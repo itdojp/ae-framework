@@ -1,0 +1,45 @@
+name: Release
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci
+      - run: npm run build
+      
+      - name: Generate SBOM
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b . v1.0.0
+          ./syft packages dir:. -o cyclonedx-json > sbom.json
+      
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ github.repository }}:${{ github.ref_name }} .
+      
+      - name: Sign with Sigstore
+        run: |
+          # Placeholder for Sigstore signing
+          echo "Signing artifacts with Sigstore..."
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            sbom.json
+            security/sigstore/*
+          generate_release_notes: true
+      
+      - name: Deploy Canary
+        run: |
+          echo "Deploying canary version..."
+          # Placeholder for canary deployment

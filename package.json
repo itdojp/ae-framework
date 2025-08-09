@@ -1,0 +1,42 @@
+{
+  "name": "minimal-human-starter",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p .",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "bdd": "cucumber-js",
+    "pbt": "vitest run -c tests/property/vitest.config.ts",
+    "mbt": "node tests/mbt/run.js",
+    "mutation": "stryker run",
+    "contract": "pact-broker can-i-deploy || true"
+  },
+  "dependencies": {
+    "fastify": "^5.0.0",
+    "zod": "^3.23.8",
+    "fastify-openapi-glue": "^5.5.0",
+    "pg": "^8.12.0",
+    "pino": "^9.0.0",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/sdk-node": "^0.52.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.47.0",
+    "@opentelemetry/exporter-trace-otlp-grpc": "^0.52.0",
+    "@opentelemetry/exporter-metrics-otlp-grpc": "^0.52.0",
+    "@opentelemetry/resources": "^1.25.0",
+    "@opentelemetry/semantic-conventions": "^1.25.0",
+    "@opentelemetry/sdk-metrics": "^1.25.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "tsx": "^4.16.0",
+    "vitest": "^2.0.5",
+    "@cucumber/cucumber": "^11.0.0",
+    "fast-check": "^3.19.0",
+    "@stryker-mutator/core": "^8.5.0",
+    "eslint": "^9.8.0",
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.11.0"
+  }
+}

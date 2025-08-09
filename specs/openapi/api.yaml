@@ -1,0 +1,26 @@
+openapi: 3.0.3
+info:
+  title: Inventory API
+  version: 0.1.0
+paths:
+  /reservations:
+    post:
+      operationId: createReservation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservationRequest'
+      responses:
+        '201': { description: Created }
+        '409': { description: Conflict }
+components:
+  schemas:
+    ReservationRequest:
+      type: object
+      required: [orderId, itemId, quantity]
+      properties:
+        orderId: { type: string }
+        itemId: { type: string }
+        quantity: { type: integer, minimum: 1 }

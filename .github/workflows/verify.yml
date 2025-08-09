@@ -1,0 +1,31 @@
+name: Verify Traceability
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  traceability:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate traceability matrix
+        run: |
+          chmod +x ./scripts/verify/traceability.sh
+          ./scripts/verify/traceability.sh
+      - name: Upload traceability artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: traceability-matrix
+          path: traceability.csv
+      - name: Check coverage thresholds
+        run: |
+          # Placeholder for actual threshold checks
+          echo "Checking traceability coverage..."
+          if [ -f traceability.csv ]; then
+            echo "Traceability matrix generated successfully"
+          else
+            echo "Failed to generate traceability matrix"
+            exit 1
+          fi

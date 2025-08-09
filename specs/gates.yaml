@@ -1,0 +1,9 @@
+version: 1
+thresholds:
+  traceability_coverage: 0.95
+  mutation_score: 0.70
+  mbt_transition_coverage: 0.90
+  sast_high: 0
+  dast_high: 0
+  formal_counterexamples: 0
+  canary_auto_rollback_success: 1.0

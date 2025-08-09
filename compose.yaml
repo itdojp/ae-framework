@@ -1,0 +1,30 @@
+version: "3.8"
+services:
+  api:
+    build: { context: ., dockerfile: Dockerfile }
+    command: ["npm","run","dev"]
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgres://app:app@db:5432/app
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel:4317
+    ports: ["3000:3000"]
+    depends_on: [db, otel]
+
+  db:
+    image: docker.io/library/postgres:16-alpine
+    environment:
+      - POSTGRES_USER=app
+      - POSTGRES_PASSWORD=app
+      - POSTGRES_DB=app
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  otel:
+    image: docker.io/otel/opentelemetry-collector:0.106.1
+    volumes:
+      - ./observability/otel-collector.yaml:/etc/otelcol/config.yaml:ro
+    ports: ["4317:4317","4318:4318"]
+
+volumes:
+  pgdata: {}

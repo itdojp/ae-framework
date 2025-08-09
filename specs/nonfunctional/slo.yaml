@@ -1,0 +1,8 @@
+service: inventory-api
+objectives:
+  - name: latency-p50
+    sli: http_request_duration_seconds_bucket{le="0.200",service="inventory-api"}
+    target: 99.0
+  - name: double-booking-violations
+    sli: custom_double_booking_violations_total
+    target: 100.0   # 100% が 0件の意。違反=0 を維持
