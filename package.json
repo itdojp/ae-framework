@@ -37,7 +37,13 @@
     "verify:all": "npm run verify:tests && npm run verify:quality && npm run verify:security && npm run mutation",
     "intent-agent": "tsx src/mcp-server/intent-server.ts",
     "intent-agent:build": "tsc src/mcp-server/intent-server.ts --outDir dist/mcp-server --module commonjs --target es2022",
-    "agents:build": "npm run build && npm run intent-agent:build"
+    "agents:build": "npm run build && npm run intent-agent:build",
+    "formal-agent": "tsx src/mcp-server/formal-server.ts",
+    "formal-agent:dev": "tsx watch src/mcp-server/formal-server.ts",
+    "formal-spec": "npm run formal-agent",
+    "validate-specs": "tsx -e \"import { FormalAgent } from './src/agents/formal-agent.js'; const agent = new FormalAgent(); console.log('Validating all specifications...'); agent.getSpecifications().forEach(spec => console.log(spec.validation));\"",
+    "generate-tla": "tsx -e \"import { FormalAgent } from './src/agents/formal-agent.js'; const agent = new FormalAgent(); console.log('TLA+ generation tools ready');\"",
+    "model-check": "tsx -e \"import { FormalAgent } from './src/agents/formal-agent.js'; const agent = new FormalAgent(); console.log('Model checking tools ready');\""
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.0",
