@@ -11,7 +11,12 @@
     "pbt": "vitest run -c tests/property/vitest.config.ts",
     "mbt": "node tests/mbt/run.js",
     "mutation": "stryker run",
-    "contract": "pact-broker can-i-deploy || true"
+    "contract": "pact-broker can-i-deploy || true",
+    "agent:test": "tsx src/agents/test-generation-agent.ts",
+    "agent:code": "tsx src/agents/code-generation-agent.ts",
+    "mcp:tdd": "tsx src/mcp-server/tdd-server.ts",
+    "mcp:test": "tsx src/mcp-server/test-generation-server.ts",
+    "mcp:code": "tsx src/mcp-server/code-generation-server.ts"
   },
   "dependencies": {
     "fastify": "^5.0.0",
