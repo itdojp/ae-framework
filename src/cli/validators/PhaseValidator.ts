@@ -1,5 +1,5 @@
 import { execSync } from 'child_process';
-import { existsSync, statSync } from 'fs';
+import { existsSync } from 'fs';
 import { glob } from 'glob';
 import { AEFrameworkConfig, Phase, ValidationResult, ValidationDetail, Prerequisite } from '../types.js';
 
@@ -174,7 +174,7 @@ export class PhaseValidator {
   private async validateTestsAreRed(): Promise<{ passed: boolean; message?: string }> {
     try {
       // Run tests expecting them to fail (RED phase)
-      const result = execSync('npm test --silent', { encoding: 'utf8', stdio: 'pipe' });
+      execSync('npm test --silent', { encoding: 'utf8', stdio: 'pipe' });
       
       // If tests pass when they should fail, that's a problem in RED phase
       return {

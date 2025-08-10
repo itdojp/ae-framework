@@ -44,13 +44,13 @@ export class MetricsCollector {
   private metricsPath: string;
   private logger: Logger;
 
-  constructor(private config: AEFrameworkConfig, logger?: Logger) {
+  constructor(private _config: AEFrameworkConfig, logger?: Logger) {
     this.logger = logger || {
       warn: (msg: string) => console.warn(msg),
       info: (msg: string) => console.log(msg),
       error: (msg: string) => console.error(msg)
     };
-    this.metricsPath = path.join(process.cwd(), config.metrics.export.path);
+    this.metricsPath = path.join(process.cwd(), _config.metrics.export.path);
     this.ensureMetricsDirectory();
     this.projectMetrics = this.loadOrCreateProjectMetrics();
   }
