@@ -2,11 +2,11 @@
 
 import { Command } from 'commander';
 import chalk from 'chalk';
-import { PhaseValidator } from './validators/PhaseValidator';
-import { GuardRunner } from './guards/GuardRunner';
-import { ConfigLoader } from './config/ConfigLoader';
-import { MetricsCollector } from './metrics/MetricsCollector';
-import { AEFrameworkConfig, Phase, Guard } from './types';
+import { PhaseValidator } from './validators/PhaseValidator.js';
+import { GuardRunner } from './guards/GuardRunner.js';
+import { ConfigLoader } from './config/ConfigLoader.js';
+import { MetricsCollector } from './metrics/MetricsCollector.js';
+import { AEFrameworkConfig, Phase, Guard } from './types.js';
 
 const program = new Command();
 

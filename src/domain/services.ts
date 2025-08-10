@@ -1,5 +1,5 @@
-import { Item, ReservationEntity, InsufficientStockError } from './entities';
-import { Reservation } from './contracts';
+import { Item, ReservationEntity, InsufficientStockError } from './entities.js';
+import { Reservation } from './contracts.js';
 
 export interface InventoryService {
   checkAvailability(itemId: string, quantity: number): Promise<boolean>;

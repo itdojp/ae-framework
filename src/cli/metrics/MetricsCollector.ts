@@ -1,6 +1,6 @@
 import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'fs';
 import * as path from 'path';
-import { AEFrameworkConfig } from '../types';
+import { AEFrameworkConfig } from '../types.js';
 
 export interface TDDViolation {
   timestamp: Date;

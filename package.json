@@ -9,8 +9,8 @@
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc -p .",
-    "build:cli": "tsc -p . && chmod +x dist/cli/index.js",
+    "build": "tsc",
+    "build:cli": "tsc && chmod +x dist/cli/index.js",
     "lint": "eslint .",
     "test": "vitest run",
     "test:all": "npm run test && npm run bdd && npm run pbt",
@@ -27,7 +27,7 @@
   "dependencies": {
     "fastify": "^5.0.0",
     "zod": "^3.23.8",
-    "fastify-openapi-glue": "^5.5.0",
+    "fastify-openapi-glue": "^4.5.0",
     "pg": "^8.12.0",
     "pino": "^9.0.0",
     "@opentelemetry/api": "^1.9.0",

@@ -1,7 +1,7 @@
 import { execSync } from 'child_process';
 import { existsSync } from 'fs';
 import { glob } from 'glob';
-import { AEFrameworkConfig, Guard, GuardResult } from '../types';
+import { AEFrameworkConfig, Guard, GuardResult } from '../types.js';
 
 export class GuardRunner {
   constructor(private config: AEFrameworkConfig) {}

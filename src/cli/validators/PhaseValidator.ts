@@ -1,7 +1,7 @@
 import { execSync } from 'child_process';
 import { existsSync, statSync } from 'fs';
 import { glob } from 'glob';
-import { AEFrameworkConfig, Phase, ValidationResult, ValidationDetail, Prerequisite } from '../types';
+import { AEFrameworkConfig, Phase, ValidationResult, ValidationDetail, Prerequisite } from '../types.js';
 
 export class PhaseValidator {
   constructor(private config: AEFrameworkConfig) {}

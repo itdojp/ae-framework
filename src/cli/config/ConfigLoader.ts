@@ -1,7 +1,7 @@
 import { readFileSync, existsSync } from 'fs';
 import * as yaml from 'js-yaml';
 import * as path from 'path';
-import { AEFrameworkConfig } from '../types';
+import { AEFrameworkConfig } from '../types.js';
 
 export class ConfigLoader {
   static load(configPath?: string): AEFrameworkConfig {

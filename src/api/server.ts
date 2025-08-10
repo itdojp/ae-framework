@@ -1,5 +1,5 @@
 import Fastify from "fastify";
-import { Reservation } from "../domain/contracts";
+import { Reservation } from "../domain/contracts.js";
 
 const app = Fastify({ logger: true });
 
