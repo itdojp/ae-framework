@@ -128,10 +128,19 @@ export class GuardRunner {
   private async runCoverageGuard(): Promise<GuardResult> {
     try {
       // Run coverage check
-      const result = execSync('npm run coverage --silent 2>/dev/null || npm test -- --coverage --silent', { 
-        encoding: 'utf8', 
-        stdio: 'pipe' 
-      });
+      let result: string;
+      try {
+        result = execSync('npm run coverage --silent', {
+          encoding: 'utf8',
+          stdio: 'pipe'
+        });
+      } catch (e) {
+        // Fallback to npm test with coverage if npm run coverage fails
+        result = execSync('npm test -- --coverage --silent', {
+          encoding: 'utf8',
+          stdio: 'pipe'
+        });
+      }
       
       // Parse coverage output
       const coverageMatch = result.match(/All files[^\d]*(\d+(?:\.\d+)?)/);

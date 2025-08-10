@@ -33,11 +33,23 @@ export interface ProjectMetrics {
   sessionId: string;
 }
 
+export interface Logger {
+  warn(message: string): void;
+  info(message: string): void;
+  error(message: string): void;
+}
+
 export class MetricsCollector {
   private projectMetrics: ProjectMetrics;
   private metricsPath: string;
+  private logger: Logger;
 
-  constructor(private config: AEFrameworkConfig) {
+  constructor(private config: AEFrameworkConfig, logger?: Logger) {
+    this.logger = logger || {
+      warn: (msg: string) => console.warn(msg),
+      info: (msg: string) => console.log(msg),
+      error: (msg: string) => console.error(msg)
+    };
     this.metricsPath = path.join(process.cwd(), config.metrics.export.path);
     this.ensureMetricsDirectory();
     this.projectMetrics = this.loadOrCreateProjectMetrics();
@@ -130,7 +142,7 @@ export class MetricsCollector {
     this.saveMetrics();
 
     // Log violation for immediate visibility
-    console.warn(`🚨 TDD Violation: ${violation.message}`);
+    this.logger.warn(`🚨 TDD Violation: ${violation.message}`);
     
     // Save detailed violation log
     this.saveViolationLog(fullViolation);
