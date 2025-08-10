@@ -22,7 +22,9 @@
     "contract": "pact-broker can-i-deploy || true",
     "ae-framework": "tsx src/cli/index.ts",
     "setup-hooks": "cp scripts/hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit",
-    "validate-tdd": "npm run ae-framework -- guard"
+    "validate-tdd": "npm run ae-framework -- guard",
+    "mcp:tdd": "tsx src/mcp-server/tdd-server.ts",
+    "mcp:test-gen": "tsx src/mcp-server/test-generation-server.ts"
   },
   "dependencies": {
     "fastify": "^5.0.0",
@@ -41,7 +43,8 @@
     "commander": "^12.0.0",
     "chalk": "^5.3.0",
     "js-yaml": "^4.1.0",
-    "glob": "^10.3.0"
+    "glob": "^10.3.0",
+    "@modelcontextprotocol/sdk": "^0.5.0"
   },
   "devDependencies": {
     "typescript": "^5.5.4",
