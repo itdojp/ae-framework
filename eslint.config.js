@@ -1,8 +1,10 @@
+import typescriptEslintParser from "@typescript-eslint/parser";
+
 export default [
   {
     files: ["**/*.ts", "**/*.tsx"],
     languageOptions: {
-      parser: "@typescript-eslint/parser",
+      parser: typescriptEslintParser,
       parserOptions: {
         ecmaVersion: "latest",
         sourceType: "module"
@@ -16,6 +18,6 @@ export default [
     }
   },
   {
-    ignores: ["dist/**", "node_modules/**", "coverage/**"]
+    ignores: ["dist/**", "node_modules/**", "coverage/**", "*.js", "*.mjs", "*.cjs"]
   }
 ];
