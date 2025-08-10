@@ -1,17 +1,28 @@
 {
-  "name": "minimal-human-starter",
-  "private": true,
+  "name": "ae-framework",
+  "version": "1.0.0",
+  "description": "AI-Agent Enabled Framework with TDD enforcement",
+  "private": false,
   "type": "module",
+  "bin": {
+    "ae-framework": "./dist/cli/index.js"
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p .",
+    "build:cli": "tsc -p . && chmod +x dist/cli/index.js",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:all": "npm run test && npm run bdd && npm run pbt",
+    "coverage": "vitest run --coverage",
     "bdd": "cucumber-js",
     "pbt": "vitest run -c tests/property/vitest.config.ts",
     "mbt": "node tests/mbt/run.js",
     "mutation": "stryker run",
-    "contract": "pact-broker can-i-deploy || true"
+    "contract": "pact-broker can-i-deploy || true",
+    "ae-framework": "tsx src/cli/index.ts",
+    "setup-hooks": "cp scripts/hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit",
+    "validate-tdd": "npm run ae-framework -- guard"
   },
   "dependencies": {
     "fastify": "^5.0.0",
@@ -26,7 +37,11 @@
     "@opentelemetry/exporter-metrics-otlp-grpc": "^0.52.0",
     "@opentelemetry/resources": "^1.25.0",
     "@opentelemetry/semantic-conventions": "^1.25.0",
-    "@opentelemetry/sdk-metrics": "^1.25.0"
+    "@opentelemetry/sdk-metrics": "^1.25.0",
+    "commander": "^12.0.0",
+    "chalk": "^5.3.0",
+    "js-yaml": "^4.1.0",
+    "glob": "^10.3.0"
   },
   "devDependencies": {
     "typescript": "^5.5.4",
@@ -37,6 +52,8 @@
     "@stryker-mutator/core": "^8.5.0",
     "eslint": "^9.8.0",
     "@types/node": "^22.0.0",
-    "@types/pg": "^8.11.0"
+    "@types/pg": "^8.11.0",
+    "@types/js-yaml": "^4.0.5",
+    "@vitest/coverage-v8": "^2.0.5"
   }
 }
