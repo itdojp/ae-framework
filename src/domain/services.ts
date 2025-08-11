@@ -1,5 +1,5 @@
-import { Item, ReservationEntity, InsufficientStockError } from './entities';
-import { Reservation } from './contracts';
+import { Item, ReservationEntity, InsufficientStockError } from './entities.js';
+import { Reservation } from './contracts.js';
 
 export interface InventoryService {
   checkAvailability(itemId: string, quantity: number): Promise<boolean>;
@@ -8,7 +8,7 @@ export interface InventoryService {
 }
 
 export class InventoryServiceImpl implements InventoryService {
-  constructor(private db: any) {}
+  constructor(private _db: any) {}
 
   async checkAvailability(itemId: string, quantity: number): Promise<boolean> {
     const item = await this.getItem(itemId);
@@ -39,7 +39,7 @@ export class InventoryServiceImpl implements InventoryService {
     };
   }
 
-  async getItem(itemId: string): Promise<Item | null> {
+  async getItem(_itemId: string): Promise<Item | null> {
     // TODO: Implement database query
     return null;
   }

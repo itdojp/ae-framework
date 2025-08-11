@@ -26,7 +26,7 @@ export function initTelemetry(serviceName: string = 'inventory-api') {
     metricReader: new PeriodicExportingMetricReader({
       exporter: metricExporter,
       exportIntervalMillis: 10000,
-    }),
+    }) as any,
     instrumentations: [
       getNodeAutoInstrumentations({
         '@opentelemetry/instrumentation-fs': {
