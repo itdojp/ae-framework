@@ -22,7 +22,9 @@
     "contract": "pact-broker can-i-deploy || true",
     "ae-framework": "tsx src/cli/index.ts",
     "setup-hooks": "cp scripts/hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit",
-    "validate-tdd": "npm run ae-framework -- guard"
+    "validate-tdd": "npm run ae-framework -- guard",
+    "mcp:tdd": "tsx src/mcp-server/tdd-server.ts",
+    "mcp:test-gen": "tsx src/mcp-server/test-generation-server.ts"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.0",
@@ -41,6 +43,7 @@
     "js-yaml": "^4.1.0",
     "pg": "^8.12.0",
     "pino": "^9.0.0",
+    "@modelcontextprotocol/sdk": "^0.5.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

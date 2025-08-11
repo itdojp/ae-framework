@@ -1,0 +1,35 @@
+{
+  "mcpServers": {
+    "ae-framework-tdd": {
+      "name": "AE Framework TDD Guard",
+      "description": "TDD enforcement and guidance for ae-framework",
+      "command": "node",
+      "args": ["dist/mcp-server/tdd-server.js"],
+      "env": {},
+      "tools": [
+        "analyze_tdd_compliance",
+        "guide_tdd_development",
+        "validate_test_first",
+        "check_red_green_cycle",
+        "suggest_test_structure"
+      ]
+    },
+    "ae-framework-test-gen": {
+      "name": "AE Framework Test Generator",
+      "description": "Automated test generation for ae-framework",
+      "command": "node",
+      "args": ["dist/mcp-server/test-generation-server.js"],
+      "env": {},
+      "tools": [
+        "generate_tests_from_requirements",
+        "generate_tests_from_code",
+        "generate_property_tests",
+        "generate_bdd_scenarios",
+        "plan_integration_tests",
+        "generate_security_tests",
+        "design_performance_tests",
+        "analyze_test_coverage"
+      ]
+    }
+  }
+}

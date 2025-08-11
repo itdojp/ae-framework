@@ -2,9 +2,34 @@
 
 > 人手最小＆仕様準拠最大。TDD強制機能付きIntent→Formal→Tests→Code→Verify→Operate の6フェーズ。
 
-## 🚀 New TDD Enforcement Features
+## 🚀 AI-Powered Development Features
 
-ae-frameworkは、TDD（Test-Driven Development）原則の遵守を自動的に強制する機能を搭載しました：
+### 🤖 Test Generation Agent (NEW!)
+自動的に包括的なテストを生成する AI エージェント：
+
+- **要件からテスト生成**: 自然言語の要件から完全なテストスイートを作成
+- **コードからテスト逆生成**: 既存コードを分析してテストを生成（リバースTDD）
+- **Property-Based Testing**: 数学的性質からプロパティテストを自動設計
+- **BDD シナリオ生成**: ユーザーストーリーから Gherkin シナリオを作成
+- **セキュリティテスト**: OWASP ガイドラインに基づくセキュリティテスト生成
+- **パフォーマンステスト**: SLA 要件からパフォーマンステストスイートを設計
+
+```bash
+# MCP サーバーとして起動
+npm run mcp:test-gen
+
+# 使用例
+{
+  "tool": "generate_tests_from_requirements",
+  "args": {
+    "feature": "User Authentication",
+    "requirements": ["Users can login", "Password must be hashed"]
+  }
+}
+```
+
+### 🛡️ TDD Enforcement Features
+TDD（Test-Driven Development）原則の遵守を自動的に強制：
 
 ### 🛡️ TDD Guards
 - **TDD Guard**: コードファイルに対応するテストファイルの存在を強制
