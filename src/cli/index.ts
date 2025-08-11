@@ -2,11 +2,11 @@
 
 import { Command } from 'commander';
 import chalk from 'chalk';
-import { PhaseValidator } from './validators/PhaseValidator';
-import { GuardRunner } from './guards/GuardRunner';
-import { ConfigLoader } from './config/ConfigLoader';
-import { MetricsCollector } from './metrics/MetricsCollector';
-import { AEFrameworkConfig, Phase, Guard } from './types';
+import { PhaseValidator } from './validators/PhaseValidator.js';
+import { GuardRunner } from './guards/GuardRunner.js';
+import { ConfigLoader } from './config/ConfigLoader.js';
+// import { MetricsCollector } from './metrics/MetricsCollector.js';  // TODO: Enable when metrics tracking is implemented
+import { AEFrameworkConfig, Phase } from './types.js';
 
 const program = new Command();
 
@@ -14,13 +14,13 @@ class AEFrameworkCLI {
   private config: AEFrameworkConfig;
   private phaseValidator: PhaseValidator;
   private guardRunner: GuardRunner;
-  private metricsCollector: MetricsCollector;
+  // private metricsCollector: MetricsCollector;  // TODO: use for metrics tracking
 
   constructor() {
     this.config = ConfigLoader.load();
     this.phaseValidator = new PhaseValidator(this.config);
     this.guardRunner = new GuardRunner(this.config);
-    this.metricsCollector = new MetricsCollector(this.config);
+    // this.metricsCollector = new MetricsCollector(this.config);  // TODO: use for metrics tracking
   }
 
   async checkPhase(phaseName: string): Promise<void> {

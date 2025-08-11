@@ -100,7 +100,7 @@ fi
 # Check 4: Prevent committing of debug/console statements
 echo "🔍 Checking for debug statements..."
 
-staged_files=$(git diff --cached --name-only --diff-filter=ACM | grep '\.(ts|js)$' || true)
+staged_files=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|js)$' || true)
 
 if [ -n "$staged_files" ]; then
     debug_found=""

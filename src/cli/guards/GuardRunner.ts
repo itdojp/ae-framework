@@ -1,7 +1,7 @@
 import { execSync } from 'child_process';
 import { existsSync } from 'fs';
 import { glob } from 'glob';
-import { AEFrameworkConfig, Guard, GuardResult } from '../types';
+import { AEFrameworkConfig, Guard, GuardResult } from '../types.js';
 
 export class GuardRunner {
   constructor(private config: AEFrameworkConfig) {}
@@ -112,7 +112,7 @@ export class GuardRunner {
       }
       
       // Alternative: Check if test files were modified more recently than source files
-      const srcFiles = await glob('src/**/*.ts');
+      // const srcFiles = await glob('src/**/*.ts');  // TODO: use for timestamp comparison
       const testFiles = await glob('tests/**/*.test.ts');
       
       if (testFiles.length === 0) {
@@ -128,10 +128,19 @@ export class GuardRunner {
   private async runCoverageGuard(): Promise<GuardResult> {
     try {
       // Run coverage check
-      const result = execSync('npm run coverage --silent 2>/dev/null || npm test -- --coverage --silent', { 
-        encoding: 'utf8', 
-        stdio: 'pipe' 
-      });
+      let result: string;
+      try {
+        result = execSync('npm run coverage --silent', {
+          encoding: 'utf8',
+          stdio: 'pipe'
+        });
+      } catch (e) {
+        // Fallback to npm test with coverage if npm run coverage fails
+        result = execSync('npm test -- --coverage --silent', {
+          encoding: 'utf8',
+          stdio: 'pipe'
+        });
+      }
       
       // Parse coverage output
       const coverageMatch = result.match(/All files[^\d]*(\d+(?:\.\d+)?)/);
