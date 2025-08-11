@@ -1,8 +1,8 @@
-import { initTelemetry } from './infra/telemetry';
-import { Database, initDatabase } from './infra/db';
-import { InventoryServiceImpl } from './domain/services';
-import app from './api/server';
-import { reservationRoutes } from './api/routes/reservations';
+import { initTelemetry } from './infra/telemetry.js';
+import { Database, initDatabase } from './infra/db.js';
+import { InventoryServiceImpl } from './domain/services.js';
+import app from './api/server.js';
+import { reservationRoutes } from './api/routes/reservations.js';
 
 async function start() {
   // Initialize telemetry

@@ -1,0 +1,159 @@
+#!/bin/sh
+# ae-framework TDD enforcement pre-commit hook
+
+set -e
+
+echo "🛡️  Running ae-framework TDD guards..."
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Check if ae-framework CLI is available
+if command -v ae-framework > /dev/null 2>&1; then
+    echo "${BLUE}Using ae-framework CLI for validation${NC}"
+    
+    # Run TDD guards
+    if ! ae-framework guard; then
+        echo "${RED}❌ TDD guards failed. Commit blocked.${NC}"
+        echo "${YELLOW}💡 Tips:${NC}"
+        echo "  - Ensure all source files have corresponding tests"
+        echo "  - Run tests and make sure they pass: npm test"
+        echo "  - Check coverage: npm run coverage"
+        echo ""
+        echo "Run 'ae-framework guard' for detailed information."
+        exit 1
+    fi
+    
+    echo "${GREEN}✅ All TDD guards passed${NC}"
+else
+    echo "${YELLOW}⚠️  ae-framework CLI not found, running basic checks...${NC}"
+    
+    # Basic TDD checks without CLI
+    
+    # Check 1: Ensure tests exist for source files
+    echo "🔍 Checking for tests..."
+    
+    # Get staged source files
+    staged_src_files=$(git diff --cached --name-only --diff-filter=ACM | grep '^src/.*\.ts$' | grep -v 'index\.ts$' || true)
+    
+    if [ -n "$staged_src_files" ]; then
+        missing_tests=""
+        
+        for src_file in $staged_src_files; do
+            # Extract base name
+            base_name=$(basename "$src_file" .ts)
+            
+            # Look for corresponding test file
+            test_file_found=false
+            
+            # Check various test file patterns
+            for test_pattern in "tests/**/${base_name}.test.ts" "tests/**/*${base_name}*.test.ts" "**/${base_name}.spec.ts"; do
+                if ls $test_pattern > /dev/null 2>&1; then
+                    test_file_found=true
+                    break
+                fi
+            done
+            
+            if [ "$test_file_found" = false ]; then
+                missing_tests="$missing_tests\n  - $src_file"
+            fi
+        done
+        
+        if [ -n "$missing_tests" ]; then
+            echo "${RED}❌ Source files without corresponding tests:${NC}"
+            echo -e "$missing_tests"
+            echo ""
+            echo "${YELLOW}💡 TDD Violation: Write tests before implementing code${NC}"
+            exit 1
+        fi
+    fi
+    
+    # Check 2: Run tests to ensure they pass
+    echo "🧪 Running tests..."
+    
+    if ! npm test > /dev/null 2>&1; then
+        echo "${RED}❌ Tests are failing. Fix tests before committing.${NC}"
+        echo ""
+        echo "${YELLOW}💡 Run 'npm test' to see detailed test results${NC}"
+        exit 1
+    fi
+    
+    # Check 3: Verify no TODO/FIXME in tests (indicating incomplete tests)
+    staged_test_files=$(git diff --cached --name-only --diff-filter=ACM | grep '\.test\.ts$' || true)
+    
+    if [ -n "$staged_test_files" ]; then
+        for test_file in $staged_test_files; do
+            if git show ":$test_file" | grep -q "TODO\|FIXME\|SKIP\|PENDING"; then
+                echo "${YELLOW}⚠️  Warning: Test file $test_file contains TODO/FIXME/SKIP markers${NC}"
+                echo "   Consider completing these tests before committing"
+            fi
+        done
+    fi
+    
+    echo "${GREEN}✅ Basic TDD checks passed${NC}"
+fi
+
+# Check 4: Prevent committing of debug/console statements
+echo "🔍 Checking for debug statements..."
+
+staged_files=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|js)$' || true)
+
+if [ -n "$staged_files" ]; then
+    debug_found=""
+    
+    for file in $staged_files; do
+        # Check for common debug patterns
+        if git show ":$file" | grep -q "console\.log\|console\.debug\|debugger"; then
+            debug_found="$debug_found\n  - $file"
+        fi
+    done
+    
+    if [ -n "$debug_found" ]; then
+        echo "${YELLOW}⚠️  Debug statements found in:${NC}"
+        echo -e "$debug_found"
+        echo ""
+        echo "${YELLOW}Consider removing debug statements before committing${NC}"
+        
+        # Ask for confirmation (if running interactively)
+        if [ -t 0 ]; then
+            echo -n "Continue anyway? (y/N): "
+            read -r response
+            case $response in
+                [yY][eE][sS]|[yY])
+                    echo "Proceeding with commit..."
+                    ;;
+                *)
+                    echo "Commit cancelled."
+                    exit 1
+                    ;;
+            esac
+        fi
+    fi
+fi
+
+# Check 5: Enforce commit message standards
+commit_msg_file="$1"
+if [ -n "$commit_msg_file" ] && [ -f "$commit_msg_file" ]; then
+    commit_msg=$(cat "$commit_msg_file")
+    
+    # Check for minimum commit message length
+    if [ ${#commit_msg} -lt 10 ]; then
+        echo "${RED}❌ Commit message too short (minimum 10 characters)${NC}"
+        echo "Current message: '$commit_msg'"
+        exit 1
+    fi
+    
+    # Check for TDD-related keywords in commit message
+    if echo "$commit_msg" | grep -qi "tdd\|test\|spec\|coverage"; then
+        echo "${GREEN}✅ TDD-related commit detected${NC}"
+    fi
+fi
+
+echo "${GREEN}🎉 All pre-commit checks passed!${NC}"
+echo "${BLUE}💡 Remember: Keep following TDD principles in your development${NC}"
+
+exit 0

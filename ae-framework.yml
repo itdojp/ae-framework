@@ -1,0 +1,156 @@
+# ae-framework Configuration
+# TDD Enforcement and Phase Management
+
+version: "1.0"
+name: "ae-framework"
+description: "AI-Agent Enabled Framework with TDD enforcement"
+
+# Phase definitions and validation rules
+phases:
+  1-intent:
+    name: "Intent Definition"
+    description: "Define requirements, specifications, and API contracts"
+    required_artifacts:
+      - "specs/gates.yaml"
+      - "specs/openapi/*.yaml"
+      - "specs/nonfunctional/*.yaml"
+    validation:
+      - check_requirements_completeness
+      
+  2-formal:
+    name: "Formal Specification" 
+    description: "Create formal specifications using TLA+, state charts"
+    required_artifacts:
+      - "specs/formal/tla+/*.tla"
+      - "specs/formal/tla+/*.cfg"
+    validation:
+      - validate_formal_specs
+      
+  3-tests:
+    name: "Test-First Development"
+    description: "Write tests before implementation (RED phase)"
+    required_artifacts:
+      - "tests/**/*.test.ts"
+      - "specs/bdd/features/*.feature"
+      - "specs/bdd/step_definitions/*.ts"
+    validation:
+      - ensure_tests_exist
+      - run_tests_expect_red
+    enforce_red_first: true    # Tests must fail initially
+    block_code_without_test: true  # Prevent code creation without tests
+    
+  4-code:
+    name: "Implementation"
+    description: "Implement code to make tests pass (GREEN phase)"
+    required_artifacts:
+      - "src/**/*.ts"
+    validation:
+      - ensure_tests_pass
+      - check_code_coverage
+    prerequisites:
+      - phase: "3-tests"
+        status: "completed"
+        validation: "tests_are_red"
+        
+  5-verify:
+    name: "Verification & Validation"
+    description: "Comprehensive testing and verification"
+    required_artifacts:
+      - "verify/traceability.sh"
+      - "stryker.conf.json"
+    validation:
+      - run_full_test_suite
+      - verify_traceability
+      - mutation_testing
+    mandatory_test_run: true
+    coverage_threshold: 80
+    
+  6-operate:
+    name: "Operations Setup"
+    description: "Deployment, monitoring, and operational concerns"
+    required_artifacts:
+      - "Dockerfile"
+      - "compose.yaml"
+      - "observability/*.yaml"
+    validation:
+      - validate_deployment_configs
+      - security_scan
+
+# TDD enforcement guards
+guards:
+  - name: "TDD Guard"
+    description: "Prevent code creation without corresponding tests"
+    rule: "For each src/**/*.ts file, a corresponding tests/**/*.test.ts must exist"
+    enforcement: "strict"
+    
+  - name: "Test Execution Guard" 
+    description: "Ensure all tests pass before commits"
+    rule: "All tests must be GREEN before git commit"
+    enforcement: "strict"
+    
+  - name: "RED-GREEN Cycle Guard"
+    description: "Enforce RED-GREEN-REFACTOR cycle"
+    rule: "Tests must be RED before implementation, GREEN after"
+    enforcement: "strict"
+    
+  - name: "Coverage Guard"
+    description: "Maintain minimum code coverage"
+    rule: "Code coverage must be >= 80%"
+    enforcement: "warning"
+
+# CLI tool configuration
+cli:
+  checkpoint_validation: true
+  interactive_mode: true
+  auto_validation: true
+  
+  commands:
+    check:
+      description: "Validate current phase requirements"
+      usage: "ae-framework check --phase <phase-name>"
+      
+    next:
+      description: "Move to next phase with validation"
+      usage: "ae-framework next"
+      
+    guard:
+      description: "Run specific guard validation"
+      usage: "ae-framework guard --name <guard-name>"
+
+# Template configurations
+templates:
+  test_first:
+    enabled: true
+    path: "templates/test-first/"
+    
+  phase_transitions:
+    enabled: true
+    require_validation: true
+    
+  standard_prompts:
+    enabled: true
+    path: "templates/prompts/"
+
+# Integration settings
+integrations:
+  git:
+    pre_commit_hooks: true
+    prevent_commit_on_red: true
+    
+  ide:
+    vscode_extension: true
+    guard_notifications: true
+    
+  ci_cd:
+    validate_on_push: true
+    block_merge_on_violations: true
+
+# Metrics and monitoring
+metrics:
+  track_tdd_violations: true
+  phase_timing: true
+  coverage_trends: true
+  
+  export:
+    format: "json"
+    path: "metrics/"
