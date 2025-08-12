@@ -43,7 +43,9 @@
     "formal-spec": "npm run formal-agent",
     "validate-specs": "tsx -e \"import { FormalAgent } from './src/agents/formal-agent.js'; const agent = new FormalAgent(); console.log('Validating all specifications...'); agent.getSpecifications().forEach(spec => console.log(spec.validation));\"",
     "generate-tla": "tsx -e \"import { FormalAgent } from './src/agents/formal-agent.js'; const agent = new FormalAgent(); console.log('TLA+ generation tools ready');\"",
-    "model-check": "tsx -e \"import { FormalAgent } from './src/agents/formal-agent.js'; const agent = new FormalAgent(); console.log('Model checking tools ready');\""
+    "model-check": "tsx -e \"import { FormalAgent } from './src/agents/formal-agent.js'; const agent = new FormalAgent(); console.log('Model checking tools ready');\"",
+    "operate:server": "tsx src/mcp-server/operate-server.ts",
+    "operate:dev": "tsx watch src/mcp-server/operate-server.ts"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.0",
