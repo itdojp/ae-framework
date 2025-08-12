@@ -450,7 +450,7 @@ export class FormalAgent {
 
   // Private helper methods
   private generateId(): string {
-    return `spec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `spec_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 
   private generateTLASpec(requirements: string): string {
