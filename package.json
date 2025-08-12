@@ -34,7 +34,10 @@
     "verify:tests": "npm run test && npm run pbt && npm run bdd",
     "verify:quality": "npm run lint && npm run build",
     "verify:security": "npm audit --audit-level moderate",
-    "verify:all": "npm run verify:tests && npm run verify:quality && npm run verify:security && npm run mutation"
+    "verify:all": "npm run verify:tests && npm run verify:quality && npm run verify:security && npm run mutation",
+    "intent-agent": "tsx src/mcp-server/intent-server.ts",
+    "intent-agent:build": "tsc src/mcp-server/intent-server.ts --outDir dist/mcp-server --module commonjs --target es2022",
+    "agents:build": "npm run build && npm run intent-agent:build"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.0",
