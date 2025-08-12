@@ -23,8 +23,12 @@
     "ae-framework": "tsx src/cli/index.ts",
     "setup-hooks": "cp scripts/hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit",
     "validate-tdd": "npm run ae-framework -- guard",
+    "agent:test": "tsx src/agents/test-generation-agent.ts",
+    "agent:code": "tsx src/agents/code-generation-agent.ts",
     "mcp:tdd": "tsx src/mcp-server/tdd-server.ts",
-    "mcp:test-gen": "tsx src/mcp-server/test-generation-server.ts"
+    "mcp:test": "tsx src/mcp-server/test-generation-server.ts",
+    "mcp:test-gen": "tsx src/mcp-server/test-generation-server.ts",
+    "mcp:code": "tsx src/mcp-server/code-generation-server.ts"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.0",
