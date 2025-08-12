@@ -63,6 +63,36 @@ export interface VerificationCheck {
   warnings?: string[];
 }
 
+export interface TestResult {
+  total: number;
+  passed: number;
+  failed: number;
+  duration: number;
+  failures: Array<{
+    message: string;
+    fullTitle?: string;
+  }>;
+}
+
+export interface LintResult {
+  errors: number;
+  warnings: number;
+  messages: Array<{
+    severity: 'error' | 'warning';
+    message: string;
+    line?: number;
+    column?: number;
+  }>;
+}
+
+export interface BenchmarkResult {
+  responseTime: number;
+  throughput: number;
+  errorRate: number;
+  cpuUsage: number;
+  memoryUsage: number;
+}
+
 export interface CoverageReport {
   line: number;
   branch: number;
@@ -703,7 +733,7 @@ export class VerifyAgent {
   }
 
   // Helper methods
-  private async runTestFile(test: TestFile): Promise<any> {
+  private async runTestFile(test: TestFile): Promise<TestResult> {
     // Implementation would run actual tests
     return {
       total: 10,
@@ -714,11 +744,16 @@ export class VerifyAgent {
     };
   }
 
-  private async lintFile(file: CodeFile): Promise<any> {
+  private async lintFile(file: CodeFile): Promise<LintResult> {
     return {
       errors: 0,
       warnings: 1,
-      messages: ['Unused variable'],
+      messages: [{
+        severity: 'warning' as const,
+        message: 'Unused variable',
+        line: 10,
+        column: 5
+      }],
     };
   }
 
@@ -738,7 +773,7 @@ export class VerifyAgent {
     return [];
   }
 
-  private async runBenchmarks(files: CodeFile[]): Promise<any> {
+  private async runBenchmarks(files: CodeFile[]): Promise<BenchmarkResult> {
     return {
       responseTime: 50,
       throughput: 2000,
