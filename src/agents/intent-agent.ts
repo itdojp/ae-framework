@@ -203,6 +203,8 @@ export interface RequirementTrace {
 }
 
 export class IntentAgent {
+  private requirementCounter = 0;
+  
   /**
    * Analyze requirements and extract intent
    */
@@ -898,7 +900,7 @@ export class IntentAgent {
     if (!sentence.trim()) return null;
     
     return {
-      id: `REQ-${Date.now()}`,
+      id: `REQ-${++this.requirementCounter}-${Date.now().toString(36)}`,
       type: this.determineRequirementType(sentence),
       category: this.determineCategory(sentence),
       description: sentence.trim(),
