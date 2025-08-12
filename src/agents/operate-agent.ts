@@ -532,19 +532,19 @@ export class OperateAgent {
 
   // Private helper methods
   private generateDeploymentId(): string {
-    return `deploy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `deploy-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
   }
 
   private generateIncidentId(): string {
-    return `inc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `inc-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
   }
 
   private generateChaosTestId(): string {
-    return `chaos-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `chaos-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
   }
 
   private generateSecurityScanId(): string {
-    return `sec-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `sec-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
   }
 
   private async runPreDeploymentChecks(params: DeploymentParams): Promise<void> {
