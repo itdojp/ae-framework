@@ -419,12 +419,12 @@ export class CodeGenerationAgent {
     
     for (const test of tests) {
       // Extract function names being tested
-      const funcMatches = test.content.match(/describe\(['"](\w+)/g) || [];
-      functions.push(...funcMatches.map(m => m.replace(/describe\(['"]/, '')));
+      const funcMatches = test.content.match(/describe\s*\(['"]([^'"]+)/g) || [];
+      functions.push(...funcMatches.map(m => m.replace(/describe\s*\(['"]/, '')));
       
       // Extract expected behaviors
-      const itMatches = test.content.match(/it\(['"]([^'"]+)/g) || [];
-      expectedBehaviors.push(...itMatches.map(m => m.replace(/it\(['"]/, '')));
+      const itMatches = test.content.match(/it\s*\(['"]([^'"]+)/g) || [];
+      expectedBehaviors.push(...itMatches.map(m => m.replace(/it\s*\(['"]/, '')));
     }
     
     return { functions, classes, expectedBehaviors };
@@ -673,19 +673,22 @@ start();
   }
 
   private applySingletonPattern(code: string): string {
-    // Apply singleton pattern to classes
-    return code.replace(/class (\w+)/g, (match, className) => {
-      return `class ${className} {
+    // Apply singleton pattern to classes without overwriting existing members
+    return code.replace(
+      /class (\w+)\s*{/, 
+      (match, className) => {
+        return `class ${className} {
   private static instance: ${className};
-  private constructor() {}
   
   static getInstance(): ${className} {
     if (!${className}.instance) {
       ${className}.instance = new ${className}();
     }
     return ${className}.instance;
-  }`;
-    });
+  }
+`; // Keep opening brace, rest of class will follow
+      }
+    );
   }
 
   private applyFactoryPattern(code: string): string {
