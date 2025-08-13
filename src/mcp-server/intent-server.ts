@@ -14,6 +14,7 @@ import {
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
 import { IntentAgent, IntentAnalysisRequest, RequirementSource, ProjectContext } from '../agents/intent-agent.js';
+import { SteeringLoader } from '../utils/steering-loader.js';
 
 class IntentMCPServer {
   private server: Server;
