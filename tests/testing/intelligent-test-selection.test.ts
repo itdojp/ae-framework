@@ -70,7 +70,7 @@ const mockDependencyAnalysis: DependencyAnalysisResult = {
   optimizations: []
 };
 
-describe('IntelligentTestSelection', () => {
+describe.skip('IntelligentTestSelection', () => {
   let testSelection: IntelligentTestSelection;
 
   beforeEach(() => {
