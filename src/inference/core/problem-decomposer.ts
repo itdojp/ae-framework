@@ -645,11 +645,13 @@ export class ProblemDecomposer {
         .map(depId => nodeMap.get(depId))
         .filter((node): node is ExecutionNode => node !== undefined);
         
-      currentNode = dependentNodes.length > 0
-        ? dependentNodes.reduce((latest, node) => 
+      if (dependentNodes.length > 0) {
+        currentNode = dependentNodes.reduce((latest, node) => 
             node.estimatedEndTime > latest.estimatedEndTime ? node : latest
-          )
-        : null;
+        );
+      } else {
+        break;
+      }
     }
     
     return path;

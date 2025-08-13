@@ -6,23 +6,7 @@
 import { EventEmitter } from 'events';
 import { SequentialInferenceEngine } from '../engines/sequential-inference-engine.js';
 import { ProblemDecomposer, type Problem, type DecompositionResult } from '../inference/core/problem-decomposer.js';
-import type { ComplexQuery, InferenceResult, DependencyGraph, ImpactAnalysis } from '../engines/sequential-inference-engine.js';
-
-export interface DependencyNode {
-  id: string;
-  name: string;
-  type: 'module' | 'function' | 'class' | 'variable' | 'type' | 'file';
-  path: string;
-  dependencies: string[];
-  dependents: string[];
-  metadata: {
-    lines: number;
-    complexity: number;
-    lastModified: Date;
-    testCoverage?: number;
-    importance: 'low' | 'medium' | 'high' | 'critical';
-  };
-}
+import type { ComplexQuery, InferenceResult, DependencyGraph, ImpactAnalysis, DependencyNode } from '../engines/sequential-inference-engine.js';
 
 export interface CircularDependency {
   id: string;
@@ -278,6 +262,13 @@ export class DependencyAnalyzer extends EventEmitter {
         changes: request.changes,
         analysisDepth: request.analysisDepth
       },
+      constraints: [
+        {
+          type: 'resource',
+          condition: 'maxDepth <= 10',
+          severity: 'warning'
+        }
+      ],
       priority: 'high'
     };
 
@@ -355,6 +346,13 @@ export class DependencyAnalyzer extends EventEmitter {
           scope: request.analysisScope
         }
       },
+      constraints: [
+        {
+          type: 'resource',
+          condition: 'maxDepth <= 10',
+          severity: 'warning'
+        }
+      ],
       priority: 'high'
     };
   }
@@ -365,29 +363,25 @@ export class DependencyAnalyzer extends EventEmitter {
       projectRoot: request.projectRoot,
       sourceFiles: request.targetFiles || [],
       dependencies: {},
-      analysisOptions: {
-        includeExternal: request.includeExternal,
-        maxDepth: request.maxDepth,
-        excludePatterns: request.excludePatterns
-      }
+      devDependencies: {}
     });
 
     // Convert to our internal format
-    const nodes: DependencyNode[] = dependencies.dependencyMap ? 
-      Object.entries(dependencies.dependencyMap).map(([path, deps]) => ({
-        id: this.generateNodeId(path),
-        name: this.extractFileName(path),
-        type: this.inferNodeType(path),
-        path,
-        dependencies: Array.isArray(deps) ? deps : [],
-        dependents: [], // Will be populated in post-processing
+    const nodes: DependencyNode[] = dependencies.nodes.map(node => ({
+        id: node.id,
+        name: this.extractFileName(node.path),
+        type: this.inferNodeType(node.path),
+        path: node.path,
+        dependencies: node.dependencies,
+        dependents: node.dependents,
+        weight: 1,
         metadata: {
           lines: 0, // Would be populated by actual file analysis
-          complexity: this.estimateComplexity(path, Array.isArray(deps) ? deps : []),
+          complexity: this.estimateComplexity(node.path, node.dependencies),
           lastModified: new Date(),
-          importance: this.assessNodeImportance(path, Array.isArray(deps) ? deps : [])
+          importance: this.assessNodeImportance(node.path, node.dependencies)
         }
-      })) : [];
+    }));
 
     // Build reverse dependencies (dependents)
     this.populateDependents(nodes);
@@ -395,11 +389,14 @@ export class DependencyAnalyzer extends EventEmitter {
     return {
       nodes,
       edges: this.buildEdges(nodes),
-      metadata: {
-        analysisId: request.id,
-        timestamp: new Date(),
-        projectRoot: request.projectRoot,
-        totalNodes: nodes.length
+      cycles: [], // Simplified for now
+      criticalPaths: [], // Simplified for now
+      metrics: {
+        totalNodes: nodes.length,
+        totalEdges: this.buildEdges(nodes).length,
+        cycleCount: 0,
+        maxDepth: 0,
+        fanOut: {}
       }
     };
   }
@@ -709,7 +706,7 @@ export class DependencyAnalyzer extends EventEmitter {
     if (totalEdges === 0) return 1.0;
     
     const intraModularEdges = graph.edges.filter(edge => 
-      this.getModuleName(edge.source) === this.getModuleName(edge.target)
+      this.getModuleName(edge.from) === this.getModuleName(edge.to)
     ).length;
     
     return intraModularEdges / totalEdges;

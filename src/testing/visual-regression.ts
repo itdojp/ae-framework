@@ -447,8 +447,8 @@ export class VisualRegressionTesting extends EventEmitter {
     for (const component of criticalComponents.slice(0, 10)) { // Limit to top 10
       const test: VisualTestCase = {
         id: `visual-${component.id}`,
-        name: `Visual Test: ${component.name}`,
-        description: `Visual regression test for ${component.name} component`,
+        name: `Visual Test: ${this.extractComponentName(component)}`,
+        description: `Visual regression test for ${this.extractComponentName(component)} component`,
         url: this.getComponentURL(component),
         selector: `[data-testid="${component.id}"]`,
         config: { ...this.config, ...request.config },
@@ -816,7 +816,15 @@ export class VisualRegressionTesting extends EventEmitter {
     return `${affectedComponents} components affected by visual changes, requiring developer review`;
   }
 
+  private extractComponentName(component: any): string {
+    if (component.path) {
+      return component.path.split('/').pop()?.replace(/\.(ts|js|tsx|jsx)$/, '') || component.id;
+    }
+    return component.id;
+  }
+
   private getComponentURL(component: any): string {
-    return `/components/${component.name.toLowerCase().replace(/\s+/g, '-')}`;
+    const name = this.extractComponentName(component);
+    return `/components/${name.toLowerCase().replace(/\s+/g, '-')}`;
   }
 }

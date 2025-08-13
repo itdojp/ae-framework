@@ -245,6 +245,18 @@ export class PlaywrightIntegration extends EventEmitter {
       const analysisQuery = {
         id: `test-gen-${request.id}`,
         description: 'Generate comprehensive E2E test suite',
+        constraints: [
+          {
+            type: 'resource' as const,
+            condition: 'maxDepth <= 10',
+            severity: 'warning' as const
+          },
+          {
+            type: 'temporal' as const,
+            condition: 'timeout <= 60000',
+            severity: 'error' as const
+          }
+        ],
         context: {
           sourceAnalysis: request.sourceAnalysis,
           userFlows: request.userFlows,
