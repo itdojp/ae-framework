@@ -217,7 +217,7 @@ export class ReasoningEngine extends EventEmitter {
 
   private createSession(request: ReasoningRequest): ReasoningSession {
     return {
-      id: `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `session-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
       startTime: new Date(),
       status: 'pending',
       request,

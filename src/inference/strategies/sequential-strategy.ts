@@ -336,7 +336,7 @@ export class SequentialStrategy {
     
     for (const objective of objectives) {
       hypotheses.push({
-        id: `hyp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        id: `hyp-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
         objective,
         description: `Hypothesis for achieving ${objective}`,
         supportingEvidence: analysisResult.patterns?.slice(0, 2) || [],
