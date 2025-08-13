@@ -12,6 +12,12 @@ import { OperateAgent } from '../agents/operate-agent.js';
 import { PhaseStateManager, PhaseType } from '../utils/phase-state-manager.js';
 import { SteeringLoader } from '../utils/steering-loader.js';
 import { ApprovalService } from '../services/approval-service.js';
+import { 
+  AnalyzeCommand,
+  TroubleshootCommand,
+  ImproveCommand,
+  DocumentCommand
+} from './extended/index.js';
 
 export interface SlashCommand {
   name: string;
@@ -68,6 +74,7 @@ export class SlashCommandManager {
 
     // Register commands (agents will be initialized on demand)
     this.registerCommands();
+    this.registerExtendedCommands();
   }
 
   /**
@@ -128,6 +135,57 @@ export class SlashCommandManager {
       this.operateAgent = new OperateAgent();
     }
     return this.operateAgent;
+  }
+
+  /**
+   * Register extended commands from Issue #17
+   */
+  private registerExtendedCommands(): void {
+    // Register analyze command
+    const analyzeCmd = new AnalyzeCommand();
+    this.registerCommand({
+      name: analyzeCmd.name,
+      description: analyzeCmd.description,
+      category: analyzeCmd.category,
+      usage: analyzeCmd.usage,
+      aliases: analyzeCmd.aliases,
+      handler: analyzeCmd.handler.bind(analyzeCmd),
+      stopOnFailure: false
+    });
+
+    // Register troubleshoot command
+    const troubleshootCmd = new TroubleshootCommand();
+    this.registerCommand({
+      name: troubleshootCmd.name,
+      description: troubleshootCmd.description,
+      category: troubleshootCmd.category,
+      usage: troubleshootCmd.usage,
+      aliases: troubleshootCmd.aliases,
+      handler: troubleshootCmd.handler.bind(troubleshootCmd)
+    });
+
+    // Register improve command
+    const improveCmd = new ImproveCommand();
+    this.registerCommand({
+      name: improveCmd.name,
+      description: improveCmd.description,
+      category: improveCmd.category,
+      usage: improveCmd.usage,
+      aliases: improveCmd.aliases,
+      handler: improveCmd.handler.bind(improveCmd)
+    });
+
+    // Register document command
+    const documentCmd = new DocumentCommand();
+    this.registerCommand({
+      name: documentCmd.name,
+      description: documentCmd.description,
+      category: documentCmd.category,
+      usage: documentCmd.usage,
+      aliases: documentCmd.aliases,
+      handler: documentCmd.handler.bind(documentCmd),
+      stopOnFailure: false
+    });
   }
 
   /**
