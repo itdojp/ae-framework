@@ -2,65 +2,87 @@
 
 > 人手最小＆仕様準拠最大。TDD強制機能付きIntent→Formal→Tests→Code→Verify→Operate の6フェーズ。
 
-## 🎯 Steering Documents (NEW!)
-プロジェクト全体のコンテキストと方向性を管理する新機能：
+## 📢 最新アップデート
+- **[🚀 クイックスタート](./docs/QUICK_START.md)** - 5分で始めるae-framework
+- **[📖 新機能ガイド](./docs/NEW_FEATURES.md)** - Steering Documents、Phase State Management、Approval Workflow、Slash Commandsの詳細な使用方法
 
-### 概要
-Steering Documentsは、すべてのAIエージェントとチームメンバーが参照する、プロジェクトの共通コンテキストです。`.ae/steering/`ディレクトリに配置され、すべてのフェーズで自動的に参照されます。
+## 🎯 主要機能
 
-### コアドキュメント
+### 📚 [Steering Documents](./docs/NEW_FEATURES.md#-steering-documents)
+プロジェクト全体のコンテキストと方向性を管理：
 - **product.md**: プロダクトビジョン、ターゲットユーザー、コア機能
-- **architecture.md**: 技術スタック、アーキテクチャパターン、システム構成
+- **architecture.md**: 技術スタック、アーキテクチャパターン、システム構成  
 - **standards.md**: コーディング規約、命名規則、品質基準
 
-### 使用方法
 ```bash
-# Steering Documentsの初期化
+# クイックスタート
 mkdir -p .ae/steering
-# product.md, architecture.md, standards.mdを作成・編集
-
-# AIエージェントは自動的にこれらのドキュメントを参照
-npm run intent-agent  # product.mdのビジョンを考慮
-npm run code-agent    # standards.mdの規約に従う
+echo "# Product Vision" > .ae/steering/product.md
 ```
 
-## 📊 Phase State Management (NEW!)
-プロジェクトの各フェーズの進捗と承認状態を追跡・管理：
+### 📊 [Phase State Management](./docs/NEW_FEATURES.md#-phase-state-management)
+6フェーズの進捗を自動追跡：
+- 各フェーズの開始・完了・承認を記録
+- プロジェクト全体の進捗率とタイムライン
+- 成果物とメタデータの管理
 
-### 概要
-Phase State Managementは、6フェーズの進捗を自動追跡し、承認ワークフローを管理します。`.ae/phase-state.json`にプロジェクト状態を保存し、すべてのエージェントが参照可能です。
-
-### CLIコマンド
 ```bash
-# プロジェクトの初期化
+# クイックスタート
 ae-phase init --name "My Project"
-
-# 現在の状態を確認
 ae-phase status
-ae-phase status --verbose  # 詳細レポート
-
-# フェーズの開始・完了
-ae-phase start intent
-ae-phase complete intent --artifacts requirements.md user-stories.md
-
-# フェーズの承認
-ae-phase approve intent --user "John Doe" --notes "Requirements look good"
-
-# 次のフェーズへ移行
-ae-phase next
-
-# タイムライン表示
 ae-phase timeline
 ```
 
-### 機能
-- **自動状態追跡**: 各フェーズの開始・完了・承認を記録
-- **承認ワークフロー**: フェーズ完了後の承認プロセス
-- **成果物管理**: 各フェーズの成果物を記録
-- **進捗可視化**: プロジェクト全体の進捗率とタイムライン
-- **メタデータ**: 追加情報の保存と管理
+### ✅ [Approval Workflow](./docs/NEW_FEATURES.md#-approval-workflow)
+フェーズ完了後の品質ゲート：
+- 複数承認者のサポート
+- 自動承認条件（テストカバレッジ、セキュリティスキャン）
+- 承認期限とエスカレーション
 
-## 🚀 AI-Powered Development Features
+```bash
+# クイックスタート
+ae-approve request intent --summary "Ready for review"
+ae-approve approve intent --user "Tech Lead"
+```
+
+### 🚀 [Slash Commands](./docs/NEW_FEATURES.md#-slash-commands) 
+統一されたコマンドインターフェース：
+- インタラクティブモード（`ae-slash i`）
+- 全フェーズのコマンド統合
+- コマンドエイリアスとシーケンス実行
+
+```bash
+# クイックスタート
+ae-slash interactive
+ae> /init "My Project"
+ae> /status
+ae> /next
+```
+
+## 🚀 開発ワークフロー
+
+### 統合ワークフロー例
+```bash
+# 1. プロジェクト初期化
+ae-phase init --name "My Project"
+mkdir -p .ae/steering
+
+# 2. インタラクティブ開発
+ae-slash i
+ae> /init "E-Commerce Platform"
+ae> /intent Users can browse and purchase products
+ae> /complete requirements.md
+ae> /approve Ready for implementation
+ae> /next
+
+# 3. 進捗確認
+ae-phase timeline
+ae-approve pending
+```
+
+詳細は[新機能ガイド](./docs/NEW_FEATURES.md#-統合ワークフロー例)を参照してください。
+
+## 🤖 AI-Powered Development Features
 
 ### 🤖 Test Generation Agent (NEW!)
 自動的に包括的なテストを生成する AI エージェント：
