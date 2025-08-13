@@ -1,18 +1,98 @@
 /**
  * Document Command for ae-framework
- * Intelligent documentation generation
+ * Generates comprehensive documentation for code
  */
 
-import { CommandHandler, CommandResult, CommandContext } from '../slash-command-manager.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import * as ts from 'typescript';
+import type { CommandResult, CommandContext } from '../slash-command-manager.js';
+import { EvidenceValidator } from '../../utils/evidence-validator.js';
+
+export interface DocumentationResult {
+  file: string;
+  documentation: Documentation;
+  format: 'markdown' | 'jsdoc' | 'api-json';
+  written: boolean;
+}
+
+export interface Documentation {
+  summary: string;
+  description?: string;
+  exports: ExportedItem[];
+  dependencies: string[];
+  examples?: Example[];
+  metadata: Metadata;
+}
+
+export interface ExportedItem {
+  name: string;
+  type: 'function' | 'class' | 'interface' | 'type' | 'constant' | 'enum';
+  signature?: string;
+  description?: string;
+  parameters?: Parameter[];
+  returns?: ReturnValue;
+  properties?: Property[];
+  methods?: Method[];
+}
+
+export interface Parameter {
+  name: string;
+  type: string;
+  description?: string;
+  optional?: boolean;
+  defaultValue?: string;
+}
+
+export interface ReturnValue {
+  type: string;
+  description?: string;
+}
+
+export interface Property {
+  name: string;
+  type: string;
+  description?: string;
+  optional?: boolean;
+  access?: 'public' | 'private' | 'protected';
+}
+
+export interface Method {
+  name: string;
+  signature: string;
+  description?: string;
+  parameters?: Parameter[];
+  returns?: ReturnValue;
+  access?: 'public' | 'private' | 'protected';
+}
+
+export interface Example {
+  title: string;
+  code: string;
+  description?: string;
+}
+
+export interface Metadata {
+  author?: string;
+  version?: string;
+  lastModified: string;
+  fileSize: number;
+  linesOfCode: number;
+  complexity: number;
+}
 
 export class DocumentCommand {
   name = '/ae:document';
-  description = 'Intelligent documentation generation';
+  description = 'Generate comprehensive documentation';
   category = 'utility' as const;
-  usage = '/ae:document <file|directory> [--format <markdown|jsdoc|api>]';
-  aliases = ['/document', '/docs', '/doc'];
+  usage = '/ae:document <file|directory> [--format=markdown|jsdoc|api-json] [--output=path]';
+  aliases = ['/document', '/a:document'];
+
+  private validator: EvidenceValidator;
+
+  constructor() {
+    this.validator = new EvidenceValidator();
+  }
 
   async handler(args: string[], context: CommandContext): Promise<CommandResult> {
     if (args.length === 0) {
@@ -24,24 +104,33 @@ export class DocumentCommand {
 
     const target = args[0];
     const options = this.parseOptions(args.slice(1));
-    const format = options.format || 'markdown';
 
     try {
-      const documentation = await this.generateDocumentation(target, format, context);
-      
-      if (options.output) {
-        await this.saveDocumentation(documentation, options.output);
-        return {
-          success: true,
-          message: `Documentation saved to ${options.output}`,
-          data: documentation
-        };
+      const results = await this.generateDocumentation(target, options);
+      const summary = this.generateDocumentationSummary(results);
+
+      // Optionally validate documentation completeness
+      if (options.validate) {
+        for (const result of results) {
+          const validation = await this.validator.validateClaim(
+            `Documentation completeness for ${result.file}`,
+            JSON.stringify(result.documentation),
+            { minConfidence: 0.6 }
+          );
+          
+          if (validation.confidence < 0.6) {
+            return {
+              success: false,
+              message: `Documentation validation failed for ${result.file}: ${validation.reasoning}`
+            };
+          }
+        }
       }
 
       return {
         success: true,
-        message: documentation.content,
-        data: documentation
+        message: summary,
+        data: results
       };
     } catch (error: any) {
       return {
@@ -51,674 +140,568 @@ export class DocumentCommand {
     }
   }
 
-  private async generateDocumentation(
-    target: string,
-    format: string,
-    context: CommandContext
-  ): Promise<Documentation> {
-    const fullPath = path.resolve(context.projectRoot, target);
-    const stats = await fs.stat(fullPath);
-    
+  private parseOptions(args: string[]): any {
+    const options: any = {
+      format: 'markdown',
+      output: null,
+      writeFiles: false,
+      includePrivate: false,
+      validate: false
+    };
+
+    for (let i = 0; i < args.length; i++) {
+      const arg = args[i];
+      if (arg.startsWith('--format=')) {
+        options.format = arg.split('=')[1];
+      } else if (arg.startsWith('--output=')) {
+        options.output = arg.split('=')[1];
+        options.writeFiles = true;
+      } else if (arg === '--include-private') {
+        options.includePrivate = true;
+      } else if (arg === '--validate') {
+        options.validate = true;
+      }
+    }
+
+    return options;
+  }
+
+  private async generateDocumentation(target: string, options: any): Promise<DocumentationResult[]> {
+    const results: DocumentationResult[] = [];
+    const stats = await fs.stat(target);
+
     if (stats.isDirectory()) {
-      return this.documentDirectory(fullPath, format);
+      const files = await this.findSourceFiles(target);
+      for (const file of files) {
+        const result = await this.documentFile(file, options);
+        results.push(result);
+      }
     } else {
-      return this.documentFile(fullPath, format);
+      const result = await this.documentFile(target, options);
+      results.push(result);
     }
+
+    return results;
   }
 
-  private async documentFile(filePath: string, format: string): Promise<Documentation> {
-    const content = await fs.readFile(filePath, 'utf-8');
-    const ext = path.extname(filePath);
-    const fileName = path.basename(filePath);
+  private async findSourceFiles(dir: string): Promise<string[]> {
+    const files: string[] = [];
+    const entries = await fs.readdir(dir, { withFileTypes: true });
 
-    const analysis = this.analyzeCode(content, ext);
-    
-    let documentation: Documentation = {
-      title: fileName,
-      type: 'file',
-      format,
-      content: '',
-      metadata: {
-        path: filePath,
-        generated: new Date().toISOString(),
-        stats: analysis.stats
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+      
+      if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
+        const subFiles = await this.findSourceFiles(fullPath);
+        files.push(...subFiles);
+      } else if (entry.isFile() && (entry.name.endsWith('.ts') || entry.name.endsWith('.js'))) {
+        files.push(fullPath);
       }
+    }
+
+    return files;
+  }
+
+  private async documentFile(file: string, options: any): Promise<DocumentationResult> {
+    const content = await fs.readFile(file, 'utf-8');
+    const stats = await fs.stat(file);
+    
+    const documentation = await this.parseAndDocument(content, file, options);
+    let written = false;
+
+    if (options.writeFiles && options.output) {
+      const outputPath = this.getOutputPath(file, options.output, options.format);
+      const formatted = this.formatDocumentation(documentation, options.format);
+      await fs.writeFile(outputPath, formatted);
+      written = true;
+    }
+
+    return {
+      file,
+      documentation,
+      format: options.format,
+      written
+    };
+  }
+
+  private async parseAndDocument(content: string, filePath: string, options: any): Promise<Documentation> {
+    const sourceFile = ts.createSourceFile(
+      filePath,
+      content,
+      ts.ScriptTarget.Latest,
+      true
+    );
+
+    const exports = this.extractExports(sourceFile, options.includePrivate);
+    const dependencies = this.extractDependencies(content);
+    const examples = this.extractExamples(content);
+    const metadata = await this.generateMetadata(content, filePath);
+
+    return {
+      summary: this.generateSummary(exports),
+      description: this.extractDescription(content),
+      exports,
+      dependencies,
+      examples,
+      metadata
+    };
+  }
+
+  private extractExports(sourceFile: ts.SourceFile, includePrivate: boolean = false): ExportedItem[] {
+    const exports: ExportedItem[] = [];
+
+    const visit = (node: ts.Node) => {
+      // Functions
+      if (ts.isFunctionDeclaration(node) && node.name) {
+        const isPrivate = this.hasPrivateModifier(node);
+        if (!isPrivate || includePrivate) {
+          exports.push(this.createFunctionItem(node));
+        }
+      }
+      
+      // Classes
+      if (ts.isClassDeclaration(node) && node.name) {
+        const isPrivate = this.hasPrivateModifier(node);
+        if (!isPrivate || includePrivate) {
+          exports.push(this.createClassItem(node, includePrivate));
+        }
+      }
+      
+      // Interfaces
+      if (ts.isInterfaceDeclaration(node)) {
+        exports.push(this.createInterfaceItem(node));
+      }
+      
+      // Type aliases
+      if (ts.isTypeAliasDeclaration(node)) {
+        exports.push(this.createTypeItem(node));
+      }
+      
+      // Constants and variables
+      if (ts.isVariableStatement(node)) {
+        const isPrivate = this.hasPrivateModifier(node);
+        if (!isPrivate || includePrivate) {
+          for (const declaration of node.declarationList.declarations) {
+            if (ts.isIdentifier(declaration.name)) {
+              exports.push(this.createConstantItem(declaration));
+            }
+          }
+        }
+      }
+      
+      // Enums
+      if (ts.isEnumDeclaration(node)) {
+        const isPrivate = this.hasPrivateModifier(node);
+        if (!isPrivate || includePrivate) {
+          exports.push(this.createEnumItem(node));
+        }
+      }
+
+      ts.forEachChild(node, visit);
     };
 
-    switch (format) {
-      case 'markdown':
-        documentation.content = this.generateMarkdownDoc(fileName, analysis);
-        break;
-      case 'jsdoc':
-        documentation.content = this.generateJSDocComments(analysis);
-        break;
-      case 'api':
-        documentation.content = this.generateAPIDoc(fileName, analysis);
-        break;
-      default:
-        documentation.content = this.generateMarkdownDoc(fileName, analysis);
-    }
-
-    return documentation;
-  }
-
-  private async documentDirectory(dirPath: string, format: string): Promise<Documentation> {
-    const files = await this.scanDirectory(dirPath);
-    const documentations: Documentation[] = [];
-
-    for (const file of files) {
-      const doc = await this.documentFile(file, format);
-      documentations.push(doc);
-    }
-
-    return this.combineDocumentations(documentations, dirPath, format);
-  }
-
-  private analyzeCode(content: string, ext: string): CodeAnalysis {
-    const analysis: CodeAnalysis = {
-      classes: this.extractClasses(content),
-      functions: this.extractFunctions(content),
-      interfaces: this.extractInterfaces(content),
-      imports: this.extractImports(content),
-      exports: this.extractExports(content),
-      constants: this.extractConstants(content),
-      stats: {
-        lines: content.split('\n').length,
-        classes: 0,
-        functions: 0,
-        interfaces: 0
-      }
-    };
-
-    analysis.stats.classes = analysis.classes.length;
-    analysis.stats.functions = analysis.functions.length;
-    analysis.stats.interfaces = analysis.interfaces.length;
-
-    return analysis;
-  }
-
-  private extractClasses(content: string): ClassInfo[] {
-    const classes: ClassInfo[] = [];
-    const classRegex = /(?:export\s+)?class\s+(\w+)(?:\s+extends\s+(\w+))?(?:\s+implements\s+([\w\s,]+))?\s*\{/g;
-    
-    let match;
-    while ((match = classRegex.exec(content)) !== null) {
-      const className = match[1];
-      const extendsClass = match[2];
-      const implementsList = match[3]?.split(',').map(s => s.trim());
-      
-      const classBody = this.extractClassBody(content, match.index);
-      const methods = this.extractClassMethods(classBody);
-      const properties = this.extractClassProperties(classBody);
-      
-      classes.push({
-        name: className,
-        extends: extendsClass,
-        implements: implementsList,
-        methods,
-        properties,
-        description: this.extractComment(content, match.index)
-      });
-    }
-
-    return classes;
-  }
-
-  private extractFunctions(content: string): FunctionInfo[] {
-    const functions: FunctionInfo[] = [];
-    const functionRegex = /(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\(([^)]*)\)(?:\s*:\s*([^{]+))?\s*\{/g;
-    const arrowRegex = /(?:export\s+)?(?:const|let)\s+(\w+)\s*=\s*(?:async\s+)?\(([^)]*)\)(?:\s*:\s*([^=]+))?\s*=>/g;
-    
-    let match;
-    
-    // Traditional functions
-    while ((match = functionRegex.exec(content)) !== null) {
-      functions.push({
-        name: match[1],
-        parameters: this.parseParameters(match[2]),
-        returnType: match[3]?.trim(),
-        isAsync: content.substring(match.index - 10, match.index).includes('async'),
-        description: this.extractComment(content, match.index)
-      });
-    }
-    
-    // Arrow functions
-    while ((match = arrowRegex.exec(content)) !== null) {
-      functions.push({
-        name: match[1],
-        parameters: this.parseParameters(match[2]),
-        returnType: match[3]?.trim(),
-        isAsync: content.substring(match.index - 10, match.index).includes('async'),
-        description: this.extractComment(content, match.index)
-      });
-    }
-
-    return functions;
-  }
-
-  private extractInterfaces(content: string): InterfaceInfo[] {
-    const interfaces: InterfaceInfo[] = [];
-    const interfaceRegex = /(?:export\s+)?interface\s+(\w+)(?:\s+extends\s+([\w\s,]+))?\s*\{/g;
-    
-    let match;
-    while ((match = interfaceRegex.exec(content)) !== null) {
-      const interfaceName = match[1];
-      const extends_ = match[2]?.split(',').map(s => s.trim());
-      
-      const interfaceBody = this.extractBlockBody(content, match.index);
-      const properties = this.extractInterfaceProperties(interfaceBody);
-      
-      interfaces.push({
-        name: interfaceName,
-        extends: extends_,
-        properties,
-        description: this.extractComment(content, match.index)
-      });
-    }
-
-    return interfaces;
-  }
-
-  private extractImports(content: string): string[] {
-    const imports: string[] = [];
-    const importRegex = /import\s+(?:{[^}]+}|\*\s+as\s+\w+|\w+)\s+from\s+['"]([^'"]+)['"]/g;
-    
-    let match;
-    while ((match = importRegex.exec(content)) !== null) {
-      imports.push(match[1]);
-    }
-
-    return imports;
-  }
-
-  private extractExports(content: string): string[] {
-    const exports: string[] = [];
-    const exportRegex = /export\s+(?:default\s+)?(?:class|function|const|let|var|interface|type)\s+(\w+)/g;
-    
-    let match;
-    while ((match = exportRegex.exec(content)) !== null) {
-      exports.push(match[1]);
-    }
-
+    visit(sourceFile);
     return exports;
   }
 
-  private extractConstants(content: string): ConstantInfo[] {
-    const constants: ConstantInfo[] = [];
-    const constRegex = /(?:export\s+)?const\s+([A-Z_]+)\s*(?::\s*([^=]+))?\s*=\s*([^;]+);/g;
-    
-    let match;
-    while ((match = constRegex.exec(content)) !== null) {
-      constants.push({
-        name: match[1],
-        type: match[2]?.trim(),
-        value: match[3].trim(),
-        description: this.extractComment(content, match.index)
-      });
-    }
-
-    return constants;
+  private hasPrivateModifier(node: ts.Node): boolean {
+    return node.modifiers?.some(mod => mod.kind === ts.SyntaxKind.PrivateKeyword) ?? false;
   }
 
-  private extractClassBody(content: string, startIndex: number): string {
-    let braceCount = 0;
-    let inClass = false;
-    let endIndex = startIndex;
-    
-    for (let i = startIndex; i < content.length; i++) {
-      if (content[i] === '{') {
-        braceCount++;
-        inClass = true;
-      } else if (content[i] === '}') {
-        braceCount--;
-        if (inClass && braceCount === 0) {
-          endIndex = i;
-          break;
-        }
-      }
-    }
-    
-    return content.substring(startIndex, endIndex + 1);
+  private createFunctionItem(node: ts.FunctionDeclaration): ExportedItem {
+    return {
+      name: node.name!.getText(),
+      type: 'function',
+      signature: this.getFunctionSignature(node),
+      description: this.extractJSDocComment(node),
+      parameters: this.extractParameters(node),
+      returns: this.extractReturnType(node)
+    };
   }
 
-  private extractBlockBody(content: string, startIndex: number): string {
-    return this.extractClassBody(content, startIndex);
-  }
+  private createClassItem(node: ts.ClassDeclaration, includePrivate: boolean): ExportedItem {
+    const methods: Method[] = [];
+    const properties: Property[] = [];
 
-  private extractClassMethods(classBody: string): MethodInfo[] {
-    const methods: MethodInfo[] = [];
-    const methodRegex = /(?:public|private|protected)?\s*(?:static\s+)?(?:async\s+)?(\w+)\s*\(([^)]*)\)(?:\s*:\s*([^{]+))?\s*\{/g;
-    
-    let match;
-    while ((match = methodRegex.exec(classBody)) !== null) {
-      if (match[1] !== 'constructor') {
+    for (const member of node.members) {
+      const isPrivate = this.hasPrivateModifier(member);
+      
+      if (ts.isMethodDeclaration(member) && member.name && (!isPrivate || includePrivate)) {
         methods.push({
-          name: match[1],
-          parameters: this.parseParameters(match[2]),
-          returnType: match[3]?.trim(),
-          visibility: this.extractVisibility(classBody, match.index),
-          isStatic: classBody.substring(match.index - 20, match.index).includes('static'),
-          isAsync: classBody.substring(match.index - 20, match.index).includes('async')
+          name: member.name.getText(),
+          signature: this.getMethodSignature(member),
+          description: this.extractJSDocComment(member),
+          parameters: this.extractParameters(member),
+          returns: this.extractReturnType(member),
+          access: isPrivate ? 'private' : 'public'
+        });
+      }
+      
+      if (ts.isPropertyDeclaration(member) && member.name && (!isPrivate || includePrivate)) {
+        properties.push({
+          name: member.name.getText(),
+          type: this.getTypeString(member.type),
+          description: this.extractJSDocComment(member),
+          access: isPrivate ? 'private' : 'public'
         });
       }
     }
 
-    return methods;
+    return {
+      name: node.name!.getText(),
+      type: 'class',
+      description: this.extractJSDocComment(node),
+      methods,
+      properties
+    };
   }
 
-  private extractClassProperties(classBody: string): PropertyInfo[] {
-    const properties: PropertyInfo[] = [];
-    const propertyRegex = /(?:public|private|protected)?\s*(?:readonly\s+)?(\w+)(?:\?)?(?:\s*:\s*([^;=]+))?(?:\s*=\s*([^;]+))?;/g;
+  private createInterfaceItem(node: ts.InterfaceDeclaration): ExportedItem {
+    const properties: Property[] = [];
+
+    for (const member of node.members) {
+      if (ts.isPropertySignature(member) && member.name) {
+        properties.push({
+          name: member.name.getText(),
+          type: this.getTypeString(member.type),
+          description: this.extractJSDocComment(member),
+          optional: !!member.questionToken
+        });
+      }
+    }
+
+    return {
+      name: node.name.getText(),
+      type: 'interface',
+      description: this.extractJSDocComment(node),
+      properties
+    };
+  }
+
+  private createTypeItem(node: ts.TypeAliasDeclaration): ExportedItem {
+    return {
+      name: node.name.getText(),
+      type: 'type',
+      signature: this.getTypeString(node.type),
+      description: this.extractJSDocComment(node)
+    };
+  }
+
+  private createConstantItem(node: ts.VariableDeclaration): ExportedItem {
+    return {
+      name: node.name.getText(),
+      type: 'constant',
+      signature: this.getTypeString(node.type),
+      description: this.extractJSDocComment(node.parent?.parent as ts.Node)
+    };
+  }
+
+  private createEnumItem(node: ts.EnumDeclaration): ExportedItem {
+    return {
+      name: node.name.getText(),
+      type: 'enum',
+      description: this.extractJSDocComment(node)
+    };
+  }
+
+  private getFunctionSignature(node: ts.FunctionDeclaration | ts.MethodDeclaration): string {
+    const params = node.parameters.map(p => {
+      const name = p.name.getText();
+      const type = p.type ? `: ${this.getTypeString(p.type)}` : '';
+      const optional = p.questionToken ? '?' : '';
+      return `${name}${optional}${type}`;
+    }).join(', ');
+    
+    const returnType = node.type ? `: ${this.getTypeString(node.type)}` : '';
+    return `(${params})${returnType}`;
+  }
+
+  private getMethodSignature(node: ts.MethodDeclaration): string {
+    return this.getFunctionSignature(node);
+  }
+
+  private extractParameters(node: ts.FunctionDeclaration | ts.MethodDeclaration): Parameter[] {
+    return node.parameters.map(p => ({
+      name: p.name.getText(),
+      type: p.type ? this.getTypeString(p.type) : 'any',
+      optional: !!p.questionToken,
+      defaultValue: p.initializer?.getText(),
+      description: this.extractParameterComment(node, p.name.getText())
+    }));
+  }
+
+  private extractReturnType(node: ts.FunctionDeclaration | ts.MethodDeclaration): ReturnValue | undefined {
+    if (node.type) {
+      return {
+        type: this.getTypeString(node.type),
+        description: this.extractReturnComment(node)
+      };
+    }
+    return undefined;
+  }
+
+  private getTypeString(type: ts.TypeNode | undefined): string {
+    if (!type) return 'any';
+    return type.getText();
+  }
+
+  private extractJSDocComment(node: ts.Node): string | undefined {
+    const jsDoc = (node as any).jsDoc;
+    if (jsDoc && jsDoc.length > 0) {
+      return jsDoc[0].comment?.toString();
+    }
+    return undefined;
+  }
+
+  private extractParameterComment(node: ts.Node, paramName: string): string | undefined {
+    const jsDoc = (node as any).jsDoc;
+    if (jsDoc && jsDoc.length > 0) {
+      const tags = jsDoc[0].tags;
+      if (tags) {
+        const paramTag = tags.find((tag: any) => 
+          tag.kind === ts.SyntaxKind.JSDocParameterTag && 
+          tag.name?.getText() === paramName
+        );
+        return paramTag?.comment?.toString();
+      }
+    }
+    return undefined;
+  }
+
+  private extractReturnComment(node: ts.Node): string | undefined {
+    const jsDoc = (node as any).jsDoc;
+    if (jsDoc && jsDoc.length > 0) {
+      const tags = jsDoc[0].tags;
+      if (tags) {
+        const returnTag = tags.find((tag: any) => tag.kind === ts.SyntaxKind.JSDocReturnTag);
+        return returnTag?.comment?.toString();
+      }
+    }
+    return undefined;
+  }
+
+  private extractDependencies(content: string): string[] {
+    const dependencies: Set<string> = new Set();
+    const importPattern = /import\s+.*?\s+from\s+['"]([^'"]+)['"]/g;
+    const requirePattern = /require\s*\(['"]([^'"]+)['"]\)/g;
     
     let match;
-    while ((match = propertyRegex.exec(classBody)) !== null) {
-      properties.push({
-        name: match[1],
-        type: match[2]?.trim(),
-        defaultValue: match[3]?.trim(),
-        visibility: this.extractVisibility(classBody, match.index),
-        isReadonly: classBody.substring(match.index - 20, match.index).includes('readonly'),
-        isOptional: classBody.substring(match.index, match.index + 50).includes('?')
-      });
+    while ((match = importPattern.exec(content)) !== null) {
+      dependencies.add(match[1]);
+    }
+    while ((match = requirePattern.exec(content)) !== null) {
+      dependencies.add(match[1]);
     }
 
-    return properties;
+    return Array.from(dependencies);
   }
 
-  private extractInterfaceProperties(interfaceBody: string): PropertyInfo[] {
-    const properties: PropertyInfo[] = [];
-    const propertyRegex = /(\w+)(\?)?(?:\s*:\s*([^;]+));/g;
+  private extractExamples(content: string): Example[] {
+    const examples: Example[] = [];
+    const examplePattern = /@example\s*([\s\S]*?)(?=@\w+|\*\/)/g;
     
     let match;
-    while ((match = propertyRegex.exec(interfaceBody)) !== null) {
-      properties.push({
-        name: match[1],
-        type: match[3]?.trim(),
-        isOptional: match[2] === '?'
-      });
+    while ((match = examplePattern.exec(content)) !== null) {
+      const exampleText = match[1].trim();
+      if (exampleText) {
+        examples.push({
+          title: 'Example',
+          code: exampleText
+        });
+      }
     }
 
-    return properties;
+    return examples;
   }
 
-  private parseParameters(params: string): ParameterInfo[] {
-    if (!params.trim()) return [];
+  private extractDescription(content: string): string | undefined {
+    const fileCommentPattern = /\/\*\*\s*([\s\S]*?)\*\//;
+    const match = content.match(fileCommentPattern);
     
-    return params.split(',').map(param => {
-      const parts = param.trim().split(':');
-      const name = parts[0].trim().replace('?', '');
-      const type = parts[1]?.trim();
-      const isOptional = param.includes('?');
-      const hasDefault = param.includes('=');
+    if (match) {
+      return match[1]
+        .split('\n')
+        .map(line => line.replace(/^\s*\*\s?/, '').trim())
+        .filter(line => line && !line.startsWith('@'))
+        .join('\n')
+        .trim();
+    }
+
+    return undefined;
+  }
+
+  private async generateMetadata(content: string, filePath: string): Promise<Metadata> {
+    const stats = await fs.stat(filePath);
+    const lines = content.split('\n');
+    const linesOfCode = lines.filter(line => line.trim() && !line.trim().startsWith('//')).length;
+    
+    // Simple complexity calculation
+    const complexity = this.calculateComplexity(content);
+
+    return {
+      lastModified: stats.mtime.toISOString(),
+      fileSize: stats.size,
+      linesOfCode,
+      complexity
+    };
+  }
+
+  private calculateComplexity(content: string): number {
+    let complexity = 1;
+    const patterns = [
+      /if\s*\(/g,
+      /for\s*\(/g,
+      /while\s*\(/g,
+      /case\s+/g,
+      /catch\s*\(/g,
+      /\?\s*[^:]+:/g,
+      /&&/g,
+      /\|\|/g
+    ];
+
+    for (const pattern of patterns) {
+      const matches = content.match(pattern);
+      if (matches) {
+        complexity += matches.length;
+      }
+    }
+
+    return complexity;
+  }
+
+  private generateSummary(exports: ExportedItem[]): string {
+    const counts = {
+      function: 0,
+      class: 0,
+      interface: 0,
+      type: 0,
+      constant: 0,
+      enum: 0
+    };
+
+    for (const item of exports) {
+      counts[item.type]++;
+    }
+
+    const parts: string[] = [];
+    if (counts.function > 0) parts.push(`${counts.function} functions`);
+    if (counts.class > 0) parts.push(`${counts.class} classes`);
+    if (counts.interface > 0) parts.push(`${counts.interface} interfaces`);
+    if (counts.type > 0) parts.push(`${counts.type} type aliases`);
+    if (counts.constant > 0) parts.push(`${counts.constant} constants`);
+    if (counts.enum > 0) parts.push(`${counts.enum} enums`);
+
+    return `Module exports: ${parts.join(', ') || 'none'}`;
+  }
+
+  private formatDocumentation(doc: Documentation, format: string): string {
+    switch (format) {
+      case 'markdown':
+        return this.formatAsMarkdown(doc);
+      case 'jsdoc':
+        return this.formatAsJSDoc(doc);
+      case 'api-json':
+        return JSON.stringify(doc, null, 2);
+      default:
+        return this.formatAsMarkdown(doc);
+    }
+  }
+
+  private formatAsMarkdown(doc: Documentation): string {
+    let md = `# ${doc.summary}\n\n`;
+    
+    if (doc.description) {
+      md += `${doc.description}\n\n`;
+    }
+
+    if (doc.exports.length > 0) {
+      md += `## API Reference\n\n`;
       
-      return { name, type, isOptional, hasDefault };
-    });
-  }
-
-  private extractVisibility(content: string, index: number): 'public' | 'private' | 'protected' {
-    const before = content.substring(Math.max(0, index - 20), index);
-    if (before.includes('private')) return 'private';
-    if (before.includes('protected')) return 'protected';
-    return 'public';
-  }
-
-  private extractComment(content: string, index: number): string {
-    // Look for JSDoc comment before the declaration
-    const before = content.substring(Math.max(0, index - 500), index);
-    const jsdocMatch = before.match(/\/\*\*([^*]|\*(?!\/))*\*\/\s*$/);
-    
-    if (jsdocMatch) {
-      return this.cleanComment(jsdocMatch[0]);
-    }
-    
-    // Look for single-line comment
-    const lineMatch = before.match(/\/\/\s*(.+)\s*$/);
-    if (lineMatch) {
-      return lineMatch[1].trim();
-    }
-    
-    return '';
-  }
-
-  private cleanComment(comment: string): string {
-    return comment
-      .replace(/\/\*\*|\*\//g, '')
-      .replace(/^\s*\*\s?/gm, '')
-      .trim();
-  }
-
-  private generateMarkdownDoc(fileName: string, analysis: CodeAnalysis): string {
-    let doc = `# ${fileName}\n\n`;
-    
-    // Add file statistics
-    doc += `## Statistics\n`;
-    doc += `- Lines: ${analysis.stats.lines}\n`;
-    doc += `- Classes: ${analysis.stats.classes}\n`;
-    doc += `- Functions: ${analysis.stats.functions}\n`;
-    doc += `- Interfaces: ${analysis.stats.interfaces}\n\n`;
-    
-    // Document imports
-    if (analysis.imports.length > 0) {
-      doc += `## Dependencies\n`;
-      for (const imp of analysis.imports) {
-        doc += `- ${imp}\n`;
-      }
-      doc += '\n';
-    }
-    
-    // Document interfaces
-    if (analysis.interfaces.length > 0) {
-      doc += `## Interfaces\n\n`;
-      for (const iface of analysis.interfaces) {
-        doc += `### ${iface.name}\n`;
-        if (iface.description) doc += `${iface.description}\n\n`;
-        if (iface.extends) doc += `Extends: ${iface.extends.join(', ')}\n\n`;
+      for (const item of doc.exports) {
+        md += `### ${item.name}\n\n`;
+        md += `**Type:** \`${item.type}\`\n\n`;
         
-        doc += `#### Properties\n`;
-        for (const prop of iface.properties) {
-          doc += `- **${prop.name}**${prop.isOptional ? '?' : ''}: \`${prop.type || 'any'}\`\n`;
+        if (item.description) {
+          md += `${item.description}\n\n`;
         }
-        doc += '\n';
-      }
-    }
-    
-    // Document classes
-    if (analysis.classes.length > 0) {
-      doc += `## Classes\n\n`;
-      for (const cls of analysis.classes) {
-        doc += `### ${cls.name}\n`;
-        if (cls.description) doc += `${cls.description}\n\n`;
-        if (cls.extends) doc += `Extends: ${cls.extends}\n`;
-        if (cls.implements) doc += `Implements: ${cls.implements.join(', ')}\n\n`;
         
-        if (cls.properties.length > 0) {
-          doc += `#### Properties\n`;
-          for (const prop of cls.properties) {
-            doc += `- **${prop.name}** (\`${prop.visibility}\`): \`${prop.type || 'any'}\``;
-            if (prop.defaultValue) doc += ` = \`${prop.defaultValue}\``;
-            doc += '\n';
+        if (item.signature) {
+          md += `**Signature:** \`${item.signature}\`\n\n`;
+        }
+        
+        if (item.parameters && item.parameters.length > 0) {
+          md += `**Parameters:**\n`;
+          for (const param of item.parameters) {
+            md += `- \`${param.name}\` (${param.type})${param.optional ? ' *optional*' : ''}: ${param.description || ''}\n`;
           }
-          doc += '\n';
+          md += '\n';
         }
         
-        if (cls.methods.length > 0) {
-          doc += `#### Methods\n`;
-          for (const method of cls.methods) {
-            doc += `- **${method.name}**(${this.formatParameters(method.parameters)}): \`${method.returnType || 'void'}\``;
-            if (method.isAsync) doc += ` *(async)*`;
-            if (method.isStatic) doc += ` *(static)*`;
-            doc += '\n';
-          }
-          doc += '\n';
+        if (item.returns) {
+          md += `**Returns:** \`${item.returns.type}\` ${item.returns.description || ''}\n\n`;
         }
       }
     }
-    
-    // Document functions
-    if (analysis.functions.length > 0) {
-      doc += `## Functions\n\n`;
-      for (const func of analysis.functions) {
-        doc += `### ${func.name}\n`;
-        if (func.description) doc += `${func.description}\n\n`;
-        doc += `\`\`\`typescript\n`;
-        doc += `${func.isAsync ? 'async ' : ''}function ${func.name}(${this.formatParameters(func.parameters)}): ${func.returnType || 'void'}\n`;
-        doc += `\`\`\`\n\n`;
+
+    if (doc.examples && doc.examples.length > 0) {
+      md += `## Examples\n\n`;
+      for (const example of doc.examples) {
+        md += `### ${example.title}\n\n`;
+        md += `\`\`\`typescript\n${example.code}\n\`\`\`\n\n`;
+        if (example.description) {
+          md += `${example.description}\n\n`;
+        }
       }
     }
-    
-    // Document constants
-    if (analysis.constants.length > 0) {
-      doc += `## Constants\n\n`;
-      for (const constant of analysis.constants) {
-        doc += `- **${constant.name}**: \`${constant.type || 'any'}\` = \`${constant.value}\`\n`;
-        if (constant.description) doc += `  ${constant.description}\n`;
+
+    if (doc.dependencies.length > 0) {
+      md += `## Dependencies\n\n`;
+      for (const dep of doc.dependencies) {
+        md += `- \`${dep}\`\n`;
       }
-      doc += '\n';
+      md += '\n';
     }
-    
-    // Document exports
-    if (analysis.exports.length > 0) {
-      doc += `## Exports\n`;
-      for (const exp of analysis.exports) {
-        doc += `- ${exp}\n`;
-      }
-    }
-    
-    return doc;
+
+    return md;
   }
 
-  private generateJSDocComments(analysis: CodeAnalysis): string {
-    let jsdoc = '';
+  private formatAsJSDoc(doc: Documentation): string {
+    let jsdoc = `/**\n * ${doc.summary}\n`;
     
-    // Generate JSDoc for classes
-    for (const cls of analysis.classes) {
-      jsdoc += `/**\n`;
-      jsdoc += ` * ${cls.description || cls.name}\n`;
-      if (cls.extends) jsdoc += ` * @extends ${cls.extends}\n`;
-      if (cls.implements) {
-        for (const impl of cls.implements) {
-          jsdoc += ` * @implements ${impl}\n`;
-        }
-      }
-      jsdoc += ` */\n\n`;
-      
-      // Methods
-      for (const method of cls.methods) {
-        jsdoc += `/**\n`;
-        jsdoc += ` * ${method.name} method\n`;
-        for (const param of method.parameters) {
-          jsdoc += ` * @param {${param.type || '*'}} ${param.name}${param.isOptional ? ' - Optional' : ''}\n`;
-        }
-        if (method.returnType) {
-          jsdoc += ` * @returns {${method.returnType}}\n`;
-        }
-        jsdoc += ` */\n\n`;
-      }
+    if (doc.description) {
+      jsdoc += ` * \n * ${doc.description.replace(/\n/g, '\n * ')}\n`;
     }
     
-    // Generate JSDoc for functions
-    for (const func of analysis.functions) {
-      jsdoc += `/**\n`;
-      jsdoc += ` * ${func.description || func.name}\n`;
-      for (const param of func.parameters) {
-        jsdoc += ` * @param {${param.type || '*'}} ${param.name}${param.isOptional ? ' - Optional' : ''}\n`;
-      }
-      if (func.returnType) {
-        jsdoc += ` * @returns {${func.returnType}}\n`;
-      }
-      if (func.isAsync) {
-        jsdoc += ` * @async\n`;
-      }
-      jsdoc += ` */\n\n`;
-    }
+    jsdoc += ` */\n`;
     
     return jsdoc;
   }
 
-  private generateAPIDoc(fileName: string, analysis: CodeAnalysis): string {
-    const api: any = {
-      name: fileName,
-      version: '1.0.0',
-      description: `API documentation for ${fileName}`,
-      classes: analysis.classes,
-      functions: analysis.functions,
-      interfaces: analysis.interfaces,
-      exports: analysis.exports
-    };
-    
-    return JSON.stringify(api, null, 2);
+  private getOutputPath(inputFile: string, outputDir: string, format: string): string {
+    const basename = path.basename(inputFile, path.extname(inputFile));
+    const extension = format === 'api-json' ? 'json' : 'md';
+    return path.join(outputDir, `${basename}.${extension}`);
   }
 
-  private formatParameters(params: ParameterInfo[]): string {
-    return params.map(p => {
-      let param = p.name;
-      if (p.isOptional) param += '?';
-      if (p.type) param += `: ${p.type}`;
-      return param;
-    }).join(', ');
-  }
-
-  private async scanDirectory(dirPath: string): Promise<string[]> {
-    const files: string[] = [];
-    const entries = await fs.readdir(dirPath, { withFileTypes: true });
+  private generateDocumentationSummary(results: DocumentationResult[]): string {
+    let summary = `Generated documentation for ${results.length} file(s)\n\n`;
     
-    for (const entry of entries) {
-      const fullPath = path.join(dirPath, entry.name);
-      if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
-        const subFiles = await this.scanDirectory(fullPath);
-        files.push(...subFiles);
-      } else if (entry.isFile() && this.shouldDocument(fullPath)) {
-        files.push(fullPath);
-      }
+    let totalExports = 0;
+    const formats = new Set<string>();
+    let written = 0;
+
+    for (const result of results) {
+      totalExports += result.documentation.exports.length;
+      formats.add(result.format);
+      if (result.written) written++;
     }
-    
-    return files;
-  }
 
-  private shouldDocument(filePath: string): boolean {
-    const ext = path.extname(filePath);
-    return ['.ts', '.js', '.tsx', '.jsx'].includes(ext);
-  }
-
-  private combineDocumentations(
-    docs: Documentation[],
-    dirPath: string,
-    format: string
-  ): Documentation {
-    const dirName = path.basename(dirPath);
-    let combined = `# ${dirName} Documentation\n\n`;
-    combined += `Generated: ${new Date().toISOString()}\n\n`;
-    combined += `## Table of Contents\n\n`;
-    
-    // Generate TOC
-    for (const doc of docs) {
-      const relativePath = path.relative(dirPath, doc.metadata?.path || '');
-      combined += `- [${relativePath}](#${relativePath.replace(/[\/\\.]/g, '-')})\n`;
+    summary += `Total exports documented: ${totalExports}\n`;
+    summary += `Format(s): ${Array.from(formats).join(', ')}\n`;
+    if (written > 0) {
+      summary += `Files written: ${written}\n`;
     }
-    combined += '\n---\n\n';
-    
-    // Add individual documentations
-    for (const doc of docs) {
-      const relativePath = path.relative(dirPath, doc.metadata?.path || '');
-      combined += `## ${relativePath}\n\n`;
-      combined += doc.content;
-      combined += '\n---\n\n';
-    }
-    
-    return {
-      title: dirName,
-      type: 'directory',
-      format,
-      content: combined,
-      metadata: {
-        path: dirPath,
-        generated: new Date().toISOString(),
-        fileCount: docs.length
-      }
-    };
+
+    return summary;
   }
-
-  private async saveDocumentation(doc: Documentation, outputPath: string): Promise<void> {
-    const dir = path.dirname(outputPath);
-    await fs.mkdir(dir, { recursive: true });
-    await fs.writeFile(outputPath, doc.content, 'utf-8');
-  }
-
-  private parseOptions(args: string[]): Record<string, any> {
-    const options: Record<string, any> = {};
-    for (let i = 0; i < args.length; i++) {
-      if (args[i].startsWith('--')) {
-        const key = args[i].slice(2);
-        const value = args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : true;
-        options[key] = value;
-        if (value !== true) i++;
-      }
-    }
-    return options;
-  }
-}
-
-// Type definitions
-interface Documentation {
-  title: string;
-  type: 'file' | 'directory';
-  format: string;
-  content: string;
-  metadata?: {
-    path: string;
-    generated: string;
-    stats?: any;
-    fileCount?: number;
-  };
-}
-
-interface CodeAnalysis {
-  classes: ClassInfo[];
-  functions: FunctionInfo[];
-  interfaces: InterfaceInfo[];
-  imports: string[];
-  exports: string[];
-  constants: ConstantInfo[];
-  stats: {
-    lines: number;
-    classes: number;
-    functions: number;
-    interfaces: number;
-  };
-}
-
-interface ClassInfo {
-  name: string;
-  extends?: string;
-  implements?: string[];
-  methods: MethodInfo[];
-  properties: PropertyInfo[];
-  description?: string;
-}
-
-interface FunctionInfo {
-  name: string;
-  parameters: ParameterInfo[];
-  returnType?: string;
-  isAsync: boolean;
-  description?: string;
-}
-
-interface InterfaceInfo {
-  name: string;
-  extends?: string[];
-  properties: PropertyInfo[];
-  description?: string;
-}
-
-interface MethodInfo {
-  name: string;
-  parameters: ParameterInfo[];
-  returnType?: string;
-  visibility: 'public' | 'private' | 'protected';
-  isStatic: boolean;
-  isAsync: boolean;
-}
-
-interface PropertyInfo {
-  name: string;
-  type?: string;
-  defaultValue?: string;
-  visibility?: 'public' | 'private' | 'protected';
-  isReadonly?: boolean;
-  isOptional?: boolean;
-}
-
-interface ParameterInfo {
-  name: string;
-  type?: string;
-  isOptional: boolean;
-  hasDefault?: boolean;
-}
-
-interface ConstantInfo {
-  name: string;
-  type?: string;
-  value: string;
-  description?: string;
 }
