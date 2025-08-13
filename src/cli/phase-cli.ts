@@ -230,10 +230,13 @@ program
       } else {
         // Reset entire project
         const stateFile = path.join(process.cwd(), '.ae', 'phase-state.json');
-        if (fs.existsSync(stateFile)) {
-          fs.unlinkSync(stateFile);
+        try {
+          await fs.promises.unlink(stateFile);
+          console.log(`✅ Reset entire project`);
+        } catch (error) {
+          // File might not exist, which is fine
+          console.log(`✅ Project reset (no existing state found)`);
         }
-        console.log(`✅ Reset entire project`);
       }
     } catch (error: any) {
       console.error(`❌ Error: ${error.message}`);

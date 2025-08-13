@@ -159,6 +159,7 @@ export class PhaseStateManager {
     phaseStatus.startedAt = new Date();
     state.currentPhase = phase;
     
+    // Save state only once after all modifications
     await this.saveState(state);
   }
 

@@ -24,7 +24,10 @@ export abstract class BaseAgent {
     const state = await this.phaseStateManager.getCurrentState();
     
     if (!state) {
-      // Initialize new project if no state exists
+      // Initialize new project if no state exists - log warning
+      console.warn(`⚠️  No project state found. Auto-initializing new project for phase: ${this.phaseName}`);
+      console.warn(`   Consider running 'ae-phase init' to explicitly initialize the project.`);
+      
       await this.phaseStateManager.initializeProject();
       await this.phaseStateManager.startPhase(this.phaseName);
     } else if (!state.phaseStatus[this.phaseName].startedAt) {
