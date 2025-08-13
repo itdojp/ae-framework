@@ -118,8 +118,8 @@ export class UnifiedDocumentCommand extends BaseExtendedCommand {
 
       // Write individual file documentation if requested
       if (options.output) {
-        const fileOutputPath = this.getOutputPath(file, options.output, options.format);
-        const formatted = this.formatDocumentation(fileDoc, options.format);
+        const fileOutputPath = this.getOutputPath(file, options.output, options.format || 'markdown');
+        const formatted = this.formatDocumentation(fileDoc, options.format || 'markdown');
         await fs.writeFile(fileOutputPath, formatted);
         outputPath = options.output;
       }
@@ -149,7 +149,7 @@ export class UnifiedDocumentCommand extends BaseExtendedCommand {
         dependencies: Array.from(dependencies),
         coverage
       },
-      format: options.format,
+      format: options.format || 'markdown',
       outputPath
     };
   }
@@ -312,7 +312,7 @@ export class UnifiedDocumentCommand extends BaseExtendedCommand {
   }
 
   private hasPrivateModifier(node: ts.Node): boolean {
-    return node.modifiers?.some(mod => mod.kind === ts.SyntaxKind.PrivateKeyword) ?? false;
+    return (node as any).modifiers?.some((mod: any) => mod.kind === ts.SyntaxKind.PrivateKeyword) ?? false;
   }
 
   private createFunctionItem(node: ts.FunctionDeclaration): ExportedItem {

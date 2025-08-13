@@ -15,6 +15,7 @@ export interface InstallerCommandResult extends ExtendedCommandResult {
   installedDependencies?: string[];
   createdFiles?: string[];
   suggestions?: string[];
+  recommendations?: string[];
   availableTemplates?: InstallationTemplate[];
 }
 
@@ -286,7 +287,7 @@ export class InstallerCommand extends BaseExtendedCommand {
       message += `Installation completed in ${result.duration}ms`;
 
       // Update project context
-      await contextManager.updateContext({
+      contextManager.addToMemory(`template_install_${templateId}`, {
         installedTemplate: templateId,
         templateCategory: template.category,
         projectLanguage: template.language,
@@ -433,5 +434,42 @@ Examples:
       evidence: ['Command execution failed'],
       recommendations: ['Use /ae:installer help for usage information']
     };
+  }
+
+  // Required abstract method implementations
+  protected validateArgs(args: string[]): { isValid: boolean; message?: string } {
+    if (args.length === 0) {
+      return {
+        isValid: false,
+        message: 'Please specify an action: template-id, list, suggest, or help'
+      };
+    }
+    return { isValid: true };
+  }
+
+  protected async execute(
+    args: string[], 
+    options: Record<string, any>, 
+    context: any
+  ): Promise<ExtendedCommandResult> {
+    return await this.handler(args, context);
+  }
+
+  protected generateValidationClaim(data: any): string {
+    if (data.installedTemplate) {
+      return `Template "${data.installedTemplate}" was successfully installed`;
+    } else if (data.availableTemplates) {
+      return `${data.availableTemplates.length} templates are available for installation`;
+    }
+    return 'Installer operation was completed';
+  }
+
+  protected generateSummary(data: any): string {
+    if (data.installedTemplate) {
+      return `Successfully installed template: ${data.installedTemplate}`;
+    } else if (data.availableTemplates) {
+      return `Found ${data.availableTemplates.length} available templates`;
+    }
+    return 'Installer operation completed';
   }
 }

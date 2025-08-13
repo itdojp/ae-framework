@@ -132,7 +132,7 @@ export class UnifiedAnalyzeCommand extends BaseExtendedCommand {
       totalClasses += analysis.codeMetrics.classes;
       totalComplexity += analysis.codeMetrics.cyclomaticComplexity;
       
-      analysis.codeMetrics.dependencies.forEach(dep => dependencies.add(dep));
+      analysis.codeMetrics.dependencies.forEach((dep: string) => dependencies.add(dep));
     }
 
     return {

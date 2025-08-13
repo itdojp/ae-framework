@@ -494,7 +494,7 @@ SafetyProperty == ${this.generateSafetyProperty(requirements)}
     return `// Alloy specification generated from requirements
 
 ${signatures.map(sig => `sig ${sig.name} {
-    ${sig.fields.map(f => `${f.name}: ${f.type}`).join(",\n    ")}
+    ${sig.fields.map((f: any) => `${f.name}: ${f.type}`).join(",\n    ")}
 }`).join("\n\n")}
 
 ${facts.map(fact => `fact ${fact.name} {

@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/testing/**/*",
+    "src/engines/**/*",
+    "src/analysis/**/*",
+    "src/utils/context-manager.ts",
+    "src/utils/token-optimizer.ts"
+  ],
+  "exclude": ["node_modules", "dist", "tests"]
+}

@@ -5,7 +5,7 @@
  * enabling seamless TDD workflow integration and proactive assistance.
  */
 
-import { TDDAgent, TDDAgentConfig, TDDContext } from './tdd-agent';
+import { TDDAgent, TDDAgentConfig, TDDContext } from './tdd-agent.js';
 
 export interface TaskRequest {
   description: string;
@@ -135,9 +135,9 @@ export class TDDTaskAdapter {
 **Current Phase**: ${currentPhase.name}
 
 ## Risk Factors
-${plan.riskFactors.map(risk => `• ${risk}`).join('\n')}
+${plan.riskFactors.map((risk: any) => `• ${risk}`).join('\n')}
       `.trim(),
-      recommendations: currentPhase.tasks.map(task => `${task.action} (${task.priority} priority)`),
+      recommendations: currentPhase.tasks.map((task: any) => `${task.action} (${task.priority} priority)`),
       nextActions: [
         'Start with RED phase - write failing tests first',
         `Create test file for ${feature}`,
@@ -157,13 +157,13 @@ ${plan.riskFactors.map(risk => `• ${risk}`).join('\n')}
       summary: `TDD Validation Results - Compliance Score: ${compliance.complianceScore}%`,
       analysis: guidance.analysis,
       recommendations: guidance.nextSteps,
-      nextActions: guidance.tasks.map(task => task.action),
+      nextActions: guidance.tasks.map((task: any) => task.action),
       warnings: guidance.warnings.concat(
         compliance.violations
-          .filter(v => v.severity === 'error')
-          .map(v => v.description)
+          .filter((v: any) => v.severity === 'error')
+          .map((v: any) => v.description)
       ),
-      shouldBlockProgress: compliance.violations.some(v => v.severity === 'error'),
+      shouldBlockProgress: compliance.violations.some((v: any) => v.severity === 'error'),
     };
   }
 
@@ -174,7 +174,7 @@ ${plan.riskFactors.map(risk => `• ${risk}`).join('\n')}
       summary: 'TDD Development Guidance',
       analysis: guidance.analysis,
       recommendations: guidance.nextSteps,
-      nextActions: guidance.tasks.map(task => `${task.action} - ${task.expectedOutcome}`),
+      nextActions: guidance.tasks.map((task: any) => `${task.action} - ${task.expectedOutcome}`),
       warnings: guidance.warnings,
       shouldBlockProgress: false,
     };
@@ -182,7 +182,7 @@ ${plan.riskFactors.map(risk => `• ${risk}`).join('\n')}
 
   private async handleComplianceEnforcement(request: TaskRequest): Promise<TaskResponse> {
     const compliance = await this.agent.monitorTDDCompliance();
-    const criticalViolations = compliance.violations.filter(v => v.severity === 'error');
+    const criticalViolations = compliance.violations.filter((v: any) => v.severity === 'error');
     
     return {
       summary: `TDD Compliance Check - ${criticalViolations.length} critical violations found`,
@@ -198,9 +198,9 @@ ${plan.riskFactors.map(risk => `• ${risk}`).join('\n')}
 - **Recent Violations**: ${compliance.trends.recentViolations}
 - **Coverage Trend**: ${compliance.trends.coverageTrend}
       `.trim(),
-      recommendations: compliance.violations.map(v => v.recommendation),
-      nextActions: criticalViolations.map(v => `Fix: ${v.description}`),
-      warnings: criticalViolations.map(v => v.description),
+      recommendations: compliance.violations.map((v: any) => v.recommendation),
+      nextActions: criticalViolations.map((v: any) => `Fix: ${v.description}`),
+      warnings: criticalViolations.map((v: any) => v.description),
       shouldBlockProgress: criticalViolations.length > 0,
     };
   }
@@ -224,8 +224,8 @@ ${plan.riskFactors.map(risk => `• ${risk}`).join('\n')}
 
 ## Critical Test Cases
 ${testSuggestion.testCases
-  .filter(tc => tc.importance === 'critical')
-  .map(tc => `• ${tc.name}: ${tc.description}`)
+  .filter((tc: any) => tc.importance === 'critical')
+  .map((tc: any) => `• ${tc.name}: ${tc.description}`)
   .join('\n')}
           `.trim(),
           recommendations: [
@@ -263,7 +263,7 @@ ${testSuggestion.testCases
       summary: 'General TDD Guidance',
       analysis: guidance.analysis,
       recommendations: guidance.nextSteps,
-      nextActions: guidance.tasks.map(task => task.action),
+      nextActions: guidance.tasks.map((task: any) => task.action),
       warnings: guidance.warnings,
       shouldBlockProgress: false,
     };

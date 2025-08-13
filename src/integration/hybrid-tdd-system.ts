@@ -5,10 +5,10 @@
  * for comprehensive TDD enforcement and guidance
  */
 
-import { TDDTaskAdapter, TaskRequest, TaskResponse } from '../agents/tdd-task-adapter';
-import { AEFrameworkCLI } from '../cli/index';
-import { ConfigLoader } from '../cli/config/ConfigLoader';
-import { MetricsCollector } from '../cli/metrics/MetricsCollector';
+import { TDDTaskAdapter, TaskRequest, TaskResponse } from '../agents/tdd-task-adapter.js';
+import { AEFrameworkCLI } from '../cli/index.js';
+import { ConfigLoader } from '../cli/config/ConfigLoader.js';
+import { MetricsCollector } from '../cli/metrics/MetricsCollector.js';
 
 export interface HybridTDDConfig {
   enableCLI: boolean;
@@ -370,9 +370,9 @@ export class HybridTDDSystem {
         console.warn(`💡 Suggestion: ${violation.suggestion}`);
         
         this.metricsCollector.recordViolation({
-          type: violation.type,
+          type: violation.type as any,
           file: filePath,
-          phase: this.metricsCollector['context']?.currentPhase || 'unknown',
+          phase: 'unknown',
           message: violation.message,
           severity: violation.severity,
         });

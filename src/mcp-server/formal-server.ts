@@ -488,7 +488,7 @@ export async function createFormalServer(): Promise<FormalMCPServer> {
 }
 
 // CLI entry point
-if (require.main === module) {
+if (typeof require !== 'undefined' && require.main === module) {
   const server = new FormalMCPServer();
   server.run().catch(console.error);
 }

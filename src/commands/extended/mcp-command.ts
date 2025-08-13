@@ -17,6 +17,7 @@ export interface MCPCommandResult extends ExtendedCommandResult {
   capabilities?: any[];
   metrics?: any;
   pluginDetails?: any;
+  recommendations?: string[];
 }
 
 export class MCPCommand extends BaseExtendedCommand {
@@ -753,5 +754,42 @@ Examples:
       evidence: ['Command execution failed'],
       recommendations: ['Use /ae:mcp help for usage information']
     };
+  }
+
+  // Required abstract method implementations
+  protected validateArgs(args: string[]): { isValid: boolean; message?: string } {
+    if (args.length === 0) {
+      return {
+        isValid: false,
+        message: 'Please specify an action: start, stop, status, install, list, or help'
+      };
+    }
+    return { isValid: true };
+  }
+
+  protected async execute(
+    args: string[], 
+    options: Record<string, any>, 
+    context: any
+  ): Promise<ExtendedCommandResult> {
+    return await this.handler(args, context);
+  }
+
+  protected generateValidationClaim(data: any): string {
+    if (data.serverStatus) {
+      return `MCP server status is: ${data.serverStatus}`;
+    } else if (data.installedPlugin) {
+      return `MCP plugin "${data.installedPlugin}" was successfully installed`;
+    }
+    return 'MCP operation was completed';
+  }
+
+  protected generateSummary(data: any): string {
+    if (data.serverStatus) {
+      return `MCP server is ${data.serverStatus}`;
+    } else if (data.installedPlugin) {
+      return `Successfully installed MCP plugin: ${data.installedPlugin}`;
+    }
+    return 'MCP operation completed';
   }
 }
