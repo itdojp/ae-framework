@@ -694,9 +694,11 @@ export class InstallerManager {
     
     try {
       const content = await fs.readFile(customTemplatesPath, 'utf-8');
-      customTemplates = JSON.parse(content);
+      const parsed = JSON.parse(content);
+      customTemplates = Array.isArray(parsed) ? parsed : [];
     } catch {
-      // File doesn't exist yet
+      // File doesn't exist yet or invalid JSON
+      customTemplates = [];
     }
     
     // Update or add template
