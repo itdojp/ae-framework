@@ -190,7 +190,7 @@ export class SlashCommandManager {
       stopOnFailure: false
     });
 
-    // TODO: Re-implement persona command after resolving dependencies
+    // TODO: Register persona command (Smart Persona System - Phase 2) when dependencies are resolved
 
     // Register installer command (Integrated Installer - Phase 2)
     const installerCmd = new InstallerCommand();
