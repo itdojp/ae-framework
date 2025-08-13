@@ -7,12 +7,13 @@
   "bin": {
     "ae-framework": "./dist/cli/index.js",
     "ae-phase": "./dist/cli/phase-cli.js",
-    "ae-approve": "./dist/cli/approval-cli.js"
+    "ae-approve": "./dist/cli/approval-cli.js",
+    "ae-slash": "./dist/cli/slash-cli.js"
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "build:cli": "tsc && chmod +x dist/cli/index.js && chmod +x dist/cli/phase-cli.js && chmod +x dist/cli/approval-cli.js",
+    "build:cli": "tsc && chmod +x dist/cli/index.js && chmod +x dist/cli/phase-cli.js && chmod +x dist/cli/approval-cli.js && chmod +x dist/cli/slash-cli.js",
     "phase": "tsx src/cli/phase-cli.ts",
     "lint": "eslint .",
     "test": "vitest run",
