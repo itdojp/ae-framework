@@ -285,7 +285,9 @@ export class PersonaCommand extends BaseExtendedCommand {
           }
           break;
         case 'autoValidation':
-          converted.autoValidation = value === 'true';
+          if (value === 'true' || value === 'false') {
+            converted.autoValidation = value === 'true';
+          }
           break;
         case 'preferredLanguages':
           converted.preferredLanguages = value.split(',').map((lang: string) => lang.trim());

@@ -124,6 +124,7 @@ describe('PersonaIntegrationService', () => {
     });
 
     test('should learn from failed command execution', async () => {
+      await personaService.initialize();
       const result: CommandResult = {
         success: false,
         message: 'Analysis failed'
@@ -204,14 +205,16 @@ describe('PersonaIntegrationService', () => {
   });
 
   describe('validation options', () => {
-    test('should return validation options based on persona preferences', () => {
+    test('should return validation options based on persona preferences', async () => {
+      await personaService.initialize();
       const options = personaService.getValidationOptions('/ae:analyze');
 
       expect(options.validate).toBe(true); // autoValidation is true in mock
       expect(options.minConfidence).toBe(0.7); // normal evidence level
     });
 
-    test('should adjust confidence level for strict evidence requirement', () => {
+    test('should adjust confidence level for strict evidence requirement', async () => {
+      await personaService.initialize();
       mockPersonaManager.getAdaptedBehavior.mockReturnValue({
         evidenceLevel: 'strict'
       });
@@ -225,7 +228,8 @@ describe('PersonaIntegrationService', () => {
       expect(options.minConfidence).toBe(0.9); // strict evidence level
     });
 
-    test('should return relaxed validation for relaxed evidence level', () => {
+    test('should return relaxed validation for relaxed evidence level', async () => {
+      await personaService.initialize();
       mockPersonaManager.getAdaptedBehavior.mockReturnValue({
         evidenceLevel: 'relaxed'
       });
@@ -241,20 +245,23 @@ describe('PersonaIntegrationService', () => {
   });
 
   describe('personalized command options', () => {
-    test('should return language preferences for analyze commands', () => {
+    test('should return language preferences for analyze commands', async () => {
+      await personaService.initialize();
       const options = personaService.getPersonalizedCommandOptions('/ae:analyze');
 
       expect(options.languages).toEqual(['typescript']);
     });
 
-    test('should return code style preferences for generate commands', () => {
+    test('should return code style preferences for generate commands', async () => {
+      await personaService.initialize();
       const options = personaService.getPersonalizedCommandOptions('/ae:generate');
 
       expect(options.testingStyle).toBe('all');
       expect(options.codeStyle).toBe('mixed');
     });
 
-    test('should return explanation level for document commands', () => {
+    test('should return explanation level for document commands', async () => {
+      await personaService.initialize();
       const options = personaService.getPersonalizedCommandOptions('/ae:document');
 
       expect(options.explanationLevel).toBe('intermediate');
@@ -291,6 +298,7 @@ describe('PersonaIntegrationService', () => {
 
   describe('preference updates from usage', () => {
     test('should update preferences based on command usage patterns', async () => {
+      await personaService.initialize();
       await personaService.updatePreferencesFromUsage();
 
       // Should analyze command usage and potentially update preferences
