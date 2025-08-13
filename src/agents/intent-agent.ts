@@ -1028,8 +1028,8 @@ export class IntentAgent {
     // If product steering exists, enhance with product context
     if (steeringDocs.product) {
       requirements.forEach(req => {
-        // Add product context to requirements
-        if (!req.rationale && steeringDocs.product.includes('Vision')) {
+        // Add product context to requirements (case-insensitive check)
+        if (!req.rationale && steeringDocs.product.toLowerCase().includes('vision')) {
           req.rationale = 'Aligns with product vision';
         }
       });
@@ -1037,18 +1037,55 @@ export class IntentAgent {
     
     // If architecture steering exists, categorize technical requirements
     if (steeringDocs.architecture) {
+      const archKeywords = ['api', 'database', 'microservice', 'architecture', 'integration', 'infrastructure'];
       requirements.forEach(req => {
-        if (req.type === 'technical' && steeringDocs.architecture.includes(req.description)) {
-          req.category = 'architecture';
+        if (req.type === 'technical') {
+          // More flexible matching using keywords
+          const reqLower = req.description.toLowerCase();
+          const archLower = steeringDocs.architecture.toLowerCase();
+          
+          // Check if requirement contains architecture keywords or if architecture doc mentions the requirement
+          const isArchRelated = archKeywords.some(keyword => reqLower.includes(keyword)) ||
+                               reqLower.split(' ').some(word => archLower.includes(word));
+          
+          if (isArchRelated) {
+            req.category = 'architecture';
+          }
         }
       });
     }
     
     // If standards steering exists, apply priority based on standards
     if (steeringDocs.standards) {
+      // Extract mandatory standards with more sophisticated parsing
+      const standardsLower = steeringDocs.standards.toLowerCase();
+      const mandatoryPatterns = [
+        /must\s+(?:have|implement|follow|use)\s+(\w+)/g,
+        /required:\s*([^,\n]+)/g,
+        /mandatory:\s*([^,\n]+)/g
+      ];
+      
+      const mandatoryStandards: string[] = [];
+      mandatoryPatterns.forEach(pattern => {
+        const matches = standardsLower.matchAll(pattern);
+        for (const match of matches) {
+          if (match[1]) {
+            mandatoryStandards.push(match[1].trim());
+          }
+        }
+      });
+      
       requirements.forEach(req => {
-        if (steeringDocs.standards.includes('must') && 
-            req.description.toLowerCase().includes('standard')) {
+        const reqLower = req.description.toLowerCase();
+        
+        // Check if requirement relates to any mandatory standard
+        const relatesToMandatory = mandatoryStandards.some(standard => 
+          reqLower.includes(standard) || reqLower.includes('standard')
+        );
+        
+        // Also check for explicit priority keywords in standards doc
+        if (relatesToMandatory || 
+            (standardsLower.includes('must') && reqLower.includes('standard'))) {
           req.priority = 'must';
         }
       });
