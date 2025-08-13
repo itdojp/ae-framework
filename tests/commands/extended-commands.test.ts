@@ -62,14 +62,15 @@ describe('Extended Commands', () => {
       expect(result.success).toBe(true);
       expect(result.message).toContain('Found');
       expect(result.data).toBeDefined();
-      expect(Array.isArray(result.data)).toBe(true);
+      expect(result.data.detectedIssues).toBeDefined();
+      expect(Array.isArray(result.data.detectedIssues)).toBe(true);
     });
 
     test('should categorize issues correctly', async () => {
-      const result = await manager.execute('/ae:troubleshoot SyntaxError: Unexpected token');
+      const result = await manager.execute('/ae:troubleshoot --error="Cannot find module express"');
       
       expect(result.success).toBe(true);
-      expect(result.data?.length).toBeGreaterThan(0);
+      expect(result.data?.detectedIssues?.length).toBeGreaterThan(0);
     });
   });
 
@@ -105,9 +106,9 @@ describe('Extended Commands', () => {
       const result = await manager.execute('/ae:improve test.js');
       
       expect(result.success).toBe(true);
-      expect(result.message).toContain('Analyzed');
+      expect(result.message).toContain('Found');
       expect(result.data).toBeDefined();
-      expect(result.data?.length).toBeGreaterThan(0);
+      expect(result.data?.improvements?.length).toBeGreaterThan(0);
     });
   });
 

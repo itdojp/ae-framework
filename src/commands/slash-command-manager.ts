@@ -13,10 +13,10 @@ import { PhaseStateManager, PhaseType } from '../utils/phase-state-manager.js';
 import { SteeringLoader } from '../utils/steering-loader.js';
 import { ApprovalService } from '../services/approval-service.js';
 import { 
-  AnalyzeCommand,
-  TroubleshootCommand,
-  ImproveCommand,
-  DocumentCommand
+  UnifiedAnalyzeCommand,
+  UnifiedDocumentCommand,
+  UnifiedImproveCommand,
+  UnifiedTroubleshootCommand
 } from './extended/index.js';
 
 export interface SlashCommand {
@@ -138,11 +138,11 @@ export class SlashCommandManager {
   }
 
   /**
-   * Register extended commands from Issue #17
+   * Register extended commands from Issue #17 (Unified Architecture)
    */
   private registerExtendedCommands(): void {
-    // Register analyze command
-    const analyzeCmd = new AnalyzeCommand();
+    // Register unified analyze command
+    const analyzeCmd = new UnifiedAnalyzeCommand();
     this.registerCommand({
       name: analyzeCmd.name,
       description: analyzeCmd.description,
@@ -153,8 +153,8 @@ export class SlashCommandManager {
       stopOnFailure: false
     });
 
-    // Register troubleshoot command
-    const troubleshootCmd = new TroubleshootCommand();
+    // Register unified troubleshoot command
+    const troubleshootCmd = new UnifiedTroubleshootCommand();
     this.registerCommand({
       name: troubleshootCmd.name,
       description: troubleshootCmd.description,
@@ -164,8 +164,8 @@ export class SlashCommandManager {
       handler: troubleshootCmd.handler.bind(troubleshootCmd)
     });
 
-    // Register improve command
-    const improveCmd = new ImproveCommand();
+    // Register unified improve command
+    const improveCmd = new UnifiedImproveCommand();
     this.registerCommand({
       name: improveCmd.name,
       description: improveCmd.description,
@@ -175,8 +175,8 @@ export class SlashCommandManager {
       handler: improveCmd.handler.bind(improveCmd)
     });
 
-    // Register document command
-    const documentCmd = new DocumentCommand();
+    // Register unified document command
+    const documentCmd = new UnifiedDocumentCommand();
     this.registerCommand({
       name: documentCmd.name,
       description: documentCmd.description,

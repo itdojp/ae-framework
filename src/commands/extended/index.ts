@@ -1,9 +1,15 @@
 /**
  * Extended Commands for ae-framework
- * Export all extended command implementations
+ * Unified architecture with consistent interfaces and shared functionality
  */
 
-export { AnalyzeCommand } from './analyze-command.js';
-export { TroubleshootCommand } from './troubleshoot-command.js';
-export { ImproveCommand } from './improve-command.js';
-export { DocumentCommand } from './document-command.js';
+// Unified commands (new architecture)
+export { UnifiedAnalyzeCommand } from './analyze-command-unified.js';
+export { UnifiedDocumentCommand } from './document-command-unified.js';
+export { UnifiedImproveCommand } from './improve-command-unified.js';
+export { UnifiedTroubleshootCommand } from './troubleshoot-command-unified.js';
+
+// Base classes and types
+export { BaseExtendedCommand } from './base-command.js';
+export type { ExtendedCommandResult, ExtendedCommandConfig, CommandMetrics } from './base-command.js';
+export * from './types.js';
