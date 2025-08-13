@@ -17,7 +17,9 @@ import {
   UnifiedDocumentCommand,
   UnifiedImproveCommand,
   UnifiedTroubleshootCommand,
-  PersonaCommand
+  PersonaCommand,
+  InstallerCommand,
+  MCPCommand
 } from './extended/index.js';
 
 export interface SlashCommand {
@@ -197,6 +199,30 @@ export class SlashCommandManager {
       usage: personaCmd.usage,
       aliases: personaCmd.aliases,
       handler: personaCmd.handler.bind(personaCmd),
+      stopOnFailure: false
+    });
+
+    // Register installer command (Integrated Installer - Phase 2)
+    const installerCmd = new InstallerCommand();
+    this.registerCommand({
+      name: installerCmd.name,
+      description: installerCmd.description,
+      category: installerCmd.category,
+      usage: installerCmd.usage,
+      aliases: installerCmd.aliases,
+      handler: installerCmd.handler.bind(installerCmd),
+      stopOnFailure: false
+    });
+
+    // Register MCP command (MCP Server Extensions - Phase 2)
+    const mcpCmd = new MCPCommand();
+    this.registerCommand({
+      name: mcpCmd.name,
+      description: mcpCmd.description,
+      category: mcpCmd.category,
+      usage: mcpCmd.usage,
+      aliases: mcpCmd.aliases,
+      handler: mcpCmd.handler.bind(mcpCmd),
       stopOnFailure: false
     });
   }
