@@ -399,8 +399,8 @@ export class IntelligentTestSelection extends EventEmitter {
 
     // Check which changed files are covered
     for (const change of changes) {
-      if (!coveredFiles.has(change.path)) {
-        uncoveredFiles.add(change.path);
+      if (!coveredFiles.has(change.filePath)) {
+        uncoveredFiles.add(change.filePath);
       }
     }
 
@@ -511,7 +511,7 @@ export class IntelligentTestSelection extends EventEmitter {
     // Calculate risk distribution
     const riskCounts = { critical: 0, high: 0, medium: 0, low: 0 };
     changes.forEach(change => {
-      riskCounts[change.riskLevel]++;
+      riskCounts[change.impact]++;
     });
 
     return {
@@ -796,8 +796,8 @@ export class IntelligentTestSelection extends EventEmitter {
     
     // Find uncovered changed files
     changes.forEach(change => {
-      if (!coveredPaths.has(change.path)) {
-        gaps.push(change.path);
+      if (!coveredPaths.has(change.filePath)) {
+        gaps.push(change.filePath);
       }
     });
     
@@ -847,49 +847,49 @@ export class IntelligentTestSelection extends EventEmitter {
   }
 
   // Test classification helper methods
-  private isHighPriorityTest(test: UnitTest, changes: CodeChange[]): boolean {
+  private isHighPriorityTest(test: TestCase, changes: CodeChange[]): boolean {
     return changes.some(change => 
-      change.riskLevel === 'critical' && test.coveredCode.includes(change.path)
+      change.impact === 'critical' && test.componentCoverage.includes(change.componentId)
     );
   }
 
-  private coversChangedIntegrationPoints(test: IntegrationTest, changes: CodeChange[]): boolean {
+  private coversChangedIntegrationPoints(test: TestCase, changes: CodeChange[]): boolean {
     return changes.some(change => 
-      test.integrationPoints.some(point => point.includes(change.path))
+      test.componentCoverage.includes(change.componentId)
     );
   }
 
   private affectsUserJourney(test: E2ETestCase, changes: CodeChange[]): boolean {
     // Check if changes affect critical user journey components
-    return changes.some(change => change.riskLevel === 'critical' || change.riskLevel === 'high');
+    return changes.some(change => change.impact === 'critical' || change.impact === 'high');
   }
 
   private hasUIChanges(changes: CodeChange[]): boolean {
     return changes.some(change => 
-      change.path.includes('.css') || 
-      change.path.includes('.scss') ||
-      change.path.includes('.vue') ||
-      change.path.includes('.jsx') ||
-      change.path.includes('.tsx') ||
-      change.path.includes('component')
+      change.filePath.includes('.css') || 
+      change.filePath.includes('.scss') ||
+      change.filePath.includes('.vue') ||
+      change.filePath.includes('.jsx') ||
+      change.filePath.includes('.tsx') ||
+      change.filePath.includes('component')
     );
   }
 
   private affectsVisualComponents(test: VisualTestCase, changes: CodeChange[]): boolean {
     return changes.some(change => 
-      test.dependencies.some(dep => dep.includes(change.path))
+      test.componentCoverage.includes(change.componentId)
     );
   }
 
   private hasPerformanceCriticalChanges(changes: CodeChange[]): boolean {
     return changes.some(change => 
-      change.complexity > 5 || change.riskLevel === 'critical'
+      change.riskScore > 0.7 || change.impact === 'critical'
     );
   }
 
-  private coversPerformanceCriticalComponents(test: PerformanceTest, changes: CodeChange[]): boolean {
+  private coversPerformanceCriticalComponents(test: TestCase, changes: CodeChange[]): boolean {
     return changes.some(change => 
-      test.affectedComponents.some(comp => comp.includes(change.path))
+      test.componentCoverage.includes(change.componentId)
     );
   }
 
