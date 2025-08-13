@@ -11,6 +11,7 @@ import { VerifyAgent } from '../agents/verify-agent.js';
 import { OperateAgent } from '../agents/operate-agent.js';
 import { PhaseStateManager, PhaseType } from '../utils/phase-state-manager.js';
 import { SteeringLoader } from '../utils/steering-loader.js';
+import { ApprovalService } from '../services/approval-service.js';
 
 export interface SlashCommand {
   name: string;
@@ -28,6 +29,7 @@ export type CommandHandler = (args: string[], context: CommandContext) => Promis
 export interface CommandContext {
   phaseStateManager: PhaseStateManager;
   steeringLoader: SteeringLoader;
+  approvalService: ApprovalService;
   currentPhase?: PhaseType;
   projectRoot: string;
 }
@@ -60,6 +62,7 @@ export class SlashCommandManager {
     this.context = {
       phaseStateManager,
       steeringLoader: new SteeringLoader(root),
+      approvalService: new ApprovalService(root, phaseStateManager),
       projectRoot: root,
     };
 
@@ -586,7 +589,7 @@ export class SlashCommandManager {
     }
 
     const notes = args.join(' ');
-    await context.phaseStateManager.approvePhase(
+    await context.approvalService.approve(
       state.currentPhase,
       'CLI User',
       notes || undefined
