@@ -177,7 +177,7 @@ export class ValidationOrchestrator extends EventEmitter {
     const requiredValidators = this.selectValidators(target, context, requirements);
     
     // Group validators into phases
-    const phases = this.organizePhasesValidator(requiredValidators);
+    const phases = this.organizeValidatorsIntoPhases(requiredValidators);
     
     // Calculate estimates
     const totalValidators = requiredValidators.length;
@@ -389,7 +389,7 @@ export class ValidationOrchestrator extends EventEmitter {
     return configs.sort((a, b) => this.getPriorityValue(b.priority) - this.getPriorityValue(a.priority));
   }
 
-  private organizePhasesValidator(validators: ValidatorConfig[]): ValidationPhase[] {
+  private organizeValidatorsIntoPhases(validators: ValidatorConfig[]): ValidationPhase[] {
     const phases: ValidationPhase[] = [];
     
     // Group by priority and dependencies
