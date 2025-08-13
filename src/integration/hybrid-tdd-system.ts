@@ -369,13 +369,17 @@ export class HybridTDDSystem {
         console.warn(`🚨 TDD Violation: ${violation.message}`);
         console.warn(`💡 Suggestion: ${violation.suggestion}`);
         
-        this.metricsCollector.recordViolation({
-          type: violation.type as any,
-          file: filePath,
-          phase: 'unknown',
-          message: violation.message,
-          severity: violation.severity,
-        });
+        // Only record violations that match expected enum values
+        const validTypes = ['code_without_test', 'test_not_run', 'skip_red_phase', 'coverage_low'];
+        if (validTypes.includes(violation.type)) {
+          this.metricsCollector.recordViolation({
+            type: violation.type as 'code_without_test' | 'test_not_run' | 'skip_red_phase' | 'coverage_low',
+            file: filePath,
+            phase: 'unknown',
+            message: violation.message,
+            severity: violation.severity,
+          });
+        }
       }
     }
   }
