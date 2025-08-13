@@ -95,7 +95,7 @@ echo "# API Design Principles" > .ae/steering/api-design.md
 
 ### プログラマティックアクセス
 ```typescript
-import { SteeringLoader } from 'ae-framework';
+import { SteeringLoader } from 'ae-framework/utils';
 
 const loader = new SteeringLoader();
 
@@ -168,7 +168,7 @@ ae-phase reset --force
 
 ### プログラマティックアクセス
 ```typescript
-import { PhaseStateManager } from 'ae-framework';
+import { PhaseStateManager } from 'ae-framework/utils';
 
 const manager = new PhaseStateManager();
 
@@ -270,7 +270,7 @@ ae-approve set-policy test --auto-test --auto-security
 
 ### プログラマティックアクセス
 ```typescript
-import { ApprovalService } from 'ae-framework';
+import { ApprovalService } from 'ae-framework/services';
 
 const service = new ApprovalService();
 
@@ -411,7 +411,7 @@ ae> /intent [要件がproduct.mdのビジョンに基づいて解析される]
 
 ### プログラマティックアクセス
 ```typescript
-import { SlashCommandManager } from 'ae-framework';
+import { SlashCommandManager } from 'ae-framework/commands';
 
 const manager = new SlashCommandManager();
 
@@ -569,4 +569,4 @@ ae-slash help /intent
 - [API リファレンス](./API.md)
 - [設定ガイド](./CONFIGURATION.md)
 - [コントリビューションガイド](../CONTRIBUTING.md)
-- [Issue #11 実装詳細](https://github.com/itdojp/ae-framework/issues/11)
+- [Issue #11 Implementation Details](https://github.com/itdojp/ae-framework/issues/11)

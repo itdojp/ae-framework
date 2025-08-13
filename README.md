@@ -17,7 +17,7 @@
 ```bash
 # クイックスタート
 mkdir -p .ae/steering
-echo "# Product Vision" > .ae/steering/product.md
+echo '# Product Vision' > .ae/steering/product.md
 ```
 
 ### 📊 [Phase State Management](./docs/NEW_FEATURES.md#-phase-state-management)
@@ -28,7 +28,7 @@ echo "# Product Vision" > .ae/steering/product.md
 
 ```bash
 # クイックスタート
-ae-phase init --name "My Project"
+ae-phase init --name 'My Project'
 ae-phase status
 ae-phase timeline
 ```
@@ -41,8 +41,8 @@ ae-phase timeline
 
 ```bash
 # クイックスタート
-ae-approve request intent --summary "Ready for review"
-ae-approve approve intent --user "Tech Lead"
+ae-approve request intent --summary 'Ready for review'
+ae-approve approve intent --user 'Tech Lead'
 ```
 
 ### 🚀 [Slash Commands](./docs/NEW_FEATURES.md#-slash-commands) 
@@ -54,7 +54,7 @@ ae-approve approve intent --user "Tech Lead"
 ```bash
 # クイックスタート
 ae-slash interactive
-ae> /init "My Project"
+ae> /init 'My Project'
 ae> /status
 ae> /next
 ```
@@ -64,12 +64,12 @@ ae> /next
 ### 統合ワークフロー例
 ```bash
 # 1. プロジェクト初期化
-ae-phase init --name "My Project"
+ae-phase init --name 'My Project'
 mkdir -p .ae/steering
 
 # 2. インタラクティブ開発
 ae-slash i
-ae> /init "E-Commerce Platform"
+ae> /init 'E-Commerce Platform'
 ae> /intent Users can browse and purchase products
 ae> /complete requirements.md
 ae> /approve Ready for implementation

@@ -1,4 +1,4 @@
-# ae-framework クイックスタートガイド
+# ae-framework Quick Start Guide
 
 ## 📦 インストール
 
@@ -28,7 +28,7 @@ mkdir my-awesome-project
 cd my-awesome-project
 
 # ae-frameworkプロジェクトを初期化
-ae-phase init --name "My Awesome Project"
+ae-phase init --name 'My Awesome Project'
 ```
 
 ### Step 2: Steering Documentsの作成
