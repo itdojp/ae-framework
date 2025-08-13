@@ -641,12 +641,15 @@ export class ProblemDecomposer {
       if (currentNode.dependencies.length === 0) break;
       
       // Find the dependency with the latest end time
-      currentNode = currentNode.dependencies
+      const dependentNodes = currentNode.dependencies
         .map(depId => nodeMap.get(depId))
-        .filter(Boolean)
-        .reduce((latest, node) => 
-          node!.estimatedEndTime > latest!.estimatedEndTime ? node : latest
-        ) || null;
+        .filter((node): node is ExecutionNode => node !== undefined);
+        
+      currentNode = dependentNodes.length > 0
+        ? dependentNodes.reduce((latest, node) => 
+            node.estimatedEndTime > latest.estimatedEndTime ? node : latest
+          )
+        : null;
     }
     
     return path;

@@ -363,7 +363,7 @@ export class ValidationOrchestrator extends EventEmitter {
     requirements?: any
   ): ValidatorConfig[] {
     const configs: ValidatorConfig[] = [];
-    const categories = requirements?.categories || Object.keys(ValidationCategory);
+    const categories = requirements?.categories || ['structural', 'functional', 'performance', 'security', 'consistency', 'completeness', 'integration', 'business_rules', 'data_quality'];
 
     for (const [validatorId, validator] of this.validators) {
       if (validator.canHandle(target, context)) {
@@ -504,7 +504,7 @@ export class ValidationOrchestrator extends EventEmitter {
           results.push(result);
           
           // Stop on critical failure for sequential execution
-          if (!result.success && validatorConfig.successCriteria.mustPass) {
+          if (!result.success && (validatorConfig.successCriteria.mustPass ?? false)) {
             break;
           }
         }
