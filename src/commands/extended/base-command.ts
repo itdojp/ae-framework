@@ -83,7 +83,7 @@ export abstract class BaseExtendedCommand {
       return {
         success: result.success,
         message: result.message,
-        data: result
+        data: result.data
       };
 
     } catch (error: any) {
