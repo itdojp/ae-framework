@@ -2,6 +2,28 @@
 
 > 人手最小＆仕様準拠最大。TDD強制機能付きIntent→Formal→Tests→Code→Verify→Operate の6フェーズ。
 
+## 🎯 Steering Documents (NEW!)
+プロジェクト全体のコンテキストと方向性を管理する新機能：
+
+### 概要
+Steering Documentsは、すべてのAIエージェントとチームメンバーが参照する、プロジェクトの共通コンテキストです。`.ae/steering/`ディレクトリに配置され、すべてのフェーズで自動的に参照されます。
+
+### コアドキュメント
+- **product.md**: プロダクトビジョン、ターゲットユーザー、コア機能
+- **architecture.md**: 技術スタック、アーキテクチャパターン、システム構成
+- **standards.md**: コーディング規約、命名規則、品質基準
+
+### 使用方法
+```bash
+# Steering Documentsの初期化
+mkdir -p .ae/steering
+# product.md, architecture.md, standards.mdを作成・編集
+
+# AIエージェントは自動的にこれらのドキュメントを参照
+npm run intent-agent  # product.mdのビジョンを考慮
+npm run code-agent    # standards.mdの規約に従う
+```
+
 ## 🚀 AI-Powered Development Features
 
 ### 🤖 Test Generation Agent (NEW!)

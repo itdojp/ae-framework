@@ -5,6 +5,7 @@
 
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import * as path from 'path';
+import { SteeringLoader } from '../utils/steering-loader.js';
 
 export interface IntentAnalysisRequest {
   sources: RequirementSource[];
@@ -204,16 +205,24 @@ export interface RequirementTrace {
 
 export class IntentAgent {
   private requirementCounter = 0;
+  private steeringLoader: SteeringLoader;
+
+  constructor() {
+    this.steeringLoader = new SteeringLoader();
+  }
   
   /**
    * Analyze requirements and extract intent
    */
   async analyzeIntent(request: IntentAnalysisRequest): Promise<IntentAnalysisResult> {
-    // Extract raw requirements from sources
+    // Load steering documents for context
+    const steeringContext = await this.steeringLoader.getSteeringContext();
+    
+    // Extract raw requirements from sources, considering steering context
     const rawRequirements = this.extractRequirements(request.sources);
     
-    // Parse and structure requirements
-    const requirements = this.parseRequirements(rawRequirements, request.context);
+    // Parse and structure requirements with steering context
+    const requirements = await this.parseRequirementsWithSteering(rawRequirements, request.context, steeringContext);
     
     // Generate user stories
     const userStories = this.generateUserStories(requirements);
@@ -232,7 +241,7 @@ export class IntentAgent {
     const risks = this.analyzeRisks(requirements, constraints);
     
     // Detect ambiguities
-    const ambiguities = this.detectAmbiguities(rawRequirements);
+    const ambiguities = await this.detectAmbiguities(request.sources);
     
     // Generate suggestions
     const suggestions = this.generateSuggestions(requirements, ambiguities, risks);
@@ -1001,5 +1010,81 @@ export class IntentAgent {
     }
     
     return false;
+  }
+
+  /**
+   * Parse requirements with steering document context
+   */
+  private async parseRequirementsWithSteering(
+    raw: string[],
+    context: ProjectContext | undefined,
+    steeringContext: string
+  ): Promise<Requirement[]> {
+    const requirements = this.parseRequirements(raw, context);
+    
+    // Enhance requirements based on steering documents
+    const steeringDocs = await this.steeringLoader.loadAllDocuments();
+    
+    // If product steering exists, enhance with product context
+    if (steeringDocs.product) {
+      requirements.forEach(req => {
+        // Add product context to requirements
+        if (!req.rationale && steeringDocs.product.includes('Vision')) {
+          req.rationale = 'Aligns with product vision';
+        }
+      });
+    }
+    
+    // If architecture steering exists, categorize technical requirements
+    if (steeringDocs.architecture) {
+      requirements.forEach(req => {
+        if (req.type === 'technical' && steeringDocs.architecture.includes(req.description)) {
+          req.category = 'architecture';
+        }
+      });
+    }
+    
+    // If standards steering exists, apply priority based on standards
+    if (steeringDocs.standards) {
+      requirements.forEach(req => {
+        if (steeringDocs.standards.includes('must') && 
+            req.description.toLowerCase().includes('standard')) {
+          req.priority = 'must';
+        }
+      });
+    }
+    
+    return requirements;
+  }
+
+  /**
+   * Get steering-aware suggestions
+   */
+  async getSteeringAwareSuggestions(): Promise<string[]> {
+    const suggestions: string[] = [];
+    const hasSteeringDocs = await this.steeringLoader.hasSteeringDocuments();
+    
+    if (!hasSteeringDocs) {
+      suggestions.push('Initialize steering documents for better context (.ae/steering/)');
+      suggestions.push('Define product vision in .ae/steering/product.md');
+      suggestions.push('Document architecture decisions in .ae/steering/architecture.md');
+      suggestions.push('Establish coding standards in .ae/steering/standards.md');
+    } else {
+      const docs = await this.steeringLoader.loadAllDocuments();
+      
+      if (!docs.product) {
+        suggestions.push('Create product steering document for clearer vision');
+      }
+      
+      if (!docs.architecture) {
+        suggestions.push('Create architecture steering document for technical consistency');
+      }
+      
+      if (!docs.standards) {
+        suggestions.push('Create standards steering document for code quality');
+      }
+    }
+    
+    return suggestions;
   }
 }
