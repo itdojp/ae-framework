@@ -169,12 +169,15 @@ describe('InstallerCommand', () => {
       expect(result.installedTemplate).toBe('typescript-node');
       expect(result.installedDependencies).toEqual(mockInstallResult.installedDependencies);
       expect(result.createdFiles).toEqual(mockInstallResult.createdFiles);
-      expect(mockContextManager.updateContext).toHaveBeenCalledWith({
-        installedTemplate: 'typescript-node',
-        templateCategory: 'api',
-        projectLanguage: 'typescript',
-        projectFramework: undefined
-      });
+      expect(mockContextManager.addToMemory).toHaveBeenCalledWith(
+        'template_install_typescript-node',
+        {
+          installedTemplate: 'typescript-node',
+          templateCategory: 'api',
+          projectLanguage: 'typescript',
+          projectFramework: undefined
+        }
+      );
     });
 
     test('should handle non-existent template', async () => {
