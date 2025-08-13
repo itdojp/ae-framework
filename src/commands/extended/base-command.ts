@@ -31,7 +31,7 @@ export interface CommandMetrics {
 export abstract class BaseExtendedCommand {
   public readonly name: string;
   public readonly description: string;
-  public readonly category: 'utility' as const;
+  public readonly category = 'utility' as const;
   public readonly usage: string;
   public readonly aliases?: string[];
 
