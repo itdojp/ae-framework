@@ -107,7 +107,7 @@ export class DocumentCommand {
 
     try {
       const results = await this.generateDocumentation(target, options);
-      const summary = this.generateSummary(results);
+      const summary = this.generateDocumentationSummary(results);
 
       // Optionally validate documentation completeness
       if (options.validate) {
@@ -683,7 +683,7 @@ export class DocumentCommand {
     return path.join(outputDir, `${basename}.${extension}`);
   }
 
-  private generateSummary(results: DocumentationResult[]): string {
+  private generateDocumentationSummary(results: DocumentationResult[]): string {
     let summary = `Generated documentation for ${results.length} file(s)\n\n`;
     
     let totalExports = 0;
