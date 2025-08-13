@@ -611,6 +611,12 @@ export class SlashCommandManager {
       };
     }
 
+    // Start phase if not started
+    const phaseStatus = state.phaseStatus[state.currentPhase];
+    if (!phaseStatus.startedAt) {
+      await context.phaseStateManager.startPhase(state.currentPhase);
+    }
+
     await context.phaseStateManager.completePhase(state.currentPhase, args);
 
     const message = state.approvalsRequired 

@@ -83,10 +83,7 @@ describe('SlashCommandManager', () => {
     test('should complete phase', async () => {
       await manager.execute('/init Test Project');
       
-      // Start intent phase (initialize in base agent will handle this)
-      const phaseManager = new PhaseStateManager(testDir);
-      await phaseManager.startPhase('intent');
-      
+      // The intent phase should start automatically when initialized
       const result = await manager.execute('/complete requirements.md');
       
       expect(result.success).toBe(true);
@@ -97,9 +94,9 @@ describe('SlashCommandManager', () => {
     test('should approve phase', async () => {
       await manager.execute('/init Test Project');
       
-      const phaseManager = new PhaseStateManager(testDir);
-      await phaseManager.startPhase('intent');
-      await phaseManager.completePhase('intent', ['requirements.md']);
+      // Use manager commands to start and complete phase
+      // This ensures we're using the same PhaseStateManager instance
+      await manager.execute('/complete requirements.md');
       
       const result = await manager.execute('/approve Good work');
       
@@ -111,10 +108,9 @@ describe('SlashCommandManager', () => {
     test('should transition to next phase', async () => {
       await manager.execute('/init Test Project');
       
-      const phaseManager = new PhaseStateManager(testDir);
-      await phaseManager.startPhase('intent');
-      await phaseManager.completePhase('intent', []);
-      await phaseManager.approvePhase('intent', 'CLI');
+      // Use manager commands to complete and approve phase
+      await manager.execute('/complete');
+      await manager.execute('/approve');
       
       const result = await manager.execute('/next');
       
@@ -126,9 +122,7 @@ describe('SlashCommandManager', () => {
     test('should prevent transition without completion', async () => {
       await manager.execute('/init Test Project');
       
-      const phaseManager = new PhaseStateManager(testDir);
-      await phaseManager.startPhase('intent');
-      
+      // Try to move to next phase without completing current phase
       const result = await manager.execute('/next');
       
       expect(result.success).toBe(false);
@@ -278,12 +272,10 @@ describe('SlashCommandManager', () => {
     test('should validate formal command arguments', async () => {
       await manager.execute('/init Test');
       
-      // Move to formal phase
-      const phaseManager = new PhaseStateManager(testDir);
-      await phaseManager.startPhase('intent');
-      await phaseManager.completePhase('intent', []);
-      await phaseManager.approvePhase('intent', 'auto');
-      await phaseManager.transitionToNextPhase();
+      // Move to formal phase using manager commands
+      await manager.execute('/complete');
+      await manager.execute('/approve');
+      await manager.execute('/next');
       
       const result = await manager.execute('/formal');
       
