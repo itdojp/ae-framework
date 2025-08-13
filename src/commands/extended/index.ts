@@ -9,7 +9,7 @@ export { UnifiedDocumentCommand } from './document-command-unified.js';
 export { UnifiedImproveCommand } from './improve-command-unified.js';
 export { UnifiedTroubleshootCommand } from './troubleshoot-command-unified.js';
 
-// Smart Persona System (Phase 2) - Temporarily removed
+// Smart Persona System (Phase 2) - TODO: Re-implement persona command after resolving dependencies
 // export { PersonaCommand } from './persona-command.js';
 
 // Integrated Installer (Phase 2)  

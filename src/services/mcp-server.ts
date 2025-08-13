@@ -156,6 +156,7 @@ export class MCPServer extends EventEmitter {
     pluginsLoaded: 0,
     endpointsRegistered: 0
   };
+  private totalResponseTime: number = 0;
   private projectRoot: string;
 
   constructor(config: MCPServerConfig, projectRoot: string) {
@@ -283,8 +284,8 @@ export class MCPServer extends EventEmitter {
     } finally {
       // Update metrics
       const responseTime = Date.now() - startTime;
-      this.metrics.averageResponseTime = 
-        (this.metrics.averageResponseTime + responseTime) / 2;
+      this.totalResponseTime += responseTime;
+      this.metrics.averageResponseTime = this.totalResponseTime / this.metrics.requestCount;
       this.metrics.uptime = Date.now() - this.startTime;
     }
   }

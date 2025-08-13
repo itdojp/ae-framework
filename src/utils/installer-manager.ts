@@ -519,9 +519,9 @@ export class InstallerManager {
             configContent = JSON.stringify(config.content, null, 2);
             break;
           case 'yaml':
-            // Would need yaml library in practice
+            // TODO: Implement proper YAML support by adding yaml library dependency
             configContent = JSON.stringify(config.content, null, 2);
-            result.warnings.push('YAML format not fully supported, using JSON');
+            result.warnings.push('YAML format not implemented, falling back to JSON');
             break;
           case 'js':
           case 'ts':

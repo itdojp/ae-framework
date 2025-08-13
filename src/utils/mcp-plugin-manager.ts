@@ -442,19 +442,41 @@ No additional configuration required.
       // Check if file exists
       await fs.access(modulePath);
 
-      // For Node.js, we would use dynamic import or require
-      // This is a simplified version that assumes module loading capability
-      if (modulePath.endsWith('.js')) {
-        // Dynamic import for ES modules
-        const module = await import(modulePath);
-        return module.default || module;
-      } else if (modulePath.endsWith('.ts')) {
-        // For TypeScript, would need compilation step
-        throw new Error('TypeScript plugins not yet supported');
+      const fileExtension = path.extname(modulePath);
+      
+      switch (fileExtension) {
+        case '.js':
+        case '.mjs':
+          try {
+            // Dynamic import for ES modules
+            const module = await import(modulePath);
+            return module.default || module;
+          } catch (importError: any) {
+            // Fallback to require for CommonJS modules
+            if (fileExtension === '.js') {
+              try {
+                delete require.cache[require.resolve(modulePath)];
+                return require(modulePath);
+              } catch (requireError: any) {
+                throw new Error(`Failed to load module as ES module or CommonJS: ${importError.message}, ${requireError.message}`);
+              }
+            }
+            throw importError;
+          }
+          
+        case '.ts':
+          throw new Error('TypeScript plugins require compilation. Please compile to JavaScript first.');
+          
+        case '.json':
+          throw new Error('JSON files cannot be loaded as plugins. Please use JavaScript files.');
+          
+        default:
+          throw new Error(`Unsupported plugin file format: ${fileExtension}. Supported formats: .js, .mjs`);
       }
-
-      throw new Error('Unsupported plugin file format');
     } catch (error: any) {
+      if (error.code === 'ENOENT') {
+        throw new Error(`Plugin module file not found: ${modulePath}`);
+      }
       throw new Error(`Failed to load plugin module: ${error.message}`);
     }
   }

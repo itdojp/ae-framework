@@ -190,17 +190,7 @@ export class SlashCommandManager {
       stopOnFailure: false
     });
 
-    // Register persona command (Smart Persona System - Phase 2) - Temporarily removed
-    // const personaCmd = new PersonaCommand();
-    // this.registerCommand({
-    //   name: personaCmd.name,
-    //   description: personaCmd.description,
-    //   category: personaCmd.category,
-    //   usage: personaCmd.usage,
-    //   aliases: personaCmd.aliases,
-    //   handler: personaCmd.handler.bind(personaCmd),
-    //   stopOnFailure: false
-    // });
+    // TODO: Re-implement persona command after resolving dependencies
 
     // Register installer command (Integrated Installer - Phase 2)
     const installerCmd = new InstallerCommand();
