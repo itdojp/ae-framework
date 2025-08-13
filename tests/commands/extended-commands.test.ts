@@ -186,11 +186,14 @@ describe('Extended Commands', () => {
         cmd.name.startsWith('/ae:')
       );
       
-      expect(extendedCommands.length).toBe(4);
+      expect(extendedCommands.length).toBe(6);
       expect(extendedCommands.map(c => c.name)).toContain('/ae:analyze');
       expect(extendedCommands.map(c => c.name)).toContain('/ae:troubleshoot');
       expect(extendedCommands.map(c => c.name)).toContain('/ae:improve');
       expect(extendedCommands.map(c => c.name)).toContain('/ae:document');
+      // expect(extendedCommands.map(c => c.name)).toContain('/ae:persona');  // Temporarily removed
+      expect(extendedCommands.map(c => c.name)).toContain('/ae:installer');
+      expect(extendedCommands.map(c => c.name)).toContain('/ae:mcp');
     });
 
     test.skip('should work with command aliases', async () => {

@@ -36,13 +36,34 @@ export abstract class BaseExtendedCommand {
   public readonly aliases?: string[];
 
   protected validator: EvidenceValidator;
+  private metrics: Map<string, number> = new Map();
   
-  constructor(config: ExtendedCommandConfig) {
-    this.name = config.name;
-    this.description = config.description;
-    this.usage = config.usage;
-    this.aliases = config.aliases;
+  constructor(config?: ExtendedCommandConfig) {
+    // Set default values, will be overridden by subclasses
+    this.name = config?.name || '';
+    this.description = config?.description || '';
+    this.usage = config?.usage || '';
+    this.aliases = config?.aliases || [];
     this.validator = new EvidenceValidator();
+  }
+
+  /**
+   * Record metric for performance tracking
+   */
+  protected recordMetric(key: string, value?: number): void {
+    if (value !== undefined) {
+      this.metrics.set(key, value);
+    } else {
+      const currentValue = this.metrics.get(key) || 0;
+      this.metrics.set(key, currentValue + 1);
+    }
+  }
+
+  /**
+   * Get recorded metrics
+   */
+  protected getMetrics(): Map<string, number> {
+    return new Map(this.metrics);
   }
 
   /**
