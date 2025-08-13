@@ -186,7 +186,7 @@ describe('Extended Commands', () => {
         cmd.name.startsWith('/ae:')
       );
       
-      expect(extendedCommands.length).toBe(4);
+      expect(extendedCommands.length).toBe(5);
       expect(extendedCommands.map(c => c.name)).toContain('/ae:analyze');
       expect(extendedCommands.map(c => c.name)).toContain('/ae:troubleshoot');
       expect(extendedCommands.map(c => c.name)).toContain('/ae:improve');

@@ -16,7 +16,8 @@ import {
   UnifiedAnalyzeCommand,
   UnifiedDocumentCommand,
   UnifiedImproveCommand,
-  UnifiedTroubleshootCommand
+  UnifiedTroubleshootCommand,
+  PersonaCommand
 } from './extended/index.js';
 
 export interface SlashCommand {
@@ -184,6 +185,18 @@ export class SlashCommandManager {
       usage: documentCmd.usage,
       aliases: documentCmd.aliases,
       handler: documentCmd.handler.bind(documentCmd),
+      stopOnFailure: false
+    });
+
+    // Register persona command (Smart Persona System - Phase 2)
+    const personaCmd = new PersonaCommand();
+    this.registerCommand({
+      name: personaCmd.name,
+      description: personaCmd.description,
+      category: personaCmd.category,
+      usage: personaCmd.usage,
+      aliases: personaCmd.aliases,
+      handler: personaCmd.handler.bind(personaCmd),
       stopOnFailure: false
     });
   }
