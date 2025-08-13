@@ -71,6 +71,8 @@ export class PersonaManager {
   private profilePath: string;
   private currentProfile: PersonaProfile | null = null;
   private workingContext: WorkingContext;
+  private interactionCount: number = 0;
+  private saveThreshold: number = 10; // Save every 10 interactions
 
   constructor(projectRoot: string) {
     this.profilePath = path.join(projectRoot, '.ae-framework', 'persona.json');
@@ -152,8 +154,15 @@ export class PersonaManager {
 
     this.currentProfile.learningData.lastUpdated = new Date().toISOString();
 
-    // Periodically save learning data
-    if (Math.random() < 0.1) { // 10% chance to save
+    // Update language preferences periodically based on usage
+    if (this.interactionCount % 20 === 0) { // Every 20 interactions
+      this.updateLanguagePreferencesFromUsage();
+    }
+
+    // Save learning data based on interaction count
+    this.interactionCount++;
+    if (this.interactionCount >= this.saveThreshold) {
+      this.interactionCount = 0;
       await this.saveProfile();
     }
   }
@@ -241,11 +250,14 @@ export class PersonaManager {
       }
     }
 
-    // Suggest based on success patterns
-    for (const successPattern of this.currentProfile.learningData.successPatterns) {
-      if (Math.random() < 0.3) { // 30% chance to suggest successful patterns
-        suggestions.push(`Consider: ${successPattern}`);
-      }
+    // Suggest based on success patterns (most recent and frequent patterns first)
+    const sortedSuccessPatterns = this.currentProfile.learningData.successPatterns
+      .slice(-6) // Take last 6 patterns
+      .reverse(); // Most recent first
+    
+    for (let i = 0; i < Math.min(2, sortedSuccessPatterns.length); i++) {
+      const pattern = sortedSuccessPatterns[i];
+      suggestions.push(`Consider: ${pattern}`);
     }
 
     return suggestions.slice(0, 3); // Limit to 3 suggestions
@@ -341,7 +353,7 @@ export class PersonaManager {
         verbosity: 'normal',
         codeStyle: 'mixed',
         explanationLevel: 'intermediate',
-        preferredLanguages: ['typescript', 'javascript'],
+        preferredLanguages: this.inferInitialLanguagePreferences(),
         preferredFrameworks: [],
         testingPreference: 'all',
         suggestionFrequency: 'medium',
@@ -438,14 +450,33 @@ export class PersonaManager {
     }
     
     if (rule.trigger.context) {
-      // Simple context matching - could be enhanced
+      // Enhanced context matching with specific property checks
       const contextMatch = Object.keys(rule.trigger.context).every(key => {
-        return JSON.stringify(this.workingContext).includes(key);
+        const expectedValue = (rule.trigger.context as any)[key];
+        const actualValue = this.getContextValue(key);
+        return this.compareContextValues(actualValue, expectedValue);
       });
       if (!contextMatch) return false;
     }
     
-    return Math.random() < rule.confidence; // Probabilistic rule application
+    // Use confidence threshold instead of random - more deterministic
+    return rule.confidence >= 0.5; // Apply rules with confidence >= 50%
+  }
+
+  private getContextValue(keyPath: string): any {
+    const keys = keyPath.split('.');
+    let value: any = this.workingContext;
+    for (const key of keys) {
+      value = value?.[key];
+    }
+    return value;
+  }
+
+  private compareContextValues(actual: any, expected: any): boolean {
+    if (typeof expected === 'number' && typeof actual === 'number') {
+      return actual >= expected * 0.9; // Allow 10% tolerance for numeric values
+    }
+    return actual === expected;
   }
 
   private reducedVerbosity(verbosity: UserPreferences['verbosity']): UserPreferences['verbosity'] {
@@ -469,5 +500,89 @@ export class PersonaManager {
       evidenceLevel: 'normal',
       recommendations: []
     };
+  }
+
+  private inferInitialLanguagePreferences(): string[] {
+    // Analyze project structure to infer language preferences
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const projectDir = path.dirname(this.profilePath);
+      
+      const languageIndicators: { [key: string]: string[] } = {
+        'typescript': ['tsconfig.json', '*.ts', '*.tsx', 'package.json'],
+        'javascript': ['package.json', '*.js', '*.jsx', '.babelrc'],
+        'python': ['requirements.txt', '*.py', 'setup.py', 'pyproject.toml'],
+        'java': ['pom.xml', 'build.gradle', '*.java'],
+        'go': ['go.mod', '*.go'],
+        'rust': ['Cargo.toml', '*.rs']
+      };
+
+      const detectedLanguages: string[] = [];
+
+      for (const [language, indicators] of Object.entries(languageIndicators)) {
+        for (const indicator of indicators) {
+          try {
+            if (indicator.includes('.')) {
+              if (fs.existsSync(path.join(projectDir, indicator))) {
+                detectedLanguages.push(language);
+                break;
+              }
+            }
+          } catch {
+            // Ignore file system errors
+          }
+        }
+      }
+
+      return detectedLanguages.length > 0 ? detectedLanguages : ['typescript', 'javascript'];
+    } catch {
+      // Fallback to common languages if analysis fails
+      return ['typescript', 'javascript'];
+    }
+  }
+
+  /**
+   * Update language preferences based on actual command usage patterns
+   */
+  private updateLanguagePreferencesFromUsage(): void {
+    if (!this.currentProfile) return;
+
+    const languageUsage: { [key: string]: number } = {};
+    
+    // Analyze command usage to detect language patterns
+    for (const [command, count] of Object.entries(this.currentProfile.learningData.commandUsage)) {
+      const languageHints = this.extractLanguageHints(command);
+      for (const lang of languageHints) {
+        languageUsage[lang] = (languageUsage[lang] || 0) + count;
+      }
+    }
+
+    // Update preferences based on usage frequency
+    const sortedLanguages = Object.entries(languageUsage)
+      .sort(([,a], [,b]) => b - a)
+      .map(([lang]) => lang);
+
+    if (sortedLanguages.length > 0) {
+      this.currentProfile.preferences.preferredLanguages = [
+        ...sortedLanguages.slice(0, 3), // Top 3 used languages
+        ...this.currentProfile.preferences.preferredLanguages.filter(
+          lang => !sortedLanguages.includes(lang)
+        )
+      ].slice(0, 5); // Keep max 5 languages
+    }
+  }
+
+  private extractLanguageHints(command: string): string[] {
+    const hints: string[] = [];
+    
+    if (command.includes('.ts') || command.includes('typescript')) hints.push('typescript');
+    if (command.includes('.js') || command.includes('javascript')) hints.push('javascript');
+    if (command.includes('.py') || command.includes('python')) hints.push('python');
+    if (command.includes('.java')) hints.push('java');
+    if (command.includes('.go')) hints.push('go');
+    if (command.includes('.rs') || command.includes('rust')) hints.push('rust');
+    
+    return hints;
   }
 }
