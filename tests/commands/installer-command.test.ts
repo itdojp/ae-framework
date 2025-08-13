@@ -32,7 +32,7 @@ describe('InstallerCommand', () => {
 
     // Mock ContextManager
     mockContextManager = {
-      updateContext: vi.fn()
+      addToMemory: vi.fn()
     };
     vi.mocked(ContextManager).mockImplementation(() => mockContextManager);
 
