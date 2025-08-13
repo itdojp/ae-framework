@@ -171,7 +171,7 @@ export class ValidationOrchestrator extends EventEmitter {
       maxDuration?: number;
     }
   ): Promise<ValidationPlan> {
-    const planId = `plan-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const planId = `plan-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     
     // Analyze target and context to determine required validators
     const requiredValidators = this.selectValidators(target, context, requirements);
@@ -213,7 +213,7 @@ export class ValidationOrchestrator extends EventEmitter {
       throw new Error(`Validation plan ${planId} not found`);
     }
 
-    const executionId = `exec-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const executionId = `exec-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     const execution: ValidationExecution = {
       planId,
       executionId,
