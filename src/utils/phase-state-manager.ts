@@ -245,11 +245,6 @@ export class PhaseStateManager {
    * Transition to next phase
    */
   async transitionToNextPhase(): Promise<PhaseType | null> {
-    const canTransition = await this.canTransitionToNextPhase();
-    if (!canTransition) {
-      throw new Error('Cannot transition to next phase. Current phase not completed/approved.');
-    }
-
     const state = await this.getCurrentState();
     if (!state) {
       throw new Error('No project state found.');
@@ -257,7 +252,17 @@ export class PhaseStateManager {
 
     const nextPhase = PHASE_TRANSITIONS[state.currentPhase];
     if (!nextPhase) {
-      return null; // Already at final phase
+      // Already at final phase - check if it's completed
+      const currentPhaseStatus = state.phaseStatus[state.currentPhase];
+      if (currentPhaseStatus.completed) {
+        return null; // Final phase is completed, no more phases
+      }
+      throw new Error('Cannot transition: no next phase available.');
+    }
+
+    const canTransition = await this.canTransitionToNextPhase();
+    if (!canTransition) {
+      throw new Error('Cannot transition to next phase. Current phase not completed/approved.');
     }
 
     state.currentPhase = nextPhase;
