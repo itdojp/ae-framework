@@ -33,6 +33,7 @@ export class ContextManager {
   private readonly DEFAULT_MAX_TOKENS = 8000;
   private readonly STEERING_TOKEN_BUDGET = 2000;
   private readonly PHASE_TOKEN_BUDGET = 1500;
+  private readonly TOKEN_ESTIMATE_RATIO = 0.25; // Same as TokenOptimizer for consistency
   private readonly FILES_TOKEN_BUDGET = 3500;
 
   constructor(projectRoot?: string) {
@@ -427,17 +428,17 @@ export class ContextManager {
   }
 
   /**
-   * Estimate token count
+   * Estimate token count - delegates to TokenOptimizer for consistency
    */
   private estimateTokens(text: string): number {
-    return Math.ceil(text.length * 0.25);
+    return this.tokenOptimizer.estimateTokens(text);
   }
 
   /**
    * Truncate text to token limit
    */
   private truncateToTokens(text: string, maxTokens: number): string {
-    const estimatedChars = maxTokens * 4;
+    const estimatedChars = Math.floor(maxTokens / this.TOKEN_ESTIMATE_RATIO);
     return text.length > estimatedChars 
       ? text.substring(0, estimatedChars)
       : text;

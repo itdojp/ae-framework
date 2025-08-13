@@ -22,6 +22,7 @@ export class TokenOptimizer {
   private cache: Map<string, string> = new Map();
   private readonly CACHE_SIZE = 100;
   private readonly TOKEN_ESTIMATE_RATIO = 0.25; // Approximate tokens per character
+  private readonly KEY_INDICATOR_REGEX = /\b(must|should|required|important|critical|key|main|primary)[:\s]/i;
 
   /**
    * Compress steering documents by removing redundancy and focusing on essentials
@@ -198,7 +199,8 @@ export class TokenOptimizer {
       }
     }
 
-    return deduplicated.join('. ') + (text.match(/[.!?]$/) ? text.slice(-1) : '.');
+    const lastChar = text.match(/[.!?]$/)?.[0] || '.';
+    return deduplicated.join('. ') + lastChar;
   }
 
   /**
@@ -225,7 +227,7 @@ export class TokenOptimizer {
       }
 
       // Keep sentences/lines with key indicators
-      if (trimmed.match(/\b(must|should|required|important|critical|key|main|primary)[:|\s]/i)) {
+      if (this.KEY_INDICATOR_REGEX.test(trimmed)) {
         keyPoints.push(sentence);
         continue;
       }
@@ -341,7 +343,7 @@ export class TokenOptimizer {
   /**
    * Estimate token count (rough approximation)
    */
-  private estimateTokens(text: string): number {
+  estimateTokens(text: string): number {
     // Simple estimation: ~4 characters per token on average
     return Math.ceil(text.length * this.TOKEN_ESTIMATE_RATIO);
   }
