@@ -20,6 +20,7 @@ export interface SlashCommand {
   aliases?: string[];
   handler: CommandHandler;
   requiresPhase?: PhaseType;
+  stopOnFailure?: boolean; // Whether to stop sequence execution on failure (default: true)
 }
 
 export type CommandHandler = (args: string[], context: CommandContext) => Promise<CommandResult>;
@@ -207,6 +208,7 @@ export class SlashCommandManager {
       usage: '/status',
       aliases: ['/s'],
       handler: this.handleStatusCommand.bind(this),
+      stopOnFailure: false, // Status command doesn't stop sequence execution
     });
 
     this.registerCommand({
@@ -243,6 +245,7 @@ export class SlashCommandManager {
       usage: '/help [command]',
       aliases: ['/h', '/?'],
       handler: this.handleHelpCommand.bind(this),
+      stopOnFailure: false, // Help commands don't stop sequence execution
     });
 
     this.registerCommand({
@@ -260,6 +263,7 @@ export class SlashCommandManager {
       usage: '/context',
       aliases: ['/ctx'],
       handler: this.handleContextCommand.bind(this),
+      stopOnFailure: false, // Context command doesn't stop sequence execution
     });
 
     this.registerCommand({
@@ -269,6 +273,7 @@ export class SlashCommandManager {
       usage: '/timeline',
       aliases: ['/tl'],
       handler: this.handleTimelineCommand.bind(this),
+      stopOnFailure: false, // Timeline command doesn't stop sequence execution
     });
 
     this.registerCommand({
@@ -806,6 +811,29 @@ export class SlashCommandManager {
    */
   parseCommandFromText(text: string): string[] {
     const commands: string[] = [];
+    /**
+     * Regex pattern to extract slash commands from text.
+     * 
+     * Pattern explanation:
+     *   /           - Match a literal slash
+     *   \w+         - Match one or more word characters (the command name)
+     *   (?:         - Start non-capturing group
+     *     \s+       -   Match one or more whitespace characters
+     *     [^/]*     -   Match zero or more characters that are not a slash (the arguments)
+     *   )?          - End non-capturing group, make it optional (arguments are optional)
+     *   g           - Global flag to match all occurrences
+     * 
+     * Examples of valid matches:
+     *   "/run"                       => matches "/run"
+     *   "/run intent"                => matches "/run intent"
+     *   "/help"                      => matches "/help"
+     *   "/set mode fast"             => matches "/set mode fast"
+     *   "Please /run intent and /verify" => matches "/run intent", "/verify"
+     * 
+     * Examples of non-matches:
+     *   "run intent"                 => no match (missing slash)
+     *   "/ run"                      => no match (space after slash)
+     */
     const pattern = /\/\w+(?:\s+[^/]*)?/g;
     const matches = text.match(pattern);
     
@@ -826,9 +854,16 @@ export class SlashCommandManager {
       const result = await this.execute(command);
       results.push(result);
       
-      // Stop on failure unless it's informational
-      if (!result.success && !command.startsWith('/help') && !command.startsWith('/status')) {
-        break;
+      // Stop on failure unless the command is marked as non-critical
+      if (!result.success) {
+        const commandName = command.split(/\s+/)[0];
+        const resolvedName = this.aliases.get(commandName) || commandName;
+        const cmdObj = this.commands.get(resolvedName);
+        const stopOnFailure = cmdObj?.stopOnFailure !== false;
+        
+        if (stopOnFailure) {
+          break;
+        }
       }
       
       // Execute next command if suggested
