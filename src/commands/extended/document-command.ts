@@ -53,6 +53,7 @@ export interface Property {
   name: string;
   type: string;
   description?: string;
+  optional?: boolean;
   access?: 'public' | 'private' | 'protected';
 }
 
@@ -60,9 +61,9 @@ export interface Method {
   name: string;
   signature: string;
   description?: string;
-  access?: 'public' | 'private' | 'protected';
   parameters?: Parameter[];
   returns?: ReturnValue;
+  access?: 'public' | 'private' | 'protected';
 }
 
 export interface Example {
@@ -74,13 +75,19 @@ export interface Example {
 export interface Metadata {
   author?: string;
   version?: string;
-  license?: string;
-  tags?: string[];
-  complexity?: number;
+  lastModified: string;
+  fileSize: number;
   linesOfCode: number;
+  complexity: number;
 }
 
 export class DocumentCommand {
+  name = '/ae:document';
+  description = 'Generate comprehensive documentation';
+  category = 'utility' as const;
+  usage = '/ae:document <file|directory> [--format=markdown|jsdoc|api-json] [--output=path]';
+  aliases = ['/document', '/a:document'];
+
   private validator: EvidenceValidator;
 
   constructor() {
@@ -99,8 +106,26 @@ export class DocumentCommand {
     const options = this.parseOptions(args.slice(1));
 
     try {
-      const results = await this.document(target, options);
+      const results = await this.generateDocumentation(target, options);
       const summary = this.generateSummary(results);
+
+      // Optionally validate documentation completeness
+      if (options.validate) {
+        for (const result of results) {
+          const validation = await this.validator.validateClaim(
+            `Documentation completeness for ${result.file}`,
+            JSON.stringify(result.documentation),
+            { minConfidence: 0.6 }
+          );
+          
+          if (validation.confidence < 0.6) {
+            return {
+              success: false,
+              message: `Documentation validation failed for ${result.file}: ${validation.reasoning}`
+            };
+          }
+        }
+      }
 
       return {
         success: true,
@@ -119,35 +144,29 @@ export class DocumentCommand {
     const options: any = {
       format: 'markdown',
       output: null,
+      writeFiles: false,
       includePrivate: false,
-      includeExamples: true,
-      write: false
+      validate: false
     };
 
     for (let i = 0; i < args.length; i++) {
-      switch (args[i]) {
-        case '--format':
-          options.format = args[++i] || 'markdown';
-          break;
-        case '--output':
-          options.output = args[++i];
-          break;
-        case '--include-private':
-          options.includePrivate = true;
-          break;
-        case '--no-examples':
-          options.includeExamples = false;
-          break;
-        case '--write':
-          options.write = true;
-          break;
+      const arg = args[i];
+      if (arg.startsWith('--format=')) {
+        options.format = arg.split('=')[1];
+      } else if (arg.startsWith('--output=')) {
+        options.output = arg.split('=')[1];
+        options.writeFiles = true;
+      } else if (arg === '--include-private') {
+        options.includePrivate = true;
+      } else if (arg === '--validate') {
+        options.validate = true;
       }
     }
 
     return options;
   }
 
-  private async document(target: string, options: any): Promise<DocumentationResult[]> {
+  private async generateDocumentation(target: string, options: any): Promise<DocumentationResult[]> {
     const results: DocumentationResult[] = [];
     const stats = await fs.stat(target);
 
@@ -172,13 +191,10 @@ export class DocumentCommand {
     for (const entry of entries) {
       const fullPath = path.join(dir, entry.name);
       
-      if (entry.isDirectory() && !entry.name.startsWith('.') && 
-          entry.name !== 'node_modules' && entry.name !== 'dist') {
+      if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
         const subFiles = await this.findSourceFiles(fullPath);
         files.push(...subFiles);
-      } else if (entry.isFile() && 
-                (entry.name.endsWith('.ts') || entry.name.endsWith('.js')) &&
-                !entry.name.includes('.test.') && !entry.name.includes('.spec.')) {
+      } else if (entry.isFile() && (entry.name.endsWith('.ts') || entry.name.endsWith('.js'))) {
         files.push(fullPath);
       }
     }
@@ -188,40 +204,15 @@ export class DocumentCommand {
 
   private async documentFile(file: string, options: any): Promise<DocumentationResult> {
     const content = await fs.readFile(file, 'utf-8');
+    const stats = await fs.stat(file);
     
-    // Parse the file
-    const exports = this.extractExports(content, file);
-    const dependencies = this.extractDependencies(content);
-    const examples = options.includeExamples ? this.extractExamples(content) : [];
-    const metadata = await this.extractMetadata(content, file);
-
-    const documentation: Documentation = {
-      summary: this.generateSummary(exports),
-      description: this.extractFileDescription(content),
-      exports,
-      dependencies,
-      examples,
-      metadata
-    };
-
-    // Format documentation
-    let formatted: string;
-    switch (options.format) {
-      case 'jsdoc':
-        formatted = this.formatAsJSDoc(documentation, file);
-        break;
-      case 'api-json':
-        formatted = JSON.stringify(documentation, null, 2);
-        break;
-      default:
-        formatted = this.formatAsMarkdown(documentation, file);
-    }
-
-    // Write documentation if requested
+    const documentation = await this.parseAndDocument(content, file, options);
     let written = false;
-    if (options.write) {
-      const outputPath = options.output || this.getDefaultOutputPath(file, options.format);
-      await fs.writeFile(outputPath, formatted, 'utf-8');
+
+    if (options.writeFiles && options.output) {
+      const outputPath = this.getOutputPath(file, options.output, options.format);
+      const formatted = this.formatDocumentation(documentation, options.format);
+      await fs.writeFile(outputPath, formatted);
       written = true;
     }
 
@@ -233,199 +224,264 @@ export class DocumentCommand {
     };
   }
 
-  private extractExports(content: string, file: string): ExportedItem[] {
+  private async parseAndDocument(content: string, filePath: string, options: any): Promise<Documentation> {
+    const sourceFile = ts.createSourceFile(
+      filePath,
+      content,
+      ts.ScriptTarget.Latest,
+      true
+    );
+
+    const exports = this.extractExports(sourceFile, options.includePrivate);
+    const dependencies = this.extractDependencies(content);
+    const examples = this.extractExamples(content);
+    const metadata = await this.generateMetadata(content, filePath);
+
+    return {
+      summary: this.generateSummary(exports),
+      description: this.extractDescription(content),
+      exports,
+      dependencies,
+      examples,
+      metadata
+    };
+  }
+
+  private extractExports(sourceFile: ts.SourceFile, includePrivate: boolean = false): ExportedItem[] {
     const exports: ExportedItem[] = [];
 
-    if (file.endsWith('.ts')) {
-      const sourceFile = ts.createSourceFile(
-        file,
-        content,
-        ts.ScriptTarget.Latest,
-        true
-      );
-
-      const visit = (node: ts.Node) => {
-        if (ts.isExportAssignment(node) || ts.isExportDeclaration(node)) {
-          // Handle export statements
-        } else if (ts.isFunctionDeclaration(node) && node.modifiers?.some(m => m.kind === ts.SyntaxKind.ExportKeyword)) {
-          exports.push(this.extractFunction(node));
-        } else if (ts.isClassDeclaration(node) && node.modifiers?.some(m => m.kind === ts.SyntaxKind.ExportKeyword)) {
-          exports.push(this.extractClass(node));
-        } else if (ts.isInterfaceDeclaration(node) && node.modifiers?.some(m => m.kind === ts.SyntaxKind.ExportKeyword)) {
-          exports.push(this.extractInterface(node));
-        } else if (ts.isTypeAliasDeclaration(node) && node.modifiers?.some(m => m.kind === ts.SyntaxKind.ExportKeyword)) {
-          exports.push(this.extractTypeAlias(node));
-        } else if (ts.isEnumDeclaration(node) && node.modifiers?.some(m => m.kind === ts.SyntaxKind.ExportKeyword)) {
-          exports.push(this.extractEnum(node));
-        } else if (ts.isVariableStatement(node) && node.modifiers?.some(m => m.kind === ts.SyntaxKind.ExportKeyword)) {
-          node.declarationList.declarations.forEach(decl => {
-            if (ts.isIdentifier(decl.name)) {
-              exports.push({
-                name: decl.name.text,
-                type: 'constant',
-                signature: decl.getText()
-              });
-            }
-          });
+    const visit = (node: ts.Node) => {
+      // Functions
+      if (ts.isFunctionDeclaration(node) && node.name) {
+        const isPrivate = this.hasPrivateModifier(node);
+        if (!isPrivate || includePrivate) {
+          exports.push(this.createFunctionItem(node));
         }
-
-        ts.forEachChild(node, visit);
-      };
-
-      visit(sourceFile);
-    } else {
-      // For JavaScript files, use regex patterns
-      const functionPattern = /export\s+(async\s+)?function\s+(\w+)/g;
-      const classPattern = /export\s+class\s+(\w+)/g;
-      const constPattern = /export\s+const\s+(\w+)/g;
-
-      let match;
-      while ((match = functionPattern.exec(content)) !== null) {
-        exports.push({
-          name: match[2],
-          type: 'function',
-          signature: match[0]
-        });
+      }
+      
+      // Classes
+      if (ts.isClassDeclaration(node) && node.name) {
+        const isPrivate = this.hasPrivateModifier(node);
+        if (!isPrivate || includePrivate) {
+          exports.push(this.createClassItem(node, includePrivate));
+        }
+      }
+      
+      // Interfaces
+      if (ts.isInterfaceDeclaration(node)) {
+        exports.push(this.createInterfaceItem(node));
+      }
+      
+      // Type aliases
+      if (ts.isTypeAliasDeclaration(node)) {
+        exports.push(this.createTypeItem(node));
+      }
+      
+      // Constants and variables
+      if (ts.isVariableStatement(node)) {
+        const isPrivate = this.hasPrivateModifier(node);
+        if (!isPrivate || includePrivate) {
+          for (const declaration of node.declarationList.declarations) {
+            if (ts.isIdentifier(declaration.name)) {
+              exports.push(this.createConstantItem(declaration));
+            }
+          }
+        }
+      }
+      
+      // Enums
+      if (ts.isEnumDeclaration(node)) {
+        const isPrivate = this.hasPrivateModifier(node);
+        if (!isPrivate || includePrivate) {
+          exports.push(this.createEnumItem(node));
+        }
       }
 
-      while ((match = classPattern.exec(content)) !== null) {
-        exports.push({
-          name: match[1],
-          type: 'class',
-          signature: match[0]
-        });
-      }
+      ts.forEachChild(node, visit);
+    };
 
-      while ((match = constPattern.exec(content)) !== null) {
-        exports.push({
-          name: match[1],
-          type: 'constant',
-          signature: match[0]
-        });
-      }
-    }
-
+    visit(sourceFile);
     return exports;
   }
 
-  private extractFunction(node: ts.FunctionDeclaration): ExportedItem {
-    const name = node.name?.text || 'anonymous';
-    const parameters = node.parameters.map(param => ({
-      name: param.name.getText(),
-      type: param.type?.getText() || 'any',
-      optional: !!param.questionToken,
-      defaultValue: param.initializer?.getText()
-    }));
+  private hasPrivateModifier(node: ts.Node): boolean {
+    return node.modifiers?.some(mod => mod.kind === ts.SyntaxKind.PrivateKeyword) ?? false;
+  }
 
-    const returnType = node.type?.getText() || 'void';
-
+  private createFunctionItem(node: ts.FunctionDeclaration): ExportedItem {
     return {
-      name,
+      name: node.name!.getText(),
       type: 'function',
-      signature: node.getText().split('{')[0].trim(),
-      parameters,
-      returns: { type: returnType }
+      signature: this.getFunctionSignature(node),
+      description: this.extractJSDocComment(node),
+      parameters: this.extractParameters(node),
+      returns: this.extractReturnType(node)
     };
   }
 
-  private extractClass(node: ts.ClassDeclaration): ExportedItem {
-    const name = node.name?.text || 'anonymous';
-    const properties: Property[] = [];
+  private createClassItem(node: ts.ClassDeclaration, includePrivate: boolean): ExportedItem {
     const methods: Method[] = [];
-
-    node.members.forEach(member => {
-      if (ts.isPropertyDeclaration(member)) {
-        const propName = member.name?.getText() || '';
-        properties.push({
-          name: propName,
-          type: member.type?.getText() || 'any',
-          access: this.getAccessModifier(member)
-        });
-      } else if (ts.isMethodDeclaration(member)) {
-        const methodName = member.name?.getText() || '';
-        const parameters = member.parameters.map(param => ({
-          name: param.name.getText(),
-          type: param.type?.getText() || 'any',
-          optional: !!param.questionToken
-        }));
-        
-        methods.push({
-          name: methodName,
-          signature: member.getText().split('{')[0].trim(),
-          access: this.getAccessModifier(member),
-          parameters,
-          returns: { type: member.type?.getText() || 'void' }
-        });
-      }
-    });
-
-    return {
-      name,
-      type: 'class',
-      signature: `class ${name}`,
-      properties,
-      methods
-    };
-  }
-
-  private extractInterface(node: ts.InterfaceDeclaration): ExportedItem {
-    const name = node.name.text;
     const properties: Property[] = [];
 
-    node.members.forEach(member => {
-      if (ts.isPropertySignature(member)) {
-        const propName = member.name?.getText() || '';
-        properties.push({
-          name: propName,
-          type: member.type?.getText() || 'any'
+    for (const member of node.members) {
+      const isPrivate = this.hasPrivateModifier(member);
+      
+      if (ts.isMethodDeclaration(member) && member.name && (!isPrivate || includePrivate)) {
+        methods.push({
+          name: member.name.getText(),
+          signature: this.getMethodSignature(member),
+          description: this.extractJSDocComment(member),
+          parameters: this.extractParameters(member),
+          returns: this.extractReturnType(member),
+          access: isPrivate ? 'private' : 'public'
         });
       }
-    });
-
-    return {
-      name,
-      type: 'interface',
-      signature: `interface ${name}`,
-      properties
-    };
-  }
-
-  private extractTypeAlias(node: ts.TypeAliasDeclaration): ExportedItem {
-    return {
-      name: node.name.text,
-      type: 'type',
-      signature: node.getText()
-    };
-  }
-
-  private extractEnum(node: ts.EnumDeclaration): ExportedItem {
-    const name = node.name.text;
-    const properties = node.members.map(member => ({
-      name: member.name?.getText() || '',
-      type: 'enum member',
-      description: member.initializer?.getText()
-    }));
-
-    return {
-      name,
-      type: 'enum',
-      signature: `enum ${name}`,
-      properties
-    };
-  }
-
-  private getAccessModifier(member: ts.ClassElement): 'public' | 'private' | 'protected' {
-    if (member.modifiers) {
-      if (member.modifiers.some(m => m.kind === ts.SyntaxKind.PrivateKeyword)) return 'private';
-      if (member.modifiers.some(m => m.kind === ts.SyntaxKind.ProtectedKeyword)) return 'protected';
+      
+      if (ts.isPropertyDeclaration(member) && member.name && (!isPrivate || includePrivate)) {
+        properties.push({
+          name: member.name.getText(),
+          type: this.getTypeString(member.type),
+          description: this.extractJSDocComment(member),
+          access: isPrivate ? 'private' : 'public'
+        });
+      }
     }
-    return 'public';
+
+    return {
+      name: node.name!.getText(),
+      type: 'class',
+      description: this.extractJSDocComment(node),
+      methods,
+      properties
+    };
+  }
+
+  private createInterfaceItem(node: ts.InterfaceDeclaration): ExportedItem {
+    const properties: Property[] = [];
+
+    for (const member of node.members) {
+      if (ts.isPropertySignature(member) && member.name) {
+        properties.push({
+          name: member.name.getText(),
+          type: this.getTypeString(member.type),
+          description: this.extractJSDocComment(member),
+          optional: !!member.questionToken
+        });
+      }
+    }
+
+    return {
+      name: node.name.getText(),
+      type: 'interface',
+      description: this.extractJSDocComment(node),
+      properties
+    };
+  }
+
+  private createTypeItem(node: ts.TypeAliasDeclaration): ExportedItem {
+    return {
+      name: node.name.getText(),
+      type: 'type',
+      signature: this.getTypeString(node.type),
+      description: this.extractJSDocComment(node)
+    };
+  }
+
+  private createConstantItem(node: ts.VariableDeclaration): ExportedItem {
+    return {
+      name: node.name.getText(),
+      type: 'constant',
+      signature: this.getTypeString(node.type),
+      description: this.extractJSDocComment(node.parent?.parent as ts.Node)
+    };
+  }
+
+  private createEnumItem(node: ts.EnumDeclaration): ExportedItem {
+    return {
+      name: node.name.getText(),
+      type: 'enum',
+      description: this.extractJSDocComment(node)
+    };
+  }
+
+  private getFunctionSignature(node: ts.FunctionDeclaration | ts.MethodDeclaration): string {
+    const params = node.parameters.map(p => {
+      const name = p.name.getText();
+      const type = p.type ? `: ${this.getTypeString(p.type)}` : '';
+      const optional = p.questionToken ? '?' : '';
+      return `${name}${optional}${type}`;
+    }).join(', ');
+    
+    const returnType = node.type ? `: ${this.getTypeString(node.type)}` : '';
+    return `(${params})${returnType}`;
+  }
+
+  private getMethodSignature(node: ts.MethodDeclaration): string {
+    return this.getFunctionSignature(node);
+  }
+
+  private extractParameters(node: ts.FunctionDeclaration | ts.MethodDeclaration): Parameter[] {
+    return node.parameters.map(p => ({
+      name: p.name.getText(),
+      type: p.type ? this.getTypeString(p.type) : 'any',
+      optional: !!p.questionToken,
+      defaultValue: p.initializer?.getText(),
+      description: this.extractParameterComment(node, p.name.getText())
+    }));
+  }
+
+  private extractReturnType(node: ts.FunctionDeclaration | ts.MethodDeclaration): ReturnValue | undefined {
+    if (node.type) {
+      return {
+        type: this.getTypeString(node.type),
+        description: this.extractReturnComment(node)
+      };
+    }
+    return undefined;
+  }
+
+  private getTypeString(type: ts.TypeNode | undefined): string {
+    if (!type) return 'any';
+    return type.getText();
+  }
+
+  private extractJSDocComment(node: ts.Node): string | undefined {
+    const jsDoc = (node as any).jsDoc;
+    if (jsDoc && jsDoc.length > 0) {
+      return jsDoc[0].comment?.toString();
+    }
+    return undefined;
+  }
+
+  private extractParameterComment(node: ts.Node, paramName: string): string | undefined {
+    const jsDoc = (node as any).jsDoc;
+    if (jsDoc && jsDoc.length > 0) {
+      const tags = jsDoc[0].tags;
+      if (tags) {
+        const paramTag = tags.find((tag: any) => 
+          tag.kind === ts.SyntaxKind.JSDocParameterTag && 
+          tag.name?.getText() === paramName
+        );
+        return paramTag?.comment?.toString();
+      }
+    }
+    return undefined;
+  }
+
+  private extractReturnComment(node: ts.Node): string | undefined {
+    const jsDoc = (node as any).jsDoc;
+    if (jsDoc && jsDoc.length > 0) {
+      const tags = jsDoc[0].tags;
+      if (tags) {
+        const returnTag = tags.find((tag: any) => tag.kind === ts.SyntaxKind.JSDocReturnTag);
+        return returnTag?.comment?.toString();
+      }
+    }
+    return undefined;
   }
 
   private extractDependencies(content: string): string[] {
     const dependencies: Set<string> = new Set();
-    
-    // Extract import statements
     const importPattern = /import\s+.*?\s+from\s+['"]([^'"]+)['"]/g;
     const requirePattern = /require\s*\(['"]([^'"]+)['"]\)/g;
     
@@ -442,96 +498,65 @@ export class DocumentCommand {
 
   private extractExamples(content: string): Example[] {
     const examples: Example[] = [];
+    const examplePattern = /@example\s*([\s\S]*?)(?=@\w+|\*\/)/g;
     
-    // Extract examples from comments
-    const examplePattern = /\/\*\*[\s\S]*?@example([\s\S]*?)\*\//g;
     let match;
-    
     while ((match = examplePattern.exec(content)) !== null) {
-      const exampleContent = match[1].trim();
-      const lines = exampleContent.split('\n').map(l => l.replace(/^\s*\*\s?/, ''));
-      
-      examples.push({
-        title: 'Example',
-        code: lines.join('\n')
-      });
-    }
-
-    // Also look for markdown code blocks in comments
-    const codeBlockPattern = /\/\/\s*```([\s\S]*?)```/g;
-    while ((match = codeBlockPattern.exec(content)) !== null) {
-      examples.push({
-        title: 'Code Example',
-        code: match[1].trim()
-      });
+      const exampleText = match[1].trim();
+      if (exampleText) {
+        examples.push({
+          title: 'Example',
+          code: exampleText
+        });
+      }
     }
 
     return examples;
   }
 
-  private extractFileDescription(content: string): string | undefined {
-    // Look for file-level JSDoc comment
-    const fileCommentPattern = /^\/\*\*([\s\S]*?)\*\//;
+  private extractDescription(content: string): string | undefined {
+    const fileCommentPattern = /\/\*\*\s*([\s\S]*?)\*\//;
     const match = content.match(fileCommentPattern);
     
     if (match) {
-      const comment = match[1]
+      return match[1]
         .split('\n')
-        .map(line => line.replace(/^\s*\*\s?/, ''))
+        .map(line => line.replace(/^\s*\*\s?/, '').trim())
+        .filter(line => line && !line.startsWith('@'))
         .join('\n')
         .trim();
-      
-      // Return first paragraph as description
-      return comment.split('\n\n')[0];
     }
-    
+
     return undefined;
   }
 
-  private async extractMetadata(content: string, file: string): Promise<Metadata> {
+  private async generateMetadata(content: string, filePath: string): Promise<Metadata> {
+    const stats = await fs.stat(filePath);
     const lines = content.split('\n');
-    const metadata: Metadata = {
-      linesOfCode: lines.length
+    const linesOfCode = lines.filter(line => line.trim() && !line.trim().startsWith('//')).length;
+    
+    // Simple complexity calculation
+    const complexity = this.calculateComplexity(content);
+
+    return {
+      lastModified: stats.mtime.toISOString(),
+      fileSize: stats.size,
+      linesOfCode,
+      complexity
     };
-
-    // Try to extract from package.json if available
-    try {
-      const packageJson = await fs.readFile(path.join(process.cwd(), 'package.json'), 'utf-8');
-      const pkg = JSON.parse(packageJson);
-      metadata.author = pkg.author;
-      metadata.version = pkg.version;
-      metadata.license = pkg.license;
-    } catch {
-      // Package.json not available
-    }
-
-    // Extract tags from comments
-    const tagPattern = /@tag\s+(\w+)/g;
-    const tags: string[] = [];
-    let match;
-    while ((match = tagPattern.exec(content)) !== null) {
-      tags.push(match[1]);
-    }
-    if (tags.length > 0) {
-      metadata.tags = tags;
-    }
-
-    // Calculate complexity (simplified)
-    metadata.complexity = this.calculateComplexity(content);
-
-    return metadata;
   }
 
   private calculateComplexity(content: string): number {
     let complexity = 1;
-    
-    // Count decision points
     const patterns = [
       /if\s*\(/g,
       /for\s*\(/g,
       /while\s*\(/g,
       /case\s+/g,
-      /catch\s*\(/g
+      /catch\s*\(/g,
+      /\?\s*[^:]+:/g,
+      /&&/g,
+      /\|\|/g
     ];
 
     for (const pattern of patterns) {
@@ -545,92 +570,75 @@ export class DocumentCommand {
   }
 
   private generateSummary(exports: ExportedItem[]): string {
-    const counts: Record<string, number> = {};
-    
+    const counts = {
+      function: 0,
+      class: 0,
+      interface: 0,
+      type: 0,
+      constant: 0,
+      enum: 0
+    };
+
     for (const item of exports) {
-      counts[item.type] = (counts[item.type] || 0) + 1;
+      counts[item.type]++;
     }
 
     const parts: string[] = [];
-    for (const [type, count] of Object.entries(counts)) {
-      parts.push(`${count} ${type}${count > 1 ? 's' : ''}`);
-    }
+    if (counts.function > 0) parts.push(`${counts.function} functions`);
+    if (counts.class > 0) parts.push(`${counts.class} classes`);
+    if (counts.interface > 0) parts.push(`${counts.interface} interfaces`);
+    if (counts.type > 0) parts.push(`${counts.type} type aliases`);
+    if (counts.constant > 0) parts.push(`${counts.constant} constants`);
+    if (counts.enum > 0) parts.push(`${counts.enum} enums`);
 
-    return parts.length > 0 ? `Exports ${parts.join(', ')}` : 'No exports';
+    return `Module exports: ${parts.join(', ') || 'none'}`;
   }
 
-  private formatAsMarkdown(doc: Documentation, file: string): string {
-    let md = `# ${path.basename(file)}\n\n`;
+  private formatDocumentation(doc: Documentation, format: string): string {
+    switch (format) {
+      case 'markdown':
+        return this.formatAsMarkdown(doc);
+      case 'jsdoc':
+        return this.formatAsJSDoc(doc);
+      case 'api-json':
+        return JSON.stringify(doc, null, 2);
+      default:
+        return this.formatAsMarkdown(doc);
+    }
+  }
+
+  private formatAsMarkdown(doc: Documentation): string {
+    let md = `# ${doc.summary}\n\n`;
     
     if (doc.description) {
       md += `${doc.description}\n\n`;
     }
 
-    md += `## Summary\n\n${doc.summary}\n\n`;
-
-    if (doc.dependencies.length > 0) {
-      md += `## Dependencies\n\n`;
-      for (const dep of doc.dependencies) {
-        md += `- ${dep}\n`;
-      }
-      md += '\n';
-    }
-
     if (doc.exports.length > 0) {
-      md += `## Exports\n\n`;
+      md += `## API Reference\n\n`;
       
-      for (const exp of doc.exports) {
-        md += `### ${exp.name}\n\n`;
-        md += `**Type:** ${exp.type}\n\n`;
+      for (const item of doc.exports) {
+        md += `### ${item.name}\n\n`;
+        md += `**Type:** \`${item.type}\`\n\n`;
         
-        if (exp.signature) {
-          md += '```typescript\n';
-          md += exp.signature;
-          md += '\n```\n\n';
+        if (item.description) {
+          md += `${item.description}\n\n`;
         }
-
-        if (exp.description) {
-          md += `${exp.description}\n\n`;
+        
+        if (item.signature) {
+          md += `**Signature:** \`${item.signature}\`\n\n`;
         }
-
-        if (exp.parameters && exp.parameters.length > 0) {
-          md += '**Parameters:**\n\n';
-          for (const param of exp.parameters) {
-            md += `- \`${param.name}\` (${param.type})`;
-            if (param.optional) md += ' _optional_';
-            if (param.defaultValue) md += ` = ${param.defaultValue}`;
-            if (param.description) md += ` - ${param.description}`;
-            md += '\n';
+        
+        if (item.parameters && item.parameters.length > 0) {
+          md += `**Parameters:**\n`;
+          for (const param of item.parameters) {
+            md += `- \`${param.name}\` (${param.type})${param.optional ? ' *optional*' : ''}: ${param.description || ''}\n`;
           }
           md += '\n';
         }
-
-        if (exp.returns) {
-          md += `**Returns:** ${exp.returns.type}`;
-          if (exp.returns.description) md += ` - ${exp.returns.description}`;
-          md += '\n\n';
-        }
-
-        if (exp.properties && exp.properties.length > 0) {
-          md += '**Properties:**\n\n';
-          for (const prop of exp.properties) {
-            md += `- \`${prop.name}\` (${prop.type})`;
-            if (prop.access && prop.access !== 'public') md += ` _${prop.access}_`;
-            if (prop.description) md += ` - ${prop.description}`;
-            md += '\n';
-          }
-          md += '\n';
-        }
-
-        if (exp.methods && exp.methods.length > 0) {
-          md += '**Methods:**\n\n';
-          for (const method of exp.methods) {
-            md += `- \`${method.name}\``;
-            if (method.access && method.access !== 'public') md += ` _${method.access}_`;
-            if (method.description) md += ` - ${method.description}`;
-            md += '\n';
-          }
-          md += '\n';
+        
+        if (item.returns) {
+          md += `**Returns:** \`${item.returns.type}\` ${item.returns.description || ''}\n\n`;
         }
       }
     }
@@ -639,117 +647,59 @@ export class DocumentCommand {
       md += `## Examples\n\n`;
       for (const example of doc.examples) {
         md += `### ${example.title}\n\n`;
+        md += `\`\`\`typescript\n${example.code}\n\`\`\`\n\n`;
         if (example.description) {
           md += `${example.description}\n\n`;
         }
-        md += '```typescript\n';
-        md += example.code;
-        md += '\n```\n\n';
       }
     }
 
-    if (doc.metadata) {
-      md += `## Metadata\n\n`;
-      md += `- **Lines of Code:** ${doc.metadata.linesOfCode}\n`;
-      md += `- **Complexity:** ${doc.metadata.complexity}\n`;
-      if (doc.metadata.author) md += `- **Author:** ${doc.metadata.author}\n`;
-      if (doc.metadata.version) md += `- **Version:** ${doc.metadata.version}\n`;
-      if (doc.metadata.license) md += `- **License:** ${doc.metadata.license}\n`;
-      if (doc.metadata.tags) md += `- **Tags:** ${doc.metadata.tags.join(', ')}\n`;
+    if (doc.dependencies.length > 0) {
+      md += `## Dependencies\n\n`;
+      for (const dep of doc.dependencies) {
+        md += `- \`${dep}\`\n`;
+      }
+      md += '\n';
     }
 
     return md;
   }
 
-  private formatAsJSDoc(doc: Documentation, file: string): string {
-    let jsdoc = '/**\n';
-    jsdoc += ` * @file ${path.basename(file)}\n`;
+  private formatAsJSDoc(doc: Documentation): string {
+    let jsdoc = `/**\n * ${doc.summary}\n`;
     
     if (doc.description) {
-      jsdoc += ` * @description ${doc.description}\n`;
+      jsdoc += ` * \n * ${doc.description.replace(/\n/g, '\n * ')}\n`;
     }
     
-    if (doc.metadata) {
-      if (doc.metadata.author) jsdoc += ` * @author ${doc.metadata.author}\n`;
-      if (doc.metadata.version) jsdoc += ` * @version ${doc.metadata.version}\n`;
-      if (doc.metadata.license) jsdoc += ` * @license ${doc.metadata.license}\n`;
-    }
+    jsdoc += ` */\n`;
     
-    jsdoc += ' */\n\n';
-
-    // Add JSDoc for each export
-    for (const exp of doc.exports) {
-      jsdoc += '/**\n';
-      
-      if (exp.description) {
-        jsdoc += ` * ${exp.description}\n`;
-      }
-      
-      if (exp.parameters) {
-        for (const param of exp.parameters) {
-          jsdoc += ` * @param {${param.type}} ${param.name}`;
-          if (param.description) jsdoc += ` - ${param.description}`;
-          jsdoc += '\n';
-        }
-      }
-      
-      if (exp.returns) {
-        jsdoc += ` * @returns {${exp.returns.type}}`;
-        if (exp.returns.description) jsdoc += ` ${exp.returns.description}`;
-        jsdoc += '\n';
-      }
-      
-      jsdoc += ' */\n';
-      
-      if (exp.signature) {
-        jsdoc += exp.signature + '\n\n';
-      }
-    }
-
     return jsdoc;
   }
 
-  private getDefaultOutputPath(file: string, format: string): string {
-    const dir = path.dirname(file);
-    const base = path.basename(file, path.extname(file));
-    
-    switch (format) {
-      case 'markdown':
-        return path.join(dir, `${base}.md`);
-      case 'api-json':
-        return path.join(dir, `${base}.api.json`);
-      default:
-        return path.join(dir, `${base}.docs.js`);
-    }
+  private getOutputPath(inputFile: string, outputDir: string, format: string): string {
+    const basename = path.basename(inputFile, path.extname(inputFile));
+    const extension = format === 'api-json' ? 'json' : 'md';
+    return path.join(outputDir, `${basename}.${extension}`);
   }
 
   private generateSummary(results: DocumentationResult[]): string {
-    let summary = `Documented ${results.length} file(s)\n\n`;
+    let summary = `Generated documentation for ${results.length} file(s)\n\n`;
     
     let totalExports = 0;
-    let writtenCount = 0;
-    const types: Record<string, number> = {};
+    const formats = new Set<string>();
+    let written = 0;
 
     for (const result of results) {
       totalExports += result.documentation.exports.length;
-      if (result.written) writtenCount++;
-
-      for (const exp of result.documentation.exports) {
-        types[exp.type] = (types[exp.type] || 0) + 1;
-      }
+      formats.add(result.format);
+      if (result.written) written++;
     }
 
     summary += `Total exports documented: ${totalExports}\n`;
-    
-    if (writtenCount > 0) {
-      summary += `Documentation files written: ${writtenCount}\n`;
-    }
-
-    if (Object.keys(types).length > 0) {
-      summary += '\nExports by type:\n';
-      for (const [type, count] of Object.entries(types)) {
-        summary += `  ${type}: ${count}\n`;
-      }
+    summary += `Format(s): ${Array.from(formats).join(', ')}\n`;
+    if (written > 0) {
+      summary += `Files written: ${written}\n`;
     }
 
     return summary;

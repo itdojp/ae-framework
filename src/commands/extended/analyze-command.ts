@@ -78,6 +78,12 @@ export interface PerformanceBottleneck {
 }
 
 export class AnalyzeCommand {
+  name = '/ae:analyze';
+  description = 'Deep code analysis with multiple perspectives';
+  category = 'utility' as const;
+  usage = '/ae:analyze <file|directory> [options]';
+  aliases = ['/analyze', '/a:analyze'];
+  
   private validator: EvidenceValidator;
 
   constructor() {

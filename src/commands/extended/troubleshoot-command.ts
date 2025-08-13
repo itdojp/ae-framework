@@ -47,6 +47,12 @@ export interface Solution {
 }
 
 export class TroubleshootCommand {
+  name = '/ae:troubleshoot';
+  description = 'Intelligent debugging and problem diagnosis';
+  category = 'utility' as const;
+  usage = '/ae:troubleshoot [--error="error message"] [--file=path] [--logs=path] [--validate]';
+  aliases = ['/troubleshoot', '/a:troubleshoot'];
+
   private validator: EvidenceValidator;
 
   constructor() {
@@ -57,37 +63,20 @@ export class TroubleshootCommand {
     const options = this.parseOptions(args);
 
     try {
-      // Auto-detect issues if no specific target provided
-      const issues = options.target 
-        ? await this.troubleshootTarget(options.target, options)
-        : await this.autoDetectIssues(options);
-
-      const results: TroubleshootResult[] = [];
-      
-      for (const issue of issues) {
-        const diagnosis = await this.diagnoseIssue(issue, options);
-        const solutions = await this.generateSolutions(issue, diagnosis, options);
-        
-        // Validate solutions with evidence
-        let evidence;
-        if (options.validateSolutions) {
-          const validation = await this.validator.validateClaim(
-            `Solution for ${issue.type}: ${solutions[0]?.description}`,
-            JSON.stringify(diagnosis),
-            { minConfidence: 0.6, includeExternalDocs: true }
-          );
-          evidence = validation;
-        }
-
-        results.push({
-          issue,
-          diagnosis,
-          solutions,
-          evidence
-        });
-      }
-
+      const results = await this.performDiagnosis(options, context);
       const summary = this.generateSummary(results);
+
+      // Validate diagnosis with evidence if requested
+      if (options.validate && results.length > 0) {
+        for (const result of results) {
+          const validation = await this.validator.validateClaim(
+            `Troubleshooting diagnosis: ${result.diagnosis.rootCause}`,
+            JSON.stringify({ issue: result.issue, solutions: result.solutions }),
+            { minConfidence: 0.6 }
+          );
+          result.evidence = validation;
+        }
+      }
 
       return {
         success: true,
@@ -104,826 +93,800 @@ export class TroubleshootCommand {
 
   private parseOptions(args: string[]): any {
     const options: any = {
-      target: null,
-      deep: false,
-      validateSolutions: false,
-      includePerformance: false,
-      includeMemory: false
+      error: null,
+      file: null,
+      logs: null,
+      validate: false,
+      auto: true
     };
 
-    for (let i = 0; i < args.length; i++) {
-      if (!args[i].startsWith('--')) {
-        options.target = args[i];
-      } else {
-        switch (args[i]) {
-          case '--deep':
-            options.deep = true;
-            break;
-          case '--validate':
-            options.validateSolutions = true;
-            break;
-          case '--performance':
-            options.includePerformance = true;
-            break;
-          case '--memory':
-            options.includeMemory = true;
-            break;
-        }
+    for (const arg of args) {
+      if (arg.startsWith('--error=')) {
+        options.error = arg.split('=')[1];
+      } else if (arg.startsWith('--file=')) {
+        options.file = arg.split('=')[1];
+      } else if (arg.startsWith('--logs=')) {
+        options.logs = arg.split('=')[1];
+      } else if (arg === '--validate') {
+        options.validate = true;
+      } else if (arg === '--no-auto') {
+        options.auto = false;
       }
     }
 
     return options;
   }
 
-  private async autoDetectIssues(options: any): Promise<DetectedIssue[]> {
-    const issues: DetectedIssue[] = [];
+  private async performDiagnosis(options: any, context: CommandContext): Promise<TroubleshootResult[]> {
+    const results: TroubleshootResult[] = [];
 
-    // Check for test failures
-    const testIssues = await this.checkTestFailures();
-    issues.push(...testIssues);
-
-    // Check for build errors
-    const buildIssues = await this.checkBuildErrors();
-    issues.push(...buildIssues);
-
-    // Check for runtime errors in logs
-    const logIssues = await this.checkLogs();
-    issues.push(...logIssues);
-
-    // Check for performance issues if requested
-    if (options.includePerformance) {
-      const perfIssues = await this.checkPerformance();
-      issues.push(...perfIssues);
+    // If no specific issue is provided, perform automatic detection
+    if (options.auto && !options.error && !options.file && !options.logs) {
+      const autoDetected = await this.autoDetectIssues(context);
+      results.push(...autoDetected);
     }
 
-    // Check for memory issues if requested
-    if (options.includeMemory) {
-      const memIssues = await this.checkMemory();
-      issues.push(...memIssues);
+    // If specific error provided, analyze it
+    if (options.error) {
+      const errorResult = await this.analyzeError(options.error, options.file);
+      results.push(errorResult);
     }
 
-    // Check for dependency issues
-    const depIssues = await this.checkDependencies();
-    issues.push(...depIssues);
+    // If specific file provided, analyze it
+    if (options.file) {
+      const fileResult = await this.analyzeFile(options.file);
+      results.push(fileResult);
+    }
 
-    return issues;
+    // If log file provided, analyze it
+    if (options.logs) {
+      const logResults = await this.analyzeLogs(options.logs);
+      results.push(...logResults);
+    }
+
+    return results;
   }
 
-  private async troubleshootTarget(target: string, options: any): Promise<DetectedIssue[]> {
-    const issues: DetectedIssue[] = [];
+  private async autoDetectIssues(context: CommandContext): Promise<TroubleshootResult[]> {
+    const results: TroubleshootResult[] = [];
 
     try {
-      const stats = await fs.stat(target);
-      
-      if (stats.isFile()) {
-        // Analyze specific file for issues
-        const fileIssues = await this.analyzeFile(target);
-        issues.push(...fileIssues);
-      } else if (stats.isDirectory()) {
-        // Analyze directory
-        const dirIssues = await this.analyzeDirectory(target);
-        issues.push(...dirIssues);
+      // Check for common Node.js/npm issues
+      const packageJsonPath = path.join(context.projectRoot, 'package.json');
+      if (await this.fileExists(packageJsonPath)) {
+        const packageIssues = await this.checkPackageIssues(packageJsonPath);
+        results.push(...packageIssues);
       }
-    } catch (error: any) {
-      // Target doesn't exist or can't be accessed
-      issues.push({
-        type: 'File Access Error',
-        description: `Cannot access ${target}: ${error.message}`,
-        severity: 'high'
-      });
+
+      // Check for TypeScript issues
+      const tsConfigPath = path.join(context.projectRoot, 'tsconfig.json');
+      if (await this.fileExists(tsConfigPath)) {
+        const tsIssues = await this.checkTypeScriptIssues(context.projectRoot);
+        results.push(...tsIssues);
+      }
+
+      // Check for git issues
+      const gitPath = path.join(context.projectRoot, '.git');
+      if (await this.fileExists(gitPath)) {
+        const gitIssues = await this.checkGitIssues(context.projectRoot);
+        results.push(...gitIssues);
+      }
+
+      // Check for process/port issues
+      const processIssues = await this.checkProcessIssues();
+      results.push(...processIssues);
+
+    } catch (error) {
+      // Auto-detection failed, but continue
     }
 
-    return issues;
+    return results;
   }
 
-  private async checkTestFailures(): Promise<DetectedIssue[]> {
-    const issues: DetectedIssue[] = [];
+  private async analyzeError(errorMessage: string, filePath?: string): Promise<TroubleshootResult> {
+    const issue: DetectedIssue = {
+      type: this.categorizeError(errorMessage),
+      description: errorMessage,
+      severity: this.determineSeverity(errorMessage),
+      stackTrace: errorMessage
+    };
 
-    try {
-      const { stdout, stderr } = await execAsync('npm test 2>&1', { 
-        env: { ...process.env, CI: 'true' }
-      });
-      
-      // Parse test output for failures
-      const failurePattern = /✖\s+(.+)\n\s+(.+)/g;
-      let match;
-      
-      while ((match = failurePattern.exec(stdout + stderr)) !== null) {
-        issues.push({
-          type: 'Test Failure',
-          description: match[1],
-          severity: 'high',
-          stackTrace: match[2]
-        });
-      }
-    } catch (error: any) {
-      // Tests failed to run
-      if (error.stdout || error.stderr) {
-        const output = error.stdout + error.stderr;
-        
-        // Extract specific test failures
-        const lines = output.split('\n');
-        for (const line of lines) {
-          if (line.includes('FAIL') || line.includes('✖')) {
-            issues.push({
-              type: 'Test Failure',
-              description: line.trim(),
-              severity: 'high'
-            });
-          }
-        }
-      }
+    if (filePath) {
+      issue.location = { file: filePath };
     }
 
-    return issues;
-  }
-
-  private async checkBuildErrors(): Promise<DetectedIssue[]> {
-    const issues: DetectedIssue[] = [];
-
-    try {
-      // Try TypeScript compilation
-      const { stderr } = await execAsync('npx tsc --noEmit 2>&1');
-      
-      if (stderr) {
-        const errorPattern = /(.+)\((\d+),(\d+)\):\s+error\s+TS\d+:\s+(.+)/g;
-        let match;
-        
-        while ((match = errorPattern.exec(stderr)) !== null) {
-          issues.push({
-            type: 'TypeScript Error',
-            description: match[4],
-            severity: 'critical',
-            location: {
-              file: match[1],
-              line: parseInt(match[2])
-            }
-          });
-        }
-      }
-    } catch (error: any) {
-      // Build failed
-      if (error.stderr) {
-        issues.push({
-          type: 'Build Error',
-          description: 'TypeScript compilation failed',
-          severity: 'critical',
-          stackTrace: error.stderr
-        });
-      }
-    }
-
-    return issues;
-  }
-
-  private async checkLogs(): Promise<DetectedIssue[]> {
-    const issues: DetectedIssue[] = [];
-    const logFiles = ['error.log', 'debug.log', 'app.log'];
-
-    for (const logFile of logFiles) {
-      try {
-        const content = await fs.readFile(logFile, 'utf-8');
-        const lines = content.split('\n').slice(-100); // Last 100 lines
-        
-        for (const line of lines) {
-          if (line.includes('ERROR') || line.includes('FATAL')) {
-            issues.push({
-              type: 'Runtime Error',
-              description: line.substring(0, 200),
-              severity: line.includes('FATAL') ? 'critical' : 'high'
-            });
-          } else if (line.includes('WARN')) {
-            issues.push({
-              type: 'Warning',
-              description: line.substring(0, 200),
-              severity: 'medium'
-            });
-          }
-        }
-      } catch {
-        // Log file doesn't exist
-      }
-    }
-
-    return issues;
-  }
-
-  private async checkPerformance(): Promise<DetectedIssue[]> {
-    const issues: DetectedIssue[] = [];
-
-    try {
-      // Run performance profiling
-      const { stdout } = await execAsync('npm run perf 2>&1 || echo "No perf script"');
-      
-      if (!stdout.includes('No perf script')) {
-        // Parse performance metrics
-        const slowPattern = /Slow operation:\s+(.+)\s+took\s+(\d+)ms/g;
-        let match;
-        
-        while ((match = slowPattern.exec(stdout)) !== null) {
-          const duration = parseInt(match[2]);
-          if (duration > 1000) {
-            issues.push({
-              type: 'Performance Issue',
-              description: `${match[1]} is slow (${duration}ms)`,
-              severity: duration > 5000 ? 'high' : 'medium'
-            });
-          }
-        }
-      }
-    } catch {
-      // Performance check not available
-    }
-
-    return issues;
-  }
-
-  private async checkMemory(): Promise<DetectedIssue[]> {
-    const issues: DetectedIssue[] = [];
-
-    try {
-      // Check for memory leaks in heap snapshots
-      const heapSnapshot = path.join(process.cwd(), 'heap-snapshot.heapsnapshot');
-      const stats = await fs.stat(heapSnapshot);
-      
-      if (stats.size > 100 * 1024 * 1024) { // > 100MB
-        issues.push({
-          type: 'Memory Issue',
-          description: 'Large heap snapshot detected - possible memory leak',
-          severity: 'high'
-        });
-      }
-    } catch {
-      // No heap snapshot available
-    }
-
-    // Check current memory usage
-    const memUsage = process.memoryUsage();
-    if (memUsage.heapUsed > 500 * 1024 * 1024) { // > 500MB
-      issues.push({
-        type: 'Memory Issue',
-        description: `High memory usage: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`,
-        severity: 'medium'
-      });
-    }
-
-    return issues;
-  }
-
-  private async checkDependencies(): Promise<DetectedIssue[]> {
-    const issues: DetectedIssue[] = [];
-
-    try {
-      // Check for outdated dependencies
-      const { stdout } = await execAsync('npm outdated --json 2>&1 || echo "{}"');
-      const outdated = JSON.parse(stdout);
-      
-      for (const [pkg, info] of Object.entries(outdated) as any) {
-        if (info.wanted !== info.latest) {
-          issues.push({
-            type: 'Outdated Dependency',
-            description: `${pkg}: ${info.current} → ${info.latest}`,
-            severity: 'low'
-          });
-        }
-      }
-
-      // Check for vulnerabilities
-      const { stdout: auditOut } = await execAsync('npm audit --json 2>&1 || echo "{}"');
-      const audit = JSON.parse(auditOut);
-      
-      if (audit.metadata?.vulnerabilities) {
-        const vulns = audit.metadata.vulnerabilities;
-        if (vulns.critical > 0) {
-          issues.push({
-            type: 'Security Vulnerability',
-            description: `${vulns.critical} critical vulnerabilities found`,
-            severity: 'critical'
-          });
-        }
-        if (vulns.high > 0) {
-          issues.push({
-            type: 'Security Vulnerability',
-            description: `${vulns.high} high severity vulnerabilities found`,
-            severity: 'high'
-          });
-        }
-      }
-    } catch {
-      // Dependency check failed
-    }
-
-    return issues;
-  }
-
-  private async analyzeFile(file: string): Promise<DetectedIssue[]> {
-    const issues: DetectedIssue[] = [];
-    
-    try {
-      const content = await fs.readFile(file, 'utf-8');
-      const lines = content.split('\n');
-      
-      // Check for syntax errors
-      if (file.endsWith('.js') || file.endsWith('.ts')) {
-        try {
-          // Try to parse as JavaScript
-          new Function(content);
-        } catch (error: any) {
-          issues.push({
-            type: 'Syntax Error',
-            description: error.message,
-            severity: 'critical',
-            location: { file }
-          });
-        }
-      }
-
-      // Check for common issues
-      lines.forEach((line, index) => {
-        // Infinite loops
-        if (line.match(/while\s*\(\s*true\s*\)/) && !line.includes('break')) {
-          issues.push({
-            type: 'Potential Infinite Loop',
-            description: 'while(true) without obvious break condition',
-            severity: 'high',
-            location: { file, line: index + 1 }
-          });
-        }
-
-        // Unhandled promises
-        if (line.includes('.then(') && !line.includes('.catch(')) {
-          issues.push({
-            type: 'Unhandled Promise',
-            description: 'Promise without error handling',
-            severity: 'medium',
-            location: { file, line: index + 1 }
-          });
-        }
-      });
-    } catch (error: any) {
-      issues.push({
-        type: 'File Read Error',
-        description: error.message,
-        severity: 'high',
-        location: { file }
-      });
-    }
-
-    return issues;
-  }
-
-  private async analyzeDirectory(dir: string): Promise<DetectedIssue[]> {
-    const issues: DetectedIssue[] = [];
-    
-    try {
-      const entries = await fs.readdir(dir, { withFileTypes: true });
-      
-      for (const entry of entries) {
-        if (entry.isFile() && (entry.name.endsWith('.js') || entry.name.endsWith('.ts'))) {
-          const filePath = path.join(dir, entry.name);
-          const fileIssues = await this.analyzeFile(filePath);
-          issues.push(...fileIssues);
-        }
-      }
-    } catch (error: any) {
-      issues.push({
-        type: 'Directory Read Error',
-        description: error.message,
-        severity: 'high'
-      });
-    }
-
-    return issues;
-  }
-
-  private async diagnoseIssue(issue: DetectedIssue, options: any): Promise<Diagnosis> {
-    let rootCause = 'Unknown';
-    let affectedComponents: string[] = [];
-    let impact = 'Unknown';
-    let confidence = 0.5;
-
-    switch (issue.type) {
-      case 'Test Failure':
-        rootCause = await this.diagnoseTestFailure(issue);
-        affectedComponents = ['Test Suite', 'Implementation'];
-        impact = 'CI/CD pipeline blocked';
-        confidence = 0.8;
-        break;
-
-      case 'TypeScript Error':
-        rootCause = 'Type system violation';
-        affectedComponents = [issue.location?.file || 'Unknown file'];
-        impact = 'Build failure';
-        confidence = 0.95;
-        break;
-
-      case 'Runtime Error':
-        rootCause = await this.diagnoseRuntimeError(issue);
-        affectedComponents = this.identifyAffectedComponents(issue);
-        impact = 'Application crash or malfunction';
-        confidence = 0.7;
-        break;
-
-      case 'Performance Issue':
-        rootCause = 'Inefficient algorithm or resource usage';
-        affectedComponents = ['Performance-critical path'];
-        impact = 'Slow response times';
-        confidence = 0.6;
-        break;
-
-      case 'Memory Issue':
-        rootCause = 'Memory leak or excessive allocation';
-        affectedComponents = ['Memory management'];
-        impact = 'Out of memory errors';
-        confidence = 0.65;
-        break;
-
-      case 'Security Vulnerability':
-        rootCause = 'Vulnerable dependency';
-        affectedComponents = ['Dependencies'];
-        impact = 'Security risk';
-        confidence = 0.9;
-        break;
-
-      default:
-        rootCause = `${issue.type} detected`;
-        confidence = 0.4;
-    }
-
-    if (options.deep) {
-      // Perform deeper analysis
-      const deepAnalysis = await this.performDeepAnalysis(issue);
-      if (deepAnalysis.rootCause) rootCause = deepAnalysis.rootCause;
-      if (deepAnalysis.confidence) confidence = deepAnalysis.confidence;
-    }
+    const diagnosis = await this.diagnoseIssue(issue);
+    const solutions = await this.generateSolutions(issue, diagnosis);
 
     return {
-      rootCause,
-      affectedComponents,
-      impact,
-      confidence
+      issue,
+      diagnosis,
+      solutions
     };
   }
 
-  private async diagnoseTestFailure(issue: DetectedIssue): Promise<string> {
-    if (issue.stackTrace) {
-      if (issue.stackTrace.includes('TypeError')) {
-        return 'Type error in test or implementation';
-      }
-      if (issue.stackTrace.includes('ReferenceError')) {
-        return 'Undefined variable or function';
-      }
-      if (issue.stackTrace.includes('AssertionError')) {
-        return 'Assertion failed - expected vs actual mismatch';
-      }
+  private async analyzeFile(filePath: string): Promise<TroubleshootResult> {
+    const content = await fs.readFile(filePath, 'utf-8');
+    const issues = this.scanFileForIssues(content, filePath);
+
+    if (issues.length === 0) {
+      return {
+        issue: {
+          type: 'no-issues',
+          description: 'No obvious issues detected in the file',
+          severity: 'low'
+        },
+        diagnosis: {
+          rootCause: 'File appears to be healthy',
+          affectedComponents: [filePath],
+          impact: 'None',
+          confidence: 0.8
+        },
+        solutions: []
+      };
     }
-    return 'Test expectation not met';
+
+    // Return the most severe issue found
+    const primaryIssue = issues.sort((a, b) => this.getSeverityScore(b.severity) - this.getSeverityScore(a.severity))[0];
+    const diagnosis = await this.diagnoseIssue(primaryIssue);
+    const solutions = await this.generateSolutions(primaryIssue, diagnosis);
+
+    return {
+      issue: primaryIssue,
+      diagnosis,
+      solutions
+    };
   }
 
-  private async diagnoseRuntimeError(issue: DetectedIssue): Promise<string> {
-    const description = issue.description.toLowerCase();
+  private async analyzeLogs(logPath: string): Promise<TroubleshootResult[]> {
+    const results: TroubleshootResult[] = [];
     
-    if (description.includes('cannot read property')) {
-      return 'Null or undefined reference';
-    }
-    if (description.includes('connection refused')) {
-      return 'Service unavailable or network issue';
-    }
-    if (description.includes('timeout')) {
-      return 'Operation took too long';
-    }
-    if (description.includes('permission denied')) {
-      return 'Insufficient permissions';
-    }
-    
-    return 'Runtime exception';
-  }
+    try {
+      const logContent = await fs.readFile(logPath, 'utf-8');
+      const logLines = logContent.split('\n');
+      
+      const errors = this.extractErrorsFromLogs(logLines);
+      
+      for (const error of errors) {
+        const issue: DetectedIssue = {
+          type: 'log-error',
+          description: error.message,
+          severity: error.severity,
+          location: {
+            file: logPath,
+            line: error.lineNumber
+          }
+        };
 
-  private identifyAffectedComponents(issue: DetectedIssue): string[] {
-    const components: string[] = [];
-    
-    if (issue.location?.file) {
-      components.push(path.basename(issue.location.file));
-    }
-    if (issue.location?.function) {
-      components.push(issue.location.function);
-    }
-    
-    // Extract components from stack trace
-    if (issue.stackTrace) {
-      const filePattern = /at\s+.*?\s+\((.+?):\d+:\d+\)/g;
-      let match;
-      while ((match = filePattern.exec(issue.stackTrace)) !== null) {
-        components.push(path.basename(match[1]));
+        const diagnosis = await this.diagnoseIssue(issue);
+        const solutions = await this.generateSolutions(issue, diagnosis);
+
+        results.push({
+          issue,
+          diagnosis,
+          solutions
+        });
       }
+    } catch (error) {
+      results.push({
+        issue: {
+          type: 'log-access-error',
+          description: `Unable to read log file: ${error}`,
+          severity: 'high'
+        },
+        diagnosis: {
+          rootCause: 'Log file is inaccessible or corrupted',
+          affectedComponents: [logPath],
+          impact: 'Cannot analyze application logs',
+          confidence: 0.9
+        },
+        solutions: [
+          {
+            description: 'Check log file permissions and path',
+            steps: [
+              'Verify the log file path is correct',
+              'Check file permissions',
+              'Ensure the log file is not locked by another process'
+            ],
+            confidence: 0.8,
+            estimatedTime: '5 minutes',
+            riskLevel: 'low'
+          }
+        ]
+      });
     }
-    
-    return [...new Set(components)];
+
+    return results;
   }
 
-  private async performDeepAnalysis(issue: DetectedIssue): Promise<any> {
-    // Simulate deep analysis
-    const analysis: any = {};
+  private async checkPackageIssues(packageJsonPath: string): Promise<TroubleshootResult[]> {
+    const results: TroubleshootResult[] = [];
     
-    // Try to find related issues
-    if (issue.location?.file) {
+    try {
+      const packageContent = await fs.readFile(packageJsonPath, 'utf-8');
+      const packageJson = JSON.parse(packageContent);
+
+      // Check for missing node_modules
+      const nodeModulesPath = path.join(path.dirname(packageJsonPath), 'node_modules');
+      if (!await this.fileExists(nodeModulesPath)) {
+        results.push({
+          issue: {
+            type: 'missing-dependencies',
+            description: 'node_modules directory is missing',
+            severity: 'high'
+          },
+          diagnosis: {
+            rootCause: 'Dependencies not installed',
+            affectedComponents: ['node_modules'],
+            impact: 'Application cannot run',
+            confidence: 0.95
+          },
+          solutions: [
+            {
+              description: 'Install dependencies',
+              steps: ['Run npm install or yarn install'],
+              confidence: 0.9,
+              estimatedTime: '2-5 minutes',
+              riskLevel: 'low'
+            }
+          ]
+        });
+      }
+
+      // Check for security vulnerabilities
       try {
-        const content = await fs.readFile(issue.location.file, 'utf-8');
+        const { stdout } = await execAsync('npm audit --json', { 
+          cwd: path.dirname(packageJsonPath),
+          timeout: 10000 
+        });
+        const auditResult = JSON.parse(stdout);
         
-        // Look for patterns that might indicate root cause
-        if (content.includes('TODO') || content.includes('FIXME')) {
-          analysis.rootCause = 'Incomplete implementation (TODO/FIXME found)';
-          analysis.confidence = 0.75;
+        if (auditResult.vulnerabilities && Object.keys(auditResult.vulnerabilities).length > 0) {
+          results.push({
+            issue: {
+              type: 'security-vulnerabilities',
+              description: `${Object.keys(auditResult.vulnerabilities).length} security vulnerabilities found`,
+              severity: 'medium'
+            },
+            diagnosis: {
+              rootCause: 'Outdated or vulnerable dependencies',
+              affectedComponents: Object.keys(auditResult.vulnerabilities),
+              impact: 'Potential security risks',
+              confidence: 0.85
+            },
+            solutions: [
+              {
+                description: 'Fix security vulnerabilities',
+                steps: [
+                  'Run npm audit fix',
+                  'Review and update vulnerable packages manually if needed'
+                ],
+                confidence: 0.8,
+                estimatedTime: '5-15 minutes',
+                riskLevel: 'low'
+              }
+            ]
+          });
         }
-      } catch {
-        // File not accessible
+      } catch (auditError) {
+        // Audit failed, but continue
       }
+
+    } catch (error) {
+      results.push({
+        issue: {
+          type: 'package-json-error',
+          description: 'package.json is malformed or unreadable',
+          severity: 'high'
+        },
+        diagnosis: {
+          rootCause: 'Invalid package.json syntax',
+          affectedComponents: ['package.json'],
+          impact: 'Cannot manage dependencies',
+          confidence: 0.9
+        },
+        solutions: [
+          {
+            description: 'Fix package.json syntax',
+            steps: [
+              'Validate JSON syntax',
+              'Check for missing commas or quotes',
+              'Use a JSON validator tool'
+            ],
+            confidence: 0.8,
+            estimatedTime: '5-10 minutes',
+            riskLevel: 'medium'
+          }
+        ]
+      });
     }
-    
-    return analysis;
+
+    return results;
   }
 
-  private async generateSolutions(
-    issue: DetectedIssue,
-    diagnosis: Diagnosis,
-    options: any
-  ): Promise<Solution[]> {
+  private async checkTypeScriptIssues(projectRoot: string): Promise<TroubleshootResult[]> {
+    const results: TroubleshootResult[] = [];
+
+    try {
+      const { stdout, stderr } = await execAsync('npx tsc --noEmit', { 
+        cwd: projectRoot,
+        timeout: 30000 
+      });
+
+      if (stderr) {
+        const errors = this.parseTypeScriptErrors(stderr);
+        
+        for (const error of errors) {
+          results.push({
+            issue: {
+              type: 'typescript-error',
+              description: error.message,
+              severity: 'medium',
+              location: {
+                file: error.file,
+                line: error.line
+              }
+            },
+            diagnosis: {
+              rootCause: 'TypeScript compilation errors',
+              affectedComponents: [error.file || 'unknown'],
+              impact: 'Code will not compile',
+              confidence: 0.9
+            },
+            solutions: [
+              {
+                description: 'Fix TypeScript errors',
+                steps: [
+                  'Open the affected file',
+                  'Review the error message',
+                  'Fix type annotations or logic as needed'
+                ],
+                confidence: 0.7,
+                estimatedTime: '5-30 minutes per error',
+                riskLevel: 'low'
+              }
+            ]
+          });
+        }
+      }
+    } catch (error) {
+      // TypeScript check failed, but this might be expected
+    }
+
+    return results;
+  }
+
+  private async checkGitIssues(projectRoot: string): Promise<TroubleshootResult[]> {
+    const results: TroubleshootResult[] = [];
+
+    try {
+      // Check for uncommitted changes
+      const { stdout: statusOutput } = await execAsync('git status --porcelain', { 
+        cwd: projectRoot,
+        timeout: 5000 
+      });
+
+      if (statusOutput.trim()) {
+        results.push({
+          issue: {
+            type: 'uncommitted-changes',
+            description: 'There are uncommitted changes in the repository',
+            severity: 'low'
+          },
+          diagnosis: {
+            rootCause: 'Working directory has modified files',
+            affectedComponents: statusOutput.trim().split('\n').map(line => line.substring(3)),
+            impact: 'Changes may be lost',
+            confidence: 0.95
+          },
+          solutions: [
+            {
+              description: 'Commit or stash changes',
+              steps: [
+                'Review changed files with git status',
+                'Add files with git add',
+                'Commit with git commit -m "message"',
+                'Or stash with git stash'
+              ],
+              confidence: 0.9,
+              estimatedTime: '2-5 minutes',
+              riskLevel: 'low'
+            }
+          ]
+        });
+      }
+
+      // Check for merge conflicts
+      const { stdout: conflictOutput } = await execAsync('git diff --name-only --diff-filter=U', { 
+        cwd: projectRoot,
+        timeout: 5000 
+      });
+
+      if (conflictOutput.trim()) {
+        results.push({
+          issue: {
+            type: 'merge-conflicts',
+            description: 'Merge conflicts detected',
+            severity: 'high'
+          },
+          diagnosis: {
+            rootCause: 'Unresolved merge conflicts',
+            affectedComponents: conflictOutput.trim().split('\n'),
+            impact: 'Cannot complete merge operation',
+            confidence: 0.95
+          },
+          solutions: [
+            {
+              description: 'Resolve merge conflicts',
+              steps: [
+                'Open conflicted files',
+                'Look for conflict markers (<<<<<<< ======= >>>>>>>)',
+                'Choose the correct version or merge manually',
+                'Remove conflict markers',
+                'Add and commit resolved files'
+              ],
+              confidence: 0.8,
+              estimatedTime: '10-30 minutes',
+              riskLevel: 'medium'
+            }
+          ]
+        });
+      }
+    } catch (error) {
+      // Git commands failed, repository might not be initialized
+    }
+
+    return results;
+  }
+
+  private async checkProcessIssues(): Promise<TroubleshootResult[]> {
+    const results: TroubleshootResult[] = [];
+
+    try {
+      // Check for common port conflicts (3000, 8000, 8080, 5000)
+      const commonPorts = [3000, 8000, 8080, 5000];
+      
+      for (const port of commonPorts) {
+        try {
+          const { stdout } = await execAsync(`lsof -i :${port}`, { timeout: 5000 });
+          if (stdout.trim()) {
+            results.push({
+              issue: {
+                type: 'port-conflict',
+                description: `Port ${port} is already in use`,
+                severity: 'medium'
+              },
+              diagnosis: {
+                rootCause: `Another process is using port ${port}`,
+                affectedComponents: [`port-${port}`],
+                impact: 'Application cannot start on this port',
+                confidence: 0.9
+              },
+              solutions: [
+                {
+                  description: 'Free up the port',
+                  steps: [
+                    `Find the process using: lsof -i :${port}`,
+                    'Kill the process if safe to do so',
+                    'Or configure your application to use a different port'
+                  ],
+                  confidence: 0.8,
+                  estimatedTime: '2-5 minutes',
+                  riskLevel: 'low'
+                }
+              ]
+            });
+          }
+        } catch (error) {
+          // Port check failed, continue
+        }
+      }
+    } catch (error) {
+      // Process checking not available on this system
+    }
+
+    return results;
+  }
+
+  private categorizeError(errorMessage: string): string {
+    if (errorMessage.includes('ENOENT')) return 'file-not-found';
+    if (errorMessage.includes('EADDRINUSE')) return 'port-in-use';
+    if (errorMessage.includes('EACCES')) return 'permission-denied';
+    if (errorMessage.includes('MODULE_NOT_FOUND')) return 'missing-module';
+    if (errorMessage.includes('SyntaxError')) return 'syntax-error';
+    if (errorMessage.includes('TypeError')) return 'type-error';
+    if (errorMessage.includes('ReferenceError')) return 'reference-error';
+    if (errorMessage.includes('ECONNREFUSED')) return 'connection-refused';
+    if (errorMessage.includes('timeout')) return 'timeout';
+    return 'unknown-error';
+  }
+
+  private determineSeverity(errorMessage: string): 'critical' | 'high' | 'medium' | 'low' {
+    if (errorMessage.includes('FATAL') || errorMessage.includes('CRITICAL')) return 'critical';
+    if (errorMessage.includes('ERROR') || errorMessage.includes('FAIL')) return 'high';
+    if (errorMessage.includes('WARN') || errorMessage.includes('WARNING')) return 'medium';
+    return 'low';
+  }
+
+  private async diagnoseIssue(issue: DetectedIssue): Promise<Diagnosis> {
+    const diagnosis: Diagnosis = {
+      rootCause: 'Unknown',
+      affectedComponents: [],
+      impact: 'Unknown impact',
+      confidence: 0.5
+    };
+
+    switch (issue.type) {
+      case 'file-not-found':
+        diagnosis.rootCause = 'Required file or directory does not exist';
+        diagnosis.impact = 'Application cannot access required resources';
+        diagnosis.confidence = 0.9;
+        break;
+      
+      case 'port-in-use':
+        diagnosis.rootCause = 'Another process is already using the required port';
+        diagnosis.impact = 'Application cannot start or bind to network port';
+        diagnosis.confidence = 0.95;
+        break;
+      
+      case 'missing-module':
+        diagnosis.rootCause = 'Required Node.js module is not installed';
+        diagnosis.impact = 'Application cannot import required functionality';
+        diagnosis.confidence = 0.9;
+        break;
+      
+      case 'syntax-error':
+        diagnosis.rootCause = 'Code contains invalid syntax';
+        diagnosis.impact = 'Code cannot be parsed or executed';
+        diagnosis.confidence = 0.95;
+        break;
+      
+      case 'type-error':
+        diagnosis.rootCause = 'Variable or object is not of expected type';
+        diagnosis.impact = 'Runtime error causing application failure';
+        diagnosis.confidence = 0.8;
+        break;
+      
+      default:
+        diagnosis.rootCause = 'Issue requires manual investigation';
+        diagnosis.impact = 'Unknown impact on application functionality';
+        diagnosis.confidence = 0.3;
+    }
+
+    if (issue.location?.file) {
+      diagnosis.affectedComponents.push(issue.location.file);
+    }
+
+    return diagnosis;
+  }
+
+  private async generateSolutions(issue: DetectedIssue, diagnosis: Diagnosis): Promise<Solution[]> {
     const solutions: Solution[] = [];
 
     switch (issue.type) {
-      case 'Test Failure':
-        solutions.push(...this.generateTestSolutions(issue, diagnosis));
+      case 'file-not-found':
+        solutions.push({
+          description: 'Create the missing file or directory',
+          steps: [
+            'Verify the expected file path',
+            'Create the missing file or directory',
+            'Ensure proper permissions are set'
+          ],
+          confidence: 0.8,
+          estimatedTime: '2-5 minutes',
+          riskLevel: 'low'
+        });
         break;
 
-      case 'TypeScript Error':
-        solutions.push(...this.generateTypeScriptSolutions(issue, diagnosis));
+      case 'port-in-use':
+        solutions.push({
+          description: 'Use a different port',
+          steps: [
+            'Find available port numbers',
+            'Update application configuration to use different port',
+            'Restart the application'
+          ],
+          confidence: 0.9,
+          estimatedTime: '2-5 minutes',
+          riskLevel: 'low'
+        });
+        solutions.push({
+          description: 'Stop the conflicting process',
+          steps: [
+            'Identify the process using the port',
+            'Safely terminate the process if appropriate',
+            'Restart your application'
+          ],
+          confidence: 0.7,
+          estimatedTime: '5-10 minutes',
+          riskLevel: 'medium'
+        });
         break;
 
-      case 'Runtime Error':
-        solutions.push(...this.generateRuntimeSolutions(issue, diagnosis));
+      case 'missing-module':
+        solutions.push({
+          description: 'Install the missing module',
+          steps: [
+            'Run npm install <module-name>',
+            'Or add to package.json and run npm install',
+            'Verify installation was successful'
+          ],
+          confidence: 0.9,
+          estimatedTime: '2-5 minutes',
+          riskLevel: 'low'
+        });
         break;
 
-      case 'Performance Issue':
-        solutions.push(...this.generatePerformanceSolutions(issue, diagnosis));
-        break;
-
-      case 'Memory Issue':
-        solutions.push(...this.generateMemorySolutions(issue, diagnosis));
-        break;
-
-      case 'Security Vulnerability':
-        solutions.push(...this.generateSecuritySolutions(issue, diagnosis));
+      case 'syntax-error':
+        solutions.push({
+          description: 'Fix syntax errors in the code',
+          steps: [
+            'Open the file mentioned in the error',
+            'Go to the line number indicated',
+            'Review and correct syntax errors',
+            'Use linting tools to catch similar issues'
+          ],
+          confidence: 0.8,
+          estimatedTime: '5-15 minutes',
+          riskLevel: 'low'
+        });
         break;
 
       default:
         solutions.push({
           description: 'Manual investigation required',
           steps: [
-            `Review ${issue.type}`,
-            'Check related documentation',
-            'Consult team members'
+            'Review error message carefully',
+            'Check application logs for more context',
+            'Search documentation or online resources',
+            'Consider reaching out for additional support'
           ],
-          confidence: 0.3,
-          estimatedTime: '30min',
-          riskLevel: 'low'
+          confidence: 0.4,
+          estimatedTime: '15-60 minutes',
+          riskLevel: 'medium'
         });
     }
 
-    // Sort by confidence
-    solutions.sort((a, b) => b.confidence - a.confidence);
-
-    return solutions.slice(0, 3); // Return top 3 solutions
-  }
-
-  private generateTestSolutions(issue: DetectedIssue, diagnosis: Diagnosis): Solution[] {
-    const solutions: Solution[] = [];
-
-    if (diagnosis.rootCause.includes('Type error')) {
-      solutions.push({
-        description: 'Fix type mismatch',
-        steps: [
-          'Check test data types',
-          'Verify function signatures',
-          'Update test expectations'
-        ],
-        confidence: 0.8,
-        estimatedTime: '15min',
-        riskLevel: 'low'
-      });
-    }
-
-    if (diagnosis.rootCause.includes('Assertion failed')) {
-      solutions.push({
-        description: 'Update test expectations',
-        steps: [
-          'Review actual vs expected values',
-          'Verify business logic',
-          'Update assertions or fix implementation'
-        ],
-        confidence: 0.75,
-        estimatedTime: '20min',
-        riskLevel: 'low'
-      });
-    }
-
-    solutions.push({
-      description: 'Debug test in isolation',
-      steps: [
-        'Run single test with --inspect',
-        'Add console.log statements',
-        'Use debugger to step through'
-      ],
-      confidence: 0.6,
-      estimatedTime: '30min',
-      riskLevel: 'low'
-    });
-
     return solutions;
   }
 
-  private generateTypeScriptSolutions(issue: DetectedIssue, diagnosis: Diagnosis): Solution[] {
-    const solutions: Solution[] = [];
+  private scanFileForIssues(content: string, filePath: string): DetectedIssue[] {
+    const issues: DetectedIssue[] = [];
+    const lines = content.split('\n');
 
-    solutions.push({
-      description: 'Fix type annotations',
-      steps: [
-        `Open ${issue.location?.file}`,
-        `Go to line ${issue.location?.line}`,
-        'Add or correct type annotations',
-        'Run tsc to verify'
-      ],
-      confidence: 0.9,
-      estimatedTime: '10min',
-      riskLevel: 'low'
+    lines.forEach((line, index) => {
+      // Check for common issues
+      if (line.includes('console.log') && filePath.includes('prod')) {
+        issues.push({
+          type: 'debug-code-in-production',
+          description: 'Debug console.log found in production code',
+          severity: 'medium',
+          location: { file: filePath, line: index + 1 }
+        });
+      }
+
+      if (line.includes('TODO') || line.includes('FIXME')) {
+        issues.push({
+          type: 'unfinished-code',
+          description: 'Unfinished code detected (TODO/FIXME)',
+          severity: 'low',
+          location: { file: filePath, line: index + 1 }
+        });
+      }
+
+      if (line.includes('throw new Error') && !line.includes('//')) {
+        issues.push({
+          type: 'unhandled-error',
+          description: 'Potentially unhandled error throw',
+          severity: 'medium',
+          location: { file: filePath, line: index + 1 }
+        });
+      }
     });
 
-    solutions.push({
-      description: 'Use type assertion as workaround',
-      steps: [
-        'Add "as Type" assertion',
-        'Document why assertion is needed',
-        'Plan proper fix for later'
-      ],
-      confidence: 0.5,
-      estimatedTime: '5min',
-      riskLevel: 'medium'
-    });
-
-    return solutions;
+    return issues;
   }
 
-  private generateRuntimeSolutions(issue: DetectedIssue, diagnosis: Diagnosis): Solution[] {
-    const solutions: Solution[] = [];
+  private extractErrorsFromLogs(logLines: string[]): Array<{message: string, severity: 'critical' | 'high' | 'medium' | 'low', lineNumber: number}> {
+    const errors: Array<{message: string, severity: 'critical' | 'high' | 'medium' | 'low', lineNumber: number}> = [];
 
-    if (diagnosis.rootCause.includes('Null or undefined')) {
-      solutions.push({
-        description: 'Add null checks',
-        steps: [
-          'Identify nullable variables',
-          'Add optional chaining (?.) or null checks',
-          'Initialize variables properly'
-        ],
-        confidence: 0.85,
-        estimatedTime: '15min',
-        riskLevel: 'low'
-      });
+    logLines.forEach((line, index) => {
+      const lowerLine = line.toLowerCase();
+      
+      if (lowerLine.includes('error') || lowerLine.includes('exception')) {
+        errors.push({
+          message: line.trim(),
+          severity: 'high',
+          lineNumber: index + 1
+        });
+      } else if (lowerLine.includes('fatal') || lowerLine.includes('critical')) {
+        errors.push({
+          message: line.trim(),
+          severity: 'critical',
+          lineNumber: index + 1
+        });
+      } else if (lowerLine.includes('warn') || lowerLine.includes('warning')) {
+        errors.push({
+          message: line.trim(),
+          severity: 'medium',
+          lineNumber: index + 1
+        });
+      }
+    });
+
+    return errors;
+  }
+
+  private parseTypeScriptErrors(stderr: string): Array<{message: string, file?: string, line?: number}> {
+    const errors: Array<{message: string, file?: string, line?: number}> = [];
+    const lines = stderr.split('\n');
+
+    for (const line of lines) {
+      const match = line.match(/^(.+?)(\((\d+),(\d+)\))?: error TS\d+: (.+)$/);
+      if (match) {
+        errors.push({
+          message: match[5],
+          file: match[1],
+          line: match[3] ? parseInt(match[3]) : undefined
+        });
+      }
     }
 
-    if (diagnosis.rootCause.includes('network')) {
-      solutions.push({
-        description: 'Implement retry logic',
-        steps: [
-          'Add exponential backoff',
-          'Set reasonable timeout',
-          'Add error handling'
-        ],
-        confidence: 0.7,
-        estimatedTime: '30min',
-        riskLevel: 'low'
-      });
+    return errors;
+  }
+
+  private getSeverityScore(severity: string): number {
+    switch (severity) {
+      case 'critical': return 4;
+      case 'high': return 3;
+      case 'medium': return 2;
+      case 'low': return 1;
+      default: return 0;
     }
-
-    solutions.push({
-      description: 'Add comprehensive error handling',
-      steps: [
-        'Wrap in try-catch',
-        'Log detailed error information',
-        'Provide graceful fallback'
-      ],
-      confidence: 0.6,
-      estimatedTime: '20min',
-      riskLevel: 'low'
-    });
-
-    return solutions;
   }
 
-  private generatePerformanceSolutions(issue: DetectedIssue, diagnosis: Diagnosis): Solution[] {
-    return [
-      {
-        description: 'Optimize algorithm',
-        steps: [
-          'Profile code to find bottleneck',
-          'Use more efficient data structures',
-          'Implement caching'
-        ],
-        confidence: 0.7,
-        estimatedTime: '2hr',
-        riskLevel: 'medium'
-      },
-      {
-        description: 'Add performance monitoring',
-        steps: [
-          'Add timing measurements',
-          'Set up performance budgets',
-          'Create alerts for slowdowns'
-        ],
-        confidence: 0.6,
-        estimatedTime: '1hr',
-        riskLevel: 'low'
-      }
-    ];
-  }
-
-  private generateMemorySolutions(issue: DetectedIssue, diagnosis: Diagnosis): Solution[] {
-    return [
-      {
-        description: 'Fix memory leak',
-        steps: [
-          'Take heap snapshots',
-          'Compare allocations',
-          'Remove event listeners',
-          'Clear caches properly'
-        ],
-        confidence: 0.65,
-        estimatedTime: '3hr',
-        riskLevel: 'medium'
-      },
-      {
-        description: 'Optimize memory usage',
-        steps: [
-          'Use WeakMap for caches',
-          'Implement pagination',
-          'Stream large data'
-        ],
-        confidence: 0.6,
-        estimatedTime: '2hr',
-        riskLevel: 'low'
-      }
-    ];
-  }
-
-  private generateSecuritySolutions(issue: DetectedIssue, diagnosis: Diagnosis): Solution[] {
-    return [
-      {
-        description: 'Update vulnerable dependencies',
-        steps: [
-          'Run npm audit fix',
-          'Update package.json',
-          'Test thoroughly',
-          'Deploy update'
-        ],
-        confidence: 0.9,
-        estimatedTime: '30min',
-        riskLevel: 'low'
-      },
-      {
-        description: 'Apply security patch',
-        steps: [
-          'Check for patches',
-          'Apply patch manually',
-          'Verify fix'
-        ],
-        confidence: 0.7,
-        estimatedTime: '1hr',
-        riskLevel: 'medium'
-      }
-    ];
+  private async fileExists(filePath: string): Promise<boolean> {
+    try {
+      await fs.access(filePath);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   private generateSummary(results: TroubleshootResult[]): string {
+    if (results.length === 0) {
+      return 'No issues detected. System appears to be healthy.';
+    }
+
     let summary = `Found ${results.length} issue(s)\n\n`;
 
-    for (const result of results) {
-      summary += `[${result.issue.severity.toUpperCase()}] ${result.issue.type}\n`;
-      summary += `  ${result.issue.description}\n`;
-      summary += `  Root Cause: ${result.diagnosis.rootCause}\n`;
-      
-      if (result.solutions.length > 0) {
-        summary += `  Top Solution: ${result.solutions[0].description} `;
-        summary += `(${Math.round(result.solutions[0].confidence * 100)}% confidence)\n`;
-      }
-      
-      summary += '\n';
+    const severityCounts = {
+      critical: 0,
+      high: 0,
+      medium: 0,
+      low: 0
+    };
+
+    results.forEach(result => {
+      severityCounts[result.issue.severity]++;
+    });
+
+    if (severityCounts.critical > 0) {
+      summary += `🚨 Critical: ${severityCounts.critical}\n`;
+    }
+    if (severityCounts.high > 0) {
+      summary += `🔥 High: ${severityCounts.high}\n`;
+    }
+    if (severityCounts.medium > 0) {
+      summary += `⚠️  Medium: ${severityCounts.medium}\n`;
+    }
+    if (severityCounts.low > 0) {
+      summary += `ℹ️  Low: ${severityCounts.low}\n`;
     }
 
-    // Add summary statistics
-    const critical = results.filter(r => r.issue.severity === 'critical').length;
-    const high = results.filter(r => r.issue.severity === 'high').length;
-    
-    if (critical > 0 || high > 0) {
-      summary += `⚠️  ${critical} critical, ${high} high severity issues require immediate attention`;
-    }
+    const topIssue = results[0];
+    summary += `\nTop issue: ${topIssue.issue.description}`;
 
     return summary;
   }
