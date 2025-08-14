@@ -111,15 +111,32 @@ export class ContainerManager extends EventEmitter {
    */
   async initialize(): Promise<void> {
     try {
-      // Create preferred engine or auto-detect
-      if (this.config.preferredEngine) {
-        this.engine = await ContainerEngineFactory.createEngine(this.config.preferredEngine);
-      } else {
-        this.engine = await ContainerEngineFactory.createPreferredEngine();
-      }
+      // Create preferred engine or auto-detect with timeout for CI
+      const createTimeout = process.env.CI ? 5000 : 15000; // 5s for CI, 15s for local
+      
+      const enginePromise = this.config.preferredEngine 
+        ? ContainerEngineFactory.createEngine(this.config.preferredEngine)
+        : ContainerEngineFactory.createPreferredEngine();
+      
+      this.engine = await Promise.race([
+        enginePromise,
+        new Promise<any>((_, reject) => 
+          setTimeout(() => reject(new Error('Engine creation timeout')), createTimeout)
+        )
+      ]);
 
-      // Verify engine is available
-      if (!await this.engine.checkAvailability()) {
+      // Verify engine is available with timeout
+      const availabilityTimeout = process.env.CI ? 3000 : 10000; // 3s for CI, 10s for local
+      const availabilityPromise = this.engine.checkAvailability();
+      
+      const isAvailable = await Promise.race([
+        availabilityPromise,
+        new Promise<boolean>((_, reject) => 
+          setTimeout(() => reject(new Error('Availability check timeout')), availabilityTimeout)
+        )
+      ]);
+
+      if (!isAvailable) {
         throw new Error(`Container engine ${this.engine.getName()} is not available`);
       }
 
@@ -128,8 +145,10 @@ export class ContainerManager extends EventEmitter {
       // Setup event listeners
       this.setupEngineEventListeners();
 
-      // Start background services
-      this.startBackgroundServices();
+      // Start background services (only if not in CI)
+      if (!process.env.CI) {
+        this.startBackgroundServices();
+      }
 
       this.emit('initialized', {
         engine: this.engine.getName(),

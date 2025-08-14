@@ -100,8 +100,30 @@ export class ContainerAgent {
         };
       }
 
-      // Initialize container manager
-      await this.containerManager.initialize();
+      // Initialize container manager with timeout for CI environments
+      const initTimeout = process.env.CI ? 10000 : 30000; // 10s for CI, 30s for local
+      const initPromise = this.containerManager.initialize();
+      
+      let engineInfo;
+      try {
+        await Promise.race([
+          initPromise,
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Container engine initialization timeout')), initTimeout)
+          )
+        ]);
+        engineInfo = this.containerManager.getEngineInfo();
+      } catch (error: any) {
+        // In CI environments, container engines might not be available
+        // Continue with limited functionality
+        if (process.env.CI || error.message.includes('not found') || error.message.includes('timeout')) {
+          console.warn(`Container engine not available: ${error.message}`);
+          console.warn('Running in degraded mode without container engine');
+          engineInfo = { name: 'none', version: 'N/A', available: false };
+        } else {
+          throw error;
+        }
+      }
 
       // Check if Containerfiles directory exists and has container files
       try {
@@ -121,8 +143,6 @@ export class ContainerAgent {
       }
 
       this.initialized = true;
-
-      const engineInfo = this.containerManager.getEngineInfo();
       
       return {
         success: true,
@@ -130,7 +150,8 @@ export class ContainerAgent {
         data: {
           engine: engineInfo,
           containerfilesPath: this.config.containerfilesPath,
-          initialized: true
+          initialized: true,
+          degradedMode: engineInfo?.available === false
         }
       };
     } catch (error: any) {
