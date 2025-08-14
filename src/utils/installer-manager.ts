@@ -13,7 +13,7 @@ export interface InstallationTemplate {
   description: string;
   category: 'web' | 'api' | 'cli' | 'library' | 'fullstack' | 'mobile';
   framework?: string;
-  language: 'typescript' | 'javascript' | 'python' | 'rust' | 'go' | 'java';
+  language: 'typescript' | 'javascript' | 'python' | 'rust' | 'go' | 'java' | 'elixir';
   dependencies: Dependency[];
   devDependencies?: Dependency[];
   scripts: Record<string, string>;
@@ -39,7 +39,7 @@ export interface TemplateFile {
 
 export interface Configuration {
   file: string;
-  format: 'json' | 'yaml' | 'env' | 'ini' | 'js' | 'ts';
+  format: 'json' | 'yaml' | 'env' | 'ini' | 'js' | 'ts' | 'elixir';
   content: Record<string, any> | string;
   merge?: boolean; // Merge with existing file
 }
@@ -222,6 +222,11 @@ export class InstallerManager {
       if (files.some(f => f.endsWith('.rs'))) {
         suggestions.push('rust-cli', 'rust-web');
         reasoning.push('Rust files detected');
+      }
+      
+      if (files.some(f => f === 'mix.exs' || f.endsWith('.ex') || f.endsWith('.exs'))) {
+        suggestions.push('elixir-phoenix', 'elixir-otp', 'elixir-cli');
+        reasoning.push('Elixir project detected');
       }
 
     } catch (error) {
@@ -417,6 +422,268 @@ export class InstallerManager {
           }
         ],
         configurations: []
+      },
+      {
+        id: 'elixir-phoenix',
+        name: 'Phoenix Web Application',
+        description: 'Full-featured Phoenix web application with LiveView',
+        category: 'fullstack',
+        framework: 'phoenix',
+        language: 'elixir',
+        dependencies: [],
+        scripts: {
+          'setup': 'mix deps.get && mix ecto.setup',
+          'dev': 'mix phx.server',
+          'test': 'mix test',
+          'format': 'mix format',
+          'credo': 'mix credo',
+          'build': 'mix compile'
+        },
+        files: [
+          {
+            path: 'lib/my_app/application.ex',
+            content: `defmodule MyApp.Application do
+  @moduledoc false
+
+  use Application
+
+  @impl true
+  def start(_type, _args) do
+    children = [
+      MyAppWeb.Telemetry,
+      MyApp.Repo,
+      {Phoenix.PubSub, name: MyApp.PubSub},
+      MyAppWeb.Endpoint
+    ]
+
+    opts = [strategy: :one_for_one, name: MyApp.Supervisor]
+    Supervisor.start_link(children, opts)
+  end
+
+  @impl true
+  def config_change(changed, _new, removed) do
+    MyAppWeb.Endpoint.config_change(changed, removed)
+    :ok
+  end
+end
+`
+          },
+          {
+            path: 'lib/my_app_web/router.ex',
+            content: `defmodule MyAppWeb.Router do
+  use MyAppWeb, :router
+
+  pipeline :browser do
+    plug :accepts, ["html"]
+    plug :fetch_session
+    plug :fetch_live_flash
+    plug :put_root_layout, html: {MyAppWeb.Layouts, :root}
+    plug :protect_from_forgery
+    plug :put_secure_browser_headers
+  end
+
+  pipeline :api do
+    plug :accepts, ["json"]
+  end
+
+  scope "/", MyAppWeb do
+    pipe_through :browser
+
+    get "/", PageController, :home
+  end
+
+  scope "/api", MyAppWeb do
+    pipe_through :api
+  end
+end
+`
+          },
+          {
+            path: 'test/my_app_web/controllers/page_controller_test.exs',
+            content: `defmodule MyAppWeb.PageControllerTest do
+  use MyAppWeb.ConnCase
+
+  test "GET /", %{conn: conn} do
+    conn = get(conn, ~p"/")
+    assert html_response(conn, 200) =~ "Welcome to Phoenix!"
+  end
+end
+`
+          }
+        ],
+        configurations: [
+          {
+            file: 'mix.exs',
+            format: 'elixir',
+            content: `defmodule MyApp.MixProject do
+  use Mix.Project
+
+  def project do
+    [
+      app: :my_app,
+      version: "0.1.0",
+      elixir: "~> 1.14",
+      elixirc_paths: elixirc_paths(Mix.env()),
+      start_permanent: Mix.env() == :prod,
+      aliases: aliases(),
+      deps: deps()
+    ]
+  end
+
+  def application do
+    [
+      mod: {MyApp.Application, []},
+      extra_applications: [:logger, :runtime_tools]
+    ]
+  end
+
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
+
+  defp deps do
+    [
+      {:phoenix, "~> 1.7.10"},
+      {:phoenix_ecto, "~> 4.4"},
+      {:ecto_sql, "~> 3.10"},
+      {:postgrex, ">= 0.0.0"},
+      {:phoenix_html, "~> 3.3"},
+      {:phoenix_live_reload, "~> 1.2", only: :dev},
+      {:phoenix_live_view, "~> 0.20.2"},
+      {:floki, ">= 0.30.0", only: :test},
+      {:phoenix_live_dashboard, "~> 0.8.2"},
+      {:jason, "~> 1.2"},
+      {:bandit, "~> 1.0"}
+    ]
+  end
+
+  defp aliases do
+    [
+      setup: ["deps.get", "ecto.setup"],
+      "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
+      "ecto.reset": ["ecto.drop", "ecto.setup"],
+      test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"]
+    ]
+  end
+end
+`
+          }
+        ]
+      },
+      {
+        id: 'elixir-cli',
+        name: 'Elixir CLI Application',
+        description: 'Command-line interface application built with Elixir',
+        category: 'cli',
+        language: 'elixir',
+        dependencies: [],
+        scripts: {
+          'deps': 'mix deps.get',
+          'build': 'mix compile',
+          'test': 'mix test',
+          'format': 'mix format',
+          'escript': 'mix escript.build'
+        },
+        files: [
+          {
+            path: 'lib/my_app/cli.ex',
+            content: `defmodule MyApp.CLI do
+  @moduledoc """
+  Command Line Interface for MyApp
+  """
+
+  def main(args) do
+    {options, command, _} = 
+      args
+      |> OptionParser.parse(switches: [help: :boolean, version: :boolean])
+
+    case {options, command} do
+      {[help: true], _} -> show_help()
+      {[version: true], _} -> show_version()
+      {_, ["hello", name]} -> greet(name)
+      _ -> show_help()
+    end
+  end
+
+  defp show_help do
+    IO.puts """
+    MyApp CLI Tool
+    
+    Usage:
+      my_app hello <name>     - Greet someone
+      my_app --help           - Show this help
+      my_app --version        - Show version
+    """
+  end
+
+  defp show_version do
+    version = Application.spec(:my_app, :vsn) |> to_string()
+    IO.puts("MyApp version #{version}")
+  end
+
+  defp greet(name) do
+    IO.puts("Hello, #{name}!")
+  end
+end
+`
+          },
+          {
+            path: 'test/my_app/cli_test.exs',
+            content: `defmodule MyApp.CLITest do
+  use ExUnit.Case
+  import ExUnit.CaptureIO
+
+  alias MyApp.CLI
+
+  test "shows help when no arguments" do
+    output = capture_io(fn -> CLI.main([]) end)
+    assert output =~ "MyApp CLI Tool"
+  end
+
+  test "greets user with hello command" do
+    output = capture_io(fn -> CLI.main(["hello", "World"]) end)
+    assert output =~ "Hello, World!"
+  end
+end
+`
+          }
+        ],
+        configurations: [
+          {
+            file: 'mix.exs',
+            format: 'elixir',
+            content: `defmodule MyApp.MixProject do
+  use Mix.Project
+
+  def project do
+    [
+      app: :my_app,
+      version: "0.1.0",
+      elixir: "~> 1.14",
+      start_permanent: Mix.env() == :prod,
+      escript: escript(),
+      deps: deps()
+    ]
+  end
+
+  def application do
+    [
+      extra_applications: [:logger]
+    ]
+  end
+
+  defp escript do
+    [main_module: MyApp.CLI]
+  end
+
+  defp deps do
+    [
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
+    ]
+  end
+end
+`
+          }
+        ]
       }
     ];
 
@@ -528,6 +795,11 @@ export class InstallerManager {
             configContent = typeof config.content === 'string' 
               ? config.content 
               : `export default ${JSON.stringify(config.content, null, 2)};`;
+            break;
+          case 'elixir':
+            configContent = typeof config.content === 'string' 
+              ? config.content 
+              : JSON.stringify(config.content, null, 2);
             break;
           default:
             configContent = JSON.stringify(config.content, null, 2);

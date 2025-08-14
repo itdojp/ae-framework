@@ -69,7 +69,7 @@ export class CodeGenerationServer {
                 },
                 language: {
                   type: 'string',
-                  enum: ['typescript', 'javascript', 'python', 'go', 'rust']
+                  enum: ['typescript', 'javascript', 'python', 'go', 'rust', 'elixir']
                 },
                 framework: { type: 'string' },
                 architecture: {

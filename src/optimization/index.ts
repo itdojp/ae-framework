@@ -650,9 +650,36 @@ export class OptimizationSystem extends EventEmitter {
   }
 }
 
-// Export all types and components
-export * from './monitoring/index.js';
-export * from './parallel/index.js';
+// Export all types and components with explicit re-exports to avoid naming conflicts
+export type { 
+  MonitoringSystemConfig,
+  SystemHealthStatus,
+  PerformanceMetrics,
+  PerformanceAlert,
+  MetricPoint,
+  MetricsSnapshot,
+  AlertInstance,
+  AlertSummary
+} from './monitoring/index.js';
+export { MonitoringSystem, PerformanceMonitor, MetricsCollector, AlertManager } from './monitoring/index.js';
+
+export type {
+  ParallelTask,
+  TaskResult,
+  ResourceRequirements,
+  ResourceUsage,
+  OptimizationStrategy,
+  ParallelizationPlan,
+  OptimizationMetrics,
+  ScheduledTask,
+  SchedulingPolicy,
+  TaskQueue,
+  SchedulingMetrics,
+  PooledResource,
+  ResourceType,
+  ResourceCapacity
+} from './parallel/index.js';
+export { ParallelOptimizer, TaskScheduler, ResourcePool, ParallelOptimizationSystem } from './parallel/index.js';
 
 // Convenience function to create a complete optimization system
 export function createOptimizationSystem(config?: OptimizationSystemConfig): OptimizationSystem {
