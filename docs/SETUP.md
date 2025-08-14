@@ -212,6 +212,42 @@ npm run analyze:demo
 # Phase 3.1 Sequential Inference Engine の動作確認
 ```
 
+#### インテリジェントテスト選択デモ ✨ **NEW**
+```bash
+# AI駆動の最適テスト選択システム
+npm test -- tests/testing/intelligent-test-selection.test.ts
+# 16のテストケース全てが合格することを確認
+```
+
+### 6. Phase 3.3 最適化システムの動作確認 ✨ **NEW**
+
+#### 統合最適化システムテスト
+```bash
+# パフォーマンス監視システム
+npm test -- tests/optimization/monitoring.test.ts
+
+# 並列最適化システム  
+npm test -- tests/optimization/parallel.test.ts
+
+# システム統合テスト
+npm test -- tests/optimization/system-integration.test.ts
+
+# パフォーマンスベンチマーク
+npm test -- tests/optimization/performance-benchmarks.test.ts
+```
+
+#### 最適化システム個別動作確認
+```bash
+# 監視システム単体テスト
+npm run test:monitoring
+
+# 並列処理システム単体テスト  
+npm run test:parallel
+
+# 完全最適化システム統合テスト
+npm run test:optimization-full
+```
+
 ## 🛠️ 開発環境のセットアップ
 
 ### 1. 開発用監視モード
@@ -327,6 +363,50 @@ Error: Baseline screenshots not found
 ```bash
 # ベースライン画像を生成
 npm run visual:baseline
+```
+
+#### 8. インテリジェントテスト選択エラー ✨ **NEW**
+```bash
+Error: SequentialInferenceEngine not initialized
+```
+**解決方法**:
+```bash
+# 依存関係の確認
+npm test -- tests/engines/sequential-inference-engine.test.ts
+
+# テスト選択システムの個別確認
+npm test -- tests/testing/intelligent-test-selection.test.ts
+```
+
+#### 9. 最適化システムエラー ✨ **NEW**
+```bash
+Error: OptimizationSystem startup failed
+```
+**解決方法**:
+```bash
+# システム個別チェック
+npm test -- tests/optimization/monitoring.test.ts
+npm test -- tests/optimization/parallel.test.ts
+
+# 統合システムチェック
+npm test -- tests/optimization/system-integration.test.ts
+```
+
+#### 10. SuperClaude Framework統合エラー ✨ **NEW**
+```bash
+Error: Token optimization failed
+Error: Evidence validation failed
+```
+**解決方法**:
+```bash
+# Token Optimizer確認
+node -e "import('./src/utils/token-optimizer.js').then(m => console.log('OK'))"
+
+# Evidence Validator確認  
+node -e "import('./src/utils/evidence-validator.js').then(m => console.log('OK'))"
+
+# Extended Commands確認
+npm test -- tests/commands/extended/*.test.ts
 ```
 
 ## 📚 次のステップ
