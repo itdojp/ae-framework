@@ -408,7 +408,9 @@ export class ContextManager {
     if (this.workingMemory.size >= 20) {
       // Remove oldest entry
       const firstKey = this.workingMemory.keys().next().value;
-      this.workingMemory.delete(firstKey);
+      if (firstKey !== undefined) {
+        this.workingMemory.delete(firstKey);
+      }
     }
     this.workingMemory.set(key, value);
   }

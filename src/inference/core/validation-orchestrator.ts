@@ -353,7 +353,7 @@ export class ValidationOrchestrator extends EventEmitter {
       id: 'integration-compatibility',
       category: 'integration',
       validate: this.validateIntegrationCompatibility.bind(this),
-      canHandle: (target, context) => context.subSolutions && context.subSolutions.length > 1
+      canHandle: (target, context) => Boolean(context.subSolutions && context.subSolutions.length > 1)
     });
   }
 

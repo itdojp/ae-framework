@@ -105,7 +105,7 @@ export class UnifiedTroubleshootCommand extends BaseExtendedCommand {
     const diagnosis: Diagnosis[] = [];
     const solutions: Solution[] = [];
     const issues: Issue[] = [];
-    const suggestions = [];
+    const suggestions: any[] = [];
 
     // Auto-detect common issues if --auto flag is used
     if (options.auto || !description || description === 'General troubleshooting') {

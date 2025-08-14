@@ -367,7 +367,12 @@ export class PersonaManager {
           confidence: 0.8
         },
         {
-          trigger: { context: { workSession: { successRate: 0.95 } } },
+          trigger: { context: { workSession: { 
+            startTime: new Date().toISOString(),
+            commandCount: 10,
+            errorCount: 1,
+            successRate: 0.95 
+          } } },
           adaptation: { verbosity: 'minimal', suggestionBehavior: 'minimal' },
           confidence: 0.7
         }

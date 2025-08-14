@@ -135,7 +135,64 @@ export class SlashCommandManager {
    */
   private getOperateAgent(): OperateAgent {
     if (!this.operateAgent) {
-      this.operateAgent = new OperateAgent();
+      this.operateAgent = new OperateAgent({
+        deploymentConfig: {
+          cicdProvider: 'github-actions',
+          environments: ['dev', 'prod'],
+          rolloutStrategy: 'rolling',
+          healthCheckUrl: 'http://localhost:3000/health',
+          timeoutSeconds: 300
+        },
+        monitoringConfig: {
+          metricsEndpoint: 'http://localhost:8080/metrics',
+          logsEndpoint: 'http://localhost:8080/logs',
+          tracesEndpoint: 'http://localhost:8080/traces',
+          healthEndpoints: ['http://localhost:3000/health'],
+          checkIntervalMs: 30000
+        },
+        alertingConfig: {
+          channels: [],
+          thresholds: [],
+          escalationPolicy: []
+        },
+        scalingConfig: {
+          minInstances: 1,
+          maxInstances: 10,
+          targetCpuPercent: 80,
+          targetMemoryPercent: 80,
+          scaleUpCooldown: '5m',
+          scaleDownCooldown: '10m'
+        },
+        securityConfig: {
+          scanSchedule: '0 2 * * *',
+          vulnerabilityThreshold: 'medium',
+          complianceFrameworks: [],
+          securityEndpoints: []
+        },
+        costConfig: {
+          budgetLimit: 10000,
+          costCenter: 'development',
+          optimizationTargets: [],
+          reportingSchedule: 'weekly'
+        },
+        sloConfig: {
+          availability: 99.9,
+          latencyP95Ms: 200,
+          errorRatePercent: 0.1,
+          throughputRps: 1000,
+          evaluationWindow: '1d'
+        },
+        chaosConfig: {
+          enabled: false,
+          schedule: '0 3 * * 1',
+          experiments: [],
+          safetyLimits: {
+            maxErrorRate: 0.05,
+            maxLatencyMs: 5000,
+            minHealthyInstances: 1
+          }
+        }
+      });
     }
     return this.operateAgent;
   }
@@ -478,17 +535,25 @@ export class SlashCommandManager {
     let result: any;
     switch (specType) {
       case 'openapi':
-        result = await this.getFormalAgent().generateOpenAPISpec({
-          title: 'Generated API',
-          version: '1.0.0',
-          sourceFiles: previousArtifacts,
-        });
+        result = await this.getFormalAgent().createAPISpecification(
+          JSON.stringify({
+            title: 'Generated API',
+            version: '1.0.0',
+            sourceFiles: previousArtifacts,
+          }),
+          'openapi',
+          { includeExamples: true, generateContracts: false }
+        );
         break;
       case 'tla':
-        result = await this.getFormalAgent().generateTLAPlus({
-          moduleName: 'System',
-          requirements: previousArtifacts,
-        });
+        result = await this.getFormalAgent().generateFormalSpecification(
+          JSON.stringify({
+            moduleName: 'System',
+            requirements: previousArtifacts,
+          }),
+          'tla+',
+          { includeDiagrams: true, generateProperties: true }
+        );
         break;
       default:
         return {
@@ -515,15 +580,14 @@ export class SlashCommandManager {
     const filePath = args[0];
     const testType = args[1] || 'unit';
     
-    const tests = await this.getTestAgent().generateTests({
-      sourceFile: filePath,
-      testType: testType as any,
-      coverage: 'comprehensive',
+    const tests = await this.getTestAgent().generateTestsFromRequirements({
+      feature: filePath,
+      testFramework: 'vitest',
     });
 
     return {
       success: true,
-      message: `Generated ${tests.tests.length} ${testType} tests`,
+      message: `Generated ${tests.testCases.length} ${testType} tests`,
       data: tests,
     };
   }
@@ -537,9 +601,12 @@ export class SlashCommandManager {
     }
 
     const testFile = args[0];
-    const code = await this.getCodeAgent().generateFromTests({
-      testFile,
-      targetFile: testFile.replace('.test.', '.').replace('.spec.', '.'),
+    const code = await this.getCodeAgent().generateCodeFromTests({
+      tests: [{
+        path: testFile,
+        content: '',
+        type: 'unit'
+      }],
       language: 'typescript',
     });
 
@@ -551,11 +618,15 @@ export class SlashCommandManager {
   }
 
   private async handleVerifyCommand(args: string[], context: CommandContext): Promise<CommandResult> {
-    const report = await this.getVerifyAgent().runFullVerification();
+    const report = await this.getVerifyAgent().runFullVerification({
+      codeFiles: [],
+      testFiles: [],
+      verificationTypes: ['tests', 'coverage', 'linting'],
+    });
     
     return {
-      success: report.overallStatus === 'passed',
-      message: `Verification ${report.overallStatus}`,
+      success: report.passed,
+      message: `Verification ${report.passed ? 'passed' : 'failed'}`,
       data: report,
     };
   }
@@ -573,16 +644,21 @@ export class SlashCommandManager {
 
     switch (action) {
       case 'deploy':
-        result = await this.getOperateAgent().deploy({
+        result = await this.getOperateAgent().deployApplication({
           environment: args[1] || 'production',
+          version: 'latest',
           strategy: 'blue-green',
         });
         break;
       case 'monitor':
-        result = await this.getOperateAgent().getMetrics();
+        result = await this.getOperateAgent().monitorHealth();
         break;
       case 'rollback':
-        result = await this.getOperateAgent().rollback(args[1] || 'latest');
+        result = await this.getOperateAgent().deployApplication({
+          environment: args[1] || 'production',
+          version: args[2] || 'previous',
+          rollbackOnFailure: true,
+        });
         break;
       default:
         return {

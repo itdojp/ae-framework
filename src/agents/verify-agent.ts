@@ -249,8 +249,8 @@ export class VerifyAgent {
       return {
         type: 'tests',
         passed: false,
-        details: { error: error.message },
-        errors: [error.message],
+        details: { error: (error as Error).message },
+        errors: [(error as Error).message],
       };
     }
   }
@@ -281,8 +281,8 @@ export class VerifyAgent {
       return {
         type: 'coverage',
         passed: false,
-        details: { error: error.message },
-        errors: [error.message],
+        details: { error: (error as Error).message },
+        errors: [(error as Error).message],
       };
     }
   }
@@ -328,8 +328,8 @@ export class VerifyAgent {
       return {
         type: 'linting',
         passed: false,
-        details: { error: error.message },
-        errors: [error.message],
+        details: { error: (error as Error).message },
+        errors: [(error as Error).message],
       };
     }
   }
@@ -360,8 +360,8 @@ export class VerifyAgent {
       return {
         type: 'typechecking',
         passed: false,
-        details: { error: error.message },
-        errors: [error.message],
+        details: { error: (error as Error).message },
+        errors: [(error as Error).message],
       };
     }
   }
@@ -410,8 +410,8 @@ export class VerifyAgent {
       return {
         type: 'security',
         passed: false,
-        details: { error: error.message },
-        errors: [error.message],
+        details: { error: (error as Error).message },
+        errors: [(error as Error).message],
       };
     }
   }
@@ -458,8 +458,8 @@ export class VerifyAgent {
       return {
         type: 'performance',
         passed: false,
-        details: { error: error.message },
-        errors: [error.message],
+        details: { error: (error as Error).message },
+        errors: [(error as Error).message],
       };
     }
   }
@@ -512,8 +512,8 @@ export class VerifyAgent {
       return {
         type: 'contracts',
         passed: false,
-        details: { error: error.message },
-        errors: [error.message],
+        details: { error: (error as Error).message },
+        errors: [(error as Error).message],
       };
     }
   }
@@ -558,8 +558,8 @@ export class VerifyAgent {
       return {
         type: 'specifications',
         passed: false,
-        details: { error: error.message },
-        errors: [error.message],
+        details: { error: (error as Error).message },
+        errors: [(error as Error).message],
       };
     }
   }
@@ -609,8 +609,8 @@ export class VerifyAgent {
       return {
         type: 'mutations',
         passed: false,
-        details: { error: error.message },
-        errors: [error.message],
+        details: { error: (error as Error).message },
+        errors: [(error as Error).message],
       };
     }
   }

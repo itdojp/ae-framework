@@ -17,6 +17,8 @@
     "phase": "tsx src/cli/phase-cli.ts",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:fast": "vitest run --exclude \"tests/testing/intelligent-test-selection.test.ts\"",
+    "test:phase3.2:core": "vitest run tests/testing/playwright-integration.test.ts tests/testing/visual-regression.test.ts",
     "test:all": "npm run test && npm run bdd && npm run pbt",
     "coverage": "vitest run --coverage",
     "bdd": "cucumber-js",
@@ -49,7 +51,15 @@
     "generate-tla": "tsx -e \"import { FormalAgent } from './src/agents/formal-agent.js'; const agent = new FormalAgent(); console.log('TLA+ generation tools ready');\"",
     "model-check": "tsx -e \"import { FormalAgent } from './src/agents/formal-agent.js'; const agent = new FormalAgent(); console.log('Model checking tools ready');\"",
     "operate:server": "tsx src/mcp-server/operate-server.ts",
-    "operate:dev": "tsx watch src/mcp-server/operate-server.ts"
+    "operate:dev": "tsx watch src/mcp-server/operate-server.ts",
+    "test:phase3.2": "vitest run tests/testing/",
+    "test:playwright": "vitest run tests/testing/playwright-integration.test.ts",
+    "test:visual": "vitest run tests/testing/visual-regression.test.ts",
+    "test:intelligent": "vitest run tests/testing/intelligent-test-selection.test.ts",
+    "playwright:install": "playwright install",
+    "e2e:demo": "tsx -e \"import { PlaywrightIntegration } from './src/testing/playwright-integration.js'; console.log('Playwright E2E demo ready');\"",
+    "visual:demo": "tsx -e \"import { VisualRegressionTesting } from './src/testing/visual-regression.js'; console.log('Visual regression demo ready');\"",
+    "smart-test:demo": "tsx -e \"import { IntelligentTestSelection } from './src/testing/intelligent-test-selection.js'; console.log('Intelligent test selection demo ready');\""
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.5.0",
@@ -75,6 +85,7 @@
   },
   "devDependencies": {
     "@cucumber/cucumber": "^11.0.0",
+    "@playwright/test": "^1.47.0",
     "@stryker-mutator/core": "^8.5.0",
     "@stryker-mutator/typescript-checker": "^8.7.1",
     "@stryker-mutator/vitest-runner": "^8.7.1",
@@ -86,6 +97,7 @@
     "@vitest/coverage-v8": "^2.0.5",
     "eslint": "^9.8.0",
     "fast-check": "^3.19.0",
+    "playwright": "^1.47.0",
     "tsx": "^4.16.0",
     "typescript": "^5.5.4",
     "vitest": "^2.0.5"

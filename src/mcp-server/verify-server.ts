@@ -348,7 +348,7 @@ export class VerifyMCPServer {
           content: [
             {
               type: 'text',
-              text: `Error executing ${name}: ${error.message}`
+              text: `Error executing ${name}: ${(error as Error).message}`
             }
           ]
         };
@@ -639,7 +639,7 @@ export class VerifyMCPServer {
             language
           });
         } catch (error) {
-          console.warn(`Could not read file ${filePath}: ${error.message}`);
+          console.warn(`Could not read file ${filePath}: ${(error as Error).message}`);
         }
       }
     }
@@ -683,7 +683,7 @@ export class VerifyMCPServer {
               type
             });
           } catch (error) {
-            console.warn(`Could not read test file ${filePath}: ${error.message}`);
+            console.warn(`Could not read test file ${filePath}: ${(error as Error).message}`);
           }
         }
       }
@@ -730,7 +730,7 @@ export class VerifyMCPServer {
             path: specPath
           });
         } catch (error) {
-          console.warn(`Could not read specification ${specPath}: ${error.message}`);
+          console.warn(`Could not read specification ${specPath}: ${(error as Error).message}`);
         }
       }
     }
@@ -761,7 +761,7 @@ export class VerifyMCPServer {
         }
       }
     } catch (error) {
-      console.warn(`Could not read directory ${dir}: ${error.message}`);
+      console.warn(`Could not read directory ${dir}: ${(error as Error).message}`);
     }
     
     return files;
@@ -830,7 +830,7 @@ export class VerifyMCPServer {
 }
 
 // Start the server if this file is run directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (typeof require !== 'undefined' && require.main === module) {
   const server = new VerifyMCPServer({
     name: 'ae-framework-verify-agent',
     version: '1.0.0'

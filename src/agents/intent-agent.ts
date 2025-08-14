@@ -309,7 +309,7 @@ export class IntentAgent {
     const relationships = this.identifyRelationships(entities, requirements);
     
     // Define bounded contexts
-    const boundedContexts = this.defineBoundedContexts(entities, context);
+    const boundedContexts = context ? this.defineBoundedContexts(entities, context) : [];
     
     // Identify aggregates
     const aggregates = this.identifyAggregates(entities, relationships);

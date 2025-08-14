@@ -372,7 +372,9 @@ export class ReasoningEngine extends EventEmitter {
     if (this.resultCache.size >= this.options.cacheSize!) {
       // Evict oldest entry
       const oldestKey = this.resultCache.keys().next().value;
-      this.resultCache.delete(oldestKey);
+      if (oldestKey !== undefined) {
+        this.resultCache.delete(oldestKey);
+      }
       this.metrics.cacheStatistics.evictions++;
     }
 
