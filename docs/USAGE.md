@@ -11,6 +11,7 @@ ae-frameworkは以下の6フェーズでソフトウェア開発を支援しま�
 3. **Test Agent** (Phase 3): テスト設計・生成
    - **Phase 3.1**: Sequential推論エンジン・依存関係分析
    - **Phase 3.2**: E2E自動化・視覚回帰テスト・AI選択 ✨ **NEW**
+   - **Phase 3.3**: 統合最適化・パフォーマンス監視 ✨ **NEW**
 4. **Code Agent** (Phase 4): コード実装・生成
 5. **Verify Agent** (Phase 5): 品質検証・監査
 6. **Operate Agent** (Phase 6): 運用・監視
@@ -36,6 +37,12 @@ npm run e2e:demo
 
 # 3b. 視覚回帰テスト (Phase 3.2)  
 npm run visual:demo
+
+# 3c. インテリジェントテスト選択 (Phase 3.2) ✨ **NEW**
+npm test -- tests/testing/intelligent-test-selection.test.ts
+
+# 3d. 統合最適化システム (Phase 3.3) ✨ **NEW**
+npm test -- tests/optimization/system-integration.test.ts
 
 # 4. コード生成
 npm run mcp:code
@@ -405,7 +412,288 @@ console.log('予想実行時間:', selectedTests.selectedTests.estimatedExecutio
 console.log('信頼度スコア:', selectedTests.analysis.confidenceScore);
 ```
 
-#### 5. 従来の包括的テストの生成
+#### 5. Phase 3.3: 統合最適化システム ✨ **NEW**
+
+```typescript
+import { 
+  OptimizationSystem, 
+  createOptimizationSystem 
+} from './src/optimization/index.js';
+
+// 統合最適化システムの初期化
+const optimizationSystem = createOptimizationSystem({
+  monitoring: {
+    performanceMonitor: {
+      interval: 1000, // 1秒間隔での監視
+      thresholds: {
+        cpu: { warning: 70, critical: 90 },
+        memory: { warning: 80, critical: 95 },
+        responseTime: { warning: 1000, critical: 2000 },
+        errorRate: { warning: 5, critical: 10 }
+      }
+    },
+    metricsCollector: {
+      aggregationInterval: 5000,
+      retention: 300000 // 5分間データ保持
+    }
+  },
+  parallelOptimization: {
+    optimizer: {
+      maxConcurrency: 8,
+      loadBalancing: 'resource_aware'
+    },
+    scheduler: {
+      algorithm: 'resource_aware'
+    },
+    resourcePool: {
+      sizing: {
+        initialSize: 10,
+        minSize: 5,
+        maxSize: 50
+      }
+    }
+  },
+  integration: {
+    adaptiveOptimization: true,
+    performanceBasedScaling: true,
+    crossSystemIntegration: true
+  }
+});
+
+// システム開始
+await optimizationSystem.start();
+
+// 操作の追跡
+optimizationSystem.trackOperation('user-login', Date.now());
+optimizationSystem.trackOperation('data-processing', Date.now());
+
+// メトリクス取得
+const metrics = optimizationSystem.getSystemMetrics();
+console.log('システムメトリクス:', {
+  monitoring: metrics.monitoring,
+  performance: metrics.performance,
+  integration: metrics.integration
+});
+
+// システム終了
+await optimizationSystem.stop();
+```
+
+#### 6. Phase 3.3: パフォーマンス監視システム ✨ **NEW**
+
+```typescript
+import { 
+  PerformanceMonitor,
+  MetricsCollector,
+  AlertManager 
+} from './src/optimization/monitoring/index.js';
+
+// 高度なパフォーマンス監視システム
+const monitor = new PerformanceMonitor({
+  interval: 500,
+  enableAdvancedMetrics: true,
+  customMetrics: ['api_response_time', 'database_connections']
+});
+
+const metricsCollector = new MetricsCollector({
+  aggregationInterval: 2000,
+  retention: 600000, // 10分間
+  enableHistoricalAnalysis: true
+});
+
+const alertManager = new AlertManager();
+
+// カスタムアラートルール設定
+alertManager.addRule({
+  id: 'high-error-rate',
+  name: 'High Error Rate Alert',
+  condition: (metrics) => metrics.errorRate > 0.05,
+  severity: 'high',
+  actions: ['email', 'webhook']
+});
+
+// システム開始
+await monitor.start();
+await metricsCollector.start();
+await alertManager.start();
+
+// メトリクス収集開始
+monitor.on('metricsCollected', (metrics) => {
+  metricsCollector.collect(metrics);
+});
+
+// アラート処理
+alertManager.on('alertTriggered', (alert) => {
+  console.log('アラート発生:', alert.message);
+});
+
+// パフォーマンス分析
+const analysis = await monitor.analyzePerformance({
+  timeRange: { start: Date.now() - 300000, end: Date.now() },
+  includeRegression: true,
+  generateRecommendations: true
+});
+
+console.log('パフォーマンス分析:', analysis.summary);
+console.log('改善提案:', analysis.recommendations);
+```
+
+#### 7. Phase 3.3: 並列最適化システム ✨ **NEW**
+
+```typescript
+import { 
+  ParallelOptimizer,
+  TaskScheduler,
+  ResourcePool
+} from './src/optimization/parallel/index.js';
+
+// リソースプール設定
+const resourcePool = new ResourcePool('default-pool', {
+  sizing: {
+    initialSize: 15,
+    minSize: 5,
+    maxSize: 100,
+    scalingFactor: 1.5
+  },
+  resources: {
+    cpu: { capacity: 8, allocated: 0 },
+    memory: { capacity: 16384, allocated: 0 }, // 16GB
+    io: { capacity: 1000, allocated: 0 },
+    network: { capacity: 1000, allocated: 0 }
+  }
+});
+
+// タスクスケジューラ設定
+const scheduler = new TaskScheduler(resourcePool, {
+  algorithm: 'resource_aware',
+  enableLoadBalancing: true,
+  priorityWeights: {
+    high: 3.0,
+    medium: 2.0,
+    low: 1.0
+  }
+});
+
+// 並列オプティマイザ設定
+const optimizer = new ParallelOptimizer({
+  maxConcurrency: 12,
+  loadBalancing: 'adaptive',
+  optimizationStrategy: 'throughput'
+});
+
+// システム開始
+await resourcePool.start();
+await scheduler.start();
+await optimizer.start();
+
+// タスク実行
+const task = {
+  id: 'data-analysis-task',
+  type: 'cpu_intensive',
+  priority: 'high',
+  resourceRequirements: {
+    cpu: 2,
+    memory: 1024,
+    estimatedDuration: 30000
+  },
+  payload: {
+    dataSet: 'large_dataset.json',
+    operation: 'statistical_analysis'
+  }
+};
+
+const result = await optimizer.executeTask(task);
+console.log('タスク実行結果:', result);
+
+// パフォーマンス最適化
+const optimizationResult = await optimizer.optimizePerformance({
+  target: 'throughput',
+  constraints: {
+    maxCpuUsage: 0.8,
+    maxMemoryUsage: 0.85
+  }
+});
+
+console.log('最適化結果:', optimizationResult.improvements);
+```
+
+#### 8. SuperClaude Framework統合 ✨ **NEW**
+
+```typescript
+import { TokenOptimizer } from './src/utils/token-optimizer.js';
+import { EvidenceValidator } from './src/utils/evidence-validator.js';
+import { 
+  UnifiedAnalyzeCommand,
+  UnifiedDocumentCommand,
+  UnifiedImproveCommand 
+} from './src/commands/extended/index.js';
+
+// Token最適化システム
+const tokenOptimizer = new TokenOptimizer();
+
+// ステアリング文書の最適化
+const steeringDocs = {
+  product: '製品仕様に関する詳細な文書...',
+  architecture: 'システム設計に関する文書...',
+  standards: 'コーディング規約と品質基準...'
+};
+
+const { compressed, stats } = await tokenOptimizer.compressSteeringDocuments(
+  steeringDocs,
+  {
+    maxTokens: 3000,
+    preservePriority: ['product', 'architecture'],
+    compressionLevel: 'high'
+  }
+);
+
+console.log('Token削減:', `${stats.reductionPercentage}% (${stats.original} → ${stats.compressed})`);
+
+// Evidence-based validation
+const evidenceValidator = new EvidenceValidator();
+
+const validationResult = await evidenceValidator.validateSolution(
+  'ユーザー認証システムの実装',
+  `
+  JWT ベースの認証システムを実装する：
+  \`\`\`typescript
+  import jwt from 'jsonwebtoken';
+  
+  export class AuthService {
+    generateToken(userId: string): string {
+      return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '24h' });
+    }
+  }
+  \`\`\`
+  `,
+  {
+    requireDocumentation: true,
+    requireTests: true,
+    minConfidence: 0.8
+  }
+);
+
+console.log('検証結果:', validationResult.isValid ? '合格' : '要改善');
+console.log('信頼度:', validationResult.confidence);
+console.log('証拠サマリー:', validationResult.evidence.length);
+
+// Extended Commands
+const analyzeCommand = new UnifiedAnalyzeCommand();
+const documentCommand = new UnifiedDocumentCommand();
+const improveCommand = new UnifiedImproveCommand();
+
+// 統合分析コマンド
+const analysisResult = await analyzeCommand.execute([
+  'src/auth/',
+  '--depth=deep',
+  '--security',
+  '--performance'
+]);
+
+console.log('分析結果:', analysisResult.data);
+```
+
+#### 9. 従来の包括的テストの生成
 ```typescript
 import { TestGenerationAgent } from './src/agents/test-generation-agent.js';
 
@@ -902,13 +1190,27 @@ npm run lint
 
 ## 💡 ベストプラクティス
 
-### 🎯 Phase 3.2 導入のベストプラクティス
+### 🎯 Phase 3.2 & 3.3 導入のベストプラクティス
 
+#### Phase 3.2 (AI駆動テスト自動化)
 1. **段階的導入**: Phase 3.1 → 3.2 の順序で導入
 2. **E2Eテスト戦略**: クリティカルパスから始めて段階的に拡張
 3. **視覚回帰テスト**: ベースライン品質を確立してから運用開始
-4. **CI最適化**: 開発時は高速CI、リリース前はフルCIを活用
-5. **テスト選択**: AIによる最適化を活用して実行時間を最小化
+4. **インテリジェントテスト選択**: AIによる最適化で実行時間最小化
+5. **CI最適化**: 開発時は高速CI、リリース前はフルCIを活用
+
+#### Phase 3.3 (統合最適化システム) ✨ **NEW**
+1. **監視システム**: パフォーマンス監視を段階的に導入
+2. **並列最適化**: リソース使用量を監視しながら並列度を調整
+3. **統合最適化**: システム間連携を確認してから本格運用
+4. **アラート設定**: 適切なしきい値設定で誤検知を防止
+5. **メトリクス分析**: 継続的なパフォーマンス改善サイクル確立
+
+#### SuperClaude Framework統合 ✨ **NEW**
+1. **Token最適化**: ステアリング文書の圧縮率を段階的に向上
+2. **Evidence-based検証**: 信頼度しきい値を適切に設定
+3. **Extended Commands**: 統合分析・文書化・改善コマンドの活用
+4. **品質保証**: 検証システムと組み合わせた品質管理
 
 ### 📋 一般的なベストプラクティス
 
@@ -920,10 +1222,24 @@ npm run lint
 
 ### ⚡ パフォーマンス最適化
 
+#### 従来の最適化
 1. **CI実行時間**: 開発時2分、フルテスト30分を目標
 2. **並列実行**: E2Eテストとビジュアルテストの並列化
 3. **キャッシュ活用**: Playwrightブラウザとテスト結果のキャッシュ
 4. **選択的実行**: 変更影響範囲に基づくスマートテスト選択
+
+#### Phase 3.3 統合最適化 ✨ **NEW**
+1. **システム監視**: リアルタイムパフォーマンス監視とアラート
+2. **リソース最適化**: CPU・メモリ・I/O・ネットワークの最適配分
+3. **並列処理最適化**: 動的負荷分散とリソースプール管理
+4. **予測的スケーリング**: 過去データに基づく自動リソース調整
+5. **統合メトリクス**: システム全体の包括的パフォーマンス分析
+
+#### SuperClaude Framework最適化 ✨ **NEW**
+1. **Token効率化**: 最大70%のtoken削減による高速処理
+2. **コンテキスト最適化**: 関連度ベースの情報選択
+3. **証拠ベース検証**: 信頼性の高い解決案の迅速な特定
+4. **統合コマンド**: 分析・文書化・改善の一元化による効率向上
 
 ---
 
