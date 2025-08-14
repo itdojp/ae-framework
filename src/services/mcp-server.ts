@@ -579,3 +579,45 @@ export class MCPServer extends EventEmitter {
     return null;
   }
 }
+
+/**
+ * Factory function to create MCP server with Rust verification plugin
+ */
+export async function createRustVerificationServer(projectRoot: string): Promise<MCPServer> {
+  const { RustVerificationPlugin } = await import('./plugins/rust-verification-plugin.js');
+  
+  const config: MCPServerConfig = {
+    name: 'ae-framework-rust-verification',
+    version: '1.0.0',
+    description: 'ae-framework MCP server with enhanced Rust verification capabilities',
+    endpoints: [],
+    capabilities: [
+      {
+        name: 'rust-verification',
+        version: '1.0.0',
+        description: 'Enhanced Rust formal verification using multiple tools',
+        enabled: true,
+        configuration: {
+          tools: ['prusti', 'kani', 'miri'],
+          autoDiscovery: true
+        }
+      }
+    ],
+    plugins: [
+      new RustVerificationPlugin({
+        enabledTools: ['prusti', 'kani', 'miri'],
+        defaultOptions: {
+          timeout: 300,
+          memoryLimit: 2048,
+          unwindLimit: 10,
+          strictMode: true,
+          generateReport: true
+        }
+      })
+    ]
+  };
+
+  const server = new MCPServer(config, projectRoot);
+  
+  return server;
+}
