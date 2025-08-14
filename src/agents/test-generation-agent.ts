@@ -10,7 +10,7 @@ export interface TestGenerationRequest {
   feature: string;
   requirements?: string[];
   codeFile?: string;
-  testFramework: 'vitest' | 'jest' | 'mocha';
+  testFramework: 'vitest' | 'jest' | 'mocha' | 'exunit';
 }
 
 export interface GeneratedTest {
@@ -291,6 +291,11 @@ export class TestGenerationAgent {
 
   private generateTestFileContent(testCases: TestCase[], request: TestGenerationRequest): string {
     const framework = request.testFramework || 'vitest';
+    
+    if (framework === 'exunit') {
+      return this.generateExUnitTestContent(testCases, request);
+    }
+    
     let content = '';
 
     // インポート文
@@ -308,6 +313,63 @@ export class TestGenerationAgent {
     content += '});\n';
 
     return content;
+  }
+
+  private generateExUnitTestContent(testCases: TestCase[], request: TestGenerationRequest): string {
+    const moduleName = this.toElixirModuleName(request.feature);
+    let content = '';
+
+    // Module definition and use ExUnit.Case
+    content += `defmodule ${moduleName}Test do\n`;
+    content += `  ${this.generateImports('exunit')}\n\n`;
+    
+    // Module being tested
+    content += `  alias ${moduleName}\n\n`;
+    
+    // Test cases
+    for (const testCase of testCases) {
+      content += `  # ${testCase.description}\n`;
+      content += `  ${this.convertToExUnitTest(testCase)}\n\n`;
+    }
+
+    content += 'end\n';
+
+    return content;
+  }
+
+  private convertToExUnitTest(testCase: TestCase): string {
+    const testName = testCase.name.toLowerCase().replace(/\s+/g, '_');
+    
+    let test = `  test "${testCase.description}" do\n`;
+    
+    // Convert basic test patterns to ExUnit
+    if (testCase.code.includes('expect(')) {
+      // Convert expect() calls to ExUnit assertions
+      const converted = testCase.code
+        .replace(/expect\(([^)]+)\)\.toBe\(([^)]+)\)/g, 'assert $1 == $2')
+        .replace(/expect\(([^)]+)\)\.toEqual\(([^)]+)\)/g, 'assert $1 == $2')
+        .replace(/expect\(([^)]+)\)\.toBeTruthy\(\)/g, 'assert $1')
+        .replace(/expect\(([^)]+)\)\.toBeFalsy\(\)/g, 'refute $1');
+      
+      test += `    # ${testCase.description}\n`;
+      test += `    # TODO: Implement test logic\n`;
+      test += `    assert true\n`;
+    } else {
+      test += `    # ${testCase.description}\n`;
+      test += `    # TODO: Implement test logic\n`;
+      test += `    assert true\n`;
+    }
+    
+    test += `  end`;
+    
+    return test;
+  }
+
+  private toElixirModuleName(name: string): string {
+    return name
+      .split(/\s+/)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join('');
   }
 
   private generatePropertyTestCode(contract: any, invariant: string): string {
@@ -368,13 +430,25 @@ export class TestGenerationAgent {
       'vitest': "import { describe, it, expect, beforeEach, afterEach } from 'vitest';",
       'jest': "import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';",
       'mocha': "import { describe, it, beforeEach, afterEach } from 'mocha';\nimport { expect } from 'chai';",
+      'exunit': "# ExUnit test module\nuse ExUnit.Case",
     };
     return imports[framework] || imports['vitest'];
   }
 
   // 以下、多数のヘルパーメソッドの簡略版
   private determineTestFilePath(request: TestGenerationRequest): string {
-    return `tests/${request.feature.toLowerCase().replace(/\s+/g, '-')}.test.ts`;
+    const framework = request.testFramework || 'vitest';
+    const baseName = request.feature.toLowerCase().replace(/\s+/g, '-');
+    
+    switch (framework) {
+      case 'exunit':
+        return `test/${baseName}_test.exs`;
+      case 'vitest':
+      case 'jest':
+      case 'mocha':
+      default:
+        return `tests/${baseName}.test.ts`;
+    }
   }
 
   private analyzeCoverage(testCases: TestCase[]): TestCoverage {

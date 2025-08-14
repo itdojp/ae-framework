@@ -11,7 +11,7 @@ export interface CodeGenerationRequest {
   tests: TestFile[];
   specifications?: Specification;
   architecture?: ArchitecturePattern;
-  language: 'typescript' | 'javascript' | 'python' | 'go' | 'rust';
+  language: 'typescript' | 'javascript' | 'python' | 'go' | 'rust' | 'elixir';
   framework?: string;
   style?: CodingStyle;
 }
@@ -457,23 +457,105 @@ export class CodeGenerationAgent {
     const files: CodeFile[] = [];
     
     for (const func of analysis.functions) {
-      const implementation = this.generateFunctionImplementation(func, analysis.expectedBehaviors);
+      const implementation = this.generateFunctionImplementation(
+        func, 
+        analysis.expectedBehaviors, 
+        request.language,
+        request.framework
+      );
+      
+      const fileExtension = this.getFileExtension(request.language);
+      const testExtension = this.getTestExtension(request.language);
+      
       files.push({
-        path: `src/${func}.ts`,
+        path: `${this.getSourceDirectory(request.language)}/${func}.${fileExtension}`,
         content: implementation,
         purpose: `Implementation of ${func}`,
-        tests: [`tests/${func}.test.ts`],
+        tests: [`${this.getTestDirectory(request.language)}/${func}.${testExtension}`],
       });
     }
     
     return files;
   }
 
-  private generateFunctionImplementation(funcName: string, behaviors: string[]): string {
-    // Generate minimal implementation to pass tests
-    let implementation = `export function ${funcName}(...args: any[]): any {\n`;
+  private generateFunctionImplementation(
+    funcName: string, 
+    behaviors: string[], 
+    language: string,
+    framework?: string
+  ): string {
+    switch (language) {
+      case 'elixir':
+        return this.generateElixirFunction(funcName, behaviors, framework);
+      case 'typescript':
+      case 'javascript':
+        return this.generateTSFunction(funcName, behaviors);
+      case 'python':
+        return this.generatePythonFunction(funcName, behaviors);
+      case 'rust':
+        return this.generateRustFunction(funcName, behaviors);
+      case 'go':
+        return this.generateGoFunction(funcName, behaviors);
+      default:
+        return this.generateTSFunction(funcName, behaviors);
+    }
+  }
+
+  private generateElixirFunction(funcName: string, behaviors: string[], framework?: string): string {
+    if (framework === 'phoenix') {
+      return this.generatePhoenixModule(funcName, behaviors);
+    }
+    
+    // Standard Elixir module
+    let implementation = `defmodule ${this.capitalize(funcName)} do\n`;
+    implementation += `  @moduledoc """\n`;
+    implementation += `  ${this.capitalize(funcName)} module\n`;
+    implementation += `  """\n\n`;
+    
+    // Add function implementation
+    implementation += `  @doc """\n`;
+    implementation += `  Main function for ${funcName}\n`;
+    implementation += `  """\n`;
+    implementation += `  def ${funcName}(args) do\n`;
     
     // Add basic implementation based on expected behaviors
+    for (const behavior of behaviors) {
+      implementation += `    # ${behavior}\n`;
+    }
+    
+    implementation += `    # TODO: Implement based on tests\n`;
+    implementation += `    {:ok, "not implemented"}\n`;
+    implementation += `  end\n`;
+    implementation += `end\n`;
+    
+    return implementation;
+  }
+
+  private generatePhoenixModule(funcName: string, behaviors: string[]): string {
+    const moduleName = this.capitalize(funcName);
+    let implementation = `defmodule MyAppWeb.${moduleName}Controller do\n`;
+    implementation += `  use MyAppWeb, :controller\n\n`;
+    
+    implementation += `  @doc """\n`;
+    implementation += `  ${moduleName} action\n`;
+    implementation += `  """\n`;
+    implementation += `  def ${funcName}(conn, _params) do\n`;
+    
+    for (const behavior of behaviors) {
+      implementation += `    # ${behavior}\n`;
+    }
+    
+    implementation += `    # TODO: Implement based on tests\n`;
+    implementation += `    json(conn, %{message: "not implemented"})\n`;
+    implementation += `  end\n`;
+    implementation += `end\n`;
+    
+    return implementation;
+  }
+
+  private generateTSFunction(funcName: string, behaviors: string[]): string {
+    let implementation = `export function ${funcName}(...args: any[]): any {\n`;
+    
     for (const behavior of behaviors) {
       if (behavior.includes('return')) {
         implementation += `  // ${behavior}\n`;
@@ -485,6 +567,100 @@ export class CodeGenerationAgent {
     implementation += `}\n`;
     
     return implementation;
+  }
+
+  private generatePythonFunction(funcName: string, behaviors: string[]): string {
+    let implementation = `def ${funcName}(*args, **kwargs):\n`;
+    implementation += `    """${this.capitalize(funcName)} function"""\n`;
+    
+    for (const behavior of behaviors) {
+      implementation += `    # ${behavior}\n`;
+    }
+    
+    implementation += `    # TODO: Implement based on tests\n`;
+    implementation += `    return {}\n`;
+    
+    return implementation;
+  }
+
+  private generateRustFunction(funcName: string, behaviors: string[]): string {
+    let implementation = `pub fn ${funcName}() -> Result<(), Box<dyn std::error::Error>> {\n`;
+    
+    for (const behavior of behaviors) {
+      implementation += `    // ${behavior}\n`;
+    }
+    
+    implementation += `    // TODO: Implement based on tests\n`;
+    implementation += `    Ok(())\n`;
+    implementation += `}\n`;
+    
+    return implementation;
+  }
+
+  private generateGoFunction(funcName: string, behaviors: string[]): string {
+    let implementation = `func ${this.capitalize(funcName)}() error {\n`;
+    
+    for (const behavior of behaviors) {
+      implementation += `    // ${behavior}\n`;
+    }
+    
+    implementation += `    // TODO: Implement based on tests\n`;
+    implementation += `    return nil\n`;
+    implementation += `}\n`;
+    
+    return implementation;
+  }
+
+  private getFileExtension(language: string): string {
+    const extensions: Record<string, string> = {
+      'typescript': 'ts',
+      'javascript': 'js',
+      'python': 'py',
+      'elixir': 'ex',
+      'rust': 'rs',
+      'go': 'go'
+    };
+    return extensions[language] || 'ts';
+  }
+
+  private getTestExtension(language: string): string {
+    const extensions: Record<string, string> = {
+      'typescript': 'test.ts',
+      'javascript': 'test.js',
+      'python': 'test.py',
+      'elixir': 'exs',
+      'rust': 'rs',
+      'go': 'test.go'
+    };
+    return extensions[language] || 'test.ts';
+  }
+
+  private getSourceDirectory(language: string): string {
+    const directories: Record<string, string> = {
+      'typescript': 'src',
+      'javascript': 'src',
+      'python': 'src',
+      'elixir': 'lib',
+      'rust': 'src',
+      'go': '.'
+    };
+    return directories[language] || 'src';
+  }
+
+  private getTestDirectory(language: string): string {
+    const directories: Record<string, string> = {
+      'typescript': 'tests',
+      'javascript': 'tests', 
+      'python': 'tests',
+      'elixir': 'test',
+      'rust': 'tests',
+      'go': '.'
+    };
+    return directories[language] || 'tests';
+  }
+
+  private capitalize(str: string): string {
+    return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
   private async runTests(files: CodeFile[], tests: TestFile[]): Promise<TestResult[]> {
