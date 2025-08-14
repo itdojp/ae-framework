@@ -9,6 +9,7 @@ ae-frameworkの全6フェーズエージェントとMCPサーバーのインス�
 - **npm**: 9.0.0 以上  
 - **TypeScript**: 5.5.0 以上
 - **Git**: 2.0 以上
+- **Playwright**: 1.47.0 以上 (Phase 3.2 E2Eテスト用)
 
 ### 推奨環境
 - **OS**: Linux, macOS, Windows (WSL2推奨)
@@ -30,13 +31,21 @@ cd ae-framework
 npm install
 ```
 
-### 3. TypeScriptのビルド
+### 3. Phase 3.2 Playwright設定
+
+E2Eテストと視覚回帰テスト用のPlaywrightブラウザをインストール：
+
+```bash
+npx playwright install
+```
+
+### 4. TypeScriptのビルド
 
 ```bash
 npm run build
 ```
 
-### 4. Git Hooksの設定（オプション）
+### 5. Git Hooksの設定（オプション）
 
 TDD強制機能を有効にするためのpre-commitフックを設定：
 
@@ -120,7 +129,15 @@ npm run build
 ### 2. テストの実行
 
 ```bash
+# 全テスト実行
 npm test
+
+# 高速テスト実行 (CI最適化版)
+npm run test:fast
+
+# Phase 3.2 コア機能テスト
+npm run test:phase3.2:core
+
 # 全てのテストがパスすることを確認
 ```
 
@@ -175,6 +192,26 @@ npm run mcp:tdd
 # "TDD MCP server running on stdio" が表示されればOK
 ```
 
+### 5. Phase 3.2 新機能の動作確認
+
+#### E2Eテスト自動生成デモ
+```bash
+npm run e2e:demo
+# Playwright統合システムの動作確認
+```
+
+#### 視覚回帰テストデモ
+```bash
+npm run visual:demo
+# Visual Regression Testing の動作確認
+```
+
+#### 依存関係分析デモ
+```bash
+npm run analyze:demo
+# Phase 3.1 Sequential Inference Engine の動作確認
+```
+
 ## 🛠️ 開発環境のセットアップ
 
 ### 1. 開発用監視モード
@@ -204,6 +241,21 @@ npm run coverage
 ```bash
 npm run mutation
 # Strykerによる変異テストが実行される
+```
+
+### 4. CI/CD 最適化設定
+
+Phase 3.2では CI実行時間を 2時間→2分 に最適化：
+
+```bash
+# 高速CI（開発用）: 基本テストのみ
+# - 自動実行: プッシュ・プルリクエスト時
+# - 実行時間: 約2分
+
+# フルCI（包括的）: mutation testing含む  
+# - 自動実行: 毎週日曜日、リリースタグ時
+# - 手動実行: gh workflow run "Full CI"
+# - 実行時間: 約30分（重要コンポーネントのみ）
 ```
 
 ## 🔍 トラブルシューティング
@@ -246,6 +298,35 @@ Module not found: @modelcontextprotocol/sdk
 ```bash
 npm install --force
 npm run build
+```
+
+#### 5. Playwright ブラウザエラー
+```bash
+Error: Browser not found. Please run 'npx playwright install'
+```
+**解決方法**: 
+```bash
+npx playwright install
+```
+
+#### 6. E2Eテスト実行エラー
+```bash
+Error: Test timeout exceeded
+```
+**解決方法**: 
+```bash
+# タイムアウト設定を確認
+npm run test:playwright -- --timeout=60000
+```
+
+#### 7. 視覚回帰テストエラー
+```bash
+Error: Baseline screenshots not found
+```
+**解決方法**: 
+```bash
+# ベースライン画像を生成
+npm run visual:baseline
 ```
 
 ## 📚 次のステップ

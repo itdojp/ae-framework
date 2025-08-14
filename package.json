@@ -59,7 +59,21 @@
     "playwright:install": "playwright install",
     "e2e:demo": "tsx -e \"import { PlaywrightIntegration } from './src/testing/playwright-integration.js'; console.log('Playwright E2E demo ready');\"",
     "visual:demo": "tsx -e \"import { VisualRegressionTesting } from './src/testing/visual-regression.js'; console.log('Visual regression demo ready');\"",
-    "smart-test:demo": "tsx -e \"import { IntelligentTestSelection } from './src/testing/intelligent-test-selection.js'; console.log('Intelligent test selection demo ready');\""
+    "smart-test:demo": "tsx -e \"import { IntelligentTestSelection } from './src/testing/intelligent-test-selection.js'; console.log('Intelligent test selection demo ready');\"",
+    "test:optimization": "vitest run tests/optimization/",
+    "test:phase3.3": "vitest run tests/optimization/",
+    "test:parallel": "vitest run tests/optimization/parallel.test.ts",
+    "test:monitoring": "vitest run tests/optimization/monitoring.test.ts",
+    "parallel:demo": "tsx src/optimization/parallel/demo.ts",
+    "monitoring:demo": "tsx src/optimization/monitoring/demo.ts",
+    "test:integration": "vitest run tests/optimization/system-integration.test.ts",
+    "test:benchmarks": "vitest run tests/optimization/performance-benchmarks.test.ts",
+    "test:phase3.3:full": "vitest run tests/optimization/monitoring.test.ts tests/optimization/parallel.test.ts tests/optimization/system-integration.test.ts",
+    "benchmark:performance": "vitest run tests/optimization/performance-benchmarks.test.ts --reporter=verbose",
+    "optimization:demo": "tsx -e \"import { startDefaultOptimizationSystem } from './src/optimization/index.js'; console.log('Complete optimization system demo ready');\"",
+    "analyze:demo": "tsx -e \"import { SequentialInferenceEngine } from './src/engines/sequential-inference-engine.js'; import { DependencyAnalyzer } from './src/analysis/dependency-analyzer.js'; console.log('Sequential Inference Engine & Dependency Analyzer demo ready');\"",
+    "dependency:analyze": "tsx -e \"import { DependencyAnalyzer } from './src/analysis/dependency-analyzer.js'; console.log('Dependency Analyzer ready');\"",
+    "performance:monitor": "tsx -e \"import { startDefaultMonitoring } from './src/optimization/monitoring/index.js'; console.log('Performance monitoring demo ready');\""
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.5.0",

@@ -9,6 +9,8 @@ ae-frameworkは以下の6フェーズでソフトウェア開発を支援しま�
 1. **Intent Agent** (Phase 1): 要件定義・分析
 2. **Formal Agent** (Phase 2): 形式仕様・設計
 3. **Test Agent** (Phase 3): テスト設計・生成
+   - **Phase 3.1**: Sequential推論エンジン・依存関係分析
+   - **Phase 3.2**: E2E自動化・視覚回帰テスト・AI選択 ✨ **NEW**
 4. **Code Agent** (Phase 4): コード実装・生成
 5. **Verify Agent** (Phase 5): 品質検証・監査
 6. **Operate Agent** (Phase 6): 運用・監視
@@ -26,8 +28,14 @@ npm run intent-agent
 # 2. 形式仕様生成
 npm run formal-agent
 
-# 3. テスト生成
+# 3. テスト生成 (Phase 3.1 & 3.2)
 npm run mcp:test
+
+# 3a. E2E自動テスト生成 (Phase 3.2)
+npm run e2e:demo
+
+# 3b. 視覚回帰テスト (Phase 3.2)  
+npm run visual:demo
 
 # 4. コード生成
 npm run mcp:code
@@ -191,11 +199,48 @@ if (!verification.valid) {
 
 ## 🧪 Phase 3: Test Agent（テスト生成）
 
-### 基本的な使い方
+Phase 3は2つのサブフェーズから構成されます：
 
-#### MCPサーバーとして使用
+### 📋 Phase 3.1: Sequential推論エンジン・依存関係分析
+
+高度な推論エンジンによる複雑問題解決とコンポーネント間依存関係の解析
+
+#### 基本的な使い方
+```bash
+# Sequential推論エンジンデモ
+npm run analyze:demo
+
+# 依存関係分析
+npm run dependency:analyze
+```
+
+### 🎭 Phase 3.2: E2E自動化・視覚回帰テスト ✨ **NEW**
+
+AI駆動の包括的テスト自動化システム
+
+#### 基本的な使い方
+
+##### MCPサーバーとして使用
 ```bash
 npm run mcp:test
+```
+
+##### E2Eテスト自動生成
+```bash
+npm run e2e:demo
+npm run test:playwright
+```
+
+##### 視覚回帰テスト
+```bash
+npm run visual:demo
+npm run test:visual
+```
+
+##### 高速テスト実行（CI最適化版）
+```bash
+npm run test:fast
+npm run test:phase3.2:core
 ```
 
 #### 直接エージェント実行
@@ -205,7 +250,162 @@ npm run agent:test
 
 ### 実践例
 
-#### 1. 包括的テストの生成
+#### 1. Phase 3.1: Sequential推論エンジンの使用
+
+```typescript
+import { SequentialInferenceEngine } from './src/engines/sequential-inference-engine.js';
+import { DependencyAnalyzer } from './src/analysis/dependency-analyzer.js';
+
+const engine = new SequentialInferenceEngine();
+const analyzer = new DependencyAnalyzer(engine);
+
+// 複雑な推論クエリ
+const complexQuery = {
+  id: 'complex-analysis-1',
+  description: 'マイクロサービス間の影響分析',
+  context: {
+    services: ['api', 'database', 'cache'],
+    changeRequest: 'API認証方式の変更',
+    constraints: ['ダウンタイム最小化', 'データ整合性維持']
+  },
+  priority: 'high' as const
+};
+
+const inferenceResult = await engine.processComplexQuery(complexQuery);
+const dependencyResult = await analyzer.analyzeSystemDependencies({
+  targetPath: './src',
+  analysisType: 'full',
+  includeExternal: true
+});
+
+console.log('推論結果:', inferenceResult.reasoning);
+console.log('影響範囲:', dependencyResult.impactAnalysis);
+```
+
+#### 2. Phase 3.2: Playwright E2Eテスト自動生成
+
+```typescript
+import { PlaywrightIntegration } from './src/testing/playwright-integration.js';
+
+const playwright = new PlaywrightIntegration(engine);
+
+// E2Eテスト自動生成
+const testRequest = {
+  id: 'e2e-test-gen-1',
+  targetComponents: ['user-auth', 'product-catalog', 'shopping-cart'],
+  dependencyAnalysis: dependencyResult,
+  testTypes: ['critical-path', 'error-scenarios', 'performance'],
+  browsers: ['chromium', 'firefox', 'webkit'],
+  constraints: {
+    maxExecutionTime: 300000, // 5分
+    priority: 'high'
+  }
+};
+
+const e2eTests = await playwright.generateE2ETests(testRequest);
+
+console.log(`生成されたテスト: ${e2eTests.tests.length}件`);
+console.log('実行時間予測:', e2eTests.estimatedExecutionTime);
+
+// テスト実行
+const executionResult = await playwright.executeTests(e2eTests.tests);
+console.log('テスト結果:', executionResult.summary);
+```
+
+#### 3. Phase 3.2: 視覚回帰テスト
+
+```typescript
+import { VisualRegressionTesting } from './src/testing/visual-regression.js';
+
+const visualTesting = new VisualRegressionTesting(playwright);
+
+// 視覚回帰テスト生成
+const visualRequest = {
+  id: 'visual-test-1',
+  components: [
+    { path: '/login', name: 'ログインページ' },
+    { path: '/dashboard', name: 'ダッシュボード' },
+    { path: '/product/:id', name: '商品詳細' }
+  ],
+  viewports: [
+    { width: 1280, height: 720, name: 'Desktop' },
+    { width: 768, height: 1024, name: 'Tablet' },
+    { width: 375, height: 667, name: 'Mobile' }
+  ],
+  browsers: ['chromium', 'firefox'],
+  options: {
+    threshold: 0.2, // 20%の差分を許容
+    includeAnimations: false,
+    generateBaseline: true
+  }
+};
+
+const visualTests = await visualTesting.generateVisualTests(visualRequest);
+
+// ベースライン生成
+const baselineResult = await visualTesting.captureBaselines(visualTests.tests);
+console.log('ベースライン生成:', baselineResult.captured);
+
+// 視覚回帰検証実行
+const visualResult = await visualTesting.executeVisualTests(visualTests.tests);
+console.log('視覚差分検出:', visualResult.differences);
+```
+
+#### 4. Phase 3.2: インテリジェントテスト選択
+
+```typescript
+import { IntelligentTestSelection } from './src/testing/intelligent-test-selection.js';
+
+const testSelection = new IntelligentTestSelection(engine);
+
+// コード変更に基づく最適テスト選択
+const selectionRequest = {
+  id: 'smart-selection-1',
+  changes: [
+    {
+      id: 'change-1',
+      type: 'modification',
+      filePath: 'src/auth/login.ts',
+      componentId: 'user-auth',
+      impact: 'medium',
+      changeType: 'logic',
+      linesChanged: 15,
+      riskScore: 0.6,
+      description: 'ログイン認証ロジックの改修'
+    }
+  ],
+  testInventory: {
+    id: 'inventory-1',
+    timestamp: new Date(),
+    totalTests: 247,
+    testSuites: [...] // 利用可能なテストスイート
+  },
+  constraints: {
+    maxExecutionTime: 120000, // 2分以内
+    maxTestCount: 50,
+    requiredCoverage: 80,
+    priorityLevels: ['critical', 'high'],
+    testTypes: ['unit', 'integration', 'e2e']
+  },
+  strategy: {
+    mode: 'hybrid',
+    riskWeighting: {
+      changeImpact: 0.4,
+      componentCriticality: 0.3,
+      historicalFailures: 0.2,
+      dependencyComplexity: 0.1
+    }
+  }
+};
+
+const selectedTests = await testSelection.selectTests(selectionRequest);
+
+console.log(`選択されたテスト: ${selectedTests.selectedTests.totalTests}件`);
+console.log('予想実行時間:', selectedTests.selectedTests.estimatedExecutionTime);
+console.log('信頼度スコア:', selectedTests.analysis.confidenceScore);
+```
+
+#### 5. 従来の包括的テストの生成
 ```typescript
 import { TestGenerationAgent } from './src/agents/test-generation-agent.js';
 
@@ -569,6 +769,32 @@ npm run validate-tdd
 cat metrics/project-metrics.json
 ```
 
+### Phase 3.2 テスト自動化メトリクス
+
+```bash
+# E2Eテスト実行統計
+npm run test:playwright -- --reporter=json > metrics/e2e-results.json
+
+# 視覚回帰テスト結果
+npm run test:visual -- --reporter=json > metrics/visual-results.json
+
+# Phase 3.2 専用テストスイート
+npm run test:phase3.2:core
+```
+
+### CI/CD パフォーマンス監視
+
+```bash
+# 高速CI実行時間 (目標: 2分以内)
+npm run test:fast
+
+# CI実行ログの確認
+cat .github/workflows/ci-fast.yml
+
+# フルCI統計 (週次実行)
+gh run list --workflow="Full CI"
+```
+
 ### 品質メトリクスの監視
 
 ```bash
@@ -578,8 +804,18 @@ npm run verify:all
 # カバレッジレポート
 npm run coverage
 
-# 変異テスト
+# 変異テスト (週次自動実行)
 npm run mutation
+```
+
+### テスト選択効率性メトリクス
+
+```bash
+# インテリジェントテスト選択の効果測定
+# - 実行時間短縮率
+# - カバレッジ維持率  
+# - リスク検出精度
+npm run analyze:test-selection-metrics
 ```
 
 ## 🆘 トラブルシューティング
@@ -600,7 +836,43 @@ const agent = new CodeGenerationAgent();
 agent.timeout = 300000; // 5分
 ```
 
-#### 3. 依存関係エラー
+#### 3. Phase 3.2 Playwrightエラー
+```bash
+# Playwrightブラウザのインストール
+npx playwright install
+
+# E2Eテストタイムアウト
+npm run test:playwright -- --timeout=60000
+
+# ヘッドレスモード無効化（デバッグ用）
+npm run test:playwright -- --headed
+```
+
+#### 4. 視覚回帰テストエラー
+```bash
+# ベースライン画像生成
+npm run visual:baseline
+
+# 差分しきい値調整
+npm run test:visual -- --threshold=0.3
+
+# 特定ビューポートのみテスト
+npm run test:visual -- --viewport=desktop
+```
+
+#### 5. CI実行時間問題
+```bash
+# 高速CI使用（開発時）
+npm run test:fast
+
+# テスト並列実行数調整
+npm run test -- --maxWorkers=4
+
+# 特定テストのスキップ
+npm run test -- --exclude="**/slow.test.ts"
+```
+
+#### 6. 依存関係エラー
 ```bash
 # 依存関係の再インストール
 npm ci
@@ -630,11 +902,28 @@ npm run lint
 
 ## 💡 ベストプラクティス
 
+### 🎯 Phase 3.2 導入のベストプラクティス
+
+1. **段階的導入**: Phase 3.1 → 3.2 の順序で導入
+2. **E2Eテスト戦略**: クリティカルパスから始めて段階的に拡張
+3. **視覚回帰テスト**: ベースライン品質を確立してから運用開始
+4. **CI最適化**: 開発時は高速CI、リリース前はフルCIを活用
+5. **テスト選択**: AIによる最適化を活用して実行時間を最小化
+
+### 📋 一般的なベストプラクティス
+
 1. **段階的導入**: 1つのフェーズから始めて徐々に拡張
 2. **継続的監視**: verify:allを定期実行
 3. **メトリクス追跡**: 品質改善の効果測定
 4. **チーム共有**: 生成された仕様・テストをチーム全体で共有
 5. **カスタマイズ**: プロジェクト特有の要件に応じた設定調整
+
+### ⚡ パフォーマンス最適化
+
+1. **CI実行時間**: 開発時2分、フルテスト30分を目標
+2. **並列実行**: E2Eテストとビジュアルテストの並列化
+3. **キャッシュ活用**: Playwrightブラウザとテスト結果のキャッシュ
+4. **選択的実行**: 変更影響範囲に基づくスマートテスト選択
 
 ---
 
