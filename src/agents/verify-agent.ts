@@ -7,6 +7,7 @@ import { execSync } from 'child_process';
 import { readFileSync, existsSync } from 'fs';
 import * as path from 'path';
 import { RustVerificationAgent, type RustVerificationRequest, type RustVerificationResult } from './rust-verification-agent.js';
+import { ContainerAgent, type ContainerVerificationRequest } from './container-agent.js';
 
 export interface VerificationRequest {
   codeFiles: CodeFile[];
@@ -14,6 +15,12 @@ export interface VerificationRequest {
   specifications?: Specification[];
   verificationTypes: VerificationType[];
   strictMode?: boolean;
+  containerConfig?: {
+    enabled: boolean;
+    preferredEngine?: 'docker' | 'podman';
+    buildImages?: boolean;
+    projectPath?: string;
+  };
 }
 
 export interface CodeFile {
@@ -45,7 +52,8 @@ export type VerificationType =
   | 'contracts'
   | 'specifications'
   | 'mutations'
-  | 'rust-verification';
+  | 'rust-verification'
+  | 'container-verification';
 
 export interface VerificationResult {
   passed: boolean;
@@ -138,9 +146,14 @@ export interface TraceItem {
 
 export class VerifyAgent {
   private rustVerificationAgent: RustVerificationAgent;
+  private containerAgent?: ContainerAgent;
 
-  constructor() {
+  constructor(options?: { enableContainers?: boolean; containerConfig?: any }) {
     this.rustVerificationAgent = new RustVerificationAgent();
+    
+    if (options?.enableContainers !== false) {
+      this.containerAgent = new ContainerAgent(options?.containerConfig);
+    }
   }
 
   /**
@@ -213,6 +226,8 @@ export class VerifyAgent {
         return this.runMutationTesting(request);
       case 'rust-verification':
         return this.runRustVerification(request);
+      case 'container-verification':
+        return this.runContainerVerification(request);
       default:
         return {
           type,
@@ -794,6 +809,94 @@ export class VerifyAgent {
   }
 
   /**
+   * Run container-based verification
+   */
+  private async runContainerVerification(request: VerificationRequest): Promise<VerificationCheck> {
+    if (!this.containerAgent) {
+      return {
+        type: 'container-verification',
+        passed: false,
+        details: { error: 'Container agent not initialized' },
+        errors: ['Container verification is not enabled'],
+      };
+    }
+
+    try {
+      // Determine project path for container verification
+      let projectPath = request.containerConfig?.projectPath;
+      
+      if (!projectPath && request.codeFiles.length > 0) {
+        // Try to find project root from the first code file
+        const firstFile = request.codeFiles[0];
+        
+        if (firstFile.language === 'rust') {
+          projectPath = this.findRustProjectPath(firstFile.path) || undefined;
+        } else if (firstFile.language === 'elixir') {
+          projectPath = this.findElixirProjectPath(firstFile.path) || undefined;
+        }
+        
+        if (!projectPath) {
+          projectPath = path.dirname(path.resolve(firstFile.path));
+        }
+      }
+
+      if (!projectPath) {
+        return {
+          type: 'container-verification',
+          passed: false,
+          details: { error: 'Could not determine project path for container verification' },
+          errors: ['Project path is required for container verification'],
+        };
+      }
+
+      // Determine language and tools based on project structure and code files
+      const language = this.detectProjectLanguage(request.codeFiles, projectPath);
+      const tools = this.selectVerificationTools(language, request.verificationTypes);
+
+      // Run container-based verification
+      const containerRequest: ContainerVerificationRequest = {
+        projectPath,
+        language,
+        tools,
+        jobName: `verify-${Date.now()}`,
+        buildImages: request.containerConfig?.buildImages,
+        environment: {
+          AE_VERIFICATION_CONTEXT: 'verify-agent',
+          AE_STRICT_MODE: request.strictMode ? '1' : '0',
+        },
+      };
+
+      const result = await this.containerAgent.runVerification(containerRequest);
+
+      return {
+        type: 'container-verification',
+        passed: result.success,
+        details: {
+          jobId: result.data?.jobId,
+          status: result.data?.status,
+          results: result.data?.results,
+          duration: result.data?.duration,
+          logs: result.data?.logs,
+          projectPath,
+          language,
+          tools,
+        },
+        errors: result.success ? undefined : [result.message],
+        warnings: result.success && result.data?.results?.summary?.warnings > 0 
+          ? [`${result.data.results.summary.warnings} warnings found`]
+          : undefined,
+      };
+    } catch (error: any) {
+      return {
+        type: 'container-verification',
+        passed: false,
+        details: { error: error.message },
+        errors: [error.message],
+      };
+    }
+  }
+
+  /**
    * Generate improvement suggestions
    */
   private generateSuggestions(
@@ -928,5 +1031,86 @@ export class VerifyAgent {
     }
     
     return null;
+  }
+
+  private findElixirProjectPath(filePath: string): string | null {
+    let currentDir = path.dirname(path.resolve(filePath));
+    
+    // Search up the directory tree for mix.exs
+    while (currentDir !== path.dirname(currentDir)) {
+      const mixPath = path.join(currentDir, 'mix.exs');
+      if (existsSync(mixPath)) {
+        return currentDir;
+      }
+      currentDir = path.dirname(currentDir);
+    }
+    
+    return null;
+  }
+
+  private detectProjectLanguage(
+    codeFiles: CodeFile[], 
+    projectPath: string
+  ): 'rust' | 'elixir' | 'multi' {
+    // Check for project files
+    if (existsSync(path.join(projectPath, 'Cargo.toml'))) {
+      // Check if there are also Elixir files
+      const hasElixir = codeFiles.some(f => f.language === 'elixir') || 
+        existsSync(path.join(projectPath, 'mix.exs'));
+      
+      return hasElixir ? 'multi' : 'rust';
+    }
+    
+    if (existsSync(path.join(projectPath, 'mix.exs'))) {
+      // Check if there are also Rust files
+      const hasRust = codeFiles.some(f => f.language === 'rust') ||
+        existsSync(path.join(projectPath, 'Cargo.toml'));
+      
+      return hasRust ? 'multi' : 'elixir';
+    }
+    
+    // Detect based on code files
+    const languages = new Set(codeFiles.map(f => f.language));
+    
+    if (languages.has('rust') && languages.has('elixir')) {
+      return 'multi';
+    } else if (languages.has('rust')) {
+      return 'rust';
+    } else if (languages.has('elixir')) {
+      return 'elixir';
+    }
+    
+    // Default to multi for mixed or unknown languages
+    return 'multi';
+  }
+
+  private selectVerificationTools(
+    language: 'rust' | 'elixir' | 'multi',
+    verificationTypes: VerificationType[]
+  ): string[] {
+    const tools: string[] = [];
+    
+    if (language === 'rust' || language === 'multi') {
+      tools.push('cargo');
+      
+      if (verificationTypes.includes('rust-verification')) {
+        tools.push('prusti', 'kani', 'miri');
+      }
+      
+      if (verificationTypes.includes('tests')) {
+        tools.push('cargo'); // Already included but indicates testing
+      }
+    }
+    
+    if (language === 'elixir' || language === 'multi') {
+      tools.push('elixir', 'mix');
+      
+      if (verificationTypes.includes('tests')) {
+        tools.push('exunit');
+      }
+    }
+    
+    // Remove duplicates and return
+    return Array.from(new Set(tools));
   }
 }
