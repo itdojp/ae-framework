@@ -4,7 +4,7 @@
  */
 
 import { EventEmitter } from 'events';
-import type { SequentialInferenceEngine } from '../engines/sequential-inference-engine.js';
+import type { SequentialInferenceEngine, ComplexQuery } from '../engines/sequential-inference-engine.js';
 import type { DependencyAnalysisResult } from '../analysis/dependency-analyzer.js';
 
 // Core interfaces
@@ -882,7 +882,7 @@ export class IntelligentTestSelection extends EventEmitter {
     riskScores: Map<string, number>,
     impactScores: Map<string, number>
   ): Promise<void> {
-    const query = {
+    const query: ComplexQuery = {
       id: `test-selection-${Date.now()}`,
       description: 'Intelligent test selection optimization query',
       context: {
