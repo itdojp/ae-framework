@@ -117,8 +117,8 @@ describe('Performance Benchmarks', () => {
       
       // Assertions
       expect(throughput).toBeGreaterThan(500); // At least 500 ops/sec
-      expect(metrics.integration.systemStability).toBeGreaterThan(0.05); // Adjusted for demo system
-      expect(metrics.performance.errorRate).toBeLessThan(1.1); // Allow high error rate in demo
+      expect(metrics.integration.systemStability).toBeGreaterThan(0.05); // Demo system - limited stability expected
+      expect(metrics.performance.errorRate).toBeLessThanOrEqual(1.0); // Error rate should be 0-100% (0-1.0)
     }, 10000);
 
     it('should maintain throughput under sustained load', async () => {
@@ -164,8 +164,8 @@ describe('Performance Benchmarks', () => {
       
       // Assertions for sustained performance
       expect(throughput).toBeGreaterThan(100); // At least 100 ops/sec sustained
-      expect(metrics.integration.systemStability).toBeGreaterThan(0.05); // Adjusted for demo system
-      expect(metrics.performance.errorRate).toBeLessThan(1.1); // Allow high error rate in demo
+      expect(metrics.integration.systemStability).toBeGreaterThan(0.05); // Demo system - limited stability expected
+      expect(metrics.performance.errorRate).toBeLessThanOrEqual(1.0); // Error rate should be 0-100% (0-1.0)
     }, 15000);
   });
 

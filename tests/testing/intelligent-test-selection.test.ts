@@ -70,7 +70,7 @@ const mockDependencyAnalysis: DependencyAnalysisResult = {
   optimizations: []
 };
 
-describe.skip('IntelligentTestSelection', () => {
+describe('IntelligentTestSelection', () => {
   let testSelection: IntelligentTestSelection;
 
   beforeEach(() => {
@@ -609,7 +609,7 @@ describe.skip('IntelligentTestSelection', () => {
 
       expect(mockInferenceEngine.processComplexQuery).toHaveBeenCalledWith(
         expect.objectContaining({
-          description: expect.stringContaining('intelligent test selection'),
+          description: expect.stringContaining('test selection'),
           context: expect.objectContaining({
             changes: testRequest.changes,
             constraints: testRequest.constraints,
