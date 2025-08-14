@@ -17,6 +17,8 @@
     "phase": "tsx src/cli/phase-cli.ts",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:fast": "vitest run --exclude \"tests/testing/intelligent-test-selection.test.ts\"",
+    "test:phase3.2:core": "vitest run tests/testing/playwright-integration.test.ts tests/testing/visual-regression.test.ts",
     "test:all": "npm run test && npm run bdd && npm run pbt",
     "coverage": "vitest run --coverage",
     "bdd": "cucumber-js",

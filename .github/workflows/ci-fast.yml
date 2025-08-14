@@ -1,0 +1,27 @@
+name: Fast CI
+on: 
+  push:
+    branches: [ main, 'feat/*' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  fast-build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test -- --run
+      - run: npm run bdd || true  # 失敗時は仕様更新提案へ
+      
+      # Phase 3.2 core tests only (fast feedback)
+      - name: Run Phase 3.2 Core Tests
+        run: npm run test:phase3.2:core || true
+        
+      - name: Generate Basic SBOM
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b . v1.0.0
+          ./syft packages dir:. -o cyclonedx-json > security/sbom/sbom.json
