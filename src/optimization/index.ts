@@ -654,7 +654,7 @@ export class OptimizationSystem extends EventEmitter {
 export type { 
   MonitoringSystemConfig,
   SystemHealthStatus,
-  PerformanceMetrics,
+  PerformanceMetrics as MonitoringPerformanceMetrics,
   PerformanceAlert,
   MetricPoint,
   MetricsSnapshot,
@@ -677,7 +677,9 @@ export type {
   SchedulingMetrics,
   PooledResource,
   ResourceType,
-  ResourceCapacity
+  ResourceCapacity,
+  PerformanceMetrics as ParallelPerformanceMetrics,
+  MonitoringConfig as ParallelMonitoringConfig
 } from './parallel/index.js';
 export { ParallelOptimizer, TaskScheduler, ResourcePool, ParallelOptimizationSystem } from './parallel/index.js';
 
