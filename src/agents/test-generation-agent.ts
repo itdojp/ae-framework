@@ -430,7 +430,7 @@ export class TestGenerationAgent {
       'vitest': "import { describe, it, expect, beforeEach, afterEach } from 'vitest';",
       'jest': "import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';",
       'mocha': "import { describe, it, beforeEach, afterEach } from 'mocha';\nimport { expect } from 'chai';",
-      'exunit': "# ExUnit test module\nuse ExUnit.Case",
+      'exunit': "use ExUnit.Case",
     };
     return imports[framework] || imports['vitest'];
   }

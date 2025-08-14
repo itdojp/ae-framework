@@ -628,7 +628,7 @@ export class CodeGenerationAgent {
       'typescript': 'test.ts',
       'javascript': 'test.js',
       'python': 'test.py',
-      'elixir': 'exs',
+      'elixir': '_test.exs',
       'rust': 'rs',
       'go': 'test.go'
     };

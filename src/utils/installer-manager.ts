@@ -39,7 +39,7 @@ export interface TemplateFile {
 
 export interface Configuration {
   file: string;
-  format: 'json' | 'yaml' | 'env' | 'ini' | 'js' | 'ts';
+  format: 'json' | 'yaml' | 'env' | 'ini' | 'js' | 'ts' | 'elixir';
   content: Record<string, any> | string;
   merge?: boolean; // Merge with existing file
 }
@@ -514,7 +514,7 @@ end
         configurations: [
           {
             file: 'mix.exs',
-            format: 'ts',
+            format: 'elixir',
             content: `defmodule MyApp.MixProject do
   use Mix.Project
 
@@ -650,7 +650,7 @@ end
         configurations: [
           {
             file: 'mix.exs',
-            format: 'ts',
+            format: 'elixir',
             content: `defmodule MyApp.MixProject do
   use Mix.Project
 
@@ -795,6 +795,11 @@ end
             configContent = typeof config.content === 'string' 
               ? config.content 
               : `export default ${JSON.stringify(config.content, null, 2)};`;
+            break;
+          case 'elixir':
+            configContent = typeof config.content === 'string' 
+              ? config.content 
+              : JSON.stringify(config.content, null, 2);
             break;
           default:
             configContent = JSON.stringify(config.content, null, 2);
