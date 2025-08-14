@@ -205,8 +205,7 @@ describe('Metrics Collector', () => {
   });
 
   it('should query metrics with filters', () => {
-    const now = new Date();
-    const oneMinuteAgo = new Date(now.getTime() - 60000);
+    const oneMinuteAgo = new Date(Date.now() - 60000);
 
     collector.recordMetric('test.metric', 100, { env: 'prod' });
     collector.recordMetric('test.metric', 200, { env: 'dev' });
@@ -220,7 +219,8 @@ describe('Metrics Collector', () => {
     const prodMetrics = collector.queryMetrics({ tags: { env: 'prod' } });
     expect(prodMetrics.length).toBe(2);
 
-    // Query by time range
+    // Query by time range - use current time after recording metrics
+    const now = new Date();
     const recentMetrics = collector.queryMetrics({
       timeRange: { start: oneMinuteAgo, end: now }
     });
