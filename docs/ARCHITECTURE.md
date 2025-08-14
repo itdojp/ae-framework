@@ -581,7 +581,7 @@ ae-frameworkは以下の特徴を持つ包括的な開発フレームワーク�
 - 運用ガイド・デプロイ設定
 
 ### 🔧 **SuperClaude Framework統合**
-- Token最適化による70%効率化
+- Token最適化による最大70%効率化（社内ベンチマークによる推定値）
 - Evidence-based検証システム
 - Extended Commandsによる高度操作
 
