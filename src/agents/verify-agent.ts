@@ -6,6 +6,7 @@
 import { execSync } from 'child_process';
 import { readFileSync, existsSync } from 'fs';
 import * as path from 'path';
+import { RustVerificationAgent, type RustVerificationRequest, type RustVerificationResult } from './rust-verification-agent.js';
 
 export interface VerificationRequest {
   codeFiles: CodeFile[];
@@ -43,7 +44,8 @@ export type VerificationType =
   | 'accessibility'
   | 'contracts'
   | 'specifications'
-  | 'mutations';
+  | 'mutations'
+  | 'rust-verification';
 
 export interface VerificationResult {
   passed: boolean;
@@ -135,6 +137,12 @@ export interface TraceItem {
 }
 
 export class VerifyAgent {
+  private rustVerificationAgent: RustVerificationAgent;
+
+  constructor() {
+    this.rustVerificationAgent = new RustVerificationAgent();
+  }
+
   /**
    * Run comprehensive verification suite
    */
@@ -203,6 +211,8 @@ export class VerifyAgent {
         return this.verifySpecifications(request);
       case 'mutations':
         return this.runMutationTesting(request);
+      case 'rust-verification':
+        return this.runRustVerification(request);
       default:
         return {
           type,
@@ -692,6 +702,98 @@ export class VerifyAgent {
   }
 
   /**
+   * Run Rust formal verification
+   */
+  async runRustVerification(request: VerificationRequest): Promise<VerificationCheck> {
+    try {
+      const rustFiles = request.codeFiles.filter(file => 
+        file.path.endsWith('.rs') || file.language === 'rust'
+      );
+
+      if (rustFiles.length === 0) {
+        return {
+          type: 'rust-verification',
+          passed: true,
+          details: { message: 'No Rust files found for verification' },
+        };
+      }
+
+      // Find Rust project directory by looking for Cargo.toml
+      const projectPath = this.findRustProjectPath(rustFiles[0].path);
+      
+      if (!projectPath) {
+        return {
+          type: 'rust-verification',
+          passed: false,
+          details: { error: 'Could not find Cargo.toml for Rust project' },
+          errors: ['Rust project structure not detected'],
+        };
+      }
+
+      // Prepare Rust verification request
+      const rustRequest: RustVerificationRequest = {
+        projectPath,
+        sourceFiles: rustFiles.map(file => ({
+          path: file.path,
+          content: file.content,
+        })),
+        verificationTools: ['prusti', 'kani', 'miri'], // Default verification tools
+        options: {
+          timeout: 300,
+          memoryLimit: 2048,
+          unwindLimit: 10,
+          strictMode: true,
+          generateReport: true,
+          checkOverflow: true,
+          checkConcurrency: true,
+        },
+      };
+
+      // Run Rust verification
+      const results = await this.rustVerificationAgent.verifyRustProject(rustRequest);
+      
+      const overallSuccess = results.every(result => result.success);
+      const allErrors = results.flatMap(result => 
+        result.errors.map(error => `${error.tool}: ${error.message}`)
+      );
+      const allWarnings = results.flatMap(result =>
+        result.warnings.map(warning => `${warning.tool}: ${warning.message}`)
+      );
+
+      // Generate detailed results summary
+      const toolResults = results.map(result => ({
+        tool: result.tool,
+        success: result.success,
+        checks: result.results.length,
+        passed: result.results.filter(check => check.status === 'passed').length,
+        failed: result.results.filter(check => check.status === 'failed').length,
+        executionTime: result.performance.executionTime,
+      }));
+
+      return {
+        type: 'rust-verification',
+        passed: overallSuccess,
+        details: {
+          totalTools: results.length,
+          successfulTools: results.filter(r => r.success).length,
+          toolResults,
+          summary: `Ran ${results.length} Rust verification tools with ${overallSuccess ? 'success' : 'failures'}`,
+        },
+        errors: allErrors.length > 0 ? allErrors : undefined,
+        warnings: allWarnings.length > 0 ? allWarnings : undefined,
+      };
+
+    } catch (error) {
+      return {
+        type: 'rust-verification',
+        passed: false,
+        details: { error: (error as Error).message },
+        errors: [(error as Error).message],
+      };
+    }
+  }
+
+  /**
    * Generate improvement suggestions
    */
   private generateSuggestions(
@@ -811,5 +913,20 @@ export class VerifyAgent {
     if (requirements.length === 0) return 100;
     const covered = requirements.filter(r => r.covered).length;
     return (covered / requirements.length) * 100;
+  }
+
+  private findRustProjectPath(filePath: string): string | null {
+    let currentDir = path.dirname(path.resolve(filePath));
+    
+    // Search up the directory tree for Cargo.toml
+    while (currentDir !== path.dirname(currentDir)) {
+      const cargoPath = path.join(currentDir, 'Cargo.toml');
+      if (existsSync(cargoPath)) {
+        return currentDir;
+      }
+      currentDir = path.dirname(currentDir);
+    }
+    
+    return null;
   }
 }
