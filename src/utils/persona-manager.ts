@@ -520,7 +520,8 @@ export class PersonaManager {
         'python': ['requirements.txt', '*.py', 'setup.py', 'pyproject.toml'],
         'java': ['pom.xml', 'build.gradle', '*.java'],
         'go': ['go.mod', '*.go'],
-        'rust': ['Cargo.toml', '*.rs']
+        'rust': ['Cargo.toml', '*.rs'],
+        'elixir': ['mix.exs', '*.ex', '*.exs', 'config/config.exs', 'lib/', 'test/']
       };
 
       const detectedLanguages: string[] = [];
@@ -587,6 +588,7 @@ export class PersonaManager {
     if (command.includes('.java')) hints.push('java');
     if (command.includes('.go')) hints.push('go');
     if (command.includes('.rs') || command.includes('rust')) hints.push('rust');
+    if (command.includes('.ex') || command.includes('.exs') || command.includes('elixir') || command.includes('mix')) hints.push('elixir');
     
     return hints;
   }

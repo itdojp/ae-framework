@@ -892,17 +892,26 @@ export class IntelligentTestSelection extends EventEmitter {
         riskScores: Object.fromEntries(riskScores),
         impactScores: Object.fromEntries(impactScores)
       },
-      requirements: [
-        'Optimize test selection based on risk and impact analysis',
-        'Consider execution time constraints',
-        'Maximize coverage while minimizing execution time'
-      ]
+      constraints: [
+        {
+          type: 'resource' as const,
+          condition: `execution_time <= ${request.constraints.maxExecutionTime}`,
+          severity: 'critical' as const
+        },
+        {
+          type: 'resource' as const,
+          condition: `test_count <= ${request.constraints.maxTests}`,
+          severity: 'error' as const
+        }
+      ],
+      priority: 'high' as const,
+      expectedOutcome: 'Optimized test selection with balanced risk and coverage'
     };
     
     const inferenceResult = await this.inferenceEngine.processComplexQuery(query);
     
     // Enhance scores based on inference engine recommendations
-    if (inferenceResult.result?.selectedTests) {
+    if (inferenceResult.finalResult?.selectedTests) {
       // Apply ML insights to adjust scores
       this.applyMLInsights(inferenceResult, riskScores, impactScores);
     }
