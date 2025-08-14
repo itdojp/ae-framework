@@ -3,16 +3,17 @@
  * Integrates container-based verification environments with the ae-framework
  */
 
+import { ContainerManager, ContainerManagerConfig, VerificationJob, VerificationEnvironment } from '../services/container/container-manager.js';
+import { ContainerEngineFactory, type ContainerEngineName } from '../services/container/container-engine.js';
+import * as path from 'path';
+import * as fs from 'fs/promises';
+
 export interface AgentResult<T = any> {
   success: boolean;
   message: string;
   data?: T;
   error?: string;
 }
-import { ContainerManager, ContainerManagerConfig, VerificationJob, VerificationEnvironment } from '../services/container/container-manager.js';
-import { ContainerEngineFactory, type ContainerEngineName } from '../services/container/container-engine.js';
-import * as path from 'path';
-import * as fs from 'fs/promises';
 
 export interface ContainerAgentConfig extends ContainerManagerConfig {
   containerfilesPath?: string;
