@@ -71,9 +71,14 @@ DATABASE_URL=postgresql://username:password@localhost:5432/ae-framework
 LOG_LEVEL=info
 ```
 
-### 2. MCPサーバー設定
+### 2. Claude Code 統合設定
 
-Claude Codeで使用する場合の設定ファイル例：
+**自動統合（推奨）:**
+ae-framework は Claude Code Task Tool として自動統合されています。追加設定は不要です。
+
+**MCP サーバー設定（オプション）:**
+
+Claude Code で MCP Server も使用する場合の設定ファイル例：
 
 ```json
 {
@@ -81,7 +86,10 @@ Claude Codeで使用する場合の設定ファイル例：
     "ae-intent": {
       "command": "npx",
       "args": ["tsx", "src/mcp-server/intent-server.ts"],
-      "cwd": "/path/to/ae-framework"
+      "cwd": "/path/to/ae-framework",
+      "env": {
+        "NODE_ENV": "production"
+      }
     },
     "ae-formal": {
       "command": "npx", 
