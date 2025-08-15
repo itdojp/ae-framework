@@ -60,7 +60,33 @@ npm run operate:server
 
 ### 基本的な使い方
 
-#### MCPサーバーとして使用
+#### Claude Code Task Tool として使用（推奨）
+Claude Code環境では自動的にTask Toolとして統合されています：
+
+```
+User: プロジェクトの要件分析をお願いします
+
+Claude Code: Intent Task Adapterを使用して要件分析を実行します...
+
+✅ Intent Analysis Complete - 15 requirements identified
+📋 Next steps:
+  • Review identified requirements for completeness  
+  • Proceed to Phase 2 (Formal Specification)
+```
+
+#### CLI実行
+```bash
+# 要件分析実行
+ae-framework intent --analyze --sources="requirements.md"
+
+# 完全性検証
+ae-framework intent --validate
+
+# フェーズチェック
+ae-framework check --phase 1-intent
+```
+
+#### MCPサーバーとして使用（フォールバック）
 ```bash
 npm run intent-agent
 ```

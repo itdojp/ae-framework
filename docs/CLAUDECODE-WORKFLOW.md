@@ -45,13 +45,29 @@ Claude Code を開き、以下の手順で ae-framework を使用した開発を
 ```
 ae-frameworkのIntent Agentを使用して要件分析を行います。
 
-[Intent Agentを使用]
+Intent Task Adapterを使用して分析を実行します...
+
+✅ Intent Analysis Complete - 12 requirements identified
+
+📋 Next steps:
+  • Review identified requirements for completeness
+  • Validate stakeholder concerns coverage
+  • Proceed to Phase 2 (Formal Specification)
+  • Create domain model from requirements
 ```
 
-**実際のコマンド（Claude Code 内部）:**
+**実際の実行方法:**
+Claude Code環境では、Intent AgentがTask Toolとして統合されており、以下のいずれかで実行されます:
+
 ```bash
-# Intent Agentが自動実行される
-/ae:intent analyze --input="タスク管理システムの要件" --domain="productivity" --output="requirements.json"
+# 1. Task Tool統合 (Claude Code内で自動実行)
+# Intent Task Adapter → Intent Agent
+
+# 2. CLI実行 (コマンドライン環境)
+ae-framework intent --analyze --sources="requirements.md"
+
+# 3. ハイブリッド実行 (フォールバック機能)
+# MCP Server → Task Tool → CLI Agent
 ```
 
 **出力例:**
