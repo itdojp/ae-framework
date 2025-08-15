@@ -7,6 +7,7 @@ import { GuardRunner } from './guards/GuardRunner.js';
 import { ConfigLoader } from './config/ConfigLoader.js';
 // import { MetricsCollector } from './metrics/MetricsCollector.js';  // TODO: Enable when metrics tracking is implemented
 import { AEFrameworkConfig, Phase } from './types.js';
+import { createHybridIntentSystem } from '../integration/hybrid-intent-system.js';
 
 const program = new Command();
 
@@ -14,12 +15,20 @@ class AEFrameworkCLI {
   private config: AEFrameworkConfig;
   private phaseValidator: PhaseValidator;
   private guardRunner: GuardRunner;
+  private intentSystem: any;
   // private metricsCollector: MetricsCollector;  // TODO: use for metrics tracking
 
   constructor() {
     this.config = ConfigLoader.load();
     this.phaseValidator = new PhaseValidator(this.config);
     this.guardRunner = new GuardRunner(this.config);
+    this.intentSystem = createHybridIntentSystem({
+      enableCLI: true,
+      enableMCPServer: false, // Disabled for CLI mode
+      enableClaudeCodeIntegration: false,
+      enforceRealTime: false,
+      strictMode: false,
+    });
     // this.metricsCollector = new MetricsCollector(this.config);  // TODO: use for metrics tracking
   }
 
@@ -74,6 +83,52 @@ class AEFrameworkCLI {
     }
 
     if (!allPassed) {
+      process.exit(1);
+    }
+  }
+
+  async runIntent(options: { analyze?: boolean; validate?: boolean; sources?: string }): Promise<void> {
+    console.log(chalk.blue('🎯 Running Intent Analysis...'));
+    
+    try {
+      if (options.validate) {
+        console.log(chalk.blue('🔍 Validating Intent completeness...'));
+        const result = await this.intentSystem.handleIntentRequest({
+          type: 'cli',
+          data: { command: 'validate', sources: options.sources || [] }
+        });
+        
+        if (result.response.score > 0.8) {
+          console.log(chalk.green(`✅ Intent validation passed: ${Math.round(result.response.score * 100)}%`));
+        } else {
+          console.log(chalk.red(`❌ Intent validation failed: ${Math.round(result.response.score * 100)}%`));
+          console.log(chalk.yellow('Missing areas:'));
+          result.response.missingAreas?.forEach((area: string) => {
+            console.log(chalk.yellow(`  • ${area}`));
+          });
+          process.exit(1);
+        }
+      } else {
+        console.log(chalk.blue('📋 Analyzing requirements and extracting intent...'));
+        const result = await this.intentSystem.handleIntentRequest({
+          type: 'cli',
+          data: { command: 'analyze', sources: options.sources || [] }
+        });
+        
+        console.log(chalk.green('✅ Intent analysis completed'));
+        if (result.response.requirements) {
+          console.log(chalk.green(`   Found ${result.response.requirements.length} requirements`));
+        }
+        
+        if (result.followUp) {
+          console.log(chalk.cyan('\n📋 Next steps:'));
+          result.followUp.forEach((step: string) => {
+            console.log(chalk.cyan(`  • ${step}`));
+          });
+        }
+      }
+    } catch (error) {
+      console.log(chalk.red(`❌ Intent analysis failed: ${error}`));
       process.exit(1);
     }
   }
@@ -211,6 +266,17 @@ program
     await cli.runGuards('RED-GREEN Cycle Guard');
     
     console.log(chalk.green('✅ TDD cycle validation complete'));
+  });
+
+program
+  .command('intent')
+  .description('Run Intent analysis for Phase 1')
+  .option('--analyze', 'Analyze requirements and extract intent')
+  .option('--validate', 'Validate Intent completeness')
+  .option('--sources <sources>', 'Requirement sources (comma-separated paths)')
+  .action(async (options) => {
+    const cli = new AEFrameworkCLI();
+    await cli.runIntent(options);
   });
 
 program.parse();

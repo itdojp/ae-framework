@@ -3,8 +3,43 @@
 > 人手最小＆仕様準拠最大。TDD強制機能付きIntent→Formal→Tests→Code→Verify→Operate の6フェーズ。
 
 ## 📢 最新アップデート
-- **[🚀 クイックスタート](./docs/QUICK_START.md)** - 5分で始めるae-framework
+- **[🎯 Intent Agent 改善](./docs/TDD-FRAMEWORK-ARCHITECTURE.md)** - Claude Code Task Tool統合でMCP問題を解決
+- **[🚀 クイックスタート](./docs/QUICK-START-GUIDE.md)** - 5分で始めるae-framework  
 - **[📖 新機能ガイド](./docs/NEW_FEATURES.md)** - Steering Documents、Phase State Management、Approval Workflow、Slash Commandsの詳細な使用方法
+
+## 🔧 Intent Agent 統合強化
+
+### Claude Code Task Tool 統合（推奨）
+ae-framework は Claude Code 環境で自動統合されており、追加設定なしで利用可能：
+
+```
+User: プロジェクトの要件分析をお願いします
+
+Claude Code: Intent Task Adapterを使用して要件分析を実行します...
+
+✅ Intent Analysis Complete - 12 requirements identified
+📋 Next steps:
+  • Proceed to Phase 2 (Formal Specification)
+```
+
+### CLI実行も強化
+```bash
+# Phase 1 Intent分析
+ae-framework intent --analyze --sources="requirements.md"
+
+# 完全性検証
+ae-framework intent --validate
+
+# フェーズチェック
+ae-framework check --phase 1-intent
+```
+
+### ハイブリッドアプローチ
+- **Claude Code**: Task Tool統合（最優先）
+- **CLI**: コマンドライン環境
+- **MCP**: フォールバック機能
+
+詳細は [TDD Framework Architecture](./docs/TDD-FRAMEWORK-ARCHITECTURE.md) を参照。
 
 ## 🎯 主要機能
 
