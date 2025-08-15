@@ -1,0 +1,48 @@
+# Multi-language Verification Environment
+FROM ubuntu:22.04 as base
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    git \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Rust
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:$PATH"
+
+# Install Rust verification tools
+RUN cargo install --version 0.1.259 prusti-cli || echo "Prusti install failed"
+RUN cargo install --version 0.36.0 kani-verifier || echo "Kani install failed"
+RUN rustup component add miri
+
+# Install Elixir
+RUN wget -O erlang.deb https://packages.erlang-solutions.com/erlang/debian/pool/esl-erlang_25.3.2.7-1~ubuntu~jammy_amd64.deb && \
+    dpkg -i erlang.deb || apt-get install -f -y && \
+    wget -O elixir.deb https://packages.erlang-solutions.com/erlang/debian/pool/elixir_1.15.7-1~ubuntu~jammy_all.deb && \
+    dpkg -i elixir.deb || apt-get install -f -y && \
+    rm erlang.deb elixir.deb
+
+# Install Hex and Rebar for Elixir
+RUN mix local.hex --force && \
+    mix local.rebar --force
+
+# Set up workspace
+WORKDIR /workspace
+VOLUME ["/workspace", "/output"]
+
+# Verification target
+FROM base as verification
+ENV RUST_BACKTRACE=1
+ENV CARGO_HOME=/opt/cargo
+ENV MIX_ENV=test
+ENV ERL_CRASH_DUMP=/dev/null
+ENV PATH="/opt/cargo/bin:/opt/elixir/bin:$PATH"
+
+# Default command
+CMD ["sh", "-c", "echo 'Multi-language verification environment ready'"]

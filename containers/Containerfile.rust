@@ -1,0 +1,31 @@
+# Rust Verification Environment
+FROM rust:1.75-slim as base
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Rust verification tools
+RUN cargo install --version 0.1.259 prusti-cli || echo "Prusti install failed"
+RUN cargo install --version 0.36.0 kani-verifier || echo "Kani install failed"
+
+# Install Miri for undefined behavior detection
+RUN rustup component add miri
+
+# Set up workspace
+WORKDIR /workspace
+VOLUME ["/workspace", "/output"]
+
+# Verification target
+FROM base as verification
+ENV RUST_BACKTRACE=1
+ENV CARGO_HOME=/opt/cargo
+ENV PATH="/opt/cargo/bin:$PATH"
+
+# Default command
+CMD ["cargo", "check"]

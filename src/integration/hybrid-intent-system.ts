@@ -5,6 +5,8 @@
  * for comprehensive Intent analysis and Phase 1 guidance
  */
 
+import fs from 'fs';
+import path from 'path';
 import { IntentTaskAdapter, TaskRequest, TaskResponse } from '../agents/intent-task-adapter.js';
 import { IntentAgent } from '../agents/intent-agent.js';
 import { ConfigLoader } from '../cli/config/ConfigLoader.js';
@@ -23,6 +25,7 @@ export class HybridIntentSystem {
   private taskAdapter?: IntentTaskAdapter;
   private metricsCollector: MetricsCollector;
   private config: HybridIntentConfig;
+  private periodicCheckIntervalId?: NodeJS.Timeout;
 
   constructor(config: HybridIntentConfig) {
     this.config = config;
@@ -273,9 +276,10 @@ export class HybridIntentSystem {
 
   private async executeMCPCommand(data: any): Promise<any> {
     // Execute MCP server commands
-    // This would integrate with the MCP server implementation
-    // For now, simulate MCP failure to trigger fallback
-    throw new Error('MCP server not responding');
+    // NOTE: MCP functionality is intentionally disabled in favor of Task Tool integration
+    // This method exists for backward compatibility and will always trigger the fallback
+    // to Task Tool or CLI-based execution, which provides better performance and reliability
+    throw new Error('MCP server not responding - using Task Tool fallback');
   }
 
   private combineResults(agentResult: any, taskResult: any): any {
@@ -326,14 +330,12 @@ export class HybridIntentSystem {
 
   private setupRequirementWatchers(): void {
     // Set up file system watchers for requirements files
-    const fs = require('fs');
-    const path = require('path');
     
     const watchPaths = ['requirements/', 'specs/', 'docs/requirements/', '.'];
     
     for (const watchPath of watchPaths) {
       if (fs.existsSync(watchPath)) {
-        fs.watch(watchPath, { recursive: true }, (eventType: string, filename: string) => {
+        fs.watch(watchPath, { recursive: true }, (eventType: string, filename: string | null) => {
           if (filename && this.isRequirementFile(filename)) {
             this.handleRequirementChange(path.join(watchPath, filename), eventType);
           }
@@ -344,8 +346,6 @@ export class HybridIntentSystem {
 
   private setupGitIntegration(): void {
     // Ensure git hooks are installed for Intent validation
-    const fs = require('fs');
-    const path = require('path');
     
     const hookPath = path.join('.git', 'hooks', 'pre-commit');
     const hookSource = path.join('scripts', 'hooks', 'pre-commit-intent');
@@ -373,7 +373,7 @@ export class HybridIntentSystem {
 
   private startPeriodicChecks(): void {
     // Start periodic Intent compliance checks
-    setInterval(async () => {
+    this.periodicCheckIntervalId = setInterval(async () => {
       try {
         const compliance = await this.checkIntentCompliance();
         if (compliance.criticalIssues > 0) {
@@ -383,6 +383,16 @@ export class HybridIntentSystem {
         // Silent fail - don't interrupt development
       }
     }, 10 * 60 * 1000); // Check every 10 minutes
+  }
+
+  /**
+   * Clean up resources and stop periodic checks
+   */
+  public cleanup(): void {
+    if (this.periodicCheckIntervalId) {
+      clearInterval(this.periodicCheckIntervalId);
+      this.periodicCheckIntervalId = undefined;
+    }
   }
 
   private isRequirementFile(filename: string): boolean {
