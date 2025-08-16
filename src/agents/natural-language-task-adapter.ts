@@ -517,9 +517,16 @@ ${gaps.map(g => `• ${g.suggestedRequirement}`).join('\n')}
   }
 
   private detectConflicts(requirements: RequirementDocument[]): string[] {
+    // Initialize conflicts array to ensure it's properly initialized (addressing review comment)
+    const conflicts: string[] = [];
+    
+    // Early return if no requirements to check
+    if (!requirements || requirements.length === 0) {
+      return conflicts;
+    }
+    
     // TODO: Implement more sophisticated conflict detection logic.
     // This basic implementation flags requirements with identical content but different types or priorities.
-    const conflicts: string[] = [];
     for (let i = 0; i < requirements.length; i++) {
       for (let j = i + 1; j < requirements.length; j++) {
         if (
@@ -532,10 +539,12 @@ ${gaps.map(g => `• ${g.suggestedRequirement}`).join('\n')}
         }
       }
     }
-    // Retain the original complexity warning for large sets
+    
+    // Add complexity warning for large sets
     if (requirements.length > NaturalLanguageTaskAdapter.MAX_REQUIREMENTS_BEFORE_CONFLICTS) {
       conflicts.push('Potential conflicts between requirements due to complexity');
     }
+    
     return conflicts;
   }
 
