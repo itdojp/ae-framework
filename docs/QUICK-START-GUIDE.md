@@ -7,8 +7,17 @@ Claude Code で今すぐ始める ae-framework！
 
 ### 1. Claude Code で ae-framework を有効化
 
-**Claude Code の設定画面で以下を追加:**
+**ae-framework は Claude Code と統合済み！**
 
+```bash
+# 1. プロジェクトにae-frameworkをインストール
+npm install -g ae-framework
+
+# 2. Claude Code で自動認識
+# Intent Agent が Task Tool として利用可能
+```
+
+**設定確認 (オプション):**
 ```json
 {
   "mcpServers": {
@@ -21,7 +30,7 @@ Claude Code で今すぐ始める ae-framework！
 }
 ```
 
-### 2. 即座に使える基本コマンド
+### 2. 即座に使える基本機能
 
 Claude Code で以下のように話しかけるだけ：
 
@@ -29,7 +38,22 @@ Claude Code で以下のように話しかけるだけ：
 「ae-frameworkを使ってログイン機能を作ってください」
 ```
 
-**→ 自動的に6フェーズで完全開発！**
+**→ Intent Task Adapter が自動実行して6フェーズで完全開発！**
+
+**Claude Code での実行例:**
+```
+User: ログイン機能を作ってください
+
+Claude Code: ae-frameworkのIntent Agentで要件分析を開始します...
+
+✅ Intent Analysis Complete - 8 requirements identified
+📋 Next steps:
+  • Review identified requirements for completeness
+  • Proceed to Phase 2 (Formal Specification)
+  • Create domain model from requirements
+
+[自動的にPhase 2-6も実行]
+```
 
 ---
 

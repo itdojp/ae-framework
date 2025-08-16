@@ -7,6 +7,7 @@ import { GuardRunner } from './guards/GuardRunner.js';
 import { ConfigLoader } from './config/ConfigLoader.js';
 // import { MetricsCollector } from './metrics/MetricsCollector.js';  // TODO: Enable when metrics tracking is implemented
 import { AEFrameworkConfig, Phase } from './types.js';
+import { createHybridIntentSystem } from '../integration/hybrid-intent-system.js';
 import { createNaturalLanguageTaskHandler } from '../agents/natural-language-task-adapter.js';
 import { createUserStoriesTaskHandler } from '../agents/user-stories-task-adapter.js';
 import { createValidationTaskHandler } from '../agents/validation-task-adapter.js';
@@ -14,23 +15,46 @@ import { createDomainModelingTaskHandler } from '../agents/domain-modeling-task-
 
 const program = new Command();
 
+// Define interfaces for better type safety (addressing review comment)
+interface TaskHandler {
+  handleTask: (request: any) => Promise<any>;
+  provideProactiveGuidance?: (context: any) => Promise<any>;
+}
+
+interface TaskResult {
+  summary: string;
+  analysis: string;
+  recommendations: string[];
+  nextActions: string[];
+  warnings: string[];
+  shouldBlockProgress: boolean;
+}
+
 class AEFrameworkCLI {
   private config: AEFrameworkConfig;
   private phaseValidator: PhaseValidator;
   private guardRunner: GuardRunner;
+  private intentSystem: any;
   // private metricsCollector: MetricsCollector;  // TODO: use for metrics tracking
-  public naturalLanguageHandler: any;
-  public userStoriesHandler: any;
-  public validationHandler: any;
-  public domainModelingHandler: any;
+  public naturalLanguageHandler: TaskHandler;
+  public userStoriesHandler: TaskHandler;
+  public validationHandler: TaskHandler;
+  public domainModelingHandler: TaskHandler;
 
   constructor() {
     this.config = ConfigLoader.load();
     this.phaseValidator = new PhaseValidator(this.config);
     this.guardRunner = new GuardRunner(this.config);
+    this.intentSystem = createHybridIntentSystem({
+      enableCLI: true,
+      enableMCPServer: false, // Disabled for CLI mode
+      enableClaudeCodeIntegration: false,
+      enforceRealTime: false,
+      strictMode: false,
+    });
     // this.metricsCollector = new MetricsCollector(this.config);  // TODO: use for metrics tracking
     
-    // Initialize Task Tool handlers
+    // Initialize Task Tool handlers with proper types
     this.naturalLanguageHandler = createNaturalLanguageTaskHandler();
     this.userStoriesHandler = createUserStoriesTaskHandler();
     this.validationHandler = createValidationTaskHandler();
@@ -88,6 +112,75 @@ class AEFrameworkCLI {
     }
 
     if (!allPassed) {
+      process.exit(1);
+    }
+  }
+
+  async runIntent(options: { analyze?: boolean; validate?: boolean; sources?: string }): Promise<void> {
+    console.log(chalk.blue('🎯 Running Intent Analysis...'));
+    
+    try {
+      if (options.validate) {
+        console.log(chalk.blue('🔍 Validating Intent completeness...'));
+        const result = await this.intentSystem.handleIntentRequest({
+          type: 'cli',
+          data: { command: 'validate', sources: options.sources || [] }
+        });
+        
+        if (result.response.score > 0.8) {
+          console.log(chalk.green(`✅ Intent validation passed: ${Math.round(result.response.score * 100)}%`));
+        } else {
+          console.log(chalk.red(`❌ Intent validation failed: ${Math.round(result.response.score * 100)}%`));
+          console.log(chalk.yellow('Missing areas:'));
+          result.response.missingAreas?.forEach((area: string) => {
+            console.log(chalk.yellow(`  • ${area}`));
+          });
+          process.exit(1);
+        }
+      } else {
+        console.log(chalk.blue('📋 Analyzing requirements and extracting intent...'));
+        const result = await this.intentSystem.handleIntentRequest({
+          type: 'cli',
+          data: { command: 'analyze', sources: options.sources || [] }
+        });
+        
+        console.log(chalk.green('✅ Intent analysis completed'));
+        if (result.response.requirements) {
+          console.log(chalk.green(`   Found ${result.response.requirements.length} requirements`));
+        }
+        
+        if (result.followUp) {
+          console.log(chalk.cyan('\n📋 Next steps:'));
+          result.followUp.forEach((step: string) => {
+            console.log(chalk.cyan(`  • ${step}`));
+          });
+        }
+      }
+    } catch (error) {
+      console.log(chalk.red(`❌ Intent analysis failed: ${error}`));
+      process.exit(1);
+    }
+  }
+
+  // Extracted method to reduce code duplication (addressing review comment)
+  private handleProgressBlocking(result: TaskResult): void {
+    if (result.recommendations.length > 0) {
+      console.log(chalk.yellow('\n💡 Recommendations:'));
+      result.recommendations.forEach((rec: string) => console.log(chalk.yellow(`• ${rec}`)));
+    }
+    
+    if (result.nextActions.length > 0) {
+      console.log(chalk.cyan('\n⏭️ Next Actions:'));
+      result.nextActions.forEach((action: string) => console.log(chalk.cyan(`• ${action}`)));
+    }
+    
+    if (result.warnings.length > 0) {
+      console.log(chalk.red('\n⚠️ Warnings:'));
+      result.warnings.forEach((warning: string) => console.log(chalk.red(`• ${warning}`)));
+    }
+    
+    if (result.shouldBlockProgress) {
+      console.log(chalk.red('\n🚫 Progress blocked - address critical issues before proceeding'));
       process.exit(1);
     }
   }
@@ -227,6 +320,17 @@ program
     console.log(chalk.green('✅ TDD cycle validation complete'));
   });
 
+program
+  .command('intent')
+  .description('Run Intent analysis for Phase 1')
+  .option('--analyze', 'Analyze requirements and extract intent')
+  .option('--validate', 'Validate Intent completeness')
+  .option('--sources <sources>', 'Requirement sources (comma-separated paths)')
+  .action(async (options) => {
+    const cli = new AEFrameworkCLI();
+    await cli.runIntent(options);
+  });
+
 // Phase 2: Natural Language Requirements CLI
 program
   .command('natural-language')
@@ -251,30 +355,12 @@ program
     };
     
     try {
-      const result = await cli.naturalLanguageHandler.handleTask(request);
+      const result: TaskResult = await cli.naturalLanguageHandler.handleTask(request);
       console.log(chalk.green(`✅ ${result.summary}`));
       console.log(chalk.blue('\n📊 Analysis:'));
       console.log(result.analysis);
       
-      if (result.recommendations.length > 0) {
-        console.log(chalk.yellow('\n💡 Recommendations:'));
-        result.recommendations.forEach((rec: string) => console.log(chalk.yellow(`• ${rec}`)));
-      }
-      
-      if (result.nextActions.length > 0) {
-        console.log(chalk.cyan('\n⏭️ Next Actions:'));
-        result.nextActions.forEach((action: string) => console.log(chalk.cyan(`• ${action}`)));
-      }
-      
-      if (result.warnings.length > 0) {
-        console.log(chalk.red('\n⚠️ Warnings:'));
-        result.warnings.forEach((warning: string) => console.log(chalk.red(`• ${warning}`)));
-      }
-      
-      if (result.shouldBlockProgress) {
-        console.log(chalk.red('\n🚫 Progress blocked - address critical issues before proceeding'));
-        process.exit(1);
-      }
+      cli.handleProgressBlocking(result);
     } catch (error) {
       console.log(chalk.red(`❌ Error: ${error}`));
       process.exit(1);
@@ -307,30 +393,12 @@ program
     };
     
     try {
-      const result = await cli.userStoriesHandler.handleTask(request);
+      const result: TaskResult = await cli.userStoriesHandler.handleTask(request);
       console.log(chalk.green(`✅ ${result.summary}`));
       console.log(chalk.blue('\n📊 Analysis:'));
       console.log(result.analysis);
       
-      if (result.recommendations.length > 0) {
-        console.log(chalk.yellow('\n💡 Recommendations:'));
-        result.recommendations.forEach((rec: string) => console.log(chalk.yellow(`• ${rec}`)));
-      }
-      
-      if (result.nextActions.length > 0) {
-        console.log(chalk.cyan('\n⏭️ Next Actions:'));
-        result.nextActions.forEach((action: string) => console.log(chalk.cyan(`• ${action}`)));
-      }
-      
-      if (result.warnings.length > 0) {
-        console.log(chalk.red('\n⚠️ Warnings:'));
-        result.warnings.forEach((warning: string) => console.log(chalk.red(`• ${warning}`)));
-      }
-      
-      if (result.shouldBlockProgress) {
-        console.log(chalk.red('\n🚫 Progress blocked - address critical issues before proceeding'));
-        process.exit(1);
-      }
+      cli.handleProgressBlocking(result);
     } catch (error) {
       console.log(chalk.red(`❌ Error: ${error}`));
       process.exit(1);
@@ -365,30 +433,12 @@ program
     };
     
     try {
-      const result = await cli.validationHandler.handleTask(request);
+      const result: TaskResult = await cli.validationHandler.handleTask(request);
       console.log(chalk.green(`✅ ${result.summary}`));
       console.log(chalk.blue('\n📊 Analysis:'));
       console.log(result.analysis);
       
-      if (result.recommendations.length > 0) {
-        console.log(chalk.yellow('\n💡 Recommendations:'));
-        result.recommendations.forEach((rec: string) => console.log(chalk.yellow(`• ${rec}`)));
-      }
-      
-      if (result.nextActions.length > 0) {
-        console.log(chalk.cyan('\n⏭️ Next Actions:'));
-        result.nextActions.forEach((action: string) => console.log(chalk.cyan(`• ${action}`)));
-      }
-      
-      if (result.warnings.length > 0) {
-        console.log(chalk.red('\n⚠️ Warnings:'));
-        result.warnings.forEach((warning: string) => console.log(chalk.red(`• ${warning}`)));
-      }
-      
-      if (result.shouldBlockProgress) {
-        console.log(chalk.red('\n🚫 Progress blocked - address critical issues before proceeding'));
-        process.exit(1);
-      }
+      cli.handleProgressBlocking(result);
     } catch (error) {
       console.log(chalk.red(`❌ Error: ${error}`));
       process.exit(1);
@@ -425,30 +475,12 @@ program
     };
     
     try {
-      const result = await cli.domainModelingHandler.handleTask(request);
+      const result: TaskResult = await cli.domainModelingHandler.handleTask(request);
       console.log(chalk.green(`✅ ${result.summary}`));
       console.log(chalk.blue('\n📊 Analysis:'));
       console.log(result.analysis);
       
-      if (result.recommendations.length > 0) {
-        console.log(chalk.yellow('\n💡 Recommendations:'));
-        result.recommendations.forEach((rec: string) => console.log(chalk.yellow(`• ${rec}`)));
-      }
-      
-      if (result.nextActions.length > 0) {
-        console.log(chalk.cyan('\n⏭️ Next Actions:'));
-        result.nextActions.forEach((action: string) => console.log(chalk.cyan(`• ${action}`)));
-      }
-      
-      if (result.warnings.length > 0) {
-        console.log(chalk.red('\n⚠️ Warnings:'));
-        result.warnings.forEach((warning: string) => console.log(chalk.red(`• ${warning}`)));
-      }
-      
-      if (result.shouldBlockProgress) {
-        console.log(chalk.red('\n🚫 Progress blocked - address critical issues before proceeding'));
-        process.exit(1);
-      }
+      cli.handleProgressBlocking(result);
     } catch (error) {
       console.log(chalk.red(`❌ Error: ${error}`));
       process.exit(1);

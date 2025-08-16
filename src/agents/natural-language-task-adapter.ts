@@ -43,6 +43,9 @@ export interface ProcessedRequirements {
 
 export class NaturalLanguageTaskAdapter {
   private agent: FormalAgent;
+  
+  // Constants for better maintainability (addressing review comment)
+  private static readonly MAX_REQUIREMENTS_BEFORE_CONFLICTS = 10;
 
   constructor() {
     const config: FormalAgentConfig = {
@@ -388,16 +391,38 @@ ${gaps.map(g => `• ${g.suggestedRequirement}`).join('\n')}
   }
 
   private extractRequirementsText(prompt: string): string {
-    // Extract requirements text from prompt
+    // More robust extraction: handle bullet points, numbered lists, and common requirement patterns
     const lines = prompt.split('\n');
-    const requirementLines = lines.filter(line => 
-      line.trim() && 
-      !line.startsWith('#') && 
-      !line.startsWith('//') &&
-      !line.startsWith('*')
-    );
-    
-    return requirementLines.join('\n');
+    const requirementPatterns = [
+      /^\s*[-*+]\s+(.+)/,                // Markdown/ASCII bullet points
+      /^\s*\d+[\.\)]\s+(.+)/,            // Numbered lists (1. or 1) )
+      /^\s*•\s+(.+)/,                    // Unicode bullet
+      /^\s*Requirement\s*\d*[:\-\.]?\s*(.+)/i, // "Requirement 1: ..." etc.
+      /^\s*(The system|System|It|Software|Application)\s+(shall|must|should|will)\b(.+)/i, // Common requirement phrasing
+    ];
+
+    const extracted: string[] = [];
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('//')) continue;
+      let matched = false;
+      for (const pattern of requirementPatterns) {
+        const match = trimmed.match(pattern);
+        if (match) {
+          // Use the first capturing group if available, else the whole match
+          extracted.push(match[1] ? match[1].trim() : trimmed);
+          matched = true;
+          break;
+        }
+      }
+      // If not matched, but the line is long enough and ends with a period, treat as a possible requirement
+      if (!matched && trimmed.length > 20 && /[\.!?]$/.test(trimmed)) {
+        extracted.push(trimmed);
+      }
+    }
+
+    return extracted.join('\n');
   }
 
   private async processNaturalLanguageRequirements(text: string): Promise<ProcessedRequirements> {
@@ -469,8 +494,26 @@ ${gaps.map(g => `• ${g.suggestedRequirement}`).join('\n')}
   }
 
   private detectConflicts(requirements: RequirementDocument[]): string[] {
-    // Mock implementation - would use more sophisticated conflict detection
-    return requirements.length > 10 ? ['Potential conflicts between requirements due to complexity'] : [];
+    // TODO: Implement more sophisticated conflict detection logic.
+    // This basic implementation flags requirements with identical content but different types or priorities.
+    const conflicts: string[] = [];
+    for (let i = 0; i < requirements.length; i++) {
+      for (let j = i + 1; j < requirements.length; j++) {
+        if (
+          requirements[i].content === requirements[j].content &&
+          (requirements[i].type !== requirements[j].type || requirements[i].priority !== requirements[j].priority)
+        ) {
+          conflicts.push(
+            `Conflict: Requirement "${requirements[i].content}" has differing type or priority (${requirements[i].type}/${requirements[i].priority} vs ${requirements[j].type}/${requirements[j].priority})`
+          );
+        }
+      }
+    }
+    // Retain the original complexity warning for large sets
+    if (requirements.length > NaturalLanguageTaskAdapter.MAX_REQUIREMENTS_BEFORE_CONFLICTS) {
+      conflicts.push('Potential conflicts between requirements due to complexity');
+    }
+    return conflicts;
   }
 
   private detectAmbiguousLanguage(requirements: RequirementDocument[]): string[] {
@@ -489,8 +532,16 @@ ${gaps.map(g => `• ${g.suggestedRequirement}`).join('\n')}
       .map(r => `Clarify specific behavior for: "${r.content}"`);
   }
 
+  // Business entity interface for better type safety (addressing review comment)
+  interface BusinessEntity {
+    name: string;
+    type: 'core' | 'supporting';
+    description: string;
+    relationships?: string[];
+  }
+
   // Additional helper methods would be implemented here...
-  private async extractBusinessEntities(text: string): Promise<any[]> {
+  private async extractBusinessEntities(text: string): Promise<BusinessEntity[]> {
     // Mock implementation
     return [
       { name: 'User', type: 'core', description: 'System user entity', relationships: ['has Profile'] },
@@ -498,7 +549,21 @@ ${gaps.map(g => `• ${g.suggestedRequirement}`).join('\n')}
     ];
   }
 
-  private async validateRequirementsCompleteness(text: string): Promise<any> {
+  interface CompletenessValidationResult {
+    score: number;
+    missingCategories: string[];
+    coverage: {
+      functional: number;
+      nonFunctional: number;
+      businessRules: number;
+      userInterface: number;
+      data: number;
+    };
+    missingElements: string[];
+    recommendations: string[];
+  }
+
+  private async validateRequirementsCompleteness(text: string): Promise<CompletenessValidationResult> {
     // Mock implementation
     return {
       score: 75,
@@ -597,6 +662,22 @@ ${gaps.map(g => `• ${g.suggestedRequirement}`).join('\n')}
   }
 }
 
+// Interfaces for better type safety (addressing review comment)
+interface ProactiveGuidanceContext {
+  recentFiles: string[];
+  recentActions: string[];
+  userIntent: string;
+}
+
+interface ProactiveGuidanceResult {
+  shouldIntervene: boolean;
+  intervention: {
+    type: 'warning' | 'suggestion' | 'block';
+    message: string;
+    recommendedActions: string[];
+  };
+}
+
 // Export for Claude Code Task tool integration
 export const createNaturalLanguageTaskHandler = () => {
   const adapter = new NaturalLanguageTaskAdapter();
@@ -606,7 +687,7 @@ export const createNaturalLanguageTaskHandler = () => {
       return adapter.handleNaturalLanguageTask(request);
     },
     
-    provideProactiveGuidance: async (context: any): Promise<any> => {
+    provideProactiveGuidance: async (context: ProactiveGuidanceContext): Promise<ProactiveGuidanceResult> => {
       return adapter.provideProactiveGuidance(context);
     },
   };
