@@ -3,15 +3,19 @@
 > 人手最小＆仕様準拠最大。TDD強制機能付きIntent→Formal→Tests→Code→Verify→Operate の6フェーズ。
 
 ## 📢 最新アップデート
+- **[🚀 Phase 2-5 Claude Code Task Tool統合](./docs/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)** - 全フェーズの完全自動化を実現
 - **[🎯 Intent Agent 改善](./docs/TDD-FRAMEWORK-ARCHITECTURE.md)** - Claude Code Task Tool統合でMCP問題を解決
-- **[🚀 クイックスタート](./docs/QUICK-START-GUIDE.md)** - 5分で始めるae-framework  
-- **[📖 新機能ガイド](./docs/NEW_FEATURES.md)** - Steering Documents、Phase State Management、Approval Workflow、Slash Commandsの詳細な使用方法
+- **[📝 自然言語要件処理](./docs/PHASE-2-NATURAL-LANGUAGE-REQUIREMENTS.md)** - Phase 2の包括的な要件分析機能
+- **[📋 ユーザーストーリー自動生成](./docs/PHASE-3-USER-STORIES-CREATION.md)** - Phase 3のアジャイル開発サポート
+- **[🔍 多層品質検証](./docs/PHASE-4-VALIDATION.md)** - Phase 4の包括的品質保証システム
+- **[🏗️ ドメイン駆動設計](./docs/PHASE-5-DOMAIN-MODELING.md)** - Phase 5のDDDによる設計自動化
 
-## 🔧 Intent Agent 統合強化
+## 🔧 Claude Code Task Tool 統合（全フェーズ対応）
 
-### Claude Code Task Tool 統合（推奨）
-ae-framework は Claude Code 環境で自動統合されており、追加設定なしで利用可能：
+### 🚀 完全自動統合
+ae-framework は Claude Code 環境で**全6フェーズ**を自動統合。追加設定なしで利用可能：
 
+#### Phase 1: Intent Analysis 🎯
 ```
 User: プロジェクトの要件分析をお願いします
 
@@ -19,24 +23,96 @@ Claude Code: Intent Task Adapterを使用して要件分析を実行します...
 
 ✅ Intent Analysis Complete - 12 requirements identified
 📋 Next steps:
-  • Proceed to Phase 2 (Formal Specification)
+  • Proceed to Phase 2 (Natural Language Requirements)
 ```
 
-### CLI実行も強化
-```bash
-# Phase 1 Intent分析
-ae-framework intent --analyze --sources="requirements.md"
+#### Phase 2: Natural Language Requirements 📝
+```
+User: 要件を構造化してください
 
-# 完全性検証
+Claude Code: Natural Language Task Adapterを実行中...
+
+✅ Requirements Analysis - 15 requirements identified
+📊 Analysis:
+  • Functional Requirements: 10
+  • Non-Functional Requirements: 3
+  • Business Requirements: 2
+💡 Recommendations:
+  • Review identified gaps for completeness
+  • Clarify ambiguous requirements with stakeholders
+```
+
+#### Phase 3: User Stories Creation 📋
+```
+User: ユーザーストーリーを作成してください
+
+Claude Code: User Stories Task Adapterで処理中...
+
+✅ User Story Generation Complete - 8 stories created across 3 epics
+📊 Analysis:
+  • Total Stories: 8
+  • Total Epics: 3
+  • Total Story Points: 34
+  • Completeness Score: 85%
+```
+
+#### Phase 4: Validation 🔍
+```
+User: 要件とストーリーの整合性を検証してください
+
+Claude Code: Validation Task Adapterで検証中...
+
+✅ Cross-Validation Complete - 90% alignment across phases
+📊 Analysis:
+  • Requirements-Stories alignment: 95%
+  • Traceability coverage: 88%
+  • Consistency score: 92%
+```
+
+#### Phase 5: Domain Modeling 🏗️
+```
+User: ドメインモデルを設計してください
+
+Claude Code: Domain Modeling Task Adapterで設計中...
+
+✅ Domain Analysis Complete - 6 entities, 2 bounded contexts identified
+📊 Analysis:
+  • Core Domain Entities: 4
+  • Bounded Contexts: 2
+  • Business Rules: 12
+  • Domain Services: 3
+```
+
+### CLI実行も全フェーズ対応
+```bash
+# Phase 1: Intent分析
+ae-framework intent --analyze --sources="requirements.md"
 ae-framework intent --validate
 
-# フェーズチェック
-ae-framework check --phase 1-intent
+# Phase 2: 自然言語要件処理
+ae-framework natural-language --analyze
+ae-framework natural-language --extract-entities
+ae-framework natural-language --validate-completeness
+
+# Phase 3: ユーザーストーリー管理
+ae-framework user-stories --generate
+ae-framework user-stories --validate
+ae-framework user-stories --prioritize
+
+# Phase 4: 検証ワークフロー
+ae-framework validate --requirements
+ae-framework validate --stories
+ae-framework validate --traceability
+
+# Phase 5: ドメインモデリング
+ae-framework domain-model --analyze
+ae-framework domain-model --entities
+ae-framework domain-model --contexts
 ```
 
 ### ハイブリッドアプローチ
-- **Claude Code**: Task Tool統合（最優先）
-- **CLI**: コマンドライン環境
+- **Claude Code**: Task Tool統合（全フェーズ対応、最優先）
+- **CLI**: コマンドライン環境（開発者向け）
 - **MCP**: フォールバック機能
 
 詳細は [TDD Framework Architecture](./docs/TDD-FRAMEWORK-ARCHITECTURE.md) を参照。
@@ -170,7 +246,7 @@ ae-framework violations
 ae-framework status
 ```
 
-## 🤖 AI Agents
+## 🤖 AI Agents（Claude Code Task Tool統合）
 
 ### Phase 1: Intent Agent 🎯
 要件と意図の分析を担当：
@@ -181,16 +257,58 @@ ae-framework status
 - 要件の優先順位付け（MoSCoW）
 - トレーサビリティマトリックス作成
 
-### Phase 2: Formal Agent 📐
-形式仕様とモデル検証を担当：
-- OpenAPI/AsyncAPI仕様生成
-- GraphQLスキーマ定義
-- TLA+形式検証
-- 状態遷移モデル作成
-- ER図とデータフロー図生成
-- B-Method/Z記法サポート
+**Claude Code統合**: Intent Task Adapterによる完全自動化
 
-### Phase 3: Test Generation Agent 🧪
+### Phase 2: Natural Language Requirements Agent 📝
+自然言語要件の構造化と分析を担当：
+- **要件分析**: 自然言語テキストから構造化要件を抽出
+- **エンティティ抽出**: ビジネスエンティティとその関係性を特定
+- **完全性検証**: 要件の網羅性と欠落項目の特定
+- **曖昧性解決**: 不明確な要件の特定と明確化提案
+- **要件構造化**: 要件のカテゴリ分類と優先度設定
+- **ギャップ識別**: 要件間の矛盾と欠落の検出
+
+**Claude Code統合**: Natural Language Task Adapterでシームレス処理
+
+### Phase 3: User Stories Creation Agent 📋
+ユーザーストーリーの生成と管理を担当：
+- **ストーリー生成**: 要件からのユーザーストーリー自動作成
+- **ストーリー検証**: "As a... I want... So that..."形式の品質確保
+- **優先順位付け**: ビジネス価値に基づくストーリープライオリティ
+- **見積もり**: ストーリーポイントによる複雑度評価
+- **受入基準作成**: Given-When-Then形式の詳細条件定義
+- **エピック組織化**: 関連ストーリーのエピック単位での管理
+- **依存関係識別**: ストーリー間の技術的・ビジネス的依存関係
+
+**Claude Code統合**: User Stories Task Adapterで包括的管理
+
+### Phase 4: Validation Agent 🔍
+要件・ストーリー・仕様の品質検証を担当：
+- **要件検証**: 機能・非機能要件の完全性と一貫性チェック
+- **ストーリー検証**: ユーザーストーリーの品質メトリクス評価
+- **仕様検証**: 形式仕様の整合性と明確性検証
+- **トレーサビリティ検証**: 要件からコードまでの追跡可能性確保
+- **完全性検証**: 各フェーズの成果物の網羅性評価
+- **一貫性検証**: フェーズ間の整合性と用語統一チェック
+- **実現可能性検証**: 技術的・経済的・運用的実現可能性評価
+- **クロス検証**: 複数フェーズにわたる総合的品質評価
+
+**Claude Code統合**: Validation Task Adapterで多層検証
+
+### Phase 5: Domain Modeling Agent 🏗️
+ドメイン駆動設計（DDD）によるドメインモデリングを担当：
+- **ドメイン分析**: ビジネスドメインの包括的分析
+- **エンティティ識別**: ドメインエンティティとその分類
+- **集約モデリング**: 集約ルートと境界の定義
+- **境界コンテキスト定義**: マイクロサービス境界の明確化
+- **ビジネスルール抽出**: ドメイン固有のビジネスロジック特定
+- **ユビキタス言語作成**: チーム共通の専門用語辞書構築
+- **ドメインサービス設計**: 複数エンティティにまたがるサービス設計
+- **モデル検証**: ドメインモデルの整合性と完全性検証
+
+**Claude Code統合**: Domain Modeling Task Adapterで設計自動化
+
+### Phase 6: Test Generation Agent 🧪
 包括的なテスト生成を担当：
 - 要件からのテスト自動生成
 - Property-based testing設計
@@ -296,11 +414,19 @@ The framework tracks:
 
 ## 📚 Documentation
 
-- [Architecture Guide](docs/architecture.md)
-- [Agent API Reference](docs/api/agents.md)
-- [TDD Enforcement Rules](docs/tdd-rules.md)
-- [Configuration Options](docs/configuration.md)
-- [Contributing Guide](CONTRIBUTING.md)
+### Claude Code Task Tool統合
+- [Claude Code Task Tool統合ガイド](docs/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md) - 全フェーズ統合の詳細
+- [Phase 2: Natural Language Requirements](docs/PHASE-2-NATURAL-LANGUAGE-REQUIREMENTS.md) - 自然言語要件処理
+- [Phase 3: User Stories Creation](docs/PHASE-3-USER-STORIES-CREATION.md) - ユーザーストーリー生成
+- [Phase 4: Validation](docs/PHASE-4-VALIDATION.md) - 品質検証システム
+- [Phase 5: Domain Modeling](docs/PHASE-5-DOMAIN-MODELING.md) - ドメイン駆動設計
+- [CLI Commands Reference](docs/CLI-COMMANDS-REFERENCE.md) - 全コマンドリファレンス
+
+### フレームワーク詳細
+- [TDD Framework Architecture](docs/TDD-FRAMEWORK-ARCHITECTURE.md) - Phase 1 Intent Agent
+- [New Features Guide](docs/NEW_FEATURES.md) - Steering Documents、Phase State Management
+- [Quick Start Guide](docs/QUICK-START-GUIDE.md) - 5分で始めるガイド
+- [Contributing Guide](CONTRIBUTING.md) - 貢献ガイドライン
 
 ## 🤝 Contributing
 
