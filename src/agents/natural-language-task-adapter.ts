@@ -7,21 +7,7 @@
  */
 
 import { FormalAgent, FormalAgentConfig } from './formal-agent.js';
-
-export interface TaskRequest {
-  description: string;
-  prompt: string;
-  subagent_type: string;
-}
-
-export interface TaskResponse {
-  summary: string;
-  analysis: string;
-  recommendations: string[];
-  nextActions: string[];
-  warnings: string[];
-  shouldBlockProgress: boolean;
-}
+import { TaskRequest, TaskResponse, ProactiveGuidanceContext, ProactiveGuidanceResult } from './task-types.js';
 
 export interface RequirementDocument {
   title: string;
@@ -114,18 +100,7 @@ export class NaturalLanguageTaskAdapter {
   /**
    * Proactive natural language processing guidance for Claude Code
    */
-  async provideProactiveGuidance(context: {
-    recentFiles: string[];
-    recentActions: string[];
-    userIntent: string;
-  }): Promise<{
-    shouldIntervene: boolean;
-    intervention: {
-      type: 'warning' | 'suggestion' | 'block';
-      message: string;
-      recommendedActions: string[];
-    };
-  }> {
+  async provideProactiveGuidance(context: ProactiveGuidanceContext): Promise<ProactiveGuidanceResult> {
     const analysis = await this.analyzeRecentActivity(context);
     
     if (analysis.hasIncompleteRequirements) {
@@ -672,21 +647,6 @@ ${gaps.map(g => `• ${g.suggestedRequirement}`).join('\n')}
   }
 }
 
-// Interfaces for better type safety (addressing review comment)
-interface ProactiveGuidanceContext {
-  recentFiles: string[];
-  recentActions: string[];
-  userIntent: string;
-}
-
-interface ProactiveGuidanceResult {
-  shouldIntervene: boolean;
-  intervention: {
-    type: 'warning' | 'suggestion' | 'block';
-    message: string;
-    recommendedActions: string[];
-  };
-}
 
 // Export for Claude Code Task tool integration
 export const createNaturalLanguageTaskHandler = () => {

@@ -8,6 +8,7 @@ import { ConfigLoader } from './config/ConfigLoader.js';
 // import { MetricsCollector } from './metrics/MetricsCollector.js';  // TODO: Enable when metrics tracking is implemented
 import { AEFrameworkConfig, Phase } from './types.js';
 import { createHybridIntentSystem } from '../integration/hybrid-intent-system.js';
+import { TaskRequest, TaskResponse, TaskHandler } from '../agents/task-types.js';
 import { createNaturalLanguageTaskHandler } from '../agents/natural-language-task-adapter.js';
 import { createUserStoriesTaskHandler } from '../agents/user-stories-task-adapter.js';
 import { createValidationTaskHandler } from '../agents/validation-task-adapter.js';
@@ -15,20 +16,8 @@ import { createDomainModelingTaskHandler } from '../agents/domain-modeling-task-
 
 const program = new Command();
 
-// Define interfaces for better type safety (addressing Copilot review comment 2280080078)
-interface TaskHandler<Request = unknown, Response = unknown> {
-  handleTask: (request: Request) => Promise<Response>;
-  provideProactiveGuidance?: (context: Request) => Promise<Response>;
-}
-
-interface TaskResult {
-  summary: string;
-  analysis: string;
-  recommendations: string[];
-  nextActions: string[];
-  warnings: string[];
-  shouldBlockProgress: boolean;
-}
+// TaskResult is now TaskResponse from the adapters (addressing Copilot review comment 2280080078)
+type TaskResult = TaskResponse;
 
 class AEFrameworkCLI {
   private config: AEFrameworkConfig;
