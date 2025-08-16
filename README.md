@@ -415,6 +415,7 @@ The framework tracks:
 ## 📚 Documentation
 
 ### Claude Code Task Tool統合
+- **[🚀 Claude Code自動実行ガイド](docs/CLAUDE-CODE-AUTOMATION-GUIDE.md)** - 要求から実装まで完全自動化
 - [Claude Code Task Tool統合ガイド](docs/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md) - 全フェーズ統合の詳細
 - [Phase 2: Natural Language Requirements](docs/PHASE-2-NATURAL-LANGUAGE-REQUIREMENTS.md) - 自然言語要件処理
 - [Phase 3: User Stories Creation](docs/PHASE-3-USER-STORIES-CREATION.md) - ユーザーストーリー生成
