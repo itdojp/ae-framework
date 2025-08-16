@@ -15,7 +15,7 @@ import { createDomainModelingTaskHandler } from '../agents/domain-modeling-task-
 
 const program = new Command();
 
-// Define interfaces for better type safety (addressing review comment)
+// Define interfaces for better type safety (addressing Copilot review comment 2280080078)
 interface TaskHandler<Request = unknown, Response = unknown> {
   handleTask: (request: Request) => Promise<Response>;
   provideProactiveGuidance?: (context: Request) => Promise<Response>;

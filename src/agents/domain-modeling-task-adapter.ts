@@ -665,7 +665,7 @@ ${validation.consistencyChecks.map((check: any) =>
   }
 
   // Input extraction methods (simplified)
-  // TODO: Implement input extraction logic
+  // TODO: Implement input extraction logic (addressing Copilot review comment 2280080079)
   private extractDomainInput(prompt: string): any { return {}; }
   // TODO: Implement input extraction logic
   private extractEntityInput(prompt: string): any { return {}; }
