@@ -41,6 +41,29 @@ export interface ProcessedRequirements {
   clarificationNeeded: string[];
 }
 
+// Business entity interface for better type safety (addressing review comment)
+interface BusinessEntity {
+  name: string;
+  type: 'core' | 'supporting';
+  description: string;
+  relationships?: string[];
+}
+
+// Completeness validation result interface
+interface CompletenessValidationResult {
+  score: number;
+  missingCategories: string[];
+  coverage: {
+    functional: number;
+    nonFunctional: number;
+    businessRules: number;
+    userInterface: number;
+    data: number;
+  };
+  missingElements: string[];
+  recommendations: string[];
+}
+
 export class NaturalLanguageTaskAdapter {
   private agent: FormalAgent;
   
@@ -532,14 +555,6 @@ ${gaps.map(g => `• ${g.suggestedRequirement}`).join('\n')}
       .map(r => `Clarify specific behavior for: "${r.content}"`);
   }
 
-  // Business entity interface for better type safety (addressing review comment)
-  interface BusinessEntity {
-    name: string;
-    type: 'core' | 'supporting';
-    description: string;
-    relationships?: string[];
-  }
-
   // Additional helper methods would be implemented here...
   private async extractBusinessEntities(text: string): Promise<BusinessEntity[]> {
     // Mock implementation
@@ -547,20 +562,6 @@ ${gaps.map(g => `• ${g.suggestedRequirement}`).join('\n')}
       { name: 'User', type: 'core', description: 'System user entity', relationships: ['has Profile'] },
       { name: 'Profile', type: 'supporting', description: 'User profile information' },
     ];
-  }
-
-  interface CompletenessValidationResult {
-    score: number;
-    missingCategories: string[];
-    coverage: {
-      functional: number;
-      nonFunctional: number;
-      businessRules: number;
-      userInterface: number;
-      data: number;
-    };
-    missingElements: string[];
-    recommendations: string[];
   }
 
   private async validateRequirementsCompleteness(text: string): Promise<CompletenessValidationResult> {
