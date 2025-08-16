@@ -19,7 +19,7 @@ export interface TaskResponse {
 
 export interface TaskHandler {
   handleTask: (request: TaskRequest) => Promise<TaskResponse>;
-  provideProactiveGuidance?: (context: any) => Promise<any>;
+  provideProactiveGuidance?: (context: ProactiveGuidanceContext) => Promise<ProactiveGuidanceResult>;
 }
 
 export interface ProactiveGuidanceContext {
