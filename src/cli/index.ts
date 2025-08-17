@@ -8,8 +8,16 @@ import { ConfigLoader } from './config/ConfigLoader.js';
 // import { MetricsCollector } from './metrics/MetricsCollector.js';  // TODO: Enable when metrics tracking is implemented
 import { AEFrameworkConfig, Phase } from './types.js';
 import { createHybridIntentSystem } from '../integration/hybrid-intent-system.js';
+import { TaskRequest, TaskResponse, TaskHandler } from '../agents/task-types.js';
+import { createNaturalLanguageTaskHandler } from '../agents/natural-language-task-adapter.js';
+import { createUserStoriesTaskHandler } from '../agents/user-stories-task-adapter.js';
+import { createValidationTaskHandler } from '../agents/validation-task-adapter.js';
+import { createDomainModelingTaskHandler } from '../agents/domain-modeling-task-adapter.js';
 
 const program = new Command();
+
+// TaskResult is now TaskResponse from the adapters (addressing Copilot review comment 2280080078)
+type TaskResult = TaskResponse;
 
 class AEFrameworkCLI {
   private config: AEFrameworkConfig;
@@ -17,6 +25,10 @@ class AEFrameworkCLI {
   private guardRunner: GuardRunner;
   private intentSystem: any;
   // private metricsCollector: MetricsCollector;  // TODO: use for metrics tracking
+  public naturalLanguageHandler: TaskHandler;
+  public userStoriesHandler: TaskHandler;
+  public validationHandler: TaskHandler;
+  public domainModelingHandler: TaskHandler;
 
   constructor() {
     this.config = ConfigLoader.load();
@@ -30,6 +42,12 @@ class AEFrameworkCLI {
       strictMode: false,
     });
     // this.metricsCollector = new MetricsCollector(this.config);  // TODO: use for metrics tracking
+    
+    // Initialize Task Tool handlers with proper types
+    this.naturalLanguageHandler = createNaturalLanguageTaskHandler();
+    this.userStoriesHandler = createUserStoriesTaskHandler();
+    this.validationHandler = createValidationTaskHandler();
+    this.domainModelingHandler = createDomainModelingTaskHandler();
   }
 
   async checkPhase(phaseName: string): Promise<void> {
@@ -129,6 +147,29 @@ class AEFrameworkCLI {
       }
     } catch (error) {
       console.log(chalk.red(`❌ Intent analysis failed: ${error}`));
+      process.exit(1);
+    }
+  }
+
+  // Extracted method to reduce code duplication (addressing review comment)
+  public handleProgressBlocking(result: TaskResult): void {
+    if (result.recommendations.length > 0) {
+      console.log(chalk.yellow('\n💡 Recommendations:'));
+      result.recommendations.forEach((rec: string) => console.log(chalk.yellow(`• ${rec}`)));
+    }
+    
+    if (result.nextActions.length > 0) {
+      console.log(chalk.cyan('\n⏭️ Next Actions:'));
+      result.nextActions.forEach((action: string) => console.log(chalk.cyan(`• ${action}`)));
+    }
+    
+    if (result.warnings.length > 0) {
+      console.log(chalk.red('\n⚠️ Warnings:'));
+      result.warnings.forEach((warning: string) => console.log(chalk.red(`• ${warning}`)));
+    }
+    
+    if (result.shouldBlockProgress) {
+      console.log(chalk.red('\n🚫 Progress blocked - address critical issues before proceeding'));
       process.exit(1);
     }
   }
@@ -277,6 +318,162 @@ program
   .action(async (options) => {
     const cli = new AEFrameworkCLI();
     await cli.runIntent(options);
+  });
+
+// Phase 2: Natural Language Requirements CLI
+program
+  .command('natural-language')
+  .description('Process natural language requirements (Phase 2)')
+  .option('--analyze', 'Analyze natural language requirements')
+  .option('--extract-entities', 'Extract business entities from requirements')
+  .option('--validate-completeness', 'Validate requirements completeness')
+  .option('--sources <sources>', 'Source files or text to process')
+  .action(async (options) => {
+    const cli = new AEFrameworkCLI();
+    console.log(chalk.blue('🔍 Processing Natural Language Requirements...'));
+    
+    const taskType = options.analyze ? 'analyze-requirements' :
+                    options.extractEntities ? 'extract-entities' :
+                    options.validateCompleteness ? 'validate-completeness' :
+                    'analyze-requirements';
+    
+    const request = {
+      description: `Natural language processing: ${taskType}`,
+      prompt: options.sources || 'Process available requirements documents',
+      subagent_type: 'natural-language-processing',
+    };
+    
+    try {
+      const result: TaskResult = await cli.naturalLanguageHandler.handleTask(request);
+      console.log(chalk.green(`✅ ${result.summary}`));
+      console.log(chalk.blue('\n📊 Analysis:'));
+      console.log(result.analysis);
+      
+      cli.handleProgressBlocking(result);
+    } catch (error) {
+      console.log(chalk.red(`❌ Error: ${error}`));
+      process.exit(1);
+    }
+  });
+
+// Phase 3: User Stories CLI
+program
+  .command('user-stories')
+  .description('Generate and manage user stories (Phase 3)')
+  .option('--generate', 'Generate user stories from requirements')
+  .option('--validate', 'Validate existing user stories')
+  .option('--prioritize', 'Prioritize user stories')
+  .option('--estimate', 'Estimate user story complexity')
+  .option('--sources <sources>', 'Source files or requirements to process')
+  .action(async (options) => {
+    const cli = new AEFrameworkCLI();
+    console.log(chalk.blue('📝 Processing User Stories...'));
+    
+    const taskType = options.generate ? 'generate-stories' :
+                    options.validate ? 'validate-stories' :
+                    options.prioritize ? 'prioritize-stories' :
+                    options.estimate ? 'estimate-stories' :
+                    'generate-stories';
+    
+    const request = {
+      description: `User stories processing: ${taskType}`,
+      prompt: options.sources || 'Process available requirements for user story generation',
+      subagent_type: 'user-stories-processing',
+    };
+    
+    try {
+      const result: TaskResult = await cli.userStoriesHandler.handleTask(request);
+      console.log(chalk.green(`✅ ${result.summary}`));
+      console.log(chalk.blue('\n📊 Analysis:'));
+      console.log(result.analysis);
+      
+      cli.handleProgressBlocking(result);
+    } catch (error) {
+      console.log(chalk.red(`❌ Error: ${error}`));
+      process.exit(1);
+    }
+  });
+
+// Phase 4: Validation CLI
+program
+  .command('validate')
+  .description('Validate requirements, stories, and specifications (Phase 4)')
+  .option('--requirements', 'Validate requirements')
+  .option('--stories', 'Validate user stories')
+  .option('--specifications', 'Validate specifications')
+  .option('--traceability', 'Validate traceability')
+  .option('--completeness', 'Validate completeness')
+  .option('--sources <sources>', 'Source files to validate')
+  .action(async (options) => {
+    const cli = new AEFrameworkCLI();
+    console.log(chalk.blue('🔍 Running Validation...'));
+    
+    const taskType = options.requirements ? 'validate-requirements' :
+                    options.stories ? 'validate-user-stories' :
+                    options.specifications ? 'validate-specifications' :
+                    options.traceability ? 'validate-traceability' :
+                    options.completeness ? 'validate-completeness' :
+                    'validate-requirements';
+    
+    const request = {
+      description: `Validation: ${taskType}`,
+      prompt: options.sources || 'Validate available artifacts',
+      subagent_type: 'validation-processing',
+    };
+    
+    try {
+      const result: TaskResult = await cli.validationHandler.handleTask(request);
+      console.log(chalk.green(`✅ ${result.summary}`));
+      console.log(chalk.blue('\n📊 Analysis:'));
+      console.log(result.analysis);
+      
+      cli.handleProgressBlocking(result);
+    } catch (error) {
+      console.log(chalk.red(`❌ Error: ${error}`));
+      process.exit(1);
+    }
+  });
+
+// Phase 5: Domain Modeling CLI
+program
+  .command('domain-model')
+  .description('Create and validate domain models (Phase 5)')
+  .option('--analyze', 'Analyze domain')
+  .option('--entities', 'Identify entities')
+  .option('--aggregates', 'Model aggregates')
+  .option('--contexts', 'Define bounded contexts')
+  .option('--rules', 'Extract business rules')
+  .option('--language', 'Create ubiquitous language')
+  .option('--sources <sources>', 'Source files or requirements to process')
+  .action(async (options) => {
+    const cli = new AEFrameworkCLI();
+    console.log(chalk.blue('🏗️ Processing Domain Model...'));
+    
+    const taskType = options.analyze ? 'analyze-domain' :
+                    options.entities ? 'identify-entities' :
+                    options.aggregates ? 'model-aggregates' :
+                    options.contexts ? 'define-bounded-contexts' :
+                    options.rules ? 'extract-business-rules' :
+                    options.language ? 'create-ubiquitous-language' :
+                    'analyze-domain';
+    
+    const request = {
+      description: `Domain modeling: ${taskType}`,
+      prompt: options.sources || 'Analyze domain based on available requirements and stories',
+      subagent_type: 'domain-modeling-processing',
+    };
+    
+    try {
+      const result: TaskResult = await cli.domainModelingHandler.handleTask(request);
+      console.log(chalk.green(`✅ ${result.summary}`));
+      console.log(chalk.blue('\n📊 Analysis:'));
+      console.log(result.analysis);
+      
+      cli.handleProgressBlocking(result);
+    } catch (error) {
+      console.log(chalk.red(`❌ Error: ${error}`));
+      process.exit(1);
+    }
   });
 
 program.parse();
