@@ -1,0 +1,439 @@
+{
+  "project": "inventory-management-example",
+  "version": "1.0.0",
+  "phase": {
+    "current": "6",
+    "completed": ["1", "2", "3", "4", "5"]
+  },
+  "metadata": {
+    "description": "Inventory Management System - Phase 3→5→6 End-to-End Demo",
+    "created": "2024-01-01T00:00:00Z",
+    "updated": "2024-01-01T00:00:00Z",
+    "domain": "retail",
+    "complexity": "medium"
+  },
+  "user_stories": [
+    {
+      "id": "US001",
+      "title": "Product Management",
+      "description": "As a store manager, I want to add, edit, and view products so that I can maintain accurate product catalog",
+      "acceptance_criteria": [
+        "Can create new product with name, description, price, stock, category",
+        "Can edit existing product details", 
+        "Can view product list with filtering by category and status",
+        "Can search products by name",
+        "System validates all input data",
+        "Shows appropriate error messages for invalid data"
+      ],
+      "priority": "high",
+      "estimate": "8 points"
+    },
+    {
+      "id": "US002", 
+      "title": "Stock Monitoring",
+      "description": "As a store manager, I want to monitor stock levels so that I can prevent stockouts and overstock",
+      "acceptance_criteria": [
+        "Can view current stock quantity for each product",
+        "System alerts when stock falls below threshold", 
+        "Can filter products by stock status",
+        "Can track stock history and changes"
+      ],
+      "priority": "medium",
+      "estimate": "5 points"
+    },
+    {
+      "id": "US003",
+      "title": "Order Processing", 
+      "description": "As a store manager, I want to process customer orders so that I can fulfill customer demands efficiently",
+      "acceptance_criteria": [
+        "Can create orders with multiple products",
+        "System automatically updates stock levels",
+        "Can track order status progression",
+        "Can view order history and details",
+        "System prevents orders for out-of-stock items"
+      ],
+      "priority": "high",
+      "estimate": "13 points"
+    }
+  ],
+  "entities": {
+    "Product": {
+      "description": "Product entity for inventory management with comprehensive validation",
+      "user_stories": ["US001", "US002"],
+      "attributes": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "validation": "uuid",
+          "description": "Unique product identifier",
+          "generated": true,
+          "primary_key": true
+        },
+        "name": {
+          "type": "string", 
+          "required": true,
+          "validation": "min:1,max:100",
+          "description": "Product name",
+          "unique": true,
+          "searchable": true
+        },
+        "description": {
+          "type": "string",
+          "required": false,
+          "validation": "max:500", 
+          "description": "Detailed product description",
+          "searchable": true
+        },
+        "price": {
+          "type": "number",
+          "required": true,
+          "validation": "min:0.01,max:999999.99",
+          "description": "Product price in USD",
+          "format": "currency"
+        },
+        "stock": {
+          "type": "number",
+          "required": true,
+          "validation": "min:0,integer,max:99999",
+          "description": "Current stock quantity",
+          "monitored": true
+        },
+        "lowStockThreshold": {
+          "type": "number",
+          "required": true,
+          "validation": "min:0,integer,max:1000",
+          "description": "Alert when stock falls below this level",
+          "default": 10
+        },
+        "category": {
+          "type": "string",
+          "required": true,
+          "validation": "enum:electronics,clothing,books,home,sports,beauty,toys,automotive",
+          "description": "Product category",
+          "filterable": true
+        },
+        "sku": {
+          "type": "string",
+          "required": true,
+          "validation": "pattern:^[A-Z]{2,3}-[0-9]{4,6}$",
+          "description": "Stock Keeping Unit",
+          "unique": true,
+          "example": "ELE-123456"
+        },
+        "weight": {
+          "type": "number",
+          "required": false,
+          "validation": "min:0.01,max:1000",
+          "description": "Product weight in kg",
+          "unit": "kg"
+        },
+        "dimensions": {
+          "type": "object",
+          "required": false,
+          "description": "Product dimensions",
+          "properties": {
+            "length": {"type": "number", "min": 0},
+            "width": {"type": "number", "min": 0}, 
+            "height": {"type": "number", "min": 0},
+            "unit": {"type": "string", "enum": ["cm", "in"]}
+          }
+        },
+        "active": {
+          "type": "boolean",
+          "required": true,
+          "default": true,
+          "description": "Whether product is available for sale"
+        },
+        "tags": {
+          "type": "array",
+          "required": false,
+          "validation": "max_length:10",
+          "description": "Product tags for categorization",
+          "items": {"type": "string", "max": 50}
+        },
+        "createdAt": {
+          "type": "date",
+          "required": true,
+          "default": "now",
+          "description": "Creation timestamp",
+          "generated": true
+        },
+        "updatedAt": {
+          "type": "date", 
+          "required": true,
+          "default": "now",
+          "description": "Last update timestamp",
+          "auto_update": true
+        }
+      },
+      "constraints": {
+        "unique": ["name", "sku"],
+        "indexes": ["category", "active", "createdAt", "stock", "name"],
+        "business_rules": [
+          "Price must be positive",
+          "Stock cannot be negative", 
+          "Active products should have stock > 0 or allow backorders",
+          "SKU must follow company format pattern",
+          "Low stock threshold should be less than initial stock"
+        ]
+      },
+      "acceptance_criteria": [
+        "User can create a new product with valid data",
+        "User can view product list with pagination and filtering",
+        "User can edit existing product details",
+        "User can delete products not referenced in orders",
+        "System validates all product data before saving",
+        "System shows appropriate error messages for invalid data",
+        "User can filter products by category and status",
+        "User can search products by name or SKU",
+        "System alerts when stock falls below threshold",
+        "Product list shows stock status indicators"
+      ]
+    },
+    "Order": {
+      "description": "Customer order entity with comprehensive order management",
+      "user_stories": ["US003"],
+      "attributes": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "validation": "uuid",
+          "description": "Unique order identifier",
+          "generated": true,
+          "primary_key": true
+        },
+        "orderNumber": {
+          "type": "string",
+          "required": true,
+          "validation": "pattern:^ORD-[0-9]{8}$",
+          "description": "Human-readable order number",
+          "unique": true,
+          "generated": true,
+          "example": "ORD-20240001"
+        },
+        "customerId": {
+          "type": "string",
+          "required": true,
+          "validation": "uuid",
+          "description": "Customer identifier",
+          "foreign_key": "Customer.id"
+        },
+        "customerEmail": {
+          "type": "string",
+          "required": true,
+          "validation": "email",
+          "description": "Customer email address"
+        },
+        "status": {
+          "type": "string",
+          "required": true,
+          "validation": "enum:pending,confirmed,processing,shipped,delivered,cancelled,refunded",
+          "default": "pending",
+          "description": "Current order status",
+          "workflow": {
+            "pending": ["confirmed", "cancelled"],
+            "confirmed": ["processing", "cancelled"],
+            "processing": ["shipped", "cancelled"],
+            "shipped": ["delivered"],
+            "delivered": ["refunded"],
+            "cancelled": [],
+            "refunded": []
+          }
+        },
+        "items": {
+          "type": "array",
+          "required": true,
+          "validation": "min_length:1,max_length:50",
+          "description": "Order items array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "productId": {"type": "string", "validation": "uuid"},
+              "quantity": {"type": "number", "validation": "min:1,integer"},
+              "unitPrice": {"type": "number", "validation": "min:0"},
+              "subtotal": {"type": "number", "validation": "min:0"}
+            }
+          }
+        },
+        "subtotal": {
+          "type": "number",
+          "required": true,
+          "validation": "min:0",
+          "description": "Order subtotal before tax and shipping",
+          "calculated": true
+        },
+        "taxAmount": {
+          "type": "number",
+          "required": true,
+          "validation": "min:0",
+          "description": "Tax amount",
+          "calculated": true
+        },
+        "shippingAmount": {
+          "type": "number",
+          "required": true,
+          "validation": "min:0",
+          "description": "Shipping cost",
+          "default": 0
+        },
+        "total": {
+          "type": "number",
+          "required": true,
+          "validation": "min:0",
+          "description": "Total order amount including tax and shipping",
+          "calculated": true
+        },
+        "shippingAddress": {
+          "type": "object",
+          "required": true,
+          "description": "Shipping address details",
+          "properties": {
+            "street": {"type": "string", "required": true},
+            "city": {"type": "string", "required": true},
+            "state": {"type": "string", "required": true},
+            "zipCode": {"type": "string", "required": true, "pattern": "^[0-9]{5}(-[0-9]{4})?$"},
+            "country": {"type": "string", "required": true, "default": "US"}
+          }
+        },
+        "notes": {
+          "type": "string",
+          "required": false,
+          "validation": "max:1000",
+          "description": "Order notes or special instructions"
+        },
+        "orderDate": {
+          "type": "date",
+          "required": true,
+          "default": "now",
+          "description": "Order creation date",
+          "generated": true
+        },
+        "shippedDate": {
+          "type": "date",
+          "required": false,
+          "description": "Date when order was shipped"
+        },
+        "deliveredDate": {
+          "type": "date",
+          "required": false,
+          "description": "Date when order was delivered"
+        }
+      },
+      "constraints": {
+        "unique": ["orderNumber"],
+        "indexes": ["customerId", "status", "orderDate", "customerEmail"],
+        "business_rules": [
+          "Total must equal subtotal + tax + shipping",
+          "Cannot modify orders in shipped or delivered status",
+          "Must have at least one item",
+          "All products must be active and in stock at order time",
+          "Status transitions must follow defined workflow",
+          "Shipped date must be after order date",
+          "Delivered date must be after shipped date"
+        ]
+      },
+      "acceptance_criteria": [
+        "User can create order with multiple products",
+        "User can view order details and history", 
+        "User can update order status appropriately",
+        "System calculates totals automatically",
+        "System validates inventory before confirming order",
+        "System prevents invalid status transitions",
+        "User can filter orders by status and date",
+        "System updates stock levels when order is confirmed",
+        "User can add notes and special instructions",
+        "System tracks order timeline and status changes"
+      ]
+    },
+    "Customer": {
+      "description": "Customer entity for order management",
+      "user_stories": ["US003"],
+      "attributes": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "validation": "uuid", 
+          "description": "Unique customer identifier",
+          "generated": true,
+          "primary_key": true
+        },
+        "email": {
+          "type": "string",
+          "required": true,
+          "validation": "email",
+          "description": "Customer email address",
+          "unique": true
+        },
+        "firstName": {
+          "type": "string",
+          "required": true,
+          "validation": "min:1,max:50",
+          "description": "Customer first name"
+        },
+        "lastName": {
+          "type": "string",
+          "required": true,
+          "validation": "min:1,max:50", 
+          "description": "Customer last name"
+        },
+        "phone": {
+          "type": "string",
+          "required": false,
+          "validation": "pattern:^\\+?[1-9]\\d{1,14}$",
+          "description": "Customer phone number"
+        },
+        "createdAt": {
+          "type": "date",
+          "required": true,
+          "default": "now",
+          "description": "Registration date",
+          "generated": true
+        }
+      },
+      "constraints": {
+        "unique": ["email"],
+        "indexes": ["email", "lastName", "createdAt"]
+      }
+    }
+  },
+  "relationships": {
+    "Product-Order": {
+      "type": "many-to-many",
+      "through": "OrderItem",
+      "description": "Products can be in multiple orders, orders can contain multiple products"
+    },
+    "Customer-Order": {
+      "type": "one-to-many",
+      "description": "One customer can have multiple orders"
+    }
+  },
+  "ui_preferences": {
+    "theme": "modern",
+    "layout": "responsive",
+    "components": "radix-ui",
+    "styling": "tailwindcss",
+    "forms": "react-hook-form",
+    "validation": "zod",
+    "data_fetching": "tanstack-query",
+    "testing": "playwright",
+    "accessibility": "wcag-2.1-aa",
+    "i18n": "next-intl"
+  },
+  "quality_gates": {
+    "accessibility": {
+      "critical": 0,
+      "warnings": 5
+    },
+    "performance": {
+      "lighthouse_score": 80
+    },
+    "coverage": {
+      "lines": 80,
+      "functions": 80,
+      "branches": 80
+    },
+    "visual_regression": {
+      "threshold": 0.1
+    }
+  }
+}

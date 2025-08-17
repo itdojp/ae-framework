@@ -55,9 +55,42 @@ export class UIScaffoldGenerator {
   constructor(phaseState: PhaseState, options: GeneratorOptions) {
     this.phaseState = phaseState;
     this.options = options;
-    this.templatesDir = path.join(process.cwd(), 'templates', 'ui');
+    // Find ae-framework root directory
+    const currentDir = process.cwd();
+    const frameworkRoot = this.findFrameworkRoot(currentDir);
+    this.templatesDir = path.join(frameworkRoot, 'templates', 'ui');
     
     this.registerHandlebarsHelpers();
+  }
+
+  private findFrameworkRoot(startDir: string): string {
+    let currentDir = startDir;
+    
+    while (currentDir !== path.dirname(currentDir)) {
+      // Check if this directory contains package.json with ae-framework
+      const packagePath = path.join(currentDir, 'package.json');
+      if (fs.existsSync(packagePath)) {
+        try {
+          const packageContent = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+          if (packageContent.name === 'ae-framework') {
+            return currentDir;
+          }
+        } catch (error) {
+          // Continue searching
+        }
+      }
+      
+      // Check if templates directory exists here
+      const templatesPath = path.join(currentDir, 'templates', 'ui');
+      if (fs.existsSync(templatesPath)) {
+        return currentDir;
+      }
+      
+      currentDir = path.dirname(currentDir);
+    }
+    
+    // Fallback to current working directory
+    return process.cwd();
   }
 
   async generateAll(): Promise<Record<string, GenerationResult>> {
