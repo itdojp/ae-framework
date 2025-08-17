@@ -334,6 +334,75 @@ ae-framework status
 - パフォーマンステスト実行
 - Mutation testing実行
 
+### Phase 6: UI/UX Quality Gates 🎨
+フロントエンド品質ゲート実行：
+- アクセシビリティ監査（WCAG 2.1 AA）
+- ビジュアルリグレッションテスト
+- Lighthouse CI パフォーマンス測定
+- OPA ポリシー準拠チェック
+- コンポーネントカバレッジ検証
+
+#### ローカル実行手順
+
+**1. アクセシビリティテスト**
+```bash
+# テスト実行
+npm run test:a11y
+
+# レポート生成
+npm run test:a11y:report
+
+# 閾値チェック（重大=0, 警告≤5）
+node scripts/check-a11y-threshold.js --critical=0 --warnings=5
+```
+
+**2. ビジュアルリグレッションテスト**
+```bash
+# Storybook必要（初回のみ）
+npm run build-storybook
+
+# ビジュアルテスト実行
+npm run test:visual
+
+# レポート生成
+npm run test:visual:report
+```
+
+**3. Lighthouse CI**
+```bash
+# アプリケーションビルド
+npm run build:frontend
+
+# Lighthouse実行（LHCIトークン不要でローカル可能）
+npx lhci autorun --config=lighthouserc.js
+```
+
+**4. OPA ポリシー検証**
+```bash
+# OPA設定（初回のみ）
+# brew install opa または https://github.com/open-policy-agent/opa/releases
+
+# ポリシー検証
+opa eval -d policies/ui/ -i src/ui/components/ "data.ui.violations"
+
+# 準拠チェック
+node scripts/check-opa-compliance.js --ui-violations=0
+```
+
+**5. カバレッジゲート**
+```bash
+# カバレッジ付きテスト
+npm run test:coverage
+
+# 閾値チェック（80%以上）
+npx nyc check-coverage --lines 80 --functions 80 --branches 80
+```
+
+#### CI環境での実行
+- PR作成時に `.github/workflows/phase6-validation.yml` が自動実行
+- `packages/ui/**`, `apps/web/**` 変更時にトリガー
+- 全ゲート通過でAuto-approve相当、失敗で自動Reject
+
 ### Phase 6: Operate Agent 🚀
 運用とデプロイメントを担当：
 - CI/CDパイプライン統合
