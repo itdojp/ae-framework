@@ -13,11 +13,79 @@ Design Systems統合、アクセシビリティ確保、パフォーマンス最
 
 ## 🔄 Phase境界定義
 
-| Phase | スコープ | 入力 | 出力 | 品質ゲート |
-|-------|---------|------|------|-----------|
-| **Phase 6<br>UI/UX & Frontend Delivery** | • UI Component設計<br>• Design Token統合<br>• State Architecture設計<br>• Accessibility検証<br>• UI Quality Gates | • Phase 3: User Stories & AC<br>• Phase 5: Domain Model & Constraints | • Component Specifications<br>• Design Tokens<br>• State Architecture<br>• A11y/E2E/VR Reports<br>• CRUD UI Scaffolds | • A11y: 重大=0, 警告≤5<br>• E2E: 100% pass<br>• Coverage: ≥80%<br>• Web Vitals Budget |
-| **Phase 7<br>Code Generation/Impl** | • Backend API生成<br>• Database Schema生成<br>• Full-Stack統合<br>• E2E Test生成 | • Phase 6: Component Specs<br>• Domain Models | • Full-Stack Application<br>• API Implementations<br>• Integration Tests | • API Response Time<br>• Database Performance<br>• Integration Coverage |
-| **Phase 8<br>Operate** | • DevOps Pipeline設定<br>• Monitoring設定<br>• Security Policy適用<br>• 運用Governance | • Phase 7: Full-Stack App | • Production Deployment<br>• Monitoring Dashboard<br>• Security Reports<br>• Operations Runbook | • Security Scans<br>• Performance SLA<br>• Compliance Checks |
+### Phase 6: UI/UX & Frontend Delivery
+
+**スコープ**
+- UI Component設計
+- Design Token統合
+- State Architecture設計
+- Accessibility検証
+- UI Quality Gates
+
+**入力**
+- Phase 3: User Stories & AC
+- Phase 5: Domain Model & Constraints
+
+**出力**
+- Component Specifications
+- Design Tokens
+- State Architecture
+- Accessibility/E2E/VR Reports
+- CRUD UI Scaffolds
+
+**品質ゲート**
+- Accessibility: 重大=0, 警告≤5
+- E2E: 100% pass
+- Coverage: ≥80%
+- Web Vitals Budget
+
+---
+
+### Phase 7: Code Generation/Impl
+
+**スコープ**
+- Backend API生成
+- Database Schema生成
+- Full-Stack統合
+- E2E Test生成
+
+**入力**
+- Phase 6: Component Specs
+- Domain Models
+
+**出力**
+- Full-Stack Application
+- API Implementations
+- Integration Tests
+
+**品質ゲート**
+- API Response Time
+- Database Performance
+- Integration Coverage
+
+---
+
+### Phase 8: Operate
+
+**スコープ**
+- DevOps Pipeline設定
+- Monitoring設定
+- Security Policy適用
+- 運用Governance
+
+**入力**
+- Phase 7: Full-Stack App
+
+**出力**
+- Production Deployment
+- Monitoring Dashboard
+- Security Reports
+- Operations Runbook
+
+**品質ゲート**
+- Security Scans
+- Performance SLA
+- Compliance Checks
 
 ## 📥 Inputs (フェーズ入力)
 
@@ -137,7 +205,7 @@ interface CRUDScaffold {
 ### v1 初期閾値（MVP段階）
 ```yaml
 accessibility:
-  critical_violations: 0        # Critical A11y violations must be 0
+  critical_violations: 0        # Critical Accessibility violations must be 0
   warning_violations: ≤5        # Warning violations should be ≤5
   
 end_to_end_testing:
@@ -293,6 +361,7 @@ export interface A11yReport {
 ### Implementation Skeleton
 ```typescript
 // src/agents/phase6-ui-task-adapter.ts
+// NOTE: './formal-agent.js' is a planned dependency and will be implemented in a future phase.
 import { FormalAgent, FormalAgentConfig } from './formal-agent.js';
 import { TaskRequest, TaskResponse } from './task-types.js';
 
