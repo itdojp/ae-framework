@@ -1,0 +1,168 @@
+import { test, expect } from '@playwright/test';
+
+test.describe('{{EntityName}} Management', () => {
+  test.beforeEach(async ({ page }) => {
+    // Navigate to {{entityName}}s page
+    await page.goto('/{{entityName}}');
+  });
+
+  test('should display {{entityName}}s list page', async ({ page }) => {
+    // Check page title
+    await expect(page).toHaveTitle(/{{EntityName}}s/);
+    
+    // Check main heading
+    await expect(page.getByRole('heading', { name: '{{EntityName}}s' })).toBeVisible();
+    
+    // Check "Add New {{EntityName}}" button
+    await expect(page.getByRole('button', { name: 'Add New {{EntityName}}' })).toBeVisible();
+    
+    // Check search input
+    await expect(page.getByPlaceholder('Search {{entityName}}s...')).toBeVisible();
+  });
+
+  test('should navigate to create new {{entityName}} page', async ({ page }) => {
+    // Click "Add New {{EntityName}}" button
+    await page.getByRole('button', { name: 'Add New {{EntityName}}' }).click();
+    
+    // Should navigate to new {{entityName}} page
+    await expect(page).toHaveURL('/{{entityName}}/new');
+    
+    // Check page heading
+    await expect(page.getByRole('heading', { name: 'Create New {{EntityName}}' })).toBeVisible();
+    
+    // Check form is present
+    {{#each requiredFormFields}}
+    await expect(page.getByLabel('{{getFieldLabel @key}} *')).toBeVisible();
+    {{/each}}
+  });
+
+  test('should create a new {{entityName}} successfully', async ({ page }) => {
+    // Navigate to create page
+    await page.goto('/{{entityName}}/new');
+    
+    // Fill out the form
+    {{#each requiredFormFields}}
+    await page.getByLabel('{{getFieldLabel @key}} *').fill('{{getTestValue type @key}}');
+    {{/each}}
+    
+    {{#each optionalFormFields}}
+    {{#unless (isBoolean type)}}
+    await page.getByLabel('{{getFieldLabel @key}}').fill('{{getTestValue type @key}}');
+    {{/unless}}
+    {{/each}}
+    
+    // Submit form
+    await page.getByRole('button', { name: 'Create {{EntityName}}' }).click();
+    
+    // Should redirect to {{entityName}}s list
+    await expect(page).toHaveURL('/{{entityName}}');
+    
+    // Should show success message or new {{entityName}} in list
+    {{#if displayNameField}}
+    await expect(page.getByText('{{getTestValue "string" displayNameField}}')).toBeVisible();
+    {{/if}}
+  });
+
+  test('should show validation errors for invalid form data', async ({ page }) => {
+    // Navigate to create page
+    await page.goto('/{{entityName}}/new');
+    
+    // Submit form without filling required fields
+    await page.getByRole('button', { name: 'Create {{EntityName}}' }).click();
+    
+    // Should show validation errors
+    {{#each requiredFormFields}}
+    await expect(page.getByText(/{{getFieldLabel @key}}.*(required|必須)/i)).toBeVisible();
+    {{/each}}
+  });
+
+  test('should search {{entityName}}s', async ({ page }) => {
+    // Search for {{entityName}}s
+    const searchTerm = '{{#if displayNameField}}test{{else}}{{entityName}}{{/if}}';
+    await page.getByPlaceholder('Search {{entityName}}s...').fill(searchTerm);
+    
+    // Wait for search results
+    await page.waitForTimeout(500);
+    
+    // Check that search was performed (URL should contain search parameter)
+    await expect(page).toHaveURL(new RegExp(`search=${searchTerm}`));
+  });
+
+  {{#if hasStatusField}}
+  test('should filter {{entityName}}s by status', async ({ page }) => {
+    // Use status filter
+    await page.selectOption('select', '{{first statusOptions}}');
+    
+    // Wait for filter results
+    await page.waitForTimeout(500);
+    
+    // Check that filter was applied (URL should contain filter parameter)
+    await expect(page).toHaveURL(new RegExp(`filter={{first statusOptions}}`));
+  });
+  {{/if}}
+
+  test('should view {{entityName}} details', async ({ page }) => {
+    // Assuming there's at least one {{entityName}} in the list
+    const firstCard = page.locator('[data-testid="{{entityName}}-card"]').first();
+    
+    if (await firstCard.count() > 0) {
+      await firstCard.getByText('View Details').click();
+      
+      // Should navigate to detail page
+      await expect(page).toHaveURL(new RegExp(`/{{entityName}}/[a-zA-Z0-9-]+`));
+      
+      // Check detail page elements
+      await expect(page.getByText('Back to {{EntityName}}s')).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Edit' })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Delete' })).toBeVisible();
+    }
+  });
+
+  test('should edit {{entityName}} details', async ({ page }) => {
+    // Navigate to first {{entityName}} detail page
+    const firstCard = page.locator('[data-testid="{{entityName}}-card"]').first();
+    
+    if (await firstCard.count() > 0) {
+      await firstCard.getByText('View Details').click();
+      
+      // Click edit button
+      await page.getByRole('button', { name: 'Edit' }).click();
+      
+      // Form should be visible in edit mode
+      {{#each editableFormFields}}
+      await expect(page.getByLabel('{{getFieldLabel @key}}')).toBeVisible();
+      {{/each}}
+      
+      // Update a field
+      {{#if displayNameField}}
+      await page.getByLabel('{{getFieldLabel displayNameField}}').fill('Updated {{capitalize displayNameField}}');
+      {{/if}}
+      
+      // Submit update
+      await page.getByRole('button', { name: 'Update {{EntityName}}' }).click();
+      
+      // Should show updated value
+      {{#if displayNameField}}
+      await expect(page.getByText('Updated {{capitalize displayNameField}}')).toBeVisible();
+      {{/if}}
+    }
+  });
+
+  test('should handle {{entityName}} deletion with confirmation', async ({ page }) => {
+    // Navigate to first {{entityName}} detail page
+    const firstCard = page.locator('[data-testid="{{entityName}}-card"]').first();
+    
+    if (await firstCard.count() > 0) {
+      await firstCard.getByText('View Details').click();
+      
+      // Set up dialog handler for confirmation
+      page.on('dialog', dialog => dialog.accept());
+      
+      // Click delete button
+      await page.getByRole('button', { name: 'Delete' }).click();
+      
+      // Should redirect to {{entityName}}s list
+      await expect(page).toHaveURL('/{{entityName}}');
+    }
+  });
+});

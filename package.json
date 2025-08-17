@@ -8,7 +8,8 @@
     "ae-framework": "./dist/cli/index.js",
     "ae-phase": "./dist/cli/phase-cli.js",
     "ae-approve": "./dist/cli/approval-cli.js",
-    "ae-slash": "./dist/cli/slash-cli.js"
+    "ae-slash": "./dist/cli/slash-cli.js",
+    "ae-ui": "./dist/cli/ui-scaffold-cli.js"
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",
@@ -19,7 +20,7 @@
     "build:tokens": "pnpm --filter @ae-framework/design-tokens build",
     "build:ui": "pnpm --filter @ae-framework/ui build",
     "build:storybook": "pnpm --filter @ae-framework/storybook build-storybook",
-    "build:cli": "tsc && chmod +x dist/cli/index.js && chmod +x dist/cli/phase-cli.js && chmod +x dist/cli/approval-cli.js && chmod +x dist/cli/slash-cli.js",
+    "build:cli": "tsc && chmod +x dist/cli/index.js && chmod +x dist/cli/phase-cli.js && chmod +x dist/cli/approval-cli.js && chmod +x dist/cli/slash-cli.js && chmod +x dist/cli/ui-scaffold-cli.js",
     "phase": "tsx src/cli/phase-cli.ts",
     "lint": "eslint . && pnpm --filter @ae-framework/ui lint && pnpm --filter @ae-framework/web lint",
     "lint:frontend": "pnpm --filter @ae-framework/ui lint && pnpm --filter @ae-framework/web lint",
@@ -109,6 +110,7 @@
     "fastify": "^5.0.0",
     "fastify-openapi-glue": "^4.5.0",
     "glob": "^10.3.0",
+    "handlebars": "^4.7.8",
     "js-yaml": "^4.1.0",
     "pg": "^8.12.0",
     "pino": "^9.0.0",
@@ -134,6 +136,7 @@
     "@stryker-mutator/core": "^8.5.0",
     "@stryker-mutator/typescript-checker": "^8.7.1",
     "@stryker-mutator/vitest-runner": "^8.7.1",
+    "@types/handlebars": "^4.1.0",
     "@types/js-yaml": "^4.0.5",
     "@types/node": "^22.0.0",
     "@types/pg": "^8.11.0",
