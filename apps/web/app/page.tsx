@@ -8,14 +8,14 @@ export default function HomePage() {
     <main className="container mx-auto px-4 py-8">
       <div className="text-center">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          ae-framework
+          {t('title')}
         </h1>
         <p className="text-xl text-gray-600 mb-8">
-          AI-Enhanced Development Framework with Phase 6 UI/UX Automation
+          {t('subtitle')}
         </p>
         <div className="space-x-4">
-          <Button>Get Started</Button>
-          <Button variant="outline">Learn More</Button>
+          <Button>{t('getStarted')}</Button>
+          <Button variant="outline">{t('learnMore')}</Button>
         </div>
       </div>
       

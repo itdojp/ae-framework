@@ -1,11 +1,11 @@
 import { getRequestConfig } from 'next-intl/server';
 
-export default getRequestConfig(async () => {
-  // Provide a static locale for now
-  const locale = 'ja';
+export default getRequestConfig(async ({locale}) => {
+  // Use the detected locale from the context
+  // Default to 'ja' if no locale is provided
+  const resolvedLocale = locale || 'ja';
  
   return {
-    locale,
-    messages: (await import(`./messages/${locale}.json`)).default
+    messages: (await import(`./messages/${resolvedLocale}.json`)).default
   };
 });
