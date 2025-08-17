@@ -1,0 +1,13 @@
+{
+  "HomePage": {
+    "title": "ae-framework",
+    "subtitle": "AI-Enhanced Development Framework with Phase 6 UI/UX Automation",
+    "getStarted": "Get Started",
+    "learnMore": "Learn More"
+  },
+  "Navigation": {
+    "home": "Home",
+    "about": "About", 
+    "health": "Health Check"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "name": "@ae-framework/design-tokens",
+  "version": "0.1.0",
+  "description": "Design tokens for ae-framework UI components",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.3"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./tailwind": {
+      "import": "./dist/tailwind.esm.js", 
+      "require": "./dist/tailwind.js",
+      "types": "./dist/tailwind.d.ts"
+    }
+  }
+}

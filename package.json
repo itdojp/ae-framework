@@ -12,10 +12,19 @@
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "dev:web": "pnpm --filter @ae-framework/web dev",
+    "dev:storybook": "pnpm --filter @ae-framework/storybook dev",
     "build": "tsc",
+    "build:frontend": "pnpm run build:tokens && pnpm run build:ui && pnpm --filter @ae-framework/web build",
+    "build:tokens": "pnpm --filter @ae-framework/design-tokens build",
+    "build:ui": "pnpm --filter @ae-framework/ui build",
+    "build:storybook": "pnpm --filter @ae-framework/storybook build-storybook",
     "build:cli": "tsc && chmod +x dist/cli/index.js && chmod +x dist/cli/phase-cli.js && chmod +x dist/cli/approval-cli.js && chmod +x dist/cli/slash-cli.js",
     "phase": "tsx src/cli/phase-cli.ts",
-    "lint": "eslint .",
+    "lint": "eslint . && pnpm --filter @ae-framework/ui lint && pnpm --filter @ae-framework/web lint",
+    "lint:frontend": "pnpm --filter @ae-framework/ui lint && pnpm --filter @ae-framework/web lint",
+    "type-check:frontend": "pnpm --filter @ae-framework/ui type-check && pnpm --filter @ae-framework/web type-check",
+    "clean:frontend": "pnpm --filter @ae-framework/design-tokens clean && pnpm --filter @ae-framework/ui clean",
     "test": "vitest run",
     "test:fast": "vitest run --exclude \"tests/testing/intelligent-test-selection.test.ts\"",
     "test:phase3.2:core": "vitest run tests/testing/playwright-integration.test.ts tests/testing/visual-regression.test.ts",
@@ -119,5 +128,10 @@
     "tsx": "^4.16.0",
     "typescript": "^5.5.4",
     "vitest": "^2.0.5"
-  }
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.1"
 }
