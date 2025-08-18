@@ -3,6 +3,8 @@
 > 人手最小＆仕様準拠最大。TDD強制機能付きIntent→Formal→Tests→Code→Verify→Operate の6フェーズ。
 
 ## 📢 最新アップデート
+- **[📋 AE-Spec Validation CI/CD](./docs/development/spec-validation.md)** - 仕様品質の自動検証とCI/CD統合
+- **[🔧 Spec Compiler SSOT](./packages/spec-compiler/README.md)** - AE-Spec → AE-IR変換による統一仕様管理  
 - **[🎨 Phase 6 UI/UX & Frontend Delivery完全実装](./docs/phases/phase-6-uiux.md)** - React + Next.js UI自動生成とOpenTelemetryテレメトリ
 - **[📊 OpenTelemetryテレメトリ統合](./docs/phases/telemetry-configuration.md)** - Phase 6品質メトリクス・パフォーマンス監視
 - **[🚀 Phase 2-5 Claude Code Task Tool統合](./docs/integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)** - 全フェーズの完全自動化を実現

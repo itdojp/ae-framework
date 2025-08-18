@@ -92,7 +92,11 @@
     "optimization:demo": "tsx -e \"import { startDefaultOptimizationSystem } from './src/optimization/index.js'; console.log('Complete optimization system demo ready');\"",
     "analyze:demo": "tsx -e \"import { SequentialInferenceEngine } from './src/engines/sequential-inference-engine.js'; import { DependencyAnalyzer } from './src/analysis/dependency-analyzer.js'; console.log('Sequential Inference Engine & Dependency Analyzer demo ready');\"",
     "dependency:analyze": "tsx -e \"import { DependencyAnalyzer } from './src/analysis/dependency-analyzer.js'; console.log('Dependency Analyzer ready');\"",
-    "performance:monitor": "tsx -e \"import { startDefaultMonitoring } from './src/optimization/monitoring/index.js'; console.log('Performance monitoring demo ready');\""
+    "performance:monitor": "tsx -e \"import { startDefaultMonitoring } from './src/optimization/monitoring/index.js'; console.log('Performance monitoring demo ready');\"",
+    "validate:specs": "bash scripts/validate-specs.sh",
+    "validate:spec": "bash scripts/validate-specs.sh -f",
+    "validate:specs:ci": "bash scripts/validate-specs.sh --no-color",
+    "hooks:setup-spec-validation": "cp scripts/hooks/pre-commit-spec-validation .git/hooks/pre-commit-spec-validation && chmod +x .git/hooks/pre-commit-spec-validation"
   },
   "dependencies": {
     "@ae-framework/spec-compiler": "workspace:*",

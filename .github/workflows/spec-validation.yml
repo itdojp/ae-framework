@@ -1,0 +1,207 @@
+name: AE-Spec Validation
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'spec/**/*.md'
+      - 'packages/spec-compiler/**'
+      - '.github/workflows/spec-validation.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'spec/**/*.md'
+      - 'packages/spec-compiler/**'
+      - '.github/workflows/spec-validation.yml'
+
+jobs:
+  validate-specs:
+    name: Validate AE-Spec Files
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+          
+      - name: Install dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          
+      - name: Build spec-compiler
+        run: |
+          cd packages/spec-compiler
+          pnpm build
+          
+      - name: Find AE-Spec files
+        id: find-specs
+        run: |
+          if [ -d "spec" ]; then
+            SPEC_FILES=$(find spec -name "*.md" -type f | tr '\n' ' ')
+            echo "Found spec files: $SPEC_FILES"
+            echo "spec_files=$SPEC_FILES" >> $GITHUB_OUTPUT
+            echo "has_specs=true" >> $GITHUB_OUTPUT
+          else
+            echo "No spec directory found"
+            echo "has_specs=false" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: Validate specifications
+        if: steps.find-specs.outputs.has_specs == 'true'
+        run: |
+          echo "🔍 Validating AE-Spec files..."
+          
+          # Track validation results
+          VALIDATION_PASSED=true
+          TOTAL_FILES=0
+          PASSED_FILES=0
+          
+          # Create results directory
+          mkdir -p validation-results
+          
+          for SPEC_FILE in ${{ steps.find-specs.outputs.spec_files }}; do
+            if [ -f "$SPEC_FILE" ]; then
+              echo ""
+              echo "📋 Validating: $SPEC_FILE"
+              echo "=================================="
+              
+              TOTAL_FILES=$((TOTAL_FILES + 1))
+              
+              # Run validation with error capture
+              if cd packages/spec-compiler && node dist/cli.js validate -i "../../$SPEC_FILE" --max-errors 0 --max-warnings 10; then
+                echo "✅ $SPEC_FILE passed validation"
+                PASSED_FILES=$((PASSED_FILES + 1))
+                echo "PASSED" > "../../validation-results/$(basename $SPEC_FILE .md).result"
+              else
+                echo "❌ $SPEC_FILE failed validation"
+                VALIDATION_PASSED=false
+                echo "FAILED" > "../../validation-results/$(basename $SPEC_FILE .md).result"
+              fi
+              
+              cd - > /dev/null
+            fi
+          done
+          
+          # Generate summary
+          echo ""
+          echo "📊 Validation Summary"
+          echo "===================="
+          echo "Total files: $TOTAL_FILES"
+          echo "Passed: $PASSED_FILES"
+          echo "Failed: $((TOTAL_FILES - PASSED_FILES))"
+          
+          # Save summary to output
+          echo "total_files=$TOTAL_FILES" >> $GITHUB_OUTPUT
+          echo "passed_files=$PASSED_FILES" >> $GITHUB_OUTPUT
+          echo "failed_files=$((TOTAL_FILES - PASSED_FILES))" >> $GITHUB_OUTPUT
+          
+          if [ "$VALIDATION_PASSED" = "false" ]; then
+            echo ""
+            echo "❌ Spec validation failed. Please fix the issues above."
+            exit 1
+          else
+            echo ""
+            echo "✅ All specifications passed validation!"
+          fi
+        id: validate
+        
+      - name: Upload validation results
+        if: always() && steps.find-specs.outputs.has_specs == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: spec-validation-results
+          path: validation-results/
+          retention-days: 30
+          
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && steps.find-specs.outputs.has_specs == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            // Check if validation results exist
+            const resultsDir = 'validation-results';
+            if (!fs.existsSync(resultsDir)) {
+              console.log('No validation results found');
+              return;
+            }
+            
+            const totalFiles = '${{ steps.validate.outputs.total_files }}' || '0';
+            const passedFiles = '${{ steps.validate.outputs.passed_files }}' || '0';
+            const failedFiles = '${{ steps.validate.outputs.failed_files }}' || '0';
+            
+            const passed = parseInt(failedFiles) === 0;
+            const icon = passed ? '✅' : '❌';
+            const status = passed ? 'PASSED' : 'FAILED';
+            
+            let comment = `## ${icon} AE-Spec Validation ${status}\n\n`;
+            comment += `📊 **Summary:**\n`;
+            comment += `- Total specifications: ${totalFiles}\n`;
+            comment += `- Passed: ${passedFiles}\n`;
+            comment += `- Failed: ${failedFiles}\n\n`;
+            
+            // Read individual results if available
+            try {
+              const resultFiles = fs.readdirSync(resultsDir);
+              if (resultFiles.length > 0) {
+                comment += `📋 **Individual Results:**\n`;
+                for (const resultFile of resultFiles) {
+                  const specName = path.basename(resultFile, '.result');
+                  const result = fs.readFileSync(path.join(resultsDir, resultFile), 'utf8').trim();
+                  const resultIcon = result === 'PASSED' ? '✅' : '❌';
+                  comment += `- ${resultIcon} \`${specName}.md\`\n`;
+                }
+              }
+            } catch (error) {
+              console.log('Could not read individual results:', error.message);
+            }
+            
+            if (!passed) {
+              comment += `\n⚠️ **Please fix the validation issues above before merging.**\n\n`;
+              comment += `💡 **Tips:**\n`;
+              comment += `- Check for missing required fields in entities\n`;
+              comment += `- Ensure all invariants reference existing entities\n`;
+              comment += `- Verify API endpoints follow the expected format\n`;
+              comment += `- Run \`pnpm ae-framework spec validate -i <your-spec>.md\` locally to test\n`;
+            } else {
+              comment += `\n🎉 All specifications are valid and ready for merge!\n`;
+            }
+            
+            comment += `\n---\n*Automated by [AE-Framework Spec Validation](${context.payload.repository.html_url}/actions/runs/${context.runId})*`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  quality-gates:
+    name: Quality Gates Check
+    needs: validate-specs
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Check validation status
+        run: |
+          if [ "${{ needs.validate-specs.result }}" = "success" ] || [ "${{ needs.validate-specs.result }}" = "skipped" ]; then
+            echo "✅ All quality gates passed"
+            echo "- Spec validation: ${{ needs.validate-specs.result }}"
+          else
+            echo "❌ Quality gates failed"
+            echo "- Spec validation: ${{ needs.validate-specs.result }}"
+            exit 1
+          fi

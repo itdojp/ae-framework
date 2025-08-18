@@ -1,0 +1,141 @@
+#!/bin/bash
+
+# Pre-commit hook for AE-Spec validation
+# Validates modified AE-Spec files before allowing commit
+
+set -e
+
+# Configuration
+SPEC_PATTERN="spec/.*\.md$"
+HOOK_ENABLED=true
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+print_colored() {
+    local color=$1
+    shift
+    echo -e "${color}$@${NC}"
+}
+
+# Check if spec validation is enabled
+check_config() {
+    local config_file=".ae/spec-validation.config.json"
+    if [ -f "$config_file" ] && command -v jq &> /dev/null; then
+        HOOK_ENABLED=$(jq -r '.integrations.pre_commit_hook.enabled // true' "$config_file")
+    fi
+}
+
+# Get list of modified spec files
+get_modified_specs() {
+    local modified_files=()
+    
+    # Get staged files
+    while IFS= read -r file; do
+        if [[ "$file" =~ $SPEC_PATTERN ]]; then
+            if [ -f "$file" ]; then
+                modified_files+=("$file")
+            fi
+        fi
+    done < <(git diff --cached --name-only --diff-filter=AM)
+    
+    echo "${modified_files[@]}"
+}
+
+# Validate single spec file
+validate_spec_file() {
+    local spec_file=$1
+    
+    print_colored $BLUE "🔍 Validating: $spec_file"
+    
+    # Check if spec-compiler is available
+    if [ ! -f "packages/spec-compiler/dist/cli.js" ]; then
+        print_colored $YELLOW "⚠️  spec-compiler not built, building now..."
+        cd packages/spec-compiler
+        npm run build --silent
+        cd ../..
+    fi
+    
+    # Run validation
+    cd packages/spec-compiler
+    if node dist/cli.js validate -i "../../$spec_file" --max-errors 0 --max-warnings 10 > /dev/null 2>&1; then
+        cd ../..
+        print_colored $GREEN "✅ $spec_file is valid"
+        return 0
+    else
+        cd ../..
+        print_colored $RED "❌ $spec_file has validation errors"
+        
+        # Show detailed errors
+        print_colored $YELLOW "Running detailed validation..."
+        cd packages/spec-compiler
+        node dist/cli.js validate -i "../../$spec_file" --max-errors 0 --max-warnings 10
+        cd ../..
+        
+        return 1
+    fi
+}
+
+# Main execution
+main() {
+    check_config
+    
+    if [ "$HOOK_ENABLED" != "true" ]; then
+        print_colored $YELLOW "⏭️  Spec validation pre-commit hook is disabled"
+        exit 0
+    fi
+    
+    # Get modified spec files
+    modified_specs=($(get_modified_specs))
+    
+    if [ ${#modified_specs[@]} -eq 0 ]; then
+        # No spec files modified, allow commit
+        exit 0
+    fi
+    
+    print_colored $BLUE "📋 Found ${#modified_specs[@]} modified AE-Spec file(s)"
+    echo ""
+    
+    # Validate each modified spec
+    validation_failed=false
+    failed_specs=()
+    
+    for spec_file in "${modified_specs[@]}"; do
+        if ! validate_spec_file "$spec_file"; then
+            validation_failed=true
+            failed_specs+=("$spec_file")
+        fi
+        echo ""
+    done
+    
+    # Summary
+    if [ "$validation_failed" = true ]; then
+        print_colored $RED "❌ Commit blocked: ${#failed_specs[@]} specification(s) failed validation"
+        echo ""
+        print_colored $YELLOW "Failed files:"
+        for failed_spec in "${failed_specs[@]}"; do
+            print_colored $YELLOW "  - $failed_spec"
+        done
+        echo ""
+        print_colored $YELLOW "💡 To fix validation issues:"
+        print_colored $YELLOW "  1. Run: ./scripts/validate-specs.sh -f <spec-file>"
+        print_colored $YELLOW "  2. Fix the reported issues"
+        print_colored $YELLOW "  3. Re-stage your changes: git add <spec-file>"
+        print_colored $YELLOW "  4. Retry the commit"
+        echo ""
+        print_colored $YELLOW "Or to skip validation (not recommended):"
+        print_colored $YELLOW "  git commit --no-verify"
+        
+        exit 1
+    else
+        print_colored $GREEN "✅ All modified specifications are valid"
+        exit 0
+    fi
+}
+
+# Run main function
+main "$@"
