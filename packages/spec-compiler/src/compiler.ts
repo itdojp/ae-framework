@@ -1,5 +1,4 @@
 import { readFileSync, writeFileSync } from 'fs';
-import { load as parseYaml } from 'js-yaml';
 import { AEIR, CompileOptions, SpecLintReport, SpecLintIssue } from './types.js';
 
 export class AESpecCompiler {
@@ -154,10 +153,15 @@ export class AESpecCompiler {
       } else if (currentEntity) {
         const fieldMatch = line.match(/^[-*]\s*\*\*(.+?)\*\*\s*\((.+?)\)(?:\s*-\s*(.+))?$/);
         if (fieldMatch) {
+          const typeRaw = fieldMatch[2].trim();
+          const typeParts = typeRaw.split(',').map(s => s.trim());
+          const required = typeParts.includes('required');
+          const type = typeParts.filter(part => part !== 'required').join(', ');
+          
           currentEntity.fields.push({
             name: fieldMatch[1].trim(),
-            type: fieldMatch[2].trim(),
-            required: fieldMatch[2].includes('required'),
+            type: type || typeRaw,
+            required,
             description: fieldMatch[3]?.trim(),
           });
         }

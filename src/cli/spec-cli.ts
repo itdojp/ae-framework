@@ -8,6 +8,7 @@
 import { Command } from 'commander';
 import { AESpecCompiler } from '../../packages/spec-compiler/src/index.js';
 import { resolve } from 'path';
+import { readFileSync } from 'fs';
 import chalk from 'chalk';
 
 export function createSpecCommand(): Command {
@@ -49,7 +50,7 @@ export function createSpecCommand(): Command {
   spec
     .command('lint')
     .description('Lint AE-IR for quality issues')
-    .requiredOption('-i, --input <file>', 'Input AE-IR JSON file (default: .ae/ae-ir.json)')
+    .option('-i, --input <file>', 'Input AE-IR JSON file', '.ae/ae-ir.json')
     .option('--max-errors <n>', 'Maximum allowed errors', parseInt, 0)
     .option('--max-warnings <n>', 'Maximum allowed warnings', parseInt, 10)
     .action(async (options) => {
@@ -57,7 +58,7 @@ export function createSpecCommand(): Command {
         const inputPath = options.input || '.ae/ae-ir.json';
         console.log(chalk.blue(`🔍 Linting ${inputPath}...`));
         
-        const irContent = require('fs').readFileSync(resolve(inputPath), 'utf-8');
+        const irContent = readFileSync(resolve(inputPath), 'utf-8');
         const ir = JSON.parse(irContent);
         
         const compiler = new AESpecCompiler();
