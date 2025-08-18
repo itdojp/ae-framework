@@ -168,7 +168,7 @@ export class EnhancedStateCLI {
       console.log(chalk.green(`✅ Snapshot loaded: ${snapshotId}`));
       console.log(chalk.blue(`   Entries: ${Object.keys(snapshot).length}`));
       
-      console.log('\\n📋 Snapshot Contents:');
+      console.log('\n📋 Snapshot Contents:');
       for (const [key, entry] of Object.entries(snapshot)) {
         console.log(`  • ${key}: ${entry.logicalKey} (v${entry.version})`);
       }
