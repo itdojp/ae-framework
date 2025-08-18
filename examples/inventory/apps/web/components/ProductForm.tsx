@@ -16,7 +16,7 @@ const productSchema = z.object({
   price: z.number().min(0),
   stock: z.number().min(0).int(),
   lowStockThreshold: z.number().min(0).int(),
-  category: z.enum([&quot;electronics&quot;]),
+  category: z.enum(["electronics"]),
   sku: z.string(),
   weight: z.number().min(0).optional(),
   dimensions: z.any().optional(),

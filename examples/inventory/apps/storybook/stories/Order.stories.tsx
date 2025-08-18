@@ -34,21 +34,21 @@ type Story = StoryObj<typeof meta>;
 
 // Mock data
 const mockOrder = {
-  id: &quot;Sample id&quot;,
-  orderNumber: &quot;Sample orderNumber&quot;,
-  customerId: &quot;Sample customerId&quot;,
-  customerEmail: &quot;Sample customerEmail&quot;,
-  status: &quot;pending&quot;,
+  id: "Sample id",
+  orderNumber: "Sample orderNumber",
+  customerId: "Sample customerId",
+  customerEmail: "Sample customerEmail",
+  status: "pending",
   items: [],
   subtotal: 42,
   taxAmount: 42,
   shippingAmount: 42,
   total: 42,
   shippingAddress: {},
-  notes: &quot;Sample notes&quot;,
-  orderDate: &quot;2024-01-01T00:00:00.000Z&quot;,
-  shippedDate: &quot;2024-01-01T00:00:00.000Z&quot;,
-  deliveredDate: &quot;2024-01-01T00:00:00.000Z&quot;,
+  notes: "Sample notes",
+  orderDate: "2024-01-01T00:00:00.000Z",
+  shippedDate: "2024-01-01T00:00:00.000Z",
+  deliveredDate: "2024-01-01T00:00:00.000Z",
 };
 
 export const Form: Story = {

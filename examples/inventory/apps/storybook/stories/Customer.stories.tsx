@@ -34,12 +34,12 @@ type Story = StoryObj<typeof meta>;
 
 // Mock data
 const mockCustomer = {
-  id: &quot;Sample id&quot;,
-  email: &quot;Sample email&quot;,
-  firstName: &quot;Sample firstName&quot;,
-  lastName: &quot;Sample lastName&quot;,
-  phone: &quot;Sample phone&quot;,
-  createdAt: &quot;2024-01-01T00:00:00.000Z&quot;,
+  id: "Sample id",
+  email: "Sample email",
+  firstName: "Sample firstName",
+  lastName: "Sample lastName",
+  phone: "Sample phone",
+  createdAt: "2024-01-01T00:00:00.000Z",
 };
 
 export const Form: Story = {

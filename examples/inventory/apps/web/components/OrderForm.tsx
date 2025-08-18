@@ -14,7 +14,7 @@ const orderSchema = z.object({
   orderNumber: z.string(),
   customerId: z.string(),
   customerEmail: z.string(),
-  status: z.enum([&quot;pending&quot;]),
+  status: z.enum(["pending"]),
   items: z.array(z.any()).min(1),
   subtotal: z.number().min(0),
   taxAmount: z.number().min(0),
