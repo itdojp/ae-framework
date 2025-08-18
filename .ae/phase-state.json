@@ -1,0 +1,168 @@
+{
+  "project": "ae-framework",
+  "version": "1.0.0",
+  "phase": {
+    "current": "6",
+    "completed": ["1", "2", "3", "4", "5"]
+  },
+  "entities": {
+    "Product": {
+      "description": "Product entity for inventory management",
+      "attributes": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "validation": "uuid",
+          "description": "Unique product identifier"
+        },
+        "name": {
+          "type": "string",
+          "required": true,
+          "validation": "min:1,max:100",
+          "description": "Product name"
+        },
+        "description": {
+          "type": "string",
+          "required": false,
+          "validation": "max:500",
+          "description": "Product description"
+        },
+        "price": {
+          "type": "number",
+          "required": true,
+          "validation": "min:0",
+          "description": "Product price in USD"
+        },
+        "stock": {
+          "type": "number",
+          "required": true,
+          "validation": "min:0,integer",
+          "description": "Current stock quantity"
+        },
+        "category": {
+          "type": "string",
+          "required": true,
+          "validation": "enum:electronics,clothing,books,home",
+          "description": "Product category"
+        },
+        "active": {
+          "type": "boolean",
+          "required": true,
+          "default": true,
+          "description": "Whether product is active"
+        },
+        "createdAt": {
+          "type": "date",
+          "required": true,
+          "default": "now",
+          "description": "Creation timestamp"
+        },
+        "updatedAt": {
+          "type": "date",
+          "required": true,
+          "default": "now",
+          "description": "Last update timestamp"
+        }
+      },
+      "constraints": {
+        "unique": ["name"],
+        "indexes": ["category", "active", "createdAt"],
+        "business_rules": [
+          "Price must be positive",
+          "Stock cannot be negative",
+          "Active products must have stock > 0 or allow backorders"
+        ]
+      },
+      "acceptance_criteria": [
+        "User can create a new product with valid data",
+        "User can view product list with pagination",
+        "User can edit existing product details",
+        "User can delete products not in active orders",
+        "System validates all product data before saving",
+        "System shows appropriate error messages for invalid data",
+        "User can filter products by category and status",
+        "User can search products by name"
+      ]
+    },
+    "Order": {
+      "description": "Customer order entity",
+      "attributes": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "validation": "uuid",
+          "description": "Unique order identifier"
+        },
+        "customerId": {
+          "type": "string",
+          "required": true,
+          "validation": "uuid",
+          "description": "Customer identifier"
+        },
+        "status": {
+          "type": "string",
+          "required": true,
+          "validation": "enum:pending,confirmed,shipped,delivered,cancelled",
+          "default": "pending",
+          "description": "Order status"
+        },
+        "total": {
+          "type": "number",
+          "required": true,
+          "validation": "min:0",
+          "description": "Total order amount"
+        },
+        "items": {
+          "type": "array",
+          "required": true,
+          "validation": "min_length:1",
+          "description": "Order items array"
+        },
+        "shippingAddress": {
+          "type": "object",
+          "required": true,
+          "description": "Shipping address details"
+        },
+        "orderDate": {
+          "type": "date",
+          "required": true,
+          "default": "now",
+          "description": "Order creation date"
+        }
+      },
+      "constraints": {
+        "unique": [],
+        "indexes": ["customerId", "status", "orderDate"],
+        "business_rules": [
+          "Total must equal sum of item prices",
+          "Cannot modify shipped orders",
+          "Must have at least one item"
+        ]
+      },
+      "acceptance_criteria": [
+        "User can create order with multiple products",
+        "User can view order details and history",
+        "User can update order status appropriately",
+        "System calculates total automatically",
+        "System validates inventory before confirming order"
+      ]
+    }
+  },
+  "relationships": {
+    "Product-Order": {
+      "type": "many-to-many",
+      "through": "OrderItem",
+      "description": "Products can be in multiple orders"
+    }
+  },
+  "ui_preferences": {
+    "theme": "modern",
+    "layout": "responsive",
+    "components": "radix-ui",
+    "styling": "tailwindcss",
+    "forms": "react-hook-form",
+    "validation": "zod",
+    "data_fetching": "tanstack-query",
+    "testing": "playwright"
+  }
+}

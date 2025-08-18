@@ -1,0 +1,13 @@
+{
+  "HomePage": {
+    "title": "ae-framework",
+    "subtitle": "AI-Enhanced Development Framework with Phase 6 UI/UX Automation",
+    "getStarted": "はじめる",
+    "learnMore": "詳細を見る"
+  },
+  "Navigation": {
+    "home": "ホーム",
+    "about": "概要",
+    "health": "ヘルスチェック"
+  }
+}

@@ -13,6 +13,11 @@ import { createNaturalLanguageTaskHandler } from '../agents/natural-language-tas
 import { createUserStoriesTaskHandler } from '../agents/user-stories-task-adapter.js';
 import { createValidationTaskHandler } from '../agents/validation-task-adapter.js';
 import { createDomainModelingTaskHandler } from '../agents/domain-modeling-task-adapter.js';
+import { UIScaffoldGenerator } from '../generators/ui-scaffold-generator.js';
+import { Phase6Telemetry } from '../telemetry/phase6-metrics.js';
+import '../telemetry/telemetry-setup.js'; // Initialize telemetry
+import * as fs from 'fs';
+import * as path from 'path';
 
 const program = new Command();
 
@@ -29,6 +34,7 @@ class AEFrameworkCLI {
   public userStoriesHandler: TaskHandler;
   public validationHandler: TaskHandler;
   public domainModelingHandler: TaskHandler;
+  public uiHandler: TaskHandler;
 
   constructor() {
     this.config = ConfigLoader.load();
@@ -48,6 +54,11 @@ class AEFrameworkCLI {
     this.userStoriesHandler = createUserStoriesTaskHandler();
     this.validationHandler = createValidationTaskHandler();
     this.domainModelingHandler = createDomainModelingTaskHandler();
+    this.uiHandler = {
+      handleTask: async (request: TaskRequest): Promise<TaskResponse> => {
+        return this.handleUIScaffoldTask(request);
+      }
+    };
   }
 
   async checkPhase(phaseName: string): Promise<void> {
@@ -253,6 +264,59 @@ class AEFrameworkCLI {
         console.log(chalk.cyan(`   • ${validation}`));
       });
     }
+  }
+
+  async handleUIScaffoldTask(request: TaskRequest): Promise<TaskResponse> {
+    return await Phase6Telemetry.instrumentScaffoldOperation(
+      'ui_scaffold_task',
+      async () => {
+        const stateFile = path.join(process.cwd(), '.ae', 'phase-state.json');
+        
+        if (!fs.existsSync(stateFile)) {
+          return {
+            summary: 'Phase state file not found',
+            analysis: 'No .ae/phase-state.json found. Please run domain modeling first.',
+            recommendations: ['Run ae-framework domain-model to create phase state'],
+            nextActions: ['Set up project with ae-framework'],
+            warnings: ['Cannot generate UI without domain model'],
+            shouldBlockProgress: true
+          };
+        }
+
+        const phaseState = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+        const outputDir = path.join(process.cwd(), 'src', 'ui', 'components', 'generated');
+        
+        const generator = new UIScaffoldGenerator(phaseState, { outputDir });
+        const results = await generator.generateAll();
+        
+        const successCount = Object.values(results).filter(r => r.success).length;
+        const totalCount = Object.keys(results).length;
+        const totalFiles = Object.values(results).reduce((sum, r) => sum + r.files.length, 0);
+
+        // Record quality metrics
+        Phase6Telemetry.recordQualityMetrics({
+          coverage: totalFiles > 0 ? (successCount / totalCount) * 100 : 0,
+        });
+
+        return {
+          summary: `Generated ${totalFiles} files for ${successCount}/${totalCount} entities`,
+          analysis: `UI scaffold generation completed:\n${Object.entries(results).map(([entity, result]) => 
+            `  • ${entity}: ${result.success ? `✅ ${result.files.length} files` : `❌ ${result.error}`}`
+          ).join('\n')}`,
+          recommendations: successCount < totalCount ? 
+            ['Review failed entities and fix domain model issues'] : 
+            ['Run npm run lint to ensure code quality', 'Test generated components'],
+          nextActions: ['Review generated components', 'Customize as needed', 'Run quality gates'],
+          warnings: successCount < totalCount ? 
+            [`${totalCount - successCount} entities failed to generate`] : [],
+          shouldBlockProgress: successCount === 0
+        };
+      },
+      {
+        request_type: request.subagent_type,
+        sources: request.prompt,
+      }
+    );
   }
 }
 
@@ -469,6 +533,43 @@ program
       console.log(chalk.blue('\n📊 Analysis:'));
       console.log(result.analysis);
       
+      cli.handleProgressBlocking(result);
+    } catch (error) {
+      console.log(chalk.red(`❌ Error: ${error}`));
+      process.exit(1);
+    }
+  });
+
+// Phase 6: UI Scaffold CLI
+program
+  .command('ui-scaffold')
+  .description('Generate UI components from domain model (Phase 6)')
+  .option('--components', 'Generate React components')
+  .option('--state', 'Design state architecture')
+  .option('--tokens', 'Integrate design tokens')
+  .option('--a11y', 'Validate accessibility')
+  .option('--sources <sources>', 'Source files or globs')
+  .action(async (options) => {
+    const cli = new AEFrameworkCLI();
+    console.log(chalk.blue('🎨 Generating UI Components...'));
+    
+    const taskType = options.components ? 'generate-components' :
+                    options.state ? 'design-state' :
+                    options.tokens ? 'integrate-design-tokens' :
+                    options.a11y ? 'validate-accessibility' :
+                    'generate-components';
+
+    const request = {
+      description: `UI/UX processing: ${taskType}`,
+      prompt: options.sources || 'Process available domain model and user stories',
+      subagent_type: 'ui-processing',
+    };
+
+    try {
+      const result = await cli.uiHandler.handleTask(request);
+      console.log(chalk.green(`✅ ${result.summary}`));
+      console.log(chalk.blue('\n🎨 UI Analysis:'));
+      console.log(result.analysis);
       cli.handleProgressBlocking(result);
     } catch (error) {
       console.log(chalk.red(`❌ Error: ${error}`));

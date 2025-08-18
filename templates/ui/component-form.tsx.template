@@ -1,0 +1,128 @@
+'use client';
+
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Button } from '@ae-framework/ui/components/button';
+import { Input } from '@ae-framework/ui/components/input';
+import { Textarea } from '@ae-framework/ui/components/textarea';
+import { Checkbox } from '@ae-framework/ui/components/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ae-framework/ui/components/select';
+
+// Zod schema for {{EntityName}} validation
+const {{entityName}}Schema = z.object({
+{{#each editableAttributes}}
+  {{@key}}: {{getZodSchema this}},
+{{/each}}
+});
+
+type {{EntityName}}FormData = z.infer<typeof {{entityName}}Schema>;
+
+interface {{EntityName}}FormProps {
+  initialData?: Partial<{{EntityName}}FormData>;
+  onSubmit: (data: {{EntityName}}FormData) => void;
+  onCancel?: () => void;
+  isLoading?: boolean;
+  error?: string;
+}
+
+export function {{EntityName}}Form({ 
+  initialData, 
+  onSubmit, 
+  onCancel, 
+  isLoading = false,
+  error 
+}: {{EntityName}}FormProps) {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch
+  } = useForm<{{EntityName}}FormData>({
+    resolver: zodResolver({{entityName}}Schema),
+    defaultValues: initialData
+  });
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-3">
+          <p className="text-red-800 text-sm">{error}</p>
+        </div>
+      )}
+
+{{#each editableAttributes}}
+      <div>
+        <label htmlFor="{{@key}}" className="block text-sm font-medium text-gray-700 mb-1">
+          {{getFieldLabel @key}}{{#if required}} *{{/if}}
+        </label>
+        {{#if (isTextArea type validation)}}
+        <Textarea
+          id="{{@key}}"
+          placeholder="{{getFieldPlaceholder @key ../description}}"
+          {...register('{{@key}}')}
+          className={ errors.{{@key}} ? 'border-red-500' : '' }
+        />
+        {{else if (isSelect type validation)}}
+        <Select onValueChange={(value) => setValue('{{@key}}', value)} defaultValue={ initialData?.{{@key}} }>
+          <SelectTrigger className={errors.{{@key}} ? 'border-red-500' : ''}>
+            <SelectValue placeholder="Select {{getFieldLabel @key}}" />
+          </SelectTrigger>
+          <SelectContent>
+            {{#each (getSelectOptions validation)}}
+            <SelectItem value="{{this}}">{{capitalize this}}</SelectItem>
+            {{/each}}
+          </SelectContent>
+        </Select>
+        {{else if (isBoolean type)}}
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="{{@key}}"
+            {...register('{{@key}}')}
+            className={ errors.{{@key}} ? 'border-red-500' : '' }
+          />
+          <label htmlFor="{{@key}}" className="text-sm text-gray-600">
+            {{description}}
+          </label>
+        </div>
+        {{else}}
+        <Input
+          id="{{@key}}"
+          type="{{getInputType type}}"
+          placeholder="{{getFieldPlaceholder @key ../description}}"
+          {...register('{{@key}}'{{#if (isNumber type)}}, { valueAsNumber: true }{{/if}})}
+          className={ errors.{{@key}} ? 'border-red-500' : '' }
+        />
+        {{/if}}
+        { errors.{{@key}} && (
+          <p className="text-red-600 text-sm mt-1">
+            { errors.{{@key}}?.message }
+          </p>
+        ) }
+      </div>
+
+{{/each}}
+      <div className="flex gap-3 pt-4">
+        <Button 
+          type="submit" 
+          disabled={isLoading}
+          className="flex-1"
+        >
+          {isLoading ? 'Saving...' : initialData ? 'Update {{EntityName}}' : 'Create {{EntityName}}'}
+        </Button>
+        
+        {onCancel && (
+          <Button 
+            type="button" 
+            variant="outline"
+            onClick={onCancel}
+            disabled={isLoading}
+          >
+            Cancel
+          </Button>
+        ) }
+      </div>
+    </form>
+  );
+}
