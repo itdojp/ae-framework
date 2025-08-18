@@ -13,6 +13,22 @@ on:
       - 'spec/**'
       - '.ae/**'
       - 'packages/spec-compiler/**'
+  workflow_dispatch:
+    inputs:
+      spec_file:
+        description: 'Spec file path to validate'
+        required: false
+        default: 'spec/example-spec.md'
+        type: string
+      output_file:
+        description: 'Output AE-IR file path'
+        required: false
+        default: '.ae/ae-ir.json'
+        type: string
+
+env:
+  SPEC_FILE: ${{ github.event.inputs.spec_file || 'spec/example-spec.md' }}
+  OUTPUT_FILE: ${{ github.event.inputs.output_file || '.ae/ae-ir.json' }}
 
 jobs:
   spec-validation:
@@ -45,43 +61,27 @@ jobs:
       - name: Compile AE-Spec → AE-IR
         run: |
           pnpm ae-framework spec compile \
-            --input spec/example-spec.md \
-            --output .ae/ae-ir.json
+            --input ${{ env.SPEC_FILE }} \
+            --output ${{ env.OUTPUT_FILE }}
 
       - name: Lint AE-IR (Check for ambiguity/undefined/conflicts)
         run: |
           pnpm ae-framework spec lint \
-            --input .ae/ae-ir.json \
+            --input ${{ env.OUTPUT_FILE }} \
             --max-errors 0 \
             --max-warnings 10
 
       - name: Validate complete spec workflow
         run: |
           pnpm ae-framework spec validate \
-            --input spec/example-spec.md \
+            --input ${{ env.SPEC_FILE }} \
             --output .ae/ae-ir-validated.json \
             --max-errors 0 \
             --max-warnings 10
 
       - name: Check AE-IR structure
         run: |
-          if [ ! -f ".ae/ae-ir.json" ]; then
-            echo "❌ AE-IR file not generated"
-            exit 1
-          fi
-          
-          # Check if AE-IR has required fields
-          node -e "
-            const ir = JSON.parse(require('fs').readFileSync('.ae/ae-ir.json', 'utf8'));
-            const required = ['version', 'metadata', 'domain', 'api'];
-            for (const field of required) {
-              if (!ir[field]) {
-                console.error(\`❌ Missing required field: \${field}\`);
-                process.exit(1);
-              }
-            }
-            console.log('✅ AE-IR structure validation passed');
-          "
+          node scripts/validate-aeir-structure.cjs "${{ env.OUTPUT_FILE }}"
 
       - name: Archive AE-IR artifacts
         if: always()
@@ -101,18 +101,18 @@ jobs:
             const fs = require('fs');
             
             try {
-              const ir = JSON.parse(fs.readFileSync('.ae/ae-ir.json', 'utf8'));
+              const ir = JSON.parse(fs.readFileSync('${{ env.OUTPUT_FILE }}', 'utf8'));
               
               const summary = `## 🔍 AE-Spec Validation Results
               
               ✅ **Specification compiled successfully!**
               
               ### 📊 Statistics
-              - **Entities**: ${ir.domain.length}
-              - **API Endpoints**: ${ir.api.length}
-              - **Use Cases**: ${ir.usecases.length}
-              - **Business Invariants**: ${ir.invariants.length}
-              - **Glossary Terms**: ${ir.glossary.length}
+              - **Entities**: ${ir.domain?.length ?? 0}
+              - **API Endpoints**: ${ir.api?.length ?? 0}
+              - **Use Cases**: ${ir.usecases?.length ?? 0}
+              - **Business Invariants**: ${ir.invariants?.length ?? 0}
+              - **Glossary Terms**: ${ir.glossary?.length ?? 0}
               
               ### 📋 Generated AE-IR
               - File: \`.ae/ae-ir.json\`

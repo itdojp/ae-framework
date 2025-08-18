@@ -2,7 +2,7 @@ import { execSync } from 'child_process';
 import { existsSync } from 'fs';
 import { glob } from 'glob';
 import { AEFrameworkConfig, Guard, GuardResult } from '../types.js';
-import { loadQualityPolicy, getCurrentPhase, shouldEnforceGate, getThreshold } from '../../utils/quality-policy-loader.js';
+import { getCurrentPhase, shouldEnforceGate, getThreshold } from '../../utils/quality-policy-loader.js';
 
 export class GuardRunner {
   constructor(private config: AEFrameworkConfig) {}
