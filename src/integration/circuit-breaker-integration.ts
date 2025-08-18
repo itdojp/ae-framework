@@ -98,7 +98,7 @@ export class AEFrameworkCircuitBreakerIntegration extends EventEmitter {
       failureThreshold: 2,
       successThreshold: 1,
       timeout: 60000,
-      monitoringWindow: 120000,
+      monitoringWindow: 60000,
       expectedErrors: [PhaseTransitionError, StateManagementError],
       fallback: () => this.phaseTransitionFallback(),
       enableMonitoring: true

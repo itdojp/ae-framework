@@ -459,13 +459,6 @@ export class CircuitBreaker extends EventEmitter {
   }
 
   /**
-   * Default fallback function
-   */
-  private defaultFallback(): null {
-    return null;
-  }
-
-  /**
    * Generate health check report
    */
   generateHealthReport(): {
