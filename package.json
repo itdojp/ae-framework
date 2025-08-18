@@ -9,7 +9,7 @@
     "ae-phase": "./dist/cli/phase-cli.js",
     "ae-approve": "./dist/cli/approval-cli.js",
     "ae-slash": "./dist/cli/slash-cli.js",
-    "ae-ui": "./dist/cli/ui-scaffold-cli.js"
+    "ae-ui": "./dist/cli/ae-ui-alias.js"
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",
@@ -20,7 +20,7 @@
     "build:tokens": "pnpm --filter @ae-framework/design-tokens build",
     "build:ui": "pnpm --filter @ae-framework/ui build",
     "build:storybook": "pnpm --filter @ae-framework/storybook build-storybook",
-    "build:cli": "tsc && chmod +x dist/cli/index.js && chmod +x dist/cli/phase-cli.js && chmod +x dist/cli/approval-cli.js && chmod +x dist/cli/slash-cli.js && chmod +x dist/cli/ui-scaffold-cli.js",
+    "build:cli": "tsc && chmod +x dist/cli/index.js && chmod +x dist/cli/phase-cli.js && chmod +x dist/cli/approval-cli.js && chmod +x dist/cli/slash-cli.js && chmod +x dist/cli/ui-scaffold-cli.js && chmod +x dist/cli/ae-ui-alias.js",
     "phase": "tsx src/cli/phase-cli.ts",
     "lint": "eslint . && pnpm --filter @ae-framework/ui lint && pnpm --filter @ae-framework/web lint",
     "lint:frontend": "pnpm --filter @ae-framework/ui lint && pnpm --filter @ae-framework/web lint",

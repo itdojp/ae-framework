@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
 import { UIScaffoldGenerator } from '../generators/ui-scaffold-generator.js';
+import { spawn } from 'child_process';
 
 const program = new Command();
 
@@ -80,8 +81,8 @@ program
 
     } catch (error) {
       console.error(chalk.red('✗ Generation failed:'));
-      console.error(chalk.red(error.message));
-      if (error.stack) {
+      console.error(chalk.red(error instanceof Error ? error.message : String(error)));
+      if (error instanceof Error && error.stack) {
         console.error(chalk.gray(error.stack));
       }
       process.exit(1);
@@ -119,7 +120,7 @@ program
 
     } catch (error) {
       console.error(chalk.red('✗ Failed to list entities:'));
-      console.error(chalk.red(error.message));
+      console.error(chalk.red(error instanceof Error ? error.message : String(error)));
       process.exit(1);
     }
   });
@@ -137,7 +138,7 @@ program
       }
 
       const phaseState = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
-      const generator = new UIScaffoldGenerator(phaseState, { dryRun: true });
+      const generator = new UIScaffoldGenerator(phaseState, { outputDir: './temp', dryRun: true });
       
       console.log(chalk.blue('🔍 Validating Phase State...'));
       console.log(chalk.gray('─'.repeat(40)));
@@ -158,7 +159,7 @@ program
 
     } catch (error) {
       console.error(chalk.red('✗ Validation failed:'));
-      console.error(chalk.red(error.message));
+      console.error(chalk.red(error instanceof Error ? error.message : String(error)));
       process.exit(1);
     }
   });

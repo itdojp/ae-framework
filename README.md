@@ -3,6 +3,8 @@
 > 人手最小＆仕様準拠最大。TDD強制機能付きIntent→Formal→Tests→Code→Verify→Operate の6フェーズ。
 
 ## 📢 最新アップデート
+- **[🎨 Phase 6 UI/UX & Frontend Delivery完全実装](./docs/phase-6-uiux.md)** - React + Next.js UI自動生成とOpenTelemetryテレメトリ
+- **[📊 OpenTelemetryテレメトリ統合](./docs/telemetry-configuration.md)** - Phase 6品質メトリクス・パフォーマンス監視
 - **[🚀 Phase 2-5 Claude Code Task Tool統合](./docs/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)** - 全フェーズの完全自動化を実現
 - **[🎯 Intent Agent 改善](./docs/TDD-FRAMEWORK-ARCHITECTURE.md)** - Claude Code Task Tool統合でMCP問題を解決
 - **[📝 自然言語要件処理](./docs/PHASE-2-NATURAL-LANGUAGE-REQUIREMENTS.md)** - Phase 2の包括的な要件分析機能
@@ -83,6 +85,30 @@ Claude Code: Domain Modeling Task Adapterで設計中...
   • Domain Services: 3
 ```
 
+#### Phase 6: UI/UX & Frontend Delivery 🎨
+```
+User: UI コンポーネントを生成してください
+
+Claude Code: UI Task Adapterでコンポーネント生成中...
+
+📊 OpenTelemetry initialized for ae-framework Phase 6
+   Service: ae-framework v1.0.0
+   Environment: development
+   OTLP Export: ✅ Enabled
+
+✅ Generated 21 files for 3/3 entities
+📊 Test Coverage: 100% (threshold: 80%)
+📈 Phase 6 Efficiency Metrics:
+  🏗️  Scaffold Time: 15243ms ✅
+  📊 Generated 21 files for 3/3 entities
+
+🎨 UI Analysis:
+  • React Components: 12 files
+  • Next.js Pages: 6 files  
+  • Storybook Stories: 3 files
+  • E2E Tests: 3 files
+```
+
 ### CLI実行も全フェーズ対応
 ```bash
 # Phase 1: Intent分析
@@ -108,6 +134,18 @@ ae-framework validate --traceability
 ae-framework domain-model --analyze
 ae-framework domain-model --entities
 ae-framework domain-model --contexts
+
+# Phase 6: UI/UX & Frontend Delivery
+ae-framework ui-scaffold --components
+ae-framework ui-scaffold --state
+ae-framework ui-scaffold --tokens
+ae-framework ui-scaffold --a11y
+
+# ae-ui エイリアス（同等の動作）
+ae-ui scaffold --components
+ae-ui scaffold --state  
+ae-ui scaffold --tokens
+ae-ui scaffold --a11y
 ```
 
 ### ハイブリッドアプローチ
@@ -308,6 +346,19 @@ ae-framework status
 
 **Claude Code統合**: Domain Modeling Task Adapterで設計自動化
 
+### Phase 6: UI/UX & Frontend Delivery Agent 🎨
+React + Next.js によるフロントエンド配信とテレメトリ監視を担当：
+- **UIスキャフォールド**: ドメインモデルからReactコンポーネント自動生成
+- **Next.js統合**: App Routerベースの多言語対応ページ生成
+- **デザインシステム**: Radix UI + Tailwind CSS + Design Tokens統合
+- **ストーリーブック**: 各コンポーネントのStorybookストーリー自動生成
+- **E2Eテスト**: Playwrightベースの自動テスト生成
+- **アクセシビリティ**: WCAG 2.1 AA準拠の自動検証
+- **テレメトリ**: OpenTelemetryによるパフォーマンス・品質メトリクス監視
+- **品質ゲート**: カバレッジ・A11y・パフォーマンス閾値の自動監視
+
+**Claude Code統合**: UI Task Adapterで完全自動化
+
 ### Phase 6: Test Generation Agent 🧪
 包括的なテスト生成を担当：
 - 要件からのテスト自動生成
@@ -443,8 +494,88 @@ ae-framework generate:code
 # 5. Verify quality (Phase 5)
 ae-framework verify
 
-# 6. Deploy (Phase 6)
+# 6. Generate UI Components (Phase 6)
+ae-framework ui-scaffold --components
+# または
+ae-ui scaffold --components
+
+# 7. Deploy (Phase 6)
 ae-framework deploy
+```
+
+## 🎨 Phase 6: UI/UX & Frontend Delivery
+
+### OpenTelemetryテレメトリ監視
+Phase 6では**OpenTelemetry**を使用してリアルタイム品質監視を実行：
+
+```bash
+# テレメトリ有効化
+DEBUG_TELEMETRY=true ae-framework ui-scaffold --components
+
+# OTLP エクスポート設定
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 ae-framework ui-scaffold --components
+```
+
+**監視メトリクス:**
+- **品質メトリクス**: テストカバレッジ(≥80%)、A11yスコア(≥95%)、パフォーマンススコア(≥75%)
+- **効率性メトリクス**: スキャフォールド時間(<30秒)、E2Eテスト時間(<5分)、ビルド時間
+- **保守性メトリクス**: コンポーネント複雑度(<10)、未使用CSS率(<5%)、デザイントークン使用率(≥95%)
+
+### CLI Commands
+```bash
+# メインコマンド
+ae-framework ui-scaffold --components     # React components生成
+ae-framework ui-scaffold --state         # State architecture設計
+ae-framework ui-scaffold --tokens        # Design tokens統合
+ae-framework ui-scaffold --a11y          # Accessibility検証
+
+# ae-ui エイリアス (同等の動作)
+ae-ui scaffold --components              # React components生成
+ae-ui scaffold --state                   # State architecture設計
+ae-ui scaffold --tokens                  # Design tokens統合
+ae-ui scaffold --a11y                    # Accessibility検証
+```
+
+### 生成されるファイル構成
+```
+src/ui/components/generated/
+├── apps/web/app/{entity}/page.tsx           # 一覧ページ
+├── apps/web/app/{entity}/[id]/page.tsx      # 詳細ページ  
+├── apps/web/app/{entity}/new/page.tsx       # 新規作成ページ
+├── apps/web/components/{Entity}Form.tsx     # フォームコンポーネント
+├── apps/web/components/{Entity}Card.tsx     # カードコンポーネント
+├── apps/storybook/stories/{Entity}.stories.tsx # Storybookストーリー
+└── apps/web/__e2e__/{entity}.spec.ts        # E2Eテスト
+```
+
+**技術仕様:**
+- **Framework**: Next.js 14 App Router
+- **UI Library**: Radix UI + Tailwind CSS  
+- **Forms**: React Hook Form + Zod validation
+- **State**: React Query for server state
+- **Testing**: Playwright E2E + Storybook
+- **i18n**: next-intl 多言語対応
+- **A11y**: WCAG 2.1 AA準拠
+
+### Phase 6品質ゲート
+OpenTelemetryテレメトリによる自動監視：
+
+- ✅ **テストカバレッジ**: ≥80% (自動警告)
+- ✅ **A11yスコア**: ≥95% (WCAG 2.1 AA準拠)  
+- ✅ **パフォーマンススコア**: ≥75% (Lighthouse CI)
+- ✅ **スキャフォールド時間**: <30秒 (効率性監視)
+- ✅ **E2Eテスト時間**: <5分 (CI/CD最適化)
+- ✅ **TypeScript**: 型エラー0、strict mode準拠
+- ✅ **ESLint**: 構文エラー0、警告最小化
+
+**テレメトリ出力例:**
+```bash
+📊 OpenTelemetry initialized for ae-framework Phase 6
+📊 Test Coverage: 85% (threshold: 80%) ✅
+♿ A11y Score: 96% (threshold: 95%) ✅  
+⚡ Performance Score: 78% (threshold: 75%) ✅
+🏗️ Scaffold Time: 25000ms ✅
+⚠️ E2E Test Time: 320000ms (threshold: 300000ms)
 ```
 
 ## 🧪 Testing
@@ -473,6 +604,29 @@ The framework tracks:
 - **Phase Completion**: Progress through 6 phases
 - **Quality Gates**: Pass/fail status per phase
 
+### Phase 6 OpenTelemetryテレメトリ
+リアルタイム品質・パフォーマンス監視システム：
+
+**Environment Configuration:**
+```bash
+# Development (Console export)
+DEBUG_TELEMETRY=true
+
+# Production (OTLP export)  
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4317/v1/traces
+OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:4317/v1/metrics
+
+# Disable telemetry
+DISABLE_TELEMETRY=true
+```
+
+**Collected Metrics:**
+- **Quality**: Test coverage, A11y score, Performance score
+- **Efficiency**: Scaffold time, E2E test time, Build time  
+- **Operations**: Success/failure tracking with error details
+- **Spans**: Distributed tracing for all major operations
+
 ## 🔒 Security
 
 - **OWASP Compliance**: Security tests based on OWASP guidelines
@@ -490,6 +644,8 @@ The framework tracks:
 - [Phase 3: User Stories Creation](docs/PHASE-3-USER-STORIES-CREATION.md) - ユーザーストーリー生成
 - [Phase 4: Validation](docs/PHASE-4-VALIDATION.md) - 品質検証システム
 - [Phase 5: Domain Modeling](docs/PHASE-5-DOMAIN-MODELING.md) - ドメイン駆動設計
+- **[Phase 6: UI/UX & Frontend Delivery](docs/phase-6-uiux.md)** - React + Next.js UI自動生成
+- **[OpenTelemetryテレメトリ設定](docs/telemetry-configuration.md)** - Phase 6品質・パフォーマンス監視
 - [CLI Commands Reference](docs/CLI-COMMANDS-REFERENCE.md) - 全コマンドリファレンス
 
 ### フレームワーク詳細
@@ -511,6 +667,9 @@ MIT License - see [LICENSE](LICENSE) file for details.
 Built with:
 - MCP SDK for agent communication
 - OpenAI/Anthropic APIs for AI capabilities
+- Next.js 14 + React 18 for UI generation
+- Radix UI + Tailwind CSS for design system
+- OpenTelemetry for telemetry and monitoring
 - Vitest for testing framework
 - Fast-check for property-based testing
 - Stryker for mutation testing

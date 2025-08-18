@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import Handlebars from 'handlebars';
+import { Phase6Telemetry } from '../telemetry/phase6-metrics.js';
 
 interface PhaseState {
   entities: Record<string, EntityDefinition>;
@@ -94,10 +95,13 @@ export class UIScaffoldGenerator {
   }
 
   async generateAll(): Promise<Record<string, GenerationResult>> {
-    const results: Record<string, GenerationResult> = {};
-    const entities = this.options.targetEntity 
-      ? { [this.options.targetEntity]: this.phaseState.entities[this.options.targetEntity] }
-      : this.phaseState.entities;
+    return await Phase6Telemetry.instrumentScaffoldOperation(
+      'generate_all_entities',
+      async () => {
+        const results: Record<string, GenerationResult> = {};
+        const entities = this.options.targetEntity 
+          ? { [this.options.targetEntity]: this.phaseState.entities[this.options.targetEntity] }
+          : this.phaseState.entities;
 
     for (const [entityName, entityDef] of Object.entries(entities)) {
       if (!entityDef) {
@@ -119,12 +123,21 @@ export class UIScaffoldGenerator {
         results[entityName] = {
           success: false,
           files: [],
-          error: error.message
+          error: error instanceof Error ? error.message : String(error)
         };
       }
     }
 
-    return results;
+        return results;
+      },
+      {
+        entity_count: Object.keys(this.options.targetEntity 
+          ? { [this.options.targetEntity]: this.phaseState.entities[this.options.targetEntity] }
+          : this.phaseState.entities).length,
+        target_entity: this.options.targetEntity || 'all',
+        output_dir: this.options.outputDir,
+      }
+    );
   }
 
   private async generateEntityUI(entityName: string, entityDef: EntityDefinition): Promise<string[]> {
