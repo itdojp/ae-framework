@@ -115,11 +115,11 @@ export const CardGrid: StoryObj = {
       {[...Array(6)].map((_, i) => (
         <ProductCard 
           key={i}
-          product={
+          product={{
             ...mockProduct,
             id: `product-${i + 1}`,
             name: `Name ${i + 1}`,
-          }
+          }}
           onDelete={(id) => console.log('Delete:', id)}
         />
       ))}
