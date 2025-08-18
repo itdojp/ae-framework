@@ -57,7 +57,7 @@ function validateQualityPolicy() {
     
     // Validate quality gates
     if (policy.quality) {
-      console.log(`\\n📋 Found ${Object.keys(policy.quality).length} quality gates:`);
+      console.log(`\n📋 Found ${Object.keys(policy.quality).length} quality gates:`);
       
       for (const [gateName, gate] of Object.entries(policy.quality)) {
         console.log(`   • ${gateName}: ${gate.description || 'No description'}`);
@@ -107,7 +107,7 @@ function validateQualityPolicy() {
     
     // Validate environments
     if (policy.environments) {
-      console.log(`\\n🌍 Found ${Object.keys(policy.environments).length} environment configurations:`);
+      console.log(`\n🌍 Found ${Object.keys(policy.environments).length} environment configurations:`);
       
       for (const [envName, env] of Object.entries(policy.environments)) {
         console.log(`   • ${envName}: ${env.description || 'No description'}`);
@@ -155,20 +155,20 @@ function validateQualityPolicy() {
     }
     
     // Print results
-    console.log('\\n📊 Validation Results:');
+    console.log('\n📊 Validation Results:');
     
     if (errors.length > 0) {
-      console.log(`\\n❌ Errors (${errors.length}):`);
+      console.log(`\n❌ Errors (${errors.length}):`);
       errors.forEach(error => console.log(`   • ${error}`));
     }
     
     if (warnings.length > 0) {
-      console.log(`\\n⚠️  Warnings (${warnings.length}):`);
+      console.log(`\n⚠️  Warnings (${warnings.length}):`);
       warnings.forEach(warning => console.log(`   • ${warning}`));
     }
     
     if (isValid) {
-      console.log('\\n✅ Policy validation completed successfully');
+      console.log('\n✅ Policy validation completed successfully');
       
       if (warnings.length === 0) {
         console.log('🎉 No issues found!');
@@ -176,7 +176,7 @@ function validateQualityPolicy() {
         console.log(`💡 Consider addressing ${warnings.length} warnings for optimal configuration`);
       }
     } else {
-      console.log('\\n❌ Policy validation failed');
+      console.log('\n❌ Policy validation failed');
       console.log(`🔧 Please fix ${errors.length} errors before using this policy`);
     }
     

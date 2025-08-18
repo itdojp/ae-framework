@@ -118,7 +118,14 @@
     "state:stats": "tsx src/cli/index.ts enhanced-state stats",
     "state:gc": "tsx src/cli/index.ts enhanced-state gc",
     "state:export": "tsx src/cli/index.ts enhanced-state export",
-    "state:import": "tsx src/cli/index.ts enhanced-state import"
+    "state:import": "tsx src/cli/index.ts enhanced-state import",
+    "circuit-breaker:create": "tsx src/cli/index.ts circuit-breaker create",
+    "circuit-breaker:list": "tsx src/cli/index.ts circuit-breaker list",
+    "circuit-breaker:stats": "tsx src/cli/index.ts circuit-breaker stats",
+    "circuit-breaker:health": "tsx src/cli/index.ts circuit-breaker health",
+    "circuit-breaker:test": "tsx src/cli/index.ts circuit-breaker test",
+    "circuit-breaker:watch": "tsx src/cli/index.ts circuit-breaker watch",
+    "circuit-breaker:reset": "tsx src/cli/index.ts circuit-breaker reset"
   },
   "dependencies": {
     "@ae-framework/spec-compiler": "workspace:*",

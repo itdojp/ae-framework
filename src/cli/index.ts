@@ -589,6 +589,10 @@ program.addCommand(createCodegenCommand());
 import { createEnhancedStateCommand } from './enhanced-state-cli.js';
 program.addCommand(createEnhancedStateCommand());
 
+// Add circuit breaker commands
+import { createCircuitBreakerCommand } from './circuit-breaker-cli.js';
+program.addCommand(createCircuitBreakerCommand());
+
 program.parse();
 
 export { AEFrameworkCLI };
