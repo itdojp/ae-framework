@@ -1,0 +1,266 @@
+name: Centralized Quality Gates
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Environment for quality gates (development, ci, production)'
+        required: false
+        type: string
+        default: 'ci'
+      phase:
+        description: 'Development phase (phase-1 to phase-6)'
+        required: false
+        type: string
+        default: 'auto-detect'
+      gates:
+        description: 'Comma-separated list of gates to run'
+        required: false
+        type: string
+        default: 'all'
+
+jobs:
+  detect-phase:
+    name: Detect Current Phase
+    runs-on: ubuntu-latest
+    outputs:
+      phase: ${{ steps.phase-detect.outputs.phase }}
+      changed-areas: ${{ steps.changes.outputs.changed-areas }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Detect changed areas
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            ui: 'src/ui/**'
+            web: 'apps/web/**'
+            storybook: 'apps/storybook/**'
+            specs: 'spec/**'
+            codegen: 'src/codegen/**'
+            policies: 'policy/**'
+            
+      - name: Detect current phase
+        id: phase-detect
+        run: |
+          # Try to detect phase from project state
+          if [ -f ".ae/phase-state.json" ]; then
+            PHASE=$(jq -r '.currentPhase // "phase-1"' .ae/phase-state.json)
+          else
+            # Fallback detection based on changed files and existing artifacts
+            if [ -d "src/ui" ] && [ -d "apps/web" ]; then
+              PHASE="phase-6"
+            elif [ -f ".ae/domain-model.json" ]; then
+              PHASE="phase-5"
+            elif [ -d "tests/" ]; then
+              PHASE="phase-4"
+            elif [ -f ".ae/user-stories.json" ]; then
+              PHASE="phase-3"
+            elif [ -f ".ae/requirements.json" ]; then
+              PHASE="phase-2"
+            else
+              PHASE="phase-1"
+            fi
+          fi
+          
+          echo "Detected phase: $PHASE"
+          echo "phase=$PHASE" >> $GITHUB_OUTPUT
+
+  quality-gates:
+    name: Run Quality Gates
+    needs: detect-phase
+    runs-on: ubuntu-latest
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        gate-group:
+          - name: "core"
+            gates: "linting,security"
+          - name: "testing"
+            gates: "coverage,tdd"
+          - name: "ui"
+            gates: "accessibility,lighthouse,visual"
+          - name: "policy"
+            gates: "policy,mutation"
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build application
+        if: matrix.gate-group.name == 'ui'
+        run: |
+          npm run build
+          npm run build:frontend
+        
+      - name: Setup test infrastructure
+        if: matrix.gate-group.name == 'testing' || matrix.gate-group.name == 'ui'
+        run: |
+          # Ensure reports directory exists
+          mkdir -p reports
+          
+          # Generate test coverage if needed
+          if [[ "${{ matrix.gate-group.gates }}" == *"coverage"* ]]; then
+            npm run test:coverage || true
+          fi
+          
+          # Generate a11y report if needed
+          if [[ "${{ matrix.gate-group.gates }}" == *"accessibility"* ]]; then
+            npm run test:a11y || true
+            npm run test:a11y:report || true
+          fi
+        
+      - name: Run Quality Gates Group - ${{ matrix.gate-group.name }}
+        env:
+          ENVIRONMENT: ${{ inputs.environment || 'ci' }}
+          PHASE: ${{ inputs.phase || needs.detect-phase.outputs.phase }}
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+        run: |
+          echo "🚀 Running ${{ matrix.gate-group.name }} quality gates"
+          echo "   Environment: $ENVIRONMENT"
+          echo "   Phase: $PHASE" 
+          echo "   Gates: ${{ matrix.gate-group.gates }}"
+          
+          # Make scripts executable
+          chmod +x scripts/run-quality-gates.cjs
+          chmod +x scripts/check-a11y-threshold.cjs
+          chmod +x scripts/check-coverage-threshold.cjs
+          
+          # Run the quality gates
+          node scripts/run-quality-gates.cjs \
+            --env="$ENVIRONMENT" \
+            --phase="$PHASE" \
+            --gates="${{ matrix.gate-group.gates }}"
+        
+      - name: Upload quality gate reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-reports-${{ matrix.gate-group.name }}
+          path: |
+            reports/
+            lighthouse-reports/
+            coverage/
+          retention-days: 30
+
+  quality-summary:
+    name: Quality Gates Summary
+    needs: [detect-phase, quality-gates]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Download all reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: quality-reports-*
+          path: reports/
+          merge-multiple: true
+          
+      - name: Generate quality summary
+        run: |
+          echo "# Quality Gates Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Phase:** ${{ needs.detect-phase.outputs.phase }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ inputs.environment || 'ci' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Check job results
+          CORE_RESULT="${{ needs.quality-gates.result }}"
+          
+          echo "## Gate Group Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Add results for each matrix job
+          echo "| Gate Group | Status | Gates |" >> $GITHUB_STEP_SUMMARY
+          echo "|------------|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Core | ${{ needs.quality-gates.result == 'success' && '✅ Passed' || '❌ Failed' }} | linting, security |" >> $GITHUB_STEP_SUMMARY
+          echo "| Testing | ${{ needs.quality-gates.result == 'success' && '✅ Passed' || '❌ Failed' }} | coverage, tdd |" >> $GITHUB_STEP_SUMMARY
+          echo "| UI | ${{ needs.quality-gates.result == 'success' && '✅ Passed' || '❌ Failed' }} | accessibility, lighthouse, visual |" >> $GITHUB_STEP_SUMMARY
+          echo "| Policy | ${{ needs.quality-gates.result == 'success' && '✅ Passed' || '❌ Failed' }} | policy, mutation |" >> $GITHUB_STEP_SUMMARY
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Changed Areas" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "${{ needs.detect-phase.outputs.changed-areas }}" >> $GITHUB_STEP_SUMMARY
+          
+      - name: Quality gate status check
+        if: needs.quality-gates.result == 'failure'
+        run: |
+          echo "❌ Quality gates failed"
+          exit 1
+
+  comment-pr:
+    name: Comment on PR
+    needs: [detect-phase, quality-gates, quality-summary]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && always()
+    
+    steps:
+      - name: Comment quality gate results
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const phase = '${{ needs.detect-phase.outputs.phase }}';
+            const environment = '${{ inputs.environment || "ci" }}';
+            const qualityResult = '${{ needs.quality-gates.result }}';
+            const changedAreas = '${{ needs.detect-phase.outputs.changed-areas }}';
+            
+            const statusIcon = qualityResult === 'success' ? '✅' : '❌';
+            const statusText = qualityResult === 'success' ? 'PASSED' : 'FAILED';
+            
+            let comment = `## ${statusIcon} Centralized Quality Gates - ${statusText}\n\n`;
+            comment += `**Phase:** ${phase}\n`;
+            comment += `**Environment:** ${environment}\n`;
+            comment += `**Changed areas:** ${changedAreas || 'None detected'}\n\n`;
+            
+            if (qualityResult === 'success') {
+              comment += `🎉 All quality gates passed for the current phase!\n\n`;
+            } else {
+              comment += `⚠️ Some quality gates failed. Please check the workflow logs for details.\n\n`;
+            }
+            
+            comment += `### Gate Groups Executed\n`;
+            comment += `- **Core:** Linting, Security\n`;
+            comment += `- **Testing:** Coverage, TDD\n`;
+            comment += `- **UI:** Accessibility, Lighthouse, Visual\n`;
+            comment += `- **Policy:** OPA Policy, Mutation Testing\n\n`;
+            
+            comment += `### Next Steps\n`;
+            if (qualityResult !== 'success') {
+              comment += `1. Review the failed quality gates in the workflow logs\n`;
+              comment += `2. Fix any issues found by the quality checks\n`;
+              comment += `3. Update code and re-run the checks\n`;
+            } else {
+              comment += `1. Code is ready for review\n`;
+              comment += `2. All quality standards are met\n`;
+            }
+            
+            comment += `\n---\n*Automated by [AE-Framework Quality Gates](${context.payload.repository.html_url}/actions/runs/${context.runId})*`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });

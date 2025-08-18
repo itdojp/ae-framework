@@ -103,7 +103,14 @@
     "codegen:watch": "bash scripts/codegen-tools.sh watch",
     "codegen:validate": "bash scripts/codegen-tools.sh validate",
     "codegen:status": "bash scripts/codegen-tools.sh status",
-    "codegen:clean": "bash scripts/codegen-tools.sh clean"
+    "codegen:clean": "bash scripts/codegen-tools.sh clean",
+    "quality:gates": "node scripts/run-quality-gates.cjs",
+    "quality:gates:dev": "node scripts/run-quality-gates.cjs --env=development",
+    "quality:gates:prod": "node scripts/run-quality-gates.cjs --env=production",
+    "quality:accessibility": "node scripts/run-quality-gates.cjs --gates=accessibility",
+    "quality:coverage": "node scripts/run-quality-gates.cjs --gates=coverage",
+    "quality:all": "node scripts/run-quality-gates.cjs --gates=accessibility,coverage,lighthouse,linting,security,tdd",
+    "quality:validate-policy": "node scripts/validate-quality-policy.cjs"
   },
   "dependencies": {
     "@ae-framework/spec-compiler": "workspace:*",
