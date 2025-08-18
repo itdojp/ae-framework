@@ -20,6 +20,7 @@ import { Phase6Telemetry } from '../telemetry/phase6-metrics.js';
 import '../telemetry/telemetry-setup.js'; // Initialize telemetry
 import * as fs from 'fs';
 import * as path from 'path';
+import { createSecurityCommand } from './security-cli.js';
 
 const program = new Command();
 
@@ -592,6 +593,9 @@ program.addCommand(createEnhancedStateCommand());
 // Add circuit breaker commands
 import { createCircuitBreakerCommand } from './circuit-breaker-cli.js';
 program.addCommand(createCircuitBreakerCommand());
+
+// Security commands
+program.addCommand(createSecurityCommand());
 
 program.parse();
 
