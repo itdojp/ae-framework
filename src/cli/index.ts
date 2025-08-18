@@ -585,6 +585,10 @@ program.addCommand(createSpecCommand());
 // Add codegen commands
 program.addCommand(createCodegenCommand());
 
+// Add circuit breaker commands
+import { createCircuitBreakerCommand } from './circuit-breaker-cli.js';
+program.addCommand(createCircuitBreakerCommand());
+
 program.parse();
 
 export { AEFrameworkCLI };

@@ -110,7 +110,14 @@
     "quality:accessibility": "node scripts/run-quality-gates.cjs --gates=accessibility",
     "quality:coverage": "node scripts/run-quality-gates.cjs --gates=coverage",
     "quality:all": "node scripts/run-quality-gates.cjs --gates=accessibility,coverage,lighthouse,linting,security,tdd",
-    "quality:validate-policy": "node scripts/validate-quality-policy.cjs"
+    "quality:validate-policy": "node scripts/validate-quality-policy.cjs",
+    "circuit-breaker:create": "tsx src/cli/index.ts circuit-breaker create",
+    "circuit-breaker:list": "tsx src/cli/index.ts circuit-breaker list",
+    "circuit-breaker:stats": "tsx src/cli/index.ts circuit-breaker stats",
+    "circuit-breaker:health": "tsx src/cli/index.ts circuit-breaker health",
+    "circuit-breaker:test": "tsx src/cli/index.ts circuit-breaker test",
+    "circuit-breaker:watch": "tsx src/cli/index.ts circuit-breaker watch",
+    "circuit-breaker:reset": "tsx src/cli/index.ts circuit-breaker reset"
   },
   "dependencies": {
     "@ae-framework/spec-compiler": "workspace:*",
