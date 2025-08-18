@@ -167,7 +167,7 @@ export default function ProductDetailPage({
                 Name
               </label>
               <div className="text-gray-900">
-                { {product.name} }
+                {product.name}
               </div>
             </div>
             <div>
@@ -175,7 +175,7 @@ export default function ProductDetailPage({
                 Description
               </label>
               <div className="text-gray-900">
-                { {product.description} }
+                {product.description}
               </div>
             </div>
             <div>
@@ -183,7 +183,7 @@ export default function ProductDetailPage({
                 Price
               </label>
               <div className="text-gray-900">
-                { {product.price} }
+                {product.price}
               </div>
             </div>
             <div>
@@ -191,7 +191,7 @@ export default function ProductDetailPage({
                 Stock
               </label>
               <div className="text-gray-900">
-                { {product.stock} }
+                {product.stock}
               </div>
             </div>
             <div>
@@ -199,7 +199,7 @@ export default function ProductDetailPage({
                 Category
               </label>
               <div className="text-gray-900">
-                { {product.category} }
+                {product.category}
               </div>
             </div>
             <div>
@@ -207,7 +207,7 @@ export default function ProductDetailPage({
                 Active
               </label>
               <div className="text-gray-900">
-                { {product.active} }
+                {product.active}
               </div>
             </div>
             <div>
@@ -215,7 +215,7 @@ export default function ProductDetailPage({
                 Created At
               </label>
               <div className="text-gray-900">
-                { {product.createdAt} }
+                {product.createdAt}
               </div>
             </div>
             <div>
@@ -223,7 +223,7 @@ export default function ProductDetailPage({
                 Updated At
               </label>
               <div className="text-gray-900">
-                { {product.updatedAt} }
+                {product.updatedAt}
               </div>
             </div>
           </div>

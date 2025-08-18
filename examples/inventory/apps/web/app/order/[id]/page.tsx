@@ -181,7 +181,7 @@ export default function OrderDetailPage({
                 Order Number
               </label>
               <div className="text-gray-900">
-                { {order.orderNumber} }
+                {order.orderNumber}
               </div>
             </div>
             <div>
@@ -189,7 +189,7 @@ export default function OrderDetailPage({
                 Customer Id
               </label>
               <div className="text-gray-900">
-                { {order.customerId} }
+                {order.customerId}
               </div>
             </div>
             <div>
@@ -197,7 +197,7 @@ export default function OrderDetailPage({
                 Customer Email
               </label>
               <div className="text-gray-900">
-                { {order.customerEmail} }
+                {order.customerEmail}
               </div>
             </div>
             <div>
@@ -205,7 +205,7 @@ export default function OrderDetailPage({
                 Status
               </label>
               <div className="text-gray-900">
-                { {order.status} }
+                {order.status}
               </div>
             </div>
             <div>
@@ -213,7 +213,7 @@ export default function OrderDetailPage({
                 Items
               </label>
               <div className="text-gray-900">
-                { {order.items} }
+                {order.items}
               </div>
             </div>
             <div>
@@ -221,7 +221,7 @@ export default function OrderDetailPage({
                 Subtotal
               </label>
               <div className="text-gray-900">
-                { {order.subtotal} }
+                {order.subtotal}
               </div>
             </div>
             <div>
@@ -229,7 +229,7 @@ export default function OrderDetailPage({
                 Tax Amount
               </label>
               <div className="text-gray-900">
-                { {order.taxAmount} }
+                {order.taxAmount}
               </div>
             </div>
             <div>
@@ -237,7 +237,7 @@ export default function OrderDetailPage({
                 Shipping Amount
               </label>
               <div className="text-gray-900">
-                { {order.shippingAmount} }
+                {order.shippingAmount}
               </div>
             </div>
             <div>
@@ -245,7 +245,7 @@ export default function OrderDetailPage({
                 Total
               </label>
               <div className="text-gray-900">
-                { {order.total} }
+                {order.total}
               </div>
             </div>
             <div>
@@ -253,7 +253,7 @@ export default function OrderDetailPage({
                 Shipping Address
               </label>
               <div className="text-gray-900">
-                { {order.shippingAddress} }
+                {order.shippingAddress}
               </div>
             </div>
             <div>
@@ -261,7 +261,7 @@ export default function OrderDetailPage({
                 Notes
               </label>
               <div className="text-gray-900">
-                { {order.notes} }
+                {order.notes}
               </div>
             </div>
             <div>
@@ -269,7 +269,7 @@ export default function OrderDetailPage({
                 Order Date
               </label>
               <div className="text-gray-900">
-                { {order.orderDate} }
+                {order.orderDate}
               </div>
             </div>
             <div>
@@ -277,7 +277,7 @@ export default function OrderDetailPage({
                 Shipped Date
               </label>
               <div className="text-gray-900">
-                { {order.shippedDate} }
+                {order.shippedDate}
               </div>
             </div>
             <div>
@@ -285,7 +285,7 @@ export default function OrderDetailPage({
                 Delivered Date
               </label>
               <div className="text-gray-900">
-                { {order.deliveredDate} }
+                {order.deliveredDate}
               </div>
             </div>
           </div>

@@ -162,7 +162,7 @@ export default function CustomerDetailPage({
                 Email
               </label>
               <div className="text-gray-900">
-                { {customer.email} }
+                {customer.email}
               </div>
             </div>
             <div>
@@ -170,7 +170,7 @@ export default function CustomerDetailPage({
                 First Name
               </label>
               <div className="text-gray-900">
-                { {customer.firstName} }
+                {customer.firstName}
               </div>
             </div>
             <div>
@@ -178,7 +178,7 @@ export default function CustomerDetailPage({
                 Last Name
               </label>
               <div className="text-gray-900">
-                { {customer.lastName} }
+                {customer.lastName}
               </div>
             </div>
             <div>
@@ -186,7 +186,7 @@ export default function CustomerDetailPage({
                 Phone
               </label>
               <div className="text-gray-900">
-                { {customer.phone} }
+                {customer.phone}
               </div>
             </div>
             <div>
@@ -194,7 +194,7 @@ export default function CustomerDetailPage({
                 Created At
               </label>
               <div className="text-gray-900">
-                { {customer.createdAt} }
+                {customer.createdAt}
               </div>
             </div>
           </div>
