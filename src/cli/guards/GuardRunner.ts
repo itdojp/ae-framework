@@ -2,6 +2,7 @@ import { execSync } from 'child_process';
 import { existsSync } from 'fs';
 import { glob } from 'glob';
 import { AEFrameworkConfig, Guard, GuardResult } from '../types.js';
+import { loadQualityPolicy, getCurrentPhase, shouldEnforceGate, getThreshold } from '../../utils/quality-policy-loader.js';
 
 export class GuardRunner {
   constructor(private config: AEFrameworkConfig) {}
@@ -146,7 +147,11 @@ export class GuardRunner {
       const coverageMatch = result.match(/All files[^\d]*(\d+(?:\.\d+)?)/);
       const coverage = coverageMatch ? parseFloat(coverageMatch[1]) : 0;
       
-      const threshold = this.config.phases['5-verify']?.coverage_threshold || 80;
+      // Get threshold from quality policy
+      const currentPhase = getCurrentPhase();
+      const threshold = shouldEnforceGate('coverage', currentPhase) 
+        ? (getThreshold('coverage', 'lines') as number) || 80 
+        : 80;
       
       if (coverage >= threshold) {
         return { success: true, message: `Coverage: ${coverage}% (>= ${threshold}%)` };

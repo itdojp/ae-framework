@@ -211,8 +211,11 @@ export class DeterministicCodeGenerator {
         break;
     }
 
-    // Write generated files
-    for (const file of files) {
+    // Sort files by path to ensure deterministic output order
+    const sortedFiles = files.sort((a, b) => a.filePath.localeCompare(b.filePath));
+
+    // Write generated files in deterministic order
+    for (const file of sortedFiles) {
       const fullPath = join(this.options.outputDir, file.filePath);
       mkdirSync(dirname(fullPath), { recursive: true });
       writeFileSync(fullPath, file.content, 'utf-8');
