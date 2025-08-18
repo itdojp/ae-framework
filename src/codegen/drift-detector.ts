@@ -68,6 +68,10 @@ export interface DriftReport {
   generatedAt: string;
 }
 
+// Configuration constants for drift detection
+const DEFAULT_LINE_CHANGE_ESTIMATE_RATIO = 0.1; // 10% estimated change ratio
+const FALLBACK_ORIGINAL_LINES = 100; // Fallback when original line count unknown
+
 export class DriftDetector {
   private config: DriftConfig;
 
@@ -371,7 +375,7 @@ export class DriftDetector {
     // Simplified line change estimation
     // In practice, this could use diff algorithms
     const lines = content.split('\n').length;
-    return Math.floor(lines * 0.1); // Estimate 10% changed
+    return Math.floor(lines * DEFAULT_LINE_CHANGE_ESTIMATE_RATIO);
   }
 
   private calculateChangeConfidence(content: string, originalFile: any): 'high' | 'medium' | 'low' {
@@ -382,14 +386,39 @@ export class DriftDetector {
 
     // Check for significant structural changes
     const currentLines = content.split('\n').length;
-    const estimatedOriginalLines = 100; // Simplified
-    const changeRatio = Math.abs(currentLines - estimatedOriginalLines) / estimatedOriginalLines;
+    const estimatedOriginalLines = this.getOriginalLineCount(originalFile);
+    if (estimatedOriginalLines === undefined || estimatedOriginalLines === 0) {
+      if (this.config.verbose) {
+        console.warn(chalk.yellow('⚠️  Could not determine original line count, using fallback of 100'));
+      }
+    }
+    const baseLines = (estimatedOriginalLines && estimatedOriginalLines > 0) ? estimatedOriginalLines : FALLBACK_ORIGINAL_LINES;
+    const changeRatio = Math.abs(currentLines - baseLines) / baseLines;
 
     if (changeRatio > 0.5) return 'high';
     if (changeRatio > 0.2) return 'medium';
     return 'low';
   }
 
+  /**
+   * Attempts to determine the original line count from the manifest or original file content.
+   */
+  private getOriginalLineCount(originalFile: any): number | undefined {
+    // If originalFile is a string (content), count lines
+    if (typeof originalFile === 'string') {
+      return originalFile.split('\n').length;
+    }
+    // If originalFile is an object with a 'content' property
+    if (originalFile && typeof originalFile.content === 'string') {
+      return originalFile.content.split('\n').length;
+    }
+    // If originalFile is an object with a 'lines' property
+    if (originalFile && typeof originalFile.lines === 'number') {
+      return originalFile.lines;
+    }
+    // Could not determine
+    return undefined;
+  }
   private isLikelyGeneratedFile(content: string, filePath: string): boolean {
     // Check for generated file indicators
     const generatedMarkers = [
