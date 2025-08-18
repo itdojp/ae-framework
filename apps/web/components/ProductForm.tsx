@@ -15,7 +15,7 @@ const productSchema = z.object({
   description: z.string().max(500).optional(),
   price: z.number().min(0),
   stock: z.number().min(0).int(),
-  category: z.enum([&quot;electronics&quot;]),
+  category: z.enum(["electronics"]),
   active: z.boolean(),
 });
 
