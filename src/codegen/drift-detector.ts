@@ -419,6 +419,7 @@ export class DriftDetector {
     // Could not determine
     return undefined;
   }
+
   private isLikelyGeneratedFile(content: string, filePath: string): boolean {
     // Check for generated file indicators
     const generatedMarkers = [
