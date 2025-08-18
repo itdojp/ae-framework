@@ -98,6 +98,8 @@ Claude Code: UI Task Adapterでコンポーネント生成中...
 
 ✅ Generated 21 files for 3/3 entities
 📊 Test Coverage: 100% (threshold: 80%)
+♿ A11y Score: 96% (threshold: 95%) ✅  
+⚡ Performance Score: 78% (threshold: 75%) ✅
 📈 Phase 6 Efficiency Metrics:
   🏗️  Scaffold Time: 15243ms ✅
   📊 Generated 21 files for 3/3 entities
@@ -107,6 +109,8 @@ Claude Code: UI Task Adapterでコンポーネント生成中...
   • Next.js Pages: 6 files  
   • Storybook Stories: 3 files
   • E2E Tests: 3 files
+  • Design Tokens: integrated ✅
+  • i18n Support: ja/en ✅
 ```
 
 ### CLI実行も全フェーズ対応
@@ -534,28 +538,53 @@ ae-ui scaffold --components              # React components生成
 ae-ui scaffold --state                   # State architecture設計
 ae-ui scaffold --tokens                  # Design tokens統合
 ae-ui scaffold --a11y                    # Accessibility検証
+ae-ui scaffold --i18n                    # 多言語対応設定
+ae-ui scaffold --storybook               # Storybook統合
 ```
 
 ### 生成されるファイル構成
 ```
-src/ui/components/generated/
-├── apps/web/app/{entity}/page.tsx           # 一覧ページ
-├── apps/web/app/{entity}/[id]/page.tsx      # 詳細ページ  
-├── apps/web/app/{entity}/new/page.tsx       # 新規作成ページ
-├── apps/web/components/{Entity}Form.tsx     # フォームコンポーネント
-├── apps/web/components/{Entity}Card.tsx     # カードコンポーネント
-├── apps/storybook/stories/{Entity}.stories.tsx # Storybookストーリー
-└── apps/web/__e2e__/{entity}.spec.ts        # E2Eテスト
+ae-framework/
+├── packages/
+│   ├── design-tokens/                       # デザイントークン
+│   │   ├── src/index.ts                     # トークン定義
+│   │   └── src/tailwind.ts                  # Tailwind統合
+│   └── ui/                                  # UIコンポーネントライブラリ
+│       ├── src/button.tsx                   # Buttonコンポーネント
+│       ├── src/input.tsx                    # Inputコンポーネント
+│       ├── src/textarea.tsx                 # Textareaコンポーネント
+│       ├── src/select.tsx                   # Selectコンポーネント
+│       ├── src/checkbox.tsx                 # Checkboxコンポーネント
+│       └── src/dialog.tsx                   # Dialogコンポーネント
+├── apps/
+│   ├── web/                                 # Next.js Webアプリケーション
+│   │   ├── app/{entity}/page.tsx            # 一覧ページ
+│   │   ├── app/{entity}/[id]/page.tsx       # 詳細ページ
+│   │   ├── app/{entity}/new/page.tsx        # 新規作成ページ
+│   │   ├── components/{Entity}Form.tsx      # フォームコンポーネント
+│   │   ├── components/{Entity}Card.tsx      # カードコンポーネント
+│   │   ├── messages/ja.json                 # 日本語翻訳
+│   │   ├── messages/en.json                 # 英語翻訳
+│   │   └── __e2e__/{entity}.spec.ts         # E2Eテスト
+│   └── storybook/                           # Storybookドキュメント
+│       └── stories/{Entity}.stories.tsx     # コンポーネントストーリー
+└── templates/ui/                            # Handlebarsテンプレート
+    ├── component-form.tsx.template          # フォームテンプレート
+    ├── component-card.tsx.template          # カードテンプレート
+    └── page-list.tsx.template               # ページテンプレート
 ```
 
 **技術仕様:**
 - **Framework**: Next.js 14 App Router
-- **UI Library**: Radix UI + Tailwind CSS  
+- **UI Library**: Radix UI + Tailwind CSS + shadcn/ui  
+- **Design System**: Design Tokens + Class Variance Authority (CVA)
 - **Forms**: React Hook Form + Zod validation
-- **State**: React Query for server state
-- **Testing**: Playwright E2E + Storybook
-- **i18n**: next-intl 多言語対応
-- **A11y**: WCAG 2.1 AA準拠
+- **State**: TanStack Query 5 for server state
+- **Testing**: Playwright E2E + Storybook + Vitest
+- **i18n**: next-intl 多言語対応 (ja/en)
+- **A11y**: WCAG 2.1 AA準拠 + eslint-plugin-jsx-a11y
+- **Telemetry**: OpenTelemetry for quality metrics
+- **Icons**: Lucide React
 
 ### Phase 6品質ゲート
 OpenTelemetryテレメトリによる自動監視：
@@ -571,11 +600,18 @@ OpenTelemetryテレメトリによる自動監視：
 **テレメトリ出力例:**
 ```bash
 📊 OpenTelemetry initialized for ae-framework Phase 6
+   Service: ae-framework v1.0.0
+   Environment: development
+   OTLP Export: ✅ Enabled
+
 📊 Test Coverage: 85% (threshold: 80%) ✅
 ♿ A11y Score: 96% (threshold: 95%) ✅  
 ⚡ Performance Score: 78% (threshold: 75%) ✅
 🏗️ Scaffold Time: 25000ms ✅
 ⚠️ E2E Test Time: 320000ms (threshold: 300000ms)
+🎨 Component Complexity: avg 6.2 (threshold: 10) ✅
+🌐 i18n Coverage: 98% (ja/en) ✅
+📐 Design Token Usage: 95% ✅
 ```
 
 ## 🧪 Testing
