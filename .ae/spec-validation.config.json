@@ -1,0 +1,113 @@
+{
+  "version": "1.0.0",
+  "description": "AE-Framework specification validation configuration",
+  "quality_gates": {
+    "max_errors": 0,
+    "max_warnings": 10,
+    "max_info": -1,
+    "fail_on_missing_sections": true,
+    "require_business_rules": true
+  },
+  "validation_rules": {
+    "structure": {
+      "STRUCT_001": {
+        "enabled": true,
+        "severity": "error",
+        "description": "Specification must have a name in metadata"
+      },
+      "STRUCT_002": {
+        "enabled": true,
+        "severity": "warn", 
+        "description": "At least one domain entity should be defined"
+      },
+      "STRUCT_003": {
+        "enabled": true,
+        "severity": "info",
+        "description": "API endpoints should be documented"
+      }
+    },
+    "business_logic": {
+      "BIZ_001": {
+        "enabled": true,
+        "severity": "warn",
+        "description": "Entities should have associated business rules"
+      }
+    },
+    "consistency": {
+      "CONS_001": {
+        "enabled": true,
+        "severity": "error",
+        "description": "Entity relationships must reference existing entities"
+      }
+    },
+    "completeness": {
+      "COMP_001": {
+        "enabled": true,
+        "severity": "warn",
+        "description": "Entities should have at least one required field"
+      }
+    }
+  },
+  "required_sections": [
+    "title",
+    "domain"
+  ],
+  "optional_sections": [
+    "glossary",
+    "invariants", 
+    "usecases",
+    "api",
+    "ui",
+    "nfr"
+  ],
+  "file_patterns": [
+    "spec/**/*.md"
+  ],
+  "exclude_patterns": [
+    "spec/drafts/**/*.md",
+    "spec/archive/**/*.md",
+    "spec/templates/**/*.md"
+  ],
+  "output": {
+    "format": "json",
+    "include_suggestions": true,
+    "verbose": true
+  },
+  "integrations": {
+    "github_actions": {
+      "comment_on_pr": true,
+      "fail_on_errors": true,
+      "upload_artifacts": true
+    },
+    "pre_commit_hook": {
+      "enabled": false,
+      "auto_fix": false
+    }
+  },
+  "custom_rules": {
+    "naming_conventions": {
+      "entity_names": {
+        "pattern": "^[A-Z][a-zA-Z0-9]*$",
+        "severity": "warn",
+        "description": "Entity names should be PascalCase"
+      },
+      "field_names": {
+        "pattern": "^[a-z][a-zA-Z0-9]*$", 
+        "severity": "info",
+        "description": "Field names should be camelCase"
+      }
+    },
+    "completeness_checks": {
+      "min_entities": {
+        "value": 1,
+        "severity": "error",
+        "description": "Specification must define at least one entity"
+      },
+      "min_use_cases": {
+        "value": 1,
+        "severity": "warn",
+        "description": "Specification should define at least one use case"
+      }
+    }
+  }
+}
