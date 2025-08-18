@@ -1,0 +1,195 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework.com/schemas/quality-policy.json",
+  "title": "AE-Framework Quality Gates Policy",
+  "description": "Centralized quality gates configuration for consistent enforcement across development and CI/CD",
+  "version": "1.0.0",
+  "lastUpdated": "2025-01-20T10:00:00Z",
+  
+  "quality": {
+    "accessibility": {
+      "description": "Accessibility compliance thresholds",
+      "enforcement": "strict",
+      "thresholds": {
+        "critical": 0,
+        "serious": 2,
+        "moderate": 3,
+        "minor": 5,
+        "total_warnings": 5
+      },
+      "tools": ["jest-axe", "lighthouse-ci", "axe-core"],
+      "phases": ["phase-6"]
+    },
+    
+    "coverage": {
+      "description": "Code coverage requirements",
+      "enforcement": "strict",
+      "thresholds": {
+        "lines": 80,
+        "functions": 80,
+        "branches": 80,
+        "statements": 80
+      },
+      "tools": ["nyc", "vitest"],
+      "phases": ["phase-3", "phase-4", "phase-5", "phase-6"],
+      "excludePatterns": [
+        "**/*.d.ts",
+        "**/*.stories.{js,ts,tsx}",
+        "**/node_modules/**",
+        "dist/**",
+        "build/**"
+      ]
+    },
+    
+    "lighthouse": {
+      "description": "Lighthouse CI performance and quality gates",
+      "enforcement": "warn",
+      "thresholds": {
+        "performance": 90,
+        "accessibility": 95,
+        "bestPractices": 85,
+        "seo": 80,
+        "pwa": "off"
+      },
+      "tools": ["@lhci/cli"],
+      "phases": ["phase-6"],
+      "config": {
+        "numberOfRuns": 3,
+        "urls": [
+          "http://localhost:3000",
+          "http://localhost:3000/health"
+        ]
+      }
+    },
+    
+    "tdd": {
+      "description": "Test-Driven Development enforcement",
+      "enforcement": "strict",
+      "enabledFromPhase": "phase-3",
+      "thresholds": {
+        "testToCodeRatio": 1.2,
+        "redGreenCycleCompliance": 100
+      },
+      "tools": ["vitest", "jest"],
+      "phases": ["phase-3", "phase-4", "phase-5", "phase-6"]
+    },
+    
+    "linting": {
+      "description": "Code quality and style enforcement",
+      "enforcement": "strict",
+      "thresholds": {
+        "errors": 0,
+        "warnings": 10
+      },
+      "tools": ["eslint", "typescript"],
+      "phases": ["phase-1", "phase-2", "phase-3", "phase-4", "phase-5", "phase-6"]
+    },
+    
+    "security": {
+      "description": "Security vulnerability thresholds",
+      "enforcement": "strict",
+      "thresholds": {
+        "critical": 0,
+        "high": 0,
+        "moderate": 2,
+        "low": 5
+      },
+      "tools": ["npm audit", "snyk"],
+      "phases": ["phase-4", "phase-5", "phase-6"]
+    },
+    
+    "visual": {
+      "description": "Visual regression testing thresholds",
+      "enforcement": "warn",
+      "thresholds": {
+        "pixelDifference": 0.02,
+        "failureThreshold": 0.1
+      },
+      "tools": ["chromatic", "percy"],
+      "phases": ["phase-6"]
+    },
+    
+    "policy": {
+      "description": "OPA (Open Policy Agent) compliance",
+      "enforcement": "strict",
+      "thresholds": {
+        "uiViolations": 0,
+        "designSystemViolations": 0,
+        "accessibilityViolations": 0
+      },
+      "tools": ["opa"],
+      "phases": ["phase-6"]
+    },
+    
+    "mutation": {
+      "description": "Mutation testing quality gates",
+      "enforcement": "warn",
+      "thresholds": {
+        "mutationScore": 70,
+        "survived": 30
+      },
+      "tools": ["stryker"],
+      "phases": ["phase-4", "phase-5", "phase-6"],
+      "targetPaths": [
+        "src/engines/**/*.ts",
+        "src/testing/playwright-integration.ts",
+        "src/testing/visual-regression.ts"
+      ]
+    }
+  },
+  
+  "environments": {
+    "development": {
+      "description": "Development environment overrides",
+      "overrides": {
+        "accessibility.thresholds.total_warnings": 10,
+        "coverage.enforcement": "warn",
+        "lighthouse.enforcement": "off",
+        "visual.enforcement": "off"
+      }
+    },
+    
+    "ci": {
+      "description": "CI environment settings",
+      "overrides": {}
+    },
+    
+    "production": {
+      "description": "Production deployment gates",
+      "overrides": {
+        "accessibility.thresholds.critical": 0,
+        "accessibility.thresholds.total_warnings": 0,
+        "coverage.thresholds.lines": 85,
+        "lighthouse.thresholds.performance": 95,
+        "lighthouse.thresholds.accessibility": 100,
+        "security.thresholds.moderate": 0
+      }
+    }
+  },
+  
+  "reporting": {
+    "outputDirectory": "reports",
+    "formats": ["json", "html", "junit"],
+    "retention": {
+      "days": 30,
+      "artifacts": ["coverage", "lighthouse", "accessibility", "visual"]
+    }
+  },
+  
+  "notifications": {
+    "onFailure": {
+      "slack": {
+        "enabled": false,
+        "webhook": "${SLACK_WEBHOOK_URL}"
+      },
+      "email": {
+        "enabled": false,
+        "recipients": []
+      }
+    },
+    "onThresholdChange": {
+      "requireApproval": true,
+      "reviewers": ["team-leads", "architects"]
+    }
+  }
+}

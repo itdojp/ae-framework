@@ -16,7 +16,7 @@ jobs:
           npm run test:a11y
           npm run test:a11y:report
       - name: Accessibility gate check
-        run: node scripts/check-a11y-threshold.js --critical=0 --warnings=5
+        run: node scripts/check-a11y-threshold.cjs --env=ci
 
   visual-regression:
     runs-on: ubuntu-latest
@@ -69,4 +69,4 @@ jobs:
       - name: Run tests with coverage
         run: npm run test:coverage
       - name: Coverage threshold check
-        run: npx nyc check-coverage --lines 80 --functions 80 --branches 80
+        run: node scripts/check-coverage-threshold.cjs --env=ci
