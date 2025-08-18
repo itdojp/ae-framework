@@ -620,11 +620,11 @@ ae-framework ui-scaffold --components --storybook --i18n --a11y
 
 ## 🔗 関連ドキュメント
 
-- **[Phase 6 UI/UX Getting Started](./PHASE-6-GETTING-STARTED.md)** - Phase 6専用クイックスタート
-- **[Claude Code Task Tool Integration](./CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)** - Task Tool統合仕様
-- **[Claude Code Workflow](./CLAUDECODE-WORKFLOW.md)** - 基本ワークフロー
-- **[Quick Start Guide](./QUICK-START-GUIDE.md)** - 全般的なクイックスタート
-- **[CLI Commands Reference](./CLI-COMMANDS-REFERENCE.md)** - CLIコマンドリファレンス
+- **[Phase 6 UI/UX Getting Started](../getting-started/PHASE-6-GETTING-STARTED.md)** - Phase 6専用クイックスタート
+- **[Claude Code Task Tool Integration](../integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)** - Task Tool統合仕様
+- **[Claude Code Workflow](../integrations/CLAUDECODE-WORKFLOW.md)** - 基本ワークフロー
+- **[Quick Start Guide](../getting-started/QUICK-START-GUIDE.md)** - 全般的なクイックスタート
+- **[CLI Commands Reference](../reference/CLI-COMMANDS-REFERENCE.md)** - CLIコマンドリファレンス
 
 ## 💡 まとめ
 
