@@ -585,6 +585,10 @@ program.addCommand(createSpecCommand());
 // Add codegen commands
 program.addCommand(createCodegenCommand());
 
+// Add enhanced state management commands
+import { createEnhancedStateCommand } from './enhanced-state-cli.js';
+program.addCommand(createEnhancedStateCommand());
+
 program.parse();
 
 export { AEFrameworkCLI };
