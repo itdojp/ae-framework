@@ -581,6 +581,10 @@ program
 // Add spec commands
 program.addCommand(createSpecCommand());
 
+// Add circuit breaker commands
+import { createCircuitBreakerCommand } from './circuit-breaker-cli.js';
+program.addCommand(createCircuitBreakerCommand());
+
 program.parse();
 
 export { AEFrameworkCLI };
