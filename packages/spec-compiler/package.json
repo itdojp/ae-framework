@@ -1,0 +1,31 @@
+{
+  "name": "@ae-framework/spec-compiler",
+  "version": "1.0.0",
+  "description": "AE-Spec to AE-IR compiler for single source of truth",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.5",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.4",
+    "vitest": "^2.0.5"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  }
+}

@@ -3,6 +3,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { PhaseValidator } from './validators/PhaseValidator.js';
+import { createSpecCommand } from './spec-cli.js';
 import { GuardRunner } from './guards/GuardRunner.js';
 import { ConfigLoader } from './config/ConfigLoader.js';
 // import { MetricsCollector } from './metrics/MetricsCollector.js';  // TODO: Enable when metrics tracking is implemented
@@ -576,6 +577,9 @@ program
       process.exit(1);
     }
   });
+
+// Add spec commands
+program.addCommand(createSpecCommand());
 
 program.parse();
 
