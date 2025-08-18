@@ -96,7 +96,14 @@
     "validate:specs": "bash scripts/validate-specs.sh",
     "validate:spec": "bash scripts/validate-specs.sh -f",
     "validate:specs:ci": "bash scripts/validate-specs.sh --no-color",
-    "hooks:setup-spec-validation": "cp scripts/hooks/pre-commit-spec-validation .git/hooks/pre-commit-spec-validation && chmod +x .git/hooks/pre-commit-spec-validation"
+    "hooks:setup-spec-validation": "cp scripts/hooks/pre-commit-spec-validation .git/hooks/pre-commit-spec-validation && chmod +x .git/hooks/pre-commit-spec-validation",
+    "codegen:generate": "bash scripts/codegen-tools.sh generate-all",
+    "codegen:drift": "bash scripts/codegen-tools.sh check-drift", 
+    "codegen:regen": "bash scripts/codegen-tools.sh regenerate-drifted",
+    "codegen:watch": "bash scripts/codegen-tools.sh watch",
+    "codegen:validate": "bash scripts/codegen-tools.sh validate",
+    "codegen:status": "bash scripts/codegen-tools.sh status",
+    "codegen:clean": "bash scripts/codegen-tools.sh clean"
   },
   "dependencies": {
     "@ae-framework/spec-compiler": "workspace:*",
