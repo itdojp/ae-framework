@@ -3,14 +3,14 @@
 > 人手最小＆仕様準拠最大。TDD強制機能付きIntent→Formal→Tests→Code→Verify→Operate の6フェーズ。
 
 ## 📢 最新アップデート
-- **[🎨 Phase 6 UI/UX & Frontend Delivery完全実装](./docs/phase-6-uiux.md)** - React + Next.js UI自動生成とOpenTelemetryテレメトリ
-- **[📊 OpenTelemetryテレメトリ統合](./docs/telemetry-configuration.md)** - Phase 6品質メトリクス・パフォーマンス監視
-- **[🚀 Phase 2-5 Claude Code Task Tool統合](./docs/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)** - 全フェーズの完全自動化を実現
-- **[🎯 Intent Agent 改善](./docs/TDD-FRAMEWORK-ARCHITECTURE.md)** - Claude Code Task Tool統合でMCP問題を解決
-- **[📝 自然言語要件処理](./docs/PHASE-2-NATURAL-LANGUAGE-REQUIREMENTS.md)** - Phase 2の包括的な要件分析機能
-- **[📋 ユーザーストーリー自動生成](./docs/PHASE-3-USER-STORIES-CREATION.md)** - Phase 3のアジャイル開発サポート
-- **[🔍 多層品質検証](./docs/PHASE-4-VALIDATION.md)** - Phase 4の包括的品質保証システム
-- **[🏗️ ドメイン駆動設計](./docs/PHASE-5-DOMAIN-MODELING.md)** - Phase 5のDDDによる設計自動化
+- **[🎨 Phase 6 UI/UX & Frontend Delivery完全実装](./docs/phases/phase-6-uiux.md)** - React + Next.js UI自動生成とOpenTelemetryテレメトリ
+- **[📊 OpenTelemetryテレメトリ統合](./docs/phases/telemetry-configuration.md)** - Phase 6品質メトリクス・パフォーマンス監視
+- **[🚀 Phase 2-5 Claude Code Task Tool統合](./docs/integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)** - 全フェーズの完全自動化を実現
+- **[🎯 Intent Agent 改善](./docs/architecture/TDD-FRAMEWORK-ARCHITECTURE.md)** - Claude Code Task Tool統合でMCP問題を解決
+- **[📝 自然言語要件処理](./docs/phases/PHASE-2-NATURAL-LANGUAGE-REQUIREMENTS.md)** - Phase 2の包括的な要件分析機能
+- **[📋 ユーザーストーリー自動生成](./docs/phases/PHASE-3-USER-STORIES-CREATION.md)** - Phase 3のアジャイル開発サポート
+- **[🔍 多層品質検証](./docs/phases/PHASE-4-VALIDATION.md)** - Phase 4の包括的品質保証システム
+- **[🏗️ ドメイン駆動設計](./docs/phases/PHASE-5-DOMAIN-MODELING.md)** - Phase 5のDDDによる設計自動化
 
 ## 🔧 Claude Code Task Tool 統合（全フェーズ対応）
 
@@ -157,11 +157,11 @@ ae-ui scaffold --a11y
 - **CLI**: コマンドライン環境（開発者向け）
 - **MCP**: フォールバック機能
 
-詳細は [TDD Framework Architecture](./docs/TDD-FRAMEWORK-ARCHITECTURE.md) を参照。
+詳細は [TDD Framework Architecture](./docs/architecture/TDD-FRAMEWORK-ARCHITECTURE.md) を参照。
 
 ## 🎯 主要機能
 
-### 📚 [Steering Documents](./docs/NEW_FEATURES.md#-steering-documents)
+### 📚 [Steering Documents](./docs/architecture/NEW_FEATURES.md#-steering-documents)
 プロジェクト全体のコンテキストと方向性を管理：
 - **product.md**: プロダクトビジョン、ターゲットユーザー、コア機能
 - **architecture.md**: 技術スタック、アーキテクチャパターン、システム構成  
@@ -173,7 +173,7 @@ mkdir -p .ae/steering
 echo '# Product Vision' > .ae/steering/product.md
 ```
 
-### 📊 [Phase State Management](./docs/NEW_FEATURES.md#-phase-state-management)
+### 📊 [Phase State Management](./docs/architecture/NEW_FEATURES.md#-phase-state-management)
 6フェーズの進捗を自動追跡：
 - 各フェーズの開始・完了・承認を記録
 - プロジェクト全体の進捗率とタイムライン
@@ -186,7 +186,7 @@ ae-phase status
 ae-phase timeline
 ```
 
-### ✅ [Approval Workflow](./docs/NEW_FEATURES.md#-approval-workflow)
+### ✅ [Approval Workflow](./docs/architecture/NEW_FEATURES.md#-approval-workflow)
 フェーズ完了後の品質ゲート：
 - 複数承認者のサポート
 - 自動承認条件（テストカバレッジ、セキュリティスキャン）
@@ -198,7 +198,7 @@ ae-approve request intent --summary 'Ready for review'
 ae-approve approve intent --user 'Tech Lead'
 ```
 
-### 🚀 [Slash Commands](./docs/NEW_FEATURES.md#-slash-commands) 
+### 🚀 [Slash Commands](./docs/architecture/NEW_FEATURES.md#-slash-commands) 
 統一されたコマンドインターフェース：
 - インタラクティブモード（`ae-slash i`）
 - 全フェーズのコマンド統合
@@ -233,7 +233,7 @@ ae-phase timeline
 ae-approve pending
 ```
 
-詳細は[新機能ガイド](./docs/NEW_FEATURES.md#-統合ワークフロー例)を参照してください。
+詳細は[新機能ガイド](./docs/architecture/NEW_FEATURES.md#-統合ワークフロー例)を参照してください。
 
 ## 🤖 AI-Powered Development Features
 
@@ -673,26 +673,47 @@ DISABLE_TELEMETRY=true
 
 ## 📚 Documentation
 
-### Claude Code Task Tool統合
-- **[🚀 Claude Code自動実行ガイド](docs/CLAUDE-CODE-AUTOMATION-GUIDE.md)** - 要求から実装まで完全自動化
-- [Claude Code Task Tool統合ガイド](docs/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md) - 全フェーズ統合の詳細
-- [Phase 2: Natural Language Requirements](docs/PHASE-2-NATURAL-LANGUAGE-REQUIREMENTS.md) - 自然言語要件処理
-- [Phase 3: User Stories Creation](docs/PHASE-3-USER-STORIES-CREATION.md) - ユーザーストーリー生成
-- [Phase 4: Validation](docs/PHASE-4-VALIDATION.md) - 品質検証システム
-- [Phase 5: Domain Modeling](docs/PHASE-5-DOMAIN-MODELING.md) - ドメイン駆動設計
-- **[Phase 6: UI/UX & Frontend Delivery](docs/phase-6-uiux.md)** - React + Next.js UI自動生成
-- **[OpenTelemetryテレメトリ設定](docs/telemetry-configuration.md)** - Phase 6品質・パフォーマンス監視
-- [CLI Commands Reference](docs/CLI-COMMANDS-REFERENCE.md) - 全コマンドリファレンス
+### 🚀 導入・クイックスタート
+- **[🚀 Quick Start Guide](docs/getting-started/QUICK-START-GUIDE.md)** - 15分で始めるae-framework
+- **[🎨 Phase 6 Getting Started](docs/getting-started/PHASE-6-GETTING-STARTED.md)** - UI/UX専用クイックスタート
+- [Setup Guide](docs/getting-started/SETUP.md) - 基本セットアップ
 
-### フレームワーク詳細
-- [TDD Framework Architecture](docs/TDD-FRAMEWORK-ARCHITECTURE.md) - Phase 1 Intent Agent
-- [New Features Guide](docs/NEW_FEATURES.md) - Steering Documents、Phase State Management
-- [Quick Start Guide](docs/QUICK-START-GUIDE.md) - 5分で始めるガイド
-- [Contributing Guide](CONTRIBUTING.md) - 貢献ガイドライン
+### 📝 実用ガイド
+- **[🎯 Development Instructions Guide](docs/guides/DEVELOPMENT-INSTRUCTIONS-GUIDE.md)** - 実際の開発指示方法
+- **[🚀 Claude Code Automation Guide](docs/guides/CLAUDE-CODE-AUTOMATION-GUIDE.md)** - 要求から実装まで完全自動化
+- [Usage Guide](docs/guides/USAGE.md) - 一般的な使い方ガイド
+- [Test Generation Guide](docs/guides/test-generation-guide.md) - テスト生成ガイド
+
+### 🎯 フェーズ別詳細
+- [Phase 2: Natural Language Requirements](docs/phases/PHASE-2-NATURAL-LANGUAGE-REQUIREMENTS.md) - 自然言語要件処理
+- [Phase 3: User Stories Creation](docs/phases/PHASE-3-USER-STORIES-CREATION.md) - ユーザーストーリー生成
+- [Phase 4: Validation](docs/phases/PHASE-4-VALIDATION.md) - 品質検証システム
+- [Phase 5: Domain Modeling](docs/phases/PHASE-5-DOMAIN-MODELING.md) - ドメイン駆動設計
+- **[Phase 6: UI/UX & Frontend Delivery](docs/phases/phase-6-uiux.md)** - React + Next.js UI自動生成
+- **[Frontend Foundation](docs/phases/frontend-foundation.md)** - フロントエンド技術基盤
+- **[OpenTelemetry Telemetry](docs/phases/telemetry-configuration.md)** - Phase 6品質・パフォーマンス監視
+
+### 🔗 統合・ワークフロー
+- **[Claude Code Task Tool Integration](docs/integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)** - 全フェーズ統合詳細
+- [Claude Code Workflow](docs/integrations/CLAUDECODE-WORKFLOW.md) - Claude Codeワークフロー
+
+### 📚 リファレンス
+- **[CLI Commands Reference](docs/reference/CLI-COMMANDS-REFERENCE.md)** - 全コマンドリファレンス
+- [API Reference](docs/reference/API.md) - API仕様
+
+### 🏗️ アーキテクチャ・設計
+- **[TDD Framework Architecture](docs/architecture/TDD-FRAMEWORK-ARCHITECTURE.md)** - TDDフレームワーク設計
+- [System Architecture](docs/architecture/ARCHITECTURE.md) - システムアーキテクチャ
+- [New Features Guide](docs/architecture/NEW_FEATURES.md) - Steering Documents、Phase State Management
+
+### 📚 全体ナビゲーション
+**[docs/README.md](docs/README.md)** - 全ドキュメントの体系的ナビゲーションガイド
 
 ## 🤝 Contributing
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+📚 **詳細ドキュメント**: [docs/README.md](docs/README.md) - 全ドキュメントの体系的ナビゲーション
 
 ## 📄 License
 
