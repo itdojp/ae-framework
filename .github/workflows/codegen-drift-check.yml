@@ -1,0 +1,413 @@
+name: Deterministic Codegen & Drift Check
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'spec/**/*.md'
+      - '.ae/ae-ir.json'
+      - 'src/codegen/**'
+      - 'templates/**'
+      - '.github/workflows/codegen-drift-check.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'spec/**/*.md'
+      - '.ae/ae-ir.json'
+      - 'src/codegen/**'
+      - 'templates/**'
+      - '.github/workflows/codegen-drift-check.yml'
+
+jobs:
+  drift-detection:
+    name: Code Generation Drift Detection
+    runs-on: ubuntu-latest
+    
+    outputs:
+      drift-status: ${{ steps.drift-check.outputs.drift-status }}
+      needs-regeneration: ${{ steps.drift-check.outputs.needs-regeneration }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2 # Need previous commit for comparison
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+          
+      - name: Install dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          
+      - name: Build ae-framework
+        run: |
+          pnpm build
+          
+      - name: Check for AE-IR file
+        id: check-aeir
+        run: |
+          if [ -f ".ae/ae-ir.json" ]; then
+            echo "has_aeir=true" >> $GITHUB_OUTPUT
+            echo "Found AE-IR file"
+          else
+            echo "has_aeir=false" >> $GITHUB_OUTPUT
+            echo "No AE-IR file found, checking for specs to compile..."
+            
+            if find spec -name "*.md" -type f | grep -q .; then
+              echo "Found spec files, will compile first"
+              echo "needs_compilation=true" >> $GITHUB_OUTPUT
+            else
+              echo "No spec files found"
+              echo "needs_compilation=false" >> $GITHUB_OUTPUT
+            fi
+          fi
+          
+      - name: Compile specs to AE-IR if needed
+        if: steps.check-aeir.outputs.has_aeir == 'false' && steps.check-aeir.outputs.needs_compilation == 'true'
+        run: |
+          echo "🔄 Compiling specifications to AE-IR..."
+          mkdir -p .ae
+          
+          # Find the first spec file to compile (in production, this would be more sophisticated)
+          SPEC_FILE=$(find spec -name "*.md" -type f | head -1)
+          if [ -n "$SPEC_FILE" ]; then
+            echo "Compiling $SPEC_FILE to .ae/ae-ir.json"
+            npx tsx src/cli/index.ts spec compile -i "$SPEC_FILE" -o .ae/ae-ir.json
+            echo "✅ Compilation completed"
+          fi
+          
+      - name: Run drift detection
+        id: drift-check
+        run: |
+          echo "🔍 Running drift detection..."
+          
+          # Check if we have AE-IR and generated code to check
+          if [ ! -f ".ae/ae-ir.json" ]; then
+            echo "No AE-IR file available for drift detection"
+            echo "drift-status=no-baseline" >> $GITHUB_OUTPUT
+            echo "needs-regeneration=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Look for existing generated code directories
+          GENERATED_DIRS=""
+          for dir in "src/generated" "generated" "src/types" "src/api/generated"; do
+            if [ -d "$dir" ]; then
+              GENERATED_DIRS="$GENERATED_DIRS $dir"
+            fi
+          done
+          
+          if [ -z "$GENERATED_DIRS" ]; then
+            echo "No generated code directories found"
+            echo "drift-status=no-generated-code" >> $GITHUB_OUTPUT  
+            echo "needs-regeneration=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Run drift detection for each directory
+          OVERALL_DRIFT="no_drift"
+          DRIFT_DETAILS=""
+          
+          for dir in $GENERATED_DIRS; do
+            echo "Checking drift in $dir..."
+            
+            # Run drift detection and capture result
+            if npx tsx src/cli/index.ts codegen drift -d "$dir" -s .ae/ae-ir.json --format json > drift-report-$(basename $dir).json; then
+              DRIFT_STATUS=$(cat drift-report-$(basename $dir).json | jq -r '.status')
+              echo "Drift status for $dir: $DRIFT_STATUS"
+              
+              # Update overall status (take worst case)
+              case "$DRIFT_STATUS" in
+                "critical_drift")
+                  OVERALL_DRIFT="critical_drift"
+                  ;;
+                "major_drift")
+                  if [ "$OVERALL_DRIFT" != "critical_drift" ]; then
+                    OVERALL_DRIFT="major_drift"
+                  fi
+                  ;;
+                "minor_drift")
+                  if [ "$OVERALL_DRIFT" = "no_drift" ]; then
+                    OVERALL_DRIFT="minor_drift"
+                  fi
+                  ;;
+              esac
+              
+              DRIFT_DETAILS="$DRIFT_DETAILS\n- $dir: $DRIFT_STATUS"
+            else
+              echo "Drift detection failed for $dir"
+              OVERALL_DRIFT="detection_failed"
+            fi
+          done
+          
+          echo "Overall drift status: $OVERALL_DRIFT"
+          echo "drift-status=$OVERALL_DRIFT" >> $GITHUB_OUTPUT
+          
+          # Determine if regeneration is needed
+          case "$OVERALL_DRIFT" in
+            "critical_drift"|"major_drift")
+              echo "needs-regeneration=true" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "needs-regeneration=false" >> $GITHUB_OUTPUT
+              ;;
+          esac
+          
+          # Save drift details for PR comment
+          echo "DRIFT_DETAILS<<EOF" >> $GITHUB_ENV
+          echo -e "$DRIFT_DETAILS" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+        continue-on-error: true
+        
+      - name: Upload drift reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: drift-reports
+          path: drift-report-*.json
+          retention-days: 30
+
+  regenerate-code:
+    name: Regenerate Code if Needed
+    needs: drift-detection
+    runs-on: ubuntu-latest
+    if: needs.drift-detection.outputs.needs-regeneration == 'true'
+    
+    strategy:
+      matrix:
+        target: [typescript, react, api, database]
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Build ae-framework
+        run: pnpm build
+        
+      - name: Regenerate ${{ matrix.target }} code
+        run: |
+          echo "🏗️  Regenerating ${{ matrix.target }} code..."
+          
+          TARGET_DIR="generated/${{ matrix.target }}"
+          mkdir -p "$TARGET_DIR"
+          
+          if [ -f ".ae/ae-ir.json" ]; then
+            npx tsx src/cli/index.ts codegen generate \
+              -i .ae/ae-ir.json \
+              -o "$TARGET_DIR" \
+              -t ${{ matrix.target }} \
+              --verbose
+            echo "✅ Code regeneration completed for ${{ matrix.target }}"
+          else
+            echo "❌ No AE-IR file found"
+            exit 1
+          fi
+          
+      - name: Upload generated code
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-${{ matrix.target }}-code
+          path: generated/${{ matrix.target }}
+          retention-days: 7
+
+  validate-generation:
+    name: Validate Generated Code
+    needs: [drift-detection, regenerate-code]
+    runs-on: ubuntu-latest
+    if: always() && needs.regenerate-code.result == 'success'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Setup pnpm  
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Download all generated code
+        uses: actions/download-artifact@v4
+        with:
+          pattern: generated-*-code
+          path: generated/
+          merge-multiple: true
+          
+      - name: Validate TypeScript compilation
+        run: |
+          if [ -d "generated/typescript" ]; then
+            echo "🔍 Validating TypeScript code..."
+            cd generated/typescript
+            if ls *.ts 1> /dev/null 2>&1; then
+              npx tsc --noEmit --skipLibCheck *.ts
+              echo "✅ TypeScript validation passed"
+            fi
+          fi
+          
+      - name: Validate React components
+        run: |
+          if [ -d "generated/react" ]; then
+            echo "🔍 Validating React components..."
+            cd generated/react
+            # Basic syntax validation
+            for file in *.tsx; do
+              if [ -f "$file" ]; then
+                echo "Checking $file"
+                npx tsc --noEmit --skipLibCheck --jsx react "$file"
+              fi
+            done
+            echo "✅ React components validation passed"
+          fi
+
+  comment-pr:
+    name: Comment on PR
+    needs: [drift-detection, regenerate-code]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && always()
+    
+    steps:
+      - name: Comment drift detection results
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const driftStatus = '${{ needs.drift-detection.outputs.drift-status }}';
+            const needsRegeneration = '${{ needs.drift-detection.outputs.needs-regeneration }}';
+            const driftDetails = process.env.DRIFT_DETAILS || 'No details available';
+            
+            const statusIcons = {
+              'no_drift': '✅',
+              'minor_drift': '⚠️',
+              'major_drift': '🟠',
+              'critical_drift': '🚨',
+              'no-baseline': 'ℹ️',
+              'no-generated-code': '📝',
+              'detection_failed': '❌'
+            };
+            
+            const icon = statusIcons[driftStatus] || '❓';
+            const statusText = driftStatus.replace(/_/g, ' ').toUpperCase();
+            
+            let comment = `## ${icon} Code Generation Drift Detection\n\n`;
+            comment += `**Status:** ${statusText}\n`;
+            comment += `**Regeneration needed:** ${needsRegeneration === 'true' ? 'Yes' : 'No'}\n\n`;
+            
+            if (driftDetails && driftDetails !== 'No details available') {
+              comment += `**Details:**\n${driftDetails}\n\n`;
+            }
+            
+            switch(driftStatus) {
+              case 'no_drift':
+                comment += `🎉 All generated code is up to date with the specifications.\n`;
+                break;
+              case 'minor_drift':
+                comment += `⚠️ Minor drift detected. Consider regenerating code to ensure consistency.\n`;
+                break;
+              case 'major_drift':
+                comment += `🟠 Major drift detected. Code regeneration is recommended.\n`;
+                break;
+              case 'critical_drift':
+                comment += `🚨 Critical drift detected. Specifications have changed significantly.\n`;
+                comment += `**Action required:** Regenerate all code to maintain consistency.\n`;
+                break;
+              case 'no-baseline':
+                comment += `ℹ️ No baseline found for drift detection. This might be the first generation.\n`;
+                break;
+              case 'no-generated-code':
+                comment += `📝 No generated code found. Consider running code generation.\n`;
+                break;
+              case 'detection_failed':
+                comment += `❌ Drift detection failed. Please check the logs for details.\n`;
+                break;
+            }
+            
+            if (needsRegeneration === 'true') {
+              comment += `\n💡 **Next steps:**\n`;
+              comment += `- Review the drift details above\n`;
+              comment += `- Run \`pnpm ae-framework codegen generate\` locally to regenerate code\n`;
+              comment += `- Commit the regenerated code if the changes look correct\n`;
+            }
+            
+            comment += `\n---\n*Automated by [AE-Framework Codegen](${context.payload.repository.html_url}/actions/runs/${context.runId})*`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  quality-gate:
+    name: Code Generation Quality Gate
+    needs: [drift-detection, regenerate-code, validate-generation]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Evaluate quality gate
+        run: |
+          DRIFT_STATUS="${{ needs.drift-detection.outputs.drift-status }}"
+          REGEN_RESULT="${{ needs.regenerate-code.result }}"
+          VALIDATION_RESULT="${{ needs.validate-generation.result }}"
+          
+          echo "📊 Quality Gate Evaluation"
+          echo "=========================="
+          echo "Drift Status: $DRIFT_STATUS"
+          echo "Regeneration: $REGEN_RESULT"  
+          echo "Validation: $VALIDATION_RESULT"
+          
+          # Determine overall result
+          case "$DRIFT_STATUS" in
+            "critical_drift")
+              echo "❌ Quality gate FAILED: Critical drift detected"
+              exit 1
+              ;;
+            "major_drift")
+              if [ "$REGEN_RESULT" != "success" ]; then
+                echo "❌ Quality gate FAILED: Major drift and regeneration failed"
+                exit 1
+              fi
+              ;;
+            "detection_failed")
+              echo "⚠️  Quality gate WARNING: Drift detection failed"
+              exit 0
+              ;;
+          esac
+          
+          # Check validation if regeneration occurred
+          if [ "$REGEN_RESULT" = "success" ] && [ "$VALIDATION_RESULT" = "failure" ]; then
+            echo "❌ Quality gate FAILED: Code validation failed"
+            exit 1
+          fi
+          
+          echo "✅ Quality gate PASSED"

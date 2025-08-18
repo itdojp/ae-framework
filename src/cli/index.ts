@@ -4,6 +4,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import { PhaseValidator } from './validators/PhaseValidator.js';
 import { createSpecCommand } from './spec-cli.js';
+import { createCodegenCommand } from './codegen-cli.js';
 import { GuardRunner } from './guards/GuardRunner.js';
 import { ConfigLoader } from './config/ConfigLoader.js';
 // import { MetricsCollector } from './metrics/MetricsCollector.js';  // TODO: Enable when metrics tracking is implemented
@@ -580,6 +581,9 @@ program
 
 // Add spec commands
 program.addCommand(createSpecCommand());
+
+// Add codegen commands
+program.addCommand(createCodegenCommand());
 
 // Add circuit breaker commands
 import { createCircuitBreakerCommand } from './circuit-breaker-cli.js';
