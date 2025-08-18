@@ -2,6 +2,11 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 
 /**
+ * Supported AE-Framework phases
+ */
+const PHASES = ['phase-1', 'phase-2', 'phase-3', 'phase-4', 'phase-5', 'phase-6'] as const;
+
+/**
  * Quality Policy Configuration Types
  */
 export interface QualityThresholds {
@@ -137,9 +142,8 @@ export const shouldEnforceGate = (gateType: string, currentPhase: string, enviro
   
   // Check if there's an enabled from phase requirement
   if (gate.enabledFromPhase) {
-    const phases = ['phase-1', 'phase-2', 'phase-3', 'phase-4', 'phase-5', 'phase-6'];
-    const enabledPhaseIndex = phases.indexOf(gate.enabledFromPhase);
-    const currentPhaseIndex = phases.indexOf(currentPhase);
+    const enabledPhaseIndex = PHASES.indexOf(gate.enabledFromPhase);
+    const currentPhaseIndex = PHASES.indexOf(currentPhase);
     
     return currentPhaseIndex >= enabledPhaseIndex;
   }

@@ -83,7 +83,7 @@ function shouldEnforceGate(gate, currentPhase) {
  * Execute a quality gate
  */
 function executeQualityGate(gateName, gate, environment) {
-  console.log(`\\n🔍 Executing ${gateName} quality gate...`);
+  console.log(`\n🔍 Executing ${gateName} quality gate...`);
   console.log(`   Enforcement: ${gate.enforcement}`);
   console.log(`   Description: ${gate.description}`);
   
@@ -194,7 +194,7 @@ function runQualityGates() {
   
   const gatestoRun = specificGates || Object.keys(policy.quality);
   
-  console.log(`\\n📋 Quality gates to evaluate: ${gatestoRun.join(', ')}`);
+  console.log(`\n📋 Quality gates to evaluate: ${gatestoRun.join(', ')}`);
   
   for (const gateName of gatestoRun) {
     const gate = policy.quality[gateName];
@@ -208,7 +208,7 @@ function runQualityGates() {
     
     // Check if this gate should be enforced for the current phase
     if (!shouldEnforceGate(gate, currentPhase)) {
-      console.log(`\\n⏭️  Skipping ${gateName} (not applicable for ${currentPhase})`);
+      console.log(`\n⏭️  Skipping ${gateName} (not applicable for ${currentPhase})`);
       results.skipped++;
       continue;
     }
@@ -226,14 +226,14 @@ function runQualityGates() {
       results.failed++;
       
       if (result.strict) {
-        console.log('\\n🚫 Strict quality gate failed - stopping execution');
+        console.log('\n🚫 Strict quality gate failed - stopping execution');
         break;
       }
     }
   }
   
   // Print summary
-  console.log('\\n📊 Quality Gates Summary:');
+  console.log('\n📊 Quality Gates Summary:');
   console.log(`   Total: ${results.total}`);
   console.log(`   Passed: ${results.passed} ✅`);
   console.log(`   Failed: ${results.failed} ❌`);
@@ -241,10 +241,10 @@ function runQualityGates() {
   console.log(`   Warnings: ${results.warnings} ⚠️`);
   
   if (results.failed > 0) {
-    console.log('\\n❌ Quality gates failed');
+    console.log('\n❌ Quality gates failed');
     process.exit(1);
   } else {
-    console.log('\\n✅ All quality gates passed');
+    console.log('\n✅ All quality gates passed');
     process.exit(0);
   }
 }
