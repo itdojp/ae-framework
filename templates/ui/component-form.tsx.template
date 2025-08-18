@@ -57,7 +57,7 @@ export function {{EntityName}}Form({
         <label htmlFor="{{@key}}" className="block text-sm font-medium text-gray-700 mb-1">
           {{getFieldLabel @key}}{{#if required}} *{{/if}}
         </label>
-        {{#if (isTextArea type)}}
+        {{#if (isTextArea type validation)}}
         <Textarea
           id="{{@key}}"
           placeholder="{{getFieldPlaceholder @key ../description}}"

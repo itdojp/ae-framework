@@ -481,8 +481,15 @@ export class UIScaffoldGenerator {
       }
     });
 
-    Handlebars.registerHelper('isTextArea', (type: string) => {
-      return type === 'string'; // Could be enhanced with validation hints
+    Handlebars.registerHelper('isTextArea', (type: string, validation?: string) => {
+      // Use textarea for string types with 'multiline' hint or large maxLength
+      if (type !== 'string') return false;
+      if (validation) {
+        if (validation.includes('multiline')) return true;
+        const maxLengthMatch = validation.match(/maxLength:(\d+)/);
+        if (maxLengthMatch && parseInt(maxLengthMatch[1], 10) > 255) return true;
+      }
+      return false;
     });
 
     Handlebars.registerHelper('isSelect', (type: string, validation?: string) => {
