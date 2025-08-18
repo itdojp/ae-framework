@@ -82,6 +82,8 @@ validate_spec() {
     if [ -f "$CONFIG_FILE" ] && command -v jq &> /dev/null; then
         max_errors=$(jq -r '.quality_gates.max_errors // 0' "$CONFIG_FILE")
         max_warnings=$(jq -r '.quality_gates.max_warnings // 10' "$CONFIG_FILE")
+    elif [ -f "$CONFIG_FILE" ] && ! command -v jq &> /dev/null; then
+        print_colored $YELLOW "⚠️  'jq' not found. Cannot parse $CONFIG_FILE. Using default validation thresholds."
     fi
     
     # Run validation
@@ -164,13 +166,19 @@ run_validations() {
     fi
     
     # Save summary
+    if [ "$total_files" -eq 0 ]; then
+        success_rate=0
+    else
+        success_rate=$(echo "scale=2; $passed_files * 100 / $total_files" | bc -l 2>/dev/null || echo "0")
+    fi
+    
     cat > "$RESULTS_DIR/summary.json" << EOF
 {
   "timestamp": "$(date -Iseconds)",
   "total_files": $total_files,
   "passed_files": $passed_files,
   "failed_files": $failed_files,
-  "success_rate": $(echo "scale=2; $passed_files * 100 / $total_files" | bc -l 2>/dev/null || echo "0")
+  "success_rate": $success_rate
 }
 EOF
     
