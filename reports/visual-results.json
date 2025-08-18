@@ -1,0 +1,45 @@
+{
+  "snapshots": {
+    "total": 12,
+    "passed": 11,
+    "changed": 1,
+    "failed": 0
+  },
+  "components_tested": [
+    "Button",
+    "Input",
+    "Card",
+    "Modal",
+    "Navigation",
+    "Form",
+    "Table",
+    "Dropdown",
+    "Tooltip",
+    "Badge",
+    "Avatar",
+    "Loading"
+  ],
+  "changes": [
+    {
+      "component": "Button",
+      "story": "Primary Hover State",
+      "change_type": "minor",
+      "description": "Slight shadow adjustment",
+      "status": "needs_review"
+    }
+  ],
+  "baseline_updated": false,
+  "browser_coverage": [
+    "Chrome",
+    "Firefox",
+    "Safari"
+  ],
+  "viewport_coverage": [
+    "Mobile",
+    "Tablet",
+    "Desktop"
+  ],
+  "timestamp": "2025-08-17T23:42:15.937Z",
+  "build_id": "vr-1755474135938",
+  "tool": "chromatic"
+}

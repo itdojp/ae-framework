@@ -1,0 +1,74 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { {{EntityName}}Form } from '../../../components/{{EntityName}}Form';
+import { Button } from '@ae-framework/ui/components/button';
+import Link from 'next/link';
+
+interface {{EntityName}}CreateData {
+{{#each editableAttributes}}
+  {{@key}}{{#unless required}}?{{/unless}}: {{getTypeScriptType type}};
+{{/each}}
+}
+
+export default function New{{EntityName}}Page() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const createMutation = useMutation({
+    mutationFn: async (data: {{EntityName}}CreateData) => {
+      const response = await fetch('/api/{{entityName}}s', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create {{entityName}}');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['{{entityName}}s'] });
+      router.push('/{{entityName}}');
+    }
+  });
+
+  const handleSubmit = (data: {{EntityName}}CreateData) => {
+    createMutation.mutate(data);
+  };
+
+  return (
+    <div className="p-6 max-w-2xl mx-auto">
+      <div className="mb-6">
+        <div className="flex items-center gap-4 mb-4">
+          <Link href="/{{entityName}}">
+            <Button variant="outline">← Back to {{EntityName}}s</Button>
+          </Link>
+        </div>
+        <h1 className="text-3xl font-bold text-gray-900">Create New {{EntityName}}</h1>
+        <p className="text-gray-600 mt-2">
+          Fill in the details below to create a new {{entityName}}.
+        </p>
+      </div>
+
+      <div className="bg-white border rounded-lg p-6">
+        <{{EntityName}}Form
+          onSubmit={handleSubmit}
+          isLoading={createMutation.isPending}
+          error={createMutation.error?.message}
+        />
+      </div>
+
+      {createMutation.error && (
+        <div className="mt-4 bg-red-50 border border-red-200 rounded-md p-4">
+          <h3 className="text-red-800 font-medium">Error creating {{entityName}}</h3>
+          <p className="text-red-600">{createMutation.error.message}</p>
+        </div>
+      )}
+    </div>
+  );
+}
