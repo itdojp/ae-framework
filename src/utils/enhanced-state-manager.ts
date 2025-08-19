@@ -6,7 +6,18 @@ import { createHash } from 'crypto';
 import { promisify } from 'util';
 import { gzip, gunzip } from 'zlib';
 // import { AEIR } from '@ae-framework/spec-compiler';  // Temporarily disabled for build fix
-type AEIR = any; // Temporary type for build fix
+
+/**
+ * Minimal AEIR stub type for build fix.
+ * TODO: Replace with import from '@ae-framework/spec-compiler' when available.
+ */
+export interface AEIR {
+  id?: string;
+  name?: string;
+  type?: string;
+  version?: string;
+  // Add other properties as needed based on usage in this file.
+}
 
 const gzipAsync = promisify(gzip);
 const gunzipAsync = promisify(gunzip);

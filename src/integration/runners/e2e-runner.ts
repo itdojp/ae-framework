@@ -6,6 +6,18 @@
 import { v4 as uuidv4 } from 'uuid';
 import { promises as fs } from 'fs';
 import { join } from 'path';
+
+/**
+ * Test step result interface
+ */
+export interface TestStepResult {
+  stepIndex: number;
+  action: string;
+  status: 'success' | 'error';
+  message: string;
+  duration: number;
+  screenshot?: string;
+}
 import {
   TestRunner,
   TestCase,
@@ -136,7 +148,7 @@ export class E2ETestRunner implements TestRunner {
   async runTest(test: TestCase, environment: TestEnvironment): Promise<TestResult> {
     const startTime = new Date().toISOString();
     const resultId = uuidv4();
-    const stepResults: any[] = [];
+    const stepResults: TestStepResult[] = [];
     const screenshots: string[] = [];
     const logs: string[] = [];
     

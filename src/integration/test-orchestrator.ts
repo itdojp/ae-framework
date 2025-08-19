@@ -429,7 +429,7 @@ export class IntegrationTestOrchestrator extends EventEmitter {
    * Find appropriate runner for test
    */
   private findRunner(test: TestCase): TestRunner | undefined {
-    for (const runner of Array.from(this.runners.values())) {
+    for (const runner of this.runners.values()) {
       if (runner.canRun(test)) {
         return runner;
       }
