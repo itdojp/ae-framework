@@ -38,7 +38,9 @@ export class FailureArtifactFactory {
         errorType: error.constructor.name,
         errorMessage: error.message,
         logs: [error.message],
-        metrics: {}
+        metrics: {},
+        dependencies: [],
+        relatedFiles: []
       },
       suggestedActions: [],
       relatedArtifacts: [],
@@ -83,7 +85,9 @@ export class FailureArtifactFactory {
         metrics: {
           expected: typeof expected === 'number' ? expected : 0,
           actual: typeof actual === 'number' ? actual : 0
-        }
+        },
+        dependencies: [],
+        relatedFiles: []
       },
       suggestedActions: [],
       relatedArtifacts: [],
@@ -132,7 +136,9 @@ export class FailureArtifactFactory {
         errorMessage: message,
         sourceCode,
         logs: [`TypeScript error: ${message}`],
-        metrics: {}
+        metrics: {},
+        dependencies: [],
+        relatedFiles: []
       },
       suggestedActions: [],
       relatedArtifacts: [],
@@ -180,7 +186,9 @@ export class FailureArtifactFactory {
         metrics: {
           dataSize: JSON.stringify(actualData).length,
           fieldCount: typeof actualData === 'object' ? Object.keys(actualData || {}).length : 0
-        }
+        },
+        dependencies: [],
+        relatedFiles: []
       },
       suggestedActions: [],
       relatedArtifacts: [],
@@ -232,7 +240,9 @@ export class FailureArtifactFactory {
         metrics: {
           exitCode,
           outputLines: buildOutput.split('\n').length
-        }
+        },
+        dependencies: [],
+        relatedFiles: []
       },
       suggestedActions: [],
       relatedArtifacts: [],
@@ -287,7 +297,9 @@ export class FailureArtifactFactory {
         errorMessage: message,
         sourceCode,
         logs: [`ESLint ${severity}: ${rule} - ${message}`],
-        metrics: {}
+        metrics: {},
+        dependencies: [],
+        relatedFiles: []
       },
       suggestedActions: [],
       relatedArtifacts: [],
@@ -332,7 +344,8 @@ export class FailureArtifactFactory {
         errorMessage: message,
         logs: [`Dependency issue: ${packageName} - ${issueType}`],
         dependencies: [packageName],
-        metrics: {}
+        metrics: {},
+        relatedFiles: []
       },
       suggestedActions: [],
       relatedArtifacts: [],
@@ -384,7 +397,9 @@ export class FailureArtifactFactory {
           [metric]: actual,
           [`${metric}_threshold`]: threshold,
           [`${metric}_ratio`]: actual / threshold
-        }
+        },
+        dependencies: [],
+        relatedFiles: []
       },
       suggestedActions: [],
       relatedArtifacts: [],
