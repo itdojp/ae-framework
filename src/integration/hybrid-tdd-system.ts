@@ -9,6 +9,10 @@ import { TDDTaskAdapter, TaskRequest, TaskResponse } from '../agents/tdd-task-ad
 import { AEFrameworkCLI } from '../cli/index.js';
 import { ConfigLoader } from '../cli/config/ConfigLoader.js';
 import { MetricsCollector } from '../cli/metrics/MetricsCollector.js';
+import { AESpecCompiler, AEIR, CompileOptions } from '@ae-framework/spec-compiler';
+import { EnhancedStateManager } from '../utils/enhanced-state-manager.js';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export interface HybridTDDConfig {
   enableCLI: boolean;
@@ -16,6 +20,10 @@ export interface HybridTDDConfig {
   enableClaudeCodeIntegration: boolean;
   enforceRealTime: boolean;
   strictMode: boolean;
+  // AE-Spec/IR SSOT configuration
+  enableSpecSSot: boolean;
+  specPath: string;
+  aeIrOutputPath: string;
 }
 
 export class HybridTDDSystem {
@@ -23,10 +31,14 @@ export class HybridTDDSystem {
   private taskAdapter?: TDDTaskAdapter;
   private metricsCollector: MetricsCollector;
   private config: HybridTDDConfig;
+  private specCompiler: AESpecCompiler;
+  private stateManager: EnhancedStateManager;
 
   constructor(config: HybridTDDConfig) {
     this.config = config;
     this.metricsCollector = new MetricsCollector(ConfigLoader.load());
+    this.specCompiler = new AESpecCompiler();
+    this.stateManager = EnhancedStateManager.getInstance();
     
     if (config.enableCLI) {
       this.cli = new AEFrameworkCLI();
@@ -44,6 +56,7 @@ export class HybridTDDSystem {
   async handleTDDRequest(request: {
     type: 'cli' | 'task' | 'mcp' | 'auto';
     data: any;
+    phase?: number;
     context?: {
       isClaudeCode: boolean;
       hasTaskTool: boolean;
@@ -54,6 +67,13 @@ export class HybridTDDSystem {
     source: 'cli' | 'agent' | 'hybrid';
     followUp?: string[];
   }> {
+    // AE-Spec/IR SSOT Pipeline Processing (issue #71 requirement)
+    if (this.config.enableSpecSSot && await this.requiresSpecPipeline(request.phase)) {
+      const aeIR = await this.processSpecPipeline();
+      // Inject AE-IR into request for downstream phases
+      request.data = { ...request.data, aeIR };
+    }
+
     // Auto-detect best handler if type is 'auto'
     if (request.type === 'auto') {
       request.type = this.detectBestHandler(request.context);
@@ -72,6 +92,63 @@ export class HybridTDDSystem {
       default:
         return this.handleHybridRequest(request.data);
     }
+  }
+
+  /**
+   * AE-Spec/IR SSOT Pipeline Processing
+   * Converts NL specs to structured IR for downstream phases
+   */
+  private async processSpecPipeline(): Promise<AEIR> {
+    const specPath = this.config.specPath || 'spec/ae-spec.md';
+    const outputPath = this.config.aeIrOutputPath || '.ae/ae-ir.json';
+    
+    // Ensure spec file exists
+    if (!fs.existsSync(specPath)) {
+      throw new Error(`Spec file not found: ${specPath}`);
+    }
+
+    // Compile AE-Spec to AE-IR
+    const compileOptions: CompileOptions = {
+      inputPath: specPath,
+      outputPath,
+      validate: true,
+      sourceMap: true,
+    };
+
+    const ir = await this.specCompiler.compile(compileOptions);
+    
+    // Lint AE-IR for ambiguity/undefined/conflicts
+    const lintResult = await this.specCompiler.lint(ir);
+    if (!lintResult.passed) {
+      const errorMessages = lintResult.issues
+        .filter(issue => issue.severity === 'error')
+        .map(issue => issue.message)
+        .join('; ');
+      throw new Error(`Spec lint failed: ${errorMessages}`);
+    }
+
+    // Save SSOT to state manager
+    await this.stateManager.saveSSOT('.ae/ae-ir.json', ir);
+    
+    console.log(`✅ AE-Spec compiled to AE-IR successfully`);
+    console.log(`📁 SSOT saved to: ${outputPath}`);
+    
+    if (lintResult.issues.length > 0) {
+      const warnings = lintResult.issues.filter(i => i.severity === 'warn').length;
+      const infos = lintResult.issues.filter(i => i.severity === 'info').length;
+      console.log(`⚠️ Lint results: ${warnings} warnings, ${infos} info messages`);
+    }
+
+    return ir;
+  }
+
+  /**
+   * Check if current phase requires spec pipeline processing
+   */
+  private async requiresSpecPipeline(phase?: number): Promise<boolean> {
+    // Phases 2-6 require AE-IR as input
+    if (!phase) return true; // Default: always process
+    return phase >= 2;
   }
 
   /**
