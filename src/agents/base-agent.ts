@@ -5,6 +5,21 @@
 
 import { PhaseStateManager, PhaseType } from '../utils/phase-state-manager.js';
 import { SteeringLoader } from '../utils/steering-loader.js';
+import { ValidationResult } from '../cli/types.js';
+
+/**
+ * Generic agent output interface for validation
+ */
+export interface AgentOutput {
+  type: 'requirements' | 'specifications' | 'tests' | 'code' | 'verification' | 'deployment' | 'generic';
+  content: string;
+  artifacts: string[];
+  metadata?: Record<string, any>;
+  quality?: {
+    score: number;
+    metrics: Record<string, number>;
+  };
+}
 
 export abstract class BaseAgent {
   protected phaseStateManager: PhaseStateManager;
@@ -196,5 +211,77 @@ export abstract class BaseAgent {
     }
     
     return report;
+  }
+
+  /**
+   * Default safe validation method
+   * Concrete agents should override this with their specific validation logic
+   * Default implementation always passes to prevent system failures
+   */
+  protected async validate(output: AgentOutput): Promise<ValidationResult> {
+    // Safe default: always pass validation if concrete implementation is missing
+    // This prevents system crashes when agents don't implement custom validation
+    return {
+      success: true,
+      message: 'Default validation passed (no custom validation implemented)',
+      details: [{
+        check: 'default_validation',
+        passed: true,
+        message: 'Safe default validation - concrete agent should implement custom validation'
+      }]
+    };
+  }
+
+  /**
+   * Wrapper method to ensure validation is always called safely
+   * This method should be called by concrete agents after generating output
+   */
+  protected async validateOutput(output: AgentOutput): Promise<ValidationResult> {
+    try {
+      const result = await this.validate(output);
+      
+      // Safely log validation activity for monitoring (don't fail if logging fails)
+      this.safeLogActivity('output_validation', {
+        success: result.success,
+        outputType: output.type,
+        artifactCount: output.artifacts.length,
+        qualityScore: output.quality?.score,
+        validationMessage: result.message
+      });
+      
+      return result;
+    } catch (error) {
+      // Even if validation fails, return a safe result to prevent system crash
+      const safeResult: ValidationResult = {
+        success: false,
+        message: `Validation error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        details: [{
+          check: 'validation_error_handler',
+          passed: false,
+          message: 'Validation method threw an exception - failing safely'
+        }]
+      };
+      
+      // Safely log error without throwing
+      this.safeLogActivity('validation_error', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        outputType: output.type
+      });
+      
+      return safeResult;
+    }
+  }
+
+  /**
+   * Safe logging method that never throws exceptions
+   * Falls back to console logging if phase state logging fails
+   */
+  private safeLogActivity(activity: string, metadata?: any): void {
+    // Don't await - run async without blocking validation
+    this.logActivity(activity, metadata).catch(error => {
+      // Fallback to console logging if phase state logging fails
+      console.log(`[BaseAgent:${this.phaseName}] ${activity}:`, metadata);
+      console.warn(`Phase state logging failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    });
   }
 }
