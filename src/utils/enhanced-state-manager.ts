@@ -5,7 +5,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { createHash } from 'crypto';
 import { promisify } from 'util';
 import { gzip, gunzip } from 'zlib';
-import { AEIR } from '@ae-framework/spec-compiler';
+// import { AEIR } from '@ae-framework/spec-compiler';  // Temporarily disabled for build fix
+type AEIR = any; // Temporary type for build fix
 
 const gzipAsync = promisify(gzip);
 const gunzipAsync = promisify(gunzip);
