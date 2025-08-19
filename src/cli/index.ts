@@ -606,6 +606,11 @@ program.addCommand(createSecurityCommand());
 import { createQualityCommand } from './quality-cli.js';
 program.addCommand(createQualityCommand());
 
+// Conformance verification commands  
+import { ConformanceCli } from './conformance-cli.js';
+const conformanceCli = new ConformanceCli();
+program.addCommand(conformanceCli.createCommand());
+
 program.parse();
 
 export { AEFrameworkCLI };
