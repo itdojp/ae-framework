@@ -611,6 +611,11 @@ import { ConformanceCli } from './conformance-cli.js';
 const conformanceCli = new ConformanceCli();
 program.addCommand(conformanceCli.createCommand());
 
+// Integration testing commands
+import { IntegrationTestingCli } from './integration-cli.js';
+const integrationCli = new IntegrationTestingCli();
+program.addCommand(integrationCli.createCommand());
+
 program.parse();
 
 export { AEFrameworkCLI };
