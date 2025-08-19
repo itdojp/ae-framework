@@ -4,6 +4,7 @@ import { securityHeadersPlugin, getSecurityConfiguration } from "./middleware/se
 import { runtimeGuard, CommonSchemas } from "../telemetry/runtime-guards.js";
 import { enhancedTelemetry, TELEMETRY_ATTRIBUTES } from "../telemetry/enhanced-telemetry.js";
 import { trace } from '@opentelemetry/api';
+import { registerHealthEndpoint } from '../health/health-endpoint.js';
 
 /**
  * Create and configure Fastify server instance
@@ -224,6 +225,9 @@ export async function createServer(): Promise<FastifyInstance> {
       throw error;
     }
   });
+
+  // Register health check endpoints for Docker/Kubernetes
+  await registerHealthEndpoint(app);
 
   return app;
 }
