@@ -597,6 +597,14 @@ program.addCommand(createCircuitBreakerCommand());
 // Security commands
 program.addCommand(createSecurityCommand());
 
+// Resilience commands
+import { createResilienceCommand } from './resilience-cli.js';
+program.addCommand(createResilienceCommand());
+
+// SBOM commands
+import { createSBOMCommand } from './sbom-cli.js';
+program.addCommand(createSBOMCommand());
+
 program.parse();
 
 export { AEFrameworkCLI };
