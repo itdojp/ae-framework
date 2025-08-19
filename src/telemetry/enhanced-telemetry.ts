@@ -355,7 +355,7 @@ export class EnhancedTelemetry {
 export const enhancedTelemetry = new EnhancedTelemetry();
 
 // Auto-initialize if not disabled and not in test environment
-if (process.env.DISABLE_ENHANCED_TELEMETRY !== 'true' && process.env.NODE_ENV !== 'test') {
+if (typeof process !== 'undefined' && process.env.DISABLE_ENHANCED_TELEMETRY !== 'true' && process.env.NODE_ENV !== 'test') {
   enhancedTelemetry.initialize();
 
   // Graceful shutdown handling (only when auto-initialized and not in test)
@@ -363,6 +363,15 @@ if (process.env.DISABLE_ENHANCED_TELEMETRY !== 'true' && process.env.NODE_ENV !=
     await enhancedTelemetry.shutdown();
   };
   
-  process.on('SIGTERM', shutdownHandler);
-  process.on('SIGINT', shutdownHandler);
+  // Safe process event handler registration for different environments
+  try {
+    if (typeof process !== 'undefined' && process.on && typeof process.on === 'function') {
+      process.on('SIGTERM', shutdownHandler);
+      process.on('SIGINT', shutdownHandler);
+    }
+  } catch (error) {
+    // In some ESM environments, process.on may not be available
+    // This is not critical for telemetry functionality
+    console.warn('Process event handlers could not be registered:', error instanceof Error ? error.message : String(error));
+  }
 }
