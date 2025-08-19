@@ -347,14 +347,16 @@ export class SBOMGenerator {
 
     const vulnerabilities: any[] = [];
 
-    // Placeholder implementation
+    // Placeholder implementation - TODO: Replace with actual vulnerability scanning
+    // Note: This is a demonstration/testing implementation only
     for (const component of components) {
       if (component.type === 'library') {
-        // Mock vulnerability check
-        if (Math.random() < 0.1) { // 10% chance for demonstration
+        // Deterministic mock vulnerability check based on component name hash
+        const hash = this.simpleHash(component.name + component.version);
+        if (hash % 10 === 0) { // Deterministic 10% chance based on name/version
           vulnerabilities.push({
             bom_ref: component.name,
-            id: `CVE-2023-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+            id: `CVE-2023-${(hash % 10000).toString().padStart(4, '0')}`,
             source: {
               name: 'National Vulnerability Database',
               url: 'https://nvd.nist.gov/',
@@ -362,8 +364,8 @@ export class SBOMGenerator {
             ratings: [
               {
                 source: 'NVD',
-                score: Math.random() * 10,
-                severity: ['low', 'medium', 'high', 'critical'][Math.floor(Math.random() * 4)],
+                score: ((hash % 100) / 10), // Deterministic score 0-10
+                severity: ['low', 'medium', 'high', 'critical'][hash % 4],
                 method: 'CVSSv3',
               },
             ],
@@ -470,6 +472,19 @@ export class SBOMGenerator {
 
     xml += '</bom>\n';
     return xml;
+  }
+
+  /**
+   * Simple hash function for deterministic mock data generation
+   */
+  private simpleHash(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash);
   }
 
   /**

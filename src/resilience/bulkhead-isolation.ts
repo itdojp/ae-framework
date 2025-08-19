@@ -68,12 +68,13 @@ export class Bulkhead {
       }
 
       // Add to queue with timeout
+      let queuedOp: QueuedOperation;
       const timeoutId = setTimeout(() => {
         this.removeFromQueue(queuedOp);
         this.handleRejection('timeout', reject, `Operation timed out in queue for bulkhead ${this.options.name}`);
       }, this.options.timeoutMs);
 
-      const queuedOp: QueuedOperation = {
+      queuedOp = {
         operation,
         resolve,
         reject,
