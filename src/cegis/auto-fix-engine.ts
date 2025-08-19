@@ -1,530 +1,542 @@
 /**
- * CEGIS Auto-Fix Engine
- * 
- * Implements counter-example guided inductive synthesis for automated
- * specification and code repair based on failure artifacts
+ * Auto-Fix Engine
+ * Phase 2.1: Core engine for analyzing failures and applying automated fixes
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
 import { 
   FailureArtifact, 
-  FailureArtifactCollection,
-  RepairAction,
-  FailureCategory,
-  FailureSeverity 
-} from './failure-artifact-schema.js';
-
-export interface AutoFixOptions {
-  dryRun: boolean;
-  maxIterations: number;
-  confidenceThreshold: number;
-  backupOriginals: boolean;
-  outputDir: string;
-}
-
-export interface FixResult {
-  success: boolean;
-  appliedActions: RepairAction[];
-  errors: string[];
-  generatedFiles: string[];
-  backupFiles: string[];
-  recommendations: string[];
-}
-
-export interface FixStrategy {
-  category: FailureCategory;
-  severity: FailureSeverity[];
-  minConfidence: number;
-  execute(artifact: FailureArtifact, options: AutoFixOptions): Promise<FixResult>;
-}
+  FixStrategy, 
+  FixResult, 
+  AppliedFix, 
+  SkippedFix, 
+  AutoFixConfig, 
+  AutoFixOptions,
+  FailurePattern,
+  FailureCategory
+} from './types.js';
+import { RiskAssessmentService } from './risk-assessment-service.js';
+import { TypeErrorFixStrategy } from './strategies/type-error-strategy.js';
+import { TestFailureFixStrategy } from './strategies/test-failure-strategy.js';
+import { ContractViolationFixStrategy } from './strategies/contract-violation-strategy.js';
 
 export class AutoFixEngine {
-  private strategies: Map<FailureCategory, FixStrategy> = new Map();
-  private fixHistory: FixResult[] = [];
+  private strategies: Map<FailureCategory, FixStrategy[]> = new Map();
+  private riskAssessment: RiskAssessmentService;
+  private config: AutoFixConfig;
 
-  constructor() {
-    this.registerDefaultStrategies();
-  }
-
-  /**
-   * Register a fix strategy for a specific failure category
-   */
-  registerStrategy(strategy: FixStrategy): void {
-    this.strategies.set(strategy.category, strategy);
-  }
-
-  /**
-   * Analyze failure artifacts and propose fixes
-   */
-  async analyzeFailures(
-    failures: FailureArtifact[] | FailureArtifactCollection,
-    options: Partial<AutoFixOptions> = {}
-  ): Promise<{ analysis: string; proposedFixes: RepairAction[]; riskAssessment: string }> {
-    const artifacts = Array.isArray(failures) ? failures : failures.failures;
-    const opts = this.mergeOptions(options);
-
-    // Group failures by category and severity
-    const groupedFailures = this.groupFailures(artifacts);
-    
-    // Analyze patterns and root causes
-    const patterns = this.analyzePatterns(groupedFailures);
-    
-    // Generate comprehensive analysis
-    const analysis = this.generateAnalysis(groupedFailures, patterns);
-    
-    // Propose fixes based on patterns
-    const proposedFixes = this.proposeFixes(groupedFailures, opts);
-    
-    // Assess risks of proposed fixes
-    const riskAssessment = this.assessRisks(proposedFixes, artifacts);
-
-    return {
-      analysis,
-      proposedFixes,
-      riskAssessment,
+  constructor(
+    config: Partial<AutoFixConfig> = {},
+    riskAssessment?: RiskAssessmentService
+  ) {
+    this.config = {
+      dryRun: false,
+      confidenceThreshold: 0.7,
+      maxRiskLevel: 3,
+      enabledCategories: [
+        'type_error',
+        'test_failure',
+        'contract_violation',
+        'lint_error',
+        'build_error'
+      ],
+      maxFixesPerRun: 10,
+      timeoutMs: 30000,
+      backupFiles: true,
+      generateReport: true,
+      ...config
     };
+
+    this.riskAssessment = riskAssessment || new RiskAssessmentService();
+    this.initializeDefaultStrategies();
   }
 
   /**
-   * Execute automated fixes for failure artifacts
+   * Execute automatic fixes for the given failure artifacts
    */
   async executeFixes(
-    failures: FailureArtifact[] | FailureArtifactCollection,
-    options: Partial<AutoFixOptions> = {}
+    failures: FailureArtifact[],
+    options: AutoFixOptions = {}
   ): Promise<FixResult> {
-    const artifacts = Array.isArray(failures) ? failures : failures.failures;
-    const opts = this.mergeOptions(options);
-
-    const result: FixResult = {
-      success: true,
-      appliedActions: [],
-      errors: [],
-      generatedFiles: [],
-      backupFiles: [],
-      recommendations: [],
-    };
-
-    if (opts.dryRun) {
-      console.log('🔍 Running in dry-run mode - no files will be modified');
-    }
-
+    const startTime = Date.now();
+    const effectiveConfig = { ...this.config, ...options };
+    
+    console.log(`🔧 Starting auto-fix process for ${failures.length} failures...`);
+    
     try {
-      // Create output directory
-      if (!fs.existsSync(opts.outputDir)) {
-        fs.mkdirSync(opts.outputDir, { recursive: true });
+      // 1. Filter and validate failures
+      const validFailures = this.filterValidFailures(failures, effectiveConfig);
+      console.log(`📋 Processing ${validFailures.length} valid failures`);
+      
+      // 2. Analyze failure patterns
+      const patterns = await this.analyzeFailurePatterns(validFailures);
+      console.log(`🔍 Identified ${patterns.length} failure patterns`);
+      
+      // 3. Select and prioritize strategies
+      const strategies = await this.selectStrategies(validFailures, patterns);
+      console.log(`⚙️  Selected ${strategies.length} fix strategies`);
+      
+      // 4. Execute fixes
+      const { appliedFixes, skippedFixes } = await this.applyFixes(
+        strategies,
+        validFailures,
+        effectiveConfig
+      );
+      
+      // 5. Generate summary and recommendations
+      const summary = this.generateSummary(validFailures, appliedFixes, skippedFixes);
+      const recommendations = await this.generateRecommendations(
+        validFailures,
+        appliedFixes,
+        patterns
+      );
+      
+      // 6. Generate report if requested
+      let reportPath: string | undefined;
+      if (effectiveConfig.generateReport) {
+        reportPath = await this.generateReport(
+          validFailures,
+          appliedFixes,
+          skippedFixes,
+          summary,
+          recommendations
+        );
       }
-
-      // Sort failures by severity and confidence
-      const sortedFailures = this.prioritizeFailures(artifacts);
-
-      let iterations = 0;
-      for (const failure of sortedFailures) {
-        if (iterations >= opts.maxIterations) {
-          result.recommendations.push(`Reached maximum iterations (${opts.maxIterations}). ${sortedFailures.length - iterations} failures remaining.`);
-          break;
-        }
-
-        try {
-          const fixResult = await this.fixSingleFailure(failure, opts);
-          
-          // Merge results
-          result.appliedActions.push(...fixResult.appliedActions);
-          result.generatedFiles.push(...fixResult.generatedFiles);
-          result.backupFiles.push(...fixResult.backupFiles);
-          result.recommendations.push(...fixResult.recommendations);
-          
-          if (!fixResult.success) {
-            result.errors.push(...fixResult.errors);
-            result.success = false;
-          }
-
-        } catch (error) {
-          result.errors.push(`Failed to fix ${failure.id}: ${error}`);
-          result.success = false;
-        }
-
-        iterations++;
-      }
-
-      // Generate summary
-      this.generateFixSummary(result, opts);
-
+      
+      const duration = Date.now() - startTime;
+      console.log(`✅ Auto-fix completed in ${duration}ms`);
+      console.log(`📊 Applied: ${appliedFixes.length}, Skipped: ${skippedFixes.length}`);
+      
+      return {
+        appliedFixes,
+        skippedFixes,
+        summary,
+        recommendations,
+        reportPath
+      };
+      
     } catch (error) {
-      result.errors.push(`Auto-fix execution failed: ${error}`);
-      result.success = false;
+      console.error('❌ Auto-fix process failed:', error);
+      throw error;
     }
-
-    // Store fix history
-    this.fixHistory.push(result);
-
-    return result;
   }
 
   /**
-   * Fix a single failure artifact
+   * Add a custom fix strategy
    */
-  private async fixSingleFailure(artifact: FailureArtifact, options: AutoFixOptions): Promise<FixResult> {
-    const strategy = this.strategies.get(artifact.category);
-    
-    if (!strategy) {
-      return {
-        success: false,
-        appliedActions: [],
-        errors: [`No strategy found for category: ${artifact.category}`],
-        generatedFiles: [],
-        backupFiles: [],
-        recommendations: [`Consider implementing a fix strategy for ${artifact.category} failures`],
-      };
+  addStrategy(strategy: FixStrategy): void {
+    if (!this.strategies.has(strategy.category)) {
+      this.strategies.set(strategy.category, []);
     }
-
-    // Check if severity is supported by strategy
-    if (!strategy.severity.includes(artifact.severity)) {
-      return {
-        success: false,
-        appliedActions: [],
-        errors: [],
-        generatedFiles: [],
-        backupFiles: [],
-        recommendations: [`${artifact.category} strategy does not support ${artifact.severity} severity`],
-      };
-    }
-
-    // Filter actions by confidence threshold
-    const viableActions = artifact.suggestedActions.filter(
-      action => action.confidence >= options.confidenceThreshold
-    );
-
-    if (viableActions.length === 0) {
-      return {
-        success: false,
-        appliedActions: [],
-        errors: [],
-        generatedFiles: [],
-        backupFiles: [],
-        recommendations: [`No actions meet confidence threshold of ${options.confidenceThreshold} for ${artifact.id}`],
-      };
-    }
-
-    console.log(`🔧 Fixing ${artifact.category} failure: ${artifact.title}`);
-    return await strategy.execute(artifact, options);
+    this.strategies.get(strategy.category)!.push(strategy);
   }
 
   /**
-   * Register default fix strategies
+   * Get available strategies for a category
    */
-  private registerDefaultStrategies(): void {
-    // Contract violation strategy
-    this.registerStrategy(new ContractViolationStrategy());
-    
-    // Specification mismatch strategy
-    this.registerStrategy(new SpecificationMismatchStrategy());
-    
-    // Test failure strategy
-    this.registerStrategy(new TestFailureStrategy());
-    
-    // Type error strategy
-    this.registerStrategy(new TypeErrorStrategy());
+  getStrategies(category: FailureCategory): FixStrategy[] {
+    return this.strategies.get(category) || [];
   }
 
-  private mergeOptions(options: Partial<AutoFixOptions>): AutoFixOptions {
+  /**
+   * Analyze failure patterns to identify common issues
+   */
+  async analyzeFailurePatterns(failures: FailureArtifact[]): Promise<FailurePattern[]> {
+    const patterns: FailurePattern[] = [];
+    const categoryGroups = this.groupByCategory(failures);
+    
+    for (const [category, categoryFailures] of categoryGroups) {
+      // Analyze common error messages
+      const errorMessages = categoryFailures
+        .map(f => f.evidence.errorMessage)
+        .filter(Boolean) as string[];
+      
+      const messagePatterns = this.findCommonPatterns(errorMessages);
+      
+      for (const pattern of messagePatterns) {
+        patterns.push({
+          pattern: pattern.text,
+          frequency: pattern.count,
+          categories: [category],
+          commonLocations: categoryFailures
+            .filter(f => f.location)
+            .map(f => f.location!),
+          suggestedStrategies: this.getSuggestedStrategies(category, pattern.text),
+          confidence: this.calculatePatternConfidence(pattern.count, categoryFailures.length)
+        });
+      }
+    }
+    
+    return patterns.sort((a, b) => b.frequency - a.frequency);
+  }
+
+  private initializeDefaultStrategies(): void {
+    // Type error strategies
+    this.strategies.set('type_error', [
+      new TypeErrorFixStrategy()
+    ]);
+    
+    // Test failure strategies
+    this.strategies.set('test_failure', [
+      new TestFailureFixStrategy()
+    ]);
+    
+    // Contract violation strategies
+    this.strategies.set('contract_violation', [
+      new ContractViolationFixStrategy()
+    ]);
+    
+    // Add more strategies as needed
+  }
+
+  private filterValidFailures(
+    failures: FailureArtifact[],
+    config: AutoFixConfig
+  ): FailureArtifact[] {
+    return failures.filter(failure => {
+      // Check if category is enabled
+      if (!config.enabledCategories.includes(failure.category)) {
+        return false;
+      }
+      
+      // Check if we have necessary information
+      if (!failure.location?.filePath) {
+        return false;
+      }
+      
+      // Check severity
+      if (failure.severity === 'info' && config.maxRiskLevel < 2) {
+        return false;
+      }
+      
+      return true;
+    });
+  }
+
+  private async selectStrategies(
+    failures: FailureArtifact[],
+    patterns: FailurePattern[]
+  ): Promise<{ strategy: FixStrategy; failures: FailureArtifact[] }[]> {
+    const strategyGroups: { strategy: FixStrategy; failures: FailureArtifact[] }[] = [];
+    
+    for (const failure of failures) {
+      const categoryStrategies = this.strategies.get(failure.category) || [];
+      
+      for (const strategy of categoryStrategies) {
+        if (await strategy.canApply(failure)) {
+          const existingGroup = strategyGroups.find(g => g.strategy.name === strategy.name);
+          if (existingGroup) {
+            existingGroup.failures.push(failure);
+          } else {
+            strategyGroups.push({
+              strategy,
+              failures: [failure]
+            });
+          }
+        }
+      }
+    }
+    
+    // Sort by strategy confidence and failure count
+    return strategyGroups.sort((a, b) => {
+      const scoreA = a.strategy.confidence * a.failures.length;
+      const scoreB = b.strategy.confidence * b.failures.length;
+      return scoreB - scoreA;
+    });
+  }
+
+  private async applyFixes(
+    strategyGroups: { strategy: FixStrategy; failures: FailureArtifact[] }[],
+    allFailures: FailureArtifact[],
+    config: AutoFixConfig
+  ): Promise<{ appliedFixes: AppliedFix[]; skippedFixes: SkippedFix[] }> {
+    const appliedFixes: AppliedFix[] = [];
+    const skippedFixes: SkippedFix[] = [];
+    const processedFiles = new Set<string>();
+    
+    let fixCount = 0;
+    
+    for (const { strategy, failures } of strategyGroups) {
+      if (fixCount >= config.maxFixesPerRun) {
+        skippedFixes.push({
+          strategy: strategy.name,
+          reason: 'Maximum fixes per run reached',
+          confidence: strategy.confidence,
+          riskLevel: strategy.riskLevel
+        });
+        continue;
+      }
+      
+      // Check strategy confidence
+      if (strategy.confidence < config.confidenceThreshold) {
+        skippedFixes.push({
+          strategy: strategy.name,
+          reason: 'Low confidence',
+          confidence: strategy.confidence,
+          riskLevel: strategy.riskLevel
+        });
+        continue;
+      }
+      
+      // Check risk level
+      if (strategy.riskLevel > config.maxRiskLevel) {
+        skippedFixes.push({
+          strategy: strategy.name,
+          reason: 'High risk level',
+          confidence: strategy.confidence,
+          riskLevel: strategy.riskLevel
+        });
+        continue;
+      }
+      
+      try {
+        console.log(`🔧 Applying strategy: ${strategy.name} to ${failures.length} failures`);
+        
+        const fix = await this.applySingleStrategy(
+          strategy,
+          failures,
+          config,
+          processedFiles
+        );
+        
+        if (fix) {
+          appliedFixes.push(fix);
+          fixCount++;
+          
+          // Track processed files to avoid conflicts
+          fix.filesModified.forEach(file => processedFiles.add(file));
+        }
+        
+      } catch (error) {
+        skippedFixes.push({
+          strategy: strategy.name,
+          reason: 'Execution failed',
+          error: error instanceof Error ? error.message : 'Unknown error',
+          confidence: strategy.confidence,
+          riskLevel: strategy.riskLevel
+        });
+      }
+    }
+    
+    return { appliedFixes, skippedFixes };
+  }
+
+  private async applySingleStrategy(
+    strategy: FixStrategy,
+    failures: FailureArtifact[],
+    config: AutoFixConfig,
+    processedFiles: Set<string>
+  ): Promise<AppliedFix | null> {
+    const startTime = Date.now();
+    const filesModified: string[] = [];
+    const errors: string[] = [];
+    const warnings: string[] = [];
+    const allActions: any[] = [];
+    
+    for (const failure of failures) {
+      // Skip if file already processed
+      if (failure.location?.filePath && processedFiles.has(failure.location.filePath)) {
+        warnings.push(`File already processed: ${failure.location.filePath}`);
+        continue;
+      }
+      
+      const actions = await strategy.generateFix(failure);
+      allActions.push(...actions);
+      
+      for (const action of actions) {
+        try {
+          if (action.filePath && !config.dryRun) {
+            // Backup file if requested
+            if (config.backupFiles) {
+              await this.backupFile(action.filePath);
+            }
+            
+            // Apply the fix
+            await this.applyAction(action);
+            
+            if (action.filePath && !filesModified.includes(action.filePath)) {
+              filesModified.push(action.filePath);
+            }
+          }
+        } catch (error) {
+          errors.push(`Failed to apply action: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      }
+    }
+    
+    const duration = Date.now() - startTime;
+    
     return {
-      dryRun: options.dryRun ?? false,
-      maxIterations: options.maxIterations ?? 10,
-      confidenceThreshold: options.confidenceThreshold ?? 0.7,
-      backupOriginals: options.backupOriginals ?? true,
-      outputDir: options.outputDir ?? '.ae/auto-fix',
-      ...options,
+      strategy: strategy.name,
+      actions: allActions,
+      success: errors.length === 0,
+      filesModified,
+      errors,
+      warnings,
+      metadata: {
+        timestamp: new Date().toISOString(),
+        duration,
+        confidence: strategy.confidence,
+        riskLevel: strategy.riskLevel
+      }
     };
   }
 
-  private groupFailures(failures: FailureArtifact[]): Map<FailureCategory, FailureArtifact[]> {
+  private async applyAction(action: any): Promise<void> {
+    if (action.type === 'code_change' && action.codeChange && action.filePath) {
+      const fs = await import('fs');
+      const content = await fs.promises.readFile(action.filePath, 'utf-8');
+      const lines = content.split('\n');
+      
+      // Replace the specified lines
+      const startIdx = action.codeChange.startLine - 1;
+      const endIdx = action.codeChange.endLine;
+      
+      lines.splice(startIdx, endIdx - startIdx, action.codeChange.newCode);
+      
+      await fs.promises.writeFile(action.filePath, lines.join('\n'));
+    }
+    
+    // Handle other action types as needed
+  }
+
+  private async backupFile(filePath: string): Promise<void> {
+    const fs = await import('fs');
+    const path = await import('path');
+    
+    const backupPath = `${filePath}.backup.${Date.now()}`;
+    await fs.promises.copyFile(filePath, backupPath);
+  }
+
+  private groupByCategory(failures: FailureArtifact[]): Map<FailureCategory, FailureArtifact[]> {
     const groups = new Map<FailureCategory, FailureArtifact[]>();
     
     for (const failure of failures) {
-      const category = failure.category;
-      if (!groups.has(category)) {
-        groups.set(category, []);
+      if (!groups.has(failure.category)) {
+        groups.set(failure.category, []);
       }
-      groups.get(category)!.push(failure);
+      groups.get(failure.category)!.push(failure);
     }
     
     return groups;
   }
 
-  private analyzePatterns(groupedFailures: Map<FailureCategory, FailureArtifact[]>): string[] {
-    const patterns: string[] = [];
+  private findCommonPatterns(messages: string[]): { text: string; count: number }[] {
+    const patterns: Map<string, number> = new Map();
     
-    for (const [category, failures] of groupedFailures) {
-      if (failures.length > 3) {
-        patterns.push(`High frequency of ${category} failures (${failures.length} occurrences)`);
-      }
+    for (const message of messages) {
+      // Extract common error patterns
+      const normalizedMessage = message.replace(/['"`][^'"`]*['"`]/g, 'STRING')
+                                      .replace(/\d+/g, 'NUMBER')
+                                      .replace(/\w+\(\)/g, 'FUNCTION()');
       
-      // Analyze common files/locations
-      const locations = failures.map(f => f.location?.file).filter(Boolean);
-      const locationCounts = new Map<string, number>();
-      
-      for (const loc of locations) {
-        locationCounts.set(loc!, (locationCounts.get(loc!) || 0) + 1);
-      }
-      
-      for (const [file, count] of locationCounts) {
-        if (count > 2) {
-          patterns.push(`Multiple ${category} failures in ${file} (${count} occurrences)`);
-        }
-      }
+      patterns.set(normalizedMessage, (patterns.get(normalizedMessage) || 0) + 1);
     }
     
-    return patterns;
+    return Array.from(patterns.entries())
+      .map(([text, count]) => ({ text, count }))
+      .filter(p => p.count > 1)
+      .sort((a, b) => b.count - a.count);
   }
 
-  private generateAnalysis(
-    groupedFailures: Map<FailureCategory, FailureArtifact[]>,
-    patterns: string[]
-  ): string {
-    const totalFailures = Array.from(groupedFailures.values()).reduce((sum, arr) => sum + arr.length, 0);
-    
-    let analysis = `# Failure Analysis Report\n\n`;
-    analysis += `**Total Failures**: ${totalFailures}\n\n`;
-    
-    analysis += `## Failure Distribution\n`;
-    for (const [category, failures] of groupedFailures) {
-      const percentage = ((failures.length / totalFailures) * 100).toFixed(1);
-      analysis += `- **${category}**: ${failures.length} (${percentage}%)\n`;
-    }
-    
-    if (patterns.length > 0) {
-      analysis += `\n## Detected Patterns\n`;
-      for (const pattern of patterns) {
-        analysis += `- ${pattern}\n`;
-      }
-    }
-    
-    return analysis;
+  private getSuggestedStrategies(category: FailureCategory, pattern: string): string[] {
+    const strategies = this.strategies.get(category) || [];
+    return strategies.map(s => s.name);
   }
 
-  private proposeFixes(
-    groupedFailures: Map<FailureCategory, FailureArtifact[]>,
-    options: AutoFixOptions
-  ): RepairAction[] {
-    const allActions: RepairAction[] = [];
+  private calculatePatternConfidence(occurrences: number, total: number): number {
+    return Math.min(occurrences / total, 0.9);
+  }
+
+  private generateSummary(
+    failures: FailureArtifact[],
+    appliedFixes: AppliedFix[],
+    skippedFixes: SkippedFix[]
+  ) {
+    const filesModified = new Set<string>();
+    const errors: string[] = [];
+    const warnings: string[] = [];
     
-    for (const failures of groupedFailures.values()) {
-      for (const failure of failures) {
-        const viableActions = failure.suggestedActions.filter(
-          action => action.confidence >= options.confidenceThreshold
+    for (const fix of appliedFixes) {
+      fix.filesModified.forEach(file => filesModified.add(file));
+      errors.push(...fix.errors);
+      warnings.push(...fix.warnings);
+    }
+    
+    return {
+      totalFailures: failures.length,
+      fixesApplied: appliedFixes.length,
+      fixesSkipped: skippedFixes.length,
+      filesModified: filesModified.size,
+      success: errors.length === 0,
+      errors,
+      warnings
+    };
+  }
+
+  private async generateRecommendations(
+    failures: FailureArtifact[],
+    appliedFixes: AppliedFix[],
+    patterns: FailurePattern[]
+  ): Promise<string[]> {
+    const recommendations: string[] = [];
+    
+    // Pattern-based recommendations
+    for (const pattern of patterns.slice(0, 3)) {
+      if (pattern.frequency > 2) {
+        recommendations.push(
+          `Consider reviewing the recurring pattern: "${pattern.pattern}" (${pattern.frequency} occurrences)`
         );
-        allActions.push(...viableActions);
       }
     }
     
-    // Deduplicate and sort by confidence
-    const uniqueActions = this.deduplicateActions(allActions);
-    return uniqueActions.sort((a, b) => b.confidence - a.confidence);
-  }
-
-  private assessRisks(proposedFixes: RepairAction[], artifacts: FailureArtifact[]): string {
-    const highRiskActions = proposedFixes.filter(action => 
-      action.type === 'spec_update' || action.confidence < 0.8
-    );
-    
-    const criticalFailures = artifacts.filter(a => a.severity === 'critical').length;
-    
-    let assessment = `# Risk Assessment\n\n`;
-    
-    if (highRiskActions.length > 0) {
-      assessment += `⚠️ **High Risk Actions**: ${highRiskActions.length}\n`;
-      assessment += `- Specification updates may require manual review\n`;
-      assessment += `- Actions with low confidence may introduce new issues\n\n`;
-    }
-    
-    if (criticalFailures > 0) {
-      assessment += `🚨 **Critical Failures**: ${criticalFailures}\n`;
-      assessment += `- Immediate attention required\n`;
-      assessment += `- Consider manual intervention\n\n`;
-    }
-    
-    assessment += `**Recommendation**: Review all proposed fixes before applying in production.\n`;
-    
-    return assessment;
-  }
-
-  private prioritizeFailures(failures: FailureArtifact[]): FailureArtifact[] {
-    const severityOrder = { critical: 4, major: 3, minor: 2, info: 1 };
-    
-    return failures.sort((a, b) => {
-      // Sort by severity first
-      const severityDiff = severityOrder[b.severity] - severityOrder[a.severity];
-      if (severityDiff !== 0) return severityDiff;
-      
-      // Then by highest confidence in suggested actions
-      const aMaxConfidence = Math.max(...a.suggestedActions.map(action => action.confidence));
-      const bMaxConfidence = Math.max(...b.suggestedActions.map(action => action.confidence));
-      
-      return bMaxConfidence - aMaxConfidence;
-    });
-  }
-
-  private deduplicateActions(actions: RepairAction[]): RepairAction[] {
-    const seen = new Set<string>();
-    const unique: RepairAction[] = [];
-    
-    for (const action of actions) {
-      const key = `${action.type}:${action.targetFile}:${action.description}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        unique.push(action);
+    // Category-based recommendations
+    const categoryGroups = this.groupByCategory(failures);
+    for (const [category, categoryFailures] of categoryGroups) {
+      if (categoryFailures.length > 3) {
+        recommendations.push(
+          `High frequency of ${category} errors (${categoryFailures.length}). Consider improving ${category} practices.`
+        );
       }
     }
     
-    return unique;
-  }
-
-  private generateFixSummary(result: FixResult, options: AutoFixOptions): void {
-    const summaryPath = path.join(options.outputDir, 'fix-summary.md');
-    
-    let summary = `# Auto-Fix Summary\n\n`;
-    summary += `**Generated**: ${new Date().toISOString()}\n`;
-    summary += `**Mode**: ${options.dryRun ? 'Dry Run' : 'Execution'}\n`;
-    summary += `**Success**: ${result.success ? '✅' : '❌'}\n\n`;
-    
-    summary += `## Applied Actions\n`;
-    if (result.appliedActions.length === 0) {
-      summary += `No actions were applied.\n\n`;
-    } else {
-      for (const action of result.appliedActions) {
-        summary += `- **${action.type}**: ${action.description}\n`;
-        if (action.targetFile) {
-          summary += `  - File: ${action.targetFile}\n`;
-        }
-        summary += `  - Confidence: ${(action.confidence * 100).toFixed(1)}%\n`;
-      }
-      summary += `\n`;
+    // Success rate recommendations
+    const successRate = appliedFixes.filter(f => f.success).length / appliedFixes.length;
+    if (successRate < 0.8) {
+      recommendations.push(
+        'Low fix success rate. Consider manual review of failed fixes.'
+      );
     }
     
-    if (result.errors.length > 0) {
-      summary += `## Errors\n`;
-      for (const error of result.errors) {
-        summary += `- ${error}\n`;
-      }
-      summary += `\n`;
-    }
+    return recommendations;
+  }
+
+  private async generateReport(
+    failures: FailureArtifact[],
+    appliedFixes: AppliedFix[],
+    skippedFixes: SkippedFix[],
+    summary: any,
+    recommendations: string[]
+  ): Promise<string> {
+    const reportPath = `cegis-report-${Date.now()}.json`;
     
-    if (result.recommendations.length > 0) {
-      summary += `## Recommendations\n`;
-      for (const rec of result.recommendations) {
-        summary += `- ${rec}\n`;
-      }
-      summary += `\n`;
-    }
-    
-    if (!options.dryRun) {
-      fs.writeFileSync(summaryPath, summary);
-      console.log(`📝 Fix summary saved to: ${summaryPath}`);
-    } else {
-      console.log('📝 Fix Summary (Dry Run):\n' + summary);
-    }
-  }
-
-  /**
-   * Get fix history
-   */
-  getFixHistory(): FixResult[] {
-    return [...this.fixHistory];
-  }
-
-  /**
-   * Clear fix history
-   */
-  clearFixHistory(): void {
-    this.fixHistory = [];
-  }
-}
-
-// Default strategy implementations
-class ContractViolationStrategy implements FixStrategy {
-  category: FailureCategory = 'contract_violation';
-  severity: FailureSeverity[] = ['critical', 'major'];
-  minConfidence = 0.8;
-
-  async execute(artifact: FailureArtifact, options: AutoFixOptions): Promise<FixResult> {
-    const result: FixResult = {
-      success: true,
-      appliedActions: [],
-      errors: [],
-      generatedFiles: [],
-      backupFiles: [],
-      recommendations: [],
+    const report = {
+      timestamp: new Date().toISOString(),
+      summary,
+      failures: failures.length,
+      appliedFixes: appliedFixes.map(f => ({
+        strategy: f.strategy,
+        success: f.success,
+        filesModified: f.filesModified,
+        metadata: f.metadata
+      })),
+      skippedFixes,
+      recommendations,
+      patterns: await this.analyzeFailurePatterns(failures)
     };
-
-    // For contract violations, prioritize spec updates
-    const specAction = artifact.suggestedActions.find(a => a.type === 'spec_update');
     
-    if (specAction && specAction.confidence >= this.minConfidence) {
-      if (!options.dryRun) {
-        // In a real implementation, this would update specification files
-        result.recommendations.push('Contract violation detected - consider updating specification');
-        result.recommendations.push(`Proposed change: ${specAction.proposedChange || 'See description'}`);
-      }
-      
-      result.appliedActions.push(specAction);
-      result.success = true;
-    } else {
-      result.recommendations.push('Manual review required for contract violation');
-      result.success = false;
-    }
-
-    return result;
-  }
-}
-
-class SpecificationMismatchStrategy implements FixStrategy {
-  category: FailureCategory = 'specification_mismatch';
-  severity: FailureSeverity[] = ['critical', 'major', 'minor'];
-  minConfidence = 0.7;
-
-  async execute(artifact: FailureArtifact, options: AutoFixOptions): Promise<FixResult> {
-    return {
-      success: false,
-      appliedActions: [],
-      errors: [],
-      generatedFiles: [],
-      backupFiles: [],
-      recommendations: ['Specification mismatch requires manual analysis'],
-    };
-  }
-}
-
-class TestFailureStrategy implements FixStrategy {
-  category: FailureCategory = 'test_failure';
-  severity: FailureSeverity[] = ['major', 'minor'];
-  minConfidence = 0.6;
-
-  async execute(artifact: FailureArtifact, options: AutoFixOptions): Promise<FixResult> {
-    return {
-      success: false,
-      appliedActions: [],
-      errors: [],
-      generatedFiles: [],
-      backupFiles: [],
-      recommendations: ['Test failure analysis - consider test update or code fix'],
-    };
-  }
-}
-
-class TypeErrorStrategy implements FixStrategy {
-  category: FailureCategory = 'type_error';
-  severity: FailureSeverity[] = ['major', 'minor'];
-  minConfidence = 0.8;
-
-  async execute(artifact: FailureArtifact, options: AutoFixOptions): Promise<FixResult> {
-    return {
-      success: false,
-      appliedActions: [],
-      errors: [],
-      generatedFiles: [],
-      backupFiles: [],
-      recommendations: ['Type error detected - TypeScript compilation required'],
-    };
+    const fs = await import('fs');
+    await fs.promises.writeFile(reportPath, JSON.stringify(report, null, 2));
+    
+    return reportPath;
   }
 }
