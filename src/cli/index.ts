@@ -597,6 +597,10 @@ program.addCommand(createCircuitBreakerCommand());
 // Security commands
 program.addCommand(createSecurityCommand());
 
+// Quality gates commands
+import { createQualityCommand } from './quality-cli.js';
+program.addCommand(createQualityCommand());
+
 program.parse();
 
 export { AEFrameworkCLI };
