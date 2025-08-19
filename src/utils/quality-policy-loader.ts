@@ -120,8 +120,7 @@ export const loadQualityPolicy = (environment?: string): QualityPolicy => {
  * @returns Quality gate configuration
  */
 export const getQualityGate = (gateType: string, environment?: string): QualityGate => {
-  const activeProfile = getQualityProfile(environment);
-  const policy = loadQualityPolicy(activeProfile);
+  const policy = loadQualityPolicy(environment);
   const gate = policy.quality[gateType];
   
   if (!gate) {
@@ -139,8 +138,7 @@ export const getQualityGate = (gateType: string, environment?: string): QualityG
  * @returns True if the gate should be enforced
  */
 export const shouldEnforceGate = (gateType: string, currentPhase: string, environment?: string): boolean => {
-  const activeProfile = getQualityProfile(environment);
-  const gate = getQualityGate(gateType, activeProfile);
+  const gate = getQualityGate(gateType, environment);
   
   // Check if enforcement is disabled
   if (gate.enforcement === 'off') {
@@ -171,8 +169,7 @@ export const shouldEnforceGate = (gateType: string, currentPhase: string, enviro
  * @returns The threshold value
  */
 export const getThreshold = (gateType: string, metric: string, environment?: string): number | string | undefined => {
-  const activeProfile = getQualityProfile(environment);
-  const gate = getQualityGate(gateType, activeProfile);
+  const gate = getQualityGate(gateType, environment);
   return gate.thresholds[metric as keyof QualityThresholds];
 };
 
@@ -183,8 +180,7 @@ export const getThreshold = (gateType: string, metric: string, environment?: str
  * @returns Array of command line arguments
  */
 export const getThresholdArgs = (gateType: string, environment?: string): string[] => {
-  const activeProfile = getQualityProfile(environment);
-  const gate = getQualityGate(gateType, activeProfile);
+  const gate = getQualityGate(gateType, environment);
   const args: string[] = [];
   
   Object.entries(gate.thresholds).forEach(([key, value]) => {
@@ -210,8 +206,7 @@ export const validateQualityResults = (
   results: Record<string, number>, 
   environment?: string
 ): { passed: boolean; failures: string[]; warnings: string[] } => {
-  const activeProfile = getQualityProfile(environment);
-  const gate = getQualityGate(gateType, activeProfile);
+  const gate = getQualityGate(gateType, environment);
   const failures: string[] = [];
   const warnings: string[] = [];
   
