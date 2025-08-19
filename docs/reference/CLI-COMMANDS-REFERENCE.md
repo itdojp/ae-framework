@@ -107,6 +107,163 @@ ae-framework natural-language --identify-gaps --sources="current-requirements.md
   • Clarify ambiguous requirements with stakeholders
 ```
 
+## Phase 2.1: CEGIS Auto-Fix System
+
+### cegis コマンド
+Counter-Example Guided Inductive Synthesis による自動コード修復
+
+```bash
+# 基本的な修復実行
+ae-framework cegis fix --files src/ --patterns="*.ts,*.js"
+
+# 違反分析
+ae-framework cegis analyze --violations violations.json
+
+# 修復候補生成
+ae-framework cegis generate-candidates --violations violations.json --max-candidates 5
+
+# システム状態確認
+ae-framework cegis status
+
+# 修復履歴表示
+ae-framework cegis history --limit 10
+
+# 修復統計
+ae-framework cegis stats --format table
+```
+
+**オプション:**
+- `--files <paths>`: 対象ファイル/ディレクトリ
+- `--patterns <patterns>`: ファイルパターン（カンマ区切り）
+- `--violations <file>`: 違反定義ファイル
+- `--max-candidates <n>`: 修復候補の最大数
+- `--timeout <ms>`: 修復タイムアウト
+- `--verify-fix`: 修復後の検証実行
+
+**出力例:**
+```
+🔧 CEGIS Auto-Fix System - Analyzing 15 files
+📊 Analysis Results:
+  • Violations Found: 8
+  • Fix Candidates: 12
+  • Successfully Applied: 7
+  • Verification Passed: 6
+💡 Recommendations:
+  • Review remaining violation: src/utils/validation.ts:42
+  • Manual intervention required for complex cases
+```
+
+## Phase 2.2: Runtime Conformance Verification
+
+### conformance コマンド
+リアルタイム適合性検証システム
+
+```bash
+# 基本的な検証実行
+ae-framework conformance verify --rules rules.json
+
+# メトリクス収集と表示
+ae-framework conformance metrics --format json --output metrics.json
+
+# 規則管理
+ae-framework conformance rules --list
+ae-framework conformance rules --validate rules.json --output validation-report.json
+
+# システム設定
+ae-framework conformance config --show
+ae-framework conformance config --create-sample --output sample-config.json
+
+# システム状態監視
+ae-framework conformance status --detailed
+
+# サンプル生成
+ae-framework conformance sample --rules --output sample-rules.json
+```
+
+**オプション:**
+- `--rules <file>`: 規則定義ファイル
+- `--config <file>`: 設定ファイル
+- `--output-dir <dir>`: 出力ディレクトリ
+- `--collect-metrics`: メトリクス収集有効化
+- `--sample-rate <rate>`: サンプリング率 (0.0-1.0)
+- `--timeout <ms>`: 実行タイムアウト
+- `--live`: リアルタイム監視モード
+
+**出力例:**
+```
+🛡️ Runtime Conformance Verification - Processing 25 rules
+📊 Verification Results:
+  • Rules Executed: 25
+  • Violations Detected: 3
+  • Success Rate: 88%
+  • Average Response Time: 245ms
+⚠️  Violations:
+  • API rate limit exceeded: /api/users (severity: major)
+  • Data validation failed: user.email (severity: minor)
+💡 Recommendations:
+  • Implement rate limiting for /api/users endpoint
+  • Add email validation in user input form
+```
+
+## Phase 2.3: Integration Testing System
+
+### integration コマンド
+包括的統合テストとエンドツーエンドテストのオーケストレーション
+
+```bash
+# テスト実行
+ae-framework integration run --suites test-suites.json --environment test
+ae-framework integration run --tests tests.json --parallel --max-concurrency 4
+
+# テスト発見
+ae-framework integration discover --patterns "./tests/**/*.json" --type all
+ae-framework integration discover --patterns "./e2e/**/*.json" --type tests --output discovered-tests.json
+
+# リソース一覧
+ae-framework integration list --type environments
+ae-framework integration list --type runners --format table
+
+# サンプル生成
+ae-framework integration generate --type test --test-type e2e --name "Login Test" --output login-test.json
+ae-framework integration generate --type suite --name "Auth Suite" --output auth-suite.json
+
+# システム状態監視
+ae-framework integration status --watch --refresh 5
+
+# レポート管理
+ae-framework integration reports --list
+ae-framework integration reports --clean --days 7
+```
+
+**オプション:**
+- `--tests <files>`: テストファイル（カンマ区切り）
+- `--suites <files>`: スイートファイル（カンマ区切り）
+- `--environment <name>`: 実行環境名
+- `--categories <list>`: カテゴリフィルター
+- `--tags <list>`: タグフィルター
+- `--parallel`: 並列実行有効化
+- `--max-concurrency <n>`: 最大並行数
+- `--timeout <ms>`: 実行タイムアウト
+- `--output-dir <dir>`: 結果出力ディレクトリ
+- `--report-format <format>`: レポート形式（json,html）
+
+**出力例:**
+```
+🧪 Integration Testing System - Executing 12 test suites
+📊 Execution Results:
+  • Test Suites: 12 (8 passed, 4 failed)
+  • Total Tests: 156 (142 passed, 14 failed)
+  • Execution Time: 8min 32sec
+  • Pass Rate: 91%
+📋 Failed Tests:
+  • auth-suite: Password reset functionality (timeout)
+  • api-suite: Rate limiting validation (assertion failed)
+💡 Recommendations:
+  • Increase timeout for password reset tests
+  • Review API rate limiting implementation
+  • Generate detailed HTML report for stakeholder review
+```
+
 ## Phase 3: User Stories Creation
 
 ### user-stories コマンド
