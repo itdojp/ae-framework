@@ -1,0 +1,61 @@
+[
+  {
+    "id": "6eb2e9fe-c96c-4d3d-a702-9825d84db399",
+    "name": "Required Email Field",
+    "description": "Ensures email field is present and valid",
+    "category": "data_validation",
+    "severity": "major",
+    "enabled": true,
+    "condition": {
+      "expression": "required && email",
+      "variables": [
+        "data.email"
+      ],
+      "constraints": {}
+    },
+    "actions": [
+      "log_violation"
+    ],
+    "metadata": {
+      "createdAt": "2025-08-19T19:47:17.544Z",
+      "updatedAt": "2025-08-19T19:47:17.544Z",
+      "version": "1.0.0",
+      "tags": [
+        "email",
+        "required",
+        "sample"
+      ]
+    }
+  },
+  {
+    "id": "1eeca732-8927-495a-b9f5-17235ca84d24",
+    "name": "API Response Time",
+    "description": "Ensures API responses are within acceptable time limits",
+    "category": "api_contract",
+    "severity": "minor",
+    "enabled": true,
+    "condition": {
+      "expression": "timeout",
+      "variables": [
+        "data.response.time"
+      ],
+      "constraints": {
+        "maxMs": 1000
+      }
+    },
+    "actions": [
+      "log_violation",
+      "metric_increment"
+    ],
+    "metadata": {
+      "createdAt": "2025-08-19T19:47:17.544Z",
+      "updatedAt": "2025-08-19T19:47:17.544Z",
+      "version": "1.0.0",
+      "tags": [
+        "performance",
+        "api",
+        "sample"
+      ]
+    }
+  }
+]
