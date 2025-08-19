@@ -177,7 +177,7 @@ export async function securityHeadersPlugin(
     }
   });
 
-  // Register the hook for all routes
+  // Register the hook for all routes using onRequest
   fastify.addHook('onRequest', async (request, reply) => {
     await securityHeadersHook(request, reply, finalOptions);
   });
@@ -191,6 +191,9 @@ export const securityConfigurations = {
     enabled: true,
     contentSecurityPolicy: {
       enabled: true,
+      // NOTE: Development CSP allows 'unsafe-inline' and 'unsafe-eval' for convenience.
+      // In production, consider using nonces or hashes instead to maintain better security.
+      // Example: "script-src 'self' 'nonce-<RANDOM_NONCE>'; style-src 'self' 'nonce-<RANDOM_NONCE>'"
       directives: "default-src 'self' 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' ws: wss:; frame-ancestors 'none';"
     },
     strictTransportSecurity: {

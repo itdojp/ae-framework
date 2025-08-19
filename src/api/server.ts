@@ -8,8 +8,11 @@ import { securityHeadersPlugin, getSecurityConfiguration } from "./middleware/se
 export async function createServer(): Promise<FastifyInstance> {
   const app = Fastify({ logger: true });
 
-  // Register security headers middleware
-  await app.register(securityHeadersPlugin, getSecurityConfiguration());
+  // Register security headers middleware with development config for testing
+  const securityConfig = process.env.NODE_ENV === 'test' 
+    ? { enabled: true } // Use defaults with everything enabled for testing
+    : getSecurityConfiguration();
+  await app.register(securityHeadersPlugin, securityConfig);
 
   // Health check endpoint
   app.get("/health", async (req, reply) => {
@@ -32,6 +35,7 @@ export async function createServer(): Promise<FastifyInstance> {
   return app;
 }
 
-// Export a configured server instance for backward compatibility
-const app = await createServer();
-export default app;
+// Export a function to get a configured server instance for backward compatibility
+export default async function getServer() {
+  return createServer();
+}
