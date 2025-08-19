@@ -120,7 +120,9 @@ test_application() {
     # Test that the application can start (dry run)
     echo "Testing application startup..."
     
-    local container_id=$(docker run -d --rm -p 3001:3000 "$FULL_IMAGE_NAME" 2>/dev/null || echo "failed")
+    # Use random available port to avoid conflicts
+    local HOST_PORT=$(python3 -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()" 2>/dev/null || echo "3001")
+    local container_id=$(docker run -d --rm -p "${HOST_PORT}:3000" "$FULL_IMAGE_NAME" 2>/dev/null || echo "failed")
     
     if [ "$container_id" = "failed" ]; then
         echo "❌ Application failed to start"
@@ -133,7 +135,7 @@ test_application() {
     sleep 5
     
     # Test health endpoint if available
-    if curl -f http://localhost:3001/health >/dev/null 2>&1; then
+    if curl -f http://localhost:${HOST_PORT}/health >/dev/null 2>&1; then
         echo "✅ Health check passed"
     else
         echo "ℹ️  Health endpoint not available or not responding"

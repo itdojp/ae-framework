@@ -179,11 +179,10 @@ describe('CI/CD Tag Trigger Configuration - Phase 1.3', () => {
         const content = readFileSync(workflowFile, 'utf8');
         
         // Check for insecure patterns
-        expect(content, `${path.basename(workflowFile)} should not use wildcard-only tags`)
-          .not.toMatch(/tags:\s*\[\s*'\*'\s*\]/);
-        
-        expect(content, `${path.basename(workflowFile)} should not use overly broad patterns`)
-          .not.toMatch(/tags:\s*\[\s*'\*'\s*\]/);
+        expect(
+          content,
+          `${path.basename(workflowFile)} should not use wildcard-only or overly broad tag patterns`
+        ).not.toMatch(/tags:\s*\[\s*'\*'\s*\]/);
       });
     });
 

@@ -22,7 +22,7 @@ check_workflow_tag_triggers() {
     
     # Check if workflow has 'on.push.tags' configuration
     local has_tag_trigger=false
-    if grep -q "tags:" "$workflow_file" && grep -A5 "tags:" "$workflow_file" | grep -q "v\*"; then
+    if grep -q "tags:" "$workflow_file" && grep -A5 "tags:" "$workflow_file" | grep -E -q "[\"']?v\*[\"']?"; then
         has_tag_trigger=true
     fi
     
@@ -92,7 +92,7 @@ validate_tag_patterns() {
         echo "   Tag patterns: $tag_lines"
         
         # Check for common mistakes
-        if echo "$tag_lines" | grep -q "tags: v\*"; then
+        if echo "$tag_lines" | grep -Eq "tags:\s*v\*($|\s*)"; then
             echo "   ❌ ERROR: Invalid syntax 'tags: v*' - should be array format!"
             ERRORS=$((ERRORS + 1))
         fi

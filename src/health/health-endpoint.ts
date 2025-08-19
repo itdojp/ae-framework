@@ -5,6 +5,21 @@
 
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { telemetryService } from '../telemetry/telemetry-service.js';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+// Read version from package.json at startup
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const packageJsonPath = join(__dirname, '../../package.json');
+let APP_VERSION = '1.0.0';
+try {
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
+  APP_VERSION = packageJson.version || '1.0.0';
+} catch (error) {
+  console.warn('Failed to read version from package.json, using default:', APP_VERSION);
+}
 
 export interface HealthStatus {
   status: 'healthy' | 'unhealthy' | 'degraded';
@@ -108,7 +123,7 @@ async function getHealthStatus(): Promise<HealthStatus> {
     status: overallStatus,
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    version: process.env.npm_package_version || '1.0.0',
+    version: APP_VERSION,
     environment: process.env.NODE_ENV || 'development',
     checks: {
       memory: {
