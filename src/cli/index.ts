@@ -5,6 +5,7 @@ import chalk from 'chalk';
 import { PhaseValidator } from './validators/PhaseValidator.js';
 import { createSpecCommand } from './spec-cli.js';
 import { createCodegenCommand } from './codegen-cli.js';
+import { CEGISCli } from './cegis-cli.js';
 import { GuardRunner } from './guards/GuardRunner.js';
 import { ConfigLoader } from './config/ConfigLoader.js';
 // import { MetricsCollector } from './metrics/MetricsCollector.js';  // TODO: Enable when metrics tracking is implemented
@@ -585,6 +586,10 @@ program.addCommand(createSpecCommand());
 
 // Add codegen commands
 program.addCommand(createCodegenCommand());
+
+// Add CEGIS auto-fix commands
+const cegisCli = new CEGISCli();
+program.addCommand(cegisCli.createCommand());
 
 // Add enhanced state management commands
 import { createEnhancedStateCommand } from './enhanced-state-cli.js';
