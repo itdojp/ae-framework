@@ -128,24 +128,28 @@ export class BackoffStrategy {
   }
 
   /**
-   * Execute operation with timeout
+   * Execute operation with timeout using AbortController for better resource management
    */
   private async executeWithTimeout<T>(
-    operation: () => Promise<T>,
+    operation: (signal?: AbortSignal) => Promise<T>,
     timeoutMs: number
   ): Promise<T> {
+    const controller = new AbortController();
+    let timeoutId: NodeJS.Timeout | null = null;
+    
     return new Promise((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
+      timeoutId = setTimeout(() => {
+        controller.abort();
         reject(new Error(`Operation timed out after ${timeoutMs}ms`));
       }, timeoutMs);
 
-      operation()
+      operation(controller.signal)
         .then(result => {
-          clearTimeout(timeoutId);
+          if (timeoutId) clearTimeout(timeoutId);
           resolve(result);
         })
         .catch(error => {
-          clearTimeout(timeoutId);
+          if (timeoutId) clearTimeout(timeoutId);
           reject(error);
         });
     });

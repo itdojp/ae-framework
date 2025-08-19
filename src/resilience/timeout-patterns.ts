@@ -42,45 +42,34 @@ export class TimeoutWrapper {
     operation: () => Promise<T>,
     operationName: string = 'operation'
   ): Promise<T> {
-    return new Promise<T>((resolve, reject) => {
-      const startTime = Date.now();
-      let completed = false;
+    const startTime = Date.now();
 
-      // Set up timeout
+    const timeoutPromise = new Promise<never>((_, reject) => {
       const timeoutId = setTimeout(() => {
-        if (!completed) {
-          completed = true;
-          const duration = Date.now() - startTime;
-          this.options.onTimeout?.(duration);
-          
-          // Abort if AbortController provided
-          if (this.options.abortController) {
-            this.options.abortController.abort();
-          }
-          
-          const message = this.options.timeoutMessage || 
-            `Operation '${operationName}' timed out after ${this.options.timeoutMs}ms`;
-          reject(new TimeoutError(message, this.options.timeoutMs, duration));
+        const duration = Date.now() - startTime;
+        this.options.onTimeout?.(duration);
+        if (this.options.abortController) {
+          this.options.abortController.abort();
         }
+        const message = this.options.timeoutMessage ||
+          `Operation '${operationName}' timed out after ${this.options.timeoutMs}ms`;
+        reject(new TimeoutError(message, this.options.timeoutMs, duration));
       }, this.options.timeoutMs);
-
-      // Execute operation
-      operation()
-        .then(result => {
-          if (!completed) {
-            completed = true;
-            clearTimeout(timeoutId);
-            resolve(result);
-          }
-        })
-        .catch(error => {
-          if (!completed) {
-            completed = true;
-            clearTimeout(timeoutId);
-            reject(error);
-          }
-        });
+      // Attach timeout ID for cleanup
+      (timeoutPromise as any).timeoutId = timeoutId;
     });
+
+    const opPromise = operation();
+
+    // When operation settles, clear the timeout
+    opPromise.finally(() => {
+      const timeoutId = (timeoutPromise as any).timeoutId;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    });
+
+    return Promise.race([opPromise, timeoutPromise]);
   }
 
   private validateOptions(): void {
