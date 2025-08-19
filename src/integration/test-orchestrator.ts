@@ -141,7 +141,10 @@ export class IntegrationTestOrchestrator extends EventEmitter {
         error: error instanceof Error ? error.message : String(error),
         stackTrace: error instanceof Error ? error.stack : undefined,
         logs: [`Test execution failed: ${error}`],
-        metrics: {}
+        metrics: {
+          networkCalls: 0,
+          databaseQueries: 0
+        }
       };
 
       this.emit('test_failed', { testId, error: errorResult.error });
@@ -377,7 +380,10 @@ export class IntegrationTestOrchestrator extends EventEmitter {
           steps: [],
           error: result.reason?.message || 'Unknown error',
           logs: ['Parallel execution failed'],
-          metrics: {}
+          metrics: {
+            networkCalls: 0,
+            databaseQueries: 0
+          }
         });
       }
     }
@@ -423,7 +429,7 @@ export class IntegrationTestOrchestrator extends EventEmitter {
    * Find appropriate runner for test
    */
   private findRunner(test: TestCase): TestRunner | undefined {
-    for (const runner of this.runners.values()) {
+    for (const runner of Array.from(this.runners.values())) {
       if (runner.canRun(test)) {
         return runner;
       }

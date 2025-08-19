@@ -46,6 +46,8 @@ export interface BrowserPage {
   getAttribute(selector: string, name: string): Promise<string | null>;
   isVisible(selector: string): Promise<boolean>;
   locator(selector: string): any;
+  evaluate(fn: () => any): Promise<any>;
+  reload(): Promise<void>;
   close(): Promise<void>;
 }
 
@@ -134,6 +136,9 @@ export class E2ETestRunner implements TestRunner {
   async runTest(test: TestCase, environment: TestEnvironment): Promise<TestResult> {
     const startTime = new Date().toISOString();
     const resultId = uuidv4();
+    const stepResults: any[] = [];
+    const screenshots: string[] = [];
+    const logs: string[] = [];
     
     if (!this.context) {
       throw new Error('E2E environment not initialized. Call setup() first.');
@@ -142,10 +147,6 @@ export class E2ETestRunner implements TestRunner {
     try {
       // Create new page for test
       this.currentPage = await this.context.newPage();
-      
-      const stepResults = [];
-      const screenshots: string[] = [];
-      const logs: string[] = [];
 
       // Execute preconditions
       for (const precondition of test.preconditions) {
@@ -296,7 +297,7 @@ export class E2ETestRunner implements TestRunner {
       case 'click':
         const clickSelector = step.data?.selector || stepData.selector;
         if (!clickSelector) throw new Error('Click action requires selector');
-        await page.waitForSelector(clickSelector, { timeout: step.timeout || this.config.timeout });
+        await page.waitForSelector(clickSelector, step.timeout || this.config.timeout);
         await page.click(clickSelector);
         return `Clicked element: ${clickSelector}`;
 
@@ -304,7 +305,7 @@ export class E2ETestRunner implements TestRunner {
         const typeSelector = step.data?.selector || stepData.selector;
         const typeValue = step.data?.value || stepData.value;
         if (!typeSelector || !typeValue) throw new Error('Type action requires selector and value');
-        await page.waitForSelector(typeSelector, { timeout: step.timeout || this.config.timeout });
+        await page.waitForSelector(typeSelector, step.timeout || this.config.timeout);
         await page.fill(typeSelector, typeValue);
         return `Typed '${typeValue}' into ${typeSelector}`;
 
@@ -312,7 +313,7 @@ export class E2ETestRunner implements TestRunner {
         const selectSelector = step.data?.selector || stepData.selector;
         const selectValue = step.data?.value || stepData.value;
         if (!selectSelector || !selectValue) throw new Error('Select action requires selector and value');
-        await page.waitForSelector(selectSelector, { timeout: step.timeout || this.config.timeout });
+        await page.waitForSelector(selectSelector, step.timeout || this.config.timeout);
         await page.selectOption(selectSelector, selectValue);
         return `Selected '${selectValue}' in ${selectSelector}`;
 
@@ -543,14 +544,15 @@ export class E2ETestRunner implements TestRunner {
           count: async () => 1 // Mock: always find one element
         };
       },
-      close: async (): Promise<void> => {
-        console.log('Mock: Close page');
-      },
-      evaluate: async (fn: Function) => {
-        return fn(); // Execute function in mock context
+      evaluate: async (fn: () => any): Promise<any> => {
+        console.log('Mock: Evaluate function');
+        return 'mock-evaluated-result';
       },
       reload: async (): Promise<void> => {
         console.log('Mock: Reload page');
+      },
+      close: async (): Promise<void> => {
+        console.log('Mock: Close page');
       }
     } as any;
   }

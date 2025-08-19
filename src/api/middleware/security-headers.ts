@@ -170,10 +170,15 @@ export async function securityHeadersPlugin(
     if (typeof finalOptions[key as keyof SecurityHeadersOptions] === 'object' && 
         options[key as keyof SecurityHeadersOptions] && 
         typeof options[key as keyof SecurityHeadersOptions] === 'object') {
-      finalOptions[key as keyof SecurityHeadersOptions] = {
-        ...finalOptions[key as keyof SecurityHeadersOptions],
-        ...options[key as keyof SecurityHeadersOptions]
-      } as any;
+      const currentValue = finalOptions[key as keyof SecurityHeadersOptions];
+      const optionValue = options[key as keyof SecurityHeadersOptions];
+      
+      if (currentValue && optionValue && typeof currentValue === 'object' && typeof optionValue === 'object') {
+        finalOptions[key as keyof SecurityHeadersOptions] = {
+          ...currentValue,
+          ...optionValue
+        } as any;
+      }
     }
   });
 
