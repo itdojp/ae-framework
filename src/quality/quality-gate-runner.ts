@@ -337,7 +337,6 @@ export class QualityGateRunner {
         throw new Error(`Command '${executable}' contains suspicious path characters`);
       }
     }
-    
     return parts;
   }
 
