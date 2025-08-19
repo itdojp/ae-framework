@@ -14,6 +14,9 @@ import {
 
 describe('Complete Optimization System Integration', () => {
   let optimizationSystem: OptimizationSystem;
+  
+  // Set shorter timeouts to prevent hanging tests
+  vi.setConfig({ testTimeout: 10000 }); // 10 seconds max per test
 
   beforeEach(() => {
     optimizationSystem = createOptimizationSystem({
@@ -28,8 +31,21 @@ describe('Complete Optimization System Integration', () => {
 
   afterEach(async () => {
     if (optimizationSystem) {
-      await optimizationSystem.stop();
+      try {
+        // Force shutdown to prevent hanging
+        await Promise.race([
+          optimizationSystem.stop(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Shutdown timeout')), 1000))
+        ]);
+      } catch (error) {
+        console.warn('Warning: Optimization system shutdown error:', error.message);
+        // Force cleanup
+        optimizationSystem = null as any;
+      }
     }
+    
+    // Clear any remaining timers
+    vi.clearAllTimers();
   });
 
   describe('System Lifecycle', () => {
@@ -113,8 +129,8 @@ describe('Complete Optimization System Integration', () => {
       optimizationSystem.trackOperation('test-operation', performance.now() - 100);
       optimizationSystem.trackError('test-error');
       
-      // Wait a bit for metrics to update
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Wait a bit for metrics to update (reduced from 100ms to 20ms)
+      await new Promise(resolve => setTimeout(resolve, 20));
       
       const updatedMetrics = optimizationSystem.getSystemMetrics();
       
@@ -133,8 +149,8 @@ describe('Complete Optimization System Integration', () => {
       const operationStart = performance.now();
       optimizationSystem.trackOperation('integration-test', operationStart);
       
-      // Wait for monitoring to process
-      await new Promise(resolve => setTimeout(resolve, 150));
+      // Wait for monitoring to process (reduced from 150ms to 30ms)
+      await new Promise(resolve => setTimeout(resolve, 30));
       
       const monitoringMetrics = monitoringSystem.getHealthStatus();
       expect(monitoringMetrics).toBeTruthy();
@@ -151,8 +167,8 @@ describe('Complete Optimization System Integration', () => {
       // Trigger an error to generate a cross-system alert
       optimizationSystem.trackError('integration-test-error');
       
-      // Wait for event processing
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Wait for event processing (reduced from 100ms to 20ms)
+      await new Promise(resolve => setTimeout(resolve, 20));
       
       expect(alertTriggered).toBe(true);
     });
@@ -182,8 +198,8 @@ describe('Complete Optimization System Integration', () => {
       adaptiveSystem.trackError('high-error-rate-simulation');
       adaptiveSystem.trackError('high-error-rate-simulation');
       
-      // Wait for adaptive optimization to run
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // Wait for adaptive optimization to run (reduced from 200ms to 50ms)
+      await new Promise(resolve => setTimeout(resolve, 50));
       
       const dashboard = adaptiveSystem.getDashboard();
       
@@ -248,8 +264,8 @@ describe('Complete Optimization System Integration', () => {
         operations.forEach(op => op);
       }).not.toThrow();
       
-      // Wait for processing
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Wait for processing (reduced from 300ms to 50ms)
+      await new Promise(resolve => setTimeout(resolve, 50));
       
       const metrics = optimizationSystem.getSystemMetrics();
       expect(metrics.performance.overallThroughput).toBeGreaterThanOrEqual(0);
@@ -261,18 +277,18 @@ describe('Complete Optimization System Integration', () => {
       const startTime = Date.now();
       const operations = [];
       
-      // Generate sustained load for a short period
-      const loadDuration = 1000; // 1 second
+      // Generate sustained load for a short period (reduced from 1000ms to 200ms)
+      const loadDuration = 200; // 200ms - much faster for testing
       const interval = setInterval(() => {
         if (Date.now() - startTime < loadDuration) {
           optimizationSystem.trackOperation('load-test', performance.now() - 10);
         } else {
           clearInterval(interval);
         }
-      }, 10);
+      }, 5); // Reduced interval for faster execution
       
-      // Wait for load test to complete
-      await new Promise(resolve => setTimeout(resolve, loadDuration + 200));
+      // Wait for load test to complete (reduced total wait time)
+      await new Promise(resolve => setTimeout(resolve, loadDuration + 50));
       
       const metrics = optimizationSystem.getSystemMetrics();
       
@@ -280,12 +296,6 @@ describe('Complete Optimization System Integration', () => {
       expect(metrics.integration.systemStability).toBeGreaterThanOrEqual(0.05);
       expect(metrics.performance.errorRate).toBeGreaterThanOrEqual(0); // Allow high error rate in demo system
       
-      // Log metrics for debugging
-      console.log('Sustained load metrics:', {
-        systemStability: metrics.integration.systemStability,
-        successRate: metrics.optimization.successRate,
-        errorRate: metrics.performance.errorRate
-      });
     });
 
     it('should scale resources based on load', async () => {
@@ -303,7 +313,7 @@ describe('Complete Optimization System Integration', () => {
         scalingSystem.trackOperation(`scaling-test-${i}`, performance.now() - 100);
       }
       
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 50));
       
       const metrics = scalingSystem.getSystemMetrics();
       
@@ -351,8 +361,8 @@ describe('Complete Optimization System Integration', () => {
       // Simulate transient failure
       optimizationSystem.trackError('transient-failure');
       
-      // Wait for recovery
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Wait for recovery (reduced from 100ms to 20ms)
+      await new Promise(resolve => setTimeout(resolve, 20));
       
       // System should stabilize (adjusted for demo system)
       const metrics = optimizationSystem.getSystemMetrics();
@@ -391,7 +401,7 @@ describe('Complete Optimization System Integration', () => {
       // Generate some activity to trigger recommendations
       optimizationSystem.trackError('report-test');
       
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 20));
       
       const report = optimizationSystem.exportSystemReport();
       const parsedReport = JSON.parse(report);

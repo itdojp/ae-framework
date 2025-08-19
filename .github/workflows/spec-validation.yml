@@ -9,6 +9,7 @@ on:
       - 'src/cli/spec-cli.ts'
   push:
     branches: [main]
+    tags: ['v*'] # Validate specs on releases
     paths:
       - 'spec/**'
       - '.ae/**'

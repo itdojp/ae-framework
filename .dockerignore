@@ -1,0 +1,108 @@
+# Dependencies and package managers
+node_modules/
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-store/
+
+# Development and test files
+src/
+tests/
+test/
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+coverage/
+.nyc_output/
+reports/
+
+# Build artifacts (except dist)
+.cache/
+.temp/
+.tmp/
+*.tsbuildinfo
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Git files
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD and deployment
+.github/
+.gitlab-ci.yml
+docker-compose.yml
+docker-compose.*.yml
+Dockerfile.*
+
+# Documentation
+README.md
+CHANGELOG.md
+CONTRIBUTING.md
+LICENSE
+docs/
+examples/
+
+# Configuration files (development)
+.env.local
+.env.development
+.env.test
+.eslintrc*
+.prettierrc*
+tsconfig.json
+jest.config.*
+vitest.config.*
+stryker.conf.*
+
+# Logs and temporary files
+logs/
+*.log
+pids/
+*.pid
+*.seed
+*.pid.lock
+lib-cov/
+
+# Runtime data
+.ae/
+.data/
+data/
+storage/
+
+# Security and secrets (should never be in Docker context anyway)
+.env
+*.key
+*.pem
+secrets/
+
+# Monorepo and workspace files
+pnpm-workspace.yaml
+lerna.json
+rush.json
+
+# Quality assurance files
+.stryker-tmp/
+mutation-reports/
+lighthouse-reports/
+a11y-reports/
+
+# Scripts that shouldn't be in production
+scripts/
+hooks/

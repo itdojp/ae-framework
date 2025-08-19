@@ -101,7 +101,7 @@ export class SteeringLoader {
     let context = '# Project Steering Context\n\n';
     
     for (const [name, content] of Object.entries(documents)) {
-      const title = name.replace('custom-', '').replaceAll('-', ' ')
+      const title = name.replace('custom-', '').replace(/-/g, ' ')
         .split(' ')
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ');

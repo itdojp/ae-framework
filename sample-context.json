@@ -1,0 +1,10 @@
+{
+  "timestamp": "2025-08-19T19:47:17.566Z",
+  "executionId": "0cc938d5-27c0-4b6d-a763-4526c62448a3",
+  "environment": "cli",
+  "version": "2.2.0",
+  "metadata": {
+    "source": "cli",
+    "tool": "conformance-cli"
+  }
+}

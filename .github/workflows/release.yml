@@ -5,8 +5,22 @@ on:
       - 'v*'
 
 jobs:
+  # Ensure quality gates pass before release
+  quality-check:
+    name: Quality Check
+    uses: ./.github/workflows/quality-gates-centralized.yml
+    with:
+      environment: production
+
+  # Run fast CI tests
+  ci-check:
+    name: CI Check  
+    uses: ./.github/workflows/ci-fast.yml
+
+  # Main release job - only runs if quality and CI checks pass
   release:
     runs-on: ubuntu-latest
+    needs: [quality-check, ci-check]
     permissions:
       contents: write
       packages: write
