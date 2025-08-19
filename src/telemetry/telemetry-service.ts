@@ -40,6 +40,9 @@ export class TelemetryService {
   private meter: Meter;
   private logger: Logger;
   
+  // Internal quality score tracking
+  private lastQualityScore: number = 0;
+  
   // Metrics instruments
   private phaseExecutionHistogram: any;
   private errorRateCounter: any;
@@ -178,9 +181,6 @@ export class TelemetryService {
       direction: direction
     });
   }
-
-  // Internal quality score tracking
-  private lastQualityScore: number = 0;
 
   private getLatestQualityScore(): number {
     return this.lastQualityScore;
