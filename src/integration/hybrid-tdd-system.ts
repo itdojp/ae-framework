@@ -128,7 +128,7 @@ export class HybridTDDSystem {
     }
 
     // Save SSOT to state manager
-    await this.stateManager.saveSSOT('.ae/ae-ir.json', ir);
+    await this.stateManager.saveSSOT(outputPath, ir);
     
     console.log(`✅ AE-Spec compiled to AE-IR successfully`);
     console.log(`📁 SSOT saved to: ${outputPath}`);

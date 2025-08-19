@@ -225,12 +225,28 @@ export class QualityGateRunner {
    */
   private async executeCommand(command: string, timeout: number): Promise<{ stdout: string; stderr: string; code: number }> {
     return new Promise((resolve, reject) => {
-      // Parse command to avoid shell injection
-      const commandParts = this.parseCommand(command);
-      const process = spawn(commandParts[0], commandParts.slice(1), {
-        stdio: ['pipe', 'pipe', 'pipe'],
-        timeout,
-      });
+      // Check if command needs shell features (pipes, redirects, etc.)
+      const needsShell = command.includes('|') || command.includes('>') || command.includes('<') || 
+                        command.includes('&&') || command.includes('||') || command.includes('$');
+      
+      let process: any;
+      
+      if (needsShell) {
+        // Use shell for complex commands with enhanced security validation
+        this.validateShellCommand(command);
+        process = spawn(command, {
+          shell: true,
+          stdio: ['pipe', 'pipe', 'pipe'],
+          timeout,
+        });
+      } else {
+        // Parse command to avoid shell injection for simple commands
+        const commandParts = this.parseCommand(command);
+        process = spawn(commandParts[0], commandParts.slice(1), {
+          stdio: ['pipe', 'pipe', 'pipe'],
+          timeout,
+        });
+      }
 
       let stdout = '';
       let stderr = '';
@@ -288,15 +304,70 @@ export class QualityGateRunner {
     // In a production environment, consider using a library like shell-quote
     const parts = trimmed.split(/\s+/);
     
-    // Basic validation - reject potentially dangerous commands
+    // Security validation - use allowlist for common commands, blacklist for dangerous ones
     const executable = parts[0];
-    const dangerousCommands = ['rm', 'sudo', 'curl', 'wget', 'eval', 'bash', 'sh'];
+    
+    // Allowlist of commonly used quality gate commands
+    const allowedCommands = [
+      'npm', 'npx', 'yarn', 'pnpm', 'node',
+      'jest', 'mocha', 'vitest', 'nyc',
+      'eslint', 'prettier', 'tsc', 'tslint',
+      'lighthouse', 'axe', 'pa11y',
+      'audit', 'license-checker'
+    ];
+    
+    // Dangerous commands that should never be allowed
+    const dangerousCommands = [
+      'rm', 'rmdir', 'del', 'sudo', 'su',
+      'curl', 'wget', 'eval', 'exec',
+      'bash', 'sh', 'zsh', 'fish',
+      'chmod', 'chown', 'kill', 'killall'
+    ];
     
     if (dangerousCommands.includes(executable)) {
       throw new Error(`Command '${executable}' is not allowed for security reasons`);
     }
     
+    // For non-allowlisted commands, require they don't start with dangerous prefixes
+    if (!allowedCommands.includes(executable)) {
+      console.warn(`⚠️ Command '${executable}' is not in the allowlist. Proceeding with caution.`);
+      
+      // Additional check for suspicious patterns
+      if (executable.includes('/') || executable.includes('\\') || executable.startsWith('.')) {
+        throw new Error(`Command '${executable}' contains suspicious path characters`);
+      }
+    }
+    
     return parts;
+  }
+
+  /**
+   * Validate shell commands for security
+   */
+  private validateShellCommand(command: string): void {
+    // Check for obviously dangerous patterns
+    const dangerousPatterns = [
+      /rm\s+-rf/,           // Dangerous rm commands
+      /sudo\s+/,            // Sudo usage
+      /su\s+/,              // Su usage  
+      /eval\s+/,            // Eval usage
+      /exec\s+/,            // Exec usage
+      /\$\(/,               // Command substitution
+      /`[^`]*`/,            // Backtick command substitution
+      /wget\s+/,            // Network downloads
+      /curl\s+.*-o/,        // Curl with output to file
+      />\s*\/etc/,          // Writing to system directories
+      />\s*\/usr/,
+      />\s*\/bin/,
+    ];
+
+    for (const pattern of dangerousPatterns) {
+      if (pattern.test(command)) {
+        throw new Error(`Command contains dangerous pattern: ${pattern.source}`);
+      }
+    }
+
+    console.log(`ℹ️ Using shell mode for command: ${command.substring(0, 50)}...`);
   }
 
   /**
