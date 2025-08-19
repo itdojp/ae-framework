@@ -489,16 +489,36 @@ npx nyc check-coverage --lines 80 --functions 80 --branches 80
 
 ## 📦 Installation
 
+### Linux/macOS (推奨)
+
 ```bash
 # Node.js 20+ required
-npm install
+# pnpm使用（monorepo対応）
+corepack enable
+pnpm install
 
 # Install Git hooks for TDD enforcement
-npm run setup-hooks
+pnpm run setup-hooks
 
 # Build the framework
-npm run build
+pnpm run build
 ```
+
+### 🪟 Windows環境
+
+**⚠️ Windows環境の方は [SETUP-WINDOWS.md](./SETUP-WINDOWS.md) を参照してください。**
+
+ae-frameworkはpnpm workspacesを使用しているため、npmでは正常にインストールできません：
+
+```powershell
+# ❌ エラーが発生する方法
+npm install  # → EUNSUPPORTEDPROTOCOL: workspace:* エラー
+
+# ✅ 正しい方法
+pnpm install  # → 正常にインストール
+```
+
+詳細な手順は **[→ Windows セットアップガイド](./SETUP-WINDOWS.md)** をご覧ください。
 
 ## 🚀 Quick Start
 
