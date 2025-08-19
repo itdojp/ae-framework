@@ -81,6 +81,15 @@ export interface QualityPolicy {
 }
 
 /**
+ * Get the current quality profile from environment variable or parameter
+ * @param environment - Optional environment override
+ * @returns Profile name ('development', 'ci', 'production')
+ */
+export const getQualityProfile = (environment?: string): string => {
+  return environment || process.env.AE_QUALITY_PROFILE || 'ci';
+};
+
+/**
  * Loads the centralized quality policy configuration
  * @param environment - Optional environment to apply overrides ('development', 'ci', 'production')
  * @returns Parsed quality policy with environment overrides applied
@@ -91,9 +100,10 @@ export const loadQualityPolicy = (environment?: string): QualityPolicy => {
     const policyContent = readFileSync(policyPath, 'utf-8');
     const policy: QualityPolicy = JSON.parse(policyContent);
     
-    // Apply environment-specific overrides if specified
-    if (environment && policy.environments[environment]) {
-      const overrides = policy.environments[environment].overrides;
+    // Apply environment-specific overrides based on profile
+    const activeProfile = getQualityProfile(environment);
+    if (activeProfile && policy.environments[activeProfile]) {
+      const overrides = policy.environments[activeProfile].overrides;
       policy.quality = applyOverrides(policy.quality, overrides);
     }
     

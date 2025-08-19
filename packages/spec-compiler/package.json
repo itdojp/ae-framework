@@ -1,6 +1,7 @@
 {
   "name": "@ae-framework/spec-compiler",
   "version": "1.0.0",
+  "type": "module",
   "description": "AE-Spec to AE-IR compiler for single source of truth",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

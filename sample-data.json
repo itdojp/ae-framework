@@ -1,0 +1,24 @@
+{
+  "user": {
+    "email": "test@example.com",
+    "name": "Test User",
+    "age": 25
+  },
+  "apiCall": {
+    "method": "GET",
+    "url": "https://api.example.com/users/123",
+    "path": "/users/123",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "response": {
+      "status": 200,
+      "time": 150,
+      "body": {
+        "id": 123,
+        "name": "Test User"
+      }
+    },
+    "timestamp": "2025-08-19T19:47:17.545Z"
+  }
+}

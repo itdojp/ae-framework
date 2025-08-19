@@ -3,6 +3,9 @@
 > 人手最小＆仕様準拠最大。TDD強制機能付きIntent→Formal→Tests→Code→Verify→Operate の6フェーズ。
 
 ## 📢 最新アップデート
+- **🆕 [🧪 Phase 2.3: Integration Testing System](./docs/phases/PHASE-2-3-INTEGRATION-TESTING.md)** - 包括的統合テストとE2Eテストオーケストレーション
+- **🆕 [🛡️ Phase 2.2: Runtime Conformance System](./docs/phases/PHASE-2-2-RUNTIME-CONFORMANCE.md)** - リアルタイム適合性検証とCEGIS連携
+- **[🔧 Phase 2.1: CEGIS Auto-Fix System](./docs/architecture/CEGIS-DESIGN.md)** - 反例誘導帰納合成による自動コード修復
 - **[📋 AE-Spec Validation CI/CD](./docs/development/spec-validation.md)** - 仕様品質の自動検証とCI/CD統合
 - **[🔧 Spec Compiler SSOT](./packages/spec-compiler/README.md)** - AE-Spec → AE-IR変換による統一仕様管理  
 - **[🎨 Phase 6 UI/UX & Frontend Delivery完全実装](./docs/phases/phase-6-uiux.md)** - React + Next.js UI自動生成とOpenTelemetryテレメトリ
@@ -125,6 +128,21 @@ ae-framework intent --validate
 ae-framework natural-language --analyze
 ae-framework natural-language --extract-entities
 ae-framework natural-language --validate-completeness
+
+# Phase 2.1: CEGIS自動修復システム
+ae-framework cegis fix --files src/ --patterns="*.ts"
+ae-framework cegis analyze --violations violations.json
+ae-framework cegis status
+
+# Phase 2.2: ランタイム適合性検証
+ae-framework conformance verify --rules rules.json
+ae-framework conformance metrics --format json
+ae-framework conformance status
+
+# Phase 2.3: 統合テストとE2Eテスト
+ae-framework integration run --suites test-suites.json --environment test
+ae-framework integration discover --patterns "./tests/**/*.json" --type all
+ae-framework integration reports --list
 
 # Phase 3: ユーザーストーリー管理
 ae-framework user-stories --generate
@@ -688,6 +706,9 @@ DISABLE_TELEMETRY=true
 
 ### 🎯 フェーズ別詳細
 - [Phase 2: Natural Language Requirements](docs/phases/PHASE-2-NATURAL-LANGUAGE-REQUIREMENTS.md) - 自然言語要件処理
+- **🆕 [Phase 2.1: CEGIS Auto-Fix System](docs/architecture/CEGIS-DESIGN.md)** - 反例誘導帰納合成による自動コード修復
+- **🆕 [Phase 2.2: Runtime Conformance System](docs/phases/PHASE-2-2-RUNTIME-CONFORMANCE.md)** - リアルタイム適合性検証とCEGIS連携
+- **🆕 [Phase 2.3: Integration Testing System](docs/phases/PHASE-2-3-INTEGRATION-TESTING.md)** - 包括的統合テストとE2Eテストオーケストレーション
 - [Phase 3: User Stories Creation](docs/phases/PHASE-3-USER-STORIES-CREATION.md) - ユーザーストーリー生成
 - [Phase 4: Validation](docs/phases/PHASE-4-VALIDATION.md) - 品質検証システム
 - [Phase 5: Domain Modeling](docs/phases/PHASE-5-DOMAIN-MODELING.md) - ドメイン駆動設計

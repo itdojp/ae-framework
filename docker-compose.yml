@@ -1,0 +1,88 @@
+# Docker Compose for ae-framework
+# Development and testing environment
+
+version: '3.8'
+
+services:
+  ae-framework:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      # OpenTelemetry configuration
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:14268/api/traces
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=ae-framework,service.version=1.0.0
+      # Disable telemetry for local development if needed
+      # - DISABLE_TELEMETRY=true
+    volumes:
+      # Mount application state directory
+      - ae_data:/app/.ae
+    depends_on:
+      - jaeger
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    # Security: Use non-root user
+    user: "1001:1001"
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+        reservations:
+          memory: 256M
+          cpus: "0.25"
+
+  # OpenTelemetry collector and observability
+  jaeger:
+    image: jaegertracing/all-in-one:1.50
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "14268:14268"  # Jaeger collector HTTP
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:16686/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # PostgreSQL for persistence (if needed)
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=ae_framework
+      - POSTGRES_USER=ae_user
+      - POSTGRES_PASSWORD=ae_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ae_user -d ae_framework"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  ae_data:
+    driver: local
+  postgres_data:
+    driver: local
+
+networks:
+  default:
+    name: ae-framework-network

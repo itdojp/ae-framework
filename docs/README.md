@@ -20,6 +20,8 @@ ae-frameworkは、AI-Powered TDDによる6フェーズでソフトウェア開�
 
 - **[DEVELOPMENT-INSTRUCTIONS-GUIDE.md](./guides/DEVELOPMENT-INSTRUCTIONS-GUIDE.md)** ⭐ **最新** - 開発指示の具体的方法
 - **[CLAUDE-CODE-AUTOMATION-GUIDE.md](./guides/CLAUDE-CODE-AUTOMATION-GUIDE.md)** ⭐ **重要** - Claude Code完全自動化
+- **🆕 [PHASE-2-ADVANCED-FEATURES-GUIDE.md](./guides/PHASE-2-ADVANCED-FEATURES-GUIDE.md)** ⭐ **NEW** - Phase 2.1-2.3統合ガイド
+- **🆕 [ADVANCED-TROUBLESHOOTING-GUIDE.md](./guides/ADVANCED-TROUBLESHOOTING-GUIDE.md)** ⭐ **NEW** - 高度な機能のトラブルシューティング
 - [USAGE.md](./guides/USAGE.md) - 一般的な使い方ガイド
 - [test-generation-guide.md](./guides/test-generation-guide.md) - テスト生成ガイド
 
@@ -27,6 +29,8 @@ ae-frameworkは、AI-Powered TDDによる6フェーズでソフトウェア開�
 6フェーズの詳細仕様とガイド
 
 - [PHASE-2-NATURAL-LANGUAGE-REQUIREMENTS.md](./phases/PHASE-2-NATURAL-LANGUAGE-REQUIREMENTS.md) - 自然言語要件処理
+- **🆕 [PHASE-2-2-RUNTIME-CONFORMANCE.md](./phases/PHASE-2-2-RUNTIME-CONFORMANCE.md)** ⭐ **NEW** - リアルタイム適合性検証システム
+- **🆕 [PHASE-2-3-INTEGRATION-TESTING.md](./phases/PHASE-2-3-INTEGRATION-TESTING.md)** ⭐ **NEW** - 統合テストとE2Eテストシステム
 - [PHASE-3-USER-STORIES-CREATION.md](./phases/PHASE-3-USER-STORIES-CREATION.md) - ユーザーストーリー生成
 - [PHASE-4-VALIDATION.md](./phases/PHASE-4-VALIDATION.md) - 品質検証システム
 - [PHASE-5-DOMAIN-MODELING.md](./phases/PHASE-5-DOMAIN-MODELING.md) - ドメイン駆動設計
@@ -50,6 +54,8 @@ Claude CodeやMCPとの統合
 システム設計と新機能仕様
 
 - **[TDD-FRAMEWORK-ARCHITECTURE.md](./architecture/TDD-FRAMEWORK-ARCHITECTURE.md)** ⭐ **重要** - TDDフレームワーク設計
+- **🆕 [CEGIS-DESIGN.md](./architecture/CEGIS-DESIGN.md)** ⭐ **NEW** - CEGIS自動修復システム設計
+- **🆕 [RUNTIME-CONFORMANCE-DESIGN.md](./architecture/RUNTIME-CONFORMANCE-DESIGN.md)** ⭐ **NEW** - Runtime Conformance設計
 - [ARCHITECTURE.md](./architecture/ARCHITECTURE.md) - システムアーキテクチャ
 - [NEW_FEATURES.md](./architecture/NEW_FEATURES.md) - 新機能仕様
 
@@ -75,6 +81,7 @@ Claude CodeやMCPとの統合
 1. **[getting-started/QUICK-START-GUIDE.md](./getting-started/QUICK-START-GUIDE.md)** - 15分で体験
 2. **[guides/DEVELOPMENT-INSTRUCTIONS-GUIDE.md](./guides/DEVELOPMENT-INSTRUCTIONS-GUIDE.md)** - 実際の指示方法
 3. **[integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md](./integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)** - Claude Code統合
+4. **🆕 [guides/PHASE-2-ADVANCED-FEATURES-GUIDE.md](./guides/PHASE-2-ADVANCED-FEATURES-GUIDE.md)** - 高度な機能の活用法
 
 ### 🎨 Phase 6 UI/UX開発者
 1. **[getting-started/PHASE-6-GETTING-STARTED.md](./getting-started/PHASE-6-GETTING-STARTED.md)** - Phase 6専用ガイド
@@ -92,7 +99,19 @@ Claude CodeやMCPとの統合
 2. **[guides/CLAUDE-CODE-AUTOMATION-GUIDE.md](./guides/CLAUDE-CODE-AUTOMATION-GUIDE.md)** - 自動化活用法
 3. **[architecture/NEW_FEATURES.md](./architecture/NEW_FEATURES.md)** - 機能概要
 
+### 🧪 品質保証・テストエンジニア
+1. **🆕 [phases/PHASE-2-2-RUNTIME-CONFORMANCE.md](./phases/PHASE-2-2-RUNTIME-CONFORMANCE.md)** - リアルタイム適合性検証
+2. **🆕 [phases/PHASE-2-3-INTEGRATION-TESTING.md](./phases/PHASE-2-3-INTEGRATION-TESTING.md)** - 統合テスト・E2Eテスト
+3. **🆕 [architecture/CEGIS-DESIGN.md](./architecture/CEGIS-DESIGN.md)** - 自動修復システム
+4. **🆕 [guides/ADVANCED-TROUBLESHOOTING-GUIDE.md](./guides/ADVANCED-TROUBLESHOOTING-GUIDE.md)** - 問題解決ガイド
+
 ## 🔄 更新履歴
+
+### 🆕 2025年8月 - Phase 2 Advanced Features完全実装
+- **Phase 2.1: CEGIS自動修復システム**: 反例誘導帰納合成による自動コード修復
+- **Phase 2.2: Runtime Conformance System**: リアルタイム適合性検証とCEGIS連携
+- **Phase 2.3: Integration Testing System**: 包括的統合テストとE2Eテストオーケストレーション
+- **新ドキュメント追加**: 実践ガイド・トラブルシューティング・CLIリファレンス更新
 
 ### 2025年8月 - Phase 6 UI/UX & Frontend Delivery完全実装
 - **Phase 6実装完了**: React + Next.js 14 UI自動生成

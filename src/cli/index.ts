@@ -5,6 +5,7 @@ import chalk from 'chalk';
 import { PhaseValidator } from './validators/PhaseValidator.js';
 import { createSpecCommand } from './spec-cli.js';
 import { createCodegenCommand } from './codegen-cli.js';
+import { CEGISCli } from './cegis-cli.js';
 import { GuardRunner } from './guards/GuardRunner.js';
 import { ConfigLoader } from './config/ConfigLoader.js';
 // import { MetricsCollector } from './metrics/MetricsCollector.js';  // TODO: Enable when metrics tracking is implemented
@@ -586,6 +587,10 @@ program.addCommand(createSpecCommand());
 // Add codegen commands
 program.addCommand(createCodegenCommand());
 
+// Add CEGIS auto-fix commands
+const cegisCli = new CEGISCli();
+program.addCommand(cegisCli.createCommand());
+
 // Add enhanced state management commands
 import { createEnhancedStateCommand } from './enhanced-state-cli.js';
 program.addCommand(createEnhancedStateCommand());
@@ -596,6 +601,20 @@ program.addCommand(createCircuitBreakerCommand());
 
 // Security commands
 program.addCommand(createSecurityCommand());
+
+// Quality gates commands
+import { createQualityCommand } from './quality-cli.js';
+program.addCommand(createQualityCommand());
+
+// Conformance verification commands  
+import { ConformanceCli } from './conformance-cli.js';
+const conformanceCli = new ConformanceCli();
+program.addCommand(conformanceCli.createCommand());
+
+// Integration testing commands
+import { IntegrationTestingCli } from './integration-cli.js';
+const integrationCli = new IntegrationTestingCli();
+program.addCommand(integrationCli.createCommand());
 
 // Resilience commands
 import { createResilienceCommand } from './resilience-cli.js';
