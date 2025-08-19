@@ -49,15 +49,23 @@ export function shutdownTelemetry(): Promise<void> {
   return telemetrySDK.shutdown();
 }
 
-// Process cleanup
-process.on('SIGTERM', async () => {
-  try {
-    await shutdownTelemetry();
-    console.log('📊 OpenTelemetry shutdown complete');
-  } catch (error) {
-    console.error('❌ Error during OpenTelemetry shutdown:', error);
+// Process cleanup (safe registration for different environments)
+try {
+  if (typeof process !== 'undefined' && process.on && typeof process.on === 'function') {
+    process.on('SIGTERM', async () => {
+      try {
+        await shutdownTelemetry();
+        console.log('📊 OpenTelemetry shutdown complete');
+      } catch (error) {
+        console.error('❌ Error during OpenTelemetry shutdown:', error);
+      }
+    });
   }
-});
+} catch (error) {
+  // In some ESM environments, process.on may not be available
+  // This is not critical for telemetry functionality
+  console.warn('Process SIGTERM handler could not be registered:', error instanceof Error ? error.message : String(error));
+}
 
 // Default initialization (can be disabled via environment variable)
 if (process.env.DISABLE_TELEMETRY !== 'true') {
