@@ -355,7 +355,7 @@ export class EnhancedTelemetry {
 export const enhancedTelemetry = new EnhancedTelemetry();
 
 // Auto-initialize if not disabled and not in test environment
-if (process.env.DISABLE_ENHANCED_TELEMETRY !== 'true' && process.env.NODE_ENV !== 'test') {
+if (typeof process !== 'undefined' && process.env.DISABLE_ENHANCED_TELEMETRY !== 'true' && process.env.NODE_ENV !== 'test') {
   enhancedTelemetry.initialize();
 
   // Graceful shutdown handling (only when auto-initialized and not in test)

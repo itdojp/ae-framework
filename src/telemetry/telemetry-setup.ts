@@ -68,6 +68,6 @@ try {
 }
 
 // Default initialization (can be disabled via environment variable)
-if (process.env.DISABLE_TELEMETRY !== 'true') {
+if (typeof process !== 'undefined' && process.env.DISABLE_TELEMETRY !== 'true') {
   initializeTelemetry();
 }
