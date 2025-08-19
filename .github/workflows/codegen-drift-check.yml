@@ -10,13 +10,10 @@ on:
       - 'templates/**'
       - '.github/workflows/codegen-drift-check.yml'
   pull_request:
+    # Run on ALL PRs for contract drift detection (issue #71)
     branches: [ main ]
-    paths:
-      - 'spec/**/*.md'
-      - '.ae/ae-ir.json'
-      - 'src/codegen/**'
-      - 'templates/**'
-      - '.github/workflows/codegen-drift-check.yml'
+  workflow_call:
+    # Allow this workflow to be called by other workflows
 
 jobs:
   drift-detection:
@@ -95,6 +92,7 @@ jobs:
             echo "No AE-IR file available for drift detection"
             echo "drift-status=no-baseline" >> $GITHUB_OUTPUT
             echo "needs-regeneration=false" >> $GITHUB_OUTPUT
+            echo "contract-failure=false" >> $GITHUB_OUTPUT
             exit 0
           fi
           
@@ -110,12 +108,14 @@ jobs:
             echo "No generated code directories found"
             echo "drift-status=no-generated-code" >> $GITHUB_OUTPUT  
             echo "needs-regeneration=true" >> $GITHUB_OUTPUT
+            echo "contract-failure=false" >> $GITHUB_OUTPUT
             exit 0
           fi
           
           # Run drift detection for each directory
           OVERALL_DRIFT="no_drift"
           DRIFT_DETAILS=""
+          CONTRACT_FAILURE="false"
           
           for dir in $GENERATED_DIRS; do
             echo "Checking drift in $dir..."
@@ -123,7 +123,14 @@ jobs:
             # Run drift detection and capture result
             if npx tsx src/cli/index.ts codegen drift -d "$dir" -s .ae/ae-ir.json --format json > drift-report-$(basename $dir).json; then
               DRIFT_STATUS=$(cat drift-report-$(basename $dir).json | jq -r '.status')
-              echo "Drift status for $dir: $DRIFT_STATUS"
+              CRITICAL_CHANGES=$(cat drift-report-$(basename $dir).json | jq -r '.criticalChanges // 0')
+              echo "Drift status for $dir: $DRIFT_STATUS (critical changes: $CRITICAL_CHANGES)"
+              
+              # Issue #71: Contract failure detection
+              if [ "$CRITICAL_CHANGES" -gt 0 ] && [ "$DRIFT_STATUS" = "critical_drift" ]; then
+                CONTRACT_FAILURE="true"
+                echo "🚨 CONTRACT FAILURE: Critical drift with breaking changes detected in $dir"
+              fi
               
               # Update overall status (take worst case)
               case "$DRIFT_STATUS" in
@@ -142,7 +149,7 @@ jobs:
                   ;;
               esac
               
-              DRIFT_DETAILS="$DRIFT_DETAILS\n- $dir: $DRIFT_STATUS"
+              DRIFT_DETAILS="$DRIFT_DETAILS\n- $dir: $DRIFT_STATUS (critical: $CRITICAL_CHANGES)"
             else
               echo "Drift detection failed for $dir"
               OVERALL_DRIFT="detection_failed"
@@ -150,7 +157,9 @@ jobs:
           done
           
           echo "Overall drift status: $OVERALL_DRIFT"
+          echo "Contract failure status: $CONTRACT_FAILURE"
           echo "drift-status=$OVERALL_DRIFT" >> $GITHUB_OUTPUT
+          echo "contract-failure=$CONTRACT_FAILURE" >> $GITHUB_OUTPUT
           
           # Determine if regeneration is needed
           case "$OVERALL_DRIFT" in
@@ -166,7 +175,14 @@ jobs:
           echo "DRIFT_DETAILS<<EOF" >> $GITHUB_ENV
           echo -e "$DRIFT_DETAILS" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
-        continue-on-error: true
+          
+          # Issue #71: Fail immediately on contract violations
+          if [ "$CONTRACT_FAILURE" = "true" ]; then
+            echo "🚨 FAILING BUILD: Contract violation detected - specifications and code are out of sync"
+            echo "::error::Critical drift with breaking changes detected. Generated code no longer matches specifications."
+            exit 1
+          fi
+        continue-on-error: false
         
       - name: Upload drift reports
         if: always()
