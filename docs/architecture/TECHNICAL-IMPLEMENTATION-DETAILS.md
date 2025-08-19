@@ -1079,6 +1079,9 @@ export class SQLiteStorageAdapter implements StorageAdapter {
 
 #### Telemetry Service Implementation
 ```typescript
+import { trace, metrics, Tracer, Meter } from '@opentelemetry/api';
+import { logs, Logger } from '@opentelemetry/api-logs';
+
 export class TelemetryService {
   private tracer: Tracer;
   private meter: Meter;
@@ -1087,7 +1090,7 @@ export class TelemetryService {
   constructor() {
     this.tracer = trace.getTracer('@ae-framework/telemetry');
     this.meter = metrics.getMeter('@ae-framework/telemetry');
-    this.logger = trace.getLogger('@ae-framework/telemetry');
+    this.logger = logs.getLogger('@ae-framework/telemetry');
     
     this.initializeMetrics();
   }
@@ -1102,13 +1105,16 @@ export class TelemetryService {
       }
     );
 
-    // 品質メトリクス
-    this.qualityScoreGauge = this.meter.createUpDownCounter(
+    // 品質メトリクス (Observable Gauge for snapshot values)
+    this.meter.createObservableGauge(
       'ae_framework_quality_score',
       {
-        description: 'Quality score for generated artifacts'
+        description: 'Quality score for generated artifacts (0-100)'
       }
-    );
+    ).addCallback((obs) => {
+      const latestScore = this.getLatestQualityScore();
+      obs.observe(latestScore);
+    });
 
     // エラー率メトリクス
     this.errorRateCounter = this.meter.createCounter(
@@ -1140,10 +1146,8 @@ export class TelemetryService {
     });
 
     if (qualityMetrics) {
-      this.qualityScoreGauge.add(qualityMetrics.overallScore, {
-        phase: phase,
-        metric_type: 'overall'
-      });
+      // Quality metrics are recorded via ObservableGauge callback
+      this.lastQualityScore = qualityMetrics.overallScore;
     }
 
     if (!success) {
@@ -1154,6 +1158,13 @@ export class TelemetryService {
     }
 
     span.end();
+  }
+
+  // Internal quality score tracking
+  private lastQualityScore: number = 0;
+
+  private getLatestQualityScore(): number {
+    return this.lastQualityScore;
   }
 }
 ```
