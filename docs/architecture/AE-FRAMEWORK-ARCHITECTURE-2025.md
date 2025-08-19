@@ -5,7 +5,7 @@
 
 ## 🎯 アーキテクチャ概要
 
-ae-frameworkは、**TDD強制機能付き6フェーズ開発手法**を実装するAI駆動開発フレームワークです。Claude Code統合、OpenTelemetryテレメトリ監視、React+Next.js UI自動生成を特徴とします。
+ae-frameworkは、**TDD強制機能付き6フェーズ開発手法**を実装するAI駆動開発フレームワークです。Claude Code統合、OpenTelemetryテレメトリ監視、React+Next.js UI自動生成、CEGIS自動修復システム、ランタイム適合性検証を特徴とします。
 
 ### 🎨 全体アーキテクチャ図
 
@@ -108,6 +108,28 @@ graph TB
     subgraph "⚡ Advanced Features"
         direction TB
         
+        subgraph "CEGIS Auto-Fix System" 
+            CEGIS[CEGIS Engine]
+            FAILURE_ARTIFACTS[Failure Artifacts]
+            AUTO_FIX[Auto-Fix Strategies]
+            FIX_CLI[ae fix CLI]
+            
+            CEGIS --> FAILURE_ARTIFACTS
+            FAILURE_ARTIFACTS --> AUTO_FIX
+            AUTO_FIX --> FIX_CLI
+        end
+        
+        subgraph "Runtime Conformance"
+            CONFORMANCE_GUARDS[Conformance Guards]
+            ZOD_VALIDATION[Zod Validation]
+            OTEL_RUNTIME[OpenTelemetry Runtime]
+            MIDDLEWARE[Express/Fastify Middleware]
+            
+            CONFORMANCE_GUARDS --> ZOD_VALIDATION
+            CONFORMANCE_GUARDS --> OTEL_RUNTIME
+            CONFORMANCE_GUARDS --> MIDDLEWARE
+        end
+        
         subgraph "Sequential Inference Engine"
             SEE[Sequential Engine]
             DECOMP[Problem Decomposer]
@@ -172,10 +194,14 @@ graph TB
             E2E_TESTS[E2E Test Suite]
             A11Y_REPORTS[A11y Reports]
             PERF_REPORTS[Performance Reports]
+            FAILURE_REPORTS[Failure Analysis Reports]
+            CONFORMANCE_REPORTS[Runtime Conformance Reports]
             
             TESTS --> E2E_TESTS
             TESTS --> A11Y_REPORTS
             TESTS --> PERF_REPORTS
+            TESTS --> FAILURE_REPORTS
+            TESTS --> CONFORMANCE_REPORTS
         end
     end
     
@@ -198,6 +224,12 @@ graph TB
     DMA --> UIA
     
     %% Advanced Features Integration
+    CEGIS -.-> VA
+    CEGIS -.-> DMA
+    CEGIS -.-> UIA
+    CONFORMANCE_GUARDS -.-> VA
+    CONFORMANCE_GUARDS -.-> DMA
+    CONFORMANCE_GUARDS -.-> UIA
     SEE -.-> IA
     SEE -.-> NLA
     ITS -.-> USA
@@ -223,6 +255,8 @@ graph TB
     UIA --> E2E_TESTS
     A11Y --> A11Y_REPORTS
     PERF --> PERF_REPORTS
+    CEGIS --> FAILURE_REPORTS
+    CONFORMANCE_GUARDS --> CONFORMANCE_REPORTS
     
     HYBRID --> DOCS
     HYBRID --> API_DOCS
@@ -348,11 +382,15 @@ graph TB
             COVERAGE_GUARD[📊 Coverage Guard]
             A11Y_GUARD[♿ A11y Guard]
             PERF_GUARD[⚡ Performance Guard]
+            CONFORMANCE_GUARD[🔍 Runtime Conformance Guard]
+            CEGIS_GUARD[🔧 CEGIS Auto-Fix Guard]
             
             TDD_GUARD --> TEST_GUARD
             TEST_GUARD --> COVERAGE_GUARD
             COVERAGE_GUARD --> A11Y_GUARD
             A11Y_GUARD --> PERF_GUARD
+            PERF_GUARD --> CONFORMANCE_GUARD
+            CONFORMANCE_GUARD --> CEGIS_GUARD
         end
         
         P1 -.-> STATE_MGR
@@ -367,6 +405,12 @@ graph TB
         P5 -.-> COVERAGE_GUARD
         P6 -.-> A11Y_GUARD
         P6 -.-> PERF_GUARD
+        P4 -.-> CONFORMANCE_GUARD
+        P5 -.-> CONFORMANCE_GUARD
+        P6 -.-> CONFORMANCE_GUARD
+        P4 -.-> CEGIS_GUARD
+        P5 -.-> CEGIS_GUARD
+        P6 -.-> CEGIS_GUARD
     end
 ```
 
@@ -633,6 +677,14 @@ ae-framework/
 │   ├── component-form.tsx.template  # Form Template
 │   ├── component-card.tsx.template  # Card Template
 │   └── page-list.tsx.template       # Page Template
+│
+├── 🧪 tests/                         # Test Files
+│   ├── agents/                       # Agent Tests
+│   ├── cegis/                        # CEGIS System Tests
+│   ├── runtime/                      # Runtime Conformance Tests
+│   ├── generators/                   # Generator Tests
+│   ├── integration/                  # Integration Tests
+│   └── e2e/                         # E2E Tests
 │
 ├── 📚 docs/                          # Documentation
 │   ├── getting-started/             # Quick Start Guides
