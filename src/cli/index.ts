@@ -616,6 +616,7 @@ import { IntegrationTestingCli } from './integration-cli.js';
 const integrationCli = new IntegrationTestingCli();
 program.addCommand(integrationCli.createCommand());
 
+
 program.parse();
 
 export { AEFrameworkCLI };
