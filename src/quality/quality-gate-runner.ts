@@ -225,13 +225,16 @@ export class QualityGateRunner {
    */
   private async executeCommand(command: string, timeout: number): Promise<{ stdout: string; stderr: string; code: number }> {
     return new Promise((resolve, reject) => {
-      const process = spawn('sh', ['-c', command], {
+      // Parse command to avoid shell injection
+      const commandParts = this.parseCommand(command);
+      const process = spawn(commandParts[0], commandParts.slice(1), {
         stdio: ['pipe', 'pipe', 'pipe'],
         timeout,
       });
 
       let stdout = '';
       let stderr = '';
+      let finished = false;
 
       process.stdout?.on('data', (data) => {
         stdout += data.toString();
@@ -242,21 +245,58 @@ export class QualityGateRunner {
       });
 
       process.on('close', (code) => {
-        resolve({ stdout, stderr, code: code || 0 });
+        if (!finished) {
+          finished = true;
+          clearTimeout(timeoutHandle);
+          resolve({ stdout, stderr, code: code || 0 });
+        }
       });
 
       process.on('error', (error) => {
-        reject(error);
+        if (!finished) {
+          finished = true;
+          clearTimeout(timeoutHandle);
+          reject(error);
+        }
       });
 
-      // Handle timeout
-      setTimeout(() => {
-        if (!process.killed) {
+      // Handle timeout with proper cleanup
+      const timeoutHandle = setTimeout(() => {
+        if (!finished) {
+          finished = true;
           process.kill('SIGTERM');
           reject(new Error(`Command timed out after ${timeout}ms`));
         }
       }, timeout);
     });
+  }
+
+  /**
+   * Parse command string into executable and arguments safely
+   */
+  private parseCommand(command: string): string[] {
+    // Simple command parsing to avoid shell injection
+    // For production use, consider using a proper shell parser library
+    const trimmed = command.trim();
+    
+    // Handle npm/npx commands specially as they are common in quality gates
+    if (trimmed.startsWith('npm ') || trimmed.startsWith('npx ')) {
+      return trimmed.split(/\s+/);
+    }
+    
+    // For other commands, use a basic splitting approach
+    // In a production environment, consider using a library like shell-quote
+    const parts = trimmed.split(/\s+/);
+    
+    // Basic validation - reject potentially dangerous commands
+    const executable = parts[0];
+    const dangerousCommands = ['rm', 'sudo', 'curl', 'wget', 'eval', 'bash', 'sh'];
+    
+    if (dangerousCommands.includes(executable)) {
+      throw new Error(`Command '${executable}' is not allowed for security reasons`);
+    }
+    
+    return parts;
   }
 
   /**

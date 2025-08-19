@@ -216,7 +216,7 @@ export class RuntimeGuard {
     details?: Record<string, any>
   ): ContractViolation {
     const violation: ContractViolation = {
-      id: `biz_rule_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `biz_rule_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
       type: ViolationType.BUSINESS_RULE,
       severity,
       message: `Business rule violation: ${rule} - ${message}`,
@@ -241,7 +241,7 @@ export class RuntimeGuard {
     requestId?: string
   ): ContractViolation {
     const violation: ContractViolation = {
-      id: `rate_limit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `rate_limit_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
       type: ViolationType.RATE_LIMIT,
       severity: ViolationSeverity.MEDIUM,
       message: `Rate limit exceeded for ${endpoint}: ${current}/${limit} requests in ${windowMs}ms`,
@@ -386,7 +386,7 @@ export class RuntimeGuard {
     }));
 
     return {
-      id: `validation_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `validation_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
       type: ViolationType.SCHEMA_VALIDATION,
       severity,
       message: `Schema validation failed: ${issues.length} issues found`,
