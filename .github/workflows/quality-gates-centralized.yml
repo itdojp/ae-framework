@@ -3,6 +3,7 @@ name: Centralized Quality Gates
 on:
   push:
     branches: [ main, develop ]
+    tags: ['v*'] # Run quality gates on releases
   pull_request:
     branches: [ main, develop ]
   workflow_call:
