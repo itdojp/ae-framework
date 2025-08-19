@@ -6,12 +6,14 @@
 
 1. [統合アーキテクチャ実装](#統合アーキテクチャ実装)
 2. [AI Agent システム](#ai-agent-システム)
-3. [データ永続化とステート管理](#データ永続化とステート管理)
-4. [テレメトリとモニタリング](#テレメトリとモニタリング)
-5. [品質保証システム](#品質保証システム)
-6. [パフォーマンス最適化](#パフォーマンス最適化)
-7. [セキュリティ実装](#セキュリティ実装)
-8. [デプロイメントと運用](#デプロイメントと運用)
+3. [CEGIS自動修復システム](#cegis自動修復システム)
+4. [ランタイム適合性検証](#ランタイム適合性検証)
+5. [データ永続化とステート管理](#データ永続化とステート管理)
+6. [テレメトリとモニタリング](#テレメトリとモニタリング)
+7. [品質保証システム](#品質保証システム)
+8. [パフォーマンス最適化](#パフォーマンス最適化)
+9. [セキュリティ実装](#セキュリティ実装)
+10. [デプロイメントと運用](#デプロイメントと運用)
 
 ---
 
@@ -426,6 +428,537 @@ export class IntelligentOrchestrator implements AgentOrchestrator {
 
     throw new Error(`Agent execution failed after ${maxRetries} attempts: ${lastError.message}`);
   }
+}
+```
+
+---
+
+## CEGIS自動修復システム
+
+### 🔧 Counter-Example Guided Inductive Synthesis
+
+CEGIS (Counter-Example Guided Inductive Synthesis) システムは、失敗アーティファクトを基にした自動コード修復機能です。
+
+#### 失敗アーティファクトスキーマ
+```typescript
+// 標準化された失敗アーティファクトスキーマ
+export const FailureArtifactSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string().min(1).max(200),
+  description: z.string().min(1).max(2000),
+  severity: z.enum(['critical', 'major', 'minor', 'info']),
+  category: FailureCategorySchema,
+  location: FailureLocationSchema.optional(),
+  context: FailureContextSchema,
+  evidence: FailureEvidenceSchema,
+  rootCause: RootCauseSchema.optional(),
+  suggestedActions: z.array(RepairActionSchema).default([]),
+  relatedArtifacts: z.array(z.string().uuid()).default([]),
+  metadata: z.object({
+    createdAt: z.string().datetime(),
+    updatedAt: z.string().datetime(),
+    version: z.string().default('1.0.0'),
+    tags: z.array(z.string()).default([]),
+    environment: z.record(z.string()).optional(),
+  })
+});
+
+// ファクトリパターンで簡単作成
+export class FailureArtifactFactory {
+  static fromError(
+    error: Error,
+    location?: CodeLocation,
+    context?: Record<string, any>
+  ): FailureArtifact {
+    return {
+      id: generateUUID(),
+      title: `Runtime Error: ${error.name}`,
+      description: error.message,
+      severity: 'major',
+      category: 'runtime_error',
+      evidence: {
+        stackTrace: error.stack,
+        errorType: error.constructor.name,
+        timestamp: new Date().toISOString(),
+        logs: [error.message],
+        metrics: {}
+      },
+      // ... その他のフィールド
+    };
+  }
+
+  static fromTestFailure(
+    testName: string,
+    expected: any,
+    actual: any,
+    location?: CodeLocation
+  ): FailureArtifact {
+    return {
+      id: generateUUID(),
+      title: `Test Failure: ${testName}`,
+      description: `Expected ${JSON.stringify(expected)}, but got ${JSON.stringify(actual)}`,
+      severity: 'major',
+      category: 'test_failure',
+      evidence: {
+        expected: JSON.stringify(expected),
+        actual: JSON.stringify(actual),
+        testName,
+        timestamp: new Date().toISOString()
+      },
+      // ... その他のフィールド
+    };
+  }
+}
+```
+
+#### 自動修復エンジン
+```typescript
+export class AutoFixEngine {
+  constructor(
+    private strategies: Map<FailureCategory, FixStrategy[]> = new Map(),
+    private confidenceThreshold: number = 0.7,
+    private riskAssessment: RiskAssessmentService = new RiskAssessmentService()
+  ) {
+    this.initializeDefaultStrategies();
+  }
+
+  async executeFixes(
+    failures: FailureArtifact[],
+    options: AutoFixOptions = {}
+  ): Promise<FixResult> {
+    // 1. 失敗パターン分析
+    const patterns = await this.analyzeFailurePatterns(failures);
+    
+    // 2. 修復戦略選択
+    const strategies = await this.selectStrategies(patterns);
+    
+    // 3. 修復実行
+    const fixes: AppliedFix[] = [];
+    const skipped: SkippedFix[] = [];
+    
+    for (const strategy of strategies) {
+      if (strategy.confidence < this.confidenceThreshold) {
+        skipped.push({
+          strategy: strategy.name,
+          reason: 'Low confidence',
+          confidence: strategy.confidence
+        });
+        continue;
+      }
+
+      const riskLevel = await this.riskAssessment.assess(strategy);
+      if (riskLevel > options.maxRiskLevel) {
+        skipped.push({
+          strategy: strategy.name,
+          reason: 'High risk',
+          riskLevel
+        });
+        continue;
+      }
+
+      try {
+        const fix = await this.applyFix(strategy, options.dryRun);
+        fixes.push(fix);
+      } catch (error) {
+        skipped.push({
+          strategy: strategy.name,
+          reason: 'Execution failed',
+          error: error.message
+        });
+      }
+    }
+
+    return {
+      appliedFixes: fixes,
+      skippedFixes: skipped,
+      summary: this.generateSummary(fixes, skipped),
+      recommendations: await this.generateRecommendations(failures, fixes)
+    };
+  }
+
+  private initializeDefaultStrategies(): void {
+    // コントラクト違反修復戦略
+    this.strategies.set('contract_violation', [
+      new TypeConstraintFixStrategy(),
+      new ValidationFixStrategy(),
+      new SchemaUpdateStrategy()
+    ]);
+
+    // テスト失敗修復戦略
+    this.strategies.set('test_failure', [
+      new AssertionFixStrategy(),
+      new MockFixStrategy(),
+      new TestDataFixStrategy()
+    ]);
+
+    // 型エラー修復戦略
+    this.strategies.set('type_error', [
+      new TypeAnnotationStrategy(),
+      new InterfaceUpdateStrategy(),
+      new GenericConstraintStrategy()
+    ]);
+  }
+}
+```
+
+#### CLIインターフェース
+```typescript
+// ae fix コマンド実装
+export class AEFixCLI {
+  async execute(args: string[]): Promise<void> {
+    const command = new Command()
+      .name('ae-fix')
+      .description('CEGIS-based automated code fixing')
+      .version('1.0.0');
+
+    command
+      .command('fix')
+      .description('Apply automated fixes to failure artifacts')
+      .option('-i, --input <file>', 'Input failure artifacts JSON file')
+      .option('-o, --output <dir>', 'Output directory for fixed files', './fixed')
+      .option('--dry-run', 'Show proposed fixes without applying them')
+      .option('--confidence <threshold>', 'Minimum confidence threshold', '0.7')
+      .option('--max-risk <level>', 'Maximum risk level', '3')
+      .action(async (options) => {
+        const failures = await this.loadFailures(options.input);
+        const engine = new AutoFixEngine();
+        
+        const result = await engine.executeFixes(failures, {
+          dryRun: options.dryRun,
+          confidenceThreshold: parseFloat(options.confidence),
+          maxRiskLevel: parseInt(options.maxRisk)
+        });
+
+        await this.displayResults(result);
+        
+        if (!options.dryRun) {
+          await this.writeFixedFiles(result.appliedFixes, options.output);
+        }
+      });
+
+    command
+      .command('analyze')
+      .description('Analyze failure patterns')
+      .option('-i, --input <file>', 'Input failure artifacts JSON file')
+      .option('-v, --verbose', 'Verbose analysis output')
+      .action(async (options) => {
+        const failures = await this.loadFailures(options.input);
+        const analysis = await this.analyzePatterns(failures);
+        
+        console.log('\n🔍 Failure Pattern Analysis:\n');
+        this.displayAnalysis(analysis, options.verbose);
+      });
+
+    await command.parseAsync(args);
+  }
+}
+```
+
+---
+
+## ランタイム適合性検証
+
+### 🔍 Runtime Conformance with Zod + OpenTelemetry
+
+ランタイム適合性検証システムは、本番環境での契約違反や仕様ドリフトをリアルタイムで検出します。
+
+#### 適合性ガード
+```typescript
+// Zodベースのランタイム検証ガード
+export class ConformanceGuard<T> {
+  constructor(
+    private schema: z.ZodSchema<T>,
+    private schemaName: string,
+    private config: GuardConfig = defaultConfig
+  ) {
+    this.initializeTelemetry();
+  }
+
+  async validateInput(
+    data: unknown,
+    context?: Record<string, any>
+  ): Promise<ConformanceResult<T>> {
+    const startTime = Date.now();
+    let span: Span | undefined;
+    
+    if (this.config.telemetryEnabled) {
+      span = tracer.startSpan(`conformance_check_input`, {
+        attributes: {
+          'conformance.schema_name': this.schemaName,
+          'conformance.direction': 'input'
+        }
+      });
+    }
+
+    try {
+      const result = this.schema.safeParse(data);
+      const duration = Date.now() - startTime;
+      
+      // メトリクス記録
+      this.recordMetrics(result.success, duration, 'input');
+      
+      if (!result.success) {
+        // 適合性違反の処理
+        await this.handleViolation(result.error, data, 'input', context);
+        
+        if (this.config.failOnViolation) {
+          throw new ConformanceViolationError(
+            this.schemaName,
+            'input',
+            result.error.issues,
+            data
+          );
+        }
+        
+        return {
+          success: false,
+          errors: result.error.issues.map(issue => `${issue.path.join('.')}: ${issue.message}`),
+          warnings: [],
+          metadata: {
+            schemaName: this.schemaName,
+            duration,
+            timestamp: new Date().toISOString(),
+            context
+          }
+        };
+      }
+      
+      return {
+        success: true,
+        data: result.data,
+        errors: [],
+        warnings: [],
+        metadata: {
+          schemaName: this.schemaName,
+          duration,
+          timestamp: new Date().toISOString(),
+          context
+        }
+      };
+    } catch (error) {
+      span?.recordException(error as Error);
+      throw error;
+    } finally {
+      span?.end();
+    }
+  }
+
+  private async handleViolation(
+    error: z.ZodError,
+    data: unknown,
+    direction: 'input' | 'output',
+    context?: Record<string, any>
+  ): Promise<void> {
+    // ファイラーアーティファクト生成
+    if (this.config.generateArtifacts) {
+      const artifact = FailureArtifactFactory.fromContractViolation(
+        `${this.schemaName} (${direction})`,
+        'Schema validation',
+        data,
+        context?.location
+      );
+      
+      artifact.evidence.logs.push(
+        ...error.issues.map(issue => `Validation error: ${issue.message}`)
+      );
+      
+      // CEGISシステムへの通知
+      await this.notifyFailure(artifact);
+    }
+  }
+}
+```
+
+#### Express/Fastifyミドルウェア
+```typescript
+// Expressミドルウェア実装
+export class ExpressConformanceMiddleware {
+  constructor(private config: MiddlewareConfig = defaultMiddlewareConfig) {}
+
+  validateRequestBody<T>(schema: z.ZodSchema<T>, operationId: string) {
+    const guard = GuardFactory.apiRequest(schema, operationId);
+    
+    return async (req: Request, res: Response, next: NextFunction) => {
+      if (!this.config.enabled) return next();
+
+      const span = tracer.startSpan(`validate_request_body_${operationId}`);
+      
+      try {
+        const context = this.createValidationContext(req, operationId);
+        const result = await guard.validateInput(req.body, context);
+
+        span.setAttributes({
+          'http.method': req.method,
+          'http.route': req.route?.path || req.path,
+          'conformance.validation_result': result.success ? 'success' : 'failure'
+        });
+
+        if (!result.success) {
+          return this.handleValidationError(result, req, res, next, 'request_body');
+        }
+
+        // 検証済みデータで置き換え
+        req.body = result.data;
+        next();
+      } catch (error) {
+        span.recordException(error as Error);
+        this.handleMiddlewareError(error, req, res, next);
+      } finally {
+        span.end();
+      }
+    };
+  }
+
+  validateResponse<T>(schema: z.ZodSchema<T>, operationId: string) {
+    const guard = GuardFactory.apiResponse(schema, operationId);
+    
+    return (req: Request, res: Response, next: NextFunction) => {
+      if (!this.config.enabled) return next();
+
+      // レスポンスメソッドをインターセプト
+      const originalJson = res.json;
+      const originalSend = res.send;
+
+      res.json = function(data: any) {
+        validateAndSend.call(this, data, originalJson);
+        return this;
+      };
+
+      res.send = function(data: any) {
+        validateAndSend.call(this, data, originalSend);
+        return this;
+      };
+
+      const validateAndSend = async function(this: Response, data: any, originalMethod: Function) {
+        const span = tracer.startSpan(`validate_response_${operationId}`);
+        
+        try {
+          const context = this.createValidationContext(req, operationId);
+          const result = await guard.validateOutput(data, context);
+
+          if (!result.success && this.config.logErrors) {
+            console.warn(`🚨 Response validation failed for ${operationId}:`, result.errors);
+          }
+
+          // レスポンスは常に送信（ブレーキングしない）
+          originalMethod.call(this, data);
+        } catch (error) {
+          span.recordException(error as Error);
+          originalMethod.call(this, data);
+        } finally {
+          span.end();
+        }
+      }.bind(this);
+
+      next();
+    };
+  }
+}
+```
+
+#### ファクトリーパターン
+```typescript
+// ガードファクトリー
+export class GuardFactory {
+  // APIリクエスト用ガード（厳格）
+  static apiRequest<T>(schema: z.ZodSchema<T>, operationId: string): ConformanceGuard<T> {
+    return new ConformanceGuard(schema, `api.request.${operationId}`, {
+      failOnViolation: true,
+      logViolations: true,
+      generateArtifacts: true,
+      context: { type: 'api_request', operation: operationId }
+    });
+  }
+
+  // APIレスポンス用ガード（寛容）
+  static apiResponse<T>(schema: z.ZodSchema<T>, operationId: string): ConformanceGuard<T> {
+    return new ConformanceGuard(schema, `api.response.${operationId}`, {
+      failOnViolation: false, // プロダクションではレスポンスで失敗させない
+      logViolations: true,
+      generateArtifacts: true,
+      context: { type: 'api_response', operation: operationId }
+    });
+  }
+
+  // データベースエンティティ用ガード
+  static databaseEntity<T>(schema: z.ZodSchema<T>, entityName: string): ConformanceGuard<T> {
+    return new ConformanceGuard(schema, `db.entity.${entityName}`, {
+      failOnViolation: true,
+      logViolations: true,
+      generateArtifacts: true,
+      context: { type: 'database_entity', entity: entityName }
+    });
+  }
+
+  // イベント用ガード（寛容）
+  static event<T>(schema: z.ZodSchema<T>, eventType: string): ConformanceGuard<T> {
+    return new ConformanceGuard(schema, `event.${eventType}`, {
+      failOnViolation: false, // イベント処理を停止させない
+      logViolations: true,
+      generateArtifacts: true,
+      context: { type: 'event', eventType }
+    });
+  }
+}
+```
+
+#### デコレーターサポート
+```typescript
+// 自動メソッド検証デコレーター
+export function ValidateInput<T>(guard: ConformanceGuard<T>) {
+  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+    const originalMethod = descriptor.value;
+
+    descriptor.value = async function (input: unknown, ...args: any[]) {
+      const result = await guard.validateInput(input, {
+        method: `${target.constructor.name}.${propertyKey}`,
+        timestamp: new Date().toISOString()
+      });
+
+      if (!result.success && guard.getConfig().failOnViolation) {
+        throw new ConformanceViolationError(
+          `Input validation failed for ${propertyKey}`,
+          guard.getConfig().context?.schema_name || 'unknown',
+          'input',
+          result.errors,
+          input
+        );
+      }
+
+      return originalMethod.call(this, result.data || input, ...args);
+    };
+
+    return descriptor;
+  };
+}
+
+export function ValidateOutput<T>(guard: ConformanceGuard<T>) {
+  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+    const originalMethod = descriptor.value;
+
+    descriptor.value = async function (...args: any[]) {
+      const result = await originalMethod.apply(this, args);
+      
+      const validationResult = await guard.validateOutput(result, {
+        method: `${target.constructor.name}.${propertyKey}`,
+        timestamp: new Date().toISOString()
+      });
+
+      if (!validationResult.success && guard.getConfig().failOnViolation) {
+        throw new ConformanceViolationError(
+          `Output validation failed for ${propertyKey}`,
+          guard.getConfig().context?.schema_name || 'unknown',
+          'output',
+          validationResult.errors,
+          result
+        );
+      }
+
+      return result;
+    };
+
+    return descriptor;
+  };
 }
 ```
 
@@ -1222,18 +1755,36 @@ ae-frameworkの技術実装は、以下の特徴により次世代のAI駆動開
 - **ハイブリッド統合**: Claude Code、MCP、CLIの統合システム
 - **AI Agent協調**: フェーズ特化エージェントの協調動作
 - **品質保証組み込み**: 各段階での自動品質チェック
+- **CEGIS自動修復**: 失敗駆動の自動コード改善システム
+- **ランタイム適合性**: 本番環境での契約違反リアルタイム検出
 - **並列処理最適化**: 高速な処理のための並列化エンジン
 
 ### 🔧 技術スタックの革新
 - **TypeScript First**: 完全な型安全性
-- **OpenTelemetry**: 包括的な可観測性
+- **Zod Runtime Validation**: 実行時データ整合性保証
+- **OpenTelemetry**: 包括的な可観測性とメトリクス
 - **Modern React**: 最新のReact 18 + Next.js 14
 - **AI Integration**: Claude APIの深度統合
+- **CEGIS Engine**: 自動コード修復とパターン学習
 
 ### 🚀 運用特性
+- **自己修復**: 失敗パターンから自動学習・修復
+- **リアルタイム監視**: Runtime Conformanceによる契約違反即座検出
 - **スケーラブル**: クラウドネイティブ設計
-- **監視可能**: リアルタイムメトリクス収集
+- **監視可能**: 多次元メトリクス収集とアラート
 - **安全**: セキュリティファーストアプローチ
 - **保守性**: モジュラー設計による高い保守性
+- **品質保証**: TDDからRuntime Conformanceまで多層品質ガード
 
-**🎉 ae-frameworkで、AI-Enhanced Developmentの技術的革新を体験しましょう！**
+### 🌟 最新機能の統合効果
+
+**CEGIS + Runtime Conformance** の組み合わせにより、ae-frameworkは従来の開発フレームワークを超えた「**自己進化するAI開発システム**」を実現しています：
+
+1. **開発時**: TDD + Quality Gatesによる品質保証
+2. **実行時**: Runtime Conformanceによる契約監視
+3. **失敗時**: CEGIS による自動修復と学習
+4. **改善時**: 失敗パターン分析による継続的品質向上
+
+この循環により、システムは使用するほど賢くなり、開発者の負担を軽減しながら品質を継続的に向上させます。
+
+**🎉 ae-frameworkで、自己修復するAI-Enhanced Developmentの未来を体験しましょう！**
