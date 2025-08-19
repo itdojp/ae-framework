@@ -81,6 +81,15 @@ export interface QualityPolicy {
 }
 
 /**
+ * Get the current quality profile from environment variable or parameter
+ * @param environment - Optional environment override
+ * @returns Profile name ('development', 'ci', 'production')
+ */
+export const getQualityProfile = (environment?: string): string => {
+  return environment || process.env.AE_QUALITY_PROFILE || 'ci';
+};
+
+/**
  * Loads the centralized quality policy configuration
  * @param environment - Optional environment to apply overrides ('development', 'ci', 'production')
  * @returns Parsed quality policy with environment overrides applied
@@ -91,9 +100,10 @@ export const loadQualityPolicy = (environment?: string): QualityPolicy => {
     const policyContent = readFileSync(policyPath, 'utf-8');
     const policy: QualityPolicy = JSON.parse(policyContent);
     
-    // Apply environment-specific overrides if specified
-    if (environment && policy.environments[environment]) {
-      const overrides = policy.environments[environment].overrides;
+    // Apply environment-specific overrides based on profile
+    const activeProfile = getQualityProfile(environment);
+    if (activeProfile && policy.environments[activeProfile]) {
+      const overrides = policy.environments[activeProfile].overrides;
       policy.quality = applyOverrides(policy.quality, overrides);
     }
     
@@ -110,7 +120,8 @@ export const loadQualityPolicy = (environment?: string): QualityPolicy => {
  * @returns Quality gate configuration
  */
 export const getQualityGate = (gateType: string, environment?: string): QualityGate => {
-  const policy = loadQualityPolicy(environment);
+  const activeProfile = getQualityProfile(environment);
+  const policy = loadQualityPolicy(activeProfile);
   const gate = policy.quality[gateType];
   
   if (!gate) {
@@ -128,7 +139,8 @@ export const getQualityGate = (gateType: string, environment?: string): QualityG
  * @returns True if the gate should be enforced
  */
 export const shouldEnforceGate = (gateType: string, currentPhase: string, environment?: string): boolean => {
-  const gate = getQualityGate(gateType, environment);
+  const activeProfile = getQualityProfile(environment);
+  const gate = getQualityGate(gateType, activeProfile);
   
   // Check if enforcement is disabled
   if (gate.enforcement === 'off') {
@@ -159,7 +171,8 @@ export const shouldEnforceGate = (gateType: string, currentPhase: string, enviro
  * @returns The threshold value
  */
 export const getThreshold = (gateType: string, metric: string, environment?: string): number | string | undefined => {
-  const gate = getQualityGate(gateType, environment);
+  const activeProfile = getQualityProfile(environment);
+  const gate = getQualityGate(gateType, activeProfile);
   return gate.thresholds[metric as keyof QualityThresholds];
 };
 
@@ -170,7 +183,8 @@ export const getThreshold = (gateType: string, metric: string, environment?: str
  * @returns Array of command line arguments
  */
 export const getThresholdArgs = (gateType: string, environment?: string): string[] => {
-  const gate = getQualityGate(gateType, environment);
+  const activeProfile = getQualityProfile(environment);
+  const gate = getQualityGate(gateType, activeProfile);
   const args: string[] = [];
   
   Object.entries(gate.thresholds).forEach(([key, value]) => {
@@ -196,7 +210,8 @@ export const validateQualityResults = (
   results: Record<string, number>, 
   environment?: string
 ): { passed: boolean; failures: string[]; warnings: string[] } => {
-  const gate = getQualityGate(gateType, environment);
+  const activeProfile = getQualityProfile(environment);
+  const gate = getQualityGate(gateType, activeProfile);
   const failures: string[] = [];
   const warnings: string[] = [];
   

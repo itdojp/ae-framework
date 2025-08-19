@@ -25,11 +25,18 @@ function loadQualityPolicy(environment) {
         const pathParts = overridePath.split('.');
         let current = policy.quality;
         
+        // Navigate to the correct nested object
         for (let i = 0; i < pathParts.length - 1; i++) {
-          current = current[pathParts[i]];
+          const part = pathParts[i];
+          if (!current[part]) {
+            current[part] = {};
+          }
+          current = current[part];
         }
         
-        current[pathParts[pathParts.length - 1]] = value;
+        // Set the final value
+        const finalKey = pathParts[pathParts.length - 1];
+        current[finalKey] = value;
       });
     }
     
@@ -43,7 +50,10 @@ function loadQualityPolicy(environment) {
 
 // Parse command line arguments and load policy
 const args = process.argv.slice(2);
-const environment = args.find(arg => arg.startsWith('--env='))?.split('=')[1] || 'ci';
+// Check AE_QUALITY_PROFILE environment variable first, then CLI args, then default to 'ci'
+const environment = process.env.AE_QUALITY_PROFILE || 
+                   args.find(arg => arg.startsWith('--env='))?.split('=')[1] || 
+                   'ci';
 const policy = loadQualityPolicy(environment);
 
 // Get thresholds from policy or fallback to CLI args
@@ -51,10 +61,10 @@ let linesThreshold, functionsThreshold, branchesThreshold, statementsThreshold;
 
 if (policy && policy.quality.coverage) {
   const coverageGate = policy.quality.coverage;
-  linesThreshold = coverageGate.thresholds.lines || 80;
-  functionsThreshold = coverageGate.thresholds.functions || 80;
-  branchesThreshold = coverageGate.thresholds.branches || 80;
-  statementsThreshold = coverageGate.thresholds.statements || 80;
+  linesThreshold = coverageGate.thresholds.lines ?? 80;
+  functionsThreshold = coverageGate.thresholds.functions ?? 80;
+  branchesThreshold = coverageGate.thresholds.branches ?? 80;
+  statementsThreshold = coverageGate.thresholds.statements ?? 80;
   
   console.log(`📋 Using centralized quality policy (${environment} environment)`);
   console.log(`   Policy version: ${policy.version}`);
