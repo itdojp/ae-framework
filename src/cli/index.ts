@@ -616,6 +616,13 @@ import { IntegrationTestingCli } from './integration-cli.js';
 const integrationCli = new IntegrationTestingCli();
 program.addCommand(integrationCli.createCommand());
 
+// Resilience commands
+import { createResilienceCommand } from './resilience-cli.js';
+program.addCommand(createResilienceCommand());
+
+// SBOM commands
+import { createSBOMCommand } from './sbom-cli.js';
+program.addCommand(createSBOMCommand());
 
 program.parse();
 
