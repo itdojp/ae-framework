@@ -11,7 +11,7 @@ import { trace } from '@opentelemetry/api';
 export async function createServer(): Promise<FastifyInstance> {
   const app = Fastify({ 
     logger: true,
-    genReqId: () => `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    genReqId: () => `req_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
   });
 
   const tracer = trace.getTracer('ae-framework-api');
@@ -36,6 +36,7 @@ export async function createServer(): Promise<FastifyInstance> {
     });
     
     (request as any).span = span;
+    (request as any).startTime = Date.now();
     enhancedTelemetry.recordCounter('api.requests.total', 1, {
       method: request.method,
       endpoint: request.url,
@@ -48,7 +49,7 @@ export async function createServer(): Promise<FastifyInstance> {
     if (span) {
       span.setAttributes({
         'http.status_code': reply.statusCode,
-        [TELEMETRY_ATTRIBUTES.DURATION_MS]: reply.getResponseTime(),
+        [TELEMETRY_ATTRIBUTES.DURATION_MS]: Date.now() - (request as any).startTime || 0,
       });
       
       if (reply.statusCode >= 400) {
@@ -153,7 +154,7 @@ export async function createServer(): Promise<FastifyInstance> {
         runtimeGuard.recordBusinessRuleViolation(
           'max_quantity_limit',
           `Quantity ${quantity} exceeds maximum allowed (100)`,
-          'medium',
+          'medium' as const,
           { orderId, itemId, quantity }
         );
         

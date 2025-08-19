@@ -6,7 +6,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 import { QualityPolicyLoader, QualityGateResult } from '../../src/quality/policy-loader.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Mock quality policy for testing
 const mockPolicy = {
