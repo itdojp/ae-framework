@@ -2,6 +2,7 @@ name: Verify Traceability
 on:
   push:
     branches: [main]
+    tags: ['v*'] # Verify traceability on releases
   pull_request:
     branches: [main]
 

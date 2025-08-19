@@ -2,6 +2,7 @@ name: Fast CI
 on: 
   push:
     branches: [ main, 'feat/*' ]
+    tags: ['v*'] # Ensure tag-based releases trigger CI
   pull_request:
     branches: [ main ]
 
