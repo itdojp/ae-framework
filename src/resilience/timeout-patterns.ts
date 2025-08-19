@@ -292,6 +292,9 @@ export class AdaptiveTimeout {
  * Hierarchical timeout with cascading timeouts for nested operations
  */
 export class HierarchicalTimeout {
+  private static readonly MAX_TIMEOUT_MS = 60000; // Maximum allowed timeout (60 seconds)
+  private static readonly FALLBACK_TIMEOUT_MS = 30000; // Fallback timeout when restriction is applied
+  
   private activeTimeouts: Map<string, NodeJS.Timeout> = new Map();
   private operationStack: string[] = [];
 
@@ -308,8 +311,8 @@ export class HierarchicalTimeout {
     if (parentOperationId && this.activeTimeouts.has(parentOperationId)) {
       const parentStartTime = Date.now();
       // Estimate remaining parent timeout (simplified)
-      if (timeoutMs > 60000) { // If timeout is too long, restrict it
-        timeoutMs = Math.min(timeoutMs, 30000);
+      if (timeoutMs > HierarchicalTimeout.MAX_TIMEOUT_MS) { // If timeout is too long, restrict it
+        timeoutMs = Math.min(timeoutMs, HierarchicalTimeout.FALLBACK_TIMEOUT_MS);
       }
     }
 

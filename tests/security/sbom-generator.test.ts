@@ -12,7 +12,7 @@ vi.mock('fs/promises');
 vi.mock('glob');
 
 const mockFs = vi.mocked(fs);
-const mockGlob = vi.hoisted(() => vi.fn());
+const mockGlob = vi.fn();
 
 vi.mock('glob', () => ({
   glob: mockGlob,

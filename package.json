@@ -9,7 +9,9 @@
     "ae-phase": "./dist/cli/phase-cli.js",
     "ae-approve": "./dist/cli/approval-cli.js",
     "ae-slash": "./dist/cli/slash-cli.js",
-    "ae-ui": "./dist/cli/ae-ui-alias.js"
+    "ae-ui": "./dist/cli/ae-ui-alias.js",
+    "ae-sbom": "./dist/cli/sbom-cli.js",
+    "ae-resilience": "./dist/cli/resilience-cli.js"
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",
