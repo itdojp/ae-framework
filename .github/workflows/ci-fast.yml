@@ -6,8 +6,15 @@ on:
     branches: [ main ]
 
 jobs:
+  # Issue #71: CI最前段にSpec Validation追加（fail-fast）
+  spec-validation:
+    name: 🚦 Fail-Fast Spec Validation
+    uses: ./.github/workflows/fail-fast-spec-validation.yml
+    secrets: inherit
+
   build-test:
     runs-on: ubuntu-latest
+    needs: spec-validation  # Spec validation must pass first
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
