@@ -142,8 +142,8 @@ export const shouldEnforceGate = (gateType: string, currentPhase: string, enviro
   
   // Check if there's an enabled from phase requirement
   if (gate.enabledFromPhase) {
-    const enabledPhaseIndex = PHASES.indexOf(gate.enabledFromPhase);
-    const currentPhaseIndex = PHASES.indexOf(currentPhase);
+    const enabledPhaseIndex = PHASES.indexOf(gate.enabledFromPhase as typeof PHASES[number]);
+    const currentPhaseIndex = PHASES.indexOf(currentPhase as typeof PHASES[number]);
     
     return currentPhaseIndex >= enabledPhaseIndex;
   }

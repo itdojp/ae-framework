@@ -150,8 +150,33 @@
     },
     
     "ci": {
-      "description": "CI environment settings",
-      "overrides": {}
+      "description": "CI environment settings - Optimized for continuous integration with stricter thresholds",
+      "overrides": {
+        "accessibility.thresholds.critical": 0,
+        "accessibility.thresholds.serious": 0,
+        "accessibility.thresholds.moderate": 1,
+        "accessibility.thresholds.total_warnings": 3,
+        "coverage.thresholds.lines": 85,
+        "coverage.thresholds.functions": 85,
+        "coverage.thresholds.branches": 80,
+        "coverage.thresholds.statements": 85,
+        "lighthouse.enforcement": "warn",
+        "lighthouse.thresholds.performance": 85,
+        "lighthouse.thresholds.accessibility": 95,
+        "lighthouse.config.numberOfRuns": 1,
+        "linting.thresholds.errors": 0,
+        "linting.thresholds.warnings": 5,
+        "security.thresholds.critical": 0,
+        "security.thresholds.high": 0,
+        "security.thresholds.moderate": 1,
+        "security.thresholds.low": 3,
+        "visual.enforcement": "off",
+        "mutation.enforcement": "off",
+        "tdd.thresholds.testToCodeRatio": 1.0,
+        "policy.thresholds.uiViolations": 0,
+        "policy.thresholds.designSystemViolations": 1,
+        "policy.thresholds.accessibilityViolations": 0
+      }
     },
     
     "production": {
