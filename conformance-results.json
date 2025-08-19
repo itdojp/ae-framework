@@ -1,0 +1,159 @@
+{
+  "overall": "pass",
+  "results": [
+    {
+      "id": "4e8f03ce-ee5c-4913-843d-b1f569673bf4",
+      "ruleId": "54262b4b-fd5d-402f-965a-31230ba4b3d6",
+      "status": "pass",
+      "timestamp": "2025-08-19T19:47:17.476Z",
+      "duration": 0,
+      "context": {
+        "timestamp": "2025-08-19T19:47:17.476Z",
+        "executionId": "f24e6fac-f3f0-4ddd-891e-5b4a1a508ac4",
+        "environment": "cli",
+        "version": "2.2.0",
+        "metadata": {
+          "source": "cli",
+          "tool": "conformance-cli",
+          "engineVersion": "2.2.0",
+          "verificationId": "f24e6fac-f3f0-4ddd-891e-5b4a1a508ac4"
+        }
+      },
+      "metrics": {
+        "executionTime": 0,
+        "memoryUsage": 14025504,
+        "networkCalls": 0,
+        "dbQueries": 0
+      }
+    },
+    {
+      "id": "77b6b45b-5f53-490b-9750-2469cddf0634",
+      "ruleId": "5b3aef09-1387-4cda-8333-675672363c9d",
+      "status": "pass",
+      "timestamp": "2025-08-19T19:47:17.476Z",
+      "duration": 0,
+      "context": {
+        "timestamp": "2025-08-19T19:47:17.476Z",
+        "executionId": "f24e6fac-f3f0-4ddd-891e-5b4a1a508ac4",
+        "environment": "cli",
+        "version": "2.2.0",
+        "metadata": {
+          "source": "cli",
+          "tool": "conformance-cli",
+          "engineVersion": "2.2.0",
+          "verificationId": "f24e6fac-f3f0-4ddd-891e-5b4a1a508ac4"
+        }
+      },
+      "metrics": {
+        "executionTime": 0,
+        "memoryUsage": 14026344,
+        "networkCalls": 0,
+        "dbQueries": 0
+      }
+    },
+    {
+      "id": "7ec5ad70-bf88-43dc-a6a1-698d68aa0461",
+      "ruleId": "618b3f48-7de9-4078-9534-2c6b11e01082",
+      "status": "pass",
+      "timestamp": "2025-08-19T19:47:17.476Z",
+      "duration": 0,
+      "context": {
+        "timestamp": "2025-08-19T19:47:17.476Z",
+        "executionId": "f24e6fac-f3f0-4ddd-891e-5b4a1a508ac4",
+        "environment": "cli",
+        "version": "2.2.0",
+        "metadata": {
+          "source": "cli",
+          "tool": "conformance-cli",
+          "engineVersion": "2.2.0",
+          "verificationId": "f24e6fac-f3f0-4ddd-891e-5b4a1a508ac4"
+        }
+      },
+      "metrics": {
+        "executionTime": 0,
+        "memoryUsage": 14027184,
+        "networkCalls": 0,
+        "dbQueries": 0
+      }
+    },
+    {
+      "id": "c2e9b3ed-8a90-4212-9206-4ffa0887bcfd",
+      "ruleId": "none",
+      "status": "skip",
+      "timestamp": "2025-08-19T19:47:17.476Z",
+      "duration": 0,
+      "context": {
+        "timestamp": "2025-08-19T19:47:17.476Z",
+        "executionId": "f24e6fac-f3f0-4ddd-891e-5b4a1a508ac4",
+        "environment": "cli",
+        "version": "2.2.0",
+        "metadata": {
+          "source": "cli",
+          "tool": "conformance-cli",
+          "engineVersion": "2.2.0",
+          "verificationId": "f24e6fac-f3f0-4ddd-891e-5b4a1a508ac4"
+        }
+      },
+      "metrics": {
+        "executionTime": 0
+      }
+    },
+    {
+      "id": "017a9d5b-9cdd-4207-860d-352ed8ae1cbf",
+      "ruleId": "invalid-data",
+      "status": "skip",
+      "timestamp": "2025-08-19T19:47:17.476Z",
+      "duration": 0,
+      "context": {
+        "timestamp": "2025-08-19T19:47:17.476Z",
+        "executionId": "f24e6fac-f3f0-4ddd-891e-5b4a1a508ac4",
+        "environment": "cli",
+        "version": "2.2.0",
+        "metadata": {
+          "source": "cli",
+          "tool": "conformance-cli",
+          "engineVersion": "2.2.0",
+          "verificationId": "f24e6fac-f3f0-4ddd-891e-5b4a1a508ac4"
+        }
+      },
+      "metrics": {
+        "executionTime": 0
+      }
+    }
+  ],
+  "violations": [],
+  "summary": {
+    "totalRules": 5,
+    "rulesExecuted": 3,
+    "rulesPassed": 3,
+    "rulesFailed": 0,
+    "rulesSkipped": 2,
+    "rulesError": 0,
+    "totalDuration": 0,
+    "violationsBySeverity": {
+      "critical": 0,
+      "major": 0,
+      "minor": 0,
+      "info": 0,
+      "warning": 0
+    },
+    "violationsByCategory": {
+      "data_validation": 0,
+      "api_contract": 0,
+      "business_logic": 0,
+      "security_policy": 0,
+      "performance_constraint": 0,
+      "resource_usage": 0,
+      "state_invariant": 0,
+      "behavioral_constraint": 0,
+      "integration_requirement": 0,
+      "compliance_rule": 0
+    }
+  },
+  "metadata": {
+    "executionId": "a5ab7a05-70de-454b-90cf-3c21054607ad",
+    "timestamp": "2025-08-19T19:47:17.476Z",
+    "environment": "production",
+    "version": "2.2.0"
+  }
+}

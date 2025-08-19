@@ -1,0 +1,28 @@
+{
+  "enabled": true,
+  "mode": "permissive",
+  "rules": [],
+  "sampling": {
+    "enabled": false,
+    "rate": 1,
+    "strategy": "random"
+  },
+  "performance": {
+    "timeoutMs": 5000,
+    "maxConcurrentChecks": 10,
+    "cacheResults": true,
+    "cacheTtlMs": 300000
+  },
+  "reporting": {
+    "destinations": [
+      "console"
+    ],
+    "batchSize": 100,
+    "flushIntervalMs": 30000
+  },
+  "alerting": {
+    "enabled": false,
+    "thresholds": {},
+    "channels": []
+  }
+}
