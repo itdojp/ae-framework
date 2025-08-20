@@ -1,0 +1,36 @@
+{
+  "timestamp": "2025-08-20T00:39:11.441Z",
+  "summary": {
+    "totalFailures": 3,
+    "fixesApplied": 0,
+    "fixesSkipped": 3,
+    "filesModified": 0,
+    "success": true,
+    "errors": [],
+    "warnings": []
+  },
+  "failures": 3,
+  "appliedFixes": [],
+  "skippedFixes": [
+    {
+      "strategy": "TypeScript Type Error Fix",
+      "reason": "Low confidence",
+      "confidence": 0.8,
+      "riskLevel": 1
+    },
+    {
+      "strategy": "Contract Violation Fix",
+      "reason": "Low confidence",
+      "confidence": 0.8,
+      "riskLevel": 2
+    },
+    {
+      "strategy": "Test Failure Fix",
+      "reason": "Low confidence",
+      "confidence": 0.7,
+      "riskLevel": 1
+    }
+  ],
+  "recommendations": [],
+  "patterns": []
+}

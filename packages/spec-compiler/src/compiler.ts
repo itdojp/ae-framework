@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { AEIR, CompileOptions, SpecLintReport, SpecLintIssue } from './types.js';
+import { StrictAEIRSchema, validateAEIR, createAEIRValidator } from './strict-schema.js';
 
 export class AESpecCompiler {
   /**
@@ -30,10 +31,13 @@ export class AESpecCompiler {
   }
 
   /**
-   * Lint AE-IR for quality issues
+   * Lint AE-IR for quality issues with strict schema validation
    */
   async lint(ir: AEIR): Promise<SpecLintReport> {
     const issues: SpecLintIssue[] = [];
+    
+    // Strict schema validation first
+    this.validateStrictSchema(ir, issues);
     
     // Basic structure validation
     this.validateStructure(ir, issues);
@@ -351,6 +355,29 @@ export class AESpecCompiler {
           suggestion: 'Consider marking key fields as required',
         });
       }
+    }
+  }
+
+  private validateStrictSchema(ir: AEIR, issues: SpecLintIssue[]): void {
+    const validator = createAEIRValidator();
+    const result = validator.validate(ir);
+    
+    if (!result.success) {
+      const readableErrors = validator.getReadableErrors(result.errors);
+      
+      readableErrors.forEach((error, index) => {
+        issues.push({
+          id: `SCHEMA_${(index + 1).toString().padStart(3, '0')}`,
+          severity: 'error',
+          message: `Schema validation failed at ${error.path}: ${error.message}`,
+          location: { 
+            section: error.path.split('.')[0] || 'root',
+            line: undefined,
+            column: undefined
+          },
+          suggestion: 'Fix the schema validation error to ensure specification compliance'
+        });
+      });
     }
   }
 }

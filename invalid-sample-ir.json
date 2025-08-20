@@ -1,0 +1,34 @@
+{
+  "version": "1.0",
+  "metadata": {
+    "name": "123invalid-name!",
+    "description": "Short"
+  },
+  "glossary": [
+    { "term": "User", "definition": "A person" },
+    { "term": "User", "definition": "Duplicate term" }
+  ],
+  "domain": [
+    {
+      "name": "User",
+      "fields": [
+        { "name": "id", "type": "invalid_type" },
+        { "name": "id", "type": "string" }
+      ]
+    }
+  ],
+  "invariants": [],
+  "usecases": [
+    {
+      "name": "Test",
+      "actor": "User",
+      "steps": [
+        { "step": 1, "description": "Step 1", "type": "action" },
+        { "step": 3, "description": "Step 3", "type": "action" }
+      ]
+    }
+  ],
+  "api": [
+    { "method": "GET", "path": "invalid-path" }
+  ]
+}
