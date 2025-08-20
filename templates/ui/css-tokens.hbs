@@ -1,0 +1,89 @@
+/**
+ * Design Tokens for {{entityName}}
+ * Auto-generated CSS custom properties
+ */
+
+:root {
+  /* Color Tokens */
+  --ae-color-primary: #3b82f6;
+  --ae-color-primary-hover: #2563eb;
+  --ae-color-secondary: #6b7280;
+  --ae-color-success: #10b981;
+  --ae-color-warning: #f59e0b;
+  --ae-color-error: #ef4444;
+  
+  /* Spacing Tokens */
+  --ae-space-xs: 0.25rem;
+  --ae-space-sm: 0.5rem;
+  --ae-space-md: 1rem;
+  --ae-space-lg: 1.5rem;
+  --ae-space-xl: 2rem;
+  
+  /* Typography Tokens */
+  --ae-font-size-sm: 0.875rem;
+  --ae-font-size-base: 1rem;
+  --ae-font-size-lg: 1.125rem;
+  --ae-font-size-xl: 1.25rem;
+  --ae-font-weight-normal: 400;
+  --ae-font-weight-medium: 500;
+  --ae-font-weight-semibold: 600;
+  
+  /* Border Radius Tokens */
+  --ae-radius-sm: 0.25rem;
+  --ae-radius-md: 0.375rem;
+  --ae-radius-lg: 0.5rem;
+  
+  /* Shadow Tokens */
+  --ae-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --ae-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --ae-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* {{entityName}} Specific Tokens */
+.{{kebabCase entityName}}-form {
+  --form-background: var(--ae-color-white, #ffffff);
+  --form-border-color: var(--ae-color-secondary, #6b7280);
+  --form-border-radius: var(--ae-radius-md);
+  --form-shadow: var(--ae-shadow-md);
+  --form-padding: var(--ae-space-lg);
+}
+
+.{{kebabCase entityName}}-card {
+  --card-background: var(--ae-color-white, #ffffff);
+  --card-border-color: var(--ae-color-secondary, #6b7280);
+  --card-border-radius: var(--ae-radius-lg);
+  --card-shadow: var(--ae-shadow-sm);
+  --card-padding: var(--ae-space-md);
+}
+
+/* Field-specific styling */
+{{#each attributes}}
+.{{../kebabCase ../entityName}}-{{kebabCase name}} {
+  {{#if (eq type 'string')}}
+  --field-min-width: 200px;
+  {{/if}}
+  {{#if (eq type 'number')}}
+  --field-width: 120px;
+  --field-text-align: right;
+  {{/if}}
+  {{#if (eq type 'boolean')}}
+  --field-width: auto;
+  {{/if}}
+  {{#if required}}
+  --field-label-color: var(--ae-color-error);
+  --field-label-font-weight: var(--ae-font-weight-semibold);
+  {{/if}}
+}
+{{/each}}
+
+/* Responsive tokens */
+@media (max-width: 768px) {
+  :root {
+    --ae-space-lg: 1rem;
+    --ae-space-xl: 1.5rem;
+  }
+  
+  .{{kebabCase entityName}}-form {
+    --form-padding: var(--ae-space-md);
+  }
+}
