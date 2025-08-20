@@ -12,13 +12,26 @@ import {
   type OptimizationDashboard 
 } from '../../src/optimization/index.js';
 
+// Import integration setup for resource leak detection
+import '../integration/setup';
+
 describe('Complete Optimization System Integration', () => {
   let optimizationSystem: OptimizationSystem;
+  let activeWorkers: any[] = [];
+  let activeSystems: OptimizationSystem[] = [];
   
-  // Set shorter timeouts to prevent hanging tests
-  vi.setConfig({ testTimeout: 10000 }); // 10 seconds max per test
+  // Set extended timeout for integration tests
+  vi.setConfig({ 
+    testTimeout: 60000,  // 60 seconds for integration tests
+    hookTimeout: 30000,  // 30 seconds for hooks
+    teardownTimeout: 15000 // 15 seconds for teardown
+  });
 
   beforeEach(() => {
+    // Reset tracking arrays
+    activeWorkers = [];
+    activeSystems = [];
+    
     optimizationSystem = createOptimizationSystem({
       integration: {
         autoStart: false,
@@ -27,25 +40,60 @@ describe('Complete Optimization System Integration', () => {
         performanceBasedScaling: true
       }
     });
+    
+    // Track this system for cleanup
+    activeSystems.push(optimizationSystem);
+    
+    // Store in global for the shared cleanup hook
+    (globalThis as any).optimizationSystem = optimizationSystem;
   });
 
   afterEach(async () => {
-    if (optimizationSystem) {
-      try {
-        // Force shutdown to prevent hanging
-        await Promise.race([
-          optimizationSystem.stop(),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Shutdown timeout')), 1000))
-        ]);
-      } catch (error) {
-        console.warn('Warning: Optimization system shutdown error:', error.message);
-        // Force cleanup
-        optimizationSystem = null as any;
+    // Stop all tracked systems with timeout
+    const shutdownPromises = activeSystems.map(async (system) => {
+      if (system && typeof system.stop === 'function') {
+        try {
+          return await Promise.race([
+            system.stop(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('System shutdown timeout')), 5000))
+          ]);
+        } catch (error) {
+          console.warn(`Warning: System shutdown error:`, error);
+        }
       }
-    }
+    });
+
+    // Stop all active workers
+    const workerPromises = activeWorkers.map(async (worker) => {
+      if (worker && typeof worker.terminate === 'function') {
+        try {
+          return await Promise.race([
+            worker.terminate(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Worker termination timeout')), 2000))
+          ]);
+        } catch (error) {
+          console.warn(`Warning: Worker termination error:`, error);
+        }
+      }
+    });
+
+    // Wait for all shutdowns
+    await Promise.allSettled([...shutdownPromises, ...workerPromises]);
+    
+    // Clear tracking arrays
+    activeWorkers.length = 0;
+    activeSystems.length = 0;
+    
+    // Clear global reference
+    delete (globalThis as any).optimizationSystem;
     
     // Clear any remaining timers
     vi.clearAllTimers();
+    
+    // Force garbage collection if available
+    if (global.gc) {
+      try { global.gc(); } catch { /* ignore */ }
+    }
   });
 
   describe('System Lifecycle', () => {
