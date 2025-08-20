@@ -1,0 +1,114 @@
+{
+  "budgets": {
+    "system": {
+      "startup": {
+        "value": 5000,
+        "unit": "ms",
+        "description": "Maximum system startup time",
+        "severity": "error"
+      },
+      "memory": {
+        "value": 536870912,
+        "unit": "bytes",
+        "description": "Maximum memory usage (512MB)",
+        "severity": "warning"
+      },
+      "cpu": {
+        "value": 0.8,
+        "unit": "percentage",
+        "description": "Maximum CPU usage (80%)",
+        "severity": "warning"
+      }
+    },
+    "tests": {
+      "execution": {
+        "value": 30000,
+        "unit": "ms",
+        "description": "Maximum test execution time",
+        "severity": "error"
+      },
+      "integration": {
+        "value": 60000,
+        "unit": "ms",
+        "description": "Maximum integration test execution time",
+        "severity": "error"
+      },
+      "performance": {
+        "value": 180000,
+        "unit": "ms",
+        "description": "Maximum performance test execution time",
+        "severity": "warning"
+      }
+    },
+    "application": {
+      "render": {
+        "value": 1000,
+        "unit": "ms",
+        "description": "Maximum render time",
+        "severity": "error"
+      },
+      "bundleSize": {
+        "value": 2097152,
+        "unit": "bytes",
+        "description": "Maximum bundle size (2MB)",
+        "severity": "warning"
+      },
+      "networkLatency": {
+        "value": 500,
+        "unit": "ms",
+        "description": "Maximum network latency",
+        "severity": "warning"
+      }
+    },
+    "ci": {
+      "fastCI": {
+        "value": 300000,
+        "unit": "ms",
+        "description": "Maximum Fast CI execution time (5 minutes)",
+        "severity": "error"
+      },
+      "qualityGates": {
+        "value": 900000,
+        "unit": "ms", 
+        "description": "Maximum Quality Gates execution time (15 minutes)",
+        "severity": "warning"
+      },
+      "nightlyMatrix": {
+        "value": 1800000,
+        "unit": "ms",
+        "description": "Maximum Nightly Matrix execution time (30 minutes)",
+        "severity": "info"
+      }
+    }
+  },
+  "environments": {
+    "development": {
+      "toleranceMultiplier": 1.5,
+      "description": "Development environment with relaxed budgets"
+    },
+    "ci": {
+      "toleranceMultiplier": 1.2,
+      "description": "CI environment with slightly relaxed budgets"
+    },
+    "production": {
+      "toleranceMultiplier": 1.0,
+      "description": "Production environment with strict budgets"
+    }
+  },
+  "reporting": {
+    "enabled": true,
+    "format": "json",
+    "outputPath": "reports/performance-budgets.json",
+    "includeMetrics": ["startup", "memory", "cpu", "render", "bundleSize"],
+    "thresholds": {
+      "error": 1.0,
+      "warning": 0.9,
+      "info": 0.8
+    }
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "lastUpdated": "2025-08-20T00:00:00Z",
+    "description": "Performance budgets configuration for AE Framework"
+  }
+}
