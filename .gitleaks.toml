@@ -1,0 +1,123 @@
+# Gitleaks configuration for AE Framework
+# https://github.com/gitleaks/gitleaks
+
+title = "AE Framework Security Configuration"
+
+[extend]
+# Extend the base configuration with additional rules
+useDefault = true
+
+[[rules]]
+id = "ae-framework-api-key"
+description = "AE Framework API Key"
+regex = '''ae[_-]?api[_-]?key\s*[:=]\s*['""]?[a-f0-9]{32,}['""]?'''
+tags = ["api-key", "ae-framework"]
+
+[[rules]]
+id = "ae-framework-secret"
+description = "AE Framework Secret"
+regex = '''ae[_-]?secret\s*[:=]\s*['""]?[a-zA-Z0-9]{16,}['""]?'''
+tags = ["secret", "ae-framework"]
+
+[[rules]]
+id = "database-connection-string"
+description = "Database Connection String"
+regex = '''(postgres|mysql|mongodb)://[^\s'"]{10,}'''
+tags = ["database", "connection-string"]
+
+[[rules]]
+id = "jwt-secret"
+description = "JWT Secret Key"
+regex = '''jwt[_-]?secret\s*[:=]\s*['""]?[a-zA-Z0-9]{20,}['""]?'''
+tags = ["jwt", "secret"]
+
+[[rules]]
+id = "encryption-key"
+description = "Encryption Key"
+regex = '''(encryption|cipher)[_-]?key\s*[:=]\s*['""]?[a-fA-F0-9]{32,}['""]?'''
+tags = ["encryption", "key"]
+
+# Additional environment variable patterns
+[[rules]]
+id = "env-secret-vars"
+description = "Environment Secret Variables"
+regex = '''(SECRET|PASSWORD|TOKEN|KEY|PRIVATE)_[A-Z_]*\s*[:=]\s*['""]?[^\s'"]{8,}['""]?'''
+tags = ["env", "secret"]
+
+# Cloud provider keys
+[[rules]]
+id = "aws-access-key"
+description = "AWS Access Key"
+regex = '''AKIA[0-9A-Z]{16}'''
+tags = ["aws", "access-key"]
+
+[[rules]]
+id = "aws-secret-key"
+description = "AWS Secret Key"
+regex = '''[A-Za-z0-9/+=]{40}'''
+tags = ["aws", "secret-key"]
+[rules.allowlist]
+description = "Allow base64 encoded test data"
+regexes = ['''test[_-]?data''', '''example[_-]?token''']
+
+[[rules]]
+id = "google-api-key"
+description = "Google API Key"
+regex = '''AIza[0-9A-Za-z\\-_]{35}'''
+tags = ["google", "api-key"]
+
+[[rules]]
+id = "slack-webhook"
+description = "Slack Webhook URL"
+regex = '''https://hooks\.slack\.com/services/[A-Z0-9/]+'''
+tags = ["slack", "webhook"]
+
+# File patterns to always check
+[rules.allowlist]
+paths = [
+    '''node_modules/''',
+    '''.git/''',
+    '''dist/''',
+    '''build/''',
+    '''coverage/''',
+    '''*.min.js''',
+    '''*.map''',
+    '''package-lock.json''',
+    '''yarn.lock'''
+]
+
+# Global allowlist for common false positives
+[allowlist]
+description = "Global allowlist for false positives"
+paths = [
+    '''tests/fixtures/''',
+    '''tests/mocks/''',
+    '''docs/examples/''',
+    '''*.test.js''',
+    '''*.test.ts''',
+    '''*.spec.js''',
+    '''*.spec.ts''',
+    '''jest.config.js''',
+    '''vitest.config.ts'''
+]
+regexes = [
+    '''example[_-]?(password|secret|key|token)''',
+    '''test[_-]?(password|secret|key|token)''',
+    '''mock[_-]?(password|secret|key|token)''',
+    '''dummy[_-]?(password|secret|key|token)''',
+    '''fake[_-]?(password|secret|key|token)''',
+    '''sample[_-]?(password|secret|key|token)''',
+    '''placeholder[_-]?(password|secret|key|token)''',
+    '''your[_-]?(password|secret|key|token)''',
+    '''(password|secret|key|token)[_-]?here''',
+    '''123456789''',
+    '''password123''',
+    '''secret123''',
+    '''[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}''' # UUID pattern
+]
+
+# Entropy detection settings
+[rules.allowlist.entropy]
+min = 3.5
+max = 8.0
+group = 3
