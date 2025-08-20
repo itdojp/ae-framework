@@ -11,9 +11,33 @@ import { readFileSync, writeFileSync, existsSync, statSync } from 'fs';
 import { join, relative, dirname } from 'path';
 import { glob } from 'glob';
 import { spawn } from 'child_process';
-import { promisify } from 'util';
 
-const execAsync = promisify(spawn);
+function execAsync(command: string, args: string[] = [], options = {}): Promise<{ stdout: string, stderr: string, code: number }> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, options);
+    let stdout = '';
+    let stderr = '';
+
+    if (child.stdout) {
+      child.stdout.on('data', (data) => {
+        stdout += data.toString();
+      });
+    }
+    if (child.stderr) {
+      child.stderr.on('data', (data) => {
+        stderr += data.toString();
+      });
+    }
+
+    child.on('error', (err) => {
+      reject(err);
+    });
+
+    child.on('close', (code) => {
+      resolve({ stdout, stderr, code: code ?? 0 });
+    });
+  });
+}
 
 interface CodeBlock {
   language: string;

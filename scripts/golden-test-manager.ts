@@ -9,7 +9,7 @@
  * - reset: Reset approved snapshot (requires confirmation)
  */
 
-import { CodegenSnapshotManager } from '../tests/golden/codegen-snapshot.test.js';
+import { CodegenSnapshotManager } from '../tests/golden/codegen-snapshot.test';
 import { readFileSync, existsSync } from 'fs';
 
 const snapshotManager = new CodegenSnapshotManager();

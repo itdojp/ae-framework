@@ -12,7 +12,6 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { spawn } from 'child_process';
-import { promisify } from 'util';
 
 interface AEIR {
   version: string;
@@ -40,7 +39,32 @@ interface AEIR {
   }>;
 }
 
-const execAsync = promisify(spawn);
+function execAsync(command: string, args: string[] = [], options: any = {}): Promise<{ stdout: string, stderr: string, code: number }> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, options);
+    let stdout = '';
+    let stderr = '';
+
+    if (child.stdout) {
+      child.stdout.on('data', (data) => {
+        stdout += data.toString();
+      });
+    }
+    if (child.stderr) {
+      child.stderr.on('data', (data) => {
+        stderr += data.toString();
+      });
+    }
+
+    child.on('error', (err) => {
+      reject(err);
+    });
+
+    child.on('close', (code) => {
+      resolve({ stdout, stderr, code: code ?? 0 });
+    });
+  });
+}
 
 class MetamorphicTestGenerator {
   private baseIR: AEIR;
