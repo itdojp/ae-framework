@@ -130,6 +130,53 @@ graph TB
             CONFORMANCE_GUARDS --> MIDDLEWARE
         end
         
+        subgraph "CI/CD Pipeline System"
+            CI_FAST[Fast CI Layer]
+            CI_QUALITY[Quality Gates Layer]
+            CI_NIGHTLY[Nightly Matrix Layer]
+            WORKFLOW_LINT[Workflow Lint]
+            
+            CI_FAST --> CI_QUALITY
+            CI_QUALITY --> CI_NIGHTLY
+            WORKFLOW_LINT --> CI_FAST
+        end
+        
+        subgraph "Test Strategy System"
+            TEST_PROJECTS[Vitest Projects]
+            UNIT_TESTS[Unit Tests (10s)]
+            INT_TESTS[Integration Tests (60s)]
+            PERF_TESTS[Performance Tests (180s)]
+            RESOURCE_ISOLATION[Resource Isolation]
+            
+            TEST_PROJECTS --> UNIT_TESTS
+            TEST_PROJECTS --> INT_TESTS
+            TEST_PROJECTS --> PERF_TESTS
+            RESOURCE_ISOLATION --> INT_TESTS
+            RESOURCE_ISOLATION --> PERF_TESTS
+        end
+        
+        subgraph "Performance Budget System"
+            BUDGET_CONFIG[Budget Configuration]
+            BUDGET_VALIDATOR[Budget Validator]
+            METRIC_TRACKER[Metrics Tracker]
+            THRESHOLD_ENFORCEMENT[Threshold Enforcement]
+            
+            BUDGET_CONFIG --> BUDGET_VALIDATOR
+            BUDGET_VALIDATOR --> METRIC_TRACKER
+            METRIC_TRACKER --> THRESHOLD_ENFORCEMENT
+        end
+        
+        subgraph "Flake Detection & Isolation"
+            FLAKE_DETECTOR[Flake Detector]
+            ISOLATION_MANAGER[Isolation Manager]
+            RECOVERY_SYSTEM[Recovery System]
+            AUTO_LABELING[Auto Labeling]
+            
+            FLAKE_DETECTOR --> ISOLATION_MANAGER
+            ISOLATION_MANAGER --> RECOVERY_SYSTEM
+            RECOVERY_SYSTEM --> AUTO_LABELING
+        end
+        
         subgraph "Sequential Inference Engine"
             SEE[Sequential Engine]
             DECOMP[Problem Decomposer]
@@ -948,25 +995,29 @@ graph TB
         direction TB
         
         subgraph "CI/CD Pipeline"
-            GITHUB_ACTIONS[GitHub Actions]
-            BUILD_STAGE[Build Stage]
-            TEST_STAGE[Test Stage]
+            WORKFLOW_LINT_DEPLOY[Workflow Lint]
+            FAST_CI[Fast CI (5min)]
+            QUALITY_GATES[Quality Gates (15min)]
+            NIGHTLY_MATRIX[Nightly Matrix (30min)]
             DEPLOY_STAGE[Deploy Stage]
             
-            GITHUB_ACTIONS --> BUILD_STAGE
-            BUILD_STAGE --> TEST_STAGE
-            TEST_STAGE --> DEPLOY_STAGE
+            WORKFLOW_LINT_DEPLOY --> FAST_CI
+            FAST_CI --> QUALITY_GATES
+            QUALITY_GATES --> DEPLOY_STAGE
+            NIGHTLY_MATRIX --> DEPLOY_STAGE
         end
         
         subgraph "Testing Pipeline"
-            UNIT_TESTS[Unit Tests]
-            E2E_TESTS_PIPE[E2E Tests]
-            A11Y_TESTS[A11y Tests]
-            PERF_TESTS[Performance Tests]
+            UNIT_TESTS_PIPE[Unit Tests (10s timeout)]
+            INT_TESTS_PIPE[Integration Tests (60s timeout)]
+            PERF_TESTS_PIPE[Performance Tests (180s timeout)]
+            FLAKE_ISOLATION[Flake Isolation]
             
-            UNIT_TESTS --> E2E_TESTS_PIPE
-            E2E_TESTS_PIPE --> A11Y_TESTS
-            A11Y_TESTS --> PERF_TESTS
+            UNIT_TESTS_PIPE --> INT_TESTS_PIPE
+            INT_TESTS_PIPE --> PERF_TESTS_PIPE
+            FLAKE_ISOLATION -.-> UNIT_TESTS_PIPE
+            FLAKE_ISOLATION -.-> INT_TESTS_PIPE
+            FLAKE_ISOLATION -.-> PERF_TESTS_PIPE
         end
         
         subgraph "Deployment Targets"

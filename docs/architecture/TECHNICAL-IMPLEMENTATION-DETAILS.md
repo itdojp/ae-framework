@@ -13,7 +13,11 @@
 7. [品質保証システム](#品質保証システム)
 8. [パフォーマンス最適化](#パフォーマンス最適化)
 9. [セキュリティ実装](#セキュリティ実装)
-10. [デプロイメントと運用](#デプロイメントと運用)
+10. [CI/CD Pipeline System](#cicd-pipeline-system)
+11. [Test Strategy Architecture](#test-strategy-architecture)
+12. [Performance Budget System](#performance-budget-system)
+13. [Flake Detection and Isolation](#flake-detection-and-isolation)
+14. [デプロイメントと運用](#デプロイメントと運用)
 
 ---
 
@@ -1595,6 +1599,472 @@ export class APISecurityManager {
 
 ---
 
+## CI/CD Pipeline System
+
+### 🔄 Multi-Layer CI/CD Architecture
+
+Issue #127の改善により、ae-frameworkは「速くて落ちない」CI/CDパイプラインを実現しています。
+
+#### Pipeline Layer Design
+```typescript
+interface CIPipelineLayer {
+  name: string;
+  timeout: number;
+  trigger: TriggerCondition;
+  dependencies: string[];
+  parallelizable: boolean;
+}
+
+export const CI_LAYERS: CIPipelineLayer[] = [
+  {
+    name: 'workflow-lint',
+    timeout: 60000, // 1 minute
+    trigger: 'always',
+    dependencies: [],
+    parallelizable: false
+  },
+  {
+    name: 'fast-ci',
+    timeout: 300000, // 5 minutes
+    trigger: 'pr-push',
+    dependencies: ['workflow-lint'],
+    parallelizable: true
+  },
+  {
+    name: 'quality-gates',
+    timeout: 900000, // 15 minutes
+    trigger: 'pr-push',
+    dependencies: ['fast-ci'],
+    parallelizable: true
+  },
+  {
+    name: 'nightly-matrix',
+    timeout: 1800000, // 30 minutes
+    trigger: 'schedule',
+    dependencies: [],
+    parallelizable: true
+  }
+];
+```
+
+#### Reusable CI Core Workflow
+```yaml
+# .github/workflows/common/ci-core.yml
+name: ci-core
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        required: false
+        type: string
+        default: '20'
+      run-script:
+        required: true
+        type: string
+permissions: read-all
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run ${{ inputs.run-script }}
+```
+
+#### Workflow Lint System
+```typescript
+export class WorkflowLintManager {
+  constructor(
+    private actionlintPath: string = '/usr/local/bin/actionlint'
+  ) {}
+
+  async validateWorkflows(workflowDir: string): Promise<ValidationResult> {
+    const workflowFiles = await this.findWorkflowFiles(workflowDir);
+    const results: LintResult[] = [];
+
+    for (const file of workflowFiles) {
+      const result = await this.lintWorkflow(file);
+      results.push(result);
+    }
+
+    return {
+      passed: results.every(r => r.errors.length === 0),
+      results,
+      summary: this.generateSummary(results)
+    };
+  }
+
+  private async lintWorkflow(filepath: string): Promise<LintResult> {
+    try {
+      const output = await exec(`${this.actionlintPath} ${filepath}`);
+      return {
+        file: filepath,
+        errors: this.parseActionlintOutput(output),
+        warnings: []
+      };
+    } catch (error) {
+      return {
+        file: filepath,
+        errors: [error.message],
+        warnings: []
+      };
+    }
+  }
+}
+```
+
+---
+
+## Test Strategy Architecture
+
+### 🧪 Vitest Projects-Based Test Separation
+
+#### Project Configuration
+```typescript
+// vitest.config.ts
+import { defineConfig } from 'vitest/config'
+
+export default defineConfig({
+  test: {
+    include: ['tests/**/*.{test,spec}.ts'],
+    reporters: ['default'],
+  },
+  projects: [
+    {
+      test: {
+        name: 'unit',
+        include: ['tests/unit/**/*.test.ts'],
+        testTimeout: 10000,     // 10 seconds
+        hookTimeout: 5000,      // 5 seconds
+        pool: 'threads',
+      },
+    },
+    {
+      test: {
+        name: 'integration',
+        include: ['tests/integration/**/*.test.ts'],
+        testTimeout: 60000,     // 60 seconds
+        hookTimeout: 30000,     // 30 seconds
+        teardownTimeout: 15000, // 15 seconds
+        pool: 'forks',          // Resource isolation
+        threads: false,         // Prevent conflicts
+      },
+    },
+    {
+      test: {
+        name: 'performance',
+        include: ['tests/optimization/performance-benchmarks.test.ts'],
+        testTimeout: 180000,    // 180 seconds
+        hookTimeout: 60000,     // 60 seconds
+        pool: 'forks',
+        threads: false,
+      },
+    },
+  ],
+})
+```
+
+#### Resource Leak Detection System
+```typescript
+// tests/_setup/afterEach.integration.ts
+import 'why-is-node-running'
+import { afterEach, beforeEach } from 'vitest'
+
+let beforeHandles = 0
+
+beforeEach(() => {
+  beforeHandles = (process as any)['_getActiveHandles']?.().length ?? 0
+})
+
+afterEach(async () => {
+  // Force shutdown with timeout wrapper
+  async function stopWithTimeout(s: { stop: () => Promise<void> }) {
+    return Promise.race([
+      s.stop(),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('Shutdown timeout')), 5000)),
+    ])
+  }
+
+  // Stop globally held top-level systems (set by tests)
+  const sys = (globalThis as any).optimizationSystem
+  if (sys?.stop) {
+    try { await stopWithTimeout(sys) } catch (e) { /* silent failure */ }
+  }
+
+  // Force garbage collection (requires --expose-gc)
+  if (global.gc) { try { global.gc() } catch { /* noop */ } }
+
+  const afterHandles = (process as any)['_getActiveHandles']?.().length ?? 0
+  if (afterHandles > beforeHandles) {
+    // Log handle leaks for analysis
+    console.warn(`[leak] handles: ${beforeHandles} -> ${afterHandles}`)
+  }
+})
+```
+
+#### Test Execution Scripts
+```json
+{
+  "scripts": {
+    "test": "vitest run",
+    "test:unit": "vitest run --project unit",
+    "test:int": "vitest run --project integration", 
+    "test:perf": "vitest run --project performance",
+    "test:all": "vitest run"
+  }
+}
+```
+
+---
+
+## Performance Budget System
+
+### ⚡ Code-Enforced Performance Thresholds
+
+#### Budget Configuration
+```typescript
+// config/performance-budgets.json
+interface PerformanceBudgets {
+  budgets: {
+    system: {
+      startup: { value: number; unit: string; severity: string };
+      memory: { value: number; unit: string; severity: string };
+      cpu: { value: number; unit: string; severity: string };
+    };
+    tests: {
+      execution: { value: number; unit: string; severity: string };
+      integration: { value: number; unit: string; severity: string };
+      performance: { value: number; unit: string; severity: string };
+    };
+    ci: {
+      fastCI: { value: number; unit: string; severity: string };
+      qualityGates: { value: number; unit: string; severity: string };
+      nightlyMatrix: { value: number; unit: string; severity: string };
+    };
+  };
+  environments: {
+    [env: string]: {
+      toleranceMultiplier: number;
+      description: string;
+    };
+  };
+}
+```
+
+#### Budget Validator Implementation
+```typescript
+export class PerformanceBudgetValidator {
+  constructor(private configPath: string = './config/performance-budgets.json') {
+    this.config = this.loadConfig();
+    this.environment = process.env.NODE_ENV || 'ci';
+  }
+
+  async validate(): Promise<boolean> {
+    console.log(`📊 Performance Budget Validation (Environment: ${this.environment})`);
+    
+    try {
+      await this.validateSystemBudgets();
+      await this.validateTestBudgets();
+      this.validateApplicationBudgets();
+      
+      this.generateReport();
+      this.printSummary();
+      
+      return this.results.summary.failed === 0;
+    } catch (error) {
+      console.error(`❌ Validation failed: ${error.message}`);
+      return false;
+    }
+  }
+
+  private async validateSystemBudgets(): Promise<void> {
+    const memoryMetrics = this.measureMemoryUsage();
+    const memoryBudget = this.getEnvironmentBudget(this.config.budgets.system.memory.value);
+    
+    this.validateMetric('memory', memoryMetrics.heapUsed, memoryBudget, this.config.budgets.system.memory);
+
+    const cpuUsage = await this.measureCpuUsage();
+    const cpuBudget = this.getEnvironmentBudget(this.config.budgets.system.cpu.value);
+    
+    this.validateMetric('cpu', cpuUsage, cpuBudget, this.config.budgets.system.cpu);
+  }
+}
+```
+
+#### Automated Budget Enforcement
+```typescript
+// tests/perf/budgets.test.ts
+describe('Performance Budgets Enforcement', () => {
+  it('should meet system startup time budget', async () => {
+    const startupTime = await PerformanceBudgetValidator.measureSystemStartup();
+    expect(startupTime).toBeLessThanOrEqual(BUDGETS.systemStartup);
+  });
+
+  it('should stay within memory usage budget', () => {
+    const memoryUsage = PerformanceBudgetValidator.measureMemoryUsage();
+    expect(memoryUsage).toBeLessThanOrEqual(BUDGETS.memoryBytes);
+  });
+
+  it('should maintain acceptable CPU usage levels', async () => {
+    const cpuUsage = await PerformanceBudgetValidator.measureCpuUsage();
+    expect(cpuUsage).toBeLessThanOrEqual(BUDGETS.cpuUsage);
+  });
+});
+```
+
+---
+
+## Flake Detection and Isolation
+
+### 🔍 Automated Flaky Test Management
+
+#### Flake Detection Workflow
+```yaml
+# .github/workflows/flake-detect.yml
+name: Flake Detect
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 21 * * *' # JST 06:00
+jobs:
+  run3:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Run tests multiple times
+        run: |
+          fails=0
+          total_runs=3
+          
+          for i in $(seq 1 $total_runs); do
+            if npm run test:int; then
+              echo "✅ Run #$i passed"
+            else
+              echo "❌ Run #$i failed"
+              fails=$((fails+1))
+            fi
+          done
+          
+          failure_rate=$(echo "scale=2; $fails / $total_runs * 100" | bc -l)
+          
+          if [ $(echo "$failure_rate > 30.0" | bc -l) -eq 1 ]; then
+            echo "🚨 Flake detected! Failure rate: ${failure_rate}%"
+            echo "flaky=true" >> $GITHUB_OUTPUT
+          fi
+```
+
+#### Isolation Manager System
+```typescript
+export class FlakeIsolationManager {
+  constructor() {
+    this.flakeConfigPath = './config/flaky-tests.json';
+    this.config = this.loadFlakeConfig();
+  }
+
+  isolateTest(testPattern: string, metadata = {}): void {
+    const newIsolatedTest = {
+      pattern: testPattern,
+      status: 'isolated',
+      isolatedAt: new Date().toISOString(),
+      category: this.detectTestCategory(testPattern),
+      metadata: {
+        failureRate: metadata.failureRate || 'unknown',
+        reason: metadata.reason || 'flaky-behavior',
+        ...metadata
+      },
+      recovery: {
+        attempts: 0,
+        lastAttempt: null,
+        successfulRuns: 0,
+        totalRuns: 0
+      }
+    };
+    
+    this.config.isolatedTests.push(newIsolatedTest);
+    this.saveFlakeConfig();
+    this.generateTestPatternConfig();
+  }
+
+  async tryRecoverTest(testPattern: string, runs = 10): Promise<boolean> {
+    let successCount = 0;
+    
+    for (let i = 0; i < runs; i++) {
+      try {
+        execSync(`npm test -- --testPathPattern="${testPattern.replace(/\*/g, '.*')}"`, {
+          stdio: 'pipe',
+          timeout: 60000
+        });
+        successCount++;
+      } catch (error) {
+        // Test failed
+      }
+    }
+    
+    const successRate = successCount / runs;
+    
+    if (successRate >= (1 - this.config.thresholds.recoveryThreshold)) {
+      const test = this.config.isolatedTests.find(t => t.pattern === testPattern);
+      test.status = 'recovered';
+      test.recoveredAt = new Date().toISOString();
+      
+      this.saveFlakeConfig();
+      return true;
+    }
+    
+    return false;
+  }
+}
+```
+
+#### Daily Maintenance System
+```yaml
+# .github/workflows/flake-maintenance.yml
+name: Daily Flake Maintenance
+on:
+  schedule:
+    - cron: '0 10 * * *' # Daily at 19:00 JST
+jobs:
+  maintenance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run flake maintenance
+        run: npm run flake:maintenance
+      
+      - name: Create recovery notification
+        if: steps.recovery-check.outputs.recovered_count > 0
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🎉 Flaky Test Recovery - ${recoveredCount} Tests Recovered`,
+              body: `Recovery notification with comprehensive details...`,
+              labels: ['flaky-test', 'recovered', 'maintenance', 'automated']
+            });
+```
+
+#### NPM Script Integration
+```json
+{
+  "scripts": {
+    "flake:isolate": "node scripts/flake-isolation-manager.js isolate",
+    "flake:recover": "node scripts/flake-isolation-manager.js recover", 
+    "flake:remove": "node scripts/flake-isolation-manager.js remove",
+    "flake:report": "node scripts/flake-isolation-manager.js report",
+    "flake:maintenance": "node scripts/flake-isolation-manager.js maintenance",
+    "flake:list": "node scripts/flake-isolation-manager.js list"
+  }
+}
+```
+
+---
+
 ## デプロイメントと運用
 
 ### 🚀 CI/CD Pipeline Implementation
@@ -1787,15 +2257,39 @@ ae-frameworkの技術実装は、以下の特徴により次世代のAI駆動開
 - **保守性**: モジュラー設計による高い保守性
 - **品質保証**: TDDからRuntime Conformanceまで多層品質ガード
 
-### 🌟 最新機能の統合効果
+### 🌟 Issue #127 統合による最新機能効果
 
-**CEGIS + Runtime Conformance** の組み合わせにより、ae-frameworkは従来の開発フレームワークを超えた「**自己進化するAI開発システム**」を実現しています：
+**CEGIS + Runtime Conformance + Fast CI/CD** の組み合わせにより、ae-frameworkは従来の開発フレームワークを超えた「**自己進化・自己修復するAI開発システム**」を実現しています：
 
-1. **開発時**: TDD + Quality Gatesによる品質保証
-2. **実行時**: Runtime Conformanceによる契約監視
-3. **失敗時**: CEGIS による自動修復と学習
-4. **改善時**: 失敗パターン分析による継続的品質向上
+1. **開発時**: TDD + Quality Gates + Performance Budgetsによる品質保証
+2. **CI/CD時**: Fast CI (5分) → Quality Gates (15分) → Nightly Matrix (30分) の段階実行
+3. **テスト時**: Unit (10s) / Integration (60s) / Performance (180s) の分離実行
+4. **実行時**: Runtime Conformanceによる契約監視
+5. **失敗時**: CEGIS + Flake Isolation による自動修復と学習
+6. **改善時**: 失敗パターン分析による継続的品質向上
 
-この循環により、システムは使用するほど賢くなり、開発者の負担を軽減しながら品質を継続的に向上させます。
+### 🚀 Issue #127改善の技術的インパクト
 
-**🎉 ae-frameworkで、自己修復するAI-Enhanced Developmentの未来を体験しましょう！**
+#### CI/CD Pipeline革新
+- **速度**: Fast CI 5分での迅速フィードバック
+- **信頼性**: Workflow Lintによる「workflow file issue」の根絶
+- **安定性**: 段階実行による確実な品質保証
+
+#### Test Strategy革命  
+- **分離**: Vitest Projectsによる種類別テスト実行
+- **タイムアウト**: 現実的な時間設定によるハングアップ防止
+- **リソース**: Forks poolとResource Leak Detectionによる隔離
+
+#### Performance Budget強制
+- **予算**: コード化された性能閾値の自動判定
+- **環境**: 開発/CI/本番環境別の許容値調整
+- **監視**: リアルタイム性能予算違反検出
+
+#### Flake Management自動化
+- **検出**: 30%失敗率での自動フレーク判定
+- **隔離**: Test Pattern Configurationによる自動隔離
+- **回復**: Daily Maintenanceによる自動回復試行
+
+この統合により、システムは使用するほど賢くなり、開発者の負担を大幅に軽減しながら品質・速度・安定性を同時に向上させます。
+
+**🎉 ae-frameworkで、次世代AI-Enhanced Development & 高速安定CI/CDの未来を体験しましょう！**
