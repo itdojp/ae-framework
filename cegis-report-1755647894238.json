@@ -1,0 +1,746 @@
+{
+  "timestamp": "2025-08-19T23:58:14.238Z",
+  "summary": {
+    "totalFailures": 100,
+    "fixesApplied": 1,
+    "fixesSkipped": 0,
+    "filesModified": 0,
+    "success": true,
+    "errors": [],
+    "warnings": []
+  },
+  "failures": 100,
+  "appliedFixes": [
+    {
+      "strategy": "TypeScript Type Error Fix",
+      "success": true,
+      "filesModified": [],
+      "metadata": {
+        "timestamp": "2025-08-19T23:58:14.238Z",
+        "duration": 0,
+        "confidence": 0.8,
+        "riskLevel": 1
+      }
+    }
+  ],
+  "skippedFixes": [],
+  "recommendations": [
+    "Consider reviewing the recurring pattern: \"Cannot find name STRING\" (100 occurrences)",
+    "High frequency of type_error errors (100). Consider improving type_error practices."
+  ],
+  "patterns": [
+    {
+      "pattern": "Cannot find name STRING",
+      "frequency": 100,
+      "categories": [
+        "type_error"
+      ],
+      "commonLocations": [
+        {
+          "filePath": "/test/file0.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file1.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file2.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file3.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file4.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file5.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file6.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file7.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file8.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file9.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file10.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file11.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file12.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file13.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file14.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file15.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file16.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file17.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file18.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file19.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file20.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file21.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file22.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file23.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file24.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file25.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file26.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file27.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file28.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file29.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file30.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file31.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file32.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file33.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file34.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file35.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file36.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file37.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file38.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file39.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file40.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file41.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file42.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file43.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file44.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file45.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file46.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file47.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file48.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file49.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file50.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file51.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file52.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file53.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file54.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file55.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file56.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file57.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file58.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file59.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file60.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file61.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file62.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file63.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file64.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file65.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file66.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file67.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file68.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file69.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file70.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file71.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file72.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file73.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file74.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file75.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file76.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file77.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file78.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file79.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file80.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file81.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file82.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file83.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file84.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file85.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file86.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file87.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file88.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file89.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file90.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file91.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file92.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file93.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file94.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file95.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file96.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file97.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file98.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        },
+        {
+          "filePath": "/test/file99.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "startColumn": 5,
+          "endColumn": 5
+        }
+      ],
+      "suggestedStrategies": [
+        "TypeScript Type Error Fix"
+      ],
+      "confidence": 0.9
+    }
+  ]
+}
