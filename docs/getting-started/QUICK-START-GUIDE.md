@@ -10,8 +10,10 @@ Claude Code で今すぐ始める ae-framework！
 **ae-framework は Claude Code と統合済み！**
 
 ```bash
-# 1. プロジェクトにae-frameworkをインストール
-npm install -g ae-framework
+# 1. プロジェクトにae-frameworkをクローン・セットアップ
+git clone https://github.com/itdojp/ae-framework.git
+cd ae-framework
+pnpm install
 
 # 2. Claude Code で自動認識
 # Intent Agent が Task Tool として利用可能
@@ -30,13 +32,17 @@ npm install -g ae-framework
 }
 ```
 
-**Phase 6 UI/UX機能有効化:**
+**Issue #127 最新機能有効化:**
 ```bash
-# OpenTelemetryテレメトリ有効化
-DEBUG_TELEMETRY=true ae-framework ui-scaffold --components
+# Fast CI Pipeline
+pnpm run test:unit && pnpm run lint
 
-# OTLPエクスポート設定 (プロダクション)
-OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 ae-framework ui-scaffold --components
+# フレーク検知・隔離システム
+pnpm run flake:detect
+pnpm run flake:report
+
+# パフォーマンス予算システム
+pnpm run perf:budgets
 ```
 
 ### 2. 即座に使える基本機能
@@ -110,14 +116,14 @@ Phase 5: 品質検証中...
 ✓ パフォーマンス検証 合格
 ✓ 品質スコア 96/100
 
-Phase 6: UI/UX & Frontend Delivery完了
-✓ React + Next.js 14 App Router
-✓ Radix UI + Tailwind CSS + Design Tokens
-✓ Storybookコンポーネントドキュメント
-✓ Playwright E2Eテスト自動生成
-✓ WCAG 2.1 AAアクセシビリティ準拠
-✓ OpenTelemetryテレメトリ監視
-✓ 多言語対応 (ja/en)
+Issue #127: 最新CI/CD最適化完了
+✓ Fast CI Pipeline (5分以内)
+✓ Quality Gates (15分以内)
+✓ Vitest Projects分離 (unit/integration/performance)
+✓ リソースリーク検知・自動クリーンアップ
+✓ フレーク検知・隔離・復旧システム
+✓ パフォーマンス予算自動検証
+✓ Workflow Lint (actionlint)
 ✓ TypeScript strict mode準拠
 ```
 
@@ -205,7 +211,7 @@ Claude: Sequential推論エンジンで影響分析を実行します...
 - データベース移行スクリプト
 - 38件の自動テスト (既存テストの94%は変更不要)
 
-実装時間見積もり: 4時間
+実装時間見積もり: 2時間 (Issue #127最適化済み)
 リスク評価: 低リスク
 ```
 
@@ -241,7 +247,7 @@ Phase 5: 品質保証
 ✓ セキュリティ監査
 ✓ パフォーマンス検証
 
-移行完了までの見積もり: 2週間
+移行完了までの見積もり: 1週間 (Issue #127最適化済み)
 リスク: 中リスク (適切な監視により軽減)
 ```
 
@@ -260,7 +266,7 @@ Claude: Sequential推論エンジンでマイクロサービス分割戦略を�
 4. Order Service (独立度: 低, 影響: 高)
 
 第1段階: User Service分離
-- 推定工数: 1週間
+- 推定工数: 3日 (Issue #127最適化済み)
 - リスク: 低
 - 依存関係: 最小限
 - 自動生成されるコンポーネント:

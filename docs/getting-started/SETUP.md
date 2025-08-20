@@ -6,10 +6,10 @@ ae-frameworkの全6フェーズエージェントとMCPサーバーのインス�
 
 ### システム要件
 - **Node.js**: 18.0.0 以上
-- **npm**: 9.0.0 以上  
+- **pnpm**: 8.0.0 以上 (推奨パッケージマネージャー)
 - **TypeScript**: 5.5.0 以上
 - **Git**: 2.0 以上
-- **Playwright**: 1.47.0 以上 (Phase 3.2 E2Eテスト用)
+- **Playwright**: 1.47.0 以上 (E2Eテスト用)
 
 ### 推奨環境
 - **OS**: Linux, macOS, Windows (WSL2推奨)
@@ -27,6 +27,12 @@ cd ae-framework
 
 ### 2. 依存関係のインストール
 
+**pnpm使用（推奨）:**
+```bash
+pnpm install
+```
+
+**npmでも可能:**
 ```bash
 npm install
 ```
@@ -42,7 +48,7 @@ npx playwright install
 ### 4. TypeScriptのビルド
 
 ```bash
-npm run build
+pnpm run build
 ```
 
 ### 5. Git Hooksの設定（オプション）
@@ -50,7 +56,7 @@ npm run build
 TDD強制機能を有効にするためのpre-commitフックを設定：
 
 ```bash
-npm run setup-hooks
+pnpm run setup-hooks
 ```
 
 ## 🔧 設定
@@ -130,7 +136,7 @@ Claude Code で MCP Server も使用する場合の設定ファイル例：
 ### 1. ビルドの確認
 
 ```bash
-npm run build
+pnpm run build
 # エラーが出ないことを確認
 ```
 
@@ -138,13 +144,15 @@ npm run build
 
 ```bash
 # 全テスト実行
-npm test
+pnpm test
+
+# Vitest Projects分離テスト
+pnpm run test:unit      # ユニットテスト (10秒タイムアウト)
+pnpm run test:int       # 統合テスト (60秒タイムアウト)
+pnpm run test:perf      # パフォーマンステスト (180秒タイムアウト)
 
 # 高速テスト実行 (CI最適化版)
-npm run test:fast
-
-# Phase 3.2 コア機能テスト
-npm run test:phase3.2:core
+pnpm run test:fast
 
 # 全てのテストがパスすることを確認
 ```
@@ -152,7 +160,7 @@ npm run test:phase3.2:core
 ### 3. Lintチェック
 
 ```bash
-npm run lint
+pnpm run lint
 # Lint警告/エラーがないことを確認
 ```
 
@@ -160,100 +168,100 @@ npm run lint
 
 #### Intent Agent
 ```bash
-npm run intent-agent
+pnpm run intent-agent
 # "Intent Agent MCP server running on stdio" が表示されればOK
 ```
 
 #### Formal Agent  
 ```bash
-npm run formal-agent
+pnpm run formal-agent
 # "Formal Agent MCP server running on stdio" が表示されればOK
 ```
 
 #### Test Generation Agent
 ```bash
-npm run mcp:test
+pnpm run mcp:test
 # "Test Generation MCP server running on stdio" が表示されればOK
 ```
 
 #### Code Generation Agent
 ```bash
-npm run mcp:code
+pnpm run mcp:code
 # "Code Generation MCP server running on stdio" が表示されればOK
 ```
 
 #### Verify Agent
 ```bash
-npm run verify:server
+pnpm run verify:server
 # "Verify Agent MCP server running on stdio" が表示されればOK
 ```
 
 #### Operate Agent
 ```bash
-npm run operate:server
+pnpm run operate:server
 # "Operate Agent MCP server running on stdio" が表示されればOK
 ```
 
 #### TDD Agent
 ```bash
-npm run mcp:tdd
+pnpm run mcp:tdd
 # "TDD MCP server running on stdio" が表示されればOK
 ```
 
-### 5. Phase 3.2 新機能の動作確認
+### 5. Issue #127 最新CI/CDシステムの動作確認 ✨ **NEW**
 
-#### E2Eテスト自動生成デモ
+#### Fast CI Pipeline確認
 ```bash
-npm run e2e:demo
-# Playwright統合システムの動作確認
+# 高速CI (5分以内)
+pnpm run test:unit
+pnpm run lint
 ```
 
-#### 視覚回帰テストデモ
+#### Quality Gates確認
 ```bash
-npm run visual:demo
-# Visual Regression Testing の動作確認
+# 品質ゲート (15分以内)
+pnpm run test:int
+pnpm run test:a11y
+pnpm run test:coverage
 ```
 
-#### 依存関係分析デモ
+#### フレーク検知・隔離システム
 ```bash
-npm run analyze:demo
-# Phase 3.1 Sequential Inference Engine の動作確認
+# フレーク検知
+pnpm run flake:detect
+
+# フレーク隔離管理
+pnpm run flake:list
+pnpm run flake:report
 ```
 
-#### インテリジェントテスト選択デモ ✨ **NEW**
+#### パフォーマンス予算システム
 ```bash
-# AI駆動の最適テスト選択システム
-npm test -- tests/testing/intelligent-test-selection.test.ts
-# 16のテストケース全てが合格することを確認
+# パフォーマンス予算チェック
+pnpm run perf:budgets
+pnpm run test:budgets
 ```
 
-### 6. Phase 3.3 最適化システムの動作確認 ✨ **NEW**
+### 6. リソースリーク検知システム ✨ **NEW**
 
-#### 統合最適化システムテスト
 ```bash
-# パフォーマンス監視システム
-npm test -- tests/optimization/monitoring.test.ts
-
-# 並列最適化システム  
-npm test -- tests/optimization/parallel.test.ts
-
-# システム統合テスト
-npm test -- tests/optimization/system-integration.test.ts
-
-# パフォーマンスベンチマーク
-npm test -- tests/optimization/performance-benchmarks.test.ts
+# リソースリーク検知付きテスト実行
+pnpm run test:int
+# ハンドルリーク警告が表示され、自動クリーンアップされることを確認
 ```
 
-#### 最適化システム個別動作確認
+### 7. 品質スコアカードシステム
+
 ```bash
-# 監視システム単体テスト
-npm run test:monitoring
+# プロジェクト全体の品質分析
+pnpm run quality:scorecard
+pnpm run package:quality
 
-# 並列処理システム単体テスト  
-npm run test:parallel
+# セキュリティ分析
+pnpm run security:full
 
-# 完全最適化システム統合テスト
-npm run test:optimization-full
+# アクセシビリティ分析
+pnpm run accessibility:full
 ```
 
 ## 🛠️ 開発環境のセットアップ
@@ -264,42 +272,45 @@ npm run test:optimization-full
 
 ```bash
 # Intent Agent (開発用)
-npm run intent-agent:build
+pnpm run intent-agent:build
 
 # Formal Agent (開発用)  
-npm run formal-agent:dev
+pnpm run formal-agent:dev
 
 # Operate Agent (開発用)
-npm run operate:dev
+pnpm run operate:dev
 ```
 
 ### 2. カバレッジ測定
 
 ```bash
-npm run coverage
+pnpm run coverage
 # カバレッジレポートが生成される
 ```
 
 ### 3. Mutation Testing
 
 ```bash
-npm run mutation
+pnpm run mutation
 # Strykerによる変異テストが実行される
 ```
 
-### 4. CI/CD 最適化設定
+### 4. CI/CD 最適化設定 ✨ **Issue #127実装済み**
 
-Phase 3.2では CI実行時間を 2時間→2分 に最適化：
+CI実行時間を大幅最適化：
 
 ```bash
-# 高速CI（開発用）: 基本テストのみ
+# Fast CI (5分以内): 基本テスト + lint
 # - 自動実行: プッシュ・プルリクエスト時
-# - 実行時間: 約2分
+# - 実行時間: ~5分
 
-# フルCI（包括的）: mutation testing含む  
-# - 自動実行: 毎週日曜日、リリースタグ時
-# - 手動実行: gh workflow run "Full CI"
-# - 実行時間: 約30分（重要コンポーネントのみ）
+# Quality Gates (15分以内): 統合テスト + 品質チェック
+# - 自動実行: プルリクエスト時
+# - 実行時間: ~15分
+
+# Nightly Matrix (30分以内): クロスプラットフォーム + 性能テスト
+# - 自動実行: 毎日18:00 JST
+# - 実行時間: ~30分
 ```
 
 ## 🔍 トラブルシューティング
@@ -340,8 +351,8 @@ Module not found: @modelcontextprotocol/sdk
 ```
 **解決方法**: 
 ```bash
-npm install --force
-npm run build
+pnpm install --force
+pnpm run build
 ```
 
 #### 5. Playwright ブラウザエラー
@@ -359,8 +370,9 @@ Error: Test timeout exceeded
 ```
 **解決方法**: 
 ```bash
-# タイムアウト設定を確認
-npm run test:playwright -- --timeout=60000
+# タイムアウト設定を確認 (Vitest Projects設定で自動調整済み)
+pnpm run test:int  # 60秒タイムアウト
+pnpm run test:perf # 180秒タイムアウト
 ```
 
 #### 7. 視覚回帰テストエラー
@@ -373,48 +385,48 @@ Error: Baseline screenshots not found
 npm run visual:baseline
 ```
 
-#### 8. インテリジェントテスト選択エラー ✨ **NEW**
+#### 8. フレーク検知システムエラー ✨ **NEW**
 ```bash
-Error: SequentialInferenceEngine not initialized
+Error: Flake isolation manager not found
 ```
 **解決方法**:
 ```bash
-# 依存関係の確認
-npm test -- tests/engines/sequential-inference-engine.test.ts
+# フレーク検知システム確認
+pnpm run flake:detect:quick
+pnpm run flake:list
 
-# テスト選択システムの個別確認
-npm test -- tests/testing/intelligent-test-selection.test.ts
+# フレーク隔離設定確認
+ls -la config/flaky-tests.json
+ls -la config/test-patterns.json
 ```
 
-#### 9. 最適化システムエラー ✨ **NEW**
+#### 9. パフォーマンス予算エラー ✨ **NEW**
 ```bash
-Error: OptimizationSystem startup failed
-```
-**解決方法**:
-```bash
-# システム個別チェック
-npm test -- tests/optimization/monitoring.test.ts
-npm test -- tests/optimization/parallel.test.ts
-
-# 統合システムチェック
-npm test -- tests/optimization/system-integration.test.ts
-```
-
-#### 10. SuperClaude Framework統合エラー ✨ **NEW**
-```bash
-Error: Token optimization failed
-Error: Evidence validation failed
+Error: Performance budget validation failed
 ```
 **解決方法**:
 ```bash
-# Token Optimizer確認
-node -e "import('./src/utils/token-optimizer.js').then(m => console.log('OK'))"
+# パフォーマンス予算設定確認
+cat config/performance-budgets.json
 
-# Evidence Validator確認  
-node -e "import('./src/utils/evidence-validator.js').then(m => console.log('OK'))"
+# 個別予算チェック
+pnpm run perf:budgets:dev
+pnpm run perf:budgets:prod
+```
 
-# Extended Commands確認
-npm test -- tests/commands/extended/*.test.ts
+#### 10. Vitest Projects設定エラー ✨ **NEW**
+```bash
+Error: Project 'unit' not found
+```
+**解決方法**:
+```bash
+# Vitest設定確認
+cat vitest.config.ts
+
+# プロジェクト別実行確認
+pnpm run test:unit
+pnpm run test:int
+pnpm run test:perf
 ```
 
 ## 📚 次のステップ
@@ -440,8 +452,8 @@ npm test -- tests/commands/extended/*.test.ts
 
 ```bash
 git pull origin main
-npm install
-npm run build
+pnpm install
+pnpm run build
 ```
 
 定期的に更新して最新の機能と修正を入手することを推奨します。
