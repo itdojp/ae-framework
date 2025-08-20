@@ -1,41 +1,20 @@
-name: Fast CI
-on: 
-  push:
-    branches: [ main, 'feat/*' ]
-    tags: ['v*'] # Ensure tag-based releases trigger CI
+name: CI Fast
+on:
   pull_request:
-    branches: [ main ]
-
+  push:
+    branches: [main, develop]
+concurrency:
+  group: ci-fast-${{ github.ref }}
+  cancel-in-progress: true
+permissions: read-all
 jobs:
-  # Issue #71: CI最前段にSpec Validation追加（fail-fast）
-  spec-validation:
-    name: 🚦 Fail-Fast Spec Validation
-    uses: ./.github/workflows/fail-fast-spec-validation.yml
-    secrets: inherit
-
-  # Issue #71: Contract drift detection (fail on breaking changes)
-  contract-drift-check:
-    name: 🔍 Contract Drift Detection
-    uses: ./.github/workflows/codegen-drift-check.yml
-    secrets: inherit
-
-  build-test:
-    runs-on: ubuntu-latest
-    needs: [spec-validation, contract-drift-check]  # Both validations must pass first
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22 }
-      - run: npm ci
-      - run: npm run lint
-      - run: npm test -- --run
-      - run: npm run bdd || true  # 失敗時は仕様更新提案へ
-      
-      # Phase 3.2 core tests only (fast feedback)
-      - name: Run Phase 3.2 Core Tests
-        run: npm run test:phase3.2:core || true
-        
-      - name: Generate Basic SBOM
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b . v1.0.0
-          ./syft packages dir:. -o cyclonedx-json > security/sbom/sbom.json
+  unit:
+    uses: ./.github/workflows/common/ci-core.yml
+    with:
+      node-version: '20'
+      run-script: test:unit
+  lint:
+    uses: ./.github/workflows/common/ci-core.yml
+    with:
+      node-version: '20'
+      run-script: lint
