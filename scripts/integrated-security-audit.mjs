@@ -9,7 +9,7 @@
 import fs from 'fs';
 import fsp from 'fs/promises';
 import path from 'path';
-import { spawn, execSync } from 'child_process';
+import { spawn, execSync, spawnSync } from 'child_process';
 import { pathToFileURL } from 'url';
 
 class IntegratedSecurityAuditor {
@@ -82,16 +82,34 @@ class IntegratedSecurityAuditor {
       details: {}
     };
 
+    let npmAudit, npmOutdated;
+    
     try {
       // NPM Audit
       try {
-        const npmAuditResult = execSync('npm audit --json', { 
+        npmAudit = spawnSync('npm', ['audit', '--json'], {
           encoding: 'utf8',
           timeout: 30000,
-          cwd: this.projectRoot 
+          cwd: this.projectRoot
         });
+        if (npmAudit.error) {
+          throw npmAudit.error;
+        }
+        if (npmAudit.status !== 0 && !npmAudit.stdout) {
+          throw new Error(`npm audit failed: ${npmAudit.stderr}`);
+        }
+        const npmAuditResult = npmAudit.stdout;
         
-        const npmData = JSON.parse(npmAuditResult);
+        let npmData;
+        try {
+          npmData = JSON.parse(npmAuditResult);
+        } catch (parseError) {
+          console.error('❌ Failed to parse npm audit JSON output:', parseError.message);
+          audit.status = 'error';
+          audit.details.npm = { error: 'Malformed JSON from npm audit', rawOutput: npmAuditResult };
+          audit.recommendations.push('Check your npm version and network connectivity. Try running `npm audit` manually to diagnose the issue.');
+          return audit;
+        }
         audit.details.npm = npmData;
         
         if (npmData.vulnerabilities) {
@@ -117,10 +135,10 @@ class IntegratedSecurityAuditor {
         console.log(`   📊 Found ${audit.vulnerabilities.length} dependency vulnerabilities`);
         
       } catch (error) {
-        if (error.status === 1) {
+        if (error.message && error.message.includes('npm audit failed') && npmAudit && npmAudit.stdout) {
           // npm audit found vulnerabilities, parse the output
           try {
-            const npmData = JSON.parse(error.stdout);
+            const npmData = JSON.parse(npmAudit.stdout);
             audit.details.npm = npmData;
             audit.status = 'warning';
             console.log('   ⚠️ NPM audit found issues (parsed from error output)');
@@ -136,14 +154,14 @@ class IntegratedSecurityAuditor {
 
       // Check for outdated packages
       try {
-        const outdatedResult = execSync('npm outdated --json', { 
+        npmOutdated = spawnSync('npm', ['outdated', '--json'], {
           encoding: 'utf8',
           timeout: 20000,
-          cwd: this.projectRoot 
+          cwd: this.projectRoot
         });
         
-        if (outdatedResult) {
-          const outdatedData = JSON.parse(outdatedResult);
+        if (npmOutdated.stdout) {
+          const outdatedData = JSON.parse(npmOutdated.stdout);
           audit.details.outdated = outdatedData;
           
           Object.entries(outdatedData).forEach(([pkg, info]) => {
@@ -158,9 +176,9 @@ class IntegratedSecurityAuditor {
         }
       } catch (error) {
         // npm outdated returns non-zero exit code when packages are outdated
-        if (error.stdout) {
+        if (npmOutdated && npmOutdated.stdout) {
           try {
-            const outdatedData = JSON.parse(error.stdout);
+            const outdatedData = JSON.parse(npmOutdated.stdout);
             audit.details.outdated = outdatedData;
             console.log(`   📈 Found ${Object.keys(outdatedData).length} outdated packages`);
           } catch (parseError) {
