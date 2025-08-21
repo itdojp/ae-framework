@@ -124,12 +124,12 @@ export default defineConfig({
     
     fs.writeFileSync('./reports/ci-stability-report.json', JSON.stringify(report, null, 2));
     
-    console.log('\nCI Stability Enhancements Applied:');
+    console.log('\\nCI Stability Enhancements Applied:');
     report.summary.actions.forEach(action => {
       console.log(`  • ${action}`);
     });
     
-    console.log('\nRecommendations:');
+    console.log('\\nRecommendations:');
     report.summary.recommendations.forEach(rec => {
       console.log(`  • ${rec}`);
     });
@@ -147,7 +147,7 @@ async function main() {
     await enhancer.updatePackageScripts();
     await enhancer.generateReport();
     
-    console.log('\nCI stability enhancements completed successfully!');
+    console.log('\\nCI stability enhancements completed successfully!');
   } catch (error) {
     console.error('Error:', error.message);
     process.exit(1);
