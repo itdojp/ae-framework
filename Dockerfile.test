@@ -1,0 +1,125 @@
+# Test Environment Dockerfile
+# Optimized for stable, reproducible test execution across different environments
+
+FROM node:22-alpine AS test-base
+
+# Install system dependencies needed for testing
+RUN apk add --no-cache \
+    git \
+    bash \
+    curl \
+    chromium \
+    chromium-chromedriver \
+    xvfb \
+    dbus \
+    fontconfig \
+    cairo \
+    pango \
+    gdk-pixbuf \
+    libx11 \
+    libxcomposite \
+    libxcursor \
+    libxdamage \
+    libxext \
+    libxfixes \
+    libxi \
+    libxrandr \
+    libxrender \
+    libxss \
+    libxtst \
+    alsa-lib \
+    nss \
+    ca-certificates \
+    fonts-liberation \
+    fonts-noto \
+    fonts-noto-cjk
+
+# Set environment variables for consistent test execution
+ENV NODE_ENV=test
+ENV CI=true
+ENV CHROMIUM_PATH=/usr/bin/chromium-browser
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+ENV PLAYWRIGHT_BROWSERS_PATH=/usr/bin
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+
+# Set resource limits for stable testing
+ENV NODE_OPTIONS="--max-old-space-size=2048 --expose-gc"
+ENV VITEST_POOL_THREADS=2
+ENV VITEST_MAX_THREADS=2
+ENV VITEST_MIN_THREADS=1
+
+# Configure display for headless testing
+ENV DISPLAY=:99
+ENV XVFB_RES=1280x1024x24
+
+WORKDIR /app
+
+# Copy package files first for better layer caching
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/*/package.json ./packages/*/
+
+# Enable pnpm and install all dependencies (including dev dependencies for testing)
+RUN corepack enable pnpm && \
+    pnpm config set store-dir /pnpm && \
+    pnpm install --frozen-lockfile --include-workspace-root
+
+# Copy test configuration files
+COPY vitest.config.ts vitest.ci.config.ts tsconfig.json jest.a11y.config.cjs ./
+COPY lighthouserc.js stryker.conf.json eslint.config.js ./
+
+# Copy test setup and utilities
+COPY tests/_setup/ ./tests/_setup/
+COPY config/ ./config/
+COPY scripts/ ./scripts/
+
+# Set permissions for scripts
+RUN chmod +x scripts/*.sh scripts/*.mjs scripts/*.js
+
+# Copy source code (needed for testing)
+COPY src/ ./src/
+COPY templates/ ./templates/
+COPY packages/ ./packages/
+
+# Copy test files
+COPY tests/ ./tests/
+
+# Create necessary directories with proper permissions
+RUN mkdir -p \
+    /app/reports \
+    /app/logs \
+    /app/tmp \
+    /app/.ae \
+    /app/coverage \
+    /app/.nyc_output \
+    /pnpm && \
+    chown -R node:node /app /pnpm
+
+# Create test user with proper permissions
+USER node
+
+# Install browsers for E2E testing (as user to avoid permission issues)
+RUN pnpm exec playwright install --with-deps chromium 2>/dev/null || true
+
+# Health check for test environment
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD node -e "console.log('Test environment ready'); process.exit(0)"
+
+# Default command runs all tests
+CMD ["pnpm", "test:ci:stable"]
+
+# Alternative test execution stages
+FROM test-base AS test-unit
+CMD ["pnpm", "test:unit"]
+
+FROM test-base AS test-integration  
+CMD ["pnpm", "test:integration"]
+
+FROM test-base AS test-e2e
+CMD ["pnpm", "test:playwright"]
+
+FROM test-base AS test-quality
+CMD ["pnpm", "test:quality"]
+
+FROM test-base AS test-flake-detection
+CMD ["pnpm", "flake:detect:enhanced:quick"]

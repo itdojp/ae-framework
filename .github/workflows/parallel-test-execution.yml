@@ -1,0 +1,236 @@
+name: Parallel Test Execution Strategy
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  NODE_ENV: test
+  CI: true
+
+jobs:
+  # Matrix strategy for parallel test execution
+  test-matrix:
+    name: Test Suite (${{ matrix.test-type }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        test-type: [unit, integration, quality, flake-detection]
+        include:
+          - test-type: unit
+            command: test:docker:unit
+            timeout: 10
+          - test-type: integration  
+            command: test:docker:integration
+            timeout: 15
+          - test-type: quality
+            command: test:docker:quality
+            timeout: 20
+          - test-type: flake-detection
+            command: test:docker:flake
+            timeout: 25
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Create reports directory
+        run: |
+          mkdir -p reports
+          mkdir -p logs
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ matrix.test-type }}-${{ hashFiles('**/Dockerfile.test') }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-${{ matrix.test-type }}-
+            ${{ runner.os }}-buildx-
+
+      - name: Run ${{ matrix.test-type }} tests
+        run: |
+          echo "🚀 Starting ${{ matrix.test-type }} test suite..."
+          timeout ${{ matrix.timeout }}m make ${{ matrix.command }}
+        timeout-minutes: ${{ matrix.timeout }}
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.test-type }}
+          path: |
+            reports/
+            logs/
+          retention-days: 30
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        if: matrix.test-type == 'unit' && always()
+        with:
+          name: coverage-reports
+          path: coverage/
+          retention-days: 30
+
+  # E2E tests run separately due to higher resource requirements
+  test-e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Create reports directory
+        run: |
+          mkdir -p reports
+          mkdir -p logs
+
+      - name: Run E2E tests
+        run: |
+          echo "🎭 Starting E2E test suite..."
+          make test:docker:e2e
+        timeout-minutes: 40
+
+      - name: Upload E2E test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-e2e
+          path: |
+            reports/
+            logs/
+            playwright-report/
+          retention-days: 30
+
+  # Performance tests run on schedule and for significant changes
+  test-performance:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Run performance tests
+        run: |
+          echo "⚡ Starting performance test suite..."
+          make test:docker:performance
+        timeout-minutes: 30
+
+      - name: Upload performance results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance-results
+          path: |
+            benchmarks/
+            reports/
+          retention-days: 90
+
+  # Consolidate results from all test jobs
+  test-consolidation:
+    name: Test Result Consolidation
+    runs-on: ubuntu-latest
+    needs: [test-matrix, test-e2e]
+    if: always()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all test artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Merge test results
+        run: |
+          echo "📊 Consolidating test results..."
+          mkdir -p reports
+          
+          # Merge all test results into reports directory
+          find artifacts/ -name "*.xml" -exec cp {} reports/ \;
+          find artifacts/ -name "*.json" -exec cp {} reports/ \;
+          find artifacts/ -name "*.txt" -exec cp {} reports/ \;
+
+      - name: Generate consolidated report
+        run: |
+          node scripts/generate-test-report.js
+        timeout-minutes: 5
+
+      - name: Upload consolidated results
+        uses: actions/upload-artifact@v4
+        with:
+          name: consolidated-test-results
+          path: |
+            reports/consolidated-test-report.json
+            reports/test-summary.txt
+          retention-days: 90
+
+      - name: Check test results
+        run: |
+          if [ -f "reports/consolidated-test-report.json" ]; then
+            # Extract status from consolidated report
+            STATUS=$(node -e "
+              const report = require('./reports/consolidated-test-report.json');
+              console.log(report.status);
+            ")
+            
+            if [ "$STATUS" = "failure" ]; then
+              echo "❌ Tests failed - check consolidated report for details"
+              exit 1
+            else
+              echo "✅ All tests passed successfully"
+            fi
+          else
+            echo "⚠️ No consolidated report found"
+            exit 1
+          fi
+
+  # Adaptive retry for flaky tests
+  test-flaky-retry:
+    name: Flaky Test Retry
+    runs-on: ubuntu-latest
+    needs: [test-matrix]
+    if: failure() && contains(needs.test-matrix.result, 'failure')
+    timeout-minutes: 20
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx  
+        uses: docker/setup-buildx-action@v3
+
+      - name: Retry failed tests with enhanced detection
+        run: |
+          echo "🔄 Retrying potentially flaky tests..."
+          make test:docker:flake
+        timeout-minutes: 15
+
+      - name: Upload retry results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: flaky-test-retry-results
+          path: |
+            reports/flake-detection/
+          retention-days: 30
