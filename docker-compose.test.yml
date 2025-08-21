@@ -1,0 +1,240 @@
+# Docker Compose for Standardized Test Environment
+# Provides consistent resource constraints and environment settings
+
+version: '3.8'
+
+services:
+  # Base test environment with standardized resources
+  test-base:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+      target: test-base
+    environment:
+      - NODE_ENV=test
+      - CI=true
+      - NODE_OPTIONS=--max-old-space-size=2048 --expose-gc
+      - VITEST_POOL_THREADS=2
+      - VITEST_MAX_THREADS=2
+      - VITEST_MIN_THREADS=1
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+    volumes:
+      - ./reports:/app/reports
+      - ./logs:/app/logs
+      - test-cache:/app/.cache
+      - test-node-modules:/app/node_modules
+    tmpfs:
+      - /app/tmp:size=512M,uid=1000,gid=1000
+    shm_size: 1g
+    networks:
+      - test-network
+
+  # Unit tests - minimal resources
+  test-unit:
+    extends: test-base
+    build:
+      target: test-unit
+    command: ["pnpm", "test:unit"]
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    environment:
+      - TEST_TYPE=unit
+      - VITEST_POOL_THREADS=1
+
+  # Integration tests - moderate resources  
+  test-integration:
+    extends: test-base
+    build:
+      target: test-integration
+    command: ["pnpm", "test:ci", "--exclude", "**/system-integration.test.ts"]
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+    environment:
+      - TEST_TYPE=integration
+      - VITEST_POOL_THREADS=2
+
+  # E2E tests - maximum resources
+  test-e2e:
+    extends: test-base
+    build:
+      target: test-e2e
+    command: ["pnpm", "test:playwright"]
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 3G
+        reservations:
+          cpus: '1.5'
+          memory: 2G
+    environment:
+      - TEST_TYPE=e2e
+      - PLAYWRIGHT_WORKERS=1
+      - CHROMIUM_FLAGS=--no-sandbox --disable-dev-shm-usage
+    volumes:
+      - ./reports:/app/reports
+      - ./logs:/app/logs
+      - test-cache:/app/.cache
+    shm_size: 2g
+
+  # Quality tests (Golden, Metamorphic, etc.)
+  test-quality:
+    extends: test-base
+    build:
+      target: test-quality
+    command: ["pnpm", "test:quality"]
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+    environment:
+      - TEST_TYPE=quality
+      - VITEST_POOL_THREADS=2
+
+  # Flake detection with extended timeout
+  test-flake-detection:
+    extends: test-base
+    build:
+      target: test-flake-detection
+    command: ["pnpm", "flake:detect:enhanced:quick"]
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+    environment:
+      - TEST_TYPE=flake-detection
+      - FLAKE_DETECTION_TIMEOUT=300000
+    volumes:
+      - ./reports/flake-detection:/app/reports/flake-detection
+
+  # Performance testing with monitoring
+  test-performance:
+    extends: test-base
+    command: ["pnpm", "test:perf"]
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.5'
+          memory: 1.5G
+    environment:
+      - TEST_TYPE=performance
+      - PERFORMANCE_MONITORING=true
+    volumes:
+      - ./benchmarks:/app/benchmarks
+
+  # Test database for integration tests
+  test-db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=ae_framework_test
+      - POSTGRES_USER=test_user
+      - POSTGRES_PASSWORD=test_password
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    volumes:
+      - test-db-data:/var/lib/postgresql/data
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d ae_framework_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching tests
+  test-cache:
+    image: redis:7-alpine
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # Test result aggregator
+  test-reporter:
+    image: node:22-alpine
+    working_dir: /app
+    command: >
+      sh -c "
+        echo 'Waiting for tests to complete...' &&
+        sleep 30 &&
+        echo 'Generating consolidated test report...' &&
+        node scripts/generate-test-report.js
+      "
+    depends_on:
+      - test-unit
+      - test-integration
+      - test-quality
+    volumes:
+      - ./reports:/app/reports
+      - ./scripts:/app/scripts
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    environment:
+      - REPORT_TYPE=consolidated
+    networks:
+      - test-network
+
+networks:
+  test-network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: test-br0
+
+volumes:
+  test-cache:
+    driver: local
+  test-node-modules:
+    driver: local  
+  test-db-data:
+    driver: local
