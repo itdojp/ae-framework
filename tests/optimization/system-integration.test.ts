@@ -32,6 +32,9 @@ describe('Complete Optimization System Integration', () => {
     activeWorkers = [];
     activeSystems = [];
     
+    // Clear any existing global reference to prevent conflicts
+    delete (globalThis as any).optimizationSystem;
+    
     optimizationSystem = createOptimizationSystem({
       integration: {
         autoStart: false,
@@ -44,55 +47,74 @@ describe('Complete Optimization System Integration', () => {
     // Track this system for cleanup
     activeSystems.push(optimizationSystem);
     
-    // Store in global for the shared cleanup hook
-    (globalThis as any).optimizationSystem = optimizationSystem;
+    // Mark this test as managing its own cleanup to avoid double-shutdown
+    (globalThis as any).__testManagedCleanup = true;
   });
 
   afterEach(async () => {
-    // Stop all tracked systems with timeout
-    const shutdownPromises = activeSystems.map(async (system) => {
-      if (system && typeof system.stop === 'function') {
-        try {
-          return await Promise.race([
-            system.stop(),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('System shutdown timeout')), 5000))
-          ]);
-        } catch (error) {
-          console.warn(`Warning: System shutdown error:`, error);
+    // Mark cleanup as starting to prevent shared cleanup interference
+    (globalThis as any).__cleanupInProgress = true;
+    
+    try {
+      // Stop all tracked systems with timeout and proper error handling
+      const shutdownPromises = activeSystems.map(async (system) => {
+        if (system && typeof system.stop === 'function') {
+          try {
+            return await Promise.race([
+              system.stop(),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('System shutdown timeout')), 8000))
+            ]);
+          } catch (error) {
+            console.warn(`Warning: System shutdown error:`, error);
+            return null; // Continue with other shutdowns
+          }
         }
-      }
-    });
+        return null;
+      });
 
-    // Stop all active workers
-    const workerPromises = activeWorkers.map(async (worker) => {
-      if (worker && typeof worker.terminate === 'function') {
-        try {
-          return await Promise.race([
-            worker.terminate(),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Worker termination timeout')), 2000))
-          ]);
-        } catch (error) {
-          console.warn(`Warning: Worker termination error:`, error);
+      // Stop all active workers with extended timeout
+      const workerPromises = activeWorkers.map(async (worker) => {
+        if (worker && typeof worker.terminate === 'function') {
+          try {
+            return await Promise.race([
+              worker.terminate(),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Worker termination timeout')), 3000))
+            ]);
+          } catch (error) {
+            console.warn(`Warning: Worker termination error:`, error);
+            return null; // Continue with other terminations
+          }
         }
-      }
-    });
+        return null;
+      });
 
-    // Wait for all shutdowns
-    await Promise.allSettled([...shutdownPromises, ...workerPromises]);
-    
-    // Clear tracking arrays
-    activeWorkers.length = 0;
-    activeSystems.length = 0;
-    
-    // Clear global reference
-    delete (globalThis as any).optimizationSystem;
-    
-    // Clear any remaining timers
-    vi.clearAllTimers();
-    
-    // Force garbage collection if available
-    if (global.gc) {
-      try { global.gc(); } catch { /* ignore */ }
+      // Wait for all shutdowns with extended overall timeout
+      await Promise.race([
+        Promise.allSettled([...shutdownPromises, ...workerPromises]),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Overall cleanup timeout')), 12000))
+      ]);
+      
+    } catch (error) {
+      console.warn(`Warning: Cleanup timeout exceeded:`, error);
+    } finally {
+      // Always clean up state regardless of shutdown success
+      activeWorkers.length = 0;
+      activeSystems.length = 0;
+      
+      // Clear global references
+      delete (globalThis as any).optimizationSystem;
+      delete (globalThis as any).__testManagedCleanup;
+      delete (globalThis as any).__cleanupInProgress;
+      
+      // Clear any remaining timers
+      vi.clearAllTimers();
+      
+      // Force garbage collection if available (with delay for async cleanup)
+      setTimeout(() => {
+        if (global.gc) {
+          try { global.gc(); } catch { /* ignore */ }
+        }
+      }, 100);
     }
   });
 
