@@ -6,7 +6,9 @@
  */
 
 import fs from 'fs';
+import fsp from 'fs/promises';
 import path from 'path';
+import { pathToFileURL } from 'url';
 
 class CEGISReportCleanup {
   constructor() {
@@ -86,7 +88,7 @@ class CEGISReportCleanup {
       const destPath = path.join(this.archiveDir, report.filename);
       
       try {
-        fs.renameSync(sourcePath, destPath);
+        await fsp.rename(sourcePath, destPath);
         archivedCount++;
       } catch (error) {
         console.warn(`⚠️ Failed to archive ${report.filename}: ${error.message}`);
@@ -223,7 +225,7 @@ async function main() {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   main();
 }
 
