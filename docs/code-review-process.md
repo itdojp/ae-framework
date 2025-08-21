@@ -69,9 +69,9 @@ console.log('Section Title:');
   - `ci-stability-enhancer.mjs`: Used escaped newlines (`\\n`)
 
 #### Final Decision
-- **Decision**: Accept consistency feedback, standardize on escaped newlines
-- **Rationale**: Maintain codebase consistency while preserving UX
-- **Implementation**: Updated to use `\\n` consistently
+- **Decision**: Accept consistency feedback, standardize on literal newlines
+- **Rationale**: Maintain codebase consistency while preserving UX and correct functionality
+- **Implementation**: Updated to use `\n` consistently for actual newlines
 
 ### Lessons Learned
 
@@ -86,13 +86,13 @@ console.log('Section Title:');
 
 #### Console Output
 ```javascript
-// ✅ Preferred: Escaped newlines for consistency
-console.log('\\nSection Title:');
-console.log('\\nAnother Section:');
+// ✅ Preferred: Literal newlines for consistency
+console.log('\nSection Title:');
+console.log('\nAnother Section:');
 
-// ❌ Avoid: Mixed patterns
-console.log('\nSome Section:');  // literal
-console.log('\\nOther Section:'); // escaped
+// ❌ Avoid: Mixed patterns or literal backslash-n
+console.log('Some Section:');     // no newline
+console.log('\\nOther Section:'); // prints literal "\n"
 ```
 
 #### Error Handling
@@ -101,7 +101,7 @@ console.log('\\nOther Section:'); // escaped
 console.error(`Error: ${error.message}`);
 
 // ✅ Consistent success messaging  
-console.log('\\n✅ Operation completed successfully!');
+console.log('\n✅ Operation completed successfully!');
 ```
 
 ### Review Response Protocol
