@@ -31,6 +31,11 @@
     "clean:project": "node scripts/project-cleanup.mjs",
     "clean:reports": "rm -rf temp-reports/*/",
     "clean:all": "pnpm run clean:frontend && pnpm run clean:project",
+    "optimize:ci": "node scripts/integrated-ci-test-optimizer.mjs",
+    "optimize:ci:full": "node scripts/integrated-ci-test-optimizer.mjs --ci",
+    "optimize:ci:stability": "node scripts/integrated-ci-test-optimizer.mjs --no-flake-detection --no-performance",
+    "optimize:ci:flake": "node scripts/integrated-ci-test-optimizer.mjs --no-stability --no-performance",
+    "optimize:ci:performance": "node scripts/integrated-ci-test-optimizer.mjs --no-flake-detection --no-stability",
     "test": "vitest run",
     "test:unit": "vitest run --project unit",
     "test:int": "vitest run --project integration",
@@ -218,7 +223,10 @@
     "test:quality": "npm run test:golden && npm run test:metamorphic && npm run test:cli:fuzz && npm run test:contracts && npm run test:doctest && npm run test:randomize",
     "test:quality:fast": "npm run test:golden && npm run test:cli:fuzz && npm run test:doctest",
     "test:ci": "vitest run --config vitest.ci.config.ts",
-    "test:ci:stable": "vitest run --config vitest.ci.config.ts --exclude \"**/system-integration.test.ts\""
+    "test:ci:stable": "vitest run --config vitest.ci.config.ts --exclude \"**/system-integration.test.ts\"",
+    "test:parallel:ci": "vitest run --config vitest.optimized.config.ts --reporter=junit --reporter=json",
+    "test:performance": "vitest run --config vitest.optimized.config.ts --reporter=verbose --run --coverage=false",
+    "test:flake-detection": "vitest run --config vitest.optimized.config.ts --retry=5 --reporter=json"
   },
   "dependencies": {
     "@ae-framework/spec-compiler": "file:./packages/spec-compiler",
