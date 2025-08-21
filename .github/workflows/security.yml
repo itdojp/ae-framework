@@ -193,14 +193,14 @@ jobs:
   container-security:
     name: Container Security
     runs-on: ubuntu-latest
-    if: hashFiles('Dockerfile') != ''
+    if: hashFiles('docker/Dockerfile') != ''
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Build Docker image
-        run: docker build -t ae-framework:latest .
+        run: docker build -f docker/Dockerfile -t ae-framework:latest .
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
