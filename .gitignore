@@ -43,7 +43,16 @@ logs/
 # Temporary files
 tmp/
 temp/
+temp-reports/
 .cache/
+
+# Generated reports and artifacts
+cegis-report-*.json
+*-report-*.json
+conformance-results.json
+sample-*.json
+invalid-sample-*.json
+clean-sample-*.json
 
 # Generated files
 traceability.csv
