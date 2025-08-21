@@ -1,0 +1,307 @@
+{
+  "timestamp": "2025-08-20T23:50:48.336Z",
+  "version": "1.0.0",
+  "files": {
+    "examples/inventory/apps/web/components/ProductForm.tsx": {
+      "hash": "4720d382c030b35ed499bac97b9932c976e49141e9552555fc78b6904d9b9218",
+      "lineCount": 282,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 1,
+      "eslintErrors": 0
+    },
+    "examples/inventory/apps/web/components/ProductCard.tsx": {
+      "hash": "136fea1db3c2a05bdb379ab6faa01d4c12141f747ddb968fc751ebb1992df471",
+      "lineCount": 117,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 1,
+      "eslintErrors": 0
+    },
+    "examples/inventory/apps/web/components/OrderForm.tsx": {
+      "hash": "a0fd71991f5fe234a221f369368640b1453dab07e659fbc18571c3e61ff5327e",
+      "lineCount": 335,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 1,
+      "eslintErrors": 0
+    },
+    "examples/inventory/apps/web/components/OrderCard.tsx": {
+      "hash": "839a17c19f153297a8922a261205d31d92ce60831772fb8a87c0dc0698710b1b",
+      "lineCount": 113,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 1,
+      "eslintErrors": 0
+    },
+    "examples/inventory/apps/web/components/CustomerForm.tsx": {
+      "hash": "43831310f57e1b2654d0cba64be2c4bf343ddd29f36c11168b8e185752a68df3",
+      "lineCount": 146,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 0,
+      "eslintErrors": 0
+    },
+    "examples/inventory/apps/web/components/CustomerCard.tsx": {
+      "hash": "344a51f883c196bbba11132723aa102e32d037c92e2ed00a88b0f5b5ba24ca73",
+      "lineCount": 84,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 0,
+      "eslintErrors": 0
+    },
+    "examples/inventory/apps/web/__e2e__/product.spec.ts": {
+      "hash": "b6e626e7f11f29b2af2a6449f393d60b4eed116bb6971d13b50836cde3ba18d0",
+      "lineCount": 179,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 0,
+      "eslintErrors": 0
+    },
+    "examples/inventory/apps/web/__e2e__/order.spec.ts": {
+      "hash": "0a452a35a8534980116b521aec7e3f8cc862bfa918b20764c8831dfb45438541",
+      "lineCount": 190,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 0,
+      "eslintErrors": 0
+    },
+    "examples/inventory/apps/web/__e2e__/customer.spec.ts": {
+      "hash": "3d95dd062b8d41c0d3e0551bd0aa26696df90caaefbbdb9d23632e8fb0aa2de1",
+      "lineCount": 144,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 0,
+      "eslintErrors": 0
+    },
+    "examples/inventory/apps/storybook/stories/Product.stories.tsx": {
+      "hash": "735ff94f3c982f33cfe55548ca66c36523fadd7779215d01a1854ae867bf01bb",
+      "lineCount": 128,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 0,
+      "eslintErrors": 1
+    },
+    "examples/inventory/apps/storybook/stories/Order.stories.tsx": {
+      "hash": "34551b8238bfadd2f8485a910df09b1f40005dda26a8ebe14872f6abcf67435f",
+      "lineCount": 128,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 0,
+      "eslintErrors": 1
+    },
+    "examples/inventory/apps/storybook/stories/Customer.stories.tsx": {
+      "hash": "2be06722bbddc4e9bb547e440ed0e8fb60c464d22d00f4213d3dd06a12ae6c27",
+      "lineCount": 119,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 0,
+      "eslintErrors": 1
+    },
+    "examples/inventory/apps/web/app/product/page.tsx": {
+      "hash": "88f162217809d3dfbde552bbb473faa01f339c9cd18c873f866e024d5d5b2cac",
+      "lineCount": 116,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 1,
+      "eslintErrors": 0
+    },
+    "examples/inventory/apps/web/app/order/page.tsx": {
+      "hash": "9b1dc2fa35a32648d7c4ec5186df715a8c6d37b7ebe17aed14fe2fda193bb9bf",
+      "lineCount": 118,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 1,
+      "eslintErrors": 0
+    },
+    "examples/inventory/apps/web/app/customer/page.tsx": {
+      "hash": "9889197ef585928b8a3d03a201f2df7d1dec53af82d475b495e1b48354b0011c",
+      "lineCount": 108,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 0,
+      "eslintErrors": 0
+    },
+    "examples/inventory/apps/web/app/product/new/page.tsx": {
+      "hash": "86044ab532a63d3f16c7c3dcd5fb7dd5e10208d87b35d53222b14cd386b6ca5b",
+      "lineCount": 82,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 1,
+      "eslintErrors": 0
+    },
+    "examples/inventory/apps/web/app/product/[id]/page.tsx": {
+      "hash": "03f435e63155ae6eafae747ca99c7731b03aba235163957b1fb8723e670e998c",
+      "lineCount": 293,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 1,
+      "eslintErrors": 0
+    },
+    "examples/inventory/apps/web/app/order/new/page.tsx": {
+      "hash": "b62a69782240c7feb695b07f38478fdf9585bb68b7f6375ec4e6a02fc0b9263e",
+      "lineCount": 85,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 1,
+      "eslintErrors": 0
+    },
+    "examples/inventory/apps/web/app/order/[id]/page.tsx": {
+      "hash": "71817e4dc364361729084d7e5c41db2fa60752e0cf7c46779e42840160ff0a6c",
+      "lineCount": 305,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 1,
+      "eslintErrors": 0
+    },
+    "examples/inventory/apps/web/app/customer/new/page.tsx": {
+      "hash": "ddaf62479aa61e9eaa97d021c29c05d438bf740c1964a91f75eada1da6ed6263",
+      "lineCount": 75,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 0,
+      "eslintErrors": 0
+    },
+    "examples/inventory/apps/web/app/customer/[id]/page.tsx": {
+      "hash": "2a001e47fd626011516478ac7f1f6930ee748e6e68a37c02a3c3c68c98e4c5e4",
+      "lineCount": 214,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 0,
+      "eslintErrors": 0
+    },
+    "examples/inventory/src/ui/components/generated/apps/web/components/ProductForm.tsx": {
+      "hash": "67f5d1a152149149a546d21a34d20682bb0c530865493ef15b2b7b35bbfe36a3",
+      "lineCount": 282,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 1,
+      "eslintErrors": 0
+    },
+    "examples/inventory/src/ui/components/generated/apps/web/components/ProductCard.tsx": {
+      "hash": "ea9c9e68871f67a5ba9c6a37712ab6870efbb3a8e068848157623d2fc1099396",
+      "lineCount": 117,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 1,
+      "eslintErrors": 0
+    },
+    "examples/inventory/src/ui/components/generated/apps/web/components/OrderForm.tsx": {
+      "hash": "5bc6aba12017980e2a5b5b3db00a02bdb16b4001df59837f928d2642e51eeff6",
+      "lineCount": 335,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 1,
+      "eslintErrors": 0
+    },
+    "examples/inventory/src/ui/components/generated/apps/web/components/OrderCard.tsx": {
+      "hash": "28cd97d4090fa290a71873b45fe7e2e0ff2ed5fce486de4b2f8bde1fd6085bd8",
+      "lineCount": 113,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 1,
+      "eslintErrors": 0
+    },
+    "examples/inventory/src/ui/components/generated/apps/web/components/CustomerForm.tsx": {
+      "hash": "339ab62360ec9b83f85be51ea22d35863891e5a3a7d0bb4acb96ee2b06c32ebe",
+      "lineCount": 146,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 0,
+      "eslintErrors": 0
+    },
+    "examples/inventory/src/ui/components/generated/apps/web/components/CustomerCard.tsx": {
+      "hash": "228ce3b8bbef7fb516ad8551374b9e35d1b3a25f7b037a47edec4010c454f093",
+      "lineCount": 84,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 0,
+      "eslintErrors": 0
+    },
+    "examples/inventory/src/ui/components/generated/apps/web/__e2e__/product.spec.ts": {
+      "hash": "03528718fb9cea68c8669585533f72729fd9aec7d0d382d713a57a1d1bc15d81",
+      "lineCount": 179,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 0,
+      "eslintErrors": 0
+    },
+    "examples/inventory/src/ui/components/generated/apps/web/__e2e__/order.spec.ts": {
+      "hash": "f08cdbfe89ae861bf91788d0bf44f1b10b420172439a362967e2bdde311d2e54",
+      "lineCount": 190,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 0,
+      "eslintErrors": 0
+    },
+    "examples/inventory/src/ui/components/generated/apps/web/__e2e__/customer.spec.ts": {
+      "hash": "a21ca6c03835dbe703ec1c4988f78479e1acaaae309069fa4e373e77f914cfbf",
+      "lineCount": 144,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 0,
+      "eslintErrors": 0
+    },
+    "examples/inventory/src/ui/components/generated/apps/storybook/stories/Product.stories.tsx": {
+      "hash": "a5d5116cf16730b0654315084d46f86a493dd2b0cd729d6787bf3c1fefea7abc",
+      "lineCount": 128,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 0,
+      "eslintErrors": 1
+    },
+    "examples/inventory/src/ui/components/generated/apps/storybook/stories/Order.stories.tsx": {
+      "hash": "de3391123690b802615ca0ca4d0deb86d64dcb52edd50f007f83e3ecae3d5d2d",
+      "lineCount": 128,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 0,
+      "eslintErrors": 1
+    },
+    "examples/inventory/src/ui/components/generated/apps/storybook/stories/Customer.stories.tsx": {
+      "hash": "3150436ba794619909924cee3121db0a2acb8d3f82381898dc5d78b25c75fabe",
+      "lineCount": 119,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 0,
+      "eslintErrors": 1
+    },
+    "examples/inventory/src/ui/components/generated/apps/web/app/product/page.tsx": {
+      "hash": "570f9a23015e98085e65242be1d1f856f0ded10a633d5d3a7180996a956607be",
+      "lineCount": 116,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 1,
+      "eslintErrors": 0
+    },
+    "examples/inventory/src/ui/components/generated/apps/web/app/order/page.tsx": {
+      "hash": "ee96a7eca90231078b552c6b12f83532fd659c9fb262382d5bb33f9ba3c2c00b",
+      "lineCount": 118,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 1,
+      "eslintErrors": 0
+    },
+    "examples/inventory/src/ui/components/generated/apps/web/app/customer/page.tsx": {
+      "hash": "baf13b3534c1fb431239bfc24f27d04b8a328632219248be7edf26eda9286993",
+      "lineCount": 108,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 0,
+      "eslintErrors": 0
+    },
+    "examples/inventory/src/ui/components/generated/apps/web/app/product/new/page.tsx": {
+      "hash": "42abe506569d1322dbf03be5451f58a622fb1df27fbca9b4dabef5ba97bd973d",
+      "lineCount": 82,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 1,
+      "eslintErrors": 0
+    },
+    "examples/inventory/src/ui/components/generated/apps/web/app/product/[id]/page.tsx": {
+      "hash": "0d5a036c54b86701b607d3995d5e130944a31cc3c7a9872d612b556e5ff2212e",
+      "lineCount": 293,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 1,
+      "eslintErrors": 0
+    },
+    "examples/inventory/src/ui/components/generated/apps/web/app/order/new/page.tsx": {
+      "hash": "7d0859849dcd53bd6bdfda207356aaf09fda1e2857cee030cf7e8bd6dc5edbe8",
+      "lineCount": 85,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 1,
+      "eslintErrors": 0
+    },
+    "examples/inventory/src/ui/components/generated/apps/web/app/order/[id]/page.tsx": {
+      "hash": "2bdfd1c9d8c5afeef0ece789c25c0ba6f7e570660d2ae6ce293a221c48078925",
+      "lineCount": 305,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 1,
+      "eslintErrors": 0
+    },
+    "examples/inventory/src/ui/components/generated/apps/web/app/customer/new/page.tsx": {
+      "hash": "1d9c39b29cd6ce4ee42411b83da6d6616d693ff742fccfe5c5988e4a3e64f056",
+      "lineCount": 75,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 0,
+      "eslintErrors": 0
+    },
+    "examples/inventory/src/ui/components/generated/apps/web/app/customer/[id]/page.tsx": {
+      "hash": "fee725cc12415a1e65da6661cf3bfcccd0927e80923c9fbd732ffc2160caf5ee",
+      "lineCount": 214,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 0,
+      "eslintErrors": 0
+    }
+  },
+  "summary": {
+    "totalFiles": 42,
+    "totalLines": 6722,
+    "totalAriaAttributes": 0,
+    "totalTypeScriptErrors": 20,
+    "totalEslintErrors": 6
+  }
+}

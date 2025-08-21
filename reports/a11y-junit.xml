@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="Accessibility Tests" tests="8" failures="2" errors="0" time="0.593">
-  <testsuite name="Component Accessibility Tests" errors="0" failures="2" skipped="0" timestamp="2025-08-19T22:31:30" time="0.554" tests="8">
+<testsuites name="Accessibility Tests" tests="8" failures="2" errors="0" time="0.756">
+  <testsuite name="Component Accessibility Tests" errors="0" failures="2" skipped="0" timestamp="2025-08-21T00:34:40" time="0.697" tests="8">
     <testcase classname="Component Accessibility Tests Button Component should have accessible name" name="Component Accessibility Tests Button Component should have accessible name" time="0.002">
     </testcase>
     <testcase classname="Component Accessibility Tests Button Component should fail without accessible name" name="Component Accessibility Tests Button Component should fail without accessible name" time="0.001">
@@ -11,7 +11,7 @@ Received:   0
     at Object.toBeGreaterThan (/home/claudecode/work/ae-framework/tests/a11y/components.test.js:34:37)
     at processTicksAndRejections (node:internal/process/task_queues:95:5)</failure>
     </testcase>
-    <testcase classname="Component Accessibility Tests Button Component should support keyboard navigation" name="Component Accessibility Tests Button Component should support keyboard navigation" time="0">
+    <testcase classname="Component Accessibility Tests Button Component should support keyboard navigation" name="Component Accessibility Tests Button Component should support keyboard navigation" time="0.001">
     </testcase>
     <testcase classname="Component Accessibility Tests Form Input Component should have proper label association" name="Component Accessibility Tests Form Input Component should have proper label association" time="0">
     </testcase>
@@ -25,7 +25,7 @@ Received:   0
     </testcase>
     <testcase classname="Component Accessibility Tests Modal Component should have proper focus management" name="Component Accessibility Tests Modal Component should have proper focus management" time="0">
     </testcase>
-    <testcase classname="Component Accessibility Tests Navigation Component should use semantic navigation elements" name="Component Accessibility Tests Navigation Component should use semantic navigation elements" time="0.001">
+    <testcase classname="Component Accessibility Tests Navigation Component should use semantic navigation elements" name="Component Accessibility Tests Navigation Component should use semantic navigation elements" time="0">
     </testcase>
     <testcase classname="Component Accessibility Tests Color Contrast should pass contrast requirements for normal text" name="Component Accessibility Tests Color Contrast should pass contrast requirements for normal text" time="0">
     </testcase>
