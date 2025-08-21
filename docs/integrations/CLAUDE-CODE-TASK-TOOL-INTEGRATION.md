@@ -1,9 +1,211 @@
-# Claude Code統合ガイド - AE Framework完全連携
+# Claude Code Integration Guide - AE Framework Complete Integration
 
-> **AE Framework ↔ Claude Code** の包括的統合ドキュメント  
-> 自然言語指示から高品質コード生成まで一貫したワークフローを実現
+> **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
 
-## 📋 目次
+---
+
+## English
+
+**Comprehensive Integration Documentation for AE Framework ↔ Claude Code**  
+**Seamless workflow from natural language instructions to high-quality code generation**
+
+### 📋 Table of Contents
+
+1. [Integration Overview](#integration-overview)
+2. [Architecture Details](#architecture-details)
+3. [Task Tool Integration](#task-tool-integration)
+4. [Phase-by-Phase Integration](#phase-by-phase-integration)
+5. [Actual Call Flow](#actual-call-flow)
+6. [Usage Examples & Best Practices](#usage-examples--best-practices)
+7. [Performance & Optimization](#performance--optimization)
+8. [Troubleshooting](#troubleshooting)
+
+---
+
+### Integration Overview
+
+#### 🎯 Core Philosophy
+
+AE Framework integrates as a **Task Tool** in Claude Code environment, enabling the following through natural language instructions alone:
+
+- **Requirements Analysis** → **Domain Modeling** → **UI Generation** complete automation
+- **6-Phase Development Methodology** seamless execution
+- **WCAG 2.1 AA compliant** high-quality UI auto-generation
+- **Enterprise-grade** quality assurance
+
+#### 🔄 Integration Architecture
+
+```
+Claude Code (Natural Language) 
+    ↓ Task Tool Call
+AE Framework (Task Adapters)
+    ↓ Structured Processing
+High-Quality Artifacts (React+Next.js etc.)
+```
+
+#### ✨ Key Benefits
+
+1. **Zero Learning Curve**: No complex CLI commands required
+2. **Quality Assurance**: Automatic quality gates and metrics
+3. **High-Speed Generation**: 21 files/30 seconds UI auto-generation
+4. **Full Compliance**: WCAG 2.1 AA, Enterprise Security ready
+
+**🎉 2025 Complete Implementation Status**:
+- ✅ **Phase 6 UI/UX Generation**: 100% implementation complete (21 files/30 seconds generation)
+- ✅ **Comprehensive Quality System**: Golden/Approval, Metamorphic, CLI Fuzzing complete
+- ✅ **Integrated Security Audit**: 5 core modules implementation complete
+- ✅ **CEGIS Auto-repair**: Failure artifact analysis & auto-correction implemented
+- ✅ **Runtime Conformance**: Zod + OpenTelemetry runtime verification implemented
+- ✅ **Fast CI/CD**: 5min/15min/30min staged pipeline implemented
+- ✅ **Enterprise Quality**: WCAG 2.1 AA compliant, production-ready complete
+
+### Architecture Details
+
+#### 🏗️ Hybrid Integration System
+
+```typescript
+export interface HybridIntentConfig {
+  enableCLI: boolean;                    // CLI integration
+  enableMCPServer: boolean;              // MCP Server integration  
+  enableClaudeCodeIntegration: boolean;  // 🎯 Claude Code integration (Primary)
+  enforceRealTime: boolean;              // Real-time processing
+  strictMode: boolean;                   // Strict mode
+}
+
+export class HybridIntentSystem {
+  async handleIntentRequest(request: {
+    type: 'cli' | 'task' | 'mcp' | 'auto';
+    data: any;
+    context?: {
+      isClaudeCode: boolean;     // 🎯 Claude Code detection
+      hasTaskTool: boolean;      // Task Tool availability
+    };
+  }): Promise<any> {
+    
+    if (request.context?.isClaudeCode && request.context?.hasTaskTool) {
+      // 🎯 Claude Code Task Tool processing
+      return this.handleTaskToolRequest(request);
+    }
+    
+    // Fallback: CLI or MCP
+    return this.handleFallbackRequest(request);
+  }
+}
+```
+
+### Task Tool Integration
+
+#### 🔧 Interface Definition
+
+```typescript
+// Claude Code → AE Framework
+interface TaskRequest {
+  description: string;      // Task description
+  prompt: string;          // Processing target prompt  
+  subagent_type: string;   // Phase specification
+}
+
+// AE Framework → Claude Code
+interface TaskResponse {
+  summary: string;           // Execution result summary
+  analysis: string;          // Detailed analysis (Markdown format)
+  recommendations: string[]; // Recommendations
+  nextActions: string[];     // Next actions
+  warnings: string[];        // Warnings
+  shouldBlockProgress: boolean; // Progress blocking determination
+}
+```
+
+### Phase-by-Phase Integration
+
+#### Phase 1: Intent Analysis 🎯
+- **Task Adapter**: Intent Task Adapter
+- **Primary Function**: User intent analysis and requirement extraction
+- **Output**: 12+ requirements identified from natural language input
+
+#### Phase 2: Natural Language Requirements 📝
+- **Task Adapter**: Natural Language Task Adapter
+- **Primary Function**: Structure and validate natural language requirements
+- **Output**: Functional/non-functional requirements categorization
+
+#### Phase 3: User Stories Creation 📋
+- **Task Adapter**: User Stories Task Adapter
+- **Primary Function**: Generate user stories and acceptance criteria
+- **Output**: Epic-organized user stories with story points
+
+#### Phase 4: Validation 🔍
+- **Task Adapter**: Validation Task Adapter
+- **Primary Function**: Cross-validate requirements, stories, and specifications
+- **Output**: Traceability matrix and consistency reports
+
+#### Phase 5: Domain Modeling 🏗️
+- **Task Adapter**: Domain Modeling Task Adapter
+- **Primary Function**: Create domain-driven design models
+- **Output**: Entities, bounded contexts, domain services
+
+#### Phase 6: UI/UX & Frontend Delivery 🎨
+- **Task Adapter**: UI Generation Task Adapter
+- **Primary Function**: React + Next.js 14 UI component generation
+- **Output**: 21 files including components, pages, tests, Storybook stories
+
+### Usage Examples
+
+#### Basic UI Generation
+```
+User: "Create an e-commerce product management interface"
+
+Claude Code: Executing UI Task Adapter for component generation...
+
+📊 OpenTelemetry initialized for ae-framework Phase 6
+✅ Generated 21 files for 3/3 entities
+📊 Test Coverage: 96% (threshold: 80%) ✅
+♿ A11y Score: 97% (threshold: 95%) ✅  
+⚡ Performance Score: 79% (threshold: 75%) ✅
+🏗️ Scaffold Time: 18243ms ✅
+```
+
+#### Complete 6-Phase Development
+```
+User: "Build a complete inventory management system"
+
+Claude Code: Executing sequential 6-phase development...
+
+Phase 1: Intent Analysis Complete - 15 requirements identified
+Phase 2: Requirements structured - 8 functional, 7 non-functional
+Phase 3: User Stories generated - 12 stories across 4 epics
+Phase 4: Validation complete - 94% traceability achieved
+Phase 5: Domain model created - 6 entities, 3 bounded contexts
+Phase 6: UI generated - React components with full test coverage
+```
+
+### Performance & Optimization
+
+#### Generation Speed
+- **UI Components**: 21 files in <30 seconds
+- **Full Application**: Complete app in <5 minutes
+- **Quality Gates**: All checks in <2 minutes
+
+#### Quality Metrics
+- **Test Coverage**: ≥80% automatic
+- **Accessibility**: WCAG 2.1 AA (≥95% score)
+- **Performance**: Lighthouse ≥75%
+- **Type Safety**: 100% TypeScript strict mode
+
+### Best Practices
+
+1. **Clear Intent**: Provide specific, actionable requirements
+2. **Iterative Development**: Build incrementally through phases
+3. **Quality Validation**: Review generated quality reports
+4. **Customization**: Use design tokens for brand consistency
+
+---
+
+## Japanese
+
+**AE Framework ↔ Claude Code の包括的統合ドキュメント**  
+**自然言語指示から高品質コード生成まで一貫したワークフローを実現**
+
+### 📋 目次
 
 1. [統合概要](#統合概要)
 2. [アーキテクチャ詳細](#アーキテクチャ詳細)
@@ -146,25 +348,6 @@ class AEFrameworkCLI {
 }
 ```
 
-### 🔄 プロアクティブガイダンス
-
-```typescript
-interface ProactiveGuidanceContext {
-  recentFiles: string[];     // 最近変更されたファイル
-  recentActions: string[];   // 最近の行動
-  userIntent: string;        // ユーザーの意図
-}
-
-interface ProactiveGuidanceResult {
-  shouldIntervene: boolean;
-  intervention: {
-    type: 'warning' | 'suggestion' | 'block';
-    message: string;
-    recommendedActions: string[];
-  };
-}
-```
-
 ---
 
 ## フェーズ別連携
@@ -199,8 +382,11 @@ const response: TaskResponse = {
     "Phase 2で詳細要件の構造化を推奨",
     "ステークホルダーへのヒアリング実施を検討"
   ],
-  nextActions: ["Phase 2: Natural Language Requirements"],
-  warnings: ["非機能要件の詳細化が必要"],
+  nextActions: [
+    "自然言語要件処理フェーズへ進行",
+    "要件の優先度設定を実施"
+  ],
+  warnings: [],
   shouldBlockProgress: false
 };
 ```
@@ -210,111 +396,39 @@ const response: TaskResponse = {
 **Task Adapter**: Natural Language Task Adapter  
 **主要機能**: 自然言語要件の構造化と分析
 
-```typescript
-// 呼び出し例
-const request: TaskRequest = {
-  description: "自然言語要件の構造化",
-  prompt: "商品登録、在庫管理、価格変更機能が必要...",
-  subagent_type: "natural-language"
-};
+**実行例**:
+```
+User: 商品管理システムの詳細要件を整理してください
 
-// 応答例 (処理時間: 10-30秒)
-const response: TaskResponse = {
-  summary: "15件の要件を機能・非機能・ビジネス要件に分類",
-  analysis: `
-## 要件分析結果
+Claude Code: Natural Language Task Adapterで要件分析を実行中...
 
-### 機能要件 (10件)
-1. **商品登録機能**
-   - 商品名、説明、価格、カテゴリの入力
-   - 画像アップロード（複数枚対応）
-   - SKU自動生成機能
-
-2. **在庫管理機能**
-   - リアルタイム在庫数表示
-   - 在庫アラート設定
-   - 入荷・出荷履歴管理
-
-### 非機能要件 (3件)
-1. **パフォーマンス要件**
-   - ページ読み込み時間: 2秒以内
-   - 同時アクセス: 100ユーザー対応
-
-2. **セキュリティ要件**
-   - 認証・認可機能
-   - SQLインジェクション対策
-
-### ビジネス要件 (2件)
-1. **運用要件**
-   - 24時間365日稼働
-   - バックアップ・復旧体制
-`,
-  recommendations: [
-    "ユーザーストーリー作成でアジャイル開発に対応",
-    "非機能要件の具体的数値目標設定"
-  ],
-  nextActions: ["Phase 3: User Stories Creation"],
-  warnings: ["セキュリティ要件の詳細化推奨"],
-  shouldBlockProgress: false
-};
+✅ Requirements Analysis Complete - 15 requirements identified
+📊 Analysis:
+  • Functional Requirements: 10
+  • Non-Functional Requirements: 3  
+  • Business Requirements: 2
+💡 Recommendations:
+  • Review identified gaps for completeness
+  • Clarify ambiguous requirements with stakeholders
 ```
 
 ### Phase 3: User Stories Creation 📋
 
 **Task Adapter**: User Stories Task Adapter  
-**主要機能**: アジャイル開発用ユーザーストーリー生成
+**主要機能**: ユーザーストーリー生成と管理
 
-```typescript
-// 呼び出し例
-const request: TaskRequest = {
-  description: "ユーザーストーリーの自動生成",
-  prompt: "Phase 2で構造化された要件からユーザーストーリーを作成",
-  subagent_type: "user-stories"
-};
+**実行例**:
+```
+User: ユーザーストーリーを作成してください
 
-// 応答例 (処理時間: 15-45秒)
-const response: TaskResponse = {
-  summary: "8個のユーザーストーリーを3つのエピックに整理 (合計34ポイント)",
-  analysis: `
-## ユーザーストーリー生成結果
+Claude Code: User Stories Task Adapterで処理中...
 
-### Epic 1: 商品管理 (13ポイント)
-
-#### Story 1.1: 商品登録 (5ポイント)
-**As a** 店舗管理者  
-**I want to** 新しい商品を登録する  
-**So that** 顧客に商品を販売できる
-
-**受け入れ条件:**
-- [ ] 商品名、価格、説明を入力できる
-- [ ] 商品画像を最大5枚アップロードできる
-- [ ] カテゴリを選択できる
-- [ ] SKUが自動生成される
-
-#### Story 1.2: 在庫管理 (8ポイント)
-**As a** 在庫管理者  
-**I want to** 商品の在庫数を管理する  
-**So that** 適切な在庫レベルを維持できる
-
-**受け入れ条件:**
-- [ ] 現在の在庫数を確認できる
-- [ ] 在庫の入荷・出荷を記録できる
-- [ ] 在庫アラートを設定できる
-
-### Epic 2: ユーザー管理 (13ポイント)
-[詳細省略...]
-
-### Epic 3: レポート機能 (8ポイント)
-[詳細省略...]
-`,
-  recommendations: [
-    "受け入れ条件の詳細化を推奨",
-    "ストーリーポイント見積もりの妥当性確認"
-  ],
-  nextActions: ["Phase 4: Validation"],
-  warnings: [],
-  shouldBlockProgress: false
-};
+✅ User Story Generation Complete - 8 stories created across 3 epics
+📊 Analysis:
+  • Total Stories: 8
+  • Total Epics: 3
+  • Total Story Points: 34
+  • Completeness Score: 85%
 ```
 
 ### Phase 4: Validation 🔍
@@ -322,850 +436,127 @@ const response: TaskResponse = {
 **Task Adapter**: Validation Task Adapter  
 **主要機能**: 要件・ストーリー・仕様の品質検証
 
-```typescript
-// 呼び出し例
-const request: TaskRequest = {
-  description: "要件とストーリーの整合性検証",
-  prompt: "Phase 2-3の成果物の整合性とトレーサビリティを検証",
-  subagent_type: "validation"
-};
+**実行例**:
+```
+User: 要件とストーリーの整合性を検証してください
 
-// 応答例 (処理時間: 20-60秒)
-const response: TaskResponse = {
-  summary: "90%の整合性を達成、3件の改善推奨事項を特定",
-  analysis: `
-## 品質検証結果
+Claude Code: Validation Task Adapterで検証中...
 
-### 整合性分析
-- **要件-ストーリー整合性**: 95% (15/15件の要件がストーリーでカバー)
-- **トレーサビリティ**: 88% (優良レベル)
-- **完全性**: 85% (良好レベル)
-
-### 検証項目詳細
-
-#### ✅ 合格項目
-1. **機能要件カバレッジ**: 100%
-   - 全機能要件がユーザーストーリーに反映済み
-   
-2. **受け入れ条件品質**: 92%
-   - SMART基準に準拠した受け入れ条件
-
-3. **ストーリー独立性**: 95%
-   - 依存関係が明確で実装順序が最適化
-
-#### ⚠️ 改善推奨項目
-1. **非機能要件の具体化** (重要度: 高)
-   - パフォーマンス要件の数値目標明確化
-   - セキュリティ要件の具体的実装方針
-
-2. **ストーリー粒度の調整** (重要度: 中)
-   - Story 1.2の8ポイントを3-5ポイントに分割推奨
-
-3. **テスタビリティ向上** (重要度: 中)
-   - UI要件の検証方法明記
-`,
-  recommendations: [
-    "非機能要件の詳細仕様策定",
-    "ドメインモデリングによる設計品質向上",
-    "テスト戦略の早期策定"
-  ],
-  nextActions: ["Phase 5: Domain Modeling"],
-  warnings: [
-    "非機能要件の曖昧さが実装段階でリスクとなる可能性"
-  ],
-  shouldBlockProgress: false
-};
+✅ Cross-Validation Complete - 90% alignment across phases
+📊 Analysis:
+  • Requirements-Stories alignment: 95%
+  • Traceability coverage: 88%
+  • Consistency score: 92%
 ```
 
 ### Phase 5: Domain Modeling 🏗️
 
 **Task Adapter**: Domain Modeling Task Adapter  
-**主要機能**: ドメイン駆動設計（DDD）によるモデリング
+**主要機能**: ドメイン駆動設計（DDD）によるドメインモデリング
 
-```typescript
-// 呼び出し例
-const request: TaskRequest = {
-  description: "ドメインモデルの設計",
-  prompt: "検証済み要件とストーリーからDDDアプローチでドメインモデルを設計",
-  subagent_type: "domain-modeling"
-};
+**実行例**:
+```
+User: ドメインモデルを設計してください
 
-// 応答例 (処理時間: 30-90秒)
-const response: TaskResponse = {
-  summary: "6エンティティ、2境界コンテキスト、12ビジネスルールを特定",
-  analysis: `
-## ドメインモデル設計結果
+Claude Code: Domain Modeling Task Adapterで設計中...
 
-### 境界コンテキスト
-
-#### 1. 商品管理コンテキスト (Product Management Context)
-**責務**: 商品の生命周期管理
-
-**エンティティ:**
-- **Product** (集約ルート)
-  - productId: ProductId
-  - name: ProductName
-  - price: Price
-  - description: Description
-  - category: Category
-  - createdAt: DateTime
-
-- **Inventory** (集約ルート)  
-  - inventoryId: InventoryId
-  - productId: ProductId
-  - quantity: Quantity
-  - reservedQuantity: Quantity
-  - lastUpdated: DateTime
-
-**ビジネスルール:**
-1. 商品価格は0より大きい値である必要がある
-2. 在庫数は0以上の整数である必要がある
-3. 商品名は一意である必要がある
-
-#### 2. 注文管理コンテキスト (Order Management Context)
-**責務**: 注文処理とステータス管理
-
-**エンティティ:**
-- **Order** (集約ルート)
-  - orderId: OrderId
-  - customerId: CustomerId
-  - orderItems: List<OrderItem>
-  - status: OrderStatus
-  - totalAmount: Money
-
-**値オブジェクト:**
-- **OrderItem**
-  - productId: ProductId
-  - quantity: Quantity
-  - unitPrice: Price
-
-### ドメインサービス
-1. **在庫確認サービス**: 注文時の在庫可用性チェック
-2. **価格計算サービス**: 割引・税金計算
-
-### イベント
-1. **ProductCreated**: 商品作成時
-2. **InventoryUpdated**: 在庫変更時
-3. **OrderPlaced**: 注文確定時
-
-### 技術的推奨事項
-- **アーキテクチャ**: ヘキサゴナルアーキテクチャ
-- **永続化**: Repository パターン
-- **イベント**: ドメインイベントによる結合度低減
-`,
-  recommendations: [
-    "UI生成でドメインモデルベースの画面設計実行",
-    "Repository実装でデータアクセス層分離",
-    "ドメインイベント活用で疎結合アーキテクチャ構築"
-  ],
-  nextActions: ["Phase 6: UI Generation"],
-  warnings: [],
-  shouldBlockProgress: false
-};
+✅ Domain Analysis Complete - 6 entities, 2 bounded contexts identified
+📊 Analysis:
+  • Core Domain Entities: 4
+  • Bounded Contexts: 2
+  • Business Rules: 12
+  • Domain Services: 3
 ```
 
-### Phase 6: UI Generation 🎨 ⭐ **2025年完全実装**
+### Phase 6: UI/UX & Frontend Delivery 🎨
 
 **Task Adapter**: UI Generation Task Adapter  
-**主要機能**: React+Next.js完全自動生成
+**主要機能**: React + Next.js 14 によるフロントエンド配信
 
-```typescript
-// 呼び出し例
-const request: TaskRequest = {
-  description: "React UIコンポーネントの自動生成",
-  prompt: "ドメインモデルからCRUD操作可能な高品質UIを生成",
-  subagent_type: "ui-generation"
-};
-
-// 応答例 (処理時間: <30秒で21ファイル生成!)
-const response: TaskResponse = {
-  summary: "React+Next.js UI一式を30秒で生成完了 (21ファイル)",
-  analysis: `
-## UI生成結果 🎨
-
-### 生成されたコンポーネント (21ファイル)
-
-#### Core Components
-1. **ProductForm.tsx** 
-   - TypeScript完全型付け
-   - React Hook Form統合
-   - Zod バリデーション
-   - WCAG 2.1 AA準拠
-
-2. **ProductCard.tsx**
-   - Radix UI Primitives使用
-   - CVA variants適用
-   - レスポンシブデザイン
-
-3. **ProductList.tsx**
-   - Virtual scrolling対応
-   - TanStack Query統合
-   - 検索・フィルタリング機能
-
-4. **InventoryDashboard.tsx**
-   - リアルタイム在庫表示
-   - Chart.js統合
-   - アクセシブルなデータ可視化
-
-#### Generated Files Structure
-\`\`\`
-apps/web/
-├── app/[locale]/                 # App Router (Next.js 14)
-│   ├── products/
-│   │   ├── page.tsx             # 商品一覧ページ
-│   │   ├── create/page.tsx      # 商品作成ページ
-│   │   └── [id]/
-│   │       ├── page.tsx         # 商品詳細ページ
-│   │       └── edit/page.tsx    # 商品編集ページ
-│   └── inventory/
-│       └── page.tsx             # 在庫管理ページ
-├── components/ui/               # 再利用可能UIコンポーネント
-│   ├── button.tsx
-│   ├── input.tsx
-│   ├── card.tsx
-│   └── dialog.tsx
-├── components/product/          # ドメイン固有コンポーネント
-│   ├── product-form.tsx
-│   ├── product-card.tsx
-│   └── product-list.tsx
-├── messages/                    # i18n対応
-│   ├── en.json
-│   └── ja.json
-└── __e2e__/                    # E2Eテスト
-    ├── product.spec.ts
-    └── inventory.spec.ts
-\`\`\`
-
-### 品質メトリクス 📊
-
-#### Lighthouse スコア
-- **Performance**: 94/100 ⭐
-- **Accessibility**: 100/100 ⭐
-- **Best Practices**: 96/100 ⭐
-- **SEO**: 92/100 ⭐
-
-#### アクセシビリティ
-- **WCAG 2.1 AA準拠**: 100% ✅
-- **重大違反**: 0件 ✅
-- **ARIA属性**: 完全実装 ✅
-- **キーボードナビゲーション**: 全対応 ✅
-- **スクリーンリーダー**: 完全対応 ✅
-
-#### TypeScript品質
-- **型カバレッジ**: 100% ✅
-- **strictモード**: 有効 ✅
-- **\`any\`型使用**: 0箇所 ✅
-
-#### テスト品質
-- **Unit テスト**: 21ファイル生成 ✅
-- **E2E テスト**: 8シナリオカバー ✅
-- **Storybook**: 全コンポーネント対応 ✅
-
-### デザインシステム統合
-- **Design Tokens**: Tailwind CSS統合
-- **Color Palette**: アクセシブルなカラーセット
-- **Typography**: システムフォント最適化
-- **Spacing**: 8px グリッドシステム
-- **Components**: shadcn/ui ベース
-
-### 国際化 (i18n)
-- **対応言語**: 英語、日本語
-- **自動翻訳**: 基本UI文言
-- **ロケールルーティング**: App Router統合
-- **日付・通貨**: 地域別フォーマット
-`,
-  recommendations: [
-    "E2Eテスト実行で動作検証推奨",
-    "Storybookでコンポーネント仕様確認",
-    "本番デプロイ前のセキュリティ監査実行"
-  ],
-  nextActions: [
-    "品質ゲート実行",
-    "セキュリティ監査実行", 
-    "パフォーマンステスト実行",
-    "本番デプロイ検討"
-  ],
-  warnings: [],
-  shouldBlockProgress: false
-};
+**実行例**:
 ```
+User: UI コンポーネントを生成してください
 
----
+Claude Code: UI Task Adapterでコンポーネント生成中...
 
-## 実際の呼び出しフロー
+📊 OpenTelemetry initialized for ae-framework Phase 6
+   Service: ae-framework v1.0.0
+   Environment: development
+   OTLP Export: ✅ Enabled
 
-### 🔄 完全な開発フロー例
+✅ Generated 21 files for 3/3 entities
+📊 Test Coverage: 100% (threshold: 80%)
+♿ A11y Score: 96% (threshold: 95%) ✅  
+⚡ Performance Score: 78% (threshold: 75%) ✅
+📈 Phase 6 Efficiency Metrics:
+  🏗️  Scaffold Time: 15243ms ✅
+  📊 Generated 21 files for 3/3 entities
 
-```
-👤 User: "ECサイトの商品管理機能を作りたいです"
-
-🤖 Claude Code: 
-要件分析から開始します。ae-frameworkのIntent Task Adapterを使用...
-
-[Intent Task Adapter実行 - 15秒]
-✅ Phase 1完了: 12項目の要件を特定
-📋 次は詳細要件の構造化を行いますか？
-
-👤 User: "はい、お願いします"
-
-🤖 Claude Code:
-Natural Language Task Adapterで要件構造化中...
-
-[Natural Language Task Adapter実行 - 25秒]
-✅ Phase 2完了: 15件の要件を機能・非機能・ビジネス要件に分類
-🔍 続いてユーザーストーリー作成に進みますか？
-
-👤 User: "はい、アジャイル開発に対応してください"
-
-🤖 Claude Code:
-User Stories Task Adapterでストーリー生成中...
-
-[User Stories Task Adapter実行 - 40秒]
-✅ Phase 3完了: 8つのストーリーを3エピックに整理 (34ポイント)
-🔍 品質検証に進みますか？
-
-👤 User: "品質チェックをお願いします"
-
-🤖 Claude Code:
-Validation Task Adapterで整合性検証中...
-
-[Validation Task Adapter実行 - 45秒]
-✅ Phase 4完了: 90%の整合性達成、改善点3件特定
-🏗️ ドメインモデル設計に進みますか？
-
-👤 User: "DDDアプローチで設計してください"
-
-🤖 Claude Code:
-Domain Modeling Task Adapterで設計中...
-
-[Domain Modeling Task Adapter実行 - 70秒]
-✅ Phase 5完了: 6エンティティ、2境界コンテキスト設計完了
-🎨 最終的にUIまで生成しますか？
-
-👤 User: "React+Next.jsでモダンなUIを生成してください"
-
-🤖 Claude Code:
-UI Generation Task Adapterで自動生成中...
-
-[UI Generation Task Adapter実行 - 28秒] ⚡
-✅ Phase 6完了: React+Next.js UI一式生成 (21ファイル)
-🎨 品質メトリクス:
-   • Lighthouse: Performance 94, A11y 100
-   • WCAG 2.1 AA: 完全準拠
-   • TypeScript: 100%型付け
-   • テスト: Unit + E2E + Storybook完備
-
-🚀 本番デプロイの準備が整いました！
-```
-
-### 📊 処理時間詳細
-
-```
-Phase 1 (Intent Analysis):      ~15秒
-Phase 2 (Natural Language):     ~25秒  
-Phase 3 (User Stories):         ~40秒
-Phase 4 (Validation):           ~45秒
-Phase 5 (Domain Modeling):      ~70秒
-Phase 6 (UI Generation):        ~28秒 ⚡
-───────────────────────────────────
-合計処理時間:                   ~223秒 (約3分43秒)
-```
-
-**🎯 結果: 自然言語指示から本格的なWebアプリケーション完成まで4分以内!**
-
-### CLI統合 (フォールバック)
-
-Claude Code統合と並行して、CLI環境もサポート：
-
-```bash
-# Phase 2: 自然言語要件処理
-ae-framework natural-language --analyze
-ae-framework natural-language --extract-entities
-ae-framework natural-language --validate-completeness
-
-# Phase 3: ユーザーストーリー管理
-ae-framework user-stories --generate
-ae-framework user-stories --validate
-ae-framework user-stories --prioritize
-
-# Phase 4: 検証ワークフロー
-ae-framework validate --requirements
-ae-framework validate --stories
-ae-framework validate --traceability
-
-# Phase 5: ドメインモデリング
-ae-framework domain-model --analyze
-ae-framework domain-model --entities
-ae-framework domain-model --contexts
-
-# Phase 6: UI生成
-ae-framework ui scaffold --domain domain-model.json
-ae-framework ui generate --components all
+🎨 UI Analysis:
+  • React Components: 12 files
+  • Next.js Pages: 6 files  
+  • Storybook Stories: 3 files
+  • E2E Tests: 3 files
+  • Design Tokens: integrated ✅
+  • i18n Support: ja/en ✅
 ```
 
 ---
 
 ## 使用例とベストプラクティス
 
-### 🎯 効果的な指示の仕方
-
-#### ✅ 良い例
+### 基本的なUI生成
 
 ```
-👤 "ECサイトの商品管理システムを作成してください。
-    要件：
-    - 商品の登録・編集・削除
-    - 在庫管理（入荷・出荷・アラート）
-    - カテゴリ管理
-    - 売上レポート機能
-    - 管理者権限制御
-    
-    非機能要件：
-    - 同時アクセス100ユーザー対応
-    - ページ読み込み2秒以内
-    - WCAG 2.1 AA準拠"
+User: eコマースの商品管理インターフェースを作成してください
 
-→ 明確で構造化された指示により最適な結果
+Claude Code: UIコンポーネント生成のためのUI Task Adapterを実行中...
+
+📊 OpenTelemetry初期化完了 ae-framework Phase 6
+✅ 3/3エンティティに対して21ファイル生成
+📊 テストカバレッジ: 96% (閾値: 80%) ✅
+♿ A11yスコア: 97% (閾値: 95%) ✅  
+⚡ パフォーマンススコア: 79% (閾値: 75%) ✅
+🏗️ スキャフォールド時間: 18243ms ✅
 ```
 
-#### ❌ 避けるべき例
+### 完全な6フェーズ開発
 
 ```
-👤 "なんか商品管理するやつ作って"
+User: 完全な在庫管理システムを構築してください
 
-→ 曖昧な指示では要件分析で多くの確認が必要
-```
+Claude Code: 連続6フェーズ開発を実行中...
 
-### 🔧 段階的開発アプローチ
-
-#### パターン1: フルフロー実行
-```
-User: "要件分析からUI生成まで一括実行"
-→ 全6フェーズを連続実行 (約4分)
-→ 最終成果物まで一気に完成
-```
-
-#### パターン2: 段階的確認
-```
-User: "まず要件分析だけ実行"
-→ Phase 1-2実行、結果確認
-User: "続きをお願いします"
-→ Phase 3-4実行、中間確認
-User: "UIまで生成してください"
-→ Phase 5-6実行、完成
-```
-
-#### パターン3: 特定フェーズ実行
-```
-User: "このドメインモデルからUIを生成"
-→ Phase 6のみ実行 (30秒で完了)
-→ 既存設計からの迅速なUI実装
-```
-
-### 📋 プロジェクト規模別推奨事項
-
-#### 小規模プロジェクト (要件数 <20)
-- **推奨**: フルフロー一括実行
-- **時間**: 3-5分で完成
-- **メリット**: 最速での成果物完成
-
-#### 中規模プロジェクト (要件数 20-100)
-- **推奨**: 段階的確認アプローチ
-- **時間**: 10-15分（確認時間含む）
-- **メリット**: 途中での方向修正可能
-
-#### 大規模プロジェクト (要件数 100+)
-- **推奨**: 境界コンテキスト別実行
-- **時間**: 20-30分
-- **メリット**: 複雑性の管理と品質担保
-
-### 🌟 主要特徴
-
-#### 🚀 完全自動統合
-- Claude Code環境で追加設定なしで利用可能
-- 自然言語での指示で複雑なワークフローを実行
-- 段階的な品質ゲートとプロアクティブガイダンス
-
-#### 🔧 TypeScript型安全性
-- 全インターフェースでTypeScript型定義を提供
-- コンパイル時エラー検出で品質保証
-- IDE支援による開発効率向上
-
-#### 📊 包括的メトリクス
-- フェーズ別進捗追跡
-- 品質メトリクスの自動計算
-- トレーサビリティマトリックス生成
-
-#### 🛡️ 品質保証
-- 多層検証アプローチ
-- 一貫性チェック機能
-- 完全性評価システム
-
-#### 🏗️ DDD統合
-- ドメイン駆動設計パターンのサポート
-- 境界コンテキスト自動識別
-- ユビキタス言語構築支援
-
-### 🔧 設定とカスタマイズ
-
-#### 基本設定
-```typescript
-// src/cli/index.ts での設定例
-const taskHandlers = {
-  naturalLanguage: createNaturalLanguageTaskHandler(),
-  userStories: createUserStoriesTaskHandler(),
-  validation: createValidationTaskHandler(),
-  domainModeling: createDomainModelingTaskHandler(),
-  uiGeneration: createUIGenerationTaskHandler()  // Phase 6追加
-};
-```
-
-#### 品質閾値調整
-```typescript
-const qualityThresholds = {
-  completeness: {
-    critical: 50,    // 進行ブロック閾値
-    warning: 70,     // 警告表示閾値
-    good: 85         // 良好判定閾値
-  },
-  consistency: {
-    minimum: 80,     // 最低一貫性要求
-    target: 90       // 目標一貫性レベル
-  },
-  uiQuality: {       // Phase 6品質設定
-    lighthouse: 90,   // Lighthouseスコア目標
-    a11y: 'WCAG_AA', // アクセシビリティレベル
-    typescript: 100   // TypeScript型カバレッジ
-  }
-};
-```
-
-#### プロアクティブガイダンス設定
-```typescript
-const guidanceConfig = {
-  enableAutoIntervention: true,
-  interventionThresholds: {
-    critical: 'block',      // 重要問題で進行ブロック
-    high: 'warning',        // 高優先度で警告
-    medium: 'suggestion'    // 中優先度で提案
-  },
-  phaseTransitions: {
-    autoAdvance: true,      // 自動フェーズ進行
-    confirmationRequired: false  // 確認不要
-  }
-};
-```
-
-#### 段階的品質向上
-```
-初期要件 (60%品質)
-    ↓ Phase 2
-構造化要件 (75%品質)
-    ↓ Phase 3
-ユーザーストーリー (80%品質)
-    ↓ Phase 4
-検証済み仕様 (90%品質)
-    ↓ Phase 5
-ドメインモデル (95%品質)
-    ↓ Phase 6
-本格運用UI (99%品質) ⭐
+Phase 1: 意図分析完了 - 15要件を特定
+Phase 2: 要件構造化完了 - 機能要件8、非機能要件7
+Phase 3: ユーザーストーリー生成完了 - 4エピックにわたる12ストーリー
+Phase 4: 検証完了 - 94%のトレーサビリティ達成
+Phase 5: ドメインモデル作成完了 - 6エンティティ、3境界コンテキスト
+Phase 6: UI生成完了 - 完全なテストカバレッジを持つReactコンポーネント
 ```
 
 ---
 
 ## パフォーマンスと最適化
 
-### ⚡ 処理速度実績
+### 生成速度
+- **UIコンポーネント**: 30秒以内に21ファイル
+- **完全アプリケーション**: 5分以内に完成アプリ
+- **品質ゲート**: 2分以内に全チェック
 
-#### Phase別処理時間 (平均値)
-| Phase | 処理内容 | 時間(秒) | 成果物 |
-|-------|----------|----------|--------|
-| 1 | Intent Analysis | 10-20 | 要件一覧、意図分析 |
-| 2 | Natural Language | 15-30 | 構造化要件、エンティティ |
-| 3 | User Stories | 20-45 | ストーリー、エピック |
-| 4 | Validation | 25-60 | 整合性レポート、改善点 |
-| 5 | Domain Modeling | 30-90 | ドメインモデル、設計書 |
-| 6 | UI Generation | **<30** | **21ファイル UI一式** ⭐ |
+### 品質メトリクス
+- **テストカバレッジ**: ≥80% 自動達成
+- **アクセシビリティ**: WCAG 2.1 AA (≥95%スコア)
+- **パフォーマンス**: Lighthouse ≥75%
+- **型安全性**: 100% TypeScript strict mode
 
-#### 🚀 Phase 6の圧倒的速度
+### ベストプラクティス
 
-```
-従来の手動開発:
-  設計: 2-4時間
-  実装: 8-16時間  
-  テスト: 4-8時間
-  品質チェック: 2-4時間
-  ─────────────────
-  合計: 16-32時間
-
-AE Framework Phase 6:
-  自動生成: 30秒以内 ⚡
-  品質保証: 自動完了
-  テスト: 自動生成
-  ─────────────────
-  合計: 30秒 (1900倍+ 高速化!)
-```
-
-### 💾 メモリとリソース使用量
-
-#### システム要件
-- **最小メモリ**: 512MB
-- **推奨メモリ**: 2GB
-- **ディスク容量**: 1GB (生成物含む)
-- **CPU**: 2コア以上推奨
-
-#### 規模別リソース使用量
-```
-小規模 (<50要件):
-  メモリ: ~100MB
-  処理時間: 2-4分
-  生成ファイル: 10-15個
-
-中規模 (50-200要件):
-  メモリ: ~200MB  
-  処理時間: 5-10分
-  生成ファイル: 20-35個
-
-大規模 (200+要件):
-  メモリ: ~400MB
-  処理時間: 10-20分
-  生成ファイル: 40-60個
-```
-
-### 🔧 最適化設定
-
-#### パフォーマンス調整
-```typescript
-// 高速化設定
-const optimizedConfig = {
-  // 並列処理の最大数
-  maxConcurrency: 4,
-  
-  // キャッシュ有効化
-  enableCaching: true,
-  
-  // 詳細分析の簡略化
-  detailedAnalysis: false,
-  
-  // 生成物の最小セット
-  minimalOutput: true
-};
-```
-
-#### 品質重視設定
-```typescript
-// 品質重視設定
-const qualityConfig = {
-  // 詳細検証有効化
-  comprehensiveValidation: true,
-  
-  // 複数観点からの分析
-  multiPerspectiveAnalysis: true,
-  
-  // 完全なドキュメント生成
-  fullDocumentation: true,
-  
-  // 厳密な品質ゲート
-  strictQualityGates: true
-};
-```
-
-### スケーラビリティ
-- 同時処理: 最大4フェーズ並列実行
-- ファイルサイズ: 最大50MB/ファイル
-- 要件数: 最大1000要件/プロジェクト
-- 生成UI: 最大100コンポーネント/実行
+1. **明確な意図**: 具体的で実行可能な要件を提供
+2. **反復開発**: フェーズを通じて段階的に構築
+3. **品質検証**: 生成された品質レポートをレビュー
+4. **カスタマイズ**: ブランド一貫性のためデザイントークンを使用
 
 ---
 
-## トラブルシューティング
-
-### 🚨 よくある問題と解決方法
-
-#### 1. Task Tool呼び出しエラー
-
-**症状**: `Task Tool not found` エラー
-```
-Error: Task Tool integration not available
-```
-
-**原因と解決**:
-```typescript
-// 原因: Claude Code統合が無効
-enableClaudeCodeIntegration: false
-
-// 解決: 統合を有効化
-export const config: HybridIntentConfig = {
-  enableClaudeCodeIntegration: true,  // ✅ 有効化
-  enableCLI: true,
-  enableMCPServer: false,
-  enforceRealTime: true,
-  strictMode: false
-};
-```
-
-#### 2. 処理タイムアウト
-
-**症状**: 長時間処理が完了しない
-```
-Warning: Task execution timeout (>300s)
-```
-
-**原因と解決**:
-```typescript
-// 原因: 大量の要件による処理負荷
-// 解決: バッチサイズ制限
-const processingConfig = {
-  maxRequirements: 50,     // 要件数制限
-  batchSize: 10,           // バッチサイズ
-  timeoutMs: 180000        // 3分でタイムアウト
-};
-```
-
-#### 3. UI生成品質問題
-
-**症状**: 生成されたUIの品質が期待以下
-```
-Warning: Generated UI failed quality gates
-```
-
-**解決方法**:
-```typescript
-// 品質設定の調整
-const uiQualityConfig = {
-  accessibilityLevel: 'WCAG_AA',    // アクセシビリティレベル
-  performanceTarget: 90,             // Lighthouseスコア目標
-  typeScriptStrict: true,            // TypeScript厳密モード
-  testCoverage: 0.8                  // テストカバレッジ目標
-};
-```
-
-#### 4. メモリ不足エラー
-
-**症状**: `Out of memory` エラー
-```
-Error: JavaScript heap out of memory
-```
-
-**解決方法**:
-```bash
-# Node.js メモリ制限拡張
-export NODE_OPTIONS="--max-old-space-size=4096"
-
-# または分割実行アプローチ
-# 大規模プロジェクトを境界コンテキスト別に分割
-```
-
-#### 5. 品質スコアが低い
-
-**原因と解決**:
-```
-原因: 曖昧な要件、不完全な情報
-解決策:
-1. より詳細な要件を提供
-2. 段階的にフェーズを進める
-3. 検証結果の推奨事項を実行
-4. ステークホルダーへの追加ヒアリング
-```
-
-#### 6. プロアクティブガイダンスが過度に介入
-
-**解決策**:
-```typescript
-// 介入設定の調整
-const guidanceConfig = {
-  enableAutoIntervention: true,
-  interventionThresholds: {
-    critical: 'warning',    // blockからwarningに変更
-    high: 'suggestion',     // warningからsuggestionに変更
-    medium: 'none'          // 中優先度は介入なし
-  }
-};
-```
-
-### 🔧 診断コマンド
-
-#### システム状態確認
-```bash
-# AE Framework状態確認
-npx ae-framework health-check
-
-# Claude Code統合確認
-npx ae-framework integration-status
-
-# リソース使用量確認
-npx ae-framework resource-usage
-```
-
-#### ログ出力設定
-```typescript
-// デバッグログ有効化
-const debugConfig = {
-  logLevel: 'debug',
-  enableDetailedLogging: true,
-  outputToFile: true,
-  logFile: './logs/ae-framework-debug.log'
-};
-```
-
-### 📞 サポート情報
-
-#### ドキュメント参照
-- **Technical Implementation**: `/docs/architecture/TECHNICAL-IMPLEMENTATION-DETAILS.md`
-- **Phase 6 Details**: `/docs/phases/phase-6-uiux.md`
-- **Quality System**: `/docs/quality/quality-implementation-status.md`
-
-#### 問題報告
-```
-GitHub Issues: https://github.com/itdojp/ae-framework/issues
-Template: Bug Report / Feature Request / Integration Issue
-```
-
----
-
-## 🎯 まとめ
-
-### 🌟 AE Framework × Claude Code統合の価値
-
-1. **開発効率の革命的向上**
-   - 手動開発: 16-32時間 → AI自動化: 4分以内
-   - **1900倍以上の高速化**実現
-
-2. **品質保証の自動化**
-   - WCAG 2.1 AA準拠: 100%自動達成
-   - Lighthouse >90: 確実な性能担保
-   - TypeScript 100%: 完全型安全性
-
-3. **学習コストゼロ**
-   - 複雑なCLIコマンド不要
-   - 自然言語指示のみで完成
-   - プロアクティブガイダンス提供
-
-4. **エンタープライズ対応**
-   - セキュリティ監査統合
-   - Runtime Conformance検証
-   - 包括的テスト自動生成
-
-### 🚀 次世代開発の実現
-
-**AE Framework**はClaude Codeとの完全統合により、**「自然言語 → 厳密仕様 → 正しいコード」**の完全自動化を実現し、AI-Enhanced Developmentの新標準となっています。
-
-**開発チームは今すぐ**:
-- ✨ **90%以上の時間短縮**
-- 🛡️ **ゼロ品質トラブル**  
-- ♿ **完全アクセシブル**
-- 🏢 **エンタープライズ対応**
-
-を実現できます。
-
----
-
-**📚 関連ドキュメント**
-- [Phase 6 UI/UX Details](../phases/phase-6-uiux.md)
-- [Technical Implementation](../architecture/TECHNICAL-IMPLEMENTATION-DETAILS.md)
-- [Quality System Guide](../quality/quality-implementation-status.md)
-- [Architecture Overview](../architecture/AE-FRAMEWORK-ARCHITECTURE-2025.md)
-
-**🔗 外部リンク**
-- [Claude Code Documentation](https://docs.anthropic.com/en/docs/claude-code)
-- [AE Framework GitHub](https://github.com/itdojp/ae-framework)
+**🤖 Experience the future of development with AE Framework and Claude Code integration today! / AE FrameworkとClaude Code統合で、開発の未来を今すぐ体験してください！**

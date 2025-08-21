@@ -1,11 +1,380 @@
-# 🚀 ae-framework クイックスタートガイド
+# 🚀 ae-framework Quick Start Guide
 
-Claude Code で今すぐ始める ae-framework！
+> **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
+
+---
+
+## English
+
+**Get started with ae-framework in Claude Code!**
+**Complete automation of your first project in 15 minutes**
+
+### ⚡ 5-Minute Quick Setup
+
+#### 1. Enable ae-framework in Claude Code
+
+**ae-framework is already integrated with Claude Code!**
+
+```bash
+# 1. Clone and setup ae-framework in your project
+git clone https://github.com/itdojp/ae-framework.git
+cd ae-framework
+pnpm install
+
+# 2. Auto-recognized by Claude Code
+# Intent Agent available as Task Tool
+```
+
+**Configuration Check (Optional):**
+```json
+{
+  "mcpServers": {
+    "ae-framework": {
+      "command": "npx",
+      "args": ["tsx", "/path/to/ae-framework/src/mcp-server/intent-server.ts"],
+      "cwd": "/path/to/ae-framework"
+    }
+  }
+}
+```
+
+#### 2. Immediate Basic Functionality
+
+Simply talk to Claude Code like this:
+
+```
+"Please create a login feature using ae-framework"
+```
+
+**→ Intent Task Adapter automatically executes complete 6-phase development!**
+
+**Claude Code Execution Example:**
+```
+User: Create a login feature
+
+Claude Code: Starting requirement analysis with ae-framework Intent Agent...
+
+✅ Intent Analysis Complete - 8 requirements identified
+📋 Next steps:
+  • Review identified requirements for completeness
+  • Proceed to Phase 2 (Formal Specification)
+  • Create domain model from requirements
+
+[Automatically executes Phases 2-6]
+```
+
+---
+
+### 📱 Practical Example: Complete TODO App in 5 Minutes
+
+#### Step 1: Just Describe Requirements
+```
+User: I want to create a TODO app. Please develop it with ae-framework using basic functionality.
+
+Required features:
+- Add/delete tasks
+- Toggle completion status
+- Simple UI
+```
+
+#### Step 2: Claude Code Auto-Execution
+```
+Claude: Developing step-by-step with ae-framework.
+
+Phase 1: Requirement analysis...
+✓ 5 functional requirements identified
+✓ 3 non-functional requirements identified
+✓ 8 user stories generated
+
+Phase 2: Formal specification generation...
+✓ TLA+ specification auto-generated
+✓ State transition diagram created
+✓ API specification defined
+
+Phase 3: Automatic test generation...
+✓ 18 unit tests
+✓ 8 E2E tests
+✓ 12 visual regression tests
+✓ AI-optimized to 2m30s execution time
+
+Phase 4: Automatic code generation...
+✓ React + TypeScript
+✓ Express.js backend
+✓ SQLite database
+✓ Full TDD compliance
+
+Phase 5: Quality verification...
+✓ Test coverage 92%
+✓ Security audit passed
+✓ Performance verification passed
+✓ Quality score 96/100
+
+Phase 6: UI/UX generation...
+✓ React components (21 files)
+✓ Next.js 14 App Router
+✓ Accessibility score 96% (WCAG 2.1 AA)
+✓ Multi-language support (ja/en)
+✓ OpenTelemetry monitoring enabled
+```
+
+#### Step 3: Review Completed App
+
+**Generated File Structure:**
+```
+todo-app/
+├── packages/
+│   ├── design-tokens/                       # Design tokens
+│   └── ui/                                  # UI component library
+│       ├── src/button.tsx
+│       ├── src/input.tsx
+│       └── src/checkbox.tsx
+├── apps/
+│   ├── web/                                 # Next.js 14 App Router
+│   │   ├── app/todos/page.tsx               # TODO list page
+│   │   ├── app/todos/[id]/page.tsx          # TODO detail page
+│   │   ├── app/todos/new/page.tsx           # TODO creation
+│   │   ├── components/TodoForm.tsx          # TODO form
+│   │   ├── components/TodoCard.tsx          # TODO card
+│   │   ├── messages/ja.json                 # Japanese translations
+│   │   ├── messages/en.json                 # English translations
+│   │   └── __e2e__/todos.spec.ts            # E2E tests
+│   └── storybook/                           # Storybook documentation
+│       └── stories/Todo.stories.tsx         # Component stories
+├── backend/
+│   ├── src/
+│   │   ├── routes/todos.ts
+│   │   ├── models/Todo.ts
+│   │   └── app.ts
+│   └── tests/
+│       └── todos.test.ts
+├── docker-compose.yml
+└── .github/workflows/ci.yml
+```
+
+**Instant Launch:**
+```bash
+cd todo-app
+
+# Install dependencies
+pnpm install
+
+# Build design tokens
+pnpm run build:tokens
+
+# Build UI components
+pnpm run build:ui
+
+# Start web application
+pnpm run dev:web
+
+# Start Storybook (separate terminal)
+pnpm run dev:storybook
+```
+
+**🎉 Complete! Open http://localhost:3000 in browser**
+
+---
+
+### 🎯 Common Development Scenarios
+
+#### Scenario 1: Add Feature to Existing Project
+
+```
+User: I want to add a review feature to my existing e-commerce site. Please use ae-framework to analyze the impact and add it safely.
+
+Claude: Running impact analysis with Sequential reasoning engine...
+
+[Analysis Results]
+Affected components:
+- Product Service (medium impact)
+- User Service (low impact)
+- Database Schema (new table addition)
+
+Recommended approach:
+1. Independent implementation as new Review Service
+2. Loose coupling design with existing APIs
+3. Gradual database migration
+
+Generated code:
+- ReviewService.ts (new)
+- ProductService.ts (minimal changes)
+- Database migration scripts
+- 38 automated tests (94% of existing tests unchanged)
+
+Implementation time estimate: 2 hours
+Risk assessment: Low risk
+```
+
+#### Scenario 2: Legacy System Partial Modernization
+
+```
+User: I want to modernize only the authentication part of an old PHP system with Node.js.
+
+Claude: Proposing gradual migration strategy...
+
+Phase 1: Requirement extraction
+✓ Analysis of existing PHP authentication system
+✓ Identification of migration scope
+✓ Design of data integration approach
+
+Phase 2: Migration design
+✓ Design with Strangler Fig pattern
+✓ Database sharing strategy
+✓ Session integration approach
+
+Phase 3: Parallel testing strategy
+✓ Verification with both PHP/Node.js
+✓ Data consistency testing
+✓ Performance comparison testing
+
+Migration completion estimate: 1 week
+Risk: Medium risk (mitigated with proper monitoring)
+```
+
+---
+
+### 🔧 Convenient One-liner Commands
+
+#### Instantly Usable Commands
+
+```bash
+# 🔍 Complete project analysis
+"Analyze the entire project with deep security and performance checks"
+
+# 📝 Auto-generate API documentation
+"Generate API documentation with examples for ./src"
+
+# 🚀 Performance optimization suggestions
+"Improve ./src performance and apply auto-fixes"
+
+# 🧪 Smart test selection
+"Run tests only for files with important changes"
+
+# 🔒 Security audit
+"Perform full security scan and generate report"
+
+# 📊 Quality report generation
+"Verify all quality metrics and export PDF report"
+
+# 🎨 Phase 6 UI/UX commands
+"ae-framework ui-scaffold --components --tokens --a11y"
+"ae-ui scaffold --storybook --i18n"
+"Monitor quality with OpenTelemetry telemetry"
+```
+
+---
+
+### 📊 Results Visualization
+
+#### Automatic Development Metrics Collection
+
+```
+Daily development report (using ae-framework):
+
+📈 Productivity metrics:
+- Code generation speed: 1,200 lines/hour (vs 200 lines/hour traditional)
+- Bug density: 0.1 bugs/1000 lines (vs 2.3 bugs/1000 lines traditional)
+- Test coverage: 91% (vs 67% traditional)
+
+⏱️ Time savings:
+- Requirement analysis: 80% reduction (2 days → 4 hours)
+- Test creation: 90% reduction (1 day → 1 hour)
+- Code review: 70% reduction (4 hours → 1.2 hours)
+
+🎯 Quality improvement:
+- Formal specification compliance: 98%
+- Security standard compliance: 100%
+- Performance requirement achievement: 95%
+```
+
+---
+
+### 🚨 FAQ & Troubleshooting
+
+#### Q: Can it be used for large-scale projects?
+
+**A:** Yes! Phase 6 UI generation handles large-scale optimization.
+
+```
+Examples:
+- 75% time reduction in 1M+ line projects
+- Parallel development of 15 microservices
+- Collaborative development with 20-person teams
+- Phase 6 UI/UX: Generate 21 React component files in 15 seconds
+- Accessibility score 96% (WCAG 2.1 AA compliance)
+- Real-time quality monitoring with OpenTelemetry telemetry
+```
+
+#### Q: Can it integrate with existing CI pipelines?
+
+**A:** Fully supported.
+
+```yaml
+# GitHub Actions example
+- name: ae-framework Quality Check
+  run: npx ae-verify all --ci-mode=true --export-junit
+  
+- name: Intelligent Test Selection  
+  run: npx ae-test select-intelligent --changes="${{ github.event.commits }}"
+```
+
+#### Q: What is the learning curve?
+
+**A:** Very low.
+
+```
+Learning schedule:
+Day 1: Experience Phases 1-2 with basic dialogue
+Day 2: Practice Phase 3 test generation
+Day 3: Experience complete cycle with Phases 4-6
+Week 2: Team adoption and full operation start
+
+Required prerequisites:
+- Basic TypeScript knowledge
+- Understanding of basic development processes
+- Experience using Claude Code
+```
+
+---
+
+### 🎉 Next Steps
+
+#### 1. Start Now
+```
+Enter in Claude Code:
+"Create a sample project with ae-framework"
+```
+
+#### 2. Full Adoption
+1. Try with partial functionality of existing project
+2. Gradual integration into development process
+3. Full operation with entire team
+
+#### 3. Advanced Usage
+- 70% efficiency improvement with SuperClaude Framework
+- Full utilization of Phase 6 UI/UX generation
+- Custom agent development
+
+---
+
+## 🤝 Community & Support
+
+**GitHub Issues**: Bug reports & feature requests  
+**Discord**: Real-time Q&A & information exchange  
+**Regular Webinars**: Practical technique sharing  
+
+**🤖 Experience the future of development with ae-framework today!**
+
+---
+
+## Japanese
+
+**Claude Code で今すぐ始める ae-framework！**
 **15分で最初のプロジェクトを完全自動化**
 
-## ⚡ 5分で始める最短セットアップ
+### ⚡ 5分で始める最短セットアップ
 
-### 1. Claude Code で ae-framework を有効化
+#### 1. Claude Code で ae-framework を有効化
 
 **ae-framework は Claude Code と統合済み！**
 
@@ -32,20 +401,7 @@ pnpm install
 }
 ```
 
-**Issue #127 最新機能有効化:**
-```bash
-# Fast CI Pipeline
-pnpm run test:unit && pnpm run lint
-
-# フレーク検知・隔離システム
-pnpm run flake:detect
-pnpm run flake:report
-
-# パフォーマンス予算システム
-pnpm run perf:budgets
-```
-
-### 2. 即座に使える基本機能
+#### 2. 即座に使える基本機能
 
 Claude Code で以下のように話しかけるだけ：
 
@@ -72,9 +428,9 @@ Claude Code: ae-frameworkのIntent Agentで要件分析を開始します...
 
 ---
 
-## 📱 実践例：5分でTODOアプリ完成
+### 📱 実践例：5分でTODOアプリ完成
 
-### ステップ1: 要件を話すだけ
+#### ステップ1: 要件を話すだけ
 ```
 ユーザー: TODOアプリを作りたいです。基本的な機能で良いので、ae-frameworkで開発してください。
 
@@ -84,7 +440,7 @@ Claude Code: ae-frameworkのIntent Agentで要件分析を開始します...
 - シンプルなUI
 ```
 
-### ステップ2: Claude Code が自動実行
+#### ステップ2: Claude Code が自動実行
 ```
 Claude: ae-frameworkで段階的に開発します。
 
@@ -116,18 +472,15 @@ Phase 5: 品質検証中...
 ✓ パフォーマンス検証 合格
 ✓ 品質スコア 96/100
 
-Issue #127: 最新CI/CD最適化完了
-✓ Fast CI Pipeline (5分以内)
-✓ Quality Gates (15分以内)
-✓ Vitest Projects分離 (unit/integration/performance)
-✓ リソースリーク検知・自動クリーンアップ
-✓ フレーク検知・隔離・復旧システム
-✓ パフォーマンス予算自動検証
-✓ Workflow Lint (actionlint)
-✓ TypeScript strict mode準拠
+Phase 6: UI/UX生成中...
+✓ Reactコンポーネント (21ファイル)
+✓ Next.js 14 App Router
+✓ アクセシビリティスコア 96% (WCAG 2.1 AA)
+✓ 多言語対応 (ja/en)
+✓ OpenTelemetry監視有効化
 ```
 
-### ステップ3: 完成したアプリの確認
+#### ステップ3: 完成したアプリの確認
 
 **生成されるファイル構成:**
 ```
@@ -185,9 +538,9 @@ pnpm run dev:storybook
 
 ---
 
-## 🎯 よくある開発シナリオ
+### 🎯 よくある開発シナリオ
 
-### シナリオ1: 既存プロジェクトに機能追加
+#### シナリオ1: 既存プロジェクトに機能追加
 
 ```
 ユーザー: 既存のECサイトにレビュー機能を追加したいです。ae-frameworkで影響範囲を分析して安全に追加してください。
@@ -211,11 +564,11 @@ Claude: Sequential推論エンジンで影響分析を実行します...
 - データベース移行スクリプト
 - 38件の自動テスト (既存テストの94%は変更不要)
 
-実装時間見積もり: 2時間 (Issue #127最適化済み)
+実装時間見積もり: 2時間
 リスク評価: 低リスク
 ```
 
-### シナリオ2: レガシーシステムの部分モダナイゼーション
+#### シナリオ2: レガシーシステムの部分モダナイゼーション
 
 ```
 ユーザー: 古いPHPシステムの認証部分だけをNode.jsでモダンにしたいです。
@@ -237,71 +590,34 @@ Phase 3: 並行テスト戦略
 ✓ データ整合性テスト
 ✓ パフォーマンス比較テスト
 
-Phase 4: 段階的実装
-✓ 新認証サービス (Node.js)
-✓ 既存システム連携API
-✓ ログイン画面の段階的切り替え
-
-Phase 5: 品質保証
-✓ 既存機能の回帰テスト
-✓ セキュリティ監査
-✓ パフォーマンス検証
-
-移行完了までの見積もり: 1週間 (Issue #127最適化済み)
+移行完了までの見積もり: 1週間
 リスク: 中リスク (適切な監視により軽減)
-```
-
-### シナリオ3: マイクロサービス分割
-
-```
-ユーザー: モノリスなWebアプリをマイクロサービスに分割したいです。どこから始めれば良いですか？
-
-Claude: Sequential推論エンジンでマイクロサービス分割戦略を分析します...
-
-[分析結果]
-推奨分割順序:
-1. User Service (独立度: 高, 影響: 低)
-2. Notification Service (独立度: 高, 影響: 低)  
-3. Payment Service (独立度: 中, 影響: 中)
-4. Order Service (独立度: 低, 影響: 高)
-
-第1段階: User Service分離
-- 推定工数: 3日 (Issue #127最適化済み)
-- リスク: 低
-- 依存関係: 最小限
-- 自動生成されるコンポーネント:
-  * User microservice (独立実行)
-  * API Gateway設定
-  * データ同期機能
-  * 包括的テストスイート
-
-実装開始しますか？
 ```
 
 ---
 
-## 🔧 便利なワンライナーコマンド
+### 🔧 便利なワンライナーコマンド
 
-### 即座に使える便利コマンド
+#### 即座に使える便利コマンド
 
 ```bash
 # 🔍 プロジェクト全体分析
-「/ae:analyze . --depth=deep --security --performance」
+「プロジェクト全体を深層解析して、セキュリティとパフォーマンスをチェックしてください」
 
 # 📝 API文書自動生成  
-「/ae:document ./src --type=api --include-examples」
+「./src のAPI文書をサンプル付きで生成してください」
 
 # 🚀 パフォーマンス最適化提案
-「/ae:improve ./src --focus=performance --auto-fix」
+「./src のパフォーマンスを改善して自動修正してください」
 
 # 🧪 スマートテスト選択
 「重要な変更があったファイルだけテストを実行してください」
 
 # 🔒 セキュリティ監査
-「/ae:verify security --full-scan --generate-report」
+「フルセキュリティスキャンを実行してレポートを生成してください」
 
 # 📊 品質レポート生成
-「/ae:verify all --export=report.pdf」
+「全品質メトリクスを検証してPDFレポートをエクスポートしてください」
 
 # 🎨 Phase 6 UI/UXコマンド
 「ae-framework ui-scaffold --components --tokens --a11y」
@@ -311,59 +627,9 @@ Claude: Sequential推論エンジンでマイクロサービス分割戦略を�
 
 ---
 
-## 🎨 カスタマイズ例
+### 📊 成果の可視化
 
-### プロジェクト固有の設定
-
-```typescript
-// ae-framework.config.ts
-export default {
-  phases: {
-    intent: {
-      domain: "e-commerce",
-      templates: ["./templates/ecommerce-requirements.json"],
-      aiModel: "claude-3-sonnet"
-    },
-    formal: {
-      specFormat: "tla+",
-      generateDiagrams: true,
-      validationLevel: "strict"
-    },
-    test: {
-      framework: "vitest",
-      coverage: { target: 90 },
-      intelligentSelection: {
-        strategy: "risk_based",
-        maxExecutionTime: 300
-      }
-    },
-    code: {
-      language: "typescript",
-      framework: "next.js",
-      architecture: "clean-architecture"
-    }
-  }
-}
-```
-
-### チーム固有のコマンドエイリアス
-
-```json
-{
-  "aliases": {
-    "analyze-api": "/ae:analyze ./src/api --security --performance",
-    "quick-test": "/ae:test select-intelligent --strategy=balanced --max-time=120",
-    "deploy-check": "/ae:verify all --deployment-ready=true",
-    "generate-docs": "/ae:document . --type=all --format=markdown"
-  }
-}
-```
-
----
-
-## 📊 成果の可視化
-
-### 開発メトリクス自動収集
+#### 開発メトリクス自動収集
 
 ```
 日次開発レポート (ae-framework使用):
@@ -386,11 +652,11 @@ export default {
 
 ---
 
-## 🚨 よくある質問とトラブルシューティング
+### 🚨 よくある質問とトラブルシューティング
 
-### Q: 大規模プロジェクトでも使えますか？
+#### Q: 大規模プロジェクトでも使えますか？
 
-**A:** はい！Phase 3.3の統合最適化システムが大規模対応しています。
+**A:** はい！Phase 6の統合最適化システムが大規模対応しています。
 
 ```
 実績例:
@@ -402,7 +668,7 @@ export default {
 - OpenTelemetryテレメトリでリアルタイム品質監視
 ```
 
-### Q: 既存のCIパイプラインと統合できますか？
+#### Q: 既存のCIパイプラインと統合できますか？
 
 **A:** 完全対応しています。
 
@@ -415,7 +681,7 @@ export default {
   run: npx ae-test select-intelligent --changes="${{ github.event.commits }}"
 ```
 
-### Q: 学習コストはどの程度ですか？
+#### Q: 学習コストはどの程度ですか？
 
 **A:** 非常に低く設定されています。
 
@@ -434,30 +700,30 @@ Week 2: チーム導入と本格運用開始
 
 ---
 
-## 🎉 次のステップ
+### 🎉 次のステップ
 
-### 1. 今すぐ始める
+#### 1. 今すぐ始める
 ```
 Claude Code で以下を入力:
 「ae-frameworkのサンプルプロジェクトを作成してください」
 ```
 
-### 2. 本格導入
+#### 2. 本格導入
 1. 既存プロジェクトの一部機能で試用
 2. 開発プロセスに段階的統合  
 3. チーム全体での本格運用
 
-### 3. 上級活用
+#### 3. 上級活用
 - SuperClaude Framework による70%効率化
-- Phase 3.3 統合最適化の本格活用
+- Phase 6 UI/UX生成の本格活用
 - カスタムエージェント開発
 
 ---
 
-## 💬 コミュニティ・サポート
+## 💬 Community & Support / コミュニティ・サポート
 
-**GitHub Issues**: バグ報告・機能要望  
-**Discord**: リアルタイム質問・情報交換  
-**定期Webinar**: 実践テクニック共有  
+**GitHub Issues**: Bug reports & feature requests / バグ報告・機能要望  
+**Discord**: Real-time Q&A & information exchange / リアルタイム質問・情報交換  
+**Regular Webinars**: Practical technique sharing / 実践テクニック共有  
 
-**🤖 ae-framework で、開発の未来を今すぐ体験してください！**
+**🤖 Experience the future of development with ae-framework today! / ae-framework で、開発の未来を今すぐ体験してください！**

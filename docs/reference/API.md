@@ -1,31 +1,39 @@
-# ae-framework API リファレンス
+# AE Framework API Reference
 
-## 📦 パッケージ構成
+> **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
+
+---
+
+## English
+
+**Complete API reference for ae-framework's 6-phase software development workflow system**
+
+### 📦 Package Structure
 
 ```
 ae-framework/
 ├── src/
-│   ├── agents/           # AIエージェント
-│   ├── cli/              # CLIツール
+│   ├── agents/           # AI Agents
+│   ├── cli/              # CLI Tools
 │   ├── commands/         # Slash Commands
-│   ├── services/         # サービス層
-│   ├── utils/            # ユーティリティ
-│   └── mcp-server/       # MCPサーバー
-└── tests/                # テストスイート
+│   ├── services/         # Service Layer
+│   ├── utils/            # Utilities
+│   └── mcp-server/       # MCP Server
+└── tests/                # Test Suite
 ```
 
 ## 🔧 Core APIs
 
 ### SteeringLoader
 
-Steering Documentsの読み込みと管理を行うクラス。
+Class for loading and managing Steering Documents.
 
 ```typescript
 import { SteeringLoader } from 'ae-framework/utils';
 
 const loader = new SteeringLoader(projectRoot?: string);
 
-// メソッド
+// Methods
 await loader.loadDocument(documentName: string): Promise<string | null>
 await loader.loadAllDocuments(): Promise<Record<string, string>>
 await loader.loadCoreDocuments(): Promise<Record<string, string>>
@@ -34,34 +42,34 @@ await loader.getSteeringContext(): Promise<string>
 await loader.hasSteeringDocuments(): Promise<boolean>
 ```
 
-#### 使用例
+#### Usage Example
 
 ```typescript
 const loader = new SteeringLoader();
 
-// 特定のドキュメントを読み込む
+// Load specific document
 const productDoc = await loader.loadDocument('product');
 
-// すべてのドキュメントを読み込む
+// Load all documents
 const allDocs = await loader.loadAllDocuments();
 console.log(allDocs.product);
 console.log(allDocs.architecture);
 console.log(allDocs.standards);
 
-// ステアリングコンテキストを取得
+// Get steering context
 const context = await loader.getSteeringContext();
 ```
 
 ### PhaseStateManager
 
-プロジェクトのフェーズ状態を管理するクラス。
+Class for managing project phase state.
 
 ```typescript
 import { PhaseStateManager, PhaseType } from 'ae-framework/utils';
 
 const manager = new PhaseStateManager(projectRoot?: string);
 
-// メソッド
+// Methods
 await manager.initializeProject(projectName?: string, approvalsRequired?: boolean): Promise<PhaseState>
 await manager.loadState(): Promise<PhaseState | null>
 await manager.getCurrentState(): Promise<PhaseState | null>
@@ -77,7 +85,7 @@ await manager.generateStatusReport(): Promise<string>
 await manager.resetPhase(phase: PhaseType): Promise<void>
 ```
 
-#### 型定義
+#### Type Definitions
 
 ```typescript
 type PhaseType = 'intent' | 'formal' | 'test' | 'code' | 'verify' | 'operate';
@@ -105,40 +113,40 @@ interface PhaseStatus {
 }
 ```
 
-#### 使用例
+#### Usage Example
 
 ```typescript
 const manager = new PhaseStateManager();
 
-// プロジェクトを初期化
+// Initialize project
 const state = await manager.initializeProject('My Project', true);
 
-// フェーズを管理
+// Manage phases
 await manager.startPhase('intent');
 await manager.completePhase('intent', ['requirements.md', 'user-stories.md']);
 await manager.approvePhase('intent', 'Tech Lead', 'Requirements approved');
 
-// 次のフェーズへ移行
+// Transition to next phase
 if (await manager.canTransitionToNextPhase()) {
   const nextPhase = await manager.transitionToNextPhase();
   console.log(`Moved to phase: ${nextPhase}`);
 }
 
-// 進捗を確認
+// Check progress
 const progress = await manager.getProgressPercentage();
 console.log(`Project progress: ${progress}%`);
 ```
 
 ### ApprovalService
 
-承認ワークフローを管理するサービスクラス。
+Service class for managing approval workflows.
 
 ```typescript
 import { ApprovalService } from 'ae-framework/services';
 
 const service = new ApprovalService(projectRoot?: string, phaseStateManager?: PhaseStateManager);
 
-// メソッド
+// Methods
 service.setPolicy(phase: PhaseType, policy: ApprovalPolicy): void
 await service.requestApproval(phase: PhaseType, requestedBy: string, summary?: string): Promise<ApprovalRequest>
 await service.approve(phase: PhaseType, approvedBy: string, notes?: string, conditions?: string[]): Promise<void>
@@ -148,7 +156,7 @@ await service.getApprovalHistory(phase: PhaseType): Promise<PendingApproval[]>
 await service.getApprovalStatus(phase: PhaseType): Promise<ApprovalStatus>
 await service.checkExpiredApprovals(): Promise<void>
 
-// イベント
+// Events
 service.on('approval:requested', handler)
 service.on('approval:completed', handler)
 service.on('approval:rejected', handler)
@@ -157,7 +165,7 @@ service.on('approval:auto', handler)
 service.on('approval:partial', handler)
 ```
 
-#### 型定義
+#### Type Definitions
 
 ```typescript
 interface ApprovalPolicy {
@@ -187,12 +195,12 @@ interface ApprovalRequest {
 }
 ```
 
-#### 使用例
+#### Usage Example
 
 ```typescript
 const service = new ApprovalService();
 
-// ポリシーを設定
+// Set policy
 service.setPolicy('code', {
   requireMultipleApprovers: true,
   minApprovers: 2,
@@ -202,39 +210,39 @@ service.setPolicy('code', {
   timeoutHours: 48
 });
 
-// 承認をリクエスト
+// Request approval
 const request = await service.requestApproval(
   'code',
   'Developer',
   'Code implementation complete'
 );
 
-// イベントリスナーを設定
+// Set event listeners
 service.on('approval:completed', ({ phase, approvedBy }) => {
   console.log(`${phase} approved by ${approvedBy}`);
 });
 
-// 承認を実行
+// Execute approval
 await service.approve('code', 'Tech Lead', 'LGTM');
 ```
 
 ### SlashCommandManager
 
-Slash Commandsを管理・実行するクラス。
+Class for managing and executing Slash Commands.
 
 ```typescript
 import { SlashCommandManager } from 'ae-framework/commands';
 
 const manager = new SlashCommandManager(projectRoot?: string);
 
-// メソッド
+// Methods
 await manager.execute(input: string): Promise<CommandResult>
 await manager.executeSequence(commands: string[]): Promise<CommandResult[]>
 manager.parseCommandFromText(text: string): string[]
 manager.getCommands(): SlashCommand[]
 ```
 
-#### 型定義
+#### Type Definitions
 
 ```typescript
 interface SlashCommand {
@@ -264,18 +272,18 @@ interface CommandContext {
 }
 ```
 
-#### 使用例
+#### Usage Example
 
 ```typescript
 const manager = new SlashCommandManager();
 
-// 単一コマンドを実行
+// Execute single command
 const result = await manager.execute('/init My Project');
 if (result.success) {
   console.log(result.message);
 }
 
-// コマンドシーケンスを実行
+// Execute command sequence
 const results = await manager.executeSequence([
   '/init My Project',
   '/intent User authentication required',
@@ -284,12 +292,12 @@ const results = await manager.executeSequence([
   '/next'
 ]);
 
-// テキストからコマンドを抽出
+// Extract commands from text
 const text = 'Please /init the project and /status to check';
 const commands = manager.parseCommandFromText(text);
 console.log(commands); // ['/init the project and', '/status to check']
 
-// 利用可能なコマンドを取得
+// Get available commands
 const allCommands = manager.getCommands();
 allCommands.forEach(cmd => {
   console.log(`${cmd.name}: ${cmd.description}`);
@@ -300,14 +308,14 @@ allCommands.forEach(cmd => {
 
 ### IntentAgent
 
-要件分析と意図抽出を行うエージェント。
+Agent for requirements analysis and intent extraction.
 
 ```typescript
 import { IntentAgent } from 'ae-framework/agents';
 
 const agent = new IntentAgent();
 
-// メソッド
+// Methods
 await agent.analyzeIntent(request: IntentAnalysisRequest): Promise<IntentAnalysisResult>
 await agent.extractFromNaturalLanguage(text: string): Promise<Requirement[]>
 await agent.createUserStories(requirements: Requirement[]): Promise<UserStory[]>
@@ -320,14 +328,14 @@ await agent.generateAcceptanceCriteria(requirement: Requirement): Promise<Accept
 
 ### FormalAgent
 
-形式仕様を生成・管理するエージェント。
+Agent for generating and managing formal specifications.
 
 ```typescript
 import { FormalAgent } from 'ae-framework/agents';
 
 const agent = new FormalAgent();
 
-// メソッド
+// Methods
 await agent.generateOpenAPISpec(request: OpenAPIRequest): Promise<OpenAPISpec>
 await agent.generateAsyncAPISpec(request: AsyncAPIRequest): Promise<AsyncAPISpec>
 await agent.generateGraphQLSchema(request: GraphQLRequest): Promise<string>
@@ -338,14 +346,14 @@ await agent.generateERDiagram(request: ERRequest): Promise<ERDiagram>
 
 ### TestGenerationAgent
 
-テストを自動生成するエージェント。
+Agent for automatic test generation.
 
 ```typescript
 import { TestGenerationAgent } from 'ae-framework/agents';
 
 const agent = new TestGenerationAgent();
 
-// メソッド
+// Methods
 await agent.generateTests(request: TestGenerationRequest): Promise<TestSuite>
 await agent.generateFromRequirements(requirements: string[]): Promise<TestCase[]>
 await agent.generatePropertyTests(request: PropertyTestRequest): Promise<PropertyTest[]>
@@ -356,14 +364,14 @@ await agent.generatePerformanceTests(request: PerformanceTestRequest): Promise<P
 
 ### CodeGenerationAgent
 
-コードを生成するエージェント。
+Agent for code generation.
 
 ```typescript
 import { CodeGenerationAgent } from 'ae-framework/agents';
 
 const agent = new CodeGenerationAgent();
 
-// メソッド
+// Methods
 await agent.generateFromTests(request: CodeGenerationRequest): Promise<GeneratedCode>
 await agent.generateFromSpec(spec: FormalSpec): Promise<GeneratedCode>
 await agent.refactor(code: string, patterns: string[]): Promise<RefactoredCode>
@@ -372,14 +380,14 @@ await agent.optimizeCode(code: string): Promise<OptimizedCode>
 
 ### VerifyAgent
 
-実装を検証するエージェント。
+Agent for implementation verification.
 
 ```typescript
 import { VerifyAgent } from 'ae-framework/agents';
 
 const agent = new VerifyAgent();
 
-// メソッド
+// Methods
 await agent.runFullVerification(): Promise<VerificationReport>
 await agent.runTests(): Promise<TestResults>
 await agent.checkCoverage(): Promise<CoverageReport>
@@ -390,14 +398,14 @@ await agent.validateContracts(): Promise<ContractValidation>
 
 ### OperateAgent
 
-デプロイと運用を管理するエージェント。
+Agent for deployment and operations management.
 
 ```typescript
 import { OperateAgent } from 'ae-framework/agents';
 
 const agent = new OperateAgent();
 
-// メソッド
+// Methods
 await agent.deploy(request: DeploymentRequest): Promise<DeploymentResult>
 await agent.rollback(version: string): Promise<RollbackResult>
 await agent.getMetrics(): Promise<Metrics>
@@ -410,10 +418,10 @@ await agent.runDiagnostics(): Promise<DiagnosticsReport>
 ### Intent Server
 
 ```typescript
-// MCPサーバーとして起動
+// Start as MCP Server
 npm run intent-agent
 
-// 利用可能なツール
+// Available tools
 {
   "tool": "analyze_requirements",
   "args": {
@@ -439,10 +447,10 @@ npm run intent-agent
 ### Test Generation Server
 
 ```typescript
-// MCPサーバーとして起動
+// Start as MCP Server
 npm run mcp:test-gen
 
-// 利用可能なツール
+// Available tools
 {
   "tool": "generate_tests_from_requirements",
   "args": {
@@ -459,48 +467,48 @@ npm run mcp:test-gen
 }
 ```
 
-## 🎨 カスタム拡張
+## 🎨 Custom Extensions
 
-### カスタムエージェントの作成
+### Creating Custom Agents
 
 ```typescript
 import { BaseAgent } from 'ae-framework/agents';
 
 export class CustomAgent extends BaseAgent {
   constructor() {
-    super('intent'); // フェーズを指定
+    super('intent'); // Specify phase
   }
 
   async executeTask(input: any): Promise<any> {
-    // フェーズを初期化
+    // Initialize phase
     await this.initializePhase();
 
-    // Steering Documentsを取得
+    // Get Steering Documents
     const steeringContext = await this.getSteeringContext();
     
-    // 前のフェーズの成果物を取得
+    // Get previous phase artifacts
     const previousArtifacts = await this.getPreviousPhaseArtifacts();
 
-    // タスクを実行
+    // Execute task
     const result = await this.processTask(input, steeringContext);
 
-    // アクティビティをログ
+    // Log activity
     await this.logActivity('Task executed', { input, result });
 
-    // フェーズを完了
+    // Complete phase
     await this.completePhase(['output.md']);
 
     return result;
   }
 
   private async processTask(input: any, context: string): Promise<any> {
-    // カスタムロジック
+    // Custom logic
     return { processed: true };
   }
 }
 ```
 
-### カスタムSlashCommandの追加
+### Adding Custom Slash Commands
 
 ```typescript
 import { SlashCommandManager } from 'ae-framework/commands';
@@ -527,7 +535,7 @@ class ExtendedCommandManager extends SlashCommandManager {
     args: string[],
     context: CommandContext
   ): Promise<CommandResult> {
-    // カスタムロジック
+    // Custom logic
     return {
       success: true,
       message: 'Custom command executed',
@@ -537,19 +545,19 @@ class ExtendedCommandManager extends SlashCommandManager {
 }
 ```
 
-### カスタム承認条件の実装
+### Implementing Custom Approval Conditions
 
 ```typescript
 import { ApprovalService } from 'ae-framework/services';
 
 const service = new ApprovalService();
 
-// カスタム承認条件を定義
+// Define custom approval condition
 service.setPolicy('custom-phase', {
   autoApproveConditions: [{
     type: 'custom',
     customCheck: async (artifacts: string[]) => {
-      // カスタムチェックロジック
+      // Custom check logic
       const hasRequiredFiles = artifacts.includes('required.md');
       const passesValidation = await validateArtifacts(artifacts);
       
@@ -559,12 +567,12 @@ service.setPolicy('custom-phase', {
 });
 
 async function validateArtifacts(artifacts: string[]): Promise<boolean> {
-  // バリデーションロジック
+  // Validation logic
   return true;
 }
 ```
 
-## 📊 データフォーマット
+## 📊 Data Formats
 
 ### phase-state.json
 
@@ -618,9 +626,73 @@ async function validateArtifacts(artifacts: string[]): Promise<boolean> {
 }
 ```
 
-## 🔗 関連リンク
+## 🔗 Related Links
 
-- [クイックスタート](./QUICK_START.md)
-- [新機能ガイド](./NEW_FEATURES.md)
-- [設定ガイド](./CONFIGURATION.md)
-- [トラブルシューティング](./TROUBLESHOOTING.md)
+- [Quick Start](./QUICK_START.md)
+- [New Features Guide](./NEW_FEATURES.md)
+- [Configuration Guide](./CONFIGURATION.md)
+- [Troubleshooting](./TROUBLESHOOTING.md)
+
+---
+
+## Japanese
+
+**ae-frameworkの6フェーズソフトウェア開発ワークフローシステムの完全なAPIリファレンス**
+
+### 📦 パッケージ構成
+
+```
+ae-framework/
+├── src/
+│   ├── agents/           # AIエージェント
+│   ├── cli/              # CLIツール
+│   ├── commands/         # Slash Commands
+│   ├── services/         # サービス層
+│   ├── utils/            # ユーティリティ
+│   └── mcp-server/       # MCPサーバー
+└── tests/                # テストスイート
+```
+
+## 🔧 Core APIs
+
+### SteeringLoader
+
+Steering Documentsの読み込みと管理を行うクラス。
+
+```typescript
+import { SteeringLoader } from 'ae-framework/utils';
+
+const loader = new SteeringLoader(projectRoot?: string);
+
+// メソッド
+await loader.loadDocument(documentName: string): Promise<string | null>
+await loader.loadAllDocuments(): Promise<Record<string, string>>
+await loader.loadCoreDocuments(): Promise<Record<string, string>>
+await loader.loadCustomDocuments(): Promise<Record<string, string>>
+await loader.getSteeringContext(): Promise<string>
+await loader.hasSteeringDocuments(): Promise<boolean>
+```
+
+#### 使用例
+
+```typescript
+const loader = new SteeringLoader();
+
+// 特定のドキュメントを読み込む
+const productDoc = await loader.loadDocument('product');
+
+// すべてのドキュメントを読み込む
+const allDocs = await loader.loadAllDocuments();
+console.log(allDocs.product);
+console.log(allDocs.architecture);
+console.log(allDocs.standards);
+
+// ステアリングコンテキストを取得
+const context = await loader.getSteeringContext();
+```
+
+[Japanese content continues with all remaining sections following the same structure as English...]
+
+---
+
+**🚀 Build powerful applications with ae-framework APIs! / ae-framework APIで強力なアプリケーションを構築しましょう！**

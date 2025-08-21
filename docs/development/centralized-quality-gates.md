@@ -1,5 +1,13 @@
 # Centralized Quality Gates System
 
+> **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
+
+---
+
+## English
+
+**Comprehensive centralized quality gates system ensuring consistent quality standards across all development phases and environments**
+
 The AE-Framework implements a comprehensive centralized quality gates system that ensures consistent quality standards across all development phases and environments.
 
 ## Overview
@@ -405,3 +413,415 @@ Configure notifications for:
 - Trend analysis and degradation alerts
 
 This centralized quality gates system provides a robust foundation for maintaining consistent code quality across the entire AE-Framework development lifecycle.
+
+---
+
+## Japanese
+
+**全開発フェーズと環境において一貫した品質基準を保証する包括的な集約品質ゲートシステム**
+
+AE-Frameworkは、全ての開発フェーズと環境において一貫した品質基準を保証する包括的な集約品質ゲートシステムを実装しています。
+
+### 概要
+
+集約品質ゲートシステムは以下を提供します：
+
+- **単一情報源**: 全ての品質閾値を一つのJSON設定ファイルで定義
+- **環境固有のオーバーライド**: 開発、CI、本番環境での異なる基準
+- **フェーズ認識の強制**: 開発フェーズの進行に基づく品質ゲートの有効化
+- **自動CI/CD統合**: GitHub Actionsワークフローによる品質基準の強制
+- **柔軟な設定**: 閾値の変更と新しい品質ゲートの追加が容易
+
+### アーキテクチャ
+
+#### コアコンポーネント
+
+```
+policy/
+├── quality.json              # 集約ポリシー設定
+src/utils/
+├── quality-policy-loader.ts  # ポリシーロード用TypeScriptユーティリティ
+scripts/
+├── run-quality-gates.cjs     # メイン品質ゲートランナー
+├── check-a11y-threshold.cjs  # アクセシビリティチェッカー（更新済み）
+├── check-coverage-threshold.cjs # カバレッジチェッカー（新規）
+.github/workflows/
+├── quality-gates-centralized.yml # 包括的CIワークフロー
+└── phase6-validation.yml     # 集約ポリシー使用に更新
+```
+
+#### ポリシー設定構造
+
+集約ポリシー（`policy/quality.json`）は以下を定義します：
+
+1. **品質ゲート**: 各ゲートは閾値、強制レベル、適用フェーズ、ツールを含む
+2. **環境オーバーライド**: dev/CI/本番環境での特定調整
+3. **レポート設定**: 出力形式、保持期間、通知設定
+4. **ツール統合**: Lighthouse CIなど外部ツールの設定
+
+### 設定
+
+#### 品質ゲート定義
+
+各品質ゲートは以下で定義されます：
+
+```json
+{
+  "gateName": {
+    "description": "人間可読な説明",
+    "enforcement": "strict|warn|off",
+    "thresholds": {
+      "metricName": value
+    },
+    "tools": ["tool1", "tool2"],
+    "phases": ["phase-3", "phase-6"],
+    "enabledFromPhase": "phase-3",
+    "excludePatterns": ["**/*.d.ts"]
+  }
+}
+```
+
+#### サポートされる品質ゲート
+
+| ゲート | 説明 | 主要メトリクス | フェーズ |
+|--------|------|----------------|----------|
+| **accessibility** | A11y準拠 | critical≤0, warnings≤5 | phase-6 |
+| **coverage** | コードカバレッジ | lines≥80%, functions≥80% | phase-3+ |
+| **lighthouse** | パフォーマンス・品質 | performance≥90, a11y≥95 | phase-6 |
+| **linting** | コード品質・スタイル | errors≤0, warnings≤10 | 全て |
+| **security** | 脆弱性スキャン | critical≤0, high≤0 | phase-4+ |
+| **tdd** | テスト駆動開発 | ratio≥1.2, compliance≥100% | phase-3+ |
+| **visual** | ビジュアル回帰 | pixelDiff≤0.02 | phase-6 |
+| **policy** | OPA準拠 | violations≤0 | phase-6 |
+| **mutation** | ミューテーションテスト | score≥70% | phase-4+ |
+
+#### 環境オーバーライド
+
+##### 開発環境
+- 高速反復のための緩い閾値
+- 厳格な強制の代わりに警告
+- 一部ゲートの無効化（lighthouse、visual）
+
+##### CI環境
+- 標準強制レベル
+- 適用可能な全ゲート有効
+- 品質とビルド速度のバランス
+
+##### 本番環境
+- 最も厳格な閾値
+- 重要な問題に対するゼロトレランス
+- 強化されたセキュリティとパフォーマンス要件
+
+### 使用方法
+
+#### コマンドラインインターフェース
+
+##### 基本使用法
+```bash
+# 現在のフェーズに適用可能な全品質ゲートを実行
+npm run quality:gates
+
+# 特定環境で実行
+npm run quality:gates:dev
+npm run quality:gates:prod
+
+# 特定ゲートのみ実行
+npm run quality:accessibility
+npm run quality:coverage
+
+# 包括的品質チェック実行
+npm run quality:all
+```
+
+##### 高度な使用法
+```bash
+# カスタム環境とフェーズ
+node scripts/run-quality-gates.cjs --env=production --phase=phase-6
+
+# 特定ゲート組み合わせ
+node scripts/run-quality-gates.cjs --gates=accessibility,coverage,lighthouse
+
+# ヘルプとオプション
+node scripts/run-quality-gates.cjs --help
+```
+
+#### TypeScript統合
+
+```typescript
+import { 
+  loadQualityPolicy, 
+  getQualityGate, 
+  shouldEnforceGate,
+  validateQualityResults 
+} from '../src/utils/quality-policy-loader.js';
+
+// 環境オーバーライドでポリシーをロード
+const policy = loadQualityPolicy('ci');
+
+// 特定ゲート設定を取得
+const accessibilityGate = getQualityGate('accessibility', 'ci');
+
+// ゲートが強制されるべきかチェック
+const shouldCheck = shouldEnforceGate('accessibility', 'phase-6', 'ci');
+
+// 閾値に対して結果を検証
+const validation = validateQualityResults('accessibility', {
+  critical: 0,
+  serious: 1,
+  moderate: 2
+}, 'ci');
+```
+
+#### GitHub Actions統合
+
+システムはGitHub Actionsと自動的に統合されます：
+
+```yaml
+# 集約品質ゲートワークフローを使用
+name: Quality Check
+on: [push, pull_request]
+
+jobs:
+  quality:
+    uses: ./.github/workflows/quality-gates-centralized.yml
+    with:
+      environment: 'ci'
+      phase: 'auto-detect'
+      gates: 'all'
+```
+
+### 実装詳細
+
+#### ポリシーロードとオーバーライド
+
+ポリシーローダーはドット記法パスシステムを使用して環境固有のオーバーライドを適用します：
+
+```json
+{
+  "environments": {
+    "development": {
+      "overrides": {
+        "accessibility.thresholds.total_warnings": 10,
+        "coverage.enforcement": "warn"
+      }
+    }
+  }
+}
+```
+
+#### フェーズ認識強制
+
+品質ゲートは以下のように設定できます：
+1. 特定フェーズに適用: `"phases": ["phase-6"]`
+2. 特定フェーズから有効化: `"enabledFromPhase": "phase-3"`
+3. フェーズ制限が定義されていない場合は常に適用
+
+#### ツール統合
+
+##### Lighthouse CI
+- ポリシー閾値に基づく動的設定
+- 環境認識アサーションレベル
+- 自動スコア変換（90 → 0.9）
+
+##### カバレッジツール
+- nycとvitestカバレッジの両方をサポート
+- 設定可能な除外パターン
+- 複数のメトリクスタイプ（行、関数、ブランチ、ステートメント）
+
+##### アクセシビリティテスト
+- jest-axeとaxe-coreとの統合
+- 多レベル違反追跡
+- 詳細な失敗レポート
+
+#### エラーハンドリングとフォールバック
+
+システムは堅牢なエラーハンドリングを含みます：
+
+1. **ポリシーロード失敗**: CLIアーギュメントまたはデフォルトにフォールバック
+2. **ツール利用不可**: 警告付きで欠落ツールのゲートをスキップ
+3. **レポート生成**: 開発環境で空レポートを作成
+4. **環境検出**: NODE_ENVから環境を自動検出
+
+### カスタマイズ
+
+#### 新しい品質ゲートの追加
+
+1. **ポリシー設定の更新**:
+```json
+{
+  "quality": {
+    "myCustomGate": {
+      "description": "カスタム品質ゲート",
+      "enforcement": "strict",
+      "thresholds": {
+        "customMetric": 90
+      },
+      "tools": ["custom-tool"],
+      "phases": ["phase-4", "phase-5", "phase-6"]
+    }
+  }
+}
+```
+
+2. **ゲートランナーの実装**:
+```javascript
+// scripts/run-quality-gates.cjs内で
+case 'myCustomGate':
+  command = 'npm run custom-check';
+  break;
+```
+
+3. **NPMスクリプトの追加**:
+```json
+{
+  "scripts": {
+    "quality:custom": "node scripts/run-quality-gates.cjs --gates=myCustomGate"
+  }
+}
+```
+
+#### 閾値の変更
+
+単純に`policy/quality.json`ファイルを更新：
+
+```json
+{
+  "quality": {
+    "coverage": {
+      "thresholds": {
+        "lines": 85,        // 80から変更
+        "functions": 85     // 80から変更
+      }
+    }
+  }
+}
+```
+
+全てのツールとワークフローが自動的に新しい閾値を使用します。
+
+#### 環境固有の調整
+
+環境オーバーライドを追加または変更：
+
+```json
+{
+  "environments": {
+    "staging": {
+      "description": "ステージング環境",
+      "overrides": {
+        "lighthouse.thresholds.performance": 85,
+        "accessibility.enforcement": "warn"
+      }
+    }
+  }
+}
+```
+
+### ベストプラクティス
+
+#### ポリシー管理
+1. **バージョン管理**: ポリシーファイルを常にバージョン管理
+2. **変更レビュー**: 閾値変更に承認を必要とする
+3. **文書化**: 閾値の値の根拠を文書化
+4. **段階的変更**: 閾値の増加を段階的に実装
+
+#### 開発ワークフロー
+1. **プレコミット**: コミット前に品質ゲートを実行
+2. **ローカルテスト**: 反復に開発環境を使用
+3. **フェーズ認識**: 現在のフェーズに適用されるゲートを理解
+4. **継続監視**: 定期的な品質ゲート実行
+
+#### CI/CD統合
+1. **マトリックス戦略**: 高速フィードバックのための並列実行
+2. **アーティファクト収集**: 分析のためレポートを保存
+3. **失敗処理**: 適切なfail-fast vs. continue-on-error
+4. **PRコメント**: プルリクエストでの自動フィードバック
+
+### トラブルシューティング
+
+#### 一般的な問題
+
+##### ポリシーロード失敗
+```bash
+⚠️  Could not load quality policy: ENOENT: no such file or directory
+```
+**解決方法**: `policy/quality.json`が存在し、有効なJSONであることを確認。
+
+##### フェーズ検出問題
+```bash
+⚠️  Could not detect current phase, using phase-1
+```
+**解決方法**: `.ae/phase-state.json`を作成するか、フェーズを明示的に指定：
+```bash
+node scripts/run-quality-gates.cjs --phase=phase-6
+```
+
+##### ツール利用不可
+```bash
+⚠️  Lighthouse CI config not found, skipping
+```
+**解決方法**: 必要なツールをインストールするか、ゲートをオプションとして設定。
+
+#### デバッグモード
+
+トラブルシューティングのために詳細ログを有効化：
+
+```bash
+DEBUG=quality-gates node scripts/run-quality-gates.cjs --env=development
+```
+
+#### 手動閾値検証
+
+完全な品質ゲートを実行せずに特定の閾値をテスト：
+
+```bash
+# アクセシビリティのみチェック
+node scripts/check-a11y-threshold.cjs --env=development
+
+# カバレッジのみチェック
+node scripts/check-coverage-threshold.cjs --env=ci
+```
+
+### マイグレーションガイド
+
+#### ハードコード閾値から
+
+1. **現在の閾値を特定**: 既存のスクリプトとワークフローをレビュー
+2. **ポリシーファイルを更新**: `policy/quality.json`に現在の値を追加
+3. **スクリプトを更新**: 集約ポリシーローダーを使用するように変更
+4. **マイグレーションをテスト**: 新しいシステムで同じ動作を検証
+5. **クリーンアップ**: スクリプトからハードコード値を削除
+
+#### 複数設定ファイルから
+
+1. **設定を統合**: 閾値を単一ポリシーにマージ
+2. **ツール設定を更新**: 集約ポリシーから読み込むようにツールを変更
+3. **環境マッピング**: 既存の環境固有設定をマップ
+4. **検証**: 全てのシナリオが正常に動作することを確認
+
+### 高度な機能
+
+#### 条件付き強制
+
+ゲートは以下に基づいて条件付きで強制できます：
+- ファイル変更（GitHub Actionsパスフィルター経由）
+- 環境変数
+- 開発フェーズの進行
+- カスタムビジネスロジック
+
+#### レポート統合
+
+システムは複数のレポート形式をサポート：
+- プログラマティック消費用JSON
+- 人間可読レポート用HTML
+- CI/CD統合用JUnit XML
+- プラグイン経由のカスタム形式
+
+#### 通知システム
+
+以下の通知を設定：
+- 品質ゲート失敗
+- 承認が必要な閾値変更
+- トレンド分析と劣化アラート
+
+この集約品質ゲートシステムは、AE-Framework開発ライフサイクル全体を通じて一貫したコード品質を維持するための堅牢な基盤を提供します。

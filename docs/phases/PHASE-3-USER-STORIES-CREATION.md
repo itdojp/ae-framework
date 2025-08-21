@@ -1,6 +1,356 @@
 # Phase 3: User Stories Creation
 
-## 概要
+> **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
+
+---
+
+## English
+
+**Automated user story generation and management system from structured requirements with Claude Code Task Tool integration**
+
+### Overview
+
+Phase 3 provides Claude Code Task Tool integration for generating and managing user stories from structured requirements. It automatically generates user stories in the essential "As a... I want... So that..." format crucial for agile development and ensures their quality.
+
+### Claude Code Task Tool Integration
+
+#### Automatic Invocation
+When Claude Code determines user story creation is needed, the User Stories Task Adapter is automatically invoked:
+
+```
+User: Please create user stories
+
+Claude Code: Processing with User Stories Task Adapter...
+
+✅ User Story Generation Complete - 8 stories created across 3 epics
+📊 Analysis:
+  • Total Stories: 8
+  • Total Epics: 3
+  • Total Story Points: 34
+  • Completeness Score: 85%
+```
+
+### Key Features
+
+#### 1. Story Generation
+Automatic user story creation from requirements:
+
+**Example Input Requirements:**
+```
+User authentication functionality
+- Users can log in with email and password
+- Passwords are stored as hashes
+- Login failures are allowed up to 3 times
+```
+
+**Generated Story Example:**
+```
+US001: User Login
+As a registered user
+I want to log into the system with my email and password
+So that I can access my personalized dashboard
+
+Acceptance Criteria:
+- User can enter valid email address and password
+- System validates authentication credentials
+- Successful login redirects to dashboard
+- Failed login displays appropriate error message
+
+Priority: High
+Story Points: 5
+Epic: User Management
+```
+
+#### 2. Story Validation
+Quality assurance for "As a... I want... So that..." format:
+
+**Validation Items:**
+```typescript
+interface QualityMetrics {
+  formatCompliance: number;      // Format compliance: 90%
+  acceptanceCriteria: number;    // Acceptance criteria clarity: 70%
+  testability: number;           // Testability: 85%
+  independence: number;          // Independence: 80%
+  estimability: number;          // Estimability: 75%
+}
+```
+
+**Common Issues:**
+- Missing acceptance criteria (3 occurrences)
+- Ambiguous expressions (2 occurrences)
+- Dependency issues (1 occurrence)
+
+#### 3. Story Prioritization
+Story priority based on business value:
+
+**Priority Matrix:**
+- **High Priority**: 3 stories (high business value)
+- **Medium Priority**: 4 stories (medium business value)
+- **Low Priority**: 1 story (low business value)
+
+**Release Recommendations:**
+- **Release 1.0**: 5 stories (8 weeks)
+- **Release 1.1**: 3 stories (4 weeks)
+
+#### 4. Story Estimation
+Complexity assessment using story points:
+
+**Estimation Distribution:**
+- **1 Point**: 2 stories (simple)
+- **3 Points**: 3 stories (simple)
+- **5 Points**: 2 stories (medium)
+- **8 Points**: 1 story (complex)
+
+**Complexity Analysis:**
+- Simple stories (1-3 points): 5 stories
+- Medium stories (5-8 points): 3 stories
+- Complex stories (13+ points): 0 stories
+
+#### 5. Acceptance Criteria Creation
+Detailed condition definition in Given-When-Then format:
+
+**Example: User Login Story**
+```
+Acceptance Criteria:
+1. Given user has valid authentication credentials
+   When submitting login form
+   Then user is redirected to dashboard
+
+2. Given user enters invalid authentication credentials
+   When submitting login form
+   Then error message is displayed
+
+3. Given user has failed login 3 times
+   When attempting 4th login
+   Then account is temporarily locked
+```
+
+**Test Scenarios:**
+1. Valid login test (positive)
+2. Invalid authentication test (negative)
+3. Account lock test (edge case)
+
+#### 6. Epic Organization
+Management of related stories in epic units:
+
+**Epic Example:**
+```
+Epic: User Management
+- US001: User Login (5 points)
+- US002: User Registration (8 points)
+- US003: Password Reset (3 points)
+Total: 16 points (estimated 2 weeks)
+
+Epic: Product Management
+- US004: Product Search (5 points)
+- US005: Product Detail Display (3 points)
+Total: 8 points (estimated 1 week)
+```
+
+#### 7. Dependency Identification
+Technical and business dependencies between stories:
+
+**Dependency Types:**
+- Technical dependencies: 2 cases
+- Business dependencies: 1 case
+- Data dependencies: 1 case
+- UI dependencies: 0 cases
+
+**Critical Path:**
+- US001 (User Login) → US004 (Product Search)
+- US002 (User Registration) → US001 (User Login)
+
+### CLI Command Examples
+
+#### Story Generation
+```bash
+# Generate user stories from requirements
+ae-framework user-stories --generate --sources="requirements.md"
+
+# Example output:
+# ✅ User Story Generation Complete - 8 stories created across 3 epics
+# 📊 Analysis:
+#   • Total Stories: 8
+#   • Total Epics: 3
+#   • Total Story Points: 34
+#   • Completeness Score: 85%
+```
+
+#### Story Validation
+```bash
+# Validate user story quality
+ae-framework user-stories --validate --sources="user-stories.md"
+
+# Example output:
+# ✅ Story Validation Complete - 7/8 stories are valid
+# 📊 Quality Metrics:
+#   • Proper Format: 90%
+#   • Clear Acceptance Criteria: 70%
+#   • Testable Stories: 85%
+#   • Independent Stories: 80%
+```
+
+#### Prioritization
+```bash
+# Prioritize stories
+ae-framework user-stories --prioritize --sources="user-stories.md"
+
+# Example output:
+# ✅ Story Prioritization Complete - 8 stories prioritized
+# 📊 Priority Matrix:
+#   • High: 3 stories (high business value)
+#   • Medium: 4 stories (medium business value)
+#   • Low: 1 stories (low business value)
+```
+
+#### Estimation
+```bash
+# Estimate story points
+ae-framework user-stories --estimate --sources="user-stories.md"
+
+# Example output:
+# ✅ Story Estimation Complete - 34 total story points estimated
+# 📊 Complexity Analysis:
+#   • Simple Stories (1-3 points): 5 stories
+#   • Medium Stories (5-8 points): 3 stories
+#   • Complex Stories (13+ points): 0 stories
+```
+
+### Proactive Guidance
+
+The User Stories Task Adapter automatically suggests interventions in these situations:
+
+#### Incomplete Story Detection
+```
+⚠️ Warning: Incomplete user stories detected
+💡 Recommendations:
+  • Create comprehensive user stories
+  • Define clear acceptance criteria
+  • Estimate story complexity
+```
+
+#### Story Quality Issues
+```
+💡 Suggestion: User story quality can be improved
+🔧 Actions:
+  • Improve story structure and format
+  • Add detailed acceptance criteria
+  • Ensure stories are testable and independent
+```
+
+### TypeScript Interfaces
+
+#### UserStory
+```typescript
+interface UserStory {
+  id: string;
+  title: string;
+  description: string;
+  asA: string;
+  iWant: string;
+  soThat: string;
+  acceptanceCriteria: string[];
+  priority: 'high' | 'medium' | 'low';
+  storyPoints: number;
+  epic?: string;
+  dependencies: string[];
+  testScenarios: string[];
+}
+```
+
+#### UserStorySet
+```typescript
+interface UserStorySet {
+  stories: UserStory[];
+  epics: string[];
+  totalStoryPoints: number;
+  completenessScore: number;
+  gaps: string[];
+  conflicts: string[];
+}
+```
+
+### Best Practices
+
+#### Good User Story Characteristics (INVEST)
+- **Independent**: Independent from other stories
+- **Negotiable**: Details are negotiable
+- **Valuable**: Provides value to users
+- **Estimable**: Can be estimated
+- **Small**: Appropriate size
+- **Testable**: Can be tested
+
+#### Acceptance Criteria Guidelines
+1. **Clarity**: Eliminate ambiguity
+2. **Measurability**: Objectively evaluable
+3. **Completeness**: Cover all conditions
+4. **Consistency**: No contradiction with other criteria
+
+#### Epic Design Principles
+1. **Business Value**: Clear value proposition
+2. **Appropriate Size**: Completable in 1-4 weeks
+3. **Independence**: Minimize dependencies with other epics
+4. **Measurability**: Progress can be tracked
+
+### Next Steps
+
+After Phase 3 completion, proceed to these phases:
+
+1. **Phase 4: Validation** - User story quality validation
+2. **Phase 5: Domain Modeling** - Domain model design based on stories
+3. **Phase 6: Test Generation** - Test case generation from stories
+
+### Troubleshooting
+
+#### Common Issues and Solutions
+
+**Issue: Incorrect story format**
+```bash
+# Execute story validation
+ae-framework user-stories --validate --sources="stories.md"
+```
+
+**Issue: Difficult estimation**
+```bash
+# More detailed story decomposition
+ae-framework user-stories --generate --sources="detailed-requirements.md"
+```
+
+**Issue: Complex dependencies**
+```bash
+# Execute dependency analysis
+ae-framework user-stories --dependencies --sources="stories.md"
+```
+
+### Configuration and Customization
+
+#### Story Template Customization
+```typescript
+const storyTemplate = {
+  format: "As a {role}, I want {goal} so that {benefit}",
+  acceptanceCriteriaFormat: "Given {context}, When {action}, Then {outcome}",
+  priorities: ['high', 'medium', 'low'],
+  storyPoints: [1, 2, 3, 5, 8, 13, 21]
+};
+```
+
+#### Quality Metrics Adjustment
+```typescript
+const qualityThresholds = {
+  formatCompliance: 90,      // Format compliance
+  acceptanceCriteria: 80,    // Acceptance criteria
+  testability: 85,           // Testability
+  independence: 75           // Independence
+};
+```
+
+---
+
+## Japanese
+
+**構造化された要件からの自動ユーザーストーリー生成・管理システム with Claude Code Task Tool統合**
+
+### 概要
 
 Phase 3では、構造化された要件からユーザーストーリーを生成し、管理するためのClaude Code Task Tool統合を提供します。アジャイル開発において重要な"As a... I want... So that..."形式のユーザーストーリーを自動生成し、品質を確保します。
 

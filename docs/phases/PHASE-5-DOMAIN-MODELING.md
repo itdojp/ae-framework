@@ -1,6 +1,467 @@
 # Phase 5: Domain Modeling
 
-## 概要
+> **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
+
+---
+
+## English
+
+**Comprehensive domain modeling system using Domain-Driven Design (DDD) principles with Claude Code Task Tool integration**
+
+### Overview
+
+Phase 5 provides Claude Code Task Tool integration for domain modeling through Domain-Driven Design (DDD). Based on validated requirements and stories, it designs robust and maintainable domain models.
+
+### Claude Code Task Tool Integration
+
+#### Automatic Invocation
+When Claude Code determines domain modeling is needed, the Domain Modeling Task Adapter is automatically invoked:
+
+```
+User: Please design a domain model
+
+Claude Code: Designing with Domain Modeling Task Adapter...
+
+✅ Domain Analysis Complete - 6 entities, 2 bounded contexts identified
+📊 Analysis:
+  • Core Domain Entities: 4
+  • Bounded Contexts: 2
+  • Business Rules: 12
+  • Domain Services: 3
+```
+
+### Key Features
+
+#### 1. Domain Analysis
+Comprehensive business domain analysis:
+
+**Analysis Results:**
+```typescript
+interface DomainAnalysisResult {
+  entities: DomainEntity[];           // 6 entities
+  boundedContexts: BoundedContext[];  // 2 bounded contexts
+  businessRules: BusinessRule[];      // 12 business rules
+  domainServices: DomainService[];    // 3 domain services
+}
+```
+
+**Core Domain Entities:**
+- **User** (entity): System user entity
+- **Order** (aggregate): Customer order aggregate
+- **Product** (entity): Product entity
+- **Payment** (value object): Payment information
+
+**Bounded Context Overview:**
+- **User Management**: User operation processing (3 entities)
+- **Order Processing**: Order processing workflow (4 entities)
+
+**Critical Business Rules:**
+- **Email Validation**: Email address uniqueness constraint
+- **Order Total Calculation**: Order total calculation logic
+- **Payment Authorization**: Payment authorization process
+
+**Domain Complexity Analysis:**
+- High complexity areas: Order Processing
+- Medium complexity areas: User Management, Payment
+- Simple areas: Product Catalog
+
+#### 2. Entity Identification
+Domain entity identification and classification:
+
+**Entity Classification:**
+```typescript
+interface DomainEntity {
+  name: string;
+  type: 'aggregate' | 'entity' | 'value_object' | 'service' | 'repository';
+  description: string;
+  attributes: EntityAttribute[];
+  methods: EntityMethod[];
+  relationships: EntityRelationship[];
+  businessRules: string[];
+  invariants: string[];
+}
+```
+
+**Identified Entities:**
+- **Aggregate Roots**: Order, User
+- **Value Objects**: Email, Address, Money
+- **Domain Services**: OrderService, PaymentService
+
+**Entity Relationships:**
+- User has Profile (1:1)
+- Order contains OrderItem (1:many)
+- Product belongs to Category (many:1)
+
+**Business Rule Coverage:**
+- **User**: 3 business rules
+- **Order**: 5 business rules
+- **Product**: 2 business rules
+
+#### 3. Aggregate Modeling
+Definition of aggregate roots and boundaries:
+
+**Aggregate Details:**
+```typescript
+interface AggregateRoot {
+  name: string;              // Order
+  description: string;       // Customer order aggregate
+  entities: string[];        // [OrderItem, ShippingInfo]
+  valueObjects: string[];    // [Money, Quantity]
+  businessRules: string[];   // [Order total calculation]
+  invariants: string[];     // [Order must have at least one item]
+}
+```
+
+**Aggregate Boundary Analysis:**
+- **Order**: Strong boundary (85% coupling)
+- **User**: Strong boundary (90% coupling)
+- **Product**: Medium boundary (70% coupling)
+
+**Inter-Aggregate Dependencies:**
+- Order → User (customer reference)
+- Order → Product (product reference)
+- Payment → Order (order reference)
+
+#### 4. Bounded Context Definition
+Clarification of microservice boundaries:
+
+**Context Definition:**
+```typescript
+interface BoundedContext {
+  name: string;                    // Sales
+  description: string;             // Sales and order management
+  entities: string[];              // [Order, Customer]
+  services: string[];              // [OrderService]
+  responsibilities: string[];      // [Order processing, Customer management]
+  interfaces: ContextInterface[];  // API definition
+}
+```
+
+**Context Relationships:**
+- **Sales** → **Inventory** (customer-supplier)
+- **Payment** → **Sales** (conformist)
+- **Shipping** → **Sales** (anticorruption layer)
+
+**Integration Patterns:**
+- **Sales ↔ Inventory**: Event Sourcing (inventory update with order events)
+- **Payment ↔ Sales**: Command/Query (payment commands and queries)
+
+#### 5. Business Rule Extraction
+Identification of domain-specific business logic:
+
+**Business Rule Analysis:**
+```typescript
+interface BusinessRule {
+  id: string;                 // BR001
+  name: string;               // Order Validation
+  description: string;        // Orders must have valid customer and items
+  type: 'constraint' | 'derivation' | 'existence' | 'action_enabler';
+  entities: string[];         // [Order, Customer, OrderItem]
+  conditions: string[];       // [Customer exists, Items available]
+  actions: string[];          // [Create order, Update inventory]
+}
+```
+
+**High Priority Rules:**
+- **Order Validation**: Orders require valid customer and products
+- **Payment Authorization**: Payments require pre-authorization
+- **Inventory Check**: Product reservation after inventory verification
+
+**Rule Complexity Analysis:**
+- **Order Validation**: Medium complexity (2 dependencies)
+- **Payment Authorization**: High complexity (4 dependencies)
+- **Inventory Check**: Low complexity (1 dependency)
+
+**Entity-Rule Mapping:**
+- **Order**: 5 rules
+- **Payment**: 3 rules
+- **User**: 2 rules
+
+#### 6. Ubiquitous Language Creation
+Building a shared vocabulary dictionary for the team:
+
+**Core Domain Terms:**
+```typescript
+interface UbiquitousLanguageTerm {
+  term: string;           // Order
+  definition: string;     // Customer request for products
+  context: string;        // Sales
+  synonyms: string[];     // [Purchase, Request]
+  relatedTerms: string[]; // [OrderItem, Customer]
+}
+```
+
+**Key Terms:**
+- **Order**: Customer's product purchase request (Context: Sales)
+- **Customer**: User as customer in the system (Context: Sales)
+- **Product**: Sellable merchandise (Context: Catalog)
+
+**Term Relationships:**
+- **Order** contains **OrderItem**
+- **Customer** places **Order**
+- **Product** belongs to **Category**
+
+#### 7. Domain Service Design
+Service design spanning multiple entities:
+
+**Service Definition:**
+```typescript
+interface DomainService {
+  name: string;               // OrderService
+  description: string;        // Order processing service
+  operations: ServiceOperation[];
+  dependencies: string[];     // [PaymentService, InventoryService]
+}
+```
+
+**Service Operations:**
+```typescript
+interface ServiceOperation {
+  name: string;           // processOrder
+  description: string;    // Process customer order
+  inputs: Parameter[];    // [order: Order]
+  outputs: Parameter[];   // [result: OrderResult]
+  businessRule: string;   // Validate order before processing
+}
+```
+
+**Service Dependency Analysis:**
+- **OrderService**: 2 dependencies (medium coupling)
+- **PaymentService**: 1 dependency (low coupling)
+- **InventoryService**: 3 dependencies (high coupling)
+
+**Service Coupling Analysis:**
+- **OrderService**: 85% coupling (3 responsibilities)
+- **PaymentService**: 95% coupling (1 responsibility)
+- **InventoryService**: 70% coupling (4 responsibilities)
+
+#### 8. Domain Model Validation
+Domain model consistency and completeness validation:
+
+**Validation Score: 85%**
+
+**Validation Items:**
+- Entity validation: 90%
+- Relationship validation: 80%
+- Business rule validation: 85%
+
+**Validation Issues:**
+- Medium importance: Some relationships lack cardinality (relationships)
+- Low importance: Entity naming consistency (naming)
+
+**Model Completeness:**
+- Entities: 90%
+- Relationships: 80%
+- Business rules: 85%
+- Bounded contexts: 75%
+
+**Consistency Check:**
+- Entity names: Pass (0 issues)
+- Relationship definitions: Pass (1 issue)
+- Business rules: Pass (0 issues)
+
+### CLI Command Examples
+
+#### Domain Analysis
+```bash
+# Comprehensive domain analysis
+ae-framework domain-model --analyze --sources="requirements.md,user-stories.md"
+
+# Example output:
+# ✅ Domain Analysis Complete - 6 entities, 2 bounded contexts identified
+# 📊 Analysis:
+#   • Core Domain Entities: 4
+#   • Bounded Contexts: 2
+#   • Business Rules: 12
+```
+
+#### Entity Identification
+```bash
+# Domain entity identification
+ae-framework domain-model --entities --sources="domain-requirements.md"
+
+# Example output:
+# ✅ Entity Identification Complete - 8 entities identified
+# 📊 Classification:
+#   • Aggregate Roots: 3
+#   • Value Objects: 2
+#   • Domain Services: 3
+```
+
+#### Aggregate Modeling
+```bash
+# Aggregate design and boundary definition
+ae-framework domain-model --aggregates --sources="entities.md"
+
+# Example output:
+# ✅ Aggregate Modeling Complete - 3 aggregates defined
+# 📊 Boundary Analysis:
+#   • Strong boundaries: 2
+#   • Medium boundaries: 1
+```
+
+#### Bounded Context Definition
+```bash
+# Bounded context design
+ae-framework domain-model --contexts --sources="domain-analysis.md"
+
+# Example output:
+# ✅ Bounded Context Definition Complete - 3 contexts defined
+# 📊 Integration Patterns:
+#   • Event Sourcing: 2
+#   • Command/Query: 1
+```
+
+### Proactive Guidance
+
+The Domain Modeling Task Adapter automatically suggests interventions in these situations:
+
+#### Incomplete Modeling Detection
+```
+⚠️ Warning: Domain model appears incomplete
+💡 Recommendations:
+  • Create comprehensive entity models
+  • Define aggregate boundaries
+  • Establish bounded contexts
+```
+
+#### Modeling Inconsistency Detection
+```
+💡 Suggestion: Domain model inconsistencies detected
+🔧 Actions:
+  • Review entity relationships
+  • Validate business rule consistency
+  • Check ubiquitous language usage
+```
+
+#### Model Improvement Suggestions
+```
+💡 Suggestion: Consider refining domain model
+🔧 Actions:
+  • Update domain model based on new requirements
+  • Refine entity definitions
+  • Adjust aggregate boundaries if needed
+```
+
+### TypeScript Interfaces
+
+#### DomainEntity
+```typescript
+interface DomainEntity {
+  name: string;
+  type: 'aggregate' | 'entity' | 'value_object' | 'service' | 'repository';
+  description: string;
+  attributes: EntityAttribute[];
+  methods: EntityMethod[];
+  relationships: EntityRelationship[];
+  businessRules: string[];
+  invariants: string[];
+}
+```
+
+#### BoundedContext
+```typescript
+interface BoundedContext {
+  name: string;
+  description: string;
+  entities: string[];
+  services: string[];
+  responsibilities: string[];
+  interfaces: ContextInterface[];
+}
+```
+
+#### BusinessRule
+```typescript
+interface BusinessRule {
+  id: string;
+  name: string;
+  description: string;
+  type: 'constraint' | 'derivation' | 'existence' | 'action_enabler';
+  entities: string[];
+  conditions: string[];
+  actions: string[];
+}
+```
+
+### DDD Best Practices
+
+#### Entity Design Principles
+1. **Uniqueness**: Each entity has a unique identifier
+2. **Invariants**: Clearly define entity invariants
+3. **Lifecycle**: Manage from creation to deletion
+4. **Clear Responsibility**: Follow single responsibility principle
+
+#### Aggregate Design Principles
+1. **Consistency Boundaries**: Aggregates as transaction boundaries
+2. **Keep Small**: Design aggregates as small as possible
+3. **Reference by ID**: Other aggregates referenced by ID only
+4. **Eventual Consistency**: Allow eventual consistency between aggregates
+
+#### Bounded Context Design Principles
+1. **Team Boundaries**: Align with development team responsibilities
+2. **Language Boundaries**: Ubiquitous language application scope
+3. **Technical Boundaries**: Technology stack and data store boundaries
+4. **Evolution Boundaries**: Independent release cycles
+
+### Next Steps
+
+After Phase 5 completion, proceed to these phases:
+
+1. **Phase 6: Test Generation** - Test design based on domain models
+2. **Phase 7: Code Generation** - Implementation generation from domain models
+3. **Phase 8: Implementation** - Implementation based on DDD patterns
+
+### Troubleshooting
+
+#### Common Issues and Solutions
+
+**Issue: Unclear entity boundaries**
+```bash
+# More detailed domain analysis
+ae-framework domain-model --analyze --entities --sources="detailed-requirements.md"
+```
+
+**Issue: Aggregates too large**
+```bash
+# Aggregate redesign
+ae-framework domain-model --aggregates --sources="refined-entities.md"
+```
+
+**Issue: Complex business rules**
+```bash
+# Business rule analysis and simplification
+ae-framework domain-model --rules --sources="business-requirements.md"
+```
+
+### Configuration and Customization
+
+#### Domain Modeling Configuration
+```typescript
+const domainModelingConfig = {
+  maxEntitiesPerAggregate: 7,        // Maximum entities per aggregate
+  maxBusinessRulesPerEntity: 5,      // Maximum rules per entity
+  enforceUbiquitousLanguage: true,   // Enforce ubiquitous language
+  validateInvariants: true           // Validate invariants
+};
+```
+
+#### Complexity Threshold Adjustment
+```typescript
+const complexityThresholds = {
+  lowComplexity: 3,      // Low complexity upper limit
+  mediumComplexity: 7,   // Medium complexity upper limit
+  highComplexity: 10     // High complexity upper limit
+};
+```
+
+---
+
+## Japanese
+
+**ドメイン駆動設計（DDD）原則を用いたClaude Code Task Tool統合による包括的ドメインモデリングシステム**
+
+### 概要
 
 Phase 5では、ドメイン駆動設計（DDD）によるドメインモデリングを行うためのClaude Code Task Tool統合を提供します。検証済みの要件とストーリーに基づいて、堅牢で保守性の高いドメインモデルを設計します。
 

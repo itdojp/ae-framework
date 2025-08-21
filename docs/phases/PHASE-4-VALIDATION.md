@@ -1,6 +1,394 @@
 # Phase 4: Validation
 
-## 概要
+> **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
+
+---
+
+## English
+
+**Comprehensive quality validation system for requirements, stories, and specifications with Claude Code Task Tool integration**
+
+### Overview
+
+Phase 4 provides Claude Code Task Tool integration for quality validation of requirements, stories, and specifications. It ensures project quality assurance and consistency through multilayered validation approaches.
+
+### Claude Code Task Tool Integration
+
+#### Automatic Invocation
+When Claude Code determines quality validation is needed, the Validation Task Adapter is automatically invoked:
+
+```
+User: Please verify the consistency of requirements and stories
+
+Claude Code: Validating with Validation Task Adapter...
+
+✅ Cross-Validation Complete - 90% alignment across phases
+📊 Analysis:
+  • Requirements-Stories alignment: 95%
+  • Traceability coverage: 88%
+  • Consistency score: 92%
+```
+
+### Key Features
+
+#### 1. Requirements Validation
+Completeness and consistency check for functional and non-functional requirements:
+
+**Validation Items:**
+```typescript
+interface ValidationResult {
+  isValid: boolean;
+  score: number;                    // Overall score: 85%
+  issues: ValidationIssue[];        // Detected issues
+  recommendations: string[];        // Improvement suggestions
+  coverageReport: CoverageReport;   // Coverage report
+}
+```
+
+**Coverage Analysis:**
+- Functional requirements: 90%
+- Non-functional requirements: 70%
+- Business requirements: 80%
+- Technical requirements: 75%
+- Overall: 85%
+
+**Example Detected Issues:**
+```typescript
+interface ValidationIssue {
+  id: string;                       // REQ001
+  type: 'error' | 'warning' | 'info';
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  category: string;                 // "Clarity"
+  description: string;              // "Requirement statement could be more specific"
+  location?: string;                // Issue location
+  suggestion?: string;              // Fix suggestion
+}
+```
+
+#### 2. User Stories Validation
+Quality metrics assessment of user stories:
+
+**Quality Metrics:**
+- Proper format (As a... I want... So that...): 90%
+- Clear acceptance criteria: 70%
+- Testability: 85%
+- Independence: 80%
+- Estimability: 75%
+
+**Common Issues:**
+- Missing acceptance criteria (3 occurrences)
+- Format issues (1 occurrence)
+- Dependency problems (0 occurrences)
+
+**Story-specific Issues:**
+- **US001**: Incomplete acceptance criteria
+- **US005**: Story too large
+
+#### 3. Specification Validation
+Consistency and clarity validation of formal specifications:
+
+**Compliance Analysis:**
+- Formal notation: 80%
+- Completeness: 70%
+- Consistency: 85%
+- Clarity: 75%
+- Testability: 80%
+
+**Issues by Category:**
+- Formal notation: 2 issues
+- Completeness: 3 issues
+- Consistency: 1 issue
+
+**Critical Specification Gaps:**
+- API specification incompleteness (Impact: High)
+- Data model ambiguity (Impact: Medium)
+
+#### 4. Traceability Validation
+Ensuring traceability from requirements to code:
+
+**Traceability Coverage: 80%**
+
+**Traceability Matrix:**
+- Requirements → User Stories (85% coverage)
+- User Stories → Specifications (75% coverage)
+- Specifications → Tests (90% coverage)
+
+**Missing Links:**
+- REQ003 → US007 (Requirements-stories mismatch)
+- US004 → SPEC002 (Missing specification)
+
+**Orphaned Artifacts:**
+- Specification SPEC005: No traceability
+- Test TEST012: No corresponding requirement
+
+#### 5. Completeness Validation
+Coverage assessment of deliverables in each phase:
+
+**Completeness Score: 75%**
+
+**Completeness by Category:**
+- Requirements: 80% (2 items missing)
+- User stories: 85% (1 item missing)
+- Specifications: 70% (4 items missing)
+- Tests: 90% (1 item missing)
+
+**Missing Components:**
+- Security: Authentication requirement details (Priority: High)
+- Performance: Load testing specifications (Priority: Medium)
+- Operations: Monitoring requirements (Priority: Low)
+
+#### 6. Consistency Validation
+Inter-phase alignment and terminology consistency check:
+
+**Consistency Score: 85%**
+
+**Consistency Analysis:**
+- Terminology consistency: 90%
+- Format consistency: 80%
+- Business rule consistency: 85%
+- Technical constraint consistency: 80%
+
+**Major Inconsistencies:**
+- Terminology conflicts: "User" vs "Customer"
+- Format inconsistency: Requirement description style differences
+
+#### 7. Feasibility Validation
+Technical, economic, and operational feasibility assessment:
+
+**Feasibility Score: 80%**
+
+**Assessment by Dimension:**
+- Technical feasibility: 85%
+- Economic feasibility: 75%
+- Operational feasibility: 80%
+- Schedule feasibility: 70%
+
+**Risk Factors:**
+- High risk: Legacy system integration (Impact: Major)
+- Medium risk: Third-party API dependency (Impact: Medium)
+
+#### 8. Cross-Validation
+Comprehensive quality assessment across multiple phases:
+
+**Overall Alignment: 85%**
+
+**Inter-Phase Alignment:**
+- Requirements-Stories: 90%
+- Stories-Specifications: 85%
+- Specifications-Tests: 80%
+
+**Cross-Phase Issues:**
+- Requirements ↔ Specifications: Definition misalignment (Importance: High)
+- Stories ↔ Tests: Coverage gap (Importance: Medium)
+
+### CLI Command Examples
+
+#### Requirements Validation
+```bash
+# Validate requirements completeness and consistency
+ae-framework validate --requirements --sources="requirements.md"
+
+# Example output:
+# ✅ Requirements Validation Complete - 85% valid (0 errors, 3 warnings)
+# 📊 Coverage Analysis:
+#   • Functional Requirements: 90%
+#   • Non-Functional Requirements: 70%
+#   • Business Requirements: 80%
+```
+
+#### User Stories Validation
+```bash
+# Validate user stories quality
+ae-framework validate --stories --sources="user-stories.md"
+
+# Example output:
+# ✅ User Stories Validation Complete - 80% compliant
+# 📊 Quality Metrics:
+#   • Proper Format: 90%
+#   • Clear Acceptance Criteria: 70%
+#   • Testable Stories: 85%
+```
+
+#### Traceability Validation
+```bash
+# Validate traceability from requirements to code
+ae-framework validate --traceability --sources="all-artifacts/"
+
+# Example output:
+# ✅ Traceability Validation Complete - 80% traceability coverage
+# 📊 Coverage Matrix:
+#   • Requirements → Stories: 85%
+#   • Stories → Specs: 75%
+#   • Specs → Tests: 90%
+```
+
+#### Completeness Validation
+```bash
+# Validate completeness across all phases
+ae-framework validate --completeness --sources="project/"
+
+# Example output:
+# ✅ Completeness Validation Complete - 75% complete
+# ⚠️ Warnings:
+#   • Security requirements missing details
+#   • Performance specifications incomplete
+```
+
+### Proactive Guidance
+
+The Validation Task Adapter automatically suggests interventions in these situations:
+
+#### Critical Validation Issue Detection
+```
+🚫 Block: Critical validation issues detected
+🔧 Actions:
+  • Address critical validation issues immediately
+  • Improve requirements coverage in weak areas
+  • Validate requirements with stakeholders
+```
+
+#### Validation Gap Detection
+```
+⚠️ Warning: Validation gaps detected
+💡 Recommendations:
+  • Validate updated requirements
+  • Check consistency with existing specifications
+  • Verify traceability links
+```
+
+#### Change-Related Validation Suggestions
+```
+💡 Suggestion: Recent changes should be validated
+🔧 Actions:
+  • Validate recent changes for consistency
+  • Check impact on existing requirements
+  • Update validation documentation
+```
+
+### TypeScript Interfaces
+
+#### ValidationResult
+```typescript
+interface ValidationResult {
+  isValid: boolean;
+  score: number;
+  issues: ValidationIssue[];
+  recommendations: string[];
+  coverageReport: CoverageReport;
+}
+```
+
+#### ValidationIssue
+```typescript
+interface ValidationIssue {
+  id: string;
+  type: 'error' | 'warning' | 'info';
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  category: string;
+  description: string;
+  location?: string;
+  suggestion?: string;
+}
+```
+
+#### CoverageReport
+```typescript
+interface CoverageReport {
+  functional: number;      // Functional requirements coverage
+  nonFunctional: number;   // Non-functional requirements coverage
+  business: number;        // Business requirements coverage
+  technical: number;       // Technical requirements coverage
+  overall: number;         // Overall coverage
+}
+```
+
+### Validation Level Configuration
+
+#### Basic Validation
+```typescript
+const basicValidation = {
+  requirements: true,
+  stories: true,
+  completeness: false,
+  traceability: false
+};
+```
+
+#### Comprehensive Validation
+```typescript
+const comprehensiveValidation = {
+  requirements: true,
+  stories: true,
+  specifications: true,
+  traceability: true,
+  completeness: true,
+  consistency: true,
+  feasibility: true,
+  crossValidation: true
+};
+```
+
+### Next Steps
+
+After Phase 4 completion, proceed to these phases:
+
+1. **Phase 5: Domain Modeling** - Domain model design based on validated requirements
+2. **Phase 6: Test Generation** - Test case generation from validated specifications
+3. **Phase 7: Code Generation** - Test-driven implementation generation
+
+### Troubleshooting
+
+#### Common Issues and Solutions
+
+**Issue: Low validation score**
+```bash
+# Detailed issue analysis
+ae-framework validate --requirements --completeness --sources="all/"
+```
+
+**Issue: Incomplete traceability**
+```bash
+# Rebuild traceability matrix
+ae-framework validate --traceability --sources="artifacts/"
+```
+
+**Issue: Multiple cross-validation issues**
+```bash
+# Phased validation approach
+ae-framework validate --requirements
+ae-framework validate --stories
+ae-framework validate --traceability
+```
+
+### Configuration and Customization
+
+#### Validation Threshold Adjustment
+```typescript
+const validationThresholds = {
+  critical: 50,      // Threshold to block progress
+  warning: 70,       // Threshold to display warnings
+  good: 85,          // Threshold considered good
+  excellent: 95      // Threshold considered excellent
+};
+```
+
+#### Custom Validation Rules
+```typescript
+const customValidationRules = {
+  requirementFormat: /^REQ-\d{3}:/,
+  storyFormat: /^US-\d{3}:/,
+  acceptanceCriteriaRequired: true,
+  traceabilityRequired: true
+};
+```
+
+---
+
+## Japanese
+
+**要件・ストーリー・仕様の品質検証を行うClaude Code Task Tool統合による包括的品質検証システム**
+
+### 概要
 
 Phase 4では、要件・ストーリー・仕様の品質検証を行うためのClaude Code Task Tool統合を提供します。多層的な検証アプローチにより、プロジェクトの品質保証と整合性確保を実現します。
 
