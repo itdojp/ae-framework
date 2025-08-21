@@ -1,5 +1,291 @@
 # Phase 2: Natural Language Requirements
 
+> **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
+
+---
+
+## English
+
+**Natural language requirements structuring and analysis system with Claude Code Task Tool integration**
+
+### Overview
+
+Phase 2 provides Claude Code Task Tool integration for structuring and analyzing requirements written in natural language. This phase aims to systematically organize scattered requirement information and convert it into formats usable by subsequent phases.
+
+### Claude Code Task Tool Integration
+
+#### Automatic Invocation
+When Claude Code determines that natural language requirements processing is needed, the Natural Language Task Adapter is automatically invoked:
+
+```
+User: Please structure this requirements document
+
+Claude Code: Executing Natural Language Task Adapter...
+
+✅ Requirements Analysis - 15 requirements identified
+📊 Analysis:
+  • Functional Requirements: 10
+  • Non-Functional Requirements: 3
+  • Business Requirements: 2
+```
+
+### Key Features
+
+#### 1. Requirements Analysis
+Extracting structured requirements from natural language text:
+
+**Input Example:**
+```
+The system must allow users to register accounts.
+Login functionality should be secure and fast.
+Payment processing needs to be reliable.
+The interface should be user-friendly.
+```
+
+**Structured Output:**
+```typescript
+interface RequirementAnalysisResult {
+  functional: FunctionalRequirement[];    // 2 requirements
+  nonFunctional: NonFunctionalRequirement[]; // 2 requirements  
+  business: BusinessRequirement[];        // 0 requirements
+  technical: TechnicalRequirement[];      // 0 requirements
+}
+```
+
+**Analysis Results:**
+- **Functional Requirements**: User registration, Login functionality
+- **Non-functional Requirements**: Security and performance, Reliability
+- **Quality Attributes**: Usability, Security, Performance
+
+#### 2. Requirement Categorization
+Systematic classification of requirements by type and priority:
+
+**Category Types:**
+```typescript
+enum RequirementType {
+  FUNCTIONAL = 'functional',
+  NON_FUNCTIONAL = 'non_functional', 
+  BUSINESS = 'business',
+  TECHNICAL = 'technical',
+  CONSTRAINT = 'constraint'
+}
+```
+
+**Priority Levels:**
+- **High Priority**: Core functionality, Security requirements
+- **Medium Priority**: Performance enhancements, Usability features
+- **Low Priority**: Nice-to-have features, Future enhancements
+
+#### 3. Ambiguity Detection
+Identifying and resolving ambiguous or incomplete requirements:
+
+**Ambiguity Types:**
+- **Unclear Terms**: "fast", "user-friendly", "reliable"
+- **Missing Details**: Incomplete specifications
+- **Contradictions**: Conflicting requirements
+- **Assumptions**: Implicit requirements
+
+**Resolution Process:**
+```typescript
+interface AmbiguityResolution {
+  original: string;
+  issues: AmbiguityIssue[];
+  suggestions: string[];
+  clarificationQuestions: string[];
+}
+```
+
+#### 4. Requirements Validation
+Ensuring completeness and consistency of requirements:
+
+**Validation Checks:**
+- **Completeness**: All necessary requirements covered
+- **Consistency**: No conflicting requirements
+- **Feasibility**: Technically achievable
+- **Testability**: Verifiable requirements
+
+**Validation Score: 85%**
+- Completeness: 90%
+- Consistency: 85%
+- Feasibility: 80%
+- Testability: 85%
+
+#### 5. Formal Specification Generation
+Converting natural language requirements to formal specifications:
+
+**Specification Types:**
+```typescript
+interface FormalSpecification {
+  tlaPlus: TLASpecification;      // TLA+ formal specification
+  contracts: ContractSpec[];      // Pre/post conditions
+  stateMachines: StateMachine[];  // Behavioral specifications
+  interfaces: InterfaceSpec[];    // API specifications
+}
+```
+
+**Example TLA+ Generation:**
+```tla
+EXTENDS Naturals, Sequences
+
+VARIABLES users, sessions, loginAttempts
+
+UserRegistration ==
+  /\ users' = users \cup {newUser}
+  /\ newUser \notin users
+  /\ IsValidEmail(newUser.email)
+```
+
+#### 6. Documentation Generation
+Creating comprehensive requirement documentation:
+
+**Document Types:**
+- **Requirements Specification Document (RSD)**
+- **System Requirements Specification (SRS)**
+- **Functional Requirements Document (FRD)**
+- **Non-Functional Requirements (NFR) Document**
+
+**Generated Sections:**
+- Introduction and scope
+- Functional requirements with examples
+- Non-functional requirements with metrics
+- Constraints and assumptions
+- Acceptance criteria
+- Traceability matrix
+
+### CLI Command Examples
+
+#### Requirements Analysis
+```bash
+# Analyze natural language requirements
+ae-framework phase-2 --analyze --source="requirements.txt"
+
+# Example output:
+# ✅ Requirements Analysis Complete - 15 requirements identified
+# 📊 Breakdown:
+#   • Functional: 10 requirements
+#   • Non-Functional: 3 requirements
+#   • Business: 2 requirements
+```
+
+#### Requirement Validation
+```bash
+# Validate requirements completeness and consistency
+ae-framework phase-2 --validate --source="requirements.md"
+
+# Example output:
+# ✅ Validation Complete - 85% validation score
+# 📊 Results:
+#   • Completeness: 90%
+#   • Consistency: 85%
+#   • Feasibility: 80%
+```
+
+#### Formal Specification Generation
+```bash
+# Generate formal specifications
+ae-framework phase-2 --formal --source="validated-requirements.json"
+
+# Example output:
+# ✅ Formal Specification Generated
+# 📊 Generated:
+#   • TLA+ specifications: 3 files
+#   • Contract specifications: 5 contracts
+#   • State machines: 2 machines
+```
+
+### Proactive Guidance
+
+The Natural Language Task Adapter automatically suggests interventions in these situations:
+
+#### Incomplete Requirements Detection
+```
+⚠️ Warning: Requirements appear incomplete
+💡 Recommendations:
+  • Add missing functional requirements
+  • Define acceptance criteria
+  • Specify non-functional requirements
+```
+
+#### Ambiguity Detection
+```
+💡 Suggestion: Ambiguous requirements detected
+🔧 Actions:
+  • Clarify unclear terms
+  • Add specific metrics
+  • Define acceptance criteria
+```
+
+### TypeScript Interfaces
+
+#### RequirementAnalysisResult
+```typescript
+interface RequirementAnalysisResult {
+  functional: FunctionalRequirement[];
+  nonFunctional: NonFunctionalRequirement[];
+  business: BusinessRequirement[];
+  technical: TechnicalRequirement[];
+  constraints: Constraint[];
+  assumptions: Assumption[];
+}
+```
+
+#### FormalSpecification
+```typescript
+interface FormalSpecification {
+  tlaPlus: TLASpecification;
+  contracts: ContractSpecification[];
+  stateMachines: StateMachineSpecification[];
+  interfaces: InterfaceSpecification[];
+}
+```
+
+### Best Practices
+
+#### Effective Requirement Writing
+1. **Clarity**: Use clear, unambiguous language
+2. **Completeness**: Include all necessary details
+3. **Consistency**: Avoid contradictions
+4. **Traceability**: Link to business objectives
+5. **Testability**: Define verifiable criteria
+
+#### Natural Language Guidelines
+1. **Active Voice**: Use active rather than passive voice
+2. **Specific Terms**: Avoid vague terms like "fast" or "user-friendly"
+3. **Quantifiable Metrics**: Include specific measurements where possible
+4. **Structured Format**: Use consistent formatting and templates
+
+### Integration with Phase 1 and Phase 3
+
+#### Input from Phase 1 (Intent Analysis)
+- Analyzed user intentions
+- Identified ambiguities
+- Extracted context and constraints
+- Prioritized requirements
+
+#### Output to Phase 3 (User Stories)
+- Structured requirements
+- Formal specifications
+- Validation results
+- Documentation artifacts
+
+### Advanced Features
+
+#### Machine Learning Integration
+- **Requirement Classification**: Automatic categorization using ML models
+- **Similarity Detection**: Finding related requirements
+- **Quality Prediction**: Predicting requirement quality scores
+
+#### Collaborative Features
+- **Multi-stakeholder Input**: Support for multiple requirement sources
+- **Review Workflows**: Systematic requirement review processes
+- **Change Management**: Tracking requirement evolution
+
+---
+
+## Japanese
+
+**自然言語要件の構造化・分析システム with Claude Code Task Tool統合**
+
 ## 概要
 
 Phase 2では、自然言語で記述された要件を構造化し、分析するためのClaude Code Task Tool統合を提供します。このフェーズは、散在する要件情報を体系的に整理し、後続フェーズで利用可能な形式に変換することを目的としています。

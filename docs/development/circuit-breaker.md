@@ -1,5 +1,11 @@
 # Circuit Breaker Pattern Implementation
 
+> **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
+
+---
+
+## English
+
 The Circuit Breaker pattern implementation provides fault tolerance and resilience for the AE-Framework by preventing cascading failures and providing graceful degradation when services become unavailable.
 
 ## Overview
@@ -692,3 +698,247 @@ const githubApi = {
 ```
 
 This Circuit Breaker implementation provides comprehensive fault tolerance for the AE-Framework, ensuring system resilience and graceful degradation under failure conditions while maintaining visibility into system health and performance.
+
+---
+
+## Japanese
+
+**サーキットブレーカーパターン実装**
+
+サーキットブレーカーパターン実装は、カスケード障害を防止し、サービスが利用できなくなった際の緩やかな劣化を提供することで、AE-Frameworkにフォルトトレラント性と回復力を提供します。
+
+## 概要
+
+サーキットブレーカーパターンは、潜在的に信頼性の低い操作の保護ラッパーとして機能し、障害率を監視し、障害が設定された閾値を超えた際に自動的にフォールバック機構に切り替えます。
+
+### 状態
+
+- **CLOSED**: 通常操作、リクエストは通過する
+- **OPEN**: 高速失敗、リクエストを即座に拒否
+- **HALF_OPEN**: サービスが回復したかテスト中
+
+### 主要機能
+
+- **設定可能な閾値**: 障害と成功の閾値
+- **タイムアウト処理**: タイムアウト期間後の自動リトライ
+- **フォールバック機構**: サーキットが開いている際の緩やかな劣化
+- **監視と指標**: 包括的な統計とヘルス報告
+
+## アーキテクチャ
+
+### 中核コンポーネント
+
+```typescript
+interface CircuitBreakerConfig {
+  failureThreshold: number;          // 障害閾値
+  successThreshold: number;          // 成功閾値
+  timeout: number;                   // タイムアウト（ミリ秒）
+  monitoringWindow: number;          // 監視ウィンドウ
+  fallback?: () => any;             // フォールバック機能
+}
+
+enum CircuitState {
+  CLOSED = 'closed',                // 閉状態
+  OPEN = 'open',                    // 開状態
+  HALF_OPEN = 'half_open'           // 半開状態
+}
+```
+
+### AE-Framework統合
+
+```typescript
+// フレームワーク固有のサーキットブレーカー設定
+const aeFrameworkCircuitBreakers = {
+  intentAgent: new CircuitBreaker('intent-agent', {
+    failureThreshold: 3,
+    successThreshold: 2,
+    timeout: 60000,
+    fallback: () => ({ error: 'インテント分析が一時的に利用できません' })
+  }),
+  
+  naturalLanguageProcessor: new CircuitBreaker('nlp-processor', {
+    failureThreshold: 5,
+    successThreshold: 3,
+    timeout: 30000,
+    fallback: () => ({ text: '処理できませんでした', processed: false })
+  })
+};
+```
+
+## 実装パターン
+
+### 基本的な保護
+
+```typescript
+// エージェント操作の保護
+async function executeProtectedAgentOperation(agentName: string, operation: () => Promise<any>) {
+  const breaker = aeFrameworkCircuitBreakers.getAgentCircuitBreaker(agentName);
+  
+  try {
+    return await breaker.execute(operation);
+  } catch (error) {
+    if (error instanceof CircuitBreakerOpenError) {
+      // サーキットが開いている場合のフォールバック
+      return await handleAgentUnavailable(agentName);
+    }
+    throw error;
+  }
+}
+```
+
+### 状態管理の保護
+
+```typescript
+// 状態操作を保護
+const protectedStateManager = {
+  async saveSSOT(key: string, data: any) {
+    return aeFrameworkCircuitBreakers.executeStateOperation(
+      'save_ssot',
+      () => stateManager.saveSSOT(key, data)
+    );
+  },
+  
+  async loadSSOT(key: string) {
+    return aeFrameworkCircuitBreakers.executeStateOperation(
+      'load_ssot',
+      () => stateManager.loadSSOT(key),
+      () => ({ fallback: true, data: null }) // フォールバック
+    );
+  }
+};
+```
+
+## 監視とアラート
+
+### ヘルス監視
+
+```typescript
+// フレームワークヘルス状態
+interface FrameworkHealthStatus {
+  overall: 'healthy' | 'degraded' | 'critical';
+  agents: Record<string, CircuitBreakerStatus>;
+  services: Record<string, CircuitBreakerStatus>;
+  timestamp: Date;
+}
+
+// ヘルスチェックエンドポイント
+app.get('/health/circuit-breakers', (req, res) => {
+  const health = aeFrameworkCircuitBreakers.getFrameworkHealthStatus();
+  
+  const status = health.overall === 'critical' ? 503 : 
+                 health.overall === 'degraded' ? 200 : 200;
+  
+  res.status(status).json(health);
+});
+```
+
+### イベント監視
+
+```typescript
+// サーキットブレーカーイベントの監視
+circuitBreakerManager.on('circuitOpened', (event) => {
+  logger.warn('サーキットブレーカーが開きました', {
+    name: event.name,
+    failureCount: event.failureCount,
+    threshold: event.threshold
+  });
+  
+  // 重要なサービスの場合はアラート送信
+  if (event.name.includes('critical')) {
+    alertingService.sendAlert({
+      severity: 'high',
+      message: `重要なサーキットブレーカーが開きました: ${event.name}`,
+      context: event
+    });
+  }
+});
+
+circuitBreakerManager.on('circuitClosed', (event) => {
+  logger.info('サーキットブレーカーが閉じました', {
+    name: event.name,
+    recoveryTime: event.recoveryTime
+  });
+});
+```
+
+## ベストプラクティス
+
+### 適切な設定
+
+1. **障害閾値**: サービスの性質に応じて調整
+2. **タイムアウト**: 十分な回復時間を確保
+3. **フォールバック**: 有用なデータまたはエラーメッセージを提供
+4. **監視ウィンドウ**: システム負荷と検出精度のバランス
+
+### フォールバック戦略
+
+```typescript
+// 段階的フォールバック
+const userServiceBreaker = new CircuitBreaker('user-service', {
+  fallback: async () => {
+    // 1. キャッシュから試行
+    const cachedUser = await cache.get(userId);
+    if (cachedUser) {
+      return { ...cachedUser, cached: true };
+    }
+    
+    // 2. デフォルト値を返す
+    return {
+      name: '不明なユーザー',
+      email: 'unknown@example.com',
+      cached: false,
+      source: 'fallback'
+    };
+  }
+});
+```
+
+## トラブルシューティング
+
+### 一般的な問題
+
+1. **サーキットが頻繁に開く**
+   - `failureThreshold`を増加
+   - `monitoringWindow`を増加
+   - エラーが実際にサービスヘルスを示しているか確認
+
+2. **サーキットが長時間開いたまま**
+   - `timeout`を減少
+   - サービス回復が検出可能であることを確認
+   - 成功閾値要件をチェック
+
+3. **フォールバックが動作しない**
+   - フォールバック関数が提供され正しいことを確認
+   - フォールバックロジックの例外をチェック
+   - フォールバックが期待されるデータ構造を返すことを確認
+
+### デバッグ
+
+```typescript
+// デバッグログを有効化
+breaker.on('operationSuccess', (event) => {
+  console.debug(`✅ ${event.name}: ${event.duration}ms`);
+});
+
+breaker.on('operationFailure', (event) => {
+  console.debug(`❌ ${event.name}: ${event.error.message} (${event.duration}ms)`);
+});
+
+breaker.on('stateChanged', (event) => {
+  console.debug(`🔄 ${event.name}: ${event.previousState} → ${event.newState}`);
+});
+```
+
+## パフォーマンス考慮事項
+
+### メモリ使用量
+- サーキットブレーカーは監視のためリクエスト履歴を保存
+- 履歴は`monitoringWindow`に基づいて自動クリーンアップ
+- 高頻度で低影響の操作では監視を無効化
+
+### CPU オーバーヘッド
+- 成功操作に対する最小限のオーバーヘッド
+- 障害検出と状態遷移は軽量
+- 必要でない場合はイベント発行を無効化可能
+
+このサーキットブレーカー実装は、AE-Frameworkに包括的なフォルトトレラント性を提供し、障害状態下でもシステムの回復力と緩やかな劣化を確保しながら、システムヘルスとパフォーマンスの可視性を維持します。

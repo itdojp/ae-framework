@@ -1,5 +1,11 @@
 # Enhanced State Manager
 
+> **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
+
+---
+
+## English
+
 The Enhanced State Manager is a comprehensive state management system for AE-Framework that provides SQLite-like storage with advanced features including versioning, compression, transactions, and EventBus integration for CEGIS (Counterexample-Guided Iterative Synthesis) workflows.
 
 ## Overview
@@ -599,3 +605,305 @@ async function migrateState(fromEnv: string, toEnv: string) {
 ```
 
 This Enhanced State Manager provides a robust foundation for managing complex state in AE-Framework with advanced features that support sophisticated workflows including CEGIS integration, making it ideal for AI-enhanced development processes.
+
+---
+
+## Japanese
+
+**拡張状態管理**
+
+拡張状態管理は、AE-Framework用の包括的な状態管理システムで、バージョニング、圧縮、トランザクション、CEGIS（反例誘導反復合成）ワークフロー用のEventBus統合などの高度な機能を備えたSQLiteライクなストレージを提供します。
+
+## 概要
+
+拡張状態管理は、基本的なPhaseStateManagerをベースに以下を提供します：
+
+- **SQLiteライクなストレージ**: 論理キー + ISO タイムスタンプ命名規則
+- **SSOT管理**: AE-IR仕様のSingle Source of Truth
+- **バージョン制御**: 自動クリーンアップ付きマルチバージョンストレージ
+- **圧縮**: 設定可能な閾値での大データの自動圧縮
+- **トランザクション**: ロールバックサポート付きアトミック操作
+- **ガベージコレクション**: 設定可能な間隔でのTTLベースクリーンアップ
+- **EventBus統合**: 障害アーティファクト用のCEGISトリガー通知
+- **スナップショット**: バックアップと復旧用の圧縮状態スナップショット
+
+## アーキテクチャ
+
+### 中核コンポーネント
+
+```typescript
+┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐
+│  EnhancedStateCLI   │───▶│ EnhancedStateManager │───▶│   ストレージ層       │
+├─────────────────────┤    ├─────────────────────┤    ├─────────────────────┤
+│ - CLI コマンド      │    │ - SSOT 管理         │    │ - メモリストレージ   │
+│ - ユーザーIF        │    │ - バージョン制御     │    │ - ファイル永続化     │
+│ - イベント監視      │    │ - トランザクション   │    │ - 圧縮              │
+└─────────────────────┘    │ - EventBus          │    │ - インデックス管理   │
+                           │ - ガベージコレクション│    └─────────────────────┘
+                           └─────────────────────┘
+```
+
+### 主要インターフェース
+
+```typescript
+interface EnhancedStateManager {
+  // SSOT 管理
+  saveSSOT(logicalKey: string, value: any): Promise<string>;
+  loadSSOT(logicalKey: string, version?: string): Promise<any>;
+  listSSOTVersions(logicalKey: string): Promise<StateVersion[]>;
+  
+  // トランザクション
+  beginTransaction(): string;
+  commitTransaction(transactionId: string): Promise<void>;
+  rollbackTransaction(transactionId: string): Promise<void>;
+  
+  // 状態管理
+  saveState(key: string, value: any): Promise<void>;
+  loadState(key: string): Promise<any>;
+  deleteState(key: string): Promise<boolean>;
+  
+  // ユーティリティ
+  createSnapshot(): Promise<string>;
+  exportState(): Promise<EnhancedStateExport>;
+  importState(state: EnhancedStateExport): Promise<void>;
+}
+```
+
+## 主要機能
+
+### SSOT（Single Source of Truth）管理
+
+```typescript
+// AE-IR仕様をSSOTとして保存
+const version = await stateManager.saveSSOT('user-management', {
+  entities: ['User', 'Profile', 'Settings'],
+  relationships: [
+    { from: 'User', to: 'Profile', type: 'hasOne' },
+    { from: 'User', to: 'Settings', type: 'hasMany' }
+  ],
+  timestamp: new Date().toISOString()
+});
+
+console.log('新しいバージョン保存:', version);
+
+// 最新版をロード
+const latestSpec = await stateManager.loadSSOT('user-management');
+
+// 特定バージョンをロード
+const specificVersion = await stateManager.loadSSOT('user-management', version);
+```
+
+### トランザクションサポート
+
+```typescript
+// アトミック操作の例
+const txId = stateManager.beginTransaction();
+
+try {
+  // 複数の関連操作
+  await stateManager.saveSSOT('feature-auth', authSpec, txId);
+  await stateManager.saveState('auth-config', authConfig, txId);
+  await stateManager.saveState('security-rules', securityRules, txId);
+  
+  // すべて成功した場合コミット
+  await stateManager.commitTransaction(txId);
+  console.log('認証機能の設定が正常に保存されました');
+  
+} catch (error) {
+  // エラーの場合ロールバック
+  await stateManager.rollbackTransaction(txId);
+  console.error('トランザクションロールバック:', error.message);
+}
+```
+
+### EventBus統合（CEGIS）
+
+```typescript
+// CEGISイベントリスナーの設定
+stateManager.on('ssot:saved', (event) => {
+  console.log('SSOT保存:', event.logicalKey, event.version);
+  
+  // CEGIS検証トリガー
+  if (event.logicalKey.includes('critical')) {
+    eventBus.emit('cegis:verify', {
+      specification: event.value,
+      version: event.version,
+      trigger: 'ssot_update'
+    });
+  }
+});
+
+stateManager.on('transaction:failed', (event) => {
+  console.warn('トランザクション失敗:', event.transactionId);
+  
+  // 障害アーティファクトを保存
+  eventBus.emit('cegis:counterexample', {
+    transactionId: event.transactionId,
+    error: event.error,
+    rollbackData: event.rollbackData
+  });
+});
+```
+
+## CLI 使用方法
+
+### 基本的な状態操作
+
+```bash
+# SSOT保存
+ae-framework enhanced-state save-ssot user-management ./specs/user-spec.json
+
+# SSOT読み込み
+ae-framework enhanced-state load-ssot user-management
+
+# 特定バージョンの読み込み
+ae-framework enhanced-state load-ssot user-management --version="20250120_143022"
+
+# バージョン一覧
+ae-framework enhanced-state list-versions user-management
+```
+
+### 高度な操作
+
+```bash
+# スナップショット作成
+ae-framework enhanced-state create-snapshot
+
+# 状態のエクスポート
+ae-framework enhanced-state export --output=backup.json
+
+# 状態のインポート
+ae-framework enhanced-state import --input=backup.json
+
+# ガベージコレクション実行
+ae-framework enhanced-state gc --force
+```
+
+### 監視とデバッグ
+
+```bash
+# 統計情報表示
+ae-framework enhanced-state stats
+
+# リアルタイム監視
+ae-framework enhanced-state watch
+
+# 圧縮率分析
+ae-framework enhanced-state analyze-compression
+
+# イベントログ監視
+ae-framework enhanced-state monitor-events
+```
+
+## ベストプラクティス
+
+### 効率的な使用法
+
+1. **適切なキー設計**: 論理的で一意なキーを使用
+2. **トランザクション適用**: 関連する操作をグループ化
+3. **定期的なクリーンアップ**: ガベージコレクションを定期実行
+4. **バックアップ戦略**: 重要なSSOTの定期スナップショット
+
+### パフォーマンス最適化
+
+```typescript
+// 設定可能なパフォーマンスオプション
+const stateManager = new EnhancedStateManager('./data', {
+  compressionThreshold: 1024 * 10,     // 10KB以上で圧縮
+  maxVersionsPerKey: 50,               // キーあたり最大50バージョン
+  gcInterval: 24 * 60 * 60 * 1000,     // 24時間ごとにGC
+  ttlDays: 30,                         // 30日でTTL
+  enableEventBus: true,                // EventBus有効
+  persistenceInterval: 5 * 60 * 1000   // 5分ごとに永続化
+});
+```
+
+### エラーハンドリング
+
+```typescript
+// 包括的なエラーハンドリング
+try {
+  const result = await stateManager.loadSSOT('non-existent-key');
+} catch (error) {
+  if (error instanceof StateNotFoundError) {
+    console.log('状態が見つかりません:', error.key);
+    // デフォルト値の設定やユーザー通知
+  } else if (error instanceof CompressionError) {
+    console.error('圧縮エラー:', error.message);
+    // データ復旧の試行
+  } else {
+    console.error('予期しないエラー:', error);
+    // ログ記録とアラート送信
+  }
+}
+```
+
+## 監視と診断
+
+### 統計監視
+
+```typescript
+const stats = stateManager.getStatistics();
+console.log('拡張状態管理統計:', {
+  総エントリ数: stats.totalEntries,
+  総サイズ: formatBytes(stats.totalSize),
+  圧縮率: stats.compressedEntries / stats.totalEntries,
+  論理キー数: stats.logicalKeys,
+  キーあたり平均バージョン数: stats.averageVersions,
+  アクティブトランザクション: stats.activeTransactions
+});
+```
+
+### ヘルスチェック
+
+```typescript
+// 定期ヘルスチェック
+setInterval(async () => {
+  const stats = stateManager.getStatistics();
+  
+  // 高メモリ使用量のアラート
+  if (stats.totalSize > MAX_MEMORY_THRESHOLD) {
+    console.warn('高メモリ使用量を検出');
+    await stateManager.runGarbageCollection();
+  }
+  
+  // アクティブトランザクション数のアラート
+  if (stats.activeTransactions > MAX_TRANSACTIONS) {
+    console.warn('アクティブトランザクション数が多すぎます');
+  }
+}, 60000); // 1分ごとにチェック
+```
+
+## 移行とバックアップ
+
+### 定期バックアップ
+
+```bash
+#!/bin/bash
+# 自動バックアップスクリプト
+BACKUP_DIR="/backups/ae-framework"
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+
+ae-framework enhanced-state export -o "$BACKUP_DIR/state_$TIMESTAMP.json"
+```
+
+### 状態の移行
+
+```typescript
+// 環境間の移行
+async function migrateState(fromEnv: string, toEnv: string) {
+  const sourceManager = new EnhancedStateManager(`/data/${fromEnv}`);
+  const targetManager = new EnhancedStateManager(`/data/${toEnv}`);
+  
+  await sourceManager.initialize();
+  await targetManager.initialize();
+  
+  const exportedState = await sourceManager.exportState();
+  await targetManager.importState(exportedState);
+  
+  await sourceManager.shutdown();
+  await targetManager.shutdown();
+}
+```
+
+この拡張状態管理は、CEGIS統合を含む洗練されたワークフローをサポートする高度な機能を備え、AE-Frameworkで複雑な状態を管理するための堅牢な基盤を提供し、AI強化開発プロセスに最適です。

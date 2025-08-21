@@ -1,5 +1,11 @@
 # Code Generation Agent
 
+> **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
+
+---
+
+## English
+
 ## Overview
 
 The Code Generation Agent is a Phase 4 component of the ae-framework that automatically generates implementation code from tests and specifications. It follows the TDD principle of writing minimal code to make tests pass, then refactoring for quality.
@@ -211,3 +217,223 @@ console.log('Metrics:', result.metrics);
 - Integration with CI/CD pipelines
 - Real-time collaboration features
 - Visual code generation interface
+
+---
+
+## Japanese
+
+**コード生成エージェント**
+
+## 概要
+
+コード生成エージェントは、テストと仕様から実装コードを自動生成するae-frameworkのフェーズ4コンポーネントです。テストを通すための最小限のコードを書き、その後品質のためにリファクタリングするTDDの原則に従います。
+
+## 機能
+
+### 中核機能
+
+1. **テスト駆動コード生成**
+   - テストファイルを分析して要件を理解
+   - テストを通す最小限の実装を生成
+   - 複数言語をサポート（TypeScript、JavaScript、Python、Go、Rust）
+
+2. **OpenAPIからのAPI生成**
+   - OpenAPI仕様から完全なAPI実装を作成
+   - ルートハンドラー、モデル、ミドルウェアを生成
+   - 複数フレームワークをサポート（Fastify、Express、Koa）
+
+3. **デザインパターンの適用**
+   - 一般的なデザインパターンを適用（Singleton、Factory、Observer等）
+   - 既存コードをパターンを使用するようリファクタリング
+   - コードの一貫性を維持
+
+4. **パフォーマンス最適化**
+   - パフォーマンスボトルネックを特定
+   - 最適化を自動適用
+   - 最適化前後のベンチマークを提供
+
+### 対応技術
+
+#### フロントエンド
+- React、Vue、Angular
+- TypeScript、JavaScript
+- CSS、SCSS、Styled Components
+
+#### バックエンド
+- Node.js（Express、Fastify、Koa）
+- Python（FastAPI、Django、Flask）
+- Go（Gin、Echo、Chi）
+- Rust（Actix、Warp、Axum）
+
+#### データベース
+- PostgreSQL、MySQL、SQLite
+- MongoDB、Redis
+- Prisma、TypeORM、Sequelize
+
+## 使用方法
+
+### MCPサーバーとして実行
+
+```bash
+npm run code-generation-agent
+```
+
+### 直接統合
+
+```typescript
+import { CodeGenerationAgent } from './src/agents/code-generation-agent.js';
+
+const agent = new CodeGenerationAgent();
+
+// テストから実装を生成
+const testFile = 'src/tests/user.test.ts';
+const implementation = await agent.generateFromTests(testFile, {
+  language: 'typescript',
+  framework: 'fastify',
+  includeValidation: true
+});
+
+console.log('生成されたコード:', implementation);
+```
+
+## 生成例
+
+### API生成例
+
+```typescript
+// OpenAPI仕様から生成されたFastifyルート
+export async function createUser(
+  request: FastifyRequest<{ Body: CreateUserRequest }>,
+  reply: FastifyReply
+) {
+  const { name, email } = request.body;
+  
+  // バリデーション
+  if (!name || !email) {
+    return reply.status(400).send({ error: 'nameとemailは必須です' });
+  }
+  
+  try {
+    const user = await userService.create({ name, email });
+    return reply.status(201).send(user);
+  } catch (error) {
+    return reply.status(500).send({ error: 'ユーザー作成に失敗しました' });
+  }
+}
+```
+
+### デザインパターン適用例
+
+```typescript
+// Factoryパターンを適用
+export class DatabaseConnectionFactory {
+  private static instance: DatabaseConnectionFactory;
+  
+  private constructor() {}
+  
+  public static getInstance(): DatabaseConnectionFactory {
+    if (!DatabaseConnectionFactory.instance) {
+      DatabaseConnectionFactory.instance = new DatabaseConnectionFactory();
+    }
+    return DatabaseConnectionFactory.instance;
+  }
+  
+  public createConnection(type: 'postgres' | 'mysql' | 'sqlite'): Connection {
+    switch (type) {
+      case 'postgres':
+        return new PostgresConnection();
+      case 'mysql':
+        return new MySQLConnection();
+      case 'sqlite':
+        return new SQLiteConnection();
+      default:
+        throw new Error(`サポートされていないデータベースタイプ: ${type}`);
+    }
+  }
+}
+```
+
+## 設定オプション
+
+### 基本設定
+
+```typescript
+interface CodeGenerationConfig {
+  language: 'typescript' | 'javascript' | 'python' | 'go' | 'rust';
+  framework?: string;
+  database?: 'postgres' | 'mysql' | 'sqlite' | 'mongodb';
+  includeValidation: boolean;
+  includeAuth: boolean;
+  codeStyle: {
+    quotes: 'single' | 'double';
+    semicolons: boolean;
+    indentation: 'tabs' | 'spaces';
+    indentSize: number;
+  };
+}
+```
+
+### パフォーマンス指標
+
+```typescript
+{
+  targetResponseTime: 100,       // ターゲット応答時間（ms）
+  targetMemoryUsage: 512,        // ターゲットメモリ（MB）
+  targetCPUUsage: 80            // ターゲットCPU使用率（%）
+}
+```
+
+## 実用例
+
+### OpenAPIからのAPI生成
+
+```typescript
+const openApiSpec = fs.readFileSync('api.yaml', 'utf-8');
+
+const result = await agent.generateFromOpenAPI(openApiSpec, {
+  framework: 'fastify',
+  database: 'postgres',
+  includeValidation: true,
+  includeAuth: true
+});
+
+// 生成されたファイルを書き込み
+for (const file of result.files) {
+  fs.writeFileSync(file.path, file.content);
+}
+```
+
+### 既存コードのリファクタリング
+
+```typescript
+const code = fs.readFileSync('src/legacy.ts', 'utf-8');
+
+const result = await agent.refactorCode(code, {
+  reduceComplexity: true,
+  improveDRY: true,
+  improveNaming: true,
+  extractMethods: true,
+  introducePatterns: ['repository', 'factory']
+});
+
+console.log('リファクタリング済みコード:', result.refactoredCode);
+console.log('行った変更:', result.changes);
+console.log('指標:', result.metrics);
+```
+
+## トラブルシューティング
+
+### よくある問題
+
+1. **テストが通らない**: テストファイルが標準的なテストパターンに従っていることを確認
+2. **パターンの競合**: 一部のパターンが競合する可能性があるため、順次適用
+3. **パフォーマンス低下**: 最適化をレビューし、ベンチマーク結果を確認
+4. **ORM互換性**: データベーススキーマがORM要件と一致することを確認
+
+## 将来の拡張
+
+- より多くのプログラミング言語のサポート
+- AI駆動のコード最適化
+- CI/CDパイプラインとの統合
+- リアルタイムコラボレーション機能
+- ビジュアルコード生成インターフェース

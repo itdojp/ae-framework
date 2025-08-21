@@ -1,5 +1,11 @@
 # Formal Agent - Phase 2 of ae-framework
 
+> **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
+
+---
+
+## English
+
 The Formal Agent is a critical component of the ae-framework that bridges Phase 1 (Intent) and Phase 3 (Tests) by converting requirements into formal, verifiable specifications. It provides comprehensive capabilities for generating, validating, and model-checking formal specifications across multiple notations and formats.
 
 ## Overview
@@ -757,3 +763,218 @@ The Formal Agent is part of the ae-framework and follows the same license terms.
 ---
 
 The Formal Agent represents a significant step forward in bridging the gap between informal requirements and formal, testable specifications, enabling higher confidence in system correctness and reliability.
+
+---
+
+## Japanese
+
+**フォーマル・エージェント - ae-frameworkのフェーズ2**
+
+フォーマル・エージェントは、フェーズ1（Intent）とフェーズ3（Tests）の橋渡しを行うae-frameworkの重要なコンポーネントで、要件を正式で検証可能な仕様に変換します。複数の記法とフォーマットにわたって、正式仕様の生成、検証、モデルチェックのための包括的な機能を提供します。
+
+## 概要
+
+フォーマル・エージェントは、自然言語の要件を数学的に正確な仕様に変換し、検証、確認、テスト生成に使用できるようにします。複数の正式仕様言語をサポートし、統合された検証とモデルチェック機能を提供します。
+
+### 主要機能
+
+- **正式仕様生成**: TLA+、Alloy、Z記法
+- **API仕様作成**: OpenAPI、AsyncAPI、GraphQLスキーマ
+- **状態機械生成**: 不変条件付きFSM定義
+- **契約仕様**: Design by Contract（事前条件、事後条件、不変条件）
+- **プロパティベース仕様**: プロパティベーステスト用
+- **正式検証**: モデルチェックとプロパティ検証
+- **仕様検証**: 一貫性と正確性のチェック
+- **図表生成**: UML、シーケンス、状態、クラス、コンポーネント図
+
+## アーキテクチャ
+
+フォーマル・エージェントは2つの主要コンポーネントで構成されます：
+
+1. **コアエージェント** (`src/agents/formal-agent.ts`): メインビジネスロジック
+2. **MCPサーバーラッパー** (`src/mcp-server/formal-server.ts`): ツール統合用Model Context Protocolサーバー
+
+## 使用方法
+
+### フォーマル・エージェントの実行
+
+#### MCPサーバーとして
+```bash
+npm run formal-agent
+```
+
+#### 直接統合
+```typescript
+import { FormalAgent, FormalSpecificationRequest } from './src/agents/formal-agent.js';
+
+const agent = new FormalAgent();
+
+const request: FormalSpecificationRequest = {
+  requirements: [
+    {
+      id: 'REQ-001',
+      description: 'ユーザーは認証後にシステムにアクセスできる',
+      type: 'functional'
+    }
+  ],
+  specificationTypes: ['tla+', 'openapi', 'state-machine'],
+  validationOptions: {
+    enableModelChecking: true,
+    maxStates: 10000
+  }
+};
+
+const result = await agent.generateFormalSpecifications(request);
+```
+
+## 対応する正式言語
+
+### TLA+
+- 並行システムと分散システムの仕様
+- 安全性と活性プロパティの検証
+- 状態空間探索とモデルチェック
+
+### Alloy
+- 構造的な制約の表現
+- リレーショナルロジックベースの仕様
+- 軽量な正式手法アプローチ
+
+### Z記法
+- 数学的ベースの仕様言語
+- 複雑なデータ構造とオペレーション
+- 厳密な型システム
+
+## 生成される成果物
+
+### TLA+仕様
+```tla
+EXTENDS Naturals, Sequences
+
+VARIABLES users, sessions, permissions
+
+UserLogin(user) ==
+  /\ user \notin sessions
+  /\ IsValidCredentials(user)
+  /\ sessions' = sessions \cup {user}
+  /\ UNCHANGED <<users, permissions>>
+
+Safety == \A user \in sessions : IsAuthenticated(user)
+```
+
+### OpenAPI仕様
+```yaml
+openapi: 3.0.0
+info:
+  title: ユーザー管理API
+  version: 1.0.0
+paths:
+  /login:
+    post:
+      summary: ユーザーログイン
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+```
+
+### 状態機械定義
+```typescript
+interface AuthenticationStateMachine {
+  states: ['未認証', '認証中', '認証済み', 'エラー'];
+  transitions: [
+    { from: '未認証', to: '認証中', event: 'login_attempt' },
+    { from: '認証中', to: '認証済み', event: 'auth_success' },
+    { from: '認証中', to: 'エラー', event: 'auth_failure' }
+  ];
+  invariants: ['認証済みユーザーは有効な権限を持つ'];
+}
+```
+
+## 検証機能
+
+### プロパティ検証
+```typescript
+// 安全性プロパティ
+const safetyProperty = {
+  name: 'データ整合性',
+  description: '未認証ユーザーは保護されたリソースにアクセスできない',
+  formal: '[] (unauthenticated => ~access_protected_resource)'
+};
+
+// 活性プロパティ
+const livenessProperty = {
+  name: 'ログイン完了',
+  description: '有効な認証情報での最終的なログイン成功',
+  formal: '<> (valid_credentials => authenticated)'
+};
+```
+
+### モデルチェック結果
+```typescript
+interface ModelCheckResult {
+  property: string;
+  satisfied: boolean;
+  counterexample?: {
+    states: StateSequence;
+    actions: ActionSequence;
+    description: string;
+  };
+}
+```
+
+## パフォーマンス考慮事項
+
+### 仕様生成
+- TLA+生成: 仕様あたり約100-500ms
+- Alloy生成: 仕様あたり約50-200ms
+- Z記法生成: 仕様あたり約200-800ms
+
+### モデルチェック
+- 状態空間探索: システム複雑性に対して指数的
+- プロパティ検証: プロパティ数に対して線形
+- メモリ使用量: 探索状態1000個あたり約1MB
+
+### 最適化のヒント
+1. **スコープ制限**: 有界モデルチェックを使用
+2. **プロパティ重視**: 重要なプロパティを優先検証
+3. **段階的構築**: 仕様を段階的に構築
+4. **キャッシュ活用**: 可能な場合は検証結果を再利用
+
+## トラブルシューティング
+
+### よくある問題
+
+**問題: TLA+仕様生成が失敗する**
+- 解決策: 要件に状態変数とアクションが含まれていることを確認
+- チェック: モジュール名が予約語と競合していないか
+
+**問題: モデルチェックがタイムアウトする**
+- 解決策: スコープを削減するかタイムアウト制限を増加
+- チェック: 状態空間の複雑性とプロパティ数
+
+**問題: API仕様が不完全**
+- 解決策: より詳細なエンドポイント記述を提供
+- チェック: リクエスト/レスポンス例を含める
+
+### デバッグモード
+
+詳細ログを有効化：
+```bash
+DEBUG=formal-agent npm run formal-agent
+```
+
+## 拡張の領域
+
+1. **追加の正式言語**: Coq、Isabelle/HOL、Event-B
+2. **高度なモデルチェック**: TLC、Alloy Analyzerとの統合
+3. **図表拡張**: インタラクティブ図表、アニメーション
+4. **パフォーマンス最適化**: 並列処理、キャッシュ
+5. **統合**: 直接IDE支援、CI/CD統合
+
+フォーマル・エージェントは、非形式的な要件と形式的でテスト可能な仕様の間のギャップを埋める重要な一歩を表し、システムの正確性と信頼性への高い信頼を可能にします。
