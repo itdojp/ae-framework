@@ -1,0 +1,2707 @@
+{
+  "timestamp": "2025-08-21T05:35:32.156Z",
+  "environment": {
+    "nodeVersion": "v20.19.4",
+    "platform": "linux",
+    "isCI": false
+  },
+  "summary": {
+    "totalChecks": 5,
+    "passed": 2,
+    "failed": 2,
+    "warnings": 1,
+    "criticalIssues": 14,
+    "riskScore": 502
+  },
+  "audits": {
+    "dependencyAudit": {
+      "status": "failed",
+      "vulnerabilities": [
+        {
+          "package": "@inquirer/editor",
+          "severity": "low",
+          "range": "<=4.2.15",
+          "via": [
+            "external-editor"
+          ],
+          "fixAvailable": {
+            "name": "@stryker-mutator/core",
+            "version": "9.0.1",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "package": "@inquirer/prompts",
+          "severity": "low",
+          "range": "<=6.0.1",
+          "via": [
+            "@inquirer/editor"
+          ],
+          "fixAvailable": {
+            "name": "@stryker-mutator/core",
+            "version": "9.0.1",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "package": "@lhci/cli",
+          "severity": "low",
+          "range": "*",
+          "via": [
+            "@lhci/utils",
+            "inquirer",
+            "lighthouse",
+            "tmp"
+          ],
+          "fixAvailable": {
+            "name": "@lhci/cli",
+            "version": "0.1.0",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "package": "@lhci/utils",
+          "severity": "low",
+          "range": "0.11.0 - 0.14.0",
+          "via": [
+            "lighthouse"
+          ],
+          "fixAvailable": {
+            "name": "@lhci/cli",
+            "version": "0.1.0",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "package": "@puppeteer/browsers",
+          "severity": "high",
+          "range": "<=1.4.1",
+          "via": [
+            "tar-fs"
+          ],
+          "fixAvailable": {
+            "name": "@lhci/cli",
+            "version": "0.1.0",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "package": "@sentry/node",
+          "severity": "low",
+          "range": "4.0.0-beta.0 - 7.74.2-alpha.1",
+          "via": [
+            "cookie"
+          ],
+          "fixAvailable": {
+            "name": "@lhci/cli",
+            "version": "0.1.0",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "package": "@stryker-mutator/core",
+          "severity": "low",
+          "range": "8.3.0 - 8.7.1",
+          "via": [
+            "@inquirer/prompts"
+          ],
+          "fixAvailable": {
+            "name": "@stryker-mutator/core",
+            "version": "9.0.1",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "package": "@stryker-mutator/typescript-checker",
+          "severity": "low",
+          "range": "8.3.0 - 8.7.1",
+          "via": [
+            "@stryker-mutator/core"
+          ],
+          "fixAvailable": {
+            "name": "@stryker-mutator/typescript-checker",
+            "version": "9.0.1",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "package": "@stryker-mutator/vitest-runner",
+          "severity": "low",
+          "range": "8.3.0 - 8.7.1",
+          "via": [
+            "@stryker-mutator/core"
+          ],
+          "fixAvailable": {
+            "name": "@stryker-mutator/vitest-runner",
+            "version": "9.0.1",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "package": "@vitest/coverage-v8",
+          "severity": "moderate",
+          "range": "<=2.2.0-beta.2",
+          "via": [
+            "vitest"
+          ],
+          "fixAvailable": {
+            "name": "@vitest/coverage-v8",
+            "version": "3.2.4",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "package": "@vitest/mocker",
+          "severity": "moderate",
+          "range": "<=3.0.0-beta.4",
+          "via": [
+            "vite"
+          ],
+          "fixAvailable": {
+            "name": "vitest",
+            "version": "3.2.4",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "package": "cookie",
+          "severity": "low",
+          "range": "<0.7.0",
+          "via": [
+            {
+              "source": 1103907,
+              "name": "cookie",
+              "dependency": "cookie",
+              "title": "cookie accepts cookie name, path, and domain with out of bounds characters",
+              "url": "https://github.com/advisories/GHSA-pxg6-pf52-xh8x",
+              "severity": "low",
+              "cwe": [
+                "CWE-74"
+              ],
+              "cvss": {
+                "score": 0,
+                "vectorString": null
+              },
+              "range": "<0.7.0"
+            }
+          ],
+          "fixAvailable": {
+            "name": "@lhci/cli",
+            "version": "0.1.0",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "package": "esbuild",
+          "severity": "moderate",
+          "range": "<=0.24.2",
+          "via": [
+            {
+              "source": 1102341,
+              "name": "esbuild",
+              "dependency": "esbuild",
+              "title": "esbuild enables any website to send any requests to the development server and read the response",
+              "url": "https://github.com/advisories/GHSA-67mh-4wv8-2f99",
+              "severity": "moderate",
+              "cwe": [
+                "CWE-346"
+              ],
+              "cvss": {
+                "score": 5.3,
+                "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:N/A:N"
+              },
+              "range": "<=0.24.2"
+            }
+          ],
+          "fixAvailable": {
+            "name": "vitest",
+            "version": "3.2.4",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "package": "external-editor",
+          "severity": "low",
+          "range": ">=1.1.1",
+          "via": [
+            "tmp"
+          ],
+          "fixAvailable": {
+            "name": "@lhci/cli",
+            "version": "0.1.0",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "package": "inquirer",
+          "severity": "low",
+          "range": "3.0.0 - 8.2.6 || 9.0.0 - 9.3.7",
+          "via": [
+            "external-editor"
+          ],
+          "fixAvailable": {
+            "name": "@lhci/cli",
+            "version": "0.1.0",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "package": "lighthouse",
+          "severity": "high",
+          "range": "9.4.0-dev.20220216 - 12.2.1",
+          "via": [
+            "@sentry/node",
+            "puppeteer-core"
+          ],
+          "fixAvailable": {
+            "name": "@lhci/cli",
+            "version": "0.1.0",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "package": "puppeteer-core",
+          "severity": "high",
+          "range": "10.0.0 - 22.11.1",
+          "via": [
+            "@puppeteer/browsers",
+            "tar-fs",
+            "ws"
+          ],
+          "fixAvailable": {
+            "name": "@lhci/cli",
+            "version": "0.1.0",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "package": "tar-fs",
+          "severity": "high",
+          "range": "2.0.0 - 2.1.2",
+          "via": [
+            {
+              "source": 1104677,
+              "name": "tar-fs",
+              "dependency": "tar-fs",
+              "title": "tar-fs Vulnerable to Link Following and Path Traversal via Extracting a Crafted tar File",
+              "url": "https://github.com/advisories/GHSA-pq67-2wwv-3xjx",
+              "severity": "high",
+              "cwe": [
+                "CWE-22"
+              ],
+              "cvss": {
+                "score": 7.5,
+                "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N"
+              },
+              "range": ">=2.0.0 <2.1.2"
+            },
+            {
+              "source": 1106930,
+              "name": "tar-fs",
+              "dependency": "tar-fs",
+              "title": "tar-fs can extract outside the specified dir with a specific tarball",
+              "url": "https://github.com/advisories/GHSA-8cj5-5rvv-wf4v",
+              "severity": "high",
+              "cwe": [
+                "CWE-22"
+              ],
+              "cvss": {
+                "score": 0,
+                "vectorString": null
+              },
+              "range": ">=2.0.0 <2.1.3"
+            }
+          ],
+          "fixAvailable": {
+            "name": "@lhci/cli",
+            "version": "0.1.0",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "package": "tmp",
+          "severity": "low",
+          "range": "<=0.2.3",
+          "via": [
+            {
+              "source": 1106849,
+              "name": "tmp",
+              "dependency": "tmp",
+              "title": "tmp allows arbitrary temporary file / directory write via symbolic link `dir` parameter",
+              "url": "https://github.com/advisories/GHSA-52f5-9888-hmc6",
+              "severity": "low",
+              "cwe": [
+                "CWE-59"
+              ],
+              "cvss": {
+                "score": 2.5,
+                "vectorString": "CVSS:3.1/AV:L/AC:H/PR:L/UI:N/S:U/C:N/I:L/A:N"
+              },
+              "range": "<=0.2.3"
+            }
+          ],
+          "fixAvailable": {
+            "name": "@lhci/cli",
+            "version": "0.1.0",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "package": "vite",
+          "severity": "moderate",
+          "range": "0.11.0 - 6.1.6",
+          "via": [
+            "esbuild"
+          ],
+          "fixAvailable": {
+            "name": "vitest",
+            "version": "3.2.4",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "package": "vite-node",
+          "severity": "moderate",
+          "range": "<=2.2.0-beta.2",
+          "via": [
+            "vite"
+          ],
+          "fixAvailable": {
+            "name": "vitest",
+            "version": "3.2.4",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "package": "vitest",
+          "severity": "moderate",
+          "range": "0.0.1 - 0.0.12 || 0.0.29 - 0.0.122 || 0.3.3 - 3.0.0-beta.4",
+          "via": [
+            "@vitest/mocker",
+            "vite",
+            "vite-node"
+          ],
+          "fixAvailable": {
+            "name": "vitest",
+            "version": "3.2.4",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "package": "ws",
+          "severity": "high",
+          "range": "8.0.0 - 8.17.0",
+          "via": [
+            {
+              "source": 1098392,
+              "name": "ws",
+              "dependency": "ws",
+              "title": "ws affected by a DoS when handling a request with many HTTP headers",
+              "url": "https://github.com/advisories/GHSA-3h5v-q93c-6h6q",
+              "severity": "high",
+              "cwe": [
+                "CWE-476"
+              ],
+              "cvss": {
+                "score": 7.5,
+                "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+              },
+              "range": ">=8.0.0 <8.17.1"
+            }
+          ],
+          "fixAvailable": {
+            "name": "@lhci/cli",
+            "version": "0.1.0",
+            "isSemVerMajor": true
+          }
+        }
+      ],
+      "outdatedPackages": [
+        {
+          "package": "@babel/core",
+          "current": "7.25.9",
+          "wanted": "7.28.3",
+          "latest": "7.28.3",
+          "location": "/home/claudecode/work/ae-framework/node_modules/@babel/core"
+        },
+        {
+          "package": "@babel/preset-typescript",
+          "current": "7.24.7",
+          "wanted": "7.27.1",
+          "latest": "7.27.1",
+          "location": "/home/claudecode/work/ae-framework/node_modules/@babel/preset-typescript"
+        },
+        {
+          "package": "@cucumber/cucumber",
+          "current": "11.3.0",
+          "wanted": "11.3.0",
+          "latest": "12.1.0",
+          "location": "/home/claudecode/work/ae-framework/node_modules/@cucumber/cucumber"
+        },
+        {
+          "package": "@lhci/cli",
+          "current": "0.12.0",
+          "wanted": "0.12.0",
+          "latest": "0.15.1",
+          "location": "/home/claudecode/work/ae-framework/node_modules/@lhci/cli"
+        },
+        {
+          "package": "@modelcontextprotocol/sdk",
+          "current": "0.5.0",
+          "wanted": "0.5.0",
+          "latest": "1.17.3",
+          "location": "/home/claudecode/work/ae-framework/node_modules/@modelcontextprotocol/sdk"
+        },
+        {
+          "package": "@opentelemetry/api-logs",
+          "current": "0.52.1",
+          "wanted": "0.52.1",
+          "latest": "0.203.0",
+          "location": "/home/claudecode/work/ae-framework/node_modules/@opentelemetry/api-logs"
+        },
+        {
+          "package": "@opentelemetry/auto-instrumentations-node",
+          "current": "0.47.1",
+          "wanted": "0.47.1",
+          "latest": "0.62.1",
+          "location": "/home/claudecode/work/ae-framework/node_modules/@opentelemetry/auto-instrumentations-node"
+        },
+        {
+          "package": "@opentelemetry/exporter-metrics-otlp-grpc",
+          "current": "0.52.1",
+          "wanted": "0.52.1",
+          "latest": "0.203.0",
+          "location": "/home/claudecode/work/ae-framework/node_modules/@opentelemetry/exporter-metrics-otlp-grpc"
+        },
+        {
+          "package": "@opentelemetry/exporter-trace-otlp-grpc",
+          "current": "0.52.1",
+          "wanted": "0.52.1",
+          "latest": "0.203.0",
+          "location": "/home/claudecode/work/ae-framework/node_modules/@opentelemetry/exporter-trace-otlp-grpc"
+        },
+        {
+          "package": "@opentelemetry/resources",
+          "current": "1.30.1",
+          "wanted": "1.30.1",
+          "latest": "2.0.1",
+          "location": "/home/claudecode/work/ae-framework/node_modules/@opentelemetry/resources"
+        },
+        {
+          "package": "@opentelemetry/sdk-metrics",
+          "current": "1.30.1",
+          "wanted": "1.30.1",
+          "latest": "2.0.1",
+          "location": "/home/claudecode/work/ae-framework/node_modules/@opentelemetry/sdk-metrics"
+        },
+        {
+          "package": "@opentelemetry/sdk-node",
+          "current": "0.52.1",
+          "wanted": "0.52.1",
+          "latest": "0.203.0",
+          "location": "/home/claudecode/work/ae-framework/node_modules/@opentelemetry/sdk-node"
+        },
+        {
+          "package": "@playwright/test",
+          "current": "1.54.2",
+          "wanted": "1.55.0",
+          "latest": "1.55.0",
+          "location": "/home/claudecode/work/ae-framework/node_modules/@playwright/test"
+        },
+        {
+          "package": "@stryker-mutator/core",
+          "current": "8.7.1",
+          "wanted": "8.7.1",
+          "latest": "9.0.1",
+          "location": "/home/claudecode/work/ae-framework/node_modules/@stryker-mutator/core"
+        },
+        {
+          "package": "@stryker-mutator/typescript-checker",
+          "current": "8.7.1",
+          "wanted": "8.7.1",
+          "latest": "9.0.1",
+          "location": "/home/claudecode/work/ae-framework/node_modules/@stryker-mutator/typescript-checker"
+        },
+        {
+          "package": "@stryker-mutator/vitest-runner",
+          "current": "8.7.1",
+          "wanted": "8.7.1",
+          "latest": "9.0.1",
+          "location": "/home/claudecode/work/ae-framework/node_modules/@stryker-mutator/vitest-runner"
+        },
+        {
+          "package": "@types/handlebars",
+          "current": "4.1.0",
+          "wanted": "4.1.0",
+          "latest": "4.0.40",
+          "location": "/home/claudecode/work/ae-framework/node_modules/@types/handlebars"
+        },
+        {
+          "package": "@types/node",
+          "current": "22.17.1",
+          "wanted": "22.17.2",
+          "latest": "24.3.0",
+          "location": "/home/claudecode/work/ae-framework/node_modules/@types/node"
+        },
+        {
+          "package": "@typescript-eslint/eslint-plugin",
+          "current": "8.39.1",
+          "wanted": "8.40.0",
+          "latest": "8.40.0",
+          "location": "/home/claudecode/work/ae-framework/node_modules/@typescript-eslint/eslint-plugin"
+        },
+        {
+          "package": "@typescript-eslint/parser",
+          "current": "8.39.1",
+          "wanted": "8.40.0",
+          "latest": "8.40.0",
+          "location": "/home/claudecode/work/ae-framework/node_modules/@typescript-eslint/parser"
+        },
+        {
+          "package": "@vitest/coverage-v8",
+          "current": "2.1.9",
+          "wanted": "2.1.9",
+          "latest": "3.2.4",
+          "location": "/home/claudecode/work/ae-framework/node_modules/@vitest/coverage-v8"
+        },
+        {
+          "package": "ajv-formats",
+          "current": "3.0.1",
+          "wanted": "2.1.1",
+          "latest": "3.0.1",
+          "location": "/home/claudecode/work/ae-framework/node_modules/ajv-formats"
+        },
+        {
+          "package": "babel-jest",
+          "current": "29.7.0",
+          "wanted": "29.7.0",
+          "latest": "30.0.5",
+          "location": "/home/claudecode/work/ae-framework/node_modules/babel-jest"
+        },
+        {
+          "package": "chalk",
+          "current": "5.5.0",
+          "wanted": "5.6.0",
+          "latest": "5.6.0",
+          "location": "/home/claudecode/work/ae-framework/node_modules/chalk"
+        },
+        {
+          "package": "chromatic",
+          "current": "7.6.0",
+          "wanted": "7.6.0",
+          "latest": "13.1.3",
+          "location": "/home/claudecode/work/ae-framework/node_modules/chromatic"
+        },
+        {
+          "package": "commander",
+          "current": "12.1.0",
+          "wanted": "12.1.0",
+          "latest": "14.0.0",
+          "location": "/home/claudecode/work/ae-framework/node_modules/commander"
+        },
+        {
+          "package": "fast-check",
+          "current": "3.23.2",
+          "wanted": "3.23.2",
+          "latest": "4.2.0",
+          "location": "/home/claudecode/work/ae-framework/node_modules/fast-check"
+        },
+        {
+          "package": "fastify-openapi-glue",
+          "current": "4.9.1",
+          "wanted": "4.9.2",
+          "latest": "4.9.2",
+          "location": "/home/claudecode/work/ae-framework/node_modules/fastify-openapi-glue"
+        },
+        {
+          "package": "glob",
+          "current": "10.4.5",
+          "wanted": "10.4.5",
+          "latest": "11.0.3",
+          "location": "/home/claudecode/work/ae-framework/node_modules/glob"
+        },
+        {
+          "package": "jest",
+          "current": "29.7.0",
+          "wanted": "29.7.0",
+          "latest": "30.0.5",
+          "location": "/home/claudecode/work/ae-framework/node_modules/jest"
+        },
+        {
+          "package": "jest-axe",
+          "current": "8.0.0",
+          "wanted": "8.0.0",
+          "latest": "10.0.0",
+          "location": "/home/claudecode/work/ae-framework/node_modules/jest-axe"
+        },
+        {
+          "package": "jest-environment-jsdom",
+          "current": "29.7.0",
+          "wanted": "29.7.0",
+          "latest": "30.0.5",
+          "location": "/home/claudecode/work/ae-framework/node_modules/jest-environment-jsdom"
+        },
+        {
+          "package": "jsdom",
+          "current": "22.1.0",
+          "wanted": "22.1.0",
+          "latest": "26.1.0",
+          "location": "/home/claudecode/work/ae-framework/node_modules/jsdom"
+        },
+        {
+          "package": "nyc",
+          "current": "15.1.0",
+          "wanted": "15.1.0",
+          "latest": "17.1.0",
+          "location": "/home/claudecode/work/ae-framework/node_modules/nyc"
+        },
+        {
+          "package": "playwright",
+          "current": "1.54.2",
+          "wanted": "1.55.0",
+          "latest": "1.55.0",
+          "location": "/home/claudecode/work/ae-framework/node_modules/playwright"
+        },
+        {
+          "package": "vitest",
+          "current": "2.1.9",
+          "wanted": "2.1.9",
+          "latest": "3.2.4",
+          "location": "/home/claudecode/work/ae-framework/node_modules/vitest"
+        },
+        {
+          "package": "zod",
+          "current": "3.25.76",
+          "wanted": "3.25.76",
+          "latest": "4.0.17",
+          "location": "/home/claudecode/work/ae-framework/node_modules/zod"
+        }
+      ],
+      "recommendations": [
+        "Run 'npm audit fix' to automatically fix 23 vulnerabilities",
+        "Consider updating 37 outdated packages"
+      ],
+      "details": {
+        "npm": {
+          "auditReportVersion": 2,
+          "vulnerabilities": {
+            "@inquirer/editor": {
+              "name": "@inquirer/editor",
+              "severity": "low",
+              "isDirect": false,
+              "via": [
+                "external-editor"
+              ],
+              "effects": [
+                "@inquirer/prompts"
+              ],
+              "range": "<=4.2.15",
+              "nodes": [
+                "node_modules/@inquirer/editor"
+              ],
+              "fixAvailable": {
+                "name": "@stryker-mutator/core",
+                "version": "9.0.1",
+                "isSemVerMajor": true
+              }
+            },
+            "@inquirer/prompts": {
+              "name": "@inquirer/prompts",
+              "severity": "low",
+              "isDirect": false,
+              "via": [
+                "@inquirer/editor"
+              ],
+              "effects": [
+                "@stryker-mutator/core"
+              ],
+              "range": "<=6.0.1",
+              "nodes": [
+                "node_modules/@inquirer/prompts"
+              ],
+              "fixAvailable": {
+                "name": "@stryker-mutator/core",
+                "version": "9.0.1",
+                "isSemVerMajor": true
+              }
+            },
+            "@lhci/cli": {
+              "name": "@lhci/cli",
+              "severity": "low",
+              "isDirect": true,
+              "via": [
+                "@lhci/utils",
+                "inquirer",
+                "lighthouse",
+                "tmp"
+              ],
+              "effects": [],
+              "range": "*",
+              "nodes": [
+                "node_modules/@lhci/cli"
+              ],
+              "fixAvailable": {
+                "name": "@lhci/cli",
+                "version": "0.1.0",
+                "isSemVerMajor": true
+              }
+            },
+            "@lhci/utils": {
+              "name": "@lhci/utils",
+              "severity": "low",
+              "isDirect": false,
+              "via": [
+                "lighthouse"
+              ],
+              "effects": [
+                "@lhci/cli"
+              ],
+              "range": "0.11.0 - 0.14.0",
+              "nodes": [
+                "node_modules/@lhci/utils"
+              ],
+              "fixAvailable": {
+                "name": "@lhci/cli",
+                "version": "0.1.0",
+                "isSemVerMajor": true
+              }
+            },
+            "@puppeteer/browsers": {
+              "name": "@puppeteer/browsers",
+              "severity": "high",
+              "isDirect": false,
+              "via": [
+                "tar-fs"
+              ],
+              "effects": [
+                "puppeteer-core"
+              ],
+              "range": "<=1.4.1",
+              "nodes": [
+                "node_modules/@puppeteer/browsers"
+              ],
+              "fixAvailable": {
+                "name": "@lhci/cli",
+                "version": "0.1.0",
+                "isSemVerMajor": true
+              }
+            },
+            "@sentry/node": {
+              "name": "@sentry/node",
+              "severity": "low",
+              "isDirect": false,
+              "via": [
+                "cookie"
+              ],
+              "effects": [
+                "lighthouse"
+              ],
+              "range": "4.0.0-beta.0 - 7.74.2-alpha.1",
+              "nodes": [
+                "node_modules/@sentry/node"
+              ],
+              "fixAvailable": {
+                "name": "@lhci/cli",
+                "version": "0.1.0",
+                "isSemVerMajor": true
+              }
+            },
+            "@stryker-mutator/core": {
+              "name": "@stryker-mutator/core",
+              "severity": "low",
+              "isDirect": true,
+              "via": [
+                "@inquirer/prompts"
+              ],
+              "effects": [
+                "@stryker-mutator/typescript-checker",
+                "@stryker-mutator/vitest-runner"
+              ],
+              "range": "8.3.0 - 8.7.1",
+              "nodes": [
+                "node_modules/@stryker-mutator/core"
+              ],
+              "fixAvailable": {
+                "name": "@stryker-mutator/core",
+                "version": "9.0.1",
+                "isSemVerMajor": true
+              }
+            },
+            "@stryker-mutator/typescript-checker": {
+              "name": "@stryker-mutator/typescript-checker",
+              "severity": "low",
+              "isDirect": true,
+              "via": [
+                "@stryker-mutator/core"
+              ],
+              "effects": [],
+              "range": "8.3.0 - 8.7.1",
+              "nodes": [
+                "node_modules/@stryker-mutator/typescript-checker"
+              ],
+              "fixAvailable": {
+                "name": "@stryker-mutator/typescript-checker",
+                "version": "9.0.1",
+                "isSemVerMajor": true
+              }
+            },
+            "@stryker-mutator/vitest-runner": {
+              "name": "@stryker-mutator/vitest-runner",
+              "severity": "low",
+              "isDirect": true,
+              "via": [
+                "@stryker-mutator/core"
+              ],
+              "effects": [],
+              "range": "8.3.0 - 8.7.1",
+              "nodes": [
+                "node_modules/@stryker-mutator/vitest-runner"
+              ],
+              "fixAvailable": {
+                "name": "@stryker-mutator/vitest-runner",
+                "version": "9.0.1",
+                "isSemVerMajor": true
+              }
+            },
+            "@vitest/coverage-v8": {
+              "name": "@vitest/coverage-v8",
+              "severity": "moderate",
+              "isDirect": true,
+              "via": [
+                "vitest"
+              ],
+              "effects": [],
+              "range": "<=2.2.0-beta.2",
+              "nodes": [
+                "node_modules/@vitest/coverage-v8"
+              ],
+              "fixAvailable": {
+                "name": "@vitest/coverage-v8",
+                "version": "3.2.4",
+                "isSemVerMajor": true
+              }
+            },
+            "@vitest/mocker": {
+              "name": "@vitest/mocker",
+              "severity": "moderate",
+              "isDirect": false,
+              "via": [
+                "vite"
+              ],
+              "effects": [
+                "vitest"
+              ],
+              "range": "<=3.0.0-beta.4",
+              "nodes": [
+                "node_modules/@vitest/mocker"
+              ],
+              "fixAvailable": {
+                "name": "vitest",
+                "version": "3.2.4",
+                "isSemVerMajor": true
+              }
+            },
+            "cookie": {
+              "name": "cookie",
+              "severity": "low",
+              "isDirect": false,
+              "via": [
+                {
+                  "source": 1103907,
+                  "name": "cookie",
+                  "dependency": "cookie",
+                  "title": "cookie accepts cookie name, path, and domain with out of bounds characters",
+                  "url": "https://github.com/advisories/GHSA-pxg6-pf52-xh8x",
+                  "severity": "low",
+                  "cwe": [
+                    "CWE-74"
+                  ],
+                  "cvss": {
+                    "score": 0,
+                    "vectorString": null
+                  },
+                  "range": "<0.7.0"
+                }
+              ],
+              "effects": [
+                "@sentry/node"
+              ],
+              "range": "<0.7.0",
+              "nodes": [
+                "node_modules/@sentry/node/node_modules/cookie"
+              ],
+              "fixAvailable": {
+                "name": "@lhci/cli",
+                "version": "0.1.0",
+                "isSemVerMajor": true
+              }
+            },
+            "esbuild": {
+              "name": "esbuild",
+              "severity": "moderate",
+              "isDirect": false,
+              "via": [
+                {
+                  "source": 1102341,
+                  "name": "esbuild",
+                  "dependency": "esbuild",
+                  "title": "esbuild enables any website to send any requests to the development server and read the response",
+                  "url": "https://github.com/advisories/GHSA-67mh-4wv8-2f99",
+                  "severity": "moderate",
+                  "cwe": [
+                    "CWE-346"
+                  ],
+                  "cvss": {
+                    "score": 5.3,
+                    "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:N/A:N"
+                  },
+                  "range": "<=0.24.2"
+                }
+              ],
+              "effects": [
+                "vite"
+              ],
+              "range": "<=0.24.2",
+              "nodes": [
+                "node_modules/vite/node_modules/esbuild"
+              ],
+              "fixAvailable": {
+                "name": "vitest",
+                "version": "3.2.4",
+                "isSemVerMajor": true
+              }
+            },
+            "external-editor": {
+              "name": "external-editor",
+              "severity": "low",
+              "isDirect": false,
+              "via": [
+                "tmp"
+              ],
+              "effects": [
+                "@inquirer/editor",
+                "inquirer"
+              ],
+              "range": ">=1.1.1",
+              "nodes": [
+                "node_modules/external-editor"
+              ],
+              "fixAvailable": {
+                "name": "@lhci/cli",
+                "version": "0.1.0",
+                "isSemVerMajor": true
+              }
+            },
+            "inquirer": {
+              "name": "inquirer",
+              "severity": "low",
+              "isDirect": false,
+              "via": [
+                "external-editor"
+              ],
+              "effects": [
+                "@lhci/cli"
+              ],
+              "range": "3.0.0 - 8.2.6 || 9.0.0 - 9.3.7",
+              "nodes": [
+                "node_modules/inquirer"
+              ],
+              "fixAvailable": {
+                "name": "@lhci/cli",
+                "version": "0.1.0",
+                "isSemVerMajor": true
+              }
+            },
+            "lighthouse": {
+              "name": "lighthouse",
+              "severity": "high",
+              "isDirect": false,
+              "via": [
+                "@sentry/node",
+                "puppeteer-core"
+              ],
+              "effects": [
+                "@lhci/cli",
+                "@lhci/utils"
+              ],
+              "range": "9.4.0-dev.20220216 - 12.2.1",
+              "nodes": [
+                "node_modules/lighthouse"
+              ],
+              "fixAvailable": {
+                "name": "@lhci/cli",
+                "version": "0.1.0",
+                "isSemVerMajor": true
+              }
+            },
+            "puppeteer-core": {
+              "name": "puppeteer-core",
+              "severity": "high",
+              "isDirect": false,
+              "via": [
+                "@puppeteer/browsers",
+                "tar-fs",
+                "ws"
+              ],
+              "effects": [
+                "lighthouse"
+              ],
+              "range": "10.0.0 - 22.11.1",
+              "nodes": [
+                "node_modules/puppeteer-core"
+              ],
+              "fixAvailable": {
+                "name": "@lhci/cli",
+                "version": "0.1.0",
+                "isSemVerMajor": true
+              }
+            },
+            "tar-fs": {
+              "name": "tar-fs",
+              "severity": "high",
+              "isDirect": false,
+              "via": [
+                {
+                  "source": 1104677,
+                  "name": "tar-fs",
+                  "dependency": "tar-fs",
+                  "title": "tar-fs Vulnerable to Link Following and Path Traversal via Extracting a Crafted tar File",
+                  "url": "https://github.com/advisories/GHSA-pq67-2wwv-3xjx",
+                  "severity": "high",
+                  "cwe": [
+                    "CWE-22"
+                  ],
+                  "cvss": {
+                    "score": 7.5,
+                    "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N"
+                  },
+                  "range": ">=2.0.0 <2.1.2"
+                },
+                {
+                  "source": 1106930,
+                  "name": "tar-fs",
+                  "dependency": "tar-fs",
+                  "title": "tar-fs can extract outside the specified dir with a specific tarball",
+                  "url": "https://github.com/advisories/GHSA-8cj5-5rvv-wf4v",
+                  "severity": "high",
+                  "cwe": [
+                    "CWE-22"
+                  ],
+                  "cvss": {
+                    "score": 0,
+                    "vectorString": null
+                  },
+                  "range": ">=2.0.0 <2.1.3"
+                }
+              ],
+              "effects": [
+                "@puppeteer/browsers",
+                "puppeteer-core"
+              ],
+              "range": "2.0.0 - 2.1.2",
+              "nodes": [
+                "node_modules/tar-fs"
+              ],
+              "fixAvailable": {
+                "name": "@lhci/cli",
+                "version": "0.1.0",
+                "isSemVerMajor": true
+              }
+            },
+            "tmp": {
+              "name": "tmp",
+              "severity": "low",
+              "isDirect": false,
+              "via": [
+                {
+                  "source": 1106849,
+                  "name": "tmp",
+                  "dependency": "tmp",
+                  "title": "tmp allows arbitrary temporary file / directory write via symbolic link `dir` parameter",
+                  "url": "https://github.com/advisories/GHSA-52f5-9888-hmc6",
+                  "severity": "low",
+                  "cwe": [
+                    "CWE-59"
+                  ],
+                  "cvss": {
+                    "score": 2.5,
+                    "vectorString": "CVSS:3.1/AV:L/AC:H/PR:L/UI:N/S:U/C:N/I:L/A:N"
+                  },
+                  "range": "<=0.2.3"
+                }
+              ],
+              "effects": [
+                "@lhci/cli",
+                "external-editor"
+              ],
+              "range": "<=0.2.3",
+              "nodes": [
+                "node_modules/@lhci/cli/node_modules/tmp",
+                "node_modules/tmp"
+              ],
+              "fixAvailable": {
+                "name": "@lhci/cli",
+                "version": "0.1.0",
+                "isSemVerMajor": true
+              }
+            },
+            "vite": {
+              "name": "vite",
+              "severity": "moderate",
+              "isDirect": false,
+              "via": [
+                "esbuild"
+              ],
+              "effects": [
+                "@vitest/mocker",
+                "vite-node",
+                "vitest"
+              ],
+              "range": "0.11.0 - 6.1.6",
+              "nodes": [
+                "node_modules/vite"
+              ],
+              "fixAvailable": {
+                "name": "vitest",
+                "version": "3.2.4",
+                "isSemVerMajor": true
+              }
+            },
+            "vite-node": {
+              "name": "vite-node",
+              "severity": "moderate",
+              "isDirect": false,
+              "via": [
+                "vite"
+              ],
+              "effects": [
+                "vitest"
+              ],
+              "range": "<=2.2.0-beta.2",
+              "nodes": [
+                "node_modules/vite-node"
+              ],
+              "fixAvailable": {
+                "name": "vitest",
+                "version": "3.2.4",
+                "isSemVerMajor": true
+              }
+            },
+            "vitest": {
+              "name": "vitest",
+              "severity": "moderate",
+              "isDirect": true,
+              "via": [
+                "@vitest/mocker",
+                "vite",
+                "vite-node"
+              ],
+              "effects": [
+                "@vitest/coverage-v8"
+              ],
+              "range": "0.0.1 - 0.0.12 || 0.0.29 - 0.0.122 || 0.3.3 - 3.0.0-beta.4",
+              "nodes": [
+                "node_modules/vitest"
+              ],
+              "fixAvailable": {
+                "name": "vitest",
+                "version": "3.2.4",
+                "isSemVerMajor": true
+              }
+            },
+            "ws": {
+              "name": "ws",
+              "severity": "high",
+              "isDirect": false,
+              "via": [
+                {
+                  "source": 1098392,
+                  "name": "ws",
+                  "dependency": "ws",
+                  "title": "ws affected by a DoS when handling a request with many HTTP headers",
+                  "url": "https://github.com/advisories/GHSA-3h5v-q93c-6h6q",
+                  "severity": "high",
+                  "cwe": [
+                    "CWE-476"
+                  ],
+                  "cvss": {
+                    "score": 7.5,
+                    "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                  },
+                  "range": ">=8.0.0 <8.17.1"
+                }
+              ],
+              "effects": [
+                "puppeteer-core"
+              ],
+              "range": "8.0.0 - 8.17.0",
+              "nodes": [
+                "node_modules/puppeteer-core/node_modules/ws"
+              ],
+              "fixAvailable": {
+                "name": "@lhci/cli",
+                "version": "0.1.0",
+                "isSemVerMajor": true
+              }
+            }
+          },
+          "metadata": {
+            "vulnerabilities": {
+              "info": 0,
+              "low": 12,
+              "moderate": 6,
+              "high": 5,
+              "critical": 0,
+              "total": 23
+            },
+            "dependencies": {
+              "prod": 315,
+              "dev": 1125,
+              "optional": 78,
+              "peer": 0,
+              "peerOptional": 0,
+              "total": 1442
+            }
+          }
+        },
+        "outdated": {
+          "@babel/core": {
+            "current": "7.25.9",
+            "wanted": "7.28.3",
+            "latest": "7.28.3",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/@babel/core"
+          },
+          "@babel/preset-typescript": {
+            "current": "7.24.7",
+            "wanted": "7.27.1",
+            "latest": "7.27.1",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/@babel/preset-typescript"
+          },
+          "@cucumber/cucumber": {
+            "current": "11.3.0",
+            "wanted": "11.3.0",
+            "latest": "12.1.0",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/@cucumber/cucumber"
+          },
+          "@lhci/cli": {
+            "current": "0.12.0",
+            "wanted": "0.12.0",
+            "latest": "0.15.1",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/@lhci/cli"
+          },
+          "@modelcontextprotocol/sdk": {
+            "current": "0.5.0",
+            "wanted": "0.5.0",
+            "latest": "1.17.3",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/@modelcontextprotocol/sdk"
+          },
+          "@opentelemetry/api-logs": {
+            "current": "0.52.1",
+            "wanted": "0.52.1",
+            "latest": "0.203.0",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/@opentelemetry/api-logs"
+          },
+          "@opentelemetry/auto-instrumentations-node": {
+            "current": "0.47.1",
+            "wanted": "0.47.1",
+            "latest": "0.62.1",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/@opentelemetry/auto-instrumentations-node"
+          },
+          "@opentelemetry/exporter-metrics-otlp-grpc": {
+            "current": "0.52.1",
+            "wanted": "0.52.1",
+            "latest": "0.203.0",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/@opentelemetry/exporter-metrics-otlp-grpc"
+          },
+          "@opentelemetry/exporter-trace-otlp-grpc": {
+            "current": "0.52.1",
+            "wanted": "0.52.1",
+            "latest": "0.203.0",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/@opentelemetry/exporter-trace-otlp-grpc"
+          },
+          "@opentelemetry/resources": {
+            "current": "1.30.1",
+            "wanted": "1.30.1",
+            "latest": "2.0.1",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/@opentelemetry/resources"
+          },
+          "@opentelemetry/sdk-metrics": {
+            "current": "1.30.1",
+            "wanted": "1.30.1",
+            "latest": "2.0.1",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/@opentelemetry/sdk-metrics"
+          },
+          "@opentelemetry/sdk-node": {
+            "current": "0.52.1",
+            "wanted": "0.52.1",
+            "latest": "0.203.0",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/@opentelemetry/sdk-node"
+          },
+          "@playwright/test": {
+            "current": "1.54.2",
+            "wanted": "1.55.0",
+            "latest": "1.55.0",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/@playwright/test"
+          },
+          "@stryker-mutator/core": {
+            "current": "8.7.1",
+            "wanted": "8.7.1",
+            "latest": "9.0.1",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/@stryker-mutator/core"
+          },
+          "@stryker-mutator/typescript-checker": {
+            "current": "8.7.1",
+            "wanted": "8.7.1",
+            "latest": "9.0.1",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/@stryker-mutator/typescript-checker"
+          },
+          "@stryker-mutator/vitest-runner": {
+            "current": "8.7.1",
+            "wanted": "8.7.1",
+            "latest": "9.0.1",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/@stryker-mutator/vitest-runner"
+          },
+          "@types/handlebars": {
+            "current": "4.1.0",
+            "wanted": "4.1.0",
+            "latest": "4.0.40",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/@types/handlebars"
+          },
+          "@types/node": {
+            "current": "22.17.1",
+            "wanted": "22.17.2",
+            "latest": "24.3.0",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/@types/node"
+          },
+          "@typescript-eslint/eslint-plugin": {
+            "current": "8.39.1",
+            "wanted": "8.40.0",
+            "latest": "8.40.0",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/@typescript-eslint/eslint-plugin"
+          },
+          "@typescript-eslint/parser": {
+            "current": "8.39.1",
+            "wanted": "8.40.0",
+            "latest": "8.40.0",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/@typescript-eslint/parser"
+          },
+          "@vitest/coverage-v8": {
+            "current": "2.1.9",
+            "wanted": "2.1.9",
+            "latest": "3.2.4",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/@vitest/coverage-v8"
+          },
+          "ajv-formats": {
+            "current": "3.0.1",
+            "wanted": "2.1.1",
+            "latest": "3.0.1",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/ajv-formats"
+          },
+          "babel-jest": {
+            "current": "29.7.0",
+            "wanted": "29.7.0",
+            "latest": "30.0.5",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/babel-jest"
+          },
+          "chalk": {
+            "current": "5.5.0",
+            "wanted": "5.6.0",
+            "latest": "5.6.0",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/chalk"
+          },
+          "chromatic": {
+            "current": "7.6.0",
+            "wanted": "7.6.0",
+            "latest": "13.1.3",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/chromatic"
+          },
+          "commander": {
+            "current": "12.1.0",
+            "wanted": "12.1.0",
+            "latest": "14.0.0",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/commander"
+          },
+          "fast-check": {
+            "current": "3.23.2",
+            "wanted": "3.23.2",
+            "latest": "4.2.0",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/fast-check"
+          },
+          "fastify-openapi-glue": {
+            "current": "4.9.1",
+            "wanted": "4.9.2",
+            "latest": "4.9.2",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/fastify-openapi-glue"
+          },
+          "glob": {
+            "current": "10.4.5",
+            "wanted": "10.4.5",
+            "latest": "11.0.3",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/glob"
+          },
+          "jest": {
+            "current": "29.7.0",
+            "wanted": "29.7.0",
+            "latest": "30.0.5",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/jest"
+          },
+          "jest-axe": {
+            "current": "8.0.0",
+            "wanted": "8.0.0",
+            "latest": "10.0.0",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/jest-axe"
+          },
+          "jest-environment-jsdom": {
+            "current": "29.7.0",
+            "wanted": "29.7.0",
+            "latest": "30.0.5",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/jest-environment-jsdom"
+          },
+          "jsdom": {
+            "current": "22.1.0",
+            "wanted": "22.1.0",
+            "latest": "26.1.0",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/jsdom"
+          },
+          "nyc": {
+            "current": "15.1.0",
+            "wanted": "15.1.0",
+            "latest": "17.1.0",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/nyc"
+          },
+          "playwright": {
+            "current": "1.54.2",
+            "wanted": "1.55.0",
+            "latest": "1.55.0",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/playwright"
+          },
+          "vitest": {
+            "current": "2.1.9",
+            "wanted": "2.1.9",
+            "latest": "3.2.4",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/vitest"
+          },
+          "zod": {
+            "current": "3.25.76",
+            "wanted": "3.25.76",
+            "latest": "4.0.17",
+            "dependent": "ae-framework",
+            "location": "/home/claudecode/work/ae-framework/node_modules/zod"
+          }
+        }
+      }
+    },
+    "secretsScanning": {
+      "status": "warning",
+      "findings": [
+        {
+          "file": "compose.yaml",
+          "line": 8,
+          "type": "Database URLs",
+          "severity": "high",
+          "preview": "postgres://app:app@db:5432/app",
+          "recommendation": "Use environment variables for connection strings"
+        }
+      ],
+      "patterns": [
+        {
+          "name": "API Keys",
+          "severity": "high"
+        },
+        {
+          "name": "AWS Access Keys",
+          "severity": "critical"
+        },
+        {
+          "name": "Private Keys",
+          "severity": "critical"
+        },
+        {
+          "name": "Database URLs",
+          "severity": "high"
+        },
+        {
+          "name": "JWT Tokens",
+          "severity": "medium"
+        },
+        {
+          "name": "Generic Secrets",
+          "severity": "medium"
+        }
+      ],
+      "recommendations": [
+        "Remove hardcoded secrets and use environment variables",
+        "Implement proper secrets management (e.g., Azure Key Vault, AWS Secrets Manager)",
+        "Add secrets scanning to pre-commit hooks"
+      ],
+      "details": {}
+    },
+    "complianceCheck": {
+      "status": "passed",
+      "policies": [
+        "SECURITY.md",
+        "CONTRIBUTING.md"
+      ],
+      "violations": [
+        {
+          "type": "Missing Security Configuration Files",
+          "severity": "medium",
+          "description": "Missing files: .npmignore",
+          "recommendation": "Create proper ignore files to prevent sensitive data exposure"
+        }
+      ],
+      "recommendations": [
+        "Create proper ignore files to prevent sensitive data exposure"
+      ],
+      "details": {
+        "securityScripts": [
+          "package:audit",
+          "security:analyze",
+          "security:secrets",
+          "security:audit",
+          "security:integrated",
+          "security:integrated:quick",
+          "security:integrated:full",
+          "security:integrated:compliance",
+          "security:full",
+          "verify:security",
+          "security:test-headers",
+          "security:check-headers",
+          "security:scan",
+          "security:config"
+        ],
+        "opa": {
+          "violations": [],
+          "policies_evaluated": 0,
+          "components_checked": 0,
+          "timestamp": "2025-08-17T23:42:20.650Z"
+        }
+      }
+    },
+    "vulnerabilityAssessment": {
+      "status": "failed",
+      "vulnerabilities": [
+        {
+          "file": "scripts/failure-visualization.js",
+          "line": 513,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "scripts/failure-visualization.js",
+          "line": 513,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "scripts/doctest.ts",
+          "line": 246,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "scripts/diff-generate.ts",
+          "line": 331,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "scripts/diff-generate.ts",
+          "line": 331,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "scripts/diff-generate.ts",
+          "line": 331,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "scripts/diff-generate.ts",
+          "line": 331,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "scripts/diff-generate.ts",
+          "line": 331,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "scripts/diff-generate.ts",
+          "line": 331,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "scripts/diff-generate.ts",
+          "line": 331,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "scripts/diff-generate.ts",
+          "line": 331,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "scripts/diff-generate.ts",
+          "line": 331,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "scripts/diff-generate.ts",
+          "line": 331,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "tests/utils/evidence-validator.test.ts",
+          "line": 108,
+          "type": "Eval Usage",
+          "severity": "critical",
+          "category": "code-injection",
+          "preview": "eval(",
+          "recommendation": "Avoid eval() and similar functions, use safer alternatives"
+        },
+        {
+          "file": "tests/property/reservation.pbt.test.ts",
+          "line": 212,
+          "type": "Hardcoded Crypto",
+          "severity": "medium",
+          "category": "crypto",
+          "preview": "createHash('sha256'",
+          "recommendation": "Use well-established cryptographic libraries and standards"
+        },
+        {
+          "file": "tests/optimization/system-integration.test.ts",
+          "line": 328,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "tests/optimization/performance-benchmarks.test.ts",
+          "line": 91,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "tests/optimization/performance-benchmarks.test.ts",
+          "line": 91,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "tests/optimization/performance-benchmarks.test.ts",
+          "line": 91,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "tests/optimization/parallel.test.ts",
+          "line": 484,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "tests/optimization/parallel.test.ts",
+          "line": 484,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "tests/optimization/parallel.test.ts",
+          "line": 484,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "tests/golden/codegen-snapshot.test.ts",
+          "line": 11,
+          "type": "Hardcoded Crypto",
+          "severity": "medium",
+          "category": "crypto",
+          "preview": "createHash } from 'crypto'",
+          "recommendation": "Use well-established cryptographic libraries and standards"
+        },
+        {
+          "file": "tests/conformance/verification-engine.test.ts",
+          "line": 421,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "tests/contracts/prompt-validation.test.ts",
+          "line": 343,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "tests/contracts/prompt-validation.test.ts",
+          "line": 343,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "tests/cli/fuzz.spec.ts",
+          "line": 49,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "tests/cli/fuzz.spec.ts",
+          "line": 49,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "tests/cli/fuzz.spec.ts",
+          "line": 49,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "tests/cli/fuzz.spec.ts",
+          "line": 49,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "tests/cli/fuzz.spec.ts",
+          "line": 49,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "tests/cli/fuzz.spec.ts",
+          "line": 49,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "tests/cli/fuzz.spec.ts",
+          "line": 49,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "tests/cli/fuzz.spec.ts",
+          "line": 49,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "tests/cli/fuzz.spec.ts",
+          "line": 49,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/utils/token-optimizer.ts",
+          "line": 373,
+          "type": "Hardcoded Crypto",
+          "severity": "medium",
+          "category": "crypto",
+          "preview": "createHash('sha256'",
+          "recommendation": "Use well-established cryptographic libraries and standards"
+        },
+        {
+          "file": "src/utils/evidence-validator.ts",
+          "line": 734,
+          "type": "Eval Usage",
+          "severity": "critical",
+          "category": "code-injection",
+          "preview": "eval(",
+          "recommendation": "Avoid eval() and similar functions, use safer alternatives"
+        },
+        {
+          "file": "src/utils/evidence-validator.ts",
+          "line": 734,
+          "type": "Eval Usage",
+          "severity": "critical",
+          "category": "code-injection",
+          "preview": "eval(",
+          "recommendation": "Avoid eval() and similar functions, use safer alternatives"
+        },
+        {
+          "file": "src/utils/enhanced-state-manager.ts",
+          "line": 5,
+          "type": "Hardcoded Crypto",
+          "severity": "medium",
+          "category": "crypto",
+          "preview": "createHash } from 'crypto'",
+          "recommendation": "Use well-established cryptographic libraries and standards"
+        },
+        {
+          "file": "src/utils/circuit-breaker.ts",
+          "line": 2,
+          "type": "Hardcoded Crypto",
+          "severity": "medium",
+          "category": "crypto",
+          "preview": "createHash } from 'crypto'",
+          "recommendation": "Use well-established cryptographic libraries and standards"
+        },
+        {
+          "file": "src/testing/visual-regression.ts",
+          "line": 584,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/testing/visual-regression.ts",
+          "line": 584,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/testing/visual-regression.ts",
+          "line": 584,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/testing/visual-regression.ts",
+          "line": 584,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/testing/visual-regression.ts",
+          "line": 584,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/testing/visual-regression.ts",
+          "line": 584,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/testing/visual-regression.ts",
+          "line": 584,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/testing/playwright-integration.ts",
+          "line": 317,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/testing/playwright-integration.ts",
+          "line": 317,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/testing/playwright-integration.ts",
+          "line": 317,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/telemetry/runtime-guards.ts",
+          "line": 219,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/telemetry/runtime-guards.ts",
+          "line": 219,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/telemetry/runtime-guards.ts",
+          "line": 219,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/telemetry/enhanced-telemetry.ts",
+          "line": 231,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/services/persona-integration.ts",
+          "line": 178,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/security/sbom-generator.ts",
+          "line": 417,
+          "type": "Hardcoded Crypto",
+          "severity": "medium",
+          "category": "crypto",
+          "preview": "createHash('sha256').update(content).digest('hex'",
+          "recommendation": "Use well-established cryptographic libraries and standards"
+        },
+        {
+          "file": "src/resilience/backoff-strategies.ts",
+          "line": 110,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/resilience/backoff-strategies.ts",
+          "line": 110,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/resilience/backoff-strategies.ts",
+          "line": 110,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/conformance/rule-engine.ts",
+          "line": 686,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/conformance/rule-engine.ts",
+          "line": 686,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/codegen/drift-detector.ts",
+          "line": 6,
+          "type": "Hardcoded Crypto",
+          "severity": "medium",
+          "category": "crypto",
+          "preview": "createHash } from 'crypto'",
+          "recommendation": "Use well-established cryptographic libraries and standards"
+        },
+        {
+          "file": "src/codegen/deterministic-generator.ts",
+          "line": 6,
+          "type": "Hardcoded Crypto",
+          "severity": "medium",
+          "category": "crypto",
+          "preview": "createHash } from 'crypto'",
+          "recommendation": "Use well-established cryptographic libraries and standards"
+        },
+        {
+          "file": "src/cli/resilience-cli.ts",
+          "line": 219,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/cli/resilience-cli.ts",
+          "line": 219,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/cli/conformance-cli.ts",
+          "line": 653,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/cli/circuit-breaker-cli.ts",
+          "line": 207,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/cli/ae-fix-cli.ts",
+          "line": 336,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/api/server.ts",
+          "line": 15,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/agents/verify-agent.ts",
+          "line": 1004,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/agents/operate-agent.ts",
+          "line": 535,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/agents/operate-agent.ts",
+          "line": 535,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/agents/operate-agent.ts",
+          "line": 535,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/agents/operate-agent.ts",
+          "line": 535,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/agents/formal-agent.ts",
+          "line": 453,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/agents/formal-agent.ts",
+          "line": 453,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/services/container/container-manager.ts",
+          "line": 221,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/optimization/monitoring/performance-monitor.ts",
+          "line": 488,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/optimization/monitoring/performance-monitor.ts",
+          "line": 488,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/optimization/monitoring/performance-monitor.ts",
+          "line": 488,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/optimization/monitoring/performance-monitor.ts",
+          "line": 488,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/optimization/monitoring/demo.ts",
+          "line": 117,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/optimization/monitoring/demo.ts",
+          "line": 117,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/optimization/monitoring/demo.ts",
+          "line": 117,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/optimization/parallel/resource-pool.ts",
+          "line": 872,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/optimization/parallel/resource-pool.ts",
+          "line": 872,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/optimization/parallel/parallel-optimizer.ts",
+          "line": 447,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/optimization/parallel/parallel-optimizer.ts",
+          "line": 447,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/optimization/parallel/parallel-optimizer.ts",
+          "line": 447,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/optimization/parallel/demo.ts",
+          "line": 287,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/optimization/parallel/demo.ts",
+          "line": 287,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/optimization/parallel/demo.ts",
+          "line": 287,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/integration/runners/api-runner.ts",
+          "line": 384,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/inference/strategies/sequential-strategy.ts",
+          "line": 339,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/inference/strategies/parallel-strategy.ts",
+          "line": 170,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/inference/strategies/parallel-strategy.ts",
+          "line": 170,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/inference/strategies/parallel-strategy.ts",
+          "line": 170,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/inference/strategies/parallel-strategy.ts",
+          "line": 170,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/inference/strategies/parallel-strategy.ts",
+          "line": 170,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/inference/strategies/parallel-strategy.ts",
+          "line": 170,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/inference/strategies/parallel-strategy.ts",
+          "line": 170,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/inference/strategies/parallel-strategy.ts",
+          "line": 170,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/inference/core/validation-orchestrator.ts",
+          "line": 174,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/inference/core/validation-orchestrator.ts",
+          "line": 174,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/inference/core/reasoning-engine.ts",
+          "line": 220,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        },
+        {
+          "file": "src/commands/extended/improve-command-unified.ts",
+          "line": 295,
+          "type": "Eval Usage",
+          "severity": "critical",
+          "category": "code-injection",
+          "preview": "eval(",
+          "recommendation": "Avoid eval() and similar functions, use safer alternatives"
+        },
+        {
+          "file": "src/commands/extended/improve-command-unified.ts",
+          "line": 295,
+          "type": "Eval Usage",
+          "severity": "critical",
+          "category": "code-injection",
+          "preview": "eval(",
+          "recommendation": "Avoid eval() and similar functions, use safer alternatives"
+        },
+        {
+          "file": "src/commands/extended/improve-command-unified.ts",
+          "line": 295,
+          "type": "Eval Usage",
+          "severity": "critical",
+          "category": "code-injection",
+          "preview": "eval(",
+          "recommendation": "Avoid eval() and similar functions, use safer alternatives"
+        },
+        {
+          "file": "src/commands/extended/improve-command-unified.ts",
+          "line": 295,
+          "type": "Eval Usage",
+          "severity": "critical",
+          "category": "code-injection",
+          "preview": "eval(",
+          "recommendation": "Avoid eval() and similar functions, use safer alternatives"
+        },
+        {
+          "file": "src/commands/extended/analyze-command-unified.ts",
+          "line": 267,
+          "type": "Eval Usage",
+          "severity": "critical",
+          "category": "code-injection",
+          "preview": "eval(",
+          "recommendation": "Avoid eval() and similar functions, use safer alternatives"
+        },
+        {
+          "file": "src/commands/extended/analyze-command-unified.ts",
+          "line": 267,
+          "type": "Eval Usage",
+          "severity": "critical",
+          "category": "code-injection",
+          "preview": "eval(",
+          "recommendation": "Avoid eval() and similar functions, use safer alternatives"
+        },
+        {
+          "file": "src/cli/metrics/MetricsCollector.ts",
+          "line": 221,
+          "type": "Insecure Randomness",
+          "severity": "medium",
+          "category": "weak-crypto",
+          "preview": "Math.random()",
+          "recommendation": "Use cryptographically secure random number generators"
+        }
+      ],
+      "riskScore": 502,
+      "recommendations": [
+        "Use cryptographically secure random number generators",
+        "Avoid eval() and similar functions, use safer alternatives",
+        "Use well-established cryptographic libraries and standards",
+        "Implement static code analysis tools in CI/CD pipeline",
+        "Conduct regular security code reviews"
+      ],
+      "details": {
+        "riskInterpretation": {
+          "level": "critical",
+          "description": "Critical security vulnerabilities require urgent remediation"
+        }
+      }
+    },
+    "codeAnalysis": {
+      "status": "passed",
+      "findings": [],
+      "metrics": {
+        "totalLines": 117433,
+        "totalFiles": 300,
+        "functionsCount": 852,
+        "complexFunctions": 0,
+        "averageLinesPerFile": 391
+      },
+      "recommendations": [
+        "Implement automated security testing in CI/CD",
+        "Regular code reviews with security focus"
+      ],
+      "details": {
+        "eslint": {
+          "error": "ESLint not available"
+        }
+      }
+    }
+  },
+  "recommendations": [
+    "Run 'npm audit fix' to automatically fix 23 vulnerabilities",
+    "Consider updating 37 outdated packages",
+    "Remove hardcoded secrets and use environment variables",
+    "Implement proper secrets management (e.g., Azure Key Vault, AWS Secrets Manager)",
+    "Add secrets scanning to pre-commit hooks",
+    "Create proper ignore files to prevent sensitive data exposure",
+    "Use cryptographically secure random number generators",
+    "Avoid eval() and similar functions, use safer alternatives",
+    "Use well-established cryptographic libraries and standards",
+    "Implement static code analysis tools in CI/CD pipeline",
+    "Conduct regular security code reviews",
+    "Implement automated security testing in CI/CD",
+    "Regular code reviews with security focus"
+  ],
+  "actionItems": [
+    {
+      "priority": "critical",
+      "action": "Address 14 critical security issues immediately",
+      "deadline": "Within 24 hours"
+    },
+    {
+      "priority": "high",
+      "action": "Fix 2 failed security checks",
+      "deadline": "Within 1 week"
+    },
+    {
+      "priority": "medium",
+      "action": "Review 1 security warnings",
+      "deadline": "Within 2 weeks"
+    },
+    {
+      "priority": "high",
+      "action": "Update vulnerable dependencies",
+      "deadline": "Within 3 days"
+    },
+    {
+      "priority": "critical",
+      "action": "Remove hardcoded secrets and rotate exposed credentials",
+      "deadline": "Immediately"
+    }
+  ]
+}
