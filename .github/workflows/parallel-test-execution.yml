@@ -55,15 +55,6 @@ jobs:
           mkdir -p reports
           mkdir -p logs
 
-      - name: Cache Docker layers
-        uses: actions/cache@v3
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ matrix.test-type }}-${{ hashFiles('**/Dockerfile.test') }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-${{ matrix.test-type }}-
-            ${{ runner.os }}-buildx-
-
       - name: Run ${{ matrix.test-type }} tests
         run: |
           echo "🚀 Starting ${{ matrix.test-type }} test suite..."
