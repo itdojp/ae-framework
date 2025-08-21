@@ -1,0 +1,50 @@
+{
+  "patterns": {
+    "timeoutKeywords": [
+      "timeout", "timed out", "exceeded", "hang", "hanging", 
+      "unresponsive", "deadlock", "infinite loop"
+    ],
+    "resourceKeywords": [
+      "memory", "leak", "handle", "worker", "process", "resource",
+      "allocation", "out of memory", "heap", "garbage collection"
+    ],
+    "concurrencyKeywords": [
+      "race", "concurrent", "parallel", "async", "synchronization",
+      "mutex", "semaphore", "atomic", "thread", "promise"
+    ],
+    "environmentKeywords": [
+      "CI", "environment", "platform", "node_modules", "dependency",
+      "path", "permission", "access", "network", "filesystem"
+    ],
+    "cleanupKeywords": [
+      "cleanup", "teardown", "after", "hook", "dispose", "close",
+      "shutdown", "terminate", "finalize", "destroy"
+    ]
+  },
+  "analysis": {
+    "minimumRuns": 5,
+    "confidenceInterval": 0.95,
+    "trendAnalysisWindow": 10,
+    "earlyTerminationThreshold": 8,
+    "stabilityConfidence": 5
+  },
+  "thresholds": {
+    "stable": 0.0,
+    "minorInstability": 0.05,
+    "flakyWarning": 0.15,
+    "highlyFlaky": 0.5,
+    "consistentFailure": 0.8
+  },
+  "alerts": {
+    "githubIssue": true,
+    "slackNotification": false,
+    "emailAlert": false,
+    "autoIsolation": true,
+    "reportGeneration": true
+  },
+  "performance": {
+    "maxTestDuration": 180000,
+    "timeoutWarningThreshold": 60000,
+    "slowTestThreshold": 30000
+  }
+}
