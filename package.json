@@ -141,7 +141,7 @@
     "smart-test:demo": "tsx -e \"import { IntelligentTestSelection } from './src/testing/intelligent-test-selection.js'; console.log('Intelligent test selection demo ready');\"",
     "test:optimization": "vitest run tests/optimization/",
     "test:phase3.3": "vitest run tests/optimization/",
-    "test:parallel": "vitest run tests/optimization/parallel.test.ts",
+    "test:parallel:vitest": "vitest run tests/optimization/parallel.test.ts",
     "test:monitoring": "vitest run tests/optimization/monitoring.test.ts",
     "parallel:demo": "tsx src/optimization/parallel/demo.ts",
     "monitoring:demo": "tsx src/optimization/monitoring/demo.ts",
