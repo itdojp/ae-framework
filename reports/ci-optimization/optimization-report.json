@@ -1,0 +1,108 @@
+{
+  "timestamp": "2025-08-21T03:30:20.538Z",
+  "environment": {
+    "isCI": false,
+    "nodeVersion": "v20.19.4",
+    "platform": "linux"
+  },
+  "metrics": {
+    "testsRun": 0,
+    "testsPass": 0,
+    "testsFail": 0,
+    "flakeTests": [],
+    "performanceIssues": {},
+    "optimizationsApplied": [
+      "Vitest configuration optimized"
+    ],
+    "executionTime": 0,
+    "memoryUsage": {}
+  },
+  "configuration": {
+    "stability": {
+      "retrySettings": {
+        "maxRetries": 3,
+        "retryDelay": 2000,
+        "exponentialBackoff": true
+      },
+      "timeouts": {
+        "testTimeout": 60000,
+        "hookTimeout": 30000,
+        "teardownTimeout": 30000
+      },
+      "resourceLimits": {
+        "maxConcurrency": 4,
+        "memoryLimit": "2GB",
+        "cpuLimit": 2
+      },
+      "environmentOptimizations": {
+        "disableAnimations": false,
+        "reducedLogging": false,
+        "skipLongRunningTests": false,
+        "enableStrictCleanup": true
+      }
+    },
+    "flakeDetection": {
+      "threshold": 0.05,
+      "earlyWarningThreshold": 0.15,
+      "minimumRuns": 5,
+      "analysisWindow": 10,
+      "patterns": {
+        "timeoutKeywords": [
+          "timeout",
+          "timed out",
+          "exceeded",
+          "hang"
+        ],
+        "resourceKeywords": [
+          "memory",
+          "leak",
+          "handle",
+          "worker",
+          "process"
+        ],
+        "concurrencyKeywords": [
+          "race",
+          "concurrent",
+          "parallel",
+          "async"
+        ],
+        "environmentKeywords": [
+          "CI",
+          "environment",
+          "platform",
+          "node_modules"
+        ]
+      }
+    },
+    "performance": {
+      "slowTestThreshold": 10000,
+      "memoryLeakThreshold": 104857600,
+      "parallelization": {
+        "enabled": true,
+        "maxWorkers": 4,
+        "chunkSize": 10
+      },
+      "optimization": {
+        "enableTestCaching": true,
+        "enableSmartRetries": true,
+        "enableResourceMonitoring": true
+      }
+    }
+  },
+  "optimizations": [
+    "Vitest configuration optimized"
+  ],
+  "recommendations": [
+    "Use npm run test:parallel:ci for CI environments",
+    "Monitor flaky tests with npm run test:flake-detection",
+    "Regular performance analysis with npm run test:performance",
+    "Review memory usage patterns for leak detection",
+    "Update timeout configurations based on CI performance"
+  ],
+  "nextSteps": [
+    "Monitor optimization effectiveness over next CI runs",
+    "Adjust configuration based on performance metrics",
+    "Implement automated flaky test isolation",
+    "Set up performance regression alerts"
+  ]
+}
