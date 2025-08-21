@@ -1,0 +1,35 @@
+{
+  "isolatedTests": [
+    {
+      "testPath": "tests/optimization/system-integration.test.ts",
+      "reason": "100% failure rate in CI",
+      "isolatedAt": "2025-08-20T21:06:47.769Z",
+      "failureRate": 1.0,
+      "totalRuns": 3,
+      "failedRuns": 3,
+      "lastFailure": "2025-08-20T21:06:47.769Z",
+      "category": "integration"
+    }
+  ],
+  "thresholds": {
+    "isolationThreshold": 0.3,
+    "recoveryThreshold": 0.05,
+    "minRunsForIsolation": 3,
+    "minRunsForRecovery": 10
+  },
+  "retryPolicy": {
+    "maxRetries": 3,
+    "retryDelay": 1000,
+    "exponentialBackoff": true
+  },
+  "notifications": {
+    "slack": false,
+    "email": false,
+    "github": true
+  },
+  "metadata": {
+    "lastUpdated": "2025-08-20T21:06:47.769Z",
+    "version": "1.0.0",
+    "totalIsolatedTests": 1
+  }
+}

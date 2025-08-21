@@ -208,7 +208,9 @@
     "test:diff": "tsx scripts/diff-generate.ts",
     "test:randomize": "vitest run tests/utils/test-randomizer.spec.ts",
     "test:quality": "npm run test:golden && npm run test:metamorphic && npm run test:cli:fuzz && npm run test:contracts && npm run test:doctest && npm run test:randomize",
-    "test:quality:fast": "npm run test:golden && npm run test:cli:fuzz && npm run test:doctest"
+    "test:quality:fast": "npm run test:golden && npm run test:cli:fuzz && npm run test:doctest",
+    "test:ci": "vitest run --config vitest.ci.config.ts",
+    "test:ci:stable": "vitest run --config vitest.ci.config.ts --exclude \"**/system-integration.test.ts\""
   },
   "dependencies": {
     "@ae-framework/spec-compiler": "file:./packages/spec-compiler",

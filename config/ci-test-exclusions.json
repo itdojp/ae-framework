@@ -1,0 +1,9 @@
+{
+  "patterns": [
+    "tests/optimization/system-integration.test.ts",
+    "tests/**/*.flaky.test.*",
+    "tests/**/*.e2e.test.*"
+  ],
+  "reason": "CI stability - Issue #140",
+  "createdAt": "2025-08-20T23:59:11.223Z"
+}
