@@ -1,5 +1,11 @@
 # Operate Agent - Phase 6 of ae-framework
 
+> **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
+
+---
+
+## English
+
 The Operate Agent is the final phase in the ae-framework's 6-phase cycle (Intent→Formal→Tests→Code→Verify→**Operate**). It handles production operations, monitoring, and optimization to ensure deployed systems run reliably, efficiently, and securely.
 
 ## Overview
@@ -378,3 +384,272 @@ When contributing to the Operate Agent:
 ## License
 
 This project follows the same license as the ae-framework project.
+
+---
+
+## Japanese
+
+**オペレート・エージェント - ae-frameworkのフェーズ6**
+
+オペレート・エージェントは、ae-frameworkの6フェーズサイクル（Intent→Formal→Tests→Code→Verify→**Operate**）の最終フェーズです。デプロイされたシステムが信頼性、効率性、セキュリティを保って動作することを確保するために、本番運用、監視、最適化を処理します。
+
+## 概要
+
+オペレート・エージェントは以下を含む包括的な本番運用機能を提供します：
+
+- **デプロイオーケストレーション**: ブルーグリーン、カナリア、ローリングデプロイ戦略によるCI/CD統合
+- **インフラ監視**: 全システムエンドポイントでのリアルタイムヘルスチェックとアラート
+- **パフォーマンス最適化**: 自動パフォーマンス分析と調整推奨
+- **ログ分析**: インテリジェントなログ集約、パターン検出、異常識別
+- **インシデント管理**: 作成から解決まで完全なインシデントライフサイクル管理
+- **リソーススケーリング**: パフォーマンス指標と需要に基づく動的オートスケーリング
+- **セキュリティ監視**: 脆弱性スキャンとコンプライアンスフレームワーク検証
+- **コスト最適化**: インフラコスト分析と最適化推奨
+- **カオスエンジニアリング**: カオス実験による制御された回復力テスト
+- **SLO/SLA追跡**: サービスレベル目標監視とコンプライアンス報告
+
+## アーキテクチャ
+
+### 中核コンポーネント
+
+```
+src/agents/operate-agent.ts        # コアエージェント実装
+src/mcp-server/operate-server.ts   # MCPサーバーラッパー
+```
+
+### 主要クラス
+
+```typescript
+class OperateAgent {
+  // デプロイ管理
+  async deployApplication(config: DeploymentConfig): Promise<DeploymentResult>;
+  async rollbackDeployment(deploymentId: string): Promise<RollbackResult>;
+  
+  // 監視とアラート
+  async monitorInfrastructure(config: MonitoringConfig): Promise<MonitoringStatus>;
+  async analyzePerformance(metrics: PerformanceMetrics): Promise<AnalysisResult>;
+  
+  // インシデント管理
+  async createIncident(details: IncidentDetails): Promise<IncidentReport>;
+  async resolveIncident(incidentId: string): Promise<ResolutionResult>;
+  
+  // スケーリングと最適化
+  async scaleResources(policy: ScalingPolicy): Promise<ScalingResult>;
+  async optimizeInfrastructure(targets: OptimizationTargets): Promise<OptimizationReport>;
+}
+```
+
+## 主要機能
+
+### デプロイオーケストレーション
+
+```typescript
+// ブルーグリーンデプロイ
+const deploymentResult = await operateAgent.deployApplication({
+  strategy: 'blue-green',
+  application: 'user-service',
+  version: 'v2.1.0',
+  healthCheck: '/health',
+  rollbackThreshold: 5, // 5%のエラー率で自動ロールバック
+  monitoring: {
+    metrics: ['response_time', 'error_rate', 'throughput'],
+    duration: 600 // 10分間監視
+  }
+});
+
+console.log('デプロイ結果:', deploymentResult);
+```
+
+### パフォーマンス監視
+
+```typescript
+// パフォーマンス分析の実行
+const analysis = await operateAgent.analyzePerformance({
+  timeRange: '1h',
+  services: ['api-gateway', 'user-service', 'payment-service'],
+  metrics: ['cpu', 'memory', 'response_time', 'throughput'],
+  alertThresholds: {
+    cpu: 80,
+    memory: 85,
+    response_time: 1000
+  }
+});
+
+if (analysis.recommendations.length > 0) {
+  console.log('最適化推奨:', analysis.recommendations);
+}
+```
+
+### インシデント管理
+
+```typescript
+// インシデントの作成と追跡
+const incident = await operateAgent.createIncident({
+  title: 'API応答時間増大',
+  severity: 'high',
+  description: 'ユーザーサービスの応答時間が平常時の3倍に増大',
+  affectedServices: ['user-service'],
+  detectedAt: new Date(),
+  reporter: 'monitoring-system',
+  tags: ['performance', 'user-impact']
+});
+
+// インシデント解決
+await operateAgent.resolveIncident(incident.id, {
+  resolution: 'データベース接続プールサイズを増加',
+  rootCause: 'データベース接続制限によるボトルネック',
+  preventiveMeasures: ['接続プール監視アラート追加', 'オートスケーリングポリシー調整']
+});
+```
+
+## 設定オプション
+
+### デプロイ設定
+
+```typescript
+interface DeploymentConfig {
+  strategy: 'blue-green' | 'canary' | 'rolling';
+  application: string;
+  version: string;
+  environment: 'staging' | 'production';
+  healthCheck: {
+    endpoint: string;
+    timeout: number;
+    retries: number;
+  };
+  rollbackPolicy: {
+    autoRollback: boolean;
+    errorThreshold: number;
+    timeout: number;
+  };
+}
+```
+
+### 監視設定
+
+```typescript
+interface MonitoringConfig {
+  services: string[];
+  metrics: string[];
+  alerting: {
+    channels: ('email' | 'slack' | 'pagerduty')[];
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    suppressionRules: SuppressionRule[];
+  };
+  retention: {
+    metrics: string;     // "30d"
+    logs: string;        // "7d"
+    traces: string;      // "3d"
+  };
+}
+```
+
+## MCPツール
+
+### 利用可能なツール
+
+1. **deploy_application**: アプリケーションデプロイの実行
+2. **monitor_infrastructure**: インフラ監視の開始/設定
+3. **analyze_performance**: パフォーマンス分析の実行
+4. **manage_incidents**: インシデント管理操作
+5. **scale_resources**: リソーススケーリングの実行
+6. **optimize_infrastructure**: インフラ最適化の実行
+7. **run_chaos_experiment**: カオスエンジニアリング実験の実行
+
+### ツール使用例
+
+```typescript
+// MCPクライアントから使用
+const result = await mcpClient.callTool('deploy_application', {
+  strategy: 'canary',
+  application: 'frontend-app',
+  version: 'v1.2.3',
+  trafficSplit: 10, // 10%のトラフィックを新バージョンに
+  monitoring: {
+    duration: 1800, // 30分間監視
+    successCriteria: {
+      errorRate: '<1%',
+      responseTime: '<500ms'
+    }
+  }
+});
+```
+
+## 統合
+
+### CI/CDパイプライン
+
+```yaml
+# GitHub Actionsでの使用例
+- name: AE Framework本番デプロイ
+  run: |
+    npm run operate-agent -- deploy \
+      --strategy blue-green \
+      --app user-service \
+      --version ${{ github.sha }} \
+      --health-check /health \
+      --auto-rollback true
+```
+
+### 監視システム
+
+- **Prometheus**: メトリクス収集と保存
+- **Grafana**: 可視化とダッシュボード
+- **Jaeger**: 分散トレーシング
+- **ELK Stack**: ログ集約と分析
+
+### アラートマネージャー
+
+- **PagerDuty**: インシデント通知とエスカレーション
+- **Slack**: チーム通知
+- **Email**: 基本アラート配信
+
+## ベストプラクティス
+
+### デプロイの安全性
+
+1. **常にヘルスチェックを使用**: 包括的なヘルスエンドポイントを設定
+2. **段階的ロールアウト**: 重要なデプロイにはカナリアまたはブルーグリーンを使用
+3. **ロールバック準備**: ロールバック手順をテストし自動化
+4. **デプロイ中の監視**: ロールアウト中にメトリクスを注意深く監視
+
+### インシデント対応
+
+1. **明確な重要度ガイドライン**: 各重要度レベルを構成するものを定義
+2. **応答時間SLA**: 明確な応答時間期待値を設定
+3. **コミュニケーションプロトコル**: インシデント中にステークホルダーに情報提供
+4. **インシデント後レビュー**: 振り返りですべてのインシデントから学習
+
+### パフォーマンス最適化
+
+1. **ベースライン確立**: 通常のパフォーマンス特性を把握
+2. **段階的変更**: 最適化を段階的に適用
+3. **影響測定**: 変更の影響を常に測定
+4. **ロールバック計画**: パフォーマンス変更を元に戻す準備
+
+## セキュリティ考慮事項
+
+- **認証情報管理**: アクセス認証情報の安全な保存とローテーション
+- **最小特権**: 操作に必要な最小限の権限
+- **監査ログ**: すべての運用アクションの完全な監査証跡
+- **暗号化**: すべての外部システムとの安全な通信
+- **アクセス制御**: 運用機能へのロールベースアクセス
+
+## パフォーマンス特性
+
+- **スケーラビリティ**: 大規模本番環境向けに設計
+- **効率性**: 監視操作の最小限のリソースオーバーヘッド
+- **信頼性**: 組み込み冗長性と障害処理
+- **応答性**: 重要な操作の高速応答時間
+
+## 将来の拡張
+
+- **機械学習**: AI駆動の異常検出と最適化
+- **予測スケーリング**: 予測ベースのリソーススケーリング
+- **高度なカオス**: より洗練されたカオスエンジニアリングシナリオ
+- **マルチクラウド**: マルチクラウドデプロイの強化サポート
+- **GitOps統合**: GitOpsワークフローとの深い統合
+
+## ライセンス
+
+このプロジェクトはae-frameworkプロジェクトと同じライセンスに従います。

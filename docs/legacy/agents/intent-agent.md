@@ -1,5 +1,11 @@
 # Intent Agent
 
+> **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
+
+---
+
+## English
+
 The Intent Agent is a core component of the ae-framework Phase 1, responsible for requirements gathering, analysis, and intent extraction from multiple sources. It transforms raw requirements into structured formats that feed into subsequent phases of the architectural engineering process.
 
 ## Overview
@@ -640,4 +646,163 @@ For questions and support:
 
 ---
 
-*This documentation is maintained as part of the ae-framework project. Last updated: 2025*
+---
+
+## Japanese
+
+**インテント・エージェント**
+
+インテント・エージェントは、ae-frameworkのフェーズ1の中核コンポーネントであり、複数のソースからの要件収集、分析、インテント抽出を担当します。生の要件を構造化されたフォーマットに変換し、アーキテクチャエンジニアリングプロセスの後続フェーズに供給します。
+
+## 概要
+
+インテント・エージェントは、ae-frameworkの重要な最初のフェーズを以下のように処理します：
+
+- **要件収集**: テキスト、ドキュメント、会話、課題、メール、図表などの多様なソースから要件を収集
+- **自然言語処理**: 非構造化自然言語から構造化要件を抽出
+- **ユーザーストーリー生成**: 要件を適切な受け入れ基準を持つユーザーストーリーに変換
+- **ユースケース作成**: アクター、フロー、例外を含む包括的なユースケースモデルの構築
+- **ドメインモデリング**: エンティティ、関係、境界コンテキスト、集約の特定
+- **曖昧性検出**: 曖昧な要件の発見と解決提案
+- **リスク分析**: 潜在的リスクとその軽減戦略の特定
+- **仮定管理**: 検証が必要な仮定の追跡
+- **ステークホルダー分析**: ステークホルダーの懸念分析と競合の検出
+- **トレーサビリティ**: 要件と下流成果物間のリンク作成
+- **仕様生成**: Gherkin、OpenAPI、AsyncAPI、GraphQL仕様のテンプレート作成
+
+## アーキテクチャ
+
+### 中核コンポーネント
+
+```typescript
+IntentAgent
+├── 要件処理
+│   ├── ソース抽出
+│   ├── 自然言語分析
+│   └── 要件カテゴリ化
+├── 分析・モデリング
+│   ├── ユーザーストーリー生成
+│   ├── ユースケース作成
+│   ├── ドメインモデル構築
+│   └── ステークホルダー分析
+├── 品質保証
+│   ├── 曖昧性検出
+│   ├── 完全性検証
+│   └── リスク評価
+└── 出力生成
+    ├── 仕様テンプレート
+    ├── トレーサビリティマトリックス
+    └── 構造化レポート
+```
+
+### MCP サーバー統合
+
+インテント・エージェントは MCP (Model Context Protocol) サーバーとして公開され、AI アシスタントや他のシステムが使用できるツールを提供します：
+
+- `analyze_intent`: 完全なインテント分析ワークフロー
+- `extract_from_natural_language`: テキストから要件を抽出
+- `create_user_stories`: 要件からユーザーストーリーを生成
+- `build_domain_model`: エンティティと関係性を持つドメインモデルを作成
+- `detect_ambiguities`: 曖昧な要件を特定
+- `validate_completeness`: 要件カバレッジをチェック
+- `generate_specification_templates`: 仕様テンプレートを作成
+- `prioritize_requirements`: MoSCoW 優先順位付けを適用
+- `generate_acceptance_criteria`: 受け入れ基準を作成
+- `analyze_stakeholder_concerns`: ステークホルダーの競合を分析
+
+## 使用方法
+
+### インテント・エージェントの実行
+
+#### MCP サーバーとして
+```bash
+npm run intent-agent
+```
+
+#### 直接使用
+```typescript
+import { IntentAgent, IntentAnalysisRequest } from './src/agents/intent-agent.js';
+
+const agent = new IntentAgent();
+
+const request: IntentAnalysisRequest = {
+  sources: [
+    {
+      type: 'text',
+      content: 'ユーザーは在庫アイテムを予約できる必要があります',
+      metadata: {
+        author: 'プロダクトマネージャー',
+        priority: 'high'
+      }
+    }
+  ],
+  context: {
+    domain: '在庫管理',
+    existingSystem: false
+  },
+  analysisDepth: 'comprehensive'
+};
+
+const result = await agent.analyzeIntent(request);
+```
+
+## 品質保証機能
+
+### 完全性検証
+
+エージェントは、必須カテゴリ全体での要件完全性を検証します：
+
+- 認証・認可
+- データ検証
+- エラーハンドリング
+- ログ・監視
+- パフォーマンス
+- セキュリティ
+- ユーザビリティ
+
+### 曖昧性検出
+
+以下を自動的に特定します：
+- **曖昧な用語**: 「高速」、「良い」、「多い」
+- **曖昧な修飾語**: 「たぶん」、「おそらく」、「すぐに」
+- **未定義用語**: コンテキスト固有の専門用語
+- **矛盾する記述**: 矛盾する要件
+
+### リスク分析
+
+一般的なリスクを特定：
+- パフォーマンスボトルネック
+- セキュリティ脆弱性
+- 統合の課題
+- リソース制約
+- 技術的負債
+
+## ベストプラクティス
+
+### 要件収集
+1. **複数のソースを使用**: ドキュメント、会話、課題を組み合わせる
+2. **コンテキストを提供**: ドメイン情報と制約を含める
+3. **ステークホルダーを検証**: すべての主要ステークホルダーが代表されることを確認
+4. **仮定を文書化**: 暗黙の仮定を明示的にする
+
+### 品質保証
+1. **高重要度の曖昧性に対処**: 不明確な要件を早期に解決
+2. **完全性を検証**: すべての必須カテゴリがカバーされていることを確認
+3. **ステークホルダーの競合をレビュー**: 競合する懸念を解決
+4. **リスクを評価**: 高影響リスクの軽減を計画
+
+## パフォーマンス考慮事項
+
+### スケーラビリティ
+- 複数の要件ソースを並行処理
+- 反復的改良のために分析結果をキャッシュ
+- 既存分析への増分更新をサポート
+
+### 処理時間
+- **基本分析**: 小規模入力で < 1秒
+- **詳細分析**: 中程度の複雑さで 2-5秒
+- **包括的分析**: 大規模で複雑な入力で 5-15秒
+
+---
+
+*このドキュメントは ae-framework プロジェクトの一部として維持されています。最終更新: 2025*

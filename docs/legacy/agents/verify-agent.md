@@ -1,5 +1,11 @@
 # Verify Agent Documentation
 
+> **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
+
+---
+
+## English
+
 ## Overview
 
 The Verify Agent is a comprehensive verification and quality assurance system for Phase 5 of the ae-framework. It provides automated verification capabilities including testing, coverage analysis, code quality checks, security scanning, and compliance validation.
@@ -411,3 +417,288 @@ Implement custom metrics by extending the `calculateQualityMetrics` method with 
 ## License
 
 This project is part of the ae-framework and follows the same licensing terms.
+
+---
+
+## Japanese
+
+**検証エージェント ドキュメント**
+
+## 概要
+
+検証エージェントは、ae-frameworkのフェーズ5のための包括的な検証・品質保証システムです。テスト、カバレッジ分析、コード品質チェック、セキュリティスキャン、コンプライアンス検証などの自動検証機能を提供します。
+
+## アーキテクチャ
+
+検証エージェントは2つの主要コンポーネントで構成されます：
+
+1. **コアエージェント (`VerifyAgent`)**: `src/agents/verify-agent.ts` に配置
+2. **MCPサーバーラッパー (`VerifyMCPServer`)**: `src/mcp-server/verify-server.ts` に配置
+
+MCPサーバーは、AIアシスタントや他のシステムで使用できるツールとしてエージェントの機能を公開します。
+
+## 機能
+
+### 中核検証タイプ
+
+- **テスト**: ユニット、統合、e2e、プロパティベース、契約テスト
+- **カバレッジ**: ライン、ブランチ、関数、ステートメントカバレッジ分析
+- **リント**: ESLintを使用したコードスタイルと品質チェック
+- **型チェック**: TypeScript型検証
+- **セキュリティ**: 脆弱性スキャンと依存関係監査
+- **パフォーマンス**: ベンチマークと負荷テスト
+- **アクセシビリティ**: APIアクセシビリティコンプライアンスチェック
+- **契約**: API契約検証（PACT）
+- **仕様**: OpenAPI、AsyncAPI、GraphQL、TLA+検証
+- **ミューテーション**: テスト品質評価のためのミューテーションテスト
+
+### 包括的検証サポート
+
+```typescript
+interface VerificationRequest {
+  projectPath: string;
+  verificationTypes: VerificationType[];
+  options?: VerificationOptions;
+}
+
+type VerificationType = 
+  | 'tests'
+  | 'coverage'
+  | 'linting'
+  | 'type-checking'
+  | 'security'
+  | 'performance'
+  | 'accessibility'
+  | 'contracts'
+  | 'specifications'
+  | 'mutations';
+```
+
+## 使用方法
+
+### MCPサーバーとして実行
+
+```bash
+npm run verify-agent
+```
+
+### 直接統合
+
+```typescript
+import { VerifyAgent } from './src/agents/verify-agent.js';
+
+const agent = new VerifyAgent();
+
+const result = await agent.verifyProject('./my-project', {
+  verificationTypes: ['tests', 'coverage', 'linting', 'security'],
+  options: {
+    testPattern: '**/*.test.ts',
+    coverageThreshold: 80,
+    strictLinting: true
+  }
+});
+
+console.log('検証結果:', result);
+```
+
+## 設定オプション
+
+### テスト設定
+
+```typescript
+interface TestOptions {
+  pattern: string;              // テストファイルパターン
+  timeout: number;              // テストタイムアウト（ms）
+  parallel: boolean;            // 並列実行
+  bail: boolean;               // 最初の失敗で停止
+  coverage: {
+    threshold: number;          // カバレッジ閾値（%）
+    includeUntested: boolean;   // 未テストファイルを含める
+  };
+}
+```
+
+### セキュリティ設定
+
+```typescript
+interface SecurityOptions {
+  auditLevel: 'low' | 'moderate' | 'high' | 'critical';
+  excludeDevDependencies: boolean;
+  ignoreVulnerabilities: string[];  // 無視する脆弱性ID
+}
+```
+
+## 検証結果例
+
+### 基本検証結果
+
+```typescript
+interface VerificationResult {
+  overall: 'passed' | 'failed' | 'warning';
+  timestamp: Date;
+  projectPath: string;
+  results: {
+    tests: TestResult;
+    coverage: CoverageResult;
+    linting: LintingResult;
+    security: SecurityResult;
+    // ... その他の検証タイプ
+  };
+  summary: {
+    totalChecks: number;
+    passed: number;
+    failed: number;
+    warnings: number;
+  };
+}
+```
+
+### テスト結果
+
+```json
+{
+  "tests": {
+    "status": "passed",
+    "summary": {
+      "total": 45,
+      "passed": 43,
+      "failed": 2,
+      "skipped": 0,
+      "duration": 2341
+    },
+    "coverage": {
+      "lines": 87.5,
+      "branches": 82.1,
+      "functions": 90.3,
+      "statements": 86.8
+    }
+  }
+}
+```
+
+### セキュリティ結果
+
+```json
+{
+  "security": {
+    "status": "warning",
+    "vulnerabilities": {
+      "low": 2,
+      "moderate": 1,
+      "high": 0,
+      "critical": 0
+    },
+    "details": [
+      {
+        "severity": "moderate",
+        "package": "example-lib",
+        "version": "1.2.3",
+        "vulnerability": "CVE-2023-12345",
+        "recommendation": "バージョン1.2.4以上にアップグレード"
+      }
+    ]
+  }
+}
+```
+
+## MCPツール
+
+### 利用可能なツール
+
+1. **verify_project**: プロジェクト全体の包括的検証
+2. **run_tests**: テスト実行
+3. **analyze_coverage**: カバレッジ分析
+4. **check_quality**: コード品質チェック
+5. **security_audit**: セキュリティ監査
+6. **validate_specifications**: 仕様検証
+
+### ツール使用例
+
+```typescript
+// MCPクライアントから使用
+const result = await mcpClient.callTool('verify_project', {
+  projectPath: '/path/to/project',
+  verificationTypes: ['tests', 'coverage', 'security'],
+  options: {
+    testPattern: '**/*.test.ts',
+    coverageThreshold: 80
+  }
+});
+```
+
+## ベストプラクティス
+
+### 段階的検証
+
+1. **開発中**: 基本テストとリント
+2. **プルリクエスト**: 全カバレッジと型チェック
+3. **リリース前**: セキュリティとパフォーマンステスト
+4. **本番**: 契約とコンプライアンステスト
+
+### 継続的統合
+
+```yaml
+# GitHub Actionsでの使用例
+- name: AE Framework検証
+  run: |
+    npm run verify-agent -- \
+      --types tests,coverage,security \
+      --coverage-threshold 85 \
+      --security-level moderate
+```
+
+## トラブルシューティング
+
+### よくある問題
+
+1. **テスト失敗**: テストファイルパターンと設定を確認
+2. **カバレッジ不足**: テストカバレッジを向上、閾値を調整
+3. **セキュリティ警告**: 依存関係を更新、脆弱性を修正
+4. **型エラー**: TypeScript設定とコードを確認
+
+### デバッグ
+
+```bash
+# 詳細ログで実行
+DEBUG=verify-agent npm run verify-agent
+
+# 特定の検証タイプのみ実行
+npm run verify-agent -- --types tests --verbose
+```
+
+## 拡張
+
+### カスタム検証器の追加
+
+```typescript
+// カスタム検証器の実装
+class CustomSecurityVerifier implements Verifier {
+  async verify(options: VerificationOptions): Promise<VerificationResult> {
+    // カスタムセキュリティチェックロジック
+    return {
+      status: 'passed',
+      details: '実装されたセキュリティチェック'
+    };
+  }
+}
+```
+
+### ファイル検出の拡張
+
+`loadCodeFiles`、`loadTestFiles`、または `loadSpecifications` メソッドを変更して、追加のファイルタイプや場所をサポートします。
+
+### カスタム品質指標
+
+追加の分析ツールとフレームワークで `calculateQualityMetrics` メソッドを拡張して、カスタム指標を実装します。
+
+## 依存関係
+
+- **中核依存関係**: TypeScript、Node.js
+- **テスト**: Vitest、Cucumber、Fast-check、Stryker
+- **品質**: ESLint、TypeScriptコンパイラ
+- **MCP**: @modelcontextprotocol/sdk
+- **セキュリティ**: npm audit（ビルトイン）
+
+## ライセンス
+
+このプロジェクトはae-frameworkの一部であり、同じライセンス条項に従います。
