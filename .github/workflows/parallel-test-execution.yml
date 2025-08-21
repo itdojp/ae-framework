@@ -55,7 +55,6 @@ jobs:
           mkdir -p reports
           mkdir -p logs
 
-
       - name: Run ${{ matrix.test-type }} tests
         run: |
           echo "🚀 Starting ${{ matrix.test-type }} test suite..."
@@ -245,10 +244,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-<<<<<<< HEAD
-      - name: Set up Docker Buildx  
-        uses: docker/setup-buildx-action@v3
-=======
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -259,7 +254,6 @@ jobs:
         run: |
           npm install -g pnpm
           pnpm install
->>>>>>> f912e11a8e24211e06d3c711d18a2e056cca5020
 
       - name: Retry failed tests with enhanced detection
         run: |
