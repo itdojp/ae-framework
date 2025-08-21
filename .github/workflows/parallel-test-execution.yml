@@ -55,7 +55,6 @@ jobs:
           mkdir -p reports
           mkdir -p logs
 
-
       - name: Run ${{ matrix.test-type }} tests
         run: |
           echo "🚀 Starting ${{ matrix.test-type }} test suite..."
