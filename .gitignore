@@ -53,3 +53,6 @@ syft
 packages/*/src/**/*.js
 packages/*/src/**/*.js.map
 packages/*/src/**/*.d.ts
+cegis-report-*.json
+temp-reports/
+# CEGIS report files - generated during testing
