@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "noUncheckedIndexedAccess": false,
+    "strict": false,
+    "skipLibCheck": true,
+    "noEmitOnError": false
+  },
+  "include": [
+    "src/**/*",
+    "packages/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "tests",
+    "src/ui/components/generated/**/*",
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ]
+}
