@@ -266,13 +266,13 @@ class ProjectCleaner {
     const reportPath = 'temp-reports/cleanup-report.json';
     fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
     
-    console.log('\\n📊 Cleanup Summary:');
+    console.log('\n📊 Cleanup Summary:');
     console.log(`   Files Processed: ${report.summary.totalFilesProcessed}`);
     console.log(`   Files Removed: ${report.summary.filesRemoved}`);
     console.log(`   Files Archived: ${report.summary.filesArchived}`);
     console.log(`   Directories Created: ${report.summary.directoriesCreated}`);
     console.log(`   Space Saved: ${report.summary.spaceSaved}`);
-    console.log(`\\n📄 Full report: ${reportPath}`);
+    console.log(`\n📄 Full report: ${reportPath}`);
     
     return report;
   }
@@ -294,7 +294,7 @@ class ProjectCleaner {
     try {
       const analysis = await this.analyzeProjectStructure();
       
-      console.log(`\\n📈 Analysis Results:`);
+      console.log(`\n📈 Analysis Results:`);
       console.log(`   Temporary files: ${analysis.temporaryFiles.length}`);
       console.log(`   Report files: ${analysis.reportFiles.length}`);
       console.log(`   Large files: ${analysis.largeFiles.length}`);
@@ -306,7 +306,7 @@ class ProjectCleaner {
       
       const report = await this.generateCleanupReport();
       
-      console.log('\\n✅ Project cleanup completed successfully!');
+      console.log('\n✅ Project cleanup completed successfully!');
       
       return report;
       
@@ -323,7 +323,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   
   cleaner.run()
     .then(() => {
-      console.log('\\n🎉 All cleanup tasks completed!');
+      console.log('\n🎉 All cleanup tasks completed!');
       process.exit(0);
     })
     .catch((error) => {
