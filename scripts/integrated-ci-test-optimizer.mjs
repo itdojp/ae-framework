@@ -163,14 +163,28 @@ class IntegratedCITestOptimizer {
 
       for (const pattern of testPatterns) {
         try {
-          const { glob } = await import('glob');
+          let glob;
+          try {
+            ({ glob } = await import('glob'));
+          } catch (importError) {
+            if (importError && importError.code === 'ERR_MODULE_NOT_FOUND') {
+              throw new Error(
+                "The 'glob' package is required to analyze test files but is not installed. Please run 'npm install glob' or 'yarn add glob'."
+              );
+            } else {
+              throw importError;
+            }
+          }
           const files = await glob(pattern, { 
             cwd: this.projectRoot,
             ignore: ['node_modules/**', 'dist/**', 'build/**']
           });
           analysis.testFiles.push(...files);
         } catch (error) {
-          // Pattern not found, continue
+          if (error && error.message && error.message.includes("The 'glob' package is required")) {
+            throw error; // propagate to outer catch for user visibility
+          }
+          // Pattern not found or other error, continue
         }
       }
     } catch (error) {
@@ -291,8 +305,7 @@ class IntegratedCITestOptimizer {
 
     // Save optimized configuration
     const configPath = './vitest.optimized.config.ts';
-    const configContent = `
-import { defineConfig } from 'vitest/config';
+    const configContent = `import { defineConfig } from 'vitest/config';
 
 export default defineConfig(${JSON.stringify(vitestConfig, null, 2)});
 `;
