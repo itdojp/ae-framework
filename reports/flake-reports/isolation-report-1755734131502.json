@@ -1,0 +1,29 @@
+{
+  "summary": {
+    "totalIsolatedTests": 1,
+    "generatedAt": "2025-08-20T23:55:31.501Z",
+    "ciImpact": "Tests excluded from CI to maintain stability"
+  },
+  "isolatedTests": [
+    {
+      "testPath": "tests/optimization/system-integration.test.ts",
+      "reason": "100% failure rate in CI",
+      "failureRate": "100.00%",
+      "isolatedAt": "2025-08-20T21:06:47.769Z",
+      "category": "integration",
+      "issueNumber": null
+    }
+  ],
+  "recommendations": [
+    "Investigate root causes of isolated tests",
+    "Implement test stability improvements",
+    "Consider test environment optimization",
+    "Review resource dependencies and timing issues"
+  ],
+  "nextSteps": [
+    "Run stability analysis on isolated tests",
+    "Implement retry mechanisms where appropriate",
+    "Monitor test recovery metrics",
+    "Plan gradual reintegration strategy"
+  ]
+}

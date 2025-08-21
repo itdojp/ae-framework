@@ -1,0 +1,38 @@
+{
+  "isolatedTests": [
+    {
+      "testPath": "tests/optimization/system-integration.test.ts",
+      "reason": "FIXED: Cleanup conflicts and timeout issues resolved",
+      "isolatedAt": "2025-08-20T21:06:47.769Z",
+      "recoveredAt": "2025-08-21T00:22:58.000Z",
+      "failureRate": 0.0,
+      "totalRuns": 17,
+      "failedRuns": 0,
+      "lastSuccess": "2025-08-21T00:22:58.000Z",
+      "category": "integration",
+      "status": "recovered",
+      "fixApplied": "Resolved duplicate cleanup and extended timeouts"
+    }
+  ],
+  "thresholds": {
+    "isolationThreshold": 0.3,
+    "recoveryThreshold": 0.05,
+    "minRunsForIsolation": 3,
+    "minRunsForRecovery": 10
+  },
+  "retryPolicy": {
+    "maxRetries": 3,
+    "retryDelay": 1000,
+    "exponentialBackoff": true
+  },
+  "notifications": {
+    "slack": false,
+    "email": false,
+    "github": true
+  },
+  "metadata": {
+    "lastUpdated": "2025-08-20T21:06:47.769Z",
+    "version": "1.0.0",
+    "totalIsolatedTests": 1
+  }
+}

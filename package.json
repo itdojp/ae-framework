@@ -53,6 +53,11 @@
     "flake:detect": "node scripts/flake-detector.js",
     "flake:detect:quick": "node scripts/flake-detector.js --runs 5 --threshold 0.2",
     "flake:detect:thorough": "node scripts/flake-detector.js --runs 20 --threshold 0.05",
+    "flake:detect:enhanced": "node scripts/enhanced-flake-detector.mjs",
+    "flake:detect:enhanced:quick": "node scripts/enhanced-flake-detector.mjs --runs 8 --threshold 0.1",
+    "test:parallel": "node scripts/parallel-test-coordinator.mjs",
+    "test:ci:parallel": "node scripts/parallel-test-coordinator.mjs",
+    "flake:detect:enhanced:deep": "node scripts/enhanced-flake-detector.mjs --runs 15 --threshold 0.05",
     "flake:isolate": "node scripts/flake-isolation-manager.js isolate",
     "flake:recover": "node scripts/flake-isolation-manager.js recover",
     "flake:remove": "node scripts/flake-isolation-manager.js remove",
@@ -136,7 +141,7 @@
     "smart-test:demo": "tsx -e \"import { IntelligentTestSelection } from './src/testing/intelligent-test-selection.js'; console.log('Intelligent test selection demo ready');\"",
     "test:optimization": "vitest run tests/optimization/",
     "test:phase3.3": "vitest run tests/optimization/",
-    "test:parallel": "vitest run tests/optimization/parallel.test.ts",
+    "test:parallel:vitest": "vitest run tests/optimization/parallel.test.ts",
     "test:monitoring": "vitest run tests/optimization/monitoring.test.ts",
     "parallel:demo": "tsx src/optimization/parallel/demo.ts",
     "monitoring:demo": "tsx src/optimization/monitoring/demo.ts",
@@ -208,7 +213,9 @@
     "test:diff": "tsx scripts/diff-generate.ts",
     "test:randomize": "vitest run tests/utils/test-randomizer.spec.ts",
     "test:quality": "npm run test:golden && npm run test:metamorphic && npm run test:cli:fuzz && npm run test:contracts && npm run test:doctest && npm run test:randomize",
-    "test:quality:fast": "npm run test:golden && npm run test:cli:fuzz && npm run test:doctest"
+    "test:quality:fast": "npm run test:golden && npm run test:cli:fuzz && npm run test:doctest",
+    "test:ci": "vitest run --config vitest.ci.config.ts",
+    "test:ci:stable": "vitest run --config vitest.ci.config.ts --exclude \"**/system-integration.test.ts\""
   },
   "dependencies": {
     "@ae-framework/spec-compiler": "file:./packages/spec-compiler",

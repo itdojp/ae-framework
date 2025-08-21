@@ -8,6 +8,11 @@ beforeEach(() => {
 })
 
 afterEach(async () => {
+  // Skip shared cleanup if test is managing its own cleanup or cleanup is already in progress
+  if ((globalThis as any).__testManagedCleanup || (globalThis as any).__cleanupInProgress) {
+    return;
+  }
+
   // 最長5秒で停止させるラッパー
   async function stopWithTimeout(s: { stop: () => Promise<void> }) {
     return Promise.race([
@@ -19,7 +24,14 @@ afterEach(async () => {
   // グローバルに保持している最上位のシステムがあれば止める（テスト側が set）
   const sys = (globalThis as any).optimizationSystem
   if (sys?.stop) {
-    try { await stopWithTimeout(sys) } catch (e) { /* ここでは握りつぶし */ }
+    try { 
+      await stopWithTimeout(sys);
+      // Clear reference after successful shutdown
+      delete (globalThis as any).optimizationSystem;
+    } catch (e) { 
+      // ここでは握りつぶし
+      console.warn('Shared cleanup timeout:', e);
+    }
   }
 
   // GC（Node起動に --expose-gc が必要）
