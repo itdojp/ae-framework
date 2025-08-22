@@ -683,9 +683,10 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
     ];
     
     for (const pattern of patterns) {
-      const matches = content.matchAll(pattern);
-      for (const match of matches) {
+      let match;
+      while ((match = pattern.exec(content)) !== null) {
         requirements.push(match[1]);
+        if (!pattern.global) break;
       }
     }
     
@@ -1240,11 +1241,12 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
       
       const mandatoryStandards: string[] = [];
       mandatoryPatterns.forEach(pattern => {
-        const matches = standardsLower.matchAll(pattern);
-        for (const match of matches) {
+        let match;
+        while ((match = pattern.exec(standardsLower)) !== null) {
           if (match[1]) {
             mandatoryStandards.push(match[1].trim());
           }
+          if (!pattern.global) break;
         }
       });
       
