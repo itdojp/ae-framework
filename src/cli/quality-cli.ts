@@ -84,7 +84,7 @@ export function createQualityCommand(): Command {
           gates.forEach(gate => {
             // Find the gate key in policy
             const allGates = qualityPolicy.getAllGates();
-            const gateKey = Object.keys(allGates).find(key => allGates[key].name === gate.name) || gate.name;
+            const gateKey = Object?.keys(allGates)?.find(key => allGates[key]?.name === gate?.name) || gate?.name;
             
             const threshold = qualityPolicy.getThreshold(gateKey, options.env);
             const shouldBlock = qualityPolicy.shouldBlock(gateKey, options.env);
@@ -105,7 +105,7 @@ export function createQualityCommand(): Command {
           gates.forEach(gate => {
             // Find the gate key in policy
             const allGates = qualityPolicy.getAllGates();
-            const gateKey = Object.keys(allGates).find(key => allGates[key].name === gate.name) || gate.name;
+            const gateKey = Object?.keys(allGates)?.find(key => allGates[key]?.name === gate?.name) || gate?.name;
             
             const shouldBlock = qualityPolicy.shouldBlock(gateKey, options.env);
             const enabled = gate.enabled ? '✅' : '❌';

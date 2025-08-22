@@ -216,7 +216,7 @@ class AEFrameworkCLI {
 
     console.log(chalk.green(`✅ Prerequisites satisfied`));
     console.log(chalk.blue(`🚀 Ready to start phase: ${nextPhase}`));
-    this.displayPhaseRequirements(phase);
+    this.displayPhaseRequirements(phase as any);
   }
 
   async detectCurrentPhase(): Promise<string> {

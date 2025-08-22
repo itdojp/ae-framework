@@ -132,7 +132,7 @@ program
         if (!groups[problem.category]) {
           groups[problem.category] = [];
         }
-        groups[problem.category].push(problem);
+        groups[problem?.category]?.push(problem);
         return groups;
       }, {} as Record<string, typeof problems>);
       

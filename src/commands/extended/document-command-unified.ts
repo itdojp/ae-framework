@@ -443,9 +443,9 @@ export class UnifiedDocumentCommand extends BaseExtendedCommand {
   private extractJSDocFromLines(lines: string[], lineIndex: number): string | undefined {
     // Look backwards for JSDoc comment
     let i = lineIndex - 1;
-    while (i >= 0 && lines[i].trim() === '') i--;
+    while (i >= 0 && lines[i]?.trim() === '') i--;
     
-    if (i >= 0 && lines[i].trim().endsWith('*/')) {
+    if (i >= 0 && lines[i]?.trim()?.endsWith('*/')) {
       const comment = [];
       while (i >= 0 && !lines[i].includes('/**')) {
         comment.unshift(lines[i]);

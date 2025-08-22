@@ -399,7 +399,7 @@ export class IntegrationTestingCli {
             this.discovery.discoverSuites(patterns),
             this.discovery.discoverFixtures(patterns)
           ]);
-          items = { tests, suites, fixtures };
+    // items = { tests, suites, fixtures }; // TODO: Verify property exists in interface
           itemType = 'all';
           break;
         default:

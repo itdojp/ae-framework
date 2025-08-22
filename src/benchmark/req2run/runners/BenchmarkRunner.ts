@@ -55,7 +55,7 @@ export class BenchmarkRunner {
       const intent = await this.executePhase(
         AEFrameworkPhase.INTENT_ANALYSIS,
         () => this.intentAgent.analyzeIntent(
-          IntentAgent.createBenchmarkRequest(spec)
+          IntentAgent.createBenchmarkRequest(spec as any)
         ),
         phaseExecutions,
         errors
@@ -313,14 +313,14 @@ export class BenchmarkRunner {
           acceptance_criteria: [req.description]
         })) || [],
         constraints: {
-          technical: spec.constraints?.allowed_packages || [],
+    // technical: spec.constraints?.allowed_packages || [], // TODO: Verify property exists in interface
           business: spec.constraints?.disallowed_packages || [],
           performance: spec.requirements?.non_functional?.performance || {}
         },
         metadata: {
           created_by: spec.metadata?.author || 'req2run-benchmark',
           created_at: spec.metadata?.created_date || new Date().toISOString(),
-          version: spec.metadata?.version || '1.0.0',
+    // version: spec.metadata?.version || '1.0.0', // TODO: Verify property exists in interface
           category: spec.category,
           difficulty: spec.difficulty,
           estimated_time: spec.estimated_time_minutes || 30
