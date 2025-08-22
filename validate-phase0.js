@@ -89,7 +89,7 @@ validate(
 // 10. Check metrics directory can be created
 let metricsReady = false;
 try {
-  const { mkdirSync } = await import('fs');
+  const { mkdirSync } = require('fs');
   mkdirSync('metrics/self-improvement', { recursive: true });
   metricsReady = existsSync('metrics/self-improvement');
 } catch (error) {
