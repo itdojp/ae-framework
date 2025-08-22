@@ -830,7 +830,7 @@ start();
       const imports = file.content.match(/import .* from ['"]([^'"]+)['"]/g) || [];
       imports.forEach(imp => {
         const match = imp.match(/from ['"]([^'"]+)['"]/);
-        if (match && !match[1].startsWith('.')) {
+        if (match && match[1] && !match[1].startsWith('.')) {
           deps.add(match[1]);
         }
       });

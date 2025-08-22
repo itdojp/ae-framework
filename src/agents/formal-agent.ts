@@ -647,23 +647,23 @@ type Mutation {
   // Extraction and analysis methods
   private extractTitle(requirements: string): string {
     const titleMatch = requirements.match(/(?:title|name):\s*(.+)/i);
-    return titleMatch ? titleMatch[1].trim() : "Generated Specification";
+    return titleMatch && titleMatch[1] ? titleMatch[1].trim() : "Generated Specification";
   }
 
   private extractModuleName(requirements: string): string {
     const nameMatch = requirements.match(/(?:module|system|component):\s*(\w+)/i);
-    return nameMatch ? nameMatch[1] : "GeneratedModule";
+    return nameMatch && nameMatch[1] ? nameMatch[1] : "GeneratedModule";
   }
 
   private extractVariables(requirements: string): string[] {
     // Simplified variable extraction
     const variables = requirements.match(/\b(?:variable|state|field):\s*(\w+)/gi) || [];
-    return variables.map(v => v.split(":")[1].trim()).filter(Boolean);
+    return variables.map(v => v.split(":")[1]?.trim()).filter(Boolean) as string[];
   }
 
   private extractConstants(requirements: string): string[] {
     const constants = requirements.match(/\b(?:constant|const|parameter):\s*(\w+)/gi) || [];
-    return constants.map(c => c.split(":")[1].trim()).filter(Boolean);
+    return constants.map(c => c.split(":")[1]?.trim()).filter(Boolean) as string[];
   }
 
   private extractActions(requirements: string): { name: string; params: string[]; guard: string; effect: string }[] {
@@ -686,8 +686,8 @@ type Mutation {
     pathMatches.forEach(match => {
       const [method, path] = match.split(/\s+/);
       endpoints.push({
-        path: path,
-        method: method.toUpperCase(),
+        path: path || '',
+        method: method?.toUpperCase() || 'GET',
         description: `${method} operation for ${path}`,
         parameters: [],
         responses: [
@@ -721,7 +721,7 @@ type Mutation {
     const stateNames = requirements.match(/\b(?:state|status|phase):\s*(\w+)/gi) || [];
     
     return stateNames.map((stateName, index) => ({
-      name: stateName.split(":")[1].trim(),
+      name: stateName.split(":")[1]?.trim() || `State${index}`,
       type: index === 0 ? "initial" : "intermediate" as any,
       properties: {},
       invariants: [],
@@ -734,8 +734,8 @@ type Mutation {
     
     for (let i = 0; i < states.length - 1; i++) {
       transitions.push({
-        from: states[i].name,
-        to: states[i + 1].name,
+        from: states[i]?.name || `State${i}`,
+        to: states[i + 1]?.name || `State${i + 1}`,
         event: `transition${i + 1}`,
         guard: "TRUE",
       });
@@ -917,7 +917,7 @@ title Component Diagram for ${specification.title}
 
   private extractAlloyProperties(content: string): string[] {
     const properties = content.match(/assert\s+(\w+)/g) || [];
-    return properties.map(p => p.split(/\s+/)[1]);
+    return properties.map(p => p.split(/\s+/)[1]).filter(Boolean) as string[];
   }
 
   private extractZProperties(content: string): string[] {
@@ -946,7 +946,7 @@ title Component Diagram for ${specification.title}
 
   private extractStateMachineName(requirements: string): string {
     const match = requirements.match(/(?:state machine|fsm|automaton):\s*(\w+)/i);
-    return match ? match[1] : "StateMachine";
+    return match && match[1] ? match[1] : "StateMachine";
   }
 
   private generateInvariants(requirements: string): string[] {
