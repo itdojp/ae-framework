@@ -5,6 +5,7 @@
 
 import { EventEmitter } from 'events';
 import { performance, PerformanceObserver } from 'perf_hooks';
+import os from 'node:os';
 
 export interface PerformanceMetrics {
   timestamp: Date;
@@ -626,7 +627,7 @@ export class PerformanceMonitor extends EventEmitter {
 
   private getLoadAverage(): number[] {
     try {
-      return process.platform === 'win32' ? [0, 0, 0] : require('os').loadavg();
+      return process.platform === 'win32' ? [0, 0, 0] : os.loadavg();
     } catch {
       return [0, 0, 0];
     }
@@ -634,7 +635,7 @@ export class PerformanceMonitor extends EventEmitter {
 
   private getTotalSystemMemory(): number {
     try {
-      return require('os').totalmem();
+      return os.totalmem();
     } catch {
       return 8 * 1024 * 1024 * 1024; // Default 8GB
     }

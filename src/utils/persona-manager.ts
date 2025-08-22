@@ -3,8 +3,9 @@
  * Adapts AI behavior based on user patterns and preferences
  */
 
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import * as fs from 'node:fs/promises';
+import * as fsSync from 'node:fs';
+import * as path from 'node:path';
 
 export interface UserPreferences {
   // Communication style
@@ -510,8 +511,6 @@ export class PersonaManager {
   private inferInitialLanguagePreferences(): string[] {
     // Analyze project structure to infer language preferences
     try {
-      const fs = require('fs');
-      const path = require('path');
       const projectDir = path.dirname(this.profilePath);
       
       const languageIndicators: { [key: string]: string[] } = {
@@ -530,7 +529,7 @@ export class PersonaManager {
         for (const indicator of indicators) {
           try {
             if (indicator.includes('.')) {
-              if (fs.existsSync(path.join(projectDir, indicator))) {
+              if (fsSync.existsSync(path.join(projectDir, indicator))) {
                 detectedLanguages.push(language);
                 break;
               }

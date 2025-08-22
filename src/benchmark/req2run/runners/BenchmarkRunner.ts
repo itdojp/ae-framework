@@ -14,7 +14,7 @@ import {
   GeneratedArtifacts,
   BenchmarkError 
 } from '../types/index.js';
-import os from 'os';
+import os from 'node:os';
 import fs from 'fs/promises';
 import yaml from 'yaml';
 
@@ -54,12 +54,37 @@ export class BenchmarkRunner {
       // Execute AE Framework 6-phase pipeline
       const intent = await this.executePhase(
         AEFrameworkPhase.INTENT_ANALYSIS,
-        () => Promise.resolve({
-          id: `intent-${spec.id}`,
-          title: `Intent for ${spec.title}`,
-          description: spec.description,
-          success: true,
-          metadata: spec.metadata
+        () => this.intentAgent.analyzeIntent({
+          sources: [
+            {
+              type: 'document',
+              content: `Problem: ${spec.title}\n\nDescription: ${spec.description}\n\nRequirements:\n${spec.requirements.map(r => `${r.priority}: ${r.description}`).join('\n')}\n\nConstraints:\n${JSON.stringify(spec.constraints, null, 2)}`,
+              metadata: {
+                author: spec.metadata.created_by,
+                date: new Date(spec.metadata.created_at),
+                priority: 'high',
+                tags: ['benchmark', 'requirement', spec.metadata.category, spec.metadata.difficulty]
+              }
+            }
+          ],
+          context: {
+            domain: spec.metadata.category,
+            existingSystem: false,
+            constraints: [
+              {
+                type: 'technical',
+                description: 'Must use allowed packages only',
+                impact: 'high',
+                source: 'benchmark-specification'
+              }
+            ],
+            stakeholders: [
+              { name: 'Developer', role: 'implementer', influence: 'high' },
+              { name: 'End User', role: 'consumer', influence: 'high' }
+            ]
+          },
+          analysisDepth: 'comprehensive',
+          outputFormat: 'both'
         }),
         phaseExecutions,
         errors
@@ -67,50 +92,41 @@ export class BenchmarkRunner {
 
       const requirements = await this.executePhase(
         AEFrameworkPhase.REQUIREMENTS,
-        () => Promise.resolve({
-          processed_requirements: spec.requirements,
-          analysis: `Processed ${spec.requirements.length} requirements`,
-          success: true
-        }),
+        () => this.nlpAgent.processNaturalLanguageRequirements(
+          intent.primaryIntent + '\n\n' + 
+          spec.requirements.map(r => `${r.priority}: ${r.description}`).join('\n') +
+          '\n\nConstraints:\n' + JSON.stringify(spec.constraints, null, 2)
+        ),
         phaseExecutions,
         errors
       );
 
       const userStories = await this.executePhase(
         AEFrameworkPhase.USER_STORIES,
-        () => Promise.resolve({
-          stories: spec.requirements.map(r => ({
-            id: `story-${r.id}`,
-            title: `User story for ${r.id}`,
-            description: r.description,
-            priority: r.priority
-          })),
-          success: true
-        }),
+        () => this.storiesAgent.generateUserStories(
+          requirements.processedRequirements || requirements.naturalLanguageRequirements || JSON.stringify(requirements)
+        ),
         phaseExecutions,
         errors
       );
 
       const validation = await this.executePhase(
         AEFrameworkPhase.VALIDATION,
-        () => Promise.resolve({
-          validation_results: {
-            passed: spec.requirements.length,
-            failed: 0,
-            coverage: 100
-          },
-          success: true
-        }),
+        () => this.validationAgent.validateUserStories(userStories),
         phaseExecutions,
         errors
       );
 
       const domainModel = await this.executePhase(
         AEFrameworkPhase.DOMAIN_MODELING,
-        () => Promise.resolve({
-          entities: spec.requirements.map(r => ({ name: r.id, description: r.description })),
-          relationships: [],
-          metadata: spec.metadata
+        () => this.domainAgent.handleDomainModelingTask({
+          description: `Create domain model for ${spec.title}`,
+          prompt: `Based on the validated user stories, create a domain model for the file processing CLI tool. Include entities, value objects, and relationships needed to implement the requirements: ${JSON.stringify(userStories, null, 2)}`,
+          context: {
+            previousPhaseResults: { validation, userStories, requirements },
+            domain: spec.metadata.category,
+            projectScope: spec.description
+          }
         }),
         phaseExecutions,
         errors

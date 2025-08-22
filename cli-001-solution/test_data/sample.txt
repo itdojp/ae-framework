@@ -1,0 +1,8 @@
+Error: Failed to connect to database
+Warning: Low disk space detected
+Info: User logged in successfully
+Error: Invalid authentication credentials
+Info: Data backup completed
+Warning: High CPU usage detected
+Error: Network timeout occurred
+Info: System maintenance scheduled
