@@ -428,7 +428,8 @@ export class ContainerManager extends EventEmitter {
       const imageId = await this.engine.buildImage(buildContext, tag);
 
       if (options?.push) {
-        await this.engine.pushImage(tag.split(':')[0], tag.split(':')[1]);
+        const [imageName, imageTag] = tag.split(':');
+        await this.engine.pushImage(imageName || '', imageTag || 'latest');
       }
 
       this.emit('imageBuilt', {
@@ -739,7 +740,7 @@ export class ContainerManager extends EventEmitter {
       }
     };
 
-    return environments[language] || environments.multi;
+    return environments[language] ?? environments.multi;
   }
 
   private buildVerificationCommand(job: Omit<VerificationJob, 'id' | 'status' | 'startTime'>): string[] {
