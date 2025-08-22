@@ -67,6 +67,7 @@ export interface IntentAnalysisResult {
   ambiguities: Ambiguity[];
   suggestions: string[];
   traceability: RequirementTrace[];
+  primaryIntent: string;
 }
 
 export interface Requirement {

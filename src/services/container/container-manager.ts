@@ -747,7 +747,7 @@ export class ContainerManager extends EventEmitter {
       }
     };
 
-    return environments[language] ?? environments.multi;
+    return environments[language] || environments.multi;
   }
 
   private buildVerificationCommand(job: Omit<VerificationJob, 'id' | 'status' | 'startTime'>): string[] {
@@ -857,7 +857,7 @@ export class ContainerManager extends EventEmitter {
 
       // Parse test results (simplified)
       const testMatches = logs.combined.match(/(\d+) passed.*?(\d+) failed/);
-      if (testMatches) {
+      if (testMatches && testMatches[1] && testMatches[2]) {
         results.summary.passed = parseInt(testMatches[1]);
         results.summary.failed = parseInt(testMatches[2]);
         results.summary.tests = results.summary.passed + results.summary.failed;

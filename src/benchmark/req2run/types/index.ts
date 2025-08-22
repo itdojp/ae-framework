@@ -15,6 +15,12 @@ export interface RequirementSpec {
   expectedOutput: ExpectedOutput;
   timeLimit?: number;
   resourceLimits?: ResourceLimits;
+  metadata: {
+    created_by: string;
+    created_at: string;
+    category: string;
+    difficulty: string;
+  };
 }
 
 export interface BenchmarkResult {

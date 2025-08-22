@@ -56,7 +56,7 @@ export class RiskAssessmentService {
       mitigation.push('Manual review recommended');
     }
     
-    if (action.type === 'spec_update' || action.type === 'validation_update') {
+    if (action.type === 'validation_update') {
       factors.push('Schema/validation changes affect data contracts');
       mitigation.push('Verify backward compatibility');
     }
@@ -268,7 +268,7 @@ export class RiskAssessmentService {
     
     // Check for schema/validation conflicts
     const schemaActions = actions.filter(a => 
-      a.type === 'validation_update' || a.type === 'spec_update'
+      a.type === 'validation_update'
     );
     if (schemaActions.length > 1) {
       risks.push('Multiple schema changes may break data contracts');
@@ -284,7 +284,7 @@ export class RiskAssessmentService {
       if (!groups[action.type]) {
         groups[action.type] = [];
       }
-      groups[action.type].push(action);
+      groups[action.type]?.push(action);
     }
     
     return groups;

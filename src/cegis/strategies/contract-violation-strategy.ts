@@ -16,7 +16,7 @@ export class ContractViolationFixStrategy extends BaseFixStrategy {
   async canApply(failure: FailureArtifact): Promise<boolean> {
     return failure.category === 'contract_violation' && 
            !!failure.evidence.errorMessage &&
-           failure.metadata.environment?.contractName;
+           !!failure.metadata.environment?.contractName;
   }
 
   async generateFix(failure: FailureArtifact): Promise<RepairAction[]> {
@@ -176,7 +176,7 @@ export class ContractViolationFixStrategy extends BaseFixStrategy {
       
       if (dataLog) {
         const jsonMatch = dataLog.match(/Actual data:\s*(.+)/);
-        if (jsonMatch) {
+        if (jsonMatch && jsonMatch[1]) {
           return JSON.parse(jsonMatch[1]);
         }
       }

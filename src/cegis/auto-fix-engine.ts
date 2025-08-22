@@ -14,6 +14,8 @@ import {
   FailurePattern,
   FailureCategory
 } from './types.js';
+
+export type { AutoFixOptions };
 import { RiskAssessmentService } from './risk-assessment-service.js';
 import { TypeErrorFixStrategy } from './strategies/type-error-strategy.js';
 import { TestFailureFixStrategy } from './strategies/test-failure-strategy.js';

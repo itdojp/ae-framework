@@ -61,7 +61,7 @@ export class TypeErrorFixStrategy extends BaseFixStrategy {
     const actions: RepairAction[] = [];
     const nameMatch = tsError.description.match(/Cannot find name '([^']+)'/);
     
-    if (!nameMatch || !failure.location) return actions;
+    if (!nameMatch || !nameMatch[1] || !failure.location) return actions;
     
     const missingName = nameMatch[1];
     const filePath = failure.location.filePath;
@@ -171,7 +171,7 @@ export class TypeErrorFixStrategy extends BaseFixStrategy {
     const actions: RepairAction[] = [];
     const moduleMatch = tsError.description.match(/Cannot find module '([^']+)'/);
     
-    if (!moduleMatch || !failure.location) return actions;
+    if (!moduleMatch || !moduleMatch[1] || !failure.location) return actions;
     
     const moduleName = moduleMatch[1];
     const filePath = failure.location.filePath;
@@ -269,6 +269,8 @@ export class TypeErrorFixStrategy extends BaseFixStrategy {
     const argMatch = tsError.description.match(/Argument of type '([^']+)' is not assignable to parameter of type '([^']+)'/);
     if (argMatch) {
       const [, argType, paramType] = argMatch;
+      
+      if (!argType || !paramType) return actions;
       
       // Common fixes
       if (argType === 'string' && paramType === 'number') {
