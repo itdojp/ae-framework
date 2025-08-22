@@ -406,7 +406,7 @@ export function createAEIRValidator() {
     
     // Partial validation for development
     validatePartial: (data: Partial<StrictAEIR>) => {
-      return StrictAEIRSchema.deepPartial().safeParse(data);
+      return StrictAEIRSchema.partial().safeParse(data);
     },
     
     // Get validation errors in a readable format
