@@ -342,6 +342,9 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
     // Create traceability links
     const traceability = this.createTraceability(requirements);
     
+    // Determine primary intent from high-priority requirements
+    const primaryIntent = this.extractPrimaryIntent(requirements);
+    
     return {
       requirements,
       userStories,
@@ -353,6 +356,7 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
       ambiguities,
       suggestions,
       traceability,
+      primaryIntent,
     };
   }
 
@@ -1307,5 +1311,31 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
     }
     
     return suggestions;
+  }
+
+  /**
+   * Extract primary intent from requirements
+   */
+  private extractPrimaryIntent(requirements: Requirement[]): string {
+    // Find the highest priority requirement
+    const mustHaveReqs = requirements.filter(req => req.priority === 'must');
+    if (mustHaveReqs.length > 0 && mustHaveReqs[0]) {
+      return mustHaveReqs[0].description;
+    }
+
+    // Fall back to first should-have requirement
+    const shouldHaveReqs = requirements.filter(req => req.priority === 'should');
+    if (shouldHaveReqs.length > 0 && shouldHaveReqs[0]) {
+      return shouldHaveReqs[0].description;
+    }
+
+    // Fall back to any functional requirement
+    const functionalReqs = requirements.filter(req => req.type === 'functional');
+    if (functionalReqs.length > 0 && functionalReqs[0]) {
+      return functionalReqs[0].description;
+    }
+
+    // Ultimate fallback
+    return requirements.length > 0 && requirements[0] ? requirements[0].description : 'Define system requirements and functionality';
   }
 }
