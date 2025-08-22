@@ -25,6 +25,8 @@ export interface ProcessedRequirements {
   conflicts: string[];
   ambiguities: string[];
   clarificationNeeded: string[];
+  processedRequirements?: string;
+  naturalLanguageRequirements?: string;
 }
 
 // Business entity interface for better type safety (addressing review comment)

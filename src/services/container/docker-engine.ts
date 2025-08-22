@@ -55,7 +55,7 @@ export class DockerEngine extends ContainerEngine {
         return false;
       }
 
-      this.engineInfo.version = versionMatch[1];
+      this.engineInfo.version = versionMatch[1] || 'unknown';
       this.engineInfo.available = true;
 
       // Check for docker-compose
@@ -910,12 +910,12 @@ export class DockerEngine extends ContainerEngine {
 
     return portsString.split(', ').map(portMapping => {
       const match = portMapping.match(/(.+?):(\d+)->(\d+)\/(.+)/);
-      if (match) {
+      if (match && match[2] && match[3]) {
         return {
-          hostIp: match[1],
+          hostIp: match[1] || '',
           hostPort: parseInt(match[2]),
           containerPort: parseInt(match[3]),
-          protocol: match[4]
+          protocol: match[4] || 'tcp'
         };
       }
       return null;

@@ -193,6 +193,10 @@ export interface FixResult {
   };
   recommendations: string[];
   reportPath?: string;
+  success: boolean;
+  appliedActions: AppliedFix[];
+  generatedFiles: string[];
+  backupFiles: string[];
 }
 
 // Risk assessment result
@@ -209,6 +213,7 @@ export interface AutoFixOptions {
   confidenceThreshold?: number;
   maxRiskLevel?: number;
   timeoutMs?: number;
+  maxIterations?: number;
 }
 
 // Pattern analysis result

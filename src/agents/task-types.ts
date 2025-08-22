@@ -6,6 +6,7 @@ export interface TaskRequest {
   description: string;
   prompt: string;
   subagent_type: string;
+  context?: any;
 }
 
 export interface TaskResponse {

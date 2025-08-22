@@ -225,6 +225,8 @@ export abstract class BaseFixStrategy implements FixStrategy {
     if (!match) return null;
 
     const [, code, description] = match;
+    if (!code || !description) return null;
+    
     return {
       code,
       type: this.getTypeScriptErrorType(code),

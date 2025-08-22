@@ -95,7 +95,7 @@ export class TestFailureFixStrategy extends BaseFixStrategy {
     const expectedMatch = testOutput.match(/Expected:\s*(.+)/);
     const actualMatch = testOutput.match(/Received:\s*(.+)/);
     
-    if (expectedMatch && actualMatch && failure.evidence.sourceCode) {
+    if (expectedMatch && actualMatch && expectedMatch[1] && actualMatch[1] && failure.evidence.sourceCode) {
       const expected = expectedMatch[1].trim();
       const actual = actualMatch[1].trim();
       const sourceLines = failure.evidence.sourceCode.split('\n');
@@ -255,7 +255,7 @@ export class TestFailureFixStrategy extends BaseFixStrategy {
     
     // Extract current timeout if any
     const timeoutMatch = testOutput.match(/(\d+)ms/);
-    const currentTimeout = timeoutMatch ? parseInt(timeoutMatch[1]) : 5000;
+    const currentTimeout = timeoutMatch && timeoutMatch[1] ? parseInt(timeoutMatch[1]) : 5000;
     const newTimeout = Math.min(currentTimeout * 2, 30000); // Max 30 seconds
     
     // Add or update timeout
