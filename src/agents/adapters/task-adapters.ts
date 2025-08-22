@@ -58,8 +58,8 @@ export class RequirementsAgentAdapter implements StandardAEAgent<RequirementsInp
         structured: this.extractStructuredRequirements(result, input.intentAnalysis.requirements),
         summary: result.summary || 'Requirements processed successfully',
         gaps: result.gaps || [],
-        processedRequirements: result.processedRequirements || nlpInput,
-        naturalLanguageRequirements: result.naturalLanguageRequirements || nlpInput
+        processedRequirements: result.summary || 'Requirements processed', // Map to string
+        naturalLanguageRequirements: nlpInput // Use input text
       };
 
       const metadata: PhaseMetadata = {
@@ -232,7 +232,7 @@ export class UserStoriesAgentAdapter implements StandardAEAgent<UserStoriesInput
         stories: this.transformStories(result.stories || []),
         acceptanceCriteria: this.extractAcceptanceCriteria(result.stories || []),
         traceabilityMatrix: this.buildTraceabilityMatrix(result.stories || [], input.requirements.structured),
-        success: result.success || false
+        success: (result.stories && result.stories.length > 0) // Determine success from stories
       };
 
       return {
@@ -502,6 +502,7 @@ export class DomainModelingAgentAdapter implements StandardAEAgent<DomainModelin
       const domainTask = {
         description: `Create domain model for ${input.businessContext.domain}`,
         prompt: this.buildDomainPrompt(input),
+        subagent_type: 'general-purpose', // Required field
         context: {
           previousPhaseResults: input,
           domain: input.businessContext.domain,

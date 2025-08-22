@@ -1,0 +1,105 @@
+{
+  "metadata": {
+    "timestamp": "2025-08-22T08:14:54.535Z",
+    "totalProblems": 1,
+    "successfulRuns": 0,
+    "failedRuns": 1,
+    "averageScore": 0,
+    "totalExecutionTime": 13,
+    "framework": "AE Framework v1.0.0 (Standardized Pipeline)",
+    "benchmarkVersion": "req2run-benchmark",
+    "pipelineVersion": "1.0.0",
+    "agentsUsed": [
+      "IntentAgentAdapter",
+      "RequirementsAgentAdapter",
+      "UserStoriesAgentAdapter",
+      "ValidationAgentAdapter",
+      "DomainModelingAgentAdapter",
+      "UIUXAgentAdapter"
+    ]
+  },
+  "configuration": {
+    "execution": {
+      "parallel": true,
+      "maxConcurrency": 3,
+      "timeout": 180000,
+      "retryOnFailure": false
+    },
+    "reporting": {
+      "destinations": [
+        {
+          "type": "filesystem",
+          "config": {
+            "directory": "ci-reports",
+            "format": [
+              "json"
+            ]
+          }
+        }
+      ]
+    },
+    "evaluation": {
+      "includePerformanceMetrics": true,
+      "includeSecurityAnalysis": false,
+      "includeCodeQualityMetrics": true,
+      "generateArtifacts": false
+    }
+  },
+  "analytics": {
+    "summary": {
+      "totalProblems": 1,
+      "successRate": 0,
+      "averageScore": 0,
+      "averageExecutionTime": 13
+    },
+    "performance": {
+      "fastestExecution": 13,
+      "slowestExecution": 13,
+      "averagePhaseTime": {
+        "intent-analysis": 2,
+        "requirements": 0,
+        "user-stories": 1
+      }
+    },
+    "quality": {
+      "highScoreProblems": 0,
+      "mediumScoreProblems": 0,
+      "lowScoreProblems": 0
+    },
+    "errors": {
+      "totalErrors": 0,
+      "errorsByPhase": {},
+      "commonErrorPatterns": []
+    }
+  },
+  "results": [
+    {
+      "problemId": "CLI-001",
+      "success": false,
+      "score": 0,
+      "executionTime": 13,
+      "functionalCoverage": 0,
+      "phases": [
+        {
+          "phase": "intent-analysis",
+          "duration": 2,
+          "success": true,
+          "errors": 0
+        },
+        {
+          "phase": "requirements",
+          "duration": 0,
+          "success": true,
+          "errors": 0
+        },
+        {
+          "phase": "user-stories",
+          "duration": 1,
+          "success": false,
+          "errors": 0
+        }
+      ],
+      "errors": []
+    }
+  ]
+}
