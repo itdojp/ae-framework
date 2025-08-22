@@ -3,9 +3,9 @@
  * Adapts AI behavior based on user patterns and preferences
  */
 
-import * as fs from 'fs/promises';
-import * as fsSync from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs/promises';
+import * as fsSync from 'node:fs';
+import * as path from 'node:path';
 
 export interface UserPreferences {
   // Communication style

@@ -11,8 +11,8 @@ import { ConfigLoader } from '../cli/config/ConfigLoader.js';
 import { MetricsCollector } from '../cli/metrics/MetricsCollector.js';
 import { AESpecCompiler, AEIR, CompileOptions } from '@ae-framework/spec-compiler';
 import { EnhancedStateManager } from '../utils/enhanced-state-manager.js';
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 export interface HybridTDDConfig {
   enableCLI: boolean;

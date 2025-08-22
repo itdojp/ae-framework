@@ -5,7 +5,7 @@
 
 import { EventEmitter } from 'events';
 import { performance, PerformanceObserver } from 'perf_hooks';
-import os from 'os';
+import os from 'node:os';
 
 export interface PerformanceMetrics {
   timestamp: Date;

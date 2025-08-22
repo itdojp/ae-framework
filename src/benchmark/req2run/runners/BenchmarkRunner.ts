@@ -14,7 +14,7 @@ import {
   GeneratedArtifacts,
   BenchmarkError 
 } from '../types/index.js';
-import os from 'os';
+import os from 'node:os';
 import fs from 'fs/promises';
 import yaml from 'yaml';
 
