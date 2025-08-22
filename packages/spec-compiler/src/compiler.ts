@@ -128,7 +128,7 @@ export class AESpecCompiler {
     
     for (const line of lines) {
       const match = line.match(/^[-*]\s*\*\*(.+?)\*\*:\s*(.+)$/);
-      if (match) {
+      if (match && match[1] && match[2]) {
         glossary.push({
           term: match[1].trim(),
           definition: match[2].trim(),
@@ -151,12 +151,12 @@ export class AESpecCompiler {
           entities.push(currentEntity);
         }
         currentEntity = {
-          name: entityMatch[1].trim(),
+          name: entityMatch[1]?.trim() || 'UnknownEntity',
           fields: [],
         };
       } else if (currentEntity) {
         const fieldMatch = line.match(/^[-*]\s*\*\*(.+?)\*\*\s*\((.+?)\)(?:\s*-\s*(.+))?$/);
-        if (fieldMatch) {
+        if (fieldMatch && fieldMatch[1] && fieldMatch[2]) {
           const typeRaw = fieldMatch[2].trim();
           const typeParts = typeRaw.split(',').map(s => s.trim());
           const required = typeParts.includes('required');
@@ -186,7 +186,7 @@ export class AESpecCompiler {
     
     for (const line of lines) {
       const match = line.match(/^[-*]\s*(.+)$/);
-      if (match) {
+      if (match && match[1]) {
         invariants.push({
           id: `INV_${counter.toString().padStart(3, '0')}`,
           description: match[1].trim(),
@@ -207,7 +207,7 @@ export class AESpecCompiler {
     
     for (const section of sections.slice(1)) {
       const lines = section.split('\n');
-      const name = lines[0].trim();
+      const name = lines[0]?.trim() || 'Unnamed Use Case';
       const usecase: AEIR['usecases'][0] = {
         name,
         actor: 'User', // Extract from content
