@@ -428,7 +428,15 @@ export class ContainerManager extends EventEmitter {
       const imageId = await this.engine.buildImage(buildContext, tag);
 
       if (options?.push) {
-        await this.engine.pushImage(tag.split(':')[0], tag.split(':')[1]);
+        // Validate tag format before splitting
+        if (typeof tag !== 'string' || !tag.includes(':')) {
+          throw new Error(`Invalid image tag format: "${tag}". Expected format "name:tag".`);
+        }
+        const [imageName, imageTag] = tag.split(':');
+        if (!imageName) {
+          throw new Error(`Image name is empty in tag: "${tag}".`);
+        }
+        await this.engine.pushImage(imageName, imageTag || 'latest');
       }
 
       this.emit('imageBuilt', {
@@ -739,7 +747,7 @@ export class ContainerManager extends EventEmitter {
       }
     };
 
-    return environments[language] || environments.multi;
+    return environments[language] ?? environments.multi;
   }
 
   private buildVerificationCommand(job: Omit<VerificationJob, 'id' | 'status' | 'startTime'>): string[] {

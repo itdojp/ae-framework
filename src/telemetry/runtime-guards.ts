@@ -273,8 +273,8 @@ export class RuntimeGuard {
         return reply.code(400).send({
           error: 'Validation Error',
           message: 'Request payload validation failed',
-          details: violation.details,
-          violation_id: violation.id,
+          details: violation?.details || 'Unknown validation error',
+          violation_id: violation?.id || 'unknown',
         });
       }
 
@@ -304,8 +304,8 @@ export class RuntimeGuard {
           return {
             error: 'Response Validation Error',
             message: 'Response payload validation failed',
-            details: violation.details,
-            violation_id: violation.id,
+            details: violation?.details || 'Unknown validation error',
+            violation_id: violation?.id || 'unknown',
             original_payload: payload,
           };
         }

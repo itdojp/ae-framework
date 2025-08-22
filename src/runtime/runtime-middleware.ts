@@ -618,9 +618,9 @@ export class MiddlewareRegistry {
     return Array.from(this.registeredRoutes.entries()).map(([key, value]) => {
       const [method, path] = key.split(':');
       return {
-        path,
-        method,
-        operationId: value.operationId,
+        path: path || '',
+        method: method || '',
+        operationId: value.operationId || '',
       };
     });
   }
