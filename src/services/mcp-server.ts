@@ -518,6 +518,8 @@ export class MCPServer extends EventEmitter {
       const middleware = this.middleware[index++];
       if (middleware) {
         await middleware.handler(request, response, next);
+      } else {
+        console.warn(`Warning: Middleware at index ${index - 1} is undefined and was skipped.`);
       }
     };
 

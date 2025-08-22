@@ -428,8 +428,15 @@ export class ContainerManager extends EventEmitter {
       const imageId = await this.engine.buildImage(buildContext, tag);
 
       if (options?.push) {
+        // Validate tag format before splitting
+        if (typeof tag !== 'string' || !tag.includes(':')) {
+          throw new Error(`Invalid image tag format: "${tag}". Expected format "name:tag".`);
+        }
         const [imageName, imageTag] = tag.split(':');
-        await this.engine.pushImage(imageName || '', imageTag || 'latest');
+        if (!imageName) {
+          throw new Error(`Image name is empty in tag: "${tag}".`);
+        }
+        await this.engine.pushImage(imageName, imageTag || 'latest');
       }
 
       this.emit('imageBuilt', {
