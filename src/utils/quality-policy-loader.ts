@@ -251,15 +251,19 @@ function applyOverrides(quality: Record<string, QualityGate>, overrides: Record<
     // Navigate to the parent object
     for (let i = 0; i < pathParts.length - 1; i++) {
       const part = pathParts[i];
-      if (current[part] === undefined) {
+      if (part && current[part] === undefined) {
         current[part] = {};
       }
-      current = current[part];
+      if (part) {
+        current = current[part];
+      }
     }
     
     // Set the final value
     const finalKey = pathParts[pathParts.length - 1];
-    current[finalKey] = value;
+    if (finalKey) {
+      current[finalKey] = value;
+    }
   });
   
   return updatedQuality;

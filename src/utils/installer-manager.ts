@@ -895,19 +895,19 @@ end
   private async runCommand(command: string, options: { silent?: boolean } = {}): Promise<string> {
     return new Promise((resolve, reject) => {
       const [cmd, ...args] = command.split(' ');
-      const process = spawn(cmd, args, { 
+      const process = spawn(cmd || 'echo', args, { 
         cwd: this.projectRoot,
         stdio: options.silent ? 'pipe' : 'inherit'
       });
       
       let output = '';
       
-      if (options.silent) {
-        process.stdout?.on('data', (data) => {
+      if (options.silent && process.stdout && process.stderr) {
+        process.stdout.on('data', (data) => {
           output += data.toString();
         });
         
-        process.stderr?.on('data', (data) => {
+        process.stderr.on('data', (data) => {
           output += data.toString();
         });
       }

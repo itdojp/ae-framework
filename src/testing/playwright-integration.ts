@@ -611,7 +611,7 @@ export class PlaywrightIntegration extends EventEmitter {
       priority: userFlow.priority,
       tags: ['user-flow', 'e2e', userFlow.frequency],
       steps,
-      expectedOutcome: userFlow.steps[userFlow.steps.length - 1].expectedResult,
+      expectedOutcome: userFlow.steps[userFlow.steps.length - 1]?.expectedResult || 'Test flow completes successfully',
       preconditions: ['User is authenticated', 'Application is in initial state'],
       testData: { flowId: userFlow.id },
       dependencies: []
@@ -692,7 +692,7 @@ export class PlaywrightIntegration extends EventEmitter {
     }
 
     if (request.constraints.browser.length === 1) {
-      config.browserType = request.constraints.browser[0];
+      config.browserType = request.constraints.browser[0] || 'chromium';
     }
 
     // Adjust timeout based on test complexity
@@ -810,7 +810,7 @@ export class PlaywrightIntegration extends EventEmitter {
   private extractComponentFromSelector(selector: string): string {
     // Extract component identifier from CSS selector
     const match = selector.match(/\[data-component="([^"]+)"\]/);
-    return match ? match[1] : 'unknown';
+    return match?.[1] || 'unknown';
   }
 
   private calculateUserFlowCoverage(tests: E2ETestCase[]): number {

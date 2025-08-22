@@ -478,13 +478,15 @@ export class EvidenceValidator {
       for (const line of lines) {
         if (line) {
           const [file, ...content] = line.split(':');
-          evidence.push({
-            type: 'code',
-            source: path.basename(file),
-            content: content.join(':').trim(),
-            relevance: 0.6,
-            location: { file }
-          });
+          if (file) {
+            evidence.push({
+              type: 'code',
+              source: path.basename(file),
+              content: content.join(':').trim(),
+              relevance: 0.6,
+              location: { file }
+            });
+          }
         }
       }
     } catch (error) {
@@ -551,9 +553,9 @@ export class EvidenceValidator {
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      if (line.includes('test(') || line.includes('it(')) {
+      if (line?.includes('test(') || line?.includes('it(')) {
         for (const keyword of keywords) {
-          if (line.toLowerCase().includes(keyword)) {
+          if (line?.toLowerCase().includes(keyword)) {
             tests.push(line.trim());
             break;
           }
@@ -855,7 +857,7 @@ export class EvidenceValidator {
       const codeMatch = solution.match(/```[\w]*\n([\s\S]*?)\n```/);
       if (codeMatch) {
         const code = codeMatch[1];
-        const implValidation = await this.validateImplementation(code, problem);
+        const implValidation = await this.validateImplementation(code || '', problem);
         
         // Combine evidence
         const combinedEvidence = [...claimValidation.evidence, ...implValidation.evidence];
@@ -878,8 +880,8 @@ export class EvidenceValidator {
    */
   getEvidenceSummary(evidence: Evidence[]): string {
     const byType = evidence.reduce((acc, e) => {
-      if (!acc[e.type]) acc[e.type] = [];
-      acc[e.type].push(e);
+      if (!acc[e?.type || 'unknown']) acc[e?.type || 'unknown'] = [];
+      acc[e?.type || 'unknown']?.push(e);
       return acc;
     }, {} as Record<string, Evidence[]>);
 
