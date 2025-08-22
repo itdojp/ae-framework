@@ -1,0 +1,160 @@
+version: "2.0"
+name: "ae-framework-v2"
+description: "AI-Agent Enabled Framework Self-Improvement Project with TDD enforcement"
+
+phases:
+  "0-tdd-setup":
+    name: "TDD Infrastructure Setup"
+    description: "Set up ae-framework TDD functionality for quality-controlled development"
+    required_artifacts: ["ae-framework-v2.yml", "tests/tdd-setup.test.ts"]
+    validation: ["tdd_system_operational", "metrics_collection_active"]
+    enforce_red_first: true
+    block_code_without_test: true
+    coverage_threshold: 80
+
+  "1-foundation":
+    name: "Foundation Analysis & Core Utilities"
+    description: "Analyze existing codebase and fix core utility TypeScript compliance"
+    required_artifacts: ["src/utils/*.ts", "tests/utils/*.test.ts"]
+    validation: ["strict_typescript_compliance", "zero_core_errors"]
+    prerequisites: [{
+      phase: "0-tdd-setup",
+      status: "completed",
+      validation: "tdd_infrastructure_ready"
+    }]
+    coverage_threshold: 80
+
+  "2-agents":
+    name: "Agent System Refactoring"
+    description: "Unify agent system using domain modeling and TDD"
+    required_artifacts: ["src/agents/*.ts", "tests/agents/*.test.ts"]
+    validation: ["unified_agent_architecture", "agent_typescript_compliance"]
+    prerequisites: [{
+      phase: "1-foundation",
+      status: "completed",
+      validation: "foundation_errors_resolved"
+    }]
+    coverage_threshold: 80
+
+  "3-services":
+    name: "Services & Integration"
+    description: "Reconstruct service layer with optimization and validation"
+    required_artifacts: ["src/services/*.ts", "tests/services/*.test.ts"]
+    validation: ["service_layer_optimized", "performance_improved"]
+    prerequisites: [{
+      phase: "2-agents",
+      status: "completed", 
+      validation: "agent_system_unified"
+    }]
+    coverage_threshold: 80
+
+  "4-validation":
+    name: "Validation & Quality Assurance"
+    description: "Comprehensive system validation and quality reporting"
+    required_artifacts: ["reports/*.json", "tests/integration/*.test.ts"]
+    validation: ["zero_typescript_errors", "benchmark_passed", "quality_improved"]
+    prerequisites: [{
+      phase: "3-services",
+      status: "completed",
+      validation: "services_optimized"
+    }]
+    coverage_threshold: 85
+
+guards:
+  - name: "Self-Improvement TDD Guard"
+    description: "Prevent code creation without corresponding tests during self-improvement"
+    rule: "For each modified src/**/*.ts file, corresponding tests/**/*.test.ts must exist"
+    enforcement: "strict"
+
+  - name: "TypeScript Strict Mode Guard"
+    description: "Ensure TypeScript strict mode compliance"
+    rule: "All TypeScript files must compile without errors in strict mode"
+    enforcement: "strict"
+
+  - name: "Component Utilization Guard"
+    description: "Ensure ae-framework components are utilized where applicable"
+    rule: "New implementations should leverage existing ae-framework components"
+    enforcement: "warning"
+
+  - name: "Quality Improvement Guard"
+    description: "Ensure measurable quality improvements"
+    rule: "Changes must not increase TypeScript error count"
+    enforcement: "strict"
+
+cli:
+  checkpoint_validation: true
+  interactive_mode: true
+  auto_validation: true
+  commands:
+    check:
+      description: "Validate current self-improvement phase requirements"
+      usage: "ae-framework check --phase <phase-name>"
+    next:
+      description: "Move to next self-improvement phase with validation"
+      usage: "ae-framework next"
+    guard:
+      description: "Run specific guard validation for self-improvement"
+      usage: "ae-framework guard --name <guard-name>"
+    progress:
+      description: "Show self-improvement progress and metrics"
+      usage: "ae-framework progress"
+
+templates:
+  test_first:
+    enabled: true
+    path: "templates/test-first/"
+  phase_transitions:
+    enabled: true
+    require_validation: true
+  standard_prompts:
+    enabled: true
+    path: "templates/prompts/"
+  self_improvement:
+    enabled: true
+    path: "templates/self-improvement/"
+
+integrations:
+  git:
+    pre_commit_hooks: true
+    prevent_commit_on_red: true
+    prevent_commit_on_typescript_errors: true
+  ide:
+    vscode_extension: true
+    guard_notifications: true
+  ci_cd:
+    validate_on_push: true
+    block_merge_on_violations: true
+  claude_code:
+    task_tool_integration: true
+    hybrid_tdd_system: true
+    real_time_guidance: true
+
+metrics:
+  track_tdd_violations: true
+  track_typescript_errors: true
+  phase_timing: true
+  coverage_trends: true
+  self_improvement_progress: true
+  component_utilization: true
+  export:
+    format: "json"
+    path: "metrics/self-improvement/"
+
+# Self-improvement specific configuration
+self_improvement:
+  target_typescript_errors: 0
+  starting_typescript_errors: 287
+  target_coverage: 80
+  target_performance_improvement: 20
+  component_utilization_tracking: true
+  quality_gates:
+    - phase: "0-tdd-setup"
+      criteria: ["TDD system operational", "Metrics collection active"]
+    - phase: "1-foundation"
+      criteria: ["Core utilities TypeScript compliant", "Foundation tests passing"]
+    - phase: "2-agents"
+      criteria: ["Agent system unified", "Agent TypeScript compliance"]
+    - phase: "3-services"
+      criteria: ["Service layer optimized", "Performance benchmarked"]
+    - phase: "4-validation"
+      criteria: ["Zero TypeScript errors", "Quality improvements proven"]
