@@ -385,7 +385,10 @@ export class BenchmarkRunner {
   private getPhaseInput(phase: AEFrameworkPhase, phaseExecutions: PhaseExecution[]): any {
     if (phaseExecutions.length === 0) return null;
     const lastExecution = phaseExecutions[phaseExecutions.length - 1];
-    return lastExecution.output;
+    if (lastExecution) {
+      return lastExecution.output;
+    }
+    return null;
   }
 
   /**
