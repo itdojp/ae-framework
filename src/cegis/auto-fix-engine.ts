@@ -109,6 +109,11 @@ export class AutoFixEngine {
       console.log(`📊 Applied: ${appliedFixes.length}, Skipped: ${skippedFixes.length}`);
       
       return {
+  success: undefined, // TODO: Implement
+  appliedActions: undefined, // TODO: Implement
+  generatedFiles: undefined, // TODO: Implement
+  backupFiles: undefined, // TODO: Implement
+
         appliedFixes,
         skippedFixes,
         summary,

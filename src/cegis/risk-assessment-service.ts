@@ -284,7 +284,7 @@ export class RiskAssessmentService {
       if (!groups[action.type]) {
         groups[action.type] = [];
       }
-      groups[action.type].push(action);
+      groups[action?.type]?.push(action);
     }
     
     return groups;

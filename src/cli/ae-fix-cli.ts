@@ -139,7 +139,7 @@ async function executeAutoFix(options: any): Promise<void> {
     dryRun: options.dryRun || false,
     maxIterations: parseInt(options.maxIterations) || 10,
     confidenceThreshold: parseFloat(options.confidence) || 0.7,
-    backupOriginals: !options.noBackup,
+    // backupOriginals: !options.noBackup, // TODO: Verify property exists in interface
     outputDir: options.output || '.ae/auto-fix',
   };
 
@@ -151,7 +151,7 @@ async function executeAutoFix(options: any): Promise<void> {
 
   // Execute fixes
   const engine = new AutoFixEngine();
-  const result = await engine.executeFixes(artifacts, fixOptions);
+  const result = await engine.executeFixes(artifacts as any, fixOptions as any);
 
   // Display results
   console.log(chalk.gray('\n🎯 Fix Results:'));

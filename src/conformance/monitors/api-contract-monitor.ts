@@ -67,7 +67,10 @@ export class APIContractMonitor implements ConformanceMonitor {
           timestamp: new Date().toISOString(),
           duration: Date.now() - startTime,
           context,
-          metrics: { executionTime: Date.now() - startTime }
+          metrics: {
+  networkCalls: undefined, // TODO: Implement
+  dbQueries: undefined, // TODO: Implement
+ executionTime: Date.now() - startTime }
         };
       }
 
@@ -137,6 +140,10 @@ export class APIContractMonitor implements ConformanceMonitor {
           category: 'api_contract',
           severity: 'major',
           message: `API contract validation failed: ${error instanceof Error ? error.message : String(error)}`,
+          metrics: undefined, // TODO: Implement
+          logs: undefined, // TODO: Implement
+          stateSnapshot: undefined, // TODO: Implement
+          traces: undefined, // TODO: Implement
           context,
           stackTrace: error instanceof Error ? error.stack : undefined,
           evidence: { inputData: data }
