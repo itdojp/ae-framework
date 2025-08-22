@@ -340,8 +340,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     });
 }
 
-export {
-  runBenchmarkEPICDemo as default,
-  demonstrateCICDIntegration,
-  demonstratePerformanceRegression
-};
+export default runBenchmarkEPICDemo;
