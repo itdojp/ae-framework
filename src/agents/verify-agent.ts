@@ -734,7 +734,7 @@ export class VerifyAgent {
       }
 
       // Find Rust project directory by looking for Cargo.toml
-      const projectPath = this.findRustProjectPath(rustFiles[0].path);
+      const projectPath = this.findRustProjectPath(rustFiles[0]?.path || '');
       
       if (!projectPath) {
         return {
@@ -829,13 +829,13 @@ export class VerifyAgent {
         // Try to find project root from the first code file
         const firstFile = request.codeFiles[0];
         
-        if (firstFile.language === 'rust') {
-          projectPath = this.findRustProjectPath(firstFile.path) || undefined;
-        } else if (firstFile.language === 'elixir') {
-          projectPath = this.findElixirProjectPath(firstFile.path) || undefined;
+        if (firstFile?.language === 'rust') {
+          projectPath = this.findRustProjectPath(firstFile?.path || '') || undefined;
+        } else if (firstFile?.language === 'elixir') {
+          projectPath = this.findElixirProjectPath(firstFile?.path || '') || undefined;
         }
         
-        if (!projectPath) {
+        if (!projectPath && firstFile?.path) {
           projectPath = path.dirname(path.resolve(firstFile.path));
         }
       }

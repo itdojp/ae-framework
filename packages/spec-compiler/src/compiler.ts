@@ -220,7 +220,7 @@ export class AESpecCompiler {
         if (stepMatch) {
           usecase.steps.push({
             step: stepCounter++,
-            description: stepMatch[1].trim(),
+            description: stepMatch?.[1]?.trim() || 'Step description',
             type: 'action', // Infer from content
           });
         }
@@ -248,9 +248,9 @@ export class AESpecCompiler {
       const match = line.match(/^[-*]\s*(GET|POST|PUT|PATCH|DELETE)\s+(.+?)(?:\s*-\s*(.+))?$/);
       if (match) {
         apis.push({
-          method: match[1] as any,
-          path: match[2].trim(),
-          summary: match[3]?.trim(),
+          method: match?.[1] as any || 'GET',
+          path: match?.[2]?.trim() || '/api',
+          summary: match?.[3]?.trim(),
         });
       }
     }

@@ -269,7 +269,7 @@ export class OperateAgent {
     ) ? 'healthy' : 'unhealthy';
     
     const details = healthChecks.map((check, index) => ({
-      endpoint: this.config.monitoringConfig.healthEndpoints[index],
+      endpoint: this.config.monitoringConfig.healthEndpoints[index] || `endpoint_${index}`,
       status: check.status === 'fulfilled' ? check.value : { healthy: false, error: 'Check failed' },
     }));
     

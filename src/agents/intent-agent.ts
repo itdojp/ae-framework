@@ -592,14 +592,14 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
     for (let i = 0; i < stakeholders.length; i++) {
       for (let j = i + 1; j < stakeholders.length; j++) {
         const conflictingConcerns = this.findConflicts(
-          stakeholders[i].concerns,
-          stakeholders[j].concerns
+          stakeholders[i]?.concerns || [],
+          stakeholders[j]?.concerns || []
         );
         
         for (const issue of conflictingConcerns) {
           conflicts.push({
-            stakeholder1: stakeholders[i].name,
-            stakeholder2: stakeholders[j].name,
+            stakeholder1: stakeholders[i]?.name || 'Unknown',
+            stakeholder2: stakeholders[j]?.name || 'Unknown',
             issue,
           });
         }
@@ -688,7 +688,9 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
       let match;
       pattern.lastIndex = 0; // Reset regex state
       while ((match = pattern.exec(content)) !== null) {
-        requirements.push(match[1]);
+        if (match[1]) {
+          requirements.push(match[1]);
+        }
         // All patterns are global, so continue until no more matches
       }
     }
@@ -942,8 +944,8 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
     for (let i = 0; i < entities.length; i++) {
       for (let j = i + 1; j < entities.length; j++) {
         relationships.push({
-          from: entities[i].name,
-          to: entities[j].name,
+          from: entities[i]?.name || `entity_${i}`,
+          to: entities[j]?.name || `entity_${j}`,
           type: 'references',
           cardinality: '1-n',
         });
@@ -1181,8 +1183,9 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
     ];
     
     for (const [a, b] of opposites) {
-      if ((concern1.includes(a) && concern2.includes(b)) ||
-          (concern1.includes(b) && concern2.includes(a))) {
+      if (a && b && concern1 && concern2 &&
+          ((concern1.includes(a) && concern2.includes(b)) ||
+          (concern1.includes(b) && concern2.includes(a)))) {
         return true;
       }
     }
@@ -1207,7 +1210,7 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
     if (steeringDocs.product) {
       requirements.forEach(req => {
         // Add product context to requirements (case-insensitive check)
-        if (!req.rationale && steeringDocs.product.toLowerCase().includes('vision')) {
+        if (!req.rationale && steeringDocs.product?.toLowerCase().includes('vision')) {
           req.rationale = 'Aligns with product vision';
         }
       });
@@ -1220,7 +1223,7 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
         if (req.type === 'technical') {
           // More flexible matching using keywords
           const reqLower = req.description.toLowerCase();
-          const archLower = steeringDocs.architecture.toLowerCase();
+          const archLower = steeringDocs.architecture?.toLowerCase() || '';
           
           // Check if requirement contains architecture keywords or if architecture doc mentions the requirement
           const isArchRelated = archKeywords.some(keyword => reqLower.includes(keyword)) ||

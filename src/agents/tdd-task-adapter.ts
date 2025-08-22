@@ -132,12 +132,12 @@ export class TDDTaskAdapter {
 
 **Feature**: ${feature}
 **Estimated Effort**: ${plan.estimatedEffort}
-**Current Phase**: ${currentPhase.name}
+**Current Phase**: ${currentPhase?.name || 'Unknown'}
 
 ## Risk Factors
-${plan.riskFactors.map((risk: any) => `• ${risk}`).join('\n')}
+${plan.riskFactors?.map((risk: any) => `• ${risk}`).join('\n') || 'No risk factors identified'}
       `.trim(),
-      recommendations: currentPhase.tasks.map((task: any) => `${task.action} (${task.priority} priority)`),
+      recommendations: currentPhase?.tasks?.map((task: any) => `${task.action} (${task.priority} priority)`) || ['Start with TDD implementation'],
       nextActions: [
         'Start with RED phase - write failing tests first',
         `Create test file for ${feature}`,
@@ -301,13 +301,13 @@ ${testSuggestion.testCases
                   prompt.match(/create\s+([^\.]+)/i) ||
                   prompt.match(/add\s+([^\.]+)/i);
     
-    return match ? match[1].trim() : 'new feature';
+    return match?.[1]?.trim() || 'new feature';
   }
 
   private extractFilePath(prompt: string): string | null {
     // Extract file path from prompt
     const match = prompt.match(/([^\s]+\.ts)/);
-    return match ? match[1] : null;
+    return match?.[1] || null;
   }
 
   private detectCurrentPhase(): string {

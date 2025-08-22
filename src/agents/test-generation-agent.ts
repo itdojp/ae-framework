@@ -411,12 +411,12 @@ export class TestGenerationAgent {
   // ヘルパーメソッド群
   private extractFunctions(code: string): string[] {
     const regex = /(?:export\s+)?(?:async\s+)?function\s+(\w+)/g;
-    return Array.from(code.matchAll(regex), m => m[1]);
+    return Array.from(code.matchAll(regex), m => m[1]).filter((name): name is string => Boolean(name));
   }
 
   private extractClasses(code: string): string[] {
     const regex = /(?:export\s+)?class\s+(\w+)/g;
-    return Array.from(code.matchAll(regex), m => m[1]);
+    return Array.from(code.matchAll(regex), m => m[1]).filter((name): name is string => Boolean(name));
   }
 
   private calculateComplexity(code: string): number {
@@ -426,13 +426,14 @@ export class TestGenerationAgent {
   }
 
   private generateImports(framework: string): string {
-    const imports: Record<string, string> = {
+    const imports = {
       'vitest': "import { describe, it, expect, beforeEach, afterEach } from 'vitest';",
       'jest': "import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';",
       'mocha': "import { describe, it, beforeEach, afterEach } from 'mocha';\nimport { expect } from 'chai';",
       'exunit': "use ExUnit.Case",
-    };
-    return imports[framework] || imports['vitest'];
+    } as const;
+    
+    return (imports as any)[framework] || imports.vitest;
   }
 
   // 以下、多数のヘルパーメソッドの簡略版
@@ -737,10 +738,10 @@ export class TestGenerationAgent {
 
   private inferFeatureName(functions: string[], classes: string[]): string {
     if (classes.length > 0) {
-      return classes[0];
+      return classes[0] || 'UnknownClass';
     }
     if (functions.length > 0) {
-      return functions[0];
+      return functions[0] || 'UnknownFunction';
     }
     return 'Unknown Feature';
   }
@@ -750,7 +751,9 @@ export class TestGenerationAgent {
     const dependencies: string[] = [];
     let match;
     while ((match = importRegex.exec(code)) !== null) {
-      dependencies.push(match[1]);
+      if (match[1]) {
+        dependencies.push(match[1]);
+      }
     }
     return dependencies;
   }

@@ -218,7 +218,7 @@ export async function runIndividualPhaseExample() {
       success: result.success,
       phase: result.phase,
       duration: result.metadata.duration,
-      outputKeys: Object.keys(result.data)
+      outputKeys: result.data ? Object.keys(result.data) : []
     });
 
     return result;
