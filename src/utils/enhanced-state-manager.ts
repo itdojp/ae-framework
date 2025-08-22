@@ -193,7 +193,7 @@ export class EnhancedStateManager extends EventEmitter {
 
     // Apply compression if needed
     if (this.shouldCompress(entry.metadata.size)) {
-      entry.data = await this.compress(entry.data) as Buffer;
+      (entry as any).data = await this.compress(entry.data);
       entry.compressed = true;
     }
 
