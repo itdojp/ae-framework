@@ -40,6 +40,7 @@ export interface Constraint {
   type: 'technical' | 'business' | 'regulatory' | 'resource';
   description: string;
   impact: 'high' | 'medium' | 'low';
+  source?: string;
 }
 
 export interface Stakeholder {
@@ -290,6 +291,7 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
           type: 'technical',
           description: 'Must use allowed packages only',
           impact: 'high',
+          source: 'benchmark_spec'
         }],
         stakeholders: [
           { name: 'Developer', role: 'implementer', concerns: ['implementation quality', 'maintainability'], influenceLevel: 'high' },
@@ -684,9 +686,10 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
     
     for (const pattern of patterns) {
       let match;
+      pattern.lastIndex = 0; // Reset regex state
       while ((match = pattern.exec(content)) !== null) {
         requirements.push(match[1]);
-        if (!pattern.global) break;
+        // All patterns are global, so continue until no more matches
       }
     }
     
@@ -991,6 +994,7 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
           type: 'technical',
           description: text,
           impact: 'medium',
+          source: 'requirements_analysis'
         });
       }
     }
@@ -1242,11 +1246,12 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
       const mandatoryStandards: string[] = [];
       mandatoryPatterns.forEach(pattern => {
         let match;
+        pattern.lastIndex = 0; // Reset regex state
         while ((match = pattern.exec(standardsLower)) !== null) {
           if (match[1]) {
             mandatoryStandards.push(match[1].trim());
           }
-          if (!pattern.global) break;
+          // All patterns are global, so continue until no more matches
         }
       });
       
