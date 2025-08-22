@@ -65,7 +65,7 @@ export class BenchmarkRunner {
         AEFrameworkPhase.REQUIREMENTS,
         () => this.nlpAgent.processNaturalLanguageRequirements(
           intent.primaryIntent + '\n\n' + 
-          spec.requirements.map(r => r).join('\n') +
+          spec.requirements.join('\n') +
           '\n\nConstraints:\n' + JSON.stringify(spec.constraints, null, 2)
         ),
         phaseExecutions,
