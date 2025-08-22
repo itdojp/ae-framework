@@ -139,12 +139,11 @@ export class APIContractMonitor implements ConformanceMonitor {
           ruleName: 'API Contract Error',
           category: 'api_contract',
           severity: 'major',
-          message: `API contract validation failed: ${
-  metrics: undefined, // TODO: Implement
-  logs: undefined, // TODO: Implement
-  stateSnapshot: undefined, // TODO: Implement
-  traces: undefined, // TODO: Implement
-error instanceof Error ? error.message : String(error)}`,
+          message: `API contract validation failed: ${error instanceof Error ? error.message : String(error)}`,
+          metrics: undefined, // TODO: Implement
+          logs: undefined, // TODO: Implement
+          stateSnapshot: undefined, // TODO: Implement
+          traces: undefined, // TODO: Implement
           context,
           stackTrace: error instanceof Error ? error.stack : undefined,
           evidence: { inputData: data }
