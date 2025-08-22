@@ -40,6 +40,7 @@ export interface Constraint {
   type: 'technical' | 'business' | 'regulatory' | 'resource';
   description: string;
   impact: 'high' | 'medium' | 'low';
+  source?: string;
 }
 
 export interface Stakeholder {
@@ -209,6 +210,97 @@ export class IntentAgent {
 
   constructor() {
     this.steeringLoader = new SteeringLoader();
+  }
+
+  /**
+   * Helper method to create a simple intent analysis request from text
+   * Addresses API usability issues by providing a more intuitive interface
+   */
+  static createSimpleRequest(
+    content: string, 
+    options?: {
+      sourceType?: RequirementSource['type'];
+      domain?: string;
+      analysisDepth?: IntentAnalysisRequest['analysisDepth'];
+      outputFormat?: IntentAnalysisRequest['outputFormat'];
+    }
+  ): IntentAnalysisRequest {
+    const sourceType = options?.sourceType || 'document';
+    
+    return {
+      sources: [{
+        type: sourceType,
+        content,
+        metadata: {
+          priority: 'high',
+          tags: ['requirement', 'analysis']
+        }
+      }],
+      context: options?.domain ? {
+        domain: options.domain,
+        existingSystem: false,
+        constraints: [],
+        stakeholders: []
+      } : undefined,
+      analysisDepth: options?.analysisDepth || 'comprehensive',
+      outputFormat: options?.outputFormat || 'both'
+    };
+  }
+
+  /**
+   * Helper method to create request from benchmark specification
+   * Specifically designed for req2run-benchmark integration
+   */
+  static createBenchmarkRequest(spec: {
+    title: string;
+    description: string;
+    requirements: Array<{ id: string; description: string; priority: string }>;
+    constraints: any;
+    metadata: {
+      created_by: string;
+      created_at: string;
+      category: string;
+      difficulty: string;
+    };
+  }): IntentAnalysisRequest {
+    const content = `Problem: ${spec.title}
+
+Description: ${spec.description}
+
+Requirements:
+${spec.requirements.map(r => `${r.priority}: ${r.description}`).join('\n')}
+
+Constraints:
+${JSON.stringify(spec.constraints, null, 2)}`;
+
+    return {
+      sources: [{
+        type: 'document',
+        content,
+        metadata: {
+          author: spec.metadata.created_by,
+          date: new Date(spec.metadata.created_at),
+          priority: 'high',
+          tags: ['benchmark', 'requirement', spec.metadata.category, spec.metadata.difficulty]
+        }
+      }],
+      context: {
+        domain: spec.metadata.category,
+        existingSystem: false,
+        constraints: [{
+          type: 'technical',
+          description: 'Must use allowed packages only',
+          impact: 'high',
+          source: 'benchmark_spec'
+        }],
+        stakeholders: [
+          { name: 'Developer', role: 'implementer', concerns: ['implementation quality', 'maintainability'], influenceLevel: 'high' },
+          { name: 'End User', role: 'consumer', concerns: ['usability', 'functionality'], influenceLevel: 'high' }
+        ]
+      },
+      analysisDepth: 'comprehensive',
+      outputFormat: 'both'
+    };
   }
   
   /**
@@ -555,8 +647,27 @@ export class IntentAgent {
     const requirements: string[] = [];
     
     for (const line of lines) {
-      if (line.match(/^[\d\-\*]\s+/)) {
-        requirements.push(line.replace(/^[\d\-\*]\s+/, ''));
+      const trimmedLine = line.trim();
+      
+      // Match various requirement patterns:
+      // - Numbered: "1. requirement", "1) requirement"  
+      // - Bullet points: "- requirement", "* requirement"
+      // - Priority levels: "MUST: requirement", "SHOULD: requirement", "MAY: requirement"
+      // - Keywords: "The system must/should/shall"
+      if (trimmedLine.match(/^(\d+[\.\)]\s+|[\-\*]\s+|(MUST|SHOULD|MAY|SHALL):\s*|.*(must|should|shall|will)\s+)/i)) {
+        let cleanRequirement = trimmedLine
+          .replace(/^(\d+[\.\)]\s+|[\-\*]\s+|(MUST|SHOULD|MAY|SHALL):\s*)/i, '')
+          .trim();
+        
+        // If the requirement is still meaningful after cleaning, add it
+        if (cleanRequirement.length > 10) {
+          requirements.push(cleanRequirement);
+        }
+      }
+      
+      // Also extract lines that contain clear requirement indicators
+      else if (trimmedLine.match(/(requirement|feature|capability|function).*:/i) && trimmedLine.length > 15) {
+        requirements.push(trimmedLine);
       }
     }
     
@@ -574,9 +685,11 @@ export class IntentAgent {
     ];
     
     for (const pattern of patterns) {
-      const matches = content.matchAll(pattern);
-      for (const match of matches) {
+      let match;
+      pattern.lastIndex = 0; // Reset regex state
+      while ((match = pattern.exec(content)) !== null) {
         requirements.push(match[1]);
+        // All patterns are global, so continue until no more matches
       }
     }
     
@@ -627,24 +740,40 @@ export class IntentAgent {
   private determineRequirementType(text: string): Requirement['type'] {
     const lowerText = text.toLowerCase();
     
+    // Non-functional requirements (performance, security, quality attributes)
     if (lowerText.includes('performance') || 
         lowerText.includes('security') || 
-        lowerText.includes('scalability')) {
+        lowerText.includes('scalability') ||
+        lowerText.includes('usability') ||
+        lowerText.includes('reliability') ||
+        lowerText.includes('availability') ||
+        lowerText.includes('response time') ||
+        lowerText.includes('throughput')) {
       return 'non-functional';
     }
     
+    // Business requirements (business rules, policies, objectives)
     if (lowerText.includes('business') || 
         lowerText.includes('revenue') || 
-        lowerText.includes('customer')) {
+        lowerText.includes('customer') ||
+        lowerText.includes('policy') ||
+        lowerText.includes('compliance') ||
+        lowerText.includes('regulation')) {
       return 'business';
     }
     
+    // Technical requirements (infrastructure, APIs, technical constraints)
     if (lowerText.includes('api') || 
         lowerText.includes('database') || 
-        lowerText.includes('integration')) {
+        lowerText.includes('integration') ||
+        lowerText.includes('platform') ||
+        lowerText.includes('architecture') ||
+        lowerText.includes('framework') ||
+        lowerText.includes('technology')) {
       return 'technical';
     }
     
+    // Functional requirements (what the system should do)
     return 'functional';
   }
 
@@ -675,19 +804,67 @@ export class IntentAgent {
   private generateUserStories(requirements: Requirement[]): UserStory[] {
     return requirements
       .filter(req => req.type === 'functional')
-      .map((req, index) => ({
-        id: `US-${String(index + 1).padStart(3, '0')}`,
-        title: req.description.substring(0, 50),
-        narrative: {
-          asA: 'user',
-          iWant: req.description,
-          soThat: 'I can achieve my goals',
-        },
-        acceptance: req.acceptance,
-        priority: req.priority === 'must' ? 'high' : 
-                  req.priority === 'should' ? 'medium' : 'low',
-        requirements: [req.id],
-      }));
+      .map((req, index) => {
+        // Generate more meaningful user story titles
+        const title = this.generateUserStoryTitle(req.description);
+        const narrative = this.generateUserStoryNarrative(req.description);
+        
+        return {
+          id: `US-${String(index + 1).padStart(3, '0')}`,
+          title,
+          narrative,
+          acceptance: req.acceptance,
+          priority: req.priority === 'must' ? 'high' : 
+                    req.priority === 'should' ? 'medium' : 'low',
+          requirements: [req.id],
+        };
+      });
+  }
+
+  private generateUserStoryTitle(description: string): string {
+    // Create meaningful titles from requirements
+    const words = description.split(' ');
+    if (words.length > 8) {
+      return words.slice(0, 8).join(' ') + '...';
+    }
+    return description.length > 50 ? description.substring(0, 47) + '...' : description;
+  }
+
+  private generateUserStoryNarrative(description: string): UserStory['narrative'] {
+    // Extract action words and objects to create better narratives
+    const lowerDesc = description.toLowerCase();
+    
+    // Determine user type based on context
+    let userType = 'user';
+    if (lowerDesc.includes('developer') || lowerDesc.includes('admin')) {
+      userType = 'developer';
+    } else if (lowerDesc.includes('system') || lowerDesc.includes('automated')) {
+      userType = 'system operator';
+    }
+    
+    // Extract the action/want from description
+    let want = description;
+    if (description.includes('should') || description.includes('must') || description.includes('shall')) {
+      want = description.replace(/(should|must|shall|will)\s+/gi, '').trim();
+    }
+    
+    // Generate meaningful "so that" clause based on requirement type
+    let soThat = 'I can accomplish my task efficiently';
+    if (lowerDesc.includes('convert') || lowerDesc.includes('transform')) {
+      soThat = 'I can work with data in different formats';
+    } else if (lowerDesc.includes('validate') || lowerDesc.includes('check')) {
+      soThat = 'I can ensure data integrity';
+    } else if (lowerDesc.includes('process') || lowerDesc.includes('handle')) {
+      soThat = 'I can manage my data effectively';
+    } else if (lowerDesc.includes('output') || lowerDesc.includes('display')) {
+      soThat = 'I can understand the results clearly';
+    }
+    
+    return {
+      asA: userType,
+      iWant: want,
+      soThat,
+    };
   }
 
   private generateUseCases(
@@ -817,6 +994,7 @@ export class IntentAgent {
           type: 'technical',
           description: text,
           impact: 'medium',
+          source: 'requirements_analysis'
         });
       }
     }
@@ -1067,11 +1245,13 @@ export class IntentAgent {
       
       const mandatoryStandards: string[] = [];
       mandatoryPatterns.forEach(pattern => {
-        const matches = standardsLower.matchAll(pattern);
-        for (const match of matches) {
+        let match;
+        pattern.lastIndex = 0; // Reset regex state
+        while ((match = pattern.exec(standardsLower)) !== null) {
           if (match[1]) {
             mandatoryStandards.push(match[1].trim());
           }
+          // All patterns are global, so continue until no more matches
         }
       });
       

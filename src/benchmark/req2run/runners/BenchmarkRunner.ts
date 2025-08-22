@@ -54,38 +54,9 @@ export class BenchmarkRunner {
       // Execute AE Framework 6-phase pipeline
       const intent = await this.executePhase(
         AEFrameworkPhase.INTENT_ANALYSIS,
-        () => this.intentAgent.analyzeIntent({
-          sources: [
-            {
-              type: 'document',
-              content: `Problem: ${spec.title}\n\nDescription: ${spec.description}\n\nRequirements:\n${spec.requirements.map(r => `${r.priority}: ${r.description}`).join('\n')}\n\nConstraints:\n${JSON.stringify(spec.constraints, null, 2)}`,
-              metadata: {
-                author: spec.metadata.created_by,
-                date: new Date(spec.metadata.created_at),
-                priority: 'high',
-                tags: ['benchmark', 'requirement', spec.metadata.category, spec.metadata.difficulty]
-              }
-            }
-          ],
-          context: {
-            domain: spec.metadata.category,
-            existingSystem: false,
-            constraints: [
-              {
-                type: 'technical',
-                description: 'Must use allowed packages only',
-                impact: 'high',
-                source: 'benchmark-specification'
-              }
-            ],
-            stakeholders: [
-              { name: 'Developer', role: 'implementer', influence: 'high' },
-              { name: 'End User', role: 'consumer', influence: 'high' }
-            ]
-          },
-          analysisDepth: 'comprehensive',
-          outputFormat: 'both'
-        }),
+        () => this.intentAgent.analyzeIntent(
+          IntentAgent.createBenchmarkRequest(spec)
+        ),
         phaseExecutions,
         errors
       );
