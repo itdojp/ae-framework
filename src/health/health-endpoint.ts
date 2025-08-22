@@ -138,7 +138,7 @@ async function getHealthStatus(): Promise<HealthStatus> {
         platform: process.platform
       },
       telemetry: {
-        status: telemetryStatus,
+        status: telemetryStatus as 'ok' | 'error',
         message: telemetryMessage
       }
     }
