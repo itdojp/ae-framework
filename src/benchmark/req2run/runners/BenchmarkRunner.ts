@@ -281,7 +281,7 @@ export class BenchmarkRunner {
    */
   private async loadProblemSpec(problemId: string): Promise<RequirementSpec> {
     try {
-      const repoDir = '/tmp/req2run-benchmark';
+      const repoDir = process.env.REQ2RUN_BENCHMARK_REPO || '/tmp/req2run-benchmark';
       
       // Check if repo exists
       try {
@@ -481,7 +481,7 @@ export class BenchmarkRunner {
           totalProblems: results.length,
           successfulRuns: results.filter(r => r.success).length,
           failedRuns: results.filter(r => !r.success).length,
-          averageScore: results.reduce((sum, r) => sum + r.metrics.overallScore, 0) / results.length,
+          averageScore: results.length > 0 ? results.reduce((sum, r) => sum + r.metrics.overallScore, 0) / results.length : 0,
           totalExecutionTime: results.reduce((sum, r) => sum + r.executionDetails.totalDuration, 0),
           framework: 'AE Framework v1.0.0',
           benchmarkVersion: 'req2run-benchmark'
@@ -497,13 +497,17 @@ export class BenchmarkRunner {
         }))
       };
 
+      // Determine report directory from config, fallback to 'reports/benchmark'
+      const reportDir = this.config?.reporting?.destinations?.[0]?.config?.directory || 'reports/benchmark';
+      await fs.mkdir(reportDir, { recursive: true });
+
       // Save JSON report
-      const jsonReportPath = `reports/benchmark/req2run-benchmark-${timestamp}.json`;
+      const jsonReportPath = `${reportDir}/req2run-benchmark-${timestamp}.json`;
       await fs.writeFile(jsonReportPath, JSON.stringify(reportData, null, 2));
 
       // Save Markdown summary
       const markdownReport = this.generateMarkdownReport(reportData);
-      const mdReportPath = `reports/benchmark/req2run-benchmark-${timestamp}.md`;
+      const mdReportPath = `${reportDir}/req2run-benchmark-${timestamp}.md`;
       await fs.writeFile(mdReportPath, markdownReport);
 
       console.log(`📊 Detailed reports generated:`);
@@ -517,7 +521,23 @@ export class BenchmarkRunner {
   /**
    * Generate Markdown report
    */
-  private generateMarkdownReport(data: any): string {
+  private generateMarkdownReport(data: {
+    metadata: {
+      timestamp: string;
+      totalProblems: number;
+      successfulRuns: number;
+      failedRuns: number;
+      averageScore: number;
+      totalExecutionTime: number;
+    };
+    results: Array<{
+      problemId: string;
+      success: boolean;
+      score: number;
+      executionTime: number;
+      errors: string[];
+    }>;
+  }): string {
     return `# Req2Run Benchmark Report
 
 Generated: ${data.metadata.timestamp}
