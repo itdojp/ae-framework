@@ -423,7 +423,7 @@ ${gaps.map(g => `• ${g.suggestedRequirement}`).join('\n')}
     return extracted.join('\n');
   }
 
-  private async processNaturalLanguageRequirements(text: string): Promise<ProcessedRequirements> {
+  async processNaturalLanguageRequirements(text: string): Promise<ProcessedRequirements> {
     // Mock implementation - in real scenario, this would use NLP libraries
     const sentences = text.split(/[.!?]+/).filter(s => s.trim());
     

@@ -342,12 +342,7 @@ export async function benchmarkIntegrationExample() {
 }
 
 // Export for usage in tests or other modules
-export {
-  runCompleteAEFrameworkPipeline as default,
-  runIndividualPhaseExample,
-  inspectPipelineCapabilities,
-  benchmarkIntegrationExample
-};
+export default runCompleteAEFrameworkPipeline;
 
 // Self-executing example if run directly
 if (import.meta.url === `file://${process.argv[1]}`) {

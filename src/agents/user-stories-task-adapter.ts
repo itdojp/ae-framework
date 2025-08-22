@@ -476,7 +476,7 @@ ${dependencies.risks.map((risk: any) =>
   }
 
   // Mock implementations for demonstration
-  private async generateUserStories(input: string): Promise<UserStorySet> {
+  async generateUserStories(input: string): Promise<UserStorySet> {
     return {
       stories: [
         {

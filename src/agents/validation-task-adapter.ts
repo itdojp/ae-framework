@@ -554,7 +554,7 @@ ${validation.alignmentGaps.map((gap: any) =>
     };
   }
 
-  private async validateUserStories(input: any): Promise<any> {
+  async validateUserStories(input: any): Promise<any> {
     return {
       score: 80,
       totalStories: 10,

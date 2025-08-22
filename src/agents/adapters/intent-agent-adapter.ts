@@ -39,7 +39,10 @@ export class IntentAgentAdapter implements StandardAEAgent<IntentInput, IntentOu
     try {
       // Transform standard input to IntentAgent format
       const intentRequest = {
-        sources: input.sources,
+        sources: input.sources.map(source => ({
+          ...source,
+          type: source.type === 'specification' ? 'text' : source.type // Map incompatible types
+        })),
         context: input.context || {},
         analysisDepth: 'comprehensive' as const,
         includeStakeholders: true,
@@ -55,9 +58,12 @@ export class IntentAgentAdapter implements StandardAEAgent<IntentInput, IntentOu
 
       // Transform result to standard output format
       const standardOutput: IntentOutput = {
-        primaryIntent: analysisResult.primaryIntent || 'Intent analysis completed',
-        requirements: analysisResult.requirements || [],
-        stakeholders: analysisResult.stakeholders || [],
+        primaryIntent: (analysisResult as any).primaryIntent || analysisResult.intent || 'Intent analysis completed',
+        requirements: (analysisResult.requirements || []).map(req => ({
+          ...req,
+          acceptance_criteria: req.acceptance_criteria || []  // Add missing property
+        })),
+        stakeholders: (analysisResult as any).stakeholders || [],
         constraints: analysisResult.constraints || [],
         businessContext: {
           domain: input.context?.domain || 'general',

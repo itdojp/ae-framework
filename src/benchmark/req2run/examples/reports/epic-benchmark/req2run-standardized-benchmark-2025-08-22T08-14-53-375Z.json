@@ -1,0 +1,107 @@
+{
+  "metadata": {
+    "timestamp": "2025-08-22T08:14:53.375Z",
+    "totalProblems": 1,
+    "successfulRuns": 0,
+    "failedRuns": 1,
+    "averageScore": 0,
+    "totalExecutionTime": 11,
+    "framework": "AE Framework v1.0.0 (Standardized Pipeline)",
+    "benchmarkVersion": "req2run-benchmark",
+    "pipelineVersion": "1.0.0",
+    "agentsUsed": [
+      "IntentAgentAdapter",
+      "RequirementsAgentAdapter",
+      "UserStoriesAgentAdapter",
+      "ValidationAgentAdapter",
+      "DomainModelingAgentAdapter",
+      "UIUXAgentAdapter"
+    ]
+  },
+  "configuration": {
+    "execution": {
+      "parallel": false,
+      "maxConcurrency": 2,
+      "timeout": 300000,
+      "retryOnFailure": true
+    },
+    "reporting": {
+      "destinations": [
+        {
+          "type": "filesystem",
+          "config": {
+            "directory": "reports/epic-benchmark",
+            "format": [
+              "json",
+              "markdown",
+              "csv"
+            ]
+          }
+        }
+      ]
+    },
+    "evaluation": {
+      "includePerformanceMetrics": true,
+      "includeSecurityAnalysis": true,
+      "includeCodeQualityMetrics": true,
+      "generateArtifacts": true
+    }
+  },
+  "analytics": {
+    "summary": {
+      "totalProblems": 1,
+      "successRate": 0,
+      "averageScore": 0,
+      "averageExecutionTime": 11
+    },
+    "performance": {
+      "fastestExecution": 11,
+      "slowestExecution": 11,
+      "averagePhaseTime": {
+        "intent-analysis": 3,
+        "requirements": 0,
+        "user-stories": 0
+      }
+    },
+    "quality": {
+      "highScoreProblems": 0,
+      "mediumScoreProblems": 0,
+      "lowScoreProblems": 0
+    },
+    "errors": {
+      "totalErrors": 0,
+      "errorsByPhase": {},
+      "commonErrorPatterns": []
+    }
+  },
+  "results": [
+    {
+      "problemId": "CLI-001",
+      "success": false,
+      "score": 0,
+      "executionTime": 11,
+      "functionalCoverage": 0,
+      "phases": [
+        {
+          "phase": "intent-analysis",
+          "duration": 3,
+          "success": true,
+          "errors": 0
+        },
+        {
+          "phase": "requirements",
+          "duration": 0,
+          "success": true,
+          "errors": 0
+        },
+        {
+          "phase": "user-stories",
+          "duration": 0,
+          "success": false,
+          "errors": 0
+        }
+      ],
+      "errors": []
+    }
+  ]
+}
