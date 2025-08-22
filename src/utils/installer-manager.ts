@@ -895,7 +895,13 @@ end
   private async runCommand(command: string, options: { silent?: boolean } = {}): Promise<string> {
     return new Promise((resolve, reject) => {
       const [cmd, ...args] = command.split(' ');
-      const process = spawn(cmd || 'echo', args, { 
+      
+      if (!cmd) {
+        reject(new Error(`Cannot execute empty command: "${command}"`));
+        return;
+      }
+      
+      const process = spawn(cmd, args, { 
         cwd: this.projectRoot,
         stdio: options.silent ? 'pipe' : 'inherit'
       });
