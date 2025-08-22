@@ -392,8 +392,6 @@ export class HybridTDDSystem {
 
   private setupFileWatchers(): void {
     // Set up file system watchers for real-time TDD enforcement
-    const fs = require('fs');
-    const path = require('path');
     
     if (fs.existsSync('src')) {
       fs.watch('src', { recursive: true }, (eventType: string, filename: string) => {
@@ -406,8 +404,6 @@ export class HybridTDDSystem {
 
   private setupGitIntegration(): void {
     // Ensure git hooks are installed
-    const fs = require('fs');
-    const path = require('path');
     
     const hookPath = path.join('.git', 'hooks', 'pre-commit');
     const hookSource = path.join('scripts', 'hooks', 'pre-commit');
@@ -483,7 +479,6 @@ export class HybridTDDSystem {
     if (filePath.startsWith('src/') && filePath.endsWith('.ts')) {
       // Check if corresponding test exists
       const testFile = filePath.replace('src/', 'tests/').replace('.ts', '.test.ts');
-      const fs = require('fs');
       
       if (!fs.existsSync(testFile)) {
         return {
