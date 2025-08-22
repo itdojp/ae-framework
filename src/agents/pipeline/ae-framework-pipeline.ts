@@ -233,7 +233,7 @@ export class AEFrameworkPipeline {
       const agentError: AgentError = {
         code: 'PIPELINE_ERROR',
         message: error instanceof Error ? error.message : 'Unknown pipeline error',
-        phase: phases.length > 0 ? phases[phases.length - 1].phase : 'intent',
+        phase: phases.length > 0 ? (phases[phases.length - 1]?.phase || 'intent') : 'intent',
         severity: 'error',
         context: { config: this.config }
       };

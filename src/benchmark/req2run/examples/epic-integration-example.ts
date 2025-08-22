@@ -20,12 +20,11 @@ export async function runBenchmarkEPICDemo(): Promise<void> {
     execution: {
       parallel: false,
       maxConcurrency: 2,
-      timeout: 300000, // 5 minutes per problem
       retryOnFailure: true
     },
     reporting: {
       destinations: [{
-        type: 'filesystem' as const,
+        type: 'file' as const,
         config: {
           directory: 'reports/epic-benchmark',
           format: ['json', 'markdown', 'csv']
@@ -33,7 +32,6 @@ export async function runBenchmarkEPICDemo(): Promise<void> {
       }]
     },
     evaluation: {
-      includePerformanceMetrics: true,
       includeSecurityAnalysis: true,
       includeCodeQualityMetrics: true,
       generateArtifacts: true
@@ -244,7 +242,7 @@ export async function demonstrateCICDIntegration(): Promise<void> {
     },
     reporting: {
       destinations: [{
-        type: 'filesystem' as const,
+        type: 'file' as const,
         config: {
           directory: 'ci-reports',
           format: ['json']
@@ -252,7 +250,6 @@ export async function demonstrateCICDIntegration(): Promise<void> {
       }]
     },
     evaluation: {
-      includePerformanceMetrics: true,
       includeSecurityAnalysis: false, // Skip in CI for speed
       includeCodeQualityMetrics: true,
       generateArtifacts: false // Skip artifact generation in CI
@@ -291,7 +288,7 @@ export async function demonstratePerformanceRegression(): Promise<void> {
     },
     reporting: {
       destinations: [{
-        type: 'filesystem' as const,
+        type: 'file' as const,
         config: {
           directory: 'regression-analysis',
           format: ['json', 'csv']
@@ -299,7 +296,6 @@ export async function demonstratePerformanceRegression(): Promise<void> {
       }]
     },
     evaluation: {
-      includePerformanceMetrics: true,
       includeSecurityAnalysis: true,
       includeCodeQualityMetrics: true,
       generateArtifacts: true

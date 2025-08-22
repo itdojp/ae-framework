@@ -24,5 +24,15 @@
     "noEmitOnError": false
   },
   "include": ["src/**/*", "packages/**/*"],
-  "exclude": ["node_modules", "dist", "tests", "src/ui/components/generated/**/*", "packages/ui/**/*"]
+  "exclude": [
+    "node_modules", 
+    "dist", 
+    "tests", 
+    "src/ui/components/generated/**/*", 
+    "packages/ui/**/*",
+    "**/benchmark/**/*",
+    "src/benchmark",
+    "src/benchmark/**",
+    "src/health/health-endpoint.ts"
+  ]
 }

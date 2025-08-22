@@ -505,11 +505,11 @@ ${gaps.map(g => `• ${g.suggestedRequirement}`).join('\n')}
     for (let i = 0; i < requirements.length; i++) {
       for (let j = i + 1; j < requirements.length; j++) {
         if (
-          requirements[i].content === requirements[j].content &&
-          (requirements[i].type !== requirements[j].type || requirements[i].priority !== requirements[j].priority)
+          requirements[i]?.content === requirements[j]?.content &&
+          (requirements[i]?.type !== requirements[j]?.type || requirements[i]?.priority !== requirements[j]?.priority)
         ) {
           conflicts.push(
-            `Conflict: Requirement "${requirements[i].content}" has differing type or priority (${requirements[i].type}/${requirements[i].priority} vs ${requirements[j].type}/${requirements[j].priority})`
+            `Conflict: Requirement "${requirements[i]?.content}" has differing type or priority (${requirements[i]?.type}/${requirements[i]?.priority} vs ${requirements[j]?.type}/${requirements[j]?.priority})`
           );
         }
       }

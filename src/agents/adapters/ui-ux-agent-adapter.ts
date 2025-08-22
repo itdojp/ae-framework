@@ -215,21 +215,21 @@ export class UIUXAgentAdapter implements StandardAEAgent<UIUXInput, UIUXOutput> 
     };
 
     stories.forEach(story => {
-      const desc = story.description.toLowerCase();
+      const desc = story.description?.toLowerCase() || '';
       const role = story.asA?.toLowerCase() || '';
 
-      if (desc.includes('login') || desc.includes('register') || desc.includes('auth')) {
-        groups['Authentication Flow'].push(story);
-      } else if (role.includes('admin') || desc.includes('manage')) {
-        groups['Admin Flow'].push(story);
+      if (desc?.includes('login') || desc?.includes('register') || desc?.includes('auth')) {
+        groups['Authentication Flow']?.push(story);
+      } else if (role?.includes('admin') || desc?.includes('manage')) {
+        groups['Admin Flow']?.push(story);
       } else {
-        groups['Main User Flow'].push(story);
+        groups['Main User Flow']?.push(story);
       }
     });
 
     // Remove empty groups
     Object.keys(groups).forEach(key => {
-      if (groups[key].length === 0) {
+      if (groups[key]?.length === 0) {
         delete groups[key];
       }
     });

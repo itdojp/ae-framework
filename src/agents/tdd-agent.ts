@@ -415,8 +415,8 @@ ${analysis.lastTestRun ? `
     complexity: 'low' | 'medium' | 'high';
   } {
     // Analyze code to understand structure
-    const functions = (code.match(/function\s+\w+/g) || []).map(f => f.split(' ')[1]);
-    const classes = (code.match(/class\s+\w+/g) || []).map(c => c.split(' ')[1]);
+    const functions = (code.match(/function\s+\w+/g) || []).map(f => f.split(' ')[1]).filter((name): name is string => Boolean(name));
+    const classes = (code.match(/class\s+\w+/g) || []).map(c => c.split(' ')[1]).filter((name): name is string => Boolean(name));
     const exports = (code.match(/export\s+\w+/g) || []);
     
     const complexity = code.length > 1000 ? 'high' : code.length > 300 ? 'medium' : 'low';

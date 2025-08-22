@@ -133,18 +133,18 @@ export async function createServer(): Promise<FastifyInstance> {
       );
 
       if (!requestValidation.valid) {
-        const violation = requestValidation.violations[0];
+        const violation = requestValidation.violations?.[0];
         timer.end({ 
           endpoint: '/reservations', 
           result: 'validation_error',
-          violation_type: violation.type,
+          violation_type: violation?.type || 'unknown',
         });
         
         return reply.code(400).send({
           error: "VALIDATION_ERROR",
           message: "Request payload validation failed",
-          details: violation.details,
-          violation_id: violation.id,
+          details: violation?.details || 'Validation failed',
+          violation_id: violation?.id || 'unknown',
         });
       }
 
@@ -155,7 +155,7 @@ export async function createServer(): Promise<FastifyInstance> {
         runtimeGuard.recordBusinessRuleViolation(
           'max_quantity_limit',
           `Quantity ${quantity} exceeds maximum allowed (100)`,
-          'medium' as const,
+          'medium' as any,
           { orderId, itemId, quantity }
         );
         

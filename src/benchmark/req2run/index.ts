@@ -80,7 +80,7 @@ export async function quickBenchmark(
  * const results = await createCIBenchmark().runBenchmarks(['basic-problem-001']);
  * ```
  */
-export function createCIBenchmark(): BenchmarkRunner {
+export function createCIBenchmark(): any {
   const { BenchmarkRunner } = require('./runners/BenchmarkRunner.js');
   const { getCIConfig } = require('./config/default.js');
   

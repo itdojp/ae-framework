@@ -1,0 +1,127 @@
+{
+  "metadata": {
+    "timestamp": "2025-08-22T09:44:14.297Z",
+    "totalProblems": 1,
+    "successfulRuns": 1,
+    "failedRuns": 0,
+    "averageScore": 78,
+    "totalExecutionTime": 8,
+    "framework": "AE Framework v1.0.0 (Standardized Pipeline)",
+    "benchmarkVersion": "req2run-benchmark",
+    "pipelineVersion": "1.0.0",
+    "agentsUsed": [
+      "IntentAgentAdapter",
+      "RequirementsAgentAdapter",
+      "UserStoriesAgentAdapter",
+      "ValidationAgentAdapter",
+      "DomainModelingAgentAdapter",
+      "UIUXAgentAdapter"
+    ]
+  },
+  "configuration": {
+    "execution": {
+      "parallel": false,
+      "maxConcurrency": 1,
+      "timeout": 300000,
+      "retryOnFailure": true
+    },
+    "reporting": {
+      "destinations": [
+        {
+          "type": "filesystem",
+          "config": {
+            "directory": "regression-analysis",
+            "format": [
+              "json",
+              "csv"
+            ]
+          }
+        }
+      ]
+    },
+    "evaluation": {
+      "includePerformanceMetrics": true,
+      "includeSecurityAnalysis": true,
+      "includeCodeQualityMetrics": true,
+      "generateArtifacts": true
+    }
+  },
+  "analytics": {
+    "summary": {
+      "totalProblems": 1,
+      "successRate": 100,
+      "averageScore": 78,
+      "averageExecutionTime": 8
+    },
+    "performance": {
+      "fastestExecution": 8,
+      "slowestExecution": 8,
+      "averagePhaseTime": {
+        "intent-analysis": 1,
+        "requirements": 0,
+        "user-stories": 0,
+        "validation": 0,
+        "domain-modeling": 0,
+        "ui-ux-generation": 0
+      }
+    },
+    "quality": {
+      "highScoreProblems": 0,
+      "mediumScoreProblems": 1,
+      "lowScoreProblems": 0
+    },
+    "errors": {
+      "totalErrors": 0,
+      "errorsByPhase": {},
+      "commonErrorPatterns": []
+    }
+  },
+  "results": [
+    {
+      "problemId": "CLI-001",
+      "success": true,
+      "score": 78,
+      "executionTime": 8,
+      "functionalCoverage": 30,
+      "phases": [
+        {
+          "phase": "intent-analysis",
+          "duration": 1,
+          "success": true,
+          "errors": 0
+        },
+        {
+          "phase": "requirements",
+          "duration": 0,
+          "success": true,
+          "errors": 0
+        },
+        {
+          "phase": "user-stories",
+          "duration": 0,
+          "success": true,
+          "errors": 0
+        },
+        {
+          "phase": "validation",
+          "duration": 0,
+          "success": true,
+          "errors": 0
+        },
+        {
+          "phase": "domain-modeling",
+          "duration": 0,
+          "success": true,
+          "errors": 0
+        },
+        {
+          "phase": "ui-ux-generation",
+          "duration": 0,
+          "success": true,
+          "errors": 0
+        }
+      ],
+      "errors": []
+    }
+  ]
+}

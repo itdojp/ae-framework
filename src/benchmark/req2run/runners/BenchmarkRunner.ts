@@ -27,11 +27,11 @@ import { DomainModelingTaskAdapter } from '../../../agents/domain-modeling-task-
 
 export class BenchmarkRunner {
   private config: BenchmarkConfig;
-  private intentAgent: IntentAgent;
-  private nlpAgent: NaturalLanguageTaskAdapter;
-  private storiesAgent: UserStoriesTaskAdapter;
-  private validationAgent: ValidationTaskAdapter;
-  private domainAgent: DomainModelingTaskAdapter;
+  private intentAgent!: IntentAgent;
+  private nlpAgent!: NaturalLanguageTaskAdapter;
+  private storiesAgent!: UserStoriesTaskAdapter;
+  private validationAgent!: ValidationTaskAdapter;
+  private domainAgent!: DomainModelingTaskAdapter;
 
   constructor(config: BenchmarkConfig) {
     this.config = config;
