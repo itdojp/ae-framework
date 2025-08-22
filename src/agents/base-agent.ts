@@ -84,7 +84,7 @@ export abstract class BaseAgent {
       // Check if all previous phases are completed and approved
       for (let i = currentIndex; i < targetIndex; i++) {
         const phase = phases[i];
-        const phaseStatus = state.phaseStatus[phase];
+        const phaseStatus = state.phaseStatus[phase as PhaseType];
         
         if (!phaseStatus.completed) {
           return {
@@ -160,6 +160,9 @@ export abstract class BaseAgent {
     }
 
     const previousPhase = phases[currentIndex - 1];
+    if (!previousPhase) {
+      throw new Error('No previous phase found');
+    }
     return await this.phaseStateManager.getPhaseArtifacts(previousPhase);
   }
 
