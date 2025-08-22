@@ -193,7 +193,7 @@ export class EnhancedStateManager extends EventEmitter {
 
     // Apply compression if needed
     if (this.shouldCompress(entry.metadata.size)) {
-      entry.data = await this.compress(entry.data);
+      entry.data = await this.compress(entry.data) as T & Buffer;
       entry.compressed = true;
     }
 
@@ -763,7 +763,9 @@ export class EnhancedStateManager extends EventEmitter {
     // Store rollback data (only if not already stored for this key)
     if (!context.rollbackData.has(key)) {
       const existingEntry = this.storage.get(key);
-      context.rollbackData.set(key, existingEntry);
+      if (existingEntry) {
+        context.rollbackData.set(key, existingEntry);
+      }
     }
 
     // Record operation

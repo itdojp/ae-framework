@@ -518,7 +518,7 @@ class SelectionEngine {
   private calculateMLScore(features: number[]): number {
     // Simplified ML scoring - in reality would use trained weights
     const weights = [0.3, 0.25, 0.2, -0.1, 0.1, 0.15];
-    return features.reduce((sum, feature, i) => sum + feature * weights[i], 0);
+    return features.reduce((sum, feature, i) => sum + feature * (weights[i] || 0), 0);
   }
   
   private getPriorityWeight(priority: string): number {

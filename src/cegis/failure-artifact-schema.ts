@@ -183,8 +183,14 @@ export class FailureArtifactFactory {
       evidence: {
         stackTrace: error.stack,
         logs: [error.message],
+        screenshots: [],
+        networkLogs: [],
       },
-      context,
+      context: context ? {
+        timestamp: new Date().toISOString(),
+        environment: 'development',
+        ...context,
+      } : undefined,
     });
   }
 
@@ -197,6 +203,8 @@ export class FailureArtifactFactory {
       location,
       evidence: {
         logs: [error],
+        screenshots: [],
+        networkLogs: [],
       },
     });
   }
@@ -219,6 +227,8 @@ export class FailureArtifactFactory {
           `Expected: ${JSON.stringify(expected, null, 2)}`,
           `Actual: ${JSON.stringify(actual, null, 2)}`,
         ],
+        screenshots: [],
+        networkLogs: [],
       },
       suggestedActions: [
         {
@@ -226,12 +236,14 @@ export class FailureArtifactFactory {
           description: 'Update specification to match actual behavior',
           confidence: 0.7,
           reasoning: 'Contract mismatch may indicate specification is outdated',
+          prerequisites: [],
         },
         {
           type: 'code_change', 
           description: 'Fix implementation to match specification',
           confidence: 0.8,
           reasoning: 'Implementation should conform to specified contract',
+          prerequisites: [],
         },
       ],
     });

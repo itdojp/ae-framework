@@ -436,7 +436,7 @@ export class PersonaManager {
   }
 
   private extractCommandPattern(command: string): string {
-    return command.split(' ')[0]; // Just the base command
+    return command.split(' ')[0] || ''; // Just the base command
   }
 
   private getTimeSlot(hour: number): 'morning' | 'afternoon' | 'evening' | 'night' {
