@@ -10,7 +10,10 @@ export interface RequirementSpec {
   category: BenchmarkCategory;
   difficulty: DifficultyLevel;
   requirements: string[];
-  constraints: string[];
+  constraints: {
+    business?: string[];
+    performance?: any;
+  };
   testCriteria: TestCriteria[];
   expectedOutput: ExpectedOutput;
   timeLimit?: number;
@@ -20,6 +23,7 @@ export interface RequirementSpec {
     created_at: string;
     category: string;
     difficulty: string;
+    estimated_time?: number;
   };
 }
 
