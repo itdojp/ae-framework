@@ -382,7 +382,22 @@ export class IntegrationTestOrchestrator extends EventEmitter {
           logs: ['Parallel execution failed'],
           metrics: {
             networkCalls: 0,
-            databaseQueries: 0
+            databaseQueries: 0,
+            responseTime: 0,
+            cpuUsage: 0,
+            memoryUsage: 0
+          },
+          assertions: {
+            passed: 0,
+            failed: 1,
+            total: 1,
+            details: []
+          },
+          coverage: {
+            lines: 0,
+            branches: 0,
+            functions: 0,
+            statements: 0
           }
         });
       }
@@ -442,6 +457,7 @@ export class IntegrationTestOrchestrator extends EventEmitter {
    */
   private async setupFixtures(fixtureIds: string[], environment: TestEnvironment): Promise<void> {
     for (const fixtureId of fixtureIds) {
+      if (!fixtureId) continue;
       const fixture = this.testFixtures.get(fixtureId);
       if (fixture) {
         await this.executeSetupScripts(fixture.setup, environment);

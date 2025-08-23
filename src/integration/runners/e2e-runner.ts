@@ -185,7 +185,7 @@ export class E2ETestRunner implements TestRunner {
 
           stepResults.push({
             id: step.id,
-            status: 'passed',
+            status: 'passed' as const,
             startTime: stepStartTime,
             endTime: stepEndTime,
             duration: stepDuration,
@@ -207,7 +207,7 @@ export class E2ETestRunner implements TestRunner {
 
           stepResults.push({
             id: step.id,
-            status: 'failed',
+            status: 'failed' as const,
             startTime: stepStartTime,
             endTime: stepEndTime,
             duration: stepDuration,
@@ -236,8 +236,16 @@ export class E2ETestRunner implements TestRunner {
         duration,
         environment: environment.name,
         steps: stepResults.map(step => ({
-          ...step,
-          artifacts: []
+          id: step.id,
+          status: step.status,
+          metrics: {},
+          logs: step.logs || [],
+          startTime: step.startTime,
+          duration: step.duration,
+          screenshots: step.screenshots || [],
+          error: step.error,
+          endTime: step.endTime,
+          actualResult: step.actualResult
         })),
         screenshots,
         logs,
@@ -260,7 +268,18 @@ export class E2ETestRunner implements TestRunner {
         endTime,
         duration,
         environment: environment.name,
-        steps: stepResults,
+        steps: stepResults.map(step => ({
+          id: step.id,
+          status: step.status,
+          metrics: {},
+          logs: step.logs || [],
+          startTime: step.startTime,
+          duration: step.duration,
+          screenshots: step.screenshots || [],
+          error: step.error,
+          endTime: step.endTime,
+          actualResult: step.actualResult
+        })),
         error: error instanceof Error ? error.message : String(error),
         stackTrace: error instanceof Error ? error.stack : undefined,
         screenshots,

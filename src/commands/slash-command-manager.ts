@@ -1052,6 +1052,7 @@ export class SlashCommandManager {
       // Stop on failure unless the command is marked as non-critical
       if (!result.success) {
         const commandName = command.split(/\s+/)[0];
+        if (!commandName) continue;
         const resolvedName = this.aliases.get(commandName) || commandName;
         if (!resolvedName) continue;
         const cmdObj = this.commands.get(resolvedName!);

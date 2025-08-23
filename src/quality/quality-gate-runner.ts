@@ -306,6 +306,9 @@ export class QualityGateRunner {
     
     // Security validation - use allowlist for common commands, blacklist for dangerous ones
     const executable = parts[0];
+    if (!executable) {
+      throw new Error('Invalid command: empty command provided');
+    }
     
     // Allowlist of commonly used quality gate commands
     const allowedCommands = [

@@ -158,9 +158,7 @@ async function simulateOperations(
     
     await sleep(duration);
     
-    if (operationType) {
-      system.trackOperation(operationType, startTime);
-    }
+    system.trackOperation(operationType, startTime);
     system.recordMetric(`operations.${operationType}.count`, 1, { 
       status: 'success',
       duration_bucket: duration < 100 ? 'fast' : duration < 300 ? 'medium' : 'slow'
@@ -175,13 +173,11 @@ function simulateErrors(system: MonitoringSystem, count: number = 3): void {
   
   for (let i = 0; i < count; i++) {
     const errorType = errorTypes[i % errorTypes.length];
-    if (errorType) {
-      system.trackError(errorType);
-      system.recordMetric('errors.by_type', 1, { 
-        type: errorType,
-        severity: Math.random() < 0.3 ? 'high' : 'low'
-      });
-    }
+    system.trackError(errorType);
+    system.recordMetric('errors.by_type', 1, { 
+      type: errorType,
+      severity: Math.random() < 0.3 ? 'high' : 'low'
+    });
   }
   
   console.log(`   ✓ Tracked ${count} errors`);

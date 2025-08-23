@@ -791,7 +791,7 @@ export class TaskScheduler extends EventEmitter {
     for (const queue of this.taskQueues.values()) {
       for (let i = queue.tasks.length - 1; i >= 0; i--) {
         const task = queue.tasks[i];
-        if (task.deadline && now > task.deadline.getTime()) {
+        if (task && task.deadline && now > task.deadline.getTime()) {
           this.handleMissedDeadline(task);
           queue.tasks.splice(i, 1);
         }

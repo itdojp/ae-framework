@@ -197,7 +197,8 @@ async function executeAnalysis(options: any): Promise<void> {
   console.log(chalk.green(`📥 Loaded ${Array.isArray(artifacts) ? artifacts.length : artifacts.failures.length} failure artifacts`));
 
   const engine = new AutoFixEngine();
-  const analysis = await engine.executeFixes(artifacts, {
+  const failureList = Array.isArray(artifacts) ? artifacts : artifacts.failures;
+  const analysis = await engine.executeFixes(failureList, {
     outputDir: options.output || '.ae/analysis',
     dryRun: true,
   });
