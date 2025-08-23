@@ -21,6 +21,7 @@
     "noUncheckedIndexedAccess": true,
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
+    "downlevelIteration": true,
     "noEmitOnError": false
   },
   "include": ["src/**/*", "packages/**/*"],

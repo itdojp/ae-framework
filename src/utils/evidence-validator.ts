@@ -253,7 +253,7 @@ export class EvidenceValidator {
     const evidence: Evidence[] = [];
     const claimLower = claim.toLowerCase();
 
-    for (const [patternName, pattern] of this.patternDatabase) {
+    for (const [patternName, pattern] of Array.from(this.patternDatabase)) {
       if (this.matchesPattern(claimLower, pattern)) {
         evidence.push({
           type: 'pattern',
