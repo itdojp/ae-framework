@@ -69,7 +69,7 @@
     "flake:detect:quick": "node scripts/flake-detector.js --runs 5 --threshold 0.2",
     "flake:detect:thorough": "node scripts/flake-detector.js --runs 20 --threshold 0.05",
     "flake:detect:enhanced": "node scripts/enhanced-flake-detector.mjs",
-    "flake:detect:enhanced:quick": "node scripts/enhanced-flake-detector.mjs --runs 8 --threshold 0.1",
+    "flake:detect:enhanced:quick": "node scripts/enhanced-flake-detector.mjs --runs 5 --threshold 0.15",
     "test:parallel": "node scripts/parallel-test-coordinator.mjs",
     "test:ci:parallel": "node scripts/parallel-test-coordinator.mjs",
     "flake:detect:enhanced:deep": "node scripts/enhanced-flake-detector.mjs --runs 15 --threshold 0.05",

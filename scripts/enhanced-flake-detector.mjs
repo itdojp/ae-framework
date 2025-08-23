@@ -65,14 +65,14 @@ class EnhancedFlakeDetector {
       
       const testProcess = spawn(testCommand[0], testCommand.slice(1), {
         stdio: ['inherit', 'pipe', 'pipe'],
-        timeout: 120000 // 2 minute timeout
+        timeout: 90000 // 1.5 minute timeout
       });
 
       // Additional timeout protection
       const forceTimeout = setTimeout(() => {
-        console.log(`   ⏰ Force killing test process after 2.5 minutes`);
+        console.log(`   ⏰ Force killing test process after 2 minutes`);
         testProcess.kill('SIGKILL');
-      }, 150000);
+      }, 120000);
 
       let stdout = '';
       let stderr = '';
