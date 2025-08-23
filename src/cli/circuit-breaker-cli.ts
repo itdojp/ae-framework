@@ -2,17 +2,17 @@
 
 import { Command } from 'commander';
 import chalk from 'chalk';
-import { CircuitBreaker, CircuitBreakerManager, CircuitState, circuitBreakerManager } from '../utils/circuit-breaker.js';
+import { CircuitBreaker, CircuitState } from '../utils/circuit-breaker.js';
 
 /**
  * Circuit Breaker CLI
  * Provides command-line interface for circuit breaker management and monitoring
  */
 export class CircuitBreakerCLI {
-  private manager: CircuitBreakerManager;
+  private breakers: Map<string, CircuitBreaker>;
 
   constructor() {
-    this.manager = circuitBreakerManager;
+    this.breakers = new Map();
     this.setupEventListeners();
   }
 
@@ -27,13 +27,15 @@ export class CircuitBreakerCLI {
     monitoringWindow?: number;
   }): Promise<void> {
     try {
-      const breaker = this.manager.getCircuitBreaker(options.name, {
-        failureThreshold: options.failureThreshold,
-        successThreshold: options.successThreshold,
-        timeout: options.timeout,
-        monitoringWindow: options.monitoringWindow,
+      const breaker = new CircuitBreaker(options.name, {
+        failureThreshold: options.failureThreshold || 5,
+        successThreshold: options.successThreshold || 3,
+        timeout: options.timeout || 60000,
+        monitoringWindow: options.monitoringWindow || 10000,
         enableMonitoring: true
       });
+      
+      this.breakers.set(options.name, breaker);
 
       console.log(chalk.green(`✅ Circuit breaker '${options.name}' created successfully`));
       console.log(chalk.blue(`   State: ${breaker.getState()}`));
