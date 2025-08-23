@@ -93,6 +93,7 @@ export class BenchmarkRunner {
         () => this.domainAgent.handleDomainModelingTask({
           description: `Create domain model for ${spec.title}`,
           prompt: `Based on the validated user stories, create a domain model for the file processing CLI tool. Include entities, value objects, and relationships needed to implement the requirements: ${JSON.stringify(userStories, null, 2)}`,
+          subagent_type: 'domain-modeling',
           context: {
             previousPhaseResults: { validation, userStories, requirements },
             domain: spec.metadata.category,
