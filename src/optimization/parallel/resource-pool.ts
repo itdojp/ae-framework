@@ -848,6 +848,7 @@ export class ResourcePool extends EventEmitter {
     
     for (let i = 0; i < this.waitingQueue.length; i++) {
       const request = this.waitingQueue[i];
+      if (!request) continue;
       const allocation = this.tryAllocate(request.taskId, request.requirements, request.priority);
       
       if (allocation) {

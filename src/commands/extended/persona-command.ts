@@ -39,7 +39,7 @@ export class PersonaCommand extends BaseExtendedCommand {
     const action = args[0];
     const validActions = ['view', 'update', 'export', 'import', 'reset'];
     
-    if (!validActions.includes(action)) {
+    if (!action || !validActions.includes(action)) {
       return {
         isValid: false,
         message: `Invalid action: ${action}. Valid actions: ${validActions.join(', ')}`
@@ -83,6 +83,7 @@ export class PersonaCommand extends BaseExtendedCommand {
           result = await this.handleExport(options.output);
           break;
         case 'import':
+          if (!args[1]) throw new Error('File path is required for import command');
           result = await this.handleImport(args[1]);
           break;
         case 'reset':
@@ -241,8 +242,10 @@ export class PersonaCommand extends BaseExtendedCommand {
     for (const arg of args) {
       if (arg.includes('=')) {
         const [key, value] = arg.split('=', 2);
-        const cleanKey = key.replace(/^--/, '');
-        updates[cleanKey] = value;
+        if (key) {
+          const cleanKey = key.replace(/^--/, '');
+          updates[cleanKey] = value;
+        }
       }
     }
     

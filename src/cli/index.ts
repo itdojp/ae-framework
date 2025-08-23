@@ -233,6 +233,7 @@ class AEFrameworkCLI {
       if (!phaseName) continue;
       
       const phase = this.config.phases[phaseName];
+      if (!phase) continue;
       const hasArtifacts = await this.phaseValidator.hasRequiredArtifacts(phase);
       if (hasArtifacts) {
         return phaseName;
@@ -249,7 +250,7 @@ class AEFrameworkCLI {
   getNextPhase(currentPhase: string): string | null {
     const phases = Object.keys(this.config.phases);
     const currentIndex = phases.indexOf(currentPhase);
-    return currentIndex < phases.length - 1 ? phases[currentIndex + 1] : null;
+    return currentIndex < phases.length - 1 ? (phases[currentIndex + 1] || null) : null;
   }
 
   displayResults(details: Array<{ check: string; passed: boolean; message?: string }>): void {

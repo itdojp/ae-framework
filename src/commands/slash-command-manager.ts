@@ -465,10 +465,10 @@ export class SlashCommandManager {
     const args = parts.slice(1);
 
     // Resolve alias if needed
-    const resolvedName = this.aliases.get(commandName) || commandName;
+    const resolvedName = this.aliases.get(commandName || '') || commandName;
     
     // Find command
-    const command = this.commands.get(resolvedName);
+    const command = this.commands.get(resolvedName || '');
     if (!command) {
       return {
         success: false,
@@ -578,6 +578,9 @@ export class SlashCommandManager {
     }
 
     const filePath = args[0];
+    if (!filePath) {
+      throw new Error('File path is required for test generation');
+    }
     const testType = args[1] || 'unit';
     
     const tests = await this.getTestAgent().generateTestsFromRequirements({
@@ -601,6 +604,9 @@ export class SlashCommandManager {
     }
 
     const testFile = args[0];
+    if (!testFile) {
+      throw new Error('Test file path is required');
+    }
     const code = await this.getCodeAgent().generateCodeFromTests({
       tests: [{
         path: testFile,
@@ -807,6 +813,12 @@ export class SlashCommandManager {
     if (args.length > 0) {
       // Show help for specific command
       const commandName = args[0];
+      if (!commandName) {
+        return {
+          success: false,
+          message: 'Command name is required for specific help',
+        };
+      }
       const resolvedName = this.aliases.get(commandName) || commandName;
       const command = this.commands.get(resolvedName);
       
@@ -1033,6 +1045,7 @@ export class SlashCommandManager {
     const results: CommandResult[] = [];
     
     for (const command of commands) {
+      if (!command) continue;
       const result = await this.execute(command);
       results.push(result);
       
