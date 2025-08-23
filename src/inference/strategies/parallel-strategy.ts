@@ -328,7 +328,7 @@ export class ParallelStrategy {
   }
 
   private getTaskProcessor(task: ParallelTask): (task: ParallelTask) => Promise<any> {
-    const taskType = task.id.split('-')[0];
+    const taskType = task.id.split('-')[0]!;
     const processor = this.taskProcessors.get(taskType);
     
     if (!processor) {

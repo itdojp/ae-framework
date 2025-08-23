@@ -455,7 +455,7 @@ export class IntegrationTestOrchestrator extends EventEmitter {
   private async teardownFixtures(fixtureIds: string[], environment: TestEnvironment): Promise<void> {
     // Teardown in reverse order
     for (let i = fixtureIds.length - 1; i >= 0; i--) {
-      const fixture = this.testFixtures.get(fixtureIds[i]);
+      const fixture = this.testFixtures.get(fixtureIds[i]!);
       if (fixture) {
         await this.executeTeardownScripts(fixture.teardown, environment);
       }
@@ -484,9 +484,9 @@ export class IntegrationTestOrchestrator extends EventEmitter {
     // Execute in reverse order
     for (let i = scripts.length - 1; i >= 0; i--) {
       try {
-        await this.executeScript(scripts[i], environment);
+        await this.executeScript(scripts[i]!, environment);
       } catch (error) {
-        this.emit('teardown_script_failed', { script: scripts[i], error });
+        this.emit('teardown_script_failed', { script: scripts[i]!, error });
         // Don't throw on teardown failures, just log them
       }
     }

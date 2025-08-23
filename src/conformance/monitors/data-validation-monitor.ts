@@ -47,7 +47,12 @@ export class DataValidationMonitor implements ConformanceMonitor {
           timestamp: new Date().toISOString(),
           duration: Date.now() - startTime,
           context,
-          metrics: { executionTime: Date.now() - startTime }
+          metrics: { 
+            executionTime: Date.now() - startTime,
+            networkCalls: 0,
+            dbQueries: 0
+          },
+          metadata: DEFAULT_METRICS
         };
       }
 
@@ -106,7 +111,11 @@ export class DataValidationMonitor implements ConformanceMonitor {
             traces: DEFAULT_TRACES
           }
         },
-        metrics: { executionTime: duration }
+        metrics: { 
+          executionTime: duration,
+          networkCalls: 0,
+          dbQueries: 0
+        }
       };
     }
   }

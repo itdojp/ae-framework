@@ -95,7 +95,12 @@ export class APIContractMonitor implements ConformanceMonitor {
           timestamp: new Date().toISOString(),
           duration: Date.now() - startTime,
           context,
-          metrics: { executionTime: Date.now() - startTime }
+          metrics: { 
+            executionTime: Date.now() - startTime,
+            networkCalls: 0,
+            dbQueries: 0
+          },
+          metadata: DEFAULT_METRICS
         };
       }
 
@@ -117,12 +122,13 @@ export class APIContractMonitor implements ConformanceMonitor {
 
       return {
         id: resultId,
-        ruleId: violation?.ruleId || applicableRules[0].id,
+        ruleId: violation?.ruleId || applicableRules[0]!.id,
         status: violation ? 'fail' : 'pass',
         timestamp: new Date().toISOString(),
         duration,
         context,
         violation,
+        metadata: DEFAULT_METRICS,
         metrics: {
           executionTime: duration,
           memoryUsage: this.getMemoryUsage(),
@@ -161,7 +167,11 @@ export class APIContractMonitor implements ConformanceMonitor {
             traces: DEFAULT_TRACES
           }
         },
-        metrics: { executionTime: duration }
+        metrics: { 
+          executionTime: duration,
+          networkCalls: 0,
+          dbQueries: 0
+        }
       };
     }
   }

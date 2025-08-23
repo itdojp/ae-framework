@@ -467,7 +467,7 @@ export class APITestRunner implements TestRunner {
       case 'apikey':
         const apiKey = auth.credentials.apiKey || environment.variables.API_KEY;
         const headerName = auth.credentials.headerName || 'X-API-Key';
-        headers[headerName] = apiKey;
+        headers[headerName] = apiKey!;
         break;
 
       case 'oauth2':
@@ -596,7 +596,7 @@ export class APITestRunner implements TestRunner {
       const arrayMatch = part.match(/^(\w+)\[(\d+)\]$/);
       if (arrayMatch) {
         const [, key, index] = arrayMatch;
-        current = current[key]?.[parseInt(index)];
+        current = current[key!]?.[parseInt(index!)];
       } else {
         current = current[part];
       }

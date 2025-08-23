@@ -494,7 +494,7 @@ class TDDGuardServer {
     let match;
     
     while ((match = functionRegex.exec(code)) !== null) {
-      functions.push(match[1]);
+      functions.push(match[1]!);
     }
     
     return functions;

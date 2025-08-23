@@ -487,7 +487,7 @@ export class UIScaffoldGenerator {
       if (validation) {
         if (validation.includes('multiline')) return true;
         const maxLengthMatch = validation.match(/maxLength:(\d+)/);
-        if (maxLengthMatch && parseInt(maxLengthMatch[1], 10) > 255) return true;
+        if (maxLengthMatch && parseInt(maxLengthMatch[1]!, 10) > 255) return true;
       }
       return false;
     });
