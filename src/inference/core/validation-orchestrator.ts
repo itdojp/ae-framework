@@ -477,9 +477,9 @@ export class ValidationOrchestrator extends EventEmitter {
           const result = validatorResults[i];
           const config = phase.validators[i];
           
-          if (result.status === 'fulfilled') {
+          if (result && result.status === 'fulfilled') {
             results.push(result.value);
-          } else {
+          } else if (result) {
             results.push({
               validatorId: config.id,
               success: false,
@@ -488,7 +488,7 @@ export class ValidationOrchestrator extends EventEmitter {
                 criterion: config.name,
                 passed: false,
                 score: 0,
-                details: `Validation failed: ${result.reason}`,
+                details: `Validation failed: ${result.reason || 'Unknown error'}`,
                 importance: config.priority
               },
               executionTime: 0,

@@ -897,6 +897,7 @@ export class ParallelOptimizer extends EventEmitter {
     
     for (let groupIndex = 0; groupIndex < groups.length; groupIndex++) {
       const group = groups[groupIndex];
+      if (!group) continue;
       
       for (let taskIndex = 0; taskIndex < group.tasks.length; taskIndex++) {
         const taskId = group.tasks[taskIndex];

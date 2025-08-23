@@ -186,11 +186,12 @@ export class SequentialInferenceEngine extends EventEmitter {
       // Execute steps sequentially with validation
       for (let i = 0; i < steps.length; i++) {
         const step = steps[i];
+        if (!step) continue;
         
         // Check dependencies
         if (!this.checkStepDependencies(step, result.steps)) {
           step.status = 'skipped';
-          step.error = new Error(`Dependencies not met: ${step.dependencies.join(', ')}`);
+          step.error = new Error(`Dependencies not met: ${step.dependencies?.join(', ') || 'unknown'}`);
           continue;
         }
 

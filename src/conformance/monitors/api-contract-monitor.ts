@@ -68,9 +68,10 @@ export class APIContractMonitor implements ConformanceMonitor {
           duration: Date.now() - startTime,
           context,
           metrics: {
-  networkCalls: undefined, // TODO: Implement
-  dbQueries: undefined, // TODO: Implement
- executionTime: Date.now() - startTime }
+            networkCalls: 0, // TODO: Implement
+            dbQueries: 0, // TODO: Implement
+            executionTime: Date.now() - startTime
+          }
         };
       }
 
@@ -534,7 +535,7 @@ export class APIContractMonitor implements ConformanceMonitor {
       const actualSegment = actualPathSegments[i];
 
       // Check parameter segments (e.g., {id})
-      if (specSegment.startsWith('{') && specSegment.endsWith('}')) {
+      if (specSegment && specSegment.startsWith('{') && specSegment.endsWith('}')) {
         const paramName = specSegment.slice(1, -1);
         
         // Basic parameter validation (could be enhanced with type checking)
