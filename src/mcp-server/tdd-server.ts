@@ -506,7 +506,9 @@ class TDDGuardServer {
     let match;
     
     while ((match = classRegex.exec(code)) !== null) {
-      classes.push(match[1]);
+      if (match[1]) {
+        classes.push(match[1]);
+      }
     }
     
     return classes;

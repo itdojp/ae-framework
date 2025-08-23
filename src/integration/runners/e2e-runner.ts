@@ -185,7 +185,7 @@ export class E2ETestRunner implements TestRunner {
 
           stepResults.push({
             id: step.id,
-            status: 'passed' as 'passed',
+            status: 'passed',
             startTime: stepStartTime,
             endTime: stepEndTime,
             duration: stepDuration,
@@ -207,7 +207,7 @@ export class E2ETestRunner implements TestRunner {
 
           stepResults.push({
             id: step.id,
-            status: 'failed' as 'failed',
+            status: 'failed',
             startTime: stepStartTime,
             endTime: stepEndTime,
             duration: stepDuration,

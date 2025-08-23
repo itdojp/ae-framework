@@ -261,11 +261,11 @@ export class PerformanceMonitor extends EventEmitter {
 
     return {
       average: this.responseTimes.reduce((sum, rt) => sum + rt, 0) / len,
-      median: sorted[Math.floor(len / 2)],
-      p95: sorted[Math.floor(len * 0.95)],
-      p99: sorted[Math.floor(len * 0.99)],
-      min: sorted[0],
-      max: sorted[len - 1],
+      median: sorted[Math.floor(len / 2)] ?? 0,
+      p95: sorted[Math.floor(len * 0.95)] ?? 0,
+      p99: sorted[Math.floor(len * 0.99)] ?? 0,
+      min: sorted[0] ?? 0,
+      max: sorted[len - 1] ?? 0,
       samples: [...this.responseTimes]
     };
   }
@@ -553,7 +553,8 @@ export class PerformanceMonitor extends EventEmitter {
    * Get current metrics
    */
   getCurrentMetrics(): PerformanceMetrics | null {
-    return this.metrics.length > 0 ? this.metrics[this.metrics.length - 1] : null;
+    const lastMetric = this.metrics[this.metrics.length - 1];
+    return lastMetric ?? null;
   }
 
   /**

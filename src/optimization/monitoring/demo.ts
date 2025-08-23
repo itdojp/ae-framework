@@ -152,12 +152,15 @@ async function simulateOperations(
     const startTime = performance.now();
     
     // Simulate different operation types with varying durations
-    const operationType = ['database_query', 'api_call', 'file_processing', 'computation'][i % 4];
+    const operationTypes = ['database_query', 'api_call', 'file_processing', 'computation'] as const;
+    const operationType = operationTypes[i % 4];
     const duration = Math.random() * 500 + 50; // 50-550ms
     
     await sleep(duration);
     
-    system.trackOperation(operationType, startTime);
+    if (operationType) {
+      system.trackOperation(operationType, startTime);
+    }
     system.recordMetric(`operations.${operationType}.count`, 1, { 
       status: 'success',
       duration_bucket: duration < 100 ? 'fast' : duration < 300 ? 'medium' : 'slow'
@@ -172,11 +175,13 @@ function simulateErrors(system: MonitoringSystem, count: number = 3): void {
   
   for (let i = 0; i < count; i++) {
     const errorType = errorTypes[i % errorTypes.length];
-    system.trackError(errorType);
-    system.recordMetric('errors.by_type', 1, { 
-      type: errorType,
-      severity: Math.random() < 0.3 ? 'high' : 'low'
-    });
+    if (errorType) {
+      system.trackError(errorType);
+      system.recordMetric('errors.by_type', 1, { 
+        type: errorType,
+        severity: Math.random() < 0.3 ? 'high' : 'low'
+      });
+    }
   }
   
   console.log(`   ✓ Tracked ${count} errors`);

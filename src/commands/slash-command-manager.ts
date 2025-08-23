@@ -1053,6 +1053,7 @@ export class SlashCommandManager {
       if (!result.success) {
         const commandName = command.split(/\s+/)[0];
         const resolvedName = this.aliases.get(commandName) || commandName;
+        if (!resolvedName) continue;
         const cmdObj = this.commands.get(resolvedName!);
         const stopOnFailure = cmdObj?.stopOnFailure !== false;
         

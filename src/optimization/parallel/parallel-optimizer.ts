@@ -515,7 +515,9 @@ export class ParallelOptimizer extends EventEmitter {
       const task = tasksToProcess[i];
       const workerId = availableWorkers[i];
       
-      this.executeTask(task, workerId);
+      if (task && workerId) {
+        this.executeTask(task, workerId);
+      }
     }
   }
 

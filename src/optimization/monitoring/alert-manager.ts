@@ -799,7 +799,7 @@ export class AlertManager extends EventEmitter {
       case 'count':
         return values.length;
       default:
-        return values[values.length - 1]; // Latest value
+        return values.length > 0 ? values[values.length - 1] : 0; // Latest value or 0 if empty
     }
   }
 }

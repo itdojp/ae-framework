@@ -160,7 +160,10 @@ export class MetricsCollector extends EventEmitter {
     this.recordMetricWithTimestamp('cpu.user', perfMetrics.cpuUsage.userCPU, timestamp, commonTags, '%', 'gauge');
     this.recordMetricWithTimestamp('cpu.system', perfMetrics.cpuUsage.systemCPU, timestamp, commonTags, '%', 'gauge');
     this.recordMetricWithTimestamp('cpu.total', perfMetrics.cpuUsage.totalUsage, timestamp, commonTags, '%', 'gauge');
-    this.recordMetricWithTimestamp('cpu.load_avg_1m', perfMetrics.cpuUsage.loadAverage[0], timestamp, commonTags, '', 'gauge');
+    const loadAvg1m = perfMetrics.cpuUsage.loadAverage?.[0];
+    if (typeof loadAvg1m === 'number') {
+      this.recordMetricWithTimestamp('cpu.load_avg_1m', loadAvg1m, timestamp, commonTags, '', 'gauge');
+    }
 
     // Memory metrics
     this.recordMetricWithTimestamp('memory.heap_used', perfMetrics.memoryUsage.heapUsed, timestamp, commonTags, 'bytes', 'gauge');
@@ -477,11 +480,11 @@ export class MetricsCollector extends EventEmitter {
       case 'count':
         return values.length;
       case 'p50':
-        return sorted[Math.floor(sorted.length * 0.5)];
+        return sorted[Math.floor(sorted.length * 0.5)] ?? 0;
       case 'p95':
-        return sorted[Math.floor(sorted.length * 0.95)];
+        return sorted[Math.floor(sorted.length * 0.95)] ?? 0;
       case 'p99':
-        return sorted[Math.floor(sorted.length * 0.99)];
+        return sorted[Math.floor(sorted.length * 0.99)] ?? 0;
       default:
         return 0;
     }
