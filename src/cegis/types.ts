@@ -149,6 +149,10 @@ export interface AppliedFix {
   filesModified: string[];
   errors: string[];
   warnings: string[];
+  type?: string;
+  description?: string;
+  targetFile?: string;
+  confidence?: number;
   metadata: {
     timestamp: string;
     duration: number;
@@ -197,6 +201,7 @@ export interface FixResult {
   appliedActions: AppliedFix[];
   generatedFiles: string[];
   backupFiles: string[];
+  errors: string[];
 }
 
 // Risk assessment result
@@ -214,6 +219,7 @@ export interface AutoFixOptions {
   maxRiskLevel?: number;
   timeoutMs?: number;
   maxIterations?: number;
+  outputDir?: string;
 }
 
 // Pattern analysis result
