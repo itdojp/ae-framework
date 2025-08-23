@@ -138,15 +138,15 @@ export class CircuitBreakerCLI {
       
       // Summary
       console.log(chalk.blue('📈 Summary:'));
-      console.log(`Total Breakers: ${report.summary.totalBreakers}`);
-      console.log(`🟢 Closed: ${report.summary.closedBreakers}`);
-      console.log(`🟡 Half-Open: ${report.summary.halfOpenBreakers}`);
-      console.log(`🔴 Open: ${report.summary.openBreakers}`);
-      console.log(`Total Requests: ${report.summary.totalRequests}`);
-      console.log(`Total Failures: ${report.summary.totalFailures}`);
+      console.log(`Total Breakers: ${report.totalBreakers}`);
+      console.log(`🟢 Closed: ${report.closedBreakers}`);
+      console.log(`🟡 Half-Open: ${report.halfOpenBreakers}`);
+      console.log(`🔴 Open: ${report.openBreakers}`);
+      console.log(`Total Requests: ${report.totalRequests}`);
+      console.log(`Total Failures: ${report.totalFailures}`);
       
-      if (report.summary.totalRequests > 0) {
-        const failureRate = (report.summary.totalFailures / report.summary.totalRequests * 100).toFixed(2);
+      if (report.totalRequests > 0) {
+        const failureRate = (report.totalFailures / report.totalRequests * 100).toFixed(2);
         console.log(`Failure Rate: ${failureRate}%`);
       }
       
@@ -159,18 +159,18 @@ export class CircuitBreakerCLI {
         
         for (const breaker of report.breakers) {
           const healthIcon = this.getHealthIcon(breaker.health);
-          const stateIcon = this.getStateIcon(breaker.state);
+          const stateIcon = this.getStateIcon(breaker.state as CircuitState);
           
           console.log(`${breaker.name}: ${healthIcon} ${breaker.health.toUpperCase()} (${stateIcon} ${breaker.state})`);
           
-          if (breaker.recentFailures.length > 0) {
+          if (breaker.recentFailures && breaker.recentFailures.length > 0) {
             console.log(`  Recent Failures: ${breaker.recentFailures.length}`);
-            breaker.recentFailures.slice(0, 3).forEach(failure => {
+            breaker.recentFailures.slice(0, 3).forEach((failure: any) => {
               console.log(`    • ${new Date(failure.timestamp).toISOString()}: ${failure.error}`);
             });
           }
           
-          if (breaker.recommendations.length > 0) {
+          if (breaker.recommendations && breaker.recommendations.length > 0) {
             console.log(`  Recommendations:`);
             breaker.recommendations.forEach(rec => {
               console.log(`    • ${rec}`);
@@ -402,7 +402,14 @@ export class CircuitBreakerCLI {
     healthy: number;
     degraded: number;
     unhealthy: number;
-    summary: Array<{name: string; state: string; health: string}>;
+    summary: Array<{name: string; state: string; health: string; recentFailures?: any[]; recommendations?: string[]}>;
+    overall: string;
+    breakers: Array<{name: string; state: string; health: string; recentFailures?: any[]; recommendations?: string[]}>;
+    totalRequests: number;
+    totalFailures: number;
+    closedBreakers: number;
+    halfOpenBreakers: number;
+    openBreakers: number;
   } {
     const summary: Array<{name: string; state: string; health: string}> = [];
     let healthy = 0;
@@ -428,12 +435,48 @@ export class CircuitBreakerCLI {
       summary.push({ name, state, health });
     }
 
+    // Calculate overall health
+    let overall: string;
+    const totalBreakers = this.breakers.size;
+    if (unhealthy > totalBreakers * 0.5) {
+      overall = 'unhealthy';
+    } else if (degraded > totalBreakers * 0.3) {
+      overall = 'degraded';
+    } else {
+      overall = 'healthy';
+    }
+
+    // Calculate summary statistics
+    let totalRequests = 0;
+    let totalFailures = 0;
+    let closedBreakers = 0;
+    let halfOpenBreakers = 0;
+    let openBreakers = 0;
+
+    for (const [, breaker] of this.breakers) {
+      const stats = breaker.getStats();
+      const state = breaker.getState();
+      totalRequests += stats.totalRequests;
+      totalFailures += stats.totalFailures;
+      
+      if (state === 'CLOSED') closedBreakers++;
+      else if (state === 'HALF_OPEN') halfOpenBreakers++;
+      else if (state === 'OPEN') openBreakers++;
+    }
+
     return {
-      totalBreakers: this.breakers.size,
+      totalBreakers,
       healthy,
       degraded,
       unhealthy,
-      summary
+      summary,
+      overall,
+      breakers: summary.map(s => ({...s, recentFailures: [], recommendations: []})),
+      totalRequests,
+      totalFailures,
+      closedBreakers,
+      halfOpenBreakers,
+      openBreakers
     };
   }
 }

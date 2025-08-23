@@ -14,6 +14,12 @@ import {
   ConformanceRuleCategory
 } from '../types.js';
 
+// Default empty structures for evidence objects
+const DEFAULT_METRICS = {};
+const DEFAULT_LOGS: string[] = [];
+const DEFAULT_STATE_SNAPSHOT = {};
+const DEFAULT_TRACES: any[] = [];
+
 export class DataValidationMonitor implements ConformanceMonitor {
   readonly id = 'data-validation-monitor';
   readonly name = 'Data Validation Monitor';
@@ -92,7 +98,13 @@ export class DataValidationMonitor implements ConformanceMonitor {
           message: `Data validation failed: ${error instanceof Error ? error.message : String(error)}`,
           context,
           stackTrace: error instanceof Error ? error.stack : undefined,
-          evidence: { inputData: data }
+          evidence: { 
+            inputData: data,
+            metrics: DEFAULT_METRICS,
+            logs: DEFAULT_LOGS,
+            stateSnapshot: DEFAULT_STATE_SNAPSHOT,
+            traces: DEFAULT_TRACES
+          }
         },
         metrics: { executionTime: duration }
       };
@@ -163,7 +175,9 @@ export class DataValidationMonitor implements ConformanceMonitor {
             evidence: {
               inputData: data,
               stateSnapshot: { errors: result.error.errors },
-              logs: [`Validation failed for rule: ${rule.name}`]
+              logs: [`Validation failed for rule: ${rule.name}`],
+              metrics: DEFAULT_METRICS,
+              traces: DEFAULT_TRACES
             },
             remediation: {
               suggested: this.generateValidationSuggestions(result.error, rule),
@@ -194,7 +208,13 @@ export class DataValidationMonitor implements ConformanceMonitor {
         actualValue: data,
         context,
         stackTrace: error instanceof Error ? error.stack : undefined,
-        evidence: { inputData: data }
+        evidence: { 
+        inputData: data,
+        metrics: DEFAULT_METRICS,
+        logs: DEFAULT_LOGS,
+        stateSnapshot: DEFAULT_STATE_SNAPSHOT,
+        traces: DEFAULT_TRACES
+      }
       };
 
       return { violation };
@@ -333,7 +353,13 @@ export class DataValidationMonitor implements ConformanceMonitor {
             actualValue: data,
             expectedValue: 'Non-null value',
             context,
-            evidence: { inputData: data }
+            evidence: { 
+            inputData: data,
+            metrics: DEFAULT_METRICS,
+            logs: DEFAULT_LOGS,
+            stateSnapshot: DEFAULT_STATE_SNAPSHOT,
+            traces: DEFAULT_TRACES
+          }
           }
         };
       }
@@ -349,7 +375,13 @@ export class DataValidationMonitor implements ConformanceMonitor {
             actualValue: data,
             expectedValue: 'string',
             context,
-            evidence: { inputData: data }
+            evidence: { 
+            inputData: data,
+            metrics: DEFAULT_METRICS,
+            logs: DEFAULT_LOGS,
+            stateSnapshot: DEFAULT_STATE_SNAPSHOT,
+            traces: DEFAULT_TRACES
+          }
           }
         };
       }
@@ -365,7 +397,13 @@ export class DataValidationMonitor implements ConformanceMonitor {
             actualValue: data,
             expectedValue: 'number',
             context,
-            evidence: { inputData: data }
+            evidence: { 
+            inputData: data,
+            metrics: DEFAULT_METRICS,
+            logs: DEFAULT_LOGS,
+            stateSnapshot: DEFAULT_STATE_SNAPSHOT,
+            traces: DEFAULT_TRACES
+          }
           }
         };
       }
@@ -381,7 +419,13 @@ export class DataValidationMonitor implements ConformanceMonitor {
             actualValue: data,
             expectedValue: 'array',
             context,
-            evidence: { inputData: data }
+            evidence: { 
+            inputData: data,
+            metrics: DEFAULT_METRICS,
+            logs: DEFAULT_LOGS,
+            stateSnapshot: DEFAULT_STATE_SNAPSHOT,
+            traces: DEFAULT_TRACES
+          }
           }
         };
       }
@@ -400,7 +444,13 @@ export class DataValidationMonitor implements ConformanceMonitor {
               actualValue: data,
               expectedValue: 'Valid email address',
               context,
-              evidence: { inputData: data }
+              evidence: { 
+            inputData: data,
+            metrics: DEFAULT_METRICS,
+            logs: DEFAULT_LOGS,
+            stateSnapshot: DEFAULT_STATE_SNAPSHOT,
+            traces: DEFAULT_TRACES
+          }
             }
           };
         }
@@ -421,7 +471,13 @@ export class DataValidationMonitor implements ConformanceMonitor {
               actualValue: data,
               expectedValue: 'Valid URL',
               context,
-              evidence: { inputData: data }
+              evidence: { 
+            inputData: data,
+            metrics: DEFAULT_METRICS,
+            logs: DEFAULT_LOGS,
+            stateSnapshot: DEFAULT_STATE_SNAPSHOT,
+            traces: DEFAULT_TRACES
+          }
             }
           };
         }
@@ -441,7 +497,13 @@ export class DataValidationMonitor implements ConformanceMonitor {
               actualValue: data,
               expectedValue: 'Valid UUID',
               context,
-              evidence: { inputData: data }
+              evidence: { 
+            inputData: data,
+            metrics: DEFAULT_METRICS,
+            logs: DEFAULT_LOGS,
+            stateSnapshot: DEFAULT_STATE_SNAPSHOT,
+            traces: DEFAULT_TRACES
+          }
             }
           };
         }
@@ -460,7 +522,13 @@ export class DataValidationMonitor implements ConformanceMonitor {
           actualValue: data,
           context,
           stackTrace: error instanceof Error ? error.stack : undefined,
-          evidence: { inputData: data }
+          evidence: { 
+            inputData: data,
+            metrics: DEFAULT_METRICS,
+            logs: DEFAULT_LOGS,
+            stateSnapshot: DEFAULT_STATE_SNAPSHOT,
+            traces: DEFAULT_TRACES
+          }
         }
       };
     }

@@ -202,6 +202,10 @@ export interface FixResult {
   generatedFiles: string[];
   backupFiles: string[];
   errors: string[];
+  // Add missing properties referenced in ae-fix-cli.ts
+  analysis?: string;
+  proposedFixes?: RepairAction[];
+  riskAssessment?: RiskAssessment;
 }
 
 // Risk assessment result

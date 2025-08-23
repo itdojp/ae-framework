@@ -385,6 +385,26 @@ export class CircuitBreaker extends EventEmitter {
   }
 
   /**
+   * Check if circuit breaker is in a healthy state
+   */
+  isHealthy(): boolean {
+    // Circuit is healthy if it's closed or half-open with recent successes
+    if (this.state === CircuitState.CLOSED) {
+      // Check recent failure rate in closed state
+      const recentFailureRate = this.totalRequests > 0 ? this.failureCount / this.totalRequests : 0;
+      return recentFailureRate < 0.5; // Healthy if failure rate < 50%
+    }
+    
+    if (this.state === CircuitState.HALF_OPEN) {
+      // Healthy if we have some recent successes
+      return this.successCount > 0;
+    }
+    
+    // Open state is not healthy
+    return false;
+  }
+
+  /**
    * Cleanup resources
    */
   destroy(): void {

@@ -13,6 +13,12 @@ import {
   ConformanceRuleCategory
 } from '../types.js';
 
+// Default empty structures for evidence objects
+const DEFAULT_METRICS = {};
+const DEFAULT_LOGS: string[] = [];
+const DEFAULT_STATE_SNAPSHOT = {};
+const DEFAULT_TRACES: any[] = [];
+
 interface APIContractSpec {
   method: string;
   path: string;
@@ -147,7 +153,13 @@ export class APIContractMonitor implements ConformanceMonitor {
           traces: undefined, // TODO: Implement
           context,
           stackTrace: error instanceof Error ? error.stack : undefined,
-          evidence: { inputData: data }
+          evidence: { 
+            inputData: data,
+            metrics: DEFAULT_METRICS,
+            logs: DEFAULT_LOGS,
+            stateSnapshot: DEFAULT_STATE_SNAPSHOT,
+            traces: DEFAULT_TRACES
+          }
         },
         metrics: { executionTime: duration }
       };
