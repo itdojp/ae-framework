@@ -306,6 +306,8 @@ export class BenchmarkRunner {
         id: spec.id,
         title: spec.title,
         description: spec.notes || `${spec.title} - ${spec.category} (${spec.difficulty})`,
+        category: spec.category || 'general',
+        difficulty: spec.difficulty || 'intermediate',
         requirements: spec.requirements?.functional?.map((req: any) => ({
           id: req.id,
           description: req.description,
@@ -314,14 +316,25 @@ export class BenchmarkRunner {
           acceptance_criteria: [req.description]
         })) || [],
         constraints: {
-    // technical: spec.constraints?.allowed_packages || [], // TODO: Verify property exists in interface
           business: spec.constraints?.disallowed_packages || [],
           performance: spec.requirements?.non_functional?.performance || {}
+        },
+        testCriteria: spec.requirements?.functional?.map((req: any) => ({
+          id: req.id || `test-${Date.now()}`,
+          description: `Test: ${req.description}`,
+          type: 'unit',
+          weight: 1.0,
+          automated: true
+        })) || [],
+        expectedOutput: {
+          type: 'application' as any,
+          format: 'executable',
+          schema: null,
+          examples: []
         },
         metadata: {
           created_by: spec.metadata?.author || 'req2run-benchmark',
           created_at: spec.metadata?.created_date || new Date().toISOString(),
-    // version: spec.metadata?.version || '1.0.0', // TODO: Verify property exists in interface
           category: spec.category,
           difficulty: spec.difficulty,
           estimated_time: spec.estimated_time_minutes || 30

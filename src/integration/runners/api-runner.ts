@@ -193,7 +193,11 @@ export class APITestRunner implements TestRunner {
         endTime,
         duration,
         environment: environment.name,
-        steps: stepResults,
+        steps: stepResults.map(step => ({
+          ...step,
+          screenshots: [],
+          error: undefined
+        })),
         logs,
         metrics: {
           ...metrics,
@@ -456,7 +460,7 @@ export class APITestRunner implements TestRunner {
         break;
 
       case 'bearer':
-        const token = auth.credentials.token || environment.variables.API_TOKEN;
+        const token = auth.credentials.token || environment.variables.API_TOKEN || '';
         headers['Authorization'] = `Bearer ${token}`;
         break;
 

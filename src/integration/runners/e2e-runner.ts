@@ -185,7 +185,7 @@ export class E2ETestRunner implements TestRunner {
 
           stepResults.push({
             id: step.id,
-            status: 'passed' as const,
+            status: 'passed' as 'passed',
             startTime: stepStartTime,
             endTime: stepEndTime,
             duration: stepDuration,
@@ -207,7 +207,7 @@ export class E2ETestRunner implements TestRunner {
 
           stepResults.push({
             id: step.id,
-            status: 'failed' as const,
+            status: 'failed' as 'failed',
             startTime: stepStartTime,
             endTime: stepEndTime,
             duration: stepDuration,
@@ -235,7 +235,10 @@ export class E2ETestRunner implements TestRunner {
         endTime,
         duration,
         environment: environment.name,
-        steps: stepResults,
+        steps: stepResults.map(step => ({
+          ...step,
+          artifacts: []
+        })),
         screenshots,
         logs,
         metrics: {

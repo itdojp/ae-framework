@@ -56,6 +56,9 @@ export class UnifiedImproveCommand extends BaseExtendedCommand {
     context: CommandContext
   ): Promise<ExtendedCommandResult<ImprovementResult>> {
     const target = args[0];
+    if (!target) {
+      throw new Error('Target path is required');
+    }
     const fullPath = path.resolve(context.projectRoot, target);
     
     try {
@@ -521,7 +524,7 @@ export class UnifiedImproveCommand extends BaseExtendedCommand {
         const lineIndex = improvement.location.line - 1;
         if (lineIndex >= 0 && lineIndex < lines.length) {
           const originalLine = lines[lineIndex];
-          if (originalLine.trim() === improvement.original.trim()) {
+          if (originalLine && originalLine.trim() === improvement.original.trim()) {
             lines[lineIndex] = originalLine.replace(improvement.original.trim(), improvement.suggested);
             applied++;
           }

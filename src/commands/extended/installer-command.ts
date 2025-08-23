@@ -146,6 +146,7 @@ export class InstallerCommand extends BaseExtendedCommand {
         
         for (let i = 0; i < suggestions.length; i++) {
           const templateId = suggestions[i];
+          if (!templateId) continue;
           const template = installerManager.getTemplate(templateId);
           const reason = reasoning[i];
           
@@ -331,19 +332,19 @@ export class InstallerCommand extends BaseExtendedCommand {
     for (let i = 0; i < args.length; i++) {
       const arg = args[i];
       
-      if (arg.startsWith('--name=')) {
+      if (arg && arg.startsWith('--name=')) {
         options.projectName = arg.substring('--name='.length);
-      } else if (arg.startsWith('--packageManager=')) {
+      } else if (arg && arg.startsWith('--packageManager=')) {
         const manager = arg.substring('--packageManager='.length);
         if (['npm', 'yarn', 'pnpm'].includes(manager)) {
           options.packageManager = manager;
         }
-      } else if (arg === '--name' && i + 1 < args.length) {
+      } else if (arg && arg === '--name' && i + 1 < args.length) {
         options.projectName = args[i + 1];
         i++; // Skip next arg
-      } else if (arg === '--packageManager' && i + 1 < args.length) {
+      } else if (arg && arg === '--packageManager' && i + 1 < args.length) {
         const manager = args[i + 1];
-        if (['npm', 'yarn', 'pnpm'].includes(manager)) {
+        if (manager && ['npm', 'yarn', 'pnpm'].includes(manager)) {
           options.packageManager = manager;
         }
         i++; // Skip next arg

@@ -271,18 +271,23 @@ export class MCPCommand extends BaseExtendedCommand {
         return await this.handleListPlugins(projectRoot);
 
       case 'load':
+        if (!args[1]) throw new Error('Plugin name is required for load command');
         return await this.handleLoadPlugin(args[1], projectRoot);
 
       case 'enable':
+        if (!args[1]) throw new Error('Plugin name is required for enable command');
         return await this.handleEnablePlugin(args[1], projectRoot);
 
       case 'disable':
+        if (!args[1]) throw new Error('Plugin name is required for disable command');
         return await this.handleDisablePlugin(args[1], projectRoot);
 
       case 'unload':
+        if (!args[1]) throw new Error('Plugin name is required for unload command');
         return await this.handleUnloadPlugin(args[1], projectRoot);
 
       case 'create':
+        if (!args[1]) throw new Error('Plugin name is required for create command');
         return await this.handleCreatePlugin(args[1], args[2] || projectRoot, projectRoot);
 
       case 'discover':

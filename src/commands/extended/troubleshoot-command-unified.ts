@@ -690,7 +690,7 @@ export class UnifiedTroubleshootCommand extends BaseExtendedCommand {
             severity: 'medium',
             message: errorLine.trim(),
             location: { file: logsPath },
-            frequency: errorLines.filter(line => line.includes(errorLine.split(' ')[0])).length
+            frequency: errorLines.filter(line => line.includes(errorLine.split(' ')[0] || '')).length
           });
         }
 
