@@ -268,7 +268,7 @@ export class EnhancedStateManager extends EventEmitter {
     // Collect all relevant entries
     const snapshotData: Record<string, StateEntry> = {};
     
-    for (const [key, entry] of this.storage) {
+    for (const [key, entry] of Array.from(this.storage)) {
       if (entry.metadata.phase === phase || (entities && entities.some(e => entry.logicalKey.includes(e)))) {
         snapshotData[key] = entry;
       }
@@ -449,7 +449,7 @@ export class EnhancedStateManager extends EventEmitter {
     }
 
     // Restore previous state only for keys that existed before
-    for (const [key, previousEntry] of context.rollbackData) {
+    for (const [key, previousEntry] of Array.from(context.rollbackData)) {
       if (previousEntry) {
         this.storage.set(key, previousEntry);
       }
@@ -457,7 +457,7 @@ export class EnhancedStateManager extends EventEmitter {
     }
 
     // Rebuild indices from remaining entries
-    for (const [key, entry] of this.storage) {
+    for (const [key, entry] of Array.from(this.storage)) {
       this.updateIndices(entry.logicalKey, key, entry);
     }
 
@@ -530,7 +530,7 @@ export class EnhancedStateManager extends EventEmitter {
     const now = Date.now();
     const expiredKeys: string[] = [];
 
-    for (const [key, expiryTime] of this.ttlIndex) {
+    for (const [key, expiryTime] of Array.from(this.ttlIndex)) {
       if (now >= expiryTime) {
         expiredKeys.push(key);
       }
@@ -691,7 +691,7 @@ export class EnhancedStateManager extends EventEmitter {
     let latestKey: string | null = null;
     let latestVersion = -1;
 
-    for (const key of keys) {
+    for (const key of Array.from(keys)) {
       const entry = this.storage.get(key);
       if (entry && entry.version > latestVersion) {
         latestVersion = entry.version;
@@ -708,7 +708,7 @@ export class EnhancedStateManager extends EventEmitter {
       return null;
     }
 
-    for (const key of keys) {
+    for (const key of Array.from(keys)) {
       const entry = this.storage.get(key);
       if (entry && entry.version === version) {
         return key;
@@ -816,7 +816,7 @@ export class EnhancedStateManager extends EventEmitter {
     await this.persistToDisk();
     
     // Rollback any active transactions
-    for (const txId of this.activeTransactions.keys()) {
+    for (const txId of Array.from(this.activeTransactions.keys())) {
       await this.rollbackTransaction(txId);
     }
     
