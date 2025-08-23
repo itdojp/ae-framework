@@ -145,7 +145,7 @@ export class GuardRunner {
       
       // Parse coverage output
       const coverageMatch = result.match(/All files[^\d]*(\d+(?:\.\d+)?)/);
-      const coverage = coverageMatch ? parseFloat(coverageMatch[1]) : 0;
+      const coverage = coverageMatch && coverageMatch[1] ? parseFloat(coverageMatch[1]) : 0;
       
       // Get threshold from quality policy
       const currentPhase = getCurrentPhase();

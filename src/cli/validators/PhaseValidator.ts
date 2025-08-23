@@ -243,7 +243,7 @@ export class PhaseValidator {
       
       // Parse coverage output for percentage
       const coverageMatch = result.match(/All files[^\d]*(\d+(?:\.\d+)?)/);
-      const coverage = coverageMatch ? parseFloat(coverageMatch[1]) : 0;
+      const coverage = coverageMatch && coverageMatch[1] ? parseFloat(coverageMatch[1]) : 0;
       
       const passed = coverage >= threshold;
       

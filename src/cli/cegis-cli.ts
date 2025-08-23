@@ -111,12 +111,15 @@ export class CEGISCli {
       };
 
       // Validate options
-      if (autoFixOptions.confidenceThreshold < 0 || autoFixOptions.confidenceThreshold > 1) {
+      const confidenceThreshold = autoFixOptions.confidenceThreshold ?? 0.7;
+      const maxRiskLevel = autoFixOptions.maxRiskLevel ?? 3;
+      
+      if (confidenceThreshold < 0 || confidenceThreshold > 1) {
         console.error('❌ Confidence threshold must be between 0.0 and 1.0');
         return;
       }
 
-      if (autoFixOptions.maxRiskLevel < 1 || autoFixOptions.maxRiskLevel > 5) {
+      if (maxRiskLevel < 1 || maxRiskLevel > 5) {
         console.error('❌ Risk level must be between 1 and 5');
         return;
       }
