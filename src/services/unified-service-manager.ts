@@ -208,11 +208,8 @@ export class UnifiedServiceManager {
       const result = await this.routeTaskToService(task);
       
       // Apply optimizations if enabled
-      if (this.optimizationConfig.caching) {
-        result.performanceMetrics = {
-          ...result.performanceMetrics,
-          cacheHitRate: 0.15 // Simulated cache improvement
-        };
+      if (this.optimizationConfig.caching && result.performanceMetrics) {
+        result.performanceMetrics.cacheHitRate = 0.15; // Simulated cache improvement
       }
 
       const executionTime = Date.now() - startTime;
