@@ -1,9 +1,17 @@
-import { describe, test, expect, beforeEach, vi } from 'vitest';
+import { describe, test, expect, beforeEach, vi, beforeAll, afterAll } from 'vitest';
 import { CircuitBreaker, CircuitState } from '../../src/utils/circuit-breaker.js';
 
 describe('CircuitBreaker - Basic Functionality', () => {
   let circuitBreaker: CircuitBreaker;
   
+  beforeAll(() => {
+    vi.useFakeTimers();
+  });
+
+  afterAll(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(() => {
     circuitBreaker = new CircuitBreaker('test-breaker', {
       failureThreshold: 3,
@@ -101,8 +109,9 @@ describe('CircuitBreaker - Basic Functionality', () => {
     
     expect(shortTimeoutBreaker.getState()).toBe(CircuitState.OPEN);
     
-    // Wait for timeout
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Wait for timeout using fake timers
+    vi.advanceTimersByTime(100);
+    await Promise.resolve(); // allow any pending microtasks to run
     
     // Next call should transition to HALF_OPEN
     try {
@@ -171,9 +180,12 @@ describe('CircuitBreaker - Basic Functionality', () => {
 
   test('should handle async operations correctly', async () => {
     const result = await circuitBreaker.execute(async () => {
-      return new Promise(resolve => {
+      // Use fake timer for async operation
+      const asyncPromise = new Promise(resolve => {
         setTimeout(() => resolve('async-success'), 10);
       });
+      vi.advanceTimersByTime(10);
+      return await asyncPromise;
     });
     
     expect(result).toBe('async-success');
@@ -181,7 +193,10 @@ describe('CircuitBreaker - Basic Functionality', () => {
 
   test('should measure response time', async () => {
     await circuitBreaker.execute(async () => {
-      await new Promise(resolve => setTimeout(resolve, 50));
+      // Simulate 50ms delay with fake timers
+      const delayPromise = new Promise(resolve => setTimeout(resolve, 50));
+      vi.advanceTimersByTime(50);
+      await delayPromise;
       return 'delayed-success';
     });
     
