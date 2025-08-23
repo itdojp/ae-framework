@@ -181,7 +181,7 @@ async function executeAutoFix(options: any): Promise<void> {
       if (action.targetFile) {
         console.log(`    📁 File: ${action.targetFile}`);
       }
-      console.log(`    🎯 Confidence: ${(action.confidence * 100).toFixed(1)}%`);
+      console.log(`    🎯 Confidence: ${((action.confidence || 0) * 100).toFixed(1)}%`);
     }
   }
 

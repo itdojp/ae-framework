@@ -203,6 +203,11 @@ class AEFrameworkCLI {
 
     // Validate prerequisites
     const phase = this.config.phases[nextPhase];
+    if (!phase) {
+      console.error(chalk.red(`❌ Phase configuration not found: ${nextPhase}`));
+      return;
+    }
+    
     if (phase.prerequisites) {
       for (const prereq of phase.prerequisites) {
         const valid = await this.phaseValidator.validatePrerequisite(prereq);
@@ -224,14 +229,21 @@ class AEFrameworkCLI {
     const phases = Object.keys(this.config.phases);
     
     for (let i = phases.length - 1; i >= 0; i--) {
-      const phase = this.config.phases[phases[i]];
+      const phaseName = phases[i];
+      if (!phaseName) continue;
+      
+      const phase = this.config.phases[phaseName];
       const hasArtifacts = await this.phaseValidator.hasRequiredArtifacts(phase);
       if (hasArtifacts) {
-        return phases[i];
+        return phaseName;
       }
     }
     
-    return phases[0]; // Default to first phase
+    const firstPhase = phases[0];
+    if (!firstPhase) {
+      throw new Error('No phases configured');
+    }
+    return firstPhase; // Default to first phase
   }
 
   getNextPhase(currentPhase: string): string | null {

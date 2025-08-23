@@ -57,6 +57,9 @@ export class UnifiedDocumentCommand extends BaseExtendedCommand {
     context: CommandContext
   ): Promise<ExtendedCommandResult<DocumentationResult>> {
     const target = args[0];
+    if (!target) {
+      throw new Error('Target path is required for documentation generation');
+    }
     const fullPath = path.resolve(context.projectRoot, target);
     
     try {
@@ -278,7 +281,7 @@ export class UnifiedDocumentCommand extends BaseExtendedCommand {
         const nameMatch = line.match(/(?:function\s+(\w+)|const\s+(\w+)\s*=)/);
         if (nameMatch) {
           exports.push({
-            name: nameMatch[1] || nameMatch[2],
+            name: nameMatch[1] || nameMatch[2] || 'anonymous',
             type: 'function',
             signature: line.trim(),
             description: this.extractJSDocFromLines(lines, index)
@@ -290,7 +293,7 @@ export class UnifiedDocumentCommand extends BaseExtendedCommand {
       const classMatch = line.match(/(?:export\s+)?class\s+(\w+)/);
       if (classMatch) {
         exports.push({
-          name: classMatch[1],
+          name: classMatch[1] || 'AnonymousClass',
           type: 'class',
           description: this.extractJSDocFromLines(lines, index)
         });
@@ -300,7 +303,7 @@ export class UnifiedDocumentCommand extends BaseExtendedCommand {
       const constMatch = line.match(/(?:export\s+)?const\s+(\w+)\s*=/);
       if (constMatch && !line.includes('function') && !line.includes('=>')) {
         exports.push({
-          name: constMatch[1],
+          name: constMatch[1] || 'AnonymousConstant',
           type: 'constant',
           signature: line.trim(),
           description: this.extractJSDocFromLines(lines, index)
@@ -487,10 +490,14 @@ export class UnifiedDocumentCommand extends BaseExtendedCommand {
     
     let match;
     while ((match = importPattern.exec(content)) !== null) {
-      dependencies.add(match[1]);
+      if (match[1]) {
+        dependencies.add(match[1]);
+      }
     }
     while ((match = requirePattern.exec(content)) !== null) {
-      dependencies.add(match[1]);
+      if (match[1]) {
+        dependencies.add(match[1]);
+      }
     }
 
     return Array.from(dependencies);

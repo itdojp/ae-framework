@@ -57,6 +57,9 @@ export class UnifiedAnalyzeCommand extends BaseExtendedCommand {
     context: CommandContext
   ): Promise<ExtendedCommandResult<CodeAnalysis>> {
     const target = args[0];
+    if (!target) {
+      throw new Error('Target path is required for analysis');
+    }
     const fullPath = path.resolve(context.projectRoot, target);
     
     try {
@@ -381,10 +384,14 @@ export class UnifiedAnalyzeCommand extends BaseExtendedCommand {
     
     let match;
     while ((match = importPattern.exec(content)) !== null) {
-      dependencies.add(match[1]);
+      if (match[1]) {
+        dependencies.add(match[1]);
+      }
     }
     while ((match = requirePattern.exec(content)) !== null) {
-      dependencies.add(match[1]);
+      if (match[1]) {
+        dependencies.add(match[1]);
+      }
     }
 
     return Array.from(dependencies);

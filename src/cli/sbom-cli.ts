@@ -190,8 +190,8 @@ export class SBOMCLI {
       const sbom2 = JSON.parse(content2);
 
       // Compare components
-      const components1 = new Map(sbom1.components?.map((c: any) => [`${c.name}@${c.version}`, c]) || []);
-      const components2 = new Map(sbom2.components?.map((c: any) => [`${c.name}@${c.version}`, c]) || []);
+      const components1 = new Map<string, any>(sbom1.components?.map((c: any) => [`${c.name}@${c.version}`, c]) || []);
+      const components2 = new Map<string, any>(sbom2.components?.map((c: any) => [`${c.name}@${c.version}`, c]) || []);
 
       const added: string[] = [];
       const removed: string[] = [];
