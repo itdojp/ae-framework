@@ -466,6 +466,9 @@ export class APITestRunner implements TestRunner {
 
       case 'apikey':
         const apiKey = auth.credentials.apiKey || environment.variables.API_KEY;
+        if (!apiKey) {
+          throw new Error('API key is required for apikey authentication');
+        }
         const headerName = auth.credentials.headerName || 'X-API-Key';
         headers[headerName] = apiKey;
         break;
@@ -596,7 +599,11 @@ export class APITestRunner implements TestRunner {
       const arrayMatch = part.match(/^(\w+)\[(\d+)\]$/);
       if (arrayMatch) {
         const [, key, index] = arrayMatch;
-        current = current[key]?.[parseInt(index)];
+        if (key && index !== undefined) {
+          current = current[key]?.[parseInt(index)];
+        } else {
+          current = undefined;
+        }
       } else {
         current = current[part];
       }

@@ -220,10 +220,17 @@ export class ConformanceRuleEngine {
           message: `Rule execution failed: ${error instanceof Error ? error.message : String(error)}`,
           context,
           stackTrace: error instanceof Error ? error.stack : undefined,
-          evidence: {}
+          evidence: {
+            metrics: DEFAULT_METRICS,
+            logs: DEFAULT_LOGS,
+            stateSnapshot: DEFAULT_STATE_SNAPSHOT,
+            traces: DEFAULT_TRACES
+          }
         },
         metrics: {
-          executionTime: duration
+          executionTime: duration,
+          networkCalls: 0,
+          dbQueries: 0
         }
       };
     }
@@ -295,7 +302,11 @@ export class ConformanceRuleEngine {
         context: runtime,
         stackTrace: error instanceof Error ? error.stack : undefined,
         evidence: {
-          inputData: input
+          inputData: input,
+          metrics: DEFAULT_METRICS,
+          logs: DEFAULT_LOGS,
+          stateSnapshot: DEFAULT_STATE_SNAPSHOT,
+          traces: DEFAULT_TRACES
         }
       };
 
@@ -445,7 +456,12 @@ export class ConformanceRuleEngine {
               severity: 'major',
               message: `Rule execution failed: ${result.reason}`,
               context,
-              evidence: {}
+              evidence: {
+            metrics: DEFAULT_METRICS,
+            logs: DEFAULT_LOGS,
+            stateSnapshot: DEFAULT_STATE_SNAPSHOT,
+            traces: DEFAULT_TRACES
+          }
             },
             metrics: { executionTime: 0 }
           });
@@ -690,7 +706,7 @@ export class ConformanceRuleEngine {
     const shuffled = [...array];
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      const temp = shuffled[i];
+      const temp = shuffled[i]!;
       shuffled[i] = shuffled[j]!;
       shuffled[j] = temp;
     }
