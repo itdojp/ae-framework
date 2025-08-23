@@ -147,7 +147,13 @@ export class APIContractMonitor implements ConformanceMonitor {
           traces: undefined, // TODO: Implement
           context,
           stackTrace: error instanceof Error ? error.stack : undefined,
-          evidence: { inputData: data }
+          evidence: { 
+            inputData: data,
+            metrics: {},
+            logs: [],
+            stateSnapshot: {},
+            traces: []
+          }
         },
         metrics: { executionTime: duration }
       };
