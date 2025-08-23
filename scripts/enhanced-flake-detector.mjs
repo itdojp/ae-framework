@@ -65,8 +65,14 @@ class EnhancedFlakeDetector {
       
       const testProcess = spawn(testCommand[0], testCommand.slice(1), {
         stdio: ['inherit', 'pipe', 'pipe'],
-        timeout: 180000 // 3 minute timeout
+        timeout: 120000 // 2 minute timeout
       });
+
+      // Additional timeout protection
+      const forceTimeout = setTimeout(() => {
+        console.log(`   ⏰ Force killing test process after 2.5 minutes`);
+        testProcess.kill('SIGKILL');
+      }, 150000);
 
       let stdout = '';
       let stderr = '';
@@ -81,6 +87,7 @@ class EnhancedFlakeDetector {
 
       testProcess.on('close', (code) => {
         const duration = Date.now() - startTime;
+        clearTimeout(forceTimeout);
         
         resolve({
           run,
@@ -95,6 +102,7 @@ class EnhancedFlakeDetector {
       });
 
       testProcess.on('error', (error) => {
+        clearTimeout(forceTimeout);
         reject({
           run,
           success: false,

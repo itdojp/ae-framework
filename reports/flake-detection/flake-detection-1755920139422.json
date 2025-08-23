@@ -1,0 +1,86 @@
+{
+  "summary": {
+    "testSuiteRuns": 8,
+    "failureRate": "0.00%",
+    "classification": "stable",
+    "confidence": "95%",
+    "generatedAt": "2025-08-23T03:35:39.422Z"
+  },
+  "statistics": {
+    "total": 8,
+    "failures": 0,
+    "successes": 8,
+    "failureRate": 0,
+    "confidenceInterval": {
+      "lower": 0,
+      "upper": 0
+    },
+    "averageDuration": 160.5,
+    "classification": "stable"
+  },
+  "patternAnalysis": {
+    "failureCategories": {},
+    "averageFailureDuration": 0
+  },
+  "recommendations": [
+    "✅ Tests are stable - no action required"
+  ],
+  "results": [
+    {
+      "run": 1,
+      "success": true,
+      "duration": 173,
+      "timestamp": "2025-08-23T03:35:38.309Z",
+      "exitCode": 0
+    },
+    {
+      "run": 2,
+      "success": true,
+      "duration": 163,
+      "timestamp": "2025-08-23T03:35:38.473Z",
+      "exitCode": 0
+    },
+    {
+      "run": 3,
+      "success": true,
+      "duration": 165,
+      "timestamp": "2025-08-23T03:35:38.638Z",
+      "exitCode": 0
+    },
+    {
+      "run": 4,
+      "success": true,
+      "duration": 163,
+      "timestamp": "2025-08-23T03:35:38.801Z",
+      "exitCode": 0
+    },
+    {
+      "run": 5,
+      "success": true,
+      "duration": 156,
+      "timestamp": "2025-08-23T03:35:38.957Z",
+      "exitCode": 0
+    },
+    {
+      "run": 6,
+      "success": true,
+      "duration": 154,
+      "timestamp": "2025-08-23T03:35:39.111Z",
+      "exitCode": 0
+    },
+    {
+      "run": 7,
+      "success": true,
+      "duration": 156,
+      "timestamp": "2025-08-23T03:35:39.267Z",
+      "exitCode": 0
+    },
+    {
+      "run": 8,
+      "success": true,
+      "duration": 154,
+      "timestamp": "2025-08-23T03:35:39.421Z",
+      "exitCode": 0
+    }
+  ]
+}
