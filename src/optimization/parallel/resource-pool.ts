@@ -396,7 +396,8 @@ export class ResourcePool extends EventEmitter {
       
       const used = resource.capacity.value - resource.available.value;
       const usage = resource.capacity.value > 0 ? used / resource.capacity.value : 0;
-      utilization[resource.type] = Math.max(utilization[resource.type], usage);
+      const currentUtilization = utilization[resource.type] ?? 0;
+      utilization[resource.type] = Math.max(currentUtilization, usage);
     }
     
     return utilization as Record<ResourceType, number>;
