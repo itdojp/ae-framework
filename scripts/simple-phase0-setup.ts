@@ -98,11 +98,14 @@ export class SimplePhase0Setup {
   private async getTypeScriptErrorCount(): Promise<number> {
     try {
       const { execSync } = await import('child_process');
-      execSync('npm run build', { stdio: 'pipe' });
-      return 0; // No errors if build succeeds
+      // Use tsc directly for reliable error detection
+      execSync('npx tsc --noEmit', { stdio: 'pipe' });
+      return 0; // No errors if tsc succeeds
     } catch (error: any) {
-      const errorOutput = String(error.stdout || error.stderr || '');
-      const errorMatches = errorOutput.match(/error TS\d+:/g);
+      // Combine stdout and stderr for robust parsing
+      const errorOutput = String(error.stdout || '') + String(error.stderr || '');
+      // Match lines that look like TypeScript errors (e.g., error TS1234:)
+      const errorMatches = errorOutput.match(/^error TS\d+:/gm) || errorOutput.match(/error TS\d+:/g);
       return errorMatches ? errorMatches.length : 0;
     }
   }
