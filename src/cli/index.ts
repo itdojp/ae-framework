@@ -678,6 +678,48 @@ doctorCommand
   .action(async () => {
     await doctorEnv();
   });
+
+// Adapt commands
+import { adaptJest } from '../commands/adapt/jest.js';
+import { adaptVitest } from '../commands/adapt/vitest.js';
+const adaptCommand = program
+  .command('adapt')
+  .description('Project adaptation commands');
+
+adaptCommand
+  .command('jest')
+  .description('Adapt Jest project with coverage thresholds')
+  .option('--coverage-statements <threshold>', 'Minimum statement coverage (default: 80)', '80')
+  .option('--coverage-branches <threshold>', 'Minimum branch coverage (default: 80)', '80')
+  .option('--coverage-functions <threshold>', 'Minimum function coverage (default: 80)', '80')
+  .option('--coverage-lines <threshold>', 'Minimum line coverage (default: 80)', '80')
+  .action(async (options) => {
+    const thresholds = {
+      statements: parseInt(options.coverageStatements),
+      branches: parseInt(options.coverageBranches),
+      functions: parseInt(options.coverageFunctions),
+      lines: parseInt(options.coverageLines)
+    };
+    await adaptJest(thresholds);
+  });
+
+adaptCommand
+  .command('vitest')
+  .description('Adapt Vitest project with coverage thresholds')
+  .option('--coverage-statements <threshold>', 'Minimum statement coverage (default: 80)', '80')
+  .option('--coverage-branches <threshold>', 'Minimum branch coverage (default: 80)', '80')
+  .option('--coverage-functions <threshold>', 'Minimum function coverage (default: 80)', '80')
+  .option('--coverage-lines <threshold>', 'Minimum line coverage (default: 80)', '80')
+  .action(async (options) => {
+    const thresholds = {
+      statements: parseInt(options.coverageStatements),
+      branches: parseInt(options.coverageBranches),
+      functions: parseInt(options.coverageFunctions),
+      lines: parseInt(options.coverageLines)
+    };
+    await adaptVitest(thresholds);
+  });
+
 program.parse();
 
 export { AEFrameworkCLI };
