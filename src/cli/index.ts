@@ -652,6 +652,20 @@ program
     await agentComplete(options.prompt, options.system);
   });
 
+// CI commands
+import { ciScaffold } from '../commands/ci/scaffold.js';
+const ciCommand = program
+  .command('ci')
+  .description('CI-related commands');
+
+ciCommand
+  .command('scaffold')
+  .description('Generate GitHub Actions CI workflow')
+  .option('--force', 'Overwrite existing workflow file')
+  .action(async (options) => {
+    await ciScaffold(options.force);
+  });
+
 program.parse();
 
 export { AEFrameworkCLI };
