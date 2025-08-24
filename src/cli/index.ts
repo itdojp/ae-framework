@@ -666,6 +666,19 @@ ciCommand
     await ciScaffold(options.force);
   });
 
+// Doctor commands
+import { doctorEnv } from '../commands/doctor/env.js';
+const doctorCommand = program
+  .command('doctor')
+  .description('Diagnostic commands');
+
+doctorCommand
+  .command('env')
+  .description('Check environment requirements')
+  .action(async () => {
+    await doctorEnv();
+  });
+
 program.parse();
 
 export { AEFrameworkCLI };
