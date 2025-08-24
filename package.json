@@ -5,6 +5,7 @@
   "private": false,
   "type": "module",
   "bin": {
+    "ae": "./dist/cli.js",
     "ae-framework": "./dist/cli/index.js",
     "ae-phase": "./dist/cli/phase-cli.js",
     "ae-approve": "./dist/cli/approval-cli.js",
@@ -257,16 +258,20 @@
     "@opentelemetry/sdk-node": "^0.52.0",
     "@opentelemetry/semantic-conventions": "^1.25.0",
     "@types/uuid": "^10.0.0",
+    "cac": "^6.7.14",
     "chalk": "^5.3.0",
     "commander": "^12.0.0",
+    "execa": "^9.6.0",
     "fastify": "^5.0.0",
     "fastify-openapi-glue": "^4.5.0",
     "gitleaks": "^1.0.0",
     "glob": "^10.3.0",
     "handlebars": "^4.7.8",
     "js-yaml": "^4.1.0",
+    "micromatch": "^4.0.8",
     "pg": "^8.12.0",
     "pino": "^9.0.0",
+    "tinybench": "^5.0.1",
     "uuid": "^11.1.0",
     "yaml": "^2.8.1",
     "zod": "^3.23.8"
@@ -284,6 +289,7 @@
     "@stryker-mutator/vitest-runner": "^8.7.1",
     "@types/handlebars": "^4.1.0",
     "@types/js-yaml": "^4.0.5",
+    "@types/micromatch": "^4.0.9",
     "@types/node": "^22.0.0",
     "@types/pg": "^8.11.0",
     "@typescript-eslint/eslint-plugin": "^8.39.0",
@@ -309,8 +315,6 @@
     "why-is-node-running": "^3.2.2"
   },
   "engines": {
-    "node": ">=18.0.0",
-    "pnpm": ">=8.0.0"
-  },
-  "packageManager": "pnpm@8.15.1"
+    "node": ">=20.11 <23"
+  }
 }
