@@ -637,6 +637,21 @@ program.addCommand(createResilienceCommand());
 import { createSBOMCommand } from './sbom-cli.js';
 program.addCommand(createSBOMCommand());
 
+// Agent commands
+import { agentComplete } from '../commands/agent/complete.js';
+program
+  .command('agent:complete')
+  .description('LLM completion for quick verification')
+  .option('--prompt <prompt>', 'Prompt to send to LLM (required)')
+  .option('--system <system>', 'System message for LLM (optional)')
+  .action(async (options) => {
+    if (!options.prompt) {
+      console.error(chalk.red('❌ --prompt is required'));
+      process.exit(1);
+    }
+    await agentComplete(options.prompt, options.system);
+  });
+
 program.parse();
 
 export { AEFrameworkCLI };
