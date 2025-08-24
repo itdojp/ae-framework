@@ -678,7 +678,6 @@ doctorCommand
   .action(async () => {
     await doctorEnv();
   });
-
 program.parse();
 
 export { AEFrameworkCLI };
