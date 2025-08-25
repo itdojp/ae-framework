@@ -1,9 +1,9 @@
 # Bench Report
-- Date: 2025-08-25T07:29:50.660Z
+- Date: 2025-08-25T11:19:49.095Z
 - Node: v20.19.4
 - Machine: linux/x64 AMD Ryzen 7 7735HS with Radeon Graphics
 - Iter: 30, Warmup: 300ms, Seed: 321
 
 | task | mean(ms) | stdev(ms) | hz |
 |---|---:|---:|---:|
-| noop | 0.041 | 0.472 | 26313599.0 |
+| noop | 0.039 | 0.244 | 27317281.0 |

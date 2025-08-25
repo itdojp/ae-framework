@@ -40,7 +40,8 @@ export function withRecorder(base: LLM, opts?: { dir?: string; replay?: boolean 
             file = legacyFile;
           }
           
-          const hit = JSON.parse(await readFile(file, 'utf8'));
+          const content: unknown = JSON.parse(await readFile(file, 'utf8'));
+          const hit = content as { output: string };
           return hit.output;
         } catch (error) {
           if (error && typeof error === 'object' && 'code' in error && (error as any).code === 'ENOENT') {

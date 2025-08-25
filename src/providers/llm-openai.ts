@@ -1,11 +1,12 @@
 import type { LLM } from './index.js';
+import { OpenAIChat } from '../schemas/llm.js';
 
 const OpenAIProvider: LLM = {
   name: 'openai',
   async complete({ prompt, system, temperature }) {
     const mod: any = await eval('import("openai")');
     const client = new mod.default({ apiKey: process.env.OPENAI_API_KEY });
-    const res = await client.chat.completions.create({
+    const res: unknown = await client.chat.completions.create({
       model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
       messages: [
         ...(system ? [{ role: 'system', content: system }] : []),
@@ -13,7 +14,8 @@ const OpenAIProvider: LLM = {
       ],
       temperature: temperature ?? 0
     });
-    return res?.choices?.[0]?.message?.content ?? '';
+    const parsed = OpenAIChat.safeParse(res);
+    return parsed.success ? parsed.data.choices[0].message.content : String(res ?? '');
   }
 };
 

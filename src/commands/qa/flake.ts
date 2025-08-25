@@ -1,5 +1,7 @@
-import { execa } from 'execa';
 import * as os from 'node:os';
+import { run } from '../../core/exec.js';
+import { err, ok, isErr, type Result } from '../../core/result.js';
+import type { AppError } from '../../core/errors.js';
 
 async function detectPM(): Promise<'pnpm'|'npm'|'yarn'|'npx'> {
   const fs = await import('node:fs/promises');
@@ -63,7 +65,7 @@ async function detectTestRunner(): Promise<'jest' | 'vitest'> {
   }
 }
 
-export async function qaFlake(options: QAFlakeOptions = {}) {
+export async function qaFlake(options: QAFlakeOptions = {}): Promise<Result<{ failures: number; total: number; seeds: number[] }, AppError>> {
   const { times = 10, pattern, timeoutMs = 300000, workers } = options;
   const pm = await detectPM();
   const testRunner = await detectTestRunner();
@@ -129,21 +131,21 @@ export async function qaFlake(options: QAFlakeOptions = {}) {
       }
     }
     
-    const r = await execa(command, args, {
+    const result = await run(`flake-run-${i + 1}`, command, args, {
       env: { ...process.env, AE_SEED: String(seed) }, 
-      reject: false, 
       stdio: 'inherit',
       timeout: timeoutMs,
       killSignal: 'SIGTERM'
     });
     
-    if (r.exitCode !== 0) { 
+    if (result.ok) {
+      console.log(`[ae][flake] ✅ Run ${i + 1} passed`);
+    } else if (isErr(result)) { 
       fails++; 
       seeds.push(seed);
       failedSeeds.push({ seed, run: i + 1 });
-      console.log(`[ae][flake] ❌ Run ${i + 1} failed with seed=${seed} (exit ${r.exitCode})`);
-    } else {
-      console.log(`[ae][flake] ✅ Run ${i + 1} passed`);
+      const errorMsg = 'detail' in result.error ? result.error.detail : result.error.code;
+      console.log(`[ae][flake] ❌ Run ${i + 1} failed with seed=${seed} (${errorMsg ?? 'unknown error'})`);
     }
   }
   
@@ -190,5 +192,9 @@ export async function qaFlake(options: QAFlakeOptions = {}) {
     console.log(`[ae][flake] ✅ No flakiness detected. All ${times} runs passed.`);
   }
   
-  process.exit(fails ? 1 : 0);
+  if (fails > 0) {
+    return err({ code: 'E_EXEC', step: 'qa:flake', detail: `${fails}/${times} runs failed` });
+  }
+  
+  return ok({ failures: fails, total: times, seeds });
 }
