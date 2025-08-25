@@ -29,10 +29,10 @@ jobs:
           fi
       
       - name: Install
-        run: "${{ env.PM }}" install
+        run: ${{ env.PM }} install
       
       - name: Build
-        run: "${{ env.PM }}" run build
+        run: ${{ env.PM }} run build
       
       - name: Verify
         run: node dist/cli.js verify
@@ -46,3 +46,14 @@ jobs:
           name: ae-artifacts
           path: artifacts/
           retention-days: 14
+      
+      - name: Notify Slack on failure
+        if: failure() && secrets.SLACK_WEBHOOK_URL != null
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_MESSAGE: |
+            🚨 ${{ github.workflow }} failed on ${{ github.ref }}
+            • run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            • artifacts: (see workflow page)
+          SLACK_COLOR: "#E01E5A"
