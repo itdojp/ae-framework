@@ -2,6 +2,7 @@ import { cac } from 'cac';
 import { tddGuard } from '../commands/tdd/guard.js';
 import { benchRun } from '../commands/bench/run.js';
 import { qaRun } from '../commands/qa/run.js';
+import { qaFlake } from '../commands/qa/flake.js';
 
 export async function main() {
   const cli = cac('ae');
@@ -14,6 +15,10 @@ export async function main() {
   
   cli.command('qa', 'Run QA metrics')
     .action(qaRun);
+  
+  cli.command('qa:flake', 'Run tests multiple times to detect flakiness')
+    .option('--times <n>', 'Repeat count', { default: 10 })
+    .action((opts) => qaFlake(Number(opts.times)));
   
   cli.option('--seed <n>', 'Random seed (AE_SEED also supported)');
   
