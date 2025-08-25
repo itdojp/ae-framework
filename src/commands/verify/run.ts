@@ -81,6 +81,26 @@ export async function verifyRun(): Promise<Result<{ logs: string[]; duration: st
     }
   }
 
+  async function softStep(name: string, cmd: string, args: string[], env?: Record<string, string>) {
+    logs.push(`## ${name}\n\`\`\`bash\n${[cmd, ...args].join(' ')}\n\`\`\``);
+    console.log(`[ae][verify] ${name} start`);
+    
+    const result = await run(name, cmd, args, {
+      stdio: 'inherit',
+      env: env ? { ...process.env, ...env } : process.env
+    });
+    
+    if (result.ok) {
+      logs.push(`✅ ${name}: OK`);
+      console.log(`[ae][verify] ${name} end: OK`);
+    } else if (isErr(result)) {
+      // Don't set success = false for soft steps
+      const errorMsg = 'detail' in result.error ? result.error.detail : result.error.code;
+      logs.push(`⚠️  ${name}: INFO (${errorMsg ?? 'unknown error'})`);
+      console.log(`[ae][verify] ${name} end: INFO`);
+    }
+  }
+
   try {
     // 1) TypeScript type check (prioritize scoped config)
     try {
@@ -151,6 +171,34 @@ export async function verifyRun(): Promise<Result<{ logs: string[]; duration: st
       const errorMsg = error instanceof Error ? error.message : String(error);
       logs.push(`## Benchmarks\n❌ FAILED (error: ${errorMsg})`);
       console.log(`[ae][verify] Benchmarks: FAILED (error: ${errorMsg})`);
+    }
+
+    // 5) Type tests (non-blocking)
+    try {
+      if (await hasBin('tsd')) {
+        await softStep('Type Tests', 'tsd', []);
+      } else {
+        logs.push('## Type Tests\nℹ️  Skipped (tsd not available)');
+        console.log('[ae][verify] Type Tests: SKIPPED (tsd not available)');
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logs.push(`## Type Tests\n⚠️  INFO: ${errorMsg}`);
+      console.log(`[ae][verify] Type Tests: INFO (${errorMsg})`);
+    }
+
+    // 6) Type coverage (non-blocking)
+    try {
+      if (await hasBin('type-coverage')) {
+        await softStep('Type Coverage', 'type-coverage', ['-p', 'tsconfig.verify.json', '--ignore-catch']);
+      } else {
+        logs.push('## Type Coverage\nℹ️  Skipped (type-coverage not available)');
+        console.log('[ae][verify] Type Coverage: SKIPPED (type-coverage not available)');
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logs.push(`## Type Coverage\n⚠️  INFO: ${errorMsg}`);
+      console.log(`[ae][verify] Type Coverage: INFO (${errorMsg})`);
     }
 
   } catch (unexpectedError) {
