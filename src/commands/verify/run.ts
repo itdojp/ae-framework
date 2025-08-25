@@ -1,8 +1,10 @@
-import { execa } from 'execa';
 import { writeFile, mkdir, access, constants } from 'node:fs/promises';
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 import path from 'node:path';
+import { run } from '../../core/exec.js';
+import { err, ok, isErr, type Result } from '../../core/result.js';
+import type { AppError } from '../../core/errors.js';
 
 const execAsync = promisify(exec);
 
@@ -51,38 +53,31 @@ async function hasFile(file: string): Promise<boolean> {
   }
 }
 
-export async function verifyRun() {
+export async function verifyRun(): Promise<Result<{ logs: string[]; duration: string }, AppError>> {
   console.log('[ae][verify] Starting verification pipeline...');
   await mkdir('artifacts', { recursive: true });
   
   const logs: string[] = [];
-  let ok = true;
+  let success = true;
   const startTime = new Date();
 
-  async function step(name: string, cmd: string, args: string[], env?: Record<string, string>) {
+  async function step(name: string, cmd: string, args: string[], env?: Record<string, string>): Promise<void> {
     logs.push(`## ${name}\n\`\`\`bash\n${[cmd, ...args].join(' ')}\n\`\`\``);
     console.log(`[ae][verify] ${name} start`);
     
-    try {
-      const r = await execa(cmd, args, { 
-        reject: false, 
-        stdio: 'inherit', 
-        env: env ? { ...process.env, ...env } : process.env 
-      });
-      
-      if (r.exitCode !== 0) { 
-        ok = false; 
-        logs.push(`❌ ${name}: FAILED (exit ${r.exitCode})`);
-        console.log(`[ae][verify] ${name} end: FAILED`);
-      } else { 
-        logs.push(`✅ ${name}: OK`);
-        console.log(`[ae][verify] ${name} end: OK`);
-      }
-    } catch (error) {
-      ok = false;
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      logs.push(`❌ ${name}: FAILED (error: ${errorMsg})`);
-      console.log(`[ae][verify] ${name} end: FAILED (error: ${errorMsg})`);
+    const result = await run(name, cmd, args, {
+      stdio: 'inherit',
+      env: env ? { ...process.env, ...env } : process.env
+    });
+    
+    if (result.ok) {
+      logs.push(`✅ ${name}: OK`);
+      console.log(`[ae][verify] ${name} end: OK`);
+    } else if (isErr(result)) {
+      success = false;
+      const errorMsg = 'detail' in result.error ? result.error.detail : result.error.code;
+      logs.push(`❌ ${name}: FAILED (${errorMsg ?? 'unknown error'})`);
+      console.log(`[ae][verify] ${name} end: FAILED`);
     }
   }
 
@@ -102,7 +97,7 @@ export async function verifyRun() {
         console.log('[ae][verify] TypeScript Types: SKIPPED (tsc not available)');
       }
     } catch (error) {
-      ok = false;
+      success = false;
       const errorMsg = error instanceof Error ? error.message : String(error);
       logs.push(`## TypeScript Types\n❌ FAILED (error: ${errorMsg})`);
       console.log(`[ae][verify] TypeScript Types: FAILED (error: ${errorMsg})`);
@@ -122,7 +117,7 @@ export async function verifyRun() {
         console.log('[ae][verify] ESLint: SKIPPED (eslint not available)');
       }
     } catch (error) {
-      ok = false;
+      success = false;
       const errorMsg = error instanceof Error ? error.message : String(error);
       logs.push(`## ESLint\n❌ FAILED (error: ${errorMsg})`);
       console.log(`[ae][verify] ESLint: FAILED (error: ${errorMsg})`);
@@ -137,7 +132,7 @@ export async function verifyRun() {
         console.log('[ae][verify] QA Metrics: SKIPPED (ae CLI not built)');
       }
     } catch (error) {
-      ok = false;
+      success = false;
       const errorMsg = error instanceof Error ? error.message : String(error);
       logs.push(`## QA Metrics\n❌ FAILED (error: ${errorMsg})`);
       console.log(`[ae][verify] QA Metrics: FAILED (error: ${errorMsg})`);
@@ -152,28 +147,29 @@ export async function verifyRun() {
         console.log('[ae][verify] Benchmarks: SKIPPED (ae CLI not built)');
       }
     } catch (error) {
-      ok = false;
+      success = false;
       const errorMsg = error instanceof Error ? error.message : String(error);
       logs.push(`## Benchmarks\n❌ FAILED (error: ${errorMsg})`);
       console.log(`[ae][verify] Benchmarks: FAILED (error: ${errorMsg})`);
     }
 
   } catch (unexpectedError) {
-    ok = false;
+    success = false;
     const errorMsg = unexpectedError instanceof Error ? unexpectedError.message : String(unexpectedError);
     logs.push(`## Unexpected Error\n❌ FAILED: ${errorMsg}`);
     console.log(`[ae][verify] Unexpected error: ${errorMsg}`);
-  } finally {
-    const endTime = new Date();
-    const duration = ((endTime.getTime() - startTime.getTime()) / 1000).toFixed(1);
+  }
 
-    const summary = ok ? '✅ All verification steps passed' : '❌ Some verification steps failed';
-    
-    // Add failure summary if needed
-    const failedSteps = logs.filter(log => log.includes('❌')).length;
-    const additionalInfo = failedSteps > 0 ? `\n\n**Failed Steps**: ${failedSteps}` : '';
-    
-    const report = `# Verification Report
+  const endTime = new Date();
+  const duration = ((endTime.getTime() - startTime.getTime()) / 1000).toFixed(1);
+
+  const summary = success ? '✅ All verification steps passed' : '❌ Some verification steps failed';
+  
+  // Add failure summary if needed
+  const failedSteps = logs.filter(log => log.includes('❌')).length;
+  const additionalInfo = failedSteps > 0 ? `\n\n**Failed Steps**: ${failedSteps}` : '';
+  
+  const report = `# Verification Report
 
 Generated: ${startTime.toISOString()}
 Duration: ${duration}s
@@ -185,15 +181,18 @@ ${logs.join('\n\n')}
 *Generated by ae-framework verification pipeline*
 `;
 
-    try {
-      await writeFile('artifacts/verify.md', report);
-      console.log(`[ae][verify] Verification report generated -> artifacts/verify.md`);
-    } catch (error) {
-      console.error(`[ae][verify] Failed to write report: ${error instanceof Error ? error.message : String(error)}`);
-    }
-    
-    console.log(`[ae][verify] Pipeline complete: ${ok ? 'PASSED' : 'FAILED'} (${duration}s)`);
+  try {
+    await writeFile('artifacts/verify.md', report);
+    console.log(`[ae][verify] Verification report generated -> artifacts/verify.md`);
+  } catch (error) {
+    console.error(`[ae][verify] Failed to write report: ${error instanceof Error ? error.message : String(error)}`);
   }
   
-  process.exit(ok ? 0 : 1);
+  console.log(`[ae][verify] Pipeline complete: ${success ? 'PASSED' : 'FAILED'} (${duration}s)`);
+  
+  if (success) {
+    return ok({ logs, duration });
+  } else {
+    return err({ code: 'E_EXEC', step: 'verify', detail: `${failedSteps} steps failed` });
+  }
 }
