@@ -168,6 +168,15 @@ node dist/src/cli.js qa:flake --times 5 --workers 50% --pattern "tests/**"
 
 ---
 
+## Related Documentation
+
+- **[T5/T6/T7 Implementation Validation Report](./types-t5-t6-t7-implementation-validation.md)** - Initial implementation validation from PR #244-246 merges
+- **[API Extractor Configuration](../api-extractor.json)** - T7 breaking change detection setup
+- **[ESLint Type Policy](../eslint.config.js)** - T5 comment banning rules
+- **[@ts-expect-error Policy Checker](../scripts/ci/check-expect-error.mjs)** - T5 enforcement script
+
+---
+
 ## Detailed Analysis
 
 ### Critical Issues Requiring Immediate Attention
