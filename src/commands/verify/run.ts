@@ -1,4 +1,4 @@
-import { writeFile, mkdir, access, constants } from 'node:fs/promises';
+import { writeFile, mkdir, access, constants, readFile } from 'node:fs/promises';
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 import path from 'node:path';
@@ -48,6 +48,16 @@ async function hasFile(file: string): Promise<boolean> {
   try {
     await access(file, constants.F_OK);
     return true;
+  } catch {
+    return false;
+  }
+}
+
+async function hasScript(scriptName: string): Promise<boolean> {
+  try {
+    const packageJsonContent = await readFile('package.json', 'utf8');
+    const packageJson = JSON.parse(packageJsonContent);
+    return packageJson.scripts && typeof packageJson.scripts[scriptName] === 'string';
   } catch {
     return false;
   }
@@ -261,8 +271,13 @@ export async function verifyRun(): Promise<Result<{ logs: string[]; duration: st
 
     // 10) Type tests (tsd)
     try {
-      const stepFn = isStrict ? step : softStep;
-      await stepFn('Type Tests (tsd)', 'pnpm', ['run', 'test:types']);
+      if (await hasScript('test:types')) {
+        const stepFn = isStrict ? step : softStep;
+        await stepFn('Type Tests (tsd)', 'pnpm', ['run', 'test:types']);
+      } else {
+        logs.push('## Type Tests (tsd)\nℹ️  Skipped (test:types script not found)');
+        console.log('[ae][verify] Type Tests (tsd): SKIPPED (test:types script not found)');
+      }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       if (isStrict) {
@@ -277,8 +292,14 @@ export async function verifyRun(): Promise<Result<{ logs: string[]; duration: st
 
     // 11) API snapshot verification (strict)
     try {
+      const hasApiCheck = await hasScript('api:check');
       const stepFn = isStrict ? step : softStep;
-      await stepFn('API Snapshot Check', 'pnpm', ['run', 'api:check']);
+      if (hasApiCheck) {
+        await stepFn('API Snapshot Check', 'pnpm', ['run', 'api:check']);
+      } else {
+        logs.push('## API Snapshot Check\nℹ️  Skipped (api:check script not found in package.json)');
+        console.log('[ae][verify] API Snapshot Check: SKIPPED (api:check script not found in package.json)');
+      }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       if (isStrict) {
