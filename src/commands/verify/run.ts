@@ -86,6 +86,33 @@ export async function verifyRun() {
     }
   }
 
+  async function softStep(name: string, cmd: string, args: string[], env?: Record<string, string>) {
+    logs.push(`## ${name}\n\`\`\`bash\n${[cmd, ...args].join(' ')}\n\`\`\``);
+    console.log(`[ae][verify] ${name} start`);
+    
+    try {
+      const r = await execa(cmd, args, { 
+        reject: false, 
+        stdio: 'inherit', 
+        env: env ? { ...process.env, ...env } : process.env 
+      });
+      
+      if (r.exitCode !== 0) { 
+        // Don't set ok = false for soft steps
+        logs.push(`⚠️  ${name}: INFO (exit ${r.exitCode})`);
+        console.log(`[ae][verify] ${name} end: INFO`);
+      } else { 
+        logs.push(`✅ ${name}: OK`);
+        console.log(`[ae][verify] ${name} end: OK`);
+      }
+    } catch (error) {
+      // Don't set ok = false for soft steps
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logs.push(`⚠️  ${name}: INFO (error: ${errorMsg})`);
+      console.log(`[ae][verify] ${name} end: INFO (error: ${errorMsg})`);
+    }
+  }
+
   try {
     // 1) TypeScript type check (prioritize scoped config)
     try {
@@ -156,6 +183,34 @@ export async function verifyRun() {
       const errorMsg = error instanceof Error ? error.message : String(error);
       logs.push(`## Benchmarks\n❌ FAILED (error: ${errorMsg})`);
       console.log(`[ae][verify] Benchmarks: FAILED (error: ${errorMsg})`);
+    }
+
+    // 5) Type tests (non-blocking)
+    try {
+      if (await hasBin('tsd')) {
+        await softStep('Type Tests', 'tsd', []);
+      } else {
+        logs.push('## Type Tests\nℹ️  Skipped (tsd not available)');
+        console.log('[ae][verify] Type Tests: SKIPPED (tsd not available)');
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logs.push(`## Type Tests\n⚠️  INFO: ${errorMsg}`);
+      console.log(`[ae][verify] Type Tests: INFO (${errorMsg})`);
+    }
+
+    // 6) Type coverage (non-blocking)
+    try {
+      if (await hasBin('type-coverage')) {
+        await softStep('Type Coverage', 'type-coverage', ['-p', 'tsconfig.verify.json', '--ignore-catch']);
+      } else {
+        logs.push('## Type Coverage\nℹ️  Skipped (type-coverage not available)');
+        console.log('[ae][verify] Type Coverage: SKIPPED (type-coverage not available)');
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logs.push(`## Type Coverage\n⚠️  INFO: ${errorMsg}`);
+      console.log(`[ae][verify] Type Coverage: INFO (${errorMsg})`);
     }
 
   } catch (unexpectedError) {
