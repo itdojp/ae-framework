@@ -12,10 +12,9 @@ import {
   AgentConfig, 
   AgentState, 
   AgentContext,
-  TaskType,
-  QualityMetrics,
-  ValidationResult 
+  TaskType
 } from './domain-types.js';
+import { assertNever } from '../core/assertNever.js';
 
 /**
  * Unified Agent class implementing domain model architecture
@@ -75,10 +74,10 @@ export class UnifiedAgent {
       });
 
       // Process based on task type using unified approach
-      const result = await this.executeTaskByType(task);
+      const result = this.executeTaskByType(task);
       
       // Validate result - merge with existing validation
-      const validationResult = await this.validateTaskResult(result, task);
+      const validationResult = this.validateTaskResult(result, task);
       result.validation = {
         ...result.validation,
         ...validationResult
@@ -120,7 +119,7 @@ export class UnifiedAgent {
   /**
    * Execute task based on type - unified implementation
    */
-  private async executeTaskByType(task: AgentTask): Promise<TaskResult> {
+  private executeTaskByType(task: AgentTask): TaskResult {
     const baseResult: TaskResult = {
       success: false,
       taskId: task.id,
@@ -132,30 +131,43 @@ export class UnifiedAgent {
     };
 
     switch (task.type) {
-      case TaskType.CODE_GENERATION:
-        return await this.handleCodeGeneration(task, baseResult);
+      case TaskType.INTENT_ANALYSIS:
+        return this.handleIntentAnalysis(task, baseResult);
+      
+      case TaskType.FORMAL_SPECIFICATION:
+        return this.handleFormalSpecification(task, baseResult);
       
       case TaskType.TEST_GENERATION:
-        return await this.handleTestGeneration(task, baseResult);
+        return this.handleTestGeneration(task, baseResult);
+      
+      case TaskType.CODE_GENERATION:
+        return this.handleCodeGeneration(task, baseResult);
+      
+      case TaskType.VERIFICATION:
+        return this.handleVerification(task, baseResult);
       
       case TaskType.VALIDATION:
-        return await this.handleValidation(task, baseResult);
+        return this.handleValidation(task, baseResult);
+      
+      case TaskType.DEPLOYMENT:
+        return this.handleDeployment(task, baseResult);
       
       case TaskType.QUALITY_ASSURANCE:
-        return await this.handleQualityAssurance(task, baseResult);
+        return this.handleQualityAssurance(task, baseResult);
       
       case TaskType.PHASE_VALIDATION:
-        return await this.handlePhaseValidation(task, baseResult);
+        return this.handlePhaseValidation(task, baseResult);
       
       default:
-        return await this.handleGenericTask(task, baseResult);
+        // TypeScript should ensure this is never reached
+        assertNever(task.type, 'Unhandled TaskType');
     }
   }
 
   /**
    * Handle code generation tasks
    */
-  private async handleCodeGeneration(task: AgentTask, result: TaskResult): Promise<TaskResult> {
+  private handleCodeGeneration(task: AgentTask, result: TaskResult): TaskResult {
     // TDD enforcement: ensure tests exist first
     if (this.config.context.tddEnabled) {
       result.tddCompliance = {
@@ -176,7 +188,7 @@ export class UnifiedAgent {
   /**
    * Handle test generation tasks
    */
-  private async handleTestGeneration(task: AgentTask, result: TaskResult): Promise<TaskResult> {
+  private handleTestGeneration(task: AgentTask, result: TaskResult): TaskResult {
     result.artifacts = [`tests/generated/${task.id}.test.ts`];
     result.success = true;
     result.validation.typeScriptCompliant = true;
@@ -197,7 +209,7 @@ export class UnifiedAgent {
   /**
    * Handle validation tasks
    */
-  private async handleValidation(task: AgentTask, result: TaskResult): Promise<TaskResult> {
+  private handleValidation(task: AgentTask, result: TaskResult): TaskResult {
     result.validation = {
       typeScriptCompliant: true,
       strictModeCompatible: true,
@@ -214,7 +226,7 @@ export class UnifiedAgent {
   /**
    * Handle quality assurance tasks
    */
-  private async handleQualityAssurance(task: AgentTask, result: TaskResult): Promise<TaskResult> {
+  private handleQualityAssurance(task: AgentTask, result: TaskResult): TaskResult {
     const coverageThreshold = this.config.context.coverageThreshold || 0.8;
     
     result.metrics = {
@@ -233,7 +245,7 @@ export class UnifiedAgent {
   /**
    * Handle phase validation tasks
    */
-  private async handlePhaseValidation(task: AgentTask, result: TaskResult): Promise<TaskResult> {
+  private handlePhaseValidation(task: AgentTask, result: TaskResult): TaskResult {
     result.phaseValidation = {
       readyForNextPhase: true,
       completionCriteria: [
@@ -250,9 +262,49 @@ export class UnifiedAgent {
   }
 
   /**
+   * Handle intent analysis tasks
+   */
+  private handleIntentAnalysis(task: AgentTask, result: TaskResult): TaskResult {
+    result.success = true;
+    result.validation.typeScriptCompliant = true;
+    result.artifacts = [`reports/intent-analysis-${task.id}.json`];
+    return result;
+  }
+
+  /**
+   * Handle formal specification tasks
+   */
+  private handleFormalSpecification(task: AgentTask, result: TaskResult): TaskResult {
+    result.success = true;
+    result.validation.typeScriptCompliant = true;
+    result.artifacts = [`specs/formal-spec-${task.id}.json`];
+    return result;
+  }
+
+  /**
+   * Handle verification tasks
+   */
+  private handleVerification(task: AgentTask, result: TaskResult): TaskResult {
+    result.success = true;
+    result.validation.typeScriptCompliant = true;
+    result.artifacts = [`reports/verification-${task.id}.json`];
+    return result;
+  }
+
+  /**
+   * Handle deployment tasks
+   */
+  private handleDeployment(task: AgentTask, result: TaskResult): TaskResult {
+    result.success = true;
+    result.validation.typeScriptCompliant = true;
+    result.artifacts = [`deployments/deploy-${task.id}.json`];
+    return result;
+  }
+
+  /**
    * Handle generic tasks
    */
-  private async handleGenericTask(task: AgentTask, result: TaskResult): Promise<TaskResult> {
+  private handleGenericTask(task: AgentTask, result: TaskResult): TaskResult {
     result.success = true;
     result.validation.typeScriptCompliant = true;
     result.artifacts = [`artifacts/generic-${task.id}.json`];
@@ -263,7 +315,7 @@ export class UnifiedAgent {
   /**
    * Validate task result against acceptance criteria  
    */
-  private async validateTaskResult(result: TaskResult, task: AgentTask): Promise<any> {
+  private validateTaskResult(result: TaskResult, task: AgentTask): Record<string, unknown> {
     const checks: Array<{check: string, passed: boolean, message: string}> = [];
 
     // TypeScript compliance check
@@ -323,7 +375,7 @@ export class UnifiedAgent {
   /**
    * Log activity to phase state manager
    */
-  private async logActivity(activity: string, metadata?: any): Promise<void> {
+  private async logActivity(activity: string, metadata?: Record<string, unknown>): Promise<void> {
     try {
       const key = `${this.config.id}_${activity}_${Date.now()}`;
       const value = {
@@ -335,7 +387,7 @@ export class UnifiedAgent {
       };
       
       await this.phaseStateManager.addMetadata(key, value);
-    } catch (error) {
+    } catch {
       // Fallback to console logging
       console.log(`[UnifiedAgent:${this.config.id}] ${activity}:`, metadata);
     }

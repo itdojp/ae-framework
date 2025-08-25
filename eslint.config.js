@@ -35,6 +35,7 @@ export default ts.config(
         'ts-expect-error': 'allow-with-description', // description required
         minimumDescriptionLength: 12
       }],
+      '@typescript-eslint/switch-exhaustiveness-check': 'error',
     }
   },
   {
