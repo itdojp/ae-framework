@@ -1,12 +1,14 @@
 # Verification Report
 
-Generated: 2025-08-25T02:49:47.387Z
-Duration: 7.9s
+Generated: 2025-08-25T04:18:53.176Z
+Duration: 17.9s
 Status: ❌ Some verification steps failed
+
+**Failed Steps**: 2
 
 ## TypeScript Types
 ```bash
-tsc --noEmit
+tsc -p tsconfig.verify.json
 ```
 
 ❌ TypeScript Types: FAILED (exit 2)
@@ -16,7 +18,7 @@ tsc --noEmit
 eslint .
 ```
 
-❌ ESLint: FAILED (exit 2)
+❌ ESLint: FAILED (exit 1)
 
 ## QA Metrics
 ℹ️  Skipped (ae CLI not built)

@@ -1,0 +1,105 @@
+{
+  "metadata": {
+    "timestamp": "2025-08-25T03:15:00.167Z",
+    "totalProblems": 2,
+    "successfulRuns": 0,
+    "failedRuns": 2,
+    "averageScore": 0,
+    "totalExecutionTime": 7,
+    "framework": "AE Framework v1.0.0",
+    "benchmarkVersion": "req2run-benchmark"
+  },
+  "configuration": {
+    "req2runRepository": "https://github.com/itdojp/req2run-benchmark.git",
+    "problems": [
+      {
+        "id": "test-problem-001",
+        "enabled": true,
+        "timeoutMs": 60000,
+        "retries": 1,
+        "category": "web-api",
+        "difficulty": "basic"
+      }
+    ],
+    "execution": {
+      "parallel": true,
+      "maxConcurrency": 2,
+      "resourceLimits": {
+        "maxMemoryMB": 1024,
+        "maxCpuPercent": 50,
+        "maxDiskMB": 1024,
+        "maxExecutionTimeMs": 300000
+      },
+      "environment": "test",
+      "docker": {
+        "enabled": false,
+        "image": "node:18-alpine",
+        "volumes": [],
+        "ports": []
+      }
+    },
+    "evaluation": {
+      "weights": {
+        "functional": 0.35,
+        "performance": 0.15,
+        "quality": 0.2,
+        "security": 0.15,
+        "testing": 0.15
+      },
+      "thresholds": {
+        "minOverallScore": 60,
+        "minFunctionalCoverage": 70,
+        "maxResponseTime": 2000,
+        "minCodeQuality": 75,
+        "maxVulnerabilities": 5
+      },
+      "scoring": {
+        "algorithm": "weighted-average",
+        "penalties": {
+          "timeoutPenalty": 0.5,
+          "errorPenalty": 0.3,
+          "qualityPenalty": 0.2
+        },
+        "bonuses": {
+          "performanceBonus": 0.1,
+          "qualityBonus": 0.1,
+          "securityBonus": 0.05
+        }
+      }
+    },
+    "reporting": {
+      "formats": [
+        "json"
+      ],
+      "destinations": [],
+      "dashboard": {
+        "enabled": false,
+        "port": 3001,
+        "refreshInterval": 30000,
+        "charts": []
+      }
+    }
+  },
+  "results": [
+    {
+      "problemId": "problem-1",
+      "success": false,
+      "score": 0,
+      "executionTime": 3,
+      "phases": [],
+      "errors": [
+        "Failed to load problem spec for problem-1: Req2Run benchmark repository not found at /tmp/req2run-benchmark. Please ensure it exists."
+      ]
+    },
+    {
+      "problemId": "problem-2",
+      "success": false,
+      "score": 0,
+      "executionTime": 4,
+      "phases": [],
+      "errors": [
+        "Failed to load problem spec for problem-2: Req2Run benchmark repository not found at /tmp/req2run-benchmark. Please ensure it exists."
+      ]
+    }
+  ]
+}
