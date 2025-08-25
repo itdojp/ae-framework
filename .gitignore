@@ -53,6 +53,7 @@ conformance-results.json
 sample-*.json
 invalid-sample-*.json
 clean-sample-*.json
+artifacts/cassettes/
 
 # Generated files
 traceability.csv

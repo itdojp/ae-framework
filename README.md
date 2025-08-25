@@ -323,6 +323,22 @@ Built with:
 - Required check: set **PR Verify / verify** as a required status in branch protection.
 - Slack alerts: verify/nightly failures notify Slack (requires `SLACK_WEBHOOK_URL` secret).
 
+#### Benchmark Policy
+- Default tolerance: 5% for performance regression detection
+- Environment override: Set `BENCH_TOLERANCE` to customize (takes priority over command arguments)
+- Nightly monitoring: Automated bench comparison with seeded runs for consistency
+
+#### Flake Detection Policy
+- Default: 5-10 runs for standard flake detection
+- Opt-in extended testing: Add `run-flake` label to PR for 20-30 runs (statistical analysis)
+- Extended flake tests use `continue-on-error: true` to avoid blocking PR merges
+
+#### Cassette Policy
+- **Generated cassettes** (`artifacts/cassettes/`): Never commit (build artifacts, ignore in git)
+- **Fixed cassettes** (if needed): Use `cassettes/fixtures/` with mandatory code review
+- **PR policy**: New cassettes OK, existing cassette changes require review
+- **Alternative storage**: Consider separate repo or Git LFS for large cassette collections
+
 #### Slack Alerts Setup
 1. Go to repository **Settings** → **Secrets and variables** → **Actions**
 2. Click **New repository secret**
