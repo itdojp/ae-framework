@@ -1,4 +1,4 @@
-import { writeFile, mkdir, access, constants } from 'node:fs/promises';
+import { writeFile, mkdir, access, constants, readFile } from 'node:fs/promises';
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 import path from 'node:path';
@@ -53,6 +53,16 @@ async function hasFile(file: string): Promise<boolean> {
   }
 }
 
+async function hasScript(scriptName: string): Promise<boolean> {
+  try {
+    const packageJsonContent = await readFile('package.json', 'utf8');
+    const packageJson = JSON.parse(packageJsonContent);
+    return packageJson.scripts && typeof packageJson.scripts[scriptName] === 'string';
+  } catch {
+    return false;
+  }
+}
+
 export async function verifyRun(): Promise<Result<{ logs: string[]; duration: string }, AppError>> {
   console.log('[ae][verify] Starting verification pipeline...');
   await mkdir('artifacts', { recursive: true });
@@ -101,6 +111,8 @@ export async function verifyRun(): Promise<Result<{ logs: string[]; duration: st
     }
   }
 
+  const isStrict = process.env.AE_TYPES_STRICT === '1';
+  
   try {
     // 1) TypeScript type check (prioritize scoped config)
     try {
@@ -215,6 +227,91 @@ export async function verifyRun(): Promise<Result<{ logs: string[]; duration: st
       console.log(`[ae][verify] API Type Check: INFO (${errorMsg})`);
     }
 
+    // 8) Strict TypeScript verification (strict mode only)
+    try {
+      if (await hasFile('tsconfig.verify.json')) {
+        const stepFn = isStrict ? step : softStep;
+        await stepFn('Strict TypeScript Check', 'tsc', ['-p', 'tsconfig.verify.json', '--noEmit']);
+      } else {
+        logs.push('## Strict TypeScript Check\nℹ️  Skipped (tsconfig.verify.json not found)');
+        console.log('[ae][verify] Strict TypeScript Check: SKIPPED (no tsconfig.verify.json)');
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      if (isStrict) {
+        success = false;
+        logs.push(`## Strict TypeScript Check\n❌ FAILED: ${errorMsg}`);
+        console.log(`[ae][verify] Strict TypeScript Check: FAILED (${errorMsg})`);
+      } else {
+        logs.push(`## Strict TypeScript Check\n⚠️  INFO: ${errorMsg}`);
+        console.log(`[ae][verify] Strict TypeScript Check: INFO (${errorMsg})`);
+      }
+    }
+
+    // 9) Strict ESLint verification (type-checked)
+    try {
+      if (await hasBin('eslint')) {
+        const stepFn = isStrict ? step : softStep;
+        await stepFn('Strict ESLint Check', 'eslint', ['.']);
+      } else {
+        logs.push('## Strict ESLint Check\nℹ️  Skipped (eslint not available)');
+        console.log('[ae][verify] Strict ESLint Check: SKIPPED (eslint not available)');
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      if (isStrict) {
+        success = false;
+        logs.push(`## Strict ESLint Check\n❌ FAILED: ${errorMsg}`);
+        console.log(`[ae][verify] Strict ESLint Check: FAILED (${errorMsg})`);
+      } else {
+        logs.push(`## Strict ESLint Check\n⚠️  INFO: ${errorMsg}`);
+        console.log(`[ae][verify] Strict ESLint Check: INFO (${errorMsg})`);
+      }
+    }
+
+    // 10) Type tests (tsd)
+    try {
+      if (await hasScript('test:types')) {
+        const stepFn = isStrict ? step : softStep;
+        await stepFn('Type Tests (tsd)', 'pnpm', ['run', 'test:types']);
+      } else {
+        logs.push('## Type Tests (tsd)\nℹ️  Skipped (test:types script not found)');
+        console.log('[ae][verify] Type Tests (tsd): SKIPPED (test:types script not found)');
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      if (isStrict) {
+        success = false;
+        logs.push(`## Type Tests (tsd)\n❌ FAILED: ${errorMsg}`);
+        console.log(`[ae][verify] Type Tests (tsd): FAILED (${errorMsg})`);
+      } else {
+        logs.push(`## Type Tests (tsd)\n⚠️  INFO: ${errorMsg}`);
+        console.log(`[ae][verify] Type Tests (tsd): INFO (${errorMsg})`);
+      }
+    }
+
+    // 11) API snapshot verification (strict)
+    try {
+      const hasApiCheck = await hasScript('api:check');
+      const stepFn = isStrict ? step : softStep;
+      if (hasApiCheck) {
+        await stepFn('API Snapshot Check', 'pnpm', ['run', 'api:check']);
+      } else {
+        logs.push('## API Snapshot Check\nℹ️  Skipped (api:check script not found in package.json)');
+        console.log('[ae][verify] API Snapshot Check: SKIPPED (api:check script not found in package.json)');
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      if (isStrict) {
+        success = false;
+        logs.push(`## API Snapshot Check\n❌ FAILED: ${errorMsg}`);
+        console.log(`[ae][verify] API Snapshot Check: FAILED (${errorMsg})`);
+      } else {
+        logs.push(`## API Snapshot Check\n⚠️  INFO: ${errorMsg}`);
+        console.log(`[ae][verify] API Snapshot Check: INFO (${errorMsg})`);
+      }
+    }
+
   } catch (unexpectedError) {
     success = false;
     const errorMsg = unexpectedError instanceof Error ? unexpectedError.message : String(unexpectedError);
@@ -235,12 +332,14 @@ export async function verifyRun(): Promise<Result<{ logs: string[]; duration: st
 
 Generated: ${startTime.toISOString()}
 Duration: ${duration}s
+Mode: ${isStrict ? '🔒 STRICT (CI)' : '🔓 SOFT (Local)'}
 Status: ${summary}${additionalInfo}
 
 ${logs.join('\n\n')}
 
 ---
 *Generated by ae-framework verification pipeline*
+*AE_TYPES_STRICT=${process.env.AE_TYPES_STRICT || '0'} (strict gates ${isStrict ? 'ENABLED' : 'DISABLED'})*
 `;
 
   try {
