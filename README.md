@@ -354,6 +354,12 @@ Built with:
 - Required check: set **PR Verify / verify** as a required status in branch protection (use `./scripts/setup-branch-protection.sh`).
 - Slack alerts: verify/nightly failures notify Slack (requires `SLACK_WEBHOOK_URL` secret).
 
+#### Verification Environment Controls
+- `AE_TYPES_STRICT=1`: CI strict mode (failures exit 1), `0` for local soft mode (warnings only)
+- `AE_LINT_SCOPE`: ESLint scope pattern (default: `"src/{providers,commands}/**/*.ts"`)
+- `AE_TSC_PROJECT`: TypeScript project config (default: `"tsconfig.verify.json"`)
+- `AE_EXPECT_ERROR_STRICT=1`: Enable @ts-expect-error policy enforcement (default: enabled)
+
 #### Benchmark Policy
 - Default tolerance: 5% for performance regression detection
 - Environment override: Set `BENCH_TOLERANCE` to customize (takes priority over command arguments)
