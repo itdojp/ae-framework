@@ -42,31 +42,40 @@ function withTimeout(llm: LLM, timeoutMs: number = 5000): LLM {
   };
 }
 
+async function has(pkg: string): Promise<boolean> {
+  try {
+    await eval(`import("${pkg}")`);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function loadLLM(): Promise<LLM> {
-  if (process.env.ANTHROPIC_API_KEY) {
+  if (process.env.ANTHROPIC_API_KEY && await has('@anthropic-ai/sdk')) {
     try {
       const llm = (await import('./llm-anthropic.js')).default;
       return withTimeout(llm);
     } catch (error) {
-      console.warn('Anthropic SDK not available, falling back to echo');
+      console.warn('Anthropic provider failed, falling back to echo');
     }
   }
   
-  if (process.env.OPENAI_API_KEY) {
+  if (process.env.OPENAI_API_KEY && await has('openai')) {
     try {
       const llm = (await import('./llm-openai.js')).default;
       return withTimeout(llm);
     } catch (error) {
-      console.warn('OpenAI SDK not available, falling back to echo');
+      console.warn('OpenAI provider failed, falling back to echo');
     }
   }
   
-  if (process.env.GEMINI_API_KEY) {
+  if (process.env.GEMINI_API_KEY && await has('@google/generative-ai')) {
     try {
       const llm = (await import('./llm-gemini.js')).default;
       return withTimeout(llm);
     } catch (error) {
-      console.warn('Gemini SDK not available, falling back to echo');
+      console.warn('Gemini provider failed, falling back to echo');
     }
   }
   

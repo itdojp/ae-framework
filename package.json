@@ -318,6 +318,17 @@
     "vitest": "^2.0.5",
     "why-is-node-running": "^3.2.2"
   },
+  "peerDependenciesMeta": {
+    "@anthropic-ai/sdk": {
+      "optional": true
+    },
+    "@google/generative-ai": {
+      "optional": true
+    },
+    "openai": {
+      "optional": true
+    }
+  },
   "engines": {
     "node": ">=20.11 <23"
   }

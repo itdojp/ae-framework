@@ -44,7 +44,7 @@ export function withRecorder(base: LLM, opts?: { dir?: string; replay?: boolean 
           return hit.output;
         } catch (error) {
           if (error && typeof error === 'object' && 'code' in error && (error as any).code === 'ENOENT') {
-            throw new Error(`Cassette not found: ${file}. Run with --record first.`);
+            throw new Error(`Cassette not found: ${hashFile}. Run with --record first.`);
           } else if (error instanceof SyntaxError) {
             throw new Error(`Cassette file is invalid JSON.`);
           } else {

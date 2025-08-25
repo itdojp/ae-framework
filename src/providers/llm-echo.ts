@@ -1,4 +1,4 @@
-import type { LLM } from './index';
+import type { LLM } from './index.js';
 
 const Echo: LLM = {
   name: 'echo',
