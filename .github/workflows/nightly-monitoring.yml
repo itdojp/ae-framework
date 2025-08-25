@@ -19,16 +19,16 @@ jobs:
         run: |
           if [ -f pnpm-lock.yaml ]; then
             npm i -g pnpm
-            echo "PM=pnpm" >> $GITHUB_ENV
+            echo "PM=pnpm" >> "$GITHUB_ENV"
           else
-            echo "PM=npm" >> $GITHUB_ENV
+            echo "PM=npm" >> "$GITHUB_ENV"
           fi
       
       - name: Install
-        run: ${{ env.PM }} install
+        run: "${{ env.PM }}" install
       
       - name: Build
-        run: ${{ env.PM }} run build
+        run: "${{ env.PM }}" run build
       
       - name: Flake (30x)
         run: node dist/cli.js qa:flake --times 30 --timeoutMs 240000 --workers 50% --pattern "tests/**"
