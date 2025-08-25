@@ -29,10 +29,10 @@ export default ts.config(
       '@typescript-eslint/no-misused-promises': 'warn',
       // Enforce ts-comment policy
       '@typescript-eslint/ban-ts-comment': ['error', {
-        'ts-ignore': true,           // 完全禁止
-        'ts-nocheck': true,          // 完全禁止
+        'ts-ignore': true,           // completely banned
+        'ts-nocheck': true,          // completely banned
         'ts-check': false,
-        'ts-expect-error': 'allow-with-description', // 説明必須
+        'ts-expect-error': 'allow-with-description', // description required
         minimumDescriptionLength: 12
       }],
     }
