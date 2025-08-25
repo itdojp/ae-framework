@@ -1,0 +1,6 @@
+{
+  "input": {
+    "prompt": "Custom directory test"
+  },
+  "output": "[echo] Custom directory test"
+}

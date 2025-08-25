@@ -1,0 +1,6 @@
+{
+  "input": {
+    "prompt": "Hello"
+  },
+  "output": "[echo] Hello"
+}
