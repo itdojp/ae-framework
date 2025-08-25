@@ -21,7 +21,13 @@ export function withRecorder(base: LLM, opts?: { dir?: string; replay?: boolean 
           const hit = JSON.parse(await readFile(file, 'utf8'));
           return hit.output;
         } catch (error) {
-          throw new Error(`Cassette not found: ${file}. Run with --record first.`);
+          if (error && typeof error === 'object' && 'code' in error && (error as any).code === 'ENOENT') {
+            throw new Error(`Cassette not found: ${file}. Run with --record first.`);
+          } else if (error instanceof SyntaxError) {
+            throw new Error(`Cassette file is invalid JSON: ${file}.`);
+          } else {
+            throw error;
+          }
         }
       }
       
