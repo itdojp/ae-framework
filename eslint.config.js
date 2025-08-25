@@ -27,6 +27,14 @@ export default ts.config(
       '@typescript-eslint/restrict-template-expressions': ['warn', { allowNumber: true, allowBoolean: true }],
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-misused-promises': 'warn',
+      // Enforce ts-comment policy
+      '@typescript-eslint/ban-ts-comment': ['error', {
+        'ts-ignore': true,           // completely banned
+        'ts-nocheck': true,          // completely banned
+        'ts-check': false,
+        'ts-expect-error': 'allow-with-description', // description required
+        minimumDescriptionLength: 12
+      }],
     }
   },
   {

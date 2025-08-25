@@ -369,7 +369,7 @@ export class TypeErrorFixStrategy extends BaseFixStrategy {
       `Add @ts-ignore comment to suppress type error`,
       filePath,
       targetLine,
-      `// @ts-ignore\n${targetLine}`,
+      `// @ts-expect-error -- TODO: describe why\n${targetLine}`,
       failure.location.startLine,
       failure.location.endLine,
       0.3,
