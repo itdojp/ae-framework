@@ -21,7 +21,15 @@ export async function main() {
   
   cli.command('qa:flake', 'Run tests multiple times to detect flakiness')
     .option('--times <n>', 'Repeat count', { default: 10 })
-    .action((opts) => qaFlake(Number(opts.times)));
+    .option('--pattern <glob>', 'Test pattern/directory filter (e.g., "unit" for unit tests)')
+    .option('--timeoutMs <n>', 'Execution timeout per run in milliseconds', { default: 300000 })
+    .option('--workers <n|percent>', 'Worker threads/processes (number or percentage like "50%")')
+    .action((opts) => qaFlake({
+      times: Number(opts.times),
+      pattern: opts.pattern,
+      timeoutMs: Number(opts.timeoutMs),
+      workers: opts.workers
+    }));
   
   cli.command('verify', 'Run types/lint/qa/bench in one shot')
     .action(verifyRun);
