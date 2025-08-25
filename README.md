@@ -320,7 +320,7 @@ Built with:
 - PR: `PR Verify` workflow runs `ae verify`, replay smoke, uploads artifacts (14d retention).
 - Nightly: `nightly-monitoring` runs flake(×30) and compares two seeded benches (≤5%) at JST 04:15.
 - Replay policy: PR=**replay** by default, main/nightly may record separately if needed.
-- Required check: set **PR Verify / verify** as a required status in branch protection.
+- Required check: set **PR Verify / verify** as a required status in branch protection (use `./scripts/setup-branch-protection.sh`).
 - Slack alerts: verify/nightly failures notify Slack (requires `SLACK_WEBHOOK_URL` secret).
 
 #### Benchmark Policy
