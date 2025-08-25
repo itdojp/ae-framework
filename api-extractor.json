@@ -1,0 +1,16 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/api-extractor/v7/api-extractor.schema.json",
+  "mainEntryPointFilePath": "artifacts/types/index.d.ts",
+  "docModel": { "enabled": false },
+  "dtsRollup": { "enabled": false },
+  "apiReport": {
+    "enabled": true,
+    "reportFolder": "artifacts/api",
+    "reportTempFolder": "artifacts/api/.tmp"
+  },
+  "messages": { 
+    "compilerMessageReporting": { 
+      "default": { "logLevel": "none" } 
+    } 
+  }
+}

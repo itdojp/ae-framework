@@ -215,6 +215,43 @@ export async function verifyRun(): Promise<Result<{ logs: string[]; duration: st
       console.log(`[ae][verify] API Type Check: INFO (${errorMsg})`);
     }
 
+    // 8) API Extractor report generation
+    try {
+      const isStrict = process.env.AE_TYPES_STRICT === '1';
+      const stepFn = isStrict ? step : softStep;
+      await stepFn('API Extractor Report', 'pnpm', ['run', 'api:emit']);
+      await stepFn('API Extractor Report', 'pnpm', ['run', 'api:report']);
+    } catch (error) {
+      const isStrict = process.env.AE_TYPES_STRICT === '1';
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      if (isStrict) {
+        success = false;
+        logs.push(`## API Extractor Report\n❌ FAILED: ${errorMsg}`);
+        console.log(`[ae][verify] API Extractor Report: FAILED (${errorMsg})`);
+      } else {
+        logs.push(`## API Extractor Report\n⚠️  INFO: ${errorMsg}`);
+        console.log(`[ae][verify] API Extractor Report: INFO (${errorMsg})`);
+      }
+    }
+
+    // 9) API Breaking Change Detection
+    try {
+      const isStrict = process.env.AE_TYPES_STRICT === '1';
+      const stepFn = isStrict ? step : softStep;
+      await stepFn('API Breaking Changes', 'pnpm', ['run', 'api:diff']);
+    } catch (error) {
+      const isStrict = process.env.AE_TYPES_STRICT === '1';
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      if (isStrict) {
+        success = false;
+        logs.push(`## API Breaking Changes\n❌ FAILED: ${errorMsg}`);
+        console.log(`[ae][verify] API Breaking Changes: FAILED (${errorMsg})`);
+      } else {
+        logs.push(`## API Breaking Changes\n⚠️  INFO: ${errorMsg}`);
+        console.log(`[ae][verify] API Breaking Changes: INFO (${errorMsg})`);
+      }
+    }
+
   } catch (unexpectedError) {
     success = false;
     const errorMsg = unexpectedError instanceof Error ? unexpectedError.message : String(unexpectedError);
