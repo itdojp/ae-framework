@@ -1,1 +1,1 @@
-test('string_reverse repro', () => { process.env.AE_SEED='12345'; const data=["k&3OSt"]; /* TODO: call SUT(data) */ });
+test('string_reverse repro', () => { process.env.AE_SEED='194984627'; const data=["avMV1uo-`"]; /* TODO: call SUT(data) */ });

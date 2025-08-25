@@ -1,0 +1,48 @@
+name: PR Verify
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: pr-verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Pick package manager
+        id: pm
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            npm i -g pnpm
+            echo "PM=pnpm" >> "$GITHUB_ENV"
+          else
+            echo "PM=npm" >> "$GITHUB_ENV"
+          fi
+      
+      - name: Install
+        run: "${{ env.PM }}" install
+      
+      - name: Build
+        run: "${{ env.PM }}" run build
+      
+      - name: Verify
+        run: node dist/cli.js verify
+      
+      - name: LLM replay smoke
+        run: AE_RECORDER_MODE=replay node dist/cli.js agent:complete --prompt "Hello, ae!"
+      
+      - name: Upload artifacts (7 days)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ae-artifacts
+          path: artifacts/
+          retention-days: 7

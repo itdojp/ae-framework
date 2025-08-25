@@ -316,6 +316,12 @@ Built with:
 - OpenTelemetry for telemetry and monitoring
 - Vitest for testing framework
 
+### CI Gate
+- PR: `PR Verify` workflow runs `ae verify`, replay smoke, uploads artifacts.
+- Nightly: `nightly-monitoring` runs flake(×30) and compares two seeded benches (≤5%).
+- Replay policy: PR=**replay** by default, main/nightly may record separately if needed.
+- Required check: set **PR Verify / verify** as a required status in branch protection.
+
 ---
 
 **ae-framework** - Automating excellence through AI-driven development 🚀

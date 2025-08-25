@@ -1,0 +1,5 @@
+[ae][agent] Starting completion: "Hello, ae\!"
+[ae][agent] Mode: REPLAY (cassettes <- artifacts/cassettes)
+[ae][agent] Provider: rec(echo)
+[ae][agent] Completed: 18 characters
+[rec(echo)] [echo] Hello, ae\!
