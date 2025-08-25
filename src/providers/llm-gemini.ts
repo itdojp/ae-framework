@@ -1,29 +1,19 @@
-import type { LLM } from './index';
+import type { LLM } from './index.js';
 
-const Gemini: LLM = {
+const GeminiProvider: LLM = {
   name: 'gemini',
-  async complete({ prompt, system, temperature = 0.7 }) {
-    try {
-      const { GoogleGenerativeAI } = await import('@google/generative-ai');
-      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-      
-      const model = genAI.getGenerativeModel({ 
-        model: 'gemini-pro',
-        generationConfig: {
-          temperature,
-          maxOutputTokens: 1000
-        }
-      });
-
-      const fullPrompt = system ? `${system}\n\n${prompt}` : prompt;
-      const result = await model.generateContent(fullPrompt);
-      const response = await result.response;
-      
-      return response.text() || '[no response]';
-    } catch (error) {
-      throw new Error(`Gemini API error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+  async complete({ prompt, system, temperature }) {
+    const mod: any = await import('@google/generative-ai');
+    const client = new mod.GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = client.getGenerativeModel({ model: process.env.GEMINI_MODEL ?? 'gemini-1.5-pro' });
+    const res = await model.generateContent([
+      ...(system ? [{ text: system }] : []),
+      { text: prompt }
+    ], { generationConfig: { temperature: temperature ?? 0 } } as any);
+    // SDK差異を吸収して文字列へ
+    const out = (res?.response?.text?.() ?? res?.response?.candidates?.[0]?.content?.parts?.[0]?.text ?? '').toString();
+    return out;
   }
 };
 
-export default Gemini;
+export default GeminiProvider;

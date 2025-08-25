@@ -1,29 +1,22 @@
-import type { LLM } from './index';
+import type { LLM } from './index.js';
 
-const Anthropic: LLM = {
+const AnthropicProvider: LLM = {
   name: 'anthropic',
-  async complete({ prompt, system, temperature = 0.7 }) {
-    try {
-      const { Anthropic: AnthropicSDK } = await import('@anthropic-ai/sdk');
-      const client = new AnthropicSDK({
-        apiKey: process.env.ANTHROPIC_API_KEY
-      });
-
-      const response = await client.messages.create({
-        model: 'claude-3-sonnet-20240229',
-        max_tokens: 1000,
-        temperature,
-        system,
-        messages: [{ role: 'user', content: prompt }]
-      });
-
-      return response.content[0].type === 'text' 
-        ? response.content[0].text 
-        : '[non-text response]';
-    } catch (error) {
-      throw new Error(`Anthropic API error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+  async complete({ prompt, system, temperature }) {
+    const mod: any = await import('@anthropic-ai/sdk');
+    const client = new mod.default({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const res = await client.messages.create({
+      model: process.env.ANTHROPIC_MODEL ?? 'claude-3-5-sonnet-20240620',
+      max_tokens: 1024,
+      temperature: temperature ?? 0,
+      messages: [
+        ...(system ? [{ role: 'user', content: system }] : []),
+        { role: 'user', content: prompt }
+      ]
+    });
+    const c = Array.isArray(res?.content) ? res.content[0] : res?.content;
+    return (c?.text ?? c ?? '').toString();
   }
 };
 
-export default Anthropic;
+export default AnthropicProvider;

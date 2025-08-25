@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { branded, Brand } from './brand';
+import { branded, Brand } from './brand.js';
 
 const EmailSchema = z.string().email();
 export type Email = Brand<string, 'Email'>;
