@@ -328,6 +328,39 @@ export async function verifyRun(): Promise<Result<{ logs: string[]; duration: st
       }
     }
 
+    // 13) API Extractor report generation
+    try {
+      const stepFn = isStrict ? step : softStep;
+      await stepFn('API Extractor Report', 'pnpm', ['run', 'api:emit']);
+      await stepFn('API Extractor Report', 'pnpm', ['run', 'api:report']);
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      if (isStrict) {
+        success = false;
+        logs.push(`## API Extractor Report\n❌ FAILED: ${errorMsg}`);
+        console.log(`[ae][verify] API Extractor Report: FAILED (${errorMsg})`);
+      } else {
+        logs.push(`## API Extractor Report\n⚠️  INFO: ${errorMsg}`);
+        console.log(`[ae][verify] API Extractor Report: INFO (${errorMsg})`);
+      }
+    }
+
+    // 14) API Breaking Change Detection
+    try {
+      const stepFn = isStrict ? step : softStep;
+      await stepFn('API Breaking Changes', 'pnpm', ['run', 'api:diff']);
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      if (isStrict) {
+        success = false;
+        logs.push(`## API Breaking Changes\n❌ FAILED: ${errorMsg}`);
+        console.log(`[ae][verify] API Breaking Changes: FAILED (${errorMsg})`);
+      } else {
+        logs.push(`## API Breaking Changes\n⚠️  INFO: ${errorMsg}`);
+        console.log(`[ae][verify] API Breaking Changes: INFO (${errorMsg})`);
+      }
+    }
+
   } catch (unexpectedError) {
     success = false;
     const errorMsg = unexpectedError instanceof Error ? unexpectedError.message : String(unexpectedError);
