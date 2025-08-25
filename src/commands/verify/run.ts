@@ -85,26 +85,19 @@ export async function verifyRun(): Promise<Result<{ logs: string[]; duration: st
     logs.push(`## ${name}\n\`\`\`bash\n${[cmd, ...args].join(' ')}\n\`\`\``);
     console.log(`[ae][verify] ${name} start`);
     
-    try {
-      const r = await execa(cmd, args, { 
-        reject: false, 
-        stdio: 'inherit', 
-        env: env ? { ...process.env, ...env } : process.env 
-      });
-      
-      if (r.exitCode !== 0) { 
-        // Don't set ok = false for soft steps
-        logs.push(`⚠️  ${name}: INFO (exit ${r.exitCode})`);
-        console.log(`[ae][verify] ${name} end: INFO`);
-      } else { 
-        logs.push(`✅ ${name}: OK`);
-        console.log(`[ae][verify] ${name} end: OK`);
-      }
-    } catch (error) {
-      // Don't set ok = false for soft steps
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      logs.push(`⚠️  ${name}: INFO (error: ${errorMsg})`);
-      console.log(`[ae][verify] ${name} end: INFO (error: ${errorMsg})`);
+    const result = await run(name, cmd, args, {
+      stdio: 'inherit',
+      env: env ? { ...process.env, ...env } : process.env
+    });
+    
+    if (result.ok) {
+      logs.push(`✅ ${name}: OK`);
+      console.log(`[ae][verify] ${name} end: OK`);
+    } else if (isErr(result)) {
+      // Don't set success = false for soft steps
+      const errorMsg = 'detail' in result.error ? result.error.detail : result.error.code;
+      logs.push(`⚠️  ${name}: INFO (${errorMsg ?? 'unknown error'})`);
+      console.log(`[ae][verify] ${name} end: INFO`);
     }
   }
 
