@@ -8,19 +8,6 @@ import type { AppError } from '../../core/errors.js';
 
 const execAsync = promisify(exec);
 
-// Environment-based scope controls
-const AE_LINT_SCOPE = process.env.AE_LINT_SCOPE || 'src/{providers,commands}/**/*.ts';
-const AE_TSC_PROJECT = process.env.AE_TSC_PROJECT || 'tsconfig.verify.json';
-const AE_EXPECT_ERROR_STRICT = process.env.AE_EXPECT_ERROR_STRICT !== '0';
-const STEP_TIMEOUT_MS = 120000; // 120 seconds per step
-
-interface StepResult {
-  name: string;
-  status: 'OK' | 'FAIL' | 'TIMEOUT' | 'SKIP';
-  duration: number;
-  error?: string;
-}
-
 async function hasBin(bin: string): Promise<boolean> {
   // a) Check node_modules/.bin/<bin>
   try {
@@ -76,225 +63,346 @@ async function hasScript(scriptName: string): Promise<boolean> {
   }
 }
 
-async function runStepWithTimeout(
-  name: string,
-  cmd: string,
-  args: string[],
-  env?: Record<string, string>
-): Promise<StepResult> {
-  const startTime = Date.now();
-  
-  try {
-    const result = await Promise.race([
-      run(name, cmd, args, {
-        stdio: 'inherit',
-        env: env ? { ...process.env, ...env } : process.env
-      }),
-      new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('TIMEOUT')), STEP_TIMEOUT_MS)
-      )
-    ]);
-    
-    const duration = Date.now() - startTime;
-    
-    if (result.ok) {
-      return { name, status: 'OK', duration };
-    } else {
-      const errorMsg = isErr(result) && 'detail' in result.error 
-        ? result.error.detail 
-        : isErr(result) ? result.error.code : 'Unknown error';
-      return { name, status: 'FAIL', duration, error: errorMsg };
-    }
-  } catch (error) {
-    const duration = Date.now() - startTime;
-    
-    if (error instanceof Error && error.message === 'TIMEOUT') {
-      return { name, status: 'TIMEOUT', duration };
-    } else {
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      return { name, status: 'FAIL', duration, error: errorMsg };
-    }
-  }
-}
-
 export async function verifyRun(): Promise<Result<{ logs: string[]; duration: string }, AppError>> {
-  console.log('[ae][verify] Starting staged verification pipeline...');
+  console.log('[ae][verify] Starting verification pipeline...');
   await mkdir('artifacts', { recursive: true });
   
   const logs: string[] = [];
-  const stepResults: StepResult[] = [];
-  const startTime = Date.now();
-  const isStrict = process.env.AE_TYPES_STRICT === '1';
+  let success = true;
+  const startTime = new Date();
 
-  // Define all verification steps
-  const steps: Array<{
-    name: string;
-    check: () => Promise<boolean>;
-    execute: () => Promise<StepResult>;
-    required: boolean;
-  }> = [
-    {
-      name: 'TypeScript Check',
-      check: async () => await hasBin('tsc'),
-      execute: async () => {
-        if (await hasFile(AE_TSC_PROJECT)) {
-          return runStepWithTimeout('TypeScript Check', 'tsc', ['-p', AE_TSC_PROJECT, '--noEmit']);
-        } else if (await hasFile('tsconfig.build.json')) {
-          return runStepWithTimeout('TypeScript Check', 'tsc', ['-p', 'tsconfig.build.json', '--noEmit']);
-        } else {
-          return runStepWithTimeout('TypeScript Check', 'tsc', ['--noEmit']);
-        }
-      },
-      required: true
-    },
-    {
-      name: 'ESLint Check',
-      check: async () => await hasBin('eslint') && (
-        await hasFile('eslint.config.js') || 
-        await hasFile('eslint.config.mjs') || 
-        await hasFile('eslint.config.ts')
-      ),
-      execute: async () => runStepWithTimeout('ESLint Check', 'eslint', [AE_LINT_SCOPE]),
-      required: true
-    },
-    {
-      name: 'TSD Type Tests',
-      check: async () => await hasScript('test:types'),
-      execute: async () => runStepWithTimeout('TSD Type Tests', 'pnpm', ['run', 'test:types']),
-      required: false
-    },
-    {
-      name: 'API Snapshot Check',
-      check: async () => await hasScript('api:check'),
-      execute: async () => runStepWithTimeout('API Snapshot Check', 'pnpm', ['run', 'api:check']),
-      required: false
-    },
-    {
-      name: 'API Report Generation',
-      check: async () => await hasScript('api:report'),
-      execute: async () => {
-        // Run api:emit first, then api:report
-        const emitResult = await runStepWithTimeout('API Emit', 'pnpm', ['run', 'api:emit']);
-        if (emitResult.status !== 'OK') return emitResult;
-        return runStepWithTimeout('API Report Generation', 'pnpm', ['run', 'api:report']);
-      },
-      required: false
-    },
-    {
-      name: 'API Breaking Changes',
-      check: async () => await hasScript('api:diff'),
-      execute: async () => runStepWithTimeout('API Breaking Changes', 'pnpm', ['run', 'api:diff']),
-      required: false
-    },
-    {
-      name: '@ts-expect-error Policy',
-      check: async () => AE_EXPECT_ERROR_STRICT && await hasFile('scripts/ci/check-expect-error.mjs'),
-      execute: async () => runStepWithTimeout('@ts-expect-error Policy', 'node', ['scripts/ci/check-expect-error.mjs']),
-      required: true
-    }
-  ];
-
-  // Execute all steps regardless of failures
-  for (const stepDef of steps) {
-    const canRun = await stepDef.check();
+  async function step(name: string, cmd: string, args: string[], env?: Record<string, string>): Promise<void> {
+    logs.push(`## ${name}\n\`\`\`bash\n${[cmd, ...args].join(' ')}\n\`\`\``);
+    console.log(`[ae][verify] ${name} start`);
     
-    if (!canRun) {
-      const result: StepResult = { name: stepDef.name, status: 'SKIP', duration: 0 };
-      stepResults.push(result);
-      console.log(`[ae][verify] step=${stepDef.name} status=SKIP dur=0ms (requirements not met)`);
-      logs.push(`## ${stepDef.name}\nℹ️ SKIPPED (requirements not met)`);
-      continue;
-    }
-
-    console.log(`[ae][verify] step=${stepDef.name} status=RUNNING`);
+    const result = await run(name, cmd, args, {
+      stdio: 'inherit',
+      env: env ? { ...process.env, ...env } : process.env
+    });
     
-    try {
-      const result = await stepDef.execute();
-      stepResults.push(result);
-      
-      const statusIcon = result.status === 'OK' ? '✅' : 
-                        result.status === 'TIMEOUT' ? '⏱️' :
-                        result.status === 'FAIL' ? '❌' : '⚠️';
-      
-      console.log(`[ae][verify] step=${result.name} status=${result.status} dur=${result.duration}ms`);
-      
-      if (result.status === 'OK') {
-        logs.push(`## ${result.name}\n${statusIcon} PASSED (${result.duration}ms)`);
-      } else if (result.status === 'TIMEOUT') {
-        logs.push(`## ${result.name}\n${statusIcon} TIMEOUT after ${STEP_TIMEOUT_MS/1000}s`);
-      } else {
-        const errorInfo = result.error ? ` (${result.error})` : '';
-        logs.push(`## ${result.name}\n${statusIcon} FAILED${errorInfo} (${result.duration}ms)`);
-      }
-    } catch (error) {
-      const result: StepResult = { 
-        name: stepDef.name, 
-        status: 'FAIL', 
-        duration: 0, 
-        error: error instanceof Error ? error.message : String(error)
-      };
-      stepResults.push(result);
-      
-      console.log(`[ae][verify] step=${stepDef.name} status=FAIL dur=0ms (execution error)`);
-      logs.push(`## ${stepDef.name}\n❌ EXECUTION ERROR (${result.error})`);
+    if (result.ok) {
+      logs.push(`✅ ${name}: OK`);
+      console.log(`[ae][verify] ${name} end: OK`);
+    } else if (isErr(result)) {
+      success = false;
+      const errorMsg = 'detail' in result.error ? result.error.detail : result.error.code;
+      logs.push(`❌ ${name}: FAILED (${errorMsg ?? 'unknown error'})`);
+      console.log(`[ae][verify] ${name} end: FAILED`);
     }
   }
 
-  // Calculate final results
-  const totalDuration = Date.now() - startTime;
-  const failed = stepResults.filter(r => r.status === 'FAIL' || r.status === 'TIMEOUT');
-  const passed = stepResults.filter(r => r.status === 'OK');
-  const skipped = stepResults.filter(r => r.status === 'SKIP');
+  async function softStep(name: string, cmd: string, args: string[], env?: Record<string, string>) {
+    logs.push(`## ${name}\n\`\`\`bash\n${[cmd, ...args].join(' ')}\n\`\`\``);
+    console.log(`[ae][verify] ${name} start`);
+    
+    const result = await run(name, cmd, args, {
+      stdio: 'inherit',
+      env: env ? { ...process.env, ...env } : process.env
+    });
+    
+    if (result.ok) {
+      logs.push(`✅ ${name}: OK`);
+      console.log(`[ae][verify] ${name} end: OK`);
+    } else if (isErr(result)) {
+      // Don't set success = false for soft steps
+      const errorMsg = 'detail' in result.error ? result.error.detail : result.error.code;
+      logs.push(`⚠️  ${name}: INFO (${errorMsg ?? 'unknown error'})`);
+      console.log(`[ae][verify] ${name} end: INFO`);
+    }
+  }
+
+  const isStrict = process.env.AE_TYPES_STRICT === '1';
   
-  const hasFailures = failed.length > 0;
-  const shouldFail = isStrict && hasFailures;
+  try {
+    // 1) TypeScript type check (prioritize scoped config)
+    try {
+      if (await hasBin('tsc')) {
+        if (await hasFile('tsconfig.verify.json')) {
+          await step('TypeScript Types', 'tsc', ['-p', 'tsconfig.verify.json']);
+        } else if (await hasFile('tsconfig.build.json')) {
+          await step('TypeScript Types', 'tsc', ['-p', 'tsconfig.build.json']);
+        } else {
+          await step('TypeScript Types', 'tsc', ['--noEmit']);
+        }
+      } else {
+        logs.push('## TypeScript Types\nℹ️  Skipped (tsc not available)');
+        console.log('[ae][verify] TypeScript Types: SKIPPED (tsc not available)');
+      }
+    } catch (error) {
+      success = false;
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logs.push(`## TypeScript Types\n❌ FAILED (error: ${errorMsg})`);
+      console.log(`[ae][verify] TypeScript Types: FAILED (error: ${errorMsg})`);
+    }
 
-  // Generate comprehensive summary
-  const modeStr = isStrict ? '🔒 STRICT (CI)' : '🔓 SOFT (Local)';
-  const statusStr = shouldFail ? '❌ FAILED' : hasFailures ? '⚠️ PARTIAL' : '✅ PASSED';
+    // 2) ESLint (check for flat config, graceful skip if missing)
+    try {
+      if (await hasBin('eslint')) {
+        if (await hasFile('eslint.config.js') || await hasFile('eslint.config.mjs') || await hasFile('eslint.config.ts')) {
+          await step('ESLint', 'eslint', ['.']);
+        } else {
+          logs.push('## ESLint\n⚠️  WARN: No flat config (eslint.config.js) found - skipped');
+          console.log('[ae][verify] ESLint: WARN (no flat config found, skipped)');
+        }
+      } else {
+        logs.push('## ESLint\nℹ️  Skipped (eslint not available)');
+        console.log('[ae][verify] ESLint: SKIPPED (eslint not available)');
+      }
+    } catch (error) {
+      success = false;
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logs.push(`## ESLint\n❌ FAILED (error: ${errorMsg})`);
+      console.log(`[ae][verify] ESLint: FAILED (error: ${errorMsg})`);
+    }
+
+    // 3) QA metrics
+    try {
+      if (await hasFile('dist/cli.js')) {
+        await step('QA Metrics', 'node', ['dist/cli.js', 'qa']);
+      } else {
+        logs.push('## QA Metrics\nℹ️  Skipped (ae CLI not built)');
+        console.log('[ae][verify] QA Metrics: SKIPPED (ae CLI not built)');
+      }
+    } catch (error) {
+      success = false;
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logs.push(`## QA Metrics\n❌ FAILED (error: ${errorMsg})`);
+      console.log(`[ae][verify] QA Metrics: FAILED (error: ${errorMsg})`);
+    }
+
+    // 4) Benchmarks (with deterministic seed)
+    try {
+      if (await hasFile('dist/cli.js')) {
+        await step('Benchmarks', 'node', ['dist/cli.js', 'bench'], { AE_SEED: '123' });
+      } else {
+        logs.push('## Benchmarks\nℹ️  Skipped (ae CLI not built)');
+        console.log('[ae][verify] Benchmarks: SKIPPED (ae CLI not built)');
+      }
+    } catch (error) {
+      success = false;
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logs.push(`## Benchmarks\n❌ FAILED (error: ${errorMsg})`);
+      console.log(`[ae][verify] Benchmarks: FAILED (error: ${errorMsg})`);
+    }
+
+    // 5) Type tests (non-blocking)
+    try {
+      if (await hasBin('tsd')) {
+        await softStep('Type Tests', 'tsd', []);
+      } else {
+        logs.push('## Type Tests\nℹ️  Skipped (tsd not available)');
+        console.log('[ae][verify] Type Tests: SKIPPED (tsd not available)');
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logs.push(`## Type Tests\n⚠️  INFO: ${errorMsg}`);
+      console.log(`[ae][verify] Type Tests: INFO (${errorMsg})`);
+    }
+
+    // 6) Type coverage (non-blocking)
+    try {
+      if (await hasBin('type-coverage')) {
+        await softStep('Type Coverage', 'type-coverage', ['-p', 'tsconfig.verify.json', '--ignore-catch']);
+      } else {
+        logs.push('## Type Coverage\nℹ️  Skipped (type-coverage not available)');
+        console.log('[ae][verify] Type Coverage: SKIPPED (type-coverage not available)');
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logs.push(`## Type Coverage\n⚠️  INFO: ${errorMsg}`);
+      console.log(`[ae][verify] Type Coverage: INFO (${errorMsg})`);
+    }
+
+    // 7) API type snapshot check (non-blocking)
+    try {
+      if (await hasFile('pnpm-lock.yaml') || await hasFile('package-lock.json')) {
+        await softStep('API Type Check', 'pnpm', ['api:check']);
+      } else {
+        logs.push('## API Type Check\nℹ️  Skipped (no package manager lockfile found)');
+        console.log('[ae][verify] API Type Check: SKIPPED (no lockfile found)');
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logs.push(`## API Type Check\n⚠️  INFO: ${errorMsg}`);
+      console.log(`[ae][verify] API Type Check: INFO (${errorMsg})`);
+    }
+
+    // 8) Strict TypeScript verification (strict mode only)
+    try {
+      if (await hasFile('tsconfig.verify.json')) {
+        const stepFn = isStrict ? step : softStep;
+        await stepFn('Strict TypeScript Check', 'tsc', ['-p', 'tsconfig.verify.json', '--noEmit']);
+      } else {
+        logs.push('## Strict TypeScript Check\nℹ️  Skipped (tsconfig.verify.json not found)');
+        console.log('[ae][verify] Strict TypeScript Check: SKIPPED (no tsconfig.verify.json)');
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      if (isStrict) {
+        success = false;
+        logs.push(`## Strict TypeScript Check\n❌ FAILED: ${errorMsg}`);
+        console.log(`[ae][verify] Strict TypeScript Check: FAILED (${errorMsg})`);
+      } else {
+        logs.push(`## Strict TypeScript Check\n⚠️  INFO: ${errorMsg}`);
+        console.log(`[ae][verify] Strict TypeScript Check: INFO (${errorMsg})`);
+      }
+    }
+
+    // 9) Strict ESLint verification (type-checked)
+    try {
+      if (await hasBin('eslint')) {
+        const stepFn = isStrict ? step : softStep;
+        await stepFn('Strict ESLint Check', 'eslint', ['.']);
+      } else {
+        logs.push('## Strict ESLint Check\nℹ️  Skipped (eslint not available)');
+        console.log('[ae][verify] Strict ESLint Check: SKIPPED (eslint not available)');
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      if (isStrict) {
+        success = false;
+        logs.push(`## Strict ESLint Check\n❌ FAILED: ${errorMsg}`);
+        console.log(`[ae][verify] Strict ESLint Check: FAILED (${errorMsg})`);
+      } else {
+        logs.push(`## Strict ESLint Check\n⚠️  INFO: ${errorMsg}`);
+        console.log(`[ae][verify] Strict ESLint Check: INFO (${errorMsg})`);
+      }
+    }
+
+    // 10) Type tests (tsd)
+    try {
+      if (await hasScript('test:types')) {
+        const stepFn = isStrict ? step : softStep;
+        await stepFn('Type Tests (tsd)', 'pnpm', ['run', 'test:types']);
+      } else {
+        logs.push('## Type Tests (tsd)\nℹ️  Skipped (test:types script not found)');
+        console.log('[ae][verify] Type Tests (tsd): SKIPPED (test:types script not found)');
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      if (isStrict) {
+        success = false;
+        logs.push(`## Type Tests (tsd)\n❌ FAILED: ${errorMsg}`);
+        console.log(`[ae][verify] Type Tests (tsd): FAILED (${errorMsg})`);
+      } else {
+        logs.push(`## Type Tests (tsd)\n⚠️  INFO: ${errorMsg}`);
+        console.log(`[ae][verify] Type Tests (tsd): INFO (${errorMsg})`);
+      }
+    }
+
+    // 11) API snapshot verification (strict)
+    try {
+      const hasApiCheck = await hasScript('api:check');
+      const stepFn = isStrict ? step : softStep;
+      if (hasApiCheck) {
+        await stepFn('API Snapshot Check', 'pnpm', ['run', 'api:check']);
+      } else {
+        logs.push('## API Snapshot Check\nℹ️  Skipped (api:check script not found in package.json)');
+        console.log('[ae][verify] API Snapshot Check: SKIPPED (api:check script not found in package.json)');
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      if (isStrict) {
+        success = false;
+        logs.push(`## API Snapshot Check\n❌ FAILED: ${errorMsg}`);
+        console.log(`[ae][verify] API Snapshot Check: FAILED (${errorMsg})`);
+      } else {
+        logs.push(`## API Snapshot Check\n⚠️  INFO: ${errorMsg}`);
+        console.log(`[ae][verify] API Snapshot Check: INFO (${errorMsg})`);
+      }
+    }
+
+    // 12) TypeScript expect-error comment policy check
+    try {
+      const stepFn = isStrict ? step : softStep;
+      await stepFn('TypeScript Comment Policy', 'node', ['scripts/ci/check-expect-error.mjs']);
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      if (isStrict) {
+        success = false;
+        logs.push(`## TypeScript Comment Policy\n❌ FAILED: ${errorMsg}`);
+        console.log(`[ae][verify] TypeScript Comment Policy: FAILED (${errorMsg})`);
+      } else {
+        logs.push(`## TypeScript Comment Policy\n⚠️  INFO: ${errorMsg}`);
+        console.log(`[ae][verify] TypeScript Comment Policy: INFO (${errorMsg})`);
+      }
+    }
+
+    // 13) API Extractor report generation
+    try {
+      const stepFn = isStrict ? step : softStep;
+      await stepFn('API Extractor Report', 'pnpm', ['run', 'api:emit']);
+      await stepFn('API Extractor Report', 'pnpm', ['run', 'api:report']);
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      if (isStrict) {
+        success = false;
+        logs.push(`## API Extractor Report\n❌ FAILED: ${errorMsg}`);
+        console.log(`[ae][verify] API Extractor Report: FAILED (${errorMsg})`);
+      } else {
+        logs.push(`## API Extractor Report\n⚠️  INFO: ${errorMsg}`);
+        console.log(`[ae][verify] API Extractor Report: INFO (${errorMsg})`);
+      }
+    }
+
+    // 14) API Breaking Change Detection
+    try {
+      const stepFn = isStrict ? step : softStep;
+      await stepFn('API Breaking Changes', 'pnpm', ['run', 'api:diff']);
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      if (isStrict) {
+        success = false;
+        logs.push(`## API Breaking Changes\n❌ FAILED: ${errorMsg}`);
+        console.log(`[ae][verify] API Breaking Changes: FAILED (${errorMsg})`);
+      } else {
+        logs.push(`## API Breaking Changes\n⚠️  INFO: ${errorMsg}`);
+        console.log(`[ae][verify] API Breaking Changes: INFO (${errorMsg})`);
+      }
+    }
+
+  } catch (unexpectedError) {
+    success = false;
+    const errorMsg = unexpectedError instanceof Error ? unexpectedError.message : String(unexpectedError);
+    logs.push(`## Unexpected Error\n❌ FAILED: ${errorMsg}`);
+    console.log(`[ae][verify] Unexpected error: ${errorMsg}`);
+  }
+
+  const endTime = new Date();
+  const duration = ((endTime.getTime() - startTime.getTime()) / 1000).toFixed(1);
+
+  const summary = success ? '✅ All verification steps passed' : '❌ Some verification steps failed';
   
-  const summary = `# Staged Verification Report
+  // Add failure summary if needed
+  const failedSteps = logs.filter(log => log.includes('❌')).length;
+  const additionalInfo = failedSteps > 0 ? `\n\n**Failed Steps**: ${failedSteps}` : '';
+  
+  const report = `# Verification Report
 
-Generated: ${new Date(startTime).toISOString()}
-Duration: ${(totalDuration / 1000).toFixed(1)}s
-Mode: ${modeStr}
-Status: ${statusStr}
-
-## Summary Statistics
-- ✅ Passed: ${passed.length}
-- ❌ Failed: ${failed.length} 
-- ⏱️ Timeouts: ${stepResults.filter(r => r.status === 'TIMEOUT').length}
-- ⚠️ Skipped: ${skipped.length}
-
-## Environment Controls
-- AE_TYPES_STRICT: ${process.env.AE_TYPES_STRICT || '0'} (${isStrict ? 'ENABLED' : 'DISABLED'})
-- AE_LINT_SCOPE: ${AE_LINT_SCOPE}
-- AE_TSC_PROJECT: ${AE_TSC_PROJECT}
-- AE_EXPECT_ERROR_STRICT: ${AE_EXPECT_ERROR_STRICT ? '1' : '0'}
-- STEP_TIMEOUT: ${STEP_TIMEOUT_MS/1000}s
-
-## Step Results
+Generated: ${startTime.toISOString()}
+Duration: ${duration}s
+Mode: ${isStrict ? '🔒 STRICT (CI)' : '🔓 SOFT (Local)'}
+Status: ${summary}${additionalInfo}
 
 ${logs.join('\n\n')}
 
 ---
-*Generated by ae-framework staged verification pipeline*
-*Exit behavior: ${isStrict ? 'failures cause exit 1' : 'warnings only (exit 0)'}*
+*Generated by ae-framework verification pipeline*
+*AE_TYPES_STRICT=${process.env.AE_TYPES_STRICT || '0'} (strict gates ${isStrict ? 'ENABLED' : 'DISABLED'})*
 `;
 
   try {
-    await writeFile('artifacts/verify.md', summary);
-    console.log(`[ae][verify] Report generated -> artifacts/verify.md`);
+    await writeFile('artifacts/verify.md', report);
+    console.log(`[ae][verify] Verification report generated -> artifacts/verify.md`);
   } catch (error) {
     console.error(`[ae][verify] Failed to write report: ${error instanceof Error ? error.message : String(error)}`);
   }
   
-  console.log(`[ae][verify] Pipeline complete: ${statusStr} (${(totalDuration/1000).toFixed(1)}s)`);
-  console.log(`[ae][verify] Results: ${passed.length} passed, ${failed.length} failed, ${skipped.length} skipped`);
+  console.log(`[ae][verify] Pipeline complete: ${success ? 'PASSED' : 'FAILED'} (${duration}s)`);
   
-  if (shouldFail) {
-    return err({ code: 'E_EXEC', step: 'verify', detail: `${failed.length} steps failed in strict mode` });
+  if (success) {
+    return ok({ logs, duration });
   } else {
-    return ok({ logs: [summary], duration: `${(totalDuration/1000).toFixed(1)}s` });
+    return err({ code: 'E_EXEC', step: 'verify', detail: `${failedSteps} steps failed` });
   }
 }
