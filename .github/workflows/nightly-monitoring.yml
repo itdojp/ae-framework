@@ -25,10 +25,10 @@ jobs:
           fi
       
       - name: Install
-        run: "${{ env.PM }}" install
+        run: ${{ env.PM }} install
       
       - name: Build
-        run: "${{ env.PM }}" run build
+        run: ${{ env.PM }} run build
       
       - name: Flake (30x)
         run: node dist/cli.js qa:flake --times 30 --timeoutMs 240000 --workers 50% --pattern "tests/**"
@@ -56,3 +56,14 @@ jobs:
           name: nightly-artifacts
           path: artifacts/
           retention-days: 14
+      
+      - name: Notify Slack on failure
+        if: failure() && secrets.SLACK_WEBHOOK_URL != null
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_MESSAGE: |
+            🚨 ${{ github.workflow }} failed on ${{ github.ref }}
+            • run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            • artifacts: (see workflow page)
+          SLACK_COLOR: "#E01E5A"

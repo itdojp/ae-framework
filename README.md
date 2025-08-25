@@ -321,6 +321,14 @@ Built with:
 - Nightly: `nightly-monitoring` runs flake(×30) and compares two seeded benches (≤5%) at JST 04:15.
 - Replay policy: PR=**replay** by default, main/nightly may record separately if needed.
 - Required check: set **PR Verify / verify** as a required status in branch protection.
+- Slack alerts: verify/nightly failures notify Slack (requires `SLACK_WEBHOOK_URL` secret).
+
+#### Slack Alerts Setup
+1. Go to repository **Settings** → **Secrets and variables** → **Actions**
+2. Click **New repository secret**
+3. Name: `SLACK_WEBHOOK_URL`, Value: your Slack webhook URL
+4. Save - failures will now trigger Slack notifications
+5. If secret is not set, notification step is automatically skipped
 
 ---
 
