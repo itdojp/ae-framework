@@ -24,15 +24,21 @@ export async function main() {
     .option('--pattern <glob>', 'Test pattern/directory filter (e.g., "unit" for unit tests)')
     .option('--timeoutMs <n>', 'Execution timeout per run in milliseconds', { default: 300000 })
     .option('--workers <n|percent>', 'Worker threads/processes (number or percentage like "50%")')
-    .action((opts) => qaFlake({
-      times: Number(opts.times),
-      pattern: opts.pattern,
-      timeoutMs: Number(opts.timeoutMs),
-      workers: opts.workers
-    }));
+    .action(async (opts) => {
+      const r = await qaFlake({
+        times: Number(opts.times),
+        pattern: opts.pattern,
+        timeoutMs: Number(opts.timeoutMs),
+        workers: opts.workers
+      });
+      process.exit(r.ok ? 0 : 1);
+    });
   
   cli.command('verify', 'Run types/lint/qa/bench in one shot')
-    .action(verifyRun);
+    .action(async () => {
+      const r = await verifyRun();
+      process.exit(r.ok ? 0 : 1);
+    });
   
   cli.command('agent:complete', 'LLM completion with record/replay support')
     .option('--prompt <text>', 'Prompt text')
