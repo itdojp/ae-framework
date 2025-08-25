@@ -261,6 +261,37 @@ ae-framework deploy
 
 ---
 
+## 🔒 TypeScript Policy / TypeScript ポリシー
+
+### @ts-expect-error Usage Policy
+
+When using `@ts-expect-error` comments, follow this structured format:
+
+```typescript
+// @ts-expect-error owner:@username expires:YYYY-MM-DD reason: detailed description
+```
+
+**Required fields:**
+- `owner:@username` - GitHub handle responsible for the suppression
+- `expires:YYYY-MM-DD` - Date when this suppression should be reviewed/removed
+- `reason: description` - Detailed explanation (minimum 12 characters)
+
+**Examples:**
+```typescript
+// @ts-expect-error owner:@alice expires:2025-12-31 reason: narrowing todo for complex union
+const result = complexUnion as string;
+
+// @ts-expect-error owner:@bob expires:2025-06-15 reason: legacy API compatibility until v2 migration
+legacyApi.unsafeMethod(data);
+```
+
+**Policy enforcement:**
+- ✅ CI validates all `@ts-expect-error` comments
+- ⚠️ Local development shows warnings only
+- 🔍 Script: `node scripts/ci/check-expect-error.mjs`
+
+---
+
 ## Documentation / ドキュメント
 
 ### 🚀 Getting Started / 導入・クイックスタート
