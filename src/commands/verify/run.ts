@@ -1,13 +1,23 @@
 import { execa } from 'execa';
 import { writeFile, mkdir } from 'node:fs/promises';
+import { access, constants } from 'node:fs/promises';
+import which from 'which';
 
 async function hasBin(bin: string): Promise<boolean> {
-  const which = await import('which');
   try { 
-    await which.default(bin); 
+    await which(bin); 
     return true; 
   } catch { 
     return false; 
+  }
+}
+
+async function hasFile(file: string): Promise<boolean> {
+  try {
+    await access(file, constants.F_OK);
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -56,19 +66,17 @@ export async function verifyRun() {
   }
 
   // 3) QA metrics
-  try {
+  if (await hasFile('dist/cli.js')) {
     await step('QA Metrics', 'node', ['dist/cli.js', 'qa']);
-  } catch (error) {
-    // If dist/cli.js doesn't exist, try alternative approaches
+  } else {
     logs.push('## QA Metrics\nℹ️  Skipped (ae CLI not built)');
     console.log('[ae] QA Metrics: SKIPPED (ae CLI not built)');
   }
 
   // 4) Benchmarks (with deterministic seed)
-  try {
+  if (await hasFile('dist/cli.js')) {
     await step('Benchmarks', 'node', ['dist/cli.js', 'bench'], { AE_SEED: '123' });
-  } catch (error) {
-    // If dist/cli.js doesn't exist, skip
+  } else {
     logs.push('## Benchmarks\nℹ️  Skipped (ae CLI not built)');
     console.log('[ae] Benchmarks: SKIPPED (ae CLI not built)');
   }
