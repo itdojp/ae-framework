@@ -44,7 +44,7 @@ function withTimeout(llm: LLM, timeoutMs: number = 5000): LLM {
 
 async function has(pkg: string): Promise<boolean> {
   try {
-    await import(pkg);
+    await eval(`import("${pkg}")`);
     return true;
   } catch {
     return false;

@@ -3,7 +3,7 @@ import type { LLM } from './index.js';
 const GeminiProvider: LLM = {
   name: 'gemini',
   async complete({ prompt, system, temperature }) {
-    const mod: any = await import('@google/generative-ai');
+    const mod: any = await eval('import("@google/generative-ai")');
     const client = new mod.GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = client.getGenerativeModel({ model: process.env.GEMINI_MODEL ?? 'gemini-1.5-pro' });
     const res = await model.generateContent([
