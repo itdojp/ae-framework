@@ -14,62 +14,79 @@ export const DEFAULT_BENCHMARK_CONFIG: BenchmarkConfig = {
   req2runRepository: 'https://github.com/itdojp/req2run-benchmark.git',
   
   problems: [
-    // Basic level problems for initial testing
+    // Basic level problems for initial testing - using actual available problem IDs
     {
-      id: 'web-api-basic-001',
+      id: 'CLI-001',
       enabled: true,
       timeoutMs: 300000, // 5 minutes
-      retries: 1,
-      category: BenchmarkCategory.WEB_API,
-      difficulty: DifficultyLevel.BASIC
-    },
-    {
-      id: 'cli-tool-basic-001',
-      enabled: true,
-      timeoutMs: 180000, // 3 minutes
       retries: 1,
       category: BenchmarkCategory.CLI_TOOL,
       difficulty: DifficultyLevel.BASIC
     },
-    {
-      id: 'data-processing-basic-001',
-      enabled: true,
-      timeoutMs: 240000, // 4 minutes
-      retries: 1,
-      category: BenchmarkCategory.DATA_PROCESSING,
-      difficulty: DifficultyLevel.BASIC
-    },
     
-    // Intermediate level problems
+    // Intermediate level problems - using actual available problem IDs
     {
-      id: 'web-api-intermediate-001',
-      enabled: false, // Disabled by default until basic works
+      id: 'WEB-001',
+      enabled: true, // Enable for comprehensive benchmark
       timeoutMs: 600000, // 10 minutes
       retries: 2,
       category: BenchmarkCategory.WEB_API,
       difficulty: DifficultyLevel.INTERMEDIATE
     },
     {
-      id: 'auth-intermediate-001',
-      enabled: false,
+      id: 'CLI-010',
+      enabled: true,
       timeoutMs: 480000, // 8 minutes
       retries: 2,
-      category: BenchmarkCategory.AUTHENTICATION,
+      category: BenchmarkCategory.CLI_TOOL,
+      difficulty: DifficultyLevel.INTERMEDIATE
+    },
+    {
+      id: 'NET-001',
+      enabled: true,
+      timeoutMs: 480000, // 8 minutes
+      retries: 2,
+      category: BenchmarkCategory.NETWORK_PROTOCOL,
       difficulty: DifficultyLevel.INTERMEDIATE
     },
     
-    // Advanced and Expert level problems (disabled by default)
+    // Advanced level problems - enable for comprehensive benchmark
     {
-      id: 'distributed-advanced-001',
-      enabled: false,
+      id: 'DATA-001',
+      enabled: true,
       timeoutMs: 1800000, // 30 minutes
       retries: 3,
-      category: BenchmarkCategory.DISTRIBUTED_SYSTEM,
+      category: BenchmarkCategory.DATA_PROCESSING,
       difficulty: DifficultyLevel.ADVANCED
     },
     {
-      id: 'ml-pipeline-expert-001',
-      enabled: false,
+      id: 'ML-001',
+      enabled: true,
+      timeoutMs: 1800000, // 30 minutes
+      retries: 3,
+      category: BenchmarkCategory.MACHINE_LEARNING,
+      difficulty: DifficultyLevel.ADVANCED
+    },
+    {
+      id: 'WEB-012',
+      enabled: true,
+      timeoutMs: 1800000, // 30 minutes
+      retries: 3,
+      category: BenchmarkCategory.WEB_API,
+      difficulty: DifficultyLevel.ADVANCED
+    },
+    // Expert level problems - enable for comprehensive benchmark
+    {
+      id: 'RTC-001',
+      enabled: false, // Temporarily disable due to YAML conflict
+      timeoutMs: 3600000, // 60 minutes
+      retries: 3,
+      category: BenchmarkCategory.REAL_TIME,
+      difficulty: DifficultyLevel.EXPERT
+    },
+    {
+      id: 'LANG-001',
+      enabled: true,
       timeoutMs: 3600000, // 60 minutes
       retries: 3,
       category: BenchmarkCategory.MACHINE_LEARNING,
@@ -78,8 +95,8 @@ export const DEFAULT_BENCHMARK_CONFIG: BenchmarkConfig = {
   ],
 
   execution: {
-    parallel: false, // Start with sequential execution
-    maxConcurrency: 2,
+    parallel: true, // Enable parallel execution for comprehensive benchmark
+    maxConcurrency: 3,
     resourceLimits: {
       maxMemoryMB: 4096,    // 4GB memory limit
       maxCpuPercent: 80,    // 80% CPU limit
@@ -278,7 +295,7 @@ export function getCIConfig(): BenchmarkConfig {
     ...DEFAULT_BENCHMARK_CONFIG,
     problems: DEFAULT_BENCHMARK_CONFIG.problems.filter(p => 
       p.difficulty === DifficultyLevel.BASIC && p.enabled
-    ).slice(0, 3), // Only first 3 basic problems for CI
+    ).slice(0, 1), // Only first basic problem for CI
     execution: {
       ...DEFAULT_BENCHMARK_CONFIG.execution,
       parallel: false,
