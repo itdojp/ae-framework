@@ -1,0 +1,2 @@
+# Example for future use: Fixed cassettes for distribution (requires Git LFS)
+# cassettes/fixtures/* filter=lfs diff=lfs merge=lfs -text
