@@ -3,7 +3,7 @@
     "target": "ES2022",
     "module": "NodeNext",
     "lib": ["ES2022", "DOM"],
-    "types": ["node"],
+    "types": ["node", "vitest"],
     "moduleResolution": "NodeNext",
     "outDir": "./dist",
     "rootDir": ".",
@@ -22,9 +22,10 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "downlevelIteration": true,
-    "noEmitOnError": false
+    "noEmitOnError": false,
+    "allowJs": false
   },
-  "include": ["src/**/*", "packages/**/*"],
+  "include": ["src/**/*.ts", "types/**/*.d.ts", "packages/**/*"],
   "exclude": [
     "node_modules", 
     "dist", 
