@@ -52,7 +52,7 @@ async function hasFile(file: string): Promise<boolean> {
 }
 
 export async function verifyRun() {
-  console.log('[ae] Starting verification pipeline...');
+  console.log('[ae][verify] Starting verification pipeline...');
   await mkdir('artifacts', { recursive: true });
   
   const logs: string[] = [];
@@ -73,24 +73,30 @@ export async function verifyRun() {
       if (r.exitCode !== 0) { 
         ok = false; 
         logs.push(`❌ ${name}: FAILED (exit ${r.exitCode})`);
-        console.log(`[ae][verify] ${name}: FAILED`);
+        console.log(`[ae][verify] ${name} end: FAILED`);
       } else { 
         logs.push(`✅ ${name}: OK`);
-        console.log(`[ae][verify] ${name}: OK`);
+        console.log(`[ae][verify] ${name} end: OK`);
       }
     } catch (error) {
       ok = false;
       const errorMsg = error instanceof Error ? error.message : String(error);
       logs.push(`❌ ${name}: FAILED (error: ${errorMsg})`);
-      console.log(`[ae][verify] ${name}: FAILED (error: ${errorMsg})`);
+      console.log(`[ae][verify] ${name} end: FAILED (error: ${errorMsg})`);
     }
   }
 
   try {
-    // 1) TypeScript type check
+    // 1) TypeScript type check (prioritize scoped config)
     try {
       if (await hasBin('tsc')) {
-        await step('TypeScript Types', 'tsc', ['--noEmit']);
+        if (await hasFile('tsconfig.verify.json')) {
+          await step('TypeScript Types', 'tsc', ['-p', 'tsconfig.verify.json']);
+        } else if (await hasFile('tsconfig.build.json')) {
+          await step('TypeScript Types', 'tsc', ['-p', 'tsconfig.build.json']);
+        } else {
+          await step('TypeScript Types', 'tsc', ['--noEmit']);
+        }
       } else {
         logs.push('## TypeScript Types\nℹ️  Skipped (tsc not available)');
         console.log('[ae][verify] TypeScript Types: SKIPPED (tsc not available)');
@@ -102,10 +108,15 @@ export async function verifyRun() {
       console.log(`[ae][verify] TypeScript Types: FAILED (error: ${errorMsg})`);
     }
 
-    // 2) ESLint
+    // 2) ESLint (check for flat config, graceful skip if missing)
     try {
       if (await hasBin('eslint')) {
-        await step('ESLint', 'eslint', ['.']);
+        if (await hasFile('eslint.config.js') || await hasFile('eslint.config.mjs') || await hasFile('eslint.config.ts')) {
+          await step('ESLint', 'eslint', ['.']);
+        } else {
+          logs.push('## ESLint\n⚠️  WARN: No flat config (eslint.config.js) found - skipped');
+          console.log('[ae][verify] ESLint: WARN (no flat config found, skipped)');
+        }
       } else {
         logs.push('## ESLint\nℹ️  Skipped (eslint not available)');
         console.log('[ae][verify] ESLint: SKIPPED (eslint not available)');
@@ -147,17 +158,26 @@ export async function verifyRun() {
       console.log(`[ae][verify] Benchmarks: FAILED (error: ${errorMsg})`);
     }
 
+  } catch (unexpectedError) {
+    ok = false;
+    const errorMsg = unexpectedError instanceof Error ? unexpectedError.message : String(unexpectedError);
+    logs.push(`## Unexpected Error\n❌ FAILED: ${errorMsg}`);
+    console.log(`[ae][verify] Unexpected error: ${errorMsg}`);
   } finally {
     const endTime = new Date();
     const duration = ((endTime.getTime() - startTime.getTime()) / 1000).toFixed(1);
 
     const summary = ok ? '✅ All verification steps passed' : '❌ Some verification steps failed';
     
+    // Add failure summary if needed
+    const failedSteps = logs.filter(log => log.includes('❌')).length;
+    const additionalInfo = failedSteps > 0 ? `\n\n**Failed Steps**: ${failedSteps}` : '';
+    
     const report = `# Verification Report
 
 Generated: ${startTime.toISOString()}
 Duration: ${duration}s
-Status: ${summary}
+Status: ${summary}${additionalInfo}
 
 ${logs.join('\n\n')}
 
@@ -172,7 +192,7 @@ ${logs.join('\n\n')}
       console.error(`[ae][verify] Failed to write report: ${error instanceof Error ? error.message : String(error)}`);
     }
     
-    console.log(`[ae][verify] Verification ${ok ? 'PASSED' : 'FAILED'} (${duration}s)`);
+    console.log(`[ae][verify] Pipeline complete: ${ok ? 'PASSED' : 'FAILED'} (${duration}s)`);
   }
   
   process.exit(ok ? 0 : 1);

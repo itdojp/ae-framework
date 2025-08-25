@@ -283,6 +283,7 @@
     "@babel/preset-react": "^7.23.0",
     "@babel/preset-typescript": "^7.23.0",
     "@cucumber/cucumber": "^11.0.0",
+    "@eslint/js": "^9.34.0",
     "@lhci/cli": "^0.12.0",
     "@playwright/test": "^1.47.0",
     "@stryker-mutator/core": "^8.5.0",
@@ -313,6 +314,7 @@
     "playwright": "^1.47.0",
     "tsx": "^4.16.0",
     "typescript": "^5.5.4",
+    "typescript-eslint": "^8.40.0",
     "vitest": "^2.0.5",
     "why-is-node-running": "^3.2.2"
   },
