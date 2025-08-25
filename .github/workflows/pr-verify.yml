@@ -57,3 +57,32 @@ jobs:
             • run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
             • artifacts: (see workflow page)
           SLACK_COLOR: "#E01E5A"
+
+  flake-optin:
+    if: contains(join(fromJSON(toJSON(github.event.pull_request.labels)).*.name, ','), 'run-flake')
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Pick package manager
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            npm i -g pnpm
+            echo "PM=pnpm" >> "$GITHUB_ENV"
+          else
+            echo "PM=npm" >> "$GITHUB_ENV"
+          fi
+      
+      - name: Install
+        run: ${{ env.PM }} install
+      
+      - name: Build
+        run: ${{ env.PM }} run build
+      
+      - name: Flake (opt-in)
+        run: node dist/cli.js qa:flake --times 20 --timeoutMs 240000 --workers 50% --pattern "tests/**"
