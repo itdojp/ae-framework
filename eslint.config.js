@@ -1,11 +1,32 @@
-// eslint v9 flat config (minimal)
+// eslint v9 flat (type-checked, soft landing)
 import js from '@eslint/js';
-import tseslint from 'typescript-eslint';
+import ts from 'typescript-eslint';
 
-export default tseslint.config(
-  js.configs.recommended,
-  ...tseslint.configs.recommended,
-  { 
-    ignores: ['dist/**', 'artifacts/**', 'node_modules/**', 'apps/**', 'packages/**'] 
+export default ts.config(
+  {
+    ignores: ['dist/**','artifacts/**','node_modules/**','apps/**','packages/**'],
   },
+  js.configs.recommended,
+  ...ts.configs.recommended,
+  {
+    files: ['src/**/*.ts'],
+    extends: [...ts.configs.recommendedTypeChecked],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.verify.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      // 可視化重視：まずは warn から入り、後続PRで error に上げる
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unsafe-assignment': 'warn',
+      '@typescript-eslint/no-unsafe-call': 'warn',
+      '@typescript-eslint/no-unsafe-member-access': 'warn',
+      '@typescript-eslint/no-unsafe-return': 'warn',
+      '@typescript-eslint/restrict-template-expressions': ['warn', { allowNumber: true, allowBoolean: true }],
+      '@typescript-eslint/no-floating-promises': 'warn',
+      '@typescript-eslint/no-misused-promises': 'warn',
+    }
+  }
 );
