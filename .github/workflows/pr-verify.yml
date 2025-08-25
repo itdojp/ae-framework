@@ -40,9 +40,9 @@ jobs:
       - name: LLM replay smoke
         run: AE_RECORDER_MODE=replay node dist/cli.js agent:complete --prompt "Hello, ae!"
       
-      - name: Upload artifacts (7 days)
+      - name: Upload artifacts (14 days)
         uses: actions/upload-artifact@v4
         with:
           name: ae-artifacts
           path: artifacts/
-          retention-days: 7
+          retention-days: 14
