@@ -317,8 +317,8 @@ Built with:
 - Vitest for testing framework
 
 ### CI Gate
-- PR: `PR Verify` workflow runs `ae verify`, replay smoke, uploads artifacts.
-- Nightly: `nightly-monitoring` runs flake(×30) and compares two seeded benches (≤5%).
+- PR: `PR Verify` workflow runs `ae verify`, replay smoke, uploads artifacts (14d retention).
+- Nightly: `nightly-monitoring` runs flake(×30) and compares two seeded benches (≤5%) at JST 04:15.
 - Replay policy: PR=**replay** by default, main/nightly may record separately if needed.
 - Required check: set **PR Verify / verify** as a required status in branch protection.
 
