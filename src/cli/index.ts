@@ -644,12 +644,19 @@ program
   .description('LLM completion for quick verification')
   .option('--prompt <prompt>', 'Prompt to send to LLM (required)')
   .option('--system <system>', 'System message for LLM (optional)')
+  .option('--record', 'Record LLM I/O to cassettes')
+  .option('--replay', 'Replay from cassettes (no network)')
+  .option('--cassette-dir <dir>', 'Cassette directory (default: artifacts/cassettes)')
   .action(async (options) => {
     if (!options.prompt) {
       console.error(chalk.red('❌ --prompt is required'));
       process.exit(1);
     }
-    await agentComplete(options.prompt, options.system);
+    await agentComplete(options.prompt, options.system, {
+      record: !!options.record,
+      replay: !!options.replay,
+      dir: options.cassetteDir
+    });
   });
 
 // CI commands
