@@ -36,6 +36,8 @@ jobs:
       
       - name: Verify
         run: node dist/cli.js verify
+        env:
+          AE_TYPES_STRICT: "1"
       
       - name: LLM replay smoke
         run: AE_RECORDER_MODE=replay node dist/cli.js agent:complete --prompt "Hello, ae!"
