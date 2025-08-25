@@ -7,6 +7,17 @@ export interface LLM {
   }): Promise<string>;
 }
 
+// Cache echo provider to avoid repeated imports
+let echoProviderPromise: Promise<{ default: LLM }> | null = null;
+
+async function fallbackToEcho(input: { system?: string; prompt: string; temperature?: number }): Promise<string> {
+  if (!echoProviderPromise) {
+    echoProviderPromise = import('./llm-echo.js');
+  }
+  const echoProvider = (await echoProviderPromise).default;
+  return await echoProvider.complete(input);
+}
+
 function withTimeout(llm: LLM, timeoutMs: number = 5000): LLM {
   return {
     name: llm.name,
@@ -20,14 +31,12 @@ function withTimeout(llm: LLM, timeoutMs: number = 5000): LLM {
       } catch (error) {
         if (error instanceof Error && error.message === 'LLM timeout') {
           console.warn(`[${llm.name}] Timed out after ${timeoutMs}ms, falling back to echo`);
-          const echoProvider = (await import('./llm-echo.js')).default;
-          return await echoProvider.complete(input);
+          return await fallbackToEcho(input);
         }
         
         // For other errors, also fallback to echo
         console.warn(`[${llm.name}] Failed with error, falling back to echo:`, error instanceof Error ? error.message : 'Unknown error');
-        const echoProvider = (await import('./llm-echo.js')).default;
-        return await echoProvider.complete(input);
+        return await fallbackToEcho(input);
       }
     }
   };

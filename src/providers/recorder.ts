@@ -3,6 +3,9 @@ import { readFile, writeFile, mkdir, access } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import * as path from 'node:path';
 
+// Cache echo provider to avoid repeated imports
+let echoProviderPromise: Promise<{ default: LLM }> | null = null;
+
 export function withRecorder(base: LLM, opts?: { dir?: string; replay?: boolean }) : LLM {
   const dir = opts?.dir ?? 'artifacts/cassettes';
   const replay = opts?.replay ?? false;
@@ -41,7 +44,7 @@ export function withRecorder(base: LLM, opts?: { dir?: string; replay?: boolean 
           return hit.output;
         } catch (error) {
           if (error && typeof error === 'object' && 'code' in error && (error as any).code === 'ENOENT') {
-            throw new Error(`Cassette not found: ${hashFile} or ${legacyFile}. Run with --record first.`);
+            throw new Error(`Cassette not found: ${file}. Run with --record first.`);
           } else if (error instanceof SyntaxError) {
             throw new Error(`Cassette file is invalid JSON.`);
           } else {
@@ -56,7 +59,10 @@ export function withRecorder(base: LLM, opts?: { dir?: string; replay?: boolean 
       } catch (error) {
         // If base provider fails (including timeout), use echo as fallback
         console.warn(`[recorder] Base provider failed, using echo fallback:`, error instanceof Error ? error.message : 'Unknown error');
-        const echoProvider = (await import('./llm-echo.js')).default;
+        if (!echoProviderPromise) {
+          echoProviderPromise = import('./llm-echo.js');
+        }
+        const echoProvider = (await echoProviderPromise).default;
         out = await echoProvider.complete(input);
       }
       
