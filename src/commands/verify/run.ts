@@ -201,6 +201,20 @@ export async function verifyRun(): Promise<Result<{ logs: string[]; duration: st
       console.log(`[ae][verify] Type Coverage: INFO (${errorMsg})`);
     }
 
+    // 7) API type snapshot check (non-blocking)
+    try {
+      if (await hasFile('pnpm-lock.yaml') || await hasFile('package-lock.json')) {
+        await softStep('API Type Check', 'pnpm', ['api:check']);
+      } else {
+        logs.push('## API Type Check\nℹ️  Skipped (no package manager lockfile found)');
+        console.log('[ae][verify] API Type Check: SKIPPED (no lockfile found)');
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logs.push(`## API Type Check\n⚠️  INFO: ${errorMsg}`);
+      console.log(`[ae][verify] API Type Check: INFO (${errorMsg})`);
+    }
+
   } catch (unexpectedError) {
     success = false;
     const errorMsg = unexpectedError instanceof Error ? unexpectedError.message : String(unexpectedError);
