@@ -7,22 +7,24 @@ interface PackageJson {
   [key: string]: any;
 }
 
-const VITEST_CONFIG_TEMPLATE = `import { defineConfig } from 'vitest/config';
+function generateVitestConfigTemplate(thresholds = { lines: 80, functions: 80, branches: 80, statements: 80 }) {
+  return `import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
     coverage: {
       provider: 'v8', // or 'c8'
       thresholds: {
-        lines: 80,
-        functions: 80,
-        branches: 80,
-        statements: 80,
+        lines: ${thresholds.lines},
+        functions: ${thresholds.functions},
+        branches: ${thresholds.branches},
+        statements: ${thresholds.statements},
       }
     }
   }
 });
 `;
+}
 
 function backupFile(filePath: string): void {
   if (fs.existsSync(filePath)) {
@@ -75,7 +77,22 @@ function updatePackageJson(): boolean {
   return true;
 }
 
-function createVitestConfig(): void {
+function generateVitestConfigSnippet(thresholds = { lines: 80, functions: 80, branches: 80, statements: 80 }) {
+  return `
+  test: {
+    coverage: {
+      provider: 'v8',
+      thresholds: {
+        lines: ${thresholds.lines},
+        functions: ${thresholds.functions}, 
+        branches: ${thresholds.branches},
+        statements: ${thresholds.statements},
+      }
+    }
+  }`;
+}
+
+function createVitestConfig(customThresholds?: { statements: number; branches: number; functions: number; lines: number }): void {
   const configPaths = [
     'vitest.config.ts',
     'vitest.config.js',
@@ -85,26 +102,17 @@ function createVitestConfig(): void {
   
   const existingConfig = configPaths.find(p => fs.existsSync(path.join(process.cwd(), p)));
   
+  const thresholds = customThresholds || { lines: 80, functions: 80, branches: 80, statements: 80 };
+
   if (existingConfig) {
     console.log(chalk.blue(`ℹ️  Existing config found: ${existingConfig}`));
     console.log(chalk.yellow('⚠️  Please manually add coverage thresholds to your existing config:'));
-    console.log(chalk.cyan(`
-  test: {
-    coverage: {
-      provider: 'v8',
-      thresholds: {
-        lines: 80,
-        functions: 80, 
-        branches: 80,
-        statements: 80,
-      }
-    }
-  }`));
+    console.log(chalk.cyan(generateVitestConfigSnippet(thresholds)));
     return;
   }
 
   const configPath = path.join(process.cwd(), 'vitest.config.ts');
-  fs.writeFileSync(configPath, VITEST_CONFIG_TEMPLATE);
+  fs.writeFileSync(configPath, generateVitestConfigTemplate(thresholds));
   console.log(chalk.green('✅ Created vitest.config.ts with coverage thresholds'));
 }
 
@@ -131,14 +139,14 @@ function updatePreCommitHook(): void {
   console.log(chalk.green('✅ Added TDD guard to pre-commit hook'));
 }
 
-export async function adaptVitest() {
+export async function adaptVitest(thresholds?: { statements: number; branches: number; functions: number; lines: number }) {
   console.log(chalk.blue('🔧 Adapting project for Vitest with ae-framework integration\n'));
 
   try {
     const success = updatePackageJson();
     if (!success) return;
 
-    createVitestConfig();
+    createVitestConfig(thresholds);
     updatePreCommitHook();
 
     console.log(chalk.cyan('\n📋 Vitest Adaptation Summary:'));

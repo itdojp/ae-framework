@@ -24,7 +24,12 @@ function backupFile(filePath: string): void {
   }
 }
 
-function updatePackageJson(): boolean {
+function shellEscapeForSingleQuotes(str: string): string {
+  // For single-quoted strings in shell, we need to replace single quotes with '\''
+  return str.replace(/'/g, "'\\''");
+}
+
+function updatePackageJson(customThresholds?: { statements: number; branches: number; functions: number; lines: number }): boolean {
   const packageJsonPath = path.join(process.cwd(), 'package.json');
   
   if (!fs.existsSync(packageJsonPath)) {
@@ -43,16 +48,25 @@ function updatePackageJson(): boolean {
     packageJson.scripts = {};
   }
 
+  const thresholdConfig = customThresholds ? {
+    global: {
+      branches: customThresholds.branches,
+      functions: customThresholds.functions,
+      lines: customThresholds.lines,
+      statements: customThresholds.statements
+    }
+  } : DEFAULT_COVERAGE_THRESHOLD;
+
   if (!packageJson.scripts.test) {
     const seedCmd = process.env.AE_SEED ? `AE_SEED=${process.env.AE_SEED} ` : '';
-    const thresholdJson = JSON.stringify(DEFAULT_COVERAGE_THRESHOLD).replace(/"/g, '\\"');
+    const thresholdJson = shellEscapeForSingleQuotes(JSON.stringify(thresholdConfig));
     packageJson.scripts.test = `${seedCmd}jest --coverage --coverageThreshold='${thresholdJson}'`;
     modified = true;
     console.log(chalk.green('✅ Added test script with coverage thresholds'));
   } else if (!packageJson.scripts.test.includes('coverageThreshold')) {
     // Update existing test script to include coverage threshold
     const currentTest = packageJson.scripts.test;
-    const thresholdJson = JSON.stringify(DEFAULT_COVERAGE_THRESHOLD).replace(/"/g, '\\"');
+    const thresholdJson = shellEscapeForSingleQuotes(JSON.stringify(thresholdConfig));
     
     if (currentTest.includes('jest')) {
       packageJson.scripts.test = `${currentTest} --coverage --coverageThreshold='${thresholdJson}'`;
@@ -95,11 +109,11 @@ function updatePreCommitHook(): void {
   console.log(chalk.green('✅ Added TDD guard to pre-commit hook'));
 }
 
-export async function adaptJest() {
+export async function adaptJest(thresholds?: { statements: number; branches: number; functions: number; lines: number }) {
   console.log(chalk.blue('🔧 Adapting project for Jest with ae-framework integration\n'));
 
   try {
-    const success = updatePackageJson();
+    const success = updatePackageJson(thresholds);
     if (!success) return;
 
     updatePreCommitHook();

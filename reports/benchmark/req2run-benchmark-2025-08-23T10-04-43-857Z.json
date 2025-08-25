@@ -1,0 +1,188 @@
+{
+  "metadata": {
+    "timestamp": "2025-08-23T10:04:43.858Z",
+    "totalProblems": 3,
+    "successfulRuns": 0,
+    "failedRuns": 3,
+    "averageScore": 0,
+    "totalExecutionTime": 11,
+    "framework": "AE Framework v1.0.0",
+    "benchmarkVersion": "req2run-benchmark"
+  },
+  "configuration": {
+    "req2runRepository": "https://github.com/itdojp/req2run-benchmark.git",
+    "problems": [
+      {
+        "id": "web-api-basic-001",
+        "enabled": true,
+        "timeoutMs": 300000,
+        "retries": 1,
+        "category": "web-api",
+        "difficulty": "basic"
+      },
+      {
+        "id": "cli-tool-basic-001",
+        "enabled": true,
+        "timeoutMs": 180000,
+        "retries": 1,
+        "category": "cli-tool",
+        "difficulty": "basic"
+      },
+      {
+        "id": "data-processing-basic-001",
+        "enabled": true,
+        "timeoutMs": 240000,
+        "retries": 1,
+        "category": "data-processing",
+        "difficulty": "basic"
+      }
+    ],
+    "execution": {
+      "parallel": false,
+      "maxConcurrency": 1,
+      "resourceLimits": {
+        "maxMemoryMB": 4096,
+        "maxCpuPercent": 80,
+        "maxDiskMB": 10240,
+        "maxExecutionTimeMs": 3600000
+      },
+      "environment": "development",
+      "docker": {
+        "enabled": false,
+        "image": "node:18-alpine",
+        "volumes": [
+          "/tmp:/tmp"
+        ],
+        "ports": [
+          3000,
+          8080
+        ]
+      }
+    },
+    "evaluation": {
+      "weights": {
+        "functional": 0.35,
+        "performance": 0.15,
+        "quality": 0.2,
+        "security": 0.15,
+        "testing": 0.15
+      },
+      "thresholds": {
+        "minOverallScore": 60,
+        "minFunctionalCoverage": 70,
+        "maxResponseTime": 2000,
+        "minCodeQuality": 75,
+        "maxVulnerabilities": 5
+      },
+      "scoring": {
+        "algorithm": "weighted-average",
+        "penalties": {
+          "timeoutPenalty": 0.5,
+          "errorPenalty": 0.3,
+          "qualityPenalty": 0.2
+        },
+        "bonuses": {
+          "performanceBonus": 0.1,
+          "qualityBonus": 0.1,
+          "securityBonus": 0.05
+        }
+      }
+    },
+    "reporting": {
+      "formats": [
+        "json",
+        "html",
+        "markdown"
+      ],
+      "destinations": [
+        {
+          "type": "file",
+          "config": {
+            "directory": "./reports/benchmark",
+            "filename": "req2run-benchmark-{timestamp}.{format}"
+          }
+        },
+        {
+          "type": "github",
+          "config": {
+            "repository": "itdojp/ae-framework",
+            "issueOnFailure": true,
+            "commentOnPR": true
+          }
+        }
+      ],
+      "dashboard": {
+        "enabled": true,
+        "port": 3001,
+        "refreshInterval": 30000,
+        "charts": [
+          {
+            "type": "line",
+            "metrics": [
+              "overallScore",
+              "functionalCoverage"
+            ],
+            "title": "Performance Trends"
+          },
+          {
+            "type": "bar",
+            "metrics": [
+              "performance.responseTime",
+              "performance.memoryUsage"
+            ],
+            "title": "Resource Usage"
+          },
+          {
+            "type": "pie",
+            "metrics": [
+              "security.vulnerabilityCount"
+            ],
+            "title": "Security Issues"
+          },
+          {
+            "type": "radar",
+            "metrics": [
+              "functionalCoverage",
+              "codeQuality.maintainabilityIndex",
+              "security.securityScore",
+              "performance.throughput"
+            ],
+            "title": "Overall Quality Radar"
+          }
+        ]
+      }
+    }
+  },
+  "results": [
+    {
+      "problemId": "web-api-basic-001",
+      "success": false,
+      "score": 0,
+      "executionTime": 7,
+      "phases": [],
+      "errors": [
+        "Failed to load problem spec for web-api-basic-001: Problem specification not found for web-api-basic-001"
+      ]
+    },
+    {
+      "problemId": "cli-tool-basic-001",
+      "success": false,
+      "score": 0,
+      "executionTime": 2,
+      "phases": [],
+      "errors": [
+        "Failed to load problem spec for cli-tool-basic-001: Problem specification not found for cli-tool-basic-001"
+      ]
+    },
+    {
+      "problemId": "data-processing-basic-001",
+      "success": false,
+      "score": 0,
+      "executionTime": 2,
+      "phases": [],
+      "errors": [
+        "Failed to load problem spec for data-processing-basic-001: Problem specification not found for data-processing-basic-001"
+      ]
+    }
+  ]
+}
