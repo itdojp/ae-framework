@@ -5,7 +5,7 @@
   "private": false,
   "type": "module",
   "bin": {
-    "ae": "./dist/cli.js",
+    "ae": "./dist/src/cli.js",
     "ae-framework": "./dist/cli/index.js",
     "ae-phase": "./dist/cli/phase-cli.js",
     "ae-approve": "./dist/cli/approval-cli.js",

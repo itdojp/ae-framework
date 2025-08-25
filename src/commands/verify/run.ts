@@ -1,14 +1,44 @@
 import { execa } from 'execa';
-import { writeFile, mkdir } from 'node:fs/promises';
-import { access, constants } from 'node:fs/promises';
-import which from 'which';
+import { writeFile, mkdir, access, constants } from 'node:fs/promises';
+import { exec } from 'node:child_process';
+import { promisify } from 'node:util';
+import path from 'node:path';
+
+const execAsync = promisify(exec);
 
 async function hasBin(bin: string): Promise<boolean> {
-  try { 
-    await which(bin); 
-    return true; 
-  } catch { 
-    return false; 
+  // a) Check node_modules/.bin/<bin>
+  try {
+    await access(path.join('node_modules', '.bin', bin), constants.F_OK);
+    return true;
+  } catch {
+    // Continue to next check
+  }
+
+  // b) Check PATH environment variable
+  const pathEnv = process.env.PATH || '';
+  const pathSeparator = process.platform === 'win32' ? ';' : ':';
+  const paths = pathEnv.split(pathSeparator);
+  
+  for (const binPath of paths) {
+    if (!binPath) continue;
+    try {
+      const binFile = process.platform === 'win32' 
+        ? path.join(binPath, `${bin}.exe`)
+        : path.join(binPath, bin);
+      await access(binFile, constants.F_OK);
+      return true;
+    } catch {
+      // Continue to next path
+    }
+  }
+
+  // c) Try command -v as last resort
+  try {
+    await execAsync(`command -v ${bin}`);
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -31,62 +61,99 @@ export async function verifyRun() {
 
   async function step(name: string, cmd: string, args: string[], env?: Record<string, string>) {
     logs.push(`## ${name}\n\`\`\`bash\n${[cmd, ...args].join(' ')}\n\`\`\``);
-    console.log(`[ae] Running ${name}...`);
+    console.log(`[ae][verify] ${name} start`);
     
-    const r = await execa(cmd, args, { 
-      reject: false, 
-      stdio: 'inherit', 
-      env: env ? { ...process.env, ...env } : process.env 
-    });
-    
-    if (r.exitCode !== 0) { 
-      ok = false; 
-      logs.push(`❌ ${name}: FAILED (exit ${r.exitCode})`);
-      console.log(`[ae] ${name}: FAILED`);
-    } else { 
-      logs.push(`✅ ${name}: OK`);
-      console.log(`[ae] ${name}: OK`);
+    try {
+      const r = await execa(cmd, args, { 
+        reject: false, 
+        stdio: 'inherit', 
+        env: env ? { ...process.env, ...env } : process.env 
+      });
+      
+      if (r.exitCode !== 0) { 
+        ok = false; 
+        logs.push(`❌ ${name}: FAILED (exit ${r.exitCode})`);
+        console.log(`[ae][verify] ${name}: FAILED`);
+      } else { 
+        logs.push(`✅ ${name}: OK`);
+        console.log(`[ae][verify] ${name}: OK`);
+      }
+    } catch (error) {
+      ok = false;
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logs.push(`❌ ${name}: FAILED (error: ${errorMsg})`);
+      console.log(`[ae][verify] ${name}: FAILED (error: ${errorMsg})`);
     }
   }
 
-  // 1) TypeScript type check
-  if (await hasBin('tsc')) {
-    await step('TypeScript Types', 'tsc', ['--noEmit']);
-  } else {
-    logs.push('## TypeScript Types\nℹ️  Skipped (tsc not available)');
-    console.log('[ae] TypeScript Types: SKIPPED (tsc not available)');
-  }
+  try {
+    // 1) TypeScript type check
+    try {
+      if (await hasBin('tsc')) {
+        await step('TypeScript Types', 'tsc', ['--noEmit']);
+      } else {
+        logs.push('## TypeScript Types\nℹ️  Skipped (tsc not available)');
+        console.log('[ae][verify] TypeScript Types: SKIPPED (tsc not available)');
+      }
+    } catch (error) {
+      ok = false;
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logs.push(`## TypeScript Types\n❌ FAILED (error: ${errorMsg})`);
+      console.log(`[ae][verify] TypeScript Types: FAILED (error: ${errorMsg})`);
+    }
 
-  // 2) ESLint
-  if (await hasBin('eslint')) {
-    await step('ESLint', 'eslint', ['.']);
-  } else {
-    logs.push('## ESLint\nℹ️  Skipped (eslint not available)');
-    console.log('[ae] ESLint: SKIPPED (eslint not available)');
-  }
+    // 2) ESLint
+    try {
+      if (await hasBin('eslint')) {
+        await step('ESLint', 'eslint', ['.']);
+      } else {
+        logs.push('## ESLint\nℹ️  Skipped (eslint not available)');
+        console.log('[ae][verify] ESLint: SKIPPED (eslint not available)');
+      }
+    } catch (error) {
+      ok = false;
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logs.push(`## ESLint\n❌ FAILED (error: ${errorMsg})`);
+      console.log(`[ae][verify] ESLint: FAILED (error: ${errorMsg})`);
+    }
 
-  // 3) QA metrics
-  if (await hasFile('dist/cli.js')) {
-    await step('QA Metrics', 'node', ['dist/cli.js', 'qa']);
-  } else {
-    logs.push('## QA Metrics\nℹ️  Skipped (ae CLI not built)');
-    console.log('[ae] QA Metrics: SKIPPED (ae CLI not built)');
-  }
+    // 3) QA metrics
+    try {
+      if (await hasFile('dist/cli.js')) {
+        await step('QA Metrics', 'node', ['dist/cli.js', 'qa']);
+      } else {
+        logs.push('## QA Metrics\nℹ️  Skipped (ae CLI not built)');
+        console.log('[ae][verify] QA Metrics: SKIPPED (ae CLI not built)');
+      }
+    } catch (error) {
+      ok = false;
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logs.push(`## QA Metrics\n❌ FAILED (error: ${errorMsg})`);
+      console.log(`[ae][verify] QA Metrics: FAILED (error: ${errorMsg})`);
+    }
 
-  // 4) Benchmarks (with deterministic seed)
-  if (await hasFile('dist/cli.js')) {
-    await step('Benchmarks', 'node', ['dist/cli.js', 'bench'], { AE_SEED: '123' });
-  } else {
-    logs.push('## Benchmarks\nℹ️  Skipped (ae CLI not built)');
-    console.log('[ae] Benchmarks: SKIPPED (ae CLI not built)');
-  }
+    // 4) Benchmarks (with deterministic seed)
+    try {
+      if (await hasFile('dist/cli.js')) {
+        await step('Benchmarks', 'node', ['dist/cli.js', 'bench'], { AE_SEED: '123' });
+      } else {
+        logs.push('## Benchmarks\nℹ️  Skipped (ae CLI not built)');
+        console.log('[ae][verify] Benchmarks: SKIPPED (ae CLI not built)');
+      }
+    } catch (error) {
+      ok = false;
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logs.push(`## Benchmarks\n❌ FAILED (error: ${errorMsg})`);
+      console.log(`[ae][verify] Benchmarks: FAILED (error: ${errorMsg})`);
+    }
 
-  const endTime = new Date();
-  const duration = ((endTime.getTime() - startTime.getTime()) / 1000).toFixed(1);
+  } finally {
+    const endTime = new Date();
+    const duration = ((endTime.getTime() - startTime.getTime()) / 1000).toFixed(1);
 
-  const summary = ok ? '✅ All verification steps passed' : '❌ Some verification steps failed';
-  
-  const report = `# Verification Report
+    const summary = ok ? '✅ All verification steps passed' : '❌ Some verification steps failed';
+    
+    const report = `# Verification Report
 
 Generated: ${startTime.toISOString()}
 Duration: ${duration}s
@@ -98,9 +165,15 @@ ${logs.join('\n\n')}
 *Generated by ae-framework verification pipeline*
 `;
 
-  await writeFile('artifacts/verify.md', report);
-  console.log(`[ae] Verification report generated -> artifacts/verify.md`);
-  console.log(`[ae] Verification ${ok ? 'PASSED' : 'FAILED'} (${duration}s)`);
+    try {
+      await writeFile('artifacts/verify.md', report);
+      console.log(`[ae][verify] Verification report generated -> artifacts/verify.md`);
+    } catch (error) {
+      console.error(`[ae][verify] Failed to write report: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    
+    console.log(`[ae][verify] Verification ${ok ? 'PASSED' : 'FAILED'} (${duration}s)`);
+  }
   
   process.exit(ok ? 0 : 1);
 }
