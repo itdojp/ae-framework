@@ -1,0 +1,30 @@
+name: ae-ci
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  qa-bench:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Use pnpm if available
+        run: |
+          if [ -f pnpm-lock.yaml ]; then npm i -g pnpm && echo "PM=pnpm" >> $GITHUB_ENV; else echo "PM=npm" >> $GITHUB_ENV; fi
+      - name: Install
+        run: ${{ env.PM }} install
+      - name: Build
+        run: ${{ env.PM }} run build
+      - name: QA
+        run: node dist/cli.js qa
+      - name: Bench (seeded)
+        run: AE_SEED=123 node dist/cli.js bench
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ae-artifacts
+          path: artifacts/
