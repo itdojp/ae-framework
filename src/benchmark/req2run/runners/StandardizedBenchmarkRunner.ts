@@ -396,12 +396,14 @@ export class StandardizedBenchmarkRunner {
         success: phase.success,
         outputQuality: phase.success ? 85 : 0,
         resourceUsage: {
-          cpuUsage: 0,
-          memoryUsage: 0,
-          diskUsage: 0,
-          networkUsage: 0
+          maxMemoryUsage: 0,
+          avgCpuUsage: 0,
+          diskIO: 0,
+          networkIO: 0,
+          buildTime: 0,
+          deploymentTime: 0
         },
-        errors: phase.errors
+        errors: phase.errors?.map(err => err.message) || []
       }))
     };
   }
@@ -540,7 +542,8 @@ export class StandardizedBenchmarkRunner {
       if (typeof req === 'string') {
         content += `- HIGH: ${req}\n`;
       } else {
-        content += `- ${req.priority?.toUpperCase() || 'HIGH'}: ${req.description}\n`;
+        const reqObj = req as any;
+        content += `- ${reqObj.priority?.toUpperCase() || 'HIGH'}: ${reqObj.description}\n`;
       }
     });
 
@@ -689,7 +692,7 @@ Generated on: ${new Date().toISOString()}
   private assessFunctionalCoverage(output: any, spec: RequirementSpec): number {
     // Assess how well the generated output covers the functional requirements
     const totalRequirements = spec.requirements.filter(r => 
-      typeof r === 'string' || r.type === 'functional'
+      typeof r === 'string' || (r as any).type === 'functional'
     ).length;
     if (totalRequirements === 0) return 100;
 

@@ -25,6 +25,8 @@ export interface RequirementSpec {
     difficulty: string;
     estimated_time?: number;
     version?: string;
+    benchmark_source?: string;
+    problem_id?: string;
   };
 }
 
@@ -93,14 +95,6 @@ export interface PhaseMetrics {
   outputQuality: number;             // 出力品質 (0-100)
   resourceUsage: ResourceMetrics;
   errors?: string[];
-}
-
-export interface ExecutionLog {
-  timestamp: string;
-  level: 'info' | 'warn' | 'error' | 'debug';
-  message: string;
-  phase?: string;
-  context?: any;
 }
 
 export interface ExecutionDetails {
@@ -238,6 +232,7 @@ export interface ResourceLimits {
   maxCpuPercent: number;
   maxDiskMB: number;
   maxExecutionTimeMs: number;
+  maxNetworkMbps?: number;
 }
 
 export interface DockerConfig {
@@ -248,10 +243,12 @@ export interface DockerConfig {
 }
 
 export interface EvaluationConfig {
-  weights: MetricWeights;
-  thresholds: MetricThresholds;
-  scoring: ScoringConfig;
+  weights?: MetricWeights;
+  thresholds?: MetricThresholds;
+  scoring?: ScoringConfig;
   includeSecurityAnalysis?: boolean;
+  includeCodeQualityMetrics?: boolean;
+  generateArtifacts?: boolean;
 }
 
 export interface MetricWeights {
@@ -310,8 +307,9 @@ export interface ReportDestination {
 export interface DashboardConfig {
   enabled: boolean;
   port: number;
-  refreshInterval: number;
-  charts: ChartConfig[];
+  host?: string;
+  refreshInterval?: number;
+  charts?: ChartConfig[];
 }
 
 export interface ChartConfig {
@@ -339,11 +337,11 @@ export interface ExecutionEnvironment {
 }
 
 export interface ExecutionLog {
-  timestamp: Date;
+  timestamp: string;
   level: 'debug' | 'info' | 'warn' | 'error';
-  phase: AEFrameworkPhase;
+  phase?: string;
   message: string;
-  data?: any;
+  context?: any;
 }
 
 export interface DocumentationArtifact {
