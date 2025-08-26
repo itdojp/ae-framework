@@ -91,7 +91,8 @@ Design a dedicated adapter that maps CodeX TODO/Plan/Tool calls to ae-framework 
 
 ### Current skeleton and behavior
 - File: `src/agents/codex-task-adapter.ts`
-- Phase routing: intent/formal/stories/validation/modeling → delegates to existing adapters
+- Phase routing: intent/stories/validation/modeling → delegates to existing adapters
+- Formal: delegates to `FormalAgent` (`tla+` generation + validation summary)
 - UI: uses `UIScaffoldGenerator` if `context.phaseState.entities` is provided; otherwise returns recommendations
 
 ## Operational Considerations
@@ -106,3 +107,32 @@ Design a dedicated adapter that maps CodeX TODO/Plan/Tool calls to ae-framework 
 1) PoC: CodeX can run `verify` (and optional `ui-scaffold`) via CLI and produce artifacts.
 2) MCP: CodeX connects to intent/test/verify MCP servers and exchanges results.
 3) Adapter (optional): Phases can be orchestrated from CodeX plans with clear progress and results.
+
+## End-to-End Walkthrough (CLI/MCP)
+
+1. Build the framework
+```bash
+pnpm run build
+```
+
+2. Run quick PoC from CodeX task (produces artifacts summary)
+```bash
+pnpm run codex:quickstart
+# Or enable Phase 6 demo: CODEX_RUN_UI=1 pnpm run codex:quickstart
+```
+
+3. Start MCP servers and connect from CodeX (example)
+```bash
+pnpm run codex:mcp:intent &
+pnpm run codex:mcp:verify &
+# Configure CodeX MCP client to connect via stdio to the above
+```
+
+4. UI generation (Phase 6)
+```bash
+# Use minimal sample
+cat samples/phase-state.example.json | jq .
+
+# CLI scaffold
+node dist/src/cli/index.js ui-scaffold --components
+```
