@@ -34,6 +34,7 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
             // Derive OpenAPI as a convenience artifact
             let openapiPath = '';
             let tlaPath = '';
+            let mcPath = '';
             try {
               // write TLA+ spec content
               const outDir = path.join(process.cwd(), 'artifacts', 'codex');
@@ -44,6 +45,13 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
               const openapi = await formal.createAPISpecification(reqText, 'openapi', { includeExamples: true, generateContracts: true });
               openapiPath = path.join(outDir, 'openapi.yaml');
               fs.writeFileSync(openapiPath, openapi.content, 'utf8');
+
+              // Model checking (best-effort)
+              try {
+                const mc = await formal.runModelChecking(spec, []);
+                mcPath = path.join(outDir, 'model-check.json');
+                fs.writeFileSync(mcPath, JSON.stringify(mc, null, 2), 'utf8');
+              } catch {}
             } catch {}
             return writeAndReturn(phase, {
               summary: `Formal spec generated: ${spec.type.toUpperCase()} (${spec.validation.status})`,
@@ -51,7 +59,8 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
               recommendations: [
                 'Validate properties',
                 tlaPath ? `Review TLA+: ${path.relative(process.cwd(), tlaPath)}` : 'TLA+ content available in response',
-                openapiPath ? `Review OpenAPI: ${path.relative(process.cwd(), openapiPath)}` : 'Consider API spec generation if needed'
+                openapiPath ? `Review OpenAPI: ${path.relative(process.cwd(), openapiPath)}` : 'Consider API spec generation if needed',
+                mcPath ? `Check model checking: ${path.relative(process.cwd(), mcPath)}` : 'Model checking unavailable'
               ],
               nextActions: ['Proceed to tests generation', 'Run model checking'],
               warnings: spec.validation.warnings?.map(w => w.message) || [],

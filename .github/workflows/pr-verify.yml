@@ -65,6 +65,30 @@ jobs:
         with:
           name: codex-openapi
           path: artifacts/codex/openapi.yaml
+
+      - name: Upload model checking (if generated)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: codex-model-check
+          path: artifacts/codex/model-check.json
+      - name: Show model checking summary (if present)
+        if: always()
+        run: |
+          if [ -f artifacts/codex/model-check.json ]; then
+            node -e "const mc=require('./artifacts/codex/model-check.json'); console.log('Properties:', mc.properties?.length||0); const unsat=(mc.properties||[]).filter(p=>p && p.satisfied===false).length; console.log('Unsatisfied:', unsat);"
+          else
+            echo 'No model-check.json found.'
+          fi
+      - name: Show UI summary (if present)
+        if: always()
+        run: |
+          if [ -f artifacts/codex/ui-summary.json ]; then
+            node -e "const s=require('./artifacts/codex/ui-summary.json'); console.log('UI Entities:', s.okEntities,'/',s.totalEntities,'Files:', (s.files||[]).length, 'Dry-run:', !!s.dryRun);"
+          else
+            echo 'No ui-summary.json found.'
+          fi
+
           path: artifacts/codex/*.json
           path: artifacts/codex-quickstart-summary.md
       - name: Show CodeX summary (head)
