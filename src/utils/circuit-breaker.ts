@@ -433,7 +433,11 @@ class CircuitBreakerManager extends EventEmitter {
       breaker.on('circuitClosed', (event) => this.emit('circuitClosed', event));
     }
     
-    return this.breakers.get(name)!;
+    const breaker = this.breakers.get(name);
+    if (!breaker) {
+      throw new Error(`CircuitBreaker for "${name}" was not found after creation.`);
+    }
+    return breaker;
   }
 
   getAllBreakers(): CircuitBreaker[] {
