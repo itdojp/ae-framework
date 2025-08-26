@@ -24,6 +24,7 @@ export interface RequirementSpec {
     category: string;
     difficulty: string;
     estimated_time?: number;
+    version?: string;
   };
 }
 
@@ -92,6 +93,14 @@ export interface PhaseMetrics {
   outputQuality: number;             // 出力品質 (0-100)
   resourceUsage: ResourceMetrics;
   errors?: string[];
+}
+
+export interface ExecutionLog {
+  timestamp: string;
+  level: 'info' | 'warn' | 'error' | 'debug';
+  message: string;
+  phase?: string;
+  context?: any;
 }
 
 export interface ExecutionDetails {
@@ -220,6 +229,8 @@ export interface ExecutionConfig {
   resourceLimits: ResourceLimits;
   environment: string;
   docker: DockerConfig;
+  retryOnFailure?: boolean;
+  timeout?: number;
 }
 
 export interface ResourceLimits {
@@ -240,6 +251,7 @@ export interface EvaluationConfig {
   weights: MetricWeights;
   thresholds: MetricThresholds;
   scoring: ScoringConfig;
+  includeSecurityAnalysis?: boolean;
 }
 
 export interface MetricWeights {

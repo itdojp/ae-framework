@@ -150,7 +150,9 @@ export function createCodegenCommand(): Command {
         console.log(chalk.blue('👀 Starting watch mode...'));
         console.log(chalk.yellow('  Press Ctrl+C to stop'));
         
-        const { watch } = await import('chokidar');
+        // const { watch } = await import('chokidar');
+        console.log('Watch mode not available - chokidar not installed');
+        return;
         
         let timeout: NodeJS.Timeout;
         const debounceMs = parseInt(options.debounce);
