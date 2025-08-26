@@ -33,7 +33,9 @@ export class InventoryServiceImpl implements InventoryService {
 
     return {
       id: 'generated-id',
-      ...reservation,
+      orderId: reservation.orderId || 'generated-order-id',
+      itemId: reservation.itemId,
+      quantity: reservation.quantity,
       createdAt: new Date(),
       status: 'confirmed'
     };
