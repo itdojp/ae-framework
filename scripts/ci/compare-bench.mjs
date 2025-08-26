@@ -29,18 +29,18 @@ function validateSummaryItem(item, filePath, index) {
     errors.push(`item at index ${index} is not an object`);
   } else {
     if (typeof item.name !== 'string') {
-      errors.push(`item at index ${index} missing 'name' (string)`);
+      errors.push(`item at index ${index} missing required field 'name' (string)`);
     }
     if (typeof item.meanMs !== 'number') {
-      errors.push(`item at index ${index} missing 'meanMs' (number)`);
+      errors.push(`item at index ${index} missing required field 'meanMs' (number) - check bench output schema`);
     }
     if (typeof item.hz !== 'number') {
-      errors.push(`item at index ${index} missing 'hz' (number)`);
+      errors.push(`item at index ${index} missing required field 'hz' (number) - check bench output schema`);
     }
   }
   
   if (errors.length > 0) {
-    throw new Error(`Invalid summary format in "${filePath}": ${errors.join(', ')}`);
+    throw new Error(`❌ Bench schema validation failed in "${filePath}":\n  ${errors.join('\n  ')}\n\nExpected format: {"summary":[{"name":string,"meanMs":number,"hz":number}],"meta":{...}}`);
   }
 }
 
