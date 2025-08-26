@@ -43,6 +43,12 @@ jobs:
         if: always()
         with:
           name: codex-json-artifacts
+      - name: Upload OpenAPI (if generated)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: codex-openapi
+          path: artifacts/codex/openapi.yaml
           path: artifacts/codex/*.json
           path: artifacts/codex-quickstart-summary.md
       - name: Show CodeX summary (head)

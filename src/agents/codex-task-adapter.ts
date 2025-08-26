@@ -31,10 +31,22 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
           case 'formal': {
             const reqText = request.prompt || request.description || '';
             const spec = await formal.generateFormalSpecification(reqText, 'tla+');
+            // Derive OpenAPI as a convenience artifact
+            let openapiPath = '';
+            try {
+              const openapi = await formal.createAPISpecification(reqText, 'openapi', { includeExamples: true, generateContracts: true });
+              const outDir = path.join(process.cwd(), 'artifacts', 'codex');
+              fs.mkdirSync(outDir, { recursive: true });
+              openapiPath = path.join(outDir, 'openapi.yaml');
+              fs.writeFileSync(openapiPath, openapi.content, 'utf8');
+            } catch {}
             return writeAndReturn(phase, {
               summary: `Formal spec generated: ${spec.type.toUpperCase()} (${spec.validation.status})`,
               analysis: spec.content.slice(0, 1200),
-              recommendations: ['Validate properties', 'Consider API spec generation if needed'],
+              recommendations: [
+                'Validate properties',
+                openapiPath ? `Review OpenAPI: ${path.relative(process.cwd(), openapiPath)}` : 'Consider API spec generation if needed'
+              ],
               nextActions: ['Proceed to tests generation', 'Run model checking'],
               warnings: spec.validation.warnings?.map(w => w.message) || [],
               shouldBlockProgress: spec.validation.status === 'invalid',

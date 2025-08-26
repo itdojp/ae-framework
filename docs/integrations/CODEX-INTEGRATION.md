@@ -152,3 +152,9 @@ When the CodeX adapter runs phases, it writes JSON summaries to `artifacts/codex
 - Each file contains `{ phase, response, ts }` for downstream tooling.
 
 In CI (`pr-verify.yml`), these are uploaded as an artifact named `codex-json-artifacts`.
+
+Additionally, when running the formal phase, the adapter derives an OpenAPI specification and writes it to:
+
+- `artifacts/codex/openapi.yaml`
+
+This file is also uploaded in CI as `codex-openapi` if present.
