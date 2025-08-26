@@ -1,0 +1,9 @@
+{
+  "specification": "spec_1234567890",
+  "properties": [
+    { "name": "Safety", "satisfied": true, "description": "No invalid states reachable" },
+    { "name": "Liveness", "satisfied": false, "description": "Requests eventually served", "counterExample": { "trace": [], "description": "Potential starvation" } }
+  ],
+  "counterExamples": [ { "trace": [], "description": "Potential starvation" } ],
+  "statistics": { "statesExplored": 1200, "timeElapsed": 3500, "memoryUsed": 102400 }
+}

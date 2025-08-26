@@ -180,3 +180,13 @@ Windows/WSL notes (quickstart formal/UI)
 - Ensure `pnpm run build` is executed so that `dist/` exists (quickstart loads from `dist`)
 - Prefer WSL for consistent `cwd` and path behavior; if using Windows paths, avoid spaces
 - Use Corepack: `corepack enable` to manage pnpm; run the quickstart from repository root
+
+One-liner examples:
+- PowerShell:
+```powershell
+$env:CODEX_RUN_FORMAL="1"; pnpm run build; pnpm run codex:quickstart
+```
+- cmd.exe:
+```bat
+set CODEX_RUN_FORMAL=1 && pnpm run build && pnpm run codex:quickstart
+```

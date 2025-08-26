@@ -1,0 +1,15 @@
+{
+  "phase": "intent",
+  "response": {
+    "summary": "Intent Analysis Complete - 12 requirements identified",
+    "analysis": "# Requirements Analysis Report\n...",
+    "recommendations": [
+      "Review identified requirements for completeness",
+      "Proceed to formal specification (Phase 2)"
+    ],
+    "nextActions": ["Validate stakeholder concerns coverage", "Create domain model from requirements"],
+    "warnings": [],
+    "shouldBlockProgress": false
+  },
+  "ts": "2025-01-01T00:00:00.000Z"
+}
