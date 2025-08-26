@@ -200,29 +200,29 @@ ae-framework circuit-breaker force-open -n "api-service"
 ae-framework circuit-breaker force-close -n "api-service"
 ```
 
-### NPM Scripts
+### Scripts
 
 ```bash
 # Create circuit breaker
-npm run circuit-breaker:create -- -n "my-service" -f 5
+pnpm run circuit-breaker:create -- -n "my-service" -f 5
 
 # List all circuit breakers
-npm run circuit-breaker:list
+pnpm run circuit-breaker:list
 
 # Show statistics
-npm run circuit-breaker:stats -- -n "my-service"
+pnpm run circuit-breaker:stats -- -n "my-service"
 
 # Health report
-npm run circuit-breaker:health
+pnpm run circuit-breaker:health
 
 # Test circuit breaker
-npm run circuit-breaker:test -- -n "my-service" -o 20 -f 0.4
+pnpm run circuit-breaker:test -- -n "my-service" -o 20 -f 0.4
 
 # Watch state changes
-npm run circuit-breaker:watch
+pnpm run circuit-breaker:watch
 
 # Reset circuit breaker
-npm run circuit-breaker:reset -- -n "my-service"
+pnpm run circuit-breaker:reset -- -n "my-service"
 ```
 
 ## Configuration Options

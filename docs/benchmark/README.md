@@ -28,10 +28,10 @@ The benchmark system is integrated into AE Framework:
 
 ```bash
 # Install AE Framework with benchmark capabilities
-npm install ae-framework
+pnpm add ae-framework
 
 # Or build from source
-npm run build:cli
+pnpm run build:cli
 ```
 
 #### Basic Usage
@@ -53,20 +53,20 @@ ae-benchmark init --output benchmark-config.json
 ae-benchmark run --config benchmark-config.json
 ```
 
-#### NPM Scripts
+#### Scripts
 
 ```bash
 # Quick benchmark execution
-npm run benchmark:basic
+pnpm run benchmark:basic
 
 # CI-optimized run
-npm run benchmark:ci
+pnpm run benchmark:ci
 
 # List problems
-npm run benchmark:list
+pnpm run benchmark:list
 
 # Generate config
-npm run benchmark:init
+pnpm run benchmark:init
 ```
 
 ### Configuration
@@ -253,8 +253,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-      - run: npm ci
-      - run: npm run benchmark:ci
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run benchmark:ci
       - uses: actions/upload-artifact@v4
         with:
           name: benchmark-results
@@ -375,10 +375,10 @@ AE Frameworkベンチマーク統合は、[Req2Run-Benchmark](https://github.com
 
 ```bash
 # ベンチマーク機能付きAE Frameworkをインストール
-npm install ae-framework
+pnpm add ae-framework
 
 # またはソースからビルド
-npm run build:cli
+pnpm run build:cli
 ```
 
 #### 基本的な使用方法
@@ -404,16 +404,16 @@ ae-benchmark run --config benchmark-config.json
 
 ```bash
 # クイックベンチマーク実行
-npm run benchmark:basic
+pnpm run benchmark:basic
 
 # CI最適化実行
-npm run benchmark:ci
+pnpm run benchmark:ci
 
 # 問題リスト
-npm run benchmark:list
+pnpm run benchmark:list
 
 # 設定生成
-npm run benchmark:init
+pnpm run benchmark:init
 ```
 
 ### 設定

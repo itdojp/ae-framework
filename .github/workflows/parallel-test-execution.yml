@@ -43,12 +43,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'pnpm'
       
-      - name: Install dependencies
+      - name: Enable corepack and install deps
         run: |
-          npm install -g pnpm
-          pnpm install
+          corepack enable
+          pnpm install --frozen-lockfile
 
       - name: Create reports directory
         run: |
@@ -58,7 +58,7 @@ jobs:
       - name: Run ${{ matrix.test-type }} tests
         run: |
           echo "🚀 Starting ${{ matrix.test-type }} test suite..."
-          npm run ${{ matrix.command }}
+          pnpm run ${{ matrix.command }}
         timeout-minutes: ${{ matrix.timeout }}
 
       - name: Upload test results
@@ -93,12 +93,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'pnpm'
       
-      - name: Install dependencies
+      - name: Enable corepack and install deps
         run: |
-          npm install -g pnpm
-          pnpm install
+          corepack enable
+          pnpm install --frozen-lockfile
 
       - name: Create reports directory
         run: |
@@ -108,7 +108,7 @@ jobs:
       - name: Run E2E tests
         run: |
           echo "🎭 Starting E2E test suite..."
-          npm run test:playwright
+          pnpm run test:playwright
         timeout-minutes: 40
 
       - name: Upload E2E test results
@@ -137,17 +137,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'pnpm'
       
-      - name: Install dependencies
+      - name: Enable corepack and install deps
         run: |
-          npm install -g pnpm
-          pnpm install
+          corepack enable
+          pnpm install --frozen-lockfile
 
       - name: Run performance tests
         run: |
           echo "⚡ Starting performance test suite..."
-          npm run test:perf
+          pnpm run test:perf
         timeout-minutes: 30
 
       - name: Upload performance results
@@ -175,12 +175,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'pnpm'
       
-      - name: Install dependencies
+      - name: Enable corepack and install deps
         run: |
-          npm install -g pnpm
-          pnpm install
+          corepack enable
+          pnpm install --frozen-lockfile
 
 
       - name: Download all test artifacts
@@ -248,17 +248,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'pnpm'
       
-      - name: Install dependencies
+      - name: Enable corepack and install deps
         run: |
-          npm install -g pnpm
-          pnpm install
+          corepack enable
+          pnpm install --frozen-lockfile
 
       - name: Retry failed tests with enhanced detection
         run: |
           echo "🔄 Retrying potentially flaky tests..."
-          npm run flake:detect:enhanced:quick
+          pnpm run flake:detect:enhanced:quick
         timeout-minutes: 8
 
       - name: Upload retry results

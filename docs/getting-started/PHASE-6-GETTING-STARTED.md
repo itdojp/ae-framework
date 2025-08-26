@@ -236,7 +236,7 @@ DISABLE_TELEMETRY=true ae-framework ui-scaffold --components
 #### Automated Testing
 ```bash
 # Accessibility tests
-npm run test:a11y
+pnpm run test:a11y
 
 # Threshold check (critical=0, warnings≤5)
 node scripts/check-a11y-threshold.js --critical=0 --warnings=5
@@ -336,14 +336,14 @@ test.describe('Product Management', () => {
 #### Automated Quality Monitoring
 ```bash
 # Run all quality gates
-npm run quality:check
+pnpm run quality:check
 
 # Individual checks
-npm run lint:frontend
-npm run type-check:frontend
-npm run test:coverage
-npm run test:a11y
-npm run build:frontend
+pnpm run lint:frontend
+pnpm run type-check:frontend
+pnpm run test:coverage
+pnpm run test:a11y
+pnpm run build:frontend
 ```
 
 ### 🔧 Customization
@@ -406,10 +406,10 @@ OTEL_LOG_LEVEL=debug ae-framework ui-scaffold --components
 **3. Accessibility Test Failures**
 ```bash
 # Generate detailed report
-npm run test:a11y:report
+pnpm run test:a11y:report
 
 # Fix specific issues
-npm run test:a11y -- --fix
+pnpm run test:a11y -- --fix
 ```
 
 ### 🎉 Next Steps
@@ -654,7 +654,7 @@ DISABLE_TELEMETRY=true ae-framework ui-scaffold --components
 #### 自動テスト
 ```bash
 # アクセシビリティテスト
-npm run test:a11y
+pnpm run test:a11y
 
 # 閾値チェック (重大=0, 警告≤5)
 node scripts/check-a11y-threshold.js --critical=0 --warnings=5
@@ -754,14 +754,14 @@ test.describe('Product Management', () => {
 #### 自動品質監視
 ```bash
 # 全品質ゲート実行
-npm run quality:check
+pnpm run quality:check
 
 # 個別チェック
-npm run lint:frontend
-npm run type-check:frontend
-npm run test:coverage
-npm run test:a11y
-npm run build:frontend
+pnpm run lint:frontend
+pnpm run type-check:frontend
+pnpm run test:coverage
+pnpm run test:a11y
+pnpm run build:frontend
 ```
 
 ### 🔧 カスタマイズ
@@ -824,10 +824,10 @@ OTEL_LOG_LEVEL=debug ae-framework ui-scaffold --components
 **3. アクセシビリティテスト失敗**
 ```bash
 # 詳細レポート生成
-npm run test:a11y:report
+pnpm run test:a11y:report
 
 # 特定の問題を修正
-npm run test:a11y -- --fix
+pnpm run test:a11y -- --fix
 ```
 
 ### 🎉 次のステップ

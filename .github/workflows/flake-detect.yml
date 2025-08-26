@@ -16,8 +16,9 @@ jobs:
       - uses: actions/setup-node@v4
         with: 
           node-version: '20'
-          cache: 'npm'
-      - run: npm ci
+          cache: 'pnpm'
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
       
       - name: Run tests multiple times
         id: flake-test
@@ -31,7 +32,7 @@ jobs:
           for i in $(seq 1 $total_runs); do
             echo "📊 Run #$i of $total_runs"
             
-            if npm run test:int; then
+            if pnpm run test:int; then
               echo "✅ Run #$i passed"
             else
               echo "❌ Run #$i failed"

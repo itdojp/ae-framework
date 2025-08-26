@@ -240,7 +240,7 @@ jobs:
         node-version: '18'
         
     - name: Install dependencies
-      run: npm ci
+      run: pnpm install --frozen-lockfile
       
     - name: Phase 2.1 - CEGIS Auto-Fix
       run: |
@@ -258,7 +258,7 @@ jobs:
     - name: Phase 2.3 - Integration Testing
       run: |
         # テスト環境の起動
-        npm run start:test-env &
+        pnpm run start:test-env &
         TEST_PID=$!
         
         # テストの実行

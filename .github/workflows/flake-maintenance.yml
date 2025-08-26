@@ -19,8 +19,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-      - run: npm ci
+          cache: 'pnpm'
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
       
       - name: Install bc for calculations
         run: sudo apt-get update && sudo apt-get install -y bc
@@ -28,16 +29,16 @@ jobs:
       - name: Run flake maintenance
         run: |
           echo "🔧 Running daily flake isolation maintenance..."
-          npm run flake:maintenance
+          pnpm run flake:maintenance
       
       - name: Generate maintenance report
         run: |
           echo "📊 Generating maintenance report..."
-          npm run flake:report
+          pnpm run flake:report
           
           # Display current status
           echo "📋 Current flake isolation status:"
-          npm run flake:list
+          pnpm run flake:list
       
       - name: Upload maintenance reports
         uses: actions/upload-artifact@v4

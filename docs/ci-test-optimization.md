@@ -16,22 +16,22 @@ The Integrated CI/Test Optimizer combines multiple optimization strategies to im
 ### Basic Optimization
 ```bash
 # Run complete optimization suite
-npm run optimize:ci
+pnpm run optimize:ci
 
 # Force CI mode (useful for local testing of CI configurations)
-npm run optimize:ci:full
+pnpm run optimize:ci:full
 ```
 
 ### Targeted Optimization
 ```bash
 # Focus on stability improvements only
-npm run optimize:ci:stability
+pnpm run optimize:ci:stability
 
 # Focus on flaky test detection only
-npm run optimize:ci:flake
+pnpm run optimize:ci:flake
 
 # Focus on performance optimization only
-npm run optimize:ci:performance
+pnpm run optimize:ci:performance
 ```
 
 ## Configuration
@@ -153,13 +153,13 @@ jobs:
           node-version: '20'
       
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       
       - name: Optimize CI environment
-        run: npm run optimize:ci:full
+        run: pnpm run optimize:ci:full
       
       - name: Run optimized tests
-        run: npm run test:parallel:ci
+        run: pnpm run test:parallel:ci
       
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -181,13 +181,13 @@ pipeline {
     stages {
         stage('Setup') {
             steps {
-                sh 'npm ci'
-                sh 'npm run optimize:ci:full'
+                sh 'pnpm install --frozen-lockfile'
+                sh 'pnpm run optimize:ci:full'
             }
         }
         stage('Test') {
             steps {
-                sh 'npm run test:parallel:ci'
+                sh 'pnpm run test:parallel:ci'
             }
             post {
                 always {
@@ -221,17 +221,17 @@ Set up regular monitoring to track optimization effectiveness:
 
 ```bash
 # Weekly optimization analysis
-0 0 * * 1 cd /path/to/project && npm run optimize:ci > optimization-$(date +%Y%m%d).log
+0 0 * * 1 cd /path/to/project && pnpm run optimize:ci > optimization-$(date +%Y%m%d).log
 
 # Daily flaky test detection
-0 8 * * * cd /path/to/project && npm run optimize:ci:flake
+0 8 * * * cd /path/to/project && pnpm run optimize:ci:flake
 ```
 
 ## Best Practices
 
 ### Development Workflow
 1. **Local Development**: Use standard test commands for rapid feedback
-2. **Pre-commit**: Run `npm run optimize:ci:flake` to catch potential issues
+2. **Pre-commit**: Run `pnpm run optimize:ci:flake` to catch potential issues
 3. **CI/CD**: Use optimized configurations for reliable automation
 4. **Regular Reviews**: Analyze optimization reports weekly
 
@@ -254,14 +254,14 @@ Set up regular monitoring to track optimization effectiveness:
 **Tests Timing Out in CI**
 ```bash
 # Increase timeouts for CI environment
-npm run optimize:ci:stability
+pnpm run optimize:ci:stability
 # Check generated vitest.optimized.config.ts for timeout values
 ```
 
 **High Memory Usage**
 ```bash
 # Enable memory monitoring
-npm run optimize:ci:performance
+pnpm run optimize:ci:performance
 # Review reports/ci-optimization/optimization-report.json for memory metrics
 ```
 
@@ -279,7 +279,7 @@ npm run optimize:ci:performance
 ### Debug Mode
 Enable verbose logging for troubleshooting:
 ```bash
-DEBUG=ci-optimizer npm run optimize:ci
+DEBUG=ci-optimizer pnpm run optimize:ci
 ```
 
 ## Advanced Usage
@@ -323,7 +323,7 @@ The optimizer integrates well with:
 
 ### From Existing CI Scripts
 1. **Backup Current Configuration**: Save existing CI configurations
-2. **Run Initial Optimization**: `npm run optimize:ci` to generate baseline
+2. **Run Initial Optimization**: `pnpm run optimize:ci` to generate baseline
 3. **Compare Results**: Review generated configurations vs. current setup
 4. **Gradual Migration**: Start with non-critical pipelines
 5. **Monitor Performance**: Track improvements and adjust as needed

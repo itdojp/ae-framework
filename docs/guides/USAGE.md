@@ -30,34 +30,34 @@ Development flow for creating a new web application:
 
 ```bash
 # 1. Requirements analysis
-npm run intent-agent
+pnpm run intent-agent
 
 # 2. Formal specification generation
-npm run formal-agent
+pnpm run formal-agent
 
 # 3. Test generation (Phase 3.1 & 3.2)
-npm run mcp:test
+pnpm run mcp:test
 
 # 3a. E2E automatic test generation (Phase 3.2)
-npm run e2e:demo
+pnpm run e2e:demo
 
 # 3b. Visual regression testing (Phase 3.2)
-npm run visual:demo
+pnpm run visual:demo
 
 # 3c. Intelligent test selection (Phase 3.2) ✨ **NEW**
-npm test -- tests/testing/intelligent-test-selection.test.ts
+pnpm test -- tests/testing/intelligent-test-selection.test.ts
 
 # 3d. Integration optimization system (Phase 3.3) ✨ **NEW**
-npm test -- tests/optimization/system-integration.test.ts
+pnpm test -- tests/optimization/system-integration.test.ts
 
 # 4. Code generation
-npm run mcp:code
+pnpm run mcp:code
 
 # 5. Quality verification
-npm run verify:all
+pnpm run verify:all
 
 # 6. Deployment and operations
-npm run operate:server
+pnpm run operate:server
 ```
 
 ---
@@ -94,7 +94,7 @@ ae-framework check --phase 1-intent
 
 #### Using as MCP Server (Fallback)
 ```bash
-npm run intent-agent
+pnpm run intent-agent
 ```
 
 #### Direct Execution (Development/Testing)
@@ -173,22 +173,22 @@ console.log('Relationships:', domainModel.relationships);
 
 #### Using as MCP Server
 ```bash
-npm run formal-agent
+pnpm run formal-agent
 ```
 
 #### TLA+ Specification Generation
 ```bash
-npm run generate-tla
+pnpm run generate-tla
 ```
 
 #### Specification Validation
 ```bash
-npm run validate-specs
+pnpm run validate-specs
 ```
 
 #### Model Checking
 ```bash
-npm run model-check
+pnpm run model-check
 ```
 
 ### Practical Examples
@@ -247,10 +247,10 @@ Complex problem solving through advanced reasoning engine and inter-component de
 #### Basic Usage
 ```bash
 # Sequential reasoning engine demo
-npm run analyze:demo
+pnpm run analyze:demo
 
 # Dependency analysis
-npm run dependency:analyze
+pnpm run dependency:analyze
 ```
 
 ### 🎭 Phase 3.2: E2E Automation & Visual Regression Testing ✨ **NEW**
@@ -261,30 +261,30 @@ AI-driven comprehensive test automation system
 
 ##### Using as MCP Server
 ```bash
-npm run mcp:test
+pnpm run mcp:test
 ```
 
 ##### E2E Test Auto-generation
 ```bash
-npm run e2e:demo
-npm run test:playwright
+pnpm run e2e:demo
+pnpm run test:playwright
 ```
 
 ##### Visual Regression Testing
 ```bash
-npm run visual:demo
-npm run test:visual
+pnpm run visual:demo
+pnpm run test:visual
 ```
 
 ##### Fast Test Execution (CI Optimized)
 ```bash
-npm run test:fast
-npm run test:phase3.2:core
+pnpm run test:fast
+pnpm run test:phase3.2:core
 ```
 
 #### Direct Agent Execution
 ```bash
-npm run agent:test
+pnpm run agent:test
 ```
 
 ### Practical Examples
@@ -381,34 +381,34 @@ ae-frameworkは以下の6フェーズでソフトウェア開発を支援しま�
 
 ```bash
 # 1. 要件分析
-npm run intent-agent
+pnpm run intent-agent
 
 # 2. 形式仕様生成
-npm run formal-agent
+pnpm run formal-agent
 
 # 3. テスト生成 (Phase 3.1 & 3.2)
-npm run mcp:test
+pnpm run mcp:test
 
 # 3a. E2E自動テスト生成 (Phase 3.2)
-npm run e2e:demo
+pnpm run e2e:demo
 
 # 3b. 視覚回帰テスト (Phase 3.2)  
-npm run visual:demo
+pnpm run visual:demo
 
 # 3c. インテリジェントテスト選択 (Phase 3.2) ✨ **NEW**
-npm test -- tests/testing/intelligent-test-selection.test.ts
+pnpm test -- tests/testing/intelligent-test-selection.test.ts
 
 # 3d. 統合最適化システム (Phase 3.3) ✨ **NEW**
-npm test -- tests/optimization/system-integration.test.ts
+pnpm test -- tests/optimization/system-integration.test.ts
 
 # 4. コード生成
-npm run mcp:code
+pnpm run mcp:code
 
 # 5. 品質検証
-npm run verify:all
+pnpm run verify:all
 
 # 6. デプロイ・運用
-npm run operate:server
+pnpm run operate:server
 ```
 
 ---
@@ -445,7 +445,7 @@ ae-framework check --phase 1-intent
 
 #### MCPサーバーとして使用（フォールバック）
 ```bash
-npm run intent-agent
+pnpm run intent-agent
 ```
 
 #### 直接実行（開発・テスト用）

@@ -85,7 +85,7 @@ ae-framework cegis fix --files src/ --verify-fix
 #### 1. テスト環境の確認
 ```bash
 # テストが正常に実行できるか確認
-npm test
+pnpm test
 # または
 npx vitest run
 
@@ -100,7 +100,7 @@ ae-framework cegis fix --files src/specific-file.ts --violations specific-violat
 
 # 修復後の手動テスト
 ae-framework cegis fix --files src/ --no-verify
-npm test
+pnpm test
 ```
 
 #### 3. 修復履歴の確認
@@ -508,7 +508,7 @@ mkdir -p $DIAG_DIR
 # システム情報
 uname -a > $DIAG_DIR/system-info.txt
 node --version > $DIAG_DIR/node-version.txt
-npm list ae-framework > $DIAG_DIR/package-version.txt
+pnpm list ae-framework > $DIAG_DIR/package-version.txt
 
 # 設定情報
 ae-framework conformance config --show > $DIAG_DIR/conformance-config.json

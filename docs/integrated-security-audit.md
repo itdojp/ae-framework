@@ -6,7 +6,7 @@ The Integrated Security Audit System provides comprehensive security analysis an
 
 The integrated security audit system (`scripts/integrated-security-audit.mjs`) provides:
 
-- **Dependency Security Audit**: Analysis of npm packages for known vulnerabilities
+- **Dependency Security Audit**: Analysis of packages for known vulnerabilities
 - **Secrets Scanning**: Detection of exposed credentials, API keys, and sensitive data
 - **Compliance Checking**: Verification of security policies and best practices
 - **Vulnerability Assessment**: Code-level security issue detection
@@ -16,29 +16,29 @@ The integrated security audit system (`scripts/integrated-security-audit.mjs`) p
 
 ```bash
 # Run basic security audit
-npm run security:integrated
+pnpm run security:integrated
 
 # Quick audit (essential checks only)
-npm run security:integrated:quick
+pnpm run security:integrated:quick
 
 # Full comprehensive audit
-npm run security:integrated:full
+pnpm run security:integrated:full
 
 # Compliance checking only
-npm run security:integrated:compliance
+pnpm run security:integrated:compliance
 ```
 
 ## Audit Modules
 
 ### 1. Dependency Security Audit
 
-Analyzes npm packages for:
+Analyzes packages for:
 - Known security vulnerabilities
 - Outdated packages with security patches
 - License compliance issues
 - Deprecated dependencies
 
-**Tools Used**: npm audit, npm outdated, custom license analyzer
+**Tools Used**: pnpm audit, pnpm outdated, custom license analyzer
 
 ### 2. Secrets Scanning
 
@@ -151,8 +151,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
-      - run: npm ci
-      - run: npm run security:integrated:full
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run security:integrated:full
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -165,7 +165,7 @@ jobs:
 ```bash
 #!/bin/sh
 # .git/hooks/pre-commit
-npm run security:integrated:quick
+pnpm run security:integrated:quick
 if [ $? -ne 0 ]; then
   echo "Security audit failed. Commit aborted."
   exit 1
@@ -338,7 +338,7 @@ console.log(`Security Score: ${results.summary.securityScore}%`);
 
 1. **Missing Dependencies**
    ```bash
-   npm install gitleaks glob
+   pnpm add -D gitleaks glob
    ```
 
 2. **Permission Errors**

@@ -6,27 +6,27 @@
   "type": "module",
   "types": "dist/src/index.d.ts",
   "bin": {
-    "ae": "./dist/cli.js",
-    "ae-framework": "./dist/cli/index.js",
-    "ae-phase": "./dist/cli/phase-cli.js",
-    "ae-approve": "./dist/cli/approval-cli.js",
-    "ae-slash": "./dist/cli/slash-cli.js",
-    "ae-ui": "./dist/cli/ae-ui-alias.js",
-    "ae-sbom": "./dist/cli/sbom-cli.js",
-    "ae-resilience": "./dist/cli/resilience-cli.js",
-    "ae-benchmark": "./dist/cli/benchmark-cli.js"
+    "ae": "./dist/src/cli/index.js",
+    "ae-framework": "./dist/src/cli/index.js",
+    "ae-phase": "./dist/src/cli/phase-cli.js",
+    "ae-approve": "./dist/src/cli/approval-cli.js",
+    "ae-slash": "./dist/src/cli/slash-cli.js",
+    "ae-ui": "./dist/src/cli/ae-ui-alias.js",
+    "ae-sbom": "./dist/src/cli/sbom-cli.js",
+    "ae-resilience": "./dist/src/cli/resilience-cli.js",
+    "ae-benchmark": "./dist/src/cli/benchmark-cli.js"
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "dev:web": "pnpm --filter @ae-framework/web dev",
     "dev:storybook": "pnpm --filter @ae-framework/storybook dev",
-    "build": "tsc -p tsconfig.build.json && cp dist/src/cli.js dist/cli.js",
+    "build": "tsc -p tsconfig.build.json",
     "build:windows": "tsc --project configs/tsconfig.windows.json",
     "build:frontend": "pnpm run build:tokens && pnpm run build:ui && pnpm --filter @ae-framework/web build",
     "build:tokens": "pnpm --filter @ae-framework/design-tokens build",
     "build:ui": "pnpm --filter @ae-framework/ui build",
     "build:storybook": "pnpm --filter @ae-framework/storybook build-storybook",
-    "build:cli": "tsc && chmod +x dist/cli/index.js && chmod +x dist/cli/phase-cli.js && chmod +x dist/cli/approval-cli.js && chmod +x dist/cli/slash-cli.js && chmod +x dist/cli/ui-scaffold-cli.js && chmod +x dist/cli/ae-ui-alias.js && chmod +x dist/cli/benchmark-cli.js",
+    "build:cli": "chmod +x dist/src/cli/index.js dist/src/cli/phase-cli.js dist/src/cli/approval-cli.js dist/src/cli/slash-cli.js dist/src/cli/ui-scaffold-cli.js dist/src/cli/ae-ui-alias.js dist/src/cli/benchmark-cli.js || true",
     "phase": "tsx src/cli/phase-cli.ts",
     "benchmark": "tsx src/cli/benchmark-cli.ts",
     "benchmark:basic": "tsx src/cli/benchmark-cli.ts run --difficulty basic",
@@ -334,6 +334,16 @@
     "vitest": "^2.0.5",
     "why-is-node-running": "^3.2.2"
   },
+  "files": [
+    "dist/**",
+    "templates/**",
+    "docs/**",
+    "types/**",
+    "packages/**",
+    "ae.config.ts",
+    "ae-framework*.yml",
+    "api-extractor.json"
+  ],
   "peerDependenciesMeta": {
     "@anthropic-ai/sdk": {
       "optional": true
@@ -347,5 +357,6 @@
   },
   "engines": {
     "node": ">=20.11 <23"
-  }
+  },
+  "packageManager": "pnpm@9"
 }

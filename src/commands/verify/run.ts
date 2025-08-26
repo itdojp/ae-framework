@@ -157,8 +157,11 @@ export async function verifyRun(): Promise<Result<{ logs: string[]; duration: st
 
     // 3) QA metrics
     try {
-      if (await hasFile('dist/cli.js')) {
-        await step('QA Metrics', 'node', ['dist/cli.js', 'qa']);
+      const cliPath = (await hasFile('dist/src/cli/index.js'))
+        ? 'dist/src/cli/index.js'
+        : (await hasFile('dist/cli.js')) ? 'dist/cli.js' : '';
+      if (cliPath) {
+        await step('QA Metrics', 'node', [cliPath, 'qa']);
       } else {
         logs.push('## QA Metrics\nℹ️  Skipped (ae CLI not built)');
         console.log('[ae][verify] QA Metrics: SKIPPED (ae CLI not built)');
@@ -172,8 +175,11 @@ export async function verifyRun(): Promise<Result<{ logs: string[]; duration: st
 
     // 4) Benchmarks (with deterministic seed)
     try {
-      if (await hasFile('dist/cli.js')) {
-        await step('Benchmarks', 'node', ['dist/cli.js', 'bench'], { AE_SEED: '123' });
+      const cliPath = (await hasFile('dist/src/cli/index.js'))
+        ? 'dist/src/cli/index.js'
+        : (await hasFile('dist/cli.js')) ? 'dist/cli.js' : '';
+      if (cliPath) {
+        await step('Benchmarks', 'node', [cliPath, 'bench'], { AE_SEED: '123' });
       } else {
         logs.push('## Benchmarks\nℹ️  Skipped (ae CLI not built)');
         console.log('[ae][verify] Benchmarks: SKIPPED (ae CLI not built)');
