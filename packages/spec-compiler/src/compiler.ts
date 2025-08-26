@@ -363,7 +363,7 @@ export class AESpecCompiler {
     const result = validator.validate(ir);
     
     if (!result.success) {
-      const readableErrors = validator.getReadableErrors(result.errors);
+      const readableErrors = validator.getReadableErrors((result as any).errors || []);
       
       readableErrors.forEach((error, index) => {
         issues.push({

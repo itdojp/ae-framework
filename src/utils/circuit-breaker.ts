@@ -101,6 +101,7 @@ export class CircuitBreaker extends EventEmitter {
     this.emit('circuitBreakerCreated', { name: this.name, options: this.options });
   }
 
+
   /**
    * Execute a function with circuit breaker protection
    */
@@ -382,6 +383,43 @@ export class CircuitBreaker extends EventEmitter {
       name: this.name, 
       previousState 
     });
+  }
+
+  /**
+   * Generate health report for monitoring
+   */
+  generateHealthReport(): {
+    health: 'healthy' | 'degraded' | 'unhealthy';
+    recommendations: string[];
+  } {
+    const stats = this.getStats();
+    const recommendations: string[] = [];
+    
+    // Determine health status
+    let health: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
+    
+    if (this.state === CircuitState.OPEN) {
+      health = 'unhealthy';
+      recommendations.push('Circuit is open - check underlying service');
+    } else if (this.state === CircuitState.HALF_OPEN) {
+      health = 'degraded';
+      recommendations.push('Circuit is recovering - monitor closely');
+    } else {
+      // Closed state - check failure rate
+      const failureRate = stats.totalRequests > 0 ? stats.totalFailures / stats.totalRequests : 0;
+      
+      if (failureRate > 0.3) {
+        health = 'degraded';
+        recommendations.push(`High failure rate: ${(failureRate * 100).toFixed(1)}%`);
+      }
+      
+      if (stats.averageResponseTime > this.options.timeout * 0.8) {
+        health = 'degraded';
+        recommendations.push(`Slow response times: ${stats.averageResponseTime.toFixed(0)}ms avg`);
+      }
+    }
+    
+    return { health, recommendations };
   }
 
   /**

@@ -57,7 +57,7 @@ export class CEGISCli {
       .command('create-artifact')
       .description('Create failure artifact from error information')
       .option('--type <type>', 'Failure type (error, test, type, contract, build, lint)', 'error')
-      .option('--message <message>', 'Error message', '', true)
+      .option('--message <message>', 'Error message', '')
       .option('--file <file>', 'Source file path')
       .option('--line <line>', 'Line number', '1')
       .option('--column <column>', 'Column number', '1')
