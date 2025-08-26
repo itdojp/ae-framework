@@ -6,6 +6,8 @@ import { ValidationTaskAdapter } from './validation-task-adapter.js';
 import { DomainModelingTaskAdapter } from './domain-modeling-task-adapter.js';
 import { UIScaffoldGenerator } from '../generators/ui-scaffold-generator.js';
 import { FormalAgent } from './formal-agent.js';
+import * as fs from 'fs';
+import * as path from 'path';
 
 type Phase = 'intent' | 'formal' | 'stories' | 'validation' | 'modeling' | 'ui';
 
@@ -25,32 +27,32 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
       try {
         switch (phase) {
           case 'intent':
-            return await intent.handleIntentTask(request as any);
+            return writeAndReturn(phase, await intent.handleIntentTask(request as any));
           case 'formal': {
             const reqText = request.prompt || request.description || '';
             const spec = await formal.generateFormalSpecification(reqText, 'tla+');
-            return {
+            return writeAndReturn(phase, {
               summary: `Formal spec generated: ${spec.type.toUpperCase()} (${spec.validation.status})`,
               analysis: spec.content.slice(0, 1200),
               recommendations: ['Validate properties', 'Consider API spec generation if needed'],
               nextActions: ['Proceed to tests generation', 'Run model checking'],
               warnings: spec.validation.warnings?.map(w => w.message) || [],
               shouldBlockProgress: spec.validation.status === 'invalid',
-            };
+            });
           }
           case 'stories':
-            return await stories.handleUserStoriesTask(request);
+            return writeAndReturn(phase, await stories.handleUserStoriesTask(request));
           case 'validation':
-            return await validation.handleValidationTask(request);
+            return writeAndReturn(phase, await validation.handleValidationTask(request));
           case 'modeling':
-            return await modeling.handleDomainModelingTask(request);
+            return writeAndReturn(phase, await modeling.handleDomainModelingTask(request));
           case 'ui':
-            return await handleUI(request);
+            return writeAndReturn(phase, await handleUI(request));
           default:
-            return neutralResponse(phase, request);
+            return writeAndReturn(phase, neutralResponse(phase, request));
         }
       } catch (err) {
-        return {
+        const errorResp: TaskResponse = {
           summary: `CodeX adapter error in phase: ${phase}`,
           analysis: String(err),
           recommendations: recommendNextActions(phase),
@@ -58,6 +60,7 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
           warnings: ['Adapter error encountered'],
           shouldBlockProgress: true,
         };
+        return writeAndReturn(phase, errorResp);
       }
     },
     async provideProactiveGuidance(context) {
@@ -156,4 +159,16 @@ async function handleUI(request: TaskRequest): Promise<TaskResponse> {
     warnings: [],
     shouldBlockProgress: false,
   };
+}
+
+function writeAndReturn(phase: Phase, response: TaskResponse): TaskResponse {
+  try {
+    const outDir = path.join(process.cwd(), 'artifacts', 'codex');
+    fs.mkdirSync(outDir, { recursive: true });
+    const file = path.join(outDir, `result-${phase}.json`);
+    fs.writeFileSync(file, JSON.stringify({ phase, response, ts: new Date().toISOString() }, null, 2), 'utf8');
+  } catch {
+    // best-effort only
+  }
+  return response;
 }

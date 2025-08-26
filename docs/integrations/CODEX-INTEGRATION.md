@@ -136,3 +136,12 @@ cat samples/phase-state.example.json | jq .
 # CLI scaffold
 node dist/src/cli/index.js ui-scaffold --components
 ```
+
+## Machine-readable artifacts
+
+When the CodeX adapter runs phases, it writes JSON summaries to `artifacts/codex/`:
+
+- `result-intent.json`, `result-formal.json`, `result-stories.json`, etc.
+- Each file contains `{ phase, response, ts }` for downstream tooling.
+
+In CI (`pr-verify.yml`), these are uploaded as an artifact named `codex-json-artifacts`.

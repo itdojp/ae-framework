@@ -38,6 +38,12 @@ jobs:
         if: always()
         with:
           name: codex-quickstart-summary
+      - name: Upload CodeX JSON artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: codex-json-artifacts
+          path: artifacts/codex/*.json
           path: artifacts/codex-quickstart-summary.md
       - name: Show CodeX summary (head)
         if: always()
