@@ -1936,7 +1936,7 @@ export class CLIFuzzTester {
   "convenience_scripts": {
     "test:fuzz": "vitest run tests/cli/fuzz.spec.ts",
     "test:fuzz:quick": "vitest run tests/cli/fuzz.spec.ts --timeout 10000",
-    "test:quality:full": "npm run test:golden:status && npm run test:fuzz && npm run test:metamorphic:invariant",
+    "test:quality:full": "pnpm run test:golden:status && pnpm run test:fuzz && pnpm run test:metamorphic:invariant",
     "test:metamorphic:invariant": "vitest run tests/metamorphic/invariant-preservation.test.ts"
   }
 }
@@ -2251,9 +2251,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run ${{ inputs.run-script }}
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run ${{ inputs.run-script }}
 ```
 
 #### Workflow Lint System
@@ -2522,7 +2522,7 @@ jobs:
           total_runs=3
           
           for i in $(seq 1 $total_runs); do
-            if npm run test:int; then
+            if pnpm run test:int; then
               echo "✅ Run #$i passed"
             else
               echo "❌ Run #$i failed"
@@ -2575,7 +2575,7 @@ export class FlakeIsolationManager {
     
     for (let i = 0; i < runs; i++) {
       try {
-        execSync(`npm test -- --testPathPattern="${testPattern.replace(/\*/g, '.*')}"`, {
+        execSync(`pnpm test -- --testPathPattern="${testPattern.replace(/\*/g, '.*')}"`, {
           stdio: 'pipe',
           timeout: 60000
         });
@@ -2613,7 +2613,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Run flake maintenance
-        run: npm run flake:maintenance
+        run: pnpm run flake:maintenance
       
       - name: Create recovery notification
         if: steps.recovery-check.outputs.recovered_count > 0
@@ -2629,7 +2629,7 @@ jobs:
             });
 ```
 
-#### NPM Script Integration
+#### Script Integration
 ```json
 {
   "scripts": {
@@ -2712,10 +2712,10 @@ jobs:
       - name: Build CLI
         run: pnpm run build:cli
         
-      - name: Package for NPM
+      - name: Package for publish
         run: pnpm pack
         
-      - name: Publish to NPM
+      - name: Publish to registry
         if: startsWith(github.ref, 'refs/tags/')
         run: pnpm publish
         env:
@@ -2729,7 +2729,7 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 COPY package*.json pnpm-lock.yaml ./
-RUN npm install -g pnpm && pnpm install --frozen-lockfile
+RUN corepack enable && pnpm install --frozen-lockfile
 
 COPY . .
 RUN pnpm run build && pnpm run build:cli

@@ -226,7 +226,7 @@ graph LR
 1. **Start with requirements**
    ```bash
    # Generate tests from user story
-   npm run mcp:test-gen
+   pnpm run mcp:test-gen
    ```
 
 2. **Review generated tests**
@@ -235,7 +235,7 @@ graph LR
 
 3. **Run tests (RED phase)**
    ```bash
-   npm test
+   pnpm test
    # All tests should fail initially
    ```
 

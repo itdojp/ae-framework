@@ -18,15 +18,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 22 }
-      - run: npm ci
-      - run: npm run lint
-      - run: npm test -- --run
-      - run: npm run bdd || true            # 失敗時は仕様更新提案へ
+        with: { node-version: 22, cache: 'pnpm' }
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run lint
+      - run: pnpm test -- --run
+      - run: pnpm run bdd || true            # 失敗時は仕様更新提案へ
       - name: Mutation Testing (Stryker) - Critical Components Only
         run: |
           # Phase 3.1/3.2 コア機能のみをmutation testing
-          npx stryker run --mutate "src/engines/**/*.ts,src/testing/playwright-integration.ts,src/testing/visual-regression.ts" --maxTestRunnerReuse 0 || true
+          pnpm exec stryker run --mutate "src/engines/**/*.ts,src/testing/playwright-integration.ts,src/testing/visual-regression.ts" --maxTestRunnerReuse 0 || true
       - name: Generate SBOM
         run: |
           curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b . v1.0.0

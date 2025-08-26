@@ -71,7 +71,7 @@ pnpm run setup-hooks:unix
 #### Prerequisites
 - **Node.js 18+**
 - **Git for Windows** (includes Git Bash)
-- **pnpm** (`npm install -g pnpm`)
+- **pnpm**（Corepack を使用: `corepack enable`）
 
 #### Installation Steps
 
@@ -170,7 +170,7 @@ pnpm run build:windows
 - [Node.js Windows Installation](https://nodejs.org/en/download/)
 - [Git for Windows](https://gitforwindows.org/)
 - [WSL Installation Guide](https://docs.microsoft.com/en-us/windows/wsl/install)
-- [pnpm Installation](https://pnpm.io/installation#using-npm)
+- [pnpm Installation](https://pnpm.io/installation)
 
 ### 🔍 Getting Help
 
@@ -249,7 +249,7 @@ pnpm run setup-hooks:unix
 #### 前提条件
 - **Node.js 18+**
 - **Git for Windows** (Git Bashを含む)
-- **pnpm** (`npm install -g pnpm`)
+- **pnpm**（Corepack を使用: `corepack enable`）
 
 #### インストール手順
 
@@ -348,7 +348,7 @@ pnpm run build:windows
 - [Node.js Windows インストール](https://nodejs.org/en/download/)
 - [Git for Windows](https://gitforwindows.org/)
 - [WSL インストールガイド](https://docs.microsoft.com/en-us/windows/wsl/install)
-- [pnpm インストール](https://pnpm.io/installation#using-npm)
+- [pnpm インストール](https://pnpm.io/installation)
 
 ### 🔍 ヘルプの取得
 

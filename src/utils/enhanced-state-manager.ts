@@ -1,7 +1,7 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import type { EventEmitter } from 'events';
-import type { v4 as uuidv4 } from 'uuid';
+import { EventEmitter } from 'events';
+import { v4 as uuidv4 } from 'uuid';
 import { createHash } from 'crypto';
 import { promisify } from 'util';
 import { gzip, gunzip } from 'zlib';

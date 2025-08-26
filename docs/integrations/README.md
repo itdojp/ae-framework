@@ -59,7 +59,7 @@ npx ae-framework generate --domain "Product Management" --ui react
 #### 3. MCP Server Integration (Backup)
 ```bash
 # Execution via MCP Server
-npm run mcp:start
+pnpm run mcp:start
 ```
 
 ### 📊 Integration Method Comparison
@@ -85,8 +85,8 @@ Claude Code: Analyzing requirements with Intent Task Adapter...
 
 #### Direct Use in Development Environment
 ```bash
-# Installation
-npm install -g ae-framework
+# Installation (global)
+pnpm add -g ae-framework
 
 # Execute UI generation
 ae-framework ui scaffold --input domain-model.json
@@ -162,7 +162,7 @@ npx ae-framework generate --domain "商品管理" --ui react
 #### 3. MCP Server統合 (バックアップ)
 ```bash
 # MCP Server経由実行
-npm run mcp:start
+pnpm run mcp:start
 ```
 
 ### 📊 統合方式比較
@@ -188,8 +188,8 @@ Claude Code: Intent Task Adapterで要件分析中...
 
 #### 開発環境での直接使用
 ```bash
-# インストール
-npm install -g ae-framework
+# インストール（グローバル）
+pnpm add -g ae-framework
 
 # UI生成実行
 ae-framework ui scaffold --input domain-model.json

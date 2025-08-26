@@ -40,6 +40,10 @@ pgdata/
 logs/
 *.log
 
+# npm lockfile (pnpm を正とするため除外)
+package-lock.json
+npm-shrinkwrap.json
+
 # Temporary files
 tmp/
 temp/

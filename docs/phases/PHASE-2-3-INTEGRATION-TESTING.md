@@ -69,7 +69,7 @@ Phase 2.3では、複雑なアプリケーションの統合テストとエン�
 
 ```bash
 # ae-frameworkのインストール
-npm install ae-framework
+pnpm add ae-framework
 
 # CLI確認
 ae-framework integration --help
@@ -763,11 +763,11 @@ jobs:
         node-version: '18'
         
     - name: Install dependencies
-      run: npm ci
+      run: pnpm install --frozen-lockfile
       
     - name: Start test environment
       run: |
-        npm run start:test-env &
+        pnpm run start:test-env &
         npx wait-on http://localhost:3000
         
     - name: Run integration tests
@@ -807,10 +807,10 @@ FROM mcr.microsoft.com/playwright:v1.40.0-focal
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN corepack enable && pnpm install --frozen-lockfile
 
 COPY . .
-RUN npm run build
+RUN pnpm run build
 
 # テスト実行用スクリプト
 COPY integration-test-entrypoint.sh /entrypoint.sh
@@ -855,7 +855,7 @@ fi
 
 # 1. テスト環境の起動
 echo "Starting test environment..."
-npm run start:test-env &
+pnpm run start:test-env &
 TEST_SERVER_PID=$!
 
 # 健全性チェック

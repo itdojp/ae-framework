@@ -64,10 +64,10 @@ Defines validation rules and thresholds:
 **Usage**:
 ```bash
 # Validate all specs
-npm run validate:specs
+pnpm run validate:specs
 
 # Validate specific file
-npm run validate:spec spec/my-spec.md
+pnpm run validate:spec spec/my-spec.md
 
 # Direct script usage
 ./scripts/validate-specs.sh
@@ -88,7 +88,7 @@ npm run validate:spec spec/my-spec.md
 
 **Setup**:
 ```bash
-npm run hooks:setup-spec-validation
+pnpm run hooks:setup-spec-validation
 ```
 
 **Features**:
@@ -141,10 +141,10 @@ Default quality gates:
 vim spec/my-new-feature.md
 
 # 2. Validate locally
-npm run validate:spec spec/my-new-feature.md
+pnpm run validate:spec spec/my-new-feature.md
 
 # 3. Fix any issues and re-validate
-npm run validate:spec spec/my-new-feature.md
+pnpm run validate:spec spec/my-new-feature.md
 
 # 4. Commit (pre-commit hook validates automatically)
 git add spec/my-new-feature.md
@@ -175,7 +175,7 @@ The GitHub Actions workflow automatically:
 1. **"spec-compiler not found"**
    ```bash
    cd packages/spec-compiler
-   npm run build
+   pnpm run build
    ```
 
 2. **"Validation failed: Entity has no business rules"**
@@ -229,8 +229,8 @@ Add to `.vscode/tasks.json`:
 Add to `.gitconfig`:
 ```ini
 [alias]
-  validate-specs = !npm run validate:specs
-  validate-spec = "!f() { npm run validate:spec \"$1\"; }; f"
+  validate-specs = !pnpm run validate:specs
+  validate-spec = "!f() { pnpm run validate:spec \"$1\"; }; f"
 ```
 
 ## Best Practices
@@ -374,7 +374,7 @@ jobs:
           path: validation-results/
 ```
 
-## NPM スクリプト
+## スクリプト
 
 ```json
 {
@@ -483,8 +483,8 @@ echo "✅ AE-Spec検証が完了しました。"
 
 ```ini
 [alias]
-  validate-specs = !npm run validate:specs
-  validate-spec = "!f() { npm run validate:spec \"$1\"; }; f"
+  validate-specs = !pnpm run validate:specs
+  validate-spec = "!f() { pnpm run validate:spec \"$1\"; }; f"
 ```
 
 ## ベストプラクティス

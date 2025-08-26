@@ -32,18 +32,20 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
-        cache: 'npm'
+        node-version: '20'
+        cache: 'pnpm'
+    - name: Enable corepack
+      run: corepack enable
         
     - name: Install dependencies
-      run: npm ci
+      run: pnpm install --frozen-lockfile
       
     - name: Build project
-      run: npm run build
+      run: pnpm run build
       
     - name: Generate SBOM (JSON format)
       run: |
-        npm run ae-framework sbom generate \
+        pnpm run ae-framework sbom generate \
           --format json \
           --include-dev-deps \
           ${{ github.event.inputs.include_vulnerabilities == 'true' && '--include-vulns' || '' }} \
@@ -52,14 +54,14 @@ jobs:
           
     - name: Generate SBOM (XML format)
       run: |
-        npm run ae-framework sbom generate \
+        pnpm run ae-framework sbom generate \
           --format xml \
           --output sbom.xml \
           --verbose
           
     - name: Validate SBOM
       run: |
-        npm run ae-framework sbom validate sbom.json --verbose
+        pnpm run ae-framework sbom validate sbom.json --verbose
         
     - name: Compare with previous SBOM (PR only)
       if: github.event_name == 'pull_request'
@@ -71,7 +73,7 @@ jobs:
           unzip -q previous-sbom.zip 2>/dev/null && \
           if [[ -f "sbom.json" ]]; then
             mv sbom.json previous-sbom.json
-            npm run ae-framework sbom compare previous-sbom.json sbom.json --verbose
+            pnpm run ae-framework sbom compare previous-sbom.json sbom.json --verbose
           fi
         else
           echo "No previous SBOM found for comparison"
@@ -96,9 +98,9 @@ jobs:
         path: sbom.json
         
     # Security scanning
-    - name: Run npm audit
+    - name: Run dependency audit
       run: |
-        npm audit --audit-level=moderate --json > audit-results.json || true
+        pnpm audit --audit-level=moderate --json > audit-results.json || true
         
     - name: Upload security scan results
       uses: actions/upload-artifact@v4
@@ -187,7 +189,7 @@ jobs:
           echo "" >> security-report.md
         fi
         
-        echo "## NPM Audit Results" >> security-report.md
+        echo "## Dependency Audit Results" >> security-report.md
         if [[ -f "audit-results.json" ]]; then
           if jq -e '.vulnerabilities' audit-results.json > /dev/null 2>&1; then
             echo "- Total vulnerabilities: $(jq '.metadata.vulnerabilities.total // 0' audit-results.json)" >> security-report.md

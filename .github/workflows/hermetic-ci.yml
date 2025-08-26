@@ -76,7 +76,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+          cache: 'pnpm'
+      - name: Enable corepack
+        run: corepack enable
           
       - name: Create deterministic environment
         run: |
@@ -92,17 +94,17 @@ jobs:
           
       - name: Install dependencies (hermetic)
         run: |
-          # Use exact package-lock.json for hermetic builds
-          npm ci --no-audit --no-fund --prefer-offline
+          # Use lockfile for hermetic builds
+          pnpm install --frozen-lockfile --prefer-offline
           
       - name: Run hermetic tests
         run: |
-          npm run hermetic:quick
-          npm run test:fast
+          pnpm run hermetic:quick
+          pnpm run test:fast
           
       - name: Build (first attempt)
         run: |
-          npm run build
+          pnpm run build
           
           # Create checksum of build output
           find dist/ -type f -exec sha256sum {} \; | sort > build1.checksums
@@ -114,7 +116,7 @@ jobs:
           rm -rf node_modules/.cache/
           
           # Rebuild from scratch
-          npm run build
+          pnpm run build
           
           # Create checksum of second build
           find dist/ -type f -exec sha256sum {} \; | sort > build2.checksums
@@ -158,10 +160,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
+          cache: 'pnpm'
+      - name: Enable corepack
+        run: corepack enable
           
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: pnpm install --frozen-lockfile --prefer-offline
         
       - name: Setup test isolation
         run: |
@@ -177,13 +181,13 @@ jobs:
         run: |
           case "${{ matrix.test-suite }}" in
             unit)
-              npm run test:fast -- --reporter=json > test-results-unit.json
+              pnpm run test:fast -- --reporter=json > test-results-unit.json
               ;;
             integration)
-              npm run test:integration -- --reporter=json > test-results-integration.json || true
+              pnpm run test:integration -- --reporter=json > test-results-integration.json || true
               ;;
             e2e)
-              npm run test:e2e -- --reporter=json > test-results-e2e.json || true
+              pnpm run test:e2e -- --reporter=json > test-results-e2e.json || true
               ;;
           esac
           
@@ -221,7 +225,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
+          cache: 'pnpm'
+      - name: Enable corepack
+        run: corepack enable
           
       - name: Analyze dependency hermeticity
         run: |
@@ -237,13 +243,13 @@ jobs:
             echo "$PROBLEMATIC_DEPS"
           fi
           
-          # Verify package-lock.json integrity
-          echo "Verifying package-lock.json integrity..."
-          npm ci --dry-run
+          # Verify lockfile integrity via install
+          echo "Verifying lockfile integrity..."
+          pnpm install --frozen-lockfile --prefer-offline
           
-          # Check for post-install scripts that might break hermeticity
+          # Check for post-install scripts that might break hermeticity (using npm list as a generic scanner)
           echo "Checking for post-install scripts..."
-          POSTINSTALL_SCRIPTS=$(npm ls --parseable | xargs -I {} find {} -name "package.json" -exec grep -l "postinstall" {} \; 2>/dev/null || true)
+          POSTINSTALL_SCRIPTS=$(pnpm ls --depth Infinity --json | jq -r '.[0].packages[].path' | xargs -I {} find {} -name "package.json" -exec grep -l "postinstall" {} \; 2>/dev/null || true)
           if [ ! -z "$POSTINSTALL_SCRIPTS" ]; then
             echo "⚠️  Found packages with postinstall scripts:"
             echo "$POSTINSTALL_SCRIPTS"
@@ -252,22 +258,22 @@ jobs:
       - name: Install and verify hermetic dependencies
         run: |
           # Install with strict hermetic constraints
-          npm ci --no-audit --no-fund --ignore-scripts
+          pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
           
           # Re-enable scripts only for essential packages
-          npm rebuild
+          pnpm rebuild
           
       - name: Generate dependency report
         run: |
           echo "📊 Generating dependency hermeticity report..."
           
           # Create dependency report
-          npm ls --all --json > dependency-tree.json
-          npm audit --json > dependency-audit.json || true
+          pnpm ls --json > dependency-tree.json
+          pnpm audit --json > dependency-audit.json || true
           
           # Analyze for hermetic violations
-          echo "Dependencies installed: $(npm ls --depth=0 --json | jq '.dependencies | length')"
-          echo "Total packages: $(npm ls --all --parseable | wc -l)"
+          echo "Dependencies installed: $(jq '.[0].dependencies | length' dependency-tree.json)"
+          echo "Total packages: $(jq '.[0].packages | length' dependency-tree.json)"
           
       - name: Upload dependency analysis
         uses: actions/upload-artifact@v4
@@ -291,10 +297,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
+          cache: 'pnpm'
+      - name: Enable corepack
+        run: corepack enable
           
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: pnpm install --frozen-lockfile --prefer-offline
         
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -306,13 +314,13 @@ jobs:
           echo "🔍 Running hermetic quality gates..."
           
           # Run hermetic test validation
-          npm run hermetic:validate
+          pnpm run hermetic:validate
           
           # Run quality scorecard
-          npm run quality:scorecard
+          pnpm run quality:scorecard
           
           # Validate hermeticity
-          npm run hermetic:quick
+          pnpm run hermetic:quick
           
       - name: Generate hermetic compliance report
         run: |

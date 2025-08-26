@@ -57,7 +57,7 @@ Phase 2.2では、アプリケーションが実行時に定義された仕様�
 
 ```bash
 # ae-frameworkのインストール
-npm install ae-framework
+pnpm add ae-framework
 
 # CLI確認
 ae-framework conformance --help

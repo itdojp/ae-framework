@@ -419,7 +419,7 @@ await agent.runDiagnostics(): Promise<DiagnosticsReport>
 
 ```typescript
 // Start as MCP Server
-npm run intent-agent
+pnpm run intent-agent
 
 // Available tools
 {
@@ -448,7 +448,7 @@ npm run intent-agent
 
 ```typescript
 // Start as MCP Server
-npm run mcp:test-gen
+pnpm run mcp:test-gen
 
 // Available tools
 {

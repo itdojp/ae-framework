@@ -39,16 +39,16 @@ The project includes automated cleanup tools to maintain project hygiene:
 
 ```bash
 # Full project cleanup
-npm run clean:all
+pnpm run clean:all
 
 # Clean only temporary files and reports
-npm run clean:project
+pnpm run clean:project
 
 # Clean archived reports
-npm run clean:reports
+pnpm run clean:reports
 
 # Clean frontend build artifacts
-npm run clean:frontend
+pnpm run clean:frontend
 ```
 
 ### Cleanup Script Features
@@ -121,15 +121,15 @@ The `scripts/project-cleanup.mjs` script provides:
 
 1. **Before Commits**
    ```bash
-   npm run clean:project
-   npm run lint
-   npm run test
+  pnpm run clean:project
+  pnpm run lint
+  pnpm run test
    ```
 
 2. **Build Preparation**
    ```bash
-   npm run clean:all
-   npm run build
+  pnpm run clean:all
+  pnpm run build
    ```
 
 3. **CI/CD Integration**
@@ -159,9 +159,9 @@ export AGGRESSIVE_CLEANUP=true
 ```json
 {
   "scripts": {
-    "prebuild": "npm run clean:project",
-    "posttest": "npm run clean:reports",
-    "precommit": "npm run clean:project && npm run lint"
+    "prebuild": "pnpm run clean:project",
+    "posttest": "pnpm run clean:reports",
+    "precommit": "pnpm run clean:project && pnpm run lint"
   }
 }
 ```
@@ -177,12 +177,12 @@ export AGGRESSIVE_CLEANUP=true
 ### Common Issues
 
 1. **Large Project Size**
-   - Run `npm run clean:all`
+  - Run `pnpm run clean:all`
    - Check `temp-reports/` directory size
    - Review git repository size
 
 2. **Build Failures Due to Artifacts**
-   - Clean build artifacts: `npm run clean:frontend`
+  - Clean build artifacts: `pnpm run clean:frontend`
    - Remove node_modules and reinstall
    - Check for permission issues
 
@@ -207,7 +207,7 @@ export AGGRESSIVE_CLEANUP=true
    # Remove all temporary files (use with caution)
    rm -rf temp-reports/
    rm -f *-report-*.json
-   npm run clean:all
+  pnpm run clean:all
    ```
 
 ## Continuous Improvement

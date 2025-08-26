@@ -95,7 +95,7 @@ pnpm ae-framework codegen drift -d generated/types -s .ae/ae-ir.json --format js
 pnpm ae-framework codegen watch -i .ae/ae-ir.json -o generated/types -t typescript
 ```
 
-### NPM Scripts
+### Scripts
 
 ```bash
 # Generate all target types

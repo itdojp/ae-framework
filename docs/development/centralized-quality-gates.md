@@ -107,18 +107,18 @@ Each quality gate is defined with:
 #### Basic Usage
 ```bash
 # Run all applicable quality gates for current phase
-npm run quality:gates
+pnpm run quality:gates
 
 # Run with specific environment
-npm run quality:gates:dev
-npm run quality:gates:prod
+pnpm run quality:gates:dev
+pnpm run quality:gates:prod
 
 # Run specific gates only
-npm run quality:accessibility
-npm run quality:coverage
+pnpm run quality:accessibility
+pnpm run quality:coverage
 
 # Run comprehensive quality check
-npm run quality:all
+pnpm run quality:all
 ```
 
 #### Advanced Usage
@@ -255,11 +255,11 @@ The system includes robust error handling:
 ```javascript
 // In scripts/run-quality-gates.cjs
 case 'myCustomGate':
-  command = 'npm run custom-check';
+  command = 'pnpm run custom-check';
   break;
 ```
 
-3. **Add NPM Script**:
+3. **Add Script**:
 ```json
 {
   "scripts": {
@@ -519,18 +519,18 @@ scripts/
 ##### 基本使用法
 ```bash
 # 現在のフェーズに適用可能な全品質ゲートを実行
-npm run quality:gates
+pnpm run quality:gates
 
 # 特定環境で実行
-npm run quality:gates:dev
-npm run quality:gates:prod
+pnpm run quality:gates:dev
+pnpm run quality:gates:prod
 
 # 特定ゲートのみ実行
-npm run quality:accessibility
-npm run quality:coverage
+pnpm run quality:accessibility
+pnpm run quality:coverage
 
 # 包括的品質チェック実行
-npm run quality:all
+pnpm run quality:all
 ```
 
 ##### 高度な使用法
@@ -667,7 +667,7 @@ jobs:
 ```javascript
 // scripts/run-quality-gates.cjs内で
 case 'myCustomGate':
-  command = 'npm run custom-check';
+  command = 'pnpm run custom-check';
   break;
 ```
 

@@ -11,8 +11,8 @@
 ### 📋 Prerequisites
 
 #### System Requirements
-- **Node.js**: 18.0.0 or higher
-- **pnpm**: 8.0.0 or higher (recommended package manager)
+- **Node.js**: 20.11 or higher
+- **pnpm**: 9.x (recommended package manager)
 - **TypeScript**: 5.5.0 or higher
 - **Git**: 2.0 or higher
 - **Playwright**: 1.47.0 or higher (for E2E testing)
@@ -23,6 +23,12 @@
 - **Storage**: 1GB+ free space
 
 ### 🚀 Installation
+
+Note: With Node.js 20+, enable Corepack to use the bundled pnpm:
+```bash
+corepack enable
+corepack prepare pnpm@latest --activate  # optional pin
+```
 
 #### 1. Clone Repository
 
@@ -38,10 +44,7 @@ cd ae-framework
 pnpm install
 ```
 
-**Using npm also possible:**
-```bash
-npm install
-```
+注: このプロジェクトは pnpm を前提としています。
 
 #### 3. Phase 6 Playwright Setup
 
@@ -250,7 +253,7 @@ pnpm run accessibility:full
 ```bash
 Error: Node.js version 16.x is not supported
 ```
-**Solution**: Update to Node.js 18 or higher
+**Solution**: Update to Node.js 20.11 or higher
 
 **2. TypeScript Compile Error**
 ```bash
@@ -306,11 +309,12 @@ Once installation is complete, refer to the [Usage Guide](./USAGE.md) to learn h
 If issues persist, you can get support through:
 
 1. Report on [GitHub Issues](https://github.com/itdojp/ae-framework/issues)
-2. Check logs (detailed output from `npm run build`)
+2. Check logs (detailed output from `pnpm run build`)
 3. Check environment information:
    ```bash
    node --version
-   npm --version
+   pnpm --version
+   corepack --version
    npx tsc --version
    ```
 
@@ -335,8 +339,8 @@ Regular updates are recommended to get the latest features and fixes.
 ### 📋 前提条件
 
 #### システム要件
-- **Node.js**: 18.0.0 以上
-- **pnpm**: 8.0.0 以上 (推奨パッケージマネージャー)
+- **Node.js**: 20.11 以上
+- **pnpm**: 9.x (推奨パッケージマネージャー)
 - **TypeScript**: 5.5.0 以上
 - **Git**: 2.0 以上
 - **Playwright**: 1.47.0 以上 (E2Eテスト用)
@@ -362,10 +366,7 @@ cd ae-framework
 pnpm install
 ```
 
-**npmでも可能:**
-```bash
-npm install
-```
+注: このプロジェクトは pnpm を前提としています。
 
 #### 3. Phase 6 Playwright設定
 
@@ -630,11 +631,11 @@ pnpm run perf:budgets:prod
 問題が解決しない場合は、以下の方法でサポートを受けられます：
 
 1. [GitHub Issues](https://github.com/itdojp/ae-framework/issues) での報告
-2. ログの確認（`npm run build`の詳細出力）
+2. ログの確認（`pnpm run build`の詳細出力）
 3. 環境情報の確認：
    ```bash
    node --version
-   npm --version
+   pnpm --version
    npx tsc --version
    ```
 

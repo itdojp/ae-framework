@@ -56,7 +56,7 @@ New convenience scripts added:
 {
   "test:fuzz": "vitest run tests/cli/fuzz.spec.ts",
   "test:fuzz:quick": "vitest run tests/cli/fuzz.spec.ts --timeout 10000", 
-  "test:quality:full": "npm run test:golden:status && npm run test:fuzz && npm run test:metamorphic:invariant",
+  "test:quality:full": "pnpm run test:golden:status && pnpm run test:fuzz && pnpm run test:metamorphic:invariant",
   "test:metamorphic:invariant": "vitest run tests/metamorphic/invariant-preservation.test.ts",
   "test:metamorphic": "vitest run tests/metamorphic/"
 }

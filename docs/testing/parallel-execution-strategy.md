@@ -41,7 +41,7 @@ strategy:
 #### Local Parallel Coordination
 ```bash
 # Run all test suites in parallel with optimal resource allocation
-npm run test:parallel
+pnpm run test:parallel
 
 # Docker-based parallel execution with resource constraints
 make test:docker:all
@@ -62,7 +62,7 @@ The parallel execution strategy automatically activates in GitHub Actions:
 
 #### Quick Parallel Run
 ```bash
-npm run test:parallel
+pnpm run test:parallel
 ```
 
 #### Docker-based Execution

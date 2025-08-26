@@ -16,17 +16,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Use pnpm if available
-        run: |
-          if [ -f pnpm-lock.yaml ]; then npm i -g pnpm && echo "PM=pnpm" >> $GITHUB_ENV; else echo "PM=npm" >> $GITHUB_ENV; fi
+          cache: 'pnpm'
+      - name: Enable corepack
+        run: corepack enable
       - name: Install
-        run: \${{ env.PM }} install
+        run: pnpm install --frozen-lockfile
       - name: Build
-        run: \${{ env.PM }} run build
+        run: pnpm run build
       - name: QA
-        run: node dist/cli.js qa
+        run: node dist/src/cli/index.js qa
       - name: Bench (seeded)
-        run: AE_SEED=123 node dist/cli.js bench
+        run: AE_SEED=123 node dist/src/cli/index.js bench
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -60,7 +60,7 @@ export async function ciScaffold(force = false) {
   
   console.log(chalk.cyan('\n📋 Workflow includes:'));
   console.log(chalk.cyan('  • Node.js 20 setup'));
-  console.log(chalk.cyan('  • Auto-detection of pnpm vs npm'));
+  console.log(chalk.cyan('  • pnpm via corepack'));
   console.log(chalk.cyan('  • Build step'));
   console.log(chalk.cyan('  • QA validation via `ae qa`'));
   console.log(chalk.cyan('  • Deterministic benchmark via `AE_SEED=123 ae bench`'));

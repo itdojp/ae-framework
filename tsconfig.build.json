@@ -9,29 +9,14 @@
     "allowSyntheticDefaultImports": true
   },
   "include": [
-    "src/cli.ts",
-    "src/runner/**/*.ts",
-    "src/commands/verify/*.ts",
-    "src/commands/qa/*.ts",
-    "src/commands/bench/*.ts",
-    "src/commands/tdd/*.ts",
-    "src/commands/doctor/*.ts",
-    "src/testing/fc-assert.ts"
+    "src/**/*.ts",
+    "types/**/*.d.ts"
   ],
   "exclude": [
-    "node_modules", 
-    "dist", 
+    "node_modules",
+    "dist",
     "tests",
     "**/*.test.ts",
-    "**/*.spec.ts",
-    "src/cli/ae-fix-cli.ts",
-    "src/cli/benchmark-cli.ts",
-    "src/cli/cegis-cli.ts",
-    "src/cli/circuit-breaker-cli.ts",
-    "src/cli/codegen-cli.ts",
-    "src/cli/conformance-cli.ts",
-    "src/cli/security-cli.ts",
-    "src/self-improvement/**/*",
-    "src/agents/**/*"
+    "**/*.spec.ts"
   ]
 }
