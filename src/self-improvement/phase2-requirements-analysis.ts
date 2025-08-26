@@ -7,8 +7,8 @@
 
 import { NaturalLanguageTaskAdapter, ProcessedRequirements } from '../agents/natural-language-task-adapter.js';
 import { TaskRequest } from '../agents/task-types.js';
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import type * as fs from 'fs/promises';
+import type * as path from 'path';
 
 export interface Phase2AnalysisResult {
   errorRequirements: ProcessedRequirements;

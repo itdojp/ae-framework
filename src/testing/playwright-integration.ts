@@ -3,7 +3,7 @@
  * Provides E2E test automation and intelligent test generation
  */
 
-import { EventEmitter } from 'events';
+import type { EventEmitter } from 'events';
 import type { DependencyAnalysisResult } from '../analysis/dependency-analyzer.js';
 import type { SequentialInferenceEngine } from '../engines/sequential-inference-engine.js';
 

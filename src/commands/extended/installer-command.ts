@@ -7,7 +7,7 @@ import { BaseExtendedCommand, ExtendedCommandResult, ExtendedCommandConfig } fro
 import { InstallerManager, InstallationTemplate, InstallationResult } from '../../utils/installer-manager.js';
 import { ContextManager } from '../../utils/context-manager.js';
 import { TokenOptimizer } from '../../utils/token-optimizer.js';
-import * as fs from 'fs/promises';
+import type * as fs from 'fs/promises';
 import * as path from 'path';
 
 export interface InstallerCommandResult extends ExtendedCommandResult {

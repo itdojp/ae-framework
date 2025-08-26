@@ -4,8 +4,8 @@
 
 import { FormalAgent, FormalAgentConfig } from '../agents/formal-agent.js';
 import { TDDAgent } from '../agents/tdd-agent.js';
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import type * as fs from 'fs/promises';
+import type * as path from 'path';
 
 export class Phase3Simple {
   private formalAgent: FormalAgent;

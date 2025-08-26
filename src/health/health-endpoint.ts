@@ -3,7 +3,7 @@
  * Phase 1.4: Docker production optimization health checks
  */
 
-import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { telemetryService } from '../telemetry/telemetry-service.js';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';

@@ -99,7 +99,7 @@ async function detectTestFiles(pattern?: string): Promise<{ pattern: string; fil
 }
 
 export async function qaFlake(options: QAFlakeOptions = {}): Promise<Result<{ failures: number; total: number; seeds: number[] }, AppError>> {
-  const { times = 10, pattern, timeoutMs = 300000, workers } = options;
+  const { times = 10, pattern = 'tests/**/*.test.ts', timeoutMs = 300000, workers } = options;
   const pm = await detectPM();
   const testRunner = await detectTestRunner();
   

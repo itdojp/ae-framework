@@ -3,8 +3,8 @@
  * Phase 2.3: Central orchestrator for managing and executing integration tests
  */
 
-import { EventEmitter } from 'events';
-import { v4 as uuidv4 } from 'uuid';
+import type { EventEmitter } from 'events';
+import type { v4 as uuidv4 } from 'uuid';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import {
