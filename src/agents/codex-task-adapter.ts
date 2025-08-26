@@ -54,6 +54,33 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
         };
       }
     },
+    async provideProactiveGuidance(context) {
+      const actions: string[] = [];
+      const recent = (context.recentFiles || []).join(', ');
+      const msg: string[] = [];
+
+      if (!(context.userIntent || '').trim()) {
+        actions.push('Clarify user intent for the current task');
+      }
+      if (!recent) {
+        actions.push('Run verify to generate baseline artifacts');
+      }
+      if (!actions.length) {
+        actions.push('Proceed with next phase or run quality gates');
+      }
+
+      msg.push('CodeX adapter proactive guidance');
+      if (recent) msg.push(`Recent files: ${recent}`);
+
+      return {
+        shouldIntervene: actions.length > 0,
+        intervention: {
+          type: 'suggestion',
+          message: msg.join(' | '),
+          recommendedActions: actions,
+        },
+      };
+    }
   };
   return handler;
 }
