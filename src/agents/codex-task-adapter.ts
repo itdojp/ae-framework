@@ -138,30 +138,39 @@ async function handleUI(request: TaskRequest): Promise<TaskResponse> {
   const phaseState = ctx.phaseState;
   const outputDir = ctx.outputDir || 'apps';
 
+  // If no entities provided, run a safe dry-run with a minimal demo entity
+  let effectiveState = phaseState;
+  let dryRun = false;
   if (!phaseState?.entities || Object.keys(phaseState.entities).length === 0) {
-    return {
-      summary: 'UI generation skipped - no entities provided',
-      analysis: 'Provide context.phaseState.entities to generate UI scaffolds.',
-      recommendations: [
-        'Populate context.phaseState.entities with domain entities',
-        'Or run: ae ui-scaffold --components'
-      ],
-      nextActions: ['Run CLI-based ui-scaffold as a fallback'],
-      warnings: [],
-      shouldBlockProgress: false,
-    };
+    dryRun = true;
+    effectiveState = {
+      entities: {
+        demo: {
+          description: 'Demo entity (dry-run)',
+          attributes: {
+            id: { type: 'uuid', required: true, description: 'ID' },
+            name: { type: 'string', required: true, description: 'Name' },
+            createdAt: { type: 'date', required: false, description: 'Created timestamp' }
+          },
+          acceptance_criteria: ['Name is required']
+        }
+      }
+    } as any;
   }
 
-  const gen = new UIScaffoldGenerator(phaseState, { outputDir });
+  const gen = new UIScaffoldGenerator(effectiveState as any, { outputDir, dryRun });
   const results = await gen.generateAll();
   const total = Object.values(results).length;
   const ok = Object.values(results).filter(r => r.success).length;
   const files = Object.values(results).flatMap(r => r.success ? (r.files || []) : []);
 
   return {
-    summary: `UI scaffold complete: ${ok}/${total} entities` ,
+    summary: `UI scaffold ${dryRun ? '(dry-run) ' : ''}complete: ${ok}/${total} entities` ,
     analysis: files.length ? files.map(f => `• ${f}`).join('\n') : 'No files generated',
-    recommendations: ['Run quality gates for phase 6', 'Review a11y/performance metrics'],
+    recommendations: [
+      dryRun ? 'Provide context.phaseState.entities to generate real files' : 'Run quality gates for phase 6',
+      'Review a11y/performance metrics'
+    ],
     nextActions: ['pnpm run test:a11y', 'pnpm run test:coverage'],
     warnings: [],
     shouldBlockProgress: false,
