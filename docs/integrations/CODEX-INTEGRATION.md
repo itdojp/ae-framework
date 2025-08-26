@@ -173,7 +173,7 @@ On Windows/WSL
 - If using Windows paths, ensure `cwd` is an absolute path without spaces and that execution policy permits scripts
 - Use Corepack (`corepack enable`) to manage pnpm versions consistently
 
-See also: [CodeX Artifacts and JSON Formats](./CODEX-ARTIFACTS.md) for detailed shapes and collection policy.
+See also: [CodeX Quick Start](./QUICK-START-CODEX.md) and [CodeX Artifacts and JSON Formats](./CODEX-ARTIFACTS.md) for detailed usage and data shapes.
 
 
 Windows/WSL notes (quickstart formal/UI)
