@@ -1,0 +1,15 @@
+{
+  "phase": "formal",
+  "response": {
+    "summary": "Formal spec generated: TLA+ (valid)",
+    "analysis": "----------------------------- MODULE Spec -----------------------------\n...",
+    "recommendations": [
+      "Validate properties",
+      "Review OpenAPI: artifacts/codex/openapi.yaml"
+    ],
+    "nextActions": ["Proceed to tests generation", "Run model checking"],
+    "warnings": [],
+    "shouldBlockProgress": false
+  },
+  "ts": "2025-01-01T00:00:00.000Z"
+}

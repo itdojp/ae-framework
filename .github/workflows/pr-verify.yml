@@ -110,7 +110,12 @@ jobs:
             try {
               if (fs.existsSync('artifacts/codex/ui-summary.json')) {
                 const s = JSON.parse(fs.readFileSync('artifacts/codex/ui-summary.json','utf8'));
-                lines.push(`• UI Scaffold: ${s.okEntities}/${s.totalEntities} entities, Files: ${(s.files||[]).length}, Dry-run: ${!!s.dryRun}`);
+                let files = s.files || [];
+                const preview = files.slice(0, 5).map(f => `    - ${f}`).join('
+');
+                lines.push(`• UI Scaffold: ${s.okEntities}/${s.totalEntities} entities, Files: ${files.length}, Dry-run: ${!!s.dryRun}`);
+                if (files.length) lines.push('  Preview files (up to 5):
+' + preview);
               }
             } catch {}
             // Formal/OpenAPI presence
