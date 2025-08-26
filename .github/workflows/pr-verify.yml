@@ -43,6 +43,22 @@ jobs:
         if: always()
         with:
           name: codex-json-artifacts
+      - name: Upload formal TLA+ (if generated)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: codex-formal-tla
+          path: artifacts/codex/formal.tla
+      - name: Show TLA+ head (if present)
+        if: always()
+        run: |
+          if [ -f artifacts/codex/formal.tla ]; then
+            echo '--- TLA+ (head) ---'
+            sed -n '1,80p' artifacts/codex/formal.tla || true
+            echo '---'
+          else
+            echo 'No formal.tla found.'
+          fi
       - name: Upload OpenAPI (if generated)
         uses: actions/upload-artifact@v4
         if: always()

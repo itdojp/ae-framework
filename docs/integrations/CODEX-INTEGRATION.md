@@ -158,3 +158,8 @@ Additionally, when running the formal phase, the adapter derives an OpenAPI spec
 - `artifacts/codex/openapi.yaml`
 
 This file is also uploaded in CI as `codex-openapi` if present.
+
+On Windows/WSL
+- Prefer running MCP servers from WSL for consistent `cwd` and path behavior
+- If using Windows paths, ensure `cwd` is an absolute path without spaces and that execution policy permits scripts
+- Use Corepack (`corepack enable`) to manage pnpm versions consistently

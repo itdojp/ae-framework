@@ -33,10 +33,15 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
             const spec = await formal.generateFormalSpecification(reqText, 'tla+');
             // Derive OpenAPI as a convenience artifact
             let openapiPath = '';
+            let tlaPath = '';
             try {
-              const openapi = await formal.createAPISpecification(reqText, 'openapi', { includeExamples: true, generateContracts: true });
+              // write TLA+ spec content
               const outDir = path.join(process.cwd(), 'artifacts', 'codex');
               fs.mkdirSync(outDir, { recursive: true });
+              tlaPath = path.join(outDir, 'formal.tla');
+              fs.writeFileSync(tlaPath, spec.content, 'utf8');
+
+              const openapi = await formal.createAPISpecification(reqText, 'openapi', { includeExamples: true, generateContracts: true });
               openapiPath = path.join(outDir, 'openapi.yaml');
               fs.writeFileSync(openapiPath, openapi.content, 'utf8');
             } catch {}
@@ -45,6 +50,7 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
               analysis: spec.content.slice(0, 1200),
               recommendations: [
                 'Validate properties',
+                tlaPath ? `Review TLA+: ${path.relative(process.cwd(), tlaPath)}` : 'TLA+ content available in response',
                 openapiPath ? `Review OpenAPI: ${path.relative(process.cwd(), openapiPath)}` : 'Consider API spec generation if needed'
               ],
               nextActions: ['Proceed to tests generation', 'Run model checking'],
@@ -160,11 +166,19 @@ async function handleUI(request: TaskRequest): Promise<TaskResponse> {
   const ok = Object.values(results).filter(r => r.success).length;
   const files = Object.values(results).flatMap(r => r.success ? (r.files || []) : []);
 
+  // Write additional UI summary artifact (machine-readable)
+  try {
+    const outDir = path.join(process.cwd(), 'artifacts', 'codex');
+    fs.mkdirSync(outDir, { recursive: true });
+    const uiSummaryPath = path.join(outDir, 'ui-summary.json');
+    fs.writeFileSync(uiSummaryPath, JSON.stringify({ totalEntities: total, okEntities: ok, files, dryRun }, null, 2), 'utf8');
+  } catch {}
+
   return {
     summary: `UI scaffold ${dryRun ? '(dry-run) ' : ''}complete: ${ok}/${total} entities` ,
     analysis: files.length ? files.map(f => `• ${f}`).join('\n') : 'No files generated',
     recommendations: [
-      dryRun ? 'Provide context.phaseState.entities to generate real files' : 'Run quality gates for phase 6',
+      dryRun ? 'Provide context.phaseState.entities to generate real files' : `Files generated: ${files.length}`,
       'Review a11y/performance metrics'
     ],
     nextActions: ['pnpm run test:a11y', 'pnpm run test:coverage'],
