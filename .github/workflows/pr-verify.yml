@@ -39,6 +39,16 @@ jobs:
         with:
           name: codex-quickstart-summary
           path: artifacts/codex-quickstart-summary.md
+      - name: Show CodeX summary (head)
+        if: always()
+        run: |
+          if [ -f artifacts/codex-quickstart-summary.md ]; then
+            echo '--- CodeX Quickstart Summary (head) ---'
+            sed -n '1,60p' artifacts/codex-quickstart-summary.md || true
+            echo '---'
+          else
+            echo 'No codex-quickstart summary found.'
+          fi
 
       - name: Bin smoke check
         run: node scripts/ci/check-bins.mjs
