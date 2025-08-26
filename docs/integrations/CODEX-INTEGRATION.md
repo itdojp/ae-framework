@@ -144,6 +144,15 @@ cat samples/phase-state.example.json | jq .
 node dist/src/cli/index.js ui-scaffold --components
 ```
 
+Quickstart with a custom phase-state (optional):
+
+```bash
+pnpm run build
+CODEX_RUN_UI=1 CODEX_PHASE_STATE_FILE=samples/phase-state.example.json pnpm run codex:quickstart
+
+# Dry-run is enabled by default; set CODEX_UI_DRY_RUN=0 to write files
+```
+
 ## Machine-readable artifacts
 
 When the CodeX adapter runs phases, it writes JSON summaries to `artifacts/codex/`:

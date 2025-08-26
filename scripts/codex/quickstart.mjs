@@ -47,8 +47,16 @@ async function main() {
   // 2) Optional UI scaffold
   let uiCode = 0;
   if (process.env.CODEX_RUN_UI === '1') {
-    console.log('[codex] Running ae ui-scaffold --components ...');
-    uiCode = runNode([cli, 'ui-scaffold', '--components']);
+    const stateFile = process.env.CODEX_PHASE_STATE_FILE;
+    if (stateFile) {
+      console.log(`[codex] Running ui-scaffold-cli generate --state=${stateFile} ...`);
+      const uiCli = path.resolve('dist/src/cli/ui-scaffold-cli.js');
+      const args = [uiCli, 'generate', '--state', stateFile, '--output', '.', process.env.CODEX_UI_DRY_RUN === '0' ? '' : '--dry-run'].filter(Boolean);
+      uiCode = runNode(args);
+    } else {
+      console.log('[codex] Running ae ui-scaffold --components ...');
+      uiCode = runNode([cli, 'ui-scaffold', '--components']);
+    }
   }
 
   // 3) Optional formal generation + OpenAPI
@@ -81,7 +89,7 @@ async function main() {
     '# CodeX Quickstart Summary',
     '',
     `- Verify exit code: ${verifyCode}`,
-    process.env.CODEX_RUN_UI === '1' ? `- UI scaffold exit code: ${uiCode}` : '- UI scaffold: skipped',
+    process.env.CODEX_RUN_UI === '1' ? `- UI scaffold exit code: ${uiCode}${process.env.CODEX_PHASE_STATE_FILE ? ' (state file provided)' : ''}` : '- UI scaffold: skipped',
     process.env.CODEX_RUN_FORMAL === '1' ? `- Formal generation: ${formalCode === 0 ? 'ok' : 'failed'}${formalOut ? ` (${path.relative(root, formalOut)})` : ''}` : '- Formal generation: skipped',
     '',
     'Artifacts generated under artifacts/ as applicable.',
