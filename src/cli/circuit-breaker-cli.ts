@@ -231,7 +231,7 @@ export class CircuitBreakerCLI {
           process.stdout.write(chalk.green('✓'));
           
         } catch (error) {
-          if (error.name === 'CircuitBreakerOpenError') {
+          if (error instanceof Error && error.name === 'CircuitBreakerOpenError') {
             rejectedCount++;
             process.stdout.write(chalk.red('X'));
           } else {
