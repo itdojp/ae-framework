@@ -28,6 +28,12 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      - name: CodeX quickstart smoke
+        run: pnpm run codex:quickstart
+        env:
+          AE_TYPES_STRICT: "1"
+        continue-on-error: true
+
       - name: Bin smoke check
         run: node scripts/ci/check-bins.mjs
 
