@@ -41,12 +41,18 @@ export async function benchRun() {
     samples: task.result?.samples?.length ?? 0,
   }));
   
-  // Create payload
+  // Ensure stable JSON schema with minimum required fields
   const payload = {
-    date: new Date().toISOString(),
-    env,
-    config: cfg.bench,
-    summary,
+    summary: summary.map(task => ({
+      name: task.name,
+      meanMs: task.meanMs || 0,
+      hz: task.hz || 0,
+    })),
+    meta: {
+      date: new Date().toISOString(),
+      env,
+      config: cfg.bench,
+    },
   };
   
   // Write JSON report
@@ -54,7 +60,7 @@ export async function benchRun() {
   
   // Write Markdown report
   const markdown = `# Bench Report
-- Date: ${payload.date}
+- Date: ${payload.meta.date}
 - Node: ${env.node}
 - Machine: ${env.platform}/${env.arch} ${env.cpu}
 - Iter: ${cfg.bench.iterations}, Warmup: ${cfg.bench.warmupMs}ms, Seed: ${env.seed}

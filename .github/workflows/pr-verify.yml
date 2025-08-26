@@ -87,4 +87,4 @@ jobs:
         run: ${{ env.PM }} run build
       
       - name: Flake (opt-in)
-        run: node dist/cli.js qa:flake --times 20 --timeoutMs 240000 --workers 50% --pattern "tests/**"
+        run: node dist/cli.js qa:flake --times 20 --timeoutMs 240000 --workers 50% --pattern "tests/**/*.test.ts"

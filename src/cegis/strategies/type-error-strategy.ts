@@ -364,9 +364,9 @@ export class TypeErrorFixStrategy extends BaseFixStrategy {
     const targetLine = sourceLines[failure.location.startLine - 1] || '';
     const filePath = failure.location.filePath;
     
-    // Add @ts-ignore as last resort
+    // Add TypeScript expect-error directive with metadata as last resort
     actions.push(this.createCodeChangeAction(
-      `Add @ts-ignore comment to suppress type error`,
+      `Add TypeScript expect-error comment to suppress type error`,
       filePath,
       targetLine,
       `// @ts-expect-error owner:@itdojp expires:2026-03-31 reason: automated type error suppression for complex union\n${targetLine}`,
