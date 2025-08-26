@@ -3,7 +3,7 @@
  * Phase 3 of Issue #37: Unified interface for Docker and Podman container engines
  */
 
-import { EventEmitter } from 'events';
+import type { EventEmitter } from 'events';
 
 export type ContainerEngineName = 'docker' | 'podman';
 

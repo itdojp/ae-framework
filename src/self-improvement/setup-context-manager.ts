@@ -8,8 +8,8 @@
 
 import { ContextManager, ContextOptions } from '../utils/context-manager.js';
 import { PhaseStateManager, PhaseType } from '../utils/phase-state-manager.js';
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import type * as fs from 'fs/promises';
+import type * as path from 'path';
 
 export interface ContextSetupResult {
   success: boolean;

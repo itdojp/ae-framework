@@ -3,7 +3,7 @@
  * AI-driven test selection with risk analysis and optimization
  */
 
-import { EventEmitter } from 'events';
+import type { EventEmitter } from 'events';
 import type { SequentialInferenceEngine, ComplexQuery } from '../engines/sequential-inference-engine.js';
 import type { DependencyAnalysisResult } from '../analysis/dependency-analyzer.js';
 

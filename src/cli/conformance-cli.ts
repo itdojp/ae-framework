@@ -5,7 +5,7 @@
 
 import { Command } from 'commander';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import type { join } from 'path';
 import { ConformanceVerificationEngine } from '../conformance/verification-engine.js';
 import { 
   ConformanceRule, 

@@ -3,7 +3,7 @@
  */
 
 import { PhaseStateManager, PhaseType } from '../utils/phase-state-manager.js';
-import { EventEmitter } from 'events';
+import type { EventEmitter } from 'events';
 import * as fs from 'fs';
 import * as path from 'path';
 

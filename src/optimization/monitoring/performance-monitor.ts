@@ -3,7 +3,7 @@
  * Provides real-time performance monitoring and analysis
  */
 
-import { EventEmitter } from 'events';
+import type { EventEmitter } from 'events';
 import { performance, PerformanceObserver } from 'perf_hooks';
 import os from 'node:os';
 

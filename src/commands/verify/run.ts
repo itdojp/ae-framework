@@ -77,7 +77,8 @@ export async function verifyRun(): Promise<Result<{ logs: string[]; duration: st
     
     const result = await run(name, cmd, args, {
       stdio: 'inherit',
-      env: env ? { ...process.env, ...env } : process.env
+      env: env ? { ...process.env, ...env } : process.env,
+      timeout: 120000  // 120 second timeout per step
     });
     
     if (result.ok) {
@@ -97,6 +98,7 @@ export async function verifyRun(): Promise<Result<{ logs: string[]; duration: st
     
     const result = await run(name, cmd, args, {
       stdio: 'inherit',
+      timeout: 120000,  // 120 second timeout per step
       env: env ? { ...process.env, ...env } : process.env
     });
     
@@ -117,13 +119,22 @@ export async function verifyRun(): Promise<Result<{ logs: string[]; duration: st
     // 1) TypeScript type check (prioritize scoped config)
     try {
       if (await hasBin('tsc')) {
-        if (await hasFile('tsconfig.verify.json')) {
-          await step('TypeScript Types', 'tsc', ['-p', 'tsconfig.verify.json']);
+        const tscProject = process.env.AE_TSC_PROJECT;
+        let args: string[];
+        
+        if (tscProject) {
+          // Use explicit project specified by AE_TSC_PROJECT
+          args = ['-p', tscProject];
+          console.log(`[ae][verify] TypeScript Types: using project ${tscProject}`);
+        } else if (await hasFile('tsconfig.verify.json')) {
+          args = ['-p', 'tsconfig.verify.json'];
         } else if (await hasFile('tsconfig.build.json')) {
-          await step('TypeScript Types', 'tsc', ['-p', 'tsconfig.build.json']);
+          args = ['-p', 'tsconfig.build.json'];
         } else {
-          await step('TypeScript Types', 'tsc', ['--noEmit']);
+          args = ['--noEmit'];
         }
+        
+        await step('TypeScript Types', 'tsc', args);
       } else {
         logs.push('## TypeScript Types\nℹ️  Skipped (tsc not available)');
         console.log('[ae][verify] TypeScript Types: SKIPPED (tsc not available)');
@@ -139,7 +150,18 @@ export async function verifyRun(): Promise<Result<{ logs: string[]; duration: st
     try {
       if (await hasBin('eslint')) {
         if (await hasFile('eslint.config.js') || await hasFile('eslint.config.mjs') || await hasFile('eslint.config.ts')) {
-          await step('ESLint', 'eslint', ['.']);
+          const lintScope = process.env.AE_LINT_SCOPE;
+          let args: string[];
+          
+          if (lintScope) {
+            // Use scoped path specified by AE_LINT_SCOPE
+            args = [lintScope];
+            console.log(`[ae][verify] ESLint: using scope ${lintScope}`);
+          } else {
+            args = ['.'];
+          }
+          
+          await step('ESLint', 'eslint', args);
         } else {
           logs.push('## ESLint\n⚠️  WARN: No flat config (eslint.config.js) found - skipped');
           console.log('[ae][verify] ESLint: WARN (no flat config found, skipped)');

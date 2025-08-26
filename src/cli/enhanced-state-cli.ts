@@ -3,9 +3,9 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { EnhancedStateManager, FailureArtifact } from '../utils/enhanced-state-manager.js';
-import { AEIR } from '@ae-framework/spec-compiler';
+import type { AEIR } from '@ae-framework/spec-compiler';
 import * as fs from 'fs/promises';
-import * as path from 'path';
+import type * as path from 'path';
 
 /**
  * Enhanced State Manager CLI

@@ -1,5 +1,5 @@
-import { EventEmitter } from 'events';
-import { createHash } from 'crypto';
+import type { EventEmitter } from 'events';
+import type { createHash } from 'crypto';
 
 /**
  * Circuit Breaker States
