@@ -4,7 +4,7 @@
  */
 
 import { Command } from 'commander';
-import type { promises as fs } from 'fs';
+import { promises as fs } from 'fs';
 import { join, resolve } from 'path';
 import { existsSync } from 'fs';
 import { IntegrationTestOrchestrator } from '../integration/test-orchestrator.js';

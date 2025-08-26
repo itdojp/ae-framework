@@ -3,7 +3,7 @@
  * Manages alerts, notifications, and escalation workflows
  */
 
-import type { EventEmitter } from 'events';
+import { EventEmitter } from 'events';
 import type { PerformanceAlert } from './performance-monitor.js';
 import type { MetricPoint } from './metrics-collector.js';
 
