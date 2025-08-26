@@ -287,7 +287,7 @@ async function validateArtifacts(options: any): Promise<void> {
     }
   } catch (error) {
     console.error(chalk.red('❌ Validation failed:'));
-    console.error(chalk.red(error.message));
+    console.error(chalk.red(error instanceof Error ? error.message : String(error)));
     process.exit(1);
   }
 }
