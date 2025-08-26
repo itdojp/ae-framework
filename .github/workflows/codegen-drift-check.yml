@@ -48,6 +48,9 @@ jobs:
       - name: Build ae-framework
         run: |
           pnpm build
+
+      - name: Bin smoke check
+        run: node scripts/ci/check-bins.mjs
           
       - name: Check for AE-IR file
         id: check-aeir

@@ -24,6 +24,8 @@ jobs:
       
       - name: Build
         run: pnpm run build
+      - name: Bin smoke check
+        run: node scripts/ci/check-bins.mjs
       
       - name: Flake (30x)
         run: node dist/src/cli/index.js qa:flake --times 30 --timeoutMs 240000 --workers 50% --pattern "tests/**"
