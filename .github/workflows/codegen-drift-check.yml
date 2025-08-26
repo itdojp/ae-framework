@@ -37,9 +37,9 @@ jobs:
           cache: 'pnpm'
           
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v5
         with:
-          version: 8
+          version: 10
           
       - name: Install dependencies
         run: |
@@ -216,9 +216,9 @@ jobs:
           cache: 'pnpm'
           
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v5
         with:
-          version: 8
+          version: 10
           
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -269,9 +269,9 @@ jobs:
           cache: 'pnpm'
           
       - name: Setup pnpm  
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v5
         with:
-          version: 8
+          version: 10
           
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
