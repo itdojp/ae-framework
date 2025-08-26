@@ -3,7 +3,7 @@
  * Analyzes project dependencies, module relationships, and impact scope
  */
 
-import type { EventEmitter } from 'events';
+import { EventEmitter } from 'events';
 import { SequentialInferenceEngine } from '../engines/sequential-inference-engine.js';
 import { ProblemDecomposer, type Problem, type DecompositionResult } from '../inference/core/problem-decomposer.js';
 import type { ComplexQuery, InferenceResult, DependencyGraph, ImpactAnalysis, DependencyNode } from '../engines/sequential-inference-engine.js';
