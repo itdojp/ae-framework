@@ -1,1 +1,1 @@
-test('sort_multiset repro', () => { process.env.AE_SEED='194984627'; const data=[[1611958447,1284425638,-1642048833,1317547831,1506250094,-615897173,-941689419,998127295,-739490294]]; /* TODO: call SUT(data) */ });
+test('sort_multiset repro', () => { process.env.AE_SEED='12345'; const data=[[-1100527903,-1892217882,101596626,545129614,-1707662762,1881696051]]; /* TODO: call SUT(data) */ });

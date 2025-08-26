@@ -3,8 +3,8 @@
  * Phase 2.2: Central orchestrator for runtime conformance verification
  */
 
-import { v4 as uuidv4 } from 'uuid';
-import { EventEmitter } from 'events';
+import type { v4 as uuidv4 } from 'uuid';
+import type { EventEmitter } from 'events';
 import {
   ConformanceRule,
   ConformanceConfig,

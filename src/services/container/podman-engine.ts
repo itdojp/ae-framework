@@ -6,7 +6,7 @@
 import { execSync, exec, spawn } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
-import * as fs from 'fs/promises';
+import type * as fs from 'fs/promises';
 import { 
   ContainerEngine, 
   ContainerEngineInfo, 

@@ -3,8 +3,8 @@
  * Phase 1 of ae-framework: Requirements gathering and intent analysis
  */
 
-import { readFileSync, writeFileSync, existsSync } from 'fs';
-import * as path from 'path';
+import type { readFileSync, writeFileSync, existsSync } from 'fs';
+import type * as path from 'path';
 import { SteeringLoader } from '../utils/steering-loader.js';
 
 export interface IntentAnalysisRequest {

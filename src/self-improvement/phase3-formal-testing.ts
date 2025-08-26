@@ -8,8 +8,8 @@
 import { FormalAgent, FormalAgentConfig } from '../agents/formal-agent.js';
 import { TDDAgent } from '../agents/tdd-agent.js';
 import { ValidationTaskAdapter } from '../agents/validation-task-adapter.js';
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import type * as fs from 'fs/promises';
+import type * as path from 'path';
 
 export interface Phase3Result {
   formalSpecifications: {
