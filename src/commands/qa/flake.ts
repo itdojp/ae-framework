@@ -1,4 +1,5 @@
 import * as os from 'node:os';
+import { glob } from 'glob';
 import { run } from '../../core/exec.js';
 import { err, ok, isErr, type Result } from '../../core/result.js';
 import type { AppError } from '../../core/errors.js';
@@ -65,10 +66,48 @@ async function detectTestRunner(): Promise<'jest' | 'vitest'> {
   }
 }
 
+async function detectTestFiles(pattern?: string): Promise<{ pattern: string; fileCount: number }> {
+  if (pattern) {
+    try {
+      const files = await glob(pattern);
+      return { pattern, fileCount: files.length };
+    } catch {
+      return { pattern, fileCount: 0 };
+    }
+  }
+
+  // Auto-fallback patterns in order
+  const fallbackPatterns = [
+    'tests/**/*.test.ts',
+    'test/**/*.test.ts', 
+    'tests/**'
+  ];
+
+  for (const fallbackPattern of fallbackPatterns) {
+    try {
+      const files = await glob(fallbackPattern);
+      if (files.length > 0) {
+        return { pattern: fallbackPattern, fileCount: files.length };
+      }
+    } catch {
+      // Continue to next pattern
+    }
+  }
+
+  // If nothing found, use the first fallback as default
+  return { pattern: fallbackPatterns[0], fileCount: 0 };
+}
+
 export async function qaFlake(options: QAFlakeOptions = {}): Promise<Result<{ failures: number; total: number; seeds: number[] }, AppError>> {
   const { times = 10, pattern, timeoutMs = 300000, workers } = options;
   const pm = await detectPM();
   const testRunner = await detectTestRunner();
+  
+  // Detect test files with fallback patterns
+  const testDetection = await detectTestFiles(pattern);
+  const finalPattern = testDetection.pattern;
+  const fileCount = testDetection.fileCount;
+  
   let fails = 0; 
   const seeds: number[] = [];
   const failedSeeds: { seed: number; run: number }[] = [];
@@ -76,9 +115,13 @@ export async function qaFlake(options: QAFlakeOptions = {}): Promise<Result<{ fa
   console.log(`[ae][flake] Running tests ${times} times to detect flakiness...`);
   console.log(`[ae][flake] Package manager: ${pm}`);
   console.log(`[ae][flake] Test runner: ${testRunner}`);
-  if (pattern) console.log(`[ae][flake] Pattern: ${pattern}`);
+  console.log(`[ae][flake] Pattern: ${finalPattern} (${fileCount} files detected)`);
   if (timeoutMs !== 300000) console.log(`[ae][flake] Timeout: ${timeoutMs}ms`);
   if (workers) console.log(`[ae][flake] Workers: ${workers}`);
+  
+  if (fileCount === 0) {
+    console.log(`[ae][flake] ⚠️  Warning: No test files found with pattern '${finalPattern}'`);
+  }
   
   for (let i = 0; i < times; i++) {
     const seed = Math.floor(Math.random() * 1e9);
@@ -101,13 +144,13 @@ export async function qaFlake(options: QAFlakeOptions = {}): Promise<Result<{ fa
     
     // Add test runner specific options
     if (testRunner === 'vitest') {
-      // Vitest options
-      if (pattern) {
+      // Vitest options - use finalPattern from detection
+      if (finalPattern) {
         // Try to use as directory pattern first, or as test name pattern
-        if (pattern.includes('/') || pattern.includes('*')) {
-          args.push('--dir', pattern);
+        if (finalPattern.includes('/') || finalPattern.includes('*')) {
+          args.push('--dir', finalPattern);
         } else {
-          args.push('--testNamePattern', pattern);
+          args.push('--testNamePattern', finalPattern);
         }
       }
       if (workers) {
@@ -119,9 +162,9 @@ export async function qaFlake(options: QAFlakeOptions = {}): Promise<Result<{ fa
         }
       }
     } else if (testRunner === 'jest') {
-      // Jest options  
-      if (pattern) {
-        args.push('--testPathPattern', pattern);
+      // Jest options - use finalPattern from detection 
+      if (finalPattern) {
+        args.push('--testPathPattern', finalPattern);
       }
       if (workers) {
         const parsedWorkers = parseWorkers(workers);
@@ -162,11 +205,11 @@ export async function qaFlake(options: QAFlakeOptions = {}): Promise<Result<{ fa
     if (testRunner === 'vitest') {
       failedSeeds.forEach(({ run, seed }) => {
         const reproArgs = ['vitest', 'run'];
-        if (pattern) {
-          if (pattern.includes('/') || pattern.includes('*')) {
-            reproArgs.push('--dir', pattern);
+        if (finalPattern) {
+          if (finalPattern.includes('/') || finalPattern.includes('*')) {
+            reproArgs.push('--dir', finalPattern);
           } else {
-            reproArgs.push('--testNamePattern', pattern);
+            reproArgs.push('--testNamePattern', finalPattern);
           }
         }
         if (workers) {
@@ -180,7 +223,7 @@ export async function qaFlake(options: QAFlakeOptions = {}): Promise<Result<{ fa
     } else {
       failedSeeds.forEach(({ run, seed }) => {
         const reproArgs = ['jest'];
-        if (pattern) reproArgs.push('--testPathPattern', pattern);
+        if (finalPattern) reproArgs.push('--testPathPattern', finalPattern);
         if (workers) {
           const parsedWorkers = parseWorkers(workers);
           if (parsedWorkers) reproArgs.push('--maxWorkers', parsedWorkers);
