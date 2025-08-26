@@ -534,6 +534,7 @@ export class SlashCommandManager {
     // Generate formal specification based on type
     let result: any;
     switch (specType) {
+      case undefined:
       case 'openapi':
         result = await this.getFormalAgent().createAPISpecification(
           JSON.stringify({
@@ -649,6 +650,7 @@ export class SlashCommandManager {
     let result: any;
 
     switch (action) {
+      case undefined:
       case 'deploy':
         result = await this.getOperateAgent().deployApplication({
           environment: args[1] || 'production',
@@ -884,6 +886,7 @@ export class SlashCommandManager {
     const docName = args[1];
 
     switch (action) {
+      case undefined:
       case 'load':
         if (!docName) {
           return {

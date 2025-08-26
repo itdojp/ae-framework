@@ -312,7 +312,7 @@ export async function verifyRun(): Promise<Result<{ logs: string[]; duration: st
       }
     }
 
-    // 12) TypeScript expect-error comment policy check
+    // 12) TypeScript Comment Policy check
     try {
       const stepFn = isStrict ? step : softStep;
       await stepFn('TypeScript Comment Policy', 'node', ['scripts/ci/check-expect-error.mjs']);
