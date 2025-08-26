@@ -5,16 +5,11 @@ import { UserStoriesTaskAdapter } from './user-stories-task-adapter.js';
 import { ValidationTaskAdapter } from './validation-task-adapter.js';
 import { DomainModelingTaskAdapter } from './domain-modeling-task-adapter.js';
 import { UIScaffoldGenerator } from '../generators/ui-scaffold-generator.js';
-
-// CodeX Task Adapter (skeleton)
-// Maps CodeX tasks to ae-framework Phase 1–6 handlers.
+import { FormalAgent } from './formal-agent.js';
 
 type Phase = 'intent' | 'formal' | 'stories' | 'validation' | 'modeling' | 'ui';
 
-export interface CodexTaskAdapterOptions {
-  // Future: inject concrete phase handlers if needed
-  // e.g., naturalLanguageHandler, userStoriesHandler, ...
-}
+export interface CodexTaskAdapterOptions {}
 
 export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): TaskHandler {
   const intent = new IntentTaskAdapter();
@@ -22,6 +17,8 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
   const stories = new UserStoriesTaskAdapter();
   const validation = new ValidationTaskAdapter();
   const modeling = new DomainModelingTaskAdapter();
+  const formal = new FormalAgent({ outputFormat: 'tla+', validationLevel: 'comprehensive', generateDiagrams: false, enableModelChecking: true });
+
   const handler: TaskHandler = {
     async handleTask(request: TaskRequest): Promise<TaskResponse> {
       const phase = selectPhase(request);
@@ -29,9 +26,18 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
         switch (phase) {
           case 'intent':
             return await intent.handleIntentTask(request as any);
-          case 'formal':
-            // Map formal → natural language/spec processing for now
-            return await nl.handleNaturalLanguageTask(request);
+          case 'formal': {
+            const reqText = request.prompt || request.description || '';
+            const spec = await formal.generateFormalSpecification(reqText, 'tla+');
+            return {
+              summary: `Formal spec generated: ${spec.type.toUpperCase()} (${spec.validation.status})`,
+              analysis: spec.content.slice(0, 1200),
+              recommendations: ['Validate properties', 'Consider API spec generation if needed'],
+              nextActions: ['Proceed to tests generation', 'Run model checking'],
+              warnings: spec.validation.warnings?.map(w => w.message) || [],
+              shouldBlockProgress: spec.validation.status === 'invalid',
+            };
+          }
           case 'stories':
             return await stories.handleUserStoriesTask(request);
           case 'validation':
@@ -59,15 +65,9 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
       const recent = (context.recentFiles || []).join(', ');
       const msg: string[] = [];
 
-      if (!(context.userIntent || '').trim()) {
-        actions.push('Clarify user intent for the current task');
-      }
-      if (!recent) {
-        actions.push('Run verify to generate baseline artifacts');
-      }
-      if (!actions.length) {
-        actions.push('Proceed with next phase or run quality gates');
-      }
+      if (!(context.userIntent || '').trim()) actions.push('Clarify user intent for the current task');
+      if (!recent) actions.push('Run verify to generate baseline artifacts');
+      if (!actions.length) actions.push('Proceed with next phase or run quality gates');
 
       msg.push('CodeX adapter proactive guidance');
       if (recent) msg.push(`Recent files: ${recent}`);
@@ -99,35 +99,17 @@ function selectPhase(req: TaskRequest): Phase {
 function recommendNextActions(phase: Phase): string[] {
   switch (phase) {
     case 'intent':
-      return [
-        'Extract requirements and acceptance criteria',
-        'Proceed to formal specification (Phase 2)'
-      ];
+      return ['Extract requirements and acceptance criteria', 'Proceed to formal specification (Phase 2)'];
     case 'formal':
-      return [
-        'Validate specification consistency',
-        'Generate user stories (Phase 3)'
-      ];
+      return ['Validate specification consistency', 'Generate user stories (Phase 3)'];
     case 'stories':
-      return [
-        'Derive test cases from user stories',
-        'Run integration checks (Phase 4/5)'
-      ];
+      return ['Derive test cases from user stories', 'Run integration checks (Phase 4/5)'];
     case 'validation':
-      return [
-        'Cross-validate requirements/stories/specs',
-        'Prepare domain modeling (Phase 5)'
-      ];
+      return ['Cross-validate requirements/stories/specs', 'Prepare domain modeling (Phase 5)'];
     case 'modeling':
-      return [
-        'Create domain entities and relationships',
-        'Generate UI components (Phase 6)'
-      ];
+      return ['Create domain entities and relationships', 'Generate UI components (Phase 6)'];
     case 'ui':
-      return [
-        'Run UI scaffold and quality gates',
-        'Publish artifacts and telemetry'
-      ];
+      return ['Run UI scaffold and quality gates', 'Publish artifacts and telemetry'];
     default:
       return [];
   }
@@ -138,7 +120,6 @@ async function handleUI(request: TaskRequest): Promise<TaskResponse> {
   const phaseState = ctx.phaseState;
   const outputDir = ctx.outputDir || 'apps';
 
-  // If no entities provided, run a safe dry-run with a minimal demo entity
   let effectiveState = phaseState;
   let dryRun = false;
   if (!phaseState?.entities || Object.keys(phaseState.entities).length === 0) {
@@ -172,18 +153,6 @@ async function handleUI(request: TaskRequest): Promise<TaskResponse> {
       'Review a11y/performance metrics'
     ],
     nextActions: ['pnpm run test:a11y', 'pnpm run test:coverage'],
-    warnings: [],
-    shouldBlockProgress: false,
-  };
-}
-
-function neutralResponse(phase: Phase, request: TaskRequest): TaskResponse {
-  const actions = recommendNextActions(phase);
-  return {
-    summary: `CodeX adapter received phase: ${phase}`,
-    analysis: request.description || request.prompt || '',
-    recommendations: actions,
-    nextActions: actions,
     warnings: [],
     shouldBlockProgress: false,
   };
