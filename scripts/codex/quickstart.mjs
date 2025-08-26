@@ -62,6 +62,8 @@ async function main() {
   // 3) Optional formal generation + OpenAPI
   let formalCode = 0;
   let formalOut = '';
+  let formalMC = '';
+  let formalMC = '';
   if (process.env.CODEX_RUN_FORMAL === '1') {
     try {
       console.log('[codex] Generating formal spec + OpenAPI ...');
@@ -77,6 +79,11 @@ async function main() {
         const openapi = await agent.createAPISpecification(reqText, 'openapi', { includeExamples: true, generateContracts: true });
         fs.writeFileSync(path.join(codexDir, 'quickstart-openapi.yaml'), openapi.content, 'utf8');
       } catch {}
+      try {
+        const mc = await agent.runModelChecking(spec, []);
+        fs.writeFileSync(path.join(codexDir, 'quickstart-model-check.json'), JSON.stringify(mc, null, 2), 'utf8');
+        formalMC = 'ok';
+      } catch { formalMC = 'failed'; }
       formalOut = tlaPath;
       formalCode = 0;
     } catch (e) {
@@ -90,7 +97,7 @@ async function main() {
     '',
     `- Verify exit code: ${verifyCode}`,
     process.env.CODEX_RUN_UI === '1' ? `- UI scaffold exit code: ${uiCode}${process.env.CODEX_PHASE_STATE_FILE ? ' (state file provided)' : ''}` : '- UI scaffold: skipped',
-    process.env.CODEX_RUN_FORMAL === '1' ? `- Formal generation: ${formalCode === 0 ? 'ok' : 'failed'}${formalOut ? ` (${path.relative(root, formalOut)})` : ''}` : '- Formal generation: skipped',
+    process.env.CODEX_RUN_FORMAL === '1' ? `- Formal generation: ${formalCode === 0 ? 'ok' : 'failed'}${formalOut ? ` (${path.relative(root, formalOut)})` : ''}${formalMC ? `, model-check: ${formalMC}` : ''}` : '- Formal generation: skipped',
     '',
     'Artifacts generated under artifacts/ as applicable.',
   ].join('\n');

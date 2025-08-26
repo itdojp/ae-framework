@@ -172,3 +172,5 @@ On Windows/WSL
 - Prefer running MCP servers from WSL for consistent `cwd` and path behavior
 - If using Windows paths, ensure `cwd` is an absolute path without spaces and that execution policy permits scripts
 - Use Corepack (`corepack enable`) to manage pnpm versions consistently
+
+See also: [CodeX Artifacts and JSON Formats](./CODEX-ARTIFACTS.md) for detailed shapes and collection policy.
