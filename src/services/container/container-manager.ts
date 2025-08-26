@@ -3,7 +3,7 @@
  * Phase 3 of Issue #37: Orchestrates container operations across different engines
  */
 
-import type { EventEmitter } from 'events';
+import { EventEmitter } from 'events';
 import * as path from 'path';
 import { 
   ContainerEngine, 

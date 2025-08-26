@@ -5,7 +5,7 @@
 
 import type * as fs from 'fs/promises';
 import * as path from 'path';
-import type { EventEmitter } from 'events';
+import { EventEmitter } from 'events';
 
 export interface MCPServerConfig {
   name: string;
