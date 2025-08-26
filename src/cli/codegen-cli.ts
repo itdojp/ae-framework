@@ -178,27 +178,10 @@ export function createCodegenCommand(): Command {
           }
         };
 
-        // const watcher = watch(options.input, {
-        console.log('Watch mode requires chokidar dependency');
+        console.log(chalk.yellow('Watch mode requires chokidar dependency'));
+        console.log('Install with: npm install chokidar');
+        console.log('Watch mode not available in current setup');
         return;
-          persistent: true,
-          ignoreInitial: true,
-        });
-
-        watcher.on('change', () => {
-          clearTimeout(timeout);
-          timeout = setTimeout(regenerate, debounceMs);
-        });
-
-        // Keep process alive
-        process.on('SIGINT', () => {
-          console.log(chalk.yellow('\n👋 Stopping watch mode...'));
-          watcher.close();
-          process.exit(0);
-        });
-
-        // Initial generation
-        await regenerate();
 
       } catch (error) {
         console.error(chalk.red(`❌ Watch mode failed: ${(error as Error).message}`));

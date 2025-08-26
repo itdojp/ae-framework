@@ -38,7 +38,7 @@ export class HybridTDDSystem {
     this.config = config;
     this.metricsCollector = new MetricsCollector(ConfigLoader.load());
     this.specCompiler = new AESpecCompiler();
-    this.stateManager = EnhancedStateManager.getInstance();
+    this.stateManager = new EnhancedStateManager();
     
     if (config.enableCLI) {
       this.cli = new AEFrameworkCLI();
@@ -502,6 +502,9 @@ export const createHybridTDDSystem = (config?: Partial<HybridTDDConfig>) => {
     enableClaudeCodeIntegration: true,
     enforceRealTime: true,
     strictMode: true,
+    enableSpecSSot: true,
+    specPath: './specs',
+    aeIrOutputPath: './ae-ir-output',
   };
   
   return new HybridTDDSystem({ ...defaultConfig, ...config });

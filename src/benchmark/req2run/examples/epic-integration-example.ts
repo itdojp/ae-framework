@@ -5,7 +5,7 @@
  */
 
 import { StandardizedBenchmarkRunner } from '../runners/StandardizedBenchmarkRunner.js';
-import { BenchmarkConfig, ReportFormat } from '../types/index.js';
+import { BenchmarkConfig, ReportFormat, BenchmarkCategory, DifficultyLevel } from '../types/index.js';
 
 /**
  * Example: Complete Req2Run-Benchmark EPIC Integration
@@ -17,6 +17,12 @@ export async function runBenchmarkEPICDemo(): Promise<void> {
   
   // Configuration for benchmark execution
   const config: BenchmarkConfig = {
+    req2runRepository: './examples/req2run-problems',
+    problems: [
+      { id: 'simple-calculator', enabled: true, timeoutMs: 300000, retries: 1, category: BenchmarkCategory.CLI_TOOL, difficulty: DifficultyLevel.BASIC },
+      { id: 'user-auth-system', enabled: true, timeoutMs: 300000, retries: 1, category: BenchmarkCategory.AUTHENTICATION, difficulty: DifficultyLevel.INTERMEDIATE },
+      { id: 'data-processing', enabled: true, timeoutMs: 300000, retries: 1, category: BenchmarkCategory.DATA_PROCESSING, difficulty: DifficultyLevel.BASIC }
+    ],
     execution: {
       parallel: false,
       maxConcurrency: 2,
@@ -254,6 +260,11 @@ export async function demonstrateCICDIntegration(): Promise<void> {
   console.log('\n🔄 CI/CD Integration Pattern Demo');
   
   const config: BenchmarkConfig = {
+    req2runRepository: './examples/req2run-problems',
+    problems: [
+      { id: 'auth-system', enabled: true, timeoutMs: 180000, retries: 0, category: BenchmarkCategory.AUTHENTICATION, difficulty: DifficultyLevel.ADVANCED },
+      { id: 'payment-gateway', enabled: true, timeoutMs: 180000, retries: 0, category: BenchmarkCategory.WEB_API, difficulty: DifficultyLevel.ADVANCED }
+    ],
     execution: {
       parallel: true,
       maxConcurrency: 3,
@@ -320,6 +331,11 @@ export async function demonstratePerformanceRegression(): Promise<void> {
   
   // This would typically compare against baseline results
   const config: BenchmarkConfig = {
+    req2runRepository: './examples/req2run-problems',
+    problems: [
+      { id: 'performance-test', enabled: true, timeoutMs: 300000, retries: 1, category: BenchmarkCategory.DISTRIBUTED_SYSTEM, difficulty: DifficultyLevel.ADVANCED },
+      { id: 'memory-optimization', enabled: true, timeoutMs: 300000, retries: 1, category: BenchmarkCategory.DISTRIBUTED_SYSTEM, difficulty: DifficultyLevel.EXPERT }
+    ],
     execution: {
       parallel: false,
       maxConcurrency: 1,

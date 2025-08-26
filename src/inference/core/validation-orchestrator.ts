@@ -488,12 +488,14 @@ export class ValidationOrchestrator extends EventEmitter {
                 criterion: config.name,
                 passed: false,
                 score: 0,
-                details: `Validation failed: ${result.reason || 'Unknown error'}`,
+                details: `Validation failed: ${result.status === 'rejected' ? (result.reason instanceof Error ? result.reason.message : String(result.reason ?? 'Unknown error')) : 'Validation rejected'}`,
                 importance: config.priority
               },
               executionTime: 0,
               attempts: 1,
-              error: result.reason as Error
+              error: result.status === 'rejected'
+                ? (result.reason instanceof Error ? result.reason : new Error(String(result.reason)))
+                : new Error('Validation failed')
             });
           }
         }
