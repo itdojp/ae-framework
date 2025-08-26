@@ -61,7 +61,14 @@ pnpm run codex:mcp:code
 ```
 
 ### Client setup (example)
-Configure CodeX to connect to the servers via stdio on Node 20.11+. Ensure the working directory is the ae-framework repo (or set `cwd`). Example (pseudoconfig):
+Configure CodeX to connect to the servers via stdio on Node 20.11+. Ensure the working directory is the ae-framework repo (or set `cwd`).
+
+Sample configs are provided under `samples/`:
+
+- JSON: `samples/codex-mcp-config.json`
+- YAML: `samples/codex-mcp-config.yaml`
+
+Replace `${AE_FRAMEWORK_ROOT}` with your local path. Minimal JSON example:
 
 ```json
 {

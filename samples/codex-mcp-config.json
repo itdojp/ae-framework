@@ -1,0 +1,29 @@
+{
+  "$schema": "https://modelcontextprotocol.io/schemas/client/v0.1.0",
+  "mcpServers": {
+    "ae-intent": {
+      "command": "pnpm",
+      "args": ["run", "codex:mcp:intent"],
+      "cwd": "${AE_FRAMEWORK_ROOT}",
+      "env": {
+        "NODE_ENV": "production"
+      }
+    },
+    "ae-verify": {
+      "command": "pnpm",
+      "args": ["run", "codex:mcp:verify"],
+      "cwd": "${AE_FRAMEWORK_ROOT}"
+    },
+    "ae-test": {
+      "command": "pnpm",
+      "args": ["run", "codex:mcp:test"],
+      "cwd": "${AE_FRAMEWORK_ROOT}"
+    },
+    "ae-code": {
+      "command": "pnpm",
+      "args": ["run", "codex:mcp:code"],
+      "cwd": "${AE_FRAMEWORK_ROOT}"
+    }
+  }
+}
+
