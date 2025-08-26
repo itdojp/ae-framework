@@ -32,6 +32,7 @@ jobs:
         run: pnpm run codex:quickstart
         env:
           AE_TYPES_STRICT: "1"
+          CODEX_RUN_FORMAL: "1"
         continue-on-error: true
       - name: Upload CodeX quickstart summary
         uses: actions/upload-artifact@v4
