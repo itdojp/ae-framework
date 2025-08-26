@@ -416,4 +416,36 @@ export class CircuitBreaker extends EventEmitter {
   }
 }
 
+/**
+ * Simple Circuit Breaker Manager
+ */
+class CircuitBreakerManager extends EventEmitter {
+  private breakers = new Map<string, CircuitBreaker>();
+
+  getCircuitBreaker(name: string, options: CircuitBreakerOptions): CircuitBreaker {
+    if (!this.breakers.has(name)) {
+      const breaker = new CircuitBreaker(name, options);
+      this.breakers.set(name, breaker);
+      
+      // Forward events
+      breaker.on('stateChange', (state) => this.emit('breakerStateChanged', { name, state }));
+      breaker.on('circuitOpened', (event) => this.emit('circuitOpened', event));
+      breaker.on('circuitClosed', (event) => this.emit('circuitClosed', event));
+    }
+    
+    return this.breakers.get(name)!;
+  }
+
+  getAllBreakers(): CircuitBreaker[] {
+    return Array.from(this.breakers.values());
+  }
+
+  resetAll(): void {
+    for (const breaker of this.breakers.values()) {
+      breaker.reset();
+    }
+  }
+}
+
+export const circuitBreakerManager = new CircuitBreakerManager();
 export default CircuitBreaker;

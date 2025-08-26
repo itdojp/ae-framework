@@ -176,7 +176,7 @@ export class Phase4CodeGeneration {
       },
       language: 'typescript',
       style: {
-        indentation: '  ',
+        indentation: 'spaces',
         quotes: 'single',
         semicolons: true,
         trailingComma: 'es5'
