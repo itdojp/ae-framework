@@ -3,7 +3,7 @@
  * Phase 2.2: Runtime monitor for API contract conformance verification
  */
 
-import type { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 import {
   ConformanceMonitor,
   ConformanceRule,

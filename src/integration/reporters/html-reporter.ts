@@ -3,7 +3,7 @@
  * Phase 2.3: Generate comprehensive HTML reports for test execution results
  */
 
-import type { promises as fs } from 'fs';
+import { promises as fs } from 'fs';
 import { join, dirname } from 'path';
 import {
   TestReporter,

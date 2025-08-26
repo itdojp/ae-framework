@@ -3,7 +3,7 @@
  * Advanced task scheduling with priorities, dependencies, and resource optimization
  */
 
-import type { EventEmitter } from 'events';
+import { EventEmitter } from 'events';
 import type { ParallelTask, TaskResult, ResourceRequirements, TaskPriority } from './parallel-optimizer.js';
 
 export interface ScheduledTask extends ParallelTask {

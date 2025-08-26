@@ -3,7 +3,7 @@
  * Phase 2.2: Runtime monitor for data validation conformance rules
  */
 
-import type { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 import {
   ConformanceMonitor,

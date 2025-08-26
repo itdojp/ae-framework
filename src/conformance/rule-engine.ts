@@ -3,7 +3,7 @@
  * Phase 2.2: Core engine for executing conformance rules and detecting violations
  */
 
-import type { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 import { 
   ConformanceRule,
   ConformanceConfig,

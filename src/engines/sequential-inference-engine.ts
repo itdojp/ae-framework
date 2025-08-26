@@ -3,7 +3,7 @@
  * Provides multi-step reasoning with validation and rollback capabilities
  */
 
-import type { EventEmitter } from 'events';
+import { EventEmitter } from 'events';
 
 export interface ComplexQuery {
   id: string;

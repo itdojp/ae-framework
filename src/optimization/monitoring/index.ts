@@ -3,7 +3,7 @@
  * Combines performance monitoring, metrics collection, and alert management
  */
 
-import type { EventEmitter } from 'events';
+import { EventEmitter } from 'events';
 import { PerformanceMonitor, type PerformanceMetrics, type PerformanceAlert } from './performance-monitor.js';
 import { MetricsCollector, type MetricPoint, type MetricsSnapshot } from './metrics-collector.js';
 import { AlertManager, type AlertInstance, type AlertSummary } from './alert-manager.js';

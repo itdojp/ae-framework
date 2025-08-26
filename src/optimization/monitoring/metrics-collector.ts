@@ -3,7 +3,7 @@
  * Collects, aggregates, and exports performance metrics
  */
 
-import type { EventEmitter } from 'events';
+import { EventEmitter } from 'events';
 import type { PerformanceMetrics } from './performance-monitor.js';
 
 export interface MetricPoint {

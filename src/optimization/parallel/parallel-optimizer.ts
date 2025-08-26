@@ -3,7 +3,7 @@
  * Intelligent parallel processing optimization and task distribution
  */
 
-import type { EventEmitter } from 'events';
+import { EventEmitter } from 'events';
 import type { Worker } from 'worker_threads';
 import { cpus } from 'os';
 

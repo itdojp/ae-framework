@@ -3,7 +3,7 @@
  * Combines monitoring, parallel processing, and resource management
  */
 
-import type { EventEmitter } from 'events';
+import { EventEmitter } from 'events';
 import { MonitoringSystem, type MonitoringSystemConfig, type MonitoringDashboard } from './monitoring/index.js';
 import { ParallelOptimizationSystem, type OptimizationMetrics } from './parallel/index.js';
 

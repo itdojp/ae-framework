@@ -3,7 +3,7 @@
  * Advanced resource allocation and pooling for parallel optimization
  */
 
-import type { EventEmitter } from 'events';
+import { EventEmitter } from 'events';
 import type { ResourceRequirements, ResourceUsage } from './parallel-optimizer.js';
 
 export interface PooledResource {

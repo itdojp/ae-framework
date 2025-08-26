@@ -3,7 +3,7 @@
  * Coordinates validation processes across different solution components
  */
 
-import type { EventEmitter } from 'events';
+import { EventEmitter } from 'events';
 import type { SubSolution, CompositeSolution, ValidationResult } from './solution-composer.js';
 
 export interface ValidationPlan {
