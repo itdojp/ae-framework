@@ -25,6 +25,7 @@ export async function runBenchmarkEPICDemo(): Promise<void> {
         maxMemoryMB: 512,
         maxCpuPercent: 80,
         maxDiskMB: 1024,
+        maxExecutionTimeMs: 300000,
         maxNetworkMbps: 100
       },
       environment: 'test',
@@ -262,6 +263,7 @@ export async function demonstrateCICDIntegration(): Promise<void> {
         maxMemoryMB: 1024,
         maxCpuPercent: 90,
         maxDiskMB: 2048,
+        maxExecutionTimeMs: 180000,
         maxNetworkMbps: 100
       },
       environment: 'ci',
@@ -327,6 +329,7 @@ export async function demonstratePerformanceRegression(): Promise<void> {
         maxMemoryMB: 2048,
         maxCpuPercent: 70,
         maxDiskMB: 4096,
+        maxExecutionTimeMs: 300000,
         maxNetworkMbps: 50
       },
       environment: 'regression',

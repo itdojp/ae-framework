@@ -213,8 +213,12 @@ export class StandardizedBenchmarkRunner {
       id: spec.id || problemId,
       title: spec.title || `Benchmark Problem ${problemId}`,
       description: this.buildDescription(spec),
+      category: spec.category || 'general',
+      difficulty: spec.difficulty || 'basic',
       requirements: this.extractRequirements(spec),
       constraints: this.extractConstraints(spec),
+      testCriteria: spec.testCriteria || [],
+      expectedOutput: spec.expectedOutput || { type: 'any', value: null },
       metadata: {
         created_by: spec.metadata?.author || 'req2run-benchmark',
         created_at: spec.metadata?.created_date || new Date().toISOString(),

@@ -178,7 +178,9 @@ export function createCodegenCommand(): Command {
           }
         };
 
-        const watcher = watch(options.input, {
+        // const watcher = watch(options.input, {
+        console.log('Watch mode requires chokidar dependency');
+        return;
           persistent: true,
           ignoreInitial: true,
         });
