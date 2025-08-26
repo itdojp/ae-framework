@@ -174,3 +174,9 @@ On Windows/WSL
 - Use Corepack (`corepack enable`) to manage pnpm versions consistently
 
 See also: [CodeX Artifacts and JSON Formats](./CODEX-ARTIFACTS.md) for detailed shapes and collection policy.
+
+
+Windows/WSL notes (quickstart formal/UI)
+- Ensure `pnpm run build` is executed so that `dist/` exists (quickstart loads from `dist`)
+- Prefer WSL for consistent `cwd` and path behavior; if using Windows paths, avoid spaces
+- Use Corepack: `corepack enable` to manage pnpm; run the quickstart from repository root

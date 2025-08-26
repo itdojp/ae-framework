@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/schemas/ui-summary.schema.json",
+  "title": "UI Summary",
+  "type": "object",
+  "properties": {
+    "totalEntities": { "type": "integer", "minimum": 0 },
+    "okEntities": { "type": "integer", "minimum": 0 },
+    "files": { "type": "array", "items": { "type": "string" } },
+    "dryRun": { "type": "boolean" }
+  },
+  "required": ["totalEntities", "okEntities", "files", "dryRun"],
+  "additionalProperties": false
+}

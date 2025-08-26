@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/schemas/codex-result.schema.json",
+  "title": "CodeX Phase Result",
+  "type": "object",
+  "properties": {
+    "phase": {
+      "type": "string",
+      "enum": ["intent", "formal", "stories", "validation", "modeling", "ui"]
+    },
+    "response": {
+      "type": "object",
+      "properties": {
+        "summary": { "type": "string" },
+        "analysis": { "type": "string" },
+        "recommendations": { "type": "array", "items": { "type": "string" } },
+        "nextActions": { "type": "array", "items": { "type": "string" } },
+        "warnings": { "type": "array", "items": { "type": "string" } },
+        "shouldBlockProgress": { "type": "boolean" }
+      },
+      "required": ["summary", "analysis", "recommendations", "nextActions", "warnings", "shouldBlockProgress"],
+      "additionalProperties": true
+    },
+    "ts": { "type": "string", "format": "date-time" }
+  },
+  "required": ["phase", "response", "ts"],
+  "additionalProperties": false
+}
