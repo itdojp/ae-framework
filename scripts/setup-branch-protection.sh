@@ -20,9 +20,9 @@ echo "📋 Applying branch protection rules..."
 
 gh api repos/$REPO/branches/$BRANCH/protection \
     --method PUT \
-    --field required_status_checks='{"strict":true,"contexts":["verify / verify"]}' \
+    --raw-field required_status_checks='{"strict":true,"contexts":["verify / verify"]}' \
     --field enforce_admins=true \
-    --field required_pull_request_reviews='{"required_approving_review_count":1,"dismiss_stale_reviews":true,"require_code_owner_reviews":false}' \
+    --raw-field required_pull_request_reviews='{"required_approving_review_count":1,"dismiss_stale_reviews":true,"require_code_owner_reviews":false}' \
     --field restrictions=null \
     --field allow_force_pushes=false \
     --field allow_deletions=false
