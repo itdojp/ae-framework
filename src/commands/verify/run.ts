@@ -312,19 +312,19 @@ export async function verifyRun(): Promise<Result<{ logs: string[]; duration: st
       }
     }
 
-    // 12) @ts-expect-error policy check
+    // 12) TypeScript Comment Policy check
     try {
       const stepFn = isStrict ? step : softStep;
-      await stepFn('@ts-expect-error Policy', 'node', ['scripts/ci/check-expect-error.mjs']);
+      await stepFn('TypeScript Comment Policy', 'node', ['scripts/ci/check-expect-error.mjs']);
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       if (isStrict) {
         success = false;
-        logs.push(`## @ts-expect-error Policy\n❌ FAILED: ${errorMsg}`);
-        console.log(`[ae][verify] @ts-expect-error Policy: FAILED (${errorMsg})`);
+        logs.push(`## TypeScript Comment Policy\n❌ FAILED: ${errorMsg}`);
+        console.log(`[ae][verify] TypeScript Comment Policy: FAILED (${errorMsg})`);
       } else {
-        logs.push(`## @ts-expect-error Policy\n⚠️  INFO: ${errorMsg}`);
-        console.log(`[ae][verify] @ts-expect-error Policy: INFO (${errorMsg})`);
+        logs.push(`## TypeScript Comment Policy\n⚠️  INFO: ${errorMsg}`);
+        console.log(`[ae][verify] TypeScript Comment Policy: INFO (${errorMsg})`);
       }
     }
 

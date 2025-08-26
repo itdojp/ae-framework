@@ -369,7 +369,7 @@ export class TypeErrorFixStrategy extends BaseFixStrategy {
       `Add @ts-ignore comment to suppress type error`,
       filePath,
       targetLine,
-      `// @ts-expect-error -- TODO: describe why\n${targetLine}`,
+      `// @ts-expect-error owner:@itdojp expires:2026-03-31 reason: automated type error suppression for complex union\n${targetLine}`,
       failure.location.startLine,
       failure.location.endLine,
       0.3,

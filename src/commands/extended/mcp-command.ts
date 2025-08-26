@@ -264,9 +264,10 @@ export class MCPCommand extends BaseExtendedCommand {
   }
 
   private async handlePluginManagement(args: string[], projectRoot: string): Promise<MCPCommandResult> {
-    const pluginAction = args[0]?.toLowerCase();
+    const pluginAction = args[0]?.toLowerCase() ?? undefined;
 
     switch (pluginAction) {
+      case undefined:
       case 'list':
         return await this.handleListPlugins(projectRoot);
 
@@ -419,9 +420,10 @@ export class MCPCommand extends BaseExtendedCommand {
   }
 
   private async handleConfigManagement(args: string[], projectRoot: string): Promise<MCPCommandResult> {
-    const configAction = args[0]?.toLowerCase();
+    const configAction = args[0]?.toLowerCase() ?? undefined;
 
     switch (configAction) {
+      case undefined:
       case 'show':
         return await this.handleShowConfig(projectRoot);
 
