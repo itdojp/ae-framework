@@ -98,6 +98,7 @@ We welcome international contributions! Please see our [Contributing Guide](CONT
 
 - [Quick Start Guide](docs/getting-started/QUICK-START-GUIDE.md)
 - [Claude Code Integration](docs/integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)
+- [CodeX Integration](docs/integrations/CODEX-INTEGRATION.md)
 - [API Reference](docs/reference/API.md)
 - [CLI Commands](docs/reference/CLI-COMMANDS-REFERENCE.md)
 
