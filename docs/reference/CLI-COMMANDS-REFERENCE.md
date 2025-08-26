@@ -540,6 +540,58 @@ ae-framework config validate
 ae-framework config reset
 ```
 
+### verify command
+Comprehensive verification with staged execution and scope controls
+
+```bash
+# Full verification with all steps
+ae-framework verify
+
+# Scoped TypeScript verification  
+AE_TSC_PROJECT=tsconfig.build.json ae-framework verify
+
+# Scoped ESLint verification
+AE_LINT_SCOPE=src/core ae-framework verify
+
+# Combined scoped verification
+AE_TSC_PROJECT=tsconfig.verify.json AE_LINT_SCOPE=src ae-framework verify
+
+# Strict mode (fail on any step failure)
+AE_TYPES_STRICT=1 ae-framework verify
+```
+
+**Options:**
+- Environment Variables:
+  - `AE_TSC_PROJECT`: Specify TypeScript project file (e.g., `tsconfig.build.json`)
+  - `AE_LINT_SCOPE`: Limit ESLint scope to specific directory (e.g., `src/core`)
+  - `AE_TYPES_STRICT=1`: Enable strict mode (exit on failures)
+
+**Features:**
+- Staged execution with 120s timeout per step
+- Continues on failure and aggregates results in `artifacts/verify.md`
+- TypeScript type checking with prioritized config detection
+- ESLint linting with flat config support
+- QA metrics and benchmarks with deterministic seeds
+- Type tests (non-blocking) and expect-error policy validation
+
+### codemod commands
+Code transformation utilities using TypeScript AST manipulation
+
+```bash
+# Transform regular imports to 'import type' for type-only usage
+npm run codemod:import-type
+
+# Transform specific directory only
+cd src/core && npm run codemod:import-type
+```
+
+**Features:**
+- Analyzes TypeScript files using ts-morph AST manipulation
+- Detects type-only import usage patterns
+- Skips relative imports (likely value imports)
+- Transforms external library imports to `import type` when appropriate
+- Helps resolve verbatimModuleSyntax violations
+
 ## Advanced Usage Examples
 
 ### Pipeline Integration
