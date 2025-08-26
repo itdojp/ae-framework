@@ -184,7 +184,6 @@ export class E2ETestRunner implements TestRunner {
           }
 
           stepResults.push({
-            id: step.id,
             status: 'success',
             startTime: stepStartTime,
             endTime: stepEndTime,
@@ -206,7 +205,6 @@ export class E2ETestRunner implements TestRunner {
           screenshots.push(screenshotPath);
 
           stepResults.push({
-            id: step.id,
             status: 'error',
             startTime: stepStartTime,
             endTime: stepEndTime,
