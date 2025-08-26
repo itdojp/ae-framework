@@ -17,6 +17,12 @@ import {
   ConformanceRuleCategory
 } from './types.js';
 
+// Default values for rule execution context
+const DEFAULT_METRICS = { executionTime: 0, cpuUsage: 0, memoryUsage: 0, networkCalls: 0, dbQueries: 0 };
+const DEFAULT_LOGS: string[] = [];
+const DEFAULT_STATE_SNAPSHOT = {};
+const DEFAULT_TRACES: string[] = [];
+
 export class ConformanceRuleEngine {
   private rules: Map<string, ConformanceRule> = new Map();
   private config: ConformanceConfig;

@@ -1,4 +1,4 @@
-import { CircuitBreaker } from '../utils/circuit-breaker.js';
+import { circuitBreakerManager, CircuitBreaker } from '../utils/circuit-breaker.js';
 import { EventEmitter } from 'events';
 
 /**
