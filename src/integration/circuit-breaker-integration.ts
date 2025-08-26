@@ -281,6 +281,7 @@ export class AEFrameworkCircuitBreakerIntegration extends EventEmitter {
 
     for (const breaker of allBreakers) {
       const health = breaker.generateHealthReport();
+      const name = breaker.name;
       let componentHealth: 'healthy' | 'degraded' | 'critical';
       
       switch (health.health) {
