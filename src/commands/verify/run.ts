@@ -53,6 +53,12 @@ async function hasFile(file: string): Promise<boolean> {
   }
 }
 
+async function getCliPath(): Promise<string> {
+  return (await hasFile('dist/src/cli/index.js'))
+    ? 'dist/src/cli/index.js'
+    : (await hasFile('dist/cli.js')) ? 'dist/cli.js' : '';
+}
+
 async function hasScript(scriptName: string): Promise<boolean> {
   try {
     const packageJsonContent = await readFile('package.json', 'utf8');
@@ -179,9 +185,7 @@ export async function verifyRun(): Promise<Result<{ logs: string[]; duration: st
 
     // 3) QA metrics
     try {
-      const cliPath = (await hasFile('dist/src/cli/index.js'))
-        ? 'dist/src/cli/index.js'
-        : (await hasFile('dist/cli.js')) ? 'dist/cli.js' : '';
+      const cliPath = await getCliPath();
       if (cliPath) {
         await step('QA Metrics', 'node', [cliPath, 'qa']);
       } else {
@@ -197,9 +201,7 @@ export async function verifyRun(): Promise<Result<{ logs: string[]; duration: st
 
     // 4) Benchmarks (with deterministic seed)
     try {
-      const cliPath = (await hasFile('dist/src/cli/index.js'))
-        ? 'dist/src/cli/index.js'
-        : (await hasFile('dist/cli.js')) ? 'dist/cli.js' : '';
+      const cliPath = await getCliPath();
       if (cliPath) {
         await step('Benchmarks', 'node', [cliPath, 'bench'], { AE_SEED: '123' });
       } else {
