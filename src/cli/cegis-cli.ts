@@ -5,7 +5,7 @@
 
 import { Command } from 'commander';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import type { join } from 'path';
 import { AutoFixEngine } from '../cegis/auto-fix-engine.js';
 import { FailureArtifactFactory } from '../cegis/failure-artifact-factory.js';
 import { FailureArtifact, AutoFixOptions } from '../cegis/types.js';

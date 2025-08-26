@@ -1,5 +1,5 @@
 import { circuitBreakerManager, CircuitBreaker } from '../utils/circuit-breaker.js';
-import { EventEmitter } from 'events';
+import type { EventEmitter } from 'events';
 
 /**
  * AE-Framework specific error types for circuit breaker filtering

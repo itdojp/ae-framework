@@ -3,7 +3,7 @@
  * Phase 5 of ae-framework: Automated verification and quality assurance
  */
 
-import { execSync } from 'child_process';
+import type { execSync } from 'child_process';
 import { readFileSync, existsSync } from 'fs';
 import * as path from 'path';
 import { RustVerificationAgent, type RustVerificationRequest, type RustVerificationResult } from './rust-verification-agent.js';

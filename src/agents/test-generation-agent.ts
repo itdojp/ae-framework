@@ -3,7 +3,7 @@
  * 自動的にテストケースを生成し、包括的なテスト戦略を提供
  */
 
-import { execSync } from 'child_process';
+import type { execSync } from 'child_process';
 import { readFileSync, existsSync } from 'fs';
 
 export interface TestGenerationRequest {

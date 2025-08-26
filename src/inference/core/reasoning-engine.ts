@@ -3,7 +3,7 @@
  * Orchestrates different reasoning strategies and manages inference processes
  */
 
-import { EventEmitter } from 'events';
+import type { EventEmitter } from 'events';
 import { SequentialStrategy } from '../strategies/sequential-strategy.js';
 import { ParallelStrategy } from '../strategies/parallel-strategy.js';
 import type { ReasoningContext, StrategyResult } from '../strategies/sequential-strategy.js';

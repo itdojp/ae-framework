@@ -10,7 +10,7 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-grpc';
 import { MeterProvider, PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { metrics, trace } from '@opentelemetry/api';
-import { logs } from '@opentelemetry/api-logs';
+import type { logs } from '@opentelemetry/api-logs';
 import * as os from 'os';
 import * as process from 'process';
 

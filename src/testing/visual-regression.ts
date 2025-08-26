@@ -3,7 +3,7 @@
  * Provides automated visual testing and change detection
  */
 
-import { EventEmitter } from 'events';
+import type { EventEmitter } from 'events';
 import type { DependencyAnalysisResult } from '../analysis/dependency-analyzer.js';
 import type { PlaywrightConfig, E2ETestCase } from './playwright-integration.js';
 

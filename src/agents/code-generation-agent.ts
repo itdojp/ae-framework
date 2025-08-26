@@ -3,8 +3,8 @@
  * Phase 4 of ae-framework: Automated code generation from tests and specifications
  */
 
-import { readFileSync, existsSync, writeFileSync } from 'fs';
-import { execSync } from 'child_process';
+import type { readFileSync, existsSync, writeFileSync } from 'fs';
+import type { execSync } from 'child_process';
 import * as path from 'path';
 
 export interface CodeGenerationRequest {
