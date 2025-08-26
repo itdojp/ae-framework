@@ -18,19 +18,36 @@ fi
 # Apply branch protection rules
 echo "📋 Applying branch protection rules..."
 
+# Create protection payload
+cat > /tmp/protection-payload.json << 'EOF'
+{
+  "required_status_checks": {
+    "strict": true,
+    "contexts": ["PR Verify / verify"]
+  },
+  "enforce_admins": true,
+  "required_pull_request_reviews": {
+    "required_approving_review_count": 1,
+    "dismiss_stale_reviews": true,
+    "require_code_owner_reviews": false
+  },
+  "restrictions": null,
+  "allow_force_pushes": false,
+  "allow_deletions": false
+}
+EOF
+
 gh api repos/$REPO/branches/$BRANCH/protection \
     --method PUT \
-    --raw-field required_status_checks='{"strict":true,"contexts":["verify / verify"]}' \
-    --field enforce_admins=true \
-    --raw-field required_pull_request_reviews='{"required_approving_review_count":1,"dismiss_stale_reviews":true,"require_code_owner_reviews":false}' \
-    --field restrictions=null \
-    --field allow_force_pushes=false \
-    --field allow_deletions=false
+    --input /tmp/protection-payload.json
 
 echo "✅ Branch protection configured successfully!"
 echo ""
+# Cleanup temp file
+rm -f /tmp/protection-payload.json
+
 echo "📊 Protection rules applied:"
-echo "  • Required status checks: verify / verify"
+echo "  • Required status checks: PR Verify / verify"
 echo "  • Require branches to be up to date: true"
 echo "  • Restrict pushes to matching branches: false"
 echo "  • Require pull request reviews: 1 approval"
