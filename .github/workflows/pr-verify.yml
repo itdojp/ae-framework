@@ -33,6 +33,12 @@ jobs:
         env:
           AE_TYPES_STRICT: "1"
         continue-on-error: true
+      - name: Upload CodeX quickstart summary
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: codex-quickstart-summary
+          path: artifacts/codex-quickstart-summary.md
 
       - name: Bin smoke check
         run: node scripts/ci/check-bins.mjs

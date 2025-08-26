@@ -1,4 +1,10 @@
 import { TaskHandler, TaskRequest, TaskResponse } from './task-types.js';
+import { IntentTaskAdapter } from './intent-task-adapter.js';
+import { NaturalLanguageTaskAdapter } from './natural-language-task-adapter.js';
+import { UserStoriesTaskAdapter } from './user-stories-task-adapter.js';
+import { ValidationTaskAdapter } from './validation-task-adapter.js';
+import { DomainModelingTaskAdapter } from './domain-modeling-task-adapter.js';
+import { UIScaffoldGenerator } from '../generators/ui-scaffold-generator.js';
 
 // CodeX Task Adapter (skeleton)
 // Maps CodeX tasks to ae-framework Phase 1–6 handlers.
@@ -11,20 +17,42 @@ export interface CodexTaskAdapterOptions {
 }
 
 export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): TaskHandler {
+  const intent = new IntentTaskAdapter();
+  const nl = new NaturalLanguageTaskAdapter();
+  const stories = new UserStoriesTaskAdapter();
+  const validation = new ValidationTaskAdapter();
+  const modeling = new DomainModelingTaskAdapter();
   const handler: TaskHandler = {
     async handleTask(request: TaskRequest): Promise<TaskResponse> {
       const phase = selectPhase(request);
-      // For PoC: return a neutral response with recommended next actions.
-      // Future: delegate to concrete phase handlers and collect real outputs.
-      const actions = recommendNextActions(phase);
-      return {
-        summary: `CodeX adapter received phase: ${phase}`,
-        analysis: request.description || request.prompt || '',
-        recommendations: actions,
-        nextActions: actions,
-        warnings: [],
-        shouldBlockProgress: false,
-      };
+      try {
+        switch (phase) {
+          case 'intent':
+            return await intent.handleIntentTask(request as any);
+          case 'formal':
+            // Map formal → natural language/spec processing for now
+            return await nl.handleNaturalLanguageTask(request);
+          case 'stories':
+            return await stories.handleUserStoriesTask(request);
+          case 'validation':
+            return await validation.handleValidationTask(request);
+          case 'modeling':
+            return await modeling.handleDomainModelingTask(request);
+          case 'ui':
+            return await handleUI(request);
+          default:
+            return neutralResponse(phase, request);
+        }
+      } catch (err) {
+        return {
+          summary: `CodeX adapter error in phase: ${phase}`,
+          analysis: String(err),
+          recommendations: recommendNextActions(phase),
+          nextActions: [],
+          warnings: ['Adapter error encountered'],
+          shouldBlockProgress: true,
+        };
+      }
     },
   };
   return handler;
@@ -78,3 +106,49 @@ function recommendNextActions(phase: Phase): string[] {
   }
 }
 
+async function handleUI(request: TaskRequest): Promise<TaskResponse> {
+  const ctx = (request as any).context || {};
+  const phaseState = ctx.phaseState;
+  const outputDir = ctx.outputDir || 'apps';
+
+  if (!phaseState?.entities || Object.keys(phaseState.entities).length === 0) {
+    return {
+      summary: 'UI generation skipped - no entities provided',
+      analysis: 'Provide context.phaseState.entities to generate UI scaffolds.',
+      recommendations: [
+        'Populate context.phaseState.entities with domain entities',
+        'Or run: ae ui-scaffold --components'
+      ],
+      nextActions: ['Run CLI-based ui-scaffold as a fallback'],
+      warnings: [],
+      shouldBlockProgress: false,
+    };
+  }
+
+  const gen = new UIScaffoldGenerator(phaseState, { outputDir });
+  const results = await gen.generateAll();
+  const total = Object.values(results).length;
+  const ok = Object.values(results).filter(r => r.success).length;
+  const files = Object.values(results).flatMap(r => r.success ? (r.files || []) : []);
+
+  return {
+    summary: `UI scaffold complete: ${ok}/${total} entities` ,
+    analysis: files.length ? files.map(f => `• ${f}`).join('\n') : 'No files generated',
+    recommendations: ['Run quality gates for phase 6', 'Review a11y/performance metrics'],
+    nextActions: ['pnpm run test:a11y', 'pnpm run test:coverage'],
+    warnings: [],
+    shouldBlockProgress: false,
+  };
+}
+
+function neutralResponse(phase: Phase, request: TaskRequest): TaskResponse {
+  const actions = recommendNextActions(phase);
+  return {
+    summary: `CodeX adapter received phase: ${phase}`,
+    analysis: request.description || request.prompt || '',
+    recommendations: actions,
+    nextActions: actions,
+    warnings: [],
+    shouldBlockProgress: false,
+  };
+}
