@@ -3,8 +3,8 @@
  * Phase 2.3: Browser-based E2E test execution with Playwright integration
  */
 
-import { v4 as uuidv4 } from 'uuid';
-import { promises as fs } from 'fs';
+import type { v4 as uuidv4 } from 'uuid';
+import type { promises as fs } from 'fs';
 import { join } from 'path';
 
 /**

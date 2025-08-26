@@ -4,7 +4,7 @@
  */
 
 import { z } from 'zod';
-import { FastifyRequest, FastifyReply } from 'fastify';
+import type { FastifyRequest, FastifyReply } from 'fastify';
 import { enhancedTelemetry, TELEMETRY_ATTRIBUTES } from './enhanced-telemetry.js';
 import { trace, context } from '@opentelemetry/api';
 

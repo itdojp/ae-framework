@@ -3,8 +3,8 @@
  * Intelligent parallel processing optimization and task distribution
  */
 
-import { EventEmitter } from 'events';
-import { Worker } from 'worker_threads';
+import type { EventEmitter } from 'events';
+import type { Worker } from 'worker_threads';
 import { cpus } from 'os';
 
 export interface ParallelTask<T = any, R = any> {

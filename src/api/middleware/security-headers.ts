@@ -3,7 +3,7 @@
  * Implements basic HTTP security headers for the AE-Framework API
  */
 
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
 export interface SecurityHeadersOptions {
   /** Enable/disable all security headers */

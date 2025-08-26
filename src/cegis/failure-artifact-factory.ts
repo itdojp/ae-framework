@@ -3,7 +3,7 @@
  * Phase 2.1: Factory for creating standardized failure artifacts
  */
 
-import { v4 as uuidv4 } from 'uuid';
+import type { v4 as uuidv4 } from 'uuid';
 import { 
   FailureArtifact, 
   FailureCategory, 

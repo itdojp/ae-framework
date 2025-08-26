@@ -3,7 +3,7 @@
  * Phase 2.3: HTTP API testing with contract validation and performance monitoring
  */
 
-import { v4 as uuidv4 } from 'uuid';
+import type { v4 as uuidv4 } from 'uuid';
 import {
   TestRunner,
   TestCase,
