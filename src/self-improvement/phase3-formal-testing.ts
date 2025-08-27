@@ -307,21 +307,26 @@ export class Phase3FormalTesting {
     ]) {
       totalTests++;
       
-      const testValidation = await this.validationAdapter.validateUserStories({
-        testSuite,
-        validationType: 'quality',
-        criteria: [
-          'syntax',
-          'coverage',
-          'reliability',
-          'maintainability'
-        ]
+      const testValidation = await this.validationAdapter.handleValidationTask({
+        description: 'Test suite validation',
+        prompt: 'Validate test suite quality, syntax, coverage, and maintainability',
+        subagent_type: 'validation',
+        context: {
+          testSuite,
+          validationType: 'quality',
+          criteria: [
+            'syntax',
+            'coverage',
+            'reliability',
+            'maintainability'
+          ]
+        }
       });
 
-      if (testValidation.isValid) {
+      if (!testValidation.shouldBlockProgress) {
         validTests++;
       } else {
-        warnings.push(`Test validation failed: ${testValidation.errors.join(', ')}`);
+        warnings.push(`Test validation failed: ${testValidation.analysis}`);
       }
     }
 

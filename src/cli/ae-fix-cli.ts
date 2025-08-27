@@ -264,7 +264,35 @@ async function createFailureArtifact(options: any): Promise<void> {
 }
 
 // Transform artifact location properties to expected format
-function transformArtifactLocation(artifact: any): any {
+interface TransformedArtifactLocation {
+  filePath?: string;
+  startLine?: number;
+  endLine?: number;
+  startColumn?: number;
+  endColumn?: number;
+  functionName?: string;
+  className?: string;
+}
+
+interface SourceArtifactLocation {
+  file?: string;
+  line?: number;
+  column?: number;
+  function?: string;
+  module?: string;
+}
+
+interface SourceFailureArtifact {
+  location?: SourceArtifactLocation;
+  [key: string]: any;
+}
+
+interface TransformedFailureArtifact {
+  location?: TransformedArtifactLocation;
+  [key: string]: any;
+}
+
+function transformArtifactLocation(artifact: SourceFailureArtifact): TransformedFailureArtifact {
   if (artifact.location) {
     const { location, ...rest } = artifact;
     return {

@@ -5,10 +5,25 @@
  * with OpenTelemetry integration and failure artifact generation
  */
 
-// Optional Express types - will be undefined if express is not installed
-type Request = any;
-type Response = any;
-type NextFunction = any;
+// Express types with conditional import for better type safety
+interface ExpressRequest {
+  method: string;
+  url: string;
+  headers: Record<string, string | string[] | undefined>;
+  body?: any;
+  params?: Record<string, string>;
+  query?: Record<string, any>;
+}
+
+interface ExpressResponse {
+  status(code: number): ExpressResponse;
+  json(obj: any): ExpressResponse;
+  send(data: any): ExpressResponse;
+}
+
+type Request = ExpressRequest;
+type Response = ExpressResponse;
+type NextFunction = (error?: any) => void;
 import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { ConformanceGuard, ConformanceResult, GuardFactory } from './conformance-guards.js';
