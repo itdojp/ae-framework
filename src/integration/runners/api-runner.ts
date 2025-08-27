@@ -126,14 +126,14 @@ export class APITestRunner implements TestRunner {
   async runTest(test: TestCase, environment: TestEnvironment): Promise<TestResult> {
     const startTime = new Date().toISOString();
     const resultId = uuidv4();
+    const stepResults = [];
+    const logs: string[] = [];
+    const metrics = {
+      networkCalls: 0,
+      databaseQueries: 0
+    };
     
     try {
-      const stepResults = [];
-      const logs: string[] = [];
-      const metrics = {
-        networkCalls: 0,
-        databaseQueries: 0
-      };
 
       // Execute test steps
       for (const step of test.steps) {
@@ -217,10 +217,10 @@ export class APITestRunner implements TestRunner {
         endTime,
         duration,
         environment: environment.name,
-        steps: [], // stepResults is not defined in this scope, using empty array
+        steps: stepResults, // Return collected step results, even if partial
         error: error instanceof Error ? error.message : String(error),
         stackTrace: error instanceof Error ? error.stack : undefined,
-        logs: [], // logs is not defined in this scope, using empty array
+        logs, // Return collected logs for debugging
         metrics: {
           networkCalls: 0,
           databaseQueries: 0,

@@ -8,7 +8,7 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 
 /**
- * Test step result interface
+ * Test step result interface - for internal step tracking
  */
 export interface TestStepResult {
   stepIndex: number;
@@ -17,6 +17,21 @@ export interface TestStepResult {
   message: string;
   duration: number;
   screenshot?: string;
+}
+
+/**
+ * Internal step execution result - matches TestResult.steps format
+ */
+interface InternalStepResult {
+  status: 'passed' | 'error';
+  startTime: string;
+  endTime: string;
+  duration: number;
+  actualResult?: string;
+  error?: string;
+  screenshots: string[];
+  logs: string[];
+  metrics: Record<string, number>;
 }
 import {
   TestRunner,
@@ -148,7 +163,7 @@ export class E2ETestRunner implements TestRunner {
   async runTest(test: TestCase, environment: TestEnvironment): Promise<TestResult> {
     const startTime = new Date().toISOString();
     const resultId = uuidv4();
-    const stepResults: TestStepResult[] = [];
+    const stepResults: InternalStepResult[] = [];
     const screenshots: string[] = [];
     const logs: string[] = [];
     
@@ -185,7 +200,7 @@ export class E2ETestRunner implements TestRunner {
 
           stepResults.push({
             status: 'passed',
-            // startTime: stepStartTime, // removed as not part of interface
+            startTime: stepStartTime,
             endTime: stepEndTime,
             duration: stepDuration,
             actualResult,
@@ -206,7 +221,7 @@ export class E2ETestRunner implements TestRunner {
 
           stepResults.push({
             status: 'error',
-            // startTime: stepStartTime, // removed as not part of interface
+            startTime: stepStartTime,
             endTime: stepEndTime,
             duration: stepDuration,
             error: error instanceof Error ? error.message : String(error),
@@ -234,12 +249,12 @@ export class E2ETestRunner implements TestRunner {
         duration,
         environment: environment.name,
         steps: stepResults.map(step => ({
-          id: test.id + '-' + Math.random().toString(36).substr(2, 9),
+          id: uuidv4(),
           status: step.status,
           error: step.error,
           metrics: step.metrics || {},
           logs: step.logs || [],
-          startTime: step.endTime, // Use endTime as startTime since startTime is not available
+          startTime: step.startTime || step.endTime,
           endTime: step.endTime,
           duration: step.duration || 0,
           screenshots: step.screenshots || [],
@@ -267,12 +282,12 @@ export class E2ETestRunner implements TestRunner {
         duration,
         environment: environment.name,
         steps: stepResults.map(step => ({
-          id: test.id + '-' + Math.random().toString(36).substr(2, 9),
+          id: uuidv4(),
           status: step.status,
           error: step.error,
           metrics: step.metrics || {},
           logs: step.logs || [],
-          startTime: step.endTime || new Date().toISOString(),
+          startTime: step.startTime || step.endTime || new Date().toISOString(),
           endTime: step.endTime || new Date().toISOString(),
           duration: step.duration || 0,
           screenshots: step.screenshots || [],
