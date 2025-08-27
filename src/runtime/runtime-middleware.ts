@@ -5,7 +5,10 @@
  * with OpenTelemetry integration and failure artifact generation
  */
 
-import type { Request, Response, NextFunction } from 'express';
+// Optional Express types - will be undefined if express is not installed
+type Request = any;
+type Response = any;
+type NextFunction = any;
 import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { ConformanceGuard, ConformanceResult, GuardFactory } from './conformance-guards.js';
@@ -367,7 +370,7 @@ export async function fastifyConformancePlugin(
   fastify.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
     if (!config.enabled) return;
 
-    const operationId = (request.routerMethod as any)?.operationId || 
+    const operationId = ((request as any).routerMethod as any)?.operationId || 
                        `${request.method}_${request.url}`;
 
     const span = tracer.startSpan(`fastify_validate_${operationId}`);
@@ -397,7 +400,7 @@ export async function fastifyConformancePlugin(
   fastify.addHook('onSend', async (request: FastifyRequest, reply: FastifyReply, payload: any) => {
     if (!config.enabled) return payload;
 
-    const operationId = (request.routerMethod as any)?.operationId || 
+    const operationId = ((request as any).routerMethod as any)?.operationId || 
                        `${request.method}_${request.url}`;
 
     const span = tracer.startSpan(`fastify_validate_response_${operationId}`);

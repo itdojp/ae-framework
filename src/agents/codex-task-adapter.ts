@@ -76,7 +76,7 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
           case 'ui':
             return writeAndReturn(phase, await handleUI(request));
           default:
-            return writeAndReturn(phase, neutralResponse(phase, request));
+            return writeAndReturn(phase, createNeutralResponse(phase, request));
         }
       } catch (err) {
         const errorResp: TaskResponse = {
@@ -206,4 +206,15 @@ function writeAndReturn(phase: Phase, response: TaskResponse): TaskResponse {
     // best-effort only
   }
   return response;
+}
+
+function createNeutralResponse(phase: Phase, request: TaskRequest): TaskResponse {
+  return {
+    summary: `No specific handler available for phase: ${phase}`,
+    analysis: `Task request received for phase '${phase}' but no specialized handler is implemented. Task type: ${(request as any).type || 'unknown'}`,
+    recommendations: [`Implement specific handler for phase '${phase}'`, 'Consider using a different phase for this task type'],
+    nextActions: ['Review task requirements', 'Select appropriate phase or implement handler'],
+    warnings: [`Phase '${phase}' not fully supported in current implementation`],
+    shouldBlockProgress: false
+  };
 }
