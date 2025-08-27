@@ -63,7 +63,7 @@ export class Phase3Simple {
         - Existing functionality must be preserved
         - Test coverage must not decrease
         `,
-        'openapi',
+        'z-notation',
         { generateProperties: false }
       );
 
@@ -94,7 +94,7 @@ export class Phase3Simple {
       console.error('❌ Phase 3 Simple failed:', error);
       return {
         success: false,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         message: 'Phase 3 Simple failed'
       };
     }

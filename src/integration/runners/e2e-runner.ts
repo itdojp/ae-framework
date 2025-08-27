@@ -184,8 +184,8 @@ export class E2ETestRunner implements TestRunner {
           }
 
           stepResults.push({
-            status: 'success',
-            startTime: stepStartTime,
+            status: 'passed',
+            // startTime: stepStartTime, // removed as not part of interface
             endTime: stepEndTime,
             duration: stepDuration,
             actualResult,
@@ -206,7 +206,7 @@ export class E2ETestRunner implements TestRunner {
 
           stepResults.push({
             status: 'error',
-            startTime: stepStartTime,
+            // startTime: stepStartTime, // removed as not part of interface
             endTime: stepEndTime,
             duration: stepDuration,
             error: error instanceof Error ? error.message : String(error),
@@ -234,8 +234,16 @@ export class E2ETestRunner implements TestRunner {
         duration,
         environment: environment.name,
         steps: stepResults.map(step => ({
-          ...step,
-          artifacts: []
+          id: test.id + '-' + Math.random().toString(36).substr(2, 9),
+          status: step.status,
+          error: step.error,
+          metrics: step.metrics || {},
+          logs: step.logs || [],
+          startTime: step.endTime, // Use endTime as startTime since startTime is not available
+          endTime: step.endTime,
+          duration: step.duration || 0,
+          screenshots: step.screenshots || [],
+          actualResult: step.actualResult
         })),
         screenshots,
         logs,
@@ -258,7 +266,18 @@ export class E2ETestRunner implements TestRunner {
         endTime,
         duration,
         environment: environment.name,
-        steps: stepResults,
+        steps: stepResults.map(step => ({
+          id: test.id + '-' + Math.random().toString(36).substr(2, 9),
+          status: step.status,
+          error: step.error,
+          metrics: step.metrics || {},
+          logs: step.logs || [],
+          startTime: step.endTime || new Date().toISOString(),
+          endTime: step.endTime || new Date().toISOString(),
+          duration: step.duration || 0,
+          screenshots: step.screenshots || [],
+          actualResult: step.actualResult
+        })),
         error: error instanceof Error ? error.message : String(error),
         stackTrace: error instanceof Error ? error.stack : undefined,
         screenshots,

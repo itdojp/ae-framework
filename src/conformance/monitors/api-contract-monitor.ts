@@ -156,7 +156,7 @@ export class APIContractMonitor implements ConformanceMonitor {
           // metrics: undefined, // TODO: Implement (removed as not part of interface)
           // logs: undefined, // TODO: Implement (removed as not part of interface)
           // stateSnapshot: undefined, // TODO: Implement (removed as not part of interface)
-          traces: undefined, // TODO: Implement
+          // traces: undefined, // TODO: Implement (removed as not part of interface)
           context,
           stackTrace: error instanceof Error ? error.stack : undefined,
           evidence: { 
