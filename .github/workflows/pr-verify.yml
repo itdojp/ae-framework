@@ -144,6 +144,16 @@ jobs:
                 lines.push(`• Validation: ${sum}${covText}`);
               }
             } catch {}
+            // Intent summary
+            try {
+              if (fs.existsSync('artifacts/codex/result-intent.json')) {
+                const ri = JSON.parse(fs.readFileSync('artifacts/codex/result-intent.json','utf8'));
+                const sum = (ri.response && ri.response.summary) || '';
+                const mReq = sum.match(/(\d+)\s+requirement/i);
+                const reqText = mReq ? `${mReq[1]} requirements` : 'requirements: n/a';
+                lines.push(`• Intent: ${reqText}`);
+              }
+            } catch {}
             // Formal/OpenAPI presence
             const hasTla = fs.existsSync('artifacts/codex/formal.tla');
             const hasOas = fs.existsSync('artifacts/codex/openapi.yaml');

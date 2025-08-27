@@ -92,11 +92,30 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
     },
     async provideProactiveGuidance(context) {
       const actions: string[] = [];
-      const recent = (context.recentFiles || []).join(', ');
+      const recentFiles = context.recentFiles || [];
+      const recent = recentFiles.join(', ');
       const msg: string[] = [];
 
-      if (!(context.userIntent || '').trim()) actions.push('Clarify user intent for the current task');
+      const intent = (context.userIntent || '').toLowerCase();
+      const hasOpenAPI = recentFiles.some(f => f.includes('openapi.yaml'));
+      const hasTLA = recentFiles.some(f => f.endsWith('.tla'));
+      const hasUISummary = recentFiles.some(f => f.includes('ui-summary.json'));
+
+      if (!intent.trim()) actions.push('Clarify user intent for the current task');
       if (!recent) actions.push('Run verify to generate baseline artifacts');
+
+      // Phase-aware nudges
+      if (intent.includes('api') || hasOpenAPI) {
+        actions.push('Generate/validate API specs (OpenAPI)');
+        actions.push('Derive contract tests from API specs');
+      }
+      if (hasTLA) {
+        actions.push('Run model checking on TLA+');
+        actions.push('Review properties and counterexamples');
+      }
+      if (hasUISummary) {
+        actions.push('Run accessibility and coverage gates for UI');
+      }
       if (!actions.length) actions.push('Proceed with next phase or run quality gates');
 
       msg.push('CodeX adapter proactive guidance');
@@ -107,7 +126,7 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
         intervention: {
           type: 'suggestion',
           message: msg.join(' | '),
-          recommendedActions: actions,
+          recommendedActions: Array.from(new Set(actions)),
         },
       };
     }
