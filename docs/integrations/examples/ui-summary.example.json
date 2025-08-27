@@ -1,0 +1,9 @@
+{
+  "totalEntities": 1,
+  "okEntities": 1,
+  "files": [
+    "apps/web/app/products/page.tsx",
+    "apps/web/components/ProductForm.tsx"
+  ],
+  "dryRun": true
+}

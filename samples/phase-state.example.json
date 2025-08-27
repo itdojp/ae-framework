@@ -1,0 +1,21 @@
+{
+  "$schema": "https://example.com/ae-framework/phase-state.schema.json",
+  "entities": {
+    "products": {
+      "description": "E-commerce product catalog",
+      "attributes": {
+        "id": { "type": "uuid", "required": true, "description": "Product ID" },
+        "name": { "type": "string", "required": true, "description": "Product name" },
+        "price": { "type": "number", "required": true, "description": "Unit price", "validation": ">= 0" },
+        "description": { "type": "string", "required": false, "description": "Details" },
+        "stock": { "type": "integer", "required": true, "description": "Available stock", "validation": ">= 0", "default": 0 }
+      },
+      "acceptance_criteria": [
+        "Name is required",
+        "Price must be non-negative",
+        "Stock must be non-negative integer"
+      ]
+    }
+  }
+}
+

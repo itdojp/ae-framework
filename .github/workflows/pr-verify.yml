@@ -28,6 +28,148 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      - name: CodeX quickstart smoke
+        run: pnpm run codex:quickstart
+        env:
+          AE_TYPES_STRICT: "1"
+          CODEX_RUN_FORMAL: "1"
+        continue-on-error: true
+      - name: Upload CodeX quickstart summary
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: codex-quickstart-summary
+          path: artifacts/codex-quickstart-summary.md
+      - name: Upload CodeX JSON artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: codex-json-artifacts
+          path: artifacts/codex/*.json
+      - name: Upload formal TLA+ (if generated)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: codex-formal-tla
+          path: artifacts/codex/formal.tla
+      - name: Show TLA+ head (if present)
+        if: always()
+        run: |
+          if [ -f artifacts/codex/formal.tla ]; then
+            echo '--- TLA+ (head) ---'
+            sed -n '1,80p' artifacts/codex/formal.tla || true
+            echo '---'
+          else
+            echo 'No formal.tla found.'
+          fi
+      - name: Upload OpenAPI (if generated)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: codex-openapi
+          path: artifacts/codex/openapi.yaml
+
+      - name: Upload model checking (if generated)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: codex-model-check
+          path: artifacts/codex/model-check.json
+      - name: Show model checking summary (if present)
+        if: always()
+        run: |
+          if [ -f artifacts/codex/model-check.json ]; then
+            node -e "const mc=require('./artifacts/codex/model-check.json'); console.log('Properties:', mc.properties?.length||0); const unsat=(mc.properties||[]).filter(p=>p && p.satisfied===false).length; console.log('Unsatisfied:', unsat);"
+          else
+            echo 'No model-check.json found.'
+          fi
+      - name: Show UI summary (if present)
+        if: always()
+        run: |
+          if [ -f artifacts/codex/ui-summary.json ]; then
+            node -e "const s=require('./artifacts/codex/ui-summary.json'); console.log('UI Entities:', s.okEntities,'/',s.totalEntities,'Files:', (s.files||[]).length, 'Dry-run:', !!s.dryRun);"
+          else
+            echo 'No ui-summary.json found.'
+          fi
+
+      - name: Comment summary on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let lines = [];
+            // Model check
+            try {
+              if (fs.existsSync('artifacts/codex/model-check.json')) {
+                const mc = JSON.parse(fs.readFileSync('artifacts/codex/model-check.json','utf8'));
+                const props = (mc.properties || []).length;
+                const unsat = (mc.properties || []).filter(p => p && p.satisfied === false).length;
+                lines.push(`• Model Checking: ${props} properties, Unsatisfied: ${unsat}`);
+              }
+            } catch {}
+            // UI summary
+            try {
+              if (fs.existsSync('artifacts/codex/ui-summary.json')) {
+                const s = JSON.parse(fs.readFileSync('artifacts/codex/ui-summary.json','utf8'));
+                let files = s.files || [];
+                const preview = files.slice(0, 5).map(f => `    - ${f}`).join('
+');
+                lines.push(`• UI Scaffold: ${s.okEntities}/${s.totalEntities} entities, Files: ${files.length}, Dry-run: ${!!s.dryRun}`);
+                if (files.length) lines.push('  Preview files (up to 5):
+' + preview);
+              }
+            } catch {}
+            // Stories summary
+            try {
+              if (fs.existsSync('artifacts/codex/result-stories.json')) {
+                const rs = JSON.parse(fs.readFileSync('artifacts/codex/result-stories.json','utf8'));
+                const sum = (rs.response && rs.response.summary) || '';
+                const mStories = sum.match(/(\d+)\s+stor/i);
+                const mEpics = sum.match(/(\d+)\s+epic/i);
+                const parts = [];
+                parts.push(mStories ? `${mStories[1]} stories` : 'stories: n/a');
+                if (mEpics) parts.push(`${mEpics[1]} epics`);
+                lines.push(`• Stories: ${parts.join(', ')}`);
+              }
+            } catch {}
+            // Validation summary
+            try {
+              if (fs.existsSync('artifacts/codex/result-validation.json')) {
+                const rv = JSON.parse(fs.readFileSync('artifacts/codex/result-validation.json','utf8'));
+                const sum = (rv.response && rv.response.summary) || 'Validation';
+                const analysis = (rv.response && rv.response.analysis) || '';
+                const mCov = analysis.match(/Coverage:\s*(\d+)%/i);
+                const covText = mCov ? `, Coverage: ${mCov[1]}%` : '';
+                lines.push(`• Validation: ${sum}${covText}`);
+              }
+            } catch {}
+            // Formal/OpenAPI presence
+            const hasTla = fs.existsSync('artifacts/codex/formal.tla');
+            const hasOas = fs.existsSync('artifacts/codex/openapi.yaml');
+            if (hasTla) lines.push('• Formal: TLA+ generated (artifacts/codex/formal.tla)');
+            if (hasOas) lines.push('• OpenAPI: artifacts/codex/openapi.yaml');
+            if (lines.length === 0) {
+              lines.push('No CodeX artifacts found to summarize.');
+            }
+            const body = `### CodeX Artifacts Summary\n\n${lines.map(l=>`- ${l}`).join('\n')}\n`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
+      - name: Show CodeX summary (head)
+        if: always()
+        run: |
+          if [ -f artifacts/codex-quickstart-summary.md ]; then
+            echo '--- CodeX Quickstart Summary (head) ---'
+            sed -n '1,60p' artifacts/codex-quickstart-summary.md || true
+            echo '---'
+          else
+            echo 'No codex-quickstart summary found.'
+          fi
+
       - name: Bin smoke check
         run: node scripts/ci/check-bins.mjs
 

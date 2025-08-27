@@ -1,0 +1,15 @@
+{
+  "phase": "stories",
+  "response": {
+    "summary": "User Story Generation Complete - 8 stories created across 3 epics",
+    "analysis": "# User Stories Generation Report\n...",
+    "recommendations": [
+      "Derive test cases from user stories",
+      "Run integration checks (Phase 4/5)"
+    ],
+    "nextActions": ["Validate story completeness", "Prioritize stories"],
+    "warnings": [],
+    "shouldBlockProgress": false
+  },
+  "ts": "2025-01-01T00:00:00.000Z"
+}
