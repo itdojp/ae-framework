@@ -23,7 +23,11 @@
     "allowSyntheticDefaultImports": true,
     "downlevelIteration": true,
     "noEmitOnError": false,
-    "allowJs": false
+    "allowJs": false,
+    "paths": {
+      "@ae-framework/spec-compiler": ["./packages/spec-compiler/dist/index.d.ts"],
+      "@ae-framework/spec-compiler/*": ["./packages/spec-compiler/dist/*"]
+    }
   },
   "include": ["src/**/*.ts", "types/**/*.d.ts", "packages/**/*"],
   "exclude": [

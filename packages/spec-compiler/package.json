@@ -10,7 +10,9 @@
     "clean": "rm -rf dist",
     "dev": "tsc --watch",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepublishOnly": "pnpm run build",
+    "prepack": "pnpm run build"
   },
   "dependencies": {
     "js-yaml": "^4.1.0",
