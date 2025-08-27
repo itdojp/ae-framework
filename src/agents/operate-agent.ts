@@ -3,50 +3,50 @@ import pino from 'pino';
 
 // Core interfaces for the Operate Agent
 export interface OperateAgentConfig {
-  deploymentConfig: DeploymentConfig;
-  monitoringConfig: MonitoringConfig;
-  alertingConfig: AlertingConfig;
-  scalingConfig: ScalingConfig;
-  securityConfig: SecurityConfig;
-  costConfig: CostConfig;
-  sloConfig: SloConfig;
-  chaosConfig: ChaosConfig;
+  deploymentConfig?: DeploymentConfig;
+  monitoringConfig?: MonitoringConfig;
+  alertingConfig?: AlertingConfig;
+  scalingConfig?: ScalingConfig;
+  securityConfig?: SecurityConfig;
+  costConfig?: CostConfig;
+  sloConfig?: SloConfig;
+  chaosConfig?: ChaosConfig;
 }
 
 export interface DeploymentConfig {
-  cicdProvider: 'github-actions' | 'gitlab-ci' | 'jenkins' | 'tekton';
-  environments: string[];
-  rolloutStrategy: 'blue-green' | 'canary' | 'rolling';
-  healthCheckUrl: string;
-  timeoutSeconds: number;
+  cicdProvider?: 'github-actions' | 'gitlab-ci' | 'jenkins' | 'tekton';
+  environments?: string[];
+  rolloutStrategy?: 'blue-green' | 'canary' | 'rolling';
+  healthCheckUrl?: string;
+  timeoutSeconds?: number;
 }
 
 export interface MonitoringConfig {
-  metricsEndpoint: string;
-  logsEndpoint: string;
-  tracesEndpoint: string;
-  healthEndpoints: string[];
-  checkIntervalMs: number;
+  metricsEndpoint?: string;
+  logsEndpoint?: string;
+  tracesEndpoint?: string;
+  healthEndpoints?: string[];
+  checkIntervalMs?: number;
 }
 
 export interface AlertingConfig {
-  channels: AlertChannel[];
-  thresholds: AlertThreshold[];
-  escalationPolicy: EscalationPolicy[];
+  channels?: AlertChannel[];
+  thresholds?: AlertThreshold[];
+  escalationPolicy?: EscalationPolicy[];
 }
 
 export interface AlertChannel {
-  type: 'slack' | 'email' | 'pagerduty' | 'webhook';
-  endpoint: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  type?: 'slack' | 'email' | 'pagerduty' | 'webhook';
+  endpoint?: string;
+  severity?: 'low' | 'medium' | 'high' | 'critical';
 }
 
 export interface AlertThreshold {
-  metric: string;
-  condition: 'gt' | 'lt' | 'eq';
-  value: number;
-  duration: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  metric?: string;
+  condition?: 'gt' | 'lt' | 'eq';
+  value?: number;
+  duration?: string;
+  severity?: 'low' | 'medium' | 'high' | 'critical';
 }
 
 export interface EscalationPolicy {
@@ -108,19 +108,19 @@ export interface SafetyLimits {
 
 // Zod schemas for validation
 export const DeploymentConfigSchema = z.object({
-  cicdProvider: z.enum(['github-actions', 'gitlab-ci', 'jenkins', 'tekton']),
-  environments: z.array(z.string()),
-  rolloutStrategy: z.enum(['blue-green', 'canary', 'rolling']),
-  healthCheckUrl: z.string().url(),
-  timeoutSeconds: z.number().positive(),
+  cicdProvider: z.enum(['github-actions', 'gitlab-ci', 'jenkins', 'tekton']).optional(),
+  environments: z.array(z.string()).optional(),
+  rolloutStrategy: z.enum(['blue-green', 'canary', 'rolling']).optional(),
+  healthCheckUrl: z.string().url().optional(),
+  timeoutSeconds: z.number().positive().optional(),
 });
 
 export const MonitoringConfigSchema = z.object({
-  metricsEndpoint: z.string().url(),
-  logsEndpoint: z.string().url(),
-  tracesEndpoint: z.string().url(),
-  healthEndpoints: z.array(z.string().url()),
-  checkIntervalMs: z.number().positive(),
+  metricsEndpoint: z.string().url().optional(),
+  logsEndpoint: z.string().url().optional(),
+  tracesEndpoint: z.string().url().optional(),
+  healthEndpoints: z.array(z.string().url()).optional(),
+  checkIntervalMs: z.number().positive().optional(),
 });
 
 export const AlertingConfigSchema = z.object({
@@ -191,14 +191,14 @@ export const ChaosConfigSchema = z.object({
 });
 
 export const OperateAgentConfigSchema = z.object({
-  deploymentConfig: DeploymentConfigSchema,
-  monitoringConfig: MonitoringConfigSchema,
-  alertingConfig: AlertingConfigSchema,
-  scalingConfig: ScalingConfigSchema,
-  securityConfig: SecurityConfigSchema,
-  costConfig: CostConfigSchema,
-  sloConfig: SloConfigSchema,
-  chaosConfig: ChaosConfigSchema,
+  deploymentConfig: DeploymentConfigSchema.optional(),
+  monitoringConfig: MonitoringConfigSchema.optional(),
+  alertingConfig: AlertingConfigSchema.optional(),
+  scalingConfig: ScalingConfigSchema.optional(),
+  securityConfig: SecurityConfigSchema.optional(),
+  costConfig: CostConfigSchema.optional(),
+  sloConfig: SloConfigSchema.optional(),
+  chaosConfig: ChaosConfigSchema.optional(),
 });
 
 // Core Operate Agent class
@@ -237,7 +237,7 @@ export class OperateAgent {
         id: deploymentId,
         environment: params.environment,
         version: params.version,
-        strategy: params.strategy || this.config.deploymentConfig.rolloutStrategy,
+        strategy: params.strategy || this.config.deploymentConfig?.rolloutStrategy || 'rolling',
         status: result.success ? 'success' : 'failed',
         startTime,
         endTime,

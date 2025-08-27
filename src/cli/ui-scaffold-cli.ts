@@ -5,7 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
 import { UIScaffoldGenerator } from '../generators/ui-scaffold-generator.js';
-import { spawn } from 'child_process';
+import type { spawn } from 'child_process';
 
 const program = new Command();
 

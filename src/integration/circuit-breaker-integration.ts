@@ -279,8 +279,9 @@ export class AEFrameworkCircuitBreakerIntegration extends EventEmitter {
     let criticalCount = 0;
     let degradedCount = 0;
 
-    for (const [name, breaker] of allBreakers) {
+    for (const breaker of allBreakers) {
       const health = breaker.generateHealthReport();
+      const name = breaker.getName();
       let componentHealth: 'healthy' | 'degraded' | 'critical';
       
       switch (health.health) {
@@ -440,7 +441,14 @@ export function WithCircuitBreaker(
     const originalMethod = descriptor.value;
     
     descriptor.value = async function (...args: any[]) {
-      const breaker = circuitBreakerManager.getCircuitBreaker(breakerName, options);
+      const breaker = circuitBreakerManager.getCircuitBreaker(breakerName, {
+        failureThreshold: 5,
+        successThreshold: 3,
+        timeout: 30000,
+        monitoringWindow: 60000,
+        enableMonitoring: true,
+        ...options
+      });
       
       return breaker.execute(async () => {
         return originalMethod.apply(this, args);

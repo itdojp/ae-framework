@@ -4,7 +4,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { Worker } from 'worker_threads';
+import type { Worker } from 'worker_threads';
 import { cpus } from 'os';
 
 export interface ParallelTask<T = any, R = any> {

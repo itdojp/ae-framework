@@ -5,8 +5,8 @@
  * with OpenTelemetry integration and failure artifact generation
  */
 
-import { Request, Response, NextFunction } from 'express';
-import { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
+import type { Request, Response, NextFunction } from 'express';
+import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { ConformanceGuard, ConformanceResult, GuardFactory } from './conformance-guards.js';
 import { trace, SpanStatusCode } from '@opentelemetry/api';

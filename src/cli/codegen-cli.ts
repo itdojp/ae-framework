@@ -150,7 +150,9 @@ export function createCodegenCommand(): Command {
         console.log(chalk.blue('👀 Starting watch mode...'));
         console.log(chalk.yellow('  Press Ctrl+C to stop'));
         
-        const { watch } = await import('chokidar');
+        // const { watch } = await import('chokidar');
+        console.log('Watch mode not available - chokidar not installed');
+        return;
         
         let timeout: NodeJS.Timeout;
         const debounceMs = parseInt(options.debounce);
@@ -176,25 +178,10 @@ export function createCodegenCommand(): Command {
           }
         };
 
-        const watcher = watch(options.input, {
-          persistent: true,
-          ignoreInitial: true,
-        });
-
-        watcher.on('change', () => {
-          clearTimeout(timeout);
-          timeout = setTimeout(regenerate, debounceMs);
-        });
-
-        // Keep process alive
-        process.on('SIGINT', () => {
-          console.log(chalk.yellow('\n👋 Stopping watch mode...'));
-          watcher.close();
-          process.exit(0);
-        });
-
-        // Initial generation
-        await regenerate();
+        console.log(chalk.yellow('Watch mode requires chokidar dependency'));
+        console.log('Install with: npm install chokidar');
+        console.log('Watch mode not available in current setup');
+        return;
 
       } catch (error) {
         console.error(chalk.red(`❌ Watch mode failed: ${(error as Error).message}`));

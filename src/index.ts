@@ -1,7 +1,7 @@
 import { initTelemetry } from './infra/telemetry.js';
 import { Database, initDatabase } from './infra/db.js';
 import { InventoryServiceImpl } from './domain/services.js';
-import app from './api/server.js';
+import { createServer } from './api/server.js';
 import { reservationRoutes } from './api/routes/reservations.js';
 
 async function start() {
@@ -14,6 +14,9 @@ async function start() {
 
   // Initialize services
   const inventoryService = new InventoryServiceImpl(db);
+
+  // Create app instance
+  const app = await createServer();
 
   // Register routes
   await app.register(reservationRoutes, { inventoryService });

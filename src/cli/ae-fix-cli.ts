@@ -151,7 +151,8 @@ async function executeAutoFix(options: any): Promise<void> {
 
   // Execute fixes
   const engine = new AutoFixEngine();
-  const result = await engine.executeFixes(artifacts as any, fixOptions as any);
+  const artifactArray = Array.isArray(artifacts) ? artifacts : artifacts.failures;
+  const result = await engine.executeFixes(artifactArray, fixOptions);
 
   // Display results
   console.log(chalk.gray('\n🎯 Fix Results:'));
@@ -197,7 +198,8 @@ async function executeAnalysis(options: any): Promise<void> {
   console.log(chalk.green(`📥 Loaded ${Array.isArray(artifacts) ? artifacts.length : artifacts.failures.length} failure artifacts`));
 
   const engine = new AutoFixEngine();
-  const analysis = await engine.executeFixes(artifacts, {
+  const artifactArray = Array.isArray(artifacts) ? artifacts : artifacts.failures;
+  const analysis = await engine.executeFixes(artifactArray, {
     outputDir: options.output || '.ae/analysis',
     dryRun: true,
   });
@@ -287,7 +289,7 @@ async function validateArtifacts(options: any): Promise<void> {
     }
   } catch (error) {
     console.error(chalk.red('❌ Validation failed:'));
-    console.error(chalk.red(error.message));
+    console.error(chalk.red(error instanceof Error ? error.message : String(error)));
     process.exit(1);
   }
 }

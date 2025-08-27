@@ -241,10 +241,10 @@ export function createSecurityCommand(): Command {
         }
         
       } catch (error) {
-        if (error.name === 'AbortError') {
+        if (error instanceof Error && error.name === 'AbortError') {
           console.error('❌ Request timed out');
         } else {
-          console.error('❌ Error scanning URL:', error.message);
+          console.error('❌ Error scanning URL:', error instanceof Error ? error.message : String(error));
         }
         process.exit(1);
       }

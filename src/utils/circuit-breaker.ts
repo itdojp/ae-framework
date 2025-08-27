@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { createHash } from 'crypto';
+import type { createHash } from 'crypto';
 
 /**
  * Circuit Breaker States
@@ -100,6 +100,7 @@ export class CircuitBreaker extends EventEmitter {
 
     this.emit('circuitBreakerCreated', { name: this.name, options: this.options });
   }
+
 
   /**
    * Execute a function with circuit breaker protection
@@ -385,6 +386,43 @@ export class CircuitBreaker extends EventEmitter {
   }
 
   /**
+   * Generate health report for monitoring
+   */
+  generateHealthReport(): {
+    health: 'healthy' | 'degraded' | 'unhealthy';
+    recommendations: string[];
+  } {
+    const stats = this.getStats();
+    const recommendations: string[] = [];
+    
+    // Determine health status
+    let health: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
+    
+    if (this.state === CircuitState.OPEN) {
+      health = 'unhealthy';
+      recommendations.push('Circuit is open - check underlying service');
+    } else if (this.state === CircuitState.HALF_OPEN) {
+      health = 'degraded';
+      recommendations.push('Circuit is recovering - monitor closely');
+    } else {
+      // Closed state - check failure rate
+      const failureRate = stats.totalRequests > 0 ? stats.totalFailures / stats.totalRequests : 0;
+      
+      if (failureRate > 0.3) {
+        health = 'degraded';
+        recommendations.push(`High failure rate: ${(failureRate * 100).toFixed(1)}%`);
+      }
+      
+      if (stats.averageResponseTime > this.options.timeout * 0.8) {
+        health = 'degraded';
+        recommendations.push(`Slow response times: ${stats.averageResponseTime.toFixed(0)}ms avg`);
+      }
+    }
+    
+    return { health, recommendations };
+  }
+
+  /**
    * Check if circuit breaker is in a healthy state
    */
   isHealthy(): boolean {
@@ -416,4 +454,40 @@ export class CircuitBreaker extends EventEmitter {
   }
 }
 
+/**
+ * Simple Circuit Breaker Manager
+ */
+class CircuitBreakerManager extends EventEmitter {
+  private breakers = new Map<string, CircuitBreaker>();
+
+  getCircuitBreaker(name: string, options: CircuitBreakerOptions): CircuitBreaker {
+    if (!this.breakers.has(name)) {
+      const breaker = new CircuitBreaker(name, options);
+      this.breakers.set(name, breaker);
+      
+      // Forward events
+      breaker.on('stateChange', (state) => this.emit('breakerStateChanged', { name, state }));
+      breaker.on('circuitOpened', (event) => this.emit('circuitOpened', event));
+      breaker.on('circuitClosed', (event) => this.emit('circuitClosed', event));
+    }
+    
+    const breaker = this.breakers.get(name);
+    if (!breaker) {
+      throw new Error(`CircuitBreaker for "${name}" was not found after creation.`);
+    }
+    return breaker;
+  }
+
+  getAllBreakers(): CircuitBreaker[] {
+    return Array.from(this.breakers.values());
+  }
+
+  resetAll(): void {
+    for (const breaker of this.breakers.values()) {
+      breaker.reset();
+    }
+  }
+}
+
+export const circuitBreakerManager = new CircuitBreakerManager();
 export default CircuitBreaker;

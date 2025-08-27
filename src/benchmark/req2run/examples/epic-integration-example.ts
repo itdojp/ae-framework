@@ -5,7 +5,7 @@
  */
 
 import { StandardizedBenchmarkRunner } from '../runners/StandardizedBenchmarkRunner.js';
-import { BenchmarkConfig } from '../types/index.js';
+import { BenchmarkConfig, ReportFormat, BenchmarkCategory, DifficultyLevel } from '../types/index.js';
 
 /**
  * Example: Complete Req2Run-Benchmark EPIC Integration
@@ -17,19 +17,45 @@ export async function runBenchmarkEPICDemo(): Promise<void> {
   
   // Configuration for benchmark execution
   const config: BenchmarkConfig = {
+    req2runRepository: './examples/req2run-problems',
+    problems: [
+      { id: 'simple-calculator', enabled: true, timeoutMs: 300000, retries: 1, category: BenchmarkCategory.CLI_TOOL, difficulty: DifficultyLevel.BASIC },
+      { id: 'user-auth-system', enabled: true, timeoutMs: 300000, retries: 1, category: BenchmarkCategory.AUTHENTICATION, difficulty: DifficultyLevel.INTERMEDIATE },
+      { id: 'data-processing', enabled: true, timeoutMs: 300000, retries: 1, category: BenchmarkCategory.DATA_PROCESSING, difficulty: DifficultyLevel.BASIC }
+    ],
     execution: {
       parallel: false,
       maxConcurrency: 2,
-      retryOnFailure: true
+      retryOnFailure: true,
+      resourceLimits: {
+        maxMemoryMB: 512,
+        maxCpuPercent: 80,
+        maxDiskMB: 1024,
+        maxExecutionTimeMs: 300000,
+        maxNetworkMbps: 100
+      },
+      environment: 'test',
+      docker: {
+        enabled: true,
+        image: 'node:18',
+        volumes: [],
+        ports: []
+      }
     },
     reporting: {
+      formats: [ReportFormat.JSON, ReportFormat.MARKDOWN, ReportFormat.CSV],
       destinations: [{
         type: 'file' as const,
         config: {
           directory: 'reports/epic-benchmark',
           format: ['json', 'markdown', 'csv']
         }
-      }]
+      }],
+      dashboard: {
+        enabled: true,
+        port: 3000,
+        host: 'localhost'
+      }
     },
     evaluation: {
       includeSecurityAnalysis: true,
@@ -234,20 +260,45 @@ export async function demonstrateCICDIntegration(): Promise<void> {
   console.log('\n🔄 CI/CD Integration Pattern Demo');
   
   const config: BenchmarkConfig = {
+    req2runRepository: './examples/req2run-problems',
+    problems: [
+      { id: 'auth-system', enabled: true, timeoutMs: 180000, retries: 0, category: BenchmarkCategory.AUTHENTICATION, difficulty: DifficultyLevel.ADVANCED },
+      { id: 'payment-gateway', enabled: true, timeoutMs: 180000, retries: 0, category: BenchmarkCategory.WEB_API, difficulty: DifficultyLevel.ADVANCED }
+    ],
     execution: {
       parallel: true,
       maxConcurrency: 3,
-      timeout: 180000, // 3 minutes for CI
-      retryOnFailure: false // Fail fast in CI
+      timeout: 180000,
+      retryOnFailure: false,
+      resourceLimits: {
+        maxMemoryMB: 1024,
+        maxCpuPercent: 90,
+        maxDiskMB: 2048,
+        maxExecutionTimeMs: 180000,
+        maxNetworkMbps: 100
+      },
+      environment: 'ci',
+      docker: {
+        enabled: true,
+        image: 'node:18',
+        volumes: [],
+        ports: []
+      }
     },
     reporting: {
+      formats: [ReportFormat.JSON],
       destinations: [{
         type: 'file' as const,
         config: {
           directory: 'ci-reports',
           format: ['json']
         }
-      }]
+      }],
+      dashboard: {
+        enabled: false,
+        port: 3000,
+        host: 'localhost'
+      }
     },
     evaluation: {
       includeSecurityAnalysis: false, // Skip in CI for speed
@@ -280,20 +331,45 @@ export async function demonstratePerformanceRegression(): Promise<void> {
   
   // This would typically compare against baseline results
   const config: BenchmarkConfig = {
+    req2runRepository: './examples/req2run-problems',
+    problems: [
+      { id: 'performance-test', enabled: true, timeoutMs: 300000, retries: 1, category: BenchmarkCategory.DISTRIBUTED_SYSTEM, difficulty: DifficultyLevel.ADVANCED },
+      { id: 'memory-optimization', enabled: true, timeoutMs: 300000, retries: 1, category: BenchmarkCategory.DISTRIBUTED_SYSTEM, difficulty: DifficultyLevel.EXPERT }
+    ],
     execution: {
       parallel: false,
       maxConcurrency: 1,
       timeout: 300000,
-      retryOnFailure: true
+      retryOnFailure: true,
+      resourceLimits: {
+        maxMemoryMB: 2048,
+        maxCpuPercent: 70,
+        maxDiskMB: 4096,
+        maxExecutionTimeMs: 300000,
+        maxNetworkMbps: 50
+      },
+      environment: 'regression',
+      docker: {
+        enabled: true,
+        image: 'node:18',
+        volumes: [],
+        ports: []
+      }
     },
     reporting: {
+      formats: [ReportFormat.JSON, ReportFormat.CSV],
       destinations: [{
         type: 'file' as const,
         config: {
           directory: 'regression-analysis',
           format: ['json', 'csv']
         }
-      }]
+      }],
+      dashboard: {
+        enabled: true,
+        port: 3001,
+        host: 'localhost'
+      }
     },
     evaluation: {
       includeSecurityAnalysis: true,

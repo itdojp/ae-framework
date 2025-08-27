@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import { Reservation } from '../../domain/contracts.js';
 import { InventoryService } from '../../domain/services.js';
 

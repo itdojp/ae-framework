@@ -5,7 +5,7 @@
 
 import { Command } from 'commander';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import type { join } from 'path';
 import { ConformanceVerificationEngine } from '../conformance/verification-engine.js';
 import { 
   ConformanceRule, 
@@ -466,7 +466,7 @@ export class ConformanceCli {
       // Violations by severity
       console.log('📈 Violations by Severity:');
       for (const [severity, count] of Object.entries(result.summary.violationsBySeverity)) {
-        if (count > 0) {
+        if (Number(count) > 0) {
           console.log(`   ${severity}: ${count}`);
         }
       }
@@ -475,7 +475,7 @@ export class ConformanceCli {
       // Violations by category
       console.log('📂 Violations by Category:');
       for (const [category, count] of Object.entries(result.summary.violationsByCategory)) {
-        if (count > 0) {
+        if (Number(count) > 0) {
           console.log(`   ${category}: ${count}`);
         }
       }

@@ -26,7 +26,7 @@
     "build:tokens": "pnpm --filter @ae-framework/design-tokens build",
     "build:ui": "pnpm --filter @ae-framework/ui build",
     "build:storybook": "pnpm --filter @ae-framework/storybook build-storybook",
-    "build:cli": "chmod +x dist/src/cli/index.js dist/src/cli/phase-cli.js dist/src/cli/approval-cli.js dist/src/cli/slash-cli.js dist/src/cli/ui-scaffold-cli.js dist/src/cli/ae-ui-alias.js dist/src/cli/benchmark-cli.js || true",
+    "build:cli": "chmod +x dist/src/cli/*.js || true",
     "phase": "tsx src/cli/phase-cli.ts",
     "benchmark": "tsx src/cli/benchmark-cli.ts",
     "benchmark:basic": "tsx src/cli/benchmark-cli.ts run --difficulty basic",
@@ -363,5 +363,5 @@
   "engines": {
     "node": ">=20.11 <23"
   },
-  "packageManager": "pnpm@9"
+  "packageManager": "pnpm@10.0.0"
 }

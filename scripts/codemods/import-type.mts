@@ -1,243 +1,181 @@
+#!/usr/bin/env tsx
+/**
+ * TypeScript Import Type Codemod
+ * 
+ * Transforms regular imports to `import type` when only types are used.
+ * Helps with verbatimModuleSyntax compatibility.
+ */
+
 import { Project, SyntaxKind, ImportDeclaration, Node } from 'ts-morph';
 import { glob } from 'glob';
 
-interface ImportUsageAnalysis {
-  hasTypeOnlyUsage: boolean;
-  hasValueUsage: boolean;
-  usedIdentifiers: Set<string>;
+interface TransformStats {
+  filesProcessed: number;
+  importsTransformed: number;
+  errors: string[];
 }
 
-function analyzeImportUsage(
-  importDeclaration: ImportDeclaration,
-  sourceFile: any
-): ImportUsageAnalysis {
-  const analysis: ImportUsageAnalysis = {
-    hasTypeOnlyUsage: false,
-    hasValueUsage: false,
-    usedIdentifiers: new Set(),
-  };
-
-  // Get all imported identifiers
-  const namedImports = importDeclaration.getNamedImports();
-  const defaultImport = importDeclaration.getDefaultImport();
-  const namespaceImport = importDeclaration.getNamespaceImport();
-
-  const allImportedNames = new Set<string>();
-
-  // Collect all imported names
-  namedImports.forEach(namedImport => {
-    const name = namedImport.getName();
-    allImportedNames.add(name);
-    const aliasNode = namedImport.getAliasNode();
-    if (aliasNode) {
-      allImportedNames.add(aliasNode.getText());
-    }
-  });
-
-  if (defaultImport) {
-    allImportedNames.add(defaultImport.getText());
-  }
-
-  if (namespaceImport) {
-    allImportedNames.add(namespaceImport.getText());
-  }
-
-  // Find all usages in the source file
-  sourceFile.forEachDescendant((node: Node) => {
-    if (Node.isIdentifier(node)) {
-      const identifierName = node.getText();
-      
-      if (allImportedNames.has(identifierName)) {
-        analysis.usedIdentifiers.add(identifierName);
-        
-        // Check if this identifier is used in a type context
-        const parent = node.getParent();
-        const grandParent = parent?.getParent();
-        
-        const isInTypeContext = 
-          // Type annotations: foo: Type
-          (Node.isTypeReference(parent)) ||
-          // Generic parameters: Array<Type>
-          (Node.isTypeReference(grandParent)) ||
-          // Interface extends: extends Type
-          (parent?.getKind() === SyntaxKind.ExpressionWithTypeArguments) ||
-          // Type aliases: type Foo = Type
-          (parent?.getKind() === SyntaxKind.TypeAliasDeclaration) ||
-          // Function return types: (): Type
-          (parent?.getKind() === SyntaxKind.TypeReference) ||
-          // Variable type annotations: const x: Type
-          (parent?.getKind() === SyntaxKind.TypeAnnotation) ||
-          // Parameter type annotations: (param: Type)
-          (grandParent?.getKind() === SyntaxKind.Parameter && parent?.getKind() === SyntaxKind.TypeReference) ||
-          // Property type annotations: prop: Type
-          (grandParent?.getKind() === SyntaxKind.PropertySignature) ||
-          // As expressions: x as Type  
-          (parent?.getKind() === SyntaxKind.AsExpression) ||
-          // Type predicates: is Type
-          (parent?.getKind() === SyntaxKind.TypePredicate) ||
-          // Mapped types and utility types
-          (parent?.getKind() === SyntaxKind.MappedType) ||
-          // Template literal types
-          (parent?.getKind() === SyntaxKind.TemplateLiteralType);
-
-        if (isInTypeContext) {
-          analysis.hasTypeOnlyUsage = true;
-        } else {
-          // Check if it's used in a runtime context
-          const isRuntimeUsage =
-            // Function calls: fn()
-            (parent?.getKind() === SyntaxKind.CallExpression) ||
-            // Property access: obj.prop
-            (parent?.getKind() === SyntaxKind.PropertyAccessExpression) ||
-            // Element access: obj[key]
-            (parent?.getKind() === SyntaxKind.ElementAccessExpression) ||
-            // Variable assignment: x = value
-            (parent?.getKind() === SyntaxKind.BinaryExpression) ||
-            // Return statements: return value
-            (parent?.getKind() === SyntaxKind.ReturnStatement) ||
-            // Array/object literals: [value] or {key: value}
-            (parent?.getKind() === SyntaxKind.ArrayLiteralExpression) ||
-            (parent?.getKind() === SyntaxKind.ObjectLiteralExpression) ||
-            // New expressions: new Constructor()
-            (parent?.getKind() === SyntaxKind.NewExpression) ||
-            // instanceof checks: x instanceof Type
-            (parent?.getKind() === SyntaxKind.BinaryExpression && 
-             parent.getOperatorToken().getKind() === SyntaxKind.InstanceOfKeyword);
-
-          if (isRuntimeUsage || !isInTypeContext) {
-            analysis.hasValueUsage = true;
-          }
-        }
-      }
-    }
-  });
-
-  return analysis;
-}
-
-function shouldConvertToTypeImport(analysis: ImportUsageAnalysis): boolean {
-  // Convert to type import only if:
-  // 1. It has type-only usage AND no value usage, OR
-  // 2. It has no usage at all (dead import - still convert for consistency)
-  return analysis.hasTypeOnlyUsage && !analysis.hasValueUsage;
-}
-
-async function processFile(filePath: string, project: Project): Promise<boolean> {
-  console.log(`Processing: ${filePath}`);
+function isTypeOnlyUsage(importDecl: ImportDeclaration): boolean {
+  const sourceFile = importDecl.getSourceFile();
+  const importedSymbols = new Set<string>();
   
-  const sourceFile = project.addSourceFileAtPath(filePath);
-  let modified = false;
-
-  const importDeclarations = sourceFile.getImportDeclarations();
-
-  for (const importDeclaration of importDeclarations) {
-    // Skip if already a type-only import
-    if (importDeclaration.isTypeOnly()) {
-      continue;
-    }
-
-    // Skip relative imports from .js files (likely runtime dependencies)
-    const moduleSpecifier = importDeclaration.getModuleSpecifierValue();
-    if (moduleSpecifier.endsWith('.js') || moduleSpecifier.endsWith('.mjs')) {
-      continue;
-    }
-
-    const analysis = analyzeImportUsage(importDeclaration, sourceFile);
+  // Collect imported symbols
+  const namedImports = importDecl.getNamedImports();
+  namedImports.forEach(namedImport => {
+    importedSymbols.add(namedImport.getName());
+  });
+  
+  const defaultImport = importDecl.getDefaultImport();
+  if (defaultImport) {
+    importedSymbols.add(defaultImport.getText());
+  }
+  
+  const namespaceImport = importDecl.getNamespaceImport();
+  if (namespaceImport) {
+    importedSymbols.add(namespaceImport.getText());
+  }
+  
+  // Check usage throughout the file
+  for (const symbol of importedSymbols) {
+    const identifiers = sourceFile.getDescendantsOfKind(SyntaxKind.Identifier)
+      .filter(id => id.getText() === symbol && id !== defaultImport && !namedImports.some(ni => ni.getNameNode() === id));
     
-    if (shouldConvertToTypeImport(analysis)) {
-      // Convert to type-only import
-      const moduleSpecifier = importDeclaration.getModuleSpecifierValue();
-      const namedImports = importDeclaration.getNamedImports();
-      const defaultImport = importDeclaration.getDefaultImport();
-      const namespaceImport = importDeclaration.getNamespaceImport();
-
-      // Build new import statement
-      let newImportText = 'import type ';
-      
-      if (defaultImport && namedImports.length > 0) {
-        // Mixed default + named imports: import type Foo, { Bar } from 'module'
-        newImportText += `${defaultImport.getText()}, { ${namedImports.map(n => n.getText()).join(', ')} }`;
-      } else if (defaultImport) {
-        // Default import only: import type Foo from 'module'
-        newImportText += defaultImport.getText();
-      } else if (namespaceImport) {
-        // Namespace import: import type * as Foo from 'module'
-        newImportText += `* as ${namespaceImport.getText()}`;
-      } else if (namedImports.length > 0) {
-        // Named imports only: import type { Foo, Bar } from 'module'
-        newImportText += `{ ${namedImports.map(n => n.getText()).join(', ')} }`;
-      } else {
-        // Side-effect import - skip
+    for (const identifier of identifiers) {
+      // Skip if it's part of the import declaration itself
+      if (identifier.getAncestors().some(ancestor => ancestor === importDecl)) {
         continue;
       }
       
-      newImportText += ` from '${moduleSpecifier}';`;
+      // Check if used in type-only contexts
+      const parent = identifier.getParent();
+      if (!parent) continue;
       
-      // Replace the import
-      importDeclaration.replaceWithText(newImportText);
-      modified = true;
+      // Type-only contexts
+      if (
+        parent.getKind() === SyntaxKind.TypeReference ||
+        parent.getKind() === SyntaxKind.ExpressionWithTypeArguments ||
+        parent.getKind() === SyntaxKind.TypeQuery ||
+        Node.isTypeAliasDeclaration(parent) ||
+        Node.isInterfaceDeclaration(parent) ||
+        Node.isTypeParameterDeclaration(parent)
+      ) {
+        continue; // This is type-only usage
+      }
       
-      console.log(`  ✓ Converted: ${importDeclaration.getText().trim()} -> ${newImportText}`);
+      // Check for type annotations
+      if (Node.isTypeNode(parent) || Node.isTypeElement(parent)) {
+        continue; // This is type-only usage
+      }
+      
+      // Check if it's in a type assertion
+      if (Node.isAsExpression(parent) || Node.isTypeAssertion(parent)) {
+        continue; // This is type-only usage
+      }
+      
+      // If we reach here, it's a value usage
+      return false;
     }
   }
-
-  if (modified) {
-    sourceFile.saveSync();
-  }
-
-  // Clean up to avoid memory issues
-  project.removeSourceFile(sourceFile);
   
-  return modified;
+  return true;
+}
+
+function transformImportsInFile(filePath: string): number {
+  try {
+    const project = new Project({
+      tsConfigFilePath: 'tsconfig.json',
+      skipAddingFilesFromTsConfig: true,
+    });
+    
+    const sourceFile = project.addSourceFileAtPath(filePath);
+    const importDeclarations = sourceFile.getImportDeclarations();
+    let transformedCount = 0;
+    
+    for (const importDecl of importDeclarations) {
+      // Skip if already a type-only import
+      if (importDecl.isTypeOnly()) {
+        continue;
+      }
+      
+      // Skip relative imports from same package (likely value imports)
+      const moduleSpecifier = importDecl.getModuleSpecifierValue();
+      if (moduleSpecifier.startsWith('.')) {
+        continue;
+      }
+      
+      // Check if this import is used only in type contexts
+      if (isTypeOnlyUsage(importDecl)) {
+        importDecl.setIsTypeOnly(true);
+        transformedCount++;
+        
+        console.log(`  ✓ ${filePath}: ${moduleSpecifier} → import type`);
+      }
+    }
+    
+    if (transformedCount > 0) {
+      sourceFile.saveSync();
+    }
+    
+    return transformedCount;
+  } catch (error) {
+    console.error(`  ❌ Error processing ${filePath}:`, error);
+    return 0;
+  }
 }
 
 async function main() {
-  console.log('[codemod:import-type] Starting import type codemod...');
+  console.log('🔄 TypeScript Import Type Codemod');
+  console.log('Analyzing src/**/*.ts for type-only imports...\n');
   
-  const project = new Project({
-    tsConfigFilePath: 'tsconfig.json',
-  });
-
-  // Find all TypeScript files in src/
-  const files = await glob('src/**/*.ts', { 
-    ignore: ['**/*.d.ts', '**/*.test.ts', '**/*.spec.ts'] 
-  });
+  const stats: TransformStats = {
+    filesProcessed: 0,
+    importsTransformed: 0,
+    errors: []
+  };
   
-  console.log(`Found ${files.length} TypeScript files to process`);
-  
-  let totalModified = 0;
-  let processedCount = 0;
-
-  for (const file of files) {
-    try {
-      const wasModified = await processFile(file, project);
-      if (wasModified) {
-        totalModified++;
-      }
-      processedCount++;
-      
-      if (processedCount % 10 === 0) {
-        console.log(`Progress: ${processedCount}/${files.length} files processed`);
-      }
-    } catch (error) {
-      console.error(`Error processing ${file}:`, error);
+  try {
+    // Find all TypeScript files in src
+    const files = await glob('src/**/*.ts', { ignore: ['**/*.d.ts', '**/*.test.ts', '**/*.spec.ts'] });
+    
+    if (files.length === 0) {
+      console.log('No TypeScript files found in src/');
+      return;
     }
-  }
-
-  console.log('\n[codemod:import-type] Summary:');
-  console.log(`  Files processed: ${processedCount}`);
-  console.log(`  Files modified: ${totalModified}`);
-  console.log(`  Files unchanged: ${processedCount - totalModified}`);
-  
-  if (totalModified > 0) {
-    console.log('\n✓ Import type codemod completed successfully');
-    console.log('Run `npm run build` to verify changes compile correctly');
-  } else {
-    console.log('\n✓ No files needed modification');
+    
+    console.log(`📁 Found ${files.length} TypeScript files to analyze\n`);
+    
+    for (const file of files) {
+      stats.filesProcessed++;
+      const transformed = transformImportsInFile(file);
+      stats.importsTransformed += transformed;
+      
+      if (transformed === 0) {
+        console.log(`  • ${file}: no changes needed`);
+      }
+    }
+    
+    console.log(`\n📊 Summary:`);
+    console.log(`  • Files processed: ${stats.filesProcessed}`);
+    console.log(`  • Imports transformed: ${stats.importsTransformed}`);
+    
+    if (stats.errors.length > 0) {
+      console.log(`  • Errors: ${stats.errors.length}`);
+      stats.errors.forEach(error => console.log(`    - ${error}`));
+    }
+    
+    if (stats.importsTransformed > 0) {
+      console.log(`\n✅ Successfully transformed ${stats.importsTransformed} imports to 'import type'`);
+      console.log('💡 This should resolve verbatimModuleSyntax violations');
+    } else {
+      console.log('\n✅ All imports are already correctly typed');
+    }
+    
+  } catch (error) {
+    console.error('❌ Failed to run import type codemod:', error);
+    process.exit(1);
   }
 }
 
-main().catch(error => {
-  console.error('[codemod:import-type] Fatal error:', error);
-  process.exit(1);
-});
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch(console.error);
+}

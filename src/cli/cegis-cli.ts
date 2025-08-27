@@ -5,7 +5,7 @@
 
 import { Command } from 'commander';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import type { join } from 'path';
 import { AutoFixEngine } from '../cegis/auto-fix-engine.js';
 import { FailureArtifactFactory } from '../cegis/failure-artifact-factory.js';
 import { FailureArtifact, AutoFixOptions } from '../cegis/types.js';
@@ -57,7 +57,7 @@ export class CEGISCli {
       .command('create-artifact')
       .description('Create failure artifact from error information')
       .option('--type <type>', 'Failure type (error, test, type, contract, build, lint)', 'error')
-      .option('--message <message>', 'Error message', '', true)
+      .option('--message <message>', 'Error message', '')
       .option('--file <file>', 'Source file path')
       .option('--line <line>', 'Line number', '1')
       .option('--column <column>', 'Column number', '1')

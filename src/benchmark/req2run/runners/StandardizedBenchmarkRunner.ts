@@ -213,8 +213,12 @@ export class StandardizedBenchmarkRunner {
       id: spec.id || problemId,
       title: spec.title || `Benchmark Problem ${problemId}`,
       description: this.buildDescription(spec),
+      category: spec.category || 'general',
+      difficulty: spec.difficulty || 'basic',
       requirements: this.extractRequirements(spec),
       constraints: this.extractConstraints(spec),
+      testCriteria: spec.testCriteria || [],
+      expectedOutput: spec.expectedOutput || { type: 'any', value: null },
       metadata: {
         created_by: spec.metadata?.author || 'req2run-benchmark',
         created_at: spec.metadata?.created_date || new Date().toISOString(),
@@ -308,9 +312,12 @@ export class StandardizedBenchmarkRunner {
       totalDuration: endTime.getTime() - startTime.getTime(),
       phaseExecutions,
       environment: await this.getExecutionEnvironment(),
-      logs: pipelineResult.metadata.dataFlowTrace.map(trace => 
-        `Phase ${trace.phase}: ${trace.inputSize} → ${trace.outputSize} bytes`
-      )
+      logs: pipelineResult.metadata.dataFlowTrace.map(trace => ({
+        timestamp: new Date().toISOString(),
+        level: 'info' as const,
+        message: `Phase ${trace.phase}: ${trace.inputSize} → ${trace.outputSize} bytes`,
+        phase: trace.phase
+      }))
     };
 
     return {
@@ -389,11 +396,18 @@ export class StandardizedBenchmarkRunner {
       },
       phaseMetrics: pipelineResult.phases.map(phase => ({
         phase: this.mapStandardPhaseToLegacy(phase.phase),
-        score: phase.success ? 85 : 0,
         duration: phase.metadata.duration,
-        confidence: phase.metadata.confidence || 0.8,
-        errors: phase.errors?.length || 0,
-        warnings: phase.warnings?.length || 0
+        success: phase.success,
+        outputQuality: phase.success ? 85 : 0,
+        resourceUsage: {
+          maxMemoryUsage: 0,
+          avgCpuUsage: 0,
+          diskIO: 0,
+          networkIO: 0,
+          buildTime: 0,
+          deploymentTime: 0
+        },
+        errors: phase.errors?.map(err => err.message) || []
       }))
     };
   }
@@ -528,8 +542,13 @@ export class StandardizedBenchmarkRunner {
     let content = `${spec.title}\n\n${spec.description}\n\n`;
 
     content += 'Requirements:\n';
-    spec.requirements.forEach(req => {
-      content += `- ${req.priority.toUpperCase()}: ${req.description}\n`;
+    spec.requirements.forEach((req, index) => {
+      if (typeof req === 'string') {
+        content += `- HIGH: ${req}\n`;
+      } else {
+        const reqObj = req as any;
+        content += `- ${reqObj.priority?.toUpperCase() || 'HIGH'}: ${reqObj.description}\n`;
+      }
     });
 
     if (spec.constraints) {
@@ -676,7 +695,9 @@ Generated on: ${new Date().toISOString()}
 
   private assessFunctionalCoverage(output: any, spec: RequirementSpec): number {
     // Assess how well the generated output covers the functional requirements
-    const totalRequirements = spec.requirements.filter(r => r.type === 'functional').length;
+    const totalRequirements = spec.requirements.filter(r => 
+      typeof r === 'string' || (r as any).type === 'functional'
+    ).length;
     if (totalRequirements === 0) return 100;
 
     // Simple heuristic: if we have UI components and user flows, assume good coverage
@@ -832,7 +853,7 @@ Generated: ${data.metadata.timestamp}
 
 ### Phase Performance
 ${Object.entries(data.analytics.performance.averagePhaseTime).map(([phase, time]) => 
-  `- **${phase}**: ${(time / 1000).toFixed(2)}s average`
+  `- **${phase}**: ${(Number(time) / 1000).toFixed(2)}s average`
 ).join('\n')}
 
 ## 🔍 Individual Results
