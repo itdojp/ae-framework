@@ -6,23 +6,83 @@
   "properties": {
     "phase": {
       "type": "string",
-      "enum": ["intent", "formal", "stories", "validation", "modeling", "ui"]
+      "enum": [
+        "intent",
+        "formal",
+        "stories",
+        "validation",
+        "modeling",
+        "ui"
+      ]
     },
     "response": {
       "type": "object",
       "properties": {
-        "summary": { "type": "string" },
-        "analysis": { "type": "string" },
-        "recommendations": { "type": "array", "items": { "type": "string" } },
-        "nextActions": { "type": "array", "items": { "type": "string" } },
-        "warnings": { "type": "array", "items": { "type": "string" } },
-        "shouldBlockProgress": { "type": "boolean" }
+        "summary": {
+          "type": "string"
+        },
+        "analysis": {
+          "type": "string"
+        },
+        "recommendations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "nextActions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "shouldBlockProgress": {
+          "type": "boolean"
+        }
       },
-      "required": ["summary", "analysis", "recommendations", "nextActions", "warnings", "shouldBlockProgress"],
+      "required": [
+        "summary",
+        "analysis",
+        "recommendations",
+        "nextActions",
+        "warnings",
+        "shouldBlockProgress"
+      ],
       "additionalProperties": true
     },
-    "ts": { "type": "string", "format": "date-time" }
+    "ts": {
+      "type": "string",
+      "format": "date-time"
+    }
   },
-  "required": ["phase", "response", "ts"],
-  "additionalProperties": false
+  "required": [
+    "phase",
+    "response",
+    "ts"
+  ],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "phase": "formal",
+      "response": {
+        "summary": "Sample",
+        "analysis": "...",
+        "recommendations": [
+          "..."
+        ],
+        "nextActions": [
+          "..."
+        ],
+        "warnings": [],
+        "shouldBlockProgress": false
+      },
+      "ts": "2025-01-01T00:00:00.000Z"
+    }
+  ]
 }

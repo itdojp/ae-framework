@@ -4,11 +4,39 @@
   "title": "UI Summary",
   "type": "object",
   "properties": {
-    "totalEntities": { "type": "integer", "minimum": 0 },
-    "okEntities": { "type": "integer", "minimum": 0 },
-    "files": { "type": "array", "items": { "type": "string" } },
-    "dryRun": { "type": "boolean" }
+    "totalEntities": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "okEntities": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "dryRun": {
+      "type": "boolean"
+    }
   },
-  "required": ["totalEntities", "okEntities", "files", "dryRun"],
-  "additionalProperties": false
+  "required": [
+    "totalEntities",
+    "okEntities",
+    "files",
+    "dryRun"
+  ],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "totalEntities": 1,
+      "okEntities": 1,
+      "files": [
+        "apps/web/app/products/page.tsx"
+      ],
+      "dryRun": true
+    }
+  ]
 }

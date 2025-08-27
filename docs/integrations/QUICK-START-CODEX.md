@@ -8,6 +8,7 @@ This guide shows the fastest way to use ae-framework from CodeX via CLI/MCP.
 - Repository built (`pnpm run build`)
 
 ## 1) One-command PoC (Verify + Formal)
+To customize formal input, set `CODEX_FORMAL_REQ` to your requirement text (single line or escaped).
 ```bash
 pnpm run build
 CODEX_RUN_FORMAL=1 pnpm run codex:quickstart
