@@ -21,7 +21,7 @@
     "dev:web": "pnpm --filter @ae-framework/web dev",
     "dev:storybook": "pnpm --filter @ae-framework/storybook dev",
     "build": "pnpm build:spec-compiler && tsc -p tsconfig.build.json",
-    "build:spec-compiler": "cd packages/spec-compiler && pnpm run build",
+    "build:spec-compiler": "pnpm --filter @ae-framework/spec-compiler build",
     "build:windows": "tsc --project configs/tsconfig.windows.json",
     "build:frontend": "pnpm run build:tokens && pnpm run build:ui && pnpm --filter @ae-framework/web build",
     "build:tokens": "pnpm --filter @ae-framework/design-tokens build",
