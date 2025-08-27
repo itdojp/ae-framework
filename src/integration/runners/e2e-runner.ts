@@ -8,7 +8,7 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 
 /**
- * Test step result interface
+ * Test step result interface - for internal step tracking
  */
 export interface TestStepResult {
   stepIndex: number;
@@ -17,6 +17,21 @@ export interface TestStepResult {
   message: string;
   duration: number;
   screenshot?: string;
+}
+
+/**
+ * Internal step execution result - matches TestResult.steps format
+ */
+interface InternalStepResult {
+  status: 'passed' | 'error';
+  startTime: string;
+  endTime: string;
+  duration: number;
+  actualResult?: string;
+  error?: string;
+  screenshots: string[];
+  logs: string[];
+  metrics: Record<string, number>;
 }
 import {
   TestRunner,
@@ -148,7 +163,7 @@ export class E2ETestRunner implements TestRunner {
   async runTest(test: TestCase, environment: TestEnvironment): Promise<TestResult> {
     const startTime = new Date().toISOString();
     const resultId = uuidv4();
-    const stepResults: TestStepResult[] = [];
+    const stepResults: InternalStepResult[] = [];
     const screenshots: string[] = [];
     const logs: string[] = [];
     
@@ -184,7 +199,7 @@ export class E2ETestRunner implements TestRunner {
           }
 
           stepResults.push({
-            status: 'success',
+            status: 'passed',
             startTime: stepStartTime,
             endTime: stepEndTime,
             duration: stepDuration,
@@ -234,8 +249,16 @@ export class E2ETestRunner implements TestRunner {
         duration,
         environment: environment.name,
         steps: stepResults.map(step => ({
-          ...step,
-          artifacts: []
+          id: uuidv4(),
+          status: step.status,
+          error: step.error,
+          metrics: step.metrics || {},
+          logs: step.logs || [],
+          startTime: step.startTime || step.endTime,
+          endTime: step.endTime,
+          duration: step.duration || 0,
+          screenshots: step.screenshots || [],
+          actualResult: step.actualResult
         })),
         screenshots,
         logs,
@@ -258,7 +281,18 @@ export class E2ETestRunner implements TestRunner {
         endTime,
         duration,
         environment: environment.name,
-        steps: stepResults,
+        steps: stepResults.map(step => ({
+          id: uuidv4(),
+          status: step.status,
+          error: step.error,
+          metrics: step.metrics || {},
+          logs: step.logs || [],
+          startTime: step.startTime || step.endTime || new Date().toISOString(),
+          endTime: step.endTime || new Date().toISOString(),
+          duration: step.duration || 0,
+          screenshots: step.screenshots || [],
+          actualResult: step.actualResult
+        })),
         error: error instanceof Error ? error.message : String(error),
         stackTrace: error instanceof Error ? error.stack : undefined,
         screenshots,

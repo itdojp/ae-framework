@@ -50,17 +50,17 @@ export interface AlertThreshold {
 }
 
 export interface EscalationPolicy {
-  delay: string;
-  channels: string[];
+  delay?: string;
+  channels?: string[];
 }
 
 export interface ScalingConfig {
-  minInstances: number;
-  maxInstances: number;
-  targetCpuPercent: number;
-  targetMemoryPercent: number;
-  scaleUpCooldown: string;
-  scaleDownCooldown: string;
+  minInstances?: number;
+  maxInstances?: number;
+  targetCpuPercent?: number;
+  targetMemoryPercent?: number;
+  scaleUpCooldown?: string;
+  scaleDownCooldown?: string;
 }
 
 export interface SecurityConfig {

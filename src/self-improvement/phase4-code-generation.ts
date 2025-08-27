@@ -177,7 +177,7 @@ export class Phase4CodeGeneration {
       language: 'typescript',
       style: {
         indentation: 'spaces',
-        semicolons: true,
+        // semicolons: true, // removed as not part of CodingStyle interface
         trailingComma: 'es5'
       }
     };
