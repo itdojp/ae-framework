@@ -308,7 +308,7 @@ function transformArtifactLocation(artifact: SourceFailureArtifact): Transformed
       }
     };
   }
-  return artifact;
+  return artifact as TransformedFailureArtifact;
 }
 
 // Validate artifacts
