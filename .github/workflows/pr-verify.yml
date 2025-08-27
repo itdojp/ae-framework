@@ -39,11 +39,13 @@ jobs:
         if: always()
         with:
           name: codex-quickstart-summary
+          path: artifacts/codex-quickstart-summary.md
       - name: Upload CodeX JSON artifacts
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: codex-json-artifacts
+          path: artifacts/codex/*.json
       - name: Upload formal TLA+ (if generated)
         uses: actions/upload-artifact@v4
         if: always()
@@ -118,6 +120,30 @@ jobs:
 ' + preview);
               }
             } catch {}
+            // Stories summary
+            try {
+              if (fs.existsSync('artifacts/codex/result-stories.json')) {
+                const rs = JSON.parse(fs.readFileSync('artifacts/codex/result-stories.json','utf8'));
+                const sum = (rs.response && rs.response.summary) || '';
+                const mStories = sum.match(/(\d+)\s+stor/i);
+                const mEpics = sum.match(/(\d+)\s+epic/i);
+                const parts = [];
+                parts.push(mStories ? `${mStories[1]} stories` : 'stories: n/a');
+                if (mEpics) parts.push(`${mEpics[1]} epics`);
+                lines.push(`• Stories: ${parts.join(', ')}`);
+              }
+            } catch {}
+            // Validation summary
+            try {
+              if (fs.existsSync('artifacts/codex/result-validation.json')) {
+                const rv = JSON.parse(fs.readFileSync('artifacts/codex/result-validation.json','utf8'));
+                const sum = (rv.response && rv.response.summary) || 'Validation';
+                const analysis = (rv.response && rv.response.analysis) || '';
+                const mCov = analysis.match(/Coverage:\s*(\d+)%/i);
+                const covText = mCov ? `, Coverage: ${mCov[1]}%` : '';
+                lines.push(`• Validation: ${sum}${covText}`);
+              }
+            } catch {}
             // Formal/OpenAPI presence
             const hasTla = fs.existsSync('artifacts/codex/formal.tla');
             const hasOas = fs.existsSync('artifacts/codex/openapi.yaml');
@@ -133,9 +159,6 @@ jobs:
               issue_number: context.issue.number,
               body
             });
-
-          path: artifacts/codex/*.json
-          path: artifacts/codex-quickstart-summary.md
       - name: Show CodeX summary (head)
         if: always()
         run: |
