@@ -178,7 +178,8 @@ export class Phase4CodeGeneration {
       style: {
         indentation: 'spaces',
         // semicolons: true, // removed as not part of CodingStyle interface
-        trailingComma: 'es5'
+        // trailingComma: 'es5' // removed as not part of CodingStyle interface
+        naming: 'camelCase'
       }
     };
 

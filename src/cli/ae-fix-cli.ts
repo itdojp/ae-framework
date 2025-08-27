@@ -152,7 +152,8 @@ async function executeAutoFix(options: any): Promise<void> {
   // Execute fixes
   const engine = new AutoFixEngine();
   const artifactArray = Array.isArray(artifacts) ? artifacts : artifacts.failures;
-  const result = await engine.executeFixes(artifactArray, fixOptions);
+  const transformedArtifacts = artifactArray.map(transformArtifactLocation);
+  const result = await engine.executeFixes(transformedArtifacts, fixOptions);
 
   // Display results
   console.log(chalk.gray('\n🎯 Fix Results:'));
@@ -199,7 +200,8 @@ async function executeAnalysis(options: any): Promise<void> {
 
   const engine = new AutoFixEngine();
   const artifactArray = Array.isArray(artifacts) ? artifacts : artifacts.failures;
-  const analysis = await engine.executeFixes(artifactArray, {
+  const transformedArtifacts = artifactArray.map(transformArtifactLocation);
+  const analysis = await engine.executeFixes(transformedArtifacts, {
     outputDir: options.output || '.ae/analysis',
     dryRun: true,
   });
@@ -259,6 +261,54 @@ async function createFailureArtifact(options: any): Promise<void> {
   console.log(chalk.gray(`   Title: ${artifact.title}`));
   console.log(chalk.gray(`   Severity: ${artifact.severity}`));
   console.log(chalk.gray(`   Category: ${artifact.category}`));
+}
+
+// Transform artifact location properties to expected format
+interface TransformedArtifactLocation {
+  filePath?: string;
+  startLine?: number;
+  endLine?: number;
+  startColumn?: number;
+  endColumn?: number;
+  functionName?: string;
+  className?: string;
+}
+
+interface SourceArtifactLocation {
+  file?: string;
+  line?: number;
+  column?: number;
+  function?: string;
+  module?: string;
+}
+
+interface SourceFailureArtifact {
+  location?: SourceArtifactLocation;
+  [key: string]: any;
+}
+
+interface TransformedFailureArtifact {
+  location?: TransformedArtifactLocation;
+  [key: string]: any;
+}
+
+function transformArtifactLocation(artifact: SourceFailureArtifact): TransformedFailureArtifact {
+  if (artifact.location) {
+    const { location, ...rest } = artifact;
+    return {
+      ...rest,
+      location: {
+        filePath: location.file,
+        startLine: location.line,
+        endLine: location.line,
+        startColumn: location.column,
+        endColumn: location.column,
+        functionName: location.function,
+        className: location.module
+      }
+    };
+  }
+  return artifact as TransformedFailureArtifact;
 }
 
 // Validate artifacts

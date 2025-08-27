@@ -133,9 +133,7 @@ export class Phase3FormalTesting {
     );
 
     // Code Quality Improvement Specification
-    const codeQualitySpec = await this.formalAgent.generateFormalSpecification(
-      'code-quality-improvement',
-      `
+    const codeQualityRequirements = `
       # Code Quality Improvement Formal Specification
 
       ## Quality Metrics
@@ -164,18 +162,19 @@ export class Phase3FormalTesting {
       - All quality metrics meet defined thresholds
       - No regression in existing functionality
       - Improved IDE support and developer experience
-      `,
+      `;
+    
+    const codeQualitySpec = await this.formalAgent.generateFormalSpecification(
+      codeQualityRequirements,
+      'tla+',
       {
-        domain: 'code-quality',
-        format: 'comprehensive',
-        includeConstraints: true
+        generateProperties: true,
+        includeDiagrams: true
       }
     );
 
     // Test Coverage Enhancement Specification
-    const testCoverageSpec = await this.formalAgent.createSpecification(
-      'test-coverage-enhancement',
-      `
+    const testCoverageRequirements = `
       # Test Coverage Enhancement Formal Specification
 
       ## Coverage Requirements
@@ -191,25 +190,14 @@ export class Phase3FormalTesting {
          - Test both success and failure paths
 
       2. Integration Tests
-         - Component interaction testing
-         - Real dependency integration
-         - End-to-end workflow validation
-
-      3. Type Validation Tests
-         - Interface compliance testing
-         - Type assertion validation
-         - Generic type behavior verification
-
-      ## Quality Standards
-      - Tests MUST be deterministic and reliable
-      - Test data MUST be representative of real usage
-      - Test execution MUST be fast (<5s per test suite)
-      - Tests MUST provide clear failure messages
-      `,
+         - Component interaction testing`;
+    
+    const testCoverageSpec = await this.formalAgent.createAPISpecification(
+      testCoverageRequirements,
+      'openapi',
       {
-        domain: 'test-coverage',
-        format: 'comprehensive',
-        includeConstraints: true
+        includeExamples: true,
+        generateContracts: true
       }
     );
 
@@ -249,36 +237,20 @@ export class Phase3FormalTesting {
       unitTests.push(unitTest);
 
       // Generate integration tests
-      const integrationTest = await this.tddAgent.generateTest({
-        component,
-        testType: 'integration', 
-        description: `Integration tests for ${component} with other framework components`,
-        requirements: [
-          'Test component interactions',
-          'Verify data flow between components',
-          'Test error propagation',
-          'Validate configuration handling'
-        ],
-        coverageTarget: 85
-      });
+      const integrationTest = await this.tddAgent.suggestTestsForCode(
+        `src/components/${component}.ts`,
+        `// Integration test generation for ${component}\n// Test component interactions and data flow`
+      );
 
-      integrationTests.push(integrationTest);
+      integrationTests.push(integrationTest.testContent);
 
       // Generate type validation tests
-      const typeTest = await this.tddAgent.generateTest({
-        component,
-        testType: 'type-validation',
-        description: `Type validation tests for ${component} interfaces and types`,
-        requirements: [
-          'Validate all interface implementations',
-          'Test generic type constraints',
-          'Verify type assertion correctness',
-          'Test discriminated union behavior'
-        ],
-        coverageTarget: 100
-      });
+      const typeTest = await this.tddAgent.suggestTestsForCode(
+        `src/types/${component}.ts`,
+        `// Type validation test generation for ${component}\n// Test interfaces and type constraints`
+      );
 
-      typeValidationTests.push(typeTest);
+      typeValidationTests.push(typeTest.testContent);
     }
 
     return {
@@ -301,21 +273,26 @@ export class Phase3FormalTesting {
     // Validate formal specifications
     console.log('🔍 Validating formal specifications...');
     
-    const specValidation = await this.validationAdapter.validateSpecification({
-      specification: specifications.typeScriptErrorResolution,
-      validationType: 'comprehensive',
-      criteria: [
-        'completeness',
-        'consistency',
-        'traceability',
-        'implementability'
-      ]
+    const specValidation = await this.validationAdapter.handleValidationTask({
+      description: 'Specification validation',
+      prompt: 'Validate the formal specifications for completeness, consistency, traceability, and implementability',
+      subagent_type: 'validation',
+      context: {
+        specification: specifications.typeScriptErrorResolution,
+        validationType: 'comprehensive',
+        criteria: [
+          'completeness',
+          'consistency', 
+          'traceability',
+          'implementability'
+        ]
+      }
     });
 
-    if (!specValidation.isValid) {
-      errors.push(...specValidation.errors);
-      warnings.push(...specValidation.warnings);
+    if (specValidation.shouldBlockProgress) {
+      errors.push(specValidation.analysis);
     }
+    warnings.push(...specValidation.warnings);
 
     // Validate test quality and coverage
     console.log('🧪 Validating generated tests...');
@@ -330,21 +307,26 @@ export class Phase3FormalTesting {
     ]) {
       totalTests++;
       
-      const testValidation = await this.validationAdapter.validateTest({
-        testSuite,
-        validationType: 'quality',
-        criteria: [
-          'syntax',
-          'coverage',
-          'reliability',
-          'maintainability'
-        ]
+      const testValidation = await this.validationAdapter.handleValidationTask({
+        description: 'Test suite validation',
+        prompt: 'Validate test suite quality, syntax, coverage, and maintainability',
+        subagent_type: 'validation',
+        context: {
+          testSuite,
+          validationType: 'quality',
+          criteria: [
+            'syntax',
+            'coverage',
+            'reliability',
+            'maintainability'
+          ]
+        }
       });
 
-      if (testValidation.isValid) {
+      if (!testValidation.shouldBlockProgress) {
         validTests++;
       } else {
-        warnings.push(`Test validation failed: ${testValidation.errors.join(', ')}`);
+        warnings.push(`Test validation failed: ${testValidation.analysis}`);
       }
     }
 

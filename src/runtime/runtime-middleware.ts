@@ -5,7 +5,12 @@
  * with OpenTelemetry integration and failure artifact generation
  */
 
-import type { Request, Response, NextFunction } from 'express';
+// Express types - using any for maximum compatibility with optional dependency
+// This approach maintains backward compatibility while allowing the middleware
+// to work when Express is not installed
+type Request = any;  // Express.Request when available
+type Response = any; // Express.Response when available  
+type NextFunction = any; // Express.NextFunction when available
 import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { ConformanceGuard, ConformanceResult, GuardFactory } from './conformance-guards.js';
@@ -367,7 +372,7 @@ export async function fastifyConformancePlugin(
   fastify.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
     if (!config.enabled) return;
 
-    const operationId = (request.routerMethod as any)?.operationId || 
+    const operationId = ((request as any).routerMethod as any)?.operationId || 
                        `${request.method}_${request.url}`;
 
     const span = tracer.startSpan(`fastify_validate_${operationId}`);
@@ -397,7 +402,7 @@ export async function fastifyConformancePlugin(
   fastify.addHook('onSend', async (request: FastifyRequest, reply: FastifyReply, payload: any) => {
     if (!config.enabled) return payload;
 
-    const operationId = (request.routerMethod as any)?.operationId || 
+    const operationId = ((request as any).routerMethod as any)?.operationId || 
                        `${request.method}_${request.url}`;
 
     const span = tracer.startSpan(`fastify_validate_response_${operationId}`);

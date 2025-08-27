@@ -64,46 +64,46 @@ export interface ScalingConfig {
 }
 
 export interface SecurityConfig {
-  scanSchedule: string;
-  vulnerabilityThreshold: 'low' | 'medium' | 'high' | 'critical';
-  complianceFrameworks: string[];
-  securityEndpoints: string[];
+  scanSchedule?: string;
+  vulnerabilityThreshold?: 'low' | 'medium' | 'high' | 'critical';
+  complianceFrameworks?: string[];
+  securityEndpoints?: string[];
 }
 
 export interface CostConfig {
-  budgetLimit: number;
-  costCenter: string;
-  optimizationTargets: string[];
-  reportingSchedule: string;
+  budgetLimit?: number;
+  costCenter?: string;
+  optimizationTargets?: string[];
+  reportingSchedule?: string;
 }
 
 export interface SloConfig {
-  availability: number; // e.g., 99.9
-  latencyP95Ms: number;
-  errorRatePercent: number;
-  throughputRps: number;
-  evaluationWindow: string;
+  availability?: number; // e.g., 99.9
+  latencyP95Ms?: number;
+  errorRatePercent?: number;
+  throughputRps?: number;
+  evaluationWindow?: string;
 }
 
 export interface ChaosConfig {
-  enabled: boolean;
-  schedule: string;
-  experiments: ChaosExperiment[];
-  safetyLimits: SafetyLimits;
+  enabled?: boolean;
+  schedule?: string;
+  experiments?: ChaosExperiment[];
+  safetyLimits?: SafetyLimits;
 }
 
 export interface ChaosExperiment {
-  name: string;
-  type: 'pod-failure' | 'network-latency' | 'cpu-stress' | 'memory-stress';
-  targets: string[];
-  duration: string;
-  intensity: number;
+  name?: string;
+  type?: 'pod-failure' | 'network-latency' | 'cpu-stress' | 'memory-stress';
+  targets?: string[];
+  duration?: string;
+  intensity?: number;
 }
 
 export interface SafetyLimits {
-  maxErrorRate: number;
-  maxLatencyMs: number;
-  minHealthyInstances: number;
+  maxErrorRate?: number;
+  maxLatencyMs?: number;
+  minHealthyInstances?: number;
 }
 
 // Zod schemas for validation
@@ -152,42 +152,42 @@ export const ScalingConfigSchema = z.object({
 });
 
 export const SecurityConfigSchema = z.object({
-  scanSchedule: z.string(),
-  vulnerabilityThreshold: z.enum(['low', 'medium', 'high', 'critical']),
-  complianceFrameworks: z.array(z.string()),
-  securityEndpoints: z.array(z.string().url()),
+  scanSchedule: z.string().optional(),
+  vulnerabilityThreshold: z.enum(['low', 'medium', 'high', 'critical']).optional(),
+  complianceFrameworks: z.array(z.string()).optional(),
+  securityEndpoints: z.array(z.string().url()).optional(),
 });
 
 export const CostConfigSchema = z.object({
-  budgetLimit: z.number().positive(),
-  costCenter: z.string(),
-  optimizationTargets: z.array(z.string()),
-  reportingSchedule: z.string(),
+  budgetLimit: z.number().positive().optional(),
+  costCenter: z.string().optional(),
+  optimizationTargets: z.array(z.string()).optional(),
+  reportingSchedule: z.string().optional(),
 });
 
 export const SloConfigSchema = z.object({
-  availability: z.number().min(0).max(100),
-  latencyP95Ms: z.number().positive(),
-  errorRatePercent: z.number().min(0).max(100),
-  throughputRps: z.number().positive(),
-  evaluationWindow: z.string(),
+  availability: z.number().min(0).max(100).optional(),
+  latencyP95Ms: z.number().positive().optional(),
+  errorRatePercent: z.number().min(0).max(100).optional(),
+  throughputRps: z.number().positive().optional(),
+  evaluationWindow: z.string().optional(),
 });
 
 export const ChaosConfigSchema = z.object({
-  enabled: z.boolean(),
-  schedule: z.string(),
+  enabled: z.boolean().optional(),
+  schedule: z.string().optional(),
   experiments: z.array(z.object({
-    name: z.string(),
-    type: z.enum(['pod-failure', 'network-latency', 'cpu-stress', 'memory-stress']),
-    targets: z.array(z.string()),
-    duration: z.string(),
-    intensity: z.number().min(0).max(100),
-  })),
+    name: z.string().optional(),
+    type: z.enum(['pod-failure', 'network-latency', 'cpu-stress', 'memory-stress']).optional(),
+    targets: z.array(z.string()).optional(),
+    duration: z.string().optional(),
+    intensity: z.number().min(0).max(100).optional(),
+  })).optional(),
   safetyLimits: z.object({
-    maxErrorRate: z.number().min(0).max(100),
-    maxLatencyMs: z.number().positive(),
-    minHealthyInstances: z.number().int().positive(),
-  }),
+    maxErrorRate: z.number().min(0).max(100).optional(),
+    maxLatencyMs: z.number().positive().optional(),
+    minHealthyInstances: z.number().int().positive().optional(),
+  }).optional(),
 });
 
 export const OperateAgentConfigSchema = z.object({
