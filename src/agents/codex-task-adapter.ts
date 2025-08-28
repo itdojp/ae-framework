@@ -8,6 +8,7 @@ import { UIScaffoldGenerator } from '../generators/ui-scaffold-generator.js';
 import { FormalAgent } from './formal-agent.js';
 import * as fs from 'fs';
 import * as path from 'path';
+import { z } from 'zod';
 
 type Phase = 'intent' | 'formal' | 'stories' | 'validation' | 'modeling' | 'ui';
 
@@ -37,7 +38,7 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
             let mcPath = '';
             try {
               // write TLA+ spec content
-              const outDir = path.join(process.cwd(), 'artifacts', 'codex');
+              const outDir = getArtifactsDir();
               fs.mkdirSync(outDir, { recursive: true });
               tlaPath = path.join(outDir, 'formal.tla');
               fs.writeFileSync(tlaPath, spec.content, 'utf8');
@@ -170,8 +171,14 @@ async function handleUI(request: TaskRequest): Promise<TaskResponse> {
   const outputDir = ctx.outputDir || 'apps';
 
   let effectiveState = phaseState;
-  let dryRun = false;
-  if (!phaseState?.entities || Object.keys(phaseState.entities).length === 0) {
+  // Resolve dryRun precedence: context.dryRun > CODEX_UI_DRY_RUN env > fallback
+  let dryRun: boolean | undefined = typeof ctx.dryRun === 'boolean' ? ctx.dryRun : undefined;
+  if (dryRun === undefined) {
+    const env = process.env.CODEX_UI_DRY_RUN;
+    if (env === '0') dryRun = false;
+    else if (env === '1') dryRun = true;
+  }
+  if (dryRun === undefined && (!phaseState?.entities || Object.keys(phaseState.entities).length === 0)) {
     dryRun = true;
     effectiveState = {
       entities: {
@@ -188,6 +195,39 @@ async function handleUI(request: TaskRequest): Promise<TaskResponse> {
     } as any;
   }
 
+  // Runtime schema validation
+  const AttributeSchema = z.object({
+    type: z.string(),
+    required: z.boolean().optional(),
+    description: z.string().optional(),
+  });
+  const EntitySchema = z.object({
+    description: z.string().optional(),
+    attributes: z.record(AttributeSchema),
+    acceptance_criteria: z.array(z.string()).optional(),
+  });
+  const PhaseStateSchema = z.object({
+    entities: z.record(EntitySchema),
+  });
+
+  if (effectiveState) {
+    const parsed = PhaseStateSchema.safeParse(effectiveState);
+    if (!parsed.success) {
+      const msgs = parsed.error.issues.map(i => `${i.path.join('.')}: ${i.message}`);
+      return {
+        summary: 'Invalid Phase 6 phaseState input',
+        analysis: msgs.join('\n'),
+        recommendations: [
+          'Fix phaseState.entities schema (see analysis)',
+          'Provide valid attribute types and required flags',
+        ],
+        nextActions: ['Re-run UI generation after fixing inputs'],
+        warnings: msgs,
+        shouldBlockProgress: true,
+      };
+    }
+  }
+
   const gen = new UIScaffoldGenerator(effectiveState as any, { outputDir, dryRun });
   const results = await gen.generateAll();
   const total = Object.values(results).length;
@@ -196,10 +236,10 @@ async function handleUI(request: TaskRequest): Promise<TaskResponse> {
 
   // Write additional UI summary artifact (machine-readable)
   try {
-    const outDir = path.join(process.cwd(), 'artifacts', 'codex');
+    const outDir = getArtifactsDir();
     fs.mkdirSync(outDir, { recursive: true });
     const uiSummaryPath = path.join(outDir, 'ui-summary.json');
-    fs.writeFileSync(uiSummaryPath, JSON.stringify({ totalEntities: total, okEntities: ok, files, dryRun }, null, 2), 'utf8');
+    fs.writeFileSync(uiSummaryPath, JSON.stringify({ totalEntities: total, okEntities: ok, files, dryRun, artifactDir: outDir }, null, 2), 'utf8');
   } catch {}
 
   return {
@@ -217,7 +257,7 @@ async function handleUI(request: TaskRequest): Promise<TaskResponse> {
 
 function writeAndReturn(phase: Phase, response: TaskResponse): TaskResponse {
   try {
-    const outDir = path.join(process.cwd(), 'artifacts', 'codex');
+    const outDir = getArtifactsDir();
     fs.mkdirSync(outDir, { recursive: true });
     const file = path.join(outDir, `result-${phase}.json`);
     fs.writeFileSync(file, JSON.stringify({ phase, response, ts: new Date().toISOString() }, null, 2), 'utf8');
@@ -236,4 +276,10 @@ function createNeutralResponse(phase: Phase, request: TaskRequest): TaskResponse
     warnings: [`Phase '${phase}' not fully supported in current implementation`],
     shouldBlockProgress: false
   };
+}
+
+function getArtifactsDir() {
+  return process.env.CODEX_ARTIFACTS_DIR?.trim()
+    ? path.resolve(process.env.CODEX_ARTIFACTS_DIR)
+    : path.join(process.cwd(), 'artifacts', 'codex');
 }
