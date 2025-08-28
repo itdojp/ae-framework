@@ -5,7 +5,7 @@ This guide shows the fastest way to use ae-framework from CodeX via CLI/MCP.
 ## Prerequisites
 - Node.js 20.11+
 - pnpm 9 (Corepack: `corepack enable`)
-- Repository built (`pnpm run build`)
+- Build the repo first (`pnpm run build`) — stdio/quickstart scripts load `dist/`
 
 ## 1) One-command PoC (Verify + Formal)
 To customize formal input, set `CODEX_FORMAL_REQ` to your requirement text (single line or escaped).
@@ -56,4 +56,10 @@ $env:CODEX_RUN_FORMAL="1"; pnpm run build; pnpm run codex:quickstart
 - cmd.exe:
 ```bat
 set CODEX_RUN_FORMAL=1 && pnpm run build && pnpm run codex:quickstart
+```
+## 4) Stdio Adapter (direct Task Adapter)
+Pipe a `TaskRequest` JSON to the stdio adapter and receive a `TaskResponse` JSON.
+```bash
+pnpm run build
+echo '{"description":"Generate UI","subagent_type":"ui","context":{"phaseState":{"entities":{}}}}' | pnpm run codex:adapter
 ```
