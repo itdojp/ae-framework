@@ -63,7 +63,6 @@ async function main() {
   let formalCode = 0;
   let formalOut = '';
   let formalMC = '';
-  let formalMC = '';
   if (process.env.CODEX_RUN_FORMAL === '1') {
     try {
       console.log('[codex] Generating formal spec + OpenAPI ...');
