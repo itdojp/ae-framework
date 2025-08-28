@@ -14,7 +14,8 @@
     "ae-ui": "./dist/src/cli/ae-ui-alias.js",
     "ae-sbom": "./dist/src/cli/sbom-cli.js",
     "ae-resilience": "./dist/src/cli/resilience-cli.js",
-    "ae-benchmark": "./dist/src/cli/benchmark-cli.js"
+    "ae-benchmark": "./dist/src/cli/benchmark-cli.js",
+    "ae-server": "./dist/src/cli/server-runner.js"
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",
@@ -363,6 +364,9 @@
   },
   "engines": {
     "node": ">=20.11 <23"
+  },
+  "exports": {
+    ".": "./dist/src/index.js"
   },
   "packageManager": "pnpm@10.0.0"
 }

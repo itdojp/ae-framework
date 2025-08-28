@@ -6,7 +6,7 @@ This guide explains how to use ae-framework in the CodeX (agentic coding) enviro
 
 - Minimal: CLI bridge (PoC)
 - Recommended: MCP integration (reuse existing MCP servers)
-- Advanced: CodeX-specific task adapter (future work)
+- Adapter: CodeX Task Adapter via stdio bridge (JSON-in/JSON-out)
 
 ## 1) CLI Bridge (PoC)
 
@@ -87,20 +87,26 @@ Replace `${AE_FRAMEWORK_ROOT}` with your local path. Minimal JSON example:
 }
 ```
 
-## 3) CodeX Task Adapter (Future)
+## 3) CodeX Task Adapter (Stdio Bridge)
 
-Design a dedicated adapter that maps CodeX TODO/Plan/Tool calls to ae-framework phases.
+A dedicated adapter maps CodeX TODO/Plan/Tool calls to ae-framework phases. Use the stdio bridge for simple JSON I/O.
 
-### Planned scope
+### Current scope
 - Phase handlers: intent, formal, stories, validation, modeling, ui
-- Request/response contracts: reuse `src/agents/*-task-adapter.ts` patterns
-- Telemetry integration: reuse phase6 OpenTelemetry metrics
+- Request/response contracts: `TaskRequest` / `TaskResponse`
+- Artifacts: writes JSON summaries to `artifacts/codex/`
 
-### Current skeleton and behavior
-- File: `src/agents/codex-task-adapter.ts`
-- Phase routing: intent/stories/validation/modeling → delegates to existing adapters
-- Formal: delegates to `FormalAgent` (`tla+` generation + validation summary)
-- UI: uses `UIScaffoldGenerator` if `context.phaseState.entities` is provided; otherwise returns recommendations
+### Usage (stdio)
+- Script: `pnpm run codex:adapter`
+- Example:
+```bash
+echo '{"description":"Generate UI","subagent_type":"ui","context":{"phaseState":{"entities":{}}}}' | pnpm run codex:adapter
+```
+
+### Implementation notes
+- File: `src/agents/codex-task-adapter.ts` (core), `scripts/codex/adapter-stdio.mjs` (bridge)
+- UI: uses `UIScaffoldGenerator` when `context.phaseState.entities` is provided; otherwise dry-run
+- Formal: `FormalAgent` generates TLA+ and OpenAPI (best-effort model checking)
 
 ## Operational Considerations
 

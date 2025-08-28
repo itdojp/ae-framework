@@ -4,7 +4,7 @@ This document describes the machine-readable artifacts produced when running ae-
 
 ## Per-phase result files
 
-- Path: `artifacts/codex/result-<phase>.json`
+- Path: `artifacts/codex/result-<phase>.json` (or directory in `CODEX_ARTIFACTS_DIR` if set)
 - Format:
 ```jsonc
 {
@@ -34,7 +34,8 @@ Notes:
   "totalEntities": 1,
   "okEntities": 1,
   "files": ["apps/web/app/products/page.tsx", "apps/web/components/ProductForm.tsx"],
-  "dryRun": true
+  "dryRun": true,
+  "artifactDir": "/abs/path/to/artifacts/codex"
 }
 ```
 
@@ -65,4 +66,3 @@ The PR Verify workflow uploads:
 - `codex-model-check`: `artifacts/codex/model-check.json` (if present)
 
 Additionally, it posts a PR comment summarizing model check and UI scaffold results.
-
