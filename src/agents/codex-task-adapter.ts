@@ -8,6 +8,7 @@ import { UIScaffoldGenerator } from '../generators/ui-scaffold-generator.js';
 import { FormalAgent } from './formal-agent.js';
 import * as fs from 'fs';
 import * as path from 'path';
+import { trace } from '@opentelemetry/api';
 
 type Phase = 'intent' | 'formal' | 'stories' | 'validation' | 'modeling' | 'ui';
 
@@ -24,10 +25,21 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
   const handler: TaskHandler = {
     async handleTask(request: TaskRequest): Promise<TaskResponse> {
       const phase = selectPhase(request);
+      const tracer = trace.getTracer('ae-codex-adapter');
+      const span = tracer.startSpan('codex.adapter.handleTask', {
+        attributes: {
+          'ae.phase': phase,
+          'ae.codex.adapter': true,
+        },
+      });
       try {
         switch (phase) {
           case 'intent':
-            return writeAndReturn(phase, await intent.handleIntentTask(request as any));
+            {
+              const resp = await intent.handleIntentTask(request as any);
+              span.setAttributes({ 'ae.result.blocked': resp.shouldBlockProgress || false, 'ae.result.warnings': resp.warnings?.length || 0 });
+              return writeAndReturn(phase, resp);
+            }
           case 'formal': {
             const reqText = request.prompt || request.description || '';
             const spec = await formal.generateFormalSpecification(reqText, 'tla+');
@@ -53,7 +65,7 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
                 fs.writeFileSync(mcPath, JSON.stringify(mc, null, 2), 'utf8');
               } catch {}
             } catch {}
-            return writeAndReturn(phase, {
+            const resp: TaskResponse = {
               summary: `Formal spec generated: ${spec.type.toUpperCase()} (${spec.validation.status})`,
               analysis: spec.content.slice(0, 1200),
               recommendations: [
@@ -65,20 +77,39 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
               nextActions: ['Proceed to tests generation', 'Run model checking'],
               warnings: spec.validation.warnings?.map(w => w.message) || [],
               shouldBlockProgress: spec.validation.status === 'invalid',
-            });
+            };
+            span.setAttributes({ 'ae.result.blocked': resp.shouldBlockProgress || false, 'ae.result.warnings': resp.warnings?.length || 0 });
+            return writeAndReturn(phase, resp);
           }
           case 'stories':
-            return writeAndReturn(phase, await stories.handleUserStoriesTask(request));
+            {
+              const resp = await stories.handleUserStoriesTask(request);
+              span.setAttributes({ 'ae.result.blocked': resp.shouldBlockProgress || false, 'ae.result.warnings': resp.warnings?.length || 0 });
+              return writeAndReturn(phase, resp);
+            }
           case 'validation':
-            return writeAndReturn(phase, await validation.handleValidationTask(request));
+            {
+              const resp = await validation.handleValidationTask(request);
+              span.setAttributes({ 'ae.result.blocked': resp.shouldBlockProgress || false, 'ae.result.warnings': resp.warnings?.length || 0 });
+              return writeAndReturn(phase, resp);
+            }
           case 'modeling':
-            return writeAndReturn(phase, await modeling.handleDomainModelingTask(request));
+            {
+              const resp = await modeling.handleDomainModelingTask(request);
+              span.setAttributes({ 'ae.result.blocked': resp.shouldBlockProgress || false, 'ae.result.warnings': resp.warnings?.length || 0 });
+              return writeAndReturn(phase, resp);
+            }
           case 'ui':
-            return writeAndReturn(phase, await handleUI(request));
+            {
+              const resp = await handleUI(request, span);
+              span.setAttributes({ 'ae.result.blocked': resp.shouldBlockProgress || false, 'ae.result.warnings': resp.warnings?.length || 0 });
+              return writeAndReturn(phase, resp);
+            }
           default:
             return writeAndReturn(phase, createNeutralResponse(phase, request));
         }
       } catch (err) {
+        span.recordException(err as Error);
         const errorResp: TaskResponse = {
           summary: `CodeX adapter error in phase: ${phase}`,
           analysis: String(err),
@@ -88,6 +119,8 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
           shouldBlockProgress: true,
         };
         return writeAndReturn(phase, errorResp);
+      } finally {
+        span.end();
       }
     },
     async provideProactiveGuidance(context) {
@@ -164,7 +197,7 @@ function recommendNextActions(phase: Phase): string[] {
   }
 }
 
-async function handleUI(request: TaskRequest): Promise<TaskResponse> {
+async function handleUI(request: TaskRequest, parentSpan?: any): Promise<TaskResponse> {
   const ctx = (request as any).context || {};
   const phaseState = ctx.phaseState;
   const outputDir = ctx.outputDir || 'apps';
@@ -188,11 +221,14 @@ async function handleUI(request: TaskRequest): Promise<TaskResponse> {
     } as any;
   }
 
+  const tracer = trace.getTracer('ae-codex-adapter');
+  const span = tracer.startSpan('codex.adapter.ui', { attributes: { 'ae.phase': 'ui', 'ae.ui.dryRun': !!dryRun } });
   const gen = new UIScaffoldGenerator(effectiveState as any, { outputDir, dryRun });
   const results = await gen.generateAll();
   const total = Object.values(results).length;
   const ok = Object.values(results).filter(r => r.success).length;
   const files = Object.values(results).flatMap(r => r.success ? (r.files || []) : []);
+  span.setAttributes({ 'ae.ui.entities.total': total, 'ae.ui.entities.ok': ok, 'ae.ui.files.count': files.length });
 
   // Write additional UI summary artifact (machine-readable)
   try {
@@ -202,7 +238,7 @@ async function handleUI(request: TaskRequest): Promise<TaskResponse> {
     fs.writeFileSync(uiSummaryPath, JSON.stringify({ totalEntities: total, okEntities: ok, files, dryRun }, null, 2), 'utf8');
   } catch {}
 
-  return {
+  const resp: TaskResponse = {
     summary: `UI scaffold ${dryRun ? '(dry-run) ' : ''}complete: ${ok}/${total} entities` ,
     analysis: files.length ? files.map(f => `• ${f}`).join('\n') : 'No files generated',
     recommendations: [
@@ -213,6 +249,8 @@ async function handleUI(request: TaskRequest): Promise<TaskResponse> {
     warnings: [],
     shouldBlockProgress: false,
   };
+  span.end();
+  return resp;
 }
 
 function writeAndReturn(phase: Phase, response: TaskResponse): TaskResponse {
