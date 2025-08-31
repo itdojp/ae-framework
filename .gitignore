@@ -58,6 +58,9 @@ sample-*.json
 invalid-sample-*.json
 clean-sample-*.json
 artifacts/cassettes/
+artifacts/codex/
+artifacts/codex-quickstart-summary.md
+tests/api/generated/
 
 # Generated files
 traceability.csv

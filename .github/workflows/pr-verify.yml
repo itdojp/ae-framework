@@ -91,6 +91,14 @@ jobs:
           else
             echo 'No ui-summary.json found.'
           fi
+      - name: Show contract/E2E templates summary (if present)
+        if: always()
+        run: |
+          if [ -f artifacts/codex/openapi-contract-tests.json ]; then
+            node -e "const s=require('./artifacts/codex/openapi-contract-tests.json'); console.log('Contract/E2E templates:', s.files, 'dir:', s.outDir);"
+          else
+            echo 'No openapi-contract-tests.json found.'
+          fi
 
       - name: Comment summary on PR
         if: github.event_name == 'pull_request'
@@ -159,6 +167,13 @@ jobs:
             const hasOas = fs.existsSync('artifacts/codex/openapi.yaml');
             if (hasTla) lines.push('• Formal: TLA+ generated (artifacts/codex/formal.tla)');
             if (hasOas) lines.push('• OpenAPI: artifacts/codex/openapi.yaml');
+            // Contract/E2E templates
+            try {
+              if (fs.existsSync('artifacts/codex/openapi-contract-tests.json')) {
+                const s = JSON.parse(fs.readFileSync('artifacts/codex/openapi-contract-tests.json','utf8'));
+                lines.push(`• Contract/E2E templates: ${s.files} files (dir: ${s.outDir})`);
+              }
+            } catch {}
             if (lines.length === 0) {
               lines.push('No CodeX artifacts found to summarize.');
             }

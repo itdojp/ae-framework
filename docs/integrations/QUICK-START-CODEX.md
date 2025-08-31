@@ -4,7 +4,7 @@ This guide shows the fastest way to use ae-framework from CodeX via CLI/MCP.
 
 ## Prerequisites
 - Node.js 20.11+
-- pnpm 9 (Corepack: `corepack enable`)
+- pnpm 10 (Corepack recommended: `corepack enable`)
 - Build the repo first (`pnpm run build`) — stdio/quickstart scripts load `dist/`
 
 ## 1) One-command PoC (Verify + Formal)
@@ -18,6 +18,16 @@ Outputs under `artifacts/`:
 - `artifacts/codex/openapi.yaml` (OpenAPI)
 - `artifacts/codex/model-check.json` (model checking)
 - `artifacts/codex/result-formal.json` (per-phase JSON)
+- If OpenAPI is present, contract/E2E templates are scaffolded under `tests/api/generated/` and summarized in `artifacts/codex/openapi-contract-tests.json`.
+
+Optional flags for smoother local runs:
+```bash
+# Skip quality gates entirely
+CODEX_SKIP_QUALITY=1 pnpm run codex:quickstart
+
+# Tolerant mode: always exit 0 even if steps fail
+CODEX_TOLERANT=1 pnpm run codex:quickstart
+```
 
 ## 2) UI Scaffold (Phase 6)
 Use the included sample Phase State:
@@ -30,6 +40,7 @@ pnpm run codex:quickstart
 ```
 - Dry-run by default. Set `CODEX_UI_DRY_RUN=0` to write files.
 - UI summary is saved as `artifacts/codex/ui-summary.json`.
+ - To change where artifacts are written, set `CODEX_ARTIFACTS_DIR` (adapter) or run quickstart from the repo root.
 
 ## 3) MCP Integration
 Start MCP servers and connect from CodeX:

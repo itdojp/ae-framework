@@ -162,6 +162,7 @@
     "container:demo": "tsx -e \"import { ContainerAgent } from './src/agents/container-agent.js'; console.log('Container verification demo ready');\"",
     "codex:quickstart": "node scripts/codex/quickstart.mjs",
     "codex:adapter": "node scripts/codex/adapter-stdio.mjs",
+    "codex:generate:contracts": "node scripts/codex/generate-contract-tests.mjs",
     "codex:mcp:intent": "tsx src/mcp-server/intent-server.ts",
     "codex:mcp:test": "tsx src/mcp-server/test-generation-server.ts",
     "codex:mcp:verify": "tsx src/mcp-server/verify-server.ts",
