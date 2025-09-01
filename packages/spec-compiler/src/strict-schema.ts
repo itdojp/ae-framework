@@ -5,6 +5,20 @@
 
 import { z } from 'zod';
 
+// Helpers to allow configurable limits via environment variables
+function intFromEnv(key: string, def: number): number {
+  const v = process.env[key];
+  if (!v) return def;
+  const n = parseInt(v, 10);
+  return Number.isFinite(n) && n > 0 ? n : def;
+}
+
+const DESC_MIN = intFromEnv('AE_SPEC_DESC_MIN', 10);
+const DESC_MAX = intFromEnv('AE_SPEC_DESC_MAX', 500);
+const FIELD_DESC_MAX = intFromEnv('AE_SPEC_FIELD_DESC_MAX', 300);
+const DOMAIN_DESC_MAX = intFromEnv('AE_SPEC_DOMAIN_DESC_MAX', 500);
+const INVARIANT_DESC_MAX = intFromEnv('AE_SPEC_INVARIANT_DESC_MAX', 500);
+
 // Version validation - semantic versioning
 const VersionSchema = z.string().regex(/^\d+\.\d+\.\d+(-[a-zA-Z0-9\-.]+)?(\+[a-zA-Z0-9\-.]+)?$/, {
   message: "Version must follow semantic versioning (e.g., 1.0.0, 1.0.0-alpha.1)"
@@ -28,7 +42,7 @@ const ISO8601DateSchema = z.string().datetime({
 // Metadata Schema with strict validation
 const MetadataSchema = z.object({
   name: IdentifierSchema,
-  description: z.string().min(10).max(500).optional(),
+  description: z.string().min(DESC_MIN).max(DESC_MAX).optional(),
   version: VersionSchema.optional(),
   created: ISO8601DateSchema,
   updated: ISO8601DateSchema
@@ -42,7 +56,7 @@ const MetadataSchema = z.object({
 // Glossary Schema with uniqueness validation
 const GlossaryItemSchema = z.object({
   term: z.string().min(2).max(100),
-  definition: z.string().min(10).max(1000),
+  definition: z.string().min(DESC_MIN).max(intFromEnv('AE_SPEC_GLOSSARY_DESC_MAX', 1000)),
   aliases: z.array(z.string().min(1).max(100)).max(10).optional()
 }).strict();
 
@@ -80,8 +94,8 @@ const FieldSchema = z.object({
   name: IdentifierSchema,
   type: z.enum(['string', 'number', 'boolean', 'date', 'uuid', 'email', 'url', 'json', 'array', 'object']),
   required: z.boolean().default(false),
-  constraints: z.array(z.string().min(5).max(200)).max(10).optional(),
-  description: z.string().min(5).max(300).optional()
+  constraints: z.array(z.string().min(5).max(intFromEnv('AE_SPEC_CONSTRAINT_MAX', 200))).max(10).optional(),
+  description: z.string().min(5).max(FIELD_DESC_MAX).optional()
 }).strict();
 
 // Relationship Schema with strict validation
@@ -95,7 +109,7 @@ const RelationshipSchema = z.object({
 // Domain Entity Schema with field uniqueness
 const DomainEntitySchema = z.object({
   name: IdentifierSchema,
-  description: z.string().min(10).max(500).optional(),
+  description: z.string().min(DESC_MIN).max(DOMAIN_DESC_MAX).optional(),
   fields: z.array(FieldSchema).min(1).max(50),
   relationships: z.array(RelationshipSchema).max(20).optional()
 }).strict().superRefine((entity, ctx) => {
@@ -131,7 +145,7 @@ const DomainSchema = z.array(DomainEntitySchema).min(1).max(100).superRefine((en
 // Invariant Schema with expression validation
 const InvariantSchema = z.object({
   id: z.string().uuid({ message: "Invariant ID must be a valid UUID" }),
-  description: z.string().min(10).max(500),
+  description: z.string().min(DESC_MIN).max(INVARIANT_DESC_MAX),
   expression: z.string().min(5).max(1000),
   entities: z.array(IdentifierSchema).min(1).max(10),
   severity: z.enum(['error', 'warning'])
@@ -246,7 +260,7 @@ const APIParameterSchema = z.object({
   in: z.enum(['path', 'query', 'header', 'body']),
   type: z.enum(['string', 'number', 'boolean', 'array', 'object']),
   required: z.boolean().default(false),
-  description: z.string().min(5).max(200).optional()
+  description: z.string().min(5).max(intFromEnv('AE_SPEC_API_PARAM_DESC_MAX', 200)).optional()
 }).strict();
 
 const APIRequestSchema = z.object({
@@ -264,14 +278,14 @@ const APIResponseSchema = z.object({
 
 const APIErrorSchema = z.object({
   statusCode: z.number().int().min(400).max(599),
-  description: z.string().min(5).max(200)
+  description: z.string().min(5).max(intFromEnv('AE_SPEC_API_ERROR_DESC_MAX', 200))
 }).strict();
 
 const APIEndpointSchema = z.object({
   method: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']),
   path: PathSchema,
-  summary: z.string().min(5).max(100).optional(),
-  description: z.string().min(10).max(500).optional(),
+  summary: z.string().min(5).max(intFromEnv('AE_SPEC_API_SUMMARY_MAX', 100)).optional(),
+  description: z.string().min(DESC_MIN).max(DESC_MAX).optional(),
   parameters: z.array(APIParameterSchema).max(20).optional(),
   request: APIRequestSchema.optional(),
   response: APIResponseSchema.optional(),

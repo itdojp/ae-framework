@@ -114,12 +114,22 @@ export function createSpecCommand(): Command {
     .option('--output <file>', 'Output JSON file (default: .ae/ae-ir.json)')
     .option('--max-errors <n>', 'Maximum allowed errors', parseInt, 0)
     .option('--max-warnings <n>', 'Maximum allowed warnings', parseInt, 10)
+    .option('--relaxed', 'Relax strict schema errors to warnings')
+    .option('--desc-max <n>', 'Override description max length (e.g., 1000)', parseInt)
     .action(async (options) => {
       try {
         console.log(chalk.blue(`🔍 Validating ${options.input}...`));
         
         const compiler = new AESpecCompiler();
         const outputPath = options.output || '.ae/ae-ir.json';
+        // Set relaxed/configurable limits via env for spec-compiler
+        if (options.relaxed) process.env.AE_SPEC_RELAXED = '1';
+        if (typeof options.descMax === 'number' && Number.isFinite(options.descMax) && options.descMax > 0) {
+          process.env.AE_SPEC_DESC_MAX = String(options.descMax);
+          process.env.AE_SPEC_INVARIANT_DESC_MAX = String(options.descMax);
+          process.env.AE_SPEC_DOMAIN_DESC_MAX = String(options.descMax);
+          process.env.AE_SPEC_FIELD_DESC_MAX = String(options.descMax);
+        }
         
         // Compile
         console.log(chalk.blue('📝 Compiling...'));

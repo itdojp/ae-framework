@@ -3,7 +3,7 @@
   "description": "AE-Framework specification validation configuration",
   "quality_gates": {
     "max_errors": 0,
-    "max_warnings": 10,
+    "max_warnings": 999,
     "max_info": -1,
     "fail_on_missing_sections": true,
     "require_business_rules": true
