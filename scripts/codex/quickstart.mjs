@@ -157,7 +157,14 @@ async function main() {
     }
   }
 
-  const summary = [
+  // Enrich summary from artifacts
+  const codexDir = path.join(artifactsDir, 'codex');
+  function readJSON(p) { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return null; } }
+  const uiSummary = readJSON(path.join(codexDir, 'ui-summary.json'));
+  const uiResult = readJSON(path.join(codexDir, 'result-ui.json'));
+  const formalResult = readJSON(path.join(codexDir, 'result-formal.json'));
+
+  const lines = [
     '# CodeX Quickstart Summary',
     '',
     process.env.CODEX_SKIP_QUALITY === '1' ? '- Quality gates: skipped' : `- Quality gates exit code: ${verifyCode}`,
@@ -165,16 +172,35 @@ async function main() {
     process.env.CODEX_RUN_FORMAL === '1' ? `- Formal generation: ${formalCode === 0 ? 'ok' : 'failed'}${formalOut ? ` (${path.relative(root, formalOut)})` : ''}${formalMC ? `, model-check: ${formalMC}` : ''}` : '- Formal generation: skipped',
     process.env.CODEX_RUN_FORMAL === '1' && openapiPath ? `- OpenAPI: ${path.relative(root, openapiPath)}${contractsSummaryPath ? ` → Generated contract/E2E templates: ${contractsCount}` : ''}` : '',
     '',
-    'Artifacts generated under artifacts/ as applicable.',
-  ].join('\n');
-  fs.writeFileSync(summaryPath, summary, 'utf8');
+  ];
+  if (uiSummary) {
+    const files = uiSummary.files || [];
+    const preview = files.slice(0, 5).map(f => `  - ${f}`);
+    const more = files.length > 5 ? ` (+${files.length - 5} more)` : '';
+    lines.push(`UI: ${uiSummary.okEntities}/${uiSummary.totalEntities} entities, Files: ${files.length}${more}, Dry-run: ${!!uiSummary.dryRun}`);
+    if (preview.length) {
+      lines.push('Preview files (up to 5):', ...preview);
+    }
+  }
+  if (uiResult?.response) {
+    const r = uiResult.response;
+    lines.push(`UI Warnings: ${r.warnings?.length || 0}${r.shouldBlockProgress ? ' (BLOCKED)' : ''}`);
+  }
+  if (formalResult?.response) {
+    const r = formalResult.response;
+    lines.push(`Formal Warnings: ${r.warnings?.length || 0}${r.shouldBlockProgress ? ' (BLOCKED)' : ''}`);
+  }
+  lines.push('Artifacts generated under artifacts/ as applicable.');
+  fs.writeFileSync(summaryPath, lines.join('\n'), 'utf8');
   console.log(`[codex] Wrote summary: ${summaryPath}`);
 
+  // Exit behavior: tolerant mode overrides, otherwise respect blocked flags from phases
   if (process.env.CODEX_TOLERANT === '1') {
     // Tolerant mode: never fail quickstart
     process.exit(0);
   }
-  if (verifyCode !== 0 || uiCode !== 0) {
+  const blocked = (uiResult?.response?.shouldBlockProgress || false) || (formalResult?.response?.shouldBlockProgress || false);
+  if (verifyCode !== 0 || uiCode !== 0 || blocked) {
     process.exit(1);
   }
 }

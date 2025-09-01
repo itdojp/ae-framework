@@ -112,6 +112,7 @@ echo '{"description":"Generate UI","subagent_type":"ui","context":{"phaseState":
 - Formal: `FormalAgent` generates TLA+ and OpenAPI (best-effort model checking)
 - Validation: runtime schema validation (Zod) for `context.phaseState` blocks on invalid inputs with actionable messages.
  - Contract/E2E templates: when OpenAPI is available in quickstart, `scripts/codex/generate-contract-tests.mjs` scaffolds tests under `tests/api/generated/` and writes `artifacts/codex/openapi-contract-tests.json`.
+ 
 
 ## Operational Considerations
 
@@ -172,13 +173,13 @@ pnpm run build
 CODEX_RUN_UI=1 CODEX_PHASE_STATE_FILE=samples/phase-state.example.json pnpm run codex:quickstart
 
 # Dry-run is enabled by default; set CODEX_UI_DRY_RUN=0 to write files
+```
 
 Skip quality gates or run in tolerant mode (optional):
 ```bash
 CODEX_SKIP_QUALITY=1 pnpm run codex:quickstart
 # or
 CODEX_TOLERANT=1 pnpm run codex:quickstart
-```
 ```
 
 ## Machine-readable artifacts
