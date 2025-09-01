@@ -50,6 +50,13 @@ pnpm run codex:spec:iterate -- spec/feature.ae-spec.md 5 10
 # Args: <spec> <maxIter=5> <maxWarnings=10>
 ```
 
+6) Prompt joiner (for CodeX agents)
+```bash
+# Convert the last validate JSON into a concise revision instruction for your LLM
+pnpm run codex:spec:prompt -- artifacts/spec-iterate/issues-01.json spec/feature.ae-spec.md > artifacts/spec-iterate/revise-01.md
+# Feed revise-01.md to your agent; update the spec; press Enter in spec-iterate loop.
+```
+
 ## Claude Code Workflow Template (MCP)
 
 1) Register MCP server

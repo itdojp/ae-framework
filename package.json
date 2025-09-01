@@ -164,6 +164,7 @@
     "codex:adapter": "node scripts/codex/adapter-stdio.mjs",
     "codex:spec:stdio": "node scripts/codex/spec-stdio.mjs",
     "codex:spec:iterate": "node scripts/codex/spec-iter.mjs",
+    "codex:spec:prompt": "node scripts/codex/issues-to-revision-prompt.mjs",
     "codex:generate:contracts": "node scripts/codex/generate-contract-tests.mjs",
     "codex:mcp:intent": "tsx src/mcp-server/intent-server.ts",
     "codex:mcp:test": "tsx src/mcp-server/test-generation-server.ts",
