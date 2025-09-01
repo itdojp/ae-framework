@@ -364,18 +364,18 @@ export class AESpecCompiler {
     
     if (!result.success) {
       const readableErrors = validator.getReadableErrors((result as any).errors || []);
-      
+      const relaxed = process.env.AE_SPEC_RELAXED === '1';
       readableErrors.forEach((error, index) => {
         issues.push({
           id: `SCHEMA_${(index + 1).toString().padStart(3, '0')}`,
-          severity: 'error',
-          message: `Schema validation failed at ${error.path}: ${error.message}`,
+          severity: relaxed ? 'warn' : 'error',
+          message: `Schema validation ${relaxed ? 'warning (relaxed mode)' : 'failed'} at ${error.path}: ${error.message}`,
           location: { 
             section: error.path.split('.')[0] || 'root',
             line: undefined,
             column: undefined
           },
-          suggestion: 'Fix the schema validation error to ensure specification compliance'
+          suggestion: relaxed ? 'Consider fixing to meet strict schema, or keep relaxed mode enabled' : 'Fix the schema validation error to ensure specification compliance'
         });
       });
     }
