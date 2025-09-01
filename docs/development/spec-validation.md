@@ -132,6 +132,32 @@ Default quality gates:
 - **Warnings**: 10 (more than 10 warnings fails validation)
 - **Info**: unlimited
 
+## Lenient Mode (Development)
+
+To accelerate early iteration, a lenient validation profile is available:
+
+- Env flag: `AE_SPEC_RELAXED=1` downgrades strict schema errors to warnings.
+- Root CLI: `ae-framework spec validate --relaxed` enables lenient mode.
+- Package CLI: `ae-spec validate --relaxed` also supported.
+- Increase warning tolerance for local runs with `--max-warnings 999` or via `.ae/spec-validation.config.json`.
+
+Configurable limits (via environment variables):
+- `AE_SPEC_DESC_MIN` / `AE_SPEC_DESC_MAX`: common description length (default 10/500)
+- `AE_SPEC_FIELD_DESC_MAX` / `AE_SPEC_DOMAIN_DESC_MAX` / `AE_SPEC_INVARIANT_DESC_MAX`
+- `AE_SPEC_GLOSSARY_DESC_MAX`
+- API-related: `AE_SPEC_API_SUMMARY_MAX`, `AE_SPEC_API_PARAM_DESC_MAX`, `AE_SPEC_API_ERROR_DESC_MAX`
+- Constraint length: `AE_SPEC_CONSTRAINT_MAX`
+
+CLI overrides:
+- Root CLI: `ae-framework spec validate --relaxed --desc-max 2000`
+- Package CLI: `ae-spec compile --relaxed --desc-max 2000`
+
+Lenient normalizations:
+- Field type hints like `enum: a|b` are coerced to `string` in lenient mode.
+- Invariant ID auto-fallback: non-UUID IDs are replaced with generated UUIDv4 in lenient mode.
+
+Note: CI should continue using the strict profile by default.
+
 ## Usage Scenarios
 
 ### 1. Developer Workflow

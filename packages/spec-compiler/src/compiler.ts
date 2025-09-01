@@ -1,4 +1,5 @@
 import { readFileSync, writeFileSync } from 'fs';
+import { v4 as uuidv4 } from 'uuid';
 import { AEIR, CompileOptions, SpecLintReport, SpecLintIssue } from './types.js';
 import { StrictAEIRSchema, validateAEIR, createAEIRValidator } from './strict-schema.js';
 
@@ -11,7 +12,11 @@ export class AESpecCompiler {
     
     try {
       const markdown = readFileSync(inputPath, 'utf-8');
-      const ir = this.parseMarkdownToIR(markdown);
+      let ir = this.parseMarkdownToIR(markdown);
+      // Lenient normalization: in relaxed mode, coerce certain fields for smoother iteration
+      if (process.env.AE_SPEC_RELAXED === '1') {
+        ir = this.applyLenientNormalizations(ir);
+      }
       
       if (validate) {
         const lintResult = await this.lint(ir);
@@ -379,5 +384,26 @@ export class AESpecCompiler {
         });
       });
     }
+  }
+
+  private applyLenientNormalizations(ir: AEIR): AEIR {
+    // Map enum-like types to string
+    ir.domain = (ir.domain || []).map(ent => ({
+      ...ent,
+      fields: (ent.fields || []).map(f => {
+        const t = String(f.type || '').toLowerCase();
+        if (t.startsWith('enum:')) {
+          return { ...f, type: 'string' };
+        }
+        return f;
+      })
+    }));
+    // Invariant ID: generate UUID if not valid
+    const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    ir.invariants = (ir.invariants || []).map(inv => ({
+      ...inv,
+      id: uuidRe.test(String(inv.id)) ? inv.id : uuidv4(),
+    }));
+    return ir;
   }
 }
