@@ -57,6 +57,29 @@ Notes:
   }
   ```
 
+## Generated contract/E2E test templates
+
+When the quickstart runs with `CODEX_RUN_FORMAL=1` and an OpenAPI is produced, a generator creates Vitest templates:
+
+- Tests directory: `tests/api/generated/`
+- One file per operationId: `<operationId>.test.ts`
+- Tests are `it.skip(...)` by default (safe templates to customize)
+- Machine-readable summary: `artifacts/codex/openapi-contract-tests.json`
+
+Example summary:
+```json
+{
+  "openapi": "artifacts/codex/quickstart-openapi.yaml",
+  "outDir": "tests/api/generated",
+  "files": 12,
+  "operations": [
+    { "operationId": "getUser", "method": "get", "path": "/users/{id}", "file": "tests/api/generated/getUser.test.ts" }
+  ],
+  "mode": "templates",
+  "ts": "2025-01-01T00:00:00.000Z"
+}
+```
+
 ## CI collection
 
 The PR Verify workflow uploads:
