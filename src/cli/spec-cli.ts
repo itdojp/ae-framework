@@ -184,6 +184,98 @@ export function createSpecCommand(): Command {
       }
     });
 
+  // New: Natural language → AE-Spec synthesis with iterative refinement
+  spec
+    .command('synth')
+    .description('Synthesize AE-Spec from natural-language requirements and iteratively refine to strict compliance')
+    .requiredOption('-i, --input <file>', 'Input natural-language requirements (.md/.txt)')
+    .option('-o, --output <file>', 'Output AE-Spec file (default: spec/generated-<ts>.ae-spec.md)')
+    .option('-n, --iterations <n>', 'Max refinement iterations', parseInt, 5)
+    .option('--relaxed-first', 'Start in relaxed mode (recommended)', true)
+    .option('--max-warnings <n>', 'Allowed warnings in final strict validation', parseInt, 10)
+    .action(async (options) => {
+      const { input, iterations, maxWarnings } = options;
+      const out = options.output || `spec/generated-${Date.now()}.ae-spec.md`;
+      const artifactsDir = 'artifacts/spec-synthesis';
+      const { mkdirSync, readFileSync, writeFileSync } = await import('fs');
+      const { resolve, dirname, join } = await import('path');
+      const chalkMod = await import('chalk');
+      const chalk = chalkMod.default;
+      const { AESpecCompiler } = await import('../../packages/spec-compiler/src/index.js');
+      const { loadLLM } = await import('../providers/index.js');
+
+      try {
+        mkdirSync(artifactsDir, { recursive: true });
+        mkdirSync(dirname(out), { recursive: true });
+        const reqText = readFileSync(resolve(input), 'utf-8');
+        const llm = await loadLLM();
+        const compiler = new AESpecCompiler();
+
+        let currentSpec = '';
+        let lastIssues: string[] = [];
+
+        for (let iter = 1; iter <= iterations; iter++) {
+          console.log(chalk.blue(`\n🧠 Synthesizing AE-Spec (iteration ${iter}/${iterations}) using ${llm.name}...`));
+          const system = 'You convert natural-language product requirements into AE-Spec markdown with sections: Glossary, Domain (with entities and typed fields), Invariants, Use Cases, API, UI Requirements, Non-Functional Requirements. Be concise and consistent.';
+          const prompt = [
+            'Natural-language requirements:\n\n',
+            reqText,
+            '\n\nConstraints:',
+            '- Output valid AE-Spec markdown with the sections listed above.',
+            '- Use field types from: string|number|boolean|date|uuid|email|url|json|array|object.',
+            '- Domain entities must have at least 1 field; mark key fields as required.',
+            '- API lines as bullet list: "- METHOD /path - summary".',
+            lastIssues.length ? `\nKnown issues to fix from previous compile:\n- ${lastIssues.join('\n- ')}` : ''
+          ].join('');
+
+          const draft = await llm.complete({ system, prompt, temperature: 0.2 });
+          currentSpec = draft;
+          const iterPath = join(artifactsDir, `iter-${String(iter).padStart(2,'0')}.md`);
+          writeFileSync(iterPath, currentSpec, 'utf-8');
+          console.log(chalk.gray(`   Saved draft: ${iterPath}`));
+
+          // Compile (lenient for intermediate)
+          const prevRelaxed = process.env.AE_SPEC_RELAXED;
+          process.env.AE_SPEC_RELAXED = '1';
+          const ir = await compiler.compile({ inputPath: resolve(iterPath), validate: false });
+          const lint = await compiler.lint(ir);
+          lastIssues = lint.issues.slice(0, 10).map(i => `${i.message} [${i.location?.section||'root'}]`);
+          console.log(chalk.blue(`   Lint summary: errors=${lint.summary.errors}, warnings=${lint.summary.warnings}`));
+          process.env.AE_SPEC_RELAXED = prevRelaxed;
+
+          // If no errors in lenient pass, attempt strict validation
+          if (lint.summary.errors === 0 && lint.summary.warnings <= maxWarnings) {
+            try {
+              const strictIr = await compiler.compile({ inputPath: resolve(iterPath), validate: true });
+              // Strict pass → finalize
+              writeFileSync(resolve(out), currentSpec, 'utf-8');
+              writeFileSync('.ae/ae-ir.json', JSON.stringify(strictIr, null, 2), 'utf-8');
+              console.log(chalk.green(`\n✅ Strict validation passed. Wrote AE-Spec: ${out}`));
+              console.log(chalk.green(`✅ Wrote AE-IR: .ae/ae-ir.json`));
+              // Optional: run quick codegen
+              await import('child_process').then(({ spawnSync }) => {
+                const run = (args: string[]) => spawnSync(process.execPath, ['dist/src/cli/index.js', ...args], { stdio: 'inherit' });
+                run(['codegen', 'generate', '-i', '.ae/ae-ir.json', '-o', 'generated/typescript', '-t', 'typescript']);
+                run(['codegen', 'generate', '-i', '.ae/ae-ir.json', '-o', 'generated/api', '-t', 'api']);
+                run(['codegen', 'generate', '-i', '.ae/ae-ir.json', '-o', 'generated/database', '-t', 'database']);
+              });
+              console.log(chalk.green('✅ Code generation completed (typescript/api/database).'));
+              return;
+            } catch (e) {
+              console.log(chalk.yellow('Strict validation attempt failed; continuing iterations...'));
+            }
+          }
+        }
+
+        // If not converged, write last draft as output (lenient) for manual follow-up
+        writeFileSync(resolve(out), currentSpec || '# Draft AE-Spec (empty)', 'utf-8');
+        console.log(chalk.yellow(`\n⚠️  Did not converge within ${iterations} iterations. Last draft saved to: ${out}`));
+      } catch (error) {
+        console.error(chalk.red(`❌ Synthesis failed: ${(error as Error).message}`));
+        process.exit(1);
+      }
+    });
+
   return spec;
 }
 
