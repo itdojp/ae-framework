@@ -19,8 +19,20 @@ program
   .option('-o, --output <file>', 'Output JSON file (default: stdout)')
   .option('--no-validate', 'Skip validation during compilation')
   .option('--source-map', 'Include source location information')
+  .option('--relaxed', 'Relax strict schema errors to warnings (AE_SPEC_RELAXED=1)')
+  .option('--desc-max <n>', 'Override description max length (e.g., 1000)')
   .action(async (options) => {
     try {
+      if (options.relaxed) process.env.AE_SPEC_RELAXED = '1';
+      if (options.descMax) {
+        const n = parseInt(String(options.descMax), 10);
+        if (Number.isFinite(n) && n > 0) {
+          process.env.AE_SPEC_DESC_MAX = String(n);
+          process.env.AE_SPEC_INVARIANT_DESC_MAX = String(n);
+          process.env.AE_SPEC_DOMAIN_DESC_MAX = String(n);
+          process.env.AE_SPEC_FIELD_DESC_MAX = String(n);
+        }
+      }
       const compiler = new AESpecCompiler();
       const ir = await compiler.compile({
         inputPath: resolve(options.input),
@@ -100,11 +112,23 @@ program
   .requiredOption('-i, --input <file>', 'Input markdown file')
   .option('--max-errors <n>', 'Maximum allowed errors', parseInt, 0)
   .option('--max-warnings <n>', 'Maximum allowed warnings', parseInt, 10)
+  .option('--relaxed', 'Relax strict schema errors to warnings (AE_SPEC_RELAXED=1)')
+  .option('--desc-max <n>', 'Override description max length (e.g., 1000)')
   .action(async (options) => {
     try {
       console.log(`🔍 Validating ${options.input}...`);
       
       const compiler = new AESpecCompiler();
+      if (options.relaxed) process.env.AE_SPEC_RELAXED = '1';
+      if (options.descMax) {
+        const n = parseInt(String(options.descMax), 10);
+        if (Number.isFinite(n) && n > 0) {
+          process.env.AE_SPEC_DESC_MAX = String(n);
+          process.env.AE_SPEC_INVARIANT_DESC_MAX = String(n);
+          process.env.AE_SPEC_DOMAIN_DESC_MAX = String(n);
+          process.env.AE_SPEC_FIELD_DESC_MAX = String(n);
+        }
+      }
       const ir = await compiler.compile({
         inputPath: resolve(options.input),
         validate: false, // We'll lint separately for better reporting
