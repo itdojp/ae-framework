@@ -53,6 +53,7 @@ ae-framework ships MCP servers that can be used by CodeX as an MCP client.
 - Test generation: `src/mcp-server/test-generation-server.ts`
 - Verify: `src/mcp-server/verify-server.ts`
 - Code generation: `src/mcp-server/code-generation-server.ts`
+- Spec Synthesis Utilities: `src/mcp-server/spec-synthesis-server.ts`
 
 ### Helper scripts
 
@@ -61,6 +62,7 @@ pnpm run codex:mcp:intent
 pnpm run codex:mcp:test
 pnpm run codex:mcp:verify
 pnpm run codex:mcp:code
+pnpm run codex:mcp:spec
 ```
 
 ### Client setup (example)
@@ -112,6 +114,25 @@ echo '{"description":"Generate UI","subagent_type":"ui","context":{"phaseState":
 - Formal: `FormalAgent` generates TLA+ and OpenAPI (best-effort model checking)
 - Validation: runtime schema validation (Zod) for `context.phaseState` blocks on invalid inputs with actionable messages.
  - Contract/E2E templates: when OpenAPI is available in quickstart, `scripts/codex/generate-contract-tests.mjs` scaffolds tests under `tests/api/generated/` and writes `artifacts/codex/openapi-contract-tests.json`.
+
+## 4) CodeX (no MCP) – Spec Tools over stdio
+- Script: `pnpm run codex:spec:stdio`
+- Actions:
+  - `compile`: `echo '{"action":"compile","args":{"inputPath":"spec/my.ae-spec.md","outputPath":".ae/ae-ir.json","relaxed":true}}' | pnpm run codex:spec:stdio`
+  - `validate`: `echo '{"action":"validate","args":{"inputPath":"spec/my.ae-spec.md","relaxed":true,"maxWarnings":999}}' | pnpm run codex:spec:stdio`
+  - `codegen`: `echo '{"action":"codegen","args":{"irPath":".ae/ae-ir.json","targets":["typescript","api","database"]}}' | pnpm run codex:spec:stdio`
+
+Flow suggestion:
+- CodeX LLM drafts AE‑Spec → call `validate` to get issues → revise → repeat → when stable, `compile` (strict) → `codegen`.
+- この方法はMCP不要・外部APIキー不要で、CodeXのランタイムだけで完結します。
+
+### Spec Synthesis via MCP (no external API keys)
+- Start: `pnpm run codex:mcp:spec`
+- Tools:
+  - `ae_spec_compile`: compile AE-Spec to AE-IR (lenient or strict)
+  - `ae_spec_validate`: validate with summary of issues (lenient/strict)
+  - `ae_spec_codegen`: generate code from `.ae/ae-ir.json`
+- Flow: CodeX uses its own LLM for drafting the AE‑Spec and calls these tools to compile/lint/codegen, iterating until strict validation passes.
  
 
 ## Operational Considerations
