@@ -18,10 +18,12 @@ Run ae-framework commands from CodeX tasks. This requires file write permissions
 # Build first
 pnpm run build
 
-# Run PoC (verify, optionally UI scaffold with CODEX_RUN_UI=1)
+# Run PoC (verify; optional UI scaffold and formal generation)
 pnpm run codex:quickstart
 
-# Or: CODEX_RUN_UI=1 pnpm run codex:quickstart
+# Examples:
+#   UI scaffold demo: CODEX_RUN_UI=1 pnpm run codex:quickstart
+#   Formal + OpenAPI + contract templates: CODEX_RUN_FORMAL=1 pnpm run codex:quickstart
 ```
 
 Artifacts (logs, summaries) will be written under `artifacts/`.
@@ -29,6 +31,7 @@ Artifacts (logs, summaries) will be written under `artifacts/`.
 ### Notes
 - The quickstart finds the CLI at `dist/src/cli/index.js` (or `dist/cli.js` as fallback).
 - Non-zero exit codes fail the step, enabling clear feedback in CodeX.
+ - Build prerequisites: Node.js >= 20.11 (<23) and pnpm 10 (use Corepack: `corepack enable`).
 
 ### Minimal Phase 6 sample (for UI scaffold)
 
@@ -107,13 +110,26 @@ echo '{"description":"Generate UI","subagent_type":"ui","context":{"phaseState":
 - File: `src/agents/codex-task-adapter.ts` (core), `scripts/codex/adapter-stdio.mjs` (bridge)
 - UI: uses `UIScaffoldGenerator` when `context.phaseState.entities` is provided; otherwise dry-run
 - Formal: `FormalAgent` generates TLA+ and OpenAPI (best-effort model checking)
+- Validation: runtime schema validation (Zod) for `context.phaseState` blocks on invalid inputs with actionable messages.
+ - Contract/E2E templates: when OpenAPI is available in quickstart, `scripts/codex/generate-contract-tests.mjs` scaffolds tests under `tests/api/generated/` and writes `artifacts/codex/openapi-contract-tests.json`.
+ 
 
 ## Operational Considerations
 
-- Environment: Node 20.11+, pnpm 9 (Corepack).
+- Environment: Node >= 20.11 (<23), pnpm 10 (Corepack recommended: `corepack enable`).
 - Artifacts: prefer JSON/Markdown outputs for CodeX UI consumption.
 - Security: keep CLI/file permissions aligned with CodeX sandbox settings.
 - E2E dependencies (Playwright/LHCI): optional; introduce in CI/local first.
+
+### Environment variables
+- `CODEX_ARTIFACTS_DIR`: override adapter artifact output dir (defaults to `./artifacts/codex`).
+- `CODEX_RUN_UI`: `1` to enable Phase 6 UI scaffold in quickstart.
+- `CODEX_PHASE_STATE_FILE`: path to phase state JSON for UI scaffold.
+- `CODEX_UI_DRY_RUN`: `1` (default) to simulate, `0` to write files for UI scaffold.
+- `CODEX_RUN_FORMAL`: `1` to enable formal generation in quickstart.
+- `CODEX_FORMAL_REQ`: requirement text for formal/OpenAPI generation when `CODEX_RUN_FORMAL=1`.
+- `CODEX_SKIP_QUALITY`: `1` to skip running quality gates in quickstart.
+- `CODEX_TOLERANT`: `1` to force quickstart to exit 0 even if steps fail (non-blocking demo mode).
 
 ## Acceptance Criteria (incremental)
 
@@ -157,6 +173,13 @@ pnpm run build
 CODEX_RUN_UI=1 CODEX_PHASE_STATE_FILE=samples/phase-state.example.json pnpm run codex:quickstart
 
 # Dry-run is enabled by default; set CODEX_UI_DRY_RUN=0 to write files
+```
+
+Skip quality gates or run in tolerant mode (optional):
+```bash
+CODEX_SKIP_QUALITY=1 pnpm run codex:quickstart
+# or
+CODEX_TOLERANT=1 pnpm run codex:quickstart
 ```
 
 ## Machine-readable artifacts
