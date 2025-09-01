@@ -43,6 +43,13 @@ echo '{"action":"compile","args":{"inputPath":"spec/feature.ae-spec.md","outputP
 echo '{"action":"codegen","args":{"irPath":".ae/ae-ir.json","targets":["typescript","api","database"]}}' | pnpm run codex:spec:stdio
 ```
 
+5) Semi-automated iteration (convenience)
+```bash
+# Iteratively validate (lenient), emit revision prompts, and attempt strict compile+codegen
+pnpm run codex:spec:iterate -- spec/feature.ae-spec.md 5 10
+# Args: <spec> <maxIter=5> <maxWarnings=10>
+```
+
 ## Claude Code Workflow Template (MCP)
 
 1) Register MCP server
