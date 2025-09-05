@@ -364,7 +364,7 @@ export class BenchmarkRunner {
   /**
    * Placeholder for UI/UX generation phase
    */
-  private async generateUIUX(domainModel: any): Promise<any> {
+  private async generateUIUX(domainModel: unknown): Promise<unknown> {
     // TODO: Implement UI/UX generation when the agent is available
     console.warn('UI/UX generation phase not yet implemented');
     return domainModel; // Return domain model as placeholder
@@ -374,7 +374,7 @@ export class BenchmarkRunner {
    * Evaluate the generated application against the problem specification
    */
   private async evaluateResult(
-    application: any,
+    application: unknown,
     spec: RequirementSpec,
     phaseExecutions: PhaseExecution[]
   ): Promise<BenchmarkMetrics> {
@@ -391,7 +391,7 @@ export class BenchmarkRunner {
   /**
    * Collect generated artifacts from the application
    */
-  private async collectArtifacts(application: any): Promise<GeneratedArtifacts> {
+  private async collectArtifacts(application: unknown): Promise<GeneratedArtifacts> {
     // TODO: Implement artifact collection
     return this.initializeArtifacts();
   }
@@ -412,7 +412,7 @@ export class BenchmarkRunner {
   /**
    * Get input for a specific phase
    */
-  private getPhaseInput(phase: AEFrameworkPhase, phaseExecutions: PhaseExecution[]): any {
+  private getPhaseInput(phase: AEFrameworkPhase, phaseExecutions: PhaseExecution[]): unknown {
     if (phaseExecutions.length === 0) return null;
     const lastExecution = phaseExecutions[phaseExecutions.length - 1];
     if (lastExecution) {

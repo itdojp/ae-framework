@@ -63,7 +63,7 @@ export async function quickBenchmark(
   
   // Handle difficulty level shortcuts
   if (typeof problemIds === 'string') {
-    const difficultyConfig = getConfigForDifficulty(problemIds as any);
+    const difficultyConfig = getConfigForDifficulty(problemIds as import('./types/index.js').DifficultyLevel);
     config = { ...config, ...difficultyConfig };
     problemIds = config.problems.filter(p => p.enabled).map(p => p.id);
   }
@@ -80,7 +80,7 @@ export async function quickBenchmark(
  * const results = await createCIBenchmark().runBenchmarks(['basic-problem-001']);
  * ```
  */
-export function createCIBenchmark(): any {
+export function createCIBenchmark() {
   const { BenchmarkRunner } = require('./runners/BenchmarkRunner.js');
   const { getCIConfig } = require('./config/default.js');
   
