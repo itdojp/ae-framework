@@ -34,8 +34,12 @@ import {
   RequirementSource, 
   ProjectContext,
   PhaseResult,
-  UIUXOutput
+  UIUXOutput,
+  UIComponent
 } from '../../../agents/interfaces/standard-interfaces.js';
+
+// Minimal generated file descriptor used within this runner (file-local type)
+type GeneratedFile = { path: string; content: string; type: 'typescript' | 'markdown' | 'config' | string; size: number };
 
 /**
  * Standardized Benchmark Runner
@@ -44,9 +48,6 @@ import {
 export class StandardizedBenchmarkRunner {
   private config: BenchmarkConfig;
   private pipeline: AEFrameworkPipeline;
-
-  // Minimal generated file descriptor used within this runner
-  type GeneratedFile = { path: string; content: string; type: 'typescript' | 'markdown' | 'config' | string; size: number };
 
   constructor(config: BenchmarkConfig) {
     this.config = config;
@@ -622,7 +623,7 @@ export class StandardizedBenchmarkRunner {
     };
   }
 
-  private generateSourceCodeFromUI(uiOutput: UIUXOutput): StandardizedBenchmarkRunner.GeneratedFile[] {
+  private generateSourceCodeFromUI(uiOutput: UIUXOutput): GeneratedFile[] {
     return uiOutput.components.map(component => ({
       path: `src/components/${component.name}.tsx`,
       content: this.generateComponentCode(component),
@@ -649,7 +650,7 @@ export const ${component.name}: React.FC<${component.name}Props> = (props) => {
 `;
   }
 
-  private generateDocumentationFromPipeline(pipelineResult: PipelineResult): StandardizedBenchmarkRunner.GeneratedFile[] {
+  private generateDocumentationFromPipeline(pipelineResult: PipelineResult): GeneratedFile[] {
     return [
       {
         path: 'README.md',
@@ -689,7 +690,7 @@ Generated on: ${new Date().toISOString()}
 `;
   }
 
-  private generateConfigurationFiles(uiOutput: UIUXOutput): StandardizedBenchmarkRunner.GeneratedFile[] {
+  private generateConfigurationFiles(uiOutput: UIUXOutput): GeneratedFile[] {
     return [
       {
         path: 'package.json',
