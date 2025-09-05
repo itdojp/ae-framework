@@ -14,6 +14,29 @@ import {
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
 import { IntentAgent, IntentAnalysisRequest, RequirementSource, ProjectContext } from '../agents/intent-agent.js';
+import {
+  AnalyzeIntentArgsSchema,
+  AnalyzeStakeholderConcernsArgsSchema,
+  BuildDomainModelArgsSchema,
+  CreateUserStoriesArgsSchema,
+  DetectAmbiguitiesArgsSchema,
+  ExtractFromNLArgsSchema,
+  GenerateAcceptanceCriteriaArgsSchema,
+  GenerateSpecTemplatesArgsSchema,
+  PrioritizeRequirementsArgsSchema,
+  ValidateCompletenessArgsSchema,
+  parseOrThrow,
+  type AnalyzeIntentArgs,
+  type BuildDomainModelArgs,
+  type CreateUserStoriesArgs,
+  type DetectAmbiguitiesArgs,
+  type ExtractFromNLArgs,
+  type GenerateAcceptanceCriteriaArgs,
+  type GenerateSpecTemplatesArgs,
+  type PrioritizeRequirementsArgs,
+  type ValidateCompletenessArgs,
+  type AnalyzeStakeholderConcernsArgs,
+} from './schemas.js';
 import { SteeringLoader } from '../utils/steering-loader.js';
 
 class IntentMCPServer {
@@ -452,34 +475,34 @@ class IntentMCPServer {
       try {
         switch (name) {
           case 'analyze_intent':
-            return await this.handleAnalyzeIntent(args as any);
+            return await this.handleAnalyzeIntent(args);
           
           case 'extract_from_natural_language':
-            return await this.handleExtractFromNaturalLanguage(args as any);
+            return await this.handleExtractFromNaturalLanguage(args);
           
           case 'create_user_stories':
-            return await this.handleCreateUserStories(args as any);
+            return await this.handleCreateUserStories(args);
           
           case 'build_domain_model':
-            return await this.handleBuildDomainModel(args as any);
+            return await this.handleBuildDomainModel(args);
           
           case 'detect_ambiguities':
-            return await this.handleDetectAmbiguities(args as any);
+            return await this.handleDetectAmbiguities(args);
           
           case 'validate_completeness':
-            return await this.handleValidateCompleteness(args as any);
+            return await this.handleValidateCompleteness(args);
           
           case 'generate_specification_templates':
-            return await this.handleGenerateSpecificationTemplates(args as any);
+            return await this.handleGenerateSpecificationTemplates(args);
           
           case 'prioritize_requirements':
-            return await this.handlePrioritizeRequirements(args as any);
+            return await this.handlePrioritizeRequirements(args);
           
           case 'generate_acceptance_criteria':
-            return await this.handleGenerateAcceptanceCriteria(args as any);
+            return await this.handleGenerateAcceptanceCriteria(args);
           
           case 'analyze_stakeholder_concerns':
-            return await this.handleAnalyzeStakeholderConcerns(args as any);
+            return await this.handleAnalyzeStakeholderConcerns(args);
           
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
@@ -493,17 +516,13 @@ class IntentMCPServer {
     });
   }
 
-  private async handleAnalyzeIntent(args: {
-    sources: RequirementSource[];
-    context?: ProjectContext;
-    analysisDepth?: 'basic' | 'detailed' | 'comprehensive';
-    outputFormat?: 'structured' | 'narrative' | 'both';
-  }) {
+  private async handleAnalyzeIntent(args: unknown) {
+    const parsed: AnalyzeIntentArgs = parseOrThrow(AnalyzeIntentArgsSchema, args);
     const request: IntentAnalysisRequest = {
-      sources: args.sources,
-      context: args.context,
-      analysisDepth: args.analysisDepth || 'detailed',
-      outputFormat: args.outputFormat || 'structured',
+      sources: parsed.sources as unknown as RequirementSource[],
+      context: parsed.context as unknown as ProjectContext,
+      analysisDepth: parsed.analysisDepth,
+      outputFormat: parsed.outputFormat,
     };
 
     const result = await this.agent.analyzeIntent(request);
@@ -518,8 +537,9 @@ class IntentMCPServer {
     };
   }
 
-  private async handleExtractFromNaturalLanguage(args: { text: string }) {
-    const requirements = await this.agent.extractFromNaturalLanguage(args.text);
+  private async handleExtractFromNaturalLanguage(args: unknown) {
+    const parsed: ExtractFromNLArgs = parseOrThrow(ExtractFromNLArgsSchema, args);
+    const requirements = await this.agent.extractFromNaturalLanguage(parsed.text);
     
     return {
       content: [
@@ -534,8 +554,9 @@ class IntentMCPServer {
     };
   }
 
-  private async handleCreateUserStories(args: { requirements: any[] }) {
-    const userStories = await this.agent.createUserStories(args.requirements);
+  private async handleCreateUserStories(args: unknown) {
+    const parsed: CreateUserStoriesArgs = parseOrThrow(CreateUserStoriesArgsSchema, args);
+    const userStories = await this.agent.createUserStories(parsed.requirements);
     
     return {
       content: [
@@ -550,10 +571,11 @@ class IntentMCPServer {
     };
   }
 
-  private async handleBuildDomainModel(args: { requirements: any[]; context?: ProjectContext }) {
+  private async handleBuildDomainModel(args: unknown) {
+    const parsed: BuildDomainModelArgs = parseOrThrow(BuildDomainModelArgsSchema, args);
     const domainModel = await this.agent.buildDomainModelFromRequirements(
-      args.requirements,
-      args.context
+      parsed.requirements,
+      parsed.context as unknown as ProjectContext
     );
     
     return {
@@ -574,8 +596,9 @@ class IntentMCPServer {
     };
   }
 
-  private async handleDetectAmbiguities(args: { sources: RequirementSource[] }) {
-    const ambiguities = await this.agent.detectAmbiguities(args.sources);
+  private async handleDetectAmbiguities(args: unknown) {
+    const parsed: DetectAmbiguitiesArgs = parseOrThrow(DetectAmbiguitiesArgsSchema, args);
+    const ambiguities = await this.agent.detectAmbiguities(parsed.sources as unknown as RequirementSource[]);
     
     return {
       content: [
@@ -595,8 +618,9 @@ class IntentMCPServer {
     };
   }
 
-  private async handleValidateCompleteness(args: { requirements: any[] }) {
-    const validation = await this.agent.validateCompleteness(args.requirements);
+  private async handleValidateCompleteness(args: unknown) {
+    const parsed: ValidateCompletenessArgs = parseOrThrow(ValidateCompletenessArgsSchema, args);
+    const validation = await this.agent.validateCompleteness(parsed.requirements);
     
     return {
       content: [
@@ -613,8 +637,9 @@ class IntentMCPServer {
     };
   }
 
-  private async handleGenerateSpecificationTemplates(args: { requirements: any[] }) {
-    const templates = await this.agent.generateSpecificationTemplates(args.requirements);
+  private async handleGenerateSpecificationTemplates(args: unknown) {
+    const parsed: GenerateSpecTemplatesArgs = parseOrThrow(GenerateSpecTemplatesArgsSchema, args);
+    const templates = await this.agent.generateSpecificationTemplates(parsed.requirements);
     
     return {
       content: [
@@ -634,10 +659,11 @@ class IntentMCPServer {
     };
   }
 
-  private async handlePrioritizeRequirements(args: { requirements: any[]; constraints: any[] }) {
+  private async handlePrioritizeRequirements(args: unknown) {
+    const parsed: PrioritizeRequirementsArgs = parseOrThrow(PrioritizeRequirementsArgsSchema, args);
     const prioritized = await this.agent.prioritizeRequirements(
-      args.requirements,
-      args.constraints
+      parsed.requirements,
+      parsed.constraints
     );
     
     return {
@@ -658,8 +684,9 @@ class IntentMCPServer {
     };
   }
 
-  private async handleGenerateAcceptanceCriteria(args: { requirement: any }) {
-    const criteria = await this.agent.generateAcceptanceCriteria(args.requirement);
+  private async handleGenerateAcceptanceCriteria(args: unknown) {
+    const parsed: GenerateAcceptanceCriteriaArgs = parseOrThrow(GenerateAcceptanceCriteriaArgsSchema, args);
+    const criteria = await this.agent.generateAcceptanceCriteria(parsed.requirement);
     
     return {
       content: [
@@ -675,10 +702,11 @@ class IntentMCPServer {
     };
   }
 
-  private async handleAnalyzeStakeholderConcerns(args: { stakeholders: any[]; requirements: any[] }) {
+  private async handleAnalyzeStakeholderConcerns(args: unknown) {
+    const parsed: AnalyzeStakeholderConcernsArgs = parseOrThrow(AnalyzeStakeholderConcernsArgsSchema, args);
     const analysis = await this.agent.analyzeStakeholderConcerns(
-      args.stakeholders,
-      args.requirements
+      parsed.stakeholders as any[],
+      parsed.requirements as any[]
     );
     
     // Convert Map objects to plain objects for JSON serialization
@@ -696,7 +724,7 @@ class IntentMCPServer {
               conflicts: analysis.conflicts,
             },
             summary: {
-              total_stakeholders: args.stakeholders.length,
+              total_stakeholders: (parsed.stakeholders as any[]).length,
               total_conflicts: analysis.conflicts.length,
               stakeholders_with_unaddressed_concerns: Object.keys(unaddressedObj).filter(
                 key => unaddressedObj[key].length > 0

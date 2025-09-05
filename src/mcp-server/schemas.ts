@@ -205,3 +205,112 @@ export const SuggestTestStructureArgsSchema = z.object({
   framework: z.string().optional().default('vitest'),
 });
 export type SuggestTestStructureArgs = z.infer<typeof SuggestTestStructureArgsSchema>;
+
+// ---------- Intent MCP Schemas ----------
+const RequirementSourceType = z.enum(['text','document','conversation','issue','email','diagram']);
+const PriorityEnum = z.enum(['critical','high','medium','low']);
+const ImpactEnum = z.enum(['high','medium','low']);
+const ConstraintSchema = z.object({
+  type: z.enum(['technical','business','regulatory','resource']),
+  description: z.string(),
+  impact: ImpactEnum,
+});
+const StakeholderSchema = z.object({
+  name: z.string(),
+  role: z.string(),
+  concerns: z.array(z.string()),
+  influenceLevel: ImpactEnum,
+});
+export const RequirementSourceSchema = z.object({
+  type: RequirementSourceType,
+  content: z.string(),
+  metadata: z.object({
+    author: z.string().optional(),
+    date: z.string().optional(),
+    priority: PriorityEnum.optional(),
+    tags: z.array(z.string()).optional(),
+    references: z.array(z.string()).optional(),
+  }).optional(),
+});
+export type RequirementSourceInput = z.infer<typeof RequirementSourceSchema>;
+
+export const ProjectContextSchema = z.object({
+  domain: z.string().optional(),
+  existingSystem: z.boolean().optional(),
+  constraints: z.array(ConstraintSchema).optional(),
+  stakeholders: z.array(StakeholderSchema).optional(),
+});
+
+export const AnalyzeIntentArgsSchema = z.object({
+  sources: z.array(RequirementSourceSchema).min(1),
+  context: ProjectContextSchema.optional(),
+  analysisDepth: z.enum(['basic','detailed','comprehensive']).optional().default('detailed'),
+  outputFormat: z.enum(['structured','narrative','both']).optional().default('structured'),
+});
+export type AnalyzeIntentArgs = z.infer<typeof AnalyzeIntentArgsSchema>;
+
+export const ExtractFromNLArgsSchema = z.object({ text: z.string().min(1) });
+export type ExtractFromNLArgs = z.infer<typeof ExtractFromNLArgsSchema>;
+
+export const CreateUserStoriesArgsSchema = z.object({ requirements: z.array(z.any()).min(1) });
+export type CreateUserStoriesArgs = z.infer<typeof CreateUserStoriesArgsSchema>;
+
+export const BuildDomainModelArgsSchema = z.object({
+  requirements: z.array(z.any()).min(1),
+  context: ProjectContextSchema.optional(),
+});
+export type BuildDomainModelArgs = z.infer<typeof BuildDomainModelArgsSchema>;
+
+export const DetectAmbiguitiesArgsSchema = z.object({ sources: z.array(RequirementSourceSchema).min(1) });
+export type DetectAmbiguitiesArgs = z.infer<typeof DetectAmbiguitiesArgsSchema>;
+
+export const ValidateCompletenessArgsSchema = z.object({ requirements: z.array(z.any()).min(1) });
+export type ValidateCompletenessArgs = z.infer<typeof ValidateCompletenessArgsSchema>;
+
+export const GenerateSpecTemplatesArgsSchema = z.object({ requirements: z.array(z.any()).min(1) });
+export type GenerateSpecTemplatesArgs = z.infer<typeof GenerateSpecTemplatesArgsSchema>;
+
+export const PrioritizeRequirementsArgsSchema = z.object({
+  requirements: z.array(z.any()).min(1),
+  constraints: z.array(z.any()).min(1),
+});
+export type PrioritizeRequirementsArgs = z.infer<typeof PrioritizeRequirementsArgsSchema>;
+
+export const GenerateAcceptanceCriteriaArgsSchema = z.object({
+  requirement: z.any(),
+});
+export type GenerateAcceptanceCriteriaArgs = z.infer<typeof GenerateAcceptanceCriteriaArgsSchema>;
+
+export const AnalyzeStakeholderConcernsArgsSchema = z.object({
+  stakeholders: z.array(StakeholderSchema).min(1),
+  requirements: z.array(z.object({ id: z.string(), description: z.string() })).min(1),
+});
+export type AnalyzeStakeholderConcernsArgs = z.infer<typeof AnalyzeStakeholderConcernsArgsSchema>;
+
+// ---------- Code Generation MCP Schemas ----------
+export const GenerateCodeFromTestsArgsSchema = z.object({
+  tests: z.array(z.object({
+    path: z.string(),
+    content: z.string(),
+    type: z.enum(['unit','integration','e2e']),
+  })).min(1),
+  language: z.enum(['typescript','javascript','python','go','rust','elixir']),
+  framework: z.string().optional(),
+  architecture: z.object({ pattern: z.enum(['mvc','hexagonal','clean','ddd','microservice']) }).optional(),
+});
+export type GenerateCodeFromTestsArgs = z.infer<typeof GenerateCodeFromTestsArgsSchema>;
+
+export const GenerateAPIFromOpenAPIArgsSchema = z.object({
+  spec: z.string(),
+  framework: z.enum(['fastify','express','koa']),
+  database: z.enum(['postgres','mongodb','mysql']).optional(),
+  includeValidation: z.boolean().optional(),
+  includeAuth: z.boolean().optional(),
+});
+export type GenerateAPIFromOpenAPIArgs = z.infer<typeof GenerateAPIFromOpenAPIArgsSchema>;
+
+export const ValidateCodeAgainstTestsArgsSchema = z.object({
+  codeFiles: z.array(z.object({ path: z.string(), content: z.string() })).min(1),
+  testFiles: z.array(z.object({ path: z.string(), content: z.string() })).min(1),
+});
+export type ValidateCodeAgainstTestsArgs = z.infer<typeof ValidateCodeAgainstTestsArgsSchema>;

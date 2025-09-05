@@ -7,6 +7,15 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { CodeGenerationAgent } from '../agents/code-generation-agent.js';
+import {
+  GenerateAPIFromOpenAPIArgsSchema,
+  GenerateCodeFromTestsArgsSchema,
+  ValidateCodeAgainstTestsArgsSchema,
+  parseOrThrow,
+  type GenerateAPIFromOpenAPIArgs,
+  type GenerateCodeFromTestsArgs,
+  type ValidateCodeAgainstTestsArgs,
+} from './schemas.js';
 
 export class CodeGenerationServer {
   private server: Server;
@@ -147,11 +156,8 @@ export class CodeGenerationServer {
       try {
         switch (request.params.name) {
           case 'generate_code_from_tests': {
-            const args = request.params.arguments;
-            if (!args) {
-              throw new Error('Missing arguments for generate_code_from_tests');
-            }
-            const result = await this.agent.generateCodeFromTests(args as any);
+            const parsed: GenerateCodeFromTestsArgs = parseOrThrow(GenerateCodeFromTestsArgsSchema, request.params.arguments);
+            const result = await this.agent.generateCodeFromTests(parsed as any);
             return {
               content: [
                 {
@@ -168,16 +174,13 @@ export class CodeGenerationServer {
           }
 
           case 'generate_api_from_openapi': {
-            const args = request.params.arguments as any;
-            const result = await this.agent.generateFromOpenAPI(
-              args.spec,
-              {
-                framework: args.framework,
-                database: args.database,
-                includeValidation: args.includeValidation,
-                includeAuth: args.includeAuth
-              }
-            );
+            const args: GenerateAPIFromOpenAPIArgs = parseOrThrow(GenerateAPIFromOpenAPIArgsSchema, request.params.arguments);
+            const result = await this.agent.generateFromOpenAPI(args.spec, {
+              framework: args.framework,
+              database: args.database,
+              includeValidation: args.includeValidation,
+              includeAuth: args.includeAuth,
+            });
             return {
               content: [
                 {
@@ -189,8 +192,8 @@ export class CodeGenerationServer {
           }
 
           case 'validate_code_against_tests': {
-            const args = request.params.arguments as any;
-            const results = await this.validateCodeAgainstTests(args.codeFiles, args.testFiles);
+            const args: ValidateCodeAgainstTestsArgs = parseOrThrow(ValidateCodeAgainstTestsArgsSchema, request.params.arguments);
+            const results = await this.validateCodeAgainstTests(args.codeFiles as any[], args.testFiles as any[]);
             return {
               content: [
                 {
