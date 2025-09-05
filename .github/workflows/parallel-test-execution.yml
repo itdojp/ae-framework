@@ -5,6 +5,14 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'packages/**'
+      - 'apps/**'
+      - 'tests/**'
+      - 'configs/**'
+      - 'scripts/**'
+      - 'types/**'
 
 env:
   NODE_ENV: test
@@ -83,6 +91,8 @@ jobs:
   test-e2e:
     name: E2E Tests
     runs-on: ubuntu-latest
+    # Only run on PR when explicitly requested via label; always on push
+    if: github.event_name != 'pull_request' || contains(join(fromJSON(toJSON(github.event.pull_request.labels)).*.name, ','), 'run-e2e')
     timeout-minutes: 45
     
     steps:
