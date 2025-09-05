@@ -14,7 +14,7 @@ export class Database {
     });
   }
 
-  async query(text: string, params?: any[]) {
+  async query(text: string, params?: ReadonlyArray<unknown>) {
     const client = await this.pool.connect();
     try {
       return await client.query(text, params);
