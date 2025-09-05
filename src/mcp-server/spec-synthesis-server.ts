@@ -93,7 +93,8 @@ async function start() {
       const { AEIR } = await import('../..//packages/spec-compiler/src/types.js');
       const { readFileSync } = await import('fs');
       const irPath = resolve(args.irPath);
-      const ir = JSON.parse(readFileSync(irPath, 'utf-8')) as any;
+      type IRLike = { domain?: unknown[]; api?: unknown[] };
+      const ir = JSON.parse(readFileSync(irPath, 'utf-8')) as unknown as IRLike;
       const { spawnSync } = await import('child_process');
       const outBase = args.outDir || 'generated';
       const run = (t: string, dir: string) => spawnSync(process.execPath, ['dist/src/cli/index.js','codegen','generate','-i', irPath, '-o', resolve(dir), '-t', t], { stdio: 'inherit' });
@@ -119,4 +120,3 @@ start().catch(err => {
   console.error('[mcp-spec] fatal:', err);
   process.exit(1);
 });
-
