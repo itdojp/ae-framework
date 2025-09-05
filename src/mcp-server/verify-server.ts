@@ -10,6 +10,21 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { VerifyAgent, VerificationRequest, VerificationType } from '../agents/verify-agent.js';
+import {
+  CoverageArgsSchema,
+  FullVerificationArgsSchema,
+  LintingArgsSchema,
+  RunTestsArgsSchema,
+  SecurityScanArgsSchema,
+  TypeCheckingArgsSchema,
+  parseOrThrow,
+  type CoverageArgs,
+  type FullVerificationArgs,
+  type LintingArgs,
+  type RunTestsArgs,
+  type SecurityScanArgs,
+  type TypeCheckingArgs,
+} from './schemas.js';
 import { readFileSync, existsSync, readdirSync, statSync } from 'fs';
 import * as path from 'path';
 
@@ -356,8 +371,8 @@ export class VerifyMCPServer {
     });
   }
 
-  private async handleFullVerification(args: any) {
-    const { projectPath, verificationTypes, strictMode = false } = args;
+  private async handleFullVerification(args: unknown) {
+    const { projectPath, verificationTypes, strictMode }: FullVerificationArgs = parseOrThrow(FullVerificationArgsSchema, args);
     const request = await this.buildVerificationRequest(projectPath, verificationTypes);
     request.strictMode = strictMode;
     
@@ -373,8 +388,8 @@ export class VerifyMCPServer {
     };
   }
 
-  private async handleRunTests(args: any) {
-    const { projectPath, testTypes = ['unit', 'integration', 'e2e'] } = args;
+  private async handleRunTests(args: unknown) {
+    const { projectPath, testTypes }: RunTestsArgs = parseOrThrow(RunTestsArgsSchema, args);
     const request = await this.buildVerificationRequest(projectPath, ['tests']);
     
     // Filter test files by type
@@ -392,8 +407,8 @@ export class VerifyMCPServer {
     };
   }
 
-  private async handleCheckCoverage(args: any) {
-    const { projectPath, threshold = 80 } = args;
+  private async handleCheckCoverage(args: unknown) {
+    const { projectPath, threshold }: CoverageArgs = parseOrThrow(CoverageArgsSchema, args);
     const request = await this.buildVerificationRequest(projectPath, ['coverage']);
     
     const result = await this.verifyAgent.checkCoverage(request);
@@ -409,8 +424,8 @@ export class VerifyMCPServer {
     };
   }
 
-  private async handleRunLinting(args: any) {
-    const { projectPath, fix = false } = args;
+  private async handleRunLinting(args: unknown) {
+    const { projectPath, fix }: LintingArgs = parseOrThrow(LintingArgsSchema, args);
     const request = await this.buildVerificationRequest(projectPath, ['linting']);
     
     const result = await this.verifyAgent.runLinting(request);
@@ -426,8 +441,8 @@ export class VerifyMCPServer {
     };
   }
 
-  private async handleRunTypeChecking(args: any) {
-    const { projectPath, strict = true } = args;
+  private async handleRunTypeChecking(args: unknown) {
+    const { projectPath, strict }: TypeCheckingArgs = parseOrThrow(TypeCheckingArgsSchema, args);
     const request = await this.buildVerificationRequest(projectPath, ['typechecking']);
     
     const result = await this.verifyAgent.runTypeChecking(request);
@@ -443,8 +458,8 @@ export class VerifyMCPServer {
     };
   }
 
-  private async handleRunSecurityScan(args: any) {
-    const { projectPath, includeDevDeps = true } = args;
+  private async handleRunSecurityScan(args: unknown) {
+    const { projectPath, includeDevDeps }: SecurityScanArgs = parseOrThrow(SecurityScanArgsSchema, args);
     const request = await this.buildVerificationRequest(projectPath, ['security']);
     
     const result = await this.verifyAgent.runSecurityChecks(request);
