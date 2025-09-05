@@ -92,4 +92,21 @@ export default ts.config(
       '@typescript-eslint/no-explicit-any': 'error',
     }
   }
+  },
+  // T1 escalation (file-specific): enforce no-explicit-any in cleaned files
+  {
+    files: [
+      'src/mcp-server/test-generation-server.ts',
+      'src/mcp-server/spec-synthesis-server.ts',
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.verify.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'error',
+    }
+  }
 );
