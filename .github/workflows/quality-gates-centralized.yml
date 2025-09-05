@@ -1,6 +1,15 @@
 name: Quality Gates
 on:
   pull_request:
+    # Run quality gates only when code paths change
+    paths:
+      - 'src/**'
+      - 'packages/**'
+      - 'apps/**'
+      - 'tests/**'
+      - 'configs/**'
+      - 'scripts/**'
+      - 'types/**'
 permissions: read-all
 jobs:
   integration:
