@@ -7,6 +7,25 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { TestGenerationAgent } from '../agents/test-generation-agent.js';
+import {
+  BDDArgsSchema,
+  DesignPerformanceArgsSchema,
+  GenerateFromCodeArgsSchema,
+  GenerateFromRequirementsArgsSchema,
+  PlanIntegrationArgsSchema,
+  PropertyTestsArgsSchema,
+  SecurityTestsArgsSchema,
+  AnalyzeCoverageArgsSchema,
+  parseOrThrow,
+  type BDDArgs,
+  type DesignPerformanceArgs,
+  type GenerateFromCodeArgs,
+  type GenerateFromRequirementsArgs,
+  type PlanIntegrationArgs,
+  type PropertyTestsArgs,
+  type SecurityTestsArgs,
+  type AnalyzeCoverageArgs,
+} from './schemas.js';
 
 /**
  * Test Generation MCP Server
@@ -282,12 +301,12 @@ class TestGenerationServer {
           default:
             throw new Error(`Unknown tool: ${name}`);
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         return {
           content: [
             {
               type: 'text',
-              text: `Error: ${error.message}`,
+              text: `Error: ${(error as Error).message}`,
             },
           ],
         };
@@ -295,11 +314,12 @@ class TestGenerationServer {
     });
   }
 
-  private async handleGenerateTestsFromRequirements(args: any) {
+  private async handleGenerateTestsFromRequirements(args: unknown) {
+    const parsed: GenerateFromRequirementsArgs = parseOrThrow(GenerateFromRequirementsArgsSchema, args);
     const result = await this.agent.generateTestsFromRequirements({
-      feature: args.feature,
-      requirements: args.requirements || [],
-      testFramework: args.testFramework || 'vitest',
+      feature: parsed.feature,
+      requirements: parsed.requirements,
+      testFramework: parsed.testFramework,
     });
 
     const response = this.formatTestGenerationResult(result);
@@ -309,8 +329,9 @@ class TestGenerationServer {
     };
   }
 
-  private async handleGenerateTestsFromCode(args: any) {
-    const result = await this.agent.generateTestsFromCode(args.codeFile);
+  private async handleGenerateTestsFromCode(args: unknown) {
+    const parsed: GenerateFromCodeArgs = parseOrThrow(GenerateFromCodeArgsSchema, args);
+    const result = await this.agent.generateTestsFromCode(parsed.codeFile);
     const response = this.formatTestGenerationResult(result);
     
     return {
@@ -318,12 +339,13 @@ class TestGenerationServer {
     };
   }
 
-  private async handleGeneratePropertyTests(args: any) {
+  private async handleGeneratePropertyTests(args: unknown) {
+    const parsed: PropertyTestsArgs = parseOrThrow(PropertyTestsArgsSchema, args);
     const contract = {
-      function: args.functionName,
-      inputs: args.inputs,
-      outputs: args.outputs || { type: 'any' },
-      invariants: args.invariants,
+      function: parsed.functionName,
+      inputs: parsed.inputs,
+      outputs: parsed.outputs,
+      invariants: parsed.invariants,
     };
 
     const testCases = await this.agent.generatePropertyTests(contract);
@@ -351,13 +373,14 @@ class TestGenerationServer {
     };
   }
 
-  private async handleGenerateBDDScenarios(args: any) {
+  private async handleGenerateBDDScenarios(args: unknown) {
+    const parsed: BDDArgs = parseOrThrow(BDDArgsSchema, args);
     const userStory = {
-      title: args.title,
-      asA: args.asA,
-      iWant: args.iWant,
-      soThat: args.soThat,
-      acceptanceCriteria: args.acceptanceCriteria || [],
+      title: parsed.title,
+      asA: parsed.asA,
+      iWant: parsed.iWant,
+      soThat: parsed.soThat,
+      acceptanceCriteria: parsed.acceptanceCriteria,
     };
 
     const gherkin = await this.agent.generateBDDScenarios(userStory);
@@ -372,10 +395,11 @@ class TestGenerationServer {
     };
   }
 
-  private async handlePlanIntegrationTests(args: any) {
+  private async handlePlanIntegrationTests(args: unknown) {
+    const parsed: PlanIntegrationArgs = parseOrThrow(PlanIntegrationArgsSchema, args);
     const architecture = {
-      services: args.services,
-      dataFlow: args.dataFlow || [],
+      services: parsed.services,
+      dataFlow: parsed.dataFlow,
     };
 
     const plan = await this.agent.planIntegrationTests(architecture);
@@ -408,10 +432,11 @@ class TestGenerationServer {
     };
   }
 
-  private async handleGenerateSecurityTests(args: any) {
-    const testCases = await this.agent.generateSecurityTests(args.endpoint);
+  private async handleGenerateSecurityTests(args: unknown) {
+    const parsed: SecurityTestsArgs = parseOrThrow(SecurityTestsArgsSchema, args);
+    const testCases = await this.agent.generateSecurityTests(parsed.endpoint);
     
-    let response = `# Security Tests for ${args.endpoint.method} ${args.endpoint.path}\n\n`;
+    let response = `# Security Tests for ${parsed.endpoint.method} ${parsed.endpoint.path}\n\n`;
     response += `Generated ${testCases.length} security tests based on OWASP guidelines:\n\n`;
     
     for (const testCase of testCases) {
@@ -427,8 +452,9 @@ class TestGenerationServer {
     };
   }
 
-  private async handleDesignPerformanceTests(args: any) {
-    const testSuite = await this.agent.designPerformanceTests(args.sla);
+  private async handleDesignPerformanceTests(args: unknown) {
+    const parsed: DesignPerformanceArgs = parseOrThrow(DesignPerformanceArgsSchema, args);
+    const testSuite = await this.agent.designPerformanceTests(parsed.sla);
     
     let response = `# Performance Test Suite\n\n`;
     
@@ -460,7 +486,8 @@ class TestGenerationServer {
     };
   }
 
-  private async handleAnalyzeTestCoverage(args: any) {
+  private async handleAnalyzeTestCoverage(args: unknown) {
+    const _parsed: AnalyzeCoverageArgs = parseOrThrow(AnalyzeCoverageArgsSchema, args);
     // This would analyze actual project coverage
     const response = `# Test Coverage Analysis\n\n`;
     
