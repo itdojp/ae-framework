@@ -9,6 +9,19 @@ import {
 import { execSync } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
 import { glob } from 'glob';
+import {
+  AnalyzeTDDArgsSchema,
+  GuideTDDArgsSchema,
+  RedGreenCycleArgsSchema,
+  SuggestTestStructureArgsSchema,
+  ValidateTestFirstArgsSchema,
+  parseOrThrow,
+  type AnalyzeTDDArgs,
+  type GuideTDDArgs,
+  type RedGreenCycleArgs,
+  type SuggestTestStructureArgs,
+  type ValidateTestFirstArgs,
+} from './schemas.js';
 
 interface TDDViolation {
   type: 'missing_test' | 'failing_test' | 'skip_red' | 'low_coverage';
@@ -161,9 +174,10 @@ class TDDGuardServer {
     });
   }
 
-  private async analyzeTDDCompliance(args: any): Promise<{ content: { type: 'text'; text: string }[] }> {
-    const path = args.path || process.cwd();
-    const phase = args.phase || this.detectCurrentPhase();
+  private async analyzeTDDCompliance(args: unknown): Promise<{ content: { type: 'text'; text: string }[] }> {
+    const parsed: AnalyzeTDDArgs = parseOrThrow(AnalyzeTDDArgsSchema, args);
+    const path = parsed.path;
+    const phase = parsed.phase || this.detectCurrentPhase();
 
     const analysis: TDDAnalysis = {
       phase,
@@ -229,8 +243,8 @@ class TDDGuardServer {
     };
   }
 
-  private async guideTDDDevelopment(args: any): Promise<{ content: { type: 'text'; text: string }[] }> {
-    const { feature, currentStep } = args;
+  private async guideTDDDevelopment(args: unknown): Promise<{ content: { type: 'text'; text: string }[] }> {
+    const { feature, currentStep }: GuideTDDArgs = parseOrThrow(GuideTDDArgsSchema, args);
     
     const guidance = this.generateTDDGuidance(feature, currentStep);
     
@@ -239,8 +253,8 @@ class TDDGuardServer {
     };
   }
 
-  private async validateTestFirst(args: any): Promise<{ content: { type: 'text'; text: string }[] }> {
-    const sourceFiles = args.sourceFiles || [];
+  private async validateTestFirst(args: unknown): Promise<{ content: { type: 'text'; text: string }[] }> {
+    const { sourceFiles }: ValidateTestFirstArgs = parseOrThrow(ValidateTestFirstArgsSchema, args);
     const violations: string[] = [];
     
     for (const srcFile of sourceFiles) {
@@ -272,9 +286,8 @@ class TDDGuardServer {
     };
   }
 
-  private async checkRedGreenCycle(args: any): Promise<{ content: { type: 'text'; text: string }[] }> {
-    const testCommand = args.testCommand || 'npm test';
-    const expectRed = args.expectRed || false;
+  private async checkRedGreenCycle(args: unknown): Promise<{ content: { type: 'text'; text: string }[] }> {
+    const { testCommand, expectRed }: RedGreenCycleArgs = parseOrThrow(RedGreenCycleArgsSchema, args);
     
     try {
       const result = execSync(`${testCommand} --silent`, { encoding: 'utf8', stdio: 'pipe' });
@@ -294,8 +307,9 @@ class TDDGuardServer {
           }],
         };
       }
-    } catch (error: any) {
-      const output = error.stdout || error.stderr || '';
+    } catch (error: unknown) {
+      const e = error as any;
+      const output = e?.stdout || e?.stderr || '';
       
       if (expectRed) {
         return {
@@ -315,8 +329,8 @@ class TDDGuardServer {
     }
   }
 
-  private async suggestTestStructure(args: any): Promise<{ content: { type: 'text'; text: string }[] }> {
-    const { codeFile, framework = 'vitest' } = args;
+  private async suggestTestStructure(args: unknown): Promise<{ content: { type: 'text'; text: string }[] }> {
+    const { codeFile, framework }: SuggestTestStructureArgs = parseOrThrow(SuggestTestStructureArgsSchema, args);
     
     if (!existsSync(codeFile)) {
       return {
