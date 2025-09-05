@@ -45,6 +45,9 @@ export class StandardizedBenchmarkRunner {
   private config: BenchmarkConfig;
   private pipeline: AEFrameworkPipeline;
 
+  // Minimal generated file descriptor used within this runner
+  type GeneratedFile = { path: string; content: string; type: 'typescript' | 'markdown' | 'config' | string; size: number };
+
   constructor(config: BenchmarkConfig) {
     this.config = config;
     this.initializePipeline();
@@ -619,7 +622,7 @@ export class StandardizedBenchmarkRunner {
     };
   }
 
-  private generateSourceCodeFromUI(uiOutput: UIUXOutput): unknown[] {
+  private generateSourceCodeFromUI(uiOutput: UIUXOutput): StandardizedBenchmarkRunner.GeneratedFile[] {
     return uiOutput.components.map(component => ({
       path: `src/components/${component.name}.tsx`,
       content: this.generateComponentCode(component),
@@ -628,12 +631,12 @@ export class StandardizedBenchmarkRunner {
     }));
   }
 
-  private generateComponentCode(component: unknown): string {
+  private generateComponentCode(component: UIComponent): string {
     return `// Generated component: ${component.name}
 import React from 'react';
 
 interface ${component.name}Props {
-${(component as any).props.map((prop: any) => `  ${prop.name}${prop.required ? '' : '?'}: ${prop.type};`).join('\n')}
+${component.props.map((prop) => `  ${prop.name}${prop.required ? '' : '?'}: ${prop.type};`).join('\n')}
 }
 
 export const ${component.name}: React.FC<${component.name}Props> = (props) => {
@@ -646,7 +649,7 @@ export const ${component.name}: React.FC<${component.name}Props> = (props) => {
 `;
   }
 
-  private generateDocumentationFromPipeline(pipelineResult: PipelineResult): unknown[] {
+  private generateDocumentationFromPipeline(pipelineResult: PipelineResult): StandardizedBenchmarkRunner.GeneratedFile[] {
     return [
       {
         path: 'README.md',
@@ -686,7 +689,7 @@ Generated on: ${new Date().toISOString()}
 `;
   }
 
-  private generateConfigurationFiles(uiOutput: UIUXOutput): unknown[] {
+  private generateConfigurationFiles(uiOutput: UIUXOutput): StandardizedBenchmarkRunner.GeneratedFile[] {
     return [
       {
         path: 'package.json',
