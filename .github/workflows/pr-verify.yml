@@ -122,11 +122,9 @@ jobs:
               if (fs.existsSync('artifacts/codex/ui-summary.json')) {
                 const s = JSON.parse(fs.readFileSync('artifacts/codex/ui-summary.json','utf8'));
                 let files = s.files || [];
-                const preview = files.slice(0, 5).map(f => `    - ${f}`).join('
-');
+                const preview = files.slice(0, 5).map(f => `    - ${f}`).join('\\n');
                 lines.push(`• UI Scaffold: ${s.okEntities}/${s.totalEntities} entities, Files: ${files.length}, Dry-run: ${!!s.dryRun}`);
-                if (files.length) lines.push('  Preview files (up to 5):
-' + preview);
+                if (files.length) lines.push('  Preview files (up to 5):\\n' + preview);
               }
             } catch {}
             // Stories summary
@@ -215,7 +213,7 @@ jobs:
           retention-days: 14
       
       - name: Notify Slack on failure
-        if: failure() && secrets.SLACK_WEBHOOK_URL != null
+        if: failure() && env.SLACK_WEBHOOK != null
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}

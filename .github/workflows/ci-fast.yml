@@ -3,6 +3,8 @@ on:
   pull_request:
   push:
     branches: [main, develop]
+  workflow_call:
+    # Allow release workflow to reuse this fast CI
 concurrency:
   group: ci-fast-${{ github.ref }}
   cancel-in-progress: true

@@ -203,16 +203,17 @@ jobs:
   container-security:
     name: Container Security
     runs-on: ubuntu-latest
-    if: hashFiles('docker/Dockerfile') != ''
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Build Docker image
+        if: hashFiles('docker/Dockerfile') != ''
         run: docker build -f docker/Dockerfile -t ae-framework:latest .
 
       - name: Run Trivy vulnerability scanner
+        if: hashFiles('docker/Dockerfile') != ''
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'ae-framework:latest'

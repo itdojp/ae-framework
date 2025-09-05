@@ -5,6 +5,8 @@ on:
   push:
     branches: [main, develop]
     paths: ['spec/**', '.ae/**', 'docs/**']
+  workflow_call:
+    # Allow other workflows to call this validation
 
 permissions:
   contents: read
