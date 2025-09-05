@@ -6,6 +6,8 @@
 
 ## English
 
+Note: Top-level documentation has been consolidated under `docs/` to keep the repository root tidy.
+
 **AI-Agent Enabled Framework for Test-Driven Development with 6-Phase Automation**
 
 > Minimal human intervention, maximum specification compliance. Intent → Formal → Tests → Code → Verify → Operate with TDD enforcement.
@@ -107,6 +109,8 @@ We welcome international contributions! Please see our [Contributing Guide](CONT
 
 ## Japanese
 
+注記: ルート直下のドキュメントを `docs/` 配下に整理し、トップ階層をスリム化しました。
+
 **TDD強制機能付き6フェーズ自動化のAIエージェント対応フレームワーク**
 
 > 人手最小＆仕様準拠最大。Intent→Formal→Tests→Code→Verify→Operate の6フェーズ。
@@ -125,6 +129,15 @@ ae-framework は Claude Code 環境で**全6フェーズ**を自動統合。追�
 
 **Phase 1: Intent Analysis 🎯**
 ```
+
+### 📁 Repository Layout
+- Overview: `docs/README.md`
+- Project organization: `docs/project-organization.md`
+- Architecture notes: `docs/architecture/`
+- Quality and verification: `docs/quality/`
+- Benchmarks (req2run): `docs/benchmark/`
+- Articles: `docs/articles/` (e.g., Zenn)
+- CLI smoke example: `examples/cli-smoke/`
 User: プロジェクトの要件分析をお願いします
 
 Claude Code: Intent Task Adapterを使用して要件分析を実行します...
@@ -195,6 +208,15 @@ Phase 6では**OpenTelemetry**を使用してリアルタイム品質監視を�
 
 **生成されるファイル構成**
 ```
+
+### 📁 リポジトリ構成
+- 概要: `docs/README.md`
+- プロジェクト構成: `docs/project-organization.md`
+- アーキテクチャ: `docs/architecture/`
+- 品質と検証: `docs/quality/`
+- ベンチマーク（req2run）: `docs/benchmark/`
+- 記事: `docs/articles/`（Zenn など）
+- CLI スモーク例: `examples/cli-smoke/`
 ae-framework/
 ├── packages/
 │   ├── design-tokens/                       # デザイントークン
