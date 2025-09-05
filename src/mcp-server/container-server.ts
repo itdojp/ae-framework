@@ -11,6 +11,21 @@ import {
   Tool,
 } from '@modelcontextprotocol/sdk/types.js';
 import { ContainerAgent, ContainerAgentConfig } from '../agents/container-agent.js';
+import {
+  BuildVerificationImageArgsSchema,
+  CancelJobArgsSchema,
+  CleanupArgsSchema,
+  GetJobStatusArgsSchema,
+  ListJobsArgsSchema,
+  RunContainerVerificationArgsSchema,
+  parseOrThrow,
+  type BuildVerificationImageArgs,
+  type CancelJobArgs,
+  type CleanupArgs,
+  type GetJobStatusArgs,
+  type ListJobsArgs,
+  type RunContainerVerificationArgs,
+} from './schemas.js';
 
 export class ContainerServer {
   private server: Server;
@@ -253,7 +268,8 @@ export class ContainerServer {
           }
 
           case 'run_container_verification': {
-            const result = await this.agent.runVerification(args as any);
+            const parsed: RunContainerVerificationArgs = parseOrThrow(RunContainerVerificationArgsSchema, args);
+            const result = await this.agent.runVerification(parsed as any);
             return {
               content: [
                 {
@@ -265,7 +281,8 @@ export class ContainerServer {
           }
 
           case 'build_verification_image': {
-            const result = await this.agent.buildVerificationImage(args as any);
+            const parsed: BuildVerificationImageArgs = parseOrThrow(BuildVerificationImageArgsSchema, args);
+            const result = await this.agent.buildVerificationImage(parsed as any);
             return {
               content: [
                 {
@@ -277,7 +294,7 @@ export class ContainerServer {
           }
 
           case 'get_verification_job_status': {
-            const { jobId } = args as any;
+            const { jobId }: GetJobStatusArgs = parseOrThrow(GetJobStatusArgsSchema, args);
             const result = await this.agent.getJobStatus(jobId);
             return {
               content: [
@@ -290,7 +307,8 @@ export class ContainerServer {
           }
 
           case 'list_verification_jobs': {
-            const result = await this.agent.listJobs(args as any);
+            const parsed: ListJobsArgs = parseOrThrow(ListJobsArgsSchema, args);
+            const result = await this.agent.listJobs(parsed as any);
             return {
               content: [
                 {
@@ -302,7 +320,7 @@ export class ContainerServer {
           }
 
           case 'cancel_verification_job': {
-            const { jobId } = args as any;
+            const { jobId }: CancelJobArgs = parseOrThrow(CancelJobArgsSchema, args);
             const result = await this.agent.cancelJob(jobId);
             return {
               content: [
@@ -327,7 +345,8 @@ export class ContainerServer {
           }
 
           case 'cleanup_container_resources': {
-            const result = await this.agent.cleanup(args as any);
+            const parsed: CleanupArgs = parseOrThrow(CleanupArgsSchema, args);
+            const result = await this.agent.cleanup(parsed as any);
             return {
               content: [
                 {

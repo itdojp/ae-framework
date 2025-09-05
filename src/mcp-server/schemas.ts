@@ -132,3 +132,76 @@ export const AnalyzeCoverageArgsSchema = z.object({
   projectPath: z.string().optional().default('.'),
 });
 export type AnalyzeCoverageArgs = z.infer<typeof AnalyzeCoverageArgsSchema>;
+
+// ---------- Container MCP Schemas ----------
+export const LanguageEnum = z.enum(['rust', 'elixir', 'multi']);
+
+export const RunContainerVerificationArgsSchema = z.object({
+  projectPath: z.string().min(1),
+  language: LanguageEnum,
+  tools: z.array(z.string()).min(1),
+  jobName: z.string().optional(),
+  timeout: z.number().optional(),
+  buildImages: z.boolean().optional().default(false),
+  environment: z.record(z.string()).optional().default({}),
+});
+export type RunContainerVerificationArgs = z.infer<typeof RunContainerVerificationArgsSchema>;
+
+export const BuildVerificationImageArgsSchema = z.object({
+  language: LanguageEnum,
+  tools: z.array(z.string()).min(1),
+  baseImage: z.string().optional(),
+  tag: z.string().optional(),
+  push: z.boolean().optional().default(false),
+  buildArgs: z.record(z.string()).optional().default({}),
+});
+export type BuildVerificationImageArgs = z.infer<typeof BuildVerificationImageArgsSchema>;
+
+export const GetJobStatusArgsSchema = z.object({ jobId: z.string().min(1) });
+export type GetJobStatusArgs = z.infer<typeof GetJobStatusArgsSchema>;
+
+export const ListJobsArgsSchema = z.object({
+  status: z.enum(['pending', 'running', 'completed', 'failed']).optional(),
+  language: LanguageEnum.optional(),
+});
+export type ListJobsArgs = z.infer<typeof ListJobsArgsSchema>;
+
+export const CancelJobArgsSchema = z.object({ jobId: z.string().min(1) });
+export type CancelJobArgs = z.infer<typeof CancelJobArgsSchema>;
+
+export const CleanupArgsSchema = z.object({
+  maxAge: z.number().optional().default(3600),
+  keepCompleted: z.number().optional().default(10),
+  force: z.boolean().optional().default(false),
+});
+export type CleanupArgs = z.infer<typeof CleanupArgsSchema>;
+
+// ---------- TDD MCP Schemas ----------
+export const AnalyzeTDDArgsSchema = z.object({
+  path: z.string().optional().default(process.cwd()),
+  phase: z.string().optional(),
+});
+export type AnalyzeTDDArgs = z.infer<typeof AnalyzeTDDArgsSchema>;
+
+export const GuideTDDArgsSchema = z.object({
+  feature: z.string().min(1),
+  currentStep: z.string().optional(),
+});
+export type GuideTDDArgs = z.infer<typeof GuideTDDArgsSchema>;
+
+export const ValidateTestFirstArgsSchema = z.object({
+  sourceFiles: z.array(z.string()).optional().default([]),
+});
+export type ValidateTestFirstArgs = z.infer<typeof ValidateTestFirstArgsSchema>;
+
+export const RedGreenCycleArgsSchema = z.object({
+  testCommand: z.string().optional().default('npm test'),
+  expectRed: z.boolean().optional().default(false),
+});
+export type RedGreenCycleArgs = z.infer<typeof RedGreenCycleArgsSchema>;
+
+export const SuggestTestStructureArgsSchema = z.object({
+  codeFile: z.string().min(1),
+  framework: z.string().optional().default('vitest'),
+});
+export type SuggestTestStructureArgs = z.infer<typeof SuggestTestStructureArgsSchema>;
