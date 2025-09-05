@@ -29,7 +29,7 @@
       "@ae-framework/spec-compiler/*": ["./packages/spec-compiler/dist/*"]
     }
   },
-  "include": ["src/**/*.ts", "types/**/*.d.ts", "packages/**/*"],
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "types/**/*.d.ts", "packages/**/*"],
   "exclude": [
     "node_modules", 
     "dist", 

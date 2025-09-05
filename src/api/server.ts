@@ -36,8 +36,8 @@ export async function createServer(): Promise<FastifyInstance> {
       },
     });
     
-    (request as any).span = span;
-    (request as any).startTime = Date.now();
+    request.span = span;
+    request.startTime = Date.now();
     enhancedTelemetry.recordCounter('api.requests.total', 1, {
       method: request.method,
       endpoint: request.url,
@@ -46,11 +46,11 @@ export async function createServer(): Promise<FastifyInstance> {
 
   // Add response timing hook
   app.addHook('onResponse', async (request, reply) => {
-    const span = (request as any).span;
+    const span = request.span;
     if (span) {
       span.setAttributes({
         'http.status_code': reply.statusCode,
-        [TELEMETRY_ATTRIBUTES.DURATION_MS]: Date.now() - (request as any).startTime || 0,
+        [TELEMETRY_ATTRIBUTES.DURATION_MS]: Date.now() - (request.startTime || 0),
       });
       
       if (reply.statusCode >= 400) {
@@ -108,7 +108,7 @@ export async function createServer(): Promise<FastifyInstance> {
       return reply.code(200).send(healthData);
     } catch (error) {
       timer.end({ endpoint: '/health', result: 'error' });
-      const span = (req as any).span;
+      const span = req.span;
       if (span) {
         span.recordException(error as Error);
       }
@@ -155,7 +155,7 @@ export async function createServer(): Promise<FastifyInstance> {
         runtimeGuard.recordBusinessRuleViolation(
           'max_quantity_limit',
           `Quantity ${quantity} exceeds maximum allowed (100)`,
-          'medium' as any,
+          'medium' as const,
           { orderId, itemId, quantity }
         );
         
@@ -200,7 +200,7 @@ export async function createServer(): Promise<FastifyInstance> {
       return reply.code(201).send(responseData);
     } catch (error) {
       timer.end({ endpoint: '/reservations', result: 'error' });
-      const span = (req as any).span;
+      const span = req.span;
       if (span) {
         span.recordException(error as Error);
       }
@@ -218,7 +218,7 @@ export async function createServer(): Promise<FastifyInstance> {
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      const span = (req as any).span;
+      const span = req.span;
       if (span) {
         span.recordException(error as Error);
       }
