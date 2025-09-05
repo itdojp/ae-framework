@@ -5,6 +5,13 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
+    # Run SBOM only when dependency or code manifests change
+    paths:
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'packages/**'
+      - 'apps/**'
+      - 'src/**'
   schedule:
     # Run daily at 2 AM UTC
     - cron: '0 2 * * *'
