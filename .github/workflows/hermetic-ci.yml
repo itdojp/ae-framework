@@ -107,8 +107,8 @@ jobs:
           pnpm run build
 
       - name: Bin smoke check (after first build)
-        run: node scripts/ci/check-bins.mjs
-
+        run: |
+          node scripts/ci/check-bins.mjs
           # Create checksum of build output
           find dist/ -type f -exec sha256sum {} \; | sort > build1.checksums
           
@@ -122,7 +122,8 @@ jobs:
           pnpm run build
 
       - name: Bin smoke check (after second build)
-        run: node scripts/ci/check-bins.mjs
+        run: |
+          node scripts/ci/check-bins.mjs
           # Create checksum of second build
           find dist/ -type f -exec sha256sum {} \; | sort > build2.checksums
           
