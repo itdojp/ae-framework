@@ -96,7 +96,7 @@ export async function getBenchmarkInfo(): Promise<{
   availableProblems: number;
   categories: string[];
   difficulties: string[];
-  systemInfo: any;
+  systemInfo: { nodeVersion: string; platform: string; arch: string; memory: string };
 }> {
   const { DEFAULT_BENCHMARK_CONFIG } = await import('./config/default.js');
   const { BenchmarkCategory, DifficultyLevel } = await import('./types/index.js');
