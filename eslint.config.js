@@ -52,5 +52,27 @@ export default ts.config(
       '@typescript-eslint/no-unsafe-member-access': 'error',
       '@typescript-eslint/no-unsafe-return': 'error',
     }
+  },
+  // T1 escalation (targeted): strengthen unsafe rules for MCP servers
+  {
+    files: [
+      'src/mcp-server/**/*.ts',
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.verify.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      // Keep no-explicit-any as warn for now (soft landing),
+      // but escalate unsafe operations to error in MCP boundaries
+      '@typescript-eslint/no-unsafe-assignment': 'error',
+      '@typescript-eslint/no-unsafe-call': 'error',
+      '@typescript-eslint/no-unsafe-member-access': 'error',
+      '@typescript-eslint/no-unsafe-return': 'error',
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-misused-promises': 'error',
+    }
   }
 );

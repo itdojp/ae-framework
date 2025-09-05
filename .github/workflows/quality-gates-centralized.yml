@@ -38,6 +38,11 @@ jobs:
     with:
       node-version: '20'
       run-script: test:coverage
+  type-coverage:
+    uses: ./.github/workflows/common/ci-core.yml
+    with:
+      node-version: '20'
+      run-script: typecov
   types-tests:
     uses: ./.github/workflows/common/ci-core.yml
     with:
