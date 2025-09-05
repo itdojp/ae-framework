@@ -43,6 +43,41 @@ jobs:
     with:
       node-version: '20'
       run-script: typecov
+  type-coverage-report:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      - name: Enable corepack
+        run: corepack enable
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+      - name: Run type-coverage
+        id: typecov
+        run: |
+          set -e
+          OUT=$(pnpm -s run typecov || true)
+          echo "$OUT"
+          # Extract last percentage like: "type coverage: 67.89%"
+          PCT=$(echo "$OUT" | rg -o "type coverage:\s*[0-9.]+%" -n | tail -n1 | awk '{print $3}')
+          echo "pct=$PCT" >> $GITHUB_OUTPUT
+      - name: Comment type coverage on PR
+        if: steps.typecov.outputs.pct != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pct = core.getInput('pct') || '${{ steps.typecov.outputs.pct }}';
+            const body = `### Type Coverage\n\nCurrent type coverage: **${pct}**`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
   types-tests:
     uses: ./.github/workflows/common/ci-core.yml
     with:
