@@ -115,7 +115,7 @@ export class StandardizedBenchmarkRunner {
    * Get pipeline capabilities and health status
    */
   getPipelineStatus(): {
-    capabilities: Record<string, any>;
+    capabilities: Record<string, unknown>;
     validation: { valid: boolean; missing: string[]; errors: string[] };
     health: 'healthy' | 'degraded' | 'failed';
   } {
@@ -208,7 +208,7 @@ export class StandardizedBenchmarkRunner {
   /**
    * Normalize req2run specification to AE Framework format
    */
-  private normalizeSpecification(spec: any, problemId: string): RequirementSpec {
+  private normalizeSpecification(spec: unknown, problemId: string): RequirementSpec {
     return {
       id: spec.id || problemId,
       title: spec.title || `Benchmark Problem ${problemId}`,
@@ -480,7 +480,7 @@ export class StandardizedBenchmarkRunner {
   }
 
   // Helper methods
-  private buildDescription(spec: any): string {
+  private buildDescription(spec: unknown): string {
     let description = spec.description || spec.notes || spec.title || 'Benchmark problem';
     
     if (spec.category) description += `\n\nCategory: ${spec.category}`;
@@ -490,12 +490,12 @@ export class StandardizedBenchmarkRunner {
     return description;
   }
 
-  private extractRequirements(spec: any): any[] {
+  private extractRequirements(spec: unknown): unknown[] {
     const requirements = [];
     
     // Extract functional requirements
     if (spec.requirements?.functional) {
-      spec.requirements.functional.forEach((req: any, index: number) => {
+      (spec as any).requirements.functional.forEach((req: any, index: number) => {
         requirements.push({
           id: req.id || `FUNC-${index + 1}`,
           description: req.description,
@@ -509,7 +509,7 @@ export class StandardizedBenchmarkRunner {
 
     // Extract non-functional requirements
     if (spec.requirements?.non_functional) {
-      Object.entries(spec.requirements.non_functional).forEach(([type, reqs]: [string, any], index) => {
+      Object.entries((spec as any).requirements.non_functional).forEach(([type, reqs]: [string, any], index) => {
         if (Array.isArray(reqs)) {
           reqs.forEach((req, subIndex) => {
             requirements.push({
@@ -528,7 +528,7 @@ export class StandardizedBenchmarkRunner {
     return requirements;
   }
 
-  private extractConstraints(spec: any): any {
+  private extractConstraints(spec: unknown): Record<string, unknown> {
     return {
       technical: spec.constraints?.allowed_packages || [],
       business: spec.constraints?.disallowed_packages || [],
@@ -574,7 +574,7 @@ export class StandardizedBenchmarkRunner {
     return mapping[standardPhase] || AEFrameworkPhase.INTENT_ANALYSIS;
   }
 
-  private extractPhaseInput(phase: PhaseResult<any>): any {
+  private extractPhaseInput(phase: PhaseResult<unknown>): unknown {
     // Extract relevant input information for reporting
     return {
       phase: phase.phase,
@@ -608,7 +608,7 @@ export class StandardizedBenchmarkRunner {
     };
   }
 
-  private generateSourceCodeFromUI(uiOutput: UIUXOutput): any[] {
+  private generateSourceCodeFromUI(uiOutput: UIUXOutput): unknown[] {
     return uiOutput.components.map(component => ({
       path: `src/components/${component.name}.tsx`,
       content: this.generateComponentCode(component),
@@ -617,12 +617,12 @@ export class StandardizedBenchmarkRunner {
     }));
   }
 
-  private generateComponentCode(component: any): string {
+  private generateComponentCode(component: unknown): string {
     return `// Generated component: ${component.name}
 import React from 'react';
 
 interface ${component.name}Props {
-${component.props.map((prop: any) => `  ${prop.name}${prop.required ? '' : '?'}: ${prop.type};`).join('\n')}
+${(component as any).props.map((prop: any) => `  ${prop.name}${prop.required ? '' : '?'}: ${prop.type};`).join('\n')}
 }
 
 export const ${component.name}: React.FC<${component.name}Props> = (props) => {
@@ -635,7 +635,7 @@ export const ${component.name}: React.FC<${component.name}Props> = (props) => {
 `;
   }
 
-  private generateDocumentationFromPipeline(pipelineResult: PipelineResult): any[] {
+  private generateDocumentationFromPipeline(pipelineResult: PipelineResult): unknown[] {
     return [
       {
         path: 'README.md',
@@ -675,7 +675,7 @@ Generated on: ${new Date().toISOString()}
 `;
   }
 
-  private generateConfigurationFiles(uiOutput: UIUXOutput): any[] {
+  private generateConfigurationFiles(uiOutput: UIUXOutput): unknown[] {
     return [
       {
         path: 'package.json',
@@ -693,7 +693,7 @@ Generated on: ${new Date().toISOString()}
     ];
   }
 
-  private assessFunctionalCoverage(output: any, spec: RequirementSpec): number {
+  private assessFunctionalCoverage(output: unknown, spec: RequirementSpec): number {
     // Assess how well the generated output covers the functional requirements
     const totalRequirements = spec.requirements.filter(r => 
       typeof r === 'string' || (r as any).type === 'functional'
@@ -710,7 +710,7 @@ Generated on: ${new Date().toISOString()}
     return 50; // Base coverage for successful pipeline execution
   }
 
-  private assessCodeQuality(output: any): number {
+  private assessCodeQuality(output: unknown): number {
     // Assess code quality based on generated artifacts
     if (output.components && output.designSystem) {
       let score = 70; // Base quality score
@@ -748,7 +748,7 @@ Generated on: ${new Date().toISOString()}
     return pipelineResult.phases.length / (pipelineResult.totalDuration / 1000);
   }
 
-  private generateAnalytics(results: BenchmarkResult[]): any {
+  private generateAnalytics(results: BenchmarkResult[]): Record<string, unknown> {
     const successful = results.filter(r => r.success);
     const failed = results.filter(r => !r.success);
 
@@ -826,7 +826,14 @@ Generated on: ${new Date().toISOString()}
       .map(([message, _]) => message);
   }
 
-  private generateEnhancedMarkdownReport(data: any): string {
+  private generateEnhancedMarkdownReport(data: {
+    metadata: { timestamp: string; pipelineVersion: string };
+    summary: { overallScore: number; coverage: number; averagePerformance: number; averageQuality: number; averageSecurity: number; averageTimeToCompletion: number; stability: number; reliability: number };
+    byCategory: Array<{ category: string; successRate: number; avgScore: number; avgTime: number }>;
+    topPerformers: Array<{ problemId: string; score: number; time: number }>;
+    worstPerformers: Array<{ problemId: string; score: number; time: number }>;
+    results: Array<{ problemId: string; success: boolean; score: number; time: number; phases: any[]; errors: string[] }>;
+  }): string {
     return `# Standardized AE Framework Benchmark Report
 
 Generated: ${data.metadata.timestamp}
@@ -933,7 +940,7 @@ ${data.analytics.errors.commonErrorPatterns.map((error: string) =>
     };
   }
 
-  private async getExecutionEnvironment(): Promise<any> {
+  private async getExecutionEnvironment(): Promise<ExecutionDetails['environment']> {
     return {
       nodeVersion: process.version,
       platform: process.platform,
@@ -945,11 +952,13 @@ ${data.analytics.errors.commonErrorPatterns.map((error: string) =>
     };
   }
 
-  private getSimpleEnvironment(): any {
+  private getSimpleEnvironment(): ExecutionDetails['environment'] {
     return {
       nodeVersion: process.version,
       platform: process.platform,
-      memory: process.memoryUsage().heapTotal
+      arch: process.arch,
+      memory: process.memoryUsage().heapTotal,
+      cpuCount: os.cpus().length
     };
   }
 
