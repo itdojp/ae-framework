@@ -384,15 +384,15 @@ export class ContainerServer {
           default:
             throw new Error(`Unknown tool: ${name}`);
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         return {
           content: [
             {
               type: 'text',
               text: JSON.stringify({
                 success: false,
-                message: `Tool execution failed: ${error.message}`,
-                error: error.message,
+                message: `Tool execution failed: ${error instanceof Error ? error.message : String(error)}`,
+                error: error instanceof Error ? error.message : String(error),
                 tool: name,
                 args,
               }, null, 2),

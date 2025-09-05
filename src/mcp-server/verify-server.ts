@@ -24,6 +24,20 @@ import {
   type RunTestsArgs,
   type SecurityScanArgs,
   type TypeCheckingArgs,
+  PerformanceTestsArgsSchema,
+  type PerformanceTestsArgs,
+  AccessibilityArgsSchema,
+  type AccessibilityArgs,
+  VerifyContractsArgsSchema,
+  type VerifyContractsArgs,
+  VerifySpecificationsArgsSchema,
+  type VerifySpecificationsArgs,
+  MutationTestsArgsSchema,
+  type MutationTestsArgs,
+  TraceabilityArgsSchema,
+  type TraceabilityArgs,
+  GetQualityMetricsArgsSchema,
+  type GetQualityMetricsArgs,
 } from './schemas.js';
 import { readFileSync, existsSync, readdirSync, statSync } from 'fs';
 import * as path from 'path';
@@ -476,7 +490,7 @@ export class VerifyMCPServer {
   }
 
   private async handleRunPerformanceTests(args: any) {
-    const { projectPath, duration = 30 } = args;
+    const { projectPath, duration }: PerformanceTestsArgs = parseOrThrow(PerformanceTestsArgsSchema, args);
     const request = await this.buildVerificationRequest(projectPath, ['performance']);
     
     const result = await this.verifyAgent.runPerformanceTests(request);
@@ -492,8 +506,8 @@ export class VerifyMCPServer {
     };
   }
 
-  private async handleCheckAccessibility(args: any) {
-    const { projectPath, standards = ['WCAG2.1'] } = args;
+  private async handleCheckAccessibility(args: unknown) {
+    const { projectPath, standards }: AccessibilityArgs = parseOrThrow(AccessibilityArgsSchema, args);
     const request = await this.buildVerificationRequest(projectPath, ['accessibility']);
     
     const result = await this.verifyAgent.checkAccessibility(request);
@@ -509,8 +523,8 @@ export class VerifyMCPServer {
     };
   }
 
-  private async handleVerifyContracts(args: any) {
-    const { projectPath, contractPath } = args;
+  private async handleVerifyContracts(args: unknown) {
+    const { projectPath, contractPath }: VerifyContractsArgs = parseOrThrow(VerifyContractsArgsSchema, args);
     const request = await this.buildVerificationRequest(projectPath, ['contracts']);
     
     if (contractPath) {
@@ -531,8 +545,8 @@ export class VerifyMCPServer {
     };
   }
 
-  private async handleVerifySpecifications(args: any) {
-    const { projectPath, specPaths } = args;
+  private async handleVerifySpecifications(args: unknown) {
+    const { projectPath, specPaths }: VerifySpecificationsArgs = parseOrThrow(VerifySpecificationsArgsSchema, args);
     const request = await this.buildVerificationRequest(projectPath, ['specifications']);
     
     if (specPaths && specPaths.length > 0) {
@@ -551,8 +565,8 @@ export class VerifyMCPServer {
     };
   }
 
-  private async handleRunMutationTests(args: any) {
-    const { projectPath, threshold = 80 } = args;
+  private async handleRunMutationTests(args: unknown) {
+    const { projectPath, threshold }: MutationTestsArgs = parseOrThrow(MutationTestsArgsSchema, args);
     const request = await this.buildVerificationRequest(projectPath, ['mutations']);
     
     const result = await this.verifyAgent.runMutationTesting(request);
@@ -568,8 +582,8 @@ export class VerifyMCPServer {
     };
   }
 
-  private async handleGenerateTraceabilityMatrix(args: any) {
-    const { projectPath, outputFormat = 'json' } = args;
+  private async handleGenerateTraceabilityMatrix(args: unknown) {
+    const { projectPath, outputFormat }: TraceabilityArgs = parseOrThrow(TraceabilityArgsSchema, args);
     const request = await this.buildVerificationRequest(projectPath, ['specifications']);
     
     const matrix = await this.verifyAgent.buildTraceabilityMatrix(request);
@@ -596,8 +610,8 @@ export class VerifyMCPServer {
     };
   }
 
-  private async handleGetQualityMetrics(args: any) {
-    const { projectPath, includeHistory = false } = args;
+  private async handleGetQualityMetrics(args: unknown) {
+    const { projectPath, includeHistory }: GetQualityMetricsArgs = parseOrThrow(GetQualityMetricsArgsSchema, args);
     const request = await this.buildVerificationRequest(projectPath, []);
     
     const metrics = await this.verifyAgent.calculateQualityMetrics(request);
@@ -782,7 +796,7 @@ export class VerifyMCPServer {
     return files;
   }
 
-  private formatTraceabilityAsHTML(matrix: any): string {
+  private formatTraceabilityAsHTML(matrix: { coverage: number; requirements: { id: string; description: string; covered: boolean; linkedTo: string[] }[]; tests?: { id: string; description: string; covered: boolean; linkedTo: string[] }[]; code?: { id: string; description: string; covered: boolean; linkedTo: string[] }[] }): string {
     return `
 <!DOCTYPE html>
 <html>
@@ -807,7 +821,7 @@ export class VerifyMCPServer {
             <th>Covered</th>
             <th>Linked To</th>
         </tr>
-        ${matrix.requirements.map((req: any) => `
+        ${matrix.requirements.map((req) => `
             <tr class="${req.covered ? 'covered' : 'not-covered'}">
                 <td>Requirement</td>
                 <td>${req.id}</td>
@@ -821,16 +835,16 @@ export class VerifyMCPServer {
 </html>`;
   }
 
-  private formatTraceabilityAsCSV(matrix: any): string {
+  private formatTraceabilityAsCSV(matrix: { requirements: { id: string; description: string; covered: boolean; linkedTo: string[] }[]; tests: { id: string; description: string; covered: boolean; linkedTo: string[] }[]; code: { id: string; description: string; covered: boolean; linkedTo: string[] }[] }): string {
     const header = 'Type,ID,Description,Covered,LinkedTo\n';
     const rows = [
-      ...matrix.requirements.map((req: any) => 
+      ...matrix.requirements.map((req) => 
         `Requirement,${req.id},"${req.description}",${req.covered},"${req.linkedTo.join(';')}"`
       ),
-      ...matrix.tests.map((test: any) => 
+      ...matrix.tests.map((test) => 
         `Test,${test.id},"${test.description}",${test.covered},"${test.linkedTo.join(';')}"`
       ),
-      ...matrix.code.map((code: any) => 
+      ...matrix.code.map((code) => 
         `Code,${code.id},"${code.description}",${code.covered},"${code.linkedTo.join(';')}"`
       )
     ];

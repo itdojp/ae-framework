@@ -224,7 +224,22 @@ export class CodeGenerationServer {
     });
   }
 
-  private async validateCodeAgainstTests(codeFiles: any[], testFiles: any[]): Promise<any> {
+  private async validateCodeAgainstTests(
+    codeFiles: { path: string; content: string }[],
+    testFiles: { path: string; content: string }[],
+  ): Promise<{
+    testResults: { file: string; status: 'pending' | 'passed' | 'failed'; coverage: number }[];
+    coverage: {
+      percentage: number;
+      details: {
+        lines: { covered: number; total: number };
+        functions: { covered: number; total: number };
+        branches: { covered: number; total: number };
+      }
+    };
+    suggestions: string[];
+    passing: boolean;
+  }> {
     // Basic validation implementation
     console.log(`Validating ${codeFiles.length} code files against ${testFiles.length} test files`);
     

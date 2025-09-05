@@ -51,6 +51,49 @@ export const SecurityScanArgsSchema = z.object({
 });
 export type SecurityScanArgs = z.infer<typeof SecurityScanArgsSchema>;
 
+// Additional Verify MCP schemas
+export const PerformanceTestsArgsSchema = z.object({
+  projectPath: z.string().min(1),
+  duration: z.number().optional().default(30),
+});
+export type PerformanceTestsArgs = z.infer<typeof PerformanceTestsArgsSchema>;
+
+export const AccessibilityArgsSchema = z.object({
+  projectPath: z.string().min(1),
+  standards: z.array(z.string()).optional().default(['WCAG2.1']),
+});
+export type AccessibilityArgs = z.infer<typeof AccessibilityArgsSchema>;
+
+export const VerifyContractsArgsSchema = z.object({
+  projectPath: z.string().min(1),
+  contractPath: z.string().optional(),
+});
+export type VerifyContractsArgs = z.infer<typeof VerifyContractsArgsSchema>;
+
+export const VerifySpecificationsArgsSchema = z.object({
+  projectPath: z.string().min(1),
+  specPaths: z.array(z.string()).optional().default([]),
+});
+export type VerifySpecificationsArgs = z.infer<typeof VerifySpecificationsArgsSchema>;
+
+export const MutationTestsArgsSchema = z.object({
+  projectPath: z.string().min(1),
+  threshold: z.number().optional().default(80),
+});
+export type MutationTestsArgs = z.infer<typeof MutationTestsArgsSchema>;
+
+export const TraceabilityArgsSchema = z.object({
+  projectPath: z.string().min(1),
+  outputFormat: z.enum(['json','html','csv']).optional().default('json'),
+});
+export type TraceabilityArgs = z.infer<typeof TraceabilityArgsSchema>;
+
+export const GetQualityMetricsArgsSchema = z.object({
+  projectPath: z.string().min(1),
+  includeHistory: z.boolean().optional().default(false),
+});
+export type GetQualityMetricsArgs = z.infer<typeof GetQualityMetricsArgsSchema>;
+
 export function parseOrThrow<T extends z.ZodTypeAny>(schema: T, input: unknown): z.infer<T> {
   const res = schema.safeParse(input);
   if (!res.success) {
