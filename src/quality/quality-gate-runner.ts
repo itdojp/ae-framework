@@ -10,12 +10,13 @@ import * as path from 'path';
 import { QualityPolicyLoader, QualityGateResult, QualityReport, QualityGate } from './policy-loader.js';
 
 // Mock telemetry for main branch compatibility
+type Attributes = Record<string, unknown>;
 const mockTelemetry = {
-  createTimer: (name: string, attributes?: any) => ({
-    end: (additionalAttributes?: any) => Date.now(),
+  createTimer: (name: string, attributes?: Attributes) => ({
+    end: (additionalAttributes?: Attributes) => Date.now(),
   }),
-  recordQualityMetrics: (metrics: any) => {},
-  recordCounter: (name: string, value: number, attributes?: any) => {},
+  recordQualityMetrics: (metrics: Attributes) => {},
+  recordCounter: (name: string, value: number, attributes?: Attributes) => {},
 };
 
 const TELEMETRY_ATTRIBUTES = {
@@ -229,7 +230,7 @@ export class QualityGateRunner {
       const needsShell = command.includes('|') || command.includes('>') || command.includes('<') || 
                         command.includes('&&') || command.includes('||') || command.includes('$');
       
-      let process: any;
+      let process: import('child_process').ChildProcessWithoutNullStreams;
       
       if (needsShell) {
         // Use shell for complex commands with enhanced security validation
@@ -419,8 +420,12 @@ export class QualityGateRunner {
 
   /**
    * Parse coverage results
-   */
-  private parseCoverageResult(baseResult: QualityGateResult, result: any, threshold: any): QualityGateResult {
+  */
+  private parseCoverageResult(
+    baseResult: QualityGateResult,
+    result: { stdout: string; stderr?: string; code?: number },
+    threshold: Record<string, number | undefined>
+  ): QualityGateResult {
     try {
       // Try to find coverage data in stdout
       const coverageMatch = result.stdout.match(/Lines\s*:\s*([\d.]+)%.*Functions\s*:\s*([\d.]+)%.*Branches\s*:\s*([\d.]+)%.*Statements\s*:\s*([\d.]+)%/s);
@@ -452,7 +457,11 @@ export class QualityGateRunner {
   /**
    * Parse linting results
    */
-  private parseLintingResult(baseResult: QualityGateResult, result: any, threshold: any): QualityGateResult {
+  private parseLintingResult(
+    baseResult: QualityGateResult,
+    result: { stdout: string; stderr?: string; code?: number },
+    threshold: { maxErrors?: number; maxWarnings?: number }
+  ): QualityGateResult {
     try {
       // Count errors and warnings
       const errorMatches = result.stdout.match(/(\d+)\s+error/g) || [];
@@ -483,7 +492,11 @@ export class QualityGateRunner {
   /**
    * Parse security results
    */
-  private parseSecurityResult(baseResult: QualityGateResult, result: any, threshold: any): QualityGateResult {
+  private parseSecurityResult(
+    baseResult: QualityGateResult,
+    result: { stdout: string; stderr?: string; code?: number },
+    threshold: { maxCritical?: number; maxHigh?: number; maxMedium?: number }
+  ): QualityGateResult {
     try {
       // Parse npm audit output
       const criticalMatches = result.stdout.match(/(\d+)\s+critical/i);
@@ -520,7 +533,11 @@ export class QualityGateRunner {
   /**
    * Parse performance results
    */
-  private parsePerformanceResult(baseResult: QualityGateResult, result: any, threshold: any): QualityGateResult {
+  private parsePerformanceResult(
+    baseResult: QualityGateResult,
+    _result: { stdout: string; stderr?: string; code?: number },
+    _threshold: Record<string, number | undefined>
+  ): QualityGateResult {
     // Placeholder for performance result parsing
     baseResult.details = { performanceTest: true };
     return baseResult;
@@ -529,7 +546,11 @@ export class QualityGateRunner {
   /**
    * Parse accessibility results
    */
-  private parseAccessibilityResult(baseResult: QualityGateResult, result: any, threshold: any): QualityGateResult {
+  private parseAccessibilityResult(
+    baseResult: QualityGateResult,
+    _result: { stdout: string; stderr?: string; code?: number },
+    _threshold: Record<string, number | undefined>
+  ): QualityGateResult {
     // Placeholder for accessibility result parsing
     baseResult.details = { accessibilityTest: true };
     return baseResult;
