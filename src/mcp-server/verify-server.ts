@@ -489,7 +489,7 @@ export class VerifyMCPServer {
     };
   }
 
-  private async handleRunPerformanceTests(args: any) {
+  private async handleRunPerformanceTests(args: unknown) {
     const { projectPath, duration }: PerformanceTestsArgs = parseOrThrow(PerformanceTestsArgsSchema, args);
     const request = await this.buildVerificationRequest(projectPath, ['performance']);
     

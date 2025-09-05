@@ -157,7 +157,7 @@ export class CodeGenerationServer {
         switch (request.params.name) {
           case 'generate_code_from_tests': {
             const parsed: GenerateCodeFromTestsArgs = parseOrThrow(GenerateCodeFromTestsArgsSchema, request.params.arguments);
-            const result = await this.agent.generateCodeFromTests(parsed as any);
+            const result = await this.agent.generateCodeFromTests(parsed as unknown as import('../agents/code-generation-agent.js').CodeGenerationRequest);
             return {
               content: [
                 {
@@ -193,7 +193,7 @@ export class CodeGenerationServer {
 
           case 'validate_code_against_tests': {
             const args: ValidateCodeAgainstTestsArgs = parseOrThrow(ValidateCodeAgainstTestsArgsSchema, request.params.arguments);
-            const results = await this.validateCodeAgainstTests(args.codeFiles as any[], args.testFiles as any[]);
+            const results = await this.validateCodeAgainstTests(args.codeFiles, args.testFiles);
             return {
               content: [
                 {

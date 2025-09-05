@@ -501,7 +501,19 @@ class TestGenerationServer {
     };
   }
 
-  private formatTestGenerationResult(result: any): string {
+  private formatTestGenerationResult(result: {
+    testFile: string;
+    testCases: { name: string; type: string; priority: string; description: string }[];
+    coverage: {
+      functional: unknown[];
+      edgeCases: unknown[];
+      errorHandling: unknown[];
+      performance: unknown[];
+      security: unknown[];
+    };
+    recommendations: string[];
+    testContent: string;
+  }): string {
     let response = `# Generated Tests\n\n`;
     response += `**Test File**: ${result.testFile}\n\n`;
     
