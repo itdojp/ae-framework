@@ -78,6 +78,12 @@ jobs:
               issue_number: context.issue.number,
               body
             });
+  type-coverage-threshold:
+    if: github.event_name == 'pull_request' && contains(join(fromJSON(toJSON(github.event.pull_request.labels)).*.name, ','), 'enforce-typecov')
+    uses: ./.github/workflows/common/ci-core.yml
+    with:
+      node-version: '20'
+      run-script: typecov:check
   types-tests:
     uses: ./.github/workflows/common/ci-core.yml
     with:
