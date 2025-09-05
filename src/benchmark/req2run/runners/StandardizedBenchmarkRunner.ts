@@ -209,23 +209,24 @@ export class StandardizedBenchmarkRunner {
    * Normalize req2run specification to AE Framework format
    */
   private normalizeSpecification(spec: unknown, problemId: string): RequirementSpec {
+    const s = spec as any;
     return {
-      id: spec.id || problemId,
-      title: spec.title || `Benchmark Problem ${problemId}`,
-      description: this.buildDescription(spec),
-      category: spec.category || 'general',
-      difficulty: spec.difficulty || 'basic',
-      requirements: this.extractRequirements(spec),
-      constraints: this.extractConstraints(spec),
-      testCriteria: spec.testCriteria || [],
-      expectedOutput: spec.expectedOutput || { type: 'application', value: null },
+      id: s.id || problemId,
+      title: s.title || `Benchmark Problem ${problemId}`,
+      description: this.buildDescription(s),
+      category: s.category || 'general',
+      difficulty: s.difficulty || 'basic',
+      requirements: this.extractRequirements(s),
+      constraints: this.extractConstraints(s),
+      testCriteria: s.testCriteria || [],
+      expectedOutput: s.expectedOutput || { type: 'application', value: null },
       metadata: {
-        created_by: spec.metadata?.author || 'req2run-benchmark',
-        created_at: spec.metadata?.created_date || new Date().toISOString(),
-        version: spec.metadata?.version || '1.0.0',
-        category: spec.category || 'general',
-        difficulty: spec.difficulty || 'basic',
-        estimated_time: spec.estimated_time_minutes || 30,
+        created_by: s.metadata?.author || 'req2run-benchmark',
+        created_at: s.metadata?.created_date || new Date().toISOString(),
+        version: s.metadata?.version || '1.0.0',
+        category: s.category || 'general',
+        difficulty: s.difficulty || 'basic',
+        estimated_time: s.estimated_time_minutes || 30,
         benchmark_source: 'req2run-benchmark',
         problem_id: problemId
       }
@@ -489,11 +490,12 @@ export class StandardizedBenchmarkRunner {
 
   // Helper methods
   private buildDescription(spec: unknown): string {
-    let description = spec.description || spec.notes || spec.title || 'Benchmark problem';
+    const s = spec as any;
+    let description = s.description || s.notes || s.title || 'Benchmark problem';
     
-    if (spec.category) description += `\n\nCategory: ${spec.category}`;
-    if (spec.difficulty) description += `\nDifficulty: ${spec.difficulty}`;
-    if (spec.estimated_time_minutes) description += `\nEstimated time: ${spec.estimated_time_minutes} minutes`;
+    if (s.category) description += `\n\nCategory: ${s.category}`;
+    if (s.difficulty) description += `\nDifficulty: ${s.difficulty}`;
+    if (s.estimated_time_minutes) description += `\nEstimated time: ${s.estimated_time_minutes} minutes`;
 
     return description;
   }
@@ -537,12 +539,13 @@ export class StandardizedBenchmarkRunner {
   }
 
   private extractConstraints(spec: unknown): Record<string, unknown> {
+    const s = spec as any;
     return {
-      technical: spec.constraints?.allowed_packages || [],
-      business: spec.constraints?.disallowed_packages || [],
-      performance: spec.requirements?.non_functional?.performance || {},
-      security: spec.requirements?.non_functional?.security || {},
-      platform: spec.constraints?.platform || []
+      technical: s.constraints?.allowed_packages || [],
+      business: s.constraints?.disallowed_packages || [],
+      performance: s.requirements?.non_functional?.performance || {},
+      security: s.requirements?.non_functional?.security || {},
+      platform: s.constraints?.platform || []
     };
   }
 
