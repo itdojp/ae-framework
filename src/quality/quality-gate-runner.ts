@@ -376,7 +376,7 @@ export class QualityGateRunner {
   private async parseGateResult(
     gate: QualityGate,
     result: { stdout: string; stderr: string; code: number },
-    threshold: any,
+    threshold: Record<string, number | undefined>,
     environment: string,
     executionTime: number
   ): Promise<QualityGateResult> {
