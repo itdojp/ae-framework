@@ -218,7 +218,7 @@ export class StandardizedBenchmarkRunner {
       requirements: this.extractRequirements(spec),
       constraints: this.extractConstraints(spec),
       testCriteria: spec.testCriteria || [],
-      expectedOutput: spec.expectedOutput || { type: 'any', value: null },
+      expectedOutput: spec.expectedOutput || { type: 'application', value: null },
       metadata: {
         created_by: spec.metadata?.author || 'req2run-benchmark',
         created_at: spec.metadata?.created_date || new Date().toISOString(),
@@ -266,7 +266,15 @@ export class StandardizedBenchmarkRunner {
       organization: 'Req2Run Benchmark',
       existingSystem: false,
       constraints: Object.entries(spec.constraints || {}).map(([key, value]) => ({
-        type: key as any,
+        type: ((): ProjectContext['constraints'][number]['type'] => {
+          const m: Record<string, ProjectContext['constraints'][number]['type']> = {
+            technical: 'technical',
+            business: 'business',
+            regulatory: 'regulatory',
+            resource: 'resource',
+          };
+          return m[key] ?? 'technical';
+        })(),
         description: Array.isArray(value) ? value.join(', ') : JSON.stringify(value),
         impact: 'high',
         source: 'req2run-benchmark'
@@ -865,7 +873,7 @@ ${Object.entries(data.analytics.performance.averagePhaseTime).map(([phase, time]
 
 ## 🔍 Individual Results
 
-${data.results.map((result: any) => 
+${data.results.map((result) => 
   `### ${result.problemId}
 - **Status**: ${result.success ? '✅ Success' : '❌ Failed'}
 - **Score**: ${result.score.toFixed(1)}/100
