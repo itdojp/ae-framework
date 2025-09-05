@@ -12,7 +12,7 @@ export interface RequirementSpec {
   requirements: string[];
   constraints: {
     business?: string[];
-    performance?: any;
+    performance?: unknown;
   };
   testCriteria: TestCriteria[];
   expectedOutput: ExpectedOutput;
@@ -111,8 +111,8 @@ export interface PhaseExecution {
   startTime: Date;
   endTime: Date;
   duration: number;
-  input: any;
-  output: any;
+  input: unknown;
+  output: unknown;
   success: boolean;
   errors?: string[];
 }
@@ -144,8 +144,8 @@ export interface TestCriteria {
 export interface ExpectedOutput {
   type: OutputType;
   format: string;
-  schema?: any;
-  examples: any[];
+  schema?: unknown;
+  examples: unknown[];
 }
 
 export enum BenchmarkCategory {
@@ -301,7 +301,7 @@ export enum ReportFormat {
 
 export interface ReportDestination {
   type: 'file' | 'github' | 'slack' | 'email' | 'webhook';
-  config: any;
+  config: Record<string, unknown>;
 }
 
 export interface DashboardConfig {
@@ -341,7 +341,7 @@ export interface ExecutionLog {
   level: 'debug' | 'info' | 'warn' | 'error';
   phase?: string;
   message: string;
-  context?: any;
+  context?: Record<string, unknown>;
 }
 
 export interface DocumentationArtifact {
