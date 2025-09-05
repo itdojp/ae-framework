@@ -12,7 +12,8 @@ import {
   PhaseExecution,
   ExecutionDetails,
   GeneratedArtifacts,
-  BenchmarkError 
+  BenchmarkError, 
+  OutputType
 } from '../types/index.js';
 import os from 'node:os';
 import fs from 'fs/promises';
@@ -55,7 +56,22 @@ export class BenchmarkRunner {
       const intent = await this.executePhase(
         AEFrameworkPhase.INTENT_ANALYSIS,
         () => this.intentAgent.analyzeIntent(
-          IntentAgent.createBenchmarkRequest(spec as any)
+          IntentAgent.createBenchmarkRequest({
+            title: spec.title,
+            description: spec.description,
+            requirements: (Array.isArray(spec.requirements) ? spec.requirements : []).map((r: any) => ({
+              id: r.id ?? 'req',
+              description: typeof r === 'string' ? r : r.description,
+              priority: (typeof r?.priority === 'string' ? r.priority : 'must'),
+            })),
+            constraints: spec.constraints,
+            metadata: {
+              created_by: spec.metadata.created_by,
+              created_at: spec.metadata.created_at,
+              category: spec.metadata.category,
+              difficulty: spec.metadata.difficulty,
+            }
+          })
         ),
         phaseExecutions,
         errors
@@ -327,7 +343,7 @@ export class BenchmarkRunner {
           automated: true
         })) || [],
         expectedOutput: {
-          type: 'application' as any,
+          type: OutputType.APPLICATION,
           format: 'executable',
           schema: null,
           examples: []
@@ -554,7 +570,7 @@ Generated: ${data.metadata.timestamp}
 - **Total Execution Time**: ${data.metadata.totalExecutionTime}ms
 
 ## Individual Results
-${data.results.map((result: any) => 
+${data.results.map((result) => 
   `### ${result.problemId}
 - **Status**: ${result.success ? '✅ Success' : '❌ Failed'}
 - **Score**: ${result.score}/100
