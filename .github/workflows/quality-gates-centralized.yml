@@ -23,6 +23,11 @@ jobs:
     with:
       node-version: '20'
       run-script: test:int
+  types:
+    uses: ./.github/workflows/common/ci-core.yml
+    with:
+      node-version: '20'
+      run-script: types:check
   a11y:
     uses: ./.github/workflows/common/ci-core.yml
     with:
@@ -33,3 +38,8 @@ jobs:
     with:
       node-version: '20'
       run-script: test:coverage
+  types-tests:
+    uses: ./.github/workflows/common/ci-core.yml
+    with:
+      node-version: '20'
+      run-script: test:types
