@@ -713,9 +713,11 @@ Generated on: ${new Date().toISOString()}
 
   private assessFunctionalCoverage(output: unknown, spec: RequirementSpec): number {
     // Assess how well the generated output covers the functional requirements
-    const totalRequirements = spec.requirements.filter(r => 
-      typeof r === 'string' || (r as any).type === 'functional'
-    ).length;
+    const totalRequirements = spec.requirements.filter((r) => {
+      if (typeof r === 'string') return true;
+      const t = (r as { type?: string }).type;
+      return t === 'functional';
+    }).length;
     if (totalRequirements === 0) return 100;
 
     // Simple heuristic: if we have UI components and user flows, assume good coverage
