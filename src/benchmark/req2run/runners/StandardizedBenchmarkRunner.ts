@@ -216,7 +216,7 @@ export class StandardizedBenchmarkRunner {
    * Normalize req2run specification to AE Framework format
    */
   private normalizeSpecification(spec: unknown, problemId: string): RequirementSpec {
-    const s = spec as any;
+    const s = spec as MinimalSpec;
     return {
       id: s.id || problemId,
       title: s.title || `Benchmark Problem ${problemId}`,
