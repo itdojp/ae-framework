@@ -851,7 +851,7 @@ Generated on: ${new Date().toISOString()}
     byCategory: Array<{ category: string; successRate: number; avgScore: number; avgTime: number }>;
     topPerformers: Array<{ problemId: string; score: number; time: number }>;
     worstPerformers: Array<{ problemId: string; score: number; time: number }>;
-    results: Array<{ problemId: string; success: boolean; score: number; time: number; phases: any[]; errors: string[] }>;
+    results: Array<{ problemId: string; success: boolean; score: number; time: number; phases: PhaseSummary[]; errors: string[] }>;
   }): string {
     return `# Standardized AE Framework Benchmark Report
 

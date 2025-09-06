@@ -9,6 +9,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { QualityPolicyLoader, QualityGateResult, QualityReport, QualityGate } from './policy-loader.js';
 
+type CoverageThreshold = { lines?: number; functions?: number; branches?: number; statements?: number };
+type LintThreshold = { maxErrors?: number; maxWarnings?: number };
+type SecurityThreshold = { maxCritical?: number; maxHigh?: number; maxMedium?: number };
+type PerfThreshold = Record<string, number | undefined>;
+type A11yThreshold = Record<string, number | undefined>;
+
 // Mock telemetry for main branch compatibility
 type Attributes = Record<string, unknown>;
 const mockTelemetry = {
@@ -392,19 +398,19 @@ export class QualityGateRunner {
     // Parse based on gate category
     switch (gate.category) {
       case 'testing':
-        return this.parseCoverageResult(baseResult, result, threshold);
+        return this.parseCoverageResult(baseResult, result, threshold as CoverageThreshold);
       
       case 'code-quality':
-        return this.parseLintingResult(baseResult, result, threshold);
+        return this.parseLintingResult(baseResult, result, threshold as LintThreshold);
       
       case 'security':
-        return this.parseSecurityResult(baseResult, result, threshold);
+        return this.parseSecurityResult(baseResult, result, threshold as SecurityThreshold);
       
       case 'performance':
-        return this.parsePerformanceResult(baseResult, result, threshold);
+        return this.parsePerformanceResult(baseResult, result, threshold as PerfThreshold);
       
       case 'frontend':
-        return this.parseAccessibilityResult(baseResult, result, threshold);
+        return this.parseAccessibilityResult(baseResult, result, threshold as A11yThreshold);
       
       default:
         // Generic parsing
