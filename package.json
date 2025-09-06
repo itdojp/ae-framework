@@ -65,7 +65,7 @@
     "test:phase3.2:core": "vitest run tests/testing/playwright-integration.test.ts tests/testing/visual-regression.test.ts",
     "test:types": "tsd --files types/**/*.test-d.ts",
     "typecov": "type-coverage -p tsconfig.verify.json --ignore-catch",
-    "typecov:check": "type-coverage -p tsconfig.verify.json --ignore-catch --threshold 60",
+    "typecov:check": "type-coverage -p tsconfig.verify.json --ignore-catch --threshold 65",
     "coverage": "vitest run --coverage",
     "bdd": "cucumber-js",
     "pbt": "vitest run -c tests/property/vitest.config.ts",

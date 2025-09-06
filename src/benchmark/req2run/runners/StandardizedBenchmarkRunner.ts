@@ -546,12 +546,12 @@ export class StandardizedBenchmarkRunner {
   }
 
   private extractConstraints(spec: unknown): Record<string, unknown> {
-    const s = spec as any;
+    const s = spec as MinimalSpec;
     return {
       technical: s.constraints?.allowed_packages || [],
       business: s.constraints?.disallowed_packages || [],
-      performance: s.requirements?.non_functional?.performance || {},
-      security: s.requirements?.non_functional?.security || {},
+      performance: (s.requirements?.non_functional as Record<string, unknown> | undefined)?.performance || {},
+      security: (s.requirements?.non_functional as Record<string, unknown> | undefined)?.security || {},
       platform: s.constraints?.platform || []
     };
   }
