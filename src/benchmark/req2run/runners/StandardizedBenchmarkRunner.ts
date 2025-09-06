@@ -40,6 +40,9 @@ import {
 
 // Minimal generated file descriptor used within this runner (file-local type)
 type GeneratedFile = { path: string; content: string; type: 'typescript' | 'markdown' | 'config' | string; size: number };
+type FunctionalReq = { id?: string; description?: string; priority?: string; acceptance_criteria?: string[] };
+type NonFunctionalRequirements = Record<string, Array<string | { description?: string }>>;
+type PhaseSummary = { phase: string; success: boolean; duration: number; errors: number };
 
 /**
  * Standardized Benchmark Runner
@@ -505,39 +508,39 @@ export class StandardizedBenchmarkRunner {
   }
 
   private extractRequirements(spec: unknown): unknown[] {
-    const requirements = [];
+    const requirements: unknown[] = [];
     
     // Extract functional requirements
-    if (spec.requirements?.functional) {
-      (spec as any).requirements.functional.forEach((req: any, index: number) => {
-        requirements.push({
-          id: req.id || `FUNC-${index + 1}`,
-          description: req.description,
-          type: 'functional',
-          priority: req.priority?.toLowerCase() || 'must',
-          source: 'req2run-benchmark',
-          acceptance_criteria: req.acceptance_criteria || [req.description]
-        });
+    const s = spec as any;
+    const func: FunctionalReq[] = (s.requirements?.functional ?? []) as FunctionalReq[];
+    func.forEach((req, index) => {
+      requirements.push({
+        id: req.id || `FUNC-${index + 1}`,
+        description: req.description,
+        type: 'functional',
+        priority: req.priority?.toLowerCase() || 'must',
+        source: 'req2run-benchmark',
+        acceptance_criteria: req.acceptance_criteria || (req.description ? [req.description] : [])
       });
-    }
+    });
 
     // Extract non-functional requirements
-    if (spec.requirements?.non_functional) {
-      Object.entries((spec as any).requirements.non_functional).forEach(([type, reqs]: [string, any], index) => {
-        if (Array.isArray(reqs)) {
-          reqs.forEach((req, subIndex) => {
-            requirements.push({
-              id: `NFR-${type.toUpperCase()}-${subIndex + 1}`,
-              description: req.description || req,
-              type: 'non-functional',
-              priority: 'should',
-              source: 'req2run-benchmark',
-              acceptance_criteria: [req.description || req]
-            });
+    const nfr: NonFunctionalRequirements = (s.requirements?.non_functional ?? {}) as NonFunctionalRequirements;
+    Object.entries(nfr).forEach(([type, reqs]) => {
+      if (Array.isArray(reqs)) {
+        reqs.forEach((req, subIndex) => {
+          const desc = typeof req === 'string' ? req : req?.description ?? String(req);
+          requirements.push({
+            id: `NFR-${type.toUpperCase()}-${subIndex + 1}`,
+            description: desc,
+            type: 'non-functional',
+            priority: 'should',
+            source: 'req2run-benchmark',
+            acceptance_criteria: [desc]
           });
-        }
-      });
-    }
+        });
+      }
+    });
 
     return requirements;
   }
@@ -561,8 +564,8 @@ export class StandardizedBenchmarkRunner {
       if (typeof req === 'string') {
         content += `- HIGH: ${req}\n`;
       } else {
-        const reqObj = req as any;
-        content += `- ${reqObj.priority?.toUpperCase() || 'HIGH'}: ${reqObj.description}\n`;
+        const r = req as { priority?: string; description?: string };
+        content += `- ${r.priority?.toUpperCase() || 'HIGH'}: ${r.description ?? ''}\n`;
       }
     });
 
@@ -727,14 +730,15 @@ Generated on: ${new Date().toISOString()}
 
   private assessCodeQuality(output: unknown): number {
     // Assess code quality based on generated artifacts
-    if (output.components && output.designSystem) {
+    const o = output as { components?: Array<{ states?: unknown[] }>; designSystem?: { components?: unknown } };
+    if (o.components && o.designSystem) {
       let score = 70; // Base quality score
       
       // Bonus for design system
-      if (output.designSystem.components) score += 10;
+      if (o.designSystem.components) score += 10;
       
       // Bonus for component states and interactions
-      const componentsWithStates = output.components.filter((c: any) => c.states && c.states.length > 0);
+      const componentsWithStates = o.components.filter((c) => Array.isArray(c.states) && c.states.length > 0);
       score += Math.min(20, componentsWithStates.length * 5);
       
       return Math.min(100, score);
