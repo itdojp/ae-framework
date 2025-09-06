@@ -59,10 +59,10 @@ export class BenchmarkRunner {
           IntentAgent.createBenchmarkRequest({
             title: spec.title,
             description: spec.description,
-            requirements: (Array.isArray(spec.requirements) ? spec.requirements : []).map((r: any) => ({
-              id: r.id ?? 'req',
-              description: typeof r === 'string' ? r : r.description,
-              priority: (typeof r?.priority === 'string' ? r.priority : 'must'),
+            requirements: (Array.isArray(spec.requirements) ? spec.requirements : []).map((r) => ({
+              id: (r as { id?: string }).id ?? 'req',
+              description: typeof r === 'string' ? r : (r as { description?: string }).description,
+              priority: (typeof (r as { priority?: string }).priority === 'string' ? (r as { priority?: string }).priority! : 'must'),
             })),
             constraints: spec.constraints,
             metadata: {
@@ -324,20 +324,20 @@ export class BenchmarkRunner {
         description: spec.notes || `${spec.title} - ${spec.category} (${spec.difficulty})`,
         category: spec.category || 'general',
         difficulty: spec.difficulty || 'intermediate',
-        requirements: spec.requirements?.functional?.map((req: any) => ({
-          id: req.id,
-          description: req.description,
+        requirements: spec.requirements?.functional?.map((req) => ({
+          id: (req as { id?: string }).id,
+          description: (req as { description?: string }).description,
           type: 'functional',
-          priority: req.priority.toLowerCase(),
-          acceptance_criteria: [req.description]
+          priority: String((req as { priority?: string }).priority || '').toLowerCase() || 'must',
+          acceptance_criteria: [(req as { description?: string }).description || '']
         })) || [],
         constraints: {
           business: spec.constraints?.disallowed_packages || [],
           performance: spec.requirements?.non_functional?.performance || {}
         },
-        testCriteria: spec.requirements?.functional?.map((req: any) => ({
-          id: req.id || `test-${Date.now()}`,
-          description: `Test: ${req.description}`,
+        testCriteria: spec.requirements?.functional?.map((req) => ({
+          id: (req as { id?: string }).id || `test-${Date.now()}`,
+          description: `Test: ${(req as { description?: string }).description || ''}`,
           type: 'unit',
           weight: 1.0,
           automated: true
