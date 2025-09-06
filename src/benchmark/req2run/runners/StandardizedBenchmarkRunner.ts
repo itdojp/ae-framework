@@ -892,7 +892,7 @@ ${data.results.map((result) =>
 - **Functional Coverage**: ${result.functionalCoverage.toFixed(1)}%
 
 #### Phase Breakdown
-${result.phases.map((phase: any) => 
+${result.phases.map((phase) => 
   `- **${phase.phase}**: ${phase.success ? '✅' : '❌'} (${(phase.duration / 1000).toFixed(2)}s${phase.errors > 0 ? `, ${phase.errors} errors` : ''})`
 ).join('\n')}
 
