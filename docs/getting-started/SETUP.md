@@ -11,9 +11,9 @@
 ### 📋 Prerequisites
 
 #### System Requirements
-- **Node.js**: 20.11 or higher
-- **pnpm**: 9.x (recommended package manager)
-- **TypeScript**: 5.5.0 or higher
+- **Node.js**: 20.11 以上（22系でも動作確認済み）
+- **pnpm**: 10.x（Corepack での有効化を推奨）
+- **TypeScript**: 5.9.x 以上
 - **Git**: 2.0 or higher
 - **Playwright**: 1.47.0 or higher (for E2E testing)
 
@@ -27,7 +27,7 @@
 Note: With Node.js 20+, enable Corepack to use the bundled pnpm:
 ```bash
 corepack enable
-corepack prepare pnpm@latest --activate  # optional pin
+corepack prepare pnpm@10 --activate  # 推奨の固定
 ```
 
 #### 1. Clone Repository
@@ -41,7 +41,8 @@ cd ae-framework
 
 **Using pnpm (recommended):**
 ```bash
-pnpm install
+# CI環境等でロックファイルの読み書きが制限されている場合は --no-frozen-lockfile を使用
+pnpm install --no-frozen-lockfile
 ```
 
 注: このプロジェクトは pnpm を前提としています。
@@ -189,6 +190,7 @@ pnpm run test:int
 pnpm run test:a11y
 pnpm run test:coverage
 ```
+備考: 一部のテスト/型チェックは既知の制約により失敗する場合があります。ハンドオフREADMEの対象テスト（ベンチマーク系）での確認を推奨します。
 
 **Flake Detection & Isolation System**
 ```bash
@@ -259,7 +261,7 @@ Error: Node.js version 16.x is not supported
 ```bash
 error TS2307: Cannot find module './types.js'
 ```
-**Solution**: ES module format requires `.js` extension
+**Solution**: ES module format requires `.js` extension（verbatimModuleSyntax 対応）
 ```typescript
 // ❌ Wrong
 import { Type } from './types';
@@ -326,6 +328,40 @@ Update to latest version:
 git pull origin main
 pnpm install
 pnpm run build
+```
+
+### 🔎 Quick Functional Checks（CLI）
+
+代表的なCLIの動作確認例です。
+
+```bash
+# Runtime Conformance（サンプル生成→検証）
+pnpm tsx src/cli/conformance-cli.ts sample \
+  --rules samples/sample-rules.json \
+  --config samples/sample-config.json \
+  --data samples/sample-data.json \
+  --context samples/sample-context.json
+
+pnpm tsx src/cli/conformance-cli.ts verify \
+  --input samples/sample-data.json \
+  --context-file samples/sample-context.json \
+  --rules samples/sample-rules.json \
+  --format json --output conformance-results.json
+
+# SBOM 生成（依存グラフ抽出はロックファイルが無い場合に警告）
+pnpm tsx src/cli/index.ts sbom generate --format json --output sbom.json --verbose
+
+# UI Scaffold（Dry Run）
+pnpm tsx src/cli/ui-scaffold-cli.ts generate \
+  --state samples/phase-state.example.json \
+  --output ./.ae/ui --dry-run
+
+# ベンチマーク一覧とドライラン
+pnpm tsx src/cli/benchmark-cli.ts list --enabled-only
+pnpm tsx src/cli/benchmark-cli.ts run --ci --dry-run
+
+# セキュリティ設定の表示
+pnpm tsx src/cli/index.ts security show-config --env development
 ```
 
 Regular updates are recommended to get the latest features and fixes.
