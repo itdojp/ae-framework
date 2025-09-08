@@ -105,6 +105,93 @@ ae-framework natural-language --identify-gaps --sources="current-requirements.md
 
 **Example Output:**
 ```
+
+## SBOM Management
+
+### sbom command
+Generate, validate, and compare Software Bill of Materials
+
+```bash
+# Generate SBOM (JSON)
+ae-framework sbom generate --format json --output sbom.json --verbose
+
+# Validate existing SBOM
+ae-framework sbom validate sbom.json --verbose
+
+# Compare two SBOMs
+ae-framework sbom compare base.json head.json --verbose
+```
+
+Notes:
+- Dependency graph extraction prefers lockfiles. Without lockfiles, component listing still works but dependency graph may be empty.
+
+## Benchmark Runner
+
+### benchmark command
+Run Req2Run-based benchmarks and utilities
+
+```bash
+# List available problems
+ae-framework benchmark list --enabled-only
+
+# Dry-run with CI profile
+ae-framework benchmark run --ci --dry-run
+
+# Generate sample config
+ae-framework benchmark init --output benchmark-config.json --difficulty basic
+```
+
+## Quality Gates
+
+### quality command
+Execute environment-specific quality gates
+
+```bash
+# Run (parallel by default)
+ae-framework quality run --env development --dry-run
+
+# List configured gates
+ae-framework quality list --env development --format summary
+
+# Show policy and validate
+ae-framework quality policy --env development
+ae-framework quality validate
+```
+
+## Security Utilities
+
+### security command
+Security headers configuration and checks
+
+```bash
+# Show environment config
+ae-framework security show-config --env development
+
+# Header check against a running server
+ae-framework security check-headers --url http://localhost:3000/health
+```
+
+## Circuit Breaker Tools
+
+### circuit-breaker command
+Manage circuit breaker instances and health
+
+```bash
+ae-framework circuit-breaker create --name demo --failure-threshold 3 --success-threshold 2 --timeout 60000
+ae-framework circuit-breaker list
+ae-framework circuit-breaker stats --name demo
+```
+
+## Resilience System
+
+### resilience command
+Create and test resilience systems (retry, circuit breaker, rate limiting, etc.)
+
+```bash
+ae-framework resilience create --name default --preset default
+ae-framework resilience health --name default
+ae-framework resilience test --name default --operations 20 --failure-rate 0.2
+```
 ✅ Requirements Analysis - 15 requirements identified
 📊 Analysis:
   • Functional Requirements: 10

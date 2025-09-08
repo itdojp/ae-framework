@@ -1506,6 +1506,41 @@ export class TelemetryService {
     return this.lastQualityScore;
   }
 }
+
+#### Enhanced Telemetry (2025 updates)
+
+- NodeSDK ベースの初期化に加えて、`EnhancedTelemetry` 実装（`src/telemetry/enhanced-telemetry.ts`）を導入
+- 代表的な計測:
+  - Observable Gauges（メモリ/CPU/プロセス稼働時間/接続数）
+  - Counter/Histogram による品質・契約違反の記録
+- 型安全性:
+  - バッチ観測のコールバックで属性を `Record<string, string|number|boolean>` として明示
+  - 例外時のロギングは `error-utils` の `toMessage` を用いて安全に整形
+
+```typescript
+// 簡易属性型と観測結果インタフェース
+type Attrs = Record<string, string | number | boolean>;
+interface MinimalObservableResult {
+  observe: (instrument: ObservableGauge | undefined, value: number, attributes?: Attrs) => void;
+}
+
+this.meter.addBatchObservableCallback((observableResult: MinimalObservableResult) => {
+  try {
+    const mem = process.memoryUsage();
+    observableResult.observe(this.systemMetrics.memoryUsage, mem.heapUsed, { component: 'memory', type: 'heap_used' } as Attrs);
+    // ...
+  } catch (error: unknown) {
+    console.error('Error collecting system metrics:', toMessage(error));
+  }
+}, [this.systemMetrics.memoryUsage, this.systemMetrics.cpuUsage, this.systemMetrics.processUptime]);
+```
+
+### 🧰 Error Handling Policy（CLI）
+
+- すべての CLI で「unknown-first」ポリシーを採用
+  - `catch (error: unknown) { console.error(chalk.red(\`❌ <prefix>: ${toMessage(error)}\`)); }`
+- 例外整形は `src/utils/error-utils.ts` に集約（`toMessage`/`toStack`）
+- 以前の動的 import を廃止し、`error-utils` は静的 import 化（型安全性とバンドル最適化）
 ```
 
 #### Quality Metrics Collection

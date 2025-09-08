@@ -92,6 +92,16 @@ ae-framework ui-scaffold --components  # UI generation
 - ✅ TypeScript: Zero type errors, strict mode
 - ✅ ESLint: Zero syntax errors
 
+Type Coverage Policy
+- Baseline: 65% is measured and commented on PRs.
+- Label-gated enforcement: Add PR label `enforce-typecov` to enforce 70% (CI fails if below).
+- Details: see `docs/quality/type-coverage-policy.md`.
+
+Error Handling Policy (CLI)
+- Unknown-first error handling across CLI: `catch (error: unknown)` + `toMessage(error)` for safe formatting
+- Unified error prefix: `❌ <short prefix>: <message>` with chalk.red
+- Static import for `error-utils` to improve type-safety and bundling
+
 ### 🤝 Contributing
 
 We welcome international contributions! Please see our [Contributing Guide](CONTRIBUTING.md).
@@ -104,6 +114,16 @@ We welcome international contributions! Please see our [Contributing Guide](CONT
   - [CodeX Quick Start](docs/integrations/QUICK-START-CODEX.md)
 - [API Reference](docs/reference/API.md)
 - [CLI Commands](docs/reference/CLI-COMMANDS-REFERENCE.md)
+
+### 🧪 CI Quick Guide
+
+- Minimal checks locally
+  - `pnpm run test:unit` / `pnpm run test:fast`
+  - Benchmark focused tests: see `docs/handoff/README.md`
+- Quality gates may fail depending on environment/policy
+  - Use `ae-framework quality run --env development --dry-run` for smoke
+  - Type coverage policy is reported at 65% baseline; `enforce-typecov` label enforces 70%
+  - Some jobs (security/audit/container) require network/secrets and may be red on forks
 
 ---
 
@@ -197,6 +217,25 @@ TDD（Test-Driven Development）原則の遵守を自動的に強制：
 - **Coverage Guard**: 最低カバレッジ（80%）の維持を監視
 
 ### 🎨 Phase 6: UI/UX & Frontend Delivery
+
+#### 品質ゲート（概要）
+- 型カバレッジ: 基準65%（PRコメント報告）、ラベル `enforce-typecov` 付与時に70%を強制（未満でCI失敗）。
+- 詳細は `docs/quality/type-coverage-policy.md` を参照してください。
+
+エラーハンドリング方針（CLI）
+- 全CLIで unknown-first: `catch (error: unknown)` + `toMessage(error)` による安全な整形
+- エラー出力の統一: `❌ <短い前置き>: <本文>`（chalk.red）
+- `error-utils` は静的 import 化（型安全性とバンドル最適化）
+
+### 🧪 CI クイックガイド
+
+- ローカルでの最小確認
+  - `pnpm run test:unit` / `pnpm run test:fast`
+  - ベンチマーク系の重点テストは `docs/handoff/README.md` を参照
+- Quality Gates は環境/ポリシーによりREDになる場合があります
+  - `ae-framework quality run --env development --dry-run` でスモーク
+  - 型カバレッジは65%基準のレポート、`enforce-typecov` ラベルで70%強制
+  - セキュリティ/監査/コンテナ系はネットワーク・シークレット前提のためフォーク環境ではREDになり得ます
 
 **OpenTelemetryテレメトリ監視**
 Phase 6では**OpenTelemetry**を使用してリアルタイム品質監視を実行：
