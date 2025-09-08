@@ -18,6 +18,7 @@ import {
   FailureArtifactFactory
 } from '../cegis/failure-artifact-schema.js';
 import { AutoFixEngine, AutoFixOptions } from '../cegis/auto-fix-engine.js';
+import { toMessage } from '../utils/error-utils.js';
 
 const program = new Command();
 
@@ -40,8 +41,8 @@ program
   .action(async (options) => {
     try {
       await executeAutoFix(options);
-    } catch (error) {
-      console.error(chalk.red('❌ Auto-fix failed:'), error);
+    } catch (error: unknown) {
+      console.error(chalk.red('❌ Auto-fix failed:'), toMessage(error));
       process.exit(1);
     }
   });
@@ -56,8 +57,8 @@ program
   .action(async (options) => {
     try {
       await executeAnalysis(options);
-    } catch (error) {
-      console.error(chalk.red('❌ Analysis failed:'), error);
+    } catch (error: unknown) {
+      console.error(chalk.red('❌ Analysis failed:'), toMessage(error));
       process.exit(1);
     }
   });
@@ -76,8 +77,8 @@ program
   .action(async (options) => {
     try {
       await createFailureArtifact(options);
-    } catch (error) {
-      console.error(chalk.red('❌ Failed to create artifact:'), error);
+    } catch (error: unknown) {
+      console.error(chalk.red('❌ Failed to create artifact:'), toMessage(error));
       process.exit(1);
     }
   });
@@ -90,8 +91,8 @@ program
   .action(async (options) => {
     try {
       await validateArtifacts(options);
-    } catch (error) {
-      console.error(chalk.red('❌ Validation failed:'), error);
+    } catch (error: unknown) {
+      console.error(chalk.red('❌ Validation failed:'), toMessage(error));
       process.exit(1);
     }
   });
@@ -104,8 +105,8 @@ program
   .action(async (options) => {
     try {
       await showFixHistory(options);
-    } catch (error) {
-      console.error(chalk.red('❌ Failed to show history:'), error);
+    } catch (error: unknown) {
+      console.error(chalk.red('❌ Failed to show history:'), toMessage(error));
       process.exit(1);
     }
   });
@@ -119,8 +120,8 @@ program
   .action(async (options) => {
     try {
       await generateDemoArtifacts(options);
-    } catch (error) {
-      console.error(chalk.red('❌ Demo generation failed:'), error);
+    } catch (error: unknown) {
+      console.error(chalk.red('❌ Demo generation failed:'), toMessage(error));
       process.exit(1);
     }
   });
@@ -337,9 +338,8 @@ async function validateArtifacts(options: any): Promise<void> {
       validateFailureArtifact(data);
       console.log(chalk.green('✅ Single artifact is valid'));
     }
-  } catch (error) {
-    console.error(chalk.red('❌ Validation failed:'));
-    console.error(chalk.red(error instanceof Error ? error.message : String(error)));
+  } catch (error: unknown) {
+    console.error(chalk.red('❌ Validation failed:'), toMessage(error));
     process.exit(1);
   }
 }
@@ -385,7 +385,7 @@ async function generateDemoArtifacts(options: any): Promise<void> {
     artifacts.push(FailureArtifactFactory.create({
       title: `Demo Failure ${artifacts.length + 1}`,
       description: `This is a demo failure artifact for testing purposes`,
-      severity: ['critical', 'major', 'minor'][Math.floor(Math.random() * 3)] as any,
+      severity: (['critical', 'major', 'minor'][Math.floor(Math.random() * 3)] as 'critical' | 'major' | 'minor'),
       category: 'runtime_error',
     }));
   }

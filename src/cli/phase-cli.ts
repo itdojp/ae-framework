@@ -8,6 +8,8 @@ import { Command } from 'commander';
 import { PhaseStateManager, PhaseType } from '../utils/phase-state-manager.js';
 import * as fs from 'fs';
 import * as path from 'path';
+import { toMessage } from '../utils/error-utils.js';
+import chalk from 'chalk';
 
 const program = new Command();
 const manager = new PhaseStateManager();
@@ -27,7 +29,7 @@ program
     try {
       const hasProject = await manager.hasProject();
       if (hasProject) {
-        console.error('❌ Project already initialized. Use "ae-phase reset" to start over.');
+        console.error(chalk.red('❌ Project already initialized. Use "ae-phase reset" to start over.'));
         process.exit(1);
       }
 
@@ -43,8 +45,8 @@ program
       }
       console.log(`🔒 Approvals Required: ${state.approvalsRequired ? 'Yes' : 'No'}`);
       console.log(`📍 Current Phase: ${state.currentPhase}`);
-    } catch (error: any) {
-      console.error(`❌ Error: ${error.message}`);
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
       process.exit(1);
     }
   });
@@ -58,7 +60,7 @@ program
     try {
       const state = await manager.getCurrentState();
       if (!state) {
-        console.error('❌ No project found. Run "ae-phase init" first.');
+        console.error(chalk.red('❌ No project found. Run "ae-phase init" first.'));
         process.exit(1);
       }
 
@@ -86,8 +88,8 @@ program
           console.log(`📝 Current phase not started`);
         }
       }
-    } catch (error: any) {
-      console.error(`❌ Error: ${error.message}`);
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
       process.exit(1);
     }
   });
@@ -100,8 +102,8 @@ program
     try {
       await manager.startPhase(phase);
       console.log(`✅ Started phase: ${phase}`);
-    } catch (error: any) {
-      console.error(`❌ Error: ${error.message}`);
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
       process.exit(1);
     }
   });
@@ -126,8 +128,8 @@ program
       if (state?.approvalsRequired) {
         console.log(`⏳ Phase requires approval before proceeding`);
       }
-    } catch (error: any) {
-      console.error(`❌ Error: ${error.message}`);
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
       process.exit(1);
     }
   });
@@ -155,8 +157,8 @@ program
         const nextPhase = manager.getNextPhase(state!.currentPhase);
         console.log(`➡️  Ready to transition to phase: ${nextPhase}`);
       }
-    } catch (error: any) {
-      console.error(`❌ Error: ${error.message}`);
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
       process.exit(1);
     }
   });
@@ -173,8 +175,8 @@ program
       } else {
         console.log(`🎉 All phases completed!`);
       }
-    } catch (error: any) {
-      console.error(`❌ Error: ${error.message}`);
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
       process.exit(1);
     }
   });
@@ -206,8 +208,8 @@ program
         
         console.log(`${phase} | ${status} | ${started} | ${completed} | ${duration}`);
       }
-    } catch (error: any) {
-      console.error(`❌ Error: ${error.message}`);
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
       process.exit(1);
     }
   });
@@ -233,13 +235,13 @@ program
         try {
           await fs.promises.unlink(stateFile);
           console.log(`✅ Reset entire project`);
-        } catch (error) {
+        } catch (error: unknown) {
           // File might not exist, which is fine
           console.log(`✅ Project reset (no existing state found)`);
         }
       }
-    } catch (error: any) {
-      console.error(`❌ Error: ${error.message}`);
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
       process.exit(1);
     }
   });
@@ -258,8 +260,8 @@ program
         console.log(`📦 Artifacts for phase ${phase}:`);
         artifacts.forEach(a => console.log(`   - ${a}`));
       }
-    } catch (error: any) {
-      console.error(`❌ Error: ${error.message}`);
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
       process.exit(1);
     }
   });

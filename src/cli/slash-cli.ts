@@ -7,6 +7,7 @@
 import { Command } from 'commander';
 import { SlashCommandManager } from '../commands/slash-command-manager.js';
 import chalk from 'chalk';
+import { toMessage } from '../utils/error-utils.js';
 import * as readline from 'readline';
 
 const program = new Command();
@@ -42,10 +43,10 @@ program
         console.log(chalk.red('❌ Failed'));
         console.log(result.message);
       }
-    } catch (error: any) {
-      console.error(chalk.red(`❌ Error: ${error.message}`));
-      process.exit(1);
-    }
+  } catch (error: unknown) {
+    console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
+    process.exit(1);
+  }
   });
 
 // Parse commands from text
@@ -93,10 +94,10 @@ program
       
       const successCount = results.filter(r => r.success).length;
       console.log(chalk.blue(`\n📊 Results: ${successCount}/${results.length} successful`));
-    } catch (error: any) {
-      console.error(chalk.red(`❌ Error: ${error.message}`));
-      process.exit(1);
-    }
+  } catch (error: unknown) {
+    console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
+    process.exit(1);
+  }
   });
 
 // List all commands
@@ -200,9 +201,9 @@ program
             }
           }
         }
-      } catch (error: any) {
-        console.error(chalk.red(`Error: ${error.message}`));
-      }
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
+    }
       
       console.log('');
       rl.prompt();

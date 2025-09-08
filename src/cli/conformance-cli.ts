@@ -7,6 +7,8 @@ import { Command } from 'commander';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import type { join } from 'path';
 import { ConformanceVerificationEngine } from '../conformance/verification-engine.js';
+import chalk from 'chalk';
+import { toMessage } from '../utils/error-utils.js';
 import { 
   ConformanceRule, 
   ConformanceConfig, 
@@ -120,12 +122,12 @@ export class ConformanceCli {
 
       // Load input data
       if (!options.input) {
-        console.error('❌ Input file is required. Use --input to specify the data file.');
+        console.error(chalk.red('❌ Input file is required. Use --input to specify the data file.'));
         return;
       }
 
       if (!existsSync(options.input)) {
-        console.error(`❌ Input file not found: ${options.input}`);
+        console.error(chalk.red(`❌ Input file not found: ${options.input}`));
         return;
       }
 
@@ -177,8 +179,8 @@ export class ConformanceCli {
         console.log(`💾 Results saved to ${options.output}`);
       }
 
-    } catch (error) {
-      console.error('❌ Verification failed:', error instanceof Error ? error.message : error);
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Verification failed: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -237,8 +239,8 @@ export class ConformanceCli {
         console.log(`✅ Successfully imported all rules`);
       }
 
-    } catch (error) {
-      console.error('❌ Rules operation failed:', error instanceof Error ? error.message : error);
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Rules operation failed: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -267,7 +269,7 @@ export class ConformanceCli {
           this.engine.updateConfig(updateObj);
           console.log(`✅ Set ${key} = ${value}`);
         } else {
-          console.error('❌ Invalid format. Use: --set key=value');
+          console.error(chalk.red('❌ Invalid format. Use: --set key=value'));
         }
       }
 
@@ -283,8 +285,8 @@ export class ConformanceCli {
         console.log('🔄 Configuration reset to defaults');
       }
 
-    } catch (error) {
-      console.error('❌ Config operation failed:', error instanceof Error ? error.message : error);
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Config operation failed: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -334,8 +336,8 @@ export class ConformanceCli {
         console.log(`💾 Metrics exported to ${options.export}`);
       }
 
-    } catch (error) {
-      console.error('❌ Metrics operation failed:', error instanceof Error ? error.message : error);
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Metrics operation failed: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -666,8 +668,8 @@ export async function executeConformanceCli(args: string[]): Promise<void> {
   
   try {
     await command.parseAsync(args);
-  } catch (error) {
-    console.error('❌ CLI execution failed:', error instanceof Error ? error.message : error);
+  } catch (error: unknown) {
+    console.error(chalk.red(`❌ CLI execution failed: ${toMessage(error)}`));
     process.exit(1);
   }
 }

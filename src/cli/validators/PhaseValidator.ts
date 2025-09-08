@@ -2,6 +2,7 @@ import { execSync } from 'child_process';
 import { existsSync } from 'fs';
 import { glob } from 'glob';
 import { AEFrameworkConfig, Phase, ValidationResult, ValidationDetail, Prerequisite } from '../types.js';
+import { toMessage } from '../../utils/error-utils.js';
 
 export class PhaseValidator {
   constructor(private config: AEFrameworkConfig) {}
@@ -166,8 +167,8 @@ export class PhaseValidator {
         passed: hasTests,
         message: hasTests ? undefined : 'No test files found'
       };
-    } catch (error) {
-      return { passed: false, message: `Error checking tests: ${error}` };
+    } catch (error: unknown) {
+      return { passed: false, message: `Error checking tests: ${toMessage(error)}` };
     }
   }
 
@@ -232,8 +233,8 @@ export class PhaseValidator {
           ? 'All source files have corresponding tests'
           : `Files without tests: ${srcFilesWithoutTests.slice(0, 3).join(', ')}${srcFilesWithoutTests.length > 3 ? '...' : ''}`
       };
-    } catch (error) {
-      return { passed: false, message: `Error checking test coverage: ${error}` };
+    } catch (error: unknown) {
+      return { passed: false, message: `Error checking test coverage: ${toMessage(error)}` };
     }
   }
 
@@ -251,8 +252,8 @@ export class PhaseValidator {
         passed,
         message: `Coverage: ${coverage}% (threshold: ${threshold}%)`
       };
-    } catch (error) {
-      return { passed: false, message: 'Could not determine coverage' };
+    } catch (error: unknown) {
+      return { passed: false, message: `Could not determine coverage: ${toMessage(error)}` };
     }
   }
 
@@ -261,10 +262,10 @@ export class PhaseValidator {
       // Run all types of tests
       execSync('npm run test:all --silent', { encoding: 'utf8', stdio: 'pipe' });
       return { passed: true, message: 'Full test suite passed' };
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         passed: false,
-        message: `Test suite failed: ${error.message}`
+        message: `Test suite failed: ${toMessage(error)}`
       };
     }
   }
@@ -277,8 +278,8 @@ export class PhaseValidator {
       } else {
         return { passed: false, message: 'Traceability script not found' };
       }
-    } catch (error) {
-      return { passed: false, message: 'Traceability verification failed' };
+    } catch (error: unknown) {
+      return { passed: false, message: `Traceability verification failed: ${toMessage(error)}` };
     }
   }
 }

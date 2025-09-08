@@ -4,6 +4,7 @@ import { Command } from 'commander';
 import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
+import { toMessage } from '../utils/error-utils.js';
 import { UIScaffoldGenerator } from '../generators/ui-scaffold-generator.js';
 import type { spawn } from 'child_process';
 
@@ -79,9 +80,8 @@ program
         console.log(chalk.gray('  Run npm run lint to ensure code quality.'));
       }
 
-    } catch (error) {
-      console.error(chalk.red('✗ Generation failed:'));
-      console.error(chalk.red(error instanceof Error ? error.message : String(error)));
+    } catch (error: unknown) {
+      console.error(chalk.red('✗ Generation failed:'), toMessage(error));
       if (error instanceof Error && error.stack) {
         console.error(chalk.gray(error.stack));
       }
@@ -118,9 +118,8 @@ program
         });
       }
 
-    } catch (error) {
-      console.error(chalk.red('✗ Failed to list entities:'));
-      console.error(chalk.red(error instanceof Error ? error.message : String(error)));
+    } catch (error: unknown) {
+      console.error(chalk.red('✗ Failed to list entities:'), toMessage(error));
       process.exit(1);
     }
   });
@@ -157,9 +156,8 @@ program
         process.exit(1);
       }
 
-    } catch (error) {
-      console.error(chalk.red('✗ Validation failed:'));
-      console.error(chalk.red(error instanceof Error ? error.message : String(error)));
+    } catch (error: unknown) {
+      console.error(chalk.red('✗ Validation failed:'), toMessage(error));
       process.exit(1);
     }
   });

@@ -3,6 +3,7 @@ import { initTelemetry } from '../infra/telemetry.js';
 import { Database, initDatabase } from '../infra/db.js';
 import { InventoryServiceImpl } from '../domain/services.js';
 import { createServer } from '../api/server.js';
+import chalk from 'chalk';
 import { reservationRoutes } from '../api/routes/reservations.js';
 
 async function main() {
@@ -29,14 +30,15 @@ async function main() {
   try {
     await app.listen({ port, host });
     console.log(`Server listening on http://${host}:${port}`);
-  } catch (err) {
-    app.log.error(err);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    app.log.error(chalk.red(`❌ Failed to start server: ${msg}`));
     process.exit(1);
   }
 }
 
-main().catch(err => {
-  console.error(err);
+main().catch((err: unknown) => {
+  const msg = err instanceof Error ? err.message : String(err);
+  console.error(chalk.red(`❌ Unhandled server error: ${msg}`));
   process.exit(1);
 });
-

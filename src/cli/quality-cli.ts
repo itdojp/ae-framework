@@ -6,6 +6,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { QualityPolicyLoader, qualityPolicy } from '../quality/policy-loader.js';
+import { toMessage } from '../utils/error-utils.js';
 import { QualityGateRunner } from '../quality/quality-gate-runner.js';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -49,8 +50,8 @@ export function createQualityCommand(): Command {
         } else {
           console.log(chalk.green('\n✅ All quality gates passed!'));
         }
-      } catch (error) {
-        console.error(chalk.red('❌ Error running quality gates:'), error);
+      } catch (error: unknown) {
+        console.error(chalk.red(`❌ Error running quality gates: ${toMessage(error)}`));
         process.exit(1);
       }
     });
@@ -120,8 +121,8 @@ export function createQualityCommand(): Command {
             );
           });
         }
-      } catch (error) {
-        console.error(chalk.red('❌ Error listing quality gates:'), error);
+      } catch (error: unknown) {
+        console.error(chalk.red(`❌ Error listing quality gates: ${toMessage(error)}`));
         process.exit(1);
       }
     });
@@ -161,11 +162,13 @@ export function createQualityCommand(): Command {
           
         } else {
           // Show full policy
-          const policy = qualityPolicy.exportPolicy(options.format as any);
+          const allowed: Array<'json' | 'yaml' | 'summary'> = ['json', 'yaml', 'summary'];
+          const fmt = allowed.includes(options.format) ? options.format as 'json' | 'yaml' | 'summary' : 'json';
+          const policy = qualityPolicy.exportPolicy(fmt);
           console.log(policy);
         }
-      } catch (error) {
-        console.error(chalk.red('❌ Error showing policy:'), error);
+      } catch (error: unknown) {
+        console.error(chalk.red(`❌ Error showing policy: ${toMessage(error)}`));
         process.exit(1);
       }
     });
@@ -224,8 +227,8 @@ export function createQualityCommand(): Command {
           }
         }
         
-      } catch (error) {
-        console.error(chalk.red('❌ Error validating policy:'), error);
+      } catch (error: unknown) {
+        console.error(chalk.red(`❌ Error validating policy: ${toMessage(error)}`));
         process.exit(1);
       }
     });
@@ -297,8 +300,8 @@ export function createQualityCommand(): Command {
             }
           });
         }
-      } catch (error) {
-        console.error(chalk.red('❌ Error showing reports:'), error);
+      } catch (error: unknown) {
+        console.error(chalk.red(`❌ Error showing reports: ${toMessage(error)}`));
         process.exit(1);
       }
     });
@@ -337,8 +340,8 @@ export function createQualityCommand(): Command {
           console.log(chalk.red('❌ Failed to create quality policy configuration'));
           process.exit(1);
         }
-      } catch (error) {
-        console.error(chalk.red('❌ Error initializing quality configuration:'), error);
+      } catch (error: unknown) {
+        console.error(chalk.red(`❌ Error initializing quality configuration: ${toMessage(error)}`));
         process.exit(1);
       }
     });

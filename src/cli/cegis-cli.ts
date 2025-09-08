@@ -4,11 +4,14 @@
  */
 
 import { Command } from 'commander';
+import chalk from 'chalk';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import type { join } from 'path';
 import { AutoFixEngine } from '../cegis/auto-fix-engine.js';
+import type { FailureCategory } from '../cegis/types.js';
 import { FailureArtifactFactory } from '../cegis/failure-artifact-factory.js';
 import { FailureArtifact, AutoFixOptions } from '../cegis/types.js';
+import { toMessage } from '../utils/error-utils.js';
 
 export class CEGISCli {
   private engine: AutoFixEngine;
@@ -115,12 +118,12 @@ export class CEGISCli {
       const maxRiskLevel = autoFixOptions.maxRiskLevel ?? 3;
       
       if (confidenceThreshold < 0 || confidenceThreshold > 1) {
-        console.error('❌ Confidence threshold must be between 0.0 and 1.0');
+        console.error(chalk.red('❌ Confidence threshold must be between 0.0 and 1.0'));
         return;
       }
 
       if (maxRiskLevel < 1 || maxRiskLevel > 5) {
-        console.error('❌ Risk level must be between 1 and 5');
+        console.error(chalk.red('❌ Risk level must be between 1 and 5'));
         return;
       }
 
@@ -130,8 +133,8 @@ export class CEGISCli {
       // Display results
       await this.displayResults(result, options);
 
-    } catch (error) {
-      console.error('❌ Auto-fix failed:', error instanceof Error ? error.message : error);
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Auto-fix failed: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -185,8 +188,8 @@ export class CEGISCli {
         }
       }
 
-    } catch (error) {
-      console.error('❌ Analysis failed:', error instanceof Error ? error.message : error);
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Analysis failed: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -199,7 +202,7 @@ export class CEGISCli {
       console.log('📝 Creating failure artifact...');
 
       if (!options.message) {
-        console.error('❌ Error message is required');
+        console.error(chalk.red('❌ Error message is required'));
         return;
       }
 
@@ -253,7 +256,7 @@ export class CEGISCli {
           break;
 
         default:
-          console.error(`❌ Unknown artifact type: ${options.type}`);
+          console.error(chalk.red(`❌ Unknown artifact type: ${options.type}`));
           return;
       }
 
@@ -261,8 +264,8 @@ export class CEGISCli {
       writeFileSync(options.output, JSON.stringify([artifact], null, 2));
       console.log(`✅ Failure artifact created: ${options.output}`);
 
-    } catch (error) {
-      console.error('❌ Failed to create artifact:', error instanceof Error ? error.message : error);
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Failed to create artifact: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -276,11 +279,11 @@ export class CEGISCli {
     console.log(`Engine: AutoFixEngine`);
     
     // Show available strategies
-    const allCategories = ['type_error', 'test_failure', 'contract_violation', 'lint_error', 'build_error'];
+    const allCategories: FailureCategory[] = ['type_error', 'test_failure', 'contract_violation', 'lint_error', 'build_error'];
     console.log('\n📋 Available Strategies:');
     
     for (const category of allCategories) {
-      const strategies = this.engine.getStrategies(category as any);
+      const strategies = this.engine.getStrategies(category as FailureCategory);
       console.log(`- ${category}: ${strategies.length} strategies`);
     }
 
@@ -298,13 +301,13 @@ export class CEGISCli {
   private async handleStrategiesCommand(options: any): Promise<void> {
     console.log('🛠️  Available Fix Strategies\n');
 
-    const allCategories = ['type_error', 'test_failure', 'contract_violation', 'lint_error', 'build_error'];
-    const categoriesToShow = options.category 
-      ? [options.category] 
+    const allCategories: FailureCategory[] = ['type_error', 'test_failure', 'contract_violation', 'lint_error', 'build_error'];
+    const categoriesToShow: FailureCategory[] = options.category && allCategories.includes(options.category as FailureCategory)
+      ? [options.category as FailureCategory]
       : allCategories;
 
     for (const category of categoriesToShow) {
-      const strategies = this.engine.getStrategies(category as any);
+      const strategies = this.engine.getStrategies(category);
       
       if (strategies.length === 0) {
         console.log(`${category}: No strategies available`);
@@ -345,14 +348,14 @@ export class CEGISCli {
       return artifacts.map(artifact => {
         try {
           return FailureArtifactFactory.validate(artifact);
-        } catch (error) {
-          console.warn(`⚠️  Invalid artifact skipped: ${error instanceof Error ? error.message : error}`);
+        } catch (error: unknown) {
+          console.warn(`⚠️  Invalid artifact skipped: ${toMessage(error)}`);
           return null;
         }
       }).filter(Boolean) as FailureArtifact[];
       
-    } catch (error) {
-      throw new Error(`Failed to parse input file: ${error instanceof Error ? error.message : error}`);
+    } catch (error: unknown) {
+      throw new Error(`Failed to parse input file: ${toMessage(error)}`);
     }
   }
 
@@ -425,8 +428,8 @@ export async function executeCEGISCli(args: string[]): Promise<void> {
   
   try {
     await command.parseAsync(args);
-  } catch (error) {
-    console.error('❌ CLI execution failed:', error instanceof Error ? error.message : error);
+  } catch (error: unknown) {
+    console.error(chalk.red(`❌ CLI execution failed: ${toMessage(error)}`));
     process.exit(1);
   }
 }
