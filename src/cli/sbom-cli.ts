@@ -2,6 +2,7 @@
 
 import { Command } from 'commander';
 import chalk from 'chalk';
+import { toMessage } from '../utils/error-utils.js';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { SBOMGenerator, type SBOMGeneratorOptions, type SBOMComponent } from '../security/sbom-generator.js';
@@ -78,8 +79,8 @@ export class SBOMCLI {
       const sizeKB = (stats.size / 1024).toFixed(1);
       console.log(chalk.gray(`   File size: ${sizeKB} KB`));
 
-    } catch (error) {
-      console.error(chalk.red(`❌ Failed to generate SBOM: ${error}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Failed to generate SBOM: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -163,8 +164,8 @@ export class SBOMCLI {
         console.log(chalk.gray(`   Vulnerabilities: ${sbom.vulnerabilities?.length || 0}`));
       }
 
-    } catch (error) {
-      console.error(chalk.red(`❌ Failed to validate SBOM: ${error}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Failed to validate SBOM: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -252,8 +253,8 @@ export class SBOMCLI {
         console.log(chalk.green('✅ No differences found'));
       }
 
-    } catch (error) {
-      console.error(chalk.red(`❌ Failed to compare SBOMs: ${error}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Failed to compare SBOMs: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -305,8 +306,8 @@ export class SBOMCLI {
       console.log(chalk.gray(`   3. Configure any required secrets/variables`));
       console.log(chalk.gray(`   4. Test the pipeline in your CI/CD environment`));
 
-    } catch (error) {
-      console.error(chalk.red(`❌ Failed to generate CI integration: ${error}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Failed to generate CI integration: ${toMessage(error)}`));
       process.exit(1);
     }
   }

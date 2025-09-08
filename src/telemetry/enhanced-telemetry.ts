@@ -9,7 +9,10 @@ import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-grpc';
 import { MeterProvider, PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
+import { TraceIdRatioBasedSampler } from '@opentelemetry/sdk-trace-base';
 import { metrics, trace } from '@opentelemetry/api';
+import type { Meter, Histogram, Counter, UpDownCounter, ObservableGauge } from '@opentelemetry/api';
+import { toMessage } from '../utils/error-utils.js';
 import type { logs } from '@opentelemetry/api-logs';
 import * as os from 'os';
 import * as process from 'process';
@@ -77,14 +80,14 @@ export class EnhancedTelemetry {
   private config: TelemetryConfig;
   private sdk?: NodeSDK;
   private meterProvider?: MeterProvider;
-  private meter: any;
+  private meter?: Meter;
   
   // Observable Gauges for system metrics
   private systemMetrics: {
-    memoryUsage?: any;
-    cpuUsage?: any;
-    activeConnections?: any;
-    processUptime?: any;
+    memoryUsage?: ObservableGauge;
+    cpuUsage?: ObservableGauge;
+    activeConnections?: ObservableGauge;
+    processUptime?: ObservableGauge;
   } = {};
 
   constructor(config: Partial<TelemetryConfig> = {}) {
@@ -145,28 +148,34 @@ export class EnhancedTelemetry {
       unit: 'connections',
     });
 
+    // Local minimal types for attributes and observable result
+    type Attrs = Record<string, string | number | boolean>;
+    interface MinimalObservableResult {
+      observe: (instrument: ObservableGauge | undefined, value: number, attributes?: Attrs) => void;
+    }
+
     // Add observables with proper error handling
     this.meter.addBatchObservableCallback(
-      (observableResult: any) => {
+      (observableResult: MinimalObservableResult) => {
         try {
           const memUsage = process.memoryUsage();
           observableResult.observe(this.systemMetrics.memoryUsage, memUsage.heapUsed, {
             [TELEMETRY_ATTRIBUTES.SERVICE_COMPONENT]: 'memory',
             type: 'heap_used',
-          });
+          } as Attrs);
           observableResult.observe(this.systemMetrics.memoryUsage, memUsage.heapTotal, {
             [TELEMETRY_ATTRIBUTES.SERVICE_COMPONENT]: 'memory',
             type: 'heap_total',
-          });
+          } as Attrs);
           observableResult.observe(this.systemMetrics.memoryUsage, memUsage.external, {
             [TELEMETRY_ATTRIBUTES.SERVICE_COMPONENT]: 'memory',
             type: 'external',
-          });
+          } as Attrs);
 
           // Process uptime
           observableResult.observe(this.systemMetrics.processUptime, process.uptime(), {
             [TELEMETRY_ATTRIBUTES.SERVICE_COMPONENT]: 'process',
-          });
+          } as Attrs);
 
           // CPU load average (Unix-like systems)
           if (os.loadavg) {
@@ -174,18 +183,18 @@ export class EnhancedTelemetry {
             observableResult.observe(this.systemMetrics.cpuUsage, load[0], {
               [TELEMETRY_ATTRIBUTES.SERVICE_COMPONENT]: 'cpu',
               period: '1min',
-            });
+            } as Attrs);
             observableResult.observe(this.systemMetrics.cpuUsage, load[1], {
               [TELEMETRY_ATTRIBUTES.SERVICE_COMPONENT]: 'cpu',
               period: '5min',
-            });
+            } as Attrs);
             observableResult.observe(this.systemMetrics.cpuUsage, load[2], {
               [TELEMETRY_ATTRIBUTES.SERVICE_COMPONENT]: 'cpu',
               period: '15min',
-            });
+            } as Attrs);
           }
-        } catch (error) {
-          console.error('Error collecting system metrics:', error);
+        } catch (error: unknown) {
+          console.error('Error collecting system metrics:', toMessage(error));
         }
       },
       [
@@ -226,11 +235,7 @@ export class EnhancedTelemetry {
       this.sdk = new NodeSDK({
         resource: this.createResource(),
         traceExporter,
-        sampler: {
-          shouldSample: () => ({
-            decision: Math.random() < this.config.samplingRatio ? 1 : 0,
-          }),
-        } as any,
+        sampler: new TraceIdRatioBasedSampler(this.config.samplingRatio),
       });
 
       this.sdk.start();
@@ -244,8 +249,8 @@ export class EnhancedTelemetry {
         console.log(`   Tracing: ${this.config.enableTracing ? '✅' : '❌'}`);
         console.log(`   OTLP: ${this.config.otlpEndpoint ? '✅' : '❌'}`);
       }
-    } catch (error) {
-      console.error('❌ Failed to initialize Enhanced OpenTelemetry:', error);
+    } catch (error: unknown) {
+      console.error('❌ Failed to initialize Enhanced OpenTelemetry:', toMessage(error));
     }
   }
 
@@ -258,8 +263,8 @@ export class EnhancedTelemetry {
         await this.meterProvider.shutdown();
       }
       console.log('📊 Enhanced OpenTelemetry shutdown complete');
-    } catch (error) {
-      console.error('❌ Error during Enhanced OpenTelemetry shutdown:', error);
+    } catch (error: unknown) {
+      console.error('❌ Error during Enhanced OpenTelemetry shutdown:', toMessage(error));
     }
   }
 
@@ -270,7 +275,7 @@ export class EnhancedTelemetry {
       end: (additionalAttributes?: Record<string, any>) => {
         const duration = Date.now() - start;
         if (this.meter) {
-          const histogram = this.meter.createHistogram(`${name}.duration`, {
+          const histogram: Histogram = this.meter.createHistogram(`${name}.duration`, {
             description: `Duration of ${name} operation`,
             unit: 'ms',
           });
@@ -283,7 +288,7 @@ export class EnhancedTelemetry {
 
   public recordCounter(name: string, value: number = 1, attributes?: Record<string, any>) {
     if (this.meter) {
-      const counter = this.meter.createCounter(name, {
+      const counter: Counter = this.meter.createCounter(name, {
         description: `Counter for ${name}`,
       });
       counter.add(value, attributes);
@@ -292,7 +297,7 @@ export class EnhancedTelemetry {
 
   public recordGauge(name: string, value: number, attributes?: Record<string, any>) {
     if (this.meter) {
-      const gauge = this.meter.createUpDownCounter(name, {
+      const gauge: UpDownCounter = this.meter.createUpDownCounter(name, {
         description: `Gauge for ${name}`,
       });
       gauge.add(value, attributes);

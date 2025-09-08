@@ -6,6 +6,8 @@
  */
 
 import { Command } from 'commander';
+import chalk from 'chalk';
+import { toMessage } from '../utils/error-utils.js';
 import { BenchmarkRunner } from '../benchmark/req2run/runners/BenchmarkRunner.js';
 import { 
   DEFAULT_BENCHMARK_CONFIG, 
@@ -89,8 +91,8 @@ program
       const failedCount = results.filter(r => !r.success).length;
       process.exit(failedCount > 0 ? 1 : 0);
       
-    } catch (error) {
-      console.error('❌ Benchmark execution failed:', error);
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Benchmark execution failed: ${toMessage(error)}`));
       process.exit(1);
     }
   });
@@ -145,8 +147,8 @@ program
         });
       }
       
-    } catch (error) {
-      console.error('❌ Failed to list problems:', error);
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Failed to list problems: ${toMessage(error)}`));
       process.exit(1);
     }
   });
@@ -169,8 +171,8 @@ program
       console.log(`   - Max Concurrency: ${config.execution.maxConcurrency}`);
       console.log(`   - Docker: ${config.execution.docker.enabled ? 'Enabled' : 'Disabled'}`);
       
-    } catch (error) {
-      console.error('❌ Configuration validation failed:', error);
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Configuration validation failed: ${toMessage(error)}`));
       process.exit(1);
     }
   });
@@ -200,8 +202,8 @@ program
       await fs.writeFile(options.output, JSON.stringify(config, null, 2));
       console.log(`✅ Configuration template saved to ${options.output}`);
       
-    } catch (error) {
-      console.error('❌ Failed to generate configuration:', error);
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Failed to generate configuration: ${toMessage(error)}`));
       process.exit(1);
     }
   });
@@ -218,8 +220,8 @@ async function loadConfiguration(options: any): Promise<BenchmarkConfig> {
       const configData = await fs.readFile(options.config, 'utf-8');
       const fileConfig = JSON.parse(configData);
       config = { ...config, ...fileConfig };
-    } catch (error) {
-      throw new Error(`Failed to load configuration from ${options.config}: ${error}`);
+    } catch (error: unknown) {
+      throw new Error(`Failed to load configuration from ${options.config}: ${toMessage(error)}`);
     }
   }
   
@@ -310,7 +312,7 @@ async function saveResults(results: BenchmarkResult[], outputPath: string): Prom
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  console.error(chalk.red('❌ Unhandled Rejection at:'), promise, 'reason:', reason);
   process.exit(1);
 });
 

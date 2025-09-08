@@ -10,6 +10,7 @@ import { AESpecCompiler } from '../../packages/spec-compiler/src/index.js';
 import { resolve } from 'path';
 import { readFileSync } from 'fs';
 import chalk from 'chalk';
+import { toMessage } from '../utils/error-utils.js';
 
 export function createSpecCommand(): Command {
   const spec = new Command('spec');
@@ -41,8 +42,8 @@ export function createSpecCommand(): Command {
         console.log(chalk.gray(`   APIs: ${ir.api.length}`));
         console.log(chalk.gray(`   Use Cases: ${ir.usecases.length}`));
         
-      } catch (error) {
-        console.error(chalk.red(`❌ Compilation failed: ${(error as Error).message}`));
+      } catch (error: unknown) {
+        console.error(chalk.red(`❌ Compilation failed: ${toMessage(error)}`));
         process.exit(1);
       }
     });
@@ -101,8 +102,8 @@ export function createSpecCommand(): Command {
           console.log(chalk.green('\n✅ All quality checks passed'));
         }
         
-      } catch (error) {
-        console.error(chalk.red(`❌ Linting failed: ${(error as Error).message}`));
+      } catch (error: unknown) {
+        console.error(chalk.red(`❌ Linting failed: ${toMessage(error)}`));
         process.exit(1);
       }
     });
@@ -178,8 +179,8 @@ export function createSpecCommand(): Command {
           console.log(chalk.gray(`   AE-IR saved to: ${outputPath}`));
         }
         
-      } catch (error) {
-        console.error(chalk.red(`❌ Validation failed: ${(error as Error).message}`));
+      } catch (error: unknown) {
+        console.error(chalk.red(`❌ Validation failed: ${toMessage(error)}`));
         process.exit(1);
       }
     });
@@ -270,8 +271,8 @@ export function createSpecCommand(): Command {
         // If not converged, write last draft as output (lenient) for manual follow-up
         writeFileSync(resolve(out), currentSpec || '# Draft AE-Spec (empty)', 'utf-8');
         console.log(chalk.yellow(`\n⚠️  Did not converge within ${iterations} iterations. Last draft saved to: ${out}`));
-      } catch (error) {
-        console.error(chalk.red(`❌ Synthesis failed: ${(error as Error).message}`));
+      } catch (error: unknown) {
+        console.error(chalk.red(`❌ Synthesis failed: ${toMessage(error)}`));
         process.exit(1);
       }
     });

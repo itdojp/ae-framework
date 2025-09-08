@@ -4,7 +4,9 @@
  */
 
 import { Command } from 'commander';
+import chalk from 'chalk';
 import { createServer } from '../api/server.js';
+import { toMessage } from '../utils/error-utils.js';
 import { getSecurityConfiguration, securityConfigurations } from '../api/middleware/security-headers.js';
 
 export function createSecurityCommand(): Command {
@@ -42,8 +44,8 @@ export function createSecurityCommand(): Command {
           process.exit(0);
         });
         
-      } catch (error) {
-        console.error('❌ Error starting test server:', error);
+      } catch (error: unknown) {
+        console.error(chalk.red(`❌ Error starting test server: ${toMessage(error)}`));
         process.exit(1);
       }
     });
@@ -114,8 +116,8 @@ export function createSecurityCommand(): Command {
           });
         }
         
-      } catch (error) {
-        console.error('❌ Error checking headers:', error);
+      } catch (error: unknown) {
+        console.error(chalk.red(`❌ Error checking headers: ${toMessage(error)}`));
         process.exit(1);
       }
     });
@@ -242,9 +244,9 @@ export function createSecurityCommand(): Command {
         
       } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') {
-          console.error('❌ Request timed out');
+          console.error(chalk.red('❌ Request timed out'));
         } else {
-          console.error('❌ Error scanning URL:', error instanceof Error ? error.message : String(error));
+          console.error(chalk.red(`❌ Error scanning URL: ${toMessage(error)}`));
         }
         process.exit(1);
       }

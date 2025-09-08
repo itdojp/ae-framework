@@ -2,6 +2,7 @@
 
 import { Command } from 'commander';
 import chalk from 'chalk';
+import { toMessage } from '../utils/error-utils.js';
 import {
   ResilienceSystem,
   createResilienceSystem,
@@ -53,8 +54,8 @@ export class ResilienceCLI {
       console.log(chalk.blue(`   Bulkhead enabled: ${config.bulkhead?.enabled}`));
       console.log(chalk.blue(`   Timeout enabled: ${config.timeout?.enabled}`));
       
-    } catch (error) {
-      console.error(chalk.red(`❌ Failed to create resilience system: ${error}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Failed to create resilience system: ${toMessage(error)}`));
       process.exit(1);
     }
   }

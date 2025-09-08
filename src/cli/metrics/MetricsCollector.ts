@@ -1,6 +1,7 @@
 import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'fs';
 import * as path from 'path';
 import { AEFrameworkConfig } from '../types.js';
+import { toMessage } from '../../utils/error-utils.js';
 
 export interface TDDViolation {
   timestamp: Date;
@@ -78,8 +79,8 @@ export class MetricsCollector {
           });
         });
         return metrics;
-      } catch (error) {
-        console.warn(`Could not load existing metrics: ${error}`);
+      } catch (error: unknown) {
+        console.warn(`Could not load existing metrics: ${toMessage(error)}`);
       }
     }
 
@@ -211,8 +212,8 @@ export class MetricsCollector {
       } else {
         writeFileSync(logFile, logEntry);
       }
-    } catch (error) {
-      console.warn(`Could not save violation log: ${error}`);
+    } catch (error: unknown) {
+      console.warn(`Could not save violation log: ${toMessage(error)}`);
     }
   }
 

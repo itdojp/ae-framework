@@ -4,6 +4,8 @@
  */
 
 import { Command } from 'commander';
+import { toMessage } from '../utils/error-utils.js';
+import chalk from 'chalk';
 import { promises as fs } from 'fs';
 import { join, resolve } from 'path';
 import { existsSync } from 'fs';
@@ -311,8 +313,8 @@ export class IntegrationTestingCli {
             break;
           }
           
-        } catch (error) {
-          console.error(`❌ Suite execution failed: ${error instanceof Error ? error.message : error}`);
+        } catch (error: unknown) {
+            console.error(chalk.red(`❌ Suite execution failed: ${toMessage(error)}`));
           
           if (config.failFast) {
             throw error;
@@ -334,8 +336,8 @@ export class IntegrationTestingCli {
               break;
             }
             
-          } catch (error) {
-            console.error(`❌ Test execution failed: ${error instanceof Error ? error.message : error}`);
+          } catch (error: unknown) {
+            console.error(chalk.red(`❌ Test execution failed: ${toMessage(error)}`));
             
             if (config.failFast) {
               throw error;
@@ -363,7 +365,7 @@ export class IntegrationTestingCli {
       console.log('✅ Integration test execution completed');
 
     } catch (error) {
-      console.error('❌ Integration test execution failed:', error instanceof Error ? error.message : error);
+            console.error(chalk.red(`❌ Integration test execution failed: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -418,7 +420,7 @@ export class IntegrationTestingCli {
       }
 
     } catch (error) {
-      console.error('❌ Discovery failed:', error instanceof Error ? error.message : error);
+            console.error(chalk.red(`❌ Discovery failed: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -458,7 +460,7 @@ export class IntegrationTestingCli {
         break;
 
       default:
-        console.error(`Unknown resource type: ${options.type}`);
+        console.error(chalk.red(`❌ Unknown resource type: ${options.type}`));
         process.exit(1);
     }
   }
@@ -497,7 +499,7 @@ export class IntegrationTestingCli {
       }
 
     } catch (error) {
-      console.error('❌ Generation failed:', error instanceof Error ? error.message : error);
+            console.error(chalk.red(`❌ Generation failed: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -566,7 +568,7 @@ export class IntegrationTestingCli {
           console.log('Reports directory does not exist. Run tests to generate reports.');
         }
       } catch (error) {
-        console.error('❌ Failed to list reports:', error);
+                console.error(chalk.red(`❌ Failed to list reports: ${toMessage(error)}`));
       }
     }
 
@@ -594,7 +596,7 @@ export class IntegrationTestingCli {
           console.log(`✅ Cleaned ${cleaned} old reports (older than ${retentionDays} days)`);
         }
       } catch (error) {
-        console.error('❌ Failed to clean reports:', error);
+                console.error(chalk.red(`❌ Failed to clean reports: ${toMessage(error)}`));
       }
     }
   }
@@ -850,7 +852,7 @@ export async function executeIntegrationCli(args: string[]): Promise<void> {
   try {
     await command.parseAsync(args);
   } catch (error) {
-    console.error('❌ CLI execution failed:', error instanceof Error ? error.message : error);
+        console.error(chalk.red(`❌ CLI execution failed: ${toMessage(error)}`));
     process.exit(1);
   }
 }
