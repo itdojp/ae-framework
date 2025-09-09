@@ -7,6 +7,7 @@ const repoRoot = process.cwd();
 const outDir = path.join(repoRoot, 'artifacts', 'codex');
 const toolsDir = path.join(repoRoot, '.cache', 'tools');
 const tlaJar = path.join(toolsDir, 'tla2tools.jar');
+const alloyJar = process.env.ALLOY_JAR || path.join(toolsDir, 'alloy.jar');
 
 async function ensureDir(dir) {
   await fs.mkdir(dir, { recursive: true });
@@ -68,7 +69,7 @@ async function runTLC(modulePath) {
 }
 
 async function main() {
-  const summary = { tool: 'TLC', results: [], skipped: [], errors: [] };
+  const summary = { tlc: { results: [], skipped: [], errors: [] }, alloy: { results: [], skipped: [], errors: [] } };
   const tlaCandidates = await findFiles([
     'artifacts/codex',
     'artifacts',
@@ -79,7 +80,7 @@ async function main() {
   const tlaFiles = tlaCandidates.filter((f) => f.endsWith('.tla'));
   if (tlaFiles.length === 0) {
     console.log('No TLA+ modules found. Skipping TLC.');
-    summary.skipped.push('No .tla found');
+    summary.tlc.skipped.push('No .tla found');
   } else {
     // Ensure TLC jar
     try {
@@ -92,10 +93,28 @@ async function main() {
     for (const f of tlaFiles) {
       try {
         const res = await runTLC(f);
-        summary.results.push({ module: res.module, ok: res.ok, code: res.code, log: res.log });
+        summary.tlc.results.push({ module: res.module, ok: res.ok, code: res.code, log: res.log });
       } catch (e) {
-        summary.errors.push({ file: path.relative(repoRoot, f), error: String(e) });
+        summary.tlc.errors.push({ file: path.relative(repoRoot, f), error: String(e) });
       }
+    }
+  }
+  // Alloy (optional, scaffold)
+  const alloyCandidates = await findFiles(['artifacts', 'specs', 'docs/formal']);
+  const alsFiles = alloyCandidates.filter((f) => f.endsWith('.als'));
+  if (alsFiles.length === 0) {
+    summary.alloy.skipped.push('No .als found');
+  } else {
+    // For now, only report presence unless ALLOY_JAR is provided
+    try {
+      await fs.stat(alloyJar);
+      // Running Alloy Analyzer headless is environment-specific; leave execution as a future step
+      summary.alloy.skipped.push('Alloy jar found but execution disabled (future step).');
+    } catch {
+      summary.alloy.skipped.push('Alloy jar not found; set ALLOY_JAR to enable execution.');
+    }
+    for (const f of alsFiles) {
+      summary.alloy.results.push({ file: path.relative(repoRoot, f), ok: null });
     }
   }
   await ensureDir(outDir);
@@ -108,4 +127,3 @@ main().catch((e) => {
   console.error('run-model-checks failed:', e);
   process.exit(0); // do not fail build yet; gate can be added later
 });
-
