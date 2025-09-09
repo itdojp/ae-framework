@@ -561,6 +561,13 @@ export class EnhancedStateManager extends EventEmitter {
   }
 
   /**
+   * Public entry point for manual garbage collection (CLI-safe)
+   */
+  public async collectGarbage(): Promise<void> {
+    await this.runGarbageCollection();
+  }
+
+  /**
    * Stop garbage collection
    */
   stopGarbageCollection(): void {

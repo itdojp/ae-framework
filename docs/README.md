@@ -104,6 +104,7 @@ Claude CodeやMCPとの統合
 2. **🆕 [phases/PHASE-2-3-INTEGRATION-TESTING.md](./phases/PHASE-2-3-INTEGRATION-TESTING.md)** - 統合テスト・E2Eテスト
 3. **🆕 [architecture/CEGIS-DESIGN.md](./architecture/CEGIS-DESIGN.md)** - 自動修復システム
 4. **🆕 [guides/ADVANCED-TROUBLESHOOTING-GUIDE.md](./guides/ADVANCED-TROUBLESHOOTING-GUIDE.md)** - 問題解決ガイド
+5. **[quality/type-coverage-policy.md](./quality/type-coverage-policy.md)** - 型カバレッジポリシー（運用ルール）
 
 ## 🔄 更新履歴
 

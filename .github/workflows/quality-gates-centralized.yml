@@ -70,8 +70,19 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const pct = core.getInput('pct') || '${{ steps.typecov.outputs.pct }}';
-            const body = `### Type Coverage\n\nCurrent type coverage: **${pct}**`;
+            const pct = '${{ steps.typecov.outputs.pct }}';
+            const labels = (context.payload.pull_request?.labels || []).map(l => l.name);
+            const enforcing = labels.includes('enforce-typecov');
+            const threshold = enforcing ? '70%' : '65%';
+            const status = enforcing ? 'enforced (label: enforce-typecov)' : 'report-only';
+            const body = [
+              '### Type Coverage',
+              '',
+              `Current type coverage: **${pct}**`,
+              `Policy: **${status}**, Threshold: **${threshold}**`,
+              '',
+              'Docs: `docs/quality/type-coverage-policy.md`'
+            ].join('\n');
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -83,7 +94,7 @@ jobs:
     uses: ./.github/workflows/common/ci-core.yml
     with:
       node-version: '20'
-      run-script: typecov:check
+      run-script: typecov:check:70
   types-tests:
     uses: ./.github/workflows/common/ci-core.yml
     with:
