@@ -45,3 +45,7 @@ const generated = await agent.generateFromOpenAPI(openapi, {
 ### Optional enforcement in CI
 
 Set `CONTRACTS_ENFORCE=1` in the environment to make the `contracts-exec` step fail the PR when minimal parse/pre/post checks fail. Default is report-only.
+
+### Supplying sample input
+
+Set `CONTRACTS_SAMPLE_INPUT=/path/to/input.json` to feed a JSON object as input to the runtime contracts execution. This helps validate schemas and pre/post on a realistic shape. When absent, `{}` is used.

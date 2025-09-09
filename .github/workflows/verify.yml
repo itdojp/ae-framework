@@ -75,10 +75,12 @@ jobs:
           MODEL_FILE=$(find artifacts_dl/model-check-results -name 'model-check.json' 2>/dev/null | head -1)
           TRACE_JSON=$(find artifacts_dl/traceability-matrix -name 'traceability.json' 2>/dev/null | head -1)
           CONTRACTS_JSON=$(find artifacts_dl/contracts-check -name 'contracts-check.json' 2>/dev/null | head -1)
+          CONTRACTS_EXEC=$(find artifacts_dl/contracts-exec -name 'contracts-exec.json' 2>/dev/null | head -1)
           echo "TRACE_FILE=$TRACE_FILE" >> $GITHUB_OUTPUT
           echo "MODEL_FILE=$MODEL_FILE" >> $GITHUB_OUTPUT
           echo "TRACE_JSON=$TRACE_JSON" >> $GITHUB_OUTPUT
           echo "CONTRACTS_JSON=$CONTRACTS_JSON" >> $GITHUB_OUTPUT
+          echo "CONTRACTS_EXEC=$CONTRACTS_EXEC" >> $GITHUB_OUTPUT
           {
             echo "### 🔍 Verification Summary"
             if [ -f "$TRACE_JSON" ]; then
@@ -153,6 +155,13 @@ jobs:
               echo "- Contracts: schemas=${haveSchemas} conditions=${haveConds} machine=${haveMachine}"
             else
               echo "- Contracts: (no check artifact)"
+            fi
+            if [ -f "$CONTRACTS_EXEC" ]; then
+              pin=$(jq -r '.results.parseInOk // false' "$CONTRACTS_EXEC" 2>/dev/null || echo false)
+              pre=$(jq -r '.results.preOk // false' "$CONTRACTS_EXEC" 2>/dev/null || echo false)
+              pst=$(jq -r '.results.postOk // false' "$CONTRACTS_EXEC" 2>/dev/null || echo false)
+              pout=$(jq -r '.results.parseOutOk // false' "$CONTRACTS_EXEC" 2>/dev/null || echo false)
+              echo "  - Contracts exec: parseIn=${pin} pre=${pre} post=${pst} parseOut=${pout}"
             fi
           } > pr-summary.md
           cat pr-summary.md
