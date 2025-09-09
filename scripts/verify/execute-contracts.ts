@@ -38,6 +38,16 @@ async function main() {
         } catch (e) {
           console.warn(`[contracts-exec] Warning: failed to read CONTRACTS_SAMPLE_INPUT at ${samplePath}: ${e instanceof Error ? e.message : String(e)}`);
         }
+      } else {
+        // Try to derive from OpenAPI YAML if available (very naive: find first JSON block)
+        const openapiPath = process.env.CONTRACTS_OPENAPI_PATH || path.join(repoRoot, 'artifacts', 'codex', 'openapi.yaml');
+        try {
+          const yamlTxt = await fs.readFile(openapiPath, 'utf8');
+          const jsonMatch = yamlTxt.match(/\{[\s\S]*?\}/);
+          if (jsonMatch) {
+            try { input = JSON.parse(jsonMatch[0]); } catch {}
+          }
+        } catch {}
       }
       let preOk = true; let postOk = true; let parseInOk = true; let parseOutOk = true;
       try { schemas.InputSchema?.parse?.(input); } catch (e) { parseInOk = false; }
