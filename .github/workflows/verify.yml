@@ -69,8 +69,8 @@ jobs:
         id: build
         run: |
           set -e
-          TRACE_FILE=$(ls artifacts_dl/traceability-matrix/traceability.csv || true)
-          MODEL_FILE=$(ls artifacts_dl/model-check-results/model-check.json || true)
+          TRACE_FILE=$(find artifacts_dl/traceability-matrix -name 'traceability.csv' 2>/dev/null | head -1)
+          MODEL_FILE=$(find artifacts_dl/model-check-results -name 'model-check.json' 2>/dev/null | head -1)
           echo "TRACE_FILE=$TRACE_FILE" >> $GITHUB_OUTPUT
           echo "MODEL_FILE=$MODEL_FILE" >> $GITHUB_OUTPUT
           {
