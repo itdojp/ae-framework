@@ -198,6 +198,46 @@ Recommended approach:
 Generated code:
 - ReviewService.ts (new)
 - ProductService.ts (minimal changes)
+
+---
+
+### 🧩 Optional: Inject Runtime Contracts into Generated Handlers
+
+You can generate minimal runtime contracts (Zod schemas, pre/post stubs, a small state-machine) from a formal spec, then inject them into OpenAPI-generated route handlers with `includeContracts: true`.
+
+Example (TypeScript):
+
+```ts
+// If using ae-framework as a dependency:
+// import { CodeGenerationAgent } from 'ae-framework';
+// If working from this repo checkout:
+import { CodeGenerationAgent } from '../../dist/src/agents/code-generation-agent.js';
+import { promises as fs } from 'fs';
+import path from 'path';
+
+const agent = new CodeGenerationAgent();
+
+// 1) Generate runtime contracts from a formal spec string (TLA+/Alloy)
+const formalSpec = '---- MODULE Sample ----';
+const contractFiles = await agent.generateContractsSkeleton(formalSpec);
+for (const f of contractFiles) {
+  await fs.mkdir(path.dirname(f.path), { recursive: true });
+  await fs.writeFile(f.path, f.content, 'utf8');
+}
+
+// 2) Generate API code with contracts injected
+const openapi = `openapi: 3.0.0\ninfo: {title: API, version: 1.0.0}\npaths: { /ping: { get: { responses: { '200': { description: ok } } } } }`;
+const generated = await agent.generateFromOpenAPI(openapi, {
+  framework: 'fastify',
+  includeValidation: true,
+  includeContracts: true,
+});
+// Write generated.files to disk as needed
+```
+
+Notes:
+- `includeContracts` injects imports and minimal pre/post + Zod checks into each generated handler.
+- Contracts are skeletons; refine schemas/conditions over time or wire them to properties derived from formal specs.
 - Database migration scripts
 - 38 automated tests (94% of existing tests unchanged)
 
