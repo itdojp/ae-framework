@@ -120,8 +120,17 @@ async function main() {
             await ensureDir(outDir);
             const res = await new Promise((resolve) => {
               const args = ['-jar', alloyJar, f];
+              const addArgsJson = (process.env.ALLOY_CMD_JSON || '').trim();
               const addArgs = (process.env.ALLOY_CMD_ARGS || '').trim();
-              if (addArgs) args.push(...addArgs.split(/\s+/));
+              if (addArgsJson) {
+                try {
+                  const arr = JSON.parse(addArgsJson);
+                  if (Array.isArray(arr)) args.push(...arr.map(String));
+                } catch {}
+              } else if (addArgs) {
+                // Fallback: simple whitespace split (avoid quotes/escaping); prefer ALLOY_CMD_JSON
+                args.push(...addArgs.split(/\s+/));
+              }
               const sh = spawn('java', args, { cwd: repoRoot });
               let out = ''; let err = '';
               let terminated = false;
@@ -138,7 +147,8 @@ async function main() {
                 clearTimeout(timer);
                 await fs.writeFile(logPath, out + (err ? `\n[stderr]\n${err}` : ''), 'utf8');
                 const timeout = code === null && signal === 'SIGKILL';
-                const okHeuristic = code === 0 && !timeout && !/Exception|ERROR|FAILED/i.test(out + err);
+                const failRegex = new RegExp(process.env.ALLOY_FAIL_REGEX || 'Exception|ERROR|FAILED', 'i');
+                const okHeuristic = code === 0 && !timeout && !failRegex.test(out + err);
                 resolve({ ok: okHeuristic, code, signal, timeout, log: path.relative(repoRoot, logPath) });
               });
             });
