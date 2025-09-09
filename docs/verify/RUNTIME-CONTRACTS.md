@@ -41,3 +41,7 @@ const generated = await agent.generateFromOpenAPI(openapi, {
 ```
 
 > This is an initial skeleton; future versions will extract specific properties.
+
+### Optional enforcement in CI
+
+Set `CONTRACTS_ENFORCE=1` in the environment to make the `contracts-exec` step fail the PR when minimal parse/pre/post checks fail. Default is report-only.
