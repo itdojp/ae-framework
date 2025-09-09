@@ -129,3 +129,15 @@ jobs:
               issue_number: context.payload.pull_request.number,
               body
             });
+  contracts-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run contracts presence check (report-only)
+        run: |
+          node scripts/verify/run-contracts-check.mjs || true
+      - name: Upload contracts artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: contracts-check
+          path: artifacts/contracts/contracts-check.json
