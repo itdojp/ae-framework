@@ -72,3 +72,12 @@ Combine with `|` to build a case-insensitive regex. Example:
 ```
 ALLOY_FAIL_REGEX='Exception|ERROR|FAILED|Counterexample|assertion'
 ```
+
+Jar/version specific notes (examples, adjust as needed):
+
+- Some builds emit `Counterexample found.
+  Assertion XYZ is invalid` for failing `assert` blocks.
+- Others use `FAILED` preceded by the assertion name or a check ID.
+- Parser-level issues often include `Exception` or `ERROR` with a stack trace.
+
+Tip: Start with the default and add the most common markers seen in your CI logs. Keep the regex concise to avoid false positives.
