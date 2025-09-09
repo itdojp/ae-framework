@@ -8,6 +8,7 @@ const outDir = path.join(repoRoot, 'artifacts', 'codex');
 const toolsDir = path.join(repoRoot, '.cache', 'tools');
 const tlaJar = path.join(toolsDir, 'tla2tools.jar');
 const alloyJar = process.env.ALLOY_JAR || path.join(toolsDir, 'alloy.jar');
+const alloyRunCmd = process.env.ALLOY_RUN_CMD || null; // e.g. 'java -jar $ALLOY_JAR -f {file}'
 
 async function ensureDir(dir) {
   await fs.mkdir(dir, { recursive: true });
@@ -105,16 +106,37 @@ async function main() {
   if (alsFiles.length === 0) {
     summary.alloy.skipped.push('No .als found');
   } else {
-    // For now, only report presence unless ALLOY_JAR is provided
-    try {
-      await fs.stat(alloyJar);
-      // Running Alloy Analyzer headless is environment-specific; leave execution as a future step
-      summary.alloy.skipped.push('Alloy jar found but execution disabled (future step).');
-    } catch {
-      summary.alloy.skipped.push('Alloy jar not found; set ALLOY_JAR to enable execution.');
-    }
-    for (const f of alsFiles) {
-      summary.alloy.results.push({ file: path.relative(repoRoot, f), ok: null });
+    // Optional execution via ALLOY_RUN_CMD (with {file} placeholder)
+    let haveJar = false;
+    try { await fs.stat(alloyJar); haveJar = true; } catch {}
+    if (!alloyRunCmd) {
+      summary.alloy.skipped.push(haveJar ? 'ALLOY_JAR present; set ALLOY_RUN_CMD to enable execution.' : 'No ALLOY_RUN_CMD; detection only.');
+      for (const f of alsFiles) summary.alloy.results.push({ file: path.relative(repoRoot, f), ok: null });
+    } else {
+      for (const f of alsFiles) {
+        const name = path.basename(f, '.als');
+        const logPath = path.join(outDir, `${name}.alloy.log.txt`);
+        const cmd = alloyRunCmd.replace('{file}', f).replace('$ALLOY_JAR', alloyJar);
+        try {
+          await ensureDir(outDir);
+          const res = await new Promise((resolve) => {
+            const sh = spawn(cmd, { shell: true, cwd: repoRoot });
+            let out = ''; let err = '';
+            const timer = setTimeout(() => sh.kill('SIGKILL'), 3 * 60 * 1000);
+            sh.stdout.on('data', d => out += d.toString());
+            sh.stderr.on('data', d => err += d.toString());
+            sh.on('exit', async (code) => {
+              clearTimeout(timer);
+              await fs.writeFile(logPath, out + (err ? `\n[stderr]\n${err}` : ''), 'utf8');
+              // Heuristic: treat nonzero exit as failure; else ok
+              resolve({ ok: code === 0, code, log: path.relative(repoRoot, logPath) });
+            });
+          });
+          summary.alloy.results.push({ file: path.relative(repoRoot, f), ok: res.ok, code: res.code, log: res.log });
+        } catch (e) {
+          summary.alloy.errors.push({ file: path.relative(repoRoot, f), error: String(e) });
+        }
+      }
     }
   }
   await ensureDir(outDir);
