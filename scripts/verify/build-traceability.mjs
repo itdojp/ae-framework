@@ -51,7 +51,7 @@ async function parseFeatures(files) {
         scenarios.push({ file: path.relative(repoRoot, f), name, id, tags: pendingTags });
         pendingTags = [];
       }
-      if (line === '') pendingTags = []; // reset on blank lines
+      // Note: Do not reset tags on blank lines; in Gherkin, tags persist until applied to a Scenario/Feature
     }
   }
   return scenarios;
@@ -114,4 +114,3 @@ async function main() {
 }
 
 main().catch((e) => { console.error('traceability build failed', e); process.exit(1); });
-
