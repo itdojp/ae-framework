@@ -39,13 +39,25 @@ async function main() {
           console.warn(`[contracts-exec] Warning: failed to read CONTRACTS_SAMPLE_INPUT at ${samplePath}: ${e instanceof Error ? e.message : String(e)}`);
         }
       } else {
-        // Try to derive from OpenAPI YAML if available (very naive: find first JSON block)
-        const openapiPath = process.env.CONTRACTS_OPENAPI_PATH || path.join(repoRoot, 'artifacts', 'codex', 'openapi.yaml');
+        // Try to derive from OpenAPI when sample not provided
+        const defaultYaml = path.join(repoRoot, 'artifacts', 'codex', 'openapi.yaml');
+        const defaultJson = path.join(repoRoot, 'artifacts', 'codex', 'openapi.json');
+        const openapiPath = process.env.CONTRACTS_OPENAPI_PATH || (await exists(defaultJson) ? defaultJson : defaultYaml);
         try {
-          const yamlTxt = await fs.readFile(openapiPath, 'utf8');
-          const jsonMatch = yamlTxt.match(/\{[\s\S]*?\}/);
-          if (jsonMatch) {
-            try { input = JSON.parse(jsonMatch[0]); } catch {}
+          const txt = await fs.readFile(openapiPath, 'utf8');
+          if (openapiPath.endsWith('.json')) {
+            try {
+              const oas = JSON.parse(txt);
+              // Very naive: pick first path+op and build an object with no fields
+              const paths = oas.paths ? Object.keys(oas.paths) : [];
+              if (paths.length > 0) input = { path: paths[0] };
+            } catch {}
+          } else {
+            // YAML: try to extract first JSON block as a best-effort
+            const jsonMatch = txt.match(/\{[\s\S]*?\}/);
+            if (jsonMatch) {
+              try { input = JSON.parse(jsonMatch[0]); } catch {}
+            }
           }
         } catch {}
       }
