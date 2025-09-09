@@ -97,6 +97,16 @@ jobs:
               echo "\n<details><summary>Unlinked (top 5)</summary>"
               jq -r '.rows[] | select(.test=="N/A" or .impl=="N/A" or .formal=="N/A") | "- " + .scenario + " (id: " + .id + ") test:" + .test + " impl:" + .impl + " formal:" + .formal' "$TRACE_JSON" 2>/dev/null | head -5 || true
               echo "</details>"
+              echo "\n<details><summary>Hit basis (tests/formal)</summary>"
+              thit_title=$(jq '[.rows[] | select(.testHit == .scenario)] | length' "$TRACE_JSON" 2>/dev/null || echo 0)
+              thit_id=$(jq '[.rows[] | select(.testHit == .id)] | length' "$TRACE_JSON" 2>/dev/null || echo 0)
+              thit_tag=$(jq '[.rows[] | select(.testHit | type=="string" and startswith("@"))] | length' "$TRACE_JSON" 2>/dev/null || echo 0)
+              fhit_title=$(jq '[.rows[] | select(.formalHit == .scenario)] | length' "$TRACE_JSON" 2>/dev/null || echo 0)
+              fhit_id=$(jq '[.rows[] | select(.formalHit == .id)] | length' "$TRACE_JSON" 2>/dev/null || echo 0)
+              fhit_tag=$(jq '[.rows[] | select(.formalHit | type=="string" and startswith("@"))] | length' "$TRACE_JSON" 2>/dev/null || echo 0)
+              echo "- Test hits: title=${thit_title} id=${thit_id} tag=${thit_tag}"
+              echo "- Formal hits: title=${fhit_title} id=${fhit_id} tag=${fhit_tag}"
+              echo "</details>"
             elif [ -f "$TRACE_FILE" ]; then
               total=$(wc -l < "$TRACE_FILE")
               scenarios=$((total-1))
