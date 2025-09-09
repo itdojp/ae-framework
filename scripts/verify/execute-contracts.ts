@@ -48,9 +48,31 @@ async function main() {
           if (openapiPath.endsWith('.json')) {
             try {
               const oas = JSON.parse(txt);
-              // Very naive: pick first path+op and build an object with no fields
-              const paths = oas.paths ? Object.keys(oas.paths) : [];
-              if (paths.length > 0) input = { path: paths[0] };
+              // Prefer deriving from components.schemas
+              const schemas = oas.components?.schemas || {};
+              const names = Object.keys(schemas);
+              if (names.length > 0) {
+                const first = schemas[names[0]];
+                const sample: any = {};
+                if (first && first.type === 'object' && first.properties) {
+                  for (const [k, v] of Object.entries<any>(first.properties)) {
+                    const t = (v as any).type || 'string';
+                    switch (t) {
+                      case 'integer': sample[k] = 0; break;
+                      case 'number': sample[k] = 0; break;
+                      case 'boolean': sample[k] = false; break;
+                      case 'array': sample[k] = []; break;
+                      case 'object': sample[k] = {}; break;
+                      default: sample[k] = ''; break;
+                    }
+                  }
+                  input = sample;
+                } else {
+                  // Fallback: pick first path+op and build an object with the path only
+                  const paths = oas.paths ? Object.keys(oas.paths) : [];
+                  if (paths.length > 0) input = { path: paths[0] };
+                }
+              }
             } catch {}
           } else {
             // YAML: try to extract first JSON block as a best-effort

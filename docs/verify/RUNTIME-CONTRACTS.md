@@ -50,4 +50,4 @@ Set `CONTRACTS_ENFORCE=1` in the environment to make the `contracts-exec` step f
 
 Set `CONTRACTS_SAMPLE_INPUT=/path/to/input.json` to feed a JSON object as input to the runtime contracts execution. This helps validate schemas and pre/post on a realistic shape. When absent, `{}` is used.
 
-Alternatively, set `CONTRACTS_OPENAPI_PATH` (defaults to `artifacts/codex/openapi.yaml` or `openapi.json`) and the runner will try to derive a simple sample. For YAML it extracts the first JSON block; for JSON it picks the first path (best‑effort, optional).
+Alternatively, set `CONTRACTS_OPENAPI_PATH` (defaults to `artifacts/codex/openapi.yaml` or `openapi.json`) and the runner will try to derive a simple sample. For JSON it prefers the first `components.schemas` object (by type) to synthesize an example; otherwise falls back to the first path; for YAML it extracts the first JSON block (best‑effort).
