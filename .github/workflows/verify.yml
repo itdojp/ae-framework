@@ -84,7 +84,14 @@ jobs:
               covered_tests=$(jq -r '.testsLinked' "$TRACE_JSON" 2>/dev/null || echo 0)
               covered_impl=$(jq -r '.implLinked' "$TRACE_JSON" 2>/dev/null || echo 0)
               covered_formal=$(jq -r '.formalLinked' "$TRACE_JSON" 2>/dev/null || echo 0)
-              echo "- Traceability: ${scenarios} scenarios; tests: ${covered_tests}; impl: ${covered_impl}; formal: ${covered_formal}"
+              pct() { if [ "$1" -gt 0 ]; then awk "BEGIN {printf \"%.0f\", ($2*100)/$1}"; else echo 0; fi; }
+              tests_pct=$(pct "$scenarios" "$covered_tests")
+              impl_pct=$(pct "$scenarios" "$covered_impl")
+              formal_pct=$(pct "$scenarios" "$covered_formal")
+              echo "- Traceability: ${scenarios} scenarios"
+              echo "  - Tests: ${covered_tests} (${tests_pct}%)"
+              echo "  - Impl: ${covered_impl} (${impl_pct}%)"
+              echo "  - Formal: ${covered_formal} (${formal_pct}%)"
               echo "\n<details><summary>Unlinked (top 5)</summary>"
               jq -r '.rows[] | select(.test=="N/A" or .impl=="N/A" or .formal=="N/A") | "- " + .scenario + " (id: " + .id + ") test:" + .test + " impl:" + .impl + " formal:" + .formal' "$TRACE_JSON" 2>/dev/null | head -5 || true
               echo "</details>"
