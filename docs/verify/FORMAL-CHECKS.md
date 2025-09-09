@@ -14,7 +14,8 @@ This document explains how formal model checking is executed in CI and where to 
 
 - Alloy (Alloy Analyzer): scaffolded detection
   - The runner lists `.als` files and includes them in `model-check.json`
-  - Execution is opt-in and will be implemented in follow-up (set `ALLOY_JAR` to prepare)
+  - Execution (headless) is supported when `ALLOY_JAR` is provided (safe default: `java -jar $ALLOY_JAR {file}`)
+  - Optional: `ALLOY_CMD_ARGS` to pass extra arguments, `ALLOY_TIMEOUT_MS` (default 180000)
 
 ## Local run
 
@@ -25,8 +26,11 @@ npm run verify:model
 # Optional: provide a custom TLA+ tools URL
 TLA_TOOLS_URL=https://example.com/tla2tools.jar npm run verify:model
 
-# Optional (future): prepare Alloy jar path
+# Optional: prepare Alloy jar path and run headless
 ALLOY_JAR=$HOME/tools/alloy.jar npm run verify:model
+
+# Extra arguments and timeout (optional)
+ALLOY_JAR=$HOME/tools/alloy.jar ALLOY_CMD_ARGS="-someFlag" ALLOY_TIMEOUT_MS=180000 npm run verify:model
 ```
 
 ## Artifacts and interpretation
@@ -42,4 +46,7 @@ ALLOY_JAR=$HOME/tools/alloy.jar npm run verify:model
 - Gate failures on model checking (opt-in label or directory presence)
 - Implement headless Alloy execution (jar/CLI options) with timeouts
 - Post PR comments summarizing formal results (green/red + links)
+# Notes
 
+- If `ALLOY_JAR` is not set, Alloy execution is skipped (detection only). Provide the jar path for headless runs.
+- The runner treats non-zero exit or timeouts as failures; logs are saved under `artifacts/codex/*.alloy.log.txt`.
