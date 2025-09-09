@@ -61,10 +61,10 @@ async function firstMatch(files, needles) {
   for (const p of files) {
     const text = await readFileSafe(p);
     for (const n of needles) {
-      if (n && text.includes(n)) return path.relative(repoRoot, p);
+      if (n && text.includes(n)) return { file: path.relative(repoRoot, p), hit: n };
     }
   }
-  return 'N/A';
+  return { file: 'N/A', hit: '' };
 }
 
 async function main() {
@@ -86,10 +86,10 @@ async function main() {
     const test = await firstMatch(testFiles, needles);
     const impl = await firstMatch(implFiles, needles);
     const formal = await firstMatch(tlaFiles, needles);
-    if (test !== 'N/A') coveredTests++;
-    if (impl !== 'N/A') coveredImpl++;
-    if (formal !== 'N/A') coveredFormal++;
-    rows.push({ scenario: sc.name, id: sc.id, tags: (sc.tags || []).join(' '), test, impl, formal });
+    if (test.file !== 'N/A') coveredTests++;
+    if (impl.file !== 'N/A') coveredImpl++;
+    if (formal.file !== 'N/A') coveredFormal++;
+    rows.push({ scenario: sc.name, id: sc.id, tags: (sc.tags || []).join(' '), test: test.file, impl: impl.file, formal: formal.file, testHit: test.hit, implHit: impl.hit, formalHit: formal.hit });
   }
 
   const csvLines = ['Scenario,Id,Tags,Test,Implementation,Formal'];
