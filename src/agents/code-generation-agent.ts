@@ -138,6 +138,7 @@ export class CodeGenerationAgent {
     database?: 'postgres' | 'mongodb' | 'mysql';
     includeValidation?: boolean;
     includeAuth?: boolean;
+    includeContracts?: boolean; // inject runtime contracts usage (opt-in)
   }): Promise<GeneratedCode> {
     const api = this.parseOpenAPI(spec);
     const files: CodeFile[] = [];
@@ -807,9 +808,25 @@ start();
   }
 
   private generateRouteHandler(endpoint: any, options: any): CodeFile {
+    const base = `// Route handler implementation for ${endpoint.method} ${endpoint.path}\n`;
+    let content = base;
+    if (options?.includeContracts) {
+      content += `import { InputSchema, OutputSchema } from '../contracts/schemas';\n`;
+      content += `import { pre, post } from '../contracts/conditions';\n`;
+      content += `\nexport async function handler(input: unknown): Promise<unknown> {\n`;
+      content += `  // Validate input and pre-condition (skeleton)\n`;
+      content += `  InputSchema.parse(input);\n`;
+      content += `  if (!pre(input)) throw new Error('Precondition failed');\n`;
+      content += `  // TODO: actual implementation here\n`;
+      content += `  const output: unknown = {};\n`;
+      content += `  if (!post(input, output)) throw new Error('Postcondition failed');\n`;
+      content += `  OutputSchema.parse(output);\n`;
+      content += `  return output;\n`;
+      content += `}\n`;
+    }
     return {
       path: `src/routes/${endpoint.path}.ts`,
-      content: '// Route handler implementation',
+      content,
       purpose: `Handle ${endpoint.method} ${endpoint.path}`,
       tests: [],
     };
