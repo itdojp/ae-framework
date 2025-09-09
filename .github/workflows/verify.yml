@@ -161,6 +161,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Determine enforcement from labels
+        run: |
+          if [ -f "$GITHUB_EVENT_PATH" ]; then
+            if jq -e '.pull_request.labels[]?.name | select(.=="enforce-contracts")' "$GITHUB_EVENT_PATH" >/dev/null; then
+              echo "CONTRACTS_ENFORCE=1" >> $GITHUB_ENV
+            fi
+          fi
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
