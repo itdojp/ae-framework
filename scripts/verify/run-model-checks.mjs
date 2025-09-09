@@ -125,5 +125,7 @@ async function main() {
 
 main().catch((e) => {
   console.error('run-model-checks failed:', e);
-  process.exit(0); // do not fail build yet; gate can be added later
+  // Intentionally do not fail the build for now (report-only mode).
+  // This behavior may change once formal checks are made gating.
+  process.exit(0);
 });
