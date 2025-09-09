@@ -156,3 +156,20 @@ jobs:
         with:
           name: contracts-check
           path: artifacts/contracts/contracts-check.json
+  contracts-exec:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Execute contracts (report-only; requires tsx)
+        run: |
+          npx -y tsx scripts/verify/execute-contracts.ts || true
+      - name: Upload contracts exec artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: contracts-exec
+          path: artifacts/contracts/contracts-exec.json

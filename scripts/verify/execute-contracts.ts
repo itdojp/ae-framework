@@ -1,0 +1,51 @@
+// Execute runtime contracts (optional, report-only)
+// Uses tsx to run TypeScript directly in CI.
+
+import { promises as fs } from 'fs';
+import path from 'path';
+
+async function exists(p: string) {
+  try { await fs.stat(p); return true; } catch { return false; }
+}
+
+async function main() {
+  const repoRoot = process.cwd();
+  const contractsDir = path.join(repoRoot, 'src', 'contracts');
+  const present = {
+    schemas: await exists(path.join(contractsDir, 'schemas.ts')),
+    conditions: await exists(path.join(contractsDir, 'conditions.ts')),
+    machine: await exists(path.join(contractsDir, 'machine.ts')),
+  };
+
+  const summary: any = { present, results: {}, note: 'Report-only execution of contracts' };
+
+  if (present.schemas && present.conditions) {
+    try {
+      // Dynamic imports using tsx runner context
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      const schemas = await import(path.join(repoRoot, 'src', 'contracts', 'schemas.ts'));
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      const conds = await import(path.join(repoRoot, 'src', 'contracts', 'conditions.ts'));
+      const input: unknown = {}; // minimal dummy input
+      let preOk = true; let postOk = true; let parseInOk = true; let parseOutOk = true;
+      try { schemas.InputSchema?.parse?.(input); } catch (e) { parseInOk = false; }
+      try { preOk = !!conds.pre?.(input); } catch (e) { preOk = false; }
+      const output: unknown = {};
+      try { postOk = !!conds.post?.(input, output); } catch (e) { postOk = false; }
+      try { schemas.OutputSchema?.parse?.(output); } catch (e) { parseOutOk = false; }
+      summary.results = { parseInOk, preOk, postOk, parseOutOk };
+    } catch (e) {
+      summary.results = { error: String(e) };
+    }
+  }
+
+  const outDir = path.join(repoRoot, 'artifacts', 'contracts');
+  await fs.mkdir(outDir, { recursive: true });
+  await fs.writeFile(path.join(outDir, 'contracts-exec.json'), JSON.stringify(summary, null, 2));
+  console.log('Contracts exec summary written to artifacts/contracts/contracts-exec.json');
+}
+
+main().catch((e) => { console.error('contracts-exec failed:', e); process.exit(1); });
+
