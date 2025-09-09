@@ -54,3 +54,21 @@ ALLOY_JAR=$HOME/tools/alloy.jar ALLOY_CMD_ARGS="-someFlag" ALLOY_TIMEOUT_MS=1800
 
 - If `ALLOY_JAR` is not set, Alloy execution is skipped (detection only). Provide the jar path for headless runs.
 - The runner treats non-zero exit or timeouts as failures; logs are saved under `artifacts/codex/*.alloy.log.txt`.
+
+## Failure pattern guidance (Alloy)
+
+Different Alloy jars may emit different failure strings. You can tune `ALLOY_FAIL_REGEX` as needed.
+
+Common patterns:
+
+- `Exception` – any unhandled exceptions
+- `ERROR` – generic error prefix
+- `FAILED` – assertion/check failure markers
+- `Counterexample` – counterexample found for an assertion
+- `assertion` – assertion-related lines (some jars include lowercase)
+
+Combine with `|` to build a case-insensitive regex. Example:
+
+```
+ALLOY_FAIL_REGEX='Exception|ERROR|FAILED|Counterexample|assertion'
+```
