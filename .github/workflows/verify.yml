@@ -113,7 +113,8 @@ jobs:
                   if [ -n "$PR_SHA" ] && [ "$testp" != "N/A" ]; then testlink="[$testp](https://github.com/$REPO/blob/$PR_SHA/$testp)"; fi
                   if [ -n "$PR_SHA" ] && [ "$implp" != "N/A" ]; then impllink="[$implp](https://github.com/$REPO/blob/$PR_SHA/$implp)"; fi
                   if [ -n "$PR_SHA" ] && [ "$formp" != "N/A" ]; then formlink="[$formp](https://github.com/$REPO/blob/$PR_SHA/$formp)"; fi
-                  echo "- $scenario test: $testlink impl: $impllink formal: $formlink"
+                  id=$(echo "$row" | jq -r '.id')
+                  echo "- $scenario (id: $id) test: $testlink impl: $impllink formal: $formlink"
                   idx=$((idx+1))
                 done < <(jq -c '.rows[] | select(.test!="N/A" and .impl!="N/A" and .formal!="N/A")' "$TRACE_JSON" 2>/dev/null)
               fi
