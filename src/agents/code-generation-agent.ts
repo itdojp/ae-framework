@@ -276,6 +276,15 @@ export class CodeGenerationAgent {
   }
 
   /**
+   * Generate runtime contracts skeleton files (opt-in).
+   * Returns an array of { path, content } under src/contracts/.
+   */
+  async generateContractsSkeleton(formalSpec: string): Promise<Array<{ path: string; content: string }>> {
+    const mod = await import('./contracts-generator.js');
+    return mod.generateContractsFromFormalSpec(formalSpec, { language: 'ts' });
+  }
+
+  /**
    * Generate error handling code
    */
   async generateErrorHandling(code: string, strategy: {
