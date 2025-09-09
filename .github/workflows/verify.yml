@@ -55,3 +55,53 @@ jobs:
           path: |
             artifacts/codex/model-check.json
             artifacts/codex/*.tlc.log.txt
+  post-summary:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs: [traceability, model-check]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts_dl
+      - name: Build PR comment summary
+        id: build
+        run: |
+          set -e
+          TRACE_FILE=$(ls artifacts_dl/traceability-matrix/traceability.csv || true)
+          MODEL_FILE=$(ls artifacts_dl/model-check-results/model-check.json || true)
+          echo "TRACE_FILE=$TRACE_FILE" >> $GITHUB_OUTPUT
+          echo "MODEL_FILE=$MODEL_FILE" >> $GITHUB_OUTPUT
+          {
+            echo "### 🔍 Verification Summary"
+            if [ -f "$TRACE_FILE" ]; then
+              total=$(wc -l < "$TRACE_FILE")
+              scenarios=$((total-1))
+              covered_tests=$(tail -n +2 "$TRACE_FILE" | cut -d, -f2 | grep -vc '^N/A$' || true)
+              covered_impl=$(tail -n +2 "$TRACE_FILE" | cut -d, -f3 | grep -vc '^N/A$' || true)
+              echo "- Traceability: ${scenarios} scenarios; tests linked: ${covered_tests}; impl linked: ${covered_impl}"
+            else
+              echo "- Traceability: (no matrix artifact)"
+            fi
+            if [ -f "$MODEL_FILE" ]; then
+              ok=$(jq '[.tlc.results[] | select(.ok==true)] | length' "$MODEL_FILE")
+              total=$(jq '(.tlc.results | length) + 0' "$MODEL_FILE")
+              echo "- Model Check (TLC): ${ok}/${total} modules ok"
+            else
+              echo "- Model Check: (no summary artifact)"
+            fi
+          } > pr-summary.md
+          cat pr-summary.md
+      - name: Post PR comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('pr-summary.md', 'utf8');
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body
+            });
