@@ -60,7 +60,7 @@ jobs:
   post-summary:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    needs: [traceability, model-check]
+    needs: [traceability, model-check, contracts-check]
     steps:
       - uses: actions/checkout@v4
       - name: Download artifacts
@@ -74,9 +74,11 @@ jobs:
           TRACE_FILE=$(find artifacts_dl/traceability-matrix -name 'traceability.csv' 2>/dev/null | head -1)
           MODEL_FILE=$(find artifacts_dl/model-check-results -name 'model-check.json' 2>/dev/null | head -1)
           TRACE_JSON=$(find artifacts_dl/traceability-matrix -name 'traceability.json' 2>/dev/null | head -1)
+          CONTRACTS_JSON=$(find artifacts_dl/contracts-check -name 'contracts-check.json' 2>/dev/null | head -1)
           echo "TRACE_FILE=$TRACE_FILE" >> $GITHUB_OUTPUT
           echo "MODEL_FILE=$MODEL_FILE" >> $GITHUB_OUTPUT
           echo "TRACE_JSON=$TRACE_JSON" >> $GITHUB_OUTPUT
+          echo "CONTRACTS_JSON=$CONTRACTS_JSON" >> $GITHUB_OUTPUT
           {
             echo "### 🔍 Verification Summary"
             if [ -f "$TRACE_JSON" ]; then
@@ -114,6 +116,14 @@ jobs:
               echo "</details>"
             else
               echo "- Model Check: (no summary artifact)"
+            fi
+            if [ -f "$CONTRACTS_JSON" ]; then
+              haveSchemas=$(jq -r '.present.schemas' "$CONTRACTS_JSON" 2>/dev/null || echo false)
+              haveConds=$(jq -r '.present.conditions' "$CONTRACTS_JSON" 2>/dev/null || echo false)
+              haveMachine=$(jq -r '.present.machine' "$CONTRACTS_JSON" 2>/dev/null || echo false)
+              echo "- Contracts: schemas=${haveSchemas} conditions=${haveConds} machine=${haveMachine}"
+            else
+              echo "- Contracts: (no check artifact)"
             fi
           } > pr-summary.md
           cat pr-summary.md
