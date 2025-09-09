@@ -173,3 +173,16 @@ jobs:
         with:
           name: contracts-exec
           path: artifacts/contracts/contracts-exec.json
+      - name: Enforce contracts (optional)
+        if: ${{ env.CONTRACTS_ENFORCE == '1' }}
+        run: |
+          FILE=artifacts/contracts/contracts-exec.json
+          if [ ! -f "$FILE" ]; then echo "No contracts exec artifact found"; exit 1; fi
+          PARSE_IN=$(jq -r '.results.parseInOk // false' "$FILE")
+          PRE_OK=$(jq -r '.results.preOk // false' "$FILE")
+          POST_OK=$(jq -r '.results.postOk // false' "$FILE")
+          PARSE_OUT=$(jq -r '.results.parseOutOk // false' "$FILE")
+          if [ "$PARSE_IN" != "true" ] || [ "$PRE_OK" != "true" ] || [ "$POST_OK" != "true" ] || [ "$PARSE_OUT" != "true" ]; then
+            echo "Contracts enforcement failed: parseIn=$PARSE_IN pre=$PRE_OK post=$POST_OK parseOut=$PARSE_OUT"
+            exit 1
+          fi
