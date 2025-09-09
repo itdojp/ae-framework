@@ -28,7 +28,17 @@ async function main() {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       const conds = await import(path.join(repoRoot, 'src', 'contracts', 'conditions.ts'));
-      const input: unknown = {}; // minimal dummy input
+      // Prefer sample input via env if provided
+      let input: unknown = {};
+      const samplePath = process.env.CONTRACTS_SAMPLE_INPUT;
+      if (samplePath) {
+        try {
+          const txt = await fs.readFile(samplePath, 'utf8');
+          input = JSON.parse(txt);
+        } catch (e) {
+          console.warn(`[contracts-exec] Warning: failed to read CONTRACTS_SAMPLE_INPUT at ${samplePath}: ${e instanceof Error ? e.message : String(e)}`);
+        }
+      }
       let preOk = true; let postOk = true; let parseInOk = true; let parseOutOk = true;
       try { schemas.InputSchema?.parse?.(input); } catch (e) { parseInOk = false; }
       try { preOk = !!conds.pre?.(input); } catch (e) { preOk = false; }
@@ -48,4 +58,3 @@ async function main() {
 }
 
 main().catch((e) => { console.error('contracts-exec failed:', e); process.exit(1); });
-
