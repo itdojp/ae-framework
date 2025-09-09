@@ -98,7 +98,7 @@ jobs:
               jq -r '.rows[] | select(.test=="N/A" or .impl=="N/A" or .formal=="N/A") | "- " + .scenario + " (id: " + .id + ") test:" + .test + " impl:" + .impl + " formal:" + .formal' "$TRACE_JSON" 2>/dev/null | head -5 || true
               echo "</details>"
               echo "\n<details><summary>Linked examples (up to 3)</summary>"
-              jq -r '.rows[] | select(.test!="N/A" or .impl!="N/A" or .formal!="N/A") | "- " + .scenario + " test:" + .test + " impl:" + .impl + " formal:" + .formal' "$TRACE_JSON" 2>/dev/null | head -3 || true
+              jq -r '.rows[] | select(.test!="N/A" and .impl!="N/A" and .formal!="N/A") | "- " + .scenario + " test:" + .test + " impl:" + .impl + " formal:" + .formal' "$TRACE_JSON" 2>/dev/null | head -3 || true
               echo "</details>"
               echo "\n<details><summary>Hit basis (tests/formal)</summary>"
               thit_title=$(jq '[.rows[] | select(.testHit == .scenario)] | length' "$TRACE_JSON" 2>/dev/null || echo 0)
