@@ -110,8 +110,43 @@ async function main() {
     let haveJar = false;
     try { await fs.stat(alloyJar); haveJar = true; } catch {}
     if (!alloyRunCmd) {
-      summary.alloy.skipped.push(haveJar ? 'ALLOY_JAR present; set ALLOY_RUN_CMD to enable execution.' : 'No ALLOY_RUN_CMD; detection only.');
-      for (const f of alsFiles) summary.alloy.results.push({ file: path.relative(repoRoot, f), ok: null });
+      // Safe default: if ALLOY_JAR is available, run `java -jar $ALLOY_JAR {file}`
+      if (haveJar) {
+        const timeoutMs = parseInt(process.env.ALLOY_TIMEOUT_MS || '', 10) || (3 * 60 * 1000);
+        for (const f of alsFiles) {
+          const name = path.basename(f, '.als');
+          const logPath = path.join(outDir, `${name}.alloy.log.txt`);
+          try {
+            await ensureDir(outDir);
+            const res = await new Promise((resolve) => {
+              const sh = spawn('java', ['-jar', alloyJar, f], { cwd: repoRoot });
+              let out = ''; let err = '';
+              let terminated = false;
+              const timer = setTimeout(() => {
+                if (!terminated && sh.exitCode === null) {
+                  sh.kill('SIGTERM');
+                  setTimeout(() => { if (!terminated && sh.exitCode === null) sh.kill('SIGKILL'); }, 10 * 1000);
+                }
+              }, timeoutMs);
+              sh.stdout.on('data', d => out += d.toString());
+              sh.stderr.on('data', d => err += d.toString());
+              sh.on('exit', async (code, signal) => {
+                terminated = true;
+                clearTimeout(timer);
+                await fs.writeFile(logPath, out + (err ? `\n[stderr]\n${err}` : ''), 'utf8');
+                const timeout = code === null && signal === 'SIGKILL';
+                resolve({ ok: code === 0 && !timeout, code, signal, timeout, log: path.relative(repoRoot, logPath) });
+              });
+            });
+            summary.alloy.results.push({ file: path.relative(repoRoot, f), ok: res.ok, code: res.code, signal: res.signal, timeout: res.timeout, log: res.log });
+          } catch (e) {
+            summary.alloy.errors.push({ file: path.relative(repoRoot, f), error: String(e) });
+          }
+        }
+      } else {
+        summary.alloy.skipped.push('No ALLOY_RUN_CMD; detection only.');
+        for (const f of alsFiles) summary.alloy.results.push({ file: path.relative(repoRoot, f), ok: null });
+      }
     } else {
       for (const f of alsFiles) {
         const name = path.basename(f, '.als');
@@ -120,19 +155,27 @@ async function main() {
         try {
           await ensureDir(outDir);
           const res = await new Promise((resolve) => {
+            const timeoutMs = parseInt(process.env.ALLOY_TIMEOUT_MS || '', 10) || (3 * 60 * 1000);
             const sh = spawn(cmd, { shell: true, cwd: repoRoot });
             let out = ''; let err = '';
-            const timer = setTimeout(() => sh.kill('SIGKILL'), 3 * 60 * 1000);
+            let terminated = false;
+            const timer = setTimeout(() => {
+              if (!terminated && sh.exitCode === null) {
+                sh.kill('SIGTERM');
+                setTimeout(() => { if (!terminated && sh.exitCode === null) sh.kill('SIGKILL'); }, 10 * 1000);
+              }
+            }, timeoutMs);
             sh.stdout.on('data', d => out += d.toString());
             sh.stderr.on('data', d => err += d.toString());
-            sh.on('exit', async (code) => {
+            sh.on('exit', async (code, signal) => {
+              terminated = true;
               clearTimeout(timer);
               await fs.writeFile(logPath, out + (err ? `\n[stderr]\n${err}` : ''), 'utf8');
-              // Heuristic: treat nonzero exit as failure; else ok
-              resolve({ ok: code === 0, code, log: path.relative(repoRoot, logPath) });
+              const timeout = code === null && signal === 'SIGKILL';
+              resolve({ ok: code === 0 && !timeout, code, signal, timeout, log: path.relative(repoRoot, logPath) });
             });
           });
-          summary.alloy.results.push({ file: path.relative(repoRoot, f), ok: res.ok, code: res.code, log: res.log });
+          summary.alloy.results.push({ file: path.relative(repoRoot, f), ok: res.ok, code: res.code, signal: res.signal, timeout: res.timeout, log: res.log });
         } catch (e) {
           summary.alloy.errors.push({ file: path.relative(repoRoot, f), error: String(e) });
         }
