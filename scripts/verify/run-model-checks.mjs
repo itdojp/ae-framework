@@ -119,7 +119,10 @@ async function main() {
           try {
             await ensureDir(outDir);
             const res = await new Promise((resolve) => {
-              const sh = spawn('java', ['-jar', alloyJar, f], { cwd: repoRoot });
+              const args = ['-jar', alloyJar, f];
+              const addArgs = (process.env.ALLOY_CMD_ARGS || '').trim();
+              if (addArgs) args.push(...addArgs.split(/\s+/));
+              const sh = spawn('java', args, { cwd: repoRoot });
               let out = ''; let err = '';
               let terminated = false;
               const timer = setTimeout(() => {
@@ -135,7 +138,8 @@ async function main() {
                 clearTimeout(timer);
                 await fs.writeFile(logPath, out + (err ? `\n[stderr]\n${err}` : ''), 'utf8');
                 const timeout = code === null && signal === 'SIGKILL';
-                resolve({ ok: code === 0 && !timeout, code, signal, timeout, log: path.relative(repoRoot, logPath) });
+                const okHeuristic = code === 0 && !timeout && !/Exception|ERROR|FAILED/i.test(out + err);
+                resolve({ ok: okHeuristic, code, signal, timeout, log: path.relative(repoRoot, logPath) });
               });
             });
             summary.alloy.results.push({ file: path.relative(repoRoot, f), ok: res.ok, code: res.code, signal: res.signal, timeout: res.timeout, log: res.log });
