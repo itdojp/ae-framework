@@ -109,6 +109,9 @@ jobs:
               total=$(jq '(.tlc.results | length) + 0' "$MODEL_FILE" 2>/dev/null || echo 0)
               if [ "$total" -gt 0 ]; then pct=$(awk "BEGIN {printf \"%.0f\", ($ok*100)/$total}"); else pct=0; fi
               echo "- Model Check (TLC): ${ok}/${total} (${pct}%) modules ok"
+              echo "\n<details><summary>Non-OK modules (top 5)</summary>"
+              jq -r '.tlc.results[] | select(.ok!=true) | "- " + .module + ( .log? // "" | " (log: " + . + ")" )' "$MODEL_FILE" 2>/dev/null | head -5 || true
+              echo "</details>"
             else
               echo "- Model Check: (no summary artifact)"
             fi
