@@ -152,6 +152,11 @@ Flow suggestion:
 - `CODEX_SKIP_QUALITY`: `1` to skip running quality gates in quickstart.
 - `CODEX_TOLERANT`: `1` to force quickstart to exit 0 even if steps fail (non-blocking demo mode).
 
+### Runtime Contracts (optional)
+- Generate runtime contracts from a formal spec and inject them into OpenAPI-generated handlers.
+- Use `CodeGenerationAgent.generateContractsSkeleton(formalSpec)` and pass `includeContracts: true` to `generateFromOpenAPI`.
+- See `docs/verify/RUNTIME-CONTRACTS.md` and Quick Start for examples.
+
 ## Acceptance Criteria (incremental)
 
 1) PoC: CodeX can run `verify` (and optional `ui-scaffold`) via CLI and produce artifacts.
