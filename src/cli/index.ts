@@ -3,6 +3,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { PhaseValidator } from './validators/PhaseValidator.js';
+import { toMessage } from '../utils/error-utils.js';
 import { createSpecCommand } from './spec-cli.js';
 import { createCodegenCommand } from './codegen-cli.js';
 import { CEGISCli } from './cegis-cli.js';
@@ -160,8 +161,8 @@ class AEFrameworkCLI {
           });
         }
       }
-    } catch (error) {
-      console.log(chalk.red(`❌ Intent analysis failed: ${error}`));
+    } catch (error: unknown) {
+      console.log(chalk.red(`❌ Intent analysis failed: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -221,7 +222,7 @@ class AEFrameworkCLI {
 
     console.log(chalk.green(`✅ Prerequisites satisfied`));
     console.log(chalk.blue(`🚀 Ready to start phase: ${nextPhase}`));
-    this.displayPhaseRequirements(phase as any);
+    this.displayPhaseRequirements(phase);
   }
 
   async detectCurrentPhase(): Promise<string> {
@@ -431,8 +432,8 @@ program
       console.log(result.analysis);
       
       cli.handleProgressBlocking(result);
-    } catch (error) {
-      console.log(chalk.red(`❌ Error: ${error}`));
+    } catch (error: unknown) {
+      console.log(chalk.red(`❌ Error: ${toMessage(error)}`));
       process.exit(1);
     }
   });
@@ -469,8 +470,8 @@ program
       console.log(result.analysis);
       
       cli.handleProgressBlocking(result);
-    } catch (error) {
-      console.log(chalk.red(`❌ Error: ${error}`));
+    } catch (error: unknown) {
+      console.log(chalk.red(`❌ Error: ${toMessage(error)}`));
       process.exit(1);
     }
   });
@@ -509,8 +510,8 @@ program
       console.log(result.analysis);
       
       cli.handleProgressBlocking(result);
-    } catch (error) {
-      console.log(chalk.red(`❌ Error: ${error}`));
+    } catch (error: unknown) {
+      console.log(chalk.red(`❌ Error: ${toMessage(error)}`));
       process.exit(1);
     }
   });
@@ -551,8 +552,8 @@ program
       console.log(result.analysis);
       
       cli.handleProgressBlocking(result);
-    } catch (error) {
-      console.log(chalk.red(`❌ Error: ${error}`));
+    } catch (error: unknown) {
+      console.log(chalk.red(`❌ Error: ${toMessage(error)}`));
       process.exit(1);
     }
   });
@@ -588,8 +589,8 @@ program
       console.log(chalk.blue('\n🎨 UI Analysis:'));
       console.log(result.analysis);
       cli.handleProgressBlocking(result);
-    } catch (error) {
-      console.log(chalk.red(`❌ Error: ${error}`));
+    } catch (error: unknown) {
+      console.log(chalk.red(`❌ Error: ${toMessage(error)}`));
       process.exit(1);
     }
   });

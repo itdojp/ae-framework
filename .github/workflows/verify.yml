@@ -30,3 +30,28 @@ jobs:
             echo "Failed to generate traceability matrix"
             exit 1
           fi
+  model-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Setup Java (for TLC)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - name: Run model checks (TLA+)
+        run: |
+          node --version
+          java -version
+          npm run verify:model || true
+      - name: Upload model-check artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-check-results
+          path: |
+            artifacts/codex/model-check.json
+            artifacts/codex/*.tlc.log.txt

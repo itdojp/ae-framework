@@ -2,6 +2,7 @@ import { execSync } from 'child_process';
 import { existsSync } from 'fs';
 import { glob } from 'glob';
 import { AEFrameworkConfig, Guard, GuardResult } from '../types.js';
+import { toMessage } from '../../utils/error-utils.js';
 import { getCurrentPhase, shouldEnforceGate, getThreshold } from '../../utils/quality-policy-loader.js';
 
 export class GuardRunner {
@@ -66,8 +67,8 @@ export class GuardRunner {
       }
       
       return { success: true, message: 'All source files have corresponding tests' };
-    } catch (error) {
-      return { success: false, message: `TDD Guard error: ${error}` };
+    } catch (error: unknown) {
+      return { success: false, message: `TDD Guard error: ${toMessage(error)}` };
     }
   }
 
@@ -121,8 +122,8 @@ export class GuardRunner {
       }
       
       return { success: true, message: 'RED-GREEN cycle appears to be followed' };
-    } catch (error) {
-      return { success: false, message: `RED-GREEN cycle check failed: ${error}` };
+    } catch (error: unknown) {
+      return { success: false, message: `RED-GREEN cycle check failed: ${toMessage(error)}` };
     }
   }
 
@@ -158,7 +159,7 @@ export class GuardRunner {
       } else {
         return { success: false, message: `Coverage: ${coverage}% (< ${threshold}%)` };
       }
-    } catch (error) {
+    } catch (error: unknown) {
       // If coverage command fails, check if at least tests exist and pass
       try {
         await this.runTestExecutionGuard();
@@ -202,7 +203,7 @@ export class GuardRunner {
         }
       }
       
-    } catch (error) {
+    } catch (error: unknown) {
       // Git command failed, skip git-based checks
     }
     

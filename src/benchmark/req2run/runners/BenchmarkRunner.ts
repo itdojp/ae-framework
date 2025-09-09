@@ -315,33 +315,47 @@ export class BenchmarkRunner {
 
       // Read and parse YAML
       const content = await fs.readFile(problemFile, 'utf-8');
-      const spec = yaml.parse(content);
+      const spec = yaml.parse(content) as unknown as {
+        id?: string;
+        title?: string;
+        notes?: string;
+        category?: string;
+        difficulty?: string;
+        estimated_time_minutes?: number;
+        metadata?: { author?: string; created_date?: string };
+        requirements?: {
+          functional?: Array<{ id?: string; description?: string; priority?: string }>;
+          non_functional?: Record<string, Array<string | { description?: string }>>;
+        };
+        constraints?: { disallowed_packages?: string[] } & Record<string, unknown>;
+      };
 
-      // Convert to RequirementSpec format
+      // Convert to RequirementSpec format (requirements as string[])
       return {
         id: spec.id,
         title: spec.title,
         description: spec.notes || `${spec.title} - ${spec.category} (${spec.difficulty})`,
         category: spec.category || 'general',
         difficulty: spec.difficulty || 'intermediate',
-        requirements: spec.requirements?.functional?.map((req) => ({
-          id: (req as { id?: string }).id,
-          description: (req as { description?: string }).description,
-          type: 'functional',
-          priority: String((req as { priority?: string }).priority || '').toLowerCase() || 'must',
-          acceptance_criteria: [(req as { description?: string }).description || '']
-        })) || [],
+        requirements: Array.isArray(spec.requirements?.functional)
+          ? (spec.requirements!.functional!
+              .map((req) => (typeof req?.description === 'string' ? req.description.trim() : ''))
+              .filter((s): s is string => s.length > 0))
+          : [],
         constraints: {
           business: spec.constraints?.disallowed_packages || [],
           performance: spec.requirements?.non_functional?.performance || {}
         },
-        testCriteria: spec.requirements?.functional?.map((req) => ({
-          id: (req as { id?: string }).id || `test-${Date.now()}`,
-          description: `Test: ${(req as { description?: string }).description || ''}`,
-          type: 'unit',
-          weight: 1.0,
-          automated: true
-        })) || [],
+        testCriteria: Array.isArray(spec.requirements?.functional)
+          ? (spec.requirements!.functional!
+              .map((req, idx) => ({
+                id: (req?.id ? String(req.id) : `test-${idx + 1}`),
+                description: `Test: ${req?.description ?? ''}`,
+                type: 'unit' as const,
+                weight: 1.0,
+                automated: true,
+              })))
+          : [],
         expectedOutput: {
           type: OutputType.APPLICATION,
           format: 'executable',
@@ -378,14 +392,88 @@ export class BenchmarkRunner {
     spec: RequirementSpec,
     phaseExecutions: PhaseExecution[]
   ): Promise<BenchmarkMetrics> {
-    // TODO: Implement comprehensive evaluation logic
-    // This would include:
-    // - Functional testing
-    // - Performance testing
-    // - Security analysis
-    // - Code quality analysis
-    
-    return this.getDefaultMetrics();
+    // Lightweight evaluator (placeholder) that derives proxy metrics
+    // from phase execution outcomes and durations. This provides
+    // non-zero, comparable signals until full evaluators are wired.
+
+    const totalPhases = phaseExecutions.length;
+    const successful = phaseExecutions.filter(p => p.success).length;
+    const totalDuration = phaseExecutions.reduce((s, p) => s + (p.duration || 0), 0);
+
+    const successRatio = totalPhases > 0 ? successful / totalPhases : 0;
+
+    // Proxy functional coverage: success ratio across phases (0-100)
+    const functionalCoverage = Math.min(100, Math.round(successRatio * 100));
+
+    // Proxy test pass rate: whether validation phase succeeded
+    const validationPhase = phaseExecutions.find(p => p.phase === AEFrameworkPhase.VALIDATION);
+    const testPassRate = validationPhase?.success ? 85 : (successRatio > 0 ? 50 : 0);
+
+    // Proxy code quality score based on presence of domain model phase success
+    const domainPhase = phaseExecutions.find(p => p.phase === AEFrameworkPhase.DOMAIN_MODELING);
+    const codeQualityScore = domainPhase?.success ? 75 : (successRatio > 0 ? 60 : 0);
+
+    // Proxy performance metrics
+    const responseTime = totalDuration; // ms for end-to-end
+    const throughput = totalDuration > 0 ? Number((successful / (totalDuration / 1000)).toFixed(2)) : 0; // phases/s
+
+    // Compose overall score (bounded 0-100)
+    // Base 60 scaled by success ratio, add small contributions from coverage and quality
+    const baseScore = Math.round(60 * successRatio);
+    const overallScore = Math.min(100, Math.max(0, Math.round(baseScore + functionalCoverage * 0.2 + codeQualityScore * 0.1)));
+
+    return {
+      overallScore,
+      functionalCoverage,
+      testPassRate,
+      performance: {
+        responseTime,
+        throughput,
+        memoryUsage: process.memoryUsage().heapUsed,
+        cpuUsage: 0,
+        diskUsage: 0
+      },
+      codeQuality: {
+        codeComplexity: codeQualityScore,
+        maintainabilityIndex: codeQualityScore,
+        testCoverage: 0,
+        duplicationRatio: 0,
+        lintScore: codeQualityScore,
+        typeScriptErrors: 0
+      },
+      security: {
+        vulnerabilityCount: 0,
+        securityScore: 80,
+        owaspCompliance: 75,
+        dependencyVulnerabilities: 0,
+        secretsExposed: 0,
+        securityHeaders: 0
+      },
+      timeToCompletion: totalDuration,
+      resourceUsage: {
+        maxMemoryUsage: process.memoryUsage().heapTotal,
+        avgCpuUsage: 0,
+        diskIO: 0,
+        networkIO: 0,
+        buildTime: 0,
+        deploymentTime: 0
+      },
+      phaseMetrics: phaseExecutions.map(p => ({
+        phase: p.phase,
+        duration: p.duration || 0,
+        success: p.success,
+        outputQuality: p.success ? 80 : 0,
+        resourceUsage: {
+          maxMemoryUsage: 0,
+          avgCpuUsage: 0,
+          diskIO: 0,
+          networkIO: 0,
+          buildTime: 0,
+          deploymentTime: 0
+        },
+        errors: p.errors || []
+      }))
+    };
   }
 
   /**

@@ -9,6 +9,7 @@ import { Command } from 'commander';
 import { resolve, join } from 'path';
 import chalk from 'chalk';
 import { DeterministicCodeGenerator } from '../codegen/deterministic-generator.js';
+import { toMessage } from '../utils/error-utils.js';
 import { DriftDetector } from '../codegen/drift-detector.js';
 
 export function createCodegenCommand(): Command {
@@ -60,8 +61,8 @@ export function createCodegenCommand(): Command {
           console.log(chalk.gray(`   ${ext}: ${count} files`));
         });
 
-      } catch (error) {
-        console.error(chalk.red(`❌ Code generation failed: ${(error as Error).message}`));
+      } catch (error: unknown) {
+        console.error(chalk.red(`❌ Code generation failed: ${toMessage(error)}`));
         process.exit(1);
       }
     });
@@ -131,8 +132,8 @@ export function createCodegenCommand(): Command {
         };
         process.exit(exitCodes[report.status]);
 
-      } catch (error) {
-        console.error(chalk.red(`❌ Drift detection failed: ${(error as Error).message}`));
+      } catch (error: unknown) {
+        console.error(chalk.red(`❌ Drift detection failed: ${toMessage(error)}`));
         process.exit(1);
       }
     });
@@ -173,8 +174,8 @@ export function createCodegenCommand(): Command {
             const manifest = await generator.generate();
             console.log(chalk.green(`✅ Regenerated ${manifest.files.length} files`));
             
-          } catch (error) {
-            console.error(chalk.red(`❌ Regeneration failed: ${(error as Error).message}`));
+          } catch (error: unknown) {
+            console.error(chalk.red(`❌ Regeneration failed: ${toMessage(error)}`));
           }
         };
 
@@ -183,8 +184,8 @@ export function createCodegenCommand(): Command {
         console.log('Watch mode not available in current setup');
         return;
 
-      } catch (error) {
-        console.error(chalk.red(`❌ Watch mode failed: ${(error as Error).message}`));
+      } catch (error: unknown) {
+        console.error(chalk.red(`❌ Watch mode failed: ${toMessage(error)}`));
         process.exit(1);
       }
     });
@@ -235,8 +236,8 @@ export function createCodegenCommand(): Command {
           console.log(`  ${file.filePath}`);
         });
 
-      } catch (error) {
-        console.error(chalk.red(`❌ Status check failed: ${(error as Error).message}`));
+      } catch (error: unknown) {
+        console.error(chalk.red(`❌ Status check failed: ${toMessage(error)}`));
         process.exit(1);
       }
     });

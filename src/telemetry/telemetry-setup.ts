@@ -2,6 +2,7 @@ import { NodeSDK } from '@opentelemetry/sdk-node';
 import { Resource } from '@opentelemetry/resources';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
+import { toMessage } from '../utils/error-utils.js';
 
 // Environment-based configuration
 const isProduction = process.env.NODE_ENV === 'production';
@@ -39,8 +40,8 @@ export function initializeTelemetry(): void {
       console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`   OTLP Export: ${enableOTLP ? '✅ Enabled' : '❌ Console only'}`);
     }
-  } catch (error) {
-    console.error('❌ Failed to initialize OpenTelemetry:', error);
+  } catch (error: unknown) {
+    console.error('❌ Failed to initialize OpenTelemetry:', toMessage(error));
   }
 }
 
@@ -56,9 +57,9 @@ try {
       try {
         await shutdownTelemetry();
         console.log('📊 OpenTelemetry shutdown complete');
-      } catch (error) {
-        console.error('❌ Error during OpenTelemetry shutdown:', error);
-      }
+    } catch (error: unknown) {
+      console.error('❌ Error during OpenTelemetry shutdown:', toMessage(error));
+    }
     });
   }
 } catch (error) {

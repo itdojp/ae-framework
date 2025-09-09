@@ -1,0 +1,5001 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.4",
+  "serialNumber": "urn:uuid:2025-09-08T131638583Z-d6b5031f94ed88af",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2025-09-08T13:16:38.583Z",
+    "tools": [
+      {
+        "vendor": "AE Framework",
+        "name": "SBOM Generator",
+        "version": "1.0.0"
+      }
+    ],
+    "authors": [
+      "AE Framework"
+    ],
+    "supplier": "AE Framework"
+  },
+  "components": [
+    {
+      "name": "@ae-framework/spec-compiler",
+      "version": "file:./packages/spec-compiler",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/@ae-framework/spec-compiler@file:./packages/spec-compiler",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/@ae-framework/spec-compiler"
+        }
+      ]
+    },
+    {
+      "name": "@modelcontextprotocol/sdk",
+      "version": "^0.5.0",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/@modelcontextprotocol/sdk@^0.5.0",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/@modelcontextprotocol/sdk"
+        }
+      ]
+    },
+    {
+      "name": "@opentelemetry/api",
+      "version": "^1.9.0",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/@opentelemetry/api@^1.9.0",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/@opentelemetry/api"
+        }
+      ]
+    },
+    {
+      "name": "@opentelemetry/api-logs",
+      "version": "^0.52.0",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/@opentelemetry/api-logs@^0.52.0",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/@opentelemetry/api-logs"
+        }
+      ]
+    },
+    {
+      "name": "@opentelemetry/auto-instrumentations-node",
+      "version": "^0.47.0",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/@opentelemetry/auto-instrumentations-node@^0.47.0",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node"
+        }
+      ]
+    },
+    {
+      "name": "@opentelemetry/exporter-metrics-otlp-grpc",
+      "version": "^0.52.0",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/@opentelemetry/exporter-metrics-otlp-grpc@^0.52.0",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/@opentelemetry/exporter-metrics-otlp-grpc"
+        }
+      ]
+    },
+    {
+      "name": "@opentelemetry/exporter-trace-otlp-grpc",
+      "version": "^0.52.0",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/@opentelemetry/exporter-trace-otlp-grpc@^0.52.0",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/@opentelemetry/exporter-trace-otlp-grpc"
+        }
+      ]
+    },
+    {
+      "name": "@opentelemetry/resources",
+      "version": "^1.25.0",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/@opentelemetry/resources@^1.25.0",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/@opentelemetry/resources"
+        }
+      ]
+    },
+    {
+      "name": "@opentelemetry/sdk-metrics",
+      "version": "^1.25.0",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/@opentelemetry/sdk-metrics@^1.25.0",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/@opentelemetry/sdk-metrics"
+        }
+      ]
+    },
+    {
+      "name": "@opentelemetry/sdk-node",
+      "version": "^0.52.0",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/@opentelemetry/sdk-node@^0.52.0",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/@opentelemetry/sdk-node"
+        }
+      ]
+    },
+    {
+      "name": "@opentelemetry/sdk-trace-base",
+      "version": "1.30.1",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/@opentelemetry/sdk-trace-base@1.30.1",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/@opentelemetry/sdk-trace-base"
+        }
+      ]
+    },
+    {
+      "name": "@opentelemetry/semantic-conventions",
+      "version": "^1.25.0",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/@opentelemetry/semantic-conventions@^1.25.0",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/@opentelemetry/semantic-conventions"
+        }
+      ]
+    },
+    {
+      "name": "@types/uuid",
+      "version": "^10.0.0",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/@types/uuid@^10.0.0",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/@types/uuid"
+        }
+      ]
+    },
+    {
+      "name": "cac",
+      "version": "^6.7.14",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/cac@^6.7.14",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/cac"
+        }
+      ]
+    },
+    {
+      "name": "chalk",
+      "version": "^5.3.0",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/chalk@^5.3.0",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/chalk"
+        }
+      ]
+    },
+    {
+      "name": "commander",
+      "version": "^12.0.0",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/commander@^12.0.0",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/commander"
+        }
+      ]
+    },
+    {
+      "name": "execa",
+      "version": "^9.6.0",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/execa@^9.6.0",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/execa"
+        }
+      ]
+    },
+    {
+      "name": "fastify",
+      "version": "^5.0.0",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/fastify@^5.0.0",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/fastify"
+        }
+      ]
+    },
+    {
+      "name": "fastify-openapi-glue",
+      "version": "^4.5.0",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/fastify-openapi-glue@^4.5.0",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/fastify-openapi-glue"
+        }
+      ]
+    },
+    {
+      "name": "gitleaks",
+      "version": "^1.0.0",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/gitleaks@^1.0.0",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/gitleaks"
+        }
+      ]
+    },
+    {
+      "name": "glob",
+      "version": "^10.3.0",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/glob@^10.3.0",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/glob"
+        }
+      ]
+    },
+    {
+      "name": "handlebars",
+      "version": "^4.7.8",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/handlebars@^4.7.8",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/handlebars"
+        }
+      ]
+    },
+    {
+      "name": "js-yaml",
+      "version": "^4.1.0",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/js-yaml@^4.1.0",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/js-yaml"
+        }
+      ]
+    },
+    {
+      "name": "micromatch",
+      "version": "^4.0.8",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/micromatch@^4.0.8",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/micromatch"
+        }
+      ]
+    },
+    {
+      "name": "pg",
+      "version": "^8.12.0",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/pg@^8.12.0",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/pg"
+        }
+      ]
+    },
+    {
+      "name": "pino",
+      "version": "^9.0.0",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/pino@^9.0.0",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/pino"
+        }
+      ]
+    },
+    {
+      "name": "tinybench",
+      "version": "^5.0.1",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/tinybench@^5.0.1",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/tinybench"
+        }
+      ]
+    },
+    {
+      "name": "uuid",
+      "version": "^11.1.0",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/uuid@^11.1.0",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/uuid"
+        }
+      ]
+    },
+    {
+      "name": "which",
+      "version": "^5.0.0",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/which@^5.0.0",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/which"
+        }
+      ]
+    },
+    {
+      "name": "yaml",
+      "version": "^2.8.1",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/yaml@^2.8.1",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/yaml"
+        }
+      ]
+    },
+    {
+      "name": "zod",
+      "version": "^3.23.8",
+      "type": "library",
+      "licenses": [],
+      "purl": "pkg:npm/zod@^3.23.8",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.npmjs.com/package/zod"
+        }
+      ]
+    },
+    {
+      "name": "src/index.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/index.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "dcfeecf62569301d9d022e922a015e26274b54083ca9909bfe96ae53f949398c"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "74c4c47c0dcd0b5532de4461b43166586093e297"
+        }
+      ]
+    },
+    {
+      "name": "src/cli.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cli.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "1851ad8cbaac1ad0c61465f84b991c5ad9b755b3f517d455129e512cc708342c"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "25bce0e9b00df08eddc7a86b27053ab89853ee94"
+        }
+      ]
+    },
+    {
+      "name": "src/utils/token-optimizer.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/utils/token-optimizer.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "af40f816cd2da973d2c78a94bc0b39c31d227850ed451a101ab090ca85a61c00"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "45d9a39eb2837cd7b4caaedd317fdf6a8a31aab1"
+        }
+      ]
+    },
+    {
+      "name": "src/utils/steering-loader.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/utils/steering-loader.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "cfa81aca9983d30e8705c6e60fbfcc27bc9d5bec8fd488f2da7cc287e0888761"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "b3b8e437f032f7eced48400d166d52d38c4e2eba"
+        }
+      ]
+    },
+    {
+      "name": "src/utils/quality-policy-loader.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/utils/quality-policy-loader.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "d705dc0c5f37d9a5b47d42fe5728213edcfc65bc5448e5e9b556f4886a9dd221"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "d543bcea628901ec8685a146b51b4941925d31f7"
+        }
+      ]
+    },
+    {
+      "name": "src/utils/phase-state-manager.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/utils/phase-state-manager.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "e76bb0bfaa009887fd4f91114e72cd2999cdd6ac296ba1db2b59376158858bae"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "a0cd8af62457fb8354c23fc9c22ec6d38ccca5d4"
+        }
+      ]
+    },
+    {
+      "name": "src/utils/persona-manager.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/utils/persona-manager.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "81c52f054cdde440dc1716e074326af9f97deec21264f74b7f38cc0d3b981b83"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "19d0648774ccf657f8f4091c546d2bfcc90a7fb7"
+        }
+      ]
+    },
+    {
+      "name": "src/utils/mcp-plugin-manager.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/utils/mcp-plugin-manager.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "23eb18ac68238962b0def1995f9734b3da9c361a05548fc4595e7e3030e007b8"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "7f1a454feb9e9920f1bb94f56b19e77c4246317a"
+        }
+      ]
+    },
+    {
+      "name": "src/utils/installer-manager.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/utils/installer-manager.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "dfee46f64012536a6cdd741eab48c88b0c174c6c2c98557cd630bfcbb58dabb7"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "334472306464037007f2ee0402d65ad63e16af6b"
+        }
+      ]
+    },
+    {
+      "name": "src/utils/index.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/utils/index.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "e05c1741e997ea5efdaa4f1ddcec0e7ff181b26f46845783cb73a4cf4813d8b0"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "049b19a35cc373279fcff6b9aa612c0437432853"
+        }
+      ]
+    },
+    {
+      "name": "src/utils/evidence-validator.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/utils/evidence-validator.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "2aa1d1a095bf1f9ee3cc340ffce4b659f2e70a6e79ebcc90a6140fbefa0c0668"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "e2f4c4b383fadc92a52009fe88d81f213a459475"
+        }
+      ]
+    },
+    {
+      "name": "src/utils/error-utils.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/utils/error-utils.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "59073ce426629cbb0f392457403dbd5bc15c23a3ea6dc6d6ff34bc02fdcb724c"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "81118b5191c89e014cc2c39ece567dce76457589"
+        }
+      ]
+    },
+    {
+      "name": "src/utils/enhanced-state-manager.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/utils/enhanced-state-manager.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "d457517c75cc2f2ac5bd8ad7341c1cc58e8dba6e5a7c552486a8b471b0b4c0a8"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "c5c2ab349e07ef06bbe747c1ba2fc29c0645d274"
+        }
+      ]
+    },
+    {
+      "name": "src/utils/context-manager.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/utils/context-manager.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "68ccf097cd9b8d52ffa4353b48ce08c1003a4b74a58c3f63261b2d7e40e6e16d"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "979a15ead939d3423a28900d284899650fbef79a"
+        }
+      ]
+    },
+    {
+      "name": "src/utils/circuit-breaker.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/utils/circuit-breaker.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "a4afd0e98501c3016be4284e51069e8460ee25d288648c9692b49dc8d5fd611a"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "3a8d25f4816836d19ff257f56b2c7d25ec9e82b4"
+        }
+      ]
+    },
+    {
+      "name": "src/types/llm.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/types/llm.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "1653a99f77abe111f290a78482f38727453a2e5dca7c7200d8a462e6a7e350b3"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "fb29e573d2700b245ac010bf6863d83cdeb47d21"
+        }
+      ]
+    },
+    {
+      "name": "src/testing/visual-regression.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/testing/visual-regression.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "5f9c8a2c7a6969eb719b7382df46606b84594bcea0ea471699f66f6cb3eaedc1"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "c6eec5bd489a5ca13ed6878e6561172e697afb0b"
+        }
+      ]
+    },
+    {
+      "name": "src/testing/properties.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/testing/properties.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "30ccbc8e60763278c4fa3869b8f92da46a5bd832768ee2a22221d8e8e9eded65"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "083813e5048d14e3d5119041570e12c5a9ce1109"
+        }
+      ]
+    },
+    {
+      "name": "src/testing/playwright-integration.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/testing/playwright-integration.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "9fddd1cef9b2a45f4f9d181b4e8925cbef68c3f783d86f78a0af88ecc9cb01f3"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "fa8d6eff6a34833f10bb5bd6cd4bd815c44b7d99"
+        }
+      ]
+    },
+    {
+      "name": "src/testing/intelligent-test-selection.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/testing/intelligent-test-selection.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "ae551e9b947381e338a365ed25a078ffac6b5f3960623c0d7a32017512990fbb"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "c9a66a86a7ff4dcc3f6cd1ded1e938ee117caccb"
+        }
+      ]
+    },
+    {
+      "name": "src/testing/fc-assert.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/testing/fc-assert.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "a7f28cd808fdd03dbde2cab548ccdaa127c8fe3c9451e1c914603413b0087743"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "451678c10b6b66e37e7a424b01857d304d6ab57e"
+        }
+      ]
+    },
+    {
+      "name": "src/services/unified-service-manager.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/services/unified-service-manager.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "556cad2f69e7fc96a9ba61cbf66428abc0be01fe38d8cadad3709d7ab9aecbe2"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "a33f88d804e50c97f9a31395e60e62f6977df075"
+        }
+      ]
+    },
+    {
+      "name": "src/services/service-types.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/services/service-types.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "69067b563ee9e8148fc0fad914302fc6d6e9ad512f816f31ab2616ea035ef5d4"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "385cf7476a1e61c123dc9caec405ec5530333799"
+        }
+      ]
+    },
+    {
+      "name": "src/services/service-registry.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/services/service-registry.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "10ab2d600553bfb9ab7905f25ef801a24312476bc4591c5f3f7493ad54bf881d"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "ba6a3804835cbd3288f6e60bdfcd0e8ff1e8e3a0"
+        }
+      ]
+    },
+    {
+      "name": "src/services/persona-integration.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/services/persona-integration.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "0e865a8fe3cfbd3ff58d4cb86565f3169cd7f11a0c7423a831b028656c8a5030"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "1b50f95dc2376806e5a0af5628ab117201718f87"
+        }
+      ]
+    },
+    {
+      "name": "src/services/mcp-server.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/services/mcp-server.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "2a49c15ce915592d96c5734717300d54517438b51500d158dc5bad443d80d989"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "7825ef5e9c544499a235d2c5b916350b3bf1d69f"
+        }
+      ]
+    },
+    {
+      "name": "src/services/index.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/services/index.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "8ed77d59f839b05977d82a45c0e1ed4799b690a2bf12626f214a981952a40fe4"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "a5973c54f7038cda69f22ebeeea1a9ecbc270b40"
+        }
+      ]
+    },
+    {
+      "name": "src/services/approval-service.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/services/approval-service.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "d1d49cd2006caecd6a6a4202eb2457ca5e28efdfafaa091fa41c5e4cda9452c8"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "cbb74769f8c376a511cf0e7facd6164e7f124734"
+        }
+      ]
+    },
+    {
+      "name": "src/telemetry/telemetry-setup.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/telemetry/telemetry-setup.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "104f5801179a6a6c7ad41bd65cae7789a3cafc60c3a402c60a59db6d6401f7b8"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "e9283d43c42eeafa6b2d81c2f79ac4112eec9a1b"
+        }
+      ]
+    },
+    {
+      "name": "src/telemetry/telemetry-service.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/telemetry/telemetry-service.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "296df40adc8535c9f4752588f4f9010b063b1a9d673c968f72aad293508acb3f"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "a08583726c8c217641e5166a54a6cd58a01c3cf4"
+        }
+      ]
+    },
+    {
+      "name": "src/telemetry/runtime-guards.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/telemetry/runtime-guards.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "87dad1f9ba5c33589039ccf1a0915601d2ed2c0d53dd2dcea54116eb2fd2b6d7"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "84edf0ff203029ace3660e050c73bdc18e30d225"
+        }
+      ]
+    },
+    {
+      "name": "src/telemetry/phase6-metrics.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/telemetry/phase6-metrics.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "2124754f5db846958d3c9ecc39ec6aba89e15e12792d1d8ce7619234b6b51b96"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "1ca2dfb248bce18ab1b201e5ab9b51e2cb34e5a6"
+        }
+      ]
+    },
+    {
+      "name": "src/telemetry/enhanced-telemetry.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/telemetry/enhanced-telemetry.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "4d8d509f49241936fbe7230b42697557123dc216c2fd64c2c8f93aba9ea4e7af"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "593e6a4b38af70839a21158d12d7f1b77aae1e3d"
+        }
+      ]
+    },
+    {
+      "name": "src/self-improvement/tdd-setup.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/self-improvement/tdd-setup.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "6f1f348fdecfa8644a3fb2ed9013bdb6225ebd717e8985a91c80e184b03bb07f"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "2f7ce94e4d4de0489210e192a32aa974742ea4d4"
+        }
+      ]
+    },
+    {
+      "name": "src/self-improvement/setup-git-hooks.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/self-improvement/setup-git-hooks.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "4f95c892dc628c7b9e28c6ca59ebeb674885e5f21117a06e4dbdcf4e80a5bb1c"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "0284a3e658b1453ae6bb24cf3cf33170c5001c0a"
+        }
+      ]
+    },
+    {
+      "name": "src/self-improvement/setup-context-manager.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/self-improvement/setup-context-manager.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "4d45a92cc01c09e880cdd34bc07b8d03d7615c74178a8314fe91cdd74788ee74"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "a25baa691fed791d7f2ba65bde8dc428b5cefb88"
+        }
+      ]
+    },
+    {
+      "name": "src/self-improvement/phase5-verification-final.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/self-improvement/phase5-verification-final.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "a38055de0be2bf6ae0efb1722eee193979586bf4d23a71ac9ca1d406ac557501"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "5c0b464c94108bd3de143e6dc108d5d538adc8b5"
+        }
+      ]
+    },
+    {
+      "name": "src/self-improvement/phase4-code-generation.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/self-improvement/phase4-code-generation.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "ebaeb3af234bdbf27979f86368ff81e91b69bb2a2ee1abe15d64ee3706560667"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "14a8f2cdb7005cc184ffc86e11e5a1f11a380092"
+        }
+      ]
+    },
+    {
+      "name": "src/self-improvement/phase3-typescript-fixes.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/self-improvement/phase3-typescript-fixes.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "01cce7284799705048d0f49b60d619355a83dd904fccb775b7399b1b56720179"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "a9201d3cdc7e3978ef5917f3ebe1005c277826d6"
+        }
+      ]
+    },
+    {
+      "name": "src/self-improvement/phase3-simple.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/self-improvement/phase3-simple.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "d8f439559e3a5944bac7652134fd5ea6ba5ad265517c578e76816e677b6f3d75"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "9b189d3116f9b77625f8f4738dcaf881b81f166f"
+        }
+      ]
+    },
+    {
+      "name": "src/self-improvement/phase3-formal-testing.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/self-improvement/phase3-formal-testing.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "1be9c265befc561199ab36b7f305884b1c548d1a8ab4bcd61342cd187cd32fb8"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "4ef5b108d729b54d4f1bbc0c16961c923c1795e8"
+        }
+      ]
+    },
+    {
+      "name": "src/self-improvement/phase2-requirements-analysis.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/self-improvement/phase2-requirements-analysis.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "945c5cffd575d282e2eb62672229d8962f06aa306bffb6deed98ed5cbb96f039"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "9858223bd63d823b3e1853edf34a0145d4053ab4"
+        }
+      ]
+    },
+    {
+      "name": "src/self-improvement/demo.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/self-improvement/demo.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "ac87644a7a8ef87fa3edaa08799b93694b1574781a503ebd6c87be688420417d"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "f200540a568fe47cb9eeeb46794ae94d39e7c931"
+        }
+      ]
+    },
+    {
+      "name": "src/self-improvement/codebase-analysis.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/self-improvement/codebase-analysis.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "e511b5fdf2d0b3aadf768be73d6f14ea32bdc7738cd94cee3d150f6094b77449"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "fbc3d5d98f632333a699169079af5484b224d69c"
+        }
+      ]
+    },
+    {
+      "name": "src/security/sbom-generator.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/security/sbom-generator.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "9d9df7f89b1182a4fc25f82d421d8843574aba675fe3b2a458d17d1cf68571b0"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "0d28c69da229462378ec0fe15ec54539e24bb54e"
+        }
+      ]
+    },
+    {
+      "name": "src/schemas/llm.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/schemas/llm.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "4507128470f2f2a3a4960966df0befeac18e1e10eec7eaa1c346129782231972"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "0c51a2fa15f959a2015a843787a12fe34aa6b472"
+        }
+      ]
+    },
+    {
+      "name": "src/runtime/runtime-middleware.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/runtime/runtime-middleware.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "300c522215b313d44f21a43eba71c7579354bc4ff4bae96af1bac79e1ff8f65b"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "13ae46d6c6879e71ac53cf50e3cf84b803517f17"
+        }
+      ]
+    },
+    {
+      "name": "src/runtime/conformance-guards.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/runtime/conformance-guards.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "50676c96d16293d248b0e307250c133cda054ecb74e3b9d57ec4cf40197d4edb"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "37f6abb87d3d84aee39e5c6b1e7b909431b4e9e4"
+        }
+      ]
+    },
+    {
+      "name": "src/runner/main.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/runner/main.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "a418284797687809495eac7005a861187682af189a4aa1c941401abc5b15dc2d"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "43a308ece03b514e555d6c2d9f63ee0db520ab8f"
+        }
+      ]
+    },
+    {
+      "name": "src/resilience/timeout-patterns.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/resilience/timeout-patterns.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "143b91028d0a8632b167762b6d0f22097eb6169d9112dc8dd4ce5801b6505e7e"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "824deebdcf50e48878a38c350c9e1168dd28da8e"
+        }
+      ]
+    },
+    {
+      "name": "src/resilience/index.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/resilience/index.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "200ee529ae4c5adb116078b6e96f177ec8b8fef8d3470cce8012ed7bf9ed0276"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "1030309c94cd1d03fec3d881d820975f14b3b38f"
+        }
+      ]
+    },
+    {
+      "name": "src/resilience/bulkhead-isolation.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/resilience/bulkhead-isolation.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "d369d8bca67ee5acda4a414ab8d9bba836a56d4147ec386a5fd419a42ef63e5e"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "e7c499f56a403da8853cffca5f1f01819c776446"
+        }
+      ]
+    },
+    {
+      "name": "src/resilience/backoff-strategies.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/resilience/backoff-strategies.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "7143159304a983426fab635305245f355c3432b6300978559ddeb223c7f49d6d"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "9988380eefdbd36a980349ef1fa214811e62957f"
+        }
+      ]
+    },
+    {
+      "name": "src/quality/quality-gate-runner.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/quality/quality-gate-runner.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "bc572fbe49c5f284d6d86b9fc206d64daca11cfbd4342110227a7731a11c8507"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "d896dda9b6e25dc5247d2ded08598183efa04152"
+        }
+      ]
+    },
+    {
+      "name": "src/quality/policy-loader.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/quality/policy-loader.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "d2e8fe78ff1063da14ccce9040e4a840428618df4a304d510fe7b749be69b14f"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "c0a417ca4fb037c85b32db6444d4cf75a871d017"
+        }
+      ]
+    },
+    {
+      "name": "src/providers/recorder.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/providers/recorder.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "8b5af68c26a8fcf6b7b6fb534b93acfe1f075451634f50e84cf9337cb1f09ce5"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "31ff4560eb54fcea368d51c6f3b370d9e111ad6a"
+        }
+      ]
+    },
+    {
+      "name": "src/providers/llm-openai.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/providers/llm-openai.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "d60c12b940a2ea675d8beab8fd0745e817553e7b394cf4253892faa5d1be2891"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "eb6d0a486bc113397ad28de4e37d23145e7f7d88"
+        }
+      ]
+    },
+    {
+      "name": "src/providers/llm-gemini.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/providers/llm-gemini.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "258763bf839ca604683f3929aa25ee7eb9ec1ae92148908a4b0be652ffccc6d4"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "c3a680743974924b342503d2360c00870509b294"
+        }
+      ]
+    },
+    {
+      "name": "src/providers/llm-echo.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/providers/llm-echo.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "6d25af1d355b403fa83861757128b2e5a2ac31cdfede07e8040bb40221d5bfeb"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "bf4de36a5c92a61743886c6b8b7396e3f36ccf84"
+        }
+      ]
+    },
+    {
+      "name": "src/providers/llm-anthropic.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/providers/llm-anthropic.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "07a4212f013ebc282cae99c96f5aacd6b39a7c29be2037d4fc11912e0dee3400"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "3f29b8f52a94ddd33ebb740ea3375ed20ce6ea1d"
+        }
+      ]
+    },
+    {
+      "name": "src/providers/index.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/providers/index.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "6c212916000d33514cb994b6663dd0381667b4f53bffa3149ed9956a872550a1"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "afce1aff2efe30fe288318d5c0a4abea63ac769f"
+        }
+      ]
+    },
+    {
+      "name": "src/optimization/index.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/optimization/index.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "bf8ed72f4bbec0aea85b1d5b23c15b03f07aa61b7e5279ab867f6bf456991f26"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "da5c0313779778087ff5f7439fe2716cf464197b"
+        }
+      ]
+    },
+    {
+      "name": "src/mcp-server/verify-server.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/mcp-server/verify-server.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "b835dabdad0117b0e5e1a0a7bcffac14d8cfb32e40ea40843cf0e4233d36c178"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "aacc8933c40e4ae7f9d4e242ee758cd307acbbe3"
+        }
+      ]
+    },
+    {
+      "name": "src/mcp-server/test-generation-server.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/mcp-server/test-generation-server.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "568dfc5e72b78f554df20eb5614c5b8c7f0d4f38eea8156ea78f118c3ed1a81c"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "936bec808f3514c082aee73d4a9d27093e402255"
+        }
+      ]
+    },
+    {
+      "name": "src/mcp-server/tdd-server.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/mcp-server/tdd-server.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "8e49ee772d5d11b8f4005520ad89eb169589cc2f15555ebbc9ba921d03ebe3b9"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "b48f7621113ca06a25df3d570e8404b30effe0b8"
+        }
+      ]
+    },
+    {
+      "name": "src/mcp-server/spec-synthesis-server.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/mcp-server/spec-synthesis-server.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "e3aa4fcd10f4a5bda80c6e2aedf5a112b8dfbf936af98af0a9a3bee9726f7413"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "f2353f531471f569d9d04b79824b01c838c437bb"
+        }
+      ]
+    },
+    {
+      "name": "src/mcp-server/schemas.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/mcp-server/schemas.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "3ac1e90f9b28c981deca2b1de9d387c5eab5e3a12325047d4b528f5b941a8c91"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "5b6b0f5d43a926d037c465f17150d1ab4b7757bd"
+        }
+      ]
+    },
+    {
+      "name": "src/mcp-server/operate-server.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/mcp-server/operate-server.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "9fe148797ce7de69872f00d82a7c6303a0fe39420f4e5aaebd435a2e3195e810"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "b156282daec2eeae5f786e920f1b8743f9ac8c21"
+        }
+      ]
+    },
+    {
+      "name": "src/mcp-server/intent-server.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/mcp-server/intent-server.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "aff1cfb3fab39f969c0140c9d343c2bed2cf0bcf88290dd054afa54218be71b0"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "a4d302389ef38507dcacdca6d0c51c3bd3370977"
+        }
+      ]
+    },
+    {
+      "name": "src/mcp-server/formal-server.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/mcp-server/formal-server.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "0e7e416cf85d68316c6909fd00a4e665d470e777f2c5579dbc80e9d7858f5b78"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "d9011f171591dc8da53452b19daff79f94be10d6"
+        }
+      ]
+    },
+    {
+      "name": "src/mcp-server/container-server.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/mcp-server/container-server.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "34c0f24d120338be3a0fd00afc4ae0e1d7f34abb4fefb0a21e018a61e27747fd"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "90e13d0b2acb5a2d1ba97f5375164f669c4183cd"
+        }
+      ]
+    },
+    {
+      "name": "src/mcp-server/code-generation-server.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/mcp-server/code-generation-server.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "2124ca7184ccefb5796e540622b74fcb82c1bc05fad76a592eb8408d6032464f"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "1513c45d418ea264f0394b63f545d87fe24c003f"
+        }
+      ]
+    },
+    {
+      "name": "src/lib/email.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/lib/email.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "87e9929e395a79b858a5d29b85c52923f9025dd3f5ad6752d1bd940979fd4332"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "94c08fe2ec3aa4a7c67d98cdc3a4812b2464b78d"
+        }
+      ]
+    },
+    {
+      "name": "src/lib/brand.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/lib/brand.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "452b513fd1bf92e54d19944176fa302ca0cc1471191fb57b09017903fb9f0cf1"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "166b6cfb2b9ed8a98aebee35ed27bc91f5f63bf3"
+        }
+      ]
+    },
+    {
+      "name": "src/integration/types.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/integration/types.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "9dbd3bd18120d8424074884f4531b7805d0705a92bb699baa4621d3a83eec034"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "37cdf173739d145858c2d643f77bfcf3bb6c9675"
+        }
+      ]
+    },
+    {
+      "name": "src/integration/test-orchestrator.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/integration/test-orchestrator.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "85cffba41c71e4146676e991b77719bae2cca5a8bd47a176b563813df2f06f92"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "d2d09ae40b07a8ae4d0418703bcba967191c7248"
+        }
+      ]
+    },
+    {
+      "name": "src/integration/hybrid-tdd-system.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/integration/hybrid-tdd-system.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "ca8c7c5138c576589a814a7e368db0eda39e7226a1c6b54e56cfd21f587ee4cb"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "16e614b06a2cdd0a3c00d9ee14890bb004a966ce"
+        }
+      ]
+    },
+    {
+      "name": "src/integration/hybrid-intent-system.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/integration/hybrid-intent-system.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "30c3318717ea54a619e63ef74209bc107f98734c891d966d2457fb66cbae3cbc"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "a20635d1f4a28e8eac3a7ecd573a55725b45a1d3"
+        }
+      ]
+    },
+    {
+      "name": "src/integration/circuit-breaker-integration.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/integration/circuit-breaker-integration.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "d2417272ddea43af2674b7f6b7de255c5384e5b7f3572868e8a7a239b14015ce"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "ea0c90f4b30cbb0de706ddd2a272f4609765a6c0"
+        }
+      ]
+    },
+    {
+      "name": "src/infra/telemetry.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/infra/telemetry.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "4af6c956a4c49d6a01d23147a6be60d30bfdfedfa6b76ec363a57aeda08e3a22"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "36852f465a421186b7c7543f69700a499ac1a507"
+        }
+      ]
+    },
+    {
+      "name": "src/infra/db.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/infra/db.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "262edd240a64ea603e15dc7a077acd78b11e23da77e8faf5c127f55a331e0580"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "3d97e3c8f4c490e6e83a45298ce990c2239059df"
+        }
+      ]
+    },
+    {
+      "name": "src/generators/ui-scaffold-generator.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/generators/ui-scaffold-generator.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "50ff0c646b1825f1f68fb272c2b7f1f23743e0c890b8ae989adc1fda15461667"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "710b055a8e0bf83b904cd0819839a0781f0abac0"
+        }
+      ]
+    },
+    {
+      "name": "src/health/health-endpoint.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/health/health-endpoint.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "8064848251d358a86671de5746fe4beff55d97376679cda5a3cc7f7c3a827c50"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "582886180818f123b4c1a50e7b469b8737e44129"
+        }
+      ]
+    },
+    {
+      "name": "src/engines/sequential-inference-engine.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/engines/sequential-inference-engine.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "9d824d725fc02e7cf3ae98c91b74da4812de4f82e8d82852a1a5731a0fb3be40"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "f9e8825c490507c9ef12db678324eeda21a5aa2f"
+        }
+      ]
+    },
+    {
+      "name": "src/domain/services.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/domain/services.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "4cc8758cd1fed97183a16ef0b159a1106862120f24de6fde01a2df7b62b92727"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "007e61c5c3001f3307d1da50f8d376ec1a3c84e7"
+        }
+      ]
+    },
+    {
+      "name": "src/domain/entities.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/domain/entities.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "d2558e436d8a3d8e4973c816d1d44d5aec27da8946e9bd818a199dafc030f5fb"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "34255a54c75ae93d481085b150644714d76434cf"
+        }
+      ]
+    },
+    {
+      "name": "src/domain/contracts.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/domain/contracts.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "6eb86d00f476ab6589b9b8b6c08d1e0f373a8e06f86ccca16450cc2f8254f1db"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "abd353aba094f776530589239cd1d69a38cf75ab"
+        }
+      ]
+    },
+    {
+      "name": "src/core/seed.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/core/seed.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "a41cacd1628701cdb716ee84434934c31843f565e62ffdff16bcc69decea07ac"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "e23b2dcc758873db4dc15970a3aa4bdd68de8703"
+        }
+      ]
+    },
+    {
+      "name": "src/core/result.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/core/result.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "e2c932fed70770865f79f19653b4bb6aa457b47cc9aaed7d19977f09ff8f13ef"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "fadf0c2b2e8cca3330a555b07c4ce0bce5435311"
+        }
+      ]
+    },
+    {
+      "name": "src/core/exec.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/core/exec.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "e312401eebf096a8bb05cb1432fa0fdac5dde6114b0da29b3821836494b533c0"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "3b09114751eb00aa4314fe32778f11e97433890c"
+        }
+      ]
+    },
+    {
+      "name": "src/core/errors.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/core/errors.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "29d0e8945fe683ab1d56c474af81faf127eea9bdb7717228f1fc39efa72dc8e4"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "d2f20654b9233d073f6d6aa803fe1cbe08f72151"
+        }
+      ]
+    },
+    {
+      "name": "src/core/config.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/core/config.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "cccc004497730daf8091973ec164407c2d363b08eb315e6f5e56f5e27a8527a7"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "f85bb7d30b5262b8d85287c89cc0764a9416f3c6"
+        }
+      ]
+    },
+    {
+      "name": "src/core/assertNever.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/core/assertNever.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "79e7784f0c0615de515c9685cb2847a0411141faf1c3e5428434bc8007ed369f"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "d642bb52f7d15791a95e939fd96ce2c1442085ee"
+        }
+      ]
+    },
+    {
+      "name": "src/conformance/verification-engine.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/conformance/verification-engine.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "25720c65bfea6875321c5b7fcdeed89be5fd522fff34a59a12203e05f0918a4a"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "d367e2b986b690896e8c050111c6192addd3b2cf"
+        }
+      ]
+    },
+    {
+      "name": "src/conformance/types.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/conformance/types.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "e0798910cf72d8edf92bd2440f43298bd373496e796b788ff30659cf4a402113"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "48a88ca5c8a862cd11a70f56a7e29b8a8ef325b1"
+        }
+      ]
+    },
+    {
+      "name": "src/conformance/rule-engine.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/conformance/rule-engine.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "d3b02add146654b0758744546c18fd230733800aa1da91bc8259ef90e3edac81"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "b6a929e8ee54bc25201c1e302647acaf1d66d91f"
+        }
+      ]
+    },
+    {
+      "name": "src/commands/slash-command-manager.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/commands/slash-command-manager.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "836bd850003cd392425c1c66d4f71385d7af4ade0e5fecadeba2edee02904e1f"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "ef070b9dc48cf2babf6e2fdd839ea632a9d45a85"
+        }
+      ]
+    },
+    {
+      "name": "src/codegen/drift-detector.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/codegen/drift-detector.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "93319e50128239dab5cd47967d280d6a9466eb87fc4a465fdaa8bc3de3847806"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "53aeb8a8064730a0b622ed04d24b1cac69faa631"
+        }
+      ]
+    },
+    {
+      "name": "src/codegen/deterministic-generator.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/codegen/deterministic-generator.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "918b9d27ee1474db7e456bbfb28d9de218db5aa4486441128504f6ae62256d57"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "da417e33f79432555cbc99ee078ff1fab198ca4e"
+        }
+      ]
+    },
+    {
+      "name": "src/cli/ui-scaffold-cli.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cli/ui-scaffold-cli.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "0cca6adcc9707d80b030aed663d79bad4ec54e42c5b1f0da8def716a2418233d"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "2558c09a64a030f12131261fb95ba007d1812b8d"
+        }
+      ]
+    },
+    {
+      "name": "src/cli/types.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cli/types.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "236f21aa090a944851cc3624133ddf3751b0f2ab25006dfde774421140ee8794"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "5b324762218383c4a3f27ff96afd0e042b448340"
+        }
+      ]
+    },
+    {
+      "name": "src/cli/spec-cli.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cli/spec-cli.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "25006ba8da146f43f8fb04a360980f43d10cce7c41b55ea1511a8725dd6c99e5"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "73430d2dde917b45a4158562f4129f062ed3781d"
+        }
+      ]
+    },
+    {
+      "name": "src/cli/slash-cli.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cli/slash-cli.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "5f3b5c820ef3ba4d025c5c4c566ae76f9361cf9cab8cbc863ffbc28a93361ad4"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "59ba4db0556df14870be361c5c0edc7c024283a3"
+        }
+      ]
+    },
+    {
+      "name": "src/cli/server-runner.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cli/server-runner.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "ca81ce6456d72f56a207c5d43209a08f3483b953ddf9f074b39f90bb593854d3"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "a76fa1b2216ef85b4031c591ee791d6c7a03e7d5"
+        }
+      ]
+    },
+    {
+      "name": "src/cli/security-cli.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cli/security-cli.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "bcf31a4d860dcc749cb162974d5e24c96b40a931648f4c12592c234eeecc0ad3"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "0fd0b76349f264788a75d91992d990045de7ad28"
+        }
+      ]
+    },
+    {
+      "name": "src/cli/sbom-cli.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cli/sbom-cli.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "4391d814337d7dc1fe18ab18b9f8a40bd91ade98c61fc8be38f0b797bfedbcc6"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "eb9c688b97aa15f04b53b0df7c0dcafd6878205e"
+        }
+      ]
+    },
+    {
+      "name": "src/cli/resilience-cli.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cli/resilience-cli.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "ea5ecc84abef4b99941699d8b2d3584f2d045552417b9519bff55837d6de03b5"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "7c1a2812490d9a39ddf904ffe383d0e9af068a3d"
+        }
+      ]
+    },
+    {
+      "name": "src/cli/quality-cli.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cli/quality-cli.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "fdfbef55cb919669c715619cd8a7d6697aeb01ec566a029cdfb0e8c3029126cb"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "9765083bc150b43a5fabb10da346428934985ef0"
+        }
+      ]
+    },
+    {
+      "name": "src/cli/phase-cli.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cli/phase-cli.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "868eddf774de036c4f4ea412f09de9b29b9ac2ef391f4c76ea565030f1d621e8"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "12e9f8af814243e64a6a6fae5522d99f828c1b5d"
+        }
+      ]
+    },
+    {
+      "name": "src/cli/integration-cli.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cli/integration-cli.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "f114dccd645e080b8b261378477dc9b4d1e62cdbef54ebb43058b2be453fbf07"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "54d1af763f3f778f749ec86f5e3c139f70d3c035"
+        }
+      ]
+    },
+    {
+      "name": "src/cli/index.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cli/index.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "d7e1e59f91040ea0f8dcc9351354ff934bc177ceba5346341f6ba149b917797e"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "a7a097191d18fa0d73d5e6d1e954b45d2a96ce21"
+        }
+      ]
+    },
+    {
+      "name": "src/cli/enhanced-state-cli.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cli/enhanced-state-cli.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "05053b7f08507ad13e49bbd27cb1eaa78fcbb16ea73c1bdc788ff0fc26bf8795"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "c27a88ebd76952e070400c2420dfcc285d7b8818"
+        }
+      ]
+    },
+    {
+      "name": "src/cli/conformance-cli.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cli/conformance-cli.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "73f1a35229a8eb7a1a79c3fca3f097abfd03f9f36cc9f39cb657f6c4254973f9"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "be08ec940f0e435239a07b6b441141b30399507b"
+        }
+      ]
+    },
+    {
+      "name": "src/cli/codegen-cli.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cli/codegen-cli.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "5d7ea5da6b5db8f3019bf8dabca3234aaf6ea3a6f7fd53e02e47fa93970e493a"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "860c41f9e29d9915ff5331453f39ce64d4dd5621"
+        }
+      ]
+    },
+    {
+      "name": "src/cli/circuit-breaker-cli.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cli/circuit-breaker-cli.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "cfc40ca2048ba301cdca02c4f038d03ba6823a6bca69d9f3f8b401b23fc4ad84"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "5c0e67a6bbfce4db4f60ec2301790db73c88c5f3"
+        }
+      ]
+    },
+    {
+      "name": "src/cli/cegis-cli.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cli/cegis-cli.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "f142d007faea0531193742691a03d3e5033846730e45316357ea70ccfa6c392f"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "9dac05aa481b12b235750423d4347faa43e83749"
+        }
+      ]
+    },
+    {
+      "name": "src/cli/benchmark-cli.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cli/benchmark-cli.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "667b02874cf56cd4f3d432baf23180f4ad6ab9eb128a5da726d56a7107a42968"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "42a4ca28ff1f383aecf020b5453d950e65851d27"
+        }
+      ]
+    },
+    {
+      "name": "src/cli/approval-cli.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cli/approval-cli.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "561529c62dc4ec43445ee9c9c3d2ca991901d97e0a9ae5ed47dd6f18f313b2c7"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "af19f543ec0725e9fa8634af44783fffaf01a892"
+        }
+      ]
+    },
+    {
+      "name": "src/cli/ae-ui-alias.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cli/ae-ui-alias.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "53294cb130f698c2c1e676ad36cb60b075bed85740f68cec090fd1b297580f8a"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "d779904438c0d1cc3ec9871ed940806777bcc0f0"
+        }
+      ]
+    },
+    {
+      "name": "src/cli/ae-fix-cli.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cli/ae-fix-cli.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "86b9329e0ccca98ddeb5d8ad7d83ee887d27efce9a68cc171a651728edc093b5"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "6d1f25cf2733874bd4723fb6ccecdcef57f1bf80"
+        }
+      ]
+    },
+    {
+      "name": "src/cegis/types.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cegis/types.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "2e19e62e4d00999b18489106ee7543fe57109ff2308b2026a727d9c9dc587afc"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "1580143a705fd17509c9f368b3927b77d47e7a9c"
+        }
+      ]
+    },
+    {
+      "name": "src/cegis/risk-assessment-service.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cegis/risk-assessment-service.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "c11644a8fb2729dba823279e540915cdfb7da3c1dd46a09f43dc8879446727c9"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "75b4afe35e02ef7d5e36fed78af13f059479e5fa"
+        }
+      ]
+    },
+    {
+      "name": "src/cegis/index.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cegis/index.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "a21807538e61eda48961015254f85cfdba3464a28086e3bbf17febdcdaa81bc6"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "4df3d2103ed3901944f465ff2c5ce12807b043ca"
+        }
+      ]
+    },
+    {
+      "name": "src/cegis/failure-artifact-schema.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cegis/failure-artifact-schema.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "52284201f733596c24539240fc7bd882eab07e011ea9fd709b25797b13593ec9"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "ff7983b9533a4277d5492338bb88dae8e089b84c"
+        }
+      ]
+    },
+    {
+      "name": "src/cegis/failure-artifact-factory.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cegis/failure-artifact-factory.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "101fc68607ad1951cc2a1321988797b2cd3bbd42cceb75cd22740fe9ab3577de"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "41fc75755a9381fa5e6e9cdc81a41d9db46caf4a"
+        }
+      ]
+    },
+    {
+      "name": "src/cegis/auto-fix-engine.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cegis/auto-fix-engine.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "84530bf7a3ed05e6c226efde6425859c2fe8589812590cce6b4f9d60a5c322df"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "240f33b52006b1ebb9b635ceaa83c346d7479e3a"
+        }
+      ]
+    },
+    {
+      "name": "src/api/server.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/api/server.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "84e512aa84bd86f227a83acd122c3d30bf6b65217be37a5e7935f00f6adc70a4"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "57fae685eed217e430ed9904eb984c11f59dce18"
+        }
+      ]
+    },
+    {
+      "name": "src/api/fastify-augment.d.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/api/fastify-augment.d.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "9c407b4c64671fbe2e9bded9e0925c4a25e83f691eae353cf60f67299da8b169"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "a7f02d30d20832585e78691df5cefc496062b9be"
+        }
+      ]
+    },
+    {
+      "name": "src/analysis/dependency-analyzer.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/analysis/dependency-analyzer.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "bef41e10e951136870ac6bfb40dd6774b194749bf7d71e44df3cfe554c942809"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "4fed85e45c2822c0455664f66dc265c63cc07236"
+        }
+      ]
+    },
+    {
+      "name": "src/agents/verify-agent.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/agents/verify-agent.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "57afe9442dea49c7922df07e6e1f300644ff73a6579be3572122c70f449934ff"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "66baa0dc0143d03e57e42c369584b393f68a707f"
+        }
+      ]
+    },
+    {
+      "name": "src/agents/validation-task-adapter.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/agents/validation-task-adapter.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "3667eeab778b00ebdd576f9574cfc8a96a97cfc63809f70a9f3062c9b3bfd450"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "86e346b1979a9c043e6c89d5d77247cb919d1900"
+        }
+      ]
+    },
+    {
+      "name": "src/agents/user-stories-task-adapter.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/agents/user-stories-task-adapter.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "f18486ce19136b2bd0d29e57cb78fe74d708582a3afc4ade43ca90991e07e05c"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "73f6ee60c14966e6ea99dd97a113425de2dfc402"
+        }
+      ]
+    },
+    {
+      "name": "src/agents/unified-agent.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/agents/unified-agent.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "5369f7e3661f376b1b997db061888b98004d1bd1fdc943fd9a8dcc25e2193f3f"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "c1bd79c37cdde98b3cc04396b1c0fb04b49aff27"
+        }
+      ]
+    },
+    {
+      "name": "src/agents/test-generation-agent.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/agents/test-generation-agent.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "12fc4da0c0fc0abee91803f323da89c754c1a443444fcf09125538abfc786606"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "6bba071956a814469d721399c1f894dfe3015516"
+        }
+      ]
+    },
+    {
+      "name": "src/agents/tdd-task-adapter.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/agents/tdd-task-adapter.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "820de5513507d2867d543d57f72ecb19311915b3201cd4374e7c0ed52a2aa877"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "71571967d357ef51fb5748fe6856da41a767004a"
+        }
+      ]
+    },
+    {
+      "name": "src/agents/tdd-agent.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/agents/tdd-agent.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "13ca74240a69f2be6637c4939ba82bde08cd56401a5a07036c47d9d4d6e9e82e"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "675521a6c8b620056e44b2d8352490b252fc6041"
+        }
+      ]
+    },
+    {
+      "name": "src/agents/task-types.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/agents/task-types.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "b9d7eedcbcb4e99bda39dd553f38f323e1ec9d5bb7a4e8990c23b3b0b60a275e"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "1243556da958e29c5128b5a86af9ea26addb04db"
+        }
+      ]
+    },
+    {
+      "name": "src/agents/rust-verification-agent.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/agents/rust-verification-agent.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "a371510a1dd2787613e9f15e501cf0d87325d1b043ebb832d590e2011d77ce32"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "e8ce6340ba31f7f864c3f6e3494bb3b49495fb01"
+        }
+      ]
+    },
+    {
+      "name": "src/agents/operate-agent.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/agents/operate-agent.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "2369418327f8156e348af7cdc259743b89eb903ec673282299a264f115983354"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "d003dde36f8076076733adf2eea1fbf33510be38"
+        }
+      ]
+    },
+    {
+      "name": "src/agents/natural-language-task-adapter.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/agents/natural-language-task-adapter.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "8f12f1b27653036afbfa2dc9c3cec3426ee9f93073c0fe4dbb951382e049b39c"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "064703898cfdb474aad457d9eca8b7f208f75f39"
+        }
+      ]
+    },
+    {
+      "name": "src/agents/intent-task-adapter.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/agents/intent-task-adapter.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "b3205e6020936027ab0bd23d92881b0931547af455145314bc88f4f82881312b"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "d23ae64865885d9bb9fcefd40af823451605729e"
+        }
+      ]
+    },
+    {
+      "name": "src/agents/intent-agent.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/agents/intent-agent.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "587acf804f497870f5f4b71c282b17920c03c48a7abb5f5840193a7828ea2c76"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "0dd899fb7f19a2f65aeb0f114d16aa91aba7ae74"
+        }
+      ]
+    },
+    {
+      "name": "src/agents/formal-agent.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/agents/formal-agent.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "9ea6e6dae7c3674f5252e82ab0a71b742e25fc5e14721d65bc6f06bf6e88be3f"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "9c6651eb93f0574aa6d7362cb0ec18a12c5d1e49"
+        }
+      ]
+    },
+    {
+      "name": "src/agents/domain-types.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/agents/domain-types.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "247cbf6dfdc05e0af0206f882fe3e1b67dcc61f8d75f05d1afff193178bd7f01"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "d818b0a6552321253e830a7844079daea5834d57"
+        }
+      ]
+    },
+    {
+      "name": "src/agents/domain-modeling-task-adapter.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/agents/domain-modeling-task-adapter.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "081a992ecb8a32a8c06125bec8b054ecaa79abbd5e2a852e1d59a2b480e64b3f"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "39592e9129d0bd36e13d363fce08f6348b01c55d"
+        }
+      ]
+    },
+    {
+      "name": "src/agents/container-agent.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/agents/container-agent.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "79ca9954c17b9d970a3f9a3fc5f66534fe771cc3b34bbcd11328f585f2a622d9"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "3253a0b2a4548a207ff96235086dee999802c613"
+        }
+      ]
+    },
+    {
+      "name": "src/agents/codex-task-adapter.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/agents/codex-task-adapter.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "768da15908a3a51c0f94455aaf8142a15c016a9c3b7ad3e5ca1c395b3699af7e"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "90d84cf9fbbb30a7880e772e613b5676b912eae3"
+        }
+      ]
+    },
+    {
+      "name": "src/agents/code-generation-agent.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/agents/code-generation-agent.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "281c18b6ee649ef9585fc940a07aee655b19f386a048f47469e92aacf27113ad"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "ca84d095ccd6ad8413beb5a552181a68f6f259be"
+        }
+      ]
+    },
+    {
+      "name": "src/agents/base-agent.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/agents/base-agent.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "77bbf197412caf83d647447edac7cd447e4ac10ddf5923ee3408c6a3f2a94495"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "ce3fab3664a5b939db77c9453925ff50ed94d0fe"
+        }
+      ]
+    },
+    {
+      "name": "src/services/plugins/rust-verification-plugin.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/services/plugins/rust-verification-plugin.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "a525bf2937da307d483c8b433eb2501eeb7346de51444ffaf21432d838d041e1"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "10a7b2a234cc869bc3b35743765aa3eb219a302b"
+        }
+      ]
+    },
+    {
+      "name": "src/services/plugins/index.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/services/plugins/index.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "e3d55a866964d4bccf6ddd8d5e9f58b069260c23bc20f663207d0f6416118d7d"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "c3a6f6add921b041839d1a3f607c16874800e9a0"
+        }
+      ]
+    },
+    {
+      "name": "src/services/container/podman-engine.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/services/container/podman-engine.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "f9914e0a0d0c03e9ccd4d5c27a132723733ca665a5036109026d767f7a2f83f5"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "71749fa3d400ec8f22a485e7e64fb44083154fa3"
+        }
+      ]
+    },
+    {
+      "name": "src/services/container/docker-engine.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/services/container/docker-engine.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "e33e232f286ce821cffc84e796e63e6636e36ceacf56a92b3a0b443543f92e6f"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "ce40414840353ec1e3967d488b6ce614458f294f"
+        }
+      ]
+    },
+    {
+      "name": "src/services/container/container-manager.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/services/container/container-manager.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "d9c23f970df0b45b3f54ec684d00835a14244b23f0e1acc96a2808b8d0c20bba"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "2a74a555ef9477927beded6005a91f4fc802d722"
+        }
+      ]
+    },
+    {
+      "name": "src/services/container/container-engine.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/services/container/container-engine.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "5dd42c70f51852968750d51963fde2dd2fdcab1d7f058a7ea3be3e0d7f0a1cf8"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "54dde25f3a42776c2f1bbd16709bb13ec8a88989"
+        }
+      ]
+    },
+    {
+      "name": "src/optimization/parallel/task-scheduler.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/optimization/parallel/task-scheduler.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "5377dc4cb357264944a689d59fec94089432965f6e0673e723ce5afc54464564"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "c986e8d08d84e587c18335ace0fb373aedd3acc3"
+        }
+      ]
+    },
+    {
+      "name": "src/optimization/parallel/resource-pool.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/optimization/parallel/resource-pool.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "95210ac62547afcb72359fbb26a1657b0ac8b1a893e6c8f697e3868e0d002678"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "a8c57de53c45b4a5597ef6e2030b4712cedcc4e6"
+        }
+      ]
+    },
+    {
+      "name": "src/optimization/parallel/parallel-optimizer.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/optimization/parallel/parallel-optimizer.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "f72cfb87dbbc8190f91ae4036ab8ba4cb6adda4e8ef88eee972f5fe25ceb473c"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "3e671fb44217aa45ccad0c493ed81af27ceafddb"
+        }
+      ]
+    },
+    {
+      "name": "src/optimization/parallel/index.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/optimization/parallel/index.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "723894fb0f28ee39dbc5f7472411f2f51d954901846b9a9cf97deb5c4a425918"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "9d72c2a1cdd3b4290657be1256235e486fb25388"
+        }
+      ]
+    },
+    {
+      "name": "src/optimization/parallel/demo.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/optimization/parallel/demo.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "39b01e9c42e2fb40b6f61fa720352b42eb5a8de7b66b5afe423dedd8361af436"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "078a0a7d7d422ed0c42be71a439fc3e2fee00041"
+        }
+      ]
+    },
+    {
+      "name": "src/optimization/monitoring/performance-monitor.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/optimization/monitoring/performance-monitor.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "cb3671135151e55e92ef86dff23cd236f4c4cb786e5dadc750473a83838f5a06"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "4236733e34c22f2982c9f3315f5ba21313d58b04"
+        }
+      ]
+    },
+    {
+      "name": "src/optimization/monitoring/metrics-collector.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/optimization/monitoring/metrics-collector.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "b635c3977ea447a94d04d9677172790528c1420c4c0b10c9e0e4cea5cc53b036"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "27778cea8c79bf5dd33f46ad486dee514b427533"
+        }
+      ]
+    },
+    {
+      "name": "src/optimization/monitoring/index.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/optimization/monitoring/index.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "200101bda17bd6c1f649e3297cdea7c490716bd02476af618ebc4a7c88c1e9a4"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "9d72d5f6d893ef903011ffa84b8d55d32a8d3d91"
+        }
+      ]
+    },
+    {
+      "name": "src/optimization/monitoring/demo.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/optimization/monitoring/demo.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "f8be908a8a4f2302b83a99023f2b3f1eb1e9c1eba71528518c9fb1dafcad1087"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "364b3bffcad1c63e9d801779dd5b4190828730d9"
+        }
+      ]
+    },
+    {
+      "name": "src/optimization/monitoring/alert-manager.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/optimization/monitoring/alert-manager.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "4faa02cd4dc8f63494a73f45e029c130ada1710b4e2acd78228103e1145994c1"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "9b56368b94326046850b55daaba2a3d190f6ae7c"
+        }
+      ]
+    },
+    {
+      "name": "src/integration/runners/e2e-runner.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/integration/runners/e2e-runner.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "ced7597f21885e399d1bed3d2f97a2f1b0b6607c9a9f9724232a0b7dc5440e69"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "da5d94ef1391ff6148c22b54163f6205a80fdc48"
+        }
+      ]
+    },
+    {
+      "name": "src/integration/runners/api-runner.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/integration/runners/api-runner.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "cb685f183de69e19b5bd36a81161aea07518cc1b18fc747d69463d2441efb63f"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "3b26207e920f64ce1cf158b8510e34baed0b6cb3"
+        }
+      ]
+    },
+    {
+      "name": "src/integration/reporters/html-reporter.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/integration/reporters/html-reporter.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "708010e03a78cdb6750bbec0d650b775f10a300f4762ca87bd17ed8304835467"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "1bdd22470c63c06181ae7925f183d7e72d8c366f"
+        }
+      ]
+    },
+    {
+      "name": "src/inference/strategies/sequential-strategy.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/inference/strategies/sequential-strategy.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "232431428f71f151b2694cda9ad4f86dca584b1aa5af11587941b593455078dc"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "067a65c781c22a12593cc02fab73250346025581"
+        }
+      ]
+    },
+    {
+      "name": "src/inference/strategies/parallel-strategy.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/inference/strategies/parallel-strategy.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "77a67e7169937e83e404ff24a169bb5311a51f45fa932bbc356fc40a9d378576"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "a29e8d503004216f924f155c7b356f607dc007c0"
+        }
+      ]
+    },
+    {
+      "name": "src/inference/core/validation-orchestrator.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/inference/core/validation-orchestrator.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "c71c93285736d910b052e76926e17e7e50f43d36ab52dcf634b65045ad07eaed"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "bc6692672ffe351fdfd26f86fe1246d9cd5a8670"
+        }
+      ]
+    },
+    {
+      "name": "src/inference/core/solution-composer.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/inference/core/solution-composer.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "910d78f228ca118f6878628260493380c6d85d3700b4ed33fade673b03b55f2b"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "8ad2456fdc648dfe833ee34988398c89a3e68666"
+        }
+      ]
+    },
+    {
+      "name": "src/inference/core/reasoning-engine.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/inference/core/reasoning-engine.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "a775c49e9ad4e4a948ef2201f4f94928547e8f0317377bc4e68d15ce996d9698"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "5eb298410cbd5ba80c561be9fb37a804b22fd7aa"
+        }
+      ]
+    },
+    {
+      "name": "src/inference/core/problem-decomposer.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/inference/core/problem-decomposer.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "e3ddecd666f666691102baf76a609225a8a88efad8a66211c69a349126a7afb4"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "e810fecb68ae5915c824d446b8daa523e64813b5"
+        }
+      ]
+    },
+    {
+      "name": "src/conformance/monitors/data-validation-monitor.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/conformance/monitors/data-validation-monitor.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "76f6078aa1b89bdf075ac0653ed5ec2d5f08e422813b58a4d9415c8456a60cc3"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "c3ad8bf947bbb9b32c71881ede8de02f209669a5"
+        }
+      ]
+    },
+    {
+      "name": "src/conformance/monitors/api-contract-monitor.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/conformance/monitors/api-contract-monitor.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "42066cdd5d2e1332ba42af01041732d0d0ef361f6b98a48cb76dfbe2aef9fa56"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "2fb1d1ff62a09782eec17b5a6fc0ef5ceccbd0aa"
+        }
+      ]
+    },
+    {
+      "name": "src/commands/tdd/guard.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/commands/tdd/guard.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "2f5fdfb19b096a22c2ca1021d16a3e09c83fa2b1c472f205e43fc26a533d0881"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "b9ca71ee1fa1f7bdbeda8cf629cf1b88a0cc5613"
+        }
+      ]
+    },
+    {
+      "name": "src/commands/verify/run.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/commands/verify/run.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "92ea305f34f7e69ec623647f7c968adf6e975dbf5a0d3176f8bf44088350f704"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "2b4c225712fb12299f5dcd68aab77c15b9e69ef0"
+        }
+      ]
+    },
+    {
+      "name": "src/commands/qa/run.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/commands/qa/run.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "473b1b4314cbebbf5f1c6721a91b1e08e52db25a54f4303ed5d5f7ab9e25e9a6"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "048946540da3bdab0466f7c3cc6a3a0598982282"
+        }
+      ]
+    },
+    {
+      "name": "src/commands/qa/flake.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/commands/qa/flake.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "c3ccd5d1b2ef14975e3725d362f786dfacb3a46730ce33a85ae6c05c66823135"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "108e90538bd72d8c534a204613c8a36d45009a99"
+        }
+      ]
+    },
+    {
+      "name": "src/commands/extended/types.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/commands/extended/types.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "11e29afce354b8dd8b2307cb5f1546015f9b9c042cc9d51e1e2df11f0ad56aa4"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "c3b974d3c33a4c18c7f0820db335524ce987fcbb"
+        }
+      ]
+    },
+    {
+      "name": "src/commands/extended/troubleshoot-command-unified.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/commands/extended/troubleshoot-command-unified.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "a4821dcea9a39e844acb8350c5f7e0f1e730d55688602949f506ca17423817f0"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "cf0f748f06d7beaaaa07b43c6506d9e945b6c6a6"
+        }
+      ]
+    },
+    {
+      "name": "src/commands/extended/persona-command.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/commands/extended/persona-command.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "6ad8cd5f596a5350be7862a029ffabe309c42bb9d660940532cda50a90cc3799"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "ebbbd5fce8ea9398d696de9a5f1a1c4050b1ce06"
+        }
+      ]
+    },
+    {
+      "name": "src/commands/extended/mcp-command.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/commands/extended/mcp-command.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "7ac003d1a4f85242aa5f51697ac4680b8b83048532094af83a88982c2d3a10e9"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "8be4d465e315b49feb8ad9bfb98acf74a7e3bda7"
+        }
+      ]
+    },
+    {
+      "name": "src/commands/extended/installer-command.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/commands/extended/installer-command.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "340e01ce5cd2a6095d2ddaec9baf8d2dc646fa78a76f1b445786b377bd416426"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "c870936dd997c0b15e3277c99e26344848ee4382"
+        }
+      ]
+    },
+    {
+      "name": "src/commands/extended/index.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/commands/extended/index.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "c6623f58cec271649327dabdbb8625bdd607568f52d63061d8a1c51bacc1e7e4"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "1293dbd4de9aad2da68d8896fde48854deff7385"
+        }
+      ]
+    },
+    {
+      "name": "src/commands/extended/improve-command-unified.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/commands/extended/improve-command-unified.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "c151c0534bbed2e69f0d1c4a316579dc3b228dae5e2b6bddee676ee283a7aa1e"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "9293bf25d74ece8288368a3e9a3edcb5468515ad"
+        }
+      ]
+    },
+    {
+      "name": "src/commands/extended/document-command-unified.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/commands/extended/document-command-unified.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "2ddda3e3ec91bf64c68adcfa9bdf43961c38028e9e6c18e9df9e793b78c19c47"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "0786cbb85b79611ba8943ae507f79736f504e5a2"
+        }
+      ]
+    },
+    {
+      "name": "src/commands/extended/base-command.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/commands/extended/base-command.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "15a72d45af1190fd5f709b653f5d19c4a5835847fedba403237175103047f3ef"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "e0f1f09b0d526928e73079d747dcef846dc6793d"
+        }
+      ]
+    },
+    {
+      "name": "src/commands/extended/analyze-command-unified.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/commands/extended/analyze-command-unified.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "0a017be359e7dfeff9e3c0c92d30083257e6f428181c2cdb16ed55cae4e42e00"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "fa6309e50308a7c7b2c6abb812b268937ed9f2d6"
+        }
+      ]
+    },
+    {
+      "name": "src/commands/doctor/env.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/commands/doctor/env.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "d33f69493de403849878771b4160e67bcec9d111bf403bc9bd3ce30983d53481"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "c63e46a582ccabe4dd7654b343eab5418cc500a5"
+        }
+      ]
+    },
+    {
+      "name": "src/commands/ci/scaffold.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/commands/ci/scaffold.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "61fa7a720de9447cf03ec8fd1cfd932dde19c98d7d558e94e05a4549dd396e4b"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "05e88243a04625cb4ac2fef27a14a18f1e062ff5"
+        }
+      ]
+    },
+    {
+      "name": "src/commands/bench/run.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/commands/bench/run.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "d6a6ecbdf50e5e6096ad9c367a438ef661a774fd2d0ad532dd6a25ff5ac63075"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "cac2361c3c28249f627272bfd78183f3cbec94f4"
+        }
+      ]
+    },
+    {
+      "name": "src/commands/agent/complete.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/commands/agent/complete.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "84d79f04754d0a875c51b3b54b76755b2fcade4751ded9fb9c922954da164afa"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "4cc1a6cb9bb60dde6423ffcf5326736ad73e7c41"
+        }
+      ]
+    },
+    {
+      "name": "src/commands/adapt/vitest.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/commands/adapt/vitest.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "bbfa3aa62f119d1ab1b9e1cc4f871020c3f2acc121ca8c65152b2b64acbea4da"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "379717a525f997fe58419d2004efcd06e3d9c645"
+        }
+      ]
+    },
+    {
+      "name": "src/commands/adapt/jest.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/commands/adapt/jest.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "53ed1b356c630f3fb546c4b16976b279233e009637fab45754a5968b68ea1338"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "49c3416bf0393916faefd16feab4c419da0f6b15"
+        }
+      ]
+    },
+    {
+      "name": "src/cli/validators/PhaseValidator.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cli/validators/PhaseValidator.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "a7df4907d8c99ef569306e8024973be782e960de38486aaed8f3e81c3e7b3a49"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "b4ea96baa83a5f777c183d1156a1194f1b343bdf"
+        }
+      ]
+    },
+    {
+      "name": "src/cli/metrics/MetricsCollector.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cli/metrics/MetricsCollector.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "8136a04cea8866d0fedd5967da18561987eb9c111c8efc02743e3641d3cecf68"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "c10298dbfa3784efd8741cac923384115134f611"
+        }
+      ]
+    },
+    {
+      "name": "src/cli/guards/GuardRunner.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cli/guards/GuardRunner.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "d6adf44089e48c89329ee5921212e0a62e62dd7e1015f475e60ee5a3478e41ef"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "023d9568b135ddbccf08ed79439019b07e994b7f"
+        }
+      ]
+    },
+    {
+      "name": "src/cli/config/ConfigLoader.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cli/config/ConfigLoader.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "afb1a656d7114ca51d8b3f8a4eb9a1140ff2af3f1d381d29dd99e18a8cdecec0"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "bb699724c8601ac40d6bf30595b522c6c9215a2d"
+        }
+      ]
+    },
+    {
+      "name": "src/cegis/strategies/type-error-strategy.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cegis/strategies/type-error-strategy.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "4d5fcc76613f0ac619e88ff21d9d5a329d81b9baa4ed337a5b41e38029b47ac6"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "d4b35b90dd46594a92c79fb422350816cef78a78"
+        }
+      ]
+    },
+    {
+      "name": "src/cegis/strategies/test-failure-strategy.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cegis/strategies/test-failure-strategy.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "5f2a94d7cb714ac80cb96a6da0986f81e1047f9e5fb9d2201f971d452e4ecdb0"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "e28a5a693fc069f801f6e0ef71e3aeb1a6afbd1c"
+        }
+      ]
+    },
+    {
+      "name": "src/cegis/strategies/contract-violation-strategy.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cegis/strategies/contract-violation-strategy.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "1fefcfd8044b334c2dc67ac0eb6087fd849f6b466691d0b1cd8d270779d36269"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "a1d582e7b887045205afe17fc23cb986826fc6cc"
+        }
+      ]
+    },
+    {
+      "name": "src/cegis/strategies/base-strategy.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/cegis/strategies/base-strategy.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "cd9008c9945b3970cff988535626a15e8323492df05454d0e87fa15134f9cd87"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "31628be43f6ac05f55fd744475a2a8b7b40cd08a"
+        }
+      ]
+    },
+    {
+      "name": "src/benchmark/req2run/index.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/benchmark/req2run/index.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "987ff923b7b8aea323bb38ceff821c51badcf9eef4c2e725907ccab626e992e2"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "ebd36ab434de42ca9677bfbe3d082f00efeef0c1"
+        }
+      ]
+    },
+    {
+      "name": "src/api/routes/reservations.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/api/routes/reservations.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "95a8ef2079fc272489bdd0f8aed9750ee66dd7ecc106c3a15beeb12b9dd3c823"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "95187c879d09cfa9b35b44f750fd0a92e468ceb5"
+        }
+      ]
+    },
+    {
+      "name": "src/api/middleware/security-headers.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/api/middleware/security-headers.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "2211cddbd7eb6557964c1b000fee1b3f1a5b93c76cb9a2aae29dbc8a278f9874"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "94885687426ec12dbc964b2ce882bb238e0b16c6"
+        }
+      ]
+    },
+    {
+      "name": "src/agents/pipeline/ae-framework-pipeline.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/agents/pipeline/ae-framework-pipeline.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "627bc199f7c7f3f9bcc287cbf5edcb617b3e2873f7e6d20d85c9744387fbbb3f"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "3bcdf1a5b570c043a01efe8c44caaeba35143928"
+        }
+      ]
+    },
+    {
+      "name": "src/agents/interfaces/standard-interfaces.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/agents/interfaces/standard-interfaces.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "7ac185530e6d5269b2d7f66609336ae4318317f3b14109bd1cd64a2c1eafc055"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "372c5855fc2eaa29ca21105053f623b9c368c192"
+        }
+      ]
+    },
+    {
+      "name": "src/agents/examples/pipeline-integration-example.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/agents/examples/pipeline-integration-example.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "1f4071d43fa0d8c5e87e5b671b72a94b32a1255ee1d4847075376509d390987e"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "bf608b521fe63c5738f7eddc952b0495f88971c8"
+        }
+      ]
+    },
+    {
+      "name": "src/agents/adapters/ui-ux-agent-adapter.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/agents/adapters/ui-ux-agent-adapter.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "87de79fc03b12a765db9191438e53c9bbcc69841171d60ecdefc84b33ba4a31d"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "4d1160a2e8c939cbcdb9a377b60fadb17f1431af"
+        }
+      ]
+    },
+    {
+      "name": "src/agents/adapters/task-adapters.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/agents/adapters/task-adapters.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "518367a8e225610b437d0139d30f0a18786409c1355b84a2dd29ac44283b19b1"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "5ed620b73e97e30f4de075cf26285a4e36a367aa"
+        }
+      ]
+    },
+    {
+      "name": "src/agents/adapters/intent-agent-adapter.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/agents/adapters/intent-agent-adapter.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "3d50a68c185788cf002d389601832d4523e714edc652bc87afd5ad43e4836af0"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "14a5d04f600d63bcfb06f2bb742a6e60230eb5af"
+        }
+      ]
+    },
+    {
+      "name": "src/benchmark/req2run/types/index.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/benchmark/req2run/types/index.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "0a4db15789678dad14b26a904631aeb8500de3e9634f58c83469702a7273fde7"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "1f72bfaabc17eb44594d11118cf8de7d37c792a8"
+        }
+      ]
+    },
+    {
+      "name": "src/benchmark/req2run/runners/StandardizedBenchmarkRunner.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/benchmark/req2run/runners/StandardizedBenchmarkRunner.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "b0c24c73c90730c88151a434456901abeb64a4e50db0912b598e645eb03d1e78"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "94b9a58df1fc50060236aaeef31898b8d6cbf6ee"
+        }
+      ]
+    },
+    {
+      "name": "src/benchmark/req2run/runners/BenchmarkRunner.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/benchmark/req2run/runners/BenchmarkRunner.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "4447845b47f62fdcd543bc18787eff6b81c2174e32f6646c717d51ccf640fbcf"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "d914469b1f494634a1037de8f5e8c7822cdf85dd"
+        }
+      ]
+    },
+    {
+      "name": "src/benchmark/req2run/examples/epic-integration-example.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/benchmark/req2run/examples/epic-integration-example.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "15881ca857b38aae771a028e8c40bddceda443cf7540daf70a9e8dfc6f83e674"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "324c19c9554ffddcf869b09d01f4d2afafbfeb58"
+        }
+      ]
+    },
+    {
+      "name": "src/benchmark/req2run/config/default.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/benchmark/req2run/config/default.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "2ea2175479b06fc629d62191632c00f094755bb4328a370794daa06745bedf90"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "223acee76a5642fb659daa44759be0000b4283e2"
+        }
+      ]
+    },
+    {
+      "name": "src/ui/components/generated/apps/web/components/ProductForm.tsx",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/ui/components/generated/apps/web/components/ProductForm.tsx",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "a125bf3b82b38675f136952070a9b7c306e39e5e2d760204f375686dd4e14198"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "959606afb7a27b6154a44b33f7f0bcb7c9080ad5"
+        }
+      ]
+    },
+    {
+      "name": "src/ui/components/generated/apps/web/components/ProductCard.tsx",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/ui/components/generated/apps/web/components/ProductCard.tsx",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "1e590016d29e9a5d5782ed2712015f0ace526f3e59aeb692bedb7706ca0a31d0"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "1724da7bf316fe07d9e6942cd3ac94df876d87c9"
+        }
+      ]
+    },
+    {
+      "name": "src/ui/components/generated/apps/web/components/OrderForm.tsx",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/ui/components/generated/apps/web/components/OrderForm.tsx",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "750fe5b5a5088f374ee7bbd58aefaafe742bdf12e1dc2f02303343a0d1a774a6"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "112d69a95e4364e74bf996e6b46ecc247225c9f5"
+        }
+      ]
+    },
+    {
+      "name": "src/ui/components/generated/apps/web/components/OrderCard.tsx",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/ui/components/generated/apps/web/components/OrderCard.tsx",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "5293b99102213c422a129f68a664339724cd15bb7ce44f91da9d60ad9b2c0412"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "3de61731bb651bba914a82bcaa4b43e67d949c87"
+        }
+      ]
+    },
+    {
+      "name": "src/ui/components/generated/apps/web/__e2e__/product.spec.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/ui/components/generated/apps/web/__e2e__/product.spec.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "1390f3dec59275d5060e33334155296adeac0add5640ab141a307301bf2cc433"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "fe04abab229f8728b02f688edb62d257c4801a6f"
+        }
+      ]
+    },
+    {
+      "name": "src/ui/components/generated/apps/web/__e2e__/order.spec.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/ui/components/generated/apps/web/__e2e__/order.spec.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "3b582044111148190540fa01a4d739a9d05e31607416b20704959b938f34f986"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "df55bf790eb18e1f21fbd3d6a001a60959046999"
+        }
+      ]
+    },
+    {
+      "name": "src/ui/components/generated/apps/storybook/stories/Product.stories.tsx",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/ui/components/generated/apps/storybook/stories/Product.stories.tsx",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "da794388bb10a318f5b00cc3b91b37f911739300dbd267ca78833ed061a7e5b8"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "fdc3f56a383ab39f016afeb1d9bc39fb59529eb5"
+        }
+      ]
+    },
+    {
+      "name": "src/ui/components/generated/apps/storybook/stories/Order.stories.tsx",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/ui/components/generated/apps/storybook/stories/Order.stories.tsx",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "8d18f257268b73e1701445a14f0220d75abefaf544163265b6b1e945948a8814"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "616f4b5ad45536f0b92ceab6f335f0ad8f07edc0"
+        }
+      ]
+    },
+    {
+      "name": "src/ui/components/generated/apps/web/app/product/page.tsx",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/ui/components/generated/apps/web/app/product/page.tsx",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "11a4e1630e6cc3bddc10301fcd1fc550322ffbeec177c1541ed323093e2e0ba6"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "7fea7d61901083672565d58e26886a4a2de920bb"
+        }
+      ]
+    },
+    {
+      "name": "src/ui/components/generated/apps/web/app/order/page.tsx",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/ui/components/generated/apps/web/app/order/page.tsx",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "be1b467ced2ffe3161969b57e7e67ed898c1a8b4a39c76bbb8ca6092f9df26ca"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "a80c37d1a960b7c411b2beb59d8b48d0b980880e"
+        }
+      ]
+    },
+    {
+      "name": "src/ui/components/generated/apps/web/app/product/new/page.tsx",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/ui/components/generated/apps/web/app/product/new/page.tsx",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "133f42454c84e0b7017bf585abff24739cee5640ac22b1348710ac4b8c2fcdb4"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "9309c3f6e9de4f6083a6d82640680e53e8a7dfe2"
+        }
+      ]
+    },
+    {
+      "name": "src/ui/components/generated/apps/web/app/product/[id]/page.tsx",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/ui/components/generated/apps/web/app/product/[id]/page.tsx",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "a4eb50f824f4b6e4a9f150c163325f0f53cc09e3a3b92cf858a3f67f686a9e24"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "174a6a2f8074453afc613dd223f8f362704ff727"
+        }
+      ]
+    },
+    {
+      "name": "src/ui/components/generated/apps/web/app/order/[id]/page.tsx",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/ui/components/generated/apps/web/app/order/[id]/page.tsx",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "c3ea5d6d8a30b406572aa79aafe6e999bb756aaca9f11c36b43c0214bf93b7d9"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "2f2db813d1215fa564cda556b6c023414378abb7"
+        }
+      ]
+    },
+    {
+      "name": "src/ui/components/generated/apps/web/app/order/new/page.tsx",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: src/ui/components/generated/apps/web/app/order/new/page.tsx",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "7a722c75cff356e551a6f25612ad0349dc8ec67c9f6b8b32f6e34f766383ce03"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "a3b7a0ba2f3019f8387b1876b80ac8bac817e9e7"
+        }
+      ]
+    },
+    {
+      "name": "tsconfig.verify.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: tsconfig.verify.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "568e959de4f5435c128511d4cf191c92162091fea8e0e5d15d92fadd65275056"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "19517f0f5a4a1edfa45f339bb7b98697768dfb5e"
+        }
+      ]
+    },
+    {
+      "name": "tsconfig.types.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: tsconfig.types.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "8fc435f71f816edf31e411200bf5ac5c4597e7d70fd19c7d086cfb5ecd00a48b"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "1494b000f1dbb493642f26fcd07cdd8afcc53f0f"
+        }
+      ]
+    },
+    {
+      "name": "tsconfig.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: tsconfig.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "83bb4f781f6285fc74c84ebba71d5091762f7112f4bc85b5a87307538535fe66"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "068785485878b14927565d9fa492ad20250ef899"
+        }
+      ]
+    },
+    {
+      "name": "tsconfig.build.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: tsconfig.build.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "9565722454d470c77745285defece51bd150995ded6fbf937f161590b534a6d8"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "307bc2dc9c2c4d0e454dae42956d17a67e0308f7"
+        }
+      ]
+    },
+    {
+      "name": "sample-rules.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: sample-rules.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "3d689866fb23d53890ba8f37216d8083ddb287efef7a0e59758a13a17c802d4a"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "7ef36cbbedc06d0ab092b0cacfc8fd46dfb732a3"
+        }
+      ]
+    },
+    {
+      "name": "sample-data.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: sample-data.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "e4600ba5df47eb8642b8d57ad79d8612934a2d5cda7a28d679a027ca05386053"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "1c15dc6cf2d08a9d76971ab2b7457fe0c4712311"
+        }
+      ]
+    },
+    {
+      "name": "sample-context.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: sample-context.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "64333fc3a758355609a1e8f361d74df25048263b4039db687e475640807944aa"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "08d6007e4aa0cce04ef76e5fed5767387afc819c"
+        }
+      ]
+    },
+    {
+      "name": "sample-config.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: sample-config.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "c1efb32b424c5382b23183ec8f1062792c7440c47da8335958e7797599e7058e"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "cb0ad69c97e1a24e2702e531bbe5c38e859444e8"
+        }
+      ]
+    },
+    {
+      "name": "package.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: package.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "4ba4271888405c046569512aa6b55febca738efeeb62064bd6488b112bdfeae2"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "318a44d1ab623548b828cc9c4f1471234680f85d"
+        }
+      ]
+    },
+    {
+      "name": "mcp-config.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: mcp-config.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "a0b73eede1c3fc4ac68fea3dd9d25eb303e660639fd4b121eeca898566f20bed"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "e10123432794e4ab56b70ae5b2a46539dfdd8eb9"
+        }
+      ]
+    },
+    {
+      "name": "eslint.config.js",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: eslint.config.js",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "6ccfdf3921e75d7aba09d1140d50bd38ab5311fea80b8e2193c27f24537965b2"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "ce54c6b852d7890c8181ef4f7108e30b1382ae57"
+        }
+      ]
+    },
+    {
+      "name": "conformance-results.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: conformance-results.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "69b705481abc2e0a041f031305c7baf8080c6bf36404281a37c6691b7983c429"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "b0019ccff77b366a3e4087a9f6703ee66088b030"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325683536.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325683536.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "5f7d8dace4a9cf253943bb669292a9e863058e2ef699c032cde7a09f7d551099"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "24bb71634f67cbd6d057384652fcabdbad526ba6"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325683531.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325683531.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "a80a4aacf114c217b89da71f84db57eb78853448778d78e5819d70fcc5f531ca"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "f8be970cb02f6fcbeb8dc9ac7fe7aae456598dee"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325683527.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325683527.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "409af0695f67f6dcaeb7f240cc36a289d000e3e85907dab6a569becb9357ea4c"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "d58e20f4ab96f7cb5d54ef9333a9faf9dd080950"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325683516.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325683516.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "62285af358b2ba8161b36980b805844e7ce59f6cf8f0e869164e0e3e3d18be59"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "9bfcf7ca860e4237a7d1499025921bdef65c29f9"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325683513.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325683513.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "2e6d1c7c08c5b75611bf00def2610a3ee212dda08f4edb8dd208fe964240a5a8"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "1a33a8f50b75e7084dd6670e80aebd887f3b17a6"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325683510.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325683510.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "64310f001bb5d15c7dc792cdc5ff3ef5d9b96c0fc841e24206a0d09c75c83818"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "8973241e49092a002b8fcbdbb1df247a3f9d4a78"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325683508.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325683508.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "312b240fd10f7feabc48940be0c18a4fd3252287208edbed0c11a30870248a7f"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "c8a76b7cb3eae9154604cd573a1a975dc2149542"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325683507.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325683507.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "6a6ad4101267623cbe1264f89f96a0f7affc531965573b0bf8e3ad60890161aa"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "696c85b03a5ee906a628790fa46a008e6e45f52a"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325683505.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325683505.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "a9c4e635b656d6b20fa96340d899bce1bd5f37efbb969adb9af098184faab156"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "2d9ef13b3392b084d2ab4c9a23d2a204836c625d"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325683497.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325683497.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "00bef28ca5342a6d4fe655efddfd674f1049aca0fb7ef5ff70ba5750089c1d0c"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "e0071975cce3c4489fef9531d7dd745e86e5e185"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325682249.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325682249.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "16c109c2b7032d4d57d87046b829779a86b86dee278d2097ac2e1d2177b49762"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "324035e039cf3603254c10855fa992e6998b653a"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325682245.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325682245.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "c3109ab9879019cdd87e52a41236dd40c1f5574bdfe86ff3f87a2d9b95933d58"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "91c701ac106feb393cc3df1c0cf580710b05888e"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325682184.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325682184.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "4a4072697f0b6e8dd61a3931eb9602f2b1b51e0140841fa9e19b12e92f93339b"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "19e8352d2f664939e8ccc84f2b27864744150185"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325633525.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325633525.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "278df70d325c4a582f9689a974261713a38e11510bbeeb9d513711090f1d5ac4"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "4cfbccebc9a856afa073422b0d0127dc2ba891bf"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325633521.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325633521.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "2e75baf307b9cbfda3edf9ee060c9c032d3a769828767c18338118beff8f9cc8"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "b1abe92b22e666608adc59904b60efcac716a511"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325633518.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325633518.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "d401466d899caba5d1fdb6db831599e0f92219a39ae39e9d724c24e3872ef620"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "f7ca9d6cb245502eabf16a6cd5e607cd8529bf61"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325633509.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325633509.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "e8de26b37283ab1726c242411b6fb8e2b22c9554317e3c79e208129a2e8e9537"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "86f194eddc4c3785c0d84240c74398a6b873fd6f"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325633508.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325633508.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "ba51dc42c9d2b805c025239110e09a46f36b6950b48629a53a10517b1ae63037"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "30195697e65cdcfd75b9fd9b15ac8653287906df"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325633503.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325633503.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "ccc7e62cb84b21a705719ec99edbd286e551e5f95ccba7a403e934f37f1a001e"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "77c43e8948da9aed1c20336699e7c61f7aaa4672"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325633501.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325633501.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "50ef4e1f1fcb86d372117ff282101af3a084f094d893dacdfc7a24c79f9afa5f"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "413212af9c08e32cdcc36ec7198593c6808c6461"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325633499.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325633499.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "678dbddcd126be03e06e8e12e93513be130955abe4883375470cbb5fa76735ab"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "c4f0bd201b9166e8c111be48bed6ac8de27e30ed"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325633496.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325633496.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "3dc64e336b647cb8698441884413c54ca72cca9070e3f6815950c45cee2898e2"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "ae2d1972e42da6a4d2698ea181d03af04cfb7b19"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325633490.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325633490.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "f220002bcaa48e7cbcea8e7657fd66b1e59013a5f38ab93aa14a0dd4afc9263a"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "3746004cbf49ff2da1a11a0e2742b97f7f79461c"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325632450.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325632450.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "f832a635fedfebb022d0061614e6576f39f4c115aeb568999c73d3a9d6b1feef"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "3ab0e9d133ebfe5ca304446a0c9fafcc581d181f"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325632446.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325632446.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "f50ddbccc1183a6e81b99c95e42d5556bb50e18584f753889b200e5544a64b75"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "b1b46081acd989ee82afe3ae2e4a8de5d3dc7177"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325632391.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325632391.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "9a0f96ed1736009a1178902f6597064e458cb1481db0f42046caa3fabb95a553"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "92deddd4abbc67edb1700f79078b87c82241b30b"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325487999.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325487999.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "270c0a0a70effe29a12082e3afa69fc95050c4777f5696715740c6f0fd8f2476"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "e2e1f2020e0de9320f581bb719549c88c8ca7b63"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325487994.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325487994.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "dbf3337d3ce3e7c7adedb3e33f893655b44ebbf0b72ab33d1adedbf31345ef14"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "b17f4e4d41d0791e989c8b87d732409ed68868a2"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325487991.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325487991.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "532ea1871fcb5629934ea6e2127177ea3c87cb7a66521302fc6f79ba5687a3aa"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "633dda8c77effb472caaf76f42b734fabab9f9b4"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325487982.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325487982.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "e0f8a498f632e8bb5b8537c2ea5f95f9a5161bf90e90475cbf61d54943440baa"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "3b528c90bbc9b9a74a5d31bcf589c19391358f30"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325487981.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325487981.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "96fc01b648a0e2c1a8beadc2abcad9e7d17187a6701d20f7ee401607cf8023f5"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "92ce2119bebf877a9a0e68433da7e6d7fbceac24"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325487978.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325487978.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "38be97ebdfb4694a17eda6a1ac50131592186f66eeb9a1b885b2c6dea71ef189"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "0478c27b8a44823f23cc6b0a02cfcc19435efa2d"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325487976.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325487976.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "1d1174986ea49b05a74757bc68941ae70bd64383af8b467081d96e506fb321c0"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "af2f76d2f17b0c16767e2ab0eae973fd9b51b416"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325487974.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325487974.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "90f5288d4a3f6dff11bbad22c414eb27dee3eb150d4dfa3be610b393f4fd2d43"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "bf810d6e33b49e570a5d35a8c7b5f3cda4ac5b42"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325487971.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325487971.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "6f6ae8ce5fa43bfbce77c04e20b543a319f0149528d6e26c76f1a5ecd20fbc26"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "7594da1a2d6e75e0a2f9fc1c08723443c69c9100"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325487963.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325487963.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "9855bf598bd9a67ae1c12ff1e7459fba1a26d7419f3f5f2b9082140ad6efefaa"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "d55ded5e4ae2980af6d30ae708f06d190f73e744"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325486937.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325486937.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "ca1473192e20c5af80148b5fecfffcc145d95010a20ba8baad76233687da5709"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "c12b813315510d50500a41ddfee21dd0919a244d"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325486933.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325486933.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "c0296e8671ff835f7c2640feb34794ed635a30c040caf1c324da0538fa6dbf60"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "5241b713a977f84e195ca5815277f01da613e53a"
+        }
+      ]
+    },
+    {
+      "name": "cegis-report-1757325486874.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: cegis-report-1757325486874.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "66aa183dd3be52259ada1bea6678945bbe9f7bef29f92b5acc80b4dddf8a7bae"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "fd77949888af02dc0b800b6571aa69e456b61d70"
+        }
+      ]
+    },
+    {
+      "name": "benchmark-config.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: benchmark-config.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "6ed5a2547a504e9785632604380b24c50eb53a8d2d080ae67e3a8f7142e61737"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "a3ee3064092d87ac3f3dbbf7255e354ab231808d"
+        }
+      ]
+    },
+    {
+      "name": "api-extractor.json",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: api-extractor.json",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "44da6e7411c4f7d8a4d4671f4392a26dbbbd1a804c94553f89c50ef803db5893"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "9a3425535359e5c8ccf840f10d6ebb33eb9681b8"
+        }
+      ]
+    },
+    {
+      "name": "ae.config.ts",
+      "version": "1.0.0",
+      "type": "file",
+      "description": "Application file: ae.config.ts",
+      "hashes": [
+        {
+          "algorithm": "SHA-256",
+          "value": "c0f5ab0d7ce566b8d5961c9761ff421a6820040406a307bc1928b9603cb392c6"
+        },
+        {
+          "algorithm": "SHA-1",
+          "value": "393c5bd2ab8865dbe00793350dc2c614acb6fc90"
+        }
+      ]
+    }
+  ]
+}

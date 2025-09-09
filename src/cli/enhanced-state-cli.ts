@@ -3,6 +3,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { EnhancedStateManager, FailureArtifact } from '../utils/enhanced-state-manager.js';
+import { toMessage } from '../utils/error-utils.js';
 import type { AEIR } from '@ae-framework/spec-compiler';
 import * as fs from 'fs/promises';
 import type * as path from 'path';
@@ -66,8 +67,8 @@ export class EnhancedStateCLI {
       console.log(chalk.blue(`   Logical key: ${options.logicalKey}`));
       console.log(chalk.blue(`   Data size: ${JSON.stringify(aeir).length} bytes`));
       
-    } catch (error) {
-      console.error(chalk.red(`❌ Failed to save SSOT: ${error}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Failed to save SSOT: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -96,8 +97,8 @@ export class EnhancedStateCLI {
         console.log(JSON.stringify(aeir, null, 2));
       }
       
-    } catch (error) {
-      console.error(chalk.red(`❌ Failed to load SSOT: ${error}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Failed to load SSOT: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -124,8 +125,8 @@ export class EnhancedStateCLI {
         console.log(`| ${version.version} | ${version.timestamp} | ${version.key} |`);
       }
       
-    } catch (error) {
-      console.error(chalk.red(`❌ Failed to list versions: ${error}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Failed to list versions: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -147,8 +148,8 @@ export class EnhancedStateCLI {
         console.log(chalk.blue(`   Entities: ${entities.join(', ')}`));
       }
       
-    } catch (error) {
-      console.error(chalk.red(`❌ Failed to create snapshot: ${error}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Failed to create snapshot: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -173,8 +174,8 @@ export class EnhancedStateCLI {
         console.log(`  • ${key}: ${entry.logicalKey} (v${entry.version})`);
       }
       
-    } catch (error) {
-      console.error(chalk.red(`❌ Failed to load snapshot: ${error}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Failed to load snapshot: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -216,8 +217,8 @@ export class EnhancedStateCLI {
       console.log(chalk.blue(`   Message: ${options.message}`));
       console.log(chalk.yellow(`   CEGIS trigger emitted via EventBus`));
       
-    } catch (error) {
-      console.error(chalk.red(`❌ Failed to simulate failure: ${error}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Failed to simulate failure: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -227,12 +228,12 @@ export class EnhancedStateCLI {
    */
   async runGarbageCollection(): Promise<void> {
     try {
-      // Access private method via reflection for CLI purposes
-      await (this.stateManager as any).runGarbageCollection();
+      // Use public manual GC entry point
+      await this.stateManager.collectGarbage();
       console.log(chalk.green('✅ Manual garbage collection completed'));
       
-    } catch (error) {
-      console.error(chalk.red(`❌ Failed to run garbage collection: ${error}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Failed to run garbage collection: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -255,8 +256,8 @@ export class EnhancedStateCLI {
       console.log(`Newest Entry: ${stats.newestEntry || 'N/A'}`);
       console.log(`Active Transactions: ${stats.activeTransactions}`);
       
-    } catch (error) {
-      console.error(chalk.red(`❌ Failed to show statistics: ${error}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Failed to show statistics: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -302,8 +303,8 @@ export class EnhancedStateCLI {
         console.log(chalk.red('❌ Transaction test failed - data not found'));
       }
       
-    } catch (error) {
-      console.error(chalk.red(`❌ Transaction test failed: ${error}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Transaction test failed: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -320,8 +321,8 @@ export class EnhancedStateCLI {
       console.log(chalk.blue(`   Entries: ${state.entries.length}`));
       console.log(chalk.blue(`   Size: ${this.formatBytes(JSON.stringify(state).length)}`));
       
-    } catch (error) {
-      console.error(chalk.red(`❌ Failed to export state: ${error}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Failed to export state: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -339,8 +340,8 @@ export class EnhancedStateCLI {
       console.log(chalk.green(`✅ State imported from: ${inputPath}`));
       console.log(chalk.blue(`   Entries: ${state.entries.length}`));
       
-    } catch (error) {
-      console.error(chalk.red(`❌ Failed to import state: ${error}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Failed to import state: ${toMessage(error)}`));
       process.exit(1);
     }
   }

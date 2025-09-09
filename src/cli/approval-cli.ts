@@ -8,6 +8,7 @@ import { Command } from 'commander';
 import { ApprovalService } from '../services/approval-service.js';
 import { PhaseType } from '../utils/phase-state-manager.js';
 import chalk from 'chalk';
+import { toMessage } from '../utils/error-utils.js';
 
 const program = new Command();
 const service = new ApprovalService();
@@ -47,8 +48,8 @@ program
       } else {
         console.log(chalk.yellow('⏳ Waiting for approval...'));
       }
-    } catch (error: any) {
-      console.error(chalk.red(`❌ Error: ${error.message}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
       process.exit(1);
     }
   });
@@ -80,8 +81,8 @@ program
         console.log(chalk.blue(`📋 Conditions:`));
         options.conditions.forEach((c: string) => console.log(chalk.gray(`   - ${c}`)));
       }
-    } catch (error: any) {
-      console.error(chalk.red(`❌ Error: ${error.message}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
       process.exit(1);
     }
   });
@@ -99,8 +100,8 @@ program
       console.log(chalk.red(`❌ Phase ${phase} approval rejected`));
       console.log(chalk.blue(`👤 Rejected by: ${options.user}`));
       console.log(chalk.blue(`📝 Reason: ${options.reason}`));
-    } catch (error: any) {
-      console.error(chalk.red(`❌ Error: ${error.message}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
       process.exit(1);
     }
   });
@@ -154,8 +155,8 @@ program
         
         console.log('');
       }
-    } catch (error: any) {
-      console.error(chalk.red(`❌ Error: ${error.message}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
       process.exit(1);
     }
   });
@@ -212,8 +213,8 @@ program
           }
         }
       }
-    } catch (error: any) {
-      console.error(chalk.red(`❌ Error: ${error.message}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
       process.exit(1);
     }
   });
@@ -251,8 +252,8 @@ program
         }
         console.log('');
       }
-    } catch (error: any) {
-      console.error(chalk.red(`❌ Error: ${error.message}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
       process.exit(1);
     }
   });
@@ -265,8 +266,8 @@ program
     try {
       await service.checkExpiredApprovals();
       console.log(chalk.green('✅ Checked for expired approvals'));
-    } catch (error: any) {
-      console.error(chalk.red(`❌ Error: ${error.message}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
       process.exit(1);
     }
   });
@@ -318,8 +319,8 @@ program
       console.log(chalk.green(`✅ Updated approval policy for phase ${phase}`));
       console.log(chalk.blue('Policy settings:'));
       console.log(JSON.stringify(policy, null, 2));
-    } catch (error: any) {
-      console.error(chalk.red(`❌ Error: ${error.message}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
       process.exit(1);
     }
   });

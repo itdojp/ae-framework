@@ -3,6 +3,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { CircuitBreaker, CircuitState } from '../utils/circuit-breaker.js';
+import { toMessage } from '../utils/error-utils.js';
 
 /**
  * Circuit Breaker CLI
@@ -43,8 +44,8 @@ export class CircuitBreakerCLI {
       console.log(chalk.blue(`   Success threshold: ${options.successThreshold || 3}`));
       console.log(chalk.blue(`   Timeout: ${options.timeout || 60000}ms`));
       
-    } catch (error) {
-      console.error(chalk.red(`❌ Failed to create circuit breaker: ${error}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Failed to create circuit breaker: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -75,8 +76,8 @@ export class CircuitBreakerCLI {
         console.log(`| ${name} | ${stateIcon} ${stats.state} | ${stats.totalFailures} | ${stats.totalSuccesses} | ${stats.totalRequests} | ${health} |`);
       }
       
-    } catch (error) {
-      console.error(chalk.red(`❌ Failed to list circuit breakers: ${error}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Failed to list circuit breakers: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -115,8 +116,8 @@ export class CircuitBreakerCLI {
         console.log(`Last Success: ${new Date(stats.lastSuccessTime).toISOString()}`);
       }
       
-    } catch (error) {
-      console.error(chalk.red(`❌ Failed to show stats: ${error}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Failed to show stats: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -181,8 +182,8 @@ export class CircuitBreakerCLI {
         }
       }
       
-    } catch (error) {
-      console.error(chalk.red(`❌ Failed to generate health report: ${error}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Failed to generate health report: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -252,8 +253,8 @@ export class CircuitBreakerCLI {
       console.log(`X Rejected: ${rejectedCount}`);
       console.log(`Final State: ${this.getStateIcon(breaker.getState())} ${breaker.getState()}`);
       
-    } catch (error) {
-      console.error(chalk.red(`❌ Failed to test circuit breaker: ${error}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Failed to test circuit breaker: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -273,8 +274,8 @@ export class CircuitBreakerCLI {
       console.log(chalk.green(`✅ Circuit breaker '${breakerName}' reset successfully`));
       console.log(chalk.blue(`   New state: ${breaker.getState()}`));
       
-    } catch (error) {
-      console.error(chalk.red(`❌ Failed to reset circuit breaker: ${error}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Failed to reset circuit breaker: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -293,8 +294,8 @@ export class CircuitBreakerCLI {
       
       console.log(chalk.yellow(`⚠️  Circuit breaker '${breakerName}' forced to OPEN state`));
       
-    } catch (error) {
-      console.error(chalk.red(`❌ Failed to force open circuit breaker: ${error}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Failed to force open circuit breaker: ${toMessage(error)}`));
       process.exit(1);
     }
   }
@@ -313,8 +314,8 @@ export class CircuitBreakerCLI {
       
       console.log(chalk.green(`✅ Circuit breaker '${breakerName}' forced to CLOSED state`));
       
-    } catch (error) {
-      console.error(chalk.red(`❌ Failed to force close circuit breaker: ${error}`));
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Failed to force close circuit breaker: ${toMessage(error)}`));
       process.exit(1);
     }
   }

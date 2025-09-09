@@ -44,6 +44,79 @@ type FunctionalReq = { id?: string; description?: string; priority?: string; acc
 type NonFunctionalRequirements = Record<string, Array<string | { description?: string }>>;
 type PhaseSummary = { phase: string; success: boolean; duration: number; errors: number };
 
+// Local, minimal view of the req2run problem YAML we normalize from
+type MinimalSpec = {
+  id?: string;
+  title?: string;
+  notes?: string;
+  category?: string;
+  difficulty?: string;
+  estimated_time_minutes?: number;
+  metadata?: { author?: string; created_date?: string; version?: string };
+  requirements?: {
+    functional?: FunctionalReq[];
+    non_functional?: NonFunctionalRequirements | undefined;
+  };
+  constraints?: {
+    allowed_packages?: string[];
+    disallowed_packages?: string[];
+    platform?: string[];
+  };
+  testCriteria?: unknown[];
+  expectedOutput?: { type?: string; value?: unknown };
+};
+
+// Enhanced report typings for the markdown generator
+type AnalyticsData = {
+  summary: {
+    totalProblems: number;
+    successRate: number;
+    averageScore: number;
+    averageExecutionTime: number;
+  };
+  performance: {
+    fastestExecution: number;
+    slowestExecution: number;
+    averagePhaseTime: Record<string, number>;
+  };
+  quality: {
+    highScoreProblems: number;
+    mediumScoreProblems: number;
+    lowScoreProblems: number;
+  };
+  errors: {
+    totalErrors: number;
+    errorsByPhase: Record<string, number>;
+    commonErrorPatterns: string[];
+  };
+};
+
+type EnhancedReportData = {
+  metadata: {
+    timestamp: string;
+    totalProblems: number;
+    successfulRuns: number;
+    failedRuns: number;
+    averageScore: number;
+    totalExecutionTime: number;
+    framework: string;
+    benchmarkVersion: string;
+    pipelineVersion: string;
+    agentsUsed: string[];
+  };
+  configuration: BenchmarkConfig;
+  analytics: AnalyticsData;
+  results: Array<{
+    problemId: string;
+    success: boolean;
+    score: number;
+    executionTime: number;
+    functionalCoverage: number;
+    phases: PhaseSummary[];
+    errors: string[];
+  }>;
+};
+
 /**
  * Standardized Benchmark Runner
  * Leverages the AE Framework standardized pipeline for consistent, maintainable benchmark execution
@@ -497,7 +570,7 @@ export class StandardizedBenchmarkRunner {
 
   // Helper methods
   private buildDescription(spec: unknown): string {
-    const s = spec as any;
+    const s = spec as MinimalSpec;
     let description = s.description || s.notes || s.title || 'Benchmark problem';
     
     if (s.category) description += `\n\nCategory: ${s.category}`;
@@ -507,40 +580,32 @@ export class StandardizedBenchmarkRunner {
     return description;
   }
 
-  private extractRequirements(spec: unknown): unknown[] {
-    const requirements: unknown[] = [];
-    
-    // Extract functional requirements
-    const s = spec as any;
-    const func: FunctionalReq[] = (s.requirements?.functional ?? []) as FunctionalReq[];
-    func.forEach((req, index) => {
-      requirements.push({
-        id: req.id || `FUNC-${index + 1}`,
-        description: req.description,
-        type: 'functional',
-        priority: req.priority?.toLowerCase() || 'must',
-        source: 'req2run-benchmark',
-        acceptance_criteria: req.acceptance_criteria || (req.description ? [req.description] : [])
-      });
-    });
+  private extractRequirements(spec: unknown): string[] {
+    const requirements: string[] = [];
+    const s = spec as MinimalSpec;
 
-    // Extract non-functional requirements
-    const nfr: NonFunctionalRequirements = (s.requirements?.non_functional ?? {}) as NonFunctionalRequirements;
-    Object.entries(nfr).forEach(([type, reqs]) => {
-      if (Array.isArray(reqs)) {
-        reqs.forEach((req, subIndex) => {
-          const desc = typeof req === 'string' ? req : req?.description ?? String(req);
-          requirements.push({
-            id: `NFR-${type.toUpperCase()}-${subIndex + 1}`,
-            description: desc,
-            type: 'non-functional',
-            priority: 'should',
-            source: 'req2run-benchmark',
-            acceptance_criteria: [desc]
-          });
-        });
+    // Extract functional requirements as plain descriptions
+    const func: FunctionalReq[] = Array.isArray(s.requirements?.functional)
+      ? (s.requirements?.functional as FunctionalReq[])
+      : [];
+    for (const req of func) {
+      if (typeof req?.description === 'string' && req.description.trim().length > 0) {
+        requirements.push(req.description.trim());
       }
-    });
+    }
+
+    // Extract non-functional requirements as plain descriptions
+    const nfr: NonFunctionalRequirements = (s.requirements?.non_functional ?? {}) as NonFunctionalRequirements;
+    for (const [, reqs] of Object.entries(nfr)) {
+      if (Array.isArray(reqs)) {
+        for (const req of reqs) {
+          const desc = typeof req === 'string' ? req : req?.description ?? String(req);
+          if (desc && String(desc).trim().length > 0) {
+            requirements.push(String(desc).trim());
+          }
+        }
+      }
+    }
 
     return requirements;
   }
@@ -560,13 +625,8 @@ export class StandardizedBenchmarkRunner {
     let content = `${spec.title}\n\n${spec.description}\n\n`;
 
     content += 'Requirements:\n';
-    spec.requirements.forEach((req, index) => {
-      if (typeof req === 'string') {
-        content += `- HIGH: ${req}\n`;
-      } else {
-        const r = req as { priority?: string; description?: string };
-        content += `- ${r.priority?.toUpperCase() || 'HIGH'}: ${r.description ?? ''}\n`;
-      }
+    spec.requirements.forEach((req) => {
+      content += `- HIGH: ${req}\n`;
     });
 
     if (spec.constraints) {
@@ -713,15 +773,11 @@ Generated on: ${new Date().toISOString()}
 
   private assessFunctionalCoverage(output: unknown, spec: RequirementSpec): number {
     // Assess how well the generated output covers the functional requirements
-    const totalRequirements = spec.requirements.filter((r) => {
-      if (typeof r === 'string') return true;
-      const t = (r as { type?: string }).type;
-      return t === 'functional';
-    }).length;
+    const totalRequirements = spec.requirements.length;
     if (totalRequirements === 0) return 100;
 
     // Simple heuristic: if we have UI components and user flows, assume good coverage
-    if (output.components && output.userFlows) {
+    if (this.isUIUXOutputLike(output)) {
       const componentCount = output.components.length;
       const flowCount = output.userFlows.length;
       return Math.min(100, (componentCount + flowCount) * 10);
@@ -769,20 +825,19 @@ Generated on: ${new Date().toISOString()}
     return pipelineResult.phases.length / (pipelineResult.totalDuration / 1000);
   }
 
-  private generateAnalytics(results: BenchmarkResult[]): Record<string, unknown> {
+  private generateAnalytics(results: BenchmarkResult[]): AnalyticsData {
     const successful = results.filter(r => r.success);
-    const failed = results.filter(r => !r.success);
 
     return {
       summary: {
         totalProblems: results.length,
-        successRate: (successful.length / results.length) * 100,
+        successRate: results.length === 0 ? 0 : (successful.length / results.length) * 100,
         averageScore: successful.length > 0 ? successful.reduce((sum, r) => sum + r.metrics.overallScore, 0) / successful.length : 0,
         averageExecutionTime: results.length > 0 ? results.reduce((sum, r) => sum + r.executionDetails.totalDuration, 0) / results.length : 0
       },
       performance: {
-        fastestExecution: Math.min(...results.map(r => r.executionDetails.totalDuration)),
-        slowestExecution: Math.max(...results.map(r => r.executionDetails.totalDuration)),
+        fastestExecution: results.length > 0 ? Math.min(...results.map(r => r.executionDetails.totalDuration)) : 0,
+        slowestExecution: results.length > 0 ? Math.max(...results.map(r => r.executionDetails.totalDuration)) : 0,
         averagePhaseTime: this.calculateAveragePhaseTime(results)
       },
       quality: {
@@ -796,6 +851,15 @@ Generated on: ${new Date().toISOString()}
         commonErrorPatterns: this.identifyCommonErrors(results)
       }
     };
+  }
+
+  // Narrow unknown outputs coming from pipeline to the bits we need
+  private isUIUXOutputLike(output: unknown): output is Pick<UIUXOutput, 'components' | 'userFlows'> {
+    if (!output || typeof output !== 'object') return false;
+    const o = output as Partial<UIUXOutput>;
+    const hasComponents = Array.isArray(o.components);
+    const hasFlows = Array.isArray(o.userFlows);
+    return hasComponents && hasFlows;
   }
 
   private calculateAveragePhaseTime(results: BenchmarkResult[]): Record<string, number> {
@@ -847,14 +911,7 @@ Generated on: ${new Date().toISOString()}
       .map(([message, _]) => message);
   }
 
-  private generateEnhancedMarkdownReport(data: {
-    metadata: { timestamp: string; pipelineVersion: string };
-    summary: { overallScore: number; coverage: number; averagePerformance: number; averageQuality: number; averageSecurity: number; averageTimeToCompletion: number; stability: number; reliability: number };
-    byCategory: Array<{ category: string; successRate: number; avgScore: number; avgTime: number }>;
-    topPerformers: Array<{ problemId: string; score: number; time: number }>;
-    worstPerformers: Array<{ problemId: string; score: number; time: number }>;
-    results: Array<{ problemId: string; success: boolean; score: number; time: number; phases: PhaseSummary[]; errors: string[] }>;
-  }): string {
+  private generateEnhancedMarkdownReport(data: EnhancedReportData): string {
     return `# Standardized AE Framework Benchmark Report
 
 Generated: ${data.metadata.timestamp}

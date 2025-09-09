@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-08-26T15:25:51.149Z",
+  "timestamp": "2025-09-08T10:01:24.152Z",
   "version": "1.0.0",
   "files": {
     "examples/inventory/apps/web/components/ProductForm.tsx": {
@@ -233,16 +233,16 @@
       "typeScriptErrors": 0,
       "eslintErrors": 1
     },
-    "examples/inventory/src/ui/components/generated/apps/web/app/order/page.tsx": {
-      "hash": "ee96a7eca90231078b552c6b12f83532fd659c9fb262382d5bb33f9ba3c2c00b",
-      "lineCount": 118,
+    "examples/inventory/src/ui/components/generated/apps/web/app/product/page.tsx": {
+      "hash": "570f9a23015e98085e65242be1d1f856f0ded10a633d5d3a7180996a956607be",
+      "lineCount": 116,
       "ariaAttributeCount": 0,
       "typeScriptErrors": 1,
       "eslintErrors": 0
     },
-    "examples/inventory/src/ui/components/generated/apps/web/app/product/page.tsx": {
-      "hash": "570f9a23015e98085e65242be1d1f856f0ded10a633d5d3a7180996a956607be",
-      "lineCount": 116,
+    "examples/inventory/src/ui/components/generated/apps/web/app/order/page.tsx": {
+      "hash": "ee96a7eca90231078b552c6b12f83532fd659c9fb262382d5bb33f9ba3c2c00b",
+      "lineCount": 118,
       "ariaAttributeCount": 0,
       "typeScriptErrors": 1,
       "eslintErrors": 0
@@ -252,20 +252,6 @@
       "lineCount": 108,
       "ariaAttributeCount": 0,
       "typeScriptErrors": 0,
-      "eslintErrors": 0
-    },
-    "examples/inventory/src/ui/components/generated/apps/web/app/order/new/page.tsx": {
-      "hash": "7d0859849dcd53bd6bdfda207356aaf09fda1e2857cee030cf7e8bd6dc5edbe8",
-      "lineCount": 85,
-      "ariaAttributeCount": 0,
-      "typeScriptErrors": 1,
-      "eslintErrors": 0
-    },
-    "examples/inventory/src/ui/components/generated/apps/web/app/order/[id]/page.tsx": {
-      "hash": "2bdfd1c9d8c5afeef0ece789c25c0ba6f7e570660d2ae6ce293a221c48078925",
-      "lineCount": 305,
-      "ariaAttributeCount": 0,
-      "typeScriptErrors": 1,
       "eslintErrors": 0
     },
     "examples/inventory/src/ui/components/generated/apps/web/app/product/new/page.tsx": {
@@ -278,6 +264,20 @@
     "examples/inventory/src/ui/components/generated/apps/web/app/product/[id]/page.tsx": {
       "hash": "0d5a036c54b86701b607d3995d5e130944a31cc3c7a9872d612b556e5ff2212e",
       "lineCount": 293,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 1,
+      "eslintErrors": 0
+    },
+    "examples/inventory/src/ui/components/generated/apps/web/app/order/new/page.tsx": {
+      "hash": "7d0859849dcd53bd6bdfda207356aaf09fda1e2857cee030cf7e8bd6dc5edbe8",
+      "lineCount": 85,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 1,
+      "eslintErrors": 0
+    },
+    "examples/inventory/src/ui/components/generated/apps/web/app/order/[id]/page.tsx": {
+      "hash": "2bdfd1c9d8c5afeef0ece789c25c0ba6f7e570660d2ae6ce293a221c48078925",
+      "lineCount": 305,
       "ariaAttributeCount": 0,
       "typeScriptErrors": 1,
       "eslintErrors": 0
