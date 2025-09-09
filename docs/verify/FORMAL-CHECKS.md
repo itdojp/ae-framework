@@ -18,7 +18,7 @@ This document explains how formal model checking is executed in CI and where to 
   - Optional:
     - `ALLOY_CMD_JSON`: JSON array of extra arguments (preferred, safe)
     - `ALLOY_CMD_ARGS`: whitespace‑separated extra arguments (fallback)
-    - `ALLOY_FAIL_REGEX`: regex for failure detection (default: `Exception|ERROR|FAILED`, case‑insensitive)
+    - `ALLOY_FAIL_REGEX`: regex for failure detection (default: `Exception|ERROR|FAILED|Counterexample|assertion`, case‑insensitive)
     - `ALLOY_TIMEOUT_MS` (default 180000)
 
 ## Local run

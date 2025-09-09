@@ -151,7 +151,7 @@ async function main() {
                 clearTimeout(timer);
                 await fs.writeFile(logPath, out + (err ? `\n[stderr]\n${err}` : ''), 'utf8');
                 const timeout = code === null && signal === 'SIGKILL';
-                const failRegex = new RegExp(process.env.ALLOY_FAIL_REGEX || 'Exception|ERROR|FAILED', 'i');
+                const failRegex = new RegExp(process.env.ALLOY_FAIL_REGEX || 'Exception|ERROR|FAILED|Counterexample|assertion', 'i');
                 const okHeuristic = code === 0 && !timeout && !failRegex.test(out + err);
                 resolve({ ok: okHeuristic, code, signal, timeout, log: path.relative(repoRoot, logPath) });
               });
