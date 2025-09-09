@@ -126,7 +126,11 @@ async function main() {
                 try {
                   const arr = JSON.parse(addArgsJson);
                   if (Array.isArray(arr)) args.push(...arr.map(String));
-                } catch {}
+                } catch (err) {
+                  console.warn(`[run-model-checks] Warning: Invalid JSON in ALLOY_CMD_JSON: ${addArgsJson}`);
+                  console.warn(`[run-model-checks] Error: ${err?.message ?? String(err)}`);
+                  console.warn('[run-model-checks] Falling back to ALLOY_CMD_ARGS or no extra arguments.');
+                }
               } else if (addArgs) {
                 // Fallback: simple whitespace split (avoid quotes/escaping); prefer ALLOY_CMD_JSON
                 args.push(...addArgs.split(/\s+/));
