@@ -24,5 +24,5 @@ async function main() {
   console.log('Contracts check summary written to artifacts/contracts/contracts-check.json');
 }
 
-main().catch((e) => { console.error('contracts-check failed:', e); process.exit(0); });
-
+// Report-only for now, but reflect failures with a non-zero code to surface issues.
+main().catch((e) => { console.error('contracts-check failed:', e); process.exit(1); });

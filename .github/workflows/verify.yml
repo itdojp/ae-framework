@@ -135,7 +135,12 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run contracts presence check (report-only)
         run: |
-          node scripts/verify/run-contracts-check.mjs || true
+          node scripts/verify/run-contracts-check.mjs
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ] && [ $EXIT_CODE -ne 2 ]; then
+            echo "Unexpected error in contracts check (exit code $EXIT_CODE)"
+            exit $EXIT_CODE
+          fi
       - name: Upload contracts artifact
         uses: actions/upload-artifact@v4
         with:
