@@ -15,7 +15,11 @@ This document explains how formal model checking is executed in CI and where to 
 - Alloy (Alloy Analyzer): scaffolded detection
   - The runner lists `.als` files and includes them in `model-check.json`
   - Execution (headless) is supported when `ALLOY_JAR` is provided (safe default: `java -jar $ALLOY_JAR {file}`)
-  - Optional: `ALLOY_CMD_ARGS` to pass extra arguments, `ALLOY_TIMEOUT_MS` (default 180000)
+  - Optional:
+    - `ALLOY_CMD_JSON`: JSON array of extra arguments (preferred, safe)
+    - `ALLOY_CMD_ARGS`: whitespace‑separated extra arguments (fallback)
+    - `ALLOY_FAIL_REGEX`: regex for failure detection (default: `Exception|ERROR|FAILED`, case‑insensitive)
+    - `ALLOY_TIMEOUT_MS` (default 180000)
 
 ## Local run
 
