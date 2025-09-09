@@ -19,7 +19,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: traceability-matrix
-          path: traceability.csv
+          path: |
+            traceability.csv
+            traceability.json
       - name: Check coverage thresholds
         run: |
           # Placeholder for actual threshold checks
@@ -71,22 +73,33 @@ jobs:
           set -e
           TRACE_FILE=$(find artifacts_dl/traceability-matrix -name 'traceability.csv' 2>/dev/null | head -1)
           MODEL_FILE=$(find artifacts_dl/model-check-results -name 'model-check.json' 2>/dev/null | head -1)
+          TRACE_JSON=$(find artifacts_dl/traceability-matrix -name 'traceability.json' 2>/dev/null | head -1)
           echo "TRACE_FILE=$TRACE_FILE" >> $GITHUB_OUTPUT
           echo "MODEL_FILE=$MODEL_FILE" >> $GITHUB_OUTPUT
+          echo "TRACE_JSON=$TRACE_JSON" >> $GITHUB_OUTPUT
           {
             echo "### 🔍 Verification Summary"
-            if [ -f "$TRACE_FILE" ]; then
+            if [ -f "$TRACE_JSON" ]; then
+              scenarios=$(jq -r '.total' "$TRACE_JSON" 2>/dev/null || echo 0)
+              covered_tests=$(jq -r '.testsLinked' "$TRACE_JSON" 2>/dev/null || echo 0)
+              covered_impl=$(jq -r '.implLinked' "$TRACE_JSON" 2>/dev/null || echo 0)
+              covered_formal=$(jq -r '.formalLinked' "$TRACE_JSON" 2>/dev/null || echo 0)
+              echo "- Traceability: ${scenarios} scenarios; tests: ${covered_tests}; impl: ${covered_impl}; formal: ${covered_formal}"
+              echo "\n<details><summary>Unlinked (top 5)</summary>"
+              jq -r '.rows[] | select(.test=="N/A" or .impl=="N/A" or .formal=="N/A") | "- " + .scenario + " (id: " + .id + ") test:" + .test + " impl:" + .impl + " formal:" + .formal' "$TRACE_JSON" 2>/dev/null | head -5 || true
+              echo "</details>"
+            elif [ -f "$TRACE_FILE" ]; then
               total=$(wc -l < "$TRACE_FILE")
               scenarios=$((total-1))
               covered_tests=$(tail -n +2 "$TRACE_FILE" | cut -d, -f2 | grep -vc '^N/A$' || true)
               covered_impl=$(tail -n +2 "$TRACE_FILE" | cut -d, -f3 | grep -vc '^N/A$' || true)
-              echo "- Traceability: ${scenarios} scenarios; tests linked: ${covered_tests}; impl linked: ${covered_impl}"
+              echo "- Traceability: ${scenarios} scenarios; tests: ${covered_tests}; impl: ${covered_impl}"
             else
               echo "- Traceability: (no matrix artifact)"
             fi
             if [ -f "$MODEL_FILE" ]; then
-              ok=$(jq '[.tlc.results[] | select(.ok==true)] | length' "$MODEL_FILE")
-              total=$(jq '(.tlc.results | length) + 0' "$MODEL_FILE")
+              ok=$(jq '[.tlc.results[] | select(.ok==true)] | length' "$MODEL_FILE" 2>/dev/null || echo 0)
+              total=$(jq '(.tlc.results | length) + 0' "$MODEL_FILE" 2>/dev/null || echo 0)
               echo "- Model Check (TLC): ${ok}/${total} modules ok"
             else
               echo "- Model Check: (no summary artifact)"
