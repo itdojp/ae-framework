@@ -109,12 +109,21 @@ async function main() {
                   default: return '';
                 }
               };
-              if (names.length > 0) {
-                input = synth((schemas as any)[names[0]]);
-              } else {
-                // Fallback: pick first path+op and build an object with the path only
-                const paths = oas.paths ? Object.keys(oas.paths) : [];
-                if (paths.length > 0) input = { path: paths[0] };
+              // Prefer requestBody of the first operation if available
+              const pathKeys: string[] = oas.paths ? Object.keys(oas.paths) : [];
+              let derived = false;
+              for (const pk of pathKeys) {
+                const ops = oas.paths[pk]; if (!ops) continue;
+                for (const m of Object.keys(ops)) {
+                  const op = (ops as any)[m];
+                  const rb = op?.requestBody?.content?.['application/json']?.schema;
+                  if (rb) { input = synth(rb); derived = true; break; }
+                }
+                if (derived) break;
+              }
+              if (!derived) {
+                if (names.length > 0) input = synth((schemas as any)[names[0]]);
+                else if (pathKeys.length > 0) input = { path: pathKeys[0] };
               }
             } catch {}
           } else {
