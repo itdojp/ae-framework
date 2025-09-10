@@ -125,11 +125,18 @@ async function main() {
               if (addArgsJson) {
                 try {
                   const arr = JSON.parse(addArgsJson);
-                  if (Array.isArray(arr)) args.push(...arr.map(String));
+                  if (Array.isArray(arr)) {
+                    args.push(...arr.map(String));
+                  } else {
+                    console.warn(`[run-model-checks] Warning: ALLOY_CMD_JSON is valid JSON but not an array. Value: ${addArgsJson}`);
+                    console.warn('[run-model-checks] Falling back to ALLOY_CMD_ARGS or no extra arguments.');
+                    if (addArgs) args.push(...addArgs.split(/\s+/));
+                  }
                 } catch (err) {
                   console.warn(`[run-model-checks] Warning: Invalid JSON in ALLOY_CMD_JSON: ${addArgsJson}`);
                   console.warn(`[run-model-checks] Error: ${err?.message ?? String(err)}`);
                   console.warn('[run-model-checks] Falling back to ALLOY_CMD_ARGS or no extra arguments.');
+                  if (addArgs) args.push(...addArgs.split(/\s+/));
                 }
               } else if (addArgs) {
                 // Fallback: simple whitespace split (avoid quotes/escaping); prefer ALLOY_CMD_JSON
@@ -151,7 +158,13 @@ async function main() {
                 clearTimeout(timer);
                 await fs.writeFile(logPath, out + (err ? `\n[stderr]\n${err}` : ''), 'utf8');
                 const timeout = code === null && signal === 'SIGKILL';
-                const failRegex = new RegExp(process.env.ALLOY_FAIL_REGEX || 'Exception|ERROR|FAILED|Counterexample|assertion', 'i');
+                let failRegex;
+                try {
+                  failRegex = new RegExp(process.env.ALLOY_FAIL_REGEX || 'Exception|ERROR|FAILED|Counterexample|assertion', 'i');
+                } catch (reErr) {
+                  console.warn(`[run-model-checks] Warning: Invalid ALLOY_FAIL_REGEX '${process.env.ALLOY_FAIL_REGEX}'. Using default.`);
+                  failRegex = /Exception|ERROR|FAILED|Counterexample|assertion/i;
+                }
                 const okHeuristic = code === 0 && !timeout && !failRegex.test(out + err);
                 resolve({ ok: okHeuristic, code, signal, timeout, log: path.relative(repoRoot, logPath) });
               });

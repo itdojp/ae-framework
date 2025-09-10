@@ -46,6 +46,8 @@ const generated = await agent.generateFromOpenAPI(openapi, {
 
 Set `CONTRACTS_ENFORCE=1` in the environment to make the `contracts-exec` step fail the PR when minimal parse/pre/post checks fail. Default is report-only.
 
+Alternatively, add a PR label `enforce-contracts`. The verify workflow translates this label into `CONTRACTS_ENFORCE=1` automatically for that PR.
+
 ### Supplying sample input
 
 Set `CONTRACTS_SAMPLE_INPUT=/path/to/input.json` to feed a JSON object as input to the runtime contracts execution. This helps validate schemas and pre/post on a realistic shape. When absent, `{}` is used.

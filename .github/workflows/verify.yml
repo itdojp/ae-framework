@@ -60,7 +60,7 @@ jobs:
   post-summary:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    needs: [traceability, model-check, contracts-check]
+    needs: [traceability, model-check, contracts-check, contracts-exec]
     steps:
       - uses: actions/checkout@v4
       - name: Download artifacts
@@ -71,6 +71,10 @@ jobs:
         id: build
         run: |
           set -e
+          shortp() {
+            p="$1"
+            awk -v s="$p" 'BEGIN{ n=split(s,a,"/"); if (n<=2) {print s} else { print a[n-1] "/" a[n] } }'
+          }
           TRACE_FILE=$(find artifacts_dl/traceability-matrix -name 'traceability.csv' 2>/dev/null | head -1)
           MODEL_FILE=$(find artifacts_dl/model-check-results -name 'model-check.json' 2>/dev/null | head -1)
           TRACE_JSON=$(find artifacts_dl/traceability-matrix -name 'traceability.json' 2>/dev/null | head -1)
@@ -104,15 +108,18 @@ jobs:
               REPO="$GITHUB_REPOSITORY"
               if [ -f "$TRACE_JSON" ]; then
                 idx=0
-                while IFS= read -r row && [ $idx -lt 3 ]; do
+              while IFS= read -r row && [ $idx -lt 3 ]; do
                   scenario=$(echo "$row" | jq -r '.scenario')
                   testp=$(echo "$row" | jq -r '.test')
                   implp=$(echo "$row" | jq -r '.impl')
                   formp=$(echo "$row" | jq -r '.formal')
-                  testlink="$testp"; impllink="$implp"; formlink="$formp"
-                  if [ -n "$PR_SHA" ] && [ "$testp" != "N/A" ]; then testlink="[$testp](https://github.com/$REPO/blob/$PR_SHA/$testp)"; fi
-                  if [ -n "$PR_SHA" ] && [ "$implp" != "N/A" ]; then impllink="[$implp](https://github.com/$REPO/blob/$PR_SHA/$implp)"; fi
-                  if [ -n "$PR_SHA" ] && [ "$formp" != "N/A" ]; then formlink="[$formp](https://github.com/$REPO/blob/$PR_SHA/$formp)"; fi
+                  testdisp=$( [ "$testp" != "N/A" ] && shortp "$testp" || echo "N/A" )
+                  impldisp=$( [ "$implp" != "N/A" ] && shortp "$implp" || echo "N/A" )
+                  formdisp=$( [ "$formp" != "N/A" ] && shortp "$formp" || echo "N/A" )
+                  testlink="$testdisp"; impllink="$impldisp"; formlink="$formdisp"
+                  if [ -n "$PR_SHA" ] && [ "$testp" != "N/A" ]; then testlink="[$testdisp](https://github.com/$REPO/blob/$PR_SHA/$testp)"; fi
+                  if [ -n "$PR_SHA" ] && [ "$implp" != "N/A" ]; then impllink="[$impldisp](https://github.com/$REPO/blob/$PR_SHA/$implp)"; fi
+                  if [ -n "$PR_SHA" ] && [ "$formp" != "N/A" ]; then formlink="[$formdisp](https://github.com/$REPO/blob/$PR_SHA/$formp)"; fi
                   id=$(echo "$row" | jq -r '.id')
                   echo "- $scenario (id: $id) test: $testlink impl: $impllink formal: $formlink"
                   idx=$((idx+1))
@@ -146,6 +153,22 @@ jobs:
               echo "\n<details><summary>Non-OK modules (top 5)</summary>"
               jq -r '.tlc.results[] | select(.ok!=true) | "- " + .module + ( .log? // "" | " (log: " + . + ")" )' "$MODEL_FILE" 2>/dev/null | head -5 || true
               echo "</details>"
+              # Alloy summary (if present)
+              a_ok=$(jq '[.alloy.results[] | select(.ok==true)] | length' "$MODEL_FILE" 2>/dev/null || echo 0)
+              a_total=$(jq '(.alloy.results | map(select(.ok!=null)) | length) + 0' "$MODEL_FILE" 2>/dev/null || echo 0)
+              if [ "$a_total" -gt 0 ]; then a_pct=$(awk "BEGIN {printf \"%.0f\", ($a_ok*100)/$a_total}"); else a_pct=0; fi
+              if [ "$a_total" -gt 0 ]; then
+                echo "- Alloy: ${a_ok}/${a_total} (${a_pct}%) specs ok"
+                echo "\n<details><summary>Alloy non-OK (top 5)</summary>"
+                jq -r '.alloy.results[] | select(.ok==false) | "- " + .file + ( .log? // "" | " (log: " + . + ")" )' "$MODEL_FILE" 2>/dev/null | head -5 || true
+                echo "</details>"
+              else
+                # If Alloy not executed but detected
+                a_detect=$(jq '(.alloy.results | length) + 0' "$MODEL_FILE" 2>/dev/null || echo 0)
+                if [ "$a_detect" -gt 0 ]; then
+                  echo "- Alloy: detected ${a_detect} specs (execution skipped)"
+                fi
+              fi
             else
               echo "- Model Check: (no summary artifact)"
             fi

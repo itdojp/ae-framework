@@ -78,12 +78,15 @@ assert NoNegativeInventory { all it: Item | it.stock >= 0 }
 - It searches tests/src/formal for any occurrence of title/id/tag and generates:
   - `traceability.csv` for human eyeballing
   - `traceability.json` with totals and per-scenario rows
-- PR summary shows total scenarios and how many link to tests/impl/formal.
-- The summary lists up to 5 unlinked scenarios for quick action.
+- PR summary includes:
+  - Scenario totals and coverage percentages (tests/impl/formal)
+  - Up to 5 unlinked scenarios (fast follow-up list)
+  - Clickable examples (up to 3) with GitHub blob links built from the PR head SHA
+  - Shortened path labels for readability (last two segments, e.g. `routes/checkout.ts`)
+  - Hit-basis counts showing what matched each link (title/id/tag) for tests and formal
 
 ### 6) Tips
 
 - Keep references short and consistent. One line per major artifact is enough.
 - Use tags for grouping; use slug for exact mapping across languages.
 - Avoid overlinking: put references in the most representative file per flow.
-
