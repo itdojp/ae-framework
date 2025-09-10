@@ -859,12 +859,20 @@ start();
       content += `    if (!post(input, output)) return { status: 500, error: 'Postcondition failed' };\n`;
       content += `    ${contractBase}Output.parse(output);\n`;
       // Choose default status from OpenAPI responses (prefer 201 for POST, 204 for DELETE, else 200)
+<<<<<<< HEAD
       // responses already computed above
       // Note: regex needs double-escaped backslash inside TS template
       const respCodes2 = Object.keys(responses).filter(c => /^\d{3}$/.test(c));
       let defaultStatus = method === 'post' ? 201 : method === 'delete' ? 204 : 200;
       if (respCodes2.length > 0) {
         const twos = respCodes2.map(Number).filter(n => n >= 200 && n < 300).sort((a,b)=>a-b);
+=======
+      const responses = endpoint?.definition?.responses || {};
+      const respCodes = Object.keys(responses).filter(c => /^\\d{3}$/.test(c));
+      let defaultStatus = method === 'post' ? 201 : method === 'delete' ? 204 : 200;
+      if (respCodes.length > 0) {
+        const twos = respCodes.map(Number).filter(n => n >= 200 && n < 300).sort((a,b)=>a-b);
+>>>>>>> origin/main
         if (method === 'post' && twos.includes(201)) defaultStatus = 201;
         else if (method === 'delete' && twos.includes(204)) defaultStatus = 204;
         else if (twos.includes(200)) defaultStatus = 200;
