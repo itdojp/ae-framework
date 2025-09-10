@@ -819,7 +819,13 @@ start();
       .filter(Boolean)
       .map(p => p.charAt(0).toUpperCase() + p.slice(1))
       .join('');
-    const contractBase = `${toPascal(safeName)}${method.charAt(0).toUpperCase()}${method.slice(1)}`;
+    const opIdRaw = (endpoint?.definition as any)?.operationId as string | undefined;
+    const opIdSafe = opIdRaw ? opIdRaw.replace(/[^a-zA-Z0-9]+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '') : '';
+    const contractBase = opIdSafe && opIdSafe.length > 0
+      ? `${toPascal(opIdSafe)}`
+      : `${toPascal(safeName)}${method.charAt(0).toUpperCase()}${method.slice(1)}`;
 
     const base = `// Route handler implementation for ${endpoint.method} ${endpoint.path}\n`;
     let content = base;
@@ -827,7 +833,8 @@ start();
       content += `import { z } from 'zod';\n`;
       content += `import { ${contractBase}Input, ${contractBase}Output } from '../contracts/schemas';\n`;
       content += `import { pre, post } from '../contracts/conditions';\n`;
-      content += `\nexport async function handler(input: unknown): Promise<unknown> {\n`;
+      content += `\n// OperationId: ${opIdRaw ?? 'N/A'}\n`;
+      content += `export async function handler(input: unknown): Promise<unknown> {\n`;
       content += `  try {\n`;
       content += `    // Validate input and pre-condition (skeleton)\n`;
       content += `    ${contractBase}Input.parse(input);\n`;
