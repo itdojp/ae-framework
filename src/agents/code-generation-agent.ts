@@ -836,6 +836,7 @@ start();
       content += `    const output: unknown = {};\n`;
       content += `    if (!post(input, output)) return { status: 500, error: 'Postcondition failed' };\n`;
       content += `    ${contractBase}Output.parse(output);\n`;
+<<<<<<< HEAD
       // Choose default status from OpenAPI responses (prefer 201 for POST, 204 for DELETE, else 200)
       const responses = endpoint?.definition?.responses || {};
       const respCodes = Object.keys(responses).filter(c => /^\d{3}$/.test(c));
@@ -848,6 +849,9 @@ start();
         else if (twos.length > 0) defaultStatus = twos[0];
       }
       content += `    return { status: ${defaultStatus}, data: output };\n`;
+=======
+      content += `    return { status: 200, data: output };\n`;
+>>>>>>> origin/main
       content += `  } catch (e) {\n`;
       content += `    if (e instanceof z.ZodError) return { status: 400, error: 'Validation error', details: e.errors };\n`;
       content += `    return { status: 500, error: 'Unhandled error' };\n`;

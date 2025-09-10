@@ -48,7 +48,6 @@ async function main() {
           if (openapiPath.endsWith('.json')) {
             try {
               const oas = JSON.parse(txt);
-              // Prefer deriving from components.schemas
               const schemas = oas.components?.schemas || {};
               const names = Object.keys(schemas);
               const seen = new Set<string>();
@@ -61,6 +60,28 @@ async function main() {
                     const v = synth(schemas[ref], depth + 1);
                     seen.delete(ref);
                     return v;
+              if (names.length > 0) {
+                const first = schemas[names[0]] as any;
+                const sample: any = {};
+                if (first && first.type === 'object' && first.properties) {
+                  const req: string[] = Array.isArray(first.required) ? first.required : [];
+                  for (const [k, vAny] of Object.entries<any>(first.properties)) {
+                    const v = vAny as any;
+                    if (v.default !== undefined) { sample[k] = v.default; continue; }
+                    if (Array.isArray(v.enum) && v.enum.length > 0) { sample[k] = v.enum[0]; continue; }
+                    const t = v.type || 'string';
+                    switch (t) {
+                      case 'integer': sample[k] = 0; break;
+                      case 'number': sample[k] = 0; break;
+                      case 'boolean': sample[k] = false; break;
+                      case 'array': sample[k] = Array.isArray(v.items) ? [] : []; break;
+                      case 'object': sample[k] = {}; break;
+                      default: sample[k] = ''; break;
+                    }
+                    // Mark required fields explicitly even if default is empty
+                    if (req.includes(k) && (sample[k] === '' || sample[k] === null || sample[k] === undefined)) {
+                      sample[k] = sample[k] === '' ? 'REQUIRED' : sample[k];
+                    }
                   }
                 }
                 if (schema.default !== undefined) return schema.default;
@@ -88,12 +109,21 @@ async function main() {
                   default: return '';
                 }
               };
-              if (names.length > 0) {
-                input = synth((schemas as any)[names[0]]);
-              } else {
-                // Fallback: pick first path+op and build an object with the path only
-                const paths = oas.paths ? Object.keys(oas.paths) : [];
-                if (paths.length > 0) input = { path: paths[0] };
+              // Prefer requestBody of the first operation if available
+              const pathKeys: string[] = oas.paths ? Object.keys(oas.paths) : [];
+              let derived = false;
+              for (const pk of pathKeys) {
+                const ops = oas.paths[pk]; if (!ops) continue;
+                for (const m of Object.keys(ops)) {
+                  const op = (ops as any)[m];
+                  const rb = op?.requestBody?.content?.['application/json']?.schema;
+                  if (rb) { input = synth(rb); derived = true; break; }
+                }
+                if (derived) break;
+              }
+              if (!derived) {
+                if (names.length > 0) input = synth((schemas as any)[names[0]]);
+                else if (pathKeys.length > 0) input = { path: pathKeys[0] };
               }
             } catch {}
           } else {
