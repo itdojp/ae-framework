@@ -1,0 +1,8 @@
+{
+  "present": {
+    "schemas": true,
+    "conditions": true,
+    "machine": true
+  },
+  "note": "Report-only. Future: execute runtime checks in verify."
+}

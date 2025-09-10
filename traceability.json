@@ -1,0 +1,41 @@
+{
+  "total": 3,
+  "testsLinked": 3,
+  "implLinked": 3,
+  "formalLinked": 3,
+  "rows": [
+    {
+      "scenario": "Successful reservation",
+      "id": "successful-reservation",
+      "tags": "",
+      "test": "tests/traceability/inventory.trace.test.ts",
+      "impl": "src/domain/inventory.ts",
+      "formal": "specs/formal/tla+/Inventory.tla",
+      "testHit": "Successful reservation",
+      "implHit": "successful-reservation",
+      "formalHit": "successful-reservation"
+    },
+    {
+      "scenario": "Prevent negative stock",
+      "id": "prevent-negative-stock",
+      "tags": "",
+      "test": "tests/traceability/inventory.trace.test.ts",
+      "impl": "src/domain/inventory.ts",
+      "formal": "specs/formal/tla+/Inventory.tla",
+      "testHit": "Prevent negative stock",
+      "implHit": "prevent-negative-stock",
+      "formalHit": "prevent-negative-stock"
+    },
+    {
+      "scenario": "Idempotent by order id",
+      "id": "idempotent-by-order-id",
+      "tags": "",
+      "test": "tests/traceability/inventory.trace.test.ts",
+      "impl": "src/domain/inventory.ts",
+      "formal": "specs/formal/tla+/Inventory.tla",
+      "testHit": "Idempotent by order id",
+      "implHit": "idempotent-by-order-id",
+      "formalHit": "idempotent-by-order-id"
+    }
+  ]
+}

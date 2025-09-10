@@ -1,0 +1,14 @@
+{
+  "present": {
+    "schemas": true,
+    "conditions": true,
+    "machine": true
+  },
+  "results": {
+    "parseInOk": true,
+    "preOk": true,
+    "postOk": true,
+    "parseOutOk": true
+  },
+  "note": "Report-only execution of contracts"
+}

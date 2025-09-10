@@ -156,6 +156,7 @@ Flow suggestion:
 - Generate runtime contracts from a formal spec and inject them into OpenAPI-generated handlers.
 - Use `CodeGenerationAgent.generateContractsSkeleton(formalSpec)` and pass `includeContracts: true` to `generateFromOpenAPI`.
 - See `docs/verify/RUNTIME-CONTRACTS.md` and Quick Start for examples.
+- CI integration and PR summary details are described in `docs/verify/FORMAL-CHECKS.md` and `docs/verify/TRACEABILITY-GUIDE.md`.
 
 ## Acceptance Criteria (incremental)
 

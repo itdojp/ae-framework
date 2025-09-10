@@ -51,35 +51,49 @@ async function main() {
               // Prefer deriving from components.schemas
               const schemas = oas.components?.schemas || {};
               const names = Object.keys(schemas);
-              if (names.length > 0) {
-                const first = schemas[names[0]] as any;
-                const sample: any = {};
-                if (first && first.type === 'object' && first.properties) {
-                  const req: string[] = Array.isArray(first.required) ? first.required : [];
-                  for (const [k, vAny] of Object.entries<any>(first.properties)) {
-                    const v = vAny as any;
-                    if (v.default !== undefined) { sample[k] = v.default; continue; }
-                    if (Array.isArray(v.enum) && v.enum.length > 0) { sample[k] = v.enum[0]; continue; }
-                    const t = v.type || 'string';
-                    switch (t) {
-                      case 'integer': sample[k] = 0; break;
-                      case 'number': sample[k] = 0; break;
-                      case 'boolean': sample[k] = false; break;
-                      case 'array': sample[k] = Array.isArray(v.items) ? [] : []; break;
-                      case 'object': sample[k] = {}; break;
-                      default: sample[k] = ''; break;
-                    }
-                    // Mark required fields explicitly even if default is empty
-                    if (req.includes(k) && (sample[k] === '' || sample[k] === null || sample[k] === undefined)) {
-                      sample[k] = sample[k] === '' ? 'REQUIRED' : sample[k];
-                    }
+              const seen = new Set<string>();
+              const synth = (schema: any, depth = 0): any => {
+                if (!schema || depth > 5) return {};
+                if (schema.$ref && typeof schema.$ref === 'string') {
+                  const ref = schema.$ref.split('/').pop() as string;
+                  if (ref && schemas[ref] && !seen.has(ref)) {
+                    seen.add(ref);
+                    const v = synth(schemas[ref], depth + 1);
+                    seen.delete(ref);
+                    return v;
                   }
-                  input = sample;
-                } else {
-                  // Fallback: pick first path+op and build an object with the path only
-                  const paths = oas.paths ? Object.keys(oas.paths) : [];
-                  if (paths.length > 0) input = { path: paths[0] };
                 }
+                if (schema.default !== undefined) return schema.default;
+                if (Array.isArray(schema.enum) && schema.enum.length > 0) return schema.enum[0];
+                const t = schema.type || (schema.properties ? 'object' : (schema.items ? 'array' : 'string'));
+                switch (t) {
+                  case 'integer':
+                  case 'number': return 0;
+                  case 'boolean': return false;
+                  case 'array': {
+                    const item = schema.items ? synth(schema.items, depth + 1) : null;
+                    return item === null ? [] : [item];
+                  }
+                  case 'object': {
+                    const obj: any = {};
+                    const req: string[] = Array.isArray(schema.required) ? schema.required : [];
+                    for (const [k, v] of Object.entries<any>(schema.properties || {})) {
+                      obj[k] = synth(v, depth + 1);
+                      if (req.includes(k) && (obj[k] === '' || obj[k] === null || obj[k] === undefined)) {
+                        obj[k] = obj[k] === '' ? 'REQUIRED' : obj[k];
+                      }
+                    }
+                    return obj;
+                  }
+                  default: return '';
+                }
+              };
+              if (names.length > 0) {
+                input = synth((schemas as any)[names[0]]);
+              } else {
+                // Fallback: pick first path+op and build an object with the path only
+                const paths = oas.paths ? Object.keys(oas.paths) : [];
+                if (paths.length > 0) input = { path: paths[0] };
               }
             } catch {}
           } else {
