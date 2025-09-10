@@ -245,6 +245,21 @@ Implementation time estimate: 2 hours
 Risk assessment: Low risk
 ```
 
+### ▶️ Run the Sample Server
+
+You can run a minimal Fastify server that wires the scaffolded endpoints:
+
+```bash
+pnpm install
+pnpm run start:server
+# Server listens on http://localhost:3000
+
+# Example calls:
+# POST /reservations       -> expects { sku, quantity>=1, orderId }
+# DELETE /reservations/:id -> cancels a reservation
+# GET /inventory/:sku      -> returns { sku, stock>=0 }
+```
+
 #### Scenario 2: Legacy System Partial Modernization
 
 ```
