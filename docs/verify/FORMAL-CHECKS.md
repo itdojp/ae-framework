@@ -63,6 +63,26 @@ ALLOY_JAR=$HOME/tools/alloy.jar \
   - Alloy: ok/total (when executed) and top non‑OK specs, or “detected N specs (execution skipped)” when jar not provided
 <<<<<<< HEAD
   - Optional enforcement: add PR label `enforce-formal` to fail the PR when TLC/Alloy has failures (default is report-only)
+
+### Headless Alloy examples
+
+Run Alloy headless when you can provide a jar (or CLI):
+
+```bash
+# Minimal
+ALLOY_JAR=$HOME/tools/alloy.jar npm run verify:model
+
+# With JSON-array args (quotes/spaces safe)
+ALLOY_JAR=$HOME/tools/alloy.jar \
+  ALLOY_CMD_JSON='["-someFlag","--opt","value with spaces"]' \
+  npm run verify:model
+
+# With regex tuning and timeout
+ALLOY_JAR=$HOME/tools/alloy.jar \
+  ALLOY_FAIL_REGEX='Exception|ERROR|FAILED|Counterexample|assert(ion)?' \
+  ALLOY_TIMEOUT_MS=180000 \
+  npm run verify:model
+```
 =======
 >>>>>>> origin/main
 
