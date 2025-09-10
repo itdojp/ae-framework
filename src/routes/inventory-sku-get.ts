@@ -7,7 +7,8 @@ export async function handler(input: unknown): Promise<unknown> {
   try {
     InventorySkuGetInput.parse(input)
     if (!pre(input)) return { status: 400, error: 'Precondition failed' }
-    const output: unknown = {}
+    const i = input as { sku: string }
+    const output: unknown = { sku: i.sku, stock: 0 }
     if (!post(input, output)) return { status: 500, error: 'Postcondition failed' }
     InventorySkuGetOutput.parse(output)
     return { status: 200, data: output }
