@@ -819,7 +819,13 @@ start();
       .filter(Boolean)
       .map(p => p.charAt(0).toUpperCase() + p.slice(1))
       .join('');
-    const contractBase = `${toPascal(safeName)}${method.charAt(0).toUpperCase()}${method.slice(1)}`;
+    const opIdRaw = (endpoint?.definition as any)?.operationId as string | undefined;
+    const opIdSafe = opIdRaw ? opIdRaw.replace(/[^a-zA-Z0-9]+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '') : '';
+    const contractBase = opIdSafe && opIdSafe.length > 0
+      ? `${toPascal(opIdSafe)}`
+      : `${toPascal(safeName)}${method.charAt(0).toUpperCase()}${method.slice(1)}`;
 
     const base = `// Route handler implementation for ${endpoint.method} ${endpoint.path}\n`;
     let content = base;
@@ -827,21 +833,45 @@ start();
       content += `import { z } from 'zod';\n`;
       content += `import { ${contractBase}Input, ${contractBase}Output } from '../contracts/schemas';\n`;
       content += `import { pre, post } from '../contracts/conditions';\n`;
-      content += `\nexport async function handler(input: unknown): Promise<unknown> {\n`;
+      content += `\n// OperationId: ${opIdRaw ?? 'N/A'}\n`;
+      content += `export async function handler(input: unknown): Promise<unknown> {\n`;
       content += `  try {\n`;
       content += `    // Validate input and pre-condition (skeleton)\n`;
       content += `    ${contractBase}Input.parse(input);\n`;
       content += `    if (!pre(input)) return { status: 400, error: 'Precondition failed' };\n`;
       content += `    // TODO: actual implementation here\n`;
-      content += `    const output: unknown = {};\n`;
+      // Build minimal sample output from OpenAPI response schema (best-effort)
+      const responses = endpoint?.definition?.responses || {};
+      const respCodes = Object.keys(responses).filter((c: string) => /^\d{3}$/.test(c));
+      const pick2xx = (codes: string[]) => codes.map(Number).filter(n => n>=200 && n<300).sort((a,b)=>a-b);
+      let chosenSchema: any | null = null;
+      if (respCodes.length > 0) {
+        const twos = pick2xx(respCodes);
+        const chosen = (method === 'post' && twos.includes(201)) ? 201
+          : (method === 'delete' && twos.includes(204)) ? 204
+          : (twos.includes(200) ? 200 : (twos[0] ?? 200));
+        const resp = responses[String(chosen)];
+        const schema = resp?.content?.['application/json']?.schema;
+        if (schema) chosenSchema = schema;
+      }
+      const lit = this.buildSampleLiteral(chosenSchema, endpoint?.components || {});
+      content += `    const output: unknown = ${lit};\n`;
       content += `    if (!post(input, output)) return { status: 500, error: 'Postcondition failed' };\n`;
       content += `    ${contractBase}Output.parse(output);\n`;
       // Choose default status from OpenAPI responses (prefer 201 for POST, 204 for DELETE, else 200)
+<<<<<<< HEAD
+      // responses already computed above
+      const respCodes2 = Object.keys(responses).filter((c: string) => /^\d{3}$/.test(c));
+      let defaultStatus = method === 'post' ? 201 : method === 'delete' ? 204 : 200;
+      if (respCodes2.length > 0) {
+        const twos = respCodes2.map(Number).filter(n => n >= 200 && n < 300).sort((a,b)=>a-b);
+=======
       const responses = endpoint?.definition?.responses || {};
       const respCodes = Object.keys(responses).filter(c => /^\\d{3}$/.test(c));
       let defaultStatus = method === 'post' ? 201 : method === 'delete' ? 204 : 200;
       if (respCodes.length > 0) {
         const twos = respCodes.map(Number).filter(n => n >= 200 && n < 300).sort((a,b)=>a-b);
+>>>>>>> origin/main
         if (method === 'post' && twos.includes(201)) defaultStatus = 201;
         else if (method === 'delete' && twos.includes(204)) defaultStatus = 204;
         else if (twos.includes(200)) defaultStatus = 200;
@@ -849,8 +879,17 @@ start();
       }
       content += `    return { status: ${defaultStatus}, data: output };\n`;
       content += `  } catch (e) {\n`;
-      content += `    if (e instanceof z.ZodError) return { status: 400, error: 'Validation error', details: e.errors };\n`;
-      content += `    return { status: 500, error: 'Unhandled error' };\n`;
+      // Map errors to OpenAPI 4xx/5xx and include minimal bodies when available
+      const fourxx = respCodes2.map(Number).filter(n => n >= 400 && n < 500);
+      const fivexx = respCodes2.map(Number).filter(n => n >= 500 && n < 600);
+      const badReq = fourxx.includes(400) ? 400 : (fourxx.includes(422) ? 422 : (fourxx[0] ?? 400));
+      const srvErr = fivexx.includes(500) ? 500 : (fivexx[0] ?? 500);
+      const badSchema = (responses as any)[String(badReq)]?.content?.['application/json']?.schema || null;
+      const srvSchema = (responses as any)[String(srvErr)]?.content?.['application/json']?.schema || null;
+      const badLit = this.buildSampleLiteral(badSchema, endpoint?.components || {});
+      const srvLit = this.buildSampleLiteral(srvSchema, endpoint?.components || {});
+      content += `    if (e instanceof z.ZodError) return { status: ${badReq}, error: 'Validation error', details: e.errors, data: ${badLit} };\n`;
+      content += `    return { status: ${srvErr}, error: 'Unhandled error', data: ${srvLit} };\n`;
       content += `  }\n`;
       content += `}\n`;
     }
@@ -860,6 +899,47 @@ start();
       purpose: `Handle ${endpoint.method} ${endpoint.path}`,
       tests: [],
     };
+  }
+
+  // Build a minimal TypeScript literal from an OpenAPI schema object (best-effort)
+  private buildSampleLiteral(schema: any, components: Record<string, any> = {}, depth = 0): string {
+    if (!schema || depth > 5) return '{}';
+    if (schema.$ref && typeof schema.$ref === 'string') {
+      const ref = String(schema.$ref);
+      const name = ref.split('/').pop() as string;
+      const target = name && components ? components[name] : null;
+      if (target) return this.buildSampleLiteral(target, components, depth + 1);
+      return '{}';
+    }
+    if (schema.default !== undefined) {
+      return JSON.stringify(schema.default);
+    }
+    if (Array.isArray(schema.enum) && schema.enum.length > 0) {
+      return JSON.stringify(schema.enum[0]);
+    }
+    const t = schema.type || (schema.properties ? 'object' : (schema.items ? 'array' : undefined));
+    switch (t) {
+      case 'integer':
+      case 'number':
+        return '0';
+      case 'boolean':
+        return 'false';
+      case 'string':
+        return JSON.stringify('');
+      case 'array': {
+        const itemLit = schema.items ? this.buildSampleLiteral(schema.items, components, depth + 1) : null;
+        // keep minimal; empty array is safe
+        return '[]';
+      }
+      case 'object': {
+        const props = schema.properties || {};
+        const keys = Object.keys(props);
+        const body = keys.map(k => `${JSON.stringify(k)}: ${this.buildSampleLiteral(props[k], components, depth + 1)}`).join(', ');
+        return `{ ${body} }`;
+      }
+      default:
+        return '{}';
+    }
   }
 
   private generateModel(schema: any, database?: string): CodeFile {
