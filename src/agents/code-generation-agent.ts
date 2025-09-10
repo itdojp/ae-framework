@@ -854,15 +854,14 @@ start();
         const schema = resp?.content?.['application/json']?.schema;
         if (schema) chosenSchema = schema;
       }
-      const lit = this.buildSampleLiteral(chosenSchema);
+      const lit = this.buildSampleLiteral(chosenSchema, endpoint?.components || {});
       content += `    const output: unknown = ${lit};\n`;
       content += `    if (!post(input, output)) return { status: 500, error: 'Postcondition failed' };\n`;
       content += `    ${contractBase}Output.parse(output);\n`;
       // Choose default status from OpenAPI responses (prefer 201 for POST, 204 for DELETE, else 200)
 <<<<<<< HEAD
       // responses already computed above
-      // Note: regex needs double-escaped backslash inside TS template
-      const respCodes2 = Object.keys(responses).filter(c => /^\d{3}$/.test(c));
+      const respCodes2 = Object.keys(responses).filter((c: string) => /^\d{3}$/.test(c));
       let defaultStatus = method === 'post' ? 201 : method === 'delete' ? 204 : 200;
       if (respCodes2.length > 0) {
         const twos = respCodes2.map(Number).filter(n => n >= 200 && n < 300).sort((a,b)=>a-b);
@@ -880,8 +879,17 @@ start();
       }
       content += `    return { status: ${defaultStatus}, data: output };\n`;
       content += `  } catch (e) {\n`;
-      content += `    if (e instanceof z.ZodError) return { status: 400, error: 'Validation error', details: e.errors };\n`;
-      content += `    return { status: 500, error: 'Unhandled error' };\n`;
+      // Map errors to OpenAPI 4xx/5xx and include minimal bodies when available
+      const fourxx = respCodes2.map(Number).filter(n => n >= 400 && n < 500);
+      const fivexx = respCodes2.map(Number).filter(n => n >= 500 && n < 600);
+      const badReq = fourxx.includes(400) ? 400 : (fourxx.includes(422) ? 422 : (fourxx[0] ?? 400));
+      const srvErr = fivexx.includes(500) ? 500 : (fivexx[0] ?? 500);
+      const badSchema = (responses as any)[String(badReq)]?.content?.['application/json']?.schema || null;
+      const srvSchema = (responses as any)[String(srvErr)]?.content?.['application/json']?.schema || null;
+      const badLit = this.buildSampleLiteral(badSchema, endpoint?.components || {});
+      const srvLit = this.buildSampleLiteral(srvSchema, endpoint?.components || {});
+      content += `    if (e instanceof z.ZodError) return { status: ${badReq}, error: 'Validation error', details: e.errors, data: ${badLit} };\n`;
+      content += `    return { status: ${srvErr}, error: 'Unhandled error', data: ${srvLit} };\n`;
       content += `  }\n`;
       content += `}\n`;
     }
@@ -894,9 +902,15 @@ start();
   }
 
   // Build a minimal TypeScript literal from an OpenAPI schema object (best-effort)
-  private buildSampleLiteral(schema: any, depth = 0): string {
+  private buildSampleLiteral(schema: any, components: Record<string, any> = {}, depth = 0): string {
     if (!schema || depth > 5) return '{}';
-    if (schema.$ref) return '{}';
+    if (schema.$ref && typeof schema.$ref === 'string') {
+      const ref = String(schema.$ref);
+      const name = ref.split('/').pop() as string;
+      const target = name && components ? components[name] : null;
+      if (target) return this.buildSampleLiteral(target, components, depth + 1);
+      return '{}';
+    }
     if (schema.default !== undefined) {
       return JSON.stringify(schema.default);
     }
@@ -913,14 +927,14 @@ start();
       case 'string':
         return JSON.stringify('');
       case 'array': {
-        const itemLit = schema.items ? this.buildSampleLiteral(schema.items, depth + 1) : null;
+        const itemLit = schema.items ? this.buildSampleLiteral(schema.items, components, depth + 1) : null;
         // keep minimal; empty array is safe
         return '[]';
       }
       case 'object': {
         const props = schema.properties || {};
         const keys = Object.keys(props);
-        const body = keys.map(k => `${JSON.stringify(k)}: ${this.buildSampleLiteral(props[k], depth + 1)}`).join(', ');
+        const body = keys.map(k => `${JSON.stringify(k)}: ${this.buildSampleLiteral(props[k], components, depth + 1)}`).join(', ');
         return `{ ${body} }`;
       }
       default:
