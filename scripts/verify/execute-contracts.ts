@@ -48,7 +48,6 @@ async function main() {
           if (openapiPath.endsWith('.json')) {
             try {
               const oas = JSON.parse(txt);
-              // Prefer deriving from components.schemas
               const schemas = oas.components?.schemas || {};
               const names = Object.keys(schemas);
               const seen = new Set<string>();
@@ -61,6 +60,28 @@ async function main() {
                     const v = synth(schemas[ref], depth + 1);
                     seen.delete(ref);
                     return v;
+              if (names.length > 0) {
+                const first = schemas[names[0]] as any;
+                const sample: any = {};
+                if (first && first.type === 'object' && first.properties) {
+                  const req: string[] = Array.isArray(first.required) ? first.required : [];
+                  for (const [k, vAny] of Object.entries<any>(first.properties)) {
+                    const v = vAny as any;
+                    if (v.default !== undefined) { sample[k] = v.default; continue; }
+                    if (Array.isArray(v.enum) && v.enum.length > 0) { sample[k] = v.enum[0]; continue; }
+                    const t = v.type || 'string';
+                    switch (t) {
+                      case 'integer': sample[k] = 0; break;
+                      case 'number': sample[k] = 0; break;
+                      case 'boolean': sample[k] = false; break;
+                      case 'array': sample[k] = Array.isArray(v.items) ? [] : []; break;
+                      case 'object': sample[k] = {}; break;
+                      default: sample[k] = ''; break;
+                    }
+                    // Mark required fields explicitly even if default is empty
+                    if (req.includes(k) && (sample[k] === '' || sample[k] === null || sample[k] === undefined)) {
+                      sample[k] = sample[k] === '' ? 'REQUIRED' : sample[k];
+                    }
                   }
                 }
                 if (schema.default !== undefined) return schema.default;

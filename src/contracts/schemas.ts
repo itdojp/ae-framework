@@ -33,3 +33,7 @@ export const ReservationsIdDeleteOutput = z.object({}).optional()
 
 export const InventorySkuGetInput = z.object({ sku: z.string() })
 export const InventorySkuGetOutput = InventorySchema
+// Minimal skeleton schemas; refine per domain as needed
+export const InputSchema = z.any()
+export const OutputSchema = z.any()
+
