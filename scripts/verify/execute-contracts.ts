@@ -112,6 +112,7 @@ async function main() {
               if (names.length > 0) {
                 input = synth((schemas as any)[names[0]]);
               } else {
+                // Fallback: pick first path+op and build an object with the path only
                 const paths = oas.paths ? Object.keys(oas.paths) : [];
                 if (paths.length > 0) input = { path: paths[0] };
               }

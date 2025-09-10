@@ -48,12 +48,8 @@ ALLOY_JAR=$HOME/tools/alloy.jar \
   - tlc.results: array of `{ module, ok, code, log }`
   - tlc.skipped/errors: reasons for skip/errors
   - alloy.results/skipped/errors: detection and readiness info
-- `artifacts/codex/*.tlc.log.txt`: Raw TLC logs per module
-<<<<<<< HEAD
-- `artifacts/codex/*.alloy.log.txt`: Raw Alloy logs per spec (when executed)
-=======
+ - `artifacts/codex/*.tlc.log.txt`: Raw TLC logs per module
  - `artifacts/codex/*.alloy.log.txt`: Raw Alloy logs per spec (when executed)
->>>>>>> origin/main
 
 ### PR summary
 
@@ -61,8 +57,8 @@ ALLOY_JAR=$HOME/tools/alloy.jar \
   - Traceability totals and linked examples
   - Model Check (TLC): ok/total and top non‑OK modules
   - Alloy: ok/total (when executed) and top non‑OK specs, or “detected N specs (execution skipped)” when jar not provided
-<<<<<<< HEAD
   - Optional enforcement: add PR label `enforce-formal` to fail the PR when TLC/Alloy has failures (default is report-only)
+   - Optional enforcement: add PR label `enforce-formal` to fail the PR when TLC/Alloy has failures (default is report-only)
 
 ### Headless Alloy examples
 
@@ -83,8 +79,6 @@ ALLOY_JAR=$HOME/tools/alloy.jar \
   ALLOY_TIMEOUT_MS=180000 \
   npm run verify:model
 ```
-=======
->>>>>>> origin/main
 
 ## Next steps
 
