@@ -255,3 +255,31 @@ jobs:
             echo "Contracts enforcement failed: parseIn=$PARSE_IN pre=$PRE_OK post=$POST_OK parseOut=$PARSE_OUT"
             exit 1
           fi
+
+  formal-enforce:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs: [model-check]
+    steps:
+      - name: Determine enforcement from labels
+        run: |
+          if [ -f "$GITHUB_EVENT_PATH" ]; then
+            if jq -e '.pull_request.labels[]?.name | select(.=="enforce-formal")' "$GITHUB_EVENT_PATH" >/dev/null; then
+              echo "FORMAL_ENFORCE=1" >> $GITHUB_ENV
+            fi
+          fi
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts_dl
+      - name: Enforce formal checks (optional)
+        if: ${{ env.FORMAL_ENFORCE == '1' }}
+        run: |
+          FILE=$(find artifacts_dl/model-check-results -name 'model-check.json' | head -1)
+          if [ -z "$FILE" ] || [ ! -f "$FILE" ]; then echo "No model-check.json found"; exit 1; fi
+          tlc_fail=$(jq -r '[.tlc.results[] | select(.ok!=true)] | length' "$FILE")
+          alloy_fail=$(jq -r '[.alloy.results[] | select(.ok==false)] | length' "$FILE")
+          if [ "$tlc_fail" != "0" ] || [ "$alloy_fail" != "0" ]; then
+            echo "Formal enforcement failed: tlc_fail=$tlc_fail alloy_fail=$alloy_fail"
+            exit 1
+          fi
