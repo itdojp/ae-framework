@@ -18,6 +18,8 @@
     "ae-server": "./dist/src/cli/server-runner.js"
   },
   "scripts": {
+    "start:server": "tsx src/server.ts",
+    "dev:server": "tsx watch src/server.ts",
     "dev": "tsx watch src/index.ts",
     "dev:web": "pnpm --filter @ae-framework/web dev",
     "dev:storybook": "pnpm --filter @ae-framework/storybook dev",
