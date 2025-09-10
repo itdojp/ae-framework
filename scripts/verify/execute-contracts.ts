@@ -48,7 +48,6 @@ async function main() {
           if (openapiPath.endsWith('.json')) {
             try {
               const oas = JSON.parse(txt);
-              // Prefer deriving from components.schemas
               const schemas = oas.components?.schemas || {};
               const names = Object.keys(schemas);
               const seen = new Set<string>();
@@ -91,7 +90,6 @@ async function main() {
               if (names.length > 0) {
                 input = synth((schemas as any)[names[0]]);
               } else {
-                // Fallback: pick first path+op and build an object with the path only
                 const paths = oas.paths ? Object.keys(oas.paths) : [];
                 if (paths.length > 0) input = { path: paths[0] };
               }
