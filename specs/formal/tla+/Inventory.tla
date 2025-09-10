@@ -7,6 +7,7 @@ VARIABLES stock, reserved
 \* Scenario: prevent-negative-stock @inventory @safety
 \* Scenario: idempotent-by-order-id @inventory @idempotency
 
+<<<<<<< HEAD
 Init == /\ stock = MaxStock /\ reserved = [o \in Orders |-> 0]
 
 Reserve(o, q) ==
