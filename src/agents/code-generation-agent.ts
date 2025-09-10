@@ -840,15 +840,31 @@ start();
       content += `    ${contractBase}Input.parse(input);\n`;
       content += `    if (!pre(input)) return { status: 400, error: 'Precondition failed' };\n`;
       content += `    // TODO: actual implementation here\n`;
-      content += `    const output: unknown = {};\n`;
+      // Build minimal sample output from OpenAPI response schema (best-effort)
+      const responses = endpoint?.definition?.responses || {};
+      const respCodes = Object.keys(responses).filter((c: string) => /^\d{3}$/.test(c));
+      const pick2xx = (codes: string[]) => codes.map(Number).filter(n => n>=200 && n<300).sort((a,b)=>a-b);
+      let chosenSchema: any | null = null;
+      if (respCodes.length > 0) {
+        const twos = pick2xx(respCodes);
+        const chosen = (method === 'post' && twos.includes(201)) ? 201
+          : (method === 'delete' && twos.includes(204)) ? 204
+          : (twos.includes(200) ? 200 : (twos[0] ?? 200));
+        const resp = responses[String(chosen)];
+        const schema = resp?.content?.['application/json']?.schema;
+        if (schema) chosenSchema = schema;
+      }
+      const lit = this.buildSampleLiteral(chosenSchema);
+      content += `    const output: unknown = ${lit};\n`;
       content += `    if (!post(input, output)) return { status: 500, error: 'Postcondition failed' };\n`;
       content += `    ${contractBase}Output.parse(output);\n`;
       // Choose default status from OpenAPI responses (prefer 201 for POST, 204 for DELETE, else 200)
-      const responses = endpoint?.definition?.responses || {};
-      const respCodes = Object.keys(responses).filter(c => /^\\d{3}$/.test(c));
+      // responses already computed above
+      // Note: regex needs double-escaped backslash inside TS template
+      const respCodes2 = Object.keys(responses).filter(c => /^\d{3}$/.test(c));
       let defaultStatus = method === 'post' ? 201 : method === 'delete' ? 204 : 200;
-      if (respCodes.length > 0) {
-        const twos = respCodes.map(Number).filter(n => n >= 200 && n < 300).sort((a,b)=>a-b);
+      if (respCodes2.length > 0) {
+        const twos = respCodes2.map(Number).filter(n => n >= 200 && n < 300).sort((a,b)=>a-b);
         if (method === 'post' && twos.includes(201)) defaultStatus = 201;
         else if (method === 'delete' && twos.includes(204)) defaultStatus = 204;
         else if (twos.includes(200)) defaultStatus = 200;
@@ -867,6 +883,41 @@ start();
       purpose: `Handle ${endpoint.method} ${endpoint.path}`,
       tests: [],
     };
+  }
+
+  // Build a minimal TypeScript literal from an OpenAPI schema object (best-effort)
+  private buildSampleLiteral(schema: any, depth = 0): string {
+    if (!schema || depth > 5) return '{}';
+    if (schema.$ref) return '{}';
+    if (schema.default !== undefined) {
+      return JSON.stringify(schema.default);
+    }
+    if (Array.isArray(schema.enum) && schema.enum.length > 0) {
+      return JSON.stringify(schema.enum[0]);
+    }
+    const t = schema.type || (schema.properties ? 'object' : (schema.items ? 'array' : undefined));
+    switch (t) {
+      case 'integer':
+      case 'number':
+        return '0';
+      case 'boolean':
+        return 'false';
+      case 'string':
+        return JSON.stringify('');
+      case 'array': {
+        const itemLit = schema.items ? this.buildSampleLiteral(schema.items, depth + 1) : null;
+        // keep minimal; empty array is safe
+        return '[]';
+      }
+      case 'object': {
+        const props = schema.properties || {};
+        const keys = Object.keys(props);
+        const body = keys.map(k => `${JSON.stringify(k)}: ${this.buildSampleLiteral(props[k], depth + 1)}`).join(', ');
+        return `{ ${body} }`;
+      }
+      default:
+        return '{}';
+    }
   }
 
   private generateModel(schema: any, database?: string): CodeFile {
