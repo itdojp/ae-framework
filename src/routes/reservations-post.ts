@@ -7,8 +7,15 @@ export async function handler(input: unknown): Promise<unknown> {
   try {
     ReservationsPostInput.parse(input)
     if (!pre(input)) return { status: 400, error: 'Precondition failed' }
-    // TODO: actual implementation here
-    const output: unknown = {}
+    // Minimal compliant output for skeleton
+    const i = input as { sku: string; quantity: number; orderId: string }
+    const output: unknown = {
+      id: 'R-' + Math.random().toString(36).slice(2, 8),
+      sku: i.sku,
+      quantity: i.quantity,
+      orderId: i.orderId,
+      status: 'created' as const,
+    }
     if (!post(input, output)) return { status: 500, error: 'Postcondition failed' }
     ReservationsPostOutput.parse(output)
     return { status: 201, data: output }
