@@ -851,7 +851,11 @@ start();
           : (method === 'delete' && twos.includes(204)) ? 204
           : (twos.includes(200) ? 200 : (twos[0] ?? 200));
         const resp = responses[String(chosen)];
-        const schema = resp?.content?.['application/json']?.schema;
+        let schema = resp?.content?.['application/json']?.schema;
+        if (!schema && resp?.content) {
+          const firstCt = Object.keys(resp.content)[0];
+          schema = resp.content[firstCt]?.schema || (firstCt === 'text/plain' ? { type: 'string' } : undefined);
+        }
         if (schema) chosenSchema = schema;
       }
       const lit = this.buildSampleLiteral(chosenSchema, endpoint?.components || {});
@@ -884,8 +888,14 @@ start();
       const fivexx = respCodes2.map(Number).filter(n => n >= 500 && n < 600);
       const badReq = fourxx.includes(400) ? 400 : (fourxx.includes(422) ? 422 : (fourxx[0] ?? 400));
       const srvErr = fivexx.includes(500) ? 500 : (fivexx[0] ?? 500);
-      const badSchema = (responses as any)[String(badReq)]?.content?.['application/json']?.schema || null;
-      const srvSchema = (responses as any)[String(srvErr)]?.content?.['application/json']?.schema || null;
+      let badSchema = (responses as any)[String(badReq)]?.content?.['application/json']?.schema || null;
+      let srvSchema = (responses as any)[String(srvErr)]?.content?.['application/json']?.schema || null;
+      if (!badSchema) {
+        const c = (responses as any)[String(badReq)]?.content; if (c) { const k = Object.keys(c)[0]; badSchema = c[k]?.schema || (k==='text/plain'?{type:'string'}:null); }
+      }
+      if (!srvSchema) {
+        const c = (responses as any)[String(srvErr)]?.content; if (c) { const k = Object.keys(c)[0]; srvSchema = c[k]?.schema || (k==='text/plain'?{type:'string'}:null); }
+      }
       const badLit = this.buildSampleLiteral(badSchema, endpoint?.components || {});
       const srvLit = this.buildSampleLiteral(srvSchema, endpoint?.components || {});
       content += `    if (e instanceof z.ZodError) return { status: ${badReq}, error: 'Validation error', details: e.errors, data: ${badLit} };\n`;

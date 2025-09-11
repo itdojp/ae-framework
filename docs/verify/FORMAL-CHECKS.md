@@ -49,6 +49,7 @@ ALLOY_JAR=$HOME/tools/alloy.jar \
   - tlc.skipped/errors: reasons for skip/errors
   - alloy.results/skipped/errors: detection and readiness info
  - `artifacts/codex/*.tlc.log.txt`: Raw TLC logs per module
+- `artifacts/codex/*.tlc.log.txt`: Raw TLC logs per module
  - `artifacts/codex/*.alloy.log.txt`: Raw Alloy logs per spec (when executed)
 
 ### PR summary
