@@ -79,4 +79,10 @@ Quality: 82% (>=80) ✅  [+1%] | Formal: pass | Adapters: lighthouse(warn), play
 ## Replay Line (optional)
 - Example: `Replay: 12 events (ItemReceived:7, ItemAllocated:5), 0 violations`
 =======
+<<<<<<< HEAD
+
+## Replay Line (optional)
+- Example: `Replay: 12 events (ItemReceived:7, ItemAllocated:5), 0 violations`
+=======
+>>>>>>> upstream/main
 >>>>>>> upstream/main
