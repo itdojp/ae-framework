@@ -1,0 +1,8 @@
+{
+  "adapter": "playwright",
+  "status": "ok",
+  "summary": "Playwright: 12/12 passed (0 flaky)",
+  "details": [
+    { "spec": "inventory.spec.ts", "passed": 8, "failed": 0, "skipped": 0 }
+  ]
+}

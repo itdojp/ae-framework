@@ -1,0 +1,8 @@
+{
+  "adapter": "jest",
+  "status": "ok",
+  "summary": "Jest: 134 passed, 0 failed",
+  "details": [
+    { "file": "aggregate.invariants.test.ts", "passed": 12, "failed": 0 }
+  ]
+}

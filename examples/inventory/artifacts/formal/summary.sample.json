@@ -1,0 +1,16 @@
+{
+  "traceId": "inv-001",
+  "tool": "tla+",
+  "result": "fail",
+  "counterexamples": [
+    {
+      "property": "allocated <= onHand",
+      "gwt": "Given inventory onHand=10\nWhen allocate qty=12\nThen invariant \"allocated <= onHand\" fails",
+      "json": {
+        "given": { "onHand": 10 },
+        "when": { "command": "allocate", "qty": 12 },
+        "then": { "violated": "allocated <= onHand" }
+      }
+    }
+  ]
+}
