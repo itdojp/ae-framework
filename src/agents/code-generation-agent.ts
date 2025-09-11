@@ -140,6 +140,7 @@ export class CodeGenerationAgent {
     includeAuth?: boolean;
     includeContracts?: boolean; // inject runtime contracts usage (opt-in)
     useOperationIdForFilenames?: boolean; // prefer operationId for route filenames
+    useOperationIdForTestNames?: boolean; // prefer operationId in test titles
   }): Promise<GeneratedCode> {
     const api = this.parseOpenAPI(spec);
     const files: CodeFile[] = [];
@@ -176,6 +177,26 @@ export class CodeGenerationAgent {
       coverage: 0,
       suggestions: ['Add tests for generated code', 'Configure database connection'],
     };
+  }
+
+  /**
+   * Optionally generate minimal test skeletons from OpenAPI using operationId or path+method.
+   */
+  async generateTestsFromOpenAPI(spec: string, options?: { useOperationIdForTestNames?: boolean }): Promise<CodeFile[]> {
+    const api = this.parseOpenAPI(spec);
+    const out: CodeFile[] = [];
+    for (const ep of api.endpoints) {
+      const opIdRaw = (ep?.definition as any)?.operationId as string | undefined;
+      const title = options?.useOperationIdForTestNames && opIdRaw ? opIdRaw : `${ep.method} ${ep.path}`;
+      const safeName = String(ep.path).replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+      const method = String(ep.method).toLowerCase();
+      const fileBase = (options?.useOperationIdForTestNames && opIdRaw)
+        ? opIdRaw.replace(/[^a-zA-Z0-9]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').toLowerCase()
+        : `${safeName}-${method}`;
+      const content = `import { describe, it, expect } from 'vitest'\nimport { handler } from '../../src/routes/${fileBase}'\n\ndescribe('${title}', () => {\n  it('returns success on minimal input (skeleton)', async () => {\n    const res: any = await handler({})\n    expect(typeof res.status).toBe('number')\n  })\n})\n`;
+      out.push({ path: `tests/api/generated/${fileBase}.spec.ts`, content, purpose: `Test for ${title}`, tests: [] });
+    }
+    return out;
   }
 
   /**
