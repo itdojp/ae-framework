@@ -12,10 +12,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
-      - name: Prepare bundle
+      - name: Prepare bundle (include combined.json if present)
+      - name: Prepare bundle (include combined.json if present)
+        shell: bash
         run: |
           mkdir -p dist-quality
           [ -d artifacts ] && cp -r artifacts dist-quality/ || true
+          [ -f artifacts/summary/combined.json ] && mkdir -p dist-quality/artifacts/summary && cp artifacts/summary/combined.json dist-quality/artifacts/summary/ || true
+          echo "Bundled files:"
+          find dist-quality -type f -maxdepth 3 -print
           [ -f formal/summary.json ] && mkdir -p dist-quality/formal && cp formal/summary.json dist-quality/formal/ || true
           [ -f artifacts/summary/PR_SUMMARY.md ] && cp artifacts/summary/PR_SUMMARY.md dist-quality/ || true
           [ -f coverage/coverage-summary.json ] && mkdir -p dist-quality/coverage && cp coverage/coverage-summary.json dist-quality/coverage/ || true
