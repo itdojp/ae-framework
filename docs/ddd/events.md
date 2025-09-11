@@ -43,7 +43,6 @@ CLI
 
 PR Requirements
 - Include event sequence snippet and link to `formal/summary.json`.
-
 ## Failure Case Sample
 - See examples/inventory/artifacts/domain/events.replay-failure.sample.json
 - Reported with traceId and violated invariants for CI/PR aggregation.
