@@ -54,6 +54,9 @@ jobs:
           console.log(md);
           '
       - name: Post or update PR comment
+      - name: Post or update PR comment
+      - name: Write job summary
+        run: cat artifacts/summary/PR_SUMMARY.md >> $GITHUB_STEP_SUMMARY
         uses: actions/github-script@v7
         with:
           script: |
