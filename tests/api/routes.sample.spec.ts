@@ -12,6 +12,7 @@ describe('route handlers (contracts-injected skeletons)', () => {
   it('DELETE /reservations/:id returns 204', async () => {
     const res: any = await deleteReservation({ id: 'R-1' })
     expect(res.status).toBe(204)
+    expect(res.data).toBeUndefined()
   })
 
   it('GET /inventory/:sku returns 200 with data', async () => {
@@ -19,4 +20,3 @@ describe('route handlers (contracts-injected skeletons)', () => {
     expect(res.status).toBe(200)
   })
 })
-
