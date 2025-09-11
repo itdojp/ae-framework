@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae.dev/schema/domain-events.schema.json",
+  "title": "Domain Events",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "name": { "type": "string" },
+      "occursOn": { "type": "string" },
+      "payload": { "type": "object", "additionalProperties": true },
+      "traceId": { "type": "string" }
+    },
+    "required": ["name"],
+    "additionalProperties": false
+  }
+}

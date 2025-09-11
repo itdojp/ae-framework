@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae.dev/schema/formal-summary.schema.json",
+  "title": "Formal Verification Summary",
+  "type": "object",
+  "properties": {
+    "traceId": { "type": "string" },
+    "tool": { "type": "string", "enum": ["tla+", "alloy", "other"] },
+    "result": { "type": "string", "enum": ["pass", "fail"] },
+    "counterexamples": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "property": { "type": "string" },
+          "gwt": { "type": "string" },
+          "json": { "type": "object" }
+        },
+        "required": ["property"]
+      }
+    }
+  },
+  "required": ["tool", "result"],
+  "additionalProperties": true
+}

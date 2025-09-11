@@ -1,0 +1,4 @@
+[
+  { "name": "ItemReceived", "occursOn": "post:receive", "payload": { "sku": "SKU-1", "qty": 10 }, "traceId": "inv-001" },
+  { "name": "ItemAllocated", "occursOn": "post:allocate", "payload": { "sku": "SKU-1", "qty": 3 }, "traceId": "inv-001" }
+]
