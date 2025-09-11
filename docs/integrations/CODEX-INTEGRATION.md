@@ -158,6 +158,13 @@ Flow suggestion:
 - See `docs/verify/RUNTIME-CONTRACTS.md` and Quick Start for examples.
 - CI integration and PR summary details are described in `docs/verify/FORMAL-CHECKS.md` and `docs/verify/TRACEABILITY-GUIDE.md`.
 
+### OpenAPI Test Generator
+- Script: `pnpm run codex:generate:tests [-- --use-operation-id] [--with-input]`
+- Reads `artifacts/codex/openapi.(json|yaml)` (or `CONTRACTS_OPENAPI_PATH`).
+- Generates minimal tests under `tests/api/generated/` using:
+  - OperationId in file/test names when `--use-operation-id` is provided
+  - Minimal sample input from requestBody schema when `--with-input` is provided
+
 ## Acceptance Criteria (incremental)
 
 1) PoC: CodeX can run `verify` (and optional `ui-scaffold`) via CLI and produce artifacts.

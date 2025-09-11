@@ -14,6 +14,7 @@ async function main() {
   const defaultJson = path.join(repo, 'artifacts', 'codex', 'openapi.json')
   const openapiPath = process.env.CONTRACTS_OPENAPI_PATH || (await exists(defaultJson) ? defaultJson : defaultYaml)
   const useOpId = process.argv.includes('--use-operation-id') || process.argv.includes('--opid')
+  const withInput = process.argv.includes('--with-input') || process.argv.includes('--sample')
 
   const specTxt = await fs.readFile(openapiPath, 'utf8')
   let jsonSpecStr: string
@@ -29,7 +30,7 @@ async function main() {
   // Lazy import to avoid build step
   const { CodeGenerationAgent } = await import(path.join(repo, 'src', 'agents', 'code-generation-agent.ts'))
   const agent = new (CodeGenerationAgent as any)()
-  const files = await agent.generateTestsFromOpenAPI(jsonSpecStr, { useOperationIdForTestNames: useOpId })
+  const files = await agent.generateTestsFromOpenAPI(jsonSpecStr, { useOperationIdForTestNames: useOpId, includeSampleInput: withInput })
 
   const outDir = path.join(repo, 'tests', 'api', 'generated')
   await fs.mkdir(outDir, { recursive: true })
@@ -38,8 +39,7 @@ async function main() {
     await fs.mkdir(path.dirname(abs), { recursive: true })
     await fs.writeFile(abs, f.content, 'utf8')
   }
-  console.log(`Generated ${files.length} test files under tests/api/generated/ (useOperationId=${useOpId})`)
+  console.log(`Generated ${files.length} test files under tests/api/generated/ (useOperationId=${useOpId}, includeSampleInput=${withInput})`)
 }
 
 main().catch((e) => { console.error('generate-openapi-tests failed:', e); process.exit(1) })
-

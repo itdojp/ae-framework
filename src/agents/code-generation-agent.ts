@@ -182,7 +182,7 @@ export class CodeGenerationAgent {
   /**
    * Optionally generate minimal test skeletons from OpenAPI using operationId or path+method.
    */
-  async generateTestsFromOpenAPI(spec: string, options?: { useOperationIdForTestNames?: boolean }): Promise<CodeFile[]> {
+  async generateTestsFromOpenAPI(spec: string, options?: { useOperationIdForTestNames?: boolean; includeSampleInput?: boolean }): Promise<CodeFile[]> {
     const api = this.parseOpenAPI(spec);
     const out: CodeFile[] = [];
     for (const ep of api.endpoints) {
@@ -193,7 +193,19 @@ export class CodeGenerationAgent {
       const fileBase = (options?.useOperationIdForTestNames && opIdRaw)
         ? opIdRaw.replace(/[^a-zA-Z0-9]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').toLowerCase()
         : `${safeName}-${method}`;
-      const content = `import { describe, it, expect } from 'vitest'\nimport { handler } from '../../src/routes/${fileBase}'\n\ndescribe('${title}', () => {\n  it('returns success on minimal input (skeleton)', async () => {\n    const res: any = await handler({})\n    expect(typeof res.status).toBe('number')\n  })\n})\n`;
+      // Try to derive minimal input from requestBody schema when requested
+      let sample = '{}';
+      if (options?.includeSampleInput) {
+        const rb = (ep?.definition as any)?.requestBody?.content;
+        let schema = rb?.['application/json']?.schema;
+        if (!schema && rb) {
+          const cts = Object.keys(rb);
+          const appCt = cts.find((ct: string) => ct.startsWith('application/')) || cts[0];
+          schema = rb[appCt]?.schema || (appCt === 'text/plain' ? { type: 'string' } : undefined);
+        }
+        sample = this.buildSampleLiteral(schema, ep?.components || {});
+      }
+      const content = `import { describe, it, expect } from 'vitest'\nimport { handler } from '../../src/routes/${fileBase}'\n\n// OperationId: ${opIdRaw ?? 'N/A'}\ndescribe('${title}', () => {\n  it('returns success on minimal input (skeleton)', async () => {\n    const res: any = await handler(${sample})\n    expect(typeof res.status).toBe('number')\n  })\n})\n`;
       out.push({ path: `tests/api/generated/${fileBase}.spec.ts`, content, purpose: `Test for ${title}`, tests: [] });
     }
     return out;
