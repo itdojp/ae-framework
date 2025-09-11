@@ -59,3 +59,10 @@ English / 日本語 (summary)
 
 ## References
 - See also: docs/roadmap/TESTING-DDD-INDEX.md (reviewer quick links)
+
+## Implementation Scripts
+- Property: npm run test:property / :focus
+- Replay: npm run test:replay / :focus
+- BDD Lint: npm run bdd:lint
+- Formal GWT: node scripts/formal/format-counterexamples.mjs
+- Aggregate: npm run artifacts:aggregate

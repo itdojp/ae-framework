@@ -43,12 +43,9 @@ DDD IR
 - docs/ddd/ae-ir-ddd.md
 - docs/ddd/events.md
 
-Templates (linters)
-- docs/templates/adapters/eslint/*
-- docs/templates/adapters/stylelint/*
-
-PR Summary
-- docs/quality/pr-summary-template.md
-
-Correlation
-- docs/testing/replay-correlation.md
+Implementation (scripts)
+- scripts/testing/property-harness.mjs
+- scripts/testing/replay-runner.mjs
+- scripts/bdd/lint.mjs
+- scripts/formal/format-counterexamples.mjs
+- scripts/adapters/aggregate-artifacts.mjs
