@@ -277,7 +277,15 @@
     "test:parallel:ci": "vitest run --config configs/vitest.optimized.config.ts --reporter=junit --reporter=json",
     "test:performance": "vitest run --config configs/vitest.optimized.config.ts --reporter=verbose --run --coverage=false",
     "test:flake-detection": "vitest run --config configs/vitest.optimized.config.ts --retry=5 --reporter=json",
+    "test:property": "node scripts/testing/property-harness.mjs",
+    "test:property:focus": "node scripts/testing/property-harness.mjs --focus=$TRACE_ID"
+    ,
     "bdd:lint": "node scripts/bdd/lint.mjs"
+    ,
+    "test:replay": "node scripts/testing/replay-runner.mjs",
+    "test:replay:focus": "node scripts/testing/replay-runner.mjs --focus=$TRACE_ID"
+    ,
+    "artifacts:aggregate": "node scripts/adapters/aggregate-artifacts.mjs"
   },
   "dependencies": {
     "@ae-framework/spec-compiler": "file:./packages/spec-compiler",
