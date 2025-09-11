@@ -1,0 +1,8 @@
+{
+  "traceId": "inv-001",
+  "seed": 123456789,
+  "runs": 100,
+  "version": "0.1",
+  "passed": true,
+  "stats": { "shrinks": 0, "durationMs": 2450 }
+}
