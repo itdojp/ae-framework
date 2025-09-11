@@ -165,6 +165,10 @@ Flow suggestion:
   - OperationId in file/test names when `--use-operation-id` is provided
   - Minimal sample input from requestBody schema when `--with-input` is provided
 
+### Codegen Options (OpenAPI)
+- `includeContracts`: injects runtime contracts (Zod + pre/post) into handlers
+- `useOperationIdForFilenames`: prefer `operationId` for route filenames (fallback: path+method)
+- `useOperationIdForTestNames` (generator): prefer `operationId` in test titles/filenames
 ## Acceptance Criteria (incremental)
 
 1) PoC: CodeX can run `verify` (and optional `ui-scaffold`) via CLI and produce artifacts.

@@ -140,7 +140,10 @@ export class CodeGenerationAgent {
     includeAuth?: boolean;
     includeContracts?: boolean; // inject runtime contracts usage (opt-in)
     useOperationIdForFilenames?: boolean; // prefer operationId for route filenames
+<<<<<<< HEAD
+=======
     useOperationIdForTestNames?: boolean; // prefer operationId in test titles
+>>>>>>> origin/main
   }): Promise<GeneratedCode> {
     const api = this.parseOpenAPI(spec);
     const files: CodeFile[] = [];
@@ -885,19 +888,12 @@ start();
           : (method === 'delete' && twos.includes(204)) ? 204
           : (twos.includes(200) ? 200 : (twos[0] ?? 200));
         const resp = responses[String(chosen)];
-<<<<<<< HEAD
         let schema = resp?.content?.['application/problem+json']?.schema
           || resp?.content?.['application/json']?.schema;
         if (!schema && resp?.content) {
           const cts = Object.keys(resp.content);
           const appCt = cts.find(ct => ct.startsWith('application/')) || cts[0];
-          schema = resp.content[appCt]?.schema || (appCt === 'text/plain' ? { type: 'string' } : undefined);
-=======
-        let schema = resp?.content?.['application/json']?.schema;
-        if (!schema && resp?.content) {
-          const firstCt = Object.keys(resp.content)[0];
-          schema = resp.content[firstCt]?.schema || (firstCt === 'text/plain' ? { type: 'string' } : undefined);
->>>>>>> origin/main
+          schema = /xml/i.test(appCt) ? { type:'string' } : (resp.content[appCt]?.schema || (appCt === 'text/plain' ? { type: 'string' } : undefined));
         }
         if (schema) chosenSchema = schema;
       }
@@ -906,19 +902,11 @@ start();
       content += `    if (!post(input, output)) return { status: 500, error: 'Postcondition failed' };\n`;
       content += `    ${contractBase}Output.parse(output);\n`;
       // Choose default status from OpenAPI responses (prefer 201 for POST, 204 for DELETE, else 200)
-<<<<<<< HEAD
       // responses already computed above
       const respCodes2 = Object.keys(responses).filter((c: string) => /^\d{3}$/.test(c));
       let defaultStatus = method === 'post' ? 201 : method === 'delete' ? 204 : 200;
       if (respCodes2.length > 0) {
         const twos = respCodes2.map(Number).filter(n => n >= 200 && n < 300).sort((a,b)=>a-b);
-=======
-      const responses = endpoint?.definition?.responses || {};
-      const respCodes = Object.keys(responses).filter(c => /^\\d{3}$/.test(c));
-      let defaultStatus = method === 'post' ? 201 : method === 'delete' ? 204 : 200;
-      if (respCodes.length > 0) {
-        const twos = respCodes.map(Number).filter(n => n >= 200 && n < 300).sort((a,b)=>a-b);
->>>>>>> origin/main
         if (method === 'post' && twos.includes(201)) defaultStatus = 201;
         else if (method === 'delete' && twos.includes(204)) defaultStatus = 204;
         else if (twos.includes(200)) defaultStatus = 200;

@@ -11,8 +11,11 @@ describe('route handlers (error paths)', () => {
     expect(res.details).toBeDefined()
     // minimal RFC7807-like body when problem+json is defined
     if (res.data) {
-      expect(typeof res.data).toBe('object')
-      expect('title' in res.data || 'detail' in res.data).toBe(true)
+      const d: any = res.data
+      expect(typeof d).toBe('object')
+      expect('title' in d || 'detail' in d).toBe(true)
+      if ('status' in d) expect(typeof d.status).toBe('number')
+      if ('title' in d) expect(typeof d.title).toBe('string')
     }
   })
 
