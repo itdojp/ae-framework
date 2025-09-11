@@ -1,0 +1,10 @@
+{
+  "adapter": "lighthouse",
+  "status": "warn",
+  "summary": "Lighthouse: Perf 78, A11y 96, PWA 55",
+  "details": [
+    { "metric": "performance", "score": 0.78 },
+    { "metric": "accessibility", "score": 0.96 },
+    { "metric": "pwa", "score": 0.55 }
+  ]
+}

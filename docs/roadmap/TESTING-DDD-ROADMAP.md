@@ -42,3 +42,13 @@ English / 日本語 (summary)
 
 - Epic #383 — https://github.com/itdojp/ae-framework/issues/383
 - PR #303 (discussion thread)
+
+## References
+- Property summary schema (#406): docs/schemas/artifacts-properties-summary.schema.json
+- CLI focus flag (#406/#411): docs/reference/cli-focus-traceid.md
+- Formal summary schema (#407): docs/schemas/formal-summary.schema.json
+- Counterexample → GWT format (#407): docs/quality/counterexample-gwt.md
+- Adapter normalization (#408): docs/templates/adapters/README.md
+- Adapter summary schema (#408): docs/schemas/artifacts-adapter-summary.schema.json
+- Domain events schema (#411): docs/schemas/domain-events.schema.json
+- Example events: examples/inventory/artifacts/domain/events.sample.json
