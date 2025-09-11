@@ -26,6 +26,7 @@ export function pre(input: unknown): boolean {
   if ('sku' in input && !('quantity' in input)) {
     return InventorySkuGetInput.safeParse(input).success
   }
+>>>>>>> e2a347e (verify: add OpenAPI sample, contracts skeleton, TLC Spec fix, traceability links (refs #381))
 // Pre/Post conditions (skeleton)
 // Derive from formal properties over time (e.g., no negative stock, idempotency)
 
@@ -60,6 +61,7 @@ export function post(input: unknown, output: unknown): boolean {
   }
   return true
 }
+>>>>>>> e2a347e (verify: add OpenAPI sample, contracts skeleton, TLC Spec fix, traceability links (refs #381))
   return true
 }
 

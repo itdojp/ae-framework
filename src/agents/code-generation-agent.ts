@@ -140,6 +140,10 @@ export class CodeGenerationAgent {
     includeAuth?: boolean;
     includeContracts?: boolean; // inject runtime contracts usage (opt-in)
     useOperationIdForFilenames?: boolean; // prefer operationId for route filenames
+<<<<<<< HEAD
+=======
+    useOperationIdForTestNames?: boolean; // prefer operationId in test titles
+>>>>>>> origin/main
   }): Promise<GeneratedCode> {
     const api = this.parseOpenAPI(spec);
     const files: CodeFile[] = [];
@@ -176,6 +180,38 @@ export class CodeGenerationAgent {
       coverage: 0,
       suggestions: ['Add tests for generated code', 'Configure database connection'],
     };
+  }
+
+  /**
+   * Optionally generate minimal test skeletons from OpenAPI using operationId or path+method.
+   */
+  async generateTestsFromOpenAPI(spec: string, options?: { useOperationIdForTestNames?: boolean; includeSampleInput?: boolean }): Promise<CodeFile[]> {
+    const api = this.parseOpenAPI(spec);
+    const out: CodeFile[] = [];
+    for (const ep of api.endpoints) {
+      const opIdRaw = (ep?.definition as any)?.operationId as string | undefined;
+      const title = options?.useOperationIdForTestNames && opIdRaw ? opIdRaw : `${ep.method} ${ep.path}`;
+      const safeName = String(ep.path).replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+      const method = String(ep.method).toLowerCase();
+      const fileBase = (options?.useOperationIdForTestNames && opIdRaw)
+        ? opIdRaw.replace(/[^a-zA-Z0-9]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').toLowerCase()
+        : `${safeName}-${method}`;
+      // Try to derive minimal input from requestBody schema when requested
+      let sample = '{}';
+      if (options?.includeSampleInput) {
+        const rb = (ep?.definition as any)?.requestBody?.content;
+        let schema = rb?.['application/json']?.schema;
+        if (!schema && rb) {
+          const cts = Object.keys(rb);
+          const appCt = cts.find((ct: string) => ct.startsWith('application/')) || cts[0];
+          schema = rb[appCt]?.schema || (appCt === 'text/plain' ? { type: 'string' } : undefined);
+        }
+        sample = this.buildSampleLiteral(schema, ep?.components || {});
+      }
+      const content = `import { describe, it, expect } from 'vitest'\nimport { handler } from '../../src/routes/${fileBase}'\n\n// OperationId: ${opIdRaw ?? 'N/A'}\ndescribe('${title}', () => {\n  it('returns success on minimal input (skeleton)', async () => {\n    const res: any = await handler(${sample})\n    expect(typeof res.status).toBe('number')\n  })\n})\n`;
+      out.push({ path: `tests/api/generated/${fileBase}.spec.ts`, content, purpose: `Test for ${title}`, tests: [] });
+    }
+    return out;
   }
 
   /**

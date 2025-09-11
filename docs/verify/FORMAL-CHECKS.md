@@ -80,6 +80,7 @@ ALLOY_JAR=$HOME/tools/alloy.jar \
   ALLOY_TIMEOUT_MS=180000 \
   npm run verify:model
 ```
+>>>>>>> e2a347e (verify: add OpenAPI sample, contracts skeleton, TLC Spec fix, traceability links (refs #381))
 
 ## Next steps
 

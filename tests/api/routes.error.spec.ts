@@ -13,8 +13,11 @@ describe('route handlers (error paths)', () => {
     if (res.data) {
       expect(typeof res.data).toBe('object')
       expect('title' in res.data || 'detail' in res.data).toBe(true)
+<<<<<<< HEAD
       if ('status' in res.data) expect(typeof res.data.status).toBe('number')
       if ('title' in res.data) expect(typeof res.data.title).toBe('string')
+=======
+>>>>>>> origin/main
     }
   })
 

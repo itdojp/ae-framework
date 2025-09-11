@@ -82,6 +82,7 @@ async function main() {
                     if (req.includes(k) && (sample[k] === '' || sample[k] === null || sample[k] === undefined)) {
                       sample[k] = sample[k] === '' ? 'REQUIRED' : sample[k];
                     }
+>>>>>>> e2a347e (verify: add OpenAPI sample, contracts skeleton, TLC Spec fix, traceability links (refs #381))
                   }
                 }
                 if (schema.default !== undefined) return schema.default;
@@ -124,6 +125,7 @@ async function main() {
               if (!derived) {
                 if (names.length > 0) input = synth((schemas as any)[names[0]]);
                 else if (pathKeys.length > 0) input = { path: pathKeys[0] };
+>>>>>>> e2a347e (verify: add OpenAPI sample, contracts skeleton, TLC Spec fix, traceability links (refs #381))
               if (names.length > 0) {
                 input = synth((schemas as any)[names[0]]);
               } else {
