@@ -1,0 +1,8 @@
+{
+  "adapter": "cypress",
+  "status": "ok",
+  "summary": "Cypress: 24 passed, 0 failed",
+  "details": [
+    { "spec": "inventory.cy.ts", "passed": 12, "failed": 0 }
+  ]
+}

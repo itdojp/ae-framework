@@ -1,0 +1,24 @@
+name: adapter-cypress
+on: [push]
+jobs:
+  cypress:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm ci
+      - name: Run Cypress (example)
+        run: |
+          echo "Simulate Cypress run"
+      - name: Write normalized summary
+        run: |
+          mkdir -p artifacts/cypress
+          cat > artifacts/cypress/summary.json << 'JSON'
+          {"adapter":"cypress","status":"ok","summary":"Cypress: 24 passed, 0 failed","details":[]}
+          JSON
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-cypress
+          path: artifacts/cypress/summary.json
