@@ -139,6 +139,7 @@ export class CodeGenerationAgent {
     includeValidation?: boolean;
     includeAuth?: boolean;
     includeContracts?: boolean; // inject runtime contracts usage (opt-in)
+    useOperationIdForFilenames?: boolean; // prefer operationId for route filenames
   }): Promise<GeneratedCode> {
     const api = this.parseOpenAPI(spec);
     const files: CodeFile[] = [];
@@ -813,7 +814,7 @@ start();
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '');
     const method = String(endpoint.method || 'get').toLowerCase();
-    const fileSafe = `${safeName}-${method}`;
+    const fileSafe = (options?.useOperationIdForFilenames && opIdSafe) ? opIdSafe.toLowerCase() : `${safeName}-${method}`;
     const toPascal = (s: string) => s
       .split('-')
       .filter(Boolean)
@@ -851,10 +852,19 @@ start();
           : (method === 'delete' && twos.includes(204)) ? 204
           : (twos.includes(200) ? 200 : (twos[0] ?? 200));
         const resp = responses[String(chosen)];
+<<<<<<< HEAD
+        let schema = resp?.content?.['application/problem+json']?.schema
+          || resp?.content?.['application/json']?.schema;
+        if (!schema && resp?.content) {
+          const cts = Object.keys(resp.content);
+          const appCt = cts.find(ct => ct.startsWith('application/')) || cts[0];
+          schema = resp.content[appCt]?.schema || (appCt === 'text/plain' ? { type: 'string' } : undefined);
+=======
         let schema = resp?.content?.['application/json']?.schema;
         if (!schema && resp?.content) {
           const firstCt = Object.keys(resp.content)[0];
           schema = resp.content[firstCt]?.schema || (firstCt === 'text/plain' ? { type: 'string' } : undefined);
+>>>>>>> origin/main
         }
         if (schema) chosenSchema = schema;
       }
@@ -888,6 +898,27 @@ start();
       const fivexx = respCodes2.map(Number).filter(n => n >= 500 && n < 600);
       const badReq = fourxx.includes(400) ? 400 : (fourxx.includes(422) ? 422 : (fourxx[0] ?? 400));
       const srvErr = fivexx.includes(500) ? 500 : (fivexx[0] ?? 500);
+<<<<<<< HEAD
+      let badSchema = (responses as any)[String(badReq)]?.content?.['application/problem+json']?.schema
+        || (responses as any)[String(badReq)]?.content?.['application/json']?.schema
+        || null;
+      let srvSchema = (responses as any)[String(srvErr)]?.content?.['application/problem+json']?.schema
+        || (responses as any)[String(srvErr)]?.content?.['application/json']?.schema
+        || null;
+      if (!badSchema) {
+        const c = (responses as any)[String(badReq)]?.content; if (c) {
+          const cts = Object.keys(c);
+          const appCt = cts.find((ct: string) => ct.startsWith('application/')) || cts[0];
+          badSchema = c[appCt]?.schema || (appCt==='text/plain'?{type:'string'}:null);
+        }
+      }
+      if (!srvSchema) {
+        const c = (responses as any)[String(srvErr)]?.content; if (c) {
+          const cts = Object.keys(c);
+          const appCt = cts.find((ct: string) => ct.startsWith('application/')) || cts[0];
+          srvSchema = c[appCt]?.schema || (appCt==='text/plain'?{type:'string'}:null);
+        }
+=======
       let badSchema = (responses as any)[String(badReq)]?.content?.['application/json']?.schema || null;
       let srvSchema = (responses as any)[String(srvErr)]?.content?.['application/json']?.schema || null;
       if (!badSchema) {
@@ -895,6 +926,7 @@ start();
       }
       if (!srvSchema) {
         const c = (responses as any)[String(srvErr)]?.content; if (c) { const k = Object.keys(c)[0]; srvSchema = c[k]?.schema || (k==='text/plain'?{type:'string'}:null); }
+>>>>>>> origin/main
       }
       const badLit = this.buildSampleLiteral(badSchema, endpoint?.components || {});
       const srvLit = this.buildSampleLiteral(srvSchema, endpoint?.components || {});
