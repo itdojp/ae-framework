@@ -31,3 +31,18 @@ Artifacts
 Implementation Notes
 - Keep core thin; aggregation can be implemented in CI or release scripts.
 - Output single comment body suitable for PR description or bot comment.
+
+## Failure Case Example
+- Coverage: 78% (< 80%) ❌  [-2%]
+- Failing GWT (2): inv-001 — allocated <= onHand; inv-007 — nonNegative(onHand)
+- Adapters:
+  - lighthouse: Perf 72, A11y 93, PWA 50 (warn)
+  - playwright: 10/12 passed (error)
+- Formal: fail — see formal/summary.json
+- Trace IDs: inv-001, inv-007
+
+### Aggregator Pseudo
+```ts
+type Summary = { coverage:number; failingGwt:string[]; adapters: {name:string; status:string; summary:string}[]; formal:string; traceIds:string[] };
+function aggregate(a:Artifacts): Summary { /* read artifacts/*/summary.json, formal/summary.json, properties/summary.json */ return {} as any }
+```
