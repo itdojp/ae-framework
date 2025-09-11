@@ -279,6 +279,8 @@
     "test:flake-detection": "vitest run --config configs/vitest.optimized.config.ts --retry=5 --reporter=json",
     "test:property": "node scripts/testing/property-harness.mjs",
     "test:property:focus": "node scripts/testing/property-harness.mjs --focus=$TRACE_ID"
+    ,
+    "artifacts:aggregate": "node scripts/adapters/aggregate-artifacts.mjs"
   },
   "dependencies": {
     "@ae-framework/spec-compiler": "file:./packages/spec-compiler",
