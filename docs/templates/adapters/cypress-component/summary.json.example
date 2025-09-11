@@ -1,0 +1,8 @@
+{
+  "adapter": "cypress-component",
+  "status": "ok",
+  "summary": "Cypress CT: 18 passed, 0 failed",
+  "details": [
+    { "spec": "inventory.component.cy.tsx", "passed": 18, "failed": 0 }
+  ]
+}

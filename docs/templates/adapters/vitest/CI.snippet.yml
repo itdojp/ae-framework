@@ -1,0 +1,22 @@
+name: adapter-vitest
+on: [push]
+jobs:
+  vitest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm ci
+      - run: npx vitest run --reporter=dot
+      - name: Write normalized summary
+        run: |
+          mkdir -p artifacts/vitest
+          cat > artifacts/vitest/summary.json << 'JSON'
+          {"adapter":"vitest","status":"ok","summary":"Vitest: 220 passed, 0 failed","details":[]}
+          JSON
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-vitest
+          path: artifacts/vitest/summary.json
