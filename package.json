@@ -276,7 +276,9 @@
     "test:ci:stable": "vitest run --config configs/vitest.ci.config.ts --exclude \"**/system-integration.test.ts\"",
     "test:parallel:ci": "vitest run --config configs/vitest.optimized.config.ts --reporter=junit --reporter=json",
     "test:performance": "vitest run --config configs/vitest.optimized.config.ts --reporter=verbose --run --coverage=false",
-    "test:flake-detection": "vitest run --config configs/vitest.optimized.config.ts --retry=5 --reporter=json"
+    "test:flake-detection": "vitest run --config configs/vitest.optimized.config.ts --retry=5 --reporter=json",
+    "test:property": "node scripts/testing/property-harness.mjs",
+    "test:property:focus": "node scripts/testing/property-harness.mjs --focus=$TRACE_ID"
   },
   "dependencies": {
     "@ae-framework/spec-compiler": "file:./packages/spec-compiler",
