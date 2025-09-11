@@ -1,12 +1,24 @@
-# Roadmap: DDD Intake Plan (includes #406–#411)
+# Roadmap: Testing + DDD Intake Plan (#406–#411)
 
 English / 日本語 (summary)
 
-- Scope: execute Issues #406–#408 and extend plan with #409–#411 (DDD-friendly AE-IR, formal presets/BDD lint, domain events → contracts & replay).
+- Scope: Testing enhancements (#406–#408) and DDD intake (#409–#411).
 - Milestones:
-  - M1 (Q1): #409 + #410 + BDD lint wiring; docs and examples updated.
-  - M2 (Q2): #411 replay/contract flow; CI artifacts normalization and PR summary aggregation.
+  - M1 (Q1): #406–#408 (test additions) + #409 + #410 (DDD IR & presets/BDD lint); docs/examples updated.
+  - M2 (Q2): #411 (domain events → contracts/replay); CI artifacts normalization and PR summary aggregation.
 - DoD (roll-up): traceId end-to-end; artifacts normalized to JSON; counterexamples as short GWT + JSON for `ae fix`; core stays thin (adapters optional).
+
+## Tracks
+
+### A. Testing Enhancements (#406–#408)
+- #406: minimal property-based testing support; persist {seed, runs, version} to `artifacts/properties/summary.json`.
+- #407: format formal counterexamples into short GWT + machine-readable JSON for `ae fix`; include `traceId` and minimal repro.
+- #408: official adapter templates; normalize external tool outputs to `artifacts/*/summary.json`; keep adapters optional.
+
+### B. DDD Intake (#409–#411)
+- #409: AE-IR optional fields (boundedContext/aggregate/domainEvents/ubiquitousTerms) — backward compatible.
+- #410: formal presets for aggregate invariants + BDD step lint (When → Aggregate Root commands only).
+- #411: domain events → Zod contracts & replay fixtures; verify invariants via `npm run test:replay`.
 
 ## Issue Checklist
 
