@@ -57,3 +57,20 @@ flowchart TD
   B -->|ok| C[Aggregate summary]
   B -->|fail| D[Report errors with traceId]
 ```
+## Summary Output Variants
+### Short Digest
+```
+Quality: 82% (>=80) ✅  [+1%] | Formal: pass | Adapters: lighthouse(warn), playwright(ok) | GWT: 0 | Trace: inv-001, inv-002
+```
+
+### Detailed
+```
+## Quality Summary
+- Coverage: 82% (>= 80%) ✅  [+1%]
+- Failing GWT: none
+- Adapters:
+  - lighthouse: Perf 78, A11y 96, PWA 55 (warn)
+  - playwright: 12/12 passed (ok)
+- Formal: pass
+- Trace IDs: inv-001, inv-002
+```

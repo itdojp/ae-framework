@@ -1,0 +1,9 @@
+{
+  "traceId": "inv-007",
+  "events": [
+    { "name": "ItemReceived", "occursOn": "post:receive", "payload": { "sku": "SKU-1", "qty": 5 } },
+    { "name": "ItemAllocated", "occursOn": "post:allocate", "payload": { "sku": "SKU-1", "qty": 8 } }
+  ],
+  "violatedInvariants": ["allocated <= onHand"],
+  "finalState": { "onHand": 5, "allocated": 8 }
+}
