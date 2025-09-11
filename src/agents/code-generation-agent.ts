@@ -139,6 +139,7 @@ export class CodeGenerationAgent {
     includeValidation?: boolean;
     includeAuth?: boolean;
     includeContracts?: boolean; // inject runtime contracts usage (opt-in)
+    useOperationIdForFilenames?: boolean; // prefer operationId for route filenames
   }): Promise<GeneratedCode> {
     const api = this.parseOpenAPI(spec);
     const files: CodeFile[] = [];
@@ -813,7 +814,7 @@ start();
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '');
     const method = String(endpoint.method || 'get').toLowerCase();
-    const fileSafe = `${safeName}-${method}`;
+    const fileSafe = (options?.useOperationIdForFilenames && opIdSafe) ? opIdSafe.toLowerCase() : `${safeName}-${method}`;
     const toPascal = (s: string) => s
       .split('-')
       .filter(Boolean)

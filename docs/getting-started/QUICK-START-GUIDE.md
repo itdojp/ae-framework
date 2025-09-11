@@ -231,6 +231,8 @@ const generated = await agent.generateFromOpenAPI(openapi, {
   framework: 'fastify',
   includeValidation: true,
   includeContracts: true,
+  // Optional: prefer operationId for route filenames
+  useOperationIdForFilenames: true,
 });
 // Write generated.files to disk as needed
 ```
