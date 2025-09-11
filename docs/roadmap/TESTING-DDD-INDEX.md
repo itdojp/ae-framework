@@ -42,3 +42,9 @@ Replay
 DDD IR
 - docs/ddd/ae-ir-ddd.md
 - docs/ddd/events.md
+
+## Examples
+- docs/examples/property-harness.md
+- docs/examples/replay-runner.md
+- docs/examples/bdd-lint.md
+- docs/examples/pr-summary/combined-to-md.example.mjs
