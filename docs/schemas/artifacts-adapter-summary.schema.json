@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae.dev/schema/artifacts-adapter-summary.schema.json",
+  "title": "Adapter Summary",
+  "type": "object",
+  "properties": {
+    "traceId": { "type": "string" },
+    "adapter": { "type": "string" },
+    "status": { "type": "string", "enum": ["ok", "warn", "error"] },
+    "summary": { "type": "string" },
+    "details": { "type": "array", "items": { "type": "object" } }
+  },
+  "required": ["adapter", "status"],
+  "additionalProperties": true
+}

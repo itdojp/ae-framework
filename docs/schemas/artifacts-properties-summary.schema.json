@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae.dev/schema/artifacts-properties-summary.schema.json",
+  "title": "Property Testing Summary",
+  "type": "object",
+  "properties": {
+    "traceId": { "type": "string" },
+    "seed": { "type": "integer" },
+    "runs": { "type": "integer", "minimum": 1 },
+    "version": { "type": "string" },
+    "passed": { "type": "boolean" },
+    "stats": {
+      "type": "object",
+      "properties": {
+        "shrinks": { "type": "integer", "minimum": 0 },
+        "durationMs": { "type": "number", "minimum": 0 }
+      },
+      "additionalProperties": true
+    }
+  },
+  "required": ["traceId", "seed", "runs", "version", "passed"],
+  "additionalProperties": true
+}
