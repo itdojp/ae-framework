@@ -46,7 +46,6 @@ Implementation Notes
 type Summary = { coverage:number; failingGwt:string[]; adapters: {name:string; status:string; summary:string}[]; formal:string; traceIds:string[] };
 function aggregate(a:Artifacts): Summary { /* read artifacts/*/summary.json, formal/summary.json, properties/summary.json */ return {} as any }
 ```
-
 ## Validation Flow
 - Validate JSON artifacts against schemas in `docs/schemas/`.
 - Aggregate only validated data for PR summary to avoid noise.

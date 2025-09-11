@@ -10,7 +10,6 @@
   - Remedy: introduce a root-level command e.g., `When the InventoryItem is recalculated` or refactor the flow via the root.
 - NG: `When onHand is directly set to -1` (state mutation).
   - Remedy: use a command such as `When the InventoryItem is adjusted by -1`, then assert invariants.
-
 ## Rules Table
 | Rule | OK | NG | Rationale |
 |------|----|----|-----------|
