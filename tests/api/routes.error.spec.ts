@@ -9,6 +9,11 @@ describe('route handlers (error paths)', () => {
     expect(res.error).toBeDefined()
     // zod error details should be present
     expect(res.details).toBeDefined()
+    // minimal RFC7807-like body when problem+json is defined
+    if (res.data) {
+      expect(typeof res.data).toBe('object')
+      expect('title' in res.data || 'detail' in res.data).toBe(true)
+    }
   })
 
   it('GET /inventory/:sku returns 400 on missing sku', async () => {
@@ -17,4 +22,3 @@ describe('route handlers (error paths)', () => {
     expect(res.error).toBeDefined()
   })
 })
-
