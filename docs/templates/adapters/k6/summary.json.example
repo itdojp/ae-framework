@@ -1,0 +1,9 @@
+{
+  "adapter": "k6",
+  "status": "warn",
+  "summary": "k6: p(95)=420ms, http_req_failed=0.5%",
+  "details": [
+    { "metric": "http_req_duration_p95", "value": 0.42 },
+    { "metric": "http_req_failed", "value": 0.005 }
+  ]
+}

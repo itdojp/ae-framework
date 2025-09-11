@@ -1,0 +1,21 @@
+name: adapter-k6
+on: [push]
+jobs:
+  k6:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run k6 (example)
+        run: |
+          echo "Simulate k6 run"
+      - name: Write normalized summary
+        run: |
+          mkdir -p artifacts/k6
+          cat > artifacts/k6/summary.json << 'JSON'
+          {"adapter":"k6","status":"warn","summary":"k6: p(95)=420ms, http_req_failed=0.5%","details":[{"metric":"http_req_duration_p95","value":0.42}]}
+          JSON
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-k6
+          path: artifacts/k6/summary.json
