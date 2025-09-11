@@ -260,6 +260,10 @@ pnpm run start:server
 # POST /reservations       -> expects { sku, quantity>=1, orderId }
 # DELETE /reservations/:id -> cancels a reservation
 # GET /inventory/:sku      -> returns { sku, stock>=0 }
+
+# Generate minimal API tests from OpenAPI (prefer operationId in names)
+pnpm run codex:generate:tests -- --use-operation-id
+# Files are written under tests/api/generated/
 ```
 
 #### Scenario 2: Legacy System Partial Modernization
