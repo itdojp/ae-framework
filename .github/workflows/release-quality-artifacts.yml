@@ -1,0 +1,33 @@
+name: release-quality-artifacts
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+permissions:
+  contents: write
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Prepare bundle
+        run: |
+          mkdir -p dist-quality
+          [ -d artifacts ] && cp -r artifacts dist-quality/ || true
+          [ -f formal/summary.json ] && mkdir -p dist-quality/formal && cp formal/summary.json dist-quality/formal/ || true
+          [ -f artifacts/summary/PR_SUMMARY.md ] && cp artifacts/summary/PR_SUMMARY.md dist-quality/ || true
+          [ -f coverage/coverage-summary.json ] && mkdir -p dist-quality/coverage && cp coverage/coverage-summary.json dist-quality/coverage/ || true
+          tar -czf quality-artifacts.tgz -C dist-quality .
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        if: github.event_name == 'release'
+        with:
+          files: quality-artifacts.tgz
+      - name: Upload artifacts (manual)
+        if: github.event_name != 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-artifacts
+          path: quality-artifacts.tgz
