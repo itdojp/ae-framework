@@ -56,3 +56,6 @@ English / 日本語 (summary)
 - DDD IR fields: docs/ddd/ae-ir-ddd.md
 - Domain events → contracts/replay: docs/ddd/events.md
 - Property-based harness: docs/testing/property-harness.md
+
+## References
+- See also: docs/roadmap/TESTING-DDD-INDEX.md (reviewer quick links)
