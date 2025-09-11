@@ -851,7 +851,13 @@ start();
           : (method === 'delete' && twos.includes(204)) ? 204
           : (twos.includes(200) ? 200 : (twos[0] ?? 200));
         const resp = responses[String(chosen)];
-        const schema = resp?.content?.['application/json']?.schema;
+        let schema = resp?.content?.['application/problem+json']?.schema
+          || resp?.content?.['application/json']?.schema;
+        if (!schema && resp?.content) {
+          const cts = Object.keys(resp.content);
+          const appCt = cts.find(ct => ct.startsWith('application/')) || cts[0];
+          schema = resp.content[appCt]?.schema || (appCt === 'text/plain' ? { type: 'string' } : undefined);
+        }
         if (schema) chosenSchema = schema;
       }
       const lit = this.buildSampleLiteral(chosenSchema, endpoint?.components || {});
@@ -884,8 +890,26 @@ start();
       const fivexx = respCodes2.map(Number).filter(n => n >= 500 && n < 600);
       const badReq = fourxx.includes(400) ? 400 : (fourxx.includes(422) ? 422 : (fourxx[0] ?? 400));
       const srvErr = fivexx.includes(500) ? 500 : (fivexx[0] ?? 500);
-      const badSchema = (responses as any)[String(badReq)]?.content?.['application/json']?.schema || null;
-      const srvSchema = (responses as any)[String(srvErr)]?.content?.['application/json']?.schema || null;
+      let badSchema = (responses as any)[String(badReq)]?.content?.['application/problem+json']?.schema
+        || (responses as any)[String(badReq)]?.content?.['application/json']?.schema
+        || null;
+      let srvSchema = (responses as any)[String(srvErr)]?.content?.['application/problem+json']?.schema
+        || (responses as any)[String(srvErr)]?.content?.['application/json']?.schema
+        || null;
+      if (!badSchema) {
+        const c = (responses as any)[String(badReq)]?.content; if (c) {
+          const cts = Object.keys(c);
+          const appCt = cts.find((ct: string) => ct.startsWith('application/')) || cts[0];
+          badSchema = c[appCt]?.schema || (appCt==='text/plain'?{type:'string'}:null);
+        }
+      }
+      if (!srvSchema) {
+        const c = (responses as any)[String(srvErr)]?.content; if (c) {
+          const cts = Object.keys(c);
+          const appCt = cts.find((ct: string) => ct.startsWith('application/')) || cts[0];
+          srvSchema = c[appCt]?.schema || (appCt==='text/plain'?{type:'string'}:null);
+        }
+      }
       const badLit = this.buildSampleLiteral(badSchema, endpoint?.components || {});
       const srvLit = this.buildSampleLiteral(srvSchema, endpoint?.components || {});
       content += `    if (e instanceof z.ZodError) return { status: ${badReq}, error: 'Validation error', details: e.errors, data: ${badLit} };\n`;
