@@ -280,6 +280,8 @@
     "test:property": "node scripts/testing/property-harness.mjs",
     "test:property:focus": "node scripts/testing/property-harness.mjs --focus=$TRACE_ID"
     ,
+    "bdd:lint": "node scripts/bdd/lint.mjs"
+    ,
     "test:replay": "node scripts/testing/replay-runner.mjs",
     "test:replay:focus": "node scripts/testing/replay-runner.mjs --focus=$TRACE_ID"
     ,
