@@ -1,4 +1,6 @@
 # PR Summary Templates (Digest & Detailed)
+# PR Summary Templates (Digest & Detailed)
+Alerts: {{alerts}}
 
 Digest
 ```

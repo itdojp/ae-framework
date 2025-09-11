@@ -2,6 +2,8 @@
 import fs from 'node:fs';
 function r(p){ try { return JSON.parse(fs.readFileSync(p,'utf-8')); } catch { return undefined; } }
 const mode = process.env.SUMMARY_MODE === 'detailed' ? 'detailed' : 'digest';
+const warnMax = isFinite(Number(process.env.ADAPTER_WARN_MAX)) ? Number(process.env.ADAPTER_WARN_MAX) : 0;
+const errorMax = isFinite(Number(process.env.ADAPTER_ERROR_MAX)) ? Number(process.env.ADAPTER_ERROR_MAX) : 0;
 const c = r('artifacts/summary/combined.json') || {};
 const adaptersArr = (c.adapters||[]);
 const statusCounts = adaptersArr.reduce((acc,a)=>{ const s=(a.status||'ok').toLowerCase(); acc[s]=(acc[s]||0)+1; return acc; },{});
@@ -26,11 +28,15 @@ for (const p of props) if (p?.traceId) traceIds.add(p.traceId);
 const replayLine = replay.totalEvents!==undefined ? `Replay: ${replay.totalEvents} events, ${(replay.violatedInvariants||[]).length} violations` : 'Replay: n/a';
 const adapterCountsLine = `Adapters: ok=${statusCounts.ok||0}, warn=${statusCounts.warn||0}, error=${statusCounts.error||0}`;
 const gwtLine = gwtCount ? `GWT: ${gwtCount} (e.g., ${gwtFirst})` : 'GWT: 0';
+const alerts=[];
+if ((statusCounts.error||0) > errorMax) alerts.push(`adapter errors>${errorMax}`);
+if ((statusCounts.warn||0) > warnMax) alerts.push(`adapter warnings>${warnMax}`);
+const alertsLine = alerts.length ? `Alerts: ${alerts.join(', ')}` : 'Alerts: none';
 let md;
 if (mode === 'digest') {
-  md = `${coverageLine} | Formal: ${formal} | ${replayLine} | ${gwtLine} | ${adapterCountsLine} | ${adaptersLine} | Trace: ${Array.from(traceIds).join(', ')}`;
+  md = `${coverageLine} | ${alertsLine} | Formal: ${formal} | ${replayLine} | ${gwtLine} | ${adapterCountsLine} | ${adaptersLine} | Trace: ${Array.from(traceIds).join(', ')}`;
 } else {
-  md = `## Quality Summary\n- ${coverageLine}\n- ${gwtLine}\n- ${adapterCountsLine}\n- Adapters:\n${adaptersList}\n- Formal: ${formal}\n- ${replayLine}\n- Trace IDs: ${Array.from(traceIds).join(', ')}`;
+  md = `## Quality Summary\n- ${coverageLine}\n- ${alertsLine}\n- ${gwtLine}\n- ${adapterCountsLine}\n- Adapters:\n${adaptersList}\n- Formal: ${formal}\n- ${replayLine}\n- Trace IDs: ${Array.from(traceIds).join(', ')}`;
 }
 fs.mkdirSync('artifacts/summary',{recursive:true});
 fs.writeFileSync('artifacts/summary/PR_SUMMARY.md', md);
