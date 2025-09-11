@@ -280,6 +280,9 @@
     "test:property": "node scripts/testing/property-harness.mjs",
     "test:property:focus": "node scripts/testing/property-harness.mjs --focus=$TRACE_ID"
     ,
+    "test:replay": "node scripts/testing/replay-runner.mjs",
+    "test:replay:focus": "node scripts/testing/replay-runner.mjs --focus=$TRACE_ID"
+    ,
     "artifacts:aggregate": "node scripts/adapters/aggregate-artifacts.mjs"
   },
   "dependencies": {
