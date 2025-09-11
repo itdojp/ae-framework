@@ -40,3 +40,19 @@ Notes
 - Validate inputs against schemas in `docs/schemas/` prior to aggregation.
 - When properties summary is an array, validate each element separately.
 - Keep implementation outside core; callable from CI.
+
+## Sidecar Combined JSON
+- Recommended path: `artifacts/summary/combined.json`
+- Include `replay` metrics when available (see replay coverage guide).
+
+### Example (extended)
+```json
+{
+  "coverage": { "value": 0.82, "threshold": 0.80, "delta": 0.01 },
+  "formal": { "result": "pass", "violations": [] },
+  "adapters": [ { "name": "lighthouse", "status": "warn", "summary": "Perf 78, A11y 96, PWA 55" } ],
+  "failingGwt": [],
+  "traceIds": ["inv-001"],
+  "replay": { "totalEvents": 12, "byType": { "ItemReceived": 7, "ItemAllocated": 5 }, "violations": [] }
+}
+```

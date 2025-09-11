@@ -1,0 +1,10 @@
+{
+  "adapter": "playwright-trace",
+  "status": "ok",
+  "summary": "Playwright Trace: 3 traces captured",
+  "details": [
+    { "file": "trace-1.zip", "tests": 5 },
+    { "file": "trace-2.zip", "tests": 4 },
+    { "file": "trace-3.zip", "tests": 3 }
+  ]
+}

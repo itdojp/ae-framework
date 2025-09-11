@@ -1,0 +1,8 @@
+{
+  "adapter": "vitest",
+  "status": "ok",
+  "summary": "Vitest: 220 passed, 0 failed",
+  "details": [
+    { "file": "aggregate.invariants.test.ts", "passed": 20, "failed": 0 }
+  ]
+}
