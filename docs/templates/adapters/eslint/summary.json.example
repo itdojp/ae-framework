@@ -1,0 +1,9 @@
+{
+  "adapter": "eslint",
+  "status": "warn",
+  "summary": "ESLint: 3 problems (1 error, 2 warnings)",
+  "details": [
+    { "file": "src/index.ts", "errors": 1, "warnings": 0 },
+    { "file": "src/util.ts", "errors": 0, "warnings": 2 }
+  ]
+}

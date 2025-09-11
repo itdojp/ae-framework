@@ -1,0 +1,19 @@
+name: adapter-stylelint
+on: [push]
+jobs:
+  stylelint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm ci
+      - run: npx stylelint "**/*.css" || true
+      - name: Write normalized summary
+        run: |
+          mkdir -p artifacts/stylelint
+          cat > artifacts/stylelint/summary.json << 'JSON'
+          {"adapter":"stylelint","status":"ok","summary":"Stylelint: 0 errors","details":[]}
+          JSON
+      - uses: actions/upload-artifact@v4
+        with: { name: artifacts-stylelint, path: artifacts/stylelint/summary.json }

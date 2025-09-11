@@ -1,0 +1,19 @@
+name: adapter-eslint
+on: [push]
+jobs:
+  eslint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm ci
+      - run: npx eslint . || true
+      - name: Write normalized summary
+        run: |
+          mkdir -p artifacts/eslint
+          cat > artifacts/eslint/summary.json << 'JSON'
+          {"adapter":"eslint","status":"warn","summary":"ESLint: 3 problems (1 error, 2 warnings)","details":[]}
+          JSON
+      - uses: actions/upload-artifact@v4
+        with: { name: artifacts-eslint, path: artifacts/eslint/summary.json }
