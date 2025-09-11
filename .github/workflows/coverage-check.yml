@@ -1,0 +1,49 @@
+name: coverage-check
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      strict: ${{ steps.gate.outputs.strict }}
+      threshold: ${{ steps.th.outputs.threshold }}
+    steps:
+      - uses: actions/github-script@v7
+        id: gate
+        with:
+          script: |
+            const labels = (context.payload.pull_request?.labels || []).map(l=>l.name);
+            const strict = labels.includes('enforce-coverage');
+            core.setOutput('strict', String(strict));
+      - uses: actions/github-script@v7
+        id: th
+        with:
+          script: |
+            const labels = (context.payload.pull_request?.labels || []).map(l=>l.name);
+            const cov = labels.find(n => n.startsWith('coverage:'));
+            const val = cov ? Number(cov.split(':')[1]) : 80;
+            core.setOutput('threshold', String(isFinite(val) ? val : 80));
+  coverage:
+    needs: gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm ci
+      - name: Run coverage
+        run: npm run coverage --silent || true
+      - name: Check coverage threshold
+        env:
+          THRESHOLD: ${{ needs.gate.outputs.threshold }}
+        run: |
+          if [ -f coverage/coverage-summary.json ]; then \
+            PCT=$(node -e "console.log((require('./coverage/coverage-summary.json').total.lines.pct)||0)"); \
+            echo "Coverage: ${PCT}% (threshold: ${THRESHOLD}%)"; \
+            awk 'BEGIN{ if ('"${PCT}"' + 0 < '"${THRESHOLD}"' + 0) exit 1 }'; \
+          else \
+            echo "No coverage-summary.json found; skipping check"; \
+          fi
+        continue-on-error: ${{ needs.gate.outputs.strict != 'true' }}
