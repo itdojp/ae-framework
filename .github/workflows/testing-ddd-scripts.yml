@@ -13,10 +13,24 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
       - run: npm ci
+      - name: Derive TRACE_ID from PR labels
+        id: trace
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = (context.payload.pull_request?.labels || []).map(l=>l.name);
+            const t = labels.find(n => n.startsWith('trace:'));
+            if (t) core.setOutput('trace_id', t.slice(6));
       - name: Property harness (#406)
-        run: npm run test:property --silent || true
+        env:
+          TRACE_ID: ${{ steps.trace.outputs.trace_id }}
+        run: |
+          if [ -n "${TRACE_ID}" ]; then TRACE_ID=${TRACE_ID} npm run test:property:focus --silent || true; else npm run test:property --silent || true; fi
       - name: Replay runner (#411)
-        run: npm run test:replay --silent || true
+        env:
+          TRACE_ID: ${{ steps.trace.outputs.trace_id }}
+        run: |
+          if [ -n "${TRACE_ID}" ]; then TRACE_ID=${TRACE_ID} npm run test:replay:focus --silent || true; else npm run test:replay --silent || true; fi
       - name: BDD lint (#410)
         run: npm run bdd:lint --silent || true
       - name: Formal GWT format (#407)
