@@ -19,3 +19,5 @@ Notes
 
 ## Automation
 - auto-labels workflow: adds `trace:<id>` from PR title, sets `pr-summary:detailed` when [detailed] is present.
+- `enforce-coverage`: make coverage threshold blocking (default 80%)
+- `coverage:<pct>`: set coverage threshold in percent (e.g., coverage:85)
