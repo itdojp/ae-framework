@@ -1,0 +1,30 @@
+name: validate-artifacts-ajv
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm ci
+      - run: npm i -D ajv ajv-cli jq
+      - name: Validate adapter summaries
+        run: npx ajv -s docs/schemas/artifacts-adapter-summary.schema.json -d "artifacts/*/summary.json" --strict=false || true
+      - name: Validate formal summary
+        run: |
+          if [ -f formal/summary.json ]; then npx ajv -s docs/schemas/formal-summary.schema.json -d formal/summary.json --strict=false; fi
+      - name: Validate property summaries
+        run: |
+          if [ -f artifacts/properties/summary.json ]; then \
+            if jq -e 'type=="array"' artifacts/properties/summary.json >/dev/null; then \
+              jq -c '.[]' artifacts/properties/summary.json | while read -r item; do \
+                echo "$item" | npx ajv -s docs/schemas/artifacts-properties-summary.schema.json -d /dev/stdin --strict=false; \
+              done; \
+            else \
+              npx ajv -s docs/schemas/artifacts-properties-summary.schema.json -d artifacts/properties/summary.json --strict=false; \
+            fi; \
+          fi
