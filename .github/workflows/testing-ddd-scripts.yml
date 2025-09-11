@@ -41,6 +41,8 @@ jobs:
         run: |
           if [ -n "${TRACE_ID}" ]; then TRACE_ID=${TRACE_ID} npm run test:replay:focus --silent || true; else npm run test:replay --silent || true; fi
       - name: BDD lint (#410)
+      - name: BDD lint (#410)
+        continue-on-error: ${{ github.ref != 'refs/heads/main' && steps.gate.outputs.strict != 'true' }}
         run: npm run bdd:lint --silent || true
       - name: Formal GWT format (#407)
         run: |

@@ -1,0 +1,30 @@
+name: auto-labels
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo, number } = context.issue;
+            const pr = context.payload.pull_request;
+            if (!pr) return;
+            const toAdd = new Set();
+            // If base is main, suggest enforce-artifacts (we do not auto-enforce here; main default handles it)
+            if (pr.base && pr.base.ref === 'main') {
+              // no-op: main default already enforces artifacts
+            }
+            // Find trace:<id> in title
+            const m = (pr.title||'').match(/trace:([A-Za-z0-9_.:-]+)/);
+            if (m) toAdd.add(`trace:${m[1]}`);
+            // Switch to detailed summary if title/body contains [detailed]
+            if ((pr.title||'').includes('[detailed]') || (pr.body||'').includes('[detailed]')) toAdd.add('pr-summary:detailed');
+            if (toAdd.size) {
+              await github.rest.issues.addLabels({ owner, repo, issue_number: number, labels: Array.from(toAdd) });
+            }
