@@ -42,3 +42,10 @@ Replay
 DDD IR
 - docs/ddd/ae-ir-ddd.md
 - docs/ddd/events.md
+
+Implementation (scripts)
+- scripts/testing/property-harness.mjs
+- scripts/testing/replay-runner.mjs
+- scripts/bdd/lint.mjs
+- scripts/formal/format-counterexamples.mjs
+- scripts/adapters/aggregate-artifacts.mjs
