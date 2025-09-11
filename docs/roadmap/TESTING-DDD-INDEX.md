@@ -43,8 +43,9 @@ DDD IR
 - docs/ddd/ae-ir-ddd.md
 - docs/ddd/events.md
 
-## Examples
-- docs/examples/property-harness.md
-- docs/examples/replay-runner.md
-- docs/examples/bdd-lint.md
-- docs/examples/pr-summary/combined-to-md.example.mjs
+Implementation (scripts)
+- scripts/testing/property-harness.mjs
+- scripts/testing/replay-runner.mjs
+- scripts/bdd/lint.mjs
+- scripts/formal/format-counterexamples.mjs
+- scripts/adapters/aggregate-artifacts.mjs

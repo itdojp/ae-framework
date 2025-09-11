@@ -1,0 +1,26 @@
+name: testing-ddd-scripts
+on: [push, pull_request]
+jobs:
+  testing-ddd:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm ci
+      - name: Property harness (#406)
+        run: npm run test:property --silent || true
+      - name: Replay runner (#411)
+        run: npm run test:replay --silent || true
+      - name: BDD lint (#410)
+        run: npm run bdd:lint --silent || true
+      - name: Formal GWT format (#407)
+        run: |
+          if [ -f formal/summary.json ]; then node scripts/formal/format-counterexamples.mjs; fi
+      - name: Aggregate artifacts (#408)
+        run: npm run artifacts:aggregate --silent || true
+      - name: Upload artifacts (summary)
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-summary
+          path: artifacts/**
