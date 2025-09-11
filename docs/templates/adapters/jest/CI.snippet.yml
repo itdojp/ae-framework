@@ -1,0 +1,22 @@
+name: adapter-jest
+on: [push]
+jobs:
+  jest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm ci
+      - run: npm test --silent
+      - name: Write normalized summary
+        run: |
+          mkdir -p artifacts/jest
+          cat > artifacts/jest/summary.json << 'JSON'
+          {"adapter":"jest","status":"ok","summary":"Jest: 134 passed, 0 failed","details":[]}
+          JSON
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-jest
+          path: artifacts/jest/summary.json

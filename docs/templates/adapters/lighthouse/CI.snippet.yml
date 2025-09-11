@@ -1,0 +1,24 @@
+name: adapter-lighthouse
+on: [push]
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm ci
+      - name: Run Lighthouse (example)
+        run: |
+          echo "Simulate Lighthouse run"
+      - name: Write normalized summary
+        run: |
+          mkdir -p artifacts/lighthouse
+          cat > artifacts/lighthouse/summary.json << 'JSON'
+          {"adapter":"lighthouse","status":"warn","summary":"Lighthouse: Perf 78, A11y 96, PWA 55","details":[{"metric":"performance","score":0.78}]}
+          JSON
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-lighthouse
+          path: artifacts/lighthouse/summary.json

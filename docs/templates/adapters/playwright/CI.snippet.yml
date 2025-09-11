@@ -1,0 +1,23 @@
+name: adapter-playwright
+on: [push]
+jobs:
+  playwright:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm ci
+      - run: npx playwright install --with-deps
+      - run: npx playwright test --reporter=list
+      - name: Write normalized summary
+        run: |
+          mkdir -p artifacts/playwright
+          cat > artifacts/playwright/summary.json << 'JSON'
+          {"adapter":"playwright","status":"ok","summary":"Playwright: 12/12 passed (0 flaky)","details":[]}
+          JSON
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-playwright
+          path: artifacts/playwright/summary.json
