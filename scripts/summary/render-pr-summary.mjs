@@ -9,6 +9,10 @@ const adaptersLine = adaptersArr.map(a=>`${a.adapter||a.name}: ${a.summary} (${a
 const adaptersList = adaptersArr.map(a=>`  - ${a.adapter||a.name}: ${a.summary} (${a.status})`).join('\n');
 const formalObj = c.formal || r('formal/summary.json') || {};
 const formal = formalObj.result || 'n/a';
+const gwt = r('artifacts/formal/gwt.summary.json');
+const gwtItems = gwt?.items || [];
+const gwtCount = gwtItems.length;
+const gwtFirst = gwtCount ? (gwtItems[0].property || (gwtItems[0].gwt ? String(gwtItems[0].gwt).split('\n')[0] : '')) : '';
 const replay = c.replay || r('artifacts/domain/replay.summary.json') || {};
 const props = c.properties ? (Array.isArray(c.properties) ? c.properties : [c.properties]) : (r('artifacts/properties/summary.json') ? [r('artifacts/properties/summary.json')] : []);
 const cov = r('coverage/coverage-summary.json');
@@ -21,11 +25,12 @@ if (replay?.traceId) traceIds.add(replay.traceId);
 for (const p of props) if (p?.traceId) traceIds.add(p.traceId);
 const replayLine = replay.totalEvents!==undefined ? `Replay: ${replay.totalEvents} events, ${(replay.violatedInvariants||[]).length} violations` : 'Replay: n/a';
 const adapterCountsLine = `Adapters: ok=${statusCounts.ok||0}, warn=${statusCounts.warn||0}, error=${statusCounts.error||0}`;
+const gwtLine = gwtCount ? `GWT: ${gwtCount} (e.g., ${gwtFirst})` : 'GWT: 0';
 let md;
 if (mode === 'digest') {
-  md = `${coverageLine} | Formal: ${formal} | ${replayLine} | ${adapterCountsLine} | ${adaptersLine} | Trace: ${Array.from(traceIds).join(', ')}`;
+  md = `${coverageLine} | Formal: ${formal} | ${replayLine} | ${gwtLine} | ${adapterCountsLine} | ${adaptersLine} | Trace: ${Array.from(traceIds).join(', ')}`;
 } else {
-  md = `## Quality Summary\n- ${coverageLine}\n- ${adapterCountsLine}\n- Adapters:\n${adaptersList}\n- Formal: ${formal}\n- ${replayLine}\n- Trace IDs: ${Array.from(traceIds).join(', ')}`;
+  md = `## Quality Summary\n- ${coverageLine}\n- ${gwtLine}\n- ${adapterCountsLine}\n- Adapters:\n${adaptersList}\n- Formal: ${formal}\n- ${replayLine}\n- Trace IDs: ${Array.from(traceIds).join(', ')}`;
 }
 fs.mkdirSync('artifacts/summary',{recursive:true});
 fs.writeFileSync('artifacts/summary/PR_SUMMARY.md', md);
