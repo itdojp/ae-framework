@@ -52,3 +52,7 @@ English / 日本語 (summary)
 - Adapter summary schema (#408): docs/schemas/artifacts-adapter-summary.schema.json
 - Domain events schema (#411): docs/schemas/domain-events.schema.json
 - Example events: examples/inventory/artifacts/domain/events.sample.json
+
+- DDD IR fields: docs/ddd/ae-ir-ddd.md
+- Domain events → contracts/replay: docs/ddd/events.md
+- Property-based harness: docs/testing/property-harness.md
