@@ -40,7 +40,6 @@ Notes
 - Validate inputs against schemas in `docs/schemas/` prior to aggregation.
 - When properties summary is an array, validate each element separately.
 - Keep implementation outside core; callable from CI.
-
 ## Sidecar Combined JSON
 - Recommended path: `artifacts/summary/combined.json`
 - Include `replay` metrics when available (see replay coverage guide).
