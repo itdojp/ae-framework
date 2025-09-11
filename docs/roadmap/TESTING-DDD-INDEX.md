@@ -42,3 +42,13 @@ Replay
 DDD IR
 - docs/ddd/ae-ir-ddd.md
 - docs/ddd/events.md
+
+Templates (linters)
+- docs/templates/adapters/eslint/*
+- docs/templates/adapters/stylelint/*
+
+PR Summary
+- docs/quality/pr-summary-template.md
+
+Correlation
+- docs/testing/replay-correlation.md
