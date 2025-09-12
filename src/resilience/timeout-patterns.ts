@@ -44,8 +44,9 @@ export class TimeoutWrapper {
   ): Promise<T> {
     const startTime = Date.now();
 
+    let timeoutId: NodeJS.Timeout | undefined;
     const timeoutPromise = new Promise<never>((_, reject) => {
-      const timeoutId = setTimeout(() => {
+      timeoutId = setTimeout(() => {
         const duration = Date.now() - startTime;
         this.options.onTimeout?.(duration);
         if (this.options.abortController) {
@@ -55,17 +56,15 @@ export class TimeoutWrapper {
           `Operation '${operationName}' timed out after ${this.options.timeoutMs}ms`;
         reject(new TimeoutError(message, this.options.timeoutMs, duration));
       }, this.options.timeoutMs);
-      // Attach timeout ID for cleanup
-      (timeoutPromise as any).timeoutId = timeoutId;
     });
 
     const opPromise = operation();
 
     // When operation settles, clear the timeout
     opPromise.finally(() => {
-      const timeoutId = (timeoutPromise as any).timeoutId;
       if (timeoutId) {
         clearTimeout(timeoutId);
+        timeoutId = undefined;
       }
     });
 
