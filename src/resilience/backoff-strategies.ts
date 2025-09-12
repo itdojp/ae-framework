@@ -543,11 +543,6 @@ export class ResilientHttpClient {
     url: string,
     options: RequestInit = {}
   ): Promise<T> {
-    // Fast-fail if circuit is already OPEN
-    if (this.circuitBreaker && this.circuitBreaker.getStats().state === CircuitState.OPEN) {
-      return new Promise<never>((_, reject) => Promise.resolve().then(() => reject(new Error(`Circuit breaker is OPEN for HTTP ${options.method || 'GET'} ${url}`))));
-    }
-
     let serverErrorCount = 0;
     const attemptOperation = async (): Promise<T> => {
       // Rate limiting per attempt
