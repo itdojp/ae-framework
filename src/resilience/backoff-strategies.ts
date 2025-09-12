@@ -192,7 +192,11 @@ export class BackoffStrategy {
     }
 
     // Custom retryable errors
-    if (error.name === 'RetryableError' || error.message.includes('retryable')) {
+    // Treat explicit 'non-retryable' markers as not retryable
+    if (error.message.includes('non-retryable')) {
+      return false;
+    }
+    if (error.name === 'RetryableError' || error.message.includes(' retryable') || error.message.startsWith('retryable')) {
       return true;
     }
 
@@ -527,24 +531,20 @@ export class ResilientHttpClient {
     url: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const operation = async (): Promise<T> => {
-      // Rate limiting
+    const attemptOperation = async (): Promise<T> => {
+      // Rate limiting per attempt
       if (this.rateLimiter) {
         await this.rateLimiter.waitForTokens();
       }
-
-      // Circuit breaker
+      const op = () => this.executeHttpRequest<T>(url, options);
       if (this.circuitBreaker) {
-        return this.circuitBreaker.execute(async () => {
-          return this.executeHttpRequest<T>(url, options);
-        }, `HTTP ${options.method || 'GET'} ${url}`);
-      } else {
-        return this.executeHttpRequest<T>(url, options);
+        return this.circuitBreaker.execute(op, `HTTP ${options.method || 'GET'} ${url}`);
       }
+      return op();
     };
 
     const result = await this.backoffStrategy.executeWithRetry(
-      operation,
+      attemptOperation,
       `HTTP ${options.method || 'GET'} ${url}`
     );
 
