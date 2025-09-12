@@ -516,12 +516,14 @@ export class ResilientHttpClient {
   private backoffStrategy: BackoffStrategy;
   private circuitBreaker?: CircuitBreaker;
   private rateLimiter?: TokenBucketRateLimiter;
+  private cbFailureThreshold?: number;
 
   constructor(private options: ResilientHttpOptions = {}) {
     this.backoffStrategy = new BackoffStrategy(options.retryOptions);
     
     if (options.circuitBreakerOptions) {
       this.circuitBreaker = new CircuitBreaker(options.circuitBreakerOptions);
+      this.cbFailureThreshold = options.circuitBreakerOptions.failureThreshold;
     }
     
     if (options.rateLimiterOptions) {
@@ -540,6 +542,7 @@ export class ResilientHttpClient {
     if (this.circuitBreaker && this.circuitBreaker.getStats().state === CircuitState.OPEN) {
       return new Promise<never>((_, reject) => Promise.resolve().then(() => reject(new Error(`Circuit breaker is OPEN for HTTP ${options.method || 'GET'} ${url}`))));
     }
+    let serverErrorCount = 0;
     const attemptOperation = async (): Promise<T> => {
       // Rate limiting per attempt
       if (this.rateLimiter) {
@@ -547,7 +550,22 @@ export class ResilientHttpClient {
       }
       const op = () => this.executeHttpRequest<T>(url, options);
       if (this.circuitBreaker) {
-        return this.circuitBreaker.execute(op, `HTTP ${options.method || 'GET'} ${url}`);
+        return this.circuitBreaker
+          .execute(op, `HTTP ${options.method || 'GET'} ${url}`)
+          .catch((err: any) => {
+            const status = err?.status;
+            if (typeof status === 'number' && status >= 500) {
+              serverErrorCount++;
+              if (
+                this.cbFailureThreshold !== undefined &&
+                serverErrorCount >= this.cbFailureThreshold
+              ) {
+                // Ensure circuit opens immediately for subsequent attempts
+                this.circuitBreaker!.forceOpen();
+              }
+            }
+            throw err;
+          });
       }
       return op();
     };
