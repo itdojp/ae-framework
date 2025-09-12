@@ -67,8 +67,20 @@ export class BackoffStrategy {
         lastError = error as Error;
         
         // Check if we should retry
-        if (attempt === this.options.maxRetries || !this.options.shouldRetry(lastError, attempt)) {
-          break;
+        const msg = lastError.message || '';
+        const userWantsRetry = this.options.shouldRetry(lastError, attempt);
+        // Honor explicit non-retryable markers even if the predicate is permissive
+        const retryable = userWantsRetry && !msg.includes('non-retryable');
+
+        if (attempt === this.options.maxRetries || !retryable) {
+          // Do not retry: return failure immediately with actual attempts executed
+          return {
+            success: false,
+            error: lastError,
+            attempts: attempt + 1,
+            totalTime: Date.now() - startTime,
+            delays,
+          };
         }
 
         // Calculate delay with jitter
@@ -83,6 +95,7 @@ export class BackoffStrategy {
       }
     }
 
+    // Should not reach here due to early return on non-retryable or maxRetries
     return {
       success: false,
       error: lastError!,
@@ -184,7 +197,11 @@ export class BackoffStrategy {
     }
 
     // Custom retryable errors
-    if (error.name === 'RetryableError' || error.message.includes('retryable')) {
+    // Treat explicit 'non-retryable' markers as not retryable
+    if (error.message.includes('non-retryable')) {
+      return false;
+    }
+    if (error.name === 'RetryableError' || error.message.includes(' retryable') || error.message.startsWith('retryable')) {
       return true;
     }
 
@@ -224,9 +241,9 @@ export class CircuitBreaker {
   private failures: number = 0;
   private successes: number = 0;
   private totalRequests: number = 0;
-  private lastFailureTime?: number;
-  private lastSuccessTime?: number;
-  private nextAttemptTime?: number;
+  private lastFailureTime: number | undefined;
+  private lastSuccessTime: number | undefined;
+  private nextAttemptTime: number | undefined;
   private startTime: number = Date.now();
 
   constructor(private options: CircuitBreakerOptions) {
@@ -320,15 +337,20 @@ export class CircuitBreaker {
    * Get circuit breaker statistics
    */
   public getStats(): CircuitBreakerStats {
-    return {
+    const base: CircuitBreakerStats = {
       state: this.state,
       failures: this.failures,
       successes: this.successes,
       totalRequests: this.totalRequests,
-      lastFailureTime: this.lastFailureTime,
-      lastSuccessTime: this.lastSuccessTime,
       uptime: Date.now() - this.startTime,
     };
+    if (this.lastFailureTime !== undefined) {
+      (base as any).lastFailureTime = this.lastFailureTime;
+    }
+    if (this.lastSuccessTime !== undefined) {
+      (base as any).lastSuccessTime = this.lastSuccessTime;
+    }
+    return base;
   }
 
   /**

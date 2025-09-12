@@ -60,30 +60,11 @@ async function main() {
                     const v = synth(schemas[ref], depth + 1);
                     seen.delete(ref);
                     return v;
-              if (names.length > 0) {
-                const first = schemas[names[0]] as any;
-                const sample: any = {};
-                if (first && first.type === 'object' && first.properties) {
-                  const req: string[] = Array.isArray(first.required) ? first.required : [];
-                  for (const [k, vAny] of Object.entries<any>(first.properties)) {
-                    const v = vAny as any;
-                    if (v.default !== undefined) { sample[k] = v.default; continue; }
-                    if (Array.isArray(v.enum) && v.enum.length > 0) { sample[k] = v.enum[0]; continue; }
-                    const t = v.type || 'string';
-                    switch (t) {
-                      case 'integer': sample[k] = 0; break;
-                      case 'number': sample[k] = 0; break;
-                      case 'boolean': sample[k] = false; break;
-                      case 'array': sample[k] = Array.isArray(v.items) ? [] : []; break;
-                      case 'object': sample[k] = {}; break;
-                      default: sample[k] = ''; break;
-                    }
-                    // Mark required fields explicitly even if default is empty
-                    if (req.includes(k) && (sample[k] === '' || sample[k] === null || sample[k] === undefined)) {
-                      sample[k] = sample[k] === '' ? 'REQUIRED' : sample[k];
-                    }
                   }
+                  return {};
                 }
+              
+                
                 if (schema.default !== undefined) return schema.default;
                 if (Array.isArray(schema.enum) && schema.enum.length > 0) return schema.enum[0];
                 const t = schema.type || (schema.properties ? 'object' : (schema.items ? 'array' : 'string'));
@@ -124,12 +105,6 @@ async function main() {
               if (!derived) {
                 if (names.length > 0) input = synth((schemas as any)[names[0]]);
                 else if (pathKeys.length > 0) input = { path: pathKeys[0] };
-              if (names.length > 0) {
-                input = synth((schemas as any)[names[0]]);
-              } else {
-                // Fallback: pick first path+op and build an object with the path only
-                const paths = oas.paths ? Object.keys(oas.paths) : [];
-                if (paths.length > 0) input = { path: paths[0] };
               }
             } catch {}
           } else {

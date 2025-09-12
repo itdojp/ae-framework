@@ -169,6 +169,15 @@ class TestRandomizer {
         testOrder = this.shuffleArray(testOrder, iterationSeed);
       }
 
+      // Guard against null/undefined entries only (preserve all declared tests)
+      testOrder = testOrder.filter((t): t is TestCase => !!t);
+
+      // Fallback: if IDs appear missing after shuffle/guards, restore original order for this iteration
+      const expectedLen = suite.cases.length;
+      const presentIds = testOrder.map(t => t?.id).filter((id): id is string => typeof id === 'string');
+      if (presentIds.length !== expectedLen) {
+        testOrder = [...suite.cases];
+      }
       console.log(`   Iteration ${iteration + 1}/${this.config.iterations} - Order: ${testOrder.map(t => t.id).join(',')}`);
 
       const executions: TestExecution[] = [];
@@ -183,6 +192,9 @@ class TestRandomizer {
       // Execute tests in order
       for (let i = 0; i < testOrder.length; i++) {
         const testCase = testOrder[i];
+        if (!testCase) {
+          continue;
+        }
         const startTime = Date.now();
         let result: 'pass' | 'fail' | 'skip' = 'pass';
         let error: string | undefined;
@@ -223,10 +235,12 @@ class TestRandomizer {
         executions.push(execution);
 
         // Track results by test
-        if (!resultsByTest.has(testCase.id)) {
-          resultsByTest.set(testCase.id, []);
+        if (testCase.id) {
+          if (!resultsByTest.has(testCase.id)) {
+            resultsByTest.set(testCase.id, []);
+          }
+          resultsByTest.get(testCase.id)!.push(result);
         }
-        resultsByTest.get(testCase.id)!.push(result);
       }
 
       // Teardown
@@ -243,7 +257,7 @@ class TestRandomizer {
       }
 
       report.configurations.push({
-        order: testOrder.map(t => t.id),
+        order: testOrder.map(t => t?.id).filter((id): id is string => typeof id === 'string'),
         results: executions,
         sideEffectsDetected
       });
@@ -296,8 +310,8 @@ class TestRandomizer {
     
     lines.push('# Test Randomization Report');
     lines.push('');
-    lines.push(`**Seed:** ${report.seed}`);
-    lines.push(`**Total Runs:** ${report.totalRuns}`);
+    lines.push(`Seed: ${report.seed}`);
+    lines.push(`Total Runs: ${report.totalRuns}`);
     lines.push(`**Generated:** ${new Date().toISOString()}`);
     lines.push('');
 
