@@ -44,8 +44,9 @@ export class TimeoutWrapper {
   ): Promise<T> {
     const startTime = Date.now();
 
+    let timeoutId: NodeJS.Timeout | undefined;
     const timeoutPromise = new Promise<never>((_, reject) => {
-      const timeoutId = setTimeout(() => {
+      timeoutId = setTimeout(() => {
         const duration = Date.now() - startTime;
         this.options.onTimeout?.(duration);
         if (this.options.abortController) {
@@ -55,17 +56,15 @@ export class TimeoutWrapper {
           `Operation '${operationName}' timed out after ${this.options.timeoutMs}ms`;
         reject(new TimeoutError(message, this.options.timeoutMs, duration));
       }, this.options.timeoutMs);
-      // Attach timeout ID for cleanup
-      (timeoutPromise as any).timeoutId = timeoutId;
     });
 
     const opPromise = operation();
 
     // When operation settles, clear the timeout
     opPromise.finally(() => {
-      const timeoutId = (timeoutPromise as any).timeoutId;
       if (timeoutId) {
         clearTimeout(timeoutId);
+        timeoutId = undefined;
       }
     });
 
@@ -83,7 +82,7 @@ export class TimeoutWrapper {
  * Custom timeout error
  */
 export class TimeoutError extends Error {
-  public readonly name = 'TimeoutError';
+  public override readonly name = 'TimeoutError';
   
   constructor(
     message: string,
@@ -121,20 +120,34 @@ export class AdaptiveTimeout {
     const startTime = Date.now();
 
     try {
-      const timeoutWrapper = new TimeoutWrapper({
+      const twOptions: TimeoutOptions = {
         timeoutMs: this.currentTimeoutMs,
         onTimeout: (duration) => {
           this.timeouts++;
           this.options.onTimeout?.(duration);
           this.adaptTimeout(false);
         },
-        abortController: this.options.abortController,
-        timeoutMessage: this.options.timeoutMessage,
-      });
+      };
+      if (this.options.abortController !== undefined) {
+        twOptions.abortController = this.options.abortController;
+      }
+      if (this.options.timeoutMessage !== undefined) {
+        twOptions.timeoutMessage = this.options.timeoutMessage;
+      }
 
-      const result = await timeoutWrapper.execute(operation, operationName);
+      const timeoutWrapper = new TimeoutWrapper(twOptions);
+
+      // Capture end time at operation resolution to avoid drift from extra timer advances
+      let endAt = 0;
+      const timedOperation = async () => {
+        const r = await operation();
+        endAt = Date.now();
+        return r;
+      };
+
+      const result = await timeoutWrapper.execute(timedOperation, operationName);
       
-      const executionTime = Date.now() - startTime;
+      const executionTime = (endAt || Date.now()) - startTime;
       this.recordSuccess(executionTime);
       
       return result;
@@ -169,8 +182,20 @@ export class AdaptiveTimeout {
    * Adapt timeout based on recent performance
    */
   private adaptTimeout(success: boolean): void {
+    // If a timeout occurred, adapt immediately even without history
+    if (!success) {
+      this.currentTimeoutMs = Math.min(
+        Math.max(
+          Math.floor(this.currentTimeoutMs * (1 + this.options.adaptationFactor)),
+          this.options.minTimeoutMs
+        ),
+        this.options.maxTimeoutMs
+      );
+      return;
+    }
+
     if (this.executionTimes.length < 5) {
-      // Not enough data for adaptation
+      // Not enough data for adaptation on success
       return;
     }
 
@@ -205,7 +230,7 @@ export class AdaptiveTimeout {
   private calculatePercentile(values: number[], percentile: number): number {
     const sorted = [...values].sort((a, b) => a - b);
     const index = Math.ceil(sorted.length * percentile) - 1;
-    return sorted[Math.max(0, index)];
+    return sorted[Math.max(0, index)] ?? sorted[0] ?? 0;
   }
 
   /**

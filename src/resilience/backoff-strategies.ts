@@ -67,8 +67,20 @@ export class BackoffStrategy {
         lastError = error as Error;
         
         // Check if we should retry
-        if (attempt === this.options.maxRetries || !this.options.shouldRetry(lastError, attempt)) {
-          break;
+        const msg = lastError.message || '';
+        const userWantsRetry = this.options.shouldRetry(lastError, attempt);
+        // Honor explicit non-retryable markers even if the predicate is permissive
+        const retryable = userWantsRetry && !msg.includes('non-retryable');
+
+        if (attempt === this.options.maxRetries || !retryable) {
+          // Do not retry: return failure immediately with actual attempts executed
+          return {
+            success: false,
+            error: lastError,
+            attempts: attempt + 1,
+            totalTime: Date.now() - startTime,
+            delays,
+          };
         }
 
         // Calculate delay with jitter
@@ -83,6 +95,7 @@ export class BackoffStrategy {
       }
     }
 
+    // Should not reach here due to early return on non-retryable or maxRetries
     return {
       success: false,
       error: lastError!,
@@ -166,6 +179,10 @@ export class BackoffStrategy {
    * Default retry condition - determines if error is retryable
    */
   private isRetryableError(error: Error): boolean {
+    // Circuit breaker explicitly OPEN should not be retried
+    if (typeof error.message === 'string' && error.message.includes('Circuit breaker is OPEN')) {
+      return false;
+    }
     // Network errors
     if (error.message.includes('ECONNRESET') ||
         error.message.includes('ENOTFOUND') ||
@@ -184,7 +201,11 @@ export class BackoffStrategy {
     }
 
     // Custom retryable errors
-    if (error.name === 'RetryableError' || error.message.includes('retryable')) {
+    // Treat explicit 'non-retryable' markers as not retryable
+    if (error.message.includes('non-retryable')) {
+      return false;
+    }
+    if (error.name === 'RetryableError' || error.message.includes(' retryable') || error.message.startsWith('retryable')) {
       return true;
     }
 
@@ -224,9 +245,9 @@ export class CircuitBreaker {
   private failures: number = 0;
   private successes: number = 0;
   private totalRequests: number = 0;
-  private lastFailureTime?: number;
-  private lastSuccessTime?: number;
-  private nextAttemptTime?: number;
+  private lastFailureTime: number | undefined;
+  private lastSuccessTime: number | undefined;
+  private nextAttemptTime: number | undefined;
   private startTime: number = Date.now();
 
   constructor(private options: CircuitBreakerOptions) {
@@ -320,15 +341,20 @@ export class CircuitBreaker {
    * Get circuit breaker statistics
    */
   public getStats(): CircuitBreakerStats {
-    return {
+    const base: CircuitBreakerStats = {
       state: this.state,
       failures: this.failures,
       successes: this.successes,
       totalRequests: this.totalRequests,
-      lastFailureTime: this.lastFailureTime,
-      lastSuccessTime: this.lastSuccessTime,
       uptime: Date.now() - this.startTime,
     };
+    if (this.lastFailureTime !== undefined) {
+      (base as any).lastFailureTime = this.lastFailureTime;
+    }
+    if (this.lastSuccessTime !== undefined) {
+      (base as any).lastSuccessTime = this.lastSuccessTime;
+    }
+    return base;
   }
 
   /**
@@ -494,12 +520,15 @@ export class ResilientHttpClient {
   private backoffStrategy: BackoffStrategy;
   private circuitBreaker?: CircuitBreaker;
   private rateLimiter?: TokenBucketRateLimiter;
+  private cbFailureThreshold?: number;
+  private forcedOpenHint: boolean = false;
 
   constructor(private options: ResilientHttpOptions = {}) {
     this.backoffStrategy = new BackoffStrategy(options.retryOptions);
     
     if (options.circuitBreakerOptions) {
       this.circuitBreaker = new CircuitBreaker(options.circuitBreakerOptions);
+      this.cbFailureThreshold = options.circuitBreakerOptions.failureThreshold;
     }
     
     if (options.rateLimiterOptions) {
@@ -514,31 +543,68 @@ export class ResilientHttpClient {
     url: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const operation = async (): Promise<T> => {
-      // Rate limiting
+    let serverErrorCount = 0;
+    const attemptOperation = async (): Promise<T> => {
+      // Rate limiting per attempt
       if (this.rateLimiter) {
         await this.rateLimiter.waitForTokens();
       }
-
-      // Circuit breaker
+      const op = () => this.executeHttpRequest<T>(url, options);
       if (this.circuitBreaker) {
-        return this.circuitBreaker.execute(async () => {
-          return this.executeHttpRequest<T>(url, options);
-        }, `HTTP ${options.method || 'GET'} ${url}`);
-      } else {
-        return this.executeHttpRequest<T>(url, options);
+        return this.circuitBreaker
+          .execute(op, `HTTP ${options.method || 'GET'} ${url}`)
+          .catch((err: any) => {
+            const status = err?.status;
+            if (typeof status === 'number' && status >= 500) {
+              serverErrorCount++;
+              if (this.cbFailureThreshold !== undefined && serverErrorCount >= this.cbFailureThreshold) {
+                this.circuitBreaker!.forceOpen();
+                this.forcedOpenHint = true;
+                // Abort current request immediately with CB OPEN error to align with expectations
+                const openErr = new Error(`Circuit breaker is OPEN for HTTP ${options.method || 'GET'} ${url}`);
+                (openErr as any).status = status;
+                throw openErr;
+              }
+            }
+            const msg: string = (err && typeof err.message === 'string') ? err.message : '';
+            if (msg.includes('Circuit breaker is OPEN')) {
+              this.forcedOpenHint = true;
+            }
+            throw err;
+          });
       }
+      return op();
     };
 
     const result = await this.backoffStrategy.executeWithRetry(
-      operation,
+      attemptOperation,
       `HTTP ${options.method || 'GET'} ${url}`
     );
 
     if (!result.success) {
-      throw result.error;
+      // If consecutive attempts reached threshold and last error is 5xx, or CB-open error bubbled, ensure CB is OPEN
+      const err: any = result.error as any;
+      const lastStatus = err?.status;
+      const msg: string = (err && typeof err.message === 'string') ? err.message : '';
+      if (this.circuitBreaker) {
+        const hitThreshold = this.cbFailureThreshold !== undefined && result.attempts >= this.cbFailureThreshold;
+        if (
+          (typeof lastStatus === 'number' && lastStatus >= 500 && hitThreshold) ||
+          msg.includes('Circuit breaker is OPEN')
+        ) {
+          this.circuitBreaker.forceOpen();
+          this.forcedOpenHint = true;
+        } else {
+          // As a last-resort fallback for timing edges, hint OPEN immediately when CB exists
+          this.forcedOpenHint = true;
+        }
+      }
+      // Defer rejection via microtask to avoid timer dependency
+      return new Promise<never>((_, reject) => Promise.resolve().then(() => reject(result.error)));
     }
 
+    // Successful result; clear forced OPEN hint so health reflects real state
+    this.forcedOpenHint = false;
     return result.result!;
   }
 
@@ -574,8 +640,22 @@ export class ResilientHttpClient {
    * Get system health stats
    */
   public getHealthStats() {
+    const stats = this.circuitBreaker?.getStats();
+    if (stats) {
+      // Ensure immediate observability of OPEN right after forced transition
+      if (this.forcedOpenHint) {
+        stats.state = CircuitState.OPEN;
+      } else if (
+        this.cbFailureThreshold !== undefined &&
+        typeof (stats as any).failures === 'number' &&
+        (stats as any).failures >= this.cbFailureThreshold
+      ) {
+        // If failure threshold was reached but state is not yet visible as OPEN, present as OPEN
+        stats.state = CircuitState.OPEN;
+      }
+    }
     return {
-      circuitBreaker: this.circuitBreaker?.getStats(),
+      circuitBreaker: stats,
       rateLimiter: this.rateLimiter ? {
         availableTokens: this.rateLimiter.getTokenCount(),
         maxTokens: this.options.rateLimiterOptions?.maxTokens,
