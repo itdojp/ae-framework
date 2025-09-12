@@ -538,7 +538,7 @@ export class ResilientHttpClient {
   ): Promise<T> {
     // If circuit is already OPEN, fail fast to match expectations that next request fails immediately
     if (this.circuitBreaker && this.circuitBreaker.getStats().state === CircuitState.OPEN) {
-      return new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`Circuit breaker is OPEN for HTTP ${options.method || 'GET'} ${url}`)), 0));
+      return new Promise<never>((_, reject) => Promise.resolve().then(() => reject(new Error(`Circuit breaker is OPEN for HTTP ${options.method || 'GET'} ${url}`))));
     }
     const attemptOperation = async (): Promise<T> => {
       // Rate limiting per attempt
@@ -558,9 +558,9 @@ export class ResilientHttpClient {
     );
 
     if (!result.success) {
-      // Defer rejection slightly to avoid unhandled rejection warnings in environments
-      // where callers attach handlers after creating the promise.
-      return new Promise<never>((_, reject) => setTimeout(() => reject(result.error), 0));
+      // Defer rejection via microtask to avoid unhandled rejection warnings
+      // while not depending on timers in test environments.
+      return new Promise<never>((_, reject) => Promise.resolve().then(() => reject(result.error)));
     }
 
     return result.result!;
