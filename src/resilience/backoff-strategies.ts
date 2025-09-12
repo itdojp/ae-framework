@@ -565,6 +565,10 @@ export class ResilientHttpClient {
               if (this.cbFailureThreshold !== undefined && serverErrorCount >= this.cbFailureThreshold) {
                 this.circuitBreaker!.forceOpen();
                 this.forcedOpenHint = true;
+                // Abort current request immediately with CB OPEN error to align with expectations
+                const openErr = new Error(`Circuit breaker is OPEN for HTTP ${options.method || 'GET'} ${url}`);
+                (openErr as any).status = status;
+                throw openErr;
               }
             }
             const msg: string = (err && typeof err.message === 'string') ? err.message : '';
