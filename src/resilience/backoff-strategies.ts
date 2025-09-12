@@ -573,15 +573,18 @@ export class ResilientHttpClient {
     );
 
     if (!result.success) {
-      // If consecutive attempts reached threshold and last error is 5xx, ensure CB is OPEN
-      const lastStatus = (result.error as any)?.status;
-      if (
-        this.circuitBreaker &&
-        this.cbFailureThreshold !== undefined &&
-        typeof lastStatus === 'number' && lastStatus >= 500 &&
-        result.attempts >= this.cbFailureThreshold
-      ) {
-        this.circuitBreaker.forceOpen();
+      // If consecutive attempts reached threshold and last error is 5xx, or CB-open error bubbled, ensure CB is OPEN
+      const err: any = result.error as any;
+      const lastStatus = err?.status;
+      const msg: string = (err && typeof err.message === 'string') ? err.message : '';
+      if (this.circuitBreaker) {
+        const hitThreshold = this.cbFailureThreshold !== undefined && result.attempts >= this.cbFailureThreshold;
+        if (
+          (typeof lastStatus === 'number' && lastStatus >= 500 && hitThreshold) ||
+          msg.includes('Circuit breaker is OPEN')
+        ) {
+          this.circuitBreaker.forceOpen();
+        }
       }
       // Defer rejection via microtask to avoid timer dependency
       return new Promise<never>((_, reject) => Promise.resolve().then(() => reject(result.error)));
