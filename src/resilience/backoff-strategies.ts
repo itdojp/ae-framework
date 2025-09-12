@@ -536,6 +536,10 @@ export class ResilientHttpClient {
     url: string,
     options: RequestInit = {}
   ): Promise<T> {
+    // If circuit is already OPEN, fail fast to match expectations that next request fails immediately
+    if (this.circuitBreaker && this.circuitBreaker.getStats().state === CircuitState.OPEN) {
+      return new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`Circuit breaker is OPEN for HTTP ${options.method || 'GET'} ${url}`)), 0));
+    }
     const attemptOperation = async (): Promise<T> => {
       // Rate limiting per attempt
       if (this.rateLimiter) {
