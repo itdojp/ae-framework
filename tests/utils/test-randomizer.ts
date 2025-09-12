@@ -171,6 +171,13 @@ class TestRandomizer {
 
       // Guard against null/undefined entries only (preserve all declared tests)
       testOrder = testOrder.filter((t): t is TestCase => !!t);
+
+      // Fallback: if IDs appear missing after shuffle/guards, restore original order for this iteration
+      const expectedLen = suite.cases.length;
+      const presentIds = testOrder.map(t => t?.id).filter((id): id is string => typeof id === 'string');
+      if (presentIds.length !== expectedLen) {
+        testOrder = [...suite.cases];
+      }
       console.log(`   Iteration ${iteration + 1}/${this.config.iterations} - Order: ${testOrder.map(t => t.id).join(',')}`);
 
       const executions: TestExecution[] = [];
