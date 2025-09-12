@@ -137,9 +137,17 @@ export class AdaptiveTimeout {
 
       const timeoutWrapper = new TimeoutWrapper(twOptions);
 
-      const result = await timeoutWrapper.execute(operation, operationName);
+      // Capture end time at operation resolution to avoid drift from extra timer advances
+      let endAt = 0;
+      const timedOperation = async () => {
+        const r = await operation();
+        endAt = Date.now();
+        return r;
+      };
+
+      const result = await timeoutWrapper.execute(timedOperation, operationName);
       
-      const executionTime = Date.now() - startTime;
+      const executionTime = (endAt || Date.now()) - startTime;
       this.recordSuccess(executionTime);
       
       return result;
@@ -174,8 +182,20 @@ export class AdaptiveTimeout {
    * Adapt timeout based on recent performance
    */
   private adaptTimeout(success: boolean): void {
+    // If a timeout occurred, adapt immediately even without history
+    if (!success) {
+      this.currentTimeoutMs = Math.min(
+        Math.max(
+          Math.floor(this.currentTimeoutMs * (1 + this.options.adaptationFactor)),
+          this.options.minTimeoutMs
+        ),
+        this.options.maxTimeoutMs
+      );
+      return;
+    }
+
     if (this.executionTimes.length < 5) {
-      // Not enough data for adaptation
+      // Not enough data for adaptation on success
       return;
     }
 
