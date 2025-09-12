@@ -169,8 +169,8 @@ class TestRandomizer {
         testOrder = this.shuffleArray(testOrder, iterationSeed);
       }
 
-      // Guard against any malformed test entries
-      testOrder = testOrder.filter((t): t is TestCase => !!t && typeof t.id === 'string' && typeof t.fn === 'function');
+      // Guard against null/undefined entries only (preserve all declared tests)
+      testOrder = testOrder.filter((t): t is TestCase => !!t);
       console.log(`   Iteration ${iteration + 1}/${this.config.iterations} - Order: ${testOrder.map(t => t.id).join(',')}`);
 
       const executions: TestExecution[] = [];
@@ -303,8 +303,8 @@ class TestRandomizer {
     
     lines.push('# Test Randomization Report');
     lines.push('');
-    lines.push(`**Seed:** ${report.seed}`);
-    lines.push(`**Total Runs:** ${report.totalRuns}`);
+    lines.push(`Seed: ${report.seed}`);
+    lines.push(`Total Runs: ${report.totalRuns}`);
     lines.push(`**Generated:** ${new Date().toISOString()}`);
     lines.push('');
 
