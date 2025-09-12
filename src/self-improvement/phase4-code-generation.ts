@@ -6,7 +6,8 @@
  * and TDD guidance from Phase 3.
  */
 
-import { CodeGenerationAgent, CodeGenerationRequest } from '../agents/code-generation-agent.js';
+import { CodeGenerationAgent } from '../agents/code-generation-agent.js';
+import type { CodeGenerationRequest } from '../agents/code-generation-agent.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -95,12 +96,12 @@ export class Phase4CodeGeneration {
         const match = line.match(/(.+?)\((\d+),(\d+)\): error (TS\d+): (.+)/);
         if (match) {
           return {
-            file: match[1],
-            line: parseInt(match[2]),
-            column: parseInt(match[3]),
-            code: match[4],
-            description: match[5],
-            severity: this.categorizeErrorSeverity(match[4], match[5])
+            file: String(match[1] || ''),
+            line: parseInt(match[2] || '0'),
+            column: parseInt(match[3] || '0'),
+            code: String(match[4] || ''),
+            description: String(match[5] || ''),
+            severity: this.categorizeErrorSeverity(String(match[4] || ''), String(match[5] || ''))
           };
         }
         return null;
@@ -126,9 +127,9 @@ export class Phase4CodeGeneration {
 
         // Generate fix using CodeGenerationAgent
         const generatedFix = await this.generateFixForError(
-          error.file,
-          error.code,
-          error.description,
+          String(error.file || ''),
+          String(error.code || ''),
+          String(error.description || ''),
           problemLine,
           context
         );
@@ -289,7 +290,7 @@ export class Phase4CodeGeneration {
     // Extract missing properties and suggest additions
     const missingProps = description.match(/following properties? from type '.*': (.+)/);
     if (missingProps) {
-      const props = missingProps[1].split(', ');
+      const props = (missingProps[1] ?? '').split(', ');
       const additions = props.map(prop => `  ${prop.trim()}: undefined, // TODO: Implement`).join('\n');
       return problemLine.replace(/{/, `{\n${additions}\n`);
     }

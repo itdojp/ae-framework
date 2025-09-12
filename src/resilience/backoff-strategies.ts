@@ -224,9 +224,9 @@ export class CircuitBreaker {
   private failures: number = 0;
   private successes: number = 0;
   private totalRequests: number = 0;
-  private lastFailureTime?: number;
-  private lastSuccessTime?: number;
-  private nextAttemptTime?: number;
+  private lastFailureTime: number | undefined;
+  private lastSuccessTime: number | undefined;
+  private nextAttemptTime: number | undefined;
   private startTime: number = Date.now();
 
   constructor(private options: CircuitBreakerOptions) {
@@ -320,15 +320,20 @@ export class CircuitBreaker {
    * Get circuit breaker statistics
    */
   public getStats(): CircuitBreakerStats {
-    return {
+    const base: CircuitBreakerStats = {
       state: this.state,
       failures: this.failures,
       successes: this.successes,
       totalRequests: this.totalRequests,
-      lastFailureTime: this.lastFailureTime,
-      lastSuccessTime: this.lastSuccessTime,
       uptime: Date.now() - this.startTime,
     };
+    if (this.lastFailureTime !== undefined) {
+      (base as any).lastFailureTime = this.lastFailureTime;
+    }
+    if (this.lastSuccessTime !== undefined) {
+      (base as any).lastSuccessTime = this.lastSuccessTime;
+    }
+    return base;
   }
 
   /**

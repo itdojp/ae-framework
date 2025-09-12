@@ -83,7 +83,7 @@ export class TimeoutWrapper {
  * Custom timeout error
  */
 export class TimeoutError extends Error {
-  public readonly name = 'TimeoutError';
+  public override readonly name = 'TimeoutError';
   
   constructor(
     message: string,
@@ -121,16 +121,22 @@ export class AdaptiveTimeout {
     const startTime = Date.now();
 
     try {
-      const timeoutWrapper = new TimeoutWrapper({
+      const twOptions: TimeoutOptions = {
         timeoutMs: this.currentTimeoutMs,
         onTimeout: (duration) => {
           this.timeouts++;
           this.options.onTimeout?.(duration);
           this.adaptTimeout(false);
         },
-        abortController: this.options.abortController,
-        timeoutMessage: this.options.timeoutMessage,
-      });
+      };
+      if (this.options.abortController !== undefined) {
+        twOptions.abortController = this.options.abortController;
+      }
+      if (this.options.timeoutMessage !== undefined) {
+        twOptions.timeoutMessage = this.options.timeoutMessage;
+      }
+
+      const timeoutWrapper = new TimeoutWrapper(twOptions);
 
       const result = await timeoutWrapper.execute(operation, operationName);
       
@@ -205,7 +211,7 @@ export class AdaptiveTimeout {
   private calculatePercentile(values: number[], percentile: number): number {
     const sorted = [...values].sort((a, b) => a - b);
     const index = Math.ceil(sorted.length * percentile) - 1;
-    return sorted[Math.max(0, index)];
+    return sorted[Math.max(0, index)] ?? sorted[0] ?? 0;
   }
 
   /**
