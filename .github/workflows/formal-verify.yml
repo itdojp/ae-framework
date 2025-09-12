@@ -1,0 +1,45 @@
+name: Formal Verify
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [ main, develop ]
+
+jobs:
+  verify-conformance:
+    name: verify:conformance (stub)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Stub verify:conformance
+        run: |
+          echo "verify:conformance stub — to be implemented"
+
+  verify-alloy:
+    name: verify:alloy (stub)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Stub verify:alloy
+        run: |
+          echo "verify:alloy stub — to be implemented"
+
+  verify-tla:
+    name: verify:tla (stub)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Stub verify:tla
+        run: |
+          echo "verify:tla stub — to be implemented (tlc/apalache)"
+
+  verify-smt:
+    name: verify:smt (stub)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Stub verify:smt
+        run: |
+          echo "verify:smt stub — to be implemented (z3/cvc5)"
+

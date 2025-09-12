@@ -1,0 +1,58 @@
+# AE Observability Trace Schema (v0.1)
+# Purpose: Define a minimal, stable schema for runtime traces that can be
+# used by verify:conformance to check implementation traces against formal specs.
+
+version: 0.1
+kind: TraceSchema
+metadata:
+  name: ae-trace
+  description: "Runtime trace schema for conformance checking"
+
+definitions:
+  Actor:
+    type: string
+    description: Logical actor/entity emitting the event (e.g., user, service)
+  EventName:
+    type: string
+    description: Short, stable event name (domain-significant)
+  Outcome:
+    type: string
+    enum: [success, failure, timeout, skipped]
+  State:
+    type: object
+    description: Domain-relevant state snapshot (subset allowed)
+
+properties:
+  traceId:
+    type: string
+    description: Correlation identifier for a single scenario or session
+  timestamp:
+    type: string
+    format: date-time
+  actor:
+    $ref: '#/definitions/Actor'
+  event:
+    $ref: '#/definitions/EventName'
+  action:
+    type: string
+    description: Operation or intent associated with the event
+  state:
+    $ref: '#/definitions/State'
+  outcome:
+    $ref: '#/definitions/Outcome'
+  details:
+    type: object
+    description: Optional additional data (opaque for conformance)
+
+required: [traceId, timestamp, actor, event]
+
+examples:
+  - traceId: "sess-2025-09-12T10:00:00Z-001"
+    timestamp: "2025-09-12T10:00:03Z"
+    actor: "checkout-service"
+    event: "OrderPlaced"
+    action: "CreateOrder"
+    state:
+      items: 3
+      total: 4200
+    outcome: success
