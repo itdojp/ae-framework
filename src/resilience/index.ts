@@ -11,6 +11,7 @@ import {
   ResilientHttpClient,
   CircuitState,
   type CircuitBreakerStats,
+  type ResilientHttpOptions,
 } from './backoff-strategies.js';
 import { BulkheadManager, type BulkheadStats } from './bulkhead-isolation.js';
 import { TimeoutManager, TimeoutWrapper, type TimeoutStats } from './timeout-patterns.js';
@@ -146,8 +147,8 @@ export class ResilienceSystem {
   private backoffStrategy?: BackoffStrategy;
   private circuitBreaker?: CircuitBreaker;
   private rateLimiter?: TokenBucketRateLimiter;
-  private bulkheadManager: BulkheadManager;
-  private timeoutManager: TimeoutManager;
+  private bulkheadManager!: BulkheadManager;
+  private timeoutManager!: TimeoutManager;
   private httpClient?: ResilientHttpClient;
 
   constructor(private config: ResilienceConfig = DEFAULT_RESILIENCE_CONFIG) {
@@ -171,12 +172,15 @@ export class ResilienceSystem {
 
     // Initialize circuit breaker
     if (this.config.circuitBreaker?.enabled) {
-      this.circuitBreaker = new CircuitBreaker({
+      const cbOptions: any = {
         failureThreshold: this.config.circuitBreaker.failureThreshold,
         recoveryTimeout: this.config.circuitBreaker.recoveryTimeout,
         monitoringPeriod: this.config.circuitBreaker.monitoringPeriod,
-        expectedErrors: this.config.circuitBreaker.expectedErrors,
-      });
+      };
+      if (this.config.circuitBreaker.expectedErrors !== undefined) {
+        cbOptions.expectedErrors = this.config.circuitBreaker.expectedErrors;
+      }
+      this.circuitBreaker = new CircuitBreaker(cbOptions);
     }
 
     // Initialize rate limiter
@@ -193,26 +197,35 @@ export class ResilienceSystem {
     this.timeoutManager = new TimeoutManager();
 
     // Initialize HTTP client with all patterns
-    this.httpClient = new ResilientHttpClient({
-      retryOptions: this.config.retry?.enabled ? {
+    const httpOpts: ResilientHttpOptions = {};
+    if (this.config.retry?.enabled) {
+      httpOpts.retryOptions = {
         maxRetries: this.config.retry.maxRetries,
         baseDelayMs: this.config.retry.baseDelayMs,
         maxDelayMs: this.config.retry.maxDelayMs,
         jitterType: this.config.retry.jitterType,
         multiplier: this.config.retry.multiplier,
-      } : undefined,
-      circuitBreakerOptions: this.config.circuitBreaker?.enabled ? {
+      };
+    }
+    if (this.config.circuitBreaker?.enabled) {
+      const opts: any = {
         failureThreshold: this.config.circuitBreaker.failureThreshold,
         recoveryTimeout: this.config.circuitBreaker.recoveryTimeout,
         monitoringPeriod: this.config.circuitBreaker.monitoringPeriod,
-        expectedErrors: this.config.circuitBreaker.expectedErrors,
-      } : undefined,
-      rateLimiterOptions: this.config.rateLimiter?.enabled ? {
+      };
+      if (this.config.circuitBreaker.expectedErrors !== undefined) {
+        opts.expectedErrors = this.config.circuitBreaker.expectedErrors;
+      }
+      httpOpts.circuitBreakerOptions = opts;
+    }
+    if (this.config.rateLimiter?.enabled) {
+      httpOpts.rateLimiterOptions = {
         tokensPerInterval: this.config.rateLimiter.tokensPerInterval,
         interval: this.config.rateLimiter.interval,
         maxTokens: this.config.rateLimiter.maxTokens,
-      } : undefined,
-    });
+      };
+    }
+    this.httpClient = new ResilientHttpClient(httpOpts);
   }
 
   /**
@@ -333,16 +346,26 @@ export class ResilienceSystem {
   } {
     const bulkheadSystem = this.bulkheadManager.getSystemHealth();
     
-    const components = {
-      circuitBreaker: this.circuitBreaker?.getStats(),
-      rateLimiter: this.rateLimiter ? {
-        availableTokens: this.rateLimiter.getTokenCount(),
-        maxTokens: this.config.rateLimiter?.maxTokens || 0,
-      } : undefined,
+    const components: {
+      circuitBreaker?: CircuitBreakerStats;
+      rateLimiter?: { availableTokens: number; maxTokens: number };
+      bulkheads: Record<string, BulkheadStats>;
+      timeouts: Record<string, TimeoutStats>;
+      http?: any;
+    } = {
       bulkheads: this.bulkheadManager.getAllStats(),
       timeouts: this.timeoutManager.getAllStats(),
-      http: this.httpClient?.getHealthStats(),
     };
+    const cbStats = this.circuitBreaker?.getStats();
+    if (cbStats) components.circuitBreaker = cbStats;
+    if (this.rateLimiter) {
+      components.rateLimiter = {
+        availableTokens: this.rateLimiter.getTokenCount(),
+        maxTokens: this.config.rateLimiter?.maxTokens || 0,
+      };
+    }
+    const httpStats = this.httpClient?.getHealthStats();
+    if (httpStats) components.http = httpStats;
 
     const overall = (
       (!components.circuitBreaker || components.circuitBreaker.state === CircuitState.CLOSED) &&

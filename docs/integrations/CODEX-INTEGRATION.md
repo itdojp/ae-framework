@@ -164,7 +164,6 @@ Flow suggestion:
 - Generates minimal tests under `tests/api/generated/` using:
   - OperationId in file/test names when `--use-operation-id` is provided
   - Minimal sample input from requestBody schema when `--with-input` is provided
-
 ### Codegen Options (OpenAPI)
 - `includeContracts`: injects runtime contracts (Zod + pre/post) into handlers
 - `useOperationIdForFilenames`: prefer `operationId` for route filenames (fallback: path+method)

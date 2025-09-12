@@ -341,16 +341,29 @@ class TestGenerationServer {
 
   private async handleGeneratePropertyTests(args: unknown) {
     const parsed: PropertyTestsArgs = parseOrThrow(PropertyTestsArgsSchema, args);
+    const normalizedInputs = parsed.inputs
+      .filter((i) => typeof i.name === 'string' && typeof i.type === 'string')
+      .map((i) => ({
+        name: i.name,
+        type: i.type,
+        ...(i.constraints !== undefined ? { constraints: i.constraints } : {}),
+      }));
+
+    const normalizedOutputs = {
+      type: parsed.outputs?.type ?? 'any',
+      ...((parsed as any).outputs?.constraints ? { constraints: (parsed as any).outputs.constraints as string[] } : {}),
+    } as { type: string; constraints?: string[] };
+
     const contract = {
       function: parsed.functionName,
-      inputs: parsed.inputs,
-      outputs: parsed.outputs,
+      inputs: normalizedInputs,
+      outputs: normalizedOutputs,
       invariants: parsed.invariants,
-    };
+    } as const;
 
     const testCases = await this.agent.generatePropertyTests(contract);
     
-    let response = `# Property-Based Tests for ${args.functionName}\n\n`;
+    let response = `# Property-Based Tests for ${parsed.functionName}\n\n`;
     response += `Generated ${testCases.length} property tests:\n\n`;
     
     for (const testCase of testCases) {
@@ -398,8 +411,8 @@ class TestGenerationServer {
   private async handlePlanIntegrationTests(args: unknown) {
     const parsed: PlanIntegrationArgs = parseOrThrow(PlanIntegrationArgsSchema, args);
     const architecture = {
-      services: parsed.services,
-      dataFlow: parsed.dataFlow,
+      services: parsed.services.map((s: any) => typeof s === 'string' ? { name: s, dependencies: [] } : { name: s.name, dependencies: s.dependencies ?? [] }),
+      dataFlow: parsed.dataFlow.map((d: any) => ({ from: d.from, to: d.to, data: d.data })),
     };
 
     const plan = await this.agent.planIntegrationTests(architecture);
@@ -434,7 +447,14 @@ class TestGenerationServer {
 
   private async handleGenerateSecurityTests(args: unknown) {
     const parsed: SecurityTestsArgs = parseOrThrow(SecurityTestsArgsSchema, args);
-    const testCases = await this.agent.generateSecurityTests(parsed.endpoint);
+    const endpoint = {
+      path: parsed.endpoint.path,
+      method: parsed.endpoint.method,
+      authentication: (parsed as any).endpoint?.authentication ?? false,
+      inputs: (parsed as any).endpoint?.inputs ?? [],
+      authorization: (parsed as any).endpoint?.authorization ?? undefined,
+    };
+    const testCases = await this.agent.generateSecurityTests(endpoint);
     
     let response = `# Security Tests for ${parsed.endpoint.method} ${parsed.endpoint.path}\n\n`;
     response += `Generated ${testCases.length} security tests based on OWASP guidelines:\n\n`;
@@ -454,7 +474,13 @@ class TestGenerationServer {
 
   private async handleDesignPerformanceTests(args: unknown) {
     const parsed: DesignPerformanceArgs = parseOrThrow(DesignPerformanceArgsSchema, args);
-    const testSuite = await this.agent.designPerformanceTests(parsed.sla);
+    const sla = {
+      responseTime: parsed.sla.responseTime ?? 200,
+      throughput: parsed.sla.throughput ?? 100,
+      concurrentUsers: parsed.sla.concurrentUsers ?? 10,
+      availability: parsed.sla.availability ?? 99.0,
+    };
+    const testSuite = await this.agent.designPerformanceTests(sla);
     
     let response = `# Performance Test Suite\n\n`;
     
