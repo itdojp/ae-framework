@@ -631,7 +631,7 @@ export class ResilientHttpClient {
    */
   public getHealthStats() {
     const stats = this.circuitBreaker?.getStats();
-    if (stats && this.forcedOpenHint && stats.state !== CircuitState.OPEN) {
+    if (stats && this.forcedOpenHint) {
       // Ensure immediate observability of OPEN right after forced transition
       stats.state = CircuitState.OPEN;
     }
