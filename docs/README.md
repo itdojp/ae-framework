@@ -59,6 +59,16 @@ Claude CodeやMCPとの統合
 - [ARCHITECTURE.md](./architecture/ARCHITECTURE.md) - システムアーキテクチャ
 - [NEW_FEATURES.md](./architecture/NEW_FEATURES.md) - 新機能仕様
 
+### ✅ [quality/](./quality/) - 品質ゲート・検証
+フォーマル検証や品質基準
+
+- **[formal-gates.md](./quality/formal-gates.md)** ⭐ フォーマル品質ゲート（v0.2 DoD）
+
+### 📐 [spec/](./spec/) - 仕様レジストリ
+仕様の配置と規約
+
+- **[registry.md](./spec/registry.md)** ⭐ 仕様配置レジストリ（TLA+/Alloy/Cedar/Trace）
+
 ### 🔬 [research/](./research/) - 調査・研究・サーベイ
 理論的背景や技術調査の成果物
 
