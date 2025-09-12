@@ -11,3 +11,4 @@ env:
   ADAPTER_ERROR_MAX: 0
   SUMMARY_MODE: ${{ steps.mode.outputs.mode }}
 ```
+- SUMMARY_LANG — en | ja (default en)

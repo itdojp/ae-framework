@@ -1,5 +1,17 @@
 # Contributing Guide
 
+## CI/PR Labels — Quick Reference
+| Label | Effect | Example |
+|---|---|---|
+| enforce-artifacts | Artifacts validation becomes blocking | enforce-artifacts |
+| enforce-testing | Property/Replay/BDD lint become blocking | enforce-testing |
+| enforce-coverage | Coverage threshold becomes blocking | enforce-coverage |
+| coverage:<pct> | Set coverage threshold (%) | coverage:85 |
+| trace:<id> | Focus property/replay runs | trace:inv-001 |
+| pr-summary:detailed | Show detailed PR summary | pr-summary:detailed |
+| lang:ja / lang:en | PR summary language | lang:ja |
+
+
 ## How to Contribute
 1. Fork the repository
 2. Create a feature branch
