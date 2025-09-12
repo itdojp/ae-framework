@@ -554,7 +554,9 @@ export class ResilientHttpClient {
     );
 
     if (!result.success) {
-      throw result.error;
+      // Defer rejection slightly to avoid unhandled rejection warnings in environments
+      // where callers attach handlers after creating the promise.
+      return new Promise<never>((_, reject) => setTimeout(() => reject(result.error), 0));
     }
 
     return result.result!;
