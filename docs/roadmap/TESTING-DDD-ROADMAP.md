@@ -66,3 +66,17 @@ English / 日本語 (summary)
 - BDD Lint: npm run bdd:lint
 - Formal GWT: node scripts/formal/format-counterexamples.mjs
 - Aggregate: npm run artifacts:aggregate
+
+## Progress (2025-09-11)
+- Docs+Scripts merged for #406–#411 (property harness, GWT formatter, aggregator, replay runner, BDD lint)
+- CI non-blocking workflows added: testing+ddd scripts, ajv validation, PR summary comment
+- Label-gated blocking introduced: enforce-artifacts/testing/coverage; coverage:<pct>
+- Main defaults: artifacts validation + BDD lint are blocking
+- PR summary: coverage, GWT, adapter counts, replay/formal fallback, Alerts, badges in README
+- Release: quality-artifacts.tgz bundles artifacts/formal/coverage/PR_SUMMARY/combined.json
+
+## Next
+- Evaluate making coverage gating default on main (target TBD)
+- Consider adapter-specific thresholds and gating (e.g., lighthouse scores)
+- Optional: PR summary card view (image/HTML) for dashboards
+- Begin core implementations guarded by labels/flags after TS typing completes
