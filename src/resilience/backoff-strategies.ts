@@ -179,6 +179,10 @@ export class BackoffStrategy {
    * Default retry condition - determines if error is retryable
    */
   private isRetryableError(error: Error): boolean {
+    // Circuit breaker explicitly OPEN should not be retried
+    if (typeof error.message === 'string' && error.message.includes('Circuit breaker is OPEN')) {
+      return false;
+    }
     // Network errors
     if (error.message.includes('ECONNRESET') ||
         error.message.includes('ENOTFOUND') ||
