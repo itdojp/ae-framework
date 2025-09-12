@@ -559,9 +559,13 @@ export class ResilientHttpClient {
             if (typeof status === 'number' && status >= 500) {
               serverErrorCount++;
               if (this.cbFailureThreshold !== undefined && serverErrorCount >= this.cbFailureThreshold) {
-          this.circuitBreaker!.forceOpen();
-          this.forcedOpenHint = true;
+                this.circuitBreaker!.forceOpen();
+                this.forcedOpenHint = true;
               }
+            }
+            const msg: string = (err && typeof err.message === 'string') ? err.message : '';
+            if (msg.includes('Circuit breaker is OPEN')) {
+              this.forcedOpenHint = true;
             }
             throw err;
           });
