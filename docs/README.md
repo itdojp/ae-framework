@@ -59,6 +59,11 @@ Claude CodeやMCPとの統合
 - [ARCHITECTURE.md](./architecture/ARCHITECTURE.md) - システムアーキテクチャ
 - [NEW_FEATURES.md](./architecture/NEW_FEATURES.md) - 新機能仕様
 
+### 🔬 [research/](./research/) - 調査・研究・サーベイ
+理論的背景や技術調査の成果物
+
+- [ae-framework-foundation-survey.md](./research/ae-framework-foundation-survey.md) - AE Framework 基礎調査（Formal Methods × AI）
+
 ### 💡 [proposals/](./proposals/) - 提案・実験的ドキュメント
 将来機能の提案や実験的な設計
 
