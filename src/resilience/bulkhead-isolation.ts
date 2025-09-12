@@ -68,7 +68,7 @@ export class Bulkhead {
       }
 
       // Add to queue with timeout
-      let queuedOp: QueuedOperation;
+      let queuedOp!: QueuedOperation;
       const timeoutId = setTimeout(() => {
         this.removeFromQueue(queuedOp);
         this.handleRejection('timeout', reject, `Operation timed out in queue for bulkhead ${this.options.name}`);
@@ -154,7 +154,7 @@ export class Bulkhead {
     message: string
   ): void {
     this.totalRejected++;
-    this.rejectionReasons[reason]++;
+    this.rejectionReasons[reason] = (this.rejectionReasons[reason] ?? 0) + 1;
     this.options.onReject?.(reason);
     reject(new Error(message));
   }

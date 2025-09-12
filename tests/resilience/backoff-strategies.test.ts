@@ -613,6 +613,16 @@ describe('Integration Tests', () => {
   });
 
   it('should handle complex failure scenarios', async () => {
+    // Suppress expected unhandled rejections for OPEN fast-fail, but fail on unexpected ones
+    const unexpected: any[] = [];
+    const onUnhandled = (reason: any) => {
+      const msg = String((reason && (reason as any).message) || reason || '');
+      if (!msg.includes('Circuit breaker is OPEN')) {
+        unexpected.push(reason);
+      }
+    };
+    process.on('unhandledRejection', onUnhandled);
+
     const httpClient = new ResilientHttpClient({
       retryOptions: {
         maxRetries: 3,
@@ -652,6 +662,8 @@ describe('Integration Tests', () => {
     } catch (error) {
       // Expected failure
     }
+    // Flush microtasks to ensure OPEN transition is observable
+    await Promise.resolve();
 
     // Verify circuit is open
     const stats = httpClient.getHealthStats();
@@ -667,5 +679,9 @@ describe('Integration Tests', () => {
 
     expect(result).toEqual({ data: 'recovered' });
     expect(httpClient.getHealthStats().circuitBreaker?.state).toBe(CircuitState.CLOSED);
+
+    // Ensure no unexpected unhandled rejections were raised during this scenario
+    process.off('unhandledRejection', onUnhandled);
+    expect(unexpected).toHaveLength(0);
   });
 });
