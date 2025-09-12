@@ -67,7 +67,12 @@ export class BackoffStrategy {
         lastError = error as Error;
         
         // Check if we should retry
-        if (attempt === this.options.maxRetries || !this.options.shouldRetry(lastError, attempt)) {
+        const msg = lastError.message || '';
+        const userWantsRetry = this.options.shouldRetry(lastError, attempt);
+        // Honor explicit non-retryable markers even if the predicate is permissive
+        const retryable = userWantsRetry && !msg.includes('non-retryable');
+
+        if (attempt === this.options.maxRetries || !retryable) {
           // Do not retry: return failure immediately with actual attempts executed
           return {
             success: false,
