@@ -593,8 +593,11 @@ export class ResilientHttpClient {
           (typeof lastStatus === 'number' && lastStatus >= 500 && hitThreshold) ||
           msg.includes('Circuit breaker is OPEN')
         ) {
-        this.circuitBreaker.forceOpen();
-        this.forcedOpenHint = true;
+          this.circuitBreaker.forceOpen();
+          this.forcedOpenHint = true;
+        } else {
+          // As a last-resort fallback for timing edges, hint OPEN immediately when CB exists
+          this.forcedOpenHint = true;
         }
       }
       // Defer rejection via microtask to avoid timer dependency
