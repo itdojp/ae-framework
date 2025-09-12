@@ -494,12 +494,14 @@ export class ResilientHttpClient {
   private backoffStrategy: BackoffStrategy;
   private circuitBreaker?: CircuitBreaker;
   private rateLimiter?: TokenBucketRateLimiter;
+  private cbFailureThreshold?: number;
 
   constructor(private options: ResilientHttpOptions = {}) {
     this.backoffStrategy = new BackoffStrategy(options.retryOptions);
     
     if (options.circuitBreakerOptions) {
       this.circuitBreaker = new CircuitBreaker(options.circuitBreakerOptions);
+      this.cbFailureThreshold = options.circuitBreakerOptions.failureThreshold;
     }
     
     if (options.rateLimiterOptions) {
@@ -514,29 +516,43 @@ export class ResilientHttpClient {
     url: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const operation = async (): Promise<T> => {
-      // Rate limiting
+    // Fast-fail if circuit is already OPEN
+    if (this.circuitBreaker && this.circuitBreaker.getStats().state === CircuitState.OPEN) {
+      return new Promise<never>((_, reject) => Promise.resolve().then(() => reject(new Error(`Circuit breaker is OPEN for HTTP ${options.method || 'GET'} ${url}`))));
+    }
+
+    let serverErrorCount = 0;
+    const attemptOperation = async (): Promise<T> => {
+      // Rate limiting per attempt
       if (this.rateLimiter) {
         await this.rateLimiter.waitForTokens();
       }
-
-      // Circuit breaker
+      const op = () => this.executeHttpRequest<T>(url, options);
       if (this.circuitBreaker) {
-        return this.circuitBreaker.execute(async () => {
-          return this.executeHttpRequest<T>(url, options);
-        }, `HTTP ${options.method || 'GET'} ${url}`);
-      } else {
-        return this.executeHttpRequest<T>(url, options);
+        return this.circuitBreaker
+          .execute(op, `HTTP ${options.method || 'GET'} ${url}`)
+          .catch((err: any) => {
+            const status = err?.status;
+            if (typeof status === 'number' && status >= 500) {
+              serverErrorCount++;
+              if (this.cbFailureThreshold !== undefined && serverErrorCount >= this.cbFailureThreshold) {
+                this.circuitBreaker!.forceOpen();
+              }
+            }
+            throw err;
+          });
       }
+      return op();
     };
 
     const result = await this.backoffStrategy.executeWithRetry(
-      operation,
+      attemptOperation,
       `HTTP ${options.method || 'GET'} ${url}`
     );
 
     if (!result.success) {
-      throw result.error;
+      // Defer rejection via microtask to avoid timer dependency
+      return new Promise<never>((_, reject) => Promise.resolve().then(() => reject(result.error)));
     }
 
     return result.result!;
