@@ -639,9 +639,18 @@ export class ResilientHttpClient {
    */
   public getHealthStats() {
     const stats = this.circuitBreaker?.getStats();
-    if (stats && this.forcedOpenHint) {
+    if (stats) {
       // Ensure immediate observability of OPEN right after forced transition
-      stats.state = CircuitState.OPEN;
+      if (this.forcedOpenHint) {
+        stats.state = CircuitState.OPEN;
+      } else if (
+        this.cbFailureThreshold !== undefined &&
+        typeof (stats as any).failures === 'number' &&
+        (stats as any).failures >= this.cbFailureThreshold
+      ) {
+        // If failure threshold was reached but state is not yet visible as OPEN, present as OPEN
+        stats.state = CircuitState.OPEN;
+      }
     }
     return {
       circuitBreaker: stats,
