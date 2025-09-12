@@ -68,7 +68,14 @@ export class BackoffStrategy {
         
         // Check if we should retry
         if (attempt === this.options.maxRetries || !this.options.shouldRetry(lastError, attempt)) {
-          break;
+          // Do not retry: return failure immediately with actual attempts executed
+          return {
+            success: false,
+            error: lastError,
+            attempts: attempt + 1,
+            totalTime: Date.now() - startTime,
+            delays,
+          };
         }
 
         // Calculate delay with jitter
@@ -83,6 +90,7 @@ export class BackoffStrategy {
       }
     }
 
+    // Should not reach here due to early return on non-retryable or maxRetries
     return {
       success: false,
       error: lastError!,
