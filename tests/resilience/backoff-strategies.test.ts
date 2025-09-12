@@ -652,6 +652,8 @@ describe('Integration Tests', () => {
     } catch (error) {
       // Expected failure
     }
+    // Flush microtasks to ensure OPEN transition is observable
+    await Promise.resolve();
 
     // Verify circuit is open
     const stats = httpClient.getHealthStats();
