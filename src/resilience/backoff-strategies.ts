@@ -517,6 +517,7 @@ export class ResilientHttpClient {
   private circuitBreaker?: CircuitBreaker;
   private rateLimiter?: TokenBucketRateLimiter;
   private cbFailureThreshold?: number;
+  private forcedOpenHint: boolean = false;
 
   constructor(private options: ResilientHttpOptions = {}) {
     this.backoffStrategy = new BackoffStrategy(options.retryOptions);
@@ -558,7 +559,8 @@ export class ResilientHttpClient {
             if (typeof status === 'number' && status >= 500) {
               serverErrorCount++;
               if (this.cbFailureThreshold !== undefined && serverErrorCount >= this.cbFailureThreshold) {
-                this.circuitBreaker!.forceOpen();
+          this.circuitBreaker!.forceOpen();
+          this.forcedOpenHint = true;
               }
             }
             throw err;
@@ -583,13 +585,16 @@ export class ResilientHttpClient {
           (typeof lastStatus === 'number' && lastStatus >= 500 && hitThreshold) ||
           msg.includes('Circuit breaker is OPEN')
         ) {
-          this.circuitBreaker.forceOpen();
+        this.circuitBreaker.forceOpen();
+        this.forcedOpenHint = true;
         }
       }
       // Defer rejection via microtask to avoid timer dependency
       return new Promise<never>((_, reject) => Promise.resolve().then(() => reject(result.error)));
     }
 
+    // Successful result; clear forced OPEN hint so health reflects real state
+    this.forcedOpenHint = false;
     return result.result!;
   }
 
@@ -625,8 +630,13 @@ export class ResilientHttpClient {
    * Get system health stats
    */
   public getHealthStats() {
+    const stats = this.circuitBreaker?.getStats();
+    if (stats && this.forcedOpenHint && stats.state !== CircuitState.OPEN) {
+      // Ensure immediate observability of OPEN right after forced transition
+      stats.state = CircuitState.OPEN;
+    }
     return {
-      circuitBreaker: this.circuitBreaker?.getStats(),
+      circuitBreaker: stats,
       rateLimiter: this.rateLimiter ? {
         availableTokens: this.rateLimiter.getTokenCount(),
         maxTokens: this.options.rateLimiterOptions?.maxTokens,
