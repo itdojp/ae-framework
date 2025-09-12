@@ -16,16 +16,18 @@ jobs:
             const pr = context.payload.pull_request;
             if (!pr) return;
             const toAdd = new Set();
-            // trace:<id> in title
+            // trace:<id>
             const m = (pr.title||'').match(/trace:([A-Za-z0-9_.:-]+)/);
             if (m) toAdd.add(`trace:${m[1]}`);
-            // detailed mode marker
+            // detailed
             if ((pr.title||'').includes('[detailed]') || (pr.body||'').includes('[detailed]')) toAdd.add('pr-summary:detailed');
-            // enforce-coverage marker
+            // coverage
             if ((pr.title||'').includes('[enforce-coverage]') || (pr.body||'').includes('[enforce-coverage]')) toAdd.add('enforce-coverage');
-            // coverage threshold [cov=85]
             const m2 = (pr.title||'').match(/\[cov=(\d{2,3})\]/) || (pr.body||'').match(/\[cov=(\d{2,3})\]/);
             if (m2) toAdd.add(`coverage:${m2[1]}`);
+            // language
+            const m3 = (pr.title||'').match(/\[lang=(ja|en)\]/i) || (pr.body||'').match(/\[lang=(ja|en)\]/i);
+            if (m3) toAdd.add(`lang:${m3[1].toLowerCase()}`);
             if (toAdd.size) {
               await github.rest.issues.addLabels({ owner, repo, issue_number: number, labels: Array.from(toAdd) });
             }

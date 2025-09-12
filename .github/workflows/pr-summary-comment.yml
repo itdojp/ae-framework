@@ -9,6 +9,15 @@ jobs:
   summarize:
     runs-on: ubuntu-latest
       - name: Determine summary mode
+      - name: Determine summary mode
+      - name: Determine summary language
+        id: lang
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = (context.payload.pull_request?.labels || []).map(l=>l.name);
+            const ja = labels.includes("lang:ja");
+            core.setOutput("lang", ja ? "ja" : "en");
         id: mode
         uses: actions/github-script@v7
         with:
@@ -25,6 +34,10 @@ jobs:
         run: |
           if npm run -s | grep -q "artifacts:aggregate"; then npm run artifacts:aggregate || true; fi
       - name: Generate Markdown summary
+      - name: Generate Markdown summary
+        env:
+          SUMMARY_MODE: ${{ steps.mode.outputs.mode }}
+          SUMMARY_LANG: ${{ steps.lang.outputs.lang }}
         env:
           SUMMARY_MODE: ${{ steps.mode.outputs.mode }}
         run: |
