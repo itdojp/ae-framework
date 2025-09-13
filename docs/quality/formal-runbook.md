@@ -127,3 +127,8 @@ Artifacts（Formal Reports）
 - `hermetic-reports/formal/alloy-summary.json`: Alloy ランナーの簡易要約（file/status/output）
 - `hermetic-reports/formal/smt-summary.json`: SMT ランナーの簡易要約（solver/file/status/output）
 - `hermetic-reports/conformance/summary.json`: Conformance 要約（events/schemaErrors/invariantViolations/violationRate/first/byType）
+
+Artifacts のクイック確認（jq）
+- 集約のpresence: `jq '.present' hermetic-reports/formal/summary.json`
+- Conformance byType: `jq '.conformance.byType' hermetic-reports/formal/summary.json`
+- 最初の不変違反: `jq '.conformance.firstInvariantViolation' hermetic-reports/formal/summary.json`
