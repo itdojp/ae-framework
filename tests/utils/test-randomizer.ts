@@ -169,7 +169,8 @@ class TestRandomizer {
         testOrder = this.shuffleArray(testOrder, iterationSeed);
       }
 
-      console.log(`   Iteration ${iteration + 1}/${this.config.iterations} - Order: ${testOrder.map(t => t.id).join(',')}`);
+      const orderIds = testOrder.filter(Boolean).map(t => (t as TestCase).id).join(',');
+      console.log(`   Iteration ${iteration + 1}/${this.config.iterations} - Order: ${orderIds}`);
 
       const executions: TestExecution[] = [];
       const preTestState = this.captureGlobalState();
@@ -183,6 +184,10 @@ class TestRandomizer {
       // Execute tests in order
       for (let i = 0; i < testOrder.length; i++) {
         const testCase = testOrder[i];
+        if (!testCase) {
+          // 不正な要素が混入している場合はスキップして安全に継続
+          continue;
+        }
         const startTime = Date.now();
         let result: 'pass' | 'fail' | 'skip' = 'pass';
         let error: string | undefined;
@@ -243,7 +248,7 @@ class TestRandomizer {
       }
 
       report.configurations.push({
-        order: testOrder.map(t => t.id),
+        order: testOrder.filter(Boolean).map(t => (t as TestCase).id),
         results: executions,
         sideEffectsDetected
       });
@@ -299,6 +304,10 @@ class TestRandomizer {
     lines.push(`**Seed:** ${report.seed}`);
     lines.push(`**Total Runs:** ${report.totalRuns}`);
     lines.push(`**Generated:** ${new Date().toISOString()}`);
+    lines.push('');
+    // 後方互換用のプレーン表記（既存のアサーション互換）
+    lines.push(`Seed: ${report.seed}`);
+    lines.push(`Total Runs: ${report.totalRuns}`);
     lines.push('');
 
     // Stability Analysis

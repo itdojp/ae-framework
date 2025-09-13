@@ -1,0 +1,21 @@
+### 進捗アップデート（Phase A / 型厳格化）
+
+- PR #494 を main へマージ済み: https://github.com/itdojp/ae-framework/pull/494
+  - NodeNext/ESM + `verbatimModuleSyntax` + `exactOptionalPropertyTypes` + `noUncheckedIndexedAccess` で `pnpm types:check` をクリーンに通過
+  - 代表的な変更: type-only import、環境変数/インデックスのブラケットアクセス、optional-safe（conditional spread）、MCP/テレメトリ/コンテナ/品質ゲートの型修正 など
+
+- CI 運用改善（本PRにあわせて導入）
+  - Verify Lite（types:check / lint / build）の新設・必須化
+  - 重い検査（drift/hermetic/security/e2e/perf 等）はラベルでオプトイン（`run-*`） or main/schedule に寄せる方針
+  - ドキュメント: `docs/ci-policy.md` を追加
+
+- Issue #477 のスコープ対応状況
+  - Scope 2: Phase A（Types cleanup）→ 完了（本PRで達成）
+  - Scope 1: Resilience Stabilization → 別ブランチ/PRで進行（必要であればフォローアップで明確化）
+  - Scope 3/4（B/C）: テスト安定化・スイート確認は引き続き小PRで継続
+
+- 次アクション（提案）
+  - Phase B（Utils/tests の安定化）に着手（quality/flake はラベルで回しつつ失敗箇所の改善）
+  - Phase C（Full suite 確認）で coverage gate/警告の精査。必要なら必須チェックへ再追加
+
+補足: CI 保護ルールは Verify Lite を必須チェックに変更済み。必要に応じて以前の構成へ戻せます。

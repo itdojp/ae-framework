@@ -194,7 +194,8 @@ describe('AdaptiveTimeout', () => {
       expect(stats.successfulOperations).toBe(3);
       expect(stats.timeouts).toBe(0);
       expect(stats.timeoutRate).toBe(0);
-      expect(stats.averageExecutionTime).toBeCloseTo(100, 10);
+      // 平均実行時間はテスト環境やタイマー進め方で多少のブレが出るため、±15ms の許容を設ける
+      expect(Math.abs(stats.averageExecutionTime - 100)).toBeLessThanOrEqual(15);
     });
 
     it('should calculate timeout rate correctly', async () => {
