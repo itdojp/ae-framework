@@ -106,3 +106,17 @@ PRサマリの表示例
 ```
 • Formal summary: [WARN] Conformance: schemaErrors=0, invariantViolations=3, rate=0.300, first=allocated_le_onhand@2, firstSchemaPath=/state/onHand, byType(onhand_min=1, allocated_le_onhand=2); [OK] SMT: ran; [INFO] Alloy: tool_not_available; [INFO] TLA: tool_not_available (tlc)
 ```
+
+Formal Verify の実行（target=all）
+- ラベル実行（PR上）
+  1. 対象PRに `run-formal` ラベルを付与
+  2. CIが起動し、Formal Verify が label-gated で実行（非ブロッキング）
+  3. 結果は: コンソール要約（logs）、`formal-reports` アーティファクト、PRサマリの Formal 行に反映
+- 手動実行（Actions > Formal Verify）
+  1. Actions タブで `Formal Verify` を選択し `Run workflow`
+  2. inputs（任意）
+     - `target=all`（または個別: conformance|alloy|tla|smt）
+     - `engine`（tla: tlc|apalache）
+     - `solver`（smt: z3|cvc5）
+     - `alloyJar`/`tlaToolsJar`（ツールJarパス／環境によって指定）
+  3. 結果は: コンソール要約（logs）、`formal-reports` アーティファクトに集約
