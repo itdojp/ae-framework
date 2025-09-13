@@ -32,6 +32,8 @@ jobs:
           node-version: '20'
       - name: Run verify:conformance stub
         run: node scripts/formal/verify-conformance.mjs
+      - name: Validate trace schema (sample)
+        run: node scripts/formal/trace-validate.mjs
 
   verify-alloy:
     name: verify:alloy (stub)

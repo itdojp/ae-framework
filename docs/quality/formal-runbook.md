@@ -28,6 +28,7 @@ Samples
 Tools
 - ローカル確認: `pnpm run tools:formal:check`（インストール済みツールを一覧）
 - セットアップ手順: [formal-tools-setup.md](./formal-tools-setup.md)
+- トレース検証（軽量）: `pnpm run trace:validate`（サンプルイベントのスキーマ整合を確認）
 
 Roadmap Fit (Issue #493)
 - Non‑blocking, label‑gated CI first
