@@ -184,6 +184,14 @@ jobs:
                 lines.push(`• Tests: PBT files=${pbtCount || 0}, BDD features=${bddCount || 0}`);
               }
             } catch {}
+            // Formal specs counts (TLA/Alloy)
+            try {
+              const { execSync } = require('child_process');
+              let tlaCount = 0, alsCount = 0;
+              try { tlaCount = parseInt(execSync("bash -lc 'ls spec/tla/*.tla 2>/dev/null | wc -l'", {stdio:['ignore','pipe','ignore']}).toString().trim()) || 0; } catch {}
+              try { alsCount = parseInt(execSync("bash -lc 'ls spec/alloy/*.als 2>/dev/null | wc -l'", {stdio:['ignore','pipe','ignore']}).toString().trim()) || 0; } catch {}
+              lines.push(`• Formal specs: TLA=${tlaCount}, Alloy=${alsCount}`);
+            } catch {}
             if (lines.length === 0) {
               lines.push('No CodeX artifacts found to summarize.');
             }
