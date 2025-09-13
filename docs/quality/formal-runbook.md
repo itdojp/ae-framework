@@ -53,3 +53,7 @@ TLA+/Apalache/SMT コマンド例（ローカル）
 - SMT（単体動作確認）
   - `z3 --version` / `cvc5 --version`
   - 実運用では CLI から `verify:smt -- --solver=z3|cvc5` を経由
+  
+Alloy CLI（環境がある場合）
+- `pnpm run verify:alloy -- --file spec/alloy/Domain.als`
+- CLI が無い場合は `ALLOY_JAR=/path/to/alloy.jar` を設定し、`java -jar $ALLOY_JAR spec/alloy/Domain.als`
