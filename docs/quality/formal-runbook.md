@@ -9,7 +9,11 @@ CLI stubs (to be wired)
 - `pnpm run verify:alloy` — prints stub
 - `pnpm run verify:tla -- --engine=apalache|tlc` — prints stub
 - `pnpm run verify:smt -- --solver=z3|cvc5` — prints stub
- - `pnpm run verify:formal` — 上記4種の連続実行（ローカル確認用）
+- `pnpm run verify:formal` — 上記4種の連続実行（ローカル確認用）
+
+Conformance sample (quick demo)
+- `pnpm run conformance:sample` — サンプルのルール/設定/データ/コンテキストを生成
+- `pnpm run conformance:verify:sample` — 生成データで検証を実行（JSONレポート出力）
 
 Specs/Artifacts
 - TLA+: `spec/tla/` (README with skeleton)
