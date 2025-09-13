@@ -42,6 +42,7 @@ let output = '';
 
 if (!fs.existsSync(absFile)){
   status = 'file_not_found';
+  output = `TLA file not found: ${absFile}`;
 } else if (engine === 'apalache'){
   if (has('apalache-mc')){
     output = sh(`bash -lc 'apalache-mc check --inv=Invariant ${absFile.replace(/'/g, "'\\''")} 2>&1 || true'`);
