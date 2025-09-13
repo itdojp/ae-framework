@@ -194,7 +194,13 @@ export class CodeGenerationServer {
 
           case 'validate_code_against_tests': {
             const args: ValidateCodeAgainstTestsArgs = parseOrThrow(ValidateCodeAgainstTestsArgsSchema, request.params.arguments);
-            const results = await this.validateCodeAgainstTests(args.codeFiles, args.testFiles);
+            const codeFiles = (args.codeFiles || [])
+              .filter(f => typeof f.path === 'string' && typeof f.content === 'string')
+              .map(f => ({ path: f.path as string, content: f.content as string }));
+            const testFiles = (args.testFiles || [])
+              .filter(f => typeof f.path === 'string' && typeof f.content === 'string')
+              .map(f => ({ path: f.path as string, content: f.content as string }));
+            const results = await this.validateCodeAgainstTests(codeFiles, testFiles);
             return {
               content: [
                 {

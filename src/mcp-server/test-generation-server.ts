@@ -345,12 +345,19 @@ class TestGenerationServer {
     const parsed: PropertyTestsArgs = parseOrThrow(PropertyTestsArgsSchema, args);
     const contract = {
       function: parsed.functionName,
-      inputs: parsed.inputs,
-      outputs: parsed.outputs,
+      inputs: parsed.inputs.map((i) => ({
+        name: i.name,
+        type: i.type,
+        ...(i.constraints ? { constraints: i.constraints } : {}),
+      })),
+      outputs: {
+        type: parsed.outputs.type,
+        ...(parsed.outputs as any).constraints ? { constraints: (parsed.outputs as any).constraints as string[] } : {},
+      },
       invariants: parsed.invariants,
-    };
+    } as const;
 
-    const testCases = await this.agent.generatePropertyTests(contract);
+    const testCases = await this.agent.generatePropertyTests(contract as any);
 
     let response = `# Property-Based Tests for ${parsed.functionName}\n\n`;
     response += `Generated ${testCases.length} property tests:\n\n`;
