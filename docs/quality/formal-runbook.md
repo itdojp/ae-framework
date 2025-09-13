@@ -72,6 +72,7 @@ Roadmap Fit (Issue #493)
 - `schemaErrors`: スキーマ違反件数
 - `invariantViolations`: 不変違反件数（`violationRate` は events に対する比率）
 - `firstInvariantViolation`: 最初の違反（`type` と `index`）
+ - `byType(...)`: 不変タイプごとの件数（例: `onhand_min`, `allocated_le_onhand`）
 
 TLA+/Apalache/SMT コマンド例（ローカル）
 - TLA+ (TLC)
@@ -87,3 +88,7 @@ TLA+/Apalache/SMT コマンド例（ローカル）
 Alloy CLI（環境がある場合）
 - `pnpm run verify:alloy -- --file spec/alloy/Domain.als`
 - CLI が無い場合は `ALLOY_JAR=/path/to/alloy.jar` を設定し、`java -jar $ALLOY_JAR spec/alloy/Domain.als`
+
+Tips（出力・色・抑制）
+- コンソール要約は色分け表示。色を無効化するには `NO_COLOR=1` を指定（CI等）
+- 実行ログのサマリは `hermetic-reports/formal/summary.json` でも確認可能

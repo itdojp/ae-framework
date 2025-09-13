@@ -50,6 +50,7 @@ if (!file) {
   status = 'ran'; ran = true;
 } else {
   status = 'solver_not_available';
+  output = `Solver '${solver}' not found. See docs/quality/formal-tools-setup.md`;
 }
 
 const summary = {

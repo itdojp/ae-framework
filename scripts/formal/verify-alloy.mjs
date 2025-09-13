@@ -49,7 +49,7 @@ if (!fs.existsSync(absFile)){
   ran = true; status = 'ran';
 } else {
   status = 'tool_not_available';
-  output = 'Alloy CLI not found. Set ALLOY_JAR=/path/to/alloy.jar or install Alloy CLI.';
+  output = 'Alloy CLI not found. Set ALLOY_JAR=/path/to/alloy.jar or install Alloy CLI. See docs/quality/formal-tools-setup.md';
 }
 
 const summary = {
