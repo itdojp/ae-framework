@@ -71,6 +71,7 @@ const validate = ajv.compile({
 
 let schemaErrors = [];
 let invariantViolations = [];
+const byType = { onhand_min: 0, allocated_le_onhand: 0 };
 const disable = new Set((args.disable || '').split(',').map(s=>s.trim()).filter(Boolean));
 const onhandMin = Number.isFinite(Number(args.onhandMin)) ? Number(args.onhandMin) : 0;
 
@@ -87,20 +88,29 @@ for (let i = 0; i < events.length; i++) {
     const hasOnHand = typeof st.onHand === 'number';
     const hasAllocated = typeof st.allocated === 'number';
     if (!disable.has('onhand_min') && hasOnHand && st.onHand < onhandMin) {
-      invariantViolations.push({ index: i, invariant: `onHand >= ${onhandMin}`, actual: st.onHand });
+      invariantViolations.push({ index: i, type: 'onhand_min', invariant: `onHand >= ${onhandMin}`, actual: st.onHand });
+      byType.onhand_min++;
     }
     if (!disable.has('allocated_le_onhand') && hasOnHand && hasAllocated && st.allocated > st.onHand) {
-      invariantViolations.push({ index: i, invariant: 'allocated <= onHand', actual: { allocated: st.allocated, onHand: st.onHand } });
+      invariantViolations.push({ index: i, type: 'allocated_le_onhand', invariant: 'allocated <= onHand', actual: { allocated: st.allocated, onHand: st.onHand } });
+      byType.allocated_le_onhand++;
     }
   }
 }
 
+const totalEvents = events.length || 0;
+const invCount = invariantViolations.length;
+const violationRate = totalEvents > 0 ? +(invCount / totalEvents).toFixed(3) : 0;
 const summary = {
   input: path.relative(repoRoot, dataPath),
-  events: events.length,
+  events: totalEvents,
   schemaErrors: schemaErrors.length,
-  invariantViolations: invariantViolations.length,
+  invariantViolations: invCount,
+  violationRate,
   timestamp: new Date().toISOString(),
+  firstInvariantViolation: invariantViolations[0] || null,
+  firstSchemaError: schemaErrors[0] || null,
+  byType,
   details: { schemaErrors, invariantViolations, options: { disable: Array.from(disable), onhandMin } }
 };
 

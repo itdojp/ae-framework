@@ -192,7 +192,13 @@ jobs:
                 if (f.conformance) {
                   const ce = f.conformance.schemaErrors ?? 'n/a';
                   const iv = f.conformance.invariantViolations ?? 'n/a';
-                  parts.push(`Conformance: schemaErrors=${ce}, invariantViolations=${iv}`);
+                  const vr = (f.conformance.violationRate !== undefined) ? f.conformance.violationRate : 'n/a';
+                  let first = '';
+                  try {
+                    const fv = f.conformance.firstInvariantViolation;
+                    if (fv && (fv.index !== undefined) && fv.type) first = `, first=${fv.type}@${fv.index}`;
+                  } catch {}
+                  parts.push(`Conformance: schemaErrors=${ce}, invariantViolations=${iv}, rate=${vr}${first}`);
                 }
                 if (f.smt) parts.push(`SMT: ${f.smt.status}`);
                 if (f.alloy) parts.push(`Alloy: ${f.alloy.status}`);
