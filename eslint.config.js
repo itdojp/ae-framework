@@ -74,7 +74,6 @@ export default ts.config(
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-misused-promises': 'error',
     }
-  }
   },
   // T1 escalation (file-specific): enforce no-explicit-any in cleaned files
   {
@@ -91,7 +90,6 @@ export default ts.config(
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
     }
-  }
   },
   // T1 escalation (file-specific): enforce no-explicit-any in cleaned files
   {
