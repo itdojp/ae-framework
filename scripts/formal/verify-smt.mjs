@@ -42,6 +42,7 @@ if (!file) {
   status = 'no_file';
 } else if (!fs.existsSync(file)) {
   status = 'file_not_found';
+  output = `SMT-LIB file not found: ${file}`;
 } else if (solver === 'z3' && has('z3')) {
   output = sh(`bash -lc 'z3 -smt2 ${file.replace(/'/g, "'\\''")} 2>&1 || true'`);
   status = 'ran'; ran = true;

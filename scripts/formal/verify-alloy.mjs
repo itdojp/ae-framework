@@ -40,6 +40,7 @@ let output = '';
 
 if (!fs.existsSync(absFile)){
   status = 'file_not_found';
+  output = `Alloy file not found: ${absFile}`;
 } else if (has('alloy')) {
   output = sh(`bash -lc 'alloy ${absFile.replace(/'/g, "'\\''")} 2>&1 || true'`);
   ran = true; status = 'ran';

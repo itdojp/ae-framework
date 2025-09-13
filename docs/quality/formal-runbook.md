@@ -98,4 +98,5 @@ Alloy CLI（環境がある場合）
 Tips（出力・色・抑制）
 - コンソール要約は色分け表示。色を無効化するには `NO_COLOR=1` を指定（CI等）
 - 実行ログのサマリは `hermetic-reports/formal/summary.json` でも確認可能
- - PRサマリにも Formal summary を1行で表示（サマリが生成されている場合）
+- PRサマリにも Formal summary を1行で表示（サマリが生成されている場合）
+ - `file_not_found`: `--file` の指定パスを確認（SMT/TLA/Alloy）
