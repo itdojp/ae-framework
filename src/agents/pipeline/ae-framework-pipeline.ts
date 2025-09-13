@@ -3,7 +3,7 @@
  * Provides standardized pipeline execution for the 6-phase AE Framework workflow
  */
 
-import { 
+import type { 
   ProcessingContext, 
   PhaseResult, 
   PhaseType, 
@@ -120,9 +120,10 @@ export class AEFrameworkPipeline {
       }
 
       // Phase 2: Requirements Processing
+      const addReq = input.context?.glossary?.map(g => `${g.term}: ${g.definition}`).join('\n');
       const reqInput: RequirementsInput = {
         intentAnalysis: intentResult.data as IntentOutput,
-        additionalRequirements: input.context?.glossary?.map(g => `${g.term}: ${g.definition}`).join('\n')
+        ...(addReq ? { additionalRequirements: addReq } : {})
       };
 
       const reqResult = await this.executePhase('requirements', reqInput, {
@@ -334,7 +335,7 @@ export class AEFrameworkPipeline {
               message: error instanceof Error ? error.message : 'Unknown execution error',
               phase,
               severity: 'error',
-              stack: error instanceof Error ? error.stack : undefined
+              ...(error instanceof Error && error.stack ? { stack: error.stack } : {})
             }],
             phase
           };

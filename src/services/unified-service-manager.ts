@@ -130,7 +130,7 @@ export class UnifiedServiceManager {
         action: 'start',
         timestamp: new Date(),
         duration: Date.now() - startTime,
-        dependenciesAffected: dependenciesStarted.length > 0 ? dependenciesStarted : undefined
+        ...(dependenciesStarted.length > 0 ? { dependenciesAffected: dependenciesStarted } : {})
       };
 
     } catch (error) {

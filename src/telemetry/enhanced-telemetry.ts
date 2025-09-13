@@ -37,14 +37,14 @@ const DEFAULT_CONFIG: TelemetryConfig = {
   serviceName: 'ae-framework',
   serviceVersion: '1.0.0',
   serviceNamespace: 'ai-agent-framework',
-  environment: process.env.NODE_ENV || 'development',
-  samplingRatio: parseFloat(process.env.OTEL_TRACES_SAMPLER_ARG || '0.1'),
-  enableMetrics: process.env.OTEL_METRICS_ENABLED !== 'false',
-  enableTracing: process.env.OTEL_TRACES_ENABLED !== 'false',
-  enableLogging: process.env.OTEL_LOGS_ENABLED !== 'false',
-  otlpEndpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
-  otlpMetricsEndpoint: process.env.OTEL_EXPORTER_OTLP_METRICS_ENDPOINT,
-  otlpTracesEndpoint: process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT,
+  environment: process.env['NODE_ENV'] || 'development',
+  samplingRatio: parseFloat(process.env['OTEL_TRACES_SAMPLER_ARG'] || '0.1'),
+  enableMetrics: process.env['OTEL_METRICS_ENABLED'] !== 'false',
+  enableTracing: process.env['OTEL_TRACES_ENABLED'] !== 'false',
+  enableLogging: process.env['OTEL_LOGS_ENABLED'] !== 'false',
+  ...(process.env['OTEL_EXPORTER_OTLP_ENDPOINT'] ? { otlpEndpoint: process.env['OTEL_EXPORTER_OTLP_ENDPOINT']! } : {}),
+  ...(process.env['OTEL_EXPORTER_OTLP_METRICS_ENDPOINT'] ? { otlpMetricsEndpoint: process.env['OTEL_EXPORTER_OTLP_METRICS_ENDPOINT']! } : {}),
+  ...(process.env['OTEL_EXPORTER_OTLP_TRACES_ENDPOINT'] ? { otlpTracesEndpoint: process.env['OTEL_EXPORTER_OTLP_TRACES_ENDPOINT']! } : {}),
 };
 
 // Standardized attribute names for consistency
@@ -99,10 +99,9 @@ export class EnhancedTelemetry {
     if (!this.config.enableMetrics) return;
 
     // Create meter provider with OTLP exporter
-    const metricExporter = this.config.otlpMetricsEndpoint || this.config.otlpEndpoint
-      ? new OTLPMetricExporter({
-          url: this.config.otlpMetricsEndpoint || this.config.otlpEndpoint,
-        })
+    const metricsUrl = this.config.otlpMetricsEndpoint ?? this.config.otlpEndpoint;
+    const metricExporter = metricsUrl
+      ? new OTLPMetricExporter({ url: metricsUrl })
       : undefined;
 
     this.meterProvider = new MeterProvider({
@@ -156,39 +155,39 @@ export class EnhancedTelemetry {
 
     // Add observables with proper error handling
     this.meter.addBatchObservableCallback(
-      (observableResult: MinimalObservableResult) => {
+      (observableResult) => {
         try {
           const memUsage = process.memoryUsage();
-          observableResult.observe(this.systemMetrics.memoryUsage, memUsage.heapUsed, {
+          (observableResult as any).observe(this.systemMetrics.memoryUsage, memUsage.heapUsed, {
             [TELEMETRY_ATTRIBUTES.SERVICE_COMPONENT]: 'memory',
             type: 'heap_used',
           } as Attrs);
-          observableResult.observe(this.systemMetrics.memoryUsage, memUsage.heapTotal, {
+          (observableResult as any).observe(this.systemMetrics.memoryUsage, memUsage.heapTotal, {
             [TELEMETRY_ATTRIBUTES.SERVICE_COMPONENT]: 'memory',
             type: 'heap_total',
           } as Attrs);
-          observableResult.observe(this.systemMetrics.memoryUsage, memUsage.external, {
+          (observableResult as any).observe(this.systemMetrics.memoryUsage, memUsage.external, {
             [TELEMETRY_ATTRIBUTES.SERVICE_COMPONENT]: 'memory',
             type: 'external',
           } as Attrs);
 
           // Process uptime
-          observableResult.observe(this.systemMetrics.processUptime, process.uptime(), {
+          (observableResult as any).observe(this.systemMetrics.processUptime, process.uptime(), {
             [TELEMETRY_ATTRIBUTES.SERVICE_COMPONENT]: 'process',
           } as Attrs);
 
           // CPU load average (Unix-like systems)
           if (os.loadavg) {
             const load = os.loadavg();
-            observableResult.observe(this.systemMetrics.cpuUsage, load[0], {
+            (observableResult as any).observe(this.systemMetrics.cpuUsage, load[0] ?? 0, {
               [TELEMETRY_ATTRIBUTES.SERVICE_COMPONENT]: 'cpu',
               period: '1min',
             } as Attrs);
-            observableResult.observe(this.systemMetrics.cpuUsage, load[1], {
+            (observableResult as any).observe(this.systemMetrics.cpuUsage, load[1] ?? 0, {
               [TELEMETRY_ATTRIBUTES.SERVICE_COMPONENT]: 'cpu',
               period: '5min',
             } as Attrs);
-            observableResult.observe(this.systemMetrics.cpuUsage, load[2], {
+            (observableResult as any).observe(this.systemMetrics.cpuUsage, load[2] ?? 0, {
               [TELEMETRY_ATTRIBUTES.SERVICE_COMPONENT]: 'cpu',
               period: '15min',
             } as Attrs);
@@ -198,9 +197,9 @@ export class EnhancedTelemetry {
         }
       },
       [
-        this.systemMetrics.memoryUsage,
-        this.systemMetrics.cpuUsage,
-        this.systemMetrics.processUptime,
+        this.systemMetrics.memoryUsage!,
+        this.systemMetrics.cpuUsage!,
+        this.systemMetrics.processUptime!,
       ]
     );
   }
@@ -224,23 +223,24 @@ export class EnhancedTelemetry {
   public initialize(): void {
     try {
       // Configure trace exporter
-      const traceExporter = this.config.enableTracing && 
-        (this.config.otlpTracesEndpoint || this.config.otlpEndpoint)
-        ? new OTLPTraceExporter({
-            url: this.config.otlpTracesEndpoint || this.config.otlpEndpoint,
-          })
+      const tracesUrl = (this.config.otlpTracesEndpoint ?? this.config.otlpEndpoint);
+      const traceExporter = this.config.enableTracing && tracesUrl
+        ? new OTLPTraceExporter({ url: tracesUrl })
         : undefined;
 
-      // Create SDK with enhanced configuration
-      this.sdk = new NodeSDK({
+      // Create SDK with enhanced configuration (avoid passing undefined fields)
+      const sdkConfig: any = {
         resource: this.createResource(),
-        traceExporter,
         sampler: new TraceIdRatioBasedSampler(this.config.samplingRatio),
-      });
+      };
+      if (traceExporter) {
+        sdkConfig.traceExporter = traceExporter;
+      }
+      this.sdk = new NodeSDK(sdkConfig);
 
       this.sdk.start();
 
-      if (this.config.environment === 'production' || process.env.DEBUG_TELEMETRY) {
+      if (this.config.environment === 'production' || process.env['DEBUG_TELEMETRY']) {
         console.log('📊 Enhanced OpenTelemetry initialized');
         console.log(`   Service: ${this.config.serviceName} v${this.config.serviceVersion}`);
         console.log(`   Environment: ${this.config.environment}`);
@@ -360,7 +360,7 @@ export class EnhancedTelemetry {
 export const enhancedTelemetry = new EnhancedTelemetry();
 
 // Auto-initialize if not disabled and not in test environment
-if (typeof process !== 'undefined' && process.env.DISABLE_ENHANCED_TELEMETRY !== 'true' && process.env.NODE_ENV !== 'test') {
+if (typeof process !== 'undefined' && process.env['DISABLE_ENHANCED_TELEMETRY'] !== 'true' && process.env['NODE_ENV'] !== 'test') {
   enhancedTelemetry.initialize();
 
   // Graceful shutdown handling (only when auto-initialized and not in test)

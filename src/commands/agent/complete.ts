@@ -3,7 +3,7 @@ import { withRecorder } from '../../providers/recorder.js';
 
 export async function agentComplete(prompt: string, system?: string, flags?: { record?: boolean; replay?: boolean; dir?: string }) {
   // Enhanced flag interpretation
-  const mode = process.env.AE_RECORDER_MODE; // record|replay|off
+  const mode = process.env['AE_RECORDER_MODE']; // record|replay|off
   
   // Error if both --record and --replay are specified
   if (flags?.record && flags?.replay) {
@@ -49,7 +49,9 @@ export async function agentComplete(prompt: string, system?: string, flags?: { r
     
     console.log(`[ae][agent] Provider: ${llm.name}`);
     
-    const output = await llm.complete({ prompt, system });
+    const llmOpts: any = { prompt };
+    if (system) llmOpts.system = system;
+    const output = await llm.complete(llmOpts);
     
     // End execution log with character count
     console.log(`[ae][agent] Completed: ${output.length} characters`);

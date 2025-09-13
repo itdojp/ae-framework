@@ -5,7 +5,8 @@
  * enabling seamless TDD workflow integration and proactive assistance.
  */
 
-import { TDDAgent, TDDAgentConfig, TDDContext } from './tdd-agent.js';
+import { TDDAgent } from './tdd-agent.js';
+import type { TDDAgentConfig, TDDContext } from './tdd-agent.js';
 
 export interface TaskRequest {
   description: string;

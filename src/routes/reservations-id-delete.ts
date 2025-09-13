@@ -1,7 +1,7 @@
 // Route handler implementation for DELETE /reservations/{id}
 import { z } from 'zod'
-import { ReservationsIdDeleteInput, ReservationsIdDeleteOutput } from '../contracts/schemas'
-import { pre, post } from '../contracts/conditions'
+import { ReservationsIdDeleteInput, ReservationsIdDeleteOutput } from '../contracts/schemas.js'
+import { pre, post } from '../contracts/conditions.js'
 
 export async function handler(input: unknown): Promise<unknown> {
   try {

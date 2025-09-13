@@ -1,7 +1,8 @@
-import Fastify, { FastifyInstance } from "fastify";
+import Fastify from "fastify";
+import type { FastifyInstance } from "fastify";
 import { Reservation } from "../domain/contracts.js";
 import { securityHeadersPlugin, getSecurityConfiguration } from "./middleware/security-headers.js";
-import { runtimeGuard, CommonSchemas } from "../telemetry/runtime-guards.js";
+import { runtimeGuard, CommonSchemas, ViolationSeverity } from "../telemetry/runtime-guards.js";
 import { enhancedTelemetry, TELEMETRY_ATTRIBUTES } from "../telemetry/enhanced-telemetry.js";
 import { trace } from '@opentelemetry/api';
 import { registerHealthEndpoint } from '../health/health-endpoint.js';
@@ -18,7 +19,7 @@ export async function createServer(): Promise<FastifyInstance> {
   const tracer = trace.getTracer('ae-framework-api');
 
   // Register security headers middleware with development config for testing
-  const securityConfig = process.env.NODE_ENV === 'test' 
+  const securityConfig = process.env['NODE_ENV'] === 'test' 
     ? { enabled: true } // Use defaults with everything enabled for testing
     : getSecurityConfiguration();
   await app.register(securityHeadersPlugin, securityConfig);
@@ -155,7 +156,7 @@ export async function createServer(): Promise<FastifyInstance> {
         runtimeGuard.recordBusinessRuleViolation(
           'max_quantity_limit',
           `Quantity ${quantity} exceeds maximum allowed (100)`,
-          'medium' as const,
+          ViolationSeverity.MEDIUM,
           { orderId, itemId, quantity }
         );
         

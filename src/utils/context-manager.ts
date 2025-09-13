@@ -3,9 +3,11 @@
  * Manages context window and optimizes information flow to AI agents
  */
 
-import { TokenOptimizer, CompressionOptions, TokenStats } from './token-optimizer.js';
+import { TokenOptimizer } from './token-optimizer.js';
+import type { CompressionOptions, TokenStats } from './token-optimizer.js';
 import { SteeringLoader } from './steering-loader.js';
-import { PhaseStateManager, PhaseType } from './phase-state-manager.js';
+import { PhaseStateManager } from './phase-state-manager.js';
+import type { PhaseType } from './phase-state-manager.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 

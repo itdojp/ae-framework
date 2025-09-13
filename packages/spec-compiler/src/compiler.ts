@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { v4 as uuidv4 } from 'uuid';
-import { AEIR, CompileOptions, SpecLintReport, SpecLintIssue } from './types.js';
+import type { AEIR, CompileOptions, SpecLintReport, SpecLintIssue } from './types.js';
 import { StrictAEIRSchema, validateAEIR, createAEIRValidator } from './strict-schema.js';
 
 export class AESpecCompiler {
@@ -14,7 +14,7 @@ export class AESpecCompiler {
       const markdown = readFileSync(inputPath, 'utf-8');
       let ir = this.parseMarkdownToIR(markdown);
       // Lenient normalization: in relaxed mode, coerce certain fields for smoother iteration
-      if (process.env.AE_SPEC_RELAXED === '1') {
+      if (process.env['AE_SPEC_RELAXED'] === '1') {
         ir = this.applyLenientNormalizations(ir);
       }
       
@@ -75,24 +75,27 @@ export class AESpecCompiler {
   private parseMarkdownToIR(markdown: string): AEIR {
     const sections = this.extractSections(markdown);
     const timestamp = new Date().toISOString();
-    
-    return {
-      version: '1.0.0',
-      metadata: {
-        name: sections.title || 'Untitled Specification',
-        description: sections.description,
-        created: timestamp,
-        updated: timestamp,
-      },
-      glossary: this.parseGlossary(sections.glossary || ''),
-      domain: this.parseDomain(sections.domain || ''),
-      invariants: this.parseInvariants(sections.invariants || ''),
-      usecases: this.parseUsecases(sections.usecases || ''),
-      statemachines: this.parseStateMachines(sections.statemachines),
-      api: this.parseAPI(sections.api || ''),
-      ui: this.parseUI(sections.ui),
-      nfr: this.parseNFR(sections.nfr),
+    const metadata: AEIR['metadata'] = {
+      name: sections['title'] || 'Untitled Specification',
+      created: timestamp,
+      updated: timestamp,
     };
+    if (sections['description']) {
+      metadata.description = sections['description'];
+    }
+    const glossary = this.parseGlossary(sections['glossary'] || '');
+    const domain = this.parseDomain(sections['domain'] || '');
+    const invariants = this.parseInvariants(sections['invariants'] || '');
+    const usecases = this.parseUsecases(sections['usecases'] || '');
+    const api = this.parseAPI(sections['api'] || '');
+    const st = this.parseStateMachines(sections['statemachines']);
+    const ui = this.parseUI(sections['ui']);
+    const nfr = this.parseNFR(sections['nfr']);
+    const base = { version: '1.0.0', metadata, glossary, domain, invariants, usecases, api } as AEIR;
+    if (st) (base as any).statemachines = st;
+    if (ui) (base as any).ui = ui;
+    if (nfr) (base as any).nfr = nfr;
+    return base;
   }
 
   private extractSections(markdown: string): Record<string, string> {
@@ -106,7 +109,7 @@ export class AESpecCompiler {
         if (currentSection) {
           sections[currentSection] = currentContent.join('\n').trim();
         }
-        sections.title = line.substring(2).trim();
+        sections['title'] = line.substring(2).trim();
         currentSection = 'description';
         currentContent = [];
       } else if (line.startsWith('## ')) {
@@ -252,11 +255,12 @@ export class AESpecCompiler {
     for (const line of lines) {
       const match = line.match(/^[-*]\s*(GET|POST|PUT|PATCH|DELETE)\s+(.+?)(?:\s*-\s*(.+))?$/);
       if (match) {
-        apis.push({
-          method: match?.[1] as any || 'GET',
+        const base = {
+          method: (match?.[1] as any) || 'GET',
           path: match?.[2]?.trim() || '/api',
-          summary: match?.[3]?.trim(),
-        });
+        } as const;
+        const withSummary = match?.[3] ? { summary: match[3].trim() } : {};
+        apis.push({ ...base, ...withSummary });
       }
     }
     
@@ -369,19 +373,16 @@ export class AESpecCompiler {
     
     if (!result.success) {
       const readableErrors = validator.getReadableErrors((result as any).errors || []);
-      const relaxed = process.env.AE_SPEC_RELAXED === '1';
+      const relaxed = process.env['AE_SPEC_RELAXED'] === '1';
       readableErrors.forEach((error, index) => {
-        issues.push({
+        const item: SpecLintIssue = {
           id: `SCHEMA_${(index + 1).toString().padStart(3, '0')}`,
           severity: relaxed ? 'warn' : 'error',
           message: `Schema validation ${relaxed ? 'warning (relaxed mode)' : 'failed'} at ${error.path}: ${error.message}`,
-          location: { 
-            section: error.path.split('.')[0] || 'root',
-            line: undefined,
-            column: undefined
-          },
+          location: { section: error.path.split('.')[0] || 'root' },
           suggestion: relaxed ? 'Consider fixing to meet strict schema, or keep relaxed mode enabled' : 'Fix the schema validation error to ensure specification compliance'
-        });
+        };
+        issues.push(item);
       });
     }
   }

@@ -140,10 +140,7 @@ export class CodeGenerationAgent {
     includeAuth?: boolean;
     includeContracts?: boolean; // inject runtime contracts usage (opt-in)
     useOperationIdForFilenames?: boolean; // prefer operationId for route filenames
-<<<<<<< HEAD
-=======
     useOperationIdForTestNames?: boolean; // prefer operationId in test titles
->>>>>>> origin/main
   }): Promise<GeneratedCode> {
     const api = this.parseOpenAPI(spec);
     const files: CodeFile[] = [];
@@ -204,7 +201,9 @@ export class CodeGenerationAgent {
         if (!schema && rb) {
           const cts = Object.keys(rb);
           const appCt = cts.find((ct: string) => ct.startsWith('application/')) || cts[0];
-          schema = rb[appCt]?.schema || (appCt === 'text/plain' ? { type: 'string' } : undefined);
+          if (appCt) {
+            schema = rb[appCt]?.schema || (appCt === 'text/plain' ? { type: 'string' } : undefined);
+          }
         }
         sample = this.buildSampleLiteral(schema, ep?.components || {});
       }
@@ -850,7 +849,6 @@ start();
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '');
     const method = String(endpoint.method || 'get').toLowerCase();
-    const fileSafe = (options?.useOperationIdForFilenames && opIdSafe) ? opIdSafe.toLowerCase() : `${safeName}-${method}`;
     const toPascal = (s: string) => s
       .split('-')
       .filter(Boolean)
@@ -860,6 +858,7 @@ start();
     const opIdSafe = opIdRaw ? opIdRaw.replace(/[^a-zA-Z0-9]+/g, '-')
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '') : '';
+    const fileSafe = (options?.useOperationIdForFilenames && opIdSafe) ? opIdSafe.toLowerCase() : `${safeName}-${method}`;
     const contractBase = opIdSafe && opIdSafe.length > 0
       ? `${toPascal(opIdSafe)}`
       : `${toPascal(safeName)}${method.charAt(0).toUpperCase()}${method.slice(1)}`;
@@ -893,7 +892,10 @@ start();
         if (!schema && resp?.content) {
           const cts = Object.keys(resp.content);
           const appCt = cts.find(ct => ct.startsWith('application/')) || cts[0];
-          schema = /xml/i.test(appCt) ? { type:'string' } : (resp.content[appCt]?.schema || (appCt === 'text/plain' ? { type: 'string' } : undefined));
+          const isXml = appCt ? /xml/i.test(appCt) : false;
+          if (appCt) {
+            schema = isXml ? { type: 'string' } : (resp.content[appCt]?.schema || (appCt === 'text/plain' ? { type: 'string' } : undefined));
+          }
         }
         if (schema) chosenSchema = schema;
       }
@@ -910,7 +912,10 @@ start();
         if (method === 'post' && twos.includes(201)) defaultStatus = 201;
         else if (method === 'delete' && twos.includes(204)) defaultStatus = 204;
         else if (twos.includes(200)) defaultStatus = 200;
-        else if (twos.length > 0) defaultStatus = twos[0];
+        else if (twos.length > 0) {
+          const first = twos[0];
+          if (typeof first === 'number') defaultStatus = first;
+        }
       }
       content += `    return { status: ${defaultStatus}, data: output };\n`;
       content += `  } catch (e) {\n`;
@@ -919,7 +924,6 @@ start();
       const fivexx = respCodes2.map(Number).filter(n => n >= 500 && n < 600);
       const badReq = fourxx.includes(400) ? 400 : (fourxx.includes(422) ? 422 : (fourxx[0] ?? 400));
       const srvErr = fivexx.includes(500) ? 500 : (fivexx[0] ?? 500);
-<<<<<<< HEAD
       let badSchema = (responses as any)[String(badReq)]?.content?.['application/problem+json']?.schema
         || (responses as any)[String(badReq)]?.content?.['application/json']?.schema
         || null;
@@ -930,24 +934,19 @@ start();
         const c = (responses as any)[String(badReq)]?.content; if (c) {
           const cts = Object.keys(c);
           const appCt = cts.find((ct: string) => ct.startsWith('application/')) || cts[0];
-          badSchema = c[appCt]?.schema || (appCt==='text/plain'?{type:'string'}:null);
+          if (appCt) {
+            badSchema = c[appCt]?.schema || (appCt === 'text/plain' ? { type: 'string' } : null);
+          }
         }
       }
       if (!srvSchema) {
         const c = (responses as any)[String(srvErr)]?.content; if (c) {
           const cts = Object.keys(c);
           const appCt = cts.find((ct: string) => ct.startsWith('application/')) || cts[0];
-          srvSchema = c[appCt]?.schema || (appCt==='text/plain'?{type:'string'}:null);
+          if (appCt) {
+            srvSchema = c[appCt]?.schema || (appCt === 'text/plain' ? { type: 'string' } : null);
+          }
         }
-=======
-      let badSchema = (responses as any)[String(badReq)]?.content?.['application/json']?.schema || null;
-      let srvSchema = (responses as any)[String(srvErr)]?.content?.['application/json']?.schema || null;
-      if (!badSchema) {
-        const c = (responses as any)[String(badReq)]?.content; if (c) { const k = Object.keys(c)[0]; badSchema = c[k]?.schema || (k==='text/plain'?{type:'string'}:null); }
-      }
-      if (!srvSchema) {
-        const c = (responses as any)[String(srvErr)]?.content; if (c) { const k = Object.keys(c)[0]; srvSchema = c[k]?.schema || (k==='text/plain'?{type:'string'}:null); }
->>>>>>> origin/main
       }
       const badLit = this.buildSampleLiteral(badSchema, endpoint?.components || {});
       const srvLit = this.buildSampleLiteral(srvSchema, endpoint?.components || {});

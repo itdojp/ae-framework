@@ -7,7 +7,7 @@
  */
 
 import { FormalAgent, FormalAgentConfig } from './formal-agent.js';
-import { TaskRequest, TaskResponse, ProactiveGuidanceContext, ProactiveGuidanceResult } from './task-types.js';
+import type { TaskRequest, TaskResponse, ProactiveGuidanceContext, ProactiveGuidanceResult } from './task-types.js';
 
 export interface RequirementDocument {
   title: string;

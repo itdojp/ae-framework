@@ -7,7 +7,7 @@
  */
 
 import { FormalAgent, FormalAgentConfig } from './formal-agent.js';
-import { TaskRequest, TaskResponse } from './task-types.js';
+import type { TaskRequest, TaskResponse } from './task-types.js';
 
 export interface UserStory {
   id: string;

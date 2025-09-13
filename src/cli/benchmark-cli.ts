@@ -15,12 +15,11 @@ import {
   getConfigForCategory,
   getCIConfig 
 } from '../benchmark/req2run/config/default.js';
-import { 
+import type { 
   BenchmarkConfig, 
-  DifficultyLevel, 
-  BenchmarkCategory,
   BenchmarkResult 
 } from '../benchmark/req2run/types/index.js';
+import { DifficultyLevel, BenchmarkCategory } from '../benchmark/req2run/types/index.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -64,7 +63,7 @@ program
       
       if (options.dryRun) {
         console.log('\n🔍 Dry Run - Problems that would be executed:');
-        problemIds.forEach((id, index) => {
+        problemIds.forEach((id: string, index: number) => {
           const problem = config.problems.find(p => p.id === id);
           console.log(`  ${index + 1}. ${id} (${problem?.category}, ${problem?.difficulty})`);
         });

@@ -4,7 +4,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import { 
+import type { 
   ConformanceRule,
   ConformanceConfig,
   RuntimeContext,
@@ -197,7 +197,8 @@ export class ConformanceRuleEngine {
           memoryUsage: this.getMemoryUsage(),
           networkCalls: 0,
           dbQueries: 0
-        }
+        },
+        metadata: {}
       };
 
       // Cache result if enabled
@@ -218,6 +219,7 @@ export class ConformanceRuleEngine {
         timestamp: new Date().toISOString(),
         duration,
         context,
+        metadata: {},
         violation: {
           ruleId: rule.id,
           ruleName: rule.name,
@@ -283,7 +285,8 @@ export class ConformanceRuleEngine {
             inputData: input,
             stateSnapshot: conditionResult.state || {},
             metrics: conditionResult.metrics || {},
-            logs: conditionResult.logs || []
+            logs: conditionResult.logs || [],
+            traces: []
           },
           remediation: {
             suggested: this.generateRemediationSuggestions(rule, conditionResult),
@@ -469,7 +472,8 @@ export class ConformanceRuleEngine {
             traces: DEFAULT_TRACES
           }
             },
-            metrics: { executionTime: 0 }
+            metrics: { executionTime: 0, networkCalls: 0, dbQueries: 0 },
+            metadata: {}
           });
         }
       }

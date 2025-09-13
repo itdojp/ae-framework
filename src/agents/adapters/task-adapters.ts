@@ -8,7 +8,7 @@ import { UserStoriesTaskAdapter } from '../user-stories-task-adapter.js';
 import { ValidationTaskAdapter } from '../validation-task-adapter.js';
 import { DomainModelingTaskAdapter } from '../domain-modeling-task-adapter.js';
 
-import {
+import type {
   StandardAEAgent,
   ProcessingContext,
   PhaseResult,

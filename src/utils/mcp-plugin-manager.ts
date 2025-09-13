@@ -5,7 +5,7 @@
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { MCPPlugin, MCPServer } from '../services/mcp-server.js';
+import type { MCPPlugin, MCPServer } from '../services/mcp-server.js';
 
 export interface PluginManifest {
   name: string;
@@ -133,12 +133,12 @@ export class MCPPluginManager {
       const plugin: MCPPlugin = {
         name: manifest.name,
         version: manifest.version,
-        description: manifest.description,
         initialize: pluginModule.initialize,
-        terminate: pluginModule.terminate,
-        dependencies: manifest.mcpDependencies,
-        endpoints: pluginModule.endpoints,
-        middleware: pluginModule.middleware
+        ...(pluginModule.terminate ? { terminate: pluginModule.terminate } : {}),
+        ...(manifest.description ? { description: manifest.description } : {}),
+        ...(manifest.mcpDependencies ? { dependencies: manifest.mcpDependencies } : {}),
+        ...(pluginModule.endpoints ? { endpoints: pluginModule.endpoints } : {}),
+        ...(pluginModule.middleware ? { middleware: pluginModule.middleware } : {})
       };
 
       const registration: PluginRegistration = {

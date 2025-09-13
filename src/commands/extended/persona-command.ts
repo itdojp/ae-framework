@@ -3,9 +3,11 @@
  * Manages Smart Persona System for adaptive AI behavior
  */
 
-import { BaseExtendedCommand, ExtendedCommandResult } from './base-command.js';
+import { BaseExtendedCommand } from './base-command.js';
+import type { ExtendedCommandResult } from './base-command.js';
 import type { CommandContext } from '../slash-command-manager.js';
-import { PersonaManager, UserPreferences, PersonaProfile } from '../../utils/persona-manager.js';
+import { PersonaManager } from '../../utils/persona-manager.js';
+import type { UserPreferences, PersonaProfile } from '../../utils/persona-manager.js';
 
 interface PersonaCommandResult {
   action: 'view' | 'update' | 'export' | 'import' | 'reset';
@@ -30,7 +32,7 @@ export class PersonaCommand extends BaseExtendedCommand {
     this.personaManager = new PersonaManager(process.cwd());
   }
 
-  protected validateArgs(args: string[]): { isValid: boolean; message?: string } {
+  protected override validateArgs(args: string[]): { isValid: boolean; message?: string } {
     if (args.length === 0) {
       // Default to 'view' action
       return { isValid: true };
@@ -49,7 +51,7 @@ export class PersonaCommand extends BaseExtendedCommand {
     return { isValid: true };
   }
 
-  protected parseOptions(args: string[]): Record<string, any> {
+  protected override parseOptions(args: string[]): Record<string, any> {
     const baseOptions = super.parseOptions(args);
     const action = args[0] || 'view';
     
@@ -61,7 +63,7 @@ export class PersonaCommand extends BaseExtendedCommand {
     };
   }
 
-  protected async execute(
+  protected override async execute(
     args: string[], 
     options: any, 
     context: CommandContext
@@ -165,8 +167,8 @@ export class PersonaCommand extends BaseExtendedCommand {
     
     return {
       action: 'update',
-      profile: updatedProfile || undefined,
-      preferences: updatedProfile?.preferences,
+      ...(updatedProfile ? { profile: updatedProfile } : {}),
+      ...(updatedProfile?.preferences ? { preferences: updatedProfile.preferences } : {}),
       message: `Updated ${Object.keys(typedUpdates).length} preference(s): ${Object.keys(typedUpdates).join(', ')}`,
       data: { updatedKeys: Object.keys(typedUpdates) }
     };
@@ -212,7 +214,7 @@ export class PersonaCommand extends BaseExtendedCommand {
       
       return {
         action: 'import',
-        profile: importedProfile || undefined,
+        ...(importedProfile ? { profile: importedProfile } : {}),
         message: `Persona data imported from ${importPath}`,
         data: { importPath, profileName: importedProfile?.name }
       };
@@ -230,7 +232,7 @@ export class PersonaCommand extends BaseExtendedCommand {
     
     return {
       action: 'reset',
-      profile: newProfile || undefined,
+      ...(newProfile ? { profile: newProfile } : {}),
       message: 'Persona profile reset to default settings',
       data: { resetAt: new Date().toISOString() }
     };
@@ -318,11 +320,11 @@ export class PersonaCommand extends BaseExtendedCommand {
     ];
   }
 
-  protected generateValidationClaim(data: PersonaCommandResult): string {
+  protected override generateValidationClaim(data: PersonaCommandResult): string {
     return `Persona command execution for action '${data.action}' completed successfully`;
   }
 
-  protected generateSummary(data: PersonaCommandResult): string {
+  protected override generateSummary(data: PersonaCommandResult): string {
     return data.message;
   }
 }

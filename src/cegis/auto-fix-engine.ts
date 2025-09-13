@@ -3,7 +3,7 @@
  * Phase 2.1: Core engine for analyzing failures and applying automated fixes
  */
 
-import { 
+import type { 
   FailureArtifact, 
   FixStrategy, 
   FixResult, 
@@ -117,7 +117,7 @@ export class AutoFixEngine {
         skippedFixes,
         summary,
         recommendations,
-        reportPath,
+        ...(reportPath ? { reportPath } : {}),
         errors: [] // No errors if we reach this point
       };
       

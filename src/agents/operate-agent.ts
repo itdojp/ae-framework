@@ -211,7 +211,7 @@ export class OperateAgent {
   private costMetrics: CostMetrics = {};
 
   constructor(config: OperateAgentConfig) {
-    this.config = OperateAgentConfigSchema.parse(config);
+    this.config = OperateAgentConfigSchema.parse(config) as OperateAgentConfig;
     this.logger = pino({ name: 'operate-agent' });
   }
 
@@ -260,8 +260,9 @@ export class OperateAgent {
   async monitorHealth(): Promise<HealthStatus> {
     this.logger.debug('Checking system health');
     
+    const endpoints = this.config.monitoringConfig?.healthEndpoints ?? [];
     const healthChecks = await Promise.allSettled(
-      this.config.monitoringConfig.healthEndpoints.map(endpoint => this.checkEndpointHealth(endpoint))
+      endpoints.map(endpoint => this.checkEndpointHealth(endpoint))
     );
     
     const overallStatus = healthChecks.every(check => 
@@ -269,7 +270,7 @@ export class OperateAgent {
     ) ? 'healthy' : 'unhealthy';
     
     const details = healthChecks.map((check, index) => ({
-      endpoint: this.config.monitoringConfig.healthEndpoints[index] || `endpoint_${index}`,
+      endpoint: endpoints[index] || `endpoint_${index}`,
       status: check.status === 'fulfilled' ? check.value : { healthy: false, error: 'Check failed' },
     }));
     
@@ -336,7 +337,7 @@ export class OperateAgent {
           status: 'open',
           createdAt: startTime,
           updatedAt: startTime,
-          assignee: params.assignee,
+          ...(params.assignee ? { assignee: params.assignee } : {}),
         };
         this.incidentHistory.push(record);
       }
@@ -415,7 +416,7 @@ export class OperateAgent {
   async runChaosTest(params: ChaosTestParams): Promise<ChaosTestResult> {
     this.logger.info({ params }, 'Running chaos test');
     
-    if (!this.config.chaosConfig.enabled) {
+    if (!this.config.chaosConfig?.enabled) {
       throw new Error('Chaos engineering is disabled');
     }
     
@@ -427,7 +428,7 @@ export class OperateAgent {
       await this.performChaosPreChecks();
       
       // Execute chaos experiment
-      const experiment = this.config.chaosConfig.experiments.find(exp => exp.name === params.experiment);
+      const experiment = this.config.chaosConfig?.experiments?.find(exp => exp.name === params.experiment);
       if (!experiment) {
         throw new Error(`Chaos experiment '${params.experiment}' not found`);
       }
@@ -679,11 +680,17 @@ export class OperateAgent {
 
   private evaluateSloCompliance(metrics: any): SloStatus {
     // Implement SLO compliance evaluation
+    const targets = {
+      availability: this.config.sloConfig?.availability ?? 99.9,
+      latencyP95Ms: this.config.sloConfig?.latencyP95Ms ?? 200,
+      errorRatePercent: this.config.sloConfig?.errorRatePercent ?? 1,
+      throughputRps: this.config.sloConfig?.throughputRps ?? 100,
+    };
     return {
-      availability: { target: this.config.sloConfig.availability, actual: 99.9, compliant: true },
-      latency: { target: this.config.sloConfig.latencyP95Ms, actual: 100, compliant: true },
-      errorRate: { target: this.config.sloConfig.errorRatePercent, actual: 0.1, compliant: true },
-      throughput: { target: this.config.sloConfig.throughputRps, actual: 1000, compliant: true },
+      availability: { target: targets.availability, actual: 99.9, compliant: true },
+      latency: { target: targets.latencyP95Ms, actual: 100, compliant: true },
+      errorRate: { target: targets.errorRatePercent, actual: 0.1, compliant: true },
+      throughput: { target: targets.throughputRps, actual: 1000, compliant: true },
       timestamp: new Date(),
     };
   }

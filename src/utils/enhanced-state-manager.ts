@@ -110,7 +110,7 @@ export class EnhancedStateManager extends EventEmitter {
   private versionIndex = new Map<string, number>(); // logicalKey -> latest version
   private ttlIndex = new Map<string, number>(); // key -> expiry timestamp
   private activeTransactions = new Map<string, TransactionContext>();
-  private gcTimer?: NodeJS.Timeout;
+  private gcTimer: NodeJS.Timeout | undefined;
   private isInitialized = false;
 
   private readonly options: Required<StorageOptions>;
@@ -187,7 +187,7 @@ export class EnhancedStateManager extends EventEmitter {
         created: timestamp,
         accessed: timestamp,
         source: options?.source || 'unknown',
-        phase: options?.phase
+        ...(options?.phase ? { phase: options.phase } : {})
       }
     };
 
@@ -298,7 +298,7 @@ export class EnhancedStateManager extends EventEmitter {
       data: compressedData,
       compressed: true,
       tags: { type: 'snapshot', phase },
-      ttl: snapshotMetadata.ttl,
+      ...(snapshotMetadata.ttl !== undefined ? { ttl: snapshotMetadata.ttl } : {}),
       metadata: {
         size: Buffer.byteLength(compressedData as Buffer),
         created: timestamp,

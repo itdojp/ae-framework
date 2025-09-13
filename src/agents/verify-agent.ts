@@ -298,9 +298,9 @@ export class VerifyAgent {
         type: 'coverage',
         passed,
         details: coverage,
-        warnings: coverage.uncoveredFiles.length > 0 
-          ? [`${coverage.uncoveredFiles.length} files have no coverage`]
-          : undefined,
+        ...(coverage.uncoveredFiles.length > 0 
+          ? { warnings: [`${coverage.uncoveredFiles.length} files have no coverage`] }
+          : {}),
       };
     } catch (error) {
       return {
@@ -342,12 +342,12 @@ export class VerifyAgent {
         type: 'linting',
         passed: lintResults.errors === 0,
         details: lintResults,
-        errors: lintResults.errors > 0 
-          ? [`Found ${lintResults.errors} linting errors`]
-          : undefined,
-        warnings: lintResults.warnings > 0
-          ? [`Found ${lintResults.warnings} linting warnings`]
-          : undefined,
+        ...(lintResults.errors > 0 
+          ? { errors: [`Found ${lintResults.errors} linting errors`] }
+          : {}),
+        ...(lintResults.warnings > 0
+          ? { warnings: [`Found ${lintResults.warnings} linting warnings`] }
+          : {}),
       };
     } catch (error) {
       return {
@@ -377,9 +377,9 @@ export class VerifyAgent {
         type: 'typechecking',
         passed: typeErrors.length === 0,
         details: { errors: typeErrors },
-        errors: typeErrors.length > 0
-          ? [`Found ${typeErrors.length} type errors`]
-          : undefined,
+        ...(typeErrors.length > 0
+          ? { errors: [`Found ${typeErrors.length} type errors`] }
+          : {}),
       };
     } catch (error) {
       return {
@@ -424,12 +424,12 @@ export class VerifyAgent {
           high: high.length,
           issues: securityIssues,
         },
-        errors: critical.length > 0
-          ? [`Found ${critical.length} critical security issues`]
-          : undefined,
-        warnings: high.length > 0
-          ? [`Found ${high.length} high severity security issues`]
-          : undefined,
+        ...(critical.length > 0
+          ? { errors: [`Found ${critical.length} critical security issues`] }
+          : {}),
+        ...(high.length > 0
+          ? { warnings: [`Found ${high.length} high severity security issues`] }
+          : {}),
       };
     } catch (error) {
       return {
@@ -475,9 +475,7 @@ export class VerifyAgent {
         type: 'performance',
         passed,
         details: benchmarks,
-        warnings: !passed
-          ? ['Performance does not meet thresholds']
-          : undefined,
+        ...(!passed ? { warnings: ['Performance does not meet thresholds'] } : {}),
       };
     } catch (error) {
       return {
@@ -626,9 +624,9 @@ export class VerifyAgent {
         type: 'mutations',
         passed,
         details: mutationResults,
-        warnings: mutationResults.mutantsSurvived > 0
-          ? [`${mutationResults.mutantsSurvived} mutants survived`]
-          : undefined,
+        ...(mutationResults.mutantsSurvived > 0
+          ? { warnings: [`${mutationResults.mutantsSurvived} mutants survived`] }
+          : {}),
       };
     } catch (error) {
       return {
@@ -794,8 +792,8 @@ export class VerifyAgent {
           toolResults,
           summary: `Ran ${results.length} Rust verification tools with ${overallSuccess ? 'success' : 'failures'}`,
         },
-        errors: allErrors.length > 0 ? allErrors : undefined,
-        warnings: allWarnings.length > 0 ? allWarnings : undefined,
+        ...(allErrors.length > 0 ? { errors: allErrors } : {}),
+        ...(allWarnings.length > 0 ? { warnings: allWarnings } : {}),
       };
 
     } catch (error) {
@@ -859,7 +857,7 @@ export class VerifyAgent {
         language,
         tools,
         jobName: `verify-${Date.now()}`,
-        buildImages: request.containerConfig?.buildImages,
+        ...(request.containerConfig?.buildImages !== undefined ? { buildImages: request.containerConfig.buildImages } : {}),
         environment: {
           AE_VERIFICATION_CONTEXT: 'verify-agent',
           AE_STRICT_MODE: request.strictMode ? '1' : '0',
@@ -881,10 +879,10 @@ export class VerifyAgent {
           language,
           tools,
         },
-        errors: result.success ? undefined : [result.message],
-        warnings: result.success && result.data?.results?.summary?.warnings > 0 
-          ? [`${result.data.results.summary.warnings} warnings found`]
-          : undefined,
+        ...(!result.success ? { errors: [result.message] } : {}),
+        ...(result.success && result.data?.results?.summary?.warnings > 0 
+          ? { warnings: [`${result.data.results.summary.warnings} warnings found`] }
+          : {}),
       };
     } catch (error: any) {
       return {

@@ -2,12 +2,12 @@ import fc from 'fast-check';
 import { writeRepro } from '../../tests/_failures/repro-writer.js';
 
 export function aeAssert<T>(prop: fc.IProperty<T>, opts?: Partial<fc.Parameters<T>>) {
-  const seedEnv = process.env.AE_SEED ? Number(process.env.AE_SEED) : undefined;
+  const seedEnv = process.env['AE_SEED'] ? Number(process.env['AE_SEED']) : undefined;
   return fc.assert(prop, { seed: seedEnv ?? 12345, verbose: true, endOnFailure: true, ...opts });
 }
 
 export function aeAssertRepro<T>(name: string, prop: fc.IProperty<T>, opts?: Partial<fc.Parameters<T>>) {
-  const seed = process.env.AE_SEED ? Number(process.env.AE_SEED) : 12345;
+  const seed = process.env['AE_SEED'] ? Number(process.env['AE_SEED']) : 12345;
   try {
     fc.assert(prop, { seed, verbose: true, endOnFailure: true, ...opts });
   } catch (e: any) {

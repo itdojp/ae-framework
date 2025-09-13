@@ -3,12 +3,8 @@
  * Provides sensible defaults for benchmark execution
  */
 
-import { 
-  BenchmarkConfig, 
-  BenchmarkCategory, 
-  DifficultyLevel,
-  ReportFormat 
-} from '../types/index.js';
+import type { BenchmarkConfig } from '../types/index.js';
+import { BenchmarkCategory, DifficultyLevel, ReportFormat } from '../types/index.js';
 
 export const DEFAULT_BENCHMARK_CONFIG: BenchmarkConfig = {
   req2runRepository: 'https://github.com/itdojp/req2run-benchmark.git',

@@ -6,9 +6,10 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as ts from 'typescript';
-import { BaseExtendedCommand, ExtendedCommandResult } from './base-command.js';
+import { BaseExtendedCommand } from './base-command.js';
+import type { ExtendedCommandResult } from './base-command.js';
 import type { CommandContext } from '../slash-command-manager.js';
-import { 
+import type { 
   ImprovementResult, 
   AnalysisTarget, 
   ImprovementOptions,
@@ -28,7 +29,7 @@ export class UnifiedImproveCommand extends BaseExtendedCommand {
     });
   }
 
-  protected validateArgs(args: string[]): { isValid: boolean; message?: string } {
+  protected override validateArgs(args: string[]): { isValid: boolean; message?: string } {
     if (args.length === 0) {
       return {
         isValid: false,
@@ -38,19 +39,21 @@ export class UnifiedImproveCommand extends BaseExtendedCommand {
     return { isValid: true };
   }
 
-  protected parseOptions(args: string[]): ImprovementOptions {
+  protected override parseOptions(args: string[]): ImprovementOptions {
     const baseOptions = super.parseOptions(args);
     
+    const category = args.find(arg => arg.startsWith('--category='))?.split('=')[1];
+    const impact = args.find(arg => arg.startsWith('--impact='))?.split('=')[1] as any;
     return {
       ...baseOptions,
-      category: args.find(arg => arg.startsWith('--category='))?.split('=')[1],
-      impact: (args.find(arg => arg.startsWith('--impact='))?.split('=')[1] as any) || undefined,
+      ...(category ? { category } : {}),
+      ...(impact ? { impact } : {}),
       apply: args.includes('--apply'),
       interactive: args.includes('--interactive')
     };
   }
 
-  protected async execute(
+  protected override async execute(
     args: string[], 
     options: ImprovementOptions, 
     context: CommandContext
@@ -580,11 +583,11 @@ export class UnifiedImproveCommand extends BaseExtendedCommand {
     return summary;
   }
 
-  protected generateValidationClaim(data: ImprovementResult): string {
+  protected override generateValidationClaim(data: ImprovementResult): string {
     return `Code improvement analysis for ${data.target.path}: ${data.improvements.length} improvements identified with estimated ${data.estimatedImpact.toLowerCase()} impact`;
   }
 
-  protected generateSummary(data: ImprovementResult): string {
+  protected override generateSummary(data: ImprovementResult): string {
     return data.summary;
   }
 }

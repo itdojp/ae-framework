@@ -445,7 +445,7 @@ export class SequentialInferenceEngine extends EventEmitter {
     await new Promise(resolve => setTimeout(resolve, 50));
     return {
       validated: true,
-      constraints: step.input.constraints?.length || 0,
+      constraints: step.input['constraints']?.length || 0,
       passed: true
     };
   }

@@ -3,18 +3,17 @@
  * Orchestrates the execution of AE Framework against Req2Run benchmark problems
  */
 
-import { 
+import type { 
   RequirementSpec, 
   BenchmarkResult, 
   BenchmarkMetrics, 
   BenchmarkConfig, 
-  AEFrameworkPhase,
   PhaseExecution,
   ExecutionDetails,
   GeneratedArtifacts,
-  BenchmarkError, 
-  OutputType
+  BenchmarkError
 } from '../types/index.js';
+import { AEFrameworkPhase, OutputType, BenchmarkCategory, DifficultyLevel, TestType } from '../types/index.js';
 import os from 'node:os';
 import fs from 'fs/promises';
 import yaml from 'yaml';
@@ -61,7 +60,7 @@ export class BenchmarkRunner {
             description: spec.description,
             requirements: (Array.isArray(spec.requirements) ? spec.requirements : []).map((r) => ({
               id: (r as { id?: string }).id ?? 'req',
-              description: typeof r === 'string' ? r : (r as { description?: string }).description,
+              description: typeof r === 'string' ? r : String((r as { description?: string }).description ?? ''),
               priority: (typeof (r as { priority?: string }).priority === 'string' ? (r as { priority?: string }).priority! : 'must'),
             })),
             constraints: spec.constraints,
@@ -151,7 +150,7 @@ export class BenchmarkRunner {
         metrics,
         executionDetails,
         generatedArtifacts,
-        errors: errors.length > 0 ? errors : undefined
+        ...(errors.length > 0 ? { errors } : {})
       };
 
     } catch (error) {
@@ -159,7 +158,7 @@ export class BenchmarkRunner {
         phase: AEFrameworkPhase.INTENT_ANALYSIS, // Default phase
         type: 'runtime',
         message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
+        ...(error instanceof Error && error.stack ? { stack: error.stack } : {}),
         timestamp: new Date()
       };
       errors.push(benchmarkError);
@@ -260,7 +259,7 @@ export class BenchmarkRunner {
         phase,
         type: 'runtime',
         message: errorMessage,
-        stack: error instanceof Error ? error.stack : undefined,
+        ...(error instanceof Error && error.stack ? { stack: error.stack } : {}),
         timestamp: new Date()
       };
       errors.push(benchmarkError);
@@ -285,7 +284,7 @@ export class BenchmarkRunner {
    */
   private async loadProblemSpec(problemId: string): Promise<RequirementSpec> {
     try {
-      const repoDir = process.env.REQ2RUN_BENCHMARK_REPO || '/tmp/req2run-benchmark';
+      const repoDir = process.env['REQ2RUN_BENCHMARK_REPO'] || '/tmp/req2run-benchmark';
       
       // Check if repo exists
       try {
@@ -330,13 +329,21 @@ export class BenchmarkRunner {
         constraints?: { disallowed_packages?: string[] } & Record<string, unknown>;
       };
 
+      // Normalize enum-like fields and required strings with safe fallbacks
+      const normalizedCategory = (spec.category && Object.values(BenchmarkCategory).includes(spec.category as any))
+        ? (spec.category as BenchmarkCategory)
+        : BenchmarkCategory.WEB_API;
+      const normalizedDifficulty = (spec.difficulty && Object.values(DifficultyLevel).includes(spec.difficulty as any))
+        ? (spec.difficulty as DifficultyLevel)
+        : DifficultyLevel.INTERMEDIATE;
+
       // Convert to RequirementSpec format (requirements as string[])
       return {
-        id: spec.id,
-        title: spec.title,
-        description: spec.notes || `${spec.title} - ${spec.category} (${spec.difficulty})`,
-        category: spec.category || 'general',
-        difficulty: spec.difficulty || 'intermediate',
+        id: String(spec.id ?? problemId),
+        title: String(spec.title ?? problemId),
+        description: spec.notes ? String(spec.notes) : `${spec.title ?? problemId} - ${spec.category ?? 'web-api'} (${spec.difficulty ?? 'intermediate'})`,
+        category: normalizedCategory,
+        difficulty: normalizedDifficulty,
         requirements: Array.isArray(spec.requirements?.functional)
           ? (spec.requirements!.functional!
               .map((req) => (typeof req?.description === 'string' ? req.description.trim() : ''))
@@ -344,14 +351,14 @@ export class BenchmarkRunner {
           : [],
         constraints: {
           business: spec.constraints?.disallowed_packages || [],
-          performance: spec.requirements?.non_functional?.performance || {}
+          performance: spec.requirements?.non_functional?.['performance'] || {}
         },
         testCriteria: Array.isArray(spec.requirements?.functional)
           ? (spec.requirements!.functional!
               .map((req, idx) => ({
                 id: (req?.id ? String(req.id) : `test-${idx + 1}`),
                 description: `Test: ${req?.description ?? ''}`,
-                type: 'unit' as const,
+                type: TestType.UNIT,
                 weight: 1.0,
                 automated: true,
               })))
@@ -363,10 +370,10 @@ export class BenchmarkRunner {
           examples: []
         },
         metadata: {
-          created_by: spec.metadata?.author || 'req2run-benchmark',
-          created_at: spec.metadata?.created_date || new Date().toISOString(),
-          category: spec.category,
-          difficulty: spec.difficulty,
+          created_by: String(spec.metadata?.author || 'req2run-benchmark'),
+          created_at: String(spec.metadata?.created_date || new Date().toISOString()),
+          category: String(spec.category || normalizedCategory),
+          difficulty: String(spec.difficulty || normalizedDifficulty),
           estimated_time: spec.estimated_time_minutes || 30
         }
       };
@@ -606,7 +613,8 @@ export class BenchmarkRunner {
       };
 
       // Determine report directory from config, fallback to 'reports/benchmark'
-      const reportDir = this.config?.reporting?.destinations?.[0]?.config?.directory || 'reports/benchmark';
+      const rawDir = (this.config?.reporting?.destinations?.[0]?.config as any)?.['directory'];
+      const reportDir = (typeof rawDir === 'string' && rawDir.trim()) ? rawDir : 'reports/benchmark';
       await fs.mkdir(reportDir, { recursive: true });
 
       // Save JSON report

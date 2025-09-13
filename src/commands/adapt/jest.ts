@@ -57,19 +57,19 @@ function updatePackageJson(customThresholds?: { statements: number; branches: nu
     }
   } : DEFAULT_COVERAGE_THRESHOLD;
 
-  if (!packageJson.scripts.test) {
-    const seedCmd = process.env.AE_SEED ? `AE_SEED=${process.env.AE_SEED} ` : '';
+  if (!packageJson.scripts['test']) {
+    const seedCmd = process.env['AE_SEED'] ? `AE_SEED=${process.env['AE_SEED']} ` : '';
     const thresholdJson = shellEscapeForSingleQuotes(JSON.stringify(thresholdConfig));
-    packageJson.scripts.test = `${seedCmd}jest --coverage --coverageThreshold='${thresholdJson}'`;
+    packageJson.scripts['test'] = `${seedCmd}jest --coverage --coverageThreshold='${thresholdJson}'`;
     modified = true;
     console.log(chalk.green('✅ Added test script with coverage thresholds'));
-  } else if (!packageJson.scripts.test.includes('coverageThreshold')) {
+  } else if (!packageJson.scripts['test'].includes('coverageThreshold')) {
     // Update existing test script to include coverage threshold
-    const currentTest = packageJson.scripts.test;
+    const currentTest = packageJson.scripts['test'];
     const thresholdJson = shellEscapeForSingleQuotes(JSON.stringify(thresholdConfig));
     
     if (currentTest.includes('jest')) {
-      packageJson.scripts.test = `${currentTest} --coverage --coverageThreshold='${thresholdJson}'`;
+      packageJson.scripts['test'] = `${currentTest} --coverage --coverageThreshold='${thresholdJson}'`;
       modified = true;
       console.log(chalk.green('✅ Updated test script with coverage thresholds'));
     } else {

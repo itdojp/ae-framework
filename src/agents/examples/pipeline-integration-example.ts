@@ -3,7 +3,8 @@
  * Demonstrates how to use the standardized pipeline for benchmark integration
  */
 
-import { AEFrameworkPipeline, PipelineConfig } from '../pipeline/ae-framework-pipeline.js';
+import { AEFrameworkPipeline } from '../pipeline/ae-framework-pipeline.js';
+import type { PipelineConfig } from '../pipeline/ae-framework-pipeline.js';
 import { IntentAgentAdapter } from '../adapters/intent-agent-adapter.js';
 import { 
   RequirementsAgentAdapter, 
@@ -12,7 +13,7 @@ import {
   DomainModelingAgentAdapter 
 } from '../adapters/task-adapters.js';
 import { UIUXAgentAdapter } from '../adapters/ui-ux-agent-adapter.js';
-import { 
+import type { 
   IntentInput, 
   RequirementSource, 
   ProjectContext 

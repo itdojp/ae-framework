@@ -4,8 +4,10 @@
  * Provides OpenTelemetry integration for traces, metrics, and logs
  */
 
-import { trace, metrics, Tracer, Meter } from '@opentelemetry/api';
-import { logs, Logger } from '@opentelemetry/api-logs';
+import { trace, metrics } from '@opentelemetry/api';
+import type { Tracer, Meter } from '@opentelemetry/api';
+import { logs } from '@opentelemetry/api-logs';
+import type { Logger } from '@opentelemetry/api-logs';
 
 export enum PhaseType {
   INTENT_ANALYSIS = 'intent_analysis',

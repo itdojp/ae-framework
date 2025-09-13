@@ -1,4 +1,5 @@
-import { Item, ReservationEntity, InsufficientStockError } from './entities.js';
+import { InsufficientStockError } from './entities.js';
+import type { Item, ReservationEntity } from './entities.js';
 import { Reservation } from './contracts.js';
 
 export interface InventoryService {

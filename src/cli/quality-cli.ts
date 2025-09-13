@@ -19,7 +19,7 @@ export function createQualityCommand(): Command {
   quality
     .command('run')
     .description('Execute quality gates for current environment')
-    .option('-e, --env <environment>', 'Target environment', process.env.NODE_ENV || 'development')
+    .option('-e, --env <environment>', 'Target environment', process.env['NODE_ENV'] || 'development')
     .option('-g, --gates <gates>', 'Comma-separated list of specific gates to run')
     .option('--sequential', 'Run gates sequentially instead of in parallel')
     .option('--dry-run', 'Show what would be executed without running')
