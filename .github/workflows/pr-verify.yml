@@ -184,6 +184,22 @@ jobs:
                 lines.push(`• Tests: PBT files=${pbtCount || 0}, BDD features=${bddCount || 0}`);
               }
             } catch {}
+            // Formal aggregated summary (if present)
+            try {
+              if (fs.existsSync('hermetic-reports/formal/summary.json')) {
+                const f = JSON.parse(fs.readFileSync('hermetic-reports/formal/summary.json','utf8'));
+                const parts = [];
+                if (f.conformance) {
+                  const ce = f.conformance.schemaErrors ?? 'n/a';
+                  const iv = f.conformance.invariantViolations ?? 'n/a';
+                  parts.push(`Conformance: schemaErrors=${ce}, invariantViolations=${iv}`);
+                }
+                if (f.smt) parts.push(`SMT: ${f.smt.status}`);
+                if (f.alloy) parts.push(`Alloy: ${f.alloy.status}`);
+                if (f.tla) parts.push(`TLA: ${f.tla.status} (${f.tla.engine})`);
+                if (parts.length) lines.push('• Formal summary: ' + parts.join('; '));
+              }
+            } catch {}
             // Formal specs counts (TLA/Alloy)
             try {
               const { execSync } = require('child_process');
