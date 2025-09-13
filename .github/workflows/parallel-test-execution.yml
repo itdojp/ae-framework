@@ -23,6 +23,11 @@ jobs:
   test-matrix:
     name: Test Suite (${{ matrix.test-type }})
     runs-on: ubuntu-latest
+    if: |
+      github.event_name != 'pull_request' ||
+      matrix.test-type == 'unit' || matrix.test-type == 'integration' ||
+      contains(join(fromJSON(toJSON(github.event.pull_request.labels)).*.name, ','), 'run-quality') ||
+      (matrix.test-type == 'flake-detection' && contains(join(fromJSON(toJSON(github.event.pull_request.labels)).*.name, ','), 'run-flake'))
     continue-on-error: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking') }}
     timeout-minutes: 30
     

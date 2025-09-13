@@ -2,7 +2,9 @@ name: Fail-Fast Spec Validation
 
 on:
   pull_request:
-    # Run on all PRs - spec validation is critical
+    paths:
+      - 'spec/**'
+      - '.ae/**'
   push:
     branches: [main]
   workflow_call:
@@ -17,6 +19,10 @@ jobs:
     runs-on: ubuntu-latest
     name: 🚦 Fail-Fast Spec Validation
     timeout-minutes: 10  # Quick fail-fast timeout
+    if: |
+      github.event_name != 'pull_request' ||
+      contains(join(fromJSON(toJSON(github.event.pull_request.labels)).*.name, ','), 'run-spec') ||
+      hashFiles('spec/ae-spec.md') != ''
     
     steps:
       - name: Checkout code
