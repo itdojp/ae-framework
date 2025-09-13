@@ -30,6 +30,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Show formal tools availability (non-blocking)
+        run: node scripts/formal/tools-check.mjs || true
       - name: Run verify:conformance stub
         run: node scripts/formal/verify-conformance.mjs
       - name: Validate trace schema (sample)
