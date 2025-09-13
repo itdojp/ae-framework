@@ -200,8 +200,13 @@ jobs:
                     const fv = f.conformance.firstInvariantViolation;
                     if (fv && (fv.index !== undefined) && fv.type) first = `, first=${fv.type}@${fv.index}`;
                   } catch {}
+                  let firstSchema = '';
+                  try {
+                    const se = f.conformance.firstSchemaError;
+                    if (se && se.path) firstSchema = `, firstSchemaPath=${se.path}`;
+                  } catch {}
                   const ok = (iv === 0 && ce === 0);
-                  parts.push(`${ok ? tag(true) : tag(false)} Conformance: schemaErrors=${ce}, invariantViolations=${iv}, rate=${vr}${first}`);
+                  parts.push(`${ok ? tag(true) : tag(false)} Conformance: schemaErrors=${ce}, invariantViolations=${iv}, rate=${vr}${first}${firstSchema}`);
                 }
                 if (f.smt) {
                   const st = f.smt.status;
