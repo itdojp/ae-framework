@@ -5,11 +5,13 @@
  * for comprehensive TDD enforcement and guidance
  */
 
-import { TDDTaskAdapter, TaskRequest, TaskResponse } from '../agents/tdd-task-adapter.js';
+import { TDDTaskAdapter } from '../agents/tdd-task-adapter.js';
+import type { TaskRequest, TaskResponse } from '../agents/tdd-task-adapter.js';
 import { AEFrameworkCLI } from '../cli/index.js';
 import { ConfigLoader } from '../cli/config/ConfigLoader.js';
 import { MetricsCollector } from '../cli/metrics/MetricsCollector.js';
-import { AESpecCompiler, AEIR, CompileOptions } from '@ae-framework/spec-compiler';
+import { AESpecCompiler } from '@ae-framework/spec-compiler';
+import type { AEIR, CompileOptions } from '@ae-framework/spec-compiler';
 import { EnhancedStateManager } from '../utils/enhanced-state-manager.js';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -394,9 +396,10 @@ export class HybridTDDSystem {
     // Set up file system watchers for real-time TDD enforcement
     
     if (fs.existsSync('src')) {
-      fs.watch('src', { recursive: true }, (eventType: string, filename: string) => {
-        if (filename && filename.endsWith('.ts')) {
-          this.handleFileChange(path.join('src', filename), eventType);
+      fs.watch('src', { recursive: true }, (eventType: string, filename: string | Buffer | null) => {
+        const name = typeof filename === 'string' ? filename : filename ? filename.toString() : '';
+        if (name && name.endsWith('.ts')) {
+          this.handleFileChange(path.join('src', name), eventType);
         }
       });
     }

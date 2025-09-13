@@ -33,7 +33,7 @@ interface InternalStepResult {
   logs: string[];
   metrics: Record<string, number>;
 }
-import {
+import type {
   TestRunner,
   TestCase,
   TestSuite,
@@ -193,7 +193,7 @@ export class E2ETestRunner implements TestRunner {
 
           // Capture screenshot if needed
           let screenshotPath: string | undefined;
-          if (this.config.screenshots || step.data?.screenshot) {
+          if (this.config.screenshots || (step.data as any)?.['screenshot']) {
             screenshotPath = await this.captureScreenshot(test.id, step.id);
             screenshots.push(screenshotPath);
           }

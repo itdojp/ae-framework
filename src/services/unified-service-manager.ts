@@ -4,9 +4,9 @@
  * Unified manager for all service types with optimization and validation
  */
 
+import { ServiceType } from './service-types.js';
 import type { 
   ServiceConfig, 
-  ServiceType, 
   ServiceTask,
   ServiceResult,
   ServiceState,

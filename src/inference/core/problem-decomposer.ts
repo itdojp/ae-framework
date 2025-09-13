@@ -494,7 +494,7 @@ export class ProblemDecomposer {
     return subProblems.map((sp, index) => ({
       ...sp,
       type: 'sequential' as const,
-      dependencies: index > 0 ? [subProblems[index - 1].id] : []
+      dependencies: (index > 0 && subProblems[index - 1]) ? [subProblems[index - 1]!.id] : []
     }));
   }
 

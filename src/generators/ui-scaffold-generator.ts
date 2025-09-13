@@ -510,7 +510,8 @@ export class UIScaffoldGenerator {
     Handlebars.registerHelper('getSelectOptions', (validation?: string) => {
       if (!validation?.includes('enum:')) return [];
       const enumMatch = validation.match(/enum:([^,]+)/);
-      return enumMatch ? enumMatch[1].split('|').map(s => s.trim()) : [];
+      const group = enumMatch?.[1] ?? '';
+      return group ? group.split('|').map(s => s.trim()) : [];
     });
 
     Handlebars.registerHelper('getMockValue', (type: string, validation?: string, key?: string) => {

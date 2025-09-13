@@ -89,7 +89,7 @@ export class SequentialStrategy {
       return {
         success: validationResult.valid,
         steps,
-        finalConclusion: steps[steps.length - 1].output,
+        finalConclusion: steps.length > 0 ? steps[steps.length - 1].output : null,
         confidence: avgConfidence,
         reasoning
       };

@@ -2,7 +2,8 @@
  * Approval Service for managing phase approvals in ae-framework
  */
 
-import { PhaseStateManager, PhaseType } from '../utils/phase-state-manager.js';
+import { PhaseStateManager } from '../utils/phase-state-manager.js';
+import type { PhaseType } from '../utils/phase-state-manager.js';
 import { EventEmitter } from 'events';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -147,12 +148,12 @@ export class ApprovalService extends EventEmitter {
     const request: ApprovalRequest = {
       phase,
       projectId: state.projectId,
-      projectName: state.projectName,
+      ...(state.projectName ? { projectName: state.projectName } : {}),
       requestedBy,
       requestedAt: new Date(),
       artifacts: phaseStatus.artifacts,
-      summary,
-      metadata: state.metadata,
+      ...(summary ? { summary } : {}),
+      ...(state.metadata ? { metadata: state.metadata } : {}),
     };
 
     // Check auto-approval conditions
@@ -177,7 +178,7 @@ export class ApprovalService extends EventEmitter {
       status: 'pending',
       responses: [],
       createdAt: new Date(),
-      expiresAt,
+      ...(expiresAt ? { expiresAt } : {}),
     };
 
     this.pendingApprovals.set(approvalId, pendingApproval);
@@ -211,8 +212,8 @@ export class ApprovalService extends EventEmitter {
         approved: true,
         approvedBy,
         approvedAt: new Date(),
-        notes,
-        conditions,
+        ...(notes ? { notes } : {}),
+        ...(conditions ? { conditions } : {}),
       };
 
       pendingApproval.responses.push(response);

@@ -500,7 +500,7 @@ export class DockerEngine extends ContainerEngine {
 
       // Extract image ID from build output
       const imageIdMatch = result.stdout.match(/Successfully built ([a-f0-9]{12})/);
-      const imageId = imageIdMatch ? imageIdMatch[1] : imageTag;
+      const imageId = (imageIdMatch && imageIdMatch[1]) ? imageIdMatch[1] : imageTag;
 
       this.emit('imageBuild', {
         imageTag,
@@ -593,8 +593,7 @@ export class DockerEngine extends ContainerEngine {
         tag: image.Tag,
         digest: image.Digest,
         size: parseInt(image.Size) || 0,
-        created: new Date(image.CreatedAt),
-        labels: undefined // Not included in format
+        created: new Date(image.CreatedAt)
       }));
     } catch (error: any) {
       throw new Error(`Failed to list images: ${error.message}`);

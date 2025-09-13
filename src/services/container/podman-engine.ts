@@ -490,7 +490,7 @@ export class PodmanEngine extends ContainerEngine {
 
       // Extract image ID from build output
       const imageIdMatch = result.stdout.match(/Successfully tagged .+ ([a-f0-9]{12})/);
-      const imageId = imageIdMatch ? imageIdMatch[1] : imageTag;
+      const imageId = (imageIdMatch && imageIdMatch[1]) ? imageIdMatch[1] : imageTag;
 
       this.emit('imageBuild', {
         imageTag,

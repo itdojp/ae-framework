@@ -5,7 +5,7 @@
 
 import { promises as fs } from 'fs';
 import { join, dirname } from 'path';
-import {
+import type {
   TestReporter,
   TestExecutionSummary,
   TestResult,

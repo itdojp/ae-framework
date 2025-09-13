@@ -4,7 +4,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import {
+import type {
   TestRunner,
   TestCase,
   TestSuite,
@@ -202,7 +202,9 @@ export class APITestRunner implements TestRunner {
         metrics: {
           ...metrics,
           responseTime: duration
-        }
+        },
+        screenshots: [],
+        artifacts: []
       };
 
     } catch (error) {
@@ -217,7 +219,7 @@ export class APITestRunner implements TestRunner {
         endTime,
         duration,
         environment: environment.name,
-        steps: stepResults, // Return collected step results, even if partial
+        steps: stepResults.map(s => ({ ...s, screenshots: (s as any).screenshots ?? [], logs: s.logs ?? [] })),
         error: error instanceof Error ? error.message : String(error),
         stackTrace: error instanceof Error ? error.stack : undefined,
         logs, // Return collected logs for debugging
@@ -225,7 +227,9 @@ export class APITestRunner implements TestRunner {
           networkCalls: 0,
           databaseQueries: 0,
           responseTime: duration
-        }
+        },
+        screenshots: [],
+        artifacts: []
       };
     }
   }
@@ -455,28 +459,28 @@ export class APITestRunner implements TestRunner {
     switch (auth.type) {
       case 'basic':
         const basicAuth = Buffer.from(
-          `${auth.credentials.username}:${auth.credentials.password}`
+          `${auth.credentials['username']}:${auth.credentials['password']}`
         ).toString('base64');
         headers['Authorization'] = `Basic ${basicAuth}`;
         break;
 
       case 'bearer':
-        const token = auth.credentials.token || environment.variables.API_TOKEN || '';
+        const token = auth.credentials['token'] || environment.variables['API_TOKEN'] || '';
         headers['Authorization'] = `Bearer ${token}`;
         break;
 
       case 'apikey':
-        const apiKey = auth.credentials.apiKey || environment.variables.API_KEY;
+        const apiKey = auth.credentials['apiKey'] || environment.variables['API_KEY'];
         if (!apiKey) {
           throw new Error('API key is required for apikey authentication');
         }
-        const headerName = auth.credentials.headerName || 'X-API-Key';
+        const headerName = auth.credentials['headerName'] || 'X-API-Key';
         headers[headerName] = apiKey;
         break;
 
       case 'oauth2':
         // OAuth2 implementation would be more complex
-        const accessToken = auth.credentials.accessToken;
+        const accessToken = auth.credentials['accessToken'];
         headers['Authorization'] = `Bearer ${accessToken}`;
         break;
     }
@@ -684,7 +688,7 @@ export class APITestRunner implements TestRunner {
     
     // Log performance metrics
     const avgResponseTime = result.steps.reduce((sum, step) => 
-      sum + (step.metrics?.responseTime || 0), 0) / result.steps.length;
+      sum + ((step.metrics as any)?.['responseTime'] || 0), 0) / Math.max(result.steps.length, 1);
     
     if (avgResponseTime > 0) {
       console.log(`API: Average response time: ${avgResponseTime.toFixed(2)}ms`);
