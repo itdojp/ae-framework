@@ -36,6 +36,15 @@ jobs:
         run: node scripts/formal/verify-conformance.mjs
       - name: Validate trace schema (sample)
         run: node scripts/formal/trace-validate.mjs
+      - name: Aggregate formal summaries (local)
+        run: node scripts/formal/aggregate-formal.mjs
+      - name: Upload formal reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: formal-reports
+          path: |
+            hermetic-reports/
 
   verify-alloy:
     name: verify:alloy (stub)
