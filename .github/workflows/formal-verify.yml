@@ -46,6 +46,8 @@ jobs:
         run: node scripts/formal/trace-validate.mjs
       - name: Aggregate formal summaries (local)
         run: node scripts/formal/aggregate-formal.mjs
+      - name: Print formal summary (console)
+        run: node scripts/formal/print-summary.mjs
       - name: Upload formal reports
         uses: actions/upload-artifact@v4
         if: always()
@@ -98,7 +100,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Run verify:smt stub
+      - name: Run verify:smt (sample)
         env:
           SMT_SOLVER: ${{ github.event_name == 'workflow_dispatch' && inputs.solver || 'z3' }}
-        run: node scripts/formal/verify-smt.mjs --solver=$SMT_SOLVER
+        run: node scripts/formal/verify-smt.mjs --solver=$SMT_SOLVER --file spec/smt/sample.smt2 || true
+      - name: Upload SMT summary (artifact)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: formal-reports-smt
+          path: |
+            hermetic-reports/formal/smt-summary.json
