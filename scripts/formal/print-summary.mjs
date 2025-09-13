@@ -32,7 +32,14 @@ if (f.conformance) {
     const fv = f.conformance.firstInvariantViolation;
     if (fv && (fv.index !== undefined) && fv.type) first = `, first=${fv.type}@${fv.index}`;
   } catch {}
-  const conformanceLine = `Conformance: schemaErrors=${ce}, invariantViolations=${iv}, rate=${vr}${first}`;
+  // byType breakdown (optional)
+  let typeBreak = '';
+  try {
+    const bt = f.conformance.byType || {};
+    const parts = Object.entries(bt).filter(([,v]) => typeof v === 'number' && v > 0).map(([k,v]) => `${k}=${v}`);
+    if (parts.length) typeBreak = `, byType(${parts.join(', ')})`;
+  } catch {}
+  const conformanceLine = `Conformance: schemaErrors=${ce}, invariantViolations=${iv}, rate=${vr}${first}${typeBreak}`;
   const colored = (iv === 0 && ce === 0) ? c.green(conformanceLine) : c.yellow(conformanceLine);
   lines.push(colored);
 }
