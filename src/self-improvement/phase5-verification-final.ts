@@ -328,8 +328,8 @@ export class Phase5VerificationFinal {
       
       // Add placeholder properties
       const missingProps = error.message.match(/following properties? from type '.*': (.+)/);
-      if (missingProps) {
-        const props = missingProps[1].split(', ').map(prop => prop.trim());
+      if (missingProps && missingProps[1]) {
+        const props = missingProps[1]!.split(', ').map(prop => prop.trim());
         const additions = props.map(prop => `  ${prop}: undefined, // TODO: Implement`).join('\n');
         const fixedLine = problemLine.replace(/{/, `{\n${additions}\n`);
         

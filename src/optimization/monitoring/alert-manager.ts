@@ -695,9 +695,10 @@ export class AlertManager extends EventEmitter {
     const throttleKey = `${alert.id}-${notification.type}-${notification.target}`;
     const lastSent = this.notificationThrottles.get(throttleKey);
     
-    if (lastSent && notification.throttle) {
+    const throttle = notification.throttle;
+    if (lastSent && throttle !== undefined) {
       const timeSinceLastSent = Date.now() - lastSent.getTime();
-      if (timeSinceLastSent < notification.throttle) {
+      if (timeSinceLastSent < throttle) {
         return;
       }
     }
@@ -800,7 +801,7 @@ export class AlertManager extends EventEmitter {
         return values.length;
       default:
         if (values.length === 0) return 0;
-        return values[values.length - 1]; // Latest value
+        return values[values.length - 1]!; // Latest value
     }
   }
 }

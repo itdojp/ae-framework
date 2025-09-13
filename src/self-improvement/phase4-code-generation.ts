@@ -288,8 +288,8 @@ export class Phase4CodeGeneration {
   private generateMissingPropertiesFix(problemLine: string, description: string): string {
     // Extract missing properties and suggest additions
     const missingProps = description.match(/following properties? from type '.*': (.+)/);
-    if (missingProps) {
-      const props = missingProps[1].split(', ');
+    if (missingProps && missingProps[1]) {
+      const props = missingProps[1]!.split(', ');
       const additions = props.map(prop => `  ${prop.trim()}: undefined, // TODO: Implement`).join('\n');
       return problemLine.replace(/{/, `{\n${additions}\n`);
     }

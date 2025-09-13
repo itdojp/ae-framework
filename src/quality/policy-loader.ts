@@ -199,7 +199,7 @@ export class QualityPolicyLoader {
 
     return compositeGate.gates
       .map(gateName => policy.qualityGates[gateName])
-      .filter(gate => gate && gate.enabled);
+      .filter((gate): gate is QualityGate => Boolean(gate && gate.enabled));
   }
 
   /**
