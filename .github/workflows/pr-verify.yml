@@ -217,17 +217,20 @@ jobs:
                 if (f.smt) {
                   const st = f.smt.status;
                   const t = (st === 'ran') ? tag(true) : (st === 'solver_not_available' ? info : tag(false));
-                  parts.push(`${t} SMT: ${st}`);
+                  const file = f.smt.file ? ` (${f.smt.file})` : '';
+                  parts.push(`${t} SMT: ${st}${file}`);
                 }
                 if (f.alloy) {
                   const st = f.alloy.status;
                   const t = (st === 'ran') ? tag(true) : (st === 'tool_not_available' ? info : tag(false));
-                  parts.push(`${t} Alloy: ${st}`);
+                  const file = f.alloy.file ? ` (${f.alloy.file})` : '';
+                  parts.push(`${t} Alloy: ${st}${file}`);
                 }
                 if (f.tla) {
                   const st = f.tla.status;
                   const t = (st === 'ran') ? tag(true) : (st === 'tool_not_available' ? info : tag(false));
-                  parts.push(`${t} TLA: ${st} (${f.tla.engine})`);
+                  const file = f.tla.file ? ` ${f.tla.file}` : '';
+                  parts.push(`${t} TLA: ${st} (${f.tla.engine})${file}`);
                 }
                 if (parts.length) lines.push('• Formal summary: ' + parts.join('; '));
               }
