@@ -28,3 +28,13 @@ jobs:
 Notes
 - Emit invariant violations with `traceId` and link to `formal/summary.json` when applicable.
 - Keep implementation outside core to avoid dependency bloat.
+
+## Env Options
+- `REPLAY_DISABLE`: comma-separated flags to disable checks (e.g., `allocated_le_onhand,onhand_min`).
+- `REPLAY_ONHAND_MIN`: minimum onHand value for invariant (default `0`).
+
+Example
+```bash
+REPLAY_DISABLE=allocated_le_onhand npm run test:replay
+REPLAY_ONHAND_MIN=5 npm run test:replay
+```
