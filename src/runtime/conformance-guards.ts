@@ -111,7 +111,7 @@ export class ConformanceGuard<T> {
           schemaName: this.schemaName,
           duration: 0,
           timestamp: new Date().toISOString(),
-          context,
+          ...(context ? { context } : {}),
         },
       };
     }
@@ -284,7 +284,7 @@ export class ConformanceGuard<T> {
         `${this.schemaName} (${direction})`,
         'Schema validation',
         data,
-        context?.location
+        context?.['location']
       );
 
       // Add additional context
@@ -445,7 +445,7 @@ export function ValidateInput<T>(guard: ConformanceGuard<T>) {
       if (!result.success && guard.getConfig().failOnViolation) {
         throw new ConformanceViolationError(
           `Input validation failed for ${propertyKey}`,
-          guard.getConfig().context?.schema_name || 'unknown',
+          guard.getConfig().context?.['schema_name'] || 'unknown',
           'input',
           result.errors,
           input
@@ -477,7 +477,7 @@ export function ValidateOutput<T>(guard: ConformanceGuard<T>) {
       if (!validationResult.success && guard.getConfig().failOnViolation) {
         throw new ConformanceViolationError(
           `Output validation failed for ${propertyKey}`,
-          guard.getConfig().context?.schema_name || 'unknown',
+          guard.getConfig().context?.['schema_name'] || 'unknown',
           'output',
           validationResult.errors,
           result

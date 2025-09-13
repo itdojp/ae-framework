@@ -175,12 +175,13 @@ export class CodeGenerationServer {
 
           case 'generate_api_from_openapi': {
             const args: GenerateAPIFromOpenAPIArgs = parseOrThrow(GenerateAPIFromOpenAPIArgsSchema, request.params.arguments);
-            const result = await this.agent.generateFromOpenAPI(args.spec, {
+            const apiOpts: any = {
               framework: args.framework,
-              database: args.database,
-              includeValidation: args.includeValidation,
-              includeAuth: args.includeAuth,
-            });
+              ...(args.database ? { database: args.database } : {}),
+              ...(args.includeValidation !== undefined ? { includeValidation: args.includeValidation } : {}),
+              ...(args.includeAuth !== undefined ? { includeAuth: args.includeAuth } : {}),
+            };
+            const result = await this.agent.generateFromOpenAPI(args.spec, apiOpts);
             return {
               content: [
                 {
