@@ -14,10 +14,37 @@ function readYaml(p){ return yaml.parse(fs.readFileSync(p, 'utf8')); }
 function readJson(p){ return JSON.parse(fs.readFileSync(p, 'utf8')); }
 function writeJson(p,obj){ fs.mkdirSync(path.dirname(p),{recursive:true}); fs.writeFileSync(p, JSON.stringify(obj,null,2)); }
 
-const schemaPath = path.join(repoRoot, 'observability', 'trace-schema.yaml');
-const dataPath = process.argv[2] || path.join(repoRoot, 'samples', 'conformance', 'sample-traces.json');
-const outDir = path.join(repoRoot, 'hermetic-reports', 'conformance');
-const outFile = path.join(outDir, 'summary.json');
+function parseArgs(argv) {
+  const args = { _: [] };
+  for (let i = 2; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === '--help' || a === '-h') args.help = true;
+    else if ((a === '--in' || a === '-i') && argv[i+1]) { args.in = argv[++i]; }
+    else if (a.startsWith('--in=')) { args.in = a.slice(5); }
+    else if (a === '--out' && argv[i+1]) { args.out = argv[++i]; }
+    else if (a.startsWith('--out=')) { args.out = a.slice(6); }
+    else if (a === '--schema' && argv[i+1]) { args.schema = argv[++i]; }
+    else if (a.startsWith('--schema=')) { args.schema = a.slice(9); }
+    else if (a === '--disable-invariants' && argv[i+1]) { args.disable = argv[++i]; }
+    else if (a.startsWith('--disable-invariants=')) { args.disable = a.slice(21); }
+    else if (a === '--onhand-min' && argv[i+1]) { args.onhandMin = argv[++i]; }
+    else if (a.startsWith('--onhand-min=')) { args.onhandMin = a.slice(13); }
+    else { args._.push(a); }
+  }
+  return args;
+}
+
+const args = parseArgs(process.argv);
+
+if (args.help) {
+  console.log(`Usage: node scripts/formal/verify-conformance.mjs [options]\n\nOptions:\n  -i, --in <file>                Input events JSON (default: samples/conformance/sample-traces.json)\n  --schema <file>                Trace schema YAML (default: observability/trace-schema.yaml)\n  --out <file>                   Output summary JSON (default: hermetic-reports/conformance/summary.json)\n  --disable-invariants <list>    Comma-separated invariants to disable (allocated_le_onhand,onhand_min)\n  --onhand-min <number>          Minimum onHand for onhand_min invariant (default: 0)\n  -h, --help                     Show this help\n`);
+  process.exit(0);
+}
+
+const schemaPath = path.resolve(repoRoot, args.schema || path.join('observability', 'trace-schema.yaml'));
+const dataPath = path.resolve(repoRoot, args.in || path.join('samples', 'conformance', 'sample-traces.json'));
+const outFile = path.resolve(repoRoot, args.out || path.join('hermetic-reports', 'conformance', 'summary.json'));
+const outDir = path.dirname(outFile);
 
 if (!fs.existsSync(schemaPath)) {
   console.error(`Schema not found: ${schemaPath}`);
@@ -44,6 +71,8 @@ const validate = ajv.compile({
 
 let schemaErrors = [];
 let invariantViolations = [];
+const disable = new Set((args.disable || '').split(',').map(s=>s.trim()).filter(Boolean));
+const onhandMin = Number.isFinite(Number(args.onhandMin)) ? Number(args.onhandMin) : 0;
 
 for (let i = 0; i < events.length; i++) {
   const ev = events[i];
@@ -57,10 +86,10 @@ for (let i = 0; i < events.length; i++) {
   if (st && typeof st === 'object') {
     const hasOnHand = typeof st.onHand === 'number';
     const hasAllocated = typeof st.allocated === 'number';
-    if (hasOnHand && st.onHand < 0) {
-      invariantViolations.push({ index: i, invariant: 'onHand >= 0', actual: st.onHand });
+    if (!disable.has('onhand_min') && hasOnHand && st.onHand < onhandMin) {
+      invariantViolations.push({ index: i, invariant: `onHand >= ${onhandMin}`, actual: st.onHand });
     }
-    if (hasOnHand && hasAllocated && st.allocated > st.onHand) {
+    if (!disable.has('allocated_le_onhand') && hasOnHand && hasAllocated && st.allocated > st.onHand) {
       invariantViolations.push({ index: i, invariant: 'allocated <= onHand', actual: { allocated: st.allocated, onHand: st.onHand } });
     }
   }
@@ -72,7 +101,7 @@ const summary = {
   schemaErrors: schemaErrors.length,
   invariantViolations: invariantViolations.length,
   timestamp: new Date().toISOString(),
-  details: { schemaErrors, invariantViolations }
+  details: { schemaErrors, invariantViolations, options: { disable: Array.from(disable), onhandMin } }
 };
 
 writeJson(outFile, summary);
