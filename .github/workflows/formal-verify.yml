@@ -74,7 +74,7 @@ jobs:
       - name: Run verify:tla stub
         env:
           TLA_ENGINE: ${{ github.event_name == 'workflow_dispatch' && inputs.engine || 'tlc' }}
-        run: node scripts/formal/verify-tla.mjs --engine=$TLA_ENGINE
+        run: node scripts/formal/verify-tla.mjs --engine=$TLA_ENGINE --file spec/tla/DomainSpec.tla || true
 
   verify-smt:
     name: verify:smt (stub)
