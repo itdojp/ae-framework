@@ -636,8 +636,13 @@ export class ConformanceRegistry {
       return null;
     }
 
-    const guard = new ConformanceGuard(schema, guardName || schemaName, config);
-    
+    // デフォルトのcontextを付与（テスト互換用）
+    const baseContext = { source: 'registry', schema: schemaName, name: guardName || schemaName } as Record<string, any>;
+    const mergedConfig: Partial<GuardConfig> = {
+      ...(config || {}),
+      context: { ...(config?.context || {}), ...baseContext },
+    };
+    const guard = new ConformanceGuard(schema, guardName || schemaName, mergedConfig);
     if (guardName) {
       this.registerGuard(guardName, guard);
     }
