@@ -189,6 +189,8 @@ jobs:
               if (fs.existsSync('hermetic-reports/formal/summary.json')) {
                 const f = JSON.parse(fs.readFileSync('hermetic-reports/formal/summary.json','utf8'));
                 const parts = [];
+                const tag = (ok) => ok ? '[OK]' : '[WARN]';
+                const info = '[INFO]';
                 if (f.conformance) {
                   const ce = f.conformance.schemaErrors ?? 'n/a';
                   const iv = f.conformance.invariantViolations ?? 'n/a';
@@ -198,11 +200,24 @@ jobs:
                     const fv = f.conformance.firstInvariantViolation;
                     if (fv && (fv.index !== undefined) && fv.type) first = `, first=${fv.type}@${fv.index}`;
                   } catch {}
-                  parts.push(`Conformance: schemaErrors=${ce}, invariantViolations=${iv}, rate=${vr}${first}`);
+                  const ok = (iv === 0 && ce === 0);
+                  parts.push(`${ok ? tag(true) : tag(false)} Conformance: schemaErrors=${ce}, invariantViolations=${iv}, rate=${vr}${first}`);
                 }
-                if (f.smt) parts.push(`SMT: ${f.smt.status}`);
-                if (f.alloy) parts.push(`Alloy: ${f.alloy.status}`);
-                if (f.tla) parts.push(`TLA: ${f.tla.status} (${f.tla.engine})`);
+                if (f.smt) {
+                  const st = f.smt.status;
+                  const t = (st === 'ran') ? tag(true) : (st === 'solver_not_available' ? info : tag(false));
+                  parts.push(`${t} SMT: ${st}`);
+                }
+                if (f.alloy) {
+                  const st = f.alloy.status;
+                  const t = (st === 'ran') ? tag(true) : (st === 'tool_not_available' ? info : tag(false));
+                  parts.push(`${t} Alloy: ${st}`);
+                }
+                if (f.tla) {
+                  const st = f.tla.status;
+                  const t = (st === 'ran') ? tag(true) : (st === 'tool_not_available' ? info : tag(false));
+                  parts.push(`${t} TLA: ${st} (${f.tla.engine})`);
+                }
                 if (parts.length) lines.push('• Formal summary: ' + parts.join('; '));
               }
             } catch {}

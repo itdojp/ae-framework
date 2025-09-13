@@ -39,24 +39,28 @@ if (f.conformance) {
     const parts = Object.entries(bt).filter(([,v]) => typeof v === 'number' && v > 0).map(([k,v]) => `${k}=${v}`);
     if (parts.length) typeBreak = `, byType(${parts.join(', ')})`;
   } catch {}
-  const conformanceLine = `Conformance: schemaErrors=${ce}, invariantViolations=${iv}, rate=${vr}${first}${typeBreak}`;
-  const colored = (iv === 0 && ce === 0) ? c.green(conformanceLine) : c.yellow(conformanceLine);
-  lines.push(colored);
+  const ok = (iv === 0 && ce === 0);
+  const tag = ok ? c.green('[OK]') : c.yellow('[WARN]');
+  const conformanceLine = `${tag} Conformance: schemaErrors=${ce}, invariantViolations=${iv}, rate=${vr}${first}${typeBreak}`;
+  lines.push(conformanceLine);
 }
 if (f.smt) {
   const st = f.smt.status;
-  const smtLine = `SMT: ${st}`;
-  lines.push(st === 'ran' ? c.green(smtLine) : (st === 'solver_not_available' ? c.gray(smtLine) : c.yellow(smtLine)));
+  const tag = (st === 'ran') ? c.green('[OK]') : (st === 'solver_not_available' ? c.gray('[INFO]') : c.yellow('[WARN]'));
+  const smtLine = `${tag} SMT: ${st}`;
+  lines.push(smtLine);
 }
 if (f.alloy) {
   const st = f.alloy.status;
-  const alloyLine = `Alloy: ${st}`;
-  lines.push(st === 'ran' ? c.green(alloyLine) : (st === 'tool_not_available' ? c.gray(alloyLine) : c.yellow(alloyLine)));
+  const tag = (st === 'ran') ? c.green('[OK]') : (st === 'tool_not_available' ? c.gray('[INFO]') : c.yellow('[WARN]'));
+  const alloyLine = `${tag} Alloy: ${st}`;
+  lines.push(alloyLine);
 }
 if (f.tla) {
   const st = f.tla.status;
-  const tlaLine = `TLA: ${st} (${f.tla.engine})`;
-  lines.push(st === 'ran' ? c.green(tlaLine) : (st === 'tool_not_available' ? c.gray(tlaLine) : c.yellow(tlaLine)));
+  const tag = (st === 'ran') ? c.green('[OK]') : (st === 'tool_not_available' ? c.gray('[INFO]') : c.yellow('[WARN]'));
+  const tlaLine = `${tag} TLA: ${st} (${f.tla.engine})`;
+  lines.push(tlaLine);
 }
 
 if (lines.length) {
