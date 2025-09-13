@@ -4,6 +4,30 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { z } from 'zod';
+// Mock OpenTelemetry
+vi.mock('@opentelemetry/api', () => ({
+  trace: {
+    getTracer: () => ({
+      startSpan: () => ({
+        setStatus: () => {},
+        setAttributes: () => {},
+        recordException: () => {},
+        end: () => {},
+      }),
+    }),
+  },
+  metrics: {
+    getMeter: () => ({
+      createCounter: () => ({
+        add: () => {},
+      }),
+      createHistogram: () => ({
+        record: () => {},
+      }),
+    }),
+  },
+}));
+
 import {
   ConformanceGuard,
   ConformanceViolationError,
@@ -12,37 +36,6 @@ import {
   ValidateInput,
   ValidateOutput,
 } from '../../src/runtime/conformance-guards.js';
-
-// Mock OpenTelemetry
-vi.mock('@opentelemetry/api', () => ({
-  trace: {
-    getTracer: () => ({
-      startSpan: () => ({
-        setStatus: vi.fn(),
-        setAttributes: vi.fn(),
-        recordException: vi.fn(),
-        end: vi.fn(),
-      }),
-    }),
-  },
-  metrics: {
-    getMeter: () => ({
-      createCounter: () => ({
-        add: vi.fn(),
-      }),
-      createHistogram: () => ({
-        record: vi.fn(),
-      }),
-    }),
-  },
-  SpanStatusCode: {
-    OK: 1,
-    ERROR: 2,
-  },
-  SpanKind: {
-    INTERNAL: 1,
-  },
-}));
 
 describe('ConformanceGuard', () => {
   const userSchema = z.object({
@@ -293,16 +286,20 @@ describe('Decorators', () => {
   });
 
   class TestService {
-    @ValidateInput(guard)
     async processName(name: string): Promise<string> {
       return `Hello, ${name}!`;
     }
 
-    @ValidateOutput(guard)
     async getName(): Promise<string> {
       return 'John Doe';
     }
   }
+
+  // 手動でデコレータを適用（ESM/変換差異の影響を避ける）
+  const inDesc = Object.getOwnPropertyDescriptor(TestService.prototype, 'processName')!;
+  const outDesc = Object.getOwnPropertyDescriptor(TestService.prototype, 'getName')!;
+  ValidateInput(guard)(TestService.prototype as any, 'processName', inDesc);
+  ValidateOutput(guard)(TestService.prototype as any, 'getName', outDesc);
 
   let service: TestService;
 

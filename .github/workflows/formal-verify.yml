@@ -3,6 +3,8 @@ name: Formal Verify
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, labeled]
+  push:
+    tags: ['v*']
   workflow_dispatch:
     inputs:
       target:

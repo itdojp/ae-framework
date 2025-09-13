@@ -8,24 +8,23 @@ permissions:
 jobs:
   summarize:
     runs-on: ubuntu-latest
-      - name: Determine summary mode
-      - name: Determine summary mode
+    steps:
       - name: Determine summary language
         id: lang
         uses: actions/github-script@v7
         with:
           script: |
             const labels = (context.payload.pull_request?.labels || []).map(l=>l.name);
-            const ja = labels.includes("lang:ja");
-            core.setOutput("lang", ja ? "ja" : "en");
+            const ja = labels.includes('lang:ja');
+            core.setOutput('lang', ja ? 'ja' : 'en');
+      - name: Determine summary mode
         id: mode
         uses: actions/github-script@v7
         with:
           script: |
             const labels = (context.payload.pull_request?.labels || []).map(l=>l.name);
-            const detailed = labels.includes("pr-summary:detailed");
-            core.setOutput("mode", detailed ? "detailed" : "digest");
-    steps:
+            const detailed = labels.includes('pr-summary:detailed');
+            core.setOutput('mode', detailed ? 'detailed' : 'digest');
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
@@ -34,18 +33,13 @@ jobs:
         run: |
           if npm run -s | grep -q "artifacts:aggregate"; then npm run artifacts:aggregate || true; fi
       - name: Generate Markdown summary
-      - name: Generate Markdown summary
+        id: gen
         env:
           SUMMARY_MODE: ${{ steps.mode.outputs.mode }}
           SUMMARY_LANG: ${{ steps.lang.outputs.lang }}
-        env:
-          SUMMARY_MODE: ${{ steps.mode.outputs.mode }}
         run: |
           if [ -f scripts/summary/render-pr-summary.mjs ]; then node scripts/summary/render-pr-summary.mjs; else echo "No renderer; keeping inline"; fi
-        run: |
-          if [ -f scripts/summary/render-pr-summary.mjs ]; then node scripts/summary/render-pr-summary.mjs; else echo "No renderer; keeping inline"; fi
-        id: gen
-        run: |
+          run: |
           node -e '
           const fs=require("fs");
           function r(p){ try { return JSON.parse(fs.readFileSync(p,"utf-8")); } catch { return undefined; } }
@@ -67,9 +61,6 @@ jobs:
           console.log(md);
           '
       - name: Post or update PR comment
-      - name: Post or update PR comment
-      - name: Write job summary
-        run: cat artifacts/summary/PR_SUMMARY.md >> $GITHUB_STEP_SUMMARY
         uses: actions/github-script@v7
         with:
           script: |
@@ -84,3 +75,5 @@ jobs:
             } else {
               await github.rest.issues.createComment({ owner, repo, issue_number: number, body: header });
             }
+      - name: Write job summary
+        run: cat artifacts/summary/PR_SUMMARY.md >> $GITHUB_STEP_SUMMARY

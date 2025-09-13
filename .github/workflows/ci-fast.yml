@@ -3,6 +3,7 @@ on:
   pull_request:
   push:
     branches: [main, develop]
+    tags: ['v*']
   workflow_call:
     # Allow release workflow to reuse this fast CI
 concurrency:
