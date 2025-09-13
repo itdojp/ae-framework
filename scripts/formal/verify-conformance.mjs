@@ -116,7 +116,12 @@ const summary = {
 
 writeJson(outFile, summary);
 console.log(`Conformance summary written: ${path.relative(repoRoot, outFile)}`);
+console.log(`- input=${path.relative(repoRoot, dataPath)} schema=${path.relative(repoRoot, schemaPath)}`);
 console.log(`- events=${summary.events} schemaErrors=${summary.schemaErrors} invariantViolations=${summary.invariantViolations}`);
+if (args.disable || args.onhandMin !== undefined) {
+  const disableList = (args.disable || '').split(',').map(s=>s.trim()).filter(Boolean).join(',') || 'none';
+  console.log(`- options: disable=[${disableList}] onhandMin=${onhandMin}`);
+}
 
 // Non-blocking (label-gated workflow); always exit 0
 process.exit(0);

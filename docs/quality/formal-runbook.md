@@ -29,6 +29,11 @@ TLA: tool_not_available (tlc)
 ----------------------
 ```
 
+色の意味（コンソール要約）
+- 緑: OK（実行成功・違反なし）
+- 黄: 注意（違反やスキップなど）
+- 灰: ツール未検出など情報のみ
+
 Conformance sample (quick demo)
 - `pnpm run conformance:sample` — サンプルのルール/設定/データ/コンテキストを生成
 - `pnpm run conformance:verify:sample` — 生成データで検証を実行（JSONレポート出力）
