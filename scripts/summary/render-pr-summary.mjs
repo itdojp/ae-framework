@@ -18,6 +18,7 @@ const gwtItems = gwt?.items || [];
 const gwtCount = gwtItems.length;
 const gwtFirst = gwtCount ? (gwtItems[0].property || (gwtItems[0].gwt ? String(gwtItems[0].gwt).split('\n')[0] : '')) : '';
 const replay = c.replay || r('artifacts/domain/replay.summary.json') || {};
+const bdd = c.bdd || r('artifacts/bdd/scenarios.json') || {};
 const props = c.properties ? (Array.isArray(c.properties) ? c.properties : [c.properties]) : (r('artifacts/properties/summary.json') ? [r('artifacts/properties/summary.json')] : []);
 const cov = r('coverage/coverage-summary.json');
 let coverageLine = t('Coverage: n/a','カバレッジ: 不明');
@@ -37,15 +38,18 @@ const adapterCountsLine = t(
 const gwtLine = gwtCount 
   ? t(`GWT: ${gwtCount} (e.g., ${gwtFirst})`, `GWT: ${gwtCount}（例: ${gwtFirst}）`)
   : t('GWT: 0','GWT: 0');
+const bddLine = bdd && (bdd.criteriaCount!==undefined || bdd.title)
+  ? t(`BDD: ${bdd.criteriaCount ?? '?'} criteria (${bdd.title ?? 'Feature'})`, `BDD: 受入基準 ${bdd.criteriaCount ?? '?'}（${bdd.title ?? 'Feature'}）`)
+  : t('BDD: n/a','BDD: なし');
 const alerts=[];
 if ((statusCounts.error||0) > errorMax) alerts.push(t(`adapter errors>${errorMax}`, `アダプタ失敗>${errorMax}`));
 if ((statusCounts.warn||0) > warnMax) alerts.push(t(`adapter warnings>${warnMax}`, `アダプタ注意>${warnMax}`));
 const alertsLine = alerts.length ? t(`Alerts: ${alerts.join(', ')}`, `警告: ${alerts.join(', ')}`) : t('Alerts: none','警告: なし');
 let md;
 if (mode === 'digest') {
-  md = `${coverageLine} | ${alertsLine} | ${t('Formal','フォーマル')}: ${formal} | ${replayLine} | ${gwtLine} | ${adapterCountsLine} | ${adaptersLine} | ${t('Trace','トレース')}: ${Array.from(traceIds).join(', ')}`;
+  md = `${coverageLine} | ${alertsLine} | ${t('Formal','フォーマル')}: ${formal} | ${replayLine} | ${bddLine} | ${gwtLine} | ${adapterCountsLine} | ${adaptersLine} | ${t('Trace','トレース')}: ${Array.from(traceIds).join(', ')}`;
 } else {
-  md = `## ${t('Quality Summary','品質サマリ')}\n- ${coverageLine}\n- ${alertsLine}\n- ${gwtLine}\n- ${adapterCountsLine}\n- ${t('Adapters','アダプタ')}:\n${adaptersList}\n- ${t('Formal','フォーマル')}: ${formal}\n- ${replayLine}\n- ${t('Trace IDs','トレースID')}: ${Array.from(traceIds).join(', ')}`;
+  md = `## ${t('Quality Summary','品質サマリ')}\n- ${coverageLine}\n- ${alertsLine}\n- ${gwtLine}\n- ${bddLine}\n- ${adapterCountsLine}\n- ${t('Adapters','アダプタ')}:\n${adaptersList}\n- ${t('Formal','フォーマル')}: ${formal}\n- ${replayLine}\n- ${t('Trace IDs','トレースID')}: ${Array.from(traceIds).join(', ')}`;
 }
 fs.mkdirSync('artifacts/summary',{recursive:true});
 fs.writeFileSync('artifacts/summary/PR_SUMMARY.md', md);
