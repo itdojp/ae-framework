@@ -29,6 +29,8 @@ Tools
 - ローカル確認: `pnpm run tools:formal:check`（インストール済みツールを一覧）
 - セットアップ手順: [formal-tools-setup.md](./formal-tools-setup.md)
 - トレース検証（軽量）: `pnpm run trace:validate`（サンプルイベントのスキーマ整合を確認）
+ - SMT サンプル: `spec/smt/sample.smt2`（動作確認用）
+ - 実行例: `pnpm run verify:smt -- --solver=z3 --file spec/smt/sample.smt2`
 
 verify:conformance オプション
 - `-i, --in <file>` 入力イベントJSON（既定: `samples/conformance/sample-traces.json`）
