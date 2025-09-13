@@ -34,6 +34,12 @@ TLA: tool_not_available (tlc)
 - 黄: 注意（違反やスキップなど）
 - 灰: ツール未検出など情報のみ
 
+ステータス基準（Normalized Status）
+- Conformance: `[OK]` if `schemaErrors=0` 且つ `invariantViolations=0`、それ以外は `[WARN]`
+- SMT: 実行できたら `[OK]`（status=`ran`）、ソルバー未検出は `[INFO]`、その他は `[WARN]`
+- Alloy: 実行できたら `[OK]`（status=`ran`）、ツール未検出は `[INFO]`、その他は `[WARN]`
+- TLA: 実行できたら `[OK]`（status=`ran`）、ツール未検出は `[INFO]`、その他は `[WARN]`
+
 Conformance sample (quick demo)
 - `pnpm run conformance:sample` — サンプルのルール/設定/データ/コンテキストを生成
 - `pnpm run conformance:verify:sample` — 生成データで検証を実行（JSONレポート出力）
@@ -92,3 +98,4 @@ Alloy CLI（環境がある場合）
 Tips（出力・色・抑制）
 - コンソール要約は色分け表示。色を無効化するには `NO_COLOR=1` を指定（CI等）
 - 実行ログのサマリは `hermetic-reports/formal/summary.json` でも確認可能
+ - PRサマリにも Formal summary を1行で表示（サマリが生成されている場合）
