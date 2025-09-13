@@ -474,8 +474,8 @@ export class EvidenceValidator {
     try {
       // Use grep to search for keyword
       const result = execSync(
-        `grep -r "${keyword}" --include="*.ts" --include="*.js" -m 5 .`,
-        { encoding: 'utf-8', stdio: 'pipe' }
+        `grep -r "${keyword}" --include="*.ts" --include="*.js" --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist -m 5 .`,
+        { encoding: 'utf-8', stdio: 'pipe', timeout: 1500, maxBuffer: 256 * 1024 }
       );
 
       const lines = result.split('\n').slice(0, depth);
@@ -510,8 +510,8 @@ export class EvidenceValidator {
     for (const keyword of keywords) {
       try {
         const imports = execSync(
-          `grep -r "import.*${keyword}" --include="*.ts" --include="*.js" .`,
-          { encoding: 'utf-8', stdio: 'pipe' }
+          `grep -r "import.*${keyword}" --include="*.ts" --include="*.js" --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist .`,
+          { encoding: 'utf-8', stdio: 'pipe', timeout: 1500, maxBuffer: 256 * 1024 }
         );
 
         if (imports) {
@@ -574,8 +574,12 @@ export class EvidenceValidator {
    * Run tests and get results
    */
   private async runTests(testFiles: string[]): Promise<{ passed: boolean }> {
+    // テスト環境では重い全体テスト実行を避ける。明示的に許可されたときのみ実行。
+    if (process.env['EVIDENCE_RUN_TESTS'] !== '1') {
+      return { passed: false };
+    }
     try {
-      execSync('npm test', { stdio: 'pipe' });
+      execSync('npm test', { stdio: 'pipe', timeout: 5000, maxBuffer: 256 * 1024 });
       return { passed: true };
     } catch (error) {
       return { passed: false };

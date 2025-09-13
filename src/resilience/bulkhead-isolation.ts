@@ -106,7 +106,7 @@ export class Bulkhead {
     } catch (error) {
       reject(error);
     } finally {
-      this.active--;
+      this.active = Math.max(0, this.active - 1);
       this.processQueue();
     }
   }
@@ -197,14 +197,10 @@ export class Bulkhead {
    * Reset bulkhead statistics
    */
   public reset(): void {
-    // Clear queue
-    this.queue.forEach(op => {
-      clearTimeout(op.timeoutId);
-      this.handleRejection('capacity', op.reject, `Bulkhead ${this.options.name} was reset`);
-    });
-    this.queue = [];
+    // Stop tracking current active operations (they may resolve/reject later)
+    this.active = 0;
 
-    // Reset counters
+    // Reset counters first so that queued rejections are reflected post-reset
     this.totalExecuted = 0;
     this.totalRejected = 0;
     this.executionTimes = [];
@@ -213,6 +209,13 @@ export class Bulkhead {
       timeout: 0,
       queue_full: 0,
     };
+
+    // Now clear queue by rejecting queued operations
+    this.queue.forEach(op => {
+      clearTimeout(op.timeoutId);
+      this.handleRejection('capacity', op.reject, `Bulkhead ${this.options.name} was reset`);
+    });
+    this.queue = [];
   }
 
   /**
@@ -229,7 +232,8 @@ export class Bulkhead {
    */
   public isHealthy(): boolean {
     const loadFactor = this.getLoadFactor();
-    const rejectionRate = this.totalRejected / (this.totalExecuted + this.totalRejected);
+    const denom = this.totalExecuted + this.totalRejected;
+    const rejectionRate = denom > 0 ? this.totalRejected / denom : 0;
     
     return loadFactor < 0.8 && rejectionRate < 0.1;
   }

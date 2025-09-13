@@ -10,6 +10,8 @@ on:
       - 'configs/**'
       - 'scripts/**'
       - 'types/**'
+  push:
+    tags: ['v*']
   workflow_call:
     # Allow reuse from other workflows (e.g., release)
     inputs:
