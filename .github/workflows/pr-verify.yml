@@ -205,8 +205,14 @@ jobs:
                     const se = f.conformance.firstSchemaError;
                     if (se && se.path) firstSchema = `, firstSchemaPath=${se.path}`;
                   } catch {}
+                  let typeBreak = '';
+                  try {
+                    const bt = f.conformance.byType || {};
+                    const arr = Object.entries(bt).filter(([,v]) => typeof v === 'number' && v > 0).map(([k,v]) => `${k}=${v}`);
+                    if (arr.length) typeBreak = `, byType(${arr.join(', ')})`;
+                  } catch {}
                   const ok = (iv === 0 && ce === 0);
-                  parts.push(`${ok ? tag(true) : tag(false)} Conformance: schemaErrors=${ce}, invariantViolations=${iv}, rate=${vr}${first}${firstSchema}`);
+                  parts.push(`${ok ? tag(true) : tag(false)} Conformance: schemaErrors=${ce}, invariantViolations=${iv}, rate=${vr}${first}${firstSchema}${typeBreak}`);
                 }
                 if (f.smt) {
                   const st = f.smt.status;
