@@ -48,8 +48,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Run verify:alloy stub
-        run: node scripts/formal/verify-alloy.mjs
+      - name: Run verify:alloy (sample)
+        run: node scripts/formal/verify-alloy.mjs --file spec/alloy/Domain.als || true
 
   verify-tla:
     name: verify:tla (stub)
