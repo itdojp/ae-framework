@@ -749,7 +749,7 @@ export class ContainerManager extends EventEmitter {
     };
 
     const env = environments[language] ?? environments['multi'];
-    return env;
+    return env as VerificationEnvironment;
   }
 
   private buildVerificationCommand(job: Omit<VerificationJob, 'id' | 'status' | 'startTime'>): string[] {

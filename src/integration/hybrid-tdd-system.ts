@@ -397,7 +397,12 @@ export class HybridTDDSystem {
     
     if (fs.existsSync('src')) {
       fs.watch('src', { recursive: true }, (eventType: string, filename: string | Buffer | null) => {
-        const name = typeof filename === 'string' ? filename : filename ? filename.toString() : '';
+        let name = '';
+        if (typeof filename === 'string') {
+          name = filename;
+        } else if (filename) {
+          name = String(filename);
+        }
         if (name && name.endsWith('.ts')) {
           this.handleFileChange(path.join('src', name), eventType);
         }

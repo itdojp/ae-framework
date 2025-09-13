@@ -7,7 +7,7 @@ import { EventEmitter } from 'events';
 import { v4 as uuidv4 } from 'uuid';
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import {
+import type {
   TestCase,
   TestSuite,
   TestFixture,
@@ -140,6 +140,8 @@ export class IntegrationTestOrchestrator extends EventEmitter {
         steps: [],
         error: error instanceof Error ? error.message : String(error),
         stackTrace: error instanceof Error ? error.stack : undefined,
+        artifacts: [],
+        screenshots: [],
         logs: [`Test execution failed: ${error}`],
         metrics: {
           networkCalls: 0,
@@ -247,12 +249,12 @@ export class IntegrationTestOrchestrator extends EventEmitter {
             results.push(result);
 
             if (result.status === 'failed') {
-              failures.push({
-                testId: test.id,
-                testName: test.name,
-                error: result.error || 'Test failed',
-                stackTrace: result.stackTrace
-              });
+            failures.push({
+              testId: test.id,
+              testName: test.name,
+              error: result.error || 'Test failed',
+              ...(result.stackTrace ? { stackTrace: result.stackTrace } : {})
+            });
 
               if (suite.configuration.failFast) {
                 this.emit('suite_fail_fast', { suiteId, testId: test.id });
@@ -271,7 +273,7 @@ export class IntegrationTestOrchestrator extends EventEmitter {
               testId: test.id,
               testName: test.name,
               error: errorMessage,
-              stackTrace: error instanceof Error ? error.stack : undefined
+              ...(error instanceof Error && error.stack ? { stackTrace: error.stack } : {})
             });
           }
         }
@@ -379,6 +381,8 @@ export class IntegrationTestOrchestrator extends EventEmitter {
           environment: environment.name,
           steps: [],
           error: result.reason?.message || 'Unknown error',
+          artifacts: [],
+          screenshots: [],
           logs: ['Parallel execution failed'],
           metrics: {
             networkCalls: 0,

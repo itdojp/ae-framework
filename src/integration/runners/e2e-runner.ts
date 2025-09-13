@@ -260,6 +260,7 @@ export class E2ETestRunner implements TestRunner {
           screenshots: step.screenshots || [],
           actualResult: step.actualResult
         })),
+        artifacts: [],
         screenshots,
         logs,
         metrics: {
@@ -295,6 +296,7 @@ export class E2ETestRunner implements TestRunner {
         })),
         error: error instanceof Error ? error.message : String(error),
         stackTrace: error instanceof Error ? error.stack : undefined,
+        artifacts: [],
         screenshots,
         logs: [...logs, `Test failed: ${error}`],
         metrics: {
@@ -479,13 +481,14 @@ export class E2ETestRunner implements TestRunner {
     const value = parts[2];
     const timeout = parts[3] ? parseInt(parts[3]) : undefined;
 
-    return {
+    const step: any = {
       type,
-      selector,
-      value,
-      timeout,
       description: action
     };
+    if (selector) step.selector = selector;
+    if (value) step.value = value;
+    if (timeout !== undefined) step.timeout = timeout;
+    return step as E2ETestStep;
   }
 
   /**

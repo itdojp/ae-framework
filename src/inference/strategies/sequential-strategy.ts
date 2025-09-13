@@ -84,12 +84,17 @@ export class SequentialStrategy {
       }
 
       // Calculate overall confidence
-      const avgConfidence = steps.reduce((sum, step) => sum + step.confidence, 0) / steps.length;
+      const avgConfidence = steps.length > 0
+        ? steps.reduce((sum, step) => sum + step.confidence, 0) / steps.length
+        : 0;
+
+      const lastStep = steps.length > 0 ? steps[steps.length - 1] : undefined;
+      const finalConclusion = lastStep?.output ?? null;
 
       return {
         success: validationResult.valid,
         steps,
-        finalConclusion: steps.length > 0 ? steps[steps.length - 1].output : null,
+        finalConclusion,
         confidence: avgConfidence,
         reasoning
       };
