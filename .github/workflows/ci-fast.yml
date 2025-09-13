@@ -15,6 +15,11 @@ jobs:
     with:
       node-version: '20'
       run-script: test:unit
+  fast:
+    uses: ./.github/workflows/common/ci-core.yml
+    with:
+      node-version: '20'
+      run-script: test:fast
   lint:
     uses: ./.github/workflows/common/ci-core.yml
     with:

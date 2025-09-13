@@ -492,6 +492,28 @@ describe('ResilientHttpClient', () => {
   });
 
   describe('Integrated Resilience Patterns', () => {
+    let unexpected: any[];
+    const onUnhandled = (reason: any) => {
+      const msg = String((reason && (reason as any).message) || reason || '');
+      // Allow fast-fail OPEN and explicit HTTP status errors during tests; capture others
+      if (
+        !msg.includes('Circuit breaker is OPEN') &&
+        !msg.includes('HTTP 500') &&
+        !msg.includes('HTTP 503')
+      ) {
+        unexpected.push(reason);
+      }
+    };
+
+    beforeEach(() => {
+      unexpected = [];
+      process.on('unhandledRejection', onUnhandled);
+    });
+
+    afterEach(() => {
+      process.off('unhandledRejection', onUnhandled);
+      expect(unexpected).toHaveLength(0);
+    });
     beforeEach(() => {
       httpClient = new ResilientHttpClient({
         retryOptions: {
