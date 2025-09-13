@@ -1,0 +1,41 @@
+repo: itdojp/ae-framework
+default_labels: [formal, framework]
+milestone: v0.2
+issues:
+  - title: "feat(conformance): TLA+×実装トレースの適合性検査をCLI/CIに常設"
+    labels: [feature, conformance, quick-win]
+    body: |
+      仕様（TLA+）を「真実の物差し」として運用するため、実装の実行トレースを仕様の許容挙動と照合する Conformance Checking を標準機能化。
+      - CLI: `ae verify:conformance`
+      - トレーススキーマ: `observability/trace-schema.yaml`
+      - CI ジョブ: `verify:conformance`（反例→tests/に失敗テスト）
+      - レポート: `hermetic-reports/conformance/`
+  - title: "feat(alloy6): BDD→時間プロパティ導出＋Alloy 6 LTL/過去演算検証を追加"
+    labels: [feature, alloy, quick-win]
+    body: |
+      BDD の時間的期待を Alloy 6 で検証。
+      - CLI: `ae spec:alloy derive`
+      - CI: `verify:alloy`
+  - title: "feat(tla-apalache): TLA+ 検証に Apalache (SMT/BMC+帰納不変) を統合"
+    labels: [feature, tla, infra, quick-win]
+    body: |
+      TLC では厳しいケースに Apalache を利用。
+      - CLI: `ae verify:tla --engine apalache`
+  - title: "feat(smt): Z3 に加えて cvc5 をサポート（SMT 冗長化）"
+    labels: [infra, smt, quick-win]
+    body: |
+      SMT ソルバーの冗長化により安定性を確保。
+      - CLI: `ae verify:smt --solver z3|cvc5`
+  - title: "feat(observe): ランタイム適合性検証（PObserve 型）を Phase 2.2 に実装"
+    labels: [feature, runtime, mid-term]
+  - title: "feat(detsim): 決定的シミュレーション・ハーネス（並行・順序入替の再現）"
+    labels: [feature, testing, mid-term]
+  - title: "feat(cedar): Cedar ポリシー＋Cedar Analysis による権限の品質ゲート"
+    labels: [feature, security, policy, mid-term]
+  - title: "feat(kani): Rust 成分に Kani（有界モデル検査）を統合"
+    labels: [feature, rust, verification, optional]
+  - title: "feat(spec-suggest): BDD→LTL プロパティ候補生成（人間承認前提）"
+    labels: [feature, ai, spec, optional]
+  - title: "feat(plugins): Domain Plug-in 雛形を公開"
+    labels: [feature, extensibility, optional]
+
