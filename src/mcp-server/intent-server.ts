@@ -13,7 +13,8 @@ import {
   ListToolsRequestSchema,
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
-import { IntentAgent, IntentAnalysisRequest, RequirementSource, ProjectContext } from '../agents/intent-agent.js';
+import { IntentAgent } from '../agents/intent-agent.js';
+import type { IntentAnalysisRequest, RequirementSource, ProjectContext } from '../agents/intent-agent.js';
 import {
   AnalyzeIntentArgsSchema,
   AnalyzeStakeholderConcernsArgsSchema,
@@ -694,7 +695,7 @@ class IntentMCPServer {
           type: 'text' as const,
           text: JSON.stringify({
             acceptance_criteria: criteria,
-            requirement_id: args.requirement.id,
+            requirement_id: parsed.requirement.id,
             criteria_count: criteria.length,
           }, null, 2),
         },
@@ -710,8 +711,8 @@ class IntentMCPServer {
     );
     
     // Convert Map objects to plain objects for JSON serialization
-    const addressedObj = Object.fromEntries(analysis.addressed);
-    const unaddressedObj = Object.fromEntries(analysis.unaddressed);
+    const addressedObj = Object.fromEntries(analysis.addressed) as Record<string, unknown>;
+    const unaddressedObj = Object.fromEntries(analysis.unaddressed) as Record<string, unknown>;
     
     return {
       content: [
@@ -726,10 +727,10 @@ class IntentMCPServer {
             summary: {
               total_stakeholders: (parsed.stakeholders as any[]).length,
               total_conflicts: analysis.conflicts.length,
-              stakeholders_with_unaddressed_concerns: Object.keys(unaddressedObj).filter(
-                key => unaddressedObj[key].length > 0
-              ).length,
-            },
+              stakeholders_with_unaddressed_concerns: Object.keys(unaddressedObj)
+                .filter(key => Array.isArray(unaddressedObj[key]) && (unaddressedObj[key] as unknown[]).length > 0)
+                .length,
+          },
           }, null, 2),
         },
       ],

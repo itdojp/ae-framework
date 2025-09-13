@@ -7,7 +7,7 @@ import { spawn, exec } from 'child_process';
 import { promisify } from 'util';
 import * as fs from 'fs';
 import * as path from 'path';
-import { QualityPolicyLoader, QualityGateResult, QualityReport, QualityGate } from './policy-loader.js';
+import { QualityPolicyLoader, type QualityGateResult, type QualityReport, type QualityGate } from './policy-loader.js';
 
 type CoverageThreshold = { lines?: number; functions?: number; branches?: number; statements?: number };
 type LintThreshold = { maxErrors?: number; maxWarnings?: number };
@@ -55,7 +55,7 @@ export class QualityGateRunner {
    */
   public async executeGates(options: QualityGateExecutionOptions = {}): Promise<QualityReport> {
     const {
-      environment = process.env.NODE_ENV || 'development',
+      environment = process.env['NODE_ENV'] || 'development',
       gates: requestedGates,
       parallel = true,
       timeout = 300000, // 5 minutes default
@@ -190,7 +190,13 @@ export class QualityGateRunner {
       const executionTime = Date.now() - startTime;
 
       // Parse result based on gate type
-      const gateResult = await this.parseGateResult(gate, result, threshold, environment, executionTime);
+      const gateResult = await this.parseGateResult(
+        gate,
+        result,
+        this.pickNumericThresholds(threshold as unknown as Record<string, unknown>),
+        environment,
+        executionTime
+      );
 
       gateTimer.end({
         result: gateResult.passed ? 'success' : 'failure',
@@ -249,7 +255,8 @@ export class QualityGateRunner {
       } else {
         // Parse command to avoid shell injection for simple commands
         const commandParts = this.parseCommand(command);
-        process = spawn(commandParts[0], commandParts.slice(1), {
+        const [execName, ...args] = commandParts as [string, ...string[]];
+        process = spawn(execName, args, {
           stdio: ['pipe', 'pipe', 'pipe'],
           timeout,
         });
@@ -313,6 +320,9 @@ export class QualityGateRunner {
     
     // Security validation - use allowlist for common commands, blacklist for dangerous ones
     const executable = parts[0];
+    if (!executable) {
+      throw new Error('Empty command');
+    }
     
     // Allowlist of commonly used quality gate commands
     const allowedCommands = [
@@ -376,6 +386,14 @@ export class QualityGateRunner {
     console.log(`ℹ️ Using shell mode for command: ${command.substring(0, 50)}...`);
   }
 
+  private pickNumericThresholds(input: Record<string, unknown>): Record<string, number | undefined> {
+    const out: Record<string, number | undefined> = {};
+    for (const [k, v] of Object.entries(input)) {
+      if (typeof v === 'number') out[k] = v;
+    }
+    return out;
+  }
+
   /**
    * Parse gate execution result
    */
@@ -398,7 +416,7 @@ export class QualityGateRunner {
     // Parse based on gate category
     switch (gate.category) {
       case 'testing':
-        return this.parseCoverageResult(baseResult, result, threshold as CoverageThreshold);
+        return this.parseCoverageResult(baseResult, result, this.pickNumericThresholds(threshold));
       
       case 'code-quality':
         return this.parseLintingResult(baseResult, result, threshold as LintThreshold);
@@ -407,10 +425,10 @@ export class QualityGateRunner {
         return this.parseSecurityResult(baseResult, result, threshold as SecurityThreshold);
       
       case 'performance':
-        return this.parsePerformanceResult(baseResult, result, threshold as PerfThreshold);
+        return this.parsePerformanceResult(baseResult, result, this.pickNumericThresholds(threshold));
       
       case 'frontend':
-        return this.parseAccessibilityResult(baseResult, result, threshold as A11yThreshold);
+        return this.parseAccessibilityResult(baseResult, result, this.pickNumericThresholds(threshold));
       
       default:
         // Generic parsing
@@ -437,12 +455,12 @@ export class QualityGateRunner {
       const coverageMatch = result.stdout.match(/Lines\s*:\s*([\d.]+)%.*Functions\s*:\s*([\d.]+)%.*Branches\s*:\s*([\d.]+)%.*Statements\s*:\s*([\d.]+)%/s);
       
       if (coverageMatch) {
-        const [, lines, functions, branches, statements] = coverageMatch;
+        const [, linesStr = '0', functionsStr = '0', branchesStr = '0', statementsStr = '0'] = coverageMatch as unknown as string[];
         const coverage = {
-          lines: parseFloat(lines),
-          functions: parseFloat(functions),
-          branches: parseFloat(branches),
-          statements: parseFloat(statements),
+          lines: parseFloat(linesStr),
+          functions: parseFloat(functionsStr),
+          branches: parseFloat(branchesStr),
+          statements: parseFloat(statementsStr),
         };
 
         baseResult.details = coverage;
@@ -509,9 +527,9 @@ export class QualityGateRunner {
       const highMatches = result.stdout.match(/(\d+)\s+high/i);
       const mediumMatches = result.stdout.match(/(\d+)\s+moderate/i);
 
-      const critical = criticalMatches ? parseInt(criticalMatches[1]) : 0;
-      const high = highMatches ? parseInt(highMatches[1]) : 0;
-      const medium = mediumMatches ? parseInt(mediumMatches[1]) : 0;
+    const critical = parseInt(criticalMatches?.[1] || '0', 10);
+    const high = parseInt(highMatches?.[1] || '0', 10);
+    const medium = parseInt(mediumMatches?.[1] || '0', 10);
 
       baseResult.details = { critical, high, medium };
       
@@ -658,7 +676,7 @@ export async function runQualityGatesCLI(args: string[]): Promise<void> {
   
   // Parse command line arguments
   const options: QualityGateExecutionOptions = {
-    environment: process.env.NODE_ENV || 'development',
+    environment: process.env['NODE_ENV'] || 'development',
     parallel: true,
     verbose: false,
     dryRun: false,
@@ -667,11 +685,22 @@ export async function runQualityGatesCLI(args: string[]): Promise<void> {
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     switch (arg) {
-      case '--env':
-        options.environment = args[++i];
+      case '--env': {
+        const val = args[i + 1];
+        if (val !== undefined) {
+          options.environment = val;
+          i++;
+        }
         break;
+      }
       case '--gates':
-        options.gates = args[++i].split(',');
+        {
+          const val = args[i + 1];
+          if (val !== undefined) {
+            options.gates = val.split(',');
+            i++;
+          }
+        }
         break;
       case '--sequential':
         options.parallel = false;
@@ -682,12 +711,23 @@ export async function runQualityGatesCLI(args: string[]): Promise<void> {
       case '--dry-run':
         options.dryRun = true;
         break;
-      case '--timeout':
-        options.timeout = parseInt(args[++i], 10);
+      case '--timeout': {
+        const val = args[i + 1];
+        if (val !== undefined) {
+          const n = parseInt(val, 10);
+          if (!Number.isNaN(n)) options.timeout = n;
+          i++;
+        }
         break;
-      case '--output':
-        options.outputDir = args[++i];
+      }
+      case '--output': {
+        const val = args[i + 1];
+        if (val !== undefined) {
+          options.outputDir = val;
+          i++;
+        }
         break;
+      }
     }
   }
 

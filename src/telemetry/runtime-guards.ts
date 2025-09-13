@@ -246,7 +246,7 @@ export class RuntimeGuard {
       severity: ViolationSeverity.MEDIUM,
       message: `Rate limit exceeded for ${endpoint}: ${current}/${limit} requests in ${windowMs}ms`,
       timestamp: new Date(),
-      requestId,
+      ...(requestId ? { requestId } : {}),
       endpoint,
       details: { limit, current, windowMs },
     };
@@ -300,7 +300,7 @@ export class RuntimeGuard {
         const violation = result.violations[0];
         console.error('Response validation failed:', violation);
         
-        if (process.env.NODE_ENV === 'development') {
+        if (process.env['NODE_ENV'] === 'development') {
           return {
             error: 'Response Validation Error',
             message: 'Response payload validation failed',
@@ -391,8 +391,8 @@ export class RuntimeGuard {
       severity,
       message: `Schema validation failed: ${issues.length} issues found`,
       timestamp: new Date(),
-      requestId: context.requestId,
-      endpoint: context.endpoint,
+      ...(context.requestId ? { requestId: context.requestId } : {}),
+      ...(context.endpoint ? { endpoint: context.endpoint } : {}),
       details: { issues },
     };
   }

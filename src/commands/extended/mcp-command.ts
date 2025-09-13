@@ -3,8 +3,10 @@
  * Manages MCP server instances, plugins, and extensions
  */
 
-import { BaseExtendedCommand, ExtendedCommandResult, ExtendedCommandConfig } from './base-command.js';
-import { MCPServer, MCPServerConfig } from '../../services/mcp-server.js';
+import { BaseExtendedCommand } from './base-command.js';
+import type { ExtendedCommandResult, ExtendedCommandConfig } from './base-command.js';
+import { MCPServer } from '../../services/mcp-server.js';
+import type { MCPServerConfig } from '../../services/mcp-server.js';
 import { MCPPluginManager } from '../../utils/mcp-plugin-manager.js';
 import { ContextManager } from '../../utils/context-manager.js';
 import { TokenOptimizer } from '../../utils/token-optimizer.js';
@@ -21,13 +23,13 @@ export interface MCPCommandResult extends ExtendedCommandResult {
 }
 
 export class MCPCommand extends BaseExtendedCommand {
-  public readonly name = '/ae:mcp';
-  public readonly description = 'Manage MCP server, plugins, and extensions';
-  public readonly category = 'utility' as const;
-  public readonly usage = '/ae:mcp <action> [options]';
-  public readonly aliases = ['/mcp', '/server', '/a:mcp'];
+  public override readonly name = '/ae:mcp';
+  public override readonly description = 'Manage MCP server, plugins, and extensions';
+  public override readonly category = 'utility' as const;
+  public override readonly usage = '/ae:mcp <action> [options]';
+  public override readonly aliases = ['/mcp', '/server', '/a:mcp'];
 
-  private mcpServer?: MCPServer;
+  private mcpServer: MCPServer | undefined;
   private pluginManager?: MCPPluginManager;
   private contextManager?: ContextManager;
   private tokenOptimizer?: TokenOptimizer;
@@ -65,7 +67,7 @@ export class MCPCommand extends BaseExtendedCommand {
     return this.tokenOptimizer;
   }
 
-  async handler(args: string[], context: any): Promise<MCPCommandResult> {
+  override async handler(args: string[], context: any): Promise<MCPCommandResult> {
     const startTime = Date.now();
     const projectRoot = context?.projectRoot || process.cwd();
 
@@ -764,7 +766,7 @@ Examples:
   }
 
   // Required abstract method implementations
-  protected validateArgs(args: string[]): { isValid: boolean; message?: string } {
+  protected override validateArgs(args: string[]): { isValid: boolean; message?: string } {
     if (args.length === 0) {
       return {
         isValid: false,
@@ -774,7 +776,7 @@ Examples:
     return { isValid: true };
   }
 
-  protected async execute(
+  protected override async execute(
     args: string[], 
     options: Record<string, any>, 
     context: any
@@ -782,7 +784,7 @@ Examples:
     return await this.handler(args, context);
   }
 
-  protected generateValidationClaim(data: any): string {
+  protected override generateValidationClaim(data: any): string {
     if (data.serverStatus) {
       return `MCP server status is: ${data.serverStatus}`;
     } else if (data.installedPlugin) {
@@ -791,7 +793,7 @@ Examples:
     return 'MCP operation was completed';
   }
 
-  protected generateSummary(data: any): string {
+  protected override generateSummary(data: any): string {
     if (data.serverStatus) {
       return `MCP server is ${data.serverStatus}`;
     } else if (data.installedPlugin) {

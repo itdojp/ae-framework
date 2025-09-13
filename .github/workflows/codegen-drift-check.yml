@@ -19,6 +19,8 @@ jobs:
   drift-detection:
     name: Code Generation Drift Detection
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || contains(join(fromJSON(toJSON(github.event.pull_request.labels)).*.name, ','), 'run-drift')
+    continue-on-error: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking') }}
     
     outputs:
       drift-status: ${{ steps.drift-check.outputs.drift-status }}

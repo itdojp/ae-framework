@@ -72,7 +72,7 @@ export class PhaseStateManager {
   async initializeProject(projectName?: string, approvalsRequired: boolean = true): Promise<PhaseState> {
     const newState: PhaseState = {
       projectId: uuidv4(),
-      projectName,
+      ...(projectName !== undefined ? { projectName } : {}),
       createdAt: new Date(),
       updatedAt: new Date(),
       currentPhase: 'intent',

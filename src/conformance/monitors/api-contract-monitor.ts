@@ -4,7 +4,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import {
+import type {
   ConformanceMonitor,
   ConformanceRule,
   RuntimeContext,
@@ -73,6 +73,7 @@ export class APIContractMonitor implements ConformanceMonitor {
           timestamp: new Date().toISOString(),
           duration: Date.now() - startTime,
           context,
+          metadata: {},
           metrics: {
             networkCalls: 0, // TODO: Implement
             dbQueries: 0, // TODO: Implement
@@ -147,6 +148,7 @@ export class APIContractMonitor implements ConformanceMonitor {
         timestamp: new Date().toISOString(),
         duration,
         context,
+        metadata: {},
         violation: {
           ruleId: 'api-contract-error',
           ruleName: 'API Contract Error',
@@ -619,7 +621,8 @@ export class APIContractMonitor implements ConformanceMonitor {
         metrics: {
           responseTime: apiCall.response?.time || 0
         },
-        logs: [`API contract violation for ${apiCall.method} ${apiCall.path}`]
+        logs: [`API contract violation for ${apiCall.method} ${apiCall.path}`],
+        traces: []
       },
       remediation: {
         suggested: this.generateAPISuggestions(rule, apiCall),

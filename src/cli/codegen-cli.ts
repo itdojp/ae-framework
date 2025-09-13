@@ -33,15 +33,16 @@ export function createCodegenCommand(): Command {
         console.log(chalk.gray(`   Output: ${options.output}`));
         console.log(chalk.gray(`   Target: ${options.target}`));
 
-        const generator = new DeterministicCodeGenerator({
+        const genOptions: any = {
           inputPath: resolve(options.input),
           outputDir: resolve(options.output),
           target: options.target,
-          templateDir: options.templateDir ? resolve(options.templateDir) : undefined,
           enableDriftDetection: options.driftDetection,
           preserveManualChanges: options.preserveChanges,
           hashAlgorithm: options.hashAlgorithm,
-        });
+        };
+        if (options.templateDir) genOptions.templateDir = resolve(options.templateDir);
+        const generator = new DeterministicCodeGenerator(genOptions);
 
         const manifest = await generator.generate();
 
@@ -83,14 +84,15 @@ export function createCodegenCommand(): Command {
         console.log(chalk.gray(`   Code directory: ${options.codeDir}`));
         console.log(chalk.gray(`   Specification: ${options.spec}`));
 
-        const detector = new DriftDetector({
+        const detOptions: any = {
           codeDir: resolve(options.codeDir),
           specPath: resolve(options.spec),
-          manifestPath: options.manifest ? resolve(options.manifest) : undefined,
           ignorePatterns: options.ignore,
           verbose: options.verbose,
           autoFix: options.autoFix,
-        });
+        };
+        if (options.manifest) detOptions.manifestPath = resolve(options.manifest);
+        const detector = new DriftDetector(detOptions);
 
         const report = await detector.detectDrift();
 
@@ -162,14 +164,15 @@ export function createCodegenCommand(): Command {
           try {
             console.log(chalk.blue('\n🔄 Specification changed, regenerating...'));
             
-            const generator = new DeterministicCodeGenerator({
+            const regenOptions: any = {
               inputPath: resolve(options.input),
               outputDir: resolve(options.output),
               target: options.target,
-              templateDir: options.templateDir ? resolve(options.templateDir) : undefined,
               enableDriftDetection: true,
               preserveManualChanges: true,
-            });
+            };
+            if (options.templateDir) regenOptions.templateDir = resolve(options.templateDir);
+            const generator = new DeterministicCodeGenerator(regenOptions);
 
             const manifest = await generator.generate();
             console.log(chalk.green(`✅ Regenerated ${manifest.files.length} files`));

@@ -112,13 +112,13 @@ export class Phase5VerificationFinal {
         const match = line.match(/(.+?)\((\d+),(\d+)\): error (TS\d+): (.+)/);
         if (match) {
           return {
-            file: match[1],
-            line: parseInt(match[2]),
-            column: parseInt(match[3]),
-            code: match[4],
-            message: match[5],
+            file: match[1]!,
+            line: parseInt(match[2]!, 10),
+            column: parseInt(match[3]!, 10),
+            code: match[4]!,
+            message: match[5]!,
             severity: 'error' as const,
-            category: this.categorizeErrorType(match[4], match[5])
+            category: this.categorizeErrorType(match[4]!, match[5]!)
           };
         }
         return null;
@@ -328,8 +328,8 @@ export class Phase5VerificationFinal {
       
       // Add placeholder properties
       const missingProps = error.message.match(/following properties? from type '.*': (.+)/);
-      if (missingProps) {
-        const props = missingProps[1].split(', ').map(prop => prop.trim());
+      if (missingProps && missingProps[1]) {
+        const props = missingProps[1]!.split(', ').map(prop => prop.trim());
         const additions = props.map(prop => `  ${prop}: undefined, // TODO: Implement`).join('\n');
         const fixedLine = problemLine.replace(/{/, `{\n${additions}\n`);
         

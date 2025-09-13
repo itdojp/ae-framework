@@ -3,7 +3,7 @@
  * Phase 2.1: Evaluates risks associated with automated fixes
  */
 
-import { FixStrategy, RepairAction, RiskAssessment, FailureArtifact } from './types.js';
+import type { FixStrategy, RepairAction, RiskAssessment, FailureArtifact } from './types.js';
 
 export class RiskAssessmentService {
   

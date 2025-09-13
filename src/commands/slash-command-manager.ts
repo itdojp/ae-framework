@@ -9,7 +9,8 @@ import { TestGenerationAgent } from '../agents/test-generation-agent.js';
 import { CodeGenerationAgent } from '../agents/code-generation-agent.js';
 import { VerifyAgent } from '../agents/verify-agent.js';
 import { OperateAgent } from '../agents/operate-agent.js';
-import { PhaseStateManager, PhaseType } from '../utils/phase-state-manager.js';
+import { PhaseStateManager } from '../utils/phase-state-manager.js';
+import type { PhaseType } from '../utils/phase-state-manager.js';
 import { SteeringLoader } from '../utils/steering-loader.js';
 import { ApprovalService } from '../services/approval-service.js';
 import { 
@@ -208,7 +209,7 @@ export class SlashCommandManager {
       description: analyzeCmd.description,
       category: analyzeCmd.category,
       usage: analyzeCmd.usage,
-      aliases: analyzeCmd.aliases,
+      ...(analyzeCmd.aliases ? { aliases: analyzeCmd.aliases } : {}),
       handler: analyzeCmd.handler.bind(analyzeCmd),
       stopOnFailure: false
     });
@@ -220,7 +221,7 @@ export class SlashCommandManager {
       description: troubleshootCmd.description,
       category: troubleshootCmd.category,
       usage: troubleshootCmd.usage,
-      aliases: troubleshootCmd.aliases,
+      ...(troubleshootCmd.aliases ? { aliases: troubleshootCmd.aliases } : {}),
       handler: troubleshootCmd.handler.bind(troubleshootCmd)
     });
 
@@ -231,7 +232,7 @@ export class SlashCommandManager {
       description: improveCmd.description,
       category: improveCmd.category,
       usage: improveCmd.usage,
-      aliases: improveCmd.aliases,
+      ...(improveCmd.aliases ? { aliases: improveCmd.aliases } : {}),
       handler: improveCmd.handler.bind(improveCmd)
     });
 
@@ -242,7 +243,7 @@ export class SlashCommandManager {
       description: documentCmd.description,
       category: documentCmd.category,
       usage: documentCmd.usage,
-      aliases: documentCmd.aliases,
+      ...(documentCmd.aliases ? { aliases: documentCmd.aliases } : {}),
       handler: documentCmd.handler.bind(documentCmd),
       stopOnFailure: false
     });
@@ -254,7 +255,7 @@ export class SlashCommandManager {
       description: personaCmd.description,
       category: personaCmd.category,
       usage: personaCmd.usage,
-      aliases: personaCmd.aliases,
+      ...(personaCmd.aliases ? { aliases: personaCmd.aliases } : {}),
       handler: personaCmd.handler.bind(personaCmd),
       stopOnFailure: false
     });
@@ -266,7 +267,7 @@ export class SlashCommandManager {
       description: installerCmd.description,
       category: installerCmd.category,
       usage: installerCmd.usage,
-      aliases: installerCmd.aliases,
+      ...(installerCmd.aliases ? { aliases: installerCmd.aliases } : {}),
       handler: installerCmd.handler.bind(installerCmd),
       stopOnFailure: false
     });
@@ -278,7 +279,7 @@ export class SlashCommandManager {
       description: mcpCmd.description,
       category: mcpCmd.category,
       usage: mcpCmd.usage,
-      aliases: mcpCmd.aliases,
+      ...(mcpCmd.aliases ? { aliases: mcpCmd.aliases } : {}),
       handler: mcpCmd.handler.bind(mcpCmd),
       stopOnFailure: false
     });
@@ -1054,10 +1055,10 @@ export class SlashCommandManager {
       
       // Stop on failure unless the command is marked as non-critical
       if (!result.success) {
-        const commandName = command.split(/\s+/)[0];
-        const resolvedName = this.aliases.get(commandName) || commandName;
-        if (!resolvedName) continue;
-        const cmdObj = this.commands.get(resolvedName!);
+        const commandName: string = (command.split(/\s+/)[0] ?? '');
+        const alias = this.aliases.get(commandName);
+        const resolvedName: string = alias ?? commandName;
+        const cmdObj = this.commands.get(resolvedName);
         const stopOnFailure = cmdObj?.stopOnFailure !== false;
         
         if (stopOnFailure) {

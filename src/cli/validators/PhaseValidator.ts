@@ -1,7 +1,7 @@
 import { execSync } from 'child_process';
 import { existsSync } from 'fs';
 import { glob } from 'glob';
-import { AEFrameworkConfig, Phase, ValidationResult, ValidationDetail, Prerequisite } from '../types.js';
+import type { AEFrameworkConfig, Phase, ValidationResult, ValidationDetail, Prerequisite } from '../types.js';
 import { toMessage } from '../../utils/error-utils.js';
 
 export class PhaseValidator {
@@ -16,7 +16,7 @@ export class PhaseValidator {
       details.push({
         check: `Required artifact: ${artifact}`,
         passed: exists,
-        message: exists ? undefined : `File or directory not found: ${artifact}`
+        ...(exists ? {} : { message: `File or directory not found: ${artifact}` })
       });
     }
 
@@ -26,7 +26,7 @@ export class PhaseValidator {
       details.push({
         check: `Validation: ${validation}`,
         passed: result.passed,
-        message: result.message
+        ...(result.message ? { message: result.message } : {})
       });
     }
 
@@ -36,7 +36,7 @@ export class PhaseValidator {
       details.push({
         check: 'Tests are RED (failing)',
         passed: redResult.passed,
-        message: redResult.message
+        ...(redResult.message ? { message: redResult.message } : {})
       });
     }
 
@@ -45,7 +45,7 @@ export class PhaseValidator {
       details.push({
         check: 'All code has corresponding tests',
         passed: testCoverageResult.passed,
-        message: testCoverageResult.message
+        ...(testCoverageResult.message ? { message: testCoverageResult.message } : {})
       });
     }
 
@@ -54,7 +54,7 @@ export class PhaseValidator {
       details.push({
         check: 'All tests pass',
         passed: testRunResult.passed,
-        message: testRunResult.message
+        ...(testRunResult.message ? { message: testRunResult.message } : {})
       });
     }
 
@@ -63,7 +63,7 @@ export class PhaseValidator {
       details.push({
         check: `Coverage >= ${phase.coverage_threshold}%`,
         passed: coverageResult.passed,
-        message: coverageResult.message
+        ...(coverageResult.message ? { message: coverageResult.message } : {})
       });
     }
 
@@ -96,11 +96,11 @@ export class PhaseValidator {
     
     return {
       success: validationResult.passed,
-      message: validationResult.message,
+      ...(validationResult.message ? { message: validationResult.message } : {}),
       details: [{
         check: prereq.validation,
         passed: validationResult.passed,
-        message: validationResult.message
+        ...(validationResult.message ? { message: validationResult.message } : {})
       }]
     };
   }
@@ -163,10 +163,9 @@ export class PhaseValidator {
       
       const hasTests = testFiles.length > 0 || specFiles.length > 0;
       
-      return {
-        passed: hasTests,
-        message: hasTests ? undefined : 'No test files found'
-      };
+      return hasTests
+        ? { passed: true }
+        : { passed: false, message: 'No test files found' };
     } catch (error: unknown) {
       return { passed: false, message: `Error checking tests: ${toMessage(error)}` };
     }

@@ -7,7 +7,7 @@
  */
 
 import { VerifyAgent } from './verify-agent.js';
-import { TaskRequest, TaskResponse } from './task-types.js';
+import type { TaskRequest, TaskResponse } from './task-types.js';
 
 export interface ValidationResult {
   isValid: boolean;

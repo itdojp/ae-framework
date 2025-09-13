@@ -5,8 +5,8 @@ const GeminiProvider: LLM = {
   name: 'gemini',
   async complete({ prompt, system, temperature }) {
     const mod: any = await eval('import("@google/generative-ai")');
-    const client = new mod.GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = client.getGenerativeModel({ model: process.env.GEMINI_MODEL ?? 'gemini-1.5-pro' });
+    const client = new mod.GoogleGenerativeAI(process.env['GEMINI_API_KEY']);
+    const model = client.getGenerativeModel({ model: process.env['GEMINI_MODEL'] ?? 'gemini-1.5-pro' });
     const res: unknown = await model.generateContent([
       ...(system ? [{ text: system }] : []),
       { text: prompt }

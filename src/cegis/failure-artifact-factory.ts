@@ -4,12 +4,12 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import { 
+import type { 
   FailureArtifact, 
   FailureCategory, 
-  CodeLocation,
-  FailureArtifactSchema 
+  CodeLocation
 } from './types.js';
+import { FailureArtifactSchema } from './types.js';
 
 export class FailureArtifactFactory {
   /**
@@ -28,7 +28,7 @@ export class FailureArtifactFactory {
       category: 'runtime_error',
       location,
       context: {
-        environment: process.env.NODE_ENV || 'development',
+        environment: process.env['NODE_ENV'] || 'development',
         nodeVersion: process.version,
         timestamp: new Date().toISOString(),
         ...context
@@ -74,7 +74,7 @@ export class FailureArtifactFactory {
       category: 'test_failure',
       location,
       context: {
-        environment: process.env.NODE_ENV || 'test',
+        environment: process.env['NODE_ENV'] || 'test',
         nodeVersion: process.version,
         timestamp: new Date().toISOString(),
         phase: 'test'
@@ -172,7 +172,7 @@ export class FailureArtifactFactory {
       category: 'contract_violation',
       location,
       context: {
-        environment: process.env.NODE_ENV || 'runtime',
+        environment: process.env['NODE_ENV'] || 'runtime',
         nodeVersion: process.version,
         timestamp: new Date().toISOString()
       },
@@ -336,7 +336,7 @@ export class FailureArtifactFactory {
       severity: issueType === 'security_vulnerability' ? 'critical' : 'major',
       category: 'dependency_issue',
       context: {
-        environment: process.env.NODE_ENV || 'development',
+        environment: process.env['NODE_ENV'] || 'development',
         nodeVersion: process.version,
         timestamp: new Date().toISOString()
       },
@@ -385,7 +385,7 @@ export class FailureArtifactFactory {
       category: 'performance_issue',
       location,
       context: {
-        environment: process.env.NODE_ENV || 'development',
+        environment: process.env['NODE_ENV'] || 'development',
         nodeVersion: process.version,
         timestamp: new Date().toISOString(),
         phase: 'verify',

@@ -10,9 +10,9 @@ import { CEGISCli } from './cegis-cli.js';
 import { GuardRunner } from './guards/GuardRunner.js';
 import { ConfigLoader } from './config/ConfigLoader.js';
 // import { MetricsCollector } from './metrics/MetricsCollector.js';  // TODO: Enable when metrics tracking is implemented
-import { AEFrameworkConfig, Phase } from './types.js';
+import type { AEFrameworkConfig, Phase } from './types.js';
 import { createHybridIntentSystem } from '../integration/hybrid-intent-system.js';
-import { TaskRequest, TaskResponse, TaskHandler } from '../agents/task-types.js';
+import type { TaskRequest, TaskResponse, TaskHandler } from '../agents/task-types.js';
 import { createNaturalLanguageTaskHandler } from '../agents/natural-language-task-adapter.js';
 import { createUserStoriesTaskHandler } from '../agents/user-stories-task-adapter.js';
 import { createValidationTaskHandler } from '../agents/validation-task-adapter.js';

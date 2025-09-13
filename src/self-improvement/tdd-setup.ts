@@ -5,8 +5,8 @@
  * ae-framework's existing components for quality-controlled reimplementation.
  */
 
-import { HybridTDDSystem, HybridTDDConfig } from '../integration/hybrid-tdd-system.js';
-import { TDDAgent, TDDAgentConfig } from '../agents/tdd-agent.js';
+import { HybridTDDSystem, type HybridTDDConfig } from '../integration/hybrid-tdd-system.js';
+import { TDDAgent, type TDDAgentConfig } from '../agents/tdd-agent.js';
 import { MetricsCollector } from '../cli/metrics/MetricsCollector.js';
 import { ConfigLoader } from '../cli/config/ConfigLoader.js';
 import * as fs from 'node:fs';

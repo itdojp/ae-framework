@@ -1,0 +1,26 @@
+name: Verify Lite
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  verify-lite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      - name: Enable corepack
+        run: corepack enable
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Type check (strict verify)
+        run: pnpm types:check
+      - name: Lint
+        run: pnpm lint
+      - name: Build
+        run: pnpm run build

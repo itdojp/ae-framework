@@ -345,12 +345,19 @@ class TestGenerationServer {
     const parsed: PropertyTestsArgs = parseOrThrow(PropertyTestsArgsSchema, args);
     const contract = {
       function: parsed.functionName,
-      inputs: parsed.inputs,
-      outputs: parsed.outputs,
+      inputs: parsed.inputs.map((i) => ({
+        name: i.name,
+        type: i.type,
+        ...(i.constraints ? { constraints: i.constraints } : {}),
+      })),
+      outputs: {
+        type: parsed.outputs.type,
+        ...(parsed.outputs as any).constraints ? { constraints: (parsed.outputs as any).constraints as string[] } : {},
+      },
       invariants: parsed.invariants,
-    };
+    } as const;
 
-    const testCases = await this.agent.generatePropertyTests(contract);
+    const testCases = await this.agent.generatePropertyTests(contract as any);
 
     let response = `# Property-Based Tests for ${parsed.functionName}\n\n`;
     response += `Generated ${testCases.length} property tests:\n\n`;
@@ -437,9 +444,29 @@ class TestGenerationServer {
 
   private async handlePlanIntegrationTests(args: unknown) {
     const parsed: PlanIntegrationArgs = parseOrThrow(PlanIntegrationArgsSchema, args);
+    const services = parsed.services
+      .map((s: unknown) => {
+        if (typeof s === 'string') {
+          return { name: s, dependencies: [] as string[] };
+        }
+        const obj = s as Record<string, unknown>;
+        const name = typeof obj['name'] === 'string' ? (obj['name'] as string) : '';
+        const deps = Array.isArray(obj['dependencies']) ? (obj['dependencies'] as unknown[]).filter((d): d is string => typeof d === 'string') : [];
+        return name ? { name, dependencies: deps } : undefined;
+      })
+      .filter((s): s is { name: string; dependencies: string[] } => Boolean(s));
+    const dataFlow = (parsed.dataFlow || [])
+      .map((d: unknown) => {
+        const obj = d as Record<string, unknown>;
+        const from = typeof obj['from'] === 'string' ? (obj['from'] as string) : '';
+        const to = typeof obj['to'] === 'string' ? (obj['to'] as string) : '';
+        const data = typeof obj['data'] === 'string' ? (obj['data'] as string) : '';
+        return from && to && data ? { from, to, data } : undefined;
+      })
+      .filter((d): d is { from: string; to: string; data: string } => Boolean(d));
     const architecture = {
-      services: parsed.services,
-      dataFlow: parsed.dataFlow,
+      services,
+      dataFlow,
     };
 
     const plan = await this.agent.planIntegrationTests(architecture);
@@ -474,7 +501,13 @@ class TestGenerationServer {
 
   private async handleGenerateSecurityTests(args: unknown) {
     const parsed: SecurityTestsArgs = parseOrThrow(SecurityTestsArgsSchema, args);
-    const testCases = await this.agent.generateSecurityTests(parsed.endpoint);
+    const endpoint = {
+      path: parsed.endpoint.path,
+      method: parsed.endpoint.method,
+      authentication: false,
+      inputs: [],
+    };
+    const testCases = await this.agent.generateSecurityTests(endpoint);
     
     let response = `# Security Tests for ${parsed.endpoint.method} ${parsed.endpoint.path}\n\n`;
     response += `Generated ${testCases.length} security tests based on OWASP guidelines:\n\n`;
@@ -494,7 +527,13 @@ class TestGenerationServer {
 
   private async handleDesignPerformanceTests(args: unknown) {
     const parsed: DesignPerformanceArgs = parseOrThrow(DesignPerformanceArgsSchema, args);
-    const testSuite = await this.agent.designPerformanceTests(parsed.sla);
+    const sla = {
+      responseTime: parsed.sla.responseTime ?? 200,
+      throughput: parsed.sla.throughput ?? 100,
+      concurrentUsers: parsed.sla.concurrentUsers ?? 50,
+      availability: parsed.sla.availability ?? 99.0,
+    };
+    const testSuite = await this.agent.designPerformanceTests(sla);
     
     let response = `# Performance Test Suite\n\n`;
     

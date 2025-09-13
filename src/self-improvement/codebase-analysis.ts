@@ -7,7 +7,7 @@
  */
 
 import { NaturalLanguageTaskAdapter } from '../agents/natural-language-task-adapter.js';
-import { TaskRequest } from '../agents/task-types.js';
+import type { TaskRequest } from '../agents/task-types.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 

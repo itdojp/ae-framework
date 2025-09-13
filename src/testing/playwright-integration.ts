@@ -382,7 +382,7 @@ export class PlaywrightIntegration extends EventEmitter {
   ): Promise<TestCoverage> {
     const totalComponents = dependencyAnalysis.nodes.length;
     const criticalComponents = dependencyAnalysis.nodes.filter(
-      n => n.metadata.importance === 'critical' || n.metadata.importance === 'high'
+      n => n.metadata['importance'] === 'critical' || n.metadata['importance'] === 'high'
     );
 
     // Calculate component coverage
@@ -528,7 +528,7 @@ export class PlaywrightIntegration extends EventEmitter {
 
     // Generate tests for critical components
     const criticalComponents = request.sourceAnalysis.nodes.filter(
-      node => node.metadata.importance === 'critical'
+      node => node.metadata['importance'] === 'critical'
     );
 
     for (const component of criticalComponents.slice(0, 5)) { // Limit to top 5
@@ -600,7 +600,7 @@ export class PlaywrightIntegration extends EventEmitter {
       id: `step-${index}`,
       action: this.mapFlowActionToTestAction(flowStep.action),
       selector: this.generateSelectorFromTarget(flowStep.target),
-      value: flowStep.data ? String(flowStep.data) : undefined,
+      ...(flowStep.data ? { value: String(flowStep.data) } : {}),
       description: `${flowStep.action} on ${flowStep.target}`
     }));
 
@@ -786,7 +786,7 @@ export class PlaywrightIntegration extends EventEmitter {
         duration: Date.now() - startTime,
         browser: config.browserType,
         attempts: success ? 1 : 2,
-        error: success ? undefined : 'Simulated test failure',
+        ...(success ? {} : { error: 'Simulated test failure' }),
         screenshots: success ? [] : [`${test.id}-failure.png`],
         videos: [],
         traces: []
@@ -823,7 +823,7 @@ export class PlaywrightIntegration extends EventEmitter {
     dependencyAnalysis: DependencyAnalysisResult
   ): number {
     const criticalNodes = dependencyAnalysis.nodes.filter(
-      n => n.metadata.importance === 'critical'
+      n => n.metadata['importance'] === 'critical'
     );
     const testedCriticalComponents = new Set<string>();
     

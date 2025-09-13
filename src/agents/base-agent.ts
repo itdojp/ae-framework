@@ -3,9 +3,10 @@
  * Provides common functionality for phase state management and steering documents
  */
 
-import { PhaseStateManager, PhaseType } from '../utils/phase-state-manager.js';
+import { PhaseStateManager } from '../utils/phase-state-manager.js';
+import type { PhaseType } from '../utils/phase-state-manager.js';
 import { SteeringLoader } from '../utils/steering-loader.js';
-import { ValidationResult } from '../cli/types.js';
+import type { ValidationResult } from '../cli/types.js';
 
 /**
  * Generic agent output interface for validation

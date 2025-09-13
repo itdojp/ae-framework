@@ -3,7 +3,7 @@
  * Implements concurrent reasoning with result aggregation
  */
 
-import { ReasoningStep, ReasoningContext, StrategyResult } from './sequential-strategy.js';
+import type { ReasoningStep, ReasoningContext, StrategyResult } from './sequential-strategy.js';
 
 export interface ParallelTask {
   id: string;
@@ -153,6 +153,7 @@ export class ParallelStrategy {
     const dataDomains = Object.keys(context.availableData);
     for (let i = 0; i < dataDomains.length; i++) {
       const domain = dataDomains[i];
+      if (!domain) continue;
       tasks.push({
         id: `analyze-${domain}`,
         description: `Analyze data in ${domain} domain`,
@@ -302,7 +303,7 @@ export class ParallelStrategy {
           result,
           duration: Date.now() - startTime,
           confidence: this.calculateTaskConfidence(task, result),
-          error: undefined
+          // omit error when success
         };
 
       } catch (error) {
@@ -323,7 +324,7 @@ export class ParallelStrategy {
       result: null,
       duration: Date.now() - startTime,
       confidence: 0,
-      error: lastError
+      ...(lastError ? { error: lastError } : {})
     };
   }
 

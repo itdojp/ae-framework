@@ -10,14 +10,10 @@ import { Command } from 'commander';
 import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
-import { 
-  FailureArtifact, 
-  FailureArtifactCollection,
-  validateFailureArtifact,
-  validateFailureArtifactCollection,
-  FailureArtifactFactory
-} from '../cegis/failure-artifact-schema.js';
-import { AutoFixEngine, AutoFixOptions } from '../cegis/auto-fix-engine.js';
+import type { FailureArtifact, FailureArtifactCollection } from '../cegis/failure-artifact-schema.js';
+import { validateFailureArtifact, validateFailureArtifactCollection, FailureArtifactFactory } from '../cegis/failure-artifact-schema.js';
+import { AutoFixEngine } from '../cegis/auto-fix-engine.js';
+import type { AutoFixOptions } from '../cegis/auto-fix-engine.js';
 import { toMessage } from '../utils/error-utils.js';
 
 const program = new Command();
@@ -153,8 +149,7 @@ async function executeAutoFix(options: any): Promise<void> {
   // Execute fixes
   const engine = new AutoFixEngine();
   const artifactArray = Array.isArray(artifacts) ? artifacts : artifacts.failures;
-  const transformedArtifacts = artifactArray.map(transformArtifactLocation);
-  const result = await engine.executeFixes(transformedArtifacts, fixOptions);
+  const result = await engine.executeFixes(artifactArray as any, fixOptions);
 
   // Display results
   console.log(chalk.gray('\n🎯 Fix Results:'));
@@ -201,8 +196,7 @@ async function executeAnalysis(options: any): Promise<void> {
 
   const engine = new AutoFixEngine();
   const artifactArray = Array.isArray(artifacts) ? artifacts : artifacts.failures;
-  const transformedArtifacts = artifactArray.map(transformArtifactLocation);
-  const analysis = await engine.executeFixes(transformedArtifacts, {
+  const analysis = await engine.executeFixes(artifactArray as any, {
     outputDir: options.output || '.ae/analysis',
     dryRun: true,
   });
@@ -211,13 +205,13 @@ async function executeAnalysis(options: any): Promise<void> {
   console.log(analysis.analysis);
 
   console.log(chalk.cyan('\n🔧 Proposed Fixes:'));
-  for (const fix of analysis.proposedFixes.slice(0, 10)) { // Show top 10
+  for (const fix of (analysis.proposedFixes || []).slice(0, 10)) { // Show top 10
     console.log(`  • ${fix.type}: ${fix.description}`);
     console.log(`    🎯 Confidence: ${(fix.confidence * 100).toFixed(1)}%`);
   }
 
-  if (analysis.proposedFixes.length > 10) {
-    console.log(chalk.gray(`    ... and ${analysis.proposedFixes.length - 10} more`));
+  if ((analysis.proposedFixes || []).length > 10) {
+    console.log(chalk.gray(`    ... and ${(analysis.proposedFixes || []).length - 10} more`));
   }
 
   console.log(chalk.yellow('\n⚠️ Risk Assessment:'));
@@ -296,18 +290,22 @@ interface TransformedFailureArtifact {
 function transformArtifactLocation(artifact: SourceFailureArtifact): TransformedFailureArtifact {
   if (artifact.location) {
     const { location, ...rest } = artifact;
+    const loc: any = {};
+    if (location.file) loc.filePath = location.file;
+    if (typeof location.line === 'number') {
+      loc.startLine = location.line;
+      loc.endLine = location.line;
+    }
+    if (typeof location.column === 'number') {
+      loc.startColumn = location.column;
+      loc.endColumn = location.column;
+    }
+    if (location.function) loc.functionName = location.function;
+    if (location.module) loc.className = location.module;
     return {
       ...rest,
-      location: {
-        filePath: location.file,
-        startLine: location.line,
-        endLine: location.line,
-        startColumn: location.column,
-        endColumn: location.column,
-        functionName: location.function,
-        className: location.module
-      }
-    };
+      ...(Object.keys(loc).length > 0 ? { location: loc } : {}),
+    } as TransformedFailureArtifact;
   }
   return artifact as TransformedFailureArtifact;
 }

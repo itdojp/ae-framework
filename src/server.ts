@@ -2,9 +2,9 @@ import Fastify from 'fastify'
 import fs from 'fs'
 import path from 'path'
 import yaml from 'yaml'
-import { handler as postReservation } from './routes/reservations-post'
-import { handler as deleteReservation } from './routes/reservations-id-delete'
-import { handler as getInventory } from './routes/inventory-sku-get'
+import { handler as postReservation } from './routes/reservations-post.js'
+import { handler as deleteReservation } from './routes/reservations-id-delete.js'
+import { handler as getInventory } from './routes/inventory-sku-get.js'
 
 const server = Fastify({ logger: true })
 

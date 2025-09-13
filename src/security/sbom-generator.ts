@@ -196,8 +196,8 @@ export class SBOMGenerator {
           name,
           version: resolvedVersion,
           type: 'library',
-          description: lockInfo.description,
-          licenses: this.options.includeLicenses ? this.extractLicenses(lockInfo) : undefined,
+          ...(lockInfo.description ? { description: lockInfo.description } : {}),
+          ...(this.options.includeLicenses ? { licenses: this.extractLicenses(lockInfo) } : {}),
           purl: `pkg:npm/${name}@${resolvedVersion}`,
           externalReferences: [
             {

@@ -23,6 +23,8 @@ jobs:
   security-scan:
     name: Security Scanning
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || contains(join(fromJSON(toJSON(github.event.pull_request.labels)).*.name, ','), 'run-security')
+    continue-on-error: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking') }}
     
     steps:
       - name: Checkout code

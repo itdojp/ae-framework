@@ -76,7 +76,7 @@ export class CircuitBreaker extends EventEmitter {
   private readonly startTime: number = Date.now();
   private responseTimes: number[] = [];
   private requestHistory: Array<{ timestamp: number; success: boolean }> = [];
-  private halfOpenTimer?: NodeJS.Timeout;
+  private halfOpenTimer: NodeJS.Timeout | undefined;
 
   constructor(
     name: string,

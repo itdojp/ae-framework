@@ -6,7 +6,7 @@
 
 import { Command } from 'commander';
 import { ApprovalService } from '../services/approval-service.js';
-import { PhaseType } from '../utils/phase-state-manager.js';
+import type { PhaseType } from '../utils/phase-state-manager.js';
 import chalk from 'chalk';
 import { toMessage } from '../utils/error-utils.js';
 

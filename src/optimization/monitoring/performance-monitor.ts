@@ -154,7 +154,7 @@ export class PerformanceMonitor extends EventEmitter {
     
     if (this.monitoringTimer) {
       clearInterval(this.monitoringTimer);
-      this.monitoringTimer = undefined;
+      delete this.monitoringTimer;
     }
 
     if (this.performanceObserver) {

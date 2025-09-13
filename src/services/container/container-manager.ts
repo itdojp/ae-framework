@@ -7,13 +7,15 @@ import { EventEmitter } from 'events';
 import * as path from 'path';
 import { 
   ContainerEngine, 
-  ContainerEngineFactory, 
+  ContainerEngineFactory
+} from './container-engine.js';
+import type {
   ContainerConfig, 
   ContainerRunOptions, 
   ContainerStatus,
   ContainerLogs,
   ImageBuildContext,
-  type ContainerEngineName 
+  ContainerEngineName 
 } from './container-engine.js';
 
 export interface ContainerManagerConfig {
@@ -83,8 +85,8 @@ export class ContainerManager extends EventEmitter {
   private config: ContainerManagerConfig;
   private activeJobs: Map<string, VerificationJob> = new Map();
   private healthChecks: Map<string, ContainerHealthCheck> = new Map();
-  private cleanupTimer?: NodeJS.Timeout;
-  private healthCheckTimer?: NodeJS.Timeout;
+  private cleanupTimer: NodeJS.Timeout | undefined;
+  private healthCheckTimer: NodeJS.Timeout | undefined;
 
   constructor(config: ContainerManagerConfig = {}) {
     super();
@@ -112,7 +114,7 @@ export class ContainerManager extends EventEmitter {
   async initialize(): Promise<void> {
     try {
       // Create preferred engine or auto-detect with timeout for CI
-      const createTimeout = process.env.CI ? 5000 : 15000; // 5s for CI, 15s for local
+      const createTimeout = process.env['CI'] ? 5000 : 15000; // 5s for CI, 15s for local
       
       const enginePromise = this.config.preferredEngine 
         ? ContainerEngineFactory.createEngine(this.config.preferredEngine)
@@ -126,7 +128,7 @@ export class ContainerManager extends EventEmitter {
       ]);
 
       // Verify engine is available with timeout
-      const availabilityTimeout = process.env.CI ? 3000 : 10000; // 3s for CI, 10s for local
+      const availabilityTimeout = process.env['CI'] ? 3000 : 10000; // 3s for CI, 10s for local
       const availabilityPromise = this.engine.checkAvailability();
       
       const isAvailable = await Promise.race([
@@ -146,7 +148,7 @@ export class ContainerManager extends EventEmitter {
       this.setupEngineEventListeners();
 
       // Start background services (only if not in CI)
-      if (!process.env.CI) {
+      if (!process.env['CI']) {
         this.startBackgroundServices();
       }
 
@@ -181,17 +183,14 @@ export class ContainerManager extends EventEmitter {
         },
         volumes: env.volumes,
         resources: env.resources,
-        security: {
-          ...this.config.securityDefaults,
-          readOnlyRootFilesystem: false // Verification might need to write temp files
-        },
+        security: this.config.securityDefaults ? { ...this.config.securityDefaults, readOnlyRootFilesystem: false } : { readOnlyRootFilesystem: false },
         labels: {
           'ae-framework.type': 'verification',
           'ae-framework.language': env.language,
           'ae-framework.tools': env.tools.join(','),
           'ae-framework.created': new Date().toISOString()
         },
-        autoRemove: this.config.autoCleanup,
+        ...(this.config.autoCleanup !== undefined ? { autoRemove: this.config.autoCleanup } : {}),
         detached: true
       };
 
@@ -266,14 +265,14 @@ export class ContainerManager extends EventEmitter {
           ...this.config.resourceLimits,
           ...environment.resources
         },
-        security: this.config.securityDefaults,
+        security: this.config.securityDefaults ? { ...this.config.securityDefaults } : {},
         labels: {
           'ae-framework.job-id': jobId,
           'ae-framework.type': 'verification-job',
           'ae-framework.language': job.language,
           'ae-framework.project': path.basename(job.projectPath)
         },
-        autoRemove: this.config.autoCleanup,
+        ...(this.config.autoCleanup !== undefined ? { autoRemove: this.config.autoCleanup } : {}),
         restart: 'no'
       };
 
@@ -287,11 +286,12 @@ export class ContainerManager extends EventEmitter {
         language: job.language
       });
 
-      const result = await this.engine.runContainer(config, {
-        timeout: this.config.defaultTimeout,
+      const runOptions: ContainerRunOptions = {
         capture: true,
-        cleanup: this.config.autoCleanup
-      });
+        ...(this.config.defaultTimeout !== undefined ? { timeout: this.config.defaultTimeout } : {}),
+        ...(this.config.autoCleanup !== undefined ? { cleanup: this.config.autoCleanup } : {})
+      };
+      const result = await this.engine.runContainer(config, runOptions);
 
       // Update job with results
       verificationJob.status = result.exitCode === 0 ? 'completed' : 'failed';
@@ -577,13 +577,14 @@ export class ContainerManager extends EventEmitter {
       }
 
       // Cleanup containers and images
-      const engineCleanup = await this.engine.cleanup({
+      const cleanupOpts: Parameters<typeof this.engine.cleanup>[0] = {
         containers: true,
         images: true,
         volumes: false, // Keep volumes for now
         networks: false,
-        force: options?.force
-      });
+        ...(options?.force !== undefined ? { force: options.force } : {})
+      };
+      const engineCleanup = await this.engine.cleanup(cleanupOpts);
 
       containersRemoved = engineCleanup.containers;
       spaceSaved = engineCleanup.spaceSaved;
@@ -747,7 +748,8 @@ export class ContainerManager extends EventEmitter {
       }
     };
 
-    return environments[language] || environments.multi;
+    const env = environments[language] ?? environments['multi'];
+    return env as VerificationEnvironment;
   }
 
   private buildVerificationCommand(job: Omit<VerificationJob, 'id' | 'status' | 'startTime'>): string[] {

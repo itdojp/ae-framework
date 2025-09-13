@@ -13,7 +13,7 @@ import { IntegrationTestOrchestrator } from '../integration/test-orchestrator.js
 import { E2ETestRunner } from '../integration/runners/e2e-runner.js';
 import { APITestRunner } from '../integration/runners/api-runner.js';
 import { HTMLTestReporter } from '../integration/reporters/html-reporter.js';
-import {
+import type { 
   TestCase,
   TestSuite,
   TestFixture,

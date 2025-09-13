@@ -243,7 +243,7 @@ export const securityConfigurations = {
  * Get security configuration for current environment
  */
 export function getSecurityConfiguration(environment?: string): SecurityHeadersOptions {
-  const env = environment || process.env.NODE_ENV || 'development';
+  const env = environment || process.env['NODE_ENV'] || 'development';
   
   switch (env) {
     case 'production':

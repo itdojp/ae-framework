@@ -139,7 +139,7 @@ export const VerificationResultSchema = z.object({
     cpuUsage: z.number().optional(),
     networkCalls: z.number().default(0),
     dbQueries: z.number().default(0)
-  }).default({}),
+  }).default({ executionTime: 0, networkCalls: 0, dbQueries: 0 }),
   metadata: z.record(z.any()).default({})
 });
 

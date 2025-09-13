@@ -5,7 +5,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
-import {
+import type {
   ConformanceMonitor,
   ConformanceRule,
   RuntimeContext,
@@ -71,7 +71,7 @@ export class DataValidationMonitor implements ConformanceMonitor {
 
       return {
         id: resultId,
-        ruleId: violation?.ruleId || applicableRules[0].id,
+        ruleId: violation?.ruleId ?? (applicableRules[0]?.id ?? 'none'),
         status: violation ? 'fail' : 'pass',
         timestamp: new Date().toISOString(),
         duration,
@@ -82,7 +82,8 @@ export class DataValidationMonitor implements ConformanceMonitor {
           memoryUsage: this.getMemoryUsage(),
           networkCalls: 0,
           dbQueries: 0
-        }
+        },
+        metadata: {}
       };
 
     } catch (error) {
@@ -95,6 +96,7 @@ export class DataValidationMonitor implements ConformanceMonitor {
         timestamp: new Date().toISOString(),
         duration,
         context,
+        metadata: {},
         violation: {
           ruleId: 'data-validation-error',
           ruleName: 'Data Validation Error',
@@ -290,45 +292,45 @@ export class DataValidationMonitor implements ConformanceMonitor {
     try {
       // String constraints
       if (schema instanceof z.ZodString) {
-        if (constraints.minLength) {
-          schema = (schema as z.ZodString).min(constraints.minLength);
+        if (constraints['minLength']) {
+          schema = (schema as z.ZodString).min(constraints['minLength']);
         }
-        if (constraints.maxLength) {
-          schema = (schema as z.ZodString).max(constraints.maxLength);
+        if (constraints['maxLength']) {
+          schema = (schema as z.ZodString).max(constraints['maxLength']);
         }
-        if (constraints.pattern) {
-          schema = (schema as z.ZodString).regex(new RegExp(constraints.pattern));
+        if (constraints['pattern']) {
+          schema = (schema as z.ZodString).regex(new RegExp(constraints['pattern']));
         }
       }
 
       // Number constraints
       if (schema instanceof z.ZodNumber) {
-        if (constraints.min !== undefined) {
-          schema = (schema as z.ZodNumber).min(constraints.min);
+        if (constraints['min'] !== undefined) {
+          schema = (schema as z.ZodNumber).min(constraints['min']);
         }
-        if (constraints.max !== undefined) {
-          schema = (schema as z.ZodNumber).max(constraints.max);
+        if (constraints['max'] !== undefined) {
+          schema = (schema as z.ZodNumber).max(constraints['max']);
         }
-        if (constraints.integer) {
+        if (constraints['integer']) {
           schema = (schema as z.ZodNumber).int();
         }
       }
 
       // Array constraints
       if (schema instanceof z.ZodArray) {
-        if (constraints.minItems) {
-          schema = (schema as z.ZodArray<any>).min(constraints.minItems);
+        if (constraints['minItems']) {
+          schema = (schema as z.ZodArray<any>).min(constraints['minItems']);
         }
-        if (constraints.maxItems) {
-          schema = (schema as z.ZodArray<any>).max(constraints.maxItems);
+        if (constraints['maxItems']) {
+          schema = (schema as z.ZodArray<any>).max(constraints['maxItems']);
         }
       }
 
       // Optional/nullable handling
-      if (constraints.optional) {
+      if (constraints['optional']) {
         schema = schema.optional();
       }
-      if (constraints.nullable) {
+      if (constraints['nullable']) {
         schema = schema.nullable();
       }
 

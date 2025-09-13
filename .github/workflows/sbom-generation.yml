@@ -26,6 +26,7 @@ on:
 jobs:
   sbom-generation:
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || contains(join(fromJSON(toJSON(github.event.pull_request.labels)).*.name, ','), 'run-security')
     
     permissions:
       contents: read
@@ -152,6 +153,7 @@ jobs:
         
   security-analysis:
     runs-on: ubuntu-latest
+    continue-on-error: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking') }}
     needs: sbom-generation
     if: always()
     

@@ -390,12 +390,12 @@ export class ProblemDecomposer {
     complexity += 3;
     
     // Add complexity based on context
-    if (problem.context.linesOfCode) {
-      complexity += Math.min(3, problem.context.linesOfCode / 10000);
+    if (problem.context['linesOfCode']) {
+      complexity += Math.min(3, (problem.context['linesOfCode'] as number) / 10000);
     }
     
-    if (problem.context.dependencies) {
-      complexity += Math.min(2, problem.context.dependencies.length / 10);
+    if (problem.context['dependencies']) {
+      complexity += Math.min(2, (problem.context['dependencies'] as any[]).length / 10);
     }
     
     if (problem.constraints.length > 5) {
@@ -410,12 +410,12 @@ export class ProblemDecomposer {
     
     complexity += 2; // Base complexity
     
-    if (problem.context.dataSize) {
-      complexity += Math.min(3, Math.log10(problem.context.dataSize) / 2);
+    if (problem.context['dataSize']) {
+      complexity += Math.min(3, Math.log10(problem.context['dataSize'] as number) / 2);
     }
     
-    if (problem.context.dataSources) {
-      complexity += Math.min(2, problem.context.dataSources.length / 5);
+    if (problem.context['dataSources']) {
+      complexity += Math.min(2, (problem.context['dataSources'] as any[]).length / 5);
     }
     
     return Math.min(10, complexity);
@@ -494,7 +494,7 @@ export class ProblemDecomposer {
     return subProblems.map((sp, index) => ({
       ...sp,
       type: 'sequential' as const,
-      dependencies: index > 0 ? [subProblems[index - 1].id] : []
+      dependencies: (index > 0 && subProblems[index - 1]) ? [subProblems[index - 1]!.id] : []
     }));
   }
 
@@ -502,7 +502,7 @@ export class ProblemDecomposer {
     // Remove redundant dependencies
     const optimized = subProblems.map(sp => ({
       ...sp,
-      dependencies: this.removeRedundantDependencies(sp.dependencies, subProblems)
+      dependencies: this.removeRedundantDependencies(sp.dependencies || [], subProblems)
     }));
     
     // Balance workload
@@ -519,7 +519,7 @@ export class ProblemDecomposer {
         const isCovered = dependencies.some(otherDep => {
           if (otherDep === dep) return false;
           const otherDepSubProblem = allSubProblems.find(sp => sp.id === otherDep);
-          return otherDepSubProblem?.dependencies.includes(dep);
+          return otherDepSubProblem?.dependencies?.includes(dep) ?? false;
         });
         
         if (!isCovered) {

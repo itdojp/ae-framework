@@ -4,16 +4,17 @@
  * Implements domain modeling and TDD as specified in ae-framework-v2.yml
  */
 
-import { PhaseStateManager, PhaseType } from '../utils/phase-state-manager.js';
+import { PhaseStateManager } from '../utils/phase-state-manager.js';
+import type { PhaseType } from '../utils/phase-state-manager.js';
 import { SteeringLoader } from '../utils/steering-loader.js';
-import { 
+import type { 
   AgentTask, 
   TaskResult, 
   AgentConfig, 
   AgentState, 
-  AgentContext,
-  TaskType
+  AgentContext
 } from './domain-types.js';
+import { TaskType } from './domain-types.js';
 import { assertNever } from '../core/assertNever.js';
 
 /**

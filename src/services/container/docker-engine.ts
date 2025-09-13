@@ -6,8 +6,8 @@
 import { execSync, exec, spawn } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
-import { 
-  ContainerEngine, 
+import { ContainerEngine } from './container-engine.js';
+import type { 
   ContainerEngineInfo, 
   ContainerConfig, 
   ContainerRunOptions, 
@@ -16,7 +16,7 @@ import {
   ContainerStats,
   ImageBuildContext,
   ImageInfo,
-  type ContainerCapabilities
+  ContainerCapabilities
 } from './container-engine.js';
 
 const execAsync = promisify(exec);
@@ -341,9 +341,9 @@ export class DockerEngine extends ContainerEngine {
         status: containerInfo.State.Status,
         image: containerInfo.Config.Image,
         createdAt: new Date(containerInfo.Created),
-        startedAt: containerInfo.State.StartedAt ? new Date(containerInfo.State.StartedAt) : undefined,
-        finishedAt: containerInfo.State.FinishedAt ? new Date(containerInfo.State.FinishedAt) : undefined,
-        exitCode: containerInfo.State.ExitCode,
+        ...(containerInfo.State.StartedAt ? { startedAt: new Date(containerInfo.State.StartedAt) } : {}),
+        ...(containerInfo.State.FinishedAt ? { finishedAt: new Date(containerInfo.State.FinishedAt) } : {}),
+        ...(containerInfo.State.ExitCode !== undefined ? { exitCode: containerInfo.State.ExitCode } : {}),
         health: containerInfo.State.Health?.Status || 'none'
       };
     } catch (error: any) {
@@ -374,7 +374,7 @@ export class DockerEngine extends ContainerEngine {
         status: container.Status,
         image: container.Image,
         createdAt: new Date(container.CreatedAt),
-        ports: container.Ports ? this.parsePorts(container.Ports) : undefined
+        ...(container.Ports ? { ports: this.parsePorts(container.Ports) } : {})
       }));
     } catch (error: any) {
       throw new Error(`Failed to list containers: ${error.message}`);
@@ -500,7 +500,7 @@ export class DockerEngine extends ContainerEngine {
 
       // Extract image ID from build output
       const imageIdMatch = result.stdout.match(/Successfully built ([a-f0-9]{12})/);
-      const imageId = imageIdMatch ? imageIdMatch[1] : imageTag;
+      const imageId = (imageIdMatch && imageIdMatch[1]) ? imageIdMatch[1] : imageTag;
 
       this.emit('imageBuild', {
         imageTag,
@@ -593,8 +593,7 @@ export class DockerEngine extends ContainerEngine {
         tag: image.Tag,
         digest: image.Digest,
         size: parseInt(image.Size) || 0,
-        created: new Date(image.CreatedAt),
-        labels: undefined // Not included in format
+        created: new Date(image.CreatedAt)
       }));
     } catch (error: any) {
       throw new Error(`Failed to list images: ${error.message}`);
@@ -910,12 +909,16 @@ export class DockerEngine extends ContainerEngine {
 
     return portsString.split(', ').map(portMapping => {
       const match = portMapping.match(/(.+?):(\d+)->(\d+)\/(.+)/);
-      if (match && match[2] && match[3]) {
+      if (match) {
+        const hostIp = match[1] ?? '';
+        const hostPortStr = match[2] ?? '0';
+        const contPortStr = match[3] ?? '0';
+        const proto = match[4] ?? 'tcp';
         return {
-          hostIp: match[1] || '',
-          hostPort: parseInt(match[2]),
-          containerPort: parseInt(match[3]),
-          protocol: match[4] || 'tcp'
+          hostIp,
+          hostPort: parseInt(hostPortStr, 10),
+          containerPort: parseInt(contPortStr, 10),
+          protocol: proto
         };
       }
       return null;
@@ -938,8 +941,8 @@ export class DockerEngine extends ContainerEngine {
     const match = sizeStr.trim().match(/^(\d+(?:\.\d+)?)\s*([A-Za-z]+)$/);
     if (!match) return 0;
 
-    const value = parseFloat(match[1]);
-    const unit = match[2];
+    const value = parseFloat(match[1] ?? '0');
+    const unit = match[2] ?? 'B';
     const multiplier = units[unit] || 1;
 
     return Math.round(value * multiplier);

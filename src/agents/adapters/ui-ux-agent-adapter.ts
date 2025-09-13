@@ -4,7 +4,7 @@
  * TODO: Replace with actual UI/UX generation agent when available
  */
 
-import {
+import type {
   StandardAEAgent,
   ProcessingContext,
   PhaseResult,
@@ -194,7 +194,7 @@ export class UIUXAgentAdapter implements StandardAEAgent<UIUXInput, UIUXOutput> 
         steps: stories.map((story, index) => ({
           action: story.iWant || story.description,
           screen: `screen_${story.id || index + 1}`,
-          nextStep: index < stories.length - 1 ? `screen_${stories[index + 1].id || index + 2}` : undefined,
+          nextStep: index < stories.length - 1 ? `screen_${stories[index + 1].id || index + 2}` : '',
           conditions: story.acceptanceCriteria || []
         })),
         triggers: stories.map(story => story.asA || 'user'),
@@ -250,7 +250,7 @@ export class UIUXAgentAdapter implements StandardAEAgent<UIUXInput, UIUXOutput> 
           name: attr.name,
           type: attr.type,
           required: attr.required,
-          description: attr.description
+          description: attr.description ?? ''
         })),
         states: [
           { name: 'loading', description: 'Data is being loaded', triggers: ['fetch'] },
@@ -271,7 +271,7 @@ export class UIUXAgentAdapter implements StandardAEAgent<UIUXInput, UIUXOutput> 
           name: attr.name,
           type: this.mapTypeToInputType(attr.type),
           required: attr.required,
-          description: attr.description
+          description: attr.description ?? ''
         })),
         states: [
           { name: 'pristine', description: 'Form not yet touched', triggers: ['init'] },
@@ -437,7 +437,7 @@ export class UIUXAgentAdapter implements StandardAEAgent<UIUXInput, UIUXOutput> 
       phase: 'ui-ux-generation',
       severity: 'error',
       context: { input, context },
-      stack: error instanceof Error ? error.stack : undefined
+      stack: error instanceof Error && error.stack ? error.stack : ''
     };
 
     const metadata: PhaseMetadata = {

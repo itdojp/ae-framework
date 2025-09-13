@@ -4,7 +4,7 @@
  * Manages registration and lifecycle of all services
  */
 
-import { 
+import type { 
   ServiceConfig, 
   ServiceType, 
   ServiceState,

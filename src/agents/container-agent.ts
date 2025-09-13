@@ -3,7 +3,8 @@
  * Integrates container-based verification environments with the ae-framework
  */
 
-import { ContainerManager, ContainerManagerConfig, VerificationJob, VerificationEnvironment } from '../services/container/container-manager.js';
+import { ContainerManager } from '../services/container/container-manager.js';
+import type { ContainerManagerConfig, VerificationJob, VerificationEnvironment } from '../services/container/container-manager.js';
 import { ContainerEngineFactory, type ContainerEngineName } from '../services/container/container-engine.js';
 import * as path from 'path';
 import * as fs from 'fs/promises';
@@ -101,7 +102,7 @@ export class ContainerAgent {
       }
 
       // Initialize container manager with timeout for CI environments
-      const initTimeout = process.env.CI ? 10000 : 30000; // 10s for CI, 30s for local
+      const initTimeout = process.env['CI'] ? 10000 : 30000; // 10s for CI, 30s for local
       const initPromise = this.containerManager.initialize();
       
       let engineInfo;
@@ -116,7 +117,7 @@ export class ContainerAgent {
       } catch (error: any) {
         // In CI environments, container engines might not be available
         // Continue with limited functionality
-        if (process.env.CI || error.message.includes('not found') || error.message.includes('timeout')) {
+        if (process.env['CI'] || error.message.includes('not found') || error.message.includes('timeout')) {
           console.warn(`Container engine not available: ${error.message}`);
           console.warn('Running in degraded mode without container engine');
           engineInfo = { name: 'none', version: 'N/A', available: false };
@@ -239,8 +240,8 @@ export class ContainerAgent {
         request.tools,
         {
           tag,
-          buildArgs: request.buildArgs,
-          push: request.push
+          ...(request.buildArgs ? { buildArgs: request.buildArgs } : {}),
+          ...(request.push !== undefined ? { push: request.push } : {})
         }
       );
 

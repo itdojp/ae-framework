@@ -396,12 +396,12 @@ export class OptimizationSystem extends EventEmitter {
   private stopIntegrationServices(): void {
     if (this.integrationTimer) {
       clearInterval(this.integrationTimer);
-      this.integrationTimer = undefined;
+      delete this.integrationTimer;
     }
 
     if (this.adaptiveTimer) {
       clearInterval(this.adaptiveTimer);
-      this.adaptiveTimer = undefined;
+      delete this.adaptiveTimer;
     }
   }
 
@@ -490,9 +490,14 @@ export class OptimizationSystem extends EventEmitter {
     const systemMetrics = this.getSystemMetrics();
     
     // Clear old recommendations
-    this.recommendations = this.recommendations.filter(r => 
-      Date.now() - new Date(r.id.split('-')[2]).getTime() < 300000 // Keep for 5 minutes
-    );
+    this.recommendations = this.recommendations.filter(r => {
+      const parts = r.id.split('-');
+      const tsStr = parts[2];
+      if (!tsStr) return true;
+      const tsNum = Number(tsStr);
+      if (Number.isNaN(tsNum)) return true;
+      return Date.now() - new Date(tsNum).getTime() < 300000; // Keep for 5 minutes
+    });
 
     // Performance recommendations
     if (systemMetrics.performance.errorRate > 0.05) {

@@ -2,7 +2,8 @@
 
 import { Command } from 'commander';
 import chalk from 'chalk';
-import { EnhancedStateManager, FailureArtifact } from '../utils/enhanced-state-manager.js';
+import { EnhancedStateManager } from '../utils/enhanced-state-manager.js';
+import type { FailureArtifact } from '../utils/enhanced-state-manager.js';
 import { toMessage } from '../utils/error-utils.js';
 import type { AEIR } from '@ae-framework/spec-compiler';
 import * as fs from 'fs/promises';
@@ -56,12 +57,12 @@ export class EnhancedStateCLI {
       // Parse tags if provided
       const tags = options.tags ? JSON.parse(options.tags) : {};
 
-      const key = await this.stateManager.saveSSOT(options.logicalKey, aeir, {
-        phase: options.phase,
-        tags,
-        ttl: options.ttl,
-        source: options.source
-      });
+      const saveOptions: any = {};
+      if (options.phase) saveOptions.phase = options.phase;
+      if (options.tags) saveOptions.tags = tags;
+      if (options.ttl !== undefined) saveOptions.ttl = options.ttl;
+      if (options.source) saveOptions.source = options.source;
+      const key = await this.stateManager.saveSSOT(options.logicalKey, aeir, saveOptions);
 
       console.log(chalk.green(`✅ SSOT saved with key: ${key}`));
       console.log(chalk.blue(`   Logical key: ${options.logicalKey}`));

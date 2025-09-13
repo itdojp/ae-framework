@@ -3,7 +3,8 @@
  * Integrates Smart Persona System with existing commands
  */
 
-import { PersonaManager, UserPreferences } from '../utils/persona-manager.js';
+import { PersonaManager } from '../utils/persona-manager.js';
+import type { UserPreferences } from '../utils/persona-manager.js';
 import type { CommandResult, CommandContext } from '../commands/slash-command-manager.js';
 
 export interface AdaptedCommandBehavior {
@@ -116,7 +117,7 @@ export class PersonaIntegrationService {
     }
 
     const profile = this.personaManager.getCurrentProfile();
-    const shouldValidate = profile?.preferences.autoValidation || behavior.evidenceLevel === 'strict';
+    const shouldValidate = profile?.preferences['autoValidation'] || behavior.evidenceLevel === 'strict';
 
     return { validate: shouldValidate, minConfidence };
   }
@@ -134,20 +135,20 @@ export class PersonaIntegrationService {
 
     // Add language preferences for analysis commands
     if (command.includes('analyze') || command.includes('improve')) {
-      if (profile.preferences.preferredLanguages.length > 0) {
-        options.languages = profile.preferences.preferredLanguages;
+      if (profile.preferences['preferredLanguages'].length > 0) {
+        options['languages'] = profile.preferences['preferredLanguages'];
       }
     }
 
     // Add testing preferences for code generation
     if (command.includes('generate') || command.includes('create')) {
-      options.testingStyle = profile.preferences.testingPreference;
-      options.codeStyle = profile.preferences.codeStyle;
+      options['testingStyle'] = profile.preferences['testingPreference'];
+      options['codeStyle'] = profile.preferences['codeStyle'];
     }
 
     // Add documentation level preferences
     if (command.includes('document')) {
-      options.explanationLevel = profile.preferences.explanationLevel;
+      options['explanationLevel'] = profile.preferences['explanationLevel'];
     }
 
     return options;

@@ -250,8 +250,8 @@ export class VisualRegressionTesting extends EventEmitter {
         baseline: {
           version: '1.0.0',
           timestamp: new Date(),
-          commit: process.env.GIT_COMMIT,
-          branch: process.env.GIT_BRANCH
+          ...(process.env['GIT_COMMIT'] ? { commit: process.env['GIT_COMMIT'] } : {}),
+          ...(process.env['GIT_BRANCH'] ? { branch: process.env['GIT_BRANCH'] } : {})
         }
       };
 
@@ -441,7 +441,7 @@ export class VisualRegressionTesting extends EventEmitter {
     const tests: VisualTestCase[] = [];
     
     const criticalComponents = request.sourceAnalysis.nodes.filter(
-      node => node.metadata.importance === 'critical' || node.metadata.importance === 'high'
+      node => node.metadata['importance'] === 'critical' || node.metadata['importance'] === 'high'
     );
 
     for (const component of criticalComponents.slice(0, 10)) { // Limit to top 10
@@ -453,7 +453,7 @@ export class VisualRegressionTesting extends EventEmitter {
         selector: `[data-testid="${component.id}"]`,
         config: { ...this.config, ...request.config },
         baseline: `baselines/${component.id}.png`,
-        priority: component.metadata.importance === 'critical' ? 'critical' : 'high',
+        priority: component.metadata['importance'] === 'critical' ? 'critical' : 'high',
         tags: ['component', 'visual', component.type],
         dependencies: component.dependencies.slice(0, 3)
       };

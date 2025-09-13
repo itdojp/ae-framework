@@ -5,7 +5,8 @@
  * enabling seamless Phase 1 Intent workflow integration and proactive assistance.
  */
 
-import { IntentAgent, IntentAnalysisRequest, RequirementSource, ProjectContext, Requirement } from './intent-agent.js';
+import { IntentAgent } from './intent-agent.js';
+import type { IntentAnalysisRequest, RequirementSource, ProjectContext, Requirement } from './intent-agent.js';
 
 export interface TaskRequest {
   description: string;
@@ -112,7 +113,7 @@ export class IntentTaskAdapter {
     
     const analysisRequest: IntentAnalysisRequest = {
       sources,
-      context,
+      ...(context ? { context } : {}),
       analysisDepth: 'comprehensive',
       outputFormat: 'both'
     };

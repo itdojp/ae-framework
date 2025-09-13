@@ -275,8 +275,8 @@ class RiskAssessor {
   
   private getComplexityScore(componentId: string, analysis: DependencyAnalysisResult): number {
     const node = analysis.nodes.find(n => n.id === componentId);
-    if (!node?.metadata?.complexity) return 0.5;
-    return Math.min(1.0, (node.metadata.complexity as number) / 10);
+    if (!node?.metadata?.['complexity']) return 0.5;
+    return Math.min(1.0, (node.metadata['complexity'] as number) / 10);
   }
 }
 

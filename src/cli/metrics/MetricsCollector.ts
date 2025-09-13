@@ -1,6 +1,6 @@
 import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'fs';
 import * as path from 'path';
-import { AEFrameworkConfig } from '../types.js';
+import type { AEFrameworkConfig } from '../types.js';
 import { toMessage } from '../../utils/error-utils.js';
 
 export interface TDDViolation {

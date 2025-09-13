@@ -237,12 +237,14 @@ export class IntentAgent {
           tags: ['requirement', 'analysis']
         }
       }],
-      context: options?.domain ? {
-        domain: options.domain,
-        existingSystem: false,
-        constraints: [],
-        stakeholders: []
-      } : undefined,
+      ...(options?.domain ? {
+        context: {
+          domain: options.domain,
+          existingSystem: false,
+          constraints: [],
+          stakeholders: []
+        }
+      } : {}),
       analysisDepth: options?.analysisDepth || 'comprehensive',
       outputFormat: options?.outputFormat || 'both'
     };
@@ -1212,23 +1214,23 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
     const steeringDocs = await this.steeringLoader.loadAllDocuments();
     
     // If product steering exists, enhance with product context
-    if (steeringDocs.product) {
+    if (steeringDocs['product']) {
       requirements.forEach(req => {
         // Add product context to requirements (case-insensitive check)
-        if (!req.rationale && steeringDocs.product?.toLowerCase().includes('vision')) {
+        if (!req.rationale && steeringDocs['product']?.toLowerCase().includes('vision')) {
           req.rationale = 'Aligns with product vision';
         }
       });
     }
     
     // If architecture steering exists, categorize technical requirements
-    if (steeringDocs.architecture) {
+    if (steeringDocs['architecture']) {
       const archKeywords = ['api', 'database', 'microservice', 'architecture', 'integration', 'infrastructure'];
       requirements.forEach(req => {
         if (req.type === 'technical') {
           // More flexible matching using keywords
           const reqLower = req.description.toLowerCase();
-          const archLower = steeringDocs.architecture?.toLowerCase() || '';
+          const archLower = steeringDocs['architecture']?.toLowerCase() || '';
           
           // Check if requirement contains architecture keywords or if architecture doc mentions the requirement
           const isArchRelated = archKeywords.some(keyword => reqLower.includes(keyword)) ||
@@ -1242,9 +1244,9 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
     }
     
     // If standards steering exists, apply priority based on standards
-    if (steeringDocs.standards) {
+    if (steeringDocs['standards']) {
       // Extract mandatory standards with more sophisticated parsing
-      const standardsLower = steeringDocs.standards.toLowerCase();
+      const standardsLower = steeringDocs['standards'].toLowerCase();
       const mandatoryPatterns = [
         /must\s+(?:have|implement|follow|use)\s+(\w+)/g,
         /required:\s*([^,\n]+)/g,
@@ -1297,15 +1299,15 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
     } else {
       const docs = await this.steeringLoader.loadAllDocuments();
       
-      if (!docs.product) {
+      if (!docs['product']) {
         suggestions.push('Create product steering document for clearer vision');
       }
       
-      if (!docs.architecture) {
+      if (!docs['architecture']) {
         suggestions.push('Create architecture steering document for technical consistency');
       }
       
-      if (!docs.standards) {
+      if (!docs['standards']) {
         suggestions.push('Create standards steering document for code quality');
       }
     }

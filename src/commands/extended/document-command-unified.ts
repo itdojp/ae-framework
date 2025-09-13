@@ -6,9 +6,10 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as ts from 'typescript';
-import { BaseExtendedCommand, ExtendedCommandResult } from './base-command.js';
+import { BaseExtendedCommand } from './base-command.js';
+import type { ExtendedCommandResult } from './base-command.js';
 import type { CommandContext } from '../slash-command-manager.js';
-import { 
+import type { 
   DocumentationResult, 
   AnalysisTarget, 
   DocumentationOptions,
@@ -29,7 +30,7 @@ export class UnifiedDocumentCommand extends BaseExtendedCommand {
     });
   }
 
-  protected validateArgs(args: string[]): { isValid: boolean; message?: string } {
+  protected override validateArgs(args: string[]): { isValid: boolean; message?: string } {
     if (args.length === 0) {
       return {
         isValid: false,
@@ -39,19 +40,21 @@ export class UnifiedDocumentCommand extends BaseExtendedCommand {
     return { isValid: true };
   }
 
-  protected parseOptions(args: string[]): DocumentationOptions {
+  protected override parseOptions(args: string[]): DocumentationOptions {
     const baseOptions = super.parseOptions(args);
     
+    const format = (args.find(arg => arg.startsWith('--format='))?.split('=')[1] as any) || 'markdown';
+    const template = args.find(arg => arg.startsWith('--template='))?.split('=')[1];
     return {
       ...baseOptions,
-      format: (args.find(arg => arg.startsWith('--format='))?.split('=')[1] as any) || 'markdown',
+      format,
       includePrivate: args.includes('--include-private'),
       includeExamples: args.includes('--include-examples'),
-      template: args.find(arg => arg.startsWith('--template='))?.split('=')[1]
+      ...(template ? { template } : {})
     };
   }
 
-  protected async execute(
+  protected override async execute(
     args: string[], 
     options: DocumentationOptions, 
     context: CommandContext
@@ -153,7 +156,7 @@ export class UnifiedDocumentCommand extends BaseExtendedCommand {
         coverage
       },
       format: options.format || 'markdown',
-      outputPath
+      ...(outputPath ? { outputPath } : {})
     };
   }
 
@@ -280,11 +283,12 @@ export class UnifiedDocumentCommand extends BaseExtendedCommand {
       if (funcMatch) {
         const nameMatch = line.match(/(?:function\s+(\w+)|const\s+(\w+)\s*=)/);
         if (nameMatch) {
+          const desc = this.extractJSDocFromLines(lines, index);
           exports.push({
             name: nameMatch[1] || nameMatch[2] || 'anonymous',
             type: 'function',
             signature: line.trim(),
-            description: this.extractJSDocFromLines(lines, index)
+            ...(desc ? { description: desc } : {})
           });
         }
       }
@@ -292,21 +296,23 @@ export class UnifiedDocumentCommand extends BaseExtendedCommand {
       // Class declarations
       const classMatch = line.match(/(?:export\s+)?class\s+(\w+)/);
       if (classMatch) {
+        const desc = this.extractJSDocFromLines(lines, index);
         exports.push({
           name: classMatch[1] || 'AnonymousClass',
           type: 'class',
-          description: this.extractJSDocFromLines(lines, index)
+          ...(desc ? { description: desc } : {})
         });
       }
 
       // Constants
       const constMatch = line.match(/(?:export\s+)?const\s+(\w+)\s*=/);
       if (constMatch && !line.includes('function') && !line.includes('=>')) {
+        const desc = this.extractJSDocFromLines(lines, index);
         exports.push({
           name: constMatch[1] || 'AnonymousConstant',
           type: 'constant',
           signature: line.trim(),
-          description: this.extractJSDocFromLines(lines, index)
+          ...(desc ? { description: desc } : {})
         });
       }
     });
@@ -319,55 +325,62 @@ export class UnifiedDocumentCommand extends BaseExtendedCommand {
   }
 
   private createFunctionItem(node: ts.FunctionDeclaration): ExportedItem {
+    const desc = this.extractJSDocComment(node);
+    const ret = this.extractReturnType(node);
     return {
       name: node.name!.getText(),
       type: 'function',
       signature: this.getFunctionSignature(node),
-      description: this.extractJSDocComment(node),
+      ...(desc ? { description: desc } : {}),
       parameters: this.extractParameters(node),
-      returns: this.extractReturnType(node)
+      ...(ret ? { returns: ret } : {})
     };
   }
 
   private createClassItem(node: ts.ClassDeclaration, includePrivate: boolean): ExportedItem {
+    const desc = this.extractJSDocComment(node);
     return {
       name: node.name!.getText(),
       type: 'class',
-      description: this.extractJSDocComment(node)
+      ...(desc ? { description: desc } : {})
     };
   }
 
   private createInterfaceItem(node: ts.InterfaceDeclaration): ExportedItem {
+    const desc = this.extractJSDocComment(node);
     return {
       name: node.name.getText(),
       type: 'interface',
-      description: this.extractJSDocComment(node)
+      ...(desc ? { description: desc } : {})
     };
   }
 
   private createTypeItem(node: ts.TypeAliasDeclaration): ExportedItem {
+    const desc = this.extractJSDocComment(node);
     return {
       name: node.name.getText(),
       type: 'type',
       signature: this.getTypeString(node.type),
-      description: this.extractJSDocComment(node)
+      ...(desc ? { description: desc } : {})
     };
   }
 
   private createConstantItem(node: ts.VariableDeclaration): ExportedItem {
+    const desc = this.extractJSDocComment(node.parent?.parent as ts.Node);
     return {
       name: node.name.getText(),
       type: 'constant',
       signature: this.getTypeString(node.type),
-      description: this.extractJSDocComment(node.parent?.parent as ts.Node)
+      ...(desc ? { description: desc } : {})
     };
   }
 
   private createEnumItem(node: ts.EnumDeclaration): ExportedItem {
+    const desc = this.extractJSDocComment(node);
     return {
       name: node.name.getText(),
       type: 'enum',
-      description: this.extractJSDocComment(node)
+      ...(desc ? { description: desc } : {})
     };
   }
 
@@ -384,20 +397,25 @@ export class UnifiedDocumentCommand extends BaseExtendedCommand {
   }
 
   private extractParameters(node: ts.FunctionDeclaration): Parameter[] {
-    return node.parameters.map(p => ({
-      name: p.name.getText(),
-      type: p.type ? this.getTypeString(p.type) : 'any',
-      optional: !!p.questionToken,
-      defaultValue: p.initializer?.getText(),
-      description: this.extractParameterComment(node, p.name.getText())
-    }));
+    return node.parameters.map(p => {
+      const desc = this.extractParameterComment(node, p.name.getText());
+      const def = p.initializer?.getText();
+      return {
+        name: p.name.getText(),
+        type: p.type ? this.getTypeString(p.type) : 'any',
+        optional: !!p.questionToken,
+        ...(def ? { defaultValue: def } : {}),
+        ...(desc ? { description: desc } : {})
+      };
+    });
   }
 
   private extractReturnType(node: ts.FunctionDeclaration): ReturnValue | undefined {
     if (node.type) {
+      const desc = this.extractReturnComment(node);
       return {
         type: this.getTypeString(node.type),
-        description: this.extractReturnComment(node)
+        ...(desc ? { description: desc } : {})
       };
     }
     return undefined;
@@ -449,13 +467,16 @@ export class UnifiedDocumentCommand extends BaseExtendedCommand {
     while (i >= 0 && lines[i]?.trim() === '') i--;
     
     if (i >= 0 && lines[i]?.trim()?.endsWith('*/')) {
-      const comment = [];
-      while (i >= 0 && !lines[i].includes('/**')) {
-        comment.unshift(lines[i]);
+      const comment: string[] = [];
+      while (i >= 0) {
+        const line = lines[i];
+        if (!line || line.includes('/**')) break;
+        comment.unshift(line);
         i--;
       }
-      if (i >= 0) {
-        comment.unshift(lines[i]);
+      const header = i >= 0 ? lines[i] : undefined;
+      if (header) {
+        comment.unshift(header);
         return comment
           .join('\n')
           .replace(/\/\*\*|\*\/|\*\s?/g, '')
@@ -471,7 +492,7 @@ export class UnifiedDocumentCommand extends BaseExtendedCommand {
     
     let match;
     while ((match = examplePattern.exec(content)) !== null) {
-      const exampleText = match[1].trim();
+      const exampleText = (match[1] ?? '').trim();
       if (exampleText) {
         examples.push({
           title: 'Example',
@@ -596,11 +617,11 @@ export class UnifiedDocumentCommand extends BaseExtendedCommand {
     return `Generated documentation for ${fileCount} file(s) with ${exportCount} exports (${(coverage * 100).toFixed(1)}% documented)`;
   }
 
-  protected generateValidationClaim(data: DocumentationResult): string {
+  protected override generateValidationClaim(data: DocumentationResult): string {
     return `Documentation completeness for ${data.target.path}: ${data.documentation.exports.length} exports documented at ${(data.documentation.coverage * 100).toFixed(1)}%`;
   }
 
-  protected generateSummary(data: DocumentationResult): string {
+  protected override generateSummary(data: DocumentationResult): string {
     return data.summary;
   }
 }

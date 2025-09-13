@@ -5,7 +5,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { EventEmitter } from 'events';
-import {
+import type {
   ConformanceRule,
   ConformanceConfig,
   RuntimeContext,
@@ -169,9 +169,10 @@ export class ConformanceVerificationEngine extends EventEmitter {
             message: `Verification failed: ${error instanceof Error ? error.message : String(error)}`,
             context,
             stackTrace: error instanceof Error ? error.stack : undefined,
-            evidence: { inputData: data }
+            evidence: { inputData: data, metrics: {}, logs: [], stateSnapshot: {}, traces: [] }
           },
-          metrics: { executionTime: Date.now() - startTime }
+          metrics: { executionTime: Date.now() - startTime, networkCalls: 0, dbQueries: 0 },
+          metadata: {}
         }],
         violations: [],
         summary: {
@@ -403,9 +404,10 @@ export class ConformanceVerificationEngine extends EventEmitter {
             message: `Monitor execution failed: ${error instanceof Error ? error.message : String(error)}`,
             context,
             stackTrace: error instanceof Error ? error.stack : undefined,
-            evidence: { inputData: data }
+            evidence: { inputData: data, metrics: {}, logs: [], stateSnapshot: {}, traces: [] }
           },
-          metrics: { executionTime: 0 }
+          metrics: { executionTime: 0, networkCalls: 0, dbQueries: 0 },
+          metadata: {}
         });
       }
     }

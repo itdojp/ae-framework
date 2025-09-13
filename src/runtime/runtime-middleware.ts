@@ -13,7 +13,8 @@ type Response = any; // Express.Response when available
 type NextFunction = any; // Express.NextFunction when available
 import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { ConformanceGuard, ConformanceResult, GuardFactory } from './conformance-guards.js';
+import { ConformanceGuard, GuardFactory } from './conformance-guards.js';
+import type { ConformanceResult } from './conformance-guards.js';
 import { trace, SpanStatusCode } from '@opentelemetry/api';
 
 const tracer = trace.getTracer('ae-framework-runtime-middleware');
@@ -282,10 +283,10 @@ export class ExpressConformanceMiddleware {
     };
 
     if (this.config.includeRequestInfo) {
-      context.requestId = req.headers['x-request-id'] as string;
-      context.userId = (req as any).user?.id;
-      context.userAgent = req.get('User-Agent');
-      context.ip = req.ip;
+      context['requestId'] = req.headers['x-request-id'] as string;
+      context['userId'] = (req as any).user?.id;
+      context['userAgent'] = req.get('User-Agent');
+      context['ip'] = req.ip;
     }
 
     return context;

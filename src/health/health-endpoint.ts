@@ -124,7 +124,7 @@ async function getHealthStatus(): Promise<HealthStatus> {
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     version: APP_VERSION,
-    environment: process.env.NODE_ENV || 'development',
+    environment: process.env['NODE_ENV'] || 'development',
     checks: {
       memory: {
         status: memoryStatus,
