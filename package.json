@@ -224,6 +224,7 @@
     "verify:formal": "node scripts/formal/verify-conformance.mjs && node scripts/formal/verify-alloy.mjs && node scripts/formal/verify-tla.mjs --engine=tlc && node scripts/formal/verify-smt.mjs --solver=z3",
     "conformance:sample": "tsx src/cli/index.ts conformance sample --rules samples/conformance/sample-rules.json --config samples/conformance/sample-config.json --data samples/conformance/sample-data.json --context samples/conformance/sample-context.json",
     "conformance:verify:sample": "tsx src/cli/index.ts conformance verify -i samples/conformance/sample-data.json --context-file samples/conformance/sample-context.json --rules samples/conformance/sample-rules.json --format json --output hermetic-reports/conformance/sample-results.json",
+    "tools:formal:check": "node scripts/formal/tools-check.mjs",
     "quality:policy": "tsx src/cli/index.ts quality policy",
     "quality:validate": "tsx src/cli/index.ts quality validate",
     "quality:report": "tsx src/cli/index.ts quality report",

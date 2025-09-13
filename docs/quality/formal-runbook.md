@@ -25,6 +25,10 @@ Samples
 - TLA+: `spec/tla/DomainSpec.tla`（最小の安全性不変と遷移の例）
 - Alloy: `spec/alloy/Domain.als`（最小の安全性アサーションの例）
 
+Tools
+- ローカル確認: `pnpm run tools:formal:check`（インストール済みツールを一覧）
+- セットアップ手順: [formal-tools-setup.md](./formal-tools-setup.md)
+
 Roadmap Fit (Issue #493)
 - Non‑blocking, label‑gated CI first
 - Wire real engines behind the above stubs incrementally
