@@ -225,6 +225,7 @@
     "conformance:sample": "tsx src/cli/index.ts conformance sample --rules samples/conformance/sample-rules.json --config samples/conformance/sample-config.json --data samples/conformance/sample-data.json --context samples/conformance/sample-context.json",
     "conformance:verify:sample": "tsx src/cli/index.ts conformance verify -i samples/conformance/sample-data.json --context-file samples/conformance/sample-context.json --rules samples/conformance/sample-rules.json --format json --output hermetic-reports/conformance/sample-results.json",
     "tools:formal:check": "node scripts/formal/tools-check.mjs",
+    "trace:validate": "node scripts/formal/trace-validate.mjs samples/conformance/sample-traces.json",
     "quality:policy": "tsx src/cli/index.ts quality policy",
     "quality:validate": "tsx src/cli/index.ts quality validate",
     "quality:report": "tsx src/cli/index.ts quality report",
