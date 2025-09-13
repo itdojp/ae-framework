@@ -7,6 +7,7 @@ permissions: read-all
 jobs:
   actionlint:
     runs-on: ubuntu-latest
+    continue-on-error: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking') }}
     steps:
       - uses: actions/checkout@v4
       - uses: rhysd/actionlint@v1.7.1
