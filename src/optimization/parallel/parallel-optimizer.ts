@@ -207,7 +207,7 @@ export class ParallelOptimizer extends EventEmitter {
     // Stop optimization loop
     if (this.optimizationTimer) {
       clearInterval(this.optimizationTimer);
-      this.optimizationTimer = undefined;
+      delete this.optimizationTimer;
     }
 
     // Terminate all workers

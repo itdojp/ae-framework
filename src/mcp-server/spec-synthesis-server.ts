@@ -94,8 +94,8 @@ async function start() {
           try {
             const ir = await compiler.compile({
               inputPath: resolve(parsed.inputPath),
-              outputPath: parsed.outputPath ? resolve(parsed.outputPath) : undefined,
-              validate: parsed.validate !== false,
+              ...(parsed.outputPath !== undefined ? { outputPath: resolve(parsed.outputPath) } : {}),
+              ...(parsed.validate !== undefined ? { validate: parsed.validate } : {}),
             });
             const lint = await compiler.lint(ir);
             return {

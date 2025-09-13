@@ -9,7 +9,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import { VerifyAgent, VerificationRequest, VerificationType } from '../agents/verify-agent.js';
+import { VerifyAgent, type VerificationRequest, type VerificationType } from '../agents/verify-agent.js';
 import {
   CoverageArgsSchema,
   FullVerificationArgsSchema,
