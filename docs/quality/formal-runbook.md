@@ -17,6 +17,7 @@ CLI stubs (to be wired)
 - `pnpm run verify:smt -- --solver=z3|cvc5` — prints stub
 - `pnpm run verify:formal` — 上記4種の連続実行（ローカル確認用）
   - 集計: `hermetic-reports/formal/summary.json` に要約を出力
+  - 表示: 実行後にコンソールへ簡易サマリを表示
 
 Conformance sample (quick demo)
 - `pnpm run conformance:sample` — サンプルのルール/設定/データ/コンテキストを生成
@@ -38,6 +39,7 @@ Tools
 - トレース検証（軽量）: `pnpm run trace:validate`（サンプルイベントのスキーマ整合を確認）
  - SMT サンプル: `spec/smt/sample.smt2`（動作確認用）
  - 実行例: `pnpm run verify:smt -- --solver=z3 --file spec/smt/sample.smt2`
+  - Alloy/TLA jar の設定: workflow_dispatch で `alloyJar` / `tlaToolsJar` を指定、またはローカルで `ALLOY_JAR` / `TLA_TOOLS_JAR` を設定
 
 verify:conformance オプション
 - `-i, --in <file>` 入力イベントJSON（既定: `samples/conformance/sample-traces.json`）
