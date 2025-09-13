@@ -4,44 +4,77 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, labeled]
   workflow_dispatch:
+    inputs:
+      target:
+        description: "Target to run (all|conformance|alloy|tla|smt)"
+        required: false
+        default: "all"
+      engine:
+        description: "TLA+ engine (tlc|apalache)"
+        required: false
+        default: "tlc"
+      solver:
+        description: "SMT solver (z3|cvc5)"
+        required: false
+        default: "z3"
 
 jobs:
   verify-conformance:
     name: verify:conformance (stub)
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'run-formal')
+    if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == env.JOB_TARGET))
+    env:
+      JOB_TARGET: conformance
     steps:
       - uses: actions/checkout@v4
-      - name: Stub verify:conformance
-        run: |
-          echo "verify:conformance stub — to be implemented"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run verify:conformance stub
+        run: node scripts/formal/verify-conformance.mjs
 
   verify-alloy:
     name: verify:alloy (stub)
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'run-formal')
+    if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == env.JOB_TARGET))
+    env:
+      JOB_TARGET: alloy
     steps:
       - uses: actions/checkout@v4
-      - name: Stub verify:alloy
-        run: |
-          echo "verify:alloy stub — to be implemented"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run verify:alloy stub
+        run: node scripts/formal/verify-alloy.mjs
 
   verify-tla:
     name: verify:tla (stub)
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'run-formal')
+    if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == env.JOB_TARGET))
+    env:
+      JOB_TARGET: tla
     steps:
       - uses: actions/checkout@v4
-      - name: Stub verify:tla
-        run: |
-          echo "verify:tla stub — to be implemented (tlc/apalache)"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run verify:tla stub
+        env:
+          TLA_ENGINE: ${{ github.event_name == 'workflow_dispatch' && inputs.engine || 'tlc' }}
+        run: node scripts/formal/verify-tla.mjs --engine=$TLA_ENGINE
 
   verify-smt:
     name: verify:smt (stub)
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'run-formal')
+    if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == env.JOB_TARGET))
+    env:
+      JOB_TARGET: smt
     steps:
       - uses: actions/checkout@v4
-      - name: Stub verify:smt
-        run: |
-          echo "verify:smt stub — to be implemented (z3/cvc5)"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run verify:smt stub
+        env:
+          SMT_SOLVER: ${{ github.event_name == 'workflow_dispatch' && inputs.solver || 'z3' }}
+        run: node scripts/formal/verify-smt.mjs --solver=$SMT_SOLVER

@@ -63,6 +63,7 @@ Claude CodeやMCPとの統合
 フォーマル検証や品質基準
 
 - **[formal-gates.md](./quality/formal-gates.md)** ⭐ フォーマル品質ゲート（v0.2 DoD）
+- [formal-runbook.md](./quality/formal-runbook.md) - 実行・運用手順（ラベルゲート/手動実行）
 
 ### 📐 [spec/](./spec/) - 仕様レジストリ
 仕様の配置と規約
