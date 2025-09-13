@@ -10,6 +10,7 @@ CLI stubs (to be wired)
 - `pnpm run verify:tla -- --engine=apalache|tlc` — prints stub
 - `pnpm run verify:smt -- --solver=z3|cvc5` — prints stub
 - `pnpm run verify:formal` — 上記4種の連続実行（ローカル確認用）
+  - 集計: `hermetic-reports/formal/summary.json` に要約を出力
 
 Conformance sample (quick demo)
 - `pnpm run conformance:sample` — サンプルのルール/設定/データ/コンテキストを生成
