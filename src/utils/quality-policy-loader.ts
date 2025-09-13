@@ -86,7 +86,7 @@ export interface QualityPolicy {
  * @returns Profile name ('development', 'ci', 'production')
  */
 export const getQualityProfile = (environment?: string): string => {
-  return environment || process.env.AE_QUALITY_PROFILE || 'ci';
+  return environment || process.env['AE_QUALITY_PROFILE'] || 'ci';
 };
 
 /**

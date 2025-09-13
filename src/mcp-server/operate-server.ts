@@ -481,9 +481,9 @@ class OperateServer {
             const deploymentParams: DeploymentParams = {
               environment: params.environment,
               version: params.version,
-              strategy: params.strategy,
-              rollbackOnFailure: params.rollbackOnFailure,
-              healthCheckTimeout: params.healthCheckTimeout,
+              ...(params.strategy !== undefined ? { strategy: params.strategy } : {}),
+              ...(params.rollbackOnFailure !== undefined ? { rollbackOnFailure: params.rollbackOnFailure } : {}),
+              ...(params.healthCheckTimeout !== undefined ? { healthCheckTimeout: params.healthCheckTimeout } : {}),
             };
             const result = await this.operateAgent.deployApplication(deploymentParams);
             return {
@@ -513,9 +513,9 @@ class OperateServer {
             const logParams: LogAnalysisParams = {
               startTime: new Date(params.startTime),
               endTime: new Date(params.endTime),
-              logLevel: params.logLevel,
-              service: params.service,
-              query: params.query,
+              ...(params.logLevel !== undefined ? { logLevel: params.logLevel } : {}),
+              ...(params.service !== undefined ? { service: params.service } : {}),
+              ...(params.query !== undefined ? { query: params.query } : {}),
             };
             const result = await this.operateAgent.analyzeLogs(logParams);
             return {
@@ -532,13 +532,13 @@ class OperateServer {
             const params = ManageIncidentSchema.parse(args);
             const incidentParams: IncidentParams = {
               action: params.action,
-              incidentId: params.incidentId,
-              title: params.title,
-              description: params.description,
-              severity: params.severity,
-              assignee: params.assignee,
-              updateNotes: params.updateNotes,
-              resolution: params.resolution,
+              ...(params.incidentId !== undefined ? { incidentId: params.incidentId } : {}),
+              ...(params.title !== undefined ? { title: params.title } : {}),
+              ...(params.description !== undefined ? { description: params.description } : {}),
+              ...(params.severity !== undefined ? { severity: params.severity } : {}),
+              ...(params.assignee !== undefined ? { assignee: params.assignee } : {}),
+              ...(params.updateNotes !== undefined ? { updateNotes: params.updateNotes } : {}),
+              ...(params.resolution !== undefined ? { resolution: params.resolution } : {}),
             };
             const result = await this.operateAgent.manageIncident(incidentParams);
             return {
@@ -554,10 +554,10 @@ class OperateServer {
           case 'optimize_performance': {
             const params = OptimizePerformanceSchema.parse(args);
             const optimizationParams: PerformanceOptimizationParams = {
-              service: params.service,
               timeWindow: params.timeWindow,
               metrics: params.metrics,
-              autoApply: params.autoApply,
+              ...(params.service !== undefined ? { service: params.service } : {}),
+              ...(params.autoApply !== undefined ? { autoApply: params.autoApply } : {}),
             };
             const result = await this.operateAgent.optimizePerformance(optimizationParams);
             return {
@@ -574,9 +574,9 @@ class OperateServer {
             const params = ScaleResourcesSchema.parse(args);
             const scalingParams: ScalingParams = {
               service: params.service,
-              action: params.action,
-              targetInstances: params.targetInstances,
-              force: params.force,
+              ...(params.action !== undefined ? { action: params.action } : {}),
+              ...(params.targetInstances !== undefined ? { targetInstances: params.targetInstances } : {}),
+              ...(params.force !== undefined ? { force: params.force } : {}),
             };
             const result = await this.operateAgent.scaleResources(scalingParams);
             return {
@@ -593,9 +593,9 @@ class OperateServer {
             const params = RunChaosTestSchema.parse(args);
             const chaosParams: ChaosTestParams = {
               experiment: params.experiment,
-              dryRun: params.dryRun,
-              duration: params.duration,
-              intensity: params.intensity,
+              ...(params.dryRun !== undefined ? { dryRun: params.dryRun } : {}),
+              ...(params.duration !== undefined ? { duration: params.duration } : {}),
+              ...(params.intensity !== undefined ? { intensity: params.intensity } : {}),
             };
             const result = await this.operateAgent.runChaosTest(chaosParams);
             return {
@@ -624,8 +624,8 @@ class OperateServer {
             const params = AnalyzeCostsSchema.parse(args);
             const costParams: CostAnalysisParams = {
               timeWindow: params.timeWindow,
-              services: params.services,
-              includePredictions: params.includePredictions,
+              ...(params.services !== undefined ? { services: params.services } : {}),
+              ...(params.includePredictions !== undefined ? { includePredictions: params.includePredictions } : {}),
             };
             const result = await this.operateAgent.analyzeCosts(costParams);
             return {
@@ -641,9 +641,9 @@ class OperateServer {
           case 'security_scan': {
             const params = SecurityScanSchema.parse(args);
             const scanParams: SecurityScanParams = {
-              scope: params.scope,
-              includeCompliance: params.includeCompliance,
-              frameworks: params.frameworks,
+              ...(params.scope !== undefined ? { scope: params.scope } : {}),
+              ...(params.includeCompliance !== undefined ? { includeCompliance: params.includeCompliance } : {}),
+              ...(params.frameworks !== undefined ? { frameworks: params.frameworks } : {}),
             };
             const result = await this.operateAgent.securityScan(scanParams);
             return {

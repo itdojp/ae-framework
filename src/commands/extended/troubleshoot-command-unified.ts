@@ -5,9 +5,10 @@
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { BaseExtendedCommand, ExtendedCommandResult } from './base-command.js';
+import { BaseExtendedCommand } from './base-command.js';
+import type { ExtendedCommandResult } from './base-command.js';
 import type { CommandContext } from '../slash-command-manager.js';
-import { 
+import type { 
   TroubleshootResult, 
   AnalysisTarget, 
   TroubleshootOptions,
@@ -28,24 +29,26 @@ export class UnifiedTroubleshootCommand extends BaseExtendedCommand {
     });
   }
 
-  protected validateArgs(args: string[]): { isValid: boolean; message?: string } {
+  protected override validateArgs(args: string[]): { isValid: boolean; message?: string } {
     // Troubleshoot can work with or without arguments
     return { isValid: true };
   }
 
-  protected parseOptions(args: string[]): TroubleshootOptions {
+  protected override parseOptions(args: string[]): TroubleshootOptions {
     const baseOptions = super.parseOptions(args);
     
+    const logs = args.find(arg => arg.startsWith('--logs='))?.split('=')[1];
+    const error = args.find(arg => arg.startsWith('--error='))?.split('=')[1];
     return {
       ...baseOptions,
       auto: args.includes('--auto'),
-      logs: args.find(arg => arg.startsWith('--logs='))?.split('=')[1],
-      error: args.find(arg => arg.startsWith('--error='))?.split('=')[1],
+      ...(logs ? { logs } : {}),
+      ...(error ? { error } : {}),
       interactive: args.includes('--interactive')
     };
   }
 
-  protected async execute(
+  protected override async execute(
     args: string[], 
     options: TroubleshootOptions, 
     context: CommandContext
@@ -859,11 +862,11 @@ export class UnifiedTroubleshootCommand extends BaseExtendedCommand {
     return `Found ${issueCount} issue(s) with ${solutionCount} suggested solution(s)`;
   }
 
-  protected generateValidationClaim(data: TroubleshootResult): string {
+  protected override generateValidationClaim(data: TroubleshootResult): string {
     return `Troubleshooting analysis for ${data.target.path}: ${data.detectedIssues.length} issues detected with ${data.solutions.length} solutions provided`;
   }
 
-  protected generateSummary(data: TroubleshootResult): string {
+  protected override generateSummary(data: TroubleshootResult): string {
     return data.summary;
   }
 }

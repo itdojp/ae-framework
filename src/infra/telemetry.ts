@@ -9,15 +9,15 @@ import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 export function initTelemetry(serviceName: string = 'inventory-api') {
   const resource = new Resource({
     [SemanticResourceAttributes.SERVICE_NAME]: serviceName,
-    [SemanticResourceAttributes.SERVICE_VERSION]: process.env.SERVICE_VERSION || '0.1.0',
+    [SemanticResourceAttributes.SERVICE_VERSION]: process.env['SERVICE_VERSION'] || '0.1.0',
   });
 
   const traceExporter = new OTLPTraceExporter({
-    url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://localhost:4317',
+    url: process.env['OTEL_EXPORTER_OTLP_ENDPOINT'] || 'http://localhost:4317',
   });
 
   const metricExporter = new OTLPMetricExporter({
-    url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://localhost:4317',
+    url: process.env['OTEL_EXPORTER_OTLP_ENDPOINT'] || 'http://localhost:4317',
   });
 
   const sdk = new NodeSDK({
@@ -26,7 +26,7 @@ export function initTelemetry(serviceName: string = 'inventory-api') {
     metricReader: new PeriodicExportingMetricReader({
       exporter: metricExporter,
       exportIntervalMillis: 10000,
-    }),
+    }) as any,
     instrumentations: [
       getNodeAutoInstrumentations({
         '@opentelemetry/instrumentation-fs': {

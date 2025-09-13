@@ -223,12 +223,12 @@ export class ResilienceCLI {
             await new Promise(resolve => setTimeout(resolve, Math.random() * 100));
             return `Operation ${i + 1} success`;
           },
-          {
+          ({
             operationName: `test-op-${i + 1}`,
-            bulkheadName: options.bulkheadName,
             timeoutMs: 5000,
             useAdaptiveTimeout: true,
-          }
+            ...(options.bulkheadName ? { bulkheadName: options.bulkheadName } : {}),
+          } as any)
         );
         successes++;
         process.stdout.write(chalk.green('.'));

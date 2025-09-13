@@ -3,7 +3,7 @@
  * Phase 2.1: Abstract base class for all fix strategies
  */
 
-import { FailureArtifact, FixStrategy, RepairAction, FailureCategory } from '../types.js';
+import type { FailureArtifact, FixStrategy, RepairAction, FailureCategory } from '../types.js';
 
 export abstract class BaseFixStrategy implements FixStrategy {
   abstract readonly name: string;

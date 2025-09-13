@@ -285,12 +285,12 @@ export class ResourcePool extends EventEmitter {
     
     if (this.maintenanceTimer) {
       clearInterval(this.maintenanceTimer);
-      this.maintenanceTimer = undefined;
+      delete this.maintenanceTimer;
     }
     
     if (this.monitoringTimer) {
       clearInterval(this.monitoringTimer);
-      this.monitoringTimer = undefined;
+      delete this.monitoringTimer;
     }
 
     // Release all allocations
@@ -725,7 +725,7 @@ export class ResourcePool extends EventEmitter {
       return aWaste - bWaste;
     });
 
-    return [availableResources[0]];
+    return [availableResources[0]!];
   }
 
   private firstFitSelection(requirements: ResourceRequirements): PooledResource[] | null {
@@ -748,7 +748,7 @@ export class ResourcePool extends EventEmitter {
     // Sort by worst fit (largest available resource)
     availableResources.sort((a, b) => b.available.value - a.available.value);
 
-    return [availableResources[0]];
+    return [availableResources[0]!];
   }
 
   private canSatisfyRequirements(resource: PooledResource, requirements: ResourceRequirements): boolean {
@@ -978,7 +978,7 @@ export class ResourcePool extends EventEmitter {
     
     const toRemove = currentSize - targetSize;
     for (let i = 0; i < Math.min(toRemove, availableResources.length); i++) {
-      this.removeResource(availableResources[i].id);
+      this.removeResource(availableResources[i]!.id);
     }
     
     this.emit('poolScaledDown', { from: currentSize, to: this.resources.size });

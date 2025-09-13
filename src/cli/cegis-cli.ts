@@ -10,7 +10,7 @@ import type { join } from 'path';
 import { AutoFixEngine } from '../cegis/auto-fix-engine.js';
 import type { FailureCategory } from '../cegis/types.js';
 import { FailureArtifactFactory } from '../cegis/failure-artifact-factory.js';
-import { FailureArtifact, AutoFixOptions } from '../cegis/types.js';
+import type { FailureArtifact, AutoFixOptions } from '../cegis/types.js';
 import { toMessage } from '../utils/error-utils.js';
 
 export class CEGISCli {

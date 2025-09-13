@@ -94,12 +94,12 @@ export class EvidenceValidator {
       suggestions = this.generateSuggestions(claim, evidence);
     }
 
-    return {
+    const base = {
       isValid: confidence >= minConfidence && this.meetsRequirements(evidence, options),
       evidence: this.sortEvidenceByRelevance(evidence),
-      confidence,
-      suggestions
-    };
+      confidence
+    } as ValidationResult;
+    return suggestions ? { ...base, suggestions } : base;
   }
 
   /**
@@ -127,14 +127,18 @@ export class EvidenceValidator {
 
     const confidence = this.calculateConfidence(evidence);
 
-    return {
+    const base: ValidationResult = {
       isValid: confidence >= 0.7 && antiPatterns.length === 0,
       evidence,
-      confidence,
-      suggestions: antiPatterns.length > 0 
-        ? ['Fix detected anti-patterns', ...antiPatterns.map(e => e.content)]
-        : undefined
+      confidence
     };
+    if (antiPatterns.length > 0) {
+      return {
+        ...base,
+        suggestions: ['Fix detected anti-patterns', ...antiPatterns.map(e => e.content)]
+      };
+    }
+    return base;
   }
 
   /**
@@ -260,7 +264,7 @@ export class EvidenceValidator {
           source: patternName,
           content: pattern.description,
           relevance: pattern.confidence,
-          location: pattern.reference ? { url: pattern.reference } : undefined
+          ...(pattern.reference ? { location: { url: pattern.reference } } : {})
         });
       }
     }

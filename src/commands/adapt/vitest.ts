@@ -53,18 +53,18 @@ function updatePackageJson(): boolean {
     packageJson.scripts = {};
   }
 
-  if (!packageJson.scripts.test) {
-    const seedCmd = process.env.AE_SEED ? `AE_SEED=${process.env.AE_SEED} ` : '';
-    packageJson.scripts.test = `${seedCmd}vitest run --coverage`;
+  if (!packageJson.scripts['test']) {
+    const seedCmd = process.env['AE_SEED'] ? `AE_SEED=${process.env['AE_SEED']} ` : '';
+    packageJson.scripts['test'] = `${seedCmd}vitest run --coverage`;
     modified = true;
     console.log(chalk.green('✅ Added test script with coverage'));
-  } else if (!packageJson.scripts.test.includes('--coverage') && packageJson.scripts.test.includes('vitest')) {
+  } else if (!packageJson.scripts['test'].includes('--coverage') && packageJson.scripts['test'].includes('vitest')) {
     // Update existing vitest script to include coverage
-    const currentTest = packageJson.scripts.test;
-    packageJson.scripts.test = `${currentTest} --coverage`;
+    const currentTest = packageJson.scripts['test'];
+    packageJson.scripts['test'] = `${currentTest} --coverage`;
     modified = true;
     console.log(chalk.green('✅ Updated test script with coverage'));
-  } else if (!packageJson.scripts.test.includes('vitest')) {
+  } else if (!packageJson.scripts['test'].includes('vitest')) {
     console.log(chalk.yellow('⚠️  Existing test script does not use Vitest, skipping coverage injection'));
   } else {
     console.log(chalk.blue('ℹ️  Test script already has coverage configuration'));

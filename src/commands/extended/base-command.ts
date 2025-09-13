@@ -76,10 +76,9 @@ export abstract class BaseExtendedCommand {
       // Validate arguments
       const validationResult = this.validateArgs(args);
       if (!validationResult.isValid) {
-        return {
-          success: false,
-          message: validationResult.message
-        };
+        return validationResult.message
+          ? { success: false, message: validationResult.message }
+          : { success: false };
       }
 
       // Parse options
@@ -97,21 +96,16 @@ export abstract class BaseExtendedCommand {
       }
 
       // Validate with evidence if requested
-      if (options.validate && result.data) {
+      if (options['validate'] && result.data) {
         result.evidence = await this.validateWithEvidence(result.data, options);
       }
 
-      return {
-        success: result.success,
-        message: result.message,
-        data: result.data
-      };
+      return result.message
+        ? { success: result.success, message: result.message, data: result.data }
+        : { success: result.success, data: result.data };
 
     } catch (error: any) {
-      return {
-        success: false,
-        message: `Command failed: ${error.message}`
-      };
+      return { success: false, message: `Command failed: ${error.message}` };
     }
   }
 
@@ -128,10 +122,12 @@ export abstract class BaseExtendedCommand {
     
     for (const arg of args) {
       if (arg === '--validate') {
-        options.validate = true;
+        options['validate'] = true;
       } else if (arg.startsWith('--')) {
         const [key, value] = arg.slice(2).split('=');
-        options[key] = value || true;
+        if (key) {
+          options[key] = value ?? true;
+        }
       }
     }
     
@@ -160,7 +156,7 @@ export abstract class BaseExtendedCommand {
       const validation = await this.validator.validateClaim(
         this.generateValidationClaim(data),
         JSON.stringify(data),
-        { minConfidence: options.minConfidence || 0.7 }
+        { minConfidence: options['minConfidence'] || 0.7 }
       );
       evidence.push(validation);
     } catch (error) {

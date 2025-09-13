@@ -119,7 +119,7 @@ export class MetricsCollector extends EventEmitter {
     
     if (this.aggregationTimer) {
       clearInterval(this.aggregationTimer);
-      this.aggregationTimer = undefined;
+      delete this.aggregationTimer;
     }
 
     this.emit('collectionStopped');

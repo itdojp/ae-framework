@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { Reservation } from '../../domain/contracts.js';
-import { InventoryService } from '../../domain/services.js';
+import type { InventoryService } from '../../domain/services.js';
 
 export async function reservationRoutes(fastify: FastifyInstance, options: { inventoryService: InventoryService }) {
   const { inventoryService } = options;

@@ -94,8 +94,8 @@ async function detectTestFiles(pattern?: string): Promise<{ pattern: string; fil
     }
   }
 
-  // If nothing found, use the first fallback as default
-  return { pattern: fallbackPatterns[0], fileCount: 0 };
+  // If nothing found, use the first fallback as default with a safe fallback string
+  return { pattern: fallbackPatterns[0] ?? 'tests/**/*.test.ts', fileCount: 0 };
 }
 
 export async function qaFlake(options: QAFlakeOptions = {}): Promise<Result<{ failures: number; total: number; seeds: number[] }, AppError>> {

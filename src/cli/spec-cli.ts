@@ -124,12 +124,12 @@ export function createSpecCommand(): Command {
         const compiler = new AESpecCompiler();
         const outputPath = options.output || '.ae/ae-ir.json';
         // Set relaxed/configurable limits via env for spec-compiler
-        if (options.relaxed) process.env.AE_SPEC_RELAXED = '1';
+        if (options.relaxed) process.env['AE_SPEC_RELAXED'] = '1';
         if (typeof options.descMax === 'number' && Number.isFinite(options.descMax) && options.descMax > 0) {
-          process.env.AE_SPEC_DESC_MAX = String(options.descMax);
-          process.env.AE_SPEC_INVARIANT_DESC_MAX = String(options.descMax);
-          process.env.AE_SPEC_DOMAIN_DESC_MAX = String(options.descMax);
-          process.env.AE_SPEC_FIELD_DESC_MAX = String(options.descMax);
+          process.env['AE_SPEC_DESC_MAX'] = String(options.descMax);
+          process.env['AE_SPEC_INVARIANT_DESC_MAX'] = String(options.descMax);
+          process.env['AE_SPEC_DOMAIN_DESC_MAX'] = String(options.descMax);
+          process.env['AE_SPEC_FIELD_DESC_MAX'] = String(options.descMax);
         }
         
         // Compile
@@ -236,13 +236,13 @@ export function createSpecCommand(): Command {
           console.log(chalk.gray(`   Saved draft: ${iterPath}`));
 
           // Compile (lenient for intermediate)
-          const prevRelaxed = process.env.AE_SPEC_RELAXED;
-          process.env.AE_SPEC_RELAXED = '1';
+        const prevRelaxed = process.env['AE_SPEC_RELAXED'];
+        process.env['AE_SPEC_RELAXED'] = '1';
           const ir = await compiler.compile({ inputPath: resolve(iterPath), validate: false });
           const lint = await compiler.lint(ir);
           lastIssues = lint.issues.slice(0, 10).map(i => `${i.message} [${i.location?.section||'root'}]`);
           console.log(chalk.blue(`   Lint summary: errors=${lint.summary.errors}, warnings=${lint.summary.warnings}`));
-          process.env.AE_SPEC_RELAXED = prevRelaxed;
+        process.env['AE_SPEC_RELAXED'] = prevRelaxed as any;
 
           // If no errors in lenient pass, attempt strict validation
           if (lint.summary.errors === 0 && lint.summary.warnings <= maxWarnings) {

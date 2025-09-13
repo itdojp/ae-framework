@@ -7,7 +7,8 @@
 
 import fs from 'fs';
 import path from 'path';
-import { IntentTaskAdapter, TaskRequest, TaskResponse } from '../agents/intent-task-adapter.js';
+import { IntentTaskAdapter } from '../agents/intent-task-adapter.js';
+import type { TaskRequest, TaskResponse } from '../agents/intent-task-adapter.js';
 import { IntentAgent } from '../agents/intent-agent.js';
 import { ConfigLoader } from '../cli/config/ConfigLoader.js';
 import { MetricsCollector } from '../cli/metrics/MetricsCollector.js';
@@ -25,7 +26,7 @@ export class HybridIntentSystem {
   private taskAdapter?: IntentTaskAdapter;
   private metricsCollector: MetricsCollector;
   private config: HybridIntentConfig;
-  private periodicCheckIntervalId?: NodeJS.Timeout;
+  private periodicCheckIntervalId: NodeJS.Timeout | undefined;
 
   constructor(config: HybridIntentConfig) {
     this.config = config;

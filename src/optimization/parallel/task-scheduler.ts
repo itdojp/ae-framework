@@ -160,7 +160,7 @@ export class TaskScheduler extends EventEmitter {
     
     if (this.schedulingTimer) {
       clearInterval(this.schedulingTimer);
-      this.schedulingTimer = undefined;
+      delete this.schedulingTimer;
     }
 
     this.emit('schedulerStopped');
@@ -174,7 +174,7 @@ export class TaskScheduler extends EventEmitter {
     const scheduledTask: ScheduledTask = {
       ...task,
       scheduledTime: new Date(),
-      deadline,
+      ...(deadline !== undefined ? { deadline } : {}),
       queueTime: 0,
       waitTime: 0,
       preemptable: task.priority !== 'urgent',
@@ -591,7 +591,7 @@ export class TaskScheduler extends EventEmitter {
     
     for (const queue of this.taskQueues.values()) {
       if (queue.tasks.length > 0) {
-        const task = queue.tasks[0];
+        const task = queue.tasks[0]!;
         if (this.canSatisfyResourceRequirements(task.resourceRequirements)) {
           candidates.push({ task, queue });
         }
@@ -716,12 +716,12 @@ export class TaskScheduler extends EventEmitter {
     tags.push(task.type);
     
     // Extract tags from metadata
-    if (task.metadata.component) {
-      tags.push(`component:${task.metadata.component}`);
+    if ((task.metadata as any)['component']) {
+      tags.push(`component:${(task.metadata as any)['component']}`);
     }
     
-    if (task.metadata.language) {
-      tags.push(`language:${task.metadata.language}`);
+    if ((task.metadata as any)['language']) {
+      tags.push(`language:${(task.metadata as any)['language']}`);
     }
     
     return tags;
@@ -790,7 +790,7 @@ export class TaskScheduler extends EventEmitter {
     
     for (const queue of this.taskQueues.values()) {
       for (let i = queue.tasks.length - 1; i >= 0; i--) {
-        const task = queue.tasks[i];
+        const task = queue.tasks[i]!;
         if (task.deadline && now > task.deadline.getTime()) {
           this.handleMissedDeadline(task);
           queue.tasks.splice(i, 1);

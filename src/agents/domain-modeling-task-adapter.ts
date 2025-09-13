@@ -6,8 +6,9 @@
  * architectural design workflows.
  */
 
-import { FormalAgent, FormalAgentConfig } from './formal-agent.js';
-import { TaskRequest, TaskResponse } from './task-types.js';
+import { FormalAgent } from './formal-agent.js';
+import type { FormalAgentConfig } from './formal-agent.js';
+import type { TaskRequest, TaskResponse } from './task-types.js';
 
 export interface DomainEntity {
   name: string;

@@ -6,9 +6,10 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as ts from 'typescript';
-import { BaseExtendedCommand, ExtendedCommandResult } from './base-command.js';
+import { BaseExtendedCommand } from './base-command.js';
+import type { ExtendedCommandResult } from './base-command.js';
 import type { CommandContext } from '../slash-command-manager.js';
-import { 
+import type { 
   CodeAnalysis, 
   AnalysisTarget, 
   AnalysisOptions,
@@ -28,7 +29,7 @@ export class UnifiedAnalyzeCommand extends BaseExtendedCommand {
     });
   }
 
-  protected validateArgs(args: string[]): { isValid: boolean; message?: string } {
+  protected override validateArgs(args: string[]): { isValid: boolean; message?: string } {
     if (args.length === 0) {
       return {
         isValid: false,
@@ -38,7 +39,7 @@ export class UnifiedAnalyzeCommand extends BaseExtendedCommand {
     return { isValid: true };
   }
 
-  protected parseOptions(args: string[]): AnalysisOptions {
+  protected override parseOptions(args: string[]): AnalysisOptions {
     const baseOptions = super.parseOptions(args);
     
     return {
@@ -51,7 +52,7 @@ export class UnifiedAnalyzeCommand extends BaseExtendedCommand {
     };
   }
 
-  protected async execute(
+  protected override async execute(
     args: string[], 
     options: AnalysisOptions, 
     context: CommandContext
@@ -471,11 +472,11 @@ export class UnifiedAnalyzeCommand extends BaseExtendedCommand {
     return `Analyzed ${fileCount} file(s), found ${issueCount} issues and ${suggestionCount} suggestions`;
   }
 
-  protected generateValidationClaim(data: CodeAnalysis): string {
+  protected override generateValidationClaim(data: CodeAnalysis): string {
     return `Code analysis findings for ${data.target.path}: ${data.issues.length} issues detected`;
   }
 
-  protected generateSummary(data: CodeAnalysis): string {
+  protected override generateSummary(data: CodeAnalysis): string {
     return data.summary;
   }
 }

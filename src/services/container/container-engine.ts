@@ -404,9 +404,9 @@ export abstract class ContainerEngine extends EventEmitter {
   protected formatResourceLimits(resources: ResourceLimits): Record<string, string> {
     const formatted: Record<string, string> = {};
     
-    if (resources.memory) formatted.memory = resources.memory;
-    if (resources.cpus) formatted.cpus = resources.cpus;
-    if (resources.cpuShares) formatted.cpuShares = resources.cpuShares.toString();
+    if (resources.memory) formatted['memory'] = resources.memory;
+    if (resources.cpus) formatted['cpus'] = resources.cpus;
+    if (resources.cpuShares) formatted['cpuShares'] = resources.cpuShares.toString();
     
     return formatted;
   }

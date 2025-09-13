@@ -1,4 +1,4 @@
-import { TaskHandler, TaskRequest, TaskResponse } from './task-types.js';
+import type { TaskHandler, TaskRequest, TaskResponse } from './task-types.js';
 import { IntentTaskAdapter } from './intent-task-adapter.js';
 import { NaturalLanguageTaskAdapter } from './natural-language-task-adapter.js';
 import { UserStoriesTaskAdapter } from './user-stories-task-adapter.js';
@@ -207,7 +207,7 @@ async function handleUI(request: TaskRequest, parentSpan?: any): Promise<TaskRes
   // Resolve dryRun precedence: context.dryRun > CODEX_UI_DRY_RUN env > fallback
   let dryRun: boolean | undefined = typeof ctx.dryRun === 'boolean' ? ctx.dryRun : undefined;
   if (dryRun === undefined) {
-    const env = process.env.CODEX_UI_DRY_RUN;
+    const env = process.env['CODEX_UI_DRY_RUN'];
     if (env === '0') dryRun = false;
     else if (env === '1') dryRun = true;
   }
@@ -266,7 +266,8 @@ async function handleUI(request: TaskRequest, parentSpan?: any): Promise<TaskRes
       return resp;
     }
   }
-  const gen = new UIScaffoldGenerator(effectiveState as any, { outputDir, dryRun });
+  const genOptions = (dryRun === undefined) ? { outputDir } : { outputDir, dryRun };
+  const gen = new UIScaffoldGenerator(effectiveState as any, genOptions);
   const results = await gen.generateAll();
   const total = Object.values(results).length;
   const ok = Object.values(results).filter(r => r.success).length;
@@ -320,7 +321,7 @@ function createNeutralResponse(phase: Phase, request: TaskRequest): TaskResponse
 }
 
 function getArtifactsDir() {
-  return process.env.CODEX_ARTIFACTS_DIR?.trim()
-    ? path.resolve(process.env.CODEX_ARTIFACTS_DIR)
+  return process.env['CODEX_ARTIFACTS_DIR']?.trim()
+    ? path.resolve(process.env['CODEX_ARTIFACTS_DIR'] as string)
     : path.join(process.cwd(), 'artifacts', 'codex');
 }

@@ -142,7 +142,7 @@ export class AlertManager extends EventEmitter {
     
     if (this.evaluationTimer) {
       clearInterval(this.evaluationTimer);
-      this.evaluationTimer = undefined;
+      delete this.evaluationTimer;
     }
 
     this.emit('alertManagerStopped');
@@ -280,7 +280,7 @@ export class AlertManager extends EventEmitter {
     const rule = this.rules.get(alert.ruleId);
     if (rule) {
       rule.silenced = false;
-      rule.silenceUntil = undefined;
+      delete rule.silenceUntil;
     }
 
     this.emit('alertUnsilenced', alert);
@@ -695,9 +695,10 @@ export class AlertManager extends EventEmitter {
     const throttleKey = `${alert.id}-${notification.type}-${notification.target}`;
     const lastSent = this.notificationThrottles.get(throttleKey);
     
-    if (lastSent && notification.throttle) {
+    const throttle = notification.throttle;
+    if (lastSent && throttle !== undefined) {
       const timeSinceLastSent = Date.now() - lastSent.getTime();
-      if (timeSinceLastSent < notification.throttle) {
+      if (timeSinceLastSent < throttle) {
         return;
       }
     }
@@ -799,7 +800,8 @@ export class AlertManager extends EventEmitter {
       case 'count':
         return values.length;
       default:
-        return values.length > 0 ? values[values.length - 1] : 0; // Latest value or 0 if empty
+        if (values.length === 0) return 0;
+        return values[values.length - 1]!; // Latest value
     }
   }
 }

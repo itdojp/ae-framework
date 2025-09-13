@@ -211,10 +211,15 @@ class FormalMCPServer {
 
   private async handleGenerateFormalSpec(args: unknown) {
     const parsed = GenerateFormalSpecSchema.parse(args);
+    const fo = parsed.options;
+    const genSpecOpts = fo ? {
+      ...(fo.includeDiagrams !== undefined ? { includeDiagrams: fo.includeDiagrams } : {}),
+      ...(fo.generateProperties !== undefined ? { generateProperties: fo.generateProperties } : {}),
+    } : {};
     const specification = await this.formalAgent.generateFormalSpecification(
       parsed.requirements,
       parsed.type,
-      parsed.options || {}
+      genSpecOpts
     );
 
     return {
@@ -239,10 +244,15 @@ class FormalMCPServer {
 
   private async handleCreateAPISpec(args: unknown) {
     const parsed = CreateAPISpecSchema.parse(args);
+    const ao = parsed.options;
+    const apiOptions = ao ? {
+      ...(ao.includeExamples !== undefined ? { includeExamples: ao.includeExamples } : {}),
+      ...(ao.generateContracts !== undefined ? { generateContracts: ao.generateContracts } : {}),
+    } : {};
     const apiSpec = await this.formalAgent.createAPISpecification(
       parsed.requirements,
       parsed.format,
-      parsed.options || {}
+      apiOptions
     );
 
     return {
@@ -260,9 +270,14 @@ class FormalMCPServer {
 
   private async handleGenerateStateMachine(args: unknown) {
     const parsed = GenerateStateMachineSchema.parse(args);
+    const so = parsed.options;
+    const smOptions = so ? {
+      ...(so.generateInvariants !== undefined ? { generateInvariants: so.generateInvariants } : {}),
+      ...(so.includeDiagrams !== undefined ? { includeDiagrams: so.includeDiagrams } : {}),
+    } : {};
     const stateMachine = await this.formalAgent.generateStateMachine(
       parsed.requirements,
-      parsed.options || {}
+      smOptions
     );
 
     return {
@@ -280,10 +295,14 @@ class FormalMCPServer {
 
   private async handleCreateContracts(args: unknown) {
     const parsed = CreateContractsSchema.parse(args);
+    const co = parsed.options;
+    const contractOptions = co ? {
+      ...(co.includeInvariants !== undefined ? { includeInvariants: co.includeInvariants } : {}),
+    } : {};
     const contracts = await this.formalAgent.createContracts(
       parsed.functionSignature,
       parsed.requirements,
-      parsed.options || {}
+      contractOptions
     );
 
     return {
@@ -342,10 +361,15 @@ class FormalMCPServer {
       );
     }
 
+    const mo = parsed.options;
+    const mcOptions = mo ? {
+      ...(mo.timeout !== undefined ? { timeout: mo.timeout } : {}),
+      ...(mo.maxStates !== undefined ? { maxStates: mo.maxStates } : {}),
+    } : {};
     const modelCheckResult = await this.formalAgent.runModelChecking(
       specification,
       parsed.properties,
-      parsed.options || {}
+      mcOptions
     );
 
     return {
@@ -447,7 +471,14 @@ class FormalMCPServer {
   private async handleUpdateConfig(args: unknown) {
     const parsed = UpdateConfigSchema.parse(args);
     
-    this.formalAgent.updateConfig(parsed.config);
+    const c = parsed.config;
+    const cfg = {
+      ...(c.outputFormat !== undefined ? { outputFormat: c.outputFormat } : {}),
+      ...(c.validationLevel !== undefined ? { validationLevel: c.validationLevel } : {}),
+      ...(c.generateDiagrams !== undefined ? { generateDiagrams: c.generateDiagrams } : {}),
+      ...(c.enableModelChecking !== undefined ? { enableModelChecking: c.enableModelChecking } : {}),
+    };
+    this.formalAgent.updateConfig(cfg);
     const newConfig = this.formalAgent.getConfig();
 
     return {

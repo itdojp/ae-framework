@@ -212,7 +212,7 @@ export class TDDAgent {
       sourceFiles: [], // Would be populated by file system scan
       testFiles: [], // Would be populated by file system scan
       testCoverage: 0, // Would be calculated from coverage reports
-      lastTestRun: this.context.testResults,
+      ...(this.context.testResults ? { lastTestRun: this.context.testResults } : {}),
     };
   }
 

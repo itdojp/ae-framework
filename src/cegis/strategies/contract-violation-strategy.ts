@@ -4,7 +4,7 @@
  */
 
 import { BaseFixStrategy } from './base-strategy.js';
-import { FailureArtifact, RepairAction, FailureCategory } from '../types.js';
+import type { FailureArtifact, RepairAction, FailureCategory } from '../types.js';
 
 export class ContractViolationFixStrategy extends BaseFixStrategy {
   readonly name = 'Contract Violation Fix';
@@ -16,13 +16,13 @@ export class ContractViolationFixStrategy extends BaseFixStrategy {
   async canApply(failure: FailureArtifact): Promise<boolean> {
     return failure.category === 'contract_violation' && 
            !!failure.evidence.errorMessage &&
-           !!failure.metadata.environment?.contractName;
+           !!(failure.metadata as any)?.environment?.['contractName'];
   }
 
   async generateFix(failure: FailureArtifact): Promise<RepairAction[]> {
     const actions: RepairAction[] = [];
-    const contractName = failure.metadata.environment?.contractName;
-    const violationType = failure.metadata.environment?.violationType;
+    const contractName = (failure.metadata as any)?.environment?.['contractName'];
+    const violationType = (failure.metadata as any)?.environment?.['violationType'];
     
     if (!contractName || !violationType || !failure.location) {
       return actions;

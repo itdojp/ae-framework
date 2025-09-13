@@ -9,6 +9,7 @@ on:
 jobs:
   traceability:
     runs-on: ubuntu-latest
+    continue-on-error: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking') }}
     steps:
       - uses: actions/checkout@v4
       - name: Generate traceability matrix
@@ -34,6 +35,7 @@ jobs:
           fi
   model-check:
     runs-on: ubuntu-latest
+    continue-on-error: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking') }}
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node
@@ -61,6 +63,7 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     needs: [traceability, model-check, contracts-check, contracts-exec]
+    continue-on-error: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking') }}
     steps:
       - uses: actions/checkout@v4
       - name: Download artifacts

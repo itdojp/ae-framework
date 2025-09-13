@@ -22,7 +22,10 @@ function checkCommand(command: string): boolean {
 
 function getNodeVersion(): { major: number; minor: number; patch: number; full: string } {
   const version = process.version.slice(1); // Remove 'v' prefix
-  const [major, minor, patch] = version.split('.').map(Number);
+  const parts = version.split('.');
+  const major = Number(parts[0] ?? '0');
+  const minor = Number(parts[1] ?? '0');
+  const patch = Number(parts[2] ?? '0');
   return { major, minor, patch, full: version };
 }
 
@@ -98,9 +101,9 @@ export async function doctorEnv() {
   }
 
   // API Keys check
-  const anthropicKey = process.env.ANTHROPIC_API_KEY;
-  const openaiKey = process.env.OPENAI_API_KEY;
-  const geminiKey = process.env.GEMINI_API_KEY;
+  const anthropicKey = process.env['ANTHROPIC_API_KEY'];
+  const openaiKey = process.env['OPENAI_API_KEY'];
+  const geminiKey = process.env['GEMINI_API_KEY'];
   
   const apiKeyCount = [anthropicKey, openaiKey, geminiKey].filter(Boolean).length;
   if (apiKeyCount > 0) {

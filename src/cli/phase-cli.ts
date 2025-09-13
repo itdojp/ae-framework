@@ -5,7 +5,8 @@
  */
 
 import { Command } from 'commander';
-import { PhaseStateManager, PhaseType } from '../utils/phase-state-manager.js';
+import { PhaseStateManager } from '../utils/phase-state-manager.js';
+import type { PhaseType } from '../utils/phase-state-manager.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { toMessage } from '../utils/error-utils.js';

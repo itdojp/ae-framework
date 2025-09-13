@@ -23,6 +23,7 @@ jobs:
   test-matrix:
     name: Test Suite (${{ matrix.test-type }})
     runs-on: ubuntu-latest
+    continue-on-error: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking') }}
     timeout-minutes: 30
     
     strategy:
@@ -91,6 +92,7 @@ jobs:
   test-e2e:
     name: E2E Tests
     runs-on: ubuntu-latest
+    continue-on-error: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking') }}
     # Only run on PR when explicitly requested via label; always on push
     if: github.event_name != 'pull_request' || contains(join(fromJSON(toJSON(github.event.pull_request.labels)).*.name, ','), 'run-e2e')
     timeout-minutes: 45
@@ -136,6 +138,7 @@ jobs:
   test-performance:
     name: Performance Tests
     runs-on: ubuntu-latest
+    continue-on-error: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking') }}
     timeout-minutes: 35
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
@@ -175,6 +178,7 @@ jobs:
     name: Test Result Consolidation
     runs-on: ubuntu-latest
     needs: [test-matrix, test-e2e]
+    continue-on-error: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking') }}
     if: always()
     
     steps:

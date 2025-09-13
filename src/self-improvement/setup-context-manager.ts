@@ -6,8 +6,8 @@
  * management during TypeScript error fixes and codebase improvements.
  */
 
-import { ContextManager, ContextOptions } from '../utils/context-manager.js';
-import { PhaseStateManager, PhaseType } from '../utils/phase-state-manager.js';
+import { ContextManager, type ContextOptions } from '../utils/context-manager.js';
+import { PhaseStateManager, type PhaseType } from '../utils/phase-state-manager.js';
 import type * as fs from 'fs/promises';
 import type * as path from 'path';
 

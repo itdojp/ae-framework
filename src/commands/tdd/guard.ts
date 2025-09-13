@@ -13,7 +13,7 @@ export async function tddGuard() {
     return;
   }
   
-  if (g.ciOnly && !process.env.CI) {
+  if (g.ciOnly && !process.env['CI']) {
     console.log('[ae:tdd:guard] skipped (ciOnly=true, not in CI)');
     return;
   }

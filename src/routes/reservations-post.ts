@@ -1,7 +1,7 @@
 // Route handler implementation for POST /reservations
 import { z } from 'zod'
-import { ReservationsPostInput, ReservationsPostOutput } from '../contracts/schemas'
-import { pre, post } from '../contracts/conditions'
+import { ReservationsPostInput, ReservationsPostOutput } from '../contracts/schemas.js'
+import { pre, post } from '../contracts/conditions.js'
 
 export async function handler(input: unknown): Promise<unknown> {
   try {

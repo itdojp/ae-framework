@@ -175,12 +175,13 @@ export class CodeGenerationServer {
 
           case 'generate_api_from_openapi': {
             const args: GenerateAPIFromOpenAPIArgs = parseOrThrow(GenerateAPIFromOpenAPIArgsSchema, request.params.arguments);
-            const result = await this.agent.generateFromOpenAPI(args.spec, {
+            const apiOpts: any = {
               framework: args.framework,
-              database: args.database,
-              includeValidation: args.includeValidation,
-              includeAuth: args.includeAuth,
-            });
+              ...(args.database ? { database: args.database } : {}),
+              ...(args.includeValidation !== undefined ? { includeValidation: args.includeValidation } : {}),
+              ...(args.includeAuth !== undefined ? { includeAuth: args.includeAuth } : {}),
+            };
+            const result = await this.agent.generateFromOpenAPI(args.spec, apiOpts);
             return {
               content: [
                 {
@@ -193,7 +194,13 @@ export class CodeGenerationServer {
 
           case 'validate_code_against_tests': {
             const args: ValidateCodeAgainstTestsArgs = parseOrThrow(ValidateCodeAgainstTestsArgsSchema, request.params.arguments);
-            const results = await this.validateCodeAgainstTests(args.codeFiles, args.testFiles);
+            const codeFiles = (args.codeFiles || [])
+              .filter(f => typeof f.path === 'string' && typeof f.content === 'string')
+              .map(f => ({ path: f.path as string, content: f.content as string }));
+            const testFiles = (args.testFiles || [])
+              .filter(f => typeof f.path === 'string' && typeof f.content === 'string')
+              .map(f => ({ path: f.path as string, content: f.content as string }));
+            const results = await this.validateCodeAgainstTests(codeFiles, testFiles);
             return {
               content: [
                 {

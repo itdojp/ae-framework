@@ -4,7 +4,7 @@
  */
 
 import { IntentAgent } from '../intent-agent.js';
-import {
+import type {
   StandardAEAgent,
   ProcessingContext,
   PhaseResult,
@@ -110,7 +110,7 @@ export class IntentAgentAdapter implements StandardAEAgent<IntentInput, IntentOu
         phase: 'intent',
         severity: 'error',
         context: { input, context },
-        stack: error instanceof Error ? error.stack : undefined
+        stack: error instanceof Error && error.stack ? error.stack : ''
       };
 
       const metadata: PhaseMetadata = {

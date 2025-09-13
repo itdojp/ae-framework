@@ -4,7 +4,7 @@
  */
 
 import { BaseFixStrategy } from './base-strategy.js';
-import { FailureArtifact, RepairAction, FailureCategory } from '../types.js';
+import type { FailureArtifact, RepairAction, FailureCategory } from '../types.js';
 
 export class TestFailureFixStrategy extends BaseFixStrategy {
   readonly name = 'Test Failure Fix';

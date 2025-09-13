@@ -5,8 +5,8 @@
  * analyze requirements for TypeScript error resolution and framework improvement.
  */
 
-import { NaturalLanguageTaskAdapter, ProcessedRequirements } from '../agents/natural-language-task-adapter.js';
-import { TaskRequest } from '../agents/task-types.js';
+import { NaturalLanguageTaskAdapter, type ProcessedRequirements } from '../agents/natural-language-task-adapter.js';
+import type { TaskRequest } from '../agents/task-types.js';
 import type * as fs from 'fs/promises';
 import type * as path from 'path';
 

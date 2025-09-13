@@ -3,8 +3,10 @@
  * Provides project template installation and setup functionality
  */
 
-import { BaseExtendedCommand, ExtendedCommandResult, ExtendedCommandConfig } from './base-command.js';
-import { InstallerManager, InstallationTemplate, InstallationResult } from '../../utils/installer-manager.js';
+import { BaseExtendedCommand } from './base-command.js';
+import type { ExtendedCommandResult, ExtendedCommandConfig } from './base-command.js';
+import { InstallerManager } from '../../utils/installer-manager.js';
+import type { InstallationTemplate, InstallationResult } from '../../utils/installer-manager.js';
 import { ContextManager } from '../../utils/context-manager.js';
 import { TokenOptimizer } from '../../utils/token-optimizer.js';
 import type * as fs from 'fs/promises';
@@ -20,11 +22,11 @@ export interface InstallerCommandResult extends ExtendedCommandResult {
 }
 
 export class InstallerCommand extends BaseExtendedCommand {
-  public readonly name = '/ae:installer';
-  public readonly description = 'Install project templates and manage dependencies';
-  public readonly category = 'utility' as const;
-  public readonly usage = '/ae:installer <template-id> | list | suggest | templates';
-  public readonly aliases = ['/installer', '/install', '/a:installer'];
+  public override readonly name = '/ae:installer';
+  public override readonly description = 'Install project templates and manage dependencies';
+  public override readonly category = 'utility' as const;
+  public override readonly usage = '/ae:installer <template-id> | list | suggest | templates';
+  public override readonly aliases = ['/installer', '/install', '/a:installer'];
 
   private installerManager?: InstallerManager;
   private contextManager?: ContextManager;
@@ -55,7 +57,7 @@ export class InstallerCommand extends BaseExtendedCommand {
     return this.tokenOptimizer;
   }
 
-  async handler(args: string[], context: any): Promise<InstallerCommandResult> {
+  override async handler(args: string[], context: any): Promise<InstallerCommandResult> {
     const startTime = Date.now();
     const projectRoot = context?.projectRoot || process.cwd();
 
@@ -438,7 +440,7 @@ Examples:
   }
 
   // Required abstract method implementations
-  protected validateArgs(args: string[]): { isValid: boolean; message?: string } {
+  protected override validateArgs(args: string[]): { isValid: boolean; message?: string } {
     if (args.length === 0) {
       return {
         isValid: false,
@@ -448,7 +450,7 @@ Examples:
     return { isValid: true };
   }
 
-  protected async execute(
+  protected override async execute(
     args: string[], 
     options: Record<string, any>, 
     context: any
@@ -456,7 +458,7 @@ Examples:
     return await this.handler(args, context);
   }
 
-  protected generateValidationClaim(data: any): string {
+  protected override generateValidationClaim(data: any): string {
     if (data.installedTemplate) {
       return `Template "${data.installedTemplate}" was successfully installed`;
     } else if (data.availableTemplates) {
@@ -465,7 +467,7 @@ Examples:
     return 'Installer operation was completed';
   }
 
-  protected generateSummary(data: any): string {
+  protected override generateSummary(data: any): string {
     if (data.installedTemplate) {
       return `Successfully installed template: ${data.installedTemplate}`;
     } else if (data.availableTemplates) {

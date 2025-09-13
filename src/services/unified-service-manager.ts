@@ -4,9 +4,9 @@
  * Unified manager for all service types with optimization and validation
  */
 
-import { 
+import { ServiceType } from './service-types.js';
+import type { 
   ServiceConfig, 
-  ServiceType, 
   ServiceTask,
   ServiceResult,
   ServiceState,
@@ -130,7 +130,7 @@ export class UnifiedServiceManager {
         action: 'start',
         timestamp: new Date(),
         duration: Date.now() - startTime,
-        dependenciesAffected: dependenciesStarted.length > 0 ? dependenciesStarted : undefined
+        ...(dependenciesStarted.length > 0 ? { dependenciesAffected: dependenciesStarted } : {})
       };
 
     } catch (error) {

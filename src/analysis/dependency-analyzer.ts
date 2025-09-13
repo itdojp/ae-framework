@@ -233,7 +233,7 @@ export class DependencyAnalyzer extends EventEmitter {
         metrics,
         riskAssessment,
         recommendations,
-        impactAnalysis,
+        ...(impactAnalysis ? { impactAnalysis } : {}),
         optimizationSuggestions: optimizations
       };
 

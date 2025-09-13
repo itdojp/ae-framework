@@ -4,23 +4,24 @@
  * This replaces the original BenchmarkRunner with standardized interfaces
  */
 
-import { 
+import type { 
   RequirementSpec, 
   BenchmarkResult, 
   BenchmarkMetrics, 
   BenchmarkConfig, 
-  AEFrameworkPhase,
   PhaseExecution,
   ExecutionDetails,
   GeneratedArtifacts,
   BenchmarkError 
 } from '../types/index.js';
+import { AEFrameworkPhase } from '../types/index.js';
 import os from 'node:os';
 import fs from 'fs/promises';
 import yaml from 'yaml';
 
 // Import standardized pipeline and adapters
-import { AEFrameworkPipeline, PipelineConfig, PipelineResult } from '../../../agents/pipeline/ae-framework-pipeline.js';
+import { AEFrameworkPipeline } from '../../../agents/pipeline/ae-framework-pipeline.js';
+import type { PipelineConfig, PipelineResult } from '../../../agents/pipeline/ae-framework-pipeline.js';
 import { IntentAgentAdapter } from '../../../agents/adapters/intent-agent-adapter.js';
 import { 
   RequirementsAgentAdapter, 
@@ -29,7 +30,7 @@ import {
   DomainModelingAgentAdapter 
 } from '../../../agents/adapters/task-adapters.js';
 import { UIUXAgentAdapter } from '../../../agents/adapters/ui-ux-agent-adapter.js';
-import { 
+import type { 
   IntentInput, 
   RequirementSource, 
   ProjectContext,
@@ -37,6 +38,7 @@ import {
   UIUXOutput,
   UIComponent
 } from '../../../agents/interfaces/standard-interfaces.js';
+import { BenchmarkCategory, DifficultyLevel, TestType, OutputType } from '../types/index.js';
 
 // Minimal generated file descriptor used within this runner (file-local type)
 type GeneratedFile = { path: string; content: string; type: 'typescript' | 'markdown' | 'config' | string; size: number };
@@ -123,7 +125,7 @@ type EnhancedReportData = {
  */
 export class StandardizedBenchmarkRunner {
   private config: BenchmarkConfig;
-  private pipeline: AEFrameworkPipeline;
+  private pipeline!: AEFrameworkPipeline;
 
   constructor(config: BenchmarkConfig) {
     this.config = config;
@@ -245,7 +247,7 @@ export class StandardizedBenchmarkRunner {
    */
   private async loadProblemSpec(problemId: string): Promise<RequirementSpec> {
     try {
-      const repoDir = process.env.REQ2RUN_BENCHMARK_REPO || '/tmp/req2run-benchmark';
+      const repoDir = process.env['REQ2RUN_BENCHMARK_REPO'] || '/tmp/req2run-benchmark';
       
       // Check repository availability
       try {
@@ -290,22 +292,28 @@ export class StandardizedBenchmarkRunner {
    */
   private normalizeSpecification(spec: unknown, problemId: string): RequirementSpec {
     const s = spec as MinimalSpec;
+    const cat = (s.category && Object.values(BenchmarkCategory).includes(s.category as any))
+      ? (s.category as BenchmarkCategory)
+      : BenchmarkCategory.WEB_API;
+    const diff = (s.difficulty && Object.values(DifficultyLevel).includes(s.difficulty as any))
+      ? (s.difficulty as DifficultyLevel)
+      : DifficultyLevel.INTERMEDIATE;
     return {
-      id: s.id || problemId,
-      title: s.title || `Benchmark Problem ${problemId}`,
+      id: String(s.id || problemId),
+      title: String(s.title || `Benchmark Problem ${problemId}`),
       description: this.buildDescription(s),
-      category: s.category || 'general',
-      difficulty: s.difficulty || 'basic',
+      category: cat,
+      difficulty: diff,
       requirements: this.extractRequirements(s),
       constraints: this.extractConstraints(s),
-      testCriteria: s.testCriteria || [],
-      expectedOutput: s.expectedOutput || { type: 'application', value: null },
+      testCriteria: [],
+      expectedOutput: { type: OutputType.APPLICATION, format: 'executable', schema: null, examples: [] },
       metadata: {
         created_by: s.metadata?.author || 'req2run-benchmark',
         created_at: s.metadata?.created_date || new Date().toISOString(),
         version: s.metadata?.version || '1.0.0',
-        category: s.category || 'general',
-        difficulty: s.difficulty || 'basic',
+        category: cat,
+        difficulty: diff,
         estimated_time: s.estimated_time_minutes || 30,
         benchmark_source: 'req2run-benchmark',
         problem_id: problemId
@@ -342,13 +350,13 @@ export class StandardizedBenchmarkRunner {
       });
     }
 
-    const context: ProjectContext = {
+    const context: any = {
       domain: spec.metadata.category || 'general',
       organization: 'Req2Run Benchmark',
       existingSystem: false,
       constraints: Object.entries(spec.constraints || {}).map(([key, value]) => ({
-        type: ((): ProjectContext['constraints'][number]['type'] => {
-          const m: Record<string, ProjectContext['constraints'][number]['type']> = {
+        type: ((): 'technical' | 'business' | 'regulatory' | 'resource' => {
+          const m: Record<string, 'technical' | 'business' | 'regulatory' | 'resource'> = {
             technical: 'technical',
             business: 'business',
             regulatory: 'regulatory',
@@ -362,7 +370,7 @@ export class StandardizedBenchmarkRunner {
       }))
     };
 
-    return { sources, context };
+    return { sources, context: context as ProjectContext };
   }
 
   /**
@@ -377,16 +385,19 @@ export class StandardizedBenchmarkRunner {
     const endTime = new Date();
 
     // Convert pipeline phases to benchmark phase executions
-    const phaseExecutions: PhaseExecution[] = pipelineResult.phases.map(phase => ({
-      phase: this.mapStandardPhaseToLegacy(phase.phase),
-      startTime: phase.metadata.startTime,
-      endTime: phase.metadata.endTime,
-      duration: phase.metadata.duration,
-      input: this.extractPhaseInput(phase),
-      output: phase.data,
-      success: phase.success,
-      errors: phase.errors?.map(e => e.message) || undefined
-    }));
+    const phaseExecutions: PhaseExecution[] = pipelineResult.phases.map(phase => {
+      const errMsgs = phase.errors?.map(e => e.message) || [];
+      return {
+        phase: this.mapStandardPhaseToLegacy(phase.phase),
+        startTime: phase.metadata.startTime,
+        endTime: phase.metadata.endTime,
+        duration: phase.metadata.duration,
+        input: this.extractPhaseInput(phase),
+        output: phase.data,
+        success: phase.success,
+        ...(errMsgs.length > 0 ? { errors: errMsgs } : {}),
+      };
+    });
 
     // Extract generated artifacts from final phase
     const generatedArtifacts = await this.extractGeneratedArtifacts(pipelineResult);
@@ -416,13 +427,15 @@ export class StandardizedBenchmarkRunner {
       metrics,
       executionDetails,
       generatedArtifacts,
-      errors: pipelineResult.errors.length > 0 ? pipelineResult.errors.map(e => ({
-        phase: this.mapStandardPhaseToLegacy(e.phase),
-        type: 'runtime',
-        message: e.message,
-        stack: e.stack,
-        timestamp: new Date()
-      })) : undefined
+      ...(pipelineResult.errors.length > 0 ? {
+        errors: pipelineResult.errors.map(e => ({
+          phase: this.mapStandardPhaseToLegacy(e.phase),
+          type: 'runtime',
+          message: e.message,
+          ...(e.stack ? { stack: e.stack } : {}),
+          timestamp: new Date()
+        }))
+      } : {})
     };
   }
 
@@ -541,7 +554,8 @@ export class StandardizedBenchmarkRunner {
       };
 
       // Save reports
-      const reportDir = this.config?.reporting?.destinations?.[0]?.config?.directory || 'reports/benchmark';
+      const rawDir = (this.config?.reporting?.destinations?.[0]?.config as any)?.['directory'];
+      const reportDir = (typeof rawDir === 'string' && rawDir.trim()) ? rawDir : 'reports/benchmark';
       await fs.mkdir(reportDir, { recursive: true });
 
       // Enhanced JSON report
@@ -571,7 +585,7 @@ export class StandardizedBenchmarkRunner {
   // Helper methods
   private buildDescription(spec: unknown): string {
     const s = spec as MinimalSpec;
-    let description = s.description || s.notes || s.title || 'Benchmark problem';
+    let description = s.notes || s.title || 'Benchmark problem';
     
     if (s.category) description += `\n\nCategory: ${s.category}`;
     if (s.difficulty) description += `\nDifficulty: ${s.difficulty}`;
@@ -615,8 +629,8 @@ export class StandardizedBenchmarkRunner {
     return {
       technical: s.constraints?.allowed_packages || [],
       business: s.constraints?.disallowed_packages || [],
-      performance: (s.requirements?.non_functional as Record<string, unknown> | undefined)?.performance || {},
-      security: (s.requirements?.non_functional as Record<string, unknown> | undefined)?.security || {},
+      performance: (s.requirements?.non_functional as Record<string, unknown> | undefined)?.['performance'] || {},
+      security: (s.requirements?.non_functional as Record<string, unknown> | undefined)?.['security'] || {},
       platform: s.constraints?.platform || []
     };
   }
@@ -686,12 +700,13 @@ export class StandardizedBenchmarkRunner {
     };
   }
 
-  private generateSourceCodeFromUI(uiOutput: UIUXOutput): GeneratedFile[] {
+  private generateSourceCodeFromUI(uiOutput: UIUXOutput): import('../types/index.js').SourceCodeArtifact[] {
     return uiOutput.components.map(component => ({
-      path: `src/components/${component.name}.tsx`,
+      filename: `src/components/${component.name}.tsx`,
       content: this.generateComponentCode(component),
-      type: 'typescript',
-      size: 0
+      language: 'typescript',
+      size: this.generateComponentCode(component).length,
+      linesOfCode: this.generateComponentCode(component).split('\n').length
     }));
   }
 
@@ -713,13 +728,13 @@ export const ${component.name}: React.FC<${component.name}Props> = (props) => {
 `;
   }
 
-  private generateDocumentationFromPipeline(pipelineResult: PipelineResult): GeneratedFile[] {
+  private generateDocumentationFromPipeline(pipelineResult: PipelineResult): import('../types/index.js').DocumentationArtifact[] {
     return [
       {
-        path: 'README.md',
+        filename: 'README.md',
         content: this.generateREADME(pipelineResult),
-        type: 'markdown',
-        size: 0
+        type: 'readme',
+        format: 'markdown'
       }
     ];
   }
@@ -753,10 +768,10 @@ Generated on: ${new Date().toISOString()}
 `;
   }
 
-  private generateConfigurationFiles(uiOutput: UIUXOutput): GeneratedFile[] {
+  private generateConfigurationFiles(uiOutput: UIUXOutput): import('../types/index.js').ConfigurationArtifact[] {
     return [
       {
-        path: 'package.json',
+        filename: 'package.json',
         content: JSON.stringify({
           name: 'generated-application',
           version: '1.0.0',
@@ -765,8 +780,7 @@ Generated on: ${new Date().toISOString()}
             'typescript': '^5.0.0'
           }
         }, null, 2),
-        type: 'json',
-        size: 0
+        type: 'package'
       }
     ];
   }
@@ -996,7 +1010,7 @@ ${data.analytics.errors.commonErrorPatterns.map((error: string) =>
       phase: AEFrameworkPhase.INTENT_ANALYSIS,
       type: 'runtime',
       message: error instanceof Error ? error.message : 'Unknown benchmark error',
-      stack: error instanceof Error ? error.stack : undefined,
+      ...(error instanceof Error && error.stack ? { stack: error.stack } : {}),
       timestamp: new Date()
     };
 
@@ -1024,9 +1038,7 @@ ${data.analytics.errors.commonErrorPatterns.map((error: string) =>
       platform: process.platform,
       arch: process.arch,
       memory: process.memoryUsage().heapTotal,
-      cpuCount: os.cpus().length,
-      pipelineVersion: '1.0.0',
-      standardizedAgents: true
+      cpuCount: os.cpus().length
     };
   }
 

@@ -186,11 +186,13 @@ export class FailureArtifactFactory {
         screenshots: [],
         networkLogs: [],
       },
-      context: context ? {
-        timestamp: new Date().toISOString(),
-        environment: 'development',
-        ...context,
-      } : undefined,
+      ...(context ? {
+        context: {
+          timestamp: new Date().toISOString(),
+          environment: 'development',
+          ...context,
+        }
+      } : {}),
     });
   }
 

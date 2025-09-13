@@ -144,15 +144,15 @@ export class MonitoringSystem extends EventEmitter {
       this.metricsCollector.stop();
 
       // Stop timers
-      if (this.healthCheckTimer) {
-        clearInterval(this.healthCheckTimer);
-        this.healthCheckTimer = undefined;
-      }
+    if (this.healthCheckTimer) {
+      clearInterval(this.healthCheckTimer);
+      delete this.healthCheckTimer;
+    }
 
-      if (this.exportTimer) {
-        clearInterval(this.exportTimer);
-        this.exportTimer = undefined;
-      }
+    if (this.exportTimer) {
+      clearInterval(this.exportTimer);
+      delete this.exportTimer;
+    }
 
       this.isRunning = false;
       this.emit('systemStopped');

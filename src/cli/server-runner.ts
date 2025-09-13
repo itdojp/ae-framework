@@ -11,7 +11,7 @@ async function main() {
   initTelemetry();
 
   // Initialize database
-  const db = new Database(process.env.DATABASE_URL || 'postgres://app:app@localhost:5432/app');
+  const db = new Database(process.env['DATABASE_URL'] || 'postgres://app:app@localhost:5432/app');
   await initDatabase(db);
 
   // Initialize services
@@ -24,8 +24,8 @@ async function main() {
   await app.register(reservationRoutes, { inventoryService });
 
   // Start server
-  const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
-  const host = process.env.HOST || '0.0.0.0';
+  const port = process.env['PORT'] ? parseInt(process.env['PORT'] as string) : 3000;
+  const host = process.env['HOST'] || '0.0.0.0';
 
   try {
     await app.listen({ port, host });

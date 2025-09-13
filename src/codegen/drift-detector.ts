@@ -8,7 +8,7 @@ import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { glob } from 'glob';
 import chalk from 'chalk';
-import { CodegenManifest, DriftDetectionResult } from './deterministic-generator.js';
+import type { CodegenManifest, DriftDetectionResult } from './deterministic-generator.js';
 
 export interface DriftConfig {
   /** Directory containing generated code */
@@ -222,11 +222,14 @@ export class DriftDetector {
     const knownFiles = new Set(manifest?.files.map(f => f.filePath) || []);
 
     // Find all files in the code directory
-    const allFiles = await glob('**/*', {
+    const globOpts: any = {
       cwd: this.config.codeDir,
-      ignore: this.config.ignorePatterns,
       nodir: true,
-    });
+    };
+    if (this.config.ignorePatterns && this.config.ignorePatterns.length > 0) {
+      globOpts.ignore = this.config.ignorePatterns;
+    }
+    const allFiles = await glob('**/*', globOpts);
 
     for (const filePath of allFiles) {
       if (!knownFiles.has(filePath)) {

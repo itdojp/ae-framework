@@ -9,13 +9,13 @@ import type { join } from 'path';
 import { ConformanceVerificationEngine } from '../conformance/verification-engine.js';
 import chalk from 'chalk';
 import { toMessage } from '../utils/error-utils.js';
-import { 
+import type { 
   ConformanceRule, 
   ConformanceConfig, 
   RuntimeContext,
   ConformanceRuleCategory,
-  ViolationSeverity
 } from '../conformance/types.js';
+import type { ViolationSeverity } from '../conformance/types.js';
 
 export class ConformanceCli {
   private engine: ConformanceVerificationEngine;
@@ -556,8 +556,10 @@ export class ConformanceCli {
     let current = result;
 
     for (let i = 0; i < keys.length - 1; i++) {
-      current[keys[i]] = {};
-      current = current[keys[i]];
+      const seg = keys[i];
+      if (!seg) continue;
+      if (!current[seg]) current[seg] = {};
+      current = current[seg];
     }
 
     // Parse value based on type
@@ -566,7 +568,9 @@ export class ConformanceCli {
     else if (value === 'false') parsedValue = false;
     else if (!isNaN(Number(value))) parsedValue = Number(value);
 
-    current[keys[keys.length - 1]] = parsedValue;
+    const lastKey = keys[keys.length - 1];
+    if (!lastKey) return result;
+    current[lastKey] = parsedValue;
     return result;
   }
 

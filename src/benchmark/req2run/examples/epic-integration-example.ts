@@ -5,7 +5,8 @@
  */
 
 import { StandardizedBenchmarkRunner } from '../runners/StandardizedBenchmarkRunner.js';
-import { BenchmarkConfig, ReportFormat, BenchmarkCategory, DifficultyLevel } from '../types/index.js';
+import type { BenchmarkConfig } from '../types/index.js';
+import { ReportFormat, BenchmarkCategory, DifficultyLevel } from '../types/index.js';
 
 /**
  * Example: Complete Req2Run-Benchmark EPIC Integration
@@ -229,7 +230,7 @@ async function getAvailableBasicProblems(): Promise<string[]> {
 
   try {
     // Check if req2run-benchmark repository is available
-    const repoDir = process.env.REQ2RUN_BENCHMARK_REPO || '/tmp/req2run-benchmark';
+    const repoDir = process.env['REQ2RUN_BENCHMARK_REPO'] || '/tmp/req2run-benchmark';
     const fs = await import('fs/promises');
     
     try {
