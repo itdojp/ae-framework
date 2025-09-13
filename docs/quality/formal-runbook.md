@@ -99,4 +99,10 @@ Tips（出力・色・抑制）
 - コンソール要約は色分け表示。色を無効化するには `NO_COLOR=1` を指定（CI等）
 - 実行ログのサマリは `hermetic-reports/formal/summary.json` でも確認可能
 - PRサマリにも Formal summary を1行で表示（サマリが生成されている場合）
- - `file_not_found`: `--file` の指定パスを確認（SMT/TLA/Alloy）
+- `file_not_found`: `--file` の指定パスを確認（SMT/TLA/Alloy）
+ - コンソール要約の抑制: `QUIET=1` を指定で print-summary を抑止（CIログを簡潔にしたい場合）
+
+PRサマリの表示例
+```
+• Formal summary: [WARN] Conformance: schemaErrors=0, invariantViolations=3, rate=0.300, first=allocated_le_onhand@2, firstSchemaPath=/state/onHand, byType(onhand_min=1, allocated_le_onhand=2); [OK] SMT: ran; [INFO] Alloy: tool_not_available; [INFO] TLA: tool_not_available (tlc)
+```

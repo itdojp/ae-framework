@@ -9,6 +9,10 @@ if (!fs.existsSync(p)) {
   console.log('No formal summary found (hermetic-reports/formal/summary.json)');
   process.exit(0);
 }
+// Allow suppressing console summary via QUIET env
+if (process.env.QUIET && process.env.QUIET !== '0' && process.env.QUIET.toLowerCase() !== 'false') {
+  process.exit(0);
+}
 const f = JSON.parse(fs.readFileSync(p,'utf8'));
 
 // Color helpers (respect NO_COLOR)
