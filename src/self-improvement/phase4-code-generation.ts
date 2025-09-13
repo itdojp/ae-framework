@@ -6,7 +6,7 @@
  * and TDD guidance from Phase 3.
  */
 
-import { CodeGenerationAgent, CodeGenerationRequest } from '../agents/code-generation-agent.js';
+import { CodeGenerationAgent, type CodeGenerationRequest } from '../agents/code-generation-agent.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -95,12 +95,12 @@ export class Phase4CodeGeneration {
         const match = line.match(/(.+?)\((\d+),(\d+)\): error (TS\d+): (.+)/);
         if (match) {
           return {
-            file: match[1],
-            line: parseInt(match[2]),
-            column: parseInt(match[3]),
-            code: match[4],
-            description: match[5],
-            severity: this.categorizeErrorSeverity(match[4], match[5])
+            file: match[1]!,
+            line: parseInt(match[2]!, 10),
+            column: parseInt(match[3]!, 10),
+            code: match[4]!,
+            description: match[5]!,
+            severity: this.categorizeErrorSeverity(match[4]!, match[5]!)
           };
         }
         return null;

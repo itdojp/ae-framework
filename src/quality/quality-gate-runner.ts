@@ -658,7 +658,7 @@ export async function runQualityGatesCLI(args: string[]): Promise<void> {
   
   // Parse command line arguments
   const options: QualityGateExecutionOptions = {
-    environment: process.env.NODE_ENV || 'development',
+    environment: process.env['NODE_ENV'] || 'development',
     parallel: true,
     verbose: false,
     dryRun: false,
@@ -667,11 +667,22 @@ export async function runQualityGatesCLI(args: string[]): Promise<void> {
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     switch (arg) {
-      case '--env':
-        options.environment = args[++i];
+      case '--env': {
+        const val = args[i + 1];
+        if (val !== undefined) {
+          options.environment = val;
+          i++;
+        }
         break;
+      }
       case '--gates':
-        options.gates = args[++i].split(',');
+        {
+          const val = args[i + 1];
+          if (val !== undefined) {
+            options.gates = val.split(',');
+            i++;
+          }
+        }
         break;
       case '--sequential':
         options.parallel = false;
@@ -682,12 +693,23 @@ export async function runQualityGatesCLI(args: string[]): Promise<void> {
       case '--dry-run':
         options.dryRun = true;
         break;
-      case '--timeout':
-        options.timeout = parseInt(args[++i], 10);
+      case '--timeout': {
+        const val = args[i + 1];
+        if (val !== undefined) {
+          const n = parseInt(val, 10);
+          if (!Number.isNaN(n)) options.timeout = n;
+          i++;
+        }
         break;
-      case '--output':
-        options.outputDir = args[++i];
+      }
+      case '--output': {
+        const val = args[i + 1];
+        if (val !== undefined) {
+          options.outputDir = val;
+          i++;
+        }
         break;
+      }
     }
   }
 

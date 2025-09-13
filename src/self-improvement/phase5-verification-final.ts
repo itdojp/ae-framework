@@ -112,13 +112,13 @@ export class Phase5VerificationFinal {
         const match = line.match(/(.+?)\((\d+),(\d+)\): error (TS\d+): (.+)/);
         if (match) {
           return {
-            file: match[1],
-            line: parseInt(match[2]),
-            column: parseInt(match[3]),
-            code: match[4],
-            message: match[5],
+            file: match[1]!,
+            line: parseInt(match[2]!, 10),
+            column: parseInt(match[3]!, 10),
+            code: match[4]!,
+            message: match[5]!,
             severity: 'error' as const,
-            category: this.categorizeErrorType(match[4], match[5])
+            category: this.categorizeErrorType(match[4]!, match[5]!)
           };
         }
         return null;
