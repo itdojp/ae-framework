@@ -38,6 +38,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Print run context
+        run: node scripts/formal/print-context.mjs || true
       - name: Show formal tools availability (non-blocking)
         run: node scripts/formal/tools-check.mjs || true
       - name: Run verify:conformance stub
