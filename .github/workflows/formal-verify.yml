@@ -2,14 +2,14 @@ name: Formal Verify
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
-  push:
-    branches: [ main, develop ]
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
+  workflow_dispatch:
 
 jobs:
   verify-conformance:
     name: verify:conformance (stub)
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'run-formal')
     steps:
       - uses: actions/checkout@v4
       - name: Stub verify:conformance
@@ -19,6 +19,7 @@ jobs:
   verify-alloy:
     name: verify:alloy (stub)
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'run-formal')
     steps:
       - uses: actions/checkout@v4
       - name: Stub verify:alloy
@@ -28,6 +29,7 @@ jobs:
   verify-tla:
     name: verify:tla (stub)
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'run-formal')
     steps:
       - uses: actions/checkout@v4
       - name: Stub verify:tla
@@ -37,9 +39,9 @@ jobs:
   verify-smt:
     name: verify:smt (stub)
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'run-formal')
     steps:
       - uses: actions/checkout@v4
       - name: Stub verify:smt
         run: |
           echo "verify:smt stub — to be implemented (z3/cvc5)"
-

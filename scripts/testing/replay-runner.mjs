@@ -27,8 +27,19 @@ function applyEvent(state, e){
 
 function checkInvariants(state){
   const violations=[];
-  if ((state.allocated??0) > (state.onHand??0)) violations.push('allocated <= onHand');
-  if ((state.onHand??0) < 0) violations.push('onHand >= 0');
+  const disable = new Set((process.env.REPLAY_DISABLE || '').split(',').map(s=>s.trim()).filter(Boolean));
+  const onHandMin = Number.isFinite(Number(process.env.REPLAY_ONHAND_MIN)) ? Number(process.env.REPLAY_ONHAND_MIN) : 0;
+
+  // inv: allocated <= onHand
+  if (!disable.has('allocated_le_onhand')){
+    if ((state.allocated??0) > (state.onHand??0)) violations.push('allocated <= onHand');
+  }
+
+  // inv: onHand >= min
+  if (!disable.has('onhand_min')){
+    if ((state.onHand??0) < onHandMin) violations.push(`onHand >= ${onHandMin}`);
+  }
+
   return violations;
 }
 
