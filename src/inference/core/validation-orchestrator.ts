@@ -329,7 +329,7 @@ export class ValidationOrchestrator extends EventEmitter {
       id: 'performance-metrics',
       category: 'performance',
       validate: this.validatePerformanceMetrics.bind(this),
-      canHandle: (target, context) => context.metadata.includePerformance === true
+      canHandle: (target, context) => context.metadata['includePerformance'] === true
     });
 
     // Security validators
@@ -476,6 +476,7 @@ export class ValidationOrchestrator extends EventEmitter {
         for (let i = 0; i < validatorResults.length; i++) {
           const result = validatorResults[i];
           const config = phase.validators[i];
+          if (!config) continue;
           
           if (result && result.status === 'fulfilled') {
             results.push(result.value);
@@ -578,7 +579,7 @@ export class ValidationOrchestrator extends EventEmitter {
           result,
           executionTime,
           attempts,
-          error: success ? undefined : new Error('Validation criteria not met')
+          ...(success ? {} : { error: new Error('Validation criteria not met') })
         };
         
       } catch (error) {
@@ -604,7 +605,7 @@ export class ValidationOrchestrator extends EventEmitter {
       },
       executionTime: 0,
       attempts,
-      error: lastError
+      ...(lastError ? { error: lastError } : {})
     };
   }
 
@@ -628,7 +629,7 @@ export class ValidationOrchestrator extends EventEmitter {
   private calculateRetryDelay(attempt: number, config: ValidatorConfig): number {
     const baseDelay = 1000; // Default base delay
     
-    switch (config.parameters?.retryPolicy?.backoffStrategy || 'linear') {
+    switch (config.parameters?.['retryPolicy']?.backoffStrategy || 'linear') {
       case 'exponential':
         return Math.min(baseDelay * Math.pow(2, attempt - 1), 10000);
       case 'linear':
@@ -645,7 +646,7 @@ export class ValidationOrchestrator extends EventEmitter {
     context: ValidationContext,
     config: ValidatorConfig
   ): Promise<ValidationResult> {
-    const requiredFields = config.parameters.requiredFields || [];
+    const requiredFields = config.parameters['requiredFields'] || [];
     const missingFields = requiredFields.filter((field: string) => !(field in target));
     
     return {
@@ -696,7 +697,7 @@ export class ValidationOrchestrator extends EventEmitter {
     context: ValidationContext,
     config: ValidatorConfig
   ): Promise<ValidationResult> {
-    const thresholds = config.parameters.performanceThresholds || {};
+    const thresholds = config.parameters['performanceThresholds'] || {};
     
     return {
       criterion: 'performance_metrics',

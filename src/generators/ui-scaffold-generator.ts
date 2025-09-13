@@ -328,8 +328,9 @@ export class UIScaffoldGenerator {
     
     const enumMatch = validation.match(/enum:([^,]+)/);
     if (!enumMatch) return [];
-    
-    return enumMatch[1].split('|').map(s => s.trim());
+    const group = enumMatch[1] ?? '';
+    if (!group) return [];
+    return group.split('|').map(s => s.trim());
   }
 
   private async renderTemplate(templateName: string, context: any): Promise<string> {
@@ -421,8 +422,9 @@ export class UIScaffoldGenerator {
           if (attr.validation?.includes('enum:')) {
             const enumMatch = attr.validation.match(/enum:([^,]+)/);
             if (enumMatch) {
-              const options = enumMatch[1].split('|').map(s => `"${s.trim()}"`).join(', ');
-              schema = `z.enum([${options}])`;
+              const group = enumMatch[1] ?? '';
+              const options = group ? group.split('|').map(s => `"${s.trim()}"`).join(', ') : '';
+              schema = options ? `z.enum([${options}])` : 'z.string()';
             }
           }
           break;
@@ -484,11 +486,12 @@ export class UIScaffoldGenerator {
     Handlebars.registerHelper('isTextArea', (type: string, validation?: string) => {
       // Use textarea for string types with 'multiline' hint or large maxLength
       if (type !== 'string') return false;
-      if (validation) {
-        if (validation.includes('multiline')) return true;
-        const maxLengthMatch = validation.match(/maxLength:(\d+)/);
-        if (maxLengthMatch && parseInt(maxLengthMatch[1]!, 10) > 255) return true;
-      }
+        if (validation) {
+          if (validation.includes('multiline')) return true;
+          const maxLengthMatch = validation.match(/maxLength:(\d+)/);
+          const maxLen = maxLengthMatch?.[1] ? parseInt(maxLengthMatch[1], 10) : undefined;
+          if (maxLen !== undefined && maxLen > 255) return true;
+        }
       return false;
     });
 
@@ -514,8 +517,9 @@ export class UIScaffoldGenerator {
       switch (type) {
         case 'string':
           if (validation?.includes('enum:')) {
-            const options = validation.match(/enum:([^,]+)/)?.[1].split('|').map(s => s.trim());
-            return `"${options?.[0] || 'active'}"`;
+            const enumStr = validation.match(/enum:([^,]+)/)?.[1];
+            const options = enumStr ? enumStr.split('|').map(s => s.trim()) : [];
+            return `"${options[0] || 'active'}"`;
           }
           return `"Sample ${key || 'text'}"`;
         case 'number':

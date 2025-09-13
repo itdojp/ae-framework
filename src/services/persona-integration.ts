@@ -136,19 +136,19 @@ export class PersonaIntegrationService {
     // Add language preferences for analysis commands
     if (command.includes('analyze') || command.includes('improve')) {
       if (profile.preferences['preferredLanguages'].length > 0) {
-        options.languages = profile.preferences['preferredLanguages'];
+        options['languages'] = profile.preferences['preferredLanguages'];
       }
     }
 
     // Add testing preferences for code generation
     if (command.includes('generate') || command.includes('create')) {
-      options.testingStyle = profile.preferences['testingPreference'];
-      options.codeStyle = profile.preferences['codeStyle'];
+      options['testingStyle'] = profile.preferences['testingPreference'];
+      options['codeStyle'] = profile.preferences['codeStyle'];
     }
 
     // Add documentation level preferences
     if (command.includes('document')) {
-      options.explanationLevel = profile.preferences['explanationLevel'];
+      options['explanationLevel'] = profile.preferences['explanationLevel'];
     }
 
     return options;

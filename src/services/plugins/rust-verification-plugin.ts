@@ -302,8 +302,8 @@ export class RustVerificationPlugin implements MCPPlugin {
 
   private async discoverRustProjects(request: MCPRequest): Promise<MCPResponse> {
     try {
-      const searchPath = request.params.searchPath || request.context.projectRoot;
-      const maxDepth = request.params.maxDepth || this.config.projectDiscovery.searchDepth;
+      const searchPath = (request.params as any)['searchPath'] || request.context.projectRoot;
+      const maxDepth = (request.params as any)['maxDepth'] || this.config.projectDiscovery.searchDepth;
 
       const projects = await this.findRustProjects(searchPath, maxDepth);
 

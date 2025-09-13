@@ -4,7 +4,7 @@
  * Unified manager for all service types with optimization and validation
  */
 
-import { 
+import type { 
   ServiceConfig, 
   ServiceType, 
   ServiceTask,

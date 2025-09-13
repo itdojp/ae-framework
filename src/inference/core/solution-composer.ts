@@ -170,7 +170,7 @@ export class SolutionComposer {
       integrationMetrics,
       validationResults: globalValidations,
       recommendations,
-      alternatives: alternatives.length > 0 ? alternatives : undefined
+      ...(alternatives.length > 0 ? { alternatives } : {})
     };
   }
 

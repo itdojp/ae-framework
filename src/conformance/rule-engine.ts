@@ -555,7 +555,7 @@ export class ConformanceRuleEngine {
       timestamp: new Date().toISOString(),
       duration: 0,
       context,
-      metrics: { executionTime: 0 },
+      metrics: { executionTime: 0, networkCalls: 0, dbQueries: 0 },
       metadata: { skipReason: reason }
     };
   }
