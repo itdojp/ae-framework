@@ -120,3 +120,10 @@ Formal Verify の実行（target=all）
      - `solver`（smt: z3|cvc5）
      - `alloyJar`/`tlaToolsJar`（ツールJarパス／環境によって指定）
   3. 結果は: コンソール要約（logs）、`formal-reports` アーティファクトに集約
+
+Artifacts（Formal Reports）
+- `hermetic-reports/formal/summary.json`: 形式結果の集約（Conformance/SMT/Alloy/TLA）
+- `hermetic-reports/formal/tla-summary.json`: TLA ランナーの簡易要約（engine/file/status/output）
+- `hermetic-reports/formal/alloy-summary.json`: Alloy ランナーの簡易要約（file/status/output）
+- `hermetic-reports/formal/smt-summary.json`: SMT ランナーの簡易要約（solver/file/status/output）
+- `hermetic-reports/conformance/summary.json`: Conformance 要約（events/schemaErrors/invariantViolations/violationRate/first/byType）
