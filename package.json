@@ -287,7 +287,9 @@
     "bdd:lint": "node scripts/bdd/lint.mjs"
     ,
     "test:replay": "node scripts/testing/replay-runner.mjs",
-    "test:replay:focus": "node scripts/testing/replay-runner.mjs --focus=$TRACE_ID"
+    "test:replay:focus": "node scripts/testing/replay-runner.mjs --focus=$TRACE_ID",
+    "test:replay:strict": "REPLAY_ONHAND_MIN=0 REPLAY_DISABLE= node scripts/testing/replay-runner.mjs",
+    "test:replay:relaxed": "REPLAY_DISABLE=allocated_le_onhand node scripts/testing/replay-runner.mjs"
     ,
     "artifacts:aggregate": "node scripts/adapters/aggregate-artifacts.mjs"
   },
