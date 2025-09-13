@@ -19,6 +19,16 @@ CLI stubs (to be wired)
   - 集計: `hermetic-reports/formal/summary.json` に要約を出力
   - 表示: 実行後にコンソールへ簡易サマリを表示
 
+ログ例（label: run-formal 実行時）
+```
+--- Formal Summary ---
+Conformance: schemaErrors=0, invariantViolations=1, rate=0.333, first=allocated_le_onhand@2
+SMT: ran
+Alloy: tool_not_available
+TLA: tool_not_available (tlc)
+----------------------
+```
+
 Conformance sample (quick demo)
 - `pnpm run conformance:sample` — サンプルのルール/設定/データ/コンテキストを生成
 - `pnpm run conformance:verify:sample` — 生成データで検証を実行（JSONレポート出力）
