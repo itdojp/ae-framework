@@ -6,12 +6,33 @@
  */
 
 import { z } from 'zod';
-import { trace, metrics, SpanStatusCode, SpanKind } from '@opentelemetry/api';
+import { trace, metrics as otMetrics } from '@opentelemetry/api';
 import { FailureArtifactFactory } from '../cegis/failure-artifact-schema.js';
 
-// Telemetry instances
+// Telemetry instances (safe for partially mocked @opentelemetry/api)
 const tracer = trace.getTracer('ae-framework-runtime-conformance');
-const meter = metrics.getMeter('ae-framework-runtime-conformance');
+type NoopCounter = { add: (value: number, attrs?: Record<string, any>) => void };
+type NoopHistogram = { record: (value: number, attrs?: Record<string, any>) => void };
+type SafeMeter = {
+  createCounter: (name: string, opts?: any) => NoopCounter;
+  createHistogram: (name: string, opts?: any) => NoopHistogram;
+};
+
+function getSafeMeter(): SafeMeter {
+  try {
+    const m: any = (otMetrics as any);
+    if (m && typeof m.getMeter === 'function') {
+      return m.getMeter('ae-framework-runtime-conformance');
+    }
+  } catch {}
+  // No-op fallbacks
+  return {
+    createCounter: () => ({ add: () => {} }),
+    createHistogram: () => ({ record: () => {} }),
+  };
+}
+
+const meter = getSafeMeter();
 
 // Metrics
 const conformanceCounter = meter.createCounter('conformance_checks_total', {
@@ -121,7 +142,6 @@ export class ConformanceGuard<T> {
     
     if (this.config.telemetryEnabled) {
       span = tracer.startSpan(`conformance_check_${direction}`, {
-        kind: SpanKind.INTERNAL,
         attributes: {
           'conformance.schema_name': this.schemaName,
           'conformance.direction': direction,
@@ -154,7 +174,7 @@ export class ConformanceGuard<T> {
       if (result.success) {
         // Validation passed
         if (span) {
-          span.setStatus({ code: SpanStatusCode.OK });
+          span.setStatus({ code: 1 as any });
           span.setAttributes({
             'conformance.result': 'success',
             'conformance.duration_ms': duration,
@@ -189,7 +209,7 @@ export class ConformanceGuard<T> {
 
         if (span) {
           span.setStatus({
-            code: SpanStatusCode.ERROR,
+            code: 2 as any,
             message: `Conformance violation: ${errors.join(', ')}`,
           });
           span.setAttributes({
@@ -257,7 +277,7 @@ export class ConformanceGuard<T> {
       if (span) {
         span.recordException(error as Error);
         span.setStatus({
-          code: SpanStatusCode.ERROR,
+          code: 2 as any,
           message: `Conformance check failed: ${error}`,
         });
       }
@@ -433,10 +453,17 @@ export class GuardFactory {
  * Decorator for automatic method validation
  */
 export function ValidateInput<T>(guard: ConformanceGuard<T>) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
-    const originalMethod = descriptor.value;
+  return function (target: any, propertyKey: string, descriptor?: PropertyDescriptor) {
+    // 防御的: デコレータ適用時にdescriptor未定義のケースに対応
+    const desc = descriptor || Object.getOwnPropertyDescriptor(target, propertyKey) || {
+      value: (target as any)[propertyKey],
+      writable: true,
+      configurable: true,
+      enumerable: false,
+    } as PropertyDescriptor;
+    const originalMethod = desc.value;
 
-    descriptor.value = async function (input: unknown, ...args: any[]) {
+    desc.value = async function (input: unknown, ...args: any[]) {
       const result = await guard.validateInput(input, {
         method: `${target.constructor.name}.${propertyKey}`,
         timestamp: new Date().toISOString(),
@@ -452,10 +479,14 @@ export function ValidateInput<T>(guard: ConformanceGuard<T>) {
         );
       }
 
-      return originalMethod.call(this, result.data || input, ...args);
+      return originalMethod.call(this, result.data ?? input, ...args);
     };
 
-    return descriptor;
+    // 可能であればプロパティディスクリプタを再定義
+    try {
+      Object.defineProperty(target, propertyKey, desc);
+    } catch {}
+    return desc;
   };
 }
 
@@ -463,10 +494,16 @@ export function ValidateInput<T>(guard: ConformanceGuard<T>) {
  * Decorator for automatic output validation
  */
 export function ValidateOutput<T>(guard: ConformanceGuard<T>) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
-    const originalMethod = descriptor.value;
+  return function (target: any, propertyKey: string, descriptor?: PropertyDescriptor) {
+    const desc = descriptor || Object.getOwnPropertyDescriptor(target, propertyKey) || {
+      value: (target as any)[propertyKey],
+      writable: true,
+      configurable: true,
+      enumerable: false,
+    } as PropertyDescriptor;
+    const originalMethod = desc.value;
 
-    descriptor.value = async function (...args: any[]) {
+    desc.value = async function (...args: any[]) {
       const result = await originalMethod.apply(this, args);
       
       const validationResult = await guard.validateOutput(result, {
@@ -487,7 +524,10 @@ export function ValidateOutput<T>(guard: ConformanceGuard<T>) {
       return result;
     };
 
-    return descriptor;
+    try {
+      Object.defineProperty(target, propertyKey, desc);
+    } catch {}
+    return desc;
   };
 }
 
