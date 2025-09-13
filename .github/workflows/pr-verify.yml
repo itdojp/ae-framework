@@ -173,6 +173,16 @@ jobs:
                 lines.push(`• Contract/E2E templates: ${s.files} files (dir: ${s.outDir})`);
               }
             } catch {}
+            // PBT/BDD counts (lightweight)
+            try {
+              const { execSync } = require('child_process');
+              let pbtCount = 0, bddCount = 0;
+              try { pbtCount = parseInt(execSync("bash -lc 'ls tests/property/*.test.ts 2>/dev/null | wc -l'", {stdio:['ignore','pipe','ignore']}).toString().trim()) || 0; } catch {}
+              try { bddCount = parseInt(execSync("bash -lc 'rg -n "^Feature:" tests 2>/dev/null | wc -l'", {stdio:['ignore','pipe','ignore']}).toString().trim()) || 0; } catch {}
+              if (!isNaN(pbtCount) || !isNaN(bddCount)) {
+                lines.push(`• Tests: PBT files=${pbtCount || 0}, BDD features=${bddCount || 0}`);
+              }
+            } catch {}
             if (lines.length === 0) {
               lines.push('No CodeX artifacts found to summarize.');
             }
