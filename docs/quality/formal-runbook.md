@@ -132,3 +132,29 @@ Artifacts のクイック確認（jq）
 - 集約のpresence: `jq '.present' hermetic-reports/formal/summary.json`
 - Conformance byType: `jq '.conformance.byType' hermetic-reports/formal/summary.json`
 - 最初の不変違反: `jq '.conformance.firstInvariantViolation' hermetic-reports/formal/summary.json`
+
+Field リファレンス（抜粋）
+- `formal/summary.json`
+  - `timestamp`: 集計時刻（ISO8601）
+  - `present`: 各セクションの有無（conformance/smt/alloy/tla）
+  - `conformance` / `smt` / `alloy` / `tla`: 各ランナーのサマリ（存在時）
+- `conformance/summary.json`
+  - `input`: 入力イベントファイル（相対パス）
+  - `events`: イベント数
+  - `schemaErrors`: スキーマ違反件数
+  - `invariantViolations`: 不変違反件数
+  - `violationRate`: 不変違反率（違反数/イベント数）
+  - `firstInvariantViolation`: 最初の不変違反（例: `type`, `index`）
+  - `firstSchemaError`: 最初のスキーマ違反（例: `path`, `message`）
+  - `byType`: 不変タイプ別の件数（例: `onhand_min`, `allocated_le_onhand`）
+- `tla-summary.json`
+  - `engine`: `tlc` | `apalache`
+  - `file`: 対象TLAファイル
+  - `status`: `ran` | `tool_not_available` | `file_not_found` など
+- `alloy-summary.json`
+  - `file`: 対象Alloyファイル
+  - `status`: `ran` | `tool_not_available` | `file_not_found` など
+- `smt-summary.json`
+  - `solver`: `z3` | `cvc5`
+  - `file`: 対象SMT-LIBファイル
+  - `status`: `ran` | `solver_not_available` | `file_not_found` など
