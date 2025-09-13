@@ -30,6 +30,13 @@ Tools
 - セットアップ手順: [formal-tools-setup.md](./formal-tools-setup.md)
 - トレース検証（軽量）: `pnpm run trace:validate`（サンプルイベントのスキーマ整合を確認）
 
+verify:conformance オプション
+- `-i, --in <file>` 入力イベントJSON（既定: `samples/conformance/sample-traces.json`）
+- `--schema <file>` トレーススキーマYAML（既定: `observability/trace-schema.yaml`）
+- `--out <file>` 出力先（既定: `hermetic-reports/conformance/summary.json`）
+- `--disable-invariants <list>` 無効化する不変（`,`区切り。`allocated_le_onhand,onhand_min`）
+- `--onhand-min <number>` onHand の最小値（既定: 0）
+
 Roadmap Fit (Issue #493)
 - Non‑blocking, label‑gated CI first
 - Wire real engines behind the above stubs incrementally
