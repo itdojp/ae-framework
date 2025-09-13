@@ -40,3 +40,14 @@ verify:conformance オプション
 Roadmap Fit (Issue #493)
 - Non‑blocking, label‑gated CI first
 - Wire real engines behind the above stubs incrementally
+
+TLA+/Apalache/SMT コマンド例（ローカル）
+- TLA+ (TLC)
+  - `java -cp $TLA_TOOLS_JAR tlc2.TLC spec/tla/DomainSpec.tla`
+  - 失敗時はログを確認（`TLC FAILED`/`Invariant violated` など）
+- Apalache
+  - `apalache-mc version`
+  - `apalache-mc check --inv=Invariant spec/tla/DomainSpec.tla`
+- SMT（単体動作確認）
+  - `z3 --version` / `cvc5 --version`
+  - 実運用では CLI から `verify:smt -- --solver=z3|cvc5` を経由
