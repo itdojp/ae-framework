@@ -17,6 +17,14 @@ on:
         description: "SMT solver (z3|cvc5)"
         required: false
         default: "z3"
+      alloyJar:
+        description: "Path to Alloy jar (optional)"
+        required: false
+        default: ""
+      tlaToolsJar:
+        description: "Path to TLA+ tla2tools.jar (optional)"
+        required: false
+        default: ""
 
 jobs:
   verify-conformance:
@@ -58,6 +66,8 @@ jobs:
         with:
           node-version: '20'
       - name: Run verify:alloy (sample)
+        env:
+          ALLOY_JAR: ${{ github.event_name == 'workflow_dispatch' && inputs.alloyJar || '' }}
         run: node scripts/formal/verify-alloy.mjs --file spec/alloy/Domain.als || true
 
   verify-tla:
@@ -74,6 +84,7 @@ jobs:
       - name: Run verify:tla stub
         env:
           TLA_ENGINE: ${{ github.event_name == 'workflow_dispatch' && inputs.engine || 'tlc' }}
+          TLA_TOOLS_JAR: ${{ github.event_name == 'workflow_dispatch' && inputs.tlaToolsJar || '' }}
         run: node scripts/formal/verify-tla.mjs --engine=$TLA_ENGINE --file spec/tla/DomainSpec.tla || true
 
   verify-smt:

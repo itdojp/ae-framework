@@ -3,6 +3,12 @@
 Usage
 - Label-gated CI: add PR label `run-formal` to run formal checks (stub initially)
 - Manual run: trigger `Formal Verify` via `workflow_dispatch`
+  - inputs:
+    - `target`: all|conformance|alloy|tla|smt
+    - `engine`: tlc|apalache（tla用）
+    - `solver`: z3|cvc5（smt用）
+    - `alloyJar`: Alloy jar のパス（任意）
+    - `tlaToolsJar`: tla2tools.jar のパス（任意）
 
 CLI stubs (to be wired)
 - `pnpm run verify:conformance` — prints stub; use `ae conformance verify` for real engine
