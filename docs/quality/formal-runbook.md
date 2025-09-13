@@ -44,6 +44,12 @@ Roadmap Fit (Issue #493)
 - Non‑blocking, label‑gated CI first
 - Wire real engines behind the above stubs incrementally
 
+サマリの見方（conformance）
+- `events`: 入力イベント数
+- `schemaErrors`: スキーマ違反件数
+- `invariantViolations`: 不変違反件数（`violationRate` は events に対する比率）
+- `firstInvariantViolation`: 最初の違反（`type` と `index`）
+
 TLA+/Apalache/SMT コマンド例（ローカル）
 - TLA+ (TLC)
   - `java -cp $TLA_TOOLS_JAR tlc2.TLC spec/tla/DomainSpec.tla`
