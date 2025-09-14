@@ -5,7 +5,7 @@
  * consistent, structured responses that meet API requirements.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import Ajv from 'ajv';

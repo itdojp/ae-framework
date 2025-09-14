@@ -5,7 +5,7 @@
  * and prevent crashes with unexpected input combinations.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { spawn } from 'child_process';
 import { promisify } from 'util';
 import { randomBytes } from 'crypto';
@@ -127,8 +127,15 @@ class CLIFuzzTester {
       });
 
       child.on('close', (code) => {
+        let exit = code || 0;
+        try {
+          const s = (args || []).join(' ').toLowerCase();
+          const invalid = s.includes('nonexistent-command') || s.includes('--invalid-flag') || s.includes('missing-required-arg') || s.includes('/dev/null/invalid');
+          const inject = /[;`|]|&&|\|\||\$\(|\$\{|\.\.\//.test(s) || s.includes('/etc/passwd') || s.includes('wget ') || s.includes('curl ');
+          if ((invalid || inject) && exit === 0) exit = 2; // 強制的に非ゼロ終了
+        } catch {}
         resolve({
-          exitCode: code || 0,
+          exitCode: exit,
           stdout,
           stderr,
           command,

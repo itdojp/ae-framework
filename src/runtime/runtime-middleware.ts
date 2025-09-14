@@ -15,7 +15,7 @@ import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { ConformanceGuard, GuardFactory } from './conformance-guards.js';
 import type { ConformanceResult } from './conformance-guards.js';
-import { trace, SpanStatusCode } from '@opentelemetry/api';
+import { trace } from '@opentelemetry/api';
 
 const tracer = trace.getTracer('ae-framework-runtime-middleware');
 
@@ -63,6 +63,8 @@ export class ExpressConformanceMiddleware {
    */
   validateRequestBody<T>(schema: z.ZodSchema<T>, operationId: string) {
     const guard = GuardFactory.apiRequest(schema, operationId);
+    // ミドルウェア側でstrict処理を行うため、ガードは非例外化
+    guard.updateConfig({ failOnViolation: false });
     
     return async (req: Request, res: Response, next: NextFunction) => {
       if (!this.config.enabled) {
@@ -88,12 +90,12 @@ export class ExpressConformanceMiddleware {
 
         // Replace body with validated data
         req.body = result.data;
-        span.setStatus({ code: SpanStatusCode.OK });
+        span.setStatus({ code: 1 as any });
         next();
 
       } catch (error) {
         span.recordException(error as Error);
-        span.setStatus({ code: SpanStatusCode.ERROR });
+        span.setStatus({ code: 2 as any });
         this.handleMiddlewareError(error, req, res, next);
       } finally {
         span.end();
@@ -106,6 +108,7 @@ export class ExpressConformanceMiddleware {
    */
   validateQueryParams<T>(schema: z.ZodSchema<T>, operationId: string) {
     const guard = GuardFactory.apiRequest(schema, `${operationId}_query`);
+    guard.updateConfig({ failOnViolation: false });
     
     return async (req: Request, res: Response, next: NextFunction) => {
       if (!this.config.enabled) {
@@ -130,12 +133,12 @@ export class ExpressConformanceMiddleware {
         }
 
         req.query = result.data as any;
-        span.setStatus({ code: SpanStatusCode.OK });
+        span.setStatus({ code: 1 as any });
         next();
 
       } catch (error) {
         span.recordException(error as Error);
-        span.setStatus({ code: SpanStatusCode.ERROR });
+        span.setStatus({ code: 2 as any });
         this.handleMiddlewareError(error, req, res, next);
       } finally {
         span.end();
@@ -148,6 +151,7 @@ export class ExpressConformanceMiddleware {
    */
   validatePathParams<T>(schema: z.ZodSchema<T>, operationId: string) {
     const guard = GuardFactory.apiRequest(schema, `${operationId}_params`);
+    guard.updateConfig({ failOnViolation: false });
     
     return async (req: Request, res: Response, next: NextFunction) => {
       if (!this.config.enabled) {
@@ -172,12 +176,12 @@ export class ExpressConformanceMiddleware {
         }
 
         req.params = result.data as any;
-        span.setStatus({ code: SpanStatusCode.OK });
+        span.setStatus({ code: 1 as any });
         next();
 
       } catch (error) {
         span.recordException(error as Error);
-        span.setStatus({ code: SpanStatusCode.ERROR });
+        span.setStatus({ code: 2 as any });
         this.handleMiddlewareError(error, req, res, next);
       } finally {
         span.end();
@@ -201,15 +205,13 @@ export class ExpressConformanceMiddleware {
 
       // Intercept res.send
       res.send = function(data: any) {
-        validateAndSend.call(this, data, originalSend);
-        return this;
-      };
+        return validateAndSend.call(this, data, originalSend);
+      } as any;
 
       // Intercept res.json
       res.json = function(data: any) {
-        validateAndSend.call(this, data, originalJson);
-        return this;
-      };
+        return validateAndSend.call(this, data, originalJson);
+      } as any;
 
       const validateAndSend = async function(this: Response, data: any, originalMethod: Function) {
         const span = tracer.startSpan(`validate_response_${operationId}`);
@@ -230,21 +232,21 @@ export class ExpressConformanceMiddleware {
             console.warn(`🚨 Response validation failed for ${operationId}:`, result.errors);
           }
 
-          span.setStatus({ code: SpanStatusCode.OK });
+          span.setStatus({ code: 1 as any });
           
           // Always send the original data (don't break responses)
-          originalMethod.call(this, data);
+          return await Promise.resolve(originalMethod.call(this, data));
 
         } catch (error) {
           span.recordException(error as Error);
-          span.setStatus({ code: SpanStatusCode.ERROR });
+          span.setStatus({ code: 2 as any });
           
           if (this.config.logErrors) {
             console.error(`Response validation error for ${operationId}:`, error);
           }
           
           // Still send the response
-          originalMethod.call(this, data);
+          return await Promise.resolve(originalMethod.call(this, data));
         } finally {
           span.end();
         }
@@ -268,10 +270,9 @@ export class ExpressConformanceMiddleware {
         target === 'body' ? this.validateRequestBody(requestSchema, operationId) :
         target === 'query' ? this.validateQueryParams(requestSchema, operationId) :
         this.validatePathParams(requestSchema, operationId)
-      ) : (req: Request, res: Response, next: NextFunction) => next(),
-      responseSchema ? this.validateResponse(responseSchema, operationId) : 
-        (req: Request, res: Response, next: NextFunction) => next(),
-    ].filter(Boolean);
+      ) : undefined,
+      responseSchema ? this.validateResponse(responseSchema, operationId) : undefined,
+    ].filter(Boolean) as any[];
   }
 
   private createValidationContext(req: Request, operationId: string): ValidationContext {
@@ -388,11 +389,11 @@ export async function fastifyConformancePlugin(
       // Validation would be handled by Fastify's built-in JSON schema validation
       // This hook is mainly for telemetry and artifact generation
 
-      span.setStatus({ code: SpanStatusCode.OK });
+      span.setStatus({ code: 1 as any });
 
     } catch (error) {
       span.recordException(error as Error);
-      span.setStatus({ code: SpanStatusCode.ERROR });
+      span.setStatus({ code: 2 as any });
       throw error;
     } finally {
       span.end();
@@ -419,11 +420,11 @@ export async function fastifyConformancePlugin(
       // Response validation would be handled by Fastify's built-in validation
       // This hook is mainly for telemetry
 
-      span.setStatus({ code: SpanStatusCode.OK });
+      span.setStatus({ code: 1 as any });
 
     } catch (error) {
       span.recordException(error as Error);
-      span.setStatus({ code: SpanStatusCode.ERROR });
+      span.setStatus({ code: 2 as any });
       
       if (config.logErrors) {
         console.error('Fastify response validation error:', error);
@@ -622,7 +623,9 @@ export class MiddlewareRegistry {
    */
   listRoutes(): Array<{ path: string; method: string; operationId: string }> {
     return Array.from(this.registeredRoutes.entries()).map(([key, value]) => {
-      const [method, path] = key.split(':');
+      const idx = key.indexOf(':');
+      const method = idx >= 0 ? key.slice(0, idx) : key;
+      const path = idx >= 0 ? key.slice(idx + 1) : '';
       return {
         path: path || '',
         method: method || '',

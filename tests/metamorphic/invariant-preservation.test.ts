@@ -8,7 +8,7 @@
  * - Business rules are consistently enforced
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { spawn } from 'child_process';
@@ -87,8 +87,34 @@ class MetamorphicTestGenerator {
     if (!existsSync(irPath)) {
       throw new Error(`Base IR not found at ${irPath}`);
     }
-    
-    this.baseIR = JSON.parse(readFileSync(irPath, 'utf-8'));
+    const raw: any = JSON.parse(readFileSync(irPath, 'utf-8'));
+    // 互換変換: フェーズ状態JSONからテスト用AEIRに射影
+    if (!raw.domain && raw.entities) {
+      const domain = Object.entries(raw.entities).map(([name, ent]: [string, any]) => {
+        const attrs = ent?.attributes || {};
+        const fields = Object.entries(attrs).map(([fname, fdef]: [string, any]) => ({
+          name: fname,
+          type: String(fdef?.type || 'string'),
+          required: !!fdef?.required,
+          constraints: [] as string[],
+        }));
+        return { name, fields };
+      });
+      const invariants = Array.from(new Set(
+        ((raw.entities && Object.values(raw.entities)) || [])
+          .flatMap((ent: any) => (ent?.constraints?.business_rules || []) as string[])
+      )).map((desc: string, i: number) => ({ id: `INV${i+1}`, description: desc, expression: desc }));
+      const api: Array<{method: string; path: string}> = [];
+      this.baseIR = {
+        version: String(raw.version || '1.0.0'),
+        metadata: { name: String(raw.project || 'inventory'), description: raw.metadata?.description },
+        domain,
+        invariants,
+        api
+      } as AEIR;
+    } else {
+      this.baseIR = raw as AEIR;
+    }
   }
 
   // Apply harmless transformations that shouldn't affect generation invariants

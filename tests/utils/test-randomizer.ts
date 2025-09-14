@@ -37,6 +37,7 @@ interface TestExecution {
   duration: number;
   result: 'pass' | 'fail' | 'skip';
   error?: string;
+  failureReason?: 'exception' | 'side_effect' | 'setup' | 'teardown';
 }
 
 interface RandomizationReport {
@@ -156,6 +157,14 @@ class TestRandomizer {
     };
 
     const resultsByTest = new Map<string, Array<'pass' | 'fail' | 'skip'>>();
+    const countsById = new Map<string, { total: number; fails: number }>();
+    // 事前に全テストIDのキーを作成（空配列）
+    suite.cases?.forEach(tc => {
+      if (tc && tc.id) {
+        resultsByTest.set(tc.id, []);
+        countsById.set(tc.id, { total: 0, fails: 0 });
+      }
+    });
 
     console.log(`🎲 Running randomized test suite: ${suite.name}`);
     console.log(`   Seed: ${this.config.seed}`);
@@ -168,6 +177,24 @@ class TestRandomizer {
       if (this.config.enableShuffling) {
         testOrder = this.shuffleArray(testOrder, iterationSeed);
       }
+      // 不正要素の排除と最終フィルタ
+      testOrder = testOrder.filter((t): t is TestCase => !!t && typeof t.id === 'string' && typeof t.fn === 'function');
+      // フォールバック: もし何らかの理由でテスト数が欠落した場合はローテーションで全件を確実に含める
+      if (testOrder.length < suite.cases.length) {
+        const rotate = iteration % suite.cases.length;
+        const rotated = [...suite.cases.slice(rotate), ...suite.cases.slice(0, rotate)];
+        testOrder = rotated.filter((t): t is TestCase => !!t && typeof t.id === 'string' && typeof t.fn === 'function');
+      }
+      // 先頭サイクル制御: 初期イテレーションで2番目のテストを先頭にして依存関係の検出を促進
+      if (suite.cases.length > 1 && testOrder.length > 1) {
+        const desiredHeadId = suite.cases[(iteration + 1) % suite.cases.length]?.id;
+        const idx = testOrder.findIndex(t => t.id === desiredHeadId);
+        if (idx > 0) {
+          const tmp = testOrder[0];
+          testOrder[0] = testOrder[idx]!;
+          testOrder[idx] = tmp!;
+        }
+      }
 
       const orderIds = testOrder.filter(Boolean).map(t => (t as TestCase).id).join(',');
       console.log(`   Iteration ${iteration + 1}/${this.config.iterations} - Order: ${orderIds}`);
@@ -178,7 +205,41 @@ class TestRandomizer {
 
       // Setup
       if (suite.setup) {
-        await suite.setup();
+        try {
+          await suite.setup();
+        } catch (setupErr) {
+          // Record setup failure for each test id in this iteration to reflect instability attribution
+          const setupMsg = (setupErr as Error).message || 'Setup failed';
+          for (let i = 0; i < testOrder.length; i++) {
+            const testCase = testOrder[i];
+            if (!testCase) continue;
+            const execution: TestExecution = {
+              id: testCase.id,
+              order: i,
+              duration: 0,
+              result: 'fail',
+              error: setupMsg,
+              failureReason: 'setup',
+            };
+            executions.push(execution);
+            if (!resultsByTest.has(testCase.id)) {
+              resultsByTest.set(testCase.id, []);
+              countsById.set(testCase.id, { total: 0, fails: 0 });
+            }
+            resultsByTest.get(testCase.id)!.push('fail');
+            const c = countsById.get(testCase.id)!;
+            c.total++;
+            c.fails++;
+            countsById.set(testCase.id, c);
+          }
+          report.configurations.push({
+            order: testOrder.filter(Boolean).map(t => (t as TestCase).id),
+            results: executions,
+            sideEffectsDetected,
+          });
+          // Skip executing tests in this iteration due to setup failure
+          continue;
+        }
       }
 
       // Execute tests in order
@@ -222,7 +283,10 @@ class TestRandomizer {
           order: i,
           duration: Date.now() - startTime,
           result,
-          error
+          error,
+          failureReason: result === 'fail'
+            ? (error && error.includes('Side effects detected') ? 'side_effect' : 'exception')
+            : undefined,
         };
 
         executions.push(execution);
@@ -230,13 +294,23 @@ class TestRandomizer {
         // Track results by test
         if (!resultsByTest.has(testCase.id)) {
           resultsByTest.set(testCase.id, []);
+          countsById.set(testCase.id, { total: 0, fails: 0 });
         }
         resultsByTest.get(testCase.id)!.push(result);
+        const c = countsById.get(testCase.id)!;
+        c.total++;
+        if (result === 'fail') c.fails++;
+        countsById.set(testCase.id, c);
       }
 
       // Teardown
       if (suite.teardown) {
-        await suite.teardown();
+        try {
+          await suite.teardown();
+        } catch (teardownErr) {
+          // For now, mark side effects detected at suite level; keep per-test results intact
+          sideEffectsDetected = true;
+        }
       }
 
       // Check for global side effects
@@ -254,20 +328,47 @@ class TestRandomizer {
       });
     }
 
-    // Analyze stability
-    for (const [testId, results] of resultsByTest) {
-      const failures = results.filter(r => r === 'fail').length;
-      const total = results.length;
-
-      if (failures === total) {
-        report.stability.consistentFailures.push(testId);
-      } else if (failures > 0 && failures < total) {
-        report.stability.intermittentFailures.push(testId);
+    // Analyze stability（テスト互換のため、記録済み resultsByTest を用いる）
+    for (const [testId, cnt] of countsById) {
+      if (cnt.total > 0) {
+        if (cnt.fails === cnt.total) {
+          report.stability.consistentFailures.push(testId);
+        } else if (cnt.fails > 0 && cnt.fails < cnt.total) {
+          report.stability.intermittentFailures.push(testId);
+        }
       }
 
       // Check for order dependency by comparing first vs other positions
       if (this.isOrderDependent(testId, report.configurations)) {
         report.stability.orderDependent.push(testId);
+      }
+    }
+
+    // 補完: configurations ベースでも確認して足りないものを補う
+    const setConsistent = new Set(report.stability.consistentFailures);
+    const setIntermittent = new Set(report.stability.intermittentFailures);
+    const allIds = new Set<string>([...Array.from(resultsByTest.keys())]);
+    // 可能な限り suite.cases の id も対象に含める
+    suite.cases?.forEach(c => allIds.add(c.id));
+
+    for (const id of allIds) {
+      let total = 0;
+      let fails = 0;
+      for (const cfg of report.configurations) {
+        const e = cfg.results.find(r => r.id === id);
+        if (e) {
+          total++;
+          if (e.result === 'fail') fails++;
+        }
+      }
+      if (total > 0) {
+        if (fails === total && !setConsistent.has(id)) {
+          report.stability.consistentFailures.push(id);
+          setConsistent.add(id);
+        } else if (fails > 0 && fails < total && !setIntermittent.has(id)) {
+          report.stability.intermittentFailures.push(id);
+          setIntermittent.add(id);
+        }
       }
     }
 
@@ -289,11 +390,19 @@ class TestRandomizer {
       }
     }
 
-    // Simple heuristic: if results differ significantly between positions
-    const firstPassRate = firstPositionResults.filter(r => r === 'pass').length / firstPositionResults.length;
-    const otherPassRate = otherPositionResults.filter(r => r === 'pass').length / otherPositionResults.length;
+    // Primary heuristic: any failure when first AND any pass when not-first
+    const anyFirstFails = firstPositionResults.some(r => r === 'fail');
+    const anyOtherPasses = otherPositionResults.some(r => r === 'pass');
+    if (anyFirstFails && anyOtherPasses) return true;
 
-    return Math.abs(firstPassRate - otherPassRate) > 0.3; // 30% difference threshold
+    // Fallback to pass-rate difference if both buckets populated
+    if (firstPositionResults.length > 0 && otherPositionResults.length > 0) {
+      const firstPassRate = firstPositionResults.filter(r => r === 'pass').length / firstPositionResults.length;
+      const otherPassRate = otherPositionResults.filter(r => r === 'pass').length / otherPositionResults.length;
+      return Math.abs(firstPassRate - otherPassRate) > 0.3; // 30% difference threshold
+    }
+
+    return false;
   }
 
   generateReport(report: RandomizationReport): string {
