@@ -186,6 +186,65 @@ jobs:
                 lines.push(`• Tests: PBT files=${pbtCount || 0}, BDD features=${bddCount || 0}`);
               }
             } catch {}
+            // Formal aggregated summary (if present)
+            try {
+              if (fs.existsSync('hermetic-reports/formal/summary.json')) {
+                const f = JSON.parse(fs.readFileSync('hermetic-reports/formal/summary.json','utf8'));
+                const parts = [];
+                const tag = (ok) => ok ? '[OK]' : '[WARN]';
+                const info = '[INFO]';
+                if (f.conformance) {
+                  const ce = f.conformance.schemaErrors ?? 'n/a';
+                  const iv = f.conformance.invariantViolations ?? 'n/a';
+                  const vr = (f.conformance.violationRate !== undefined) ? f.conformance.violationRate : 'n/a';
+                  let first = '';
+                  try {
+                    const fv = f.conformance.firstInvariantViolation;
+                    if (fv && (fv.index !== undefined) && fv.type) first = `, first=${fv.type}@${fv.index}`;
+                  } catch {}
+                  let firstSchema = '';
+                  try {
+                    const se = f.conformance.firstSchemaError;
+                    if (se && se.path) firstSchema = `, firstSchemaPath=${se.path}`;
+                  } catch {}
+                  let typeBreak = '';
+                  try {
+                    const bt = f.conformance.byType || {};
+                    const arr = Object.entries(bt).filter(([,v]) => typeof v === 'number' && v > 0).map(([k,v]) => `${k}=${v}`);
+                    if (arr.length) typeBreak = `, byType(${arr.join(', ')})`;
+                  } catch {}
+                  const ok = (iv === 0 && ce === 0);
+                  parts.push(`${ok ? tag(true) : tag(false)} Conformance: schemaErrors=${ce}, invariantViolations=${iv}, rate=${vr}${first}${firstSchema}${typeBreak}`);
+                }
+                if (f.smt) {
+                  const st = f.smt.status;
+                  const t = (st === 'ran') ? tag(true) : (st === 'solver_not_available' ? info : tag(false));
+                  const file = f.smt.file ? ` (${f.smt.file})` : '';
+                  parts.push(`${t} SMT: ${st}${file}`);
+                }
+                if (f.alloy) {
+                  const st = f.alloy.status;
+                  const t = (st === 'ran') ? tag(true) : (st === 'tool_not_available' ? info : tag(false));
+                  const file = f.alloy.file ? ` (${f.alloy.file})` : '';
+                  parts.push(`${t} Alloy: ${st}${file}`);
+                }
+                if (f.tla) {
+                  const st = f.tla.status;
+                  const t = (st === 'ran') ? tag(true) : (st === 'tool_not_available' ? info : tag(false));
+                  const file = f.tla.file ? ` ${f.tla.file}` : '';
+                  parts.push(`${t} TLA: ${st} (${f.tla.engine})${file}`);
+                }
+                if (parts.length) lines.push('• Formal summary: ' + parts.join('; '));
+              }
+            } catch {}
+            // Formal specs counts (TLA/Alloy)
+            try {
+              const { execSync } = require('child_process');
+              let tlaCount = 0, alsCount = 0;
+              try { tlaCount = parseInt(execSync("bash -lc 'ls spec/tla/*.tla 2>/dev/null | wc -l'", {stdio:['ignore','pipe','ignore']}).toString().trim()) || 0; } catch {}
+              try { alsCount = parseInt(execSync("bash -lc 'ls spec/alloy/*.als 2>/dev/null | wc -l'", {stdio:['ignore','pipe','ignore']}).toString().trim()) || 0; } catch {}
+              lines.push(`• Formal specs: TLA=${tlaCount}, Alloy=${alsCount}`);
+            } catch {}
             if (lines.length === 0) {
               lines.push('No CodeX artifacts found to summarize.');
             }

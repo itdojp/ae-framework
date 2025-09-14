@@ -19,6 +19,14 @@ on:
         description: "SMT solver (z3|cvc5)"
         required: false
         default: "z3"
+      alloyJar:
+        description: "Path to Alloy jar (optional)"
+        required: false
+        default: ""
+      tlaToolsJar:
+        description: "Path to TLA+ tla2tools.jar (optional)"
+        required: false
+        default: ""
 
 jobs:
   verify-conformance:
@@ -32,8 +40,25 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Print run context
+        run: node scripts/formal/print-context.mjs || true
+      - name: Show formal tools availability (non-blocking)
+        run: node scripts/formal/tools-check.mjs || true
       - name: Run verify:conformance stub
         run: node scripts/formal/verify-conformance.mjs
+      - name: Validate trace schema (sample)
+        run: node scripts/formal/trace-validate.mjs
+      - name: Aggregate formal summaries (local)
+        run: node scripts/formal/aggregate-formal.mjs
+      - name: Print formal summary (console)
+        run: node scripts/formal/print-summary.mjs
+      - name: Upload formal reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: formal-reports
+          path: |
+            hermetic-reports/
 
   verify-alloy:
     name: verify:alloy (stub)
@@ -46,8 +71,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Run verify:alloy stub
-        run: node scripts/formal/verify-alloy.mjs
+      - name: Run verify:alloy (sample)
+        env:
+          ALLOY_JAR: ${{ github.event_name == 'workflow_dispatch' && inputs.alloyJar || '' }}
+        run: node scripts/formal/verify-alloy.mjs --file spec/alloy/Domain.als || true
 
   verify-tla:
     name: verify:tla (stub)
@@ -63,7 +90,8 @@ jobs:
       - name: Run verify:tla stub
         env:
           TLA_ENGINE: ${{ github.event_name == 'workflow_dispatch' && inputs.engine || 'tlc' }}
-        run: node scripts/formal/verify-tla.mjs --engine=$TLA_ENGINE
+          TLA_TOOLS_JAR: ${{ github.event_name == 'workflow_dispatch' && inputs.tlaToolsJar || '' }}
+        run: node scripts/formal/verify-tla.mjs --engine=$TLA_ENGINE --file spec/tla/DomainSpec.tla || true
 
   verify-smt:
     name: verify:smt (stub)
@@ -76,7 +104,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Run verify:smt stub
+      - name: Run verify:smt (sample)
         env:
           SMT_SOLVER: ${{ github.event_name == 'workflow_dispatch' && inputs.solver || 'z3' }}
-        run: node scripts/formal/verify-smt.mjs --solver=$SMT_SOLVER
+        run: node scripts/formal/verify-smt.mjs --solver=$SMT_SOLVER --file spec/smt/sample.smt2 || true
+      - name: Upload SMT summary (artifact)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: formal-reports-smt
+          path: |
+            hermetic-reports/formal/smt-summary.json
