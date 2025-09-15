@@ -57,7 +57,7 @@
     "test:int": "vitest run --project integration",
     "test:perf": "vitest run --project performance",
     "test:all": "vitest run",
-    "test:fast": "vitest run --exclude \"tests/testing/intelligent-test-selection.test.ts\" --exclude \"tests/examples/**\" --exclude \"tests/docker/**\" --exclude \"examples/**\" --exclude \"**/__e2e__/**\" --exclude \"tests/a11y/**\" --exclude \"tests/property/**\" --exclude \"tests/traceability/**\" --exclude \"tests/security/**\" --exclude \"tests/contracts/**\" --exclude \"tests/utils/**\" --exclude \"tests/integration/**\" --exclude \"tests/resilience/integration.test.ts\" --exclude \"tests/conformance/**\" --exclude \"tests/cegis/**\" --exclude \"tests/cli/**\" --exclude \"tests/commands/**\"",
+    "test:fast": "vitest run --exclude \"tests/testing/intelligent-test-selection.test.ts\" --exclude \"tests/examples/**\" --exclude \"tests/docker/**\" --exclude \"examples/**\" --exclude \"**/__e2e__/**\" --exclude \"tests/a11y/**\" --exclude \"tests/property/**\" --exclude \"tests/traceability/**\" --exclude \"tests/security/**\" --exclude \"tests/contracts/**\" --exclude \"tests/utils/**\" --exclude \"tests/integration/**\" --exclude \"tests/resilience/integration.test.ts\" --exclude \"tests/conformance/**\" --exclude \"tests/cegis/**\" --exclude \"tests/cli/**\" --exclude \"tests/commands/**\" --exclude \"tests/api/**\" --exclude \"tests/tdd-setup.test.ts\"",
     "test:a11y": "jest --config configs/jest.a11y.config.cjs",
     "test:a11y:report": "node scripts/generate-a11y-report.cjs",
     "test:visual": "vitest run tests/testing/visual-regression.test.ts",
