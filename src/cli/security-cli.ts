@@ -7,6 +7,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import { createServer } from '../api/server.js';
 import { toMessage } from '../utils/error-utils.js';
+import { safeExit } from '../utils/safe-exit.js';
 import { getSecurityConfiguration, securityConfigurations } from '../api/middleware/security-headers.js';
 
 export function createSecurityCommand(): Command {
@@ -41,12 +42,12 @@ export function createSecurityCommand(): Command {
         process.on('SIGINT', async () => {
           console.log('\n\n🛑 Shutting down test server...');
           await app.close();
-          process.exit(0);
+          safeExit(0);
         });
         
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Error starting test server: ${toMessage(error)}`));
-        process.exit(1);
+        safeExit(1);
       }
     });
 
@@ -118,7 +119,7 @@ export function createSecurityCommand(): Command {
         
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Error checking headers: ${toMessage(error)}`));
-        process.exit(1);
+        safeExit(1);
       }
     });
 
@@ -248,7 +249,7 @@ export function createSecurityCommand(): Command {
         } else {
           console.error(chalk.red(`❌ Error scanning URL: ${toMessage(error)}`));
         }
-        process.exit(1);
+        safeExit(1);
       }
     });
 

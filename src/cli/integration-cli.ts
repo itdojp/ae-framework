@@ -5,6 +5,7 @@
 
 import { Command } from 'commander';
 import { toMessage } from '../utils/error-utils.js';
+import { safeExit } from '../utils/safe-exit.js';
 import chalk from 'chalk';
 import { promises as fs } from 'fs';
 import { join, resolve } from 'path';
@@ -366,7 +367,7 @@ export class IntegrationTestingCli {
 
     } catch (error) {
             console.error(chalk.red(`❌ Integration test execution failed: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -421,7 +422,7 @@ export class IntegrationTestingCli {
 
     } catch (error) {
             console.error(chalk.red(`❌ Discovery failed: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -461,7 +462,7 @@ export class IntegrationTestingCli {
 
       default:
         console.error(chalk.red(`❌ Unknown resource type: ${options.type}`));
-        process.exit(1);
+        safeExit(1);
     }
   }
 
@@ -500,7 +501,7 @@ export class IntegrationTestingCli {
 
     } catch (error) {
             console.error(chalk.red(`❌ Generation failed: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -853,6 +854,6 @@ export async function executeIntegrationCli(args: string[]): Promise<void> {
     await command.parseAsync(args);
   } catch (error) {
         console.error(chalk.red(`❌ CLI execution failed: ${toMessage(error)}`));
-    process.exit(1);
+    safeExit(1);
   }
 }

@@ -11,6 +11,7 @@ import { resolve } from 'path';
 import { readFileSync } from 'fs';
 import chalk from 'chalk';
 import { toMessage } from '../utils/error-utils.js';
+import { safeExit } from '../utils/safe-exit.js';
 
 export function createSpecCommand(): Command {
   const spec = new Command('spec');
@@ -44,7 +45,7 @@ export function createSpecCommand(): Command {
         
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Compilation failed: ${toMessage(error)}`));
-        process.exit(1);
+        safeExit(1);
       }
     });
 
@@ -97,14 +98,14 @@ export function createSpecCommand(): Command {
         
         if (failed) {
           console.log(chalk.red('\n❌ Quality thresholds exceeded'));
-          process.exit(1);
+          safeExit(1);
         } else {
           console.log(chalk.green('\n✅ All quality checks passed'));
         }
         
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Linting failed: ${toMessage(error)}`));
-        process.exit(1);
+        safeExit(1);
       }
     });
 
@@ -173,7 +174,7 @@ export function createSpecCommand(): Command {
           console.log(chalk.red('\n❌ Validation failed - quality thresholds exceeded'));
           console.log(chalk.red(`   Max errors allowed: ${options.maxErrors}, found: ${lintResult.summary.errors}`));
           console.log(chalk.red(`   Max warnings allowed: ${options.maxWarnings}, found: ${lintResult.summary.warnings}`));
-          process.exit(1);
+          safeExit(1);
         } else {
           console.log(chalk.green('\n✅ Validation passed successfully'));
           console.log(chalk.gray(`   AE-IR saved to: ${outputPath}`));

@@ -4,6 +4,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import { CircuitBreaker, CircuitState } from '../utils/circuit-breaker.js';
 import { toMessage } from '../utils/error-utils.js';
+import { safeExit } from '../utils/safe-exit.js';
 
 /**
  * Circuit Breaker CLI
@@ -46,7 +47,7 @@ export class CircuitBreakerCLI {
       
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Failed to create circuit breaker: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -78,7 +79,7 @@ export class CircuitBreakerCLI {
       
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Failed to list circuit breakers: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -118,7 +119,7 @@ export class CircuitBreakerCLI {
       
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Failed to show stats: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -184,7 +185,7 @@ export class CircuitBreakerCLI {
       
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Failed to generate health report: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -255,7 +256,7 @@ export class CircuitBreakerCLI {
       
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Failed to test circuit breaker: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -276,7 +277,7 @@ export class CircuitBreakerCLI {
       
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Failed to reset circuit breaker: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -337,7 +338,7 @@ export class CircuitBreakerCLI {
     process.on('SIGINT', () => {
       console.log('');
       console.log(chalk.yellow('👋 Stopping circuit breaker watch'));
-      process.exit(0);
+      safeExit(0);
     });
 
     // Keep process alive

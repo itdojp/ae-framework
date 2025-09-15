@@ -9,6 +9,7 @@ import { ApprovalService } from '../services/approval-service.js';
 import type { PhaseType } from '../utils/phase-state-manager.js';
 import chalk from 'chalk';
 import { toMessage } from '../utils/error-utils.js';
+import { safeExit } from '../utils/safe-exit.js';
 
 const program = new Command();
 const service = new ApprovalService();
@@ -50,7 +51,7 @@ program
       }
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   });
 
@@ -83,7 +84,7 @@ program
       }
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   });
 
@@ -102,7 +103,7 @@ program
       console.log(chalk.blue(`📝 Reason: ${options.reason}`));
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   });
 
@@ -157,7 +158,7 @@ program
       }
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   });
 
@@ -215,7 +216,7 @@ program
       }
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   });
 
@@ -254,7 +255,7 @@ program
       }
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   });
 
@@ -268,7 +269,7 @@ program
       console.log(chalk.green('✅ Checked for expired approvals'));
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   });
 
@@ -321,7 +322,7 @@ program
       console.log(JSON.stringify(policy, null, 2));
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   });
 
