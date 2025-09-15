@@ -1,23 +1,16 @@
-## Summary
-- Describe the change concisely.
+Title: <concise change summary>
 
-## Labels (optional but recommended)
-- trace:<id> (focus runs): e.g., `trace:inv-001`
-- pr-summary:detailed (detailed summary)
-- enforce-artifacts / enforce-testing / enforce-coverage
-- coverage:<pct> (e.g., `coverage:85`)
+Summary
+- What changed and why
+- Risk/impact
 
-Note: Some labels can be auto‑added via title/body markers:
-- `trace:<id>` in title
-- `[detailed]` for detailed summary
-- `[enforce-coverage]` to enforce coverage
-- `[cov=85]` to set coverage threshold
+CI Labels (optional)
+- Add `run-qa` to execute QA/Bench on this PR
+- Add `run-security` to execute Security/Compliance checks
+- Add `ci-non-blocking` to allow non-critical checks to continue-on-error
+- Add `coverage:<pct>` to set coverage threshold (default 80)
 
-## Checklist
-- [ ] Docs updated if needed
-- [ ] Artifacts aggregated (if applicable)
-- [ ] PR summary verified in comment / job summary
-
-Links
-- CI label gating: `docs/ci/label-gating.md`
-- Testing+DDD index: `docs/roadmap/TESTING-DDD-INDEX.md`
+Checklist
+- [ ] Verify Lite passes locally (`pnpm types:check && pnpm lint && pnpm build`)
+- [ ] test:fast passes (`pnpm run test:fast`)
+- [ ] Docs updated if behavior changes (see `docs/ci-policy.md`)
