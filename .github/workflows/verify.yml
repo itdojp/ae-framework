@@ -103,10 +103,10 @@ jobs:
               echo "  - Tests: ${covered_tests} (${tests_pct}%)"
               echo "  - Impl: ${covered_impl} (${impl_pct}%)"
               echo "  - Formal: ${covered_formal} (${formal_pct}%)"
-              echo "\n<details><summary>Unlinked (top 5)</summary>"
+              printf "\n<details><summary>Unlinked (top 5)</summary>\n"
               jq -r '.rows[] | select(.test=="N/A" or .impl=="N/A" or .formal=="N/A") | "- " + .scenario + " (id: " + .id + ") test:" + .test + " impl:" + .impl + " formal:" + .formal' "$TRACE_JSON" 2>/dev/null | head -5 || true
-              echo "</details>"
-              echo "\n<details><summary>Linked examples (up to 3)</summary>"
+              printf "</details>\n"
+              printf "\n<details><summary>Linked examples (up to 3)</summary>\n"
               PR_SHA=$(jq -r '.pull_request.head.sha // empty' "$GITHUB_EVENT_PATH" 2>/dev/null || echo "")
               REPO="$GITHUB_REPOSITORY"
               if [ -f "$TRACE_JSON" ]; then
@@ -128,8 +128,8 @@ jobs:
                   idx=$((idx+1))
                 done < <(jq -c '.rows[] | select(.test!="N/A" and .impl!="N/A" and .formal!="N/A")' "$TRACE_JSON" 2>/dev/null)
               fi
-              echo "</details>"
-              echo "\n<details><summary>Hit basis (tests/formal)</summary>"
+              printf "</details>\n"
+              printf "\n<details><summary>Hit basis (tests/formal)</summary>\n"
               thit_title=$(jq '[.rows[] | select(.testHit == .scenario)] | length' "$TRACE_JSON" 2>/dev/null || echo 0)
               thit_id=$(jq '[.rows[] | select(.testHit == .id)] | length' "$TRACE_JSON" 2>/dev/null || echo 0)
               thit_tag=$(jq '[.rows[] | select(.testHit | type=="string" and startswith("@"))] | length' "$TRACE_JSON" 2>/dev/null || echo 0)
@@ -138,7 +138,7 @@ jobs:
               fhit_tag=$(jq '[.rows[] | select(.formalHit | type=="string" and startswith("@"))] | length' "$TRACE_JSON" 2>/dev/null || echo 0)
               echo "- Test hits: title=${thit_title} id=${thit_id} tag=${thit_tag}"
               echo "- Formal hits: title=${fhit_title} id=${fhit_id} tag=${fhit_tag}"
-              echo "</details>"
+              printf "</details>\n"
             elif [ -f "$TRACE_FILE" ]; then
               total=$(wc -l < "$TRACE_FILE")
               scenarios=$((total-1))
@@ -161,10 +161,10 @@ jobs:
               a_total=$(jq '(.alloy.results | map(select(.ok!=null)) | length) + 0' "$MODEL_FILE" 2>/dev/null || echo 0)
               if [ "$a_total" -gt 0 ]; then a_pct=$(awk "BEGIN {printf \"%.0f\", ($a_ok*100)/$a_total}"); else a_pct=0; fi
               if [ "$a_total" -gt 0 ]; then
-                echo "- Alloy: ${a_ok}/${a_total} (${a_pct}%) specs ok"
-                echo "\n<details><summary>Alloy non-OK (top 5)</summary>"
+                printf "- Alloy: %s/%s (%s%%) specs ok\n" "$a_ok" "$a_total" "$a_pct"
+                printf "\n<details><summary>Alloy non-OK (top 5)</summary>\n"
                 jq -r '.alloy.results[] | select(.ok==false) | "- " + .file + ( .log? // "" | " (log: " + . + ")" )' "$MODEL_FILE" 2>/dev/null | head -5 || true
-                echo "</details>"
+                printf "</details>\n"
               else
                 # If Alloy not executed but detected
                 a_detect=$(jq '(.alloy.results | length) + 0' "$MODEL_FILE" 2>/dev/null || echo 0)
