@@ -23,6 +23,7 @@ import '../telemetry/telemetry-setup.js'; // Initialize telemetry
 import * as fs from 'fs';
 import * as path from 'path';
 import { createSecurityCommand } from './security-cli.js';
+import { safeExit } from '../utils/safe-exit.js';
 
 const program = new Command();
 
@@ -72,7 +73,7 @@ class AEFrameworkCLI {
     const phase = this.config.phases[phaseName];
     if (!phase) {
       console.log(chalk.red(`❌ Unknown phase: ${phaseName}`));
-      process.exit(1);
+      safeExit(1);
     }
 
     const results = await this.phaseValidator.validate(phase);
@@ -84,7 +85,7 @@ class AEFrameworkCLI {
     } else {
       console.log(chalk.red(`❌ Phase ${phaseName} validation failed`));
       this.displayResults(results.details);
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -140,7 +141,7 @@ class AEFrameworkCLI {
           result.response.missingAreas?.forEach((area: string) => {
             console.log(chalk.yellow(`  • ${area}`));
           });
-          process.exit(1);
+          safeExit(1);
         }
       } else {
         console.log(chalk.blue('📋 Analyzing requirements and extracting intent...'));
@@ -163,7 +164,7 @@ class AEFrameworkCLI {
       }
     } catch (error: unknown) {
       console.log(chalk.red(`❌ Intent analysis failed: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -186,7 +187,7 @@ class AEFrameworkCLI {
     
     if (result.shouldBlockProgress) {
       console.log(chalk.red('\n🚫 Progress blocked - address critical issues before proceeding'));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -215,7 +216,7 @@ class AEFrameworkCLI {
         if (!valid.success) {
           console.log(chalk.red(`❌ Prerequisite not met: ${prereq.phase}`));
           console.log(chalk.red(`   ${valid.message}`));
-          process.exit(1);
+          safeExit(1);
         }
       }
     }

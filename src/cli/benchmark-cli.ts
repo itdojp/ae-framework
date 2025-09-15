@@ -22,6 +22,7 @@ import type {
 import { DifficultyLevel, BenchmarkCategory } from '../benchmark/req2run/types/index.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { safeExit } from '../utils/safe-exit.js';
 
 const program = new Command();
 
@@ -88,11 +89,11 @@ program
       
       // Exit with appropriate code
       const failedCount = results.filter(r => !r.success).length;
-      process.exit(failedCount > 0 ? 1 : 0);
+      safeExit(failedCount > 0 ? 1 : 0);
       
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Benchmark execution failed: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   });
 
@@ -148,7 +149,7 @@ program
       
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Failed to list problems: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   });
 
@@ -172,7 +173,7 @@ program
       
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Configuration validation failed: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   });
 
@@ -312,7 +313,7 @@ async function saveResults(results: BenchmarkResult[], outputPath: string): Prom
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
   console.error(chalk.red('❌ Unhandled Rejection at:'), promise, 'reason:', reason);
-  process.exit(1);
+  safeExit(1);
 });
 
 // Execute the CLI
