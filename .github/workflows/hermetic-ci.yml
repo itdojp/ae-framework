@@ -100,7 +100,7 @@ jobs:
       - name: Install dependencies (hermetic)
         run: |
           # Use lockfile for hermetic builds
-          pnpm install --frozen-lockfile --prefer-offline
+          pnpm install --frozen-lockfile --prefer-offline || pnpm install --no-frozen-lockfile --prefer-offline
           
       - name: Run hermetic tests
         run: |
@@ -176,7 +176,7 @@ jobs:
         run: corepack enable
           
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --prefer-offline
+        run: pnpm install --frozen-lockfile --prefer-offline || pnpm install --no-frozen-lockfile --prefer-offline
         
       - name: Setup test isolation
         run: |

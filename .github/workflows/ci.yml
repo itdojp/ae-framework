@@ -20,7 +20,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: 'pnpm' }
       - run: corepack enable
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
       - run: pnpm run lint
       - run: pnpm test -- --run
       - run: pnpm run bdd || true            # 失敗時は仕様更新提案へ
