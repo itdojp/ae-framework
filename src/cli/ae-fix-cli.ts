@@ -15,6 +15,7 @@ import { validateFailureArtifact, validateFailureArtifactCollection, FailureArti
 import { AutoFixEngine } from '../cegis/auto-fix-engine.js';
 import type { AutoFixOptions } from '../cegis/auto-fix-engine.js';
 import { toMessage } from '../utils/error-utils.js';
+import { safeExit } from '../utils/safe-exit.js';
 
 const program = new Command();
 
@@ -39,7 +40,7 @@ program
       await executeAutoFix(options);
     } catch (error: unknown) {
       console.error(chalk.red('❌ Auto-fix failed:'), toMessage(error));
-      process.exit(1);
+      safeExit(1);
     }
   });
 
@@ -55,7 +56,7 @@ program
       await executeAnalysis(options);
     } catch (error: unknown) {
       console.error(chalk.red('❌ Analysis failed:'), toMessage(error));
-      process.exit(1);
+      safeExit(1);
     }
   });
 
@@ -75,7 +76,7 @@ program
       await createFailureArtifact(options);
     } catch (error: unknown) {
       console.error(chalk.red('❌ Failed to create artifact:'), toMessage(error));
-      process.exit(1);
+      safeExit(1);
     }
   });
 
@@ -89,7 +90,7 @@ program
       await validateArtifacts(options);
     } catch (error: unknown) {
       console.error(chalk.red('❌ Validation failed:'), toMessage(error));
-      process.exit(1);
+      safeExit(1);
     }
   });
 
@@ -103,7 +104,7 @@ program
       await showFixHistory(options);
     } catch (error: unknown) {
       console.error(chalk.red('❌ Failed to show history:'), toMessage(error));
-      process.exit(1);
+      safeExit(1);
     }
   });
 
@@ -338,7 +339,7 @@ async function validateArtifacts(options: any): Promise<void> {
     }
   } catch (error: unknown) {
     console.error(chalk.red('❌ Validation failed:'), toMessage(error));
-    process.exit(1);
+    safeExit(1);
   }
 }
 

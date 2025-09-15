@@ -165,6 +165,7 @@ export async function adaptVitest(thresholds?: { statements: number; branches: n
 
   } catch (error) {
     console.error(chalk.red(`❌ Vitest adaptation failed: ${error instanceof Error ? error.message : 'Unknown error'}`));
-    process.exit(1);
+    const { safeExit } = await import('../../utils/safe-exit.js');
+    safeExit(1);
   }
 }

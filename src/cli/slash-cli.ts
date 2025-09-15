@@ -8,6 +8,7 @@ import { Command } from 'commander';
 import { SlashCommandManager } from '../commands/slash-command-manager.js';
 import chalk from 'chalk';
 import { toMessage } from '../utils/error-utils.js';
+import { safeExit } from '../utils/safe-exit.js';
 import * as readline from 'readline';
 
 const program = new Command();
@@ -45,7 +46,7 @@ program
       }
   } catch (error: unknown) {
     console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
-    process.exit(1);
+    safeExit(1);
   }
   });
 
@@ -96,7 +97,7 @@ program
       console.log(chalk.blue(`\n📊 Results: ${successCount}/${results.length} successful`));
   } catch (error: unknown) {
     console.error(chalk.red(`❌ Error: ${toMessage(error)}`));
-    process.exit(1);
+    safeExit(1);
   }
   });
 
@@ -210,7 +211,7 @@ program
     });
     
     rl.on('close', () => {
-      process.exit(0);
+      safeExit(0);
     });
   });
 

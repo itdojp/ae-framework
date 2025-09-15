@@ -5,6 +5,7 @@ import chalk from 'chalk';
 import { EnhancedStateManager } from '../utils/enhanced-state-manager.js';
 import type { FailureArtifact } from '../utils/enhanced-state-manager.js';
 import { toMessage } from '../utils/error-utils.js';
+import { safeExit } from '../utils/safe-exit.js';
 import type { AEIR } from '@ae-framework/spec-compiler';
 import * as fs from 'fs/promises';
 import type * as path from 'path';
@@ -70,7 +71,7 @@ export class EnhancedStateCLI {
       
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Failed to save SSOT: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -100,7 +101,7 @@ export class EnhancedStateCLI {
       
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Failed to load SSOT: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -128,7 +129,7 @@ export class EnhancedStateCLI {
       
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Failed to list versions: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -151,7 +152,7 @@ export class EnhancedStateCLI {
       
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Failed to create snapshot: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -177,7 +178,7 @@ export class EnhancedStateCLI {
       
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Failed to load snapshot: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -220,7 +221,7 @@ export class EnhancedStateCLI {
       
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Failed to simulate failure: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -235,7 +236,7 @@ export class EnhancedStateCLI {
       
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Failed to run garbage collection: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -259,7 +260,7 @@ export class EnhancedStateCLI {
       
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Failed to show statistics: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -306,7 +307,7 @@ export class EnhancedStateCLI {
       
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Transaction test failed: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -324,7 +325,7 @@ export class EnhancedStateCLI {
       
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Failed to export state: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
