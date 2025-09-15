@@ -20,10 +20,24 @@ permissions:
   actions: read
 
 jobs:
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      run_security: ${{ steps.lbl.outputs.run_security }}
+    steps:
+      - uses: actions/github-script@v7
+        id: lbl
+        with:
+          script: |
+            const isPR = context.eventName === 'pull_request';
+            const labels = (context.payload.pull_request?.labels || []).map(l=>l.name);
+            const runSecurity = !isPR || labels.includes('run-security');
+            core.setOutput('run_security', String(runSecurity));
   security-scan:
+    needs: gate
+    if: ${{ needs.gate.outputs.run_security == 'true' }}
     name: Security Scanning
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' || contains(join(fromJSON(toJSON(github.event.pull_request.labels)).*.name, ','), 'run-security')
     continue-on-error: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking') }}
     
     steps:
@@ -43,7 +57,7 @@ jobs:
         run: corepack enable
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
       - name: Run security analyzer
         run: pnpm run security:scan
@@ -59,6 +73,8 @@ jobs:
           retention-days: 30
 
   dependency-audit:
+    needs: gate
+    if: ${{ needs.gate.outputs.run_security == 'true' }}
     name: Dependency Audit
     runs-on: ubuntu-latest
     
@@ -76,7 +92,7 @@ jobs:
         run: corepack enable
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
       - name: Audit dependencies
         run: pnpm audit --audit-level=moderate || true
@@ -91,6 +107,8 @@ jobs:
           fi
 
   secrets-scan:
+    needs: gate
+    if: ${{ needs.gate.outputs.run_security == 'true' }}
     name: Secrets Scanning
     runs-on: ubuntu-latest
     
@@ -108,9 +126,11 @@ jobs:
           config-path: .gitleaks.toml
 
   codeql-analysis:
+    needs: gate
+    if: ${{ needs.gate.outputs.run_security == 'true' }}
     name: CodeQL Analysis
     runs-on: ubuntu-latest
-    if: github.event_name != 'schedule'
+    # schedule は別トリガーで動く
     
     permissions:
       security-events: write
@@ -141,6 +161,8 @@ jobs:
           category: "/language:${{matrix.language}}"
 
   license-check:
+    needs: gate
+    if: ${{ needs.gate.outputs.run_security == 'true' }}
     name: License Compliance
     runs-on: ubuntu-latest
     

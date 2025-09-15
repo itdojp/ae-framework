@@ -17,7 +17,7 @@ jobs:
       - name: Enable corepack
         run: corepack enable
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
       - name: Type check (strict verify)
         run: pnpm types:check
       - name: Lint

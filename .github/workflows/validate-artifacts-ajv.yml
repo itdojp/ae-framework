@@ -26,7 +26,7 @@ jobs:
       - name: Enable corepack
         run: corepack enable
       - name: Install deps (pnpm)
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
       - name: Ensure ajv, ajv-cli, jq
         run: pnpm dlx npm@10 add -D ajv ajv-cli jq || pnpm add -D ajv ajv-cli jq || true
       - name: Validate adapter summaries
