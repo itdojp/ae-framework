@@ -132,6 +132,7 @@ export async function adaptJest(thresholds?: { statements: number; branches: num
 
   } catch (error) {
     console.error(chalk.red(`❌ Jest adaptation failed: ${error instanceof Error ? error.message : 'Unknown error'}`));
-    process.exit(1);
+    const { safeExit } = await import('../../utils/safe-exit.js');
+    safeExit(1);
   }
 }
