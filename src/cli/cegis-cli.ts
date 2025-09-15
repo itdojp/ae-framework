@@ -12,6 +12,7 @@ import type { FailureCategory } from '../cegis/types.js';
 import { FailureArtifactFactory } from '../cegis/failure-artifact-factory.js';
 import type { FailureArtifact, AutoFixOptions } from '../cegis/types.js';
 import { toMessage } from '../utils/error-utils.js';
+import { safeExit } from '../utils/safe-exit.js';
 
 export class CEGISCli {
   private engine: AutoFixEngine;
@@ -135,7 +136,7 @@ export class CEGISCli {
 
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Auto-fix failed: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -190,7 +191,7 @@ export class CEGISCli {
 
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Analysis failed: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -266,7 +267,7 @@ export class CEGISCli {
 
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Failed to create artifact: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -430,6 +431,6 @@ export async function executeCEGISCli(args: string[]): Promise<void> {
     await command.parseAsync(args);
   } catch (error: unknown) {
     console.error(chalk.red(`❌ CLI execution failed: ${toMessage(error)}`));
-    process.exit(1);
+    safeExit(1);
   }
 }

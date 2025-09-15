@@ -3,6 +3,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { toMessage } from '../utils/error-utils.js';
+import { safeExit } from '../utils/safe-exit.js';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { SBOMGenerator, type SBOMGeneratorOptions, type SBOMComponent } from '../security/sbom-generator.js';
@@ -81,7 +82,7 @@ export class SBOMCLI {
 
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Failed to generate SBOM: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -143,7 +144,7 @@ export class SBOMCLI {
       if (errors.length > 0) {
         console.log(chalk.red('❌ SBOM validation failed:'));
         errors.forEach(error => console.log(chalk.red(`   • ${error}`)));
-        process.exit(1);
+        safeExit(1);
       }
 
       if (warnings.length > 0) {
@@ -166,7 +167,7 @@ export class SBOMCLI {
 
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Failed to validate SBOM: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -255,7 +256,7 @@ export class SBOMCLI {
 
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Failed to compare SBOMs: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 

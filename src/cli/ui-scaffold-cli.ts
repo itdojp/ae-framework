@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
 import { toMessage } from '../utils/error-utils.js';
+import { safeExit } from '../utils/safe-exit.js';
 import { UIScaffoldGenerator } from '../generators/ui-scaffold-generator.js';
 import type { spawn } from 'child_process';
 
@@ -33,7 +34,7 @@ program
       if (!fs.existsSync(stateFile)) {
         console.error(chalk.red(`✗ Phase state file not found: ${stateFile}`));
         console.log(chalk.yellow('  Run this command from your project root, or specify --state path'));
-        process.exit(1);
+        safeExit(1);
       }
 
       const phaseState = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
@@ -85,7 +86,7 @@ program
       if (error instanceof Error && error.stack) {
         console.error(chalk.gray(error.stack));
       }
-      process.exit(1);
+      safeExit(1);
     }
   });
 
@@ -98,7 +99,7 @@ program
       const stateFile = path.resolve(options.state);
       if (!fs.existsSync(stateFile)) {
         console.error(chalk.red(`✗ Phase state file not found: ${stateFile}`));
-        process.exit(1);
+        safeExit(1);
       }
 
       const phaseState = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
@@ -120,7 +121,7 @@ program
 
     } catch (error: unknown) {
       console.error(chalk.red('✗ Failed to list entities:'), toMessage(error));
-      process.exit(1);
+      safeExit(1);
     }
   });
 
@@ -133,7 +134,7 @@ program
       const stateFile = path.resolve(options.state);
       if (!fs.existsSync(stateFile)) {
         console.error(chalk.red(`✗ Phase state file not found: ${stateFile}`));
-        process.exit(1);
+        safeExit(1);
       }
 
       const phaseState = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
@@ -158,7 +159,7 @@ program
 
     } catch (error: unknown) {
       console.error(chalk.red('✗ Validation failed:'), toMessage(error));
-      process.exit(1);
+      safeExit(1);
     }
   });
 
@@ -168,7 +169,7 @@ program.on('command:*', () => {
   console.log(chalk.gray('  generate  - Generate UI components'));
   console.log(chalk.gray('  list      - List available entities'));
   console.log(chalk.gray('  validate  - Validate phase state'));
-  process.exit(1);
+  safeExit(1);
 });
 
 // Show help if no command provided

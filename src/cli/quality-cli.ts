@@ -7,6 +7,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import { QualityPolicyLoader, qualityPolicy } from '../quality/policy-loader.js';
 import { toMessage } from '../utils/error-utils.js';
+import { safeExit } from '../utils/safe-exit.js';
 import { QualityGateRunner } from '../quality/quality-gate-runner.js';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -44,7 +45,7 @@ export function createQualityCommand(): Command {
         // Exit with appropriate code
         if (report.summary.blockers.length > 0) {
           console.log(chalk.red(`\n❌ ${report.summary.blockers.length} blocking quality gate(s) failed`));
-          process.exit(1);
+          safeExit(1);
         } else if (report.failedGates > 0) {
           console.log(chalk.yellow(`\n⚠️  ${report.failedGates} quality gate(s) failed (non-blocking)`));
         } else {
@@ -52,7 +53,7 @@ export function createQualityCommand(): Command {
         }
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Error running quality gates: ${toMessage(error)}`));
-        process.exit(1);
+        safeExit(1);
       }
     });
 
@@ -143,7 +144,7 @@ export function createQualityCommand(): Command {
           
           if (!gate) {
             console.error(chalk.red(`❌ Quality gate '${options.gate}' not found`));
-            process.exit(1);
+            safeExit(1);
           }
 
           console.log(chalk.blue(`📋 Quality Gate: ${gate.name}\n`));
@@ -169,7 +170,7 @@ export function createQualityCommand(): Command {
         }
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Error showing policy: ${toMessage(error)}`));
-        process.exit(1);
+        safeExit(1);
       }
     });
 
@@ -229,7 +230,7 @@ export function createQualityCommand(): Command {
         
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Error validating policy: ${toMessage(error)}`));
-        process.exit(1);
+        safeExit(1);
       }
     });
 
@@ -302,7 +303,7 @@ export function createQualityCommand(): Command {
         }
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Error showing reports: ${toMessage(error)}`));
-        process.exit(1);
+        safeExit(1);
       }
     });
 
@@ -338,11 +339,11 @@ export function createQualityCommand(): Command {
           console.log('  • Add quality gates to your CI/CD pipeline');
         } else {
           console.log(chalk.red('❌ Failed to create quality policy configuration'));
-          process.exit(1);
+          safeExit(1);
         }
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Error initializing quality configuration: ${toMessage(error)}`));
-        process.exit(1);
+        safeExit(1);
       }
     });
 
