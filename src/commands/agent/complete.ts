@@ -8,7 +8,8 @@ export async function agentComplete(prompt: string, system?: string, flags?: { r
   // Error if both --record and --replay are specified
   if (flags?.record && flags?.replay) {
     console.error('Error: Cannot specify both --record and --replay flags');
-    process.exit(1);
+    const { safeExit } = await import('../../utils/safe-exit.js');
+    safeExit(1);
   }
   
   // Priority: explicit flags > environment variable
@@ -58,6 +59,7 @@ export async function agentComplete(prompt: string, system?: string, flags?: { r
     console.log(`[${llm.name}]`, output);
   } catch (error) {
     console.error('[ae][agent] LLM completion failed:', error instanceof Error ? error.message : 'Unknown error');
-    process.exit(1);
+    const { safeExit } = await import('../../utils/safe-exit.js');
+    safeExit(1);
   }
 }

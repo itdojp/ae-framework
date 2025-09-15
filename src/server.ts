@@ -88,7 +88,8 @@ export async function start() {
     server.log.info('Server listening on 0.0.0.0:3000')
   } catch (err) {
     server.log.error(err)
-    process.exit(1)
+    const { safeExit } = await import('./utils/safe-exit.js');
+    safeExit(1)
   }
 }
 

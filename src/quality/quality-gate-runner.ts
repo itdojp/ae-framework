@@ -736,10 +736,12 @@ export async function runQualityGatesCLI(args: string[]): Promise<void> {
     
     // Exit with error code if gates failed and blocking is enabled
     if (report.summary.blockers.length > 0) {
-      process.exit(1);
+      const { safeExit } = await import('../utils/safe-exit.js');
+      safeExit(1);
     }
   } catch (error) {
     console.error('❌ Quality gates execution failed:', error);
-    process.exit(1);
+    const { safeExit } = await import('../utils/safe-exit.js');
+    safeExit(1);
   }
 }

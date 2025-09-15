@@ -245,7 +245,8 @@ export async function doctorEnv() {
     console.log(chalk.green(`✅ ${okCount} check(s) passed`));
     console.log();
     console.log(chalk.red('🚫 Environment has critical issues that may prevent proper operation'));
-    process.exit(1);
+    const { safeExit } = await import('../../utils/safe-exit.js');
+    safeExit(1);
   } else if (hasWarnings) {
     console.log(chalk.yellow(`⚠️  ${warnCount} warning(s)`));
     console.log(chalk.green(`✅ ${okCount} check(s) passed`));
