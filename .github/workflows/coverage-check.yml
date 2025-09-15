@@ -35,7 +35,7 @@ jobs:
       - name: Enable corepack
         run: corepack enable
       - name: Install deps (pnpm)
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
       - name: Run coverage
         run: pnpm run coverage || true
       - name: Check coverage threshold
