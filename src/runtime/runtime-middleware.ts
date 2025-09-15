@@ -202,22 +202,23 @@ export class ExpressConformanceMiddleware {
 
       const originalSend = res.send;
       const originalJson = res.json;
+      const mw = this; // preserve middleware instance for type-safe access
 
       // Intercept res.send
-      res.send = function(data: any) {
-        return validateAndSend.call(this, data, originalSend);
+      res.send = function (this: Response, data: any) {
+        return validateAndSend(this, data, originalSend);
       } as any;
 
       // Intercept res.json
-      res.json = function(data: any) {
-        return validateAndSend.call(this, data, originalJson);
+      res.json = function (this: Response, data: any) {
+        return validateAndSend(this, data, originalJson);
       } as any;
 
-      const validateAndSend = async function(this: Response, data: any, originalMethod: Function) {
+      const validateAndSend = async function (that: Response, data: any, originalMethod: Function) {
         const span = tracer.startSpan(`validate_response_${operationId}`);
         
         try {
-          const context = this.createValidationContext(req, operationId);
+          const context = mw.createValidationContext(req, operationId);
           const result = await guard.validateOutput(data, context);
 
           span.setAttributes({
@@ -228,29 +229,29 @@ export class ExpressConformanceMiddleware {
             'http.status_code': res.statusCode,
           });
 
-          if (!result.success && this.config.logErrors) {
+          if (!result.success && mw.config.logErrors) {
             console.warn(`🚨 Response validation failed for ${operationId}:`, result.errors);
           }
 
           span.setStatus({ code: 1 as any });
           
           // Always send the original data (don't break responses)
-          return await Promise.resolve(originalMethod.call(this, data));
+          return await Promise.resolve(originalMethod.call(that, data));
 
         } catch (error) {
           span.recordException(error as Error);
           span.setStatus({ code: 2 as any });
           
-          if (this.config.logErrors) {
+          if (mw.config.logErrors) {
             console.error(`Response validation error for ${operationId}:`, error);
           }
           
           // Still send the response
-          return await Promise.resolve(originalMethod.call(this, data));
+          return await Promise.resolve(originalMethod.call(that, data));
         } finally {
           span.end();
         }
-      }.bind(this);
+      };
 
       next();
     };
