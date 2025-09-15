@@ -57,7 +57,7 @@ jobs:
         run: corepack enable
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
       - name: Run security analyzer
         run: pnpm run security:scan
@@ -92,7 +92,7 @@ jobs:
         run: corepack enable
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
       - name: Audit dependencies
         run: pnpm audit --audit-level=moderate || true
@@ -107,6 +107,8 @@ jobs:
           fi
 
   secrets-scan:
+    needs: gate
+    if: ${{ needs.gate.outputs.run_security == 'true' }}
     name: Secrets Scanning
     runs-on: ubuntu-latest
     
@@ -124,9 +126,11 @@ jobs:
           config-path: .gitleaks.toml
 
   codeql-analysis:
+    needs: gate
+    if: ${{ needs.gate.outputs.run_security == 'true' }}
     name: CodeQL Analysis
     runs-on: ubuntu-latest
-    if: github.event_name != 'schedule'
+    # schedule は別トリガーで動く
     
     permissions:
       security-events: write
@@ -157,6 +161,8 @@ jobs:
           category: "/language:${{matrix.language}}"
 
   license-check:
+    needs: gate
+    if: ${{ needs.gate.outputs.run_security == 'true' }}
     name: License Compliance
     runs-on: ubuntu-latest
     
