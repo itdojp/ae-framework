@@ -1,5 +1,7 @@
 # P0: npx-first, scoped TDD guard, deterministic seed, bench+QA
 
+> 🌍 Language / 言語: English | 日本語
+
 ## 🎯 目的（P0改修）
 
 - **npx ファースト運用**: グローバルインストール前提の排除

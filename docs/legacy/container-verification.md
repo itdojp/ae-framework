@@ -1,5 +1,7 @@
 # Container-Based Verification - Phase 3
 
+> 🌍 Language / 言語: English | 日本語
+
 This document describes the container-based verification system implemented in Phase 3 of the ae-framework, enabling isolated, reproducible verification environments using Podman and Docker.
 
 ## Overview

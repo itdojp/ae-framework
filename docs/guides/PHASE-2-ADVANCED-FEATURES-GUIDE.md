@@ -1,5 +1,39 @@
 # Phase 2 Advanced Features Guide
 
+> 🌍 Language / 言語: 日本語 | English
+
+---
+
+## English (Overview)
+
+Practical workflows leveraging Phase 2.1–2.3: CEGIS Auto‑Fix (counterexample‑guided repair), Runtime Conformance (real‑time conformance verification), and Integration Testing (E2E orchestration). Quick start, commands, and how the systems interoperate.
+
+## English
+
+### Quick Start (15 minutes)
+```bash
+# Conformance samples
+ae-framework conformance sample --rules --output rules.json
+ae-framework conformance config --create-sample --output conformance-config.json
+
+# Integration testing samples
+ae-framework integration generate --type environment --name test --output test-env.json
+ae-framework integration generate --type test --test-type e2e --name "Sample Login Test" --output login-test.json
+ae-framework integration generate --type test --test-type api --name "Users API Test" --output users-api-test.json
+
+# CEGIS demo (violations.json with counterexamples) then fix
+ae-framework cegis fix --files src/ --violations violations.json
+```
+
+### Interoperability
+- 2.2 (Conformance) produces metrics/violations → can feed 2.1 (CEGIS) to synthesize repair candidates
+- 2.3 (Integration) provides E2E/API feedback → informs conformance rules and repair priorities
+
+### Reports & Artifacts
+- Conformance: `artifacts/conformance/*.json`, HTML metrics (optional)
+- Integration: `artifacts/integration/*.json`, report listings
+- CEGIS: fix stats and file diffs
+
 > Phase 2.1-2.3の新機能を活用した実践的な開発ワークフロー
 
 ## 概要
@@ -148,6 +182,100 @@ ae-framework integration status
 # 4. 総合レポートの生成
 ae-framework conformance metrics --format html --output conformance-report.html
 ae-framework integration reports --list
+```
+
+## English (Selected Outputs)
+
+### 2.2 Conformance – Sample metrics JSON
+```json
+{ "rulesExecuted": 25, "violations": 3, "successRate": 0.88 }
+```
+
+### 2.3 Integration – E2E run summary (JSON)
+```json
+{ "suites": 2, "tests": 14, "passed": 13, "failed": 1 }
+```
+
+### 2.1 CEGIS – Fix stats (text)
+```
+Violations Found: 8 / Fix Candidates: 12 / Applied: 7 / Verified: 6
+```
+
+### 2.2 Conformance – Violation sample (JSON)
+```json
+{
+  "ruleId": "api_rate_limit",
+  "severity": "major",
+  "resource": "/api/users",
+  "evidence": { "requestsPerMinute": 180, "limit": 120 }
+}
+```
+
+### 2.3 Integration – Attachments
+- Screenshots: `artifacts/integration/screenshots/*.png`
+- Traces: `artifacts/integration/traces/*.zip`
+- Summary: `artifacts/integration/summary.json`
+
+### 2.1 CEGIS – Diff example (pseudo)
+```diff
+- if (!user.email || !user.email.includes('@')) {
++ if (!user.email || !/^\S+@\S+\.\S+$/.test(user.email)) {
+    return false;
+  }
+  
+- if (user.age && user.age < 0) {
++ if (user.age != null && (user.age < 0 || user.age > 130)) {
+    return false;
+  }
+```
+
+### 2.2 Conformance – Gate excerpt (text)
+```
+🛡️ Runtime Conformance Verification - Processing 25 rules
+Rules Executed: 25 / Violations: 3 / Success Rate: 88%
+```
+
+### 2.3 Integration – Summary (text)
+```
+Suites: 2 / Tests: 14 / Passed: 13 / Failed: 1
+Artifacts: artifacts/integration/summary.json
+```
+
+### 2.3 Integration – Attachments (paths)
+```
+Screenshots: artifacts/integration/screenshots/*.png
+Traces:     artifacts/integration/traces/*.zip
+Summary:    artifacts/integration/summary.json
+```
+
+### 2.3 Integration – Discovered tests (path)
+```
+artifacts/integration/discovered.json
+```
+
+### 2.1 CEGIS – Candidates (JSON excerpt)
+```json
+[
+  { "id": "email-validation-incomplete", "file": "src/user-validator.ts", "fix": "use regex for email" },
+  { "id": "age-validation-incomplete",   "file": "src/user-validator.ts", "fix": "add upper bound check" }
+]
+```
+
+### 2.2 Conformance – Violation (JSON)
+```json
+{ "ruleId": "schema_validation", "severity": "minor", "resource": "/api/items", "evidence": { "missing": ["name"] } }
+```
+
+### 2.2 Conformance – Metrics path
+```
+artifacts/conformance/summary.json
+```
+
+### 2.1 CEGIS – Applied fix (text)
+```
+Applied: email-validation-incomplete (src/user-validator.ts:12)
+Applied: age-validation-incomplete   (src/user-validator.ts:18)
+Verified: 2/2
 ```
 
 ## 🏗️ 実践的なワークフロー

@@ -1,5 +1,9 @@
 # Claude Code統合ガイド - AE Framework完全連携
 
+> 🌍 Language / 言語: 日本語 | English
+
+---
+
 > **AE Framework ↔ Claude Code** の包括的統合ドキュメント  
 > 自然言語指示から高品質コード生成まで一貫したワークフローを実現
 
@@ -45,6 +49,17 @@ AE Framework (Task Adapters)
 4. **完全準拠**: WCAG 2.1 AA、Enterprise Security対応
 
 ---
+
+## English (Overview)
+
+Comprehensive integration guide for AE Framework ↔ Claude Code.
+
+Highlights
+- Natural language → Requirements → Domain modeling → UI generation
+- 6-phase development, WCAG 2.1 AA compliant UI, enterprise-grade quality
+- Architecture: Task Tool integration in Claude Code, with CLI/MCP fallbacks
+
+See the Japanese sections for full architecture details, call flows, and best practices. Commands and artifacts are identical regardless of language; only the explanatory text differs.
 
 ## アーキテクチャ詳細
 

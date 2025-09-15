@@ -1,5 +1,7 @@
 # Replay Test Scripts & CI (#411)
 
+> 🌍 Language / 言語: English | 日本語
+
 Package Scripts (example)
 ```json
 {

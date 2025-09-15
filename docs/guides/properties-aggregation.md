@@ -1,5 +1,13 @@
 # Property Results Aggregation Patterns (#406)
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+プロパティテストの結果集約パターン。推奨は `traceId` ごとの単一 JSON（`artifacts/properties/<traceId>.summary.json`）。代替として配列形式（`artifacts/properties/summary.json`）も可。ただしスキーマは単一要約を想定しているため、配列時は要素ごとに検証します。
+
 Patterns
 - Per-trace file (recommended): write one JSON per `traceId` under `artifacts/properties/<traceId>.summary.json`.
 - Single-file array (alternative): write an array to `artifacts/properties/summary.json`.

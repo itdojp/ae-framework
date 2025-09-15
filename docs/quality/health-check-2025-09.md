@@ -1,5 +1,7 @@
 # Repository Health Check — 2025-09-05
 
+> 🌍 Language / 言語: English | 日本語
+
 Scope: Types Gate, Verify, Bench, Flake, Branch Protection, and CI workflow hygiene.
 
 ## Current Gates & Policies
@@ -34,4 +36,3 @@ Scope: Types Gate, Verify, Bench, Flake, Branch Protection, and CI workflow hygi
 ## Follow-ups
 - Document additional exclusions for the stable profile as we identify flaky suites.
 - Track CI duration metrics to refine path filters.
-

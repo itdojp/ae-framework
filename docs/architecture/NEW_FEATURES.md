@@ -1,5 +1,13 @@
 # ae-framework 新機能ガイド
 
+> 🌍 Language / 言語: 日本語 | English
+
+---
+
+## English (Overview)
+
+Highlights of recent features: Steering Documents, Phase State Management, Approval Workflow, and Slash Commands. Includes setup, directory structure, and example templates. See Japanese sections for detailed steps and code snippets.
+
 ## 🎉 最新アップデート（Issue #11）
 
 ae-frameworkに以下の強力な新機能が追加されました：

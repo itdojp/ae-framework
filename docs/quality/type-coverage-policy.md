@@ -1,5 +1,7 @@
 # Type Coverage Policy (TSDoc)
 
+> 🌍 Language / 言語: English | 日本語
+
 English
 
 - Target: Raise and enforce TypeScript type coverage over time without blocking fast iteration.

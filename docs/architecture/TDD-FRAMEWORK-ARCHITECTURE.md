@@ -1,5 +1,76 @@
 # ae-framework TDD Architecture Documentation
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## English (Overview)
+
+End-to-end TDD architecture across six phases with CLI/MCP/Claude Code integration, real-time monitoring, and multi-level execution environments. The sections below (including Japanese overview) detail components and flows.
+
+## English (Detailed)
+
+### Architecture Overview
+The framework operationalizes Test-Driven Development across six phases and three integration surfaces:
+- CLI tools, MCP servers, and Claude Code agents
+- Real-time monitoring and proactive guidance
+- Strict TDD enforcement (RED → GREEN → REFACTOR) with guards/hooks/CI
+
+```mermaid
+graph TB
+  A[User/Developer] -->|Development Request| B[Hybrid TDD System]
+  B --> C[CLI Tool]
+  B --> D[MCP Server]
+  B --> E[Claude Code Agent]
+  C --> F[Phase Validator]
+  C --> G[Guard Runner]
+  D --> H[TDD Compliance Analysis]
+  D --> I[Test Structure Suggestion]
+  E --> J[TDD Task Adapter]
+  E --> K[Real-time Guidance]
+  J --> L[TDD Agent Core]
+  L --> M[Feature TDD Plan]
+  L --> N[Code Analysis]
+  L --> O[Compliance Monitor]
+  F --> P[File System Watcher]
+  G --> Q[Git Hooks]
+  H --> R[Test Execution]
+```
+
+### Core Components
+1) Hybrid TDD System (`src/integration/hybrid-tdd-system.ts`)
+- Purpose: Route requests to the best surface (CLI/MCP/Agent) and orchestrate real-time supervision
+- Capabilities: environment detection, workflow integration (IDE/VCS/CI), strict/real-time modes
+
+2) TDD Agent (`src/agents/tdd-agent.ts`)
+- Purpose: Intelligent TDD guidance in Claude Code
+- Capabilities: RED-GREEN-REFACTOR coaching, code analysis → test suggestions, continuous compliance
+
+3) TDD Task Adapter (`src/agents/tdd-task-adapter.ts`)
+- Purpose: Bridge Claude Code Task Tool ↔ TDD Agent
+- Capabilities: task classification/dispatch, proactive guidance, Claude-optimized responses
+
+4) MCP Server (`src/mcp-server/tdd-server.ts`)
+- Tools: `analyze_tdd_compliance`, `guide_tdd_development`, `validate_test_first`, `check_red_green_cycle`, `suggest_test_structure`
+
+5) CLI Tool (`src/cli/index.ts`)
+- Commands: `check` (phase gate), `guard` (TDD guard), `next` (phase transition)
+- Integration: Git hooks, CI jobs, file watching
+
+### TDD Execution Flow
+- Phase 3 (RED): author failing tests first; agent verifies failure before proceeding
+- Phase 4 (GREEN): implement minimum code to pass; agent confirms GREEN then recommends REFACTOR
+- Real-time violation detection: watcher alerts when code is added without corresponding tests
+
+### Integration Levels
+- Level 1 (CLI): scriptable, CI-friendly, static analysis centric
+- Level 2 (MCP): standardized tools for broader environments
+- Level 3 (Claude Code Agent): contextual guidance and real-time intervention
+
+### Configuration & Customization
+- Strictness, real-time enforcement, and scope can be tuned via config/env
+- Guards can be limited to changed files or specific paths; hooks can be opt-out via env for local dev
+
 ## 概要
 
 ae-frameworkは、Test-Driven Development (TDD)を中核に据えた6フェーズ開発手法を実装するフレームワークです。従来のTDDアプローチを拡張し、Claude Codeとの統合、リアルタイム監視、マルチレベルの実行環境を提供します。

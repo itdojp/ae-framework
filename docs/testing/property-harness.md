@@ -1,5 +1,7 @@
 # Property-based Testing Harness (Proposal for #406)
 
+> 🌍 Language / 言語: English | 日本語
+
 Objectives
 - Minimal harness to run property-based tests with reproducibility and traceability.
 

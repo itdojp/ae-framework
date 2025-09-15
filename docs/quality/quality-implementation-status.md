@@ -1,5 +1,7 @@
 # Quality Implementation Status Report
 
+> 🌍 Language / 言語: English | 日本語
+
 ## ✅ Issue #125 - Basic Quality Implementation Status: COMPLETE
 
 All quality improvement features requested in Issue #125 have been successfully implemented and integrated into the AE Framework.

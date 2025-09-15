@@ -1,5 +1,18 @@
 # Alloy Headless: Quick Reference
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+`scripts/verify/run-model-checks.mjs` で任意のヘッドレス Alloy 実行をサポートします。
+- `ALLOY_JAR` を指定すると `java -jar $ALLOY_JAR <file>.als` を実行
+- 追加引数は `ALLOY_CMD_JSON`（推奨）か `ALLOY_CMD_ARGS`
+- 失敗検出は `ALLOY_FAIL_REGEX` で調整、タイムアウトは `ALLOY_TIMEOUT_MS`
+
+英語セクションに環境変数と実行例を記載しています。
+
 This repo supports optional headless Alloy execution in `scripts/verify/run-model-checks.mjs`.
 
 Environment variables

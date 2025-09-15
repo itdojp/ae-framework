@@ -1,5 +1,7 @@
 # ae-framework Self-Improvement Project - Complete Summary
 
+> 🌍 Language / 言語: English | 日本語
+
 ## 🎯 Mission Accomplished: Self-Improving AI Framework
 
 The ae-framework has successfully demonstrated its capability to analyze, improve, and enhance its own codebase through systematic application of its own agents and methodologies. This represents a significant milestone in autonomous software development.

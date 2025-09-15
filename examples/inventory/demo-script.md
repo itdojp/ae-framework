@@ -1,5 +1,7 @@
 # 🎬 Inventory Demo Script
 
+> 🌍 Language / 言語: English | 日本語
+
 ## Quick Demo (5 minutes)
 
 ### Setup Commands

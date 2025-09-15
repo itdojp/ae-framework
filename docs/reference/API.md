@@ -696,3 +696,30 @@ const context = await loader.getSteeringContext();
 ---
 
 **🚀 Build powerful applications with ae-framework APIs! / ae-framework APIで強力なアプリケーションを構築しましょう！**
+
+## 日本語
+
+**ae-framework の 6 フェーズ開発ワークフローを支える API の概要と使用例**
+
+### パッケージ構成（抜粋）
+```
+ae-framework/
+├── src/agents/      # エージェント
+├── src/cli/         # CLI
+├── src/commands/    # スラッシュコマンド
+├── src/services/    # サービス層
+├── src/utils/       # ユーティリティ
+└── src/mcp-server/  # MCP サーバ
+```
+
+### 例: SteeringLoader
+ステアリングドキュメント（product/architecture/standards）を読み込み、文脈を生成します。
+
+```typescript
+const loader = new SteeringLoader();
+const doc = await loader.loadDocument('product');
+const all = await loader.loadAllDocuments();
+const context = await loader.getSteeringContext();
+```
+
+以降は英語セクションと同じ順序で、各 API（エージェント/コード生成/検証など）の詳細をご確認ください。

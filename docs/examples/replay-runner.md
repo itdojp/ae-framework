@@ -1,5 +1,13 @@
 # Replay Runner Usage (scripts/testing/replay-runner.mjs)
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+リプレイランナーの使い方。`artifacts/domain/events.json` を準備し、`npm run test:replay`（または `TRACE_ID=...` でフォーカス）を実行。結果は `artifacts/domain/replay.summary.json` に出力されます。
+
 Prerequisite
 - Prepare `artifacts/domain/events.json` (see docs/ddd/events.md)
 

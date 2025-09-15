@@ -1,5 +1,17 @@
 # Stable CI Test Profile
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+PR 検証向けに決定的かつ高速なテスト実行を提供するプロファイルです。重い/不安定なスイートはラベルやナイトリーに退避します。
+
+- コマンド: `pnpm run test:ci` / `pnpm run test:ci:stable`
+- 除外例: `**/system-integration.test.ts`
+- ワークフロー: PR は安定サブセット、E2E はラベル `run-e2e` またはスケジュールで実行
+
 This profile provides deterministic, faster test execution suitable for PR verification. Heavy or flaky suites are gated behind labels or nightly jobs.
 
 ## Commands
@@ -15,4 +27,3 @@ This profile provides deterministic, faster test execution suitable for PR verif
 
 ## Evolution
 - As we identify more flaky suites, we will either stabilize them (preferred) or move them to label/nightly until fixed.
-

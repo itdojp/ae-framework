@@ -1,5 +1,7 @@
 # 🏆 Req2Run-Benchmark Integration EPIC
 
+> 🌍 Language / 言語: English | 日本語
+
 **Issue #155 Implementation - Phase 1 Complete**
 
 Complete AE Framework performance evaluation system using req2run-benchmark with standardized pipeline integration.
@@ -87,6 +89,26 @@ npm run epic-demo
 # Or directly execute
 npx tsx epic-integration-example.ts
 ```
+
+---
+
+## 日本語（概要）
+
+この EPIC は、req2run-benchmark を用いて AE Framework の「要件 → 実行」能力を評価する仕組みを実装するものです。標準化した 6 フェーズのパイプラインと連携し、機能/品質/性能/セキュリティの多面的なスコアリング、レポート出力（JSON/Markdown/CSV）、および CI/CD 連携を提供します。
+
+### クイックスタート（要約）
+```bash
+# ランナーの例（TypeScript）
+npx tsx src/benchmark/req2run/examples/epic-integration-example.ts
+```
+
+### 主なポイント
+- 標準化パイプライン経由で req2run を実行し、各フェーズの結果を集約
+- 評価指標（overallScore、functionalCoverage、testPassRate、performance 等）を JSON 化
+- レポートを `reports/benchmark/` に出力（JSON/Markdown/CSV）
+- CI との統合や性能リグレッション検出の例を含む
+
+以降の英語セクションに詳細な構成、API、スコアリングモデル、コード例を記載しています。
 
 ## 📊 Evaluation System
 

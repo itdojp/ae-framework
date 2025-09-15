@@ -1,5 +1,7 @@
 # CodeX: OpenAPI → Contract/E2E Templates, Quickstart Quality Controls (2025-08-31)
 
+> 🌍 Language / 言語: English | 日本語
+
 This change adds contract/E2E test template generation from OpenAPI and improves the CodeX quickstart developer experience.
 
 ## Highlights

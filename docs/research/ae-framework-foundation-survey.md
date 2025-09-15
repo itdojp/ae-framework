@@ -1,4 +1,12 @@
 # AE Framework 基礎調査（Formal Methods × AI）
+
+> 🌍 Language / 言語: 日本語 | English
+
+---
+
+## English (Overview)
+
+Foundation survey for implementing a pipeline from NL → BDD → Formal Specs → TDD → Code → Operate. Strategy: generate → verify → repair with verifiers as final arbiters, integrating MBT, conformance checking, and runtime verification. See Japanese sections for detailed mappings, artifacts, and procedures.
 **Repository:** [itdojp/ae-framework](https://github.com/itdojp/ae-framework)  
 **Status:** Draft (v0.1) ― 2025-09-12  
 **Audience:** プロダクトオーナー / アーキテクト / テックリード / 開発者 / QA

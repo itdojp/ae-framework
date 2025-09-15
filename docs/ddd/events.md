@@ -1,5 +1,13 @@
 # Domain Events → Contracts & Replay
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+`domainEvents[]` から Zod 契約とリプレイ用フィクスチャを生成し、イベント列に対する集約不変量を検証します。成果物（events.json / formal.summary / properties.summary）と、Zod/Replay のスケッチ、CLI と PR 要件を記載しています。
+
 Goals
 - From `domainEvents[]`, generate:
   - Zod contracts (runtime validation)

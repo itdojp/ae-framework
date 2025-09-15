@@ -1,5 +1,15 @@
 # Test Generation Agent User Guide
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+Test Generation Agent は Phase 3（テスト）を自動化し、要件/コード/仕様から包括的なテストを生成します。要件ベース、コード逆生成、プロパティテスト、BDD シナリオ生成などをサポートします。
+
+以下の英語セクションに MCP ツール呼び出し例と出力形式を記載しています。
+
 ## Overview
 
 Test Generation Agentは、ae-frameworkの Phase 3 (Tests) を自動化するAIエージェントです。要件、コード、仕様から包括的なテストを自動生成し、テスト戦略の立案を支援します。

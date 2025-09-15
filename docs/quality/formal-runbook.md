@@ -1,6 +1,16 @@
 # Formal Runbook (low-impact start)
 
-Usage
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+負担の小さい形式検査の運用手順です。PR ラベルでの起動（`run-formal`）、手動トリガー、CLI スタブ、仕様/アーティファクトの配置、ロードマップ適合を簡潔にまとめています。
+
+## English
+
+### Usage
 - Label-gated CI: add PR label `run-formal` to run formal checks (stub initially)
 - Manual run: trigger `Formal Verify` via `workflow_dispatch`
   - inputs:
@@ -10,7 +20,7 @@ Usage
     - `alloyJar`: Alloy jar のパス（任意）
     - `tlaToolsJar`: tla2tools.jar のパス（任意）
 
-CLI stubs (to be wired)
+### CLI stubs (to be wired)
 - `pnpm run verify:conformance` — prints stub; use `ae conformance verify` for real engine
 - `pnpm run verify:alloy` — prints stub
 - `pnpm run verify:tla -- --engine=apalache|tlc` — prints stub
@@ -44,16 +54,35 @@ Conformance sample (quick demo)
 - `pnpm run conformance:sample` — サンプルのルール/設定/データ/コンテキストを生成
 - `pnpm run conformance:verify:sample` — 生成データで検証を実行（JSONレポート出力）
 
-Specs/Artifacts
+### Minimal YAML (example)
+```yaml
+name: Formal Verify
+on:
+  pull_request:
+    types: [labeled, synchronize]
+jobs:
+  verify:
+    if: contains(github.event.pull_request.labels.*.name, 'run-formal')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run verify:formal
+```
+
+### Specs/Artifacts
 - TLA+: `spec/tla/` (README with skeleton)
 - Alloy 6: `spec/alloy/` (README with skeleton)
 - Trace schema: `observability/trace-schema.yaml`
 - Reports (planned): `hermetic-reports/`
 
-Samples
+### Samples
 - TLA+: `spec/tla/DomainSpec.tla`（最小の安全性不変と遷移の例）
 - Alloy: `spec/alloy/Domain.als`（最小の安全性アサーションの例）
 
+ 
 Tools
 - ローカル確認: `pnpm run tools:formal:check`（インストール済みツールを一覧）
 - セットアップ手順: [formal-tools-setup.md](./formal-tools-setup.md)
@@ -158,3 +187,61 @@ Field リファレンス（抜粋）
   - `solver`: `z3` | `cvc5`
   - `file`: 対象SMT-LIBファイル
   - `status`: `ran` | `solver_not_available` | `file_not_found` など
+
+### Roadmap Fit (Issue #493)
+- Non‑blocking, label‑gated CI first
+- Wire real engines behind the above stubs incrementally
+
+---
+
+## 日本語（詳細）
+
+### 運用の基本
+1) PR でフォーマル検査を走らせたい場合は、ラベル `run-formal` を付与（初期はスタブ）。
+2) 手動実行は GitHub Actions の `workflow_dispatch`（Formal Verify）から起動。
+
+### CLI スタブ（配線予定）
+- `pnpm run verify:conformance` — スタブ出力（実行時は `ae conformance verify` を利用）
+- `pnpm run verify:alloy` — スタブ出力
+- `pnpm run verify:tla -- --engine=apalache|tlc` — スタブ出力
+- `pnpm run verify:smt -- --solver=z3|cvc5` — スタブ出力
+- `pnpm run verify:formal` — 上記4種の連続実行（ローカル確認）
+
+### 仕様/成果物配置
+- TLA+: `spec/tla/`（最小スケルトンあり）
+- Alloy 6: `spec/alloy/`（最小スケルトンあり）
+- トレーススキーマ: `observability/trace-schema.yaml`
+- レポート（計画）: `hermetic-reports/`
+
+### サンプル
+- TLA+: `spec/tla/DomainSpec.tla` — 最小の不変/遷移
+- Alloy: `spec/alloy/Domain.als` — 最小のアサーション
+
+### ロードマップ（Issue #493）
+- まずは非ブロッキングでラベル起動（PR 体験を阻害しない）
+- 各エンジン（Conformance/Alloy/TLA+/SMT）を段階的に実配線
+
+### CI 配線例（YAML 抜粋）
+```yaml
+name: Formal Verify
+on:
+  pull_request:
+    types: [labeled, synchronize]
+jobs:
+  verify:
+    if: contains(github.event.pull_request.labels.*.name, 'run-formal')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run verify:formal
+```
+
+### Makefile Snippet（任意）
+```make
+.PHONY: verify-formal
+verify-formal:
+	pnpm run verify:formal
+```

@@ -1,5 +1,21 @@
 # Project Organization and Maintenance
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+このドキュメントは、AE Framework のプロジェクト構成とメンテナンス手順をまとめたものです。目的は構造の最適化、パフォーマンス向上、開発体験の維持です。
+
+主なポイント
+- ディレクトリ構成の原則（関心の分離、アーカイブ戦略、レポート整理、ビルド成果物管理）
+- クリーニングスクリプト（`pnpm run clean:*`）と自動化
+- レポート/一時ファイルのカテゴリと保持方針
+- 運用スケジュール（毎日/毎週/毎月）とベストプラクティス
+
+以降の英語セクションに詳細な手順・例・コマンドを掲載しています。
+
 ## Overview
 
 This document outlines the project organization strategy and maintenance procedures for the AE Framework, ensuring optimal project structure, performance, and developer experience.

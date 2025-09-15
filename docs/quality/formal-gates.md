@@ -1,5 +1,47 @@
 # Formal Quality Gates (v0.2 DoD)
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+v0.2 で CI に導入するフォーマル検証ゲートの定義です。
+- 適合性チェック（トレース vs 仕様）
+- Alloy 6 による軽量時相検証、TLA+（TLC/Apalache）による検証
+- SMT ソルバの冗長化（Z3/cvc5）
+- 失敗→反例→テスト化→最小修正→緑化、というワークフロー
+
+詳細は英語セクションの対象/ワークフロー/アーティファクト項を参照してください。
+
+## English
+
+This document defines v0.2 formal verification gates in CI.
+
+Objectives
+- Conformance between runtime traces and formal specs
+- Lightweight temporal verification via Alloy 6 (LTL + past)
+- TLA+ via TLC/Apalache (SMT/BMC + inductive invariants)
+- Redundant SMT solving (Z3/cvc5)
+
+CI Targets (green = pass)
+- verify:conformance — trace vs spec
+- verify:alloy — temporal properties
+- verify:tla --engine=apalache|tlc — model checking
+- verify:smt --solver=z3|cvc5 — redundancy
+
+Workflow
+1) Failing property → counterexample
+2) Counterexample → failing test under `tests/`
+3) Minimal fix until all gates green
+
+Artifacts
+- Trace schema: `observability/trace-schema.yaml`
+- Reports: `hermetic-reports/conformance/`
+
+Status
+- v0.2: establish stubs in CI and wire engines incrementally
+
 This document defines the formal verification gates that must pass in CI for v0.2.
 
 Objectives
@@ -25,4 +67,3 @@ Artifacts
 
 Status
 - v0.2: Establish gates as stubs in CI; incrementally wire real engines
-

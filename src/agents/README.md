@@ -1,5 +1,22 @@
 # AE Framework Agent Interface Standardization
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+AE Framework の 6 フェーズに対応するエージェントの入出力・パイプラインを標準化する実装です（Issue #160）。
+
+主な内容
+- 標準エージェント I/F（入力/出力の統一）
+- パイプラインオーケストレーター（6 フェーズ自動実行）
+- 既存エージェントを包むアダプター群
+- 型定義の整備（TypeScript）
+- 統合例（すぐ使えるパターン）
+
+以降の英語セクションに、アーキテクチャ、クイックスタート、I/F 仕様、エラー処理/トレース/型安全性などの詳細を記載しています。
+
 This implementation provides standardized interfaces and pipeline orchestration for the AE Framework's 6-phase workflow, addressing Issue #160.
 
 ## Overview

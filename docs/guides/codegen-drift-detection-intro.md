@@ -1,5 +1,13 @@
 # コード生成ドリフト検出 入門ガイド
 
+> 🌍 Language / 言語: 日本語 | English
+
+---
+
+## English (Overview)
+
+Intro to codegen drift detection: compare generated code against IR/templates to detect divergence, surface a clear yes/no signal, and wire into CI. Includes where logic lives, how to run, thresholds, and customization flags.
+
 このドキュメントでは、ae-frameworkにおける「コード生成ドリフト検出」の仕組みや使い方について、プログラミングやCI/CDに不慣れな方でも分かるようにやさしく解説します。
 
 ---

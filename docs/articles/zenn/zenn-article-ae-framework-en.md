@@ -1,5 +1,13 @@
 # ae-framework: AI-Driven TDD Development Automation - Complete 6-Phase Automation from Requirements to Implementation
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+要件→テスト→実装までの 6 フェーズを自動化する ae-framework の紹介記事（英語版）です。5 分で体験するインストール手順、自然言語→実装までのデモ、TDD の強制、UI 自動生成などを解説しています。
+
 ## Introduction - The Gap Between Development Ideals and Reality
 
 "What if requirements could automatically generate tests, and then code that passes those tests could also be automatically created?"

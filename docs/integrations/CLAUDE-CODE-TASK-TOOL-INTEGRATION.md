@@ -191,12 +191,328 @@ Phase 6: UI generated - React components with full test coverage
 - **Performance**: Lighthouse ≥75%
 - **Type Safety**: 100% TypeScript strict mode
 
+#### Threshold Tuning (English)
+- Start with default gates (Coverage 80 / A11y 95 / Perf 75) and raise gradually.
+- Prefer small, incremental changes; include a short note in PR when tuning thresholds.
+- When a gate regresses on PRs, surface a short actionable tip vs. dumping long logs.
+
+#### Known Pitfalls (English)
+- Phase State incomplete → UI scaffold generates fewer/no files (ensure `entities` and required fields)
+- Missing artifacts in CI → verify `cwd` and output dirs; consider `CODEX_ARTIFACTS_DIR`
+- Adapter JSON invalid → validate with schemas under `docs/schemas/*` before aggregation
+
+#### Before / After (English, short)
+```
+// a11y — Before: hidden focus ring
+button:focus { outline: none; }
+
+// a11y — After: visible focus ring
+button:focus { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+
+// perf — Before: large raw <img>
+<img src="/hero.jpg" width="1600" height="900" />
+
+// perf — After: next/image with lazy + smaller dims
+<Image src="/hero.jpg" width={800} height={450} loading="lazy" />
+
+// coverage — Before: missing error-state test
+// After: add tests for API failure banners and form validation
+```
+
+#### Troubleshooting (English, checklist)
+- UI missing files
+  - [ ] Phase State contains `entities` with required fields
+  - [ ] Re-run scaffold: `ae-framework ui-scaffold --components`
+- Gates regressed (a11y/perf/coverage)
+  - [ ] Run `ae-framework quality run --env development --dry-run`
+  - [ ] Apply quick fixes (focus ring, next/image, add tests)
+- No formal artifacts in PR
+  - [ ] Ensure formal job ran; see `docs/verify/FORMAL-CHECKS.md`
+  - [ ] Upload `formal/summary.json` when present
+- Aggregation failed on adapter JSON
+  - [ ] Validate: `npx ajv -s docs/schemas/artifacts-adapter-summary.schema.json -d artifacts/*/summary.json --strict=false`
+  - [ ] Keep output short: `status` + short `summary`
+
+#### Phase State (minimal JSON example)
+```json
+{
+  "entities": {
+    "Product": {
+      "fields": {
+        "id": { "type": "uuid", "required": true },
+        "name": { "type": "string", "required": true },
+        "price": { "type": "number", "required": true, "min": 0 }
+      }
+    }
+  }
+}
+```
+
+#### Artifacts directory (CODEX_ARTIFACTS_DIR)
+- Set `CODEX_ARTIFACTS_DIR` to control where adapter results are written (defaults to `./artifacts/codex`).
+- Useful in CI or monorepos to keep outputs isolated per job/package.
+
+#### Schemas (for validation)
+- Adapter summary: `docs/schemas/artifacts-adapter-summary.schema.json`
+- Formal summary: `docs/schemas/formal-summary.schema.json`
+- Properties summary: `docs/schemas/artifacts-properties-summary.schema.json`
+
 ### Best Practices
 
 1. **Clear Intent**: Provide specific, actionable requirements
 2. **Iterative Development**: Build incrementally through phases
 3. **Quality Validation**: Review generated quality reports
 4. **Customization**: Use design tokens for brand consistency
+
+### Troubleshooting
+- Missing generated files → Verify Phase State completeness (ensure `entities` and required attributes are present)
+- Low a11y/perf scores → Review tokens/layout/image optimization; re-run gates
+- Model-checking not reported → See `docs/verify/FORMAL-CHECKS.md`, ensure artifacts exist and CI job ran
+- Adapter errors → Check normalized `artifacts/*/summary.json` and validate with `docs/schemas/*`
+
+---
+
+## 日本語
+
+**AE Framework ↔ Claude Code の完全統合ドキュメント**  
+**自然言語の指示から高品質なコード生成まで一貫したワークフロー**
+
+### 統合概要
+- **Task Tool** として統合し、自然言語だけで「要件→モデリング→UI生成」まで自動化
+- **6フェーズ開発**を一貫実行
+- **WCAG 2.1 AA** 準拠の UI 自動生成と **エンタープライズ品質**
+
+### アーキテクチャ（要点）
+CLI / MCP / Agent のハイブリッド構成。実行環境検出・リアルタイム介入・厳密モードを切替可能。
+
+### Task Tool I/F（要点）
+`TaskRequest`（description/prompt/subagent_type）→ `TaskResponse`（summary/analysis/recommendations/nextActions/warnings/shouldBlockProgress）。
+
+### フェーズ別連携（要点）
+- Phase 1: Intent（要件抽出）
+- Phase 2: 自然言語要件（構造化/検証）
+- Phase 3: ユーザーストーリー（AC 生成）
+- Phase 4: 検証（整合/トレーサビリティ）
+- Phase 5: ドメインモデリング（エンティティ/BC/サービス）
+- Phase 6: UI 生成（Next.js 14、21 ファイル/30 秒、Storybook/E2E/a11y）
+
+### 使用例（抜粋）
+```
+ユーザー: 「EC の商品管理 UI を作って」
+
+Claude Code: UI Task Adapter を実行...
+
+📊 OpenTelemetry initialized for ae-framework Phase 6
+✅ 3/3 エンティティで 21 ファイル生成
+📊 Coverage: 96%（>=80） / ♿ 97%（>=95） / ⚡ 79%（>=75）
+```
+
+### ベストプラクティス（抜粋）
+1) 意図を明確に（対象・範囲・品質）  
+2) フェーズごとの反復（RED→GREEN→REFACTOR）  
+3) 生成された品質レポートを確認し微調整  
+4) デザイントークンでブランド一貫性を確保  
+
+### パフォーマンスと最適化（目安）
+- UI 生成: 21 ファイル / 30 秒未満
+- フルアプリ骨子: 5 分未満
+- Quality Gates: 2 分未満（a11y/E2E/coverage/perf）
+
+### トラブルシューティング（抜粋）
+- 生成ファイルが無い/不足: Phase State の `entities` 定義や必須属性を確認
+- a11y/Perf が閾値未満: デザイントークン/レイアウト/画像最適化を見直し、ゲート再実行
+- モデル検査が出ない: `docs/verify/FORMAL-CHECKS.md` を参照し、成果物/CI 実行有無を確認
+- アダプターエラー: 正規化 `artifacts/*/summary.json` を `docs/schemas/*` で検証
+
+#### 実行コマンド例（再検証）
+```bash
+# UI スキャフォールド（再生成）
+ae-framework ui-scaffold --components
+
+# 品質ゲート（開発プロファイルでドライラン）
+ae-framework quality run --env development --dry-run
+
+# 個別テスト
+pnpm run test:a11y
+pnpm run test:coverage
+pnpm run test:perf
+```
+
+#### 成果物の検証
+```bash
+# JSON スキーマ検証（例: アダプター要約）
+npx ajv -s docs/schemas/artifacts-adapter-summary.schema.json -d artifacts/*/summary.json --strict=false
+
+# 形式: jq で概要確認
+jq '.status,.summary' artifacts/*/summary.json
+```
+
+#### Phase State（最小 JSON 例）
+```json
+{
+  "entities": {
+    "Product": {
+      "fields": {
+        "id": { "type": "uuid", "required": true },
+        "name": { "type": "string", "required": true },
+        "price": { "type": "number", "required": true, "min": 0 }
+      }
+    }
+  }
+}
+```
+
+#### スキーマ一覧（検証用）
+- アダプター要約: `docs/schemas/artifacts-adapter-summary.schema.json`
+- フォーマル要約: `docs/schemas/formal-summary.schema.json`
+- プロパティ要約: `docs/schemas/artifacts-properties-summary.schema.json`
+
+#### 出力先（CODEX_ARTIFACTS_DIR）
+- アダプターの出力先は `CODEX_ARTIFACTS_DIR` で制御可能（既定は `./artifacts/codex`）。
+- CI/モノレポではジョブ/パッケージごとに出力ディレクトリを分けると集約が安定します。
+
+#### しきい値/改善の考え方（例）
+- a11y (<95):
+  - 画像に `alt`、フォーム要素に `aria-*` を付与
+  - カラーコントラストを上げる（トークンで調整）
+  - フォーカスリングとキーボード操作パスを確認
+- perf (<75):
+  - 画像最適化（`next/image`、WebP/AVIF、遅延読み込み）
+  - CSS/JS の削減、不要依存の除去
+  - 重要リソースのプリロード、キャッシュ制御
+- coverage (<80):
+  - 重要フロー（作成/編集/削除/検索/バリデーション）のテストを追加
+  - 低網羅のモジュールを `--coverageProvider` 出力で特定し重点化
+
+#### しきい値テンプレート（例）
+```
+Coverage: 80%
+A11y:     95%
+Perf:     75%
+```
+※ プロジェクトに応じて上げられます。まずは既定を確実に満たし、徐々に引き上げる運用を推奨します。
+
+#### Before / After（短例）
+```
+// a11y — Before: コントラスト不足
+--color-primary-500: #5b8def;
+
+// a11y — After: コントラスト改善（トークン変更）
+--color-primary-500: #3b82f6; // AA を満たす青系に寄せる
+
+// perf — Before: <img> 直指定 + 大画像
+<img src="/hero.jpg" width="1600" height="900" />
+
+// perf — After: next/image + 遅延/自動最適化
+<Image src="/hero.jpg" width={800} height={450} loading="lazy" />
+
+// coverage — Before: 重要フロー未テスト
+// (フォーム送信時のバリデーションが未検証)
+
+// coverage — After: クリティカルパスのテスト追加（擬似例）
+it('rejects empty email', async () => {
+  await user.type(screen.getByLabelText('Email'), '');
+  await user.click(screen.getByRole('button', { name: /submit/i }));
+  expect(await screen.findByText(/email is required/i)).toBeInTheDocument();
+});
+```
+
+```
+// a11y — Before: キーボードナビ不可（tabindex 欠落）
+<a class="card">Details</a>
+
+// a11y — After: tabindex/role/aria を付与
+<a class="card" href="/details" role="link" tabindex="0" aria-label="Open details">Details</a>
+```
+
+```
+// perf — Before: 外部に即時アクセス（DNS/接続が遅い）
+<!-- なし -->
+
+// perf — After: preconnect/preload を活用
+<link rel="preconnect" href="https://cdn.example.com" crossorigin>
+<link rel="preload" as="image" href="/hero.jpg" imagesrcset="/hero@2x.jpg 2x" />
+```
+
+```
+// coverage — Before: 例外時のエラーハンドリング未テスト
+
+// coverage — After: 例外発生時の処理をテスト
+it('shows toast on save error', async () => {
+  server.use(mockSave(500));
+  await user.click(screen.getByRole('button', { name: /save/i }));
+  expect(await screen.findByText(/failed to save/i)).toBeInTheDocument();
+});
+```
+
+```
+// a11y — 色トークン例（可視フォーカスカラー）
+:root { --color-focus: #22c55e; } /* 適切なコントラストに設定 */
+```
+
+```
+// perf — ルート分割（Next.js の動的 import）
+const Details = dynamic(() => import('./Details'), { ssr: false, loading: () => <Spinner/> });
+```
+
+```
+// coverage — 例外分岐のテスト
+it('falls back to cached data on network error', async () => {
+  server.use(mockGetItems(500));
+  await expect(loadItems()).resolves.toEqual(cachedItems);
+});
+```
+
+```
+// a11y — Before: フォーカスリング非表示
+button:focus { outline: none; }
+
+// a11y — After: 可視フォーカスリングを付与
+button:focus { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+```
+
+```
+// perf — Before: 巨大な未使用 CSS をバンドル
+@import 'all-components.css'; // 未使用スタイル多数
+
+// perf — After: 必要なコンポーネント単位に分割読み込み
+@import 'button.css';
+@import 'form.css';
+/* PurgeCSS/Content-aware tooling で未使用を除去 */
+```
+
+```
+// coverage — Before: リストフィルタの動作未テスト
+
+// coverage — After: フィルタ/エラー状態のテストを追加
+it('filters items by category', async () => {
+  await user.selectOptions(screen.getByLabelText(/category/i), 'Books');
+  expect(screen.getAllByRole('row')).toHaveLength(3);
+});
+
+it('shows error banner on API failure', async () => {
+  server.use(mockGetItems(500));
+  await user.click(screen.getByRole('button', { name: /reload/i }));
+  expect(await screen.findByText(/failed to load/i)).toBeInTheDocument();
+});
+```
+
+#### フォーム a11y（短例）
+```
+// Before: ラベル関連付け不備
+<input id="email" />
+
+// After: label/aria を付与
+<label for="email">Email</label>
+<input id="email" aria-required="true" aria-invalid="false" />
+```
+
+#### 再実行フロー（例）
+1) Phase State の見直し（`entities`/必須属性/バリデーション）
+2) UI 再生成: `ae-framework ui-scaffold --components`
+3) 品質ゲート（開発プロファイル）: `ae-framework quality run --env development --dry-run`
+4) 個別ゲートの補強（a11y/perf/coverage の不足箇所をピンポイント修正）
+5) 成果物の検証（ajv/jq）→ PR サマリを確認
 
 ---
 

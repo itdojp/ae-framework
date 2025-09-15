@@ -1,5 +1,7 @@
 # Parallel Execution Strategy
 
+> 🌍 Language / 言語: English | 日本語
+
 ## Overview
 
 The AE Framework implements a sophisticated parallel test execution strategy that maximizes CI efficiency while maintaining test reliability and resource optimization.

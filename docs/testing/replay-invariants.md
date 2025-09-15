@@ -1,5 +1,7 @@
 # Contract Replay Invariants (config via env)
 
+> 🌍 Language / 言語: English | 日本語
+
 Script: `scripts/testing/replay-runner.mjs`
 
 Env vars
@@ -16,4 +18,3 @@ Examples
 Notes
 - This is a lightweight harness; domain logic applies minimal counters only.
 - Wire to real domain reducers when available.
-

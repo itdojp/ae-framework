@@ -1,5 +1,43 @@
 # Claude Code自動実行ガイド
 
+> 🌍 Language / 言語: 日本語 | English
+
+---
+
+## English (Overview)
+
+Complete guide to automate from requirements to implementation in Claude Code using ae-framework. It includes prompts, expected outcomes, and step-by-step instructions for each phase.
+
+See Japanese sections for detailed workflows and example prompts.
+
+## English
+
+### Audience & Prereqs
+- Developers using Claude Code; basic familiarity with NL requirements and TDD
+- Node 20+, pnpm 10; ae-framework integrated as Task Tool (no extra config)
+
+### Core Workflow (Phases 1–6)
+1) Intent: ask for requirement analysis → get structured next steps
+2) Natural Language: structure/validate requirements; extract entities
+3) Stories: generate user stories + AC (Gherkin-friendly)
+4) Validation: cross-check consistency and traceability
+5) Modeling: DDD entities/BCs/services
+6) UI: generate Next.js components; run quality gates (a11y/E2E/coverage/perf)
+
+### Prompting Patterns
+- Be explicit about scope/acceptance criteria/quality thresholds
+- Provide minimal domain context; ask for artifacts (JSON/Markdown) and file lists
+
+### CLI Parity (optional)
+```bash
+ae-framework intent --analyze --sources=requirements.md
+ae-framework ui-scaffold --components
+```
+
+### Troubleshooting (quick)
+- Missing files → check Phase State completeness
+- Low a11y/perf → review tokens/layout/images and re-run gates
+
 > ae-frameworkを使って要求ドキュメントから実装まで可能な限り自動で実行するための完全ガイド
 
 ## 📋 概要

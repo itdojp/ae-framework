@@ -1,5 +1,21 @@
 # Formal Checks: TLC/Alloy Integration (Week 1)
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+CI でのフォーマル検査（TLA+/Alloy）の実行内容と成果物の場所を説明します。
+
+- TLC (TLA+): `.github/workflows/verify.yml` の `model-check` ジョブで実行。`scripts/verify/run-model-checks.mjs` が `.tla` を探索し、`artifacts/codex/model-check.json` 等を出力（既定はレポートのみ）。
+- Alloy: `.als` を検出して `model-check.json` に含めます。`ALLOY_JAR` 指定時にヘッドレス実行が可能（タイムアウト/失敗検出を環境変数で調整）。
+- ローカル実行例や CI での PR サマリ内容（トレース/OK数/非OK上位など）を記載。
+
+詳細は以下の英語セクションを参照してください。
+
+## English
+
 This document explains how formal model checking is executed in CI and where to find artifacts.
 
 ## What runs in CI
@@ -48,9 +64,8 @@ ALLOY_JAR=$HOME/tools/alloy.jar \
   - tlc.results: array of `{ module, ok, code, log }`
   - tlc.skipped/errors: reasons for skip/errors
   - alloy.results/skipped/errors: detection and readiness info
- - `artifacts/codex/*.tlc.log.txt`: Raw TLC logs per module
 - `artifacts/codex/*.tlc.log.txt`: Raw TLC logs per module
- - `artifacts/codex/*.alloy.log.txt`: Raw Alloy logs per spec (when executed)
+- `artifacts/codex/*.alloy.log.txt`: Raw Alloy logs per spec (when executed)
 
 ### PR summary
 
@@ -59,7 +74,6 @@ ALLOY_JAR=$HOME/tools/alloy.jar \
   - Model Check (TLC): ok/total and top non‑OK modules
   - Alloy: ok/total (when executed) and top non‑OK specs, or “detected N specs (execution skipped)” when jar not provided
   - Optional enforcement: add PR label `enforce-formal` to fail the PR when TLC/Alloy has failures (default is report-only)
-   - Optional enforcement: add PR label `enforce-formal` to fail the PR when TLC/Alloy has failures (default is report-only)
 
 ### Headless Alloy examples
 
@@ -80,7 +94,7 @@ ALLOY_JAR=$HOME/tools/alloy.jar \
   ALLOY_TIMEOUT_MS=180000 \
   npm run verify:model
 ```
->>>>>>> e2a347e (verify: add OpenAPI sample, contracts skeleton, TLC Spec fix, traceability links (refs #381))
+
 
 ## Next steps
 
@@ -137,5 +151,113 @@ Use one of these as a starting point via `ALLOY_FAIL_REGEX`.
 Export example in CI or local shell:
 
 ```
+ALLOY_FAIL_REGEX='Exception|ERROR|FAILED|Counterexample|assertion' npm run verify:model
+```
+
+---
+
+## 日本語
+
+このドキュメントは、CI におけるフォーマルモデル検査（TLA+/Alloy）の実行と、成果物の場所・解釈方法を説明します。
+
+### CI で実行される内容
+
+- TLC (TLA+)
+  - ワークフロー: `.github/workflows/verify.yml`（ジョブ `model-check`）
+  - 使用ツール: `actions/setup-java` + `tla2tools.jar` 自動取得
+  - ランナー: `scripts/verify/run-model-checks.mjs`
+  - 動作: `artifacts/`, `specs/`, `docs/formal/` 配下の `.tla` を走査
+  - 出力: `artifacts/codex/model-check.json`, `artifacts/codex/*.tlc.log.txt`
+  - 既定: レポートのみ（CI を失敗させない）
+
+- Alloy (Alloy Analyzer)
+  - `.als` を検出し `model-check.json` に含める
+  - `ALLOY_JAR` を与えた場合にヘッドレス実行（`java -jar $ALLOY_JAR {file}`）
+  - オプション環境変数:
+    - `ALLOY_CMD_JSON`: 追加引数（JSON 配列; 空白/引用に安全）
+    - `ALLOY_CMD_ARGS`: 追加引数（文字列; フォールバック）
+    - `ALLOY_FAIL_REGEX`: 失敗判定用の正規表現（既定 `Exception|ERROR|FAILED|Counterexample|assertion`）
+    - `ALLOY_TIMEOUT_MS`: タイムアウト（既定 180000）
+
+### ローカル実行
+
+```bash
+# TLC（報告のみ）
+npm run verify:model
+
+# TLA+ ツール URL を指定
+TLA_TOOLS_URL=https://example.com/tla2tools.jar npm run verify:model
+
+# Alloy jar を指定してヘッドレス実行
+ALLOY_JAR=$HOME/tools/alloy.jar npm run verify:model
+
+# 追加引数/タイムアウト
+ALLOY_JAR=$HOME/tools/alloy.jar ALLOY_CMD_ARGS="-someFlag" ALLOY_TIMEOUT_MS=180000 npm run verify:model
+
+# 複雑な引数は JSON 配列を推奨
+ALLOY_JAR=$HOME/tools/alloy.jar \
+  ALLOY_CMD_JSON='["-someFlag","--opt","value with spaces"]' \
+  npm run verify:model
+```
+
+### 成果物と読み方
+
+- `artifacts/codex/model-check.json`
+  - `tlc.results`: `{ module, ok, code, log }` の配列
+  - `tlc.skipped/errors`: スキップ/エラーの理由
+  - `alloy.results/skipped/errors`: 検出・準備状況
+- `artifacts/codex/*.tlc.log.txt`: TLC の生ログ（モジュールごと）
+- `artifacts/codex/*.alloy.log.txt`: Alloy の生ログ（実行した場合）
+
+### PR サマリ
+
+PR に検証サマリを投稿します:
+- トレーサビリティ合計とリンク例
+- モデル検査 (TLC): ok/total と非 OK モジュール上位
+- Alloy: ok/total（実行時）と非 OK スペック上位、または jar 未指定時の検出数
+- 任意の強制: ラベル `enforce-formal` を付けると TLC/Alloy 失敗で PR を失敗（既定はレポートのみ）
+
+### ヘッドレス Alloy 実行例
+
+```bash
+# 最小
+ALLOY_JAR=$HOME/tools/alloy.jar npm run verify:model
+
+# JSON 配列の引数（空白/引用に強い）
+ALLOY_JAR=$HOME/tools/alloy.jar \
+  ALLOY_CMD_JSON='["-someFlag","--opt","value with spaces"]' \
+  npm run verify:model
+
+# 失敗検出のチューニング + タイムアウト
+ALLOY_JAR=$HOME/tools/alloy.jar \
+  ALLOY_FAIL_REGEX='Exception|ERROR|FAILED|Counterexample|assert(ion)?' \
+  ALLOY_TIMEOUT_MS=180000 \
+  npm run verify:model
+```
+
+### 次のステップ
+
+- モデル検査結果で失敗をゲート（ラベルやディレクトリ存在で opt-in）
+- ヘッドレス Alloy 実行（jar/CLI + タイムアウト制御）の整備
+- PR コメントに緑/赤とリンクを掲載
+
+### 備考
+
+- `ALLOY_JAR` が未設定の場合、Alloy 実行はスキップ（検出のみ）。jar を設定するとヘッドレス実行
+- 非ゼロ終了やタイムアウトは失敗扱い。ログは `artifacts/codex/*.alloy.log.txt` に保存
+
+### 失敗パターン（Alloy）
+
+Alloy の jar によりエラーメッセージは異なることがあります。`ALLOY_FAIL_REGEX` を状況に合わせて調整してください。
+
+一般的なパターン:
+- `Exception`（未処理の例外）
+- `ERROR`（一般的なエラー）
+- `FAILED`（アサーション/チェックの失敗）
+- `Counterexample`（反例の検出）
+- `assertion`（アサーション関連行）
+
+例（CI/ローカル）:
+```bash
 ALLOY_FAIL_REGEX='Exception|ERROR|FAILED|Counterexample|assertion' npm run verify:model
 ```

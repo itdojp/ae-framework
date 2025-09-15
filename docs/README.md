@@ -1,4 +1,52 @@
-# 📚 ae-framework Documentation
+# 📚 ae-framework Documentation / ドキュメント
+
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## English
+
+Comprehensive documentation for the AI‑Enhanced Development Framework.
+
+### Getting Started
+- Quick Start (15 minutes): `getting-started/QUICK-START-GUIDE.md`
+- Phase 6 Quick Start (UI/UX): `getting-started/PHASE-6-GETTING-STARTED.md`
+- Setup: `getting-started/SETUP.md`
+
+### Guides
+- Development Instructions: `guides/DEVELOPMENT-INSTRUCTIONS-GUIDE.md`
+- Claude Code Automation Guide: `guides/CLAUDE-CODE-AUTOMATION-GUIDE.md`
+- Phase 2 Advanced Features (2.1–2.3): `guides/PHASE-2-ADVANCED-FEATURES-GUIDE.md`
+- Advanced Troubleshooting: `guides/ADVANCED-TROUBLESHOOTING-GUIDE.md`
+- General Usage: `guides/USAGE.md`
+
+### Phases
+- Natural Language Requirements: `phases/PHASE-2-NATURAL-LANGUAGE-REQUIREMENTS.md`
+- Runtime Conformance: `phases/PHASE-2-2-RUNTIME-CONFORMANCE.md`
+- Integration Testing / E2E: `phases/PHASE-2-3-INTEGRATION-TESTING.md`
+- User Stories, Validation, DDD Modeling, Phase 6 UI/UX, Telemetry
+
+### Integrations
+- Claude Code Task Tool Integration: `integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md`
+- Claude Code Workflow: `integrations/CLAUDECODE-WORKFLOW.md`
+- CodeX Integration (PoC/MCP/Adapter): `integrations/CODEX-INTEGRATION.md`
+
+### Reference
+- CLI Commands: `reference/CLI-COMMANDS-REFERENCE.md`
+- API Reference: `reference/API.md`
+
+### Architecture
+- TDD Framework Architecture: `architecture/TDD-FRAMEWORK-ARCHITECTURE.md`
+- CEGIS Design: `architecture/CEGIS-DESIGN.md`
+- Runtime Conformance Design: `architecture/RUNTIME-CONFORMANCE-DESIGN.md`
+
+### Quality / Verification
+- Formal Quality Gates (DoD v0.2): `quality/formal-gates.md`
+- Runbooks / Traceability / Runtime Contracts: see `docs/quality` and `docs/verify`
+
+For the complete navigation with highlights, see the Japanese section below (same links).
+
+---
 
 > AI-Enhanced Development Framework の包括的ドキュメント
 

@@ -1,5 +1,7 @@
 # Replay Coverage Metrics (#411)
 
+> 🌍 Language / 言語: English | 日本語
+
 Metrics
 - totalEvents: total count of events replayed
 - byType: object mapping event name → count

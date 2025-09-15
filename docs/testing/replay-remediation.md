@@ -1,5 +1,7 @@
 # Replay Remediation Spec (#411)
 
+> 🌍 Language / 言語: English | 日本語
+
 Purpose
 - Provide a minimal, machine-readable suggestion when replay violates invariants.
 

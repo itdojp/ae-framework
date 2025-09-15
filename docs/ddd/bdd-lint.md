@@ -1,5 +1,13 @@
 # BDD Lint: Aggregate Root Commands Only
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+Gherkin の `When` は集約ルートのコマンドのみを呼び出す、というリンタ規約です。違反時は CI を失敗させ、修正案を提示します。状態の直接変更を避け、ユビキタス言語とカプセル化を維持します。
+
 - Rule: `When` steps must call an Aggregate Root command.
 - Violation: CI fails with a suggested fix.
 - Example (ok): `When the InventoryItem is allocated`.

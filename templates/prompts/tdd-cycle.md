@@ -1,5 +1,7 @@
 # TDD Cycle Template
 
+> 🌍 Language / 言語: English | 日本語
+
 ## Standard TDD Development Prompt
 
 Use this template when implementing features using the ae-framework to ensure proper TDD compliance.

@@ -1,5 +1,13 @@
 # SuperClaude Framework 統合提案書
 
+> 🌍 Language / 言語: 日本語 | English
+
+---
+
+## English (Overview)
+
+Proposal to integrate selected SuperClaude capabilities (smart personas, token optimization, etc.) into ae-framework. Includes persona manager sketch, context routing, and optimization utilities. See Japanese sections for details.
+
 ## 概要
 SuperClaude Frameworkの優れた機能を分析し、ae-frameworkに統合可能な要素を提案します。
 

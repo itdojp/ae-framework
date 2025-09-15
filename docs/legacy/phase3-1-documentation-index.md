@@ -1,5 +1,7 @@
 # Phase 3.1 Evidence-based Validation System - Documentation Index
 
+> 🌍 Language / 言語: English | 日本語
+
 ## Overview
 
 This directory contains comprehensive documentation for Phase 3.1 of the Evidence-based Validation System. The documentation is organized into four main categories: design specifications, implementation guides, API references, and usage examples.

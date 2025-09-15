@@ -1,5 +1,46 @@
 # Phase 2.3: Integration Testing and End-to-End Testing System
 
+> 🌍 Language / 言語: 日本語 | English
+
+---
+
+## English (Overview)
+
+Phase 2.3 offers an orchestration system for integration and end‑to‑end testing at scale. It features a multi‑runner architecture, rich reporting, and CLI workflow to discover, run, and analyze complex test suites.
+
+Highlights
+- Event‑driven orchestration, discovery/filtering, parallel/sequential runs
+- Runners: E2E (Playwright‑compatible), API (HTTP contract), extensible design
+- Reporters: interactive HTML, artifacts (screenshots, logs, traces), failure analysis
+- CLI: `run`, `discover`, `list`, `generate`, `status`, `reports`
+
+See the Japanese sections for system architecture and CLI examples.
+
+## English (Detailed)
+
+### Runners
+- E2E Runner (Playwright-compatible): browser automation and a11y hooks
+- API Contract Runner: HTTP contract checks, auth helpers
+- Extensible: add custom runners with a common result schema
+
+### CLI
+```bash
+ae-framework integration discover         # detect suites
+ae-framework integration list             # list tests/suites
+ae-framework integration run --ci         # run with CI profile
+ae-framework integration generate         # scaffold samples
+ae-framework integration reports          # open/print reports
+```
+
+### Reports & Artifacts
+- HTML reporter with filters
+- `artifacts/integration/*.json` for machine-readable summaries
+- Attachments: screenshots, traces, HARs
+
+### Best Practices
+- Keep E2E label-gated on PRs; run nightly for full coverage
+- Stabilize flaky suites or move behind labels until fixed
+
 > 包括的な統合テストとエンドツーエンドテストのオーケストレーション
 
 ## 概要

@@ -1,5 +1,7 @@
 # Replay ↔ Formal Correlation (traceId)
 
+> 🌍 Language / 言語: English | 日本語
+
 Goal
 - Correlate replay outcomes with formal verification by shared `traceId`.
 

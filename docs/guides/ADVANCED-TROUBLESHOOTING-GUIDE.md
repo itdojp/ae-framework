@@ -1,5 +1,134 @@
 # Advanced Troubleshooting Guide
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+Phase 2.1〜2.3 の高度機能（CEGIS/Runtime Conformance/Integration Testing）における代表的な問題と対処法をまとめたガイドです。症状→原因→解決の順に、CLI コマンド例と JSON 例を交えて解説します。
+
+詳細なケースは以下の英語・日本語の本文を参照してください。
+
+## English
+
+### Phase 2.1: CEGIS Auto-Fix – No candidates generated
+Symptoms
+```bash
+ae-framework cegis fix --files src/ --violations violations.json
+# Output: No fix candidates generated
+```
+Causes & Fixes
+- Incomplete violation spec → add `counterExample` (input/expected/actual), file/line, and clear message
+- Wrong file path → use repo-relative paths; ensure files exist
+
+### Phase 2.2: Conformance – Rules not executed
+Symptoms: summary shows `Rules Executed: 0`
+Fixes
+- Check `rules.json` schema; validate with `jq` and schema if provided
+- Ensure `--rules <file>` passed and not overridden; confirm working directory
+
+### Phase 2.3: Integration – E2E flakiness
+Fixes
+- Run label-gated on PRs; increase retries; stabilize selectors; move flaky suites to nightly until fixed
+
+### Logs & Tips
+- Check Playwright trace viewer for failing steps
+- Stabilize by using data-testid selectors and explicit waits for network idle
+- Record failing tests locally and compare traces with CI
+
+### Schema Validation Failures (Adapters)
+Symptoms: aggregator fails to read adapter summaries
+```bash
+npx ajv -s docs/schemas/artifacts-adapter-summary.schema.json \
+  -d artifacts/*/summary.json --strict=false
+```
+Fixes
+- Remove unknown fields or map them under `extras`
+- Ensure `status` ∈ {ok|warn|error} and include short `summary`
+
+### Formal Summary Validation (TLA+/Alloy)
+```bash
+# Validate formal summary if present
+npx ajv -s docs/schemas/formal-summary.schema.json -d formal/summary.json --strict=false
+```
+Fixes
+- Ensure required fields (e.g., `result`, `violations`) exist and types match
+- Keep messages short; link to logs under `artifacts/codex/*.tlc.log.txt`
+
+### Properties Summary (array vs object)
+Symptoms: aggregator expects an object but found an array in `artifacts/properties/summary.json`
+Fixes
+- When array, validate each element separately (see docs/examples/property-harness.md)
+- Convert to per-trace files under `artifacts/properties/<traceId>.summary.json` for simpler aggregation
+
+### Schema Missing Field (example)
+Symptoms: `status` missing in adapter summary
+```json
+{ "adapter": "lighthouse", "summary": "Perf 78, A11y 96, PWA 55" }
+```
+Fix: add required `status` ∈ {"ok","warn","error"}
+```json
+{ "adapter": "lighthouse", "status": "warn", "summary": "Perf 78, A11y 96, PWA 55" }
+```
+
+### Type Mismatch (example)
+Symptoms: `violations` expected array, got object
+```json
+{ "result": "fail", "violations": { "count": 1 } }
+```
+Fix: make `violations` an array
+```json
+{ "result": "fail", "violations": [ { "id": "inv-001", "message": "allocated <= onHand" } ] }
+```
+
+### Extra Keys (example)
+Symptoms: schema allows only known keys
+```json
+{ "adapter": "playwright", "status": "ok", "summary": "12/12 passed", "extra": 123 }
+```
+Fix: move to `extras`
+```json
+{ "adapter": "playwright", "status": "ok", "summary": "12/12 passed", "extras": { "extra": 123 } }
+```
+
+### Reading ajv Errors (quick)
+```
+error: data/violations must be array at formal/summary.json
+```
+Tips
+- `data/<path>` が示すキーの型/存在を確認（`jq` で該当箇所を抽出）
+- スキーマ側で許容されない余剰キーは `extras` に移動
+
+#### jq one-liners
+```bash
+# 抽出: violations の型と要素数
+jq '.violations | type, length' formal/summary.json
+
+# 修正ヒント: 余剰キーの一覧
+jq 'paths | select(.[-1] | strings) | join(".")' artifacts/*/summary.json
+```
+
+### Short Error Template (aggregator)
+```
+❌ adapter: invalid data at artifacts/lighthouse/summary.json (key=status, traceId=inv-001)
+```
+
+### Playwright Traces (view & compare)
+```bash
+# show a trace locally
+npx playwright show-trace artifacts/integration/traces/test-001.zip
+
+# record traces for failed tests (config)
+# playwright.config.ts → use trace: 'on-first-retry' or 'retain-on-failure'
+```
+
+### Path/CWD Issues
+Symptoms: runner cannot find artifacts or writes to unexpected locations
+Fixes
+- Use absolute `cwd` without spaces for Windows; prefer WSL
+- Pass `--output` or env (`CODEX_ARTIFACTS_DIR`) explicitly to avoid surprises
+
 > Phase 2.1-2.3の高度な機能における問題解決ガイド
 
 ## 🔧 Phase 2.1: CEGIS Auto-Fix System

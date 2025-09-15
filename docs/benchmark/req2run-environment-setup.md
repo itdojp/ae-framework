@@ -1,5 +1,13 @@
 # Req2Run Benchmark Integration — Environment Setup
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+Req2Run ベンチマーク統合の環境セットアップ手順です。ローカル/CI の前提、リポジトリ配置（`REQ2RUN_BENCHMARK_REPO` / `/tmp/req2run-benchmark`）、インストール/ビルド、クイックランの手順を説明します。
+
 This guide explains how to set up and run the Req2Run benchmark integration with ae-framework on local machines and in CI.
 
 ## Prerequisites
@@ -78,4 +86,3 @@ In code, the default report directory is `./reports/benchmark` (see `config.defa
 - Repo not found: ensure `REQ2RUN_BENCHMARK_REPO` points to a valid path or clone into `/tmp/req2run-benchmark`.
 - Long runtimes: use the CI profile (`pnpm benchmark:ci`) or narrow the category/difficulty.
 - Missing reports: check job logs for `reports/benchmark` path; ensure the process has write permissions.
-

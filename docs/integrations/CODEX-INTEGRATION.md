@@ -1,5 +1,10 @@
 # CodeX Integration Guide (PoC → MCP → Adapter)
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+
 This guide explains how to use ae-framework in the CodeX (agentic coding) environment. While Claude Code is the primary integration, CodeX can leverage ae-framework via CLI (PoC), MCP servers, or a future dedicated adapter.
 
 ## Overview
@@ -257,3 +262,85 @@ $env:CODEX_RUN_FORMAL="1"; pnpm run build; pnpm run codex:quickstart
 ```bat
 set CODEX_RUN_FORMAL=1 && pnpm run build && pnpm run codex:quickstart
 ```
+
+---
+
+## 日本語（概要）
+
+このドキュメントは、CodeX 環境で ae-framework を利用するための方法をまとめたものです。Claude Code が主統合ですが、CodeX でも以下の 3 方式で利用できます。
+
+- CLI ブリッジ（PoC）: `pnpm run codex:quickstart` などで CLI を直接呼び出し、`artifacts/` に成果を保存
+- MCP 統合（推奨）: `pnpm run codex:mcp:*` で MCP サーバを起動し、CodeX クライアントから stdio で接続
+- タスクアダプター（stdio）: TODO/Plan/Tool を ae-framework の各フェーズ（intent/formal/stories/validation/modeling/ui）へマッピング
+
+運用上の注意（抜粋）
+- 必要環境: Node >= 20.11 (<23), pnpm 10（Corepack 推奨）
+- アーティファクトは `artifacts/codex/` 配下に JSON として出力（OpenAPI は `openapi.yaml`）
+- Windows/WSL では WSL 推奨。Corepack（`corepack enable`）で pnpm を管理
+
+詳細は英語セクション（上部）および以下の関連資料を参照してください。
+- CodeX Quick Start（クイックスタート）
+- CodeX Artifacts and JSON Formats（成果物の形式）
+
+## 日本語（詳細）
+
+### 1) CLI ブリッジ（PoC）
+- `pnpm run codex:quickstart` で verify/（任意で ui-scaffold/formal）を実行し、`artifacts/` 配下に成果物を保存
+- 前提: Node 20.11+ / pnpm 10（Corepack 推奨）、`pnpm run build` 済（`dist/` を参照）
+- 代表的な成果物: `artifacts/codex/result-*.json`, `openapi.yaml`, `formal.tla`, `model-check.json`
+
+### 2) MCP 統合（推奨）
+- Intent/Test/Verify/Code/Spec の MCP サーバを同梱
+- CodeX から stdio で接続（`samples/codex-mcp-config.{json,yaml}` 参照）
+- 使い分け: 企画・検証フローを CodeX 側 LLM でドラフト→ MCP ツールで確定的処理
+
+### 3) CodeX タスクアダプター（stdio ブリッジ）
+- TODO/Plan/Tool ↔ ae-framework の各フェーズをマッピング
+- UI: `context.phaseState.entities` があれば `UIScaffoldGenerator` を実行
+- Formal: OpenAPI/TLA+ を生成し、可能ならモデル検査まで
+- 検証: 入力を Zod でバリデーションし、無効時は行動可能なエラー
+
+### 4) MCP なしの stdio ツール（Spec）
+- `codex:spec:stdio` の `compile/validate/codegen` アクションで AE-Spec をコンパイル/検証/コード生成
+- CodeX の LLM で下書き→ lenient validate で指摘収集→ strict compile→ codegen の反復
+
+### 運用上の考慮
+- 環境: Node >= 20.11 (<23), pnpm 10（Corepack 推奨）
+- 成果物: JSON/Markdown を優先（CodeX UI で消費しやすい）
+- セキュリティ: CodeX のサンドボックスに合わせた権限設計
+- E2E 依存（Playwright/LHCI）は任意（CI/ローカルから導入）
+
+### 環境変数（主なもの）
+- `CODEX_ARTIFACTS_DIR`, `CODEX_RUN_UI`, `CODEX_PHASE_STATE_FILE`, `CODEX_UI_DRY_RUN`
+- `CODEX_RUN_FORMAL`, `CODEX_FORMAL_REQ`, `CODEX_SKIP_QUALITY`, `CODEX_TOLERANT`
+
+### 実行時契約（任意）
+- 形式仕様からランタイム契約を生成し、OpenAPI 生成ハンドラに注入（`includeContracts: true`）
+- `docs/verify/RUNTIME-CONTRACTS.md` 参照
+
+### OpenAPI テストジェネレーター
+- `pnpm run codex:generate:tests` で `tests/api/generated/` に最小テンプレートを生成
+- `--use-operation-id` / `--with-input` で命名/最小入力を調整
+
+### Codegen オプション（OpenAPI）
+- `includeContracts` / `useOperationIdForFilenames` / `useOperationIdForTestNames`
+
+### 受け入れ基準（漸進）
+1) PoC 成果物が生成される（任意で UI）
+2) MCP で intent/test/verify が往復可能
+3) アダプターでプラン駆動のオーケストレーションが可能
+
+### E2E 手順（CLI/MCP 要約）
+1. `pnpm run build`
+2. `pnpm run codex:quickstart`（UI は `CODEX_RUN_UI=1`）
+3. `pnpm run codex:mcp:intent & pnpm run codex:mcp:verify &` に接続
+4. `node dist/src/cli/index.js ui-scaffold --components`
+
+### 機械可読アーティファクト
+- `artifacts/codex/result-*.json`, `openapi.yaml`, `model-check.json`（有無に応じて）
+- CI では `codex-json-artifacts`, `codex-openapi` などとしてアップロード
+
+### Windows/WSL
+- 先に `pnpm run build` を実行（`dist/` 必須）
+- WSL 推奨。Windows パスは空白回避、`cwd` は絶対パス
+- Corepack で pnpm を管理

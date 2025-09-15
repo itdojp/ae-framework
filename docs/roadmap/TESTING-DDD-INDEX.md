@@ -1,5 +1,13 @@
 # Testing + DDD Docs Index
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+Testing/DDD 関連ドキュメントの索引です。スキーマ、ガイド、PR サマリ、フォーマル/反例/BDD、アダプター、リプレイ関連の参照先を一覧します。
+
 Roadmap
 - TESTING-DDD-ROADMAP.md
 

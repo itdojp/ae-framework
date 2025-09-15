@@ -1,5 +1,7 @@
 === P0 Implementation Verification Log ===
 
+> 🌍 Language / 言語: English | 日本語
+
 ## 1. CLI Help Command
 
 ae

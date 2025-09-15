@@ -1,5 +1,7 @@
 # Inventory Management Example
 
+> 🌍 Language / 言語: English | 日本語
+
 > **Phase 3→5→6 エンドツーエンド・デモ**  
 > 要求→モデル→UI→CI→承認の完全自動化フローを体験
 

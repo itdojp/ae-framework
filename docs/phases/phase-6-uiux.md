@@ -1,5 +1,32 @@
 # Phase 6: UI/UX & Frontend Delivery
 
+> 🌍 Language / 言語: 日本語 | English
+
+---
+
+## English (Overview)
+
+Phase 6 turns user stories and domain models into production‑ready UI/UX via automated scaffolding, design system integration, a11y/perf quality gates, and telemetry. Inputs: Phase 3/5 outputs. Outputs: components, tokens, state architecture, and reports.
+
+## English (Detailed)
+
+### Scope
+- UI component design and scaffolding
+- Design token integration
+- State architecture (forms, data fetching, server state)
+- Accessibility verification and quality gates
+- E2E/visual/coverage/performance reports
+
+### Inputs / Outputs
+- Inputs: Phase 3 (User Stories + AC), Phase 5 (Domain Model & Constraints)
+- Outputs: Component specs, tokens, state architecture, a11y/E2E/visual reports, CRUD scaffolds
+
+### Quality Gates
+- Accessibility: critical=0, warnings ≤ 5
+- E2E: 100% pass
+- Coverage: ≥ 80%
+- Web Vitals budget maintained
+
 > 包括的UI/UX設計・実装・品質保証フェーズ
 
 **Parent EPIC**: [#53 Phase 6 (UI/UX & Frontend Delivery) 推進ロードマップ](https://github.com/itdojp/ae-framework/issues/53)  
@@ -38,6 +65,98 @@ Design Systems統合、アクセシビリティ確保、パフォーマンス最
 - E2E: 100% pass
 - Coverage: ≥80%
 - Web Vitals Budget
+ 
+### Repository Layout (excerpt)
+```
+ae-framework/
+├─ packages/
+│  ├─ design-tokens/
+│  └─ ui/
+├─ apps/web/
+│  ├─ app/{entity}/page.tsx            # Index
+│  ├─ app/{entity}/[id]/page.tsx       # Show
+│  ├─ messages/{ja,en}.json            # i18n
+│  └─ __e2e__/{entity}.spec.ts         # E2E
+└─ templates/ui/                       # Handlebars
+```
+
+### Technology
+- Framework: Next.js 14 App Router
+- UI: Radix UI + Tailwind CSS + shadcn/ui
+- Forms/Validation: React Hook Form + Zod
+- State: TanStack Query 5
+- Testing: Playwright E2E + Storybook + Vitest
+- i18n: next-intl (ja/en)
+- A11y: WCAG 2.1 AA + eslint-plugin-jsx-a11y
+- Telemetry: OpenTelemetry metrics for quality
+
+### Typical Flow
+1) Generate components from Phase State
+2) Run a11y/E2E/coverage/performance gates
+3) Inspect telemetry and reports; iterate tokens/state/config
+
+### Telemetry & Gate Examples
+- Telemetry: OTel metrics emitted with scaffold time, E2E duration, coverage
+- Pass examples:
+  - Coverage: 84% (>=80) — PASS
+  - A11y: 96% (>=95) — PASS
+  - Performance: 78% (>=75) — PASS
+- Fail examples:
+  - Coverage: 76% (<80) — FAIL → add tests for critical flows (forms, lists)
+  - A11y: 92% (<95) — FAIL → add alt/aria, increase contrast
+
+### Observability Checklist
+- Export OTel to local collector (`OTEL_EXPORTER_OTLP_ENDPOINT`) in development
+- Correlate E2E runs with UI scaffold time to spot regressions
+- Track component complexity (targets <10) and unused CSS (<5%)
+
+### Gate Tuning Notes
+- Raise thresholds gradually after stabilizing: Coverage 80→85, A11y 95→97, Perf 75→78
+- Keep a short CHANGELOG note in PRs when adjusting thresholds, with one-line rationale
+
+### Suggested Thresholds (starter)
+```
+Coverage: 80%
+A11y:     95%
+Perf:     75%
+```
+
+### A11y Checklist (quick)
+- All images have meaningful `alt` (or `role="presentation"` when purely decorative)
+- Form controls have associated labels (`<label for>` or `aria-label`)
+- Visible keyboard focus ring on interactive elements
+- Sufficient color contrast for text and UI components (WCAG AA)
+- Proper landmarks/roles (header/main/nav) to aid navigation
+
+### Fix Recipes (quick)
+- Coverage: add tests for form validation, list filters, and error states
+- A11y: ensure `alt`/`aria-*`, improve contrast tokens, visible focus rings
+- Perf: optimize images (`next/image`, lazy), reduce CSS/JS, remove unused deps
+
+### Lighthouse-specific Hints
+- LCP: optimize hero image, preconnect to origins, reduce render-blocking CSS
+- CLS: reserve space for images/media, avoid layout-shifting banners
+- TBT: code-split heavy modules, reduce long tasks, defer non-critical work
+
+### Performance Recipes (quick)
+- Fonts: preload critical fonts, use `font-display: swap`, subset where possible
+- Preconnect/Preload: `rel=preconnect` for third-party origins; preload hero image if needed
+- Code splitting: lazy-load non-critical components and routes
+- Images: use modern formats (WebP/AVIF), provide srcset/sizes, compress aggressively
+- Critical CSS: inline only truly critical CSS; defer non-critical styles
+- Font subset: generate locale-specific subsets to reduce TTF size
+
+### Font Preload Example
+```html
+<link rel="preload" href="/fonts/Inter-roman.var.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+  @font-face {
+    font-family: Inter;
+    src: url('/fonts/Inter-roman.var.woff2') format('woff2');
+    font-display: swap;
+  }
+</style>
+```
 
 ---
 
