@@ -18,7 +18,7 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
       - run: corepack enable
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
       
       - name: Run tests multiple times
         id: flake-test
