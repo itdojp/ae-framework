@@ -206,3 +206,13 @@ Claude CodeやMCPとの統合
 ---
 
 **🤖 ae-framework で、AI-Enhanced Development の未来を今すぐ体験してください！**
+
+---
+
+## 🗣️ Docs Language Policy / ドキュメント言語方針
+
+- Language toggle: 可能な限り各ドキュメント先頭に「Language / 言語」トグルを配置（English | 日本語）。
+- Mirrored content: 重要セクション（概要、手順、コマンド、しきい値、CI例）は英日で同等の内容を保つ。
+- Minimalism: 冗長な重複は避け、片側に詳細がある場合は他方に「詳細は反対言語側」注記を明記。
+- Operational snippets: できるだけ実行可能なスニペット（コマンド、YAML、JSON）を両言語に設置。
+- Terminology: 用語は初出時に対訳（例: 適合性=conformance）を併記。以降は文脈に応じて片側表記も可。
