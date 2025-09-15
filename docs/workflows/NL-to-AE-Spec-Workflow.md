@@ -1,5 +1,19 @@
 # Natural Language → AE‑Spec → IR → Code Workflow (CodeX / Claude Code)
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+自然言語の要件を基に LLM で AE‑Spec を下書きし、ae‑framework の確定的なツールで `compile/validate/codegen` を行うエンドツーエンドの手順を示します（CodeX/Claude Code 両対応、外部 API キー不要）。
+
+- Stdio ブリッジ: `pnpm run codex:spec:stdio`（アクション: compile/validate/codegen）
+- MCP サーバ: `pnpm run codex:mcp:spec`（ツール: ae_spec_compile/validate/codegen）
+- 反復: lenient validate → 修正 → strict compile → codegen
+
+詳細なコマンドやプロンプトテンプレートは以下の英語セクションを参照してください。
+
 This guide shows how to run an end‑to‑end workflow using your editor/agent’s own LLM for drafting AE‑Spec, while ae‑framework provides deterministic tools for compile/validate/codegen. Works with CodeX and Claude Code (no external API keys required on our side).
 
 ## Overview

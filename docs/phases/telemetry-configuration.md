@@ -1,5 +1,20 @@
 # Phase 6 Telemetry Configuration
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## English (Overview)
+
+Phase 6 (UI/UX & Frontend Delivery) instruments metrics, traces, and logs via OpenTelemetry to quantify quality gates and continuous improvement.
+
+Key metrics
+- Quality: Test Coverage (≥80%), A11y (≥95%), Performance (≥75%)
+- Efficiency: Scaffold time (<30s), E2E test time (<5m), Build time
+- Maintainability: Component complexity (<10), Unused CSS (<5%), Design token coverage (≥95%)
+
+Configuration: environment variables to disable/enable telemetry and configure OTLP exporters.
+
 ## Overview
 
 ae-frameworkのPhase 6（UI/UX & Frontend Delivery）では、OpenTelemetryを使用してメトリクス・トレース・ログの計測を行います。これにより、品質ゲート引き上げの判断材料を定量化し、継続的改善を実現します。

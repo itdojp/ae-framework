@@ -1,5 +1,7 @@
 # AE Framework Minimal Specification
 
+> 🌍 Language / 言語: English | 日本語
+
 This is a minimal, valid AE-Spec used to satisfy fail-fast validation in CI.
 
 ## Glossary
@@ -28,3 +30,9 @@ This is a minimal, valid AE-Spec used to satisfy fail-fast validation in CI.
 
 - POST /users - Register user
 - GET /users/{id} - Get user
+
+---
+
+## 日本語（概要）
+
+これは CI の早期失敗（fail‑fast）チェックを満たす、最小限の妥当な AE-Spec サンプルです。用語集、ドメイン、最小の不変条件、ユースケース、簡単な API を含みます。CI での仕様コンパイル/検証が通ることを確認するために使用します。

@@ -1,5 +1,7 @@
 # Phase 3.1 Dependency Analysis System Demo
 
+> 🌍 Language / 言語: English | 日本語
+
 ## Overview
 
 The Phase 3.1 Dependency Analysis System has been successfully implemented as part of the Evidence-based Validation System. This system provides comprehensive dependency analysis, impact assessment, and risk evaluation capabilities.

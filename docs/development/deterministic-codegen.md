@@ -1,5 +1,7 @@
 # Deterministic Code Generation & Drift Detection
 
+> 🌍 Language / 言語: English | 日本語
+
 The AE-Framework includes a comprehensive deterministic code generation system that ensures consistent code output from AE-IR specifications and detects when generated code drifts from its expected state.
 
 ## Overview

@@ -1,5 +1,19 @@
 ## Traceability Guide: Linking Feature Scenarios → Tests/Implementation/Formal Specs
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+このガイドは、BDD シナリオ（.feature）と テスト／実装／形式仕様（TLA+/Alloy）を軽量な規約で関連付け、CI でトレーサビリティ行列（CSV/JSON）を生成する方法を説明します。
+
+- シナリオに安定 ID（タグ/スラグ）を付与
+- テスト/実装/形式仕様に一行参照コメントを追加
+- CI が参照を集約し、カバレッジや未リンク項目、クリック可能な例を PR に要約
+
+詳細は以下の英語セクションに従ってください。
+
 This guide explains a lightweight convention to improve traceability across:
 
 - BDD Scenarios (.feature)

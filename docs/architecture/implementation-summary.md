@@ -1,5 +1,13 @@
 # ae-framework-v2 Core System Re-implementation - Final Summary
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+`ae-framework-v2.yml` に基づくコアシステム再実装の最終まとめです。TDD とドメインモデリングで各フェーズを完了し、型/品質/性能の目標を達成しました。成果物・検証基準・テスト結果の詳細は以下の英語セクションを参照してください。
+
 ## 🎯 Project Completion Status: SUCCESS ✅
 
 **ISSUE#179**: コアシステム再実装計画 - 完全達成

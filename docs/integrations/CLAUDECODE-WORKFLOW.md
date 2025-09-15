@@ -1,5 +1,9 @@
 # Claude Code で ae-framework を使った開発ワークフロー
 
+> 🌍 Language / 言語: 日本語 | English
+
+---
+
 このガイドでは、Claude Code 内で ae-framework を使用して効率的な開発を行う方法を実際の対話例とコマンドで説明します。
 
 ## 🎯 概要
@@ -102,6 +106,224 @@ ae-framework intent --analyze --sources="requirements.md"
     "プロジェクトマネージャーとして、チームのタスク進捗を確認したい"
   ]
 }
+```
+
+---
+
+## English (Overview)
+
+This guide walks through a practical development workflow for using ae-framework inside Claude Code. It shows phase-by-phase interactions, example prompts, and what the tool outputs at each step (Intent → Formal → Test → Code → Verify → Operate).
+
+Key points
+- Run integrated Task Tools in Claude Code, or invoke equivalent CLI commands such as `ae-framework intent --analyze`.
+- Each phase produces structured artifacts (requirements, specs, tests, code, verification reports) that feed into the next.
+- UI/UX (Phase 6) can be generated via `ui-scaffold` with quality gates and telemetry.
+
+Quick commands (CLI parity)
+```bash
+# Phase 1: Intent
+ae-framework intent --analyze --sources=requirements.md
+
+# Phase 2: Formal (OpenAPI/TLA+) — optional
+pnpm run verify:formal           # stubbed pipeline; see Formal Runbook
+
+# Phase 3: Tests (RED)
+ae-framework generate:tests
+
+# Phase 4: Code (GREEN)
+ae-framework generate:code
+
+# Phase 5: Verify (Quality gates)
+ae-framework verify
+
+# Phase 6: UI/UX scaffold
+ae-framework ui-scaffold --components
+ae-framework ui-scaffold --state
+```
+
+Artifacts (examples)
+- `artifacts/summary/PR_SUMMARY.md` — condensed PR report
+- `coverage/coverage-summary.json` — coverage
+- `hermetic-reports/formal/summary.json` — formal summary (if enabled)
+- `artifacts/codex/*` — when running via CodeX quickstart/adapter
+
+CI tips
+- Label-gated runs: use `run-formal` to trigger Formal Verify
+- Type coverage: baseline 65% reports; add `enforce-typecov` to gate at 70%
+- Replay/Property/BDD lint may be non-blocking by default; use labels from CONTRIBUTING
+
+Troubleshooting (quick)
+- Missing UI files → ensure `entities` provided in Phase State; re-run scaffold
+- PR summary missing formal → check `run-formal` label and upload `formal/summary.json`
+- Type coverage regression → add label `enforce-typecov` or reduce scope; raise thresholds gradually
+- Adapter JSON invalid → validate with `ajv` and keep `summary` concise
+
+### Quick Example (English)
+```
+User: "I want a task management system. Analyze requirements with the Intent Agent."
+
+Claude Code: Running Intent Task Adapter...
+
+✅ Intent Analysis Complete - 12 requirements identified
+📋 Next steps:
+  • Validate coverage of stakeholder concerns
+  • Proceed to Phase 2 (Formal Specification)
+  • Draft domain model from requirements
+```
+
+### Phase-by-Phase Cheatsheet (English)
+- Phase 1 (Intent): `ae-framework intent --analyze --sources=requirements.md`
+- Phase 2 (Natural Language): `ae-framework natural-language --structure --sources=raw.md`
+- Phase 3 (Stories): generate user stories + AC (Gherkin-friendly)
+- Phase 4 (Validation): cross-validate, produce traceability matrix
+- Phase 5 (Modeling): DDD entities/BCs/services
+- Phase 6 (UI/UX): `ae-framework ui-scaffold --components` (quality gates enabled)
+
+#### Artifact Handoffs (examples)
+- Intent: `artifacts/intent/summary.json` (requirements, next steps)
+- Natural Language: `artifacts/nl/requirements.json` (structured)
+- Stories: `artifacts/stories/summary.json` (epics/stories/AC)
+- Validation: `artifacts/validation/traceability.json`
+- Modeling: `artifacts/modeling/domain.json` (entities/BC/services)
+- UI: `artifacts/ui/ui-summary.json`; E2E traces under `apps/web/__e2e__/`
+
+#### Minimal Commands per Phase (English)
+```bash
+# 1) Intent
+ae-framework intent --analyze --sources=requirements.md \
+  --format json --output artifacts/intent/summary.json
+
+# 2) Natural Language
+ae-framework natural-language --structure --sources=raw.md \
+  --format json --output artifacts/nl/requirements.json
+
+# 4) Validation
+ae-framework quality policy --env development
+ae-framework quality validate
+
+# 6) UI/UX
+ae-framework ui-scaffold --components
+
+# (Optional) Conformance run (2.2)
+ae-framework conformance verify --rules rules.json --collect-metrics
+
+# (Optional) Integration (2.3)
+ae-framework integration discover --patterns "./e2e/**/*.json" --type tests \
+  --output artifacts/integration/discovered.json
+ae-framework integration run --ci
+
+トラブルシューティング（簡易）
+- UIファイルが出ない → Phase State の `entities` を確認して再スキャフォールド
+- PRサマリにFormalが無い → `run-formal` ラベルと `formal/summary.json` のアップロードを確認
+- 型カバレッジが下がった → `enforce-typecov` ラベル導入や対象の見直し（段階的に引き上げ）
+- アダプターJSONが不正 → `ajv` で検証し、`summary` を簡潔に
+
+#### Notes
+- Some phases (Stories/Modeling) are primarily orchestrated by the agent; artifacts are collected under `artifacts/stories/*` and `artifacts/modeling/*` when available.
+
+#### Chained Example (English)
+1) Intent → writes `artifacts/intent/summary.json`
+2) Natural Language → `artifacts/nl/requirements.json`
+3) Stories → `artifacts/stories/summary.json`
+4) Validation → `artifacts/validation/traceability.json`
+5) Modeling → `artifacts/modeling/domain.json`
+6) UI/UX → `artifacts/ui/ui-summary.json` + E2E traces
+
+```bash
+# Sample flow (commands)
+ae-framework intent --analyze --sources=requirements.md --format json --output artifacts/intent/summary.json
+ae-framework natural-language --structure --sources=raw.md --format json --output artifacts/nl/requirements.json
+ae-framework quality policy --env development && ae-framework quality validate
+ae-framework ui-scaffold --components
+```
+
+#### Full Flow Summary (English)
+```
+Intent:    12 requirements → artifacts/intent/summary.json
+NL:        structured requirements → artifacts/nl/requirements.json
+Stories:   8 stories / 3 epics → artifacts/stories/summary.json
+Validate:  traceability 90% → artifacts/validation/traceability.json
+Modeling:  6 entities / 2 BCs → artifacts/modeling/domain.json
+UI/UX:     21 files, a11y 96 / perf 78 / coverage 84 → artifacts/ui/ui-summary.json
+```
+
+#### CI Upload Hints (English)
+- Upload `artifacts/*/summary.json` + `formal/summary.json` for PR aggregation
+- Keep paths stable; prefer short relative paths in PR comments
+- Recommended names (CI artifacts): `codex-json-artifacts`, `codex-openapi` (when present)
+
+#### Minimal YAML (example)
+```yaml
+name: PR Verify
+on: [pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run codex:quickstart
+      - uses: actions/upload-artifact@v4
+        with:
+          name: codex-json-artifacts
+          path: artifacts/**/result-*.json
+```
+
+---
+
+## 日本語（ミニチートシート）
+
+### フェーズ最小コマンド
+```bash
+# 1) Intent
+ae-framework intent --analyze --sources=requirements.md --format json --output artifacts/intent/summary.json
+
+# 2) 自然言語要件
+ae-framework natural-language --structure --sources=raw.md --format json --output artifacts/nl/requirements.json
+
+# 4) 検証
+ae-framework quality policy --env development && ae-framework quality validate
+
+# 6) UI/UX
+ae-framework ui-scaffold --components
+```
+
+### 成果物受け渡し（例）
+- Intent: `artifacts/intent/summary.json`
+- NL: `artifacts/nl/requirements.json`
+- Stories: `artifacts/stories/summary.json`
+- Validation: `artifacts/validation/traceability.json`
+- Modeling: `artifacts/modeling/domain.json`
+- UI: `artifacts/ui/ui-summary.json`（E2E トレースは `apps/web/__e2e__/`）
+
+### CI アップロード（例）
+```yaml
+name: PR Verify
+on: [pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run codex:quickstart
+      - uses: actions/upload-artifact@v4
+        with:
+          name: codex-json-artifacts
+          path: artifacts/**/result-*.json
+```
+
+### 連鎖例（ミニ）
+1) Intent → `artifacts/intent/summary.json`
+2) 自然言語要件 → `artifacts/nl/requirements.json`
+3) Stories → `artifacts/stories/summary.json`
+4) Validation → `artifacts/validation/traceability.json`
+5) Modeling → `artifacts/modeling/domain.json`
+6) UI/UX → `artifacts/ui/ui-summary.json` + E2E トレース
 ```
 
 ---

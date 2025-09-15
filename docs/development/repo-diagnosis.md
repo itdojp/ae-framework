@@ -1,5 +1,7 @@
 # Repository Diagnosis Report
 
+> 🌍 Language / 言語: English | 日本語
+
 ## Environment Detection
 - **Node.js**: v20.19.4 ✅
 - **Package Manager**: npm (package-lock.json detected)

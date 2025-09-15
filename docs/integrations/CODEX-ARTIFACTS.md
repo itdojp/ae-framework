@@ -1,5 +1,21 @@
 # CodeX Artifacts and JSON Formats
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+CodeX アダプターで各フェーズを実行したときに生成される、機械可読な成果物の仕様をまとめています。
+
+- フェーズごとの結果: `artifacts/codex/result-<phase>.json`（共通 `TaskResponse` 形）
+- UI サマリ: `artifacts/codex/ui-summary.json`
+- Formal 関連: `formal.tla`, `openapi.yaml`, `model-check.json`
+- 契約/E2E テンプレート: `tests/api/generated/` と `openapi-contract-tests.json`
+- CI 収集: PR Verify が主要成果物をアーティファクトとしてアップロード
+
+以下の英語セクションに JSON 形や例が詳述されています。
+
 This document describes the machine-readable artifacts produced when running ae-framework phases via the CodeX adapter.
 
 ## Per-phase result files

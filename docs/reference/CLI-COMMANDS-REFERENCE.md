@@ -122,6 +122,28 @@ ae-framework sbom validate sbom.json --verbose
 ae-framework sbom compare base.json head.json --verbose
 ```
 
+---
+
+## 日本語
+
+**ae-framework の 6 フェーズ開発ワークフローを操作する CLI の全コマンドリファレンス**
+
+### 基本構文
+`ae-framework <command> [options] [flags]`
+
+### 共通オプション（抜粋）
+`--help/-h`, `--version/-v`, `--config <path>`, `--verbose`, `--quiet`, `--format <json|yaml|table|markdown>`, `--output <file>`
+
+### フェーズ別コマンド（要点）
+- Phase 1: `intent` — 要件/意図分析（`--analyze`, `--validate`, `--sources`）
+- Phase 2: `natural-language` — NL 要件の構造化/検証（`--extract-entities`, `--resolve-ambiguity` など）
+- Phase 2.1: `cegis` — 自動修復（`fix`, `analyze`, `generate-candidates`）
+- Phase 2.2: `conformance` — ランタイム適合（`verify`, `rules`, `config`, `metrics`, `status`）
+- Phase 2.3: `integration` — 統合/E2E（`discover`, `run`, `list`, `generate`, `reports`）
+- 品質: `quality` / 依存・セキュリティ: `sbom`, `security` / レジリエンス: `circuit-breaker`, `resilience`
+
+各コマンドの詳細なオプションや出力例は、英語セクションの該当章と同順で参照してください。
+
 Notes:
 - Dependency graph extraction prefers lockfiles. Without lockfiles, component listing still works but dependency graph may be empty.
 

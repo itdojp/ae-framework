@@ -1,5 +1,20 @@
 # Code Review Process Guidelines
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+このドキュメントは AE Framework におけるコードレビューの方針と、提案の検証・判断・実装プロセスを整理したものです。ケーススタディ（コンソール出力の改行一貫性）を通じて、提案の受容/却下の基準と記録方法を示します。
+
+- 技術的正確性 / 文脈適合性 / 性能影響の観点で検証
+- 決定理由を短く記録（テンプレート付き）
+- 一貫性重視の実装ガイド（改行・エラー/成功メッセージ）
+- 自動化ツールの活用とレビュー応答プロトコル
+
+詳細は以下の英語セクションに続きます。
+
 ## Overview
 
 This document outlines the comprehensive code review process implemented in the AE Framework project, demonstrating proper validation and handling of automated code review feedback.

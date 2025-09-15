@@ -1,5 +1,13 @@
 # Business Glossary
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+ドメイン用語集です。Inventory/Reservation/Stock/Order の定義と、避けるべき表現の指針を示します。
+
 ## Terms
 
 ### Inventory

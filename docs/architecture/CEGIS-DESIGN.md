@@ -1,5 +1,46 @@
 # CEGIS (Counterexample-Guided Inductive Synthesis) Design Document
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+CEGIS は反例誘導帰納合成により、仕様逸脱を検出した際の自動修復（セルフリペア）を実現します。設計の要点:
+- 反例に基づく学習とテンプレート駆動の修復計画
+- 形式検証（TLA+/Alloy）と実行時モニタの橋渡し
+- ランタイム適合性（Phase 2.2）との連携による自動回復フロー
+
+詳細は下の英語セクションのアーキテクチャ/コンポーネント図を参照してください。
+
+## 日本語（詳細）
+
+### 1. 概要
+CEGIS（Counterexample-Guided Inductive Synthesis）は、検証や実行時の反例から修復知識を獲得し、コード/構成を自動修復する設計です。
+
+### 1.1 目的
+- 自動修復: 仕様逸脱時に自己修復
+- 適応生成: 反例に基づくコード/設定の漸進的洗練
+- 継続学習: 反例データベースを用いた知識強化
+- フォーマル連携: 仕様検査とランタイムの橋渡し
+
+### 2. コンポーネント
+- Synthesizer: コード生成/テンプレ選択/修復計画
+- Verifier: 形式検査/ランタイム監視/不変量検証
+- Learner: 反例パターン拡張/規則推論/ヒューリスティク更新
+- Counterexample DB / Knowledge Base / Repair Executor
+
+### 2.1 処理フロー（例）
+1) 逸脱検出（verify/ランタイム）→ 反例保存
+2) 反例から修復候補を合成（テンプレ+文脈）
+3) 検証（TLA+/Alloy or runtime stubs）で安全性確認
+4) 候補を適用（dry-run→実適用）し再検証
+
+### 2.2 AE-Framework への組込み
+- Formal/Runtime の双方から反例導入
+- OpenAPI コード生成で runtime contracts を注入し、修復評価の足場を用意
+- PR サマリへ反例→修復の要約を出力、ゲートはラベルで opt-in
+
 ## 1. Overview
 
 This document outlines the design for implementing CEGIS (Counterexample-Guided Inductive Synthesis) in the AE-Framework. CEGIS enables counterexample-driven self-repair, providing automated system recovery and adaptation capabilities for Phase 7-8 implementation.

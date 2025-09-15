@@ -1,6 +1,12 @@
-# Security Policy
+# Security Policy / セキュリティポリシー
 
-## Supported Versions
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## English
+
+### Supported Versions
 
 Currently supported versions for security updates:
 
@@ -9,91 +15,77 @@ Currently supported versions for security updates:
 | 1.x.x   | ✅ Yes             |
 | < 1.0   | ❌ No              |
 
-## Reporting a Vulnerability
+### Reporting a Vulnerability
 
 We take security vulnerabilities seriously. If you discover a security issue, please follow these steps:
 
-### 1. Do NOT create a public GitHub issue
+1) Do NOT create a public GitHub issue
+- Security vulnerabilities should be reported privately to avoid exposing the issue before a fix is available.
 
-Security vulnerabilities should be reported privately to avoid exposing the issue before a fix is available.
+2) Contact us directly
+- Email: security@ae-framework.dev (preferred)
+- GitHub Security Advisory: Use GitHub's private vulnerability reporting feature
 
-### 2. Contact us directly
-
-- **Email**: security@ae-framework.dev (preferred)
-- **GitHub Security Advisory**: Use GitHub's private vulnerability reporting feature
-
-### 3. Include detailed information
-
-Please provide:
+3) Include detailed information
 - Description of the vulnerability
 - Steps to reproduce the issue
 - Potential impact assessment
 - Suggested fix (if you have one)
 - Your contact information
 
-### 4. Response timeline
-
-- **Initial response**: Within 24 hours
-- **Assessment**: Within 72 hours
-- **Fix timeline**: Depends on severity
+4) Response timeline
+- Initial response: Within 24 hours
+- Assessment: Within 72 hours
+- Fix timeline: Depends on severity
   - Critical: 1-7 days
   - High: 1-14 days
   - Medium: 1-30 days
   - Low: Next scheduled release
 
-## Security Measures
+### Security Measures
 
-### Automated Security Scanning
+Automated Security Scanning
+- Dependency scanning: `npm audit` runs on every CI build
+- Secret detection: Gitleaks scans for exposed credentials
+- Code analysis: CodeQL security analysis (when available)
+- Container scanning: Docker images scanned for vulnerabilities
 
-- **Dependency scanning**: `npm audit` runs on every CI build
-- **Secret detection**: Gitleaks scans for exposed credentials
-- **Code analysis**: CodeQL security analysis (when available)
-- **Container scanning**: Docker images scanned for vulnerabilities
-
-### Development Practices
-
+Development Practices
 - All dependencies are regularly updated
 - Security linting rules are enforced
 - Code review required for all changes
 - Principle of least privilege applied
 - Input validation and sanitization implemented
 
-### Infrastructure Security
-
+Infrastructure Security
 - All communications use HTTPS/TLS
 - Environment variables for sensitive configuration
 - No hardcoded credentials in source code
 - Regular security audits and penetration testing
 
-## Security Architecture
+### Security Architecture
 
-### Authentication & Authorization
-
+Authentication & Authorization
 - Token-based authentication
 - Role-based access control (RBAC)
 - Session management with secure defaults
 - API rate limiting implemented
 
-### Data Protection
-
+Data Protection
 - Encryption at rest and in transit
 - PII data handling compliance
 - Secure backup procedures
 - Data retention policies enforced
 
-### Monitoring & Logging
-
+Monitoring & Logging
 - Security event logging
 - Anomaly detection
 - Incident response procedures
 - Regular security metrics review
 
-## Vulnerability Disclosure
+### Vulnerability Disclosure
 
-### Responsible Disclosure
-
-We follow responsible disclosure practices:
-
+Responsible Disclosure
 1. Report received and acknowledged
 2. Vulnerability confirmed and assessed
 3. Fix developed and tested
@@ -101,30 +93,26 @@ We follow responsible disclosure practices:
 5. CVE assigned (if applicable)
 6. Recognition provided to reporter
 
-### Bug Bounty
+Bug Bounty
+- We currently do not have a formal bug bounty program, but we recognize and appreciate security researchers who help improve our security posture.
 
-We currently do not have a formal bug bounty program, but we recognize and appreciate security researchers who help improve our security posture.
+### Security Tools
 
-## Security Tools
-
-### Required Tools
-
+Required Tools
 - `npm audit` - Dependency vulnerability scanning
 - `gitleaks` - Secret detection
 - ESLint security rules
 - GitHub Security Advisories
 
-### Recommended Tools
-
+Recommended Tools
 - CodeQL - Static analysis security testing
 - Helmet.js - Security headers
 - express-rate-limit - API rate limiting
 - CORS - Cross-origin resource sharing
 
-## Security Checklist
+### Security Checklist
 
-### For Developers
-
+For Developers
 - [ ] Run `npm run security:scan` before committing
 - [ ] Never commit secrets or credentials
 - [ ] Use environment variables for configuration
@@ -132,8 +120,7 @@ We currently do not have a formal bug bounty program, but we recognize and appre
 - [ ] Follow secure coding guidelines
 - [ ] Keep dependencies updated
 
-### For Deployments
-
+For Deployments
 - [ ] All security tools passing
 - [ ] Environment variables configured
 - [ ] HTTPS/TLS properly configured
@@ -141,58 +128,221 @@ We currently do not have a formal bug bounty program, but we recognize and appre
 - [ ] Monitoring and logging enabled
 - [ ] Backup and recovery tested
 
-## Incident Response
+### Incident Response
 
-### Classification
+Classification
+- Critical: Immediate threat to data confidentiality, integrity, or availability
+- High: Significant security impact requiring urgent attention
+- Medium: Important security issue requiring timely resolution
+- Low: Minor security improvement or hardening opportunity
 
-- **Critical**: Immediate threat to data confidentiality, integrity, or availability
-- **High**: Significant security impact requiring urgent attention
-- **Medium**: Important security issue requiring timely resolution
-- **Low**: Minor security improvement or hardening opportunity
-
-### Response Team
-
+Response Team
 - Security Lead: [security@ae-framework.dev]
 - Development Lead: [dev@ae-framework.dev]
 - Infrastructure Lead: [ops@ae-framework.dev]
 
-### Communication
-
+Communication
 - Internal: Slack #security-incidents
 - External: Security advisory via GitHub
 - Users: Release notes and documentation updates
 
-## Compliance
+### Compliance
 
-### Standards Followed
-
+Standards Followed
 - OWASP Top 10 Web Application Security Risks
 - NIST Cybersecurity Framework
 - Common Vulnerability Scoring System (CVSS)
 - Software Package Data Exchange (SPDX)
 
-### Regular Assessments
-
+Regular Assessments
 - Quarterly security reviews
 - Annual penetration testing
 - Continuous dependency monitoring
 - Regular security training for team
 
-## Resources
+### Resources
 
-### Security Documentation
+Security Documentation
+- OWASP Secure Coding Practices
+- Node.js Security Best Practices
+- GitHub Security Best Practices
 
-- [OWASP Secure Coding Practices](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/)
-- [Node.js Security Best Practices](https://nodejs.org/en/docs/guides/security/)
-- [GitHub Security Best Practices](https://docs.github.com/en/code-security)
-
-### Contact Information
-
-- **Security Team**: security@ae-framework.dev
-- **General Contact**: contact@ae-framework.dev
-- **GitHub Security**: Use private vulnerability reporting
+Contact Information
+- Security Team: security@ae-framework.dev
+- General Contact: contact@ae-framework.dev
+- GitHub Security: Use private vulnerability reporting
 
 ---
 
-**Last Updated**: January 2025
-**Next Review**: July 2025
+## 日本語
+
+### 対応バージョン
+
+現在、セキュリティ更新の対象としてサポートしているバージョン：
+
+| バージョン | サポート状況 |
+| ---------- | ------------- |
+| 1.x.x      | ✅ 対応       |
+| < 1.0      | ❌ 非対応     |
+
+### 脆弱性の報告
+
+セキュリティ脆弱性は重大と捉えています。発見した場合は以下の手順に従ってください。
+
+1) 公開の GitHub Issue を作成しないでください
+- 修正が提供される前に情報が露出するのを避けるため、非公開で報告してください。
+
+2) 直接ご連絡ください
+- メール: security@ae-framework.dev（推奨）
+- GitHub Security Advisory: GitHub の非公開脆弱性報告機能をご利用ください
+
+3) 詳細情報を添えてください
+- 脆弱性の説明
+- 再現手順
+- 影響の評価
+- 可能であれば修正案
+- 連絡先情報
+
+4) 目安となる対応時間
+- 初期応答: 24時間以内
+- 評価: 72時間以内
+- 修正の提供: 深刻度に依存
+  - クリティカル: 1〜7日
+  - 高: 1〜14日
+  - 中: 1〜30日
+  - 低: 次回の定期リリース
+
+### セキュリティ対策
+
+自動セキュリティスキャン
+- 依存関係スキャン: `npm audit` を CI の各ビルドで実行
+- シークレット検出: Gitleaks による漏えい検出
+- コード解析: CodeQL による静的解析（利用可能な場合）
+- コンテナスキャン: Docker イメージの脆弱性検査
+
+開発プラクティス
+- 依存関係は定期的に更新
+- セキュリティに関する Lint ルールを適用
+- 全ての変更はコードレビュー必須
+- 最小権限の原則を適用
+- 入力検証とサニタイズを実装
+
+インフラセキュリティ
+- すべての通信は HTTPS/TLS を使用
+- 機密設定は環境変数で管理
+- ソースコードに認証情報をハードコーディングしない
+- 定期的なセキュリティ監査とペネトレーションテストを実施
+
+### セキュリティアーキテクチャ
+
+認証・認可
+- トークンベース認証
+- RBAC（ロールベースアクセス制御）
+- セキュアなデフォルトのセッション管理
+- API レート制限の実装
+
+データ保護
+- 透過的・保存時の暗号化
+- 個人情報（PII）に関するコンプライアンス
+- セキュアなバックアップ
+- データ保持ポリシーの順守
+
+監視・ログ
+- セキュリティイベントのロギング
+- 異常検知
+- インシデント対応手順
+- 定期的なセキュリティ指標のレビュー
+
+### 脆弱性開示
+
+責任ある開示
+1. 報告を受領し、受付を通知
+2. 脆弱性の確認と評価
+3. 修正を開発・テスト
+4. セキュリティアドバイザリを公開
+5. 必要に応じて CVE を割り当て
+6. 報告者への謝辞を掲載
+
+バグバウンティ
+- 公式なバグバウンティプログラムは現在ありませんが、セキュリティ向上へのご協力に感謝します。
+
+### セキュリティツール
+
+必須ツール
+- `npm audit` - 依存関係の脆弱性スキャン
+- `gitleaks` - シークレット検出
+- ESLint のセキュリティルール
+- GitHub Security Advisories
+
+推奨ツール
+- CodeQL - 静的解析セキュリティテスト
+- Helmet.js - セキュリティヘッダー
+- express-rate-limit - API レート制限
+- CORS - クロスオリジンリソース共有
+
+### セキュリティチェックリスト
+
+開発者向け
+- [ ] コミット前に `npm run security:scan` を実行
+- [ ] 認証情報・シークレットをコミットしない
+- [ ] 設定は環境変数で管理
+- [ ] 全入力を検証し、出力をサニタイズ
+- [ ] 安全なコーディングガイドラインに従う
+- [ ] 依存関係を最新に保つ
+
+デプロイ向け
+- [ ] すべてのセキュリティツールがパスしている
+- [ ] 環境変数が適切に設定されている
+- [ ] HTTPS/TLS が正しく構成されている
+- [ ] セキュリティヘッダーを実装
+- [ ] 監視とロギングを有効化
+- [ ] バックアップとリカバリを検証
+
+### インシデント対応
+
+分類
+- クリティカル: 機密性・完全性・可用性への即時の脅威
+- 高: 迅速な対応を要する重大な影響
+- 中: 速やかな解決が望ましい重要課題
+- 低: 小規模な改善やハードニングの機会
+
+対応チーム
+- Security Lead: [security@ae-framework.dev]
+- Development Lead: [dev@ae-framework.dev]
+- Infrastructure Lead: [ops@ae-framework.dev]
+
+コミュニケーション
+- 内部: Slack #security-incidents
+- 外部: GitHub を通じたセキュリティアドバイザリ
+- ユーザー: リリースノートやドキュメント更新
+
+### コンプライアンス
+
+準拠基準
+- OWASP Top 10 Web Application Security Risks
+- NIST Cybersecurity Framework
+- CVSS（共通脆弱性評価システム）
+- SPDX（ソフトウェア部品表）
+
+定期評価
+- 四半期ごとのセキュリティレビュー
+- 年次ペネトレーションテスト
+- 継続的な依存関係モニタリング
+- チームへの定期的なセキュリティトレーニング
+
+### 参考情報
+
+セキュリティドキュメント
+- OWASP Secure Coding Practices
+- Node.js Security Best Practices
+- GitHub Security Best Practices
+
+連絡先
+- セキュリティチーム: security@ae-framework.dev
+- 一般窓口: contact@ae-framework.dev
+- GitHub セキュリティ: 非公開脆弱性報告機能をご利用ください
+
+---
+
+Last Updated / 最終更新: January 2025
+Next Review / 次回見直し: July 2025

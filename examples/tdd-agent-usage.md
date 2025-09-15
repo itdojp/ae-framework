@@ -1,5 +1,7 @@
 # TDD Agent/Subagent Usage Examples
 
+> 🌍 Language / 言語: English | 日本語
+
 ## 🤖 MCPサーバー vs サブエージェント vs CLI の比較
 
 | 特徴 | MCP サーバー | Claude Code サブエージェント | CLI Tool |

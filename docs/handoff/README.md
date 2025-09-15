@@ -1,5 +1,19 @@
 # Handoff Notes (CLI, Type Safety, CI)
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+本ドキュメントは、このイテレーションで完了した作業内容の要約、検証手順、再開に向けた具体的なステップをまとめています。次のメンテナーがスムーズに引き継げるようにすることを目的としています。
+
+- スコープ: CLI の unknown-first エラーハンドリング、共通ユーティリティ、型安全性の強化、軽量テスト、CI のカバレッジコメント改善など
+- 検証方法（ローカル/CI）と既知の制約
+- 推奨される次のアクション、キーハンドブックコマンド集
+
+詳細は以下の英語セクションをご覧ください。
+
 This document summarizes the work completed in this iteration and provides concrete steps to verify, resume, and extend the changes. It is intended for the next maintainer to pick up quickly after Codex is paused.
 
 ## Scope Completed

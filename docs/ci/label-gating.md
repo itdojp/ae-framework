@@ -1,5 +1,17 @@
 # CI Label Gating Policy
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+PR ラベルでゲートを段階的に強化するための方針です（既定は非ブロッキング）。
+- `enforce-artifacts`, `enforce-testing`, `enforce-coverage`, `coverage:<pct>`, `trace:<id>`, `pr-summary:detailed`
+- 各ワークフローがラベルを読み取り、`continue-on-error` 等を切り替え
+
+詳細な動作は以下の英語セクションの Workflows/Automation を参照してください。
+
 Purpose
 - Enable gradual tightening of CI by toggling gates per PR using labels. Default remains non‑blocking to avoid disruption.
 

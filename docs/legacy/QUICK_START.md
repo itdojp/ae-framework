@@ -1,5 +1,7 @@
 # ae-framework Quick Start Guide
 
+> 🌍 Language / 言語: English | 日本語
+
 ## 📦 インストール
 
 ```bash

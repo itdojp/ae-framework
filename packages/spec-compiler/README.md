@@ -1,5 +1,7 @@
 # @ae-framework/spec-compiler
 
+> 🌍 Language / 言語: English | 日本語
+
 > AE-Spec to AE-IR compiler for single source of truth (SSOT)
 
 ## Overview
@@ -255,3 +257,55 @@ The linter enforces these quality rules:
 ## License
 
 MIT License - see LICENSE file for details.
+
+---
+
+## 日本語（概要）
+
+`@ae-framework/spec-compiler` は、自然言語で記述した AE-Spec (Markdown) を構造化された AE-IR (AI‑Enhanced Intermediate Representation) JSON に変換するコンパイラです。これにより、フレームワーク全体の仕様を単一の真実の源泉（SSOT）として一元管理できます。
+
+### 主な機能
+- 📝 Markdown → JSON 変換（AE-Spec → AE-IR）
+- 🔍 品質Lint（構造/整合/完全性の検査）
+- 🏗️ SSOT 連携（各フェーズの共通入力）
+- 🛠️ CLI ツール（compile / lint / validate）
+- 🧪 型安全（TypeScript フル対応）
+
+### インストール
+```bash
+npm install @ae-framework/spec-compiler
+# もしくはグローバル（任意）
+npm install -g @ae-framework/spec-compiler
+```
+
+### 使い方（CLI）
+- コンパイル（Markdown → AE-IR JSON）
+```bash
+ae-spec compile -i spec/my-spec.md -o .ae/ae-ir.json
+```
+- Lint（AE-IR の品質検査）
+```bash
+ae-spec lint -i .ae/ae-ir.json --max-errors 0 --max-warnings 5
+```
+- 検証（compile + lint のフル実行）
+```bash
+ae-spec validate -i spec/my-spec.md --max-errors 0 --max-warnings 10
+```
+
+### API（抜粋）
+```ts
+import { AESpecCompiler } from '@ae-framework/spec-compiler'
+
+const compiler = new AESpecCompiler()
+// Markdown から AE-IR へ
+const ir = await compiler.compile({ inputPath: 'spec/my-spec.md', outputPath: '.ae/ae-ir.json', validate: true })
+// Lint 実行
+const lint = await compiler.lint(ir)
+```
+
+### 運用メモ
+- AE-IR JSON は他フェーズ（テスト生成/コード生成/検証）の共通入力として利用します
+- CI では `validate` を実行し、しきい値超過時は失敗させます
+
+### ライセンス
+MIT（詳細は LICENSE を参照）

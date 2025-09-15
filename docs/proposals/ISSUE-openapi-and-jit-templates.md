@@ -1,5 +1,13 @@
 # Issue: Standardize Spec Tooling (OpenAPI) and JIT Domain Assets
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+OpenAPI 等の高頻度テンプレートはリポジトリに事前配置し、ドメイン固有の資産は JIT（AI 支援）で生成する方針。spec-as-input を中心に、CI 連携・アーティファクト配置・受け入れ基準を定義します。
+
 Context
 - OpenAPI is a standard format to describe RESTful APIs. In this repo, it serves as an input for code generation (routes/models/server), runtime contract checks (contracts-exec), and downstream contract/E2E test scaffolding.
 - Question raised: Do we need to pre-provide tools/templates (like OpenAPI) per domain/type, or can AI/JIT handle it? What else should be prepared?
@@ -59,4 +67,3 @@ Follow-ups (optional small PRs)
 
 Labels
 - `area:specs`, `area:ci`, `type:enhancement`, `priority:normal`
-

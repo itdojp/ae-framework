@@ -1,5 +1,18 @@
 # Verify Labels: Optional Enforcement Toggles
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+このリポジトリは、PR ラベルでオプトインの強制モードを切り替え可能です（既定はレポートのみ）。
+
+- `enforce-contracts`: 実行時契約の失敗で PR を失敗（CI では `CONTRACTS_ENFORCE=1` 相当）
+- `enforce-formal`: TLC/Alloy の失敗で PR を失敗（`artifacts/codex/model-check.json` を参照）
+
+必要な PR だけ厳格化し、不要ならラベルを外すことでレポートのみの動作に戻せます。
+
 This repository supports opt‑in enforcement via PR labels. By default, all checks are report‑only.
 
 - `enforce-contracts`
@@ -13,4 +26,3 @@ This repository supports opt‑in enforcement via PR labels. By default, all che
 Notes
 - Use these labels only on PRs where you want stricter gating; otherwise, the pipeline remains report‑only for fast feedback.
 - You can remove the labels to return to report‑only behavior on subsequent pushes.
-

@@ -1,5 +1,69 @@
 # Phase 2.2: Runtime Conformance Verification System
 
+> 🌍 Language / 言語: 日本語 | English
+
+---
+
+## English (Overview)
+
+Phase 2.2 provides a real-time system to verify that running applications conform to defined specifications and quality bars. It integrates with Phase 2.1 (CEGIS auto-fix) to enable an automated remediation flow when violations are detected.
+
+Highlights
+- Rule-based verification engine (sampling, caching, concurrency)
+- Real-time event-driven monitoring with multi-monitor integration
+- Metrics collection and comprehensive reports
+- Full CLI integration for verification/rules/config/metrics/status
+
+See the Japanese sections for the full architecture and CLI details.
+
+## English (Detailed)
+
+### Goals
+- Continuous validation of runtime behavior against specifications (pre/post/invariants)
+- Early violation detection → optional auto-remediation via Phase 2.1 (CEGIS)
+- Evidence collection for quality gates and PR summaries
+
+### Key Components
+- Verification Engine: configurable rules (sampling, cache, concurrency)
+- Monitors: data validation, API contract, custom business rules
+- Metrics & Reports: a11y/perf/test coverage linkage, JSON/Markdown outputs
+
+### CLI (high level)
+```bash
+ae-framework conformance verify        # run runtime checks
+ae-framework conformance rules         # list/manage rules
+ae-framework conformance config        # show/edit configuration
+ae-framework conformance metrics       # export metrics
+ae-framework conformance status        # current status
+```
+
+### Artifacts
+- `artifacts/conformance/summary.json` — results and counters
+- `artifacts/conformance/violations.json` — violations (with rule ids)
+- PR summary integration when enabled
+
+### Minimal YAML (CI example)
+```yaml
+name: Conformance Verify
+on: [pull_request]
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: pnpm install --frozen-lockfile
+      - run: ae-framework conformance verify --rules rules.json --collect-metrics
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: conformance, path: artifacts/conformance/** }
+```
+
+### Integration
+- With Phase 2.1 (CEGIS): violations → counterexamples → repair candidates
+- With Phase 6: surface UI-related metrics and guard budgets
+
 > リアルタイムでアプリケーションの適合性を監視・検証するシステム
 
 ## 概要

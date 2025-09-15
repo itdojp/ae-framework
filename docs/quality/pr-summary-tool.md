@@ -1,5 +1,13 @@
 # PR Summary Tool I/O Spec (#407)
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+正規化アーティファクトを読み取り、PR 向けの単一サマリブロックを出力する集約ツールの I/O 仕様です。入力（adapters/formal/properties）、出力（Markdown/JSON サイドカー）、CLI の概略、検証ノートを記載。
+
 Purpose
 - Define a stable contract for a PR summary aggregator that reads normalized artifacts and emits a single summary block for PRs.
 

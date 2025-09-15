@@ -1,5 +1,13 @@
 # Threat Model
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+システムの脅威モデル（STRIDE）と対策のサマリです。認証/改ざん/否認/情報漏えい/DoS/権限昇格について、脅威と緩和策を整理しています。
+
 ## System Overview
 The inventory reservation system manages stock allocation for orders.
 

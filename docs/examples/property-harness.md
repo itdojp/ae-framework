@@ -1,5 +1,13 @@
 # Property Harness Usage (scripts/testing/property-harness.mjs)
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+プロパティハーネスの使い方。`npm run test:property`（または `TRACE_ID=...` で特定のトレースに集中）を実行。サマリは `artifacts/properties/summary.json` に出力されます。
+
 Run
 ```bash
 npm run test:property

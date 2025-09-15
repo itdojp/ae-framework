@@ -1,5 +1,13 @@
 # AE-IR: Optional DDD Fields (Backward-Compatible)
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+AE-IR に後方互換な DDD フィールド（境界づけられたコンテキスト、集約、ドメインイベント、ユビキタス用語）をオプションとして追加する提案です。形式仕様/BDD リント/契約・リプレイと連携します。
+
 Summary
 - Extend AE-IR with optional DDD fields to strengthen ubiquitous language and aggregate invariants while keeping the core thin and adapters external.
 

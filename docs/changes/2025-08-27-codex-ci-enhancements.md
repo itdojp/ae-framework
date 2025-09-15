@@ -1,5 +1,7 @@
 # CodeX CI/Docs Enhancements Summary (2025-08-27)
 
+> 🌍 Language / 言語: English | 日本語
+
 This change summarizes and documents the recent CodeX integration improvements:
 
 - PR comments now summarize CodeX artifacts:

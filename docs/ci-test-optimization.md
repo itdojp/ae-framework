@@ -1,5 +1,13 @@
 # CI/Test Optimization Guide
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+統合 CI/テスト最適化ツールの使い方をまとめたガイドです。安定性向上、フレーク検出、性能最適化、包括的レポートを組み合わせて CI を高速かつ堅牢にします。クイックスタート/ターゲット最適化/設定例を以下に掲載しています。
+
 This document provides comprehensive guidance for optimizing CI/CD pipelines and test execution using the Integrated CI/Test Optimizer.
 
 ## Overview

@@ -1,5 +1,13 @@
 # ae-framework 全体のエージェント/MCPサーバー化提案
 
+> 🌍 Language / 言語: 日本語 | English
+
+---
+
+## English (Overview)
+
+Proposal to implement all six phases as MCP servers/sub‑agents for AI‑native development workflows, enabling automation, intelligent validation, knowledge sharing, and real‑time feedback. See Japanese sections for detailed API sketches and design.
+
 ## 🎯 エグゼクティブサマリー
 
 ae-frameworkの6フェーズすべてをMCPサーバー/サブエージェントとして実装することで、**AIネイティブな開発プロセス**を実現し、開発効率と品質を劇的に向上させることが可能です。

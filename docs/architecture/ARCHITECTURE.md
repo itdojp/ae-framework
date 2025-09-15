@@ -1,5 +1,15 @@
 # ae-framework アーキテクチャ図
 
+> 🌍 Language / 言語: 日本語 | English
+
+---
+
+## English (Overview)
+
+High-level architecture of ae-framework, showing components and document flows across phases. The system integrates with Claude Code and MCP servers, generates formal specs (TLA+/OpenAPI), tests, and UI, and wires verification/telemetry.
+
+See the Japanese sections and diagrams below for full details.
+
 ae-frameworkの全体アーキテクチャ、コンポーネント関係、入出力ドキュメントの流れを示します。
 
 ## 全体アーキテクチャ

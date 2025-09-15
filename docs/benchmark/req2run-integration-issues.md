@@ -1,6 +1,8 @@
 # Proposed Issues to Address in the req2run-benchmark Repository
 # req2run-benchmark リポジトリ側で処理すべき問題の提案
 
+> 🌍 Language / 言語: English | 日本語
+
 ## 概要
 AE Framework の EPIC Phase 1 統合作業中に発見された、req2run-benchmark リポジトリ側で対応が必要な問題について提案します。
 

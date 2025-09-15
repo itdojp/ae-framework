@@ -1,5 +1,7 @@
 # Phase 3.1 API Reference Guide
 
+> 🌍 Language / 言語: English | 日本語
+
 ## Overview
 
 This document provides a comprehensive API reference for Phase 3.1 Evidence-based Validation System components. All APIs are designed following TypeScript best practices and provide comprehensive type safety.

@@ -1,5 +1,20 @@
 ## Runtime Contracts from Formal Specs (Week 3)
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+形式仕様から実行時契約（Zod スキーマ、事前/事後条件）やステートマシンの雛形を生成し、任意で CI のゲートに組み込む手順を説明します。
+
+- `CodeGenerationAgent.generateContractsSkeleton(formalSpec)` で契約を生成し、`src/contracts/` に出力
+- OpenAPI 生成時に `includeContracts: true` で契約を注入
+- CI での任意ゲート: `CONTRACTS_ENFORCE=1` または PR ラベル `enforce-contracts`
+- サンプル入力: `CONTRACTS_SAMPLE_INPUT` または `CONTRACTS_OPENAPI_PATH` を指定
+
+詳細は下の英語セクションのコード例・オプション一覧を参照してください。
+
 This document outlines an opt-in path to generate runtime contracts (e.g., Zod schemas, pre/post conditions) and state-machine shells from formal specs.
 
 ### Overview

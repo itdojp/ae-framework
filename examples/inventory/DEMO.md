@@ -1,5 +1,7 @@
 # 🎬 Inventory Management Demo Walkthrough
 
+> 🌍 Language / 言語: English | 日本語
+
 > **Phase 3→5→6 エンドツーエンド・デモ完全ガイド**
 
 ## 🚀 Quick Start (5分で体験)

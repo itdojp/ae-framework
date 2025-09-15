@@ -1,5 +1,7 @@
 # Counterexample → GWT Format (Spec & Examples)
 
+> 🌍 Language / 言語: English | 日本語
+
 Purpose
 - Provide both short GWT (human) and machine-readable JSON (for `ae fix`).
 - Aligns with `formal-summary.schema.json` (#407).

@@ -1,5 +1,7 @@
 # Integrated Security Audit System
 
+> 🌍 Language / 言語: English | 日本語
+
 The Integrated Security Audit System provides comprehensive security analysis and vulnerability assessment for the ae-framework project. This system combines multiple security tools and analysis methods to ensure robust security practices across the entire codebase.
 
 ## Overview
@@ -58,6 +60,40 @@ Validates:
 - OWASP compliance guidelines
 - Industry security standards
 - Configuration security practices
+
+### Sample Output (excerpt)
+```
+Dependency Vulnerabilities: 0 critical, 1 high, 2 moderate
+Secrets: 0 findings
+Compliance: OWASP checks passed (minor warnings: 1)
+Static Analysis: 0 blocking issues
+```
+
+---
+
+## 日本語（詳細）
+
+### システム概要
+統合セキュリティ監査（`scripts/integrated-security-audit.mjs`）は、依存関係脆弱性・シークレット漏えい・コンプライアンス・静的解析を横断し、JSON/テキストで結果を集約します。
+
+### 実行
+```bash
+pnpm run security:integrated          # 標準
+pnpm run security:integrated:quick    # 重要チェックのみ
+pnpm run security:integrated:full     # 包括監査
+pnpm run security:integrated:compliance
+```
+
+### モジュール（概要）
+- 依存監査: `pnpm audit` 等で既知脆弱性/ライセンスを検査
+- シークレット検出: gitleaks + 独自パターン
+- コンプライアンス: ポリシー/OWASP/NIST 等の準拠確認
+- コード解析: セキュリティ観点の静的解析
+
+### 出力の読み方
+- 重要度（critical/high/medium/low）と影響範囲を確認
+- 修正候補（バージョン上げ/設定変更/秘匿化）を適用
+- CI ではレポートを成果物として保存し、PR ではサマリのみ表示（ノイズ低減）
 
 **Tools Used**: custom compliance engine, OPA policy validation
 

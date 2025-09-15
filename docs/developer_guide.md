@@ -1,5 +1,13 @@
 # 開発者向け入門ガイド
 
+> 🌍 Language / 言語: 日本語 | English
+
+---
+
+## English (Overview)
+
+Developer onboarding guide for ae-framework: NL → BDD → Formal → TDD → Code → Repair cycle using agents (e.g., CodeX/Claude Code). Explains the three pillars (BDD, Formal Methods, TDD), architecture flow, and core components. See Japanese sections for detailed steps and examples.
+
 ## 1. システムの目的
 ae-framework は **自然言語の要求から、曖昧さのない厳密仕様とテストを経て、正しく動作するコードを自動生成する** ことを目的としています。  
 原理は次の 3 本柱で構成されています。

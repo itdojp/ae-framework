@@ -1,5 +1,46 @@
 # Runtime Conformance Design Document
 
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## 日本語（概要）
+
+Runtime Conformance は、実行中のシステムが形式仕様に継続適合していることを確認する仕組みです。主な要素はランタイム契約、モニタリング、違反検出、証跡収集で、CEGIS による自動修復の土台になります。アーキテクチャ/統合ポイントは以下の英語セクションを参照してください。
+
+## 日本語（詳細）
+
+### 1. 概要
+Runtime Conformance は、実行時にシステム挙動が仕様（不変量・事前/事後条件・ビジネスルール）に合致しているかを継続検証する設計です。CEGIS による自動修復や適応制御の前提データ（反例・傾向）を収集します。
+
+### 1.1 目的
+- 継続的検証: 実行時の仕様適合を常時確認
+- 契約強制: pre/post・不変量・ビジネスルールをランタイムで検証
+- 逸脱検知: 早期逸脱検知と能動的修復のトリガ
+- 証跡収集: テレメトリ/トレース/メトリクスの体系的収集
+
+### 1.2 キー概念
+- ランタイム契約: 実行時に評価可能な仕様断片（Zod などで表現）
+- 適合監視: イベント/状態を継続観測し適合性を評価
+- 仕様ドリフト: 仕様と実装のズレ検出
+- 適応閾値: 文脈に応じた許容範囲の動的調整
+
+### 2. アーキテクチャ
+コンポーネント: 契約エンジン／モニター・オーケストレータ／違反検出／証跡収集／適合性アナライザ／適応コントローラ。
+```
+[Contract Engine] → pre/post, invariants
+[Monitor Orchestrator] → event stream, context tracking
+[Violation Detector] → pattern recognition, thresholds
+[Evidence Collector] → traces/metrics/context
+[Conformance Analyzer] → compliance/trend/report
+[Adaptation Controller] → thresholds/policies/strategy
+```
+
+### 2.2 AE-Framework との統合
+- AE-IR → 契約生成 → ハンドラへ注入（OpenAPI コード生成時に includeContracts）
+- verify 流れに適合性要約を取り込み、PR サマリへ反映
+- CEGIS と連携し、反例 → 修復候補生成へ橋渡し
+
 ## 1. Overview
 
 This document outlines the design for Runtime Conformance checking in the AE-Framework. Runtime Conformance ensures that executing systems continuously adhere to their formal specifications, providing the foundation for CEGIS-based self-repair and adaptive systems in Phase 7-8.

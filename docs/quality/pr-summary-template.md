@@ -1,5 +1,6 @@
 # PR Summary Templates (Digest & Detailed)
-# PR Summary Templates (Digest & Detailed)
+
+> 🌍 Language / 言語: English | 日本語
 Alerts: {{alerts}}
 
 Digest

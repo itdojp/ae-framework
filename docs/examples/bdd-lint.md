@@ -1,5 +1,7 @@
 # BDD Lint Usage (scripts/bdd/lint.mjs)
 
+> 🌍 Language / 言語: English | 日本語
+
 Run
 ```bash
 npm run bdd:lint

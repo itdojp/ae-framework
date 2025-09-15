@@ -1,5 +1,7 @@
 # Claude Code Task Tool ガイド
 
+> 🌍 Language / 言語: 日本語 | English
+
 Claude Code Task Tool は、Claude Code 環境で AI エージェントが複雑なタスクを自律的に実行できるようにする統合機能です。ae-framework では、この Task Tool を活用して開発プロセスの大幅な効率化を実現しています。
 
 ## 🎯 概要

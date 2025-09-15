@@ -1,5 +1,7 @@
 # Phase 3.1 Technical Specifications
 
+> 🌍 Language / 言語: English | 日本語
+
 ## Document Information
 - **Version**: 1.0.0
 - **Date**: 2025-08-13
