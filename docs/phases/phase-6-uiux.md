@@ -27,6 +27,40 @@ Phase 6 turns user stories and domain models into production‑ready UI/UX via a
 - Coverage: ≥ 80%
 - Web Vitals budget maintained
 
+### A11y Checklist (quick)
+- Landmarks: main/nav/footer/accessible headings present
+- Labels: form controls have programmatic labels
+- Focus: visible focus ring; no focus traps
+- Color: contrast AA (4.5:1); avoid color-only meaning
+- ARIA: use sparingly; roles/name/value correct
+- Keyboard: full flow usable with keyboard only
+
+### Performance Hints
+- Code split routes and heavy components; avoid blocking renders
+- Use `next/image` with proper sizes; lazy-load below the fold
+- Cache fetches with SWR/TanStack Query; prefer server components for data
+- Minimize re-renders: memoize lists; stable keys; avoid inline objects in props
+- Lighthouse CI budget: LCP ≤ 2.5s, TBT ≤ 200ms, CLS ≤ 0.1
+
+### Suggested Thresholds
+- Coverage ≥ 80%
+- A11y score ≥ 95%
+- Perf (Lighthouse) ≥ 75%
+
+### Operational Hints
+```bash
+# Scaffold components/state/tokens
+ae-framework ui-scaffold --components
+ae-framework ui-scaffold --state
+ae-framework ui-scaffold --tokens
+
+# Run E2E (apps/web)
+pnpm --filter @ae-framework/web exec playwright test --reporter=list
+
+# Optional: Lighthouse CI (page URL env)
+lhci autorun --upload.target=temporary-public-storage
+```
+
 > 包括的UI/UX設計・実装・品質保証フェーズ
 
 **Parent EPIC**: [#53 Phase 6 (UI/UX & Frontend Delivery) 推進ロードマップ](https://github.com/itdojp/ae-framework/issues/53)  

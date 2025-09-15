@@ -112,13 +112,45 @@ ae-framework intent --analyze --sources="requirements.md"
 
 ## English (Overview)
 
-This guide walks through a practical development workflow for using ae-framework inside Claude Code. It shows phase-by-phase interactions, example prompts, and what the tool outputs at each step (Intent → Formal → Test → Code → Verify → Operate). Key points:
+This guide walks through a practical development workflow for using ae-framework inside Claude Code. It shows phase-by-phase interactions, example prompts, and what the tool outputs at each step (Intent → Formal → Test → Code → Verify → Operate).
 
+Key points
 - Run integrated Task Tools in Claude Code, or invoke equivalent CLI commands such as `ae-framework intent --analyze`.
 - Each phase produces structured artifacts (requirements, specs, tests, code, verification reports) that feed into the next.
 - UI/UX (Phase 6) can be generated via `ui-scaffold` with quality gates and telemetry.
 
-For full details, see the Japanese sections above. The commands and JSON outputs are the same; only the surrounding explanation differs.
+Quick commands (CLI parity)
+```bash
+# Phase 1: Intent
+ae-framework intent --analyze --sources=requirements.md
+
+# Phase 2: Formal (OpenAPI/TLA+) — optional
+pnpm run verify:formal           # stubbed pipeline; see Formal Runbook
+
+# Phase 3: Tests (RED)
+ae-framework generate:tests
+
+# Phase 4: Code (GREEN)
+ae-framework generate:code
+
+# Phase 5: Verify (Quality gates)
+ae-framework verify
+
+# Phase 6: UI/UX scaffold
+ae-framework ui-scaffold --components
+ae-framework ui-scaffold --state
+```
+
+Artifacts (examples)
+- `artifacts/summary/PR_SUMMARY.md` — condensed PR report
+- `coverage/coverage-summary.json` — coverage
+- `hermetic-reports/formal/summary.json` — formal summary (if enabled)
+- `artifacts/codex/*` — when running via CodeX quickstart/adapter
+
+CI tips
+- Label-gated runs: use `run-formal` to trigger Formal Verify
+- Type coverage: baseline 65% reports; add `enforce-typecov` to gate at 70%
+- Replay/Property/BDD lint may be non-blocking by default; use labels from CONTRIBUTING
 
 ### Quick Example (English)
 ```
