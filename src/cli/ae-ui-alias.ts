@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { spawn } from 'child_process';
+import { safeExit } from '../utils/safe-exit.js';
 
 // ae-ui scaffold command - alias for ae-framework ui-scaffold
 const args = process.argv.slice(2);
@@ -15,7 +16,6 @@ if (args.length > 0 && args[0] === 'scaffold') {
   });
   
   mainCLI.on('close', (code) => {
-    const { safeExit } = await import('../utils/safe-exit.js');
     safeExit(code || 0);
   });
 } else {

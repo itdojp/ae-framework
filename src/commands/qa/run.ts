@@ -6,7 +6,7 @@ export async function qaRun(options?: { light?: boolean }) {
   const cfg = await loadConfig();
   const pm = (await detectPM()) ?? 'npm';
   const runner = await detectRunner();
-  const light = Boolean(options?.light || process.env.AE_QA_LIGHT === '1' || process.env.CI === 'true');
+  const light = Boolean(options?.light || process.env['AE_QA_LIGHT'] === '1' || process.env['CI'] === 'true');
   
   console.log(`[ae:qa] running QA with ${runner} via ${pm}${light ? ' (light mode)' : ''}`);
   
