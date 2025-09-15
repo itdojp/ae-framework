@@ -9,6 +9,7 @@ import type { join } from 'path';
 import { ConformanceVerificationEngine } from '../conformance/verification-engine.js';
 import chalk from 'chalk';
 import { toMessage } from '../utils/error-utils.js';
+import { safeExit } from '../utils/safe-exit.js';
 import type { 
   ConformanceRule, 
   ConformanceConfig, 
@@ -181,7 +182,7 @@ export class ConformanceCli {
 
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Verification failed: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -241,7 +242,7 @@ export class ConformanceCli {
 
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Rules operation failed: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -287,7 +288,7 @@ export class ConformanceCli {
 
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Config operation failed: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -338,7 +339,7 @@ export class ConformanceCli {
 
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Metrics operation failed: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -674,6 +675,6 @@ export async function executeConformanceCli(args: string[]): Promise<void> {
     await command.parseAsync(args);
   } catch (error: unknown) {
     console.error(chalk.red(`❌ CLI execution failed: ${toMessage(error)}`));
-    process.exit(1);
+    safeExit(1);
   }
 }
