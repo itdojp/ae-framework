@@ -99,7 +99,7 @@ jobs:
               tests_pct=$(pct "$scenarios" "$covered_tests")
               impl_pct=$(pct "$scenarios" "$covered_impl")
               formal_pct=$(pct "$scenarios" "$covered_formal")
-              echo "- Traceability: ${scenarios} scenarios"
+              printf "- Traceability: %s scenarios\n" "$scenarios"
               echo "  - Tests: ${covered_tests} (${tests_pct}%)"
               echo "  - Impl: ${covered_impl} (${impl_pct}%)"
               echo "  - Formal: ${covered_formal} (${formal_pct}%)"
@@ -144,18 +144,18 @@ jobs:
               scenarios=$((total-1))
               covered_tests=$(tail -n +2 "$TRACE_FILE" | cut -d, -f2 | grep -vc '^N/A$' || true)
               covered_impl=$(tail -n +2 "$TRACE_FILE" | cut -d, -f3 | grep -vc '^N/A$' || true)
-              echo "- Traceability: ${scenarios} scenarios; tests: ${covered_tests}; impl: ${covered_impl}"
+              printf "- Traceability: %s scenarios; tests: %s; impl: %s\n" "$scenarios" "$covered_tests" "$covered_impl"
             else
-              echo "- Traceability: (no matrix artifact)"
+              printf "- Traceability: (no matrix artifact)\n"
             fi
             if [ -f "$MODEL_FILE" ]; then
               ok=$(jq '[.tlc.results[] | select(.ok==true)] | length' "$MODEL_FILE" 2>/dev/null || echo 0)
               total=$(jq '(.tlc.results | length) + 0' "$MODEL_FILE" 2>/dev/null || echo 0)
               if [ "$total" -gt 0 ]; then pct=$(awk "BEGIN {printf \"%.0f\", ($ok*100)/$total}"); else pct=0; fi
-              echo "- Model Check (TLC): ${ok}/${total} (${pct}%) modules ok"
+              printf "- Model Check (TLC): %s/%s (%s%%) modules ok\n" "$ok" "$total" "$pct"
               echo "\n<details><summary>Non-OK modules (top 5)</summary>"
               jq -r '.tlc.results[] | select(.ok!=true) | "- " + .module + ( .log? // "" | " (log: " + . + ")" )' "$MODEL_FILE" 2>/dev/null | head -5 || true
-              echo "</details>"
+              printf "</details>\n"
               # Alloy summary (if present)
               a_ok=$(jq '[.alloy.results[] | select(.ok==true)] | length' "$MODEL_FILE" 2>/dev/null || echo 0)
               a_total=$(jq '(.alloy.results | map(select(.ok!=null)) | length) + 0' "$MODEL_FILE" 2>/dev/null || echo 0)
@@ -169,26 +169,26 @@ jobs:
                 # If Alloy not executed but detected
                 a_detect=$(jq '(.alloy.results | length) + 0' "$MODEL_FILE" 2>/dev/null || echo 0)
                 if [ "$a_detect" -gt 0 ]; then
-                  echo "- Alloy: detected ${a_detect} specs (execution skipped)"
+                  printf "- Alloy: detected %s specs (execution skipped)\n" "$a_detect"
                 fi
               fi
             else
-              echo "- Model Check: (no summary artifact)"
+              printf "- Model Check: (no summary artifact)\n"
             fi
             if [ -f "$CONTRACTS_JSON" ]; then
               haveSchemas=$(jq -r '.present.schemas' "$CONTRACTS_JSON" 2>/dev/null || echo false)
               haveConds=$(jq -r '.present.conditions' "$CONTRACTS_JSON" 2>/dev/null || echo false)
               haveMachine=$(jq -r '.present.machine' "$CONTRACTS_JSON" 2>/dev/null || echo false)
-              echo "- Contracts: schemas=${haveSchemas} conditions=${haveConds} machine=${haveMachine}"
+              printf "- Contracts: schemas=%s conditions=%s machine=%s\n" "$haveSchemas" "$haveConds" "$haveMachine"
             else
-              echo "- Contracts: (no check artifact)"
+              printf "- Contracts: (no check artifact)\n"
             fi
             if [ -f "$CONTRACTS_EXEC" ]; then
               pin=$(jq -r '.results.parseInOk // false' "$CONTRACTS_EXEC" 2>/dev/null || echo false)
               pre=$(jq -r '.results.preOk // false' "$CONTRACTS_EXEC" 2>/dev/null || echo false)
               pst=$(jq -r '.results.postOk // false' "$CONTRACTS_EXEC" 2>/dev/null || echo false)
               pout=$(jq -r '.results.parseOutOk // false' "$CONTRACTS_EXEC" 2>/dev/null || echo false)
-              echo "  - Contracts exec: parseIn=${pin} pre=${pre} post=${pst} parseOut=${pout}"
+              printf "  - Contracts exec: parseIn=%s pre=%s post=%s parseOut=%s\n" "$pin" "$pre" "$pst" "$pout"
             fi
           } > pr-summary.md
           cat pr-summary.md
