@@ -3,6 +3,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { toMessage } from '../utils/error-utils.js';
+import { safeExit } from '../utils/safe-exit.js';
 import {
   ResilienceSystem,
   createResilienceSystem,
@@ -56,7 +57,7 @@ export class ResilienceCLI {
       
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Failed to create resilience system: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -102,7 +103,7 @@ export class ResilienceCLI {
     const system = this.systems.get(systemName);
     if (!system) {
       console.error(chalk.red(`❌ Resilience system '${systemName}' not found`));
-      process.exit(1);
+      safeExit(1);
     }
 
     const health = system.getSystemHealth();
@@ -178,7 +179,7 @@ export class ResilienceCLI {
     const system = this.systems.get(systemName);
     if (!system) {
       console.error(chalk.red(`❌ Resilience system '${systemName}' not found`));
-      process.exit(1);
+      safeExit(1);
     }
 
     system.reset();
@@ -198,7 +199,7 @@ export class ResilienceCLI {
     const system = this.systems.get(systemName);
     if (!system) {
       console.error(chalk.red(`❌ Resilience system '${systemName}' not found`));
-      process.exit(1);
+      safeExit(1);
     }
 
     const operations = options.operations || 10;

@@ -10,6 +10,7 @@ import { resolve, join } from 'path';
 import chalk from 'chalk';
 import { DeterministicCodeGenerator } from '../codegen/deterministic-generator.js';
 import { toMessage } from '../utils/error-utils.js';
+import { safeExit } from '../utils/safe-exit.js';
 import { DriftDetector } from '../codegen/drift-detector.js';
 
 export function createCodegenCommand(): Command {
@@ -64,7 +65,7 @@ export function createCodegenCommand(): Command {
 
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Code generation failed: ${toMessage(error)}`));
-        process.exit(1);
+        safeExit(1);
       }
     });
 
@@ -132,11 +133,11 @@ export function createCodegenCommand(): Command {
           'major_drift': 2,
           'critical_drift': 3,
         };
-        process.exit(exitCodes[report.status]);
+        safeExit(exitCodes[report.status]);
 
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Drift detection failed: ${toMessage(error)}`));
-        process.exit(1);
+        safeExit(1);
       }
     });
 
@@ -189,7 +190,7 @@ export function createCodegenCommand(): Command {
 
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Watch mode failed: ${toMessage(error)}`));
-        process.exit(1);
+        safeExit(1);
       }
     });
 
@@ -241,7 +242,7 @@ export function createCodegenCommand(): Command {
 
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Status check failed: ${toMessage(error)}`));
-        process.exit(1);
+        safeExit(1);
       }
     });
 
