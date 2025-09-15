@@ -455,6 +455,16 @@ pnpm run verify:all
 pnpm run operate:server
 ```
 
+### 最小出力サンプル（日本語）
+- Intent（JSON抜粋）
+```
+{ "requirements": 15, "stories": 12, "next": ["Phase 2", "Domain model"] }
+```
+- Verify（CI 1行要約）
+```
+• CI: ✅ tests 124/124, coverage 84% (≥80), typecov 66% (baseline 65); a11y 96 (≥95), perf 78 (≥75)
+```
+
 ---
 
 ## 📝 Phase 1: Intent Agent（要件定義）

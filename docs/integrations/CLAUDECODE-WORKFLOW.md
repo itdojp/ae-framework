@@ -152,6 +152,12 @@ CI tips
 - Type coverage: baseline 65% reports; add `enforce-typecov` to gate at 70%
 - Replay/Property/BDD lint may be non-blocking by default; use labels from CONTRIBUTING
 
+Troubleshooting (quick)
+- Missing UI files → ensure `entities` provided in Phase State; re-run scaffold
+- PR summary missing formal → check `run-formal` label and upload `formal/summary.json`
+- Type coverage regression → add label `enforce-typecov` or reduce scope; raise thresholds gradually
+- Adapter JSON invalid → validate with `ajv` and keep `summary` concise
+
 ### Quick Example (English)
 ```
 User: "I want a task management system. Analyze requirements with the Intent Agent."
@@ -205,6 +211,12 @@ ae-framework conformance verify --rules rules.json --collect-metrics
 ae-framework integration discover --patterns "./e2e/**/*.json" --type tests \
   --output artifacts/integration/discovered.json
 ae-framework integration run --ci
+
+トラブルシューティング（簡易）
+- UIファイルが出ない → Phase State の `entities` を確認して再スキャフォールド
+- PRサマリにFormalが無い → `run-formal` ラベルと `formal/summary.json` のアップロードを確認
+- 型カバレッジが下がった → `enforce-typecov` ラベル導入や対象の見直し（段階的に引き上げ）
+- アダプターJSONが不正 → `ajv` で検証し、`summary` を簡潔に
 
 #### Notes
 - Some phases (Stories/Modeling) are primarily orchestrated by the agent; artifacts are collected under `artifacts/stories/*` and `artifacts/modeling/*` when available.

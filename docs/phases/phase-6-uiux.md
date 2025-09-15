@@ -99,6 +99,40 @@ Design Systems統合、アクセシビリティ確保、パフォーマンス最
 - E2E: 100% pass
 - Coverage: ≥80%
 - Web Vitals Budget
+
+### A11y チェックリスト（簡易）
+- ランドマーク: main/nav/footer/見出しの構造化
+- ラベル: フォーム要素にプログラム的ラベルを付与
+- フォーカス: 可視フォーカスリング、トラップ無し
+- 色: コントラストAA(4.5:1)、色のみの意味付けを避ける
+- ARIA: 最小限の使用。roles/name/value が正しいこと
+- キーボード: キーボードのみで一連の操作が可能
+
+### パフォーマンスヒント
+- ルート/重量コンポーネントの分割。初期レンダを阻害しない
+- `next/image` を適切なサイズで使用。視界外は遅延読込
+- SWR/TanStack Query でフェッチ結果をキャッシュ。データは Server Components 優先
+- 再レンダ最小化: リストは memo、安定キー、props のインラインオブジェクト回避
+- Lighthouse 目安: LCP ≤ 2.5s, TBT ≤ 200ms, CLS ≤ 0.1
+
+### 推奨しきい値
+- Coverage ≥ 80%
+- A11y スコア ≥ 95%
+- Perf（Lighthouse）≥ 75%
+
+### 運用ヒント（コマンド）
+```bash
+# コンポーネント/状態/トークンのスキャフォールド
+ae-framework ui-scaffold --components
+ae-framework ui-scaffold --state
+ae-framework ui-scaffold --tokens
+
+# E2E 実行（apps/web）
+pnpm --filter @ae-framework/web exec playwright test --reporter=list
+
+# 任意: Lighthouse CI（ページURLを環境で指定）
+lhci autorun --upload.target=temporary-public-storage
+```
  
 ### Repository Layout (excerpt)
 ```
