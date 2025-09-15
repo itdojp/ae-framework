@@ -34,31 +34,31 @@ jobs:
         id: check-spec
         run: |
           if [ -f "spec/ae-spec.md" ]; then
-            echo "spec_exists=true" >> $GITHUB_OUTPUT
-            echo "📄 Found AE-Spec file: spec/ae-spec.md"
+            printf "%s\n" "spec_exists=true" >> "$GITHUB_OUTPUT"
+            printf "%s\n" "📄 Found AE-Spec file: spec/ae-spec.md"
           else
-            echo "spec_exists=false" >> $GITHUB_OUTPUT
-            echo "⚠️ No AE-Spec file found at spec/ae-spec.md"
+            printf "%s\n" "spec_exists=false" >> "$GITHUB_OUTPUT"
+            printf "%s\n" "⚠️ No AE-Spec file found at spec/ae-spec.md"
           fi
       
       - name: Compile AE-Spec → AE-IR
         if: steps.check-spec.outputs.spec_exists == 'true'
         run: |
-          echo "🔄 Compiling AE-Spec to AE-IR..."
+          printf "%s\n" "🔄 Compiling AE-Spec to AE-IR..."
           pnpm spec:compile --in spec/ae-spec.md --out .ae/ae-ir.json
-          echo "✅ Compilation successful"
+          printf "%s\n" "✅ Compilation successful"
       
       - name: Lint AE-IR (ambiguity/undefined/conflicts)
         if: steps.check-spec.outputs.spec_exists == 'true'
         run: |
-          echo "🔍 Linting AE-IR for quality issues..."
+          printf "%s\n" "🔍 Linting AE-IR for quality issues..."
           pnpm spec:lint --in .ae/ae-ir.json
-          echo "✅ Linting completed"
+          printf "%s\n" "✅ Linting completed"
       
       - name: Validate AE-IR structure
         if: steps.check-spec.outputs.spec_exists == 'true'
         run: |
-          echo "📋 Validating AE-IR structure..."
+          printf "%s\n" "📋 Validating AE-IR structure..."
           if [ -f ".ae/ae-ir.json" ]; then
             # Basic JSON validation
             jq empty .ae/ae-ir.json
@@ -68,25 +68,25 @@ jobs:
             domain_count=$(jq '.domain | length' .ae/ae-ir.json)
             api_count=$(jq '.api | length' .ae/ae-ir.json)
             
-            echo "  AE-IR Version: $version"
-            echo "  Domain Entities: $domain_count"
-            echo "  API Endpoints: $api_count"
+            printf "%s\n" "  AE-IR Version: $version"
+            printf "%s\n" "  Domain Entities: $domain_count"
+            printf "%s\n" "  API Endpoints: $api_count"
             
             if [ "$version" = "missing" ]; then
-              echo "❌ Missing required field: version"
+              printf "%s\n" "❌ Missing required field: version"
               exit 1
             fi
             
-            echo "✅ AE-IR structure validation passed"
+            printf "%s\n" "✅ AE-IR structure validation passed"
           else
-            echo "❌ AE-IR file not found"
+            printf "%s\n" "❌ AE-IR file not found"
             exit 1
           fi
       
       - name: Generate drift check report
         if: steps.check-spec.outputs.spec_exists == 'true'
         run: |
-          echo "🔄 Checking for specification drift..."
+          printf "%s\n" "🔄 Checking for specification drift..."
           
           # Create a summary report
           cat > spec-validation-report.md << EOF
@@ -113,7 +113,7 @@ jobs:
           
           EOF
           
-          echo "📊 Validation report generated:"
+          printf "%s\n" "📊 Validation report generated:"
           cat spec-validation-report.md
       
       - name: Upload validation artifacts
@@ -129,6 +129,6 @@ jobs:
       - name: Skip validation (no spec file)
         if: steps.check-spec.outputs.spec_exists == 'false'
         run: |
-          echo "ℹ️ No AE-Spec file found - skipping validation"
-          echo "To enable spec validation, create a file at: spec/ae-spec.md"
-          echo "See documentation for AE-Spec format guidelines."
+          printf "%s\n" "ℹ️ No AE-Spec file found - skipping validation"
+          printf "%s\n" "To enable spec validation, create a file at: spec/ae-spec.md"
+          printf "%s\n" "See documentation for AE-Spec format guidelines."

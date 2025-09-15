@@ -26,11 +26,11 @@ jobs:
       - name: Check coverage thresholds
         run: |
           # Placeholder for actual threshold checks
-          echo "Checking traceability coverage..."
+          printf "%s\n" "Checking traceability coverage..."
           if [ -f traceability.csv ]; then
-            echo "Traceability matrix generated successfully"
+            printf "%s\n" "Traceability matrix generated successfully"
           else
-            echo "Failed to generate traceability matrix"
+            printf "%s\n" "Failed to generate traceability matrix"
             exit 1
           fi
   model-check:
@@ -83,11 +83,11 @@ jobs:
           TRACE_JSON=$(find artifacts_dl/traceability-matrix -name 'traceability.json' 2>/dev/null | head -1)
           CONTRACTS_JSON=$(find artifacts_dl/contracts-check -name 'contracts-check.json' 2>/dev/null | head -1)
           CONTRACTS_EXEC=$(find artifacts_dl/contracts-exec -name 'contracts-exec.json' 2>/dev/null | head -1)
-          echo "TRACE_FILE=$TRACE_FILE" >> $GITHUB_OUTPUT
-          echo "MODEL_FILE=$MODEL_FILE" >> $GITHUB_OUTPUT
-          echo "TRACE_JSON=$TRACE_JSON" >> $GITHUB_OUTPUT
-          echo "CONTRACTS_JSON=$CONTRACTS_JSON" >> $GITHUB_OUTPUT
-          echo "CONTRACTS_EXEC=$CONTRACTS_EXEC" >> $GITHUB_OUTPUT
+          printf "%s\n" "TRACE_FILE=$TRACE_FILE" >> "$GITHUB_OUTPUT"
+          printf "%s\n" "MODEL_FILE=$MODEL_FILE" >> "$GITHUB_OUTPUT"
+          printf "%s\n" "TRACE_JSON=$TRACE_JSON" >> "$GITHUB_OUTPUT"
+          printf "%s\n" "CONTRACTS_JSON=$CONTRACTS_JSON" >> "$GITHUB_OUTPUT"
+          printf "%s\n" "CONTRACTS_EXEC=$CONTRACTS_EXEC" >> "$GITHUB_OUTPUT"
           {
             echo "### 🔍 Verification Summary"
             if [ -f "$TRACE_JSON" ]; then
@@ -100,9 +100,9 @@ jobs:
               impl_pct=$(pct "$scenarios" "$covered_impl")
               formal_pct=$(pct "$scenarios" "$covered_formal")
               printf "- Traceability: %s scenarios\n" "$scenarios"
-              echo "  - Tests: ${covered_tests} (${tests_pct}%)"
-              echo "  - Impl: ${covered_impl} (${impl_pct}%)"
-              echo "  - Formal: ${covered_formal} (${formal_pct}%)"
+              printf "%s\n" "  - Tests: ${covered_tests} (${tests_pct}%)"
+              printf "%s\n" "  - Impl: ${covered_impl} (${impl_pct}%)"
+              printf "%s\n" "  - Formal: ${covered_formal} (${formal_pct}%)"
               printf "\n<details><summary>Unlinked (top 5)</summary>\n"
               jq -r '.rows[] | select(.test=="N/A" or .impl=="N/A" or .formal=="N/A") | "- " + .scenario + " (id: " + .id + ") test:" + .test + " impl:" + .impl + " formal:" + .formal' "$TRACE_JSON" 2>/dev/null | head -5 || true
               printf "</details>\n"
@@ -136,8 +136,8 @@ jobs:
               fhit_title=$(jq '[.rows[] | select(.formalHit == .scenario)] | length' "$TRACE_JSON" 2>/dev/null || echo 0)
               fhit_id=$(jq '[.rows[] | select(.formalHit == .id)] | length' "$TRACE_JSON" 2>/dev/null || echo 0)
               fhit_tag=$(jq '[.rows[] | select(.formalHit | type=="string" and startswith("@"))] | length' "$TRACE_JSON" 2>/dev/null || echo 0)
-              echo "- Test hits: title=${thit_title} id=${thit_id} tag=${thit_tag}"
-              echo "- Formal hits: title=${fhit_title} id=${fhit_id} tag=${fhit_tag}"
+              printf "%s\n" "- Test hits: title=${thit_title} id=${thit_id} tag=${thit_tag}"
+              printf "%s\n" "- Formal hits: title=${fhit_title} id=${fhit_id} tag=${fhit_tag}"
               printf "</details>\n"
             elif [ -f "$TRACE_FILE" ]; then
               total=$(wc -l < "$TRACE_FILE")
@@ -213,7 +213,7 @@ jobs:
           node scripts/verify/run-contracts-check.mjs
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ] && [ $EXIT_CODE -ne 2 ]; then
-            echo "Unexpected error in contracts check (exit code $EXIT_CODE)"
+            printf "%s\n" "Unexpected error in contracts check (exit code $EXIT_CODE)"
             exit $EXIT_CODE
           fi
       - name: Upload contracts artifact
@@ -230,7 +230,7 @@ jobs:
         run: |
           if [ -f "$GITHUB_EVENT_PATH" ]; then
             if jq -e '.pull_request.labels[]?.name | select(.=="enforce-contracts")' "$GITHUB_EVENT_PATH" >/dev/null; then
-              echo "CONTRACTS_ENFORCE=1" >> $GITHUB_ENV
+              printf "%s\n" "CONTRACTS_ENFORCE=1" >> "$GITHUB_ENV"
             fi
           fi
       - name: Setup Node
@@ -249,13 +249,13 @@ jobs:
         if: ${{ env.CONTRACTS_ENFORCE == '1' }}
         run: |
           FILE=artifacts/contracts/contracts-exec.json
-          if [ ! -f "$FILE" ]; then echo "No contracts exec artifact found"; exit 1; fi
+          if [ ! -f "$FILE" ]; then printf "%s\n" "No contracts exec artifact found"; exit 1; fi
           PARSE_IN=$(jq -r '.results.parseInOk // false' "$FILE")
           PRE_OK=$(jq -r '.results.preOk // false' "$FILE")
           POST_OK=$(jq -r '.results.postOk // false' "$FILE")
           PARSE_OUT=$(jq -r '.results.parseOutOk // false' "$FILE")
           if [ "$PARSE_IN" != "true" ] || [ "$PRE_OK" != "true" ] || [ "$POST_OK" != "true" ] || [ "$PARSE_OUT" != "true" ]; then
-            echo "Contracts enforcement failed: parseIn=$PARSE_IN pre=$PRE_OK post=$POST_OK parseOut=$PARSE_OUT"
+            printf "%s\n" "Contracts enforcement failed: parseIn=$PARSE_IN pre=$PRE_OK post=$POST_OK parseOut=$PARSE_OUT"
             exit 1
           fi
 
@@ -268,7 +268,7 @@ jobs:
         run: |
           if [ -f "$GITHUB_EVENT_PATH" ]; then
             if jq -e '.pull_request.labels[]?.name | select(.=="enforce-formal")' "$GITHUB_EVENT_PATH" >/dev/null; then
-              echo "FORMAL_ENFORCE=1" >> $GITHUB_ENV
+              printf "%s\n" "FORMAL_ENFORCE=1" >> "$GITHUB_ENV"
             fi
           fi
       - name: Download artifacts
@@ -279,10 +279,10 @@ jobs:
         if: ${{ env.FORMAL_ENFORCE == '1' }}
         run: |
           FILE=$(find artifacts_dl/model-check-results -name 'model-check.json' | head -1)
-          if [ -z "$FILE" ] || [ ! -f "$FILE" ]; then echo "No model-check.json found"; exit 1; fi
+          if [ -z "$FILE" ] || [ ! -f "$FILE" ]; then printf "%s\n" "No model-check.json found"; exit 1; fi
           tlc_fail=$(jq -r '[.tlc.results[] | select(.ok!=true)] | length' "$FILE")
           alloy_fail=$(jq -r '[.alloy.results[] | select(.ok==false)] | length' "$FILE")
           if [ "$tlc_fail" != "0" ] || [ "$alloy_fail" != "0" ]; then
-            echo "Formal enforcement failed: tlc_fail=$tlc_fail alloy_fail=$alloy_fail"
+            printf "%s\n" "Formal enforcement failed: tlc_fail=$tlc_fail alloy_fail=$alloy_fail"
             exit 1
           fi
