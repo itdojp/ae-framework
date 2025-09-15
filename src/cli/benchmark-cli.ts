@@ -45,6 +45,7 @@ program
   .option('--timeout <ms>', 'Execution timeout in milliseconds')
   .option('--output <path>', 'Output directory for results')
   .option('--ci', 'Use CI-optimized configuration')
+  .option('--light', 'Run in light mode (few problems, low concurrency)')
   .option('--dry-run', 'Show what would be executed without running')
   .action(async (options) => {
     try {
@@ -228,6 +229,14 @@ async function loadConfiguration(options: any): Promise<BenchmarkConfig> {
   // Apply command-line overrides
   if (options.ci) {
     config = getCIConfig();
+  }
+
+  // Light mode: keep it very small and serial
+  if (options.light) {
+    const enabled = config.problems.filter(p => p.enabled);
+    config.problems = enabled.slice(0, Math.min(3, enabled.length));
+    config.execution.parallel = false;
+    config.execution.maxConcurrency = 1 as any;
   }
   
   if (options.difficulty) {

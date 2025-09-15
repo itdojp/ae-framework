@@ -20,6 +20,8 @@ This document defines CI policies to keep PR experience fast and stable while ma
 ### Opt-in Labels
 - `ci-non-blocking`: run selected jobs with continue-on-error (traceability, model-check, contracts, security, etc.)
 - `run-security`: run heavy security jobs (Security Scanning, Dependency Audit, License Compliance, CodeQL)
+- `qa --light`: run QA in light mode (vitest -> `test:fast`); used in `ae-ci`
+- `ae-benchmark run --ci --light --dry-run`: benchmark config validation only in PRs (fast & stable)
 - `run-qa`: run `ae-ci` workflow’s `qa-bench` on PRs (default off)
 - `run-spec`: enable spec fail-fast on PRs
 - `run-drift`: enable codegen drift detection on PRs
@@ -65,6 +67,8 @@ This document defines CI policies to keep PR experience fast and stable while ma
 ### ラベル運用（Opt-in）
 - `ci-non-blocking`: 一部ジョブ（traceability, model-check, contracts, security 等）を continue-on-error で実行し PR をブロックしない
 - `run-security`: 重いセキュリティ系（Security Scanning, Dependency Audit, License Compliance, CodeQL 等）を PR で実行
+- `qa --light`: QA を軽量実行（vitest は `test:fast` 実行）。`ae-ci` の QA ステップに適用済み
+- `ae-benchmark run --ci --light --dry-run`: ベンチは PR では構成検証のみに留め、時間・安定性を優先
 - `run-qa`: `ae-ci` ワークフローの `qa-bench` を PR で実行（既定は非実行）
 - `run-spec`: 仕様 Fail-Fast を PR で有効化
 - `run-drift`: Codegen Drift 検出を PR で有効化
