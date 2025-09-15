@@ -42,6 +42,24 @@ ae-framework conformance status        # current status
 - `artifacts/conformance/violations.json` — violations (with rule ids)
 - PR summary integration when enabled
 
+### Minimal YAML (CI example)
+```yaml
+name: Conformance Verify
+on: [pull_request]
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: pnpm install --frozen-lockfile
+      - run: ae-framework conformance verify --rules rules.json --collect-metrics
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: conformance, path: artifacts/conformance/** }
+```
+
 ### Integration
 - With Phase 2.1 (CEGIS): violations → counterexamples → repair candidates
 - With Phase 6: surface UI-related metrics and guard budgets
