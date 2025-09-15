@@ -231,6 +231,25 @@ time=3.2s, confidence=0.78
   }
 ```
 
+## 日本語（サンプル出力）
+
+### 2.2 Conformance – メトリクスJSON（例）
+```json
+{ "rulesExecuted": 25, "violations": 3, "successRate": 0.88 }
+```
+
+### 2.3 Integration – 実行サマリ（JSON）
+```json
+{ "suites": 2, "tests": 14, "passed": 13, "failed": 1 }
+```
+
+### 2.1 CEGIS – 修復サマリ（テキスト）
+```
+Violations Found: 8 / Fix Candidates: 12 / Applied: 7 / Verified: 6
+files_scanned=12, files_modified=2, candidates=3, accepted=2
+time=3.2s, confidence=0.78
+```
+
 ### 2.2 Conformance – Gate excerpt (text)
 ```
 🛡️ Runtime Conformance Verification - Processing 25 rules

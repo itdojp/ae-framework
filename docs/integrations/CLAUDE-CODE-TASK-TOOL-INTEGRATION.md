@@ -342,6 +342,10 @@ Claude Code: UI Task Adapter を実行...
 - モデル検査が出ない: `docs/verify/FORMAL-CHECKS.md` を参照し、成果物/CI 実行有無を確認
 - アダプターエラー: 正規化 `artifacts/*/summary.json` を `docs/schemas/*` で検証
 
+#### 最小CI（参照）
+- Conformance（Phase 2.2）最小YAMLは: `docs/phases/PHASE-2-2-RUNTIME-CONFORMANCE.md`
+- Integration（Phase 2.3）最小YAMLは: `docs/phases/PHASE-2-3-INTEGRATION-TESTING.md`
+
 #### 実行コマンド例（再検証）
 ```bash
 # UI スキャフォールド（再生成）
