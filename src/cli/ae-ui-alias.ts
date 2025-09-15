@@ -15,7 +15,8 @@ if (args.length > 0 && args[0] === 'scaffold') {
   });
   
   mainCLI.on('close', (code) => {
-    process.exit(code || 0);
+    const { safeExit } = await import('../utils/safe-exit.js');
+    safeExit(code || 0);
   });
 } else {
   // Show help or delegate with default components flag

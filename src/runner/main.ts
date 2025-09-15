@@ -1,4 +1,5 @@
 import { cac } from 'cac';
+import { safeExit } from '../utils/safe-exit.js';
 import { tddGuard } from '../commands/tdd/guard.js';
 import { benchRun } from '../commands/bench/run.js';
 import { qaRun } from '../commands/qa/run.js';
@@ -38,7 +39,7 @@ export async function main() {
   cli.command('verify', 'Run types/lint/qa/bench in one shot')
     .action(async () => {
       const r = await verifyRun();
-      process.exit(r.ok ? 0 : 1);
+      safeExit(r.ok ? 0 : 1);
     });
   
   cli.command('agent:complete', 'LLM completion with record/replay support')

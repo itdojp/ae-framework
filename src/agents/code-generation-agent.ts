@@ -801,7 +801,8 @@ const start = async () => {
     await server.listen({ port: 3000, host: '0.0.0.0' });
   } catch (err) {
     server.log.error(err);
-    process.exit(1);
+    const { safeExit } = await import('../utils/safe-exit.js');
+    safeExit(1);
   }
 };
 

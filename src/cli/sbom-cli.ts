@@ -309,7 +309,7 @@ export class SBOMCLI {
 
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Failed to generate CI integration: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 

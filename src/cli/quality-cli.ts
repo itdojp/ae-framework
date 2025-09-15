@@ -124,7 +124,7 @@ export function createQualityCommand(): Command {
         }
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Error listing quality gates: ${toMessage(error)}`));
-        process.exit(1);
+        safeExit(1);
       }
     });
 

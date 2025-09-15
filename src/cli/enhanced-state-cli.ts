@@ -344,7 +344,7 @@ export class EnhancedStateCLI {
       
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Failed to import state: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   }
 

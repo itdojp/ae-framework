@@ -118,7 +118,7 @@ class AEFrameworkCLI {
     }
 
     if (!allPassed) {
-      process.exit(1);
+      safeExit(1);
     }
   }
 
@@ -435,7 +435,7 @@ program
       cli.handleProgressBlocking(result);
     } catch (error: unknown) {
       console.log(chalk.red(`❌ Error: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   });
 
@@ -473,7 +473,7 @@ program
       cli.handleProgressBlocking(result);
     } catch (error: unknown) {
       console.log(chalk.red(`❌ Error: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   });
 
@@ -513,7 +513,7 @@ program
       cli.handleProgressBlocking(result);
     } catch (error: unknown) {
       console.log(chalk.red(`❌ Error: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   });
 
@@ -555,7 +555,7 @@ program
       cli.handleProgressBlocking(result);
     } catch (error: unknown) {
       console.log(chalk.red(`❌ Error: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   });
 
@@ -592,7 +592,7 @@ program
       cli.handleProgressBlocking(result);
     } catch (error: unknown) {
       console.log(chalk.red(`❌ Error: ${toMessage(error)}`));
-      process.exit(1);
+      safeExit(1);
     }
   });
 

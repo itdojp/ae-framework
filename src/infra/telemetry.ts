@@ -42,7 +42,10 @@ export function initTelemetry(serviceName: string = 'inventory-api') {
     sdk.shutdown()
       .then(() => console.log('Telemetry terminated'))
       .catch((error) => console.log('Error terminating telemetry', error))
-      .finally(() => process.exit(0));
+      .finally(async () => {
+        const { safeExit } = await import('../utils/safe-exit.js');
+        safeExit(0);
+      });
   });
 
   return sdk;
