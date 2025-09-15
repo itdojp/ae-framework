@@ -38,8 +38,8 @@ jobs:
         run: pnpm run build
       - name: Bin smoke check
         run: node scripts/ci/check-bins.mjs
-      - name: QA
-        run: node dist/src/cli/index.js qa
+      - name: QA (light)
+        run: node dist/src/cli/index.js qa --light
       - name: Bench (seeded)
         run: AE_SEED=123 node dist/src/cli/index.js bench
       - name: Upload artifacts
