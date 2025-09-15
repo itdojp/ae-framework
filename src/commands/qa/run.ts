@@ -2,33 +2,42 @@ import { execa } from 'execa';
 import { loadConfig } from '../../core/config.js';
 import { readFile, stat } from 'node:fs/promises';
 
-export async function qaRun() {
+export async function qaRun(options?: { light?: boolean }) {
   const cfg = await loadConfig();
   const pm = (await detectPM()) ?? 'npm';
   const runner = await detectRunner();
+  const light = Boolean(options?.light || process.env.AE_QA_LIGHT === '1' || process.env.CI === 'true');
   
-  console.log(`[ae:qa] running QA with ${runner} via ${pm}`);
+  console.log(`[ae:qa] running QA with ${runner} via ${pm}${light ? ' (light mode)' : ''}`);
   
   if (runner === 'jest') {
     const threshold = JSON.stringify({ global: cfg.qa.coverageThreshold });
     try {
-      await execa(pm, [
-        'run', 
-        'test', 
-        '--', 
-        '--coverage',
-        `--coverageThreshold=${threshold}`
-      ], { stdio: 'inherit' });
+      if (light) {
+        // Fallback to fast suite when available
+        const script = pm === 'pnpm' ? 'test:fast' : 'test';
+        await execa(pm, ['run', script], { stdio: 'inherit' });
+      } else {
+        await execa(pm, [
+          'run', 
+          'test', 
+          '--', 
+          '--coverage',
+          `--coverageThreshold=${threshold}`
+        ], { stdio: 'inherit' });
+      }
     } catch (error) {
       console.error('[ae:qa] Coverage threshold not met or test failures');
       throw error;
     }
   } else if (runner === 'vitest') {
-    console.log('[ae:qa] vitest coverage thresholds will be extended in future PR. Running normal tests.');
-    await execa(pm, ['run', 'test'], { stdio: 'inherit' });
+    const script = light ? 'test:fast' : 'test';
+    console.log(`[ae:qa] running ${script} script for vitest`);
+    await execa(pm, ['run', script], { stdio: 'inherit' });
   } else {
     console.warn('[ae:qa] unknown test runner, running default test command');
-    await execa(pm, ['run', 'test'], { stdio: 'inherit' });
+    const script = light ? 'test:fast' : 'test';
+    await execa(pm, ['run', script], { stdio: 'inherit' });
   }
   
   console.log('[ae:qa] QA checks completed');

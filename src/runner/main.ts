@@ -17,7 +17,8 @@ export async function main() {
     .action(benchRun);
   
   cli.command('qa', 'Run QA metrics')
-    .action(qaRun);
+    .option('--light', 'Run light suite (fast tests)')
+    .action((opts) => qaRun({ light: Boolean(opts.light) }));
   
   cli.command('qa:flake', 'Run tests multiple times to detect flakiness')
     .option('--times <n>', 'Repeat count', { default: 10 })
