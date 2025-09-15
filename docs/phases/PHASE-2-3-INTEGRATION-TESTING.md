@@ -37,6 +37,29 @@ ae-framework integration reports          # open/print reports
 - `artifacts/integration/*.json` for machine-readable summaries
 - Attachments: screenshots, traces, HARs
 
+### Minimal CI YAML (English)
+```yaml
+name: Integration Tests
+on: [pull_request]
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: pnpm install --frozen-lockfile
+      - run: ae-framework integration discover --patterns "./tests/**/*.json" --type tests --output artifacts/integration/discovery.json
+      - run: ae-framework integration run --ci
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-artifacts
+          path: |
+            artifacts/integration/**
+            apps/**/__e2e__/**
+```
+
 ### Best Practices
 - Keep E2E label-gated on PRs; run nightly for full coverage
 - Stabilize flaky suites or move behind labels until fixed

@@ -199,6 +199,8 @@ ae-framework integration reports --list
 ### 2.1 CEGIS – Fix stats (text)
 ```
 Violations Found: 8 / Fix Candidates: 12 / Applied: 7 / Verified: 6
+files_scanned=12, files_modified=2, candidates=3, accepted=2
+time=3.2s, confidence=0.78
 ```
 
 ### 2.2 Conformance – Violation sample (JSON)

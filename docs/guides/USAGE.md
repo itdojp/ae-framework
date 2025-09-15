@@ -60,6 +60,16 @@ pnpm run verify:all
 pnpm run operate:server
 ```
 
+### 🔎 Minimal Output Samples (English)
+- Intent (JSON excerpt):
+```
+{ "requirements": 15, "stories": 12, "next": ["Phase 2", "Domain model"] }
+```
+- Verify (console one-liner):
+```
+• CI: ✅ tests 124/124, coverage 84% (≥80), typecov 66% (baseline 65); a11y 96 (≥95), perf 78 (≥75)
+```
+
 ### 🔁 Quick CLI Samples（現行実装）
 
 以下は現在のCLI実装に基づく、最短経路の確認用コマンドです。

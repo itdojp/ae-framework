@@ -233,6 +233,24 @@ button:focus { outline: 2px solid var(--color-focus); outline-offset: 2px; }
   - [ ] Validate: `npx ajv -s docs/schemas/artifacts-adapter-summary.schema.json -d artifacts/*/summary.json --strict=false`
   - [ ] Keep output short: `status` + short `summary`
 
+#### Before / After (Japanese, short)
+```
+// a11y — Before: フォーカスリングが見えない
+button:focus { outline: none; }
+
+// a11y — After: 可視フォーカスリング
+button:focus { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+
+// perf — Before: 生の <img> に大画像
+<img src="/hero.jpg" width="1600" height="900" />
+
+// perf — After: next/image を利用し遅延+縮小
+<Image src="/hero.jpg" width={800} height={450} loading="lazy" />
+
+// coverage — Before: エラーバナーのテスト欠落
+// After: API失敗時のバナーテストとフォームバリデーションを追加
+```
+
 #### Phase State (minimal JSON example)
 ```json
 {
