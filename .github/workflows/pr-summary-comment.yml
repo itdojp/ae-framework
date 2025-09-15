@@ -28,7 +28,6 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
-      - run: npm ci
       - name: Aggregate artifacts if present
         run: |
           if npm run -s | grep -q "artifacts:aggregate"; then npm run artifacts:aggregate || true; fi
@@ -38,8 +37,7 @@ jobs:
           SUMMARY_MODE: ${{ steps.mode.outputs.mode }}
           SUMMARY_LANG: ${{ steps.lang.outputs.lang }}
         run: |
-          if [ -f scripts/summary/render-pr-summary.mjs ]; then node scripts/summary/render-pr-summary.mjs; else echo "No renderer; keeping inline"; fi
-          run: |
+          if [ -f scripts/summary/render-pr-summary.mjs ]; then node scripts/summary/render-pr-summary.mjs; else printf "No renderer; keeping inline\n"; fi
           node -e '
           const fs=require("fs");
           function r(p){ try { return JSON.parse(fs.readFileSync(p,"utf-8")); } catch { return undefined; } }
