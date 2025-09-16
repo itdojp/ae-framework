@@ -163,6 +163,10 @@ jobs:
           path: |
             hermetic-reports/formal/apalache-summary.json
             hermetic-reports/formal/apalache-output.txt
+      - name: Validate Apalache summary shape (non-blocking)
+        if: always()
+        run: |
+          node scripts/formal/validate-apalache-summary.mjs || true
       - name: "Enforce Apalache (label: enforce-formal)"
         if: contains(github.event.pull_request.labels.*.name, 'enforce-formal')
         run: |
