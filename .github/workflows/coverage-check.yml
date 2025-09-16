@@ -42,7 +42,12 @@ jobs:
     steps:
       - name: Note
         run: |
-          printf "%s\n" "Coverage dry-run on main is non-blocking by default."
+          printf "%s\n" "Coverage policy:" \
+          && printf "%s\n" "- Enforce on main: ${COVERAGE_ENFORCE_MAIN:-0}" \
+          && printf "%s\n" "- Default threshold: ${COVERAGE_DEFAULT_THRESHOLD:-80} (override via coverage:<pct>)"
+        env:
+          COVERAGE_ENFORCE_MAIN: ${{ vars.COVERAGE_ENFORCE_MAIN }}
+          COVERAGE_DEFAULT_THRESHOLD: ${{ vars.COVERAGE_DEFAULT_THRESHOLD }}
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
