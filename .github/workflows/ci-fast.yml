@@ -22,6 +22,30 @@ jobs:
     with:
       node-version: '20'
       run-script: test:fast
+  fast-commands:
+    if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'qa-batch:commands') }}
+    uses: ./.github/workflows/common/ci-core.yml
+    with:
+      node-version: '20'
+      run-script: test:fast:batch:commands
+  fast-cli:
+    if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'qa-batch:cli') }}
+    uses: ./.github/workflows/common/ci-core.yml
+    with:
+      node-version: '20'
+      run-script: test:fast:batch:cli
+  fast-property:
+    if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'qa-batch:property') }}
+    uses: ./.github/workflows/common/ci-core.yml
+    with:
+      node-version: '20'
+      run-script: test:fast:batch:property
+  fast-agents:
+    if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'qa-batch:agents') }}
+    uses: ./.github/workflows/common/ci-core.yml
+    with:
+      node-version: '20'
+      run-script: test:fast:batch:agents
   lint:
     uses: ./.github/workflows/common/ci-core.yml
     with:
