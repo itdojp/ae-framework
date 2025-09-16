@@ -139,6 +139,11 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - 必須化・閾値強化は段階導入（別Issueで合意のうえ切替）
 - `enforce-formal` ラベル時は Apalache 実行結果（summary.ok）が `true` であることをチェック（非true で失敗）
 
+#### 表示/要約の調整（環境変数）
+- verify-apalache（要約整形）: `APALACHE_ERRORS_LIMIT`（既定 5）/ `APALACHE_ERROR_LINE_CLAMP`（既定 200）/ `APALACHE_SNIPPET_BEFORE`・`_AFTER`（既定 2/2）
+- formal-aggregate（PRコメント整形）: `FORMAL_AGG_LINE_CLAMP`（既定 200）/ `FORMAL_AGG_ERRORS_LIMIT`（既定 5）
+- 詳細は `docs/quality/formal-runbook.md` を参照
+
 ### 運用メモ
 - 緊急時は `ci-non-blocking` ラベルで PR をブロックしない運用に切替可能
 - マージ後は main の包括的 CI（夜間/週次）でカバー
