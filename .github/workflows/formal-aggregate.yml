@@ -64,6 +64,12 @@ jobs:
             if (toolPath || run) {
               lines.push(`  - ${toolPath?`tool: ${toolPath}`:''}${toolPath&&run?' | ':''}${run?`run: ${run}`:''}`);
             }
+            if (ok === false && Array.isArray(apalache.errors) && apalache.errors.length > 0) {
+              lines.push('');
+              lines.push('<details><summary>Apalache errors (top)</summary>');
+              for (const e of apalache.errors.slice(0,5)) lines.push(`- ${e}`);
+              lines.push('</details>');
+            }
           } else {
             lines.push("- Apalache summary: n/a");
           }
