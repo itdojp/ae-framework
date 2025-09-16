@@ -186,6 +186,10 @@ jobs:
                 await addLabels(['qa-batch:agents']);
                 return reply('Label `qa-batch:agents` added. Agents tests will run in CI Fast (opt-in).');
               }
+              case '/run-adapters': {
+                await addLabels(['run-adapters']);
+                return reply('Label `run-adapters` added. Adapter thresholds (report-only) will run.');
+              }
               case '/run-formal': {
                 await addLabels(['run-formal']);
                 return reply('Label `run-formal` added. Formal jobs will run (non-blocking, opt-in).');
