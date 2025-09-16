@@ -11,6 +11,10 @@ on:
         description: "Target to run (all|conformance|alloy|tla|smt)"
         required: false
         default: "all"
+      tlaFile:
+        description: "TLA file to run (for Apalache/TLA)"
+        required: false
+        default: "spec/tla/DomainSpec.tla"
       engine:
         description: "TLA+ engine (tlc|apalache)"
         required: false
@@ -150,7 +154,7 @@ jobs:
           node-version: '20'
       - name: Run verify:apalache (summary, non-blocking)
         run: |
-          node scripts/formal/verify-apalache.mjs --file spec/tla/DomainSpec.tla || true
+          node scripts/formal/verify-apalache.mjs --file "${{ inputs.tlaFile || 'spec/tla/DomainSpec.tla' }}" || true
       - name: Upload Apalache summary (artifact)
         uses: actions/upload-artifact@v4
         if: always()

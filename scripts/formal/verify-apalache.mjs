@@ -14,6 +14,8 @@ function parseArgs(argv){
     if (a==='-h' || a==='--help') args.help = true;
     else if (a==='--file' && argv[i+1]) { args.file = argv[++i]; }
     else if (a.startsWith('--file=')) { args.file = a.slice(7); }
+    else if (a==='--timeout' && argv[i+1]) { args.timeout = Number(argv[++i]); }
+    else if (a.startsWith('--timeout=')) { args.timeout = Number(a.slice(10)); }
     else { args._.push(a); }
   }
   return args;
@@ -29,7 +31,7 @@ if (args.help){
 }
 
 const repoRoot = path.resolve(process.cwd());
-const file = args.file || path.join('spec','tla','DomainSpec.tla');
+const file = args.file || process.env.APALACHE_FILE || path.join('spec','tla','DomainSpec.tla');
 const absFile = path.resolve(repoRoot, file);
 const outDir = path.join(repoRoot, 'hermetic-reports', 'formal');
 const outFile = path.join(outDir, 'apalache-summary.json');
@@ -42,6 +44,8 @@ let status = 'skipped';
 let ran = false;
 let output = '';
 let version = '';
+let toolPath = '';
+let timeMs = 0;
 
 if (!fs.existsSync(absFile)){
   status = 'file_not_found';
@@ -52,11 +56,14 @@ if (!fs.existsSync(absFile)){
 } else {
   // Minimal "typecheck" like run; apalache-mc supports: apalache-mc check <Spec>
   const cmd = `${apalacheCmd} check ${absFile.replace(/'/g, "'\\''")}`;
+  const t0 = Date.now();
   output = sh(`bash -lc '${cmd} 2>&1 || true'`);
+  timeMs = Date.now() - t0;
   status = 'ran';
   ran = true;
   // Try to get version string
   version = sh(`bash -lc '${apalacheCmd} version 2>&1 || true'`).trim().split(/\n/)[0] || '';
+  toolPath = sh(`bash -lc 'command -v ${apalacheCmd} || true'`).trim();
 }
 
 const summary = {
@@ -68,6 +75,11 @@ const summary = {
   version: version || null,
   ok: ran ? !/error|violat|counterexample|fail/i.test(output) : null,
   hints: ran ? ( /success|ok|no\s+(?:errors|counterexamples?)/i.test(output) ? 'success-indicators-found' : null ) : null,
+  timeMs: timeMs || null,
+  toolPath: toolPath || null,
+  run: (process.env.GITHUB_SERVER_URL && process.env.GITHUB_REPOSITORY && process.env.GITHUB_RUN_ID)
+    ? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
+    : null,
   timestamp: new Date().toISOString(),
   output: output.slice(0, 4000)
 };
