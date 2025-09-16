@@ -43,14 +43,19 @@ This document defines CI policies to keep PR experience fast and stable while ma
     - `/qa-batch-cli` または `/run-qa:cli` … `qa-batch:cli` を付与
     - `/qa-batch-property` または `/run-qa:property` … `qa-batch:property` を付与
     - `/qa-batch-agents` または `/run-qa:agents` … `qa-batch:agents` を付与
-  - 既存のラベル系（`/run-qa` や `/run-security` 等）も併用可能ですが、dispatchは再実行待ちを省略できるため推奨です。
+  - 使い分け例（推奨フロー）
+    - 追加確認したいカテゴリのみラベル付与 → `/ci-fast-dispatch` で即時起動
+    - Verify Lite のみ再実行したいときは `/verify-lite`
 
 ### Slash Commands (Instant Dispatch)
 - コメントで以下を投稿すると、対象ワークフローをPRのheadブランチで即時起動できます（main取り込み後有効）。
   - `/verify-lite` … Verify Lite を実行
   - `/run-qa-dispatch` … ae-ci（QA light）を実行
   - `/run-security-dispatch` … sbom-generation（Security/SBOM）を実行
-  - 既存のラベル系（`/run-qa` や `/run-security` 等）も併用可能ですが、dispatchは再実行待ちを省略できるため推奨です。
+  - `/ci-fast-dispatch` … CI Fast を実行（オプトインのバッチは対応ラベルが付与されている場合のみ動作）
+  - 使い分け例（推奨フロー）
+    - 確認したいカテゴリのラベルを付与（例: `/qa-batch-cli`）→ `/ci-fast-dispatch` で即時起動
+    - Verify Lite のみ再実行したいときは `/verify-lite`
 
 ### Path Conditions
 - Fire spec fail-fast only for changes under `spec/**`, `.ae/**`
