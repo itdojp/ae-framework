@@ -24,6 +24,14 @@ jobs:
           const fs=require("fs"), path=require("path");
           function rj(p){ try { return JSON.parse(fs.readFileSync(p,"utf-8")); } catch { return undefined; } }
           function find(dir, name){ try { const p = path.join(dir, name); return fs.existsSync(p) ? p : undefined; } catch { return undefined; } }
+          function escMd(s){
+            if (!s) return '';
+            // Basic Markdown escaping to avoid breaking PR rendering
+            return String(s)
+              .replace(/`/g, "`\u200b")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;");
+          }
           const base = "artifacts_dl";
           const outDir = "artifacts/formal"; fs.mkdirSync(outDir,{recursive:true});
           const outMd = path.join(outDir, "formal-aggregate.md");
@@ -71,14 +79,22 @@ jobs:
             if (ok === false && Array.isArray(apalache.errors) && apalache.errors.length > 0) {
               lines.push('');
               lines.push('<details><summary>Apalache errors (top)</summary>');
-              for (const e of apalache.errors.slice(0,5)) lines.push(`- ${e}`);
+              lines.push('');
+              lines.push('```text');
+              for (const e of apalache.errors.slice(0,5)) lines.push(escMd(e));
+              lines.push('```');
+              lines.push('');
               lines.push('</details>');
             }
             if (ok === false && apalache.errorSnippet && Array.isArray(apalache.errorSnippet.lines)) {
-              const first = apalache.errorSnippet.lines.find(l=>l && l.trim().length>0) || '';
-              if (first) {
+              const ctxLines = apalache.errorSnippet.lines.map(escMd);
+              if (ctxLines.length) {
                 lines.push('');
-                lines.push(`- First error context: ${first}`);
+                lines.push('- First error context:');
+                lines.push('');
+                lines.push('```text');
+                for (const l of ctxLines) lines.push(l);
+                lines.push('```');
               }
             }
           } else {
