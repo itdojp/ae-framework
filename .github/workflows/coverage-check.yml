@@ -44,7 +44,9 @@ jobs:
         run: |
           printf "%s\n" "Coverage policy:" \
           && printf "%s\n" "- Enforce on main: ${COVERAGE_ENFORCE_MAIN:-0}" \
-          && printf "%s\n" "- Default threshold: ${COVERAGE_DEFAULT_THRESHOLD:-80} (override via coverage:<pct>)"
+          && printf "%s\n" "- Default threshold: ${COVERAGE_DEFAULT_THRESHOLD:-80} (override via coverage:<pct>)" \
+          && printf "%s\n" "- Effective threshold: ${{ needs.gate.outputs.threshold }}%" \
+          && printf "%s\n" "- Policy: ${{ needs.gate.outputs.strict == 'true' && 'enforced' || 'report-only' }}"
         env:
           COVERAGE_ENFORCE_MAIN: ${{ vars.COVERAGE_ENFORCE_MAIN }}
           COVERAGE_DEFAULT_THRESHOLD: ${{ vars.COVERAGE_DEFAULT_THRESHOLD }}
@@ -64,7 +66,7 @@ jobs:
           if [ -f coverage/coverage-summary.json ]; then \
             PCT=$(node -e "console.log((require('./coverage/coverage-summary.json').total.lines.pct)||0)"); \
             printf "Coverage: %s%% (threshold: %s%%)\n" "$PCT" "$THRESHOLD"; \
-            awk 'BEGIN{ if ('"${PCT}"' + 0 < '"${THRESHOLD}"' + 0) exit 1 }'; \
+            awk 'BEGIN{ if ('"${PCT}"' + 0 < '"${THRESHOLD}"' + 0) exit 1 }' || { printf "%s\n" "::error::Coverage ${PCT}% below threshold ${THRESHOLD}%"; exit 1; }; \
           else \
             printf "%s\n" "No coverage-summary.json found; skipping check"; \
           fi

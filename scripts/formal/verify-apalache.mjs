@@ -51,7 +51,7 @@ let timeMs = 0;
 
 if (!fs.existsSync(absFile)){
   status = 'file_not_found';
-  output = `TLA file not found: ${absFile}`;
+  output = `TLA file not found: ${absFile}\nSee docs/quality/formal-runbook.md (Reproduce Locally).`;
 } else if (!haveApalache){
   status = 'tool_not_available';
   output = 'Apalache CLI not found. Install apalache or ensure apalache-mc is on PATH. See docs/quality/formal-tools-setup.md';

@@ -55,6 +55,10 @@ jobs:
           const confSum = find(base, "formal-reports-conformance/conformance-summary.json");
 
           const apalache = apalacheSum ? rj(apalacheSum) : undefined;
+          const clampInfo = {
+            lineClamp: process.env.FORMAL_AGG_LINE_CLAMP || '200',
+            errorsLimit: process.env.FORMAL_AGG_ERRORS_LIMIT || '5'
+          };
 
           const lines = [];
           lines.push("## 🔎 Formal Reports Aggregate");
@@ -108,6 +112,7 @@ jobs:
           lines.push("_Non-blocking. Add/remove label run-formal to control._");
           lines.push("_Reproduce locally: pnpm run verify:tla -- --engine=apalache_ (see docs/quality/formal-runbook.md)");
           lines.push("_Tools check: pnpm run tools:formal:check_");
+          lines.push(`_Clamp: line=${clampInfo.lineClamp}, errors=${clampInfo.errorsLimit}_`);
           const md = lines.join("\n");
           fs.writeFileSync(outMd, md);
           console.log(md);

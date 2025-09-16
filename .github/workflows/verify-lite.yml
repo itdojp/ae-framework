@@ -11,6 +11,14 @@ jobs:
   verify-lite:
     runs-on: ubuntu-latest
     steps:
+      - name: Coverage policy (note)
+        run: |
+          printf "%s\n" "Coverage policy (for reference):" \
+          && printf "%s\n" "- Enforce on main: ${COVERAGE_ENFORCE_MAIN:-0}" \
+          && printf "%s\n" "- Default threshold: ${COVERAGE_DEFAULT_THRESHOLD:-80} (override via coverage:<pct>)"
+        env:
+          COVERAGE_ENFORCE_MAIN: ${{ vars.COVERAGE_ENFORCE_MAIN }}
+          COVERAGE_DEFAULT_THRESHOLD: ${{ vars.COVERAGE_DEFAULT_THRESHOLD }}
       - uses: actions/checkout@v4
       - name: Enable corepack
         run: corepack enable
