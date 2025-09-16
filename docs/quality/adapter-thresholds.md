@@ -9,6 +9,11 @@ Proposal
   - `enforce-a11y`, `enforce-perf`, `enforce-lh` — turn results into gates
   - `a11y:<score>`, `perf:<score>` — override thresholds ad hoc
 
+Repository variables (recommended)
+- `PERF_DEFAULT_THRESHOLD`（既定 75 相当）
+- `LH_DEFAULT_THRESHOLD`（既定 80 相当）
+未設定の場合でもレポートは非ブロッキングで動作しますが、しきい値の既定を統一するため変数の設定を推奨します。
+
 Current wiring (a11y minimal)
 - `run-adapters`: runs adapter-thresholds.yml to summarize `reports/a11y-results.json` on PR (non-blocking)
 - `enforce-a11y`: enforces minimal thresholds (critical=0, serious=0). Job fails if violated.
