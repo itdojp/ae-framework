@@ -34,6 +34,7 @@
   - `/run-hermetic` … `run-hermetic` ラベル付与（Hermetic CI 実行）
   - `/run-spec` … `run-spec` ラベル付与（Spec Fail-Fast 実行）
   - `/run-drift` … `run-drift` ラベル付与（Codegen Drift 検出 実行）
+  - `/run-adapters` … `run-adapters` ラベル付与（Adapter Thresholds レポート実行）
   - `/non-blocking` … `ci-non-blocking` ラベル付与（一部ジョブを continue-on-error）
   - `/blocking` … `ci-non-blocking` ラベル除去（通常のブロッキング設定へ）
   - `/ready` … `do-not-merge` ラベル除去（マージ待ち状態へ）
@@ -53,6 +54,7 @@
     - `/run-security-dispatch` … sbom-generation.yml を PR の head ブランチで起動
     - `/ci-fast-dispatch` … ci-fast.yml を PR の head ブランチで起動（対応ラベルが付くとバッチも実行）
     - `/formal-verify-dispatch` … formal-verify.yml を PR の head ブランチで起動
+    - `/formal-apalache-dispatch` … formal-verify.yml を Apalache ターゲットで起動（inputs.target=apalache）
     - `/run-flake-dispatch` … flake-detect.yml を PR の head ブランチで起動
     - `/spec-validation-dispatch` … spec-validation.yml を PR の head ブランチで起動
   - フォーマル/契約（ラベル付与）
