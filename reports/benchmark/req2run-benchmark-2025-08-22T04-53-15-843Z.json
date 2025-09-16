@@ -1,0 +1,880 @@
+{
+  "metadata": {
+    "timestamp": "2025-08-22T04:53:15.844Z",
+    "totalProblems": 2,
+    "successfulRuns": 2,
+    "failedRuns": 0,
+    "averageScore": 0,
+    "totalExecutionTime": 64,
+    "framework": "AE Framework v1.0.0",
+    "benchmarkVersion": "req2run-benchmark"
+  },
+  "configuration": {
+    "req2runRepository": "https://github.com/itdojp/req2run-benchmark.git",
+    "problems": [
+      {
+        "id": "web-api-basic-001",
+        "enabled": false,
+        "timeoutMs": 300000,
+        "retries": 1,
+        "category": "web-api",
+        "difficulty": "basic"
+      },
+      {
+        "id": "CLI-001",
+        "enabled": true,
+        "timeoutMs": 180000,
+        "retries": 1,
+        "category": "cli-tool",
+        "difficulty": "basic"
+      },
+      {
+        "id": "WEB-001",
+        "enabled": true,
+        "timeoutMs": 300000,
+        "retries": 1,
+        "category": "web-api",
+        "difficulty": "intermediate"
+      },
+      {
+        "id": "data-processing-basic-001",
+        "enabled": false,
+        "timeoutMs": 240000,
+        "retries": 1,
+        "category": "data-processing",
+        "difficulty": "basic"
+      },
+      {
+        "id": "web-api-intermediate-001",
+        "enabled": false,
+        "timeoutMs": 600000,
+        "retries": 2,
+        "category": "web-api",
+        "difficulty": "intermediate"
+      },
+      {
+        "id": "auth-intermediate-001",
+        "enabled": false,
+        "timeoutMs": 480000,
+        "retries": 2,
+        "category": "authentication",
+        "difficulty": "intermediate"
+      },
+      {
+        "id": "distributed-advanced-001",
+        "enabled": false,
+        "timeoutMs": 1800000,
+        "retries": 3,
+        "category": "distributed-system",
+        "difficulty": "advanced"
+      },
+      {
+        "id": "ml-pipeline-expert-001",
+        "enabled": false,
+        "timeoutMs": 3600000,
+        "retries": 3,
+        "category": "machine-learning",
+        "difficulty": "expert"
+      }
+    ],
+    "execution": {
+      "parallel": false,
+      "maxConcurrency": 2,
+      "resourceLimits": {
+        "maxMemoryMB": 4096,
+        "maxCpuPercent": 80,
+        "maxDiskMB": 10240,
+        "maxExecutionTimeMs": 3600000
+      },
+      "environment": "development",
+      "docker": {
+        "enabled": false,
+        "image": "node:18-alpine",
+        "volumes": [
+          "/tmp:/tmp"
+        ],
+        "ports": [
+          3000,
+          8080
+        ]
+      }
+    },
+    "evaluation": {
+      "weights": {
+        "functional": 0.35,
+        "performance": 0.15,
+        "quality": 0.2,
+        "security": 0.15,
+        "testing": 0.15
+      },
+      "thresholds": {
+        "minOverallScore": 60,
+        "minFunctionalCoverage": 70,
+        "maxResponseTime": 2000,
+        "minCodeQuality": 75,
+        "maxVulnerabilities": 5
+      },
+      "scoring": {
+        "algorithm": "weighted-average",
+        "penalties": {
+          "timeoutPenalty": 0.5,
+          "errorPenalty": 0.3,
+          "qualityPenalty": 0.2
+        },
+        "bonuses": {
+          "performanceBonus": 0.1,
+          "qualityBonus": 0.1,
+          "securityBonus": 0.05
+        }
+      }
+    },
+    "reporting": {
+      "formats": [
+        "json",
+        "html",
+        "markdown"
+      ],
+      "destinations": [
+        {
+          "type": "file",
+          "config": {
+            "directory": "./reports/benchmark",
+            "filename": "req2run-benchmark-{timestamp}.{format}"
+          }
+        },
+        {
+          "type": "github",
+          "config": {
+            "repository": "itdojp/ae-framework",
+            "issueOnFailure": true,
+            "commentOnPR": true
+          }
+        }
+      ],
+      "dashboard": {
+        "enabled": true,
+        "port": 3001,
+        "refreshInterval": 30000,
+        "charts": [
+          {
+            "type": "line",
+            "metrics": [
+              "overallScore",
+              "functionalCoverage"
+            ],
+            "title": "Performance Trends"
+          },
+          {
+            "type": "bar",
+            "metrics": [
+              "performance.responseTime",
+              "performance.memoryUsage"
+            ],
+            "title": "Resource Usage"
+          },
+          {
+            "type": "pie",
+            "metrics": [
+              "security.vulnerabilityCount"
+            ],
+            "title": "Security Issues"
+          },
+          {
+            "type": "radar",
+            "metrics": [
+              "functionalCoverage",
+              "codeQuality.maintainabilityIndex",
+              "security.securityScore",
+              "performance.throughput"
+            ],
+            "title": "Overall Quality Radar"
+          }
+        ]
+      }
+    }
+  },
+  "results": [
+    {
+      "problemId": "CLI-001",
+      "success": true,
+      "score": 0,
+      "executionTime": 38,
+      "phases": [
+        {
+          "phase": "intent-analysis",
+          "startTime": "2025-08-22T04:53:15.807Z",
+          "endTime": "2025-08-22T04:53:15.813Z",
+          "duration": 6,
+          "input": null,
+          "output": {
+            "requirements": [],
+            "userStories": [],
+            "useCases": [],
+            "constraints": [
+              {
+                "type": "technical",
+                "description": "Must use allowed packages only",
+                "impact": "high",
+                "source": "benchmark-specification"
+              }
+            ],
+            "assumptions": [],
+            "risks": [],
+            "domainModel": {
+              "entities": [],
+              "relationships": [],
+              "boundedContexts": [
+                {
+                  "name": "cli_tool",
+                  "entities": [],
+                  "ubiquitousLanguage": []
+                }
+              ],
+              "aggregates": []
+            },
+            "ambiguities": [
+              {
+                "text": "should",
+                "type": "vague",
+                "location": "document",
+                "suggestion": "Replace \"should\" with specific criteria",
+                "severity": "medium"
+              }
+            ],
+            "suggestions": [
+              "Resolve 1 ambiguities in requirements",
+              "Add security requirements",
+              "Define performance requirements"
+            ],
+            "traceability": []
+          },
+          "success": true
+        },
+        {
+          "phase": "requirements",
+          "startTime": "2025-08-22T04:53:15.813Z",
+          "endTime": "2025-08-22T04:53:15.814Z",
+          "duration": 1,
+          "input": {
+            "requirements": [],
+            "userStories": [],
+            "useCases": [],
+            "constraints": [
+              {
+                "type": "technical",
+                "description": "Must use allowed packages only",
+                "impact": "high",
+                "source": "benchmark-specification"
+              }
+            ],
+            "assumptions": [],
+            "risks": [],
+            "domainModel": {
+              "entities": [],
+              "relationships": [],
+              "boundedContexts": [
+                {
+                  "name": "cli_tool",
+                  "entities": [],
+                  "ubiquitousLanguage": []
+                }
+              ],
+              "aggregates": []
+            },
+            "ambiguities": [
+              {
+                "text": "should",
+                "type": "vague",
+                "location": "document",
+                "suggestion": "Replace \"should\" with specific criteria",
+                "severity": "medium"
+              }
+            ],
+            "suggestions": [
+              "Resolve 1 ambiguities in requirements",
+              "Add security requirements",
+              "Define performance requirements"
+            ],
+            "traceability": []
+          },
+          "output": {
+            "structured": [
+              {
+                "title": "Requirement 1",
+                "content": "undefined\n\nmust: The tool MUST accept command-line arguments for input file path and output file path\nmust: The tool MUST support CSV, JSON, and TXT file formats\nmust: The tool MUST provide conversion between supported formats (CSV to JSON, JSON to CSV, etc",
+                "source": "natural-language-input",
+                "type": "functional",
+                "priority": "high"
+              },
+              {
+                "title": "Requirement 2",
+                "content": ")\nmust: The tool MUST validate input file existence and readability\nshould: The tool SHOULD provide a --verbose flag for detailed output\nshould: The tool SHOULD support batch processing of multiple files\nmay: The tool MAY provide progress bars for large file processing\n\nConstraints:\n{\n  \"technical\": [\n    \"click\",\n    \"argparse\",\n    \"pandas\",\n    \"commander\",\n    \"yargs\",\n    \"cobra\",\n    \"viper\"\n  ],\n  \"business\": [\n    \"requests\",\n    \"urllib\",\n    \"http\"\n  ],\n  \"performance\": {\n    \"p95_latency_ms\": 500,\n    \"p99_latency_ms\": 1000,\n    \"throughput_files_per_minute\": 100,\n    \"cpu_limit\": \"500m\",\n    \"memory_limit\": \"256Mi\"\n  }\n}",
+                "source": "natural-language-input",
+                "type": "non-functional",
+                "priority": "high"
+              }
+            ],
+            "summary": "Processed 2 requirement statements from natural language input",
+            "gaps": [
+              "Business requirements not clearly defined"
+            ],
+            "conflicts": [],
+            "ambiguities": [
+              "Ambiguous language in: \")\nmust: The tool MUST validate input file existence and readability\nshould: The tool SHOULD provide a --verbose flag for detailed output\nshould: The tool SHOULD support batch processing of multiple files\nmay: The tool MAY provide progress bars for large file processing\n\nConstraints:\n{\n  \"technical\": [\n    \"click\",\n    \"argparse\",\n    \"pandas\",\n    \"commander\",\n    \"yargs\",\n    \"cobra\",\n    \"viper\"\n  ],\n  \"business\": [\n    \"requests\",\n    \"urllib\",\n    \"http\"\n  ],\n  \"performance\": {\n    \"p95_latency_ms\": 500,\n    \"p99_latency_ms\": 1000,\n    \"throughput_files_per_minute\": 100,\n    \"cpu_limit\": \"500m\",\n    \"memory_limit\": \"256Mi\"\n  }\n}\""
+            ],
+            "clarificationNeeded": [
+              "Clarify specific behavior for: \")\nmust: The tool MUST validate input file existence and readability\nshould: The tool SHOULD provide a --verbose flag for detailed output\nshould: The tool SHOULD support batch processing of multiple files\nmay: The tool MAY provide progress bars for large file processing\n\nConstraints:\n{\n  \"technical\": [\n    \"click\",\n    \"argparse\",\n    \"pandas\",\n    \"commander\",\n    \"yargs\",\n    \"cobra\",\n    \"viper\"\n  ],\n  \"business\": [\n    \"requests\",\n    \"urllib\",\n    \"http\"\n  ],\n  \"performance\": {\n    \"p95_latency_ms\": 500,\n    \"p99_latency_ms\": 1000,\n    \"throughput_files_per_minute\": 100,\n    \"cpu_limit\": \"500m\",\n    \"memory_limit\": \"256Mi\"\n  }\n}\""
+            ]
+          },
+          "success": true
+        },
+        {
+          "phase": "user-stories",
+          "startTime": "2025-08-22T04:53:15.814Z",
+          "endTime": "2025-08-22T04:53:15.814Z",
+          "duration": 0,
+          "input": {
+            "structured": [
+              {
+                "title": "Requirement 1",
+                "content": "undefined\n\nmust: The tool MUST accept command-line arguments for input file path and output file path\nmust: The tool MUST support CSV, JSON, and TXT file formats\nmust: The tool MUST provide conversion between supported formats (CSV to JSON, JSON to CSV, etc",
+                "source": "natural-language-input",
+                "type": "functional",
+                "priority": "high"
+              },
+              {
+                "title": "Requirement 2",
+                "content": ")\nmust: The tool MUST validate input file existence and readability\nshould: The tool SHOULD provide a --verbose flag for detailed output\nshould: The tool SHOULD support batch processing of multiple files\nmay: The tool MAY provide progress bars for large file processing\n\nConstraints:\n{\n  \"technical\": [\n    \"click\",\n    \"argparse\",\n    \"pandas\",\n    \"commander\",\n    \"yargs\",\n    \"cobra\",\n    \"viper\"\n  ],\n  \"business\": [\n    \"requests\",\n    \"urllib\",\n    \"http\"\n  ],\n  \"performance\": {\n    \"p95_latency_ms\": 500,\n    \"p99_latency_ms\": 1000,\n    \"throughput_files_per_minute\": 100,\n    \"cpu_limit\": \"500m\",\n    \"memory_limit\": \"256Mi\"\n  }\n}",
+                "source": "natural-language-input",
+                "type": "non-functional",
+                "priority": "high"
+              }
+            ],
+            "summary": "Processed 2 requirement statements from natural language input",
+            "gaps": [
+              "Business requirements not clearly defined"
+            ],
+            "conflicts": [],
+            "ambiguities": [
+              "Ambiguous language in: \")\nmust: The tool MUST validate input file existence and readability\nshould: The tool SHOULD provide a --verbose flag for detailed output\nshould: The tool SHOULD support batch processing of multiple files\nmay: The tool MAY provide progress bars for large file processing\n\nConstraints:\n{\n  \"technical\": [\n    \"click\",\n    \"argparse\",\n    \"pandas\",\n    \"commander\",\n    \"yargs\",\n    \"cobra\",\n    \"viper\"\n  ],\n  \"business\": [\n    \"requests\",\n    \"urllib\",\n    \"http\"\n  ],\n  \"performance\": {\n    \"p95_latency_ms\": 500,\n    \"p99_latency_ms\": 1000,\n    \"throughput_files_per_minute\": 100,\n    \"cpu_limit\": \"500m\",\n    \"memory_limit\": \"256Mi\"\n  }\n}\""
+            ],
+            "clarificationNeeded": [
+              "Clarify specific behavior for: \")\nmust: The tool MUST validate input file existence and readability\nshould: The tool SHOULD provide a --verbose flag for detailed output\nshould: The tool SHOULD support batch processing of multiple files\nmay: The tool MAY provide progress bars for large file processing\n\nConstraints:\n{\n  \"technical\": [\n    \"click\",\n    \"argparse\",\n    \"pandas\",\n    \"commander\",\n    \"yargs\",\n    \"cobra\",\n    \"viper\"\n  ],\n  \"business\": [\n    \"requests\",\n    \"urllib\",\n    \"http\"\n  ],\n  \"performance\": {\n    \"p95_latency_ms\": 500,\n    \"p99_latency_ms\": 1000,\n    \"throughput_files_per_minute\": 100,\n    \"cpu_limit\": \"500m\",\n    \"memory_limit\": \"256Mi\"\n  }\n}\""
+            ]
+          },
+          "output": {
+            "stories": [
+              {
+                "id": "US001",
+                "title": "User Login",
+                "description": "As a user, I want to log into the system so that I can access my account",
+                "asA": "user",
+                "iWant": "to log into the system",
+                "soThat": "I can access my account",
+                "acceptanceCriteria": [
+                  "User can enter username and password",
+                  "System validates credentials",
+                  "User is redirected to dashboard on success"
+                ],
+                "priority": "high",
+                "storyPoints": 5,
+                "epic": "User Management",
+                "dependencies": [],
+                "testScenarios": [
+                  "Valid login",
+                  "Invalid credentials",
+                  "Account locked"
+                ]
+              }
+            ],
+            "epics": [
+              "User Management"
+            ],
+            "totalStoryPoints": 5,
+            "completenessScore": 85,
+            "gaps": [
+              "Password reset functionality not specified"
+            ],
+            "conflicts": []
+          },
+          "success": true
+        },
+        {
+          "phase": "validation",
+          "startTime": "2025-08-22T04:53:15.814Z",
+          "endTime": "2025-08-22T04:53:15.814Z",
+          "duration": 0,
+          "input": {
+            "stories": [
+              {
+                "id": "US001",
+                "title": "User Login",
+                "description": "As a user, I want to log into the system so that I can access my account",
+                "asA": "user",
+                "iWant": "to log into the system",
+                "soThat": "I can access my account",
+                "acceptanceCriteria": [
+                  "User can enter username and password",
+                  "System validates credentials",
+                  "User is redirected to dashboard on success"
+                ],
+                "priority": "high",
+                "storyPoints": 5,
+                "epic": "User Management",
+                "dependencies": [],
+                "testScenarios": [
+                  "Valid login",
+                  "Invalid credentials",
+                  "Account locked"
+                ]
+              }
+            ],
+            "epics": [
+              "User Management"
+            ],
+            "totalStoryPoints": 5,
+            "completenessScore": 85,
+            "gaps": [
+              "Password reset functionality not specified"
+            ],
+            "conflicts": []
+          },
+          "output": {
+            "score": 80,
+            "totalStories": 10,
+            "validStories": 8,
+            "qualityMetrics": {
+              "formatCompliance": 90,
+              "acceptanceCriteria": 70,
+              "testability": 85,
+              "independence": 80,
+              "estimability": 75
+            },
+            "commonIssues": [
+              {
+                "description": "Missing acceptance criteria",
+                "frequency": 3
+              }
+            ],
+            "storyIssues": [],
+            "blockingIssues": []
+          },
+          "success": true
+        },
+        {
+          "phase": "domain-modeling",
+          "startTime": "2025-08-22T04:53:15.814Z",
+          "endTime": "2025-08-22T04:53:15.814Z",
+          "duration": 0,
+          "input": {
+            "score": 80,
+            "totalStories": 10,
+            "validStories": 8,
+            "qualityMetrics": {
+              "formatCompliance": 90,
+              "acceptanceCriteria": 70,
+              "testability": 85,
+              "independence": 80,
+              "estimability": 75
+            },
+            "commonIssues": [
+              {
+                "description": "Missing acceptance criteria",
+                "frequency": 3
+              }
+            ],
+            "storyIssues": [],
+            "blockingIssues": []
+          },
+          "output": {
+            "summary": "General Domain Modeling Analysis",
+            "analysis": "General domain modeling analysis completed",
+            "recommendations": [
+              "Continue with domain-driven design practices"
+            ],
+            "nextActions": [
+              "Proceed to implementation phase"
+            ],
+            "warnings": [],
+            "shouldBlockProgress": false
+          },
+          "success": true
+        },
+        {
+          "phase": "ui-ux-generation",
+          "startTime": "2025-08-22T04:53:15.814Z",
+          "endTime": "2025-08-22T04:53:15.815Z",
+          "duration": 1,
+          "input": {
+            "summary": "General Domain Modeling Analysis",
+            "analysis": "General domain modeling analysis completed",
+            "recommendations": [
+              "Continue with domain-driven design practices"
+            ],
+            "nextActions": [
+              "Proceed to implementation phase"
+            ],
+            "warnings": [],
+            "shouldBlockProgress": false
+          },
+          "output": {
+            "summary": "General Domain Modeling Analysis",
+            "analysis": "General domain modeling analysis completed",
+            "recommendations": [
+              "Continue with domain-driven design practices"
+            ],
+            "nextActions": [
+              "Proceed to implementation phase"
+            ],
+            "warnings": [],
+            "shouldBlockProgress": false
+          },
+          "success": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "problemId": "WEB-001",
+      "success": true,
+      "score": 0,
+      "executionTime": 26,
+      "phases": [
+        {
+          "phase": "intent-analysis",
+          "startTime": "2025-08-22T04:53:15.840Z",
+          "endTime": "2025-08-22T04:53:15.842Z",
+          "duration": 2,
+          "input": null,
+          "output": {
+            "requirements": [],
+            "userStories": [],
+            "useCases": [],
+            "constraints": [
+              {
+                "type": "technical",
+                "description": "Must use allowed packages only",
+                "impact": "high",
+                "source": "benchmark-specification"
+              }
+            ],
+            "assumptions": [],
+            "risks": [],
+            "domainModel": {
+              "entities": [],
+              "relationships": [],
+              "boundedContexts": [
+                {
+                  "name": "web_api",
+                  "entities": [],
+                  "ubiquitousLanguage": []
+                }
+              ],
+              "aggregates": []
+            },
+            "ambiguities": [
+              {
+                "text": "should",
+                "type": "vague",
+                "location": "document",
+                "suggestion": "Replace \"should\" with specific criteria",
+                "severity": "medium"
+              },
+              {
+                "text": "fast",
+                "type": "vague",
+                "location": "document",
+                "suggestion": "Define specific metrics for \"fast\"",
+                "severity": "high"
+              }
+            ],
+            "suggestions": [
+              "Resolve 2 ambiguities in requirements",
+              "Add security requirements",
+              "Define performance requirements"
+            ],
+            "traceability": []
+          },
+          "success": true
+        },
+        {
+          "phase": "requirements",
+          "startTime": "2025-08-22T04:53:15.842Z",
+          "endTime": "2025-08-22T04:53:15.842Z",
+          "duration": 0,
+          "input": {
+            "requirements": [],
+            "userStories": [],
+            "useCases": [],
+            "constraints": [
+              {
+                "type": "technical",
+                "description": "Must use allowed packages only",
+                "impact": "high",
+                "source": "benchmark-specification"
+              }
+            ],
+            "assumptions": [],
+            "risks": [],
+            "domainModel": {
+              "entities": [],
+              "relationships": [],
+              "boundedContexts": [
+                {
+                  "name": "web_api",
+                  "entities": [],
+                  "ubiquitousLanguage": []
+                }
+              ],
+              "aggregates": []
+            },
+            "ambiguities": [
+              {
+                "text": "should",
+                "type": "vague",
+                "location": "document",
+                "suggestion": "Replace \"should\" with specific criteria",
+                "severity": "medium"
+              },
+              {
+                "text": "fast",
+                "type": "vague",
+                "location": "document",
+                "suggestion": "Define specific metrics for \"fast\"",
+                "severity": "high"
+              }
+            ],
+            "suggestions": [
+              "Resolve 2 ambiguities in requirements",
+              "Add security requirements",
+              "Define performance requirements"
+            ],
+            "traceability": []
+          },
+          "output": {
+            "structured": [
+              {
+                "title": "Requirement 1",
+                "content": "undefined\n\nmust: WHEN a client sends a valid request, the API SHALL implement CRUD operations for /todos endpoint\nmust: WHERE the API returns a response, the API SHALL format all responses as JSON with Content-Type: application/json\nmust: WHEN a user provides valid credentials to /auth/login, the API SHALL return a valid JWT token\nmust: Todo items MUST have fields: id, title, description, completed, created_at, updated_at\nshould: WHEN retrieving todos, the API SHOULD implement pagination with page and limit parameters\nmay: IF the implementation chooses, the API MAY implement filtering by completion status\nshould: WHILE processing requests, the API SHALL enforce rate limiting of 100 requests per minute per IP\n\nConstraints:\n{\n  \"technical\": [\n    \"fastapi\",\n    \"uvicorn\",\n    \"pydantic\",\n    \"sqlalchemy\",\n    \"pytest\",\n    \"httpx\",\n    \"python-jose\",\n    \"passlib\",\n    \"python-multipart\"\n  ],\n  \"business\": [\n    \"requests\",\n    \"urllib3\"\n  ],\n  \"performance\": {\n    \"p95_latency_ms\": 200,\n    \"p99_latency_ms\": 500,\n    \"throughput_rps\": 100,\n    \"concurrent_users\": 50,\n    \"cpu_limit\": \"2000m\",\n    \"memory_limit\": \"512Mi\"\n  }\n}",
+                "source": "natural-language-input",
+                "type": "non-functional",
+                "priority": "high"
+              }
+            ],
+            "summary": "Processed 1 requirement statements from natural language input",
+            "gaps": [
+              "No functional requirements identified",
+              "Business requirements not clearly defined"
+            ],
+            "conflicts": [],
+            "ambiguities": [
+              "Ambiguous language in: \"undefined\n\nmust: WHEN a client sends a valid request, the API SHALL implement CRUD operations for /todos endpoint\nmust: WHERE the API returns a response, the API SHALL format all responses as JSON with Content-Type: application/json\nmust: WHEN a user provides valid credentials to /auth/login, the API SHALL return a valid JWT token\nmust: Todo items MUST have fields: id, title, description, completed, created_at, updated_at\nshould: WHEN retrieving todos, the API SHOULD implement pagination with page and limit parameters\nmay: IF the implementation chooses, the API MAY implement filtering by completion status\nshould: WHILE processing requests, the API SHALL enforce rate limiting of 100 requests per minute per IP\n\nConstraints:\n{\n  \"technical\": [\n    \"fastapi\",\n    \"uvicorn\",\n    \"pydantic\",\n    \"sqlalchemy\",\n    \"pytest\",\n    \"httpx\",\n    \"python-jose\",\n    \"passlib\",\n    \"python-multipart\"\n  ],\n  \"business\": [\n    \"requests\",\n    \"urllib3\"\n  ],\n  \"performance\": {\n    \"p95_latency_ms\": 200,\n    \"p99_latency_ms\": 500,\n    \"throughput_rps\": 100,\n    \"concurrent_users\": 50,\n    \"cpu_limit\": \"2000m\",\n    \"memory_limit\": \"512Mi\"\n  }\n}\""
+            ],
+            "clarificationNeeded": [
+              "Clarify specific behavior for: \"undefined\n\nmust: WHEN a client sends a valid request, the API SHALL implement CRUD operations for /todos endpoint\nmust: WHERE the API returns a response, the API SHALL format all responses as JSON with Content-Type: application/json\nmust: WHEN a user provides valid credentials to /auth/login, the API SHALL return a valid JWT token\nmust: Todo items MUST have fields: id, title, description, completed, created_at, updated_at\nshould: WHEN retrieving todos, the API SHOULD implement pagination with page and limit parameters\nmay: IF the implementation chooses, the API MAY implement filtering by completion status\nshould: WHILE processing requests, the API SHALL enforce rate limiting of 100 requests per minute per IP\n\nConstraints:\n{\n  \"technical\": [\n    \"fastapi\",\n    \"uvicorn\",\n    \"pydantic\",\n    \"sqlalchemy\",\n    \"pytest\",\n    \"httpx\",\n    \"python-jose\",\n    \"passlib\",\n    \"python-multipart\"\n  ],\n  \"business\": [\n    \"requests\",\n    \"urllib3\"\n  ],\n  \"performance\": {\n    \"p95_latency_ms\": 200,\n    \"p99_latency_ms\": 500,\n    \"throughput_rps\": 100,\n    \"concurrent_users\": 50,\n    \"cpu_limit\": \"2000m\",\n    \"memory_limit\": \"512Mi\"\n  }\n}\""
+            ]
+          },
+          "success": true
+        },
+        {
+          "phase": "user-stories",
+          "startTime": "2025-08-22T04:53:15.842Z",
+          "endTime": "2025-08-22T04:53:15.842Z",
+          "duration": 0,
+          "input": {
+            "structured": [
+              {
+                "title": "Requirement 1",
+                "content": "undefined\n\nmust: WHEN a client sends a valid request, the API SHALL implement CRUD operations for /todos endpoint\nmust: WHERE the API returns a response, the API SHALL format all responses as JSON with Content-Type: application/json\nmust: WHEN a user provides valid credentials to /auth/login, the API SHALL return a valid JWT token\nmust: Todo items MUST have fields: id, title, description, completed, created_at, updated_at\nshould: WHEN retrieving todos, the API SHOULD implement pagination with page and limit parameters\nmay: IF the implementation chooses, the API MAY implement filtering by completion status\nshould: WHILE processing requests, the API SHALL enforce rate limiting of 100 requests per minute per IP\n\nConstraints:\n{\n  \"technical\": [\n    \"fastapi\",\n    \"uvicorn\",\n    \"pydantic\",\n    \"sqlalchemy\",\n    \"pytest\",\n    \"httpx\",\n    \"python-jose\",\n    \"passlib\",\n    \"python-multipart\"\n  ],\n  \"business\": [\n    \"requests\",\n    \"urllib3\"\n  ],\n  \"performance\": {\n    \"p95_latency_ms\": 200,\n    \"p99_latency_ms\": 500,\n    \"throughput_rps\": 100,\n    \"concurrent_users\": 50,\n    \"cpu_limit\": \"2000m\",\n    \"memory_limit\": \"512Mi\"\n  }\n}",
+                "source": "natural-language-input",
+                "type": "non-functional",
+                "priority": "high"
+              }
+            ],
+            "summary": "Processed 1 requirement statements from natural language input",
+            "gaps": [
+              "No functional requirements identified",
+              "Business requirements not clearly defined"
+            ],
+            "conflicts": [],
+            "ambiguities": [
+              "Ambiguous language in: \"undefined\n\nmust: WHEN a client sends a valid request, the API SHALL implement CRUD operations for /todos endpoint\nmust: WHERE the API returns a response, the API SHALL format all responses as JSON with Content-Type: application/json\nmust: WHEN a user provides valid credentials to /auth/login, the API SHALL return a valid JWT token\nmust: Todo items MUST have fields: id, title, description, completed, created_at, updated_at\nshould: WHEN retrieving todos, the API SHOULD implement pagination with page and limit parameters\nmay: IF the implementation chooses, the API MAY implement filtering by completion status\nshould: WHILE processing requests, the API SHALL enforce rate limiting of 100 requests per minute per IP\n\nConstraints:\n{\n  \"technical\": [\n    \"fastapi\",\n    \"uvicorn\",\n    \"pydantic\",\n    \"sqlalchemy\",\n    \"pytest\",\n    \"httpx\",\n    \"python-jose\",\n    \"passlib\",\n    \"python-multipart\"\n  ],\n  \"business\": [\n    \"requests\",\n    \"urllib3\"\n  ],\n  \"performance\": {\n    \"p95_latency_ms\": 200,\n    \"p99_latency_ms\": 500,\n    \"throughput_rps\": 100,\n    \"concurrent_users\": 50,\n    \"cpu_limit\": \"2000m\",\n    \"memory_limit\": \"512Mi\"\n  }\n}\""
+            ],
+            "clarificationNeeded": [
+              "Clarify specific behavior for: \"undefined\n\nmust: WHEN a client sends a valid request, the API SHALL implement CRUD operations for /todos endpoint\nmust: WHERE the API returns a response, the API SHALL format all responses as JSON with Content-Type: application/json\nmust: WHEN a user provides valid credentials to /auth/login, the API SHALL return a valid JWT token\nmust: Todo items MUST have fields: id, title, description, completed, created_at, updated_at\nshould: WHEN retrieving todos, the API SHOULD implement pagination with page and limit parameters\nmay: IF the implementation chooses, the API MAY implement filtering by completion status\nshould: WHILE processing requests, the API SHALL enforce rate limiting of 100 requests per minute per IP\n\nConstraints:\n{\n  \"technical\": [\n    \"fastapi\",\n    \"uvicorn\",\n    \"pydantic\",\n    \"sqlalchemy\",\n    \"pytest\",\n    \"httpx\",\n    \"python-jose\",\n    \"passlib\",\n    \"python-multipart\"\n  ],\n  \"business\": [\n    \"requests\",\n    \"urllib3\"\n  ],\n  \"performance\": {\n    \"p95_latency_ms\": 200,\n    \"p99_latency_ms\": 500,\n    \"throughput_rps\": 100,\n    \"concurrent_users\": 50,\n    \"cpu_limit\": \"2000m\",\n    \"memory_limit\": \"512Mi\"\n  }\n}\""
+            ]
+          },
+          "output": {
+            "stories": [
+              {
+                "id": "US001",
+                "title": "User Login",
+                "description": "As a user, I want to log into the system so that I can access my account",
+                "asA": "user",
+                "iWant": "to log into the system",
+                "soThat": "I can access my account",
+                "acceptanceCriteria": [
+                  "User can enter username and password",
+                  "System validates credentials",
+                  "User is redirected to dashboard on success"
+                ],
+                "priority": "high",
+                "storyPoints": 5,
+                "epic": "User Management",
+                "dependencies": [],
+                "testScenarios": [
+                  "Valid login",
+                  "Invalid credentials",
+                  "Account locked"
+                ]
+              }
+            ],
+            "epics": [
+              "User Management"
+            ],
+            "totalStoryPoints": 5,
+            "completenessScore": 85,
+            "gaps": [
+              "Password reset functionality not specified"
+            ],
+            "conflicts": []
+          },
+          "success": true
+        },
+        {
+          "phase": "validation",
+          "startTime": "2025-08-22T04:53:15.842Z",
+          "endTime": "2025-08-22T04:53:15.842Z",
+          "duration": 0,
+          "input": {
+            "stories": [
+              {
+                "id": "US001",
+                "title": "User Login",
+                "description": "As a user, I want to log into the system so that I can access my account",
+                "asA": "user",
+                "iWant": "to log into the system",
+                "soThat": "I can access my account",
+                "acceptanceCriteria": [
+                  "User can enter username and password",
+                  "System validates credentials",
+                  "User is redirected to dashboard on success"
+                ],
+                "priority": "high",
+                "storyPoints": 5,
+                "epic": "User Management",
+                "dependencies": [],
+                "testScenarios": [
+                  "Valid login",
+                  "Invalid credentials",
+                  "Account locked"
+                ]
+              }
+            ],
+            "epics": [
+              "User Management"
+            ],
+            "totalStoryPoints": 5,
+            "completenessScore": 85,
+            "gaps": [
+              "Password reset functionality not specified"
+            ],
+            "conflicts": []
+          },
+          "output": {
+            "score": 80,
+            "totalStories": 10,
+            "validStories": 8,
+            "qualityMetrics": {
+              "formatCompliance": 90,
+              "acceptanceCriteria": 70,
+              "testability": 85,
+              "independence": 80,
+              "estimability": 75
+            },
+            "commonIssues": [
+              {
+                "description": "Missing acceptance criteria",
+                "frequency": 3
+              }
+            ],
+            "storyIssues": [],
+            "blockingIssues": []
+          },
+          "success": true
+        },
+        {
+          "phase": "domain-modeling",
+          "startTime": "2025-08-22T04:53:15.842Z",
+          "endTime": "2025-08-22T04:53:15.842Z",
+          "duration": 0,
+          "input": {
+            "score": 80,
+            "totalStories": 10,
+            "validStories": 8,
+            "qualityMetrics": {
+              "formatCompliance": 90,
+              "acceptanceCriteria": 70,
+              "testability": 85,
+              "independence": 80,
+              "estimability": 75
+            },
+            "commonIssues": [
+              {
+                "description": "Missing acceptance criteria",
+                "frequency": 3
+              }
+            ],
+            "storyIssues": [],
+            "blockingIssues": []
+          },
+          "output": {
+            "summary": "General Domain Modeling Analysis",
+            "analysis": "General domain modeling analysis completed",
+            "recommendations": [
+              "Continue with domain-driven design practices"
+            ],
+            "nextActions": [
+              "Proceed to implementation phase"
+            ],
+            "warnings": [],
+            "shouldBlockProgress": false
+          },
+          "success": true
+        },
+        {
+          "phase": "ui-ux-generation",
+          "startTime": "2025-08-22T04:53:15.842Z",
+          "endTime": "2025-08-22T04:53:15.842Z",
+          "duration": 0,
+          "input": {
+            "summary": "General Domain Modeling Analysis",
+            "analysis": "General domain modeling analysis completed",
+            "recommendations": [
+              "Continue with domain-driven design practices"
+            ],
+            "nextActions": [
+              "Proceed to implementation phase"
+            ],
+            "warnings": [],
+            "shouldBlockProgress": false
+          },
+          "output": {
+            "summary": "General Domain Modeling Analysis",
+            "analysis": "General domain modeling analysis completed",
+            "recommendations": [
+              "Continue with domain-driven design practices"
+            ],
+            "nextActions": [
+              "Proceed to implementation phase"
+            ],
+            "warnings": [],
+            "shouldBlockProgress": false
+          },
+          "success": true
+        }
+      ],
+      "errors": []
+    }
+  ]
+}
