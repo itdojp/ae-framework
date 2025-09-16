@@ -9,7 +9,7 @@ permissions: read-all
 
 jobs:
   aggregate:
-    if: contains(github.event.pull_request.labels.*.name, 'run-formal')
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run-formal')
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
@@ -39,6 +39,7 @@ jobs:
           const base = "artifacts_dl";
           const outDir = "artifacts/formal"; fs.mkdirSync(outDir,{recursive:true});
           const outMd = path.join(outDir, "formal-aggregate.md");
+          const outJson = path.join(outDir, "formal-aggregate.json");
 
           const modelJson = find(base, "model-check-results/model-check.json");
           const alloy = modelJson ? (rj(modelJson)?.alloy || {}) : {};
@@ -56,6 +57,10 @@ jobs:
           const confSum = find(base, "formal-reports-conformance/conformance-summary.json");
 
           const apalache = apalacheSum ? rj(apalacheSum) : undefined;
+          const tla = tlaSum ? rj(tlaSum) : undefined;
+          const smt = smtSum ? rj(smtSum) : undefined;
+          const alloyS = alloySum ? rj(alloySum) : undefined;
+          const conf = confSum ? rj(confSum) : undefined;
           const clampInfo = {
             lineClamp: process.env.FORMAL_AGG_LINE_CLAMP || '200',
             errorsLimit: process.env.FORMAL_AGG_ERRORS_LIMIT || '5'
@@ -116,6 +121,17 @@ jobs:
           lines.push(`_Clamp: line=${clampInfo.lineClamp}, errors=${clampInfo.errorsLimit}_`);
           const md = lines.join("\n");
           fs.writeFileSync(outMd, md);
+          // JSON aggregate for tooling
+          const json = {
+            tlc: { ok: tlcOk, total: tlcTotal },
+            alloy: { ok: alloyOk, total: alloyTotal, summary: alloyS || null },
+            tla: tla || null,
+            smt: smt || null,
+            apalache: apalache || null,
+            conformance: conf || null,
+            info: { lineClamp: LINE_CLAMP, errorsLimit: ERRORS_LIMIT, generatedAt: new Date().toISOString() }
+          };
+          fs.writeFileSync(outJson, JSON.stringify(json,null,2));
           console.log(md);
           JS
       - name: Upload aggregate
@@ -123,7 +139,13 @@ jobs:
         with:
           name: formal-reports-aggregate
           path: artifacts/formal/formal-aggregate.md
+      - name: Upload aggregate JSON
+        uses: actions/upload-artifact@v4
+        with:
+          name: formal-reports-aggregate-json
+          path: artifacts/formal/formal-aggregate.json
       - name: Comment on PR (upsert)
+        if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |

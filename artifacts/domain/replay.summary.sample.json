@@ -1,0 +1,9 @@
+{
+  "traceId": "replay-unknown",
+  "totalEvents": 3,
+  "finalState": {
+    "onHand": 1,
+    "allocated": 0
+  },
+  "violatedInvariants": []
+}

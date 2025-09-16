@@ -6,7 +6,10 @@ describe('Formal heuristics: computeOkFromOutput', () => {
     const samples = [
       'No counterexamples found. Verification successful.',
       'OK: all properties hold',
-      'Invariant holds and no violations'
+      'Invariant holds and no violations',
+      'Aucun contre-exemple trouvé',
+      'Sin contraejemplos',
+      'Keine Gegenbeispiele'
     ];
     for (const s of samples) expect(computeOkFromOutput(s)).toBe(true);
   });
