@@ -38,7 +38,7 @@ jobs:
             // /run-qa, /run-security, /non-blocking, /ready, /pr-digest, /pr-detailed
             // /handoff A|B|C
             // Dispatchers (require workflow_dispatch on target):
-            // /verify-lite, /run-qa-dispatch, /run-security-dispatch
+            // /verify-lite, /run-qa-dispatch, /run-security-dispatch, /ci-fast-dispatch
             const cmd = body.split(/\s+/)[0];
             const arg = body.split(/\s+/)[1] || '';
 
@@ -90,6 +90,13 @@ jobs:
                 const ref = pr.data.head.ref;
                 await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'sbom-generation.yml', ref, inputs: { include_vulnerabilities: 'true' } });
                 return reply(`Dispatched sbom-generation (security) on ${ref}`);
+              }
+              case '/ci-fast-dispatch': {
+                if (!context.payload.issue.pull_request) return reply('Not a PR');
+                const pr = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
+                const ref = pr.data.head.ref;
+                await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'ci-fast.yml', ref });
+                return reply(`Dispatched CI Fast on ${ref}`);
               }
               case '/qa-batch-commands':
               case '/run-qa:commands': {
