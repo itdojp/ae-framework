@@ -78,3 +78,4 @@
 2) CI に影響のある変更は `run-qa` ラベルで限定的に回す
 3) テキスト生成・整形系は printf で統一
 4) 変更後: `pnpm -s types:check && pnpm -s build` のローカル通過を目安
+5) 小PR連投時の推奨ラベル: `ci-non-blocking`（非ブロッキング運用）, `run-formal`（Formalをopt-in）

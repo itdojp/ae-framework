@@ -33,3 +33,22 @@ Notes
 References
 - Workflow: `.github/workflows/coverage-check.yml`
 - Slash commands: see `AGENTS.md` and `docs/ci-policy.md`
+
+### PR comment example
+```
+<!-- AE-COVERAGE-SUMMARY -->
+Coverage (lines): 82%
+Threshold (effective): 80%
+- via label: coverage:80
+- default: 80%
+Policy: report-only
+Policy source: report-only
+```
+
+### Branch protection（Required化）
+1) Settings → Variables → Repository variables に以下を設定
+   - `COVERAGE_ENFORCE_MAIN=1`
+   - `COVERAGE_DEFAULT_THRESHOLD`（例: 80）
+2) Settings → Branches → Branch protection rules → main → Require status checks で
+   - `coverage-check / gate` や `coverage-check / coverage` を必要に設定（運用に応じて）
+3) 必須化前に一定期間、Note/PRコメントのみで観測することを推奨

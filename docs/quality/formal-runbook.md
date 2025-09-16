@@ -36,6 +36,10 @@
 - TLC（`TLA_TOOLS_JAR` がある場合）: `TLA_TOOLS_JAR=/path/to/tla2tools.jar pnpm run verify:tla -- --engine=tlc`
 - SMT（z3/cvc5 がある場合）: `pnpm run verify:smt -- --solver=z3 --file spec/smt/sample.smt2`
 
+Timeout（任意）
+- 長時間実行を避けるため、TLA/SMT ランナーは `--timeout <ms>` をサポート（GNU `timeout` を利用可能な環境で有効）
+- 例: `pnpm run verify:tla -- --engine=apalache --timeout 60000`
+
 ログ例（label: run-formal 実行時）
 ```
 --- Formal Summary ---
