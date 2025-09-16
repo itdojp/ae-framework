@@ -145,6 +145,11 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - formal-aggregate（PRコメント整形）: `FORMAL_AGG_LINE_CLAMP`（既定 200）/ `FORMAL_AGG_ERRORS_LIMIT`（既定 5）
 - 詳細は `docs/quality/formal-runbook.md` を参照
 
+### カバレッジ（Required運用）
+- 変数 `COVERAGE_ENFORCE_MAIN=1` と `COVERAGE_DEFAULT_THRESHOLD`（例: 80）を設定すると、main への push がブロッキング化
+- Branch protection の Required checks に `coverage-check / gate` / `coverage-check / coverage` を追加（運用次第）
+- 詳細は `docs/quality/coverage-required.md` を参照
+
 ### 運用メモ
 - 緊急時は `ci-non-blocking` ラベルで PR をブロックしない運用に切替可能
 - マージ後は main の包括的 CI（夜間/週次）でカバー
