@@ -21,6 +21,9 @@ function has(cmd) { try { execSync(`bash -lc 'command -v ${cmd}'`, {stdio:'ignor
 function sh(cmd) { try { return execSync(cmd, { encoding: 'utf8' }); } catch (e) { return (e.stdout?.toString?.() || '') + (e.stderr?.toString?.() || ''); } }
 
 const args = parseArgs(process.argv);
+const timeoutSec = args.timeout ? Math.max(1, Math.floor(Number(args.timeout)/1000)) : 0;
+function hasTimeout(){ try { execSync(`bash -lc 'command -v timeout'`, {stdio:'ignore'}); return true; } catch { return false; } }
+const haveTimeout = hasTimeout();
 if (args.help) {
   console.log(`Usage: node scripts/formal/verify-smt.mjs [--solver=z3|cvc5] [--file path/to/input.smt2]`);
   console.log('See docs/quality/formal-tools-setup.md for solver setup.');
@@ -45,10 +48,14 @@ if (!file) {
   status = 'file_not_found';
   output = `SMT-LIB file not found: ${file}`;
 } else if (solver === 'z3' && has('z3')) {
-  output = sh(`bash -lc 'z3 -smt2 ${file.replace(/'/g, "'\\''")} 2>&1 || true'`);
+  const base = `z3 -smt2 ${file.replace(/'/g, "'\\''")}`;
+  const cmd = timeoutSec && haveTimeout ? `timeout ${timeoutSec}s ${base}` : base;
+  output = sh(`bash -lc '${cmd} 2>&1 || true'`);
   status = 'ran'; ran = true;
 } else if (solver === 'cvc5' && has('cvc5')) {
-  output = sh(`bash -lc 'cvc5 --lang=smt2 ${file.replace(/'/g, "'\\''")} 2>&1 || true'`);
+  const base = `cvc5 --lang=smt2 ${file.replace(/'/g, "'\\''")}`;
+  const cmd = timeoutSec && haveTimeout ? `timeout ${timeoutSec}s ${base}` : base;
+  output = sh(`bash -lc '${cmd} 2>&1 || true'`);
   status = 'ran'; ran = true;
 } else {
   status = 'solver_not_available';

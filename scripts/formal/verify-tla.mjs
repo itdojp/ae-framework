@@ -22,6 +22,9 @@ function has(cmd){ try { execSync(`bash -lc 'command -v ${cmd}'`, {stdio:'ignore
 function sh(cmd){ try { return execSync(cmd, {encoding:'utf8'}); } catch(e){ return (e.stdout?.toString?.()||'') + (e.stderr?.toString?.()||''); } }
 
 const args = parseArgs(process.argv);
+const timeoutSec = args.timeout ? Math.max(1, Math.floor(Number(args.timeout)/1000)) : 0;
+function has(cmd){ try { execSync(`bash -lc 'command -v ${cmd}'`, {stdio:'ignore'}); return true; } catch { return false; } }
+const haveTimeout = has('timeout');
 if (args.help){
   console.log(`Usage: node scripts/formal/verify-tla.mjs [--engine=tlc|apalache] [--file spec/tla/DomainSpec.tla]`);
   process.exit(0);
@@ -45,7 +48,9 @@ if (!fs.existsSync(absFile)){
   output = `TLA file not found: ${absFile}`;
 } else if (engine === 'apalache'){
   if (has('apalache-mc')){
-    output = sh(`bash -lc 'apalache-mc check --inv=Invariant ${absFile.replace(/'/g, "'\\''")} 2>&1 || true'`);
+    const base = `apalache-mc check --inv=Invariant ${absFile.replace(/'/g, "'\\''")}`;
+    const cmd = timeoutSec && haveTimeout ? `timeout ${timeoutSec}s ${base}` : base;
+    output = sh(`bash -lc '${cmd} 2>&1 || true'`);
     ran = true; status = 'ran';
   } else {
     status = 'tool_not_available';
@@ -55,7 +60,9 @@ if (!fs.existsSync(absFile)){
   // TLC via TLA_TOOLS_JAR
   if (process.env.TLA_TOOLS_JAR){
     const jar = process.env.TLA_TOOLS_JAR;
-    output = sh(`bash -lc 'java -cp ${jar} tlc2.TLC ${absFile.replace(/'/g, "'\\''")} 2>&1 || true'`);
+    const base = `java -cp ${jar} tlc2.TLC ${absFile.replace(/'/g, "'\\''")}`;
+    const cmd = timeoutSec && haveTimeout ? `timeout ${timeoutSec}s ${base}` : base;
+    output = sh(`bash -lc '${cmd} 2>&1 || true'`);
     ran = true; status = 'ran';
   } else {
     status = 'tool_not_available';

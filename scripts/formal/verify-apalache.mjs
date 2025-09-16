@@ -6,6 +6,7 @@
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { computeOkFromOutput } from './heuristics.mjs';
 
 function parseArgs(argv){
   const args = { _: [] };
@@ -110,29 +111,7 @@ function extractErrorSnippet(out, before=SNIPPET_BEFORE, after=SNIPPET_AFTER){
 // Persist raw output for artifact consumers
 try { fs.writeFileSync(outLog, output, 'utf-8'); } catch {}
 
-function computeOkFromOutput(out){
-  if (!out) return null;
-  // Positive indicators (prefer these if present)
-  const positives = [
-    /\bno\s+(?:errors?|counterexamples?)\b/i,
-    /no\s+counterexamples?\s+found/i,
-    /verification\s+successful/i,
-    /\bok\b/i,
-    /invariant[^\n]*holds/i,
-    /no\s+violations?/i,
-    /all\s+propert(?:y|ies)\s+hold/i
-  ];
-  if (positives.some(re => re.test(out))) return true;
-  // Negative indicators
-  const negatives = [
-    /\berror\b/i,
-    /violation/i,
-    /counterexample/i,
-    /\bfail(?:ed)?\b/i
-  ];
-  if (negatives.some(re => re.test(out))) return false;
-  return null;
-}
+// computeOkFromOutput imported from heuristics.mjs
 
 const summary = {
   tool: 'apalache',
