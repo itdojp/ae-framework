@@ -43,6 +43,8 @@ Comprehensive documentation for the AI‑Enhanced Development Framework.
 ### Quality / Verification
 - Formal Quality Gates (DoD v0.2): `quality/formal-gates.md`
 - Runbooks / Traceability / Runtime Contracts: see `docs/quality` and `docs/verify`
+ - Coverage policy: `quality/coverage-policy.md`（しきい値の由来/Required化の運用）
+ - Formal runbook: `quality/formal-runbook.md`（ラベル/dispatch/要約/環境変数）
 
 For the complete navigation with highlights, see the Japanese section below (same links).
 
