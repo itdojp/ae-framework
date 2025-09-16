@@ -35,10 +35,13 @@ const outDir = path.join(repoRoot, 'hermetic-reports', 'formal');
 const outFile = path.join(outDir, 'apalache-summary.json');
 fs.mkdirSync(outDir, { recursive: true });
 
-const haveApalache = has('apalache-mc') || has('apalache');
+const haveApalacheMc = has('apalache-mc');
+const haveApalache = haveApalacheMc || has('apalache');
+const apalacheCmd = haveApalacheMc ? 'apalache-mc' : (haveApalache ? 'apalache' : '');
 let status = 'skipped';
 let ran = false;
 let output = '';
+let version = '';
 
 if (!fs.existsSync(absFile)){
   status = 'file_not_found';
@@ -48,12 +51,12 @@ if (!fs.existsSync(absFile)){
   output = 'Apalache CLI not found. Install apalache or ensure apalache-mc is on PATH. See docs/quality/formal-tools-setup.md';
 } else {
   // Minimal "typecheck" like run; apalache-mc supports: apalache-mc check <Spec>
-  const cmd = has('apalache-mc')
-    ? `apalache-mc check ${absFile.replace(/'/g, "'\\''")}`
-    : `apalache check ${absFile.replace(/'/g, "'\\''")}`;
+  const cmd = `${apalacheCmd} check ${absFile.replace(/'/g, "'\\''")}`;
   output = sh(`bash -lc '${cmd} 2>&1 || true'`);
   status = 'ran';
   ran = true;
+  // Try to get version string
+  version = sh(`bash -lc '${apalacheCmd} version 2>&1 || true'`).trim().split(/\n/)[0] || '';
 }
 
 const summary = {
@@ -62,6 +65,9 @@ const summary = {
   detected: haveApalache,
   ran,
   status,
+  version: version || null,
+  ok: ran ? !/error|violat|counterexample|fail/i.test(output) : null,
+  hints: ran ? ( /success|ok|no\s+(?:errors|counterexamples?)/i.test(output) ? 'success-indicators-found' : null ) : null,
   timestamp: new Date().toISOString(),
   output: output.slice(0, 4000)
 };
@@ -72,4 +78,3 @@ console.log(`- detected=${haveApalache} status=${status}`);
 
 // Non-blocking
 process.exit(0);
-
