@@ -40,6 +40,7 @@ jobs:
           const alloySum = find(base, "formal-reports-alloy/alloy-summary.json");
           const smtSum = find(base, "formal-reports-smt/smt-summary.json");
           const apalacheSum = find(base, "formal-reports-apalache/apalache-summary.json");
+          const apalacheOut = find(base, "formal-reports-apalache/apalache-output.txt");
           const confSum = find(base, "formal-reports-conformance/conformance-summary.json");
 
           const apalache = apalacheSum ? rj(apalacheSum) : undefined;
@@ -62,9 +63,11 @@ jobs:
             const run = apalache.run || '';
             const ec = (typeof apalache.errorCount === 'number') ? apalache.errorCount : null;
             lines.push(`- Apalache: ran=${ran? 'yes':'no'} ok=${ok==null? 'n/a': (ok? 'yes':'no')} status=${status||'n/a'}${ec!=null?`, errors=${ec}`:''} (v=${v}${timeMs?`, ${Math.round(timeMs/1000)}s`:''})`);
-            if (toolPath || run) {
-              lines.push(`  - ${toolPath?`tool: ${toolPath}`:''}${toolPath&&run?' | ':''}${run?`run: ${run}`:''}`);
-            }
+            const hints=[];
+            if (toolPath) hints.push(`tool: ${toolPath}`);
+            if (run) hints.push(`run: ${run}`);
+            if (apalacheOut) hints.push(`output: ${path.basename(apalacheOut)}`);
+            if (hints.length) lines.push('  - ' + hints.join(' | '));
             if (ok === false && Array.isArray(apalache.errors) && apalache.errors.length > 0) {
               lines.push('');
               lines.push('<details><summary>Apalache errors (top)</summary>');
