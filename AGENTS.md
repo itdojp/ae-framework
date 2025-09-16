@@ -46,6 +46,10 @@
     - `/run-qa-dispatch` … ae-ci.yml を PR の head ブランチで起動
     - `/run-security-dispatch` … sbom-generation.yml を PR の head ブランチで起動
     - `/ci-fast-dispatch` … ci-fast.yml を PR の head ブランチで起動（対応ラベルが付くとバッチも実行）
+  - フォーマル/契約（ラベル付与）
+    - `/run-formal` … `run-formal` を付与（verify/formal 系スタブを非ブロッキングで実行）
+    - `/enforce-formal` … `enforce-formal` を付与（有効時にエンフォース）
+    - `/enforce-contracts` … `enforce-contracts` を付与（有効時にエンフォース）
 
 ## 参考ファイル
 - `.github/workflows/ae-ci.yml`: PR 時 QA/Bench 軽量モード

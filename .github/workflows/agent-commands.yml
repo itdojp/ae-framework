@@ -118,6 +118,18 @@ jobs:
                 await addLabels(['qa-batch:agents']);
                 return reply('Label `qa-batch:agents` added. Agents tests will run in CI Fast (opt-in).');
               }
+              case '/run-formal': {
+                await addLabels(['run-formal']);
+                return reply('Label `run-formal` added. Formal jobs will run (non-blocking, opt-in).');
+              }
+              case '/enforce-formal': {
+                await addLabels(['enforce-formal']);
+                return reply('Label `enforce-formal` added. Formal enforcement may apply if configured.');
+              }
+              case '/enforce-contracts': {
+                await addLabels(['enforce-contracts']);
+                return reply('Label `enforce-contracts` added. Contracts enforcement may apply if configured.');
+              }
               default:
                 return; // ignore
             }
