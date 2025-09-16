@@ -1,10 +1,5 @@
-{
-  "replay": {
-    "version": 1,
-    "events": [
-      { "type": "item_allocated", "qty": 1 },
-      { "type": "item_shipped", "qty": 1 }
-    ]
-  }
-}
-
+[
+  { "name": "ItemReceived",  "payload": { "qty": 2 } },
+  { "name": "ItemAllocated", "payload": { "qty": 1 } },
+  { "name": "ItemShipped",   "payload": { "qty": 1 } }
+]
