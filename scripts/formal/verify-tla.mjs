@@ -49,7 +49,7 @@ if (!fs.existsSync(absFile)){
     ran = true; status = 'ran';
   } else {
     status = 'tool_not_available';
-    output = 'apalache-mc not found. See formal-tools-setup.md.';
+    output = 'Apalache not found. See docs/quality/formal-tools-setup.md';
   }
 } else {
   // TLC via TLA_TOOLS_JAR
@@ -59,7 +59,7 @@ if (!fs.existsSync(absFile)){
     ran = true; status = 'ran';
   } else {
     status = 'tool_not_available';
-    output = 'TLA_TOOLS_JAR not set. See formal-tools-setup.md.';
+    output = 'TLC not available (TLA_TOOLS_JAR not set). See docs/quality/formal-tools-setup.md';
   }
 }
 
