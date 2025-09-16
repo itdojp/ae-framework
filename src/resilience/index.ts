@@ -12,6 +12,7 @@ import {
   CircuitState,
   type CircuitBreakerStats,
   type ResilientHttpOptions,
+  type CircuitBreakerOptions,
 } from './backoff-strategies.js';
 import { BulkheadManager, type BulkheadStats } from './bulkhead-isolation.js';
 import { TimeoutManager, TimeoutWrapper, type TimeoutStats } from './timeout-patterns.js';
@@ -172,7 +173,7 @@ export class ResilienceSystem {
 
     // Initialize circuit breaker
     if (this.config.circuitBreaker?.enabled) {
-      const cbOptions: any = {
+      const cbOptions: CircuitBreakerOptions = {
         failureThreshold: this.config.circuitBreaker.failureThreshold,
         recoveryTimeout: this.config.circuitBreaker.recoveryTimeout,
         monitoringPeriod: this.config.circuitBreaker.monitoringPeriod,
@@ -208,7 +209,7 @@ export class ResilienceSystem {
       };
     }
     if (this.config.circuitBreaker?.enabled) {
-      const opts: any = {
+      const opts: CircuitBreakerOptions = {
         failureThreshold: this.config.circuitBreaker.failureThreshold,
         recoveryTimeout: this.config.circuitBreaker.recoveryTimeout,
         monitoringPeriod: this.config.circuitBreaker.monitoringPeriod,
