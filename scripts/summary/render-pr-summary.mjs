@@ -35,7 +35,11 @@ const replayLine = replay.totalEvents!==undefined
 let propsCount = 0;
 if (Array.isArray(props) && props.length) {
   for (const p of props) {
-    if (p && typeof p.count === 'number') propsCount += p.count; else propsCount += 1;
+    if (p && typeof p.count === 'number') {
+      propsCount += p.count;
+    } else {
+      propsCount += 1;
+    }
   }
 }
 const propsLine = propsCount

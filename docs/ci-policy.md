@@ -38,6 +38,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
   - `/run-qa-dispatch` … ae-ci（QA light）を実行
   - `/run-security-dispatch` … sbom-generation（Security/SBOM）を実行
   - `/ci-fast-dispatch` … CI Fast を実行（オプトインのバッチは対応ラベルが付与されている場合のみ動作）
+  - `/formal-verify-dispatch` … Formal Verify を実行（`run-formal` 等のラベルと併用推奨）
   - バッチ系ラベル付与（例）
     - `/qa-batch-commands` または `/run-qa:commands` … `qa-batch:commands` を付与
     - `/qa-batch-cli` または `/run-qa:cli` … `qa-batch:cli` を付与
