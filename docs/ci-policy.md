@@ -43,10 +43,13 @@ This document defines CI policies to keep PR experience fast and stable while ma
     - `/qa-batch-cli` または `/run-qa:cli` … `qa-batch:cli` を付与
     - `/qa-batch-property` または `/run-qa:property` … `qa-batch:property` を付与
     - `/qa-batch-agents` または `/run-qa:agents` … `qa-batch:agents` を付与
+<<<<<<< HEAD
   - フォーマル/契約（ラベル付与）
     - `/run-formal` … `run-formal` を付与（verify/formal 系を非ブロッキングで実行）
     - `/enforce-formal` … `enforce-formal` を付与（有効時にエンフォース）
     - `/enforce-contracts` … `enforce-contracts` を付与（有効時にエンフォース）
+=======
+>>>>>>> origin/main
   - 使い分け例（推奨フロー）
     - 追加確認したいカテゴリのみラベル付与 → `/ci-fast-dispatch` で即時起動
     - Verify Lite のみ再実行したいときは `/verify-lite`
