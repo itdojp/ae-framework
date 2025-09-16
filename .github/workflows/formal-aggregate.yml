@@ -60,7 +60,8 @@ jobs:
             const timeMs = apalache.timeMs || null;
             const toolPath = apalache.toolPath || '';
             const run = apalache.run || '';
-            lines.push(`- Apalache: ran=${ran? 'yes':'no'} ok=${ok==null? 'n/a': (ok? 'yes':'no')} status=${status||'n/a'} (v=${v}${timeMs?`, ${Math.round(timeMs/1000)}s`:''})`);
+            const ec = (typeof apalache.errorCount === 'number') ? apalache.errorCount : null;
+            lines.push(`- Apalache: ran=${ran? 'yes':'no'} ok=${ok==null? 'n/a': (ok? 'yes':'no')} status=${status||'n/a'}${ec!=null?`, errors=${ec}`:''} (v=${v}${timeMs?`, ${Math.round(timeMs/1000)}s`:''})`);
             if (toolPath || run) {
               lines.push(`  - ${toolPath?`tool: ${toolPath}`:''}${toolPath&&run?' | ':''}${run?`run: ${run}`:''}`);
             }
