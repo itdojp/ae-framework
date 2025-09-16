@@ -1,0 +1,9 @@
+{
+  "traceId": "sample-failure-1",
+  "totalEvents": 3,
+  "finalState": { "onHand": 0, "allocated": 1 },
+  "violatedInvariants": [
+    { "name": "allocated_le_onhand", "index": 2, "details": "allocated (1) > onHand (0)" }
+  ]
+}
+
