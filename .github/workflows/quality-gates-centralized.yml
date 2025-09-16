@@ -65,7 +65,7 @@ jobs:
           OUT=$(pnpm -s run typecov || true)
           printf "%s\n" "$OUT"
           # Extract last percentage like: "type coverage: 67.89%"
-          PCT=$(echo "$OUT" | rg -o "type coverage:\s*[0-9.]+%" -n | tail -n1 | awk '{print $3}')
+          PCT=$(printf "%s\n" "$OUT" | rg -o "type coverage:\s*[0-9.]+%" -n | tail -n1 | awk '{print $3}')
           printf "%s\n" "pct=$PCT" >> "$GITHUB_OUTPUT"
       - name: Comment type coverage on PR
         if: steps.typecov.outputs.pct != ''

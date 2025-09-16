@@ -212,7 +212,7 @@ jobs:
             node -e "
               const results = JSON.parse(require('fs').readFileSync('test-results-${{ matrix.test-suite }}.json', 'utf8'));
               console.log('Test isolation validation completed');
-            " || echo "Test results analysis skipped"
+            " || printf "%s\n" "Test results analysis skipped"
           fi
           
       - name: Upload test results
@@ -399,13 +399,13 @@ jobs:
           
       - name: Validate deployment hermeticity
         run: |
-          echo "🚀 Validating deployment hermeticity..."
+          printf "%s\n" "🚀 Validating deployment hermeticity..."
           
           # Verify build checksums
           if [ -f hermetic-build/build1.checksums ]; then
-            echo "✅ Hermetic build artifacts verified"
+            printf "%s\n" "✅ Hermetic build artifacts verified"
           else
-            echo "❌ Missing hermetic build verification"
+            printf "%s\n" "❌ Missing hermetic build verification"
             exit 1
           fi
           
@@ -423,8 +423,8 @@ jobs:
           
       - name: Simulate hermetic deployment
         run: |
-          echo "🚀 Simulating hermetic deployment..."
-          echo "✅ Deployment would proceed with hermetic guarantees"
+          printf "%s\n" "🚀 Simulating hermetic deployment..."
+          printf "%s\n" "✅ Deployment would proceed with hermetic guarantees"
           
           # In a real scenario, this would deploy to production
           # with full hermetic constraints maintained
