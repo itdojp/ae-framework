@@ -1,0 +1,246 @@
+{
+  "metadata": {
+    "timestamp": "2025-08-22T04:52:27.420Z",
+    "totalProblems": 2,
+    "successfulRuns": 0,
+    "failedRuns": 2,
+    "averageScore": 0,
+    "totalExecutionTime": 33,
+    "framework": "AE Framework v1.0.0",
+    "benchmarkVersion": "req2run-benchmark"
+  },
+  "configuration": {
+    "req2runRepository": "https://github.com/itdojp/req2run-benchmark.git",
+    "problems": [
+      {
+        "id": "web-api-basic-001",
+        "enabled": false,
+        "timeoutMs": 300000,
+        "retries": 1,
+        "category": "web-api",
+        "difficulty": "basic"
+      },
+      {
+        "id": "CLI-001",
+        "enabled": true,
+        "timeoutMs": 180000,
+        "retries": 1,
+        "category": "cli-tool",
+        "difficulty": "basic"
+      },
+      {
+        "id": "WEB-001",
+        "enabled": true,
+        "timeoutMs": 300000,
+        "retries": 1,
+        "category": "web-api",
+        "difficulty": "intermediate"
+      },
+      {
+        "id": "data-processing-basic-001",
+        "enabled": false,
+        "timeoutMs": 240000,
+        "retries": 1,
+        "category": "data-processing",
+        "difficulty": "basic"
+      },
+      {
+        "id": "web-api-intermediate-001",
+        "enabled": false,
+        "timeoutMs": 600000,
+        "retries": 2,
+        "category": "web-api",
+        "difficulty": "intermediate"
+      },
+      {
+        "id": "auth-intermediate-001",
+        "enabled": false,
+        "timeoutMs": 480000,
+        "retries": 2,
+        "category": "authentication",
+        "difficulty": "intermediate"
+      },
+      {
+        "id": "distributed-advanced-001",
+        "enabled": false,
+        "timeoutMs": 1800000,
+        "retries": 3,
+        "category": "distributed-system",
+        "difficulty": "advanced"
+      },
+      {
+        "id": "ml-pipeline-expert-001",
+        "enabled": false,
+        "timeoutMs": 3600000,
+        "retries": 3,
+        "category": "machine-learning",
+        "difficulty": "expert"
+      }
+    ],
+    "execution": {
+      "parallel": false,
+      "maxConcurrency": 2,
+      "resourceLimits": {
+        "maxMemoryMB": 4096,
+        "maxCpuPercent": 80,
+        "maxDiskMB": 10240,
+        "maxExecutionTimeMs": 3600000
+      },
+      "environment": "development",
+      "docker": {
+        "enabled": false,
+        "image": "node:18-alpine",
+        "volumes": [
+          "/tmp:/tmp"
+        ],
+        "ports": [
+          3000,
+          8080
+        ]
+      }
+    },
+    "evaluation": {
+      "weights": {
+        "functional": 0.35,
+        "performance": 0.15,
+        "quality": 0.2,
+        "security": 0.15,
+        "testing": 0.15
+      },
+      "thresholds": {
+        "minOverallScore": 60,
+        "minFunctionalCoverage": 70,
+        "maxResponseTime": 2000,
+        "minCodeQuality": 75,
+        "maxVulnerabilities": 5
+      },
+      "scoring": {
+        "algorithm": "weighted-average",
+        "penalties": {
+          "timeoutPenalty": 0.5,
+          "errorPenalty": 0.3,
+          "qualityPenalty": 0.2
+        },
+        "bonuses": {
+          "performanceBonus": 0.1,
+          "qualityBonus": 0.1,
+          "securityBonus": 0.05
+        }
+      }
+    },
+    "reporting": {
+      "formats": [
+        "json",
+        "html",
+        "markdown"
+      ],
+      "destinations": [
+        {
+          "type": "file",
+          "config": {
+            "directory": "./reports/benchmark",
+            "filename": "req2run-benchmark-{timestamp}.{format}"
+          }
+        },
+        {
+          "type": "github",
+          "config": {
+            "repository": "itdojp/ae-framework",
+            "issueOnFailure": true,
+            "commentOnPR": true
+          }
+        }
+      ],
+      "dashboard": {
+        "enabled": true,
+        "port": 3001,
+        "refreshInterval": 30000,
+        "charts": [
+          {
+            "type": "line",
+            "metrics": [
+              "overallScore",
+              "functionalCoverage"
+            ],
+            "title": "Performance Trends"
+          },
+          {
+            "type": "bar",
+            "metrics": [
+              "performance.responseTime",
+              "performance.memoryUsage"
+            ],
+            "title": "Resource Usage"
+          },
+          {
+            "type": "pie",
+            "metrics": [
+              "security.vulnerabilityCount"
+            ],
+            "title": "Security Issues"
+          },
+          {
+            "type": "radar",
+            "metrics": [
+              "functionalCoverage",
+              "codeQuality.maintainabilityIndex",
+              "security.securityScore",
+              "performance.throughput"
+            ],
+            "title": "Overall Quality Radar"
+          }
+        ]
+      }
+    }
+  },
+  "results": [
+    {
+      "problemId": "CLI-001",
+      "success": false,
+      "score": 0,
+      "executionTime": 23,
+      "phases": [
+        {
+          "phase": "intent-analysis",
+          "startTime": "2025-08-22T04:52:27.399Z",
+          "endTime": "2025-08-22T04:52:27.403Z",
+          "duration": 4,
+          "input": null,
+          "output": null,
+          "success": false,
+          "errors": [
+            "sources is not iterable"
+          ]
+        }
+      ],
+      "errors": [
+        "sources is not iterable",
+        "sources is not iterable"
+      ]
+    },
+    {
+      "problemId": "WEB-001",
+      "success": false,
+      "score": 0,
+      "executionTime": 10,
+      "phases": [
+        {
+          "phase": "intent-analysis",
+          "startTime": "2025-08-22T04:52:27.418Z",
+          "endTime": "2025-08-22T04:52:27.419Z",
+          "duration": 1,
+          "input": null,
+          "output": null,
+          "success": false,
+          "errors": [
+            "sources is not iterable"
+          ]
+        }
+      ],
+      "errors": [
+        "sources is not iterable",
+        "sources is not iterable"
+      ]
+    }
+  ]
+}
