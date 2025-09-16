@@ -232,7 +232,7 @@ jobs:
         
       - name: Regenerate ${{ matrix.target }} code
         run: |
-          echo "🏗️  Regenerating ${{ matrix.target }} code..."
+          printf "%s\n" "🏗️  Regenerating ${{ matrix.target }} code..."
           
           TARGET_DIR="generated/${{ matrix.target }}"
           mkdir -p "$TARGET_DIR"
@@ -243,9 +243,9 @@ jobs:
               -o "$TARGET_DIR" \
               -t ${{ matrix.target }} \
               --verbose
-            echo "✅ Code regeneration completed for ${{ matrix.target }}"
+            printf "%s\n" "✅ Code regeneration completed for ${{ matrix.target }}"
           else
-            echo "❌ No AE-IR file found"
+            printf "%s\n" "❌ No AE-IR file found"
             exit 1
           fi
           
@@ -290,27 +290,27 @@ jobs:
       - name: Validate TypeScript compilation
         run: |
           if [ -d "generated/typescript" ]; then
-            echo "🔍 Validating TypeScript code..."
+            printf "%s\n" "🔍 Validating TypeScript code..."
             cd generated/typescript
             if ls *.ts 1> /dev/null 2>&1; then
               npx tsc --noEmit --skipLibCheck *.ts
-              echo "✅ TypeScript validation passed"
+              printf "%s\n" "✅ TypeScript validation passed"
             fi
           fi
           
       - name: Validate React components
         run: |
           if [ -d "generated/react" ]; then
-            echo "🔍 Validating React components..."
+            printf "%s\n" "🔍 Validating React components..."
             cd generated/react
             # Basic syntax validation
             for file in *.tsx; do
               if [ -f "$file" ]; then
-                echo "Checking $file"
+                printf "%s\n" "Checking $file"
                 npx tsc --noEmit --skipLibCheck --jsx react "$file"
               fi
             done
-            echo "✅ React components validation passed"
+            printf "%s\n" "✅ React components validation passed"
           fi
 
   comment-pr:
