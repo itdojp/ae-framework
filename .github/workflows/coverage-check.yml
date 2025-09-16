@@ -55,3 +55,23 @@ jobs:
             printf "%s\n" "No coverage-summary.json found; skipping check"; \
           fi
         continue-on-error: ${{ needs.gate.outputs.strict != 'true' }}
+      - name: Comment PR with coverage (non-blocking)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summaryPath = 'coverage/coverage-summary.json';
+            if (!fs.existsSync(summaryPath)) return;
+            const cov = JSON.parse(fs.readFileSync(summaryPath,'utf-8'));
+            const pct = cov?.total?.lines?.pct ?? 'n/a';
+            const header = '<!-- AE-COVERAGE-SUMMARY -->\n';
+            const body = header + `Coverage (lines): ${pct}%\nThreshold: ${{ needs.gate.outputs.threshold }}%\nPolicy: ${{ needs.gate.outputs.strict == 'true' ? 'enforced' : 'report-only' }}`;
+            const { owner, repo, number } = context.issue;
+            const comments = await github.rest.issues.listComments({ owner, repo, issue_number: number, per_page: 100 });
+            const mine = comments.data.find(c => c.body && c.body.startsWith(header));
+            if (mine) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number: number, body });
+            }
