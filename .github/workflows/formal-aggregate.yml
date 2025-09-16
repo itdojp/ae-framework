@@ -158,7 +158,8 @@ jobs:
             info: { lineClamp: LINE_CLAMP, errorsLimit: ERRORS_LIMIT, generatedAt: GENERATED_AT, present }
           };
           fs.writeFileSync(outJson, JSON.stringify(json,null,2));
-          console.log(md);
+          const aggPresent = fs.existsSync(outJson) ? 'yes' : 'no';
+          console.log(md + "\nArtifacts: aggregate-json=" + aggPresent);
           JS
       - name: Upload aggregate
         uses: actions/upload-artifact@v4
