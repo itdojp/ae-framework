@@ -14,6 +14,7 @@ const conformance = readJsonSafe(path.join(confDir, 'summary.json'));
 const smt = readJsonSafe(path.join(formalDir, 'smt-summary.json'));
 const alloy = readJsonSafe(path.join(formalDir, 'alloy-summary.json'));
 const tla = readJsonSafe(path.join(formalDir, 'tla-summary.json'));
+const apalache = readJsonSafe(path.join(formalDir, 'apalache-summary.json'));
 
 const summary = {
   timestamp: new Date().toISOString(),
@@ -21,12 +22,14 @@ const summary = {
     conformance: !!conformance,
     smt: !!smt,
     alloy: !!alloy,
-    tla: !!tla
+    tla: !!tla,
+    apalache: !!apalache
   },
   conformance: conformance || null,
   smt: smt || null,
   alloy: alloy || null,
-  tla: tla || null
+  tla: tla || null,
+  apalache: apalache || null
 };
 
 const outFile = path.join(formalDir, 'summary.json');
