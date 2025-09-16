@@ -2,11 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 
 describe('Integration: replay-runner', () => {
   it('produces a summary JSON with expected keys', async () => {
-    const tmpDir = path.join(process.cwd(), 'artifacts', 'domain');
-    fs.mkdirSync(tmpDir, { recursive: true });
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'replay-runner-'));
     const input = path.join(tmpDir, 'events.sample.json');
     const output = path.join(tmpDir, 'replay.summary.sample.json');
     const events = [
@@ -28,4 +28,3 @@ describe('Integration: replay-runner', () => {
     expect(summary).toHaveProperty('violatedInvariants');
   });
 });
-

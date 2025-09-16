@@ -9,7 +9,7 @@ permissions: read-all
 
 jobs:
   aggregate:
-    if: contains(github.event.pull_request.labels.*.name, 'run-formal')
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run-formal')
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
@@ -145,6 +145,7 @@ jobs:
           name: formal-reports-aggregate-json
           path: artifacts/formal/formal-aggregate.json
       - name: Comment on PR (upsert)
+        if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |

@@ -10,9 +10,9 @@ Proposal
   - `a11y:<score>`, `perf:<score>` — override thresholds ad hoc
 
 Repository variables (recommended)
-- `PERF_DEFAULT_THRESHOLD`（既定 75 相当）
-- `LH_DEFAULT_THRESHOLD`（既定 80 相当）
-未設定の場合でもレポートは非ブロッキングで動作しますが、しきい値の既定を統一するため変数の設定を推奨します。
+- `PERF_DEFAULT_THRESHOLD`（未設定時は既定 75）
+- `LH_DEFAULT_THRESHOLD`（未設定時は既定 80）
+未設定の場合でもレポートは非ブロッキングで動作します（強制時はラベル/値の解決順：ラベル > 変数 > 既定）。
 
 Current wiring (a11y minimal)
 - `run-adapters`: runs adapter-thresholds.yml to summarize `reports/a11y-results.json` on PR (non-blocking)
