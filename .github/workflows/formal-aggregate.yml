@@ -127,7 +127,9 @@ jobs:
             const { owner, repo, number } = context.issue;
             const comments = await github.rest.issues.listComments({ owner, repo, issue_number: number, per_page: 100 });
             const mine = comments.data.find(c => c.body && c.body.startsWith('<!-- AE-FORMAL-AGGREGATE -->'));
-            if (mine) {
+            if (mine && mine.body === body) {
+              core.info('Aggregate unchanged; skipping update');
+            } else if (mine) {
               await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
             } else {
               await github.rest.issues.createComment({ owner, repo, issue_number: number, body });
