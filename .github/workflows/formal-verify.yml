@@ -75,6 +75,13 @@ jobs:
         env:
           ALLOY_JAR: ${{ github.event_name == 'workflow_dispatch' && inputs.alloyJar || '' }}
         run: node scripts/formal/verify-alloy.mjs --file spec/alloy/Domain.als || true
+      - name: Upload Alloy summary (artifact)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: formal-reports-alloy
+          path: |
+            hermetic-reports/formal/alloy-summary.json
 
   verify-tla:
     name: verify:tla (stub)
@@ -90,6 +97,13 @@ jobs:
           TLA_ENGINE: ${{ github.event_name == 'workflow_dispatch' && inputs.engine || 'tlc' }}
           TLA_TOOLS_JAR: ${{ github.event_name == 'workflow_dispatch' && inputs.tlaToolsJar || '' }}
         run: node scripts/formal/verify-tla.mjs --engine="$TLA_ENGINE" --file spec/tla/DomainSpec.tla || true
+      - name: Upload TLA summary (artifact)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: formal-reports-tla
+          path: |
+            hermetic-reports/formal/tla-summary.json
 
   verify-smt:
     name: verify:smt (stub)
