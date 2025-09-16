@@ -30,12 +30,19 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - `run-flake`: enable flake-detection on PRs
 - `run-e2e`: enable E2E tests on PRs
 - `coverage:<pct>`: override coverage threshold for coverage-check (default 80). e.g., `coverage:75`
+ - `qa-batch:commands` / `qa-batch:cli` / `qa-batch:property` / `qa-batch:agents`: run additional CI Fast batches for the specific categories (opt-in)
 
 ### Slash Commands (Instant Dispatch)
 - コメントで以下を投稿すると、対象ワークフローをPRのheadブランチで即時起動できます（main取り込み後有効）。
   - `/verify-lite` … Verify Lite を実行
   - `/run-qa-dispatch` … ae-ci（QA light）を実行
   - `/run-security-dispatch` … sbom-generation（Security/SBOM）を実行
+  - `/ci-fast-dispatch` … CI Fast を実行（オプトインのバッチは対応ラベルが付与されている場合のみ動作）
+  - バッチ系ラベル付与（例）
+    - `/qa-batch-commands` または `/run-qa:commands` … `qa-batch:commands` を付与
+    - `/qa-batch-cli` または `/run-qa:cli` … `qa-batch:cli` を付与
+    - `/qa-batch-property` または `/run-qa:property` … `qa-batch:property` を付与
+    - `/qa-batch-agents` または `/run-qa:agents` … `qa-batch:agents` を付与
   - 既存のラベル系（`/run-qa` や `/run-security` 等）も併用可能ですが、dispatchは再実行待ちを省略できるため推奨です。
 
 ### Path Conditions
