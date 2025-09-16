@@ -72,6 +72,15 @@ Add a step before running the benchmark to ensure the repository is present:
 
 The CI profile writes results to `reports/benchmark` and shortens execution for pipeline stability. Tune depths, categories, and timeouts under `src/benchmark/req2run/config/default.ts` or by providing a config file.
 
+### Light Mode and Dry Run
+- For PRs where speed and stability are critical, use the light mode dry-run to validate configuration without executing:
+  - `pnpm tsx src/cli/benchmark-cli.ts run --ci --light --dry-run`
+- This mode:
+  - Restricts to a few enabled problems
+  - Runs serially (no parallelism)
+  - Skips execution (prints what would run)
+  - Is already used in `ae-ci` workflow as a sanity check
+
 ## Custom Configuration
 You can generate and pass a benchmark config file:
 

@@ -44,9 +44,9 @@ jobs:
         run: |
           if [ -f coverage/coverage-summary.json ]; then \
             PCT=$(node -e "console.log((require('./coverage/coverage-summary.json').total.lines.pct)||0)"); \
-            echo "Coverage: ${PCT}% (threshold: ${THRESHOLD}%)"; \
+            printf "Coverage: %s%% (threshold: %s%%)\n" "$PCT" "$THRESHOLD"; \
             awk 'BEGIN{ if ('"${PCT}"' + 0 < '"${THRESHOLD}"' + 0) exit 1 }'; \
           else \
-            echo "No coverage-summary.json found; skipping check"; \
+            printf "%s\n" "No coverage-summary.json found; skipping check"; \
           fi
         continue-on-error: ${{ needs.gate.outputs.strict != 'true' }}

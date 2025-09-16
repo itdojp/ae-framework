@@ -180,6 +180,27 @@ export class CircuitBreaker extends EventEmitter {
    * Handle failed operation
    */
   private onFailure(error: Error, duration: number): void {
+    // Respect expectedErrors: only count specified error types toward failure threshold
+    if (this.options.expectedErrors && this.options.expectedErrors.length > 0) {
+      const isExpected = this.options.expectedErrors.some((Err) => error instanceof Err);
+      if (!isExpected) {
+        // Not an expected error – treat as non-fatal for breaker state (no state change)
+        if (this.options.enableMonitoring) {
+          this.responseTimes.push(duration);
+          this.requestHistory.push({ timestamp: Date.now(), success: false });
+          this.cleanupOldHistory();
+        }
+        this.emit('operationFailure', {
+          name: this.name,
+          error: error.message,
+          duration,
+          state: this.state,
+          failureCount: this.failureCount,
+        });
+        return;
+      }
+    }
+
     this.failureCount++;
     this.totalFailures++;
     this.lastFailureTime = Date.now();
@@ -233,13 +254,13 @@ export class CircuitBreaker extends EventEmitter {
       }
     }, this.options.timeout);
 
-    this.emit('stateChange', this.state);
-    this.emit('circuitOpened', { 
-      name: this.name, 
-      previousState,
+    this.emit('stateChange', { name: this.name, state: this.state });
+    this.emit('stateChanged', { name: this.name, previousState, newState: this.state });
+    this.emit('circuitOpened', {
+      name: this.name,
       failureCount: this.failureCount,
       threshold: this.options.failureThreshold,
-      timeout: this.options.timeout
+      timeout: this.options.timeout,
     });
   }
 
@@ -252,7 +273,8 @@ export class CircuitBreaker extends EventEmitter {
     this.successCount = 0;
     this.failureCount = 0;
 
-    this.emit('stateChange', this.state);
+    this.emit('stateChange', { name: this.name, state: this.state });
+    this.emit('stateChanged', { name: this.name, previousState, newState: this.state });
     this.emit('circuitHalfOpen', { 
       name: this.name, 
       previousState 
@@ -274,12 +296,12 @@ export class CircuitBreaker extends EventEmitter {
       this.halfOpenTimer = undefined;
     }
 
-    this.emit('stateChange', this.state);
-    this.emit('circuitClosed', { 
-      name: this.name, 
-      previousState,
+    this.emit('stateChange', { name: this.name, state: this.state });
+    this.emit('stateChanged', { name: this.name, previousState, newState: this.state });
+    this.emit('circuitClosed', {
+      name: this.name,
       successCount: this.successCount,
-      threshold: this.options.successThreshold
+      threshold: this.options.successThreshold,
     });
   }
 
@@ -389,37 +411,78 @@ export class CircuitBreaker extends EventEmitter {
    * Generate health report for monitoring
    */
   generateHealthReport(): {
+    name: string;
+    state: CircuitState;
     health: 'healthy' | 'degraded' | 'unhealthy';
     recommendations: string[];
+    stats: CircuitBreakerStats;
+    recentFailures: number[];
   } {
     const stats = this.getStats();
     const recommendations: string[] = [];
-    
-    // Determine health status
     let health: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
-    
+
     if (this.state === CircuitState.OPEN) {
       health = 'unhealthy';
-      recommendations.push('Circuit is open - check underlying service');
+      recommendations.push('Circuit is open - check underlying service health');
     } else if (this.state === CircuitState.HALF_OPEN) {
       health = 'degraded';
       recommendations.push('Circuit is recovering - monitor closely');
     } else {
-      // Closed state - check failure rate
       const failureRate = stats.totalRequests > 0 ? stats.totalFailures / stats.totalRequests : 0;
-      
       if (failureRate > 0.3) {
         health = 'degraded';
         recommendations.push(`High failure rate: ${(failureRate * 100).toFixed(1)}%`);
       }
-      
       if (stats.averageResponseTime > this.options.timeout * 0.8) {
         health = 'degraded';
         recommendations.push(`Slow response times: ${stats.averageResponseTime.toFixed(0)}ms avg`);
       }
     }
-    
-    return { health, recommendations };
+
+    const recentFailures = this.requestHistory
+      .filter((r) => !r.success)
+      .map((r) => r.timestamp);
+    return {
+      name: this.name,
+      state: this.state,
+      health,
+      recommendations,
+      stats,
+      recentFailures,
+    };
+  }
+
+  /**
+   * Execute a synchronous function with circuit breaker protection
+   */
+  executeSync<T>(operation: () => T, ...args: any[]): T {
+    const startTime = Date.now();
+    this.totalRequests++;
+
+    if (this.state === CircuitState.OPEN) {
+      if (Date.now() >= this.nextAttempt) {
+        this.transitionToHalfOpen();
+      } else {
+        this.emit('callRejected', { name: this.name, state: this.state, reason: 'Circuit is open' });
+        if (this.options.fallback) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+          return this.options.fallback(...args);
+        }
+        throw new CircuitBreakerOpenError(`Circuit breaker '${this.name}' is OPEN`);
+      }
+    }
+
+    try {
+      const result = operation();
+      const duration = Date.now() - startTime;
+      this.onSuccess(duration);
+      return result;
+    } catch (err) {
+      const duration = Date.now() - startTime;
+      this.onFailure(err as Error, duration);
+      throw err;
+    }
   }
 
   /**
@@ -457,20 +520,32 @@ export class CircuitBreaker extends EventEmitter {
 /**
  * Simple Circuit Breaker Manager
  */
-class CircuitBreakerManager extends EventEmitter {
+export class CircuitBreakerManager extends EventEmitter {
   private breakers = new Map<string, CircuitBreaker>();
 
-  getCircuitBreaker(name: string, options: CircuitBreakerOptions): CircuitBreaker {
+  private static readonly DEFAULT_OPTIONS: CircuitBreakerOptions = {
+    failureThreshold: 5,
+    successThreshold: 3,
+    timeout: 60_000,
+    monitoringWindow: 60_000,
+    enableMonitoring: false,
+  };
+
+  getCircuitBreaker(name: string, options?: Partial<CircuitBreakerOptions>): CircuitBreaker {
     if (!this.breakers.has(name)) {
-      const breaker = new CircuitBreaker(name, options);
+      const merged: CircuitBreakerOptions = {
+        ...CircuitBreakerManager.DEFAULT_OPTIONS,
+        ...(options || {}),
+      } as CircuitBreakerOptions;
+      const breaker = new CircuitBreaker(name, merged);
       this.breakers.set(name, breaker);
-      
+
       // Forward events
       breaker.on('stateChange', (state) => this.emit('breakerStateChanged', { name, state }));
       breaker.on('circuitOpened', (event) => this.emit('circuitOpened', event));
       breaker.on('circuitClosed', (event) => this.emit('circuitClosed', event));
     }
-    
+
     const breaker = this.breakers.get(name);
     if (!breaker) {
       throw new Error(`CircuitBreaker for "${name}" was not found after creation.`);
@@ -478,14 +553,82 @@ class CircuitBreakerManager extends EventEmitter {
     return breaker;
   }
 
-  getAllBreakers(): CircuitBreaker[] {
-    return Array.from(this.breakers.values());
+  getAllBreakers(): Map<string, CircuitBreaker> {
+    return this.breakers;
+  }
+
+  removeCircuitBreaker(name: string): boolean {
+    const breaker = this.breakers.get(name);
+    if (!breaker) return false;
+    breaker.destroy();
+    return this.breakers.delete(name);
   }
 
   resetAll(): void {
     for (const breaker of this.breakers.values()) {
       breaker.reset();
     }
+  }
+
+  getGlobalStats(): {
+    totalBreakers: number;
+    openBreakers: number;
+    closedBreakers: number;
+    halfOpenBreakers: number;
+    totalRequests: number;
+    totalFailures: number;
+    breakers: Array<{ name: string; state: CircuitState; stats: CircuitBreakerStats }>;
+  } {
+    const breakers = Array.from(this.breakers.entries());
+    let open = 0, closed = 0, half = 0, totalReq = 0, totalFail = 0;
+    const details = breakers.map(([name, b]) => {
+      const s = b.getStats();
+      switch (b.getState()) {
+        case CircuitState.OPEN: open++; break;
+        case CircuitState.HALF_OPEN: half++; break;
+        case CircuitState.CLOSED: default: closed++; break;
+      }
+      totalReq += s.totalRequests;
+      totalFail += s.totalFailures;
+      return { name, state: b.getState(), stats: s };
+    });
+    return {
+      totalBreakers: breakers.length,
+      openBreakers: open,
+      closedBreakers: closed,
+      halfOpenBreakers: half,
+      totalRequests: totalReq,
+      totalFailures: totalFail,
+      breakers: details,
+    };
+  }
+
+  generateHealthReport(): {
+    overall: 'healthy' | 'degraded' | 'unhealthy';
+    summary: {
+      totalBreakers: number;
+      openBreakers: number;
+      closedBreakers: number;
+      halfOpenBreakers: number;
+    };
+    breakers: Array<{ name: string; health: 'healthy' | 'degraded' | 'unhealthy'; recommendations: string[] }>;
+  } {
+    const stats = this.getGlobalStats();
+    const breakers = Array.from(this.breakers.entries()).map(([name, b]) => {
+      const { health, recommendations } = b.generateHealthReport();
+      return { name, health, recommendations };
+    });
+    const overall = stats.openBreakers > 0 ? 'unhealthy' : (stats.halfOpenBreakers > 0 ? 'degraded' : 'healthy');
+    return {
+      overall,
+      summary: {
+        totalBreakers: stats.totalBreakers,
+        openBreakers: stats.openBreakers,
+        closedBreakers: stats.closedBreakers,
+        halfOpenBreakers: stats.halfOpenBreakers,
+      },
+      breakers,
+    };
   }
 }
 

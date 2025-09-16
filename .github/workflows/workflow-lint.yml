@@ -11,3 +11,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: rhysd/actionlint@v1.7.1
+      - name: Check for unresolved merge markers in workflows
+        run: |
+          set -e
+          if rg -n "<<<<<<<|>>>>>>>|=======" .github/workflows -S || true; then
+            echo "Unresolved merge markers found in workflows" >&2
+            exit 1
+          fi

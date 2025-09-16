@@ -28,16 +28,16 @@ jobs:
       
       - name: Run flake maintenance
         run: |
-          echo "🔧 Running daily flake isolation maintenance..."
+          printf "%s\n" "🔧 Running daily flake isolation maintenance..."
           pnpm run flake:maintenance
       
       - name: Generate maintenance report
         run: |
-          echo "📊 Generating maintenance report..."
+          printf "%s\n" "📊 Generating maintenance report..."
           pnpm run flake:report
           
           # Display current status
-          echo "📋 Current flake isolation status:"
+          printf "%s\n" "📋 Current flake isolation status:"
           pnpm run flake:list
       
       - name: Upload maintenance reports
@@ -56,10 +56,10 @@ jobs:
           # Check if any tests have been recovered
           if [ -f "reports/flake-reports/latest-flake-isolation-report.json" ]; then
             recovered_count=$(jq -r '.isolatedTests | map(select(.status == "recovered")) | length' reports/flake-reports/latest-flake-isolation-report.json)
-            echo "recovered_count=$recovered_count" >> $GITHUB_OUTPUT
-            echo "Found $recovered_count recovered tests"
+            printf "%s\n" "recovered_count=$recovered_count" >> "$GITHUB_OUTPUT"
+            printf "%s\n" "Found $recovered_count recovered tests"
           else
-            echo "recovered_count=0" >> $GITHUB_OUTPUT
+            printf "%s\n" "recovered_count=0" >> "$GITHUB_OUTPUT"
           fi
       
       - name: Create recovery notification
@@ -106,29 +106,29 @@ jobs:
       
       - name: Update test patterns
         run: |
-          echo "🔄 Checking if test patterns need updating..."
+          printf "%s\n" "🔄 Checking if test patterns need updating..."
           
           if [ -f "config/test-patterns.json" ]; then
-            echo "✅ Test patterns configuration updated"
+            printf "%s\n" "✅ Test patterns configuration updated"
             git diff --name-only config/test-patterns.json || true
           else
-            echo "⚠️ No test patterns configuration found"
+            printf "%s\n" "⚠️ No test patterns configuration found"
           fi
       
       - name: Summary report
         run: |
-          echo "📋 Daily Flake Maintenance Complete"
-          echo "=================================="
+          printf "%s\n" "📋 Daily Flake Maintenance Complete"
+          printf "%s\n" "=================================="
           
           if [ -f "reports/flake-reports/latest-flake-isolation-report.json" ]; then
-            echo "📊 Current Status:"
+            printf "%s\n" "📊 Current Status:"
             jq -r '.summary | to_entries | map("  \(.key): \(.value)") | .[]' reports/flake-reports/latest-flake-isolation-report.json
             
-            echo ""
-            echo "💡 Recommendations:"
+            printf "%s\n" ""
+            printf "%s\n" "💡 Recommendations:"
             jq -r '.recommendations[] | "  [\(.priority | ascii_upcase)] \(.message)"' reports/flake-reports/latest-flake-isolation-report.json
           else
-            echo "⚠️ No flake isolation report found"
+            printf "%s\n" "⚠️ No flake isolation report found"
           fi
           
-          echo "=================================="
+          printf "%s\n" "=================================="

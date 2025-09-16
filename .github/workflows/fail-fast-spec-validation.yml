@@ -19,10 +19,6 @@ jobs:
     runs-on: ubuntu-latest
     name: 🚦 Fail-Fast Spec Validation
     timeout-minutes: 10  # Quick fail-fast timeout
-    if: |
-      github.event_name != 'pull_request' ||
-      contains(join(fromJSON(toJSON(github.event.pull_request.labels)).*.name, ','), 'run-spec') ||
-      hashFiles('spec/ae-spec.md') != ''
     
     steps:
       - name: Checkout code
@@ -65,69 +61,69 @@ jobs:
 
       - name: 🔍 Pre-flight spec file check
         run: |
-          echo "::group::Checking for spec files"
+          printf "%s\n" "::group::Checking for spec files"
           if [ ! -d "spec" ]; then
-            echo "::warning::No spec directory found - creating with example"
+            printf "%s\n" "::warning::No spec directory found - creating with example"
             mkdir -p spec
-            echo "# Example Specification" > spec/example-spec.md
-            echo "This is a minimal example spec for validation testing." >> spec/example-spec.md
+            printf "%s\n" "# Example Specification" > "spec/example-spec.md"
+            printf "%s\n" "This is a minimal example spec for validation testing." >> "spec/example-spec.md"
           fi
           
           SPEC_FILES=$(find spec -name "*.md" -type f 2>/dev/null || echo "")
           if [ -z "$SPEC_FILES" ]; then
-            echo "::error::No spec files found in spec/ directory"
+            printf "%s\n" "::error::No spec files found in spec/ directory"
             exit 1
           fi
           
-          echo "Found spec files:"
-          echo "$SPEC_FILES"
-          echo "::endgroup::"
+          printf "%s\n" "Found spec files:"
+          printf "%s\n" "$SPEC_FILES"
+          printf "%s\n" "::endgroup::"
 
       - name: 🚀 Fast AE-Spec Compilation
         run: |
-          echo "::group::AE-Spec → AE-IR Compilation"
+          printf "%s\n" "::group::AE-Spec → AE-IR Compilation"
           
           # Find the first spec file (or use specified one)
           SPEC_FILE=$(find spec -name "*.md" -type f | head -1)
           
           if [ -z "$SPEC_FILE" ]; then
-            echo "::error::No markdown spec files found"
+            printf "%s\n" "::error::No markdown spec files found"
             exit 1
           fi
           
-          echo "Compiling: $SPEC_FILE → .ae/ae-ir.json"
+          printf "%s\n" "Compiling: $SPEC_FILE → .ae/ae-ir.json"
           mkdir -p .ae
           
           # Fail fast on compilation errors
           if ! npx tsx src/cli/index.ts spec compile --input "$SPEC_FILE" --output .ae/ae-ir.json --no-verbose; then
-            echo "::error::AE-Spec compilation failed"
+            printf "%s\n" "::error::AE-Spec compilation failed"
             exit 1
           fi
           
-          echo "✅ Compilation successful"
-          echo "::endgroup::"
+          printf "%s\n" "✅ Compilation successful"
+          printf "%s\n" "::endgroup::"
 
       - name: ⚡ Critical Lint Validation
         run: |
-          echo "::group::Critical Lint Validation"
+          printf "%s\n" "::group::Critical Lint Validation"
           
           if [ ! -f ".ae/ae-ir.json" ]; then
-            echo "::error::AE-IR file not generated"
+            printf "%s\n" "::error::AE-IR file not generated"
             exit 1
           fi
           
           # Strict linting - fail on any errors
           if ! npx tsx src/cli/index.ts spec lint --input .ae/ae-ir.json --max-errors 0 --max-warnings 20; then
-            echo "::error::AE-IR lint validation failed - specification has critical issues"
+            printf "%s\n" "::error::AE-IR lint validation failed - specification has critical issues"
             exit 1
           fi
           
-          echo "✅ Lint validation passed"
-          echo "::endgroup::"
+          printf "%s\n" "✅ Lint validation passed"
+          printf "%s\n" "::endgroup::"
 
       - name: 📊 Structure Validation
         run: |
-          echo "::group::AE-IR Structure Validation"
+          printf "%s\n" "::group::AE-IR Structure Validation"
           
           # Basic JSON structure validation
           if ! node -e "
@@ -160,11 +156,11 @@ jobs:
             
             console.log('✅ Structure validation passed');
           "; then
-            echo "::error::AE-IR structure validation failed"
+            printf "%s\n" "::error::AE-IR structure validation failed"
             exit 1
           fi
           
-          echo "::endgroup::"
+          printf "%s\n" "::endgroup::"
 
       - name: 💾 Upload artifacts on failure
         if: failure()
@@ -179,12 +175,12 @@ jobs:
       - name: 📝 Success Summary
         if: success()
         run: |
-          echo "::notice::🎉 Fail-fast spec validation completed successfully!"
-          echo "::notice::AE-IR is ready for use as Single Source of Truth (SSOT)"
+          printf "%s\n" "::notice::🎉 Fail-fast spec validation completed successfully!"
+          printf "%s\n" "::notice::AE-IR is ready for use as Single Source of Truth (SSOT)"
           
           if [ -f ".ae/ae-ir.json" ]; then
             AE_IR_SIZE=$(du -h .ae/ae-ir.json | cut -f1)
-            echo "::notice::Generated AE-IR size: $AE_IR_SIZE"
+            printf "%s\n" "::notice::Generated AE-IR size: $AE_IR_SIZE"
           fi
 
   # Call dependent workflows only after validation passes

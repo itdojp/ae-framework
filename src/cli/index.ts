@@ -74,6 +74,7 @@ class AEFrameworkCLI {
     if (!phase) {
       console.log(chalk.red(`❌ Unknown phase: ${phaseName}`));
       safeExit(1);
+      return;
     }
 
     const results = await this.phaseValidator.validate(phase);
@@ -620,6 +621,10 @@ program.addCommand(createSecurityCommand());
 // Quality gates commands
 import { createQualityCommand } from './quality-cli.js';
 program.addCommand(createQualityCommand());
+
+// QA command (lightweight QA maps to vitest test:fast)
+import { createQaCommand } from './qa-cli.js';
+program.addCommand(createQaCommand());
 
 // Conformance verification commands  
 import { ConformanceCli } from './conformance-cli.js';

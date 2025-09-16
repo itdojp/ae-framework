@@ -4,6 +4,7 @@ on:
   push:
     branches: [main, develop]
     tags: ['v*']
+  workflow_dispatch:
   workflow_call:
     # Allow release workflow to reuse this fast CI
 concurrency:

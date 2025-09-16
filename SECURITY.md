@@ -42,6 +42,15 @@ We take security vulnerabilities seriously. If you discover a security issue, pl
   - Medium: 1-30 days
   - Low: Next scheduled release
 
+### CI Security/Compliance Operations
+
+- On pull requests, security jobs run non-blocking by default and publish artifacts for review.
+- To enforce thresholds on a PR, apply the `enforce-security` label.
+- Thresholds are configurable via repository variables:
+  - `SECURITY_MAX_HIGH` (default 0): allowed High/Critical vulnerabilities
+  - `SECURITY_MAX_MODERATE` (default 2): allowed Moderate vulnerabilities
+- Workflow reference: `.github/workflows/sbom-generation.yml` generates SBOM, runs dependency audit, performs CodeQL, and optionally enforces thresholds.
+
 ### Security Measures
 
 Automated Security Scanning
@@ -346,3 +355,11 @@ Contact Information
 
 Last Updated / 最終更新: January 2025
 Next Review / 次回見直し: July 2025
+### CI におけるセキュリティ/コンプライアンス運用
+
+- PR では既定でセキュリティ関連ジョブを非ブロッキングで実行し、結果をアーティファクトに集約します。
+- 強制（ゲート）を有効化したい場合は、PR に `enforce-security` ラベルを付与してください。
+- 閾値はリポジトリ変数で制御できます。
+  - `SECURITY_MAX_HIGH`（既定 0）: High 以上の許容数
+  - `SECURITY_MAX_MODERATE`（既定 2）: Moderate の許容数
+- 対象ワークフロー: `.github/workflows/sbom-generation.yml` で SBOM 生成・依存監査・CodeQL を実施し、必要に応じて上記閾値でエンフォースします。

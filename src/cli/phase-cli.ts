@@ -64,6 +64,7 @@ program
       if (!state) {
         console.error(chalk.red('❌ No project found. Run "ae-phase init" first.'));
         safeExit(1);
+        return;
       }
 
       if (options.verbose) {
@@ -156,8 +157,10 @@ program
       const canTransition = await manager.canTransitionToNextPhase();
       if (canTransition) {
         const state = await manager.getCurrentState();
-        const nextPhase = manager.getNextPhase(state!.currentPhase);
-        console.log(`➡️  Ready to transition to phase: ${nextPhase}`);
+        if (state) {
+          const nextPhase = manager.getNextPhase(state.currentPhase);
+          console.log(`➡️  Ready to transition to phase: ${nextPhase}`);
+        }
       }
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Error: ${toMessage(error)}`));

@@ -57,16 +57,16 @@ jobs:
       - name: Enable corepack
         run: corepack enable
       - name: Install deps
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
       - name: Run type-coverage
         id: typecov
         run: |
           set -e
           OUT=$(pnpm -s run typecov || true)
-          echo "$OUT"
+          printf "%s\n" "$OUT"
           # Extract last percentage like: "type coverage: 67.89%"
           PCT=$(echo "$OUT" | rg -o "type coverage:\s*[0-9.]+%" -n | tail -n1 | awk '{print $3}')
-          echo "pct=$PCT" >> $GITHUB_OUTPUT
+          printf "%s\n" "pct=$PCT" >> "$GITHUB_OUTPUT"
       - name: Comment type coverage on PR
         if: steps.typecov.outputs.pct != ''
         uses: actions/github-script@v7

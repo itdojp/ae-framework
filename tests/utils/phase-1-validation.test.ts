@@ -75,6 +75,8 @@ describe('Phase 1: Foundation Analysis & Core Utilities - Validation', () => {
       const { PhaseStateManager } = await import('../../src/utils/phase-state-manager.js');
       
       const manager = new PhaseStateManager();
+      // Ensure project state is initialized to avoid env-dependent failures
+      await manager.initializeProject('phase1-validation', true);
       
       // Test core operations without errors
       await expect(manager.getCurrentState()).resolves.toBeDefined();
@@ -141,6 +143,8 @@ describe('Phase 1: Foundation Analysis & Core Utilities - Validation', () => {
       
       const phaseManager = new PhaseStateManager();
       const stateManager = new EnhancedStateManager();
+      await phaseManager.initializeProject('phase1-integration', true);
+      await stateManager.initialize();
       
       // Both should be operational
       expect(phaseManager).toBeDefined();

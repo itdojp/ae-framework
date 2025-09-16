@@ -60,11 +60,11 @@ jobs:
         if: always()
         run: |
           if [ -f artifacts/codex/formal.tla ]; then
-            echo '--- TLA+ (head) ---'
+            printf "%s\n" "--- TLA+ (head) ---"
             sed -n '1,80p' artifacts/codex/formal.tla || true
-            echo '---'
+            printf "%s\n" "---"
           else
-            echo 'No formal.tla found.'
+            printf "%s\n" "No formal.tla found."
           fi
       - name: Upload OpenAPI (if generated)
         uses: actions/upload-artifact@v4
@@ -85,7 +85,7 @@ jobs:
           if [ -f artifacts/codex/model-check.json ]; then
             node -e "const mc=require('./artifacts/codex/model-check.json'); console.log('Properties:', mc.properties?.length||0); const unsat=(mc.properties||[]).filter(p=>p && p.satisfied===false).length; console.log('Unsatisfied:', unsat);"
           else
-            echo 'No model-check.json found.'
+            printf "%s\n" "No model-check.json found."
           fi
       - name: Show UI summary (if present)
         if: always()
@@ -93,7 +93,7 @@ jobs:
           if [ -f artifacts/codex/ui-summary.json ]; then
             node -e "const s=require('./artifacts/codex/ui-summary.json'); console.log('UI Entities:', s.okEntities,'/',s.totalEntities,'Files:', (s.files||[]).length, 'Dry-run:', !!s.dryRun);"
           else
-            echo 'No ui-summary.json found.'
+            printf "%s\n" "No ui-summary.json found."
           fi
       - name: Show contract/E2E templates summary (if present)
         if: always()
@@ -101,7 +101,7 @@ jobs:
           if [ -f artifacts/codex/openapi-contract-tests.json ]; then
             node -e "const s=require('./artifacts/codex/openapi-contract-tests.json'); console.log('Contract/E2E templates:', s.files, 'dir:', s.outDir);"
           else
-            echo 'No openapi-contract-tests.json found.'
+            printf "%s\n" "No openapi-contract-tests.json found."
           fi
 
       - name: Comment summary on PR
@@ -259,11 +259,11 @@ jobs:
         if: always()
         run: |
           if [ -f artifacts/codex-quickstart-summary.md ]; then
-            echo '--- CodeX Quickstart Summary (head) ---'
+            printf "%s\n" "--- CodeX Quickstart Summary (head) ---"
             sed -n '1,60p' artifacts/codex-quickstart-summary.md || true
-            echo '---'
+            printf "%s\n" "---"
           else
-            echo 'No codex-quickstart summary found.'
+            printf "%s\n" "No codex-quickstart summary found."
           fi
 
       - name: Bin smoke check

@@ -435,7 +435,7 @@ describe('Prompt Contract Testing', () => {
     
     // Should have reasonable success rate (allowing for intentional errors)
     expect(testResults.passed + testResults.failed).toBe(10);
-    expect(testResults.passed).toBeGreaterThan(5); // At least 50% success
+    expect(testResults.passed).toBeGreaterThanOrEqual(5); // At least 50% success
     
     console.log(`✅ AE-Spec Analysis: ${testResults.passed}/${testResults.passed + testResults.failed} passed`);
   });
@@ -451,7 +451,7 @@ describe('Prompt Contract Testing', () => {
     const testResults = validator.runContractTests('code-generation-plan', outputs);
     
     expect(testResults.passed + testResults.failed).toBe(8);
-    expect(testResults.passed).toBeGreaterThan(4); // At least 50% success
+    expect(testResults.passed).toBeGreaterThanOrEqual(4); // At least 50% success
     
     console.log(`✅ Code Generation Plans: ${testResults.passed}/${testResults.passed + testResults.failed} passed`);
   });

@@ -41,7 +41,7 @@ jobs:
           if [ -f artifacts/properties/summary.json ]; then \
             if jq -e 'type=="array"' artifacts/properties/summary.json >/dev/null; then \
               jq -c '.[]' artifacts/properties/summary.json | while read -r item; do \
-                echo "$item" | npx ajv -s docs/schemas/artifacts-properties-summary.schema.json -d /dev/stdin --strict=false; \
+                printf "%s\n" "$item" | npx ajv -s docs/schemas/artifacts-properties-summary.schema.json -d /dev/stdin --strict=false; \
               done; \
             else \
               npx ajv -s docs/schemas/artifacts-properties-summary.schema.json -d artifacts/properties/summary.json --strict=false; \

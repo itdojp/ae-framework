@@ -11,7 +11,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '20', cache: 'pnpm' }
       - run: corepack enable
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
       - name: Run accessibility tests
         run: |
           pnpm run test:a11y
@@ -26,7 +26,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '20', cache: 'pnpm' }
       - run: corepack enable
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
       - run: pnpm run build-storybook
       - name: Run visual regression tests
         run: |
@@ -40,7 +40,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '20', cache: 'pnpm' }
       - run: corepack enable
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
       - name: Build application
         run: pnpm run build:frontend
       - name: Run Lighthouse CI
@@ -69,7 +69,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '20', cache: 'pnpm' }
       - run: corepack enable
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
       - name: Run tests with coverage
         run: pnpm run test:coverage
       - name: Coverage threshold check

@@ -58,46 +58,46 @@ jobs:
         id: check-aeir
         run: |
           if [ -f ".ae/ae-ir.json" ]; then
-            echo "has_aeir=true" >> $GITHUB_OUTPUT
-            echo "Found AE-IR file"
+            printf "%s\n" "has_aeir=true" >> "$GITHUB_OUTPUT"
+            printf "%s\n" "Found AE-IR file"
           else
-            echo "has_aeir=false" >> $GITHUB_OUTPUT
-            echo "No AE-IR file found, checking for specs to compile..."
+            printf "%s\n" "has_aeir=false" >> "$GITHUB_OUTPUT"
+            printf "%s\n" "No AE-IR file found, checking for specs to compile..."
             
             if find spec -name "*.md" -type f | grep -q .; then
-              echo "Found spec files, will compile first"
-              echo "needs_compilation=true" >> $GITHUB_OUTPUT
+              printf "%s\n" "Found spec files, will compile first"
+              printf "%s\n" "needs_compilation=true" >> "$GITHUB_OUTPUT"
             else
-              echo "No spec files found"
-              echo "needs_compilation=false" >> $GITHUB_OUTPUT
+              printf "%s\n" "No spec files found"
+              printf "%s\n" "needs_compilation=false" >> "$GITHUB_OUTPUT"
             fi
           fi
           
       - name: Compile specs to AE-IR if needed
         if: steps.check-aeir.outputs.has_aeir == 'false' && steps.check-aeir.outputs.needs_compilation == 'true'
         run: |
-          echo "🔄 Compiling specifications to AE-IR..."
+          printf "%s\n" "🔄 Compiling specifications to AE-IR..."
           mkdir -p .ae
           
           # Find the first spec file to compile (in production, this would be more sophisticated)
           SPEC_FILE=$(find spec -name "*.md" -type f | head -1)
           if [ -n "$SPEC_FILE" ]; then
-            echo "Compiling $SPEC_FILE to .ae/ae-ir.json"
+            printf "%s\n" "Compiling $SPEC_FILE to .ae/ae-ir.json"
             npx tsx src/cli/index.ts spec compile -i "$SPEC_FILE" -o .ae/ae-ir.json
-            echo "✅ Compilation completed"
+            printf "%s\n" "✅ Compilation completed"
           fi
           
       - name: Run drift detection
         id: drift-check
         run: |
-          echo "🔍 Running drift detection..."
+          printf "%s\n" "🔍 Running drift detection..."
           
           # Check if we have AE-IR and generated code to check
           if [ ! -f ".ae/ae-ir.json" ]; then
-            echo "No AE-IR file available for drift detection"
-            echo "drift-status=no-baseline" >> $GITHUB_OUTPUT
-            echo "needs-regeneration=false" >> $GITHUB_OUTPUT
-            echo "contract-failure=false" >> $GITHUB_OUTPUT
+            printf "%s\n" "No AE-IR file available for drift detection"
+            printf "%s\n" "drift-status=no-baseline" >> "$GITHUB_OUTPUT"
+            printf "%s\n" "needs-regeneration=false" >> "$GITHUB_OUTPUT"
+            printf "%s\n" "contract-failure=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           
@@ -110,10 +110,10 @@ jobs:
           done
           
           if [ -z "$GENERATED_DIRS" ]; then
-            echo "No generated code directories found"
-            echo "drift-status=no-generated-code" >> $GITHUB_OUTPUT  
-            echo "needs-regeneration=true" >> $GITHUB_OUTPUT
-            echo "contract-failure=false" >> $GITHUB_OUTPUT
+            printf "%s\n" "No generated code directories found"
+            printf "%s\n" "drift-status=no-generated-code" >> "$GITHUB_OUTPUT"  
+            printf "%s\n" "needs-regeneration=true" >> "$GITHUB_OUTPUT"
+            printf "%s\n" "contract-failure=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           
@@ -123,18 +123,18 @@ jobs:
           CONTRACT_FAILURE="false"
           
           for dir in $GENERATED_DIRS; do
-            echo "Checking drift in $dir..."
+            printf "%s\n" "Checking drift in $dir..."
             
             # Run drift detection and capture result
             if npx tsx src/cli/index.ts codegen drift -d "$dir" -s .ae/ae-ir.json --format json > drift-report-$(basename $dir).json; then
               DRIFT_STATUS=$(cat drift-report-$(basename $dir).json | jq -r '.status')
               CRITICAL_CHANGES=$(cat drift-report-$(basename $dir).json | jq -r '.criticalChanges // 0')
-              echo "Drift status for $dir: $DRIFT_STATUS (critical changes: $CRITICAL_CHANGES)"
+              printf "%s\n" "Drift status for $dir: $DRIFT_STATUS (critical changes: $CRITICAL_CHANGES)"
               
               # Issue #71: Contract failure detection
               if [ "$CRITICAL_CHANGES" -gt 0 ] && [ "$DRIFT_STATUS" = "critical_drift" ]; then
                 CONTRACT_FAILURE="true"
-                echo "🚨 CONTRACT FAILURE: Critical drift with breaking changes detected in $dir"
+                printf "%s\n" "🚨 CONTRACT FAILURE: Critical drift with breaking changes detected in $dir"
               fi
               
               # Update overall status (take worst case)
@@ -156,35 +156,37 @@ jobs:
               
               DRIFT_DETAILS="$DRIFT_DETAILS\n- $dir: $DRIFT_STATUS (critical: $CRITICAL_CHANGES)"
             else
-              echo "Drift detection failed for $dir"
+              printf "%s\n" "Drift detection failed for $dir"
               OVERALL_DRIFT="detection_failed"
             fi
           done
           
-          echo "Overall drift status: $OVERALL_DRIFT"
-          echo "Contract failure status: $CONTRACT_FAILURE"
-          echo "drift-status=$OVERALL_DRIFT" >> $GITHUB_OUTPUT
-          echo "contract-failure=$CONTRACT_FAILURE" >> $GITHUB_OUTPUT
+          printf "%s\n" "Overall drift status: $OVERALL_DRIFT"
+          printf "%s\n" "Contract failure status: $CONTRACT_FAILURE"
+          printf "%s\n" "drift-status=$OVERALL_DRIFT" >> "$GITHUB_OUTPUT"
+          printf "%s\n" "contract-failure=$CONTRACT_FAILURE" >> "$GITHUB_OUTPUT"
           
           # Determine if regeneration is needed
           case "$OVERALL_DRIFT" in
             "critical_drift"|"major_drift")
-              echo "needs-regeneration=true" >> $GITHUB_OUTPUT
+              printf "%s\n" "needs-regeneration=true" >> "$GITHUB_OUTPUT"
               ;;
             *)
-              echo "needs-regeneration=false" >> $GITHUB_OUTPUT
+              printf "%s\n" "needs-regeneration=false" >> "$GITHUB_OUTPUT"
               ;;
           esac
           
           # Save drift details for PR comment
-          echo "DRIFT_DETAILS<<EOF" >> $GITHUB_ENV
-          echo -e "$DRIFT_DETAILS" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          {
+            printf "%s<<%s\n" "DRIFT_DETAILS" "EOF"
+            printf "%s\n" "$DRIFT_DETAILS"
+            printf "%s\n" "EOF"
+          } >> "$GITHUB_ENV"
           
           # Issue #71: Fail immediately on contract violations
           if [ "$CONTRACT_FAILURE" = "true" ]; then
-            echo "🚨 FAILING BUILD: Contract violation detected - specifications and code are out of sync"
-            echo "::error::Critical drift with breaking changes detected. Generated code no longer matches specifications."
+            printf "%s\n" "🚨 FAILING BUILD: Contract violation detected - specifications and code are out of sync"
+            printf "%s\n" "::error::Critical drift with breaking changes detected. Generated code no longer matches specifications."
             exit 1
           fi
         continue-on-error: false
