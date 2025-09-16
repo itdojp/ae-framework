@@ -17,16 +17,25 @@ jobs:
         with:
           script: |
             const labels = (context.payload.pull_request?.labels || []).map(l=>l.name);
-            const strict = labels.includes('enforce-coverage');
+            let strict = labels.includes('enforce-coverage');
+            // Enforce on main if repo variable COVERAGE_ENFORCE_MAIN == '1'
+            const onMainPush = context.eventName === 'push' && context.ref === 'refs/heads/main';
+            const enforceMain = (process.env.COVERAGE_ENFORCE_MAIN || '0') === '1';
+            if (onMainPush && enforceMain) strict = true;
             core.setOutput('strict', String(strict));
+        env:
+          COVERAGE_ENFORCE_MAIN: ${{ vars.COVERAGE_ENFORCE_MAIN }}
       - uses: actions/github-script@v7
         id: th
         with:
           script: |
             const labels = (context.payload.pull_request?.labels || []).map(l=>l.name);
             const cov = labels.find(n => n.startsWith('coverage:'));
-            const val = cov ? Number(cov.split(':')[1]) : 80;
-            core.setOutput('threshold', String(isFinite(val) ? val : 80));
+            const def = Number(process.env.COVERAGE_DEFAULT_THRESHOLD || 80);
+            const val = cov ? Number(cov.split(':')[1]) : def;
+            core.setOutput('threshold', String(isFinite(val) ? val : def));
+        env:
+          COVERAGE_DEFAULT_THRESHOLD: ${{ vars.COVERAGE_DEFAULT_THRESHOLD }}
   coverage:
     needs: gate
     runs-on: ubuntu-latest
