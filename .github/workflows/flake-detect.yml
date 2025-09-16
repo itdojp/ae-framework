@@ -29,7 +29,7 @@ jobs:
           
           printf "%s\n" "🔍 Starting flake detection with $total_runs runs"
           
-          for i in $(seq 1 $total_runs); do
+          for i in $(seq 1 "$total_runs"); do
             printf "%s\n" "📊 Run #$i of $total_runs"
             
             if pnpm run test:int; then

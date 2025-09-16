@@ -89,7 +89,7 @@ jobs:
         env:
           TLA_ENGINE: ${{ github.event_name == 'workflow_dispatch' && inputs.engine || 'tlc' }}
           TLA_TOOLS_JAR: ${{ github.event_name == 'workflow_dispatch' && inputs.tlaToolsJar || '' }}
-        run: node scripts/formal/verify-tla.mjs --engine=$TLA_ENGINE --file spec/tla/DomainSpec.tla || true
+        run: node scripts/formal/verify-tla.mjs --engine="$TLA_ENGINE" --file spec/tla/DomainSpec.tla || true
 
   verify-smt:
     name: verify:smt (stub)
@@ -107,7 +107,7 @@ jobs:
       - name: Run verify:smt (sample)
         env:
           SMT_SOLVER: ${{ github.event_name == 'workflow_dispatch' && inputs.solver || 'z3' }}
-        run: node scripts/formal/verify-smt.mjs --solver=$SMT_SOLVER --file spec/smt/sample.smt2 || true
+        run: node scripts/formal/verify-smt.mjs --solver="$SMT_SOLVER" --file spec/smt/sample.smt2 || true
       - name: Upload SMT summary (artifact)
         uses: actions/upload-artifact@v4
         if: always()
