@@ -24,6 +24,8 @@ jobs:
           const fs=require("fs"), path=require("path");
           function rj(p){ try { return JSON.parse(fs.readFileSync(p,"utf-8")); } catch { return undefined; } }
           function find(dir, name){ try { const p = path.join(dir, name); return fs.existsSync(p) ? p : undefined; } catch { return undefined; } }
+          const LINE_CLAMP = parseInt(process.env.FORMAL_AGG_LINE_CLAMP || '200', 10);
+          const ERRORS_LIMIT = parseInt(process.env.FORMAL_AGG_ERRORS_LIMIT || '5', 10);
           function escMd(s){
             if (!s) return '';
             // Basic Markdown escaping to avoid breaking PR rendering
@@ -32,7 +34,7 @@ jobs:
               .replace(/</g, "&lt;")
               .replace(/>/g, "&gt;");
           }
-          function clamp(s, n=200){ s = String(s||''); return s.length>n ? (s.slice(0,n)+"…") : s; }
+          function clamp(s, n=LINE_CLAMP){ s = String(s||''); return s.length>n ? (s.slice(0,n)+"…") : s; }
           const base = "artifacts_dl";
           const outDir = "artifacts/formal"; fs.mkdirSync(outDir,{recursive:true});
           const outMd = path.join(outDir, "formal-aggregate.md");
@@ -82,7 +84,7 @@ jobs:
               lines.push('<details><summary>Apalache errors (top)</summary>');
               lines.push('');
               lines.push('```text');
-              for (const e of apalache.errors.slice(0,5)) lines.push(escMd(clamp(e)));
+              for (const e of apalache.errors.slice(0,ERRORS_LIMIT)) lines.push(escMd(clamp(e)));
               lines.push('```');
               lines.push('');
               lines.push('</details>');

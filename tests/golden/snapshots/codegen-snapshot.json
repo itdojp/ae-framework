@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-09-16T12:28:58.559Z",
+  "timestamp": "2025-09-16T12:33:14.041Z",
   "version": "1.0.0",
   "files": {
     "examples/inventory/apps/web/components/ProductForm.tsx": {
@@ -135,16 +135,16 @@
       "typeScriptErrors": 1,
       "eslintErrors": 0
     },
-    "examples/inventory/apps/web/app/customer/new/page.tsx": {
-      "hash": "ddaf62479aa61e9eaa97d021c29c05d438bf740c1964a91f75eada1da6ed6263",
-      "lineCount": 75,
+    "examples/inventory/apps/web/app/customer/[id]/page.tsx": {
+      "hash": "2a001e47fd626011516478ac7f1f6930ee748e6e68a37c02a3c3c68c98e4c5e4",
+      "lineCount": 214,
       "ariaAttributeCount": 0,
       "typeScriptErrors": 0,
       "eslintErrors": 0
     },
-    "examples/inventory/apps/web/app/customer/[id]/page.tsx": {
-      "hash": "2a001e47fd626011516478ac7f1f6930ee748e6e68a37c02a3c3c68c98e4c5e4",
-      "lineCount": 214,
+    "examples/inventory/apps/web/app/customer/new/page.tsx": {
+      "hash": "ddaf62479aa61e9eaa97d021c29c05d438bf740c1964a91f75eada1da6ed6263",
+      "lineCount": 75,
       "ariaAttributeCount": 0,
       "typeScriptErrors": 0,
       "eslintErrors": 0
