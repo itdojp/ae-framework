@@ -22,6 +22,12 @@ jobs:
     with:
       node-version: '20'
       run-script: test:fast
+  fast-commands:
+    if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'qa-batch:commands') }}
+    uses: ./.github/workflows/common/ci-core.yml
+    with:
+      node-version: '20'
+      run-script: test:fast:batch:commands
   lint:
     uses: ./.github/workflows/common/ci-core.yml
     with:
