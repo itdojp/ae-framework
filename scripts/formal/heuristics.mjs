@@ -1,7 +1,6 @@
 // Shared heuristics for Apalache output classification
 export const POSITIVE_PATTERNS = [
-  /\bno\s+(?:errors?|counterexamples?)\b/i,
-  /no\s+counterexamples?\s+found/i,
+  /no\s+(?:errors?|counterexamples?)\s+(?:found|detected|present)\b/i,
   /verification\s+successful/i,
   /\bok\b/i,
   /invariant[^\n]*holds/i,
@@ -10,10 +9,11 @@ export const POSITIVE_PATTERNS = [
 ];
 
 export const NEGATIVE_PATTERNS = [
-  /\berror\b/i,
-  /violation/i,
+  /\bviolation\b/i,
   /counterexample/i,
-  /\bfail(?:ed)?\b/i
+  /\bfail(?:ed)?\b/i,
+  /\berrors?\s+(?:found|detected)\b/i,
+  /error:/i
 ];
 
 export function computeOkFromOutput(out){
@@ -22,4 +22,3 @@ export function computeOkFromOutput(out){
   if (NEGATIVE_PATTERNS.some(re => re.test(out))) return false;
   return null;
 }
-

@@ -20,6 +20,7 @@ describe('Formal heuristics: computeOkFromOutput', () => {
   });
   it('returns null on inconclusive outputs', () => {
     expect(computeOkFromOutput('Tool ran with warnings')).toBeNull();
+    // Negative false-positive guard: contains the word "error" but not actual failure semantics
+    expect(computeOkFromOutput('no error handlers found')).toBeNull();
   });
 });
-
