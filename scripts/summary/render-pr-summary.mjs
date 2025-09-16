@@ -31,6 +31,16 @@ for (const p of props) if (p?.traceId) traceIds.add(p.traceId);
 const replayLine = replay.totalEvents!==undefined 
   ? t(`Replay: ${replay.totalEvents} events, ${(replay.violatedInvariants||[]).length} violations`, `リプレイ: ${replay.totalEvents}件, 違反 ${(replay.violatedInvariants||[]).length}件`)
   : t('Replay: n/a','リプレイ: なし');
+// Properties (PBT) quick count: prefer aggregate 'count' or fallback to array length
+let propsCount = 0;
+if (Array.isArray(props) && props.length) {
+  for (const p of props) {
+    if (p && typeof p.count === 'number') propsCount += p.count; else propsCount += 1;
+  }
+}
+const propsLine = propsCount
+  ? t(`Props: ${propsCount}`, `プロパティ: ${propsCount}`)
+  : t('Props: n/a','プロパティ: なし');
 const adapterCountsLine = t(
   `Adapters: ok=${statusCounts.ok||0}, warn=${statusCounts.warn||0}, error=${statusCounts.error||0}`,
   `アダプタ: 正常=${statusCounts.ok||0}, 注意=${statusCounts.warn||0}, 失敗=${statusCounts.error||0}`
@@ -47,9 +57,9 @@ if ((statusCounts.warn||0) > warnMax) alerts.push(t(`adapter warnings>${warnMax}
 const alertsLine = alerts.length ? t(`Alerts: ${alerts.join(', ')}`, `警告: ${alerts.join(', ')}`) : t('Alerts: none','警告: なし');
 let md;
 if (mode === 'digest') {
-  md = `${coverageLine} | ${alertsLine} | ${t('Formal','フォーマル')}: ${formal} | ${replayLine} | ${bddLine} | ${gwtLine} | ${adapterCountsLine} | ${adaptersLine} | ${t('Trace','トレース')}: ${Array.from(traceIds).join(', ')}`;
+  md = `${coverageLine} | ${alertsLine} | ${t('Formal','フォーマル')}: ${formal} | ${replayLine} | ${propsLine} | ${bddLine} | ${gwtLine} | ${adapterCountsLine} | ${adaptersLine} | ${t('Trace','トレース')}: ${Array.from(traceIds).join(', ')}`;
 } else {
-  md = `## ${t('Quality Summary','品質サマリ')}\n- ${coverageLine}\n- ${alertsLine}\n- ${gwtLine}\n- ${bddLine}\n- ${adapterCountsLine}\n- ${t('Adapters','アダプタ')}:\n${adaptersList}\n- ${t('Formal','フォーマル')}: ${formal}\n- ${replayLine}\n- ${t('Trace IDs','トレースID')}: ${Array.from(traceIds).join(', ')}`;
+  md = `## ${t('Quality Summary','品質サマリ')}\n- ${coverageLine}\n- ${alertsLine}\n- ${gwtLine}\n- ${bddLine}\n- ${propsLine}\n- ${adapterCountsLine}\n- ${t('Adapters','アダプタ')}:\n${adaptersList}\n- ${t('Formal','フォーマル')}: ${formal}\n- ${replayLine}\n- ${t('Trace IDs','トレースID')}: ${Array.from(traceIds).join(', ')}`;
 }
 fs.mkdirSync('artifacts/summary',{recursive:true});
 fs.writeFileSync('artifacts/summary/PR_SUMMARY.md', md);
