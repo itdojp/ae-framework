@@ -5,7 +5,11 @@ export const POSITIVE_PATTERNS = [
   /\bok\b/i,
   /invariant[^\n]*holds/i,
   /no\s+violations?/i,
-  /all\s+propert(?:y|ies)\s+hold/i
+  /all\s+propert(?:y|ies)\s+hold/i,
+  // Multilingual minimal positives (conservative)
+  /aucun\s+contre[- ]exemple/i,           // French: no counterexample
+  /sin\s+contraejemplos?/i,              // Spanish: without counterexamples
+  /keine\s+gegenbeispiele/i              // German: no counterexamples
 ];
 
 export const NEGATIVE_PATTERNS = [
@@ -13,7 +17,11 @@ export const NEGATIVE_PATTERNS = [
   /counterexample/i,
   /\bfail(?:ed)?\b/i,
   /\berrors?\s+(?:found|detected)\b/i,
-  /error:/i
+  /error:/i,
+  // Minimal multilingual negatives (conservative)
+  /contre[- ]exemple\s+(?:trouv|detect)/i, // French: counterexample found/detected (prefix match)
+  /contraejemplo\s+(?:encontrado|detectado)/i, // Spanish
+  /gegenbeispiel\s+(?:gefunden|entdeckt)/i     // German
 ];
 
 export function computeOkFromOutput(out){
