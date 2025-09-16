@@ -80,4 +80,14 @@
 2) CI に影響のある変更は `run-qa` ラベルで限定的に回す
 3) テキスト生成・整形系は printf で統一
 4) 変更後: `pnpm -s types:check && pnpm -s build` のローカル通過を目安
+
+### 小PR連投のレビューポリシー（推奨）
+- 1PRあたりの変更は小さく、revertしやすい粒度に保つ
+- 体裁やコメント整形などは機能変更と切り分ける（レビュー容易化）
+- 衝突しやすいYAML/Docsは、こまめにmainへ追従（rebase/merge）
+
+### PRコメントヘッダ（AE-***）統一ガイド（推奨）
+- 集約系コメントはヘッダ行を固定（例: `<!-- AE-FORMAL-AGGREGATE -->` / `<!-- AE-COVERAGE-SUMMARY -->`）
+- 同一ヘッダのコメントはアップサート（一意に更新）
+- 1行サマリ→詳細→メタ情報（Clamp/Generated/Derived/Policy）の順で可読性を確保
 5) 小PR連投時の推奨ラベル: `ci-non-blocking`（非ブロッキング運用）, `run-formal`（Formalをopt-in）
