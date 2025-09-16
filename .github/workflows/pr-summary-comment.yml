@@ -53,7 +53,7 @@ jobs:
           if (replay?.traceId) traceIds.add(replay.traceId);
           for (const p of props) if (p?.traceId) traceIds.add(p.traceId);
           const replayLine = replay.totalEvents!==undefined ? `Replay: ${replay.totalEvents} events, ${(replay.violatedInvariants||[]).length} violations` : "Replay: n/a";
-          const md = `## Quality Summary\n- Adapters:\n${adapters}\n- Formal: ${formal}\n- ${replayLine}\n- Trace IDs: ${Array.from(traceIds).join(', ')}`;
+          const md = `## Quality Summary\n- Adapters:\n${adapters}\n- Formal: ${formal}\n- ${replayLine}\n- Trace IDs: ${Array.from(traceIds).join(", ")}`;
           fs.mkdirSync("artifacts/summary",{recursive:true});
           fs.writeFileSync("artifacts/summary/PR_SUMMARY.md", md);
           console.log(md);
