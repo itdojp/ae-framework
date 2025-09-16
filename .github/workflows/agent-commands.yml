@@ -46,6 +46,7 @@ jobs:
             // /handoff A|B|C
             // Dispatchers (require workflow_dispatch on target):
             // /verify-lite, /run-qa-dispatch, /run-security-dispatch, /ci-fast-dispatch, /formal-verify-dispatch
+            // /formal-apalache-dispatch
             // /run-flake-dispatch, /spec-validation-dispatch
             const cmd = body.split(/\s+/)[0];
             const arg = body.split(/\s+/)[1] || '';
@@ -144,6 +145,13 @@ jobs:
                 const ref = pr.data.head.ref;
                 await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'formal-verify.yml', ref });
                 return reply(`Dispatched Formal Verify on ${ref}`);
+              }
+              case '/formal-apalache-dispatch': {
+                if (!context.payload.issue.pull_request) return reply('Not a PR');
+                const pr = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
+                const ref = pr.data.head.ref;
+                await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'formal-verify.yml', ref, inputs: { target: 'apalache' } });
+                return reply(`Dispatched Formal Verify (Apalache) on ${ref}`);
               }
               case '/run-flake-dispatch': {
                 if (!context.payload.issue.pull_request) return reply('Not a PR');

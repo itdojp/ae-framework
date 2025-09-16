@@ -129,3 +129,24 @@ jobs:
           name: formal-reports-smt
           path: |
             hermetic-reports/formal/smt-summary.json
+
+  verify-apalache:
+    name: verify:apalache (stub)
+    runs-on: ubuntu-latest
+    if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'apalache'))
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Check Apalache tooling presence (non-blocking)
+        run: |
+          printf "%s\n" "Checking Apalache tooling..."
+          node -e "console.log('Apalache tooling check stub ok')"
+      - name: Upload Apalache summary (artifact)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: formal-reports-apalache
+          path: |
+            hermetic-reports/formal/apalache-summary.json
