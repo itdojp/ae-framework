@@ -36,10 +36,16 @@
   - `/pr-digest` … `pr-summary:digest` ラベル付与（要約）
   - `/pr-detailed` … `pr-summary:detailed` ラベル付与（詳細）
   - `/handoff A|B|C` … ハンドオフ用ラベル `handoff:agent-a|b|c` を付与し、次エージェントに委譲
+  - バッチ系（CI Fast の任意カテゴリ実行、いずれもラベル付与）
+    - `/qa-batch-commands` または `/run-qa:commands` … `qa-batch:commands`
+    - `/qa-batch-cli` または `/run-qa:cli` … `qa-batch:cli`
+    - `/qa-batch-property` または `/run-qa:property` … `qa-batch:property`
+    - `/qa-batch-agents` または `/run-qa:agents` … `qa-batch:agents`
   - ディスパッチ（workflow_dispatch 直起動）
     - `/verify-lite` … verify-lite.yml を PR の head ブランチで起動
     - `/run-qa-dispatch` … ae-ci.yml を PR の head ブランチで起動
     - `/run-security-dispatch` … sbom-generation.yml を PR の head ブランチで起動
+    - `/ci-fast-dispatch` … ci-fast.yml を PR の head ブランチで起動（対応ラベルが付くとバッチも実行）
 
 ## 参考ファイル
 - `.github/workflows/ae-ci.yml`: PR 時 QA/Bench 軽量モード
