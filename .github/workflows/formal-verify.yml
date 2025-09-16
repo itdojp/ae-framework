@@ -162,3 +162,4 @@ jobs:
           name: formal-reports-apalache
           path: |
             hermetic-reports/formal/apalache-summary.json
+            hermetic-reports/formal/apalache-output.txt
