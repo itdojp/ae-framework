@@ -75,7 +75,7 @@ jobs:
           lines.push(tlaSum ? `- TLA summary file: ${path.basename(tlaSum)}` : "- TLA summary: n/a");
           lines.push(alloySum ? `- Alloy summary file: ${path.basename(alloySum)}` : "- Alloy summary: n/a");
           lines.push(smtSum ? `- SMT summary file: ${path.basename(smtSum)}` : "- SMT summary: n/a");
-          // Quick one-line present/ran summary
+          // Present map (single source for MD + JSON)
           const present = {
             tla: !!tlaSum,
             alloy: !!alloySum,
@@ -83,10 +83,12 @@ jobs:
             apalache: !!apalacheSum,
             conformance: !!confSum
           };
+          // Quick one-line present/ran summary（MD表示とJSONのpresentを完全同期）
+          const presentKeys = Object.entries(present).filter(([k,v])=>v).map(([k])=>k);
+          const presentCount = presentKeys.length;
           const apLine = apalacheSum && apalache ? `ran=${apalache.ran? 'yes':'no'} ok=${apalache.ok==null? 'n/a': (apalache.ok? 'yes':'no')}` : 'n/a';
+          lines.push(`Present: ${presentCount}/5${presentCount? ` (${presentKeys.join(', ')})` : ''}`);
           lines.push(`Summary: TLA=${present.tla? 'present':'n/a'} | Alloy=${present.alloy? 'present':'n/a'} | SMT=${present.smt? 'present':'n/a'} | Apalache=${apLine} | Conformance=${present.conformance? 'present':'n/a'}`);
-          const presentTotal = (present.tla?1:0)+(present.alloy?1:0)+(present.smt?1:0)+(present.apalache?1:0)+(present.conformance?1:0);
-          lines.push(`Present: ${presentTotal}/5 (tla=${present.tla?'yes':'no'}, alloy=${present.alloy?'yes':'no'}, smt=${present.smt?'yes':'no'}, apalache=${present.apalache?'yes':'no'}, conf=${present.conformance?'yes':'no'})`);
           lines.push("");
 
           if (apalacheSum && apalache) {
@@ -131,10 +133,17 @@ jobs:
             lines.push("- Apalache summary: n/a");
           }
           lines.push(confSum ? `- Conformance summary file: ${path.basename(confSum)}` : "- Conformance summary: n/a");
+          // By-type/present summary（簡潔・Present行の補助、一行で整形）
+          const presentPairs = Object.entries(present).map(([k,v])=>`${k}=${v? '1':'0'}`).join(', ');
+          lines.push(`By-type present: ${presentPairs}`);
+          if (apalacheSum && apalache) {
+            lines.push(`Ran/OK summary: apalache ran=${apalache.ran? 'yes':'no'} ok=${apalache.ok==null? 'n/a': (apalache.ok? 'yes':'no')}`);
+          }
           lines.push("");
-          lines.push("_Non-blocking. Add/remove label run-formal to control._");
-          lines.push("_Reproduce locally: pnpm run verify:tla -- --engine=apalache_ (see docs/quality/formal-runbook.md)");
+          // Footer meta（順序を統一: Tools → Reproduce → Policy → Clamp → Generated）
           lines.push("_Tools check: pnpm run tools:formal:check_");
+          lines.push("_Reproduce locally: pnpm run verify:tla -- --engine=apalache_ (see docs/quality/formal-runbook.md)");
+          lines.push("_Non-blocking. Add/remove label run-formal to control._");
           lines.push(`_Clamp: line=${clampInfo.lineClamp}, errors=${clampInfo.errorsLimit}_`);
           lines.push(`_Generated: ${GENERATED_AT}_`);
           // Normalize markdown: collapse excessive empty lines
@@ -157,7 +166,7 @@ jobs:
             smt: smt || null,
             apalache: apalache || null,
             conformance: conf || null,
-            info: { lineClamp: LINE_CLAMP, errorsLimit: ERRORS_LIMIT, generatedAt: GENERATED_AT, present }
+            info: { lineClamp: LINE_CLAMP, errorsLimit: ERRORS_LIMIT, generatedAt: GENERATED_AT, present, presentCount }
           };
           fs.writeFileSync(outJson, JSON.stringify(json,null,2));
           const aggPresent = fs.existsSync(outJson) ? 'yes' : 'no';
