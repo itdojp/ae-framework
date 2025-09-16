@@ -67,13 +67,19 @@ if (!fs.existsSync(absFile)){
   toolPath = sh(`bash -lc 'command -v ${apalacheCmd} || true'`).trim();
 }
 
+// Tuning via env (defaults keep current behavior)
+const ERRORS_LIMIT = Number(process.env.APALACHE_ERRORS_LIMIT || '5');
+const ERROR_LINE_CLAMP = Number(process.env.APALACHE_ERROR_LINE_CLAMP || '200');
+const SNIPPET_BEFORE = Number(process.env.APALACHE_SNIPPET_BEFORE || '2');
+const SNIPPET_AFTER = Number(process.env.APALACHE_SNIPPET_AFTER || '2');
+
 function extractErrors(out){
   const lines = (out || '').split(/\r?\n/);
   const key = /error|violat|counterexample|fail/i;
   const picked = [];
-  for (const l of lines) { if (key.test(l)) picked.push(l.trim()); if (picked.length>=5) break; }
+  for (const l of lines) { if (key.test(l)) picked.push(l.trim()); if (picked.length>=ERRORS_LIMIT) break; }
   // Trim very long lines for readability in aggregate comments
-  return picked.map(l => l.length > 200 ? (l.slice(0, 200) + '…') : l);
+  return picked.map(l => l.length > ERROR_LINE_CLAMP ? (l.slice(0, ERROR_LINE_CLAMP) + '…') : l);
 }
 function countErrors(out){
   const lines = (out || '').split(/\r?\n/);
@@ -81,7 +87,7 @@ function countErrors(out){
   let n = 0; for (const l of lines) if (key.test(l)) n++;
   return n;
 }
-function extractErrorSnippet(out, before=2, after=2){
+function extractErrorSnippet(out, before=SNIPPET_BEFORE, after=SNIPPET_AFTER){
   const lines = (out || '').split(/\r?\n/);
   const key = /error|violat|counterexample|fail/i;
   for (let i=0;i<lines.length;i++){
