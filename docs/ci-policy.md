@@ -99,6 +99,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 ### 必須チェック（PR ブロッキング）
 - Verify Lite（types:check / lint / build）
 - 必要に応じて validate-artifacts-ajv / coverage-check を必須化可能
+ - カバレッジ運用とRequired化の詳細は `docs/quality/coverage-policy.md` を参照（しきい値の由来、ラベル/変数、main運用）
 
 ### ラベル運用（Opt-in）
 - `ci-non-blocking`: 一部ジョブ（traceability, model-check, contracts, security 等）を continue-on-error で実行し PR をブロックしない
