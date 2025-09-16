@@ -30,13 +30,36 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - `run-flake`: enable flake-detection on PRs
 - `run-e2e`: enable E2E tests on PRs
 - `coverage:<pct>`: override coverage threshold for coverage-check (default 80). e.g., `coverage:75`
+ - `qa-batch:commands` / `qa-batch:cli` / `qa-batch:property` / `qa-batch:agents`: run additional CI Fast batches for the specific categories (opt-in)
 
-### Slash Commands (Instant Dispatch)
-- コメントで以下を投稿すると、対象ワークフローをPRのheadブランチで即時起動できます（main取り込み後有効）。
-  - `/verify-lite` … Verify Lite を実行
-  - `/run-qa-dispatch` … ae-ci（QA light）を実行
-  - `/run-security-dispatch` … sbom-generation（Security/SBOM）を実行
-  - 既存のラベル系（`/run-qa` や `/run-security` 等）も併用可能ですが、dispatchは再実行待ちを省略できるため推奨です。
+### Slash Commands (Instant Dispatch / Labels)
+- コメントで以下を投稿すると、対象ワークフローの即時起動やラベル付与ができます（main取り込み後有効）。
+  - Dispatch（workflow_dispatch 直起動）
+    - `/verify-lite` … Verify Lite を実行
+    - `/run-qa-dispatch` … ae-ci（QA light）を実行
+    - `/run-security-dispatch` … sbom-generation（Security/SBOM）を実行
+    - `/ci-fast-dispatch` … CI Fast を実行（バッチ系は対応ラベル付与時のみ稼働）
+    - `/formal-verify-dispatch` … Formal Verify を実行（`run-formal` との併用推奨）
+    - `/run-flake-dispatch` … flake-detect を実行
+    - `/spec-validation-dispatch` … spec-validation を実行
+  - ラベル付与（Opt-in 実行/ポリシー切替）
+    - `/run-qa` … `run-qa` を付与（ae-ci の QA 実行）
+    - `/run-security` … `run-security` を付与（Security/SBOM 実行。PR要約も投稿）
+    - `/run-hermetic` … `run-hermetic` を付与（Hermetic CI 実行）
+    - `/run-spec` … `run-spec` を付与（Fail-Fast Spec 実行）
+    - `/run-drift` … `run-drift` を付与（Codegen Drift 検出）
+    - `/non-blocking` … `ci-non-blocking` を付与（一部ジョブを continue-on-error）
+    - `/ready` … `do-not-merge` を除去（マージ待ちへ）
+    - `/pr-digest` / `/pr-detailed` … PR要約モード切替
+    - `/run-formal` / `/enforce-formal` / `/enforce-contracts` … フォーマル/契約の実行/エンフォース切替
+    - `/coverage <pct|clear>` … `coverage:<pct>` を設定/クリア（しきい値上書き）
+    - `/enforce-typecov` … `enforce-typecov` を付与（型カバレッジ enforcement）
+    - `/enforce-coverage` … `enforce-coverage` を付与（カバレッジ enforcement）
+  - 使い分け例（推奨）
+    - 追加確認したいカテゴリのみラベル付与 → `/ci-fast-dispatch` で即時起動
+    - Verify Lite のみを再実行 → `/verify-lite`
+
+<!-- duplicate section removed: Slash Commands (Instant Dispatch) repeated -->
 
 ### Path Conditions
 - Fire spec fail-fast only for changes under `spec/**`, `.ae/**`
@@ -54,6 +77,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 
 ### Security/Compliance
 - Default: not required on PRs; run under `run-security`, aggregate results as artifacts
+- PR summary comment (non-blocking) is posted when `run-security` is set (dependency vulnerabilities and top licenses)
 - Enforce/gate gradually after team agreement (separate issue)
 
 ### Operations Notes
@@ -104,6 +128,11 @@ This document defines CI policies to keep PR experience fast and stable while ma
 
 ### セキュリティ/コンプライアンス
 - 既定では PR で非必須（`run-security` ラベル時のみ実行）。結果は artifacts に集約
+- `run-security` ラベル時は、依存脆弱性のサマリと上位ライセンスの簡易サマリを PR コメントに自動投稿（非ブロッキング）
+
+### フォーマル（オプトイン）
+- `run-formal` ラベル時のみ、Formal Verify（stub）と成果物の集約（Alloy/TLA/SMT の要約）を実行（非ブロッキング）
+- 集約結果は PR コメントにアップサート（重複を避けるためヘッダー識別）
 - 必須化・閾値強化は段階導入（別Issueで合意のうえ切替）
 
 ### 運用メモ

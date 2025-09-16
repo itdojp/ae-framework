@@ -1,0 +1,80 @@
+name: Formal Reports Aggregate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+
+permissions: read-all
+
+jobs:
+  aggregate:
+    if: contains(github.event.pull_request.labels.*.name, 'run-formal')
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts_dl
+      - name: Aggregate formal reports
+        id: agg
+        run: |
+          node <<'JS'
+          const fs=require("fs"), path=require("path");
+          function rj(p){ try { return JSON.parse(fs.readFileSync(p,"utf-8")); } catch { return undefined; } }
+          function find(dir, name){ try { const p = path.join(dir, name); return fs.existsSync(p) ? p : undefined; } catch { return undefined; } }
+          const base = "artifacts_dl";
+          const outDir = "artifacts/formal"; fs.mkdirSync(outDir,{recursive:true});
+          const outMd = path.join(outDir, "formal-aggregate.md");
+
+          const modelJson = find(base, "model-check-results/model-check.json");
+          const alloy = modelJson ? (rj(modelJson)?.alloy || {}) : {};
+          const tlc = modelJson ? (rj(modelJson)?.tlc || {}) : {};
+          const alloyOk = Array.isArray(alloy.results) ? alloy.results.filter(x=>x?.ok===true).length : 0;
+          const alloyTotal = Array.isArray(alloy.results) ? alloy.results.filter(x=>x?.ok!==undefined).length : 0;
+          const tlcOk = Array.isArray(tlc.results) ? tlc.results.filter(x=>x?.ok===true).length : 0;
+          const tlcTotal = Array.isArray(tlc.results) ? tlc.results.length : 0;
+
+          const tlaSum = find(base, "formal-reports-tla/tla-summary.json");
+          const alloySum = find(base, "formal-reports-alloy/alloy-summary.json");
+          const smtSum = find(base, "formal-reports-smt/smt-summary.json");
+          const apalacheSum = find(base, "formal-reports-apalache/apalache-summary.json");
+          const confSum = find(base, "formal-reports-conformance/conformance-summary.json");
+
+          const lines = [];
+          lines.push("## 🔎 Formal Reports Aggregate");
+          lines.push("");
+          lines.push(`- TLC: ${tlcOk}/${tlcTotal} ok`);
+          lines.push(`- Alloy: ${alloyOk}/${alloyTotal} ok`);
+          lines.push(tlaSum ? `- TLA summary file: ${path.basename(tlaSum)}` : "- TLA summary: n/a");
+          lines.push(alloySum ? `- Alloy summary file: ${path.basename(alloySum)}` : "- Alloy summary: n/a");
+          lines.push(smtSum ? `- SMT summary file: ${path.basename(smtSum)}` : "- SMT summary: n/a");
+          lines.push(apalacheSum ? `- Apalache summary file: ${path.basename(apalacheSum)}` : "- Apalache summary: n/a");
+          lines.push(confSum ? `- Conformance summary file: ${path.basename(confSum)}` : "- Conformance summary: n/a");
+          lines.push("");
+          lines.push("_Non-blocking. Add/remove label run-formal to control._");
+          const md = lines.join("\n");
+          fs.writeFileSync(outMd, md);
+          console.log(md);
+          JS
+      - name: Upload aggregate
+        uses: actions/upload-artifact@v4
+        with:
+          name: formal-reports-aggregate
+          path: artifacts/formal/formal-aggregate.md
+      - name: Comment on PR (upsert)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const header = '<!-- AE-FORMAL-AGGREGATE -->\n';
+            const body = header + fs.readFileSync('artifacts/formal/formal-aggregate.md','utf-8');
+            const { owner, repo, number } = context.issue;
+            const comments = await github.rest.issues.listComments({ owner, repo, issue_number: number, per_page: 100 });
+            const mine = comments.data.find(c => c.body && c.body.startsWith('<!-- AE-FORMAL-AGGREGATE -->'));
+            if (mine) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number: number, body });
+            }

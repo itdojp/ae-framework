@@ -41,26 +41,26 @@ jobs:
           
       - name: Validate hermetic requirements
         run: |
-          echo "🔍 Validating hermetic CI environment..."
+          printf "%s\n" "🔍 Validating hermetic CI environment..."
           
           # Check for non-deterministic patterns
-          echo "Checking for non-deterministic code patterns..."
+          printf "%s\n" "Checking for non-deterministic code patterns..."
           if grep -r "Date.now()" src/ --include="*.ts" --include="*.js" || \
              grep -r "Math.random()" src/ --include="*.ts" --include="*.js" || \
              grep -r "process.hrtime()" src/ --include="*.ts" --include="*.js"; then
-            echo "❌ Non-deterministic patterns found!"
+            printf "%s\n" "❌ Non-deterministic patterns found!"
             exit 1
           fi
           
           # Check for external network calls in tests
-          echo "Checking for external network dependencies in tests..."
+          printf "%s\n" "Checking for external network dependencies in tests..."
           if grep -r "http://" tests/ --include="*.ts" --include="*.js" || \
              grep -r "https://" tests/ --include="*.ts" --include="*.js" | \
              grep -v "localhost" | grep -v "127.0.0.1"; then
-            echo "⚠️  External network dependencies detected in tests"
+            printf "%s\n" "⚠️  External network dependencies detected in tests"
           fi
           
-          echo "✅ Hermetic validation completed"
+          printf "%s\n" "✅ Hermetic validation completed"
 
   deterministic-build:
     name: Deterministic Build Verification
@@ -91,7 +91,7 @@ jobs:
           export SOURCE_DATE_EPOCH=1640995200  # 2022-01-01 00:00:00 UTC
           
           # Disable npm audit for hermetic builds
-          echo "audit=false" >> .npmrc
+          printf "%s\n" "audit=false" >> .npmrc
           
           # Configure npm for reproducible builds
           npm config set fund false
@@ -135,12 +135,12 @@ jobs:
       - name: Verify deterministic build
         run: |
           if diff build1.checksums build2.checksums; then
-            echo "✅ Build is deterministic - checksums match"
+            printf "%s\n" "✅ Build is deterministic - checksums match"
           else
-            echo "❌ Build is not deterministic - checksums differ"
-            echo "First build checksums:"
+            printf "%s\n" "❌ Build is not deterministic - checksums differ"
+            printf "%s\n" "First build checksums:"
             cat build1.checksums
-            echo "Second build checksums:"
+            printf "%s\n" "Second build checksums:"
             cat build2.checksums
             exit 1
           fi
@@ -182,11 +182,14 @@ jobs:
         run: |
           # Create isolated test environment
           mkdir -p test-isolation/${{ matrix.test-suite }}
-          export TEST_ISOLATION_DIR="$(pwd)/test-isolation/${{ matrix.test-suite }}"
+          TEST_ISOLATION_DIR="$(pwd)/test-isolation/${{ matrix.test-suite }}"
+          export TEST_ISOLATION_DIR
           
           # Configure test isolation
-          printf "%s\n" "TEST_ISOLATION=true" >> "$GITHUB_ENV"
-          printf "%s\n" "TEST_SUITE=${{ matrix.test-suite }}" >> "$GITHUB_ENV"
+          {
+            printf "%s\n" "TEST_ISOLATION=true"
+            printf "%s\n" "TEST_SUITE=${{ matrix.test-suite }}"
+          } >> "$GITHUB_ENV"
           
       - name: Run isolated tests
         run: |
@@ -204,7 +207,7 @@ jobs:
           
       - name: Validate test isolation
         run: |
-          echo "🔍 Validating test isolation for ${{ matrix.test-suite }}..."
+          printf "%s\n" "🔍 Validating test isolation for ${{ matrix.test-suite }}..."
           
           # Check for test pollution
           if [ -f test-results-${{ matrix.test-suite }}.json ]; then
@@ -212,7 +215,7 @@ jobs:
             node -e "
               const results = JSON.parse(require('fs').readFileSync('test-results-${{ matrix.test-suite }}.json', 'utf8'));
               console.log('Test isolation validation completed');
-            " || echo "Test results analysis skipped"
+            " || printf "%s\n" "Test results analysis skipped"
           fi
           
       - name: Upload test results
@@ -242,28 +245,28 @@ jobs:
           
       - name: Analyze dependency hermeticity
         run: |
-          echo "🔍 Analyzing dependency hermeticity..."
+          printf "%s\n" "🔍 Analyzing dependency hermeticity..."
           
           # Check for non-hermetic dependencies
-          echo "Checking package.json for problematic dependencies..."
+          printf "%s\n" "Checking package.json for problematic dependencies..."
           
           # Check for dependencies that might break hermeticity
           PROBLEMATIC_DEPS=$(grep -E "(fsevents|node-gyp|sharp|canvas)" package.json || true)
           if [ ! -z "$PROBLEMATIC_DEPS" ]; then
-            echo "⚠️  Found potentially problematic dependencies:"
-            echo "$PROBLEMATIC_DEPS"
+            printf "%s\n" "⚠️  Found potentially problematic dependencies:"
+            printf "%s\n" "$PROBLEMATIC_DEPS"
           fi
           
           # Verify lockfile integrity via install
-          echo "Verifying lockfile integrity..."
+          printf "%s\n" "Verifying lockfile integrity..."
           pnpm install --frozen-lockfile --prefer-offline
           
           # Check for post-install scripts that might break hermeticity (using npm list as a generic scanner)
-          echo "Checking for post-install scripts..."
+          printf "%s\n" "Checking for post-install scripts..."
           POSTINSTALL_SCRIPTS=$(pnpm ls --depth Infinity --json | jq -r '.[0].packages[].path' | xargs -I {} find {} -name "package.json" -exec grep -l "postinstall" {} \; 2>/dev/null || true)
           if [ ! -z "$POSTINSTALL_SCRIPTS" ]; then
-            echo "⚠️  Found packages with postinstall scripts:"
-            echo "$POSTINSTALL_SCRIPTS"
+            printf "%s\n" "⚠️  Found packages with postinstall scripts:"
+            printf "%s\n" "$POSTINSTALL_SCRIPTS"
           fi
           
       - name: Install and verify hermetic dependencies
@@ -276,15 +279,15 @@ jobs:
           
       - name: Generate dependency report
         run: |
-          echo "📊 Generating dependency hermeticity report..."
+          printf "%s\n" "📊 Generating dependency hermeticity report..."
           
           # Create dependency report
           pnpm ls --json > dependency-tree.json
           pnpm audit --json > dependency-audit.json || true
           
           # Analyze for hermetic violations
-          echo "Dependencies installed: $(jq '.[0].dependencies | length' dependency-tree.json)"
-          echo "Total packages: $(jq '.[0].packages | length' dependency-tree.json)"
+          printf "Dependencies installed: %s\n" "$(jq '.[0].dependencies | length' dependency-tree.json)"
+          printf "Total packages: %s\n" "$(jq '.[0].packages | length' dependency-tree.json)"
           
       - name: Upload dependency analysis
         uses: actions/upload-artifact@v4
@@ -322,7 +325,7 @@ jobs:
           
       - name: Run hermetic quality analysis
         run: |
-          echo "🔍 Running hermetic quality gates..."
+          printf "%s\n" "🔍 Running hermetic quality gates..."
           
           # Run hermetic test validation
           pnpm run hermetic:validate
@@ -335,7 +338,7 @@ jobs:
           
       - name: Generate hermetic compliance report
         run: |
-          echo "📊 Generating hermetic compliance report..."
+          printf "%s\n" "📊 Generating hermetic compliance report..."
           
           # Create compliance report
           cat > hermetic-compliance.json << EOF
@@ -367,16 +370,16 @@ jobs:
           
       - name: Validate overall hermeticity
         run: |
-          echo "✅ Hermetic CI/CD pipeline validation completed"
-          echo "📊 All hermetic quality gates passed"
+          printf "%s\n" "✅ Hermetic CI/CD pipeline validation completed"
+          printf "%s\n" "📊 All hermetic quality gates passed"
           
           # Final validation
           if [ -f hermetic-compliance.json ]; then
             SCORE=$(jq '.compliance_score' hermetic-compliance.json)
             if [ "$SCORE" -eq 100 ]; then
-              echo "🎯 Perfect hermeticity score: $SCORE%"
+              printf "%s\n" "🎯 Perfect hermeticity score: $SCORE%"
             else
-              echo "⚠️  Hermeticity score: $SCORE%"
+              printf "%s\n" "⚠️  Hermeticity score: $SCORE%"
               exit 1
             fi
           fi
@@ -399,13 +402,13 @@ jobs:
           
       - name: Validate deployment hermeticity
         run: |
-          echo "🚀 Validating deployment hermeticity..."
+          printf "%s\n" "🚀 Validating deployment hermeticity..."
           
           # Verify build checksums
           if [ -f hermetic-build/build1.checksums ]; then
-            echo "✅ Hermetic build artifacts verified"
+            printf "%s\n" "✅ Hermetic build artifacts verified"
           else
-            echo "❌ Missing hermetic build verification"
+            printf "%s\n" "❌ Missing hermetic build verification"
             exit 1
           fi
           
@@ -423,8 +426,8 @@ jobs:
           
       - name: Simulate hermetic deployment
         run: |
-          echo "🚀 Simulating hermetic deployment..."
-          echo "✅ Deployment would proceed with hermetic guarantees"
+          printf "%s\n" "🚀 Simulating hermetic deployment..."
+          printf "%s\n" "✅ Deployment would proceed with hermetic guarantees"
           
           # In a real scenario, this would deploy to production
           # with full hermetic constraints maintained

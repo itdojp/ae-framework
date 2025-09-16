@@ -48,6 +48,8 @@ jobs:
         run: node scripts/formal/trace-validate.mjs
       - name: Aggregate formal summaries (local)
         run: node scripts/formal/aggregate-formal.mjs
+      - name: Conformance driver (stub)
+        run: node scripts/formal/conformance-driver.mjs || true
       - name: Print formal summary (console)
         run: node scripts/formal/print-summary.mjs
       - name: Upload formal reports
@@ -57,6 +59,13 @@ jobs:
           name: formal-reports
           path: |
             hermetic-reports/
+      - name: Upload conformance summary (artifact)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: formal-reports-conformance
+          path: |
+            hermetic-reports/formal/conformance-summary.json
 
   verify-alloy:
     name: verify:alloy (stub)
@@ -67,10 +76,21 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Check Alloy tooling presence (non-blocking)
+        run: |
+          printf "%s\n" "Checking Alloy tooling..."
+          node -e "console.log('Alloy tooling check stub ok')"
       - name: Run verify:alloy (sample)
         env:
           ALLOY_JAR: ${{ github.event_name == 'workflow_dispatch' && inputs.alloyJar || '' }}
         run: node scripts/formal/verify-alloy.mjs --file spec/alloy/Domain.als || true
+      - name: Upload Alloy summary (artifact)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: formal-reports-alloy
+          path: |
+            hermetic-reports/formal/alloy-summary.json
 
   verify-tla:
     name: verify:tla (stub)
@@ -85,7 +105,14 @@ jobs:
         env:
           TLA_ENGINE: ${{ github.event_name == 'workflow_dispatch' && inputs.engine || 'tlc' }}
           TLA_TOOLS_JAR: ${{ github.event_name == 'workflow_dispatch' && inputs.tlaToolsJar || '' }}
-        run: node scripts/formal/verify-tla.mjs --engine=$TLA_ENGINE --file spec/tla/DomainSpec.tla || true
+        run: node scripts/formal/verify-tla.mjs --engine="$TLA_ENGINE" --file spec/tla/DomainSpec.tla || true
+      - name: Upload TLA summary (artifact)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: formal-reports-tla
+          path: |
+            hermetic-reports/formal/tla-summary.json
 
   verify-smt:
     name: verify:smt (stub)
@@ -96,10 +123,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Check SMT tooling presence (non-blocking)
+        run: |
+          printf "%s\n" "Checking SMT tooling..."
+          node -e "console.log('SMT tooling check stub ok')"
       - name: Run verify:smt (sample)
         env:
           SMT_SOLVER: ${{ github.event_name == 'workflow_dispatch' && inputs.solver || 'z3' }}
-        run: node scripts/formal/verify-smt.mjs --solver=$SMT_SOLVER --file spec/smt/sample.smt2 || true
+        run: node scripts/formal/verify-smt.mjs --solver="$SMT_SOLVER" --file spec/smt/sample.smt2 || true
       - name: Upload SMT summary (artifact)
         uses: actions/upload-artifact@v4
         if: always()
@@ -107,3 +138,23 @@ jobs:
           name: formal-reports-smt
           path: |
             hermetic-reports/formal/smt-summary.json
+
+  verify-apalache:
+    name: verify:apalache (stub)
+    runs-on: ubuntu-latest
+    if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'apalache'))
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run verify:apalache (summary, non-blocking)
+        run: |
+          node scripts/formal/verify-apalache.mjs --file spec/tla/DomainSpec.tla || true
+      - name: Upload Apalache summary (artifact)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: formal-reports-apalache
+          path: |
+            hermetic-reports/formal/apalache-summary.json

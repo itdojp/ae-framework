@@ -69,7 +69,7 @@ jobs:
             printf "%s\n" "This is a minimal example spec for validation testing." >> "spec/example-spec.md"
           fi
           
-          SPEC_FILES=$(find spec -name "*.md" -type f 2>/dev/null || echo "")
+          SPEC_FILES=$(find spec -name "*.md" -type f 2>/dev/null || printf "\n")
           if [ -z "$SPEC_FILES" ]; then
             printf "%s\n" "::error::No spec files found in spec/ directory"
             exit 1

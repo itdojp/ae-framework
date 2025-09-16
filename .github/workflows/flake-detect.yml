@@ -29,7 +29,7 @@ jobs:
           
           printf "%s\n" "🔍 Starting flake detection with $total_runs runs"
           
-          for i in $(seq 1 $total_runs); do
+          for i in $(seq 1 "$total_runs"); do
             printf "%s\n" "📊 Run #$i of $total_runs"
             
             if pnpm run test:int; then
@@ -43,10 +43,12 @@ jobs:
             sleep 5
           done
           
-          printf "%s\n" "FAILS=$fails" >> "$GITHUB_ENV"
-          printf "%s\n" "TOTAL_RUNS=$total_runs" >> "$GITHUB_ENV"
+          {
+            printf "%s\n" "FAILS=$fails"
+            printf "%s\n" "TOTAL_RUNS=$total_runs"
+          } >> "$GITHUB_ENV"
           
-          failure_rate=$(echo "scale=2; $fails / $total_runs * 100" | bc -l)
+          failure_rate=$(printf "%s\n" "scale=2; $fails / $total_runs * 100" | bc -l)
           printf "%s\n" "FAILURE_RATE=$failure_rate" >> "$GITHUB_ENV"
           
           printf "%s\n" "📈 Flake detection summary:"
@@ -64,7 +66,7 @@ jobs:
             "failures": $FAILS,
             "failureRate": $FAILURE_RATE,
             "threshold": 30.0,
-            "status": "$([ $(echo "$FAILURE_RATE > 30.0" | bc -l) -eq 1 ] && echo "flaky" || echo "stable")",
+            "status": "$([ $(printf "%s\n" "$FAILURE_RATE > 30.0" | bc -l) -eq 1 ] && printf "flaky" || printf "stable")",
             "testSuite": "integration",
             "environment": "ci"
           }
@@ -75,7 +77,7 @@ jobs:
         run: |
           threshold=30.0
           
-          if [ $(echo "$FAILURE_RATE > $threshold" | bc -l) -eq 1 ]; then
+          if [ $(printf "%s\n" "$FAILURE_RATE > $threshold" | bc -l) -eq 1 ]; then
             printf "%s\n" "🚨 Flake detected! Failure rate: ${FAILURE_RATE}% exceeds threshold: ${threshold}%"
             printf "%s\n" "flaky=true" >> "$GITHUB_OUTPUT"
           else

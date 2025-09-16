@@ -31,15 +31,34 @@
 - PR コメントで以下を投稿すると、ラベル付与などを自動化します（.github/workflows/agent-commands.yml）。
   - `/run-qa` … `run-qa` ラベル付与（ae-ci の QA 実行）
   - `/run-security` … `run-security` ラベル付与（Security/SBOM 実行）
+  - `/run-hermetic` … `run-hermetic` ラベル付与（Hermetic CI 実行）
+  - `/run-spec` … `run-spec` ラベル付与（Spec Fail-Fast 実行）
+  - `/run-drift` … `run-drift` ラベル付与（Codegen Drift 検出 実行）
   - `/non-blocking` … `ci-non-blocking` ラベル付与（一部ジョブを continue-on-error）
+  - `/blocking` … `ci-non-blocking` ラベル除去（通常のブロッキング設定へ）
   - `/ready` … `do-not-merge` ラベル除去（マージ待ち状態へ）
   - `/pr-digest` … `pr-summary:digest` ラベル付与（要約）
   - `/pr-detailed` … `pr-summary:detailed` ラベル付与（詳細）
   - `/handoff A|B|C` … ハンドオフ用ラベル `handoff:agent-a|b|c` を付与し、次エージェントに委譲
+  - `/enforce-typecov` … `enforce-typecov` ラベル付与（型カバレッジのしきい値 enforcement）
+  - `/coverage <pct>` … `coverage:<pct>` ラベル設定（既存の coverage:* を置換）
+  - バッチ系（CI Fast の任意カテゴリ実行、いずれもラベル付与）
+    - `/qa-batch-commands` または `/run-qa:commands` … `qa-batch:commands`
+    - `/qa-batch-cli` または `/run-qa:cli` … `qa-batch:cli`
+    - `/qa-batch-property` または `/run-qa:property` … `qa-batch:property`
+    - `/qa-batch-agents` または `/run-qa:agents` … `qa-batch:agents`
   - ディスパッチ（workflow_dispatch 直起動）
     - `/verify-lite` … verify-lite.yml を PR の head ブランチで起動
     - `/run-qa-dispatch` … ae-ci.yml を PR の head ブランチで起動
     - `/run-security-dispatch` … sbom-generation.yml を PR の head ブランチで起動
+    - `/ci-fast-dispatch` … ci-fast.yml を PR の head ブランチで起動（対応ラベルが付くとバッチも実行）
+    - `/formal-verify-dispatch` … formal-verify.yml を PR の head ブランチで起動
+    - `/run-flake-dispatch` … flake-detect.yml を PR の head ブランチで起動
+    - `/spec-validation-dispatch` … spec-validation.yml を PR の head ブランチで起動
+  - フォーマル/契約（ラベル付与）
+    - `/run-formal` … `run-formal` を付与（verify/formal 系スタブを非ブロッキングで実行）
+    - `/enforce-formal` … `enforce-formal` を付与（有効時にエンフォース）
+    - `/enforce-contracts` … `enforce-contracts` を付与（有効時にエンフォース）
 
 ## 参考ファイル
 - `.github/workflows/ae-ci.yml`: PR 時 QA/Bench 軽量モード

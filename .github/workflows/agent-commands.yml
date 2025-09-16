@@ -29,6 +29,13 @@ jobs:
             const removeLabel = async (label) => {
               try { await github.rest.issues.removeLabel({ owner, repo, issue_number, name: label }); } catch {}
             };
+            const removeLabelsByPrefix = async (prefix) => {
+              const { data: labels } = await github.rest.issues.listLabelsOnIssue({ owner, repo, issue_number, per_page: 100 });
+              const targets = labels.map(l=>l.name).filter(n => n.startsWith(prefix));
+              for (const name of targets) {
+                try { await github.rest.issues.removeLabel({ owner, repo, issue_number, name }); } catch {}
+              }
+            };
 
             const reply = async (msg) => {
               await github.rest.issues.createComment({ owner, repo, issue_number, body: `<!-- AE-AGENTS-REPLY -->\n${msg}` });
@@ -38,7 +45,8 @@ jobs:
             // /run-qa, /run-security, /non-blocking, /ready, /pr-digest, /pr-detailed
             // /handoff A|B|C
             // Dispatchers (require workflow_dispatch on target):
-            // /verify-lite, /run-qa-dispatch, /run-security-dispatch, /ci-fast-dispatch
+            // /verify-lite, /run-qa-dispatch, /run-security-dispatch, /ci-fast-dispatch, /formal-verify-dispatch
+            // /formal-apalache-dispatch, /run-flake-dispatch, /spec-validation-dispatch
             const cmd = body.split(/\s+/)[0];
             const arg = body.split(/\s+/)[1] || '';
 
@@ -52,9 +60,41 @@ jobs:
               case '/non-blocking':
                 await addLabels(['ci-non-blocking']);
                 return reply('Label `ci-non-blocking` added. Some jobs will continue-on-error.');
+              case '/blocking':
+                await removeLabel('ci-non-blocking');
+                return reply('Label `ci-non-blocking` removed. Jobs will be blocking as configured.');
               case '/ready':
                 await removeLabel('do-not-merge');
                 return reply('Label `do-not-merge` removed. PR is ready for merge gates.');
+              case '/run-hermetic':
+                await addLabels(['run-hermetic']);
+                return reply('Label `run-hermetic` added. Hermetic CI will run for this PR.');
+              case '/run-spec':
+                await addLabels(['run-spec']);
+                return reply('Label `run-spec` added. Fail-fast spec validation will run.');
+              case '/run-drift':
+                await addLabels(['run-drift']);
+                return reply('Label `run-drift` added. Codegen drift detection will run.');
+              case '/enforce-typecov':
+                await addLabels(['enforce-typecov']);
+                return reply('Label `enforce-typecov` added. Type coverage threshold enforcement may apply.');
+              case '/coverage': {
+                const v = (arg || '').trim();
+                if (v.toLowerCase() === 'clear') {
+                  await removeLabelsByPrefix('coverage:');
+                  return reply('Cleared coverage:* labels.');
+                }
+                if (!/^\d{1,3}$/.test(v)) return reply('Usage: `/coverage <pct|clear>` (e.g., `/coverage 72`)');
+                const n = Number(v);
+                if (n < 0 || n > 100) return reply('Coverage percent must be 0..100');
+                await removeLabelsByPrefix('coverage:');
+                await addLabels([`coverage:${n}`]);
+                return reply(`Label \`coverage:${n}\` set. Coverage check will use this threshold.`);
+              }
+              case '/enforce-coverage': {
+                await addLabels(['enforce-coverage']);
+                return reply('Label `enforce-coverage` added. Coverage gate will be enforced.');
+              }
               case '/pr-digest':
                 await addLabels(['pr-summary:digest']);
                 return reply('Label `pr-summary:digest` added. Digest summary will be posted.');
@@ -98,6 +138,34 @@ jobs:
                 await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'ci-fast.yml', ref });
                 return reply(`Dispatched CI Fast on ${ref}`);
               }
+              case '/formal-verify-dispatch': {
+                if (!context.payload.issue.pull_request) return reply('Not a PR');
+                const pr = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
+                const ref = pr.data.head.ref;
+                await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'formal-verify.yml', ref });
+                return reply(`Dispatched Formal Verify on ${ref}`);
+              }
+              case '/formal-apalache-dispatch': {
+                if (!context.payload.issue.pull_request) return reply('Not a PR');
+                const pr = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
+                const ref = pr.data.head.ref;
+                await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'formal-verify.yml', ref, inputs: { target: 'apalache' } });
+                return reply(`Dispatched Formal Verify (Apalache) on ${ref}`);
+              }
+              case '/run-flake-dispatch': {
+                if (!context.payload.issue.pull_request) return reply('Not a PR');
+                const pr = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
+                const ref = pr.data.head.ref;
+                await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'flake-detect.yml', ref });
+                return reply(`Dispatched flake-detect on ${ref}`);
+              }
+              case '/spec-validation-dispatch': {
+                if (!context.payload.issue.pull_request) return reply('Not a PR');
+                const pr = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
+                const ref = pr.data.head.ref;
+                await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'spec-validation.yml', ref });
+                return reply(`Dispatched spec-validation on ${ref}`);
+              }
               case '/qa-batch-commands':
               case '/run-qa:commands': {
                 await addLabels(['qa-batch:commands']);
@@ -117,6 +185,22 @@ jobs:
               case '/run-qa:agents': {
                 await addLabels(['qa-batch:agents']);
                 return reply('Label `qa-batch:agents` added. Agents tests will run in CI Fast (opt-in).');
+              }
+              case '/run-adapters': {
+                await addLabels(['run-adapters']);
+                return reply('Label `run-adapters` added. Adapter thresholds (report-only) will run.');
+              }
+              case '/run-formal': {
+                await addLabels(['run-formal']);
+                return reply('Label `run-formal` added. Formal jobs will run (non-blocking, opt-in).');
+              }
+              case '/enforce-formal': {
+                await addLabels(['enforce-formal']);
+                return reply('Label `enforce-formal` added. Formal enforcement may apply if configured.');
+              }
+              case '/enforce-contracts': {
+                await addLabels(['enforce-contracts']);
+                return reply('Label `enforce-contracts` added. Contracts enforcement may apply if configured.');
               }
               default:
                 return; // ignore

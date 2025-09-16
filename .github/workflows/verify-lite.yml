@@ -12,14 +12,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Enable corepack
+        run: corepack enable
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'pnpm'
-      - name: Enable corepack
-        run: corepack enable
       - name: Install dependencies
         run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+      - name: Pre-build workspace types (spec-compiler)
+        run: pnpm -F @ae-framework/spec-compiler -s run build || true
       - name: Type check (strict verify)
         run: pnpm types:check
       - name: Lint

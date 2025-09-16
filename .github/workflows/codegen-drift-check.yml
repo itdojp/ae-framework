@@ -95,9 +95,11 @@ jobs:
           # Check if we have AE-IR and generated code to check
           if [ ! -f ".ae/ae-ir.json" ]; then
             printf "%s\n" "No AE-IR file available for drift detection"
-            printf "%s\n" "drift-status=no-baseline" >> "$GITHUB_OUTPUT"
-            printf "%s\n" "needs-regeneration=false" >> "$GITHUB_OUTPUT"
-            printf "%s\n" "contract-failure=false" >> "$GITHUB_OUTPUT"
+            {
+              printf "%s\n" "drift-status=no-baseline"
+              printf "%s\n" "needs-regeneration=false"
+              printf "%s\n" "contract-failure=false"
+            } >> "$GITHUB_OUTPUT"
             exit 0
           fi
           
@@ -111,9 +113,11 @@ jobs:
           
           if [ -z "$GENERATED_DIRS" ]; then
             printf "%s\n" "No generated code directories found"
-            printf "%s\n" "drift-status=no-generated-code" >> "$GITHUB_OUTPUT"  
-            printf "%s\n" "needs-regeneration=true" >> "$GITHUB_OUTPUT"
-            printf "%s\n" "contract-failure=false" >> "$GITHUB_OUTPUT"
+            {
+              printf "%s\n" "drift-status=no-generated-code"
+              printf "%s\n" "needs-regeneration=true"
+              printf "%s\n" "contract-failure=false"
+            } >> "$GITHUB_OUTPUT"
             exit 0
           fi
           
@@ -126,9 +130,9 @@ jobs:
             printf "%s\n" "Checking drift in $dir..."
             
             # Run drift detection and capture result
-            if npx tsx src/cli/index.ts codegen drift -d "$dir" -s .ae/ae-ir.json --format json > drift-report-$(basename $dir).json; then
-              DRIFT_STATUS=$(cat drift-report-$(basename $dir).json | jq -r '.status')
-              CRITICAL_CHANGES=$(cat drift-report-$(basename $dir).json | jq -r '.criticalChanges // 0')
+            if npx tsx src/cli/index.ts codegen drift -d "$dir" -s .ae/ae-ir.json --format json > "drift-report-$(basename "$dir").json"; then
+              DRIFT_STATUS=$(jq -r '.status' "drift-report-$(basename "$dir").json")
+              CRITICAL_CHANGES=$(jq -r '.criticalChanges // 0' "drift-report-$(basename "$dir").json")
               printf "%s\n" "Drift status for $dir: $DRIFT_STATUS (critical changes: $CRITICAL_CHANGES)"
               
               # Issue #71: Contract failure detection
@@ -163,18 +167,20 @@ jobs:
           
           printf "%s\n" "Overall drift status: $OVERALL_DRIFT"
           printf "%s\n" "Contract failure status: $CONTRACT_FAILURE"
-          printf "%s\n" "drift-status=$OVERALL_DRIFT" >> "$GITHUB_OUTPUT"
-          printf "%s\n" "contract-failure=$CONTRACT_FAILURE" >> "$GITHUB_OUTPUT"
-          
           # Determine if regeneration is needed
           case "$OVERALL_DRIFT" in
             "critical_drift"|"major_drift")
-              printf "%s\n" "needs-regeneration=true" >> "$GITHUB_OUTPUT"
+              NEEDS_REGEN="true"
               ;;
             *)
-              printf "%s\n" "needs-regeneration=false" >> "$GITHUB_OUTPUT"
+              NEEDS_REGEN="false"
               ;;
           esac
+          {
+            printf "%s\n" "drift-status=$OVERALL_DRIFT"
+            printf "%s\n" "contract-failure=$CONTRACT_FAILURE"
+            printf "%s\n" "needs-regeneration=$NEEDS_REGEN"
+          } >> "$GITHUB_OUTPUT"
           
           # Save drift details for PR comment
           {
@@ -232,7 +238,7 @@ jobs:
         
       - name: Regenerate ${{ matrix.target }} code
         run: |
-          echo "🏗️  Regenerating ${{ matrix.target }} code..."
+          printf "%s\n" "🏗️  Regenerating ${{ matrix.target }} code..."
           
           TARGET_DIR="generated/${{ matrix.target }}"
           mkdir -p "$TARGET_DIR"
@@ -243,9 +249,9 @@ jobs:
               -o "$TARGET_DIR" \
               -t ${{ matrix.target }} \
               --verbose
-            echo "✅ Code regeneration completed for ${{ matrix.target }}"
+            printf "%s\n" "✅ Code regeneration completed for ${{ matrix.target }}"
           else
-            echo "❌ No AE-IR file found"
+            printf "%s\n" "❌ No AE-IR file found"
             exit 1
           fi
           
@@ -290,27 +296,27 @@ jobs:
       - name: Validate TypeScript compilation
         run: |
           if [ -d "generated/typescript" ]; then
-            echo "🔍 Validating TypeScript code..."
+            printf "%s\n" "🔍 Validating TypeScript code..."
             cd generated/typescript
-            if ls *.ts 1> /dev/null 2>&1; then
-              npx tsc --noEmit --skipLibCheck *.ts
-              echo "✅ TypeScript validation passed"
+            if compgen -G "*.ts" > /dev/null; then
+              npx tsc --noEmit --skipLibCheck ./*.ts
+              printf "%s\n" "✅ TypeScript validation passed"
             fi
           fi
           
       - name: Validate React components
         run: |
           if [ -d "generated/react" ]; then
-            echo "🔍 Validating React components..."
+            printf "%s\n" "🔍 Validating React components..."
             cd generated/react
             # Basic syntax validation
-            for file in *.tsx; do
+            for file in ./*.tsx; do
               if [ -f "$file" ]; then
-                echo "Checking $file"
+                printf "%s\n" "Checking $file"
                 npx tsc --noEmit --skipLibCheck --jsx react "$file"
               fi
             done
-            echo "✅ React components validation passed"
+            printf "%s\n" "✅ React components validation passed"
           fi
 
   comment-pr:
@@ -403,34 +409,34 @@ jobs:
           REGEN_RESULT="${{ needs.regenerate-code.result }}"
           VALIDATION_RESULT="${{ needs.validate-generation.result }}"
           
-          echo "📊 Quality Gate Evaluation"
-          echo "=========================="
-          echo "Drift Status: $DRIFT_STATUS"
-          echo "Regeneration: $REGEN_RESULT"  
-          echo "Validation: $VALIDATION_RESULT"
+          printf "%s\n" "📊 Quality Gate Evaluation"
+          printf "%s\n" "=========================="
+          printf "%s\n" "Drift Status: $DRIFT_STATUS"
+          printf "%s\n" "Regeneration: $REGEN_RESULT"
+          printf "%s\n" "Validation: $VALIDATION_RESULT"
           
           # Determine overall result
           case "$DRIFT_STATUS" in
             "critical_drift")
-              echo "❌ Quality gate FAILED: Critical drift detected"
+              printf "%s\n" "❌ Quality gate FAILED: Critical drift detected"
               exit 1
               ;;
             "major_drift")
               if [ "$REGEN_RESULT" != "success" ]; then
-                echo "❌ Quality gate FAILED: Major drift and regeneration failed"
+                printf "%s\n" "❌ Quality gate FAILED: Major drift and regeneration failed"
                 exit 1
               fi
               ;;
             "detection_failed")
-              echo "⚠️  Quality gate WARNING: Drift detection failed"
+              printf "%s\n" "⚠️  Quality gate WARNING: Drift detection failed"
               exit 0
               ;;
           esac
           
           # Check validation if regeneration occurred
           if [ "$REGEN_RESULT" = "success" ] && [ "$VALIDATION_RESULT" = "failure" ]; then
-            echo "❌ Quality gate FAILED: Code validation failed"
+            printf "%s\n" "❌ Quality gate FAILED: Code validation failed"
             exit 1
           fi
           
-          echo "✅ Quality gate PASSED"
+          printf "%s\n" "✅ Quality gate PASSED"
