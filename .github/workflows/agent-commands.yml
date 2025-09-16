@@ -46,6 +46,7 @@ jobs:
             // /handoff A|B|C
             // Dispatchers (require workflow_dispatch on target):
             // /verify-lite, /run-qa-dispatch, /run-security-dispatch, /ci-fast-dispatch, /formal-verify-dispatch
+            // /run-flake-dispatch, /spec-validation-dispatch
             const cmd = body.split(/\s+/)[0];
             const arg = body.split(/\s+/)[1] || '';
 
@@ -82,6 +83,10 @@ jobs:
                 await removeLabelsByPrefix('coverage:');
                 await addLabels([`coverage:${n}`]);
                 return reply(`Label \`coverage:${n}\` set. Coverage check will use this threshold.`);
+              }
+              case '/enforce-coverage': {
+                await addLabels(['enforce-coverage']);
+                return reply('Label `enforce-coverage` added. Coverage gate will be enforced.');
               }
               case '/pr-digest':
                 await addLabels(['pr-summary:digest']);
@@ -132,6 +137,20 @@ jobs:
                 const ref = pr.data.head.ref;
                 await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'formal-verify.yml', ref });
                 return reply(`Dispatched Formal Verify on ${ref}`);
+              }
+              case '/run-flake-dispatch': {
+                if (!context.payload.issue.pull_request) return reply('Not a PR');
+                const pr = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
+                const ref = pr.data.head.ref;
+                await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'flake-detect.yml', ref });
+                return reply(`Dispatched flake-detect on ${ref}`);
+              }
+              case '/spec-validation-dispatch': {
+                if (!context.payload.issue.pull_request) return reply('Not a PR');
+                const pr = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
+                const ref = pr.data.head.ref;
+                await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'spec-validation.yml', ref });
+                return reply(`Dispatched spec-validation on ${ref}`);
               }
               case '/qa-batch-commands':
               case '/run-qa:commands': {
