@@ -35,6 +35,7 @@ const file = args.file || process.env.APALACHE_FILE || path.join('spec','tla','D
 const absFile = path.resolve(repoRoot, file);
 const outDir = path.join(repoRoot, 'hermetic-reports', 'formal');
 const outFile = path.join(outDir, 'apalache-summary.json');
+const outLog = path.join(outDir, 'apalache-output.txt');
 fs.mkdirSync(outDir, { recursive: true });
 
 const haveApalacheMc = has('apalache-mc');
@@ -74,6 +75,9 @@ function extractErrors(out){
   return picked;
 }
 
+// Persist raw output for artifact consumers
+try { fs.writeFileSync(outLog, output, 'utf-8'); } catch {}
+
 const summary = {
   tool: 'apalache',
   file: path.relative(repoRoot, absFile),
@@ -90,7 +94,8 @@ const summary = {
     : null,
   timestamp: new Date().toISOString(),
   errors: ran ? extractErrors(output) : [],
-  output: output.slice(0, 4000)
+  output: output.slice(0, 4000),
+  outputFile: path.relative(repoRoot, outLog)
 };
 
 fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));
