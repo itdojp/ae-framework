@@ -26,7 +26,8 @@ const timeoutSec = args.timeout ? Math.max(1, Math.floor(Number(args.timeout)/10
 function has(cmd){ try { execSync(`bash -lc 'command -v ${cmd}'`, {stdio:'ignore'}); return true; } catch { return false; } }
 const haveTimeout = has('timeout');
 if (args.help){
-  console.log(`Usage: node scripts/formal/verify-tla.mjs [--engine=tlc|apalache] [--file spec/tla/DomainSpec.tla]`);
+  console.log(`Usage: node scripts/formal/verify-tla.mjs [--engine=tlc|apalache] [--file spec/tla/DomainSpec.tla] [--timeout <ms>]`);
+  console.log('See docs/quality/formal-tools-setup.md for TLC/Apalache setup.');
   process.exit(0);
 }
 
