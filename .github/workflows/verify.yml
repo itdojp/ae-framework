@@ -91,11 +91,11 @@ jobs:
           {
             printf "%s\n" "### 🔍 Verification Summary"
             if [ -f "$TRACE_JSON" ]; then
-              scenarios=$(jq -r '.total' "$TRACE_JSON" 2>/dev/null || echo 0)
-              covered_tests=$(jq -r '.testsLinked' "$TRACE_JSON" 2>/dev/null || echo 0)
-              covered_impl=$(jq -r '.implLinked' "$TRACE_JSON" 2>/dev/null || echo 0)
-              covered_formal=$(jq -r '.formalLinked' "$TRACE_JSON" 2>/dev/null || echo 0)
-              pct() { if [ "$1" -gt 0 ]; then awk "BEGIN {printf \"%.0f\", ($2*100)/$1}"; else echo 0; fi; }
+              scenarios=$(jq -r '.total' "$TRACE_JSON" 2>/dev/null || printf "0\n")
+              covered_tests=$(jq -r '.testsLinked' "$TRACE_JSON" 2>/dev/null || printf "0\n")
+              covered_impl=$(jq -r '.implLinked' "$TRACE_JSON" 2>/dev/null || printf "0\n")
+              covered_formal=$(jq -r '.formalLinked' "$TRACE_JSON" 2>/dev/null || printf "0\n")
+              pct() { if [ "$1" -gt 0 ]; then awk "BEGIN {printf \"%.0f\", ($2*100)/$1}"; else printf "0\n"; fi; }
               tests_pct=$(pct "$scenarios" "$covered_tests")
               impl_pct=$(pct "$scenarios" "$covered_impl")
               formal_pct=$(pct "$scenarios" "$covered_formal")
@@ -107,35 +107,35 @@ jobs:
               jq -r '.rows[] | select(.test=="N/A" or .impl=="N/A" or .formal=="N/A") | "- " + .scenario + " (id: " + .id + ") test:" + .test + " impl:" + .impl + " formal:" + .formal' "$TRACE_JSON" 2>/dev/null | head -5 || true
               printf "</details>\n"
               printf "\n<details><summary>Linked examples (up to 3)</summary>\n"
-              PR_SHA=$(jq -r '.pull_request.head.sha // empty' "$GITHUB_EVENT_PATH" 2>/dev/null || echo "")
+              PR_SHA=$(jq -r '.pull_request.head.sha // empty' "$GITHUB_EVENT_PATH" 2>/dev/null || printf "\n")
               REPO="$GITHUB_REPOSITORY"
               if [ -f "$TRACE_JSON" ]; then
                 idx=0
               while IFS= read -r row && [ $idx -lt 3 ]; do
-                  scenario=$(echo "$row" | jq -r '.scenario')
-                  testp=$(echo "$row" | jq -r '.test')
-                  implp=$(echo "$row" | jq -r '.impl')
-                  formp=$(echo "$row" | jq -r '.formal')
-                  testdisp=$( [ "$testp" != "N/A" ] && shortp "$testp" || echo "N/A" )
-                  impldisp=$( [ "$implp" != "N/A" ] && shortp "$implp" || echo "N/A" )
-                  formdisp=$( [ "$formp" != "N/A" ] && shortp "$formp" || echo "N/A" )
+                  scenario=$(printf "%s\n" "$row" | jq -r '.scenario')
+                  testp=$(printf "%s\n" "$row" | jq -r '.test')
+                  implp=$(printf "%s\n" "$row" | jq -r '.impl')
+                  formp=$(printf "%s\n" "$row" | jq -r '.formal')
+                  testdisp=$( [ "$testp" != "N/A" ] && shortp "$testp" || printf "N/A\n" )
+                  impldisp=$( [ "$implp" != "N/A" ] && shortp "$implp" || printf "N/A\n" )
+                  formdisp=$( [ "$formp" != "N/A" ] && shortp "$formp" || printf "N/A\n" )
                   testlink="$testdisp"; impllink="$impldisp"; formlink="$formdisp"
                   if [ -n "$PR_SHA" ] && [ "$testp" != "N/A" ]; then testlink="[$testdisp](https://github.com/$REPO/blob/$PR_SHA/$testp)"; fi
                   if [ -n "$PR_SHA" ] && [ "$implp" != "N/A" ]; then impllink="[$impldisp](https://github.com/$REPO/blob/$PR_SHA/$implp)"; fi
                   if [ -n "$PR_SHA" ] && [ "$formp" != "N/A" ]; then formlink="[$formdisp](https://github.com/$REPO/blob/$PR_SHA/$formp)"; fi
-                  id=$(echo "$row" | jq -r '.id')
+                  id=$(printf "%s\n" "$row" | jq -r '.id')
                   printf "%s\n" "- $scenario (id: $id) test: $testlink impl: $impllink formal: $formlink"
                   idx=$((idx+1))
                 done < <(jq -c '.rows[] | select(.test!="N/A" and .impl!="N/A" and .formal!="N/A")' "$TRACE_JSON" 2>/dev/null)
               fi
               printf "</details>\n"
               printf "\n<details><summary>Hit basis (tests/formal)</summary>\n"
-              thit_title=$(jq '[.rows[] | select(.testHit == .scenario)] | length' "$TRACE_JSON" 2>/dev/null || echo 0)
-              thit_id=$(jq '[.rows[] | select(.testHit == .id)] | length' "$TRACE_JSON" 2>/dev/null || echo 0)
-              thit_tag=$(jq '[.rows[] | select(.testHit | type=="string" and startswith("@"))] | length' "$TRACE_JSON" 2>/dev/null || echo 0)
-              fhit_title=$(jq '[.rows[] | select(.formalHit == .scenario)] | length' "$TRACE_JSON" 2>/dev/null || echo 0)
-              fhit_id=$(jq '[.rows[] | select(.formalHit == .id)] | length' "$TRACE_JSON" 2>/dev/null || echo 0)
-              fhit_tag=$(jq '[.rows[] | select(.formalHit | type=="string" and startswith("@"))] | length' "$TRACE_JSON" 2>/dev/null || echo 0)
+              thit_title=$(jq '[.rows[] | select(.testHit == .scenario)] | length' "$TRACE_JSON" 2>/dev/null || printf "0\n")
+              thit_id=$(jq '[.rows[] | select(.testHit == .id)] | length' "$TRACE_JSON" 2>/dev/null || printf "0\n")
+              thit_tag=$(jq '[.rows[] | select(.testHit | type=="string" and startswith("@"))] | length' "$TRACE_JSON" 2>/dev/null || printf "0\n")
+              fhit_title=$(jq '[.rows[] | select(.formalHit == .scenario)] | length' "$TRACE_JSON" 2>/dev/null || printf "0\n")
+              fhit_id=$(jq '[.rows[] | select(.formalHit == .id)] | length' "$TRACE_JSON" 2>/dev/null || printf "0\n")
+              fhit_tag=$(jq '[.rows[] | select(.formalHit | type=="string" and startswith("@"))] | length' "$TRACE_JSON" 2>/dev/null || printf "0\n")
               printf "%s\n" "- Test hits: title=${thit_title} id=${thit_id} tag=${thit_tag}"
               printf "%s\n" "- Formal hits: title=${fhit_title} id=${fhit_id} tag=${fhit_tag}"
               printf "</details>\n"
@@ -149,16 +149,16 @@ jobs:
               printf "- Traceability: (no matrix artifact)\n"
             fi
             if [ -f "$MODEL_FILE" ]; then
-              ok=$(jq '[.tlc.results[] | select(.ok==true)] | length' "$MODEL_FILE" 2>/dev/null || echo 0)
-              total=$(jq '(.tlc.results | length) + 0' "$MODEL_FILE" 2>/dev/null || echo 0)
+              ok=$(jq '[.tlc.results[] | select(.ok==true)] | length' "$MODEL_FILE" 2>/dev/null || printf "0\n")
+              total=$(jq '(.tlc.results | length) + 0' "$MODEL_FILE" 2>/dev/null || printf "0\n")
               if [ "$total" -gt 0 ]; then pct=$(awk "BEGIN {printf \"%.0f\", ($ok*100)/$total}"); else pct=0; fi
               printf "- Model Check (TLC): %s/%s (%s%%) modules ok\n" "$ok" "$total" "$pct"
               printf "\n<details><summary>Non-OK modules (top 5)</summary>\n"
               jq -r '.tlc.results[] | select(.ok!=true) | "- " + .module + ( .log? // "" | " (log: " + . + ")" )' "$MODEL_FILE" 2>/dev/null | head -5 || true
               printf "</details>\n"
               # Alloy summary (if present)
-              a_ok=$(jq '[.alloy.results[] | select(.ok==true)] | length' "$MODEL_FILE" 2>/dev/null || echo 0)
-              a_total=$(jq '(.alloy.results | map(select(.ok!=null)) | length) + 0' "$MODEL_FILE" 2>/dev/null || echo 0)
+              a_ok=$(jq '[.alloy.results[] | select(.ok==true)] | length' "$MODEL_FILE" 2>/dev/null || printf "0\n")
+              a_total=$(jq '(.alloy.results | map(select(.ok!=null)) | length) + 0' "$MODEL_FILE" 2>/dev/null || printf "0\n")
               if [ "$a_total" -gt 0 ]; then a_pct=$(awk "BEGIN {printf \"%.0f\", ($a_ok*100)/$a_total}"); else a_pct=0; fi
               if [ "$a_total" -gt 0 ]; then
                 printf "- Alloy: %s/%s (%s%%) specs ok\n" "$a_ok" "$a_total" "$a_pct"
@@ -167,7 +167,7 @@ jobs:
                 printf "</details>\n"
               else
                 # If Alloy not executed but detected
-                a_detect=$(jq '(.alloy.results | length) + 0' "$MODEL_FILE" 2>/dev/null || echo 0)
+                a_detect=$(jq '(.alloy.results | length) + 0' "$MODEL_FILE" 2>/dev/null || printf "0\n")
                 if [ "$a_detect" -gt 0 ]; then
                   printf "- Alloy: detected %s specs (execution skipped)\n" "$a_detect"
                 fi
@@ -176,18 +176,18 @@ jobs:
               printf "- Model Check: (no summary artifact)\n"
             fi
             if [ -f "$CONTRACTS_JSON" ]; then
-              haveSchemas=$(jq -r '.present.schemas' "$CONTRACTS_JSON" 2>/dev/null || echo false)
-              haveConds=$(jq -r '.present.conditions' "$CONTRACTS_JSON" 2>/dev/null || echo false)
-              haveMachine=$(jq -r '.present.machine' "$CONTRACTS_JSON" 2>/dev/null || echo false)
+              haveSchemas=$(jq -r '.present.schemas' "$CONTRACTS_JSON" 2>/dev/null || printf "false\n")
+              haveConds=$(jq -r '.present.conditions' "$CONTRACTS_JSON" 2>/dev/null || printf "false\n")
+              haveMachine=$(jq -r '.present.machine' "$CONTRACTS_JSON" 2>/dev/null || printf "false\n")
               printf "- Contracts: schemas=%s conditions=%s machine=%s\n" "$haveSchemas" "$haveConds" "$haveMachine"
             else
               printf "- Contracts: (no check artifact)\n"
             fi
             if [ -f "$CONTRACTS_EXEC" ]; then
-              pin=$(jq -r '.results.parseInOk // false' "$CONTRACTS_EXEC" 2>/dev/null || echo false)
-              pre=$(jq -r '.results.preOk // false' "$CONTRACTS_EXEC" 2>/dev/null || echo false)
-              pst=$(jq -r '.results.postOk // false' "$CONTRACTS_EXEC" 2>/dev/null || echo false)
-              pout=$(jq -r '.results.parseOutOk // false' "$CONTRACTS_EXEC" 2>/dev/null || echo false)
+              pin=$(jq -r '.results.parseInOk // false' "$CONTRACTS_EXEC" 2>/dev/null || printf "false\n")
+              pre=$(jq -r '.results.preOk // false' "$CONTRACTS_EXEC" 2>/dev/null || printf "false\n")
+              pst=$(jq -r '.results.postOk // false' "$CONTRACTS_EXEC" 2>/dev/null || printf "false\n")
+              pout=$(jq -r '.results.parseOutOk // false' "$CONTRACTS_EXEC" 2>/dev/null || printf "false\n")
               printf "  - Contracts exec: parseIn=%s pre=%s post=%s parseOut=%s\n" "$pin" "$pre" "$pst" "$pout"
             fi
           } > pr-summary.md
