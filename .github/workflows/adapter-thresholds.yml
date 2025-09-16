@@ -112,6 +112,7 @@ jobs:
             lines.push(`Threshold (effective): ${threshold}%`);
             lines.push(perfLbl ? `- via label: ${perfLbl}` : `- default: ${perfDef}%`);
             lines.push(`Policy: ${enforced==='true' ? 'enforced (label: enforce-perf)' : 'report-only'}`);
+            lines.push(`Policy source: ${enforced==='true' ? 'enforced via label: enforce-perf' : 'report-only'}`);
             lines.push('');
             lines.push('Docs: docs/quality/adapter-thresholds.md');
             const body = lines.join('\n');
@@ -136,6 +137,14 @@ jobs:
             exit 1
           fi
           awk 'BEGIN{ if ('"${score}"' + 0 < '"${thresh}"' + 0) exit 1 }' || { printf "%s\n" "::error::perf score ${score}% below threshold ${thresh}%"; exit 1; }
+      - name: Validate perf JSON shape (non-blocking)
+        if: steps.perf.outputs.present == 'true'
+        run: |
+          if jq -e '.score? // .performance? // .metrics?.score? // empty' reports/perf-results.json >/dev/null 2>&1; then
+            printf "%s\n" "perf JSON shape ok";
+          else
+            printf "%s\n" "::warning::perf JSON shape unexpected (score/performance/metrics.score not found)";
+          fi
 
   summarize-lh:
     if: contains(github.event.pull_request.labels.*.name, 'run-adapters')
@@ -187,6 +196,7 @@ jobs:
             lines.push(`Threshold (effective): ${threshold}%`);
             lines.push(lhLbl ? `- via label: ${lhLbl}` : `- default: ${lhDef}%`);
             lines.push(`Policy: ${enforced==='true' ? 'enforced (label: enforce-lh)' : 'report-only'}`);
+            lines.push(`Policy source: ${enforced==='true' ? 'enforced via label: enforce-lh' : 'report-only'}`);
             lines.push('');
             lines.push('Docs: docs/quality/adapter-thresholds.md');
             const body = lines.join('\n');
@@ -212,6 +222,19 @@ jobs:
             exit 1
           fi
           awk 'BEGIN{ if ('"${score}"' + 0 < '"${thresh}"' + 0) exit 1 }' || { printf "%s\n" "::error::lighthouse score ${score}% below threshold ${thresh}%"; exit 1; }
+      - name: Validate Lighthouse JSON shape (non-blocking)
+        if: steps.lh.outputs.present == 'true'
+        run: |
+          FILE=""
+          for f in reports/lighthouse-results.json reports/lh-results.json; do
+            if [ -f "$f" ]; then FILE="$f"; break; fi
+          done
+          if [ -z "$FILE" ]; then exit 0; fi
+          if jq -e '.categories?.performance?.score? // .performance? // .score? // empty' "$FILE" >/dev/null 2>&1; then
+            printf "%s\n" "lighthouse JSON shape ok";
+          else
+            printf "%s\n" "::warning::lighthouse JSON shape unexpected (categories.performance.score/performance/score not found)";
+          fi
       - name: Upload adapter artifacts (a11y)
         if: contains(github.event.pull_request.labels.*.name, 'run-adapters') && steps.a11y.outputs.present == 'true'
         uses: actions/upload-artifact@v4
