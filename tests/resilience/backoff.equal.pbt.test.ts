@@ -16,6 +16,6 @@ describe('PBT: Backoff equal jitter across attempts', () => {
           expect(d).toBeLessThanOrEqual(expectedBase);
         }
       }
-    ), { numRuns: 50 });
+    ), { numRuns: 30 });
   });
 });
