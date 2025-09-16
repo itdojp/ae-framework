@@ -74,6 +74,12 @@ function extractErrors(out){
   for (const l of lines) { if (key.test(l)) picked.push(l.trim()); if (picked.length>=5) break; }
   return picked;
 }
+function countErrors(out){
+  const lines = (out || '').split(/\r?\n/);
+  const key = /error|violat|counterexample|fail/i;
+  let n = 0; for (const l of lines) if (key.test(l)) n++;
+  return n;
+}
 
 // Persist raw output for artifact consumers
 try { fs.writeFileSync(outLog, output, 'utf-8'); } catch {}
@@ -94,6 +100,7 @@ const summary = {
     : null,
   timestamp: new Date().toISOString(),
   errors: ran ? extractErrors(output) : [],
+  errorCount: ran ? countErrors(output) : 0,
   output: output.slice(0, 4000),
   outputFile: path.relative(repoRoot, outLog)
 };
