@@ -130,3 +130,76 @@ jobs:
             exit 1
           fi
           awk 'BEGIN{ if ('"${score}"' + 0 < '"${thresh}"' + 0) exit 1 }' || { printf "%s\n" "::error::perf score ${score}% below threshold ${thresh}%"; exit 1; }
+
+  summarize-lh:
+    if: contains(github.event.pull_request.labels.*.name, 'run-adapters')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Summarize Lighthouse results (report-only)
+        id: lh
+        run: |
+          set -e
+          FILE=""
+          for f in reports/lighthouse-results.json reports/lh-results.json; do
+            if [ -f "$f" ]; then FILE="$f"; break; fi
+          done
+          if [ -z "$FILE" ]; then
+            printf "%s\n" "present=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Try multiple paths: categories.performance.score (0..1) or .performance (0..100)
+          raw=$(jq -r '.categories.performance.score // .performance // .score // empty' "$FILE" 2>/dev/null || printf "\n")
+          score=""
+          if [ -n "$raw" ]; then
+            if printf '%s\n' "$raw" | rg -q '^[0-1](\.[0-9]+)?$'; then
+              # normalize 0..1 -> 0..100
+              score=$(awk 'BEGIN{printf "%d", ('"$raw"')*100}')
+            elif printf '%s\n' "$raw" | rg -q '^[0-9]+(\.[0-9]+)?$'; then
+              score=$(printf "%s\n" "$raw" | cut -d. -f1)
+            fi
+          fi
+          printf "%s\n" "present=true" >> "$GITHUB_OUTPUT"
+          printf "%s\n" "score=${score:-}" >> "$GITHUB_OUTPUT"
+      - name: Comment PR with Lighthouse summary
+        if: steps.lh.outputs.present == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const header = '<!-- AE-ADAPTER-LH -->\n';
+            const score = '${{ steps.lh.outputs.score }}' || 'n/a';
+            const enforced = ${{ contains(github.event.pull_request.labels.*.name, 'enforce-lh') && 'true' || 'false' }};
+            const labels = context.payload.pull_request.labels.map(l=>l.name);
+            const lhLbl = labels.find(n=>/^lh:\\d{1,3}$/.test(n));
+            const threshold = lhLbl ? Number(lhLbl.split(':')[1]) : (Number(process.env.LH_DEFAULT_THRESHOLD||80));
+            const body = [
+              header,
+              '### Lighthouse Performance (report-only)',
+              '',
+              `Score: ${score}`,
+              `Policy: ${enforced==='true' ? 'enforced (label: enforce-lh)' : 'report-only'}; Threshold: ${threshold}%`,
+              '',
+              'Docs: docs/quality/adapter-thresholds.md'
+            ].join('\n');
+            const { owner, repo, number } = context.issue;
+            const comments = await github.rest.issues.listComments({ owner, repo, issue_number: number, per_page: 100 });
+            const mine = comments.data.find(c => c.body && c.body.startsWith(header));
+            if (mine) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number: number, body });
+            }
+        env:
+          LH_DEFAULT_THRESHOLD: ${{ vars.LH_DEFAULT_THRESHOLD }}
+      - name: Enforce Lighthouse threshold
+        if: steps.lh.outputs.present == 'true' && contains(github.event.pull_request.labels.*.name, 'enforce-lh')
+        run: |
+          score='${{ steps.lh.outputs.score }}'
+          thresh='${{ vars.LH_DEFAULT_THRESHOLD }}'
+          lbl=$(jq -r '.pull_request.labels[]?.name | select(test("^lh:[0-9]{1,3}$"))' "$GITHUB_EVENT_PATH" | head -1 || true)
+          if [ -n "$lbl" ]; then thresh=${lbl#lh:}; fi
+          if [ -z "$score" ]; then
+            printf "%s\n" "::error::lighthouse score not found in results file"
+            exit 1
+          fi
+          awk 'BEGIN{ if ('"${score}"' + 0 < '"${thresh}"' + 0) exit 1 }' || { printf "%s\n" "::error::lighthouse score ${score}% below threshold ${thresh}%"; exit 1; }

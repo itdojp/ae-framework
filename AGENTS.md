@@ -35,6 +35,10 @@
   - `/run-spec` … `run-spec` ラベル付与（Spec Fail-Fast 実行）
   - `/run-drift` … `run-drift` ラベル付与（Codegen Drift 検出 実行）
   - `/run-adapters` … `run-adapters` ラベル付与（Adapter Thresholds レポート実行）
+  - `/enforce-perf` … `enforce-perf` ラベル付与（Perf しきい値 enforcement）
+  - `/perf <pct|clear>` … `perf:<pct>` を設定（上書き）/ クリア
+  - `/enforce-lh` … `enforce-lh` ラベル付与（Lighthouse しきい値 enforcement）
+  - `/lh <pct|clear>` … `lh:<pct>` を設定（上書き）/ クリア
   - `/non-blocking` … `ci-non-blocking` ラベル付与（一部ジョブを continue-on-error）
   - `/blocking` … `ci-non-blocking` ラベル除去（通常のブロッキング設定へ）
   - `/ready` … `do-not-merge` ラベル除去（マージ待ち状態へ）

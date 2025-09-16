@@ -194,6 +194,10 @@ jobs:
                 await addLabels(['enforce-perf']);
                 return reply('Label `enforce-perf` added. Performance threshold enforcement may apply.');
               }
+              case '/enforce-lh': {
+                await addLabels(['enforce-lh']);
+                return reply('Label `enforce-lh` added. Lighthouse threshold enforcement may apply.');
+              }
               case '/perf': {
                 const v = (arg || '').trim();
                 if (v.toLowerCase() === 'clear') {
@@ -206,6 +210,19 @@ jobs:
                 await removeLabelsByPrefix('perf:');
                 await addLabels([`perf:${n}`]);
                 return reply(`Label \`perf:${n}\` set. Performance check will use this threshold.`);
+              }
+              case '/lh': {
+                const v = (arg || '').trim();
+                if (v.toLowerCase() === 'clear') {
+                  await removeLabelsByPrefix('lh:');
+                  return reply('Cleared lh:* labels.');
+                }
+                if (!/^\d{1,3}$/.test(v)) return reply('Usage: `/lh <pct|clear>` (e.g., `/lh 80`)');
+                const n = Number(v);
+                if (n < 0 || n > 100) return reply('Lighthouse percent must be 0..100');
+                await removeLabelsByPrefix('lh:');
+                await addLabels([`lh:${n}`]);
+                return reply(`Label \`lh:${n}\` set. Lighthouse check will use this threshold.`);
               }
               case '/enforce-a11y': {
                 await addLabels(['enforce-a11y']);
