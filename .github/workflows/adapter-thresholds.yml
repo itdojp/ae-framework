@@ -41,12 +41,12 @@ jobs:
             const header = '<!-- AE-ADAPTER-A11Y -->\n';
             const body = [
               header,
-              '### Accessibility (report-only)',
+              '### Accessibility',
               '',
               `Violations: critical=${{ steps.a11y.outputs.critical }}, serious=${{ steps.a11y.outputs.serious }}, moderate=${{ steps.a11y.outputs.moderate }}, minor=${{ steps.a11y.outputs.minor }}`,
               `Passes: ${{ steps.a11y.outputs.passes }}, Components tested: ${{ steps.a11y.outputs.components }}`,
               '',
-              '_Non-blocking. Use label `run-adapters` to trigger, enforcement planned via `enforce-a11y`._',
+              `${{ contains(github.event.pull_request.labels.*.name, 'enforce-a11y') && 'Policy: enforced (label: enforce-a11y)' || 'Policy: report-only' }}`,
               'Docs: docs/quality/adapter-thresholds.md'
             ].join('\n');
             const { owner, repo, number } = context.issue;
@@ -57,4 +57,12 @@ jobs:
             } else {
               await github.rest.issues.createComment({ owner, repo, issue_number: number, body });
             }
-
+      - name: Enforce a11y thresholds (critical/serious==0)
+        if: steps.a11y.outputs.present == 'true' && contains(github.event.pull_request.labels.*.name, 'enforce-a11y')
+        run: |
+          crit=${{ steps.a11y.outputs.critical }}
+          seri=${{ steps.a11y.outputs.serious }}
+          if [ "$crit" -gt 0 ] || [ "$seri" -gt 0 ]; then
+            printf "%s\n" "::error::a11y violations exceed threshold (critical=$crit, serious=$seri)"
+            exit 1
+          fi

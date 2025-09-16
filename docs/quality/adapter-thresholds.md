@@ -9,6 +9,10 @@ Proposal
   - `enforce-a11y`, `enforce-perf`, `enforce-lh` — turn results into gates
   - `a11y:<score>`, `perf:<score>` — override thresholds ad hoc
 
+Current wiring (a11y minimal)
+- `run-adapters`: runs adapter-thresholds.yml to summarize `reports/a11y-results.json` on PR (non-blocking)
+- `enforce-a11y`: enforces minimal thresholds (critical=0, serious=0). Job fails if violated.
+
 Phasing
 - Phase 1: Reporting only (post PR comments/artifacts)
 - Phase 2: Label-gated enforcement
@@ -16,4 +20,4 @@ Phasing
 
 Notes
 - See `quality-gates-centralized.yml` for central jobs and consider adding thresholds as follow-up.
-
+ - File: `.github/workflows/adapter-thresholds.yml`

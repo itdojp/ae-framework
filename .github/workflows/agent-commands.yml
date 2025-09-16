@@ -190,6 +190,10 @@ jobs:
                 await addLabels(['run-adapters']);
                 return reply('Label `run-adapters` added. Adapter thresholds (report-only) will run.');
               }
+              case '/enforce-a11y': {
+                await addLabels(['enforce-a11y']);
+                return reply('Label `enforce-a11y` added. Adapter thresholds will be enforced (a11y critical/serious=0).');
+              }
               case '/run-formal': {
                 await addLabels(['run-formal']);
                 return reply('Label `run-formal` added. Formal jobs will run (non-blocking, opt-in).');
