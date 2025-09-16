@@ -78,6 +78,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 
 ### Security/Compliance
 - Default: not required on PRs; run under `run-security`, aggregate results as artifacts
+- PR summary comment (non-blocking) is posted when `run-security` is set (dependency vulnerabilities and top licenses)
 - Enforce/gate gradually after team agreement (separate issue)
 
 ### Operations Notes
@@ -128,6 +129,11 @@ This document defines CI policies to keep PR experience fast and stable while ma
 
 ### セキュリティ/コンプライアンス
 - 既定では PR で非必須（`run-security` ラベル時のみ実行）。結果は artifacts に集約
+- `run-security` ラベル時は、依存脆弱性のサマリと上位ライセンスの簡易サマリを PR コメントに自動投稿（非ブロッキング）
+
+### フォーマル（オプトイン）
+- `run-formal` ラベル時のみ、Formal Verify（stub）と成果物の集約（Alloy/TLA/SMT の要約）を実行（非ブロッキング）
+- 集約結果は PR コメントにアップサート（重複を避けるためヘッダー識別）
 - 必須化・閾値強化は段階導入（別Issueで合意のうえ切替）
 
 ### 運用メモ
