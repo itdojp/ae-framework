@@ -45,6 +45,13 @@ This document defines CI policies to keep PR experience fast and stable while ma
     - `/qa-batch-agents` または `/run-qa:agents` … `qa-batch:agents` を付与
   - 既存のラベル系（`/run-qa` や `/run-security` 等）も併用可能ですが、dispatchは再実行待ちを省略できるため推奨です。
 
+### Slash Commands (Instant Dispatch)
+- コメントで以下を投稿すると、対象ワークフローをPRのheadブランチで即時起動できます（main取り込み後有効）。
+  - `/verify-lite` … Verify Lite を実行
+  - `/run-qa-dispatch` … ae-ci（QA light）を実行
+  - `/run-security-dispatch` … sbom-generation（Security/SBOM）を実行
+  - 既存のラベル系（`/run-qa` や `/run-security` 等）も併用可能ですが、dispatchは再実行待ちを省略できるため推奨です。
+
 ### Path Conditions
 - Fire spec fail-fast only for changes under `spec/**`, `.ae/**`
 - Trigger SBOM/Security only for dependency or major code changes
