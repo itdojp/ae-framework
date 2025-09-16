@@ -39,6 +39,8 @@ jobs:
           const tlaSum = find(base, "formal-reports-tla/tla-summary.json");
           const alloySum = find(base, "formal-reports-alloy/alloy-summary.json");
           const smtSum = find(base, "formal-reports-smt/smt-summary.json");
+          const apalacheSum = find(base, "formal-reports-apalache/apalache-summary.json");
+          const confSum = find(base, "formal-reports-conformance/conformance-summary.json");
 
           const lines = [];
           lines.push("## 🔎 Formal Reports Aggregate");
@@ -48,6 +50,8 @@ jobs:
           lines.push(tlaSum ? `- TLA summary file: ${path.basename(tlaSum)}` : "- TLA summary: n/a");
           lines.push(alloySum ? `- Alloy summary file: ${path.basename(alloySum)}` : "- Alloy summary: n/a");
           lines.push(smtSum ? `- SMT summary file: ${path.basename(smtSum)}` : "- SMT summary: n/a");
+          lines.push(apalacheSum ? `- Apalache summary file: ${path.basename(apalacheSum)}` : "- Apalache summary: n/a");
+          lines.push(confSum ? `- Conformance summary file: ${path.basename(confSum)}` : "- Conformance summary: n/a");
           lines.push("");
           lines.push("_Non-blocking. Add/remove label run-formal to control._");
           const md = lines.join("\n");
