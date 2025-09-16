@@ -101,7 +101,7 @@ jobs:
         run: |
           pnpm audit --audit-level=high --json > audit-results.json || true
           if [ -s audit-results.json ]; then
-            echo "High-risk vulnerabilities found!"
+            printf "%s\n" "High-risk vulnerabilities found!"
             cat audit-results.json
             exit 1
           fi
@@ -203,26 +203,26 @@ jobs:
       - name: Check SECURITY.md exists
         run: |
           if [ ! -f SECURITY.md ]; then
-            echo "❌ SECURITY.md file is missing"
+            printf "%s\n" "❌ SECURITY.md file is missing"
             exit 1
           fi
-          echo "✅ SECURITY.md file exists"
+          printf "%s\n" "✅ SECURITY.md file exists"
 
       - name: Validate security configuration
         run: |
           # Check for .gitignore entries
           if ! grep -q "\.env" .gitignore; then
-            echo "❌ .env files not in .gitignore"
+            printf "%s\n" "❌ .env files not in .gitignore"
             exit 1
           fi
           
           # Check for security scripts in package.json
           if ! grep -q "security:" package.json; then
-            echo "❌ No security scripts found in package.json"
+            printf "%s\n" "❌ No security scripts found in package.json"
             exit 1
           fi
           
-          echo "✅ Security configuration validated"
+          printf "%s\n" "✅ Security configuration validated"
 
   container-security:
     name: Container Security
@@ -259,8 +259,8 @@ jobs:
     steps:
       - name: Notify security team
         run: |
-          echo "Security scan failed on scheduled run"
-          echo "Please check the workflow results and take appropriate action"
+          printf "%s\n" "Security scan failed on scheduled run"
+          printf "%s\n" "Please check the workflow results and take appropriate action"
           # In a real environment, you would send notifications to Slack, email, etc.
           
       - name: Create security issue

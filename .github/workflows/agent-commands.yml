@@ -1,0 +1,96 @@
+name: agent-commands
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  handle:
+    if: github.event.issue.pull_request
+    runs-on: ubuntu-latest
+    steps:
+      - name: Parse and apply agent commands
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.comment.body.trim();
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+
+            const addLabels = async (labels) => {
+              if (!labels || labels.length === 0) return;
+              await github.rest.issues.addLabels({ owner, repo, issue_number, labels });
+            };
+            const removeLabel = async (label) => {
+              try { await github.rest.issues.removeLabel({ owner, repo, issue_number, name: label }); } catch {}
+            };
+
+            const reply = async (msg) => {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body: `<!-- AE-AGENTS-REPLY -->\n${msg}` });
+            };
+
+            // Supported commands:
+            // /run-qa, /run-security, /non-blocking, /ready, /pr-digest, /pr-detailed
+            // /handoff A|B|C
+            // Dispatchers (require workflow_dispatch on target):
+            // /verify-lite, /run-qa-dispatch, /run-security-dispatch
+            const cmd = body.split(/\s+/)[0];
+            const arg = body.split(/\s+/)[1] || '';
+
+            switch (cmd) {
+              case '/run-qa':
+                await addLabels(['run-qa']);
+                return reply('Label `run-qa` added. ae-ci will execute QA step.');
+              case '/run-security':
+                await addLabels(['run-security']);
+                return reply('Label `run-security` added. Security/SBOM workflows will run.');
+              case '/non-blocking':
+                await addLabels(['ci-non-blocking']);
+                return reply('Label `ci-non-blocking` added. Some jobs will continue-on-error.');
+              case '/ready':
+                await removeLabel('do-not-merge');
+                return reply('Label `do-not-merge` removed. PR is ready for merge gates.');
+              case '/pr-digest':
+                await addLabels(['pr-summary:digest']);
+                return reply('Label `pr-summary:digest` added. Digest summary will be posted.');
+              case '/pr-detailed':
+                await addLabels(['pr-summary:detailed']);
+                return reply('Label `pr-summary:detailed` added. Detailed summary will be posted.');
+              case '/handoff': {
+                const m = (arg || '').toUpperCase();
+                if (['A','B','C'].includes(m)) {
+                  await addLabels([`handoff:agent-${m.toLowerCase()}`]);
+                  return reply(`Handoff queued for Agent ${m}.`);
+                }
+                return reply('Usage: `/handoff A|B|C`');
+              }
+              case '/verify-lite': {
+                // Dispatch verify-lite on PR head
+                if (!context.payload.issue.pull_request) return reply('Not a PR');
+                const pr = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
+                const ref = pr.data.head.ref;
+                await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'verify-lite.yml', ref });
+                return reply(`Dispatched verify-lite on ${ref}`);
+              }
+              case '/run-qa-dispatch': {
+                if (!context.payload.issue.pull_request) return reply('Not a PR');
+                const pr = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
+                const ref = pr.data.head.ref;
+                await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'ae-ci.yml', ref });
+                return reply(`Dispatched ae-ci (QA) on ${ref}`);
+              }
+              case '/run-security-dispatch': {
+                if (!context.payload.issue.pull_request) return reply('Not a PR');
+                const pr = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
+                const ref = pr.data.head.ref;
+                await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'sbom-generation.yml', ref, inputs: { include_vulnerabilities: 'true' } });
+                return reply(`Dispatched sbom-generation (security) on ${ref}`);
+              }
+              default:
+                return; // ignore
+            }

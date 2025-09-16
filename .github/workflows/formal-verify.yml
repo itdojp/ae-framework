@@ -32,9 +32,7 @@ jobs:
   verify-conformance:
     name: verify:conformance (stub)
     runs-on: ubuntu-latest
-    if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == env.JOB_TARGET))
-    env:
-      JOB_TARGET: conformance
+    if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'conformance'))
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -63,9 +61,7 @@ jobs:
   verify-alloy:
     name: verify:alloy (stub)
     runs-on: ubuntu-latest
-    if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == env.JOB_TARGET))
-    env:
-      JOB_TARGET: alloy
+    if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'alloy'))
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -79,9 +75,7 @@ jobs:
   verify-tla:
     name: verify:tla (stub)
     runs-on: ubuntu-latest
-    if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == env.JOB_TARGET))
-    env:
-      JOB_TARGET: tla
+    if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'tla'))
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -96,9 +90,7 @@ jobs:
   verify-smt:
     name: verify:smt (stub)
     runs-on: ubuntu-latest
-    if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == env.JOB_TARGET))
-    env:
-      JOB_TARGET: smt
+    if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'smt'))
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

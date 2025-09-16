@@ -104,6 +104,7 @@ export class ResilienceCLI {
     if (!system) {
       console.error(chalk.red(`❌ Resilience system '${systemName}' not found`));
       safeExit(1);
+      return;
     }
 
     const health = system.getSystemHealth();
@@ -180,6 +181,7 @@ export class ResilienceCLI {
     if (!system) {
       console.error(chalk.red(`❌ Resilience system '${systemName}' not found`));
       safeExit(1);
+      return;
     }
 
     system.reset();
@@ -200,6 +202,7 @@ export class ResilienceCLI {
     if (!system) {
       console.error(chalk.red(`❌ Resilience system '${systemName}' not found`));
       safeExit(1);
+      return;
     }
 
     const operations = options.operations || 10;
@@ -256,7 +259,8 @@ export class ResilienceCLI {
     const system = this.systems.get(systemName);
     if (!system) {
       console.error(chalk.red(`❌ Resilience system '${systemName}' not found`));
-      process.exit(1);
+      safeExit(1);
+      return;
     }
 
     const config = system.getConfig();

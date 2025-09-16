@@ -145,6 +145,7 @@ export function createQualityCommand(): Command {
           if (!gate) {
             console.error(chalk.red(`❌ Quality gate '${options.gate}' not found`));
             safeExit(1);
+            return;
           }
 
           console.log(chalk.blue(`📋 Quality Gate: ${gate.name}\n`));

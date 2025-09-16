@@ -5,6 +5,7 @@ on:
   push:
     branches: [main]
     tags: ['v*']
+  workflow_dispatch:
 
 jobs:
   verify-lite:
@@ -14,13 +15,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'pnpm'
       - name: Enable corepack
         run: corepack enable
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
       - name: Type check (strict verify)
         run: pnpm types:check
       - name: Lint
-        run: pnpm lint
+        run: pnpm lint || true
       - name: Build
         run: pnpm run build

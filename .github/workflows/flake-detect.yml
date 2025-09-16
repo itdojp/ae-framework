@@ -27,15 +27,15 @@ jobs:
           fails=0
           total_runs=3
           
-          echo "🔍 Starting flake detection with $total_runs runs"
+          printf "%s\n" "🔍 Starting flake detection with $total_runs runs"
           
           for i in $(seq 1 $total_runs); do
-            echo "📊 Run #$i of $total_runs"
+            printf "%s\n" "📊 Run #$i of $total_runs"
             
             if pnpm run test:int; then
-              echo "✅ Run #$i passed"
+              printf "%s\n" "✅ Run #$i passed"
             else
-              echo "❌ Run #$i failed"
+              printf "%s\n" "❌ Run #$i failed"
               fails=$((fails+1))
             fi
             
@@ -43,16 +43,16 @@ jobs:
             sleep 5
           done
           
-          echo "FAILS=$fails" >> $GITHUB_ENV
-          echo "TOTAL_RUNS=$total_runs" >> $GITHUB_ENV
+          printf "%s\n" "FAILS=$fails" >> "$GITHUB_ENV"
+          printf "%s\n" "TOTAL_RUNS=$total_runs" >> "$GITHUB_ENV"
           
           failure_rate=$(echo "scale=2; $fails / $total_runs * 100" | bc -l)
-          echo "FAILURE_RATE=$failure_rate" >> $GITHUB_ENV
+          printf "%s\n" "FAILURE_RATE=$failure_rate" >> "$GITHUB_ENV"
           
-          echo "📈 Flake detection summary:"
-          echo "   Total runs: $total_runs"
-          echo "   Failures: $fails"
-          echo "   Failure rate: ${failure_rate}%"
+          printf "%s\n" "📈 Flake detection summary:"
+          printf "%s\n" "   Total runs: $total_runs"
+          printf "%s\n" "   Failures: $fails"
+          printf "%s\n" "   Failure rate: ${failure_rate}%"
       
       - name: Create flake detection report
         run: |
@@ -76,11 +76,11 @@ jobs:
           threshold=30.0
           
           if [ $(echo "$FAILURE_RATE > $threshold" | bc -l) -eq 1 ]; then
-            echo "🚨 Flake detected! Failure rate: ${FAILURE_RATE}% exceeds threshold: ${threshold}%"
-            echo "flaky=true" >> $GITHUB_OUTPUT
+            printf "%s\n" "🚨 Flake detected! Failure rate: ${FAILURE_RATE}% exceeds threshold: ${threshold}%"
+            printf "%s\n" "flaky=true" >> "$GITHUB_OUTPUT"
           else
-            echo "✅ Tests stable. Failure rate: ${FAILURE_RATE}% below threshold: ${threshold}%"
-            echo "flaky=false" >> $GITHUB_OUTPUT
+            printf "%s\n" "✅ Tests stable. Failure rate: ${FAILURE_RATE}% below threshold: ${threshold}%"
+            printf "%s\n" "flaky=false" >> "$GITHUB_OUTPUT"
           fi
       
       - name: Upload flake detection report
@@ -187,10 +187,10 @@ jobs:
       - name: Report final status
         run: |
           if [ "${{ steps.flake-check.outputs.flaky }}" = "true" ]; then
-            echo "❌ Flake detection workflow completed - FLAKY TESTS DETECTED"
-            echo "Failure rate: ${FAILURE_RATE}% exceeds threshold"
+            printf "%s\n" "❌ Flake detection workflow completed - FLAKY TESTS DETECTED"
+            printf "%s\n" "Failure rate: ${FAILURE_RATE}% exceeds threshold"
             exit 1
           else
-            echo "✅ Flake detection workflow completed - Tests are STABLE"
-            echo "Failure rate: ${FAILURE_RATE}% below threshold"
+            printf "%s\n" "✅ Flake detection workflow completed - Tests are STABLE"
+            printf "%s\n" "Failure rate: ${FAILURE_RATE}% below threshold"
           fi

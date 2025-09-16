@@ -279,10 +279,10 @@ export class AEFrameworkCircuitBreakerIntegration extends EventEmitter {
     let criticalCount = 0;
     let degradedCount = 0;
 
-    for (const breaker of allBreakers) {
+    for (const breaker of allBreakers.values()) {
       const health = breaker.generateHealthReport();
       const name = breaker.getName();
-      let componentHealth: 'healthy' | 'degraded' | 'critical';
+      let componentHealth: 'healthy' | 'degraded' | 'critical' = 'healthy';
       
       switch (health.health) {
         case 'healthy':
@@ -315,7 +315,7 @@ export class AEFrameworkCircuitBreakerIntegration extends EventEmitter {
 
       // Add specific recommendations
       if (health.health !== 'healthy') {
-        recommendations.push(...health.recommendations.map(rec => `${name}: ${rec}`));
+        recommendations.push(...health.recommendations.map((rec: string) => `${name}: ${rec}`));
       }
     }
 

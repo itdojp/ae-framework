@@ -31,14 +31,26 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - `run-e2e`: enable E2E tests on PRs
 - `coverage:<pct>`: override coverage threshold for coverage-check (default 80). e.g., `coverage:75`
 
+### Slash Commands (Instant Dispatch)
+- コメントで以下を投稿すると、対象ワークフローをPRのheadブランチで即時起動できます（main取り込み後有効）。
+  - `/verify-lite` … Verify Lite を実行
+  - `/run-qa-dispatch` … ae-ci（QA light）を実行
+  - `/run-security-dispatch` … sbom-generation（Security/SBOM）を実行
+  - 既存のラベル系（`/run-qa` や `/run-security` 等）も併用可能ですが、dispatchは再実行待ちを省略できるため推奨です。
+
 ### Path Conditions
 - Fire spec fail-fast only for changes under `spec/**`, `.ae/**`
 - Trigger SBOM/Security only for dependency or major code changes
 
 ### test:fast (Fast CI suite)
 - Purpose: verify resilience/core units and lightweight integration quickly; exclude heavy/env-dependent tests
-- Current exclusions: `examples/**`, `**/__e2e__/**`, `tests/examples/**`, `tests/docker/**`, `tests/a11y/**`, `tests/property/**`, `tests/traceability/**`, `tests/security/**`, `tests/contracts/**`, `tests/utils/**`, `tests/integration/**`, `tests/resilience/integration.test.ts`, `tests/conformance/**`, `tests/cegis/**`, `tests/cli/**`, `tests/commands/**`, `tests/api/**`, `tests/tdd-setup.test.ts`
-- Re‑enablement: green each category in small PRs and remove from exclusions; keep changes revertable
+- Current exclusions: `examples/**`, `**/__e2e__/**`, `tests/examples/**`, `tests/docker/**`, `tests/a11y/**`, `tests/property/**`, `tests/traceability/**`, `tests/security/**`, `tests/contracts/**`, `tests/integration/**`, `tests/resilience/integration.test.ts`, `tests/conformance/**`, `tests/cegis/**`, `tests/cli/**`, `tests/commands/**`, `tests/api/**`, `tests/tdd-setup.test.ts`
+- Re‑enablement: green each category in small PRs and remove from exclusions; keep changes revertable.
+  - First batch: reintroduced `tests/utils/**`
+  - Second batch: reintroduced `tests/traceability/**` (skipped smoke test only)
+  - Third batch: reintroduced `tests/utils/circuit-breaker*.test.ts`（実装を整合させ全緑化）
+  - Fourth batch: reintroduced `tests/utils/phase-1-validation.test.ts`（初期化を明示し外部状態依存を解消）
+  - Fifth batch: reintroduced `tests/contracts/**`（contract validation はCI安定範囲に調整済）
 
 ### Security/Compliance
 - Default: not required on PRs; run under `run-security`, aggregate results as artifacts
@@ -84,8 +96,11 @@ This document defines CI policies to keep PR experience fast and stable while ma
 
 ### test:fast（高速CIスイート）
 - 目的: Resilience/主要ユニットと軽量統合を即時検証。重い/環境依存テストは除外
-- 主な除外: `examples/**`, `**/__e2e__/**`, `tests/examples/**`, `tests/docker/**`, `tests/a11y/**`, `tests/property/**`, `tests/traceability/**`, `tests/security/**`, `tests/contracts/**`, `tests/utils/**`, `tests/integration/**`, `tests/resilience/integration.test.ts`, `tests/conformance/**`, `tests/cegis/**`, `tests/cli/**`, `tests/commands/**`, `tests/api/**`, `tests/tdd-setup.test.ts`
-- 再導入: 小PRでカテゴリ毎に緑化→除外解除。失敗時は即 revert 可能な粒度
+- 主な除外: `examples/**`, `**/__e2e__/**`, `tests/examples/**`, `tests/docker/**`, `tests/a11y/**`, `tests/property/**`, `tests/traceability/**`, `tests/security/**`, `tests/contracts/**`, `tests/integration/**`, `tests/resilience/integration.test.ts`, `tests/conformance/**`, `tests/cegis/**`, `tests/cli/**`, `tests/commands/**`, `tests/api/**`, `tests/tdd-setup.test.ts`
+- 再導入: 小PRでカテゴリ毎に緑化→除外解除。失敗時は即 revert 可能な粒度。第一弾として `tests/utils/**`、第二弾として `tests/traceability/**`（skip の軽量テストのみ）を再導入。
+
+### QA CLI
+- `ae qa --light`: 軽量 QA 実行（`vitest` の `test:fast` を実行）。`ae-ci` の QA ステップで使用。
 
 ### セキュリティ/コンプライアンス
 - 既定では PR で非必須（`run-security` ラベル時のみ実行）。結果は artifacts に集約
