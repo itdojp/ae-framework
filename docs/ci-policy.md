@@ -108,7 +108,9 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - `run-qa`: `ae-ci` ワークフローの `qa-bench` を PR で実行（既定は非実行）
 - `run-spec`: 仕様 Fail-Fast を PR で有効化
 - `run-drift`: Codegen Drift 検出を PR で有効化
- - `run-adapters`: Adapter Thresholds（例: a11y）をPRでレポート（report-only）。`adapter-thresholds.yml` が要約コメントを投稿
+ - `run-adapters`: Adapter Thresholds（a11y/perf/Lighthouse）をPRでレポート（report-only）。`adapter-thresholds.yml` が要約コメントを投稿
+ - `enforce-perf`: perf スコアのしきい値を強制（`perf:<pct>` ラベルで上書き、既定は `vars.PERF_DEFAULT_THRESHOLD` または 75）
+ - `enforce-lh`: Lighthouse performance スコアのしきい値を強制（`lh:<pct>` ラベルで上書き、既定は `vars.LH_DEFAULT_THRESHOLD` または 80）
 - `run-hermetic`: Hermetic CI を PR で有効化
 - `run-quality`: Parallel Test の quality 行を有効化
 - `run-flake`: flake-detection を PR で有効化
