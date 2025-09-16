@@ -18,6 +18,11 @@ Perf (proposal → minimal wiring)
 - `enforce-perf` ラベルでしきい値を強制（`perf:<score>` ラベルで上書き。既定は `vars.PERF_DEFAULT_THRESHOLD` または 75）
 - Slash Commands: `/enforce-perf`, `/perf <pct|clear>`
 
+Lighthouse (proposal → minimal wiring)
+- `reports/lighthouse-results.json`（または `reports/lh-results.json`）から performance スコアを要約（非ブロッキング）
+- `enforce-lh` ラベルでしきい値を強制（`lh:<score>` ラベルで上書き。既定は `vars.LH_DEFAULT_THRESHOLD` または 80）
+- Slash Commands: `/enforce-lh`, `/lh <pct|clear>`
+
 Phasing
 - Phase 1: Reporting only (post PR comments/artifacts)
 - Phase 2: Label-gated enforcement
