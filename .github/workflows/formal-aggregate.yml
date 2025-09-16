@@ -74,6 +74,18 @@ jobs:
           lines.push(tlaSum ? `- TLA summary file: ${path.basename(tlaSum)}` : "- TLA summary: n/a");
           lines.push(alloySum ? `- Alloy summary file: ${path.basename(alloySum)}` : "- Alloy summary: n/a");
           lines.push(smtSum ? `- SMT summary file: ${path.basename(smtSum)}` : "- SMT summary: n/a");
+          // Quick one-line present/ran summary
+          const present = {
+            tla: !!tlaSum,
+            alloy: !!alloySum,
+            smt: !!smtSum,
+            apalache: !!apalacheSum,
+            conformance: !!confSum
+          };
+          const apLine = apalacheSum && apalache ? `ran=${apalache.ran? 'yes':'no'} ok=${apalache.ok==null? 'n/a': (apalache.ok? 'yes':'no')}` : 'n/a';
+          lines.push(`Summary: TLA=${present.tla? 'present':'n/a'} | Alloy=${present.alloy? 'present':'n/a'} | SMT=${present.smt? 'present':'n/a'} | Apalache=${apLine} | Conformance=${present.conformance? 'present':'n/a'}`);
+          lines.push("");
+
           if (apalacheSum && apalache) {
             const v = apalache.version || 'n/a';
             const ok = apalache.ok; // may be boolean or null
