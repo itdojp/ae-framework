@@ -101,6 +101,16 @@ function extractErrorSnippet(out, before=2, after=2){
 // Persist raw output for artifact consumers
 try { fs.writeFileSync(outLog, output, 'utf-8'); } catch {}
 
+function computeOkFromOutput(out){
+  if (!out) return null;
+  const s = out.toLowerCase();
+  // Positive indicators
+  if (/(no\s+(?:errors?|counterexamples?)\b|verification\s+successful|\bok\b)/i.test(out)) return true;
+  // Negative indicators
+  if (/(error|violation|counterexample|fail)/i.test(out)) return false;
+  return null;
+}
+
 const summary = {
   tool: 'apalache',
   file: path.relative(repoRoot, absFile),
@@ -108,7 +118,7 @@ const summary = {
   ran,
   status,
   version: version || null,
-  ok: ran ? !/error|violat|counterexample|fail/i.test(output) : null,
+  ok: ran ? (computeOkFromOutput(output)) : null,
   hints: ran ? ( /success|ok|no\s+(?:errors|counterexamples?)/i.test(output) ? 'success-indicators-found' : null ) : null,
   timeMs: timeMs || null,
   toolPath: toolPath || null,
