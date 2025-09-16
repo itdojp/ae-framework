@@ -74,6 +74,13 @@ jobs:
               for (const e of apalache.errors.slice(0,5)) lines.push(`- ${e}`);
               lines.push('</details>');
             }
+            if (ok === false && apalache.errorSnippet && Array.isArray(apalache.errorSnippet.lines)) {
+              const first = apalache.errorSnippet.lines.find(l=>l && l.trim().length>0) || '';
+              if (first) {
+                lines.push('');
+                lines.push(`- First error context: ${first}`);
+              }
+            }
           } else {
             lines.push("- Apalache summary: n/a");
           }
