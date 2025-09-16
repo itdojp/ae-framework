@@ -83,11 +83,13 @@ jobs:
           TRACE_JSON=$(find artifacts_dl/traceability-matrix -name 'traceability.json' 2>/dev/null | head -1)
           CONTRACTS_JSON=$(find artifacts_dl/contracts-check -name 'contracts-check.json' 2>/dev/null | head -1)
           CONTRACTS_EXEC=$(find artifacts_dl/contracts-exec -name 'contracts-exec.json' 2>/dev/null | head -1)
-          printf "%s\n" "TRACE_FILE=$TRACE_FILE" >> "$GITHUB_OUTPUT"
-          printf "%s\n" "MODEL_FILE=$MODEL_FILE" >> "$GITHUB_OUTPUT"
-          printf "%s\n" "TRACE_JSON=$TRACE_JSON" >> "$GITHUB_OUTPUT"
-          printf "%s\n" "CONTRACTS_JSON=$CONTRACTS_JSON" >> "$GITHUB_OUTPUT"
-          printf "%s\n" "CONTRACTS_EXEC=$CONTRACTS_EXEC" >> "$GITHUB_OUTPUT"
+          {
+            printf "%s\n" "TRACE_FILE=$TRACE_FILE"
+            printf "%s\n" "MODEL_FILE=$MODEL_FILE"
+            printf "%s\n" "TRACE_JSON=$TRACE_JSON"
+            printf "%s\n" "CONTRACTS_JSON=$CONTRACTS_JSON"
+            printf "%s\n" "CONTRACTS_EXEC=$CONTRACTS_EXEC"
+          } >> "$GITHUB_OUTPUT"
           {
             printf "%s\n" "### 🔍 Verification Summary"
             if [ -f "$TRACE_JSON" ]; then

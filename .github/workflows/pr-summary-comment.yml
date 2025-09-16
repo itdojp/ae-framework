@@ -74,4 +74,4 @@ jobs:
               await github.rest.issues.createComment({ owner, repo, issue_number: number, body: header });
             }
       - name: Write job summary
-        run: cat artifacts/summary/PR_SUMMARY.md >> $GITHUB_STEP_SUMMARY
+        run: cat artifacts/summary/PR_SUMMARY.md >> "$GITHUB_STEP_SUMMARY"

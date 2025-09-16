@@ -183,45 +183,57 @@ jobs:
     # Generate security report
     - name: Generate security report
       run: |
-        printf "# Security Analysis Report\n" > security-report.md
-        printf "\n" >> security-report.md
-        printf "Generated on: %s\n\n" "$(date)" >> security-report.md
+        {
+          printf "# Security Analysis Report\n"
+          printf "\n"
+          printf "Generated on: %s\n\n" "$(date)"
+        } > security-report.md
 
-        printf "## SBOM Summary\n" >> security-report.md
+        {
+          printf "## SBOM Summary\n"
+        } >> security-report.md
         if [[ -f "sbom.json" ]]; then
-          printf "- SBOM format: %s\n" "$(jq -r '.bomFormat' sbom.json)" >> security-report.md
-          printf "- Spec version: %s\n" "$(jq -r '.specVersion' sbom.json)" >> security-report.md
-          printf "- Components: %s\n" "$(jq '.components | length' sbom.json)" >> security-report.md
-          printf "- Dependencies: %s\n\n" "$(jq '.dependencies | length // 0' sbom.json)" >> security-report.md
+          {
+            printf "- SBOM format: %s\n" "$(jq -r '.bomFormat' sbom.json)"
+            printf "- Spec version: %s\n" "$(jq -r '.specVersion' sbom.json)"
+            printf "- Components: %s\n" "$(jq '.components | length' sbom.json)"
+            printf "- Dependencies: %s\n\n" "$(jq '.dependencies | length // 0' sbom.json)"
 
-          printf "### Component Types\n" >> security-report.md
-          jq -r '.components | group_by(.type) | .[] | "\(.length) \(.[0].type) components"' sbom.json >> security-report.md
-          printf "\n" >> security-report.md
-          
-          # License summary (top licenses)
-          printf "### Licenses (top)\n" >> security-report.md
-          jq -r '[.components[] | select(.licenses) | .licenses[]?.license?.name // .licenses[]?.expression] | group_by(.) | sort_by(-length) | .[] | "- \(length)x \(.[0])"' sbom.json | head -10 >> security-report.md || true
-          printf "\n" >> security-report.md
+            printf "### Component Types\n"
+            jq -r '.components | group_by(.type) | .[] | "\(.length) \(.[0].type) components"' sbom.json
+            printf "\n"
+
+            # License summary (top licenses)
+            printf "### Licenses (top)\n"
+            jq -r '[.components[] | select(.licenses) | .licenses[]?.license?.name // .licenses[]?.expression] | group_by(.) | sort_by(-length) | .[] | "- \(length)x \(.[0])"' sbom.json | head -10 || true
+            printf "\n"
+          } >> security-report.md
         fi
 
-        printf "## Dependency Audit Results\n" >> security-report.md
+        {
+          printf "## Dependency Audit Results\n"
+        } >> security-report.md
         if [[ -f "audit-results.json" ]]; then
           if jq -e '.vulnerabilities' audit-results.json > /dev/null 2>&1; then
-            printf "- Total vulnerabilities: %s\n" "$(jq '.metadata.vulnerabilities.total // 0' audit-results.json)" >> security-report.md
-            printf "- High severity: %s\n" "$(jq '.metadata.vulnerabilities.high // 0' audit-results.json)" >> security-report.md
-            printf "- Moderate severity: %s\n" "$(jq '.metadata.vulnerabilities.moderate // 0' audit-results.json)" >> security-report.md
-            printf "- Low severity: %s\n" "$(jq '.metadata.vulnerabilities.low // 0' audit-results.json)" >> security-report.md
+            {
+              printf "- Total vulnerabilities: %s\n" "$(jq '.metadata.vulnerabilities.total // 0' audit-results.json)"
+              printf "- High severity: %s\n" "$(jq '.metadata.vulnerabilities.high // 0' audit-results.json)"
+              printf "- Moderate severity: %s\n" "$(jq '.metadata.vulnerabilities.moderate // 0' audit-results.json)"
+              printf "- Low severity: %s\n" "$(jq '.metadata.vulnerabilities.low // 0' audit-results.json)"
+            } >> security-report.md
           else
             printf "- No vulnerabilities found\n" >> security-report.md
           fi
         fi
         printf "\n" >> security-report.md
 
-        printf "## Recommendations\n" >> security-report.md
-        printf "1. Review SBOM for unexpected dependencies\n" >> security-report.md
-        printf "2. Update vulnerable packages to latest versions\n" >> security-report.md
-        printf "3. Monitor for new vulnerabilities in dependencies\n" >> security-report.md
-        printf "4. Consider using dependency scanning tools in CI/CD\n" >> security-report.md
+        {
+          printf "## Recommendations\n"
+          printf "1. Review SBOM for unexpected dependencies\n"
+          printf "2. Update vulnerable packages to latest versions\n"
+          printf "3. Monitor for new vulnerabilities in dependencies\n"
+          printf "4. Consider using dependency scanning tools in CI/CD\n"
+        } >> security-report.md
 
     - name: Enforce security thresholds (optional)
       if: github.event_name == 'pull_request'
