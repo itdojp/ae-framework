@@ -72,7 +72,8 @@ function extractErrors(out){
   const key = /error|violat|counterexample|fail/i;
   const picked = [];
   for (const l of lines) { if (key.test(l)) picked.push(l.trim()); if (picked.length>=5) break; }
-  return picked;
+  // Trim very long lines for readability in aggregate comments
+  return picked.map(l => l.length > 200 ? (l.slice(0, 200) + '…') : l);
 }
 function countErrors(out){
   const lines = (out || '').split(/\r?\n/);
@@ -105,11 +106,23 @@ try { fs.writeFileSync(outLog, output, 'utf-8'); } catch {}
 
 function computeOkFromOutput(out){
   if (!out) return null;
-  const s = out.toLowerCase();
-  // Positive indicators
-  if (/(no\s+(?:errors?|counterexamples?)\b|verification\s+successful|\bok\b)/i.test(out)) return true;
+  // Positive indicators (prefer these if present)
+  const positives = [
+    /\bno\s+(?:errors?|counterexamples?)\b/i,
+    /verification\s+successful/i,
+    /\bok\b/i,
+    /invariant[^\n]*holds/i,
+    /no\s+violations?/i
+  ];
+  if (positives.some(re => re.test(out))) return true;
   // Negative indicators
-  if (/(error|violation|counterexample|fail)/i.test(out)) return false;
+  const negatives = [
+    /\berror\b/i,
+    /violation/i,
+    /counterexample/i,
+    /\bfail(?:ed)?\b/i
+  ];
+  if (negatives.some(re => re.test(out))) return false;
   return null;
 }
 

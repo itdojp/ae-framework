@@ -32,6 +32,7 @@ jobs:
               .replace(/</g, "&lt;")
               .replace(/>/g, "&gt;");
           }
+          function clamp(s, n=200){ s = String(s||''); return s.length>n ? (s.slice(0,n)+"…") : s; }
           const base = "artifacts_dl";
           const outDir = "artifacts/formal"; fs.mkdirSync(outDir,{recursive:true});
           const outMd = path.join(outDir, "formal-aggregate.md");
@@ -81,13 +82,13 @@ jobs:
               lines.push('<details><summary>Apalache errors (top)</summary>');
               lines.push('');
               lines.push('```text');
-              for (const e of apalache.errors.slice(0,5)) lines.push(escMd(e));
+              for (const e of apalache.errors.slice(0,5)) lines.push(escMd(clamp(e)));
               lines.push('```');
               lines.push('');
               lines.push('</details>');
             }
             if (ok === false && apalache.errorSnippet && Array.isArray(apalache.errorSnippet.lines)) {
-              const ctxLines = apalache.errorSnippet.lines.map(escMd);
+              const ctxLines = apalache.errorSnippet.lines.map(l => escMd(clamp(l)));
               if (ctxLines.length) {
                 lines.push('');
                 lines.push('- First error context:');
