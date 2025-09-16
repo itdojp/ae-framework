@@ -34,6 +34,14 @@ References
 - Workflow: `.github/workflows/coverage-check.yml`
 - Slash commands: see `AGENTS.md` and `docs/ci-policy.md`
 
+### FAQ
+- Q: PRで失敗するのはなぜ？（main以外）
+  - A: 既定は report-only です。`/enforce-coverage` ラベルや main への push（+変数設定）以外では失敗しません。失敗している場合はスクリプトの continue-on-error 条件やしきい値導出の設定を確認してください。
+- Q: しきい値はどのように決まる？
+  - A: `coverage:<pct>` ラベル > リポジトリ変数 `COVERAGE_DEFAULT_THRESHOLD` > 既定 `80` の優先順で決まります。
+- Q: main を Required にするには？
+  - A: まず `COVERAGE_ENFORCE_MAIN=1` と `COVERAGE_DEFAULT_THRESHOLD` を設定し、十分な観測期間後に Branch protection の Required checks に `coverage-check` を追加してください。
+
 ### PR comment example
 ```
 <!-- AE-COVERAGE-SUMMARY -->
