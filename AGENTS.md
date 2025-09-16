@@ -57,6 +57,8 @@
     - `/verify-lite` … verify-lite.yml を PR の head ブランチで起動
     - `/run-qa-dispatch` … ae-ci.yml を PR の head ブランチで起動
     - `/run-security-dispatch` … sbom-generation.yml を PR の head ブランチで起動
+    - `/formal-aggregate-dispatch` … formal-aggregate.yml を PR の head ブランチで起動（`run-formal` 併用推奨）
+      - 環境変数（整形・抑制）: `FORMAL_AGG_LINE_CLAMP`（既定200）, `FORMAL_AGG_ERRORS_LIMIT`（既定5）, `FORMAL_AGG_SNIPPET_MAX_LINES`（既定20）
     - `/ci-fast-dispatch` … ci-fast.yml を PR の head ブランチで起動（対応ラベルが付くとバッチも実行）
     - `/formal-verify-dispatch` … formal-verify.yml を PR の head ブランチで起動
     - `/formal-apalache-dispatch` … formal-verify.yml を Apalache ターゲットで起動（inputs.target=apalache）
