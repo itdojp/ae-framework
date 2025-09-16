@@ -66,6 +66,14 @@ if (!fs.existsSync(absFile)){
   toolPath = sh(`bash -lc 'command -v ${apalacheCmd} || true'`).trim();
 }
 
+function extractErrors(out){
+  const lines = (out || '').split(/\r?\n/);
+  const key = /error|violat|counterexample|fail/i;
+  const picked = [];
+  for (const l of lines) { if (key.test(l)) picked.push(l.trim()); if (picked.length>=5) break; }
+  return picked;
+}
+
 const summary = {
   tool: 'apalache',
   file: path.relative(repoRoot, absFile),
@@ -81,6 +89,7 @@ const summary = {
     ? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
     : null,
   timestamp: new Date().toISOString(),
+  errors: ran ? extractErrors(output) : [],
   output: output.slice(0, 4000)
 };
 
