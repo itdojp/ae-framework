@@ -3,6 +3,7 @@ name: Formal Reports Aggregate
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
+  workflow_dispatch:
 
 permissions: read-all
 

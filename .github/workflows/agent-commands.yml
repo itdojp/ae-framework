@@ -47,7 +47,9 @@ jobs:
             // Dispatchers (require workflow_dispatch on target):
             // /verify-lite, /run-qa-dispatch, /run-security-dispatch, /ci-fast-dispatch, /formal-verify-dispatch
             // /formal-apalache-dispatch, /run-flake-dispatch, /spec-validation-dispatch
+            // /formal-aggregate-dispatch (aggregate workflow_dispatch)
             // /formal-help (prints quick tips and docs links)
+            // /formal-quickstart (alias of /formal-help)
             const cmd = body.split(/\s+/)[0];
             const arg = body.split(/\s+/)[1] || '';
 
@@ -180,6 +182,13 @@ jobs:
                 await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'spec-validation.yml', ref });
                 return reply(`Dispatched spec-validation on ${ref}`);
               }
+              case '/formal-aggregate-dispatch': {
+                if (!context.payload.issue.pull_request) return reply('Not a PR');
+                const pr = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
+                const ref = pr.data.head.ref;
+                await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'formal-aggregate.yml', ref });
+                return reply(`Dispatched formal-aggregate on ${ref}`);
+              }
               case '/qa-batch-commands':
               case '/run-qa:commands': {
                 await addLabels(['qa-batch:commands']);
@@ -253,6 +262,19 @@ jobs:
               case '/enforce-contracts': {
                 await addLabels(['enforce-contracts']);
                 return reply('Label `enforce-contracts` added. Contracts enforcement may apply if configured.');
+              }
+              case '/formal-quickstart': {
+                const tips = [
+                  '### Formal Quickstart',
+                  '',
+                  '- Tools check: `pnpm run tools:formal:check`',
+                  '- Apalache: `pnpm run verify:tla -- --engine=apalache`',
+                  '- TLC: `TLA_TOOLS_JAR=/path/to/tla2tools.jar pnpm run verify:tla -- --engine=tlc`',
+                  '- SMT: `pnpm run verify:smt -- --solver=z3 --file spec/smt/sample.smt2`',
+                  '',
+                  'Docs: `docs/quality/formal-runbook.md`, `docs/quality/formal-tools-setup.md`'
+                ].join('\n');
+                return reply(tips);
               }
               default:
                 return; // ignore

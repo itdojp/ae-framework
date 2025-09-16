@@ -36,3 +36,24 @@ Phasing
 Notes
 - See `quality-gates-centralized.yml` for central jobs and consider adding thresholds as follow-up.
  - File: `.github/workflows/adapter-thresholds.yml`
+
+### Minimal JSON examples
+
+Accessibility (reports/a11y-results.json)
+```
+{
+  "violations": { "critical": 0, "serious": 1, "moderate": 2, "minor": 3 },
+  "passes": 120,
+  "components_tested": ["Button", "Form"]
+}
+```
+
+Performance (reports/perf-results.json)
+```
+{ "score": 78 }
+```
+
+Lighthouse (reports/lighthouse-results.json)
+```
+{ "categories": { "performance": { "score": 0.82 } } }
+```

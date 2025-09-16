@@ -22,5 +22,6 @@ describe('Formal heuristics: computeOkFromOutput', () => {
     expect(computeOkFromOutput('Tool ran with warnings')).toBeNull();
     // Negative false-positive guard: contains the word "error" but not actual failure semantics
     expect(computeOkFromOutput('no error handlers found')).toBeNull();
+    expect(computeOkFromOutput('no failures detected but warnings present')).toBeNull();
   });
 });

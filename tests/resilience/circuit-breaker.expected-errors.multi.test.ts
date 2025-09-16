@@ -17,10 +17,9 @@ describe('Resilience: CircuitBreaker expectedErrors with multiple types', () => 
     // Unexpected should not count
     await expect(cb.execute(async () => { throw new UnexpectedC('u'); })).rejects.toBeInstanceOf(UnexpectedC);
     expect(cb.getState()).toBe(CircuitState.CLOSED);
-    // Two expected errors open
-    await expect(cb.execute(async () => { throw new ExpectedA('a'); })).rejects.toBeInstanceOf(ExpectedA);
+    // Two expected errors (B then A) open
     await expect(cb.execute(async () => { throw new ExpectedB('b'); })).rejects.toBeInstanceOf(ExpectedB);
+    await expect(cb.execute(async () => { throw new ExpectedA('a'); })).rejects.toBeInstanceOf(ExpectedA);
     expect(cb.getState()).toBe(CircuitState.OPEN);
   });
 });
-
