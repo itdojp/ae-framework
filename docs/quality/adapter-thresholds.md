@@ -37,6 +37,15 @@ Notes
 - See `quality-gates-centralized.yml` for central jobs and consider adding thresholds as follow-up.
  - File: `.github/workflows/adapter-thresholds.yml`
 
+CLI (quick local reproduction)
+- a11y (report-only JSONを用意してPRでのコメント確認)
+  - `mkdir -p reports && printf '%s' '{"violations":{"critical":0,"serious":0,"moderate":1,"minor":2},"passes":42,"components_tested":["Button","Link"]}' > reports/a11y-results.json`
+  - PRに `/run-adapters` を付与 → Verify Lite or CI Fast 実行（コメントに要約が表示）
+- perf / lighthouse（scoreの最小JSON例）
+  - perf: `printf '%s' '{"score":87}' > reports/perf-results.json`
+  - lighthouse: `printf '%s' '{"categories":{"performance":{"score":0.93}}}' > reports/lighthouse-results.json`
+  - 必要に応じ `/enforce-perf` や `/perf <pct>`、`/enforce-lh` や `/lh <pct>` を併用
+
 ### Minimal JSON examples
 
 Accessibility (reports/a11y-results.json)

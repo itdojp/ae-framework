@@ -67,7 +67,7 @@ jobs:
           if [ -f coverage/coverage-summary.json ]; then \
             PCT=$(node -e "console.log((require('./coverage/coverage-summary.json').total.lines.pct)||0)"); \
             printf "Coverage: %s%% (threshold: %s%%)\n" "$PCT" "$THRESHOLD"; \
-            awk 'BEGIN{ if ('"${PCT}"' + 0 < '"${THRESHOLD}"' + 0) exit 1 }' || { printf "%s\n" "::error::Coverage ${PCT}% below threshold ${THRESHOLD}% (tips: /coverage <pct>, /enforce-coverage)"; exit 1; }; \
+            awk 'BEGIN{ if ('"${PCT}"' + 0 < '"${THRESHOLD}"' + 0) exit 1 }' || { printf "%s\n" "::error::Coverage ${PCT}% below threshold ${THRESHOLD}% (see docs/quality/coverage-policy.md and docs/quality/coverage-required.md; tips: /coverage <pct>, /enforce-coverage)"; exit 1; }; \
           else \
             printf "%s\n" "No coverage-summary.json found; skipping check"; \
           fi
