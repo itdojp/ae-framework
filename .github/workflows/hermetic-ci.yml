@@ -212,7 +212,7 @@ jobs:
             node -e "
               const results = JSON.parse(require('fs').readFileSync('test-results-${{ matrix.test-suite }}.json', 'utf8'));
               console.log('Test isolation validation completed');
-            " || echo "Test results analysis skipped"
+            " || printf "%s\n" "Test results analysis skipped"
           fi
           
       - name: Upload test results
