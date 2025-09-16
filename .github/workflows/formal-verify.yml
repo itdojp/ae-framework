@@ -148,10 +148,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Check Apalache tooling presence (non-blocking)
+      - name: Run verify:apalache (summary, non-blocking)
         run: |
-          printf "%s\n" "Checking Apalache tooling..."
-          node -e "console.log('Apalache tooling check stub ok')"
+          node scripts/formal/verify-apalache.mjs --file spec/tla/DomainSpec.tla || true
       - name: Upload Apalache summary (artifact)
         uses: actions/upload-artifact@v4
         if: always()

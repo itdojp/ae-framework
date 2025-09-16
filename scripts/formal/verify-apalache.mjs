@@ -1,0 +1,75 @@
+#!/usr/bin/env node
+// Lightweight Apalache runner (stub/minimal):
+// - Detects apalache CLI presence (apalache-mc or apalache)
+// - Optionally runs a quick check when available
+// - Always writes a summary JSON (non-blocking)
+import { execSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+
+function parseArgs(argv){
+  const args = { _: [] };
+  for (let i=2;i<argv.length;i++){
+    const a = argv[i];
+    if (a==='-h' || a==='--help') args.help = true;
+    else if (a==='--file' && argv[i+1]) { args.file = argv[++i]; }
+    else if (a.startsWith('--file=')) { args.file = a.slice(7); }
+    else { args._.push(a); }
+  }
+  return args;
+}
+
+function has(cmd){ try { execSync(`bash -lc 'command -v ${cmd}'`, {stdio:'ignore'}); return true; } catch { return false; } }
+function sh(cmd){ try { return execSync(cmd, {encoding:'utf8'}); } catch(e){ return (e.stdout?.toString?.()||'') + (e.stderr?.toString?.()||''); } }
+
+const args = parseArgs(process.argv);
+if (args.help){
+  console.log('Usage: node scripts/formal/verify-apalache.mjs [--file spec/tla/DomainSpec.tla]');
+  process.exit(0);
+}
+
+const repoRoot = path.resolve(process.cwd());
+const file = args.file || path.join('spec','tla','DomainSpec.tla');
+const absFile = path.resolve(repoRoot, file);
+const outDir = path.join(repoRoot, 'hermetic-reports', 'formal');
+const outFile = path.join(outDir, 'apalache-summary.json');
+fs.mkdirSync(outDir, { recursive: true });
+
+const haveApalache = has('apalache-mc') || has('apalache');
+let status = 'skipped';
+let ran = false;
+let output = '';
+
+if (!fs.existsSync(absFile)){
+  status = 'file_not_found';
+  output = `TLA file not found: ${absFile}`;
+} else if (!haveApalache){
+  status = 'tool_not_available';
+  output = 'Apalache CLI not found. Install apalache or ensure apalache-mc is on PATH. See docs/quality/formal-tools-setup.md';
+} else {
+  // Minimal "typecheck" like run; apalache-mc supports: apalache-mc check <Spec>
+  const cmd = has('apalache-mc')
+    ? `apalache-mc check ${absFile.replace(/'/g, "'\\''")}`
+    : `apalache check ${absFile.replace(/'/g, "'\\''")}`;
+  output = sh(`bash -lc '${cmd} 2>&1 || true'`);
+  status = 'ran';
+  ran = true;
+}
+
+const summary = {
+  tool: 'apalache',
+  file: path.relative(repoRoot, absFile),
+  detected: haveApalache,
+  ran,
+  status,
+  timestamp: new Date().toISOString(),
+  output: output.slice(0, 4000)
+};
+
+fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));
+console.log(`Apalache summary written: ${path.relative(repoRoot, outFile)}`);
+console.log(`- detected=${haveApalache} status=${status}`);
+
+// Non-blocking
+process.exit(0);
+
