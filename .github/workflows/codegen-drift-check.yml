@@ -126,9 +126,9 @@ jobs:
             printf "%s\n" "Checking drift in $dir..."
             
             # Run drift detection and capture result
-            if npx tsx src/cli/index.ts codegen drift -d "$dir" -s .ae/ae-ir.json --format json > drift-report-$(basename $dir).json; then
-              DRIFT_STATUS=$(cat drift-report-$(basename $dir).json | jq -r '.status')
-              CRITICAL_CHANGES=$(cat drift-report-$(basename $dir).json | jq -r '.criticalChanges // 0')
+            if npx tsx src/cli/index.ts codegen drift -d "$dir" -s .ae/ae-ir.json --format json > "drift-report-$(basename "$dir").json"; then
+              DRIFT_STATUS=$(jq -r '.status' "drift-report-$(basename "$dir").json")
+              CRITICAL_CHANGES=$(jq -r '.criticalChanges // 0' "drift-report-$(basename "$dir").json")
               printf "%s\n" "Drift status for $dir: $DRIFT_STATUS (critical changes: $CRITICAL_CHANGES)"
               
               # Issue #71: Contract failure detection
@@ -292,8 +292,8 @@ jobs:
           if [ -d "generated/typescript" ]; then
             printf "%s\n" "🔍 Validating TypeScript code..."
             cd generated/typescript
-            if ls *.ts 1> /dev/null 2>&1; then
-              npx tsc --noEmit --skipLibCheck *.ts
+            if compgen -G "*.ts" > /dev/null; then
+              npx tsc --noEmit --skipLibCheck ./*.ts
               printf "%s\n" "✅ TypeScript validation passed"
             fi
           fi
@@ -304,7 +304,7 @@ jobs:
             printf "%s\n" "🔍 Validating React components..."
             cd generated/react
             # Basic syntax validation
-            for file in *.tsx; do
+            for file in ./*.tsx; do
               if [ -f "$file" ]; then
                 printf "%s\n" "Checking $file"
                 npx tsc --noEmit --skipLibCheck --jsx react "$file"
