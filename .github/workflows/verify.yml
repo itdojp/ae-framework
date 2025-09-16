@@ -120,10 +120,10 @@ jobs:
                   implp=$(printf "%s\n" "$row" | jq -r '.impl')
                   formp=$(printf "%s\n" "$row" | jq -r '.formal')
 =======
-                  scenario=$(echo "$row" | jq -r '.scenario')
-                  testp=$(echo "$row" | jq -r '.test')
-                  implp=$(echo "$row" | jq -r '.impl')
-                  formp=$(echo "$row" | jq -r '.formal')
+                  scenario=$(printf "%s\n" "$row" | jq -r '.scenario')
+                  testp=$(printf "%s\n" "$row" | jq -r '.test')
+                  implp=$(printf "%s\n" "$row" | jq -r '.impl')
+                  formp=$(printf "%s\n" "$row" | jq -r '.formal')
 >>>>>>> origin/main
                   testdisp=$( [ "$testp" != "N/A" ] && shortp "$testp" || printf "N/A\n" )
                   impldisp=$( [ "$implp" != "N/A" ] && shortp "$implp" || printf "N/A\n" )
@@ -135,7 +135,7 @@ jobs:
 <<<<<<< HEAD
                   id=$(printf "%s\n" "$row" | jq -r '.id')
 =======
-                  id=$(echo "$row" | jq -r '.id')
+                  id=$(printf "%s\n" "$row" | jq -r '.id')
 >>>>>>> origin/main
                   printf "%s\n" "- $scenario (id: $id) test: $testlink impl: $impllink formal: $formlink"
                   idx=$((idx+1))
