@@ -9,21 +9,25 @@ export const POSITIVE_PATTERNS = [
   // Multilingual minimal positives (conservative)
   /aucun\s+contre[- ]exemple/i,           // French: no counterexample
   /sin\s+contraejemplos?/i,              // Spanish: without counterexamples
-  /keine\s+gegenbeispiele/i              // German: no counterexamples
+  /keine\s+gegenbeispiele/i,             // German: no counterexamples
+  /aucun(?:e)?\s+(?:échec|erreurs?)\s+détecté(?:e)?/i, // FR: no failure/error detected
+  /no\s+se\s+encontraron\s+(?:errores|violaciones|contraejemplos?)/i, // ES: no errors/violations/counterexamples found
+  /keine\s+verletzungen\s+gefunden/i     // DE: no violations found
 ];
 
 export const NEGATIVE_PATTERNS = [
   /\bviolation\b/i,
-  /counterexample/i,
+  // Counterexample: require contextual negatives to reduce false positives
+  /counter-?examples?\s+(?:found|detected|present|exists?)/i,
   /\bfail(?:ed)?\b/i,
   /\berrors?\s+(?:found|detected)\b/i,
   /error:/i,
   /deadlock\s+(?:found|detected)/i,
   /\bviolat(?:ed|ion)\b/i,
   // Minimal multilingual negatives (conservative)
-  /contre[- ]exemple\s+(?:trouv|detect)/i, // French: counterexample found/detected
-  /contraejemplo\s+(?:encontrado|detectado)/i, // Spanish
-  /gegenbeispiel\s+(?:gefunden|entdeckt)/i     // German
+  /contre[- ]exemples?\s+(?:trouv\w*|détect\w*)/i, // French: counterexample found/detected
+  /contraejemplos?\s+(?:encontrad\w*|detectad\w*)/i, // Spanish
+  /gegenbeispiele?\s+(?:gefunden|entdeckt)/i     // German
 ];
 
 export function computeOkFromOutput(out){
