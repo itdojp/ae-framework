@@ -163,3 +163,22 @@ jobs:
           path: |
             hermetic-reports/formal/apalache-summary.json
             hermetic-reports/formal/apalache-output.txt
+      - name: "Enforce Apalache (label: enforce-formal)"
+        if: contains(github.event.pull_request.labels.*.name, 'enforce-formal')
+        run: |
+          FILE="hermetic-reports/formal/apalache-summary.json"
+          if [ ! -f "$FILE" ]; then
+            printf "%s\n" "::error::apalache-summary.json not found"
+            exit 1
+          fi
+          ok=$(jq -r '.ok // ""' "$FILE" 2>/dev/null || printf "\n")
+          ran=$(jq -r '.ran // false' "$FILE" 2>/dev/null || printf "false\n")
+          if [ "$ran" != "true" ]; then
+            printf "%s\n" "::error::Apalache did not run; cannot enforce"
+            exit 1
+          fi
+          if [ "$ok" != "true" ]; then
+            ec=$(jq -r '.errorCount // 0' "$FILE" 2>/dev/null || printf "0\n")
+            printf "%s\n" "::error::Apalache not ok (errors=$ec)"
+            exit 1
+          fi
