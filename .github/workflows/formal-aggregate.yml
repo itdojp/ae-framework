@@ -85,6 +85,7 @@ jobs:
           };
           const apLine = apalacheSum && apalache ? `ran=${apalache.ran? 'yes':'no'} ok=${apalache.ok==null? 'n/a': (apalache.ok? 'yes':'no')}` : 'n/a';
           lines.push(`Summary: TLA=${present.tla? 'present':'n/a'} | Alloy=${present.alloy? 'present':'n/a'} | SMT=${present.smt? 'present':'n/a'} | Apalache=${apLine} | Conformance=${present.conformance? 'present':'n/a'}`);
+          lines.push(`Present: tla=${present.tla?'yes':'no'}, alloy=${present.alloy?'yes':'no'}, smt=${present.smt?'yes':'no'}, apalache=${present.apalache?'yes':'no'}, conf=${present.conformance?'yes':'no'}`);
           lines.push("");
 
           if (apalacheSum && apalache) {
