@@ -79,6 +79,7 @@ jobs:
 - Trace schema: `observability/trace-schema.yaml`
 - Reports: `hermetic-reports/`（各ツールのsummary/出力を保存）
   - Apalache: `hermetic-reports/formal/apalache-summary.json`, `hermetic-reports/formal/apalache-output.txt`
+  - Formal summary: `hermetic-reports/formal/summary.json`（present/conformance/smt/alloy/tla/apalache を含む）
 
 ### Samples
 - TLA+: `spec/tla/DomainSpec.tla`（最小の安全性不変と遷移の例）
@@ -153,7 +154,7 @@ Formal Verify の実行（target=all）
   3. 結果は: コンソール要約（logs）、`formal-reports` アーティファクトに集約
 
 Artifacts（Formal Reports）
-- `hermetic-reports/formal/summary.json`: 形式結果の集約（Conformance/SMT/Alloy/TLA）
+- `hermetic-reports/formal/summary.json`: 形式結果の集約（Conformance/SMT/Alloy/TLA/Apalache）
 - `hermetic-reports/formal/tla-summary.json`: TLA ランナーの簡易要約（engine/file/status/output）
 - `hermetic-reports/formal/alloy-summary.json`: Alloy ランナーの簡易要約（file/status/output）
 - `hermetic-reports/formal/smt-summary.json`: SMT ランナーの簡易要約（solver/file/status/output）
@@ -182,6 +183,11 @@ Field リファレンス（抜粋）
   - `engine`: `tlc` | `apalache`
   - `file`: 対象TLAファイル
   - `status`: `ran` | `tool_not_available` | `file_not_found` など
+- `apalache-summary.json`
+  - `tool`: `apalache`
+  - `ran`: 実行の有無（true/false）
+  - `ok`: 成否（true/false/null=不確定）
+  - `version`, `timeMs`, `toolPath`, `run`, `errorCount`, `errors[]`, `errorSnippet{before,after,lines[]}` など
 - `alloy-summary.json`
   - `file`: 対象Alloyファイル
   - `status`: `ran` | `tool_not_available` | `file_not_found` など
@@ -214,6 +220,17 @@ Field リファレンス（抜粋）
 - Alloy 6: `spec/alloy/`（最小スケルトンあり）
 - トレーススキーマ: `observability/trace-schema.yaml`
 - レポート（計画）: `hermetic-reports/`
+
+### 環境変数（出力の調整）
+- verify-apalache.mjs（要約の整形）
+  - `APALACHE_ERRORS_LIMIT`（既定 5）: errors[] に採用する最大行数
+  - `APALACHE_ERROR_LINE_CLAMP`（既定 200）: 1行の最大表示幅（超過時は末尾に`…`）
+  - `APALACHE_SNIPPET_BEFORE` / `APALACHE_SNIPPET_AFTER`（既定 2/2）: エラースニペットの前後行数
+- formal-aggregate.yml（PR コメントの整形）
+  - `FORMAL_AGG_LINE_CLAMP`（既定 200）: コメントに表示する1行の最大幅
+  - `FORMAL_AGG_ERRORS_LIMIT`（既定 5）: エラー行の最大件数
+
+いずれも未設定時は既定値で動作し、非ブロッキングです。
 
 ### サンプル
 - TLA+: `spec/tla/DomainSpec.tla` — 最小の不変/遷移
