@@ -31,11 +31,16 @@
 - PR コメントで以下を投稿すると、ラベル付与などを自動化します（.github/workflows/agent-commands.yml）。
   - `/run-qa` … `run-qa` ラベル付与（ae-ci の QA 実行）
   - `/run-security` … `run-security` ラベル付与（Security/SBOM 実行）
+  - `/run-hermetic` … `run-hermetic` ラベル付与（Hermetic CI 実行）
+  - `/run-spec` … `run-spec` ラベル付与（Spec Fail-Fast 実行）
+  - `/run-drift` … `run-drift` ラベル付与（Codegen Drift 検出 実行）
   - `/non-blocking` … `ci-non-blocking` ラベル付与（一部ジョブを continue-on-error）
   - `/ready` … `do-not-merge` ラベル除去（マージ待ち状態へ）
   - `/pr-digest` … `pr-summary:digest` ラベル付与（要約）
   - `/pr-detailed` … `pr-summary:detailed` ラベル付与（詳細）
   - `/handoff A|B|C` … ハンドオフ用ラベル `handoff:agent-a|b|c` を付与し、次エージェントに委譲
+  - `/enforce-typecov` … `enforce-typecov` ラベル付与（型カバレッジのしきい値 enforcement）
+  - `/coverage <pct>` … `coverage:<pct>` ラベル設定（既存の coverage:* を置換）
   - バッチ系（CI Fast の任意カテゴリ実行、いずれもラベル付与）
     - `/qa-batch-commands` または `/run-qa:commands` … `qa-batch:commands`
     - `/qa-batch-cli` または `/run-qa:cli` … `qa-batch:cli`
