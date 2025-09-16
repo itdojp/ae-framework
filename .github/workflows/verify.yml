@@ -286,3 +286,22 @@ jobs:
             printf "%s\n" "Formal enforcement failed: tlc_fail=$tlc_fail alloy_fail=$alloy_fail"
             exit 1
           fi
+
+  formal-conformance-optin:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Determine if run-formal label is present
+        run: |
+          if [ -f "$GITHUB_EVENT_PATH" ]; then
+            if jq -e '.pull_request.labels[]?.name | select(.=="run-formal")' "$GITHUB_EVENT_PATH" >/dev/null; then
+              printf "%s\n" "RUN_FORMAL=1" >> "$GITHUB_ENV"
+            fi
+          fi
+      - name: Formal conformance (stub)
+        if: ${{ env.RUN_FORMAL == '1' }}
+        run: |
+          printf "%s\n" "Running formal conformance (opt-in stub)"
+          node -e "console.log('formal conformance stub ok')"
