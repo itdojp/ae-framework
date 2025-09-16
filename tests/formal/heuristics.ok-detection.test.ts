@@ -7,7 +7,7 @@ describe('Formal heuristics: computeOkFromOutput', () => {
       'No counterexamples found. Verification successful.',
       'OK: all properties hold',
       'Invariant holds and no violations',
-      'Aucun contre-exemple trouvé',
+      'Aucun contre-exemple',
       'Sin contraejemplos',
       'Keine Gegenbeispiele'
     ];
@@ -17,7 +17,10 @@ describe('Formal heuristics: computeOkFromOutput', () => {
     const samples = [
       'Error: violation detected',
       'Counterexample found at step 12',
-      'Failed to prove property'
+      'Failed to prove property',
+      'Deadlock found in state graph',
+      'Gegenbeispiel gefunden',
+      'Contraejemplo detectado'
     ];
     for (const s of samples) expect(computeOkFromOutput(s)).toBe(false);
   });

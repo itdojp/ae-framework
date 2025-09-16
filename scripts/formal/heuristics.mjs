@@ -18,8 +18,10 @@ export const NEGATIVE_PATTERNS = [
   /\bfail(?:ed)?\b/i,
   /\berrors?\s+(?:found|detected)\b/i,
   /error:/i,
+  /deadlock\s+(?:found|detected)/i,
+  /\bviolat(?:ed|ion)\b/i,
   // Minimal multilingual negatives (conservative)
-  /contre[- ]exemple\s+(?:trouv|detect)/i, // French: counterexample found/detected (prefix match)
+  /contre[- ]exemple\s+(?:trouv|detect)/i, // French: counterexample found/detected
   /contraejemplo\s+(?:encontrado|detectado)/i, // Spanish
   /gegenbeispiel\s+(?:gefunden|entdeckt)/i     // German
 ];
