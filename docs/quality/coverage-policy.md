@@ -17,6 +17,7 @@ Mechanics
 Recommended operations
 - On PRs: use `/coverage <pct>` for ad-hoc thresholds and `/enforce-coverage` when you want blocking
 - On `main`: set `COVERAGE_ENFORCE_MAIN=1` and `COVERAGE_DEFAULT_THRESHOLD` in repository variables
+ - Status visibility: Verify Lite のログに既定しきい値/現在の閾値（ラベル/変数）を注記として表示（workflow側でNote出力）。
 
 Step-by-step (enable on main)
 1) Settings → Variables → Repository variables に以下を追加します。
@@ -27,6 +28,7 @@ Step-by-step (enable on main)
 
 Notes
 - 変数が未設定でもPRコメントは出力されます（report-only）。
+ - Required化の前に main の運用で値と逸脱時の頻度を観測し、適切な閾値を合意してください。
 
 References
 - Workflow: `.github/workflows/coverage-check.yml`
