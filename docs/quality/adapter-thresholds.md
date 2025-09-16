@@ -43,8 +43,13 @@ CLI (quick local reproduction)
   - PRに `/run-adapters` を付与 → Verify Lite or CI Fast 実行（コメントに要約が表示）
 - perf / lighthouse（scoreの最小JSON例）
   - perf: `printf '%s' '{"score":87}' > reports/perf-results.json`
-  - lighthouse: `printf '%s' '{"categories":{"performance":{"score":0.93}}}' > reports/lighthouse-results.json`
-  - 必要に応じ `/enforce-perf` や `/perf <pct>`、`/enforce-lh` や `/lh <pct>` を併用
+- lighthouse: `printf '%s' '{"categories":{"performance":{"score":0.93}}}' > reports/lighthouse-results.json`
+- 必要に応じ `/enforce-perf` や `/perf <pct>`、`/enforce-lh` や `/lh <pct>` を併用
+
+Enforcement notes
+- 既定は report-only（PR をブロックしません）。`/enforce-perf` や `/enforce-lh` を付与するとブロッキング化します。
+- しきい値の導出順は「ラベル（perf:<pct>/lh:<pct>）> リポジトリ変数（PERF_DEFAULT_THRESHOLD/LH_DEFAULT_THRESHOLD）> 既定（perf=75, lh=80）」です。
+- 変数未設定でも動作しますが、しきい値の既定を統一するためリポジトリ変数を設定する運用を推奨します。
 
 ### Minimal JSON examples
 
