@@ -38,7 +38,7 @@ jobs:
           SUMMARY_LANG: ${{ steps.lang.outputs.lang }}
         run: |
           if [ -f scripts/summary/render-pr-summary.mjs ]; then node scripts/summary/render-pr-summary.mjs; else printf "No renderer; keeping inline\n"; fi
-          node -e '
+          node <<'JS'
           const fs=require("fs");
           function r(p){ try { return JSON.parse(fs.readFileSync(p,"utf-8")); } catch { return undefined; } }
           const c = r("artifacts/summary/combined.json") || {};
@@ -57,7 +57,7 @@ jobs:
           fs.mkdirSync("artifacts/summary",{recursive:true});
           fs.writeFileSync("artifacts/summary/PR_SUMMARY.md", md);
           console.log(md);
-          '
+          JS
       - name: Post or update PR comment
         uses: actions/github-script@v7
         with:
