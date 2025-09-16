@@ -13,17 +13,16 @@ try {
   const req = ['tool','ran','status'];
   const missing = req.filter(k => !(k in j));
   if (missing.length) {
-    console.warn(`Missing keys: ${missing.join(', ')}`);
+    console.warn(`::notice::apalache-summary missing keys: ${missing.join(', ')}`);
   }
   // Soft checks
   if (j.ran === true) {
-    if (!('ok' in j)) console.warn('Key ok is missing for ran=true');
-    if (!('outputFile' in j)) console.warn('Key outputFile is missing for ran=true');
+    if (!('ok' in j)) console.warn('::notice::apalache-summary: ok missing for ran=true');
+    if (!('outputFile' in j)) console.warn('::notice::apalache-summary: outputFile missing for ran=true');
   }
-  console.log('apalache-summary.json: validation complete (non-blocking)');
+  console.log('apalache-summary.json: validation complete');
   process.exit(0);
 } catch (e) {
-  console.warn('Failed to parse apalache-summary.json (non-blocking):', e.message);
+  console.warn('::notice::Failed to parse apalache-summary.json:', e.message);
   process.exit(0);
 }
-
