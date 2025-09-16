@@ -91,6 +91,8 @@ function extractErrorSnippet(out, before=2, after=2){
         index: i,
         start,
         end,
+        before,
+        after,
         lines: lines.slice(start, end).map(s=>s.trim())
       };
     }
@@ -129,7 +131,8 @@ const summary = {
   errors: ran ? extractErrors(output) : [],
   errorCount: ran ? countErrors(output) : 0,
   errorSnippet: ran ? extractErrorSnippet(output) : null,
-  output: output.slice(0, 4000),
+  // capped raw output preview (full log saved to outputFile)
+  output: output ? String(output).slice(0, 4000) : '',
   outputFile: path.relative(repoRoot, outLog)
 };
 
