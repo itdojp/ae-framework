@@ -1,6 +1,8 @@
 name: coverage-check
 on:
   pull_request:
+  push:
+    branches: [ main ]
 permissions:
   contents: read
 jobs:
@@ -29,6 +31,9 @@ jobs:
     needs: gate
     runs-on: ubuntu-latest
     steps:
+      - name: Note
+        run: |
+          printf "%s\n" "Coverage dry-run on main is non-blocking by default."
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '20' }

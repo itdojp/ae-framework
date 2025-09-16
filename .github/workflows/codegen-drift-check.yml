@@ -403,34 +403,34 @@ jobs:
           REGEN_RESULT="${{ needs.regenerate-code.result }}"
           VALIDATION_RESULT="${{ needs.validate-generation.result }}"
           
-          echo "📊 Quality Gate Evaluation"
-          echo "=========================="
-          echo "Drift Status: $DRIFT_STATUS"
-          echo "Regeneration: $REGEN_RESULT"  
-          echo "Validation: $VALIDATION_RESULT"
+          printf "%s\n" "📊 Quality Gate Evaluation"
+          printf "%s\n" "=========================="
+          printf "%s\n" "Drift Status: $DRIFT_STATUS"
+          printf "%s\n" "Regeneration: $REGEN_RESULT"
+          printf "%s\n" "Validation: $VALIDATION_RESULT"
           
           # Determine overall result
           case "$DRIFT_STATUS" in
             "critical_drift")
-              echo "❌ Quality gate FAILED: Critical drift detected"
+              printf "%s\n" "❌ Quality gate FAILED: Critical drift detected"
               exit 1
               ;;
             "major_drift")
               if [ "$REGEN_RESULT" != "success" ]; then
-                echo "❌ Quality gate FAILED: Major drift and regeneration failed"
+                printf "%s\n" "❌ Quality gate FAILED: Major drift and regeneration failed"
                 exit 1
               fi
               ;;
             "detection_failed")
-              echo "⚠️  Quality gate WARNING: Drift detection failed"
+              printf "%s\n" "⚠️  Quality gate WARNING: Drift detection failed"
               exit 0
               ;;
           esac
           
           # Check validation if regeneration occurred
           if [ "$REGEN_RESULT" = "success" ] && [ "$VALIDATION_RESULT" = "failure" ]; then
-            echo "❌ Quality gate FAILED: Code validation failed"
+            printf "%s\n" "❌ Quality gate FAILED: Code validation failed"
             exit 1
           fi
           
-          echo "✅ Quality gate PASSED"
+          printf "%s\n" "✅ Quality gate PASSED"
