@@ -23,6 +23,7 @@ function sh(cmd) { try { return execSync(cmd, { encoding: 'utf8' }); } catch (e)
 const args = parseArgs(process.argv);
 if (args.help) {
   console.log(`Usage: node scripts/formal/verify-smt.mjs [--solver=z3|cvc5] [--file path/to/input.smt2]`);
+  console.log('See docs/quality/formal-tools-setup.md for solver setup.');
   process.exit(0);
 }
 
