@@ -89,7 +89,7 @@ jobs:
           printf "%s\n" "CONTRACTS_JSON=$CONTRACTS_JSON" >> "$GITHUB_OUTPUT"
           printf "%s\n" "CONTRACTS_EXEC=$CONTRACTS_EXEC" >> "$GITHUB_OUTPUT"
           {
-            echo "### 🔍 Verification Summary"
+            printf "%s\n" "### 🔍 Verification Summary"
             if [ -f "$TRACE_JSON" ]; then
               scenarios=$(jq -r '.total' "$TRACE_JSON" 2>/dev/null || echo 0)
               covered_tests=$(jq -r '.testsLinked' "$TRACE_JSON" 2>/dev/null || echo 0)
@@ -124,7 +124,7 @@ jobs:
                   if [ -n "$PR_SHA" ] && [ "$implp" != "N/A" ]; then impllink="[$impldisp](https://github.com/$REPO/blob/$PR_SHA/$implp)"; fi
                   if [ -n "$PR_SHA" ] && [ "$formp" != "N/A" ]; then formlink="[$formdisp](https://github.com/$REPO/blob/$PR_SHA/$formp)"; fi
                   id=$(echo "$row" | jq -r '.id')
-                  echo "- $scenario (id: $id) test: $testlink impl: $impllink formal: $formlink"
+                  printf "%s\n" "- $scenario (id: $id) test: $testlink impl: $impllink formal: $formlink"
                   idx=$((idx+1))
                 done < <(jq -c '.rows[] | select(.test!="N/A" and .impl!="N/A" and .formal!="N/A")' "$TRACE_JSON" 2>/dev/null)
               fi
@@ -153,7 +153,7 @@ jobs:
               total=$(jq '(.tlc.results | length) + 0' "$MODEL_FILE" 2>/dev/null || echo 0)
               if [ "$total" -gt 0 ]; then pct=$(awk "BEGIN {printf \"%.0f\", ($ok*100)/$total}"); else pct=0; fi
               printf "- Model Check (TLC): %s/%s (%s%%) modules ok\n" "$ok" "$total" "$pct"
-              echo "\n<details><summary>Non-OK modules (top 5)</summary>"
+              printf "\n<details><summary>Non-OK modules (top 5)</summary>\n"
               jq -r '.tlc.results[] | select(.ok!=true) | "- " + .module + ( .log? // "" | " (log: " + . + ")" )' "$MODEL_FILE" 2>/dev/null | head -5 || true
               printf "</details>\n"
               # Alloy summary (if present)
