@@ -48,6 +48,8 @@ jobs:
         run: node scripts/formal/trace-validate.mjs
       - name: Aggregate formal summaries (local)
         run: node scripts/formal/aggregate-formal.mjs
+      - name: Conformance driver (stub)
+        run: node scripts/formal/conformance-driver.mjs || true
       - name: Print formal summary (console)
         run: node scripts/formal/print-summary.mjs
       - name: Upload formal reports
@@ -57,6 +59,13 @@ jobs:
           name: formal-reports
           path: |
             hermetic-reports/
+      - name: Upload conformance summary (artifact)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: formal-reports-conformance
+          path: |
+            hermetic-reports/formal/conformance-summary.json
 
   verify-alloy:
     name: verify:alloy (stub)
