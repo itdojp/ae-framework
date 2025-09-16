@@ -20,6 +20,8 @@ jobs:
           cache: 'pnpm'
       - name: Install dependencies
         run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+      - name: Pre-build workspace types (spec-compiler)
+        run: pnpm -F @ae-framework/spec-compiler -s run build || true
       - name: Type check (strict verify)
         run: pnpm types:check
       - name: Lint
