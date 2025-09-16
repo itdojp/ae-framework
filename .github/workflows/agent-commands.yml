@@ -60,6 +60,9 @@ jobs:
               case '/non-blocking':
                 await addLabels(['ci-non-blocking']);
                 return reply('Label `ci-non-blocking` added. Some jobs will continue-on-error.');
+              case '/blocking':
+                await removeLabel('ci-non-blocking');
+                return reply('Label `ci-non-blocking` removed. Jobs will be blocking as configured.');
               case '/ready':
                 await removeLabel('do-not-merge');
                 return reply('Label `do-not-merge` removed. PR is ready for merge gates.');

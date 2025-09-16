@@ -35,6 +35,7 @@
   - `/run-spec` … `run-spec` ラベル付与（Spec Fail-Fast 実行）
   - `/run-drift` … `run-drift` ラベル付与（Codegen Drift 検出 実行）
   - `/non-blocking` … `ci-non-blocking` ラベル付与（一部ジョブを continue-on-error）
+  - `/blocking` … `ci-non-blocking` ラベル除去（通常のブロッキング設定へ）
   - `/ready` … `do-not-merge` ラベル除去（マージ待ち状態へ）
   - `/pr-digest` … `pr-summary:digest` ラベル付与（要約）
   - `/pr-detailed` … `pr-summary:detailed` ラベル付与（詳細）
