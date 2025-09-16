@@ -190,6 +190,23 @@ jobs:
                 await addLabels(['run-adapters']);
                 return reply('Label `run-adapters` added. Adapter thresholds (report-only) will run.');
               }
+              case '/enforce-perf': {
+                await addLabels(['enforce-perf']);
+                return reply('Label `enforce-perf` added. Performance threshold enforcement may apply.');
+              }
+              case '/perf': {
+                const v = (arg || '').trim();
+                if (v.toLowerCase() === 'clear') {
+                  await removeLabelsByPrefix('perf:');
+                  return reply('Cleared perf:* labels.');
+                }
+                if (!/^\d{1,3}$/.test(v)) return reply('Usage: `/perf <pct|clear>` (e.g., `/perf 75`)');
+                const n = Number(v);
+                if (n < 0 || n > 100) return reply('Perf percent must be 0..100');
+                await removeLabelsByPrefix('perf:');
+                await addLabels([`perf:${n}`]);
+                return reply(`Label \`perf:${n}\` set. Performance check will use this threshold.`);
+              }
               case '/enforce-a11y': {
                 await addLabels(['enforce-a11y']);
                 return reply('Label `enforce-a11y` added. Adapter thresholds will be enforced (a11y critical/serious=0).');
