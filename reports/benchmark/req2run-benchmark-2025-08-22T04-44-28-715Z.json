@@ -1,0 +1,1100 @@
+{
+  "metadata": {
+    "timestamp": "2025-08-22T04:44:28.716Z",
+    "totalProblems": 2,
+    "successfulRuns": 2,
+    "failedRuns": 0,
+    "averageScore": 0,
+    "totalExecutionTime": 29,
+    "framework": "AE Framework v1.0.0",
+    "benchmarkVersion": "req2run-benchmark"
+  },
+  "configuration": {
+    "req2runRepository": "https://github.com/itdojp/req2run-benchmark.git",
+    "problems": [
+      {
+        "id": "web-api-basic-001",
+        "enabled": false,
+        "timeoutMs": 300000,
+        "retries": 1,
+        "category": "web-api",
+        "difficulty": "basic"
+      },
+      {
+        "id": "CLI-001",
+        "enabled": true,
+        "timeoutMs": 180000,
+        "retries": 1,
+        "category": "cli-tool",
+        "difficulty": "basic"
+      },
+      {
+        "id": "WEB-001",
+        "enabled": true,
+        "timeoutMs": 300000,
+        "retries": 1,
+        "category": "web-api",
+        "difficulty": "intermediate"
+      },
+      {
+        "id": "data-processing-basic-001",
+        "enabled": false,
+        "timeoutMs": 240000,
+        "retries": 1,
+        "category": "data-processing",
+        "difficulty": "basic"
+      },
+      {
+        "id": "web-api-intermediate-001",
+        "enabled": false,
+        "timeoutMs": 600000,
+        "retries": 2,
+        "category": "web-api",
+        "difficulty": "intermediate"
+      },
+      {
+        "id": "auth-intermediate-001",
+        "enabled": false,
+        "timeoutMs": 480000,
+        "retries": 2,
+        "category": "authentication",
+        "difficulty": "intermediate"
+      },
+      {
+        "id": "distributed-advanced-001",
+        "enabled": false,
+        "timeoutMs": 1800000,
+        "retries": 3,
+        "category": "distributed-system",
+        "difficulty": "advanced"
+      },
+      {
+        "id": "ml-pipeline-expert-001",
+        "enabled": false,
+        "timeoutMs": 3600000,
+        "retries": 3,
+        "category": "machine-learning",
+        "difficulty": "expert"
+      }
+    ],
+    "execution": {
+      "parallel": false,
+      "maxConcurrency": 2,
+      "resourceLimits": {
+        "maxMemoryMB": 4096,
+        "maxCpuPercent": 80,
+        "maxDiskMB": 10240,
+        "maxExecutionTimeMs": 3600000
+      },
+      "environment": "development",
+      "docker": {
+        "enabled": false,
+        "image": "node:18-alpine",
+        "volumes": [
+          "/tmp:/tmp"
+        ],
+        "ports": [
+          3000,
+          8080
+        ]
+      }
+    },
+    "evaluation": {
+      "weights": {
+        "functional": 0.35,
+        "performance": 0.15,
+        "quality": 0.2,
+        "security": 0.15,
+        "testing": 0.15
+      },
+      "thresholds": {
+        "minOverallScore": 60,
+        "minFunctionalCoverage": 70,
+        "maxResponseTime": 2000,
+        "minCodeQuality": 75,
+        "maxVulnerabilities": 5
+      },
+      "scoring": {
+        "algorithm": "weighted-average",
+        "penalties": {
+          "timeoutPenalty": 0.5,
+          "errorPenalty": 0.3,
+          "qualityPenalty": 0.2
+        },
+        "bonuses": {
+          "performanceBonus": 0.1,
+          "qualityBonus": 0.1,
+          "securityBonus": 0.05
+        }
+      }
+    },
+    "reporting": {
+      "formats": [
+        "json",
+        "html",
+        "markdown"
+      ],
+      "destinations": [
+        {
+          "type": "file",
+          "config": {
+            "directory": "./reports/benchmark",
+            "filename": "req2run-benchmark-{timestamp}.{format}"
+          }
+        },
+        {
+          "type": "github",
+          "config": {
+            "repository": "itdojp/ae-framework",
+            "issueOnFailure": true,
+            "commentOnPR": true
+          }
+        }
+      ],
+      "dashboard": {
+        "enabled": true,
+        "port": 3001,
+        "refreshInterval": 30000,
+        "charts": [
+          {
+            "type": "line",
+            "metrics": [
+              "overallScore",
+              "functionalCoverage"
+            ],
+            "title": "Performance Trends"
+          },
+          {
+            "type": "bar",
+            "metrics": [
+              "performance.responseTime",
+              "performance.memoryUsage"
+            ],
+            "title": "Resource Usage"
+          },
+          {
+            "type": "pie",
+            "metrics": [
+              "security.vulnerabilityCount"
+            ],
+            "title": "Security Issues"
+          },
+          {
+            "type": "radar",
+            "metrics": [
+              "functionalCoverage",
+              "codeQuality.maintainabilityIndex",
+              "security.securityScore",
+              "performance.throughput"
+            ],
+            "title": "Overall Quality Radar"
+          }
+        ]
+      }
+    }
+  },
+  "results": [
+    {
+      "problemId": "CLI-001",
+      "success": true,
+      "score": 0,
+      "executionTime": 18,
+      "phases": [
+        {
+          "phase": "intent-analysis",
+          "startTime": "2025-08-22T04:44:28.701Z",
+          "endTime": "2025-08-22T04:44:28.701Z",
+          "duration": 0,
+          "input": null,
+          "output": {
+            "id": "intent-CLI-001",
+            "title": "Intent for File Processing CLI Tool",
+            "description": "File Processing CLI Tool - cli_tool (basic)",
+            "success": true,
+            "metadata": {
+              "created_by": "ITdo Inc. Japan",
+              "created_at": "2024-12-01",
+              "version": "1.0.0",
+              "category": "cli_tool",
+              "difficulty": "basic",
+              "estimated_time": 30
+            }
+          },
+          "success": true
+        },
+        {
+          "phase": "requirements",
+          "startTime": "2025-08-22T04:44:28.701Z",
+          "endTime": "2025-08-22T04:44:28.701Z",
+          "duration": 0,
+          "input": {
+            "id": "intent-CLI-001",
+            "title": "Intent for File Processing CLI Tool",
+            "description": "File Processing CLI Tool - cli_tool (basic)",
+            "success": true,
+            "metadata": {
+              "created_by": "ITdo Inc. Japan",
+              "created_at": "2024-12-01",
+              "version": "1.0.0",
+              "category": "cli_tool",
+              "difficulty": "basic",
+              "estimated_time": 30
+            }
+          },
+          "output": {
+            "processed_requirements": [
+              {
+                "id": "FR-001",
+                "description": "The tool MUST accept command-line arguments for input file path and output file path",
+                "type": "functional",
+                "priority": "must",
+                "acceptance_criteria": [
+                  "The tool MUST accept command-line arguments for input file path and output file path"
+                ]
+              },
+              {
+                "id": "FR-002",
+                "description": "The tool MUST support CSV, JSON, and TXT file formats",
+                "type": "functional",
+                "priority": "must",
+                "acceptance_criteria": [
+                  "The tool MUST support CSV, JSON, and TXT file formats"
+                ]
+              },
+              {
+                "id": "FR-003",
+                "description": "The tool MUST provide conversion between supported formats (CSV to JSON, JSON to CSV, etc.)",
+                "type": "functional",
+                "priority": "must",
+                "acceptance_criteria": [
+                  "The tool MUST provide conversion between supported formats (CSV to JSON, JSON to CSV, etc.)"
+                ]
+              },
+              {
+                "id": "FR-004",
+                "description": "The tool MUST validate input file existence and readability",
+                "type": "functional",
+                "priority": "must",
+                "acceptance_criteria": [
+                  "The tool MUST validate input file existence and readability"
+                ]
+              },
+              {
+                "id": "FR-005",
+                "description": "The tool SHOULD provide a --verbose flag for detailed output",
+                "type": "functional",
+                "priority": "should",
+                "acceptance_criteria": [
+                  "The tool SHOULD provide a --verbose flag for detailed output"
+                ]
+              },
+              {
+                "id": "FR-006",
+                "description": "The tool SHOULD support batch processing of multiple files",
+                "type": "functional",
+                "priority": "should",
+                "acceptance_criteria": [
+                  "The tool SHOULD support batch processing of multiple files"
+                ]
+              },
+              {
+                "id": "FR-007",
+                "description": "The tool MAY provide progress bars for large file processing",
+                "type": "functional",
+                "priority": "may",
+                "acceptance_criteria": [
+                  "The tool MAY provide progress bars for large file processing"
+                ]
+              }
+            ],
+            "analysis": "Processed 7 requirements",
+            "success": true
+          },
+          "success": true
+        },
+        {
+          "phase": "user-stories",
+          "startTime": "2025-08-22T04:44:28.701Z",
+          "endTime": "2025-08-22T04:44:28.701Z",
+          "duration": 0,
+          "input": {
+            "processed_requirements": [
+              {
+                "id": "FR-001",
+                "description": "The tool MUST accept command-line arguments for input file path and output file path",
+                "type": "functional",
+                "priority": "must",
+                "acceptance_criteria": [
+                  "The tool MUST accept command-line arguments for input file path and output file path"
+                ]
+              },
+              {
+                "id": "FR-002",
+                "description": "The tool MUST support CSV, JSON, and TXT file formats",
+                "type": "functional",
+                "priority": "must",
+                "acceptance_criteria": [
+                  "The tool MUST support CSV, JSON, and TXT file formats"
+                ]
+              },
+              {
+                "id": "FR-003",
+                "description": "The tool MUST provide conversion between supported formats (CSV to JSON, JSON to CSV, etc.)",
+                "type": "functional",
+                "priority": "must",
+                "acceptance_criteria": [
+                  "The tool MUST provide conversion between supported formats (CSV to JSON, JSON to CSV, etc.)"
+                ]
+              },
+              {
+                "id": "FR-004",
+                "description": "The tool MUST validate input file existence and readability",
+                "type": "functional",
+                "priority": "must",
+                "acceptance_criteria": [
+                  "The tool MUST validate input file existence and readability"
+                ]
+              },
+              {
+                "id": "FR-005",
+                "description": "The tool SHOULD provide a --verbose flag for detailed output",
+                "type": "functional",
+                "priority": "should",
+                "acceptance_criteria": [
+                  "The tool SHOULD provide a --verbose flag for detailed output"
+                ]
+              },
+              {
+                "id": "FR-006",
+                "description": "The tool SHOULD support batch processing of multiple files",
+                "type": "functional",
+                "priority": "should",
+                "acceptance_criteria": [
+                  "The tool SHOULD support batch processing of multiple files"
+                ]
+              },
+              {
+                "id": "FR-007",
+                "description": "The tool MAY provide progress bars for large file processing",
+                "type": "functional",
+                "priority": "may",
+                "acceptance_criteria": [
+                  "The tool MAY provide progress bars for large file processing"
+                ]
+              }
+            ],
+            "analysis": "Processed 7 requirements",
+            "success": true
+          },
+          "output": {
+            "stories": [
+              {
+                "id": "story-FR-001",
+                "title": "User story for FR-001",
+                "description": "The tool MUST accept command-line arguments for input file path and output file path",
+                "priority": "must"
+              },
+              {
+                "id": "story-FR-002",
+                "title": "User story for FR-002",
+                "description": "The tool MUST support CSV, JSON, and TXT file formats",
+                "priority": "must"
+              },
+              {
+                "id": "story-FR-003",
+                "title": "User story for FR-003",
+                "description": "The tool MUST provide conversion between supported formats (CSV to JSON, JSON to CSV, etc.)",
+                "priority": "must"
+              },
+              {
+                "id": "story-FR-004",
+                "title": "User story for FR-004",
+                "description": "The tool MUST validate input file existence and readability",
+                "priority": "must"
+              },
+              {
+                "id": "story-FR-005",
+                "title": "User story for FR-005",
+                "description": "The tool SHOULD provide a --verbose flag for detailed output",
+                "priority": "should"
+              },
+              {
+                "id": "story-FR-006",
+                "title": "User story for FR-006",
+                "description": "The tool SHOULD support batch processing of multiple files",
+                "priority": "should"
+              },
+              {
+                "id": "story-FR-007",
+                "title": "User story for FR-007",
+                "description": "The tool MAY provide progress bars for large file processing",
+                "priority": "may"
+              }
+            ],
+            "success": true
+          },
+          "success": true
+        },
+        {
+          "phase": "validation",
+          "startTime": "2025-08-22T04:44:28.701Z",
+          "endTime": "2025-08-22T04:44:28.701Z",
+          "duration": 0,
+          "input": {
+            "stories": [
+              {
+                "id": "story-FR-001",
+                "title": "User story for FR-001",
+                "description": "The tool MUST accept command-line arguments for input file path and output file path",
+                "priority": "must"
+              },
+              {
+                "id": "story-FR-002",
+                "title": "User story for FR-002",
+                "description": "The tool MUST support CSV, JSON, and TXT file formats",
+                "priority": "must"
+              },
+              {
+                "id": "story-FR-003",
+                "title": "User story for FR-003",
+                "description": "The tool MUST provide conversion between supported formats (CSV to JSON, JSON to CSV, etc.)",
+                "priority": "must"
+              },
+              {
+                "id": "story-FR-004",
+                "title": "User story for FR-004",
+                "description": "The tool MUST validate input file existence and readability",
+                "priority": "must"
+              },
+              {
+                "id": "story-FR-005",
+                "title": "User story for FR-005",
+                "description": "The tool SHOULD provide a --verbose flag for detailed output",
+                "priority": "should"
+              },
+              {
+                "id": "story-FR-006",
+                "title": "User story for FR-006",
+                "description": "The tool SHOULD support batch processing of multiple files",
+                "priority": "should"
+              },
+              {
+                "id": "story-FR-007",
+                "title": "User story for FR-007",
+                "description": "The tool MAY provide progress bars for large file processing",
+                "priority": "may"
+              }
+            ],
+            "success": true
+          },
+          "output": {
+            "validation_results": {
+              "passed": 7,
+              "failed": 0,
+              "coverage": 100
+            },
+            "success": true
+          },
+          "success": true
+        },
+        {
+          "phase": "domain-modeling",
+          "startTime": "2025-08-22T04:44:28.701Z",
+          "endTime": "2025-08-22T04:44:28.701Z",
+          "duration": 0,
+          "input": {
+            "validation_results": {
+              "passed": 7,
+              "failed": 0,
+              "coverage": 100
+            },
+            "success": true
+          },
+          "output": {
+            "entities": [
+              {
+                "name": "FR-001",
+                "description": "The tool MUST accept command-line arguments for input file path and output file path"
+              },
+              {
+                "name": "FR-002",
+                "description": "The tool MUST support CSV, JSON, and TXT file formats"
+              },
+              {
+                "name": "FR-003",
+                "description": "The tool MUST provide conversion between supported formats (CSV to JSON, JSON to CSV, etc.)"
+              },
+              {
+                "name": "FR-004",
+                "description": "The tool MUST validate input file existence and readability"
+              },
+              {
+                "name": "FR-005",
+                "description": "The tool SHOULD provide a --verbose flag for detailed output"
+              },
+              {
+                "name": "FR-006",
+                "description": "The tool SHOULD support batch processing of multiple files"
+              },
+              {
+                "name": "FR-007",
+                "description": "The tool MAY provide progress bars for large file processing"
+              }
+            ],
+            "relationships": [],
+            "metadata": {
+              "created_by": "ITdo Inc. Japan",
+              "created_at": "2024-12-01",
+              "version": "1.0.0",
+              "category": "cli_tool",
+              "difficulty": "basic",
+              "estimated_time": 30
+            }
+          },
+          "success": true
+        },
+        {
+          "phase": "ui-ux-generation",
+          "startTime": "2025-08-22T04:44:28.701Z",
+          "endTime": "2025-08-22T04:44:28.702Z",
+          "duration": 1,
+          "input": {
+            "entities": [
+              {
+                "name": "FR-001",
+                "description": "The tool MUST accept command-line arguments for input file path and output file path"
+              },
+              {
+                "name": "FR-002",
+                "description": "The tool MUST support CSV, JSON, and TXT file formats"
+              },
+              {
+                "name": "FR-003",
+                "description": "The tool MUST provide conversion between supported formats (CSV to JSON, JSON to CSV, etc.)"
+              },
+              {
+                "name": "FR-004",
+                "description": "The tool MUST validate input file existence and readability"
+              },
+              {
+                "name": "FR-005",
+                "description": "The tool SHOULD provide a --verbose flag for detailed output"
+              },
+              {
+                "name": "FR-006",
+                "description": "The tool SHOULD support batch processing of multiple files"
+              },
+              {
+                "name": "FR-007",
+                "description": "The tool MAY provide progress bars for large file processing"
+              }
+            ],
+            "relationships": [],
+            "metadata": {
+              "created_by": "ITdo Inc. Japan",
+              "created_at": "2024-12-01",
+              "version": "1.0.0",
+              "category": "cli_tool",
+              "difficulty": "basic",
+              "estimated_time": 30
+            }
+          },
+          "output": {
+            "entities": [
+              {
+                "name": "FR-001",
+                "description": "The tool MUST accept command-line arguments for input file path and output file path"
+              },
+              {
+                "name": "FR-002",
+                "description": "The tool MUST support CSV, JSON, and TXT file formats"
+              },
+              {
+                "name": "FR-003",
+                "description": "The tool MUST provide conversion between supported formats (CSV to JSON, JSON to CSV, etc.)"
+              },
+              {
+                "name": "FR-004",
+                "description": "The tool MUST validate input file existence and readability"
+              },
+              {
+                "name": "FR-005",
+                "description": "The tool SHOULD provide a --verbose flag for detailed output"
+              },
+              {
+                "name": "FR-006",
+                "description": "The tool SHOULD support batch processing of multiple files"
+              },
+              {
+                "name": "FR-007",
+                "description": "The tool MAY provide progress bars for large file processing"
+              }
+            ],
+            "relationships": [],
+            "metadata": {
+              "created_by": "ITdo Inc. Japan",
+              "created_at": "2024-12-01",
+              "version": "1.0.0",
+              "category": "cli_tool",
+              "difficulty": "basic",
+              "estimated_time": 30
+            }
+          },
+          "success": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "problemId": "WEB-001",
+      "success": true,
+      "score": 0,
+      "executionTime": 11,
+      "phases": [
+        {
+          "phase": "intent-analysis",
+          "startTime": "2025-08-22T04:44:28.714Z",
+          "endTime": "2025-08-22T04:44:28.714Z",
+          "duration": 0,
+          "input": null,
+          "output": {
+            "id": "intent-WEB-001",
+            "title": "Intent for Todo REST API with JWT Authentication",
+            "description": "Todo REST API with JWT Authentication - web_api (intermediate)",
+            "success": true,
+            "metadata": {
+              "created_by": "ITdo Inc. Japan",
+              "created_at": "2024-01-15",
+              "version": "1.1.0",
+              "category": "web_api",
+              "difficulty": "intermediate",
+              "estimated_time": 30
+            }
+          },
+          "success": true
+        },
+        {
+          "phase": "requirements",
+          "startTime": "2025-08-22T04:44:28.714Z",
+          "endTime": "2025-08-22T04:44:28.714Z",
+          "duration": 0,
+          "input": {
+            "id": "intent-WEB-001",
+            "title": "Intent for Todo REST API with JWT Authentication",
+            "description": "Todo REST API with JWT Authentication - web_api (intermediate)",
+            "success": true,
+            "metadata": {
+              "created_by": "ITdo Inc. Japan",
+              "created_at": "2024-01-15",
+              "version": "1.1.0",
+              "category": "web_api",
+              "difficulty": "intermediate",
+              "estimated_time": 30
+            }
+          },
+          "output": {
+            "processed_requirements": [
+              {
+                "id": "FR-001",
+                "description": "WHEN a client sends a valid request, the API SHALL implement CRUD operations for /todos endpoint",
+                "type": "functional",
+                "priority": "must",
+                "acceptance_criteria": [
+                  "WHEN a client sends a valid request, the API SHALL implement CRUD operations for /todos endpoint"
+                ]
+              },
+              {
+                "id": "FR-002",
+                "description": "WHERE the API returns a response, the API SHALL format all responses as JSON with Content-Type: application/json",
+                "type": "functional",
+                "priority": "must",
+                "acceptance_criteria": [
+                  "WHERE the API returns a response, the API SHALL format all responses as JSON with Content-Type: application/json"
+                ]
+              },
+              {
+                "id": "FR-003",
+                "description": "WHEN a user provides valid credentials to /auth/login, the API SHALL return a valid JWT token",
+                "type": "functional",
+                "priority": "must",
+                "acceptance_criteria": [
+                  "WHEN a user provides valid credentials to /auth/login, the API SHALL return a valid JWT token"
+                ]
+              },
+              {
+                "id": "FR-004",
+                "description": "Todo items MUST have fields: id, title, description, completed, created_at, updated_at",
+                "type": "functional",
+                "priority": "must",
+                "acceptance_criteria": [
+                  "Todo items MUST have fields: id, title, description, completed, created_at, updated_at"
+                ]
+              },
+              {
+                "id": "FR-005",
+                "description": "WHEN retrieving todos, the API SHOULD implement pagination with page and limit parameters",
+                "type": "functional",
+                "priority": "should",
+                "acceptance_criteria": [
+                  "WHEN retrieving todos, the API SHOULD implement pagination with page and limit parameters"
+                ]
+              },
+              {
+                "id": "FR-006",
+                "description": "IF the implementation chooses, the API MAY implement filtering by completion status",
+                "type": "functional",
+                "priority": "may",
+                "acceptance_criteria": [
+                  "IF the implementation chooses, the API MAY implement filtering by completion status"
+                ]
+              },
+              {
+                "id": "FR-007",
+                "description": "WHILE processing requests, the API SHALL enforce rate limiting of 100 requests per minute per IP",
+                "type": "functional",
+                "priority": "should",
+                "acceptance_criteria": [
+                  "WHILE processing requests, the API SHALL enforce rate limiting of 100 requests per minute per IP"
+                ]
+              }
+            ],
+            "analysis": "Processed 7 requirements",
+            "success": true
+          },
+          "success": true
+        },
+        {
+          "phase": "user-stories",
+          "startTime": "2025-08-22T04:44:28.714Z",
+          "endTime": "2025-08-22T04:44:28.714Z",
+          "duration": 0,
+          "input": {
+            "processed_requirements": [
+              {
+                "id": "FR-001",
+                "description": "WHEN a client sends a valid request, the API SHALL implement CRUD operations for /todos endpoint",
+                "type": "functional",
+                "priority": "must",
+                "acceptance_criteria": [
+                  "WHEN a client sends a valid request, the API SHALL implement CRUD operations for /todos endpoint"
+                ]
+              },
+              {
+                "id": "FR-002",
+                "description": "WHERE the API returns a response, the API SHALL format all responses as JSON with Content-Type: application/json",
+                "type": "functional",
+                "priority": "must",
+                "acceptance_criteria": [
+                  "WHERE the API returns a response, the API SHALL format all responses as JSON with Content-Type: application/json"
+                ]
+              },
+              {
+                "id": "FR-003",
+                "description": "WHEN a user provides valid credentials to /auth/login, the API SHALL return a valid JWT token",
+                "type": "functional",
+                "priority": "must",
+                "acceptance_criteria": [
+                  "WHEN a user provides valid credentials to /auth/login, the API SHALL return a valid JWT token"
+                ]
+              },
+              {
+                "id": "FR-004",
+                "description": "Todo items MUST have fields: id, title, description, completed, created_at, updated_at",
+                "type": "functional",
+                "priority": "must",
+                "acceptance_criteria": [
+                  "Todo items MUST have fields: id, title, description, completed, created_at, updated_at"
+                ]
+              },
+              {
+                "id": "FR-005",
+                "description": "WHEN retrieving todos, the API SHOULD implement pagination with page and limit parameters",
+                "type": "functional",
+                "priority": "should",
+                "acceptance_criteria": [
+                  "WHEN retrieving todos, the API SHOULD implement pagination with page and limit parameters"
+                ]
+              },
+              {
+                "id": "FR-006",
+                "description": "IF the implementation chooses, the API MAY implement filtering by completion status",
+                "type": "functional",
+                "priority": "may",
+                "acceptance_criteria": [
+                  "IF the implementation chooses, the API MAY implement filtering by completion status"
+                ]
+              },
+              {
+                "id": "FR-007",
+                "description": "WHILE processing requests, the API SHALL enforce rate limiting of 100 requests per minute per IP",
+                "type": "functional",
+                "priority": "should",
+                "acceptance_criteria": [
+                  "WHILE processing requests, the API SHALL enforce rate limiting of 100 requests per minute per IP"
+                ]
+              }
+            ],
+            "analysis": "Processed 7 requirements",
+            "success": true
+          },
+          "output": {
+            "stories": [
+              {
+                "id": "story-FR-001",
+                "title": "User story for FR-001",
+                "description": "WHEN a client sends a valid request, the API SHALL implement CRUD operations for /todos endpoint",
+                "priority": "must"
+              },
+              {
+                "id": "story-FR-002",
+                "title": "User story for FR-002",
+                "description": "WHERE the API returns a response, the API SHALL format all responses as JSON with Content-Type: application/json",
+                "priority": "must"
+              },
+              {
+                "id": "story-FR-003",
+                "title": "User story for FR-003",
+                "description": "WHEN a user provides valid credentials to /auth/login, the API SHALL return a valid JWT token",
+                "priority": "must"
+              },
+              {
+                "id": "story-FR-004",
+                "title": "User story for FR-004",
+                "description": "Todo items MUST have fields: id, title, description, completed, created_at, updated_at",
+                "priority": "must"
+              },
+              {
+                "id": "story-FR-005",
+                "title": "User story for FR-005",
+                "description": "WHEN retrieving todos, the API SHOULD implement pagination with page and limit parameters",
+                "priority": "should"
+              },
+              {
+                "id": "story-FR-006",
+                "title": "User story for FR-006",
+                "description": "IF the implementation chooses, the API MAY implement filtering by completion status",
+                "priority": "may"
+              },
+              {
+                "id": "story-FR-007",
+                "title": "User story for FR-007",
+                "description": "WHILE processing requests, the API SHALL enforce rate limiting of 100 requests per minute per IP",
+                "priority": "should"
+              }
+            ],
+            "success": true
+          },
+          "success": true
+        },
+        {
+          "phase": "validation",
+          "startTime": "2025-08-22T04:44:28.714Z",
+          "endTime": "2025-08-22T04:44:28.714Z",
+          "duration": 0,
+          "input": {
+            "stories": [
+              {
+                "id": "story-FR-001",
+                "title": "User story for FR-001",
+                "description": "WHEN a client sends a valid request, the API SHALL implement CRUD operations for /todos endpoint",
+                "priority": "must"
+              },
+              {
+                "id": "story-FR-002",
+                "title": "User story for FR-002",
+                "description": "WHERE the API returns a response, the API SHALL format all responses as JSON with Content-Type: application/json",
+                "priority": "must"
+              },
+              {
+                "id": "story-FR-003",
+                "title": "User story for FR-003",
+                "description": "WHEN a user provides valid credentials to /auth/login, the API SHALL return a valid JWT token",
+                "priority": "must"
+              },
+              {
+                "id": "story-FR-004",
+                "title": "User story for FR-004",
+                "description": "Todo items MUST have fields: id, title, description, completed, created_at, updated_at",
+                "priority": "must"
+              },
+              {
+                "id": "story-FR-005",
+                "title": "User story for FR-005",
+                "description": "WHEN retrieving todos, the API SHOULD implement pagination with page and limit parameters",
+                "priority": "should"
+              },
+              {
+                "id": "story-FR-006",
+                "title": "User story for FR-006",
+                "description": "IF the implementation chooses, the API MAY implement filtering by completion status",
+                "priority": "may"
+              },
+              {
+                "id": "story-FR-007",
+                "title": "User story for FR-007",
+                "description": "WHILE processing requests, the API SHALL enforce rate limiting of 100 requests per minute per IP",
+                "priority": "should"
+              }
+            ],
+            "success": true
+          },
+          "output": {
+            "validation_results": {
+              "passed": 7,
+              "failed": 0,
+              "coverage": 100
+            },
+            "success": true
+          },
+          "success": true
+        },
+        {
+          "phase": "domain-modeling",
+          "startTime": "2025-08-22T04:44:28.714Z",
+          "endTime": "2025-08-22T04:44:28.714Z",
+          "duration": 0,
+          "input": {
+            "validation_results": {
+              "passed": 7,
+              "failed": 0,
+              "coverage": 100
+            },
+            "success": true
+          },
+          "output": {
+            "entities": [
+              {
+                "name": "FR-001",
+                "description": "WHEN a client sends a valid request, the API SHALL implement CRUD operations for /todos endpoint"
+              },
+              {
+                "name": "FR-002",
+                "description": "WHERE the API returns a response, the API SHALL format all responses as JSON with Content-Type: application/json"
+              },
+              {
+                "name": "FR-003",
+                "description": "WHEN a user provides valid credentials to /auth/login, the API SHALL return a valid JWT token"
+              },
+              {
+                "name": "FR-004",
+                "description": "Todo items MUST have fields: id, title, description, completed, created_at, updated_at"
+              },
+              {
+                "name": "FR-005",
+                "description": "WHEN retrieving todos, the API SHOULD implement pagination with page and limit parameters"
+              },
+              {
+                "name": "FR-006",
+                "description": "IF the implementation chooses, the API MAY implement filtering by completion status"
+              },
+              {
+                "name": "FR-007",
+                "description": "WHILE processing requests, the API SHALL enforce rate limiting of 100 requests per minute per IP"
+              }
+            ],
+            "relationships": [],
+            "metadata": {
+              "created_by": "ITdo Inc. Japan",
+              "created_at": "2024-01-15",
+              "version": "1.1.0",
+              "category": "web_api",
+              "difficulty": "intermediate",
+              "estimated_time": 30
+            }
+          },
+          "success": true
+        },
+        {
+          "phase": "ui-ux-generation",
+          "startTime": "2025-08-22T04:44:28.714Z",
+          "endTime": "2025-08-22T04:44:28.715Z",
+          "duration": 1,
+          "input": {
+            "entities": [
+              {
+                "name": "FR-001",
+                "description": "WHEN a client sends a valid request, the API SHALL implement CRUD operations for /todos endpoint"
+              },
+              {
+                "name": "FR-002",
+                "description": "WHERE the API returns a response, the API SHALL format all responses as JSON with Content-Type: application/json"
+              },
+              {
+                "name": "FR-003",
+                "description": "WHEN a user provides valid credentials to /auth/login, the API SHALL return a valid JWT token"
+              },
+              {
+                "name": "FR-004",
+                "description": "Todo items MUST have fields: id, title, description, completed, created_at, updated_at"
+              },
+              {
+                "name": "FR-005",
+                "description": "WHEN retrieving todos, the API SHOULD implement pagination with page and limit parameters"
+              },
+              {
+                "name": "FR-006",
+                "description": "IF the implementation chooses, the API MAY implement filtering by completion status"
+              },
+              {
+                "name": "FR-007",
+                "description": "WHILE processing requests, the API SHALL enforce rate limiting of 100 requests per minute per IP"
+              }
+            ],
+            "relationships": [],
+            "metadata": {
+              "created_by": "ITdo Inc. Japan",
+              "created_at": "2024-01-15",
+              "version": "1.1.0",
+              "category": "web_api",
+              "difficulty": "intermediate",
+              "estimated_time": 30
+            }
+          },
+          "output": {
+            "entities": [
+              {
+                "name": "FR-001",
+                "description": "WHEN a client sends a valid request, the API SHALL implement CRUD operations for /todos endpoint"
+              },
+              {
+                "name": "FR-002",
+                "description": "WHERE the API returns a response, the API SHALL format all responses as JSON with Content-Type: application/json"
+              },
+              {
+                "name": "FR-003",
+                "description": "WHEN a user provides valid credentials to /auth/login, the API SHALL return a valid JWT token"
+              },
+              {
+                "name": "FR-004",
+                "description": "Todo items MUST have fields: id, title, description, completed, created_at, updated_at"
+              },
+              {
+                "name": "FR-005",
+                "description": "WHEN retrieving todos, the API SHOULD implement pagination with page and limit parameters"
+              },
+              {
+                "name": "FR-006",
+                "description": "IF the implementation chooses, the API MAY implement filtering by completion status"
+              },
+              {
+                "name": "FR-007",
+                "description": "WHILE processing requests, the API SHALL enforce rate limiting of 100 requests per minute per IP"
+              }
+            ],
+            "relationships": [],
+            "metadata": {
+              "created_by": "ITdo Inc. Japan",
+              "created_at": "2024-01-15",
+              "version": "1.1.0",
+              "category": "web_api",
+              "difficulty": "intermediate",
+              "estimated_time": 30
+            }
+          },
+          "success": true
+        }
+      ],
+      "errors": []
+    }
+  ]
+}
