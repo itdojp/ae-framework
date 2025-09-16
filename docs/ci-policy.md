@@ -32,25 +32,32 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - `coverage:<pct>`: override coverage threshold for coverage-check (default 80). e.g., `coverage:75`
  - `qa-batch:commands` / `qa-batch:cli` / `qa-batch:property` / `qa-batch:agents`: run additional CI Fast batches for the specific categories (opt-in)
 
-### Slash Commands (Instant Dispatch)
-- コメントで以下を投稿すると、対象ワークフローをPRのheadブランチで即時起動できます（main取り込み後有効）。
-  - `/verify-lite` … Verify Lite を実行
-  - `/run-qa-dispatch` … ae-ci（QA light）を実行
-  - `/run-security-dispatch` … sbom-generation（Security/SBOM）を実行
-  - `/ci-fast-dispatch` … CI Fast を実行（オプトインのバッチは対応ラベルが付与されている場合のみ動作）
-  - `/formal-verify-dispatch` … Formal Verify を実行（`run-formal` 等のラベルと併用推奨）
-  - バッチ系ラベル付与（例）
-    - `/qa-batch-commands` または `/run-qa:commands` … `qa-batch:commands` を付与
-    - `/qa-batch-cli` または `/run-qa:cli` … `qa-batch:cli` を付与
-    - `/qa-batch-property` または `/run-qa:property` … `qa-batch:property` を付与
-    - `/qa-batch-agents` または `/run-qa:agents` … `qa-batch:agents` を付与
-  - フォーマル/契約（ラベル付与）
-    - `/run-formal` … `run-formal` を付与（verify/formal 系を非ブロッキングで実行）
-    - `/enforce-formal` … `enforce-formal` を付与（有効時にエンフォース）
-    - `/enforce-contracts` … `enforce-contracts` を付与（有効時にエンフォース）
-  - 使い分け例（推奨フロー）
+### Slash Commands (Instant Dispatch / Labels)
+- コメントで以下を投稿すると、対象ワークフローの即時起動やラベル付与ができます（main取り込み後有効）。
+  - Dispatch（workflow_dispatch 直起動）
+    - `/verify-lite` … Verify Lite を実行
+    - `/run-qa-dispatch` … ae-ci（QA light）を実行
+    - `/run-security-dispatch` … sbom-generation（Security/SBOM）を実行
+    - `/ci-fast-dispatch` … CI Fast を実行（バッチ系は対応ラベル付与時のみ稼働）
+    - `/formal-verify-dispatch` … Formal Verify を実行（`run-formal` との併用推奨）
+    - `/run-flake-dispatch` … flake-detect を実行
+    - `/spec-validation-dispatch` … spec-validation を実行
+  - ラベル付与（Opt-in 実行/ポリシー切替）
+    - `/run-qa` … `run-qa` を付与（ae-ci の QA 実行）
+    - `/run-security` … `run-security` を付与（Security/SBOM 実行。PR要約も投稿）
+    - `/run-hermetic` … `run-hermetic` を付与（Hermetic CI 実行）
+    - `/run-spec` … `run-spec` を付与（Fail-Fast Spec 実行）
+    - `/run-drift` … `run-drift` を付与（Codegen Drift 検出）
+    - `/non-blocking` … `ci-non-blocking` を付与（一部ジョブを continue-on-error）
+    - `/ready` … `do-not-merge` を除去（マージ待ちへ）
+    - `/pr-digest` / `/pr-detailed` … PR要約モード切替
+    - `/run-formal` / `/enforce-formal` / `/enforce-contracts` … フォーマル/契約の実行/エンフォース切替
+    - `/coverage <pct|clear>` … `coverage:<pct>` を設定/クリア（しきい値上書き）
+    - `/enforce-typecov` … `enforce-typecov` を付与（型カバレッジ enforcement）
+    - `/enforce-coverage` … `enforce-coverage` を付与（カバレッジ enforcement）
+  - 使い分け例（推奨）
     - 追加確認したいカテゴリのみラベル付与 → `/ci-fast-dispatch` で即時起動
-    - Verify Lite のみ再実行したいときは `/verify-lite`
+    - Verify Lite のみを再実行 → `/verify-lite`
 
 <!-- duplicate section removed: Slash Commands (Instant Dispatch) repeated -->
 
