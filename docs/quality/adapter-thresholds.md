@@ -13,6 +13,11 @@ Current wiring (a11y minimal)
 - `run-adapters`: runs adapter-thresholds.yml to summarize `reports/a11y-results.json` on PR (non-blocking)
 - `enforce-a11y`: enforces minimal thresholds (critical=0, serious=0). Job fails if violated.
 
+Perf (proposal → minimal wiring)
+- `reports/perf-results.json` が存在する場合にスコアを要約（非ブロッキング）
+- `enforce-perf` ラベルでしきい値を強制（`perf:<score>` ラベルで上書き。既定は `vars.PERF_DEFAULT_THRESHOLD` または 75）
+- Slash Commands: `/enforce-perf`, `/perf <pct|clear>`
+
 Phasing
 - Phase 1: Reporting only (post PR comments/artifacts)
 - Phase 2: Label-gated enforcement
