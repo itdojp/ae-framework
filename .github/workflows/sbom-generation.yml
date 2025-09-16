@@ -293,6 +293,76 @@ jobs:
             console.log('Error posting comment:', error);
           }
 
+    # Agent B: Security/Compliance 要約コメント（run-security ラベル時のみ、アップサート）
+    - name: Post Security/Compliance summary (Agent B)
+      if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-security')
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const header = '<!-- AE-SECURITY-SUMMARY -->';
+
+          const readJSONSafe = (f) => {
+            try {
+              if (!fs.existsSync(f)) return null;
+              const raw = fs.readFileSync(f, 'utf8');
+              if (!raw || !raw.trim()) return null;
+              return JSON.parse(raw);
+            } catch (_) {
+              return null;
+            }
+          };
+
+          const audit = readJSONSafe('audit-results.json');
+          const vuln = (audit && audit.metadata && audit.metadata.vulnerabilities) || {};
+          const total = Number(vuln.total || 0);
+          const high = Number(vuln.high || vuln.critical || 0);
+          const moderate = Number(vuln.moderate || 0);
+          const low = Number(vuln.low || 0);
+          const vulnSummary = (audit && ('vulnerabilities' in (audit.metadata || {})))
+            ? `- Total: ${total} (High: ${high}, Moderate: ${moderate}, Low: ${low})`
+            : '- No vulnerabilities found';
+
+          const sbom = readJSONSafe('sbom.json');
+          let licenseLines = ['- No license data available'];
+          if (sbom && Array.isArray(sbom.components)) {
+            const freq = new Map();
+            for (const c of sbom.components) {
+              const ls = Array.isArray(c.licenses) ? c.licenses : [];
+              for (const l of ls) {
+                const key = String(l?.license?.name || l?.expression || '').trim();
+                if (!key) continue;
+                freq.set(key, (freq.get(key) || 0) + 1);
+              }
+            }
+            const sorted = [...freq.entries()].sort((a,b)=>b[1]-a[1]);
+            const take = Math.max(3, Math.min(5, sorted.length));
+            if (take > 0) licenseLines = sorted.slice(0, take).map(([name, count]) => `- ${name}: ${count}`);
+          }
+
+          const body = [
+            header,
+            '## ✅ Security/Compliance Summary',
+            '',
+            '### Dependency Vulnerabilities',
+            vulnSummary,
+            '',
+            '### Top Licenses (3-5)',
+            ...licenseLines,
+            '',
+            '_This is a non-blocking summary for visibility._'
+          ].join('\n');
+
+          const { owner, repo } = context.repo;
+          const issue_number = context.issue.number;
+          const { data: comments } = await github.rest.issues.listComments({ owner, repo, issue_number, per_page: 100 });
+          const existing = comments.find(c => typeof c.body === 'string' && c.body.startsWith(header));
+          if (existing) {
+            await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+          } else {
+            await github.rest.issues.createComment({ owner, repo, issue_number, body });
+          }
+
     # Agent B: Post Security/Compliance summary (upsert)
     - name: Post Security/Compliance summary
       if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-security')
