@@ -115,10 +115,12 @@ function computeOkFromOutput(out){
   // Positive indicators (prefer these if present)
   const positives = [
     /\bno\s+(?:errors?|counterexamples?)\b/i,
+    /no\s+counterexamples?\s+found/i,
     /verification\s+successful/i,
     /\bok\b/i,
     /invariant[^\n]*holds/i,
-    /no\s+violations?/i
+    /no\s+violations?/i,
+    /all\s+propert(?:y|ies)\s+hold/i
   ];
   if (positives.some(re => re.test(out))) return true;
   // Negative indicators

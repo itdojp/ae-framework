@@ -106,7 +106,8 @@ jobs:
           lines.push(confSum ? `- Conformance summary file: ${path.basename(confSum)}` : "- Conformance summary: n/a");
           lines.push("");
           lines.push("_Non-blocking. Add/remove label run-formal to control._");
-          lines.push("_Reproduce locally: pnpm run verify:tla -- --engine=apalache_ (or see docs/quality/formal-runbook.md)");
+          lines.push("_Reproduce locally: pnpm run verify:tla -- --engine=apalache_ (see docs/quality/formal-runbook.md)");
+          lines.push("_Tools check: pnpm run tools:formal:check_");
           const md = lines.join("\n");
           fs.writeFileSync(outMd, md);
           console.log(md);
