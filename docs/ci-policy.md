@@ -108,6 +108,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - `run-qa`: `ae-ci` ワークフローの `qa-bench` を PR で実行（既定は非実行）
 - `run-spec`: 仕様 Fail-Fast を PR で有効化
 - `run-drift`: Codegen Drift 検出を PR で有効化
+ - `run-adapters`: Adapter Thresholds（例: a11y）をPRでレポート（report-only）。`adapter-thresholds.yml` が要約コメントを投稿
 - `run-hermetic`: Hermetic CI を PR で有効化
 - `run-quality`: Parallel Test の quality 行を有効化
 - `run-flake`: flake-detection を PR で有効化
@@ -131,7 +132,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - `run-security` ラベル時は、依存脆弱性のサマリと上位ライセンスの簡易サマリを PR コメントに自動投稿（非ブロッキング）
 
 ### フォーマル（オプトイン）
-- `run-formal` ラベル時のみ、Formal Verify（stub）と成果物の集約（Alloy/TLA/SMT の要約）を実行（非ブロッキング）
+- `run-formal` ラベル時のみ、Formal Verify（stub）と成果物の集約（Alloy/TLA/SMT/Apalache の要約）を実行（非ブロッキング）
 - 集約結果は PR コメントにアップサート（重複を避けるためヘッダー識別）
 - 必須化・閾値強化は段階導入（別Issueで合意のうえ切替）
 
