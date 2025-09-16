@@ -40,6 +40,7 @@ jobs:
           const outDir = "artifacts/formal"; fs.mkdirSync(outDir,{recursive:true});
           const outMd = path.join(outDir, "formal-aggregate.md");
           const outJson = path.join(outDir, "formal-aggregate.json");
+          const GENERATED_AT = new Date().toISOString();
 
           const modelJson = find(base, "model-check-results/model-check.json");
           const alloy = modelJson ? (rj(modelJson)?.alloy || {}) : {};
@@ -133,6 +134,7 @@ jobs:
           lines.push("_Reproduce locally: pnpm run verify:tla -- --engine=apalache_ (see docs/quality/formal-runbook.md)");
           lines.push("_Tools check: pnpm run tools:formal:check_");
           lines.push(`_Clamp: line=${clampInfo.lineClamp}, errors=${clampInfo.errorsLimit}_`);
+          lines.push(`_Generated: ${GENERATED_AT}_`);
           // Normalize markdown: collapse excessive empty lines
           function normalizeMd(arr){
             const out=[]; let prevEmpty=false;
@@ -153,7 +155,7 @@ jobs:
             smt: smt || null,
             apalache: apalache || null,
             conformance: conf || null,
-            info: { lineClamp: LINE_CLAMP, errorsLimit: ERRORS_LIMIT, generatedAt: new Date().toISOString() }
+            info: { lineClamp: LINE_CLAMP, errorsLimit: ERRORS_LIMIT, generatedAt: GENERATED_AT, present }
           };
           fs.writeFileSync(outJson, JSON.stringify(json,null,2));
           console.log(md);
