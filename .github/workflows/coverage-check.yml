@@ -88,13 +88,20 @@ jobs:
             const covLabel = labels.find(n => typeof n === 'string' && n.startsWith('coverage:')) || null;
             const defTh = Number(process.env.COVERAGE_DEFAULT_THRESHOLD || 80);
             const effTh = `${{ needs.gate.outputs.threshold }}`;
-            const policy = ${{ needs.gate.outputs.strict == 'true' }} ? 'enforced' : 'report-only';
+            const strict = `${{ needs.gate.outputs.strict }}` === 'true';
+            const policy = strict ? 'enforced' : 'report-only';
+            let rationale = 'report-only';
+            if (strict) {
+              if (labels.includes('enforce-coverage')) rationale = 'enforced via label: enforce-coverage';
+              else rationale = 'enforced via main + repo vars (COVERAGE_ENFORCE_MAIN)';
+            }
             const lines = [];
             lines.push(`Coverage (lines): ${pct}%`);
             lines.push(`Threshold (effective): ${effTh}%`);
             if (covLabel) lines.push(`- via label: ${covLabel}`);
             lines.push(`- default: ${isFinite(defTh) ? defTh : 80}%`);
             lines.push(`Policy: ${policy}`);
+            lines.push(`Policy source: ${rationale}`);
             const body = header + lines.join('\n');
             const { owner, repo, number } = context.issue;
             const comments = await github.rest.issues.listComments({ owner, repo, issue_number: number, per_page: 100 });

@@ -46,7 +46,7 @@ jobs:
               `Violations: critical=${{ steps.a11y.outputs.critical }}, serious=${{ steps.a11y.outputs.serious }}, moderate=${{ steps.a11y.outputs.moderate }}, minor=${{ steps.a11y.outputs.minor }}`,
               `Passes: ${{ steps.a11y.outputs.passes }}, Components tested: ${{ steps.a11y.outputs.components }}`,
               '',
-              `${{ contains(github.event.pull_request.labels.*.name, 'enforce-a11y') && 'Policy: enforced (label: enforce-a11y)' || 'Policy: report-only' }}`,
+              `${{ contains(github.event.pull_request.labels.*.name, 'enforce-a11y') && 'Policy: enforced (label: enforce-a11y); Threshold: critical=0, serious=0' || 'Policy: report-only; Threshold: critical=0, serious=0' }}`,
               'Docs: docs/quality/adapter-thresholds.md'
             ].join('\n');
             const { owner, repo, number } = context.issue;

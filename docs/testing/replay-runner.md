@@ -29,3 +29,9 @@ REPLAY_STRICT=0 \
 node scripts/testing/replay-runner.mjs
 ```
 
+Sample Fixture
+You can also try the minimal sample fixture included in this repo:
+
+```
+REPLAY_INPUT=scripts/testing/fixtures/replay-sample.json pnpm tsx scripts/testing/replay-runner.mjs
+```

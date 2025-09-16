@@ -6,6 +6,7 @@
 - CI 安定化・段階導入（Verify Lite 必須、その他はラベル駆動）
 - 小さく安全な PR を多数（revert しやすい粒度）
 - actionlint 準拠（echo→printf、GITHUB_OUTPUT/GITHUB_ENV は printf で追記）
+ - Coverage/ Formal の表示はPRコメントに要約を投稿（coverageは閾値の由来/ポリシー、formalは再現ヒントとtoolsチェックを提示）
 
 ## ブランチ/PR運用
 - ブランチ名: `chore/ci-<topic>-<short>`（例: `chore/ci-actionlint-printf-2`）
