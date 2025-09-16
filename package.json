@@ -62,6 +62,7 @@
     "test:fast:batch:commands": "vitest run tests/commands/**",
     "test:fast:batch:cli": "vitest run tests/cli/**",
     "test:fast:batch:property": "vitest run tests/property/**",
+    "test:fast:batch:agents": "vitest run tests/agents/**",
     "test:a11y": "jest --config configs/jest.a11y.config.cjs",
     "test:a11y:report": "node scripts/generate-a11y-report.cjs",
     "test:visual": "vitest run tests/testing/visual-regression.test.ts",

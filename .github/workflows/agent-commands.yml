@@ -103,6 +103,21 @@ jobs:
                 await addLabels(['qa-batch:commands']);
                 return reply('Label `qa-batch:commands` added. Commands tests will run in CI Fast (opt-in).');
               }
+              case '/qa-batch-cli':
+              case '/run-qa:cli': {
+                await addLabels(['qa-batch:cli']);
+                return reply('Label `qa-batch:cli` added. CLI tests will run in CI Fast (opt-in).');
+              }
+              case '/qa-batch-property':
+              case '/run-qa:property': {
+                await addLabels(['qa-batch:property']);
+                return reply('Label `qa-batch:property` added. Property-based tests will run in CI Fast (opt-in).');
+              }
+              case '/qa-batch-agents':
+              case '/run-qa:agents': {
+                await addLabels(['qa-batch:agents']);
+                return reply('Label `qa-batch:agents` added. Agents tests will run in CI Fast (opt-in).');
+              }
               default:
                 return; // ignore
             }
