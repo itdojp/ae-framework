@@ -9,14 +9,13 @@ describe('PBT: Backoff decorrelated jitter sequence bounds', () => {
       async ({ base, mult, steps }) => {
         const maxDelayMs = base * Math.pow(mult, 6);
         const s = new BackoffStrategy({ baseDelayMs: base, maxDelayMs, multiplier: mult, jitterType: 'decorrelated' as const });
-        let prev = (s as any)['calculateDelay'](0);
         for (let attempt=1; attempt<=steps; attempt++) {
           const d = (s as any)['calculateDelay'](attempt);
           const minDelay = base;
-          const maxDelay = Math.min(prev * 3, maxDelayMs);
+          const prevDet = Math.min(base * Math.pow(mult, Math.max(0, attempt - 1)), maxDelayMs);
+          const maxDelay = Math.min(prevDet * 3, maxDelayMs);
           expect(d).toBeGreaterThanOrEqual(minDelay);
           expect(d).toBeLessThanOrEqual(maxDelay);
-          prev = d;
         }
       }
     ), { numRuns: 30 });
