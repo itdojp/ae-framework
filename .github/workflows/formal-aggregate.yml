@@ -100,7 +100,9 @@ jobs:
               lines.push('</details>');
             }
             if (ok === false && apalache.errorSnippet && Array.isArray(apalache.errorSnippet.lines)) {
-              const ctxLines = apalache.errorSnippet.lines.map(l => escMd(clamp(l)));
+              const MAX_LINES = parseInt(process.env.FORMAL_AGG_SNIPPET_MAX_LINES || '20', 10);
+              const ctxAll = apalache.errorSnippet.lines.map(l => escMd(clamp(l))).filter(l => String(l).trim().length>0);
+              const ctxLines = ctxAll.slice(0, Math.max(0, MAX_LINES));
               if (ctxLines.length) {
                 lines.push('');
                 lines.push('- First error context:');
