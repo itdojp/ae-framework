@@ -45,6 +45,7 @@ We take security vulnerabilities seriously. If you discover a security issue, pl
 ### CI Security/Compliance Operations
 
 - On pull requests, security jobs run non-blocking by default and publish artifacts for review.
+- When the `run-security` label is applied to a PR, a brief Security/Compliance summary (dependency vulnerabilities and top licenses) is posted as a PR comment (non-blocking).
 - To enforce thresholds on a PR, apply the `enforce-security` label.
 - Thresholds are configurable via repository variables:
   - `SECURITY_MAX_HIGH` (default 0): allowed High/Critical vulnerabilities
