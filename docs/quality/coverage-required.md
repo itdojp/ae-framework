@@ -1,30 +1,25 @@
-# Coverage Required — Enabling on main
+# Coverage Required — 運用ガイド（ブランチ保護）
 
-This note explains how to enable coverage enforcement on `main` with minimal friction.
+目的
+- PRでは非ブロッキングでカバレッジを可視化し、mainに対しては必要に応じてしきい値を強制する。
 
-Prereqs
-- Workflow: `.github/workflows/coverage-check.yml` (already present)
-- Variables: repository variables are used to derive policy and threshold
+手順（推奨）
+- リポジトリ変数の設定（Settings → Variables → Repository variables）
+  - `COVERAGE_ENFORCE_MAIN=1`（main への push を強制対象に）
+  - `COVERAGE_DEFAULT_THRESHOLD`（例: 80）
+- ブランチ保護（Settings → Branches → Branch protection rules）
+  - `Require status checks to pass before merging` を有効化
+  - ステータスチェックに `coverage-check` を追加（必要に応じて `coverage-check (push)` / `(pull_request)` を選択）
+- 運用
+  - PRではコメントに `Coverage (lines):` と `Threshold (effective):` を表示（`/coverage <pct>` で上書き可能）
+  - main への push 時は `COVERAGE_ENFORCE_MAIN=1` で強制。違反時は失敗。
 
-Steps
-1) Settings → Variables → Repository variables に以下を設定
-   - `COVERAGE_ENFORCE_MAIN=1`
-   - `COVERAGE_DEFAULT_THRESHOLD`（例: `80`）
-2) Branch protection で Required checks に `coverage-check / gate` や `coverage-check / coverage` を追加（運用ポリシーに応じて）
-3) 一定期間、Note/PRコメントのみで観測してから Required を有効化（推奨）
+Tips
+- PRで強制したい場合は `/enforce-coverage` ラベルを付与。
+- しきい値の一時上書き: `/coverage <pct>`（例: 72）。クリア: `/coverage clear`。
+- 詳細は `docs/quality/coverage-policy.md` も参照。
 
-Derivation (recap)
-- Effective threshold は以下の優先順で決まります
-  1. ラベル `coverage:<pct>`（例: `coverage:75`）
-  2. 変数 `COVERAGE_DEFAULT_THRESHOLD`
-  3. 既定 `80`
-
-FAQ
-- Q: PRで失敗することはある？
-  - A: 既定は report-only。`/enforce-coverage` ラベル、または `main` への push かつ `COVERAGE_ENFORCE_MAIN=1` 設定時のみブロッキングになります。
-- Q: どのチェックを Required にすべき？
-  - A: `coverage-check / gate` （方針導出）と `coverage-check / coverage`（実測値）を推奨。運用に合わせて選択してください。
-
-See also
-- `docs/quality/coverage-policy.md`（ポリシー詳細、表示例）
+備考
+- しきい値の決定は「ラベル > リポジトリ変数 > 既定(80)」の順で導出。
+- main Required 化は一度運用して観測した上で合意のもと有効化することを推奨。
 
