@@ -95,9 +95,11 @@ jobs:
           # Check if we have AE-IR and generated code to check
           if [ ! -f ".ae/ae-ir.json" ]; then
             printf "%s\n" "No AE-IR file available for drift detection"
-            printf "%s\n" "drift-status=no-baseline" >> "$GITHUB_OUTPUT"
-            printf "%s\n" "needs-regeneration=false" >> "$GITHUB_OUTPUT"
-            printf "%s\n" "contract-failure=false" >> "$GITHUB_OUTPUT"
+            {
+              printf "%s\n" "drift-status=no-baseline"
+              printf "%s\n" "needs-regeneration=false"
+              printf "%s\n" "contract-failure=false"
+            } >> "$GITHUB_OUTPUT"
             exit 0
           fi
           
@@ -111,9 +113,11 @@ jobs:
           
           if [ -z "$GENERATED_DIRS" ]; then
             printf "%s\n" "No generated code directories found"
-            printf "%s\n" "drift-status=no-generated-code" >> "$GITHUB_OUTPUT"  
-            printf "%s\n" "needs-regeneration=true" >> "$GITHUB_OUTPUT"
-            printf "%s\n" "contract-failure=false" >> "$GITHUB_OUTPUT"
+            {
+              printf "%s\n" "drift-status=no-generated-code"
+              printf "%s\n" "needs-regeneration=true"
+              printf "%s\n" "contract-failure=false"
+            } >> "$GITHUB_OUTPUT"
             exit 0
           fi
           
@@ -163,18 +167,20 @@ jobs:
           
           printf "%s\n" "Overall drift status: $OVERALL_DRIFT"
           printf "%s\n" "Contract failure status: $CONTRACT_FAILURE"
-          printf "%s\n" "drift-status=$OVERALL_DRIFT" >> "$GITHUB_OUTPUT"
-          printf "%s\n" "contract-failure=$CONTRACT_FAILURE" >> "$GITHUB_OUTPUT"
-          
           # Determine if regeneration is needed
           case "$OVERALL_DRIFT" in
             "critical_drift"|"major_drift")
-              printf "%s\n" "needs-regeneration=true" >> "$GITHUB_OUTPUT"
+              NEEDS_REGEN="true"
               ;;
             *)
-              printf "%s\n" "needs-regeneration=false" >> "$GITHUB_OUTPUT"
+              NEEDS_REGEN="false"
               ;;
           esac
+          {
+            printf "%s\n" "drift-status=$OVERALL_DRIFT"
+            printf "%s\n" "contract-failure=$CONTRACT_FAILURE"
+            printf "%s\n" "needs-regeneration=$NEEDS_REGEN"
+          } >> "$GITHUB_OUTPUT"
           
           # Save drift details for PR comment
           {

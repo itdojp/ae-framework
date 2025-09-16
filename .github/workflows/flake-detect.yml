@@ -43,8 +43,10 @@ jobs:
             sleep 5
           done
           
-          printf "%s\n" "FAILS=$fails" >> "$GITHUB_ENV"
-          printf "%s\n" "TOTAL_RUNS=$total_runs" >> "$GITHUB_ENV"
+          {
+            printf "%s\n" "FAILS=$fails"
+            printf "%s\n" "TOTAL_RUNS=$total_runs"
+          } >> "$GITHUB_ENV"
           
           failure_rate=$(printf "%s\n" "scale=2; $fails / $total_runs * 100" | bc -l)
           printf "%s\n" "FAILURE_RATE=$failure_rate" >> "$GITHUB_ENV"

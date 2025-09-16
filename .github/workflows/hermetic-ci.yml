@@ -186,8 +186,10 @@ jobs:
           export TEST_ISOLATION_DIR
           
           # Configure test isolation
-          printf "%s\n" "TEST_ISOLATION=true" >> "$GITHUB_ENV"
-          printf "%s\n" "TEST_SUITE=${{ matrix.test-suite }}" >> "$GITHUB_ENV"
+          {
+            printf "%s\n" "TEST_ISOLATION=true"
+            printf "%s\n" "TEST_SUITE=${{ matrix.test-suite }}"
+          } >> "$GITHUB_ENV"
           
       - name: Run isolated tests
         run: |
