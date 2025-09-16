@@ -239,6 +239,8 @@ Field リファレンス（抜粋）
 - formal-aggregate.yml（PR コメントの整形）
   - `FORMAL_AGG_LINE_CLAMP`（既定 200）: コメントに表示する1行の最大幅
   - `FORMAL_AGG_ERRORS_LIMIT`（既定 5）: エラー行の最大件数
+  - `FORMAL_AGG_SNIPPET_MAX_LINES`（既定 20）: エラースニペット（前後文脈を含む）の最大行数
+  - コメント末尾に `Generated: <ISO8601>` を付与（生成時刻）
 
 いずれも未設定時は既定値で動作し、非ブロッキングです。
 

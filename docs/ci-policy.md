@@ -40,6 +40,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
     - `/run-security-dispatch` … sbom-generation（Security/SBOM）を実行
     - `/ci-fast-dispatch` … CI Fast を実行（バッチ系は対応ラベル付与時のみ稼働）
     - `/formal-verify-dispatch` … Formal Verify を実行（`run-formal` との併用推奨）
+    - `/formal-aggregate-dispatch` … Formal Reports Aggregate を実行（`run-formal` 併用時に集約コメントを生成）
     - `/run-flake-dispatch` … flake-detect を実行
     - `/spec-validation-dispatch` … spec-validation を実行
   - ラベル付与（Opt-in 実行/ポリシー切替）
