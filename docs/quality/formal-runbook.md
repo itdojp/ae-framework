@@ -12,6 +12,7 @@
 
 ### Usage
 - Label-gated CI: add PR label `run-formal` to run formal checks (stub initially)
+- Enforcement: add PR label `enforce-formal` to gate Apalache result (`ok==true`)
 - Manual run: trigger `Formal Verify` via `workflow_dispatch`
   - inputs:
     - `target`: all|conformance|alloy|tla|smt
@@ -76,7 +77,8 @@ jobs:
 - TLA+: `spec/tla/` (README with skeleton)
 - Alloy 6: `spec/alloy/` (README with skeleton)
 - Trace schema: `observability/trace-schema.yaml`
-- Reports (planned): `hermetic-reports/`
+- Reports: `hermetic-reports/`（各ツールのsummary/出力を保存）
+  - Apalache: `hermetic-reports/formal/apalache-summary.json`, `hermetic-reports/formal/apalache-output.txt`
 
 ### Samples
 - TLA+: `spec/tla/DomainSpec.tla`（最小の安全性不変と遷移の例）
