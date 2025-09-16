@@ -42,6 +42,8 @@ jobs:
           const apalacheSum = find(base, "formal-reports-apalache/apalache-summary.json");
           const confSum = find(base, "formal-reports-conformance/conformance-summary.json");
 
+          const apalache = apalacheSum ? rj(apalacheSum) : undefined;
+
           const lines = [];
           lines.push("## 🔎 Formal Reports Aggregate");
           lines.push("");
@@ -50,7 +52,15 @@ jobs:
           lines.push(tlaSum ? `- TLA summary file: ${path.basename(tlaSum)}` : "- TLA summary: n/a");
           lines.push(alloySum ? `- Alloy summary file: ${path.basename(alloySum)}` : "- Alloy summary: n/a");
           lines.push(smtSum ? `- SMT summary file: ${path.basename(smtSum)}` : "- SMT summary: n/a");
-          lines.push(apalacheSum ? `- Apalache summary file: ${path.basename(apalacheSum)}` : "- Apalache summary: n/a");
+          if (apalacheSum && apalache) {
+            const v = apalache.version || 'n/a';
+            const ok = apalache.ok; // may be boolean or null
+            const ran = apalache.ran;
+            const status = apalache.status;
+            lines.push(`- Apalache: ran=${ran? 'yes':'no'} ok=${ok==null? 'n/a': (ok? 'yes':'no')} status=${status||'n/a'} (v=${v})`);
+          } else {
+            lines.push("- Apalache summary: n/a");
+          }
           lines.push(confSum ? `- Conformance summary file: ${path.basename(confSum)}` : "- Conformance summary: n/a");
           lines.push("");
           lines.push("_Non-blocking. Add/remove label run-formal to control._");
