@@ -105,6 +105,8 @@ jobs:
             lines.push(`- default: ${isFinite(defTh) ? defTh : 80}%`);
             lines.push(`Policy: ${policy}`);
             lines.push(`Policy source: ${rationale}`);
+            lines.push('');
+            lines.push('Docs: docs/quality/coverage-policy.md, docs/quality/coverage-required.md');
             const body = header + lines.join('\n');
             const { owner, repo, number } = context.issue;
             const comments = await github.rest.issues.listComments({ owner, repo, issue_number: number, per_page: 100 });
