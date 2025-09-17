@@ -148,13 +148,13 @@ describe('BenchmarkRunner', () => {
   });
 
   describe('runBenchmarks', () => {
-    it('should handle empty problem list', async () => {
+    it(formatGWT('empty list', 'runBenchmarks', 'returns empty results'), async () => {
       const results = await runner.runBenchmarks([]);
       
       expect(results).toEqual([]);
     });
 
-    it('should run multiple problems sequentially when parallel is false', async () => {
+    it(formatGWT('sequential run', 'runBenchmarks (parallel=false)', 'runs problems in sequence'), async () => {
       const problemIds = ['problem-1', 'problem-2', 'problem-3'];
       const startTime = Date.now();
       
