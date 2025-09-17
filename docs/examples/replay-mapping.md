@@ -18,6 +18,10 @@ This note shows a minimal way to prepare inputs and inspect outputs when using t
 - Failure (alt11 byType): `scripts/testing/fixtures/replay-failure.bytype.alt11.sample.json`（byType 風、onhand_min=2 の閾値超過の組合せ）
 <<<<<<< HEAD
 - Failure (alt12 byType): `scripts/testing/fixtures/replay-failure.bytype.alt12.sample.json`（byType 風、allocated_le_onhand と onhand_min の交互違反）
+<<<<<<< HEAD
+- Failure (alt13 byType): `scripts/testing/fixtures/replay-failure.bytype.alt13.sample.json`（byType 風、onhand_min=1/2 混在＋allocated境界の複合）
+=======
+>>>>>>> c7fa9b9 (Merge: ddd batch 37 (rebased) (admin))
 =======
 >>>>>>> b1154fc (Merge: ddd batch 36 (rebased) (admin))
 - Failure (sample3): `scripts/testing/fixtures/replay-failure.sample3.json`（典型的な allocated_le_onhand / onhand_min の違反例）
