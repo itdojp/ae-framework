@@ -11,7 +11,9 @@ const adaptersArr = (c.adapters||[]);
 const statusCounts = adaptersArr.reduce((acc,a)=>{ const s=(a.status||'ok').toLowerCase(); acc[s]=(acc[s]||0)+1; return acc; },{});
 const adaptersLine = adaptersArr.map(a=>`${a.adapter||a.name}: ${a.summary} (${a.status})`).join(', ');
 const adaptersList = adaptersArr.map(a=>`  - ${a.adapter||a.name}: ${a.summary} (${a.status})`).join('\n');
-const formalObj = c.formal || r('formal/summary.json') || {};
+const formalObj = c.formal || r('formal/summary.json') || r('hermetic-reports/formal/summary.json') || {};
+const formalHerm = r('hermetic-reports/formal/summary.json') || {};
+const formalAgg = r('artifacts/formal/formal-aggregate.json') || {};
 const formal = formalObj.result || t('n/a','不明');
 const gwt = r('artifacts/formal/gwt.summary.json');
 const gwtItems = gwt?.items || [];
@@ -59,16 +61,54 @@ const gwtLine = gwtCount
 const bddLine = bdd && (bdd.criteriaCount!==undefined || bdd.title)
   ? t(`BDD: ${bdd.criteriaCount ?? '?'} criteria (${bdd.title ?? 'Feature'})`, `BDD: 受入基準 ${bdd.criteriaCount ?? '?'}（${bdd.title ?? 'Feature'}）`)
   : t('BDD: n/a','BDD: なし');
+// Alloy temporal (from aggregate JSON if present)
+let alloyTemporalLine = '';
+try {
+  const temp = formalAgg?.info?.temporal?.alloy;
+  if (temp && (temp.present || (Array.isArray(temp.operators) && temp.operators.length))) {
+    const ops = Array.isArray(temp.operators) ? temp.operators.join(', ') : '';
+    const pops = Array.isArray(temp.pastOperators) ? temp.pastOperators.join(', ') : '';
+    alloyTemporalLine = t(
+      `Alloy temporal: present=${!!temp.present}${ops? ` ops=[${ops}]`:''}${pops? ` past=[${pops}]`:''}`,
+      `Alloy時相: present=${!!temp.present}${ops? ` ops=[${ops}]`:''}${pops? ` past=[${pops}]`:''}`
+    );
+  }
+} catch {}
 const alerts=[];
 if ((statusCounts.error||0) > errorMax) alerts.push(t(`adapter errors>${errorMax}`, `アダプタ失敗>${errorMax}`));
 if ((statusCounts.warn||0) > warnMax) alerts.push(t(`adapter warnings>${warnMax}`, `アダプタ注意>${warnMax}`));
 const alertsLine = alerts.length ? t(`Alerts: ${alerts.join(', ')}`, `警告: ${alerts.join(', ')}`) : t('Alerts: none','警告: なし');
 let md;
 if (mode === 'digest') {
-  md = `${coverageLine} | ${alertsLine} | ${t('Formal','フォーマル')}: ${formal} | ${replayLine} | ${propsLine} | ${ltlLine} | ${bddLine} | ${gwtLine} | ${adapterCountsLine} | ${adaptersLine} | ${t('Trace','トレース')}: ${Array.from(traceIds).join(', ')}`;
+  md = `${coverageLine} | ${alertsLine} | ${t('Formal','フォーマル')}: ${formal} | ${replayLine} | ${propsLine} | ${ltlLine} | ${bddLine} | ${gwtLine}${alloyTemporalLine? ` | ${alloyTemporalLine}`:''} | ${adapterCountsLine} | ${adaptersLine} | ${t('Trace','トレース')}: ${Array.from(traceIds).join(', ')}`;
 } else {
-  md = `## ${t('Quality Summary','品質サマリ')}\n- ${coverageLine}\n- ${alertsLine}\n- ${gwtLine}\n- ${bddLine}\n- ${propsLine}\n- ${ltlLine}\n- ${adapterCountsLine}\n- ${t('Adapters','アダプタ')}:\n${adaptersList}\n- ${t('Formal','フォーマル')}: ${formal}\n- ${replayLine}\n- ${t('Trace IDs','トレースID')}: ${Array.from(traceIds).join(', ')}`;
+  md = `## ${t('Quality Summary','品質サマリ')}\n- ${coverageLine}\n- ${alertsLine}\n- ${gwtLine}\n- ${bddLine}\n- ${propsLine}\n- ${ltlLine}\n- ${adapterCountsLine}\n- ${t('Adapters','アダプタ')}:\n${adaptersList}\n- ${t('Formal','フォーマル')}: ${formal}\n${alloyTemporalLine? `- ${alloyTemporalLine}\n`:''}- ${replayLine}\n- ${t('Trace IDs','トレースID')}: ${Array.from(traceIds).join(', ')}`;
 }
+// Fallback: if formal is n/a, print presentCount from aggregate JSON
+try {
+  if ((formal === 'n/a' || formal === '不明') && formalAgg?.info && typeof formalAgg.info.presentCount === 'number') {
+    const pc = Number(formalAgg.info.presentCount || 0);
+    const presentKeys = Object.entries(formalAgg.info.present || {}).filter(([,v])=>v).map(([k])=>k).join(', ');
+    const line = t(`Formal: present ${pc}/5${pc? ` (${presentKeys})`:''}`, `フォーマル: present ${pc}/5${pc? `（${presentKeys}）`:''}`);
+    if (mode === 'digest') md += ` | ${line}`; else md += `\n- ${line}`;
+  }
+} catch {}
+
+// Conformance short line (violationRate / hooks matchRate)
+try {
+  const conf = formalHerm?.conformance || {};
+  const vr = (typeof conf.violationRate === 'number') ? conf.violationRate : null;
+  const mr = (typeof formalHerm?.hookReplayMatchRate === 'number')
+    ? formalHerm.hookReplayMatchRate
+    : (typeof conf?.runtimeHooksCompare?.matchRate === 'number' ? conf.runtimeHooksCompare.matchRate : null);
+  if (vr !== null || mr !== null) {
+    const line = t(
+      `Conformance: rate=${vr ?? 'n/a'}${mr!==null? ` hooksMatch=${mr}`:''}`,
+      `適合性: 率=${vr ?? 'n/a'}${mr!==null? ` hooks一致=${mr}`:''}`
+    );
+    if (mode === 'digest') md += ` | ${line}`; else md += `\n- ${line}`;
+  }
+} catch {}
 fs.mkdirSync('artifacts/summary',{recursive:true});
 fs.writeFileSync('artifacts/summary/PR_SUMMARY.md', md);
 console.log(md);

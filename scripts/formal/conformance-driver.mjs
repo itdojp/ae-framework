@@ -19,6 +19,7 @@ const violated = Array.isArray(trace.violatedInvariants) ? trace.violatedInvaria
 const ok = violated.length === 0;
 // Compare runtime hooks with replay summary if both present (best-effort)
 let hooksInfo = null;
+let hooksCompare = null;
 try {
   if (hooks) {
     const events = Array.isArray(hooks) ? hooks : (Array.isArray(hooks.events) ? hooks.events : []);
@@ -33,6 +34,18 @@ try {
       traceId: hooksTraceId,
       matchesReplayTraceId: !!(hooksTraceId && replayTraceId && hooksTraceId === replayTraceId)
     };
+    // Best-effort set comparison if trace.events exists
+    const traceEvents = Array.isArray(trace?.events) ? trace.events : (Array.isArray(trace?.details?.events) ? trace.details.events : null);
+    if (Array.isArray(traceEvents)) {
+      const traceNames = Array.from(new Set(traceEvents.map(e => e && e.event).filter(Boolean)));
+      const hs = new Set(eventNames.filter(Boolean));
+      const ts = new Set(traceNames);
+      const onlyHooks = Array.from(hs).filter(x => !ts.has(x));
+      const onlyTrace = Array.from(ts).filter(x => !hs.has(x));
+      const inter = Array.from(hs).filter(x => ts.has(x));
+      const matchRate = (hs.size + ts.size) > 0 ? +(inter.length / Math.max(hs.size, ts.size)).toFixed(3) : 0;
+      hooksCompare = { onlyHooks, onlyTrace, intersect: inter, matchRate };
+    }
   }
 } catch {}
 const summary = {
@@ -46,7 +59,9 @@ const summary = {
   violatedInvariants: violated,
   spec: spec.result || 'n/a',
   timestamp: new Date().toISOString(),
-  runtimeHooks: hooksInfo
+  runtimeHooks: hooksInfo,
+  runtimeHooksCompare: hooksCompare,
+  hookReplayMatchRate: hooksCompare?.matchRate ?? null
 };
 
 writeJson(out, summary);
