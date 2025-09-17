@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
+import { formatGWT } from '../utils/gwt-format';
 import { CircuitBreaker, CircuitState, CircuitBreakerOpenError } from '../../src/utils/circuit-breaker';
 
 describe('Resilience: CircuitBreaker failureThreshold=3 boundary', () => {
-  it('opens after three consecutive failures and rejects until half-open window', async () => {
+  it(formatGWT('three consecutive failures', 'OPEN before half-open window', 'reject until timeout elapses'), async () => {
     const timeout = 40;
     const cb = new CircuitBreaker('fail3', {
       failureThreshold: 3,
@@ -21,4 +22,3 @@ describe('Resilience: CircuitBreaker failureThreshold=3 boundary', () => {
     expect(cb.getState()).toBe(CircuitState.CLOSED);
   });
 });
-
