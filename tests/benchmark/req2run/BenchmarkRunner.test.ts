@@ -187,7 +187,7 @@ describe('BenchmarkRunner', () => {
   });
 
   describe('error handling', () => {
-    it('should capture phase execution errors', async () => {
+    it(formatGWT('phase execution errors', 'runBenchmark', 'captures errors and marks result unsuccessful'), async () => {
       const result = await runner.runBenchmark('test-problem');
       
       // Since we don't have real implementations, we expect errors
@@ -195,7 +195,7 @@ describe('BenchmarkRunner', () => {
       expect(result.errors).toBeDefined();
     });
 
-    it('should provide meaningful error messages', async () => {
+    it(formatGWT('error report', 'inspect first error', 'provides message/timestamp/phase'), async () => {
       const result = await runner.runBenchmark('test-problem');
       
       if (result.errors && result.errors.length > 0) {
