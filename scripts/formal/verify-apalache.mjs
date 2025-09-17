@@ -97,7 +97,7 @@ const SNIPPET_AFTER = Number(process.env.APALACHE_SNIPPET_AFTER || '2');
 
 function extractErrors(out){
   const lines = (out || '').split(/\r?\n/);
-  const key = /error|violat|counterexample|fail/i;
+  const key = /error|violat|counterexample|fail|unsatisfied/i;
   const picked = [];
   for (const l of lines) { if (key.test(l)) picked.push(l.trim()); if (picked.length>=ERRORS_LIMIT) break; }
   // Trim very long lines for readability in aggregate comments
@@ -105,7 +105,7 @@ function extractErrors(out){
 }
 function countErrors(out){
   const lines = (out || '').split(/\r?\n/);
-  const key = /error|violat|counterexample|fail/i;
+  const key = /error|violat|counterexample|fail|unsatisfied/i;
   let n = 0; for (const l of lines) if (key.test(l)) n++;
   return n;
 }
