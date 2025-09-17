@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { formatGWT } from '../utils/gwt-format';
 import { StandardizedBenchmarkRunner } from '../../src/benchmark/req2run/runners/StandardizedBenchmarkRunner.js';
 import type { BenchmarkConfig, RequirementSpec } from '../../src/benchmark/req2run/types/index.js';
 
@@ -34,7 +35,7 @@ function makeConfig(): BenchmarkConfig {
 }
 
 describe('StandardizedBenchmarkRunner.normalizeSpecification', () => {
-  it('normalizes functional and non-functional requirements to string[]', () => {
+  it(formatGWT('mixed requirement shapes', 'normalize specification', 'functional and non-functional become string[]'), () => {
     const runner = new StandardizedBenchmarkRunner(makeConfig());
     const normalize = (runner as any).normalizeSpecification.bind(runner) as (spec: unknown, id: string) => RequirementSpec;
 
@@ -66,4 +67,3 @@ describe('StandardizedBenchmarkRunner.normalizeSpecification', () => {
     expect(out.difficulty).toBe('basic');
   });
 });
-
