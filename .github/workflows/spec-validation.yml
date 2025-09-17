@@ -55,6 +55,12 @@ jobs:
           pnpm spec:lint --in .ae/ae-ir.json
           printf "%s\n" "✅ Linting completed"
       
+      - name: BDD step lint (non-blocking)
+        if: steps.check-spec.outputs.spec_exists == 'true'
+        run: |
+          printf "%s\n" "🔍 BDD step lint... (non-blocking)"
+          node scripts/bdd/step-lint.mjs || true
+      
       - name: Validate AE-IR structure
         if: steps.check-spec.outputs.spec_exists == 'true'
         run: |
@@ -110,6 +116,10 @@ jobs:
           - **API Endpoints**: $(jq '.api | length' .ae/ae-ir.json)
           - **Use Cases**: $(jq '.usecases | length' .ae/ae-ir.json)
           - **Invariants**: $(jq '.invariants | length' .ae/ae-ir.json)
+          
+          ## BDD Step Lint (non-blocking)
+          
+          $(node -e "const fs=require('fs');const p='artifacts/spec/bdd-step-lint.json';if(fs.existsSync(p)){const j=JSON.parse(fs.readFileSync(p));console.log(`Usecases: ${j.usecases}\\n\\nIssues: ${j.issuesCount}`);if(j.issuesCount){for(const i of j.issues.slice(0,10)){console.log(`- ${i.usecase}: ${i.kind} — ${i.message}`)} }} else { console.log('No lint summary');}")
           
           EOF
           
