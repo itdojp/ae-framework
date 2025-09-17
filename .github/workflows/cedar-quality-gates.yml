@@ -2,6 +2,10 @@ name: Cedar Policies Quality Gates
 
 on:
   pull_request:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
 
 permissions: read-all
 
@@ -66,4 +70,3 @@ jobs:
         if: (steps.cedar.outputs.ng != '' && steps.cedar.outputs.ng != '0') && contains(github.event.pull_request.labels.*.name, 'enforce-security')
         run: |
           printf "%s\n" "::error::Cedar validation found NG=${{ steps.cedar.outputs.ng }} (enforce-security)"; exit 1
-
