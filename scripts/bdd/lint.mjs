@@ -44,6 +44,10 @@ function lintContent(content, file){
         violations.push({ file, line: i+1, message: 'Given should avoid UI-specific terms (focus on domain state)', text: l });
       }
     }
+    // Ambiguous words (STRICT): "maybe/approximately/around/roughly/about"
+    if (STRICT && /(\bmaybe\b|\bapproximately\b|\baround\b|\broughly\b|\babout\b)/i.test(l)){
+      violations.push({ file, line: i+1, message: 'Ambiguous wording detected (prefer precise, testable phrasing)', text: l });
+    }
   }
   return violations;
 }

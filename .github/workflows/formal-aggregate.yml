@@ -236,7 +236,10 @@ jobs:
                   ? conf.hookReplayMatchRate
                   : (conf.runtimeHooksCompare && typeof conf.runtimeHooksCompare.matchRate === 'number'
                     ? conf.runtimeHooksCompare.matchRate
-                    : null)))
+                    : null))),
+                onlyHooksCount: (conf && conf.hookStats && typeof conf.hookStats.onlyHooksCount === 'number') ? conf.hookStats.onlyHooksCount : null,
+                onlyTraceCount: (conf && conf.hookStats && typeof conf.hookStats.onlyTraceCount === 'number') ? conf.hookStats.onlyTraceCount : null,
+                intersectCount: (conf && conf.hookStats && typeof conf.hookStats.intersectCount === 'number') ? conf.hookStats.intersectCount : null
               }
             }
           };
