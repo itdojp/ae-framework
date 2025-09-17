@@ -47,6 +47,12 @@ jobs:
           printf "%s\n" "🔄 Compiling AE-Spec to AE-IR..."
           pnpm spec:compile --in spec/ae-spec.md --out .ae/ae-ir.json
           printf "%s\n" "✅ Compilation successful"
+
+      - name: Generate contracts & replay fixtures (non-blocking)
+        if: steps.check-spec.outputs.spec_exists == 'true'
+        run: |
+          node scripts/spec/generate-contracts.mjs || true
+          node scripts/spec/generate-replay-fixtures.mjs || true
       
       - name: Lint AE-IR (ambiguity/undefined/conflicts)
         if: steps.check-spec.outputs.spec_exists == 'true'
@@ -134,6 +140,9 @@ jobs:
           path: |
             .ae/ae-ir.json
             spec-validation-report.md
+            artifacts/spec/bdd-step-lint.json
+            artifacts/contracts/contracts-summary.json
+            artifacts/domain/replay-fixtures.sample.json
           retention-days: 30
       
       - name: Post PR comment (upsert)
