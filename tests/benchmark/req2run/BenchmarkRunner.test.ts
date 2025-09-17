@@ -137,7 +137,7 @@ describe('BenchmarkRunner', () => {
       expect(result.executionDetails).toHaveProperty('environment');
     });
 
-    it('should measure execution time properly', async () => {
+    it(formatGWT('runBenchmark timing', 'measure execution duration', 'returns positive duration within tolerance'), async () => {
       const startTime = Date.now();
       const result = await runner.runBenchmark('test-problem');
       const endTime = Date.now();
@@ -168,7 +168,7 @@ describe('BenchmarkRunner', () => {
       expect(endTime - startTime).toBeGreaterThan(0);
     });
 
-    it('should handle parallel execution when enabled', async () => {
+    it(formatGWT('parallel execution enabled', 'runBenchmarks', 'runs with specified maxConcurrency'), async () => {
       // Create config with parallel execution
       const parallelConfig = {
         ...mockConfig,
