@@ -7,8 +7,13 @@ describe('PBT: TokenOptimizer random large docs (mixed order)', () => {
   it(
     formatGWT('random large mixed docs', 'compressSteeringDocuments', 'priority order among present & tokens reduce or equal'),
     async () => {
+      // Extract unique keys arbitrary for readability and reuse
+      const uniqueKeysArb = fc
+        .array(fc.constantFrom('product', 'design', 'architecture', 'standards'), { minLength: 2, maxLength: 4 })
+        .map((a) => Array.from(new Set(a)));
+
       await fc.assert(
-        fc.asyncProperty(fc.array(fc.constantFrom('product','design','architecture','standards'), {minLength:2, maxLength:4}).map(a=>Array.from(new Set(a))), async (keys) => {
+        fc.asyncProperty(uniqueKeysArb, async (keys) => {
           const docs: Record<string,string> = {};
           for (const k of keys) docs[k] = (k+': '+('lorem '.repeat(50))).repeat(3);
           const opt = new TokenOptimizer();
@@ -23,4 +28,3 @@ describe('PBT: TokenOptimizer random large docs (mixed order)', () => {
     }
   );
 });
-
