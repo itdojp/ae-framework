@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { formatGWT } from '../utils/gwt-format';
 import { SelfImprovementTDDSetup, createSelfImprovementTDDSetup } from '../../src/self-improvement/tdd-setup.js';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -62,19 +63,25 @@ describe('SelfImprovementTDDSetup', () => {
   });
 
   describe('initialization', () => {
-    it('should create TDD setup with default configuration', () => {
+    it(
+      formatGWT('TDD setup', 'create with default configuration', 'instance is created'),
+      () => {
       const defaultSetup = new SelfImprovementTDDSetup();
       expect(defaultSetup).toBeInstanceOf(SelfImprovementTDDSetup);
-    });
+    }
+    );
 
-    it('should create TDD setup with custom configuration', () => {
+    it(
+      formatGWT('TDD setup', 'create with custom configuration', 'instance is created'),
+      () => {
       const config = {
         projectRoot: '/custom/path',
         targetCoverage: 90
       };
       const customSetup = new SelfImprovementTDDSetup(config);
       expect(customSetup).toBeInstanceOf(SelfImprovementTDDSetup);
-    });
+    }
+    );
 
     it('should be created via factory function', () => {
       const factorySetup = createSelfImprovementTDDSetup();

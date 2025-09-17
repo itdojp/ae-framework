@@ -66,6 +66,7 @@ export const CAUTION_PATTERNS = [
   /caveat[:\s]/i,              // EN "Caveat:"
   /disclaimer[:\s]/i,          // EN "Disclaimer:"
   /please\s+note[:\s]/i,       // EN "Please note:"
+  /fyi[:\s]/i,                 // EN "FYI:"
   /\bN\.?B\.?[:\s]/i,          // EN "NB:" / "N.B.:"
   /hinweis[:\s]/i,             // DE "Hinweis:"
   /warnung[:\s]/i,             // DE "Warnung:"
@@ -93,6 +94,8 @@ export const CAUTION_PATTERNS = [
   /補足[:：]?/ ,                 // JA "補足:"（コロン有無）
   /注意喚起/ ,                  // JA "注意喚起"
   /注意事項/ ,                  // JA "注意事項"
+  /参考までに/ ,                // JA "参考までに"
+  /ご参考/ ,                    // JA "ご参考"
   /注意/                        // JA "注意"
   ,/ご承知おきください/         // JA 丁寧な注意喚起
 ];
