@@ -48,6 +48,7 @@ jobs:
             lines.push(`Passes: ${{ steps.a11y.outputs.passes }}, Components tested: ${{ steps.a11y.outputs.components }}`);
             lines.push('');
             lines.push('Threshold (effective): critical=0, serious=0');
+            lines.push('Derived: fixed thresholds (critical=0, serious=0)');
             lines.push(`Policy: ${enforced==='true' ? 'enforced (label: enforce-a11y)' : 'report-only'}`);
             lines.push(`Policy source: ${enforced==='true' ? 'enforced via label: enforce-a11y' : 'report-only'}`);
             lines.push('');
@@ -65,11 +66,13 @@ jobs:
         if: steps.a11y.outputs.present == 'true'
         run: |
           FILE="reports/a11y-results.json"
-          if jq -e '.violations?.critical? // empty' "$FILE" >/dev/null 2>&1; then
+          # check that violations.critical/serious are numbers and components_tested is array (if present)
+          if jq -e '(.violations.critical|type=="number") and (.violations.serious|type=="number")' "$FILE" >/dev/null 2>&1; then
             printf "%s\n" "a11y JSON shape ok";
           else
-            printf "%s\n" "::warning::a11y JSON shape unexpected (.violations.critical not found)";
+            printf "%s\n" "::warning::a11y JSON shape unexpected (violations.critical/serious numeric check failed)";
           fi
+          if jq -e '.components_tested|type=="array"' "$FILE" >/dev/null 2>&1; then :; else printf "%s\n" "::warning::a11y components_tested not array (optional)"; fi
       - name: Enforce a11y thresholds (critical/serious==0)
         if: steps.a11y.outputs.present == 'true' && contains(github.event.pull_request.labels.*.name, 'enforce-a11y')
         run: |
