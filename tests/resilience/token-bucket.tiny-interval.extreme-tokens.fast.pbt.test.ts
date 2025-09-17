@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { TokenBucketRateLimiter } from '../../src/resilience/backoff-strategies';
 import { formatGWT } from '../utils/gwt-format';
+import { formatGWT } from '../utils/gwt-format';
 
 describe('PBT: TokenBucket tiny interval with relatively large tokens (fast)', () => {
   it(formatGWT('tiny interval & larger tokens', '5 steps oversubscribe+wait', 'tokens within [0,max]'), async () => {
@@ -27,4 +28,3 @@ describe('PBT: TokenBucket tiny interval with relatively large tokens (fast)', (
     );
   });
 });
-
