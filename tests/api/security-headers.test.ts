@@ -126,7 +126,9 @@ describe('Security Headers Middleware', () => {
     }
   );
 
-  it('should handle health check endpoint correctly', async () => {
+  it(
+    formatGWT('GET /health', 'returns JSON status and all security headers', 'healthy + headers present'),
+    async () => {
     const response = await app.inject({
       method: 'GET',
       url: '/health'

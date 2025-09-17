@@ -35,13 +35,18 @@ describe('Parallel Optimization Engine', () => {
       expect(metrics.activeWorkers).toBeGreaterThanOrEqual(0);
     });
 
-    it('should start and stop correctly', () => {
-      optimizer.start();
-      const metrics = optimizer.getOptimizationMetrics();
-      expect(metrics.activeWorkers).toBeGreaterThan(0);
-    });
+    it(
+      formatGWT('optimizer lifecycle', 'start then inspect metrics', 'active workers > 0'),
+      () => {
+        optimizer.start();
+        const metrics = optimizer.getOptimizationMetrics();
+        expect(metrics.activeWorkers).toBeGreaterThan(0);
+      }
+    );
 
-    it('should submit and process tasks', async () => {
+    it(
+      formatGWT('task submission', 'submit then check queue metrics', 'queue length >= 0'),
+      async () => {
       optimizer.start();
       
       const task: ParallelTask = {
@@ -68,7 +73,8 @@ describe('Parallel Optimization Engine', () => {
       
       const metrics = optimizer.getOptimizationMetrics();
       expect(metrics.queueLength).toBeGreaterThanOrEqual(0);
-    });
+    }
+    );
 
     it('should wait for task completion', async () => {
       optimizer.start();
