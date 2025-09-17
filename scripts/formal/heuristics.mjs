@@ -56,6 +56,7 @@ export const CAUTION_PATTERNS = [
   /attention[:\s]/i,           // EN/FR-like "attention:"
   /achtung[:\s]/i,             // DE "Achtung:"
   /precaución[:\s]/i,          // ES "Precaución:"
+  /advertencia[:\s]/i,         // ES "Advertencia:"
   /aviso[:\s]/i,               // ES "Aviso:"
   /warning[:\s]/i,             // EN "Warning:"
   /note[:\s]/i,                // EN "Note:"
@@ -68,6 +69,7 @@ export const CAUTION_PATTERNS = [
   /heads?\s*up[:\s]/i,         // EN "Heads up:"
   /psa[:\s]/i,                 // EN "PSA:"
   /注意[:：]/,                    // JA "注意:" / 全角コロン対応
+  /警告[:：]?/ ,                  // JA "警告:"（コロン有無）
   /備考[:：]/,                    // JA "備考:" / 全角コロン対応
   /留意点/ ,                    // JA "留意点"
   /重要[:：]/ ,                  // JA "重要:" / 全角コロン対応
