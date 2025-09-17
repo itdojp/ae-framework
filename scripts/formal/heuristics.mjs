@@ -70,6 +70,7 @@ export const CAUTION_PATTERNS = [
   /for\s+your\s+reference[:\s]/i, // EN "For your reference:"
   /reminder[:\s]/i,            // EN "Reminder:"
   /be\s+advised[:\s]/i,        // EN "Be advised:"
+  /please\s+be\s+advised[:\s]/i, // EN "Please be advised:"
   /\bN\.?B\.?[:\s]/i,          // EN "NB:" / "N.B.:"
   /hinweis[:\s]/i,             // DE "Hinweis:"
   /warnung[:\s]/i,             // DE "Warnung:"
