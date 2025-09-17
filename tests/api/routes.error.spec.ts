@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest'
+import { formatGWT } from '../utils/gwt-format'
 import { handler as postReservation } from '../../src/routes/reservations-post'
 import { handler as getInventory } from '../../src/routes/inventory-sku-get'
 
 describe('route handlers (error paths)', () => {
-  it('POST /reservations returns 400 on validation error', async () => {
+  it(formatGWT('invalid payload', 'POST /reservations', 'returns 400'), async () => {
     const res: any = await postReservation({})
     expect(res.status).toBe(400)
     expect(res.error).toBeDefined()
@@ -19,7 +20,7 @@ describe('route handlers (error paths)', () => {
     }
   })
 
-  it('GET /inventory/:sku returns 400 on missing sku', async () => {
+  it(formatGWT('missing sku', 'GET /inventory/:sku', 'returns 400'), async () => {
     const res: any = await getInventory({})
     expect(res.status).toBe(400)
     expect(res.error).toBeDefined()
