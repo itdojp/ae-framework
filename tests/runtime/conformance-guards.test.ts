@@ -3,6 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { formatGWT } from '../utils/gwt-format';
 import { z } from 'zod';
 // Mock OpenTelemetry
 vi.mock('@opentelemetry/api', () => ({
@@ -390,10 +391,13 @@ describe('ConformanceRegistry', () => {
       expect(guard?.getConfig().context).toBeDefined();
     });
 
-    it('should return null for unknown schema', () => {
-      const guard = registry.createGuard('unknown-schema');
-      expect(guard).toBeNull();
-    });
+    it(
+      formatGWT('unknown schema name', 'createGuard is called', 'returns null'),
+      () => {
+        const guard = registry.createGuard('unknown-schema');
+        expect(guard).toBeNull();
+      }
+    );
 
     it('should list registered guards', () => {
       const schema = z.object({ name: z.string() });

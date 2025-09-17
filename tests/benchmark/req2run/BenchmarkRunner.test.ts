@@ -251,7 +251,9 @@ describe('BenchmarkRunner', () => {
   });
 
   describe('execution environment', () => {
-    it('should capture environment information', async () => {
+    it(
+      formatGWT('benchmark run', 'capture execution environment info', 'nodeVersion/platform/arch/memory/cpuCount present'),
+      async () => {
       const result = await runner.runBenchmark('test-problem');
       
       expect(result.executionDetails.environment).toBeDefined();
@@ -260,6 +262,7 @@ describe('BenchmarkRunner', () => {
       expect(result.executionDetails.environment.arch).toBeDefined();
       expect(typeof result.executionDetails.environment.memory).toBe('number');
       expect(typeof result.executionDetails.environment.cpuCount).toBe('number');
-    });
+    }
+    );
   });
 });
