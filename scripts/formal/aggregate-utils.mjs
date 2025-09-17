@@ -33,3 +33,23 @@ export function computeAggregateInfo(baseDir){
   return { present, presentCount, ranOk };
 }
 
+// Deterministic表示用のキー順（tla→alloy→smt→apalache→conformance）
+export const ORDERED_PRESENT_KEYS = ['tla', 'alloy', 'smt', 'apalache', 'conformance'];
+
+// present（{k: boolean}）から、true のものを ORDERED_PRESENT_KEYS 順に並べて返す
+export function orderedPresentPairs(present){
+  if (!present) return [];
+  return ORDERED_PRESENT_KEYS
+    .filter((k) => present[k])
+    .map((k) => [k, true]);
+}
+
+// MD向けの一行表現を組み立て（空なら空文字）。呼び出し側で前置語を付ける想定でも可
+export function formatByTypePresentLine(info){
+  const p = info?.present || {};
+  const pairs = orderedPresentPairs(p);
+  const count = pairs.length;
+  if (count === 0) return 'By-type present: 0/5';
+  const names = pairs.map(([k]) => k).join(', ');
+  return `By-type present: ${count}/5 (${names})`;
+}
