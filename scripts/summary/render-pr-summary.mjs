@@ -88,11 +88,14 @@ try {
     : (typeof conf?.runtimeHooksCompare?.matchRate === 'number' ? conf.runtimeHooksCompare.matchRate : null);
   const onlyH = (typeof formalAgg?.info?.conformance?.onlyHooksCount === 'number') ? formalAgg.info.conformance.onlyHooksCount : null;
   const onlyT = (typeof formalAgg?.info?.conformance?.onlyTraceCount === 'number') ? formalAgg.info.conformance.onlyTraceCount : null;
+  const hEv = (typeof formalAgg?.info?.conformance?.hookEvents === 'number') ? formalAgg.info.conformance.hookEvents : null;
+  const tEv = (typeof formalAgg?.info?.conformance?.traceEvents === 'number') ? formalAgg.info.conformance.traceEvents : null;
   const delta = (onlyH!==null || onlyT!==null) ? ` Δ(hooks=${onlyH ?? 'n/a'}/trace=${onlyT ?? 'n/a'})` : '';
+  const evs = (hEv!==null || tEv!==null) ? ` ev(h=${hEv ?? 'n/a'}/t=${tEv ?? 'n/a'})` : '';
   if (vr !== null || mr !== null) {
     conformanceLine = t(
-      `Conformance: rate=${vr ?? 'n/a'}${mr!==null? ` hooksMatch=${mr}`:''}${delta}`,
-      `適合性: 率=${vr ?? 'n/a'}${mr!==null? ` hooks一致=${mr}`:''}${delta}`
+      `Conformance: rate=${vr ?? 'n/a'}${mr!==null? ` hooksMatch=${mr}`:''}${delta}${evs}`,
+      `適合性: 率=${vr ?? 'n/a'}${mr!==null? ` hooks一致=${mr}`:''}${delta}${evs}`
     );
   }
 } catch {}

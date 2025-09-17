@@ -239,7 +239,9 @@ jobs:
                     : null))),
                 onlyHooksCount: (conf && conf.hookStats && typeof conf.hookStats.onlyHooksCount === 'number') ? conf.hookStats.onlyHooksCount : null,
                 onlyTraceCount: (conf && conf.hookStats && typeof conf.hookStats.onlyTraceCount === 'number') ? conf.hookStats.onlyTraceCount : null,
-                intersectCount: (conf && conf.hookStats && typeof conf.hookStats.intersectCount === 'number') ? conf.hookStats.intersectCount : null
+                intersectCount: (conf && conf.hookStats && typeof conf.hookStats.intersectCount === 'number') ? conf.hookStats.intersectCount : null,
+                hookEvents: (conf && conf.hookStats && typeof conf.hookStats.events === 'number') ? conf.hookStats.events : null,
+                traceEvents: (conf && conf.hookStats && typeof conf.hookStats.replayEvents === 'number') ? conf.hookStats.replayEvents : null
               }
             }
           };
