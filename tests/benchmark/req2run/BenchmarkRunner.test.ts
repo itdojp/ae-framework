@@ -99,7 +99,7 @@ describe('BenchmarkRunner', () => {
   });
 
   describe('runBenchmark', () => {
-    it('should handle missing problem specification gracefully', async () => {
+    it(formatGWT('missing problem specification', 'runBenchmark', 'returns error result structure'), async () => {
       const result = await runner.runBenchmark('non-existent-problem');
       
       expect(result.success).toBe(false);
@@ -109,7 +109,7 @@ describe('BenchmarkRunner', () => {
       expect(result.metrics.overallScore).toBe(0);
     });
 
-    it('should return proper result structure', async () => {
+    it(formatGWT('valid run call', 'runBenchmark', 'returns proper result structure'), async () => {
       const result = await runner.runBenchmark('test-problem');
       
       expect(result).toHaveProperty('problemId');
