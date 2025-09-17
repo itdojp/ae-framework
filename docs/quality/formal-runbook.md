@@ -52,6 +52,10 @@ Aggregate JSON の軽量検証（非ブロッキング）
   - ran/ok（Apalache の例）:
     - `jq -r '.info.ranOk.apalache' artifacts/formal/formal-aggregate.json`
 
+Note（Aggregate comment wrapping）
+- Long-line wrapping in the aggregate PR comment can be enabled via env `FORMAL_AGG_WRAP_WIDTH`.
+- Default is OFF (no wrapping) to keep current look-and-feel; set a value like `80` to wrap outside code fences.
+
 Keys quick reference (aggregate JSON)
 - `info.present`: presence flags for tla/alloy/smt/apalache/conformance
 - `info.presentCount`: number of present summaries (0..5)
