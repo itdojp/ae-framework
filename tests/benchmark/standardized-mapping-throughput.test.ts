@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { formatGWT } from '../utils/gwt-format';
 import { StandardizedBenchmarkRunner } from '../../src/benchmark/req2run/runners/StandardizedBenchmarkRunner.js';
 import type { BenchmarkConfig } from '../../src/benchmark/req2run/types/index.js';
 
@@ -19,7 +20,7 @@ function cfg(): BenchmarkConfig {
 }
 
 describe('StandardizedBenchmarkRunner mapping and throughput', () => {
-  it('maps standardized phases to AEFrameworkPhase enum', () => {
+  it(formatGWT('standardized phases', 'map to AEFrameworkPhase enum', 'mapping is correct'), () => {
     const r = new StandardizedBenchmarkRunner(cfg());
     const map = (r as any).mapStandardPhaseToLegacy.bind(r) as (name: string) => any;
 
@@ -31,7 +32,7 @@ describe('StandardizedBenchmarkRunner mapping and throughput', () => {
     expect(map('ui-ux-generation')).toBeDefined();
   });
 
-  it('calculates throughput as phases per second', () => {
+  it(formatGWT('benchmark results', 'calculate throughput', 'phases per second is returned'), () => {
     const r = new StandardizedBenchmarkRunner(cfg());
     const calc = (r as any).calculateThroughput.bind(r) as (pr: any) => number;
 
@@ -43,4 +44,3 @@ describe('StandardizedBenchmarkRunner mapping and throughput', () => {
     expect(tp).toBeCloseTo(2.0, 3); // 4 / (2000/1000) = 2.0
   });
 });
-
