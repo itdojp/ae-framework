@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { formatGWT } from '../utils/gwt-format';
 import { createServer } from '../../src/api/server.js';
 import { FastifyInstance } from 'fastify';
 
@@ -19,7 +20,9 @@ describe('Security Headers Middleware', () => {
     await app.close();
   });
 
-  it('should add Content-Security-Policy header', async () => {
+  it(
+    formatGWT('GET /health', 'adds Content-Security-Policy header', 'CSP is present and default-src self'),
+    async () => {
     const response = await app.inject({
       method: 'GET',
       url: '/health'
@@ -28,16 +31,20 @@ describe('Security Headers Middleware', () => {
     expect(response.statusCode).toBe(200);
     expect(response.headers['content-security-policy']).toBeDefined();
     expect(response.headers['content-security-policy']).toContain("default-src 'self'");
-  });
+  }
+  );
 
-  it('should add X-Frame-Options header', async () => {
+  it(
+    formatGWT('GET /health', 'adds X-Frame-Options header', 'DENY is set'),
+    async () => {
     const response = await app.inject({
       method: 'GET',
       url: '/health'
     });
 
     expect(response.headers['x-frame-options']).toBe('DENY');
-  });
+  }
+  );
 
   it('should add X-Content-Type-Options header', async () => {
     const response = await app.inject({
