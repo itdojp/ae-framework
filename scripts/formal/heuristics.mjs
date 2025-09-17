@@ -76,13 +76,14 @@ export const CAUTION_PATTERNS = [
   /aten[cç]ão[:\s]/i,          // PT "Atenção:"
   /let\s*op[:\s]/i,            // NL "Let op:"
   /opgelet[:\s]/i,             // NL "Opgelet:"
-  /heads?\s*up[:\s]/i,         // EN "Heads up:"
+  /heads?-?\s*up[:\s]/i,        // EN "Heads up:" / "Heads-up:"
   /psa[:\s]/i,                 // EN "PSA:"
   /注意[:：]/,                    // JA "注意:" / 全角コロン対応
   /ご注意/ ,                      // JA "ご注意"
   /警告[:：]?/ ,                  // JA "警告:"（コロン有無）
   /備考[:：]/,                    // JA "備考:" / 全角コロン対応
   /留意点/ ,                    // JA "留意点"
+  /ご留意/ ,                    // JA "ご留意ください" など
   /注意点/ ,                    // JA "注意点"
   /重要[:：]/ ,                  // JA "重要:" / 全角コロン対応
   /注記[:：]?/ ,                 // JA "注記:"（コロン有無）
