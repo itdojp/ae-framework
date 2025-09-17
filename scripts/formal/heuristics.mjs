@@ -30,7 +30,11 @@ export const NEGATIVE_PATTERNS = [
   // Minimal multilingual negatives (conservative)
   /contre[- ]exemples?\s+(?:trouv\w*|détect\w*)/i, // French: counterexample found/detected
   /contraejemplos?\s+(?:encontrad\w*|detectad\w*)/i, // Spanish
-  /gegenbeispiele?\s+(?:gefunden|entdeckt)/i     // German
+  /gegenbeispiele?\s+(?:gefunden|entdeckt)/i,    // German
+  // Additional boundaries: explicit failure/violation in FR/ES/DE
+  /échec\s+(?:détecté|trouvé)/i,                  // FR failure detected/found
+  /violación\s+(?:detectada|encontrada)/i,        // ES violation detected/found
+  /fehlers?\s+gefunden/i                          // DE error(s) found
 ];
 
 export function computeOkFromOutput(out){
