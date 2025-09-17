@@ -90,6 +90,8 @@ jobs:
           lines.push(`Present: ${presentCount}/5${presentCount? ` (${presentKeys.join(', ')})` : ''}`);
           lines.push(`Presence Summary: TLA=${present.tla? 'present':'n/a'} | Alloy=${present.alloy? 'present':'n/a'} | SMT=${present.smt? 'present':'n/a'} | Apalache=${apLine} | Conformance=${present.conformance? 'present':'n/a'}`);
           lines.push("");
+          // Visual separation for presence block
+          lines.push("—");
 
           if (apalacheSum && apalache) {
             const v = apalache.version || 'n/a';
