@@ -60,7 +60,8 @@ const summary = {
   spec: spec.result || 'n/a',
   timestamp: new Date().toISOString(),
   runtimeHooks: hooksInfo,
-  runtimeHooksCompare: hooksCompare
+  runtimeHooksCompare: hooksCompare,
+  hookReplayMatchRate: hooksCompare?.matchRate ?? null
 };
 
 writeJson(out, summary);
