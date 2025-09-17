@@ -10,7 +10,7 @@
 
 ## English
 
-### Usage
+### Usage (CI / Labels)
 - Label-gated CI: add PR label `run-formal` to run formal checks (stub initially)
 - Enforcement: add PR label `enforce-formal` to gate Apalache result (`ok==true`)
 - Manual run: trigger `Formal Verify` via `workflow_dispatch`
