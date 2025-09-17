@@ -5,8 +5,15 @@ import path from 'node:path';
 function listFeatureFiles(dir='features'){ try { return fs.readdirSync(dir).filter(f=>f.endsWith('.feature')).map(f=>path.join(dir,f)); } catch { return []; } }
 function read(p){ try { return fs.readFileSync(p,'utf-8'); } catch { return ''; } }
 
-// Simple heuristic: When lines should mention an Aggregate Root (InventoryItem)
-const ROOTS = [/\bInventoryItem\b/];
+// Simple heuristic roots; overridable via env BDD_ROOTS (comma-separated)
+const ROOTS = (() => {
+  const env = process.env.BDD_ROOTS;
+  if (env && env.trim()) {
+    return env.split(',').map(s=>s.trim()).filter(Boolean).map(n=>new RegExp(`\\b${n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`));
+  }
+  return [/\bInventoryItem\b/];
+})();
+const STRICT = !!(process.env.BDD_LINT_STRICT && process.env.BDD_LINT_STRICT !== '0' && process.env.BDD_LINT_STRICT.toLowerCase() !== 'false');
 
 function lintContent(content, file){
   const lines=content.split(/\r?\n/);
@@ -16,6 +23,11 @@ function lintContent(content, file){
     if (/^When\b/i.test(l)){
       const ok = ROOTS.some(r=>r.test(l)) && !/\bset to\b/i.test(l);
       if (!ok) violations.push({ file, line: i+1, message: 'When must use Aggregate Root command and avoid direct state mutation', text: l });
+    }
+    if (STRICT && /^Then\b/i.test(l)){
+      if (/\bdatabase|sql|table|insert|update\b/i.test(l)){
+        violations.push({ file, line: i+1, message: 'Then should not mention persistence concerns directly (behavioral outcome expected)', text: l });
+      }
     }
   }
   return violations;
