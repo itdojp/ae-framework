@@ -12,18 +12,22 @@ const out = process.env.CONFORMANCE_OUTPUT || 'hermetic-reports/formal/conforman
 const trace = readJson(tracePath) || {};
 const spec = readJson(specSummary) || {};
 
+const t0 = Date.now();
+const violated = Array.isArray(trace.violatedInvariants) ? trace.violatedInvariants : [];
+const ok = violated.length === 0;
 const summary = {
-  ok: true,
+  tool: 'conformance-driver',
+  ran: true,
+  ok,
+  timeMs: Date.now() - t0,
+  errors: violated.map(v => (typeof v === 'string' ? v : JSON.stringify(v))).slice(0, 20),
   traceId: trace.traceId || null,
-  events: trace.totalEvents || 0,
-  violatedInvariants: trace.violatedInvariants || [],
+  events: Number(trace.totalEvents || 0),
+  violatedInvariants: violated,
   spec: spec.result || 'n/a',
   timestamp: new Date().toISOString()
 };
 
-summary.ok = (summary.violatedInvariants?.length ?? 0) === 0;
-
 writeJson(out, summary);
 console.log(`conformance summary written: ${out} ok=${summary.ok}`);
 process.exit(0);
-
