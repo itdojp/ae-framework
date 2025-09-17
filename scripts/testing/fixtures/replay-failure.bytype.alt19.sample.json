@@ -1,0 +1,12 @@
+{
+  "violatedInvariants": {
+    "onhand_min": { "count": 1, "indices": [0] },
+    "allocated_le_onhand": { "count": 1, "indices": [2] }
+  },
+  "events": [
+    {"type": "violation:onhand_min", "onHand": -1, "allocated": 0},
+    {"type": "ok", "onHand": 1, "allocated": 0},
+    {"type": "violation:allocated_le_onhand", "onHand": 0, "allocated": 2}
+  ]
+}
+
