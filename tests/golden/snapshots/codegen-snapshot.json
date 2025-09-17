@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-09-17T04:56:17.039Z",
+  "timestamp": "2025-09-17T10:07:41.851Z",
   "version": "1.0.0",
   "files": {
     "examples/inventory/apps/web/components/ProductForm.tsx": {
@@ -233,16 +233,16 @@
       "typeScriptErrors": 0,
       "eslintErrors": 1
     },
-    "examples/inventory/src/ui/components/generated/apps/web/app/product/page.tsx": {
-      "hash": "570f9a23015e98085e65242be1d1f856f0ded10a633d5d3a7180996a956607be",
-      "lineCount": 116,
+    "examples/inventory/src/ui/components/generated/apps/web/app/order/page.tsx": {
+      "hash": "ee96a7eca90231078b552c6b12f83532fd659c9fb262382d5bb33f9ba3c2c00b",
+      "lineCount": 118,
       "ariaAttributeCount": 0,
       "typeScriptErrors": 1,
       "eslintErrors": 0
     },
-    "examples/inventory/src/ui/components/generated/apps/web/app/order/page.tsx": {
-      "hash": "ee96a7eca90231078b552c6b12f83532fd659c9fb262382d5bb33f9ba3c2c00b",
-      "lineCount": 118,
+    "examples/inventory/src/ui/components/generated/apps/web/app/product/page.tsx": {
+      "hash": "570f9a23015e98085e65242be1d1f856f0ded10a633d5d3a7180996a956607be",
+      "lineCount": 116,
       "ariaAttributeCount": 0,
       "typeScriptErrors": 1,
       "eslintErrors": 0
@@ -254,9 +254,9 @@
       "typeScriptErrors": 0,
       "eslintErrors": 0
     },
-    "examples/inventory/src/ui/components/generated/apps/web/app/product/new/page.tsx": {
-      "hash": "42abe506569d1322dbf03be5451f58a622fb1df27fbca9b4dabef5ba97bd973d",
-      "lineCount": 82,
+    "examples/inventory/src/ui/components/generated/apps/web/app/order/[id]/page.tsx": {
+      "hash": "2bdfd1c9d8c5afeef0ece789c25c0ba6f7e570660d2ae6ce293a221c48078925",
+      "lineCount": 305,
       "ariaAttributeCount": 0,
       "typeScriptErrors": 1,
       "eslintErrors": 0
@@ -275,9 +275,9 @@
       "typeScriptErrors": 1,
       "eslintErrors": 0
     },
-    "examples/inventory/src/ui/components/generated/apps/web/app/order/[id]/page.tsx": {
-      "hash": "2bdfd1c9d8c5afeef0ece789c25c0ba6f7e570660d2ae6ce293a221c48078925",
-      "lineCount": 305,
+    "examples/inventory/src/ui/components/generated/apps/web/app/product/new/page.tsx": {
+      "hash": "42abe506569d1322dbf03be5451f58a622fb1df27fbca9b4dabef5ba97bd973d",
+      "lineCount": 82,
       "ariaAttributeCount": 0,
       "typeScriptErrors": 1,
       "eslintErrors": 0
