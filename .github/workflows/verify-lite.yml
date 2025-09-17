@@ -61,6 +61,7 @@ jobs:
           node scripts/formal/verify-alloy.mjs || true
           node scripts/formal/verify-tla.mjs --engine=tlc || true
           node scripts/formal/verify-smt.mjs --solver=cvc5 || true
+          node scripts/formal/verify-kani.mjs || true
           node scripts/formal/aggregate-formal.mjs || true
           node scripts/formal/print-summary.mjs || true
       - name: Aggregate adapters/formal/properties (non-blocking)
