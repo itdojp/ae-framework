@@ -85,7 +85,7 @@ export interface AEIR {
   }>;
 
   /** API specifications */
-  api: Array<{
+  api?: Array<{
     method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
     path: string;
     summary?: string;
