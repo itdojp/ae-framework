@@ -7,6 +7,7 @@ This note shows a minimal way to prepare inputs and inspect outputs when using t
 - Missing traceId sample: `scripts/testing/fixtures/replay-missing-traceid.sample.json`（traceId 欠損ケースの挙動を確認）
 - Failure (alt shape): `scripts/testing/fixtures/replay-failure.alt.sample.json`（violatedInvariants を byType 風に集約した例）
 - Failure (alt2 shape): `scripts/testing/fixtures/replay-failure.bytype.alt2.sample.json`（byType 風の別例）
+- Failure (sample3): `scripts/testing/fixtures/replay-failure.sample3.json`（典型的な allocated_le_onhand / onhand_min の違反例）
 
 Quick run
 ```
