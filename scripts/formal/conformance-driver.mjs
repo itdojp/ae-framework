@@ -36,6 +36,9 @@ try {
   }
 } catch {}
 
+const t0 = Date.now();
+const violated = Array.isArray(trace.violatedInvariants) ? trace.violatedInvariants : [];
+const ok = violated.length === 0;
 const summary = {
   tool: 'conformance-driver',
   ran: true,
