@@ -10,7 +10,7 @@
 
 ## English
 
-### Usage (CI / Labels)
+### Usage (CI/Labels)
 - Label-gated CI: add PR label `run-formal` to run formal checks (stub initially)
 - Enforcement: add PR label `enforce-formal` to gate Apalache result (`ok==true`)
 - Manual run: trigger `Formal Verify` via `workflow_dispatch`
@@ -21,7 +21,7 @@
     - `alloyJar`: Alloy jar のパス（任意）
     - `tlaToolsJar`: tla2tools.jar のパス（任意）
 
-### CLI stubs (to be wired)
+### CLI Stubs (to be wired)
 - `pnpm run verify:conformance` — prints stub; use `ae conformance verify` for real engine
 - `pnpm run verify:alloy` — prints stub
 - `pnpm run verify:tla -- --engine=apalache|tlc` — prints stub

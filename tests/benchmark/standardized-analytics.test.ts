@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { formatGWT } from '../utils/gwt-format';
 import { StandardizedBenchmarkRunner } from '../../src/benchmark/req2run/runners/StandardizedBenchmarkRunner.js';
 import { AEFrameworkPhase, type BenchmarkConfig, type BenchmarkResult } from '../../src/benchmark/req2run/types/index.js';
 
@@ -34,7 +35,7 @@ function makeConfig(): BenchmarkConfig {
 }
 
 describe('StandardizedBenchmarkRunner.generateAnalytics', () => {
-  it('handles empty results safely', () => {
+  it(formatGWT('no results', 'generate analytics', 'returns empty aggregates safely'), () => {
     const runner = new StandardizedBenchmarkRunner(makeConfig());
     const gen = (runner as any).generateAnalytics.bind(runner) as (results: BenchmarkResult[]) => any;
 
@@ -45,7 +46,7 @@ describe('StandardizedBenchmarkRunner.generateAnalytics', () => {
     expect(a.performance.slowestExecution).toBe(0);
   });
 
-  it('summarizes single successful result', () => {
+  it(formatGWT('single successful result', 'generate analytics', 'includes accuracy and duration aggregates'), () => {
     const runner = new StandardizedBenchmarkRunner(makeConfig());
     const gen = (runner as any).generateAnalytics.bind(runner) as (results: BenchmarkResult[]) => any;
 
