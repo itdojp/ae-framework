@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
+import { formatGWT } from '../utils/gwt-format';
 import fc from 'fast-check';
 import { BackoffStrategy } from '../../src/resilience/backoff-strategies';
 
 describe('PBT: Backoff decorrelated jitter attempt=0 boundary', () => {
-  it('attempt 0: base <= delay <= min(maxDelay, 3*base)', async () => {
+  it(formatGWT('decorrelated jitter', 'attempt=0', 'base <= delay <= min(maxDelay, 3*base)'), async () => {
     await fc.assert(fc.asyncProperty(
       fc.record({ base: fc.integer({ min: 1, max: 400 }), mult: fc.integer({ min: 2, max: 4 }) }),
       async ({ base, mult }) => {
@@ -19,4 +20,3 @@ describe('PBT: Backoff decorrelated jitter attempt=0 boundary', () => {
     ), { numRuns: 30 });
   });
 });
-
