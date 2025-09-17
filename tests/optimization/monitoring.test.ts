@@ -3,6 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { formatGWT } from '../utils/gwt-format';
 import { PerformanceMonitor } from '../../src/optimization/monitoring/performance-monitor.js';
 import { MetricsCollector } from '../../src/optimization/monitoring/metrics-collector.js';
 import { AlertManager } from '../../src/optimization/monitoring/alert-manager.js';
@@ -27,7 +28,7 @@ describe('Performance Monitor', () => {
     monitor.stop();
   });
 
-  it('should start and stop monitoring', () => {
+  it(formatGWT('monitor enabled', 'start then stop', 'collect/stop without errors'), () => {
     expect(monitor.getCurrentMetrics()).toBeNull();
     
     monitor.start();

@@ -45,7 +45,7 @@ jobs:
           printf "%s\n" "Coverage policy:" \
           && printf "%s\n" "- Enforce on main: ${COVERAGE_ENFORCE_MAIN:-0}" \
           && printf "%s\n" "- Default threshold: ${COVERAGE_DEFAULT_THRESHOLD:-80} (override via coverage:<pct>)" \
-          && printf "%s\n" "- Threshold derivation: label (coverage:<pct>) > repo var (COVERAGE_DEFAULT_THRESHOLD) > default(80)" \
+          && printf "%s\n" "- Derived: label > repo var > default" \
           && printf "%s\n" "- Effective threshold: ${{ needs.gate.outputs.threshold }}%" \
           && printf "%s\n" "- Policy: ${{ needs.gate.outputs.strict == 'true' && 'enforced' || 'report-only' }}"
         env:
