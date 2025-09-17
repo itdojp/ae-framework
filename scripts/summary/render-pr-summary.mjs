@@ -78,11 +78,27 @@ const alerts=[];
 if ((statusCounts.error||0) > errorMax) alerts.push(t(`adapter errors>${errorMax}`, `アダプタ失敗>${errorMax}`));
 if ((statusCounts.warn||0) > warnMax) alerts.push(t(`adapter warnings>${warnMax}`, `アダプタ注意>${warnMax}`));
 const alertsLine = alerts.length ? t(`Alerts: ${alerts.join(', ')}`, `警告: ${alerts.join(', ')}`) : t('Alerts: none','警告: なし');
+// Conformance short line (violationRate / hooks matchRate)
+let conformanceLine = '';
+try {
+  const conf = (formalAgg?.conformance) || (r('hermetic-reports/formal/summary.json')?.conformance) || {};
+  const vr = (typeof conf.violationRate === 'number') ? conf.violationRate : null;
+  const mr = (typeof formalAgg?.info?.conformance?.hookReplayMatchRate === 'number')
+    ? formalAgg.info.conformance.hookReplayMatchRate
+    : (typeof conf?.runtimeHooksCompare?.matchRate === 'number' ? conf.runtimeHooksCompare.matchRate : null);
+  if (vr !== null || mr !== null) {
+    conformanceLine = t(
+      `Conformance: rate=${vr ?? 'n/a'}${mr!==null? ` hooksMatch=${mr}`:''}`,
+      `適合性: 率=${vr ?? 'n/a'}${mr!==null? ` hooks一致=${mr}`:''}`
+    );
+  }
+} catch {}
+
 let md;
 if (mode === 'digest') {
-  md = `${coverageLine} | ${alertsLine} | ${t('Formal','フォーマル')}: ${formal} | ${replayLine} | ${propsLine} | ${ltlLine} | ${bddLine} | ${gwtLine}${alloyTemporalLine? ` | ${alloyTemporalLine}`:''} | ${adapterCountsLine} | ${adaptersLine} | ${t('Trace','トレース')}: ${Array.from(traceIds).join(', ')}`;
+  md = `${coverageLine} | ${alertsLine} | ${t('Formal','フォーマル')}: ${formal}${alloyTemporalLine? ` | ${alloyTemporalLine}`:''}${conformanceLine? ` | ${conformanceLine}`:''} | ${bddLine} | ${ltlLine} | ${gwtLine} | ${adapterCountsLine} | ${adaptersLine} | ${replayLine} | ${t('Trace','トレース')}: ${Array.from(traceIds).join(', ')}`;
 } else {
-  md = `## ${t('Quality Summary','品質サマリ')}\n- ${coverageLine}\n- ${alertsLine}\n- ${gwtLine}\n- ${bddLine}\n- ${propsLine}\n- ${ltlLine}\n- ${adapterCountsLine}\n- ${t('Adapters','アダプタ')}:\n${adaptersList}\n- ${t('Formal','フォーマル')}: ${formal}\n${alloyTemporalLine? `- ${alloyTemporalLine}\n`:''}- ${replayLine}\n- ${t('Trace IDs','トレースID')}: ${Array.from(traceIds).join(', ')}`;
+  md = `## ${t('Quality Summary','品質サマリ')}\n- ${coverageLine}\n- ${alertsLine}\n- ${t('Formal','フォーマル')}: ${formal}\n${alloyTemporalLine? `- ${alloyTemporalLine}\n`:''}${conformanceLine? `- ${conformanceLine}\n`:''}- ${bddLine}\n- ${ltlLine}\n- ${gwtLine}\n- ${adapterCountsLine}\n- ${t('Adapters','アダプタ')}:\n${adaptersList}\n- ${replayLine}\n- ${t('Trace IDs','トレースID')}: ${Array.from(traceIds).join(', ')}`;
 }
 // Fallback: if formal is n/a, print presentCount from aggregate JSON
 try {
