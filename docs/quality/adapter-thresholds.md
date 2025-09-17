@@ -60,6 +60,11 @@ Enforcement notes
 - しきい値の導出順は「ラベル（perf:<pct>/lh:<pct>）> リポジトリ変数（PERF_DEFAULT_THRESHOLD/LH_DEFAULT_THRESHOLD）> 既定（perf=75, lh=80）」です。
 - 変数未設定でも動作しますが、しきい値の既定を統一するためリポジトリ変数を設定する運用を推奨します。
 
+Glossary（表示用語の統一）
+- Derived: `label > repo var > default`（しきい値の導出順）
+- Policy: `enforced | report-only`
+- Policy source: `enforced via label: enforce-<name>` or `report-only`
+
 ### Minimal JSON examples
 
 Accessibility (reports/a11y-results.json)

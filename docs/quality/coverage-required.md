@@ -11,6 +11,7 @@
   - `Require status checks to pass before merging` を有効化
   - ステータスチェックに `coverage-check` を追加（必要に応じて `coverage-check (push)` / `(pull_request)` を選択）
   - （任意）`Require branches to be up to date before merging` を一時的に無効化して段階導入を容易に（運用安定後に有効化を検討）
+  - 例: `coverage-check` と `verify-lite` を必須チェックとして追加（段階導入時は `ci-non-blocking` を活用）
 - 運用
   - PRではコメントに `Coverage (lines):` と `Threshold (effective):` を表示（`/coverage <pct>` で上書き可能）
   - main への push 時は `COVERAGE_ENFORCE_MAIN=1` で強制。違反時は失敗。

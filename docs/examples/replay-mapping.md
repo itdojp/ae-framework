@@ -6,6 +6,7 @@ This note shows a minimal way to prepare inputs and inspect outputs when using t
 - Failure sample (output-like): `scripts/testing/fixtures/replay-failure.sample.json`
 - Missing traceId sample: `scripts/testing/fixtures/replay-missing-traceid.sample.json`（traceId 欠損ケースの挙動を確認）
 - Failure (alt shape): `scripts/testing/fixtures/replay-failure.alt.sample.json`（violatedInvariants を byType 風に集約した例）
+- Failure (alt2 shape): `scripts/testing/fixtures/replay-failure.bytype.alt2.sample.json`（byType 風の別例）
 
 Quick run
 ```
