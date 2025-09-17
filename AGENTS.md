@@ -15,7 +15,8 @@
   - `run-security`: Security/SBOM 系を実行
   - `ci-non-blocking`: 非ブロッキングで実行（continue-on-error）
   - `enforce-security`: Security しきい値を強制
-  - `coverage:<pct>`: coverage-check のしきい値上書き
+- `coverage:<pct>`: coverage-check のしきい値上書き
+  - `run-cedar`: Cedar policies の非ブロッキング検証を起動（cedar-quality-gates.yml）
 
 ## テスト/検証
 - ローカル: `corepack enable && pnpm i && pnpm build`
@@ -74,6 +75,7 @@
 - `.github/workflows/sbom-generation.yml`: SBOM/依存監査/閾値強制
 - `docs/ci-policy.md`: ポリシー集約
 - `SECURITY.md`: セキュリティ運用（ラベル/変数）
+- `docs/quality/cedar-quality-gates.md`: Cedar policies の品質ゲート（report-only/label-gated）
 
 ## 作業の進め方（共通）
 1) 変更箇所を最小限に限定する
