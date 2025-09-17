@@ -41,6 +41,11 @@ export const NEGATIVE_PATTERNS = [
   ,/invariant\s+(?:violated|verlet[zt]t)/i        // EN/DE invariant violated
   ,/propri[ée]t[ée]\s+viol[ée]e/i                // FR property violated
   ,/propiedad\s+violada/i                         // ES property violated
+  ,/counter-?example\s+(?:produced|generated)/i   // EN counterexample produced
+  ,/propert(?:y|ies)\s+(?:do(?:es)?\s+not|doesn't)\s+hold/i // EN property does not hold
+  ,/la\s+propiedad\s+no\s+se\s+cumple/i         // ES property does not hold
+  ,/die\s+eigenschaft\s+gilt\s+nicht/i          // DE property does not hold
+  ,/la\s+propri[ée]t[ée]\s+ne\s+tient\s+pas/i  // FR property does not hold
 ];
 
 export function computeOkFromOutput(out){
