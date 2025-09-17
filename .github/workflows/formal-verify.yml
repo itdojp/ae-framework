@@ -152,6 +152,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Check Apalache presence (non-blocking)
+        run: |
+          node scripts/formal/check-apalache.mjs || true
       - name: Run verify:apalache (summary, non-blocking)
         run: |
           node scripts/formal/verify-apalache.mjs --file "${{ inputs.tlaFile || 'spec/tla/DomainSpec.tla' }}" || true
