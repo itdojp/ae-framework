@@ -1,0 +1,12 @@
+{
+  "traceId": "sample-bytype-005",
+  "events": [
+    { "type": "onhand", "delta": 2 },
+    { "type": "allocate", "delta": 3 },
+    { "type": "onhand", "delta": 0 }
+  ],
+  "violatedInvariantsByType": {
+    "allocated_le_onhand": { "count": 1, "indices": [1] }
+  }
+}
+
