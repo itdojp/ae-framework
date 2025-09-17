@@ -230,6 +230,13 @@ jobs:
               },
               temporal: {
                 alloy: alloyS && alloyS.temporal ? alloyS.temporal : null
+              },
+              conformance: {
+                hookReplayMatchRate: (conf && (typeof conf.hookReplayMatchRate === 'number'
+                  ? conf.hookReplayMatchRate
+                  : (conf.runtimeHooksCompare && typeof conf.runtimeHooksCompare.matchRate === 'number'
+                    ? conf.runtimeHooksCompare.matchRate
+                    : null)))
               }
             }
           };
