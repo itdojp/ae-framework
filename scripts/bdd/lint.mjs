@@ -48,6 +48,10 @@ function lintContent(content, file){
     if (STRICT && /(\bmaybe\b|\bapproximately\b|\baround\b|\broughly\b|\babout\b)/i.test(l)){
       violations.push({ file, line: i+1, message: 'Ambiguous wording detected (prefer precise, testable phrasing)', text: l });
     }
+    // Double negatives (STRICT): simple patterns
+    if (STRICT && /(\bnot\b\s+.*\bnot\b|can't\s+not|cannot\s+not|don't\s+not|never\s+not)/i.test(l)){
+      violations.push({ file, line: i+1, message: 'Double negative detected (prefer direct, positive phrasing)', text: l });
+    }
   }
   return violations;
 }
