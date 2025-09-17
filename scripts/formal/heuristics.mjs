@@ -51,6 +51,13 @@ export const NEGATIVE_PATTERNS = [
   ,/(?:invariant|property|spec)\s+unsatisfied/i   // EN <kind> unsatisfied
 ];
 
+export const CAUTION_PATTERNS = [
+  /caution/i,
+  /attention[:\s]/i,           // EN/FR-like "attention:"
+  /achtung[:\s]/i,             // DE "Achtung:"
+  /precaución[:\s]/i           // ES "Precaución:"
+];
+
 export function computeOkFromOutput(out){
   if (!out) return null;
   if (POSITIVE_PATTERNS.some(re => re.test(out))) return true;
