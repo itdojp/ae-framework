@@ -73,6 +73,9 @@ jobs:
               case '/run-security':
                 await addLabels(['run-security']);
                 return reply('Label `run-security` added. Security/SBOM workflows will run.');
+              case '/run-cedar':
+                await addLabels(['run-cedar']);
+                return reply('Label `run-cedar` added. Cedar policies quality gates will run (report-only).');
               case '/non-blocking':
                 await addLabels(['ci-non-blocking']);
                 return reply('Label `ci-non-blocking` added. Some jobs will continue-on-error.');
