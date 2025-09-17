@@ -191,6 +191,10 @@ jobs:
         with:
           name: formal-reports-aggregate-json
           path: artifacts/formal/formal-aggregate.json
+      - name: Validate aggregate JSON (non-blocking)
+        if: always()
+        run: |
+          node scripts/formal/validate-aggregate-json.mjs || true
       - name: Comment on PR (upsert)
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
