@@ -26,10 +26,17 @@ function lintContent(content, file){
       if (STRICT && /\bshould\b/i.test(l)) {
         violations.push({ file, line: i+1, message: 'When should not contain modal verbs like "should" (use declarative command)', text: l });
       }
+      if (STRICT && /\bclick|button|ui|page|css|selector\b/i.test(l)){
+        violations.push({ file, line: i+1, message: 'When should avoid UI-specific terms (use domain command)', text: l });
+      }
     }
     if (STRICT && /^Then\b/i.test(l)){
       if (/\bdatabase|sql|table|insert|update\b/i.test(l)){
         violations.push({ file, line: i+1, message: 'Then should not mention persistence concerns directly (behavioral outcome expected)', text: l });
+      }
+      const andCount = (l.match(/\bAnd\b/gi) || []).length;
+      if (andCount >= 2) {
+        violations.push({ file, line: i+1, message: 'Then has too many conjunctions (prefer small, focused expectations)', text: l });
       }
     }
     if (STRICT && /^Given\b/i.test(l)){

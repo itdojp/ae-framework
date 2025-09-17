@@ -1,0 +1,24 @@
+name: ltl-suggestions-threshold
+on:
+  pull_request:
+jobs:
+  ltl-threshold:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: pnpm install --frozen-lockfile || pnpm install
+      - name: Generate BDD → LTL suggestions (report-only)
+        run: pnpm -s run bdd:suggest || true
+      - name: Check LTL suggestions threshold (warn-only by default)
+        env:
+          LTL_WARN_MAX: ${{ vars.LTL_WARN_MAX }}
+          LTL_ERROR_MAX: ${{ vars.LTL_ERROR_MAX }}
+        run: |
+          cnt=$(jq -r '.count // 0' artifacts/properties/ltl-suggestions.json 2>/dev/null || echo 0)
+          printf "LTL suggestions: %s\n" "$cnt"
+          warn=${LTL_WARN_MAX:-0}
+          err=${LTL_ERROR_MAX:-999999}
+          if [ "$cnt" -gt "$warn" ]; then printf "::warning::LTL suggestions > warn threshold (%s>%s)\n" "$cnt" "$warn"; fi
+          if [ "$cnt" -gt "$err" ]; then printf "::error::LTL suggestions > error threshold (%s>%s)\n" "$cnt" "$err"; exit 1; fi
