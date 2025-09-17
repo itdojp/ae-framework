@@ -103,6 +103,7 @@ jobs:
             lines.push(`Threshold (effective): ${effTh}%`);
             if (covLabel) lines.push(`- via label: ${covLabel}`);
             lines.push(`- default: ${isFinite(defTh) ? defTh : 80}%`);
+            lines.push('Derived: label > repo var > default');
             lines.push(`Policy: ${policy}`);
             lines.push(`Policy source: ${rationale}`);
             lines.push('Docs: docs/quality/coverage-required.md');
