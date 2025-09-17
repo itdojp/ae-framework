@@ -20,6 +20,7 @@ This note shows a minimal way to prepare inputs and inspect outputs when using t
 - Failure (alt12 byType): `scripts/testing/fixtures/replay-failure.bytype.alt12.sample.json`（byType 風、allocated_le_onhand と onhand_min の交互違反）
 <<<<<<< HEAD
 - Failure (alt13 byType): `scripts/testing/fixtures/replay-failure.bytype.alt13.sample.json`（byType 風、onhand_min=1/2 混在＋allocated境界の複合）
+- Failure (alt14 byType): `scripts/testing/fixtures/replay-failure.bytype.alt14.sample.json`（byType 風、連続OK→複合違反→OK の混在）
 =======
 >>>>>>> c7fa9b9 (Merge: ddd batch 37 (rebased) (admin))
 =======
