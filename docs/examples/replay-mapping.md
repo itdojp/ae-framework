@@ -16,7 +16,10 @@ This note shows a minimal way to prepare inputs and inspect outputs when using t
 <<<<<<< HEAD
 - Failure (alt9 byType): `scripts/testing/fixtures/replay-failure.bytype.alt9.sample.json`（byType 風、onhand_min と allocated_le_onhand の混在）
 - Failure (alt10 byType): `scripts/testing/fixtures/replay-failure.bytype.alt10.sample.json`（byType 風、allocated_le_onhand の連続違反＋one ok）
+<<<<<<< HEAD
 - Failure (alt11 byType): `scripts/testing/fixtures/replay-failure.bytype.alt11.sample.json`（byType 風、onhand_min=2 の閾値超過の組合せ）
+=======
+>>>>>>> 4fdace6 (Merge: ddd batch 35 (rebased) (admin))
 =======
  - Failure (alt9 byType): `scripts/testing/fixtures/replay-failure.bytype.alt9.sample.json`（byType 風、onhand_min と allocated_le_onhand の混在）
 >>>>>>> 7bb5625 (Merge: ddd batch 32 (rebased) (admin))
