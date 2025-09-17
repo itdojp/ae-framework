@@ -14,9 +14,10 @@ const adapterSummaries = glob(adaptersDir)
 
 const formal = safeRead('formal/summary.json');
 const props = safeRead('artifacts/properties/summary.json');
+const ltlSuggestions = safeRead('artifacts/properties/ltl-suggestions.json');
 const propDesign = safeRead('artifacts/properties/design.json');
 const bdd = safeRead('artifacts/bdd/scenarios.json');
-const combined = { adapters: adapterSummaries, formal, properties: props, propertyDesign: propDesign, bdd };
+const combined = { adapters: adapterSummaries, formal, properties: props, propertyDesign: propDesign, bdd, ltlSuggestions };
 fs.mkdirSync(path.dirname('artifacts/summary/combined.json'), { recursive: true });
 fs.writeFileSync('artifacts/summary/combined.json', JSON.stringify(combined, null, 2));
 console.log('✓ Wrote artifacts/summary/combined.json');
