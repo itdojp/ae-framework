@@ -56,7 +56,6 @@ Timeout（任意）
 Advanced toggles（運用向け）
 - Aggregate wrap 幅: `FORMAL_AGG_WRAP_WIDTH`（0=無効、推奨 80–100）
 - Apalache エラー抽出の上限/長行トリム: `APALACHE_ERRORS_LIMIT` / `APALACHE_ERROR_LINE_CLAMP`（既定: 5 / 200）
-
 Aggregate JSON の軽量検証（非ブロッキング）
 - 集約ワークフローでは `artifacts/formal/formal-aggregate.json` を出力し、最小スキーマを警告レベルで検証します。
 - ローカル確認: `node scripts/formal/validate-aggregate-json.mjs`（存在時に検証、欠損/不正は `::warning::` 出力）
