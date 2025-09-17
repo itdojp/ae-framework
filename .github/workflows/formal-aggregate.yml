@@ -84,7 +84,8 @@ jobs:
             conformance: !!confSum
           };
           // Quick one-line present/ran summary（MD表示とJSONのpresentを完全同期）
-          const presentKeys = Object.entries(present).filter(([k,v])=>v).map(([k])=>k);
+          const order = ['tla','alloy','smt','apalache','conformance'];
+          const presentKeys = order.filter(k => present[k]);
           const presentCount = presentKeys.length;
           const apLine = apalacheSum && apalache ? `ran=${apalache.ran? 'yes':'no'} ok=${apalache.ok==null? 'n/a': (apalache.ok? 'yes':'no')}` : 'n/a';
           lines.push(`Present: ${presentCount}/5${presentCount? ` (${presentKeys.join(', ')})` : ''}`);
