@@ -26,6 +26,11 @@ Tips
 - しきい値の一時上書き: `/coverage <pct>`（例: 72）。クリア: `/coverage clear`。
 - 詳細は `docs/quality/coverage-policy.md` も参照。
 
+Glossary（表示用語の統一）
+- Derived: `label > repo var > default`（しきい値の導出順）
+- Policy: `enforced | report-only`
+- Policy source: `enforced via label: enforce-coverage | enforced via main + repo vars (COVERAGE_ENFORCE_MAIN)`
+
 クイックチェックリスト（導入時）
 - [ ] 変数 `COVERAGE_ENFORCE_MAIN` / `COVERAGE_DEFAULT_THRESHOLD` を設定
 - [ ] Branch protection のステータスチェックに `coverage-check` を登録
