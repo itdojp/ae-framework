@@ -3,6 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { formatGWT } from '../utils/gwt-format';
 import { 
   ParallelOptimizer, 
   TaskScheduler, 
@@ -27,7 +28,7 @@ describe('Parallel Optimization Engine', () => {
       await optimizer.stop();
     });
 
-    it('should initialize with default configuration', () => {
+  it(formatGWT('optimizer constructed', 'initialize with defaults', 'configuration is valid'), () => {
       expect(optimizer).toBeDefined();
       const metrics = optimizer.getOptimizationMetrics();
       expect(metrics.totalTasksProcessed).toBe(0);
