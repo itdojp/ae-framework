@@ -74,7 +74,19 @@ jobs:
           lines.push(`- Alloy: ${alloyOk}/${alloyTotal} ok`);
           lines.push(tlaSum ? `- TLA summary file: ${path.basename(tlaSum)}` : "- TLA summary: n/a");
           lines.push(alloySum ? `- Alloy summary file: ${path.basename(alloySum)}` : "- Alloy summary: n/a");
+          if (alloyS && alloyS.temporal) {
+            const t = alloyS.temporal;
+            const ops = Array.isArray(t.operators) && t.operators.length ? ` (ops: ${t.operators.join(', ')})` : '';
+            lines.push(`- Alloy temporal: ${t.present ? 'present' : 'absent'}${ops}`);
+          }
           lines.push(smtSum ? `- SMT summary file: ${path.basename(smtSum)}` : "- SMT summary: n/a");
+          if (smt) {
+            const ss = [
+              `solver=${smt.solver || 'n/a'}`,
+              `status=${smt.status || 'n/a'}`
+            ].join(' ');
+            lines.push(`- SMT: ${ss}`);
+          }
           // Present map (single source for MD + JSON)
           const present = {
             tla: !!tlaSum,
