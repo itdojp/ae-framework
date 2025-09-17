@@ -124,6 +124,7 @@ jobs:
             lines.push(`Score: ${score}`);
             lines.push(`Threshold (effective): ${threshold}%`);
             lines.push(perfLbl ? `- via label: ${perfLbl}` : `- default: ${perfDef}%`);
+            lines.push('Derived: label > repo var > default');
             lines.push(`Policy: ${enforced==='true' ? 'enforced (label: enforce-perf)' : 'report-only'}`);
             lines.push(`Policy source: ${enforced==='true' ? 'enforced via label: enforce-perf' : 'report-only'}`);
             lines.push('');
@@ -208,6 +209,7 @@ jobs:
             lines.push(`Score: ${score}`);
             lines.push(`Threshold (effective): ${threshold}%`);
             lines.push(lhLbl ? `- via label: ${lhLbl}` : `- default: ${lhDef}%`);
+            lines.push('Derived: label > repo var > default');
             lines.push(`Policy: ${enforced==='true' ? 'enforced (label: enforce-lh)' : 'report-only'}`);
             lines.push(`Policy source: ${enforced==='true' ? 'enforced via label: enforce-lh' : 'report-only'}`);
             lines.push('');
