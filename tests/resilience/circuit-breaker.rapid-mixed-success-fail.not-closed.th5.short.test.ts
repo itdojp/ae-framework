@@ -4,7 +4,7 @@ import { formatGWT } from '../utils/gwt-format';
 
 describe('Resilience: CircuitBreaker rapid mixed success/fail not closed (th=5, short)', () => {
   it(
-    formatGWT('rapid transitions', 'success → fail → success (threshold=5)', 'remains HALF_OPEN (not CLOSED)'),
+    formatGWT('rapid transitions', 'success → fail (threshold=5)', 'returns to OPEN (not CLOSED)'),
     async () => {
       const timeout = 20;
       const th = 5;
@@ -13,12 +13,10 @@ describe('Resilience: CircuitBreaker rapid mixed success/fail not closed (th=5, 
       await expect(cb.execute(async () => { throw new Error('boom'); })).rejects.toBeInstanceOf(Error);
       expect(cb.getState()).toBe(CircuitState.OPEN);
       await new Promise((r) => setTimeout(r, timeout + 2));
-      // success then fail then success → should not close at th=5
+      // success then fail → breaker re-opens; not CLOSED at th=5
       await expect(cb.execute(async () => 1)).resolves.toBe(1);
       await expect(cb.execute(async () => { throw new Error('x'); })).rejects.toBeInstanceOf(Error);
-      await expect(cb.execute(async () => 1)).resolves.toBe(1);
-      expect(cb.getState()).not.toBe(CircuitState.CLOSED);
+      expect(cb.getState()).toBe(CircuitState.OPEN);
     }
   );
 });
-
