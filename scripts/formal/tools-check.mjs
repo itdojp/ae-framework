@@ -65,13 +65,18 @@ for (const r of report) {
 // One-line digest (non-blocking)
 try {
   const map = Object.fromEntries(report.map(r => [r.tool, r.present]));
+  const vers = Object.fromEntries(report.map(r => [r.tool, r.version || 'n/a']));
   const tlc = !!(process.env.TLA_TOOLS_JAR || '').trim();
+  const ap = map['apalache-mc'] ? `yes(${vers['apalache-mc']||'n/a'})` : 'no';
+  const z3 = map['z3'] ? `yes(${vers['z3']||'n/a'})` : 'no';
+  const c5 = map['cvc5'] ? `yes(${vers['cvc5']||'n/a'})` : 'no';
+  const jv = vers['java'] || 'n/a';
   const line = [
     `tlc=${tlc?'yes':'no'}`,
-    `apalache=${map['apalache-mc']?'yes':'no'}`,
-    `z3=${map['z3']?'yes':'no'}`,
-    `cvc5=${map['cvc5']?'yes':'no'}`,
-    `java=${report.find(r=>r.tool==='java')?.version||'n/a'}`
+    `apalache=${ap}`,
+    `z3=${z3}`,
+    `cvc5=${c5}`,
+    `java=${jv}`
   ].join(' ');
   console.log(`Tools: ${line}`);
 } catch {}
