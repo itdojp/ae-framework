@@ -49,6 +49,7 @@ jobs:
             lines.push('');
             lines.push('Threshold (effective): critical=0, serious=0');
             lines.push(`Policy: ${enforced==='true' ? 'enforced (label: enforce-a11y)' : 'report-only'}`);
+            lines.push(`Policy source: ${enforced==='true' ? 'enforced via label: enforce-a11y' : 'report-only'}`);
             lines.push('');
             lines.push('Docs: docs/quality/adapter-thresholds.md');
             const body = lines.join('\n');
@@ -60,6 +61,15 @@ jobs:
             } else {
               await github.rest.issues.createComment({ owner, repo, issue_number: number, body });
             }
+      - name: Validate a11y JSON shape (non-blocking)
+        if: steps.a11y.outputs.present == 'true'
+        run: |
+          FILE="reports/a11y-results.json"
+          if jq -e '.violations?.critical? // empty' "$FILE" >/dev/null 2>&1; then
+            printf "%s\n" "a11y JSON shape ok";
+          else
+            printf "%s\n" "::warning::a11y JSON shape unexpected (.violations.critical not found)";
+          fi
       - name: Enforce a11y thresholds (critical/serious==0)
         if: steps.a11y.outputs.present == 'true' && contains(github.event.pull_request.labels.*.name, 'enforce-a11y')
         run: |

@@ -13,6 +13,9 @@ export const POSITIVE_PATTERNS = [
   /aucun(?:e)?\s+(?:échec|erreurs?)\s+détecté(?:e)?/i, // FR: no failure/error detected
   /no\s+se\s+encontraron\s+(?:errores|violaciones|contraejemplos?)/i, // ES: no errors/violations/counterexamples found
   /keine\s+verletzungen\s+gefunden/i     // DE: no violations found
+  ,/keine\s+fehler\s+gefunden/i          // DE: no errors found
+  ,/aucune?\s+(?:violation|erreur)s?\s+d[ée]tect[ée]?/i // FR: no violation/error detected
+  ,/no\s+se\s+detectaron\s+(?:errores|violaciones|contraejemplos?)/i // ES: no errors/violations/counterexamples detected
 ];
 
 export const NEGATIVE_PATTERNS = [
