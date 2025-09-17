@@ -147,18 +147,31 @@ jobs:
           lines.push("_Non-blocking. Add/remove label run-formal to control._");
           lines.push(`_Clamp: line=${clampInfo.lineClamp}, errors=${clampInfo.errorsLimit}_`);
           lines.push(`_Generated: ${GENERATED_AT}_`);
-          // Normalize markdown: collapse excessive empty lines
+          // Normalize markdown: collapse excessive empty lines + optional long-line wrap (outside code fences)
           function normalizeMd(arr){
-            const out=[]; let prevEmpty=false;
-            for (let l of arr){
-              // trim trailing spaces
-              l = String(l).replace(/\s+$/,'');
+            const out=[]; let prevEmpty=false; let inFence=false;
+            const wrapWidth = parseInt(process.env.FORMAL_AGG_WRAP_WIDTH || '0', 10); // 0=disable
+            for (let raw of arr){
+              let l = String(raw).replace(/\s+$/,''); // trim trailing spaces
+              if (l.startsWith('```')) inFence = !inFence; // toggle on code fences
+              if (!inFence && wrapWidth > 0 && l.length > wrapWidth){
+                // wrap at spaces without breaking words
+                const wrapped = [];
+                let s = l;
+                while (s.length > wrapWidth){
+                  let cut = s.lastIndexOf(' ', wrapWidth);
+                  if (cut < 0) cut = wrapWidth;
+                  wrapped.push(s.slice(0, cut));
+                  s = s.slice(cut).replace(/^\s+/, '');
+                }
+                if (s.length) wrapped.push(s);
+                l = wrapped.join('\n');
+              }
               const isEmpty = l.trim().length===0;
               if (isEmpty && prevEmpty) continue; // collapse multiple blanks
               out.push(l);
               prevEmpty = isEmpty;
             }
-            // ensure code fences are surrounded by a single blank line for readability
             const joined = out.join("\n");
             return joined
               .replace(/\n{3,}/g, "\n\n")
