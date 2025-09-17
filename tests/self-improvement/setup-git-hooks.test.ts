@@ -5,6 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { formatGWT } from '../utils/gwt-format';
 import { GitHooksSetup, createGitHooksSetup } from '../../src/self-improvement/setup-git-hooks.js';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -34,19 +35,25 @@ describe('GitHooksSetup', () => {
   });
 
   describe('initialization', () => {
-    it('should create GitHooksSetup with default configuration', () => {
+    it(
+      formatGWT('git hooks setup', 'create with default configuration', 'instance is created'),
+      () => {
       const defaultSetup = new GitHooksSetup();
       expect(defaultSetup).toBeInstanceOf(GitHooksSetup);
-    });
+    }
+    );
 
-    it('should create GitHooksSetup with custom configuration', () => {
+    it(
+      formatGWT('git hooks setup', 'create with custom configuration', 'instance is created'),
+      () => {
       const config = {
         projectRoot: '/custom/path',
         forceOverwrite: true
       };
       const customSetup = new GitHooksSetup(config);
       expect(customSetup).toBeInstanceOf(GitHooksSetup);
-    });
+    }
+    );
 
     it('should be created via factory function', () => {
       const factorySetup = createGitHooksSetup();
