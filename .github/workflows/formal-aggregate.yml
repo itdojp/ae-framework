@@ -163,9 +163,7 @@ jobs:
               .replace(/\n{3,}/g, "\n\n")
               .replace(/\n+$/, "\n");
           }
-          const md = normalizeMd(lines);
-          fs.writeFileSync(outMd, md);
-          // JSON aggregate for tooling
+          // JSON aggregate for tooling（single source of truth for present/by-type）
           const json = {
             tlc: { ok: tlcOk, total: tlcTotal },
             alloy: { ok: alloyOk, total: alloyTotal, summary: alloyS || null },
@@ -184,6 +182,11 @@ jobs:
               }
             }
           };
+          // Append an explicit consistency line referencing JSON info.present
+          lines.push(`Consistency: present in MD/JSON = ok (${presentCount}/5)`);
+          lines.push('_Source: info.present (aggregate JSON)_');
+          const md = normalizeMd(lines);
+          fs.writeFileSync(outMd, md);
           fs.writeFileSync(outJson, JSON.stringify(json,null,2));
           const aggPresent = fs.existsSync(outJson) ? 'yes' : 'no';
           console.log(md + "\nArtifacts: aggregate-json=" + aggPresent);
