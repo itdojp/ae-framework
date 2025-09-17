@@ -12,6 +12,7 @@ const statusCounts = adaptersArr.reduce((acc,a)=>{ const s=(a.status||'ok').toLo
 const adaptersLine = adaptersArr.map(a=>`${a.adapter||a.name}: ${a.summary} (${a.status})`).join(', ');
 const adaptersList = adaptersArr.map(a=>`  - ${a.adapter||a.name}: ${a.summary} (${a.status})`).join('\n');
 const formalObj = c.formal || r('formal/summary.json') || {};
+const formalAgg = r('artifacts/formal/formal-aggregate.json') || {};
 const formal = formalObj.result || t('n/a','不明');
 const gwt = r('artifacts/formal/gwt.summary.json');
 const gwtItems = gwt?.items || [];
@@ -59,15 +60,28 @@ const gwtLine = gwtCount
 const bddLine = bdd && (bdd.criteriaCount!==undefined || bdd.title)
   ? t(`BDD: ${bdd.criteriaCount ?? '?'} criteria (${bdd.title ?? 'Feature'})`, `BDD: 受入基準 ${bdd.criteriaCount ?? '?'}（${bdd.title ?? 'Feature'}）`)
   : t('BDD: n/a','BDD: なし');
+// Alloy temporal (from aggregate JSON if present)
+let alloyTemporalLine = '';
+try {
+  const temp = formalAgg?.info?.temporal?.alloy;
+  if (temp && (temp.present || (Array.isArray(temp.operators) && temp.operators.length))) {
+    const ops = Array.isArray(temp.operators) ? temp.operators.join(', ') : '';
+    const pops = Array.isArray(temp.pastOperators) ? temp.pastOperators.join(', ') : '';
+    alloyTemporalLine = t(
+      `Alloy temporal: present=${!!temp.present}${ops? ` ops=[${ops}]`:''}${pops? ` past=[${pops}]`:''}`,
+      `Alloy時相: present=${!!temp.present}${ops? ` ops=[${ops}]`:''}${pops? ` past=[${pops}]`:''}`
+    );
+  }
+} catch {}
 const alerts=[];
 if ((statusCounts.error||0) > errorMax) alerts.push(t(`adapter errors>${errorMax}`, `アダプタ失敗>${errorMax}`));
 if ((statusCounts.warn||0) > warnMax) alerts.push(t(`adapter warnings>${warnMax}`, `アダプタ注意>${warnMax}`));
 const alertsLine = alerts.length ? t(`Alerts: ${alerts.join(', ')}`, `警告: ${alerts.join(', ')}`) : t('Alerts: none','警告: なし');
 let md;
 if (mode === 'digest') {
-  md = `${coverageLine} | ${alertsLine} | ${t('Formal','フォーマル')}: ${formal} | ${replayLine} | ${propsLine} | ${ltlLine} | ${bddLine} | ${gwtLine} | ${adapterCountsLine} | ${adaptersLine} | ${t('Trace','トレース')}: ${Array.from(traceIds).join(', ')}`;
+  md = `${coverageLine} | ${alertsLine} | ${t('Formal','フォーマル')}: ${formal} | ${replayLine} | ${propsLine} | ${ltlLine} | ${bddLine} | ${gwtLine}${alloyTemporalLine? ` | ${alloyTemporalLine}`:''} | ${adapterCountsLine} | ${adaptersLine} | ${t('Trace','トレース')}: ${Array.from(traceIds).join(', ')}`;
 } else {
-  md = `## ${t('Quality Summary','品質サマリ')}\n- ${coverageLine}\n- ${alertsLine}\n- ${gwtLine}\n- ${bddLine}\n- ${propsLine}\n- ${ltlLine}\n- ${adapterCountsLine}\n- ${t('Adapters','アダプタ')}:\n${adaptersList}\n- ${t('Formal','フォーマル')}: ${formal}\n- ${replayLine}\n- ${t('Trace IDs','トレースID')}: ${Array.from(traceIds).join(', ')}`;
+  md = `## ${t('Quality Summary','品質サマリ')}\n- ${coverageLine}\n- ${alertsLine}\n- ${gwtLine}\n- ${bddLine}\n- ${propsLine}\n- ${ltlLine}\n- ${adapterCountsLine}\n- ${t('Adapters','アダプタ')}:\n${adaptersList}\n- ${t('Formal','フォーマル')}: ${formal}\n${alloyTemporalLine? `- ${alloyTemporalLine}\n`:''}- ${replayLine}\n- ${t('Trace IDs','トレースID')}: ${Array.from(traceIds).join(', ')}`;
 }
 fs.mkdirSync('artifacts/summary',{recursive:true});
 fs.writeFileSync('artifacts/summary/PR_SUMMARY.md', md);

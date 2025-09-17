@@ -38,6 +38,18 @@ for (const r of report) {
   console.log(`- ${status} ${r.tool}${extra}`);
 }
 
+// One-line digest (non-blocking)
+try {
+  const map = Object.fromEntries(report.map(r => [r.tool, r.present]));
+  const tlc = !!(process.env.TLA_TOOLS_JAR || '').trim();
+  const line = [
+    `tlc=${tlc?'yes':'no'}`,
+    `apalache=${map['apalache-mc']?'yes':'no'}`,
+    `z3=${map['z3']?'yes':'no'}`,
+    `cvc5=${map['cvc5']?'yes':'no'}`
+  ].join(' ');
+  console.log(`Tools: ${line}`);
+} catch {}
+
 // Non-blocking: always exit 0
 process.exit(0);
-
