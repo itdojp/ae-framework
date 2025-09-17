@@ -149,12 +149,19 @@ jobs:
           // Normalize markdown: collapse excessive empty lines
           function normalizeMd(arr){
             const out=[]; let prevEmpty=false;
-            for (const l of arr){
-              const isEmpty = String(l).trim().length===0;
-              if (isEmpty && prevEmpty) continue;
-              out.push(l); prevEmpty = isEmpty;
+            for (let l of arr){
+              // trim trailing spaces
+              l = String(l).replace(/\s+$/,'');
+              const isEmpty = l.trim().length===0;
+              if (isEmpty && prevEmpty) continue; // collapse multiple blanks
+              out.push(l);
+              prevEmpty = isEmpty;
             }
-            return out.join("\n");
+            // ensure code fences are surrounded by a single blank line for readability
+            const joined = out.join("\n");
+            return joined
+              .replace(/\n{3,}/g, "\n\n")
+              .replace(/\n+$/, "\n");
           }
           const md = normalizeMd(lines);
           fs.writeFileSync(outMd, md);
