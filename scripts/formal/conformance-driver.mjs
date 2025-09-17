@@ -20,6 +20,7 @@ const ok = violated.length === 0;
 // Compare runtime hooks with replay summary if both present (best-effort)
 let hooksInfo = null;
 let hooksCompare = null;
+let hookStats = null;
 try {
   if (hooks) {
     const events = Array.isArray(hooks) ? hooks : (Array.isArray(hooks.events) ? hooks.events : []);
@@ -45,6 +46,14 @@ try {
       const inter = Array.from(hs).filter(x => ts.has(x));
       const matchRate = (hs.size + ts.size) > 0 ? +(inter.length / Math.max(hs.size, ts.size)).toFixed(3) : 0;
       hooksCompare = { onlyHooks, onlyTrace, intersect: inter, matchRate };
+      hookStats = {
+        events: Array.isArray(events) ? events.length : 0,
+        replayEvents: Array.isArray(traceEvents) ? traceEvents.length : 0,
+        onlyHooksCount: onlyHooks.length,
+        onlyTraceCount: onlyTrace.length,
+        intersectCount: inter.length,
+        matchRate
+      };
     }
   }
 } catch {}
@@ -61,7 +70,8 @@ const summary = {
   timestamp: new Date().toISOString(),
   runtimeHooks: hooksInfo,
   runtimeHooksCompare: hooksCompare,
-  hookReplayMatchRate: hooksCompare?.matchRate ?? null
+  hookReplayMatchRate: hooksCompare?.matchRate ?? null,
+  hookStats
 };
 
 writeJson(out, summary);
