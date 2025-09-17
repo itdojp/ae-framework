@@ -199,7 +199,7 @@ jobs:
             }
           };
           // Append an explicit consistency line referencing JSON info.present
-          lines.push(`Consistency: present in MD/JSON = ok (${presentCount}/5)`);
+          lines.push(`Consistency: MD=JSON present (${presentCount}/5)`);
           lines.push('_Source: info.present (aggregate JSON)_');
           const md = normalizeMd(lines);
           fs.writeFileSync(outMd, md);
