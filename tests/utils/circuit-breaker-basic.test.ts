@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach, vi, beforeAll, afterAll } from 'vitest';
+import { formatGWT } from '../utils/gwt-format';
 import { CircuitBreaker, CircuitState } from '../../src/utils/circuit-breaker.js';
 
 describe('CircuitBreaker - Basic Functionality', () => {
@@ -22,11 +23,11 @@ describe('CircuitBreaker - Basic Functionality', () => {
     });
   });
 
-  test('should start in CLOSED state', () => {
+  test(formatGWT('new breaker', 'constructed', 'starts in CLOSED'), () => {
     expect(circuitBreaker.getState()).toBe(CircuitState.CLOSED);
   });
 
-  test('should execute successful operations', async () => {
+  test(formatGWT('operation succeeds', 'execute', 'remains CLOSED'), async () => {
     const result = await circuitBreaker.execute(async () => {
       return 'success';
     });
