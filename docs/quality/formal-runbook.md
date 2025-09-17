@@ -40,6 +40,10 @@ Timeout（任意）
 - 長時間実行を避けるため、TLA/SMT ランナーは `--timeout <ms>` をサポート（GNU `timeout` を利用可能な環境で有効）
 - 例: `pnpm run verify:tla -- --engine=apalache --timeout 60000`
 
+Aggregate JSON の軽量検証（非ブロッキング）
+- 集約ワークフローでは `artifacts/formal/formal-aggregate.json` を出力し、最小スキーマを警告レベルで検証します。
+- ローカル確認: `node scripts/formal/validate-aggregate-json.mjs`（存在時に検証、欠損/不正は `::warning::` 出力）
+
 ログ例（label: run-formal 実行時）
 ```
 --- Formal Summary ---
@@ -276,3 +280,4 @@ jobs:
 verify-formal:
 	pnpm run verify:formal
 ```
+- `artifacts/formal/formal-aggregate.json`: PR向け集約（byType/present/ranOk 等の最小情報を含む）
