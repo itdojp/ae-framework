@@ -17,15 +17,18 @@ Repository variables (recommended)
 Current wiring (a11y minimal)
 - `run-adapters`: runs adapter-thresholds.yml to summarize `reports/a11y-results.json` on PR (non-blocking)
 - `enforce-a11y`: enforces minimal thresholds (critical=0, serious=0). Job fails if violated.
+- PR comment fields: Threshold (effective) / Derived（固定: critical=0, serious=0）/ Policy / Docs
 
 Perf (proposal → minimal wiring)
 - `reports/perf-results.json` が存在する場合にスコアを要約（非ブロッキング）
 - `enforce-perf` ラベルでしきい値を強制（`perf:<score>` ラベルで上書き。既定は `vars.PERF_DEFAULT_THRESHOLD` または 75）
+- PRコメント: Threshold (effective) / Derived（label > repo var > default）/ Policy / Docs
 - Slash Commands: `/enforce-perf`, `/perf <pct|clear>`
 
 Lighthouse (proposal → minimal wiring)
 - `reports/lighthouse-results.json`（または `reports/lh-results.json`）から performance スコアを要約（非ブロッキング）
 - `enforce-lh` ラベルでしきい値を強制（`lh:<score>` ラベルで上書き。既定は `vars.LH_DEFAULT_THRESHOLD` または 80）
+- PRコメント: Threshold (effective) / Derived（label > repo var > default）/ Policy / Docs
 - Slash Commands: `/enforce-lh`, `/lh <pct|clear>`
 
 Phasing
@@ -36,6 +39,12 @@ Phasing
 Notes
 - See `quality-gates-centralized.yml` for central jobs and consider adding thresholds as follow-up.
  - File: `.github/workflows/adapter-thresholds.yml`
+
+JSON shape checks（非ブロッキング警告）
+- a11y: `.violations.critical` / `.violations.serious` が数値、`.components_tested` が配列かを軽く検証
+- perf: `.score` or `.performance`（0..100）、もしくは `.metrics.score`
+- lighthouse: `.categories.performance.score`（0..1） or `.performance`（0..100） or `.score`
+形状が想定外の場合は `::warning::` を出力（ジョブは継続）
 
 CLI (quick local reproduction)
 - a11y (report-only JSONを用意してPRでのコメント確認)
