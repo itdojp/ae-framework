@@ -78,7 +78,9 @@ describe('Performance Monitor', () => {
     }
   );
 
-  it('should emit events for metrics collection', (done) => {
+  it(
+    formatGWT('monitoring events', 'emit on metrics collection', 'provides timestamp/cpu/memory'),
+    (done) => {
     monitor.on('metricsCollected', (metrics) => {
       expect(metrics).toBeTruthy();
       expect(metrics.timestamp).toBeInstanceOf(Date);
@@ -90,7 +92,9 @@ describe('Performance Monitor', () => {
     monitor.start();
   });
 
-  it('should generate alerts for threshold violations', (done) => {
+  it(
+    formatGWT('threshold violations', 'generate performance alerts', 'emits warning/critical at least once'),
+    (done) => {
     let alertCount = 0;
     
     monitor.on('performanceAlert', (alert) => {
