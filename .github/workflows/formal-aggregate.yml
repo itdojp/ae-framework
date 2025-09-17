@@ -87,6 +87,11 @@ jobs:
             ].join(' ');
             lines.push(`- SMT: ${ss}`);
           }
+          if (conf && conf.runtimeHooks) {
+            const h = conf.runtimeHooks;
+            const info = `present=${h.present? 'yes':'no'} count=${h.count||0} traceId=${h.traceId||'n/a'} match=${h.matchesReplayTraceId? 'yes':'no'}`;
+            lines.push(`- Runtime hooks: ${info}`);
+          }
           // Present map (single source for MD + JSON)
           const present = {
             tla: !!tlaSum,
