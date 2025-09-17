@@ -209,7 +209,9 @@ describe('BenchmarkRunner', () => {
   });
 
   describe('metrics collection', () => {
-    it('should provide default metrics for failed executions', async () => {
+    it(
+      formatGWT('failed execution', 'collect default metrics', 'overallScore=0 and metrics present'),
+      async () => {
       const result = await runner.runBenchmark('test-problem');
       
       // Check that all metric properties are present with valid default values
@@ -228,11 +230,14 @@ describe('BenchmarkRunner', () => {
       
       expect(result.metrics.security).toBeDefined();
       expect(typeof result.metrics.security.vulnerabilityCount).toBe('number');
-    });
+    }
+    );
   });
 
   describe('generated artifacts', () => {
-    it('should initialize artifact structure properly', async () => {
+    it(
+      formatGWT('benchmark run (no generators)', 'initialize generatedArtifacts structure', 'all arrays are empty by default'),
+      async () => {
       const result = await runner.runBenchmark('test-problem');
       
       expect(result.generatedArtifacts).toBeDefined();
@@ -241,7 +246,8 @@ describe('BenchmarkRunner', () => {
       expect(result.generatedArtifacts.tests).toEqual([]);
       expect(result.generatedArtifacts.configuration).toEqual([]);
       expect(result.generatedArtifacts.deployment).toEqual([]);
-    });
+    }
+    );
   });
 
   describe('execution environment', () => {
