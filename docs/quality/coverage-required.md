@@ -14,6 +14,12 @@
   - PRではコメントに `Coverage (lines):` と `Threshold (effective):` を表示（`/coverage <pct>` で上書き可能）
   - main への push 時は `COVERAGE_ENFORCE_MAIN=1` で強制。違反時は失敗。
 
+コメント表示（整形）
+- Threshold (effective)
+- Derived: label > repo var > default（`coverage:<pct>` ラベルが最優先）
+- Policy / Policy source（`enforce-coverage` ラベルまたは main+変数で強制）
+- Docs: 本ページへのリンク
+
 Tips
 - PRで強制したい場合は `/enforce-coverage` ラベルを付与。
 - しきい値の一時上書き: `/coverage <pct>`（例: 72）。クリア: `/coverage clear`。
@@ -22,4 +28,3 @@ Tips
 備考
 - しきい値の決定は「ラベル > リポジトリ変数 > 既定(80)」の順で導出。
 - main Required 化は一度運用して観測した上で合意のもと有効化することを推奨。
-
