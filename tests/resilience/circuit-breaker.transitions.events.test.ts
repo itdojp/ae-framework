@@ -2,7 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { CircuitBreaker, CircuitState } from '../../src/utils/circuit-breaker';
 
 describe('Resilience: CircuitBreaker state transition events', () => {
-  it('emits state change events in expected order', async () => {
+  it(
+    // GWT-style title for consistency
+    'Given breaker hooks | When failures and recoveries occur | Then emits state change events in expected order',
+    async () => {
     const events: Array<{evt: string, state?: CircuitState}> = [];
     const cb = new CircuitBreaker('events', {
       failureThreshold: 1,
@@ -27,6 +30,6 @@ describe('Resilience: CircuitBreaker state transition events', () => {
     expect(names).toContain('circuitOpened');
     expect(names).toContain('circuitHalfOpen');
     expect(names).toContain('circuitClosed');
-  });
+  }
+  );
 });
-
