@@ -53,14 +53,16 @@ Aggregate JSON の軽量検証（非ブロッキング）
     - `jq -r '.info.ranOk.apalache' artifacts/formal/formal-aggregate.json`
 
 Note（Aggregate comment wrapping）
-- Long-line wrapping in the aggregate PR comment can be enabled via env `FORMAL_AGG_WRAP_WIDTH`.
-- Default is OFF (no wrapping) to keep current look-and-feel; suggested values are `80`–`100` when enabling. Wrapping applies only outside code fences and preserves words.
-- Tips: for tables/links with long URLs, prefer leaving wrap OFF to avoid visual breaks; code fences are never wrapped.
-Wrap pros/cons (quick ref)
-- Pros: improves readability for long narrative lines; avoids horizontal scrolling in PR comments
-- Cons: may visually break tables or long links; disable wrap when table-heavy or URL-heavy content is expected
- - The aggregate JSON (`artifacts/formal/formal-aggregate.json`) is the single source of truth
-   for presence/ran/ok; the PR comment is derived from it.
+- Enable with env `FORMAL_AGG_WRAP_WIDTH`（既定: OFF/無効）
+- 推奨値: 80–100（有効化する場合）。コードフェンス内は対象外、語単位で折返し。
+- Tips: 長いURLや表が多い場合は OFF を推奨（見た目が崩れる可能性）
+
+Wrap pros/cons（quick ref）
+- Pros: 長文行の可読性向上、横スクロール回避
+- Cons: 表/URLの視覚崩れの可能性（表やURLが多い場合は無効推奨）
+
+Single source of truth
+- Aggregate JSON `artifacts/formal/formal-aggregate.json` が present/ran/ok の唯一の正とし、PRコメントはそこから生成
 
 Keys quick reference (aggregate JSON)
 - `info.present`: presence flags for tla/alloy/smt/apalache/conformance
