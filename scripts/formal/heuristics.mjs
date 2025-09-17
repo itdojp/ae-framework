@@ -57,6 +57,7 @@ export const CAUTION_PATTERNS = [
   /achtung[:\s]/i,             // DE "Achtung:"
   /precaución[:\s]/i,          // ES "Precaución:"
   /atención[:\s]/i,            // ES "Atención:"
+  /cuidado[:\s]/i,             // ES "Cuidado:"
   /advertencia[:\s]/i,         // ES "Advertencia:"
   /aviso[:\s]/i,               // ES "Aviso:"
   /warning[:\s]/i,             // EN "Warning:"
@@ -78,6 +79,7 @@ export const CAUTION_PATTERNS = [
   /警告[:：]?/ ,                  // JA "警告:"（コロン有無）
   /備考[:：]/,                    // JA "備考:" / 全角コロン対応
   /留意点/ ,                    // JA "留意点"
+  /注意点/ ,                    // JA "注意点"
   /重要[:：]/ ,                  // JA "重要:" / 全角コロン対応
   /注記[:：]?/ ,                 // JA "注記:"（コロン有無）
   /補足[:：]?/ ,                 // JA "補足:"（コロン有無）
