@@ -60,6 +60,10 @@ function lintContent(content, file){
     if (STRICT && /(\bvery\b|\bso\b\s+\b\w+|\breally\b|\bextremely\b)/i.test(l)){
       violations.push({ file, line: i+1, message: 'Intensifier detected (prefer precise, measurable criteria over very/so/really)', text: l });
     }
+    // Repeated intensifiers (STRICT): really very / very very / so so
+    if (STRICT && /(really\s+very|very\s+very|\bso\b\s+\bso\b)/i.test(l)){
+      violations.push({ file, line: i+1, message: 'Repeated intensifier detected (avoid "really very"/"very very"/"so so")', text: l });
+    }
     // Passive voice (STRICT): "is/are/was/were <verb>ed (by)" (heuristic)
     if (STRICT && /(\bis\b|\bare\b|\bwas\b|\bwere\b)\s+\w+ed(\b|\s+by\b)/i.test(l)){
       violations.push({ file, line: i+1, message: 'Passive voice detected (prefer active voice in steps)', text: l });
