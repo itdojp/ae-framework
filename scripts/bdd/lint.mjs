@@ -57,7 +57,7 @@ function lintContent(content, file){
       violations.push({ file, line: i+1, message: 'Double negative detected (prefer direct, positive phrasing)', text: l });
     }
     // Intensifiers (STRICT): very/so/really/extremely (warn for overuse)
-    if (STRICT && /(\bvery\b|\bso\b\s+\b\w+|\breally\b|\bextremely\b)/i.test(l)){
+    if (STRICT && /(\bvery\b|\breally\b|\bextremely\b|\bso\b\s+(?!that)\b\w+)/i.test(l)){
       violations.push({ file, line: i+1, message: 'Intensifier detected (prefer precise, measurable criteria over very/so/really)', text: l });
     }
     // Repeated intensifiers (STRICT): really very / very very / so so

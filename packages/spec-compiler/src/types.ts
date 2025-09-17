@@ -55,7 +55,7 @@ export interface AEIR {
   usecases?: Array<{
     name: string;
     description?: string;
-    actor: string;
+    actor?: string;
     preconditions?: string[];
     postconditions?: string[];
     steps: Array<{
