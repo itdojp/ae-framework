@@ -40,6 +40,10 @@ jobs:
         continue-on-error: true
         run: |
           if [ -f scripts/bdd/lint.mjs ]; then node scripts/bdd/lint.mjs; else printf "No BDD linter\n"; fi
+      - name: BDD lint (strict; label-gated)
+        if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-bdd-lint') }}
+        run: |
+          node scripts/bdd/lint.mjs
       - name: BDD → LTL suggestions (report-only)
         run: |
           if npm run -s | grep -q "bdd:suggest"; then pnpm -s run bdd:suggest; else printf "No BDD suggest script\n"; fi

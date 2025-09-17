@@ -54,6 +54,9 @@ jobs:
             const arg = body.split(/\s+/)[1] || '';
 
             switch (cmd) {
+              case '/enforce-bdd-lint':
+                await addLabels(['enforce-bdd-lint']);
+                return reply('Label `enforce-bdd-lint` added. BDD lint will be enforced (blocking) in verify-lite.');
               case '/formal-help': {
                 const tips = [
                   '### Formal Help',

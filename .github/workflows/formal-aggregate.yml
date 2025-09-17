@@ -89,6 +89,15 @@ jobs:
           const presentCount = presentKeys.length;
           const apLine = apalacheSum && apalache ? `ran=${apalache.ran? 'yes':'no'} ok=${apalache.ok==null? 'n/a': (apalache.ok? 'yes':'no')}` : 'n/a';
           lines.push(`Present: ${presentCount}/5${presentCount? ` (${presentKeys.join(', ')})` : ''}`);
+          // Alloy temporal operator presence (if summary includes it)
+          try {
+            const t = alloyS && alloyS.temporal;
+            if (t && (t.present || (Array.isArray(t.operators) && t.operators.length))) {
+              const ops = Array.isArray(t.operators) ? t.operators.join(', ') : '';
+              const pops = Array.isArray(t.pastOperators) ? t.pastOperators.join(', ') : '';
+              lines.push(`Alloy temporal: present=${!!t.present}${ops? ` ops=[${ops}]`:''}${pops? ` past=[${pops}]`:''}`);
+            }
+          } catch {}
           // Apalache ran/ok line（MDとJSONの両方で一貫表記）
           lines.push(`Apalache ran/ok: ${apalacheSum && apalache ? (apalache.ran? 'yes':'no') : 'n/a'}/${apalacheSum && apalache ? (apalache.ok==null? 'n/a' : (apalache.ok? 'yes':'no')) : 'n/a'}`);
           lines.push("");
