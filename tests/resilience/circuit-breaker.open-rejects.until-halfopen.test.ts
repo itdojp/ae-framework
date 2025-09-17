@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
+import { formatGWT } from '../utils/gwt-format';
 import { CircuitBreaker, CircuitState, CircuitBreakerOpenError } from '../../src/utils/circuit-breaker';
 
 describe('Resilience: CircuitBreaker OPEN rejects until half-open window', () => {
-  it('OPEN state rejects immediately until timeout elapses', async () => {
+  it(formatGWT('OPEN state', 'rejects until timeout elapses', 'then HALF_OPEN allows a success to close'), async () => {
     const cb = new CircuitBreaker('open-rejects', {
       failureThreshold: 1,
       successThreshold: 1,
@@ -19,4 +20,3 @@ describe('Resilience: CircuitBreaker OPEN rejects until half-open window', () =>
     expect(cb.getState()).toBe(CircuitState.CLOSED);
   });
 });
-
