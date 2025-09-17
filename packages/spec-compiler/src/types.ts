@@ -47,7 +47,7 @@ export interface AEIR {
     id: string;
     description: string;
     expression: string;
-    entities: string[];
+    entities?: string[];
     severity: 'error' | 'warning';
   }>;
 

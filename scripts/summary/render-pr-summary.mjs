@@ -94,7 +94,7 @@ try {
   const evs = (hEv!==null || tEv!==null) ? ` ev(h=${hEv ?? 'n/a'}/t=${tEv ?? 'n/a'})` : '';
   if (vr !== null || mr !== null) {
     const en = `Conf: rate=${vr ?? 'n/a'}${mr!==null? ` match=${mr}`:''}${delta}${evs}`;
-    const ja = `適合: 率=${vr ?? 'n/a'}${mr!==null? ` 一致=${mr}`:''}${delta}${evs}`;
+    const ja = `適合: 率=${vr ?? 'n/a'}${mr!==null? ` 一致率=${mr}`:''}${delta}${evs}`;
     conformanceLine = t(en, ja);
   }
 } catch {}
