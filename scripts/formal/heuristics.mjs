@@ -46,6 +46,8 @@ export const NEGATIVE_PATTERNS = [
   ,/la\s+propiedad\s+no\s+se\s+cumple/i         // ES property does not hold
   ,/die\s+eigenschaft\s+gilt\s+nicht/i          // DE property does not hold
   ,/la\s+propri[ée]t[ée]\s+ne\s+tient\s+pas/i  // FR property does not hold
+  ,/assertion\s+failed/i                          // EN assertion failed
+  ,/unsatisfied\s+(?:invariant|property|spec)/i   // EN unsatisfied invariant/property/spec
 ];
 
 export function computeOkFromOutput(out){

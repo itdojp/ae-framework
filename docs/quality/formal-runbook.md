@@ -44,6 +44,8 @@ Timeout（任意）
 Aggregate JSON の軽量検証（非ブロッキング）
 - 集約ワークフローでは `artifacts/formal/formal-aggregate.json` を出力し、最小スキーマを警告レベルで検証します。
 - ローカル確認: `node scripts/formal/validate-aggregate-json.mjs`（存在時に検証、欠損/不正は `::warning::` 出力）
+- 1行サマリを表示する簡易CLI（ローカル）:
+  - `node -e "const p='artifacts/formal/formal-aggregate.json';const j=require('fs').existsSync(p)?require('./'+p):null;if(!j){console.log('no aggregate');process.exit(0)}const pr=j.info?.present||{};const keys=Object.entries(pr).filter(([,v])=>v).map(([k])=>k);console.log('Present:', keys.length+'/5', keys.length?('('+keys.join(', ')+')'):'');"`
 
 ログ例（label: run-formal 実行時）
 ```
