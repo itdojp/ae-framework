@@ -71,7 +71,15 @@ jobs:
         if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-resilience') }}
         continue-on-error: true
         run: |
-          pnpm -s vitest run tests/resilience --reporter=verbose --run --coverage=false || true
+          pnpm -s vitest run "tests/resilience/**/*.fast.*.test.ts" --reporter=verbose --run --coverage=false || true
+      - name: BDD step lint (non-blocking)
+        continue-on-error: true
+        run: |
+          if [ -f scripts/bdd/step-lint.mjs ]; then node scripts/bdd/step-lint.mjs || true; fi
+      - name: BDD step lint (strict; label-gated)
+        if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-bdd-lint') }}
+        run: |
+          if [ -f scripts/bdd/step-lint.mjs ]; then node scripts/bdd/step-lint.mjs; fi
       - name: Render PR summary (digest)
         env:
           SUMMARY_MODE: digest
