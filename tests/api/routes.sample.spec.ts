@@ -16,8 +16,11 @@ describe('route handlers (contracts-injected skeletons)', () => {
     expect(res.data).toBeUndefined()
   })
 
-  it('GET /inventory/:sku returns 200 with data', async () => {
+  it(
+    formatGWT('existing sku', 'GET /inventory/:sku', 'returns 200 with data'),
+    async () => {
     const res: any = await getInventory({ sku: 'ABC' })
     expect(res.status).toBe(200)
-  })
+  }
+  )
 })
