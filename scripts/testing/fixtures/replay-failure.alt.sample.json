@@ -1,0 +1,12 @@
+{
+  "events": [
+    { "type": "allocate", "onHand": 3, "allocated": 5 },
+    { "type": "adjust", "onHand": -2 }
+  ],
+  "violatedInvariants": {
+    "allocated_le_onhand": 1,
+    "onhand_min": 1
+  },
+  "note": "Alternative shape illustrating byType-like summary"
+}
+

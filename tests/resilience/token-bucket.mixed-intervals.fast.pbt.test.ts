@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
+import { formatGWT } from '../utils/gwt-format';
 import fc from 'fast-check';
 import { TokenBucketRateLimiter } from '../../src/resilience/backoff-strategies';
 
 describe('PBT: TokenBucket mixed intervals (fast)', () => {
-  it('alternating small/large waits keeps tokens within [0,max] for 5..7 steps', async () => {
+  it(formatGWT('partial drain', 'alternate small/large waits', 'tokens within [0,max] for 5..7 steps'), async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.record({ tokens: fc.integer({ min: 1, max: 8 }), interval: fc.integer({ min: 12, max: 80 }), max: fc.integer({ min: 6, max: 50 }), steps: fc.integer({ min: 5, max: 7 }) }),
@@ -28,4 +29,3 @@ describe('PBT: TokenBucket mixed intervals (fast)', () => {
     );
   });
 });
-
