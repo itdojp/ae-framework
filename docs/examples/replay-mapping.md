@@ -13,7 +13,12 @@ This note shows a minimal way to prepare inputs and inspect outputs when using t
 - Failure (alt6 byType): `scripts/testing/fixtures/replay-failure.bytype.alt6.sample.json`（byType 風、さらに最小の2イベントケース）
 - Failure (alt7 byType): `scripts/testing/fixtures/replay-failure.bytype.alt7.sample.json`（byType 風、単一タイプの複数違反をまとめた例）
  - Failure (alt8 byType): `scripts/testing/fixtures/replay-failure.bytype.alt8.sample.json`（byType 風、onhand_min のみの連続違反）
+<<<<<<< HEAD
+- Failure (alt9 byType): `scripts/testing/fixtures/replay-failure.bytype.alt9.sample.json`（byType 風、onhand_min と allocated_le_onhand の混在）
+- Failure (alt10 byType): `scripts/testing/fixtures/replay-failure.bytype.alt10.sample.json`（byType 風、allocated_le_onhand の連続違反＋one ok）
+=======
  - Failure (alt9 byType): `scripts/testing/fixtures/replay-failure.bytype.alt9.sample.json`（byType 風、onhand_min と allocated_le_onhand の混在）
+>>>>>>> 7bb5625 (Merge: ddd batch 32 (rebased) (admin))
 - Failure (sample3): `scripts/testing/fixtures/replay-failure.sample3.json`（典型的な allocated_le_onhand / onhand_min の違反例）
 
 Quick run
