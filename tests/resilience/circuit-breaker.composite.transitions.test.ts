@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
+import { formatGWT } from '../utils/gwt-format';
 import { CircuitBreaker, CircuitState, CircuitBreakerOpenError } from '../../src/utils/circuit-breaker';
 
 describe('Resilience: CircuitBreaker composite transitions', () => {
-  it('CLOSED → OPEN (fail) → HALF_OPEN (timeout) → CLOSED (successThreshold) → OPEN (fail in CLOSED after threshold)', async () => {
+  it(formatGWT('CLOSED→OPEN (fail)', 'HALF_OPEN→CLOSED (success)', 'CLOSED→OPEN (fail)'), async () => {
     const timeout = 40;
     const cb = new CircuitBreaker('composite', {
       failureThreshold: 1,
@@ -29,4 +30,3 @@ describe('Resilience: CircuitBreaker composite transitions', () => {
     await expect(cb.execute(async () => 1)).rejects.toBeInstanceOf(CircuitBreakerOpenError);
   });
 });
-

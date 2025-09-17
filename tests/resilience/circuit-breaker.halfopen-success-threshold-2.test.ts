@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
+import { formatGWT } from '../utils/gwt-format';
 import { CircuitBreaker, CircuitState } from '../../src/utils/circuit-breaker';
 
 describe('Resilience: CircuitBreaker HALF_OPEN successThreshold=2', () => {
-  it('requires two successes in HALF_OPEN to close', async () => {
+  it(formatGWT('OPEN after failure', 'two successes in HALF_OPEN', 'transition to CLOSED'), async () => {
     const timeout = 30;
     const cb = new CircuitBreaker('half-open-2', {
       failureThreshold: 1,
@@ -22,4 +23,3 @@ describe('Resilience: CircuitBreaker HALF_OPEN successThreshold=2', () => {
     expect(cb.getState()).toBe(CircuitState.CLOSED);
   });
 });
-

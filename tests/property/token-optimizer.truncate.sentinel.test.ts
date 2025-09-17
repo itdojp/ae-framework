@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
+import { formatGWT } from '../utils/gwt-format';
 import { TokenOptimizer } from '../../src/utils/token-optimizer';
 
 describe('TokenOptimizer truncate sentinel', () => {
-  it('adds [...truncated] when section is truncated due to maxTokens', async () => {
+  it(formatGWT('many large sections', 'compress with small maxTokens', 'append [...truncated] sentinel'), async () => {
     const opt = new TokenOptimizer();
     // craft multiple large sections to exceed small maxTokens
     const docs: Record<string,string> = {
@@ -18,4 +19,3 @@ describe('TokenOptimizer truncate sentinel', () => {
     expect(compressed.includes('[...truncated]') || stats.compressed <= 300).toBe(true);
   });
 });
-

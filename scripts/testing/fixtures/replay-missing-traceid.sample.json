@@ -1,0 +1,10 @@
+{
+  "events": [
+    { "type": "allocate", "amount": 5 },
+    { "type": "ship", "amount": 2 }
+  ],
+  "metadata": {
+    "note": "traceId intentionally missing to illustrate mapping robustness"
+  }
+}
+
