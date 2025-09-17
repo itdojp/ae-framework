@@ -48,6 +48,11 @@ Timeout（任意）
 - 例: `pnpm run verify:tla -- --engine=apalache --timeout 60000`
 - なお、GNU `timeout` 使用時にタイムアウトが発生すると、summary の `status: "timeout"` となります（非ブロッキング運用）
 
+### Troubleshooting（よくある確認ポイント）
+- PATH: `apalache` または `apalache-mc` が見つからない場合は `node scripts/formal/check-apalache.mjs` で存在/バージョンを確認
+- Timeout: 長時間のログが出続ける場合は `--timeout` を設定し、aggregate コメントの `status: "timeout"` を目安に切り上げ
+- Logs: 生ログは `hermetic-reports/formal/apalache-output.txt` に保存（aggregate コメントは長行をトリム/折返し）
+
 Aggregate JSON の軽量検証（非ブロッキング）
 - 集約ワークフローでは `artifacts/formal/formal-aggregate.json` を出力し、最小スキーマを警告レベルで検証します。
 - ローカル確認: `node scripts/formal/validate-aggregate-json.mjs`（存在時に検証、欠損/不正は `::warning::` 出力）
