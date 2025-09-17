@@ -1,0 +1,8 @@
+{
+  "name": "default-tla-presets",
+  "kind": "tla",
+  "rules": [
+    { "id": "INV_AllEntitiesHaveId", "desc": "All entities must have an id field" },
+    { "id": "INV_UseCaseStepsNonEmpty", "desc": "Use case steps descriptions are non-empty" }
+  ]
+}
