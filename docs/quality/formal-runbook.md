@@ -187,6 +187,12 @@ Artifacts のクイック確認（jq）
 - Conformance byType: `jq '.conformance.byType' hermetic-reports/formal/summary.json`
 - 最初の不変違反: `jq '.conformance.firstInvariantViolation' hermetic-reports/formal/summary.json`
 
+Keys quick reference（aggregate JSON）
+- `info.present`: 各レポートの有無（tla/alloy/smt/apalache/conformance）
+- `info.presentCount`: present の合計数（0..5）
+- `info.ranOk.apalache`: `{ ran: boolean, ok: boolean|null }`（null は不確定）
+  - jq 例: `jq '.info.ranOk.apalache' artifacts/formal/formal-aggregate.json`
+
 Field リファレンス（抜粋）
 - `formal/summary.json`
   - `timestamp`: 集計時刻（ISO8601）

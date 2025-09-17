@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
+import { formatGWT } from '../utils/gwt-format';
 import { TokenOptimizer } from '../../src/utils/token-optimizer';
 
 describe('TokenOptimizer compressionLevel effect', () => {
-  it('high compression produces tokens <= low compression for key-indicator content', async () => {
+  it(formatGWT('key-indicator content', 'compress at low vs high', 'tokens(high) <= tokens(low)'), async () => {
     const opt = new TokenOptimizer();
     const content = [
       '# Title\n',
@@ -18,4 +19,3 @@ describe('TokenOptimizer compressionLevel effect', () => {
     expect(typeof high.compressed).toBe('string');
   });
 });
-
