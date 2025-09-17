@@ -1,0 +1,16 @@
+{
+  "events": [
+    { "type": "allocate", "onHand": -1, "allocated": 0 },
+    { "type": "allocate", "onHand": -2, "allocated": 0 },
+    { "type": "deallocate", "onHand": -3, "allocated": 0 }
+  ],
+  "violatedInvariants": {
+    "byType": {
+      "onhand_min": {
+        "count": 3,
+        "indices": [0, 1, 2]
+      }
+    }
+  }
+}
+
