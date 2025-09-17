@@ -89,7 +89,8 @@ jobs:
           const presentCount = presentKeys.length;
           const apLine = apalacheSum && apalache ? `ran=${apalache.ran? 'yes':'no'} ok=${apalache.ok==null? 'n/a': (apalache.ok? 'yes':'no')}` : 'n/a';
           lines.push(`Present: ${presentCount}/5${presentCount? ` (${presentKeys.join(', ')})` : ''}`);
-          lines.push(`Presence Summary: TLA=${present.tla? 'present':'n/a'} | Alloy=${present.alloy? 'present':'n/a'} | SMT=${present.smt? 'present':'n/a'} | Apalache=${apLine} | Conformance=${present.conformance? 'present':'n/a'}`);
+          // Apalache ran/ok line（MDとJSONの両方で一貫表記）
+          lines.push(`Apalache ran/ok: ${apalacheSum && apalache ? (apalache.ran? 'yes':'no') : 'n/a'}/${apalacheSum && apalache ? (apalache.ok==null? 'n/a' : (apalache.ok? 'yes':'no')) : 'n/a'}`);
           lines.push("");
           // Visual separation for presence block
           lines.push("---");
