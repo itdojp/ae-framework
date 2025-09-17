@@ -39,6 +39,7 @@
 Timeout（任意）
 - 長時間実行を避けるため、TLA/SMT ランナーは `--timeout <ms>` をサポート（GNU `timeout` を利用可能な環境で有効）
 - 例: `pnpm run verify:tla -- --engine=apalache --timeout 60000`
+- なお、GNU `timeout` 使用時にタイムアウトが発生すると、summary の `status: "timeout"` となります（非ブロッキング運用）
 
 Aggregate JSON の軽量検証（非ブロッキング）
 - 集約ワークフローでは `artifacts/formal/formal-aggregate.json` を出力し、最小スキーマを警告レベルで検証します。
