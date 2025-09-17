@@ -88,7 +88,7 @@ jobs:
           const presentCount = presentKeys.length;
           const apLine = apalacheSum && apalache ? `ran=${apalache.ran? 'yes':'no'} ok=${apalache.ok==null? 'n/a': (apalache.ok? 'yes':'no')}` : 'n/a';
           lines.push(`Present: ${presentCount}/5${presentCount? ` (${presentKeys.join(', ')})` : ''}`);
-          lines.push(`Summary: TLA=${present.tla? 'present':'n/a'} | Alloy=${present.alloy? 'present':'n/a'} | SMT=${present.smt? 'present':'n/a'} | Apalache=${apLine} | Conformance=${present.conformance? 'present':'n/a'}`);
+          lines.push(`Presence Summary: TLA=${present.tla? 'present':'n/a'} | Alloy=${present.alloy? 'present':'n/a'} | SMT=${present.smt? 'present':'n/a'} | Apalache=${apLine} | Conformance=${present.conformance? 'present':'n/a'}`);
           lines.push("");
 
           if (apalacheSum && apalache) {
@@ -135,7 +135,7 @@ jobs:
           lines.push(confSum ? `- Conformance summary file: ${path.basename(confSum)}` : "- Conformance summary: n/a");
           // By-type/present summary（簡潔・Present行の補助、一行で整形）
           const presentPairs = Object.entries(present).map(([k,v])=>`${k}=${v? '1':'0'}`).join(', ');
-          lines.push(`By-type present: ${presentPairs}`);
+          lines.push(`By-type presence: ${presentPairs}`);
           if (apalacheSum && apalache) {
             lines.push(`Ran/OK summary: apalache ran=${apalache.ran? 'yes':'no'} ok=${apalache.ok==null? 'n/a': (apalache.ok? 'yes':'no')}`);
           }

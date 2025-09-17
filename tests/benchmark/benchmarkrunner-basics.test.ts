@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { formatGWT } from '../utils/gwt-format';
 import { BenchmarkRunner } from '../../src/benchmark/req2run/runners/BenchmarkRunner.js';
 import type { BenchmarkConfig } from '../../src/benchmark/req2run/types/index.js';
 
@@ -19,7 +20,7 @@ function cfg(): BenchmarkConfig {
 }
 
 describe('BenchmarkRunner basics', () => {
-  it('provides default metrics with zeros on failure cases', () => {
+  it(formatGWT('runner receives failure inputs', 'generate default metrics', 'zeros are provided safely'), () => {
     const r = new BenchmarkRunner(cfg());
     const m = (r as any).getDefaultMetrics();
     expect(m.overallScore).toBe(0);
@@ -27,7 +28,7 @@ describe('BenchmarkRunner basics', () => {
     expect(m.codeQuality.typeScriptErrors).toBe(0);
   });
 
-  it('initializes empty artifacts collection', () => {
+  it(formatGWT('runner created', 'initialize artifacts collection', 'starts empty by default'), () => {
     const r = new BenchmarkRunner(cfg());
     const a = (r as any).initializeArtifacts();
     expect(a.sourceCode).toEqual([]);
@@ -37,11 +38,10 @@ describe('BenchmarkRunner basics', () => {
     expect(a.deployment).toEqual([]);
   });
 
-  it('chunkArray splits inputs as expected', () => {
+  it(formatGWT('array inputs', 'chunkArray', 'splits as expected'), () => {
     const r = new BenchmarkRunner(cfg());
     const chunk = (r as any).chunkArray.bind(r) as <T>(arr: T[], size: number) => T[][];
     const arr = [1,2,3,4,5];
     expect(chunk(arr, 2)).toEqual([[1,2],[3,4],[5]]);
   });
 });
-

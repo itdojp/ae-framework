@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { formatGWT } from '../utils/gwt-format';
 import { StandardizedBenchmarkRunner } from '../../src/benchmark/req2run/runners/StandardizedBenchmarkRunner.js';
 import type { BenchmarkConfig, RequirementSpec } from '../../src/benchmark/req2run/types/index.js';
 
@@ -21,7 +22,7 @@ function makeConfig(): BenchmarkConfig {
 }
 
 describe('StandardizedBenchmarkRunner constraints and content', () => {
-  it('extractConstraints maps expected keys', () => {
+  it(formatGWT('raw spec inputs', 'extractConstraints', 'maps expected keys'), () => {
     const runner = new StandardizedBenchmarkRunner(makeConfig());
     const extract = (runner as any).extractConstraints.bind(runner) as (spec: unknown) => Record<string, unknown>;
 
@@ -37,7 +38,7 @@ describe('StandardizedBenchmarkRunner constraints and content', () => {
     expect(constraints.platform).toEqual(['node']);
   });
 
-  it('buildSpecificationContent renders title, description, requirements, constraints', () => {
+  it(formatGWT('normalized spec', 'build content', 'renders title/description/requirements/constraints'), () => {
     const runner = new StandardizedBenchmarkRunner(makeConfig());
     const build = (runner as any).buildSpecificationContent.bind(runner) as (spec: RequirementSpec) => string;
 
@@ -64,4 +65,3 @@ describe('StandardizedBenchmarkRunner constraints and content', () => {
     expect(content).toContain('business');
   });
 });
-
