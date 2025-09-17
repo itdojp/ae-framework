@@ -3,6 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { formatGWT } from '../../utils/gwt-format';
 import { BenchmarkRunner } from '../../../src/benchmark/req2run/runners/BenchmarkRunner.js';
 import { 
   BenchmarkConfig, 
@@ -92,7 +93,7 @@ describe('BenchmarkRunner', () => {
   });
 
   describe('constructor', () => {
-    it('should initialize with provided configuration', () => {
+    it(formatGWT('constructor', 'initialize with provided configuration', 'uses given options'), () => {
       expect(runner).toBeInstanceOf(BenchmarkRunner);
     });
   });

@@ -3,14 +3,15 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { formatGWT } from '../../tests/utils/gwt-format';
 
 describe('Req2Run Benchmark Integration', () => {
-  it('should have basic structure in place', () => {
+  it(formatGWT('benchmark setup', 'initialize basic structure', 'is in place'), () => {
     // Basic placeholder test
     expect(true).toBe(true);
   });
 
-  it('should support benchmark configuration', () => {
+  it(formatGWT('benchmark config', 'configure runner', 'accepts parameters'), () => {
     const config = {
       problems: [],
       execution: { parallel: false, maxConcurrency: 1, environment: 'test' }
