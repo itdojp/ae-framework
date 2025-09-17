@@ -1,7 +1,7 @@
 {
   "metadata": {
     "version": "1.0.0",
-    "timestamp": "2025-09-17T04:12:49.304Z",
+    "timestamp": "2025-09-17T04:16:13.071Z",
     "options": {
       "databasePath": ".ae/enhanced-state.db",
       "enableCompression": true,
@@ -14,9 +14,9 @@
   },
   "entries": [
     {
-      "id": "1946c64a-bc92-4856-8f0c-f56b59d62805",
+      "id": "4c0803ff-24a0-482d-aa6a-3e17d4c87e96",
       "logicalKey": "integration-ready",
-      "timestamp": "2025-09-17T04:12:49.304Z",
+      "timestamp": "2025-09-17T04:16:13.071Z",
       "version": 1,
       "checksum": "0094478148422a83dc50a368102314e8ddf937293f6679096c4b66f5d989afcb",
       "data": {
@@ -28,8 +28,8 @@
       "ttl": 604800,
       "metadata": {
         "size": 28,
-        "created": "2025-09-17T04:12:49.304Z",
-        "accessed": "2025-09-17T04:12:49.304Z",
+        "created": "2025-09-17T04:16:13.071Z",
+        "accessed": "2025-09-17T04:16:13.071Z",
         "source": "unknown"
       }
     }
@@ -37,7 +37,7 @@
   "indices": {
     "keyIndex": {
       "integration-ready": [
-        "integration-ready_2025-09-17T04:12:49.304Z"
+        "integration-ready_2025-09-17T04:16:13.071Z"
       ]
     },
     "versionIndex": {
