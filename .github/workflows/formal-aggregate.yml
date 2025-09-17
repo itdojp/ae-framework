@@ -137,7 +137,8 @@ jobs:
           }
           lines.push(confSum ? `- Conformance summary file: ${path.basename(confSum)}` : "- Conformance summary: n/a");
           // By-type/present summary（簡潔・Present行の補助、一行で整形）
-          const presentPairs = Object.entries(present).map(([k,v])=>`${k}=${v? '1':'0'}`).join(', ');
+          const presentPairs = ['tla','alloy','smt','apalache','conformance']
+            .map(k => `${k}=${present[k]? '1':'0'}`).join(', ');
           lines.push(`By-type presence: ${presentPairs}`);
           if (apalacheSum && apalache) {
             lines.push(`Ran/OK summary: apalache ran=${apalache.ran? 'yes':'no'} ok=${apalache.ok==null? 'n/a': (apalache.ok? 'yes':'no')}`);

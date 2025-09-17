@@ -46,23 +46,29 @@ describe('Security Headers Middleware', () => {
   }
   );
 
-  it('should add X-Content-Type-Options header', async () => {
+  it(
+    formatGWT('GET /health', 'adds X-Content-Type-Options header', 'nosniff is set'),
+    async () => {
     const response = await app.inject({
       method: 'GET',
       url: '/health'
     });
 
     expect(response.headers['x-content-type-options']).toBe('nosniff');
-  });
+  }
+  );
 
-  it('should add Referrer-Policy header', async () => {
+  it(
+    formatGWT('GET /health', 'adds Referrer-Policy header', 'strict-origin-when-cross-origin is set'),
+    async () => {
     const response = await app.inject({
       method: 'GET',
       url: '/health'
     });
 
     expect(response.headers['referrer-policy']).toBe('strict-origin-when-cross-origin');
-  });
+  }
+  );
 
   it('should add X-XSS-Protection header', async () => {
     const response = await app.inject({
