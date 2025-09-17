@@ -83,6 +83,15 @@ if (mode === 'digest') {
 } else {
   md = `## ${t('Quality Summary','品質サマリ')}\n- ${coverageLine}\n- ${alertsLine}\n- ${gwtLine}\n- ${bddLine}\n- ${propsLine}\n- ${ltlLine}\n- ${adapterCountsLine}\n- ${t('Adapters','アダプタ')}:\n${adaptersList}\n- ${t('Formal','フォーマル')}: ${formal}\n${alloyTemporalLine? `- ${alloyTemporalLine}\n`:''}- ${replayLine}\n- ${t('Trace IDs','トレースID')}: ${Array.from(traceIds).join(', ')}`;
 }
+// Fallback: if formal is n/a, print presentCount from aggregate JSON
+try {
+  if ((formal === 'n/a' || formal === '不明') && formalAgg?.info && typeof formalAgg.info.presentCount === 'number') {
+    const pc = Number(formalAgg.info.presentCount || 0);
+    const presentKeys = Object.entries(formalAgg.info.present || {}).filter(([,v])=>v).map(([k])=>k).join(', ');
+    const line = t(`Formal: present ${pc}/5${pc? ` (${presentKeys})`:''}`, `フォーマル: present ${pc}/5${pc? `（${presentKeys}）`:''}`);
+    if (mode === 'digest') md += ` | ${line}`; else md += `\n- ${line}`;
+  }
+} catch {}
 fs.mkdirSync('artifacts/summary',{recursive:true});
 fs.writeFileSync('artifacts/summary/PR_SUMMARY.md', md);
 console.log(md);

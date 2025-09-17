@@ -23,10 +23,18 @@ function lintContent(content, file){
     if (/^When\b/i.test(l)){
       const ok = ROOTS.some(r=>r.test(l)) && !/\bset to\b/i.test(l);
       if (!ok) violations.push({ file, line: i+1, message: 'When must use Aggregate Root command and avoid direct state mutation', text: l });
+      if (STRICT && /\bshould\b/i.test(l)) {
+        violations.push({ file, line: i+1, message: 'When should not contain modal verbs like "should" (use declarative command)', text: l });
+      }
     }
     if (STRICT && /^Then\b/i.test(l)){
       if (/\bdatabase|sql|table|insert|update\b/i.test(l)){
         violations.push({ file, line: i+1, message: 'Then should not mention persistence concerns directly (behavioral outcome expected)', text: l });
+      }
+    }
+    if (STRICT && /^Given\b/i.test(l)){
+      if (/\bclick|button|ui|page|css|selector\b/i.test(l)){
+        violations.push({ file, line: i+1, message: 'Given should avoid UI-specific terms (focus on domain state)', text: l });
       }
     }
   }
