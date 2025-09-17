@@ -16,6 +16,9 @@ export const POSITIVE_PATTERNS = [
   ,/keine\s+fehler\s+gefunden/i          // DE: no errors found
   ,/aucune?\s+(?:violation|erreur)s?\s+d[ée]tect[ée]?/i // FR: no violation/error detected
   ,/no\s+se\s+detectaron\s+(?:errores|violaciones|contraejemplos?)/i // ES: no errors/violations/counterexamples detected
+  ,/all\s+invariants?\s+(?:satisfied|hold)/i
+  ,/no\s+property\s+violations?\b/i
+  ,/no\s+counterexample\s+found\s+in\s+\d+\s+steps?/i
 ];
 
 export const NEGATIVE_PATTERNS = [
@@ -35,6 +38,9 @@ export const NEGATIVE_PATTERNS = [
   /échec\s+(?:détecté|trouvé)/i,                  // FR failure detected/found
   /violación\s+(?:detectada|encontrada)/i,        // ES violation detected/found
   /fehlers?\s+gefunden/i                          // DE error(s) found
+  ,/invariant\s+(?:violated|verlet[zt]t)/i        // EN/DE invariant violated
+  ,/propri[ée]t[ée]\s+viol[ée]e/i                // FR property violated
+  ,/propiedad\s+violada/i                         // ES property violated
 ];
 
 export function computeOkFromOutput(out){
