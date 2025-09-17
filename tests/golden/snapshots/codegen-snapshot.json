@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-09-17T04:12:49.109Z",
+  "timestamp": "2025-09-17T04:16:12.869Z",
   "version": "1.0.0",
   "files": {
     "examples/inventory/apps/web/components/ProductForm.tsx": {
@@ -128,6 +128,13 @@
       "typeScriptErrors": 1,
       "eslintErrors": 0
     },
+    "examples/inventory/apps/web/app/order/[id]/page.tsx": {
+      "hash": "71817e4dc364361729084d7e5c41db2fa60752e0cf7c46779e42840160ff0a6c",
+      "lineCount": 305,
+      "ariaAttributeCount": 0,
+      "typeScriptErrors": 1,
+      "eslintErrors": 0
+    },
     "examples/inventory/apps/web/app/customer/new/page.tsx": {
       "hash": "ddaf62479aa61e9eaa97d021c29c05d438bf740c1964a91f75eada1da6ed6263",
       "lineCount": 75,
@@ -140,13 +147,6 @@
       "lineCount": 214,
       "ariaAttributeCount": 0,
       "typeScriptErrors": 0,
-      "eslintErrors": 0
-    },
-    "examples/inventory/apps/web/app/order/[id]/page.tsx": {
-      "hash": "71817e4dc364361729084d7e5c41db2fa60752e0cf7c46779e42840160ff0a6c",
-      "lineCount": 305,
-      "ariaAttributeCount": 0,
-      "typeScriptErrors": 1,
       "eslintErrors": 0
     },
     "examples/inventory/src/ui/components/generated/apps/web/components/ProductForm.tsx": {
