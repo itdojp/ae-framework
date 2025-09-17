@@ -54,7 +54,7 @@ jobs:
         continue-on-error: true
         run: |
           if [ -f scripts/formal/tools-check.mjs ]; then node scripts/formal/tools-check.mjs; fi
-      - name: Run formal (label gated: run-formal)
+      - name: "Run formal (label gated: run-formal)"
         if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'run-formal') }}
         run: |
           node scripts/formal/verify-conformance.mjs || true
