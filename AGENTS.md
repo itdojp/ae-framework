@@ -91,3 +91,9 @@
 - 同一ヘッダのコメントはアップサート（一意に更新）
 - 1行サマリ→詳細→メタ情報（Clamp/Generated/Derived/Policy）の順で可読性を確保
 5) 小PR連投時の推奨ラベル: `ci-non-blocking`（非ブロッキング運用）, `run-formal`（Formalをopt-in）
+
+#### 例（良い/BAD）
+- 良い: Coverage コメントは `Threshold (effective)` → `Derived` → `Policy/Policy source` の順で表示（docsリンク付き）
+- 良い: Formal Aggregate コメントは `Present` → `Summary` → `By-type present` → `Apalache ran/ok` → `メタ（Tools/Reproduce/Policy/Clamp/Generated）`
+- BAD: 同一ヘッダのコメントを重複投稿する（アップサートせずノイズが増える）
+- BAD: 由来（Derived）/Policy の表記がCoverage/Adaptersで不一致になる

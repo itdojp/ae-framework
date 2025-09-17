@@ -32,6 +32,13 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - `coverage:<pct>`: override coverage threshold for coverage-check (default 80). e.g., `coverage:75`
  - `qa-batch:commands` / `qa-batch:cli` / `qa-batch:property` / `qa-batch:agents`: run additional CI Fast batches for the specific categories (opt-in)
 
+### Comment formatting (Coverage/Adapters)
+- Coverage / Adapters comments show:
+  - Threshold (effective)
+  - Derived: label > repo var > default（a11yは固定: critical=0, serious=0）
+  - Policy / Policy source（enforced via label, or report-only）
+  - Links to docs
+
 ### Slash Commands (Instant Dispatch / Labels)
 - コメントで以下を投稿すると、対象ワークフローの即時起動やラベル付与ができます（main取り込み後有効）。
   - Dispatch（workflow_dispatch 直起動）
