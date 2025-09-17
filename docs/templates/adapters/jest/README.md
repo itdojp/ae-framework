@@ -21,3 +21,13 @@ Minimal JSON shape (`artifacts/adapters/jest/summary.json`):
   "traceId": null
 }
 ```
+
+Alternative compact shape:
+```
+{
+  "tool": "jest",
+  "summary": { "passed": 12, "failed": 0, "skipped": 1 },
+  "files": [ { "path": "tests/foo.test.ts", "passed": 5, "failed": 0 } ]
+}
+```
+This artifact can be aggregated by `scripts/adapters/aggregate-artifacts.mjs` to generate a PR summary.
