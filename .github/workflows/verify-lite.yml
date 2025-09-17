@@ -36,3 +36,34 @@ jobs:
         run: pnpm lint || true
       - name: Build
         run: pnpm run build
+      - name: BDD lint (non-blocking)
+        continue-on-error: true
+        run: |
+          if [ -f scripts/bdd/lint.mjs ]; then node scripts/bdd/lint.mjs; else printf "No BDD linter\n"; fi
+      - name: BDD → LTL suggestions (report-only)
+        run: |
+          if npm run -s | grep -q "bdd:suggest"; then pnpm -s run bdd:suggest; else printf "No BDD suggest script\n"; fi
+      - name: Formal tools check (non-blocking)
+        continue-on-error: true
+        run: |
+          if [ -f scripts/formal/tools-check.mjs ]; then node scripts/formal/tools-check.mjs; fi
+      - name: Run formal (label gated: run-formal)
+        if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'run-formal') }}
+        run: |
+          node scripts/formal/verify-conformance.mjs || true
+          node scripts/formal/verify-alloy.mjs || true
+          node scripts/formal/verify-tla.mjs --engine=tlc || true
+          node scripts/formal/verify-smt.mjs --solver=cvc5 || true
+          node scripts/formal/aggregate-formal.mjs || true
+          node scripts/formal/print-summary.mjs || true
+      - name: Aggregate adapters/formal/properties (non-blocking)
+        continue-on-error: true
+        run: |
+          if npm run -s | grep -q "artifacts:aggregate"; then pnpm -s run artifacts:aggregate; fi
+      - name: Render PR summary (digest)
+        env:
+          SUMMARY_MODE: digest
+          SUMMARY_LANG: ${{ (github.event.pull_request && contains(github.event.pull_request.labels.*.name, 'lang:ja')) && 'ja' || 'en' }}
+        run: |
+          if [ -f scripts/summary/render-pr-summary.mjs ]; then node scripts/summary/render-pr-summary.mjs; fi
+          [ -f artifacts/summary/PR_SUMMARY.md ] && cat artifacts/summary/PR_SUMMARY.md >> "$GITHUB_STEP_SUMMARY" || true

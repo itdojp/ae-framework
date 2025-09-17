@@ -299,6 +299,8 @@
     ,
     "bdd:lint": "node scripts/bdd/lint.mjs"
     ,
+    "bdd:suggest": "node scripts/bdd/ltl-suggest.mjs"
+    ,
     "test:replay": "node scripts/testing/replay-runner.mjs",
     "test:replay:focus": "node scripts/testing/replay-runner.mjs --focus=$TRACE_ID",
     "test:replay:strict": "REPLAY_ONHAND_MIN=0 REPLAY_DISABLE= node scripts/testing/replay-runner.mjs",

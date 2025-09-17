@@ -1,0 +1,12 @@
+{
+  "file": "spec/alloy/Domain.als",
+  "ran": false,
+  "status": "tool_not_available",
+  "timestamp": "2025-09-17T19:57:44.834Z",
+  "output": "Alloy CLI not found. Set ALLOY_JAR=/path/to/alloy.jar or install Alloy CLI. See docs/quality/formal-tools-setup.md",
+  "temporal": {
+    "present": false,
+    "operators": [],
+    "pastOperators": []
+  }
+}
