@@ -8,8 +8,6 @@ VARIABLES stock, reserved
 \* Scenario: idempotent-by-order-id @inventory @idempotency
 
 Init == /\ stock = MaxStock /\ reserved = [o \in Orders |-> 0]
->>>>>>> e2a347e (verify: add OpenAPI sample, contracts skeleton, TLC Spec fix, traceability links (refs #381))
-Init == /\ stock = MaxStock /\ reserved = [o \in {} |-> 0]
 
 Reserve(o, q) ==
   /\ o \in Orders
