@@ -17,7 +17,7 @@ export interface AEIR {
   };
 
   /** Business glossary and terminology */
-  glossary: Array<{
+  glossary?: Array<{
     term: string;
     definition: string;
     aliases?: string[];
@@ -52,7 +52,7 @@ export interface AEIR {
   }>;
 
   /** Use cases and business processes */
-  usecases: Array<{
+  usecases?: Array<{
     name: string;
     description?: string;
     actor: string;
