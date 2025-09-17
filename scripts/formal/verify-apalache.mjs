@@ -23,7 +23,16 @@ function parseArgs(argv){
 }
 
 function has(cmd){ try { execSync(`bash -lc 'command -v ${cmd}'`, {stdio:'ignore'}); return true; } catch { return false; } }
-function sh(cmd){ try { return execSync(cmd, {encoding:'utf8'}); } catch(e){ return (e.stdout?.toString?.()||'') + (e.stderr?.toString?.()||''); } }
+function shWithCode(cmd){
+  try {
+    const out = execSync(cmd, {encoding:'utf8'});
+    return { out, code: 0 };
+  } catch(e){
+    const out = (e.stdout?.toString?.()||'') + (e.stderr?.toString?.()||'');
+    const code = typeof e.status === 'number' ? e.status : (typeof e.code === 'number' ? e.code : 1);
+    return { out, code };
+  }
+}
 
 const args = parseArgs(process.argv);
 if (args.help){
@@ -64,13 +73,20 @@ if (!fs.existsSync(absFile)){
     baseCmd = `timeout ${secs}s ${baseCmd}`;
   }
   const t0 = Date.now();
-  output = sh(`bash -lc '${baseCmd} 2>&1 || true'`);
+  const res = shWithCode(`bash -lc '${baseCmd} 2>&1'`);
+  output = res.out;
   timeMs = Date.now() - t0;
-  status = 'ran';
-  ran = true;
+  // Detect timeout exit (GNU timeout returns 124)
+  if (args.timeout && haveApalache && has('timeout') && (res.code === 124 || /timeout:/.test(output))) {
+    status = 'timeout';
+    ran = true;
+  } else {
+    status = 'ran';
+    ran = true;
+  }
   // Try to get version string
-  version = sh(`bash -lc '${apalacheCmd} version 2>&1 || true'`).trim().split(/\n/)[0] || '';
-  toolPath = sh(`bash -lc 'command -v ${apalacheCmd} || true'`).trim();
+  version = shWithCode(`bash -lc '${apalacheCmd} version 2>&1 || true'`).out.trim().split(/\n/)[0] || '';
+  toolPath = shWithCode(`bash -lc 'command -v ${apalacheCmd} || true'`).out.trim();
 }
 
 // Tuning via env (defaults keep current behavior)
