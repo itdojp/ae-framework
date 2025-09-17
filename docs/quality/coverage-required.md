@@ -10,6 +10,7 @@
 - ブランチ保護（Settings → Branches → Branch protection rules）
   - `Require status checks to pass before merging` を有効化
   - ステータスチェックに `coverage-check` を追加（必要に応じて `coverage-check (push)` / `(pull_request)` を選択）
+  - （任意）`Require branches to be up to date before merging` を一時的に無効化して段階導入を容易に（運用安定後に有効化を検討）
 - 運用
   - PRではコメントに `Coverage (lines):` と `Threshold (effective):` を表示（`/coverage <pct>` で上書き可能）
   - main への push 時は `COVERAGE_ENFORCE_MAIN=1` で強制。違反時は失敗。
@@ -24,6 +25,12 @@ Tips
 - PRで強制したい場合は `/enforce-coverage` ラベルを付与。
 - しきい値の一時上書き: `/coverage <pct>`（例: 72）。クリア: `/coverage clear`。
 - 詳細は `docs/quality/coverage-policy.md` も参照。
+
+クイックチェックリスト（導入時）
+- [ ] 変数 `COVERAGE_ENFORCE_MAIN` / `COVERAGE_DEFAULT_THRESHOLD` を設定
+- [ ] Branch protection のステータスチェックに `coverage-check` を登録
+- [ ] PRコメントに `Derived: label > repo var > default` と `Policy`/`Policy source` が表示されることを確認
+- [ ] 観測期間を設け、Required化の閾値/対象を最終決定
 
 備考
 - しきい値の決定は「ラベル > リポジトリ変数 > 既定(80)」の順で導出。
