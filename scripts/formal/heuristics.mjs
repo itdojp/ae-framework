@@ -55,7 +55,9 @@ export const CAUTION_PATTERNS = [
   /caution/i,
   /attention[:\s]/i,           // EN/FR-like "attention:"
   /achtung[:\s]/i,             // DE "Achtung:"
-  /precaución[:\s]/i           // ES "Precaución:"
+  /precaución[:\s]/i,          // ES "Precaución:"
+  /aviso[:\s]/i,               // ES "Aviso:"
+  /注意/                        // JA "注意"
 ];
 
 export function computeOkFromOutput(out){

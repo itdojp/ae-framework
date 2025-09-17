@@ -21,6 +21,8 @@ This note shows a minimal way to prepare inputs and inspect outputs when using t
 - Failure (alt14 byType): `scripts/testing/fixtures/replay-failure.bytype.alt14.sample.json`（byType 風、連続OK→複合違反→OK の混在）
 - Failure (alt15 byType): `scripts/testing/fixtures/replay-failure.bytype.alt15.sample.json`（byType 風、最小長の交互違反: onhand_min→allocated→onhand_min）
 - Failure (alt16 byType): `scripts/testing/fixtures/replay-failure.bytype.alt16.sample.json`（byType 風、短系列で onhand_min と allocated の各1件）
+- Failure (alt17 byType): `scripts/testing/fixtures/replay-failure.bytype.alt17.sample.json`（byType 風、onhand_min の複数違反が短系列で発生）
+- Failure (alt18 byType): `scripts/testing/fixtures/replay-failure.bytype.alt18.sample.json`（byType 風、allocated_le_onhand の複数違反）
 - Failure (sample3): `scripts/testing/fixtures/replay-failure.sample3.json`（典型的な allocated_le_onhand / onhand_min の違反例）
 
 Quick run
