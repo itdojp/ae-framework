@@ -35,6 +35,13 @@
 - Apalache（ある場合）: `pnpm run verify:tla -- --engine=apalache`
 - TLC（`TLA_TOOLS_JAR` がある場合）: `TLA_TOOLS_JAR=/path/to/tla2tools.jar pnpm run verify:tla -- --engine=tlc`
 - SMT（z3/cvc5 がある場合）: `pnpm run verify:smt -- --solver=z3 --file spec/smt/sample.smt2`
+ 
+### Apalache Quickstart（任意）
+- Presence/version check: `node scripts/formal/check-apalache.mjs`
+- Verify (non-blocking summary): `node scripts/formal/verify-apalache.mjs --file spec/tla/DomainSpec.tla`
+- Notes:
+  - formal-verify に非ブロッキングの presence/version ガードステップを追加済み（verify:apalache）
+  - aggregate コメントには Apalache ran/ok とエラー断片を一行で要約（長行は折り返し／トリム）
 
 Timeout（任意）
 - 長時間実行を避けるため、TLA/SMT ランナーは `--timeout <ms>` をサポート（GNU `timeout` を利用可能な環境で有効）
