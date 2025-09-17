@@ -185,6 +185,13 @@ jobs:
                 await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'spec-validation.yml', ref });
                 return reply(`Dispatched spec-validation on ${ref}`);
               }
+              case '/run-cedar-dispatch': {
+                if (!context.payload.issue.pull_request) return reply('Not a PR');
+                const pr = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
+                const ref = pr.data.head.ref;
+                await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'cedar-quality-gates.yml', ref });
+                return reply(`Dispatched cedar-quality-gates on ${ref}`);
+              }
               case '/formal-aggregate-dispatch': {
                 if (!context.payload.issue.pull_request) return reply('Not a PR');
                 const pr = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
