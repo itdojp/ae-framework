@@ -242,6 +242,10 @@ jobs:
                 await addLabels(['run-adapters']);
                 return reply('Label `run-adapters` added. Adapter thresholds (report-only) will run.');
               }
+              case '/run-resilience': {
+                await addLabels(['run-resilience']);
+                return reply('Label `run-resilience` added. Resilience quick tests will run (non-blocking).');
+              }
               case '/enforce-perf': {
                 await addLabels(['enforce-perf']);
                 return reply('Label `enforce-perf` added. Performance threshold enforcement may apply.');

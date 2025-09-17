@@ -1,0 +1,25 @@
+{
+  "count": 2,
+  "items": [
+    {
+      "file": "specs/bdd/features/inventory_reservation.feature",
+      "title": "Successful reservation",
+      "given": ["inventory has 10 units"],
+      "when": ["I reserve 3 units for order \"ORD-1\""],
+      "then": ["the remaining stock should be 7"],
+      "suggestions": [
+        { "ltl": "G( (I reserve 3 units for order \"ORD-1\") -> F(the remaining stock should be 7) )" }
+      ]
+    },
+    {
+      "file": "specs/bdd/features/inventory_reservation.feature",
+      "title": "Prevent negative stock",
+      "when": ["I reserve 11 units for order \"ORD-2\""],
+      "then": ["the operation should be rejected with code \"INSUFFICIENT_STOCK\""],
+      "suggestions": [
+        { "ltl": "G( (I reserve 11 units for order \"ORD-2\") -> F(the operation should be rejected with code \"INSUFFICIENT_STOCK\") )" }
+      ]
+    }
+  ]
+}
+

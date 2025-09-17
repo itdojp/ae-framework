@@ -64,6 +64,11 @@ jobs:
         continue-on-error: true
         run: |
           if npm run -s | grep -q "artifacts:aggregate"; then pnpm -s run artifacts:aggregate; fi
+      - name: Resilience quick (label-gated, non-blocking)
+        if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-resilience') }}
+        continue-on-error: true
+        run: |
+          pnpm -s vitest run tests/resilience --reporter=verbose --run --coverage=false || true
       - name: Render PR summary (digest)
         env:
           SUMMARY_MODE: digest

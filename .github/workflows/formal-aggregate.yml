@@ -207,6 +207,9 @@ jobs:
               presentCount,
               ranOk: {
                 apalache: apalache ? { ran: !!apalache.ran, ok: (typeof apalache.ok === 'boolean' ? apalache.ok : null) } : null
+              },
+              temporal: {
+                alloy: alloyS && alloyS.temporal ? alloyS.temporal : null
               }
             }
           };
