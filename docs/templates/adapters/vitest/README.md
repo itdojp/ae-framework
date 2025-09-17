@@ -21,3 +21,13 @@ Minimal JSON shape (`artifacts/adapters/vitest/summary.json`):
   "traceId": null
 }
 ```
+
+Alternative compact shape:
+```
+{
+  "tool": "vitest",
+  "summary": { "passed": 42, "failed": 0, "skipped": 0 },
+  "suites": [ { "name": "unit", "passed": 30, "failed": 0 } ]
+}
+```
+Aggregated by `scripts/adapters/aggregate-artifacts.mjs` into a single PR summary.
