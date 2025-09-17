@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { formatGWT } from '../../tests/utils/gwt-format';
+import { formatGWT } from '../../utils/gwt-format';
 
 describe('Req2Run Benchmark Integration', () => {
   it(formatGWT('benchmark setup', 'initialize basic structure', 'is in place'), () => {
