@@ -64,8 +64,8 @@ function lintContent(content, file){
     if (STRICT && /(really\s+very|very\s+very|\bso\b\s+\bso\b)/i.test(l)){
       violations.push({ file, line: i+1, message: 'Repeated intensifier detected (avoid "really very"/"very very"/"so so")', text: l });
     }
-    // Passive voice (STRICT): "is/are/was/were <verb>ed (by)" (heuristic)
-    if (STRICT && /(\bis\b|\bare\b|\bwas\b|\bwere\b)\s+\w+ed(\b|\s+by\b)/i.test(l)){
+    // Passive voice (STRICT): "is/are/was/were <verb>ed by"（false positive を避けるため by を必須に）
+    if (STRICT && /(\bis\b|\bare\b|\bwas\b|\bwere\b)\s+\w+ed\s+by\b/i.test(l)){
       violations.push({ file, line: i+1, message: 'Passive voice detected (prefer active voice in steps)', text: l });
     }
   }

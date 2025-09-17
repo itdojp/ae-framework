@@ -61,7 +61,7 @@ export interface AEIR {
     steps: Array<{
       step: number;
       description: string;
-      type: 'action' | 'validation' | 'computation';
+      type?: 'action' | 'validation' | 'computation';
     }>;
   }>;
 
