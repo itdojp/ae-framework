@@ -11,6 +11,7 @@ This note shows a minimal way to prepare inputs and inspect outputs when using t
 - Failure (alt4 byType): `scripts/testing/fixtures/replay-failure.bytype.alt4.sample.json`（byType 風、割当過多の簡易例）
 - Failure (alt5 byType): `scripts/testing/fixtures/replay-failure.bytype.alt5.sample.json`（byType 風、最小構成の割当過多）
 - Failure (alt6 byType): `scripts/testing/fixtures/replay-failure.bytype.alt6.sample.json`（byType 風、さらに最小の2イベントケース）
+- Failure (alt7 byType): `scripts/testing/fixtures/replay-failure.bytype.alt7.sample.json`（byType 風、単一タイプの複数違反をまとめた例）
 - Failure (sample3): `scripts/testing/fixtures/replay-failure.sample3.json`（典型的な allocated_le_onhand / onhand_min の違反例）
 
 Quick run
