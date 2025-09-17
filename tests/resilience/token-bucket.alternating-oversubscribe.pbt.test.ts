@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
+import { formatGWT } from '../utils/gwt-format';
 import fc from 'fast-check';
 import { TokenBucketRateLimiter } from '../../src/resilience/backoff-strategies';
 
 describe('PBT: TokenBucket alternating oversubscribe with waits', () => {
-  it('alternating oversubscribe/await patterns never go negative or exceed max', async () => {
+  it(formatGWT('partial drain', 'alternate oversubscribe + waits', 'tokens remain within [0,max]'), async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.record({

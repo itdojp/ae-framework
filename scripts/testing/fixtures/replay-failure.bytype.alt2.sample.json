@@ -1,0 +1,12 @@
+{
+  "events": [
+    { "type": "allocate", "onHand": 2, "allocated": 4 },
+    { "type": "receive", "onHand": 1 }
+  ],
+  "violatedInvariants": {
+    "allocated_le_onhand": 1,
+    "onhand_min": 0
+  },
+  "note": "Alternative byType-like shape (alt2)"
+}
+
