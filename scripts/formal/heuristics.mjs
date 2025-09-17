@@ -58,6 +58,8 @@ export const CAUTION_PATTERNS = [
   /precaución[:\s]/i,          // ES "Precaución:"
   /aviso[:\s]/i,               // ES "Aviso:"
   /notice[:\s]/i,              // EN "Notice:"
+  /heads?\s*up[:\s]/i,         // EN "Heads up:"
+  /注意喚起/ ,                  // JA "注意喚起"
   /注意事項/ ,                  // JA "注意事項"
   /注意/                        // JA "注意"
 ];
