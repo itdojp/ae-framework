@@ -95,41 +95,36 @@ describe('Security Headers Middleware', () => {
     }
   );
 
-  it('should remove server identification headers', async () => {
-    const response = await app.inject({
-      method: 'GET',
-      url: '/health'
-    });
+  it(
+    formatGWT('GET /health', 'removes server identification headers', 'no x-powered-by / server headers'),
+    async () => {
+      const response = await app.inject({ method: 'GET', url: '/health' });
+      expect(response.headers['x-powered-by']).toBeUndefined();
+      expect(response.headers['server']).toBeUndefined();
+    }
+  );
 
-    expect(response.headers['x-powered-by']).toBeUndefined();
-    expect(response.headers['server']).toBeUndefined();
-  });
+  it(
+    formatGWT('HTTP request', 'does not add HSTS header', 'no Strict-Transport-Security on http'),
+    async () => {
+      const response = await app.inject({ method: 'GET', url: '/health' });
+      expect(response.headers['strict-transport-security']).toBeUndefined();
+    }
+  );
 
-  it('should NOT add HSTS header for HTTP requests', async () => {
-    const response = await app.inject({
-      method: 'GET',
-      url: '/health'
-    });
-
-    // HSTS should not be present for HTTP requests
-    expect(response.headers['strict-transport-security']).toBeUndefined();
-  });
-
-  it('should work with POST requests', async () => {
-    const response = await app.inject({
-      method: 'POST',
-      url: '/reservations',
-      payload: {
-        orderId: 'test-order',
-        itemId: 'test-item',
-        quantity: 1
-      }
-    });
-
-    expect(response.headers['content-security-policy']).toBeDefined();
-    expect(response.headers['x-frame-options']).toBe('DENY');
-    expect(response.headers['x-content-type-options']).toBe('nosniff');
-  });
+  it(
+    formatGWT('POST /reservations', 'returns security headers', 'CSP/X-Frame-Options/X-Content-Type-Options are present'),
+    async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/reservations',
+        payload: { orderId: 'test-order', itemId: 'test-item', quantity: 1 }
+      });
+      expect(response.headers['content-security-policy']).toBeDefined();
+      expect(response.headers['x-frame-options']).toBe('DENY');
+      expect(response.headers['x-content-type-options']).toBe('nosniff');
+    }
+  );
 
   it('should handle health check endpoint correctly', async () => {
     const response = await app.inject({

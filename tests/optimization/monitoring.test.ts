@@ -37,7 +37,9 @@ describe('Performance Monitor', () => {
     monitor.stop();
   });
 
-  it('should track operations and calculate response times', async () => {
+  it(
+    formatGWT('operation executed', 'track response time', 'metrics eventually include samples'),
+    async () => {
     const startTime = performance.now();
     
     // Simulate operation
@@ -62,18 +64,19 @@ describe('Performance Monitor', () => {
       // If no metrics collected yet, check that operation was tracked
       expect(monitor.getCurrentMetrics()).toBeTruthy();
     }
-  });
+  }
+  );
 
-  it('should track errors', () => {
-    monitor.trackError('validation-error');
-    monitor.trackError('network-error');
-    monitor.trackError('validation-error');
-    
-    monitor.start();
-    
-    // Errors should be tracked in metrics when collected
-    expect(() => monitor.trackError('test-error')).not.toThrow();
-  });
+  it(
+    formatGWT('errors occur', 'track error types', 'metrics capture errors without throwing'),
+    () => {
+      monitor.trackError('validation-error');
+      monitor.trackError('network-error');
+      monitor.trackError('validation-error');
+      monitor.start();
+      expect(() => monitor.trackError('test-error')).not.toThrow();
+    }
+  );
 
   it('should emit events for metrics collection', (done) => {
     monitor.on('metricsCollected', (metrics) => {
