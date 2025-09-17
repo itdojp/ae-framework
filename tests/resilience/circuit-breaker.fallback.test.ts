@@ -1,8 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { CircuitBreaker, CircuitState, CircuitBreakerOpenError } from '../../src/utils/circuit-breaker';
+import { formatGWT } from '../utils/gwt-format';
 
 describe('Resilience: CircuitBreaker fallback behavior', () => {
-  it('uses fallback when OPEN', async () => {
+  it(
+    formatGWT('OPEN state', 'execute with configured fallback', 'returns fallback value without throwing'),
+    async () => {
     const cb = new CircuitBreaker('fallback', {
       failureThreshold: 1,
       successThreshold: 1,
@@ -20,6 +23,6 @@ describe('Resilience: CircuitBreaker fallback behavior', () => {
       throw e;
     });
     expect(val).toBe(99);
-  });
+  }
+  );
 });
-
