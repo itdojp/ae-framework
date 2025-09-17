@@ -72,6 +72,7 @@ export const CAUTION_PATTERNS = [
   /be\s+advised[:\s]/i,        // EN "Be advised:"
   /please\s+be\s+advised[:\s]/i, // EN "Please be advised:"
   /advisory[:\s]/i,            // EN "Advisory:"
+  /important[:\s]/i,           // EN "Important:"
   /\bN\.?B\.?[:\s]/i,          // EN "NB:" / "N.B.:"
   /hinweis[:\s]/i,             // DE "Hinweis:"
   /warnung[:\s]/i,             // DE "Warnung:"
@@ -105,6 +106,11 @@ export const CAUTION_PATTERNS = [
   /周知/ ,                      // JA "周知"
   /注意/                        // JA "注意"
   ,/ご承知おきください/         // JA 丁寧な注意喚起
+  ,/留意事項/                   // JA "留意事項"
+  ,/重要な?お知らせ[:：]?/       // JA "重要なお知らせ:"
+  ,/ご案内[:：]?/               // JA "ご案内:"
+  ,/notice\s+to\s+readers[:\s]/i // EN "Notice to readers:"
+  ,/注意喚起です[:：]?/          // JA "注意喚起です:"
 ];
 
 export function computeOkFromOutput(out){
