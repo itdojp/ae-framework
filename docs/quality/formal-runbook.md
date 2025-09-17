@@ -55,6 +55,7 @@ Aggregate JSON の軽量検証（非ブロッキング）
 Note（Aggregate comment wrapping）
 - Long-line wrapping in the aggregate PR comment can be enabled via env `FORMAL_AGG_WRAP_WIDTH`.
 - Default is OFF (no wrapping) to keep current look-and-feel; suggested values are `80`–`100` when enabling. Wrapping applies only outside code fences and preserves words.
+- Tips: for tables/links with long URLs, prefer leaving wrap OFF to avoid visual breaks; code fences are never wrapped.
  - The aggregate JSON (`artifacts/formal/formal-aggregate.json`) is the single source of truth
    for presence/ran/ok; the PR comment is derived from it.
 
