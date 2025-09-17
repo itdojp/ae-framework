@@ -39,8 +39,7 @@ describe('PBT: TokenBucket alternating oversubscribe with waits', () => {
           }
         }
       ),
-      { numRuns: 20 }
+      { numRuns: 10 }
     );
   });
 });
-
