@@ -141,6 +141,7 @@ jobs:
           }
           lines.push("");
           // Footer meta（順序を統一: Tools → Reproduce → Policy → Clamp → Generated）
+          lines.push("\n---");
           lines.push("_Tools check: pnpm run tools:formal:check_");
           lines.push("_Reproduce locally: pnpm run verify:tla -- --engine=apalache_ (see docs/quality/formal-runbook.md)");
           lines.push("_Non-blocking. Add/remove label run-formal to control._");

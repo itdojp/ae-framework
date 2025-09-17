@@ -49,6 +49,8 @@ Aggregate JSON の軽量検証（非ブロッキング）
   - jq 例（presentCount/by-type）:
     - `jq '.info.presentCount' artifacts/formal/formal-aggregate.json`
     - `jq -r '.info.present | to_entries | map("\(.key)=\(.value|tostring)") | join(", ")' artifacts/formal/formal-aggregate.json`
+  - ran/ok（Apalache の例）:
+    - `jq -r '.info.ranOk.apalache' artifacts/formal/formal-aggregate.json`
 
 ログ例（label: run-formal 実行時）
 ```
