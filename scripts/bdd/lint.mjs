@@ -38,6 +38,11 @@ function lintContent(content, file){
       if (andCount >= 2) {
         violations.push({ file, line: i+1, message: 'Then has too many conjunctions (prefer small, focused expectations)', text: l });
       }
+      // "and then" repeated (STRICT)
+      const andThenCount = (l.match(/\band\s+then\b/gi) || []).length;
+      if (andThenCount >= 2) {
+        violations.push({ file, line: i+1, message: 'Avoid repeated "and then"; prefer separate steps', text: l });
+      }
     }
     if (STRICT && /^Given\b/i.test(l)){
       if (/\bclick|button|ui|page|css|selector\b/i.test(l)){
