@@ -1,15 +1,15 @@
 # Adapter Thresholds — Lighthouse/Perf/A11y (Label-Gated)
 
-Purpose
-- Define adapter thresholds and label-gated enforcement without slowing down PRs by default.
+Purpose（決定）
+- Adapter thresholds は「PRは非ブロッキング、必要時ラベルで強制」の方針とする（段階導入）。
 
 Proposal
-- Keep adapter checks non-blocking on PRs; use labels to opt-in enforcement and/or stricter thresholds.
+- PRは非ブロッキング（report-only）。必要に応じてラベルで強制・しきい値上書きを行う。
 - Example labels (to be wired incrementally):
   - `enforce-a11y`, `enforce-perf`, `enforce-lh` — turn results into gates
   - `a11y:<score>`, `perf:<score>` — override thresholds ad hoc
 
-Repository variables (recommended)
+Repository variables（推奨/決定）
 - `PERF_DEFAULT_THRESHOLD`（未設定時は既定 75）
 - `LH_DEFAULT_THRESHOLD`（未設定時は既定 80）
 未設定の場合でもレポートは非ブロッキングで動作します（強制時はラベル/値の解決順：ラベル > 変数 > 既定）。
@@ -31,10 +31,10 @@ Lighthouse (proposal → minimal wiring)
 - PRコメント: Threshold (effective) / Derived（label > repo var > default）/ Policy / Policy source / Docs
 - Slash Commands: `/enforce-lh`, `/lh <pct|clear>`
 
-Phasing
-- Phase 1: Reporting only (post PR comments/artifacts)
-- Phase 2: Label-gated enforcement
-- Phase 3: Consider main defaults after observation
+Phasing（段階導入）
+- Phase 1: Reporting only（PRコメント/アーティファクト）
+- Phase 2: Label-gated enforcement（`enforce-*` ラベルでブロック化）
+- Phase 3: main 既定（観測後に検討）
 
 Notes
 - See `quality-gates-centralized.yml` for central jobs and consider adding thresholds as follow-up.
