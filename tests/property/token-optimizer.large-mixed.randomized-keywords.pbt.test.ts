@@ -7,13 +7,25 @@ describe('PBT: TokenOptimizer large mixed with randomized keywords', () => {
   it(
     formatGWT('large mixed with keywords', 'compressSteeringDocuments', 'priority order among present & tokens reduce or equal'),
     async () => {
+      // Readability: extract unique keys arbitrary (avoid inline nesting)
+      const uniqueKeysArb = fc
+        .array(fc.constantFrom('product', 'design', 'architecture', 'standards'), { minLength: 2, maxLength: 4 })
+        .map((a) => Array.from(new Set(a)));
+
       await fc.assert(
         fc.asyncProperty(
-          fc.array(fc.constantFrom('product','design','architecture','standards'), {minLength:2, maxLength:4}).map(a=>Array.from(new Set(a))),
+          uniqueKeysArb,
           async (keys) => {
             const docs: Record<string,string> = {};
             for (const k of keys) {
-              const kw = (k === 'product') ? 'FEATURE' : (k === 'design') ? 'UX' : (k === 'architecture') ? 'MODEL' : 'POLICY';
+              // Readability: replace nested ternary with a lookup map
+              const keywordMap: Record<string, string> = {
+                product: 'FEATURE',
+                design: 'UX',
+                architecture: 'MODEL',
+                standards: 'POLICY',
+              };
+              const kw = keywordMap[k] ?? 'POLICY';
               docs[k] = [(`# ${k}`), (('lorem '.repeat(40)) + kw + ' ' + ('ipsum '.repeat(40)))].join('\n');
             }
             const opt = new TokenOptimizer();
@@ -29,4 +41,3 @@ describe('PBT: TokenOptimizer large mixed with randomized keywords', () => {
     }
   );
 });
-
