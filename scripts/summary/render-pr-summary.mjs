@@ -93,10 +93,9 @@ try {
   const delta = (onlyH!==null || onlyT!==null) ? ` Δ(hooks=${onlyH ?? 'n/a'}/trace=${onlyT ?? 'n/a'})` : '';
   const evs = (hEv!==null || tEv!==null) ? ` ev(h=${hEv ?? 'n/a'}/t=${tEv ?? 'n/a'})` : '';
   if (vr !== null || mr !== null) {
-    conformanceLine = t(
-      `Conformance: rate=${vr ?? 'n/a'}${mr!==null? ` hooksMatch=${mr}`:''}${delta}${evs}`,
-      `適合性: 率=${vr ?? 'n/a'}${mr!==null? ` hooks一致=${mr}`:''}${delta}${evs}`
-    );
+    const en = `Conf: rate=${vr ?? 'n/a'}${mr!==null? ` match=${mr}`:''}${delta}${evs}`;
+    const ja = `適合: 率=${vr ?? 'n/a'}${mr!==null? ` 一致=${mr}`:''}${delta}${evs}`;
+    conformanceLine = t(en, ja);
   }
 } catch {}
 

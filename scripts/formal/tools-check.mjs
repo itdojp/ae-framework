@@ -70,7 +70,8 @@ try {
     `tlc=${tlc?'yes':'no'}`,
     `apalache=${map['apalache-mc']?'yes':'no'}`,
     `z3=${map['z3']?'yes':'no'}`,
-    `cvc5=${map['cvc5']?'yes':'no'}`
+    `cvc5=${map['cvc5']?'yes':'no'}`,
+    `java=${report.find(r=>r.tool==='java')?.version||'n/a'}`
   ].join(' ');
   console.log(`Tools: ${line}`);
 } catch {}
