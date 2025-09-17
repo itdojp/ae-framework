@@ -12,6 +12,7 @@ const statusCounts = adaptersArr.reduce((acc,a)=>{ const s=(a.status||'ok').toLo
 const adaptersLine = adaptersArr.map(a=>`${a.adapter||a.name}: ${a.summary} (${a.status})`).join(', ');
 const adaptersList = adaptersArr.map(a=>`  - ${a.adapter||a.name}: ${a.summary} (${a.status})`).join('\n');
 const formalObj = c.formal || r('formal/summary.json') || r('hermetic-reports/formal/summary.json') || {};
+const formalHerm = r('hermetic-reports/formal/summary.json') || {};
 const formalAgg = r('artifacts/formal/formal-aggregate.json') || {};
 const formal = formalObj.result || t('n/a','不明');
 const gwt = r('artifacts/formal/gwt.summary.json');
@@ -89,6 +90,22 @@ try {
     const pc = Number(formalAgg.info.presentCount || 0);
     const presentKeys = Object.entries(formalAgg.info.present || {}).filter(([,v])=>v).map(([k])=>k).join(', ');
     const line = t(`Formal: present ${pc}/5${pc? ` (${presentKeys})`:''}`, `フォーマル: present ${pc}/5${pc? `（${presentKeys}）`:''}`);
+    if (mode === 'digest') md += ` | ${line}`; else md += `\n- ${line}`;
+  }
+} catch {}
+
+// Conformance short line (violationRate / hooks matchRate)
+try {
+  const conf = formalHerm?.conformance || {};
+  const vr = (typeof conf.violationRate === 'number') ? conf.violationRate : null;
+  const mr = (typeof formalHerm?.hookReplayMatchRate === 'number')
+    ? formalHerm.hookReplayMatchRate
+    : (typeof conf?.runtimeHooksCompare?.matchRate === 'number' ? conf.runtimeHooksCompare.matchRate : null);
+  if (vr !== null || mr !== null) {
+    const line = t(
+      `Conformance: rate=${vr ?? 'n/a'}${mr!==null? ` hooksMatch=${mr}`:''}`,
+      `適合性: 率=${vr ?? 'n/a'}${mr!==null? ` hooks一致=${mr}`:''}`
+    );
     if (mode === 'digest') md += ` | ${line}`; else md += `\n- ${line}`;
   }
 } catch {}
