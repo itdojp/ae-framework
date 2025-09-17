@@ -52,6 +52,12 @@ Aggregate JSON の軽量検証（非ブロッキング）
   - ran/ok（Apalache の例）:
     - `jq -r '.info.ranOk.apalache' artifacts/formal/formal-aggregate.json`
 
+Keys quick reference (aggregate JSON)
+- `info.present`: presence flags for tla/alloy/smt/apalache/conformance
+- `info.presentCount`: number of present summaries (0..5)
+- `info.ranOk.apalache`: `{ ran: boolean, ok: boolean|null }` (null = indeterminate)
+  - jq: `jq '.info.ranOk.apalache' artifacts/formal/formal-aggregate.json`
+
 ログ例（label: run-formal 実行時）
 ```
 --- Formal Summary ---
