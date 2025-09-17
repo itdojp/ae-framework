@@ -22,13 +22,13 @@ Current wiring (a11y minimal)
 Perf (proposal → minimal wiring)
 - `reports/perf-results.json` が存在する場合にスコアを要約（非ブロッキング）
 - `enforce-perf` ラベルでしきい値を強制（`perf:<score>` ラベルで上書き。既定は `vars.PERF_DEFAULT_THRESHOLD` または 75）
-- PRコメント: Threshold (effective) / Derived（label > repo var > default）/ Policy / Docs
+- PRコメント: Threshold (effective) / Derived（label > repo var > default）/ Policy / Policy source / Docs
 - Slash Commands: `/enforce-perf`, `/perf <pct|clear>`
 
 Lighthouse (proposal → minimal wiring)
 - `reports/lighthouse-results.json`（または `reports/lh-results.json`）から performance スコアを要約（非ブロッキング）
 - `enforce-lh` ラベルでしきい値を強制（`lh:<score>` ラベルで上書き。既定は `vars.LH_DEFAULT_THRESHOLD` または 80）
-- PRコメント: Threshold (effective) / Derived（label > repo var > default）/ Policy / Docs
+- PRコメント: Threshold (effective) / Derived（label > repo var > default）/ Policy / Policy source / Docs
 - Slash Commands: `/enforce-lh`, `/lh <pct|clear>`
 
 Phasing
