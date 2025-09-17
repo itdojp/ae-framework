@@ -43,7 +43,7 @@ export interface AEIR {
   }>;
 
   /** Business invariants and rules */
-  invariants: Array<{
+  invariants?: Array<{
     id: string;
     description: string;
     expression: string;

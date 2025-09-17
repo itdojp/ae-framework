@@ -56,6 +56,10 @@ function lintContent(content, file){
     if (STRICT && /(\bnot\b\s+.*\bnot\b|can't\s+not|cannot\s+not|don't\s+not|never\s+not)/i.test(l)){
       violations.push({ file, line: i+1, message: 'Double negative detected (prefer direct, positive phrasing)', text: l });
     }
+    // Passive voice (STRICT): "is/are/was/were <verb>ed (by)" (heuristic)
+    if (STRICT && /(\bis\b|\bare\b|\bwas\b|\bwere\b)\s+\w+ed(\b|\s+by\b)/i.test(l)){
+      violations.push({ file, line: i+1, message: 'Passive voice detected (prefer active voice in steps)', text: l });
+    }
   }
   return violations;
 }
