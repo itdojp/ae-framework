@@ -30,7 +30,7 @@
   - 集計: `hermetic-reports/formal/summary.json` に要約を出力
   - 表示: 実行後にコンソールへ簡易サマリを表示
 
-### Reproduce Locally / ローカル再現
+### Reproduce Locally / ローカル再現（要点）
 - Tools check: `pnpm run tools:formal:check`（利用可能ツールの一覧）
 - Apalache（ある場合）: `pnpm run verify:tla -- --engine=apalache`
 - TLC（`TLA_TOOLS_JAR` がある場合）: `TLA_TOOLS_JAR=/path/to/tla2tools.jar pnpm run verify:tla -- --engine=tlc`
