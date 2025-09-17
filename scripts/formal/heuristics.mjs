@@ -67,6 +67,7 @@ export const CAUTION_PATTERNS = [
   /disclaimer[:\s]/i,          // EN "Disclaimer:"
   /please\s+note[:\s]/i,       // EN "Please note:"
   /fyi[:\s]/i,                 // EN "FYI:"
+  /for\s+your\s+reference[:\s]/i, // EN "For your reference:"
   /\bN\.?B\.?[:\s]/i,          // EN "NB:" / "N.B.:"
   /hinweis[:\s]/i,             // DE "Hinweis:"
   /warnung[:\s]/i,             // DE "Warnung:"
@@ -96,6 +97,7 @@ export const CAUTION_PATTERNS = [
   /注意事項/ ,                  // JA "注意事項"
   /参考までに/ ,                // JA "参考までに"
   /ご参考/ ,                    // JA "ご参考"
+  /参考情報/ ,                  // JA "参考情報"
   /注意/                        // JA "注意"
   ,/ご承知おきください/         // JA 丁寧な注意喚起
 ];
