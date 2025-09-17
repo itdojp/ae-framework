@@ -59,6 +59,14 @@ if (f.alloy) {
   const tag = (st === 'ran') ? c.green('[OK]') : (st === 'tool_not_available' ? c.gray('[INFO]') : c.yellow('[WARN]'));
   const alloyLine = `${tag} Alloy: ${st}`;
   lines.push(alloyLine);
+  try {
+    if (f.alloy.temporal && (Array.isArray(f.alloy.temporal.operators) || Array.isArray(f.alloy.temporal.pastOperators))) {
+      const ops = (f.alloy.temporal.operators || []).join(', ');
+      const pops = (f.alloy.temporal.pastOperators || []).join(', ');
+      const tline = c.cyan(`  - temporal: present=${!!f.alloy.temporal.present}`) + (ops? `, ops=[${ops}]`:'') + (pops? `, past=[${pops}]`:'');
+      lines.push(tline);
+    }
+  } catch {}
 }
 if (f.tla) {
   const st = f.tla.status;

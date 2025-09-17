@@ -1,0 +1,61 @@
+{
+  "count": 3,
+  "items": [
+    {
+      "file": "specs/bdd/features/inventory_reservation.feature",
+      "title": "Successful reservation",
+      "given": [],
+      "when": [
+        "I reserve 3 units for order \"ORD-1\""
+      ],
+      "then": [
+        "the remaining stock should be 7"
+      ],
+      "suggestions": [
+        {
+          "when": "I reserve 3 units for order \"ORD-1\"",
+          "then": "the remaining stock should be 7",
+          "ltl": "G( (I reserve 3 units for order \"ORD-1\") -> F(the remaining stock should be 7) )"
+        }
+      ]
+    },
+    {
+      "file": "specs/bdd/features/inventory_reservation.feature",
+      "title": "Prevent negative stock",
+      "given": [],
+      "when": [
+        "I reserve 11 units for order \"ORD-2\""
+      ],
+      "then": [
+        "the operation should be rejected with code \"INSUFFICIENT_STOCK\""
+      ],
+      "suggestions": [
+        {
+          "when": "I reserve 11 units for order \"ORD-2\"",
+          "then": "the operation should be rejected with code \"INSUFFICIENT_STOCK\"",
+          "ltl": "G( (I reserve 11 units for order \"ORD-2\") -> F(the operation should be rejected with code \"INSUFFICIENT_STOCK\") )"
+        }
+      ]
+    },
+    {
+      "file": "specs/bdd/features/inventory_reservation.feature",
+      "title": "Idempotent by order id",
+      "given": [
+        "order \"ORD-3\" already reserved 2 units"
+      ],
+      "when": [
+        "I reserve 2 units again for order \"ORD-3\""
+      ],
+      "then": [
+        "the remaining stock should be 8"
+      ],
+      "suggestions": [
+        {
+          "when": "I reserve 2 units again for order \"ORD-3\"",
+          "then": "the remaining stock should be 8",
+          "ltl": "G( (I reserve 2 units again for order \"ORD-3\") -> F(the remaining stock should be 8) )"
+        }
+      ]
+    }
+  ]
+}

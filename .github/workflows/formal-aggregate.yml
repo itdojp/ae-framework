@@ -138,9 +138,9 @@ jobs:
           }
           lines.push(confSum ? `- Conformance summary file: ${path.basename(confSum)}` : "- Conformance summary: n/a");
           // By-type/present summary（簡潔・Present行の補助、一行で整形）
-          const presentPairs = ['tla','alloy','smt','apalache','conformance']
-            .map(k => `${k}=${present[k]? '1':'0'}`).join(', ');
-          lines.push(`By-type presence: ${presentPairs}`);
+          // Deterministic by-type present line (JSON→MDと順序を完全同期)
+          const presentList = ['tla','alloy','smt','apalache','conformance'].filter(k => present[k]);
+          lines.push(`By-type present: ${presentList.length}/5${presentList.length? ` (${presentList.join(', ')})` : ''}`);
           if (apalacheSum && apalache) {
             lines.push(`Ran/OK summary: apalache ran=${apalache.ran? 'yes':'no'} ok=${apalache.ok==null? 'n/a': (apalache.ok? 'yes':'no')}`);
           }

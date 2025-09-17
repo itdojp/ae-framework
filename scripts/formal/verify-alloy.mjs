@@ -37,6 +37,7 @@ fs.mkdirSync(outDir, { recursive: true });
 let ran = false;
 let status = 'skipped';
 let output = '';
+let temporal = { present: false, operators: [], pastOperators: [] };
 
 if (!fs.existsSync(absFile)){
   status = 'file_not_found';
@@ -53,12 +54,35 @@ if (!fs.existsSync(absFile)){
   output = 'Alloy CLI not found. Set ALLOY_JAR=/path/to/alloy.jar or install Alloy CLI. See docs/quality/formal-tools-setup.md';
 }
 
+// Best-effort presence detection of temporal operators (Alloy 6 LTL / past operators)
+try {
+  const src = fs.readFileSync(absFile, 'utf8');
+  const ops = [
+    'always', 'eventually', 'historically', 'once', 'since', 'until', 'releases', 'triggered', 'next', 'before'
+  ];
+  const pastOps = ['historically', 'once', 'since', 'before'];
+  const found = new Set();
+  const foundPast = new Set();
+  for (const op of ops) {
+    const re = new RegExp(`\\b${op}\\b`, 'i');
+    if (re.test(src)) found.add(op);
+  }
+  for (const op of pastOps) {
+    const re = new RegExp(`\\b${op}\\b`, 'i');
+    if (re.test(src)) foundPast.add(op);
+  }
+  temporal.present = found.size > 0;
+  temporal.operators = Array.from(found);
+  temporal.pastOperators = Array.from(foundPast);
+} catch {}
+
 const summary = {
   file: path.relative(repoRoot, absFile),
   ran,
   status,
   timestamp: new Date().toISOString(),
-  output: output.slice(0, 4000)
+  output: output.slice(0, 4000),
+  temporal
 };
 fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));
 console.log(`Alloy summary written: ${path.relative(repoRoot, outFile)}`);

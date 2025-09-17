@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { formatGWT } from '../utils/gwt-format';
 import { 
   OptimizationSystem, 
   createOptimizationSystem,
@@ -119,12 +120,16 @@ describe('Complete Optimization System Integration', () => {
   });
 
   describe('System Lifecycle', () => {
-    it('should start and stop the complete system', async () => {
+    it(
+      formatGWT('system lifecycle', 'start then stop', 'no errors during shutdown'),
+      async () => {
       await optimizationSystem.start();
       expect(() => optimizationSystem.stop()).not.toThrow();
     });
 
-    it('should initialize all subsystems correctly', () => {
+    it(
+      formatGWT('system initialization', 'create monitoring and parallel subsystems', 'both subsystems are present'),
+      () => {
       const monitoringSystem = optimizationSystem.getMonitoringSystem();
       const parallelOptimization = optimizationSystem.getParallelOptimizationSystem();
       

@@ -30,6 +30,19 @@
   - 集計: `hermetic-reports/formal/summary.json` に要約を出力
   - 表示: 実行後にコンソールへ簡易サマリを表示
 
+### Runtime Hooks（PObserve 型）取り込み（Phase 2.2）
+- ランタイムフック JSON を（任意で）`hermetic-reports/runtime/hooks.json` に保存し、ドライバーが再生サマリと突き合わせます。
+- 環境変数:
+  - `RUNTIME_HOOKS` または `CONFORMANCE_RUNTIME_HOOKS` — フック JSON のパス
+  - `CONFORMANCE_TRACE` — リプレイサマリ（既定: `artifacts/domain/replay.summary.json`）
+- conformance-summary には `runtimeHooks: {present, path, count, uniqueEvents[], traceId, matchesReplayTraceId}` が追加されます。
+
+### BDD → LTL プロパティ候補（レポートのみ）
+- `pnpm run bdd:suggest` で `specs/bdd/**/*.feature`（フォールバック: `features/`）から GWT を抽出し、LTL 候補を出力します。
+  - 出力: 
+    - `artifacts/bdd/scenarios.json` — PRサマリ用の {title, criteriaCount}
+    - `artifacts/properties/ltl-suggestions.json` — {count, items[]}（集約/参考用）
+
 ### Reproduce Locally / ローカル再現（要点）
 - Tools check: `pnpm run tools:formal:check`（利用可能ツールの一覧）
 - Apalache（ある場合）: `pnpm run verify:tla -- --engine=apalache`
