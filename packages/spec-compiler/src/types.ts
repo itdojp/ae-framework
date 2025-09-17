@@ -160,6 +160,27 @@ export interface AEIR {
       dataSize?: string;
     };
   };
+
+  /**
+   * Optional DDD fields (backward-compatible)
+   * See docs/ddd/ae-ir-ddd.md
+   */
+  /** DDD: bounded context name */
+  boundedContext?: string;
+  /** DDD: aggregate definition */
+  aggregate?: {
+    name: string;
+    root: string;
+    invariants?: string[];
+  };
+  /** DDD: domain events catalog */
+  domainEvents?: Array<{
+    name: string;
+    payload?: Record<string, unknown>;
+    occursOn?: string;
+  }>;
+  /** DDD: ubiquitous language terms */
+  ubiquitousTerms?: string[];
 }
 
 export interface SpecLintIssue {
