@@ -16,6 +16,7 @@
 - 運用
   - PRではコメントに `Coverage (lines):` と `Threshold (effective):` を表示（`/coverage <pct>` で上書き可能）
   - main への push 時は `COVERAGE_ENFORCE_MAIN=1` で強制。違反時は失敗。
+  - WorkflowのNoteにも `Derived: label > repo var > default` と `Policy` を明示（CIログで確認可能）
 
 コメント表示（整形）
 - Threshold (effective)
