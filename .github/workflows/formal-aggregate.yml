@@ -166,7 +166,16 @@ jobs:
             smt: smt || null,
             apalache: apalache || null,
             conformance: conf || null,
-            info: { lineClamp: LINE_CLAMP, errorsLimit: ERRORS_LIMIT, generatedAt: GENERATED_AT, present, presentCount }
+            info: { 
+              lineClamp: LINE_CLAMP, 
+              errorsLimit: ERRORS_LIMIT, 
+              generatedAt: GENERATED_AT, 
+              present, 
+              presentCount,
+              ranOk: {
+                apalache: apalache ? { ran: !!apalache.ran, ok: (typeof apalache.ok === 'boolean' ? apalache.ok : null) } : null
+              }
+            }
           };
           fs.writeFileSync(outJson, JSON.stringify(json,null,2));
           const aggPresent = fs.existsSync(outJson) ? 'yes' : 'no';
