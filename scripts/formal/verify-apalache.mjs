@@ -57,9 +57,14 @@ if (!fs.existsSync(absFile)){
   output = 'Apalache CLI not found. Install apalache or ensure apalache-mc is on PATH. See docs/quality/formal-tools-setup.md';
 } else {
   // Minimal "typecheck" like run; apalache-mc supports: apalache-mc check <Spec>
-  const cmd = `${apalacheCmd} check ${absFile.replace(/'/g, "'\\''")}`;
+  let baseCmd = `${apalacheCmd} check ${absFile.replace(/'/g, "'\\''")}`;
+  // Optional timeout wrapper (GNU timeout)
+  if (args.timeout && Number.isFinite(args.timeout) && args.timeout > 0 && has('timeout')) {
+    const secs = Math.max(1, Math.floor(Number(args.timeout)/1000));
+    baseCmd = `timeout ${secs}s ${baseCmd}`;
+  }
   const t0 = Date.now();
-  output = sh(`bash -lc '${cmd} 2>&1 || true'`);
+  output = sh(`bash -lc '${baseCmd} 2>&1 || true'`);
   timeMs = Date.now() - t0;
   status = 'ran';
   ran = true;
