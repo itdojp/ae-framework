@@ -60,11 +60,13 @@ export const CAUTION_PATTERNS = [
   /warning[:\s]/i,             // EN "Warning:"
   /note[:\s]/i,                // EN "Note:"
   /notice[:\s]/i,              // EN "Notice:"
+  /caveat[:\s]/i,              // EN "Caveat:"
   /nota[:\s]/i,                // ES "Nota:"
   /heads?\s*up[:\s]/i,         // EN "Heads up:"
   /psa[:\s]/i,                 // EN "PSA:"
   /注意[:：]/,                    // JA "注意:" / 全角コロン対応
   /備考[:：]/,                    // JA "備考:" / 全角コロン対応
+  /留意点/ ,                    // JA "留意点"
   /注意喚起/ ,                  // JA "注意喚起"
   /注意事項/ ,                  // JA "注意事項"
   /注意/                        // JA "注意"
