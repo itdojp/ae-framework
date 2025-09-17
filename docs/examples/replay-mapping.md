@@ -16,16 +16,10 @@ This note shows a minimal way to prepare inputs and inspect outputs when using t
 - Failure (alt9 byType): `scripts/testing/fixtures/replay-failure.bytype.alt9.sample.json`（byType 風、onhand_min と allocated_le_onhand の混在）
 - Failure (alt10 byType): `scripts/testing/fixtures/replay-failure.bytype.alt10.sample.json`（byType 風、allocated_le_onhand の連続違反＋one ok）
 - Failure (alt11 byType): `scripts/testing/fixtures/replay-failure.bytype.alt11.sample.json`（byType 風、onhand_min=2 の閾値超過の組合せ）
-<<<<<<< HEAD
 - Failure (alt12 byType): `scripts/testing/fixtures/replay-failure.bytype.alt12.sample.json`（byType 風、allocated_le_onhand と onhand_min の交互違反）
-<<<<<<< HEAD
 - Failure (alt13 byType): `scripts/testing/fixtures/replay-failure.bytype.alt13.sample.json`（byType 風、onhand_min=1/2 混在＋allocated境界の複合）
 - Failure (alt14 byType): `scripts/testing/fixtures/replay-failure.bytype.alt14.sample.json`（byType 風、連続OK→複合違反→OK の混在）
 - Failure (alt15 byType): `scripts/testing/fixtures/replay-failure.bytype.alt15.sample.json`（byType 風、最小長の交互違反: onhand_min→allocated→onhand_min）
-=======
->>>>>>> c7fa9b9 (Merge: ddd batch 37 (rebased) (admin))
-=======
->>>>>>> b1154fc (Merge: ddd batch 36 (rebased) (admin))
 - Failure (sample3): `scripts/testing/fixtures/replay-failure.sample3.json`（典型的な allocated_le_onhand / onhand_min の違反例）
 
 Quick run
