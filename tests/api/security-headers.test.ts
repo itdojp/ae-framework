@@ -70,24 +70,30 @@ describe('Security Headers Middleware', () => {
   }
   );
 
-  it('should add X-XSS-Protection header', async () => {
-    const response = await app.inject({
-      method: 'GET',
-      url: '/health'
-    });
+  it(
+    formatGWT('GET /health', 'adds X-XSS-Protection header', '1; mode=block is set'),
+    async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/health'
+      });
 
-    expect(response.headers['x-xss-protection']).toBe('1; mode=block');
-  });
+      expect(response.headers['x-xss-protection']).toBe('1; mode=block');
+    }
+  );
 
-  it('should add Permissions-Policy header', async () => {
-    const response = await app.inject({
-      method: 'GET',
-      url: '/health'
-    });
+  it(
+    formatGWT('GET /health', 'adds Permissions-Policy header', 'camera=() etc. are restricted'),
+    async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/health'
+      });
 
-    expect(response.headers['permissions-policy']).toBeDefined();
-    expect(response.headers['permissions-policy']).toContain('camera=()');
-  });
+      expect(response.headers['permissions-policy']).toBeDefined();
+      expect(response.headers['permissions-policy']).toContain('camera=()');
+    }
+  );
 
   it('should remove server identification headers', async () => {
     const response = await app.inject({
