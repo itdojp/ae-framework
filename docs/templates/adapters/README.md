@@ -24,3 +24,10 @@ JUnit/XML に関する注意
 - Prefer emitting normalized JSON summaries alongside JUnit XML.
 - Do not require core to parse XML; keep parsing in adapters/CI if needed.
 - Example: upload both `junit.xml` and `artifacts/<adapter>/summary.json`.
+
+## Related templates
+- CI.validate-artifacts.snippet.yml — 正規化 JSON/JUnit を AJV で検証する CI 例
+- ajv-failures.md — AJV 失敗例とトラブルシューティング
+- ajv-validation.md — AJV 検証ガイド
+- ci-examples.md — アダプター含む最小CIスニペット
+- ltl-suggestions.md — BDD→LTL 候補の warn-only 運用例と CI スニペット
