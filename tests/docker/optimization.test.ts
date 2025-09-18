@@ -67,13 +67,17 @@ describe('Docker Production Optimization - Phase 1.4', () => {
       expect(content, 'Should have HEALTHCHECK').toMatch(/HEALTHCHECK/);
     });
 
-    it('should set production environment', () => {
+    it(
+      formatGWT('Dockerfile production', 'set NODE_ENV=production', 'environment is configured for prod'),
+      () => {
       const content = readFileSync(dockerfile, 'utf8');
       
       expect(content, 'Should set NODE_ENV=production').toMatch(/NODE_ENV=production/);
     });
 
-    it('should use Alpine base image for smaller size', () => {
+    it(
+      formatGWT('Dockerfile base image', 'use node:*-alpine', 'image size is minimized'),
+      () => {
       const content = readFileSync(dockerfile, 'utf8');
       
       expect(content, 'Should use Alpine images').toMatch(/node:\d+-alpine/);
