@@ -52,8 +52,8 @@ const ltlLine = ltlSug && typeof ltlSug.count === 'number'
   ? t(`LTL sugg: ${ltlSug.count}`, `LTL候補: ${ltlSug.count}`)
   : t('LTL sugg: n/a', 'LTL候補: なし');
 const adapterCountsLine = t(
-  `Adapters: ok=${statusCounts.ok||0}, warn=${statusCounts.warn||0}, error=${statusCounts.error||0}`,
-  `アダプタ: 正常=${statusCounts.ok||0}, 注意=${statusCounts.warn||0}, 失敗=${statusCounts.error||0}`
+  `Adapters ok/warn/err=${statusCounts.ok||0}/${statusCounts.warn||0}/${statusCounts.error||0}`,
+  `アダプタ 正常/注意/失敗=${statusCounts.ok||0}/${statusCounts.warn||0}/${statusCounts.error||0}`
 );
 const gwtLine = gwtCount 
   ? t(`GWT: ${gwtCount} (e.g., ${gwtFirst})`, `GWT: ${gwtCount}（例: ${gwtFirst}）`)

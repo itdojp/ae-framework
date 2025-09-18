@@ -77,6 +77,10 @@ function lintContent(content, file){
     if (STRICT && /\bshould\s+be\b/i.test(l)){
       violations.push({ file, line: i+1, message: 'Prefer declarative outcomes over "should be" phrasing', text: l });
     }
+    // "should be able to" (STRICT): prefer capability as acceptance criteria
+    if (STRICT && /\bshould\s+be\s+able\s+to\b/i.test(l)){
+      violations.push({ file, line: i+1, message: 'Prefer concrete, testable capability over "should be able to"', text: l });
+    }
     // Passive voice (STRICT): "is/are/was/were <verb>ed by"（false positive を避けるため by を必須に）
     if (STRICT && /(\bis\b|\bare\b|\bwas\b|\bwere\b)\s+\w+ed\s+by\b/i.test(l)){
       violations.push({ file, line: i+1, message: 'Passive voice detected (prefer active voice in steps)', text: l });
