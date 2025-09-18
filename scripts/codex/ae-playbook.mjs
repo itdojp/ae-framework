@@ -22,7 +22,7 @@ const ART_ROOT = path.join(CWD, 'artifacts', 'ae');
 const CONTEXT_FILE = path.join(ART_ROOT, 'context.json');
 
 function parseArgs(argv) {
-  const args = { resume: false, skip: new Set(), enableFormal: false };
+  const args = { resume: false, skip: new Set(), enableFormal: false, formalTimeoutMs: 0 };
   for (const a of argv.slice(2)) {
     if (a === '--resume') args.resume = true;
     else if (a.startsWith('--skip=')) {
@@ -30,6 +30,9 @@ function parseArgs(argv) {
       parts.forEach(p => args.skip.add(p));
     } else if (a === '--enable-formal') {
       args.enableFormal = true; // reserved (Phase-3)
+    } else if (a.startsWith('--formal-timeout=')) {
+      const v = Number(a.split('=')[1]);
+      if (Number.isFinite(v) && v >= 0) args.formalTimeoutMs = v;
     }
   }
   return args;
@@ -147,6 +150,54 @@ async function runSimulation(context) {
   return ok;
 }
 
+async function runFormal(context, opts = {}) {
+  const dir = path.join(ART_ROOT, 'formal');
+  await ensureDir(dir);
+  const log = path.join(dir, 'formal.log');
+  const timeoutMs = Number(opts.timeoutMs || 0);
+  const hasTla = await fs
+    .access(path.join(CWD, 'scripts', 'formal', 'verify-tla.mjs'))
+    .then(() => true)
+    .catch(() => false);
+  const hasApalache = await fs
+    .access(path.join(CWD, 'scripts', 'formal', 'verify-apalache.mjs'))
+    .then(() => true)
+    .catch(() => false);
+
+  if (!hasTla && !hasApalache) {
+    await savePhase(context, 'formal', { code: 0, skipped: true, reason: 'no formal runners present' });
+    return true;
+  }
+
+  const cmds = [];
+  if (hasTla) {
+    const argTimeout = timeoutMs > 0 ? ` --timeout=${timeoutMs}` : '';
+    cmds.push(`node scripts/formal/verify-tla.mjs${argTimeout} || true`);
+  }
+  if (hasApalache) {
+    const argTimeout = timeoutMs > 0 ? ` --timeout=${timeoutMs}` : '';
+    cmds.push(`node scripts/formal/verify-apalache.mjs${argTimeout} || true`);
+  }
+
+  const cmd = cmds.join(' && ');
+  const res = await teeTo(log, (hooks) => sh('bash', ['-lc', cmd], hooks));
+
+  // Collect known outputs (if generated)
+  const hr = path.join(CWD, 'hermetic-reports', 'formal');
+  const summary = {};
+  const files = [
+    { key: 'tlaSummary', file: path.join(hr, 'tla-summary.json') },
+    { key: 'apalacheSummary', file: path.join(hr, 'apalache-summary.json') },
+    { key: 'apalacheLog', file: path.join(hr, 'apalache-output.txt') },
+  ];
+  for (const f of files) {
+    try { await fs.access(f.file); summary[f.key] = path.relative(CWD, f.file); } catch {}
+  }
+
+  await savePhase(context, 'formal', { code: 0, log, ...summary });
+  return true;
+}
+
 async function main() {
   const args = parseArgs(process.argv);
   await ensureDir(ART_ROOT);
@@ -180,10 +231,16 @@ async function main() {
     await savePhase(context, 'sim', { code: 0, skipped: true });
   }
 
+  // Phase-3: Formal (opt-in, non-blocking)
+  if (args.enableFormal && !shouldSkip('formal')) {
+    await runFormal(context, { timeoutMs: args.formalTimeoutMs });
+  } else {
+    await savePhase(context, 'formal', { code: 0, skipped: true });
+  }
+
   console.log(`\n✔ Playbook completed. Context: ${path.relative(CWD, CONTEXT_FILE)}`);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch((e) => { console.error(e?.stack || e); process.exit(1); });
 }
-

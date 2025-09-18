@@ -46,7 +46,7 @@
    - `node scripts/formal/verify-tla.mjs` → `artifacts/formal/tla-summary.json`
    - `node scripts/formal/verify-apalache.mjs`（存在時）→ `artifacts/formal/apalache-summary.json`
    - `node scripts/formal/validate-conformance-summary.mjs`（non-blocking）
-   - aggregate 相当をローカルでまとめ `artifacts/formal/formal-aggregate.json` と簡易MDを出力
+   - （本プレイブック最小統合は verify-tla/verify-apalache を順次起動し、hermetic-reports/formal 直下の summary/log を検出して context.json に記録。aggregateは今後の拡張で対応）
 8)（任意）ビルド・スモーク実行
    - `pnpm build`（再）/ `node dist/...` 最小実行
    - 出力: `artifacts/ae/build/smoke.log`
@@ -73,7 +73,7 @@ CodeX CLI 0.38 からの実行例
 - 初回〜軽量ルート
   - `codex run node scripts/codex/ae-playbook.mjs --resume --skip=formal,adapters`
 - Formal を含む
-  - `codex run node scripts/codex/ae-playbook.mjs --enable-formal --apalache-timeout=60s`
+  - `codex run node scripts/codex/ae-playbook.mjs --enable-formal --formal-timeout=60000`
 
 実装ステップ（小PR分割）
 1) PR1（本PR）: 設計ドキュメント（本書）
@@ -90,4 +90,3 @@ CodeX CLI 0.38 からの実行例
 備考
 - 長行ログ/MD 整形（formal-aggregate）は wrap/clamp を環境変数で制御（デフォルトは既存値を踏襲）
 - Spec 不在のプロジェクトでは Spec/Contracts/Replay/Simulation を自動スキップ設計
-
