@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { formatGWT } from '../utils/gwt-format';
 import { readFileSync, existsSync } from 'fs';
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -17,7 +18,9 @@ describe('Docker Production Optimization - Phase 1.4', () => {
   const dockerComposeProd = 'docker-compose.prod.yml';
 
   describe('Dockerfile Security and Optimization', () => {
-    it('should have multi-stage build configuration', () => {
+    it(
+      formatGWT('Dockerfile present', 'use multi-stage build', 'deps/build/runtime stages exist'),
+      () => {
       expect(existsSync(dockerfile)).toBe(true);
       
       const content = readFileSync(dockerfile, 'utf8');
@@ -32,7 +35,9 @@ describe('Docker Production Optimization - Phase 1.4', () => {
       expect(content).toMatch(/FROM .* AS runtime/);
     });
 
-    it('should use production dependency pruning', () => {
+    it(
+      formatGWT('Dockerfile production', 'prune dev dependencies', 'uses pnpm prune --prod'),
+      () => {
       const content = readFileSync(dockerfile, 'utf8');
       
       // Should use pnpm prune --prod to remove dev dependencies
