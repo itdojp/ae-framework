@@ -122,7 +122,9 @@ describe('Docker Production Optimization - Phase 1.4', () => {
   });
 
   describe('Docker Compose Configuration', () => {
-    it('should have development docker-compose.yml', () => {
+    it(
+      formatGWT('Compose dev', 'define healthcheck/resources/user', 'development compose is present'),
+      () => {
       expect(existsSync(dockerCompose)).toBe(true);
       
       const content = readFileSync(dockerCompose, 'utf8');
@@ -139,7 +141,9 @@ describe('Docker Production Optimization - Phase 1.4', () => {
       expect(content, 'Should specify user ID').toMatch(/user:/);
     });
 
-    it('should have production docker-compose.prod.yml', () => {
+    it(
+      formatGWT('Compose prod', 'enable security hardening', 'readonly/cap_drop/security_opt/no-new-privileges present'),
+      () => {
       expect(existsSync(dockerComposeProd)).toBe(true);
       
       const content = readFileSync(dockerComposeProd, 'utf8');
