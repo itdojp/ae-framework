@@ -32,7 +32,7 @@ if (formalObj?.traceId) traceIds.add(formalObj.traceId);
 if (replay?.traceId) traceIds.add(replay.traceId);
 for (const p of props) if (p?.traceId) traceIds.add(p.traceId);
 const replayLine = replay.totalEvents!==undefined 
-  ? t(`Replay: ${replay.totalEvents} events, ${(replay.violatedInvariants||[]).length} violations`, `リプレイ: ${replay.totalEvents}件, 違反 ${(replay.violatedInvariants||[]).length}件`)
+  ? t(`Replay ev/viol=${replay.totalEvents}/${(replay.violatedInvariants||[]).length}`, `リプレイ ev/viol=${replay.totalEvents}/${(replay.violatedInvariants||[]).length}`)
   : t('Replay: n/a','リプレイ: なし');
 // Properties (PBT) quick count: prefer aggregate 'count' or fallback to array length
 let propsCount = 0;
