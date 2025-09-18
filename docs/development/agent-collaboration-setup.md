@@ -84,7 +84,7 @@ docs/**              @org/pm-team
 mkdir -p ~/ws/{pm-high,arch-high,impl-1,impl-2,impl-3}
 cd ~/ws/impl-1 && gh repo clone itdojp/ae-framework
 git config user.name "agent-impl-1"
-git config user.email "agent-impl-1@example.invalid"
+git config user.email "agent-impl-1@example.com"
 gh auth login   # repo/workflow scope
 
 export GH_REPO=itdojp/ae-framework
