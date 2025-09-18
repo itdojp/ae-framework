@@ -1,0 +1,8 @@
+version: "0.1"
+tasks:
+  playbook:light:
+    run: node scripts/codex/ae-playbook.mjs --resume --skip=formal
+    description: Run setup→qa→spec→sim; skip formal.
+  playbook:formal:
+    run: node scripts/codex/ae-playbook.mjs --resume --enable-formal --formal-timeout=60000
+    description: Run with formal (timeout 60s if available).

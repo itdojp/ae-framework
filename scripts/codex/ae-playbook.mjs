@@ -238,7 +238,58 @@ async function main() {
     await savePhase(context, 'formal', { code: 0, skipped: true });
   }
 
+  // Phase-4: Coverage/Adapters (report-only detection)
+  if (!shouldSkip('coverage')) {
+    await detectCoverage(context);
+  } else {
+    await savePhase(context, 'coverage', { code: 0, skipped: true });
+  }
+  if (!shouldSkip('adapters')) {
+    await detectAdapters(context);
+  } else {
+    await savePhase(context, 'adapters', { code: 0, skipped: true });
+  }
+
   console.log(`\n✔ Playbook completed. Context: ${path.relative(CWD, CONTEXT_FILE)}`);
+}
+
+async function detectCoverage(context) {
+  const candidates = [
+    path.join(CWD, 'coverage', 'coverage-summary.json'),
+    path.join(CWD, 'artifacts', 'coverage', 'coverage-summary.json'),
+  ];
+  let found = null;
+  for (const f of candidates) { try { await fs.access(f); found = f; break; } catch {} }
+  const dir = path.join(ART_ROOT, 'coverage');
+  await ensureDir(dir);
+  const note = found ? { coverageSummary: path.relative(CWD, found) } : { note: 'coverage summary not found' };
+  await savePhase(context, 'coverage', { code: 0, ...note });
+  return true;
+}
+
+async function detectAdapters(context) {
+  const dir = path.join(ART_ROOT, 'adapters');
+  await ensureDir(dir);
+  const roots = [path.join(CWD, 'artifacts', 'adapters'), path.join(CWD, 'artifacts', 'lighthouse')];
+  const hits = [];
+  async function walk(root, depth = 0) {
+    if (depth > 3) return; // limit depth
+    let entries = [];
+    try { entries = await fs.readdir(root, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      const p = path.join(root, e.name);
+      if (e.isDirectory()) { await walk(p, depth + 1); continue; }
+      if (!e.isFile()) continue;
+      if (p.endsWith('summary.json') || /\b(a11y|perf|lh)\.json$/i.test(p)) {
+        hits.push(path.relative(CWD, p));
+      }
+    }
+  }
+  for (const r of roots) await walk(r, 0);
+  // de-dup
+  const uniq = Array.from(new Set(hits));
+  await savePhase(context, 'adapters', { code: 0, reports: uniq });
+  return true;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

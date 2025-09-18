@@ -39,9 +39,9 @@
    - `pnpm run test:fast`
    - `node dist/src/cli/index.js qa --light`（または `pnpm tsx src/cli/qa-cli.ts --light`）
    - 出力: `artifacts/ae/qa/qa.log`（任意）
-6) Coverage/Adapters（Phase-3以降, report-only）
-   - coverage: `artifacts/coverage/coverage-summary.json` を収集（既存と合流）
-   - adapters: `artifacts/adapters/{a11y.json,perf.json,lh.json}`
+6) Coverage/Adapters（Phase-4, report-only 検出）
+   - coverage: `coverage/coverage-summary.json`（優先）/ `artifacts/coverage/coverage-summary.json` を検出して context.json に反映
+   - adapters: `artifacts/adapters/**/summary.json` / `artifacts/lighthouse/summary.json` / `artifacts/adapters/{a11y.json,perf.json,lh.json}` を検出して context.json に反映
 7) Formal（Phase-3以降, opt-in / 非ブロッキング）
    - `node scripts/formal/verify-tla.mjs` → `artifacts/formal/tla-summary.json`
    - `node scripts/formal/verify-apalache.mjs`（存在時）→ `artifacts/formal/apalache-summary.json`
@@ -74,6 +74,11 @@ CodeX CLI 0.38 からの実行例
   - `codex run node scripts/codex/ae-playbook.mjs --resume --skip=formal,adapters`
 - Formal を含む
   - `codex run node scripts/codex/ae-playbook.mjs --enable-formal --formal-timeout=60000`
+  - Coverage/Adapters 検出のみを明示的に実行したい場合は `--skip` を併用（例: `--skip=setup,qa,spec,sim,formal`）
+
+補助（任意）
+- `package.json` に `codex:run`: `node scripts/codex/ae-playbook.mjs --resume` を追加
+- `codex/ae.playbook.yaml` に簡易タスクを定義（light/formal 等）
 
 実装ステップ（小PR分割）
 1) PR1（本PR）: 設計ドキュメント（本書）
