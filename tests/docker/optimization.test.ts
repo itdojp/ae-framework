@@ -44,7 +44,9 @@ describe('Docker Production Optimization - Phase 1.4', () => {
       expect(content, 'Should prune dev dependencies').toMatch(/pnpm prune --prod/);
     });
 
-    it('should use non-root user for security', () => {
+    it(
+      formatGWT('Dockerfile security', 'use non-root user and chown', 'USER directive and --chown are present'),
+      () => {
       const content = readFileSync(dockerfile, 'utf8');
       
       // Should create non-root user
@@ -57,7 +59,9 @@ describe('Docker Production Optimization - Phase 1.4', () => {
       expect(content, 'Should use --chown for security').toMatch(/--chown=/);
     });
 
-    it('should have health check configuration', () => {
+    it(
+      formatGWT('Dockerfile runtime', 'define health check', 'HEALTHCHECK is present'),
+      () => {
       const content = readFileSync(dockerfile, 'utf8');
       
       expect(content, 'Should have HEALTHCHECK').toMatch(/HEALTHCHECK/);
