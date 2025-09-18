@@ -25,6 +25,9 @@ function lintContent(content, file){
       !l ||
       l.startsWith('#') ||          // comments
       l.startsWith('@') ||          // tags
+      /^Scenario\b/i.test(l) ||     // scenario title
+      /^Scenario Outline\b/i.test(l) || // scenario outline title
+      /^Rule\b/i.test(l) ||         // rule section
       /^Feature\b/i.test(l) ||      // feature header
       /^Background\b/i.test(l) ||   // background section
       /^Examples\b/i.test(l) ||     // examples header
