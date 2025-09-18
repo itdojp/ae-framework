@@ -57,9 +57,13 @@ function lintContent(content, file){
     if (STRICT && /(\betc\.?\b|and\s+so\s+on|\.\.\.)/i.test(l)){
       violations.push({ file, line: i+1, message: 'Avoid ambiguous tails like "etc."/"and so on"/"..."', text: l });
     }
-    // Double negatives (STRICT): simple patterns
-    if (STRICT && /(\bnot\b\s+.*\bnot\b|can't\s+not|cannot\s+not|don't\s+not|never\s+not)/i.test(l)){
-      violations.push({ file, line: i+1, message: 'Double negative detected (prefer direct, positive phrasing)', text: l });
+    // Double negatives (STRICT): simple patterns（"not only ... but also" は除外）
+    if (STRICT) {
+      const dn = /(\bnot\b\s+.*\bnot\b|can't\s+not|cannot\s+not|don't\s+not|never\s+not)/i.test(l);
+      const whitelist = /\bnot\s+only\b[\s\S]*\bbut\s+(also\b)?/i.test(l);
+      if (dn && !whitelist) {
+        violations.push({ file, line: i+1, message: 'Double negative detected (prefer direct, positive phrasing)', text: l });
+      }
     }
     // Intensifiers (STRICT): very/so/really/extremely (warn for overuse)
     if (STRICT && /(\bvery\b|\breally\b|\bextremely\b|\bso\b\s+(?!that)\b\w+)/i.test(l)){
