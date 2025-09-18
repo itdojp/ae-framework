@@ -136,23 +136,25 @@ class ParallelTestCoordinator {
     const logFile = path.join('logs', `parallel-${suite.name}-${Date.now()}.log`);
     
     const jobPromise = new Promise((resolve, reject) => {
-      const process = spawn('make', [suite.command], {
+      // Avoid shadowing global `process` (Node.js). Use `child` for the spawned process.
+      const child = spawn('make', [suite.command], {
         stdio: 'pipe',
+        // Use the real Node.js process.env explicitly to prevent CodeQL issue (property access on non-object)
         env: { ...process.env, TEST_SUITE: suite.name }
       });
 
       let stdout = '';
       let stderr = '';
 
-      process.stdout?.on('data', (data) => {
+      child.stdout?.on('data', (data) => {
         stdout += data.toString();
       });
 
-      process.stderr?.on('data', (data) => {
+      child.stderr?.on('data', (data) => {
         stderr += data.toString();
       });
 
-      process.on('close', async (code) => {
+      child.on('close', async (code) => {
         const endTime = Date.now();
         const duration = endTime - startTime;
         
@@ -180,7 +182,7 @@ class ParallelTestCoordinator {
         }
       });
 
-      process.on('error', (error) => {
+      child.on('error', (error) => {
         console.error(`💥 Process error for ${suite.name}:`, error.message);
         reject(error);
       });
