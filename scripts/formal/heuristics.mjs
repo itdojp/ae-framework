@@ -116,6 +116,7 @@ export const CAUTION_PATTERNS = [
   ,/注意喚起です[:：]?/          // JA "注意喚起です:"
   ,/heads\s*up[:\s]/i            // EN "Heads up:"
   ,/ご留意ください/              // JA もう一段丁寧な注意喚起
+  ,/ご注意のほど(?:お願いします|お願いいたします)[:：]?/ // JA 丁寧な依頼形の注意喚起
 ];
 
 export function computeOkFromOutput(out){
