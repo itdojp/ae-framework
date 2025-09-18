@@ -67,13 +67,17 @@ describe('Docker Production Optimization - Phase 1.4', () => {
       expect(content, 'Should have HEALTHCHECK').toMatch(/HEALTHCHECK/);
     });
 
-    it('should set production environment', () => {
+    it(
+      formatGWT('Dockerfile production', 'set NODE_ENV=production', 'environment is configured for prod'),
+      () => {
       const content = readFileSync(dockerfile, 'utf8');
       
       expect(content, 'Should set NODE_ENV=production').toMatch(/NODE_ENV=production/);
     });
 
-    it('should use Alpine base image for smaller size', () => {
+    it(
+      formatGWT('Dockerfile base image', 'use node:*-alpine', 'image size is minimized'),
+      () => {
       const content = readFileSync(dockerfile, 'utf8');
       
       expect(content, 'Should use Alpine images').toMatch(/node:\d+-alpine/);
@@ -81,7 +85,9 @@ describe('Docker Production Optimization - Phase 1.4', () => {
   });
 
   describe('Docker Ignore Configuration', () => {
-    it('should have comprehensive .dockerignore file', () => {
+    it(
+      formatGWT('Docker ignore', 'list comprehensive dev/test paths', 'docker build context is minimized'),
+      () => {
       expect(existsSync(dockerignore)).toBe(true);
       
       const content = readFileSync(dockerignore, 'utf8');
@@ -100,7 +106,9 @@ describe('Docker Production Optimization - Phase 1.4', () => {
       expect(lines).toContain('docs/');
     });
 
-    it('should exclude sensitive files', () => {
+    it(
+      formatGWT('Docker ignore', 'exclude sensitive files', 'env/keys/secrets are ignored'),
+      () => {
       const content = readFileSync(dockerignore, 'utf8');
       
       expect(content, 'Should ignore .env files').toMatch(/\.env/);
