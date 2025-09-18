@@ -62,7 +62,9 @@ describe('GitHooksSetup', () => {
   });
 
   describe('git hooks setup', () => {
-    it('should successfully install git hooks when git repository exists', async () => {
+    it(
+      formatGWT('valid git repo', 'install git hooks', 'hooks are installed successfully'),
+      async () => {
       // Arrange: Mock git repository and source hooks exist
       vi.mocked(fs.existsSync).mockImplementation((path: any) => {
         const pathStr = String(path);
@@ -85,7 +87,9 @@ describe('GitHooksSetup', () => {
       expect(result.message).toContain('Git hooks installed successfully');
     });
 
-    it('should fail when not a git repository', async () => {
+    it(
+      formatGWT('non-git directory', 'install git hooks', 'fails with clear error'),
+      async () => {
       // Arrange: Mock no git repository
       vi.mocked(fs.existsSync).mockReturnValue(false);
 
