@@ -267,6 +267,60 @@ async function detectCoverage(context) {
   return true;
 }
 
+function adapterIdFromPath(rel) {
+  const l = rel.toLowerCase();
+  if (l.includes('lighthouse')) return 'lighthouse';
+  if (l.includes('axe')) return 'axe';
+  if (l.includes('jest')) return 'jest';
+  if (l.includes('vitest')) return 'vitest';
+  return null;
+}
+
+export function validateAdapterJson(relPath, json) {
+  const warns = [];
+  const base = (relPath || '').toString();
+  const adapter = (json && typeof json.adapter === 'string') ? json.adapter.toLowerCase() : null;
+  const guessed = adapterIdFromPath(base);
+  const label = adapter || guessed || 'unknown';
+  // status check
+  const status = json?.status;
+  const allowed = ['ok','warn','warning','error'];
+  if (status !== undefined && !allowed.includes(String(status).toLowerCase())) {
+    warns.push({ file: base, message: `invalid status: ${status}` });
+  }
+  // summary presence
+  if (!(typeof json?.summary === 'string' && json.summary.trim().length)) {
+    warns.push({ file: base, message: 'missing summary' });
+  }
+  // adapter kind checks (minimal)
+  switch (label) {
+    case 'lighthouse':
+      // Expect at least a details array or a performance metric-like field in summary
+      if (!Array.isArray(json?.details) && !/lighthouse|perf|performance/i.test(String(json?.summary||''))) {
+        warns.push({ file: base, message: 'lighthouse: missing details or performance hint' });
+      }
+      break;
+    case 'axe':
+      // Expect violations info in summary or details
+      if (!/axe|a11y|accessib/i.test(String(json?.summary||'')) && !Array.isArray(json?.violations)) {
+        warns.push({ file: base, message: 'axe: missing violations or a11y hint' });
+      }
+      break;
+    case 'jest':
+    case 'vitest':
+      // Expect passed/failed counts hint in summary
+      if (!/(pass|fail|tests?)/i.test(String(json?.summary||''))) {
+        warns.push({ file: base, message: `${label}: summary lacks pass/fail hint` });
+      }
+      break;
+    default:
+      if (!adapter && !guessed) {
+        warns.push({ file: base, message: 'unknown adapter (no adapter field and cannot guess from path)' });
+      }
+  }
+  return warns;
+}
+
 async function detectAdapters(context) {
   const dir = path.join(ART_ROOT, 'adapters');
   await ensureDir(dir);
@@ -295,23 +349,10 @@ async function detectAdapters(context) {
     try {
       const txt = await fs.readFile(abs, 'utf-8');
       const json = JSON.parse(txt);
-      if (typeof json !== 'object' || json === null) {
-        warnings.push({ file: rel, message: 'not an object' });
-        continue;
-      }
-      const base = path.basename(abs).toLowerCase();
-      if (base === 'summary.json') {
-        const adapter = typeof json.adapter === 'string';
-        const summary = typeof json.summary === 'string';
-        const statusOk = json.status === undefined || ['ok','warn','warning','error'].includes(String(json.status).toLowerCase());
-        if (!adapter || !summary || !statusOk) {
-          const miss = [];
-          if (!adapter) miss.push('adapter');
-          if (!summary) miss.push('summary');
-          if (!statusOk) miss.push('status');
-          warnings.push({ file: rel, message: `summary shape missing/invalid: ${miss.join(', ')}` });
-        }
-      }
+      if (typeof json !== 'object' || json === null) { warnings.push({ file: rel, message: 'not an object' }); continue; }
+      // Base checks + per-adapter minimal schema
+      const baseWarns = validateAdapterJson(rel, json);
+      for (const w of baseWarns) warnings.push(w);
     } catch (e) {
       warnings.push({ file: rel, message: `json parse failed: ${String(e && e.message || e)}` });
     }
