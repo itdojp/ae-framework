@@ -131,6 +131,21 @@ try {
   if (covPath) extra += `\n- ${t('Detected coverage','検出されたカバレッジ')}: ${covPath}`;
   if (adaptersReports.length) extra += `\n- ${t('Detected adapters','検出されたアダプタ')}: ${adaptersReports.length}`;
   if (warnCount) extra += `\n- ${t('Adapter shape warnings','アダプタ形状の警告')}: ${warnCount}`;
+  // Sample a few adapter summaries as one-liners
+  if (adaptersReports.length) {
+    const samples = [];
+    for (const rel of adaptersReports.slice(0, 3)) {
+      try {
+        const j = r(rel);
+        if (j && (j.adapter || j.name) && j.summary) {
+          const id = (j.adapter || j.name).toString();
+          const sum = String(j.summary).replace(/\s+/g,' ').slice(0, 100);
+          samples.push(`${id}: ${sum}`);
+        }
+      } catch {}
+    }
+    if (samples.length) extra += `\n- ${t('Adapter samples','アダプタ例')}: ${samples.join('; ')}`;
+  }
   if (extra) {
     const p = 'artifacts/summary/PR_SUMMARY.md';
     fs.appendFileSync(p, `\n${extra}\n`);
