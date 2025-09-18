@@ -49,6 +49,7 @@ export const NEGATIVE_PATTERNS = [
   ,/assertion\s+failed/i                          // EN assertion failed
   ,/unsatisfied\s+(?:invariant|property|spec)/i   // EN unsatisfied invariant/property/spec
   ,/(?:invariant|property|spec)\s+unsatisfied/i   // EN <kind> unsatisfied
+  ,/dead\s*end/i                                  // EN dead end encountered
 ];
 
 export const CAUTION_PATTERNS = [
