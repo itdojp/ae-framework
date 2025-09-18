@@ -49,6 +49,7 @@ export const NEGATIVE_PATTERNS = [
   ,/assertion\s+failed/i                          // EN assertion failed
   ,/unsatisfied\s+(?:invariant|property|spec)/i   // EN unsatisfied invariant/property/spec
   ,/(?:invariant|property|spec)\s+unsatisfied/i   // EN <kind> unsatisfied
+  ,/dead\s*end/i                                  // EN dead end encountered
 ];
 
 export const CAUTION_PATTERNS = [
@@ -110,7 +111,12 @@ export const CAUTION_PATTERNS = [
   ,/重要な?お知らせ[:：]?/       // JA "重要なお知らせ:"
   ,/ご案内[:：]?/               // JA "ご案内:"
   ,/notice\s+to\s+readers[:\s]/i // EN "Notice to readers:"
+  ,/advisory\s+note[:\s]/i      // EN "Advisory note:"
+  ,/ご注意事項[:：]?/            // JA "ご注意事項:"
   ,/注意喚起です[:：]?/          // JA "注意喚起です:"
+  ,/heads\s*up[:\s]/i            // EN "Heads up:"
+  ,/ご留意ください/              // JA もう一段丁寧な注意喚起
+  ,/ご注意のほど(?:お願いします|お願いいたします)[:：]?/ // JA 丁寧な依頼形の注意喚起
 ];
 
 export function computeOkFromOutput(out){

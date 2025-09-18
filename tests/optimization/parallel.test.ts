@@ -4,6 +4,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { formatGWT } from '../utils/gwt-format';
+import { formatGWT } from '../utils/gwt-format';
 import { 
   ParallelOptimizer, 
   TaskScheduler, 
@@ -76,7 +77,9 @@ describe('Parallel Optimization Engine', () => {
     }
     );
 
-    it('should wait for task completion', async () => {
+    it(
+      formatGWT('task submitted', 'wait for task completion', 'receives completed result'),
+      async () => {
       optimizer.start();
       
       const task: ParallelTask = {
@@ -165,7 +168,9 @@ describe('Parallel Optimization Engine', () => {
       expect(cancelled).toBe(true);
     });
 
-    it('should update optimization strategy', () => {
+    it(
+      formatGWT('strategy provided', 'update optimization strategy', 'applies configuration without error'),
+      () => {
       const newStrategy: Partial<OptimizationStrategy> = {
         maxConcurrency: 8,
         loadBalancing: 'least_loaded'

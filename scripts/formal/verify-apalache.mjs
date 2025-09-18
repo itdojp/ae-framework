@@ -94,6 +94,7 @@ const ERRORS_LIMIT = Number(process.env.APALACHE_ERRORS_LIMIT || '5');
 const ERROR_LINE_CLAMP = Number(process.env.APALACHE_ERROR_LINE_CLAMP || '200');
 const SNIPPET_BEFORE = Number(process.env.APALACHE_SNIPPET_BEFORE || '2');
 const SNIPPET_AFTER = Number(process.env.APALACHE_SNIPPET_AFTER || '2');
+const OUTPUT_CLAMP = Number(process.env.APALACHE_OUTPUT_CLAMP || '4000');
 
 function extractErrors(out){
   const lines = (out || '').split(/\r?\n/);
@@ -153,7 +154,7 @@ const summary = {
   errorCount: ran ? countErrors(output) : 0,
   errorSnippet: ran ? extractErrorSnippet(output) : null,
   // capped raw output preview (full log saved to outputFile)
-  output: output ? String(output).slice(0, 4000) : '',
+  output: output ? String(output).slice(0, OUTPUT_CLAMP) : '',
   outputFile: path.relative(repoRoot, outLog)
 };
 

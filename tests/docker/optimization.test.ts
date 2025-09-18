@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { formatGWT } from '../utils/gwt-format';
 import { readFileSync, existsSync } from 'fs';
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -17,7 +18,9 @@ describe('Docker Production Optimization - Phase 1.4', () => {
   const dockerComposeProd = 'docker-compose.prod.yml';
 
   describe('Dockerfile Security and Optimization', () => {
-    it('should have multi-stage build configuration', () => {
+    it(
+      formatGWT('Dockerfile present', 'use multi-stage build', 'deps/build/runtime stages exist'),
+      () => {
       expect(existsSync(dockerfile)).toBe(true);
       
       const content = readFileSync(dockerfile, 'utf8');
@@ -32,14 +35,18 @@ describe('Docker Production Optimization - Phase 1.4', () => {
       expect(content).toMatch(/FROM .* AS runtime/);
     });
 
-    it('should use production dependency pruning', () => {
+    it(
+      formatGWT('Dockerfile production', 'prune dev dependencies', 'uses pnpm prune --prod'),
+      () => {
       const content = readFileSync(dockerfile, 'utf8');
       
       // Should use pnpm prune --prod to remove dev dependencies
       expect(content, 'Should prune dev dependencies').toMatch(/pnpm prune --prod/);
     });
 
-    it('should use non-root user for security', () => {
+    it(
+      formatGWT('Dockerfile security', 'use non-root user and chown', 'USER directive and --chown are present'),
+      () => {
       const content = readFileSync(dockerfile, 'utf8');
       
       // Should create non-root user
@@ -52,19 +59,25 @@ describe('Docker Production Optimization - Phase 1.4', () => {
       expect(content, 'Should use --chown for security').toMatch(/--chown=/);
     });
 
-    it('should have health check configuration', () => {
+    it(
+      formatGWT('Dockerfile runtime', 'define health check', 'HEALTHCHECK is present'),
+      () => {
       const content = readFileSync(dockerfile, 'utf8');
       
       expect(content, 'Should have HEALTHCHECK').toMatch(/HEALTHCHECK/);
     });
 
-    it('should set production environment', () => {
+    it(
+      formatGWT('Dockerfile production', 'set NODE_ENV=production', 'environment is configured for prod'),
+      () => {
       const content = readFileSync(dockerfile, 'utf8');
       
       expect(content, 'Should set NODE_ENV=production').toMatch(/NODE_ENV=production/);
     });
 
-    it('should use Alpine base image for smaller size', () => {
+    it(
+      formatGWT('Dockerfile base image', 'use node:*-alpine', 'image size is minimized'),
+      () => {
       const content = readFileSync(dockerfile, 'utf8');
       
       expect(content, 'Should use Alpine images').toMatch(/node:\d+-alpine/);
@@ -72,7 +85,9 @@ describe('Docker Production Optimization - Phase 1.4', () => {
   });
 
   describe('Docker Ignore Configuration', () => {
-    it('should have comprehensive .dockerignore file', () => {
+    it(
+      formatGWT('Docker ignore', 'list comprehensive dev/test paths', 'docker build context is minimized'),
+      () => {
       expect(existsSync(dockerignore)).toBe(true);
       
       const content = readFileSync(dockerignore, 'utf8');
@@ -91,7 +106,9 @@ describe('Docker Production Optimization - Phase 1.4', () => {
       expect(lines).toContain('docs/');
     });
 
-    it('should exclude sensitive files', () => {
+    it(
+      formatGWT('Docker ignore', 'exclude sensitive files', 'env/keys/secrets are ignored'),
+      () => {
       const content = readFileSync(dockerignore, 'utf8');
       
       expect(content, 'Should ignore .env files').toMatch(/\.env/);
@@ -109,7 +126,9 @@ describe('Docker Production Optimization - Phase 1.4', () => {
   });
 
   describe('Docker Compose Configuration', () => {
-    it('should have development docker-compose.yml', () => {
+    it(
+      formatGWT('Compose dev', 'define healthcheck/resources/user', 'development compose is present'),
+      () => {
       expect(existsSync(dockerCompose)).toBe(true);
       
       const content = readFileSync(dockerCompose, 'utf8');
@@ -126,7 +145,9 @@ describe('Docker Production Optimization - Phase 1.4', () => {
       expect(content, 'Should specify user ID').toMatch(/user:/);
     });
 
-    it('should have production docker-compose.prod.yml', () => {
+    it(
+      formatGWT('Compose prod', 'enable security hardening', 'readonly/cap_drop/security_opt/no-new-privileges present'),
+      () => {
       expect(existsSync(dockerComposeProd)).toBe(true);
       
       const content = readFileSync(dockerComposeProd, 'utf8');

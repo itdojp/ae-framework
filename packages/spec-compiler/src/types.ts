@@ -13,11 +13,11 @@ export interface AEIR {
     description?: string;
     version?: string;
     created: string;
-    updated: string;
+    updated?: string;
   };
 
   /** Business glossary and terminology */
-  glossary: Array<{
+  glossary?: Array<{
     term: string;
     definition: string;
     aliases?: string[];
@@ -43,25 +43,25 @@ export interface AEIR {
   }>;
 
   /** Business invariants and rules */
-  invariants: Array<{
+  invariants?: Array<{
     id: string;
     description: string;
     expression: string;
-    entities: string[];
+    entities?: string[];
     severity: 'error' | 'warning';
   }>;
 
   /** Use cases and business processes */
-  usecases: Array<{
+  usecases?: Array<{
     name: string;
     description?: string;
-    actor: string;
+    actor?: string;
     preconditions?: string[];
     postconditions?: string[];
     steps: Array<{
       step: number;
       description: string;
-      type: 'action' | 'validation' | 'computation';
+      type?: 'action' | 'validation' | 'computation';
     }>;
   }>;
 
@@ -85,7 +85,7 @@ export interface AEIR {
   }>;
 
   /** API specifications */
-  api: Array<{
+  api?: Array<{
     method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
     path: string;
     summary?: string;

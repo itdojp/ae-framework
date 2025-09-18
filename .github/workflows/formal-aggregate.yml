@@ -87,6 +87,11 @@ jobs:
             ].join(' ');
             lines.push(`- SMT: ${ss}`);
           }
+          if (conf && conf.runtimeHooks) {
+            const h = conf.runtimeHooks;
+            const info = `present=${h.present? 'yes':'no'} count=${h.count||0} traceId=${h.traceId||'n/a'} match=${h.matchesReplayTraceId? 'yes':'no'}`;
+            lines.push(`- Runtime hooks: ${info}`);
+          }
           // Present map (single source for MD + JSON)
           const present = {
             tla: !!tlaSum,
@@ -100,6 +105,7 @@ jobs:
           const presentKeys = order.filter(k => present[k]);
           const presentCount = presentKeys.length;
           const apLine = apalacheSum && apalache ? `ran=${apalache.ran? 'yes':'no'} ok=${apalache.ok==null? 'n/a': (apalache.ok? 'yes':'no')}` : 'n/a';
+          lines.push('### Presence');
           lines.push(`Present: ${presentCount}/5${presentCount? ` (${presentKeys.join(', ')})` : ''}`);
           // Alloy temporal operator presence (if summary includes it)
           try {
@@ -114,7 +120,7 @@ jobs:
           lines.push(`Apalache ran/ok: ${apalacheSum && apalache ? (apalache.ran? 'yes':'no') : 'n/a'}/${apalacheSum && apalache ? (apalache.ok==null? 'n/a' : (apalache.ok? 'yes':'no')) : 'n/a'}`);
           lines.push("");
           // Visual separation for presence block
-          lines.push("---");
+          lines.push("\n---");
 
           if (apalacheSum && apalache) {
             const v = apalache.version || 'n/a';

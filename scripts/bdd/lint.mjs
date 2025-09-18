@@ -19,23 +19,86 @@ function lintContent(content, file){
   const lines=content.split(/\r?\n/);
   const violations=[];
   for (let i=0;i<lines.length;i++){
-    const l=lines[i].trim();
+    const raw=lines[i];
+    const l=raw.trim();
+    if (
+      !l ||
+      l.startsWith('#') ||          // comments
+      l.startsWith('@') ||          // tags
+      /^Scenario\b/i.test(l) ||     // scenario title
+      /^Scenario Outline\b/i.test(l) || // scenario outline title
+      /^Rule\b/i.test(l) ||         // rule section
+      /^Feature\b/i.test(l) ||      // feature header
+      /^Background\b/i.test(l) ||   // background section
+      /^Examples\b/i.test(l) ||     // examples header
+      l.startsWith('|') ||          // examples table rows
+      l.startsWith('"""') ||       // doc-string blocks
+      l.startsWith('```')           // fenced code blocks
+    ) continue; // skip structural lines to reduce false positives
     if (/^When\b/i.test(l)){
       const ok = ROOTS.some(r=>r.test(l)) && !/\bset to\b/i.test(l);
       if (!ok) violations.push({ file, line: i+1, message: 'When must use Aggregate Root command and avoid direct state mutation', text: l });
       if (STRICT && /\bshould\b/i.test(l)) {
         violations.push({ file, line: i+1, message: 'When should not contain modal verbs like "should" (use declarative command)', text: l });
       }
+      if (STRICT && /\bclick|button|ui|page|css|selector\b/i.test(l)){
+        violations.push({ file, line: i+1, message: 'When should avoid UI-specific terms (use domain command)', text: l });
+      }
     }
     if (STRICT && /^Then\b/i.test(l)){
       if (/\bdatabase|sql|table|insert|update\b/i.test(l)){
         violations.push({ file, line: i+1, message: 'Then should not mention persistence concerns directly (behavioral outcome expected)', text: l });
+      }
+      const andCount = (l.match(/\bAnd\b/gi) || []).length;
+      if (andCount >= 2) {
+        violations.push({ file, line: i+1, message: 'Then has too many conjunctions (prefer small, focused expectations)', text: l });
+      }
+      // "and then" repeated (STRICT)
+      const andThenCount = (l.match(/\band\s+then\b/gi) || []).length;
+      if (andThenCount >= 2) {
+        violations.push({ file, line: i+1, message: 'Avoid repeated "and then"; prefer separate steps', text: l });
       }
     }
     if (STRICT && /^Given\b/i.test(l)){
       if (/\bclick|button|ui|page|css|selector\b/i.test(l)){
         violations.push({ file, line: i+1, message: 'Given should avoid UI-specific terms (focus on domain state)', text: l });
       }
+    }
+    // Ambiguous words (STRICT): "maybe/approximately/around/roughly/about"
+    if (STRICT && /(\bmaybe\b|\bapproximately\b|\baround\b|\broughly\b|\babout\b)/i.test(l)){
+      violations.push({ file, line: i+1, message: 'Ambiguous wording detected (prefer precise, testable phrasing)', text: l });
+    }
+    // Ambiguous tails (STRICT): etc./and so on/...
+    if (STRICT && /(\betc\.?\b|and\s+so\s+on|\.\.\.)/i.test(l)){
+      violations.push({ file, line: i+1, message: 'Avoid ambiguous tails like "etc."/"and so on"/"..."', text: l });
+    }
+    // Double negatives (STRICT): simple patterns（"not only ... but also" は除外）
+    if (STRICT) {
+      const dn = /(\bnot\b\s+.*\bnot\b|can't\s+not|cannot\s+not|don't\s+not|never\s+not)/i.test(l);
+      const whitelist = /\bnot\s+only\b[\s\S]*\bbut\s+(also\b)?/i.test(l);
+      if (dn && !whitelist) {
+        violations.push({ file, line: i+1, message: 'Double negative detected (prefer direct, positive phrasing)', text: l });
+      }
+    }
+    // Intensifiers (STRICT): very/so/really/extremely (warn for overuse)
+    if (STRICT && /(\bvery\b|\breally\b|\bextremely\b|\bso\b\s+(?!that)\b\w+)/i.test(l)){
+      violations.push({ file, line: i+1, message: 'Intensifier detected (prefer precise, measurable criteria over very/so/really)', text: l });
+    }
+    // Repeated intensifiers (STRICT): really very / very very / so so
+    if (STRICT && /(really\s+very|very\s+very|\bso\b\s+\bso\b)/i.test(l)){
+      violations.push({ file, line: i+1, message: 'Repeated intensifier detected (avoid "really very"/"very very"/"so so")', text: l });
+    }
+    // "should be" pattern (STRICT): prefer declarative outcomes
+    if (STRICT && /\bshould\s+be\b/i.test(l)){
+      violations.push({ file, line: i+1, message: 'Prefer declarative outcomes over "should be" phrasing', text: l });
+    }
+    // "should be able to" (STRICT): prefer capability as acceptance criteria
+    if (STRICT && /\bshould\s+be\s+able\s+to\b/i.test(l)){
+      violations.push({ file, line: i+1, message: 'Prefer concrete, testable capability over "should be able to"', text: l });
+    }
+    // Passive voice (STRICT): "is/are/was/were <verb>ed by"（false positive を避けるため by を必須に）
+    if (STRICT && /(\bis\b|\bare\b|\bwas\b|\bwere\b)\s+\w+ed\s+by\b/i.test(l)){
+      violations.push({ file, line: i+1, message: 'Passive voice detected (prefer active voice in steps)', text: l });
     }
   }
   return violations;

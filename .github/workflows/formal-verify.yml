@@ -189,3 +189,20 @@ jobs:
             printf "%s\n" "::error::Apalache not ok (errors=$ec)"
             exit 1
           fi
+
+  verify-kani:
+    name: verify:kani (presence)
+    runs-on: ubuntu-latest
+    if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all'))
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Kani presence (non-blocking)
+        run: node scripts/formal/verify-kani.mjs || true
+      - name: Upload Kani summary (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: formal-reports-kani
+          path: hermetic-reports/formal/kani-summary.json
