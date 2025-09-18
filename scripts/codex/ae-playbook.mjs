@@ -1,0 +1,189 @@
+#!/usr/bin/env node
+
+/**
+ * CodeX × ae-framework Playbook (Phase-2: minimal)
+ *
+ * Phases (minimal):
+ *  1) setup    : corepack enable && pnpm i && pnpm build
+ *  2) qa-light : pnpm run test:fast && (node dist/src/cli/index.js qa --light | fallback tsx)
+ *  3) spec     : compile AE-Spec to IR (if spec file is present)
+ *  4) sim      : (reserved, skipped if simulator script missing)
+ *
+ * Output: artifacts/ae/<phase>/*.log, artifacts/ae/context.json
+ * Options: --resume, --skip=<comma list> (e.g., setup,qa,spec,sim)
+ */
+
+import { promises as fs } from 'fs';
+import path from 'path';
+import { spawn } from 'child_process';
+
+const CWD = process.cwd();
+const ART_ROOT = path.join(CWD, 'artifacts', 'ae');
+const CONTEXT_FILE = path.join(ART_ROOT, 'context.json');
+
+function parseArgs(argv) {
+  const args = { resume: false, skip: new Set(), enableFormal: false };
+  for (const a of argv.slice(2)) {
+    if (a === '--resume') args.resume = true;
+    else if (a.startsWith('--skip=')) {
+      const parts = a.split('=')[1]?.split(',').map(s => s.trim()).filter(Boolean) || [];
+      parts.forEach(p => args.skip.add(p));
+    } else if (a === '--enable-formal') {
+      args.enableFormal = true; // reserved (Phase-3)
+    }
+  }
+  return args;
+}
+
+async function ensureDir(dir) { await fs.mkdir(dir, { recursive: true }); }
+
+async function writeJson(file, obj) {
+  await ensureDir(path.dirname(file));
+  await fs.writeFile(file, JSON.stringify(obj, null, 2));
+}
+
+function sh(cmd, args, opts) {
+  return new Promise((resolve) => {
+    const child = spawn(cmd, args, { cwd: CWD, env: process.env, shell: false });
+    let out = '';
+    let err = '';
+    child.stdout?.on('data', d => { const s = d.toString(); out += s; opts?.onStdout?.(s); });
+    child.stderr?.on('data', d => { const s = d.toString(); err += s; opts?.onStderr?.(s); });
+    child.on('close', (code) => resolve({ code, stdout: out, stderr: err }));
+    child.on('error', (e) => resolve({ code: 1, stdout: out, stderr: String(e?.message || e) }));
+  });
+}
+
+async function teeTo(file, runner) {
+  await ensureDir(path.dirname(file));
+  let log = '';
+  const append = async (s) => { log += s; };
+  const res = await runner({ onStdout: append, onStderr: append });
+  await fs.writeFile(file, log);
+  return res;
+}
+
+async function loadContext() {
+  try { return JSON.parse(await fs.readFile(CONTEXT_FILE, 'utf8')); } catch { return { phases: {} }; }
+}
+
+async function savePhase(context, name, data) {
+  context.phases[name] = { ...data, timestamp: new Date().toISOString() };
+  await writeJson(CONTEXT_FILE, context);
+}
+
+async function discoverSpec() {
+  const candidates = [];
+  const specDir = path.join(CWD, 'specs');
+  try {
+    const entries = await fs.readdir(specDir, { withFileTypes: true });
+    for (const e of entries) {
+      if (!e.isFile()) continue;
+      if (/\.(ya?ml|md)$/i.test(e.name)) candidates.push(path.join('specs', e.name));
+    }
+  } catch { /* ignore */ }
+  // fallback common path
+  const fallback = ['specs/app.yaml', 'spec/app.yaml', 'spec/app.yml'];
+  for (const f of fallback) {
+    try { await fs.access(path.join(CWD, f)); candidates.unshift(f); break; } catch {}
+  }
+  return candidates[0] || null;
+}
+
+async function runSetup(context) {
+  const dir = path.join(ART_ROOT, 'setup');
+  await ensureDir(dir);
+  const log = path.join(dir, 'build.log');
+  const res = await teeTo(log, (hooks) => sh('bash', ['-lc', 'corepack enable && pnpm i && pnpm build'], hooks));
+  await savePhase(context, 'setup', { code: res.code, log });
+  return res.code === 0;
+}
+
+async function runQALight(context) {
+  const dir = path.join(ART_ROOT, 'qa');
+  await ensureDir(dir);
+  const log = path.join(dir, 'qa-light.log');
+  const res = await teeTo(log, (hooks) => sh('bash', ['-lc', 'pnpm -s run test:fast && (node dist/src/cli/index.js qa --light || pnpm -s tsx src/cli/qa-cli.ts --light)'], hooks));
+  await savePhase(context, 'qa', { code: res.code, log });
+  return res.code === 0;
+}
+
+async function runSpecCompile(context) {
+  const specIn = await discoverSpec();
+  if (!specIn) {
+    await savePhase(context, 'spec', { code: 0, skipped: true, reason: 'no spec input found' });
+    return true;
+  }
+  const dir = path.join(ART_ROOT, 'spec');
+  await ensureDir(dir);
+  const out = path.join(dir, 'ir.json');
+  const log = path.join(dir, 'spec-compile.log');
+  const cmd = `node dist/src/cli/index.js spec compile -i ${specIn} -o ${path.relative(CWD, out)} || pnpm -s ae-framework spec compile -i ${specIn} -o ${path.relative(CWD, out)} || pnpm -s tsx src/cli/index.ts spec compile -i ${specIn} -o ${path.relative(CWD, out)}`;
+  const res = await teeTo(log, (hooks) => sh('bash', ['-lc', cmd], hooks));
+  const ok = res.code === 0;
+  await savePhase(context, 'spec', { code: res.code, log, output: ok ? out : null, input: specIn });
+  return ok;
+}
+
+async function runSimulation(context) {
+  const ir = path.join(ART_ROOT, 'spec', 'ir.json');
+  try { await fs.access(ir); } catch {
+    await savePhase(context, 'sim', { code: 0, skipped: true, reason: 'no IR found' });
+    return true;
+  }
+  const script = path.join('scripts', 'simulation', 'deterministic-runner.mjs');
+  try { await fs.access(path.join(CWD, script)); } catch {
+    await savePhase(context, 'sim', { code: 0, skipped: true, reason: 'deterministic-runner not present' });
+    return true;
+  }
+  const dir = path.join(ART_ROOT, 'sim');
+  await ensureDir(dir);
+  const out = path.join(dir, 'sim.json');
+  const log = path.join(dir, 'sim.log');
+  const cmd = `node ${script} --in ${path.relative(CWD, ir)} --out ${path.relative(CWD, out)}`;
+  const res = await teeTo(log, (hooks) => sh('bash', ['-lc', cmd], hooks));
+  const ok = res.code === 0;
+  await savePhase(context, 'sim', { code: res.code, log, output: ok ? out : null });
+  return ok;
+}
+
+async function main() {
+  const args = parseArgs(process.argv);
+  await ensureDir(ART_ROOT);
+  const context = args.resume ? await loadContext() : { phases: {} };
+
+  const shouldSkip = (name) => args.skip.has(name) || args.skip.has('*');
+
+  if (!shouldSkip('setup')) {
+    const ok = await runSetup(context);
+    if (!ok) { console.error('Setup failed.'); process.exit(1); }
+  } else {
+    await savePhase(context, 'setup', { code: 0, skipped: true });
+  }
+
+  if (!shouldSkip('qa')) {
+    const ok = await runQALight(context);
+    if (!ok) { console.error('QA (light) failed.'); process.exit(1); }
+  } else {
+    await savePhase(context, 'qa', { code: 0, skipped: true });
+  }
+
+  if (!shouldSkip('spec')) {
+    await runSpecCompile(context); // non-fatal (skips when no spec)
+  } else {
+    await savePhase(context, 'spec', { code: 0, skipped: true });
+  }
+
+  if (!shouldSkip('sim')) {
+    await runSimulation(context); // non-fatal
+  } else {
+    await savePhase(context, 'sim', { code: 0, skipped: true });
+  }
+
+  console.log(`\n✔ Playbook completed. Context: ${path.relative(CWD, CONTEXT_FILE)}`);
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((e) => { console.error(e?.stack || e); process.exit(1); });
+}
+
