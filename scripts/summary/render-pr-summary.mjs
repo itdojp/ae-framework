@@ -69,8 +69,8 @@ try {
     const ops = Array.isArray(temp.operators) ? temp.operators.join(', ') : '';
     const pops = Array.isArray(temp.pastOperators) ? temp.pastOperators.join(', ') : '';
     alloyTemporalLine = t(
-      `Alloy temporal: present=${!!temp.present}${ops? ` ops=[${ops}]`:''}${pops? ` past=[${pops}]`:''}`,
-      `Alloy時相: present=${!!temp.present}${ops? ` ops=[${ops}]`:''}${pops? ` past=[${pops}]`:''}`
+      `Temporal: present=${!!temp.present}${ops? ` ops=[${ops}]`:''}${pops? ` past=[${pops}]`:''}`,
+      `時相: present=${!!temp.present}${ops? ` ops=[${ops}]`:''}${pops? ` past=[${pops}]`:''}`
     );
   }
 } catch {}
