@@ -85,7 +85,9 @@ describe('Docker Production Optimization - Phase 1.4', () => {
   });
 
   describe('Docker Ignore Configuration', () => {
-    it('should have comprehensive .dockerignore file', () => {
+    it(
+      formatGWT('Docker ignore', 'list comprehensive dev/test paths', 'docker build context is minimized'),
+      () => {
       expect(existsSync(dockerignore)).toBe(true);
       
       const content = readFileSync(dockerignore, 'utf8');
@@ -104,7 +106,9 @@ describe('Docker Production Optimization - Phase 1.4', () => {
       expect(lines).toContain('docs/');
     });
 
-    it('should exclude sensitive files', () => {
+    it(
+      formatGWT('Docker ignore', 'exclude sensitive files', 'env/keys/secrets are ignored'),
+      () => {
       const content = readFileSync(dockerignore, 'utf8');
       
       expect(content, 'Should ignore .env files').toMatch(/\.env/);
