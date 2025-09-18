@@ -272,6 +272,7 @@ async function detectAdapters(context) {
   await ensureDir(dir);
   const roots = [path.join(CWD, 'artifacts', 'adapters'), path.join(CWD, 'artifacts', 'lighthouse')];
   const hits = [];
+  const warnings = [];
   async function walk(root, depth = 0) {
     if (depth > 3) return; // limit depth
     let entries = [];
@@ -288,7 +289,36 @@ async function detectAdapters(context) {
   for (const r of roots) await walk(r, 0);
   // de-dup
   const uniq = Array.from(new Set(hits));
-  await savePhase(context, 'adapters', { code: 0, reports: uniq });
+  // Light shape validation (warning only)
+  for (const rel of uniq) {
+    const abs = path.join(CWD, rel);
+    try {
+      const txt = await fs.readFile(abs, 'utf-8');
+      const json = JSON.parse(txt);
+      if (typeof json !== 'object' || json === null) {
+        warnings.push({ file: rel, message: 'not an object' });
+        continue;
+      }
+      const base = path.basename(abs).toLowerCase();
+      if (base === 'summary.json') {
+        const adapter = typeof json.adapter === 'string';
+        const summary = typeof json.summary === 'string';
+        const statusOk = json.status === undefined || ['ok','warn','warning','error'].includes(String(json.status).toLowerCase());
+        if (!adapter || !summary || !statusOk) {
+          const miss = [];
+          if (!adapter) miss.push('adapter');
+          if (!summary) miss.push('summary');
+          if (!statusOk) miss.push('status');
+          warnings.push({ file: rel, message: `summary shape missing/invalid: ${miss.join(', ')}` });
+        }
+      }
+    } catch (e) {
+      warnings.push({ file: rel, message: `json parse failed: ${String(e && e.message || e)}` });
+    }
+  }
+  // Persist validation (report-only)
+  await writeJson(path.join(dir, 'adapters-validation.json'), { count: uniq.length, warnings });
+  await savePhase(context, 'adapters', { code: 0, reports: uniq, warnings: warnings.length });
   return true;
 }
 
