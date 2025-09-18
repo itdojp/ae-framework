@@ -13,7 +13,7 @@ export interface AEIR {
     description?: string;
     version?: string;
     created: string;
-    updated: string;
+    updated?: string;
   };
 
   /** Business glossary and terminology */
