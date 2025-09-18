@@ -31,7 +31,9 @@ function lintContent(content, file){
       /^Feature\b/i.test(l) ||      // feature header
       /^Background\b/i.test(l) ||   // background section
       /^Examples\b/i.test(l) ||     // examples header
-      l.startsWith('|')             // examples table rows
+      l.startsWith('|') ||          // examples table rows
+      l.startsWith('"""') ||       // doc-string blocks
+      l.startsWith('```')           // fenced code blocks
     ) continue; // skip structural lines to reduce false positives
     if (/^When\b/i.test(l)){
       const ok = ROOTS.some(r=>r.test(l)) && !/\bset to\b/i.test(l);
