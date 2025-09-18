@@ -22,7 +22,7 @@ const gwtFirst = gwtCount ? (gwtItems[0].property || (gwtItems[0].gwt ? String(g
 const replay = c.replay || r('artifacts/domain/replay.summary.json') || {};
 const bdd = c.bdd || r('artifacts/bdd/scenarios.json') || {};
 const props = c.properties ? (Array.isArray(c.properties) ? c.properties : [c.properties]) : (r('artifacts/properties/summary.json') ? [r('artifacts/properties/summary.json')] : []);
-const cov = r('coverage/coverage-summary.json');
+const cov = r('coverage/coverage-summary.json') || r('artifacts/coverage/coverage-summary.json');
 const ltlSug = r('artifacts/properties/ltl-suggestions.json');
 let coverageLine = t('Coverage: n/a','カバレッジ: 不明');
 if (cov?.total?.lines && typeof cov.total.lines.pct === 'number') coverageLine = t(`Coverage: ${cov.total.lines.pct}%`, `カバレッジ: ${cov.total.lines.pct}%`);
@@ -119,3 +119,21 @@ try {
 fs.mkdirSync('artifacts/summary',{recursive:true});
 fs.writeFileSync('artifacts/summary/PR_SUMMARY.md', md);
 console.log(md);
+
+// Append detection info (report-only): coverage/adapters found by playbook
+try {
+  const ctx = r('artifacts/ae/context.json') || { phases: {} };
+  const covPath = ctx?.phases?.coverage?.coverageSummary;
+  const adaptersReports = Array.isArray(ctx?.phases?.adapters?.reports) ? ctx.phases.adapters.reports : [];
+  const val = r('artifacts/ae/adapters/adapters-validation.json');
+  const warnCount = (val && typeof val.warnings?.length === 'number') ? val.warnings.length : (typeof ctx?.phases?.adapters?.warnings === 'number' ? ctx.phases.adapters.warnings : 0);
+  let extra = '';
+  if (covPath) extra += `\n- ${t('Detected coverage','検出されたカバレッジ')}: ${covPath}`;
+  if (adaptersReports.length) extra += `\n- ${t('Detected adapters','検出されたアダプタ')}: ${adaptersReports.length}`;
+  if (warnCount) extra += `\n- ${t('Adapter shape warnings','アダプタ形状の警告')}: ${warnCount}`;
+  if (extra) {
+    const p = 'artifacts/summary/PR_SUMMARY.md';
+    fs.appendFileSync(p, `\n${extra}\n`);
+    console.log(extra);
+  }
+} catch {}
