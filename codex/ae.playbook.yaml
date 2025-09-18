@@ -6,3 +6,6 @@ tasks:
   playbook:formal:
     run: node scripts/codex/ae-playbook.mjs --resume --enable-formal --formal-timeout=60000
     description: Run with formal (timeout 60s if available).
+  playbook:detect:
+    run: node scripts/codex/ae-playbook.mjs --resume --skip=setup,qa,spec,sim,formal
+    description: Detect coverage/adapters only (report-only); update artifacts/ae/context.json
