@@ -21,7 +21,7 @@ function lintContent(content, file){
   for (let i=0;i<lines.length;i++){
     const raw=lines[i];
     const l=raw.trim();
-    if (!l || l.startsWith('#')) continue; // skip blank/comments
+    if (!l || l.startsWith('#') || l.startsWith('@') || /^Examples\b/i.test(l) || l.startsWith('|')) continue; // skip blank/comments/tags/examples/tables
     if (/^When\b/i.test(l)){
       const ok = ROOTS.some(r=>r.test(l)) && !/\bset to\b/i.test(l);
       if (!ok) violations.push({ file, line: i+1, message: 'When must use Aggregate Root command and avoid direct state mutation', text: l });
