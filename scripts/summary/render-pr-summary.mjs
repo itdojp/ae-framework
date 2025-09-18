@@ -115,21 +115,7 @@ try {
   }
 } catch {}
 
-// Conformance short line (violationRate / hooks matchRate)
-try {
-  const conf = formalHerm?.conformance || {};
-  const vr = (typeof conf.violationRate === 'number') ? conf.violationRate : null;
-  const mr = (typeof formalHerm?.hookReplayMatchRate === 'number')
-    ? formalHerm.hookReplayMatchRate
-    : (typeof conf?.runtimeHooksCompare?.matchRate === 'number' ? conf.runtimeHooksCompare.matchRate : null);
-  if (vr !== null || mr !== null) {
-    const line = t(
-      `Conformance: rate=${vr ?? 'n/a'}${mr!==null? ` hooksMatch=${mr}`:''}`,
-      `適合性: 率=${vr ?? 'n/a'}${mr!==null? ` hooks一致=${mr}`:''}`
-    );
-    if (mode === 'digest') md += ` | ${line}`; else md += `\n- ${line}`;
-  }
-} catch {}
+// (Removed duplicate conformance fallback line; unified above using aggregate JSON)
 fs.mkdirSync('artifacts/summary',{recursive:true});
 fs.writeFileSync('artifacts/summary/PR_SUMMARY.md', md);
 console.log(md);
