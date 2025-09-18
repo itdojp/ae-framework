@@ -18,6 +18,7 @@
     "ae-server": "./dist/src/cli/server-runner.js"
   },
   "scripts": {
+    "codex:run": "node scripts/codex/ae-playbook.mjs --resume",
     "start:server": "tsx src/server.ts",
     "dev:server": "tsx watch src/server.ts",
     "dev": "tsx watch src/index.ts",
