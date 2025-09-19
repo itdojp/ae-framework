@@ -141,6 +141,7 @@ Examples
 - Formal: policy=warn, AE‑IR=strict, ae.config=off → effective=strict
 - A11y serious: policy ≤ 0, AE‑IR absent, ae.config ≤ 1 → effective ≤ 0
 - Mismatch: AE‑IR dod.lighthouse.thresholds.pwa = "off" (categorical) vs policy numeric → use policy via precedence, log reason
+- Open‑ended band (higher): only relaxed "<= 92" present → feasible band (-∞,92]; select finite bound 92 (note: open-ended-low)
 
 **Conflict Logging Policy**
 - Always log per‑metric source values and decision path.
@@ -220,6 +221,7 @@ Acceptance rules (initial)
 - Accessibility: serious <= effective threshold (often 0 in CI); other budgets as defined.
 - Lighthouse: performance >= effective threshold (score normalized to 0..100).
 - Composite (optional): all comparator expressions pass; logs derived/effective with precedence notes; PR comment upsert allowed.
+- Infinity/NaNは外部に露出しない: 開区間は有限端点を選択（higher→acc.high, lower→acc.low）。両端が開（{-∞,+∞}）なら優先順位フォールバック（policy > AE‑IR > ae.config）。
 
 **Open Questions**
 - AE‑IR key name: dod vs quality — proposal keeps dod for scope clarity
@@ -434,7 +436,7 @@ function intersectBands(b1, b2): { low, high } | 'empty' {
 }
 
 function strictestMerge(metric, constraintsByLayer, kind): { value, source, notes[] } {
-  // Prefer intersection semantics; fall back to extremum when bands are open-ended
+  // Prefer intersection semantics; guard open-ended bands to avoid Infinity
   const bands = [];
   for (const layer of ['policy','aeir','ae.config']) {
     const c = constraintsByLayer[layer];
@@ -451,10 +453,30 @@ function strictestMerge(metric, constraintsByLayer, kind): { value, source, note
     }
     acc = next;
   }
-  // Select strictest point within the feasible region
-  const selected = (kind == 'higher') ? acc.low : acc.high; // tightest bound
+  // Select strictest point within the feasible region (with open-ended guards)
+  let selected;
+  const notes = [];
+  if (kind == 'higher') {
+    if (acc.low === -Infinity && isFinite(acc.high)) {
+      selected = acc.high; // choose finite upper bound
+      notes.push('open-ended-low: used finite-high');
+    } else if (acc.low === -Infinity && acc.high === +Infinity) {
+      return { value: fromPrecedence(constraintsByLayer), source: 'precedence', notes: ['fully-open','precedence-fallback'] };
+    } else {
+      selected = acc.low; // tightest lower bound
+    }
+  } else { // lower-is-stricter
+    if (acc.high === +Infinity && isFinite(acc.low)) {
+      selected = acc.low; // choose finite lower bound
+      notes.push('open-ended-high: used finite-low');
+    } else if (acc.low === -Infinity && acc.high === +Infinity) {
+      return { value: fromPrecedence(constraintsByLayer), source: 'precedence', notes: ['fully-open','precedence-fallback'] };
+    } else {
+      selected = acc.high; // tightest upper bound
+    }
+  }
   const source = originOfTightest(bands, selected, kind) ?? 'derived';
-  return { value: selected, source, notes: [] };
+  return { value: selected, source, notes };
 }
 ```
 
@@ -473,6 +495,9 @@ Counters (per run)
 - dod.decisions.conflicts
 - dod.decisions.relaxation_attempts  // lower layer attempted to soften policy
 - dod.decisions.precedence_fallbacks
+ - dod.decisions.open_ended_low_resolved   // chose finite-high for higher-is-stricter
+ - dod.decisions.open_ended_high_resolved  // chose finite-low for lower-is-stricter
+ - dod.decisions.fully_open_precedence     // {-∞,+∞} fallback to precedence
 
 Timers
 - dod.eval.total_ms
