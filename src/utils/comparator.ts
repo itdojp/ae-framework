@@ -5,6 +5,7 @@ export interface ParsedComparator {
   value: number;
   unit?: string;
 }
+export type ComparatorExpr = ParsedComparator;
 
 type ValueWithKind = {
   value: number;

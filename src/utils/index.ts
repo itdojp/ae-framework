@@ -8,6 +8,7 @@ export { EvidenceValidator } from './evidence-validator.js';
 export { TokenOptimizer } from './token-optimizer.js';
 export { ContextManager } from './context-manager.js';
 export { parseComparator, compare, strictest } from './comparator.js';
+export type { ComparatorOp, ComparatorExpr, ComparatorValue } from './comparator.js';
 
 // Smart Persona System (Phase 2)
 export { PersonaManager } from './persona-manager.js';
