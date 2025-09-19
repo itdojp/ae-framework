@@ -1,0 +1,16 @@
+{
+  "tool": "conformance-driver",
+  "ran": true,
+  "ok": true,
+  "timeMs": 0,
+  "errors": [],
+  "traceId": "t-1",
+  "events": 3,
+  "violatedInvariants": [],
+  "spec": "n/a",
+  "timestamp": "2025-09-19T17:13:13.307Z",
+  "runtimeHooks": null,
+  "runtimeHooksCompare": null,
+  "hookReplayMatchRate": null,
+  "hookStats": null
+}

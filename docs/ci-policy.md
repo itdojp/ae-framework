@@ -140,7 +140,8 @@ This document defines CI policies to keep PR experience fast and stable while ma
 
 Note
 - Coverage thresholds are sourced from `policy/quality.json` (single source of truth).
-- Values in `ae.config.ts` are hints only. When they differ from policy, the CLI will warn and enforce policy thresholds.
+- Precedence: policy > AE-IR (derived artifacts/spec) > ae.config.
+- Values in `ae.config.ts` are hints only. When present, the CLI warns and enforcement still follows policy.
 
 ### セキュリティ/コンプライアンス
 - 既定では PR で非必須（`run-security` ラベル時のみ実行）。結果は artifacts に集約

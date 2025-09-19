@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('../../src/utils/quality-policy-loader.js', async () => {
+vi.mock('../../src/utils/quality-policy-loader.ts', async () => {
   // default mock; individual tests will override via mockImplementation
   const getQualityGate = vi.fn().mockReturnValue({
     thresholds: { lines: 85, functions: 85, branches: 80, statements: 85 },
@@ -10,10 +10,10 @@ vi.mock('../../src/utils/quality-policy-loader.js', async () => {
 });
 
 // Import after mocking to ensure the mocked module is used
-import { resolveCoverageThresholds } from '../../src/commands/qa/run.js';
+import { resolveCoverageThresholds } from '../../src/utils/coverage-thresholds.js';
 
 // Access mocked module for overriding implementations per test
-import * as policyMod from '../../src/utils/quality-policy-loader.js';
+import * as policyMod from '../../src/utils/quality-policy-loader.ts';
 
 describe('qa config hints vs policy thresholds', () => {
   beforeEach(() => {
@@ -74,4 +74,3 @@ describe('qa config hints vs policy thresholds', () => {
     expect(mismatch).toBe(false);
   });
 });
-
