@@ -231,3 +231,145 @@ Appendix — File references
 - AE config: ae.config.ts
 - Verify Lite workflow: .github/workflows/verify-lite.yml
 - Coverage check: .github/workflows/coverage-check.yml
+
+---
+
+Appendix A — Comparator Grammar (EBNF) and Parser Rules
+
+Grammar (simplified)
+```
+ExprList   := Expr { (AND | '&&') Expr }
+Expr       := Metric WS? Op WS? Value
+Metric     := ident { '.' ident }
+Op         := '>=' | '<=' | '>' | '<' | '==' | '!='
+Value      := Number [Unit] | Percent | Duration | Rate
+Percent    := Number '%' | Number  // 0..1 allowed, normalized to 0..100 when unit=pct
+Duration   := Number ( 'ms' | 's' | 'm' | 'h' )
+Rate       := Number ( '/s' | 'rps' | 'qps' | 'rpm' )
+Number     := DIGIT { DIGIT | '_' | '.' }
+ident      := ALPHA { ALPHA | DIGIT | '_' | '-' }
+WS         := { ' ' | '\t' }
+```
+
+Parser rules
+- Trim leading/trailing whitespace; collapse internal runs for tokenization.
+- Case-insensitive for units ('MS', 'ms' treated the same). Operators are exact.
+- Allow underscores in numbers as visual separators (e.g., 1_000).
+- Normalize units to canonical forms:
+  - pct: 0..1 → ×100; trailing % removed
+  - time: ms/s/m/h → ms
+  - rate: rps, /s, qps as rps; rpm → rps/60
+- Invalid input handling:
+  - Malformed expression → record parser error with location; skip that Expr and continue others.
+  - Unknown metric path → record warn; treat as incomparable → precedence fallback note in decision log.
+  - Unknown unit → record warn; attempt best-effort parse of number; if impossible, skip Expr.
+
+Appendix B — Strictness Lattice and Edge Cases
+
+Enforcement lattice
+- strict > warn > off. Join (⊔) selects the maximum; meet (⊓) selects the minimum.
+
+Metric strictness categories
+- Higher-is-stricter: coverage.*, lighthouse.* score
+- Lower-is-stricter: accessibility.* counts, security.* counts
+
+Edge cases
+- Equality after normalization (e.g., 0.9 vs 90%): treat as equivalent; record normalized value in decisions.
+- Mixed categories (e.g., numeric vs categorical like pwa=off): incomparable → precedence fallback; emit warn.
+- Missing value at a layer: ignore; do not soften stricter values from other layers.
+
+Appendix C — Strictest Merge Pseudocode
+
+```
+inputs: policy (with env overrides applied), aeirDod?, repoCfg?
+output: { effective, derived, decisions, conflicts }
+
+function mergeDoD(policy, aeirDod, repoCfg):
+  layers := [ {src:'policy',  val:policy},
+              {src:'aeir',    val:aeirDod},
+              {src:'ae.config', val:repoCfg} ]
+
+  // Collect per-metric candidates
+  metrics := enumerateKnownMetrics(policy)
+  derived := extractPerLayer(policy, aeirDod, repoCfg)
+  decisions := []
+
+  for each metric in metrics:
+    kind := classify(metric) // higher|lower|categorical
+    vals := candidatesFor(metric, layers)
+    if kind == 'higher': sel := maxDefined(vals)
+    else if kind == 'lower': sel := minDefined(vals)
+    else:
+      sel := precedenceFallback(vals, order=['policy','aeir','ae.config'])
+      noteWarn(metric, 'categorical or incomparable; precedence used')
+    recordDecision(decisions, metric, sel, originOf(sel), rule=kind)
+
+  // Enforcement resolution (lattice join)
+  effEnf := joinEnforcement([policy.enforcement, aeirDod?.enforcement, repoCfg?.enforcement])
+
+  effective := materialize(decisions, enforcement=effEnf)
+  conflicts := summarizeConflicts(decisions)
+  return { effective, derived, decisions, conflicts }
+```
+
+Appendix D — Conflict Logging & Telemetry
+
+Logging (per decision)
+- metric, candidates per layer, rule used (higher/lower/precedence), effective value, source, note (e.g., normalized, incomparable)
+
+Telemetry artifact (JSON)
+- Path: reports/dod-composite.json (non-blocking)
+- Shape:
+  - version, timestamp, environment (dev/ci/prod)
+  - counts: totalMetrics, conflicts, incomparable, missing
+  - byCategory: coverage/accessibility/lighthouse/formal summaries
+  - decisions: array of decision logs (truncated by limit)
+
+PR comment (upsert)
+- Header: <!-- AE-DOD-COMPOSITE -->
+- Summary lines: Effective thresholds per key; Policy vs Derived; Conflicts count; Notes (fallbacks)
+
+Appendix E — Environment Examples (Composite)
+
+```
+{
+  "environments": {
+    "development": {
+      "overrides": {
+        "coverage.enforcement": "warn",
+        "lighthouse.enforcement": "off",
+        "composite.enforcement": "off"
+      }
+    },
+    "ci": {
+      "overrides": {
+        "coverage.thresholds.lines": 85,
+        "coverage.thresholds.functions": 85,
+        "composite.enforcement": "warn"
+      }
+    },
+    "production": {
+      "overrides": {
+        "coverage.thresholds.lines": 90,
+        "lighthouse.thresholds.performance": 95,
+        "composite.enforcement": "strict"
+      }
+    }
+  }
+}
+```
+
+Appendix F — Rollout Plan (warn → block) and Rollback
+
+Phases
+- Phase 0: Visibility only (logs + PR comment), no gating. Kill switch: COMPOSITE_DOD_DISABLE=1.
+- Phase 1: Enforce coverage via effective thresholds; label-gated on PR; main enforcement via repo vars.
+- Phase 2: Extend to formal/a11y/lighthouse; still label-gated; gradually enable composite.strict in prod.
+
+Rollback
+- Remove enforcement labels; set repo vars to disable enforcement; set composite.enforcement=off via overrides; revert via branch policy.
+
+Appendix G — Implementation Hints (non-binding)
+- Policy-loader (proposed): src/core/policy-loader.ts (reads policy + env overrides, AE‑IR.dod, ae.config)
+- Comparator (proposed): packages/policy-comparator/ with shared parser/evaluator used by CI scripts
+- Quality runner integration: .github/workflows/verify-lite.yml and coverage-check.yml steps invoking a summary script; comment upsert via actions/github-script
