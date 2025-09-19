@@ -138,6 +138,11 @@ This document defines CI policies to keep PR experience fast and stable while ma
 ### QA CLI
 - `ae qa --light`: 軽量 QA 実行（`vitest` の `test:fast` を実行）。`ae-ci` の QA ステップで使用。
 
+Note
+- Coverage thresholds are sourced from `policy/quality.json` (single source of truth).
+- Precedence: policy > AE-IR (derived artifacts/spec) > ae.config.
+- Values in `ae.config.ts` are hints only. When present, the CLI warns and enforcement still follows policy.
+
 ### セキュリティ/コンプライアンス
 - 既定では PR で非必須（`run-security` ラベル時のみ実行）。結果は artifacts に集約
 - `run-security` ラベル時は、依存脆弱性のサマリと上位ライセンスの簡易サマリを PR コメントに自動投稿（非ブロッキング）
