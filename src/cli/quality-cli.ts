@@ -228,6 +228,23 @@ export function createQualityCommand(): Command {
             console.log(chalk.yellow('⚠️  Automatic fixes not yet implemented'));
           }
         }
+
+        // Summarize ae.config hint presence (non-blocking info)
+        try {
+          const { loadConfig } = await import('../core/config.js');
+          const cfg = await loadConfig();
+          const hint = cfg?.qa?.coverageThreshold;
+          if (hint) {
+            const keys = Object.keys(hint).join(', ');
+            console.log(chalk.yellow(`\nℹ️  AE-Config Hints detected for coverage (keys: ${keys})`));
+            console.log(chalk.yellow('   Precedence: policy > AE-IR > ae.config')); 
+            console.log(chalk.yellow('   Migrate thresholds to policy/quality.json to change enforcement.'));
+          } else {
+            console.log(chalk.green('\nℹ️  No AE-Config coverage hints detected'));
+          }
+        } catch {
+          // ignore hint summary errors
+        }
         
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Error validating policy: ${toMessage(error)}`));
