@@ -59,11 +59,11 @@ describe('property/comparator', () => {
         // s must be either a or b by value/op after normalization
         expect([pa.op, pb.op]).toContain(ps.op)
         if (dirA) {
-          // greater-direction: s.value should be >= min(pa.value, pb.value)
-          expect(ps.value).toBeGreaterThanOrEqual(Math.min(pa.value, pb.value))
+          // greater-direction: stricter comparator has larger threshold
+          expect(ps.value).toBeGreaterThanOrEqual(Math.max(pa.value, pb.value))
         } else {
-          // less-direction: s.value should be <= max(pa.value, pb.value)
-          expect(ps.value).toBeLessThanOrEqual(Math.max(pa.value, pb.value))
+          // less-direction: stricter comparator has smaller threshold
+          expect(ps.value).toBeLessThanOrEqual(Math.min(pa.value, pb.value))
         }
       } catch (e) {
         // permissible to throw in edge cases (e.g., non-representable), ignore
