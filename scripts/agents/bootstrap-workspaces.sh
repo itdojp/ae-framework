@@ -93,15 +93,16 @@ role_label_for() {
 
 for agent in "${AGENTS[@]}"; do
   ws="$BASE_DIR/$agent"
-  echo "\n==> Preparing workspace: $ws"
+  printf "\n==> Preparing workspace: %s\n" "$ws"
   mkdir -p "$ws"
 
-  if [[ ! -d "$ws/ae-framework/.git" ]]; then
-    echo "Cloning $REPO_SLUG into $ws/ae-framework"
-    git clone "$(clone_url "$REPO_SLUG")" "$ws/ae-framework"
+  repo_dir="${REPO_SLUG##*/}"
+  if [[ ! -d "$ws/$repo_dir/.git" ]]; then
+    echo "Cloning $REPO_SLUG into $ws/$repo_dir"
+    git clone "$(clone_url "$REPO_SLUG")" "$ws/$repo_dir"
   else
     echo "Repo exists. Fetching updates..."
-    (cd "$ws/ae-framework" && git fetch --all --prune)
+    (cd "$ws/$repo_dir" && git fetch --all --prune)
   fi
 
   # Write per-agent environment file
@@ -128,7 +129,9 @@ else
   exit 1
 fi
 
-cd "$here/ae-framework"
+repo_slug=$(grep -E "^\s*(export\s+)?GH_REPO\s*=\s*" "$here/agent.env" | tail -n1 | sed -E 's/.*=\s*"?([^"\s]+)"?.*/\1/')
+repo_dir="${repo_slug##*/}"
+cd "$here/$repo_dir"
 
 # Configure git identity (local to this repo)
 git config user.name "agent-${AGENT_NAME}"
@@ -160,6 +163,10 @@ if ! command -v gh >/dev/null 2>&1; then
   exit 2
 fi
 
+if ! command -v jq >/dev/null 2>&1; then
+  echo "jq is required but not found in PATH" >&2
+  exit 2
+fi
 echo "Watcher started for $AGENT_NAME ($AGENT_ROLE) on $GH_REPO"
 
 while true; do
@@ -167,10 +174,12 @@ while true; do
     --label "$AGENT_ROLE" --label status:ready \
     --json number,title | jq -r '.[].number')
 
-  for N in "${issues[@]}"; do
-    echo "Processing issue #$N ..."
-    gh issue comment "$N" --repo "$GH_REPO" --body "/start" || true
-  done
+  if [[ ${#issues[@]} -gt 0 && -n "${issues[0]:-}" ]]; then
+    for N in "${issues[@]}"; do
+      echo "Processing issue #$N ..."
+      gh issue comment "$N" --repo "$GH_REPO" --body "/start" || true
+    done
+  fi
 
   sleep 60
 done
@@ -191,9 +200,9 @@ Repository: $REPO_SLUG
 
 Notes:
 - gh auth login --web    # if gh is not authenticated
-- Clone dir: ae-framework/
+- Clone dir: $repo_dir/
 EOF
 
 done
 
-echo "\nAll workspaces prepared under: $BASE_DIR"
+printf "\nAll workspaces prepared under: %s\n" "$BASE_DIR"
