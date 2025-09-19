@@ -91,6 +91,10 @@ describe('utils/comparator', () => {
       expect(() => strictest('>= 0.7', '<= 0.9')).toThrow()
     })
 
+    it('throws on incomparable kinds (ratio vs time)', () => {
+      expect(() => strictest('>= 0.5', '>= 100ms')).toThrow()
+    })
+
     it('regression: representative expressions from fixtures', async () => {
       const fs = await import('fs/promises')
       const path = await import('path')

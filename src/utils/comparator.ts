@@ -169,8 +169,10 @@ export function strictest(a: string, b: string): string {
   const ca = parseComparator(a);
   const cb = parseComparator(b);
 
-  const kindA: ValueWithKind['kind'] = ca.unit === 'ms' ? 'ms' : (ca.unit === 'rps' ? 'rps' : (/\%/.test(a) ? 'ratio' : 'none'))
-  const kindB: ValueWithKind['kind'] = cb.unit === 'ms' ? 'ms' : (cb.unit === 'rps' ? 'rps' : (/\%/.test(b) ? 'ratio' : 'none'))
+  // Preserve ratio classification when unit is undefined to avoid treating
+  // unit-less comparators as compatible with time/rps in strictest().
+  const kindA: ValueWithKind['kind'] = ca.unit === 'ms' ? 'ms' : (ca.unit === 'rps' ? 'rps' : 'ratio')
+  const kindB: ValueWithKind['kind'] = cb.unit === 'ms' ? 'ms' : (cb.unit === 'rps' ? 'rps' : 'ratio')
 
   if (!ensureComparableKinds(kindA, kindB)) {
     throw new Error('Cannot determine strictest: incompatible units');
