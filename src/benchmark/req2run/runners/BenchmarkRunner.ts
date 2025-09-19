@@ -17,7 +17,7 @@ import { AEFrameworkPhase, OutputType, BenchmarkCategory, DifficultyLevel, TestT
 import os from 'node:os';
 import fs from 'fs/promises';
 import yaml from 'yaml';
-import { getCommonMeta } from '../../../utils/report-meta.js';
+import { buildReportMeta } from '../../../utils/meta-factory.js';
 
 import { IntentAgent } from '../../../agents/intent-agent.js';
 import { NaturalLanguageTaskAdapter } from '../../../agents/natural-language-task-adapter.js';
@@ -591,7 +591,7 @@ export class BenchmarkRunner {
   private async generateReport(results: BenchmarkResult[]): Promise<void> {
     try {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const cm = getCommonMeta();
+      const cm = buildReportMeta();
       const reportData = {
         // New top-level meta (non-breaking addition)
         meta: cm,

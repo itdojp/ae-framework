@@ -39,7 +39,7 @@ import type {
   UIComponent
 } from '../../../agents/interfaces/standard-interfaces.js';
 import { BenchmarkCategory, DifficultyLevel, TestType, OutputType } from '../types/index.js';
-import { getCommonMeta } from '../../../utils/report-meta.js';
+import { buildReportMeta } from '../../../utils/meta-factory.js';
 import { getCommonMeta } from '../../../utils/report-meta.js';
 
 // Minimal generated file descriptor used within this runner (file-local type)
@@ -524,7 +524,7 @@ export class StandardizedBenchmarkRunner {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       
       // Enhanced report data with analytics
-      const cm = getCommonMeta();
+      const cm = buildReportMeta();
       const reportData = {
         // New top-level meta (non-breaking addition)
         meta: cm,
