@@ -604,7 +604,6 @@ export class BenchmarkRunner {
           totalExecutionTime: results.reduce((sum, r) => sum + r.executionDetails.totalDuration, 0),
           framework: 'AE Framework v1.0.0',
           benchmarkVersion: 'req2run-benchmark',
-          ...getCommonMeta(),
         },
         configuration: this.config,
         results: results.map(result => ({

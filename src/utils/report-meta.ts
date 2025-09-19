@@ -24,7 +24,7 @@ function tryGit(cmd: string): string | null {
 }
 
 function detectAgent(): { name: string; version?: string } {
-  const name = process.env['AE_AGENT'] || process.env['AE_AGENT_NAME'] || process.env['AE_ACTOR'] || 'ae-framework';
+  const name = process.env['AE_AGENT'] || process.env['AE_AGENT_NAME'] || process.env['AE_ACTOR'] || 'unknown';
   let version: string | undefined;
   // Prefer explicit env, fallback to package.json version if readable
   version = process.env['AE_AGENT_VERSION'] || undefined;
