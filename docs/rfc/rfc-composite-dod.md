@@ -373,3 +373,115 @@ Appendix G — Implementation Hints (non-binding)
 - Policy-loader (proposed): src/core/policy-loader.ts (reads policy + env overrides, AE‑IR.dod, ae.config)
 - Comparator (proposed): packages/policy-comparator/ with shared parser/evaluator used by CI scripts
 - Quality runner integration: .github/workflows/verify-lite.yml and coverage-check.yml steps invoking a summary script; comment upsert via actions/github-script
+
+---
+
+Appendix H — Comparator Equivalence, Mixed Operators, and Boundary Cases
+
+Operator semantics
+- Monotone metrics (higher-is-stricter):
+  - ">= v" means acceptable region is [v, +∞)
+  - "== v" is a degenerate band: [v, v]
+  - "<= v" generally indicates non-strict for higher-is-stricter categories and is discouraged at policy layer
+- Anti-monotone metrics (lower-is-stricter):
+  - "<= v" means acceptable region is (-∞, v]
+  - "== v" is a degenerate band: [v, v]
+  - ">= v" generally indicates non-strict for lower-is-stricter categories and is discouraged at policy layer
+
+Equivalence after normalization
+- Values compared after unit normalization (e.g., 0.9 == 90%).
+- Equality tests "==" apply on normalized canonical values; floating comparisons should use an epsilon band (e.g., 1e-9) to reduce false negatives.
+
+Mixed constraints across layers
+- Treat constraints as bands; strictest merge selects the intersection of acceptable regions.
+- If the intersection is empty (e.g., policy: coverage.lines == 92, AE‑IR: coverage.lines <= 90), mark as conflict and choose policy via precedence; log a warning.
+- If one layer attempts to relax (expand the acceptable region) relative to another (e.g., AE‑IR: >= 85 vs policy: >= 90), log a relaxation-attempt note and keep the stricter bound.
+
+Incomparable values
+- Categorical vs numeric (e.g., pwa: "off" vs 80): incomparable → use precedence fallback; emit a warning and include detail in telemetry.
+
+Examples
+- policy: coverage.lines >= 90; AE‑IR: == 90; ae.config: >= 85 → effective: >= 90 (intersection [90,∞), note: AE‑IR exact satisfied by policy bound)
+- policy: accessibility.serious <= 0; AE‑IR: <= 1; ae.config: <= 0 → effective: <= 0 (intersection (-∞,0])
+- policy: lighthouse.pwa == off; AE‑IR: >= 70 → incomparable, precedence to policy; warn
+
+---
+
+Appendix I — Strictest Integration (expanded pseudocode)
+
+```
+function classify(metric): 'higher' | 'lower' | 'categorical' { /* table-driven */ }
+
+function toBand(constraint, kind): { low, high } | 'categorical' {
+  // Convert ">= v", "<= v", "== v" to numeric bands on canonical units
+  if (kind == 'categorical') return 'categorical';
+  const { op, value } = normalize(constraint);
+  if (kind == 'higher') {
+    if (op == '>=') return { low: value, high: +Infinity };
+    if (op == '==') return { low: value, high: value };
+    if (op == '<=') return { low: -Infinity, high: value }; // discouraged; treated as non-strict
+  } else {
+    if (op == '<=') return { low: -Infinity, high: value };
+    if (op == '==') return { low: value, high: value };
+    if (op == '>=') return { low: value, high: +Infinity }; // discouraged; treated as non-strict
+  }
+}
+
+function intersectBands(b1, b2): { low, high } | 'empty' {
+  const low = Math.max(b1.low, b2.low);
+  const high = Math.min(b1.high, b2.high);
+  return low <= high ? { low, high } : 'empty';
+}
+
+function strictestMerge(metric, constraintsByLayer, kind): { value, source, notes[] } {
+  // Prefer intersection semantics; fall back to extremum when bands are open-ended
+  const bands = [];
+  for (const layer of ['policy','aeir','ae.config']) {
+    const c = constraintsByLayer[layer];
+    if (!c) continue;
+    const band = toBand(c, kind);
+    if (band === 'categorical') return { value: fromPrecedence(constraintsByLayer), source: 'precedence', notes: ['incomparable'] };
+    bands.push({ layer, band });
+  }
+  let acc = { low: -Infinity, high: +Infinity };
+  for (const { layer, band } of bands) {
+    const next = intersectBands(acc, band);
+    if (next === 'empty') {
+      return { value: fromPrecedence(constraintsByLayer), source: 'precedence', notes: ['conflict-empty-intersection'] };
+    }
+    acc = next;
+  }
+  // Select strictest point within the feasible region
+  const selected = (kind == 'higher') ? acc.low : acc.high; // tightest bound
+  const source = originOfTightest(bands, selected, kind) ?? 'derived';
+  return { value: selected, source, notes: [] };
+}
+```
+
+Notes
+- originOfTightest maps the selected bound back to the layer that contributed it (for traceability).
+- Bands with discouraged ops (e.g., '<=' on higher-is-stricter) are allowed but never soften stricter bounds provided elsewhere.
+
+---
+
+Appendix J — Telemetry Metrics (conflict/relaxation/count/time)
+
+Counters (per run)
+- dod.metrics.total
+- dod.metrics.evaluable
+- dod.metrics.incomparable
+- dod.decisions.conflicts
+- dod.decisions.relaxation_attempts  // lower layer attempted to soften policy
+- dod.decisions.precedence_fallbacks
+
+Timers
+- dod.eval.total_ms
+- dod.eval.per_metric_ms (min/avg/p95/max)
+
+Dimensions
+- environment: dev|ci|production
+- category: coverage|accessibility|lighthouse|formal
+- metric: e.g., coverage.lines
+
+Emission
+- Write reports/dod-composite.json (non-blocking); optionally summarize to PR comment.
