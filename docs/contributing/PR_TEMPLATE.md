@@ -63,6 +63,11 @@ export default {
 };
 ```
 
+Note
+- The values under `qa.coverageThreshold` in `ae.config.ts` are treated as hints for local visibility.
+- Enforcement uses the centralized policy at `policy/quality.json` (profile via `AE_QUALITY_PROFILE` or `CI` → `ci`).
+- If `ae.config.ts` differs from policy, the QA CLI prints a warning and uses the policy thresholds as the source of truth.
+
 ## ✅ 検証結果
 
 ### 動作確認ログ
