@@ -25,6 +25,11 @@ describe('utils/comparator', () => {
       expect(() => parseComparator('>>10')).toThrow()
       expect(() => parseComparator('>=10kb')).toThrow()
     })
+
+    it('tolerates extra spaces and uppercase units', () => {
+      expect(parseComparator('  <=   2S  ')).toEqual({ op: '<=', value: 2000, unit: 'ms' })
+      expect(parseComparator('>   1e3 ms')).toEqual({ op: '>', value: 1000, unit: 'ms' })
+    })
   })
 
   describe('compare', () => {
@@ -42,6 +47,13 @@ describe('utils/comparator', () => {
       expect(compare('950ms', '< 1s')).toBe(true)
       expect(compare({ value: 1, unit: 's' }, '<= 1000ms')).toBe(true)
       expect(compare({ value: 2, unit: 's' }, '<= 1500ms')).toBe(false)
+    })
+
+    it('interprets unit-less actual in expr unit context', () => {
+      // expr uses seconds; actual unit-less 1 -> 1s -> 1000ms
+      expect(compare(1, '< 2s')).toBe(true)
+      // expr uses ms; actual 1 -> 1ms
+      expect(compare(1, '>= 1ms')).toBe(true)
     })
 
     it('compares rps unit', () => {
@@ -77,6 +89,17 @@ describe('utils/comparator', () => {
 
     it('throws for mixed directions or unsupported', () => {
       expect(() => strictest('>= 0.7', '<= 0.9')).toThrow()
+    })
+
+    it('regression: representative expressions from fixtures', async () => {
+      const fs = await import('fs/promises')
+      const path = await import('path')
+      const p = path.join(process.cwd(), 'tests/fixtures/comparator-exprs.txt')
+      const lines = (await fs.readFile(p, 'utf-8')).split(/\r?\n/).filter(Boolean)
+      // ensure all lines parse
+      for (const line of lines) {
+        expect(() => parseComparator(line)).not.toThrow()
+      }
     })
   })
 })

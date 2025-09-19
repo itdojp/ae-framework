@@ -12,7 +12,14 @@ type ValueWithKind = {
   kind: 'none' | 'ratio' | 'ms' | 'rps';
 };
 
-const OP_REGEX = /^(>=|<=|==|!=|>|<)\s*(.+)$/;
+const OP_REGEX = /^\s*(>=|<=|==|!=|>|<)\s*(.+?)\s*$/;
+
+export class ParseError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'ParseError'
+  }
+}
 
 function normalizeUnit(unit?: string): string | undefined {
   if (!unit) return undefined;
@@ -28,15 +35,16 @@ function parseNumericWithUnit(input: string): { value: number; unit?: string; ki
   // Percentage: e.g., 90%
   if (/^[-+]?\d*\.?\d+\s*%$/.test(raw)) {
     const num = parseFloat(raw.replace('%', '').trim());
+    if (!Number.isFinite(num)) throw new ParseError(`Invalid percentage: ${input}`)
     return { value: num / 100, kind: 'ratio' };
   }
 
   // Generic number with optional unit
-  const m = raw.match(/^([-+]?\d*\.?\d+)\s*([a-z%]+)?$/i);
+  const m = raw.match(/^([-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?)\s*([a-zA-Z%]+)?$/);
   if (!m) {
-    throw new Error(`Invalid value: ${input}`);
+    throw new ParseError(`Invalid value: ${input}`);
   }
-  const val = parseFloat(m[1]!);
+  const val = Number(m[1]);
   const unit = normalizeUnit(m[2]);
 
   // Time normalization to ms
@@ -58,7 +66,7 @@ function parseNumericWithUnit(input: string): { value: number; unit?: string; ki
 
   // If a unit was provided but not recognized, throw
   if (unit !== undefined) {
-    throw new Error(`Unsupported unit: ${unit}`);
+    throw new ParseError(`Unsupported unit: ${unit}`);
   }
   // Plain number (unit-less)
   return { value: val, kind: 'none' };
@@ -76,9 +84,9 @@ function ensureComparableKinds(a: ValueWithKind['kind'], b: ValueWithKind['kind'
 }
 
 export function parseComparator(expr: string): ParsedComparator {
-  const trimmed = expr.trim();
+  const trimmed = String(expr ?? '');
   const m = trimmed.match(OP_REGEX);
-  if (!m) throw new Error(`Invalid comparator expression: ${expr}`);
+  if (!m) throw new ParseError(`Invalid comparator expression: ${expr}`);
   const op = m[1] as ComparatorOp;
   const rest = m[2]!;
   const { value, unit, kind } = parseNumericWithUnit(rest);
@@ -123,36 +131,46 @@ function compareNumbers(a: number, b: number, op: ComparatorOp): boolean {
   }
 }
 
-export function compare(
-  actual: { value: number; unit?: string } | number | string,
-  expr: string
-): boolean {
-  const cmp = parseComparator(expr);
-  const act = toCanonical(actual);
+export type ComparatorValue = { value: number; unit?: string } | number | string
 
-  // Determine compatibility of kinds
-  const cmpKind: ValueWithKind['kind'] = cmp.unit === 'ms' ? 'ms' : cmp.unit === 'rps' ? 'rps' : 'ratio';
+export function compare(actual: ComparatorValue, expr: string): boolean {
+  const cmp = parseComparator(expr)
+  let act = toCanonical(actual)
 
-  // If expr had no explicit unit and did not look like ratio, treat as 'none'
-  if (!cmp.unit && !expr.trim().endsWith('%') && !/\d\s*%/.test(expr)) {
-    // The comparator is unit-less numeric
-    return compareNumbers(act.value, cmp.value, cmp.op);
+  // Determine comparator kind based on normalized unit or % sign presence
+  const cmpKind: ValueWithKind['kind'] = cmp.unit === 'ms' ? 'ms' : (cmp.unit === 'rps' ? 'rps' : (/\%/.test(expr) ? 'ratio' : 'none'))
+
+  // If expr has no explicit unit and not a percent, treat both as unit-less numeric
+  if (cmpKind === 'none') {
+    return compareNumbers(act.value, cmp.value, cmp.op)
+  }
+
+  // If actual is unit-less, interpret it in the unit context of expr
+  if (act.kind === 'none') {
+    if (cmpKind === 'ms') {
+      const unitToken = extractExprUnit(expr)
+      const scale = unitToken === 's' ? 1000 : unitToken === 'm' ? 60000 : unitToken === 'h' ? 3600000 : 1
+      act = { value: act.value * scale, kind: 'ms' }
+    } else if (cmpKind === 'ratio') {
+      act = { value: act.value, kind: 'ratio' }
+    } else if (cmpKind === 'rps') {
+      act = { value: act.value, kind: 'rps' }
+    }
   }
 
   if (!ensureComparableKinds(act.kind, cmpKind)) {
-    throw new Error(`Incompatible units: actual kind ${act.kind} vs comparator kind ${cmpKind}`);
+    throw new Error(`Incompatible units: actual kind ${act.kind} vs comparator kind ${cmpKind}`)
   }
 
-  // Align unit-less actual to comparator kind if needed (no scaling needed since comparator already normalized)
-  return compareNumbers(act.value, cmp.value, cmp.op);
+  return compareNumbers(act.value, cmp.value, cmp.op)
 }
 
 export function strictest(a: string, b: string): string {
   const ca = parseComparator(a);
   const cb = parseComparator(b);
 
-  const kindA: ValueWithKind['kind'] = ca.unit === 'ms' ? 'ms' : ca.unit === 'rps' ? 'rps' : 'ratio';
-  const kindB: ValueWithKind['kind'] = cb.unit === 'ms' ? 'ms' : cb.unit === 'rps' ? 'rps' : 'ratio';
+  const kindA: ValueWithKind['kind'] = ca.unit === 'ms' ? 'ms' : (ca.unit === 'rps' ? 'rps' : (/\%/.test(a) ? 'ratio' : 'none'))
+  const kindB: ValueWithKind['kind'] = cb.unit === 'ms' ? 'ms' : (cb.unit === 'rps' ? 'rps' : (/\%/.test(b) ? 'ratio' : 'none'))
 
   if (!ensureComparableKinds(kindA, kindB)) {
     throw new Error('Cannot determine strictest: incompatible units');
@@ -192,4 +210,12 @@ export function strictest(a: string, b: string): string {
 
   // Not supported to determine strictest reliably
   throw new Error('Cannot determine strictest for given expressions');
+}
+
+function extractExprUnit(expr: string): string | undefined {
+  const m = String(expr).match(OP_REGEX)
+  if (!m) return undefined
+  const rest = m[2]!.trim()
+  const um = rest.match(/^[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?\s*([a-zA-Z%]+)?$/)
+  return um?.[1]?.toLowerCase()
 }
