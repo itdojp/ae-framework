@@ -36,6 +36,8 @@ jobs:
         run: pnpm lint || true
       - name: Build
         run: pnpm run build
+      - name: Composite DoD (strictest preview)
+        run: pnpm -s tsx scripts/quality/print-effective-dod.ts --mode=ci || true
       - name: BDD lint (non-blocking)
         continue-on-error: true
         run: |
