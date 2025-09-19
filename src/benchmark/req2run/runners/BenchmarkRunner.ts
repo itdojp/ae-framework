@@ -17,6 +17,7 @@ import { AEFrameworkPhase, OutputType, BenchmarkCategory, DifficultyLevel, TestT
 import os from 'node:os';
 import fs from 'fs/promises';
 import yaml from 'yaml';
+import { buildReportMeta } from '../../../utils/meta-factory.js';
 
 import { IntentAgent } from '../../../agents/intent-agent.js';
 import { NaturalLanguageTaskAdapter } from '../../../agents/natural-language-task-adapter.js';
@@ -590,7 +591,10 @@ export class BenchmarkRunner {
   private async generateReport(results: BenchmarkResult[]): Promise<void> {
     try {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const cm = buildReportMeta();
       const reportData = {
+        // New top-level meta (non-breaking addition)
+        meta: cm,
         metadata: {
           timestamp: new Date().toISOString(),
           totalProblems: results.length,
@@ -599,7 +603,7 @@ export class BenchmarkRunner {
           averageScore: results.length > 0 ? results.reduce((sum, r) => sum + r.metrics.overallScore, 0) / results.length : 0,
           totalExecutionTime: results.reduce((sum, r) => sum + r.executionDetails.totalDuration, 0),
           framework: 'AE Framework v1.0.0',
-          benchmarkVersion: 'req2run-benchmark'
+          benchmarkVersion: 'req2run-benchmark',
         },
         configuration: this.config,
         results: results.map(result => ({

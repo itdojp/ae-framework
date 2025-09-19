@@ -7,6 +7,7 @@ import { spawn, exec } from 'child_process';
 import { promisify } from 'util';
 import * as fs from 'fs';
 import * as path from 'path';
+import { buildReportMeta } from '../utils/meta-factory.js';
 import { QualityPolicyLoader, type QualityGateResult, type QualityReport, type QualityGate } from './policy-loader.js';
 
 type CoverageThreshold = { lines?: number; functions?: number; branches?: number; statements?: number };
@@ -594,12 +595,13 @@ export class QualityGateRunner {
       const filename = `quality-report-${report.environment}-${timestamp}.json`;
       const filepath = path.join(outputDir, filename);
 
-      fs.writeFileSync(filepath, JSON.stringify(report, null, 2));
+      const enriched = { ...report, meta: buildReportMeta() };
+      fs.writeFileSync(filepath, JSON.stringify(enriched, null, 2));
       console.log(`📝 Quality report saved to: ${filepath}`);
 
       // Also save as latest
       const latestPath = path.join(outputDir, `quality-report-${report.environment}-latest.json`);
-      fs.writeFileSync(latestPath, JSON.stringify(report, null, 2));
+      fs.writeFileSync(latestPath, JSON.stringify(enriched, null, 2));
 
     } catch (error) {
       console.error('⚠️  Failed to save quality report:', error);

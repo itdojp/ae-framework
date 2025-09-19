@@ -3,6 +3,7 @@ import * as os from 'node:os';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { loadConfig } from '../../core/config.js';
 import { getSeed } from '../../core/seed.js';
+import { buildReportMeta } from '../../utils/meta-factory.js';
 
 export async function benchRun() {
   const cfg = await loadConfig();
@@ -42,6 +43,7 @@ export async function benchRun() {
   }));
   
   // Ensure stable JSON schema with minimum required fields
+  const cm = buildReportMeta();
   const payload = {
     summary: summary.map(task => ({
       name: task.name,
@@ -52,6 +54,8 @@ export async function benchRun() {
       date: new Date().toISOString(),
       env,
       config: cfg.bench,
+      // additive, backward-compatible
+      ...cm,
     },
   };
   
