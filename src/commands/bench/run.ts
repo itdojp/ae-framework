@@ -3,6 +3,7 @@ import * as os from 'node:os';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { loadConfig } from '../../core/config.js';
 import { getSeed } from '../../core/seed.js';
+import { getCommonMeta } from '../../utils/report-meta.js';
 
 export async function benchRun() {
   const cfg = await loadConfig();
@@ -52,6 +53,7 @@ export async function benchRun() {
       date: new Date().toISOString(),
       env,
       config: cfg.bench,
+      ...getCommonMeta(),
     },
   };
   

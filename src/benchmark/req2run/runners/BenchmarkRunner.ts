@@ -17,6 +17,7 @@ import { AEFrameworkPhase, OutputType, BenchmarkCategory, DifficultyLevel, TestT
 import os from 'node:os';
 import fs from 'fs/promises';
 import yaml from 'yaml';
+import { getCommonMeta } from '../../../utils/report-meta.js';
 
 import { IntentAgent } from '../../../agents/intent-agent.js';
 import { NaturalLanguageTaskAdapter } from '../../../agents/natural-language-task-adapter.js';
@@ -599,7 +600,8 @@ export class BenchmarkRunner {
           averageScore: results.length > 0 ? results.reduce((sum, r) => sum + r.metrics.overallScore, 0) / results.length : 0,
           totalExecutionTime: results.reduce((sum, r) => sum + r.executionDetails.totalDuration, 0),
           framework: 'AE Framework v1.0.0',
-          benchmarkVersion: 'req2run-benchmark'
+          benchmarkVersion: 'req2run-benchmark',
+          ...getCommonMeta(),
         },
         configuration: this.config,
         results: results.map(result => ({
