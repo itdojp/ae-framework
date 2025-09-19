@@ -40,6 +40,7 @@ import type {
 } from '../../../agents/interfaces/standard-interfaces.js';
 import { BenchmarkCategory, DifficultyLevel, TestType, OutputType } from '../types/index.js';
 import { getCommonMeta } from '../../../utils/report-meta.js';
+import { getCommonMeta } from '../../../utils/report-meta.js';
 
 // Minimal generated file descriptor used within this runner (file-local type)
 type GeneratedFile = { path: string; content: string; type: 'typescript' | 'markdown' | 'config' | string; size: number };
@@ -523,7 +524,10 @@ export class StandardizedBenchmarkRunner {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       
       // Enhanced report data with analytics
+      const cm = getCommonMeta();
       const reportData = {
+        // New top-level meta (non-breaking addition)
+        meta: cm,
         metadata: {
           timestamp: new Date().toISOString(),
           totalProblems: results.length,
@@ -535,7 +539,7 @@ export class StandardizedBenchmarkRunner {
           benchmarkVersion: 'req2run-benchmark',
           pipelineVersion: '1.0.0',
           agentsUsed: ['IntentAgentAdapter', 'RequirementsAgentAdapter', 'UserStoriesAgentAdapter', 'ValidationAgentAdapter', 'DomainModelingAgentAdapter', 'UIUXAgentAdapter'],
-          ...getCommonMeta(),
+          // keep per-file metadata as-is; common meta sits at top-level
         },
         configuration: this.config,
         analytics: this.generateAnalytics(results),

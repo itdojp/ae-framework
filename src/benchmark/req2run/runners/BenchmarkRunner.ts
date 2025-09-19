@@ -591,7 +591,10 @@ export class BenchmarkRunner {
   private async generateReport(results: BenchmarkResult[]): Promise<void> {
     try {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const cm = getCommonMeta();
       const reportData = {
+        // New top-level meta (non-breaking addition)
+        meta: cm,
         metadata: {
           timestamp: new Date().toISOString(),
           totalProblems: results.length,

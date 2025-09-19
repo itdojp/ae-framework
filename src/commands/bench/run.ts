@@ -43,6 +43,7 @@ export async function benchRun() {
   }));
   
   // Ensure stable JSON schema with minimum required fields
+  const cm = getCommonMeta();
   const payload = {
     summary: summary.map(task => ({
       name: task.name,
@@ -53,7 +54,8 @@ export async function benchRun() {
       date: new Date().toISOString(),
       env,
       config: cfg.bench,
-      ...getCommonMeta(),
+      // additive, backward-compatible
+      ...cm,
     },
   };
   
