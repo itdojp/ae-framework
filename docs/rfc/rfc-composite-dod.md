@@ -73,6 +73,32 @@ Terminology
 }
 ```
 
+**Composite Gate (optional) — references + evaluation**
+```
+{
+  "quality": {
+    "composite": {
+      "description": "Composite DoD gate (evaluates normalized comparators)",
+      "enforcement": "warn",           // may be strict/warn/off; strictest merge can elevate
+      "refs": ["coverage", "formal", "accessibility", "lighthouse"],
+      "evaluate": {
+        "allOf": [
+          { "id": "cov-lines",  "expr": "coverage.lines >= 85%" },
+          { "id": "a11y-ser",   "expr": "accessibility.serious <= 0" },
+          { "id": "lh-perf",    "expr": "lighthouse.performance >= 90%" },
+          { "id": "formal-ok",  "expr": "formal.present >= 1" }
+        ]
+      }
+    }
+  }
+}
+```
+Evaluation order
+- Compute effective per-metric values via strictest merge.
+- Normalize comparator operands (units); evaluate expressions in order; allOf must pass.
+- Missing/incomparable metrics: apply precedence fallback (policy > AE‑IR > ae.config) and emit warn log.
+- Composite gate’s enforcement is resolved by strictest enforcement across referenced categories and itself.
+
 **AE‑IR Extension (optional; backward‑compatible)**
 - Add an optional dod section expressing spec intent. Absent fields are ignored.
 
@@ -130,14 +156,16 @@ Examples
   - String: "coverage.lines >= 90%"
 - Operators: >, >=, <, <=, ==, !=
 - Units and normalization:
-  - pct: accept 0..100 (e.g., 90) or 0..1 (e.g., 0.9) → canonical is percent (0..100)
+  - pct: accept 0..100 (e.g., 90), 0..1 (e.g., 0.9), or string with % → canonical 0..100
   - count: non‑negative integer
-  - ms: milliseconds (integers); allow s suffix in string form, normalize to ms
+  - time: ms/s/m/h accepted as "1500ms", "1.5s", "2m", "1h" → canonical ms (1s=1000ms, 1m=60000ms, 1h=3600000ms)
   - score: 0..100 (Lighthouse); if 0..1 given, multiply by 100
+  - rps (throughput): accept "120rps", "120/s", "qps:120", "7200rpm" → canonical rps (rpm/60)
 - Coercion examples:
   - "88%" → { unit: "pct", value: 88 }
   - 0.93 with unit pct → 93
-  - "750ms" → 750; "1.5s" → 1500
+  - "750ms" → 750; "1.5s" → 1500; "2m" → 120000; "1h" → 3600000
+  - "7200rpm" → 120 rps; "120/s" → 120 rps; "qps:250" → 250 rps
 - Comparison evaluation:
   - Normalize actual and target to canonical unit; apply op; produce tri‑state result { pass|fail, reason }
 - Mapping to policy categories:
@@ -172,6 +200,12 @@ Examples
 }
 ```
 
+Log format (examples)
+```
+[composite] coverage.lines: policy=80, aeir=88, ae.config=90 -> effective=90 (rule=higher-stricter)
+[composite] lighthouse.pwa: policy=off, aeir=off, ae.config=80 -> precedence=policy (categorical mismatch) [warn]
+```
+
 **Migration & Backward‑Compat**
 - Phase 0 (visibility only): compute and print effective DoD in Verify Lite / coverage‑check logs; PR comment upsert. No gating changes.
 - Phase 1 (coverage): use effective coverage thresholds in coverage‑check; still label‑gated enforcement (enforce‑coverage, coverage:<pct>) and main enforcement via repo vars.
@@ -179,6 +213,13 @@ Examples
 - AE‑IR dod is optional; existing AE‑IR remains valid.
 - ae.config continues to work; treated as least‑precedence fallback and cannot override to weaken stricter baselines.
 - policy/quality.json remains canonical; environment overrides still apply.
+
+Acceptance rules (initial)
+- Coverage: lines/functions/branches/statements must meet effective thresholds (strictest merge).
+- Formal: presence gate satisfied (>=1), evaluation is warn by default; strict when any layer sets strict.
+- Accessibility: serious <= effective threshold (often 0 in CI); other budgets as defined.
+- Lighthouse: performance >= effective threshold (score normalized to 0..100).
+- Composite (optional): all comparator expressions pass; logs derived/effective with precedence notes; PR comment upsert allowed.
 
 **Open Questions**
 - AE‑IR key name: dod vs quality — proposal keeps dod for scope clarity
