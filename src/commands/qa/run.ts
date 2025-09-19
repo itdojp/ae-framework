@@ -1,17 +1,28 @@
 import { execa } from 'execa';
 import { loadConfig } from '../../core/config.js';
 import { readFile, stat } from 'node:fs/promises';
+import { resolveCoverageThresholds } from '../../utils/coverage-thresholds.js';
+import { warnConfigThresholdHint } from '../../utils/config-hints-logger.js';
 
 export async function qaRun(options?: { light?: boolean }) {
   const cfg = await loadConfig();
+  const envProfile = process.env['AE_QUALITY_PROFILE'] || (process.env['CI'] === 'true' ? 'ci' : 'development');
+  const { effective, hint, mismatch } = await resolveCoverageThresholds(cfg, envProfile);
   const pm = (await detectPM()) ?? 'npm';
   const runner = await detectRunner();
   const light = Boolean(options?.light || process.env['AE_QA_LIGHT'] === '1' || process.env['CI'] === 'true');
   
   console.log(`[ae:qa] running QA with ${runner} via ${pm}${light ? ' (light mode)' : ''}`);
+  console.log(`[ae:qa] Using coverage thresholds from policy/quality.json (profile: ${envProfile})`);
+  console.log(`[ae:qa] thresholds → lines=${effective.lines}, functions=${effective.functions}, branches=${effective.branches}, statements=${effective.statements}`);
+  if (hint) {
+    // Deduped and suppressible via AE_SUPPRESS_CONFIG_HINTS
+    warnConfigThresholdHint({ hint, mismatch, envProfile });
+  }
   
   if (runner === 'jest') {
-    const threshold = JSON.stringify({ global: cfg.qa.coverageThreshold });
+    // Inject effective thresholds from policy into Jest
+    const threshold = JSON.stringify({ global: effective });
     try {
       if (light) {
         // Fallback to fast suite when available
@@ -42,6 +53,8 @@ export async function qaRun(options?: { light?: boolean }) {
   
   console.log('[ae:qa] QA checks completed');
 }
+
+// resolveCoverageThresholds moved to utils for testability
 
 async function detectPM(): Promise<'pnpm' | 'npm' | 'yarn' | null> {
   try { await stat('pnpm-lock.yaml'); return 'pnpm'; } catch {}
