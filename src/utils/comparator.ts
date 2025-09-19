@@ -28,7 +28,7 @@ function parseNumericWithUnit(input: string): { value: number; unit?: string; ki
   // Percentage: e.g., 90%
   if (/^[-+]?\d*\.?\d+\s*%$/.test(raw)) {
     const num = parseFloat(raw.replace('%', '').trim());
-    return { value: num / 100, unit: undefined, kind: 'ratio' };
+    return { value: num / 100, kind: 'ratio' };
   }
 
   // Generic number with optional unit
@@ -36,7 +36,7 @@ function parseNumericWithUnit(input: string): { value: number; unit?: string; ki
   if (!m) {
     throw new Error(`Invalid value: ${input}`);
   }
-  const val = parseFloat(m[1]);
+  const val = parseFloat(m[1]!);
   const unit = normalizeUnit(m[2]);
 
   // Time normalization to ms
@@ -53,11 +53,11 @@ function parseNumericWithUnit(input: string): { value: number; unit?: string; ki
   }
 
   if (unit === '%' || unit === 'percent' || unit === 'pct') {
-    return { value: val / 100, unit: undefined, kind: 'ratio' };
+    return { value: val / 100, kind: 'ratio' };
   }
 
   // Plain number (unit-less)
-  return { value: val, unit: undefined, kind: 'none' };
+  return { value: val, kind: 'none' };
 }
 
 function ensureComparableKinds(a: ValueWithKind['kind'], b: ValueWithKind['kind']): boolean {
@@ -76,11 +76,13 @@ export function parseComparator(expr: string): ParsedComparator {
   const m = trimmed.match(OP_REGEX);
   if (!m) throw new Error(`Invalid comparator expression: ${expr}`);
   const op = m[1] as ComparatorOp;
-  const rest = m[2];
+  const rest = m[2]!;
   const { value, unit, kind } = parseNumericWithUnit(rest);
   // Percent is normalized to ratio (unit undefined). Time normalized to ms.
   // Return unit only when meaningful (ms or rps)
-  return { op, value, unit: kind === 'ms' ? 'ms' : kind === 'rps' ? 'rps' : undefined };
+  if (kind === 'ms') return { op, value, unit: 'ms' };
+  if (kind === 'rps') return { op, value, unit: 'rps' };
+  return { op, value };
 }
 
 function toCanonical(actual: number | string | { value: number; unit?: string }): ValueWithKind {
