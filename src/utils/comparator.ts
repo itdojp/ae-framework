@@ -56,6 +56,10 @@ function parseNumericWithUnit(input: string): { value: number; unit?: string; ki
     return { value: val / 100, kind: 'ratio' };
   }
 
+  // If a unit was provided but not recognized, throw
+  if (unit !== undefined) {
+    throw new Error(`Unsupported unit: ${unit}`);
+  }
   // Plain number (unit-less)
   return { value: val, kind: 'none' };
 }
