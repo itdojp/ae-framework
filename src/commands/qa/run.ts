@@ -2,6 +2,7 @@ import { execa } from 'execa';
 import { loadConfig } from '../../core/config.js';
 import { readFile, stat } from 'node:fs/promises';
 import { resolveCoverageThresholds } from '../../utils/coverage-thresholds.js';
+import { warnConfigThresholdHint } from '../../utils/config-hints-logger.js';
 
 export async function qaRun(options?: { light?: boolean }) {
   const cfg = await loadConfig();
@@ -15,13 +16,8 @@ export async function qaRun(options?: { light?: boolean }) {
   console.log(`[ae:qa] Using coverage thresholds from policy/quality.json (profile: ${envProfile})`);
   console.log(`[ae:qa] thresholds → lines=${effective.lines}, functions=${effective.functions}, branches=${effective.branches}, statements=${effective.statements}`);
   if (hint) {
-    // Always warn when ae.config contains thresholds; policy remains the source of truth.
-    console.warn('[ae:qa] WARN: ae.config.qa.coverageThreshold is treated as a hint. Policy is the source of truth.');
-    console.warn(`[ae:qa] hint → lines=${hint.lines}, functions=${hint.functions}, branches=${hint.branches}, statements=${hint.statements}`);
-    if (mismatch) {
-      console.warn('[ae:qa] HINT differs from policy thresholds. Enforcement will follow policy.');
-    }
-    console.warn('[ae:qa] To change enforcement, update policy/quality.json (coverage.thresholds.*) or set AE_QUALITY_PROFILE.');
+    // Deduped and suppressible via AE_SUPPRESS_CONFIG_HINTS
+    warnConfigThresholdHint({ hint, mismatch, envProfile });
   }
   
   if (runner === 'jest') {
