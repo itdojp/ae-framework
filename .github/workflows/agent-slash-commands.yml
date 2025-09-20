@@ -1,0 +1,63 @@
+name: agent-slash-commands
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
+jobs:
+  handle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Handle basic slash commands
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = (context.payload.comment.body || '').trim();
+            const issue_number = context.issue.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const actor = context.actor;
+
+            async function add(labels){
+              if (!labels || labels.length===0) return;
+              await github.rest.issues.addLabels({ owner, repo, issue_number, labels });
+            }
+            async function remove(name){
+              try { await github.rest.issues.removeLabel({ owner, repo, issue_number, name }); } catch {}
+            }
+            async function assign(user){
+              try { await github.rest.issues.addAssignees({ owner, repo, issue_number, assignees: [user] }); } catch {}
+            }
+
+            if (body.startsWith('/start')) {
+              await remove('status:ready');
+              await add(['status:in-progress']);
+              await assign(actor);
+              return core.notice(`Moved to in-progress and assigned to ${actor}`);
+            }
+            if (body.startsWith('/ready-for-review')) {
+              await remove('status:in-progress');
+              await add(['status:review']);
+              return core.notice('Moved to review');
+            }
+            if (body.startsWith('/done')) {
+              await remove('status:review');
+              await remove('status:in-progress');
+              await add(['status:done']);
+              return core.notice('Marked as done');
+            }
+            if (body.startsWith('/block')) {
+              await add(['status:blocked']);
+              return core.notice('Marked as blocked');
+            }
+            if (body.startsWith('/unblock')) {
+              await remove('status:blocked');
+              await add(['status:in-progress']);
+              return core.notice('Unblocked');
+            }
+            core.info('No recognized slash command');
