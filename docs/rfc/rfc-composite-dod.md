@@ -221,7 +221,8 @@ Acceptance rules (initial)
 - Accessibility: serious <= effective threshold (often 0 in CI); other budgets as defined.
 - Lighthouse: performance >= effective threshold (score normalized to 0..100).
 - Composite (optional): all comparator expressions pass; logs derived/effective with precedence notes; PR comment upsert allowed.
-- Infinity/NaNは外部に露出しない: 開区間は有限端点を選択（higher→acc.high, lower→acc.low）。両端が開（{-∞,+∞}）なら優先順位フォールバック（policy > AE‑IR > ae.config）。
+- 比較式は op と value を含む（値単独ではない）。種別（higher/lower）や片開きに応じて不等号の向きを保持する（例: higher で唯一 "<= v" → emit "<= v"）。
+- Infinity/NaNは外部に露出しない: 片開きは適切な不等号付きで有限端点を採用（higher→"<= acc.high", lower→">= acc.low"）。両端が開（{-∞,+∞}）なら優先順位フォールバック（policy > AE‑IR > ae.config）。
 
 **Open Questions**
 - AE‑IR key name: dod vs quality — proposal keeps dod for scope clarity
@@ -326,6 +327,7 @@ Telemetry artifact (JSON)
   - counts: totalMetrics, conflicts, incomparable, missing
   - byCategory: coverage/accessibility/lighthouse/formal summaries
   - decisions: array of decision logs (truncated by limit)
+    - fields: metric, kind, emitted_op, value, source, notes[]
 
 PR comment (upsert)
 - Header: <!-- AE-DOD-COMPOSITE -->
@@ -406,6 +408,7 @@ Examples
 - policy: coverage.lines >= 90; AE‑IR: == 90; ae.config: >= 85 → effective: >= 90 (intersection [90,∞), note: AE‑IR exact satisfied by policy bound)
 - policy: accessibility.serious <= 0; AE‑IR: <= 1; ae.config: <= 0 → effective: <= 0 (intersection (-∞,0])
 - policy: lighthouse.pwa == off; AE‑IR: >= 70 → incomparable, precedence to policy; warn
+- higher (open-ended-low): only "<= 92" present → emit comparator "<= 92" (note: open-ended-low; discouraged at policy layer but preserved)
 
 ---
 
@@ -435,8 +438,8 @@ function intersectBands(b1, b2): { low, high } | 'empty' {
   return low <= high ? { low, high } : 'empty';
 }
 
-function strictestMerge(metric, constraintsByLayer, kind): { value, source, notes[] } {
-  // Prefer intersection semantics; guard open-ended bands to avoid Infinity
+function strictestMerge(metric, constraintsByLayer, kind): { op, value, source, notes[] } {
+  // Prefer intersection semantics; guard open-ended bands and preserve comparator direction
   const bands = [];
   for (const layer of ['policy','aeir','ae.config']) {
     const c = constraintsByLayer[layer];
@@ -453,35 +456,35 @@ function strictestMerge(metric, constraintsByLayer, kind): { value, source, note
     }
     acc = next;
   }
-  // Select strictest point within the feasible region (with open-ended guards)
-  let selected;
+  // Emit comparator (op,value) that preserves the band direction
+  let op, value;
   const notes = [];
   if (kind == 'higher') {
-    if (acc.low === -Infinity && isFinite(acc.high)) {
-      selected = acc.high; // choose finite upper bound
-      notes.push('open-ended-low: used finite-high');
-    } else if (acc.low === -Infinity && acc.high === +Infinity) {
-      return { value: fromPrecedence(constraintsByLayer), source: 'precedence', notes: ['fully-open','precedence-fallback'] };
+    if (acc.low !== -Infinity && isFinite(acc.low)) {
+      op = '>='; value = acc.low; // standard: need at least this much
+    } else if (acc.low === -Infinity && isFinite(acc.high)) {
+      op = '<='; value = acc.high; // relaxed upper bound (discouraged but preserved)
+      notes.push('open-ended-low: emitted <= upper');
     } else {
-      selected = acc.low; // tightest lower bound
+      return { op: '>=', value: fromPrecedence(constraintsByLayer), source: 'precedence', notes: ['fully-open','precedence-fallback'] };
     }
   } else { // lower-is-stricter
-    if (acc.high === +Infinity && isFinite(acc.low)) {
-      selected = acc.low; // choose finite lower bound
-      notes.push('open-ended-high: used finite-low');
-    } else if (acc.low === -Infinity && acc.high === +Infinity) {
-      return { value: fromPrecedence(constraintsByLayer), source: 'precedence', notes: ['fully-open','precedence-fallback'] };
+    if (acc.high !== +Infinity && isFinite(acc.high)) {
+      op = '<='; value = acc.high; // standard: must not exceed this
+    } else if (acc.high === +Infinity && isFinite(acc.low)) {
+      op = '>='; value = acc.low; // relaxed lower bound (discouraged but preserved)
+      notes.push('open-ended-high: emitted >= lower');
     } else {
-      selected = acc.high; // tightest upper bound
+      return { op: '<=', value: fromPrecedence(constraintsByLayer), source: 'precedence', notes: ['fully-open','precedence-fallback'] };
     }
   }
-  const source = originOfTightest(bands, selected, kind) ?? 'derived';
-  return { value: selected, source, notes };
+  const source = originOfBound(bands, op, value, kind) ?? 'derived';
+  return { op, value, source, notes };
 }
 ```
 
 Notes
-- originOfTightest maps the selected bound back to the layer that contributed it (for traceability).
+- originOfBound maps the chosen bound/op back to the contributing layer (for traceability).
 - Bands with discouraged ops (e.g., '<=' on higher-is-stricter) are allowed but never soften stricter bounds provided elsewhere.
 
 ---
