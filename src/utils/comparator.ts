@@ -91,11 +91,11 @@ export function parseComparator(expr: string): ParsedComparator {
   const op = m[1] as ComparatorOp;
   const rest = m[2]!;
   const { value, unit, kind } = parseNumericWithUnit(rest);
-  // Percent is normalized to ratio (unit undefined). Time normalized to ms.
-  // Return unit only when meaningful (ms or rps)
+  // Percent is normalized to ratio; time normalized to ms.
+  // Always surface a `unit` key for uniform shape.
   if (kind === 'ms') return { op, value, unit: 'ms' };
   if (kind === 'rps') return { op, value, unit: 'rps' };
-  return { op, value };
+  return { op, value, unit: undefined };
 }
 
 function toCanonical(actual: number | string | { value: number; unit?: string }): ValueWithKind {
