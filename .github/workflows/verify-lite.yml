@@ -11,6 +11,9 @@ jobs:
   verify-lite:
     runs-on: ubuntu-latest
     steps:
+      - name: Verify Lite sanity (always on PR/main)
+        run: |
+          printf "Verify Lite: minimal checks enabled. Heavy jobs are label-gated.\n"
       - name: Coverage policy (note)
         run: |
           printf "%s\n" "Coverage policy (for reference):" \
@@ -55,7 +58,7 @@ jobs:
         run: |
           if [ -f scripts/formal/tools-check.mjs ]; then node scripts/formal/tools-check.mjs; fi
       - name: "Run formal (label gated: run-formal)"
-        if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'run-formal') }}
+        if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-formal') }}
         run: |
           node scripts/formal/verify-conformance.mjs || true
           node scripts/formal/verify-alloy.mjs || true
