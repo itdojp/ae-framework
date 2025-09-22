@@ -296,20 +296,16 @@
     "test:performance": "vitest run --config configs/vitest.optimized.config.ts --reporter=verbose --run --coverage=false",
     "test:flake-detection": "vitest run --config configs/vitest.optimized.config.ts --retry=5 --reporter=json",
     "test:property": "node scripts/testing/property-harness.mjs",
-    "test:property:focus": "node scripts/testing/property-harness.mjs --focus=$TRACE_ID"
-    ,
-    "bdd:lint": "node scripts/bdd/lint.mjs"
-    ,
-    "bdd:suggest": "node scripts/bdd/ltl-suggest.mjs"
-    ,
+    "test:property:focus": "node scripts/testing/property-harness.mjs --focus=$TRACE_ID",
+    "bdd:lint": "node scripts/bdd/lint.mjs",
+    "bdd:suggest": "node scripts/bdd/ltl-suggest.mjs",
     "test:replay": "node scripts/testing/replay-runner.mjs",
     "test:replay:focus": "node scripts/testing/replay-runner.mjs --focus=$TRACE_ID",
     "test:replay:strict": "REPLAY_ONHAND_MIN=0 REPLAY_DISABLE= node scripts/testing/replay-runner.mjs",
-    "test:replay:relaxed": "REPLAY_DISABLE=allocated_le_onhand node scripts/testing/replay-runner.mjs"
-    ,
-    "artifacts:aggregate": "node scripts/adapters/aggregate-artifacts.mjs"
-    ,
-    "lint:actions": "bash scripts/ci/actionlint.sh"
+    "test:replay:relaxed": "REPLAY_DISABLE=allocated_le_onhand node scripts/testing/replay-runner.mjs",
+    "artifacts:aggregate": "node scripts/adapters/aggregate-artifacts.mjs",
+    "lint:actions": "bash scripts/ci/actionlint.sh",
+    "ci:guard:github-outputs": "bash scripts/ci/guard-github-outputs.sh"
   },
   "dependencies": {
     "@ae-framework/spec-compiler": "file:./packages/spec-compiler",
