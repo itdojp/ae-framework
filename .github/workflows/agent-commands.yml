@@ -86,6 +86,7 @@ jobs:
                 await removeLabel('ci-non-blocking');
                 return reply('Label `ci-non-blocking` removed. Jobs will be blocking as configured.');
               case '/ready':
+              case '/ready-for-review':
                 await removeLabel('do-not-merge');
                 return reply('Label `do-not-merge` removed. PR is ready for merge gates.');
               case '/run-hermetic':
@@ -145,6 +146,12 @@ jobs:
                 const ref = pr.data.head.ref;
                 await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'ae-ci.yml', ref });
                 return reply(`Dispatched ae-ci (QA) on ${ref}`);
+              }
+              case '/run-security-dispatch': {
+              }
+              case '/enforce-security': {
+                await addLabels(['enforce-security']);
+                return reply('Label `enforce-security` added. Security/SBOM/cedar gates may enforce thresholds.');
               }
               case '/run-security-dispatch': {
                 if (!context.payload.issue.pull_request) return reply('Not a PR');
