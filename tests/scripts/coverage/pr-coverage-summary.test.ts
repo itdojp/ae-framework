@@ -1234,6 +1234,69 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
     expect(out).toContain('- via label: COVERAGE : 90 %');
   });
 
+  it('enforce-coverage with invalid label uses repo var and is [blocking]', () => {
+    const cwd = process.cwd();
+    const covDir = join(cwd, 'coverage');
+    try { mkdirSync(covDir, { recursive: true }); } catch {}
+    const covPath = join(covDir, 'coverage-summary.json');
+    writeFileSync(covPath, JSON.stringify({ total: { lines: { pct: 88 } } }), 'utf8');
+
+    const event = {
+      pull_request: { number: 166, labels: [ { name: 'coverage:abc' }, { name: 'enforce-coverage' } ] },
+      ref: 'refs/heads/feature/enforce-invalid-label'
+    };
+    const eventPath = join(cwd, 'tmp-gh-event-enforce-invalid-label.json');
+    writeFileSync(eventPath, JSON.stringify(event), 'utf8');
+
+    const env = {
+      ...process.env,
+      GITHUB_TOKEN: 'test-token',
+      GITHUB_REPOSITORY: 'owner/repo',
+      GITHUB_EVENT_NAME: 'pull_request',
+      GITHUB_EVENT_PATH: eventPath,
+      AE_COVERAGE_DRY_RUN: '1',
+      COVERAGE_DEFAULT_THRESHOLD: '84'
+    } as NodeJS.ProcessEnv;
+
+    const res = spawnSync('node', ['scripts/coverage/pr-coverage-summary.mjs'], { cwd, env, encoding: 'utf8' });
+    expect(res.status).toBe(0);
+    const out = res.stdout || '';
+    expect(out).toContain('- via label: coverage:abc (invalid, ignored)');
+    expect(out).toContain('Threshold (effective): 84%');
+    expect(out).toContain('Source: repo var');
+    expect(out).toMatch(/\[blocking\]/);
+    expect(out).toContain('Policy source: enforced via label: enforce-coverage');
+  });
+
+  it('Gate OK when coverage equals threshold (>= comparator)', () => {
+    const cwd = process.cwd();
+    const covDir = join(cwd, 'coverage');
+    try { mkdirSync(covDir, { recursive: true }); } catch {}
+    const covPath = join(covDir, 'coverage-summary.json');
+    writeFileSync(covPath, JSON.stringify({ total: { lines: { pct: 80 } } }), 'utf8');
+
+    const event = {
+      pull_request: { number: 167, labels: [ { name: 'coverage:80' } ] },
+      ref: 'refs/heads/feature/equals-threshold'
+    };
+    const eventPath = join(cwd, 'tmp-gh-event-equals-threshold.json');
+    writeFileSync(eventPath, JSON.stringify(event), 'utf8');
+
+    const env = {
+      ...process.env,
+      GITHUB_TOKEN: 'test-token',
+      GITHUB_REPOSITORY: 'owner/repo',
+      GITHUB_EVENT_NAME: 'pull_request',
+      GITHUB_EVENT_PATH: eventPath,
+      AE_COVERAGE_DRY_RUN: '1'
+    } as NodeJS.ProcessEnv;
+
+    const res = spawnSync('node', ['scripts/coverage/pr-coverage-summary.mjs'], { cwd, env, encoding: 'utf8' });
+    expect(res.status).toBe(0);
+    const out = res.stdout || '';
+    expect(out).toMatch(/Gate: OK \(80% >= 80%\)/);
+  });
+
   it('accepts boundary label value 0', () => {
     const cwd = process.cwd();
     const covDir = join(cwd, 'coverage');
