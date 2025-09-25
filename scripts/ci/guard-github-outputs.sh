@@ -100,6 +100,7 @@ echo "✅ All GITHUB_OUTPUT/ENV appends are quoted and use printf."
 
 # Enforce printf usage specifically (no other commands appending to targets)
 non_printf_tmp="/tmp/_non_printf_offenders.$$"
+printfnn_tmp="/tmp/_printf_no_nl_offenders.$$"
 if command -v rg >/dev/null 2>&1; then
   # Match any line appending to quoted targets that does not include 'printf'
   rg -n -S '>>\s*"\$\{?GITHUB_(OUTPUT|ENV)\}?"' "$TARGET_DIR" \
@@ -124,6 +125,28 @@ if [ -s "$non_printf_tmp" ]; then
 fi
 
 echo "✅ All appends to GITHUB_OUTPUT/ENV use printf with proper quoting."
+
+# Enforce newline in printf format (prefer printf "%s\\n")
+if command -v rg >/dev/null 2>&1; then
+  rg -n -S 'printf\s+[^\n]*>>\s*"?\$\{?GITHUB_(OUTPUT|ENV)\}?"?' "$TARGET_DIR" \
+    | awk 'BEGIN{FS=":"} { line=$0; sub(/^[[:space:]]+/,"",$3); if ($3 ~ /^#/) next; print line }' \
+    | rg -v '\\n' >"$printfnn_tmp" || true
+else
+  grep -REn 'printf\s+.*>>\s*"?\$\{?GITHUB_(OUTPUT|ENV)\}?"?' "$TARGET_DIR" \
+    | awk 'BEGIN{FS=":"} { line=$0; sub(/^[[:space:]]+/,"",$3); if ($3 ~ /^#/) next; print line }' \
+    | grep -Ev '\\n' >"$printfnn_tmp" || true
+fi
+
+if [ -s "$printfnn_tmp" ]; then
+  echo "🚫 printf appends to \$GITHUB_OUTPUT/\$GITHUB_ENV should include a trailing newline (use %s\\n)." >&2
+  cat "$printfnn_tmp" >&2 || true
+  while IFS=":" read -r f l _; do
+    if [ -n "${f:-}" ] && [ -n "${l:-}" ]; then
+      printf '::error file=%s,line=%s::Include trailing newline in printf format (e.g., \"%s\\n\")\n' "$f" "$l"
+    fi
+  done < "$printfnn_tmp"
+  exit 1
+fi
 
 # Forbid tee -a to GITHUB_OUTPUT/ENV
 tee_tmp="/tmp/_tee_offenders.$$"

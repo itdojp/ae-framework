@@ -107,5 +107,25 @@ if bash scripts/ci/guard-github-outputs.sh "$TMPDIR/wf"; then
 fi
 
 rm -f "$TMPDIR/wf/offender4.yml"
+
+# Offender: printf without trailing newline
+cat > "$TMPDIR/wf/offender5.yml" << 'YAML'
+name: off5
+on: push
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          printf "%s" "NO_NL=true" >> "$GITHUB_OUTPUT"
+YAML
+
+echo "[test] Expect guard to fail on printf without newline offender..."
+if bash scripts/ci/guard-github-outputs.sh "$TMPDIR/wf"; then
+  echo "Guard did not fail on printf without newline offender (unexpected)" >&2
+  exit 1
+fi
+
+rm -f "$TMPDIR/wf/offender5.yml"
 bash scripts/ci/guard-github-outputs.sh "$TMPDIR/wf"
 echo "[test] Guard basic tests passed."
