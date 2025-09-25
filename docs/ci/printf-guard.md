@@ -7,6 +7,13 @@ This repository enforces a printf policy when appending to GitHub special files:
 
 ## Policy
 
+At a glance:
+- Use `printf` (no `echo` / `tee -a` / `::set-output`)
+- Quote target files: `>> "$GITHUB_OUTPUT"` / `>> "$GITHUB_ENV"`
+- Include a trailing newline in the format (prefer `"%s\n"`)
+- `${GITHUB_OUTPUT}` / `${GITHUB_ENV}` are accepted
+- Multi-line values: emit delimiter + lines with separate `printf` appends
+
 - Do not use `echo` to append. Use `printf` with a trailing newline.
 - Always quote the target file.
 - Grouped blocks are allowed for multiple appends.
