@@ -58,6 +58,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - `coverage:<pct>`: override coverage threshold for coverage-check (default 80). e.g., `coverage:75`
   - Use `/coverage <pct|clear>` to set/clear on a PR
  - `enforce-coverage`: enforce coverage threshold on PRs (blocking when below threshold). See `docs/quality/coverage-policy.md`.
+ - `lang:ja` / `lang:en`: select PR summary language (default `en`). See `docs/ci/summary-env.md`.
 
 Workflows (selected)
 - `.github/workflows/ae-ci.yml` (QA light)
@@ -212,6 +213,7 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
  - `enforce-coverage`: カバレッジしきい値を強制（閾値未満でブロック）。詳細は `docs/quality/coverage-policy.md` を参照
  - `run-formal`: PR で Formal Verify と集約レポートを実行（既定は report-only）。`docs/quality/formal-runbook.md` を参照
  - `enforce-formal` / `enforce-contracts`: フォーマル/契約チェックのゲート化を有効化（ラベル制御）
+ - `lang:ja` / `lang:en`: PR サマリの言語指定（既定 `en`）。`docs/ci/summary-env.md` を参照
 
 対応ワークフロー（抜粋）
 - `.github/workflows/ae-ci.yml`（QA light）
