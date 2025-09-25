@@ -27,7 +27,7 @@ Formal
 - `/run-formal` → label `run-formal`
 - `/enforce-formal` → label `enforce-formal`
 - `/formal-help` `/formal-quickstart` → reply with quick tips/docs
-- `/formal-aggregate-dispatch` → dispatch `formal-aggregate.yml` on PR head (upsert AE-FORMAL-AGGREGATE comment)
+- `/formal-aggregate-dispatch` → dispatch `formal-aggregate.yml` on PR head（Artifacts生成）。PRコメントのアップサートは `pull_request` 実行かつ `run-formal` ラベル時に行われます（idempotent, 固定ヘッダ `<!-- AE-FORMAL-AGGREGATE -->`）。
 - `/formal-verify-dispatch` → dispatch `formal-verify.yml` on PR head (optional `inputs.target`)
 - `/formal-apalache-dispatch` → dispatch `formal-verify.yml` with `inputs.target=apalache`
 
