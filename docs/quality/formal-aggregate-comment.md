@@ -23,6 +23,7 @@ Sources and Minimal JSON
     "info": {
       "present": { "conformance": true, "smt": true, "alloy": false, "tla": true, "apalache": false },
       "presentCount": 3,
+      "presentKeys": ["conformance", "smt", "tla"],
       "ranOk": { "apalache": false },
       "errors": [
         { "tool": "apalache", "kind": "parse", "message": "...", "snippet": "..." }

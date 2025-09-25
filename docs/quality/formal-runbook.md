@@ -236,6 +236,7 @@ Artifacts のクイック確認（jq）
 Keys quick reference（aggregate JSON）
 - `info.present`: 各レポートの有無（tla/alloy/smt/apalache/conformance）
 - `info.presentCount`: present の合計数（0..5）
+- `info.presentKeys`: present のキー（順序付き配列）
 - `info.ranOk.apalache`: `{ ran: boolean, ok: boolean|null }`（null は不確定）
   - jq 例: `jq '.info.ranOk.apalache' artifacts/formal/formal-aggregate.json`
 
