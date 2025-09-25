@@ -23,8 +23,11 @@ if (!token) {
   process.exit(0);
 }
 
-const repoFull = process.env['GITHUB_REPOSITORY'] || '';
-const [owner, repo] = repoFull.split('/');
+let repoFull = process.env['GITHUB_REPOSITORY'] || '';
+let owner = '', repo = '';
+if (repoFull.includes('/')) {
+  [owner, repo] = repoFull.split('/');
+}
 const eventName = process.env['GITHUB_EVENT_NAME'] || '';
 const eventPath = process.env['GITHUB_EVENT_PATH'] || '';
 const defRaw = process.env['COVERAGE_DEFAULT_THRESHOLD'];
@@ -73,6 +76,17 @@ if (!fs.existsSync(eventPath)) {
   process.exit(0);
 }
 const payload = JSON.parse(fs.readFileSync(eventPath, 'utf-8'));
+// Fallback owner/repo from event payload when env is missing
+if (!owner || !repo) {
+  const full = payload?.repository?.full_name;
+  if (typeof full === 'string' && full.includes('/')) {
+    [owner, repo] = full.split('/');
+  } else {
+    const ow = payload?.repository?.owner?.login;
+    const rp = payload?.repository?.name;
+    if (ow && rp) { owner = ow; repo = rp; }
+  }
+}
 const pr = payload.pull_request;
 if (!pr || !owner || !repo) {
   console.log('Not a pull_request context; skipping PR comment');
