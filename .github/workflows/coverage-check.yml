@@ -74,48 +74,8 @@ jobs:
         continue-on-error: ${{ needs.gate.outputs.strict != 'true' }}
       - name: Comment PR with coverage (non-blocking)
         if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COVERAGE_ENFORCE_MAIN: ${{ vars.COVERAGE_ENFORCE_MAIN }}
           COVERAGE_DEFAULT_THRESHOLD: ${{ vars.COVERAGE_DEFAULT_THRESHOLD }}
-        with:
-          script: |
-            const fs = require('fs');
-            const summaryPath = 'coverage/coverage-summary.json';
-            if (!fs.existsSync(summaryPath)) return;
-            const cov = JSON.parse(fs.readFileSync(summaryPath,'utf-8'));
-            const pct = cov?.total?.lines?.pct ?? 'n/a';
-            const header = '<!-- AE-COVERAGE-SUMMARY -->\n';
-            // Derive label override (if any)
-            const labels = (context.payload.pull_request?.labels || []).map(l=>l.name);
-            const covLabel = labels.find(n => typeof n === 'string' && n.startsWith('coverage:')) || null;
-            const defTh = Number(process.env.COVERAGE_DEFAULT_THRESHOLD || 80);
-            const effTh = `${{ needs.gate.outputs.threshold }}`;
-            const strict = `${{ needs.gate.outputs.strict }}` === 'true';
-            const policy = strict ? 'enforced' : 'report-only';
-            let rationale = 'report-only';
-            if (strict) {
-              if (labels.includes('enforce-coverage')) rationale = 'enforced via label: enforce-coverage';
-              else rationale = 'enforced via main + repo vars (COVERAGE_ENFORCE_MAIN)';
-            }
-            const lines = [];
-            lines.push(`Coverage (lines): ${pct}%`);
-            lines.push(`Threshold (effective): ${effTh}%`);
-            if (covLabel) lines.push(`- via label: ${covLabel}`);
-            lines.push(`- default: ${isFinite(defTh) ? defTh : 80}%`);
-            lines.push('Derived: label > repo var > default');
-            lines.push(`Policy: ${policy}`);
-            lines.push(`Policy source: ${rationale}`);
-            lines.push('Docs: docs/quality/coverage-required.md');
-            // Quick reproduce notes
-            lines.push('Reproduce: coverage → coverage/coverage-summary.json → total.lines.pct');
-            lines.push('Reproduce: threshold → label coverage:<pct> > vars.COVERAGE_DEFAULT_THRESHOLD > default 80');
-            const body = header + lines.join('\n');
-            const { owner, repo, number } = context.issue;
-            const comments = await github.rest.issues.listComments({ owner, repo, issue_number: number, per_page: 100 });
-            const mine = comments.data.find(c => c.body && c.body.startsWith(header));
-            if (mine) {
-              await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
-            } else {
-              await github.rest.issues.createComment({ owner, repo, issue_number: number, body });
-            }
+        run: node scripts/coverage/pr-coverage-summary.mjs
