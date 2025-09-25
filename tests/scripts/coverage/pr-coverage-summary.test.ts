@@ -395,6 +395,68 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
     expect(out).toContain('- via label: coverage:85%');
   });
 
+  it('parses percent-suffixed label value with space (coverage: 85 %)', () => {
+    const cwd = process.cwd();
+    const covDir = join(cwd, 'coverage');
+    try { mkdirSync(covDir, { recursive: true }); } catch {}
+    const covPath = join(covDir, 'coverage-summary.json');
+    writeFileSync(covPath, JSON.stringify({ total: { lines: { pct: 90 } } }), 'utf8');
+
+    const event = {
+      pull_request: { number: 138, labels: [ { name: 'coverage: 85 %' } ] },
+      ref: 'refs/heads/feature/percent-space'
+    };
+    const eventPath = join(cwd, 'tmp-gh-event-percent-space.json');
+    writeFileSync(eventPath, JSON.stringify(event), 'utf8');
+
+    const env = {
+      ...process.env,
+      GITHUB_TOKEN: 'test-token',
+      GITHUB_REPOSITORY: 'owner/repo',
+      GITHUB_EVENT_NAME: 'pull_request',
+      GITHUB_EVENT_PATH: eventPath,
+      AE_COVERAGE_DRY_RUN: '1',
+      COVERAGE_DEFAULT_THRESHOLD: '80'
+    } as NodeJS.ProcessEnv;
+
+    const res = spawnSync('node', ['scripts/coverage/pr-coverage-summary.mjs'], { cwd, env, encoding: 'utf8' });
+    expect(res.status).toBe(0);
+    const out = res.stdout || '';
+    expect(out).toContain('Threshold (effective): 85%');
+    expect(out).toContain('- via label: coverage: 85 %');
+  });
+
+  it('treats negative label values as invalid and falls back', () => {
+    const cwd = process.cwd();
+    const covDir = join(cwd, 'coverage');
+    try { mkdirSync(covDir, { recursive: true }); } catch {}
+    const covPath = join(covDir, 'coverage-summary.json');
+    writeFileSync(covPath, JSON.stringify({ total: { lines: { pct: 70 } } }), 'utf8');
+
+    const event = {
+      pull_request: { number: 139, labels: [ { name: 'coverage:-5' } ] },
+      ref: 'refs/heads/feature/neg'
+    };
+    const eventPath = join(cwd, 'tmp-gh-event-neg.json');
+    writeFileSync(eventPath, JSON.stringify(event), 'utf8');
+
+    const env = {
+      ...process.env,
+      GITHUB_TOKEN: 'test-token',
+      GITHUB_REPOSITORY: 'owner/repo',
+      GITHUB_EVENT_NAME: 'pull_request',
+      GITHUB_EVENT_PATH: eventPath,
+      AE_COVERAGE_DRY_RUN: '1',
+      COVERAGE_DEFAULT_THRESHOLD: '80'
+    } as NodeJS.ProcessEnv;
+
+    const res = spawnSync('node', ['scripts/coverage/pr-coverage-summary.mjs'], { cwd, env, encoding: 'utf8' });
+    expect(res.status).toBe(0);
+    const out = res.stdout || '';
+    expect(out).toContain('- via label: coverage:-5 (invalid, ignored)');
+    expect(out).toContain('Threshold (effective): 80%');
+  });
+
   it('label override wins over repo var value', () => {
     const cwd = process.cwd();
     const covDir = join(cwd, 'coverage');
