@@ -318,7 +318,7 @@ jobs:
           printf "### Formal Aggregate\n" >> "$GITHUB_STEP_SUMMARY"
           if [ -f artifacts/formal/formal-aggregate.json ]; then \
             P=$(jq -r '.info.presentCount // 0' artifacts/formal/formal-aggregate.json 2>/dev/null || printf "0\n"); \
-            KEYS=$(jq -r '.info.present | to_entries | map(select(.value)) | map(.key) | join(", ")' artifacts/formal/formal-aggregate.json 2>/dev/null || printf "\n"); \
+            KEYS=$(jq -r '(.info.presentKeys // (.info.present | to_entries | map(select(.value)) | map(.key))) | join(", ")' artifacts/formal/formal-aggregate.json 2>/dev/null || printf "\n"); \
             APO=$(jq -r 'try .info.ranOk.apalache as $a | ("ran=" + (if $a.ran then "yes" else "no" end) + " ok=" + (if ($a.ok==true) then "yes" else (if ($a.ok==false) then "no" else "n/a" end) end)) catch "n/a"' artifacts/formal/formal-aggregate.json 2>/dev/null || printf "n/a\n"); \
             if jq -e '.info.temporal.alloy != null' artifacts/formal/formal-aggregate.json >/dev/null 2>&1; then \
               ATP=$(jq -r '.info.temporal.alloy.present // false' artifacts/formal/formal-aggregate.json); \
