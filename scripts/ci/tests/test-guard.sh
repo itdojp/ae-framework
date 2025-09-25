@@ -66,5 +66,25 @@ fi
 
 echo "[test] Expect guard to pass on allowed cases..."
 rm -f "$TMPDIR/wf/offender.yml" "$TMPDIR/wf/offender2.yml"
+
+# Additional offender: tee -a to $GITHUB_OUTPUT
+cat > "$TMPDIR/wf/offender3.yml" << 'YAML'
+name: off3
+on: push
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "three=3" | tee -a "$GITHUB_OUTPUT"
+YAML
+
+echo "[test] Expect guard to fail on tee -a offender..."
+if bash scripts/ci/guard-github-outputs.sh "$TMPDIR/wf"; then
+  echo "Guard did not fail on tee -a offender (unexpected)" >&2
+  exit 1
+fi
+
+rm -f "$TMPDIR/wf/offender3.yml"
 bash scripts/ci/guard-github-outputs.sh "$TMPDIR/wf"
 echo "[test] Guard basic tests passed."

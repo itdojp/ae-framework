@@ -103,3 +103,17 @@ if [ -s "$non_printf_tmp" ]; then
 fi
 
 echo "✅ All appends to GITHUB_OUTPUT/ENV use printf with proper quoting."
+
+# Forbid tee -a to GITHUB_OUTPUT/ENV
+tee_tmp="/tmp/_tee_offenders.$$"
+if command -v rg >/dev/null 2>&1; then
+  rg -n -S 'tee\s+-a\s+"?\$\{?GITHUB_(OUTPUT|ENV)\}?"?' "$TARGET_DIR" >"$tee_tmp" || true
+else
+  grep -REn 'tee\s+-a\s+"?\$\{?GITHUB_(OUTPUT|ENV)\}?"?' "$TARGET_DIR" >"$tee_tmp" || true
+fi
+
+if [ -s "$tee_tmp" ]; then
+  echo "🚫 Using tee -a to append to \$GITHUB_OUTPUT/\$GITHUB_ENV is not allowed (use printf)." >&2
+  cat "$tee_tmp" >&2 || true
+  exit 1
+fi
