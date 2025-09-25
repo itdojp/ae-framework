@@ -77,7 +77,7 @@ const labels = (pr.labels || []).map(l => l.name);
 const covLabel = labels.find(n => typeof n === 'string' && n.startsWith('coverage:')) || null;
 let covLabelValStr = covLabel ? String(covLabel.split(':')[1] || '').trim() : '';
 const covLabelValNum = covLabelValStr !== '' ? Number(covLabelValStr) : NaN;
-const hasValidLabel = isFinite(covLabelValNum);
+const hasValidLabel = isFinite(covLabelValNum) && covLabelValNum >= 0 && covLabelValNum <= 100;
 const effNumeric = hasValidLabel ? covLabelValNum : defTh;
 const effTh = fmtPct(effNumeric);
 
