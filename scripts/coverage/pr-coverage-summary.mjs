@@ -33,12 +33,16 @@ const hasRepoVar = typeof defRaw !== 'undefined' && defRaw !== '';
 const enforceMain = (process.env['COVERAGE_ENFORCE_MAIN'] || '0') === '1';
 
 // Load coverage summary (optional). If missing, still post a summary with n/a.
-const summaryPath = 'coverage/coverage-summary.json';
+const summaryCandidates = [
+  'coverage/coverage-summary.json',
+  'artifacts/coverage/coverage-summary.json',
+];
+const summaryPath = summaryCandidates.find(p => fs.existsSync(p));
 let cov = {};
 let pct = 'n/a';
 let pctNum = NaN;
 let pctFns, pctBranches, pctStmts;
-if (fs.existsSync(summaryPath)) {
+if (summaryPath) {
   try {
     cov = JSON.parse(fs.readFileSync(summaryPath, 'utf-8'));
     const ln = cov?.total?.lines?.pct;
@@ -118,16 +122,17 @@ lines.push('Docs: docs/quality/coverage-required.md');
 lines.push('Docs: docs/quality/coverage-policy.md');
 lines.push('Docs: docs/ci/label-gating.md');
 lines.push('Tips: /coverage <pct> to override; /enforce-coverage to enforce');
-if (!fs.existsSync(summaryPath)) lines.push('Note: no coverage-summary.json found');
+if (!summaryPath) lines.push('Note: no coverage-summary.json found (looked in coverage/ and artifacts/coverage/)');
 lines.push('Reproduce: coverage → coverage/coverage-summary.json → total.lines.pct');
 lines.push('Reproduce: threshold → label coverage:<pct> > vars.COVERAGE_DEFAULT_THRESHOLD > default 80');
 // Report path hints (if present in workspace)
 if (fs.existsSync('coverage/index.html')) {
   lines.push('Report (HTML): coverage/index.html');
 }
-if (fs.existsSync('coverage/coverage-summary.json')) {
-  lines.push('Report (JSON): coverage/coverage-summary.json');
-}
+const jsonHintPath = summaryPath || (fs.existsSync('coverage/coverage-summary.json')
+  ? 'coverage/coverage-summary.json'
+  : (fs.existsSync('artifacts/coverage/coverage-summary.json') ? 'artifacts/coverage/coverage-summary.json' : ''));
+if (jsonHintPath) lines.push(`Report (JSON): ${jsonHintPath}`);
 const body = HEADER + lines.join('\n');
 
 // Upsert PR comment
