@@ -205,6 +205,7 @@ jobs:
   - `Header: <!-- AE-FORMAL-AGGREGATE --> (upsert on pull_request with label run-formal)`
   - `Docs: docs/quality/formal-aggregate-comment.md`
   - `Runbook: docs/quality/formal-runbook.md`
+  - `Run: <workflow run URL>`
   - `Clamp: line=…, errors=…, snippet=…, wrap=…`
   - `Comment: created|updated|skipped` (+ URL/reason when available)
 
