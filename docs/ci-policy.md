@@ -105,7 +105,8 @@ Workflows (selected)
  - `.github/workflows/fail-fast-spec-validation.yml` (spec fail-fast)
  - `.github/workflows/formal-verify.yml` (Formal verification)
  - `.github/workflows/formal-aggregate.yml` (Formal reports aggregate/comment)
- - `.github/workflows/pr-summary-comment.yml` (PR summary upsert)
+- `.github/workflows/pr-summary-comment.yml` (PR summary upsert)
+ - `.github/workflows/auto-labels.yml` (auto-apply labels from PR title/body)
 
 
 ### PR comments (Coverage / Formal)
@@ -287,6 +288,7 @@ jobs:
 
 ### ポリシーソース / 優先順位
 - しきい値 / DoD のソースは次の優先で解決: policy > AE-IR > ae.config（ヒントのみ・警告表示）。詳細は `SECURITY.md` / `docs/quality/coverage-policy.md` を参照。
+ - 同一ソース内で複数のしきい値がある場合は、より厳しい（strictest）側でマージします（例: `>=95%` は `>=90%` より厳しい）。
 
 モード（report-only / enforce）
 - report-only: 非ブロッキング（PR コメント/アーティファクトの提示のみ）
@@ -344,7 +346,8 @@ jobs:
  - `.github/workflows/fail-fast-spec-validation.yml`（仕様 Fail-Fast）
  - `.github/workflows/formal-verify.yml`（フォーマル検証）
  - `.github/workflows/formal-aggregate.yml`（フォーマル集約/コメント）
- - `.github/workflows/pr-summary-comment.yml`（PR サマリのアップサート）
+- `.github/workflows/pr-summary-comment.yml`（PR サマリのアップサート）
+ - `.github/workflows/auto-labels.yml`（PR タイトル/本文からの自動ラベリング）
 
 ### クイックスタート（ローカル検証）
 - `corepack enable && pnpm i && pnpm -s build && pnpm run test:fast`
