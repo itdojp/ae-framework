@@ -27,6 +27,9 @@
 - Follow existing code style
 - Add tests for new features
 - Update documentation
+ - Before pushing workflow changes, run local checks:
+   - `pnpm lint:workflows` (guard + actionlint via Docker if available)
+   - `pnpm ci:test:guard` (basic guard self-test)
  - CI workflow snippets: when appending to GitHub special files, use printf with quoted targets (policy enforced in CI):
    - `printf "%s\n" "key=value" >> "$GITHUB_OUTPUT"`
    - `printf "%s\n" "NAME=value" >> "$GITHUB_ENV"`
@@ -82,6 +85,9 @@ This is a monorepo; prefer `pnpm --filter` for workspace commands (e.g., `pnpm -
 - 既存のコードスタイルに従う
 - 新機能にはテストを追加
 - ドキュメントを更新
+ - ワークフロー（.github/workflows）を変更する場合はローカルチェックを実行:
+   - `pnpm lint:workflows`（ガード + actionlint／Dockerがあれば）
+   - `pnpm ci:test:guard`（ガードの基本セルフテスト）
  - CI ワークフローのスニペット: `$GITHUB_OUTPUT` や `$GITHUB_ENV` に追記する際は `printf` と引用付きリダイレクトを使用（CI でポリシーを強制）
    - `printf "%s\n" "key=value" >> "$GITHUB_OUTPUT"`
    - `printf "%s\n" "NAME=value" >> "$GITHUB_ENV"`
