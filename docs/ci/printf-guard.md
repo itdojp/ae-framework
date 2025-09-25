@@ -30,6 +30,12 @@ printf "%s\n" "also_good=true" >> "${GITHUB_OUTPUT}"
   printf "%s\n" "one=1"
   printf "%s\n" "two=2"
 } >> "$GITHUB_OUTPUT"
+
+# Multi-line outputs using delimiter pattern
+printf "%s\n" "key<<EOF" >> "$GITHUB_OUTPUT"
+printf "%s\n" "line1" >> "$GITHUB_OUTPUT"
+printf "%s\n" "line2" >> "$GITHUB_OUTPUT"
+printf "%s\n" "EOF" >> "$GITHUB_OUTPUT"
 ```
 
 ### Forbidden

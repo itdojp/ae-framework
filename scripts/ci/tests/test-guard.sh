@@ -39,6 +39,11 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           printf "%s\n" "NAME=good" >> "${GITHUB_ENV}"
           printf "%s\n" "also_good=true" >> "${GITHUB_OUTPUT}"
+          # Multi-line output using delimiter via printf lines
+          printf "%s\n" "multi<<EOF" >> "$GITHUB_OUTPUT"
+          printf "%s\n" "line1" >> "$GITHUB_OUTPUT"
+          printf "%s\n" "line2" >> "$GITHUB_OUTPUT"
+          printf "%s\n" "EOF" >> "$GITHUB_OUTPUT"
 YAML
 
 echo "[test] Expect guard to fail on offender..."
