@@ -130,6 +130,7 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 - Default: not required on PRs; run under `run-security`, aggregate results as artifacts
 - PR summary comment (non-blocking) is posted when `run-security` is set (dependency vulnerabilities and top licenses)
 - Enforce/gate gradually after team agreement (separate issue)
+ - See `SECURITY.md` for thresholds/enforcement policy and PR comment example.
 
 ### Operations Notes
 - In emergencies, use `ci-non-blocking` to avoid blocking PRs
@@ -164,9 +165,9 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 - `run-qa`: `ae-ci` ワークフローの `qa-bench` を PR で実行（既定は非実行）
 - `run-spec`: 仕様 Fail-Fast を PR で有効化
 - `run-drift`: Codegen Drift 検出を PR で有効化
- - `run-adapters`: Adapter Thresholds（a11y/perf/Lighthouse）をPRでレポート（report-only）。`adapter-thresholds.yml` が要約コメントを投稿
- - `enforce-perf`: perf スコアのしきい値を強制（`perf:<pct>` ラベルで上書き、既定は `vars.PERF_DEFAULT_THRESHOLD` または 75）
- - `enforce-lh`: Lighthouse performance スコアのしきい値を強制（`lh:<pct>` ラベルで上書き、既定は `vars.LH_DEFAULT_THRESHOLD` または 80）
+- `run-adapters`: Adapter Thresholds（a11y/perf/Lighthouse）をPRでレポート（report-only）。`adapter-thresholds.yml` が要約コメントを投稿
+- `enforce-perf`: perf スコアのしきい値を強制（`perf:<pct>` ラベルで上書き、既定は `vars.PERF_DEFAULT_THRESHOLD` または 75）
+- `enforce-lh`: Lighthouse performance スコアのしきい値を強制（`lh:<pct>` ラベルで上書き、既定は `vars.LH_DEFAULT_THRESHOLD` または 80）
 - `run-hermetic`: Hermetic CI を PR で有効化
 - `run-quality`: Parallel Test の quality 行を有効化
 - `run-flake`: flake-detection を PR で有効化
@@ -236,6 +237,7 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 ### セキュリティ/コンプライアンス
 - 既定では PR で非必須（`run-security` ラベル時のみ実行）。結果は artifacts に集約
 - `run-security` ラベル時は、依存脆弱性のサマリと上位ライセンスの簡易サマリを PR コメントに自動投稿（非ブロッキング）
+ - 詳細は `SECURITY.md` を参照（閾値/エンフォース、PRコメント例）。
 
 ### フォーマル（オプトイン）
 - `run-formal` ラベル時のみ、Formal Verify（stub）と成果物の集約（Alloy/TLA/SMT/Apalache の要約）を実行（非ブロッキング）
