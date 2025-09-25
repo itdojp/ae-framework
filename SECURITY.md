@@ -50,6 +50,7 @@ We take security vulnerabilities seriously. If you discover a security issue, pl
   - `enforce-security` — enforce thresholds (blocking when limits exceeded)
   - `ci-non-blocking` — continue-on-error for selected jobs when troubleshooting
 - Slash commands: `/run-security`, `/enforce-security` (see `.github/workflows/agent-commands.yml`)
+  - Dispatch: `/run-security-dispatch` — triggers `sbom-generation.yml` on the PR head branch
 - Local quickstart
   - `pnpm -s security:scan` — run local security scan
   - `pnpm -s security:config` — show current security config
@@ -384,6 +385,7 @@ Next Review / 次回見直し: July 2025
   - `enforce-security` — 閾値を強制（超過時はブロック）
   - `ci-non-blocking` — トラブルシュート時などに continue-on-error で一部ジョブを非ブロッキング化
 - スラッシュコマンド: `/run-security`, `/enforce-security`（`.github/workflows/agent-commands.yml` を参照）
+  - ディスパッチ: `/run-security-dispatch` — PR の head ブランチで `sbom-generation.yml` を起動
 - ローカルクイックスタート
   - `pnpm -s security:scan` — ローカルでセキュリティスキャンを実行
   - `pnpm -s security:config` — 現在のセキュリティ設定を表示
