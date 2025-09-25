@@ -1,6 +1,7 @@
 name: Spec Validation
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
     paths: ['spec/**', '.ae/**', 'docs/**']
   push:
     branches: [main, develop]
@@ -10,6 +11,9 @@ on:
 
 permissions:
   contents: read
+concurrency:
+  group: spec-validation-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   spec-validation:

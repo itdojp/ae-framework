@@ -2,11 +2,15 @@ name: Fail-Fast Spec Validation
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
     paths:
       - 'spec/**'
       - '.ae/**'
   push:
     branches: [main]
+concurrency:
+  group: fail-fast-spec-${{ github.ref }}
+  cancel-in-progress: true
   workflow_call:
     # Allow this workflow to be called by other workflows
 
