@@ -48,6 +48,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - `run-flake`: enable flake-detection on PRs
 - `run-e2e`: enable E2E tests on PRs
 - `coverage:<pct>`: override coverage threshold for coverage-check (default 80). e.g., `coverage:75`
+  - Use `/coverage <pct|clear>` to set/clear on a PR
  - `qa-batch:commands` / `qa-batch:cli` / `qa-batch:property` / `qa-batch:agents`: run additional CI Fast batches for the specific categories (opt-in)
 
 ### PR comments (Coverage / Formal)
