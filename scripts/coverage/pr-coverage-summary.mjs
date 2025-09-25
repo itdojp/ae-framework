@@ -15,6 +15,17 @@ function fmtPct(v) {
   return s.endsWith('.0') ? String(Math.round(v)) : s;
 }
 
+function parseNumToken(raw) {
+  if (typeof raw === 'string') {
+    let s = raw.trim();
+    if (s.endsWith('%')) s = s.slice(0, -1).trim();
+    const n = Number(s);
+    return isFinite(n) ? n : NaN;
+  }
+  if (typeof raw === 'number') return isFinite(raw) ? raw : NaN;
+  return NaN;
+}
+
 const HEADER = '<!-- AE-COVERAGE-SUMMARY -->\n';
 const token = process.env['GITHUB_TOKEN'];
 if (!token) {
@@ -30,13 +41,9 @@ if (repoFull.includes('/')) {
 }
 const eventName = process.env['GITHUB_EVENT_NAME'] || '';
 const eventPath = process.env['GITHUB_EVENT_PATH'] || '';
-let defRaw = process.env['COVERAGE_DEFAULT_THRESHOLD'];
-if (typeof defRaw === 'string') {
-  defRaw = defRaw.trim();
-  if (defRaw.endsWith('%')) defRaw = defRaw.slice(0, -1).trim();
-}
-const defTh = Number(defRaw || 80);
-const hasRepoVar = typeof defRaw !== 'undefined' && defRaw !== '';
+const rawRepoVar = process.env['COVERAGE_DEFAULT_THRESHOLD'];
+const defTh = parseNumToken(rawRepoVar);
+const hasRepoVar = typeof rawRepoVar !== 'undefined' && rawRepoVar !== '';
 const repoVarIsNumeric = isFinite(defTh);
 const repoVarValidRange = repoVarIsNumeric && defTh >= 0 && defTh <= 100;
 const enforceMain = (process.env['COVERAGE_ENFORCE_MAIN'] || '0') === '1';
@@ -54,20 +61,12 @@ let pctFns, pctBranches, pctStmts;
 if (summaryPath) {
   try {
     cov = JSON.parse(fs.readFileSync(summaryPath, 'utf-8'));
-    let lnRaw = cov?.total?.lines?.pct;
-    if (typeof lnRaw === 'string' && lnRaw.trim().endsWith('%')) lnRaw = lnRaw.trim().slice(0, -1).trim();
-    const lnNum = typeof lnRaw === 'string' ? Number(lnRaw) : lnRaw;
+    const lnNum = parseNumToken(cov?.total?.lines?.pct);
     pctNum = typeof lnNum === 'number' && isFinite(lnNum) ? lnNum : NaN;
     pct = isFinite(pctNum) ? fmtPct(pctNum) : 'n/a';
-    let fnRaw = cov?.total?.functions?.pct;
-    let brRaw = cov?.total?.branches?.pct;
-    let stRaw = cov?.total?.statements?.pct;
-    if (typeof fnRaw === 'string' && fnRaw.trim().endsWith('%')) fnRaw = fnRaw.trim().slice(0, -1).trim();
-    if (typeof brRaw === 'string' && brRaw.trim().endsWith('%')) brRaw = brRaw.trim().slice(0, -1).trim();
-    if (typeof stRaw === 'string' && stRaw.trim().endsWith('%')) stRaw = stRaw.trim().slice(0, -1).trim();
-    const fnNum = typeof fnRaw === 'string' ? Number(fnRaw) : fnRaw;
-    const brNum = typeof brRaw === 'string' ? Number(brRaw) : brRaw;
-    const stNum = typeof stRaw === 'string' ? Number(stRaw) : stRaw;
+    const fnNum = parseNumToken(cov?.total?.functions?.pct);
+    const brNum = parseNumToken(cov?.total?.branches?.pct);
+    const stNum = parseNumToken(cov?.total?.statements?.pct);
     pctFns = typeof fnNum === 'number' && isFinite(fnNum) ? fmtPct(fnNum) : fnRaw;
     pctBranches = typeof brNum === 'number' && isFinite(brNum) ? fmtPct(brNum) : brRaw;
     pctStmts = typeof stNum === 'number' && isFinite(stNum) ? fmtPct(stNum) : stRaw;
@@ -114,10 +113,7 @@ const covLabel = [...labels].reverse().find(n => {
   return n.toLowerCase().startsWith('coverage:');
 }) || null;
 let covLabelValStr = covLabel ? String(covLabel.split(':')[1] || '').trim() : '';
-if (covLabelValStr.endsWith('%')) {
-  covLabelValStr = covLabelValStr.slice(0, -1).trim();
-}
-const covLabelValNum = covLabelValStr !== '' ? Number(covLabelValStr) : NaN;
+const covLabelValNum = covLabelValStr !== '' ? parseNumToken(covLabelValStr) : NaN;
 const hasValidLabel = isFinite(covLabelValNum) && covLabelValNum >= 0 && covLabelValNum <= 100;
 const effNumeric = hasValidLabel
   ? covLabelValNum
