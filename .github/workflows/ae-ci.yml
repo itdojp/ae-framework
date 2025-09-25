@@ -61,3 +61,9 @@ jobs:
         with:
           name: ae-artifacts
           path: artifacts/
+      - name: QA/Bench summary (note)
+        if: always()
+        run: |
+          printf "\n## 🧪 ae-ci (QA/bench)\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- label-gated on PR via run-qa (qa_gate)\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- includes QA light and seeded bench dry-run\n" >> "$GITHUB_STEP_SUMMARY" || true
