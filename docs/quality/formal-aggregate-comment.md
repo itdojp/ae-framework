@@ -171,6 +171,7 @@ gh pr view <pr-number> --json comments --jq '.comments[].body | select(startswit
 - The aggregate workflow exports selected fields for downstream jobs:
   - `present_count`: integer (0..5)
   - `present_keys`: CSV (ordered keys present)
+  - `aggregate_json_present`: `true|false`
 
 ## Dispatch via GitHub CLI (artifacts only)
 
