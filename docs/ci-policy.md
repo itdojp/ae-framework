@@ -78,8 +78,11 @@ Workflows (selected)
 - `.github/workflows/hermetic-ci.yml` (Hermetic CI)
 - `.github/workflows/adapter-thresholds.yml` (Adapters report-only)
 - `.github/workflows/cedar-quality-gates.yml` (Cedar policies quality gates)
- - `.github/workflows/coverage-check.yml` (coverage gate/report)
- - `.github/workflows/sbom-generation.yml` (Security/SBOM)
+- `.github/workflows/coverage-check.yml` (coverage gate/report)
+- `.github/workflows/sbom-generation.yml` (Security/SBOM)
+ - `.github/workflows/fail-fast-spec-validation.yml` (spec fail-fast)
+ - `.github/workflows/formal-verify.yml` (Formal verification)
+ - `.github/workflows/formal-aggregate.yml` (Formal reports aggregate/comment)
  - `.github/workflows/pr-summary-comment.yml` (PR summary upsert)
 
 
@@ -270,8 +273,11 @@ jobs:
 - `.github/workflows/hermetic-ci.yml`（Hermetic CI）
 - `.github/workflows/adapter-thresholds.yml`（Adapters レポート: report-only）
 - `.github/workflows/cedar-quality-gates.yml`（Cedar 品質ゲート）
- - `.github/workflows/coverage-check.yml`（カバレッジ ゲート/レポート）
- - `.github/workflows/sbom-generation.yml`（Security/SBOM）
+- `.github/workflows/coverage-check.yml`（カバレッジ ゲート/レポート）
+- `.github/workflows/sbom-generation.yml`（Security/SBOM）
+ - `.github/workflows/fail-fast-spec-validation.yml`（仕様 Fail-Fast）
+ - `.github/workflows/formal-verify.yml`（フォーマル検証）
+ - `.github/workflows/formal-aggregate.yml`（フォーマル集約/コメント）
  - `.github/workflows/pr-summary-comment.yml`（PR サマリのアップサート）
 
 ### クイックスタート（ローカル検証）
