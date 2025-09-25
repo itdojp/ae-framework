@@ -17,6 +17,20 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - Verify Lite (types:check / lint / build)
 - Optionally enable validate-artifacts-ajv / coverage-check as required
 
+### Outputs/Env Append Policy (printf required)
+- When appending to GitHub special files, do not use `echo`.
+- Always use `printf` with quoting:
+  - `printf "%s\n" "key=value" >> "$GITHUB_OUTPUT"`
+  - `printf "%s\n" "NAME=value" >> "$GITHUB_ENV"`
+- Grouped appends are allowed and recommended for clarity:
+  ```bash
+  {
+    printf "%s\n" "one=1"
+    printf "%s\n" "two=2"
+  } >> "$GITHUB_OUTPUT"
+  ```
+- A guard runs in CI (workflow-lint) to block `echo >> $GITHUB_OUTPUT/$GITHUB_ENV` and to require quoted targets.
+
 ### Opt-in Labels
 - `ci-non-blocking`: run selected jobs with continue-on-error (traceability, model-check, contracts, security, etc.)
 - `run-security`: run heavy security jobs (Security Scanning, Dependency Audit, License Compliance, CodeQL)
