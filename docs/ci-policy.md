@@ -26,6 +26,8 @@ This document defines CI policies to keep PR experience fast and stable while ma
   - Example: `printf "name=%s\n" "$VALUE" >> "$GITHUB_OUTPUT"`
   - Example (env): `printf "%s=%s\n" "FOO" "$VALUE" >> "$GITHUB_ENV"`
   - Ensure a trailing newline; missing `\n` may break parsing
+  - Multiline output:
+    - `printf '%s<<EOF\n%s\nEOF\n' 'summary' "$MULTILINE" >> "$GITHUB_OUTPUT"`
 
 ### Goals
 - Block only lightweight, deterministic checks on PRs
@@ -333,6 +335,8 @@ jobs:
   - 例: `printf "name=%s\n" "$VALUE" >> "$GITHUB_OUTPUT"`
   - 例（環境変数）: `printf "%s=%s\n" "FOO" "$VALUE" >> "$GITHUB_ENV"`
   - 行末の改行（`\n`）を必ず含める。欠落すると解析に失敗する可能性あり
+  - 複数行の出力:
+    - `printf '%s<<EOF\n%s\nEOF\n' 'summary' "$MULTILINE" >> "$GITHUB_OUTPUT"`
 
 ### PRコメント（Coverage / Formal）
 - 重複防止のため固定ヘッダでアップサート（1コメントを更新）:
