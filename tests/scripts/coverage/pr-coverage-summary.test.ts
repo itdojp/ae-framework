@@ -302,6 +302,37 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
     expect(out).toContain('- via label: coverage:88');
   });
 
+  it('uses last label even if invalid (falls back and notes invalid)', () => {
+    const cwd = process.cwd();
+    const covDir = join(cwd, 'coverage');
+    try { mkdirSync(covDir, { recursive: true }); } catch {}
+    const covPath = join(covDir, 'coverage-summary.json');
+    writeFileSync(covPath, JSON.stringify({ total: { lines: { pct: 90 } } }), 'utf8');
+
+    const event = {
+      pull_request: { number: 134, labels: [ { name: 'coverage:85' }, { name: 'coverage:abc' } ] },
+      ref: 'refs/heads/feature/last-invalid'
+    };
+    const eventPath = join(cwd, 'tmp-gh-event-last-invalid.json');
+    writeFileSync(eventPath, JSON.stringify(event), 'utf8');
+
+    const env = {
+      ...process.env,
+      GITHUB_TOKEN: 'test-token',
+      GITHUB_REPOSITORY: 'owner/repo',
+      GITHUB_EVENT_NAME: 'pull_request',
+      GITHUB_EVENT_PATH: eventPath,
+      AE_COVERAGE_DRY_RUN: '1',
+      COVERAGE_DEFAULT_THRESHOLD: '80'
+    } as NodeJS.ProcessEnv;
+
+    const res = spawnSync('node', ['scripts/coverage/pr-coverage-summary.mjs'], { cwd, env, encoding: 'utf8' });
+    expect(res.status).toBe(0);
+    const out = res.stdout || '';
+    expect(out).toContain('- via label: coverage:abc (invalid, ignored)');
+    expect(out).toContain('Threshold (effective): 80%');
+  });
+
   it('accepts decimal threshold in label (e.g., coverage:82.5)', () => {
     const cwd = process.cwd();
     const covDir = join(cwd, 'coverage');
