@@ -58,8 +58,8 @@ PR comment example (non-blocking when `run-security`)
 
 ```
 Security Summary
-High/Critical: 0 (limit: SEC_MAX_HIGH=0)
-Moderate: 1 (limit: SEC_MAX_MODERATE=2)
+High/Critical: 0 (limit: SECURITY_MAX_HIGH=0)
+Moderate: 1 (limit: SECURITY_MAX_MODERATE=2)
 Policy: report-only (apply `enforce-security` to gate)
 Links: .github/workflows/sbom-generation.yml, docs/ci-policy.md
 ```
@@ -374,7 +374,7 @@ Last Updated / 最終更新: January 2025
 Next Review / 次回見直し: July 2025
 ### CI におけるセキュリティ/コンプライアンス運用
 
-- PR では既定でセキュリティ関連ジョブを非ブロッキングで実行し、結果をアーティファクトに集約します。重いジョブはラベル/パス条件で制御します（詳細は `docs/ci-policy.md`）。
+- PR では既定でセキュリティ関連ジョブを非ブロッキングで実行し、結果をアーティファクトに集約します。重いジョブはラベル/パス条件で制御します（label/path gated。詳細は `docs/ci-policy.md`）。
 - ラベル運用:
   - `run-security` — PR で Security/SBOM を実行（非ブロッキングの要約コメントを投稿）
   - `enforce-security` — 閾値を強制（超過時はブロック）
@@ -388,8 +388,8 @@ PRコメント例（`run-security` 時は非ブロッキング）
 
 ```
 Security Summary
-High/Critical: 0（許容: SEC_MAX_HIGH=0）
-Moderate: 1（許容: SEC_MAX_MODERATE=2）
+High/Critical: 0（許容: SECURITY_MAX_HIGH=0）
+Moderate: 1（許容: SECURITY_MAX_MODERATE=2）
 Policy: report-only（`enforce-security` を付与するとゲート）
 Links: .github/workflows/sbom-generation.yml, docs/ci-policy.md
 ```
