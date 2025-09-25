@@ -57,7 +57,10 @@ const labels = (pr.labels || []).map(l => l.name);
 
 // Threshold derivation: label override > repo var default > fallback 80
 const covLabel = labels.find(n => typeof n === 'string' && n.startsWith('coverage:')) || null;
-const effTh = String(isFinite(Number(covLabel?.split(':')[1])) ? Number(covLabel.split(':')[1]) : defTh);
+let covLabelValStr = covLabel ? String(covLabel.split(':')[1] || '').trim() : '';
+const covLabelValNum = covLabelValStr !== '' ? Number(covLabelValStr) : NaN;
+const hasValidLabel = isFinite(covLabelValNum);
+const effTh = String(hasValidLabel ? covLabelValNum : defTh);
 
 // Policy: report-only unless enforced via label or main+vars
 let strict = false;
@@ -80,7 +83,10 @@ if (typeof pctBranches !== 'undefined') parts.push(`branches=${pctBranches}%`);
 if (typeof pctStmts !== 'undefined') parts.push(`statements=${pctStmts}%`);
 if (parts.length) lines.push(`Metrics: ${parts.join(', ')}`);
 lines.push(`Threshold (effective): ${effTh}%`);
-if (covLabel) lines.push(`- via label: ${covLabel}`);
+if (covLabel) {
+  if (hasValidLabel) lines.push(`- via label: ${covLabel}`);
+  else lines.push(`- via label: ${covLabel} (invalid, ignored)`);
+}
 lines.push(`- default: ${isFinite(defTh) ? defTh : 80}%`);
 lines.push('Derived: label > repo var > default');
 lines.push(`Policy: ${policy}`);
