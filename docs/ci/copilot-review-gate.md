@@ -1,6 +1,6 @@
 # Copilot Review Gate
 
-目的: PR をマージする前に、GitHub Copilot によるコードレビューが存在し、その指摘（スレッド）が解決済みであることを必須化します。管理者/メンテナがPR作成者の場合は運用上の例外としてバイパスします。
+目的: PR をマージする前に、GitHub Copilot によるコードレビューが存在し、その指摘（スレッド）が解決済みであることを必須化します。
 
 ## 仕組み
 - Workflow: `.github/workflows/copilot-review-gate.yml`
@@ -8,7 +8,7 @@
   - Copilot アカウント（`github-copilot` / `github-copilot[bot]`）のレビューが存在するか
   - Copilot が関与したスレッド（コメントを含む）がすべて `isResolved=true` であるか
 - 未満の条件の場合、チェックを失敗させます（Required化でマージを停止）
- - 例外: PR作者がリポジトリの `admin` または `maintain` 権限を持つ場合、このゲートは早期成功（バイパス）します。
+  
 
 ## 必須化（Branch protection）
 - `Copilot Review Gate / gate` を Required checks に追加してください。
