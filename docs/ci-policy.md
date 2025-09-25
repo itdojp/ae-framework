@@ -79,7 +79,11 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - Trigger SBOM/Security only for dependency or major code changes
 - Gate QA/bench (ae-ci) push runs by code paths (e.g., `src/**`, workspaces, lockfiles)
 - Gate SBOM/Security push runs by manifests/code paths (`package.json`, `pnpm-lock.yaml`, workspaces)
- - Re-run on PR label changes (labeled): Verify Lite / ae-ci / Security / SBOM respond to gating labels without manual dispatch
+- Re-run on PR label changes (labeled): Verify Lite / ae-ci / Security / SBOM respond to gating labels without manual dispatch
+
+### Concurrency (Overlapping Run Avoidance)
+- Most workflows now define a `concurrency` group `${{ workflow }}-${{ github.ref }}` (or a descriptive name) with `cancel-in-progress: true`
+- Prevents overlapping runs on rapid updates while keeping PR feedback responsive
 
 ### test:fast (Fast CI suite)
 - Purpose: verify resilience/core units and lightweight integration quickly; exclude heavy/env-dependent tests
