@@ -140,7 +140,7 @@ Consistency
 Extract present count and keys
 ```
 jq -r '.info.presentCount' artifacts/formal/formal-aggregate.json
-jq -r '.info.present | to_entries | map(select(.value)) | map(.key) | join(", ")' artifacts/formal/formal-aggregate.json
+jq -r '(.info.presentKeys // (.info.present | to_entries | map(select(.value)) | map(.key))) | join(", ")' artifacts/formal/formal-aggregate.json
 ```
 
 Apalache ran/ok (if present)

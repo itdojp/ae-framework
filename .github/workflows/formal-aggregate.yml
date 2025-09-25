@@ -235,6 +235,7 @@ jobs:
               generatedAt: GENERATED_AT, 
               present, 
               presentCount,
+              presentKeys,
               ranOk: {
                 apalache: apalache ? { ran: !!apalache.ran, ok: (typeof apalache.ok === 'boolean' ? apalache.ok : null) } : null
               },
