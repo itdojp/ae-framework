@@ -21,7 +21,7 @@ jobs:
       - name: Guard self-test (offender/ok cases)
         run: bash scripts/ci/tests/test-guard.sh
       - name: Suggest echo->printf conversions (non-blocking)
-        run: pnpm -s ci:guard:suggest || true
+        run: bash scripts/ci/echo-to-printf-suggest.sh || true
       - uses: rhysd/actionlint@v1.7.1
       - name: Check for unresolved merge markers in workflows
         run: |
