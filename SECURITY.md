@@ -54,7 +54,7 @@ We take security vulnerabilities seriously. If you discover a security issue, pl
 - Local quickstart
   - `pnpm -s security:scan` — run local security scan
   - `pnpm -s security:config` — show current security config
-- Thresholds are configurable via repository variables:
+ - Thresholds are configurable via repository variables (Settings → Variables → Repository variables):
   - `SECURITY_MAX_HIGH` (default 0): allowed High/Critical vulnerabilities
   - `SECURITY_MAX_MODERATE` (default 2): allowed Moderate vulnerabilities
 - Workflow reference: `.github/workflows/sbom-generation.yml` generates SBOM, runs dependency audit, performs CodeQL, and optionally enforces thresholds. See also `.github/workflows/security.yml`.
@@ -389,7 +389,7 @@ Next Review / 次回見直し: July 2025
 - ローカルクイックスタート
   - `pnpm -s security:scan` — ローカルでセキュリティスキャンを実行
   - `pnpm -s security:config` — 現在のセキュリティ設定を表示
-- 閾値はリポジトリ変数で制御できます。
+ - 閾値はリポジトリ変数で制御できます（Settings → Variables → Repository variables に設定）。
   - `SECURITY_MAX_HIGH`（既定 0）: High 以上の許容数
   - `SECURITY_MAX_MODERATE`（既定 2）: Moderate の許容数
 - 対象ワークフロー: `.github/workflows/sbom-generation.yml` で SBOM 生成・依存監査・CodeQL を実施し、必要に応じて上記閾値でエンフォースします。関連: `.github/workflows/security.yml`。
