@@ -19,6 +19,9 @@ on:
       environment:
         required: false
         type: string
+concurrency:
+  group: quality-gates-${{ github.ref }}
+  cancel-in-progress: true
 permissions: read-all
 jobs:
   integration:
