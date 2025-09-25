@@ -131,6 +131,7 @@ We welcome international contributions! Please see our [Contributing Guide](CONT
     - Some jobs (security/audit/container) require network/secrets and may be red on forks
     - Workflow lint & printf policy:
       - Run guard + actionlint locally: `pnpm lint:workflows` (guard always runs; actionlint via Docker if available)
+      - No Docker? Use `pnpm lint:workflows:nodocker` (guard + self-test; actionlint runs in CI)
       - Run basic guard self-test locally: `pnpm ci:test:guard`
       - Run guard + self-test in one command: `pnpm ci:guard:all`
       - When appending to `$GITHUB_OUTPUT`/`$GITHUB_ENV`, use `printf` and quote the target file:
