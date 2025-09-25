@@ -290,11 +290,13 @@ jobs:
         with:
           name: formal-reports-aggregate
           path: artifacts/formal/formal-aggregate.md
+          retention-days: 14
       - name: Upload aggregate JSON
         uses: actions/upload-artifact@v4
         with:
           name: formal-reports-aggregate-json
           path: artifacts/formal/formal-aggregate.json
+          retention-days: 14
       - name: Label status (run-formal/enforce-formal)
         id: labels
         if: github.event_name == 'pull_request'
