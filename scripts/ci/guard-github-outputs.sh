@@ -41,6 +41,12 @@ if [ ! -d "$TARGET_DIR" ]; then
   exit 0
 fi
 
+# If no YAML workflow files, skip
+if ! find "$TARGET_DIR" -type f \( -name '*.yml' -o -name '*.yaml' \) | grep -q .; then
+  echo "(info) No *.yml/*.yaml files under $TARGET_DIR; skipping guard checks" >&2
+  exit 0
+fi
+
 pattern='\becho\b[^\n>]*>>[^\n$]*\$(GITHUB_OUTPUT|GITHUB_ENV)'
 
 tmp_echo="/tmp/_echo_offenders.$$"
