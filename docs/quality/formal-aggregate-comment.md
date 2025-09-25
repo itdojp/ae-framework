@@ -14,6 +14,7 @@ Permissions (workflow)
   - `issues: write`
   - `pull-requests: write`
   - Example (see `.github/workflows/formal-aggregate.yml`).
+ - Recommended: set job-level `concurrency` (e.g., `formal-aggregate-${{ github.ref }}` with `cancel-in-progress: true`) to avoid racing duplicate runs; upsert remains idempotent.
 
 Sources and Minimal JSON
 - Primary source: `artifacts/formal/formal-aggregate.json`
