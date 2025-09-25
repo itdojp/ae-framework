@@ -44,7 +44,7 @@ We take security vulnerabilities seriously. If you discover a security issue, pl
 
 ### CI Security/Compliance Operations
 
-- On pull requests, security jobs run non-blocking by default and publish artifacts for review. Heavy jobs are label/path gated per CI policy (see `docs/ci-policy.md`).
+- On pull requests, security jobs run non-blocking by default and publish artifacts for review. Heavy jobs are label/path gated per CI policy (see `docs/ci-policy.md` Path Conditions for configuration tips).
 - Labels:
   - `run-security` — opt-in Security/SBOM execution on PRs (posts a non-blocking summary comment)
   - `enforce-security` — enforce thresholds (blocking when limits exceeded)
