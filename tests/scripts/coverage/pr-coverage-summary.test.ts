@@ -552,6 +552,40 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
     expect(out).toContain('Coverage (lines): 80%');
   });
 
+  it('shows [blocking] with main push when COVERAGE_ENFORCE_MAIN=1', () => {
+    const cwd = process.cwd();
+    const covDir = join(cwd, 'coverage');
+    try { mkdirSync(covDir, { recursive: true }); } catch {}
+    const covPath = join(covDir, 'coverage-summary.json');
+    writeFileSync(covPath, JSON.stringify({ total: { lines: { pct: 82 } } }), 'utf8');
+
+    const event = {
+      repository: { full_name: 'owner/repo' },
+      // Simulate push event on main
+      ref: 'refs/heads/main'
+    };
+    const eventPath = join(cwd, 'tmp-gh-event-main.json');
+    writeFileSync(eventPath, JSON.stringify(event), 'utf8');
+
+    const env = {
+      ...process.env,
+      GITHUB_TOKEN: 'test-token',
+      GITHUB_REPOSITORY: '',
+      GITHUB_EVENT_NAME: 'push',
+      GITHUB_EVENT_PATH: eventPath,
+      AE_COVERAGE_DRY_RUN: '1',
+      COVERAGE_DEFAULT_THRESHOLD: '80',
+      COVERAGE_ENFORCE_MAIN: '1'
+    } as NodeJS.ProcessEnv;
+
+    const res = spawnSync('node', ['scripts/coverage/pr-coverage-summary.mjs'], { cwd, env, encoding: 'utf8' });
+    expect(res.status).toBe(0);
+    const out = res.stdout || '';
+    expect(out).toMatch(/\[blocking\]/);
+    expect(out).toContain('Policy: enforced');
+    expect(out).toContain('Policy source: enforced via main + repo vars (COVERAGE_ENFORCE_MAIN)');
+  });
+
   it('label override wins over repo var value', () => {
     const cwd = process.cwd();
     const covDir = join(cwd, 'coverage');
