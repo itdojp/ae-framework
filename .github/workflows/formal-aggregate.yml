@@ -35,6 +35,8 @@ jobs:
           function find(dir, name){ try { const p = path.join(dir, name); return fs.existsSync(p) ? p : undefined; } catch { return undefined; } }
           const LINE_CLAMP = parseInt(process.env.FORMAL_AGG_LINE_CLAMP || '200', 10);
           const ERRORS_LIMIT = parseInt(process.env.FORMAL_AGG_ERRORS_LIMIT || '5', 10);
+          const SNIPPET_MAX = parseInt(process.env.FORMAL_AGG_SNIPPET_MAX_LINES || '20', 10);
+          const WRAP_WIDTH = parseInt(process.env.FORMAL_AGG_WRAP_WIDTH || '0', 10);
           function escMd(s){
             if (!s) return '';
             // Basic Markdown escaping to avoid breaking PR rendering
@@ -72,7 +74,9 @@ jobs:
           const conf = confSum ? rj(confSum) : undefined;
           const clampInfo = {
             lineClamp: process.env.FORMAL_AGG_LINE_CLAMP || '200',
-            errorsLimit: process.env.FORMAL_AGG_ERRORS_LIMIT || '5'
+            errorsLimit: process.env.FORMAL_AGG_ERRORS_LIMIT || '5',
+            snippetMaxLines: process.env.FORMAL_AGG_SNIPPET_MAX_LINES || '20',
+            wrapWidth: process.env.FORMAL_AGG_WRAP_WIDTH || '0'
           };
 
           const lines = [];
@@ -156,7 +160,7 @@ jobs:
               lines.push('</details>');
             }
             if (ok === false && apalache.errorSnippet && Array.isArray(apalache.errorSnippet.lines)) {
-              const MAX_LINES = parseInt(process.env.FORMAL_AGG_SNIPPET_MAX_LINES || '20', 10);
+              const MAX_LINES = SNIPPET_MAX;
               const ctxAll = apalache.errorSnippet.lines.map(l => escMd(clamp(l))).filter(l => String(l).trim().length>0);
               const ctxLines = ctxAll.slice(0, Math.max(0, MAX_LINES));
               if (ctxLines.length) {
@@ -185,12 +189,12 @@ jobs:
           lines.push("_Tools check: pnpm run tools:formal:check_");
           lines.push("_Reproduce locally: pnpm run verify:tla -- --engine=apalache_ (see docs/quality/formal-runbook.md)");
           lines.push("_Non-blocking. Add/remove label run-formal to control._");
-          lines.push(`_Clamp: line=${clampInfo.lineClamp}, errors=${clampInfo.errorsLimit}_`);
+          lines.push(`_Clamp: line=${clampInfo.lineClamp}, errors=${clampInfo.errorsLimit}, snippet=${clampInfo.snippetMaxLines}, wrap=${clampInfo.wrapWidth}_`);
           lines.push(`_Generated: ${GENERATED_AT}_`);
           // Normalize markdown: collapse excessive empty lines + optional long-line wrap (outside code fences)
           function normalizeMd(arr){
             const out=[]; let prevEmpty=false; let inFence=false;
-            const wrapWidth = parseInt(process.env.FORMAL_AGG_WRAP_WIDTH || '0', 10); // 0=disable
+            const wrapWidth = WRAP_WIDTH; // 0=disable
             for (let raw of arr){
               let l = String(raw).replace(/\s+$/,''); // trim trailing spaces
               if (l.startsWith('```')) inFence = !inFence; // toggle on code fences
