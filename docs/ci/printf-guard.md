@@ -28,6 +28,7 @@ printf "%s\n" "NAME=value" >> "$GITHUB_ENV"
 ```bash
 echo "key=value" >> $GITHUB_OUTPUT          # ❌ echo is not allowed
 printf "%s\n" "key=value" >> $GITHUB_OUTPUT  # ❌ unquoted target
+echo "key=value" | tee -a "$GITHUB_OUTPUT"   # ❌ tee -a is not allowed (use printf)
 ```
 
 ## CI Enforcement
