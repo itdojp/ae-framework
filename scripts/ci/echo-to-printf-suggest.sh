@@ -12,15 +12,16 @@ if [ ! -d "$TARGET_DIR" ]; then
   exit 0
 fi
 
-pattern='\\becho\\b[^\n>]*>>[^\n$]*\$(GITHUB_OUTPUT|GITHUB_ENV)'
+# Match echo ... >> $GITHUB_OUTPUT / $GITHUB_ENV (PCRE)
+pattern_pcre='echo\s+.*>>\s*\$\{?GITHUB_(OUTPUT|ENV)\}?'
 
 tmp="/tmp/_echo_suggest.$$"
 trap 'rm -f "$tmp"' EXIT
 
 if command -v rg >/dev/null 2>&1; then
-  rg -n -S -g "*.yml" -g "*.yaml" "$pattern" "$TARGET_DIR" >"$tmp" || true
+  rg -n -P -S -g "*.yml" -g "*.yaml" "$pattern_pcre" "$TARGET_DIR" >"$tmp" || true
 else
-  grep -REn --include "*.yml" --include "*.yaml" "$pattern" "$TARGET_DIR" >"$tmp" || true
+  grep -REn -E --include "*.yml" --include "*.yaml" "$pattern_pcre" "$TARGET_DIR" >"$tmp" || true
 fi
 
 if [ ! -s "$tmp" ]; then
@@ -45,4 +46,3 @@ while IFS= read -r line; do
     printf 'file:%s line:%s\n  before: %s\n  note:   convert to printf "%%s\\n" "key=value" >> "$%s" (see docs/ci/echo-to-printf-recipes.md)\n' "$file" "$lineno" "$content" "$target"
   fi
 done < "$tmp"
-
