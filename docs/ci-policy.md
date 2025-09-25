@@ -15,6 +15,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 
 ### Required Checks (PR blocking)
 - Verify Lite (types:check / lint / build)
+- Copilot Review Gate（Copilotレビューの存在と未解決スレッドなし）
 - Optionally enable validate-artifacts-ajv / coverage-check as required
 
 ### Opt-in Labels
@@ -66,6 +67,10 @@ This document defines CI policies to keep PR experience fast and stable while ma
   - 使い分け例（推奨）
     - 追加確認したいカテゴリのみラベル付与 → `/ci-fast-dispatch` で即時起動
     - Verify Lite のみを再実行 → `/verify-lite`
+
+### 参考ドキュメント
+- Branch Protection運用（プリセット適用/復元）: docs/ci/branch-protection-operations.md
+- Copilot Review Gate運用: docs/ci/copilot-review-gate.md
 
 <!-- duplicate section removed: Slash Commands (Instant Dispatch) repeated -->
 
