@@ -15,7 +15,6 @@ if command -v docker >/dev/null 2>&1; then
     ghcr.io/rhysd/actionlint:latest \
     -color
 else
-  printf "%s\n" "Docker が見つかりません。Docker 版 actionlint の利用を推奨します。" >&2
-  printf "%s\n" "CI 上では rhysd/actionlint@v1 が実行されます。ローカル実行には Docker をインストールしてください。" >&2
-  exit 1
+  printf "%s\n" "(info) Docker が見つかりません。ローカルでは guard のみ実行しました。" >&2
+  printf "%s\n" "(info) CI 上では rhysd/actionlint@v1 が実行されます。Docker をインストールするとローカルでも actionlint 実行可。" >&2
 fi
