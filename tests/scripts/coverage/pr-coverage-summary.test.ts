@@ -365,6 +365,37 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
     expect(out).toContain('- default: 80%');
   });
 
+  it('adds note when summary exists but total.lines.pct is missing', () => {
+    const cwd = process.cwd();
+    const covDir = join(cwd, 'coverage');
+    try { mkdirSync(covDir, { recursive: true }); } catch {}
+    const covPath = join(covDir, 'coverage-summary.json');
+    // Write summary without total.lines.pct
+    writeFileSync(covPath, JSON.stringify({ total: { statements: { pct: 90 } } }), 'utf8');
+
+    const event = {
+      pull_request: { number: 147, labels: [] },
+      ref: 'refs/heads/feature/missing-lines-pct'
+    };
+    const eventPath = join(cwd, 'tmp-gh-event-missing-lines.json');
+    writeFileSync(eventPath, JSON.stringify(event), 'utf8');
+
+    const env = {
+      ...process.env,
+      GITHUB_TOKEN: 'test-token',
+      GITHUB_REPOSITORY: 'owner/repo',
+      GITHUB_EVENT_NAME: 'pull_request',
+      GITHUB_EVENT_PATH: eventPath,
+      AE_COVERAGE_DRY_RUN: '1'
+    } as NodeJS.ProcessEnv;
+
+    const res = spawnSync('node', ['scripts/coverage/pr-coverage-summary.mjs'], { cwd, env, encoding: 'utf8' });
+    expect(res.status).toBe(0);
+    const out = res.stdout || '';
+    expect(out).toContain('Coverage (lines): n/a%');
+    expect(out).toContain('Note: total.lines.pct not found or invalid in coverage summary');
+  });
+
   it('uses last coverage label when multiple labels are present', () => {
     const cwd = process.cwd();
     const covDir = join(cwd, 'coverage');

@@ -157,6 +157,10 @@ lines.push('Docs: docs/quality/coverage-policy.md');
 lines.push('Docs: docs/ci/label-gating.md');
 lines.push('Tips: /coverage <pct> to override; /enforce-coverage to enforce');
 if (!summaryPath) lines.push('Note: no coverage-summary.json found (looked in coverage/ and artifacts/coverage/)');
+// If summary exists but lines.pct is missing/unreadable, add a gentle note
+if (summaryPath && !isFinite(pctNum)) {
+  lines.push('Note: total.lines.pct not found or invalid in coverage summary');
+}
 lines.push('Reproduce: coverage → coverage/coverage-summary.json → total.lines.pct');
 lines.push('Reproduce: threshold → label coverage:<pct> > vars.COVERAGE_DEFAULT_THRESHOLD > default 80');
 // Report path hints (if present in workspace)
