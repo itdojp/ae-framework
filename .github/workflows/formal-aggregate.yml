@@ -295,6 +295,7 @@ jobs:
             printf "No aggregate JSON found (artifacts/formal/formal-aggregate.json)\n" >> "$GITHUB_STEP_SUMMARY"; \
           fi; \
           printf "Header: <!-- AE-FORMAL-AGGREGATE --> (upsert on pull_request with label run-formal)\n" >> "$GITHUB_STEP_SUMMARY"
+          printf "Docs: docs/quality/formal-aggregate-comment.md\n" >> "$GITHUB_STEP_SUMMARY"
       - name: Note (dispatch vs PR comment)
         if: github.event_name != 'pull_request'
         run: |
