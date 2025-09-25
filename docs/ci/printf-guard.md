@@ -11,6 +11,14 @@ This repository enforces a printf policy when appending to GitHub special files:
 - Always quote the target file.
 - Grouped blocks are allowed for multiple appends.
 
+### Newline requirement
+
+- Include a trailing newline in the printf format. Prefer:
+
+```bash
+printf "%s\n" "key=value" >> "$GITHUB_OUTPUT"
+```
+
 ### Allowed
 
 ```bash
