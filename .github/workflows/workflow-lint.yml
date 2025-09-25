@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: rhysd/actionlint@v1.7.1
       - name: Enforce printf policy for outputs/env
-        run: pnpm -s ci:guard:github-outputs
+        run: bash scripts/ci/guard-github-outputs.sh
       - name: Check for unresolved merge markers in workflows
         run: |
           set -e
