@@ -38,6 +38,7 @@ jobs:
             printf "%s\n" "two=2"
           } >> "$GITHUB_OUTPUT"
           printf "%s\n" "NAME=good" >> "${GITHUB_ENV}"
+          printf "%s\n" "also_good=true" >> "${GITHUB_OUTPUT}"
 YAML
 
 echo "[test] Expect guard to fail on offender..."

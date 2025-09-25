@@ -16,6 +16,7 @@ This repository enforces a printf policy when appending to GitHub special files:
 ```bash
 printf "%s\n" "key=value" >> "$GITHUB_OUTPUT"
 printf "%s\n" "NAME=value" >> "$GITHUB_ENV"
+printf "%s\n" "also_good=true" >> "${GITHUB_OUTPUT}"
 
 {
   printf "%s\n" "one=1"
