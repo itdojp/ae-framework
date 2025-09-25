@@ -315,7 +315,9 @@ jobs:
                   '- TLC: `TLA_TOOLS_JAR=/path/to/tla2tools.jar pnpm run verify:tla -- --engine=tlc`',
                   '- SMT: `pnpm run verify:smt -- --solver=z3 --file spec/smt/sample.smt2`',
                   '',
-                  'Docs: `docs/quality/formal-runbook.md`, `docs/quality/formal-tools-setup.md`'
+                  'Docs: `docs/quality/formal-runbook.md`, `docs/quality/formal-tools-setup.md`',
+                  '- Aggregate PR comment (report-only): see `docs/quality/formal-aggregate-comment.md`',
+                  '- Tip: `/run-formal` to enable label-gated runs; `/formal-aggregate-dispatch` to generate artifacts (PR comment posts on pull_request)'
                 ].join('\n');
                 return reply(tips);
               }
