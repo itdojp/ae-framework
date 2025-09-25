@@ -69,6 +69,8 @@ Workflows (selected)
 - `.github/workflows/parallel-test-execution.yml` (quality row)
 - `.github/workflows/flake-detect.yml` (flake detection)
 - `.github/workflows/hermetic-ci.yml` (Hermetic CI)
+ - `.github/workflows/adapter-thresholds.yml` (Adapters report-only)
+ - `.github/workflows/cedar-quality-gates.yml` (Cedar policies quality gates)
 
 
 ### PR comments (Coverage / Formal)
@@ -227,6 +229,8 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 - `.github/workflows/parallel-test-execution.yml`（quality 行）
 - `.github/workflows/flake-detect.yml`（flake 検出）
 - `.github/workflows/hermetic-ci.yml`（Hermetic CI）
+ - `.github/workflows/adapter-thresholds.yml`（Adapters レポート: report-only）
+ - `.github/workflows/cedar-quality-gates.yml`（Cedar 品質ゲート）
 
 ### クイックスタート（ローカル検証）
 - `corepack enable && pnpm i && pnpm -s build && pnpm run test:fast`
