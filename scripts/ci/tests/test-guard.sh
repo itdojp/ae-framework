@@ -10,7 +10,7 @@ trap cleanup EXIT
 
 mkdir -p "$TMPDIR/wf"
 
-# Offender case: echo to $GITHUB_OUTPUT
+# Offender cases: echo to $GITHUB_OUTPUT; unquoted target with printf to $GITHUB_ENV
 cat > "$TMPDIR/wf/offender.yml" << 'YAML'
 name: off
 on: push
@@ -20,9 +20,10 @@ jobs:
     steps:
       - run: |
           echo "bad=true" >> $GITHUB_OUTPUT
+          printf "%s\n" "NAME=bad" >> $GITHUB_ENV
 YAML
 
-# Allowed cases: printf + quoted, grouped
+# Allowed cases: printf + quoted, grouped, ${GITHUB_ENV} form
 cat > "$TMPDIR/wf/ok.yml" << 'YAML'
 name: ok
 on: push
@@ -36,6 +37,7 @@ jobs:
             printf "%s\n" "one=1"
             printf "%s\n" "two=2"
           } >> "$GITHUB_OUTPUT"
+          printf "%s\n" "NAME=good" >> "${GITHUB_ENV}"
 YAML
 
 echo "[test] Expect guard to fail on offender..."
@@ -48,4 +50,3 @@ echo "[test] Expect guard to pass on allowed cases..."
 rm -f "$TMPDIR/wf/offender.yml"
 bash scripts/ci/guard-github-outputs.sh "$TMPDIR/wf"
 echo "[test] Guard basic tests passed."
-
