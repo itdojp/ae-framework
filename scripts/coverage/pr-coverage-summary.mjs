@@ -33,6 +33,8 @@ const eventPath = process.env['GITHUB_EVENT_PATH'] || '';
 const defRaw = process.env['COVERAGE_DEFAULT_THRESHOLD'];
 const defTh = Number(defRaw || 80);
 const hasRepoVar = typeof defRaw !== 'undefined' && defRaw !== '';
+const repoVarIsNumeric = isFinite(defTh);
+const repoVarValidRange = repoVarIsNumeric && defTh >= 0 && defTh <= 100;
 const enforceMain = (process.env['COVERAGE_ENFORCE_MAIN'] || '0') === '1';
 
 // Load coverage summary (optional). If missing, still post a summary with n/a.
@@ -108,7 +110,9 @@ if (covLabelValStr.endsWith('%')) {
 }
 const covLabelValNum = covLabelValStr !== '' ? Number(covLabelValStr) : NaN;
 const hasValidLabel = isFinite(covLabelValNum) && covLabelValNum >= 0 && covLabelValNum <= 100;
-const effNumeric = hasValidLabel ? covLabelValNum : (isFinite(defTh) ? defTh : 80);
+const effNumeric = hasValidLabel
+  ? covLabelValNum
+  : (repoVarValidRange ? defTh : 80);
 const effTh = fmtPct(effNumeric);
 
 // Policy: report-only unless enforced via label or main+vars
@@ -146,7 +150,11 @@ if (covLabel) {
   if (hasValidLabel) lines.push(`- via label: ${covLabel}`);
   else lines.push(`- via label: ${covLabel} (invalid, ignored)`);
 }
-if (hasRepoVar) lines.push(`- repo var: COVERAGE_DEFAULT_THRESHOLD=${isFinite(defTh) ? fmtPct(defTh) : 'n/a'}%`);
+if (hasRepoVar) {
+  const valStr = repoVarIsNumeric ? `${fmtPct(defTh)}%` : 'n/a%';
+  const note = repoVarValidRange ? '' : ' (invalid, ignored)';
+  lines.push(`- repo var: COVERAGE_DEFAULT_THRESHOLD=${valStr}${note}`);
+}
 lines.push(`- default: 80%`);
 lines.push('Derived: label > repo var > default');
 lines.push('Rules: label override last-wins; accepts 0–100; trims %/spaces');
