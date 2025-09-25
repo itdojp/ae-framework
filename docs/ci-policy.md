@@ -68,6 +68,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - Formal Aggregate comment:
   - Posted only when `run-formal` label is present (report‑only by default)
   - Includes Tools/Reproduce hints; respects `FORMAL_AGG_LINE_CLAMP`, `FORMAL_AGG_ERRORS_LIMIT`, `FORMAL_AGG_SNIPPET_MAX_LINES`
+ - See also: `docs/quality/pr-summary.md` (summary comment structure and templates)
 
 #### Examples
 
@@ -224,6 +225,7 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 - Formal Aggregate コメント:
   - `run-formal` ラベル時のみ投稿（既定は report-only）
   - Tools/Reproduce ヒントを含み、`FORMAL_AGG_LINE_CLAMP` / `FORMAL_AGG_ERRORS_LIMIT` / `FORMAL_AGG_SNIPPET_MAX_LINES` を尊重
+ - 参考: `docs/quality/pr-summary.md`（サマリコメントの構成・テンプレート）
 
 #### 例
 
