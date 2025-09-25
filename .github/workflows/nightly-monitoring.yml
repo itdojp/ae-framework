@@ -5,6 +5,10 @@ on:
     - cron: "15 19 * * *"   # 毎日 04:15 JST（19:15 UTC）
   workflow_dispatch:
 
+concurrency:
+  group: nightly-monitoring-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   monitor:
     runs-on: ubuntu-latest
@@ -53,6 +57,11 @@ jobs:
           name: nightly-artifacts
           path: artifacts/
           retention-days: 14
+      - name: Nightly Monitoring (summary)
+        if: always()
+        run: |
+          printf "\n## 🌙 Nightly Monitoring\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- Concurrency: nightly-monitoring-${{ github.ref }} (cancel in progress)\n" >> "$GITHUB_STEP_SUMMARY" || true
       
       - name: Notify Slack on failure
         if: failure() && env.SLACK_WEBHOOK != null

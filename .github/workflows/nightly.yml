@@ -3,6 +3,9 @@ on:
   schedule:
     - cron: '15 19 * * *'   # 毎日 04:15 JST
   workflow_dispatch:
+concurrency:
+  group: nightly-${{ github.ref }}
+  cancel-in-progress: true
 permissions: read-all
 jobs:
   matrix-test:
@@ -23,6 +26,14 @@ jobs:
       - run: corepack enable
       - run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
       - run: pnpm run test:${{ matrix.kind }}
+  summary:
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Nightly Matrix (summary)
+        run: |
+          printf "\n## 🌃 Nightly Matrix\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- Concurrency: nightly-${{ github.ref }} (cancel in progress)\n" >> "$GITHUB_STEP_SUMMARY" || true
   perf:
     uses: ./.github/workflows/common/ci-core.yml
     with:
