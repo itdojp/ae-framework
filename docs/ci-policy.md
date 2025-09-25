@@ -61,7 +61,8 @@ This document defines CI policies to keep PR experience fast and stable while ma
  - `enforce-coverage`: enforce coverage threshold on PRs (blocking when below threshold). See `docs/quality/coverage-policy.md`.
  - `enforce-perf`: enforce performance score threshold (override via `perf:<pct>`, default `vars.PERF_DEFAULT_THRESHOLD` or 75)
  - `enforce-lh`: enforce Lighthouse performance threshold (override via `lh:<pct>`, default `vars.LH_DEFAULT_THRESHOLD` or 80)
- - `lang:ja` / `lang:en`: select PR summary language (default `en`). See `docs/ci/summary-env.md`.
+- `lang:ja` / `lang:en`: select PR summary language (default `en`). See `docs/ci/summary-env.md`.
+ - `pr-summary:detailed`: render a more detailed PR summary (vs. digest)
 
 Workflows (selected)
 - `.github/workflows/ae-ci.yml` (QA light)
@@ -239,6 +240,7 @@ jobs:
  - `enforce-typecov`: 型カバレッジのしきい値を強制（`docs/quality/type-coverage-policy.md` を参照）
  - `qa-batch:commands` / `qa-batch:cli` / `qa-batch:property` / `qa-batch:agents`: カテゴリ別の CI Fast バッチを実行
  - `lang:ja` / `lang:en`: PR サマリの言語指定（既定 `en`）。`docs/ci/summary-env.md` を参照
+ - `pr-summary:detailed`: 詳細な PR サマリを表示（既定の digest より詳細）
 
 対応ワークフロー（抜粋）
 - `.github/workflows/ae-ci.yml`（QA light）
