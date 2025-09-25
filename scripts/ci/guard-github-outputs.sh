@@ -12,9 +12,13 @@ tmp_echo="/tmp/_echo_offenders.$$"
 trap 'rm -f "$tmp_echo" "$unquoted_tmp"' EXIT
 
 if command -v rg >/dev/null 2>&1; then
-  rg -n -S "$pattern" .github/workflows >"$tmp_echo" || true
+  rg -n -S "$pattern" .github/workflows \
+    | awk 'BEGIN{FS=":"} { line=$0; sub(/^[[:space:]]+/,"",$3); if ($3 ~ /^#/) next; print line }' \
+    >"$tmp_echo" || true
 else
-  grep -REn "$pattern" .github/workflows >"$tmp_echo" || true
+  grep -REn "$pattern" .github/workflows \
+    | awk 'BEGIN{FS=":"} { line=$0; sub(/^[[:space:]]+/,"",$3); if ($3 ~ /^#/) next; print line }' \
+    >"$tmp_echo" || true
 fi
 
 if [ -s "$tmp_echo" ]; then
@@ -31,7 +35,9 @@ unquoted_tmp="/tmp/_unquoted_offenders.$$"
 
 if command -v rg >/dev/null 2>&1; then
   # PCRE negative lookahead to detect unquoted targets
-  if rg -P -n -S '>>\s*(?!"\$GITHUB_(OUTPUT|ENV)")\$GITHUB_(OUTPUT|ENV)' .github/workflows >"$unquoted_tmp"; then
+  if rg -P -n -S '>>\s*(?!"\$GITHUB_(OUTPUT|ENV)")\$GITHUB_(OUTPUT|ENV)' .github/workflows \
+    | awk 'BEGIN{FS=":"} { line=$0; sub(/^[[:space:]]+/,"",$3); if ($3 ~ /^#/) next; print line }' \
+    >"$unquoted_tmp"; then
     echo "🚫 Found unquoted redirection target to \$GITHUB_OUTPUT/\$GITHUB_ENV (quote the variable):" >&2
     cat "$unquoted_tmp" >&2 || true
     echo "\nFix: use >> \"\$GITHUB_OUTPUT\" (or \"\$GITHUB_ENV\")." >&2
@@ -39,7 +45,9 @@ if command -v rg >/dev/null 2>&1; then
   fi
 else
   # Fallback heuristic: lines with >> $GITHUB_* minus quoted ones
-  grep -REn '>>\s*\$GITHUB_(OUTPUT|ENV)' .github/workflows >"$unquoted_tmp" || true
+  grep -REn '>>\s*\$GITHUB_(OUTPUT|ENV)' .github/workflows \
+    | awk 'BEGIN{FS=":"} { line=$0; sub(/^[[:space:]]+/,"",$3); if ($3 ~ /^#/) next; print line }' \
+    >"$unquoted_tmp" || true
   if [ -s "$unquoted_tmp" ]; then
     if grep -REn '>>\s*"\$GITHUB_(OUTPUT|ENV)"' .github/workflows >/dev/null; then
       offenders=$(grep -REn '>>\s*\$GITHUB_(OUTPUT|ENV)' .github/workflows | grep -v '>>\s*"\$GITHUB_')
