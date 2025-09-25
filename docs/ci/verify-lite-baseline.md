@@ -26,6 +26,13 @@ This document summarizes the Verify Lite baseline setup and how heavy jobs are g
 - Opt-in heavy checks via labels on PR:
   - `/run-formal`, `/run-security`, `/run-qa`
 
+### Quick Ops
+- Re-run Verify Lite fast: `/verify-lite`
+- Enable formal steps in Verify Lite: add label `run-formal` (or comment `/run-formal`)
+- Enable resilience quick tests: add label `run-resilience` (or comment `/run-resilience`)
+- Enable QA/bench (ae-ci): add label `run-qa` (or comment `/run-qa`)
+- Make coverage required for this PR: add label `enforce-coverage`; optionally set threshold via `coverage:<pct>`
+
 ## Notes
 - Verify Lite remains lightweight by default; heavy steps are opt-in.
 - Path filters prevent default heavy runs on unrelated `push` events.
