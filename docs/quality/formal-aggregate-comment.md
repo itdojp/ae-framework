@@ -220,6 +220,7 @@ jobs:
   - `Clamp: line=…, errors=…, snippet=…, wrap=…`
   - `Label run-formal: yes|no`
   - `Label enforce-formal: yes|no`
+  - `Consistency: MD=JSON present (X/5)`
   - `Comment: created|updated|skipped` (+ URL/reason when available)
 
 ### Comment skip reasons (reference)
