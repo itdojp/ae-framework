@@ -70,8 +70,9 @@ Examples (label combos)
 - `coverage:<pct>`: override coverage threshold for coverage-check (default 80). e.g., `coverage:75`
   - Use `/coverage <pct|clear>` to set/clear on a PR
  - `enforce-coverage`: enforce coverage threshold on PRs (blocking when below threshold). See `docs/quality/coverage-policy.md`.
- - `enforce-perf`: enforce performance score threshold (override via `perf:<pct>`, default `vars.PERF_DEFAULT_THRESHOLD` or 75)
- - `enforce-lh`: enforce Lighthouse performance threshold (override via `lh:<pct>`, default `vars.LH_DEFAULT_THRESHOLD` or 80)
+  - Note: `<pct>` is an integer percent 0–100 (no `%`). Typical values 70–95.
+ - `enforce-perf`: enforce performance score threshold (override via `perf:<pct>`, default `vars.PERF_DEFAULT_THRESHOLD` or 75). `<pct>` is 0–100 (no `%`).
+ - `enforce-lh`: enforce Lighthouse performance threshold (override via `lh:<pct>`, default `vars.LH_DEFAULT_THRESHOLD` or 80). `<pct>` is 0–100 (no `%`).
 - `lang:ja` / `lang:en`: select PR summary language (default `en`). See `docs/ci/summary-env.md`.
  - `pr-summary:detailed`: render a more detailed PR summary (vs. digest)
 
@@ -274,6 +275,7 @@ jobs:
 - `coverage:<pct>`: coverage-check のしきい値を上書き（既定 80）。例: `coverage:75`
   - PR での設定/クリア: `/coverage <pct|clear>`
  - `enforce-coverage`: カバレッジしきい値を強制（閾値未満でブロック）。詳細は `docs/quality/coverage-policy.md` を参照
+  - 注意: `<pct>` は 0〜100 の整数（`%` なし）。一般的な値は 70〜95。
  - `run-formal`: PR で Formal Verify と集約レポートを実行（既定は report-only）。`docs/quality/formal-runbook.md` を参照
  - `enforce-formal` / `enforce-contracts`: フォーマル/契約チェックのゲート化を有効化（ラベル制御）
  - `enforce-typecov`: 型カバレッジのしきい値を強制（`docs/quality/type-coverage-policy.md` を参照）

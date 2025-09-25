@@ -8,6 +8,7 @@ Mechanics
 - Threshold source order:
   1. PR label `coverage:<pct>` (e.g., `coverage:75`)
   2. Repository variable `COVERAGE_DEFAULT_THRESHOLD` (default 80)
+  - `<pct>` must be an integer 0–100 (no `%`). Typical values 70–95.
 - Enforcement (blocking) when:
   - PR has label `enforce-coverage`, or
   - Push to `main` and repository variable `COVERAGE_ENFORCE_MAIN` = `1`
