@@ -23,6 +23,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - Append to `$GITHUB_OUTPUT` / `$GITHUB_ENV` using `printf` with quoting; do not use `echo` for these files.
   - Example: `printf "name=%s\n" "$VALUE" >> "$GITHUB_OUTPUT"`
   - Example (env): `printf "%s=%s\n" "FOO" "$VALUE" >> "$GITHUB_ENV"`
+  - Ensure a trailing newline; missing `\n` may break parsing
 
 ### Goals
 - Block only lightweight, deterministic checks on PRs
@@ -216,6 +217,8 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
  - `enforce-coverage`: カバレッジしきい値を強制（閾値未満でブロック）。詳細は `docs/quality/coverage-policy.md` を参照
  - `run-formal`: PR で Formal Verify と集約レポートを実行（既定は report-only）。`docs/quality/formal-runbook.md` を参照
  - `enforce-formal` / `enforce-contracts`: フォーマル/契約チェックのゲート化を有効化（ラベル制御）
+ - `enforce-typecov`: 型カバレッジのしきい値を強制（`docs/quality/type-coverage-policy.md` を参照）
+ - `qa-batch:commands` / `qa-batch:cli` / `qa-batch:property` / `qa-batch:agents`: カテゴリ別の CI Fast バッチを実行
  - `lang:ja` / `lang:en`: PR サマリの言語指定（既定 `en`）。`docs/ci/summary-env.md` を参照
 
 対応ワークフロー（抜粋）
@@ -240,6 +243,7 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 - `$GITHUB_OUTPUT` / `$GITHUB_ENV` への追記は `printf` + 適切なクォートを使用（`echo` は不可）。
   - 例: `printf "name=%s\n" "$VALUE" >> "$GITHUB_OUTPUT"`
   - 例（環境変数）: `printf "%s=%s\n" "FOO" "$VALUE" >> "$GITHUB_ENV"`
+  - 行末の改行（`\n`）を必ず含める。欠落すると解析に失敗する可能性あり
 
 ### PRコメント（Coverage / Formal）
 - 重複防止のため固定ヘッダでアップサート（1コメントを更新）:
