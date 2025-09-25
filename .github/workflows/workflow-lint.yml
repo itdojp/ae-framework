@@ -13,6 +13,8 @@ jobs:
       - uses: rhysd/actionlint@v1.7.1
       - name: Enforce printf policy for outputs/env
         run: bash scripts/ci/guard-github-outputs.sh
+      - name: Guard self-test (offender/ok cases)
+        run: bash scripts/ci/tests/test-guard.sh
       - name: Check for unresolved merge markers in workflows
         run: |
           set -e

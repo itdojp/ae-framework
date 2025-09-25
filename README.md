@@ -125,17 +125,18 @@ We welcome international contributions! Please see our [Contributing Guide](CONT
 - Minimal checks locally
   - `pnpm run test:unit` / `pnpm run test:fast`
   - Benchmark focused tests: see `docs/handoff/README.md`
-- Quality gates may fail depending on environment/policy
-  - Use `ae-framework quality run --env development --dry-run` for smoke
-  - Type coverage policy is reported at 65% baseline; `enforce-typecov` label enforces 70%
-  - Some jobs (security/audit/container) require network/secrets and may be red on forks
-  - Workflow lint & printf policy:
-    - Run guard + actionlint locally: `pnpm lint:workflows` (guard always runs; actionlint via Docker if available)
-    - When appending to `$GITHUB_OUTPUT`/`$GITHUB_ENV`, use `printf` and quote the target file:
-      - `printf "%s\n" "key=value" >> "$GITHUB_OUTPUT"`
-      - `printf "%s\n" "NAME=value" >> "$GITHUB_ENV"`
-      - Grouped appends are allowed:
-        ```bash
+  - Quality gates may fail depending on environment/policy
+    - Use `ae-framework quality run --env development --dry-run` for smoke
+    - Type coverage policy is reported at 65% baseline; `enforce-typecov` label enforces 70%
+    - Some jobs (security/audit/container) require network/secrets and may be red on forks
+    - Workflow lint & printf policy:
+      - Run guard + actionlint locally: `pnpm lint:workflows` (guard always runs; actionlint via Docker if available)
+      - Run basic guard self-test locally: `pnpm ci:test:guard`
+      - When appending to `$GITHUB_OUTPUT`/`$GITHUB_ENV`, use `printf` and quote the target file:
+        - `printf "%s\n" "key=value" >> "$GITHUB_OUTPUT"`
+        - `printf "%s\n" "NAME=value" >> "$GITHUB_ENV"`
+        - Grouped appends are allowed:
+          ```bash
         {
           printf "%s\n" "one=1"
           printf "%s\n" "two=2"
