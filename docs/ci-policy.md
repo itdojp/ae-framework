@@ -17,7 +17,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - Heavy jobs are opt‑in via labels and/or path conditions.
 
 ### actionlint & printf policy
-- All workflows must pass `rhysd/actionlint`.
+- All workflows must pass `rhysd/actionlint` (use `rhysd/actionlint@v1.7.1`; see `.github/workflows/workflow-lint.yml`).
 - Append to `$GITHUB_OUTPUT` / `$GITHUB_ENV` using `printf` with quoting; do not use `echo` for these files.
   - Example: `printf "name=%s\n" "$VALUE" >> "$GITHUB_OUTPUT"`
 
@@ -182,7 +182,7 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 - 重いジョブはラベル/パス条件でオプトイン実行。
 
 ### actionlint と printf ポリシー
-- すべてのワークフローは `rhysd/actionlint` をパスすること。
+- すべてのワークフローは `rhysd/actionlint` をパスすること（`rhysd/actionlint@v1.7.1` を使用。`.github/workflows/workflow-lint.yml` を参照）。
 - `$GITHUB_OUTPUT` / `$GITHUB_ENV` への追記は `printf` + 適切なクォートを使用（`echo` は不可）。
   - 例: `printf "name=%s\n" "$VALUE" >> "$GITHUB_OUTPUT"`
 
