@@ -263,6 +263,16 @@ jobs:
         with:
           name: formal-reports-aggregate-json
           path: artifacts/formal/formal-aggregate.json
+      - name: Export aggregate outputs (present)
+        id: export
+        if: always()
+        run: |
+          if [ -f artifacts/formal/formal-aggregate.json ]; then \
+            P=$(jq -r '.info.presentCount // 0' artifacts/formal/formal-aggregate.json 2>/dev/null || printf "0\n"); \
+            KEYS=$(jq -r '(.info.presentKeys // (.info.present | to_entries | map(select(.value)) | map(.key))) | join(",")' artifacts/formal/formal-aggregate.json 2>/dev/null || printf "\n"); \
+            printf "%s\n" "present_count=$P" >> "$GITHUB_OUTPUT"; \
+            printf "%s\n" "present_keys=$KEYS" >> "$GITHUB_OUTPUT"; \
+          fi
       - name: Validate aggregate JSON (non-blocking)
         if: always()
         run: |
