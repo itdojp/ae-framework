@@ -22,6 +22,7 @@ jobs:
       comment_action: ${{ steps.comment.outputs.comment_action }}
       comment_url: ${{ steps.comment.outputs.comment_url }}
       comment_reason: ${{ steps.comment.outputs.comment_reason }}
+      has_run_formal: ${{ steps.labels.outputs.has_run_formal }}
     if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run-formal')
     runs-on: ubuntu-latest
     continue-on-error: true
@@ -279,6 +280,15 @@ jobs:
         with:
           name: formal-reports-aggregate-json
           path: artifacts/formal/formal-aggregate.json
+      - name: Label status (run-formal)
+        id: labels
+        if: github.event_name == 'pull_request'
+        run: |
+          HAS=0
+          if [ -f "$GITHUB_EVENT_PATH" ]; then \
+            if jq -e '.pull_request.labels[]?.name | select(.=="run-formal")' "$GITHUB_EVENT_PATH" >/dev/null; then HAS=1; fi; \
+          fi; \
+          printf "%s\n" "has_run_formal=$HAS" >> "$GITHUB_OUTPUT"
       - name: Export aggregate outputs (present)
         id: export
         if: always()
