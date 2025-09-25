@@ -321,6 +321,7 @@ jobs:
           fi; \
           printf "Header: <!-- AE-FORMAL-AGGREGATE --> (upsert on pull_request with label run-formal)\n" >> "$GITHUB_STEP_SUMMARY"
           printf "Docs: docs/quality/formal-aggregate-comment.md\n" >> "$GITHUB_STEP_SUMMARY"
+          printf "Runbook: docs/quality/formal-runbook.md\n" >> "$GITHUB_STEP_SUMMARY"
           printf "Clamp: line=%s, errors=%s, snippet=%s, wrap=%s\n" \
             "${FORMAL_AGG_LINE_CLAMP:-200}" \
             "${FORMAL_AGG_ERRORS_LIMIT:-5}" \
