@@ -62,6 +62,7 @@ jobs:
           const outMd = path.join(outDir, "formal-aggregate.md");
           const outJson = path.join(outDir, "formal-aggregate.json");
           const GENERATED_AT = new Date().toISOString();
+          const RUN_URL = `${process.env.GITHUB_SERVER_URL || 'https://github.com'}/${process.env.GITHUB_REPOSITORY || ''}/actions/runs/${process.env.GITHUB_RUN_ID || ''}`;
 
           const modelJson = find(base, "model-check-results/model-check.json");
           const alloy = modelJson ? (rj(modelJson)?.alloy || {}) : {};
@@ -206,6 +207,7 @@ jobs:
           lines.push("_Non-blocking. Add/remove label run-formal to control._");
           lines.push(`_Clamp: line=${clampInfo.lineClamp}, errors=${clampInfo.errorsLimit}, snippet=${clampInfo.snippetMaxLines}, wrap=${clampInfo.wrapWidth}_`);
           lines.push(`_Generated: ${GENERATED_AT}_`);
+          if (process.env.GITHUB_RUN_ID) lines.push(`_Run: ${RUN_URL}_`);
           // Normalize markdown: collapse excessive empty lines + optional long-line wrap (outside code fences)
           function normalizeMd(arr){
             const out=[]; let prevEmpty=false; let inFence=false;
@@ -337,7 +339,9 @@ jobs:
           fi; \
           printf "Header: <!-- AE-FORMAL-AGGREGATE --> (upsert on pull_request with label run-formal)\n" >> "$GITHUB_STEP_SUMMARY"
           printf "Docs: docs/quality/formal-aggregate-comment.md\n" >> "$GITHUB_STEP_SUMMARY"
-          printf "Runbook: docs/quality/formal-runbook.md\n" >> "$GITHUB_STEP_SUMMARY"
+          printf "Runbook: docs/quality/formal-runbook.md\n" >> "$GITHUB_STEP_SUMMARY"; \
+          printf "Run: %s/%s/actions/runs/%s\n" \
+            "${GITHUB_SERVER_URL:-https://github.com}" "${GITHUB_REPOSITORY}" "${GITHUB_RUN_ID}" >> "$GITHUB_STEP_SUMMARY"
           printf "Clamp: line=%s, errors=%s, snippet=%s, wrap=%s\n" \
             "${FORMAL_AGG_LINE_CLAMP:-200}" \
             "${FORMAL_AGG_ERRORS_LIMIT:-5}" \
