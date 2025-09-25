@@ -31,6 +31,15 @@ jobs:
         env:
           COVERAGE_ENFORCE_MAIN: ${{ vars.COVERAGE_ENFORCE_MAIN }}
           COVERAGE_DEFAULT_THRESHOLD: ${{ vars.COVERAGE_DEFAULT_THRESHOLD }}
+      - name: Coverage policy (summary)
+        if: always()
+        env:
+          COVERAGE_ENFORCE_MAIN: ${{ vars.COVERAGE_ENFORCE_MAIN }}
+          COVERAGE_DEFAULT_THRESHOLD: ${{ vars.COVERAGE_DEFAULT_THRESHOLD }}
+        run: |
+          printf "\n## 📏 Coverage Policy (reference)\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- Enforce on main: %s\n" "${COVERAGE_ENFORCE_MAIN:-0}" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- Default threshold: %s (override via coverage:<pct>)\n" "${COVERAGE_DEFAULT_THRESHOLD:-80}" >> "$GITHUB_STEP_SUMMARY" || true
       - uses: actions/checkout@v4
       - name: Enable corepack
         run: corepack enable
