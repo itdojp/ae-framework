@@ -13,6 +13,7 @@ jobs:
   cedar-validate:
     if: contains(github.event.pull_request.labels.*.name, 'run-security') || contains(github.event.pull_request.labels.*.name, 'run-cedar')
     runs-on: ubuntu-latest
+    continue-on-error: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking') }}
     steps:
       - uses: actions/checkout@v4
       - name: Validate Cedar policies (non-blocking)
