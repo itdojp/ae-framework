@@ -8,6 +8,7 @@ Mechanics
 - Threshold source order:
   1. PR label `coverage:<pct>` (e.g., `coverage:75`)
   2. Repository variable `COVERAGE_DEFAULT_THRESHOLD` (default 80)
+  - Label parsing: last label wins; accepts 0–100; trims `%` and spaces; case-insensitive `coverage:` prefix.
 - Enforcement (blocking) when:
   - PR has label `enforce-coverage`, or
   - Push to `main` and repository variable `COVERAGE_ENFORCE_MAIN` = `1`
