@@ -68,6 +68,9 @@ Policy: report-only (see docs/quality/coverage-policy.md)
 Links: docs/quality/coverage-policy.md
 ```
 
+See also
+- `docs/quality/coverage-policy.md` — detailed coverage threshold policy, enforcement toggles, and PR examples.
+
 Formal Aggregate (posted only when `run-formal`)
 
 ```

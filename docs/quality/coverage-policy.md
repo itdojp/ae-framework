@@ -33,6 +33,7 @@ Notes
 References
 - Workflow: `.github/workflows/coverage-check.yml`
 - Slash commands: see `AGENTS.md` and `docs/ci-policy.md`
+- See also: `docs/ci-policy.md` (Verify Lite defaults, comment conventions, label/path gating)
 
 ### FAQ
 - Q: PRで失敗するのはなぜ？（main以外）
