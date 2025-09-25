@@ -1,10 +1,14 @@
 name: coverage-check
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
   push:
     branches: [ main ]
 permissions:
   contents: read
+concurrency:
+  group: coverage-check-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   gate:
     runs-on: ubuntu-latest
