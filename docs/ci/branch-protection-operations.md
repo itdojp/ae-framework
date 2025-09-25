@@ -6,6 +6,11 @@
 - 「At least 1 approving review is required」を不要にし、1人 + AI のワークフローでも詰まらないようにする
 - レビュー必須を外しても、軽量で決定的な Required checks を維持して品質を担保する
 
+## 事前準備（初回のみ）
+- ADMIN_TOKEN（repo admin 権限の Fine‑grained PAT）を作成・登録
+  - 手順: docs/ci/admin-token-setup.md を参照
+  - 用途: 本書の「プリセット適用」ワークフロー（Actions）でのみ使用。通常のCI/PRでは使用しません。
+
 ## プリセット一覧（.github/ 配下）
 - `branch-protection.main.restore.json` … 既定（レビュー必須: 1、`PR Verify / verify` required）
 - `branch-protection.main.relax.json` … 軽く緩和（レビュー1件維持・他条件緩め）
@@ -37,3 +42,15 @@ ADMIN_TOKEN=ghp_xxx REPO=itdojp/ae-framework BRANCH=main \
 
 ## 参考
 - 必要になれば Auto-Approve のワークフローも導入可能（PAT が必要）。レビュー要件を残したまま、特定ラベルや特定作者の PR を自動承認する運用にできます。
+
+## ロールバックと緊急対応
+- 緊急でPRを通したい場合（推奨しません）
+  - 一時的に `branch-protection.main.relax2.json` を適用 → マージ後すぐに `verify-lite-noreview` に戻す
+- 元の状態へ戻す
+  - `branch-protection.main.restore.json` を適用
+
+## クイックチェックリスト
+- [ ] ADMIN_TOKEN を登録済み（docs/ci/admin-token-setup.md）
+- [ ] Copilot Review Gate / gate が Required に含まれている
+- [ ] Verify Lite / verify-lite が Required に含まれている
+- [ ] main で想定外の Required チェックが残っていない
