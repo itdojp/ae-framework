@@ -153,7 +153,7 @@ if (parts.length) lines.push(`Metrics: ${parts.join(', ')}`);
 lines.push(`Threshold (effective): ${effTh}%`);
 // Gate status (informational)
   if (isFinite(pctNum) && isFinite(effNumeric)) {
-    const ok = pctNum >= effNumeric;
+  const ok = pctNum >= effNumeric;
     const cmp = ok ? '>=' : '<';
     const mode = ` ${strict ? '[blocking]' : '[non-blocking]'}`;
     lines.push(`Gate: ${ok ? 'OK' : 'BELOW'} (${fmtPct(pctNum)}% ${cmp} ${effTh}%)${mode}`);
@@ -161,7 +161,7 @@ lines.push(`Threshold (effective): ${effTh}%`);
       lines.push('Action: add tests to raise coverage or adjust threshold via /coverage <pct>');
     }
   }
-if (covLabel) {
+  if (covLabel) {
   if (hasValidLabel) lines.push(`- via label: ${covLabel}`);
   else lines.push(`- via label: ${covLabel} (invalid, ignored)`);
 }
@@ -212,6 +212,9 @@ try {
     console.error('Non-fatal: failed to list comments', list.status, await list.text());
     process.exit(0);
   }
+  // Threshold source line (concise)
+  const src = hasValidLabel ? 'label' : (repoVarValidRange ? 'repo var' : 'default');
+  lines.push(`Source: ${src}`);
   const comments = await list.json();
   const mine = comments.find(c => typeof c.body === 'string' && c.body.startsWith(HEADER));
   if (mine) {

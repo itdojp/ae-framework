@@ -708,6 +708,7 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
     expect(res.status).toBe(0);
     const out = res.stdout || '';
     expect(out).toContain('Threshold (effective): 85%');
+    expect(out).toContain('Source: label');
     expect(out).toContain('- via label: coverage:85');
   });
 
