@@ -119,6 +119,7 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 ### Path Conditions
 - Fire spec fail-fast only for changes under `spec/**`, `.ae/**`
 - Trigger SBOM/Security only for dependency or major code changes
+- Workflows: `.github/workflows/fail-fast-spec-validation.yml` (spec), `.github/workflows/sbom-generation.yml` (security)
 
 ### test:fast (Fast CI suite)
 - Purpose: verify resilience/core units and lightweight integration quickly; exclude heavy/env-dependent tests
@@ -233,6 +234,7 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 ### パス条件
 - 仕様関連の変更（`spec/**`, `.ae/**`）のみ Fail-Fast を発火
 - 依存や大規模コード変更時のみ SBOM/Security を発火
+- 対応ワークフロー: `.github/workflows/fail-fast-spec-validation.yml`（仕様）, `.github/workflows/sbom-generation.yml`（セキュリティ）
 
 ### test:fast（高速CIスイート）
 - 目的: Resilience/主要ユニットと軽量統合を即時検証。重い/環境依存テストは除外
