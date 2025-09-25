@@ -314,7 +314,8 @@
     "ci:test:suggest": "bash scripts/ci/tests/test-suggest.sh",
     "ci:test:guard:disable": "bash scripts/ci/tests/test-guard-disable.sh",
     "ci:test:suggest:unquoted": "bash scripts/ci/tests/test-suggest-unquoted.sh",
-    "ci:test:suggest:comments": "bash scripts/ci/tests/test-suggest-comments.sh"
+    "ci:test:suggest:comments": "bash scripts/ci/tests/test-suggest-comments.sh",
+    "ci:test:suggest:help": "bash scripts/ci/tests/test-suggest-help.sh"
   },
   "dependencies": {
     "@ae-framework/spec-compiler": "file:./packages/spec-compiler",
