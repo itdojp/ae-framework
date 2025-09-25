@@ -13,7 +13,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
   - Use this for pre‑PR sanity checks aligned with Verify Lite.
 
 ### Verify Lite defaults
-- PRs block only on Verify Lite (types:check / build / fast tests).
+- PRs block only on Verify Lite (types:check / build). Lint runs in Verify Lite but is non‑blocking.
 - Heavy jobs are opt‑in via labels and/or path conditions.
 
 ### actionlint & printf policy
@@ -27,7 +27,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - Comprehensive checks run on main and scheduled jobs
 
 ### Required Checks (PR blocking)
-- Verify Lite (types:check / lint / build)
+- Verify Lite (types:check / build) — note: lint within Verify Lite is non‑blocking
 - Optionally enable validate-artifacts-ajv / coverage-check as required
 
 ### Opt-in Labels
@@ -151,8 +151,8 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 - main と定期実行（スケジュール）で包括的な検査を実施
 
 ### 必須チェック（PR ブロッキング）
-- Verify Lite（types:check / lint / build）
-- 必要に応じて validate-artifacts-ajv / coverage-check を必須化可能
+- Verify Lite（types:check / build）— 備考: lint は Verify Lite 内で非ブロッキング
+ - 必要に応じて validate-artifacts-ajv / coverage-check を必須化可能
  - カバレッジ運用とRequired化の詳細は `docs/quality/coverage-policy.md` を参照（しきい値の由来、ラベル/変数、main運用）
 
 ### ラベル運用（Opt-in）
