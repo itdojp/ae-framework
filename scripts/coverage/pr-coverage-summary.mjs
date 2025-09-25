@@ -24,17 +24,22 @@ const eventPath = process.env['GITHUB_EVENT_PATH'] || '';
 const defTh = Number(process.env['COVERAGE_DEFAULT_THRESHOLD'] || 80);
 const enforceMain = (process.env['COVERAGE_ENFORCE_MAIN'] || '0') === '1';
 
-// Load coverage summary
+// Load coverage summary (optional). If missing, still post a summary with n/a.
 const summaryPath = 'coverage/coverage-summary.json';
-if (!fs.existsSync(summaryPath)) {
-  console.log('No coverage summary present; nothing to comment');
-  process.exit(0);
+let cov = {};
+let pct = 'n/a';
+let pctFns, pctBranches, pctStmts;
+if (fs.existsSync(summaryPath)) {
+  try {
+    cov = JSON.parse(fs.readFileSync(summaryPath, 'utf-8'));
+    pct = cov?.total?.lines?.pct ?? 'n/a';
+    pctFns = cov?.total?.functions?.pct;
+    pctBranches = cov?.total?.branches?.pct;
+    pctStmts = cov?.total?.statements?.pct;
+  } catch (e) {
+    console.error('Warning: failed to parse coverage summary; proceeding with n/a');
+  }
 }
-const cov = JSON.parse(fs.readFileSync(summaryPath, 'utf-8'));
-const pct = cov?.total?.lines?.pct ?? 'n/a';
-const pctFns = cov?.total?.functions?.pct;
-const pctBranches = cov?.total?.branches?.pct;
-const pctStmts = cov?.total?.statements?.pct;
 
 // Read event payload for PR number and labels
 if (!fs.existsSync(eventPath)) {
@@ -81,6 +86,7 @@ lines.push('Derived: label > repo var > default');
 lines.push(`Policy: ${policy}`);
 lines.push(`Policy source: ${rationale}`);
 lines.push('Docs: docs/quality/coverage-required.md');
+if (!fs.existsSync(summaryPath)) lines.push('Note: no coverage-summary.json found');
 lines.push('Reproduce: coverage → coverage/coverage-summary.json → total.lines.pct');
 lines.push('Reproduce: threshold → label coverage:<pct> > vars.COVERAGE_DEFAULT_THRESHOLD > default 80');
 const body = HEADER + lines.join('\n');
