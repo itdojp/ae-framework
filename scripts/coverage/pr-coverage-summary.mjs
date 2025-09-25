@@ -131,7 +131,7 @@ if (eventName === 'push' && payload?.ref === 'refs/heads/main' && enforceMain) s
 const policy = strict ? 'enforced' : 'report-only';
 let rationale = 'report-only';
 if (strict) {
-  rationale = labels.includes('enforce-coverage')
+  rationale = labelsLower.includes('enforce-coverage')
     ? 'enforced via label: enforce-coverage'
     : 'enforced via main + repo vars (COVERAGE_ENFORCE_MAIN)';
 }
