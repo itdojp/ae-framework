@@ -305,7 +305,8 @@
     "test:replay:relaxed": "REPLAY_DISABLE=allocated_le_onhand node scripts/testing/replay-runner.mjs",
     "artifacts:aggregate": "node scripts/adapters/aggregate-artifacts.mjs",
     "lint:actions": "bash scripts/ci/actionlint.sh",
-    "ci:guard:github-outputs": "bash scripts/ci/guard-github-outputs.sh"
+    "ci:guard:github-outputs": "bash scripts/ci/guard-github-outputs.sh",
+    "lint:workflows": "bash scripts/ci/workflow-lint-all.sh"
   },
   "dependencies": {
     "@ae-framework/spec-compiler": "file:./packages/spec-compiler",
