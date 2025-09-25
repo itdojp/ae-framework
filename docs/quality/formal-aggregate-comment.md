@@ -60,7 +60,7 @@ Comment Structure (recommended)
 4) Apalache ran/ok — single-line status if available
    - Example: `Apalache: ran=false, ok=false` (when present)
 5) Meta — Tools/Reproduce/Policy/Clamp/Generated
-   - Tools: present flags; Reproduce: short CLI (verify:tla/smt/alloy); Policy: label-gated, non-blocking; Clamp: env values; Generated: timestamp
+  - Tools: present flags; Reproduce: short CLI (verify:tla/smt/alloy); Policy: label-gated, non-blocking; Labels: run-formal/enforce-formal; Clamp: env values; Generated: timestamp/Run URL
 
 One-line Summary (top)
 - Optional first line: `Formal aggregate: Present 3/5 | Conformance iv=3 (rate=0.300) | Apalache ran=false`

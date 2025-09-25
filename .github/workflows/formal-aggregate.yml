@@ -91,6 +91,17 @@ jobs:
             snippetMaxLines: process.env.FORMAL_AGG_SNIPPET_MAX_LINES || '20',
             wrapWidth: process.env.FORMAL_AGG_WRAP_WIDTH || '0'
           };
+          // Detect label presence from event (pull_request only)
+          const EVENT_PATH = process.env.GITHUB_EVENT_PATH;
+          let hasRunFormal = null, hasEnforceFormal = null;
+          try {
+            if (EVENT_PATH && fs.existsSync(EVENT_PATH)) {
+              const ev = JSON.parse(fs.readFileSync(EVENT_PATH,'utf-8'));
+              const lbls = Array.isArray(ev?.pull_request?.labels) ? ev.pull_request.labels.map(l => (typeof l === 'object' ? l.name : String(l))) : [];
+              hasRunFormal = lbls.includes('run-formal');
+              hasEnforceFormal = lbls.includes('enforce-formal');
+            }
+          } catch {}
 
           const lines = [];
           lines.push("## 🔎 Formal Reports Aggregate");
@@ -206,6 +217,7 @@ jobs:
           lines.push("_Tools check: pnpm run tools:formal:check_");
           lines.push("_Reproduce locally: pnpm run verify:tla -- --engine=apalache_ (see docs/quality/formal-runbook.md)");
           lines.push("_Non-blocking. Add/remove label run-formal to control._");
+          if (hasRunFormal !== null) lines.push(`_Labels: run-formal=${hasRunFormal? 'yes':'no'} enforce-formal=${hasEnforceFormal? 'yes':'no'}_`);
           lines.push(`_Clamp: line=${clampInfo.lineClamp}, errors=${clampInfo.errorsLimit}, snippet=${clampInfo.snippetMaxLines}, wrap=${clampInfo.wrapWidth}_`);
           lines.push(`_Generated: ${GENERATED_AT}_`);
           if (process.env.GITHUB_RUN_ID) lines.push(`_Run: ${RUN_URL}_`);
