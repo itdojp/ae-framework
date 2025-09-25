@@ -149,6 +149,7 @@ if (covLabel) {
 if (hasRepoVar) lines.push(`- repo var: COVERAGE_DEFAULT_THRESHOLD=${isFinite(defTh) ? fmtPct(defTh) : 'n/a'}%`);
 lines.push(`- default: 80%`);
 lines.push('Derived: label > repo var > default');
+lines.push('Rules: label override last-wins; accepts 0–100; trims %/spaces');
 lines.push(`Policy: ${policy}`);
 lines.push(`Policy source: ${rationale}`);
 lines.push('Docs: docs/quality/coverage-required.md');
