@@ -145,3 +145,15 @@ Conformance summary (if present)
 ```
 jq -r '.conformance | {schemaErrors, invariantViolations, violationRate}' artifacts/formal/formal-aggregate.json
 ```
+
+## Verify PR comment via GitHub CLI
+
+Check for the upserted comment (by fixed header):
+```
+gh pr view <pr-number> --json comments --jq '.comments[].body | select(startswith("<!-- AE-FORMAL-AGGREGATE -->"))'
+```
+
+Count matching comments (should be 0 or 1 due to upsert):
+```
+gh pr view <pr-number> --json comments --jq '.comments[].body | select(startswith("<!-- AE-FORMAL-AGGREGATE -->"))' | wc -l
+```
