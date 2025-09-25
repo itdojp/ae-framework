@@ -116,6 +116,7 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 
 ### Slash Commands (Instant Dispatch / Labels)
 - コメントで以下を投稿すると、対象ワークフローの即時起動やラベル付与ができます（main取り込み後有効）。
+  - Notes: Commands are idempotent; repeating them is safe (they upsert labels/dispatch).
   - Dispatch（workflow_dispatch 直起動）
     - `/verify-lite` … Verify Lite を実行
     - `/run-qa-dispatch` … ae-ci（QA light）を実行
@@ -145,6 +146,7 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
   - 使い分け例（推奨）
     - 追加確認したいカテゴリのみラベル付与 → `/ci-fast-dispatch` で即時起動
     - Verify Lite のみを再実行 → `/verify-lite`
+  - 備考: コマンドは冪等です。繰り返し実行しても安全（ラベル付与/ディスパッチをアップサート）
 
 
 ### Path Conditions
