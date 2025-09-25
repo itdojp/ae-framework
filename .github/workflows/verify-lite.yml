@@ -95,3 +95,13 @@ jobs:
         run: |
           if [ -f scripts/summary/render-pr-summary.mjs ]; then node scripts/summary/render-pr-summary.mjs; fi
           [ -f artifacts/summary/PR_SUMMARY.md ] && cat artifacts/summary/PR_SUMMARY.md >> "$GITHUB_STEP_SUMMARY" || true
+      - name: PR label gates (summary)
+        if: always()
+        env:
+          IS_PR: ${{ github.event_name == 'pull_request' }}
+          RUN_FORMAL: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-formal') && '1' || '0' }}
+          RUN_RESILIENCE: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-resilience') && '1' || '0' }}
+        run: |
+          printf "\nVerify Lite — label gates (PR only)\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- run-formal: %s\n" "${RUN_FORMAL:-0}" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- run-resilience: %s\n" "${RUN_RESILIENCE:-0}" >> "$GITHUB_STEP_SUMMARY" || true
