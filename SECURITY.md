@@ -52,7 +52,7 @@ We take security vulnerabilities seriously. If you discover a security issue, pl
 - Thresholds are configurable via repository variables:
   - `SECURITY_MAX_HIGH` (default 0): allowed High/Critical vulnerabilities
   - `SECURITY_MAX_MODERATE` (default 2): allowed Moderate vulnerabilities
-- Workflow reference: `.github/workflows/sbom-generation.yml` generates SBOM, runs dependency audit, performs CodeQL, and optionally enforces thresholds.
+- Workflow reference: `.github/workflows/sbom-generation.yml` generates SBOM, runs dependency audit, performs CodeQL, and optionally enforces thresholds. See also `.github/workflows/security.yml`.
 
 PR comment example (non-blocking when `run-security`)
 
@@ -382,7 +382,7 @@ Next Review / 次回見直し: July 2025
 - 閾値はリポジトリ変数で制御できます。
   - `SECURITY_MAX_HIGH`（既定 0）: High 以上の許容数
   - `SECURITY_MAX_MODERATE`（既定 2）: Moderate の許容数
-- 対象ワークフロー: `.github/workflows/sbom-generation.yml` で SBOM 生成・依存監査・CodeQL を実施し、必要に応じて上記閾値でエンフォースします。
+- 対象ワークフロー: `.github/workflows/sbom-generation.yml` で SBOM 生成・依存監査・CodeQL を実施し、必要に応じて上記閾値でエンフォースします。関連: `.github/workflows/security.yml`。
 
 PRコメント例（`run-security` 時は非ブロッキング）
 
