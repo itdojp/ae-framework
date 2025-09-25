@@ -209,23 +209,23 @@ const headers = { 'authorization': `Bearer ${token}`, 'accept': 'application/vnd
 try {
   const list = await fetch(`${base}/issues/${number}/comments?per_page=100`, { headers });
   if (!list.ok) {
-    console.error('Failed to list comments', list.status, await list.text());
-    process.exit(1);
+    console.error('Non-fatal: failed to list comments', list.status, await list.text());
+    process.exit(0);
   }
   const comments = await list.json();
   const mine = comments.find(c => typeof c.body === 'string' && c.body.startsWith(HEADER));
   if (mine) {
     const res = await fetch(`${base}/issues/comments/${mine.id}`, { method: 'PATCH', headers: { ...headers, 'content-type': 'application/json' }, body: JSON.stringify({ body }) });
     if (!res.ok) {
-      console.error('Failed to update comment', res.status, await res.text());
-      process.exit(1);
+      console.error('Non-fatal: failed to update comment', res.status, await res.text());
+      process.exit(0);
     }
     console.log('Updated AE-COVERAGE-SUMMARY');
   } else {
     const res = await fetch(`${base}/issues/${number}/comments`, { method: 'POST', headers: { ...headers, 'content-type': 'application/json' }, body: JSON.stringify({ body }) });
     if (!res.ok) {
-      console.error('Failed to create comment', res.status, await res.text());
-      process.exit(1);
+      console.error('Non-fatal: failed to create comment', res.status, await res.text());
+      process.exit(0);
     }
     console.log('Created AE-COVERAGE-SUMMARY');
   }
