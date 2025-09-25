@@ -14,8 +14,8 @@
 
 ## 作成手順（FG‑PAT）
 1. GitHub → Settings → Developer settings → Fine‑grained personal access tokens → Generate new token
-2. Resource owner: 当該組織（例: itdojp）
-3. Repository access: Only select repositories → `itdojp/ae-framework` を選択
+2. Resource owner: 当該組織（例: <organization-name>）
+3. Repository access: Only select repositories → `<organization-name>/ae-framework` を選択
 4. Repository permissions: Administration → Read and write を有効化
 5. Token name/expiry を設定し、発行
 6. （組織がSSO運用の場合）SSO承認を実施
