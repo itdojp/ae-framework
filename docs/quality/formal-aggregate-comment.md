@@ -111,3 +111,9 @@ Consistency
 - Validate JSON locally (non-blocking):
   - `node scripts/formal/validate-aggregate-json.mjs` (warns on missing/invalid `artifacts/formal/formal-aggregate.json`)
 - Clamp looks too aggressive: raise `FORMAL_AGG_LINE_CLAMP` or `FORMAL_AGG_ERRORS_LIMIT` in the workflow env or rerun with overrides.
+
+## Artifacts (expected)
+
+- formal-reports-aggregate (artifact): `artifacts/formal/formal-aggregate.md`
+- formal-reports-aggregate-json (artifact): `artifacts/formal/formal-aggregate.json`
+- Tips: Download both artifacts from the Actions run to inspect the exact MD/JSON posted/derived.
