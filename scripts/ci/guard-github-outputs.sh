@@ -117,3 +117,17 @@ if [ -s "$tee_tmp" ]; then
   cat "$tee_tmp" >&2 || true
   exit 1
 fi
+
+# Forbid deprecated ::set-output command
+setout_tmp="/tmp/_setoutput_offenders.$$"
+if command -v rg >/dev/null 2>&1; then
+  rg -n -S '::set-output\s+name=' "$TARGET_DIR" >"$setout_tmp" || true
+else
+  grep -REn '::set-output\s+name=' "$TARGET_DIR" >"$setout_tmp" || true
+fi
+
+if [ -s "$setout_tmp" ]; then
+  echo "🚫 Deprecated ::set-output usage detected. Use \"printf >> \$GITHUB_OUTPUT\" instead." >&2
+  cat "$setout_tmp" >&2 || true
+  exit 1
+fi

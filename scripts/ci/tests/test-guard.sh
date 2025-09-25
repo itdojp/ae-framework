@@ -86,5 +86,25 @@ if bash scripts/ci/guard-github-outputs.sh "$TMPDIR/wf"; then
 fi
 
 rm -f "$TMPDIR/wf/offender3.yml"
+
+# Deprecated set-output offender
+cat > "$TMPDIR/wf/offender4.yml" << 'YAML'
+name: off4
+on: push
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "::set-output name=val::deprecated"
+YAML
+
+echo "[test] Expect guard to fail on ::set-output offender..."
+if bash scripts/ci/guard-github-outputs.sh "$TMPDIR/wf"; then
+  echo "Guard did not fail on ::set-output offender (unexpected)" >&2
+  exit 1
+fi
+
+rm -f "$TMPDIR/wf/offender4.yml"
 bash scripts/ci/guard-github-outputs.sh "$TMPDIR/wf"
 echo "[test] Guard basic tests passed."
