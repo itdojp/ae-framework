@@ -78,7 +78,8 @@ const number = pr.number;
 const labels = (pr.labels || []).map(l => l.name);
 
 // Threshold derivation: label override > repo var default > fallback 80
-const covLabel = labels.find(n => {
+// Prefer the last coverage:<pct> label if multiple are present
+const covLabel = [...labels].reverse().find(n => {
   if (typeof n !== 'string') return false;
   return n.toLowerCase().startsWith('coverage:');
 }) || null;
