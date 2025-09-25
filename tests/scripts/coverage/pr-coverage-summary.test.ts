@@ -803,6 +803,36 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
     expect(out).toContain('Coverage (lines): 80%');
   });
 
+  it('skips upsert gracefully when repository coordinates cannot be resolved', () => {
+    const cwd = process.cwd();
+    const covDir = join(cwd, 'coverage');
+    try { mkdirSync(covDir, { recursive: true }); } catch {}
+    const covPath = join(covDir, 'coverage-summary.json');
+    writeFileSync(covPath, JSON.stringify({ total: { lines: { pct: 80 } } }), 'utf8');
+
+    const event = {
+      // No repository object and no full_name fallback
+      pull_request: { number: 141, labels: [] }
+    };
+    const eventPath = join(cwd, 'tmp-gh-event-no-repo.json');
+    writeFileSync(eventPath, JSON.stringify(event), 'utf8');
+
+    const env = {
+      ...process.env,
+      GITHUB_TOKEN: 'test-token',
+      GITHUB_REPOSITORY: '',
+      GITHUB_EVENT_NAME: 'pull_request',
+      GITHUB_EVENT_PATH: eventPath,
+      // Intentionally not setting AE_COVERAGE_DRY_RUN to hit the skip path before posting
+      COVERAGE_DEFAULT_THRESHOLD: '80'
+    } as NodeJS.ProcessEnv;
+
+    const res = spawnSync('node', ['scripts/coverage/pr-coverage-summary.mjs'], { cwd, env, encoding: 'utf8' });
+    expect(res.status).toBe(0);
+    const out = res.stdout || '';
+    expect(out).toContain('unable to resolve repository coordinates');
+  });
+
   it('shows [blocking] with main push when COVERAGE_ENFORCE_MAIN=1', () => {
     const cwd = process.cwd();
     const covDir = join(cwd, 'coverage');

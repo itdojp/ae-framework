@@ -89,6 +89,11 @@ if (!owner || !repo) {
     if (ow && rp) { owner = ow; repo = rp; }
   }
 }
+// If still not resolved, skip posting gracefully
+if (!owner || !repo) {
+  console.log('Note: unable to resolve repository coordinates; skipping PR coverage comment upsert');
+  process.exit(0);
+}
 const pr = payload.pull_request;
 if (!pr || !owner || !repo) {
   console.log('Not a pull_request context; skipping PR comment');
