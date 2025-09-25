@@ -9,6 +9,12 @@
 
 import fs from 'node:fs';
 
+function fmtPct(v) {
+  if (typeof v !== 'number' || !isFinite(v)) return String(v);
+  const s = v.toFixed(1);
+  return s.endsWith('.0') ? String(Math.round(v)) : s;
+}
+
 const HEADER = '<!-- AE-COVERAGE-SUMMARY -->\n';
 const token = process.env['GITHUB_TOKEN'];
 if (!token) {
@@ -21,7 +27,9 @@ const repoFull = process.env['GITHUB_REPOSITORY'] || '';
 const [owner, repo] = repoFull.split('/');
 const eventName = process.env['GITHUB_EVENT_NAME'] || '';
 const eventPath = process.env['GITHUB_EVENT_PATH'] || '';
-const defTh = Number(process.env['COVERAGE_DEFAULT_THRESHOLD'] || 80);
+const defRaw = process.env['COVERAGE_DEFAULT_THRESHOLD'];
+const defTh = Number(defRaw || 80);
+const hasRepoVar = typeof defRaw !== 'undefined' && defRaw !== '';
 const enforceMain = (process.env['COVERAGE_ENFORCE_MAIN'] || '0') === '1';
 
 // Load coverage summary (optional). If missing, still post a summary with n/a.
@@ -32,10 +40,14 @@ let pctFns, pctBranches, pctStmts;
 if (fs.existsSync(summaryPath)) {
   try {
     cov = JSON.parse(fs.readFileSync(summaryPath, 'utf-8'));
-    pct = cov?.total?.lines?.pct ?? 'n/a';
-    pctFns = cov?.total?.functions?.pct;
-    pctBranches = cov?.total?.branches?.pct;
-    pctStmts = cov?.total?.statements?.pct;
+    const ln = cov?.total?.lines?.pct;
+    pct = typeof ln === 'number' ? fmtPct(ln) : 'n/a';
+    const fnv = cov?.total?.functions?.pct;
+    const brv = cov?.total?.branches?.pct;
+    const stv = cov?.total?.statements?.pct;
+    pctFns = typeof fnv === 'number' ? fmtPct(fnv) : fnv;
+    pctBranches = typeof brv === 'number' ? fmtPct(brv) : brv;
+    pctStmts = typeof stv === 'number' ? fmtPct(stv) : stv;
   } catch (e) {
     console.error('Warning: failed to parse coverage summary; proceeding with n/a');
   }
@@ -87,7 +99,8 @@ if (covLabel) {
   if (hasValidLabel) lines.push(`- via label: ${covLabel}`);
   else lines.push(`- via label: ${covLabel} (invalid, ignored)`);
 }
-lines.push(`- default: ${isFinite(defTh) ? defTh : 80}%`);
+if (hasRepoVar) lines.push(`- repo var: COVERAGE_DEFAULT_THRESHOLD=${isFinite(defTh) ? defTh : 'n/a'}%`);
+lines.push(`- default: 80%`);
 lines.push('Derived: label > repo var > default');
 lines.push(`Policy: ${policy}`);
 lines.push(`Policy source: ${rationale}`);
