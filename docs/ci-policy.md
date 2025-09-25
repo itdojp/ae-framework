@@ -256,3 +256,7 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 - 緊急時は `ci-non-blocking` ラベルで PR をブロックしない運用に切替可能
 - マージ後は main の包括的 CI（夜間/週次）でカバー
 - 必須チェックは基本 Verify Lite を中心に、その他は非必須
+
+### 参考
+- 運用ルールとCIラベルポリシー: `AGENTS.md`
+- スラッシュコマンド対応表: `.github/workflows/agent-commands.yml`
