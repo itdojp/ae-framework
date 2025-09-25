@@ -76,6 +76,7 @@ if (!pr || !owner || !repo) {
 }
 const number = pr.number;
 const labels = (pr.labels || []).map(l => l.name);
+const labelsLower = labels.map(n => (typeof n === 'string' ? n.toLowerCase() : ''));
 
 // Threshold derivation: label override > repo var default > fallback 80
 // Prefer the last coverage:<pct> label if multiple are present
@@ -94,7 +95,7 @@ const effTh = fmtPct(effNumeric);
 
 // Policy: report-only unless enforced via label or main+vars
 let strict = false;
-if (labels.includes('enforce-coverage')) strict = true;
+if (labelsLower.includes('enforce-coverage')) strict = true;
 if (eventName === 'push' && payload?.ref === 'refs/heads/main' && enforceMain) strict = true;
 const policy = strict ? 'enforced' : 'report-only';
 let rationale = 'report-only';
