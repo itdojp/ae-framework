@@ -55,6 +55,7 @@ References
 <!-- AE-COVERAGE-SUMMARY -->
 Coverage (lines): 82%
 Threshold (effective): 80%
+Source: label
 - via label: coverage:80
 - repo var: COVERAGE_DEFAULT_THRESHOLD=80%
 - default: 80%
