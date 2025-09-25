@@ -33,6 +33,9 @@ on:
 
 jobs:
   sbom-generation:
+    concurrency:
+      group: sbom-${{ github.ref }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request' || contains(join(fromJSON(toJSON(github.event.pull_request.labels)).*.name, ','), 'run-security')
     
