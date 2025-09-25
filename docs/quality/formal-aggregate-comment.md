@@ -177,6 +177,20 @@ gh pr view <pr-number> --json comments --jq '.comments[].body | select(startswit
   - `comment_url`: URL of the PR comment (when created/updated)
   - `comment_reason`: reason when skipped (e.g., `no-md`, `no-json`, `unchanged`)
 
+## GitHub Step Summary (reviewer hints)
+
+- The workflow appends a brief Step Summary to help reviewers verify runs without opening artifacts:
+  - `Present: <count>/5`
+  - `Keys: <comma-separated present keys>`
+  - `Apalache: ran=yes|no ok=yes|no|n/a`
+  - `Conformance: schemaErrors=X, invariantViolations=Y, rate=Z` (when present)
+  - `Artifacts: artifacts/formal/formal-aggregate.{md,json}`
+  - `Header: <!-- AE-FORMAL-AGGREGATE --> (upsert on pull_request with label run-formal)`
+  - `Docs: docs/quality/formal-aggregate-comment.md`
+  - `Runbook: docs/quality/formal-runbook.md`
+  - `Clamp: line=…, errors=…, snippet=…, wrap=…`
+  - `Comment: created|updated|skipped` (+ URL/reason when available)
+
 ## Dispatch via GitHub CLI (artifacts only)
 
 Run the aggregate workflow on a PR head branch (does not post the PR comment):
