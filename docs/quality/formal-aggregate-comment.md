@@ -165,6 +165,12 @@ Count matching comments (should be 0 or 1 due to upsert):
 gh pr view <pr-number> --json comments --jq '.comments[].body | select(startswith("<!-- AE-FORMAL-AGGREGATE -->"))' | wc -l
 ```
 
+## Workflow outputs (for reuse)
+
+- The aggregate workflow exports selected fields for downstream jobs:
+  - `present_count`: integer (0..5)
+  - `present_keys`: CSV (ordered keys present)
+
 ## Dispatch via GitHub CLI (artifacts only)
 
 Run the aggregate workflow on a PR head branch (does not post the PR comment):
