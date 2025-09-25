@@ -30,7 +30,8 @@ This document defines CI policies to keep PR experience fast and stable while ma
   } >> "$GITHUB_OUTPUT"
   ```
 - A guard runs in CI (workflow-lint) to block `echo >> $GITHUB_OUTPUT/$GITHUB_ENV` and to require quoted targets.
-  - See also: docs/ci/printf-guard.md for full guidance and examples.
+ - See also: docs/ci/printf-guard.md for full guidance and examples.
+  - Quick conversions: docs/ci/echo-to-printf-recipes.md
  - Additional constraints enforced by the guard:
    - Trailing newline required in printf format (prefer `"%s\n"`)
    - Forbid `tee -a` to `$GITHUB_OUTPUT`/`$GITHUB_ENV`

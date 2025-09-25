@@ -145,6 +145,7 @@ We welcome international contributions! Please see our [Contributing Guide](CONT
           printf "%s\n" "two=2"
         } >> "$GITHUB_OUTPUT"
         ```
+      - Quick conversions: see `docs/ci/echo-to-printf-recipes.md`
     - See `docs/ci-policy.md` for details
 
 ---

@@ -40,7 +40,8 @@
        printf "%s\n" "two=2"
      } >> "$GITHUB_OUTPUT"
      ```
-  - See docs/ci-policy.md for details
+ - See docs/ci-policy.md for details
+  - Quick conversions: docs/ci/echo-to-printf-recipes.md
  - Additional constraints:
    - Include a trailing newline in the printf format (prefer `"%s\n"`)
    - Do not use `tee -a` to append to these files
@@ -102,7 +103,8 @@ This is a monorepo; prefer `pnpm --filter` for workspace commands (e.g., `pnpm -
        printf "%s\n" "two=2"
      } >> "$GITHUB_OUTPUT"
      ```
-  - 詳細は docs/ci-policy.md を参照
+ - 詳細は docs/ci-policy.md を参照
+  - 早見表: docs/ci/echo-to-printf-recipes.md
  - 追加制約:
    - `printf` のフォーマットには改行を含める（推奨: `"%s\n"`）
    - `tee -a` での追記は禁止
