@@ -13,6 +13,9 @@ on:
 permissions: read-all
 jobs:
   actionlint:
+    concurrency:
+      group: workflow-lint-${{ github.ref }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     continue-on-error: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking') }}
     steps:
