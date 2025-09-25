@@ -27,6 +27,17 @@
 - Follow existing code style
 - Add tests for new features
 - Update documentation
+ - CI workflow snippets: when appending to GitHub special files, use printf with quoted targets (policy enforced in CI):
+   - `printf "%s\n" "key=value" >> "$GITHUB_OUTPUT"`
+   - `printf "%s\n" "NAME=value" >> "$GITHUB_ENV"`
+   - Grouped appends are allowed:
+     ```bash
+     {
+       printf "%s\n" "one=1"
+       printf "%s\n" "two=2"
+     } >> "$GITHUB_OUTPUT"
+     ```
+   - See docs/ci-policy.md for details
 
 ### Package Manager Policy (pnpm)
 - Node.js: 20.x (per `package.json#engines`)
@@ -71,6 +82,17 @@ This is a monorepo; prefer `pnpm --filter` for workspace commands (e.g., `pnpm -
 - 既存のコードスタイルに従う
 - 新機能にはテストを追加
 - ドキュメントを更新
+ - CI ワークフローのスニペット: `$GITHUB_OUTPUT` や `$GITHUB_ENV` に追記する際は `printf` と引用付きリダイレクトを使用（CI でポリシーを強制）
+   - `printf "%s\n" "key=value" >> "$GITHUB_OUTPUT"`
+   - `printf "%s\n" "NAME=value" >> "$GITHUB_ENV"`
+   - まとまった追記は以下のようにグループ化可能:
+     ```bash
+     {
+       printf "%s\n" "one=1"
+       printf "%s\n" "two=2"
+     } >> "$GITHUB_OUTPUT"
+     ```
+   - 詳細は docs/ci-policy.md を参照
 
 ### パッケージマネージャ方針（pnpm）
 - Node.js: 20.x 系（`package.json#engines` 準拠）
