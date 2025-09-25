@@ -45,15 +45,19 @@ let pctFns, pctBranches, pctStmts;
 if (summaryPath) {
   try {
     cov = JSON.parse(fs.readFileSync(summaryPath, 'utf-8'));
-    const ln = cov?.total?.lines?.pct;
-    pctNum = typeof ln === 'number' ? ln : NaN;
-    pct = typeof ln === 'number' ? fmtPct(ln) : 'n/a';
-    const fnv = cov?.total?.functions?.pct;
-    const brv = cov?.total?.branches?.pct;
-    const stv = cov?.total?.statements?.pct;
-    pctFns = typeof fnv === 'number' ? fmtPct(fnv) : fnv;
-    pctBranches = typeof brv === 'number' ? fmtPct(brv) : brv;
-    pctStmts = typeof stv === 'number' ? fmtPct(stv) : stv;
+    const lnRaw = cov?.total?.lines?.pct;
+    const lnNum = typeof lnRaw === 'string' ? Number(lnRaw) : lnRaw;
+    pctNum = typeof lnNum === 'number' && isFinite(lnNum) ? lnNum : NaN;
+    pct = isFinite(pctNum) ? fmtPct(pctNum) : 'n/a';
+    const fnRaw = cov?.total?.functions?.pct;
+    const brRaw = cov?.total?.branches?.pct;
+    const stRaw = cov?.total?.statements?.pct;
+    const fnNum = typeof fnRaw === 'string' ? Number(fnRaw) : fnRaw;
+    const brNum = typeof brRaw === 'string' ? Number(brRaw) : brRaw;
+    const stNum = typeof stRaw === 'string' ? Number(stRaw) : stRaw;
+    pctFns = typeof fnNum === 'number' && isFinite(fnNum) ? fmtPct(fnNum) : fnRaw;
+    pctBranches = typeof brNum === 'number' && isFinite(brNum) ? fmtPct(brNum) : brRaw;
+    pctStmts = typeof stNum === 'number' && isFinite(stNum) ? fmtPct(stNum) : stRaw;
   } catch (e) {
     console.error('Warning: failed to parse coverage summary; proceeding with n/a');
   }
@@ -74,7 +78,10 @@ const number = pr.number;
 const labels = (pr.labels || []).map(l => l.name);
 
 // Threshold derivation: label override > repo var default > fallback 80
-const covLabel = labels.find(n => typeof n === 'string' && n.startsWith('coverage:')) || null;
+const covLabel = labels.find(n => {
+  if (typeof n !== 'string') return false;
+  return n.toLowerCase().startsWith('coverage:');
+}) || null;
 let covLabelValStr = covLabel ? String(covLabel.split(':')[1] || '').trim() : '';
 const covLabelValNum = covLabelValStr !== '' ? Number(covLabelValStr) : NaN;
 const hasValidLabel = isFinite(covLabelValNum) && covLabelValNum >= 0 && covLabelValNum <= 100;
