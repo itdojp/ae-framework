@@ -9,7 +9,11 @@ cd "$(git rev-parse --show-toplevel)" || exit 1
 pattern='\becho\b[^\n>]*>>[^\n$]*\$(GITHUB_OUTPUT|GITHUB_ENV)'
 
 tmp_echo="/tmp/_echo_offenders.$$"
-trap 'rm -f "$tmp_echo" "$unquoted_tmp"' EXIT
+# Predeclare tmp vars to avoid set -u issues in EXIT trap before assignment
+unquoted_tmp=""
+non_printf_tmp=""
+# Clean up any temp files created by this guard
+trap 'rm -f "$tmp_echo" ${unquoted_tmp:+"$unquoted_tmp"} ${non_printf_tmp:+"$non_printf_tmp"}' EXIT
 
 if command -v rg >/dev/null 2>&1; then
   rg -n -S "$pattern" .github/workflows \
