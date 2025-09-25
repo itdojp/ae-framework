@@ -57,3 +57,24 @@ fi
 
 echo "✅ All GITHUB_OUTPUT/ENV appends are quoted and use printf."
 
+# Enforce printf usage specifically (no other commands appending to targets)
+non_printf_tmp="/tmp/_non_printf_offenders.$$"
+if command -v rg >/dev/null 2>&1; then
+  # Match any line appending to quoted targets that does not include 'printf'
+  rg -n -S '>>\s*"\$GITHUB_(OUTPUT|ENV)"' .github/workflows \
+    | rg -v 'printf' \
+    | rg -v '\}\s*>>\s*"\$GITHUB_(OUTPUT|ENV)"' >"$non_printf_tmp" || true
+else
+  grep -REn '>>\s*"\$GITHUB_(OUTPUT|ENV)"' .github/workflows \
+    | grep -v 'printf' \
+    | grep -Ev '\}\s*>>\s*"\$GITHUB_(OUTPUT|ENV)"' >"$non_printf_tmp" || true
+fi
+
+if [ -s "$non_printf_tmp" ]; then
+  echo "🚫 Found non-printf appends to \$GITHUB_OUTPUT/\$GITHUB_ENV. Policy requires printf." >&2
+  cat "$non_printf_tmp" >&2 || true
+  echo "\nFix: use printf, e.g.: printf \"%s\\n\" \"key=value\" >> \"\$GITHUB_OUTPUT\"" >&2
+  exit 1
+fi
+
+echo "✅ All appends to GITHUB_OUTPUT/ENV use printf with proper quoting."
