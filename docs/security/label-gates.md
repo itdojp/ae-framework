@@ -38,3 +38,21 @@ Operations
 Notes
 - Comments and summaries should be upserted to avoid noise (fixed headers)
 - For dependency tracking, configure `DEPENDENCY_TRACK_URL` and credentials
+
+## Validation (PR walkthrough)
+
+1) Report-only run
+- On a draft PR, add label `run-security` (or comment `/run-security`).
+- Expect: `sbom-generation.yml` runs; PR gets a Security/Compliance summary (`<!-- AE-SECURITY-SUMMARY -->`). Job remains non-blocking unless `enforce-security` present.
+
+2) Enforcement toggle
+- Add label `enforce-security` (or comment `/enforce-security`).
+- Expect: cedar-quality-gates fails when NG>0; SBOM audit step enforces `SECURITY_MAX_HIGH` / `SECURITY_MAX_MODERATE`.
+
+3) Non-blocking override
+- Add label `ci-non-blocking`.
+- Expect: on PRs, cedar job and SBOM security-analysis job run with `continue-on-error: true` (report-only behavior), even if checks find issues.
+
+4) Dispatch (optional)
+- Comment `/run-security-dispatch` to trigger `sbom-generation.yml` via `workflow_dispatch` on the PR head.
+- Comment `/run-cedar-dispatch` to trigger `cedar-quality-gates.yml`.
