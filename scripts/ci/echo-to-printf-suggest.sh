@@ -29,7 +29,7 @@ if [ ! -s "$tmp" ]; then
   exit 0
 fi
 
-echo "=== echo -> printf suggestions (dry-run) ==="
+echo "::group::echo -> printf suggestions (dry-run)"
 while IFS= read -r line; do
   file=${line%%:*}
   rest=${line#*:}
@@ -46,3 +46,4 @@ while IFS= read -r line; do
     printf 'file:%s line:%s\n  before: %s\n  note:   convert to printf "%%s\\n" "key=value" >> "$%s" (see docs/ci/echo-to-printf-recipes.md)\n' "$file" "$lineno" "$content" "$target"
   fi
 done < "$tmp"
+echo "::endgroup::"
