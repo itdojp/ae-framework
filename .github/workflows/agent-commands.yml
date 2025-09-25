@@ -208,6 +208,8 @@ jobs:
                 if (!context.payload.issue.pull_request) return reply('Not a PR');
                 const pr = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
                 const ref = pr.data.head.ref;
+                const labels = Array.isArray(pr.data.labels) ? pr.data.labels.map(l => (typeof l === 'object' ? l.name : String(l))) : [];
+                const hasRunFormal = labels.includes('run-formal');
                 const header = '<!-- AE-FORMAL-AGGREGATE -->';
                 const comments = await github.rest.issues.listComments({ owner, repo, issue_number, per_page: 100 });
                 const mine = comments.data.find(c => c.body && c.body.startsWith(header));
@@ -222,6 +224,7 @@ jobs:
                 lines.push(`Dispatched formal-aggregate on ${ref}`);
                 if (last) lines.push(`- last post: ${new Date(last).toISOString()}`); else lines.push('- last post: n/a');
                 lines.push(`- last artifacts present: ${hasAggArtifacts ? 'yes' : 'no'}`);
+                lines.push(`- run-formal label present: ${hasRunFormal ? 'yes' : 'no'}`);
                 lines.push('');
                 lines.push('- Clamp env: FORMAL_AGG_LINE_CLAMP (default 200), FORMAL_AGG_ERRORS_LIMIT (default 5)');
                 lines.push('- Artifacts: formal-reports-aggregate, formal-reports-aggregate-json');
