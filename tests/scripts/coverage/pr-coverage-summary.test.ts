@@ -817,6 +817,41 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
     expect(out).toContain('Metrics: functions=81%, branches=79.5%, statements=84%');
   });
 
+  it('shows n/a and note when lines.pct is an invalid string, but prints Metrics for other valid fields', () => {
+    const cwd = process.cwd();
+    const covDir = join(cwd, 'coverage');
+    try { mkdirSync(covDir, { recursive: true }); } catch {}
+    const covPath = join(covDir, 'coverage-summary.json');
+    writeFileSync(
+      covPath,
+      JSON.stringify({ total: { lines: { pct: 'N/A' }, functions: { pct: 80 }, branches: { pct: 75 }, statements: { pct: 82 } } }),
+      'utf8'
+    );
+
+    const event = {
+      pull_request: { number: 160, labels: [] },
+      ref: 'refs/heads/feature/lines-invalid'
+    };
+    const eventPath = join(cwd, 'tmp-gh-event-lines-invalid.json');
+    writeFileSync(eventPath, JSON.stringify(event), 'utf8');
+
+    const env = {
+      ...process.env,
+      GITHUB_TOKEN: 'test-token',
+      GITHUB_REPOSITORY: 'owner/repo',
+      GITHUB_EVENT_NAME: 'pull_request',
+      GITHUB_EVENT_PATH: eventPath,
+      AE_COVERAGE_DRY_RUN: '1'
+    } as NodeJS.ProcessEnv;
+
+    const res = spawnSync('node', ['scripts/coverage/pr-coverage-summary.mjs'], { cwd, env, encoding: 'utf8' });
+    expect(res.status).toBe(0);
+    const out = res.stdout || '';
+    expect(out).toContain('Coverage (lines): n/a%');
+    expect(out).toContain('Note: total.lines.pct not found or invalid in coverage summary');
+    expect(out).toContain('Metrics: functions=80%, branches=75%, statements=82%');
+  });
+
   it('honors AE_COVERAGE_SUMMARY_PATH override when present', () => {
     const cwd = process.cwd();
     const customDir = join(cwd, 'custom');
