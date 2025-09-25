@@ -128,9 +128,13 @@ echo "✅ All appends to GITHUB_OUTPUT/ENV use printf with proper quoting."
 # Forbid tee -a to GITHUB_OUTPUT/ENV
 tee_tmp="/tmp/_tee_offenders.$$"
 if command -v rg >/dev/null 2>&1; then
-  rg -n -S 'tee\s+-a\s+"?\$\{?GITHUB_(OUTPUT|ENV)\}?"?' "$TARGET_DIR" >"$tee_tmp" || true
+  rg -n -S 'tee\s+-a\s+"?\$\{?GITHUB_(OUTPUT|ENV)\}?"?' "$TARGET_DIR" \
+    | awk 'BEGIN{FS=":"} { line=$0; sub(/^[[:space:]]+/,"",$3); if ($3 ~ /^#/) next; print line }' \
+    >"$tee_tmp" || true
 else
-  grep -REn 'tee\s+-a\s+"?\$\{?GITHUB_(OUTPUT|ENV)\}?"?' "$TARGET_DIR" >"$tee_tmp" || true
+  grep -REn 'tee\s+-a\s+"?\$\{?GITHUB_(OUTPUT|ENV)\}?"?' "$TARGET_DIR" \
+    | awk 'BEGIN{FS=":"} { line=$0; sub(/^[[:space:]]+/,"",$3); if ($3 ~ /^#/) next; print line }' \
+    >"$tee_tmp" || true
 fi
 
 if [ -s "$tee_tmp" ]; then
@@ -147,9 +151,13 @@ fi
 # Forbid deprecated ::set-output command
 setout_tmp="/tmp/_setoutput_offenders.$$"
 if command -v rg >/dev/null 2>&1; then
-  rg -n -S '::set-output\s+name=' "$TARGET_DIR" >"$setout_tmp" || true
+  rg -n -S '::set-output\s+name=' "$TARGET_DIR" \
+    | awk 'BEGIN{FS=":"} { line=$0; sub(/^[[:space:]]+/,"",$3); if ($3 ~ /^#/) next; print line }' \
+    >"$setout_tmp" || true
 else
-  grep -REn '::set-output\s+name=' "$TARGET_DIR" >"$setout_tmp" || true
+  grep -REn '::set-output\s+name=' "$TARGET_DIR" \
+    | awk 'BEGIN{FS=":"} { line=$0; sub(/^[[:space:]]+/,"",$3); if ($3 ~ /^#/) next; print line }' \
+    >"$setout_tmp" || true
 fi
 
 if [ -s "$setout_tmp" ]; then
