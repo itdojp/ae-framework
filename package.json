@@ -312,7 +312,8 @@
     "lint:workflows:nodocker": "pnpm -s ci:guard:all && echo \"(info) actionlint runs in CI (no Docker)\"",
     "ci:guard:suggest": "bash scripts/ci/echo-to-printf-suggest.sh",
     "ci:test:suggest": "bash scripts/ci/tests/test-suggest.sh",
-    "ci:test:guard:disable": "bash scripts/ci/tests/test-guard-disable.sh"
+    "ci:test:guard:disable": "bash scripts/ci/tests/test-guard-disable.sh",
+    "ci:test:suggest:unquoted": "bash scripts/ci/tests/test-suggest-unquoted.sh"
   },
   "dependencies": {
     "@ae-framework/spec-compiler": "file:./packages/spec-compiler",
