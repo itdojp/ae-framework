@@ -4,6 +4,8 @@ This document summarizes the Verify Lite baseline setup and how heavy jobs are g
 
 ## Baseline (always-on)
 - Triggers: `pull_request`, `push` to `main`, `workflow_dispatch`
+- Re-runs on PR label changes (`pull_request.types` includes `labeled`)
+- Concurrency: `verify-lite-${{ github.ref }}` with cancel-in-progress to avoid overlap
 - Steps (minimal):
   - Type check: `pnpm types:check`
   - Lint (non-blocking): `pnpm lint || true`
