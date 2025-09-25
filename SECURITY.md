@@ -64,6 +64,10 @@ Policy: report-only (apply `enforce-security` to gate)
 Links: .github/workflows/sbom-generation.yml, docs/ci-policy.md
 ```
 
+References
+- CI policy (label/path gating, Verify Lite defaults): `docs/ci-policy.md`
+- Slash command mappings: `.github/workflows/agent-commands.yml`
+
 ### Security Measures
 
 Automated Security Scanning
@@ -389,3 +393,7 @@ Moderate: 1（許容: SEC_MAX_MODERATE=2）
 Policy: report-only（`enforce-security` を付与するとゲート）
 Links: .github/workflows/sbom-generation.yml, docs/ci-policy.md
 ```
+
+参考
+- CIポリシー（ラベル/パス制御・Verify Lite 既定）: `docs/ci-policy.md`
+- スラッシュコマンド対応表: `.github/workflows/agent-commands.yml`
