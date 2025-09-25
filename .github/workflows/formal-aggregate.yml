@@ -147,6 +147,8 @@ jobs:
           lines.unshift(digest);
           lines.push('### Presence');
           lines.push(`Present: ${presentCount}/5${presentCount? ` (${presentKeys.join(', ')})` : ''}`);
+          const pf = (k) => present[k] ? '✓' : '–';
+          lines.push(`Presence flags: tla=${pf('tla')} alloy=${pf('alloy')} smt=${pf('smt')} apalache=${pf('apalache')} conformance=${pf('conformance')}`);
           // Alloy temporal operator presence (if summary includes it)
           try {
             const t = alloyS && alloyS.temporal;
