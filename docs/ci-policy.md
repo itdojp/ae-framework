@@ -11,6 +11,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 ### Quickstart (local verification)
 - `corepack enable && pnpm i && pnpm -s build && pnpm run test:fast`
   - Use this for pre‑PR sanity checks aligned with Verify Lite.
+  - Optional (local security scan): `pnpm -s security:scan`
 
 ### Verify Lite defaults
 - PRs block only on Verify Lite (types:check / build). Lint runs in Verify Lite but is non‑blocking.
@@ -200,6 +201,7 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 ### クイックスタート（ローカル検証）
 - `corepack enable && pnpm i && pnpm -s build && pnpm run test:fast`
   - PR 前の健全性チェックとして Verify Lite と整合。
+  - 任意（ローカルセキュリティスキャン）: `pnpm -s security:scan`
 
 ### Verify Lite（既定）
 - PR では Verify Lite（types:check / build）のみブロッキング。lint は Verify Lite 内で実行するが非ブロッキング。
