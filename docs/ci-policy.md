@@ -48,8 +48,8 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - `run-quality`: enable quality matrix in parallel tests
 - `run-flake`: enable flake-detection on PRs
  - `run-e2e`: enable E2E tests on PRs
-  - `run-formal`: enable Formal Verify and aggregate report on PRs (report-only by default); see `docs/quality/formal-runbook.md`
-  - `enforce-formal` / `enforce-contracts`: enforce gates for formal/contract checks (label-gated)
+ - `run-formal`: enable Formal Verify and aggregate report on PRs (report-only by default); see `docs/quality/formal-runbook.md`
+ - `enforce-formal` / `enforce-contracts`: enforce gates for formal/contract checks (label-gated)
 - `run-adapters`: report Adapter Thresholds (a11y/perf/Lighthouse) in PRs (report-only). See `.github/workflows/adapter-thresholds.yml` and `docs/quality/adapter-thresholds.md`.
 - `coverage:<pct>`: override coverage threshold for coverage-check (default 80). e.g., `coverage:75`
   - Use `/coverage <pct|clear>` to set/clear on a PR
