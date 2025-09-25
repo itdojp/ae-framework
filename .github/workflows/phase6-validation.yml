@@ -1,7 +1,11 @@
 name: Phase 6 UI/UX Quality Gates
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
     paths: ['src/ui/**', 'examples/**', 'packages/ui/**', 'apps/web/**']
+concurrency:
+  group: phase6-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   accessibility-audit:
