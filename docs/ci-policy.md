@@ -236,7 +236,8 @@ jobs:
 - In emergencies, use `ci-non-blocking` to avoid blocking PRs
 - After merge, comprehensive CI on main (nightly/weekly) provides coverage
 - Keep required checks centered on Verify Lite; others non-required by default
- - For small PR batches, consider adding `ci-non-blocking` to reduce blocking during iteration
+- For small PR batches, consider adding `ci-non-blocking` to reduce blocking during iteration
+- Note: `ci-non-blocking` does not bypass required checks; those remain enforced by branch protection
 
 ### References
 - Agent collaboration rules and CI label policies: `AGENTS.md`
@@ -464,7 +465,8 @@ jobs:
 - 緊急時は `ci-non-blocking` ラベルで PR をブロックしない運用に切替可能
 - マージ後は main の包括的 CI（夜間/週次）でカバー
 - 必須チェックは基本 Verify Lite を中心に、その他は非必須
- - 小PR連投時は `ci-non-blocking` の活用を推奨（反復を阻害しない）
+- 小PR連投時は `ci-non-blocking` の活用を推奨（反復を阻害しない）
+- 注意: `ci-non-blocking` は Required checks を回避しません。ブランチ保護により必須のチェックは引き続き強制されます
 
 ### 参考
 - 運用ルールとCIラベルポリシー: `AGENTS.md`
