@@ -1,8 +1,12 @@
 name: testing-ddd-scripts
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
   push:
     branches: [ main ]
+concurrency:
+  group: testing-ddd-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
