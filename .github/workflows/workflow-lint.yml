@@ -21,3 +21,8 @@ jobs:
             printf "%s\n" "Unresolved merge markers found in workflows" >&2
             exit 1
           fi
+      - name: Workflow Lint (summary)
+        if: always()
+        run: |
+          printf "\n## 🧩 Workflow Lint\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- Concurrency: workflow-lint-${{ github.ref }} (cancel in progress)\n" >> "$GITHUB_STEP_SUMMARY" || true
