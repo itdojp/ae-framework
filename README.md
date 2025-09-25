@@ -1,6 +1,7 @@
 # ae-framework: AI-Agent Enabled Framework
 
 [![validate-artifacts-ajv](https://github.com/itdojp/ae-framework/actions/workflows/validate-artifacts-ajv.yml/badge.svg)](https://github.com/itdojp/ae-framework/actions/workflows/validate-artifacts-ajv.yml)
+[![workflow-lint](https://github.com/itdojp/ae-framework/actions/workflows/workflow-lint.yml/badge.svg)](https://github.com/itdojp/ae-framework/actions/workflows/workflow-lint.yml)
 [![testing-ddd-scripts](https://github.com/itdojp/ae-framework/actions/workflows/testing-ddd-scripts.yml/badge.svg)](https://github.com/itdojp/ae-framework/actions/workflows/testing-ddd-scripts.yml)
 [![coverage-check](https://github.com/itdojp/ae-framework/actions/workflows/coverage-check.yml/badge.svg)](https://github.com/itdojp/ae-framework/actions/workflows/coverage-check.yml)
 [![pr-summary-comment](https://github.com/itdojp/ae-framework/actions/workflows/pr-summary-comment.yml/badge.svg)](https://github.com/itdojp/ae-framework/actions/workflows/pr-summary-comment.yml)
