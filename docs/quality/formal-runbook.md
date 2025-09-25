@@ -239,6 +239,11 @@ Keys quick reference（aggregate JSON）
 - `info.ranOk.apalache`: `{ ran: boolean, ok: boolean|null }`（null は不確定）
   - jq 例: `jq '.info.ranOk.apalache' artifacts/formal/formal-aggregate.json`
 
+### CIサマリ（GitHub Step Summary）
+- `formal-aggregate.yml` は実行後に `$GITHUB_STEP_SUMMARY` に簡易サマリを追記します。
+  - 例: `Present: 3/5`、`Header: <!-- AE-FORMAL-AGGREGATE --> (upsert on pull_request with label run-formal)`
+  - 目的: レビュー時にArtifactsを開かずに presence と投稿条件を素早く確認するため。
+
 ### Idempotency（重複防止）
 - 集約コメントは固定ヘッダ `<!-- AE-FORMAL-AGGREGATE -->` によりアップサートされます。同一ヘッダのコメントは上書き更新され、再実行や同期でも重複投稿されません。
 
