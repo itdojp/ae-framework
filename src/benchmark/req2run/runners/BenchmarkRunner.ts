@@ -11,7 +11,8 @@ import type {
   PhaseExecution,
   ExecutionDetails,
   GeneratedArtifacts,
-  BenchmarkError
+  BenchmarkError,
+  ExecutionLog
 } from '../types/index.js';
 import { AEFrameworkPhase, OutputType, BenchmarkCategory, DifficultyLevel, TestType } from '../types/index.js';
 import os from 'node:os';
@@ -45,6 +46,7 @@ export class BenchmarkRunner {
     const startTime = new Date();
     const phaseExecutions: PhaseExecution[] = [];
     const errors: BenchmarkError[] = [];
+    const logs: ExecutionLog[] = [];
     let generatedArtifacts: GeneratedArtifacts = this.initializeArtifacts();
 
     try {
@@ -73,7 +75,8 @@ export class BenchmarkRunner {
           })
         ),
         phaseExecutions,
-        errors
+        errors,
+        logs
       );
 
       const requirements = await this.executePhase(
@@ -84,7 +87,8 @@ export class BenchmarkRunner {
           '\n\nConstraints:\n' + JSON.stringify(spec.constraints, null, 2)
         ),
         phaseExecutions,
-        errors
+        errors,
+        logs
       );
 
       const userStories = await this.executePhase(
@@ -93,14 +97,16 @@ export class BenchmarkRunner {
           requirements.processedRequirements || requirements.naturalLanguageRequirements || JSON.stringify(requirements)
         ),
         phaseExecutions,
-        errors
+        errors,
+        logs
       );
 
       const validation = await this.executePhase(
         AEFrameworkPhase.VALIDATION,
         () => this.validationAgent.validateUserStories(userStories),
         phaseExecutions,
-        errors
+        errors,
+        logs
       );
 
       const domainModel = await this.executePhase(
@@ -116,7 +122,8 @@ export class BenchmarkRunner {
           }
         }),
         phaseExecutions,
-        errors
+        errors,
+        logs
       );
 
       // TODO: Implement UI/UX generation phase
@@ -124,11 +131,12 @@ export class BenchmarkRunner {
         AEFrameworkPhase.UI_UX_GENERATION,
         () => this.generateUIUX(domainModel),
         phaseExecutions,
-        errors
+        errors,
+        logs
       );
 
       // Collect generated artifacts
-      generatedArtifacts = await this.collectArtifacts(application);
+      generatedArtifacts = await this.collectArtifacts(application, phaseExecutions);
 
       // Evaluate the result
       const metrics = await this.evaluateResult(application, spec, phaseExecutions);
@@ -140,7 +148,7 @@ export class BenchmarkRunner {
         totalDuration: endTime.getTime() - startTime.getTime(),
         phaseExecutions,
         environment: await this.getExecutionEnvironment(),
-        logs: [] // TODO: Implement logging
+        logs
       };
 
       return {
@@ -175,7 +183,7 @@ export class BenchmarkRunner {
           totalDuration: endTime.getTime() - startTime.getTime(),
           phaseExecutions,
           environment: await this.getExecutionEnvironment(),
-          logs: []
+          logs
         },
         generatedArtifacts,
         errors
@@ -220,9 +228,18 @@ export class BenchmarkRunner {
     phase: AEFrameworkPhase,
     executor: () => Promise<T>,
     phaseExecutions: PhaseExecution[],
-    errors: BenchmarkError[]
+    errors: BenchmarkError[],
+    logs: ExecutionLog[]
   ): Promise<T> {
     const startTime = new Date();
+    // log phase start
+    logs.push({
+      timestamp: new Date().toISOString(),
+      level: 'info',
+      phase,
+      message: 'phase:start',
+      context: { phase }
+    });
     
     try {
       const input = this.getPhaseInput(phase, phaseExecutions);
@@ -237,6 +254,15 @@ export class BenchmarkRunner {
         input,
         output,
         success: true
+      });
+
+      // log phase success
+      logs.push({
+        timestamp: new Date().toISOString(),
+        level: 'info',
+        phase,
+        message: 'phase:success',
+        context: { phase, duration: endTime.getTime() - startTime.getTime() }
       });
 
       return output;
@@ -263,6 +289,15 @@ export class BenchmarkRunner {
         timestamp: new Date()
       };
       errors.push(benchmarkError);
+
+      // log phase failure
+      logs.push({
+        timestamp: new Date().toISOString(),
+        level: 'error',
+        phase,
+        message: 'phase:error',
+        context: { phase, error: errorMessage }
+      });
 
       throw error;
     }
@@ -436,7 +471,7 @@ export class BenchmarkRunner {
       performance: {
         responseTime,
         throughput,
-        memoryUsage: process.memoryUsage().heapUsed,
+        memoryUsage: Math.round(process.memoryUsage().heapUsed / (1024 * 1024)),
         cpuUsage: 0,
         diskUsage: 0
       },
@@ -458,7 +493,7 @@ export class BenchmarkRunner {
       },
       timeToCompletion: totalDuration,
       resourceUsage: {
-        maxMemoryUsage: process.memoryUsage().heapTotal,
+        maxMemoryUsage: Math.round(process.memoryUsage().heapTotal / (1024 * 1024)),
         avgCpuUsage: 0,
         diskIO: 0,
         networkIO: 0,
@@ -486,9 +521,45 @@ export class BenchmarkRunner {
   /**
    * Collect generated artifacts from the application
    */
-  private async collectArtifacts(application: unknown): Promise<GeneratedArtifacts> {
-    // TODO: Implement artifact collection
-    return this.initializeArtifacts();
+  private async collectArtifacts(application: unknown, phaseExecutions: PhaseExecution[]): Promise<GeneratedArtifacts> {
+    // Honor config: if artifact generation is disabled, return empty structure
+    if (!this.config?.evaluation?.generateArtifacts) {
+      return this.initializeArtifacts();
+    }
+
+    const artifacts = this.initializeArtifacts();
+
+    try {
+      // Minimal documentation artifacts summarizing the run
+      const summaryMd = [
+        '# AE Framework Benchmark Artifacts',
+        '',
+        '## Phase Summary',
+        ...phaseExecutions.map(p => `- ${p.phase}: ${p.success ? '✅ success' : '❌ fail'} (${p.duration ?? 0}ms)`)
+      ].join('\n');
+
+      artifacts.documentation.push({
+        filename: 'phase-summary.md',
+        content: summaryMd,
+        type: 'architecture',
+        format: 'markdown'
+      });
+
+      // Include the generated application (or domain model placeholder) as JSON documentation
+      artifacts.documentation.push({
+        filename: 'application-output.json',
+        content: (() => {
+          try { return JSON.stringify(application ?? null, null, 2); } catch { return String(application); }
+        })(),
+        type: 'api',
+        format: 'markdown' // keep as text; format field requires one of the union, we choose markdown for portability
+      });
+
+      return artifacts;
+    } catch {
+      // In case of any failure, return at least an empty structure
+      return this.initializeArtifacts();
+    }
   }
 
   /**
