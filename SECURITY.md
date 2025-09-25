@@ -48,7 +48,8 @@ We take security vulnerabilities seriously. If you discover a security issue, pl
 - Labels:
   - `run-security` — opt-in Security/SBOM execution on PRs (posts a non-blocking summary comment)
   - `enforce-security` — enforce thresholds (blocking when limits exceeded)
-  - `ci-non-blocking` — continue-on-error for selected jobs when troubleshooting
+- `ci-non-blocking` — continue-on-error for selected jobs when troubleshooting
+  - Many security jobs honor this by setting `continue-on-error` when the label is present on PRs
   - Slash commands: `/run-security`, `/enforce-security` (see `.github/workflows/agent-commands.yml`)
   - Dispatch: `/run-security-dispatch` — triggers `sbom-generation.yml` on the PR head branch
   - Artifacts: `security-report`, `license-report` (default retention ~30 days)
