@@ -1127,6 +1127,66 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
     expect(out).toContain('Threshold (effective): 80%');
   });
 
+  it('accepts space before colon in label (coverage :85)', () => {
+    const cwd = process.cwd();
+    const covDir = join(cwd, 'coverage');
+    try { mkdirSync(covDir, { recursive: true }); } catch {}
+    const covPath = join(covDir, 'coverage-summary.json');
+    writeFileSync(covPath, JSON.stringify({ total: { lines: { pct: 90 } } }), 'utf8');
+
+    const event = {
+      pull_request: { number: 164, labels: [ { name: 'coverage :85' } ] },
+      ref: 'refs/heads/feature/space-before-colon'
+    };
+    const eventPath = join(cwd, 'tmp-gh-event-space-before-colon.json');
+    writeFileSync(eventPath, JSON.stringify(event), 'utf8');
+
+    const env = {
+      ...process.env,
+      GITHUB_TOKEN: 'test-token',
+      GITHUB_REPOSITORY: 'owner/repo',
+      GITHUB_EVENT_NAME: 'pull_request',
+      GITHUB_EVENT_PATH: eventPath,
+      AE_COVERAGE_DRY_RUN: '1'
+    } as NodeJS.ProcessEnv;
+
+    const res = spawnSync('node', ['scripts/coverage/pr-coverage-summary.mjs'], { cwd, env, encoding: 'utf8' });
+    expect(res.status).toBe(0);
+    const out = res.stdout || '';
+    expect(out).toContain('Threshold (effective): 85%');
+    expect(out).toContain('- via label: coverage :85');
+  });
+
+  it('accepts case-insensitive label with space and percent (COVERAGE : 90 %)', () => {
+    const cwd = process.cwd();
+    const covDir = join(cwd, 'coverage');
+    try { mkdirSync(covDir, { recursive: true }); } catch {}
+    const covPath = join(covDir, 'coverage-summary.json');
+    writeFileSync(covPath, JSON.stringify({ total: { lines: { pct: 95 } } }), 'utf8');
+
+    const event = {
+      pull_request: { number: 165, labels: [ { name: 'COVERAGE : 90 %' } ] },
+      ref: 'refs/heads/feature/space-and-percent'
+    };
+    const eventPath = join(cwd, 'tmp-gh-event-space-and-percent.json');
+    writeFileSync(eventPath, JSON.stringify(event), 'utf8');
+
+    const env = {
+      ...process.env,
+      GITHUB_TOKEN: 'test-token',
+      GITHUB_REPOSITORY: 'owner/repo',
+      GITHUB_EVENT_NAME: 'pull_request',
+      GITHUB_EVENT_PATH: eventPath,
+      AE_COVERAGE_DRY_RUN: '1'
+    } as NodeJS.ProcessEnv;
+
+    const res = spawnSync('node', ['scripts/coverage/pr-coverage-summary.mjs'], { cwd, env, encoding: 'utf8' });
+    expect(res.status).toBe(0);
+    const out = res.stdout || '';
+    expect(out).toContain('Threshold (effective): 90%');
+    expect(out).toContain('- via label: COVERAGE : 90 %');
+  });
+
   it('accepts boundary label value 0', () => {
     const cwd = process.cwd();
     const covDir = join(cwd, 'coverage');

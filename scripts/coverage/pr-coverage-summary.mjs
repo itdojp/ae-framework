@@ -90,7 +90,13 @@ if (!fs.existsSync(eventPath)) {
   console.log('No event payload; skipping PR comment');
   process.exit(0);
 }
-const payload = JSON.parse(fs.readFileSync(eventPath, 'utf-8'));
+let payload;
+try {
+  payload = JSON.parse(fs.readFileSync(eventPath, 'utf-8'));
+} catch (e) {
+  console.log('Warning: failed to parse event payload; skipping PR comment');
+  process.exit(0);
+}
 // Fallback owner/repo from event payload when env is missing
 if (!owner || !repo) {
   const full = payload?.repository?.full_name;
@@ -122,7 +128,7 @@ const labelsLower = labels.map(n => (typeof n === 'string' ? n.toLowerCase() : '
 // Prefer the last coverage:<pct> label if multiple are present
 const covLabel = [...labels].reverse().find(n => {
   if (typeof n !== 'string') return false;
-  return n.toLowerCase().startsWith('coverage:');
+  return /^coverage\s*:/i.test(n);
 }) || null;
 let covLabelValStr = covLabel ? String(covLabel.split(':')[1] || '').trim() : '';
 const covLabelValNum = covLabelValStr !== '' ? parseNumToken(covLabelValStr) : NaN;
