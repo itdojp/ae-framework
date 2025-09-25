@@ -151,6 +151,22 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
  - Examples (security): changes to `**/package.json`, `pnpm-lock.yaml`, `security/**` may trigger security workflows
  - Configure in workflows via `on.pull_request.paths` and/or `if: contains(github.event.pull_request.labels.*.name, 'label')`
  - Override via labels when needed: e.g., add `run-spec` or `run-security` to force execution regardless of path filters
+ 
+Examples (YAML)
+```
+# Path-gate spec validation
+on:
+  pull_request:
+    paths:
+      - 'spec/**'
+
+# Label-gate security job
+jobs:
+  security:
+    if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'run-security') }}
+    steps:
+      - run: echo 'run security steps...'
+```
 
 ### test:fast (Fast CI suite)
 - Purpose: verify resilience/core units and lightweight integration quickly; exclude heavy/env-dependent tests
@@ -292,6 +308,22 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
  - 例（セキュリティ）: `**/package.json` や `pnpm-lock.yaml`、`security/**` の変更でセキュリティ系が発火対象
  - 設定方法: ワークフローの `on.pull_request.paths` または `if: contains(github.event.pull_request.labels.*.name, 'label')` を利用
  - ラベルでの上書き: 必要に応じて `run-spec` / `run-security` を付与し、パス条件に関わらず実行を強制可能
+ 
+例（YAML）
+```
+# パスで spec 検証をゲート
+on:
+  pull_request:
+    paths:
+      - 'spec/**'
+
+# ラベルでセキュリティをゲート
+jobs:
+  security:
+    if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'run-security') }}
+    steps:
+      - run: echo 'run security steps...'
+```
 
 ### test:fast（高速CIスイート）
 - 目的: Resilience/主要ユニットと軽量統合を即時検証。重い/環境依存テストは除外
