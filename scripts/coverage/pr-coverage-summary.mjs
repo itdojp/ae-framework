@@ -103,12 +103,15 @@ if (typeof pctStmts !== 'undefined') parts.push(`statements=${pctStmts}%`);
 if (parts.length) lines.push(`Metrics: ${parts.join(', ')}`);
 lines.push(`Threshold (effective): ${effTh}%`);
 // Gate status (informational)
-if (isFinite(pctNum) && isFinite(effNumeric)) {
-  const ok = pctNum >= effNumeric;
-  const cmp = ok ? '>=' : '<';
-  const mode = ` ${strict ? '[blocking]' : '[non-blocking]'}`;
-  lines.push(`Gate: ${ok ? 'OK' : 'BELOW'} (${fmtPct(pctNum)}% ${cmp} ${effTh}%)${mode}`);
-}
+  if (isFinite(pctNum) && isFinite(effNumeric)) {
+    const ok = pctNum >= effNumeric;
+    const cmp = ok ? '>=' : '<';
+    const mode = ` ${strict ? '[blocking]' : '[non-blocking]'}`;
+    lines.push(`Gate: ${ok ? 'OK' : 'BELOW'} (${fmtPct(pctNum)}% ${cmp} ${effTh}%)${mode}`);
+    if (!ok) {
+      lines.push('Action: add tests to raise coverage or adjust threshold via /coverage <pct>');
+    }
+  }
 if (covLabel) {
   if (hasValidLabel) lines.push(`- via label: ${covLabel}`);
   else lines.push(`- via label: ${covLabel} (invalid, ignored)`);
