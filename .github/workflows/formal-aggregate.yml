@@ -124,6 +124,10 @@ jobs:
           const presentKeys = order.filter(k => present[k]);
           const presentCount = presentKeys.length;
           const apLine = apalacheSum && apalache ? `ran=${apalache.ran? 'yes':'no'} ok=${apalache.ok==null? 'n/a': (apalache.ok? 'yes':'no')}` : 'n/a';
+          // Optional one-line digest at the top for quick glance
+          const digest = `Formal aggregate: Present ${presentCount}/5${presentCount ? ` (${presentKeys.join(', ')})` : ''} | Apalache ${apLine}`;
+          lines.unshift("");
+          lines.unshift(digest);
           lines.push('### Presence');
           lines.push(`Present: ${presentCount}/5${presentCount? ` (${presentKeys.join(', ')})` : ''}`);
           // Alloy temporal operator presence (if summary includes it)
