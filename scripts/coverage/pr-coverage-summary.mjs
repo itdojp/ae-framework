@@ -84,6 +84,9 @@ const covLabel = [...labels].reverse().find(n => {
   return n.toLowerCase().startsWith('coverage:');
 }) || null;
 let covLabelValStr = covLabel ? String(covLabel.split(':')[1] || '').trim() : '';
+if (covLabelValStr.endsWith('%')) {
+  covLabelValStr = covLabelValStr.slice(0, -1).trim();
+}
 const covLabelValNum = covLabelValStr !== '' ? Number(covLabelValStr) : NaN;
 const hasValidLabel = isFinite(covLabelValNum) && covLabelValNum >= 0 && covLabelValNum <= 100;
 const effNumeric = hasValidLabel ? covLabelValNum : defTh;
