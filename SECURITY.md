@@ -49,6 +49,7 @@ We take security vulnerabilities seriously. If you discover a security issue, pl
   - `run-security` — opt-in Security/SBOM execution on PRs (posts a non-blocking summary comment)
   - `enforce-security` — enforce thresholds (blocking when limits exceeded)
   - `ci-non-blocking` — continue-on-error for selected jobs when troubleshooting
+- Slash commands: `/run-security`, `/enforce-security` (see `.github/workflows/agent-commands.yml`)
 - Thresholds are configurable via repository variables:
   - `SECURITY_MAX_HIGH` (default 0): allowed High/Critical vulnerabilities
   - `SECURITY_MAX_MODERATE` (default 2): allowed Moderate vulnerabilities
@@ -379,6 +380,7 @@ Next Review / 次回見直し: July 2025
   - `run-security` — PR で Security/SBOM を実行（非ブロッキングの要約コメントを投稿）
   - `enforce-security` — 閾値を強制（超過時はブロック）
   - `ci-non-blocking` — トラブルシュート時などに continue-on-error で一部ジョブを非ブロッキング化
+- スラッシュコマンド: `/run-security`, `/enforce-security`（`.github/workflows/agent-commands.yml` を参照）
 - 閾値はリポジトリ変数で制御できます。
   - `SECURITY_MAX_HIGH`（既定 0）: High 以上の許容数
   - `SECURITY_MAX_MODERATE`（既定 2）: Moderate の許容数

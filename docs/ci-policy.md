@@ -189,6 +189,7 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 - `run-flake`: flake-detection を PR で有効化
 - `run-e2e`: E2E テストを PR で有効化
 - `coverage:<pct>`: coverage-check のしきい値を上書き（既定 80）。例: `coverage:75`
+  - PR での設定/クリア: `/coverage <pct|clear>`
  - `run-formal`: PR で Formal Verify と集約レポートを実行（既定は report-only）。`docs/quality/formal-runbook.md` を参照
  - `enforce-formal` / `enforce-contracts`: フォーマル/契約チェックのゲート化を有効化（ラベル制御）
 
