@@ -318,7 +318,8 @@
     "ci:test:suggest:help": "bash scripts/ci/tests/test-suggest-help.sh",
     "ci:test:suggest:all": "pnpm -s ci:test:suggest && pnpm -s ci:test:suggest:unquoted && pnpm -s ci:test:suggest:comments && pnpm -s ci:test:suggest:help",
     "ci:test:guard:all": "pnpm -s ci:test:guard && pnpm -s ci:test:guard:disable",
-    "lint:workflows:all": "bash scripts/ci/workflow-lint-all.sh"
+    "lint:workflows:all": "bash scripts/ci/workflow-lint-all.sh",
+    "ci:test:policy:all": "pnpm -s ci:test:guard:all && pnpm -s ci:test:suggest:all"
   },
   "dependencies": {
     "@ae-framework/spec-compiler": "file:./packages/spec-compiler",
