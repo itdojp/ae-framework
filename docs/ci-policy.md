@@ -150,6 +150,7 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 - Workflows: `.github/workflows/fail-fast-spec-validation.yml` (spec), `.github/workflows/sbom-generation.yml` (security)
  - Examples (security): changes to `**/package.json`, `pnpm-lock.yaml`, `security/**` may trigger security workflows
  - Configure in workflows via `on.pull_request.paths` and/or `if: contains(github.event.pull_request.labels.*.name, 'label')`
+ - Override via labels when needed: e.g., add `run-spec` or `run-security` to force execution regardless of path filters
 
 ### test:fast (Fast CI suite)
 - Purpose: verify resilience/core units and lightweight integration quickly; exclude heavy/env-dependent tests
@@ -290,6 +291,7 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 - 対応ワークフロー: `.github/workflows/fail-fast-spec-validation.yml`（仕様）, `.github/workflows/sbom-generation.yml`（セキュリティ）
  - 例（セキュリティ）: `**/package.json` や `pnpm-lock.yaml`、`security/**` の変更でセキュリティ系が発火対象
  - 設定方法: ワークフローの `on.pull_request.paths` または `if: contains(github.event.pull_request.labels.*.name, 'label')` を利用
+ - ラベルでの上書き: 必要に応じて `run-spec` / `run-security` を付与し、パス条件に関わらず実行を強制可能
 
 ### test:fast（高速CIスイート）
 - 目的: Resilience/主要ユニットと軽量統合を即時検証。重い/環境依存テストは除外
