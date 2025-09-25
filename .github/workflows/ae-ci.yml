@@ -11,6 +11,7 @@ on:
       - 'src/**'
     tags: ['v*']
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
   workflow_dispatch:
 
 jobs:
