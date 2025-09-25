@@ -255,6 +255,8 @@ jobs:
    - `COVERAGE_DEFAULT_THRESHOLD`, `COVERAGE_ENFORCE_MAIN`
    - `PERF_DEFAULT_THRESHOLD`, `LH_DEFAULT_THRESHOLD`
  - PR summary env/toggles: `docs/ci/summary-env.md`
+ - Adapters thresholds: `docs/quality/adapter-thresholds.md`
+ - Cedar quality gates: `docs/quality/cedar-quality-gates.md`
 
 ### PR author checklist (quick)
 - Run Quickstart locally (`build` + `test:fast`); add `types:check` / `security:scan` as needed
@@ -490,6 +492,8 @@ jobs:
    - `COVERAGE_DEFAULT_THRESHOLD`, `COVERAGE_ENFORCE_MAIN`
    - `PERF_DEFAULT_THRESHOLD`, `LH_DEFAULT_THRESHOLD`
  - PRサマリの環境/切替: `docs/ci/summary-env.md`
+ - Adapters しきい値: `docs/quality/adapter-thresholds.md`
+ - Cedar 品質ゲート: `docs/quality/cedar-quality-gates.md`
  
 ### PR作成者チェックリスト（クイック）
 - ローカルで Quickstart を実行（`build` + `test:fast`）。必要なら `types:check` / `security:scan` も追加
