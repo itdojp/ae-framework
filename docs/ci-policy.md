@@ -177,7 +177,7 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
   - PR 前の健全性チェックとして Verify Lite と整合。
 
 ### Verify Lite（既定）
-- PR では Verify Lite（types:check / build / fast tests）のみブロッキング。
+- PR では Verify Lite（types:check / build）のみブロッキング。lint は Verify Lite 内で実行するが非ブロッキング。
 - 重いジョブはラベル/パス条件でオプトイン実行。
 
 ### actionlint と printf ポリシー
