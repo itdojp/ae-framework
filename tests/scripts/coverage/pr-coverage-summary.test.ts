@@ -367,6 +367,39 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
     expect(out).toContain('- default: 80%');
   });
 
+  it('falls back to default when both label and repo var are invalid', () => {
+    const cwd = process.cwd();
+    const covDir = join(cwd, 'coverage');
+    try { mkdirSync(covDir, { recursive: true }); } catch {}
+    const covPath = join(covDir, 'coverage-summary.json');
+    writeFileSync(covPath, JSON.stringify({ total: { lines: { pct: 78 } } }), 'utf8');
+
+    const event = {
+      pull_request: { number: 150, labels: [ { name: 'coverage:xyz' } ] },
+      ref: 'refs/heads/feature/both-invalid'
+    };
+    const eventPath = join(cwd, 'tmp-gh-event-both-invalid.json');
+    writeFileSync(eventPath, JSON.stringify(event), 'utf8');
+
+    const env = {
+      ...process.env,
+      GITHUB_TOKEN: 'test-token',
+      GITHUB_REPOSITORY: 'owner/repo',
+      GITHUB_EVENT_NAME: 'pull_request',
+      GITHUB_EVENT_PATH: eventPath,
+      AE_COVERAGE_DRY_RUN: '1',
+      COVERAGE_DEFAULT_THRESHOLD: 'abc'
+    } as NodeJS.ProcessEnv;
+
+    const res = spawnSync('node', ['scripts/coverage/pr-coverage-summary.mjs'], { cwd, env, encoding: 'utf8' });
+    expect(res.status).toBe(0);
+    const out = res.stdout || '';
+    expect(out).toContain('- via label: coverage:xyz (invalid, ignored)');
+    expect(out).toContain('- repo var: COVERAGE_DEFAULT_THRESHOLD=n/a% (invalid, ignored)');
+    expect(out).toContain('Threshold (effective): 80%');
+    expect(out).toMatch(/Gate: (OK|BELOW) \(78% (>=|<) 80%\)/);
+  });
+
   it('uses repo var when label invalid but repo var valid', () => {
     const cwd = process.cwd();
     const covDir = join(cwd, 'coverage');
