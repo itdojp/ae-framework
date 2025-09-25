@@ -172,6 +172,9 @@ gh pr view <pr-number> --json comments --jq '.comments[].body | select(startswit
   - `present_count`: integer (0..5)
   - `present_keys`: CSV (ordered keys present)
   - `aggregate_json_present`: `true|false`
+  - `comment_action`: `created|updated|skipped`
+  - `comment_url`: URL of the PR comment (when created/updated)
+  - `comment_reason`: reason when skipped (e.g., `no-md`, `no-json`, `unchanged`)
 
 ## Dispatch via GitHub CLI (artifacts only)
 

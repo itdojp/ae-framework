@@ -12,6 +12,13 @@ permissions:
 
 jobs:
   aggregate:
+    outputs:
+      present_count: ${{ steps.export.outputs.present_count }}
+      present_keys: ${{ steps.export.outputs.present_keys }}
+      aggregate_json_present: ${{ steps.export.outputs.aggregate_json_present }}
+      comment_action: ${{ steps.comment.outputs.comment_action }}
+      comment_url: ${{ steps.comment.outputs.comment_url }}
+      comment_reason: ${{ steps.comment.outputs.comment_reason }}
     if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run-formal')
     runs-on: ubuntu-latest
     continue-on-error: true
