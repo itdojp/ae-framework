@@ -309,7 +309,8 @@
     "lint:workflows": "bash scripts/ci/workflow-lint-all.sh",
     "ci:test:guard": "bash scripts/ci/tests/test-guard.sh",
     "ci:guard:all": "pnpm -s ci:guard:github-outputs && pnpm -s ci:test:guard",
-    "lint:workflows:nodocker": "pnpm -s ci:guard:all && echo \"(info) actionlint runs in CI (no Docker)\""
+    "lint:workflows:nodocker": "pnpm -s ci:guard:all && echo \"(info) actionlint runs in CI (no Docker)\"",
+    "ci:guard:suggest": "bash scripts/ci/echo-to-printf-suggest.sh"
   },
   "dependencies": {
     "@ae-framework/spec-compiler": "file:./packages/spec-compiler",
