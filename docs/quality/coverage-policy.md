@@ -34,6 +34,12 @@ References
 - Workflow: `.github/workflows/coverage-check.yml`
 - Slash commands: see `AGENTS.md` and `docs/ci-policy.md`
 
+### Development (local verify)
+- Dry-run the summary composer locally without posting to GitHub:
+  - `AE_COVERAGE_DRY_RUN=1 GITHUB_TOKEN=dummy GITHUB_REPOSITORY=owner/repo GITHUB_EVENT_NAME=pull_request GITHUB_EVENT_PATH=event.json node scripts/coverage/pr-coverage-summary.mjs`
+  - The script searches for coverage JSON at `coverage/coverage-summary.json` (then `artifacts/coverage/coverage-summary.json`).
+  - Label parsing rules: last-wins, accepts 0–100, trims `%` and spaces, case-insensitive `coverage:` prefix.
+
 ### FAQ
 - Q: PRで失敗するのはなぜ？（main以外）
   - A: 既定は report-only です。`/enforce-coverage` ラベルや main への push（+変数設定）以外では失敗しません。失敗している場合はスクリプトの continue-on-error 条件やしきい値導出の設定を確認してください。
