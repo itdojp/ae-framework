@@ -30,7 +30,11 @@ if (repoFull.includes('/')) {
 }
 const eventName = process.env['GITHUB_EVENT_NAME'] || '';
 const eventPath = process.env['GITHUB_EVENT_PATH'] || '';
-const defRaw = process.env['COVERAGE_DEFAULT_THRESHOLD'];
+let defRaw = process.env['COVERAGE_DEFAULT_THRESHOLD'];
+if (typeof defRaw === 'string') {
+  defRaw = defRaw.trim();
+  if (defRaw.endsWith('%')) defRaw = defRaw.slice(0, -1).trim();
+}
 const defTh = Number(defRaw || 80);
 const hasRepoVar = typeof defRaw !== 'undefined' && defRaw !== '';
 const repoVarIsNumeric = isFinite(defTh);

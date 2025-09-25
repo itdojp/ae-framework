@@ -303,6 +303,37 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
     expect(out).toContain('- default: 80%');
   });
 
+  it('accepts percent-suffixed repo var (COVERAGE_DEFAULT_THRESHOLD=85%)', () => {
+    const cwd = process.cwd();
+    const covDir = join(cwd, 'coverage');
+    try { mkdirSync(covDir, { recursive: true }); } catch {}
+    const covPath = join(covDir, 'coverage-summary.json');
+    writeFileSync(covPath, JSON.stringify({ total: { lines: { pct: 90 } } }), 'utf8');
+
+    const event = {
+      pull_request: { number: 151, labels: [] },
+      ref: 'refs/heads/feature/repovar-percent'
+    };
+    const eventPath = join(cwd, 'tmp-gh-event-repovar-percent.json');
+    writeFileSync(eventPath, JSON.stringify(event), 'utf8');
+
+    const env = {
+      ...process.env,
+      GITHUB_TOKEN: 'test-token',
+      GITHUB_REPOSITORY: 'owner/repo',
+      GITHUB_EVENT_NAME: 'pull_request',
+      GITHUB_EVENT_PATH: eventPath,
+      AE_COVERAGE_DRY_RUN: '1',
+      COVERAGE_DEFAULT_THRESHOLD: '85%'
+    } as NodeJS.ProcessEnv;
+
+    const res = spawnSync('node', ['scripts/coverage/pr-coverage-summary.mjs'], { cwd, env, encoding: 'utf8' });
+    expect(res.status).toBe(0);
+    const out = res.stdout || '';
+    expect(out).toContain('Threshold (effective): 85%');
+    expect(out).toContain('- repo var: COVERAGE_DEFAULT_THRESHOLD=85%');
+  });
+
   it('falls back to default when repo var is non-numeric', () => {
     const cwd = process.cwd();
     const covDir = join(cwd, 'coverage');
