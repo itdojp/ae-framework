@@ -320,18 +320,25 @@ jobs:
             const comments = await github.rest.issues.listComments({ owner, repo, issue_number: number, per_page: 100 });
             const mine = comments.data.find(c => c.body && c.body.startsWith('<!-- AE-FORMAL-AGGREGATE -->'));
             let action = 'skipped';
+            let url = '';
             if (mine && mine.body === body) {
               core.info('Aggregate unchanged; skipping update');
               action = 'skipped';
             } else if (mine) {
-              await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
+              const res = await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
+              url = res?.data?.html_url || '';
               action = 'updated';
             } else {
-              await github.rest.issues.createComment({ owner, repo, issue_number: number, body });
+              const res = await github.rest.issues.createComment({ owner, repo, issue_number: number, body });
+              url = res?.data?.html_url || '';
               action = 'created';
             }
             core.setOutput('comment_action', action);
+            if (url) core.setOutput('comment_url', url);
       - name: Append comment action to summary
         if: github.event_name == 'pull_request'
         run: |
           printf "Comment: %s\n" "${{ steps.comment.outputs.comment_action || 'n/a' }}" >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "${{ steps.comment.outputs.comment_url }}" ]; then \
+            printf "Comment URL: %s\n" "${{ steps.comment.outputs.comment_url }}" >> "$GITHUB_STEP_SUMMARY"; \
+          fi
