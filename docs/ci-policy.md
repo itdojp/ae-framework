@@ -170,6 +170,8 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
     - `/lh <pct|clear>` … `lh:<pct>` を設定/クリア（Lighthouse 性能スコアのしきい値）
     - `/enforce-typecov` … `enforce-typecov` を付与（型カバレッジ enforcement）
     - `/enforce-coverage` … `enforce-coverage` を付与（カバレッジ enforcement）
+    - `/enforce-perf` … `enforce-perf` を付与（性能スコア enforcement）
+    - `/enforce-lh` … `enforce-lh` を付与（Lighthouse 性能スコア enforcement）
   - 使い分け例（推奨）
     - 追加確認したいカテゴリのみラベル付与 → `/ci-fast-dispatch` で即時起動
     - Verify Lite のみを再実行 → `/verify-lite`
@@ -239,6 +241,11 @@ jobs:
  - Repository variables (quick ref):
    - `COVERAGE_DEFAULT_THRESHOLD`, `COVERAGE_ENFORCE_MAIN`
    - `PERF_DEFAULT_THRESHOLD`, `LH_DEFAULT_THRESHOLD`
+
+### Troubleshooting (quick)
+- Label not taking effect? Verify exact label name and that the workflow reads it (paths/if gates). Try a dispatch command to force-run.
+- Outputs not parsed? Ensure printf appends a trailing newline and uses the correct `key=value` or `key<<EOF` format.
+- Coverage label rejected? Use integers 0–100 without `%` (e.g., `coverage:85`).
 
 ---
 
@@ -449,6 +456,11 @@ jobs:
  - リポジトリ変数（クイックリファレンス）:
    - `COVERAGE_DEFAULT_THRESHOLD`, `COVERAGE_ENFORCE_MAIN`
    - `PERF_DEFAULT_THRESHOLD`, `LH_DEFAULT_THRESHOLD`
+ 
+### トラブルシューティング（クイック）
+- ラベルが効かない? ラベル名の一致とワークフローでの参照（paths/if）を確認。必要ならディスパッチで強制実行。
+- 出力が解析されない? printf の行末改行と `key=value` / `key<<EOF` 形式を確認。
+- カバレッジのラベルが拒否? 0〜100 の整数（`%` なし）で指定（例: `coverage:85`）。
 Examples (label combos)
 - Non‑blocking exploratory run: add `ci-non-blocking` + selected `run-*` labels
 - Security check (report-only): add `run-security` (optionally `ci-non-blocking`)
