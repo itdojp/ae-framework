@@ -208,6 +208,7 @@ jobs:
   - `Runbook: docs/quality/formal-runbook.md`
   - `Run: <workflow run URL>`
   - `Clamp: line=…, errors=…, snippet=…, wrap=…`
+  - `Label run-formal: yes|no`
   - `Comment: created|updated|skipped` (+ URL/reason when available)
 
 ### Comment skip reasons (reference)
