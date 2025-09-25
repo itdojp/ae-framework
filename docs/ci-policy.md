@@ -64,6 +64,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
     - `/coverage <pct|clear>` … `coverage:<pct>` を設定/クリア（しきい値上書き）
     - `/enforce-typecov` … `enforce-typecov` を付与（型カバレッジ enforcement）
     - `/enforce-coverage` … `enforce-coverage` を付与（カバレッジ enforcement）
+  - Labels quick reference: see `docs/ci/labels-quickref.md`
   - Verify Lite のラベルゲート（概要）
     - `run-formal`: Verify Lite 内の formal ステップを有効化（既定はスキップ）。非ブロッキング
     - `run-resilience`: Verify Lite 内の resilience quick を有効化（既定はスキップ）。非ブロッキング
