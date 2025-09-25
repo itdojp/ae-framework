@@ -3,6 +3,9 @@ on:
   push:
     tags:
       - 'v*'
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   # Ensure quality gates pass before release
@@ -61,3 +64,9 @@ jobs:
         run: |
           printf "%s\n" "Deploying canary version..."
           # Placeholder for canary deployment
+      - name: Release (summary)
+        if: always()
+        run: |
+          printf "\n## 🚀 Release\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- Trigger: tag push\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- Concurrency: release-${{ github.ref }} (cancel in progress)\n" >> "$GITHUB_STEP_SUMMARY" || true
