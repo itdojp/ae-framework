@@ -349,7 +349,7 @@ jobs:
           printf "%s\n" "Event: $GITHUB_EVENT_NAME (no PR comment will be posted)." \
           && printf "%s\n" "Artifacts generated under artifacts/formal/. Comment upsert runs only on pull_request with label run-formal."
       - name: Comment on PR (upsert)
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && steps.labels.outputs.has_run_formal == '1'
         id: comment
         uses: actions/github-script@v7
         with:
