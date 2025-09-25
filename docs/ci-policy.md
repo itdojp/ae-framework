@@ -133,6 +133,10 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 - After merge, comprehensive CI on main (nightly/weekly) provides coverage
 - Keep required checks centered on Verify Lite; others non-required by default
 
+### References
+- Agent collaboration rules and CI label policies: `AGENTS.md`
+- Slash command mappings: `.github/workflows/agent-commands.yml`
+
 ---
 
 ## 日本語
@@ -189,6 +193,29 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 - Formal Aggregate コメント:
   - `run-formal` ラベル時のみ投稿（既定は report-only）
   - Tools/Reproduce ヒントを含み、`FORMAL_AGG_LINE_CLAMP` / `FORMAL_AGG_ERRORS_LIMIT` / `FORMAL_AGG_SNIPPET_MAX_LINES` を尊重
+
+#### 例
+
+Coverage サマリ（固定ヘッダでアップサート）
+
+```
+<!-- AE-COVERAGE-SUMMARY -->
+Coverage: Threshold (effective) 80%
+Derived: label=coverage:80 > repo var=COVERAGE_DEFAULT_THRESHOLD=75 > default=70
+Policy: report-only (see docs/quality/coverage-policy.md)
+Links: docs/quality/coverage-policy.md
+```
+
+Formal Aggregate（`run-formal` ラベル時のみ投稿）
+
+```
+<!-- AE-FORMAL-AGGREGATE -->
+Present: Alloy/TLA/SMT summaries available
+Summary: 3 tools ran, 0 errors
+By-type present: Alloy=present, TLA=present, SMT=present, Apalache=skipped
+Apalache ran/ok: skipped (label-gated)
+Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
+```
 
 ### パス条件
 - 仕様関連の変更（`spec/**`, `.ae/**`）のみ Fail-Fast を発火
