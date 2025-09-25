@@ -514,7 +514,8 @@ jobs:
 - ラベルが効かない? ラベル名の一致とワークフローでの参照（paths/if）を確認。必要ならディスパッチで強制実行。
 - 出力が解析されない? printf の行末改行と `key=value` / `key<<EOF` 形式を確認。
 - カバレッジのラベルが拒否? 0〜100 の整数（`%` なし）で指定（例: `coverage:85`）。
-Examples (label combos)
-- Non‑blocking exploratory run: add `ci-non-blocking` + selected `run-*` labels
-- Security check (report-only): add `run-security` (optionally `ci-non-blocking`)
-- Security enforcement on PR: add `run-security` + `enforce-security`
+
+#### 例（ラベルの組み合わせ）
+- 探索的な非ブロッキング実行: `ci-non-blocking` に加えて必要な `run-*` ラベルを付与
+- セキュリティ確認（レポートのみ）: `run-security`（必要に応じて `ci-non-blocking` も併用）
+- セキュリティをPRで強制: `run-security` + `enforce-security`
