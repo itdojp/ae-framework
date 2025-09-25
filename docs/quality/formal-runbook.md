@@ -239,6 +239,9 @@ Keys quick reference（aggregate JSON）
 - `info.ranOk.apalache`: `{ ran: boolean, ok: boolean|null }`（null は不確定）
   - jq 例: `jq '.info.ranOk.apalache' artifacts/formal/formal-aggregate.json`
 
+### Idempotency（重複防止）
+- 集約コメントは固定ヘッダ `<!-- AE-FORMAL-AGGREGATE -->` によりアップサートされます。同一ヘッダのコメントは上書き更新され、再実行や同期でも重複投稿されません。
+
 Field リファレンス（抜粋）
 - `formal/summary.json`
   - `timestamp`: 集計時刻（ISO8601）
