@@ -14,6 +14,10 @@ on:
     types: [opened, synchronize, reopened, ready_for_review, labeled]
   workflow_dispatch:
 
+concurrency:
+  group: ae-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   qa_gate:
     runs-on: ubuntu-latest

@@ -12,6 +12,7 @@ on:
       - 'src/**'
   pull_request:
     branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
     # Avoid running heavy scans for docs-only changes
     paths-ignore:
       - 'docs/**'

@@ -12,6 +12,7 @@ on:
       - 'src/**'
   pull_request:
     branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
     # Run SBOM only when dependency or code manifests change
     paths:
       - 'package.json'
