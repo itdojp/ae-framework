@@ -48,6 +48,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - `run-quality`: enable quality matrix in parallel tests
 - `run-flake`: enable flake-detection on PRs
 - `run-e2e`: enable E2E tests on PRs
+- `run-adapters`: report Adapter Thresholds (a11y/perf/Lighthouse) in PRs (report-only). See `.github/workflows/adapter-thresholds.yml` and `docs/quality/adapter-thresholds.md`.
 - `coverage:<pct>`: override coverage threshold for coverage-check (default 80). e.g., `coverage:75`
   - Use `/coverage <pct|clear>` to set/clear on a PR
  - `qa-batch:commands` / `qa-batch:cli` / `qa-batch:property` / `qa-batch:agents`: run additional CI Fast batches for the specific categories (opt-in)
@@ -103,6 +104,7 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
   - ラベル付与（Opt-in 実行/ポリシー切替）
     - `/run-qa` … `run-qa` を付与（ae-ci の QA 実行）
     - `/run-security` … `run-security` を付与（Security/SBOM 実行。PR要約も投稿）
+    - `/run-adapters` … `run-adapters` を付与（Adapter Thresholds をレポート: report-only）
     - `/run-hermetic` … `run-hermetic` を付与（Hermetic CI 実行）
     - `/run-spec` … `run-spec` を付与（Fail-Fast Spec 実行）
     - `/run-drift` … `run-drift` を付与（Codegen Drift 検出）
