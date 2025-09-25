@@ -193,6 +193,8 @@ jobs:
 ### References
 - Agent collaboration rules and CI label policies: `AGENTS.md`
 - Slash command mappings: `.github/workflows/agent-commands.yml`
+ - CI label gating details: `docs/ci/label-gating.md`
+ - CI labels cheatsheet: `docs/cheatsheets/ci-labels-cheatsheet.md`
 
 ---
 
@@ -364,3 +366,5 @@ jobs:
 ### 参考
 - 運用ルールとCIラベルポリシー: `AGENTS.md`
 - スラッシュコマンド対応表: `.github/workflows/agent-commands.yml`
+ - CIラベルのゲーティング詳細: `docs/ci/label-gating.md`
+ - CIラベル早見表: `docs/cheatsheets/ci-labels-cheatsheet.md`
