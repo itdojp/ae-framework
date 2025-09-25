@@ -61,6 +61,12 @@ jobs:
       
     - name: Build project
       run: pnpm run build
+    - name: SBOM policy (summary)
+      if: always()
+      run: |
+        printf "\n## 📦 SBOM / Security policy\n" >> "$GITHUB_STEP_SUMMARY" || true
+        printf "- PR: label-gated via run-security\n" >> "$GITHUB_STEP_SUMMARY" || true
+        printf "- push: path-gated to manifests/code; schedule enabled\n" >> "$GITHUB_STEP_SUMMARY" || true
     
     - name: Bin smoke check
       run: node scripts/ci/check-bins.mjs
