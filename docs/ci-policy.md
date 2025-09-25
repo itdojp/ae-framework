@@ -11,6 +11,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 ### Quickstart (local verification)
 - `corepack enable && pnpm i && pnpm -s build && pnpm run test:fast`
   - Use this for pre‑PR sanity checks aligned with Verify Lite.
+  - Node: use v20 (>=20.11, <23) as per `engines`
   - Optional (local security scan): `pnpm -s security:scan`
   - Optional (type check only): `pnpm -s types:check`
   - Optional (formal tools check): `pnpm -s tools:formal:check`
@@ -348,6 +349,7 @@ jobs:
 ### クイックスタート（ローカル検証）
 - `corepack enable && pnpm i && pnpm -s build && pnpm run test:fast`
   - PR 前の健全性チェックとして Verify Lite と整合。
+  - Node は v20（>=20.11, <23）を使用（`engines` に準拠）
   - 任意（ローカルセキュリティスキャン）: `pnpm -s security:scan`
   - 任意（型チェックのみ）: `pnpm -s types:check`
   - 任意（フォーマルツールチェック）: `pnpm -s tools:formal:check`
