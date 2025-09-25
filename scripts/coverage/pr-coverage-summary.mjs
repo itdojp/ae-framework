@@ -108,7 +108,7 @@ if (covLabelValStr.endsWith('%')) {
 }
 const covLabelValNum = covLabelValStr !== '' ? Number(covLabelValStr) : NaN;
 const hasValidLabel = isFinite(covLabelValNum) && covLabelValNum >= 0 && covLabelValNum <= 100;
-const effNumeric = hasValidLabel ? covLabelValNum : defTh;
+const effNumeric = hasValidLabel ? covLabelValNum : (isFinite(defTh) ? defTh : 80);
 const effTh = fmtPct(effNumeric);
 
 // Policy: report-only unless enforced via label or main+vars
