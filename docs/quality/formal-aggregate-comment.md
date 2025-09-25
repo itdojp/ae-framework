@@ -201,6 +201,7 @@ jobs:
   - `Present: <count>/5`
   - `Keys: <comma-separated present keys>`
   - `Apalache: ran=yes|no ok=yes|no|n/a`
+  - `Alloy temporal: present=true|false ops=[...]` (when temporal info is present)
   - `Conformance: schemaErrors=X, invariantViolations=Y, rate=Z` (when present)
   - `Artifacts: artifacts/formal/formal-aggregate.{md,json}`
   - `Header: <!-- AE-FORMAL-AGGREGATE --> (upsert on pull_request with label run-formal)`
