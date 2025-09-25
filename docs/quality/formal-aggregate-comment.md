@@ -104,3 +104,10 @@ Consistency
 
 4) Env tuning (optional)
 - Set clamp envs to adjust formatting: `FORMAL_AGG_LINE_CLAMP` (default 200), `FORMAL_AGG_ERRORS_LIMIT` (default 5), `FORMAL_AGG_SNIPPET_MAX_LINES` (default 20).
+
+## Troubleshooting
+
+- No aggregate found: ensure label `run-formal` is present and that the workflow ran under `pull_request` (not just dispatch).
+- Validate JSON locally (non-blocking):
+  - `node scripts/formal/validate-aggregate-json.mjs` (warns on missing/invalid `artifacts/formal/formal-aggregate.json`)
+- Clamp looks too aggressive: raise `FORMAL_AGG_LINE_CLAMP` or `FORMAL_AGG_ERRORS_LIMIT` in the workflow env or rerun with overrides.
