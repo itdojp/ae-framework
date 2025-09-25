@@ -258,6 +258,11 @@ jobs:
         if: always()
         run: |
           node scripts/formal/validate-conformance-summary.mjs || true
+      - name: Note (dispatch vs PR comment)
+        if: github.event_name != 'pull_request'
+        run: |
+          printf "%s\n" "Event: $GITHUB_EVENT_NAME (no PR comment will be posted)." \
+          && printf "%s\n" "Artifacts generated under artifacts/formal/. Comment upsert runs only on pull_request with label run-formal."
       - name: Comment on PR (upsert)
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
