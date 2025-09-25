@@ -86,6 +86,7 @@
 3) テキスト生成・整形系は printf で統一
 4) 変更後: `pnpm -s types:check && pnpm -s build` のローカル通過を目安
 6) ワークフロー（.github/workflows/**）を変更した場合は、`pnpm lint:workflows`（ガード+actionlint）/ `pnpm ci:test:guard`（セルフテスト）を実行
+7) echo→printf 変換の提案を見る場合は `pnpm ci:guard:suggest` を利用（非破壊）
 
 ### 小PR連投のレビューポリシー（推奨）
 - 1PRあたりの変更は小さく、revertしやすい粒度に保つ

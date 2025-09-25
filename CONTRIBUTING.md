@@ -93,6 +93,7 @@ This is a monorepo; prefer `pnpm --filter` for workspace commands (e.g., `pnpm -
  - ワークフロー（.github/workflows）を変更する場合はローカルチェックを実行:
    - `pnpm lint:workflows`（ガード + actionlint／Dockerがあれば）
    - `pnpm ci:test:guard`（ガードの基本セルフテスト）
+   - 参考変換（echo→printf）: `pnpm ci:guard:suggest`（破壊なしの提案）
 - CI ワークフローのスニペット: `$GITHUB_OUTPUT` や `$GITHUB_ENV` に追記する際は `printf` と引用付きリダイレクトを使用（CI でポリシーを強制）
   - `printf "%s\n" "key=value" >> "$GITHUB_OUTPUT"`
   - `printf "%s\n" "NAME=value" >> "$GITHUB_ENV"`
