@@ -12,6 +12,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - `corepack enable && pnpm i && pnpm -s build && pnpm run test:fast`
   - Use this for pre‑PR sanity checks aligned with Verify Lite.
   - Optional (local security scan): `pnpm -s security:scan`
+  - Optional (type check only): `pnpm -s types:check`
 
 ### Verify Lite defaults
 - PRs block only on Verify Lite (types:check / build). Lint runs in Verify Lite but is non‑blocking.
@@ -70,8 +71,9 @@ Workflows (selected)
 - `.github/workflows/parallel-test-execution.yml` (quality row)
 - `.github/workflows/flake-detect.yml` (flake detection)
 - `.github/workflows/hermetic-ci.yml` (Hermetic CI)
- - `.github/workflows/adapter-thresholds.yml` (Adapters report-only)
- - `.github/workflows/cedar-quality-gates.yml` (Cedar policies quality gates)
+- `.github/workflows/adapter-thresholds.yml` (Adapters report-only)
+- `.github/workflows/cedar-quality-gates.yml` (Cedar policies quality gates)
+ - `.github/workflows/pr-summary-comment.yml` (PR summary upsert)
 
 
 ### PR comments (Coverage / Formal)
@@ -250,13 +252,15 @@ jobs:
 - `.github/workflows/parallel-test-execution.yml`（quality 行）
 - `.github/workflows/flake-detect.yml`（flake 検出）
 - `.github/workflows/hermetic-ci.yml`（Hermetic CI）
- - `.github/workflows/adapter-thresholds.yml`（Adapters レポート: report-only）
- - `.github/workflows/cedar-quality-gates.yml`（Cedar 品質ゲート）
+- `.github/workflows/adapter-thresholds.yml`（Adapters レポート: report-only）
+- `.github/workflows/cedar-quality-gates.yml`（Cedar 品質ゲート）
+ - `.github/workflows/pr-summary-comment.yml`（PR サマリのアップサート）
 
 ### クイックスタート（ローカル検証）
 - `corepack enable && pnpm i && pnpm -s build && pnpm run test:fast`
   - PR 前の健全性チェックとして Verify Lite と整合。
   - 任意（ローカルセキュリティスキャン）: `pnpm -s security:scan`
+  - 任意（型チェックのみ）: `pnpm -s types:check`
 
 ### Verify Lite（既定）
 - PR では Verify Lite（types:check / build）のみブロッキング。lint は Verify Lite 内で実行するが非ブロッキング。
