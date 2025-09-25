@@ -64,7 +64,7 @@ Add a step before running the benchmark to ensure the repository is present:
 - name: Prepare Req2Run repository
   run: |
     git clone --depth 1 https://github.com/itdojp/req2run-benchmark /tmp/req2run-benchmark || true
-    echo "REQ2RUN_BENCHMARK_REPO=/tmp/req2run-benchmark" >> $GITHUB_ENV
+    printf "%s\n" "REQ2RUN_BENCHMARK_REPO=/tmp/req2run-benchmark" >> "$GITHUB_ENV"
 
 - name: Run Req2Run benchmark (CI profile)
   run: pnpm benchmark:ci

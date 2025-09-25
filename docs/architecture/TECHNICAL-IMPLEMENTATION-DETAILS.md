@@ -2569,7 +2569,7 @@ jobs:
           
           if [ $(echo "$failure_rate > 30.0" | bc -l) -eq 1 ]; then
             echo "🚨 Flake detected! Failure rate: ${failure_rate}%"
-            echo "flaky=true" >> $GITHUB_OUTPUT
+            printf "%s\n" "flaky=true" >> "$GITHUB_OUTPUT"
           fi
 ```
 
