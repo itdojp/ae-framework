@@ -103,3 +103,8 @@ Set `PRINTF_GUARD_DISABLE=1` to skip guard checks (e.g., local debugging). Do no
   - Prefer `printf "%s\n" "key=value" >> "$GITHUB_OUTPUT"` over `printf "%s" ...`
 - CI shows "Deprecated ::set-output"
   - Replace with `printf` to `$GITHUB_OUTPUT` and consume via `${{ steps.<id>.outputs.<name> }}`
+
+## CI Output
+
+- When violations are found, the guard emits GitHub error annotations with file/line for quick navigation.
+- The echo→printf suggestion tool groups its hints in CI logs (`::group:: ... ::endgroup::`) for readability.
