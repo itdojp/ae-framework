@@ -57,12 +57,13 @@ This document defines CI policies to keep PR experience fast and stable while ma
     - `/run-spec` … `run-spec` を付与（Fail-Fast Spec 実行）
     - `/run-drift` … `run-drift` を付与（Codegen Drift 検出）
     - `/non-blocking` … `ci-non-blocking` を付与（一部ジョブを continue-on-error）
-    - `/ready` … `do-not-merge` を除去（マージ待ちへ）
+    - `/ready` … `do-not-merge` を除去（マージ待ちへ）／エイリアス: `/ready-for-review`
     - `/pr-digest` / `/pr-detailed` … PR要約モード切替
     - `/run-formal` / `/enforce-formal` / `/enforce-contracts` … フォーマル/契約の実行/エンフォース切替
     - `/coverage <pct|clear>` … `coverage:<pct>` を設定/クリア（しきい値上書き）
     - `/enforce-typecov` … `enforce-typecov` を付与（型カバレッジ enforcement）
     - `/enforce-coverage` … `enforce-coverage` を付与（カバレッジ enforcement）
+    - `/enforce-security` … `enforce-security` を付与（Security/SBOM/Cedar enforcement）
 - 使い分け例（推奨）
   - 追加確認したいカテゴリのみラベル付与 → `/ci-fast-dispatch` で即時起動
   - Verify Lite のみを再実行 → `/verify-lite`
