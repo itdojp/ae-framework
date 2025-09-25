@@ -41,6 +41,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - Optionally enable validate-artifacts-ajv / coverage-check as required
   - Workflows: `.github/workflows/validate-artifacts-ajv.yml`, `.github/workflows/coverage-check.yml` (see also `docs/quality/coverage-required.md`)
   - Enforce via Branch protection: Settings → Branches → main → Require status checks (add Verify Lite and selected checks)
+  - Repository variables: set under Settings → Variables → Repository variables (e.g., `COVERAGE_DEFAULT_THRESHOLD`, `COVERAGE_ENFORCE_MAIN`)
 
 ### Policy sources & precedence
 - Threshold/DoD sources resolve in this order: policy > AE-IR > ae.config (hints only; warn on use). See also `SECURITY.md` and `docs/quality/coverage-policy.md`.
@@ -277,6 +278,7 @@ jobs:
  - カバレッジ運用とRequired化の詳細は `docs/quality/coverage-policy.md` を参照（しきい値の由来、ラベル/変数、main運用）
  - 対応ワークフロー: `.github/workflows/validate-artifacts-ajv.yml`, `.github/workflows/coverage-check.yml`
   - 設定（ブランチ保護）: Settings → Branches → main → Require status checks に Verify Lite と必要なチェックを追加
+  - リポジトリ変数: Settings → Variables → Repository variables にて設定（例: `COVERAGE_DEFAULT_THRESHOLD`, `COVERAGE_ENFORCE_MAIN`）
 
 ### ポリシーソース / 優先順位
 - しきい値 / DoD のソースは次の優先で解決: policy > AE-IR > ae.config（ヒントのみ・警告表示）。詳細は `SECURITY.md` / `docs/quality/coverage-policy.md` を参照。
