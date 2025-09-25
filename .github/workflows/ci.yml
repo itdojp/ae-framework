@@ -5,6 +5,9 @@ on:
   workflow_dispatch:      # 手動実行
   push:
     tags: ['v*']          # リリースタグ時
+concurrency:
+  group: ci-full-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   # Issue #71: CI最前段にSpec Validation追加（fail-fast）
   spec-validation:
