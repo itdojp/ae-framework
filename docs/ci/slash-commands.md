@@ -52,3 +52,10 @@ Misc dispatchers
 Notes
 - All comments from the bot include header `<!-- AE-AGENTS-REPLY -->` to reduce noise.
 - See also: `docs/ci-policy.md`, `AGENTS.md`.
+
+Idempotency
+- Repeating the same command is safe:
+  - Label adds use GitHub API idempotently; duplicates are ignored by the platform.
+  - Threshold labels (`coverage:*`, `perf:*`, `lh:*`) first clear existing labels by prefix, then add the new one.
+  - Removal commands (e.g., `/blocking` removing `ci-non-blocking`) are no-ops if the label is absent.
+  - Dispatchers may retrigger workflows on repeated comments; safe for re-runs.
