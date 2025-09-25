@@ -30,6 +30,7 @@ Clamp and Limits (env)
 - `FORMAL_AGG_LINE_CLAMP` (default 200): line clamp for long lines in comment body.
 - `FORMAL_AGG_ERRORS_LIMIT` (default 5): max number of error fragments to include.
 - `FORMAL_AGG_SNIPPET_MAX_LINES` (default 20): clamp for multi-line error snippets.
+- `FORMAL_AGG_WRAP_WIDTH` (default 0 = disabled): soft-wrap width for long lines outside code fences (recommended 80–100 for readability).
 
 Comment Structure (recommended)
 1) Present — a compact presence tally and list
