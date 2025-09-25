@@ -8,6 +8,19 @@
 
 This document defines CI policies to keep PR experience fast and stable while maintaining quality.
 
+### Quickstart (local verification)
+- `corepack enable && pnpm i && pnpm -s build && pnpm run test:fast`
+  - Use this for pre‑PR sanity checks aligned with Verify Lite.
+
+### Verify Lite defaults
+- PRs block only on Verify Lite (types:check / build / fast tests).
+- Heavy jobs are opt‑in via labels and/or path conditions.
+
+### actionlint & printf policy
+- All workflows must pass `rhysd/actionlint`.
+- Append to `$GITHUB_OUTPUT` / `$GITHUB_ENV` using `printf` with quoting; do not use `echo` for these files.
+  - Example: `printf "name=%s\n" "$VALUE" >> "$GITHUB_OUTPUT"`
+
 ### Goals
 - Block only lightweight, deterministic checks on PRs
 - Heavy/unstable checks run opt-in via labels or path conditions
@@ -32,12 +45,16 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - `coverage:<pct>`: override coverage threshold for coverage-check (default 80). e.g., `coverage:75`
  - `qa-batch:commands` / `qa-batch:cli` / `qa-batch:property` / `qa-batch:agents`: run additional CI Fast batches for the specific categories (opt-in)
 
-### Comment formatting (Coverage/Adapters)
-- Coverage / Adapters comments show:
-  - Threshold (effective)
-  - Derived: label > repo var > default（a11yは固定: critical=0, serious=0）
-  - Policy / Policy source（enforced via label, or report-only）
-  - Links to docs
+### PR comments (Coverage / Formal)
+- Comments are upserted (one per header) with fixed headers to avoid duplicates:
+  - Coverage: `<!-- AE-COVERAGE-SUMMARY -->`
+  - Formal Aggregate: `<!-- AE-FORMAL-AGGREGATE -->`
+- Coverage comment format:
+  - Threshold (effective) → Derived → Policy / Policy source → Docs links
+  - Threshold derivation order: label > repo variable > default
+- Formal Aggregate comment:
+  - Posted only when `run-formal` label is present (report‑only by default)
+  - Includes Tools/Reproduce hints; respects `FORMAL_AGG_LINE_CLAMP`, `FORMAL_AGG_ERRORS_LIMIT`, `FORMAL_AGG_SNIPPET_MAX_LINES`
 
 ### Slash Commands (Instant Dispatch / Labels)
 - コメントで以下を投稿すると、対象ワークフローの即時起動やラベル付与ができます（main取り込み後有効）。
@@ -125,6 +142,30 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - `run-flake`: flake-detection を PR で有効化
 - `run-e2e`: E2E テストを PR で有効化
 - `coverage:<pct>`: coverage-check のしきい値を上書き（既定 80）。例: `coverage:75`
+
+### クイックスタート（ローカル検証）
+- `corepack enable && pnpm i && pnpm -s build && pnpm run test:fast`
+  - PR 前の健全性チェックとして Verify Lite と整合。
+
+### Verify Lite（既定）
+- PR では Verify Lite（types:check / build / fast tests）のみブロッキング。
+- 重いジョブはラベル/パス条件でオプトイン実行。
+
+### actionlint と printf ポリシー
+- すべてのワークフローは `rhysd/actionlint` をパスすること。
+- `$GITHUB_OUTPUT` / `$GITHUB_ENV` への追記は `printf` + 適切なクォートを使用（`echo` は不可）。
+  - 例: `printf "name=%s\n" "$VALUE" >> "$GITHUB_OUTPUT"`
+
+### PRコメント（Coverage / Formal）
+- 重複防止のため固定ヘッダでアップサート（1コメントを更新）:
+  - Coverage: `<!-- AE-COVERAGE-SUMMARY -->`
+  - Formal Aggregate: `<!-- AE-FORMAL-AGGREGATE -->`
+- Coverage コメントの表示順:
+  - `Threshold (effective)` → `Derived` → `Policy/Policy source` → ドキュメントリンク
+  - しきい値の由来: ラベル > リポジトリ変数 > 既定
+- Formal Aggregate コメント:
+  - `run-formal` ラベル時のみ投稿（既定は report-only）
+  - Tools/Reproduce ヒントを含み、`FORMAL_AGG_LINE_CLAMP` / `FORMAL_AGG_ERRORS_LIMIT` / `FORMAL_AGG_SNIPPET_MAX_LINES` を尊重
 
 ### パス条件
 - 仕様関連の変更（`spec/**`, `.ae/**`）のみ Fail-Fast を発火

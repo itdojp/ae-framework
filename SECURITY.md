@@ -44,9 +44,11 @@ We take security vulnerabilities seriously. If you discover a security issue, pl
 
 ### CI Security/Compliance Operations
 
-- On pull requests, security jobs run non-blocking by default and publish artifacts for review.
-- When the `run-security` label is applied to a PR, a brief Security/Compliance summary (dependency vulnerabilities and top licenses) is posted as a PR comment (non-blocking).
-- To enforce thresholds on a PR, apply the `enforce-security` label.
+- On pull requests, security jobs run non-blocking by default and publish artifacts for review. Heavy jobs are label/path gated per CI policy (see `docs/ci-policy.md`).
+- Labels:
+  - `run-security` — opt-in Security/SBOM execution on PRs (posts a non-blocking summary comment)
+  - `enforce-security` — enforce thresholds (blocking when limits exceeded)
+  - `ci-non-blocking` — continue-on-error for selected jobs when troubleshooting
 - Thresholds are configurable via repository variables:
   - `SECURITY_MAX_HIGH` (default 0): allowed High/Critical vulnerabilities
   - `SECURITY_MAX_MODERATE` (default 2): allowed Moderate vulnerabilities
@@ -358,8 +360,11 @@ Last Updated / 最終更新: January 2025
 Next Review / 次回見直し: July 2025
 ### CI におけるセキュリティ/コンプライアンス運用
 
-- PR では既定でセキュリティ関連ジョブを非ブロッキングで実行し、結果をアーティファクトに集約します。
-- 強制（ゲート）を有効化したい場合は、PR に `enforce-security` ラベルを付与してください。
+- PR では既定でセキュリティ関連ジョブを非ブロッキングで実行し、結果をアーティファクトに集約します。重いジョブはラベル/パス条件で制御します（詳細は `docs/ci-policy.md`）。
+- ラベル運用:
+  - `run-security` — PR で Security/SBOM を実行（非ブロッキングの要約コメントを投稿）
+  - `enforce-security` — 閾値を強制（超過時はブロック）
+  - `ci-non-blocking` — トラブルシュート時などに continue-on-error で一部ジョブを非ブロッキング化
 - 閾値はリポジトリ変数で制御できます。
   - `SECURITY_MAX_HIGH`（既定 0）: High 以上の許容数
   - `SECURITY_MAX_MODERATE`（既定 2）: Moderate の許容数
