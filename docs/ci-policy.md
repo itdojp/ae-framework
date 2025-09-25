@@ -146,6 +146,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - `run-formal` ラベル時のみ、Formal Verify（stub）と成果物の集約（Alloy/TLA/SMT/Apalache の要約）を実行（非ブロッキング）
 - 集約結果は PR コメントにアップサート（重複を避けるためヘッダー識別）
 - 仕様/サンプル: `docs/quality/formal-aggregate-comment.md`（固定ヘッダ `<!-- AE-FORMAL-AGGREGATE -->`、Clamp 環境変数の説明あり）
+ - アップサートは冪等（idempotent）。同一ヘッダの既存コメントがある場合は本文一致時に更新をスキップ、差分がある場合のみ上書き更新します。
 - 必須化・閾値強化は段階導入（別Issueで合意のうえ切替）
 - `enforce-formal` ラベル時は Apalache 実行結果（summary.ok）が `true` であることをチェック（非true で失敗）
 
