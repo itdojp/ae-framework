@@ -174,5 +174,4 @@ if bash scripts/ci/guard-github-outputs.sh "$TMPDIR/wf"; then
 fi
 
 rm -f "$TMPDIR/wf/offender6.yml"
-bash scripts/ci/guard-github-outputs.sh "$TMPDIR/wf"
 echo "[test] Guard basic tests passed."
