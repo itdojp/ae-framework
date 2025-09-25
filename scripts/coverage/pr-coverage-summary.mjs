@@ -36,11 +36,13 @@ const enforceMain = (process.env['COVERAGE_ENFORCE_MAIN'] || '0') === '1';
 const summaryPath = 'coverage/coverage-summary.json';
 let cov = {};
 let pct = 'n/a';
+let pctNum = NaN;
 let pctFns, pctBranches, pctStmts;
 if (fs.existsSync(summaryPath)) {
   try {
     cov = JSON.parse(fs.readFileSync(summaryPath, 'utf-8'));
     const ln = cov?.total?.lines?.pct;
+    pctNum = typeof ln === 'number' ? ln : NaN;
     pct = typeof ln === 'number' ? fmtPct(ln) : 'n/a';
     const fnv = cov?.total?.functions?.pct;
     const brv = cov?.total?.branches?.pct;
@@ -72,7 +74,8 @@ const covLabel = labels.find(n => typeof n === 'string' && n.startsWith('coverag
 let covLabelValStr = covLabel ? String(covLabel.split(':')[1] || '').trim() : '';
 const covLabelValNum = covLabelValStr !== '' ? Number(covLabelValStr) : NaN;
 const hasValidLabel = isFinite(covLabelValNum);
-const effTh = String(hasValidLabel ? covLabelValNum : defTh);
+const effNumeric = hasValidLabel ? covLabelValNum : defTh;
+const effTh = String(effNumeric);
 
 // Policy: report-only unless enforced via label or main+vars
 let strict = false;
@@ -95,6 +98,13 @@ if (typeof pctBranches !== 'undefined') parts.push(`branches=${pctBranches}%`);
 if (typeof pctStmts !== 'undefined') parts.push(`statements=${pctStmts}%`);
 if (parts.length) lines.push(`Metrics: ${parts.join(', ')}`);
 lines.push(`Threshold (effective): ${effTh}%`);
+// Gate status (informational)
+if (isFinite(pctNum) && isFinite(effNumeric)) {
+  const ok = pctNum >= effNumeric;
+  const cmp = ok ? '>=' : '<';
+  const mode = ` ${strict ? '[blocking]' : '[non-blocking]'}`;
+  lines.push(`Gate: ${ok ? 'OK' : 'BELOW'} (${fmtPct(pctNum)}% ${cmp} ${effTh}%)${mode}`);
+}
 if (covLabel) {
   if (hasValidLabel) lines.push(`- via label: ${covLabel}`);
   else lines.push(`- via label: ${covLabel} (invalid, ignored)`);
