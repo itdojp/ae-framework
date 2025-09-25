@@ -406,3 +406,7 @@ jobs:
 - コントリビュータ向け早見表（ラベル）: `CONTRIBUTING.md`（ラベル表）
  - 型カバレッジポリシー: `docs/quality/type-coverage-policy.md`
  - ベンチマーク: `docs/benchmark/README.md`
+Examples (label combos)
+- Non‑blocking exploratory run: add `ci-non-blocking` + selected `run-*` labels
+- Security check (report-only): add `run-security` (optionally `ci-non-blocking`)
+- Security enforcement on PR: add `run-security` + `enforce-security`
