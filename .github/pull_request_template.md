@@ -10,6 +10,7 @@
 - [ ] (Optional) `pnpm lint:workflows:nodocker` used (guard + self-test only) when Docker unavailable
 - [ ] (Optional) `pnpm ci:test:guard` passes (guard self-test)
  - [ ] (Optional) Run `pnpm ci:guard:suggest` to see echo→printf conversion hints (non-destructive)
+ - [ ] (Optional) Suggestion tool tests pass: `pnpm ci:test:suggest:all`
 - [ ] Scope limited to the stated objective
 
 ## Notes
