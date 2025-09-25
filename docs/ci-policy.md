@@ -110,7 +110,6 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
     - 追加確認したいカテゴリのみラベル付与 → `/ci-fast-dispatch` で即時起動
     - Verify Lite のみを再実行 → `/verify-lite`
 
-<!-- duplicate section removed: Slash Commands (Instant Dispatch) repeated -->
 
 ### Path Conditions
 - Fire spec fail-fast only for changes under `spec/**`, `.ae/**`
