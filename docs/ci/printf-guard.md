@@ -90,3 +90,16 @@ Set `PRINTF_GUARD_DISABLE=1` to skip guard checks (e.g., local debugging). Do no
 - `printf` provides predictable formatting and explicit newlines.
 - Quoting targets prevents word-splitting or brace expansion issues.
 - Grouped blocks reduce duplication and keep steps concise.
+
+## Troubleshooting
+
+- CI shows "Use printf with quoted target (no echo)"
+  - Replace `echo "key=value" >> $GITHUB_OUTPUT` with `printf "%s\n" "key=value" >> "$GITHUB_OUTPUT"`
+- CI shows "Quote $GITHUB_OUTPUT/$GITHUB_ENV in redirection"
+  - Ensure the target is quoted: `>> "$GITHUB_OUTPUT"` / `>> "$GITHUB_ENV"` (or `${...}` forms)
+- CI shows "Use printf for appends to special files"
+  - Do not use `tee -a`, `cat file >> "$GITHUB_OUTPUT"`, etc.; use `printf` as in the recipes
+- CI shows "Include trailing newline in printf format"
+  - Prefer `printf "%s\n" "key=value" >> "$GITHUB_OUTPUT"` over `printf "%s" ...`
+- CI shows "Deprecated ::set-output"
+  - Replace with `printf` to `$GITHUB_OUTPUT` and consume via `${{ steps.<id>.outputs.<name> }}`
