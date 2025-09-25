@@ -367,22 +367,28 @@ jobs:
               reason = 'no-json';
               core.info('No aggregate JSON found; skipping PR comment upsert');
             } else {
-              const body = header + fs.readFileSync(mdPath,'utf-8');
-              const { owner, repo, number } = context.issue;
-              const comments = await github.rest.issues.listComments({ owner, repo, issue_number: number, per_page: 100 });
-              const mine = comments.data.find(c => c.body && c.body.startsWith('<!-- AE-FORMAL-AGGREGATE -->'));
-              if (mine && mine.body === body) {
-                core.info('Aggregate unchanged; skipping update');
+              try {
+                const body = header + fs.readFileSync(mdPath,'utf-8');
+                const { owner, repo, number } = context.issue;
+                const comments = await github.rest.issues.listComments({ owner, repo, issue_number: number, per_page: 100 });
+                const mine = comments.data.find(c => c.body && c.body.startsWith('<!-- AE-FORMAL-AGGREGATE -->'));
+                if (mine && mine.body === body) {
+                  core.info('Aggregate unchanged; skipping update');
+                  action = 'skipped';
+                  reason = 'unchanged';
+                } else if (mine) {
+                  const res = await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
+                  url = res?.data?.html_url || '';
+                  action = 'updated';
+                } else {
+                  const res = await github.rest.issues.createComment({ owner, repo, issue_number: number, body });
+                  url = res?.data?.html_url || '';
+                  action = 'created';
+                }
+              } catch (e) {
+                core.warning(`Upsert failed: ${e?.message || e}`);
                 action = 'skipped';
-                reason = 'unchanged';
-              } else if (mine) {
-                const res = await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
-                url = res?.data?.html_url || '';
-                action = 'updated';
-              } else {
-                const res = await github.rest.issues.createComment({ owner, repo, issue_number: number, body });
-                url = res?.data?.html_url || '';
-                action = 'created';
+                reason = 'api-error';
               }
             }
             core.setOutput('comment_action', action);

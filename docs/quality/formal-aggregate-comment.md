@@ -212,6 +212,7 @@ jobs:
 - `unchanged`: existing PR comment body is identical to the newly generated content (idempotent upsert skips update)
 - `no-md`: aggregate markdown (`artifacts/formal/formal-aggregate.md`) was not found in this run context
 - `no-json`: aggregate JSON (`artifacts/formal/formal-aggregate.json`) was not found in this run context
+- `api-error`: GitHub API error occurred during comment create/update (see workflow logs for details)
 
 ## Dispatch via GitHub CLI (artifacts only)
 
