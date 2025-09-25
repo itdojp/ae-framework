@@ -6,6 +6,7 @@ on:
     tags: ['v*']
   pull_request:
     branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
   workflow_dispatch:
 
 # Ensure hermetic execution
@@ -61,6 +62,12 @@ jobs:
           fi
           
           printf "%s\n" "✅ Hermetic validation completed"
+      - name: Hermetic CI (summary)
+        if: always()
+        run: |
+          printf "\n## 🧱 Hermetic CI\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- PR: re-runs on labeled (run-hermetic); policy labels (ci-non-blocking) respected\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- Concurrency: ${{ github.workflow }}-${{ github.ref }} (cancel in progress)\n" >> "$GITHUB_STEP_SUMMARY" || true
 
   deterministic-build:
     name: Deterministic Build Verification
