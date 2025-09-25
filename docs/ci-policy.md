@@ -31,6 +31,9 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - Verify Lite (types:check / build) — note: lint within Verify Lite is non‑blocking
 - Optionally enable validate-artifacts-ajv / coverage-check as required
 
+### Policy sources & precedence
+- Threshold/DoD sources resolve in this order: policy > AE-IR > ae.config (hints only; warn on use). See also `SECURITY.md` and `docs/quality/coverage-policy.md`.
+
 ### Opt-in Labels
 - `ci-non-blocking`: run selected jobs with continue-on-error (traceability, model-check, contracts, security, etc.)
 - `run-security`: run heavy security jobs (Security Scanning, Dependency Audit, License Compliance, CodeQL)
@@ -156,6 +159,9 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 - Verify Lite（types:check / build）— 備考: lint は Verify Lite 内で非ブロッキング
  - 必要に応じて validate-artifacts-ajv / coverage-check を必須化可能
  - カバレッジ運用とRequired化の詳細は `docs/quality/coverage-policy.md` を参照（しきい値の由来、ラベル/変数、main運用）
+
+### ポリシーソース / 優先順位
+- しきい値 / DoD のソースは次の優先で解決: policy > AE-IR > ae.config（ヒントのみ・警告表示）。詳細は `SECURITY.md` / `docs/quality/coverage-policy.md` を参照。
 
 ### ラベル運用（Opt-in）
 - `ci-non-blocking`: 一部ジョブ（traceability, model-check, contracts, security 等）を continue-on-error で実行し PR をブロックしない
