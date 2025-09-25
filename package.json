@@ -306,7 +306,8 @@
     "artifacts:aggregate": "node scripts/adapters/aggregate-artifacts.mjs",
     "lint:actions": "bash scripts/ci/actionlint.sh",
     "ci:guard:github-outputs": "bash scripts/ci/guard-github-outputs.sh",
-    "lint:workflows": "bash scripts/ci/workflow-lint-all.sh"
+    "lint:workflows": "bash scripts/ci/workflow-lint-all.sh",
+    "ci:test:guard": "bash scripts/ci/tests/test-guard.sh"
   },
   "dependencies": {
     "@ae-framework/spec-compiler": "file:./packages/spec-compiler",
