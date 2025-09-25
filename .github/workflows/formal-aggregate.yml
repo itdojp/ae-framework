@@ -277,8 +277,11 @@ jobs:
           if [ -f artifacts/formal/formal-aggregate.json ]; then \
             P=$(jq -r '.info.presentCount // 0' artifacts/formal/formal-aggregate.json 2>/dev/null || printf "0\n"); \
             KEYS=$(jq -r '.info.present | to_entries | map(select(.value)) | map(.key) | join(", ")' artifacts/formal/formal-aggregate.json 2>/dev/null || printf "\n"); \
+            APO=$(jq -r 'try .info.ranOk.apalache as $a | ("ran=" + (if $a.ran then "yes" else "no" end) + " ok=" + (if ($a.ok==true) then "yes" else (if ($a.ok==false) then "no" else "n/a" end) end)) catch "n/a"' artifacts/formal/formal-aggregate.json 2>/dev/null || printf "n/a\n"); \
             printf "Present: %s/5\n" "$P" >> "$GITHUB_STEP_SUMMARY"; \
             if [ -n "$KEYS" ]; then printf "Keys: %s\n" "$KEYS" >> "$GITHUB_STEP_SUMMARY"; fi; \
+            printf "Apalache: %s\n" "$APO" >> "$GITHUB_STEP_SUMMARY"; \
+            printf "Artifacts: artifacts/formal/formal-aggregate.{md,json}\n" >> "$GITHUB_STEP_SUMMARY"; \
           else \
             printf "No aggregate JSON found (artifacts/formal/formal-aggregate.json)\n" >> "$GITHUB_STEP_SUMMARY"; \
           fi; \
