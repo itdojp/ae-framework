@@ -39,6 +39,9 @@ echo "key=value" >> $GITHUB_OUTPUT          # ❌ echo is not allowed
 printf "%s\n" "key=value" >> $GITHUB_OUTPUT  # ❌ unquoted target
 echo "key=value" | tee -a "$GITHUB_OUTPUT"   # ❌ tee -a is not allowed (use printf)
 echo "::set-output name=val::deprecated"        # ❌ deprecated; use printf >> "$GITHUB_OUTPUT"
+cat <<EOF >> "$GITHUB_OUTPUT"                 # ❌ here-doc to special files not allowed (use printf)
+key=value
+EOF
 ```
 
 ## CI Enforcement

@@ -146,5 +146,28 @@ YAML
 
 echo "[test] Expect guard to pass when offenders are only in comments..."
 bash scripts/ci/guard-github-outputs.sh "$TMPDIR/wf"
+
+# Offender: here-doc append (cat <<EOF >> "$GITHUB_OUTPUT")
+cat > "$TMPDIR/wf/offender6.yml" << 'YAML'
+name: off6
+on: push
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          cat > /tmp/x <<EOF
+          key=value
+          EOF
+          cat /tmp/x >> "$GITHUB_OUTPUT"
+YAML
+
+echo "[test] Expect guard to fail on here-doc/cat append offender..."
+if bash scripts/ci/guard-github-outputs.sh "$TMPDIR/wf"; then
+  echo "Guard did not fail on here-doc append offender (unexpected)" >&2
+  exit 1
+fi
+
+rm -f "$TMPDIR/wf/offender6.yml"
 bash scripts/ci/guard-github-outputs.sh "$TMPDIR/wf"
 echo "[test] Guard basic tests passed."
