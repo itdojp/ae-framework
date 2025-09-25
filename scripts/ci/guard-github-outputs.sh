@@ -12,6 +12,28 @@ if [ "${PRINTF_GUARD_DISABLE:-0}" = "1" ]; then
   exit 0
 fi
 
+# Help/usage
+if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
+  cat <<'USAGE'
+Usage: bash scripts/ci/guard-github-outputs.sh [TARGET_DIR]
+
+Checks GitHub workflow files for policy violations when appending to
+$GITHUB_OUTPUT / $GITHUB_ENV.
+
+Policies enforced:
+  - Use printf (no echo/tee -a/::set-output)
+  - Quote target file: >> "$GITHUB_OUTPUT" / >> "$GITHUB_ENV"
+  - Include trailing newline in printf format (prefer "%s\n")
+  - Supports ${GITHUB_OUTPUT}/${GITHUB_ENV}
+
+Options:
+  TARGET_DIR   Directory to scan (default: .github/workflows)
+Env:
+  PRINTF_GUARD_DISABLE=1  Skip checks (debug only; not for CI)
+USAGE
+  exit 0
+fi
+
 # Optional target directory (default: .github/workflows)
 TARGET_DIR="${1:-.github/workflows}"
 if [ ! -d "$TARGET_DIR" ]; then
