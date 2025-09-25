@@ -316,7 +316,8 @@
     "ci:test:suggest:unquoted": "bash scripts/ci/tests/test-suggest-unquoted.sh",
     "ci:test:suggest:comments": "bash scripts/ci/tests/test-suggest-comments.sh",
     "ci:test:suggest:help": "bash scripts/ci/tests/test-suggest-help.sh",
-    "ci:test:suggest:all": "pnpm -s ci:test:suggest && pnpm -s ci:test:suggest:unquoted && pnpm -s ci:test:suggest:comments && pnpm -s ci:test:suggest:help"
+    "ci:test:suggest:all": "pnpm -s ci:test:suggest && pnpm -s ci:test:suggest:unquoted && pnpm -s ci:test:suggest:comments && pnpm -s ci:test:suggest:help",
+    "ci:test:guard:all": "pnpm -s ci:test:guard && pnpm -s ci:test:guard:disable"
   },
   "dependencies": {
     "@ae-framework/spec-compiler": "file:./packages/spec-compiler",
