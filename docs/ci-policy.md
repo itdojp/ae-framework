@@ -13,6 +13,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
   - Use this for pre‑PR sanity checks aligned with Verify Lite.
   - Optional (local security scan): `pnpm -s security:scan`
   - Optional (type check only): `pnpm -s types:check`
+  - Optional (formal tools check): `pnpm -s tools:formal:check`
 
 ### Verify Lite defaults
 - PRs block only on Verify Lite (types:check / build). Lint runs in Verify Lite but is non‑blocking.
@@ -43,6 +44,11 @@ This document defines CI policies to keep PR experience fast and stable while ma
 Modes (report-only vs enforce)
 - report-only: non-blocking; post PR comments/artifacts for visibility
 - enforce: blocking when thresholds are violated; enable via `enforce-*` labels or Branch protection required checks
+
+Examples (label combos)
+- Non‑blocking exploratory run: add `ci-non-blocking` + selected `run-*` labels
+- Security check (report-only): add `run-security` (optionally `ci-non-blocking`)
+- Security enforcement on PR: add `run-security` + `enforce-security`
 
 ### Opt-in Labels
 - `ci-non-blocking`: run selected jobs with continue-on-error (traceability, model-check, contracts, security, etc.)
@@ -243,6 +249,11 @@ jobs:
 - report-only: 非ブロッキング（PR コメント/アーティファクトの提示のみ）
 - enforce: しきい値違反でブロック（`enforce-*` ラベルやブランチ保護の Required checks で有効化）
 
+例（ラベル組み合わせ）
+- 非ブロッキングでの試行: `ci-non-blocking` + 必要な `run-*` ラベルを付与
+- セキュリティ（report-only）: `run-security` を付与（必要に応じて `ci-non-blocking`）
+- セキュリティ（強制）: `run-security` + `enforce-security` を付与
+
 ### ラベル運用（Opt-in）
 - `ci-non-blocking`: 一部ジョブ（traceability, model-check, contracts, security 等）を continue-on-error で実行し PR をブロックしない
 - `run-security`: 重いセキュリティ系（Security Scanning, Dependency Audit, License Compliance, CodeQL 等）を PR で実行
@@ -291,6 +302,7 @@ jobs:
   - PR 前の健全性チェックとして Verify Lite と整合。
   - 任意（ローカルセキュリティスキャン）: `pnpm -s security:scan`
   - 任意（型チェックのみ）: `pnpm -s types:check`
+  - 任意（フォーマルツールチェック）: `pnpm -s tools:formal:check`
 
 ### Verify Lite（既定）
 - PR では Verify Lite（types:check / build）のみブロッキング。lint は Verify Lite 内で実行するが非ブロッキング。
