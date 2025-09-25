@@ -42,5 +42,70 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
     // Gate informational line should reflect comparator
     expect(out).toMatch(/Gate: (OK|BELOW) \(83\.2% (>=|<) 75%\)/);
   });
-});
 
+  it('handles invalid coverage:<pct> label values and falls back to default', () => {
+    const cwd = process.cwd();
+    const covDir = join(cwd, 'coverage');
+    try { mkdirSync(covDir, { recursive: true }); } catch {}
+    const covPath = join(cwd, 'coverage', 'coverage-summary.json');
+    writeFileSync(covPath, JSON.stringify({ total: { lines: { pct: 70 } } }), 'utf8');
+
+    const event = {
+      pull_request: {
+        number: 124,
+        labels: [ { name: 'coverage:abc' } ]
+      },
+      ref: 'refs/heads/feature/y'
+    };
+    const eventPath = join(cwd, 'tmp-gh-event-invalid.json');
+    writeFileSync(eventPath, JSON.stringify(event), 'utf8');
+
+    const env = {
+      ...process.env,
+      GITHUB_TOKEN: 'test-token',
+      GITHUB_REPOSITORY: 'owner/repo',
+      GITHUB_EVENT_NAME: 'pull_request',
+      GITHUB_EVENT_PATH: eventPath,
+      AE_COVERAGE_DRY_RUN: '1',
+      COVERAGE_DEFAULT_THRESHOLD: '80'
+    } as NodeJS.ProcessEnv;
+
+    const res = spawnSync('node', ['scripts/coverage/pr-coverage-summary.mjs'], { cwd, env, encoding: 'utf8' });
+    expect(res.status).toBe(0);
+    const out = res.stdout || '';
+    expect(out).toContain('AE-COVERAGE-SUMMARY (dry-run)');
+    expect(out).toContain('- via label: coverage:abc (invalid, ignored)');
+    expect(out).toContain('Threshold (effective): 80%');
+  });
+
+  it('prints n/a and note when coverage summary is missing', () => {
+    const cwd = process.cwd();
+    // Ensure coverage dir absent or empty for this test; write no file
+    const event = {
+      pull_request: {
+        number: 125,
+        labels: []
+      },
+      ref: 'refs/heads/feature/z'
+    };
+    const eventPath = join(cwd, 'tmp-gh-event-missing.json');
+    writeFileSync(eventPath, JSON.stringify(event), 'utf8');
+
+    const env = {
+      ...process.env,
+      GITHUB_TOKEN: 'test-token',
+      GITHUB_REPOSITORY: 'owner/repo',
+      GITHUB_EVENT_NAME: 'pull_request',
+      GITHUB_EVENT_PATH: eventPath,
+      AE_COVERAGE_DRY_RUN: '1',
+      COVERAGE_DEFAULT_THRESHOLD: '80'
+    } as NodeJS.ProcessEnv;
+
+    const res = spawnSync('node', ['scripts/coverage/pr-coverage-summary.mjs'], { cwd, env, encoding: 'utf8' });
+    expect(res.status).toBe(0);
+    const out = res.stdout || '';
+    expect(out).toContain('AE-COVERAGE-SUMMARY (dry-run)');
+    expect(out).toContain('Coverage (lines): n/a%');
+    expect(out).toMatch(/Note: no coverage-summary\.json found/);
+  });
+});
