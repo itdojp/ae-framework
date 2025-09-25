@@ -42,6 +42,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 
 ### Policy sources & precedence
 - Threshold/DoD sources resolve in this order: policy > AE-IR > ae.config (hints only; warn on use). See also `SECURITY.md` and `docs/quality/coverage-policy.md`.
+ - When multiple thresholds exist within the same source, merge via the strictest comparator (e.g., `>=95%` is stricter than `>=90%`).
 
 Modes (report-only vs enforce)
 - report-only: non-blocking; post PR comments/artifacts for visibility
@@ -110,6 +111,7 @@ Workflows (selected)
 - Formal Aggregate comment:
   - Posted only when `run-formal` label is present (report‑only by default)
   - Includes Tools/Reproduce hints; respects `FORMAL_AGG_LINE_CLAMP`, `FORMAL_AGG_ERRORS_LIMIT`, `FORMAL_AGG_SNIPPET_MAX_LINES`
+  - Header strings must match exactly; the upsert logic identifies comments by the fixed header line
  - See also: `docs/quality/pr-summary.md` (summary comment structure and templates)
 
 #### Examples
