@@ -45,6 +45,7 @@ We take security vulnerabilities seriously. If you discover a security issue, pl
 ### CI Security/Compliance Operations
 
 - On pull requests, security jobs run non-blocking by default and publish artifacts for review. Heavy jobs are label/path gated per CI policy (see `docs/ci-policy.md` Path Conditions for configuration tips).
+  - Tip: use `paths-ignore` (e.g., `docs/**`, `**/*.md`) to skip heavy scans on docs-only changes
 - Labels:
   - `run-security` — opt-in Security/SBOM execution on PRs (posts a non-blocking summary comment)
   - `enforce-security` — enforce thresholds (blocking when limits exceeded)
@@ -383,6 +384,7 @@ Next Review / 次回見直し: July 2025
 ### CI におけるセキュリティ/コンプライアンス運用
 
 - PR では既定でセキュリティ関連ジョブを非ブロッキングで実行し、結果をアーティファクトに集約します。重いジョブはラベル/パス条件で制御します（label/path gated。詳細は `docs/ci-policy.md`）。
+  - 補足: ドキュメントのみの変更では `paths-ignore`（例: `docs/**`, `**/*.md`）を活用して重いスキャンを回避
 - ラベル運用:
   - `run-security` — PR で Security/SBOM を実行（非ブロッキングの要約コメントを投稿）
   - `enforce-security` — 閾値を強制（超過時はブロック）
