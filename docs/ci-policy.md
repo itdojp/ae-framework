@@ -30,6 +30,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
   } >> "$GITHUB_OUTPUT"
   ```
 - A guard runs in CI (workflow-lint) to block `echo >> $GITHUB_OUTPUT/$GITHUB_ENV` and to require quoted targets.
+  - See also: docs/ci/printf-guard.md for full guidance and examples.
 
 ### Opt-in Labels
 - `ci-non-blocking`: run selected jobs with continue-on-error (traceability, model-check, contracts, security, etc.)
