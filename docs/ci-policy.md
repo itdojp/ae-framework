@@ -16,6 +16,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 ### Required Checks (PR blocking)
 - Verify Lite (types:check / lint / build)
 - Optionally enable validate-artifacts-ajv / coverage-check as required
+  - See also: docs/ci/verify-lite-baseline.md (baseline triggers, steps, label/path gates)
 
 ### Opt-in Labels
 - `ci-non-blocking`: run selected jobs with continue-on-error (traceability, model-check, contracts, security, etc.)
