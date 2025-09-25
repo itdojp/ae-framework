@@ -124,6 +124,8 @@ We welcome international contributions! Please see our [Contributing Guide](CONT
 - [CI Policy (Fast/Stable by Default)](docs/ci-policy.md)
 - [Verify Lite Baseline](docs/ci/verify-lite-baseline.md)
 - [CI Labels Quick Reference](docs/ci/labels-quickref.md)
+  
+Tip: Re-run Verify Lite quickly on a PR by commenting `/verify-lite`.
 - [CLI Commands](docs/reference/CLI-COMMANDS-REFERENCE.md)
 
 ### 🧪 CI Quick Guide
