@@ -127,3 +127,21 @@ Consistency
   - A: 固定ヘッダ `<!-- AE-FORMAL-AGGREGATE -->` に対してアップサート（上書き）します。本文が同一の場合は更新をスキップします。
 - Q: 行が長くて読みにくい場合は？
   - A: `FORMAL_AGG_WRAP_WIDTH`（推奨 80–100）や `FORMAL_AGG_LINE_CLAMP` を調整してください。
+
+## Quick triage (jq)
+
+Extract present count and keys
+```
+jq -r '.info.presentCount' artifacts/formal/formal-aggregate.json
+jq -r '.info.present | to_entries | map(select(.value)) | map(.key) | join(", ")' artifacts/formal/formal-aggregate.json
+```
+
+Apalache ran/ok (if present)
+```
+jq -r '.info.ranOk.apalache' artifacts/formal/formal-aggregate.json
+```
+
+Conformance summary (if present)
+```
+jq -r '.conformance | {schemaErrors, invariantViolations, violationRate}' artifacts/formal/formal-aggregate.json
+```
