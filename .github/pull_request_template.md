@@ -1,16 +1,14 @@
-Title: <concise change summary>
+<!-- Short and focused PRs are preferred. Link issues like Refs #NNN. -->
 
-Summary
-- What changed and why
-- Risk/impact
+## Summary
+-
 
-CI Labels (optional)
-- Add `run-qa` to execute QA/Bench on this PR
-- Add `run-security` to execute Security/Compliance checks
-- Add `ci-non-blocking` to allow non-critical checks to continue-on-error
-- Add `coverage:<pct>` to set coverage threshold (default 80)
+## Checklist
+- [ ] Workflows use `printf` with quoted `$GITHUB_OUTPUT`/`$GITHUB_ENV` (no `echo`/`tee -a`)
+- [ ] `pnpm lint:workflows` passes locally (guard + actionlint via Docker if available)
+- [ ] (Optional) `pnpm ci:test:guard` passes (guard self-test)
+- [ ] Scope limited to the stated objective
 
-Checklist
-- [ ] Verify Lite passes locally (`pnpm types:check && pnpm lint && pnpm build`)
-- [ ] test:fast passes (`pnpm run test:fast`)
-- [ ] Docs updated if behavior changes (see `docs/ci-policy.md`)
+## Notes
+- Policy & examples: `docs/ci/printf-guard.md`
+- CI runs `workflow-lint.yml` (guard self-test + `rhysd/actionlint@v1.7.1`)
