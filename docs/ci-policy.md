@@ -31,6 +31,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 ### Required Checks (PR blocking)
 - Verify Lite (types:check / build) — note: lint within Verify Lite is non‑blocking
 - Optionally enable validate-artifacts-ajv / coverage-check as required
+  - Workflows: `.github/workflows/validate-artifacts-ajv.yml`, `.github/workflows/coverage-check.yml`
 
 ### Policy sources & precedence
 - Threshold/DoD sources resolve in this order: policy > AE-IR > ae.config (hints only; warn on use). See also `SECURITY.md` and `docs/quality/coverage-policy.md`.
@@ -161,7 +162,8 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 ### 必須チェック（PR ブロッキング）
 - Verify Lite（types:check / build）— 備考: lint は Verify Lite 内で非ブロッキング
  - 必要に応じて validate-artifacts-ajv / coverage-check を必須化可能
- - カバレッジ運用とRequired化の詳細は `docs/quality/coverage-policy.md` を参照（しきい値の由来、ラベル/変数、main運用）
+  - カバレッジ運用とRequired化の詳細は `docs/quality/coverage-policy.md` を参照（しきい値の由来、ラベル/変数、main運用）
+  - 対応ワークフロー: `.github/workflows/validate-artifacts-ajv.yml`, `.github/workflows/coverage-check.yml`
 
 ### ポリシーソース / 優先順位
 - しきい値 / DoD のソースは次の優先で解決: policy > AE-IR > ae.config（ヒントのみ・警告表示）。詳細は `SECURITY.md` / `docs/quality/coverage-policy.md` を参照。
