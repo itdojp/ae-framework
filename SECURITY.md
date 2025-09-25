@@ -63,6 +63,7 @@ We take security vulnerabilities seriously. If you discover a security issue, pl
   - `SECURITY_MAX_MODERATE` (default 2): allowed Moderate vulnerabilities
 - Workflow reference: `.github/workflows/sbom-generation.yml` generates SBOM, runs dependency audit, performs CodeQL, and optionally enforces thresholds. See also `.github/workflows/security.yml`.
   - Branch protection: when enforcing on `main`, add selected security checks as Required status checks under Settings → Branches → main → Require status checks
+  - Schedule: daily security scan at 02:00 UTC (see `security.yml` `schedule`)
 
 PR comment example (non-blocking when `run-security`)
 
@@ -202,6 +203,7 @@ Security Documentation
 - OWASP Secure Coding Practices
 - Node.js Security Best Practices
 - GitHub Security Best Practices
+ - Integrated security audit runbook: `docs/integrated-security-audit.md`
 
 Contact Information
 - Security Team: security@ae-framework.dev
@@ -372,6 +374,7 @@ Contact Information
 - OWASP Secure Coding Practices
 - Node.js Security Best Practices
 - GitHub Security Best Practices
+ - 統合セキュリティ監査のランブック: `docs/integrated-security-audit.md`
 
 連絡先
 - セキュリティチーム: security@ae-framework.dev
@@ -402,6 +405,7 @@ Next Review / 次回見直し: July 2025
   - `SECURITY_MAX_MODERATE`（既定 2）: Moderate の許容数
 - 対象ワークフロー: `.github/workflows/sbom-generation.yml` で SBOM 生成・依存監査・CodeQL を実施し、必要に応じて上記閾値でエンフォースします。関連: `.github/workflows/security.yml`。
   - ブランチ保護: `main` で強制する場合は Settings → Branches → main → Require status checks に必要なセキュリティチェックを追加
+  - スケジュール: 毎日 02:00 UTC にセキュリティスキャンを実施（`security.yml` の `schedule` を参照）
 
 PRコメント例（`run-security` 時は非ブロッキング）
 
