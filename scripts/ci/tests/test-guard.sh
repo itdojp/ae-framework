@@ -175,3 +175,21 @@ fi
 
 rm -f "$TMPDIR/wf/offender6.yml"
 echo "[test] Guard basic tests passed."
+
+# Offender: single > overwrite to GITHUB_OUTPUT
+cat > "$TMPDIR/wf/offender7.yml" << 'YAML'
+name: off7
+on: push
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "overwrite=true" > "$GITHUB_OUTPUT"
+YAML
+
+echo "[test] Expect guard to fail on overwrite (single >) offender..."
+if bash scripts/ci/guard-github-outputs.sh "$TMPDIR/wf"; then
+  echo "Guard did not fail on overwrite offender (unexpected)" >&2
+  exit 1
+fi

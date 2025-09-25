@@ -228,3 +228,29 @@ if [ -s "$setout_tmp" ]; then
   done < "$setout_tmp"
   exit 1
 fi
+
+# Forbid overwrite redirection (single >) to GITHUB_OUTPUT/ENV
+overwrite_tmp="/tmp/_overwrite_offenders.$$"
+if command -v rg >/dev/null 2>&1; then
+  rg -n -S -g "*.yml" -g "*.yaml" '>\s*"?\$\{?GITHUB_(OUTPUT|ENV)\}?"?' "$TARGET_DIR" \
+    | rg -v '>>' \
+    | awk 'BEGIN{FS=":"} { line=$0; sub(/^[[:space:]]+/,"",$3); if ($3 ~ /^#/) next; print line }' \
+    >"$overwrite_tmp" || true
+else
+  grep -REn --include "*.yml" --include "*.yaml" '>\s*"?\$\{?GITHUB_(OUTPUT|ENV)\}?"?' "$TARGET_DIR" \
+    | grep -v '>>' \
+    | awk 'BEGIN{FS=":"} { line=$0; sub(/^[[:space:]]+/,"",$3); if ($3 ~ /^#/) next; print line }' \
+    >"$overwrite_tmp" || true
+fi
+
+if [ -s "$overwrite_tmp" ]; then
+  echo "🚫 Overwrite redirection (>) to \$GITHUB_OUTPUT/\$GITHUB_ENV is not allowed; use append (>>) with printf." >&2
+  echo "(count) $(wc -l < "$overwrite_tmp") offender line(s)" >&2
+  cat "$overwrite_tmp" >&2 || true
+  while IFS=":" read -r f l _; do
+    if [ -n "${f:-}" ] && [ -n "${l:-}" ]; then
+      printf '::error file=%s,line=%s::Do not overwrite special files; use printf with >> append\n' "$f" "$l"
+    fi
+  done < "$overwrite_tmp"
+  exit 1
+fi
