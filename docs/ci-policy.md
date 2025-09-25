@@ -232,6 +232,9 @@ jobs:
  - Benchmarks: `docs/benchmark/README.md`
  - Formal tools setup: `docs/quality/formal-tools-setup.md`
  - Formal checks overview: `docs/verify/FORMAL-CHECKS.md`
+ - Repository variables (quick ref):
+   - `COVERAGE_DEFAULT_THRESHOLD`, `COVERAGE_ENFORCE_MAIN`
+   - `PERF_DEFAULT_THRESHOLD`, `LH_DEFAULT_THRESHOLD`
 
 ---
 
@@ -437,6 +440,9 @@ jobs:
  - ベンチマーク: `docs/benchmark/README.md`
  - フォーマルツールのセットアップ: `docs/quality/formal-tools-setup.md`
  - フォーマル検証の概要: `docs/verify/FORMAL-CHECKS.md`
+ - リポジトリ変数（クイックリファレンス）:
+   - `COVERAGE_DEFAULT_THRESHOLD`, `COVERAGE_ENFORCE_MAIN`
+   - `PERF_DEFAULT_THRESHOLD`, `LH_DEFAULT_THRESHOLD`
 Examples (label combos)
 - Non‑blocking exploratory run: add `ci-non-blocking` + selected `run-*` labels
 - Security check (report-only): add `run-security` (optionally `ci-non-blocking`)
