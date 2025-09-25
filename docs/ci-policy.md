@@ -72,6 +72,8 @@ This document defines CI policies to keep PR experience fast and stable while ma
 ### Path Conditions
 - Fire spec fail-fast only for changes under `spec/**`, `.ae/**`
 - Trigger SBOM/Security only for dependency or major code changes
+- Gate QA/bench (ae-ci) push runs by code paths (e.g., `src/**`, workspaces, lockfiles)
+- Gate SBOM/Security push runs by manifests/code paths (`package.json`, `pnpm-lock.yaml`, workspaces)
 
 ### test:fast (Fast CI suite)
 - Purpose: verify resilience/core units and lightweight integration quickly; exclude heavy/env-dependent tests
