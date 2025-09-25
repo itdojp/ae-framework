@@ -35,6 +35,15 @@ Sources and Minimal JSON
   ```
 - Secondary data (optional): `hermetic-reports/formal/summary.json` for concise one-line console summary.
 
+Upstream artifacts consumed
+- The aggregate workflow downloads artifacts produced by upstream formal jobs and looks for the following folders/files under the downloaded path:
+  - `formal-reports-tla/tla-summary.json`
+  - `formal-reports-alloy/alloy-summary.json`
+  - `formal-reports-smt/smt-summary.json`
+  - `formal-reports-apalache/apalache-summary.json` (+ `apalache-output.txt` if present)
+  - `formal-reports-conformance/conformance-summary.json`
+- Presence of these files drives the `info.present*` fields and the reported sections.
+
 Clamp and Limits (env)
 - `FORMAL_AGG_LINE_CLAMP` (default 200): line clamp for long lines in comment body.
 - `FORMAL_AGG_ERRORS_LIMIT` (default 5): max number of error fragments to include.
