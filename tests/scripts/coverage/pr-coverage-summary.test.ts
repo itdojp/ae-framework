@@ -848,6 +848,31 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
     expect(out).toContain('Report (JSON): custom/summary.json');
   });
 
+  it('prints note when AE_COVERAGE_SUMMARY_PATH is set but file missing', () => {
+    const cwd = process.cwd();
+    const event = {
+      pull_request: { number: 159, labels: [] },
+      ref: 'refs/heads/feature/override-missing'
+    };
+    const eventPath = join(cwd, 'tmp-gh-event-override-missing.json');
+    writeFileSync(eventPath, JSON.stringify(event), 'utf8');
+
+    const env = {
+      ...process.env,
+      GITHUB_TOKEN: 'test-token',
+      GITHUB_REPOSITORY: 'owner/repo',
+      GITHUB_EVENT_NAME: 'pull_request',
+      GITHUB_EVENT_PATH: eventPath,
+      AE_COVERAGE_DRY_RUN: '1',
+      AE_COVERAGE_SUMMARY_PATH: 'custom/missing.json'
+    } as NodeJS.ProcessEnv;
+
+    const res = spawnSync('node', ['scripts/coverage/pr-coverage-summary.mjs'], { cwd, env, encoding: 'utf8' });
+    expect(res.status).toBe(0);
+    const out = res.stdout || '';
+    expect(out).toMatch(/override path 'custom\/missing\.json' not found/);
+  });
+
   it('parses percent-suffixed label value (coverage:85%)', () => {
     const cwd = process.cwd();
     const covDir = join(cwd, 'coverage');
