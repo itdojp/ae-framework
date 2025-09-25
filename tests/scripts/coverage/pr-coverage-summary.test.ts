@@ -777,6 +777,41 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
     expect(out).not.toContain('Metrics:');
   });
 
+  it('includes Metrics when lines is missing but other metrics are valid', () => {
+    const cwd = process.cwd();
+    const covDir = join(cwd, 'coverage');
+    try { mkdirSync(covDir, { recursive: true }); } catch {}
+    const covPath = join(covDir, 'coverage-summary.json');
+    // No lines.pct but valid functions/branches/statements
+    writeFileSync(
+      covPath,
+      JSON.stringify({ total: { functions: { pct: 81 }, branches: { pct: 79.5 }, statements: { pct: 84 } } }),
+      'utf8'
+    );
+
+    const event = {
+      pull_request: { number: 157, labels: [] },
+      ref: 'refs/heads/feature/metrics-only'
+    };
+    const eventPath = join(cwd, 'tmp-gh-event-metrics-only.json');
+    writeFileSync(eventPath, JSON.stringify(event), 'utf8');
+
+    const env = {
+      ...process.env,
+      GITHUB_TOKEN: 'test-token',
+      GITHUB_REPOSITORY: 'owner/repo',
+      GITHUB_EVENT_NAME: 'pull_request',
+      GITHUB_EVENT_PATH: eventPath,
+      AE_COVERAGE_DRY_RUN: '1'
+    } as NodeJS.ProcessEnv;
+
+    const res = spawnSync('node', ['scripts/coverage/pr-coverage-summary.mjs'], { cwd, env, encoding: 'utf8' });
+    expect(res.status).toBe(0);
+    const out = res.stdout || '';
+    expect(out).toContain('Coverage (lines): n/a%');
+    expect(out).toContain('Metrics: functions=81%, branches=79.5%, statements=84%');
+  });
+
   it('parses percent-suffixed label value (coverage:85%)', () => {
     const cwd = process.cwd();
     const covDir = join(cwd, 'coverage');
