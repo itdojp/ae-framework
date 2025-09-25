@@ -9,6 +9,7 @@ cd "$(git rev-parse --show-toplevel)" || exit 1
 # Allow disabling the guard in rare cases (debug), default is enabled
 if [ "${PRINTF_GUARD_DISABLE:-0}" = "1" ]; then
   echo "(info) printf guard disabled via PRINTF_GUARD_DISABLE=1" >&2
+  echo "::notice::printf guard disabled via PRINTF_GUARD_DISABLE=1" >&2
   exit 0
 fi
 
@@ -38,12 +39,14 @@ fi
 TARGET_DIR="${1:-.github/workflows}"
 if [ ! -d "$TARGET_DIR" ]; then
   echo "⚠️  Target directory not found: $TARGET_DIR (nothing to check)" >&2
+  echo "::notice::printf guard skipped: target directory not found ($TARGET_DIR)" >&2
   exit 0
 fi
 
 # If no YAML workflow files, skip
 if ! find "$TARGET_DIR" -type f \( -name '*.yml' -o -name '*.yaml' \) | grep -q .; then
   echo "(info) No *.yml/*.yaml files under $TARGET_DIR; skipping guard checks" >&2
+  echo "::notice::printf guard skipped: no YAML files under $TARGET_DIR" >&2
   exit 0
 fi
 
