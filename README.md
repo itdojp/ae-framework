@@ -4,6 +4,7 @@
 [![testing-ddd-scripts](https://github.com/itdojp/ae-framework/actions/workflows/testing-ddd-scripts.yml/badge.svg)](https://github.com/itdojp/ae-framework/actions/workflows/testing-ddd-scripts.yml)
 [![coverage-check](https://github.com/itdojp/ae-framework/actions/workflows/coverage-check.yml/badge.svg)](https://github.com/itdojp/ae-framework/actions/workflows/coverage-check.yml)
 [![pr-summary-comment](https://github.com/itdojp/ae-framework/actions/workflows/pr-summary-comment.yml/badge.svg)](https://github.com/itdojp/ae-framework/actions/workflows/pr-summary-comment.yml)
+[![verify-lite](https://github.com/itdojp/ae-framework/actions/workflows/verify-lite.yml/badge.svg)](https://github.com/itdojp/ae-framework/actions/workflows/verify-lite.yml)
 
 > **🌍 Language / 言語**: [English](#english) | [日本語](#japanese) | [Documentation / ドキュメント](#documentation-ドキュメント)
 
