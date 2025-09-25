@@ -244,9 +244,16 @@ jobs:
  - Benchmarks: `docs/benchmark/README.md`
  - Formal tools setup: `docs/quality/formal-tools-setup.md`
  - Formal checks overview: `docs/verify/FORMAL-CHECKS.md`
- - Repository variables (quick ref):
-   - `COVERAGE_DEFAULT_THRESHOLD`, `COVERAGE_ENFORCE_MAIN`
-   - `PERF_DEFAULT_THRESHOLD`, `LH_DEFAULT_THRESHOLD`
+- Repository variables (quick ref):
+  - `COVERAGE_DEFAULT_THRESHOLD`, `COVERAGE_ENFORCE_MAIN`
+  - `PERF_DEFAULT_THRESHOLD`, `LH_DEFAULT_THRESHOLD`
+
+### PR author checklist (quick)
+- Run Quickstart locally (`build` + `test:fast`); add `types:check` / `security:scan` as needed
+- Add labels to opt into heavy jobs (`run-qa`, `run-security`, `run-formal`) — prefer `ci-non-blocking` during iteration
+- Set thresholds via labels when needed (`coverage:<pct>`, `perf:<pct>`, `lh:<pct>`) and enforce with `enforce-*`
+- Use slash commands to trigger or adjust runs (`/verify-lite`, `/run-qa-dispatch`, `/coverage <pct>`, `/non-blocking`/`/blocking`)
+- Mark ready with `/ready` once green; keep PRs small and revertable
 
 ### Troubleshooting (quick)
 - Label not taking effect? Verify exact label name and that the workflow reads it (paths/if gates). Try a dispatch command to force-run.
@@ -464,6 +471,13 @@ jobs:
  - リポジトリ変数（クイックリファレンス）:
    - `COVERAGE_DEFAULT_THRESHOLD`, `COVERAGE_ENFORCE_MAIN`
    - `PERF_DEFAULT_THRESHOLD`, `LH_DEFAULT_THRESHOLD`
+ 
+### PR作成者チェックリスト（クイック）
+- ローカルで Quickstart を実行（`build` + `test:fast`）。必要なら `types:check` / `security:scan` も追加
+- 重いジョブはラベルで明示（`run-qa`, `run-security`, `run-formal`）。反復時は `ci-non-blocking` の活用を推奨
+- しきい値はラベルで設定（`coverage:<pct>`, `perf:<pct>`, `lh:<pct>`）。強制は `enforce-*` で
+- スラッシュコマンドで実行や設定を調整（`/verify-lite`, `/run-qa-dispatch`, `/coverage <pct>`, `/non-blocking`/`/blocking`）
+- 緑化後に `/ready`。PR は小さく、revert しやすく維持
  
 ### トラブルシューティング（クイック）
 - ラベルが効かない? ラベル名の一致とワークフローでの参照（paths/if）を確認。必要ならディスパッチで強制実行。
