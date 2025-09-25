@@ -15,6 +15,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 ### Verify Lite defaults
 - PRs block only on Verify Lite (types:check / build). Lint runs in Verify Lite but is non‑blocking.
 - Heavy jobs are opt‑in via labels and/or path conditions.
+- Workflow: `.github/workflows/verify-lite.yml`
 
 ### actionlint & printf policy
 - All workflows must pass `rhysd/actionlint` (use `rhysd/actionlint@v1.7.1`; see `.github/workflows/workflow-lint.yml`).
@@ -179,6 +180,7 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 ### Verify Lite（既定）
 - PR では Verify Lite（types:check / build）のみブロッキング。lint は Verify Lite 内で実行するが非ブロッキング。
 - 重いジョブはラベル/パス条件でオプトイン実行。
+- 対応ワークフロー: `.github/workflows/verify-lite.yml`
 
 ### actionlint と printf ポリシー
 - すべてのワークフローは `rhysd/actionlint` をパスすること（`rhysd/actionlint@v1.7.1` を使用。`.github/workflows/workflow-lint.yml` を参照）。
