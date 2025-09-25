@@ -136,6 +136,7 @@ We welcome international contributions! Please see our [Contributing Guide](CONT
       - No Docker? Use `pnpm lint:workflows:nodocker` (guard + self-test; actionlint runs in CI)
       - See potential conversions: `pnpm ci:guard:suggest` (non-destructive suggestions)
       - Run basic guard self-test locally: `pnpm ci:test:guard`
+      - Run policy tests (guard + suggest): `pnpm ci:test:policy:all`
       - Run guard + self-test in one command: `pnpm ci:guard:all`
       - When appending to `$GITHUB_OUTPUT`/`$GITHUB_ENV`, use `printf` and quote the target file:
         - `printf "%s\n" "key=value" >> "$GITHUB_OUTPUT"`
