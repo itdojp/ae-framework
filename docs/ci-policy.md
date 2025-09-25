@@ -131,7 +131,7 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
   - Fifth batch: reintroduced `tests/contracts/**`（contract validation はCI安定範囲に調整済）
 
 ### Security/Compliance
-- Default: not required on PRs; run under `run-security`, aggregate results as artifacts
+- Default: not required on PRs; label/path gated; run under `run-security`, aggregate results as artifacts
 - PR summary comment (non-blocking) is posted when `run-security` is set (dependency vulnerabilities and top licenses)
 - Enforce/gate gradually after team agreement (separate issue)
  - See `SECURITY.md` for thresholds/enforcement policy and PR comment example.
@@ -243,7 +243,7 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 - `ae qa --light`: 軽量 QA 実行（`vitest` の `test:fast` を実行）。`ae-ci` の QA ステップで使用。
 
 ### セキュリティ/コンプライアンス
-- 既定では PR で非必須（`run-security` ラベル時のみ実行）。結果は artifacts に集約
+- 既定では PR で非必須。ラベル/パス条件で制御（label/path gated）。`run-security` ラベル時のみ実行し、結果は artifacts に集約
 - `run-security` ラベル時は、依存脆弱性のサマリと上位ライセンスの簡易サマリを PR コメントに自動投稿（非ブロッキング）
  - 詳細は `SECURITY.md` を参照（閾値/エンフォース、PRコメント例）。
 
