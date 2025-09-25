@@ -258,6 +258,17 @@ jobs:
         if: always()
         run: |
           node scripts/formal/validate-conformance-summary.mjs || true
+      - name: Append job summary (present)
+        if: always()
+        run: |
+          printf "### Formal Aggregate\n" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f artifacts/formal/formal-aggregate.json ]; then \
+            P=$(jq -r '.info.presentCount // 0' artifacts/formal/formal-aggregate.json 2>/dev/null || printf "0\n"); \
+            printf "Present: %s/5\n" "$P" >> "$GITHUB_STEP_SUMMARY"; \
+          else \
+            printf "No aggregate JSON found (artifacts/formal/formal-aggregate.json)\n" >> "$GITHUB_STEP_SUMMARY"; \
+          fi; \
+          printf "Header: <!-- AE-FORMAL-AGGREGATE --> (upsert on pull_request with label run-formal)\n" >> "$GITHUB_STEP_SUMMARY"
       - name: Note (dispatch vs PR comment)
         if: github.event_name != 'pull_request'
         run: |
