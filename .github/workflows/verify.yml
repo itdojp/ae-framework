@@ -5,6 +5,10 @@ on:
     tags: ['v*'] # Verify traceability on releases
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
+concurrency:
+  group: verify-trace-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   traceability:
