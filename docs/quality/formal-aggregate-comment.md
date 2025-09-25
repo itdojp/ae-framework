@@ -210,6 +210,7 @@ jobs:
   - `Run: <workflow run URL>`
   - `Clamp: line=…, errors=…, snippet=…, wrap=…`
   - `Label run-formal: yes|no`
+  - `Label enforce-formal: yes|no`
   - `Comment: created|updated|skipped` (+ URL/reason when available)
 
 ### Comment skip reasons (reference)
