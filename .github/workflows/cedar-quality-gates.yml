@@ -2,12 +2,16 @@ name: Cedar Policies Quality Gates
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
   push:
     branches: [main]
     tags: ['v*']
   workflow_dispatch:
 
 permissions: read-all
+concurrency:
+  group: cedar-gates-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   cedar-validate:
@@ -70,3 +74,9 @@ jobs:
         if: (steps.cedar.outputs.ng != '' && steps.cedar.outputs.ng != '0') && contains(github.event.pull_request.labels.*.name, 'enforce-security')
         run: |
           printf "%s\n" "::error::Cedar validation found NG=${{ steps.cedar.outputs.ng }} (enforce-security)"; exit 1
+      - name: Cedar Quality Gates (summary)
+        if: always()
+        run: |
+          printf "\n## 🛡️ Cedar Quality Gates\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- PR: label-gated via run-security/run-cedar; optional enforcement via enforce-security\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- Concurrency: cedar-gates-${{ github.ref }} (cancel in progress)\n" >> "$GITHUB_STEP_SUMMARY" || true
