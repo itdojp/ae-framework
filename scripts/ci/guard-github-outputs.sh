@@ -68,6 +68,7 @@ fi
 
 if [ -s "$tmp_echo" ]; then
   echo "🚫 Found forbidden echo >> \$GITHUB_OUTPUT/\$GITHUB_ENV usage in workflows:" >&2
+  echo "(count) $(wc -l < "$tmp_echo") offender line(s)" >&2
   cat "$tmp_echo" >&2 || true
   echo "\nFix: replace with printf, e.g.: printf \"%s\\n\" \"key=value\" >> \"\$GITHUB_OUTPUT\"" >&2
   # GitHub annotations for easier review
@@ -91,6 +92,7 @@ if command -v rg >/dev/null 2>&1; then
     >"$unquoted_tmp" || true
   if [ -s "$unquoted_tmp" ]; then
     echo "🚫 Found unquoted redirection target to \$GITHUB_OUTPUT/\$GITHUB_ENV (quote the variable):" >&2
+    echo "(count) $(wc -l < "$unquoted_tmp") offender line(s)" >&2
     cat "$unquoted_tmp" >&2 || true
     echo "\nFix: use >> \"\$GITHUB_OUTPUT\" (or \"\$GITHUB_ENV\")." >&2
     while IFS=":" read -r f l _; do
@@ -113,6 +115,7 @@ else
     fi
     if [ -n "$offenders" ]; then
       echo "🚫 Found unquoted redirection target to \$GITHUB_OUTPUT/\$GITHUB_ENV (quote the variable):" >&2
+      echo "(count) $(printf "%s\n" "$offenders" | wc -l) offender line(s)" >&2
       echo "$offenders" >&2
       echo "\nFix: use >> \"\$GITHUB_OUTPUT\" (or \"\$GITHUB_ENV\")." >&2
       while IFS=":" read -r f l _; do
@@ -143,6 +146,7 @@ fi
 
 if [ -s "$non_printf_tmp" ]; then
   echo "🚫 Found non-printf appends to \$GITHUB_OUTPUT/\$GITHUB_ENV. Policy requires printf." >&2
+  echo "(count) $(wc -l < "$non_printf_tmp") offender line(s)" >&2
   cat "$non_printf_tmp" >&2 || true
   echo "\nFix: use printf, e.g.: printf \"%s\\n\" \"key=value\" >> \"\$GITHUB_OUTPUT\"" >&2
   while IFS=":" read -r f l _; do
@@ -191,6 +195,7 @@ fi
 
 if [ -s "$tee_tmp" ]; then
   echo "🚫 Using tee -a to append to \$GITHUB_OUTPUT/\$GITHUB_ENV is not allowed (use printf)." >&2
+  echo "(count) $(wc -l < "$tee_tmp") offender line(s)" >&2
   cat "$tee_tmp" >&2 || true
   while IFS=":" read -r f l _; do
     if [ -n "${f:-}" ] && [ -n "${l:-}" ]; then
@@ -214,6 +219,7 @@ fi
 
 if [ -s "$setout_tmp" ]; then
   echo "🚫 Deprecated ::set-output usage detected. Use \"printf >> \$GITHUB_OUTPUT\" instead." >&2
+  echo "(count) $(wc -l < "$setout_tmp") offender line(s)" >&2
   cat "$setout_tmp" >&2 || true
   while IFS=":" read -r f l _; do
     if [ -n "${f:-}" ] && [ -n "${l:-}" ]; then
