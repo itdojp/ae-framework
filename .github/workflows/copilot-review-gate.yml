@@ -21,10 +21,30 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const number = context.payload.pull_request.number;
+            const author = context.payload.pull_request.user.login;
             const actors = (process.env.COPILOT_ACTORS || 'github-copilot,github-copilot[bot]')
               .split(',')
               .map(s => s.trim())
               .filter(Boolean);
+
+            // Early success for admins/maintainers (author-based bypass)
+            async function isAuthorAdminOrMaintainer() {
+              try {
+                const { data } = await github.rest.repos.getCollaboratorPermissionLevel({ owner, repo, username: author });
+                if (data && data.permission === 'admin') return true;
+              } catch {}
+              try {
+                const { data } = await github.rest.repos.getCollaborator({ owner, repo, username: author });
+                const perms = (data && data.permissions) || {};
+                if (perms.admin || perms.maintain) return true;
+              } catch {}
+              return false;
+            }
+
+            if (await isAuthorAdminOrMaintainer()) {
+              core.notice(`Author @${author} has admin/maintain permission. Copilot gate bypassed by policy.`);
+              return;
+            }
 
             const query = `query($owner:String!, $repo:String!, $number:Int!) {
               repository(owner:$owner, name:$repo) {
@@ -66,4 +86,3 @@ jobs:
             }
 
             core.notice(`Copilot review present. Resolved threads: ${copilotThreads.length}.`);
-
