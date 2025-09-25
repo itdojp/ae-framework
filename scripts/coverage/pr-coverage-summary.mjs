@@ -27,8 +27,10 @@ function parseNumToken(raw) {
 }
 
 const HEADER = '<!-- AE-COVERAGE-SUMMARY -->\n';
+const dryFlag = process.env['AE_COVERAGE_DRY_RUN'];
+const isDryRun = dryFlag === '1' || (typeof dryFlag === 'string' && dryFlag.toLowerCase() === 'true');
 const token = process.env['GITHUB_TOKEN'];
-if (!token) {
+if (!token && !isDryRun) {
   // Friendly no-op in environments without token (e.g., local runs)
   console.log('GITHUB_TOKEN not set; skipping PR coverage comment upsert');
   process.exit(0);
@@ -187,8 +189,7 @@ if (jsonHintPath) lines.push(`Report (JSON): ${jsonHintPath}`);
 const body = HEADER + lines.join('\n');
 
 // Dry-run support for local testing
-const dry = process.env['AE_COVERAGE_DRY_RUN'];
-if (dry === '1' || (typeof dry === 'string' && dry.toLowerCase() === 'true')) {
+if (isDryRun) {
   console.log('AE-COVERAGE-SUMMARY (dry-run)\n' + body);
   process.exit(0);
 }
