@@ -1003,6 +1003,53 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
     expect(out).toMatch(/override path 'custom\/missing\.json' not found/);
   });
 
+  it('skip has precedence over dry-run (prints skip note only)', () => {
+    const cwd = process.cwd();
+    const env = {
+      ...process.env,
+      AE_COVERAGE_SKIP_COMMENT: '1',
+      AE_COVERAGE_DRY_RUN: '1'
+    } as NodeJS.ProcessEnv;
+
+    const res = spawnSync('node', ['scripts/coverage/pr-coverage-summary.mjs'], { cwd, env, encoding: 'utf8' });
+    expect(res.status).toBe(0);
+    const out = res.stdout || '';
+    expect(out).toContain('AE_COVERAGE_SKIP_COMMENT');
+    expect(out).not.toContain('AE-COVERAGE-SUMMARY (dry-run)');
+  });
+
+  it('override path with invalid JSON → n/a and hint', () => {
+    const cwd = process.cwd();
+    const customDir = join(cwd, 'custom2');
+    try { mkdirSync(customDir, { recursive: true }); } catch {}
+    const covPath = join(customDir, 'summary.json');
+    // Write invalid JSON
+    writeFileSync(covPath, '{ total: ', 'utf8');
+
+    const event = {
+      pull_request: { number: 166, labels: [] },
+      ref: 'refs/heads/feature/override-invalid-json'
+    };
+    const eventPath = join(cwd, 'tmp-gh-event-override-invalid.json');
+    writeFileSync(eventPath, JSON.stringify(event), 'utf8');
+
+    const env = {
+      ...process.env,
+      GITHUB_TOKEN: 'test-token',
+      GITHUB_REPOSITORY: 'owner/repo',
+      GITHUB_EVENT_NAME: 'pull_request',
+      GITHUB_EVENT_PATH: eventPath,
+      AE_COVERAGE_DRY_RUN: '1',
+      AE_COVERAGE_SUMMARY_PATH: 'custom2/summary.json'
+    } as NodeJS.ProcessEnv;
+
+    const res = spawnSync('node', ['scripts/coverage/pr-coverage-summary.mjs'], { cwd, env, encoding: 'utf8' });
+    expect(res.status).toBe(0);
+    const out = res.stdout || '';
+    expect(out).toContain('Coverage (lines): n/a%');
+    expect(out).toContain('Report (JSON): custom2/summary.json');
+  });
+
   it('parses percent-suffixed label value (coverage:85%)', () => {
     const cwd = process.cwd();
     const covDir = join(cwd, 'coverage');
