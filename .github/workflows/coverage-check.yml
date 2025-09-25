@@ -85,4 +85,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COVERAGE_ENFORCE_MAIN: ${{ vars.COVERAGE_ENFORCE_MAIN }}
           COVERAGE_DEFAULT_THRESHOLD: ${{ vars.COVERAGE_DEFAULT_THRESHOLD }}
+          AE_COVERAGE_DRY_RUN: ${{ env.AE_COVERAGE_DRY_RUN }}
+          AE_COVERAGE_SKIP_COMMENT: ${{ env.AE_COVERAGE_SKIP_COMMENT }}
+          AE_COVERAGE_SUMMARY_PATH: ${{ env.AE_COVERAGE_SUMMARY_PATH }}
         run: node scripts/coverage/pr-coverage-summary.mjs
