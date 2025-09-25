@@ -14,6 +14,10 @@ jobs:
       - name: Verify Lite sanity (always on PR/main)
         run: |
           printf "Verify Lite: minimal checks enabled. Heavy jobs are label-gated.\n"
+      - name: Self-test (non-blocking)
+        continue-on-error: true
+        run: |
+          node scripts/ci/verify-lite-selftest.mjs || true
       - name: Coverage policy (note)
         run: |
           printf "%s\n" "Coverage policy (for reference):" \
