@@ -143,6 +143,8 @@ This document defines CI policies to keep PR experience fast and stable while ma
 ### セキュリティ/コンプライアンス
 - 既定では PR で非必須（`run-security` ラベル時のみ実行）。結果は artifacts に集約
 - `run-security` ラベル時は、依存脆弱性のサマリと上位ライセンスの簡易サマリを PR コメントに自動投稿（非ブロッキング）
+- `enforce-security` ラベルでしきい値を強制（cedar/sbom の対応箇所）。`ci-non-blocking` 併用で continue-on-error に切替。
+- 詳細は `docs/security/label-gates.md` を参照（閾値: `SECURITY_MAX_HIGH`, `SECURITY_MAX_MODERATE`）
 
 ### フォーマル（オプトイン）
 - `run-formal` ラベル時のみ、Formal Verify（stub）と成果物の集約（Alloy/TLA/SMT/Apalache の要約）を実行（非ブロッキング）
