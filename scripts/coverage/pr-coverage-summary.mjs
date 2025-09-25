@@ -194,9 +194,10 @@ if (summaryPath && !isFinite(pctNum)) {
 lines.push('Reproduce: coverage → coverage/coverage-summary.json → total.lines.pct');
 lines.push('Reproduce: threshold → label coverage:<pct> > vars.COVERAGE_DEFAULT_THRESHOLD > default 80');
 // Report path hints (if present in workspace)
-if (fs.existsSync('coverage/index.html')) {
-  lines.push('Report (HTML): coverage/index.html');
-}
+const htmlHintPath = fs.existsSync('coverage/index.html')
+  ? 'coverage/index.html'
+  : (fs.existsSync('artifacts/coverage/index.html') ? 'artifacts/coverage/index.html' : '');
+if (htmlHintPath) lines.push(`Report (HTML): ${htmlHintPath}`);
 const jsonHintPath = summaryPath || (fs.existsSync('coverage/coverage-summary.json')
   ? 'coverage/coverage-summary.json'
   : (fs.existsSync('artifacts/coverage/coverage-summary.json') ? 'artifacts/coverage/coverage-summary.json' : (overrideSummary || '')));

@@ -883,6 +883,38 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
     expect(out).toContain('Report (JSON): custom/summary.json');
   });
 
+  it('hints artifacts HTML report when present', () => {
+    const cwd = process.cwd();
+    const artCov = join(cwd, 'artifacts', 'coverage');
+    try { mkdirSync(artCov, { recursive: true }); } catch {}
+    const htmlPath = join(artCov, 'index.html');
+    writeFileSync(htmlPath, '<html></html>', 'utf8');
+    const covPath = join(cwd, 'coverage', 'coverage-summary.json');
+    try { mkdirSync(join(cwd, 'coverage'), { recursive: true }); } catch {}
+    writeFileSync(covPath, JSON.stringify({ total: { lines: { pct: 90 } } }), 'utf8');
+
+    const event = {
+      pull_request: { number: 161, labels: [] },
+      ref: 'refs/heads/feature/html-hint'
+    };
+    const eventPath = join(cwd, 'tmp-gh-event-html-hint.json');
+    writeFileSync(eventPath, JSON.stringify(event), 'utf8');
+
+    const env = {
+      ...process.env,
+      GITHUB_TOKEN: 'test-token',
+      GITHUB_REPOSITORY: 'owner/repo',
+      GITHUB_EVENT_NAME: 'pull_request',
+      GITHUB_EVENT_PATH: eventPath,
+      AE_COVERAGE_DRY_RUN: '1'
+    } as NodeJS.ProcessEnv;
+
+    const res = spawnSync('node', ['scripts/coverage/pr-coverage-summary.mjs'], { cwd, env, encoding: 'utf8' });
+    expect(res.status).toBe(0);
+    const out = res.stdout || '';
+    expect(out).toContain('Report (HTML): artifacts/coverage/index.html');
+  });
+
   it('prints note when AE_COVERAGE_SUMMARY_PATH is set but file missing', () => {
     const cwd = process.cwd();
     const event = {
