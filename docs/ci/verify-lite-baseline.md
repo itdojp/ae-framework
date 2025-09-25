@@ -36,3 +36,10 @@ This document summarizes the Verify Lite baseline setup and how heavy jobs are g
 ## Notes
 - Verify Lite remains lightweight by default; heavy steps are opt-in.
 - Path filters prevent default heavy runs on unrelated `push` events.
+
+## Local Checks (baseline)
+Run these locally to approximate the Verify Lite baseline:
+
+```bash
+corepack enable && pnpm i && pnpm -s types:check && pnpm -s build && pnpm run test:fast
+```
