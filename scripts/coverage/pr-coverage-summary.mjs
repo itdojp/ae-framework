@@ -75,9 +75,9 @@ if (summaryPath) {
     const fnNum = parseNumToken(cov?.total?.functions?.pct);
     const brNum = parseNumToken(cov?.total?.branches?.pct);
     const stNum = parseNumToken(cov?.total?.statements?.pct);
-    pctFns = typeof fnNum === 'number' && isFinite(fnNum) ? fmtPct(fnNum) : fnRaw;
-    pctBranches = typeof brNum === 'number' && isFinite(brNum) ? fmtPct(brNum) : brRaw;
-    pctStmts = typeof stNum === 'number' && isFinite(stNum) ? fmtPct(stNum) : stRaw;
+    pctFns = isFinite(fnNum) ? fmtPct(fnNum) : undefined;
+    pctBranches = isFinite(brNum) ? fmtPct(brNum) : undefined;
+    pctStmts = isFinite(stNum) ? fmtPct(stNum) : undefined;
   } catch (e) {
     console.error('Warning: failed to parse coverage summary; proceeding with n/a');
   }
