@@ -393,6 +393,7 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
     expect(res.status).toBe(0);
     const out = res.stdout || '';
     expect(out).toContain('Threshold (effective): 80%');
+    expect(out).toContain('Source: default');
     expect(out).toContain('- repo var: COVERAGE_DEFAULT_THRESHOLD=n/a%');
     expect(out).toContain('- default: 80%');
   });
@@ -425,6 +426,7 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
     expect(res.status).toBe(0);
     const out = res.stdout || '';
     expect(out).toContain('Threshold (effective): 80%');
+    expect(out).toContain('Source: default');
     expect(out).toContain('- repo var: COVERAGE_DEFAULT_THRESHOLD=150% (invalid, ignored)');
     expect(out).toContain('- default: 80%');
   });
@@ -492,6 +494,7 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
     expect(out).toContain('- via label: coverage:abc (invalid, ignored)');
     expect(out).toContain('- repo var: COVERAGE_DEFAULT_THRESHOLD=75%');
     expect(out).toContain('Threshold (effective): 75%');
+    expect(out).toContain('Source: repo var');
     expect(out).toMatch(/Gate: (OK|BELOW) \(79% (>=|<) 75%\)/);
   });
 
@@ -522,6 +525,7 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
     expect(res.status).toBe(0);
     const out = res.stdout || '';
     expect(out).toContain('Threshold (effective): 80%');
+    expect(out).toContain('Source: default');
     expect(out).toContain('- default: 80%');
   });
 
