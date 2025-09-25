@@ -118,6 +118,11 @@ We welcome international contributions! Please see our [Contributing Guide](CONT
 - [CodeX Integration](docs/integrations/CODEX-INTEGRATION.md)
   - [CodeX Quick Start](docs/integrations/QUICK-START-CODEX.md)
 - [API Reference](docs/reference/API.md)
+  
+#### CI Policy & Verify Lite Baseline
+- [CI Policy (Fast/Stable by Default)](docs/ci-policy.md)
+- [Verify Lite Baseline](docs/ci/verify-lite-baseline.md)
+- [CI Labels Quick Reference](docs/ci/labels-quickref.md)
 - [CLI Commands](docs/reference/CLI-COMMANDS-REFERENCE.md)
 
 ### 🧪 CI Quick Guide
