@@ -38,6 +38,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
   - Derived: label > repo var > default（a11yは固定: critical=0, serious=0）
   - Policy / Policy source（enforced via label, or report-only）
   - Links to docs
+  - (Dev toggles) AE_COVERAGE_DRY_RUN / AE_COVERAGE_SKIP_COMMENT / AE_COVERAGE_SUMMARY_PATH
 
 ### Slash Commands (Instant Dispatch / Labels)
 - コメントで以下を投稿すると、対象ワークフローの即時起動やラベル付与ができます（main取り込み後有効）。
