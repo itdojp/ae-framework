@@ -26,6 +26,9 @@
 
 ## ワークフロー変更ポリシー
 - echo→printf へ置換（特に `>> $GITHUB_OUTPUT` / `$GITHUB_ENV` は `printf` + 変数引用）
+- printf には改行を含める（例: `printf "%s\n" "key=value" >> "$GITHUB_OUTPUT"`）
+- `tee -a` での追記は禁止（printf を使用）
+- 廃止された `::set-output` は使用しない（printf で代替）
 - paths / labels による発火制御（重い作業は opt-in）
 - SBOM/セキュリティは PR 既定非必須、ラベル/変数で段階導入
 

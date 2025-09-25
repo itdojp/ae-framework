@@ -30,17 +30,21 @@
  - Before pushing workflow changes, run local checks:
    - `pnpm lint:workflows` (guard + actionlint via Docker if available)
    - `pnpm ci:test:guard` (basic guard self-test)
- - CI workflow snippets: when appending to GitHub special files, use printf with quoted targets (policy enforced in CI):
-   - `printf "%s\n" "key=value" >> "$GITHUB_OUTPUT"`
-   - `printf "%s\n" "NAME=value" >> "$GITHUB_ENV"`
-   - Grouped appends are allowed:
+- CI workflow snippets: when appending to GitHub special files, use printf with quoted targets (policy enforced in CI):
+  - `printf "%s\n" "key=value" >> "$GITHUB_OUTPUT"`
+  - `printf "%s\n" "NAME=value" >> "$GITHUB_ENV"`
+  - Grouped appends are allowed:
      ```bash
      {
        printf "%s\n" "one=1"
        printf "%s\n" "two=2"
      } >> "$GITHUB_OUTPUT"
      ```
-   - See docs/ci-policy.md for details
+  - See docs/ci-policy.md for details
+ - Additional constraints:
+   - Include a trailing newline in the printf format (prefer `"%s\n"`)
+   - Do not use `tee -a` to append to these files
+   - Do not use deprecated `::set-output`
 
 ### Package Manager Policy (pnpm)
 - Node.js: 20.x (per `package.json#engines`)
@@ -88,17 +92,21 @@ This is a monorepo; prefer `pnpm --filter` for workspace commands (e.g., `pnpm -
  - ワークフロー（.github/workflows）を変更する場合はローカルチェックを実行:
    - `pnpm lint:workflows`（ガード + actionlint／Dockerがあれば）
    - `pnpm ci:test:guard`（ガードの基本セルフテスト）
- - CI ワークフローのスニペット: `$GITHUB_OUTPUT` や `$GITHUB_ENV` に追記する際は `printf` と引用付きリダイレクトを使用（CI でポリシーを強制）
-   - `printf "%s\n" "key=value" >> "$GITHUB_OUTPUT"`
-   - `printf "%s\n" "NAME=value" >> "$GITHUB_ENV"`
-   - まとまった追記は以下のようにグループ化可能:
+- CI ワークフローのスニペット: `$GITHUB_OUTPUT` や `$GITHUB_ENV` に追記する際は `printf` と引用付きリダイレクトを使用（CI でポリシーを強制）
+  - `printf "%s\n" "key=value" >> "$GITHUB_OUTPUT"`
+  - `printf "%s\n" "NAME=value" >> "$GITHUB_ENV"`
+  - まとまった追記は以下のようにグループ化可能:
      ```bash
      {
        printf "%s\n" "one=1"
        printf "%s\n" "two=2"
      } >> "$GITHUB_OUTPUT"
      ```
-   - 詳細は docs/ci-policy.md を参照
+  - 詳細は docs/ci-policy.md を参照
+ - 追加制約:
+   - `printf` のフォーマットには改行を含める（推奨: `"%s\n"`）
+   - `tee -a` での追記は禁止
+   - 廃止された `::set-output` は使用しない
 
 ### パッケージマネージャ方針（pnpm）
 - Node.js: 20.x 系（`package.json#engines` 準拠）
