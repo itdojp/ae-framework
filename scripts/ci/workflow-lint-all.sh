@@ -4,6 +4,9 @@ set -euo pipefail
 # Run printf/quoting guard first
 pnpm -s ci:guard:github-outputs
 
+# Show echo->printf suggestions (non-blocking, for hints)
+pnpm -s ci:guard:suggest || true
+
 # Then run actionlint (Docker-based) if available
 if command -v docker >/dev/null 2>&1; then
   if docker version >/dev/null 2>&1; then
