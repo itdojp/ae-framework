@@ -7,6 +7,9 @@ Use these labels to opt-in heavy jobs or adjust policies on PRs.
 - run-qa: enable ae-ci QA/bench on PRs
 - run-security: enable Security/SBOM on PRs
 - run-drift: enable Codegen Drift Check on PRs
+- run-cedar: enable Cedar policies validation (report-only)
+- enforce-a11y: enforce adapter a11y thresholds (critical=0, serious=0)
+- run-hermetic: enable Hermetic CI on PRs
 - ci-non-blocking: run selected jobs with continue-on-error
 - enforce-coverage: enforce coverage threshold (coverage-check)
 - coverage:<pct>: override coverage threshold (e.g., coverage:75)
