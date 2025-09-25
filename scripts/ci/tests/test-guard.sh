@@ -46,7 +46,25 @@ if bash scripts/ci/guard-github-outputs.sh "$TMPDIR/wf"; then
   exit 1
 fi
 
+# Additional offender: unquoted printf to ${GITHUB_OUTPUT}
+cat > "$TMPDIR/wf/offender2.yml" << 'YAML'
+name: off2
+on: push
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          printf "%s\n" "BAD=true" >> ${GITHUB_OUTPUT}
+YAML
+
+echo "[test] Expect guard to fail on unquoted \${GITHUB_OUTPUT} offender..."
+if bash scripts/ci/guard-github-outputs.sh "$TMPDIR/wf"; then
+  echo "Guard did not fail on unquoted ${GITHUB_OUTPUT} offender (unexpected)" >&2
+  exit 1
+fi
+
 echo "[test] Expect guard to pass on allowed cases..."
-rm -f "$TMPDIR/wf/offender.yml"
+rm -f "$TMPDIR/wf/offender.yml" "$TMPDIR/wf/offender2.yml"
 bash scripts/ci/guard-github-outputs.sh "$TMPDIR/wf"
 echo "[test] Guard basic tests passed."
