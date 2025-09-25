@@ -223,6 +223,7 @@ jobs:
                 lines.push('');
                 lines.push('- Clamp env: FORMAL_AGG_LINE_CLAMP (default 200), FORMAL_AGG_ERRORS_LIMIT (default 5)');
                 lines.push('- Artifacts: formal-reports-aggregate, formal-reports-aggregate-json');
+                lines.push('- Note: PR comment upsert runs only on pull_request with label `run-formal`.');
                 return reply(lines.join('\n'));
               }
               case '/qa-batch-commands':
