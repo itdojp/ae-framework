@@ -57,10 +57,12 @@ const repoVarValidRange = repoVarIsNumeric && defTh >= 0 && defTh <= 100;
 const enforceMain = (process.env['COVERAGE_ENFORCE_MAIN'] || '0') === '1';
 
 // Load coverage summary (optional). If missing, still post a summary with n/a.
+const overrideSummary = process.env['AE_COVERAGE_SUMMARY_PATH'];
 const summaryCandidates = [
+  overrideSummary,
   'coverage/coverage-summary.json',
   'artifacts/coverage/coverage-summary.json',
-];
+].filter(Boolean);
 const summaryPath = summaryCandidates.find(p => fs.existsSync(p));
 let cov = {};
 let pct = 'n/a';
@@ -179,7 +181,12 @@ lines.push('Docs: docs/quality/coverage-required.md');
 lines.push('Docs: docs/quality/coverage-policy.md');
 lines.push('Docs: docs/ci/label-gating.md');
 lines.push('Tips: /coverage <pct> to override; /enforce-coverage to enforce');
-if (!summaryPath) lines.push('Note: no coverage-summary.json found (looked in coverage/ and artifacts/coverage/)');
+if (!summaryPath) {
+  const msg = overrideSummary
+    ? `Note: no coverage-summary.json found (override path '${overrideSummary}' not found; looked in coverage/ and artifacts/coverage/)`
+    : 'Note: no coverage-summary.json found (looked in coverage/ and artifacts/coverage/)';
+  lines.push(msg);
+}
 // If summary exists but lines.pct is missing/unreadable, add a gentle note
 if (summaryPath && !isFinite(pctNum)) {
   lines.push('Note: total.lines.pct not found or invalid in coverage summary');
@@ -192,7 +199,7 @@ if (fs.existsSync('coverage/index.html')) {
 }
 const jsonHintPath = summaryPath || (fs.existsSync('coverage/coverage-summary.json')
   ? 'coverage/coverage-summary.json'
-  : (fs.existsSync('artifacts/coverage/coverage-summary.json') ? 'artifacts/coverage/coverage-summary.json' : ''));
+  : (fs.existsSync('artifacts/coverage/coverage-summary.json') ? 'artifacts/coverage/coverage-summary.json' : (overrideSummary || '')));
 if (jsonHintPath) lines.push(`Report (JSON): ${jsonHintPath}`);
 const body = HEADER + lines.join('\n');
 

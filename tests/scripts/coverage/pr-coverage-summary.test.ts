@@ -817,6 +817,37 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
     expect(out).toContain('Metrics: functions=81%, branches=79.5%, statements=84%');
   });
 
+  it('honors AE_COVERAGE_SUMMARY_PATH override when present', () => {
+    const cwd = process.cwd();
+    const customDir = join(cwd, 'custom');
+    try { mkdirSync(customDir, { recursive: true }); } catch {}
+    const covPath = join(customDir, 'summary.json');
+    writeFileSync(covPath, JSON.stringify({ total: { lines: { pct: 91 } } }), 'utf8');
+
+    const event = {
+      pull_request: { number: 158, labels: [] },
+      ref: 'refs/heads/feature/override'
+    };
+    const eventPath = join(cwd, 'tmp-gh-event-override.json');
+    writeFileSync(eventPath, JSON.stringify(event), 'utf8');
+
+    const env = {
+      ...process.env,
+      GITHUB_TOKEN: 'test-token',
+      GITHUB_REPOSITORY: 'owner/repo',
+      GITHUB_EVENT_NAME: 'pull_request',
+      GITHUB_EVENT_PATH: eventPath,
+      AE_COVERAGE_DRY_RUN: '1',
+      AE_COVERAGE_SUMMARY_PATH: 'custom/summary.json'
+    } as NodeJS.ProcessEnv;
+
+    const res = spawnSync('node', ['scripts/coverage/pr-coverage-summary.mjs'], { cwd, env, encoding: 'utf8' });
+    expect(res.status).toBe(0);
+    const out = res.stdout || '';
+    expect(out).toContain('Coverage (lines): 91%');
+    expect(out).toContain('Report (JSON): custom/summary.json');
+  });
+
   it('parses percent-suffixed label value (coverage:85%)', () => {
     const cwd = process.cwd();
     const covDir = join(cwd, 'coverage');
