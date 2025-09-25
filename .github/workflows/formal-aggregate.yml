@@ -7,6 +7,10 @@ on:
 
 permissions: read-all
 
+concurrency:
+  group: formal-aggregate-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   aggregate:
     if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run-formal')
