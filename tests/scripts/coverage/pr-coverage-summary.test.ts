@@ -175,4 +175,36 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
     expect(out).toContain('Report (JSON): artifacts/coverage/coverage-summary.json');
     expect(out).not.toMatch(/no coverage-summary\.json found/);
   });
+
+  it('shows Action hint when Gate is BELOW', () => {
+    const cwd = process.cwd();
+    const covDir = join(cwd, 'coverage');
+    try { mkdirSync(covDir, { recursive: true }); } catch {}
+    const covPath = join(covDir, 'coverage-summary.json');
+    // Set coverage below default threshold
+    writeFileSync(covPath, JSON.stringify({ total: { lines: { pct: 60 } } }), 'utf8');
+
+    const event = {
+      pull_request: { number: 128, labels: [] },
+      ref: 'refs/heads/feature/below'
+    };
+    const eventPath = join(cwd, 'tmp-gh-event-below.json');
+    writeFileSync(eventPath, JSON.stringify(event), 'utf8');
+
+    const env = {
+      ...process.env,
+      GITHUB_TOKEN: 'test-token',
+      GITHUB_REPOSITORY: 'owner/repo',
+      GITHUB_EVENT_NAME: 'pull_request',
+      GITHUB_EVENT_PATH: eventPath,
+      AE_COVERAGE_DRY_RUN: '1',
+      COVERAGE_DEFAULT_THRESHOLD: '80'
+    } as NodeJS.ProcessEnv;
+
+    const res = spawnSync('node', ['scripts/coverage/pr-coverage-summary.mjs'], { cwd, env, encoding: 'utf8' });
+    expect(res.status).toBe(0);
+    const out = res.stdout || '';
+    expect(out).toContain('Gate: BELOW');
+    expect(out).toContain('Action: add tests to raise coverage or adjust threshold via /coverage <pct>');
+  });
 });
