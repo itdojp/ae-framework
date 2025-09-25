@@ -88,3 +88,19 @@ Consistency
 - Aligns with: `docs/quality/formal-runbook.md` guidance and `AGENTS.md` comment header policy。
 - Non-blocking by default; labels: `run-formal` (run), `enforce-formal` (optional enforcement).
 
+## Validation (PR Walkthrough)
+
+1) Label-gated run (report-only)
+- On a draft PR, comment `/run-formal` (adds label `run-formal`).
+- Expect: `formal-aggregate.yml` runs under `pull_request` and posts an upserted comment starting with `<!-- AE-FORMAL-AGGREGATE -->`.
+
+2) Re-run (idempotent)
+- Comment `/run-formal` again (no change in labels) or push a new commit (synchronize event).
+- Expect: the same header comment is updated (not duplicated).
+
+3) Manual dispatch (artifacts only)
+- Comment `/formal-aggregate-dispatch` to trigger `workflow_dispatch` on PR head.
+- Expect: artifacts `artifacts/formal/formal-aggregate.{md,json}` are generated. Comment posting occurs only on `pull_request` runs.
+
+4) Env tuning (optional)
+- Set clamp envs to adjust formatting: `FORMAL_AGG_LINE_CLAMP` (default 200), `FORMAL_AGG_ERRORS_LIMIT` (default 5), `FORMAL_AGG_SNIPPET_MAX_LINES` (default 20).
