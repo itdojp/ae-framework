@@ -5,7 +5,7 @@
 ## 目的
 - CI 安定化・段階導入（Verify Lite 必須、その他はラベル駆動）
 - 小さく安全な PR を多数（revert しやすい粒度）
-- actionlint 準拠（echo→printf、GITHUB_OUTPUT/GITHUB_ENV は printf で追記）
+- actionlint 準拠（echo→printf、GITHUB_OUTPUT/GITHUB_ENV は printf で追記）—詳細は `docs/ci/printf-guard.md` を参照
  - Coverage/ Formal の表示はPRコメントに要約を投稿（coverageは閾値の由来/ポリシー、formalは再現ヒントとtoolsチェックを提示）
 
 ## ブランチ/PR運用
