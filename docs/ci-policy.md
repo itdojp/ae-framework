@@ -32,12 +32,17 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - `coverage:<pct>`: override coverage threshold for coverage-check (default 80). e.g., `coverage:75`
  - `qa-batch:commands` / `qa-batch:cli` / `qa-batch:property` / `qa-batch:agents`: run additional CI Fast batches for the specific categories (opt-in)
 
-### Comment formatting (Coverage/Adapters)
+### Comment formatting (Coverage/Adapters/Formal)
 - Coverage / Adapters comments show:
   - Threshold (effective)
   - Derived: label > repo var > default（a11yは固定: critical=0, serious=0）
   - Policy / Policy source（enforced via label, or report-only）
   - Links to docs
+- Formal Aggregate (report-only, label-gated by `run-formal`) uses a fixed header and section order:
+  - Header: `<!-- AE-FORMAL-AGGREGATE -->`（upsert, idempotent）
+  - Sections: Present → Summary → By-type present → Apalache ran/ok → Meta（Tools/Reproduce/Policy/Clamp/Generated）
+  - Clamp/env: `FORMAL_AGG_LINE_CLAMP`（200）, `FORMAL_AGG_ERRORS_LIMIT`（5）, `FORMAL_AGG_SNIPPET_MAX_LINES`（20）, `FORMAL_AGG_WRAP_WIDTH`（0=off）
+  - Docs: `docs/quality/formal-aggregate-comment.md`, `docs/quality/formal-runbook.md`
 
 ### Slash Commands (Instant Dispatch / Labels)
 - コメントで以下を投稿すると、対象ワークフローの即時起動やラベル付与ができます（main取り込み後有効）。
