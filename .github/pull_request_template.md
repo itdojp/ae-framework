@@ -9,6 +9,7 @@
 - [ ] `pnpm lint:workflows` passes locally (guard + actionlint via Docker if available)
 - [ ] (Optional) `pnpm lint:workflows:nodocker` used (guard + self-test only) when Docker unavailable
 - [ ] (Optional) `pnpm ci:test:guard` passes (guard self-test)
+ - [ ] (Optional) Run `pnpm ci:guard:suggest` to see echo→printf conversion hints (non-destructive)
 - [ ] Scope limited to the stated objective
 
 ## Notes
