@@ -3,6 +3,9 @@ on:
   schedule:
     - cron: '0 10 * * *' # Daily at 19:00 JST
   workflow_dispatch:
+concurrency:
+  group: flake-maintenance-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -132,3 +135,8 @@ jobs:
           fi
           
           printf "%s\n" "=================================="
+      - name: Flake Maintenance (summary)
+        if: always()
+        run: |
+          printf "\n## 🧼 Flake Maintenance\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- Concurrency: flake-maintenance-${{ github.ref }} (cancel in progress)\n" >> "$GITHUB_STEP_SUMMARY" || true

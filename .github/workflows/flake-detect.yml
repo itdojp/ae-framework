@@ -3,6 +3,9 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 21 * * *' # JST 06:00
+concurrency:
+  group: flake-detect-${{ github.ref }}
+  cancel-in-progress: true
 permissions: 
   contents: read
   issues: write
@@ -91,6 +94,11 @@ jobs:
           name: flake-detection-report
           path: reports/flake-detection-report.json
           retention-days: 30
+      - name: Flake Detection (summary)
+        if: always()
+        run: |
+          printf "\n## ❄️ Flake Detect\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- Concurrency: flake-detect-${{ github.ref }} (cancel in progress)\n" >> "$GITHUB_STEP_SUMMARY" || true
       
       - name: Create GitHub issue for flaky tests
         if: steps.flake-check.outputs.flaky == 'true'
