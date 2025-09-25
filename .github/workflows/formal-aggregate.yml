@@ -365,6 +365,7 @@ jobs:
             let action = 'skipped';
             let reason = '';
             let url = '';
+            let commentPresent = false;
             if (!fs.existsSync(mdPath)) {
               reason = 'no-md';
               core.info('No aggregate MD found; skipping PR comment upsert');
@@ -377,6 +378,7 @@ jobs:
                 const { owner, repo, number } = context.issue;
                 const comments = await github.rest.issues.listComments({ owner, repo, issue_number: number, per_page: 100 });
                 const mine = comments.data.find(c => c.body && c.body.startsWith('<!-- AE-FORMAL-AGGREGATE -->'));
+                if (mine) commentPresent = true;
                 if (mine && mine.body === body) {
                   core.info('Aggregate unchanged; skipping update');
                   action = 'skipped';
@@ -385,10 +387,12 @@ jobs:
                   const res = await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
                   url = res?.data?.html_url || '';
                   action = 'updated';
+                  commentPresent = true;
                 } else {
                   const res = await github.rest.issues.createComment({ owner, repo, issue_number: number, body });
                   url = res?.data?.html_url || '';
                   action = 'created';
+                  commentPresent = true;
                 }
               } catch (e) {
                 core.warning(`Upsert failed: ${e?.message || e}`);
@@ -399,6 +403,7 @@ jobs:
             core.setOutput('comment_action', action);
             if (reason) core.setOutput('comment_reason', reason);
             if (url) core.setOutput('comment_url', url);
+            core.setOutput('comment_present', commentPresent ? '1' : '0');
       - name: Append comment action to summary
         if: github.event_name == 'pull_request'
         run: |
@@ -408,4 +413,9 @@ jobs:
           fi
           if [ -n "${{ steps.comment.outputs.comment_reason }}" ]; then \
             printf "Comment reason: %s\n" "${{ steps.comment.outputs.comment_reason }}" >> "$GITHUB_STEP_SUMMARY"; \
+          fi
+          if [ "${{ steps.comment.outputs.comment_present }}" = "1" ]; then \
+            printf "Comment present: yes\n" >> "$GITHUB_STEP_SUMMARY"; \
+          else \
+            printf "Comment present: no\n" >> "$GITHUB_STEP_SUMMARY"; \
           fi

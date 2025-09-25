@@ -176,6 +176,7 @@ gh pr view <pr-number> --json comments --jq '.comments[].body | select(startswit
   - `comment_action`: `created|updated|skipped`
   - `comment_url`: URL of the PR comment (when created/updated)
   - `comment_reason`: reason when skipped (e.g., `no-md`, `no-json`, `unchanged`)
+  - `comment_present`: `1|0` (whether the PR already has the aggregate comment after this run)
   - `has_run_formal`: `1|0` (whether the PR currently has `run-formal` label)
 
 Downstream usage (example)
