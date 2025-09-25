@@ -106,8 +106,8 @@ else
     | awk 'BEGIN{FS=":"} { line=$0; sub(/^[[:space:]]+/,"",$3); if ($3 ~ /^#/) next; print line }' \
     >"$unquoted_tmp" || true
   if [ -s "$unquoted_tmp" ]; then
-    if grep -REn '>>\s*"\$GITHUB_(OUTPUT|ENV)"' .github/workflows >/dev/null; then
-      offenders=$(grep -REn '>>\s*\$GITHUB_(OUTPUT|ENV)' .github/workflows | grep -v '>>\s*"\$GITHUB_')
+    if grep -REn --include "*.yml" --include "*.yaml" '>>\s*"\$GITHUB_(OUTPUT|ENV)"' "$TARGET_DIR" >/dev/null; then
+      offenders=$(grep -REn --include "*.yml" --include "*.yaml" '>>\s*\$GITHUB_(OUTPUT|ENV)' "$TARGET_DIR" | grep -v '>>\s*"\$GITHUB_')
     else
       offenders=$(cat "$unquoted_tmp")
     fi
