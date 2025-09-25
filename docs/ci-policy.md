@@ -31,6 +31,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
   - Ensure a trailing newline; missing `\n` may break parsing
   - Multiline output:
     - `printf '%s<<EOF\n%s\nEOF\n' 'summary' "$MULTILINE" >> "$GITHUB_OUTPUT"`
+  - Do not use deprecated commands (`::set-output`, `::add-path`); use `$GITHUB_OUTPUT` / `$GITHUB_ENV` instead
   - Local actionlint run:
     - Docker: `docker run --rm -v "$PWD":/repo -w /repo ghcr.io/rhysd/actionlint:1.7.1`
     - Homebrew (macOS): `brew install actionlint`
@@ -381,6 +382,7 @@ jobs:
   - 行末の改行（`\n`）を必ず含める。欠落すると解析に失敗する可能性あり
   - 複数行の出力:
     - `printf '%s<<EOF\n%s\nEOF\n' 'summary' "$MULTILINE" >> "$GITHUB_OUTPUT"`
+  - 非推奨コマンド（`::set-output`, `::add-path`）は使用しないでください。代わりに `$GITHUB_OUTPUT` / `$GITHUB_ENV` を使用
   - ローカルでの actionlint 実行:
     - Docker: `docker run --rm -v "$PWD":/repo -w /repo ghcr.io/rhysd/actionlint:1.7.1`
     - Homebrew (macOS): `brew install actionlint`
