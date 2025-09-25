@@ -51,11 +51,11 @@ non_printf_tmp=""
 trap 'rm -f "$tmp_echo" ${unquoted_tmp:+"$unquoted_tmp"} ${non_printf_tmp:+"$non_printf_tmp"}' EXIT
 
 if command -v rg >/dev/null 2>&1; then
-  rg -n -S "$pattern" "$TARGET_DIR" \
+  rg -n -S -g "*.yml" -g "*.yaml" "$pattern" "$TARGET_DIR" \
     | awk 'BEGIN{FS=":"} { line=$0; sub(/^[[:space:]]+/,"",$3); if ($3 ~ /^#/) next; print line }' \
     >"$tmp_echo" || true
 else
-  grep -REn "$pattern" "$TARGET_DIR" \
+  grep -REn --include "*.yml" --include "*.yaml" "$pattern" "$TARGET_DIR" \
     | awk 'BEGIN{FS=":"} { line=$0; sub(/^[[:space:]]+/,"",$3); if ($3 ~ /^#/) next; print line }' \
     >"$tmp_echo" || true
 fi
@@ -96,7 +96,7 @@ if command -v rg >/dev/null 2>&1; then
   fi
 else
   # Fallback heuristic: lines with >> $GITHUB_* minus quoted ones
-  grep -REn '>>\s*\$\{?GITHUB_(OUTPUT|ENV)\}?"?' "$TARGET_DIR" \
+  grep -REn --include "*.yml" --include "*.yaml" '>>\s*\$\{?GITHUB_(OUTPUT|ENV)\}?"?' "$TARGET_DIR" \
     | awk 'BEGIN{FS=":"} { line=$0; sub(/^[[:space:]]+/,"",$3); if ($3 ~ /^#/) next; print line }' \
     >"$unquoted_tmp" || true
   if [ -s "$unquoted_tmp" ]; then
@@ -126,11 +126,11 @@ non_printf_tmp="/tmp/_non_printf_offenders.$$"
 printfnn_tmp="/tmp/_printf_no_nl_offenders.$$"
 if command -v rg >/dev/null 2>&1; then
   # Match any line appending to quoted targets that does not include 'printf'
-  rg -n -S '>>\s*"\$\{?GITHUB_(OUTPUT|ENV)\}?"' "$TARGET_DIR" \
+  rg -n -S -g "*.yml" -g "*.yaml" '>>\s*"\$\{?GITHUB_(OUTPUT|ENV)\}?"' "$TARGET_DIR" \
     | rg -v 'printf' \
     | rg -v '\}\s*>>\s*"\$GITHUB_(OUTPUT|ENV)"' >"$non_printf_tmp" || true
 else
-  grep -REn '>>\s*"\$\{?GITHUB_(OUTPUT|ENV)\}?"' "$TARGET_DIR" \
+  grep -REn --include "*.yml" --include "*.yaml" '>>\s*"\$\{?GITHUB_(OUTPUT|ENV)\}?"' "$TARGET_DIR" \
     | grep -v 'printf' \
     | grep -Ev '\}\s*>>\s*"\$GITHUB_(OUTPUT|ENV)"' >"$non_printf_tmp" || true
 fi
@@ -151,11 +151,11 @@ echo "✅ All appends to GITHUB_OUTPUT/ENV use printf with proper quoting."
 
 # Enforce newline in printf format (prefer printf "%s\\n")
 if command -v rg >/dev/null 2>&1; then
-  rg -n -S 'printf\s+[^\n]*>>\s*"?\$\{?GITHUB_(OUTPUT|ENV)\}?"?' "$TARGET_DIR" \
+  rg -n -S -g "*.yml" -g "*.yaml" 'printf\s+[^\n]*>>\s*"?\$\{?GITHUB_(OUTPUT|ENV)\}?"?' "$TARGET_DIR" \
     | awk 'BEGIN{FS=":"} { line=$0; sub(/^[[:space:]]+/,"",$3); if ($3 ~ /^#/) next; print line }' \
     | rg -v '\\n' >"$printfnn_tmp" || true
 else
-  grep -REn 'printf\s+.*>>\s*"?\$\{?GITHUB_(OUTPUT|ENV)\}?"?' "$TARGET_DIR" \
+  grep -REn --include "*.yml" --include "*.yaml" 'printf\s+.*>>\s*"?\$\{?GITHUB_(OUTPUT|ENV)\}?"?' "$TARGET_DIR" \
     | awk 'BEGIN{FS=":"} { line=$0; sub(/^[[:space:]]+/,"",$3); if ($3 ~ /^#/) next; print line }' \
     | grep -Ev '\\n' >"$printfnn_tmp" || true
 fi
