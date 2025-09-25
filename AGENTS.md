@@ -85,6 +85,7 @@
 2) CI に影響のある変更は `run-qa` ラベルで限定的に回す
 3) テキスト生成・整形系は printf で統一
 4) 変更後: `pnpm -s types:check && pnpm -s build` のローカル通過を目安
+6) ワークフロー（.github/workflows/**）を変更した場合は、`pnpm lint:workflows`（ガード+actionlint）/ `pnpm ci:test:guard`（セルフテスト）を実行
 
 ### 小PR連投のレビューポリシー（推奨）
 - 1PRあたりの変更は小さく、revertしやすい粒度に保つ
