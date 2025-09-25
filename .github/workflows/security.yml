@@ -3,6 +3,13 @@ name: Security Analysis
 on:
   push:
     branches: [ main, develop ]
+    # Restrict default push runs to relevant code/manifests (heavy scans)
+    paths:
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'packages/**'
+      - 'apps/**'
+      - 'src/**'
   pull_request:
     branches: [ main ]
     # Avoid running heavy scans for docs-only changes
