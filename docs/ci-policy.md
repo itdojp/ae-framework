@@ -125,6 +125,7 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
     - `/run-spec` … `run-spec` を付与（Fail-Fast Spec 実行）
     - `/run-drift` … `run-drift` を付与（Codegen Drift 検出）
     - `/non-blocking` … `ci-non-blocking` を付与（一部ジョブを continue-on-error）
+    - `/blocking` … `ci-non-blocking` を除去（通常のブロッキング設定へ）
     - `/ready` … `do-not-merge` を除去（マージ待ちへ）
     - `/pr-digest` / `/pr-detailed` … PR要約モード切替
     - `/run-formal` / `/enforce-formal` / `/enforce-contracts` … フォーマル/契約の実行/エンフォース切替
