@@ -104,8 +104,9 @@ Workflows (selected)
 - `.github/workflows/sbom-generation.yml` (Security/SBOM)
  - `.github/workflows/fail-fast-spec-validation.yml` (spec fail-fast)
  - `.github/workflows/formal-verify.yml` (Formal verification)
- - `.github/workflows/formal-aggregate.yml` (Formal reports aggregate/comment)
+- `.github/workflows/formal-aggregate.yml` (Formal reports aggregate/comment)
 - `.github/workflows/pr-summary-comment.yml` (PR summary upsert)
+ - `.github/workflows/pr-verify.yml` (comprehensive PR verify)
  - `.github/workflows/auto-labels.yml` (auto-apply labels from PR title/body)
 
 
@@ -345,8 +346,9 @@ jobs:
 - `.github/workflows/sbom-generation.yml`（Security/SBOM）
  - `.github/workflows/fail-fast-spec-validation.yml`（仕様 Fail-Fast）
  - `.github/workflows/formal-verify.yml`（フォーマル検証）
- - `.github/workflows/formal-aggregate.yml`（フォーマル集約/コメント）
+- `.github/workflows/formal-aggregate.yml`（フォーマル集約/コメント）
 - `.github/workflows/pr-summary-comment.yml`（PR サマリのアップサート）
+ - `.github/workflows/pr-verify.yml`（包括的な PR 検証）
  - `.github/workflows/auto-labels.yml`（PR タイトル/本文からの自動ラベリング）
 
 ### クイックスタート（ローカル検証）
