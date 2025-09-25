@@ -2,6 +2,13 @@ name: ae-ci
 on:
   push:
     branches: [ main ]
+    # Restrict default push runs to code path changes (heavy QA/bench)
+    paths:
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'packages/**'
+      - 'apps/**'
+      - 'src/**'
     tags: ['v*']
   pull_request:
   workflow_dispatch:
