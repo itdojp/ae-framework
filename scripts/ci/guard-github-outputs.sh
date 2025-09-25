@@ -42,6 +42,12 @@ if [ -s "$tmp_echo" ]; then
   echo "🚫 Found forbidden echo >> \$GITHUB_OUTPUT/\$GITHUB_ENV usage in workflows:" >&2
   cat "$tmp_echo" >&2 || true
   echo "\nFix: replace with printf, e.g.: printf \"%s\\n\" \"key=value\" >> \"\$GITHUB_OUTPUT\"" >&2
+  # GitHub annotations for easier review
+  while IFS=":" read -r f l _; do
+    if [ -n "${f:-}" ] && [ -n "${l:-}" ]; then
+      printf '::error file=%s,line=%s::Use printf with quoted target (no echo)\n' "$f" "$l"
+    fi
+  done < "$tmp_echo"
   exit 1
 fi
 
@@ -58,6 +64,11 @@ if command -v rg >/dev/null 2>&1; then
     echo "🚫 Found unquoted redirection target to \$GITHUB_OUTPUT/\$GITHUB_ENV (quote the variable):" >&2
     cat "$unquoted_tmp" >&2 || true
     echo "\nFix: use >> \"\$GITHUB_OUTPUT\" (or \"\$GITHUB_ENV\")." >&2
+    while IFS=":" read -r f l _; do
+      if [ -n "${f:-}" ] && [ -n "${l:-}" ]; then
+        printf '::error file=%s,line=%s::Quote $GITHUB_OUTPUT/$GITHUB_ENV in redirection\n' "$f" "$l"
+      fi
+    done < "$unquoted_tmp"
     exit 1
   fi
 else
@@ -75,6 +86,11 @@ else
       echo "🚫 Found unquoted redirection target to \$GITHUB_OUTPUT/\$GITHUB_ENV (quote the variable):" >&2
       echo "$offenders" >&2
       echo "\nFix: use >> \"\$GITHUB_OUTPUT\" (or \"\$GITHUB_ENV\")." >&2
+      while IFS=":" read -r f l _; do
+        if [ -n "${f:-}" ] && [ -n "${l:-}" ]; then
+          printf '::error file=%s,line=%s::Quote $GITHUB_OUTPUT/$GITHUB_ENV in redirection\n' "$f" "$l"
+        fi
+      done <<< "$offenders"
       exit 1
     fi
   fi
@@ -99,6 +115,11 @@ if [ -s "$non_printf_tmp" ]; then
   echo "🚫 Found non-printf appends to \$GITHUB_OUTPUT/\$GITHUB_ENV. Policy requires printf." >&2
   cat "$non_printf_tmp" >&2 || true
   echo "\nFix: use printf, e.g.: printf \"%s\\n\" \"key=value\" >> \"\$GITHUB_OUTPUT\"" >&2
+  while IFS=":" read -r f l _; do
+    if [ -n "${f:-}" ] && [ -n "${l:-}" ]; then
+      printf '::error file=%s,line=%s::Use printf for appends to special files\n' "$f" "$l"
+    fi
+  done < "$non_printf_tmp"
   exit 1
 fi
 
@@ -115,6 +136,11 @@ fi
 if [ -s "$tee_tmp" ]; then
   echo "🚫 Using tee -a to append to \$GITHUB_OUTPUT/\$GITHUB_ENV is not allowed (use printf)." >&2
   cat "$tee_tmp" >&2 || true
+  while IFS=":" read -r f l _; do
+    if [ -n "${f:-}" ] && [ -n "${l:-}" ]; then
+      printf '::error file=%s,line=%s::Do not use tee -a for appends; use printf\n' "$f" "$l"
+    fi
+  done < "$tee_tmp"
   exit 1
 fi
 
@@ -129,5 +155,10 @@ fi
 if [ -s "$setout_tmp" ]; then
   echo "🚫 Deprecated ::set-output usage detected. Use \"printf >> \$GITHUB_OUTPUT\" instead." >&2
   cat "$setout_tmp" >&2 || true
+  while IFS=":" read -r f l _; do
+    if [ -n "${f:-}" ] && [ -n "${l:-}" ]; then
+      printf '::error file=%s,line=%s::Deprecated ::set-output; use printf >> $GITHUB_OUTPUT\n' "$f" "$l"
+    fi
+  done < "$setout_tmp"
   exit 1
 fi
