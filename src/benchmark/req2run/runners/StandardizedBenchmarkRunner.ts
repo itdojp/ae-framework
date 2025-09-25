@@ -467,7 +467,7 @@ export class StandardizedBenchmarkRunner {
       performance: {
         responseTime: pipelineResult.totalDuration,
         throughput: this.calculateThroughput(pipelineResult),
-        memoryUsage: process.memoryUsage().heapUsed,
+        memoryUsage: Math.round(process.memoryUsage().heapUsed / (1024 * 1024)),
         cpuUsage: 0, // Would need actual CPU monitoring
         diskUsage: 0  // Would need actual disk monitoring
       },
@@ -489,7 +489,7 @@ export class StandardizedBenchmarkRunner {
       },
       timeToCompletion: pipelineResult.totalDuration,
       resourceUsage: {
-        maxMemoryUsage: process.memoryUsage().heapTotal,
+        maxMemoryUsage: Math.round(process.memoryUsage().heapTotal / (1024 * 1024)),
         avgCpuUsage: 0,
         diskIO: 0,
         networkIO: 0,
@@ -676,15 +676,39 @@ export class StandardizedBenchmarkRunner {
   }
 
   private async extractGeneratedArtifacts(pipelineResult: PipelineResult): Promise<GeneratedArtifacts> {
+    // Gate by config: optionally disable artifact generation
+    if (!this.config?.evaluation?.generateArtifacts) {
+      return { sourceCode: [], documentation: [], tests: [], configuration: [], deployment: [] };
+    }
+
     // Extract artifacts from UI/UX generation phase
     const uiPhase = pipelineResult.phases.find(p => p.phase === 'ui-ux-generation');
-    
+    const docs = this.generateDocumentationFromPipeline(pipelineResult);
+
+    // Add phase summary document for PM aggregation (#923 groundwork)
+    const phaseSummary = [
+      '# AE Framework Benchmark Artifacts (Standardized Pipeline)',
+      '',
+      '## Phase Summary',
+      ...pipelineResult.phases.map(p => `- ${p.phase}: ${p.success ? '✅ success' : '❌ fail'} (${p.metadata.duration}ms)`)
+    ].join('\n');
+    docs.push({ filename: 'phase-summary.md', content: phaseSummary, type: 'architecture', format: 'markdown' });
+
+    // Include final output snapshot for traceability
+    const finalPhase = pipelineResult.phases[pipelineResult.phases.length - 1];
+    const finalData = finalPhase?.data ?? null;
+    docs.push({
+      filename: 'application-output.json',
+      content: (() => { try { return JSON.stringify(finalData, null, 2); } catch { return String(finalData); } })(),
+      type: 'api',
+      format: 'markdown'
+    });
+
     if (uiPhase && uiPhase.success) {
       const uiOutput = uiPhase.data as UIUXOutput;
-      
       return {
         sourceCode: this.generateSourceCodeFromUI(uiOutput),
-        documentation: this.generateDocumentationFromPipeline(pipelineResult),
+        documentation: docs,
         tests: [], // Would be generated based on validation phase
         configuration: this.generateConfigurationFiles(uiOutput),
         deployment: [] // Would be generated based on requirements
@@ -693,7 +717,7 @@ export class StandardizedBenchmarkRunner {
 
     return {
       sourceCode: [],
-      documentation: [],
+      documentation: docs,
       tests: [],
       configuration: [],
       deployment: []
