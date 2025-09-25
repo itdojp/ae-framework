@@ -14,6 +14,8 @@ This document defines CI policies to keep PR experience fast and stable while ma
   - Optional (local security scan): `pnpm -s security:scan`
   - Optional (type check only): `pnpm -s types:check`
   - Optional (formal tools check): `pnpm -s tools:formal:check`
+  - Optional (fast:plus suite): `pnpm -s test:fast:plus`
+  - Optional (batch focus): `pnpm -s test:fast:batch:commands` (or `:cli` / `:property` / `:agents`)
 
 ### Verify Lite defaults
 - PRs block only on Verify Lite (types:check / build). Lint runs in Verify Lite but is non‑blocking.
@@ -336,6 +338,8 @@ jobs:
   - 任意（ローカルセキュリティスキャン）: `pnpm -s security:scan`
   - 任意（型チェックのみ）: `pnpm -s types:check`
   - 任意（フォーマルツールチェック）: `pnpm -s tools:formal:check`
+  - 任意（fast:plus スイート）: `pnpm -s test:fast:plus`
+  - 任意（バッチ集中実行）: `pnpm -s test:fast:batch:commands`（他に `:cli` / `:property` / `:agents` あり）
 
 ### Verify Lite（既定）
 - PR では Verify Lite（types:check / build）のみブロッキング。lint は Verify Lite 内で実行するが非ブロッキング。
