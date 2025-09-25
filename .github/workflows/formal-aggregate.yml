@@ -329,6 +329,7 @@ jobs:
             printf "Present: %s/5\n" "$P" >> "$GITHUB_STEP_SUMMARY"; \
             if [ -n "$KEYS" ]; then printf "Keys: %s\n" "$KEYS" >> "$GITHUB_STEP_SUMMARY"; fi; \
             printf "Apalache: %s\n" "$APO" >> "$GITHUB_STEP_SUMMARY"; \
+            printf "Digest: Present %s/5 | Apalache %s\n" "$P" "$APO" >> "$GITHUB_STEP_SUMMARY"; \
             printf "%s\n" "$CLN" >> "$GITHUB_STEP_SUMMARY"; \
             printf "Artifacts: artifacts/formal/formal-aggregate.{md,json}\n" >> "$GITHUB_STEP_SUMMARY"; \
           else \
