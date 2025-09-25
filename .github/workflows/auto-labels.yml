@@ -2,6 +2,9 @@ name: auto-labels
 on:
   pull_request:
     types: [opened, edited, synchronize, reopened]
+concurrency:
+  group: auto-labels-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
   pull-requests: write
@@ -31,3 +34,8 @@ jobs:
             if (toAdd.size) {
               await github.rest.issues.addLabels({ owner, repo, issue_number: number, labels: Array.from(toAdd) });
             }
+      - name: Auto Labels (summary)
+        if: always()
+        run: |
+          printf "\n## 🏷️ Auto Labels\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- Concurrency: auto-labels-${{ github.ref }} (cancel in progress)\n" >> "$GITHUB_STEP_SUMMARY" || true
