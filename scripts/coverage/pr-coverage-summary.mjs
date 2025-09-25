@@ -19,6 +19,8 @@ function parseNumToken(raw) {
   if (typeof raw === 'string') {
     let s = raw.trim();
     if (s.endsWith('%')) s = s.slice(0, -1).trim();
+    // Collapse inner whitespace (e.g., "82 . 5" -> "82.5")
+    s = s.replace(/\s+/g, '');
     const n = Number(s);
     return isFinite(n) ? n : NaN;
   }
@@ -208,6 +210,9 @@ const jsonHintPath = summaryPath || (fs.existsSync('coverage/coverage-summary.js
   ? 'coverage/coverage-summary.json'
   : (fs.existsSync('artifacts/coverage/coverage-summary.json') ? 'artifacts/coverage/coverage-summary.json' : (overrideSummary || '')));
 if (jsonHintPath) lines.push(`Report (JSON): ${jsonHintPath}`);
+// Threshold source line (concise) should be part of the rendered body
+const src = hasValidLabel ? 'label' : (repoVarValidRange ? 'repo var' : 'default');
+lines.push(`Source: ${src}`);
 const body = HEADER + lines.join('\n');
 
 // Dry-run support for local testing
@@ -226,9 +231,6 @@ try {
     console.error('Non-fatal: failed to list comments', list.status, await list.text());
     process.exit(0);
   }
-  // Threshold source line (concise)
-  const src = hasValidLabel ? 'label' : (repoVarValidRange ? 'repo var' : 'default');
-  lines.push(`Source: ${src}`);
   const comments = await list.json();
   const mine = comments.find(c => typeof c.body === 'string' && c.body.startsWith(HEADER));
   if (mine) {
