@@ -169,9 +169,9 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 
 ### 必須チェック（PR ブロッキング）
 - Verify Lite（types:check / build）— 備考: lint は Verify Lite 内で非ブロッキング
- - 必要に応じて validate-artifacts-ajv / coverage-check を必須化可能
-  - カバレッジ運用とRequired化の詳細は `docs/quality/coverage-policy.md` を参照（しきい値の由来、ラベル/変数、main運用）
-  - 対応ワークフロー: `.github/workflows/validate-artifacts-ajv.yml`, `.github/workflows/coverage-check.yml`
+- 必要に応じて validate-artifacts-ajv / coverage-check を必須化可能
+- カバレッジ運用とRequired化の詳細は `docs/quality/coverage-policy.md` を参照（しきい値の由来、ラベル/変数、main運用）
+- 対応ワークフロー: `.github/workflows/validate-artifacts-ajv.yml`, `.github/workflows/coverage-check.yml`
 
 ### ポリシーソース / 優先順位
 - しきい値 / DoD のソースは次の優先で解決: policy > AE-IR > ae.config（ヒントのみ・警告表示）。詳細は `SECURITY.md` / `docs/quality/coverage-policy.md` を参照。
@@ -194,9 +194,9 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 - `run-e2e`: E2E テストを PR で有効化
 - `coverage:<pct>`: coverage-check のしきい値を上書き（既定 80）。例: `coverage:75`
   - PR での設定/クリア: `/coverage <pct|clear>`
- - `enforce-coverage`: カバレッジしきい値を強制（閾値未満でブロック）。詳細は `docs/quality/coverage-policy.md` を参照
- - `run-formal`: PR で Formal Verify と集約レポートを実行（既定は report-only）。`docs/quality/formal-runbook.md` を参照
- - `enforce-formal` / `enforce-contracts`: フォーマル/契約チェックのゲート化を有効化（ラベル制御）
+- `enforce-coverage`: カバレッジしきい値を強制（閾値未満でブロック）。詳細は `docs/quality/coverage-policy.md` を参照
+- `run-formal`: PR で Formal Verify と集約レポートを実行（既定は report-only）。`docs/quality/formal-runbook.md` を参照
+- `enforce-formal` / `enforce-contracts`: フォーマル/契約チェックのゲート化を有効化（ラベル制御）
 
 ### クイックスタート（ローカル検証）
 - `corepack enable && pnpm i && pnpm -s build && pnpm run test:fast`
