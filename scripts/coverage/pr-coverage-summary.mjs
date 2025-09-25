@@ -79,7 +79,7 @@ let covLabelValStr = covLabel ? String(covLabel.split(':')[1] || '').trim() : ''
 const covLabelValNum = covLabelValStr !== '' ? Number(covLabelValStr) : NaN;
 const hasValidLabel = isFinite(covLabelValNum);
 const effNumeric = hasValidLabel ? covLabelValNum : defTh;
-const effTh = String(effNumeric);
+const effTh = fmtPct(effNumeric);
 
 // Policy: report-only unless enforced via label or main+vars
 let strict = false;
@@ -113,7 +113,7 @@ if (covLabel) {
   if (hasValidLabel) lines.push(`- via label: ${covLabel}`);
   else lines.push(`- via label: ${covLabel} (invalid, ignored)`);
 }
-if (hasRepoVar) lines.push(`- repo var: COVERAGE_DEFAULT_THRESHOLD=${isFinite(defTh) ? defTh : 'n/a'}%`);
+if (hasRepoVar) lines.push(`- repo var: COVERAGE_DEFAULT_THRESHOLD=${isFinite(defTh) ? fmtPct(defTh) : 'n/a'}%`);
 lines.push(`- default: 80%`);
 lines.push('Derived: label > repo var > default');
 lines.push(`Policy: ${policy}`);
