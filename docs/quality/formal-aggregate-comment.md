@@ -8,6 +8,13 @@ Header and Upsert
 - Upsert: find existing comment starting with the header; update if present, otherwise create.
 - One comment per PR; re-runs overwrite content under the same header to avoid noise.
 
+Permissions (workflow)
+- To post/update the PR comment from a workflow, ensure permissions include:
+  - `contents: read`
+  - `issues: write`
+  - `pull-requests: write`
+  - Example (see `.github/workflows/formal-aggregate.yml`).
+
 Sources and Minimal JSON
 - Primary source: `artifacts/formal/formal-aggregate.json`
   - Minimal shape (example):
