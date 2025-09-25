@@ -1,6 +1,10 @@
 name: validate-artifacts-ajv
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
+concurrency:
+  group: validate-artifacts-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
@@ -48,3 +52,9 @@ jobs:
             fi; \
           fi
         continue-on-error: ${{ github.ref != 'refs/heads/main' && needs.gate.outputs.strict != 'true' }}
+      - name: AJV policy (summary)
+        if: always()
+        run: |
+          printf "\n## 🧩 Artifacts (AJV)\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- PR: enforce via label 'enforce-artifacts' (gate job)\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- Policy: %s\n" "${{ needs.gate.outputs.strict == 'true' && 'enforced' || 'report-only' }}" >> "$GITHUB_STEP_SUMMARY" || true
