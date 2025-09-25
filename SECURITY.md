@@ -54,6 +54,16 @@ We take security vulnerabilities seriously. If you discover a security issue, pl
   - `SECURITY_MAX_MODERATE` (default 2): allowed Moderate vulnerabilities
 - Workflow reference: `.github/workflows/sbom-generation.yml` generates SBOM, runs dependency audit, performs CodeQL, and optionally enforces thresholds.
 
+PR comment example (non-blocking when `run-security`)
+
+```
+Security Summary
+High/Critical: 0 (limit: SEC_MAX_HIGH=0)
+Moderate: 1 (limit: SEC_MAX_MODERATE=2)
+Policy: report-only (apply `enforce-security` to gate)
+Links: .github/workflows/sbom-generation.yml, docs/ci-policy.md
+```
+
 ### Security Measures
 
 Automated Security Scanning
@@ -369,3 +379,13 @@ Next Review / 次回見直し: July 2025
   - `SECURITY_MAX_HIGH`（既定 0）: High 以上の許容数
   - `SECURITY_MAX_MODERATE`（既定 2）: Moderate の許容数
 - 対象ワークフロー: `.github/workflows/sbom-generation.yml` で SBOM 生成・依存監査・CodeQL を実施し、必要に応じて上記閾値でエンフォースします。
+
+PRコメント例（`run-security` 時は非ブロッキング）
+
+```
+Security Summary
+High/Critical: 0（許容: SEC_MAX_HIGH=0）
+Moderate: 1（許容: SEC_MAX_MODERATE=2）
+Policy: report-only（`enforce-security` を付与するとゲート）
+Links: .github/workflows/sbom-generation.yml, docs/ci-policy.md
+```
