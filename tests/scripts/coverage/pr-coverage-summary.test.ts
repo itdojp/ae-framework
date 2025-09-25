@@ -207,4 +207,67 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
     expect(out).toContain('Gate: BELOW');
     expect(out).toContain('Action: add tests to raise coverage or adjust threshold via /coverage <pct>');
   });
+
+  it('accepts case-insensitive coverage:<pct> label prefix', () => {
+    const cwd = process.cwd();
+    const covDir = join(cwd, 'coverage');
+    try { mkdirSync(covDir, { recursive: true }); } catch {}
+    const covPath = join(covDir, 'coverage-summary.json');
+    writeFileSync(covPath, JSON.stringify({ total: { lines: { pct: 90 } } }), 'utf8');
+
+    const event = {
+      pull_request: { number: 129, labels: [ { name: 'CoVeRaGe:77' } ] },
+      ref: 'refs/heads/feature/case'
+    };
+    const eventPath = join(cwd, 'tmp-gh-event-case.json');
+    writeFileSync(eventPath, JSON.stringify(event), 'utf8');
+
+    const env = {
+      ...process.env,
+      GITHUB_TOKEN: 'test-token',
+      GITHUB_REPOSITORY: 'owner/repo',
+      GITHUB_EVENT_NAME: 'pull_request',
+      GITHUB_EVENT_PATH: eventPath,
+      AE_COVERAGE_DRY_RUN: '1',
+      COVERAGE_DEFAULT_THRESHOLD: '80'
+    } as NodeJS.ProcessEnv;
+
+    const res = spawnSync('node', ['scripts/coverage/pr-coverage-summary.mjs'], { cwd, env, encoding: 'utf8' });
+    expect(res.status).toBe(0);
+    const out = res.stdout || '';
+    expect(out).toContain('Threshold (effective): 77%');
+    expect(out).toContain('- via label: CoVeRaGe:77');
+  });
+
+  it('prints repo var line when COVERAGE_DEFAULT_THRESHOLD is set', () => {
+    const cwd = process.cwd();
+    const covDir = join(cwd, 'coverage');
+    try { mkdirSync(covDir, { recursive: true }); } catch {}
+    const covPath = join(covDir, 'coverage-summary.json');
+    writeFileSync(covPath, JSON.stringify({ total: { lines: { pct: 81 } } }), 'utf8');
+
+    const event = {
+      pull_request: { number: 130, labels: [] },
+      ref: 'refs/heads/feature/var'
+    };
+    const eventPath = join(cwd, 'tmp-gh-event-var.json');
+    writeFileSync(eventPath, JSON.stringify(event), 'utf8');
+
+    const env = {
+      ...process.env,
+      GITHUB_TOKEN: 'test-token',
+      GITHUB_REPOSITORY: 'owner/repo',
+      GITHUB_EVENT_NAME: 'pull_request',
+      GITHUB_EVENT_PATH: eventPath,
+      AE_COVERAGE_DRY_RUN: '1',
+      COVERAGE_DEFAULT_THRESHOLD: '82'
+    } as NodeJS.ProcessEnv;
+
+    const res = spawnSync('node', ['scripts/coverage/pr-coverage-summary.mjs'], { cwd, env, encoding: 'utf8' });
+    expect(res.status).toBe(0);
+    const out = res.stdout || '';
+    expect(out).toContain('Threshold (effective): 82%');
+    expect(out).toContain('- repo var: COVERAGE_DEFAULT_THRESHOLD=82%');
+    expect(out).toContain('- default: 80%');
+  });
 });
