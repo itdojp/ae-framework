@@ -87,10 +87,18 @@ lines.push(`Policy: ${policy}`);
 lines.push(`Policy source: ${rationale}`);
 lines.push('Docs: docs/quality/coverage-required.md');
 lines.push('Docs: docs/quality/coverage-policy.md');
+lines.push('Docs: docs/ci/label-gating.md');
 lines.push('Tips: /coverage <pct> to override; /enforce-coverage to enforce');
 if (!fs.existsSync(summaryPath)) lines.push('Note: no coverage-summary.json found');
 lines.push('Reproduce: coverage → coverage/coverage-summary.json → total.lines.pct');
 lines.push('Reproduce: threshold → label coverage:<pct> > vars.COVERAGE_DEFAULT_THRESHOLD > default 80');
+// Report path hints (if present in workspace)
+if (fs.existsSync('coverage/index.html')) {
+  lines.push('Report (HTML): coverage/index.html');
+}
+if (fs.existsSync('coverage/coverage-summary.json')) {
+  lines.push('Report (JSON): coverage/coverage-summary.json');
+}
 const body = HEADER + lines.join('\n');
 
 // Upsert PR comment
