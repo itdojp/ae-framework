@@ -157,3 +157,16 @@ Count matching comments (should be 0 or 1 due to upsert):
 ```
 gh pr view <pr-number> --json comments --jq '.comments[].body | select(startswith("<!-- AE-FORMAL-AGGREGATE -->"))' | wc -l
 ```
+
+## Dispatch via GitHub CLI (artifacts only)
+
+Run the aggregate workflow on a PR head branch (does not post the PR comment):
+```
+gh workflow run formal-aggregate.yml --ref <head-branch>
+```
+
+Monitor the run:
+```
+gh run list --workflow "Formal Reports Aggregate" --limit 1
+gh run watch <run-id>
+```
