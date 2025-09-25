@@ -135,6 +135,13 @@ const jsonHintPath = summaryPath || (fs.existsSync('coverage/coverage-summary.js
 if (jsonHintPath) lines.push(`Report (JSON): ${jsonHintPath}`);
 const body = HEADER + lines.join('\n');
 
+// Dry-run support for local testing
+const dry = process.env['AE_COVERAGE_DRY_RUN'];
+if (dry === '1' || (typeof dry === 'string' && dry.toLowerCase() === 'true')) {
+  console.log('AE-COVERAGE-SUMMARY (dry-run)\n' + body);
+  process.exit(0);
+}
+
 // Upsert PR comment
 const base = `https://api.github.com/repos/${owner}/${repo}`;
 const headers = { 'authorization': `Bearer ${token}`, 'accept': 'application/vnd.github+json' };
