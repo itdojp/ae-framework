@@ -118,3 +118,12 @@ Consistency
 - formal-reports-aggregate (artifact): `artifacts/formal/formal-aggregate.md`
 - formal-reports-aggregate-json (artifact): `artifacts/formal/formal-aggregate.json`
 - Tips: Download both artifacts from the Actions run to inspect the exact MD/JSON posted/derived.
+
+## FAQ
+
+- Q: DispatchしたのにPRコメントが出ないのはなぜ？
+  - A: `workflow_dispatch` はArtifactsのみ生成します。PRコメントのアップサートは `pull_request` 実行かつ `run-formal` ラベル時に行われます。
+- Q: 同じコメントが重複しませんか？
+  - A: 固定ヘッダ `<!-- AE-FORMAL-AGGREGATE -->` に対してアップサート（上書き）します。本文が同一の場合は更新をスキップします。
+- Q: 行が長くて読みにくい場合は？
+  - A: `FORMAL_AGG_WRAP_WIDTH`（推奨 80–100）や `FORMAL_AGG_LINE_CLAMP` を調整してください。
