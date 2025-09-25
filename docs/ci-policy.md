@@ -214,7 +214,9 @@ jobs:
 - Slash command mappings: `.github/workflows/agent-commands.yml`
 - CI label gating details: `docs/ci/label-gating.md`
 - CI labels cheatsheet: `docs/cheatsheets/ci-labels-cheatsheet.md`
- - Contributor quick refs (labels): `CONTRIBUTING.md` (labels table)
+- Contributor quick refs (labels): `CONTRIBUTING.md` (labels table)
+ - Type coverage policy: `docs/quality/type-coverage-policy.md`
+ - Benchmarks: `docs/benchmark/README.md`
 
 ---
 
@@ -401,4 +403,6 @@ jobs:
 - スラッシュコマンド対応表: `.github/workflows/agent-commands.yml`
 - CIラベルのゲーティング詳細: `docs/ci/label-gating.md`
 - CIラベル早見表: `docs/cheatsheets/ci-labels-cheatsheet.md`
- - コントリビュータ向け早見表（ラベル）: `CONTRIBUTING.md`（ラベル表）
+- コントリビュータ向け早見表（ラベル）: `CONTRIBUTING.md`（ラベル表）
+ - 型カバレッジポリシー: `docs/quality/type-coverage-policy.md`
+ - ベンチマーク: `docs/benchmark/README.md`
