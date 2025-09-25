@@ -210,6 +210,12 @@ jobs:
               issue_number: context.payload.pull_request.number,
               body
             });
+      - name: Verify Traceability (summary)
+        if: always()
+        run: |
+          printf "\n## 🧭 Verify Traceability\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- PR: re-runs on labeled; policy toggles via labels (e.g., ci-non-blocking)\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- Concurrency: verify-trace-${{ github.ref }} (cancel in progress)\n" >> "$GITHUB_STEP_SUMMARY" || true
   contracts-check:
     runs-on: ubuntu-latest
     steps:
