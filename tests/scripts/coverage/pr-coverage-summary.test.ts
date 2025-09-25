@@ -928,6 +928,18 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
     expect(out).toContain('Coverage (lines): 80%');
   });
 
+  it('skips posting when AE_COVERAGE_SKIP_COMMENT=1', () => {
+    const cwd = process.cwd();
+    const env = {
+      ...process.env,
+      AE_COVERAGE_SKIP_COMMENT: '1'
+    } as NodeJS.ProcessEnv;
+    const res = spawnSync('node', ['scripts/coverage/pr-coverage-summary.mjs'], { cwd, env, encoding: 'utf8' });
+    expect(res.status).toBe(0);
+    const out = res.stdout || '';
+    expect(out).toContain('AE_COVERAGE_SKIP_COMMENT');
+  });
+
   it('skips upsert gracefully when repository coordinates cannot be resolved', () => {
     const cwd = process.cwd();
     const covDir = join(cwd, 'coverage');

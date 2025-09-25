@@ -29,6 +29,12 @@ function parseNumToken(raw) {
 const HEADER = '<!-- AE-COVERAGE-SUMMARY -->\n';
 const dryFlag = process.env['AE_COVERAGE_DRY_RUN'];
 const isDryRun = dryFlag === '1' || (typeof dryFlag === 'string' && dryFlag.toLowerCase() === 'true');
+const skipFlag = process.env['AE_COVERAGE_SKIP_COMMENT'];
+const isSkip = skipFlag === '1' || (typeof skipFlag === 'string' && skipFlag.toLowerCase() === 'true');
+if (isSkip) {
+  console.log('Note: AE_COVERAGE_SKIP_COMMENT set; skipping PR coverage comment upsert');
+  process.exit(0);
+}
 const token = process.env['GITHUB_TOKEN'];
 if (!token && !isDryRun) {
   // Friendly no-op in environments without token (e.g., local runs)
