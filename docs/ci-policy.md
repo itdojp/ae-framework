@@ -247,9 +247,10 @@ jobs:
  - Benchmarks: `docs/benchmark/README.md`
  - Formal tools setup: `docs/quality/formal-tools-setup.md`
  - Formal checks overview: `docs/verify/FORMAL-CHECKS.md`
-- Repository variables (quick ref):
-  - `COVERAGE_DEFAULT_THRESHOLD`, `COVERAGE_ENFORCE_MAIN`
-  - `PERF_DEFAULT_THRESHOLD`, `LH_DEFAULT_THRESHOLD`
+ - Repository variables (quick ref):
+   - `COVERAGE_DEFAULT_THRESHOLD`, `COVERAGE_ENFORCE_MAIN`
+   - `PERF_DEFAULT_THRESHOLD`, `LH_DEFAULT_THRESHOLD`
+ - PR summary env/toggles: `docs/ci/summary-env.md`
 
 ### PR author checklist (quick)
 - Run Quickstart locally (`build` + `test:fast`); add `types:check` / `security:scan` as needed
@@ -479,6 +480,7 @@ jobs:
  - リポジトリ変数（クイックリファレンス）:
    - `COVERAGE_DEFAULT_THRESHOLD`, `COVERAGE_ENFORCE_MAIN`
    - `PERF_DEFAULT_THRESHOLD`, `LH_DEFAULT_THRESHOLD`
+ - PRサマリの環境/切替: `docs/ci/summary-env.md`
  
 ### PR作成者チェックリスト（クイック）
 - ローカルで Quickstart を実行（`build` + `test:fast`）。必要なら `types:check` / `security:scan` も追加
