@@ -32,7 +32,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 ### Required Checks (PR blocking)
 - Verify Lite (types:check / build) — note: lint within Verify Lite is non‑blocking
 - Optionally enable validate-artifacts-ajv / coverage-check as required
-  - Workflows: `.github/workflows/validate-artifacts-ajv.yml`, `.github/workflows/coverage-check.yml`
+  - Workflows: `.github/workflows/validate-artifacts-ajv.yml`, `.github/workflows/coverage-check.yml` (see also `docs/quality/coverage-required.md`)
   - Enforce via Branch protection: Settings → Branches → main → Require status checks (add Verify Lite and selected checks)
 
 ### Policy sources & precedence
@@ -68,7 +68,7 @@ Workflows (selected)
 - `.github/workflows/parallel-test-execution.yml` (quality row)
 - `.github/workflows/flake-detect.yml` (flake detection)
 - `.github/workflows/hermetic-ci.yml` (Hermetic CI)
- - `qa-batch:commands` / `qa-batch:cli` / `qa-batch:property` / `qa-batch:agents`: run additional CI Fast batches for the specific categories (opt-in)
+
 
 ### PR comments (Coverage / Formal)
 - Comments are upserted (one per header) with fixed headers to avoid duplicates:
