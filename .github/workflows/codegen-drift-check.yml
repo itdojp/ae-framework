@@ -12,6 +12,7 @@ on:
   pull_request:
     # Run on ALL PRs for contract drift detection (issue #71)
     branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
   workflow_call:
     # Allow this workflow to be called by other workflows
 
@@ -198,6 +199,12 @@ jobs:
         continue-on-error: false
         
       - name: Upload drift reports
+      - name: Drift policy (summary)
+        if: always()
+        run: |
+          printf "\n## 🔁 Codegen Drift Check\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- PR: label-gated via run-drift (job if)\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- push: path-gated to spec/IR/templates/codegen paths\n" >> "$GITHUB_STEP_SUMMARY" || true
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -440,3 +447,6 @@ jobs:
           fi
           
           printf "%s\n" "✅ Quality gate PASSED"
+concurrency:
+  group: codegen-drift-${{ github.ref }}
+  cancel-in-progress: true
