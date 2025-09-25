@@ -50,6 +50,11 @@ Examples (label combos)
 - Security check (report-only): add `run-security` (optionally `ci-non-blocking`)
 - Security enforcement on PR: add `run-security` + `enforce-security`
 
+Label value patterns
+- `coverage:<pct>` / `perf:<pct>` / `lh:<pct>` — integer 0–100 (no `%`)
+- `trace:<id>` — free-form identifier (letters/digits/hyphen/underscore)
+- `lang:ja` / `lang:en` — PR summary language selector
+
 ### Opt-in Labels
 - `ci-non-blocking`: run selected jobs with continue-on-error (traceability, model-check, contracts, security, etc.)
 - `run-security`: run heavy security jobs (Security Scanning, Dependency Audit, License Compliance, CodeQL)
@@ -174,6 +179,7 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
  - Examples (security): changes to `**/package.json`, `pnpm-lock.yaml`, `security/**` may trigger security workflows
  - Configure in workflows via `on.pull_request.paths` and/or `if: contains(github.event.pull_request.labels.*.name, 'label')`
  - Override via labels when needed: e.g., add `run-spec` or `run-security` to force execution regardless of path filters
+  - Consider `paths-ignore` to skip heavy jobs on docs-only changes (e.g., `docs/**`, `**/*.md`)
  
 Examples (YAML)
 ```
@@ -254,6 +260,11 @@ jobs:
 - 非ブロッキングでの試行: `ci-non-blocking` + 必要な `run-*` ラベルを付与
 - セキュリティ（report-only）: `run-security` を付与（必要に応じて `ci-non-blocking`）
 - セキュリティ（強制）: `run-security` + `enforce-security` を付与
+
+ラベルの値フォーマット
+- `coverage:<pct>` / `perf:<pct>` / `lh:<pct>` — 0〜100 の整数（`%` なし）
+- `trace:<id>` — 英数・ハイフン・アンダースコアなどの識別子
+- `lang:ja` / `lang:en` — PR サマリ言語の切替
 
 ### ラベル運用（Opt-in）
 - `ci-non-blocking`: 一部ジョブ（traceability, model-check, contracts, security 等）を continue-on-error で実行し PR をブロックしない
@@ -360,6 +371,8 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
  - 例（セキュリティ）: `**/package.json` や `pnpm-lock.yaml`、`security/**` の変更でセキュリティ系が発火対象
  - 設定方法: ワークフローの `on.pull_request.paths` または `if: contains(github.event.pull_request.labels.*.name, 'label')` を利用
  - ラベルでの上書き: 必要に応じて `run-spec` / `run-security` を付与し、パス条件に関わらず実行を強制可能
+  - `paths-ignore` の活用: ドキュメントのみの変更時は重いジョブを避ける（例: `docs/**`, `**/*.md`）
+
  
 例（YAML）
 ```
