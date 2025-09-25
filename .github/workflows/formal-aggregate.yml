@@ -22,6 +22,7 @@ jobs:
       comment_action: ${{ steps.comment.outputs.comment_action }}
       comment_url: ${{ steps.comment.outputs.comment_url }}
       comment_reason: ${{ steps.comment.outputs.comment_reason }}
+      comment_present: ${{ steps.comment.outputs.comment_present }}
       has_run_formal: ${{ steps.labels.outputs.has_run_formal }}
       has_enforce_formal: ${{ steps.labels.outputs.has_enforce_formal }}
     if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run-formal')
