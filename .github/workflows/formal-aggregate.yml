@@ -321,6 +321,8 @@ jobs:
             printf "%s\n" "aggregate_json_present=true" >> "$GITHUB_OUTPUT"; \
           else \
             printf "%s\n" "aggregate_json_present=false" >> "$GITHUB_OUTPUT"; \
+            printf "%s\n" "present_count=0" >> "$GITHUB_OUTPUT"; \
+            printf "%s\n" "present_keys=" >> "$GITHUB_OUTPUT"; \
           fi
       - name: Validate aggregate JSON (non-blocking)
         if: always()
