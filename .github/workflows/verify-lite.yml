@@ -50,6 +50,12 @@ jobs:
         run: pnpm run build
       - name: Tests (fast baseline)
         run: pnpm -s run test:fast
+      - name: Baseline summary (note)
+        if: always()
+        run: |
+          printf "\n## ✅ Verify Lite Baseline\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- types:check, lint (non-blocking), build, test:fast executed\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- heavy steps are label-gated (run-formal / run-resilience)\n" >> "$GITHUB_STEP_SUMMARY" || true
       - name: BDD lint (non-blocking)
         continue-on-error: true
         run: |
