@@ -5,6 +5,9 @@ on:
     types: [published]
   push:
     tags: ['v*']
+concurrency:
+  group: release-quality-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: write
 jobs:
@@ -37,3 +40,9 @@ jobs:
         with:
           name: quality-artifacts
           path: quality-artifacts.tgz
+      - name: Release artifacts (summary)
+        if: always()
+        run: |
+          printf "\n## 📦 Release Quality Artifacts\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- Triggered via release tag/workflow_dispatch\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- Concurrency: release-quality-${{ github.ref }} (cancel in progress)\n" >> "$GITHUB_STEP_SUMMARY" || true
