@@ -53,6 +53,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
  - `run-formal`: enable Formal Verify and aggregate report on PRs (report-only by default); see `docs/quality/formal-runbook.md`
  - `enforce-formal` / `enforce-contracts`: enforce gates for formal/contract checks (label-gated)
 - `run-adapters`: report Adapter Thresholds (a11y/perf/Lighthouse) in PRs (report-only). See `.github/workflows/adapter-thresholds.yml` and `docs/quality/adapter-thresholds.md`.
+- `run-cedar`: run Cedar policies quality gates (report-only). See `.github/workflows/cedar-quality-gates.yml` and `docs/quality/cedar-quality-gates.md`.
 - `coverage:<pct>`: override coverage threshold for coverage-check (default 80). e.g., `coverage:75`
   - Use `/coverage <pct|clear>` to set/clear on a PR
  - `enforce-coverage`: enforce coverage threshold on PRs (blocking when below threshold). See `docs/quality/coverage-policy.md`.
@@ -107,9 +108,11 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
     - `/formal-aggregate-dispatch` … Formal Reports Aggregate を実行（`run-formal` 併用時に集約コメントを生成）
     - `/run-flake-dispatch` … flake-detect を実行
     - `/spec-validation-dispatch` … spec-validation を実行
+    - `/run-cedar-dispatch` … cedar-quality-gates を実行
   - ラベル付与（Opt-in 実行/ポリシー切替）
     - `/run-qa` … `run-qa` を付与（ae-ci の QA 実行）
     - `/run-security` … `run-security` を付与（Security/SBOM 実行。PR要約も投稿）
+    - `/run-cedar` … `run-cedar` を付与（Cedar policies の品質ゲートを非ブロッキングで実行）
     - `/run-adapters` … `run-adapters` を付与（Adapter Thresholds をレポート: report-only）
     - `/run-hermetic` … `run-hermetic` を付与（Hermetic CI 実行）
     - `/run-spec` … `run-spec` を付与（Fail-Fast Spec 実行）
@@ -187,6 +190,7 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 - `run-spec`: 仕様 Fail-Fast を PR で有効化
 - `run-drift`: Codegen Drift 検出を PR で有効化
 - `run-adapters`: Adapter Thresholds（a11y/perf/Lighthouse）をPRでレポート（report-only）。`adapter-thresholds.yml` が要約コメントを投稿
+- `run-cedar`: Cedar policies の品質ゲートを実行（report-only）。`.github/workflows/cedar-quality-gates.yml` / `docs/quality/cedar-quality-gates.md`
 - `enforce-perf`: perf スコアのしきい値を強制（`perf:<pct>` ラベルで上書き、既定は `vars.PERF_DEFAULT_THRESHOLD` または 75）
 - `enforce-lh`: Lighthouse performance スコアのしきい値を強制（`lh:<pct>` ラベルで上書き、既定は `vars.LH_DEFAULT_THRESHOLD` または 80）
 - `run-hermetic`: Hermetic CI を PR で有効化
