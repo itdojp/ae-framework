@@ -68,11 +68,14 @@ This document defines CI policies to keep PR experience fast and stable while ma
 Workflows (selected)
 - `.github/workflows/ae-ci.yml` (QA light)
 - `.github/workflows/ci-fast.yml` (CI Fast batches)
+- `.github/workflows/workflow-lint.yml` (actionlint)
 - `.github/workflows/parallel-test-execution.yml` (quality row)
 - `.github/workflows/flake-detect.yml` (flake detection)
 - `.github/workflows/hermetic-ci.yml` (Hermetic CI)
 - `.github/workflows/adapter-thresholds.yml` (Adapters report-only)
 - `.github/workflows/cedar-quality-gates.yml` (Cedar policies quality gates)
+ - `.github/workflows/coverage-check.yml` (coverage gate/report)
+ - `.github/workflows/sbom-generation.yml` (Security/SBOM)
  - `.github/workflows/pr-summary-comment.yml` (PR summary upsert)
 
 
@@ -251,11 +254,14 @@ jobs:
 対応ワークフロー（抜粋）
 - `.github/workflows/ae-ci.yml`（QA light）
 - `.github/workflows/ci-fast.yml`（CI Fast バッチ）
+- `.github/workflows/workflow-lint.yml`（actionlint）
 - `.github/workflows/parallel-test-execution.yml`（quality 行）
 - `.github/workflows/flake-detect.yml`（flake 検出）
 - `.github/workflows/hermetic-ci.yml`（Hermetic CI）
 - `.github/workflows/adapter-thresholds.yml`（Adapters レポート: report-only）
 - `.github/workflows/cedar-quality-gates.yml`（Cedar 品質ゲート）
+ - `.github/workflows/coverage-check.yml`（カバレッジ ゲート/レポート）
+ - `.github/workflows/sbom-generation.yml`（Security/SBOM）
  - `.github/workflows/pr-summary-comment.yml`（PR サマリのアップサート）
 
 ### クイックスタート（ローカル検証）
