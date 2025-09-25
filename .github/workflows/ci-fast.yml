@@ -1,6 +1,7 @@
 name: CI Fast
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
   push:
     branches: [main, develop]
     tags: ['v*']

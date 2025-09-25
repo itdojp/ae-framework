@@ -1,6 +1,7 @@
 name: Quality Gates
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
     # Run quality gates only when code paths change
     paths:
       - 'src/**'
