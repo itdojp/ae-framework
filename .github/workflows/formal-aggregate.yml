@@ -243,6 +243,8 @@ jobs:
             info: { 
               lineClamp: LINE_CLAMP, 
               errorsLimit: ERRORS_LIMIT, 
+              snippetMaxLines: SNIPPET_MAX,
+              wrapWidth: WRAP_WIDTH,
               generatedAt: GENERATED_AT, 
               present, 
               presentCount,
