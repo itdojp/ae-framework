@@ -86,6 +86,8 @@ lines.push('Derived: label > repo var > default');
 lines.push(`Policy: ${policy}`);
 lines.push(`Policy source: ${rationale}`);
 lines.push('Docs: docs/quality/coverage-required.md');
+lines.push('Docs: docs/quality/coverage-policy.md');
+lines.push('Tips: /coverage <pct> to override; /enforce-coverage to enforce');
 if (!fs.existsSync(summaryPath)) lines.push('Note: no coverage-summary.json found');
 lines.push('Reproduce: coverage → coverage/coverage-summary.json → total.lines.pct');
 lines.push('Reproduce: threshold → label coverage:<pct> > vars.COVERAGE_DEFAULT_THRESHOLD > default 80');
