@@ -21,6 +21,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - All workflows must pass `rhysd/actionlint` (use `rhysd/actionlint@v1.7.1`; see `.github/workflows/workflow-lint.yml`).
 - Append to `$GITHUB_OUTPUT` / `$GITHUB_ENV` using `printf` with quoting; do not use `echo` for these files.
   - Example: `printf "name=%s\n" "$VALUE" >> "$GITHUB_OUTPUT"`
+  - Example (env): `printf "%s=%s\n" "FOO" "$VALUE" >> "$GITHUB_ENV"`
 
 ### Goals
 - Block only lightweight, deterministic checks on PRs
@@ -193,6 +194,7 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 - すべてのワークフローは `rhysd/actionlint` をパスすること（`rhysd/actionlint@v1.7.1` を使用。`.github/workflows/workflow-lint.yml` を参照）。
 - `$GITHUB_OUTPUT` / `$GITHUB_ENV` への追記は `printf` + 適切なクォートを使用（`echo` は不可）。
   - 例: `printf "name=%s\n" "$VALUE" >> "$GITHUB_OUTPUT"`
+  - 例（環境変数）: `printf "%s=%s\n" "FOO" "$VALUE" >> "$GITHUB_ENV"`
 
 ### PRコメント（Coverage / Formal）
 - 重複防止のため固定ヘッダでアップサート（1コメントを更新）:
