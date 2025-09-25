@@ -226,10 +226,12 @@ jobs:
 - Agent collaboration rules and CI label policies: `AGENTS.md`
 - Slash command mappings: `.github/workflows/agent-commands.yml`
 - CI label gating details: `docs/ci/label-gating.md`
-- CI labels cheatsheet: `docs/cheatsheets/ci-labels-cheatsheet.md`
-- Contributor quick refs (labels): `CONTRIBUTING.md` (labels table)
+ - CI labels cheatsheet: `docs/cheatsheets/ci-labels-cheatsheet.md`
+ - Contributor quick refs (labels): `CONTRIBUTING.md` (labels table)
  - Type coverage policy: `docs/quality/type-coverage-policy.md`
  - Benchmarks: `docs/benchmark/README.md`
+ - Formal tools setup: `docs/quality/formal-tools-setup.md`
+ - Formal checks overview: `docs/verify/FORMAL-CHECKS.md`
 
 ---
 
@@ -429,10 +431,12 @@ jobs:
 - 運用ルールとCIラベルポリシー: `AGENTS.md`
 - スラッシュコマンド対応表: `.github/workflows/agent-commands.yml`
 - CIラベルのゲーティング詳細: `docs/ci/label-gating.md`
-- CIラベル早見表: `docs/cheatsheets/ci-labels-cheatsheet.md`
-- コントリビュータ向け早見表（ラベル）: `CONTRIBUTING.md`（ラベル表）
+ - CIラベル早見表: `docs/cheatsheets/ci-labels-cheatsheet.md`
+ - コントリビュータ向け早見表（ラベル）: `CONTRIBUTING.md`（ラベル表）
  - 型カバレッジポリシー: `docs/quality/type-coverage-policy.md`
  - ベンチマーク: `docs/benchmark/README.md`
+ - フォーマルツールのセットアップ: `docs/quality/formal-tools-setup.md`
+ - フォーマル検証の概要: `docs/verify/FORMAL-CHECKS.md`
 Examples (label combos)
 - Non‑blocking exploratory run: add `ci-non-blocking` + selected `run-*` labels
 - Security check (report-only): add `run-security` (optionally `ci-non-blocking`)
