@@ -39,6 +39,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 ### Opt-in Labels
 - `ci-non-blocking`: run selected jobs with continue-on-error (traceability, model-check, contracts, security, etc.)
 - `run-security`: run heavy security jobs (Security Scanning, Dependency Audit, License Compliance, CodeQL)
+- `enforce-security`: enforce security thresholds on PRs (blocking when limits exceeded). See `SECURITY.md`.
 - `qa --light`: run QA in light mode (vitest -> `test:fast`); used in `ae-ci`
 - `ae-benchmark run --ci --light --dry-run`: benchmark config validation only in PRs (fast & stable)
 - `run-qa`: run `ae-ci` workflow’s `qa-bench` on PRs (default off)
@@ -176,6 +177,7 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 ### ラベル運用（Opt-in）
 - `ci-non-blocking`: 一部ジョブ（traceability, model-check, contracts, security 等）を continue-on-error で実行し PR をブロックしない
 - `run-security`: 重いセキュリティ系（Security Scanning, Dependency Audit, License Compliance, CodeQL 等）を PR で実行
+- `enforce-security`: セキュリティしきい値を強制（超過時はブロック）。詳細は `SECURITY.md` を参照
 - `qa --light`: QA を軽量実行（vitest は `test:fast` 実行）。`ae-ci` の QA ステップに適用済み
 - `ae-benchmark run --ci --light --dry-run`: ベンチは PR では構成検証のみに留め、時間・安定性を優先
 - `run-qa`: `ae-ci` ワークフローの `qa-bench` を PR で実行（既定は非実行）
