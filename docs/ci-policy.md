@@ -118,6 +118,7 @@ Workflows (selected)
   - Posted only when `run-formal` label is present (report‑only by default)
   - Includes Tools/Reproduce hints; respects `FORMAL_AGG_LINE_CLAMP`, `FORMAL_AGG_ERRORS_LIMIT`, `FORMAL_AGG_SNIPPET_MAX_LINES`
   - Header strings must match exactly; the upsert logic identifies comments by the fixed header line
+  - Summary is also appended to `$GITHUB_STEP_SUMMARY` when available (see `pr-summary-comment.yml`)
  - See also: `docs/quality/pr-summary.md` (summary comment structure and templates)
 
 #### Examples
@@ -381,6 +382,7 @@ jobs:
   - `run-formal` ラベル時のみ投稿（既定は report-only）
   - Tools/Reproduce ヒントを含み、`FORMAL_AGG_LINE_CLAMP` / `FORMAL_AGG_ERRORS_LIMIT` / `FORMAL_AGG_SNIPPET_MAX_LINES` を尊重
  - 参考: `docs/quality/pr-summary.md`（サマリコメントの構成・テンプレート）
+  - サマリは `$GITHUB_STEP_SUMMARY` にも追記されます（`pr-summary-comment.yml` を参照）
 
 #### 例
 
