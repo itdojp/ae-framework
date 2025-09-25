@@ -48,9 +48,18 @@ References
 Coverage (lines): 82%
 Threshold (effective): 80%
 - via label: coverage:80
+- repo var: COVERAGE_DEFAULT_THRESHOLD=80%
 - default: 80%
+Derived: label > repo var > default
+Rules: label override last-wins; accepts 0–100; trims %/spaces
 Policy: report-only
 Policy source: report-only
+Docs: docs/quality/coverage-required.md
+Docs: docs/quality/coverage-policy.md
+Docs: docs/ci/label-gating.md
+Reproduce: coverage → coverage/coverage-summary.json → total.lines.pct
+Reproduce: threshold → label coverage:<pct> > vars.COVERAGE_DEFAULT_THRESHOLD > default 80
+Tips: /coverage <pct> to override; /enforce-coverage to enforce
 ```
 
 ### Branch protection（Required化）
