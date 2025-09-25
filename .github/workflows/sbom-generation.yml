@@ -3,6 +3,13 @@ name: SBOM Generation and Security Scanning
 on:
   push:
     branches: [ main, develop ]
+    # Restrict default push runs to dependency/code manifest changes
+    paths:
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'packages/**'
+      - 'apps/**'
+      - 'src/**'
   pull_request:
     branches: [ main ]
     # Run SBOM only when dependency or code manifests change
