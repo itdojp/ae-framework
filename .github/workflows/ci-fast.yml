@@ -52,3 +52,12 @@ jobs:
     with:
       node-version: '20'
       run-script: lint
+  summary:
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: CI Fast policy (summary)
+        run: |
+          printf "\n## 🚀 CI Fast\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- Always runs unit/fast on PR; batches gated via labels (qa-batch:*)\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- Concurrency: ci-fast-${{ github.ref }} (cancel in progress)\n" >> "$GITHUB_STEP_SUMMARY" || true

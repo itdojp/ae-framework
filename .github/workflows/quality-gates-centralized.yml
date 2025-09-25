@@ -106,3 +106,12 @@ jobs:
     with:
       node-version: '20'
       run-script: test:types
+  summary:
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Quality Gates (summary)
+        run: |
+          printf "\n## ✅ Quality Gates\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- PR: path-gated to code paths; re-runs on labeled (e.g., enforce-typecov)\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- Concurrency: quality-gates-${{ github.ref }} (cancel in progress)\n" >> "$GITHUB_STEP_SUMMARY" || true
