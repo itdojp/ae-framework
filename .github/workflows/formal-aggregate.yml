@@ -278,9 +278,18 @@ jobs:
             P=$(jq -r '.info.presentCount // 0' artifacts/formal/formal-aggregate.json 2>/dev/null || printf "0\n"); \
             KEYS=$(jq -r '.info.present | to_entries | map(select(.value)) | map(.key) | join(", ")' artifacts/formal/formal-aggregate.json 2>/dev/null || printf "\n"); \
             APO=$(jq -r 'try .info.ranOk.apalache as $a | ("ran=" + (if $a.ran then "yes" else "no" end) + " ok=" + (if ($a.ok==true) then "yes" else (if ($a.ok==false) then "no" else "n/a" end) end)) catch "n/a"' artifacts/formal/formal-aggregate.json 2>/dev/null || printf "n/a\n"); \
+            if jq -e '.conformance != null' artifacts/formal/formal-aggregate.json >/dev/null 2>&1; then \
+              CSE=$(jq -r '.conformance.schemaErrors // "n/a"' artifacts/formal/formal-aggregate.json); \
+              CIV=$(jq -r '.conformance.invariantViolations // "n/a"' artifacts/formal/formal-aggregate.json); \
+              CVR=$(jq -r '.conformance.violationRate // "n/a"' artifacts/formal/formal-aggregate.json); \
+              CLN=$(printf "Conformance: schemaErrors=%s, invariantViolations=%s, rate=%s" "$CSE" "$CIV" "$CVR"); \
+            else \
+              CLN="Conformance: n/a"; \
+            fi; \
             printf "Present: %s/5\n" "$P" >> "$GITHUB_STEP_SUMMARY"; \
             if [ -n "$KEYS" ]; then printf "Keys: %s\n" "$KEYS" >> "$GITHUB_STEP_SUMMARY"; fi; \
             printf "Apalache: %s\n" "$APO" >> "$GITHUB_STEP_SUMMARY"; \
+            printf "%s\n" "$CLN" >> "$GITHUB_STEP_SUMMARY"; \
             printf "Artifacts: artifacts/formal/formal-aggregate.{md,json}\n" >> "$GITHUB_STEP_SUMMARY"; \
           else \
             printf "No aggregate JSON found (artifacts/formal/formal-aggregate.json)\n" >> "$GITHUB_STEP_SUMMARY"; \
