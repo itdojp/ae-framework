@@ -127,5 +127,24 @@ if bash scripts/ci/guard-github-outputs.sh "$TMPDIR/wf"; then
 fi
 
 rm -f "$TMPDIR/wf/offender5.yml"
+
+# Comments should be ignored
+cat > "$TMPDIR/wf/comments.yml" << 'YAML'
+name: comments
+on: push
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          # echo "bad=true" >> $GITHUB_OUTPUT
+          # printf "%s" "NO_NL=true" >> "$GITHUB_OUTPUT"
+          # echo "::set-output name=val::deprecated"
+          # echo "three=3" | tee -a "$GITHUB_OUTPUT"
+          printf "%s\n" "ok=true" >> "$GITHUB_OUTPUT"
+YAML
+
+echo "[test] Expect guard to pass when offenders are only in comments..."
+bash scripts/ci/guard-github-outputs.sh "$TMPDIR/wf"
 bash scripts/ci/guard-github-outputs.sh "$TMPDIR/wf"
 echo "[test] Guard basic tests passed."
