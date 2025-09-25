@@ -132,6 +132,7 @@ We welcome international contributions! Please see our [Contributing Guide](CONT
     - Workflow lint & printf policy:
       - Run guard + actionlint locally: `pnpm lint:workflows` (guard always runs; actionlint via Docker if available)
       - Run basic guard self-test locally: `pnpm ci:test:guard`
+      - Run guard + self-test in one command: `pnpm ci:guard:all`
       - When appending to `$GITHUB_OUTPUT`/`$GITHUB_ENV`, use `printf` and quote the target file:
         - `printf "%s\n" "key=value" >> "$GITHUB_OUTPUT"`
         - `printf "%s\n" "NAME=value" >> "$GITHUB_ENV"`
