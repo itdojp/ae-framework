@@ -172,3 +172,9 @@ jobs:
           printf "%s\n" "ℹ️ No AE-Spec file found - skipping validation"
           printf "%s\n" "To enable spec validation, create a file at: spec/ae-spec.md"
           printf "%s\n" "See documentation for AE-Spec format guidelines."
+      - name: Spec Validation (summary)
+        if: always()
+        run: |
+          printf "\n## 📗 Spec Validation\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- PR: path-gated to spec/**, .ae/**, docs/**; re-runs on labeled\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- Concurrency: spec-validation-${{ github.ref }} (cancel in progress)\n" >> "$GITHUB_STEP_SUMMARY" || true

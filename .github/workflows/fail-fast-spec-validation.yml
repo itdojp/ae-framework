@@ -186,6 +186,12 @@ jobs:
             AE_IR_SIZE=$(du -h .ae/ae-ir.json | cut -f1)
             printf "%s\n" "::notice::Generated AE-IR size: $AE_IR_SIZE"
           fi
+      - name: Spec Validation (summary)
+        if: always()
+        run: |
+          printf "\n## 📘 Fail-Fast Spec Validation\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- PR: path-gated to spec/** and .ae/**; re-runs on labeled\n" >> "$GITHUB_STEP_SUMMARY" || true
+          printf "- Concurrency: fail-fast-spec-${{ github.ref }} (cancel in progress)\n" >> "$GITHUB_STEP_SUMMARY" || true
 
   # Call dependent workflows only after validation passes
   downstream-validation:
