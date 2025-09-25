@@ -207,6 +207,12 @@ jobs:
   - `Clamp: line=…, errors=…, snippet=…, wrap=…`
   - `Comment: created|updated|skipped` (+ URL/reason when available)
 
+### Comment skip reasons (reference)
+
+- `unchanged`: existing PR comment body is identical to the newly generated content (idempotent upsert skips update)
+- `no-md`: aggregate markdown (`artifacts/formal/formal-aggregate.md`) was not found in this run context
+- `no-json`: aggregate JSON (`artifacts/formal/formal-aggregate.json`) was not found in this run context
+
 ## Dispatch via GitHub CLI (artifacts only)
 
 Run the aggregate workflow on a PR head branch (does not post the PR comment):
