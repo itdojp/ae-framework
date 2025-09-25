@@ -39,6 +39,8 @@ jobs:
         run: pnpm lint || true
       - name: Build
         run: pnpm run build
+      - name: Tests (fast baseline)
+        run: pnpm -s run test:fast
       - name: BDD lint (non-blocking)
         continue-on-error: true
         run: |
