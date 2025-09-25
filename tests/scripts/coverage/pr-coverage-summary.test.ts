@@ -970,6 +970,23 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
     expect(out).toContain('unable to resolve repository coordinates');
   });
 
+  it('skips when no event payload is provided', () => {
+    const cwd = process.cwd();
+    const env = {
+      ...process.env,
+      GITHUB_TOKEN: 'test-token',
+      GITHUB_REPOSITORY: 'owner/repo',
+      GITHUB_EVENT_NAME: 'pull_request',
+      GITHUB_EVENT_PATH: '',
+      AE_COVERAGE_DRY_RUN: ''
+    } as NodeJS.ProcessEnv;
+
+    const res = spawnSync('node', ['scripts/coverage/pr-coverage-summary.mjs'], { cwd, env, encoding: 'utf8' });
+    expect(res.status).toBe(0);
+    const out = res.stdout || '';
+    expect(out).toContain('No event payload; skipping PR comment');
+  });
+
   it('shows [blocking] with main push when COVERAGE_ENFORCE_MAIN=1', () => {
     const cwd = process.cwd();
     const covDir = join(cwd, 'coverage');
