@@ -177,6 +177,22 @@ gh pr view <pr-number> --json comments --jq '.comments[].body | select(startswit
   - `comment_url`: URL of the PR comment (when created/updated)
   - `comment_reason`: reason when skipped (e.g., `no-md`, `no-json`, `unchanged`)
 
+Downstream usage (example)
+```yaml
+jobs:
+  aggregate:
+    uses: ./.github/workflows/formal-aggregate.yml
+  consume:
+    needs: aggregate
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "present_count=${{ needs.aggregate.outputs.present_count }}"
+          echo "present_keys=${{ needs.aggregate.outputs.present_keys }}"
+          echo "comment_action=${{ needs.aggregate.outputs.comment_action }}"
+          echo "comment_url=${{ needs.aggregate.outputs.comment_url }}"
+```
+
 ## GitHub Step Summary (reviewer hints)
 
 - The workflow appends a brief Step Summary to help reviewers verify runs without opening artifacts:
