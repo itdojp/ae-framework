@@ -126,6 +126,7 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 - Fire spec fail-fast only for changes under `spec/**`, `.ae/**`
 - Trigger SBOM/Security only for dependency or major code changes
 - Workflows: `.github/workflows/fail-fast-spec-validation.yml` (spec), `.github/workflows/sbom-generation.yml` (security)
+ - Examples (security): changes to `**/package.json`, `pnpm-lock.yaml`, `security/**` may trigger security workflows
 
 ### test:fast (Fast CI suite)
 - Purpose: verify resilience/core units and lightweight integration quickly; exclude heavy/env-dependent tests
@@ -244,6 +245,7 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
 - 仕様関連の変更（`spec/**`, `.ae/**`）のみ Fail-Fast を発火
 - 依存や大規模コード変更時のみ SBOM/Security を発火
 - 対応ワークフロー: `.github/workflows/fail-fast-spec-validation.yml`（仕様）, `.github/workflows/sbom-generation.yml`（セキュリティ）
+ - 例（セキュリティ）: `**/package.json` や `pnpm-lock.yaml`、`security/**` の変更でセキュリティ系が発火対象
 
 ### test:fast（高速CIスイート）
 - 目的: Resilience/主要ユニットと軽量統合を即時検証。重い/環境依存テストは除外
