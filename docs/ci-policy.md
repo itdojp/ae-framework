@@ -58,6 +58,8 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - `coverage:<pct>`: override coverage threshold for coverage-check (default 80). e.g., `coverage:75`
   - Use `/coverage <pct|clear>` to set/clear on a PR
  - `enforce-coverage`: enforce coverage threshold on PRs (blocking when below threshold). See `docs/quality/coverage-policy.md`.
+ - `enforce-perf`: enforce performance score threshold (override via `perf:<pct>`, default `vars.PERF_DEFAULT_THRESHOLD` or 75)
+ - `enforce-lh`: enforce Lighthouse performance threshold (override via `lh:<pct>`, default `vars.LH_DEFAULT_THRESHOLD` or 80)
  - `lang:ja` / `lang:en`: select PR summary language (default `en`). See `docs/ci/summary-env.md`.
 
 Workflows (selected)
