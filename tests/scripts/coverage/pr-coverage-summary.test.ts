@@ -9,7 +9,7 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
     const covDir = join(cwd, 'coverage');
     try { mkdirSync(covDir, { recursive: true }); } catch {}
     const covPath = join(covDir, 'coverage-summary.json');
-    writeFileSync(covPath, JSON.stringify({ total: { lines: { pct: "83.2" }, functions: { pct: 81 }, branches: { pct: 79.49 }, statements: { pct: 84.0 } } }), 'utf8');
+    writeFileSync(covPath, JSON.stringify({ total: { lines: { pct: "83.2%" }, functions: { pct: "81%" }, branches: { pct: "79.49%" }, statements: { pct: "84.0%" } } }), 'utf8');
 
     const event = {
       pull_request: {

@@ -45,13 +45,17 @@ let pctFns, pctBranches, pctStmts;
 if (summaryPath) {
   try {
     cov = JSON.parse(fs.readFileSync(summaryPath, 'utf-8'));
-    const lnRaw = cov?.total?.lines?.pct;
+    let lnRaw = cov?.total?.lines?.pct;
+    if (typeof lnRaw === 'string' && lnRaw.trim().endsWith('%')) lnRaw = lnRaw.trim().slice(0, -1).trim();
     const lnNum = typeof lnRaw === 'string' ? Number(lnRaw) : lnRaw;
     pctNum = typeof lnNum === 'number' && isFinite(lnNum) ? lnNum : NaN;
     pct = isFinite(pctNum) ? fmtPct(pctNum) : 'n/a';
-    const fnRaw = cov?.total?.functions?.pct;
-    const brRaw = cov?.total?.branches?.pct;
-    const stRaw = cov?.total?.statements?.pct;
+    let fnRaw = cov?.total?.functions?.pct;
+    let brRaw = cov?.total?.branches?.pct;
+    let stRaw = cov?.total?.statements?.pct;
+    if (typeof fnRaw === 'string' && fnRaw.trim().endsWith('%')) fnRaw = fnRaw.trim().slice(0, -1).trim();
+    if (typeof brRaw === 'string' && brRaw.trim().endsWith('%')) brRaw = brRaw.trim().slice(0, -1).trim();
+    if (typeof stRaw === 'string' && stRaw.trim().endsWith('%')) stRaw = stRaw.trim().slice(0, -1).trim();
     const fnNum = typeof fnRaw === 'string' ? Number(fnRaw) : fnRaw;
     const brNum = typeof brRaw === 'string' ? Number(brRaw) : brRaw;
     const stNum = typeof stRaw === 'string' ? Number(stRaw) : stRaw;
