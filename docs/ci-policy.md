@@ -56,6 +56,29 @@ This document defines CI policies to keep PR experience fast and stable while ma
   - Posted only when `run-formal` label is present (report‑only by default)
   - Includes Tools/Reproduce hints; respects `FORMAL_AGG_LINE_CLAMP`, `FORMAL_AGG_ERRORS_LIMIT`, `FORMAL_AGG_SNIPPET_MAX_LINES`
 
+#### Examples
+
+Coverage summary (upserted with header)
+
+```
+<!-- AE-COVERAGE-SUMMARY -->
+Coverage: Threshold (effective) 80%
+Derived: label=coverage:80 > repo var=COVERAGE_DEFAULT_THRESHOLD=75 > default=70
+Policy: report-only (see docs/quality/coverage-policy.md)
+Links: docs/quality/coverage-policy.md
+```
+
+Formal Aggregate (posted only when `run-formal`)
+
+```
+<!-- AE-FORMAL-AGGREGATE -->
+Present: Alloy/TLA/SMT summaries available
+Summary: 3 tools ran, 0 errors
+By-type present: Alloy=present, TLA=present, SMT=present, Apalache=skipped
+Apalache ran/ok: skipped (label-gated)
+Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
+```
+
 ### Slash Commands (Instant Dispatch / Labels)
 - コメントで以下を投稿すると、対象ワークフローの即時起動やラベル付与ができます（main取り込み後有効）。
   - Dispatch（workflow_dispatch 直起動）
