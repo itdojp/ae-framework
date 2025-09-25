@@ -194,6 +194,9 @@ jobs:
   - Fourth batch: reintroduced `tests/utils/phase-1-validation.test.ts`（初期化を明示し外部状態依存を解消）
   - Fifth batch: reintroduced `tests/contracts/**`（contract validation はCI安定範囲に調整済）
 
+### QA CLI
+- `ae qa --light`: runs a light QA pass (`vitest` `test:fast`); used by the `ae-ci` workflow.
+
 ### Security/Compliance
 - Default: not required on PRs; label/path gated; run under `run-security`, aggregate results as artifacts
 - PR summary comment (non-blocking) is posted when `run-security` is set (dependency vulnerabilities and top licenses)
