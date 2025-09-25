@@ -166,6 +166,8 @@ Meta: Tools=installed, Reproduce=see docs/quality/formal-runbook.md
     - `/pr-digest` / `/pr-detailed` … PR要約モード切替
     - `/run-formal` / `/enforce-formal` / `/enforce-contracts` … フォーマル/契約の実行/エンフォース切替
     - `/coverage <pct|clear>` … `coverage:<pct>` を設定/クリア（しきい値上書き）
+    - `/perf <pct|clear>` — set/clear `perf:<pct>` (performance score threshold)
+    - `/lh <pct|clear>` — set/clear `lh:<pct>` (Lighthouse performance threshold)
     - `/perf <pct|clear>` … `perf:<pct>` を設定/クリア（性能スコアのしきい値）
     - `/lh <pct|clear>` … `lh:<pct>` を設定/クリア（Lighthouse 性能スコアのしきい値）
     - `/enforce-typecov` … `enforce-typecov` を付与（型カバレッジ enforcement）
