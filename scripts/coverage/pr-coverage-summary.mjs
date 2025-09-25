@@ -105,7 +105,9 @@ if (!pr || !owner || !repo) {
   process.exit(0);
 }
 const number = pr.number;
-const labels = (pr.labels || []).map(l => l.name);
+const labels = (pr.labels || [])
+  .map(l => (typeof l === 'string' ? l : (l && typeof l.name === 'string' ? l.name : '')))
+  .filter(Boolean);
 const labelsLower = labels.map(n => (typeof n === 'string' ? n.toLowerCase() : ''));
 
 // Threshold derivation: label override > repo var default > fallback 80
