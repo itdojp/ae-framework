@@ -54,9 +54,12 @@ pnpm lint:workflows
 bash scripts/ci/guard-github-outputs.sh
 ```
 
+### Temporary Disable (debug only)
+
+Set `PRINTF_GUARD_DISABLE=1` to skip guard checks (e.g., local debugging). Do not use in CI except in emergencies.
+
 ## Rationale
 
 - `printf` provides predictable formatting and explicit newlines.
 - Quoting targets prevents word-splitting or brace expansion issues.
 - Grouped blocks reduce duplication and keep steps concise.
-
