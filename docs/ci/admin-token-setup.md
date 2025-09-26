@@ -1,4 +1,4 @@
-# ADMIN_TOKEN Setup Guide (Fine‑grained PAT)
+# ADMIN_TOKEN Setup Guide (Fine-grained PAT)
 
 このドキュメントは、Branch Protection のプリセット適用ワークフローで使用する `ADMIN_TOKEN` の作成・登録手順をまとめたものです。通常のCIやPR作成では使用しません。
 
@@ -7,15 +7,15 @@
 - 設定はコード化されたプリセット（`.github/branch-protection.*.json`）で管理し、ワークフローから適用できるようにする
 
 ## 方式（推奨）
-- Fine‑grained personal access token（FG‑PAT）を使用
-  - 対象リポジトリ: `ae-framework` のみに限定（Only select repositories）
+- Fine-grained personal access token（FG-PAT）を使用
+  - 対象リポジトリ: `<repository-name>` のみに限定（Only select repositories）
   - 権限: Repository permissions → Administration → Read and write
   - 期限: 短め（定期ローテーション推奨）
 
-## 作成手順（FG‑PAT）
-1. GitHub → Settings → Developer settings → Fine‑grained personal access tokens → Generate new token
-2. Resource owner: 当該組織（例: <organization-name>）
-3. Repository access: Only select repositories → `<organization-name>/ae-framework` を選択
+## 作成手順（FG-PAT）
+1. GitHub → Settings → Developer settings → Fine-grained personal access tokens → Generate new token
+2. Resource owner: 当該組織（例: `<organization-name>`）
+3. Repository access: Only select repositories → `<organization-name>/<repository-name>` を選択
 4. Repository permissions: Administration → Read and write を有効化
 5. Token name/expiry を設定し、発行
 6. （組織がSSO運用の場合）SSO承認を実施
@@ -23,7 +23,7 @@
 ## リポジトリへの登録（Actions Secret）
 1. リポジトリ → Settings → Secrets and variables → Actions → New repository secret
 2. Name: `ADMIN_TOKEN`
-3. Value: 先ほど発行した FG‑PAT の値
+3. Value: 先ほど発行した FG-PAT の値
 
 ## 使用箇所
 - `.github/workflows/branch-protection-apply.yml`
@@ -42,4 +42,3 @@
 ## セキュリティ運用
 - 最小権限・最小範囲（単一リポ）・短期有効期限・定期ローテーション
 - ワークフローの実行者を限定（必要なら Environment 保護で承認フロー）
-

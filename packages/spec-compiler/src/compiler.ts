@@ -216,7 +216,7 @@ export class AESpecCompiler {
     for (const section of sections.slice(1)) {
       const lines = section.split('\n');
       const name = lines[0]?.trim() || 'Unnamed Use Case';
-      const usecase: AEIR['usecases'][0] = {
+      const usecase: NonNullable<AEIR['usecases']>[number] = {
         name,
         actor: 'User', // Extract from content
         steps: [],
@@ -304,7 +304,8 @@ export class AESpecCompiler {
       });
     }
 
-    if (ir.api.length === 0) {
+    const apiCount = (ir.api ?? []).length;
+    if (apiCount === 0) {
       issues.push({
         id: 'STRUCT_003',
         severity: 'info',
@@ -316,7 +317,8 @@ export class AESpecCompiler {
 
   private validateBusinessLogic(ir: AEIR, issues: SpecLintIssue[]): void {
     // Check for entities without any business rules
-    const entitiesWithRules = new Set(ir.invariants.flatMap(inv => inv.entities));
+    const invariants = ir.invariants ?? [];
+    const entitiesWithRules = new Set(invariants.flatMap(inv => inv.entities ?? []));
     
     for (const entity of ir.domain) {
       if (!entitiesWithRules.has(entity.name)) {

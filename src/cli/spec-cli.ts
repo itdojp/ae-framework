@@ -40,8 +40,8 @@ export function createSpecCommand(): Command {
         console.log(chalk.gray(`   Input:  ${options.input}`));
         console.log(chalk.gray(`   Output: ${outputPath}`));
         console.log(chalk.gray(`   Entities: ${ir.domain.length}`));
-        console.log(chalk.gray(`   APIs: ${ir.api.length}`));
-        console.log(chalk.gray(`   Use Cases: ${ir.usecases.length}`));
+        console.log(chalk.gray(`   APIs: ${ir.api?.length ?? 0}`));
+        console.log(chalk.gray(`   Use Cases: ${ir.usecases?.length ?? 0}`));
         
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Compilation failed: ${toMessage(error)}`));
