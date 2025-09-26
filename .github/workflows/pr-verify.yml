@@ -106,156 +106,25 @@ jobs:
             printf "%s\n" "No openapi-contract-tests.json found."
           fi
 
+      - name: Generate CodeX summary
+        run: |
+          node scripts/verify/render-codex-summary.mjs || true
+
       - name: Comment summary on PR
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            let lines = [];
-            // Model check
-            try {
-              if (fs.existsSync('artifacts/codex/model-check.json')) {
-                const mc = JSON.parse(fs.readFileSync('artifacts/codex/model-check.json','utf8'));
-                const props = (mc.properties || []).length;
-                const unsat = (mc.properties || []).filter(p => p && p.satisfied === false).length;
-                lines.push(`• Model Checking: ${props} properties, Unsatisfied: ${unsat}`);
-              }
-            } catch {}
-            // UI summary
-            try {
-              if (fs.existsSync('artifacts/codex/ui-summary.json')) {
-                const s = JSON.parse(fs.readFileSync('artifacts/codex/ui-summary.json','utf8'));
-                let files = s.files || [];
-                const preview = files.slice(0, 5).map(f => `    - ${f}`).join('\\n');
-                lines.push(`• UI Scaffold: ${s.okEntities}/${s.totalEntities} entities, Files: ${files.length}, Dry-run: ${!!s.dryRun}`);
-                if (files.length) lines.push('  Preview files (up to 5):\\n' + preview);
-              }
-            } catch {}
-            // Stories summary
-            try {
-              if (fs.existsSync('artifacts/codex/result-stories.json')) {
-                const rs = JSON.parse(fs.readFileSync('artifacts/codex/result-stories.json','utf8'));
-                const sum = (rs.response && rs.response.summary) || '';
-                const mStories = sum.match(/(\d+)\s+stor/i);
-                const mEpics = sum.match(/(\d+)\s+epic/i);
-                const parts = [];
-                parts.push(mStories ? `${mStories[1]} stories` : 'stories: n/a');
-                if (mEpics) parts.push(`${mEpics[1]} epics`);
-                lines.push(`• Stories: ${parts.join(', ')}`);
-              }
-            } catch {}
-            // Validation summary
-            try {
-              if (fs.existsSync('artifacts/codex/result-validation.json')) {
-                const rv = JSON.parse(fs.readFileSync('artifacts/codex/result-validation.json','utf8'));
-                const sum = (rv.response && rv.response.summary) || 'Validation';
-                const analysis = (rv.response && rv.response.analysis) || '';
-                const mCov = analysis.match(/Coverage:\s*(\d+)%/i);
-                const covText = mCov ? `, Coverage: ${mCov[1]}%` : '';
-                lines.push(`• Validation: ${sum}${covText}`);
-              }
-            } catch {}
-            // Intent summary
-            try {
-              if (fs.existsSync('artifacts/codex/result-intent.json')) {
-                const ri = JSON.parse(fs.readFileSync('artifacts/codex/result-intent.json','utf8'));
-                const sum = (ri.response && ri.response.summary) || '';
-                const mReq = sum.match(/(\d+)\s+requirement/i);
-                const reqText = mReq ? `${mReq[1]} requirements` : 'requirements: n/a';
-                lines.push(`• Intent: ${reqText}`);
-              }
-            } catch {}
-            // Formal/OpenAPI presence
-            const hasTla = fs.existsSync('artifacts/codex/formal.tla');
-            const hasOas = fs.existsSync('artifacts/codex/openapi.yaml');
-            if (hasTla) lines.push('• Formal: TLA+ generated (artifacts/codex/formal.tla)');
-            if (hasOas) lines.push('• OpenAPI: artifacts/codex/openapi.yaml');
-            // Contract/E2E templates
-            try {
-              if (fs.existsSync('artifacts/codex/openapi-contract-tests.json')) {
-                const s = JSON.parse(fs.readFileSync('artifacts/codex/openapi-contract-tests.json','utf8'));
-                lines.push(`• Contract/E2E templates: ${s.files} files (dir: ${s.outDir})`);
-              }
-            } catch {}
-            // PBT/BDD counts (lightweight)
-            try {
-              const { execSync } = require('child_process');
-              let pbtCount = 0, bddCount = 0;
-              try { pbtCount = parseInt(execSync("bash -lc 'ls tests/property/*.test.ts 2>/dev/null | wc -l'", {stdio:['ignore','pipe','ignore']}).toString().trim()) || 0; } catch {}
-              try { bddCount = parseInt(execSync("bash -lc 'rg -n "^Feature:" tests 2>/dev/null | wc -l'", {stdio:['ignore','pipe','ignore']}).toString().trim()) || 0; } catch {}
-              if (!isNaN(pbtCount) || !isNaN(bddCount)) {
-                lines.push(`• Tests: PBT files=${pbtCount || 0}, BDD features=${bddCount || 0}`);
-              }
-            } catch {}
-            // Formal aggregated summary (if present)
-            try {
-              if (fs.existsSync('hermetic-reports/formal/summary.json')) {
-                const f = JSON.parse(fs.readFileSync('hermetic-reports/formal/summary.json','utf8'));
-                const parts = [];
-                const tag = (ok) => ok ? '[OK]' : '[WARN]';
-                const info = '[INFO]';
-                if (f.conformance) {
-                  const ce = f.conformance.schemaErrors ?? 'n/a';
-                  const iv = f.conformance.invariantViolations ?? 'n/a';
-                  const vr = (f.conformance.violationRate !== undefined) ? f.conformance.violationRate : 'n/a';
-                  let first = '';
-                  try {
-                    const fv = f.conformance.firstInvariantViolation;
-                    if (fv && (fv.index !== undefined) && fv.type) first = `, first=${fv.type}@${fv.index}`;
-                  } catch {}
-                  let firstSchema = '';
-                  try {
-                    const se = f.conformance.firstSchemaError;
-                    if (se && se.path) firstSchema = `, firstSchemaPath=${se.path}`;
-                  } catch {}
-                  let typeBreak = '';
-                  try {
-                    const bt = f.conformance.byType || {};
-                    const arr = Object.entries(bt).filter(([,v]) => typeof v === 'number' && v > 0).map(([k,v]) => `${k}=${v}`);
-                    if (arr.length) typeBreak = `, byType(${arr.join(', ')})`;
-                  } catch {}
-                  const ok = (iv === 0 && ce === 0);
-                  parts.push(`${ok ? tag(true) : tag(false)} Conformance: schemaErrors=${ce}, invariantViolations=${iv}, rate=${vr}${first}${firstSchema}${typeBreak}`);
-                }
-                if (f.smt) {
-                  const st = f.smt.status;
-                  const t = (st === 'ran') ? tag(true) : (st === 'solver_not_available' ? info : tag(false));
-                  const file = f.smt.file ? ` (${f.smt.file})` : '';
-                  parts.push(`${t} SMT: ${st}${file}`);
-                }
-                if (f.alloy) {
-                  const st = f.alloy.status;
-                  const t = (st === 'ran') ? tag(true) : (st === 'tool_not_available' ? info : tag(false));
-                  const file = f.alloy.file ? ` (${f.alloy.file})` : '';
-                  parts.push(`${t} Alloy: ${st}${file}`);
-                }
-                if (f.tla) {
-                  const st = f.tla.status;
-                  const t = (st === 'ran') ? tag(true) : (st === 'tool_not_available' ? info : tag(false));
-                  const file = f.tla.file ? ` ${f.tla.file}` : '';
-                  parts.push(`${t} TLA: ${st} (${f.tla.engine})${file}`);
-                }
-                if (parts.length) lines.push('• Formal summary: ' + parts.join('; '));
-              }
-            } catch {}
-            // Formal specs counts (TLA/Alloy)
-            try {
-              const { execSync } = require('child_process');
-              let tlaCount = 0, alsCount = 0;
-              try { tlaCount = parseInt(execSync("bash -lc 'ls spec/tla/*.tla 2>/dev/null | wc -l'", {stdio:['ignore','pipe','ignore']}).toString().trim()) || 0; } catch {}
-              try { alsCount = parseInt(execSync("bash -lc 'ls spec/alloy/*.als 2>/dev/null | wc -l'", {stdio:['ignore','pipe','ignore']}).toString().trim()) || 0; } catch {}
-              lines.push(`• Formal specs: TLA=${tlaCount}, Alloy=${alsCount}`);
-            } catch {}
-            if (lines.length === 0) {
-              lines.push('No CodeX artifacts found to summarize.');
+            if (!fs.existsSync('codex-summary.md')) {
+              core.info('codex-summary.md not found; skipping CodeX comment');
+              return;
             }
-            const summary = lines.map((line) => '- ' + line).join('\n');
-            const body = '### CodeX Artifacts Summary\n\n' + summary + '\n';
+            const body = fs.readFileSync('codex-summary.md', 'utf8');
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.issue.number,
+              issue_number: context.payload.pull_request.number,
               body
             });
       - name: Show CodeX summary (head)
