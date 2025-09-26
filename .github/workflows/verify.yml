@@ -74,6 +74,7 @@ jobs:
         id: build
         run: |
           set -e
+          printf() { command printf -- "$@"; }
           shortp() {
             p="$1"
             awk -v s="$p" 'BEGIN{ n=split(s,a,"/"); if (n<=2) {print s} else { print a[n-1] "/" a[n] } }'
