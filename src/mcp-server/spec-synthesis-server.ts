@@ -110,7 +110,11 @@ async function start() {
                         warnings: lint.summary.warnings,
                         infos: lint.summary.infos,
                       },
-                      counts: { entities: ir.domain.length, apis: ir.api.length, usecases: ir.usecases.length },
+                      counts: {
+                        entities: ir.domain.length,
+                        apis: ir.api?.length ?? 0,
+                        usecases: ir.usecases?.length ?? 0
+                      },
                     },
                     null,
                     2
