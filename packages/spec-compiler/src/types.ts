@@ -43,7 +43,7 @@ export interface AEIR {
   }>;
 
   /** Business invariants and rules */
-  invariants?: Array<{
+  invariants: Array<{
     id: string;
     description: string;
     expression: string;
@@ -52,7 +52,7 @@ export interface AEIR {
   }>;
 
   /** Use cases and business processes */
-  usecases?: Array<{
+  usecases: Array<{
     name: string;
     description?: string;
     actor?: string;
@@ -85,7 +85,7 @@ export interface AEIR {
   }>;
 
   /** API specifications */
-  api?: Array<{
+  api: Array<{
     method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
     path: string;
     summary?: string;

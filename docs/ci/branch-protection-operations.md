@@ -7,7 +7,7 @@
 - レビュー必須を外しても、軽量で決定的な Required checks を維持して品質を担保する
 
 ## 事前準備（初回のみ）
-- ADMIN_TOKEN（repo admin 権限の Fine‑grained PAT）を作成・登録
+- ADMIN_TOKEN（repo admin 権限の Fine-grained PAT）を作成・登録
   - 手順: docs/ci/admin-token-setup.md を参照
   - 用途: 本書の「プリセット適用」ワークフロー（Actions）でのみ使用。通常のCI/PRでは使用しません。
 
