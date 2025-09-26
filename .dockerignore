@@ -7,7 +7,6 @@ yarn-error.log*
 .pnpm-store/
 
 # Development and test files
-src/
 tests/
 test/
 *.test.ts
