@@ -30,6 +30,7 @@ export async function writeRepro(name: string, seed: number, data: unknown) {
   await mkdir('artifacts/repros', { recursive: true });
   const safeNameForCode = escapeForSingleQuotedString(name);
   const safeNameForFile = sanitizeFilename(name);
-  const body = `test('${safeNameForCode} repro', () => { process.env.AE_SEED='${seed}'; const data=${JSON.stringify(data)}; /* TODO: call SUT(data) */ });`;
+  const serializedData = JSON.stringify(JSON.stringify(data));
+  const body = `test('${safeNameForCode} repro', () => { process.env.AE_SEED='${seed}'; const data = JSON.parse(${serializedData}); /* TODO: call SUT(data) */ });`;
   await writeFile(`artifacts/repros/${safeNameForFile}.repro.ts`, body);
 }
