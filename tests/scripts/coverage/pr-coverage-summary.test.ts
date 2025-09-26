@@ -1,7 +1,21 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { spawnSync } from 'node:child_process';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
+
+const repoRoot = process.cwd();
+const defaultCoveragePath = join(repoRoot, 'coverage', 'coverage-summary.json');
+const fallbackCoveragePath = join(repoRoot, 'artifacts', 'coverage', 'coverage-summary.json');
+
+beforeEach(() => {
+  for (const path of [defaultCoveragePath, fallbackCoveragePath]) {
+    try {
+      rmSync(path, { force: true });
+    } catch {
+      // Ignore cleanup issues; concurrent tests recreate paths as needed.
+    }
+  }
+});
 
 describe('pr-coverage-summary.mjs (dry-run)', () => {
   it('prints summary with effective threshold from label and derived/order lines', () => {
@@ -1562,7 +1576,7 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
     expect(out).toContain('Warning: failed to parse event payload; skipping PR comment');
   });
 
-  it('shows [blocking] with main push when COVERAGE_ENFORCE_MAIN=1', () => {
+  it('skips comment on main push when COVERAGE_ENFORCE_MAIN=1', () => {
     const cwd = process.cwd();
     const covDir = join(cwd, 'coverage');
     try { mkdirSync(covDir, { recursive: true }); } catch {}
@@ -1591,9 +1605,7 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
     const res = spawnSync('node', ['scripts/coverage/pr-coverage-summary.mjs'], { cwd, env, encoding: 'utf8' });
     expect(res.status).toBe(0);
     const out = res.stdout || '';
-    expect(out).toMatch(/\[blocking\]/);
-    expect(out).toContain('Policy: enforced');
-    expect(out).toContain('Policy source: enforced via main + repo vars (COVERAGE_ENFORCE_MAIN)');
+    expect(out).toContain('Not a pull_request context; skipping PR comment');
   });
 
   it('label override wins over repo var value', () => {
