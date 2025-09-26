@@ -227,7 +227,7 @@ jobs:
 
       - name: Generate consolidated report
         run: |
-          node scripts/generate-test-report.js
+          node scripts/generate-test-report.cjs
         timeout-minutes: 5
 
       - name: Upload consolidated results
