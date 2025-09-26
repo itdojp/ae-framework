@@ -12,6 +12,8 @@ jobs:
       strict: ${{ steps.gate.outputs.strict }}
     steps:
       - uses: actions/checkout@v4
+      - name: Prepare pnpm
+        uses: ./.github/actions/setup-pnpm
       - uses: actions/setup-node@v4
         with:
           node-version: '20'

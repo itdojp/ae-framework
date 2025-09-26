@@ -17,6 +17,8 @@ jobs:
     needs: spec-validation  # Spec validation must pass first
     steps:
       - uses: actions/checkout@v4
+      - name: Prepare pnpm
+        uses: ./.github/actions/setup-pnpm
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: 'pnpm' }
       - run: corepack enable
