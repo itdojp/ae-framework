@@ -25,8 +25,14 @@
     "noEmitOnError": false,
     "allowJs": false,
     "paths": {
-      "@ae-framework/spec-compiler": ["./packages/spec-compiler/dist/index.d.ts"],
-      "@ae-framework/spec-compiler/*": ["./packages/spec-compiler/dist/*"]
+      "@ae-framework/spec-compiler": [
+        "./packages/spec-compiler/src/index.ts",
+        "./packages/spec-compiler/dist/index.d.ts"
+      ],
+      "@ae-framework/spec-compiler/*": [
+        "./packages/spec-compiler/src/*",
+        "./packages/spec-compiler/dist/*"
+      ]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "types/**/*.d.ts", "packages/**/*"],

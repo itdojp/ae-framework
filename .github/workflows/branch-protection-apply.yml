@@ -1,0 +1,61 @@
+name: Admin — Apply Branch Protection Preset
+
+on:
+  workflow_dispatch:
+    inputs:
+      preset:
+        description: Preset JSON under .github (e.g. branch-protection.main.relax2.json)
+        required: true
+        default: branch-protection.main.relax2.json
+      branch:
+        description: Target branch
+        required: true
+        default: main
+
+permissions:
+  contents: read
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check inputs
+        run: |
+          echo "Preset: ${{ github.event.inputs.preset }}"
+          echo "Branch: ${{ github.event.inputs.branch }}"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show current protection (GET)
+        env:
+          GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "ADMIN_TOKEN secret is required (a PAT with repo admin scope)." >&2
+            exit 1
+          fi
+          gh api \
+            repos/${{ github.repository }}/branches/${{ github.event.inputs.branch }}/protection \
+            --jq '.required_pull_request_reviews, .required_status_checks'
+
+      - name: Apply preset (PUT)
+        env:
+          GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        run: |
+          FILE=".github/${{ github.event.inputs.preset }}"
+          test -f "$FILE" || { echo "Preset file not found: $FILE" >&2; exit 1; }
+          gh api \
+            --method PUT \
+            -H "Accept: application/vnd.github.luke-cage-preview+json" \
+            repos/${{ github.repository }}/branches/${{ github.event.inputs.branch }}/protection \
+            --input "$FILE"
+
+      - name: Show new protection (GET)
+        env:
+          GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        run: |
+          gh api \
+            repos/${{ github.repository }}/branches/${{ github.event.inputs.branch }}/protection \
+            --jq '.required_pull_request_reviews, .required_status_checks'
+

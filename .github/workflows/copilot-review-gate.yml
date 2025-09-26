@@ -1,0 +1,68 @@
+name: Copilot Review Gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Copilot review presence and resolution
+        uses: actions/github-script@v7
+        env:
+          COPILOT_ACTORS: copilot-pull-request-reviewer,github-copilot,github-copilot[bot],copilot,copilot[bot]
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const number = context.payload.pull_request.number;
+            const actors = (process.env.COPILOT_ACTORS || 'github-copilot,github-copilot[bot]')
+              .split(',')
+              .map(s => s.trim())
+              .filter(Boolean);
+
+            const query = `query($owner:String!, $repo:String!, $number:Int!) {
+              repository(owner:$owner, name:$repo) {
+                pullRequest(number:$number) {
+                  reviews(last: 50) {
+                    nodes { author { login } state }
+                  }
+                  reviewThreads(first: 100) {
+                    nodes {
+                      isResolved
+                      comments(first: 25) { nodes { author { login } bodyText } }
+                    }
+                  }
+                }
+              }
+            }`;
+
+            const data = await github.graphql(query, { owner, repo, number });
+            const pr = data.repository.pullRequest;
+            if (!pr) {
+              core.setFailed('Cannot load PR via GraphQL');
+              return;
+            }
+
+            const reviewAuthors = pr.reviews.nodes.map(r => r.author && r.author.login).filter(Boolean);
+            const hasCopilotReview = reviewAuthors.some(login => actors.includes(login));
+            if (!hasCopilotReview) {
+              core.setFailed(`No Copilot review found (expected reviewers: ${actors.join(', ')})`);
+              return;
+            }
+
+            const copilotThreads = pr.reviewThreads.nodes.filter(t =>
+              t.comments.nodes.some(c => c.author && actors.includes(c.author.login))
+            );
+            const unresolved = copilotThreads.filter(t => !t.isResolved);
+            if (unresolved.length > 0) {
+              core.setFailed(`Unresolved Copilot review threads: ${unresolved.length}. Resolve conversations before merge.`);
+              return;
+            }
+
+            core.notice(`Copilot review present. Resolved threads: ${copilotThreads.length}.`);
