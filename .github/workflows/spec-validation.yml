@@ -112,57 +112,55 @@ jobs:
           invariants=$(jq '.invariants | length' .ae/ae-ir.json)
 
           bdd_summary=$(node <<'NODE'
-const fs = require('fs');
-const path = 'artifacts/spec/bdd-step-lint.json';
-if (!fs.existsSync(path)) {
-  console.log('No lint summary');
-  process.exit(0);
-}
-const data = JSON.parse(fs.readFileSync(path, 'utf8'));
-const lines = [];
-lines.push(`Usecases: ${data.usecases ?? 0}`);
-lines.push('');
-lines.push(`Issues: ${data.issuesCount ?? 0}`);
-if (Array.isArray(data.issues) && data.issues.length) {
-  for (const issue of data.issues.slice(0, 10)) {
-    if (!issue) continue;
-    const usecase = issue.usecase ?? 'unknown';
-    const kind = issue.kind ?? 'issue';
-    const message = issue.message ?? '';
-    lines.push(`- ${usecase}: ${kind} — ${message}`);
-  }
-}
-console.log(lines.join('\n'));
-NODE
+            const fs = require('fs');
+            const path = 'artifacts/spec/bdd-step-lint.json';
+            if (!fs.existsSync(path)) {
+              console.log('No lint summary');
+              process.exit(0);
+            }
+            const data = JSON.parse(fs.readFileSync(path, 'utf8'));
+            const lines = [];
+            lines.push(`Usecases: ${data.usecases ?? 0}`);
+            lines.push('');
+            lines.push(`Issues: ${data.issuesCount ?? 0}`);
+            if (Array.isArray(data.issues) && data.issues.length) {
+              for (const issue of data.issues.slice(0, 10)) {
+                if (!issue) continue;
+                const usecase = issue.usecase ?? 'unknown';
+                const kind = issue.kind ?? 'issue';
+                const message = issue.message ?? '';
+                lines.push(`- ${usecase}: ${kind} — ${message}`);
+              }
+            }
+            console.log(lines.join('\n'));
+          NODE
           )
 
-          cat <<EOF > spec-validation-report.md
-# AE-Spec Validation Report
-
-**Status**: ✅ Passed
-**Timestamp**: ${timestamp}
-**Branch**: ${branch}
-**Commit**: ${commit}
-
-## Validation Results
-
-- ✅ **Compilation**: AE-Spec → AE-IR successful
-- ✅ **Linting**: No critical issues found
-- ✅ **Structure**: All required fields present
-
-## AE-IR Summary
-
-- **Version**: ${version}
-- **Entities**: ${entities}
-- **API Endpoints**: ${api_endpoints}
-- **Use Cases**: ${use_cases}
-- **Invariants**: ${invariants}
-
-## BDD Step Lint (non-blocking)
-
-EOF
-
-          printf "%s\n" "${bdd_summary}" >> spec-validation-report.md
+          {
+            printf "%s\n" "# AE-Spec Validation Report"
+            printf "%s\n" ""
+            printf "%s\n" "**Status**: ✅ Passed"
+            printf "%s\n" "**Timestamp**: ${timestamp}"
+            printf "%s\n" "**Branch**: ${branch}"
+            printf "%s\n" "**Commit**: ${commit}"
+            printf "%s\n" ""
+            printf "%s\n" "## Validation Results"
+            printf "%s\n" ""
+            printf "%s\n" "- ✅ **Compilation**: AE-Spec → AE-IR successful"
+            printf "%s\n" "- ✅ **Linting**: No critical issues found"
+            printf "%s\n" "- ✅ **Structure**: All required fields present"
+            printf "%s\n" ""
+            printf "%s\n" "## AE-IR Summary"
+            printf "%s\n" ""
+            printf "%s\n" "- **Version**: ${version}"
+            printf "%s\n" "- **Entities**: ${entities}"
+            printf "%s\n" "- **API Endpoints**: ${api_endpoints}"
+            printf "%s\n" "- **Use Cases**: ${use_cases}"
+            printf "%s\n" "- **Invariants**: ${invariants}"
+            printf "%s\n" ""
+            printf "%s\n" "## BDD Step Lint (non-blocking)"
+            printf "%s\n" "${bdd_summary}"
+          } > spec-validation-report.md
 
           printf "%s\n" "📊 Validation report generated:"
           cat spec-validation-report.md

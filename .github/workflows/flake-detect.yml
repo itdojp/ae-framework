@@ -31,7 +31,7 @@ jobs:
           
           printf "%s\n" "🔍 Starting flake detection with $total_runs runs"
           
-          for i in $(seq 1 "$total_runs"); do
+          for ((i=1; i<=total_runs; i++)); do
             printf "%s\n" "📊 Run #$i of $total_runs"
             
             if pnpm run test:int; then
@@ -79,7 +79,7 @@ jobs:
         run: |
           threshold=30.0
           
-          if [ $(printf "%s\n" "$FAILURE_RATE > $threshold" | bc -l) -eq 1 ]; then
+          if [ "$(printf "%s\n" "$FAILURE_RATE > $threshold" | bc -l)" -eq 1 ]; then
             printf "%s\n" "🚨 Flake detected! Failure rate: ${FAILURE_RATE}% exceeds threshold: ${threshold}%"
             printf "%s\n" "flaky=true" >> "$GITHUB_OUTPUT"
           else
