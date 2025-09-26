@@ -13,6 +13,8 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+      - name: Prepare pnpm
+        uses: ./.github/actions/setup-pnpm
       - uses: actions/setup-node@v4
         with: 
           node-version: '20'
@@ -29,7 +31,7 @@ jobs:
           
           printf "%s\n" "🔍 Starting flake detection with $total_runs runs"
           
-          for i in $(seq 1 "$total_runs"); do
+          for ((i=1; i<=total_runs; i++)); do
             printf "%s\n" "📊 Run #$i of $total_runs"
             
             if pnpm run test:int; then
@@ -59,6 +61,11 @@ jobs:
       - name: Create flake detection report
         run: |
           mkdir -p reports
+          status="stable"
+          if [ "$(printf "%s\n" "$FAILURE_RATE > 30.0" | bc -l)" -eq 1 ]; then
+            status="flaky"
+          fi
+
           cat > reports/flake-detection-report.json <<EOF
           {
             "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
@@ -66,7 +73,7 @@ jobs:
             "failures": $FAILS,
             "failureRate": $FAILURE_RATE,
             "threshold": 30.0,
-            "status": "$([ $(printf "%s\n" "$FAILURE_RATE > 30.0" | bc -l) -eq 1 ] && printf "flaky" || printf "stable")",
+            "status": "$status",
             "testSuite": "integration",
             "environment": "ci"
           }
@@ -77,7 +84,7 @@ jobs:
         run: |
           threshold=30.0
           
-          if [ $(printf "%s\n" "$FAILURE_RATE > $threshold" | bc -l) -eq 1 ]; then
+          if [ "$(printf "%s\n" "$FAILURE_RATE > $threshold" | bc -l)" -eq 1 ]; then
             printf "%s\n" "🚨 Flake detected! Failure rate: ${FAILURE_RATE}% exceeds threshold: ${threshold}%"
             printf "%s\n" "flaky=true" >> "$GITHUB_OUTPUT"
           else

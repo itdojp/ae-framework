@@ -206,7 +206,7 @@ services:
         echo 'Waiting for tests to complete...' &&
         sleep 30 &&
         echo 'Generating consolidated test report...' &&
-        node scripts/generate-test-report.js
+        node scripts/generate-test-report.cjs
       "
     depends_on:
       - test-unit

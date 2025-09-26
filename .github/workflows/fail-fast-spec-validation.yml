@@ -34,6 +34,9 @@ jobs:
             pnpm-lock.yaml
             tsconfig.json
 
+      - name: Prepare pnpm
+        uses: ./.github/actions/setup-pnpm
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:

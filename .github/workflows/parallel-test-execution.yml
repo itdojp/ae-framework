@@ -49,6 +49,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Prepare pnpm
+        uses: ./.github/actions/setup-pnpm
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -102,6 +105,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Prepare pnpm
+        uses: ./.github/actions/setup-pnpm
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -147,6 +153,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Prepare pnpm
+        uses: ./.github/actions/setup-pnpm
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -186,6 +195,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Prepare pnpm
+        uses: ./.github/actions/setup-pnpm
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -215,7 +227,7 @@ jobs:
 
       - name: Generate consolidated report
         run: |
-          node scripts/generate-test-report.js
+          node scripts/generate-test-report.cjs
         timeout-minutes: 5
 
       - name: Upload consolidated results

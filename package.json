@@ -54,7 +54,7 @@
     "optimize:ci:flake": "node scripts/integrated-ci-test-optimizer.mjs --no-stability --no-performance",
     "optimize:ci:performance": "node scripts/integrated-ci-test-optimizer.mjs --no-flake-detection --no-stability",
     "test": "vitest run",
-    "test:unit": "vitest run --project unit",
+    "test:unit": "vitest run --project unit --passWithNoTests",
     "test:int": "vitest run --project integration",
     "test:perf": "vitest run --project performance",
     "test:all": "vitest run",

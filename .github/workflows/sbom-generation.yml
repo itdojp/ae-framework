@@ -37,6 +37,9 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
+    - name: Prepare pnpm
+      uses: ./.github/actions/setup-pnpm
+
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
@@ -87,7 +90,7 @@ jobs:
             pnpm run ae-framework sbom compare previous-sbom.json sbom.json --verbose
           fi
         else
-          printf "%s\n" "No previous SBOM found for comparison"
+          printf -- "%s\n" "No previous SBOM found for comparison"
         fi
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -129,7 +132,7 @@ jobs:
         DT_PROJECT_UUID: ${{ vars.DEPENDENCY_TRACK_PROJECT_UUID }}
       run: |
         if [[ -n "$DT_API_KEY" && -n "$DT_BASE_URL" ]]; then
-          printf "%s\n" "Uploading SBOM to Dependency Track..."
+          printf -- "%s\n" "Uploading SBOM to Dependency Track..."
           
           # Upload to specific project if UUID is provided
           if [[ -n "$DT_PROJECT_UUID" ]]; then
@@ -146,9 +149,9 @@ jobs:
               -d @sbom.json
           fi
           
-          printf "%s\n" "SBOM uploaded successfully to Dependency Track"
+          printf -- "%s\n" "SBOM uploaded successfully to Dependency Track"
         else
-          printf "%s\n" "Dependency Track credentials not configured, skipping upload"
+          printf -- "%s\n" "Dependency Track credentials not configured, skipping upload"
         fi
         
   security-analysis:
@@ -163,11 +166,13 @@ jobs:
       
     - name: Download SBOM artifacts
       uses: actions/download-artifact@v4
+      continue-on-error: true
       with:
         name: sbom-files
-        
+
     - name: Download security scan results
       uses: actions/download-artifact@v4
+      continue-on-error: true
       with:
         name: security-scan-results
         
@@ -184,55 +189,55 @@ jobs:
     - name: Generate security report
       run: |
         {
-          printf "# Security Analysis Report\n"
-          printf "\n"
-          printf "Generated on: %s\n\n" "$(date)"
+          printf -- "# Security Analysis Report\n"
+          printf -- "\n"
+          printf -- "Generated on: %s\n\n" "$(date)"
         } > security-report.md
 
         {
-          printf "## SBOM Summary\n"
+          printf -- "## SBOM Summary\n"
         } >> security-report.md
         if [[ -f "sbom.json" ]]; then
           {
-            printf "- SBOM format: %s\n" "$(jq -r '.bomFormat' sbom.json)"
-            printf "- Spec version: %s\n" "$(jq -r '.specVersion' sbom.json)"
-            printf "- Components: %s\n" "$(jq '.components | length' sbom.json)"
-            printf "- Dependencies: %s\n\n" "$(jq '.dependencies | length // 0' sbom.json)"
+            printf -- "- SBOM format: %s\n" "$(jq -r '.bomFormat' sbom.json)"
+            printf -- "- Spec version: %s\n" "$(jq -r '.specVersion' sbom.json)"
+            printf -- "- Components: %s\n" "$(jq '.components | length' sbom.json)"
+            printf -- "- Dependencies: %s\n\n" "$(jq '.dependencies | length // 0' sbom.json)"
 
-            printf "### Component Types\n"
-            jq -r '.components | group_by(.type) | .[] | "\(.length) \(.[0].type) components"' sbom.json
-            printf "\n"
+            printf -- "### Component Types\n"
+            jq -r '.components | group_by(.type) | .[] | "\(length) \(.[0].type) components"' sbom.json
+            printf -- "\n"
 
             # License summary (top licenses)
-            printf "### Licenses (top)\n"
+            printf -- "### Licenses (top)\n"
             jq -r '[.components[] | select(.licenses) | .licenses[]?.license?.name // .licenses[]?.expression] | group_by(.) | sort_by(-length) | .[] | "- \(length)x \(.[0])"' sbom.json | head -10 || true
-            printf "\n"
+            printf -- "\n"
           } >> security-report.md
         fi
 
         {
-          printf "## Dependency Audit Results\n"
+          printf -- "## Dependency Audit Results\n"
         } >> security-report.md
         if [[ -f "audit-results.json" ]]; then
           if jq -e '.vulnerabilities' audit-results.json > /dev/null 2>&1; then
             {
-              printf "- Total vulnerabilities: %s\n" "$(jq '.metadata.vulnerabilities.total // 0' audit-results.json)"
-              printf "- High severity: %s\n" "$(jq '.metadata.vulnerabilities.high // 0' audit-results.json)"
-              printf "- Moderate severity: %s\n" "$(jq '.metadata.vulnerabilities.moderate // 0' audit-results.json)"
-              printf "- Low severity: %s\n" "$(jq '.metadata.vulnerabilities.low // 0' audit-results.json)"
+              printf -- "- Total vulnerabilities: %s\n" "$(jq '.metadata.vulnerabilities.total // 0' audit-results.json)"
+              printf -- "- High severity: %s\n" "$(jq '.metadata.vulnerabilities.high // 0' audit-results.json)"
+              printf -- "- Moderate severity: %s\n" "$(jq '.metadata.vulnerabilities.moderate // 0' audit-results.json)"
+              printf -- "- Low severity: %s\n" "$(jq '.metadata.vulnerabilities.low // 0' audit-results.json)"
             } >> security-report.md
           else
-            printf "- No vulnerabilities found\n" >> security-report.md
+            printf -- "- No vulnerabilities found\n" >> security-report.md
           fi
         fi
-        printf "\n" >> security-report.md
+        printf -- "\n" >> security-report.md
 
         {
-          printf "## Recommendations\n"
-          printf "1. Review SBOM for unexpected dependencies\n"
-          printf "2. Update vulnerable packages to latest versions\n"
-          printf "3. Monitor for new vulnerabilities in dependencies\n"
-          printf "4. Consider using dependency scanning tools in CI/CD\n"
+          printf -- "## Recommendations\n"
+          printf -- "1. Review SBOM for unexpected dependencies\n"
+          printf -- "2. Update vulnerable packages to latest versions\n"
+          printf -- "3. Monitor for new vulnerabilities in dependencies\n"
+          printf -- "4. Consider using dependency scanning tools in CI/CD\n"
         } >> security-report.md
 
     - name: Enforce security thresholds (optional)
@@ -255,12 +260,12 @@ jobs:
         if [ "$ENFORCE" = "1" ] && [ -f audit-results.json ]; then
           H=$(jq -r '.metadata.vulnerabilities.high // 0' audit-results.json)
           M=$(jq -r '.metadata.vulnerabilities.moderate // 0' audit-results.json)
-          printf "Enforcing security thresholds: high<=%s moderate<=%s (found: high=%s moderate=%s)\n" "$MAX_HIGH" "$MAX_MODERATE" "$H" "$M"
+          printf -- "Enforcing security thresholds: high<=%s moderate<=%s (found: high=%s moderate=%s)\n" "$MAX_HIGH" "$MAX_MODERATE" "$H" "$M"
           FAIL=0
           [ "$H" -gt "$MAX_HIGH" ] && FAIL=1
           [ "$M" -gt "$MAX_MODERATE" ] && FAIL=1
           if [ "$FAIL" = "1" ]; then
-            printf "%s\n" "Security thresholds exceeded" >&2
+            printf -- "%s\n" "Security thresholds exceeded" >&2
             exit 1
           fi
         fi

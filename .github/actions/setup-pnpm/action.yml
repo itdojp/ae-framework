@@ -1,0 +1,22 @@
+name: "Setup pnpm via Corepack"
+description: "Ensures pnpm@10 is available before using actions/setup-node cache"
+author: "ae-framework-maintainers"
+inputs:
+  version:
+    description: "pnpm version to activate"
+    default: "10.0.0"
+    required: false
+runs:
+  using: "composite"
+  steps:
+    - run: |
+        set -euo pipefail
+        VERSION="${{ inputs.version }}"
+        if command -v corepack >/dev/null 2>&1; then
+          corepack enable > /dev/null 2>&1 || true
+          corepack prepare "pnpm@${VERSION}" --activate
+        else
+          npm install -g "pnpm@${VERSION}"
+        fi
+        pnpm --version
+      shell: bash

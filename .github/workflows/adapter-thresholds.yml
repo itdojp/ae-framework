@@ -26,13 +26,15 @@ jobs:
           minor=$(jq -r '.violations.minor // 0' "$FILE" 2>/dev/null || printf "0\n")
           passes=$(jq -r '.passes // 0' "$FILE" 2>/dev/null || printf "0\n")
           comps=$(jq -r '.components_tested | length' "$FILE" 2>/dev/null || printf "0\n")
-          printf "%s\n" "present=true" >> "$GITHUB_OUTPUT"
-          printf "%s\n" "critical=$critical" >> "$GITHUB_OUTPUT"
-          printf "%s\n" "serious=$serious" >> "$GITHUB_OUTPUT"
-          printf "%s\n" "moderate=$moderate" >> "$GITHUB_OUTPUT"
-          printf "%s\n" "minor=$minor" >> "$GITHUB_OUTPUT"
-          printf "%s\n" "passes=$passes" >> "$GITHUB_OUTPUT"
-          printf "%s\n" "components=$comps" >> "$GITHUB_OUTPUT"
+          {
+            printf "%s\n" "present=true"
+            printf "%s\n" "critical=$critical"
+            printf "%s\n" "serious=$serious"
+            printf "%s\n" "moderate=$moderate"
+            printf "%s\n" "minor=$minor"
+            printf "%s\n" "passes=$passes"
+            printf "%s\n" "components=$comps"
+          } >> "$GITHUB_OUTPUT"
       - name: Comment PR with a11y summary
         if: steps.a11y.outputs.present == 'true'
         uses: actions/github-script@v7
@@ -82,6 +84,12 @@ jobs:
             printf "%s\n" "::error::a11y violations exceed threshold (critical=$crit, serious=$seri)"
             exit 1
           fi
+      - name: Upload adapter artifacts (a11y)
+        if: steps.a11y.outputs.present == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: adapter-a11y-results
+          path: reports/a11y-results.json
 
   summarize-perf:
     if: contains(github.event.pull_request.labels.*.name, 'run-adapters')
@@ -101,8 +109,10 @@ jobs:
           [ -z "$score" ] && score=$(jq -r '.metrics.score // empty' "$FILE" 2>/dev/null || printf "\n")
           # Normalize to number 0..100 if possible
           if printf '%s\n' "$score" | rg -q '^[0-9]+(\.[0-9]+)?$'; then :; else score=""; fi
-          printf "%s\n" "present=true" >> "$GITHUB_OUTPUT"
-          printf "%s\n" "score=${score:-}" >> "$GITHUB_OUTPUT"
+          {
+            printf "%s\n" "present=true"
+            printf "%s\n" "score=${score:-}"
+          } >> "$GITHUB_OUTPUT"
       - name: Comment PR with perf summary
         if: steps.perf.outputs.present == 'true'
         uses: actions/github-script@v7
@@ -151,6 +161,12 @@ jobs:
             exit 1
           fi
           awk 'BEGIN{ if ('"${score}"' + 0 < '"${thresh}"' + 0) exit 1 }' || { printf "%s\n" "::error::perf score ${score}% below threshold ${thresh}%"; exit 1; }
+      - name: Upload adapter artifacts (perf)
+        if: steps.perf.outputs.present == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: adapter-perf-results
+          path: reports/perf-results.json
       - name: Validate perf JSON shape (non-blocking)
         if: steps.perf.outputs.present == 'true'
         run: |
@@ -188,8 +204,10 @@ jobs:
               score=$(printf "%s\n" "$raw" | cut -d. -f1)
             fi
           fi
-          printf "%s\n" "present=true" >> "$GITHUB_OUTPUT"
-          printf "%s\n" "score=${score:-}" >> "$GITHUB_OUTPUT"
+          {
+            printf "%s\n" "present=true"
+            printf "%s\n" "score=${score:-}"
+          } >> "$GITHUB_OUTPUT"
       - name: Comment PR with Lighthouse summary
         if: steps.lh.outputs.present == 'true'
         uses: actions/github-script@v7
@@ -250,20 +268,8 @@ jobs:
           else
             printf "%s\n" "::warning::lighthouse JSON shape unexpected (categories.performance.score/performance/score not found) — see docs/quality/adapter-thresholds.md";
           fi
-      - name: Upload adapter artifacts (a11y)
-        if: contains(github.event.pull_request.labels.*.name, 'run-adapters') && steps.a11y.outputs.present == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: adapter-a11y-results
-          path: reports/a11y-results.json
-      - name: Upload adapter artifacts (perf)
-        if: contains(github.event.pull_request.labels.*.name, 'run-adapters') && steps.perf.outputs.present == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: adapter-perf-results
-          path: reports/perf-results.json
       - name: Upload adapter artifacts (lighthouse)
-        if: contains(github.event.pull_request.labels.*.name, 'run-adapters') && steps.lh.outputs.present == 'true'
+        if: steps.lh.outputs.present == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: adapter-lighthouse-results

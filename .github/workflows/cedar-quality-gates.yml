@@ -25,13 +25,17 @@ jobs:
             ok=$(jq -r '.okCount // 0' "$FILE" 2>/dev/null || printf "0\n")
             ng=$(jq -r '.ngCount // 0' "$FILE" 2>/dev/null || printf "0\n")
             files=$(jq -r '.filesScanned // 0' "$FILE" 2>/dev/null || printf "0\n")
-            printf "%s\n" "files=$files" >> "$GITHUB_OUTPUT"
-            printf "%s\n" "ok=$ok" >> "$GITHUB_OUTPUT"
-            printf "%s\n" "ng=$ng" >> "$GITHUB_OUTPUT"
+            {
+              printf "%s\n" "files=$files"
+              printf "%s\n" "ok=$ok"
+              printf "%s\n" "ng=$ng"
+            } >> "$GITHUB_OUTPUT"
           else
-            printf "%s\n" "files=0" >> "$GITHUB_OUTPUT"
-            printf "%s\n" "ok=0" >> "$GITHUB_OUTPUT"
-            printf "%s\n" "ng=0" >> "$GITHUB_OUTPUT"
+            {
+              printf "%s\n" "files=0"
+              printf "%s\n" "ok=0"
+              printf "%s\n" "ng=0"
+            } >> "$GITHUB_OUTPUT"
           fi
       - name: Upload cedar summary
         if: always()

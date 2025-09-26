@@ -1,6 +1,11 @@
+const path = require('node:path');
+
+const rootDir = path.resolve(__dirname, '..');
+
 /** @type {import('jest').Config} */
 module.exports = {
   displayName: 'Accessibility Tests',
+  rootDir,
   testMatch: ['<rootDir>/tests/a11y/**/*.test.{js,ts}'],
   testEnvironment: 'node',
   setupFilesAfterEnv: ['<rootDir>/tests/a11y/setup.js'],

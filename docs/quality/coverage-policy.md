@@ -8,6 +8,7 @@ Mechanics
 - Threshold source order:
   1. PR label `coverage:<pct>` (e.g., `coverage:75`)
   2. Repository variable `COVERAGE_DEFAULT_THRESHOLD` (default 80)
+  - Label parsing: last label wins; accepts 0–100; trims `%` and spaces; case-insensitive `coverage:` prefix.
 - Enforcement (blocking) when:
   - PR has label `enforce-coverage`, or
   - Push to `main` and repository variable `COVERAGE_ENFORCE_MAIN` = `1`
@@ -34,6 +35,14 @@ References
 - Workflow: `.github/workflows/coverage-check.yml`
 - Slash commands: see `AGENTS.md` and `docs/ci-policy.md`
 
+### Development (local verify)
+- Dry-run the summary composer locally without posting to GitHub:
+  - `AE_COVERAGE_DRY_RUN=1 GITHUB_TOKEN=dummy GITHUB_REPOSITORY=owner/repo GITHUB_EVENT_NAME=pull_request GITHUB_EVENT_PATH=event.json node scripts/coverage/pr-coverage-summary.mjs`
+- The script searches for coverage JSON at `coverage/coverage-summary.json` (then `artifacts/coverage/coverage-summary.json`).
+  - Or override the summary path via `AE_COVERAGE_SUMMARY_PATH` (when set and exists, it is used).
+  - Label parsing rules: last-wins, accepts 0–100, trims `%` and spaces, case-insensitive `coverage:` prefix.
+  - Opt-out posting entirely (in CI experiments): set `AE_COVERAGE_SKIP_COMMENT=1` (script prints a note and exits).
+
 ### FAQ
 - Q: PRで失敗するのはなぜ？（main以外）
   - A: 既定は report-only です。`/enforce-coverage` ラベルや main への push（+変数設定）以外では失敗しません。失敗している場合はスクリプトの continue-on-error 条件やしきい値導出の設定を確認してください。
@@ -47,10 +56,20 @@ References
 <!-- AE-COVERAGE-SUMMARY -->
 Coverage (lines): 82%
 Threshold (effective): 80%
+Source: label
 - via label: coverage:80
+- repo var: COVERAGE_DEFAULT_THRESHOLD=80%
 - default: 80%
+Derived: label > repo var > default
+Rules: label override last-wins; accepts 0–100; trims %/spaces
 Policy: report-only
 Policy source: report-only
+Docs: docs/quality/coverage-required.md
+Docs: docs/quality/coverage-policy.md
+Docs: docs/ci/label-gating.md
+Reproduce: coverage → coverage/coverage-summary.json → total.lines.pct
+Reproduce: threshold → label coverage:<pct> > vars.COVERAGE_DEFAULT_THRESHOLD > default 80
+Tips: /coverage <pct> to override; /enforce-coverage to enforce
 ```
 
 ### Branch protection（Required化）

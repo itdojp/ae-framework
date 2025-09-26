@@ -7,7 +7,6 @@ yarn-error.log*
 .pnpm-store/
 
 # Development and test files
-src/
 tests/
 test/
 *.test.ts
@@ -66,7 +65,6 @@ examples/
 .env.test
 .eslintrc*
 .prettierrc*
-tsconfig.json
 jest.config.*
 vitest.config.*
 stryker.conf.*
