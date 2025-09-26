@@ -14,7 +14,7 @@ jobs:
       - name: Check for unresolved merge markers in workflows
         run: |
           set -e
-          if grep -R -nE '<<<<<<<|>>>>>>>|=======' .github/workflows || true; then
+          if grep -R -nE '<<<<<<<|>>>>>>>|=======' .github/workflows; then
             printf "%s\n" "Unresolved merge markers found in workflows" >&2
             exit 1
           fi
