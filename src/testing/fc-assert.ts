@@ -1,5 +1,5 @@
 import fc from 'fast-check';
-import { writeRepro } from '../../tests/_failures/repro-writer.js';
+import { writeRepro } from './repro-writer.js';
 
 export function aeAssert<T>(prop: fc.IProperty<T>, opts?: Partial<fc.Parameters<T>>) {
   const seedEnv = process.env['AE_SEED'] ? Number(process.env['AE_SEED']) : undefined;
