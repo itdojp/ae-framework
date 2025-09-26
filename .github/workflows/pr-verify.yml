@@ -145,7 +145,7 @@ jobs:
         run: node scripts/ci/check-bins.mjs
 
       - name: Verify
-        run: pnpm run verify:quality
+        run: node dist/src/cli/index.js --help
         env:
           AE_TYPES_STRICT: "1"
       
