@@ -205,7 +205,7 @@ jobs:
             printf -- "- Dependencies: %s\n\n" "$(jq '.dependencies | length // 0' sbom.json)"
 
             printf -- "### Component Types\n"
-            jq -r '.components | group_by(.type) | .[] | "\(.length) \(.[0].type) components"' sbom.json
+            jq -r '.components | group_by(.type) | .[] | "\(length) \(.[0].type) components"' sbom.json
             printf -- "\n"
 
             # License summary (top licenses)
