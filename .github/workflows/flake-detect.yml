@@ -61,6 +61,11 @@ jobs:
       - name: Create flake detection report
         run: |
           mkdir -p reports
+          status="stable"
+          if [ "$(printf "%s\n" "$FAILURE_RATE > 30.0" | bc -l)" -eq 1 ]; then
+            status="flaky"
+          fi
+
           cat > reports/flake-detection-report.json <<EOF
           {
             "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
@@ -68,7 +73,7 @@ jobs:
             "failures": $FAILS,
             "failureRate": $FAILURE_RATE,
             "threshold": 30.0,
-            "status": "$([ $(printf "%s\n" "$FAILURE_RATE > 30.0" | bc -l) -eq 1 ] && printf "flaky" || printf "stable")",
+            "status": "$status",
             "testSuite": "integration",
             "environment": "ci"
           }
