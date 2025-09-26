@@ -138,6 +138,9 @@ jobs:
             printf "%s\n" "No codex-quickstart summary found."
           fi
 
+      - name: Ensure CLI executables
+        run: pnpm run build:cli || true
+
       - name: Bin smoke check
         run: node scripts/ci/check-bins.mjs
 
