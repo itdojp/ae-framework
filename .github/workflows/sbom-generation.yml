@@ -188,6 +188,7 @@ jobs:
     # Generate security report
     - name: Generate security report
       run: |
+        printf() { command printf -- "$@"; }
         {
           printf "# Security Analysis Report\n"
           printf "\n"

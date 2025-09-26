@@ -250,7 +250,8 @@ jobs:
             if (lines.length === 0) {
               lines.push('No CodeX artifacts found to summarize.');
             }
-            const body = `### CodeX Artifacts Summary\n\n${lines.map(l=>`- ${l}`).join('\n')}\n`;
+            const summary = lines.map((line) => '- ' + line).join('\n');
+            const body = '### CodeX Artifacts Summary\n\n' + summary + '\n';
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
