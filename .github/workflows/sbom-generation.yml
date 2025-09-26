@@ -166,15 +166,15 @@ jobs:
       
     - name: Download SBOM artifacts
       uses: actions/download-artifact@v4
+      continue-on-error: true
       with:
         name: sbom-files
-        if-no-files-found: ignore
 
     - name: Download security scan results
       uses: actions/download-artifact@v4
+      continue-on-error: true
       with:
         name: security-scan-results
-        if-no-files-found: ignore
         
     # CodeQL analysis for additional security scanning
     - name: Initialize CodeQL
