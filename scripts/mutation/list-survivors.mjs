@@ -12,7 +12,13 @@ export function parseArgs(argv) {
       i += 1;
     } else if ((current === '--limit' || current === '-l') && argv[i + 1]) {
       const rawLimit = Number(argv[i + 1]);
-      args.limit = Number.isNaN(rawLimit) ? Infinity : rawLimit;
+      if (Number.isNaN(rawLimit)) {
+        args.limit = Infinity;
+      } else if (rawLimit < 0) {
+        throw new RangeError('--limit must be a non-negative number');
+      } else {
+        args.limit = rawLimit;
+      }
       i += 1;
     }
   }
@@ -45,7 +51,10 @@ export function limitSurvivors(survivors, limit) {
   if (!Number.isFinite(limit)) {
     return survivors;
   }
-  return survivors.slice(0, Math.max(0, limit));
+  if (limit < 0) {
+    throw new RangeError('limit must be a non-negative number');
+  }
+  return survivors.slice(0, limit);
 }
 
 export async function listSurvivors({ report, limit } = {}) {
@@ -57,7 +66,14 @@ export async function listSurvivors({ report, limit } = {}) {
 }
 
 export async function main(argv = process.argv) {
-  const args = parseArgs(argv);
+  let args;
+  try {
+    args = parseArgs(argv);
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 1;
+    return;
+  }
   try {
     const survivors = await listSurvivors({ report: args.report, limit: args.limit });
     console.log(JSON.stringify(survivors, null, 2));

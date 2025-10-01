@@ -23,6 +23,18 @@ describe('list-survivors CLI utilities', () => {
     ).toEqual({ report: 'custom.json', limit: 5 });
   });
 
+  it('treats non-numeric limits as Infinity', () => {
+    expect(
+      parseArgs(['node', 'script.mjs', '--limit', 'not-a-number']).limit,
+    ).toBe(Infinity);
+  });
+
+  it('throws when limit is negative', () => {
+    expect(() => parseArgs(['node', 'script.mjs', '--limit', '-3'])).toThrow(
+      /--limit must be a non-negative number/,
+    );
+  });
+
   it('ignores non-surviving mutants when collecting', () => {
     const survivors = collectSurvivors([
       {
@@ -71,6 +83,9 @@ describe('list-survivors CLI utilities', () => {
 
     expect(limitSurvivors(survivors, 2)).toEqual(survivors.slice(0, 2));
     expect(limitSurvivors(survivors, Infinity)).toEqual(survivors);
+    expect(() => limitSurvivors(survivors, -1)).toThrow(
+      /limit must be a non-negative number/,
+    );
   });
 
   it('lists survivors from a mutation report file', async () => {
