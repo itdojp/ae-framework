@@ -123,10 +123,10 @@ export class EnhancedStateManager extends EventEmitter {
     this.options = {
       databasePath: options.databasePath || '.ae/enhanced-state.db',
       enableCompression: options.enableCompression ?? true,
-      compressionThreshold: options.compressionThreshold || 1024, // 1KB
-      defaultTTL: options.defaultTTL || 86400 * 7, // 7 days
-      gcInterval: options.gcInterval || 3600, // 1 hour
-      maxVersions: options.maxVersions || 10,
+      compressionThreshold: options.compressionThreshold ?? 1024, // 1KB
+      defaultTTL: options.defaultTTL ?? 86400 * 7, // 7 days
+      gcInterval: options.gcInterval ?? 3600, // 1 hour
+      maxVersions: options.maxVersions ?? 10,
       enableTransactions: options.enableTransactions ?? true
     };
 
@@ -171,31 +171,28 @@ export class EnhancedStateManager extends EventEmitter {
     const timestamp = new Date().toISOString();
     const fullKey = `${logicalKey}_${timestamp}`;
     const version = this.getNextVersion(logicalKey);
-    
-    const entry: StateEntry<AEIR> = {
+    const estimatedSize = JSON.stringify(data).length;
+    const shouldCompress = this.shouldCompress(estimatedSize);
+    const entryData: AEIR | Buffer = shouldCompress ? await this.compress(data) : data;
+
+    const entry: StateEntry<AEIR | Buffer> = {
       id: uuidv4(),
       logicalKey,
       timestamp,
       version,
       checksum: this.calculateChecksum(data),
-      data,
-      compressed: false,
+      data: entryData,
+      compressed: shouldCompress,
       tags: options?.tags || {},
-      ttl: options?.ttl || this.options.defaultTTL,
+      ttl: options?.ttl ?? this.options.defaultTTL,
       metadata: {
-        size: JSON.stringify(data).length,
+        size: estimatedSize,
         created: timestamp,
         accessed: timestamp,
         source: options?.source || 'unknown',
         ...(options?.phase ? { phase: options.phase } : {})
       }
     };
-
-    // Apply compression if needed
-    if (this.shouldCompress(entry.metadata.size)) {
-      (entry as any).data = await this.compress(entry.data);
-      entry.compressed = true;
-    }
 
     // Store with transaction if enabled or transaction ID provided
     if (options?.transactionId) {
@@ -593,17 +590,24 @@ export class EnhancedStateManager extends EventEmitter {
     const entries = Array.from(this.storage.values());
     const totalSize = entries.reduce((sum, entry) => sum + entry.metadata.size, 0);
     const compressedEntries = entries.filter(e => e.compressed).length;
-    
-    const timestamps = entries.map(e => e.timestamp).sort();
-    
+    const logicalKeys = this.keyIndex.size;
+    const averageVersions = logicalKeys > 0 ? this.storage.size / logicalKeys : 0;
+
+    const timestamps = entries
+      .map(e => e.timestamp)
+      .filter(Boolean)
+      .sort();
+    const oldestEntry = timestamps.at(0) ?? null;
+    const newestEntry = timestamps.at(-1) ?? null;
+
     return {
       totalEntries: this.storage.size,
       totalSize,
       compressedEntries,
-      logicalKeys: this.keyIndex.size,
-      averageVersions: this.keyIndex.size > 0 ? this.storage.size / this.keyIndex.size : 0,
-      oldestEntry: timestamps[0] || null,
-      newestEntry: timestamps[timestamps.length - 1] || null,
+      logicalKeys,
+      averageVersions,
+      oldestEntry,
+      newestEntry,
       activeTransactions: this.activeTransactions.size
     };
   }
@@ -641,7 +645,6 @@ export class EnhancedStateManager extends EventEmitter {
    * Import state from backup or migration
    */
   async importState(exportedState: Awaited<ReturnType<typeof this.exportState>>): Promise<void> {
-    await this.ensureInitialized();
 
     // Clear current state
     this.storage.clear();
@@ -794,8 +797,9 @@ export class EnhancedStateManager extends EventEmitter {
     try {
       const data = await fs.readFile(this.databaseFile, 'utf-8');
       const state = JSON.parse(data);
-      
-      if (state.version === '1.0.0') {
+      const version = state?.metadata?.version ?? state?.version;
+
+      if (version === '1.0.0') {
         await this.importState(state);
         console.log(`📁 Loaded ${state.entries.length} entries from persistence`);
       }
