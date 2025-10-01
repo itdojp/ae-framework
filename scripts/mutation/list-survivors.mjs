@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-function parseArgs(argv) {
+export function parseArgs(argv) {
   const args = { report: 'reports/mutation/mutation.json', limit: Infinity };
   for (let i = 2; i < argv.length; i += 1) {
     const current = argv[i];
@@ -10,14 +11,21 @@ function parseArgs(argv) {
       args.report = argv[i + 1];
       i += 1;
     } else if ((current === '--limit' || current === '-l') && argv[i + 1]) {
-      args.limit = Number(argv[i + 1]);
+      const rawLimit = Number(argv[i + 1]);
+      if (Number.isNaN(rawLimit)) {
+        args.limit = Infinity;
+      } else if (rawLimit < 0) {
+        throw new RangeError('--limit must be a non-negative number');
+      } else {
+        args.limit = rawLimit;
+      }
       i += 1;
     }
   }
   return args;
 }
 
-function collectSurvivors(fileEntries) {
+export function collectSurvivors(fileEntries) {
   const survivors = [];
   for (const entry of fileEntries) {
     const mutants = entry.mutants ?? [];
@@ -34,15 +42,41 @@ function collectSurvivors(fileEntries) {
   return survivors;
 }
 
-async function main() {
-  const args = parseArgs(process.argv);
+export async function readMutationReport(reportPath) {
+  const content = await readFile(reportPath, 'utf8');
+  return JSON.parse(content);
+}
+
+export function limitSurvivors(survivors, limit) {
+  if (!Number.isFinite(limit)) {
+    return survivors;
+  }
+  if (limit < 0) {
+    throw new RangeError('limit must be a non-negative number');
+  }
+  return survivors.slice(0, limit);
+}
+
+export async function listSurvivors({ report, limit } = {}) {
+  const reportPath = resolve(report ?? 'reports/mutation/mutation.json');
+  const mutationReport = await readMutationReport(reportPath);
+  const fileEntries = Object.values(mutationReport.files ?? {});
+  const survivors = collectSurvivors(fileEntries);
+  return limitSurvivors(survivors, limit ?? Infinity);
+}
+
+export async function main(argv = process.argv) {
+  let args;
   try {
-    const reportPath = resolve(args.report);
-    const content = await readFile(reportPath, 'utf8');
-    const report = JSON.parse(content);
-    const survivors = collectSurvivors(Object.values(report.files ?? {}));
-    const limited = Number.isFinite(args.limit) ? survivors.slice(0, args.limit) : survivors;
-    console.log(JSON.stringify(limited, null, 2));
+    args = parseArgs(argv);
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 1;
+    return;
+  }
+  try {
+    const survivors = await listSurvivors({ report: args.report, limit: args.limit });
+    console.log(JSON.stringify(survivors, null, 2));
   } catch (error) {
     if (error.code === 'ENOENT') {
       console.error(`No mutation report found at ${args.report}`);
@@ -54,4 +88,14 @@ async function main() {
   }
 }
 
-await main();
+const invokedDirectly = (() => {
+  try {
+    return resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url);
+  } catch (error) {
+    return false;
+  }
+})();
+
+if (invokedDirectly) {
+  await main();
+}

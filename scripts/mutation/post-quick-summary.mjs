@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import { readFile } from 'node:fs/promises';
 import { basename, resolve } from 'node:path';
+import { collectSurvivors, limitSurvivors, readMutationReport } from './list-survivors.mjs';
 
 function parseArgs(argv) {
   const args = { report: 'reports/mutation/mutation.json', limit: 5 };
@@ -57,30 +57,12 @@ function computeMetrics(fileEntries) {
   return { killed, survived, timeout, noCover, errors, mutationScore };
 }
 
-function collateTopSurvivors(fileEntries, limit) {
-  const survivors = [];
-  for (const entry of fileEntries) {
-    const mutants = entry.mutants || [];
-    for (const mutant of mutants) {
-      if (mutant.status === 'Survived') {
-        survivors.push({
-          file: entry.path || 'unknown',
-          mutator: mutant.mutatorName,
-          line: mutant.location?.start?.line ?? null,
-        });
-      }
-    }
-  }
-  return survivors.slice(0, limit);
-}
-
 async function main() {
   const args = parseArgs(process.argv);
   const reportPath = resolve(args.report);
   let report;
   try {
-    const raw = await readFile(reportPath, 'utf8');
-    report = JSON.parse(raw);
+    report = await readMutationReport(reportPath);
   } catch (error) {
     console.error(`Unable to read mutation report at ${reportPath}:`, error.message);
     process.exitCode = 1;
@@ -89,7 +71,7 @@ async function main() {
 
   const fileEntries = Object.values(report.files ?? {});
   const metrics = computeMetrics(fileEntries);
-  const topSurvivors = collateTopSurvivors(fileEntries, args.limit);
+  const topSurvivors = limitSurvivors(collectSurvivors(fileEntries), args.limit);
 
   const title = `Mutation Quick Summary — ${basename(reportPath)}`;
   console.log(`# ${title}`);
@@ -102,7 +84,8 @@ async function main() {
     console.log();
     console.log('## Top surviving mutants');
     for (const survivor of topSurvivors) {
-      const location = survivor.line ? `:${survivor.line}` : '';
+      const line = survivor.location?.start?.line;
+      const location = line ? `:${line}` : '';
       console.log(`- \	${survivor.file}${location} — ${survivor.mutator}`);
     }
   }

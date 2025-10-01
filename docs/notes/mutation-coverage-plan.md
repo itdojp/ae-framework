@@ -27,10 +27,24 @@
 - `./scripts/mutation/run-scoped.sh --quick`: concurrency=1 / timeoutMS=10000 / time-limit=420 秒で `src/api/server.ts` のみを対象に 5〜6 分で完走するモード。実行後に `reports/mutation/index.html` と `reports/mutation/mutation.json` が上書きされる。
 - `./scripts/mutation/gather-mutate-patterns.sh [base_ref] --output <file>`: `git diff` の結果から TypeScript ファイルを抽出し、Stryker の `--mutate-file` オプションに渡せるパターン一覧を生成する。CI では `origin/main` との差分を出力して一時ファイルに保存する想定。
 - `./scripts/mutation/run-scoped.sh --auto-diff[=<ref>]`: `gather-mutate-patterns.sh` を内部呼び出しし、`origin/main` との差分から mutate パターンを自動生成して Stryker に渡す。`--mutate` や `--mutate-file` と併用すると差分 + 追加指定のパターンで実行できる。
+- `./scripts/mutation/list-survivors.mjs`: `reports/mutation/mutation.json` から Survived ミュータントを JSON で抽出。Verify Lite の Mutation quick ステップがこのスクリプトを呼び出し、トップ 10 件を Step Summary へ貼り付けつつ、最大 50 件のリストを `mutation-survivors-json` アーティファクトとして保存する。
 - `.github/workflows/mutation-quick.yml`: `workflow_dispatch` で `run-scoped.sh --quick` を実行し、生成された HTML / JSON レポートをアーティファクトとしてアップロードする。ブランチ push 後に実行確認する。
 - `.github/actions/mutation-auto-diff/`: 共通 composite action として base ref fetch / auto-diff 実行 / summary 収集 / アーティファクト化を提供。`mutation-quick` と `verify-lite` で利用。
 - CI で `--auto-diff` を利用する場合は、実行ジョブの冒頭で `git fetch origin main --depth=1` 等を行い、比較対象ブランチをローカルに用意しておく。
 - 差分に応じたスポット実行例: `./scripts/mutation/gather-mutate-patterns.sh HEAD~1 --output /tmp/mutate.list && ./scripts/mutation/run-scoped.sh --quick --mutate-file /tmp/mutate.list`
+
+### EnhancedStateManager サバイバー洗い出しメモ（2025-09-30）
+- `gh workflow run Mutation Quick` を実行すると、Step Summary にトップ10件、アーティファクト `mutation-survivors-json` に最大50件の Survived ミュータントが保存される。ローカルでも `node scripts/mutation/list-survivors.mjs --limit 20` で同じ JSON を参照できる。
+- 現状の survive 集中箇所（直近 quick run レポートより）:
+  - `src/utils/enhanced-state-manager.ts:640-680` — import 正規化 (`normalizeImportedState`)。`metadata` / `versionIndex` 欠落時の再生成が未テスト。
+  - `src/utils/enhanced-state-manager.ts:700-740` — `findKeyByVersion` / `versionIndex` 再構築。削除済エントリに遭遇した際のフォールバックをアサートする必要あり。
+  - `src/utils/enhanced-state-manager.ts:780-820` — `stateImported` イベント payload。AEIR ↔ Buffer 変換時に `event.payload.data` が空にならないことを保証するテストが不足。
+- テスト追加 TODO（Week2→Week3 ブリッジ）:
+  1. import 時に `metadata.entries` が存在しなくても生成されることを確認するユニットテスト。
+  2. `ensureInitialized` の早期リターンを反転させたミュータントを kill するため、未初期化状態で `withTransaction` を呼ぶケースの追加。
+  3. TTL=0 のアップサート後に GC が `versionIndex` / `keyIndex` の整合性を保つか検証するケース。
+  4. `stateImported` イベントが圧縮 Buffer と AEIR を扱う場合の payload 型チェック（optional chaining 破壊対策）。
+- 上記テストは `tests/unit/utils/enhanced-state-manager.test.ts` に順次追加し、必要に応じて Property ベースの補強を検討する。
 
 ## 次のステップ
 1. `stryker.config.js` と `tsconfig.stryker.json` を更新し、mutate/TypeScript の対象を `src/domain`, `src/utils/enhanced-state-manager.ts`, `src/api/server.ts` に限定（実施済み）。
