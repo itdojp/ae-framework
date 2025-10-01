@@ -1,0 +1,111 @@
+name: Mutation Quick
+
+on:
+  workflow_dispatch:
+    inputs:
+      mutate:
+        description: "追加で --mutate に渡す glob (optional)"
+        required: false
+      time_limit:
+        description: "STRYKER_TIME_LIMIT (秒) を上書き"
+        required: false
+      base_ref:
+        description: "auto-diff 用の比較ブランチ (default: origin/main)"
+        required: false
+
+jobs:
+  mutation-quick:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    env:
+      EXTRA_MUTATE: ${{ inputs.mutate }}
+      EXTRA_TIME_LIMIT: ${{ inputs.time_limit }}
+      AUTO_DIFF_BASE: ${{ inputs.base_ref }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Fetch base for auto-diff
+        if: ${{ env.AUTO_DIFF_BASE == '' }}
+        run: git fetch --no-tags --depth=1 origin main
+
+      - name: Fetch custom base
+        if: ${{ env.AUTO_DIFF_BASE != '' }}
+        run: |
+          git fetch --no-tags --depth=1 origin "${AUTO_DIFF_BASE}"
+
+      - name: Prepare pnpm
+        uses: ./.github/actions/setup-pnpm
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+
+      - name: Run mutation quick
+        id: mutation
+        run: |
+          set -euo pipefail
+          mkdir -p reports/mutation
+          args=(--quick)
+          if [ -n "${AUTO_DIFF_BASE}" ]; then
+            args+=("--auto-diff=${AUTO_DIFF_BASE}")
+          else
+            args+=("--auto-diff")
+          fi
+          if [ -n "${EXTRA_MUTATE}" ]; then
+            args+=("--mutate" "${EXTRA_MUTATE}")
+          fi
+          if [ -n "${EXTRA_TIME_LIMIT}" ]; then
+            export STRYKER_TIME_LIMIT="${EXTRA_TIME_LIMIT}"
+          fi
+          ./scripts/mutation/run-scoped.sh "${args[@]}"
+
+      - name: Mutation quick summary
+        if: ${{ always() }}
+        run: |
+          if [ -f reports/mutation/mutation.json ]; then
+            node scripts/mutation/post-quick-summary.mjs | tee mutation-summary.md
+            cat mutation-summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf 'No mutation report found; skipped summary.\n' | tee mutation-summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Mutation survivors JSON
+        if: ${{ always() }}
+        run: |
+          if [ -f reports/mutation/mutation.json ]; then
+            node scripts/mutation/list-survivors.mjs --limit 50 > reports/mutation/survivors.json
+            survivors_for_summary="$(node scripts/mutation/list-survivors.mjs --limit 10)"
+            {
+              printf '## Mutation survivors (top 10)\n'
+              printf '```json\n%s\n```\n' "$survivors_for_summary"
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf 'No mutation report found; skipped survivors extraction.\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload mutation reports
+        if: ${{ always() && hashFiles('reports/mutation/mutation.json') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-quick-report
+          path: |
+            reports/mutation/mutation.json
+            reports/mutation/index.html
+
+      - name: Upload mutation survivors
+        if: ${{ always() && hashFiles('reports/mutation/survivors.json') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-survivors-json
+          path: reports/mutation/survivors.json
