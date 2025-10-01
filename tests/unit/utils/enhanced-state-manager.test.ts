@@ -354,6 +354,26 @@ describe('EnhancedStateManager transactions', () => {
     await manager.shutdown();
   });
 
+  it('keeps ttl entries alive before expiration is reached', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-state-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, {
+      databasePath: 'state.db',
+      defaultTTL: 0,
+      gcInterval: 1,
+    });
+
+    await manager.saveSSOT('ttl-entry-active', { id: 'ttl' }, { ttl: 1 });
+
+    await (manager as unknown as { runGarbageCollection: () => Promise<void> }).runGarbageCollection();
+
+    const restored = await manager.loadSSOT('ttl-entry-active');
+    expect(restored).toEqual({ id: 'ttl' });
+
+    await manager.shutdown();
+  });
+
   it('restores previous entry when rollback occurs on existing key', async () => {
     const root = await mkdtemp(join(tmpdir(), 'ae-framework-state-'));
     tempRoots.push(root);
