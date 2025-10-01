@@ -117,12 +117,10 @@ jobs:
             mkdir -p reports/mutation
             node scripts/mutation/list-survivors.mjs --limit 50 > reports/mutation/survivors.json
             survivors_for_summary="$(node scripts/mutation/list-survivors.mjs --limit 10)"
-            cat <<EOF >> "$GITHUB_STEP_SUMMARY"
-## Mutation survivors (top 10)
-```json
-$survivors_for_summary
-```
-EOF
+            {
+              printf "## Mutation survivors (top 10)\n"
+              printf "```json\n%s\n```\n" "$survivors_for_summary"
+            } >> "$GITHUB_STEP_SUMMARY"
           else
             printf "%s\n" "No mutation report found; skipped survivors extraction." >> "$GITHUB_STEP_SUMMARY"
           fi
