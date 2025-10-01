@@ -87,8 +87,10 @@ jobs:
             node scripts/mutation/list-survivors.mjs --limit 50 > reports/mutation/survivors.json
             survivors_for_summary="$(node scripts/mutation/list-survivors.mjs --limit 10)"
             {
-              printf "## Mutation survivors (top 10)\n"
-              printf "```json\n%s\n```\n" "$survivors_for_summary"
+              printf '%s\n' '## Mutation survivors (top 10)'
+              printf '%s\n' '```json'
+              printf '%s\n' "$survivors_for_summary"
+              printf '%s\n' '```'
             } >> "$GITHUB_STEP_SUMMARY"
           else
             printf "%s\n" "No mutation report found; skipped survivors extraction." >> "$GITHUB_STEP_SUMMARY"
