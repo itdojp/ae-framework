@@ -27,6 +27,7 @@
 - `./scripts/mutation/run-scoped.sh --quick`: concurrency=1 / timeoutMS=10000 / time-limit=420 秒で `src/api/server.ts` のみを対象に 5〜6 分で完走するモード。実行後に `reports/mutation/index.html` と `reports/mutation/mutation.json` が上書きされる。
 - `./scripts/mutation/gather-mutate-patterns.sh [base_ref] --output <file>`: `git diff` の結果から TypeScript ファイルを抽出し、Stryker の `--mutate-file` オプションに渡せるパターン一覧を生成する。CI では `origin/main` との差分を出力して一時ファイルに保存する想定。
 - `./scripts/mutation/run-scoped.sh --auto-diff[=<ref>]`: `gather-mutate-patterns.sh` を内部呼び出しし、`origin/main` との差分から mutate パターンを自動生成して Stryker に渡す。`--mutate` や `--mutate-file` と併用すると差分 + 追加指定のパターンで実行できる。
+- `./scripts/mutation/list-survivors.mjs`: `reports/mutation/mutation.json` から Survived ミュータントを JSON で抽出。Verify Lite の Mutation quick ステップがこのスクリプトを呼び出し、トップ 10 件を Step Summary へ貼り付けつつ、最大 50 件のリストを `mutation-survivors-json` アーティファクトとして保存する。
 - `.github/workflows/mutation-quick.yml`: `workflow_dispatch` で `run-scoped.sh --quick` を実行し、生成された HTML / JSON レポートをアーティファクトとしてアップロードする。ブランチ push 後に実行確認する。
 - `.github/actions/mutation-auto-diff/`: 共通 composite action として base ref fetch / auto-diff 実行 / summary 収集 / アーティファクト化を提供。`mutation-quick` と `verify-lite` で利用。
 - CI で `--auto-diff` を利用する場合は、実行ジョブの冒頭で `git fetch origin main --depth=1` 等を行い、比較対象ブランチをローカルに用意しておく。

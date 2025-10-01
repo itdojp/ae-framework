@@ -110,3 +110,23 @@ jobs:
           else
             printf 'No mutation report found; skipped summary.\n' | tee mutation-summary.md >> "$GITHUB_STEP_SUMMARY"
           fi
+      - name: Mutation survivors JSON
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          if [ -f reports/mutation/mutation.json ]; then
+            mkdir -p reports/mutation
+            node scripts/mutation/list-survivors.mjs --limit 50 > reports/mutation/survivors.json
+            survivors_for_summary="$(node scripts/mutation/list-survivors.mjs --limit 10)"
+            {
+              printf '## Mutation survivors (top 10)\n'
+              printf '```json\n%s\n```\n' "$survivors_for_summary"
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf 'No mutation report found; skipped survivors extraction.\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload mutation survivors artifact
+        if: ${{ github.event_name == 'pull_request' && hashFiles('reports/mutation/survivors.json') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-survivors-json
+          path: reports/mutation/survivors.json
