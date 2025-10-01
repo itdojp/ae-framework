@@ -645,35 +645,130 @@ export class EnhancedStateManager extends EventEmitter {
    * Import state from backup or migration
    */
   async importState(exportedState: Awaited<ReturnType<typeof this.exportState>>): Promise<void> {
-
-    // Clear current state
     this.storage.clear();
     this.keyIndex.clear();
     this.versionIndex.clear();
     this.ttlIndex.clear();
 
-    // Import entries
-    for (const entry of exportedState.entries) {
+    const normalizedEntries: Array<{ key: string; entry: StateEntry<AEIR | Buffer> }> = [];
+
+    for (const rawEntry of exportedState.entries ?? []) {
+      const entry = await this.normalizeImportedEntry(rawEntry);
       const fullKey = `${entry.logicalKey}_${entry.timestamp}`;
       this.storage.set(fullKey, entry);
-      
-      // Update TTL index
-      if (entry.ttl) {
+
+      if (entry.ttl && entry.ttl > 0) {
         const expiryTime = new Date(entry.timestamp).getTime() + (entry.ttl * 1000);
         this.ttlIndex.set(fullKey, expiryTime);
       }
+
+      normalizedEntries.push({ key: fullKey, entry });
     }
 
-    // Import indices
-    for (const [logicalKey, keys] of Object.entries(exportedState.indices.keyIndex)) {
-      this.keyIndex.set(logicalKey, new Set(keys));
+    const importedKeyIndex = exportedState.indices?.keyIndex ?? {};
+    const importedVersionIndex = exportedState.indices?.versionIndex ?? {};
+
+    for (const [logicalKey, keys] of Object.entries(importedKeyIndex)) {
+      const filtered = keys.filter((key) => this.storage.has(key));
+      if (filtered.length > 0) {
+        this.keyIndex.set(logicalKey, new Set(filtered));
+      }
     }
 
-    for (const [logicalKey, version] of Object.entries(exportedState.indices.versionIndex)) {
+    for (const { key, entry } of normalizedEntries) {
+      if (!this.keyIndex.has(entry.logicalKey)) {
+        this.keyIndex.set(entry.logicalKey, new Set());
+      }
+      this.keyIndex.get(entry.logicalKey)!.add(key);
+    }
+
+    for (const [logicalKey, version] of Object.entries(importedVersionIndex)) {
       this.versionIndex.set(logicalKey, version);
     }
 
-    this.emit('stateImported', { entryCount: exportedState.entries.length });
+    for (const { entry } of normalizedEntries) {
+      const current = this.versionIndex.get(entry.logicalKey) ?? 0;
+      this.versionIndex.set(entry.logicalKey, Math.max(current, entry.version));
+    }
+
+    this.emit('stateImported', { entryCount: normalizedEntries.length });
+  }
+
+  private async normalizeImportedEntry(rawEntry: Partial<StateEntry>): Promise<StateEntry<AEIR | Buffer>> {
+    if (!rawEntry.logicalKey) {
+      throw new Error('Invalid state entry: missing logicalKey');
+    }
+
+    const timestamp = rawEntry.timestamp ?? new Date().toISOString();
+    const data = await this.reviveEntryData(rawEntry);
+    const isCompressed = Boolean(rawEntry.compressed);
+    const rawMetadata = rawEntry.metadata ?? {};
+    const created = rawMetadata.created ?? timestamp;
+    const accessed = rawMetadata.accessed ?? created;
+
+    let size: number;
+    if (typeof rawMetadata.size === 'number') {
+      size = rawMetadata.size;
+    } else if (isCompressed && Buffer.isBuffer(data)) {
+      size = data.length;
+    } else {
+      try {
+        size = JSON.stringify(data).length;
+      } catch {
+        size = 0;
+      }
+    }
+
+    let checksum = rawEntry.checksum;
+    if (!checksum) {
+      try {
+        if (isCompressed && Buffer.isBuffer(data)) {
+          const decompressed = await this.decompress(data);
+          checksum = this.calculateChecksum(decompressed);
+        } else {
+          checksum = this.calculateChecksum(data);
+        }
+      } catch {
+        checksum = '';
+      }
+    }
+
+    return {
+      id: rawEntry.id ?? uuidv4(),
+      logicalKey: rawEntry.logicalKey,
+      timestamp,
+      version: rawEntry.version ?? 1,
+      checksum: checksum ?? '',
+      data,
+      compressed: isCompressed,
+      tags: rawEntry.tags ?? {},
+      ttl: rawEntry.ttl,
+      metadata: {
+        size,
+        created,
+        accessed,
+        source: rawMetadata.source ?? 'unknown',
+        ...(rawMetadata.phase ? { phase: rawMetadata.phase } : {})
+      }
+    };
+  }
+
+  private async reviveEntryData(rawEntry: Partial<StateEntry>): Promise<AEIR | Buffer> {
+    if (rawEntry.compressed) {
+      const data = rawEntry.data as any;
+      if (Buffer.isBuffer(data)) {
+        return data;
+      }
+      if (data && typeof data === 'object') {
+        if (data.type === 'Buffer' && Array.isArray(data.data)) {
+          return Buffer.from(data.data);
+        }
+        if (Array.isArray(data) && data.every((value: any) => typeof value === 'number')) {
+          return Buffer.from(data);
+        }
+      }
+    }
+    return rawEntry.data as AEIR;
   }
 
   // Private helper methods

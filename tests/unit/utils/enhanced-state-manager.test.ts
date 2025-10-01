@@ -931,6 +931,96 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     await manager.shutdown();
   });
 
+  it('normalizes legacy entries missing metadata and tags during import', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-state-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+    const options = (manager as any).options;
+
+    const timestamp = new Date().toISOString();
+    const logicalKey = 'legacy-inventory';
+    const fullKey = `${logicalKey}_${timestamp}`;
+    const payload = { id: 'legacy-entry', stock: 7 };
+
+    const persistence = {
+      metadata: { version: '1.0.0', timestamp, options },
+      entries: [
+        {
+          id: 'legacy-entry-id',
+          logicalKey,
+          timestamp,
+          version: 3,
+          checksum: undefined,
+          data: payload,
+          compressed: false,
+        },
+      ],
+      indices: {
+        keyIndex: { [logicalKey]: [fullKey] },
+        versionIndex: { [logicalKey]: 3 },
+      },
+    } as any;
+
+    const importedSpy = vi.fn();
+    manager.on('stateImported', importedSpy);
+
+    await manager.importState(persistence);
+
+    expect(importedSpy).toHaveBeenCalledWith({ entryCount: 1 });
+    const internal = manager as unknown as { storage: Map<string, any> };
+    const stored = internal.storage.get(fullKey);
+    expect(stored.metadata.size).toBeGreaterThan(0);
+    expect(stored.metadata.source).toBe('unknown');
+    expect(stored.metadata.accessed).toBeDefined();
+    expect(stored.tags).toEqual({});
+
+    await expect(manager.loadSSOT(logicalKey, 3)).resolves.toEqual(payload);
+
+    await manager.shutdown();
+  });
+
+  it('revives compressed buffer entries when importing legacy backups', async () => {
+    const exportRoot = await mkdtemp(join(tmpdir(), 'ae-framework-state-export-'));
+    const importRoot = await mkdtemp(join(tmpdir(), 'ae-framework-state-import-'));
+    tempRoots.push(exportRoot, importRoot);
+
+    const originalManager = new EnhancedStateManager(exportRoot, {
+      databasePath: 'state.db',
+      enableTransactions: false,
+      enableCompression: true,
+      compressionThreshold: 1,
+    });
+
+    const payload = { id: 'compressed', instructions: 'X'.repeat(512) };
+    await originalManager.saveSSOT('inventory', payload, { source: 'legacy-backup' });
+    const exportedState = await originalManager.exportState();
+    await originalManager.shutdown();
+
+    const legacyEntry = {
+      ...exportedState.entries[0],
+      metadata: undefined,
+      tags: undefined,
+      checksum: undefined,
+    } as any;
+
+    const importManager = new EnhancedStateManager(importRoot, { databasePath: 'state.db', enableTransactions: false });
+    const importedSpy = vi.fn();
+    importManager.on('stateImported', importedSpy);
+
+    await importManager.importState({
+      metadata: exportedState.metadata,
+      entries: [legacyEntry],
+      indices: exportedState.indices,
+    });
+
+    expect(importedSpy).toHaveBeenCalledWith({ entryCount: 1 });
+    const restored = await importManager.loadSSOT('inventory');
+    expect(restored).toEqual(payload);
+
+    await importManager.shutdown();
+  });
+
   it('restores ttl metadata when importing persistence entries', async () => {
     const root = await mkdtemp(join(tmpdir(), 'ae-framework-state-'));
     tempRoots.push(root);

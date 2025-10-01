@@ -32,6 +32,7 @@
 - `.github/actions/mutation-auto-diff/`: 共通 composite action として base ref fetch / auto-diff 実行 / summary 収集 / アーティファクト化を提供。`mutation-quick` と `verify-lite` で利用。
 - CI で `--auto-diff` を利用する場合は、実行ジョブの冒頭で `git fetch origin main --depth=1` 等を行い、比較対象ブランチをローカルに用意しておく。
 - 差分に応じたスポット実行例: `./scripts/mutation/gather-mutate-patterns.sh HEAD~1 --output /tmp/mutate.list && ./scripts/mutation/run-scoped.sh --quick --mutate-file /tmp/mutate.list`
+- `workflow_dispatch` での初回トリガー（run id: 18152453139）は、事前条件としているユニット／統合テストがベースラインで失敗（TokenOptimizer 圧縮テストや Playwright CLI テストの期待値ズレなど）し、Stryker の dry-run が終了できなかった。mutation quick を活用する際は mutate 対象を `src/api/server.ts` に限定するか、これらのテストを安定化させる必要がある。
 
 ### EnhancedStateManager サバイバー洗い出しメモ（2025-09-30）
 - `gh workflow run Mutation Quick` を実行すると、Step Summary にトップ10件、アーティファクト `mutation-survivors-json` に最大50件の Survived ミュータントが保存される。ローカルでも `node scripts/mutation/list-survivors.mjs --limit 20` で同じ JSON を参照できる。
@@ -40,11 +41,11 @@
   - `src/utils/enhanced-state-manager.ts:700-740` — `findKeyByVersion` / `versionIndex` 再構築。削除済エントリに遭遇した際のフォールバックをアサートする必要あり。
   - `src/utils/enhanced-state-manager.ts:780-820` — `stateImported` イベント payload。AEIR ↔ Buffer 変換時に `event.payload.data` が空にならないことを保証するテストが不足。
 - テスト追加 TODO（Week2→Week3 ブリッジ）:
-  1. import 時に `metadata.entries` が存在しなくても生成されることを確認するユニットテスト。
-  2. `ensureInitialized` の早期リターンを反転させたミュータントを kill するため、未初期化状態で `withTransaction` を呼ぶケースの追加。
-  3. TTL=0 のアップサート後に GC が `versionIndex` / `keyIndex` の整合性を保つか検証するケース。
-  4. `stateImported` イベントが圧縮 Buffer と AEIR を扱う場合の payload 型チェック（optional chaining 破壊対策）。
-- 上記テストは `tests/unit/utils/enhanced-state-manager.test.ts` に順次追加し、必要に応じて Property ベースの補強を検討する。
+  - [x] import 時に `metadata.entries` が存在しなくても生成されることを確認するユニットテスト（legacy 正規化）。
+  - [x] `stateImported` イベントが圧縮 Buffer を扱えることの回帰テスト（legacy Buffer → AEIR 復元）。
+  - [ ] `ensureInitialized` の早期リターンを反転させたミュータントを kill するため、未初期化状態で `withTransaction` を呼ぶケースの追加。
+  - [ ] TTL=0 のアップサート後に GC が `versionIndex` / `keyIndex` の整合性を保つか検証するケース。
+- 上記残タスクは `tests/unit/utils/enhanced-state-manager.test.ts` に順次追加し、必要に応じて Property ベースの補強を検討する。
 
 ## 次のステップ
 1. `stryker.config.js` と `tsconfig.stryker.json` を更新し、mutate/TypeScript の対象を `src/domain`, `src/utils/enhanced-state-manager.ts`, `src/api/server.ts` に限定（実施済み）。
@@ -69,6 +70,7 @@
 ## 最新結果
 - 2025-09-30 再実行 (`./scripts/mutation/run-scoped.sh --quick --mutate src/utils/enhanced-state-manager.ts`, lazy initialize・metadata import テスト追加): 約4分24秒で完了。スコア **58.33%**、survived 102 / no-cov 23 / errors 49。未対応ミュータントは `versionIndex` 更新ループの no-op 化、`stateImported` イベント payload の破壊、`findKeyByVersion` の null ガード無視に集約。
 - 2025-09-30 再実行 (`./scripts/mutation/run-scoped.sh --quick --mutate src/utils/enhanced-state-manager.ts`, インデックス/トランザクション系テストを追加): 約4分25秒で完了。スコア **56.67%**、survived 107 / no-cov 23 / errors 49。`ensureInitialized` 反転・optional chaining を潰すテストが未整備のため survivor が残存。
+- 2025-10-01 `workflow_dispatch` (`mutation-quick.yml`、mutate 指定なし) はベースラインテストの失敗により **failure**。`tests/utils/token-optimizer.compression.levels.monotonic.test.ts` や Playwright CLI 系の検証が落ちているため、現状では quick 実行が継続できない。
 - 2025-09-28 再実行 (`./scripts/mutation/run-scoped.sh` + `vitest.stryker.config.ts` 更新): 約5分で完了。スコア **22.67%**、survived 92 / no-cov 82 / errors 11。API server の availability / runtime-guard を中心に kill できたが、Quantity バリデーションや runtime guard の例外系は未カバー。
 - 2025-10-02 再実行 (可用性エッジケース + 予約成功/再利用ルートのテレメトリ検証を追加): 約5分42秒で完了。スコア **57.26%**、survived 82 / no-cov 21 / errors 12。残存は再利用レスポンスの `validateResponse` 呼び出し引数・span ガード・quantity フォールバックの条件式など。
 - 2025-09-28 再実行 (reservation business-rule, span fallback, guard bypass のテストを拡充): 約5分33秒で完了。スコア **68.46%**、survived 65 / no-cov 11 / errors 12。リクエスト検証のテレメトリ文脈 (`endpoint`/`operation`) と item-not-found ハンドラ、quantity フォールバック条件が残存。
