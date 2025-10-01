@@ -33,6 +33,19 @@
 - CI で `--auto-diff` を利用する場合は、実行ジョブの冒頭で `git fetch origin main --depth=1` 等を行い、比較対象ブランチをローカルに用意しておく。
 - 差分に応じたスポット実行例: `./scripts/mutation/gather-mutate-patterns.sh HEAD~1 --output /tmp/mutate.list && ./scripts/mutation/run-scoped.sh --quick --mutate-file /tmp/mutate.list`
 
+### EnhancedStateManager サバイバー洗い出しメモ（2025-09-30）
+- `gh workflow run Mutation Quick` を実行すると、Step Summary にトップ10件、アーティファクト `mutation-survivors-json` に最大50件の Survived ミュータントが保存される。ローカルでも `node scripts/mutation/list-survivors.mjs --limit 20` で同じ JSON を参照できる。
+- 現状の survive 集中箇所（直近 quick run レポートより）:
+  - `src/utils/enhanced-state-manager.ts:640-680` — import 正規化 (`normalizeImportedState`)。`metadata` / `versionIndex` 欠落時の再生成が未テスト。
+  - `src/utils/enhanced-state-manager.ts:700-740` — `findKeyByVersion` / `versionIndex` 再構築。削除済エントリに遭遇した際のフォールバックをアサートする必要あり。
+  - `src/utils/enhanced-state-manager.ts:780-820` — `stateImported` イベント payload。AEIR ↔ Buffer 変換時に `event.payload.data` が空にならないことを保証するテストが不足。
+- テスト追加 TODO（Week2→Week3 ブリッジ）:
+  1. import 時に `metadata.entries` が存在しなくても生成されることを確認するユニットテスト。
+  2. `ensureInitialized` の早期リターンを反転させたミュータントを kill するため、未初期化状態で `withTransaction` を呼ぶケースの追加。
+  3. TTL=0 のアップサート後に GC が `versionIndex` / `keyIndex` の整合性を保つか検証するケース。
+  4. `stateImported` イベントが圧縮 Buffer と AEIR を扱う場合の payload 型チェック（optional chaining 破壊対策）。
+- 上記テストは `tests/unit/utils/enhanced-state-manager.test.ts` に順次追加し、必要に応じて Property ベースの補強を検討する。
+
 ## 次のステップ
 1. `stryker.config.js` と `tsconfig.stryker.json` を更新し、mutate/TypeScript の対象を `src/domain`, `src/utils/enhanced-state-manager.ts`, `src/api/server.ts` に限定（実施済み）。
 2. `make test-mutation` は `scripts/mutation/run-scoped.sh` 経由で実行され、デフォルトで同範囲を使用。環境変数で短時間の追加パターンも設定可能。
