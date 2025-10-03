@@ -702,7 +702,7 @@ export class EnhancedStateManager extends EventEmitter {
     const timestamp = rawEntry.timestamp ?? new Date().toISOString();
     const data = await this.reviveEntryData(rawEntry);
     const isCompressed = Boolean(rawEntry.compressed);
-    const rawMetadata = rawEntry.metadata ?? {};
+    const rawMetadata: Partial<StateEntry['metadata']> = rawEntry.metadata ?? {};
     const created = rawMetadata.created ?? timestamp;
     const accessed = rawMetadata.accessed ?? created;
 
@@ -733,7 +733,15 @@ export class EnhancedStateManager extends EventEmitter {
       }
     }
 
-    return {
+    const metadata: StateEntry['metadata'] = {
+      size,
+      created,
+      accessed,
+      source: rawMetadata.source ?? 'unknown',
+      ...(rawMetadata.phase ? { phase: rawMetadata.phase } : {}),
+    };
+
+    const entry: StateEntry<AEIR | Buffer> = {
       id: rawEntry.id ?? uuidv4(),
       logicalKey: rawEntry.logicalKey,
       timestamp,
@@ -742,15 +750,14 @@ export class EnhancedStateManager extends EventEmitter {
       data,
       compressed: isCompressed,
       tags: rawEntry.tags ?? {},
-      ttl: rawEntry.ttl,
-      metadata: {
-        size,
-        created,
-        accessed,
-        source: rawMetadata.source ?? 'unknown',
-        ...(rawMetadata.phase ? { phase: rawMetadata.phase } : {})
-      }
+      metadata,
     };
+
+    if (rawEntry.ttl !== undefined) {
+      entry.ttl = rawEntry.ttl;
+    }
+
+    return entry;
   }
 
   private async reviveEntryData(rawEntry: Partial<StateEntry>): Promise<AEIR | Buffer> {

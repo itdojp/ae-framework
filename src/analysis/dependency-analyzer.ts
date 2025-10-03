@@ -6,7 +6,7 @@
 import { EventEmitter } from 'events';
 import { SequentialInferenceEngine } from '../engines/sequential-inference-engine.js';
 import { ProblemDecomposer, type Problem, type DecompositionResult } from '../inference/core/problem-decomposer.js';
-import type { ComplexQuery, InferenceResult, DependencyGraph, ImpactAnalysis, DependencyNode } from '../engines/sequential-inference-engine.js';
+import type { ComplexQuery, DependencyGraph, ImpactAnalysis, DependencyNode } from '../engines/sequential-inference-engine.js';
 
 export interface CircularDependency {
   id: string;
@@ -127,6 +127,14 @@ export interface OptimizationSuggestion {
   prerequisites: string[];
 }
 
+interface DependencyEdge {
+  id: string;
+  from: string;
+  to: string;
+  type: 'dependency';
+  weight: number;
+}
+
 export interface ImpactAnalysisRequest {
   id: string;
   changes: ChangeRequest[];
@@ -185,7 +193,7 @@ export class DependencyAnalyzer extends EventEmitter {
     // Check cache first
     const cacheKey = this.generateCacheKey(request);
     const cached = this.cache.get(cacheKey);
-    if (cached && this.isCacheValid(cached)) {
+    if (cached) {
       this.emit('cacheHit', { requestId: request.id, cached });
       return cached;
     }
@@ -207,17 +215,17 @@ export class DependencyAnalyzer extends EventEmitter {
 
       // Execute analysis using Sequential Inference Engine
       const analysisQuery = this.createAnalysisQuery(request, decomposition);
-      const inferenceResult = await this.inferenceEngine.processComplexQuery(analysisQuery);
+      await this.inferenceEngine.processComplexQuery(analysisQuery);
 
       // Build comprehensive dependency graph
       const dependencyGraph = await this.buildDependencyGraph(request);
       
       // Perform specialized analyses
-      const circularDeps = await this.detectCircularDependencies(dependencyGraph);
+      const circularDeps = this.detectCircularDependencies(dependencyGraph);
       const metrics = this.calculateDependencyMetrics(dependencyGraph);
-      const riskAssessment = await this.assessRisks(dependencyGraph, circularDeps);
-      const recommendations = await this.generateRecommendations(dependencyGraph, metrics, riskAssessment);
-      const optimizations = await this.generateOptimizationSuggestions(dependencyGraph, metrics);
+      const riskAssessment = this.assessRisks(dependencyGraph, circularDeps);
+      const recommendations = this.generateRecommendations(dependencyGraph, metrics, riskAssessment);
+      const optimizations = this.generateOptimizationSuggestions(dependencyGraph, metrics);
 
       // Perform impact analysis if requested
       let impactAnalysis: ImpactAnalysis | undefined;
@@ -255,23 +263,6 @@ export class DependencyAnalyzer extends EventEmitter {
    * Perform impact analysis for potential changes
    */
   async analyzeImpact(request: ImpactAnalysisRequest): Promise<ImpactAnalysis> {
-    const analysisQuery: ComplexQuery = {
-      id: `impact-${request.id}`,
-      description: 'Analyze impact of proposed changes',
-      context: {
-        changes: request.changes,
-        analysisDepth: request.analysisDepth
-      },
-      constraints: [
-        {
-          type: 'resource',
-          condition: 'maxDepth <= 10',
-          severity: 'warning'
-        }
-      ],
-      priority: 'high'
-    };
-
     const result = await this.inferenceEngine.evaluateImpactScope({
       id: request.id,
       description: `Impact analysis for ${request.changes.length} changes`,
@@ -359,7 +350,7 @@ export class DependencyAnalyzer extends EventEmitter {
 
   private async buildDependencyGraph(request: DependencyAnalysisRequest): Promise<DependencyGraph> {
     // Use Sequential Inference Engine for dependency analysis
-    const dependencies = await this.inferenceEngine.analyzeDeepDependencies({
+    const dependencyData: DependencyGraph = await this.inferenceEngine.analyzeDeepDependencies({
       projectRoot: request.projectRoot,
       sourceFiles: request.targetFiles || [],
       dependencies: {},
@@ -367,7 +358,7 @@ export class DependencyAnalyzer extends EventEmitter {
     });
 
     // Convert to our internal format
-    const nodes: DependencyNode[] = dependencies.nodes.map(node => ({
+    const nodes: DependencyNode[] = dependencyData.nodes.map(node => ({
         id: node.id,
         name: this.extractFileName(node.path),
         type: this.inferNodeType(node.path),
@@ -386,14 +377,16 @@ export class DependencyAnalyzer extends EventEmitter {
     // Build reverse dependencies (dependents)
     this.populateDependents(nodes);
 
+    const edges = this.buildEdges(nodes);
+
     return {
       nodes,
-      edges: this.buildEdges(nodes),
+      edges,
       cycles: [], // Simplified for now
       criticalPaths: [], // Simplified for now
       metrics: {
         totalNodes: nodes.length,
-        totalEdges: this.buildEdges(nodes).length,
+        totalEdges: edges.length,
         cycleCount: 0,
         maxDepth: 0,
         fanOut: {}
@@ -401,7 +394,7 @@ export class DependencyAnalyzer extends EventEmitter {
     };
   }
 
-  private async detectCircularDependencies(graph: DependencyGraph): Promise<CircularDependency[]> {
+  private detectCircularDependencies(graph: DependencyGraph): CircularDependency[] {
     const cycles: CircularDependency[] = [];
     const visited = new Set<string>();
     const recursionStack = new Set<string>();
@@ -474,7 +467,7 @@ export class DependencyAnalyzer extends EventEmitter {
     };
   }
 
-  private async assessRisks(graph: DependencyGraph, circularDeps: CircularDependency[]): Promise<DependencyRiskAssessment> {
+  private assessRisks(graph: DependencyGraph, circularDeps: CircularDependency[]): DependencyRiskAssessment {
     const riskFactors: RiskFactor[] = [];
 
     // Circular dependency risks
@@ -538,11 +531,6 @@ export class DependencyAnalyzer extends EventEmitter {
     return `${request.projectRoot}-${request.analysisScope}-${request.analysisTypes.join(',')}-${request.includeExternal}`;
   }
 
-  private isCacheValid(result: DependencyAnalysisResult): boolean {
-    // Simple TTL-based validation - in real implementation would check file modification times
-    return true;
-  }
-
   private cleanupCache(): void {
     // Simple cleanup - remove oldest entries if cache is too large
     if (this.cache.size > this.options.cacheSize!) {
@@ -592,15 +580,16 @@ export class DependencyAnalyzer extends EventEmitter {
     }
   }
 
-  private buildEdges(nodes: DependencyNode[]): any[] {
-    const edges = [];
+  private buildEdges(nodes: DependencyNode[]): DependencyEdge[] {
+    const edges: DependencyEdge[] = [];
     for (const node of nodes) {
       for (const depId of node.dependencies) {
         edges.push({
           id: `${node.id}-${depId}`,
-          source: node.id,
-          target: depId,
-          type: 'dependency'
+          from: node.id,
+          to: depId,
+          type: 'dependency',
+          weight: 1
         });
       }
     }
@@ -614,8 +603,9 @@ export class DependencyAnalyzer extends EventEmitter {
   }
 
   private generateCycleFixes(cycle: string[]): string[] {
+    const cyclePath = cycle.join(' -> ');
     return [
-      'Introduce an interface to break direct dependency',
+      `Introduce an interface to decouple ${cyclePath}`,
       'Use dependency injection pattern',
       'Extract common functionality to a separate module',
       'Apply inversion of control principle'
@@ -797,11 +787,11 @@ export class DependencyAnalyzer extends EventEmitter {
     return actions;
   }
 
-  private async generateRecommendations(
+  private generateRecommendations(
     graph: DependencyGraph, 
     metrics: DependencyMetrics, 
     riskAssessment: DependencyRiskAssessment
-  ): Promise<DependencyRecommendation[]> {
+  ): DependencyRecommendation[] {
     const recommendations: DependencyRecommendation[] = [];
     
     // High coupling recommendation
@@ -837,10 +827,10 @@ export class DependencyAnalyzer extends EventEmitter {
     return recommendations;
   }
 
-  private async generateOptimizationSuggestions(
+  private generateOptimizationSuggestions(
     graph: DependencyGraph, 
     metrics: DependencyMetrics
-  ): Promise<OptimizationSuggestion[]> {
+  ): OptimizationSuggestion[] {
     const suggestions: OptimizationSuggestion[] = [];
     
     // Modularization suggestion
@@ -862,11 +852,14 @@ export class DependencyAnalyzer extends EventEmitter {
   }
 
   private async performImpactAnalysis(graph: DependencyGraph): Promise<ImpactAnalysis> {
-    // Use Sequential Inference Engine for impact analysis
+    const representativeFiles = graph.nodes
+      .slice(0, 10)
+      .map(node => ({ path: node.path ?? node.id, type: 'modify' as const }));
+
     return await this.inferenceEngine.evaluateImpactScope({
       id: `impact-${Date.now()}`,
       description: 'General impact analysis for dependency graph',
-      files: [], // No specific file changes for general analysis
+      files: representativeFiles,
       timestamp: new Date(),
       author: 'dependency-analyzer'
     });

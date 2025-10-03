@@ -15,20 +15,36 @@ export enum CircuitState {
  */
 export interface CircuitBreakerOptions {
   /** Failure threshold to open circuit (default: 5) */
-  failureThreshold: number;
+  failureThreshold?: number;
   /** Success threshold to close circuit from half-open (default: 3) */
-  successThreshold: number;
+  successThreshold?: number;
   /** Timeout before attempting to half-open (ms, default: 60000) */
-  timeout: number;
+  timeout?: number;
   /** Monitor window for failures (ms, default: 60000) */
-  monitoringWindow: number;
+  monitoringWindow?: number;
   /** Expected error types that should trigger circuit breaking */
   expectedErrors?: Array<new (...args: any[]) => Error>;
   /** Fallback function when circuit is open */
   fallback?: (...args: any[]) => any;
   /** Enable detailed monitoring and metrics */
   enableMonitoring?: boolean;
+  /** Maximum concurrent calls allowed while HALF_OPEN (default: Infinity) */
+  halfOpenMaxCalls?: number;
+  /** Alias for timeout when transitioning from OPEN to HALF_OPEN */
+  resetTimeoutMs?: number;
 }
+
+type NormalizedCircuitBreakerOptions = {
+  failureThreshold: number;
+  successThreshold: number;
+  timeout: number;
+  resetTimeoutMs: number;
+  monitoringWindow: number;
+  expectedErrors: Array<new (...args: any[]) => Error>;
+  fallback?: (...args: any[]) => any;
+  enableMonitoring: boolean;
+  halfOpenMaxCalls: number;
+};
 
 /**
  * Circuit Breaker Statistics
@@ -62,7 +78,7 @@ export class CircuitBreakerOpenError extends Error {
  */
 export class CircuitBreaker extends EventEmitter {
   private name: string;
-  private options: CircuitBreakerOptions;
+  private options: NormalizedCircuitBreakerOptions;
   private state: CircuitState = CircuitState.CLOSED;
   private failureCount: number = 0;
   private successCount: number = 0;
@@ -77,24 +93,42 @@ export class CircuitBreaker extends EventEmitter {
   private responseTimes: number[] = [];
   private requestHistory: Array<{ timestamp: number; success: boolean }> = [];
   private halfOpenTimer: NodeJS.Timeout | undefined;
+  private halfOpenActiveCalls: number = 0;
+  private halfOpenAttemptCount: number = 0;
 
   constructor(
     name: string,
     options: CircuitBreakerOptions
   ) {
     super();
-    
+
     this.name = name;
-    this.options = options;
-    
+    const defaultTimeout = options.timeout ?? options.resetTimeoutMs ?? 60000;
+    const normalized: NormalizedCircuitBreakerOptions = {
+      failureThreshold: options.failureThreshold ?? 5,
+      successThreshold: options.successThreshold ?? 3,
+      timeout: defaultTimeout,
+      resetTimeoutMs: options.resetTimeoutMs ?? defaultTimeout,
+      monitoringWindow: options.monitoringWindow ?? 60000,
+      expectedErrors: options.expectedErrors ?? [],
+      enableMonitoring: options.enableMonitoring ?? false,
+      halfOpenMaxCalls: options.halfOpenMaxCalls ?? Number.POSITIVE_INFINITY,
+    };
+
+    if (options.fallback) {
+      normalized.fallback = options.fallback;
+    }
+
+    this.options = normalized;
+
     // Validate options
-    if (options.failureThreshold <= 0) {
+    if ((this.options.failureThreshold ?? 0) <= 0) {
       throw new Error('failureThreshold must be greater than 0');
     }
-    if (options.successThreshold <= 0) {
+    if ((this.options.successThreshold ?? 0) <= 0) {
       throw new Error('successThreshold must be greater than 0');
     }
-    if (options.timeout <= 0) {
+    if ((this.options.timeout ?? 0) <= 0) {
       throw new Error('timeout must be greater than 0');
     }
 
@@ -130,6 +164,25 @@ export class CircuitBreaker extends EventEmitter {
       }
     }
 
+    const isHalfOpenCall = this.state === CircuitState.HALF_OPEN;
+    if (isHalfOpenCall) {
+      const maxCalls = this.options.halfOpenMaxCalls ?? Number.POSITIVE_INFINITY;
+      if (Number.isFinite(maxCalls) && this.halfOpenAttemptCount >= maxCalls) {
+        this.emit('callRejected', {
+          name: this.name,
+          state: this.state,
+          reason: 'Half-open max calls exceeded',
+        });
+        this.transitionToOpen();
+        if (this.options.fallback) {
+          return this.options.fallback(...args);
+        }
+        throw new CircuitBreakerOpenError(`Circuit breaker '${this.name}' is HALF_OPEN`);
+      }
+      this.halfOpenActiveCalls++;
+      this.halfOpenAttemptCount++;
+    }
+
     try {
       const result = await operation();
       const duration = Date.now() - startTime;
@@ -141,6 +194,10 @@ export class CircuitBreaker extends EventEmitter {
       const duration = Date.now() - startTime;
       this.onFailure(error as Error, duration);
       throw error;
+    } finally {
+      if (isHalfOpenCall) {
+        this.halfOpenActiveCalls = Math.max(0, this.halfOpenActiveCalls - 1);
+      }
     }
   }
 
@@ -217,7 +274,7 @@ export class CircuitBreaker extends EventEmitter {
       this.transitionToOpen();
     } else if (this.state === CircuitState.CLOSED) {
       // Check if we should open the circuit
-      if (this.failureCount >= this.options.failureThreshold) {
+      if (this.failureCount >= (this.options.failureThreshold ?? 0)) {
         this.transitionToOpen();
       }
     }
@@ -237,9 +294,15 @@ export class CircuitBreaker extends EventEmitter {
   private transitionToOpen(): void {
     const previousState = this.state;
     this.state = CircuitState.OPEN;
-    this.nextAttempt = Date.now() + this.options.timeout;
+    const resetDelay = this.options.resetTimeoutMs ?? this.options.timeout ?? 60000;
+    this.nextAttempt = Date.now() + resetDelay;
     this.circuitOpenCount++;
     this.successCount = 0; // Reset success count
+    this.halfOpenActiveCalls = 0;
+    this.halfOpenAttemptCount = 0;
+    this.halfOpenAttemptCount = 0;
+    this.halfOpenAttemptCount = 0;
+    this.halfOpenAttemptCount = 0;
 
     // Clear any existing half-open timer
     if (this.halfOpenTimer) {
@@ -252,7 +315,7 @@ export class CircuitBreaker extends EventEmitter {
       if (this.state === CircuitState.OPEN) {
         this.transitionToHalfOpen();
       }
-    }, this.options.timeout);
+    }, resetDelay);
 
     this.emit('stateChange', { name: this.name, state: this.state });
     this.emit('stateChanged', { name: this.name, previousState, newState: this.state });
@@ -272,6 +335,7 @@ export class CircuitBreaker extends EventEmitter {
     this.state = CircuitState.HALF_OPEN;
     this.successCount = 0;
     this.failureCount = 0;
+    this.halfOpenActiveCalls = 0;
 
     this.emit('stateChange', { name: this.name, state: this.state });
     this.emit('stateChanged', { name: this.name, previousState, newState: this.state });
@@ -289,6 +353,7 @@ export class CircuitBreaker extends EventEmitter {
     this.state = CircuitState.CLOSED;
     this.failureCount = 0;
     this.successCount = 0;
+    this.halfOpenActiveCalls = 0;
 
     // Clear half-open timer
     if (this.halfOpenTimer) {
@@ -383,6 +448,7 @@ export class CircuitBreaker extends EventEmitter {
     this.lastFailureTime = null;
     this.lastSuccessTime = null;
     this.nextAttempt = 0;
+    this.halfOpenActiveCalls = 0;
 
     // Clear timer
     if (this.halfOpenTimer) {
