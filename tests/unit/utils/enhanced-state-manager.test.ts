@@ -2,6 +2,8 @@ import { afterAll, describe, expect, it, vi } from 'vitest';
 import { mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { gzipSync } from 'node:zlib';
+import { createHash } from 'node:crypto';
 import { EnhancedStateManager } from '../../../src/utils/enhanced-state-manager.js';
 
 const tempRoots: string[] = [];
@@ -576,17 +578,33 @@ describe('EnhancedStateManager snapshots and artifacts', () => {
     const createdSpy = vi.fn();
     manager.on('snapshotCreated', createdSpy);
 
-    await manager.saveSSOT('inventory', { id: 'widget-1', stock: 5 });
+    await manager.saveSSOT('inventory', { id: 'widget-1', stock: 5 }, { phase: 'demo-phase' });
     const snapshotId = await manager.createSnapshot('demo-phase', ['inventory']);
 
     expect(createdSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ snapshotId })
+      expect.objectContaining({
+        snapshotId,
+        metadata: expect.objectContaining({
+          phase: 'demo-phase',
+          entities: ['inventory'],
+          ttl: (manager as any).options.defaultTTL * 2,
+        }),
+      })
     );
 
     const snapshot = await manager.loadSnapshot(snapshotId);
     expect(snapshot).not.toBeNull();
     const keys = snapshot ? Object.keys(snapshot) : [];
     expect(keys.some(key => key.includes('inventory'))).toBe(true);
+
+    const storage = (manager as unknown as { storage: Map<string, any> }).storage;
+    const entry = storage.get(snapshotId);
+    expect(entry?.logicalKey).toBe('snapshot_demo-phase');
+    expect(entry?.ttl).toBe((manager as any).options.defaultTTL * 2);
+    expect(entry?.tags).toEqual({ type: 'snapshot', phase: 'demo-phase' });
+    expect(entry?.metadata?.source).toBe('snapshot_manager');
+    expect(entry?.metadata?.phase).toBe('demo-phase');
+    expect(entry?.metadata?.accessed).toEqual(entry?.metadata?.created);
 
     await manager.shutdown();
   });
@@ -631,6 +649,13 @@ describe('EnhancedStateManager snapshots and artifacts', () => {
     const entry = storage.get(persistedKey);
     expect(entry?.data).toEqual(artifact);
     expect(entry?.metadata?.source).toBe('failure_handler');
+    expect(entry?.ttl).toBe((manager as any).options.defaultTTL);
+    expect(entry?.tags).toEqual({
+      type: 'failure',
+      phase: 'verification',
+      severity: 'medium',
+      retryable: 'true',
+    });
 
     warnSpy.mockRestore();
     await manager.shutdown();
@@ -693,6 +718,101 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     } finally {
       await second.shutdown();
     }
+  });
+
+  it('revives legacy buffer payloads during import', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-legacy-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db' });
+    await manager.initialize();
+
+    const timestamp = '2024-03-03T00:00:00.000Z';
+    const exported = {
+      metadata: { version: '1.0.0' },
+      entries: [
+        {
+          logicalKey: 'legacy-buffer',
+          timestamp,
+          version: 2,
+          compressed: true,
+          data: { type: 'Buffer', data: [65, 66, 67] },
+          metadata: {},
+        },
+      ],
+      indices: {
+        keyIndex: { 'legacy-buffer': [`legacy-buffer_${timestamp}`] },
+        versionIndex: { 'legacy-buffer': 2 },
+      },
+    };
+
+    await manager.importState(exported as any);
+
+    const storage = (manager as unknown as { storage: Map<string, any> }).storage;
+    const entry = storage.get(`legacy-buffer_${timestamp}`);
+    expect(entry?.compressed).toBe(true);
+    expect(Buffer.isBuffer(entry?.data)).toBe(true);
+    expect(entry?.metadata?.size).toBe((entry?.data as Buffer).length);
+
+    await manager.shutdown();
+  });
+
+  it('recomputes checksum and metadata when importing compressed entries without checksum', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-checksum-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, {
+      databasePath: 'state.db',
+      enableCompression: true,
+      compressionThreshold: 16,
+    });
+    await manager.initialize();
+
+    const payload = { id: 'bulk', items: ['widget-1', 'widget-2'], note: 'inventory snapshot' };
+    const rawJson = JSON.stringify(payload);
+    const compressedBuffer = gzipSync(Buffer.from(rawJson, 'utf8'));
+    const timestamp = new Date().toISOString();
+
+    const exported = {
+      metadata: { version: '1.0.0' },
+      entries: [
+        {
+          logicalKey: 'bulk-entry',
+          timestamp,
+          version: 3,
+          compressed: true,
+          data: { type: 'Buffer', data: Array.from(compressedBuffer) },
+          metadata: {},
+        },
+      ],
+      indices: {
+        keyIndex: { 'bulk-entry': [`bulk-entry_${timestamp}`] },
+        versionIndex: { 'bulk-entry': 3 },
+      },
+    };
+
+    const importedSpy = vi.fn();
+    manager.on('stateImported', importedSpy);
+
+    await manager.importState(exported as any);
+
+    expect(importedSpy).toHaveBeenCalledWith({ entryCount: 1 });
+
+    const storage = (manager as unknown as { storage: Map<string, any> }).storage;
+    const entry = storage.get(`bulk-entry_${timestamp}`);
+    expect(entry).toBeDefined();
+    expect(entry?.logicalKey).toBe('bulk-entry');
+    expect(entry?.compressed).toBe(true);
+    expect(entry?.ttl).toBeUndefined();
+    expect(entry?.metadata?.source).toBe('unknown');
+    expect(entry?.metadata?.created).toBe(timestamp);
+    expect(entry?.metadata?.accessed).toBe(timestamp);
+    expect(entry?.metadata?.size).toBe(compressedBuffer.length);
+
+    const expectedChecksum = createHash('sha256').update(rawJson).digest('hex');
+    expect(entry?.checksum).toBe(expectedChecksum);
+
+    await manager.shutdown();
   });
 
   it('surfaces errors when persistence fails', async () => {

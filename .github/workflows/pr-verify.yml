@@ -13,11 +13,23 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    env:
+      AE_HOST_STORE: ${{ github.workspace }}/.pnpm-store
+      PNPM_STORE_PATH: ${{ github.workspace }}/.pnpm-store
     continue-on-error: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking') }}
     steps:
       - uses: actions/checkout@v4
       - name: Prepare pnpm
         uses: ./.github/actions/setup-pnpm
+      - name: Ensure pnpm cache dir
+        run: mkdir -p "$AE_HOST_STORE"
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.AE_HOST_STORE }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
       
       - uses: actions/setup-node@v4
         with:
@@ -28,7 +40,9 @@ jobs:
         run: corepack enable
 
       - name: Install
-        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+        run: |
+          pnpm fetch --prefer-offline
+          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile --prefer-offline
       
       - name: Build
         run: pnpm run build

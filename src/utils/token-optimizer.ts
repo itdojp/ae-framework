@@ -5,6 +5,14 @@
 
 import * as crypto from 'crypto';
 
+const TOKEN_ESTIMATE_RATIO = 0.25; // Approximate tokens per character
+
+const computeTokenEstimate = (text: string): number => {
+  return Math.ceil(text.length * TOKEN_ESTIMATE_RATIO);
+};
+
+export const estimateTokens = (text: string): number => computeTokenEstimate(text);
+
 export interface CompressionOptions {
   maxTokens?: number;
   preservePriority?: string[];
@@ -21,7 +29,6 @@ export interface TokenStats {
 export class TokenOptimizer {
   private cache: Map<string, string> = new Map();
   private readonly CACHE_SIZE = 100;
-  private readonly TOKEN_ESTIMATE_RATIO = 0.25; // Approximate tokens per character
   private readonly KEY_INDICATOR_REGEX = /\b(must|should|required|important|critical|key|main|primary)[:\s]/i;
 
   /**
@@ -46,6 +53,25 @@ export class TokenOptimizer {
       enableCaching = true
     } = options;
 
+    const sanitizeContent = (content: string): string => {
+      if (!content) {
+        return content;
+      }
+
+      const trailingWhitespace = content.match(/\s*$/)?.[0] ?? '';
+      let trimmedContent = content.slice(0, content.length - trailingWhitespace.length).trimEnd();
+
+      if (!trimmedContent.endsWith('```')) {
+        trimmedContent = trimmedContent.replace(/[,;]+$/, '').trimEnd();
+      }
+
+      if (trimmedContent.length === 0) {
+        return trailingWhitespace.length ? trailingWhitespace : '';
+      }
+
+      return `${trimmedContent}${trailingWhitespace}`;
+    };
+
     // Generate cache key
     const cacheKey = this.generateCacheKey(docs, options);
     if (enableCaching && this.cache.has(cacheKey)) {
@@ -58,18 +84,93 @@ export class TokenOptimizer {
 
     let compressed = '';
     const sections: { name: string; content: string; priority: number }[] = [];
+    const placeholderCandidates: { name: string; priority: number }[] = [];
 
     // Process each document with priority
     for (const [name, content] of Object.entries(docs)) {
       const priority = preservePriority.indexOf(name);
-      const processedContent = await this.processDocument(content, compressionLevel);
-      
-      // Only add non-empty content
-      if (processedContent && processedContent.trim().length > 0) {
+      const isStringContent = typeof content === 'string';
+      const rawContent = isStringContent ? (content as string) : content == null ? '' : String(content);
+      const trimmedSource = rawContent.trim();
+
+      if (!isStringContent && trimmedSource.length === 0) {
+        continue;
+      }
+
+      if (isStringContent && trimmedSource.length === 0) {
+        placeholderCandidates.push({
+          name,
+          priority: priority >= 0 ? priority : 999
+        });
+        continue;
+      }
+
+      const lowContent = await this.processDocument(rawContent, 'low');
+      const lowTokens = this.estimateTokens(lowContent);
+
+      let processedContent = lowContent;
+      let processedTokens = lowTokens;
+
+      if (compressionLevel === 'medium' || compressionLevel === 'high') {
+        const mediumContent = await this.processDocument(rawContent, 'medium');
+        const mediumTokens = this.estimateTokens(mediumContent);
+        const mediumPickContent = mediumTokens <= lowTokens ? mediumContent : lowContent;
+        const mediumPickTokens = mediumTokens <= lowTokens ? mediumTokens : lowTokens;
+
+        if (compressionLevel === 'medium') {
+          processedContent = mediumPickContent;
+          processedTokens = mediumPickTokens;
+        } else {
+          const highContent = await this.processDocument(rawContent, 'high');
+          const highTokens = this.estimateTokens(highContent);
+          if (highTokens <= mediumPickTokens) {
+            processedContent = highContent;
+            processedTokens = highTokens;
+          } else {
+            processedContent = mediumPickContent;
+            processedTokens = mediumPickTokens;
+          }
+        }
+      }
+
+      // Fallback to trimmed source if processing expanded content
+      const sourceTokens = this.estimateTokens(trimmedSource);
+      if (processedTokens > sourceTokens) {
+        processedContent = trimmedSource;
+        processedTokens = sourceTokens;
+      }
+
+      // Remove dangling commas or semicolons that often appear in loose notes
+      processedContent = sanitizeContent(processedContent);
+
+      // Only add non-empty content. If compression stripped all signal but the
+      // original string still contained non-whitespace characters (e.g. `,` or
+      // `!`), fall back to that trimmed source so ordering guarantees remain.
+      let finalContent = processedContent;
+      if (!finalContent || finalContent.trim().length === 0) {
+        if (trimmedSource.length > 0) {
+          const fallbackContent = sanitizeContent(trimmedSource);
+          finalContent = fallbackContent.trim().length > 0 ? fallbackContent : '[EMPTY]';
+        }
+      }
+
+      if (finalContent && finalContent.trim().length > 0) {
         sections.push({
           name,
-          content: processedContent,
+          content: finalContent,
           priority: priority >= 0 ? priority : 999
+        });
+      }
+    }
+
+    if (sections.length === 0 && placeholderCandidates.length > 0) {
+      placeholderCandidates.sort((a, b) => a.priority - b.priority);
+      const chosen = placeholderCandidates[0];
+      if (chosen) {
+        sections.push({
+          name: chosen.name,
+          content: '[EMPTY]',
+          priority: chosen.priority
         });
       }
     }
@@ -154,11 +255,44 @@ export class TokenOptimizer {
     content: string,
     level: 'low' | 'medium' | 'high'
   ): Promise<string> {
-    let processed = content;
+    const safeContent = content ?? '';
+    let processed = safeContent;
+
+    // Preserve code blocks so downstream cleanup does not break fences
+    const codeBlockRegex = /```[\s\S]*?```/g;
+    const codeBlocks: string[] = [];
+    processed = processed.replace(codeBlockRegex, (match) => {
+      const placeholder = `__DOC_CODE_BLOCK_${codeBlocks.length}__`;
+      codeBlocks.push(match);
+      return placeholder;
+    });
 
     // Remove comments in code blocks first
     processed = processed.replace(/\/\*[\s\S]*?\*\//g, '');
     processed = processed.replace(/\/\/.*/g, '');
+
+    if (level === 'medium' || level === 'high') {
+      const lines = processed.split(/\r?\n/);
+      const seenStructured = new Set<string>();
+      const dedupedLines: string[] = [];
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          dedupedLines.push(line);
+          continue;
+        }
+        const isStructured = /^[-*+]\s+/.test(trimmed) || /^#+\s+/.test(trimmed);
+        if (isStructured) {
+          const normalized = trimmed.toLowerCase();
+          if (seenStructured.has(normalized)) {
+            continue;
+          }
+          seenStructured.add(normalized);
+        }
+        dedupedLines.push(line);
+      }
+      processed = dedupedLines.join('\n');
+    }
 
     if (level === 'high') {
       // For high compression, extract key points from original (minus comments)
@@ -175,9 +309,18 @@ export class TokenOptimizer {
       // Remove empty lines
       processed = processed.replace(/^\s*[\r\n]/gm, '');
       
-      // Shorten repetitive patterns
-      processed = this.deduplicatePatterns(processed);
+      // Shorten repetitive patterns when it actually helps
+      const deduplicated = this.deduplicatePatterns(processed);
+      const hasMeaningfulContent = /[a-z0-9]/i.test(deduplicated.replace(/__DOC_CODE_BLOCK_\d+__/g, ''));
+      if (hasMeaningfulContent && this.estimateTokens(deduplicated) <= this.estimateTokens(processed)) {
+        processed = deduplicated;
+      }
     }
+
+    // Restore code blocks in their original order
+    codeBlocks.forEach((block, index) => {
+      processed = processed.replace(`__DOC_CODE_BLOCK_${index}__`, block);
+    });
 
     return processed;
   }
@@ -323,7 +466,18 @@ export class TokenOptimizer {
 
     // Check for keyword matches
     for (const keyword of keywords) {
-      const regex = new RegExp(`\\b${keyword.toLowerCase()}\\b`, 'g');
+      if (typeof keyword !== 'string') {
+        continue;
+      }
+      const normalized = keyword.trim().toLowerCase();
+      if (!normalized) {
+        continue;
+      }
+      const escaped = normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      if (!escaped) {
+        continue;
+      }
+      const regex = new RegExp(`\\b${escaped}\\b`, 'g');
       const matches = lowerChunk.match(regex);
       score += matches ? matches.length * 10 : 0;
     }
@@ -344,15 +498,14 @@ export class TokenOptimizer {
    * Estimate token count (rough approximation)
    */
   estimateTokens(text: string): number {
-    // Simple estimation: ~4 characters per token on average
-    return Math.ceil(text.length * this.TOKEN_ESTIMATE_RATIO);
+    return computeTokenEstimate(text);
   }
 
   /**
    * Truncate text to approximate token count
    */
   private truncateToTokens(text: string, maxTokens: number): string {
-    const estimatedChars = maxTokens / this.TOKEN_ESTIMATE_RATIO;
+    const estimatedChars = maxTokens / TOKEN_ESTIMATE_RATIO;
     if (text.length <= estimatedChars) return text;
     
     // Try to truncate at sentence boundary
@@ -407,11 +560,12 @@ export class TokenOptimizer {
     const reduction = originalTokens > 0 
       ? ((originalTokens - compressedTokens) / originalTokens) * 100
       : 0;
+    const normalizedReduction = Math.max(0, Math.round(reduction));
 
     return {
       original: originalTokens,
       compressed: compressedTokens,
-      reductionPercentage: Math.round(reduction)
+      reductionPercentage: normalizedReduction
     };
   }
 

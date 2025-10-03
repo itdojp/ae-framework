@@ -1,0 +1,24 @@
+services:
+  unit-tests:
+    image: node:22-bookworm
+    init: true
+    working_dir: /workspace
+    env_file:
+      - ../../.env
+    environment:
+      PNPM_HOME: /root/.local/share/pnpm
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+      CI: "true"
+    volumes:
+      - ../..:/workspace:Z
+      - ${AE_HOST_STORE:-../../.pnpm-store}:/root/.local/share/pnpm/store/v3:Z
+    tmpfs:
+      - /tmp:size=512m
+    networks:
+      - unit-net
+    command: >-
+      bash -lc "corepack enable pnpm && pnpm install --no-frozen-lockfile --prefer-offline && pnpm vitest run tests/unit --reporter dot"
+
+networks:
+  unit-net:
+    driver: bridge
