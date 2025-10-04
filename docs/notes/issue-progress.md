@@ -14,6 +14,8 @@
 ### Latest PR / Follow-ups
 - Podman/WSL ランタイム最適化: PR [#1014](https://github.com/itdojp/ae-framework/pull/1014)
 - Spec generate/model gating: PR [#1023](https://github.com/itdojp/ae-framework/pull/1023) — `.github/workflows/spec-generate-model.yml` introduces drift fail-fast + KvOnce property run
+- Spec trace conformance gating: PR [#1024](https://github.com/itdojp/ae-framework/pull/1024) — adds KvOnce trace validation job + NDJSON schema docs
+- OTLP trace conversion: PR [#1025](https://github.com/itdojp/ae-framework/pull/1025) — OTLP→NDJSON converter + collector integration
 - ネイティブ compose 検証: Issue [#1015](https://github.com/itdojp/ae-framework/issues/1015)
 - Mutation survivor 削減タスク: Issue [#1016](https://github.com/itdojp/ae-framework/issues/1016)
 
