@@ -151,21 +151,21 @@ jobs:
           if [ -f verify-lite-lint-summary.json ]; then
             echo '## Verify Lite Lint Summary' >> "$GITHUB_STEP_SUMMARY"
             node <<'NODE' >> "$GITHUB_STEP_SUMMARY"
-const fs = require('fs');
-try {
-  const data = JSON.parse(fs.readFileSync('verify-lite-lint-summary.json', 'utf8'));
-  console.log(`Total issues: ${data.total}`);
-  const top = (data.rules || []).slice(0, 5);
-  if (top.length) {
-    console.log('Top rules:');
-    for (const rule of top) {
-      console.log(`- ${rule.rule} (${rule.count})`);
-    }
-  }
-} catch (err) {
-  console.log('Failed to parse lint summary:', err.message);
-}
-NODE
+            const fs = require('fs');
+            try {
+              const data = JSON.parse(fs.readFileSync('verify-lite-lint-summary.json', 'utf8'));
+              console.log(`Total issues: ${data.total}`);
+              const top = (data.rules || []).slice(0, 5);
+              if (top.length) {
+                console.log('Top rules:');
+                for (const rule of top) {
+                  console.log(`- ${rule.rule} (${rule.count})`);
+                }
+              }
+            } catch (err) {
+              console.log('Failed to parse lint summary:', err.message);
+            }
+            NODE
           else
             echo 'Verify Lite lint summary not generated.' >> "$GITHUB_STEP_SUMMARY"
           fi
