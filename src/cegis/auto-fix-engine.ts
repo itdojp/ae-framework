@@ -3,16 +3,17 @@
  * Phase 2.1: Core engine for analyzing failures and applying automated fixes
  */
 
-import type { 
-  FailureArtifact, 
-  FixStrategy, 
-  FixResult, 
-  AppliedFix, 
-  SkippedFix, 
-  AutoFixConfig, 
+import type {
+  FailureArtifact,
+  FixStrategy,
+  FixResult,
+  AppliedFix,
+  SkippedFix,
+  AutoFixConfig,
   AutoFixOptions,
   FailurePattern,
-  FailureCategory
+  FailureCategory,
+  RepairAction
 } from './types.js';
 
 export type { AutoFixOptions };
@@ -70,11 +71,11 @@ export class AutoFixEngine {
       console.log(`📋 Processing ${validFailures.length} valid failures`);
       
       // 2. Analyze failure patterns
-      const patterns = await this.analyzeFailurePatterns(validFailures);
+      const patterns = this.analyzeFailurePatterns(validFailures);
       console.log(`🔍 Identified ${patterns.length} failure patterns`);
       
       // 3. Select and prioritize strategies
-      const strategies = await this.selectStrategies(validFailures, patterns);
+      const strategies = await this.selectStrategies(validFailures);
       console.log(`⚙️  Selected ${strategies.length} fix strategies`);
       
       // 4. Execute fixes
@@ -86,7 +87,7 @@ export class AutoFixEngine {
       
       // 5. Generate summary and recommendations
       const summary = this.generateSummary(validFailures, appliedFixes, skippedFixes);
-      const recommendations = await this.generateRecommendations(
+      const recommendations = this.generateRecommendations(
         validFailures,
         appliedFixes,
         patterns
@@ -147,7 +148,7 @@ export class AutoFixEngine {
   /**
    * Analyze failure patterns to identify common issues
    */
-  async analyzeFailurePatterns(failures: FailureArtifact[]): Promise<FailurePattern[]> {
+  analyzeFailurePatterns(failures: FailureArtifact[]): FailurePattern[] {
     const patterns: FailurePattern[] = [];
     const categoryGroups = this.groupByCategory(failures);
     
@@ -220,8 +221,7 @@ export class AutoFixEngine {
   }
 
   private async selectStrategies(
-    failures: FailureArtifact[],
-    patterns: FailurePattern[]
+    failures: FailureArtifact[]
   ): Promise<{ strategy: FixStrategy; failures: FailureArtifact[] }[]> {
     const strategyGroups: { strategy: FixStrategy; failures: FailureArtifact[] }[] = [];
     
@@ -337,7 +337,7 @@ export class AutoFixEngine {
     const filesModified: string[] = [];
     const errors: string[] = [];
     const warnings: string[] = [];
-    const allActions: any[] = [];
+    const allActions: RepairAction[] = [];
     
     for (const failure of failures) {
       // Skip if file already processed
@@ -388,7 +388,7 @@ export class AutoFixEngine {
     };
   }
 
-  private async applyAction(action: any): Promise<void> {
+  private async applyAction(action: RepairAction): Promise<void> {
     if (action.type === 'code_change' && action.codeChange && action.filePath) {
       const fs = await import('fs');
       const content = await fs.promises.readFile(action.filePath, 'utf-8');
@@ -408,8 +408,7 @@ export class AutoFixEngine {
 
   private async backupFile(filePath: string): Promise<void> {
     const fs = await import('fs');
-    const path = await import('path');
-    
+
     const backupPath = `${filePath}.backup.${Date.now()}`;
     await fs.promises.copyFile(filePath, backupPath);
   }
@@ -454,11 +453,19 @@ export class AutoFixEngine {
     return Math.min(occurrences / total, 0.9);
   }
 
+  private calculateSuccessRate(appliedFixes: AppliedFix[]): number {
+    if (appliedFixes.length === 0) {
+      return 0;
+    }
+    const successful = appliedFixes.filter(f => f.success).length;
+    return successful / appliedFixes.length;
+  }
+
   private generateSummary(
     failures: FailureArtifact[],
     appliedFixes: AppliedFix[],
     skippedFixes: SkippedFix[]
-  ) {
+  ): FixResult['summary'] {
     const filesModified = new Set<string>();
     const errors: string[] = [];
     const warnings: string[] = [];
@@ -480,11 +487,11 @@ export class AutoFixEngine {
     };
   }
 
-  private async generateRecommendations(
+  private generateRecommendations(
     failures: FailureArtifact[],
     appliedFixes: AppliedFix[],
     patterns: FailurePattern[]
-  ): Promise<string[]> {
+  ): string[] {
     const recommendations: string[] = [];
     
     // Pattern-based recommendations
@@ -507,13 +514,13 @@ export class AutoFixEngine {
     }
     
     // Success rate recommendations
-    const successRate = appliedFixes.filter(f => f.success).length / appliedFixes.length;
-    if (successRate < 0.8) {
+    const successRate = this.calculateSuccessRate(appliedFixes);
+    if (appliedFixes.length > 0 && successRate < 0.8) {
       recommendations.push(
         'Low fix success rate. Consider manual review of failed fixes.'
       );
     }
-    
+
     return recommendations;
   }
 
@@ -521,7 +528,7 @@ export class AutoFixEngine {
     failures: FailureArtifact[],
     appliedFixes: AppliedFix[],
     skippedFixes: SkippedFix[],
-    summary: any,
+    summary: FixResult['summary'],
     recommendations: string[]
   ): Promise<string> {
     const reportPath = `cegis-report-${Date.now()}.json`;
@@ -538,7 +545,7 @@ export class AutoFixEngine {
       })),
       skippedFixes,
       recommendations,
-      patterns: await this.analyzeFailurePatterns(failures)
+      patterns: this.analyzeFailurePatterns(failures)
     };
     
     const fs = await import('fs');
