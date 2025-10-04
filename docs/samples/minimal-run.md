@@ -38,16 +38,29 @@
    - `podman compose -f` 非対応環境では `podman-compose` に自動フォールバック。
 
 5. **KvOnce TLA+ PoC の確認（任意）**
-   ```bash
-   pnpm run spec:kv-once:tlc
-   pnpm run spec:kv-once:apalache   # Apalache が導入済みの場合
-   ```
-   - 実行結果は `hermetic-reports/formal/kvonce-*-summary.json` に保存されます（minimal pipeline でも取得）。
+  ```bash
+  pnpm run spec:kv-once:tlc
+  pnpm run spec:kv-once:apalache   # Apalache が導入済みの場合
+  ```
+  - 実行結果は `hermetic-reports/formal/kvonce-*-summary.json` に保存されます（minimal pipeline でも取得）。
 
-6. **Mutation quick（任意）**
+6. **KvOnce トレース検証（任意）**
    ```bash
-   STRYKER_TIME_LIMIT=480 ./scripts/mutation/run-scoped.sh --quick -m src/utils/enhanced-state-manager.ts -c configs/stryker.enhanced.config.js
+   # OTLP サンプル（prepare-otlp が自動で payload を配置）
+   scripts/trace/run-kvonce-conformance.sh --output-dir hermetic-reports/trace/otlp
+
+   # NDJSON サンプル（リポジトリ同梱のトレースを直接検証）
+   scripts/trace/run-kvonce-conformance.sh \
+     --input samples/trace/kvonce-sample.ndjson \
+     --format ndjson \
+     --output-dir hermetic-reports/trace/ndjson
    ```
+   - `hermetic-reports/trace/<mode>/kvonce-validation.json` に結果が出力されます。`valid: true` を確認し、issues が残る場合は `kvonce-projection.json` と併せて調査してください。
+
+7. **Mutation quick（任意）**
+  ```bash
+  STRYKER_TIME_LIMIT=480 ./scripts/mutation/run-scoped.sh --quick -m src/utils/enhanced-state-manager.ts -c configs/stryker.enhanced.config.js
+  ```
    - 現状スコア 59.74%（survived 184）。Issue #1016 にて改善予定。
 
 ## 既知の課題 / TODO

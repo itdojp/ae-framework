@@ -191,6 +191,8 @@ THEOREM Safety == Spec => []NoOverwrite
 - Trace Validator / Projector の実装と `verify:conformance` への統合
 - formal-summary を PR コメントへ自動投稿
 - generate-artifacts / model-based-tests の最小ゲート `.github/workflows/spec-generate-model.yml` を運用し、対象を段階的に拡充
+- Collector 連携ガイド（`KVONCE_OTLP_PAYLOAD` の Secrets 運用、外部ストレージの取り扱い）と NDJSON/OTLP 併用時のベストプラクティス整理
+- `context` フィールドを活用した retry 検証ロジックの追加（Projector/Validator 強化）
 
 ### 実行ヒント
 

@@ -2,6 +2,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
+const NANOS_PER_MILLI = 1_000_000n;
+
 const EXIT_NO_EVENTS = 2;
 
 function parseArgs() {
@@ -67,12 +69,17 @@ function toTimestamp(nanoString) {
   if (!nanoString) return new Date().toISOString();
   try {
     const nanos = BigInt(nanoString);
-    const millisBigInt = nanos / 1_000_000n;
-    if (millisBigInt > BigInt(Number.MAX_SAFE_INTEGER) || millisBigInt < BigInt(Number.MIN_SAFE_INTEGER)) {
+    const millisBigInt = nanos / NANOS_PER_MILLI;
+    const max = BigInt(Number.MAX_SAFE_INTEGER);
+    const min = BigInt(Number.MIN_SAFE_INTEGER);
+    if (millisBigInt > max || millisBigInt < min) {
+      console.warn(`Invalid timestamp ${nanoString} (millis ${millisBigInt}) exceeds safe integer range; using current time.`);
       return new Date().toISOString();
     }
-    return new Date(Number(millisBigInt)).toISOString();
-  } catch {
+    const millis = Number(millisBigInt);
+    return new Date(millis).toISOString();
+  } catch (error) {
+    console.warn(`Failed to convert timestamp ${nanoString}: ${error.message}`);
     return new Date().toISOString();
   }
 }
@@ -95,6 +102,8 @@ function extractEvents(otlp) {
         if (value !== undefined) event.value = value;
         const reason = attrs["kvonce.event.reason"];
         if (reason !== undefined) event.reason = reason;
+        const context = attrs["kvonce.event.context"];
+        if (context !== undefined) event.context = context;
         events.push(event);
       }
     }
@@ -103,6 +112,9 @@ function extractEvents(otlp) {
 }
 
 function toNdjson(events) {
+  if (events.length === 0) {
+    return "";
+  }
   return events.map((event) => JSON.stringify(event)).join("\n") + "\n";
 }
 
