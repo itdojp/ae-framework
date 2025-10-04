@@ -22,7 +22,7 @@ if command -v jq >/dev/null 2>&1; then
 else
   VALID=$(node - <<'NODE'
 const fs = require('fs');
-const path = process.argv[1];
+const path = process.argv[2];
 try {
   const json = JSON.parse(fs.readFileSync(path, 'utf8'));
   console.log(json.valid === false ? 'false' : json.valid === true ? 'true' : 'unknown');

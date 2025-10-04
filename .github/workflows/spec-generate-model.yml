@@ -15,7 +15,6 @@ on:
 permissions:
   contents: read
   actions: read
-  id-token: none
 
 jobs:
   generate-artifacts:
@@ -39,13 +38,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'pnpm'
       - name: Enable corepack
         run: corepack enable
       - name: Install dependencies
         run: |
           pnpm fetch --prefer-offline
-          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile --prefer-offline
+          pnpm install --frozen-lockfile
       - name: Generate artifacts preview
         run: pnpm run generate:artifacts:preview
       - name: Check diff summary
@@ -56,10 +54,10 @@ jobs:
           const summaryFile = 'hermetic-reports/spec/generate-artifacts-diff.json';
           const stepSummary = process.env.GITHUB_STEP_SUMMARY;
           const appendSummary = (lines) => {
-            if (!stepSummary) return;
-            fs.appendFileSync(stepSummary, lines.join('
-') + '
-');
+            if (!stepSummary) {
+              return;
+            }
+            fs.appendFileSync(stepSummary, lines.join("\n") + "\n");
           };
           if (!fs.existsSync(summaryFile)) {
             console.log('No summary generated.');
@@ -68,7 +66,7 @@ jobs:
             return;
           }
           const summary = JSON.parse(fs.readFileSync(summaryFile, 'utf8'));
-          const changed = (summary.targets || []).filter(t => t.hasChanges);
+          const changed = (summary.targets || []).filter((t) => t.hasChanges);
           if (changed.length === 0) {
             const lines = ['## Generate Artifacts Drift', '- clean'];
             console.log('No generate-artifacts drift detected.');
@@ -125,13 +123,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'pnpm'
       - name: Enable corepack
         run: corepack enable
       - name: Install dependencies
         run: |
           pnpm fetch --prefer-offline
-          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile --prefer-offline
+          pnpm install --frozen-lockfile
       - name: Run KvOnce property suite
         run: pnpm vitest run tests/property/kvonce.safety.property.test.ts --reporter dot
       - name: Summarize model-based run
@@ -147,7 +144,7 @@ jobs:
             '## Model-based Tests',
             '- kvonce.safety property suite executed (see job log for details).'
           ];
-          fs.appendFileSync(summary, lines.join('\n') + '\n');
+          fs.appendFileSync(summary, lines.join("\n") + "\n");
           NODE
 
   trace-conformance:
@@ -174,13 +171,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'pnpm'
       - name: Enable corepack
         run: corepack enable
       - name: Install dependencies
         run: |
           pnpm fetch --prefer-offline
-          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile --prefer-offline
+          pnpm install --frozen-lockfile
       - name: Run KvOnce trace validation
         run: bash scripts/trace/run-kvonce-conformance.sh
       - name: Summarize trace validation
@@ -193,7 +189,7 @@ jobs:
             process.exit(0);
           }
           const reportPath = 'hermetic-reports/trace/kvonce-validation.json';
-          let lines = ['## Trace Validation'];
+          const lines = ['## Trace Validation'];
           try {
             const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
             lines.push(`- valid: ${report.valid}`);
@@ -208,7 +204,7 @@ jobs:
           } catch (error) {
             lines.push(`- failed to read report: ${error.message}`);
           }
-          fs.appendFileSync(summary, lines.join('\n') + '\n');
+          fs.appendFileSync(summary, lines.join("\n") + "\n");
           NODE
       - name: Upload trace artifacts
         if: always()
@@ -219,4 +215,3 @@ jobs:
             hermetic-reports/trace/kvonce-projection.json
             hermetic-reports/trace/kvonce-validation.json
           if-no-files-found: warn
-
