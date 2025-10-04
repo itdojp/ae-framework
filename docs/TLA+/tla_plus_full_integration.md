@@ -191,6 +191,7 @@ THEOREM Safety == Spec => []NoOverwrite
 - Trace Validator / Projector の実装と `verify:conformance` への統合
 - formal-summary を PR コメントへ自動投稿
 - generate-artifacts / model-based-tests の最小ゲート `.github/workflows/spec-generate-model.yml` を運用し、対象を段階的に拡充
+- KvOnce のトレース検証 (`scripts/trace/mock-otlp-service.mjs` → `scripts/trace/convert-otlp-kvonce.mjs` → `scripts/trace/run-kvonce-conformance.sh`) を CI に組み込み、サンプル OTLP ログの収集 / 変換を自動化
 
 ### 実行ヒント
 
@@ -200,6 +201,10 @@ pnpm run spec:kv-once:tlc
 
 # Apalache 版（インストール済みの場合）
 pnpm run spec:kv-once:apalache
+
+# トレース検証（OTLP → NDJSON → Projection → Validation）
+node scripts/trace/mock-otlp-service.mjs
+bash scripts/trace/run-kvonce-conformance.sh --format otlp --input hermetic-reports/trace/collected-kvonce-otlp.json
 ```
 
 - 駆動結果は `hermetic-reports/formal/tla-summary.json` に出力される。
