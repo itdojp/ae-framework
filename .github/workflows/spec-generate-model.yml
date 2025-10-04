@@ -182,49 +182,69 @@ jobs:
           pnpm fetch --prefer-offline
           pnpm install --frozen-lockfile --config.confirm=false \
             || pnpm install --no-frozen-lockfile --prefer-offline --config.confirm=false
-      - name: Run KvOnce trace conformance pipeline
-        run: bash ./scripts/trace/run-kvonce-conformance.sh
+      - name: Run KvOnce trace conformance pipeline (OTLP)
+        run: |
+          bash ./scripts/trace/run-kvonce-conformance.sh \
+            --output-dir hermetic-reports/trace/otlp
+      - name: Run KvOnce trace conformance pipeline (NDJSON sample)
+        run: |
+          bash ./scripts/trace/run-kvonce-conformance.sh \
+            --input samples/trace/kvonce-sample.ndjson \
+            --format ndjson \
+            --output-dir hermetic-reports/trace/ndjson
       - name: Summarize trace validation
         id: trace_summary
         run: |
           node <<'NODE'
           const fs = require('fs');
-          const summaryPath = process.env.GITHUB_STEP_SUMMARY;
-          const reportPath = 'hermetic-reports/trace/kvonce-validation.json';
-          if (!fs.existsSync(reportPath)) {
-            console.error('kvonce-validation.json not found');
-            if (summaryPath) {
-              fs.appendFileSync(summaryPath, '## KvOnce Trace Validation\n- validation file missing\n');
-            }
-            process.exitCode = 1;
-            return;
-          }
-          const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
-          const issues = Array.isArray(report.issues) ? report.issues : [];
-          const lines = [
-            '## KvOnce Trace Validation',
-            `- status: ${report.valid ? '✅ valid' : '❌ invalid'}`,
-            `- issues: ${issues.length}`,
+          const path = require('path');
+
+          const cases = [
+            { key: 'otlp', label: 'OTLP payload', dir: 'hermetic-reports/trace/otlp' },
+            { key: 'ndjson', label: 'NDJSON sample', dir: 'hermetic-reports/trace/ndjson' },
           ];
-          if (issues.length > 0) {
-            for (const issue of issues.slice(0, 10)) {
-              const rendered = `  - [${issue.type}] ${issue.key ?? 'unknown'} :: ${issue.message ?? ''}`.trim();
-              lines.push(rendered);
+
+          const summaryPath = process.env.GITHUB_STEP_SUMMARY;
+          const outputs = {};
+          const lines = ['## KvOnce Trace Validation'];
+
+          for (const item of cases) {
+            const reportPath = path.join(item.dir, 'kvonce-validation.json');
+            if (!fs.existsSync(reportPath)) {
+              lines.push(`- ${item.label}: ⚠️ validation file missing`);
+              outputs[`valid_${item.key}`] = 'missing';
+              outputs[`issues_${item.key}`] = 'N/A';
+              continue;
             }
-            if (issues.length > 10) {
-              lines.push(`  - … (${issues.length - 10} more)`);
+            const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+            const issues = Array.isArray(report.issues) ? report.issues : [];
+            const status = report.valid ? '✅ valid' : '❌ invalid';
+            lines.push(`- ${item.label}: ${status} (issues: ${issues.length})`);
+            if (issues.length > 0) {
+              for (const issue of issues.slice(0, 5)) {
+                const rendered = `  - [${issue.type ?? 'unknown'}] ${issue.key ?? 'unknown'} :: ${issue.message ?? ''}`.trim();
+                lines.push(rendered);
+              }
+              if (issues.length > 5) {
+                lines.push(`  - … (${issues.length - 5} more)`);
+              }
+            }
+            outputs[`valid_${item.key}`] = report.valid ? 'true' : 'false';
+            outputs[`issues_${item.key}`] = issues.length.toString();
+            if (!report.valid) {
+              process.exitCode = 1;
             }
           }
+
           if (summaryPath) {
             fs.appendFileSync(summaryPath, lines.join("\n") + "\n");
           }
+
           const outputPath = process.env.GITHUB_OUTPUT;
           if (outputPath) {
-            fs.appendFileSync(outputPath, `valid=${report.valid}\n`);
-            fs.appendFileSync(outputPath, `issues=${issues.length}\n`);
-          }
-          if (!report.valid) {
-            process.exitCode = 1;
+            for (const [key, value] of Object.entries(outputs)) {
+              fs.appendFileSync(outputPath, `${key}=${value}\n`);
+            }
           }
           NODE
       - name: Upload trace artifacts
@@ -233,10 +253,12 @@ jobs:
         with:
           name: kvonce-trace-results
           path: |
-            hermetic-reports/trace/collected-kvonce-otlp.json
-            hermetic-reports/trace/kvonce-events.ndjson
-            hermetic-reports/trace/kvonce-projection.json
-            hermetic-reports/trace/kvonce-validation.json
+            hermetic-reports/trace/otlp/kvonce-events.ndjson
+            hermetic-reports/trace/otlp/kvonce-projection.json
+            hermetic-reports/trace/otlp/kvonce-validation.json
+            hermetic-reports/trace/ndjson/kvonce-events.ndjson
+            hermetic-reports/trace/ndjson/kvonce-projection.json
+            hermetic-reports/trace/ndjson/kvonce-validation.json
           if-no-files-found: warn
       - name: Update PR with trace summary
         if: ${{ github.event_name == 'pull_request' }}
@@ -246,23 +268,34 @@ jobs:
             const fs = require('fs');
             const path = require('path');
             const marker = '<!-- kvonce-trace-summary -->';
-            const reportPath = path.join(process.cwd(), 'hermetic-reports/trace/kvonce-validation.json');
-            let body;
-            if (fs.existsSync(reportPath)) {
+            const cases = [
+              { key: 'OTLP', dir: 'hermetic-reports/trace/otlp' },
+              { key: 'NDJSON', dir: 'hermetic-reports/trace/ndjson' },
+            ];
+
+            let body = `${marker}\n### KvOnce Trace Validation`;
+
+            for (const item of cases) {
+              const reportPath = path.join(process.cwd(), item.dir, 'kvonce-validation.json');
+              if (!fs.existsSync(reportPath)) {
+                body += `\n- ${item.key}: ⚠️ 結果ファイルが生成されませんでした`;
+                continue;
+              }
               const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
               const issues = Array.isArray(report.issues) ? report.issues : [];
               const renderedIssues = issues.slice(0, 10).map((issue) => {
                 const key = issue.key ?? 'unknown';
                 const type = issue.type ?? 'unknown';
                 const message = issue.message ?? '';
-                return `- [${type}] **${key}**: ${message}`;
+                return `  - [${type}] **${key}**: ${message}`;
               });
               if (issues.length > 10) {
-                renderedIssues.push(`- … (${issues.length - 10} more)`);
+                renderedIssues.push(`  - … (${issues.length - 10} more)`);
               }
-              body = `${marker}\n### KvOnce Trace Validation\n- 状態: ${report.valid ? '✅ 正常' : '❌ 失敗'}\n- Issues: ${issues.length}\n${renderedIssues.join('\n')}`;
-            } else {
-              body = `${marker}\n### KvOnce Trace Validation\n- 状態: ⚠️ 結果ファイルが生成されませんでした`;
+              body += `\n- ${item.key}: ${report.valid ? '✅ 正常' : '❌ 失敗'} (Issues: ${issues.length})`;
+              if (renderedIssues.length > 0) {
+                body += `\n${renderedIssues.join('\n')}`;
+              }
             }
 
             const { owner, repo, number } = context.issue;
