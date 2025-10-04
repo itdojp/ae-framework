@@ -2,6 +2,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
+const NANOS_PER_MILLI = 1_000_000n;
+
 const EXIT_NO_EVENTS = 2;
 
 function parseArgs() {
@@ -31,10 +33,34 @@ function readOtlp(file) {
   }
 }
 
+function extractAttributeValue(attrValue) {
+  if (attrValue == null || typeof attrValue !== "object") {
+    return attrValue;
+  }
+  if ("stringValue" in attrValue) return attrValue.stringValue;
+  if ("intValue" in attrValue) return Number(attrValue.intValue);
+  if ("doubleValue" in attrValue) return attrValue.doubleValue;
+  if ("boolValue" in attrValue) return attrValue.boolValue;
+  if ("arrayValue" in attrValue && Array.isArray(attrValue.arrayValue?.values)) {
+    return attrValue.arrayValue.values.map(extractAttributeValue);
+  }
+  if ("mapValue" in attrValue && Array.isArray(attrValue.mapValue?.fields)) {
+    return Object.fromEntries(
+      attrValue.mapValue.fields.map(({ key, value }) => [key, extractAttributeValue(value)])
+    );
+  }
+  for (const key of Object.keys(attrValue)) {
+    if (attrValue[key] != null) {
+      return attrValue[key];
+    }
+  }
+  return undefined;
+}
+
 function attrsToRecord(attributes = []) {
   const record = {};
-  for (const attribute of attributes) {
-    record[attribute.key] = attribute.value;
+  for (const attribute of attributes || []) {
+    record[attribute.key] = extractAttributeValue(attribute.value);
   }
   return record;
 }
@@ -43,22 +69,19 @@ function toTimestamp(nanoString) {
   if (!nanoString) return new Date().toISOString();
   try {
     const nanos = BigInt(nanoString);
-    const millisBigInt = nanos / 1_000_000n;
-    if (millisBigInt > BigInt(Number.MAX_SAFE_INTEGER) || millisBigInt < BigInt(Number.MIN_SAFE_INTEGER)) {
-      throw new Error("Timestamp value is outside safe integer range");
+    const millisBigInt = nanos / NANOS_PER_MILLI;
+    const max = BigInt(Number.MAX_SAFE_INTEGER);
+    const min = BigInt(Number.MIN_SAFE_INTEGER);
+    if (millisBigInt > max || millisBigInt < min) {
+      console.warn(`Invalid timestamp ${nanoString} (millis ${millisBigInt}) exceeds safe integer range; using current time.`);
+      return new Date().toISOString();
     }
-    return new Date(Number(millisBigInt)).toISOString();
-  } catch {
+    const millis = Number(millisBigInt);
+    return new Date(millis).toISOString();
+  } catch (error) {
+    console.warn(`Failed to convert timestamp ${nanoString}: ${error.message}`);
     return new Date().toISOString();
   }
-}
-
-function convertValue(attrValue) {
-  if (attrValue?.stringValue !== undefined) return attrValue.stringValue;
-  if (attrValue?.intValue !== undefined) return attrValue.intValue;
-  if (attrValue?.doubleValue !== undefined) return attrValue.doubleValue;
-  if (attrValue?.boolValue !== undefined) return attrValue.boolValue;
-  return undefined;
 }
 
 function extractEvents(otlp) {
@@ -67,18 +90,20 @@ function extractEvents(otlp) {
     for (const scopeSpan of resourceSpan.scopeSpans || []) {
       for (const span of scopeSpan.spans || []) {
         const attrs = attrsToRecord(span.attributes);
-        const type = convertValue(attrs["kvonce.event.type"]);
-        const key = convertValue(attrs["kvonce.event.key"]);
+        const type = attrs["kvonce.event.type"];
+        const key = attrs["kvonce.event.key"];
         if (!type || !key) continue;
         const event = {
           timestamp: toTimestamp(span.startTimeUnixNano),
           type,
           key,
         };
-        const value = convertValue(attrs["kvonce.event.value"]);
+        const value = attrs["kvonce.event.value"];
         if (value !== undefined) event.value = value;
-        const reason = convertValue(attrs["kvonce.event.reason"]);
+        const reason = attrs["kvonce.event.reason"];
         if (reason !== undefined) event.reason = reason;
+        const context = attrs["kvonce.event.context"];
+        if (context !== undefined) event.context = context;
         events.push(event);
       }
     }
@@ -87,6 +112,9 @@ function extractEvents(otlp) {
 }
 
 function toNdjson(events) {
+  if (events.length === 0) {
+    return "";
+  }
   return events.map((event) => JSON.stringify(event)).join("\n") + "\n";
 }
 
