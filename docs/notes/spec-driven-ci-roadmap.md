@@ -8,7 +8,7 @@
 
 ### 1. generate-artifacts ジョブ
 - プロトタイプ: `pnpm run generate:artifacts:preview` と `.github/workflows/generate-artifacts-preview.yml` で quickstart を実行し、`hermetic-reports/spec/generate-artifacts-diff.json` に差分サマリを出力。
-  - サンプル: 差分が無い場合は `{ "targets": [{ "path": ..., "hasChanges": false }] }` のような JSON が出力され、差分がある場合は `files` に `NAME\tpath` が列挙される。
+  - サンプル: 差分が無い場合は `{ "targets": [{ "path": ..., "hasChanges": false }] }` のような JSON が出力され、差分がある場合は `files` に `NAME	path` が列挙される。
   - 直近のサマリ例:
 
     ```json
@@ -59,4 +59,3 @@
 2. モデルベーステスト対象を `kv-once` のみで実行できるよう `tests/property/reservation-schema.property.test.ts` を分割・軽量化。
 3. トレーススキーマのドラフトを `docs/TLA+/kv-once-poc.md` から派生させ、Issue #1011 に共有。
 5. 自動生成された BDD/contract テストを対象に追加し、`model-based-tests` ジョブの網羅範囲を段階的に拡張。
-6. KvOnce trace validation を実装ログへ適用するため、OTLP→NDJSON 変換ユーティリティを整備。
