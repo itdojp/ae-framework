@@ -121,22 +121,19 @@ jobs:
             });
             const marker = '<!-- generate-artifacts-preview -->';
             const previous = existing.find((c) => c.user.login === 'github-actions[bot]' && c.body.includes(marker));
+            const decoratedBody = `${body}\n\n${marker}`;
             if (previous) {
               await github.rest.issues.updateComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 comment_id: previous.id,
-                body: `${body}
-
-${marker}`
+                body: decoratedBody
               });
             } else {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
-                body: `${body}
-
-${marker}`
+                body: decoratedBody
               });
             }
