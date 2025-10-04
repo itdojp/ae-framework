@@ -47,7 +47,7 @@ jobs:
       - name: Install dependencies
         run: |
           pnpm fetch --prefer-offline
-          pnpm install --frozen-lockfile
+          pnpm install --frozen-lockfile --config.confirm=false
       - name: Generate artifacts preview
         run: pnpm run generate:artifacts:preview
       - name: Check diff summary
@@ -132,7 +132,7 @@ jobs:
       - name: Install dependencies
         run: |
           pnpm fetch --prefer-offline
-          pnpm install --frozen-lockfile
+          pnpm install --frozen-lockfile --config.confirm=false
       - name: Run KvOnce property suite
         run: pnpm vitest run tests/property/kvonce.safety.property.test.ts --reporter dot
       - name: Summarize model-based run
@@ -179,9 +179,9 @@ jobs:
       - name: Install dependencies
         run: |
           pnpm fetch --prefer-offline
-          pnpm install --frozen-lockfile
+          pnpm install --frozen-lockfile --config.confirm=false
       - name: Run KvOnce trace conformance pipeline
-        run: ./scripts/trace/run-kvonce-conformance.sh
+        run: bash ./scripts/trace/run-kvonce-conformance.sh
       - name: Summarize trace validation
         id: trace_summary
         run: |

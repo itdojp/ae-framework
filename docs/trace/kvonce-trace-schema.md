@@ -7,7 +7,7 @@
 ## イベントフォーマット
 | フィールド | 型 | 必須 | 説明 |
 |------------|----|------|------|
-| `timestamp` | string (ISO8601) | ✓ | 仕様イベントが発生した UTC 時刻 |
+| `timestamp` | string (ISO8601) | ✓ | 実際のイベントが発生した UTC 時刻 |
 | `type` | string (`success` \| `retry` \| `failure`) | ✓ | イベント種別 |
 | `key` | string | ✓ | KvOnce キー |
 | `value` | string | success時のみ | 書き込まれた値 |
