@@ -1,0 +1,148 @@
+name: Spec Generate & Model Tests
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'specs/**'
+      - 'templates/**'
+      - 'scripts/**'
+      - 'docs/**'
+      - 'tests/**'
+      - 'artifacts/**'
+      - '.github/workflows/spec-generate-model.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  generate-artifacts:
+    runs-on: ubuntu-latest
+    env:
+      AE_HOST_STORE: ${{ github.workspace }}/.pnpm-store
+      PNPM_STORE_PATH: ${{ github.workspace }}/.pnpm-store
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare pnpm
+        uses: ./.github/actions/setup-pnpm
+      - name: Ensure pnpm cache dir
+        run: mkdir -p "$AE_HOST_STORE"
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.AE_HOST_STORE }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Enable corepack
+        run: corepack enable
+      - name: Install dependencies
+        run: |
+          pnpm fetch --prefer-offline
+          pnpm install --frozen-lockfile
+      - name: Generate artifacts preview
+        run: pnpm run generate:artifacts:preview
+      - name: Check diff summary
+        id: diffcheck
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const summaryFile = 'hermetic-reports/spec/generate-artifacts-diff.json';
+          const stepSummary = process.env.GITHUB_STEP_SUMMARY;
+          const appendSummary = (lines) => {
+            if (!stepSummary) {
+              return;
+            }
+            fs.appendFileSync(stepSummary, lines.join("\n") + "\n");
+          };
+          if (!fs.existsSync(summaryFile)) {
+            console.log('No summary generated.');
+            appendSummary(['## Generate Artifacts Drift', '- summary file missing']);
+            process.exitCode = 1;
+            return;
+          }
+          const summary = JSON.parse(fs.readFileSync(summaryFile, 'utf8'));
+          const changed = (summary.targets || []).filter((t) => t.hasChanges);
+          if (changed.length === 0) {
+            const lines = ['## Generate Artifacts Drift', '- clean'];
+            console.log('No generate-artifacts drift detected.');
+            appendSummary(lines);
+            return;
+          }
+          const lines = ['## Generate Artifacts Drift', `Generated at: ${summary.generatedAt || 'unknown'}`];
+          console.log('Detected drift in generated artifacts:');
+          for (const target of changed) {
+            console.log(`- ${target.path}`);
+            lines.push(`- ${target.path}: CHANGED`);
+            if (Array.isArray(target.files)) {
+              for (const file of target.files.slice(0, 10)) {
+                console.log(`  ${file.status} ${file.file}`);
+                lines.push(`  - ${file.status} ${file.file}`);
+              }
+              if (target.files.length > 10) {
+                const more = `  - … (${target.files.length - 10} more)`;
+                console.log(more.trim());
+                lines.push(more);
+              }
+            }
+          }
+          appendSummary(lines);
+          process.exitCode = 1;
+          NODE
+      - name: Upload diff summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: generate-artifacts-diff
+          path: hermetic-reports/spec/generate-artifacts-diff.json
+          if-no-files-found: warn
+
+  model-based-tests:
+    runs-on: ubuntu-latest
+    needs: generate-artifacts
+    env:
+      AE_HOST_STORE: ${{ github.workspace }}/.pnpm-store
+      PNPM_STORE_PATH: ${{ github.workspace }}/.pnpm-store
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare pnpm
+        uses: ./.github/actions/setup-pnpm
+      - name: Ensure pnpm cache dir
+        run: mkdir -p "$AE_HOST_STORE"
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.AE_HOST_STORE }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Enable corepack
+        run: corepack enable
+      - name: Install dependencies
+        run: |
+          pnpm fetch --prefer-offline
+          pnpm install --frozen-lockfile
+      - name: Run KvOnce property suite
+        run: pnpm vitest run tests/property/kvonce.safety.property.test.ts --reporter dot
+      - name: Summarize model-based run
+        if: always()
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const summary = process.env.GITHUB_STEP_SUMMARY;
+          if (!summary) {
+            process.exit(0);
+          }
+          const lines = [
+            '## Model-based Tests',
+            '- kvonce.safety property suite executed (see job log for details).'
+          ];
+          fs.appendFileSync(summary, lines.join("\n") + "\n");
+          NODE
