@@ -36,12 +36,16 @@ Failure(k, reason) ==
 Next ==
   \E k \in Keys, v \in Values: Put(k, v)
   \/ \E k \in Keys: Retry(k, "transient")
-  \/ \E k \in Keys: Failure(k, "duplicate")
+  \/ \E k \in Keys: store[k].written /\ Failure(k, "duplicate")
 
 TypeInvariant ==
   /\ store \in [Keys -> [written: BOOLEAN, val: Values \cup {NULL}]]
   /\ retries \in [Keys -> Nat]
-  /\ events \in Seq([type: {"success", "retry", "failure"}, key: Keys, value: Values \cup {NULL}, reason: STRING])
+  /\ events \in Seq(
+        [type: "success", key: Keys, value: Values]
+        \cup [type: "retry", key: Keys, reason: STRING]
+        \cup [type: "failure", key: Keys, reason: STRING]
+     )
 
 NoOverwrite == \A k \in Keys: store[k].written => store[k].val # NULL
 
