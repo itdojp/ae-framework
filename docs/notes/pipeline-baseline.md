@@ -71,3 +71,6 @@
 ## 参考ログ
 - `logs/run-unit-20251004.txt`: Podman 実行ログ（`scripts/docker/run-unit.sh`）※未保存
 - `reports/mutation/mutation.json|html`: 直近の mutation quick 結果 (score 59.74%)
+
+## lint backlog ドキュメント
+- `docs/notes/verify-lite-lint-plan.md`: verify-lite lint 集計と段階的対応計画を整理。

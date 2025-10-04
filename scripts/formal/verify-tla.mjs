@@ -23,7 +23,6 @@ function sh(cmd){ try { return execSync(cmd, {encoding:'utf8'}); } catch(e){ ret
 
 const args = parseArgs(process.argv);
 const timeoutSec = args.timeout ? Math.max(1, Math.floor(Number(args.timeout)/1000)) : 0;
-function has(cmd){ try { execSync(`bash -lc 'command -v ${cmd}'`, {stdio:'ignore'}); return true; } catch { return false; } }
 const haveTimeout = has('timeout');
 if (args.help){
   console.log(`Usage: node scripts/formal/verify-tla.mjs [--engine=tlc|apalache] [--file spec/tla/DomainSpec.tla] [--timeout <ms>]`);
