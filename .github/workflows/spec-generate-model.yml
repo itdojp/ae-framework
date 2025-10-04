@@ -235,6 +235,7 @@ jobs:
           else
             echo "[trace] fetch-otlp-payload.mjs not found; using samples/trace/kvonce-otlp.json" >&2
             cp samples/trace/kvonce-otlp.json "$TARGET"
+            # shellcheck disable=SC1009,SC1073,SC1039,SC1072
             node <<'NODE' "$TARGET"
 import { promises as fs } from 'node:fs';
 import { createHash } from 'node:crypto';
