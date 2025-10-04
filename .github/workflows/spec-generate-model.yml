@@ -19,6 +19,7 @@ on:
 permissions:
   contents: read
   actions: read
+  checks: write
 
 jobs:
   generate-artifacts:
@@ -253,6 +254,7 @@ jobs:
         with:
           name: kvonce-trace-results
           path: |
+            hermetic-reports/trace/collected-kvonce-otlp.json
             hermetic-reports/trace/otlp/kvonce-events.ndjson
             hermetic-reports/trace/otlp/kvonce-projection.json
             hermetic-reports/trace/otlp/kvonce-validation.json
@@ -306,3 +308,49 @@ jobs:
             } else {
               await github.rest.issues.createComment({ owner, repo, issue_number: number, body });
             }
+      - name: Publish trace validation check
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/github-script@v7
+        env:
+          VALID_OTLP: ${{ steps.trace_summary.outputs.valid_otlp }}
+          VALID_NDJSON: ${{ steps.trace_summary.outputs.valid_ndjson }}
+          ISSUES_OTLP: ${{ steps.trace_summary.outputs.issues_otlp }}
+          ISSUES_NDJSON: ${{ steps.trace_summary.outputs.issues_ndjson }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const headSha = context.payload.pull_request?.head?.sha;
+            if (!headSha) {
+              core.warning('head SHA not available; skipping check run');
+              return;
+            }
+
+            const validOtlp = process.env.VALID_OTLP || 'missing';
+            const validNdjson = process.env.VALID_NDJSON || 'missing';
+            const issuesOtlp = process.env.ISSUES_OTLP || 'N/A';
+            const issuesNdjson = process.env.ISSUES_NDJSON || 'N/A';
+
+            let conclusion = 'success';
+            if (validOtlp === 'false' || validNdjson === 'false') {
+              conclusion = 'failure';
+            } else if (validOtlp === 'missing' && validNdjson === 'missing') {
+              conclusion = 'neutral';
+            }
+
+            const summaryLines = [
+              `OTLP: ${validOtlp} (issues: ${issuesOtlp})`,
+              `NDJSON: ${validNdjson} (issues: ${issuesNdjson})`
+            ];
+
+            await github.rest.checks.create({
+              owner,
+              repo,
+              name: 'KvOnce Trace Validation',
+              head_sha: headSha,
+              status: 'completed',
+              conclusion,
+              output: {
+                title: 'KvOnce Trace Validation',
+                summary: summaryLines.join('\n')
+              }
+            });
