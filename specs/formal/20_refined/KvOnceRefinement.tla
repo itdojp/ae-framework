@@ -1,5 +1,5 @@
 --------------------- MODULE KvOnceRefinement ---------------------
-EXTENDS Naturals, Sequences
+EXTENDS Naturals, Sequences, TLC
 
 CONSTANTS Keys, Values, NULL, MAX_RETRIES
 VARIABLES store, retries
@@ -17,7 +17,7 @@ Put(k, v) ==
   /\ retries[k] < MAX_RETRIES
   /\ ~store[k].written
   /\ store' = [store EXCEPT ![k] = [written |-> TRUE, val |-> v]]
-  /\ retries' = [retries EXCEPT ![k] = retries[k] + 1]
+  /\ retries' = retries
 
 Retry(k) ==
   /\ k \in Keys
