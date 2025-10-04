@@ -31,35 +31,35 @@ function readOtlp(file) {
   }
 }
 
-function toAttributeValue(value) {
-  if (typeof value === "string") {
-    return { stringValue: value };
+function extractAttributeValue(attrValue) {
+  if (attrValue == null || typeof attrValue !== "object") {
+    return attrValue;
   }
-  if (typeof value === "number") {
-    return Number.isInteger(value)
-      ? { intValue: String(value) }
-      : { doubleValue: value };
+  if ("stringValue" in attrValue) return attrValue.stringValue;
+  if ("intValue" in attrValue) return Number(attrValue.intValue);
+  if ("doubleValue" in attrValue) return attrValue.doubleValue;
+  if ("boolValue" in attrValue) return attrValue.boolValue;
+  if ("arrayValue" in attrValue && Array.isArray(attrValue.arrayValue?.values)) {
+    return attrValue.arrayValue.values.map(extractAttributeValue);
   }
-  if (typeof value === "boolean") {
-    return { boolValue: value };
+  if ("mapValue" in attrValue && Array.isArray(attrValue.mapValue?.fields)) {
+    return Object.fromEntries(
+      attrValue.mapValue.fields.map(({ key, value }) => [key, extractAttributeValue(value)])
+    );
   }
-  if (Array.isArray(value)) {
-    return {
-      arrayValue: {
-        values: value.map((v) => ({ stringValue: String(v) })),
-      },
-    };
+  // fallback: return first defined primitive value
+  for (const key of Object.keys(attrValue)) {
+    if (attrValue[key] != null) {
+      return attrValue[key];
+    }
   }
-  if (value && typeof value === "object") {
-    return { stringValue: JSON.stringify(value) };
-  }
-  return { stringValue: String(value) };
+  return undefined;
 }
 
 function attrsToRecord(attributes = []) {
   const record = {};
   for (const attr of attributes) {
-    record[attr.key] = toAttributeValue(attr.value);
+    record[attr.key] = extractAttributeValue(attr.value);
   }
   return record;
 }
@@ -72,7 +72,7 @@ function toTimestamp(nanoString) {
     const max = BigInt(Number.MAX_SAFE_INTEGER);
     const min = BigInt(Number.MIN_SAFE_INTEGER);
     if (millisBigInt > max || millisBigInt < min) {
-      throw new Error("Timestamp value is outside the safe integer range for JavaScript Number type.");
+      return new Date().toISOString();
     }
     const millis = Number(millisBigInt);
     return new Date(millis).toISOString();
@@ -89,23 +89,20 @@ function extractEvents(otlp) {
     for (const scopeSpan of scopeSpans) {
       const spans = scopeSpan.spans || [];
       for (const span of spans) {
-        const attrs = {};
-        for (const attribute of span.attributes || []) {
-          attrs[attribute.key] = attribute.value;
-        }
-        const type = attrs["kvonce.event.type"]?.stringValue;
-        const key = attrs["kvonce.event.key"]?.stringValue;
+        const attrs = attrsToRecord(span.attributes);
+        const type = attrs["kvonce.event.type"];
+        const key = attrs["kvonce.event.key"];
         if (!type || !key) continue;
         const event = {
           timestamp: toTimestamp(span.startTimeUnixNano),
           type,
           key,
         };
-        if (attrs["kvonce.event.value"]?.stringValue !== undefined) {
-          event.value = attrs["kvonce.event.value"].stringValue;
+        if (attrs["kvonce.event.value"] !== undefined) {
+          event.value = attrs["kvonce.event.value"];
         }
-        if (attrs["kvonce.event.reason"]?.stringValue !== undefined) {
-          event.reason = attrs["kvonce.event.reason"].stringValue;
+        if (attrs["kvonce.event.reason"] !== undefined) {
+          event.reason = attrs["kvonce.event.reason"];
         }
         events.push(event);
       }
