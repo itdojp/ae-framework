@@ -150,6 +150,7 @@ jobs:
         run: |
           if [ -f verify-lite-lint-summary.json ]; then
             echo '## Verify Lite Lint Summary' >> "$GITHUB_STEP_SUMMARY"
+            # shellcheck disable=SC1009,SC1073,SC1039,SC1072
             node <<'NODE' >> "$GITHUB_STEP_SUMMARY"
             const fs = require('fs');
             try {
