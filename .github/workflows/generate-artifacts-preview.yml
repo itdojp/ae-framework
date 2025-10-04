@@ -85,3 +85,60 @@ NODE
           name: generate-artifacts-preview
           path: hermetic-reports/spec/generate-artifacts-diff.json
           if-no-files-found: error
+
+      - name: Comment diff on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'hermetic-reports/spec/generate-artifacts-diff.json';
+            const summary = fs.existsSync(path) ? JSON.parse(fs.readFileSync(path, 'utf8')) : null;
+            const lines = [];
+            lines.push('### Generate Artifacts Preview');
+            if (!summary) {
+              lines.push('No diff summary generated.');
+            } else {
+              lines.push(`Generated at: ${summary.generatedAt}`);
+              for (const target of summary.targets || []) {
+                const status = target.hasChanges ? 'CHANGED' : 'clean';
+                lines.push(`- ${target.path}: ${status}`);
+                if (target.hasChanges && target.files) {
+                  const sample = target.files.slice(0, 10);
+                  for (const file of sample) {
+                    lines.push(`  - ${file.status} ${file.file}`);
+                  }
+                  if (target.files.length > sample.length) {
+                    lines.push(`  - … (${target.files.length - sample.length} more)`);
+                  }
+                }
+              }
+            }
+            const body = lines.join('
+');
+            const { data: existing } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+            const marker = '<!-- generate-artifacts-preview -->';
+            const previous = existing.find((c) => c.user.login === context.actor && c.body.includes(marker));
+            if (previous) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: previous.id,
+                body: `${body}
+
+${marker}`
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `${body}
+
+${marker}`
+              });
+            }

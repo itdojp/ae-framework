@@ -190,6 +190,7 @@ THEOREM Safety == Spec => []NoOverwrite
 - 自動生成ワークフロー（BDD/OpenAPI/モニタ）の差分チェック
 - Trace Validator / Projector の実装と `verify:conformance` への統合
 - formal-summary を PR コメントへ自動投稿
+- generate-artifacts / model-based-tests の最小ゲート `.github/workflows/spec-generate-model.yml` を運用し、対象を段階的に拡充
 
 ### 実行ヒント
 
@@ -205,3 +206,8 @@ pnpm run spec:kv-once:apalache
 - CI 取り込み時はラベル `run-formal` などで opt-in しつつ、成功時に summary を PR コメントへ反映させる予定。
 
 次ステップ：Spec Check の結果を Issue #1011 に紐付ける自動コメント、及び generate-artifacts/model-based-tests/conformance の追加。
+
+### 省略予定 (Phase C)
+- Projector / Validator を本運用に載せる前に必要なトレーススキーマ詳細設計（Issue #1011 ステップ3へ委譲）
+- 自動生成 BDD/contract テスト全体の差分チェックと整合性検証（今後の generate-artifacts 拡張で対応）
+- conformance ジョブにおける OTLP 収集とダッシュボード可視化（Issue #1011 ステップ5にて計画）
