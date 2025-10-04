@@ -105,14 +105,14 @@ export class TokenOptimizer {
         continue;
       }
 
-      const lowContent = await this.processDocument(rawContent, 'low');
+      const lowContent = await Promise.resolve(this.processDocument(rawContent, 'low'));
       const lowTokens = this.estimateTokens(lowContent);
 
       let processedContent = lowContent;
       let processedTokens = lowTokens;
 
       if (compressionLevel === 'medium' || compressionLevel === 'high') {
-        const mediumContent = await this.processDocument(rawContent, 'medium');
+        const mediumContent = await Promise.resolve(this.processDocument(rawContent, 'medium'));
         const mediumTokens = this.estimateTokens(mediumContent);
         const mediumPickContent = mediumTokens <= lowTokens ? mediumContent : lowContent;
         const mediumPickTokens = mediumTokens <= lowTokens ? mediumTokens : lowTokens;
@@ -121,7 +121,7 @@ export class TokenOptimizer {
           processedContent = mediumPickContent;
           processedTokens = mediumPickTokens;
         } else {
-          const highContent = await this.processDocument(rawContent, 'high');
+          const highContent = await Promise.resolve(this.processDocument(rawContent, 'high'));
           const highTokens = this.estimateTokens(highContent);
           if (highTokens <= mediumPickTokens) {
             processedContent = highContent;
@@ -232,7 +232,7 @@ export class TokenOptimizer {
     // Build optimized context within token limit
     let optimized = '';
     for (const chunk of scoredChunks) {
-      const compressed = await this.compressText(chunk.content);
+      const compressed = await Promise.resolve(this.compressText(chunk.content));
       const newContext = optimized + '\n' + compressed;
       
       if (this.estimateTokens(newContext) <= maxTokens) {
@@ -251,10 +251,10 @@ export class TokenOptimizer {
   /**
    * Compress text by removing redundancy while preserving meaning
    */
-  private async processDocument(
+  private processDocument(
     content: string,
     level: 'low' | 'medium' | 'high'
-  ): Promise<string> {
+  ): string {
     const safeContent = content ?? '';
     let processed = safeContent;
 
@@ -388,7 +388,7 @@ export class TokenOptimizer {
   /**
    * Compress general text
    */
-  private async compressText(text: string): Promise<string> {
+  private compressText(text: string): string {
     // Preserve code blocks
     const codeBlockRegex = /```[\s\S]*?```/g;
     const codeBlocks: string[] = [];
