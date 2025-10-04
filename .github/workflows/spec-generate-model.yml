@@ -54,8 +54,12 @@ jobs:
       - name: Install dependencies
         run: |
           pnpm fetch --prefer-offline
-          pnpm install --frozen-lockfile --config.confirm=false \
-            || pnpm install --no-frozen-lockfile --prefer-offline --config.confirm=false
+          if pnpm install --frozen-lockfile --config.confirm=false; then
+            echo "pnpm install succeeded with --frozen-lockfile"
+          else
+            echo "pnpm install --frozen-lockfile failed, falling back to --no-frozen-lockfile"
+            pnpm install --no-frozen-lockfile --prefer-offline --config.confirm=false
+          fi
       - name: Generate artifacts preview
         run: pnpm run generate:artifacts:preview
       - name: Check diff summary
@@ -74,7 +78,8 @@ jobs:
           if (!fs.existsSync(summaryFile)) {
             console.log('No summary generated.');
             appendSummary(['## Generate Artifacts Drift', '- summary file missing']);
-            process.exit(1);
+            process.exitCode = 1;
+            return;
           }
           const summary = JSON.parse(fs.readFileSync(summaryFile, 'utf8'));
           const changed = (summary.targets || []).filter((t) => t.hasChanges);
@@ -82,7 +87,8 @@ jobs:
             const lines = ['## Generate Artifacts Drift', '- clean'];
             console.log('No generate-artifacts drift detected.');
             appendSummary(lines);
-            process.exit(0);
+            process.exitCode = 0;
+            return;
           }
           const lines = ['## Generate Artifacts Drift', `Generated at: ${summary.generatedAt || 'unknown'}`];
           console.log('Detected drift in generated artifacts:');
@@ -102,7 +108,8 @@ jobs:
             }
           }
           appendSummary(lines);
-          process.exit(1);
+          process.exitCode = 1;
+          return;
           NODE
       - name: Upload diff summary
         if: always()
@@ -139,8 +146,12 @@ jobs:
       - name: Install dependencies
         run: |
           pnpm fetch --prefer-offline
-          pnpm install --frozen-lockfile --config.confirm=false \
-            || pnpm install --no-frozen-lockfile --prefer-offline --config.confirm=false
+          if pnpm install --frozen-lockfile --config.confirm=false; then
+            echo "pnpm install succeeded with --frozen-lockfile"
+          else
+            echo "pnpm install --frozen-lockfile failed, falling back to --no-frozen-lockfile"
+            pnpm install --no-frozen-lockfile --prefer-offline --config.confirm=false
+          fi
       - name: Run KvOnce property suite
         run: pnpm vitest run tests/property/kvonce.safety.property.test.ts --reporter dot
       - name: Summarize model-based run
@@ -150,7 +161,8 @@ jobs:
           const fs = require('fs');
           const summary = process.env.GITHUB_STEP_SUMMARY;
           if (!summary) {
-            process.exit(0);
+            process.exitCode = 0;
+            return;
           }
           const lines = [
             '## Model-based Tests',
@@ -189,8 +201,12 @@ jobs:
       - name: Install dependencies
         run: |
           pnpm fetch --prefer-offline
-          pnpm install --frozen-lockfile --config.confirm=false \
-            || pnpm install --no-frozen-lockfile --prefer-offline --config.confirm=false
+          if pnpm install --frozen-lockfile --config.confirm=false; then
+            echo "pnpm install succeeded with --frozen-lockfile"
+          else
+            echo "pnpm install --frozen-lockfile failed, falling back to --no-frozen-lockfile"
+            pnpm install --no-frozen-lockfile --prefer-offline --config.confirm=false
+          fi
       - name: Download collector payload artifact
         if: ${{ env.KVONCE_PAYLOAD_ARTIFACT != '' }}
         id: kvonce_artifact
@@ -330,7 +346,7 @@ jobs:
             for (const item of cases) {
               const reportPath = path.join(process.cwd(), item.dir, 'kvonce-validation.json');
               if (!fs.existsSync(reportPath)) {
-                body += `\n- ${item.key}: ⚠️ 結果ファイルが生成されませんでした`;
+                body += `\n- ${item.key}: ⚠️ validation file missing`;
                 continue;
               }
               const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
@@ -344,7 +360,7 @@ jobs:
               if (issues.length > 10) {
                 renderedIssues.push(`  - … (${issues.length - 10} more)`);
               }
-              body += `\n- ${item.key}: ${report.valid ? '✅ 正常' : '❌ 失敗'} (Issues: ${issues.length})`;
+              body += `\n- ${item.key}: ${report.valid ? '✅ Success' : '❌ Failure'} (Issues: ${issues.length})`;
               if (renderedIssues.length > 0) {
                 body += `\n${renderedIssues.join('\n')}`;
               }

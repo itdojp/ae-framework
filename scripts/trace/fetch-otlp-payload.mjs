@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
+import { createWriteStream } from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
+import { pipeline } from 'node:stream/promises';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -79,11 +81,13 @@ async function downloadUrl(url, destination) {
   if (!response.ok) {
     throw new Error(`Failed to download payload: ${response.status} ${response.statusText}`);
   }
-  const arrayBuffer = await response.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
   await fs.mkdir(path.dirname(destination), { recursive: true });
-  await fs.writeFile(destination, buffer);
-  return buffer;
+  if (!response.body) {
+    throw new Error('Response body missing for payload download');
+  }
+  const writeStream = createWriteStream(destination);
+  await pipeline(response.body, writeStream);
+  return fs.readFile(destination);
 }
 
 async function writeBuffer(target, buffer) {

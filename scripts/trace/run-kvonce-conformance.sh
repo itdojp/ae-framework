@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -92,11 +92,8 @@ SOURCE_NDJSON="${INPUT}"
 
 if [[ "${FORMAT}" == "otlp" ]]; then
   TEMP_FILE="$(mktemp "${TMPDIR:-/tmp}/kvonce-events-XXXXXX.ndjson")"
-  set +e
-  node "${SCRIPT_DIR}/convert-otlp-kvonce.mjs" --input "${INPUT}" --output "${TEMP_FILE}"
-  status=$?
-  set -e
-  if [[ ${status} -ne 0 ]]; then
+  if ! node "${SCRIPT_DIR}/convert-otlp-kvonce.mjs" --input "${INPUT}" --output "${TEMP_FILE}"; then
+    status=$?
     if [[ ${status} -eq 2 ]]; then
       echo "[kvonce-conformance] no kvonce events found in OTLP payload" >&2
     fi
@@ -105,6 +102,7 @@ if [[ "${FORMAT}" == "otlp" ]]; then
   cp "${TEMP_FILE}" "${NDJSON_PATH}"
   SOURCE_NDJSON="${NDJSON_PATH}"
 elif [[ "${FORMAT}" == "ndjson" ]]; then
+  # Skip the copy when the caller already pointed us at the destination path to avoid unnecessary I/O.
   if [[ "${INPUT}" != "${NDJSON_PATH}" ]]; then
     cp "${INPUT}" "${NDJSON_PATH}"
     SOURCE_NDJSON="${NDJSON_PATH}"
@@ -120,23 +118,7 @@ node "${SCRIPT_DIR}/validate-kvonce.mjs" --input "${PROJECTION_PATH}" --output "
 if command -v jq >/dev/null 2>&1; then
   VALID=$(jq -r '.valid' "${VALIDATION_PATH}" 2>/dev/null || echo unknown)
 else
-  VALID=$(node - "${VALIDATION_PATH}" <<'NODE'
-import fs from "node:fs";
-const file = process.argv[2];
-try {
-  const json = JSON.parse(fs.readFileSync(file, "utf8"));
-  if (json.valid === true) {
-    console.log("true");
-  } else if (json.valid === false) {
-    console.log("false");
-  } else {
-    console.log("unknown");
-  }
-} catch (error) {
-  console.log("unknown");
-}
-NODE
-)
+  VALID=$(node "${SCRIPT_DIR}/read-validation-field.mjs" "${VALIDATION_PATH}" valid || echo unknown)
 fi
 
 if [[ "${VALID}" != "true" ]]; then
