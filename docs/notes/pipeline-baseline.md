@@ -60,6 +60,13 @@
 - キャッシュ: `.pnpm-store`（既存の actions/cache を再利用）
 - 既知の課題: Quality Gate ポリシー未整備、Makefile 欠落、mutation survivors（Issue #1016）
 
+### Minimal Pipeline Workflow（実装済み）
+- `.github/workflows/minimal-pipeline.yml` を作成（manual dispatch 専用）。
+  - CodeX quickstart（品質ゲートスキップ）、EnhancedStateManager ユニットテスト、verify-lite（lint サマリ出力）、KvOnce TLC を順次実行。
+  - `VERIFY_LITE_ENFORCE_LINT` を入力で切り替え可能。
+  - `scripts/ci/verify-lite-lint-summary.mjs` により lint 結果を `verify-lite-summary.json` として保存し、Step Summary へ上位ルールを表示。
+- 今後: 差分 mutation quick の実行や生成アーティファクト比較を統合予定。
+
 ## 参考ログ
 - `logs/run-unit-20251004.txt`: Podman 実行ログ（`scripts/docker/run-unit.sh`）※未保存
 - `reports/mutation/mutation.json|html`: 直近の mutation quick 結果 (score 59.74%)
