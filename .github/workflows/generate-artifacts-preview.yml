@@ -47,7 +47,12 @@ jobs:
       - name: Install dependencies
         run: |
           pnpm fetch --prefer-offline
-          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile --prefer-offline
+          if pnpm install --frozen-lockfile --config.confirm=false; then
+            echo "pnpm install succeeded with --frozen-lockfile"
+          else
+            echo "pnpm install --frozen-lockfile failed, falling back to --no-frozen-lockfile"
+            pnpm install --no-frozen-lockfile --prefer-offline --config.confirm=false
+          fi
       - name: Preview generated artifacts
         run: pnpm run generate:artifacts:preview
       - name: Summarize diff
