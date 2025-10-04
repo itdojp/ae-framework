@@ -13,6 +13,9 @@
 
 ### Latest PR / Follow-ups
 - Podman/WSL ランタイム最適化: PR [#1014](https://github.com/itdojp/ae-framework/pull/1014)
+- Spec generate/model gating: PR [#1023](https://github.com/itdojp/ae-framework/pull/1023) — `.github/workflows/spec-generate-model.yml` introduces drift fail-fast + KvOnce property run
+- Spec trace conformance gating: PR [#1024](https://github.com/itdojp/ae-framework/pull/1024) — adds KvOnce trace validation job + NDJSON schema docs
+- OTLP trace conversion: PR (TBD) — adds `scripts/trace/convert-otlp-kvonce.mjs` and workflow integration for OTLP logs
 - ネイティブ compose 検証: Issue [#1015](https://github.com/itdojp/ae-framework/issues/1015)
 - Mutation survivor 削減タスク: Issue [#1016](https://github.com/itdojp/ae-framework/issues/1016)
 
@@ -57,3 +60,5 @@
 - [ ] Week3 着手条件（Docker runtime, tinypool 安定化, Mutation 整理）の完了確認
 - [ ] Week3 で実施するフルパイプライン実行手順のドラフト作成
 - [ ] Issue コメントへ最新進捗と次アクションを反映（オンライン復旧後）
+
+- Spec trace conformance gating: PR [#1024](https://github.com/itdojp/ae-framework/pull/1024) — adds KvOnce trace validation job + NDJSON schema docs
