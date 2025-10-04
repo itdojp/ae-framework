@@ -37,7 +37,14 @@
    ```
    - `podman compose -f` 非対応環境では `podman-compose` に自動フォールバック。
 
-5. **Mutation quick（任意）**
+5. **KvOnce TLA+ PoC の確認（任意）**
+   ```bash
+   pnpm run spec:kv-once:tlc
+   pnpm run spec:kv-once:apalache   # Apalache が導入済みの場合
+   ```
+   - 実行結果は `hermetic-reports/formal/kvonce-*-summary.json` に保存されます（minimal pipeline でも取得）。
+
+6. **Mutation quick（任意）**
    ```bash
    STRYKER_TIME_LIMIT=480 ./scripts/mutation/run-scoped.sh --quick -m src/utils/enhanced-state-manager.ts -c configs/stryker.enhanced.config.js
    ```

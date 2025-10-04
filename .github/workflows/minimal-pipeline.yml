@@ -74,11 +74,31 @@ jobs:
             echo "No lint summary generated" >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: KvOnce TLC (informational)
-        run: pnpm run spec:kv-once:tlc
-      - name: Upload formal summary
+        run: |
+          pnpm run spec:kv-once:tlc
+          if [ -f hermetic-reports/formal/tla-summary.json ]; then
+            cp hermetic-reports/formal/tla-summary.json hermetic-reports/formal/kvonce-tlc-summary.json
+          fi
+      - name: KvOnce Apalache (informational)
+        run: |
+          pnpm run spec:kv-once:apalache
+          if [ -f hermetic-reports/formal/tla-summary.json ]; then
+            cp hermetic-reports/formal/tla-summary.json hermetic-reports/formal/kvonce-apalache-summary.json
+            rm -f hermetic-reports/formal/tla-summary.json
+          fi
+      - name: Upload formal summary (legacy path)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: formal-tla-summary
           path: hermetic-reports/formal/tla-summary.json
+          if-no-files-found: ignore
+      - name: Upload KvOnce summaries
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: formal-kvonce-summaries
+          path: |
+            hermetic-reports/formal/kvonce-tlc-summary.json
+            hermetic-reports/formal/kvonce-apalache-summary.json
           if-no-files-found: ignore

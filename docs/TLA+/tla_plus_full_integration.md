@@ -184,6 +184,7 @@ THEOREM Safety == Spec => []NoOverwrite
 - KvOnce 抽象/準抽象/実装仕様と Refinement Mapping を追加（PR #1020）
 - TLC/Apalache 用 cfg と `pnpm run spec:kv-once:tlc` / `spec:kv-once:apalache` スクリプトを整備し、ツール未導入時は graceful skip
 - `.github/workflows/spec-check.yml` を整備し、KvOnce を CI でチェック（ツール未導入環境でもスキップ扱い）
+- `docs/TLA+/kv-once-poc.md` に PoC の背景と実行方法をまとめた
 
 ### 継続中
 - 自動生成ワークフロー（BDD/OpenAPI/モニタ）の差分チェック
