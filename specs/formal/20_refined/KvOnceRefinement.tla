@@ -14,6 +14,7 @@ Init ==
 Put(k, v) ==
   /\ k \in Keys
   /\ v \in Values
+  /\ retries[k] < MAX_RETRIES
   /\ ~store[k].written
   /\ store' = [store EXCEPT ![k] = [written |-> TRUE, val |-> v]]
   /\ retries' = retries

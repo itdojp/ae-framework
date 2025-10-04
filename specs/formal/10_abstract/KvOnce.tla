@@ -1,12 +1,13 @@
 --------------------------- MODULE KvOnce ---------------------------
-EXTENDS Naturals
+EXTENDS Naturals, Sequences
 
 CONSTANTS Keys, Values, NULL
-VARIABLES store
 
 ASSUME NULL \notin Values
+VARIABLES store
 
-TypeInvariant == store \in [Keys -> [written: BOOLEAN, val: Values \cup {NULL}]]
+TypeInvariant ==
+  store \in [Keys -> [written: BOOLEAN, val: Values \cup {NULL}]]
 
 Init == store = [k \in Keys |-> [written |-> FALSE, val |-> NULL]]
 
