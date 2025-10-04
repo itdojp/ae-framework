@@ -453,6 +453,14 @@ export class AutoFixEngine {
     return Math.min(occurrences / total, 0.9);
   }
 
+  private calculateSuccessRate(appliedFixes: AppliedFix[]): number {
+    if (appliedFixes.length === 0) {
+      return 0;
+    }
+    const successful = appliedFixes.filter(f => f.success).length;
+    return successful / appliedFixes.length;
+  }
+
   private generateSummary(
     failures: FailureArtifact[],
     appliedFixes: AppliedFix[],
@@ -506,7 +514,7 @@ export class AutoFixEngine {
     }
     
     // Success rate recommendations
-    const successRate = appliedFixes.length === 0 ? 0 : appliedFixes.filter(f => f.success).length / appliedFixes.length;
+    const successRate = this.calculateSuccessRate(appliedFixes);
     if (appliedFixes.length > 0 && successRate < 0.8) {
       recommendations.push(
         'Low fix success rate. Consider manual review of failed fixes.'
