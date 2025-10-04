@@ -66,7 +66,7 @@ function toTimestamp(nanoString) {
     const max = BigInt(Number.MAX_SAFE_INTEGER);
     const min = BigInt(Number.MIN_SAFE_INTEGER);
     if (millisBigInt > max || millisBigInt < min) {
-      throw new Error("Timestamp value is outside the safe integer range for JavaScript Number type.");
+      return new Date().toISOString();
     }
     const millis = Number(millisBigInt);
     return new Date(millis).toISOString();

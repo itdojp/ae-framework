@@ -43,7 +43,7 @@ jobs:
       - name: Install dependencies
         run: |
           pnpm fetch --prefer-offline
-          pnpm install --frozen-lockfile
+          pnpm install --frozen-lockfile --config.confirm=false
       - name: Generate artifacts preview
         run: pnpm run generate:artifacts:preview
       - name: Check diff summary
@@ -128,7 +128,7 @@ jobs:
       - name: Install dependencies
         run: |
           pnpm fetch --prefer-offline
-          pnpm install --frozen-lockfile
+          pnpm install --frozen-lockfile --config.confirm=false
       - name: Run KvOnce property suite
         run: pnpm vitest run tests/property/kvonce.safety.property.test.ts --reporter dot
       - name: Summarize model-based run
@@ -149,9 +149,6 @@ jobs:
 
   trace-conformance:
     runs-on: ubuntu-latest
-    needs:
-      - generate-artifacts
-      - model-based-tests
     env:
       AE_HOST_STORE: ${{ github.workspace }}/.pnpm-store
       PNPM_STORE_PATH: ${{ github.workspace }}/.pnpm-store
@@ -176,7 +173,7 @@ jobs:
       - name: Install dependencies
         run: |
           pnpm fetch --prefer-offline
-          pnpm install --frozen-lockfile
+          pnpm install --frozen-lockfile --config.confirm=false
       - name: Collect KvOnce OTLP trace sample
         run: node scripts/trace/collect-sample-otlp.mjs
         env:
