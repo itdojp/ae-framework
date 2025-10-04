@@ -11,6 +11,7 @@
 1. **Phase A (verify-lite hardening)**
    - [ ] `src/analysis/dependency-analyzer.ts`: async メソッドを sync 化 or `Promise.resolve()` 化、`any` の明示的型付け。
    - [ ] `src/cegis/auto-fix-engine.ts`: activity log / pattern 集計部を型定義化し、`require-await` を解消。
+     - [x] `analyzeFailurePatterns` / `generateRecommendations` を同期化し、`RepairAction` 型を適用。
    - [ ] `src/utils/quality-policy-loader.ts`: Policy JSON 型を整備、unsafe assignment を解消。
 2. **Phase B (CI gating)**
    - [ ] verify-lite lint を `VERIFY_LITE_ENFORCE_LINT=1` で定期実行し、総件数を Step Summary に表示。
