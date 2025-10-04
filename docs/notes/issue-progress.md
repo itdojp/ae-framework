@@ -18,6 +18,7 @@
 - OTLP trace conversion: PR [#1025](https://github.com/itdojp/ae-framework/pull/1025) — OTLP→NDJSON converter + collector integration
 - OTLP mock producer: PR [#1027](https://github.com/itdojp/ae-framework/pull/1027) — Fastify mock OTLP spans wired into trace-conformance
 - OTLP payload override: PR [#1028](https://github.com/itdojp/ae-framework/pull/1028) — `prepare-otlp-trace` script and external payload handling
+- Trace conformance summary: PR [#1029](https://github.com/itdojp/ae-framework/pull/1029) — adds `trace-conformance` job summary/PRコメントと `run-kvonce-conformance.sh`
 - ネイティブ compose 検証: Issue [#1015](https://github.com/itdojp/ae-framework/issues/1015)
 - Mutation survivor 削減タスク: Issue [#1016](https://github.com/itdojp/ae-framework/issues/1016)
 

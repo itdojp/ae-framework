@@ -7,18 +7,35 @@ Issue: #1011 / #1012
 - 実サービスの OTLP Exporter から収集したログを CI に取り込むため、Collector 構成とシークレット管理・アーティファクト受け渡し設計が必要。
 
 ## 想定アーキテクチャ
-1. **Agent / Application** — OTLP HTTP/GRPC exporter を用いて Collector へ送信。
-2. **Collector** — フィルタリング後、KVONCE 専用 sink (S3/GCS/GitHub Artifacts 等) に保存。
-3. **CI (trace-conformance job)** — `KVONCE_OTLP_PAYLOAD` に指定した payload をダウンロードし、`prepare-otlp-trace.mjs` で展開、検証を実施。
+1. **Agent / Application** — OTLP HTTP/GRPC exporter で Collector に送信。Exporter 側では `kvonce.event.*` 属性を必ず付与する。
+2. **Collector** — 受信した span を KvOnce 用の pipeline にルーティングし、フィルタリング後に専用ストレージへ保存。
+3. **CI (trace-conformance job)** — `KVONCE_OTLP_PAYLOAD` で指定した payload をダウンロードし `prepare-otlp-trace.mjs` → `run-kvonce-conformance.sh` で projection / validation を実行。
 
-## TODO
-- [ ] Collector 出力先の決定（S3/GCS/Artifacts）。
-- [ ] 認証方式（GitHub OIDC / PAT / Pre-signed URL）。
-- [ ] payload サイズ・フォーマット・保持期間の決定。
-- [ ] `scripts/trace/fetch-otlp-payload.mjs` の設計（ダウンロードと検証）。
-- [ ] プライバシー/PII マスキングポリシー策定。
+## 方針と TODO
+
+### Collector 出力先
+- [x] **Stage 0 (現状)**: GitHub Actions でサンプル/モック payload を生成し `run-kvonce-conformance.sh` に直接渡す。
+- [ ] **Stage 1 (PoC)**: GitHub Actions Artifacts に Collector からアップロード → `actions/download-artifact` で取得。
+- [ ] **Stage 2 (本番)**: S3 (又は GCS) バケットに保存し、CI では presigned URL または OIDC 経由で取得。
+
+### 認証・シークレット管理
+- [ ] GitHub OIDC → AWS STS AssumeRole / GCP Workload Identity を採用し、個人 PAT に依存しない構成を提案。
+- [ ] 失敗時フォールバックとして presigned URL / GitHub Artifact token を文書化。
+
+### payload 仕様
+- [x] フォーマット: OTLP JSON（`ResourceSpans`）→ `run-kvonce-conformance.sh` で NDJSON に変換。
+- [ ] サイズ上限: 10 MB 以下を推奨。Collector 側でバッチ圧縮 (gzip) を行い、CI で展開するフローを設計。
+- [ ] 保持期間: Stage1 は 14 日（Artifacts の既定値）、Stage2 は S3 Lifecycle (30 日) を想定。
+
+### ダウンロードコマンド
+- [ ] `scripts/trace/fetch-otlp-payload.mjs` を追加し、`KVONCE_OTLP_PAYLOAD_URL` が指定された場合に HTTP/S3 から取得できるようにする。
+- [ ] 取得後に SHA256 を記録し、`hermetic-reports/trace/kvonce-payload-metadata.json` を出力。
+
+### プライバシー / PII
+- [ ] Collector で `kvonce.event.value` などに含まれるユーザデータをフィルタ/マスクする正規化パイプラインを整備。
+- [ ] マスキング方針を `docs/policies/trace-governance.md` (新規) にまとめ、Issue #1011 Step5 へリンク。
 
 ## 次ステップ
-1. PoC: Collector → GitHub Artifacts アップロード → trace-conformance job がダウンロードして検証。
-2. RFC 作成: 実環境への導入手順、Secrets 管理、fail-safe 方針。
-3. 実装ロードマップを Issue #1011 Step3 / Issue #1012 Phase C に反映。
+1. PoC: Collector → GitHub Artifacts へアップロード → `trace-conformance` ジョブで `actions/download-artifact` を利用して検証。
+2. RFC 作成: 実環境導入フロー（Collector 設計、マスキング、Secrets 運用、失敗時ハンドリング）を 2025-10-W2 を目標にまとめる。
+3. ロードマップ: 本ドキュメントの TODO を Issue #1011 Step3 と Issue #1012 Phase C のチェックリストに取り込み、フェーズ移行時に進捗を同期する。

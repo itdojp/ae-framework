@@ -31,8 +31,8 @@
 - `scripts/trace/run-kvonce-conformance.sh` — NDJSON/OTLP を入力に Projection → Validation を実施し、`hermetic-reports/trace/kvonce-validation.json` を出力。
 
 ## CI への組み込み
-- `.github/workflows/spec-generate-model.yml` の trace-conformance ジョブが `prepare-otlp-trace.mjs` → `run-kvonce-conformance.sh` のパイプラインを実行し、Step Summary へ結果を出力。
-- 生成物 (`collected-kvonce-otlp.json`, `kvonce-projection.json`, `kvonce-validation.json`) は `kvonce-trace` アーティファクトとして保存。
+- `.github/workflows/spec-generate-model.yml` の `trace-conformance` ジョブが `prepare-otlp-trace.mjs` → `run-kvonce-conformance.sh` のパイプラインを実行し、Step Summary および PR コメントに結果を出力。
+- 生成物 (`collected-kvonce-otlp.json`, `kvonce-events.ndjson`, `kvonce-projection.json`, `kvonce-validation.json`) は `kvonce-trace` アーティファクトとして保存。
 
 ## 今後の拡張
 - `docs/trace/otlp-collector-plan.md` に従い、実サービス Collector からのログダウンロードとシークレット管理を整備。

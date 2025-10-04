@@ -43,11 +43,12 @@
   - サンプル: `samples/trace/kvonce-sample.ndjson` → projector → `kvonce-projection.json` → validator → `kvonce-validation.json` で pipeline を再現可能。
 - 目的: 実装ログを Projector/Validator に通し、仕様と照合。
 - 現状: 実サービスのログ取り込みを自動化する仕組みが未整備。CI ではサンプル/モック/外部 payload を選択可能。
+- `.github/workflows/spec-generate-model.yml` に `trace-conformance` ジョブを追加し、Step Summary と PR コメントで `kvonce-validation.json` の結果を共有。
 - TODO
   - [x] トレーススキーマ案（NDJSON）を `docs/trace/kvonce-trace-schema.md` として整理し、Issue #1011 にリンク
   - [x] Projector / Validator を整備し、`scripts/trace/run-kvonce-conformance.sh` で利用
   - [x] OTLP → NDJSON 変換（`scripts/trace/mock-otlp-service.mjs`, `scripts/trace/prepare-otlp-trace.mjs`, `scripts/trace/convert-otlp-kvonce.mjs`）を CI に統合
-  - [ ] 実サービスの OTLP エクスポータからログを自動収集し、CI に取り込む設計をまとめる
+  - [ ] 実サービスの OTLP エクスポータからログを自動収集し、CI に取り込む設計をまとめる（`docs/trace/otlp-collector-plan.md` の TODO に展開）
 
 ### 4. Report / Dashboard
 - 最終ステップで `spec-check` / `generate-artifacts` / `model-based-tests` / `conformance` の結果を集約
