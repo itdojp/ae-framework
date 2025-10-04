@@ -7,6 +7,7 @@
 ## 構成案
 
 ### 1. generate-artifacts ジョブ
+- プロトタイプ: `pnpm run generate:artifacts:preview` と `.github/workflows/generate-artifacts-preview.yml` で quickstart を実行し、`hermetic-reports/spec/generate-artifacts-diff.json` に差分サマリを出力。
 - 入力: `specs/formal/**`, `templates/**`, `ae-framework.yml`
 - 出力: `tests/api/generated/**`, `artifacts/formal/**`, `artifacts/spec/**`
 - 残課題
@@ -23,6 +24,7 @@
 - 残課題: 生成ファイルの対象絞り込み、モックデータ提供方法
 
 ### 3. conformance ジョブ
+- プロトタイプ: `scripts/trace/projector-kvonce.mjs` と `scripts/trace/validate-kvonce.mjs` を追加（NDJSON ログ→集計→簡易検証）。今後 Projector/Validator を本実装する際の土台とする。
 - 目的: 実装ログを Projector/Validator に通し、仕様と照合。
 - 現状: Projector / Validator が未整備。先にトレーススキーマを決定する必要あり。
 - TODO

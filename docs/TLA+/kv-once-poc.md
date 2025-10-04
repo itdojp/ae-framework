@@ -34,6 +34,7 @@ pnpm run spec:kv-once:apalache
 - 今後トレース検証を導入する際は、このイベント列を OTLP/NDJSON にマッピングして Projector → Validator に渡す想定です。
 
 ## 既知の制約 / TODO
+- Projector / Validator の試作として `scripts/trace/projector-kvonce.mjs` と `scripts/trace/validate-kvonce.mjs` を用意しました（NDJSON ログ → 集計 → 簡易検証）。本実装では Issue #1011 ステップ3で拡張予定。
 - Apalache 検証は最大 60 秒タイムアウトに設定しており、大きな状態空間を扱うには cfg の調整が必要です。
 - kv-once PoC と minimal pipeline の成果物（formal summary など）の突合はまだ行っていません。Issue #1011 ステップ2で generate/conformance 連携に着手予定です。
 - Issue #1012 Phase C で、後続フェーズに回す具体的なタスク（生成アーティファクト差分、トレーサ、ダッシュボードなど）の棚卸しを行います。

@@ -1,0 +1,48 @@
+name: Generate Artifacts Preview
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  id-token: none
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    env:
+      AE_HOST_STORE: ${{ github.workspace }}/.pnpm-store
+      PNPM_STORE_PATH: ${{ github.workspace }}/.pnpm-store
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare pnpm
+        uses: ./.github/actions/setup-pnpm
+      - name: Ensure pnpm cache dir
+        run: mkdir -p "$AE_HOST_STORE"
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.AE_HOST_STORE }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+      - name: Enable corepack
+        run: corepack enable
+      - name: Install dependencies
+        run: |
+          pnpm fetch --prefer-offline
+          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile --prefer-offline
+      - name: Preview generated artifacts
+        run: pnpm run generate:artifacts:preview
+      - name: Upload preview report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: generate-artifacts-preview
+          path: hermetic-reports/spec/generate-artifacts-diff.json
+          if-no-files-found: error

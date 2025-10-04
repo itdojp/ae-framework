@@ -358,7 +358,7 @@ export class DependencyAnalyzer extends EventEmitter {
     });
 
     // Convert to our internal format
-    const nodes: DependencyNode[] = dependencyData.nodes.map(node => ({
+    const nodes: DependencyNode[] = dependencyData.nodes.map((node: DependencyNode) => ({
         id: node.id,
         name: this.extractFileName(node.path),
         type: this.inferNodeType(node.path),

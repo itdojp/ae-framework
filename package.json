@@ -149,8 +149,8 @@
     "verify:server": "tsx src/mcp-server/verify-server.ts",
     "verify:full": "tsx -e \"import {VerifyAgent} from './src/agents/verify-agent.js'; const agent = new VerifyAgent(); console.log('Verify Agent initialized')\"",
     "verify:tests": "npm run test && npm run pbt && npm run bdd",
-  "verify:quality": "npm run lint && npm run build",
-  "verify:lite": "./scripts/ci/verify-lite.sh",
+    "verify:quality": "npm run lint && npm run build",
+    "verify:lite": "./scripts/ci/verify-lite.sh",
     "verify:security": "npm audit --audit-level moderate",
     "security:test-headers": "tsx src/cli/index.ts security test-headers",
     "security:check-headers": "tsx src/cli/index.ts security check-headers",
@@ -299,20 +299,16 @@
     "test:performance": "vitest run --config configs/vitest.optimized.config.ts --reporter=verbose --run --coverage=false",
     "test:flake-detection": "vitest run --config configs/vitest.optimized.config.ts --retry=5 --reporter=json",
     "test:property": "node scripts/testing/property-harness.mjs",
-    "test:property:focus": "node scripts/testing/property-harness.mjs --focus=$TRACE_ID"
-    ,
-    "bdd:lint": "node scripts/bdd/lint.mjs"
-    ,
-    "bdd:suggest": "node scripts/bdd/ltl-suggest.mjs"
-    ,
+    "test:property:focus": "node scripts/testing/property-harness.mjs --focus=$TRACE_ID",
+    "bdd:lint": "node scripts/bdd/lint.mjs",
+    "bdd:suggest": "node scripts/bdd/ltl-suggest.mjs",
     "test:replay": "node scripts/testing/replay-runner.mjs",
     "test:replay:focus": "node scripts/testing/replay-runner.mjs --focus=$TRACE_ID",
     "test:replay:strict": "REPLAY_ONHAND_MIN=0 REPLAY_DISABLE= node scripts/testing/replay-runner.mjs",
-    "test:replay:relaxed": "REPLAY_DISABLE=allocated_le_onhand node scripts/testing/replay-runner.mjs"
-    ,
-    "artifacts:aggregate": "node scripts/adapters/aggregate-artifacts.mjs"
-    ,
-    "lint:actions": "bash scripts/ci/actionlint.sh"
+    "test:replay:relaxed": "REPLAY_DISABLE=allocated_le_onhand node scripts/testing/replay-runner.mjs",
+    "artifacts:aggregate": "node scripts/adapters/aggregate-artifacts.mjs",
+    "lint:actions": "bash scripts/ci/actionlint.sh",
+    "generate:artifacts:preview": "bash scripts/ci/run-generate-artifacts-preview.sh"
   },
   "dependencies": {
     "@ae-framework/spec-compiler": "file:./packages/spec-compiler",
