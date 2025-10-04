@@ -1,0 +1,29 @@
+{
+  "name": "KvOnce",
+  "description": "Single-write key-value store refinement mapping",
+  "modules": {
+    "abstract": "KvOnce",
+    "refined": "KvOnceRefinement",
+    "implementation": "KvOnceImpl"
+  },
+  "stateMapping": {
+    "abstract": {
+      "store": "store"
+    },
+    "implementation": {
+      "store": "store",
+      "retries": "retries",
+      "events": "events"
+    }
+  },
+  "invariants": [
+    "NoOverwrite",
+    "RetryBounded"
+  ],
+  "trace": {
+    "eventField": "type",
+    "successEvent": "success",
+    "retryEvent": "retry",
+    "failureEvent": "failure"
+  }
+}
