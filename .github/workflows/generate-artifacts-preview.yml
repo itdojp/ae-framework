@@ -73,7 +73,7 @@ jobs:
               } catch (err) {
                 console.log(`Failed to read diff summary: ${err.message}`);
               }
-NODE
+            NODE
           else
             echo 'No diff summary generated' >> "$GITHUB_STEP_SUMMARY"
           fi
