@@ -40,35 +40,35 @@ function buildProjection(events) {
   for (const event of events) {
     const key = event.key ?? 'unknown';
     if (!perKey.has(key)) {
-    perKey.set(key, {
-      successCount: 0,
-      retries: 0,
-      failureReasons: [],
-      retryContexts: [],
-      successContexts: [],
-      failureContexts: [],
-    });
-  }
-  const entry = perKey.get(key);
-  if (event.type === 'success') {
-    entry.successCount += 1;
-    entry.value = event.value ?? null;
-    if (event.context !== undefined) {
-      entry.successContexts.push(event.context);
+      perKey.set(key, {
+        successCount: 0,
+        retries: 0,
+        failureReasons: [],
+        retryContexts: [],
+        successContexts: [],
+        failureContexts: [],
+      });
     }
-  }
-  if (event.type === 'retry') {
-    entry.retries += 1;
-    if (event.context !== undefined) {
-      entry.retryContexts.push(event.context);
+    const entry = perKey.get(key);
+    if (event.type === 'success') {
+      entry.successCount += 1;
+      entry.value = event.value ?? null;
+      if (event.context !== undefined) {
+        entry.successContexts.push(event.context);
+      }
     }
-  }
-  if (event.type === 'failure') {
-    entry.failureReasons.push(event.reason ?? 'unknown');
-    if (event.context !== undefined) {
-      entry.failureContexts.push(event.context);
+    if (event.type === 'retry') {
+      entry.retries += 1;
+      if (event.context !== undefined) {
+        entry.retryContexts.push(event.context);
+      }
     }
-  }
+    if (event.type === 'failure') {
+      entry.failureReasons.push(event.reason ?? 'unknown');
+      if (event.context !== undefined) {
+        entry.failureContexts.push(event.context);
+      }
+    }
   }
 
   return {

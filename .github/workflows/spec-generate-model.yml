@@ -6,6 +6,12 @@ on:
       kvonce_otlp_payload:
         description: 'Path to an OTLP payload file to use for KvOnce trace conformance (optional)'
         required: false
+      kvonce_payload_artifact:
+        description: 'Collector artifact name that contains kvonce-otlp-payload.json'
+        required: false
+      kvonce_otlp_payload_url:
+        description: 'HTTP/S3 URL to download kvonce OTLP payload JSON'
+        required: false
   pull_request:
     paths:
       - 'specs/**'
@@ -160,6 +166,8 @@ jobs:
       AE_HOST_STORE: ${{ github.workspace }}/.pnpm-store
       PNPM_STORE_PATH: ${{ github.workspace }}/.pnpm-store
       KVONCE_OTLP_PAYLOAD: ${{ github.event.inputs.kvonce_otlp_payload || '' }}
+      KVONCE_PAYLOAD_ARTIFACT: ${{ github.event.inputs.kvonce_payload_artifact || '' }}
+      KVONCE_OTLP_PAYLOAD_URL: ${{ github.event.inputs.kvonce_otlp_payload_url || '' }}
     steps:
       - uses: actions/checkout@v4
       - name: Prepare pnpm
@@ -183,9 +191,38 @@ jobs:
           pnpm fetch --prefer-offline
           pnpm install --frozen-lockfile --config.confirm=false \
             || pnpm install --no-frozen-lockfile --prefer-offline --config.confirm=false
+      - name: Download collector payload artifact
+        if: ${{ env.KVONCE_PAYLOAD_ARTIFACT != '' }}
+        id: kvonce_artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.KVONCE_PAYLOAD_ARTIFACT }}
+          path: hermetic-reports/trace/source
+      - name: Fetch OTLP payload
+        run: |
+          set -euo pipefail
+          mkdir -p hermetic-reports/trace
+          ARTIFACT_DIR="${{ steps.kvonce_artifact.outputs.download-path }}"
+          URL_INPUT="${{ env.KVONCE_OTLP_PAYLOAD_URL }}"
+          TARGET="hermetic-reports/trace/collected-kvonce-otlp.json"
+          EXTRA_ARGS=()
+          if [[ -n "$ARTIFACT_DIR" ]]; then
+            EXTRA_ARGS+=("--artifact-dir" "$ARTIFACT_DIR")
+          fi
+          if [[ -n "$URL_INPUT" ]]; then
+            EXTRA_ARGS+=("--url" "$URL_INPUT")
+          fi
+          if [[ -n "${KVONCE_OTLP_PAYLOAD}" ]]; then
+            EXTRA_ARGS+=("--explicit" "${KVONCE_OTLP_PAYLOAD}")
+          fi
+          node ./scripts/trace/fetch-otlp-payload.mjs --target "$TARGET" "${EXTRA_ARGS[@]}"
+      - name: Export payload path
+        run: echo "KVONCE_OTLP_PAYLOAD=$(pwd)/hermetic-reports/trace/collected-kvonce-otlp.json" >> "$GITHUB_ENV"
       - name: Run KvOnce trace conformance pipeline (OTLP)
         run: |
           bash ./scripts/trace/run-kvonce-conformance.sh \
+            --input hermetic-reports/trace/collected-kvonce-otlp.json \
+            --format otlp \
             --output-dir hermetic-reports/trace/otlp
       - name: Run KvOnce trace conformance pipeline (NDJSON sample)
         run: |
@@ -208,6 +245,18 @@ jobs:
           const summaryPath = process.env.GITHUB_STEP_SUMMARY;
           const outputs = {};
           const lines = ['## KvOnce Trace Validation'];
+
+          const metadataPath = path.join('hermetic-reports', 'trace', 'kvonce-payload-metadata.json');
+          if (fs.existsSync(metadataPath)) {
+            try {
+              const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+              lines.push(`- payload source: ${metadata.sourceType ?? 'unknown'} (${metadata.sourceDetail ?? 'n/a'})`);
+              lines.push(`- sha256: ${metadata.sha256 ?? 'unknown'}`);
+              lines.push(`- size: ${metadata.sizeBytes ?? 'n/a'} bytes`);
+            } catch (error) {
+              lines.push('- payload metadata: ⚠️ failed to parse');
+            }
+          }
 
           for (const item of cases) {
             const reportPath = path.join(item.dir, 'kvonce-validation.json');
@@ -255,6 +304,7 @@ jobs:
           name: kvonce-trace-results
           path: |
             hermetic-reports/trace/collected-kvonce-otlp.json
+            hermetic-reports/trace/kvonce-payload-metadata.json
             hermetic-reports/trace/otlp/kvonce-events.ndjson
             hermetic-reports/trace/otlp/kvonce-projection.json
             hermetic-reports/trace/otlp/kvonce-validation.json
@@ -308,6 +358,7 @@ jobs:
             } else {
               await github.rest.issues.createComment({ owner, repo, issue_number: number, body });
             }
+
       - name: Publish trace validation check
         if: ${{ github.event_name == 'pull_request' }}
         uses: actions/github-script@v7
@@ -339,7 +390,7 @@ jobs:
 
             const summaryLines = [
               `OTLP: ${validOtlp} (issues: ${issuesOtlp})`,
-              `NDJSON: ${validNdjson} (issues: ${issuesNdjson})`
+              `NDJSON: ${validNdjson} (issues: ${issuesNdjson})`,
             ];
 
             await github.rest.checks.create({
@@ -351,6 +402,6 @@ jobs:
               conclusion,
               output: {
                 title: 'KvOnce Trace Validation',
-                summary: summaryLines.join('\n')
-              }
+                summary: summaryLines.join('\n'),
+              },
             });
