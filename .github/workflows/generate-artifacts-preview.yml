@@ -39,13 +39,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'pnpm'
       - name: Enable corepack
         run: corepack enable
       - name: Install dependencies
         run: |
           pnpm fetch --prefer-offline
-          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile --prefer-offline
+          pnpm install --frozen-lockfile
       - name: Preview generated artifacts
         run: pnpm run generate:artifacts:preview
       - name: Summarize diff
@@ -114,15 +113,14 @@ NODE
                 }
               }
             }
-            const body = lines.join('
-');
+            const body = lines.join("\n");
             const { data: existing } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number
             });
             const marker = '<!-- generate-artifacts-preview -->';
-            const previous = existing.find((c) => c.user.login === context.actor && c.body.includes(marker));
+            const previous = existing.find((c) => c.user.login === 'github-actions[bot]' && c.body.includes(marker));
             if (previous) {
               await github.rest.issues.updateComment({
                 owner: context.repo.owner,
