@@ -45,6 +45,8 @@ jobs:
         run: pnpm run codex:quickstart
       - name: Unit tests (EnhancedStateManager focus)
         run: pnpm vitest run tests/unit/utils/enhanced-state-manager.test.ts tests/unit/utils/enhanced-state-manager.rollback.test.ts --reporter dot
+      - name: Property tests (KvOnce PoC)
+        run: pnpm vitest run tests/property/kvonce.safety.property.test.ts --reporter dot
       - name: Verify Lite (non-enforced lint)
         if: ${{ github.event.inputs.enforce_lint != 'true' }}
         run: |
