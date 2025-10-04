@@ -31,39 +31,6 @@ function readOtlp(file) {
   }
 }
 
-function toAttributeValue(value) {
-  if (typeof value === "string") {
-    return { stringValue: value };
-  }
-  if (typeof value === "number") {
-    return Number.isInteger(value)
-      ? { intValue: String(value) }
-      : { doubleValue: value };
-  }
-  if (typeof value === "boolean") {
-    return { boolValue: value };
-  }
-  if (Array.isArray(value)) {
-    return {
-      arrayValue: {
-        values: value.map((v) => ({ stringValue: String(v) })),
-      },
-    };
-  }
-  if (value && typeof value === "object") {
-    return { stringValue: JSON.stringify(value) };
-  }
-  return { stringValue: String(value) };
-}
-
-function attrsToRecord(attributes = []) {
-  const record = {};
-  for (const attr of attributes) {
-    record[attr.key] = toAttributeValue(attr.value);
-  }
-  return record;
-}
-
 function toTimestamp(nanoString) {
   if (!nanoString) return new Date().toISOString();
   try {
@@ -72,7 +39,7 @@ function toTimestamp(nanoString) {
     const max = BigInt(Number.MAX_SAFE_INTEGER);
     const min = BigInt(Number.MIN_SAFE_INTEGER);
     if (millisBigInt > max || millisBigInt < min) {
-      throw new Error("Timestamp value is outside the safe integer range for JavaScript Number type.");
+      return new Date().toISOString();
     }
     const millis = Number(millisBigInt);
     return new Date(millis).toISOString();
