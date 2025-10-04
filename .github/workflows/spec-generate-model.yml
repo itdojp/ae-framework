@@ -256,7 +256,7 @@ jobs:
               console.error(error);
               process.exit(1);
             });
-            NODE
+NODE
           fi
       - name: Export payload path
         run: echo "KVONCE_OTLP_PAYLOAD=$(pwd)/hermetic-reports/trace/collected-kvonce-otlp.json" >> "$GITHUB_ENV"
