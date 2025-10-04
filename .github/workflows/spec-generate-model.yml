@@ -182,7 +182,7 @@ jobs:
           pnpm fetch --prefer-offline
           pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile --prefer-offline
       - name: Run KvOnce trace validation
-        run: bash scripts/trace/run-kvonce-conformance.sh
+        run: bash scripts/trace/run-kvonce-conformance.sh --format otlp --input samples/trace/kvonce-otlp.json
       - name: Summarize trace validation
         if: always()
         run: |

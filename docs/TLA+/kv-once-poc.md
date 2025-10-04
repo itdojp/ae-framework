@@ -46,3 +46,4 @@ pnpm run spec:kv-once:apalache
 - `.github/workflows/minimal-pipeline.yml` — TLC/Apalache を含む最小パイプライン
 - `docs/trace/kvonce-trace-schema.md` — NDJSON トレースのドラフトスキーマと拡張メモ
 - `scripts/trace/run-kvonce-conformance.sh` — Projector / Validator をまとめて実行し、`hermetic-reports/trace/` に結果を出力
+- `samples/trace/kvonce-otlp.json` — OTLP ResourceSpans から NDJSON へ変換するためのサンプル入力
