@@ -95,6 +95,8 @@ function extractEvents(otlp) {
         if (value !== undefined) event.value = value;
         const reason = attrs["kvonce.event.reason"];
         if (reason !== undefined) event.reason = reason;
+        const context = attrs["kvonce.event.context"];
+        if (context !== undefined) event.context = context;
         events.push(event);
       }
     }
@@ -103,6 +105,9 @@ function extractEvents(otlp) {
 }
 
 function toNdjson(events) {
+  if (events.length === 0) {
+    return "";
+  }
   return events.map((event) => JSON.stringify(event)).join("\n") + "\n";
 }
 

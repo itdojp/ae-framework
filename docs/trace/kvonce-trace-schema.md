@@ -15,7 +15,7 @@
 | `context` | object | 任意 | 追加メタデータ |
 
 ## サンプル (NDJSON)
-- `samples/trace/kvonce-sample.ndjson`
+- `samples/trace/kvonce-sample.ndjson`（リポジトリに同梱。`--format ndjson` で即座に投入可能）
 
 ```ndjson
 {"timestamp":"2025-10-04T06:00:00.000Z","type":"success","key":"alpha","value":"v1"}
@@ -28,7 +28,7 @@
 - `scripts/trace/mock-otlp-service.mjs` — Fastify + OpenTelemetry SDK を利用して ResourceSpans を生成。
 - `scripts/trace/prepare-otlp-trace.mjs` — `KVONCE_OTLP_PAYLOAD` で指定された外部ログを優先し、未指定時はサンプルまたはモックサービスで payload を準備。
 - `scripts/trace/convert-otlp-kvonce.mjs` — OTLP JSON を NDJSON に変換。`startTimeUnixNano` を ISO8601 に変換し、安全な整数範囲外は例外扱い。
-- `scripts/trace/run-kvonce-conformance.sh` — NDJSON/OTLP を入力に Projection → Validation を実施し、`hermetic-reports/trace/kvonce-validation.json` を出力。
+- `scripts/trace/run-kvonce-conformance.sh` — NDJSON/OTLP を入力に Projection → Validation を実施し、`hermetic-reports/trace/kvonce-validation.json` を出力。`--input` / `--output-dir` / `--format` を指定して手元ログや外部 Collector 出力を検証できる。
 
 ## CI への組み込み
 - `.github/workflows/spec-generate-model.yml` の `trace-conformance` ジョブが `prepare-otlp-trace.mjs` → `run-kvonce-conformance.sh` のパイプラインを実行し、Step Summary および PR コメントに結果を出力。
