@@ -230,7 +230,28 @@ jobs:
           if [[ -n "${KVONCE_OTLP_PAYLOAD}" ]]; then
             EXTRA_ARGS+=("--explicit" "${KVONCE_OTLP_PAYLOAD}")
           fi
-          node ./scripts/trace/fetch-otlp-payload.mjs --target "$TARGET" "${EXTRA_ARGS[@]}"
+          if [[ -f ./scripts/trace/fetch-otlp-payload.mjs ]]; then
+            node ./scripts/trace/fetch-otlp-payload.mjs --target "$TARGET" "${EXTRA_ARGS[@]}"
+          else
+            echo "[trace] fetch-otlp-payload.mjs not found; using samples/trace/kvonce-otlp.json" >&2
+            cp samples/trace/kvonce-otlp.json "$TARGET"
+            node <<'NODE' "$TARGET"
+            import { promises as fs } from 'node:fs';
+            import { createHash } from 'node:crypto';
+            const target = process.argv[1];
+            const payload = await fs.readFile(target);
+            const hash = createHash('sha256').update(payload).digest('hex');
+            await fs.writeFile(
+              'hermetic-reports/trace/kvonce-payload-metadata.json',
+              JSON.stringify({
+                sourceType: 'sample',
+                sourceDetail: 'samples/trace/kvonce-otlp.json',
+                sha256: hash,
+                sizeBytes: payload.length
+              }, null, 2)
+            );
+            NODE
+          fi
       - name: Export payload path
         run: echo "KVONCE_OTLP_PAYLOAD=$(pwd)/hermetic-reports/trace/collected-kvonce-otlp.json" >> "$GITHUB_ENV"
       - name: Run KvOnce trace conformance pipeline (OTLP)
