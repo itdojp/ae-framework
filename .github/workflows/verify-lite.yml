@@ -34,8 +34,12 @@ jobs:
         run: pnpm -F @ae-framework/spec-compiler -s run build || true
       - name: Type check (strict verify)
         run: pnpm types:check
-      - name: Lint
-        run: pnpm lint || true
+      - name: Lint (capture summary)
+        run: |
+          pnpm lint 2>&1 | tee verify-lite-lint.log || true
+          if [ -f verify-lite-lint.log ]; then
+            node scripts/ci/verify-lite-lint-summary.mjs < verify-lite-lint.log > verify-lite-lint-summary.json
+          fi
       - name: Build
         run: pnpm run build
       - name: BDD lint (non-blocking)
@@ -132,3 +136,36 @@ jobs:
         with:
           name: mutation-survivors-json
           path: reports/mutation/survivors.json
+      - name: Upload lint summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-lite-lint
+          path: |
+            verify-lite-lint.log
+            verify-lite-lint-summary.json
+          if-no-files-found: ignore
+      - name: Append lint summary (top rules)
+        if: always()
+        run: |
+          if [ -f verify-lite-lint-summary.json ]; then
+            echo '## Verify Lite Lint Summary' >> "$GITHUB_STEP_SUMMARY"
+            node <<'NODE' >> "$GITHUB_STEP_SUMMARY"
+const fs = require('fs');
+try {
+  const data = JSON.parse(fs.readFileSync('verify-lite-lint-summary.json', 'utf8'));
+  console.log(`Total issues: ${data.total}`);
+  const top = (data.rules || []).slice(0, 5);
+  if (top.length) {
+    console.log('Top rules:');
+    for (const rule of top) {
+      console.log(`- ${rule.rule} (${rule.count})`);
+    }
+  }
+} catch (err) {
+  console.log('Failed to parse lint summary:', err.message);
+}
+NODE
+          else
+            echo 'Verify Lite lint summary not generated.' >> "$GITHUB_STEP_SUMMARY"
+          fi

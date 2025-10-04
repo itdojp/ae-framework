@@ -1,0 +1,46 @@
+name: Spec Check
+
+on:
+  pull_request:
+    paths:
+      - 'specs/formal/**'
+      - '.github/workflows/spec-check.yml'
+      - 'scripts/formal/verify-tla.mjs'
+      - 'package.json'
+  workflow_dispatch:
+
+jobs:
+  tla:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare pnpm
+        uses: ./.github/actions/setup-pnpm
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+      - name: Run KvOnce TLC (non-blocking)
+        run: |
+          pnpm run spec:kv-once:tlc || true
+      - name: Run KvOnce Apalache (optional)
+        run: |
+          pnpm run spec:kv-once:apalache || true
+      - name: Upload TLA summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tla-summary
+          path: hermetic-reports/formal/tla-summary.json
+          if-no-files-found: ignore
+      - name: Append summary to job log
+        if: always()
+        run: |
+          if [ -f hermetic-reports/formal/tla-summary.json ]; then
+            echo '## KvOnce TLA summary' >> "$GITHUB_STEP_SUMMARY"
+            cat hermetic-reports/formal/tla-summary.json >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'KvOnce TLA summary not generated (tool unavailable).' >> "$GITHUB_STEP_SUMMARY"
+          fi

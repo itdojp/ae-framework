@@ -35,6 +35,7 @@
   - `@typescript-eslint/no-explicit-any` / `no-unsafe-assignment` / `no-unsafe-member-access`（`src/utils/quality-policy-loader.ts` ほか）
   - `no-useless-escape` / `require-await`（`src/utils/token-optimizer.ts`）
 - lint を必須にするには大規模なリファクタが必要。短期的には lint をレポート用途に留め、改善タスクを段階的に切り出す方針が現実的。
+- `.github/workflows/verify-lite.yml` で lint 出力を `verify-lite-lint-summary.json` に集計し、Step Summary に上位ルールを出力する処理を追加済み（artifact も併せて保存）。
 - `scripts/ci/verify-lite-lint-summary.mjs` で出力を集計し、`artifacts/verify-lite-lint-summary.json` に上位ルール（例: `@typescript-eslint/no-unsafe-*` 1371 件、`@typescript-eslint/no-explicit-any` 648 件、`@typescript-eslint/require-await` 209 件）を記録。
 
 ## 既存ドキュメント
