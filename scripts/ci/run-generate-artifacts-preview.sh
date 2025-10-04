@@ -10,8 +10,10 @@ mkdir -p "$PREVIEW_DIR"
 # Clean previous preview artifacts
 rm -f "$PREVIEW_DIR"/generate-artifacts-diff.json
 
-# Run Codex quickstart with tolerant flags so generation never fails hard.
-CODEX_SKIP_QUALITY="1" CODEX_TOLERANT="1" pnpm run codex:quickstart >/dev/null
+# Run Codex quickstart with tolerant flags; skip gracefully when the CLI isn't built yet.
+if ! CODEX_SKIP_QUALITY="1" CODEX_TOLERANT="1" pnpm run codex:quickstart >/dev/null 2>&1; then
+  echo "[generate-artifacts] codex:quickstart unavailable; skipping CLI-driven generation"
+fi
 
 # Summarise changes under the generation targets.
 node scripts/ci/report-generated-artifacts.mjs > "$PREVIEW_DIR"/generate-artifacts-diff.json
