@@ -151,22 +151,7 @@ jobs:
           if [ -f verify-lite-lint-summary.json ]; then
             echo '## Verify Lite Lint Summary' >> "$GITHUB_STEP_SUMMARY"
             # shellcheck disable=SC1009,SC1073,SC1039,SC1072
-            node - <<'NODE' >> "$GITHUB_STEP_SUMMARY"
-const fs = require('fs');
-try {
-  const data = JSON.parse(fs.readFileSync('verify-lite-lint-summary.json', 'utf8'));
-  console.log('Total issues: ' + data.total);
-  const top = (data.rules || []).slice(0, 5);
-  if (top.length) {
-    console.log('Top rules:');
-    for (const rule of top) {
-      console.log('- ' + rule.rule + ' (' + rule.count + ')');
-    }
-  }
-} catch (err) {
-  console.log('Failed to parse lint summary: ' + err.message);
-}
-NODE
+            node -e $'const fs = require("fs");\ntry {\n  const data = JSON.parse(fs.readFileSync("verify-lite-lint-summary.json","utf8"));\n  console.log("Total issues: " + data.total);\n  const top = (data.rules || []).slice(0, 5);\n  if (top.length) {\n    console.log("Top rules:");\n    for (const rule of top) {\n      console.log("- " + rule.rule + " (" + rule.count + ")");\n    }\n  }\n} catch (err) {\n  console.log("Failed to parse lint summary: " + err.message);\n}' >> "$GITHUB_STEP_SUMMARY"
           else
             echo 'Verify Lite lint summary not generated.' >> "$GITHUB_STEP_SUMMARY"
           fi
