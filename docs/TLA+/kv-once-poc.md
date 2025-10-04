@@ -45,3 +45,5 @@ pnpm run spec:kv-once:apalache
 - `tests/property/kvonce.safety.property.test.ts` — PoC の振る舞いを確認する property テスト。minimal pipeline で実行されます。
 - `docs/notes/verify-lite-lint-plan.md` — verify-lite lint 改善計画
 - `.github/workflows/minimal-pipeline.yml` — TLC/Apalache を含む最小パイプライン
+- `docs/trace/kvonce-trace-schema.md` — NDJSON トレースのドラフトスキーマと拡張メモ
+- `scripts/trace/run-kvonce-conformance.sh` — Projector / Validator をまとめて実行し、`hermetic-reports/trace/` に結果を出力
