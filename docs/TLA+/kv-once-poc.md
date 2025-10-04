@@ -44,3 +44,5 @@ pnpm run spec:kv-once:apalache
 - `scripts/trace/projector-kvonce.mjs`, `scripts/trace/validate-kvonce.mjs` — NDJSON ログを射影・検証する雛形（例: `hermetic-reports/trace/kvonce-sample.ndjson`).
 - `docs/notes/verify-lite-lint-plan.md` — verify-lite lint 改善計画
 - `.github/workflows/minimal-pipeline.yml` — TLC/Apalache を含む最小パイプライン
+- `docs/trace/kvonce-trace-schema.md` — NDJSON トレースのドラフトスキーマと拡張メモ
+- `scripts/trace/run-kvonce-conformance.sh` — Projector / Validator をまとめて実行し、`hermetic-reports/trace/` に結果を出力

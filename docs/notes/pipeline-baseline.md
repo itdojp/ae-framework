@@ -19,6 +19,7 @@
 | Verify Lite | `pnpm run verify:lite` | 2025-10-04 | ✅ | ローカルスクリプト追加済。TypeScript エラーを解消し exit 0 を確認（lint は非強制のため警告のみ出力）。実行前に `.stryker-tmp` を自動削除するよう対応。 |
 | Make targets | `make test-*` 系 | 未 | ⛔ | ルートに Makefile が存在せず、直近のテーブルは `docs/notes/full-pipeline-restore.md` の古い情報。Phase A で Makefile 復元可否を調査する。 |
 | CI | `.github/workflows/pr-verify.yml` | 2025-10-04 | ✅ | Podman cache 導入の PR #1014 でローカル確認。CI 側での成功は PR マージ後に要確認。 |
+| CI | `.github/workflows/spec-generate-model.yml` | 2025-10-04 | ✅ | generate-artifacts drift を fail fast し、KvOnce property suite とトレース検証を実行。後続のモデルベース拡張は Issue #1011 で管理。 |
 | CI | `.github/workflows/ci.yml` | 2025-10-04 | ⚠️ | pnpm cache を追加。現状の main ブランチでの成功状況は未確認。CI 再実行後にログをレビューする。 |
 
 ### 未検証だが Phase A で確認が必要なコマンド
