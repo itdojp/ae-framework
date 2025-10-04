@@ -32,11 +32,12 @@
   - `kvonce.event.reason` → 失敗理由
   - `kvonce.event.context` → 任意メタデータ
 - `scripts/trace/mock-otlp-service.mjs` が Fastify ベースのモックサービスを起動し、OpenTelemetry SDK を利用して `hermetic-reports/trace/collected-kvonce-otlp.json` に ResourceSpans を出力します。
+- `scripts/trace/prepare-otlp-trace.mjs` は `KVONCE_OTLP_PAYLOAD` 環境変数で指定された外部ログを優先的にコピーし、未指定の場合はサンプル/モックサービスを利用して同じ場所に payload を準備します。
 - `scripts/trace/convert-otlp-kvonce.mjs` が OTLP JSON を NDJSON 形式に変換します。`startTimeUnixNano` は ISO8601 に変換し、安全な整数範囲外は例外扱いにします。
 - `scripts/trace/run-kvonce-conformance.sh` は NDJSON/OTLP のいずれかを受け取り、Projection → Validation を実行して結果を `hermetic-reports/trace/kvonce-validation.json` に保存します。
 
 ## CI への組み込み
-- `.github/workflows/spec-generate-model.yml` の `trace-conformance` ジョブが `mock-otlp-service` → `convert-otlp-kvonce` → `run-kvonce-conformance` のパイプラインを実行し、Step Summary に結果を出力します。
+- `.github/workflows/spec-generate-model.yml` の `trace-conformance` ジョブが `prepare-otlp-trace` → `run-kvonce-conformance` のパイプラインを実行し、Step Summary に結果を出力します。
 - 生成物 (`collected-kvonce-otlp.json`, `kvonce-projection.json`, `kvonce-validation.json`) は `kvonce-trace` アーティファクトとして保存されます。
 
 ## 今後の拡張

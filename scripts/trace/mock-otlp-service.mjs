@@ -11,8 +11,7 @@ import fs from "node:fs/promises";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, "..", "..");
-const outputDir = path.join(projectRoot, "hermetic-reports", "trace");
-const outputFile = path.join(outputDir, "collected-kvonce-otlp.json");
+const defaultOutput = path.join(projectRoot, "hermetic-reports", "trace", "collected-kvonce-otlp.json");
 
 diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.ERROR);
 
@@ -30,23 +29,15 @@ class CollectingExporter {
 }
 
 function toAttributeValue(value) {
-  if (typeof value === "string") {
-    return { stringValue: value };
-  }
+  if (typeof value === "string") return { stringValue: value };
   if (typeof value === "number") {
     return Number.isInteger(value)
       ? { intValue: String(value) }
       : { doubleValue: value };
   }
-  if (typeof value === "boolean") {
-    return { boolValue: value };
-  }
+  if (typeof value === "boolean") return { boolValue: value };
   if (Array.isArray(value)) {
-    return {
-      arrayValue: {
-        values: value.map((v) => ({ stringValue: String(v) })),
-      },
-    };
+    return { arrayValue: { values: value.map((v) => ({ stringValue: String(v) })) } };
   }
   if (value && typeof value === "object") {
     return { stringValue: JSON.stringify(value) };
@@ -59,8 +50,8 @@ function spanToOtlp(span) {
     key,
     value: toAttributeValue(val),
   }));
-  const startNanos = BigInt(span.startTime[0]) * 1000000000n + BigInt(span.startTime[1]);
-  const endNanos = BigInt(span.endTime[0]) * 1000000000n + BigInt(span.endTime[1]);
+  const startNanos = BigInt(span.startTime[0]) * 1_000_000_000n + BigInt(span.startTime[1]);
+  const endNanos = BigInt(span.endTime[0]) * 1_000_000_000n + BigInt(span.endTime[1]);
 
   return {
     name: span.name,
@@ -70,7 +61,7 @@ function spanToOtlp(span) {
   };
 }
 
-async function main() {
+export async function produceMockOtlp(outputPath = defaultOutput) {
   const provider = new BasicTracerProvider({
     resource: new Resource({
       [SemanticResourceAttributes.SERVICE_NAME]: "kvonce-mock-service",
@@ -81,7 +72,6 @@ async function main() {
   provider.register();
 
   const tracer = trace.getTracer("kvonce-mock-tracer");
-
   const app = fastify();
 
   app.post("/event", async (request, reply) => {
@@ -90,17 +80,15 @@ async function main() {
       reply.code(400);
       return { error: "type and key are required" };
     }
+
     await tracer.startActiveSpan(`kvonce.${type}`, async (span) => {
       span.setAttribute("kvonce.event.type", type);
       span.setAttribute("kvonce.event.key", key);
-      if (value !== undefined) {
-        span.setAttribute("kvonce.event.value", value);
-      }
-      if (reason !== undefined) {
-        span.setAttribute("kvonce.event.reason", reason);
-      }
+      if (value !== undefined) span.setAttribute("kvonce.event.value", value);
+      if (reason !== undefined) span.setAttribute("kvonce.event.reason", reason);
       span.end();
     });
+
     return { ok: true };
   });
 
@@ -130,31 +118,23 @@ async function main() {
 
   const spans = exporter.spans;
   if (!spans.length) {
-    console.error("[mock-otlp] no spans captured");
-    process.exitCode = 1;
-    return;
+    throw new Error("no spans captured from mock service");
   }
 
   const resourceAttributes = Object.entries(spans[0].resource.attributes ?? {}).map(([key, val]) => ({
     key,
     value: toAttributeValue(val),
   }));
-
   const scopeName = spans[0].instrumentationLibrary?.name ?? "kvonce-mock-tracer";
   const scopeVersion = spans[0].instrumentationLibrary?.version ?? "1.0.0";
 
   const payload = {
     resourceSpans: [
       {
-        resource: {
-          attributes: resourceAttributes,
-        },
+        resource: { attributes: resourceAttributes },
         scopeSpans: [
           {
-            scope: {
-              name: scopeName,
-              version: scopeVersion,
-            },
+            scope: { name: scopeName, version: scopeVersion },
             spans: spans.map(spanToOtlp),
           },
         ],
@@ -162,12 +142,16 @@ async function main() {
     ],
   };
 
-  await fs.mkdir(outputDir, { recursive: true });
-  await fs.writeFile(outputFile, JSON.stringify(payload, null, 2), "utf8");
-  console.log(`[mock-otlp] wrote payload to ${outputFile}`);
+  await fs.mkdir(path.dirname(outputPath), { recursive: true });
+  await fs.writeFile(outputPath, JSON.stringify(payload, null, 2), "utf8");
+  return outputPath;
 }
 
-main().catch((error) => {
-  console.error("[mock-otlp] failed:", error.message);
-  process.exitCode = 1;
-});
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  produceMockOtlp().then((out) => {
+    console.log(`[mock-otlp] wrote payload to ${out}`);
+  }).catch((error) => {
+    console.error("[mock-otlp] failed:", error.message);
+    process.exitCode = 1;
+  });
+}

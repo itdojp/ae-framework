@@ -177,8 +177,10 @@ jobs:
         run: |
           pnpm fetch --prefer-offline
           pnpm install --frozen-lockfile
-      - name: Produce KvOnce OTLP trace
-        run: node scripts/trace/mock-otlp-service.mjs
+      - name: Prepare KvOnce OTLP trace
+        env:
+          KVONCE_OTLP_PAYLOAD: ${{ secrets.KVONCE_OTLP_PAYLOAD }}
+        run: node scripts/trace/prepare-otlp-trace.mjs
       - name: Run KvOnce trace validation
         run: bash scripts/trace/run-kvonce-conformance.sh --format otlp --input hermetic-reports/trace/collected-kvonce-otlp.json
       - name: Summarize trace validation
