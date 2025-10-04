@@ -1,5 +1,5 @@
 --------------------------- MODULE KvOnce ---------------------------
-extends Naturals
+EXTENDS Naturals
 
 CONSTANTS Keys, Values, NULL
 VARIABLES store

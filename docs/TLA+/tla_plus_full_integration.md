@@ -180,11 +180,15 @@ THEOREM Safety == Spec => []NoOverwrite
 
 ## 現状進捗（2025-10-04）
 
-- [x] KvOnce 抽象/準抽象/実装仕様と Refinement Mapping を追加
-- [x] TLC/Apalache 用 cfg を整備し、`pnpm run spec:kv-once:tlc` でローカル検証可能にした（ツール未導入時はスキップ）
-- [ ] GitHub Actions の spec-check ジョブ追加（Step2 で対応予定）
-- [ ] Generated artifacts / conformance 連携の CI 実装
-- [ ] Trace Validator / Projector の実装と verify:conformance への統合
+### 完了
+- KvOnce 抽象/準抽象/実装仕様と Refinement Mapping を追加（PR #1020）
+- TLC/Apalache 用 cfg と `pnpm run spec:kv-once:tlc` / `spec:kv-once:apalache` スクリプトを整備し、ツール未導入時は graceful skip
+- `.github/workflows/spec-check.yml` を整備し、KvOnce を CI でチェック（ツール未導入環境でもスキップ扱い）
+
+### 継続中
+- 自動生成ワークフロー（BDD/OpenAPI/モニタ）の差分チェック
+- Trace Validator / Projector の実装と `verify:conformance` への統合
+- formal-summary を PR コメントへ自動投稿
 
 ### 実行ヒント
 
@@ -198,14 +202,5 @@ pnpm run spec:kv-once:apalache
 
 - 駆動結果は `hermetic-reports/formal/tla-summary.json` に出力される。
 - CI 取り込み時はラベル `run-formal` などで opt-in しつつ、成功時に summary を PR コメントへ反映させる予定。
-
-## 現状進捗（2025-10-04）
-
-- [x] KvOnce 抽象/準抽象/実装仕様と Refinement Mapping を追加（PR #1020）
-- [x] ローカル検証スクリプト `pnpm run spec:kv-once:tlc` / `spec:kv-once:apalache` を登録
-- [x] `.github/workflows/spec-check.yml` を作成し、KvOnce を CI でチェック（ツール未導入環境でもスキップ扱い）
-- [ ] 自動生成ワークフロー（BDD/OpenAPI/モニタ）の差分チェック
-- [ ] Trace Validator / Projector 実装と verify:conformance への統合
-- [ ] formal-summary を PR コメントへ自動投稿
 
 次ステップ：Spec Check の結果を Issue #1011 に紐付ける自動コメント、及び generate-artifacts/model-based-tests/conformance の追加。

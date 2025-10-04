@@ -1,5 +1,5 @@
 --------------------- MODULE KvOnceRefinement ---------------------
-extends Naturals
+EXTENDS Naturals, Sequences, TLC
 
 CONSTANTS Keys, Values, NULL, MAX_RETRIES
 VARIABLES store, retries
