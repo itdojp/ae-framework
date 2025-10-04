@@ -1,0 +1,84 @@
+name: Minimal Pipeline Demo
+
+on:
+  workflow_dispatch:
+    inputs:
+      enforce_lint:
+        description: "Run verify:lite with lint enforcement (may produce warnings)"
+        required: false
+        default: "false"
+
+jobs:
+  minimal-pipeline:
+    runs-on: ubuntu-latest
+    env:
+      AE_HOST_STORE: ${{ github.workspace }}/.pnpm-store
+      PNPM_STORE_PATH: ${{ github.workspace }}/.pnpm-store
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare pnpm
+        uses: ./.github/actions/setup-pnpm
+      - name: Ensure pnpm cache dir
+        run: mkdir -p "$AE_HOST_STORE"
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.AE_HOST_STORE }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+      - name: Enable corepack
+        run: corepack enable
+      - name: Install dependencies
+        run: |
+          pnpm fetch --prefer-offline
+          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile --prefer-offline
+      - name: Run CodeX quickstart (skip quality, run formal stub)
+        env:
+          CODEX_SKIP_QUALITY: "1"
+          CODEX_RUN_FORMAL: "1"
+          CODEX_TOLERANT: "1"
+        run: pnpm run codex:quickstart
+      - name: Unit tests (EnhancedStateManager focus)
+        run: pnpm vitest run tests/unit/utils/enhanced-state-manager.test.ts tests/unit/utils/enhanced-state-manager.rollback.test.ts --reporter dot
+      - name: Verify Lite (non-enforced lint)
+        if: ${{ github.event.inputs.enforce_lint != 'true' }}
+        run: |
+          pnpm run verify:lite | tee verify-lite-lint.log
+          node scripts/ci/verify-lite-lint-summary.mjs < verify-lite-lint.log > verify-lite-lint-summary.json
+      - name: Verify Lite (enforced lint)
+        if: ${{ github.event.inputs.enforce_lint == 'true' }}
+        run: |
+          set -o pipefail
+          VERIFY_LITE_ENFORCE_LINT=1 pnpm run verify:lite | tee verify-lite-lint.log
+          node scripts/ci/verify-lite-lint-summary.mjs < verify-lite-lint.log > verify-lite-lint-summary.json
+      - name: Upload verify-lite artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-lite-lint
+          path: |
+            verify-lite-lint.log
+            verify-lite-lint-summary.json
+      - name: Summarize lint findings
+        if: always()
+        run: |
+          if [ -f verify-lite-lint-summary.json ]; then
+            echo "## Verify Lite Lint Summary" >> "$GITHUB_STEP_SUMMARY"
+            node -e "const fs=require('fs'); const data=JSON.parse(fs.readFileSync('verify-lite-lint-summary.json','utf8')); console.log('Total issues:', data.total); console.log('Top rules:'); data.rules.slice(0,5).forEach(r=>console.log('-', r.rule, r.count));" | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No lint summary generated" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: KvOnce TLC (informational)
+        run: pnpm run spec:kv-once:tlc
+      - name: Upload formal summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: formal-tla-summary
+          path: hermetic-reports/formal/tla-summary.json
+          if-no-files-found: ignore

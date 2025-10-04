@@ -35,6 +35,7 @@
   - `@typescript-eslint/no-explicit-any` / `no-unsafe-assignment` / `no-unsafe-member-access`（`src/utils/quality-policy-loader.ts` ほか）
   - `no-useless-escape` / `require-await`（`src/utils/token-optimizer.ts`）
 - lint を必須にするには大規模なリファクタが必要。短期的には lint をレポート用途に留め、改善タスクを段階的に切り出す方針が現実的。
+- `.github/workflows/verify-lite.yml` で lint 出力を `verify-lite-lint-summary.json` に集計し、Step Summary に上位ルールを出力する処理を追加済み（artifact も併せて保存）。
 - `scripts/ci/verify-lite-lint-summary.mjs` で出力を集計し、`artifacts/verify-lite-lint-summary.json` に上位ルール（例: `@typescript-eslint/no-unsafe-*` 1371 件、`@typescript-eslint/no-explicit-any` 648 件、`@typescript-eslint/require-await` 209 件）を記録。
 
 ## 既存ドキュメント
@@ -60,6 +61,16 @@
 - キャッシュ: `.pnpm-store`（既存の actions/cache を再利用）
 - 既知の課題: Quality Gate ポリシー未整備、Makefile 欠落、mutation survivors（Issue #1016）
 
+### Minimal Pipeline Workflow（実装済み）
+- `.github/workflows/minimal-pipeline.yml` を作成（manual dispatch 専用）。
+  - CodeX quickstart（品質ゲートスキップ）、EnhancedStateManager ユニットテスト、verify-lite（lint サマリ出力）、KvOnce TLC を順次実行。
+  - `VERIFY_LITE_ENFORCE_LINT` を入力で切り替え可能。
+  - `scripts/ci/verify-lite-lint-summary.mjs` により lint 結果を `verify-lite-lint-summary.json` として保存し、Step Summary へ上位ルールを表示。
+- 今後: 差分 mutation quick の実行や生成アーティファクト比較を統合予定。
+
 ## 参考ログ
 - `logs/run-unit-20251004.txt`: Podman 実行ログ（`scripts/docker/run-unit.sh`）※未保存
 - `reports/mutation/mutation.json|html`: 直近の mutation quick 結果 (score 59.74%)
+
+## lint backlog ドキュメント
+- `docs/notes/verify-lite-lint-plan.md`: verify-lite lint 集計と段階的対応計画を整理。

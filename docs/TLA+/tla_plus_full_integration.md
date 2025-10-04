@@ -177,3 +177,30 @@ THEOREM Safety == Spec => []NoOverwrite
 4. **サービス拡張ごとに Refinement 階層を追加**
 5. **ダッシュボード整備**（網羅率・不整合・回帰影響を可視化）
 
+
+## 現状進捗（2025-10-04）
+
+### 完了
+- KvOnce 抽象/準抽象/実装仕様と Refinement Mapping を追加（PR #1020）
+- TLC/Apalache 用 cfg と `pnpm run spec:kv-once:tlc` / `spec:kv-once:apalache` スクリプトを整備し、ツール未導入時は graceful skip
+- `.github/workflows/spec-check.yml` を整備し、KvOnce を CI でチェック（ツール未導入環境でもスキップ扱い）
+
+### 継続中
+- 自動生成ワークフロー（BDD/OpenAPI/モニタ）の差分チェック
+- Trace Validator / Projector の実装と `verify:conformance` への統合
+- formal-summary を PR コメントへ自動投稿
+
+### 実行ヒント
+
+```bash
+# KvOnce 抽象仕様を TLC で検証（非破壊）
+pnpm run spec:kv-once:tlc
+
+# Apalache 版（インストール済みの場合）
+pnpm run spec:kv-once:apalache
+```
+
+- 駆動結果は `hermetic-reports/formal/tla-summary.json` に出力される。
+- CI 取り込み時はラベル `run-formal` などで opt-in しつつ、成功時に summary を PR コメントへ反映させる予定。
+
+次ステップ：Spec Check の結果を Issue #1011 に紐付ける自動コメント、及び generate-artifacts/model-based-tests/conformance の追加。
