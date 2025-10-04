@@ -6,6 +6,12 @@ on:
       kvonce_otlp_payload:
         description: 'Path to an OTLP payload file to use for KvOnce trace conformance (optional)'
         required: false
+      kvonce_otlp_payload_url:
+        description: 'HTTP(S) URL to download an OTLP payload for KvOnce trace conformance'
+        required: false
+      kvonce_otlp_artifact:
+        description: 'Artifact name that contains kvonce-otlp.json (downloaded before trace validation)'
+        required: false
   pull_request:
     paths:
       - 'specs/**'
@@ -48,6 +54,22 @@ jobs:
         run: |
           pnpm fetch --prefer-offline
           pnpm install --frozen-lockfile
+      - name: Download OTLP payload artifact
+        if: ${{ github.event.inputs.kvonce_otlp_artifact }}
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ github.event.inputs.kvonce_otlp_artifact }}
+          path: trace-otlp-artifact
+      - name: Register artifact payload
+        if: ${{ github.event.inputs.kvonce_otlp_artifact }}
+        run: |
+          if [ -f trace-otlp-artifact/kvonce-otlp.json ]; then
+            echo "KVONCE_OTLP_PAYLOAD_FILE=${GITHUB_WORKSPACE}/trace-otlp-artifact/kvonce-otlp.json" >> "$GITHUB_ENV"
+          else
+            echo "::warning::kvonce-otlp.json not found inside artifact"
+          fi
+      - name: Fetch OTLP payload
+        run: node ./scripts/trace/fetch-otlp-payload.mjs
       - name: Generate artifacts preview
         run: pnpm run generate:artifacts:preview
       - name: Check diff summary
@@ -158,6 +180,7 @@ jobs:
       AE_HOST_STORE: ${{ github.workspace }}/.pnpm-store
       PNPM_STORE_PATH: ${{ github.workspace }}/.pnpm-store
       KVONCE_OTLP_PAYLOAD: ${{ github.event.inputs.kvonce_otlp_payload || '' }}
+      KVONCE_OTLP_PAYLOAD_URL: ${{ github.event.inputs.kvonce_otlp_payload_url || '' }}
     steps:
       - uses: actions/checkout@v4
       - name: Prepare pnpm

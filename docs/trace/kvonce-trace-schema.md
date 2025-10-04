@@ -28,6 +28,7 @@
 - `scripts/trace/mock-otlp-service.mjs` — Fastify + OpenTelemetry SDK を利用して ResourceSpans を生成。
 - `scripts/trace/prepare-otlp-trace.mjs` — `KVONCE_OTLP_PAYLOAD` で指定された外部ログを優先し、未指定時はサンプルまたはモックサービスで payload を準備。
 - `scripts/trace/convert-otlp-kvonce.mjs` — OTLP JSON を NDJSON に変換。`startTimeUnixNano` を ISO8601 に変換し、安全な整数範囲外は例外扱い。
+- `scripts/trace/fetch-otlp-payload.mjs` — `KVONCE_OTLP_PAYLOAD_FILE` / `KVONCE_OTLP_PAYLOAD_URL` の入力から payload を取得し、共通ターゲットに書き出す。
 - `scripts/trace/run-kvonce-conformance.sh` — NDJSON/OTLP を入力に Projection → Validation を実施し、`hermetic-reports/trace/kvonce-validation.json` を出力。
 
 ## CI への組み込み

@@ -15,7 +15,7 @@ Issue: #1011 / #1012
 
 ### Collector 出力先
 - [x] **Stage 0 (現状)**: GitHub Actions でサンプル/モック payload を生成し `run-kvonce-conformance.sh` に直接渡す。
-- [ ] **Stage 1 (PoC)**: GitHub Actions Artifacts に Collector からアップロード → `actions/download-artifact` で取得。
+- [x] **Stage 1 (PoC)**: GitHub Actions Artifacts に Collector からアップロード → `actions/download-artifact` で取得（`kvonce_otlp_artifact` 入力でコンシューム可能）。
 - [ ] **Stage 2 (本番)**: S3 (又は GCS) バケットに保存し、CI では presigned URL または OIDC 経由で取得。
 
 ### 認証・シークレット管理
@@ -28,7 +28,7 @@ Issue: #1011 / #1012
 - [ ] 保持期間: Stage1 は 14 日（Artifacts の既定値）、Stage2 は S3 Lifecycle (30 日) を想定。
 
 ### ダウンロードコマンド
-- [ ] `scripts/trace/fetch-otlp-payload.mjs` を追加し、`KVONCE_OTLP_PAYLOAD_URL` が指定された場合に HTTP/S3 から取得できるようにする。
+- [x] `scripts/trace/fetch-otlp-payload.mjs` を追加し、`KVONCE_OTLP_PAYLOAD_FILE` / `KVONCE_OTLP_PAYLOAD_URL` が指定された場合に payload を取得して `KVONCE_OTLP_PAYLOAD` を再設定する。
 - [ ] 取得後に SHA256 を記録し、`hermetic-reports/trace/kvonce-payload-metadata.json` を出力。
 
 ### プライバシー / PII
