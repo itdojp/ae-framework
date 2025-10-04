@@ -26,6 +26,8 @@ permissions:
   contents: read
   actions: read
   checks: write
+  pull-requests: write
+  issues: write
 
 jobs:
   generate-artifacts:
