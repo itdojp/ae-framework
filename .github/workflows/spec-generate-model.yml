@@ -89,8 +89,7 @@ jobs:
           if (!fs.existsSync(summaryFile)) {
             console.log('No summary generated.');
             appendSummary(['## Generate Artifacts Drift', '- summary file missing']);
-            process.exitCode = 1;
-            return;
+            process.exit(1);
           }
           const summary = JSON.parse(fs.readFileSync(summaryFile, 'utf8'));
           const changed = (summary.targets || []).filter((t) => t.hasChanges);
@@ -98,7 +97,7 @@ jobs:
             const lines = ['## Generate Artifacts Drift', '- clean'];
             console.log('No generate-artifacts drift detected.');
             appendSummary(lines);
-            return;
+            process.exit(0);
           }
           const lines = ['## Generate Artifacts Drift', `Generated at: ${summary.generatedAt || 'unknown'}`];
           console.log('Detected drift in generated artifacts:');
@@ -118,7 +117,7 @@ jobs:
             }
           }
           appendSummary(lines);
-          process.exitCode = 1;
+          process.exit(1);
           NODE
       - name: Upload diff summary
         if: always()
