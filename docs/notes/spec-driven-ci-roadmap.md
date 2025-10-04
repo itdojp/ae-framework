@@ -40,13 +40,14 @@
 
 ### 3. conformance ジョブ
 - プロトタイプ: `scripts/trace/projector-kvonce.mjs` と `scripts/trace/validate-kvonce.mjs` を追加（NDJSON ログ→集計→簡易検証）。今後 Projector/Validator を本実装する際の土台とする。
-  - サンプル: `hermetic-reports/trace/kvonce-sample.ndjson` → projector → `kvonce-projection.json` → validator → `kvonce-validation.json` で pipeline を再現可能。
+  - サンプル: `samples/trace/kvonce-sample.ndjson` → projector → `kvonce-projection.json` → validator → `kvonce-validation.json` で pipeline を再現可能。
 - 目的: 実装ログを Projector/Validator に通し、仕様と照合。
-- 現状: Projector / Validator が未整備。先にトレーススキーマを決定する必要あり。
+- 現状: 実サービスのログ取り込みを自動化する仕組みが未整備。CI ではサンプル/モック/外部 payload を選択可能。
 - TODO
-  - [ ] トレーススキーマ案（NDJSON or OTLP）を Issue #1011 にコメント
-  - [ ] Projector 雛形（`scripts/trace/projector-kvonce.mjs`）を試作
-  - [ ] Validator 雛形（`scripts/trace/validate-kvonce.mjs`）を作成し、`hermetic-reports/trace` に結果を書き込む
+  - [x] トレーススキーマ案（NDJSON）を `docs/trace/kvonce-trace-schema.md` として整理し、Issue #1011 にリンク
+  - [x] Projector / Validator を整備し、`scripts/trace/run-kvonce-conformance.sh` で利用
+  - [x] OTLP → NDJSON 変換（`scripts/trace/mock-otlp-service.mjs`, `scripts/trace/prepare-otlp-trace.mjs`, `scripts/trace/convert-otlp-kvonce.mjs`）を CI に統合
+  - [ ] 実サービスの OTLP エクスポータからログを自動収集し、CI に取り込む設計をまとめる
 
 ### 4. Report / Dashboard
 - 最終ステップで `spec-check` / `generate-artifacts` / `model-based-tests` / `conformance` の結果を集約

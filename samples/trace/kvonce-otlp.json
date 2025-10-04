@@ -1,0 +1,59 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": { "stringValue": "kvonce-service" }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "kvonce-span-scope",
+            "version": "1.0.0"
+          },
+          "spans": [
+            {
+              "name": "kvonce.put",
+              "startTimeUnixNano": "1760000000000000000",
+              "attributes": [
+                { "key": "kvonce.event.type", "value": { "stringValue": "success" } },
+                { "key": "kvonce.event.key", "value": { "stringValue": "alpha" } },
+                { "key": "kvonce.event.value", "value": { "stringValue": "v1" } }
+              ]
+            },
+            {
+              "name": "kvonce.retry",
+              "startTimeUnixNano": "1760000001000000000",
+              "attributes": [
+                { "key": "kvonce.event.type", "value": { "stringValue": "retry" } },
+                { "key": "kvonce.event.key", "value": { "stringValue": "beta" } }
+              ]
+            },
+            {
+              "name": "kvonce.failure",
+              "startTimeUnixNano": "1760000001500000000",
+              "attributes": [
+                { "key": "kvonce.event.type", "value": { "stringValue": "failure" } },
+                { "key": "kvonce.event.key", "value": { "stringValue": "beta" } },
+                { "key": "kvonce.event.reason", "value": { "stringValue": "duplicate" } }
+              ]
+            },
+            {
+              "name": "kvonce.put",
+              "startTimeUnixNano": "1760000002000000000",
+              "attributes": [
+                { "key": "kvonce.event.type", "value": { "stringValue": "success" } },
+                { "key": "kvonce.event.key", "value": { "stringValue": "beta" } },
+                { "key": "kvonce.event.value", "value": { "stringValue": "v2" } }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
