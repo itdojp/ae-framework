@@ -68,10 +68,6 @@ cleanup() {
 trap cleanup EXIT
 
 if [[ "$FORMAT" == "otlp" ]]; then
-  if [[ ! -f "$INPUT" ]]; then
-    echo "[kvonce-conformance] OTLP JSON not found: $INPUT" >&2
-    exit 1
-  fi
   TEMP_FILE="$(mktemp "${TMPDIR:-/tmp}/kvonce-otlp-XXXXXX.ndjson")"
   node "$PROJECT_ROOT/scripts/trace/convert-otlp-kvonce.mjs" --input "$INPUT" --output "$TEMP_FILE"
   TEMP_INPUT="$TEMP_FILE"
@@ -88,7 +84,7 @@ if command -v jq >/dev/null 2>&1; then
 else
   VALID=$(node - <<'NODE'
 const fs = require('fs');
-const path = process.argv[1];
+const path = process.argv[2];
 try {
   const json = JSON.parse(fs.readFileSync(path, 'utf8'));
   console.log(json.valid === false ? 'false' : json.valid === true ? 'true' : 'unknown');

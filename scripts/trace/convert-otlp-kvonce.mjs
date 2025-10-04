@@ -2,6 +2,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+const EXIT_NO_EVENTS = 2;
+
 function parseArgs() {
   const args = process.argv.slice(2);
   const result = { input: null, output: null };
@@ -60,7 +62,13 @@ function toTimestamp(nanoString) {
   if (!nanoString) return new Date().toISOString();
   try {
     const nanos = BigInt(nanoString);
-    const millis = Number(nanos / 1000000n);
+    const millisBigInt = nanos / 1000000n;
+    const max = BigInt(Number.MAX_SAFE_INTEGER);
+    const min = BigInt(Number.MIN_SAFE_INTEGER);
+    if (millisBigInt > max || millisBigInt < min) {
+      throw new Error('Timestamp value is outside the safe integer range for JavaScript Number type.');
+    }
+    const millis = Number(millisBigInt);
     return new Date(millis).toISOString();
   } catch (error) {
     return new Date().toISOString();
@@ -114,7 +122,7 @@ const events = extractEvents(otlp);
 
 if (events.length === 0) {
   console.error('No kvonce events found in OTLP payload.');
-  process.exit(2);
+  process.exit(EXIT_NO_EVENTS);
 }
 
 const ndjson = toNdjson(events);
