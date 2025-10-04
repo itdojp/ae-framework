@@ -31,29 +31,30 @@ function readOtlp(file) {
   }
 }
 
-function toJsValue(value) {
-  if (!value || typeof value !== 'object') return undefined;
+function extractAttributeValue(value) {
+  if (value == null || typeof value !== 'object') return value;
   if ('stringValue' in value) return value.stringValue;
-  if ('boolValue' in value) return value.boolValue;
   if ('intValue' in value) return Number(value.intValue);
   if ('doubleValue' in value) return value.doubleValue;
-  if ('arrayValue' in value) {
-    return (value.arrayValue.values || []).map(toJsValue);
+  if ('boolValue' in value) return value.boolValue;
+  if ('arrayValue' in value && Array.isArray(value.arrayValue?.values)) {
+    return value.arrayValue.values.map(extractAttributeValue);
   }
-  if ('mapValue' in value) {
-    const map = {};
-    for (const { key, value: v } of value.mapValue.fields || []) {
-      map[key] = toJsValue(v);
-    }
-    return map;
+  if ('mapValue' in value && Array.isArray(value.mapValue?.fields)) {
+    return Object.fromEntries(
+      value.mapValue.fields.map(({ key, value: v }) => [key, extractAttributeValue(v)])
+    );
+  }
+  for (const key of Object.keys(value)) {
+    if (value[key] != null) return value[key];
   }
   return undefined;
 }
 
 function attrsToRecord(attributes = []) {
   const record = {};
-  for (const attr of attributes) {
-    record[attr.key] = toJsValue(attr.value);
+  for (const attr of attributes || []) {
+    record[attr.key] = extractAttributeValue(attr.value);
   }
   return record;
 }
@@ -66,7 +67,7 @@ function toTimestamp(nanoString) {
     const max = BigInt(Number.MAX_SAFE_INTEGER);
     const min = BigInt(Number.MIN_SAFE_INTEGER);
     if (millisBigInt > max || millisBigInt < min) {
-      throw new Error('Timestamp value is outside the safe integer range for JavaScript Number type.');
+      return new Date().toISOString();
     }
     const millis = Number(millisBigInt);
     return new Date(millis).toISOString();
@@ -92,17 +93,13 @@ function extractEvents(otlp) {
           type,
           key,
         };
-        if (type === 'success') {
-          if (attrs['kvonce.event.value'] !== undefined) {
-            event.value = attrs['kvonce.event.value'];
-          }
+        if (attrs['kvonce.event.value'] !== undefined) {
+          event.value = attrs['kvonce.event.value'];
         }
-        if (type === 'failure') {
-          if (attrs['kvonce.event.reason'] !== undefined) {
-            event.reason = attrs['kvonce.event.reason'];
-          }
+        if (attrs['kvonce.event.reason'] !== undefined) {
+          event.reason = attrs['kvonce.event.reason'];
         }
-        if (attrs['kvonce.event.context']) {
+        if (attrs['kvonce.event.context'] !== undefined) {
           event.context = attrs['kvonce.event.context'];
         }
         events.push(event);
@@ -113,6 +110,9 @@ function extractEvents(otlp) {
 }
 
 function toNdjson(events) {
+  if (events.length === 0) {
+    return '';
+  }
   return events.map((event) => JSON.stringify(event)).join('\n') + '\n';
 }
 

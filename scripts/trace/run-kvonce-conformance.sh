@@ -82,17 +82,19 @@ node "$PROJECT_ROOT/scripts/trace/validate-kvonce.mjs" --input "$PROJECTION" --o
 if command -v jq >/dev/null 2>&1; then
   VALID="$(jq -r '.valid' "$REPORT" 2>/dev/null || echo unknown)"
 else
-  VALID=$(node - <<'NODE'
-const fs = require('fs');
-const path = process.argv[2];
-try {
-  const json = JSON.parse(fs.readFileSync(path, 'utf8'));
-  console.log(json.valid === false ? 'false' : json.valid === true ? 'true' : 'unknown');
-} catch (error) {
+  VALID=$(node -e "const fs=require('fs');const path=process.argv[1];
+try{
+  const json=JSON.parse(fs.readFileSync(path,'utf8'));
+  if(json.valid===false){
+    console.log('false');
+  }else if(json.valid===true){
+    console.log('true');
+  }else{
+    console.log('unknown');
+  }
+}catch{
   console.log('unknown');
-}
-NODE
- "$REPORT")
+}" "$REPORT")
 fi
 
 if [[ "$VALID" != "true" ]]; then
