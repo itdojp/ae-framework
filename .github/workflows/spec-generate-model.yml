@@ -146,3 +146,75 @@ jobs:
           ];
           fs.appendFileSync(summary, lines.join("\n") + "\n");
           NODE
+
+  trace-conformance:
+    runs-on: ubuntu-latest
+    needs:
+      - generate-artifacts
+      - model-based-tests
+    env:
+      AE_HOST_STORE: ${{ github.workspace }}/.pnpm-store
+      PNPM_STORE_PATH: ${{ github.workspace }}/.pnpm-store
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare pnpm
+        uses: ./.github/actions/setup-pnpm
+      - name: Ensure pnpm cache dir
+        run: mkdir -p "$AE_HOST_STORE"
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.AE_HOST_STORE }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Enable corepack
+        run: corepack enable
+      - name: Install dependencies
+        run: |
+          pnpm fetch --prefer-offline
+          pnpm install --frozen-lockfile
+      - name: Produce KvOnce OTLP trace
+        run: node scripts/trace/mock-otlp-service.mjs
+      - name: Run KvOnce trace validation
+        run: bash scripts/trace/run-kvonce-conformance.sh --format otlp --input hermetic-reports/trace/collected-kvonce-otlp.json
+      - name: Summarize trace validation
+        if: always()
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const summary = process.env.GITHUB_STEP_SUMMARY;
+          if (!summary) {
+            process.exit(0);
+          }
+          const reportPath = 'hermetic-reports/trace/kvonce-validation.json';
+          const lines = ['## Trace Validation'];
+          try {
+            const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+            lines.push(`- valid: ${report.valid}`);
+            if (!report.valid && Array.isArray(report.issues)) {
+              for (const issue of report.issues.slice(0, 5)) {
+                lines.push(`  - ${issue.type}: ${issue.message}`);
+              }
+              if (report.issues.length > 5) {
+                lines.push(`  - … (${report.issues.length - 5} more)`);
+              }
+            }
+          } catch (error) {
+            lines.push(`- failed to read report: ${error.message}`);
+          }
+          fs.appendFileSync(summary, lines.join("\n") + "\n");
+          NODE
+      - name: Upload trace artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kvonce-trace
+          path: |
+            hermetic-reports/trace/collected-kvonce-otlp.json
+            hermetic-reports/trace/kvonce-projection.json
+            hermetic-reports/trace/kvonce-validation.json
+          if-no-files-found: warn
