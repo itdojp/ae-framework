@@ -149,6 +149,7 @@ jobs:
             '- kvonce.safety property suite executed (see job log for details).'
           ];
           fs.appendFileSync(summary, lines.join("\n") + "\n");
+          process.exit(0);
           NODE
 
   trace-conformance:
