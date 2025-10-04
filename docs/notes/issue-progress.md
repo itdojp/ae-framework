@@ -57,3 +57,5 @@
 - [ ] Week3 着手条件（Docker runtime, tinypool 安定化, Mutation 整理）の完了確認
 - [ ] Week3 で実施するフルパイプライン実行手順のドラフト作成
 - [ ] Issue コメントへ最新進捗と次アクションを反映（オンライン復旧後）
+
+- Spec trace conformance gating: PR [#1024](https://github.com/itdojp/ae-framework/pull/1024) — adds KvOnce trace validation job + NDJSON schema docs
