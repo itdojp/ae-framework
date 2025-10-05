@@ -1,0 +1,4 @@
+{"timestamp":"2025-10-04T06:00:00.000Z","type":"success","key":"alpha","value":"v1"}
+{"timestamp":"2025-10-04T06:00:02.000Z","type":"failure","key":"beta","reason":"duplicate"}
+{"timestamp":"2025-10-04T06:00:03.000Z","type":"retry","key":"beta"}
+{"timestamp":"2025-10-04T06:00:04.000Z","type":"success","key":"beta","value":"v2"}
