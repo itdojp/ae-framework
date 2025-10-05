@@ -46,11 +46,11 @@ jobs:
       - name: Install dependencies
         run: |
           pnpm fetch --prefer-offline
-          if pnpm install --frozen-lockfile --config.confirm=false; then
+          if pnpm install --frozen-lockfile; then
             echo "pnpm install succeeded with --frozen-lockfile"
           else
             echo "pnpm install --frozen-lockfile failed, falling back to --no-frozen-lockfile"
-            pnpm install --no-frozen-lockfile --prefer-offline --config.confirm=false
+            pnpm install --no-frozen-lockfile --prefer-offline
           fi
       - name: Preview generated artifacts
         run: pnpm run generate:artifacts:preview
@@ -108,7 +108,6 @@ jobs:
             const marker = '<!-- generate-artifacts-preview -->';
             const decoratedBody = [body, marker].join("\n\n");
             const previous = existing.find((c) => c.user.login === 'github-actions[bot]' && c.body.includes(marker));
-            const decoratedBody = [body, marker].join("\\n\\n");
             if (previous) {
               await github.rest.issues.updateComment({
                 owner: context.repo.owner,
