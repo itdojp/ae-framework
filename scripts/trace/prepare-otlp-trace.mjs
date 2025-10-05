@@ -10,8 +10,12 @@ const projectRoot = path.resolve(__dirname, "..", "..");
 const targetPath = path.join(projectRoot, "hermetic-reports", "trace", "collected-kvonce-otlp.json");
 const samplePath = path.join(projectRoot, "samples", "trace", "kvonce-otlp.json");
 
-async function copyPayload(src) {
+async function ensureDir() {
   await fs.mkdir(path.dirname(targetPath), { recursive: true });
+}
+
+async function copyPayload(src) {
+  await ensureDir();
   await fs.copyFile(src, targetPath);
   console.log(`[prepare-otlp] copied payload from ${src} to ${targetPath}`);
 }
@@ -33,11 +37,11 @@ async function main() {
     await copyPayload(samplePath);
     return;
   } catch {
-    // ignore; fall back to mock
+    // ignore, fall through to mock
   }
 
-  const out = await produceMockOtlp(targetPath);
-  console.log(`[prepare-otlp] generated mock payload at ${out}`);
+  const result = await produceMockOtlp(targetPath);
+  console.log(`[prepare-otlp] generated mock payload at ${result}`);
 }
 
 main().catch((error) => {
