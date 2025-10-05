@@ -13,6 +13,7 @@ const outputPath = process.env.GITHUB_OUTPUT;
 const outputs = {};
 const lines = ['## KvOnce Trace Validation'];
 let exitCode = 0;
+const MAX_INLINE_ISSUES = 5;
 
 const metadataPath = path.join(baseDir, 'kvonce-payload-metadata.json');
 if (fs.existsSync(metadataPath)) {
@@ -40,12 +41,15 @@ for (const item of cases) {
     const status = report.valid ? '✅ valid' : '❌ invalid';
     lines.push(`- ${item.label}: ${status} (issues: ${issues.length})`);
     if (issues.length > 0) {
-      for (const issue of issues.slice(0, 5)) {
-        const rendered = `  - [${issue.type ?? 'unknown'}] ${issue.key ?? 'unknown'}: ${issue.message ?? ''}`.trim();
-        lines.push(rendered);
+      for (const issue of issues.slice(0, MAX_INLINE_ISSUES)) {
+        const type = issue.type ?? 'unknown';
+        const key = issue.key ?? 'unknown';
+        const message = issue.message ?? '';
+        const rendered = `  - [${type}] ${key}: ${message}`;
+        lines.push(rendered.trimEnd());
       }
-      if (issues.length > 5) {
-        lines.push(`  - … (${issues.length - 5} more)`);
+      if (issues.length > MAX_INLINE_ISSUES) {
+        lines.push(`  - … (${issues.length - MAX_INLINE_ISSUES} more)`);
       }
     }
     outputs[`valid_${item.key}`] = report.valid ? 'true' : 'false';
@@ -71,6 +75,4 @@ if (outputPath) {
   }
 }
 
-if (exitCode !== 0) {
-  process.exitCode = exitCode;
-}
+process.exitCode = exitCode;
