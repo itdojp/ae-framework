@@ -6,16 +6,21 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 DEFAULT_TRACE_DIR="${PROJECT_ROOT}/hermetic-reports/trace"
 DEFAULT_OTLP_PAYLOAD="${DEFAULT_TRACE_DIR}/collected-kvonce-otlp.json"
 
+REALPATH_CMD=""
 resolve_path() {
   local target="$1"
-  if command -v realpath >/dev/null 2>&1; then
+  if [[ -z "${REALPATH_CMD}" ]]; then
+    if command -v realpath >/dev/null 2>&1; then
+      REALPATH_CMD="realpath"
+    else
+      REALPATH_CMD="python"
+    fi
+  fi
+
+  if [[ "${REALPATH_CMD}" == "realpath" ]]; then
     realpath "$target"
   else
-    python - <<'PY'
-import os, sys
-print(os.path.realpath(sys.argv[1]))
-PY
-"$target"
+    python -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$target"
   fi
 }
 
