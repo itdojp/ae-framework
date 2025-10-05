@@ -61,9 +61,13 @@ function extractAttributeValue(attrValue) {
       ])
     );
   }
+  const debugValue =
+    attrValue && typeof attrValue === "object"
+      ? Object.keys(attrValue)
+      : typeof attrValue;
   console.warn(
-    "[convert-otlp-kvonce] unsupported OTLP attribute representation encountered; returning undefined",
-    attrValue
+    "[convert-otlp-kvonce] unsupported OTLP attribute representation encountered; returning undefined (keys)",
+    debugValue
   );
   // Unsupported OTLP value representations (bytesValue, kvlistValue, or vendor extensions)
   // fall back to undefined. attrsToRecord preserves the key so downstream validators can
@@ -117,9 +121,7 @@ function extractEvents(otlp) {
         if (!type || !key) continue;
         const timestamp = toTimestamp(span.startTimeUnixNano);
         if (!timestamp) {
-          console.warn(
-            `[convert-otlp-kvonce] span ${span.name ?? 'unknown'} missing usable timestamp; event dropped`
-          );
+          console.warn("[convert-otlp-kvonce] span missing usable timestamp; event dropped");
           continue;
         }
         const event = {
