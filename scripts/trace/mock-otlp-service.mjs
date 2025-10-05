@@ -120,7 +120,9 @@ export async function produceMockOtlp(outputPath = defaultOutput) {
   }
 
   await app.close();
-  await provider.forceFlush?.();
+  if (typeof provider.forceFlush === "function") {
+    await provider.forceFlush();
+  }
   await provider.shutdown();
 
   const spans = exporter.spans;

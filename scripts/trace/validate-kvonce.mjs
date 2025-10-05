@@ -23,6 +23,17 @@ function parseArgs() {
 function validate(projection) {
   const issues = [];
 
+  const getAttempt = (context) => {
+    if (context == null) return null;
+    if (typeof context === 'number') return context;
+    if (typeof context === 'string') return null;
+    if (typeof context === 'object') {
+      if (typeof context.attempt === 'number') return context.attempt;
+      if (typeof context.attempts === 'number') return context.attempts;
+    }
+    return null;
+  };
+
   for (const [key, entry] of Object.entries(projection.perKey ?? {})) {
     const successCount = entry.successCount ?? 0;
     if (successCount > 1) {
@@ -34,6 +45,27 @@ function validate(projection) {
     }
     if ((entry.retries ?? 0) > 3) {
       issues.push({ key, type: 'retry-bound-exceeded', message: `retry count ${entry.retries} exceeded MAX_RETRIES 3` });
+    }
+
+    const retryContexts = Array.isArray(entry.retryContexts) ? entry.retryContexts : [];
+    if (retryContexts.length > 0) {
+      const attempts = retryContexts.map(getAttempt);
+      if (attempts.some((value) => value == null)) {
+        issues.push({ key, type: 'retry-context-missing', message: 'retry event missing attempt number in context' });
+      } else {
+        for (let i = 0; i < attempts.length; i += 1) {
+          if (attempts[i] !== i + 1) {
+            issues.push({ key, type: 'retry-attempt-out-of-sequence', message: `retry attempt ${attempts[i]} expected ${i + 1}` });
+            break;
+          }
+        }
+      }
+
+      const successContexts = Array.isArray(entry.successContexts) ? entry.successContexts : [];
+      const successAttempt = successContexts.map(getAttempt).find((value) => value != null);
+      if (successAttempt != null && successAttempt !== retryContexts.length + 1) {
+        issues.push({ key, type: 'success-attempt-mismatch', message: `success attempt ${successAttempt} inconsistent with ${retryContexts.length} retries` });
+      }
     }
   }
 
