@@ -1,0 +1,29 @@
+{
+  "resourceSpans": [
+    {
+      "scopeSpans": [
+        {
+          "spans": [
+            {
+              "startTimeUnixNano": "1735689600000000000",
+              "attributes": [
+                {
+                  "key": "kvonce.event.type",
+                  "value": { "stringValue": "success" }
+                },
+                {
+                  "key": "kvonce.event.key",
+                  "value": { "stringValue": "demo-key" }
+                },
+                {
+                  "key": "kvonce.event.value",
+                  "value": { "stringValue": "demo-payload" }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
