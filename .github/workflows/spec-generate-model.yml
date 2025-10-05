@@ -191,7 +191,10 @@ jobs:
           else
             echo "[trace] fetch-otlp-payload.mjs not found; using samples/trace/kvonce-otlp.json" >&2
             cp samples/trace/kvonce-otlp.json "$TARGET"
-            node --eval 'const { promises: fs } = require("node:fs"); const { createHash } = require("node:crypto"); (async () => { const target = process.argv[1]; const payload = await fs.readFile(target); const hash = createHash("sha256").update(payload).digest("hex"); await fs.writeFile("hermetic-reports/trace/kvonce-payload-metadata.json", JSON.stringify({ sourceType: "sample", sourceDetail: "samples/trace/kvonce-otlp.json", sha256: hash, sizeBytes: payload.length }, null, 2)); })().catch((error) => { console.error(error); process.exit(1); });' "$TARGET"
+            node ./scripts/trace/write-payload-metadata.mjs \
+              --target "$TARGET" \
+              --source-detail "samples/trace/kvonce-otlp.json" \
+              --source-type sample
           fi
       - name: Export payload path
         run: echo "KVONCE_OTLP_PAYLOAD=$(pwd)/hermetic-reports/trace/collected-kvonce-otlp.json" >> "$GITHUB_ENV"

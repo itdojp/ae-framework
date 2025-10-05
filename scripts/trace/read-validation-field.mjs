@@ -19,6 +19,6 @@ try {
   }
 } catch (error) {
   console.log('unknown');
-  console.warn(`[read-validation-field] failed to read ${field} from ${file}: ${error.message}`);
+  console.error(`[read-validation-field] failed to read ${field} from ${file}: ${error.message}`);
   process.exitCode = 1;
 }
