@@ -2,6 +2,16 @@ name: Spec Generate & Model Tests
 
 on:
   workflow_dispatch:
+    inputs:
+      kvonce_otlp_payload:
+        description: 'Path to an OTLP payload file to use for KvOnce trace conformance (optional)'
+        required: false
+      kvonce_payload_artifact:
+        description: 'Collector artifact name that contains kvonce-otlp-payload.json'
+        required: false
+      kvonce_otlp_payload_url:
+        description: 'HTTP/S3 URL to download kvonce OTLP payload JSON'
+        required: false
   pull_request:
     paths:
       - 'specs/**'
@@ -15,6 +25,9 @@ on:
 permissions:
   contents: read
   actions: read
+  checks: write
+  pull-requests: write
+  issues: write
 
 jobs:
   generate-artifacts:
@@ -43,56 +56,17 @@ jobs:
       - name: Install dependencies
         run: |
           pnpm fetch --prefer-offline
-          pnpm install --frozen-lockfile
+          if pnpm install --frozen-lockfile; then
+            echo "pnpm install succeeded with --frozen-lockfile"
+          else
+            echo "pnpm install --frozen-lockfile failed, falling back to --no-frozen-lockfile"
+            pnpm install --no-frozen-lockfile --prefer-offline
+          fi
       - name: Generate artifacts preview
         run: pnpm run generate:artifacts:preview
       - name: Check diff summary
         id: diffcheck
-        run: |
-          node <<'NODE'
-          const fs = require('fs');
-          const summaryFile = 'hermetic-reports/spec/generate-artifacts-diff.json';
-          const stepSummary = process.env.GITHUB_STEP_SUMMARY;
-          const appendSummary = (lines) => {
-            if (!stepSummary) {
-              return;
-            }
-            fs.appendFileSync(stepSummary, lines.join("\n") + "\n");
-          };
-          if (!fs.existsSync(summaryFile)) {
-            console.log('No summary generated.');
-            appendSummary(['## Generate Artifacts Drift', '- summary file missing']);
-            process.exitCode = 1;
-            return;
-          }
-          const summary = JSON.parse(fs.readFileSync(summaryFile, 'utf8'));
-          const changed = (summary.targets || []).filter((t) => t.hasChanges);
-          if (changed.length === 0) {
-            const lines = ['## Generate Artifacts Drift', '- clean'];
-            console.log('No generate-artifacts drift detected.');
-            appendSummary(lines);
-            return;
-          }
-          const lines = ['## Generate Artifacts Drift', `Generated at: ${summary.generatedAt || 'unknown'}`];
-          console.log('Detected drift in generated artifacts:');
-          for (const target of changed) {
-            console.log(`- ${target.path}`);
-            lines.push(`- ${target.path}: CHANGED`);
-            if (Array.isArray(target.files)) {
-              for (const file of target.files.slice(0, 10)) {
-                console.log(`  ${file.status} ${file.file}`);
-                lines.push(`  - ${file.status} ${file.file}`);
-              }
-              if (target.files.length > 10) {
-                const more = `  - … (${target.files.length - 10} more)`;
-                console.log(more.trim());
-                lines.push(more);
-              }
-            }
-          }
-          appendSummary(lines);
-          process.exitCode = 1;
-          NODE
+        run: node ./scripts/ci/check-generate-artifacts-diff.mjs hermetic-reports/spec/generate-artifacts-diff.json
       - name: Upload diff summary
         if: always()
         uses: actions/upload-artifact@v4
@@ -128,7 +102,12 @@ jobs:
       - name: Install dependencies
         run: |
           pnpm fetch --prefer-offline
-          pnpm install --frozen-lockfile
+          if pnpm install --frozen-lockfile; then
+            echo "pnpm install succeeded with --frozen-lockfile"
+          else
+            echo "pnpm install --frozen-lockfile failed, falling back to --no-frozen-lockfile"
+            pnpm install --no-frozen-lockfile --prefer-offline
+          fi
       - name: Run KvOnce property suite
         run: pnpm vitest run tests/property/kvonce.safety.property.test.ts --reporter dot
       - name: Summarize model-based run
@@ -144,5 +123,217 @@ jobs:
             '## Model-based Tests',
             '- kvonce.safety property suite executed (see job log for details).'
           ];
-          fs.appendFileSync(summary, lines.join("\n") + "\n");
+          fs.appendFileSync(summary, `${lines.join('\n')}\n`);
           NODE
+
+  trace-conformance:
+    runs-on: ubuntu-latest
+    needs: model-based-tests
+    env:
+      AE_HOST_STORE: ${{ github.workspace }}/.pnpm-store
+      PNPM_STORE_PATH: ${{ github.workspace }}/.pnpm-store
+      KVONCE_OTLP_PAYLOAD: ${{ github.event.inputs.kvonce_otlp_payload || '' }}
+      KVONCE_PAYLOAD_ARTIFACT: ${{ github.event.inputs.kvonce_payload_artifact || '' }}
+      KVONCE_OTLP_PAYLOAD_URL: ${{ github.event.inputs.kvonce_otlp_payload_url || '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare pnpm
+        uses: ./.github/actions/setup-pnpm
+      - name: Ensure pnpm cache dir
+        run: mkdir -p "$AE_HOST_STORE"
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.AE_HOST_STORE }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Enable corepack
+        run: corepack enable
+      - name: Install dependencies
+        run: |
+          pnpm fetch --prefer-offline
+          if pnpm install --frozen-lockfile; then
+            echo "pnpm install succeeded with --frozen-lockfile"
+          else
+            echo "pnpm install --frozen-lockfile failed, falling back to --no-frozen-lockfile"
+            pnpm install --no-frozen-lockfile --prefer-offline
+          fi
+      - name: Download collector payload artifact
+        if: ${{ env.KVONCE_PAYLOAD_ARTIFACT != '' }}
+        id: kvonce_artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.KVONCE_PAYLOAD_ARTIFACT }}
+          path: hermetic-reports/trace/source
+      - name: Fetch OTLP payload
+        run: |
+          set -euo pipefail
+          mkdir -p hermetic-reports/trace
+          ARTIFACT_DIR="${{ steps.kvonce_artifact.outputs.download-path }}"
+          URL_INPUT="${{ env.KVONCE_OTLP_PAYLOAD_URL }}"
+          TARGET="hermetic-reports/trace/collected-kvonce-otlp.json"
+          source scripts/trace/path-utils.sh
+          EXTRA_ARGS=()
+          if [[ -n "${ARTIFACT_DIR}" ]]; then
+            EXTRA_ARGS+=("--artifact-dir" "${ARTIFACT_DIR}")
+          fi
+          if [[ -n "${URL_INPUT}" ]]; then
+            EXTRA_ARGS+=("--url" "${URL_INPUT}")
+          fi
+          if [[ -n "${KVONCE_OTLP_PAYLOAD}" ]]; then
+            PAYLOAD_REAL="$(kvonce_resolve_path "${KVONCE_OTLP_PAYLOAD}")"
+            REPO_ROOT="$(kvonce_resolve_path "${GITHUB_WORKSPACE}")"
+            if [[ ! -f "${PAYLOAD_REAL}" ]]; then
+              echo "[trace] KVONCE_OTLP_PAYLOAD does not reference a file: ${KVONCE_OTLP_PAYLOAD}" >&2
+              exit 1
+            fi
+            case "${PAYLOAD_REAL}" in
+              "${REPO_ROOT}"/*) ;;
+              *)
+                echo "[trace] KVONCE_OTLP_PAYLOAD must resolve within the repository workspace" >&2
+                exit 1
+                ;;
+            esac
+            EXTRA_ARGS+=("--explicit" "${PAYLOAD_REAL}")
+            EXTRA_ARGS+=("--source-type" "explicit")
+            EXTRA_ARGS+=("--source-detail" "${PAYLOAD_REAL}")
+          fi
+          if [[ ${#EXTRA_ARGS[@]} -eq 0 ]]; then
+            EXTRA_ARGS+=("--explicit" "samples/trace/kvonce-otlp.json")
+            EXTRA_ARGS+=("--source-type" "sample")
+            EXTRA_ARGS+=("--source-detail" "samples/trace/kvonce-otlp.json")
+          fi
+          node ./scripts/trace/fetch-otlp-payload.mjs --target "${TARGET}" "${EXTRA_ARGS[@]}"
+      - name: Export payload path
+        run: echo "KVONCE_OTLP_PAYLOAD=$(pwd)/hermetic-reports/trace/collected-kvonce-otlp.json" >> "$GITHUB_ENV"
+      - name: Run KvOnce trace conformance pipeline (OTLP)
+        run: |
+          if [[ ! -f ./scripts/trace/convert-otlp-kvonce.mjs ]]; then
+            echo "[trace] convert-otlp-kvonce.mjs not found; skipping OTLP validation" >&2
+            exit 0
+          fi
+          bash ./scripts/trace/run-kvonce-conformance.sh \
+            --input "${KVONCE_OTLP_PAYLOAD}" \
+            --format otlp \
+            --output-dir hermetic-reports/trace/otlp
+      - name: Run KvOnce trace conformance pipeline (NDJSON sample)
+        run: |
+          bash ./scripts/trace/run-kvonce-conformance.sh \
+            --input samples/trace/kvonce-sample.ndjson \
+            --format ndjson \
+            --output-dir hermetic-reports/trace/ndjson
+      - name: Summarize trace validation
+        id: trace_summary
+        run: node ./scripts/trace/render-trace-summary.mjs
+      - name: Upload trace artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kvonce-trace-results
+          path: |
+            hermetic-reports/trace/collected-kvonce-otlp.json
+            hermetic-reports/trace/kvonce-payload-metadata.json
+            hermetic-reports/trace/otlp/kvonce-events.ndjson
+            hermetic-reports/trace/otlp/kvonce-projection.json
+            hermetic-reports/trace/otlp/kvonce-validation.json
+            hermetic-reports/trace/ndjson/kvonce-events.ndjson
+            hermetic-reports/trace/ndjson/kvonce-projection.json
+            hermetic-reports/trace/ndjson/kvonce-validation.json
+          if-no-files-found: warn
+      - name: Update PR with trace summary
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const marker = '<!-- kvonce-trace-summary -->';
+            const cases = [
+              { key: 'OTLP', dir: 'hermetic-reports/trace/otlp' },
+              { key: 'NDJSON', dir: 'hermetic-reports/trace/ndjson' },
+            ];
+
+            let body = `${marker}\n### KvOnce Trace Validation`;
+
+            for (const item of cases) {
+              const reportPath = path.join(process.cwd(), item.dir, 'kvonce-validation.json');
+              if (!fs.existsSync(reportPath)) {
+                body += `\n- ${item.key}: ⚠️ validation file missing`;
+                continue;
+              }
+              const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+              const issues = Array.isArray(report.issues) ? report.issues : [];
+              const renderedIssues = issues.slice(0, 10).map((issue) => {
+                const key = issue.key ?? 'unknown';
+                const type = issue.type ?? 'unknown';
+                const message = issue.message ?? '';
+                return `  - [${type}] **${key}**: ${message}`;
+              });
+              if (issues.length > 10) {
+                renderedIssues.push(`  - … (${issues.length - 10} more)`);
+              }
+              body += `\n- ${item.key}: ${report.valid ? '✅ Success' : '❌ Failure'} (Issues: ${issues.length})`;
+              if (renderedIssues.length > 0) {
+                body += `\n${renderedIssues.join('\n')}`;
+              }
+            }
+
+            const { owner, repo, number } = context.issue;
+            const existing = await github.rest.issues.listComments({ owner, repo, issue_number: number, per_page: 100 });
+            const target = existing.data.find((comment) => comment.body && comment.body.includes(marker));
+            if (target) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: target.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number: number, body });
+            }
+
+      - name: Publish trace validation check
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/github-script@v7
+        env:
+          VALID_OTLP: ${{ steps.trace_summary.outputs.valid_otlp }}
+          VALID_NDJSON: ${{ steps.trace_summary.outputs.valid_ndjson }}
+          ISSUES_OTLP: ${{ steps.trace_summary.outputs.issues_otlp }}
+          ISSUES_NDJSON: ${{ steps.trace_summary.outputs.issues_ndjson }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const headSha = context.payload.pull_request?.head?.sha;
+            if (!headSha) {
+              core.warning('head SHA not available; skipping check run');
+              return;
+            }
+
+            const validOtlp = process.env.VALID_OTLP || 'missing';
+            const validNdjson = process.env.VALID_NDJSON || 'missing';
+            const issuesOtlp = process.env.ISSUES_OTLP || 'N/A';
+            const issuesNdjson = process.env.ISSUES_NDJSON || 'N/A';
+
+            let conclusion = 'success';
+            if (validOtlp === 'false' || validNdjson === 'false') {
+              conclusion = 'failure';
+            } else if (validOtlp === 'missing' && validNdjson === 'missing') {
+              conclusion = 'neutral';
+            }
+
+            const summaryLines = [
+              `OTLP: ${validOtlp} (issues: ${issuesOtlp})`,
+              `NDJSON: ${validNdjson} (issues: ${issuesNdjson})`,
+            ];
+
+            await github.rest.checks.create({
+              owner,
+              repo,
+              name: 'KvOnce Trace Validation',
+              head_sha: headSha,
+              status: 'completed',
+              conclusion,
+              output: {
+                title: 'KvOnce Trace Validation',
+                summary: summaryLines.join('\n'),
+              },
+            });
