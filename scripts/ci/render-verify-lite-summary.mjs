@@ -22,6 +22,23 @@ try {
 const { timestamp, flags = {}, steps = {}, artifacts = {} } = summary;
 
 const yesNo = (value) => (value ? '✅' : '❌');
+const escapeHtml = (text) =>
+  String(text).replace(/[&<>'"]/g, (char) => {
+    switch (char) {
+      case '&':
+        return '&amp;';
+      case '<':
+        return '&lt;';
+      case '>':
+        return '&gt;';
+      case '"':
+        return '&quot;';
+      case "'":
+        return '&#39;';
+      default:
+        return char;
+    }
+  });
 const formatStatus = (status) => {
   if (!status) return 'n/a';
   const normalized = String(status).toLowerCase();
@@ -76,7 +93,7 @@ const tableLines = [
 ];
 for (const [key, value] of orderedSteps) {
   const status = formatStatus(value?.status);
-  const notes = value?.notes ? String(value.notes).replace(/\n/g, '<br>') : '';
+  const notes = value?.notes ? escapeHtml(value.notes).replace(/\n/g, '<br>') : '';
   tableLines.push(`| ${titleCase(key)} | ${status} | ${notes} |`);
 }
 
