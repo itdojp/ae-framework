@@ -66,50 +66,7 @@ jobs:
         run: pnpm run generate:artifacts:preview
       - name: Check diff summary
         id: diffcheck
-        run: |
-          node <<'NODE'
-          const fs = require('fs');
-          const summaryFile = 'hermetic-reports/spec/generate-artifacts-diff.json';
-          const stepSummary = process.env.GITHUB_STEP_SUMMARY;
-          const appendSummary = (lines) => {
-            if (!stepSummary) {
-              return;
-            }
-            fs.appendFileSync(stepSummary, lines.join("\n") + "\n");
-          };
-          if (!fs.existsSync(summaryFile)) {
-            console.log('No summary generated.');
-            appendSummary(['## Generate Artifacts Drift', '- summary file missing']);
-            process.exit(1);
-          }
-          const summary = JSON.parse(fs.readFileSync(summaryFile, 'utf8'));
-          const changed = (summary.targets || []).filter((t) => t.hasChanges);
-          if (changed.length === 0) {
-            const lines = ['## Generate Artifacts Drift', '- clean'];
-            console.log('No generate-artifacts drift detected.');
-            appendSummary(lines);
-            process.exit(0);
-          }
-          const lines = ['## Generate Artifacts Drift', `Generated at: ${summary.generatedAt || 'unknown'}`];
-          console.log('Detected drift in generated artifacts:');
-          for (const target of changed) {
-            console.log(`- ${target.path}`);
-            lines.push(`- ${target.path}: CHANGED`);
-            if (Array.isArray(target.files)) {
-              for (const file of target.files.slice(0, 10)) {
-                console.log(`  ${file.status} ${file.file}`);
-                lines.push(`  - ${file.status} ${file.file}`);
-              }
-              if (target.files.length > 10) {
-                const more = `  - … (${target.files.length - 10} more)`;
-                console.log(more.trim());
-                lines.push(more);
-              }
-            }
-          }
-          appendSummary(lines);
-          process.exit(1);
-          NODE
+        run: node ./scripts/ci/check-generate-artifacts-diff.mjs hermetic-reports/spec/generate-artifacts-diff.json
       - name: Upload diff summary
         if: always()
         uses: actions/upload-artifact@v4
@@ -160,14 +117,13 @@ jobs:
           const fs = require('fs');
           const summary = process.env.GITHUB_STEP_SUMMARY;
           if (!summary) {
-            process.exit(0);
+            return;
           }
           const lines = [
             '## Model-based Tests',
             '- kvonce.safety property suite executed (see job log for details).'
           ];
-          fs.appendFileSync(summary, lines.join("\n") + "\n");
-          process.exit(0);
+          fs.appendFileSync(summary, `${lines.join('\n')}\n`);
           NODE
 
   trace-conformance:
