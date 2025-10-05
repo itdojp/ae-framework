@@ -3,8 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const NANOS_PER_MILLI = 1_000_000n;
-const EXIT_NO_EVENTS = 2;
-const MAX_DATE_MILLIS = 8_640_000_000_000_000n;
+const MAX_DATE_MILLIS = 8_640_000_000_000_000n; // +/- the maximum representable JS Date (in ms)
 const MIN_DATE_MILLIS = -MAX_DATE_MILLIS;
 
 function parseArgs() {
@@ -53,7 +52,8 @@ function extractAttributeValue(attrValue) {
       ])
     );
   }
-  // Unsupported OTLP value representations fall back to undefined so the caller can decide whether validation should fail.
+  // Unsupported OTLP value representations fall back to undefined.
+  // attrsToRecord will preserve the key with an undefined value so downstream validators can decide what to do.
   return undefined;
 }
 
@@ -125,7 +125,7 @@ const events = extractEvents(otlp);
 
 if (events.length === 0) {
   console.error("No kvonce events found in OTLP payload.");
-  process.exit(EXIT_NO_EVENTS);
+  process.exit(2);
 }
 
 const ndjson = toNdjson(events);
