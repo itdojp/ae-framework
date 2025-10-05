@@ -177,25 +177,21 @@ jobs:
           URL_INPUT="${{ env.KVONCE_OTLP_PAYLOAD_URL }}"
           TARGET="hermetic-reports/trace/collected-kvonce-otlp.json"
           EXTRA_ARGS=()
-          if [[ -n "$ARTIFACT_DIR" ]]; then
-            EXTRA_ARGS+=("--artifact-dir" "$ARTIFACT_DIR")
+          if [[ -n "${ARTIFACT_DIR}" ]]; then
+            EXTRA_ARGS+=("--artifact-dir" "${ARTIFACT_DIR}")
           fi
-          if [[ -n "$URL_INPUT" ]]; then
-            EXTRA_ARGS+=("--url" "$URL_INPUT")
+          if [[ -n "${URL_INPUT}" ]]; then
+            EXTRA_ARGS+=("--url" "${URL_INPUT}")
           fi
           if [[ -n "${KVONCE_OTLP_PAYLOAD}" ]]; then
             EXTRA_ARGS+=("--explicit" "${KVONCE_OTLP_PAYLOAD}")
           fi
-          if [[ -f ./scripts/trace/fetch-otlp-payload.mjs ]]; then
-            node ./scripts/trace/fetch-otlp-payload.mjs --target "$TARGET" "${EXTRA_ARGS[@]}"
-          else
-            echo "[trace] fetch-otlp-payload.mjs not found; using samples/trace/kvonce-otlp.json" >&2
-            cp samples/trace/kvonce-otlp.json "$TARGET"
-            node ./scripts/trace/write-payload-metadata.mjs \
-              --target "$TARGET" \
-              --source-detail "samples/trace/kvonce-otlp.json" \
-              --source-type sample
+          if [[ ${#EXTRA_ARGS[@]} -eq 0 ]]; then
+            EXTRA_ARGS+=("--explicit" "samples/trace/kvonce-otlp.json")
+            EXTRA_ARGS+=("--source-type" "sample")
+            EXTRA_ARGS+=("--source-detail" "samples/trace/kvonce-otlp.json")
           fi
+          node ./scripts/trace/fetch-otlp-payload.mjs --target "${TARGET}" "${EXTRA_ARGS[@]}"
       - name: Export payload path
         run: echo "KVONCE_OTLP_PAYLOAD=$(pwd)/hermetic-reports/trace/collected-kvonce-otlp.json" >> "$GITHUB_ENV"
       - name: Run KvOnce trace conformance pipeline (OTLP)
