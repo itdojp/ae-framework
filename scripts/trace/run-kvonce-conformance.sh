@@ -106,7 +106,23 @@ if [[ "${FORMAT}" == "otlp" ]]; then
   SOURCE_NDJSON="${NDJSON_PATH}"
 elif [[ "${FORMAT}" == "ndjson" ]]; then
   # Skip the copy when the caller already pointed us at the destination path to avoid unnecessary I/O.
-  if [[ "${INPUT}" != "${NDJSON_PATH}" ]]; then
+  if command -v realpath >/dev/null 2>&1; then
+    INPUT_REAL="$(realpath "${INPUT}")"
+    NDJSON_REAL="$(realpath "${NDJSON_PATH}")"
+  else
+    INPUT_REAL="$(python - <<'PY'
+import os, sys
+print(os.path.realpath(sys.argv[1]))
+PY
+"${INPUT}")"
+    NDJSON_REAL="$(python - <<'PY'
+import os, sys
+print(os.path.realpath(sys.argv[1]))
+PY
+"${NDJSON_PATH}")"
+  fi
+
+  if [[ "${INPUT_REAL}" != "${NDJSON_REAL}" ]]; then
     cp "${INPUT}" "${NDJSON_PATH}"
     SOURCE_NDJSON="${NDJSON_PATH}"
   fi
