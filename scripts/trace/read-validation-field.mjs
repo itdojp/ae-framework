@@ -4,8 +4,7 @@ import fs from 'node:fs';
 const [,, file, field] = process.argv;
 if (!file || !field) {
   console.error('[read-validation-field] usage: read-validation-field.mjs <json-file> <field>');
-  process.exitCode = 1;
-  process.exit();
+  process.exit(1);
 }
 
 try {
