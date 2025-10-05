@@ -56,7 +56,9 @@ if (options.explicit) {
 } else if (options.url) {
   const response = await fetch(options.url);
   if (!response.ok) {
-    console.error(`[fetch-otlp-payload] failed to download ${options.url}: ${response.status}`);
+    console.error(
+      `[fetch-otlp-payload] failed to download ${options.url}: ${response.status} ${response.statusText ?? ''}`.trim()
+    );
     process.exit(1);
   }
   const buffer = Buffer.from(await response.arrayBuffer());
