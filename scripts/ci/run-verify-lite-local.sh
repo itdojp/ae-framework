@@ -37,11 +37,11 @@ MUTATION_SURVIVORS_PATH=""
 echo "[verify-lite] installing dependencies (${INSTALL_FLAGS[*]})"
 if ! pnpm install "${INSTALL_FLAGS[@]}"; then
   INSTALL_RETRIED=1
-  INSTALL_NOTES+=";retry-with=--no-frozen-lockfile"
+  INSTALL_NOTES+=";retry_with=--no-frozen-lockfile"
   echo "[verify-lite] initial pnpm install failed, retrying with --no-frozen-lockfile" >&2
   if ! pnpm install --no-frozen-lockfile; then
     INSTALL_STATUS="failure"
-    INSTALL_NOTES+=";retry_failed"
+    INSTALL_NOTES+=";retry_status=failed"
     echo "[verify-lite] pnpm install failed after retry" >&2
     exit 1
   fi
@@ -136,52 +136,9 @@ export INSTALL_FLAGS_STR
 export LINT_SUMMARY_PATH LINT_LOG_EXPORT
 export MUTATION_SUMMARY_PATH MUTATION_SURVIVORS_PATH
 
-node <<'NODE'
-const fs = require('fs');
-
-const bool = (value) => value === '1';
-const existsOrNull = (p) => (p && fs.existsSync(p) ? p : null);
-
-const summary = {
-  timestamp: process.env.RUN_TIMESTAMP,
-  flags: {
-    install: process.env.INSTALL_FLAGS_STR || '',
-    noFrozen: bool(process.env.VERIFY_LITE_NO_FROZEN || '0'),
-    keepLintLog: bool(process.env.VERIFY_LITE_KEEP_LINT_LOG || '0'),
-    enforceLint: bool(process.env.VERIFY_LITE_ENFORCE_LINT || '0'),
-    runMutation: bool(process.env.VERIFY_LITE_RUN_MUTATION || '0'),
-  },
-  steps: {
-    install: {
-      status: process.env.INSTALL_STATUS,
-      notes: process.env.INSTALL_NOTES,
-      retried: process.env.INSTALL_RETRIED === '1',
-    },
-    specCompilerBuild: { status: process.env.SPEC_COMPILER_STATUS },
-    typeCheck: { status: process.env.TYPECHECK_STATUS },
-    lint: { status: process.env.LINT_STATUS },
-    build: { status: process.env.BUILD_STATUS },
-    bddLint: { status: process.env.BDD_LINT_STATUS },
-    mutationQuick: {
-      status: process.env.MUTATION_STATUS,
-      notes: process.env.MUTATION_NOTES || null,
-    },
-  },
-  artifacts: {
-    lintSummary: existsOrNull(process.env.LINT_SUMMARY_PATH),
-    lintLog: existsOrNull(process.env.LINT_LOG_EXPORT),
-    mutationSummary: existsOrNull(process.env.MUTATION_SUMMARY_PATH),
-    mutationSurvivors: existsOrNull(process.env.MUTATION_SURVIVORS_PATH),
-  },
-};
-
-try {
-  fs.writeFileSync(process.env.SUMMARY_PATH, JSON.stringify(summary, null, 2));
-  console.log(`[verify-lite] summary written to ${process.env.SUMMARY_PATH}`);
-} catch (error) {
-  console.error('[verify-lite] failed to write summary', error);
-  process.exitCode = 1;
-}
-NODE
+if ! node scripts/ci/write-verify-lite-summary.mjs "$SUMMARY_PATH"; then
+  echo "[verify-lite] failed to persist summary" >&2
+  exit 1
+fi
 
 echo "[verify-lite] local run complete"
