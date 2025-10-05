@@ -83,7 +83,10 @@ VALID=
 if command -v jq >/dev/null 2>&1; then
   VALID="$(jq -r '.valid' "$REPORT" 2>/dev/null || echo unknown)"
 else
-  VALID=$(node -e "const fs=require('fs');const path=process.argv[1];
+  if [[ -f "$PROJECT_ROOT/scripts/trace/read-validation-field.mjs" ]]; then
+    VALID=$(node "$PROJECT_ROOT/scripts/trace/read-validation-field.mjs" "$REPORT" valid || echo unknown)
+  else
+    VALID=$(node -e "const fs=require('fs');const path=process.argv[1];
 try{
   const json=JSON.parse(fs.readFileSync(path,'utf8'));
   if(json.valid===false){
@@ -96,6 +99,7 @@ try{
 }catch{
   console.log('unknown');
 }" "$REPORT")
+  fi
 fi
 
 if [[ "$VALID" != "true" ]]; then

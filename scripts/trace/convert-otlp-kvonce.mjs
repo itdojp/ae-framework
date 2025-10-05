@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const EXIT_NO_EVENTS = 2;
+const NANOS_PER_MILLI = 1_000_000n;
 
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -45,6 +46,8 @@ function extractAttributeValue(value) {
       value.mapValue.fields.map(({ key, value: v }) => [key, extractAttributeValue(v)])
     );
   }
+  // Unknown OTLP attribute value types fall back to undefined so callers can
+  // decide whether the attribute is optional or should trigger validation.
   for (const key of Object.keys(value)) {
     if (value[key] != null) {
       return value[key];
@@ -65,7 +68,7 @@ function toTimestamp(nanoString) {
   if (!nanoString) return new Date().toISOString();
   try {
     const nanos = BigInt(nanoString);
-    const millisBigInt = nanos / 1_000_000n;
+    const millisBigInt = nanos / NANOS_PER_MILLI;
     const max = BigInt(Number.MAX_SAFE_INTEGER);
     const min = BigInt(Number.MIN_SAFE_INTEGER);
     if (millisBigInt > max || millisBigInt < min) {
