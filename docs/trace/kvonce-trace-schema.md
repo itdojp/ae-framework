@@ -36,3 +36,15 @@
 - Issue #1011 ステップ3: 生成されたトレースを実装ログから自動抽出し、このスキーマに準拠させる。
 - Issue #1011 ステップ4: `verify:conformance` ワークフローに統合し、CIゲートとして運用。
 - Issue #1012 Phase C: 他ドメイン仕様のトレーススキーマも同様の形式で整理する。
+
+## OTLP Mapping
+- OTLP span属性からの対応:
+  - `kvonce.event.type` → イベント種別 (`success`/`retry`/`failure`)
+  - `kvonce.event.key` → キー
+  - `kvonce.event.value` → 成功時の値
+  - `kvonce.event.reason` → 失敗理由
+  - `kvonce.event.context` → 任意メタデータ。mapValue は JSON オブジェクトとして埋め込まれる
+- `scripts/trace/convert-otlp-kvonce.mjs` が OTLP JSON を NDJSON 形式に変換します。デフォルトでは span の `startTimeUnixNano` を ISO8601 に変換し、必要な属性が欠けているイベントはスキップします。
+- CI では `scripts/trace/run-kvonce-conformance.sh --format otlp --input samples/trace/kvonce-otlp.json` を利用して、自動的に変換→検証を行います。
+
+
