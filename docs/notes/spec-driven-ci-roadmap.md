@@ -45,9 +45,8 @@
 - 現状: Projector / Validator が未整備。先にトレーススキーマを決定する必要あり。
 - TODO
   - [x] トレーススキーマ案（NDJSON）を `docs/trace/kvonce-trace-schema.md` として整理し、Issue #1011 にリンク
-  - [x] Projector 雛形（`scripts/trace/projector-kvonce.mjs`）と Validator 雛形（`scripts/trace/validate-kvonce.mjs`）を整備
-  - [x] OTLP → NDJSON 変換パイプライン（`collect-sample-otlp.mjs`, `convert-otlp-kvonce.mjs`, `run-kvonce-conformance.sh --format otlp`）を実装
-  - [ ] 実サービスの OTLP エクスポータからサンプルを取得し、CI で自動的に収集・検証する仕組みを設計
+  - [x] Projector/Validator をまとめて実行する `scripts/trace/run-kvonce-conformance.sh` を追加し、`hermetic-reports/trace` に結果を書き込む
+  - [x] 実装ログからの自動抽出（OTLP→NDJSON 変換）を実装（`scripts/trace/convert-otlp-kvonce.mjs` + workflow連携）
 
 ### 4. Report / Dashboard
 - 最終ステップで `spec-check` / `generate-artifacts` / `model-based-tests` / `conformance` の結果を集約
@@ -60,4 +59,5 @@
 2. モデルベーステスト対象を `kv-once` のみで実行できるよう `tests/property/reservation-schema.property.test.ts` を分割・軽量化。
 3. トレーススキーマのドラフトを `docs/TLA+/kv-once-poc.md` から派生させ、Issue #1011 に共有。
 5. 自動生成された BDD/contract テストを対象に追加し、`model-based-tests` ジョブの網羅範囲を段階的に拡張。
-6. 実サービスの OTLP ログ収集フローを設計し、CI コンテキストに投入するための artifact/secret 管理方針をまとめる。
+6. KvOnce trace validation を実装ログへ適用するため、OTLP→NDJSON 変換ユーティリティを整備。（完了）
+7. 実サービスログ（OTLP exporter）からの自動収集フローとアーティファクト連携を設計。

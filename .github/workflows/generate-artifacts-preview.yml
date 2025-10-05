@@ -108,6 +108,7 @@ jobs:
             const marker = '<!-- generate-artifacts-preview -->';
             const decoratedBody = [body, marker].join("\n\n");
             const previous = existing.find((c) => c.user.login === 'github-actions[bot]' && c.body.includes(marker));
+            const decoratedBody = [body, marker].join("\\n\\n");
             if (previous) {
               await github.rest.issues.updateComment({
                 owner: context.repo.owner,
