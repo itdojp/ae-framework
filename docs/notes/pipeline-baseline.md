@@ -41,6 +41,34 @@
 - `.github/workflows/verify-lite.yml` で lint 出力を `verify-lite-lint-summary.json` に集計し、Step Summary に上位ルールを出力する処理を追加済み（artifact も併せて保存）。
 - `scripts/ci/verify-lite-lint-summary.mjs` で出力を集計し、`artifacts/verify-lite-lint-summary.json` に上位ルール（例: `@typescript-eslint/no-unsafe-*` 1371 件、`@typescript-eslint/no-explicit-any` 648 件、`@typescript-eslint/require-await` 209 件）を記録。
 
+### Verify Lite ローカルログ収集手順（Phase A 用）
+1. ログ保存先を決めてディレクトリを用意する。
+   ```bash
+   ts_dir="reports/verify-lite/$(date +%Y%m%d-%H%M%S)"
+   mkdir -p "$ts_dir"
+   ```
+2. `scripts/ci/run-verify-lite-local.sh` を lint ログ保存・mutation quick 有効化モードで実行する。
+   ```bash
+   VERIFY_LITE_KEEP_LINT_LOG=1 \
+   VERIFY_LITE_RUN_MUTATION=1 \
+   pnpm run verify:lite | tee "$ts_dir/verify-lite.log"
+   ```
+   - `verify-lite-run-summary.json`（ステップ結果の JSON）、`verify-lite-lint-summary.json`（lint 集計）、`verify-lite-lint.log`（生ログ）、`mutation-summary.md` がリポジトリ直下に出力される。
+3. 出力成果物を保存ディレクトリへ移動する。
+   ```bash
+   mv verify-lite-run-summary.json "$ts_dir/"
+   mv verify-lite-lint-summary.json "$ts_dir/"
+   mv verify-lite-lint.log "$ts_dir/" 2>/dev/null || true
+   mv mutation-summary.md "$ts_dir/" 2>/dev/null || true
+   cp -R reports/mutation "$ts_dir/" 2>/dev/null || true
+   ```
+4. Issue #1012 Phase A の進捗報告時は、上記ディレクトリを添付し `verify-lite.log` の先頭 20 行と lint サマリの上位ルールをまとめて記載する。
+
+### Minimal Pipeline ワークフローログ
+- `.github/workflows/minimal-pipeline.yml` は「Verify Lite → EnhancedStateManager Unit → KvOnce TLC」を通しで実行し、Verify Lite の Step Summary に lint 上位ルール、Trace Replay に TLC 実行結果を掲載する。
+- 手元で同一構成を再現したい場合は `pnpm run verify:lite` → `pnpm vitest --project unit` → `pnpm run trace:kvonce:replay` を順番に実行し、各コマンドのログを `reports/minimal-pipeline/<timestamp>/` に保存する。
+- TLC を利用できない環境では Trace Replay が `tool_not_available` を記録するだけで失敗扱いにはならない旨を報告に含める。
+
 ## 既存ドキュメント
 - `docs/notes/full-pipeline-restore.md`: revive/full-pipeline ブランチ時の Make 実行結果。現状との乖離があるため差分確認が必要。
 - `docs/infra/container-runtime.md`: Podman / Docker のセットアップ手順。今回の run-unit.sh 改修と整合済み。
