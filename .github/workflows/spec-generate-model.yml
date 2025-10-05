@@ -197,13 +197,8 @@ jobs:
         run: echo "KVONCE_OTLP_PAYLOAD=$(pwd)/hermetic-reports/trace/collected-kvonce-otlp.json" >> "$GITHUB_ENV"
       - name: Run KvOnce trace conformance pipeline (OTLP)
         run: |
-          set -euo pipefail
           if [[ ! -f ./scripts/trace/convert-otlp-kvonce.mjs ]]; then
             echo "[trace] convert-otlp-kvonce.mjs not found; skipping OTLP validation" >&2
-            exit 0
-          fi
-          if ! grep -q "--format" ./scripts/trace/run-kvonce-conformance.sh; then
-            echo "[trace] run-kvonce-conformance.sh does not support --format yet; skipping OTLP validation" >&2
             exit 0
           fi
           bash ./scripts/trace/run-kvonce-conformance.sh \
@@ -212,17 +207,10 @@ jobs:
             --output-dir hermetic-reports/trace/otlp
       - name: Run KvOnce trace conformance pipeline (NDJSON sample)
         run: |
-          set -euo pipefail
-          if grep -q "--input" ./scripts/trace/run-kvonce-conformance.sh; then
-            bash ./scripts/trace/run-kvonce-conformance.sh \
-              --input samples/trace/kvonce-sample.ndjson \
-              --format ndjson \
-              --output-dir hermetic-reports/trace/ndjson
-          else
-            bash ./scripts/trace/run-kvonce-conformance.sh \
-              samples/trace/kvonce-sample.ndjson \
-              hermetic-reports/trace/ndjson
-          fi
+          bash ./scripts/trace/run-kvonce-conformance.sh \
+            --input samples/trace/kvonce-sample.ndjson \
+            --format ndjson \
+            --output-dir hermetic-reports/trace/ndjson
       - name: Summarize trace validation
         id: trace_summary
         run: node ./scripts/trace/render-trace-summary.mjs
