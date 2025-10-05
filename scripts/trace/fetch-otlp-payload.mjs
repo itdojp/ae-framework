@@ -1,163 +1,80 @@
 #!/usr/bin/env node
-import fs from 'node:fs/promises';
-import { createWriteStream } from 'node:fs';
-import { createHash } from 'node:crypto';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { gunzipSync } from 'node:zlib';
-import { pipeline } from 'node:stream/promises';
+import fs from "node:fs";
+import fsp from "node:fs/promises";
+import path from "node:path";
+import { createHash } from "node:crypto";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const projectRoot = path.resolve(__dirname, '..', '..');
-
-function parseArgs() {
-  const args = process.argv.slice(2);
-  const result = { target: null, artifactDir: null, url: null, explicit: null };
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
-    const next = args[i + 1];
-    switch (arg) {
-      case '--target':
-        if (!next) throw new Error('Missing value for --target');
-        result.target = args[++i];
-        break;
-      case '--artifact-dir':
-        if (!next) throw new Error('Missing value for --artifact-dir');
-        result.artifactDir = args[++i];
-        break;
-      case '--url':
-        if (!next) throw new Error('Missing value for --url');
-        result.url = args[++i];
-        break;
-      case '--explicit':
-        if (!next) throw new Error('Missing value for --explicit');
-        result.explicit = args[++i];
-        break;
-      default:
-        // ignore unknown args to keep compatibility
-        break;
-    }
-  }
-  if (!result.target) {
-    throw new Error('Missing required --target option');
-  }
-  return result;
-}
-
-async function pathExists(candidate) {
-  if (!candidate) return false;
-  try {
-    await fs.access(candidate);
-    return true;
-  } catch {
-    return false;
+const args = process.argv.slice(2);
+const options = { target: null, artifactDir: null, url: null, explicit: null, sourceType: null, sourceDetail: null };
+for (let i = 0; i < args.length; i++) {
+  const arg = args[i];
+  if ((arg === "--target" || arg === "-t") && args[i + 1]) {
+    options.target = args[++i];
+  } else if ((arg === "--artifact-dir" || arg === "-a") && args[i + 1]) {
+    options.artifactDir = args[++i];
+  } else if ((arg === "--url" || arg === "-u") && args[i + 1]) {
+    options.url = args[++i];
+  } else if ((arg === "--explicit" || arg === "-e") && args[i + 1]) {
+    options.explicit = args[++i];
+  } else if ((arg === "--source-type" || arg === "-y") && args[i + 1]) {
+    options.sourceType = args[++i];
+  } else if ((arg === "--source-detail" || arg === "-s") && args[i + 1]) {
+    options.sourceDetail = args[++i];
   }
 }
 
-async function readFileBuffer(filePath) {
-  if (filePath.endsWith('.gz')) {
-    const compressed = await fs.readFile(filePath);
-    return gunzipSync(compressed);
-  }
-  return fs.readFile(filePath);
+if (!options.target) {
+  console.error('[fetch-otlp-payload] usage: fetch-otlp-payload.mjs --target <file> [--artifact-dir <dir>] [--url <https://...>] [--explicit <file>]');
+  process.exit(1);
 }
 
-async function selectArtifactFile(dir) {
-  if (!dir) return null;
-  const entries = await fs.readdir(dir, { withFileTypes: true });
-  const files = entries.filter((entry) => entry.isFile());
-  const preferred = ['kvonce-otlp-payload.json', 'kvonce-otlp.json', 'payload.json'];
-  for (const name of preferred) {
-    const match = files.find((file) => file.name === name || file.name === `${name}.gz`);
-    if (match) return path.join(dir, match.name);
-  }
-  const json = files.find((file) => file.name.endsWith('.json') || file.name.endsWith('.json.gz'));
-  return json ? path.join(dir, json.name) : null;
+const targetPath = path.resolve(options.target);
+await fsp.mkdir(path.dirname(targetPath), { recursive: true });
+
+let sourceType = options.sourceType ?? 'unknown';
+let sourceDetail = options.sourceDetail ?? 'n/a';
+
+async function copyFile(source) {
+  await fsp.copyFile(source, targetPath);
+  sourceDetail = source;
 }
 
-async function downloadUrl(url, destination) {
-  const response = await fetch(url);
+if (options.explicit) {
+  await copyFile(options.explicit);
+  sourceType = 'explicit';
+} else if (options.artifactDir) {
+  const dir = path.resolve(options.artifactDir);
+  const candidates = (await fsp.readdir(dir)).filter((name) => name.endsWith('.json'));
+  const candidate = candidates.find((name) => name === 'kvonce-otlp.json') ?? candidates[0];
+  if (!candidate) {
+    console.error(`[fetch-otlp-payload] no JSON files found under ${dir}`);
+    process.exit(1);
+  }
+  await copyFile(path.join(dir, candidate));
+  sourceType = 'artifact';
+} else if (options.url) {
+  const response = await fetch(options.url);
   if (!response.ok) {
-    throw new Error(`Failed to download payload: ${response.status} ${response.statusText}`);
+    console.error(`[fetch-otlp-payload] failed to download ${options.url}: ${response.status}`);
+    process.exit(1);
   }
-  await fs.mkdir(path.dirname(destination), { recursive: true });
-  if (!response.body) {
-    throw new Error('Response body missing for payload download');
-  }
-  const writeStream = createWriteStream(destination);
-  await pipeline(response.body, writeStream);
-  return fs.readFile(destination);
+  const buffer = Buffer.from(await response.arrayBuffer());
+  await fsp.writeFile(targetPath, buffer);
+  sourceType = 'url';
+  sourceDetail = options.url;
+} else if (!options.sourceType && !options.sourceDetail) {
+  console.error('[fetch-otlp-payload] no source provided (artifact, url, or explicit).');
+  process.exit(1);
 }
 
-async function writeBuffer(target, buffer) {
-  await fs.mkdir(path.dirname(target), { recursive: true });
-  await fs.writeFile(target, buffer);
-}
-
-function computeSha256(buffer) {
-  return createHash('sha256').update(buffer).digest('hex');
-}
-
-async function ensureMetadata(dir, metadata) {
-  const metadataPath = path.join(dir, 'kvonce-payload-metadata.json');
-  await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
-  return metadataPath;
-}
-
-async function main() {
-  const args = parseArgs();
-  const targetPath = path.resolve(args.target);
-  const targetDir = path.dirname(targetPath);
-  const metadata = {
-    sourceType: 'unknown',
-    sourceDetail: '',
-    sha256: '',
-    sizeBytes: 0,
-    generatedAt: new Date().toISOString(),
-  };
-
-  let buffer = null;
-
-  if (await pathExists(args.explicit)) {
-    buffer = await readFileBuffer(args.explicit);
-    metadata.sourceType = 'explicit';
-    metadata.sourceDetail = args.explicit;
-  }
-
-  if (!buffer && args.artifactDir) {
-    const candidate = await selectArtifactFile(args.artifactDir);
-    if (candidate && (await pathExists(candidate))) {
-      buffer = await readFileBuffer(candidate);
-      metadata.sourceType = 'artifact';
-      metadata.sourceDetail = candidate;
-    }
-  }
-
-  if (!buffer && args.url) {
-    const tempPath = path.join(targetDir, 'kvonce-otlp-download.tmp');
-    buffer = await downloadUrl(args.url, tempPath);
-    metadata.sourceType = 'url';
-    metadata.sourceDetail = args.url;
-    await fs.unlink(tempPath).catch(() => {});
-  }
-
-  if (!buffer) {
-    const sample = path.join(projectRoot, 'samples', 'trace', 'kvonce-otlp.json');
-    buffer = await readFileBuffer(sample);
-    metadata.sourceType = 'sample';
-    metadata.sourceDetail = sample;
-  }
-
-  await writeBuffer(targetPath, buffer);
-  metadata.sha256 = computeSha256(buffer);
-  metadata.sizeBytes = buffer.length;
-  await ensureMetadata(targetDir, metadata);
-  console.log(`[fetch-otlp-payload] source=${metadata.sourceType} detail=${metadata.sourceDetail}`);
-  console.log(`[fetch-otlp-payload] wrote ${buffer.length} bytes to ${targetPath}`);
-}
-
-main().catch((error) => {
-  console.error('[fetch-otlp-payload] failed:', error.message);
-  process.exitCode = 1;
-});
+const payload = await fsp.readFile(targetPath);
+const hash = createHash('sha256').update(payload).digest('hex');
+const metadata = {
+  sourceType,
+  sourceDetail,
+  sha256: hash,
+  sizeBytes: payload.length,
+};
+const metadataPath = path.join(path.dirname(targetPath), '..', 'kvonce-payload-metadata.json');
+await fsp.mkdir(path.dirname(metadataPath), { recursive: true });
+await fsp.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
