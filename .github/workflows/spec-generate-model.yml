@@ -74,6 +74,18 @@ jobs:
           name: generate-artifacts-diff
           path: hermetic-reports/spec/generate-artifacts-diff.json
           if-no-files-found: warn
+      - name: Append diff summary to step report
+        if: always()
+        run: |
+          if [[ -f hermetic-reports/spec/generate-artifacts-diff.json ]]; then
+            {
+              echo '## Generate Artifacts Summary'
+              node scripts/ci/render-generate-artifacts-summary.mjs hermetic-reports/spec/generate-artifacts-diff.json
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo '## Generate Artifacts Summary' >> "$GITHUB_STEP_SUMMARY"
+            echo 'No diff summary produced.' >> "$GITHUB_STEP_SUMMARY"
+          fi
 
   model-based-tests:
     runs-on: ubuntu-latest

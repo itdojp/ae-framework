@@ -178,7 +178,7 @@ THEOREM Safety == Spec => []NoOverwrite
 5. **ダッシュボード整備**（網羅率・不整合・回帰影響を可視化）
 
 
-## 現状進捗（2025-10-04）
+## 現状進捗（2025-10-05）
 
 ### 完了
 - KvOnce 抽象/準抽象/実装仕様と Refinement Mapping を追加（PR #1020）
@@ -192,6 +192,20 @@ THEOREM Safety == Spec => []NoOverwrite
 - formal-summary を PR コメントへ自動投稿
 - generate-artifacts / model-based-tests の最小ゲート `.github/workflows/spec-generate-model.yml` を運用し、対象を段階的に拡充
 - KvOnce のトレース検証 (`scripts/trace/run-kvonce-conformance.sh`) を CI ジョブに組み込み、NDJSON スキーマを `docs/trace/kvonce-trace-schema.md` に記録
+
+### Phase C: 後回し項目と再開条件
+1. **生成成果物の完全ゲート化**  
+   - `generate-artifacts` ワークフローを必須チェックへ昇格する前に、生成差分のホワイトリスト運用と、誤検知を抑えるテンプレート整理を実施。  
+   - 再開条件: 仕様変更時の差分が安定してレビュー可能であること、Issue #1011 ステップ2の残タスクが収束していること。
+2. **Projector → Validator → TLC のトレースリプレイ**  
+   - 実装ログから自動抽出した NDJSON を TLC/Apalache で検証する再実行パイプラインを整備。  
+   - 再開条件: 現行 PoC (KvOnce) の end-to-end テストが緑化し、追加ドメインのトレース要件が確定していること。
+3. **BDD 生成フローの再導入**  
+   - TLA+ の Action から BDD ステップを再生成し、`tests/bdd` を自動更新する。  
+   - 再開条件: サンプル生成の品質が reviewer 合意を得られる水準となり、verify-lite lint backlog の整理計画 (#1016) が進んでいること。
+4. **ダッシュボード統合**  
+   - mutation/coverage/trace 成果をまとめる可視化ダッシュボードを構築。  
+   - 再開条件: Week2 以降の運用 Issues (#999/#1001) のクリティカル項目が解消されていること。
 
 ### 実行ヒント
 

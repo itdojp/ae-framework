@@ -1,27 +1,26 @@
-# Issue Progress Snapshot (2025-10-04)
+# Issue Progress Snapshot (2025-10-05)
 
 | Issue | Theme | Status | Latest Notes |
 |-------|-------|--------|--------------|
-| #997 | Week1: フルパイプライン復元の詳細化 | ⏳ 継続 | Resilience／Telemetry／Property 系の回帰を解消し、Bulkhead 統合テストも通過。`pnpm test:ci` は緑化済み。`PODMAN_COMPOSE_PROVIDER=podman-compose make test-docker-all` の順次成功と Podman 手順整備が完了し、現在は mutation survivor 解消と Verify ワークフロー拡張が主な残課題。|
-| #999 | Week2: 継続運用計画の具体化 | ⏳ 継続 | Verify Lite / mutation-quick GitHub Check を整備済み。TokenOptimizer quick run は 100% を維持。EnhancedStateManager quick run は rollback 系テスト追加後も **59.74%**（survived 184）で頭打ち。Podman unit compose は `AE_HOST_STORE` キャッシュ導入で 45 秒程度まで短縮。残課題はトランザクション／スナップショット／復元系のサバイバー解消。|
-| #1001 | Week2 Tracker | ✅ 進捗記録中 | `src/api/server.ts` の Mutation quick を 47%→67%→81%→88%→94%→98.69%→100% まで引き上げ。TokenOptimizer quick は 32.12%、EnhancedStateManager quick は rollback/initalize/legacy Buffer テスト追加後も **59.74%**（survived 184）。イベント/rollback 付近のフォローアップを継続する。|
+| #997 | Week1: フルパイプライン復元の詳細化 | ⏳ 継続 | Resilience／Telemetry／Property 系の回帰を解消し、Bulkhead 統合テストも通過。`pnpm test:ci` は緑化済み。`PODMAN_COMPOSE_PROVIDER=podman-compose make test-docker-all` の順次成功と Podman 手順整備が完了し、現在は mutation survivor 解消と Verify ワークフロー拡張が主な残課題。Fail-Fast Spec ビルドの sparse checkout を調整し、ローカルアクション不足で落ちる事象を解消。|
+| #999 | Week2: 継続運用計画の具体化 | ⏳ 継続 | Verify Lite / mutation-quick GitHub Check を整備済み。TokenOptimizer quick run は 100% を維持。EnhancedStateManager quick run は rollback 系テスト追加後も **59.74%**（survived 184）。Podman unit compose は `AE_HOST_STORE` キャッシュ導入で 45 秒程度まで短縮。`scripts/ci/run-verify-lite-local.sh` を追加し、ローカルで verify-lite パイプライン（lint 集計 + mutation quick opt-in）を一括再現可能に。`scripts/ci/ensure-bin-executables.mjs` で CLI bin の権限を自動補正済。残課題はトランザクション／スナップショット／復元系のサバイバー解消。|
+| #1001 | Week2 Tracker | ✅ 進捗記録中 | `src/api/server.ts` の Mutation quick を 47%→67%→81%→88%→94%→98.69%→100% まで引き上げ。TokenOptimizer quick は 32.12%、EnhancedStateManager quick は rollback/initialize/legacy Buffer テスト追加後も **59.74%**（survived 184）。性能プロジェクトは `vitest --passWithNoTests` 化してゲート継続、イベント/rollback 付近のフォローアップを継続する。Trace まわりは Projector/Validator/OTLP 変換の CLI テストと conformance 連結テストを追加済み。|
 | #1002 | Week3 準備 (予定) | 💤 未着手 | Week2 の残課題（Docker 実行環境整備・mutation survivors 対応）完了後に着手予定。現時点では準備メモのみ。|
 | #1003 | Week3 Tracker | 💤 未着手 | Week3 の進行条件となる CI/テスト基盤の整備待ち。前段となる #999/#1001 の完了がブロッカー。|
 |
 
-> メモ内容は GitHub Issues (#997, #999, #1001, #1002, #1003) にもコメントとして反映済み（2025-10-04 更新）。
+> メモ内容は GitHub Issues (#997, #999, #1001, #1002, #1003) にもコメントとして反映済み（2025-10-05 更新）。
 
 ### Latest PR / Follow-ups
 - Podman/WSL ランタイム最適化: PR [#1014](https://github.com/itdojp/ae-framework/pull/1014)
 - Spec generate/model gating: PR [#1023](https://github.com/itdojp/ae-framework/pull/1023) — `.github/workflows/spec-generate-model.yml` introduces drift fail-fast + KvOnce property run
-- Spec trace conformance gating: PR [#1024](https://github.com/itdojp/ae-framework/pull/1024) — adds KvOnce trace validation job + NDJSON schema docs
-- OTLP trace conversion: PR [#1025](https://github.com/itdojp/ae-framework/pull/1025) — adds OTLP→NDJSON converter + workflow integration
- - OTLP trace conversion: PR [#1025](https://github.com/itdojp/ae-framework/pull/1025) — adds OTLP→NDJSON converter + workflow integration
+- Spec trace conformance gating: PR [#1024](https://github.com/itdojp/ae-framework/pull/1024) — merged。KvOnce trace validation job + NDJSON schema docsが main に反映済み。
+- OTLP trace conversion: PR [#1025](https://github.com/itdojp/ae-framework/pull/1025) — merged。OTLP→NDJSON converter + workflow integration が landing。
 - ネイティブ compose 検証: Issue [#1015](https://github.com/itdojp/ae-framework/issues/1015)
 - Mutation survivor 削減タスク: Issue [#1016](https://github.com/itdojp/ae-framework/issues/1016)
-## Pipeline Health (2025-10-04)
-- `pnpm vitest run --reporter dot` はベンチマーク／AE-IR suite の再有効化と ResilientHttpClient の Promise Rejection 警告解消により全 suite 緑化済み。
-- `scripts/docker/run-unit.sh` は PATH から `/mnt/c/` を除外し Podman rootless を想定。事前に `pnpm fetch --prefer-offline` でホスト側 `.pnpm-store/` をウォームアップし、compose は `podman` / `podman-compose` いずれでも 600 秒タイムアウト付きで実行。エラー検知後は即座に `pnpm exec vitest run tests/unit` へフォールバックするため長時間ハングが消滅。
+## Pipeline Health (2025-10-05)
+- `pnpm vitest run --reporter dot` はベンチマーク／AE-IR suite の再有効化と ResilientHttpClient の Promise Rejection 警告解消により全 suite 緑化済み。性能プロジェクトが test ファイル未配置でも `--passWithNoTests` で exit 0 を維持。
+- `scripts/docker/run-unit.sh` は PATH から `/mnt/c/` を除外し Podman rootless を想定。事前に `pnpm fetch --prefer-offline` でホスト側 `.pnpm-store/` をウォームアップし、compose は `podman` / `podman-compose` いずれでも 600 秒タイムアウト付きで実行。エラー検知後は即座に `pnpm exec vitest run tests/unit` へフォールバックするため長時間ハングが消滅。SBOM/Drift check は CLI bin の実行権限補正後に再実行予定。
 
 ### Podman compose troubleshooting
 - `>>>> Executing external compose provider "podman-compose"` が表示された場合は native compose (`PODMAN_COMPOSE_PROVIDER=podman`) で再試行し、`podman ps` と `podman system info` が成功するか確認する。

@@ -1,4 +1,4 @@
-# Pipeline Baseline (2025-10-04)
+# Pipeline Baseline (2025-10-05)
 
 ## 目的
 - 仕様 → テスト → コード → 検証 → 運用 まで "最低限通しで動作する" フローを明文化し、Issue #1012 Phase A の足場とする。
@@ -16,7 +16,7 @@
 | Unit | `pnpm vitest run tests/unit/utils/enhanced-state-manager.test.ts tests/unit/utils/enhanced-state-manager.rollback.test.ts --reporter dot` | 2025-10-04 | ✅ | EnhancedStateManager 系 49 ケースがローカルで緑化。ログは `reports/unit-20251004.log` に保存予定 (TODO)。 |
 | Unit (Docker) | `AE_HOST_STORE=$(pwd)/.pnpm-store scripts/docker/run-unit.sh` | 2025-10-04 | ✅ | Podman フォールバックで 83 ケースが約 45s で完走。`podman compose -f` 非対応時は `podman-compose` に自動切替。 |
 | Mutation (Quick) | `STRYKER_TIME_LIMIT=480 ./scripts/mutation/run-scoped.sh --quick -m src/utils/enhanced-state-manager.ts -c configs/stryker.enhanced.config.js` | 2025-10-04 | ⚠️ | score 59.74% / survived 184。`calculateChecksum` / `reviveEntryData` 周辺が要追加テスト (Issue #1016)。 |
-| Verify Lite | `pnpm run verify:lite` | 2025-10-04 | ✅ | ローカルスクリプト追加済。TypeScript エラーを解消し exit 0 を確認（lint は非強制のため警告のみ出力）。実行前に `.stryker-tmp` を自動削除するよう対応。 |
+| Verify Lite | `pnpm run verify:lite` | 2025-10-05 | ✅ | 新規 `scripts/ci/run-verify-lite-local.sh` を追加。TypeScript / lint / build / mutation quick をローカルで一括再現し、lint サマリと mutation survivors を生成。`VERIFY_LITE_NO_FROZEN=1` で install relax 可能。 |
 | Make targets | `make test-*` 系 | 未 | ⛔ | ルートに Makefile が存在せず、直近のテーブルは `docs/notes/full-pipeline-restore.md` の古い情報。Phase A で Makefile 復元可否を調査する。 |
 | CI | `.github/workflows/pr-verify.yml` | 2025-10-04 | ✅ | Podman cache 導入の PR #1014 でローカル確認。CI 側での成功は PR マージ後に要確認。 |
 | CI | `.github/workflows/spec-generate-model.yml` | 2025-10-04 | ✅ | generate-artifacts drift を fail fast し、KvOnce property suite とトレース検証を実行。後続のモデルベース拡張は Issue #1011 で管理。 |
