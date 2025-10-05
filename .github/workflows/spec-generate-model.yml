@@ -184,7 +184,22 @@ jobs:
             EXTRA_ARGS+=("--url" "${URL_INPUT}")
           fi
           if [[ -n "${KVONCE_OTLP_PAYLOAD}" ]]; then
-            EXTRA_ARGS+=("--explicit" "${KVONCE_OTLP_PAYLOAD}")
+            PAYLOAD_REAL="$(python -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "${KVONCE_OTLP_PAYLOAD}")"
+            REPO_ROOT="$(python -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "${GITHUB_WORKSPACE}")"
+            if [[ ! -f "${PAYLOAD_REAL}" ]]; then
+              echo "[trace] KVONCE_OTLP_PAYLOAD does not reference a file: ${KVONCE_OTLP_PAYLOAD}" >&2
+              exit 1
+            fi
+            case "${PAYLOAD_REAL}" in
+              "${REPO_ROOT}"/*) ;;
+              *)
+                echo "[trace] KVONCE_OTLP_PAYLOAD must resolve within the repository workspace" >&2
+                exit 1
+                ;;
+            esac
+            EXTRA_ARGS+=("--explicit" "${PAYLOAD_REAL}")
+            EXTRA_ARGS+=("--source-type" "explicit")
+            EXTRA_ARGS+=("--source-detail" "${PAYLOAD_REAL}")
           fi
           if [[ ${#EXTRA_ARGS[@]} -eq 0 ]]; then
             EXTRA_ARGS+=("--explicit" "samples/trace/kvonce-otlp.json")

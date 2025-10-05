@@ -34,8 +34,9 @@ try {
     sha256: hash,
     sizeBytes: payload.length,
   };
-  const metadataPath = path.join(path.dirname(targetPath), '..', 'kvonce-payload-metadata.json');
-  fs.mkdirSync(path.dirname(metadataPath), { recursive: true });
+  const metadataDir = path.resolve(path.dirname(targetPath), '..');
+  const metadataPath = path.join(metadataDir, 'kvonce-payload-metadata.json');
+  fs.mkdirSync(metadataDir, { recursive: true });
   fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
 } catch (error) {
   console.error(`[write-payload-metadata] failed for ${targetPath}: ${error.message}`);
