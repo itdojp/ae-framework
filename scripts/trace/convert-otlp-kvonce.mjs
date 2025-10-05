@@ -3,8 +3,9 @@ import fs from "node:fs";
 import path from "node:path";
 
 const NANOS_PER_MILLI = 1_000_000n;
-const MAX_DATE_MILLIS = 8_640_000_000_000_000n; // +/- the maximum representable JS Date (in ms)
-const MIN_DATE_MILLIS = -MAX_DATE_MILLIS;
+const MAX_DATE_MILLIS = BigInt(Number.MAX_SAFE_INTEGER);
+const MIN_DATE_MILLIS = BigInt(Number.MIN_SAFE_INTEGER);
+const EXIT_NO_EVENTS = 2;
 
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -60,8 +61,13 @@ function extractAttributeValue(attrValue) {
       ])
     );
   }
-  // Unsupported OTLP value representations fall back to undefined.
-  // attrsToRecord will preserve the key with an undefined value so downstream validators can decide what to do.
+  console.warn(
+    "[convert-otlp-kvonce] unsupported OTLP attribute representation encountered; returning undefined",
+    attrValue
+  );
+  // Unsupported OTLP value representations (bytesValue, kvlistValue, or vendor extensions)
+  // fall back to undefined. attrsToRecord preserves the key so downstream validators can
+  // decide whether the payload should fail or emit a warning.
   return undefined;
 }
 
@@ -74,22 +80,24 @@ function attrsToRecord(attributes = []) {
 }
 
 function toTimestamp(nanoString) {
-  if (!nanoString) return new Date().toISOString();
+  if (!nanoString) {
+    console.warn("[convert-otlp-kvonce] missing span timestamp; skipping event");
+    return null;
+  }
   try {
     const nanos = BigInt(nanoString);
     const millisBigInt = nanos / NANOS_PER_MILLI;
     if (millisBigInt > MAX_DATE_MILLIS || millisBigInt < MIN_DATE_MILLIS) {
       console.warn(
-        `Invalid timestamp ${nanoString} (millis ${millisBigInt}) exceeds Date range [` +
-          `${MIN_DATE_MILLIS} to ${MAX_DATE_MILLIS}]; using current time.`
+        `Invalid timestamp ${nanoString} (millis ${millisBigInt}) exceeds Date range [${MIN_DATE_MILLIS} to ${MAX_DATE_MILLIS}]; skipping event.`
       );
-      return new Date().toISOString();
+      return null;
     }
     const millis = Number(millisBigInt);
     return new Date(millis).toISOString();
   } catch (error) {
     console.warn(`Failed to convert timestamp ${nanoString}: ${error.message}`);
-    return new Date().toISOString();
+    return null;
   }
 }
 
@@ -102,8 +110,15 @@ function extractEvents(otlp) {
         const type = attrs["kvonce.event.type"];
         const key = attrs["kvonce.event.key"];
         if (!type || !key) continue;
+        const timestamp = toTimestamp(span.startTimeUnixNano);
+        if (!timestamp) {
+          console.warn(
+            `[convert-otlp-kvonce] span ${span.name ?? 'unknown'} missing usable timestamp; event dropped`
+          );
+          continue;
+        }
         const event = {
-          timestamp: toTimestamp(span.startTimeUnixNano),
+          timestamp,
           type,
           key,
         };
@@ -132,13 +147,18 @@ const otlp = readOtlp(input);
 const events = extractEvents(otlp);
 
 if (events.length === 0) {
-  console.error("No kvonce events found in OTLP payload.");
-  process.exit(2);
+  console.error(
+    "No kvonce events found in OTLP payload. A kvonce event must include 'kvonce.event.type' and 'kvonce.event.key' attributes."
+  );
+  process.exit(EXIT_NO_EVENTS);
 }
 
 const ndjson = toNdjson(events);
 if (output) {
-  fs.mkdirSync(path.dirname(output), { recursive: true });
+  const dir = path.dirname(output);
+  if (dir && dir !== "." && dir !== path.parse(dir).root) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
   fs.writeFileSync(output, ndjson, "utf8");
 } else {
   process.stdout.write(ndjson);
