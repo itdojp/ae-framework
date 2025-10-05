@@ -8,17 +8,18 @@ const args = process.argv.slice(2);
 const options = { target: null, artifactDir: null, url: null, explicit: null, sourceType: null, sourceDetail: null };
 for (let i = 0; i < args.length; i++) {
   const arg = args[i];
-  if ((arg === "--target" || arg === "-t") && args[i + 1]) {
+  const peek = args[i + 1];
+  if ((arg === "--target" || arg === "-t") && peek && !peek.startsWith("-")) {
     options.target = args[++i];
-  } else if ((arg === "--artifact-dir" || arg === "-a") && args[i + 1]) {
+  } else if ((arg === "--artifact-dir" || arg === "-a") && peek && !peek.startsWith("-")) {
     options.artifactDir = args[++i];
-  } else if ((arg === "--url" || arg === "-u") && args[i + 1]) {
+  } else if ((arg === "--url" || arg === "-u") && peek && !peek.startsWith("-")) {
     options.url = args[++i];
-  } else if ((arg === "--explicit" || arg === "-e") && args[i + 1]) {
+  } else if ((arg === "--explicit" || arg === "-e") && peek && !peek.startsWith("-")) {
     options.explicit = args[++i];
-  } else if ((arg === "--source-type" || arg === "-y") && args[i + 1]) {
+  } else if ((arg === "--source-type" || arg === "-y") && peek && !peek.startsWith("-")) {
     options.sourceType = args[++i];
-  } else if ((arg === "--source-detail" || arg === "-s") && args[i + 1]) {
+  } else if ((arg === "--source-detail" || arg === "-s") && peek && !peek.startsWith("-")) {
     options.sourceDetail = args[++i];
   }
 }
@@ -62,7 +63,7 @@ if (options.explicit) {
   await fsp.writeFile(targetPath, buffer);
   sourceType = 'url';
   sourceDetail = options.url;
-} else if (!options.sourceType && !options.sourceDetail) {
+} else if (!options.explicit && !options.artifactDir && !options.url) {
   console.error('[fetch-otlp-payload] no source provided (artifact, url, or explicit).');
   process.exit(1);
 }
@@ -75,7 +76,7 @@ const metadata = {
   sha256: hash,
   sizeBytes: payload.length,
 };
-const metadataDir = path.resolve(path.dirname(targetPath), '..');
+const metadataDir = path.dirname(targetPath);
 const metadataPath = path.join(metadataDir, 'kvonce-payload-metadata.json');
 await fsp.mkdir(metadataDir, { recursive: true });
 await fsp.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
