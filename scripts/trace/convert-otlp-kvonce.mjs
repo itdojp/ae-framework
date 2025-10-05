@@ -3,8 +3,9 @@ import fs from "node:fs";
 import path from "node:path";
 
 const NANOS_PER_MILLI = 1_000_000n;
-
 const EXIT_NO_EVENTS = 2;
+const MAX_DATE_MILLIS = 8_640_000_000_000_000n;
+const MIN_DATE_MILLIS = -MAX_DATE_MILLIS;
 
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -52,11 +53,7 @@ function extractAttributeValue(attrValue) {
       ])
     );
   }
-  for (const key of Object.keys(attrValue)) {
-    if (attrValue[key] != null) {
-      return attrValue[key];
-    }
-  }
+  // Unsupported OTLP value representations fall back to undefined so the caller can decide whether validation should fail.
   return undefined;
 }
 
@@ -73,11 +70,10 @@ function toTimestamp(nanoString) {
   try {
     const nanos = BigInt(nanoString);
     const millisBigInt = nanos / NANOS_PER_MILLI;
-    const max = BigInt(Number.MAX_SAFE_INTEGER);
-    const min = BigInt(Number.MIN_SAFE_INTEGER);
-    if (millisBigInt > max || millisBigInt < min) {
+    if (millisBigInt > MAX_DATE_MILLIS || millisBigInt < MIN_DATE_MILLIS) {
       console.warn(
-        `Invalid timestamp ${nanoString} (millis ${millisBigInt}) exceeds safe integer range [${min} to ${max}]; using current time.`
+        `Invalid timestamp ${nanoString} (millis ${millisBigInt}) exceeds Date range [` +
+          `${MIN_DATE_MILLIS} to ${MAX_DATE_MILLIS}]; using current time.`
       );
       return new Date().toISOString();
     }
