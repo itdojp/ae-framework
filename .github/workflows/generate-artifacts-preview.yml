@@ -59,29 +59,8 @@ jobs:
         run: |
           if [ -f hermetic-reports/spec/generate-artifacts-diff.json ]; then
             echo '## Generate Artifacts Preview' >> "$GITHUB_STEP_SUMMARY"
-            node - <<'NODE' >> "$GITHUB_STEP_SUMMARY"
-const fs = require('fs');
-const path = 'hermetic-reports/spec/generate-artifacts-diff.json';
-try {
-  const data = JSON.parse(fs.readFileSync(path, 'utf8'));
-  console.log(`Generated at: ${data.generatedAt}`);
-  for (const target of data.targets || []) {
-    const status = target.hasChanges ? 'CHANGED' : 'clean';
-    console.log(`- ${target.path}: ${status}`);
-    if (target.hasChanges && target.files) {
-      const sample = target.files.slice(0, 10);
-      for (const file of sample) {
-        console.log(`  • ${file.status} ${file.file}`);
-      }
-      if (target.files.length > sample.length) {
-        console.log(`  • … (${target.files.length - sample.length} more)`);
-      }
-    }
-  }
-} catch (err) {
-  console.log(`Failed to read diff summary: ${err.message}`);
-}
-NODE
+            node scripts/ci/render-generate-artifacts-summary.mjs \
+              hermetic-reports/spec/generate-artifacts-diff.json >> "$GITHUB_STEP_SUMMARY"
           else
             echo 'No diff summary generated' >> "$GITHUB_STEP_SUMMARY"
           fi
