@@ -22,7 +22,7 @@ const changedTargets = (summary.targets || []).filter((target) => target.hasChan
 if (changedTargets.length === 0) {
   appendSummary(['## Generate Artifacts Drift', '- clean']);
   console.log('No generate-artifacts drift detected.');
-  return;
+  process.exit(0);
 }
 
 const lines = ['## Generate Artifacts Drift', `Generated at: ${summary.generatedAt || 'unknown'}`];
