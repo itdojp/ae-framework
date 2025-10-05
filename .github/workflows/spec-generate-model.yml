@@ -102,11 +102,11 @@ jobs:
       - name: Install dependencies
         run: |
           pnpm fetch --prefer-offline
-          if pnpm install --frozen-lockfile --config.confirm=false; then
+          if pnpm install --frozen-lockfile; then
             echo "pnpm install succeeded with --frozen-lockfile"
           else
             echo "pnpm install --frozen-lockfile failed, falling back to --no-frozen-lockfile"
-            pnpm install --no-frozen-lockfile --prefer-offline --config.confirm=false
+            pnpm install --no-frozen-lockfile --prefer-offline
           fi
       - name: Run KvOnce property suite
         run: pnpm vitest run tests/property/kvonce.safety.property.test.ts --reporter dot
@@ -156,11 +156,11 @@ jobs:
       - name: Install dependencies
         run: |
           pnpm fetch --prefer-offline
-          if pnpm install --frozen-lockfile --config.confirm=false; then
+          if pnpm install --frozen-lockfile; then
             echo "pnpm install succeeded with --frozen-lockfile"
           else
             echo "pnpm install --frozen-lockfile failed, falling back to --no-frozen-lockfile"
-            pnpm install --no-frozen-lockfile --prefer-offline --config.confirm=false
+            pnpm install --no-frozen-lockfile --prefer-offline
           fi
       - name: Download collector payload artifact
         if: ${{ env.KVONCE_PAYLOAD_ARTIFACT != '' }}
