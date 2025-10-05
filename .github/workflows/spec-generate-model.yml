@@ -176,15 +176,7 @@ jobs:
           ARTIFACT_DIR="${{ steps.kvonce_artifact.outputs.download-path }}"
           URL_INPUT="${{ env.KVONCE_OTLP_PAYLOAD_URL }}"
           TARGET="hermetic-reports/trace/collected-kvonce-otlp.json"
-          resolve_path() {
-            if command -v realpath >/dev/null 2>&1; then
-              realpath "$1"
-            elif command -v python3 >/dev/null 2>&1; then
-              python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$1"
-            else
-              python -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$1"
-            fi
-          }
+          source scripts/trace/path-utils.sh
           EXTRA_ARGS=()
           if [[ -n "${ARTIFACT_DIR}" ]]; then
             EXTRA_ARGS+=("--artifact-dir" "${ARTIFACT_DIR}")
@@ -193,8 +185,8 @@ jobs:
             EXTRA_ARGS+=("--url" "${URL_INPUT}")
           fi
           if [[ -n "${KVONCE_OTLP_PAYLOAD}" ]]; then
-            PAYLOAD_REAL="$(resolve_path "${KVONCE_OTLP_PAYLOAD}")"
-            REPO_ROOT="$(resolve_path "${GITHUB_WORKSPACE}")"
+            PAYLOAD_REAL="$(kvonce_resolve_path "${KVONCE_OTLP_PAYLOAD}")"
+            REPO_ROOT="$(kvonce_resolve_path "${GITHUB_WORKSPACE}")"
             if [[ ! -f "${PAYLOAD_REAL}" ]]; then
               echo "[trace] KVONCE_OTLP_PAYLOAD does not reference a file: ${KVONCE_OTLP_PAYLOAD}" >&2
               exit 1
