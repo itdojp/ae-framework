@@ -92,10 +92,17 @@ export async function produceMockOtlp(outputPath = defaultOutput) {
     return { ok: true };
   });
 
-  await app.listen({ port: 0, host: "127.0.0.1" });
-  const serverAddress = app.server.address();
-  const port = typeof serverAddress === "object" && serverAddress ? serverAddress.port : 0;
-  const url = `http://127.0.0.1:${port}/event`;
+  let url;
+  try {
+    await app.listen({ port: 0, host: "127.0.0.1" });
+    const serverAddress = app.server.address();
+    const port = typeof serverAddress === "object" && serverAddress ? serverAddress.port : 0;
+    url = `http://127.0.0.1:${port}/event`;
+  } catch (error) {
+    console.error("[mock-otlp] failed to start server:", error.message);
+    process.exitCode = 1;
+    return;
+  }
 
   const events = [
     { type: "success", key: "alpha", value: "v1" },
