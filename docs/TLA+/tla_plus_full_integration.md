@@ -191,8 +191,7 @@ THEOREM Safety == Spec => []NoOverwrite
 - Trace Validator / Projector の実装と `verify:conformance` への統合
 - formal-summary を PR コメントへ自動投稿
 - generate-artifacts / model-based-tests の最小ゲート `.github/workflows/spec-generate-model.yml` を運用し、対象を段階的に拡充
-- Collector 連携ガイド（`KVONCE_OTLP_PAYLOAD` の Secrets 運用、外部ストレージの取り扱い）と NDJSON/OTLP 併用時のベストプラクティス整理
-- `context` フィールドを活用した retry 検証ロジックの追加（Projector/Validator 強化）
+- KvOnce のトレース検証 (`scripts/trace/run-kvonce-conformance.sh`) を CI ジョブに組み込み、NDJSON スキーマを `docs/trace/kvonce-trace-schema.md` に記録
 
 ### 実行ヒント
 
@@ -202,6 +201,9 @@ pnpm run spec:kv-once:tlc
 
 # Apalache 版（インストール済みの場合）
 pnpm run spec:kv-once:apalache
+
+# トレース検証（NDJSON → Projection → Validation）
+bash scripts/trace/run-kvonce-conformance.sh
 ```
 
 - 駆動結果は `hermetic-reports/formal/tla-summary.json` に出力される。
@@ -210,6 +212,6 @@ pnpm run spec:kv-once:apalache
 次ステップ：Spec Check の結果を Issue #1011 に紐付ける自動コメント、及び generate-artifacts/model-based-tests/conformance の追加。
 
 ### 省略予定 (Phase C)
-- Projector / Validator を本運用に載せる前に必要なトレーススキーマ詳細設計（Issue #1011 ステップ3へ委譲）
+- Projector / Validator を本運用に載せる前に必要なトレーススキーマ詳細設計（Issue #1011 ステップ3へ委譲）※KvOnce 用 NDJSON スキーマは `docs/trace/kvonce-trace-schema.md` にドラフト記載済み
 - 自動生成 BDD/contract テスト全体の差分チェックと整合性検証（今後の generate-artifacts 拡張で対応）
 - conformance ジョブにおける OTLP 収集とダッシュボード可視化（Issue #1011 ステップ5にて計画）
