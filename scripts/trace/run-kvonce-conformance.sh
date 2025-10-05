@@ -6,6 +6,19 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 DEFAULT_TRACE_DIR="${PROJECT_ROOT}/hermetic-reports/trace"
 DEFAULT_OTLP_PAYLOAD="${DEFAULT_TRACE_DIR}/collected-kvonce-otlp.json"
 
+resolve_path() {
+  local target="$1"
+  if command -v realpath >/dev/null 2>&1; then
+    realpath "$target"
+  else
+    python - <<'PY'
+import os, sys
+print(os.path.realpath(sys.argv[1]))
+PY
+"$target"
+  fi
+}
+
 usage() {
   cat <<'USAGE'
 Usage: run-kvonce-conformance.sh [--input <file>] [--output-dir <dir>] [--format ndjson|otlp]
@@ -105,22 +118,8 @@ if [[ "${FORMAT}" == "otlp" ]]; then
   cp "${TEMP_FILE}" "${NDJSON_PATH}"
   SOURCE_NDJSON="${NDJSON_PATH}"
 elif [[ "${FORMAT}" == "ndjson" ]]; then
-  # Skip the copy when the caller already pointed us at the destination path to avoid unnecessary I/O.
-  if command -v realpath >/dev/null 2>&1; then
-    INPUT_REAL="$(realpath "${INPUT}")"
-    NDJSON_REAL="$(realpath "${NDJSON_PATH}")"
-  else
-    INPUT_REAL="$(python - <<'PY'
-import os, sys
-print(os.path.realpath(sys.argv[1]))
-PY
-"${INPUT}")"
-    NDJSON_REAL="$(python - <<'PY'
-import os, sys
-print(os.path.realpath(sys.argv[1]))
-PY
-"${NDJSON_PATH}")"
-  fi
+  INPUT_REAL="$(resolve_path "${INPUT}")"
+  NDJSON_REAL="$(resolve_path "${NDJSON_PATH}")"
 
   if [[ "${INPUT_REAL}" != "${NDJSON_REAL}" ]]; then
     cp "${INPUT}" "${NDJSON_PATH}"
