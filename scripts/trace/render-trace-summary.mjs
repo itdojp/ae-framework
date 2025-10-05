@@ -41,7 +41,7 @@ for (const item of cases) {
     lines.push(`- ${item.label}: ${status} (issues: ${issues.length})`);
     if (issues.length > 0) {
       for (const issue of issues.slice(0, 5)) {
-        const rendered = `  - [${issue.type ?? 'unknown'}] ${issue.key ?? 'unknown'} :: ${issue.message ?? ''}`.trim();
+        const rendered = `  - [${issue.type ?? 'unknown'}] ${issue.key ?? 'unknown'}: ${issue.message ?? ''}`.trim();
         lines.push(rendered);
       }
       if (issues.length > 5) {
