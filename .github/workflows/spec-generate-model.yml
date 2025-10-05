@@ -117,7 +117,7 @@ jobs:
           const fs = require('fs');
           const summary = process.env.GITHUB_STEP_SUMMARY;
           if (!summary) {
-            return;
+            process.exit(0);
           }
           const lines = [
             '## Model-based Tests',
