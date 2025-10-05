@@ -43,6 +43,8 @@ pnpm run spec:kv-once:apalache
 - `docs/TLA+/tla_plus_full_integration.md` — 全体ロードマップ
 - `scripts/trace/projector-kvonce.mjs`, `scripts/trace/validate-kvonce.mjs` — NDJSON ログを射影・検証する雛形（例: `hermetic-reports/trace/kvonce-sample.ndjson`).
 - `tests/property/kvonce.safety.property.test.ts` — PoC の振る舞いを確認する property テスト。minimal pipeline で実行されます。
+- `scripts/trace/collect-sample-otlp.mjs`, `scripts/trace/convert-otlp-kvonce.mjs` — OTLP ResourceSpans から NDJSON へ整形するサンプルパイプライン。
+- `docs/trace/kvonce-trace-schema.md` — NDJSON トレースのドラフトスキーマと OTLP 対応のメモ。
 - `docs/notes/verify-lite-lint-plan.md` — verify-lite lint 改善計画
 - `.github/workflows/minimal-pipeline.yml` — TLC/Apalache を含む最小パイプライン
 - `docs/trace/kvonce-trace-schema.md` — NDJSON トレースのドラフトスキーマと拡張メモ
