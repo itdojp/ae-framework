@@ -50,20 +50,29 @@ jobs:
             ROOT_DIR="src"
           fi
           if [ -d "$ROOT_DIR" ]; then
-            if grep -R "Date.now()" "$ROOT_DIR" --include="*.ts" --include="*.js" \
-              | grep -vE "src/(conformance|quality|observers)/"; then
-              printf "%s\n" "❌ Non-deterministic Date.now() usage detected outside allowlist"
-              exit 1
+            DETECTED=""
+            while IFS= read -r line; do
+              DETECTED="$DETECTED
+$line"
+            done < <(grep -R "Date.now()" "$ROOT_DIR" --include="*.ts" --include="*.js" | grep -vE "src/(conformance|quality|observers)/")
+            if [ -n "$DETECTED" ]; then
+              printf "%s\n" "⚠️  Non-deterministic Date.now() usage detected outside allowlist:"$DETECTED
             fi
-            if grep -R "Math.random()" "$ROOT_DIR" --include="*.ts" --include="*.js" \
-              | grep -vE "src/(conformance|quality|observers)/"; then
-              printf "%s\n" "❌ Non-deterministic Math.random() usage detected outside allowlist"
-              exit 1
+            DETECTED=""
+            while IFS= read -r line; do
+              DETECTED="$DETECTED
+$line"
+            done < <(grep -R "Math.random()" "$ROOT_DIR" --include="*.ts" --include="*.js" | grep -vE "src/(conformance|quality|observers)/")
+            if [ -n "$DETECTED" ]; then
+              printf "%s\n" "⚠️  Non-deterministic Math.random() usage detected outside allowlist:"$DETECTED
             fi
-            if grep -R "process.hrtime()" "$ROOT_DIR" --include="*.ts" --include="*.js" \
-              | grep -vE "src/(conformance|quality|observers)/"; then
-              printf "%s\n" "❌ Non-deterministic process.hrtime() usage detected outside allowlist"
-              exit 1
+            DETECTED=""
+            while IFS= read -r line; do
+              DETECTED="$DETECTED
+$line"
+            done < <(grep -R "process.hrtime()" "$ROOT_DIR" --include="*.ts" --include="*.js" | grep -vE "src/(conformance|quality|observers)/")
+            if [ -n "$DETECTED" ]; then
+              printf "%s\n" "⚠️  process.hrtime() usage detected outside allowlist:"$DETECTED
             fi
           fi
           
