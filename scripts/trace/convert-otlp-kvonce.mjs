@@ -71,6 +71,11 @@ function extractAttributeValue(attrValue) {
   return undefined;
 }
 
+/**
+ * Flattens OTLP span attributes into a plain object. Keys with unsupported value
+ * representations remain present with an explicit `undefined` value so that
+ * downstream validators can decide whether to treat them as errors or warnings.
+ */
 function attrsToRecord(attributes = []) {
   const record = {};
   for (const attribute of attributes || []) {
