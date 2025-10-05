@@ -17,6 +17,7 @@
 | Unit (Docker) | `AE_HOST_STORE=$(pwd)/.pnpm-store scripts/docker/run-unit.sh` | 2025-10-04 | ✅ | Podman フォールバックで 83 ケースが約 45s で完走。`podman compose -f` 非対応時は `podman-compose` に自動切替。 |
 | Mutation (Quick) | `STRYKER_TIME_LIMIT=480 ./scripts/mutation/run-scoped.sh --quick -m src/utils/enhanced-state-manager.ts -c configs/stryker.enhanced.config.js` | 2025-10-04 | ⚠️ | score 59.74% / survived 184。`calculateChecksum` / `reviveEntryData` 周辺が要追加テスト (Issue #1016)。 |
 | Verify Lite | `pnpm run verify:lite` | 2025-10-05 | ✅ | 新規 `scripts/ci/run-verify-lite-local.sh` を追加。TypeScript / lint / build / mutation quick をローカルで一括再現し、lint サマリと mutation survivors を生成。`VERIFY_LITE_NO_FROZEN=1` で install relax 可能。 |
+| Trace Replay | `pnpm run trace:kvonce:replay` | 2025-10-05 | ✅ | KvOnce NDJSON サンプルを検証 → `pnpm run spec:kv-once:tlc` を実行し、`hermetic-reports/trace/replay/kvonce-trace-replay.json` にまとめる。TLC 未導入の場合は `tool_not_available` を記録しつつ成功扱い。 |
 | Make targets | `make test-*` 系 | 未 | ⛔ | ルートに Makefile が存在せず、直近のテーブルは `docs/notes/full-pipeline-restore.md` の古い情報。Phase A で Makefile 復元可否を調査する。 |
 | CI | `.github/workflows/pr-verify.yml` | 2025-10-04 | ✅ | Podman cache 導入の PR #1014 でローカル確認。CI 側での成功は PR マージ後に要確認。 |
 | CI | `.github/workflows/spec-generate-model.yml` | 2025-10-04 | ✅ | generate-artifacts drift を fail fast し、KvOnce property suite とトレース検証を実行。後続のモデルベース拡張は Issue #1011 で管理。 |

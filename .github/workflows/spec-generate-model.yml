@@ -238,6 +238,12 @@ jobs:
             --input samples/trace/kvonce-sample.ndjson \
             --format ndjson \
             --output-dir hermetic-reports/trace/ndjson
+      - name: Replay KvOnce trace against TLC
+        run: |
+          node ./scripts/trace/run-kvonce-trace-replay.mjs \
+            --input samples/trace/kvonce-sample.ndjson \
+            --format ndjson \
+            --output-dir hermetic-reports/trace/replay
       - name: Summarize trace validation
         id: trace_summary
         run: node ./scripts/trace/render-trace-summary.mjs

@@ -192,6 +192,7 @@ THEOREM Safety == Spec => []NoOverwrite
 - formal-summary を PR コメントへ自動投稿
 - generate-artifacts / model-based-tests の最小ゲート `.github/workflows/spec-generate-model.yml` を運用し、対象を段階的に拡充
 - KvOnce のトレース検証 (`scripts/trace/run-kvonce-conformance.sh`) を CI ジョブに組み込み、NDJSON スキーマを `docs/trace/kvonce-trace-schema.md` に記録
+- KvOnce トレースを TLC へリプレイするプロトタイプ (`scripts/trace/run-kvonce-trace-replay.mjs`) を追加し、Spec Generate & Model workflow でサマリを取得
 
 ### Phase C: 後回し項目と再開条件
 1. **生成成果物の完全ゲート化**  

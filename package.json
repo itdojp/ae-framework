@@ -235,6 +235,7 @@
     "conformance:verify:sample": "tsx src/cli/index.ts conformance verify -i samples/conformance/sample-data.json --context-file samples/conformance/sample-context.json --rules samples/conformance/sample-rules.json --format json --output hermetic-reports/conformance/sample-results.json",
     "tools:formal:check": "node scripts/formal/tools-check.mjs",
     "trace:validate": "node scripts/formal/trace-validate.mjs samples/conformance/sample-traces.json",
+    "trace:kvonce:replay": "node scripts/trace/run-kvonce-trace-replay.mjs",
     "spec:check:tla": "node scripts/formal/spec-check-tla.mjs spec/tla/DomainSpec.tla",
     "spec:check:alloy": "node scripts/formal/spec-check-alloy.mjs spec/alloy/Domain.als",
     "spec:kv-once:tlc": "node scripts/formal/verify-tla.mjs --engine=tlc --file specs/formal/10_abstract/KvOnce.tla --timeout 60000",

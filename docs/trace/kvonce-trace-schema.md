@@ -33,6 +33,9 @@
   - `retryContexts` に `attempt` または `attempts` を含めると、連番チェックと成功の整合性チェックが有効化されます。
 - `scripts/trace/run-kvonce-conformance.sh`
   - 上記の両スクリプトを連続起動し、結果を `hermetic-reports/trace/` に保存します。CI では `spec-generate-model` ワークフロー内で利用。
+- `scripts/trace/run-kvonce-trace-replay.mjs`
+  - KvOnce サンプルトレースを検証したうえで、TLC (`pnpm run spec:kv-once:tlc`) を実行し、`hermetic-reports/trace/replay/kvonce-trace-replay.json` にサマリを出力します。
+  - TLC ツールが未導入の場合は `tool_not_available` として記録しつつ、CI ではステップサマリに結果を追記します。
 
 ## 今後の拡張
 - Issue #1011 ステップ3: 生成されたトレースを実装ログから自動抽出し、このスキーマに準拠させる。
@@ -49,4 +52,3 @@
 - `scripts/trace/convert-otlp-kvonce.mjs` が OTLP JSON を NDJSON 形式に変換します。デフォルトでは span の `startTimeUnixNano` を ISO8601 に変換し、必要な属性が欠けているイベントはスキップします。
 - フォールバックとして `samples/trace/kvonce-otlp.json` / `samples/trace/kvonce-sample.ndjson` を提供し、CI が外部コレクタがなくても検証できるようにしています。
 - CI では `scripts/trace/run-kvonce-conformance.sh --format otlp --input samples/trace/kvonce-otlp.json` を利用して、自動的に変換→検証を行います。
-
