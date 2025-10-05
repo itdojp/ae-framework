@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 DEFAULT_TRACE_DIR="${PROJECT_ROOT}/hermetic-reports/trace"
 DEFAULT_OTLP_PAYLOAD="${DEFAULT_TRACE_DIR}/collected-kvonce-otlp.json"
+EXIT_NO_EVENTS=2
 
 REALPATH_CMD=""
 resolve_path() {
@@ -12,6 +13,8 @@ resolve_path() {
   if [[ -z "${REALPATH_CMD}" ]]; then
     if command -v realpath >/dev/null 2>&1; then
       REALPATH_CMD="realpath"
+    elif command -v python3 >/dev/null 2>&1; then
+      REALPATH_CMD="python3"
     else
       REALPATH_CMD="python"
     fi
@@ -20,7 +23,7 @@ resolve_path() {
   if [[ "${REALPATH_CMD}" == "realpath" ]]; then
     realpath "$target"
   else
-    python -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$target"
+    "${REALPATH_CMD}" -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$target"
   fi
 }
 
@@ -110,12 +113,13 @@ SOURCE_NDJSON="${INPUT}"
 
 if [[ "${FORMAT}" == "otlp" ]]; then
   TMP_ROOT="${TMPDIR:-${PROJECT_ROOT}/.kvonce-tmp}"
-  mkdir -p "${TMP_ROOT}"
-  chmod 700 "${TMP_ROOT}"
-  TEMP_FILE="$(mktemp -p "${TMP_ROOT}" kvonce-events-XXXXXX.ndjson)"
+  if [[ ! -d "${TMP_ROOT}" ]]; then
+    install -d -m 700 "${TMP_ROOT}"
+  fi
+  TEMP_FILE="$(mktemp "${TMP_ROOT%/}/kvonce-events-XXXXXX.ndjson")"
   if ! node "${SCRIPT_DIR}/convert-otlp-kvonce.mjs" --input "${INPUT}" --output "${TEMP_FILE}"; then
     status=$?
-    if [[ ${status} -eq 2 ]]; then
+    if [[ ${status} -eq ${EXIT_NO_EVENTS} ]]; then
       echo "[kvonce-conformance] no kvonce events found in OTLP payload" >&2
     fi
     exit ${status}

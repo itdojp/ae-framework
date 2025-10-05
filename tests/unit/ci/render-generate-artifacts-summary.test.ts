@@ -34,7 +34,9 @@ describe('render-generate-artifacts-summary', () => {
     expect(result.stdout).toContain('Generated at: 2025-01-01T00:00:00Z');
     expect(result.stdout).toContain('- docs/notes: CHANGED');
     expect(result.stdout).toContain('- templates/example: clean');
-    expect(result.stdout.split('\n').filter((line) => line.includes('•')).length).toBe(11);
+    const bulletLines = result.stdout.split('\n').filter((line) => line.includes('•')).length;
+    const expectedBulletLines = Math.min(files.length, 10) + (files.length > 10 ? 1 : 0);
+    expect(bulletLines).toBe(expectedBulletLines);
     expect(result.stdout).toContain('  • … (2 more)');
 
     rmSync(dir, { recursive: true, force: true });

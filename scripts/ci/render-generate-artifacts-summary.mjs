@@ -7,6 +7,8 @@ if (!summaryPath) {
   process.exit(1);
 }
 
+const MAX_LISTED_FILES = 10;
+
 try {
   const data = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
   if (data.generatedAt) {
@@ -16,7 +18,7 @@ try {
     const status = target.hasChanges ? 'CHANGED' : 'clean';
     console.log(`- ${target.path}: ${status}`);
     if (target.hasChanges && Array.isArray(target.files)) {
-      const sample = target.files.slice(0, 10);
+      const sample = target.files.slice(0, MAX_LISTED_FILES);
       for (const file of sample) {
         console.log(`  • ${file.status} ${file.file}`);
       }
