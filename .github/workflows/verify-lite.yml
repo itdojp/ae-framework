@@ -28,24 +28,14 @@ jobs:
         with:
           node-version: '20'
           cache: 'pnpm'
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
-      - name: Pre-build workspace types (spec-compiler)
-        run: pnpm -F @ae-framework/spec-compiler -s run build || true
-      - name: Type check (strict verify)
-        run: pnpm types:check
-      - name: Lint (capture summary)
+      - name: Run verify-lite pipeline
+        env:
+          VERIFY_LITE_KEEP_LINT_LOG: '1'
+          VERIFY_LITE_RUN_MUTATION: ${{ github.event_name == 'pull_request' && '1' || '0' }}
+          VERIFY_LITE_NO_FROZEN: '0'
+          VERIFY_LITE_SUMMARY_FILE: verify-lite-run-summary.json
         run: |
-          pnpm lint 2>&1 | tee verify-lite-lint.log || true
-          if [ -f verify-lite-lint.log ]; then
-            node scripts/ci/verify-lite-lint-summary.mjs < verify-lite-lint.log > verify-lite-lint-summary.json
-          fi
-      - name: Build
-        run: pnpm run build
-      - name: BDD lint (non-blocking)
-        continue-on-error: true
-        run: |
-          if [ -f scripts/bdd/lint.mjs ]; then node scripts/bdd/lint.mjs; else printf "No BDD linter\n"; fi
+          pnpm run verify:lite
       - name: BDD lint (strict; label-gated)
         if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-bdd-lint') }}
         env:
@@ -96,19 +86,12 @@ jobs:
         run: |
           if [ -f scripts/summary/render-pr-summary.mjs ]; then node scripts/summary/render-pr-summary.mjs; fi
           [ -f artifacts/summary/PR_SUMMARY.md ] && cat artifacts/summary/PR_SUMMARY.md >> "$GITHUB_STEP_SUMMARY" || true
-      - name: Mutation quick (auto-diff)
-        if: ${{ github.event_name == 'pull_request' }}
-        continue-on-error: true
-        run: |
-          if [ -x scripts/mutation/run-scoped.sh ]; then
-            ./scripts/mutation/run-scoped.sh --quick --auto-diff || true
-          else
-            echo "scripts/mutation/run-scoped.sh not available; skipping mutation quick run"
-          fi
       - name: Mutation quick summary
         if: ${{ github.event_name == 'pull_request' }}
         run: |
-          if [ -f reports/mutation/mutation.json ]; then
+          if [ -f mutation-summary.md ]; then
+            cat mutation-summary.md >> "$GITHUB_STEP_SUMMARY"
+          elif [ -f reports/mutation/mutation.json ]; then
             node scripts/mutation/post-quick-summary.mjs | tee mutation-summary.md
             cat mutation-summary.md >> "$GITHUB_STEP_SUMMARY"
           else
@@ -136,15 +119,25 @@ jobs:
         with:
           name: mutation-survivors-json
           path: reports/mutation/survivors.json
-      - name: Upload lint summary
+      - name: Upload verify-lite report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: verify-lite-lint
+          name: verify-lite-report
           path: |
+            verify-lite-run-summary.json
             verify-lite-lint.log
             verify-lite-lint-summary.json
           if-no-files-found: ignore
+      - name: Append verify-lite run summary
+        if: always()
+        run: |
+          if [ -f verify-lite-run-summary.json ]; then
+            echo '## Verify Lite Run Summary' >> "$GITHUB_STEP_SUMMARY"
+            node scripts/ci/render-verify-lite-summary.mjs verify-lite-run-summary.json >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Verify Lite run summary not generated.' >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: Append lint summary (top rules)
         if: always()
         run: |

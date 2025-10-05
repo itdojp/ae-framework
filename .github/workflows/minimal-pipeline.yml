@@ -47,23 +47,20 @@ jobs:
         run: pnpm vitest run tests/unit/utils/enhanced-state-manager.test.ts tests/unit/utils/enhanced-state-manager.rollback.test.ts --reporter dot
       - name: Property tests (KvOnce PoC)
         run: pnpm vitest run tests/property/kvonce.safety.property.test.ts --reporter dot
-      - name: Verify Lite (non-enforced lint)
-        if: ${{ github.event.inputs.enforce_lint != 'true' }}
-        run: |
-          pnpm run verify:lite | tee verify-lite-lint.log
-          node scripts/ci/verify-lite-lint-summary.mjs < verify-lite-lint.log > verify-lite-lint-summary.json
-      - name: Verify Lite (enforced lint)
-        if: ${{ github.event.inputs.enforce_lint == 'true' }}
-        run: |
-          set -o pipefail
-          VERIFY_LITE_ENFORCE_LINT=1 pnpm run verify:lite | tee verify-lite-lint.log
-          node scripts/ci/verify-lite-lint-summary.mjs < verify-lite-lint.log > verify-lite-lint-summary.json
+      - name: Verify Lite (script)
+        env:
+          VERIFY_LITE_KEEP_LINT_LOG: '1'
+          VERIFY_LITE_RUN_MUTATION: '0'
+          VERIFY_LITE_ENFORCE_LINT: ${{ github.event.inputs.enforce_lint == 'true' && '1' || '0' }}
+          VERIFY_LITE_SUMMARY_FILE: verify-lite-run-summary.json
+        run: pnpm run verify:lite
       - name: Upload verify-lite artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: verify-lite-lint
+          name: verify-lite-report
           path: |
+            verify-lite-run-summary.json
             verify-lite-lint.log
             verify-lite-lint-summary.json
       - name: Summarize lint findings
@@ -74,6 +71,15 @@ jobs:
             node -e "const fs=require('fs'); const data=JSON.parse(fs.readFileSync('verify-lite-lint-summary.json','utf8')); console.log('Total issues:', data.total); console.log('Top rules:'); data.rules.slice(0,5).forEach(r=>console.log('-', r.rule, r.count));" | tee -a "$GITHUB_STEP_SUMMARY"
           else
             echo "No lint summary generated" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Append verify-lite run summary
+        if: always()
+        run: |
+          if [ -f verify-lite-run-summary.json ]; then
+            echo '## Verify Lite Run Summary' >> "$GITHUB_STEP_SUMMARY"
+            node scripts/ci/render-verify-lite-summary.mjs verify-lite-run-summary.json >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Verify Lite run summary not generated.' >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: KvOnce TLC (informational)
         run: |
