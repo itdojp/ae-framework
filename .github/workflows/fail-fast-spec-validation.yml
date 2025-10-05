@@ -30,6 +30,7 @@ jobs:
             .ae
             packages/spec-compiler
             src/cli
+            .github/actions/setup-pnpm
             package.json
             pnpm-lock.yaml
             tsconfig.json
