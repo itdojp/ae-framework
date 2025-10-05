@@ -75,6 +75,7 @@ const metadata = {
   sha256: hash,
   sizeBytes: payload.length,
 };
-const metadataPath = path.join(path.dirname(targetPath), '..', 'kvonce-payload-metadata.json');
-await fsp.mkdir(path.dirname(metadataPath), { recursive: true });
+const metadataDir = path.resolve(path.dirname(targetPath), '..');
+const metadataPath = path.join(metadataDir, 'kvonce-payload-metadata.json');
+await fsp.mkdir(metadataDir, { recursive: true });
 await fsp.writeFile(metadataPath, JSON.stringify(metadata, null, 2));

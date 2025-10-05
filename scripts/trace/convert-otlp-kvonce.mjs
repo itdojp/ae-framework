@@ -11,9 +11,17 @@ function parseArgs() {
   const result = { input: null, output: null };
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    if ((arg === "--input" || arg === "-i") && args[i + 1]) {
+    if (arg === "--input" || arg === "-i") {
+      if (i + 1 >= args.length || args[i + 1].startsWith("-")) {
+        console.error("Error: --input requires a value.");
+        process.exit(1);
+      }
       result.input = args[++i];
-    } else if ((arg === "--output" || arg === "-o") && args[i + 1]) {
+    } else if (arg === "--output" || arg === "-o") {
+      if (i + 1 >= args.length || args[i + 1].startsWith("-")) {
+        console.error("Error: --output requires a value.");
+        process.exit(1);
+      }
       result.output = args[++i];
     }
   }
