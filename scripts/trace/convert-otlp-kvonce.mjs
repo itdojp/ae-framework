@@ -47,7 +47,7 @@ function extractAttributeValue(attrValue) {
   }
   if ("mapValue" in attrValue && Array.isArray(attrValue.mapValue?.fields)) {
     return Object.fromEntries(
-      attrValue.mapValue.fields.map(({ key = "", value } = {}) => [
+      attrValue.mapValue.fields.map(({ key = "", value = null } = {}) => [
         key,
         extractAttributeValue(value),
       ])
