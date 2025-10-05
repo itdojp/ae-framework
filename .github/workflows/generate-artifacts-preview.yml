@@ -106,8 +106,8 @@ jobs:
               issue_number: context.issue.number
             });
             const marker = '<!-- generate-artifacts-preview -->';
+            const decoratedBody = [body, marker].join("\n\n");
             const previous = existing.find((c) => c.user.login === 'github-actions[bot]' && c.body.includes(marker));
-            const decoratedBody = `${body}\n\n${marker}`;
             if (previous) {
               await github.rest.issues.updateComment({
                 owner: context.repo.owner,
