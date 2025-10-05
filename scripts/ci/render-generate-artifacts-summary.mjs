@@ -4,8 +4,7 @@ import fs from 'node:fs';
 const [, , summaryPath] = process.argv;
 if (!summaryPath) {
   console.error('[render-generate-artifacts-summary] usage: render-generate-artifacts-summary.mjs <summary.json>');
-  process.exitCode = 1;
-  process.exit();
+  process.exit(1);
 }
 
 try {
