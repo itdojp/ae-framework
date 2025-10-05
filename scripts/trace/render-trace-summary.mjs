@@ -72,5 +72,5 @@ if (outputPath) {
 }
 
 if (exitCode !== 0) {
-  process.exit(exitCode);
+  process.exitCode = exitCode;
 }

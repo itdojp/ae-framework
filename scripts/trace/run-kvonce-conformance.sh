@@ -91,7 +91,10 @@ trap cleanup EXIT
 SOURCE_NDJSON="${INPUT}"
 
 if [[ "${FORMAT}" == "otlp" ]]; then
-  TEMP_FILE="$(mktemp "${TMPDIR:-/tmp}/kvonce-events-XXXXXX.ndjson")"
+  TMP_ROOT="${TMPDIR:-${PROJECT_ROOT}/.kvonce-tmp}"
+  mkdir -p "${TMP_ROOT}"
+  chmod 700 "${TMP_ROOT}"
+  TEMP_FILE="$(mktemp -p "${TMP_ROOT}" kvonce-events-XXXXXX.ndjson)"
   if ! node "${SCRIPT_DIR}/convert-otlp-kvonce.mjs" --input "${INPUT}" --output "${TEMP_FILE}"; then
     status=$?
     if [[ ${status} -eq 2 ]]; then
