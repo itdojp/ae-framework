@@ -10,14 +10,15 @@ if (!file || !field) {
 try {
   const json = JSON.parse(fs.readFileSync(file, 'utf8'));
   const value = json?.[field];
-  if (value === false) {
-    console.log('false');
-  } else if (value === true) {
+  if (value === true) {
     console.log('true');
+  } else if (value === false) {
+    console.log('false');
   } else {
     console.log('unknown');
   }
 } catch (error) {
   console.log('unknown');
+  console.warn(`[read-validation-field] failed to read ${field} from ${file}: ${error.message}`);
   process.exitCode = 1;
 }
