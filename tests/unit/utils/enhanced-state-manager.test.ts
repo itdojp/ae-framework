@@ -13,12 +13,44 @@ afterAll(async () => {
   await Promise.all(tempRoots.map((dir) => rm(dir, { recursive: true, force: true })));
 });
 
+type TransactionOperation = {
+  type: 'save' | 'delete';
+  key: string;
+  data: StateEntry | undefined;
+  previousData: StateEntry | undefined;
+};
+
+type TransactionContext = {
+  operations: TransactionOperation[];
+  rollbackData: Map<string, StateEntry>;
+};
+
+type InternalManager = {
+  options: EnhancedStateManager['options'];
+  databaseFile: string;
+  storage: Map<string, StateEntry>;
+  keyIndex: Map<string, Set<string>>;
+  ttlIndex: Map<string, number>;
+  versionIndex: Map<string, number>;
+  activeTransactions: Map<string, TransactionContext>;
+  saveInTransaction: (txId: string, key: string, entry: StateEntry) => Promise<void>;
+  findKeyByVersion: (logicalKey: string, version: number) => string | null;
+  runGarbageCollection: () => Promise<void>;
+  persistToDisk: () => Promise<void>;
+  calculateChecksum: (data: unknown) => string;
+};
+
+const asInternal = (manager: EnhancedStateManager): InternalManager => manager as unknown as InternalManager;
+const getStorage = (manager: EnhancedStateManager) => asInternal(manager).storage;
+const getTransactions = (manager: EnhancedStateManager) => asInternal(manager).activeTransactions;
+const getOptions = (manager: EnhancedStateManager) => asInternal(manager).options;
+
 
 describe('EnhancedStateManager configuration', () => {
   it('applies default storage options when omitted', () => {
     const root = join(tmpdir(), 'ae-framework-config-default');
     const manager = new EnhancedStateManager(root);
-    const options = (manager as any).options;
+    const options = getOptions(manager);
 
     expect(options.databasePath).toBe('.ae/enhanced-state.db');
     expect(options.enableCompression).toBe(true);
@@ -28,7 +60,7 @@ describe('EnhancedStateManager configuration', () => {
     expect(options.maxVersions).toBe(10);
     expect(options.enableTransactions).toBe(true);
 
-    const databaseFile = (manager as any).databaseFile as string;
+    const databaseFile = asInternal(manager).databaseFile as string;
     expect(databaseFile.endsWith('.ae/enhanced-state.db')).toBe(true);
   });
 
@@ -43,7 +75,7 @@ describe('EnhancedStateManager configuration', () => {
       maxVersions: 5,
       enableTransactions: false,
     });
-    const options = (manager as any).options;
+    const options = getOptions(manager);
 
     expect(options.databasePath).toBe('custom.db');
     expect(options.enableCompression).toBe(false);
@@ -70,7 +102,7 @@ describe('EnhancedStateManager saveSSOT metadata', () => {
       phase: 'verification',
     });
 
-    const storage = (manager as unknown as { storage: Map<string, any> }).storage;
+    const storage = getStorage(manager);
     const entry = storage.get(key);
 
     expect(entry?.tags).toEqual(tags);
@@ -88,11 +120,11 @@ describe('EnhancedStateManager saveSSOT metadata', () => {
     const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
     const key = await manager.saveSSOT('orders', { id: 'order-2' });
 
-    const storage = (manager as unknown as { storage: Map<string, any> }).storage;
+    const storage = getStorage(manager);
     const entry = storage.get(key);
 
     expect(entry?.tags).toEqual({});
-    expect(entry?.ttl).toBe((manager as any).options.defaultTTL);
+    expect(entry?.ttl).toBe(getOptions(manager).defaultTTL);
     expect(entry?.metadata?.source).toBe('unknown');
 
     await manager.shutdown();
@@ -111,7 +143,7 @@ describe('EnhancedStateManager indices', () => {
     await new Promise((resolve) => setTimeout(resolve, 5));
     const secondKey = await manager.saveSSOT('inventory', { id: 'item', stock: 2 });
 
-    const keyIndex = (manager as unknown as { keyIndex: Map<string, Set<string>> }).keyIndex;
+    const keyIndex = asInternal(manager).keyIndex;
     const keys = keyIndex.get('inventory');
     expect(keys).not.toBeUndefined();
     expect(Array.from(keys ?? [])).toEqual(expect.arrayContaining([firstKey, secondKey]));
@@ -140,7 +172,7 @@ describe('EnhancedStateManager indices', () => {
     expect(versionOne).toEqual({ id: 'item', stock: 10 });
     expect(versionTwo).toEqual({ id: 'item', stock: 15 });
 
-    const keyIndex = (manager as unknown as { keyIndex: Map<string, Set<string>> }).keyIndex;
+    const keyIndex = asInternal(manager).keyIndex;
     expect(keyIndex.get('inventory')).toBeDefined();
     expect(Array.from(keyIndex.get('inventory') ?? [])).toContain(first);
 
@@ -166,8 +198,7 @@ describe('EnhancedStateManager indices', () => {
 
     await manager.saveSSOT('inventory', { id: 'item', stock: 5 });
 
-    const finder = manager as unknown as { findKeyByVersion: (logicalKey: string, version: number) => string | null };
-    expect(finder.findKeyByVersion('inventory', 99)).toBeNull();
+        expect(asInternal(manager).findKeyByVersion('inventory', 99)).toBeNull();
 
     await manager.shutdown();
   });
@@ -191,10 +222,7 @@ describe('EnhancedStateManager indices', () => {
 
     const fullKey = await manager.saveSSOT('inventory', { id: 'item', stock: 1 });
 
-    const internal = manager as unknown as {
-      keyIndex: Map<string, Set<string>>;
-      storage: Map<string, any>;
-    };
+        const internal = asInternal(manager);
 
     internal.storage.delete(fullKey);
     internal.keyIndex.set('inventory', new Set());
@@ -211,14 +239,14 @@ describe('EnhancedStateManager indices', () => {
     const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false, defaultTTL: 0 });
 
     const zeroTtlKey = await manager.saveSSOT('inventory', { id: 'item', stock: 3 });
-    expect((manager as unknown as { ttlIndex: Map<string, number> }).ttlIndex.has(zeroTtlKey)).toBe(false);
+    expect(asInternal(manager).ttlIndex.has(zeroTtlKey)).toBe(false);
 
     const ttlKey = await manager.saveSSOT('inventory', { id: 'item', stock: 4 }, { ttl: 90 });
-    const ttlIndex = (manager as unknown as { ttlIndex: Map<string, number> }).ttlIndex;
+    const ttlIndex = asInternal(manager).ttlIndex;
     const expiry = ttlIndex.get(ttlKey);
     expect(typeof expiry).toBe('number');
 
-    const storage = (manager as unknown as { storage: Map<string, any> }).storage;
+    const storage = getStorage(manager);
     const entry = storage.get(ttlKey);
     const expectedExpiry = new Date(entry.timestamp).getTime() + (entry.ttl * 1000);
     expect(expiry).toBe(expectedExpiry);
@@ -236,7 +264,7 @@ describe('EnhancedStateManager indices', () => {
     await new Promise(resolve => setTimeout(resolve, 10));
     const secondKey = await manager.saveSSOT('inventory', { id: 'item', stock: 5 });
 
-    const internal = manager as unknown as { storage: Map<string, any> };
+    const internal = asInternal(manager);
     internal.storage.delete(firstKey);
 
     const latestKey = (manager as any)['findLatestKey']('inventory');
@@ -255,7 +283,7 @@ describe('EnhancedStateManager indices', () => {
     await new Promise(resolve => setTimeout(resolve, 10));
     const secondKey = await manager.saveSSOT('inventory', { id: 'item', stock: 20 });
 
-    const internal = manager as unknown as { storage: Map<string, any> };
+    const internal = asInternal(manager);
     const firstEntry = internal.storage.get(firstKey);
     const secondEntry = internal.storage.get(secondKey);
     if (firstEntry && secondEntry) {
@@ -348,7 +376,7 @@ describe('EnhancedStateManager transactions', () => {
 
     vi.useFakeTimers();
     vi.advanceTimersByTime(1500);
-    await (manager as unknown as { runGarbageCollection: () => Promise<void> }).runGarbageCollection();
+    await asInternal(manager).runGarbageCollection();
     vi.useRealTimers();
 
     const restored = await manager.loadSSOT('ttl-entry');
@@ -369,7 +397,7 @@ describe('EnhancedStateManager transactions', () => {
 
     await manager.saveSSOT('ttl-entry-active', { id: 'ttl' }, { ttl: 1 });
 
-    await (manager as unknown as { runGarbageCollection: () => Promise<void> }).runGarbageCollection();
+    await asInternal(manager).runGarbageCollection();
 
     const restored = await manager.loadSSOT('ttl-entry-active');
     expect(restored).toEqual({ id: 'ttl' });
@@ -409,11 +437,7 @@ describe('EnhancedStateManager transactions', () => {
     });
 
     const fullKey = await manager.saveSSOT('inventory', { id: 'widget', stock: 2 });
-    const internal = manager as unknown as {
-      activeTransactions: Map<string, any>;
-      saveInTransaction: (txId: string, key: string, entry: any) => Promise<void>;
-      storage: Map<string, any>;
-    };
+    const internal = asInternal(manager);
     const originalEntry = internal.storage.get(fullKey);
 
     const txId = await manager.beginTransaction();
@@ -459,18 +483,18 @@ describe('EnhancedStateManager transactions', () => {
     });
 
     const fullKey = await manager.saveSSOT('inventory', { id: 'widget', stock: 2 });
-    const storage = (manager as unknown as { storage: Map<string, any> }).storage;
+    const storage = getStorage(manager);
     const originalEntry = JSON.parse(JSON.stringify(storage.get(fullKey)));
 
     const txId = await manager.beginTransaction();
-    const calculateChecksum = (manager as unknown as { calculateChecksum: (data: unknown) => string }).calculateChecksum.bind(manager);
+    const calculateChecksum = asInternal(manager).calculateChecksum.bind(manager);
     const updatedEntry = {
       ...storage.get(fullKey),
       data: { id: 'widget', stock: 9 },
       checksum: calculateChecksum({ id: 'widget', stock: 9 }),
     };
 
-    await (manager as unknown as { saveInTransaction: (tx: string, key: string, entry: any) => Promise<void> }).saveInTransaction(txId, fullKey, updatedEntry);
+    await asInternal(manager).saveInTransaction(txId, fullKey, updatedEntry);
     expect(storage.get(fullKey)?.data).toEqual({ id: 'widget', stock: 9 });
 
     await manager.rollbackTransaction(txId);
@@ -491,16 +515,12 @@ describe('EnhancedStateManager transactions', () => {
     await manager.initialize();
 
     const txId = await manager.beginTransaction();
-    const internal = manager as unknown as {
-      saveInTransaction: (tx: string, key: string, entry: any) => Promise<void>;
-      activeTransactions: Map<string, any>;
-    };
+    const internal = asInternal(manager);
 
     const logicalKey = 'fresh-entry';
     const timestamp = new Date().toISOString();
     const data = { id: 'payload', region: 'tx-new' };
-    const calculateChecksum = (manager as any).calculateChecksum as (input: unknown) => string;
-    const checksum = calculateChecksum.call(manager, data);
+    const checksum = internal.calculateChecksum.call(manager, data);
 
     const entry = {
       id: 'fresh-entry-id',
@@ -593,7 +613,7 @@ describe('EnhancedStateManager helper behaviour', () => {
       }
     } as any);
 
-    const storage = (manager as unknown as { storage: Map<string, any> }).storage;
+    const storage = getStorage(manager);
     const numericEntry = storage.get(numericKey);
     expect(Buffer.isBuffer(numericEntry?.data)).toBe(true);
     expect((numericEntry?.data as Buffer).equals(Buffer.from(numericArray))).toBe(true);
@@ -653,7 +673,7 @@ describe('EnhancedStateManager compression behaviour', () => {
     const payload = { id: 'demo', content: 'x'.repeat(256) };
     const key = await manager.saveSSOT('large-entry', payload);
 
-    const storage = (manager as unknown as { storage: Map<string, unknown> }).storage;
+    const storage = getStorage(manager);
     const entry: any = storage.get(key);
     expect(entry?.compressed).toBe(true);
     expect(entry?.data).toBeInstanceOf(Buffer);
@@ -677,7 +697,7 @@ describe('EnhancedStateManager compression behaviour', () => {
     const tiny = { id: 'tiny', value: 1 };
     const key = await manager.saveSSOT('tiny-entry', tiny);
 
-    const storage = (manager as unknown as { storage: Map<string, any> }).storage;
+    const storage = getStorage(manager);
     const entry = storage.get(key);
     expect(entry?.compressed).toBe(false);
     expect(entry?.data).toEqual(tiny);
@@ -699,7 +719,7 @@ describe('EnhancedStateManager compression behaviour', () => {
     });
 
     const key = await manager.saveSSOT('threshold-entry', payload);
-    const storage = (manager as unknown as { storage: Map<string, any> }).storage;
+    const storage = getStorage(manager);
     const entry = storage.get(key);
 
     expect(entry?.compressed).toBe(false);
@@ -731,7 +751,7 @@ describe('EnhancedStateManager snapshots and artifacts', () => {
         metadata: expect.objectContaining({
           phase: 'demo-phase',
           entities: ['inventory'],
-          ttl: (manager as any).options.defaultTTL * 2,
+          ttl: getOptions(manager).defaultTTL * 2,
         }),
       })
     );
@@ -741,10 +761,10 @@ describe('EnhancedStateManager snapshots and artifacts', () => {
     const keys = snapshot ? Object.keys(snapshot) : [];
     expect(keys.some(key => key.includes('inventory'))).toBe(true);
 
-    const storage = (manager as unknown as { storage: Map<string, any> }).storage;
+    const storage = getStorage(manager);
     const entry = storage.get(snapshotId);
     expect(entry?.logicalKey).toBe('snapshot_demo-phase');
-    expect(entry?.ttl).toBe((manager as any).options.defaultTTL * 2);
+    expect(entry?.ttl).toBe(getOptions(manager).defaultTTL * 2);
     expect(entry?.tags).toEqual({ type: 'snapshot', phase: 'demo-phase' });
     expect(entry?.metadata?.source).toBe('snapshot_manager');
     expect(entry?.metadata?.phase).toBe('demo-phase');
@@ -788,12 +808,12 @@ describe('EnhancedStateManager snapshots and artifacts', () => {
     );
     expect(typeSpy).toHaveBeenCalledWith(artifact);
 
-    const storage = (manager as unknown as { storage: Map<string, any> }).storage;
+    const storage = getStorage(manager);
     const persistedKey = persistedSpy.mock.calls[0][0].key;
     const entry = storage.get(persistedKey);
     expect(entry?.data).toEqual(artifact);
     expect(entry?.metadata?.source).toBe('failure_handler');
-    expect(entry?.ttl).toBe((manager as any).options.defaultTTL);
+    expect(entry?.ttl).toBe(getOptions(manager).defaultTTL);
     expect(entry?.tags).toEqual({
       type: 'failure',
       phase: 'verification',
@@ -832,9 +852,9 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     await manager.initialize();
 
     await manager.saveSSOT('inventory', { id: 'widget-1', stock: 2 });
-    await (manager as unknown as { persistToDisk: () => Promise<void> }).persistToDisk();
+    await asInternal(manager).persistToDisk();
 
-    const databaseFile = (manager as unknown as { databaseFile: string }).databaseFile;
+    const databaseFile = asInternal(manager).databaseFile;
     const persisted = JSON.parse(await readFile(databaseFile, 'utf8'));
     expect(Array.isArray(persisted.entries)).toBe(true);
     expect(persisted.entries.length).toBeGreaterThan(0);
@@ -892,7 +912,7 @@ describe('EnhancedStateManager persistence and shutdown', () => {
 
     await manager.importState(exported as any);
 
-    const storage = (manager as unknown as { storage: Map<string, any> }).storage;
+    const storage = getStorage(manager);
     const entry = storage.get(`legacy-buffer_${timestamp}`);
     expect(entry?.compressed).toBe(true);
     expect(Buffer.isBuffer(entry?.data)).toBe(true);
@@ -942,7 +962,7 @@ describe('EnhancedStateManager persistence and shutdown', () => {
 
     expect(importedSpy).toHaveBeenCalledWith({ entryCount: 1 });
 
-    const storage = (manager as unknown as { storage: Map<string, any> }).storage;
+    const storage = getStorage(manager);
     const entry = storage.get(`bulk-entry_${timestamp}`);
     expect(entry).toBeDefined();
     expect(entry?.logicalKey).toBe('bulk-entry');
@@ -1001,7 +1021,7 @@ describe('EnhancedStateManager persistence and shutdown', () => {
 
     await manager.importState(exported as any);
 
-    const storage = (manager as unknown as { storage: Map<string, any> }).storage;
+    const storage = getStorage(manager);
     const entry = storage.get(`inventory_${timestamp}`);
 
     expect(entry).toBeDefined();
@@ -1055,7 +1075,7 @@ describe('EnhancedStateManager persistence and shutdown', () => {
 
     await manager.importState(exported as any);
 
-    const storage = (manager as unknown as { storage: Map<string, any> }).storage;
+    const storage = getStorage(manager);
     const entry = storage.get(`broken-entry_${timestamp}`);
 
     expect(entry).toBeDefined();
@@ -1102,13 +1122,98 @@ describe('EnhancedStateManager persistence and shutdown', () => {
 
     await manager.importState(exported as any);
 
-    const storage = (manager as unknown as { storage: Map<string, any> }).storage;
+    const storage = getStorage(manager);
     const entry = storage.get(`preset-entry_${timestamp}`);
 
     expect(entry?.checksum).toBe('precomputed-checksum');
     expect(entry?.metadata?.source).toBe('import-test');
 
     await manager.shutdown();
+  });
+
+  it('keeps provided metadata size when available', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-size-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db' });
+    await manager.initialize();
+
+    const timestamp = new Date().toISOString();
+    const payload = { id: 'sized', note: 'manual size' };
+
+    const exported = {
+      metadata: { version: '1.0.0' },
+      entries: [
+        {
+          logicalKey: 'sized-entry',
+          timestamp,
+          version: 1,
+          compressed: false,
+          data: payload,
+          metadata: {
+            size: 999,
+            created: timestamp,
+            accessed: timestamp,
+            source: 'size-test',
+          },
+        },
+      ],
+      indices: {
+        keyIndex: { 'sized-entry': [`sized-entry_${timestamp}`] },
+        versionIndex: { 'sized-entry': 1 },
+      },
+    };
+
+    await manager.importState(exported as any);
+
+    const storage = getStorage(manager);
+    const entry = storage.get(`sized-entry_${timestamp}`);
+
+    expect(entry?.metadata?.size).toBe(999);
+    await manager.shutdown();
+  });
+
+  it('falls back to zero size when JSON stringification fails', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-circular-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db' });
+    await manager.initialize();
+
+    const timestamp = new Date().toISOString();
+    const circular: any = { id: 'circular' };
+    circular.self = circular;
+
+    const exported = {
+      metadata: { version: '1.0.0' },
+      entries: [
+        {
+          logicalKey: 'circular-entry',
+          timestamp,
+          version: 1,
+          compressed: false,
+          data: circular,
+          metadata: { created: timestamp, accessed: timestamp, source: 'circular-test' },
+        },
+      ],
+      indices: {
+        keyIndex: { 'circular-entry': [`circular-entry_${timestamp}`] },
+        versionIndex: { 'circular-entry': 1 },
+      },
+    };
+
+    await manager.importState(exported as any);
+
+    const storage = getStorage(manager);
+    const entry = storage.get(`circular-entry_${timestamp}`);
+
+    expect(entry?.metadata?.size).toBe(0);
+
+    // Mock persistence to avoid filesystem writes while verifying that shutdown flushes state once.
+    const persistSpy = vi.spyOn(asInternal(manager), 'persistToDisk').mockResolvedValue();
+    await manager.shutdown();
+    expect(persistSpy).toHaveBeenCalledTimes(1);
+    persistSpy.mockRestore();
   });
 
   it('avoids decompressing when compressed flag is set but payload is an object', async () => {
@@ -1138,13 +1243,13 @@ describe('EnhancedStateManager persistence and shutdown', () => {
       },
     };
 
-    const decompressSpy = vi.spyOn(manager as any, 'decompress');
+    const decompressSpy = vi.spyOn(asInternal(manager), 'decompress');
 
     await manager.importState(exported as any);
 
     expect(decompressSpy).not.toHaveBeenCalled();
 
-    const storage = (manager as unknown as { storage: Map<string, any> }).storage;
+    const storage = getStorage(manager);
     const entry = storage.get(`object-entry_${timestamp}`);
     expect(entry?.data).toEqual(payload);
     expect(entry?.checksum).toBeDefined();
@@ -1180,7 +1285,8 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     await manager.initialize();
 
     const stopSpy = vi.spyOn(manager, 'stopGarbageCollection');
-    const persistSpy = vi.spyOn(manager as unknown as { persistToDisk: () => Promise<void> }, 'persistToDisk').mockResolvedValue();
+    // Prevent disk writes during import so we can assert shutdown flush behaviour deterministically.
+    const persistSpy = vi.spyOn(asInternal(manager), 'persistToDisk').mockResolvedValue();
     const rollbackSpy = vi.spyOn(manager, 'rollbackTransaction');
     const shutdownSpy = vi.fn();
     manager.on('stateManagerShutdown', shutdownSpy);
@@ -1382,7 +1488,7 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     expect(importedSpy).toHaveBeenCalledWith({ entryCount: 1 });
 
     const newKey = await manager.saveSSOT('inventory', { id: 'after-import', stock: 9 });
-    const storage = (manager as unknown as { storage: Map<string, any> }).storage;
+    const storage = getStorage(manager);
     const newEntry = storage.get(newKey);
     expect(newEntry?.version).toBe(8);
 
@@ -1394,7 +1500,7 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     tempRoots.push(root);
 
     const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
-    const options = (manager as any).options;
+    const options = getOptions(manager);
 
     const timestamp = new Date().toISOString();
     const logicalKey = 'legacy-inventory';
@@ -1426,7 +1532,7 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     await manager.importState(persistence);
 
     expect(importedSpy).toHaveBeenCalledWith({ entryCount: 1 });
-    const internal = manager as unknown as { storage: Map<string, any> };
+    const internal = asInternal(manager);
     const stored = internal.storage.get(fullKey);
     expect(stored.metadata.size).toBeGreaterThan(0);
     expect(stored.metadata.source).toBe('unknown');
@@ -1518,7 +1624,7 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
     await manager.initialize();
 
-    const ttlIndex = (manager as unknown as { ttlIndex: Map<string, number> }).ttlIndex;
+    const ttlIndex = asInternal(manager).ttlIndex;
     const expiry = ttlIndex.get(fullKey);
     expect(expiry).toBeDefined();
     const expectedExpiry = new Date(timestamp).getTime() + ttlSeconds * 1000;
@@ -1590,7 +1696,7 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
     await manager.initialize();
 
-    const ttlIndex = (manager as unknown as { ttlIndex: Map<string, number> }).ttlIndex;
+    const ttlIndex = asInternal(manager).ttlIndex;
     expect(ttlIndex.has(`inventory_${timestamp}`)).toBe(false);
 
     await manager.shutdown();
