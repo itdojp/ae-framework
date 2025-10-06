@@ -1,5 +1,6 @@
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { mkdtemp, mkdir, rm, readFile, writeFile } from 'node:fs/promises';
+import * as fsp from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
@@ -38,6 +39,7 @@ type InternalManager = {
   runGarbageCollection: () => Promise<void>;
   persistToDisk: () => Promise<void>;
   calculateChecksum: (data: unknown) => string;
+  decompress: (buffer: Buffer) => Promise<unknown>;
 };
 
 const asInternal = (manager: EnhancedStateManager): InternalManager => manager as unknown as InternalManager;
@@ -1087,6 +1089,32 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     await manager.shutdown();
   });
 
+  it('rejects importing entries that omit logicalKey', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-missing-key-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+    await manager.initialize();
+
+    const timestamp = new Date().toISOString();
+    const persistence = {
+      metadata: { version: '1.0.0' },
+      entries: [
+        {
+          // logicalKey intentionally omitted
+          timestamp,
+          version: 1,
+          data: { id: 'missing-key' },
+        },
+      ],
+      indices: {},
+    } as any;
+
+    await expect(manager.importState(persistence)).rejects.toThrow('missing logicalKey');
+
+    await manager.shutdown();
+  });
+
   it('preserves provided checksum during import', async () => {
     const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-checksum-preserve-'));
     tempRoots.push(root);
@@ -1131,6 +1159,44 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     await manager.shutdown();
   });
 
+  it('does not assign ttl when import entry omits ttl field', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-no-ttl-'));
+    tempRoots.push(root);
+
+    const timestamp = new Date().toISOString();
+    const fullKey = `inventory_${timestamp}`;
+    const persistence = {
+      metadata: { version: '1.0.0' },
+      entries: [
+        {
+          logicalKey: 'inventory',
+          timestamp,
+          version: 1,
+          checksum: 'no-ttl',
+          data: { id: 'no-ttl' },
+          compressed: false,
+          metadata: { size: 16, created: timestamp, accessed: timestamp },
+        },
+      ],
+      indices: {
+        keyIndex: { inventory: [fullKey] },
+        versionIndex: { inventory: 1 },
+      },
+    };
+
+    await writeFile(join(root, 'state.db'), JSON.stringify(persistence));
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+    await manager.initialize();
+
+    const storage = getStorage(manager);
+    const entry = storage.get(fullKey);
+    expect(entry?.ttl).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call(entry ?? {}, 'ttl')).toBe(false);
+
+    await manager.shutdown();
+  });
+
   it('keeps provided metadata size when available', async () => {
     const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-size-'));
     tempRoots.push(root);
@@ -1170,6 +1236,50 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     const entry = storage.get(`sized-entry_${timestamp}`);
 
     expect(entry?.metadata?.size).toBe(999);
+    await manager.shutdown();
+  });
+
+  it('derives checksum for compressed entries with plain object payloads', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-object-checksum-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, {
+      databasePath: 'state.db',
+      enableTransactions: false,
+    });
+    await manager.initialize();
+
+    const timestamp = new Date().toISOString();
+    const payload = { id: 'object-entry', stage: 'imported' };
+    const decompressSpy = vi.spyOn(asInternal(manager), 'decompress');
+    const exported = {
+      metadata: { version: '1.0.0' },
+      entries: [
+        {
+          logicalKey: 'object-entry',
+          timestamp,
+          version: 2,
+          compressed: true,
+          data: payload,
+          metadata: {},
+        },
+      ],
+      indices: {
+        keyIndex: { 'object-entry': [`object-entry_${timestamp}`] },
+        versionIndex: { 'object-entry': 2 },
+      },
+    };
+
+    await manager.importState(exported as any);
+
+    const storage = getStorage(manager);
+    const entry = storage.get(`object-entry_${timestamp}`);
+    const expectedChecksum = createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+    expect(entry?.checksum).toBe(expectedChecksum);
+    expect(entry?.data).toEqual(payload);
+    expect(decompressSpy).not.toHaveBeenCalled();
+
+    decompressSpy.mockRestore();
     await manager.shutdown();
   });
 
