@@ -1111,6 +1111,89 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     await manager.shutdown();
   });
 
+  it('keeps provided metadata size when available', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-size-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db' });
+    await manager.initialize();
+
+    const timestamp = new Date().toISOString();
+    const payload = { id: 'sized', note: 'manual size' };
+
+    const exported = {
+      metadata: { version: '1.0.0' },
+      entries: [
+        {
+          logicalKey: 'sized-entry',
+          timestamp,
+          version: 1,
+          compressed: false,
+          data: payload,
+          metadata: {
+            size: 999,
+            created: timestamp,
+            accessed: timestamp,
+            source: 'size-test',
+          },
+        },
+      ],
+      indices: {
+        keyIndex: { 'sized-entry': [`sized-entry_${timestamp}`] },
+        versionIndex: { 'sized-entry': 1 },
+      },
+    };
+
+    await manager.importState(exported as any);
+
+    const storage = (manager as unknown as { storage: Map<string, any> }).storage;
+    const entry = storage.get(`sized-entry_${timestamp}`);
+
+    expect(entry?.metadata?.size).toBe(999);
+    await manager.shutdown();
+  });
+
+  it('falls back to zero size when JSON stringification fails', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-circular-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db' });
+    await manager.initialize();
+
+    const timestamp = new Date().toISOString();
+    const circular: any = { id: 'circular' };
+    circular.self = circular;
+
+    const exported = {
+      metadata: { version: '1.0.0' },
+      entries: [
+        {
+          logicalKey: 'circular-entry',
+          timestamp,
+          version: 1,
+          compressed: false,
+          data: circular,
+          metadata: { created: timestamp, accessed: timestamp, source: 'circular-test' },
+        },
+      ],
+      indices: {
+        keyIndex: { 'circular-entry': [`circular-entry_${timestamp}`] },
+        versionIndex: { 'circular-entry': 1 },
+      },
+    };
+
+    await manager.importState(exported as any);
+
+    const storage = (manager as unknown as { storage: Map<string, any> }).storage;
+    const entry = storage.get(`circular-entry_${timestamp}`);
+
+    expect(entry?.metadata?.size).toBe(0);
+
+    const persistSpy = vi.spyOn(manager as any, 'persistToDisk').mockResolvedValue();
+    await manager.shutdown();
+    persistSpy.mockRestore();
+  });
+
   it('avoids decompressing when compressed flag is set but payload is an object', async () => {
     const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-no-decompress-'));
     tempRoots.push(root);

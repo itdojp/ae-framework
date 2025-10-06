@@ -18,10 +18,10 @@
   - 走行時間: **約 11 分 19 秒**（DisableTypeChecks の warning は継続するが quick ランは安定）
   - ミューテーションスコア: **67.25%**（killed 310 / survived 151 / no-cover 0 / errors 0）
   - GC ログ分岐（`runGarbageCollection`）と TTL 失効パスをユニットテスト追加でカバーし、サバイバーが `normalizeImportedEntry` の Buffer 復元・checksum 再計算・optional chaining 分岐に集約された。
-- `STRYKER_TIME_LIMIT=420 npx stryker run configs/stryker.enhanced.config.js --mutate src/utils/enhanced-state-manager.ts --concurrency 1`（2025-10-06 18:10 開始）
-  - 走行時間: **約 11 分 08 秒**（DisableTypeChecks warning は継続）
-  - ミューテーションスコア: **69.20%**（killed 319 / survived 142 / no-cover 0 / errors 0）
-  - トランザクション新規保存・既存 checksum 保持・非 Buffer payload の各経路をテスト化し、`saveInTransaction`／`normalizeImportedEntry` 周辺のミュータントを追加で kill。残サバイバーは `rawMetadata.size` 分岐や `loadFromPersistence` の optional chaining など、メタデータ整形系に集中。
+- `STRYKER_TIME_LIMIT=420 npx stryker run configs/stryker.enhanced.config.js --mutate src/utils/enhanced-state-manager.ts --concurrency 1`（2025-10-06 18:38 開始）
+  - 走行時間: **約 11 分 09 秒**（DisableTypeChecks warning は継続）
+  - ミューテーションスコア: **70.07%**（killed 323 / survived 138 / no-cover 0 / errors 0）
+  - メタデータ size を固定した import・JSON stringify 失敗時のフォールバックをテスト化し、`normalizeImportedEntry` と rollback 周辺のミュータントをさらに削減。残サバイバーは optional chaining (`loadFromPersistence`) と versionIndex 更新（Math.min 置換系）など、さらなる境界ケースに集約された。
 - `./scripts/mutation/run-scoped.sh --quick --mutate src/api/server.ts`（2025-10-02 再実行）は **100.00%**（killed 155 / survived 0 / no-cover 0 / errors 0 / 実行 66s）。
 - `./scripts/mutation/run-scoped.sh --quick`（差分無しのデフォルト quick ラン）は 2025-10-02 10:43 時点で **完走 & score 100.00%**。TokenOptimizer が圧縮で空文字列化した際に元データへフォールバックするよう修正し、先の `seed:1083850253` failure を解消。
   - ただし `STRYKER_TIME_LIMIT=180` で再実行した際には `tests/property/token-optimizer.trim-edge.trailing-comma.boundary.pbt.test.ts` が sandbox で失敗し Dry run が中断。trim-edge 系プロパティの期待値調整が新たな課題。
