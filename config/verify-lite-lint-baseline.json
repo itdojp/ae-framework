@@ -1,0 +1,15 @@
+{
+  "total": 2618,
+  "rules": {
+    "Unsafe": 1357,
+    "Unexpected": 645,
+    "Async": 205,
+    "'error'": 49,
+    "This": 39,
+    "'context'": 32,
+    "Invalid": 27,
+    "Switch": 20,
+    "'result'": 13,
+    "Promise": 13
+  }
+}

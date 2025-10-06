@@ -54,6 +54,7 @@ jobs:
           VERIFY_LITE_ENFORCE_LINT: ${{ github.event.inputs.enforce_lint == 'true' && '1' || '0' }}
           VERIFY_LITE_SUMMARY_FILE: verify-lite-run-summary.json
           VERIFY_LITE_SUMMARY_EXPORT_PATH: artifacts/verify-lite/verify-lite-run-summary.json
+          VERIFY_LITE_LINT_BASELINE: config/verify-lite-lint-baseline.json
         run: pnpm run verify:lite
       - name: Validate verify-lite summary schema
         if: always()
@@ -83,6 +84,20 @@ jobs:
             node -e "const fs=require('fs'); const data=JSON.parse(fs.readFileSync('verify-lite-lint-summary.json','utf8')); console.log('Total issues:', data.total); console.log('Top rules:'); data.rules.slice(0,5).forEach(r=>console.log('-', r.rule, r.count));" | tee -a "$GITHUB_STEP_SUMMARY"
           else
             echo "No lint summary generated" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Verify lite lint baseline
+        if: always()
+        env:
+          VERIFY_LITE_LINT_ENFORCE: ${{ github.event.inputs.enforce_lint == 'true' && '1' || '0' }}
+        run: |
+          if [ -f verify-lite-lint-summary.json ]; then
+            set -o pipefail
+            node scripts/ci/enforce-verify-lite-lint.mjs \
+              verify-lite-lint-summary.json \
+              config/verify-lite-lint-baseline.json | tee /tmp/lint-baseline-report.txt
+            cat /tmp/lint-baseline-report.txt >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'verify-lite lint summary missing; skipped baseline enforcement' | tee -a "$GITHUB_STEP_SUMMARY"
           fi
       - name: Append verify-lite run summary
         if: always()
