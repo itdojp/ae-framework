@@ -46,6 +46,7 @@ const asInternal = (manager: EnhancedStateManager): InternalManager => manager a
 const getStorage = (manager: EnhancedStateManager) => asInternal(manager).storage;
 const getTransactions = (manager: EnhancedStateManager) => asInternal(manager).activeTransactions;
 const getOptions = (manager: EnhancedStateManager) => asInternal(manager).options;
+const getVersionIndex = (manager: EnhancedStateManager) => asInternal(manager).versionIndex;
 
 
 describe('EnhancedStateManager configuration', () => {
@@ -1551,6 +1552,7 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     await manager.initialize();
 
     await expect(manager.loadSSOT('inventory')).resolves.toEqual({ id: 'version-fallback-1', stock: 6 });
+    expect(getVersionIndex(manager).get('inventory')).toBe(2);
 
     await manager.shutdown();
   });
@@ -1596,6 +1598,7 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     await manager.initialize();
 
     expect(importedSpy).toHaveBeenCalledWith({ entryCount: 1 });
+    expect(getVersionIndex(manager).get('inventory')).toBe(7);
 
     const newKey = await manager.saveSSOT('inventory', { id: 'after-import', stock: 9 });
     const storage = getStorage(manager);
