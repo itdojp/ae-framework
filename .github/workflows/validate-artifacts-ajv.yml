@@ -32,6 +32,24 @@ jobs:
       - name: Validate adapter summaries
         run: npx ajv -s docs/schemas/artifacts-adapter-summary.schema.json -d "artifacts/*/summary.json" --strict=false || true
         continue-on-error: ${{ github.ref != 'refs/heads/main' && needs.gate.outputs.strict != 'true' }}
+      - name: Validate report envelopes
+        run: |
+          shopt -s nullglob
+          files=(artifacts/**/report-envelope.json artifacts/**/*-envelope.json)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "[ajv] no report envelopes found"
+            exit 0
+          else
+            schema_path="schema/report-envelope.schema.json"
+            if [ ! -f "$schema_path" ] && [ -f docs/schemas/report-envelope.schema.json ]; then
+              schema_path="docs/schemas/report-envelope.schema.json"
+            fi
+            for file in "${files[@]}"; do
+              echo "[ajv] validating $file"
+              npx ajv -s "$schema_path" -d "$file" --strict=false;
+            done
+          fi
+        continue-on-error: ${{ github.ref != 'refs/heads/main' && needs.gate.outputs.strict != 'true' }}
       - name: Validate formal summary
         run: |
           if [ -f formal/summary.json ]; then npx ajv -s docs/schemas/formal-summary.schema.json -d formal/summary.json --strict=false; fi
