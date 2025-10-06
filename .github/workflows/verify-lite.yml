@@ -34,8 +34,30 @@ jobs:
           VERIFY_LITE_RUN_MUTATION: ${{ github.event_name == 'pull_request' && '1' || '0' }}
           VERIFY_LITE_NO_FROZEN: '0'
           VERIFY_LITE_SUMMARY_FILE: verify-lite-run-summary.json
+          VERIFY_LITE_SUMMARY_EXPORT_PATH: artifacts/verify-lite/verify-lite-run-summary.json
+          VERIFY_LITE_LINT_BASELINE: config/verify-lite-lint-baseline.json
+          VERIFY_LITE_LINT_ENFORCE: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-verify-lite-lint') && '1' || '0' }}
         run: |
           pnpm run verify:lite
+      - name: Verify-lite lint baseline
+        if: always()
+        env:
+          VERIFY_LITE_LINT_ENFORCE: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-verify-lite-lint') && '1' || '0' }}
+        run: |
+          if [ -f verify-lite-lint-summary.json ]; then
+            set -o pipefail
+            node scripts/ci/enforce-verify-lite-lint.mjs \
+              verify-lite-lint-summary.json \
+              config/verify-lite-lint-baseline.json | tee /tmp/lint-baseline-report.txt
+            cat /tmp/lint-baseline-report.txt >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'verify-lite lint summary missing; skipped baseline enforcement' | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Validate verify-lite summary schema
+        run: |
+          node scripts/ci/validate-verify-lite-summary.mjs \
+            verify-lite-run-summary.json \
+            schema/verify-lite-run-summary.schema.json
       - name: BDD lint (strict; label-gated)
         if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-bdd-lint') }}
         env:
@@ -125,6 +147,7 @@ jobs:
         with:
           name: verify-lite-report
           path: |
+            artifacts/verify-lite/verify-lite-run-summary.json
             verify-lite-run-summary.json
             verify-lite-lint.log
             verify-lite-lint-summary.json
