@@ -1,0 +1,29 @@
+version: '3.9'
+
+services:
+  tempo:
+    image: grafana/tempo:2.4.1
+    container_name: tempo
+    command: ["-config.file=/etc/tempo/tempo.yaml"]
+    volumes:
+      - ./tempo.yaml:/etc/tempo/tempo.yaml:ro
+      - tempo-data:/var/tempo
+    ports:
+      - "3200:3200"    # Tempo HTTP API / Jaeger query compatibility
+      - "4318:4318"    # OTLP HTTP ingest (proxy via collector)
+      - "4317:4317"    # OTLP gRPC ingest (collector -> tempo)
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.114.0
+    container_name: otel-collector
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./otel-collector.yaml:/etc/otelcol/config.yaml:ro
+    ports:
+      - "4318:4318"
+      - "4317:4317"
+    depends_on:
+      - tempo
+
+volumes:
+  tempo-data:

@@ -8,7 +8,7 @@ Issue: #1011 / #1012
 
 ## 想定アーキテクチャ
 1. **Agent / Application** — OTLP HTTP/GRPC exporter で Collector に送信。Exporter 側では `kvonce.event.*` 属性を必ず付与する。
-2. **Collector** — 受信した span を KvOnce 用の pipeline にルーティングし、フィルタリング後に専用ストレージへ保存。
+2. **Collector** — 受信した span を KvOnce 用の pipeline にルーティングし、フィルタリング後に専用ストレージへ保存。PoC 用の Docker Compose は `docker/otlp-tempo/` に配置。
 3. **CI (trace-conformance job)** — `KVONCE_OTLP_PAYLOAD` で指定した payload をダウンロードし `prepare-otlp-trace.mjs` → `run-kvonce-conformance.sh` で projection / validation を実行。
 
 ## 方針と TODO
