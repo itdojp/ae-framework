@@ -214,6 +214,16 @@ jobs:
             EXTRA_ARGS+=("--source-type" "explicit")
             EXTRA_ARGS+=("--source-detail" "${PAYLOAD_REAL}")
           fi
+          if [[ ${#EXTRA_ARGS[@]} -eq 0 && -n "${KVONCE_OTLP_PAYLOAD_FILE:-}" ]]; then
+            EXTRA_ARGS+=("--explicit" "${KVONCE_OTLP_PAYLOAD_FILE}")
+            EXTRA_ARGS+=("--source-type" "env-file")
+            EXTRA_ARGS+=("--source-detail" "${KVONCE_OTLP_PAYLOAD_FILE}")
+          fi
+          if [[ ${#EXTRA_ARGS[@]} -eq 0 && -n "${KVONCE_OTLP_PAYLOAD_URL:-}" ]]; then
+            EXTRA_ARGS+=("--url" "${KVONCE_OTLP_PAYLOAD_URL}")
+            EXTRA_ARGS+=("--source-type" "url")
+            EXTRA_ARGS+=("--source-detail" "${KVONCE_OTLP_PAYLOAD_URL}")
+          fi
           if [[ ${#EXTRA_ARGS[@]} -eq 0 ]]; then
             EXTRA_ARGS+=("--explicit" "samples/trace/kvonce-otlp.json")
             EXTRA_ARGS+=("--source-type" "sample")
