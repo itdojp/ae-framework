@@ -34,8 +34,14 @@ jobs:
           VERIFY_LITE_RUN_MUTATION: ${{ github.event_name == 'pull_request' && '1' || '0' }}
           VERIFY_LITE_NO_FROZEN: '0'
           VERIFY_LITE_SUMMARY_FILE: verify-lite-run-summary.json
+          VERIFY_LITE_SUMMARY_EXPORT_PATH: artifacts/verify-lite/verify-lite-run-summary.json
         run: |
           pnpm run verify:lite
+      - name: Validate verify-lite summary schema
+        run: |
+          node scripts/ci/validate-verify-lite-summary.mjs \
+            verify-lite-run-summary.json \
+            schema/verify-lite-run-summary.schema.json
       - name: BDD lint (strict; label-gated)
         if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-bdd-lint') }}
         env:
@@ -125,6 +131,7 @@ jobs:
         with:
           name: verify-lite-report
           path: |
+            artifacts/verify-lite/verify-lite-run-summary.json
             verify-lite-run-summary.json
             verify-lite-lint.log
             verify-lite-lint-summary.json
