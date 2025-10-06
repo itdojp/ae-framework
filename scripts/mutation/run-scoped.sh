@@ -72,7 +72,7 @@ while [[ ${1-} ]]; do
       ;;
     -c|--config|--configFile)
       shift
-      [[ ${1-} ]] || { echo "--configFile requires a path" >&2; exit 1; }
+      [[ ${1-} ]] || { echo "--config/-c/--configFile requires a path" >&2; exit 1; }
       CONFIG_PATH="$1"
       shift
       ;;
@@ -179,8 +179,8 @@ fi
 mkdir -p reports/mutation
 
 CMD=(npx stryker run "${args[@]}" --concurrency "$CONCURRENCY" --timeoutMS "$TIMEOUT")
-if [[ -n "$CONFIG_PATH" ]]; then
-  CMD+=("$CONFIG_PATH")
+if [[ -n "$CONFIG_PATH" ]] ; then
+  CMD+=(--config "$CONFIG_PATH")
 fi
 if [[ ${#EXTRA_ARGS[@]} -gt 0 ]]; then
   CMD+=("${EXTRA_ARGS[@]}")

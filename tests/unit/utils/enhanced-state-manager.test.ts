@@ -497,22 +497,58 @@ describe('EnhancedStateManager transactions', () => {
 });
 
 describe('EnhancedStateManager helper behaviour', () => {
-  it('revives numeric arrays into buffers and preserves invalid arrays as-is', async () => {
+  it('revives numeric arrays into buffers and preserves invalid arrays as-is via importState', async () => {
     const root = await mkdtemp(join(tmpdir(), 'ae-framework-revive-'));
     tempRoots.push(root);
 
     const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
-    const reviveEntryData = (manager as unknown as { reviveEntryData: (entry: Partial<StateEntry>) => Promise<unknown> }).reviveEntryData.bind(manager);
-
+    const timestamp = new Date().toISOString();
     const numericArray = [72, 73, 74];
-    const revivedBuffer = await reviveEntryData({ compressed: true, data: numericArray });
-    expect(Buffer.isBuffer(revivedBuffer)).toBe(true);
-    expect((revivedBuffer as Buffer).equals(Buffer.from(numericArray))).toBe(true);
-
     const invalidArray: Array<number | string> = [80, 'not-a-number', 82];
-    const revivedInvalid = await reviveEntryData({ compressed: true, data: invalidArray });
-    expect(Buffer.isBuffer(revivedInvalid)).toBe(false);
-    expect(revivedInvalid).toBe(invalidArray);
+
+    const numericKey = `legacy-buffer_${timestamp}`;
+    const invalidKey = `legacy-invalid_${timestamp}`;
+
+    await manager.importState({
+      metadata: { version: '1.0.0' },
+      entries: [
+        {
+          logicalKey: 'legacy-buffer',
+          timestamp,
+          version: 1,
+          compressed: true,
+          data: numericArray,
+          metadata: {},
+        },
+        {
+          logicalKey: 'legacy-invalid',
+          timestamp,
+          version: 1,
+          compressed: true,
+          data: invalidArray,
+          metadata: {},
+        }
+      ],
+      indices: {
+        keyIndex: {
+          'legacy-buffer': [numericKey],
+          'legacy-invalid': [invalidKey]
+        },
+        versionIndex: {
+          'legacy-buffer': 1,
+          'legacy-invalid': 1
+        }
+      }
+    } as any);
+
+    const storage = (manager as unknown as { storage: Map<string, any> }).storage;
+    const numericEntry = storage.get(numericKey);
+    expect(Buffer.isBuffer(numericEntry?.data)).toBe(true);
+    expect((numericEntry?.data as Buffer).equals(Buffer.from(numericArray))).toBe(true);
+
+    const invalidEntry = storage.get(invalidKey);
+    expect(Buffer.isBuffer(invalidEntry?.data)).toBe(false);
+    expect(invalidEntry?.data).toEqual(invalidArray);
 
     await manager.shutdown();
   });
