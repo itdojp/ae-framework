@@ -479,6 +479,57 @@ describe('EnhancedStateManager transactions', () => {
     await manager.shutdown();
   });
 
+  it('records transaction operations and skips rollback data for new entries', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-state-new-tx-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, {
+      databasePath: 'state.db',
+      enableTransactions: true,
+    });
+
+    await manager.initialize();
+
+    const txId = await manager.beginTransaction();
+    const internal = manager as unknown as {
+      saveInTransaction: (tx: string, key: string, entry: any) => Promise<void>;
+      activeTransactions: Map<string, any>;
+    };
+
+    const logicalKey = 'fresh-entry';
+    const timestamp = new Date().toISOString();
+    const data = { id: 'payload', region: 'tx-new' };
+    const checksum = (manager as unknown as { calculateChecksum: (input: unknown) => string }).calculateChecksum.call(manager, data);
+
+    const entry = {
+      id: 'fresh-entry-id',
+      logicalKey,
+      timestamp,
+      version: 1,
+      checksum,
+      data,
+      compressed: false,
+      tags: {},
+      metadata: {
+        size: JSON.stringify(data).length,
+        created: timestamp,
+        accessed: timestamp,
+        source: 'transaction-test',
+      },
+    };
+
+    const storageKey = `${logicalKey}_${timestamp}`;
+    await internal.saveInTransaction(txId, storageKey, entry);
+
+    const context = internal.activeTransactions.get(txId);
+    expect(context.rollbackData.size).toBe(0);
+    expect(context.operations).toHaveLength(1);
+    expect(context.operations[0]).toMatchObject({ type: 'save', key: storageKey });
+
+    await manager.rollbackTransaction(txId);
+    await manager.shutdown();
+  });
+
   it('throws when saving with an unknown transaction id', async () => {
     const root = await mkdtemp(join(tmpdir(), 'ae-framework-state-'));
     tempRoots.push(root);
@@ -1012,6 +1063,92 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     expect(entry?.metadata?.size).toBe(invalidCompressed.length);
     expect(entry?.checksum).toBe('');
 
+    await manager.shutdown();
+  });
+
+  it('preserves provided checksum during import', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-checksum-preserve-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db' });
+    await manager.initialize();
+
+    const timestamp = new Date().toISOString();
+    const payload = { id: 'preset', state: 'ready' };
+    const exported = {
+      metadata: { version: '1.0.0' },
+      entries: [
+        {
+          logicalKey: 'preset-entry',
+          timestamp,
+          version: 4,
+          compressed: false,
+          data: payload,
+          checksum: 'precomputed-checksum',
+          metadata: {
+            size: JSON.stringify(payload).length,
+            created: timestamp,
+            accessed: timestamp,
+            source: 'import-test',
+          },
+        },
+      ],
+      indices: {
+        keyIndex: { 'preset-entry': [`preset-entry_${timestamp}`] },
+        versionIndex: { 'preset-entry': 4 },
+      },
+    };
+
+    await manager.importState(exported as any);
+
+    const storage = (manager as unknown as { storage: Map<string, any> }).storage;
+    const entry = storage.get(`preset-entry_${timestamp}`);
+
+    expect(entry?.checksum).toBe('precomputed-checksum');
+    expect(entry?.metadata?.source).toBe('import-test');
+
+    await manager.shutdown();
+  });
+
+  it('avoids decompressing when compressed flag is set but payload is an object', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-no-decompress-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableCompression: true });
+    await manager.initialize();
+
+    const timestamp = new Date().toISOString();
+    const payload = { unexpected: 'object-payload' };
+    const exported = {
+      metadata: { version: '1.0.0' },
+      entries: [
+        {
+          logicalKey: 'object-entry',
+          timestamp,
+          version: 1,
+          compressed: true,
+          data: payload,
+          metadata: { created: timestamp, accessed: timestamp, source: 'object-import' },
+        },
+      ],
+      indices: {
+        keyIndex: { 'object-entry': [`object-entry_${timestamp}`] },
+        versionIndex: { 'object-entry': 1 },
+      },
+    };
+
+    const decompressSpy = vi.spyOn(manager as unknown as { decompress: (data: Buffer) => Promise<any> }, 'decompress');
+
+    await manager.importState(exported as any);
+
+    expect(decompressSpy).not.toHaveBeenCalled();
+
+    const storage = (manager as unknown as { storage: Map<string, any> }).storage;
+    const entry = storage.get(`object-entry_${timestamp}`);
+    expect(entry?.data).toEqual(payload);
+    expect(entry?.checksum).toBeDefined();
+
+    decompressSpy.mockRestore();
     await manager.shutdown();
   });
 
