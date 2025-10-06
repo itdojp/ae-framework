@@ -1608,6 +1608,51 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     await manager.shutdown();
   });
 
+  it('preserves imported version as upper bound for subsequent saves', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-version-upper-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+    await manager.initialize();
+
+    const timestamp = new Date().toISOString();
+    const fullKey = `inventory_${timestamp}`;
+    const persistence = {
+      metadata: { version: '1.0.0' },
+      entries: [
+        {
+          id: 'imported-low-version',
+          logicalKey: 'inventory',
+          timestamp,
+          version: 2,
+          checksum: 'imported-low-version',
+          data: { id: 'imported-low-version', stock: 8 },
+          compressed: false,
+          metadata: {
+            size: 54,
+            created: timestamp,
+            accessed: timestamp,
+            source: 'version-upper-test'
+          }
+        }
+      ],
+      indices: {
+        keyIndex: { inventory: [fullKey] },
+        versionIndex: { inventory: 5 }
+      }
+    };
+
+    await manager.importState(persistence as any);
+
+    const nextKey = await manager.saveSSOT('inventory', { id: 'post-import', stock: 9 });
+    expect(typeof nextKey).toBe('string');
+
+    const versions = await manager.getVersions('inventory');
+    expect(versions[0]?.version).toBe(6);
+
+    await manager.shutdown();
+  });
+
   it('normalizes legacy entries missing metadata and tags during import', async () => {
     const root = await mkdtemp(join(tmpdir(), 'ae-framework-state-'));
     tempRoots.push(root);

@@ -20,8 +20,8 @@
   - GC ログ分岐（`runGarbageCollection`）と TTL 失効パスをユニットテスト追加でカバーし、サバイバーが `normalizeImportedEntry` の Buffer 復元・checksum 再計算・optional chaining 分岐に集約された。
 - `STRYKER_TIME_LIMIT=420 npx stryker run configs/stryker.enhanced.config.js --mutate src/utils/enhanced-state-manager.ts --concurrency 1`（2025-10-07 07:19 再実行）
   - 走行時間: **約 12 分 02 秒**
-  - ミューテーションスコア: **71.15%**（killed 328 / survived 133 / no-cover 0 / errors 0）
-  - logicalKey 欠落時の例外、TTL 未指定ケース、object payload 圧縮時の checksum、versionIndex の再利用をテストでカバー。`normalizeImportedEntry` の Buffer 判定や versionIndex 集約ロジック（Math.min 変異）など、残サバイバーがさらに限定されたので、次ステップは version index の diff 検証と Buffer 判定に対する追加 assert を検討する。
+  - ミューテーションスコア: **72.02%**（killed 332 / survived 129 / no-cover 0 / errors 0）
+  - logicalKey 欠落時の例外、TTL 未指定ケース、object payload 圧縮時の checksum、imported version 上限をテストでカバー。残サバイバーは versionIndex の減少（Math.min 変異）と Buffer 判定（OR 化）などに集約されたため、次ステップは version diff の明示検証と TypedArray など別形態 payload での判定を強化する。
 - `./scripts/mutation/run-scoped.sh --quick --mutate src/api/server.ts`（2025-10-02 再実行）は **100.00%**（killed 155 / survived 0 / no-cover 0 / errors 0 / 実行 66s）。
 - `./scripts/mutation/run-scoped.sh --quick`（差分無しのデフォルト quick ラン）は 2025-10-02 10:43 時点で **完走 & score 100.00%**。TokenOptimizer が圧縮で空文字列化した際に元データへフォールバックするよう修正し、先の `seed:1083850253` failure を解消。
   - ただし `STRYKER_TIME_LIMIT=180` で再実行した際には `tests/property/token-optimizer.trim-edge.trailing-comma.boundary.pbt.test.ts` が sandbox で失敗し Dry run が中断。trim-edge 系プロパティの期待値調整が新たな課題。
