@@ -13,30 +13,44 @@ afterAll(async () => {
   await Promise.all(tempRoots.map((dir) => rm(dir, { recursive: true, force: true })));
 });
 
+type TransactionOperation = {
+  type: 'save' | 'delete';
+  key: string;
+  data: StateEntry | undefined;
+  previousData: StateEntry | undefined;
+};
+
 type TransactionContext = {
-  operations: Array<{ type: 'save' | 'delete' | 'update'; key: string; data?: unknown; previousData?: unknown }>;
+  operations: TransactionOperation[];
   rollbackData: Map<string, StateEntry>;
 };
 
-type InternalManager = EnhancedStateManager & {
+type InternalManager = {
+  options: EnhancedStateManager['options'];
+  databaseFile: string;
   storage: Map<string, StateEntry>;
+  keyIndex: Map<string, Set<string>>;
+  ttlIndex: Map<string, number>;
+  versionIndex: Map<string, number>;
   activeTransactions: Map<string, TransactionContext>;
   saveInTransaction: (txId: string, key: string, entry: StateEntry) => Promise<void>;
-  calculateChecksum: (data: unknown) => string;
-  persistToDisk: () => Promise<void>;
-  decompress: (buffer: Buffer) => Promise<unknown>;
+  findKeyByVersion: (logicalKey: string, version: number) => string | null;
   runGarbageCollection: () => Promise<void>;
+  persistToDisk: () => Promise<void>;
+  calculateChecksum: (data: unknown) => string;
 };
 
 const asInternal = (manager: EnhancedStateManager): InternalManager => manager as unknown as InternalManager;
 const getStorage = (manager: EnhancedStateManager) => asInternal(manager).storage;
+const getTransactions = (manager: EnhancedStateManager) => asInternal(manager).activeTransactions;
+const getOptions = (manager: EnhancedStateManager) => asInternal(manager).options;
 
 
 describe('EnhancedStateManager configuration', () => {
   it('applies default storage options when omitted', () => {
     const root = join(tmpdir(), 'ae-framework-config-default');
     const manager = new EnhancedStateManager(root);
-    const options = (manager as any).options;
+    const options = getOptions(manager);
 
     expect(options.databasePath).toBe('.ae/enhanced-state.db');
     expect(options.enableCompression).toBe(true);
@@ -46,7 +60,7 @@ describe('EnhancedStateManager configuration', () => {
     expect(options.maxVersions).toBe(10);
     expect(options.enableTransactions).toBe(true);
 
-    const databaseFile = (manager as any).databaseFile as string;
+    const databaseFile = asInternal(manager).databaseFile as string;
     expect(databaseFile.endsWith('.ae/enhanced-state.db')).toBe(true);
   });
 
@@ -61,7 +75,7 @@ describe('EnhancedStateManager configuration', () => {
       maxVersions: 5,
       enableTransactions: false,
     });
-    const options = (manager as any).options;
+    const options = getOptions(manager);
 
     expect(options.databasePath).toBe('custom.db');
     expect(options.enableCompression).toBe(false);
@@ -110,7 +124,7 @@ describe('EnhancedStateManager saveSSOT metadata', () => {
     const entry = storage.get(key);
 
     expect(entry?.tags).toEqual({});
-    expect(entry?.ttl).toBe((manager as any).options.defaultTTL);
+    expect(entry?.ttl).toBe(getOptions(manager).defaultTTL);
     expect(entry?.metadata?.source).toBe('unknown');
 
     await manager.shutdown();
@@ -184,8 +198,7 @@ describe('EnhancedStateManager indices', () => {
 
     await manager.saveSSOT('inventory', { id: 'item', stock: 5 });
 
-    const finder = manager as unknown as { findKeyByVersion: (logicalKey: string, version: number) => string | null };
-    expect(finder.findKeyByVersion('inventory', 99)).toBeNull();
+        expect(asInternal(manager).findKeyByVersion('inventory', 99)).toBeNull();
 
     await manager.shutdown();
   });
@@ -209,10 +222,7 @@ describe('EnhancedStateManager indices', () => {
 
     const fullKey = await manager.saveSSOT('inventory', { id: 'item', stock: 1 });
 
-    const internal = manager as unknown as {
-      keyIndex: Map<string, Set<string>>;
-      storage: Map<string, any>;
-    };
+        const internal = asInternal(manager);
 
     internal.storage.delete(fullKey);
     internal.keyIndex.set('inventory', new Set());
@@ -254,7 +264,7 @@ describe('EnhancedStateManager indices', () => {
     await new Promise(resolve => setTimeout(resolve, 10));
     const secondKey = await manager.saveSSOT('inventory', { id: 'item', stock: 5 });
 
-    const internal = manager as unknown as { storage: Map<string, any> };
+    const internal = asInternal(manager);
     internal.storage.delete(firstKey);
 
     const latestKey = (manager as any)['findLatestKey']('inventory');
@@ -273,7 +283,7 @@ describe('EnhancedStateManager indices', () => {
     await new Promise(resolve => setTimeout(resolve, 10));
     const secondKey = await manager.saveSSOT('inventory', { id: 'item', stock: 20 });
 
-    const internal = manager as unknown as { storage: Map<string, any> };
+    const internal = asInternal(manager);
     const firstEntry = internal.storage.get(firstKey);
     const secondEntry = internal.storage.get(secondKey);
     if (firstEntry && secondEntry) {
@@ -427,11 +437,7 @@ describe('EnhancedStateManager transactions', () => {
     });
 
     const fullKey = await manager.saveSSOT('inventory', { id: 'widget', stock: 2 });
-    const internal = manager as unknown as {
-      activeTransactions: Map<string, any>;
-      saveInTransaction: (txId: string, key: string, entry: any) => Promise<void>;
-      storage: Map<string, any>;
-    };
+    const internal = asInternal(manager);
     const originalEntry = internal.storage.get(fullKey);
 
     const txId = await manager.beginTransaction();
@@ -745,7 +751,7 @@ describe('EnhancedStateManager snapshots and artifacts', () => {
         metadata: expect.objectContaining({
           phase: 'demo-phase',
           entities: ['inventory'],
-          ttl: (manager as any).options.defaultTTL * 2,
+          ttl: getOptions(manager).defaultTTL * 2,
         }),
       })
     );
@@ -758,7 +764,7 @@ describe('EnhancedStateManager snapshots and artifacts', () => {
     const storage = getStorage(manager);
     const entry = storage.get(snapshotId);
     expect(entry?.logicalKey).toBe('snapshot_demo-phase');
-    expect(entry?.ttl).toBe((manager as any).options.defaultTTL * 2);
+    expect(entry?.ttl).toBe(getOptions(manager).defaultTTL * 2);
     expect(entry?.tags).toEqual({ type: 'snapshot', phase: 'demo-phase' });
     expect(entry?.metadata?.source).toBe('snapshot_manager');
     expect(entry?.metadata?.phase).toBe('demo-phase');
@@ -807,7 +813,7 @@ describe('EnhancedStateManager snapshots and artifacts', () => {
     const entry = storage.get(persistedKey);
     expect(entry?.data).toEqual(artifact);
     expect(entry?.metadata?.source).toBe('failure_handler');
-    expect(entry?.ttl).toBe((manager as any).options.defaultTTL);
+    expect(entry?.ttl).toBe(getOptions(manager).defaultTTL);
     expect(entry?.tags).toEqual({
       type: 'failure',
       phase: 'verification',
@@ -848,7 +854,7 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     await manager.saveSSOT('inventory', { id: 'widget-1', stock: 2 });
     await asInternal(manager).persistToDisk();
 
-    const databaseFile = (manager as unknown as { databaseFile: string }).databaseFile;
+    const databaseFile = asInternal(manager).databaseFile;
     const persisted = JSON.parse(await readFile(databaseFile, 'utf8'));
     expect(Array.isArray(persisted.entries)).toBe(true);
     expect(persisted.entries.length).toBeGreaterThan(0);
@@ -1203,6 +1209,7 @@ describe('EnhancedStateManager persistence and shutdown', () => {
 
     expect(entry?.metadata?.size).toBe(0);
 
+    // Mock persistence to avoid filesystem writes while verifying that shutdown flushes state once.
     const persistSpy = vi.spyOn(asInternal(manager), 'persistToDisk').mockResolvedValue();
     await manager.shutdown();
     expect(persistSpy).toHaveBeenCalledTimes(1);
@@ -1278,7 +1285,8 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     await manager.initialize();
 
     const stopSpy = vi.spyOn(manager, 'stopGarbageCollection');
-    const persistSpy = vi.spyOn(manager as unknown as { persistToDisk: () => Promise<void> }, 'persistToDisk').mockResolvedValue();
+    // Prevent disk writes during import so we can assert shutdown flush behaviour deterministically.
+    const persistSpy = vi.spyOn(asInternal(manager), 'persistToDisk').mockResolvedValue();
     const rollbackSpy = vi.spyOn(manager, 'rollbackTransaction');
     const shutdownSpy = vi.fn();
     manager.on('stateManagerShutdown', shutdownSpy);
@@ -1492,7 +1500,7 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     tempRoots.push(root);
 
     const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
-    const options = (manager as any).options;
+    const options = getOptions(manager);
 
     const timestamp = new Date().toISOString();
     const logicalKey = 'legacy-inventory';
@@ -1524,7 +1532,7 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     await manager.importState(persistence);
 
     expect(importedSpy).toHaveBeenCalledWith({ entryCount: 1 });
-    const internal = manager as unknown as { storage: Map<string, any> };
+    const internal = asInternal(manager);
     const stored = internal.storage.get(fullKey);
     expect(stored.metadata.size).toBeGreaterThan(0);
     expect(stored.metadata.source).toBe('unknown');
