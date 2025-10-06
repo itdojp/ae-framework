@@ -19,6 +19,8 @@ describe('create-report-envelope CLI', () => {
 
   it('generates an envelope with correlation, artifacts, and notes', async () => {
     const summaryPath = join(workdir, 'verify-lite-run-summary.json');
+    const metadataPath = join(workdir, 'kvonce-payload-metadata.json');
+    const extraArtifactPath = join(workdir, 'additional.json');
     const outputPath = join(workdir, 'report-envelope.json');
 
     const summary = {
@@ -38,6 +40,8 @@ describe('create-report-envelope CLI', () => {
     };
 
     await writeFile(summaryPath, JSON.stringify(summary));
+    await writeFile(metadataPath, JSON.stringify({ sha256: 'abc', sizeBytes: 42 }));
+    await writeFile(extraArtifactPath, JSON.stringify({ hello: 'world' }));
 
     const result = spawnSync(process.execPath, [scriptPath, summaryPath, outputPath], {
       cwd: workdir,
@@ -49,7 +53,9 @@ describe('create-report-envelope CLI', () => {
         GITHUB_SHA: '01a5c13d',
         GITHUB_REF: 'refs/heads/main',
         REPORT_ENVELOPE_TRACE_IDS: 'trace-1,trace-2',
-        REPORT_ENVELOPE_NOTES: 'note-one\nnote-two'
+        REPORT_ENVELOPE_NOTES: 'note-one\nnote-two',
+        REPORT_ENVELOPE_PAYLOAD_METADATA: metadataPath,
+        REPORT_ENVELOPE_EXTRA_ARTIFACTS: extraArtifactPath
       }
     });
 
@@ -69,10 +75,19 @@ describe('create-report-envelope CLI', () => {
       traceIds: ['trace-1', 'trace-2']
     });
     expect(envelope.summary).toEqual(summary);
-    expect(envelope.artifacts).toHaveLength(1);
+    expect(envelope.artifacts).toHaveLength(3);
     expect(envelope.artifacts[0]).toMatchObject({
       type: 'application/json',
       path: expect.stringContaining('verify-lite-run-summary.json'),
+      checksum: expect.stringMatching(/^sha256:[0-9a-f]{64}$/),
+      description: 'Raw summary artifact'
+    });
+    expect(envelope.artifacts[1]).toMatchObject({
+      path: expect.stringContaining('kvonce-payload-metadata.json'),
+      description: 'Payload metadata'
+    });
+    expect(envelope.artifacts[2]).toMatchObject({
+      path: expect.stringContaining('additional.json'),
       checksum: expect.stringMatching(/^sha256:[0-9a-f]{64}$/)
     });
     expect(envelope.notes).toEqual(['note-one', 'note-two']);

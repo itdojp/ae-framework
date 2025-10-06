@@ -151,7 +151,6 @@
     "verify:full": "tsx -e \"import {VerifyAgent} from './src/agents/verify-agent.js'; const agent = new VerifyAgent(); console.log('Verify Agent initialized')\"",
     "verify:tests": "npm run test && npm run pbt && npm run bdd",
     "verify:quality": "npm run lint && npm run build",
-    "verify:lite": "bash scripts/ci/run-verify-lite-local.sh",
     "verify:security": "npm audit --audit-level moderate",
     "security:test-headers": "tsx src/cli/index.ts security test-headers",
     "security:check-headers": "tsx src/cli/index.ts security check-headers",
@@ -314,6 +313,7 @@
   },
   "dependencies": {
     "@ae-framework/spec-compiler": "file:./packages/spec-compiler",
+    "@aws-sdk/client-s3": "^3.901.0",
     "@modelcontextprotocol/sdk": "^0.5.0",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/api-logs": "^0.52.0",
