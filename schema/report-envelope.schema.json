@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AE Framework Report Envelope",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "source",
+    "generatedAt",
+    "correlation",
+    "summary",
+    "artifacts"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "correlation": {
+      "type": "object",
+      "required": ["runId", "workflow", "commit", "branch"],
+      "properties": {
+        "runId": { "type": "string", "minLength": 1 },
+        "workflow": { "type": "string", "minLength": 1 },
+        "commit": { "type": "string", "minLength": 1 },
+        "branch": { "type": "string", "minLength": 1 },
+        "traceIds": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "additionalProperties": false
+    },
+    "summary": {
+      "type": "object"
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["type", "path"],
+        "properties": {
+          "type": { "type": "string", "minLength": 1 },
+          "path": { "type": "string", "minLength": 1 },
+          "checksum": {
+            "type": ["string", "null"],
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "description": { "type": ["string", "null"], "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "additionalProperties": false
+}

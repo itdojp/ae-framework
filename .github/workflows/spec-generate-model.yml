@@ -247,6 +247,32 @@ jobs:
       - name: Summarize trace validation
         id: trace_summary
         run: node ./scripts/trace/render-trace-summary.mjs
+      - name: Build KvOnce report envelope summary
+        if: always()
+        run: |
+          node ./scripts/trace/build-kvonce-envelope-summary.mjs \
+            artifacts/kvonce-trace-summary.json
+      - name: Create KvOnce trace envelope
+        if: always()
+        env:
+          REPORT_ENVELOPE_SOURCE: trace-conformance
+          REPORT_ENVELOPE_NOTES: |
+            OTLP valid: ${{ steps.trace_summary.outputs.valid_otlp }}
+            NDJSON valid: ${{ steps.trace_summary.outputs.valid_ndjson }}
+        run: |
+          if [ -f artifacts/kvonce-trace-summary.json ]; then
+            node ./scripts/trace/create-report-envelope.mjs \
+              artifacts/kvonce-trace-summary.json \
+              artifacts/kvonce-trace-envelope.json
+          else
+            echo '[trace] kvonce summary missing; skipped envelope generation'
+          fi
+      - name: Validate trace envelope schema
+        if: always()
+        run: |
+          node ./scripts/ci/validate-report-envelope.mjs \
+            artifacts/kvonce-trace-envelope.json \
+            schema/report-envelope.schema.json
       - name: Upload trace artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -255,6 +281,8 @@ jobs:
           path: |
             hermetic-reports/trace/collected-kvonce-otlp.json
             hermetic-reports/trace/kvonce-payload-metadata.json
+            artifacts/kvonce-trace-summary.json
+            artifacts/kvonce-trace-envelope.json
             hermetic-reports/trace/otlp/kvonce-events.ndjson
             hermetic-reports/trace/otlp/kvonce-projection.json
             hermetic-reports/trace/otlp/kvonce-validation.json

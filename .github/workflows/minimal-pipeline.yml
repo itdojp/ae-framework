@@ -66,6 +66,28 @@ jobs:
           else
             echo 'verify-lite summary missing; skipped validation'
           fi
+      - name: Create verify-lite report envelope
+        if: always()
+        env:
+          REPORT_ENVELOPE_SOURCE: verify-lite
+        run: |
+          if [ -f artifacts/verify-lite/verify-lite-run-summary.json ]; then
+            node scripts/trace/create-report-envelope.mjs \
+              artifacts/verify-lite/verify-lite-run-summary.json \
+              artifacts/report-envelope.json
+          elif [ -f verify-lite-run-summary.json ]; then
+            node scripts/trace/create-report-envelope.mjs \
+              verify-lite-run-summary.json \
+              artifacts/report-envelope.json
+          else
+            echo 'verify-lite summary missing; skipped envelope generation'
+          fi
+      - name: Validate report envelope schema
+        if: always()
+        run: |
+          node scripts/ci/validate-report-envelope.mjs \
+            artifacts/report-envelope.json \
+            schema/report-envelope.schema.json
       - name: Upload verify-lite artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -73,6 +95,7 @@ jobs:
           name: verify-lite-report
           path: |
             artifacts/verify-lite/verify-lite-run-summary.json
+            artifacts/report-envelope.json
             verify-lite-run-summary.json
             verify-lite-lint.log
             verify-lite-lint-summary.json
