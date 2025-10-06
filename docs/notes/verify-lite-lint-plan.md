@@ -16,6 +16,7 @@
 2. **Phase B (CI gating)**
    - [ ] verify-lite lint を `VERIFY_LITE_ENFORCE_LINT=1` で定期実行し、総件数を Step Summary に表示。
    - [ ] 主要ディレクトリの lint 修正が完了した段階で label `lint-strict` を導入。
+   - [ ] ラベル `enforce-verify-lite-lint` を付与した PR は `VERIFY_LITE_ENFORCE_LINT=1` を強制し、baseline 超過でジョブを失敗させる運用ドキュメントを整備（付与権限、解除フロー、再実行手順を明文化）。
 3. **Phase C (Strict by default)**
    - [ ] 全カテゴリが許容値（< 50 件）になったら verify-lite lint 失敗をブロッキング化。
 
