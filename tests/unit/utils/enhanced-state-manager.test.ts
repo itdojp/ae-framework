@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
 import { EnhancedStateManager } from '../../../src/utils/enhanced-state-manager.js';
+import type { StateEntry } from '../../../src/utils/enhanced-state-manager.js';
 
 const tempRoots: string[] = [];
 
@@ -490,6 +491,61 @@ describe('EnhancedStateManager transactions', () => {
     await expect(
       manager.saveSSOT('missing', { id: 'payload' }, { transactionId: 'nope' })
     ).rejects.toThrow('Transaction not found: nope');
+
+    await manager.shutdown();
+  });
+});
+
+describe('EnhancedStateManager helper behaviour', () => {
+  it('revives numeric arrays into buffers and preserves invalid arrays as-is', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-revive-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+    const reviveEntryData = (manager as unknown as { reviveEntryData: (entry: Partial<StateEntry>) => Promise<unknown> }).reviveEntryData.bind(manager);
+
+    const numericArray = [72, 73, 74];
+    const revivedBuffer = await reviveEntryData({ compressed: true, data: numericArray });
+    expect(Buffer.isBuffer(revivedBuffer)).toBe(true);
+    expect((revivedBuffer as Buffer).equals(Buffer.from(numericArray))).toBe(true);
+
+    const invalidArray: Array<number | string> = [80, 'not-a-number', 82];
+    const revivedInvalid = await reviveEntryData({ compressed: true, data: invalidArray });
+    expect(Buffer.isBuffer(revivedInvalid)).toBe(false);
+    expect(revivedInvalid).toBe(invalidArray);
+
+    await manager.shutdown();
+  });
+
+  it('creates snapshots scoped by phase or entity filters', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-snapshot-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+    await manager.saveSSOT('alpha.orders', { id: 'order-a' }, { phase: 'alpha', tags: { scope: 'orders' } });
+    const betaKey = await manager.saveSSOT('beta.inventory', { id: 'stock-beta' }, { phase: 'beta', tags: { scope: 'inventory' } });
+    const betaEntityKey = await manager.saveSSOT('gamma.inventory', { id: 'stock-gamma' }, { phase: 'gamma', tags: { scope: 'inventory' } });
+
+    const snapshotSpy = vi.fn();
+    manager.on('snapshotCreated', snapshotSpy);
+
+    const snapshotId = await manager.createSnapshot('beta', ['inventory']);
+    expect(typeof snapshotId).toBe('string');
+    expect(snapshotSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        snapshotId,
+        metadata: expect.objectContaining({
+          phase: 'beta',
+          entities: ['inventory'],
+        }),
+      })
+    );
+
+    const snapshot = await manager.loadSnapshot(snapshotId);
+    expect(snapshot).not.toBeNull();
+    const snapshotKeys = Object.keys(snapshot as Record<string, unknown>);
+    expect(snapshotKeys).toEqual(expect.arrayContaining([betaKey, betaEntityKey]));
+    expect(snapshotKeys.some((key) => key.startsWith('alpha.orders'))).toBe(false);
 
     await manager.shutdown();
   });

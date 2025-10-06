@@ -1,6 +1,6 @@
 # Mutation Coverage Improvement Plan (Week2)
 
-## 現状サマリ（2025-10-02 更新）
+## 現状サマリ（2025-10-06 更新）
 - `./scripts/mutation/run-scoped.sh --quick --mutate src/utils/enhanced-state-manager.ts`（2025-10-02 10:50 開始）
   - 走行時間: **約 135 分**（time-limit 未指定のため全 457 ミュータントを順次実行）
   - ミューテーションスコア: **9.85%**（killed 45 / survived 412 / no-cover 0 / errors 0）
@@ -10,6 +10,10 @@
   - ミューテーションスコア: **62.58%**（killed 286 / survived 171 / no-cover 0 / errors 0）
   - quick run が現実的な時間に短縮され、サバイバーはトランザクション、スナップショット、復元系の分岐へ集約。
   - `tests/unit/utils/enhanced-state-manager.test.ts` に初期化イベント／ssotLoaded／snapshot／自動トランザクション／ロールバック系のユニットテストを追加し、該当ミュータントの一部を kill 済み。
+- `STRYKER_TIME_LIMIT=420 npx stryker run configs/stryker.enhanced.config.js`（2025-10-06 11:06 開始）
+  - 走行時間: **約 2 分 54 秒**（incremental レポートをクリアしてフル quick ラン）
+  - ミューテーションスコア: **65.51%**（killed 302 / survived 159 / no-cover 0 / errors 0）
+  - `reviveEntryData` のレガシー配列復元と `createSnapshot` の phase/entity フィルタをテストでカバーし、Section2 のターゲットである 65% ラインを突破。
 - `./scripts/mutation/run-scoped.sh --quick --mutate src/api/server.ts`（2025-10-02 再実行）は **100.00%**（killed 155 / survived 0 / no-cover 0 / errors 0 / 実行 66s）。
 - `./scripts/mutation/run-scoped.sh --quick`（差分無しのデフォルト quick ラン）は 2025-10-02 10:43 時点で **完走 & score 100.00%**。TokenOptimizer が圧縮で空文字列化した際に元データへフォールバックするよう修正し、先の `seed:1083850253` failure を解消。
   - ただし `STRYKER_TIME_LIMIT=180` で再実行した際には `tests/property/token-optimizer.trim-edge.trailing-comma.boundary.pbt.test.ts` が sandbox で失敗し Dry run が中断。trim-edge 系プロパティの期待値調整が新たな課題。
@@ -58,8 +62,8 @@
 - [x] `trace.getTracer` に渡す名前が `ae-framework-api` であることを保証するユニットテストを追加。
 - [x] onResponse フックの `if (span)` ガードを成功パス/失敗パス双方で明示的に検証し、残存サバイバーを除去。
 - [x] 初期化ガード (`isInitialized`)、`emit('stateManagerInitialized')` など初期化フローのサバイバーに対するユニットテストを追加。
-- [ ] トランザクションイベント／スナップショット生成（phase / entities 判定）まわりの分岐を網羅するテストを追加。
-- [ ] Buffer 復元（`data.type === 'Buffer'`) と checksum 計算 (`calculateChecksum`) のサバイバーをカバーするテストを追加。
+- [x] トランザクションイベント／スナップショット生成（phase / entities 判定）まわりの分岐を網羅するテストを追加。
+- [x] Buffer 復元（`data.type === 'Buffer'`) のサバイバーをカバーするテストを追加（checksum 算出系は別途強化予定）。
 - [ ] 永続化（`persistToDisk` / `shutdown`）時のエラー処理とログ出力を property-based テストで補強。
 
 ## 備考

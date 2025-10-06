@@ -29,12 +29,12 @@ Options:
   -m, --mutate <pattern>     Append a mutate glob pattern (repeatable)
       --mutate-file <path>   Read newline-separated patterns from file
       --auto-diff[=<ref>]    Generate mutate patterns from git diff (default: origin/main)
-  -c, --config <path>        Use a specific Stryker config file
+  -c, --config, --configFile <path>   Use a specific Stryker config file
   -h, --help                 Show this help message
 
 Environment overrides:
   STRYKER_MUTATE, STRYKER_CONCURRENCY, STRYKER_TIMEOUT, STRYKER_TIME_LIMIT,
-  STRYKER_CONFIG (fallback when --config is not provided).
+  STRYKER_CONFIG (fallback when --config/--configFile is not provided).
 USAGE
 }
 
@@ -70,9 +70,9 @@ while [[ ${1-} ]]; do
       [[ -z "$AUTO_DIFF_REF" ]] && AUTO_DIFF_REF="origin/main"
       shift
       ;;
-    -c|--config)
+    -c|--config|--configFile)
       shift
-      [[ ${1-} ]] || { echo "--config requires a path" >&2; exit 1; }
+      [[ ${1-} ]] || { echo "--configFile requires a path" >&2; exit 1; }
       CONFIG_PATH="$1"
       shift
       ;;
@@ -180,7 +180,7 @@ mkdir -p reports/mutation
 
 CMD=(npx stryker run "${args[@]}" --concurrency "$CONCURRENCY" --timeoutMS "$TIMEOUT")
 if [[ -n "$CONFIG_PATH" ]]; then
-  CMD+=(--config "$CONFIG_PATH")
+  CMD+=("$CONFIG_PATH")
 fi
 if [[ ${#EXTRA_ARGS[@]} -gt 0 ]]; then
   CMD+=("${EXTRA_ARGS[@]}")
