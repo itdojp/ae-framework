@@ -269,6 +269,11 @@ jobs:
           REPORT_ENVELOPE_NOTES: |
             OTLP valid: ${{ steps.trace_summary.outputs.valid_otlp }}
             NDJSON valid: ${{ steps.trace_summary.outputs.valid_ndjson }}
+          REPORT_ENVELOPE_PAYLOAD_METADATA: hermetic-reports/trace/kvonce-payload-metadata.json
+          REPORT_ENVELOPE_EXTRA_ARTIFACTS: >-
+            artifacts/kvonce-trace-summary.json,
+            hermetic-reports/trace/otlp/kvonce-validation.json,
+            hermetic-reports/trace/ndjson/kvonce-validation.json
         run: |
           if [ -f artifacts/kvonce-trace-summary.json ]; then
             node ./scripts/trace/create-report-envelope.mjs \
