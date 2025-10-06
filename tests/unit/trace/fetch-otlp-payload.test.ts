@@ -7,6 +7,7 @@ import { promisify } from 'node:util';
 import { execFile } from 'node:child_process';
 
 const execFileAsync = promisify(execFile);
+const nodeBinary = process.execPath;
 const scriptPath = process.env.KVONCE_FETCH_SCRIPT_PATH
   ? resolve(process.cwd(), process.env.KVONCE_FETCH_SCRIPT_PATH)
   : resolve(process.cwd(), 'scripts/trace/fetch-otlp-payload.mjs');
@@ -27,7 +28,7 @@ describe('fetch-otlp-payload CLI', () => {
       const target = join(dir, 'collected.json');
       await writeFile(source, JSON.stringify({ hello: 'world' }), 'utf8');
 
-      await execFileAsync('node', [scriptPath, '--target', target, '--explicit', source]);
+      await execFileAsync(nodeBinary, [scriptPath, '--target', target, '--explicit', source]);
 
       const copied = JSON.parse(await readFile(target, 'utf8'));
       expect(copied).toEqual({ hello: 'world' });
@@ -47,7 +48,7 @@ describe('fetch-otlp-payload CLI', () => {
       await writeFile(join(artifactDir, 'kvonce-otlp.json'), JSON.stringify({ keep: true }), 'utf8');
 
       const target = join(dir, 'collected.json');
-      await execFileAsync('node', [scriptPath, '--target', target, '--artifact-dir', artifactDir]);
+      await execFileAsync(nodeBinary, [scriptPath, '--target', target, '--artifact-dir', artifactDir]);
 
       const copied = JSON.parse(await readFile(target, 'utf8'));
       expect(copied).toEqual({ keep: true });
@@ -69,9 +70,11 @@ describe('fetch-otlp-payload CLI', () => {
 
       const target = join(dir, 'downloaded.json');
       try {
-        await execFileAsync('node', [scriptPath, '--target', target, '--url', url]);
+        await execFileAsync(nodeBinary, [scriptPath, '--target', target, '--url', url]);
       } finally {
-        server.close();
+        await new Promise<void>((resolve, reject) => {
+          server.close((error) => (error ? reject(error) : resolve()));
+        });
       }
 
       const copied = JSON.parse(await readFile(target, 'utf8'));
@@ -98,11 +101,13 @@ describe('fetch-otlp-payload CLI', () => {
 
       const target = join(dir, 'env-download.json');
       try {
-        await execFileAsync('node', [scriptPath, '--target', target], {
+        await execFileAsync(nodeBinary, [scriptPath, '--target', target], {
           env: { ...process.env, KVONCE_OTLP_PAYLOAD_URL: url }
         });
       } finally {
-        server.close();
+        await new Promise<void>((resolve, reject) => {
+          server.close((error) => (error ? reject(error) : resolve()));
+        });
       }
 
       const copied = JSON.parse(await readFile(target, 'utf8'));
@@ -116,7 +121,7 @@ describe('fetch-otlp-payload CLI', () => {
   it('fails when no source is provided', async () => {
     await withTempDir(async (dir) => {
       const target = join(dir, 'output.json');
-      const result = await execFileAsync('node', [scriptPath, '--target', target]).catch((error) => error);
+      const result = await execFileAsync(nodeBinary, [scriptPath, '--target', target]).catch((error) => error);
       expect(result.code).toBe(1);
       const files = await readdir(dir);
       expect(files).not.toContain('output.json');

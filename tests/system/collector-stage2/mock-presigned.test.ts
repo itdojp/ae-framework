@@ -10,8 +10,8 @@ const fetchScript = join(process.cwd(), 'scripts/trace/fetch-otlp-payload.mjs');
 const execFileAsync = promisify(execFile);
 
 describe('stage2 presigned URL integration', () => {
-  let server;
-  let serverUrl;
+  let server: http.Server;
+  let serverUrl: string;
 
   beforeAll(async () => {
     const payload = JSON.stringify({ trace: 'kvonce-stage2' });
@@ -24,13 +24,20 @@ describe('stage2 presigned URL integration', () => {
         res.end();
       }
     });
-    await new Promise((resolve) => server.listen(0, resolve));
+    await new Promise<void>((resolve, reject) => {
+      server.listen(0, (err?: Error) => (err ? reject(err) : resolve()));
+    });
     const address = server.address();
+    if (!address || typeof address !== 'object') {
+      throw new Error('server failed to report its address');
+    }
     serverUrl = `http://127.0.0.1:${address.port}/kvonce.json?token=test`;
   });
 
   afterAll(async () => {
-    await new Promise((resolve) => server.close(resolve));
+    await new Promise<void>((resolve, reject) => {
+      server.close((err?: Error | null) => (err ? reject(err) : resolve()));
+    });
   });
 
   it('downloads payload via KVONCE_OTLP_PAYLOAD_URL env', async () => {
