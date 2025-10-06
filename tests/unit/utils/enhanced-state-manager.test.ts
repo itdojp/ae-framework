@@ -499,7 +499,8 @@ describe('EnhancedStateManager transactions', () => {
     const logicalKey = 'fresh-entry';
     const timestamp = new Date().toISOString();
     const data = { id: 'payload', region: 'tx-new' };
-    const checksum = (manager as unknown as { calculateChecksum: (input: unknown) => string }).calculateChecksum.call(manager, data);
+    const calculateChecksum = (manager as any).calculateChecksum as (input: unknown) => string;
+    const checksum = calculateChecksum.call(manager, data);
 
     const entry = {
       id: 'fresh-entry-id',
@@ -1137,7 +1138,7 @@ describe('EnhancedStateManager persistence and shutdown', () => {
       },
     };
 
-    const decompressSpy = vi.spyOn(manager as unknown as { decompress: (data: Buffer) => Promise<any> }, 'decompress');
+    const decompressSpy = vi.spyOn(manager as any, 'decompress');
 
     await manager.importState(exported as any);
 
