@@ -87,20 +87,28 @@
       ],
       "properties": {
         "lintSummary": {
-          "type": ["string", "null"],
-          "minLength": 1
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
         },
         "lintLog": {
-          "type": ["string", "null"],
-          "minLength": 1
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
         },
         "mutationSummary": {
-          "type": ["string", "null"],
-          "minLength": 1
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
         },
         "mutationSurvivors": {
-          "type": ["string", "null"],
-          "minLength": 1
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
         }
       }
     }

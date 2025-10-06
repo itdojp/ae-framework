@@ -1,19 +1,5 @@
-import { beforeAll, describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-let renderVerifyLiteSummary;
-
-beforeAll(async () => {
-  const filePath = resolve(__dirname, '../../../scripts/ci/lib/verify-lite-summary.mjs');
-  const code = readFileSync(filePath, 'utf8');
-  const moduleUrl = `data:text/javascript;base64,${Buffer.from(code).toString('base64')}`;
-  ({ renderVerifyLiteSummary } = await import(moduleUrl));
-});
+import { describe, expect, it } from 'vitest';
+import { renderVerifyLiteSummary } from '../../../scripts/ci/lib/verify-lite-summary.mjs';
 
 describe('renderVerifyLiteSummary', () => {
   const baseSummary = {
