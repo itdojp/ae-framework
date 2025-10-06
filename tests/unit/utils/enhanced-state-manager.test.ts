@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it, vi } from 'vitest';
-import { mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, rm, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
@@ -1411,5 +1411,73 @@ describe('EnhancedStateManager persistence and shutdown', () => {
 
     logSpy.mockRestore();
     await manager.shutdown();
+  });
+});
+
+describe('EnhancedStateManager garbage collection logging', () => {
+  it('logs removal count when expired entries are collected', async () => {
+    vi.useFakeTimers();
+    const baseTime = new Date('2025-01-01T00:00:00.000Z');
+    vi.setSystemTime(baseTime);
+
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-gc-'));
+    tempRoots.push(root);
+
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const manager = new EnhancedStateManager(root, {
+      databasePath: 'state.db',
+      enableTransactions: false,
+      gcInterval: 3600,
+    });
+
+    try {
+      await manager.initialize();
+      manager.stopGarbageCollection();
+      logSpy.mockClear();
+
+      await manager.saveSSOT('session', { id: 'stale' }, { ttl: 1, source: 'gc-test' });
+      vi.advanceTimersByTime(2000);
+
+      await manager.collectGarbage();
+
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringMatching(/removed\s+1\s+expired\s+entr(?:y|ies)/)
+      );
+      await expect(manager.loadSSOT('session')).resolves.toBeNull();
+    } finally {
+      logSpy.mockRestore();
+      await manager.shutdown();
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not log when no entries expire during collection', async () => {
+    vi.useFakeTimers();
+    const baseTime = new Date('2025-01-01T12:00:00.000Z');
+    vi.setSystemTime(baseTime);
+
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-gc-clean-'));
+    tempRoots.push(root);
+
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const manager = new EnhancedStateManager(root, {
+      databasePath: 'state.db',
+      enableTransactions: false,
+      gcInterval: 3600,
+    });
+
+    try {
+      await manager.initialize();
+      manager.stopGarbageCollection();
+      logSpy.mockClear();
+
+      await manager.collectGarbage();
+
+      expect(logSpy).not.toHaveBeenCalled();
+    } finally {
+      logSpy.mockRestore();
+      await manager.shutdown();
+      vi.useRealTimers();
+    }
   });
 });
