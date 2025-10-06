@@ -32,14 +32,40 @@ if (!options.target) {
 const targetPath = path.resolve(options.target);
 await fsp.mkdir(path.dirname(targetPath), { recursive: true });
 
-const envExplicit = process.env.KVONCE_OTLP_PAYLOAD_FILE ?? process.env.KVONCE_OTLP_PAYLOAD_LOCAL;
-const envUrl = process.env.KVONCE_OTLP_PAYLOAD_URL ?? process.env.KVONCE_OTLP_PAYLOAD_S3_URL;
+const envExplicit =
+  process.env.KVONCE_OTLP_PAYLOAD_FILE ??
+  process.env.KVONCE_OTLP_PAYLOAD_EXPLICIT ??
+  process.env.KVONCE_OTLP_PAYLOAD_LOCAL ??
+  null;
 
-// Prefer KVONCE_OTLP_PAYLOAD_FILE / KVONCE_OTLP_PAYLOAD_URL. Legacy env vars remain for backwards compatibility.
+const envArtifactDir = process.env.KVONCE_OTLP_ARTIFACT_DIR ?? null;
+
+const envUrl =
+  process.env.KVONCE_OTLP_PAYLOAD_URL ??
+  process.env.KVONCE_OTLP_URL ??
+  process.env.KVONCE_OTLP_PAYLOAD_S3_URL ??
+  null;
+
+const envSourceType = process.env.KVONCE_OTLP_SOURCE_TYPE ?? null;
+const envSourceDetail = process.env.KVONCE_OTLP_SOURCE_DETAIL ?? null;
+
+if (!options.sourceType && envSourceType) {
+  options.sourceType = envSourceType;
+}
+
+if (!options.sourceDetail && envSourceDetail) {
+  options.sourceDetail = envSourceDetail;
+}
+
+// Prefer KVONCE_OTLP_* env fallbacks when CLI flags are omitted.
 if (!options.explicit && envExplicit) {
   options.explicit = envExplicit;
   if (!options.sourceType) options.sourceType = 'env-file';
   if (!options.sourceDetail) options.sourceDetail = envExplicit;
+}
+
+if (!options.artifactDir && envArtifactDir) {
+  options.artifactDir = envArtifactDir;
 }
 
 if (!options.url && envUrl) {
@@ -57,8 +83,9 @@ const setSource = (fallbackType, fallbackDetail) => {
 };
 
 const copyFile = async (source, fallbackType) => {
-  await fsp.copyFile(source, targetPath);
-  setSource(fallbackType, source);
+  const resolved = path.resolve(source);
+  await fsp.copyFile(resolved, targetPath);
+  setSource(fallbackType, resolved);
 };
 
 const writeBuffer = async (buffer, fallbackType, fallbackDetail) => {

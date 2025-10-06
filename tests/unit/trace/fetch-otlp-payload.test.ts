@@ -83,6 +83,36 @@ describe('fetch-otlp-payload CLI', () => {
     });
   });
 
+  it('uses environment fallbacks when no CLI source is provided', async () => {
+    await withTempDir(async (dir) => {
+      const server = createServer((req, res) => {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ viaEnv: true }));
+      });
+      await new Promise((resolveServer) => server.listen(0, resolveServer));
+      const address = server.address();
+      if (typeof address !== 'object' || !address) {
+        throw new Error('server failed to listen');
+      }
+      const url = `http://127.0.0.1:${address.port}`;
+
+      const target = join(dir, 'env-download.json');
+      try {
+        await execFileAsync('node', [scriptPath, '--target', target], {
+          env: { ...process.env, KVONCE_OTLP_PAYLOAD_URL: url }
+        });
+      } finally {
+        server.close();
+      }
+
+      const copied = JSON.parse(await readFile(target, 'utf8'));
+      expect(copied).toEqual({ viaEnv: true });
+      const metadata = JSON.parse(await readFile(join(dir, 'kvonce-payload-metadata.json'), 'utf8'));
+      expect(metadata.sourceType).toBe('url');
+      expect(metadata.sourceDetail).toBe(url);
+    });
+  });
+
   it('fails when no source is provided', async () => {
     await withTempDir(async (dir) => {
       const target = join(dir, 'output.json');
