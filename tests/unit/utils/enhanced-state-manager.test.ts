@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
 import { EnhancedStateManager } from '../../../src/utils/enhanced-state-manager.js';
+import type { StateEntry } from '../../../src/utils/enhanced-state-manager.js';
 
 const tempRoots: string[] = [];
 
@@ -490,6 +491,97 @@ describe('EnhancedStateManager transactions', () => {
     await expect(
       manager.saveSSOT('missing', { id: 'payload' }, { transactionId: 'nope' })
     ).rejects.toThrow('Transaction not found: nope');
+
+    await manager.shutdown();
+  });
+});
+
+describe('EnhancedStateManager helper behaviour', () => {
+  it('revives numeric arrays into buffers and preserves invalid arrays as-is via importState', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-revive-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+    const timestamp = new Date().toISOString();
+    const numericArray = [72, 73, 74];
+    const invalidArray: Array<number | string> = [80, 'not-a-number', 82];
+
+    const numericKey = `legacy-buffer_${timestamp}`;
+    const invalidKey = `legacy-invalid_${timestamp}`;
+
+    await manager.importState({
+      metadata: { version: '1.0.0' },
+      entries: [
+        {
+          logicalKey: 'legacy-buffer',
+          timestamp,
+          version: 1,
+          compressed: true,
+          data: numericArray,
+          metadata: {},
+        },
+        {
+          logicalKey: 'legacy-invalid',
+          timestamp,
+          version: 1,
+          compressed: true,
+          data: invalidArray,
+          metadata: {},
+        }
+      ],
+      indices: {
+        keyIndex: {
+          'legacy-buffer': [numericKey],
+          'legacy-invalid': [invalidKey]
+        },
+        versionIndex: {
+          'legacy-buffer': 1,
+          'legacy-invalid': 1
+        }
+      }
+    } as any);
+
+    const storage = (manager as unknown as { storage: Map<string, any> }).storage;
+    const numericEntry = storage.get(numericKey);
+    expect(Buffer.isBuffer(numericEntry?.data)).toBe(true);
+    expect((numericEntry?.data as Buffer).equals(Buffer.from(numericArray))).toBe(true);
+
+    const invalidEntry = storage.get(invalidKey);
+    expect(Buffer.isBuffer(invalidEntry?.data)).toBe(false);
+    expect(invalidEntry?.data).toEqual(invalidArray);
+
+    await manager.shutdown();
+  });
+
+  it('creates snapshots scoped by phase or entity filters', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-snapshot-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+    await manager.saveSSOT('alpha.orders', { id: 'order-a' }, { phase: 'alpha', tags: { scope: 'orders' } });
+    const betaKey = await manager.saveSSOT('beta.inventory', { id: 'stock-beta' }, { phase: 'beta', tags: { scope: 'inventory' } });
+    const betaEntityKey = await manager.saveSSOT('gamma.inventory', { id: 'stock-gamma' }, { phase: 'gamma', tags: { scope: 'inventory' } });
+
+    const snapshotSpy = vi.fn();
+    manager.on('snapshotCreated', snapshotSpy);
+
+    const snapshotId = await manager.createSnapshot('beta', ['inventory']);
+    expect(typeof snapshotId).toBe('string');
+    expect(snapshotSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        snapshotId,
+        metadata: expect.objectContaining({
+          phase: 'beta',
+          entities: ['inventory'],
+        }),
+      })
+    );
+
+    const snapshot = await manager.loadSnapshot(snapshotId);
+    expect(snapshot).not.toBeNull();
+    const snapshotKeys = Object.keys(snapshot as Record<string, unknown>);
+    expect(snapshotKeys).toEqual(expect.arrayContaining([betaKey, betaEntityKey]));
+    expect(snapshotKeys.some((key) => key.startsWith('alpha.orders'))).toBe(false);
 
     await manager.shutdown();
   });
