@@ -907,6 +907,114 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     await manager.shutdown();
   });
 
+  it('imports compressed buffer entries and preserves phase metadata', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-buffer-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, {
+      databasePath: 'state.db',
+      enableCompression: true,
+      compressionThreshold: 8,
+    });
+    await manager.initialize();
+
+    const payload = { id: 'inventory-7', stock: 11 };
+    const rawJson = JSON.stringify(payload);
+    const compressedBuffer = gzipSync(Buffer.from(rawJson, 'utf8'));
+    const timestamp = new Date().toISOString();
+
+    const exported = {
+      metadata: { version: '1.0.0' },
+      entries: [
+        {
+          logicalKey: 'inventory',
+          timestamp,
+          version: 5,
+          compressed: true,
+          data: compressedBuffer,
+          metadata: {
+            source: 'stage2-import',
+            phase: 'replay',
+            created: timestamp,
+            accessed: timestamp,
+          },
+          ttl: 180,
+        },
+      ],
+      indices: {
+        keyIndex: { inventory: [`inventory_${timestamp}`] },
+        versionIndex: { inventory: 5 },
+      },
+    };
+
+    await manager.importState(exported as any);
+
+    const storage = (manager as unknown as { storage: Map<string, any> }).storage;
+    const entry = storage.get(`inventory_${timestamp}`);
+
+    expect(entry).toBeDefined();
+    expect(entry?.compressed).toBe(true);
+    expect(entry?.data).toBeInstanceOf(Buffer);
+    expect((entry?.data as Buffer).equals(compressedBuffer)).toBe(true);
+
+    const expectedChecksum = createHash('sha256').update(rawJson).digest('hex');
+    expect(entry?.checksum).toBe(expectedChecksum);
+    expect(entry?.metadata?.size).toBe(compressedBuffer.length);
+    expect(entry?.metadata?.phase).toBe('replay');
+    expect(entry?.metadata?.source).toBe('stage2-import');
+    expect(entry?.ttl).toBe(180);
+    expect(typeof entry?.id).toBe('string');
+    expect(entry?.id).not.toBe('');
+
+    await manager.shutdown();
+  });
+
+  it('falls back to empty checksum when decompression fails', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-bad-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, {
+      databasePath: 'state.db',
+      enableCompression: true,
+      compressionThreshold: 8,
+    });
+    await manager.initialize();
+
+    const timestamp = new Date().toISOString();
+    const invalidCompressed = Buffer.from('not-a-valid-gzip');
+
+    const exported = {
+      metadata: { version: '1.0.0' },
+      entries: [
+        {
+          logicalKey: 'broken-entry',
+          timestamp,
+          version: 2,
+          compressed: true,
+          data: invalidCompressed,
+          metadata: { created: timestamp },
+        },
+      ],
+      indices: {
+        keyIndex: { 'broken-entry': [`broken-entry_${timestamp}`] },
+        versionIndex: { 'broken-entry': 2 },
+      },
+    };
+
+    await manager.importState(exported as any);
+
+    const storage = (manager as unknown as { storage: Map<string, any> }).storage;
+    const entry = storage.get(`broken-entry_${timestamp}`);
+
+    expect(entry).toBeDefined();
+    expect(entry?.compressed).toBe(true);
+    expect(entry?.data).toBeInstanceOf(Buffer);
+    expect(entry?.metadata?.size).toBe(invalidCompressed.length);
+    expect(entry?.checksum).toBe('');
+
+    await manager.shutdown();
+  });
+
   it('surfaces errors when persistence fails', async () => {
     const root = await mkdtemp(join(tmpdir(), 'ae-framework-state-'));
     tempRoots.push(root);

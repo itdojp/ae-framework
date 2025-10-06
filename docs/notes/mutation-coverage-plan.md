@@ -18,6 +18,10 @@
   - 走行時間: **約 11 分 19 秒**（DisableTypeChecks の warning は継続するが quick ランは安定）
   - ミューテーションスコア: **67.25%**（killed 310 / survived 151 / no-cover 0 / errors 0）
   - GC ログ分岐（`runGarbageCollection`）と TTL 失効パスをユニットテスト追加でカバーし、サバイバーが `normalizeImportedEntry` の Buffer 復元・checksum 再計算・optional chaining 分岐に集約された。
+- `STRYKER_TIME_LIMIT=420 npx stryker run configs/stryker.enhanced.config.js --mutate src/utils/enhanced-state-manager.ts --concurrency 1`（2025-10-06 17:41 開始）
+  - 走行時間: **約 11 分 08 秒**（DisableTypeChecks warning は継続）
+  - ミューテーションスコア: **67.90%**（killed 313 / survived 148 / no-cover 0 / errors 0）
+  - `normalizeImportedEntry` の Buffer 経由パスと失敗時フォールバックをテストで押さえ、`checksum` 空文字フォールバックや `phase` メタデータ維持を検証。残サバイバーは optional chaining → 直接参照や rollback オペレーション判定など、トランザクション/インデックス周りに限定された。
 - `./scripts/mutation/run-scoped.sh --quick --mutate src/api/server.ts`（2025-10-02 再実行）は **100.00%**（killed 155 / survived 0 / no-cover 0 / errors 0 / 実行 66s）。
 - `./scripts/mutation/run-scoped.sh --quick`（差分無しのデフォルト quick ラン）は 2025-10-02 10:43 時点で **完走 & score 100.00%**。TokenOptimizer が圧縮で空文字列化した際に元データへフォールバックするよう修正し、先の `seed:1083850253` failure を解消。
   - ただし `STRYKER_TIME_LIMIT=180` で再実行した際には `tests/property/token-optimizer.trim-edge.trailing-comma.boundary.pbt.test.ts` が sandbox で失敗し Dry run が中断。trim-edge 系プロパティの期待値調整が新たな課題。
