@@ -136,8 +136,8 @@ Issue: #1011 / #1012 / #1036 / #1038
 3. Trace 系ジョブでは、Collector から取得した payload のメタデータ (`kvonce-payload-metadata.json`) を artifacts 配列に追加し、`scripts/trace/build-kvonce-envelope-summary.mjs` で集計したサマリを `scripts/trace/create-report-envelope.mjs` でラップする。
 4. Dashboard / Tempo 連携は Envelope を単位としてインジェストし、必要に応じて `traceIds` から関連 span を引き直す。
 
-## TODO
-- [ ] JSON Schema を `schema/report-envelope.schema.json` として整備し、AJV で検証する。
-- [ ] Verify Lite ワークフローで Envelope 生成＋ Artifact アップロードまで自動化する (#1036 Section3)。
-- [ ] Trace conformance ジョブで Projector/Validator の出力を Envelope にまとめ、Issue #1011 Step3 の完了条件に組み込む。
+## TODO / 状態
+- [x] JSON Schema を `schema/report-envelope.schema.json` として整備し、AJV で検証する。（PR #1043）
+- [x] Verify Lite ワークフローで Envelope 生成＋ Artifact アップロードまで自動化する（PR #1044, #1048）。
+- [x] Trace conformance ジョブで Projector/Validator の出力を Envelope にまとめ、Issue #1011 Step3 の完了条件に組み込む（PR #1049）。
 - [ ] 将来的に `artifacts` へ S3 Presigned URL を許容する場合の署名方式を整理する。
