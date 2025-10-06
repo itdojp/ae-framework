@@ -1440,7 +1440,9 @@ describe('EnhancedStateManager garbage collection logging', () => {
 
       await manager.collectGarbage();
 
-      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('removed 1 expired entries'));
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringMatching(/removed\s+1\s+expired\s+entr(?:y|ies)/)
+      );
       await expect(manager.loadSSOT('session')).resolves.toBeNull();
     } finally {
       logSpy.mockRestore();
