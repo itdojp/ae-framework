@@ -53,7 +53,8 @@
    VERIFY_LITE_RUN_MUTATION=1 \
    pnpm run verify:lite | tee "$ts_dir/verify-lite.log"
    ```
-   - `verify-lite-run-summary.json`（ステップ結果の JSON）、`verify-lite-lint-summary.json`（lint 集計）、`verify-lite-lint.log`（生ログ）、`mutation-summary.md` がリポジトリ直下に出力される。
+   - `verify-lite-run-summary.json`（ステップ結果の JSON、`schemaVersion` は semver 準拠で管理）、`verify-lite-lint-summary.json`（lint 集計）、`verify-lite-lint.log`（生ログ）、`mutation-summary.md` がリポジトリ直下に出力される。
+   - 同時に `artifacts/verify-lite/verify-lite-run-summary.json` にもコピーされるため、CI アーティファクトと同じパスで参照可能。
 3. 出力成果物を保存ディレクトリへ移動する。
    ```bash
    mv verify-lite-run-summary.json "$ts_dir/"

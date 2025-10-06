@@ -14,7 +14,10 @@ const readStatus = (name, fallback) => {
   return value ?? fallback;
 };
 
+const SCHEMA_VERSION = process.env.VERIFY_LITE_SUMMARY_SCHEMA_VERSION ?? '1.0.0';
+
 const summary = {
+  schemaVersion: SCHEMA_VERSION,
   timestamp: process.env.RUN_TIMESTAMP || new Date().toISOString(),
   flags: {
     install: process.env.INSTALL_FLAGS_STR || '',

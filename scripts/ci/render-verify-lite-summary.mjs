@@ -107,6 +107,7 @@ if (Object.keys(artifacts).length > 0) {
 
 const output = [
   timestamp ? `Timestamp: ${timestamp}` : 'Timestamp: n/a',
+  `Schema Version: ${summary.schemaVersion ?? 'unknown'}`,
   ...flagLines,
   '',
   ...tableLines,

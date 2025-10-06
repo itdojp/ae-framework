@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/itdojp/ae-framework/schema/verify-lite-run-summary.schema.json",
+  "title": "Verify Lite Run Summary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "timestamp",
+    "flags",
+    "steps",
+    "artifacts"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "description": "Semver identifier for this summary format.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "install",
+        "noFrozen",
+        "keepLintLog",
+        "enforceLint",
+        "runMutation"
+      ],
+      "properties": {
+        "install": {
+          "type": "string"
+        },
+        "noFrozen": {
+          "type": "boolean"
+        },
+        "keepLintLog": {
+          "type": "boolean"
+        },
+        "enforceLint": {
+          "type": "boolean"
+        },
+        "runMutation": {
+          "type": "boolean"
+        }
+      }
+    },
+    "steps": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["status"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "success",
+              "failure",
+              "skipped",
+              "pending",
+              "unknown"
+            ]
+          },
+          "notes": {
+            "type": ["string", "null"]
+          },
+          "retried": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lintSummary",
+        "lintLog",
+        "mutationSummary",
+        "mutationSurvivors"
+      ],
+      "properties": {
+        "lintSummary": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "lintLog": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "mutationSummary": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "mutationSurvivors": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        }
+      }
+    }
+  }
+}
