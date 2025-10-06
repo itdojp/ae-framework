@@ -29,7 +29,42 @@ const readJson = (filePath) => {
 
 const summary = readJson(summaryPath);
 const summaryBuffer = fs.readFileSync(summaryPath);
-const checksum = `sha256:${crypto.createHash('sha256').update(summaryBuffer).digest('hex')}`;
+
+const computeChecksum = (buffer) => `sha256:${crypto.createHash('sha256').update(buffer).digest('hex')}`;
+
+const artifacts = [];
+
+const pushArtifact = (filePath, { type = 'application/json', description = null } = {}) => {
+  const resolved = path.resolve(filePath);
+  if (!fs.existsSync(resolved)) {
+    console.warn(`[report-envelope] artifact not found, skipping: ${filePath}`);
+    return;
+  }
+  const buffer = fs.readFileSync(resolved);
+  artifacts.push({
+    type,
+    path: path.relative(process.cwd(), resolved),
+    checksum: computeChecksum(buffer),
+    ...(description ? { description } : {}),
+  });
+};
+
+pushArtifact(summaryPath, { description: 'Raw summary artifact' });
+
+const payloadMetadataPath = process.env.REPORT_ENVELOPE_PAYLOAD_METADATA;
+if (payloadMetadataPath) {
+  pushArtifact(payloadMetadataPath, { description: 'Payload metadata' });
+}
+
+const extraArtifactsEnv = process.env.REPORT_ENVELOPE_EXTRA_ARTIFACTS ?? '';
+const extraArtifacts = extraArtifactsEnv
+  .split(',')
+  .map((value) => value.trim())
+  .filter(Boolean);
+
+for (const artifactPath of extraArtifacts) {
+  pushArtifact(artifactPath, {});
+}
 
 const now = new Date().toISOString();
 const workflow = process.env.GITHUB_WORKFLOW ?? process.env.GITHUB_JOB ?? 'local-run';
@@ -59,14 +94,7 @@ const envelope = {
     ...(traceIds.length > 0 ? { traceIds } : {}),
   },
   summary,
-  artifacts: [
-    {
-      type: 'application/json',
-      path: path.relative(process.cwd(), summaryPath),
-      checksum,
-      description: 'Raw summary artifact',
-    },
-  ],
+  artifacts,
   ...(notes.length > 0 ? { notes } : {}),
 };
 

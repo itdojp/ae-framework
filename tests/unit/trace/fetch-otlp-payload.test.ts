@@ -1,13 +1,28 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { mkdtemp, writeFile, readFile, rm, mkdir, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join, resolve, dirname } from 'node:path';
 import { createServer } from 'node:http';
 import { promisify } from 'node:util';
 import { execFile } from 'node:child_process';
 
 const execFileAsync = promisify(execFile);
 const nodeBinary = process.execPath;
+const envKeys = new Set<string>();
+const setEnv = (key: string, value: string | undefined) => {
+  if (typeof value === 'undefined') {
+    return;
+  }
+  process.env[key] = value;
+  envKeys.add(key);
+};
+
+afterEach(() => {
+  for (const key of envKeys) {
+    delete process.env[key];
+  }
+  envKeys.clear();
+});
 const scriptPath = process.env.KVONCE_FETCH_SCRIPT_PATH
   ? resolve(process.cwd(), process.env.KVONCE_FETCH_SCRIPT_PATH)
   : resolve(process.cwd(), 'scripts/trace/fetch-otlp-payload.mjs');
@@ -52,6 +67,41 @@ describe('fetch-otlp-payload CLI', () => {
 
       const copied = JSON.parse(await readFile(target, 'utf8'));
       expect(copied).toEqual({ keep: true });
+    });
+  });
+
+  it('uses environment artifact directory fallback', async () => {
+    await withTempDir(async (dir) => {
+      const artifactDir = join(dir, 'artifact');
+      await mkdir(artifactDir, { recursive: true });
+      await writeFile(join(artifactDir, 'fallback.json'), JSON.stringify({ viaEnv: 'artifact' }), 'utf8');
+      setEnv('KVONCE_OTLP_ARTIFACT_DIR', artifactDir);
+
+      const target = join(dir, 'collected.json');
+      const result = await execFileAsync(nodeBinary, [scriptPath, '--target', target]);
+
+      expect(result.stderr).toBe('');
+      const copied = JSON.parse(await readFile(target, 'utf8'));
+      expect(copied).toEqual({ viaEnv: 'artifact' });
+      const metadata = JSON.parse(await readFile(join(dir, 'kvonce-payload-metadata.json'), 'utf8'));
+      expect(metadata.sourceType).toBe('artifact');
+    });
+  });
+
+  it('uses environment explicit file fallback', async () => {
+    await withTempDir(async (dir) => {
+      const explicit = join(dir, 'explicit.json');
+      await writeFile(explicit, JSON.stringify({ viaEnv: 'explicit' }), 'utf8');
+      setEnv('KVONCE_OTLP_PAYLOAD_FILE', explicit);
+
+      const target = join(dir, 'collected.json');
+      const result = await execFileAsync(nodeBinary, [scriptPath, '--target', target]);
+
+      expect(result.stderr).toBe('');
+      const copied = JSON.parse(await readFile(target, 'utf8'));
+      expect(copied).toEqual({ viaEnv: 'explicit' });
+      const metadata = JSON.parse(await readFile(join(dir, 'kvonce-payload-metadata.json'), 'utf8'));
+      expect(metadata.sourceType).toBe('env-file');
     });
   });
 
@@ -125,6 +175,29 @@ describe('fetch-otlp-payload CLI', () => {
       expect(result.code).toBe(1);
       const files = await readdir(dir);
       expect(files).not.toContain('output.json');
+    });
+  });
+
+  it('fetches payload from S3 mock directory', async () => {
+    await withTempDir(async (dir) => {
+      const mockRoot = join(dir, 's3-mock');
+      const bucket = 'kvonce-bucket';
+      const key = 'stage2/payload.json';
+      const filePath = join(mockRoot, bucket, key);
+      await mkdir(dirname(filePath), { recursive: true });
+      await writeFile(filePath, JSON.stringify({ via: 's3-mock' }), 'utf8');
+      setEnv('KVONCE_OTLP_S3_MOCK_DIR', mockRoot);
+      setEnv('KVONCE_OTLP_S3_URI', `s3://${bucket}/${key}`);
+
+      const target = join(dir, 'from-s3.json');
+      const result = await execFileAsync(nodeBinary, [scriptPath, '--target', target]);
+
+      expect(result.stderr).toBe('');
+      const copied = JSON.parse(await readFile(target, 'utf8'));
+      expect(copied).toEqual({ via: 's3-mock' });
+      const metadata = JSON.parse(await readFile(join(dir, 'kvonce-payload-metadata.json'), 'utf8'));
+      expect(metadata.sourceType).toBe('s3');
+      expect(metadata.sourceDetail).toBe(`s3://${bucket}/${key}`);
     });
   });
 });
