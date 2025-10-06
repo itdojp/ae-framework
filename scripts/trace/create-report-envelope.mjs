@@ -1,0 +1,79 @@
+#!/usr/bin/env node
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+
+const summaryPath = process.argv[2] ?? process.env.REPORT_ENVELOPE_SUMMARY ?? 'artifacts/verify-lite/verify-lite-run-summary.json';
+const outputPath = process.argv[3] ?? process.env.REPORT_ENVELOPE_OUTPUT ?? 'artifacts/report-envelope.json';
+const source = process.env.REPORT_ENVELOPE_SOURCE ?? 'verify-lite';
+const traceIdsEnv = process.env.REPORT_ENVELOPE_TRACE_IDS ?? '';
+const noteEnv = process.env.REPORT_ENVELOPE_NOTES ?? '';
+
+const ensureFile = (filePath) => {
+  if (!fs.existsSync(filePath)) {
+    console.error(`[report-envelope] summary not found: ${filePath}`);
+    process.exit(1);
+  }
+};
+
+ensureFile(summaryPath);
+
+const readJson = (filePath) => {
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch (error) {
+    console.error(`[report-envelope] failed to parse ${filePath}:`, error);
+    process.exit(1);
+  }
+};
+
+const summary = readJson(summaryPath);
+const summaryBuffer = fs.readFileSync(summaryPath);
+const checksum = `sha256:${crypto.createHash('sha256').update(summaryBuffer).digest('hex')}`;
+
+const now = new Date().toISOString();
+const workflow = process.env.GITHUB_WORKFLOW ?? process.env.GITHUB_JOB ?? 'local-run';
+const branch = process.env.GITHUB_REF ?? 'local';
+const runId = process.env.GITHUB_RUN_ID ?? `local-${Date.now()}`;
+const commit = process.env.GITHUB_SHA ?? '0000000';
+
+const traceIds = traceIdsEnv
+  .split(',')
+  .map((value) => value.trim())
+  .filter(Boolean);
+
+const notes = noteEnv
+  .split(/\r?\n/)
+  .map((value) => value.trim())
+  .filter(Boolean);
+
+const envelope = {
+  schemaVersion: '1.0.0',
+  source,
+  generatedAt: now,
+  correlation: {
+    runId,
+    workflow,
+    commit,
+    branch,
+    ...(traceIds.length > 0 ? { traceIds } : {}),
+  },
+  summary,
+  artifacts: [
+    {
+      type: 'application/json',
+      path: path.relative(process.cwd(), summaryPath),
+      checksum,
+      description: 'Raw summary artifact',
+    },
+  ],
+  ...(notes.length > 0 ? { notes } : {}),
+};
+
+const destDir = path.dirname(outputPath);
+if (!fs.existsSync(destDir)) {
+  fs.mkdirSync(destDir, { recursive: true });
+}
+
+fs.writeFileSync(outputPath, JSON.stringify(envelope, null, 2));
+console.log(`[report-envelope] wrote envelope to ${outputPath}`);
