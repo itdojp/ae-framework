@@ -40,7 +40,8 @@ let violations = 0;
 if (typeof summary.total === 'number' && typeof baseline.total === 'number') {
   const delta = summary.total - baseline.total;
   const status = delta <= 0 ? '✅' : '❌';
-  messages.push(`${status} Total issues: ${summary.total} (baseline ${baseline.total}${delta >= 0 ? `, +${delta}` : ''})`);
+  const formattedDelta = delta >= 0 ? `, +${delta}` : `, ${delta}`;
+  messages.push(`${status} Total issues: ${summary.total} (baseline ${baseline.total}${formattedDelta})`);
   if (delta > 0) violations += delta;
 }
 
@@ -49,7 +50,8 @@ for (const [rule, limit] of Object.entries(baselineRules)) {
   const actual = summaryRules.get(rule) ?? 0;
   const delta = actual - limit;
   const status = delta <= 0 ? '✅' : '❌';
-  messages.push(`${status} ${rule}: ${actual} (baseline ${limit}${delta >= 0 ? `, +${delta}` : ''})`);
+  const formattedRuleDelta = delta >= 0 ? `, +${delta}` : `, ${delta}`;
+  messages.push(`${status} ${rule}: ${actual} (baseline ${limit}${formattedRuleDelta})`);
   if (delta > 0) {
     violations += delta;
   }
