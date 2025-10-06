@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  minio:
+    image: minio/minio:RELEASE.2025-09-16T01-00-00Z
+    command: server /data --console-address :9001
+    environment:
+      MINIO_ROOT_USER: kvonce
+      MINIO_ROOT_PASSWORD: kvonce-secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  setup:
+    image: minio/mc:RELEASE.2025-09-17T20-08-00Z
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MC_HOST_kvonce: http://kvonce:kvonce-secret@minio:9000
+      PAYLOAD_SOURCE: /workspace/samples/trace/kvonce-otlp.json
+      PAYLOAD_TARGET: s3://kvonce-trace/kvonce-stage2/payload.json
+    volumes:
+      - ../../:/workspace:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      mc alias set kvonce http://minio:9000 kvonce kvonce-secret >/dev/null && \
+      mc mb --ignore-existing kvonce/kvonce-trace && \
+      mc cp "${PAYLOAD_SOURCE}" "${PAYLOAD_TARGET}" && \
+      echo "Upload complete"
+
+volumes:
+  minio-data:

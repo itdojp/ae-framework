@@ -56,3 +56,18 @@ Issue: #1011 / #1012
 | `KVONCE_OTLP_S3_USE_SSL` | `false` で TLS を無効化 | ローカル MinIO 用 |
 | `KVONCE_OTLP_S3_MOCK_DIR` | ローカル検証/テスト用のモックディレクトリ | `<dir>/<bucket>/<key>` を直接読み込み |
 | `KVONCE_OTLP_PAYLOAD_URL` | 事前署名 URL など HTTP 経由の取得 | Stage1/Artifacts 経路と互換 |
+
+
+### Local MinIO PoC
+
+- `./scripts/trace/run-minio-poc.sh` で `docker/trace-s3/docker-compose.yml` を起動し、MinIO に `samples/trace/kvonce-otlp.json` を投入できる。
+- 実行後は以下の環境変数を設定すれば、CI と同じ S3 経路をローカルで検証できる。
+  ```bash
+  export AWS_ACCESS_KEY_ID=kvonce
+  export AWS_SECRET_ACCESS_KEY=kvonce-secret
+  export KVONCE_OTLP_S3_ENDPOINT=http://127.0.0.1:9000
+  export KVONCE_OTLP_S3_URI=s3://kvonce-trace/kvonce-stage2/payload.json
+  export KVONCE_OTLP_S3_USE_SSL=false
+  export KVONCE_OTLP_S3_FORCE_PATH_STYLE=true
+  ```
+- コンテナ停止は `./scripts/trace/run-minio-poc.sh down`。MinIO コンソール (http://localhost:9001) では `kvonce` / `kvonce-secret` で確認できる。
