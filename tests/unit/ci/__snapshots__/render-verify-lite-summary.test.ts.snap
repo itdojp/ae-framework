@@ -1,0 +1,48 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`renderVerifyLiteSummary > handles missing optional notes and artifacts 1`] = `
+"Timestamp: 2025-10-06T01:23:45Z
+Schema Version: 1.0.0
+- install flags: \`\`
+- no frozen lockfile: ✅
+- keep lint log: ❌
+- enforce lint: ❌
+- run mutation: ❌
+
+| Step | Status | Notes |
+| --- | --- | --- |
+| Type Check | ✅ success |  |
+| Lint | ⏭️ skipped |  |
+
+
+Artifacts:
+- lintSummary: n/a
+- lintLog: n/a
+- mutationSummary: n/a
+- mutationSurvivors: n/a"
+`;
+
+exports[`renderVerifyLiteSummary > renders markdown summary with schema version and flags 1`] = `
+"Timestamp: 2025-10-06T00:00:00Z
+Schema Version: 1.0.0
+- install flags: \`--frozen-lockfile\`
+- no frozen lockfile: ❌
+- keep lint log: ✅
+- enforce lint: ❌
+- run mutation: ✅
+
+| Step | Status | Notes |
+| --- | --- | --- |
+| Install | ✅ success | flags=--frozen-lockfile |
+| Lint | ❌ failure | 2618 violations |
+| Build | ✅ success |  |
+| Bdd Lint | ⏭️ skipped |  |
+| Mutation Quick | ✅ success | score: 59.74% |
+
+
+Artifacts:
+- lintSummary: verify-lite-lint-summary.json
+- lintLog: verify-lite-lint.log
+- mutationSummary: mutation-summary.md
+- mutationSurvivors: reports/mutation/survivors.json"
+`;
