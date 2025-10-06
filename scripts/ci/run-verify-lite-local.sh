@@ -19,6 +19,8 @@ INSTALL_FLAGS_STR="${INSTALL_FLAGS[*]}"
 RUN_TIMESTAMP="$(date -u "+%Y-%m-%dT%H:%M:%SZ")"
 SUMMARY_PATH="${VERIFY_LITE_SUMMARY_FILE:-verify-lite-run-summary.json}"
 SUMMARY_EXPORT_PATH="${VERIFY_LITE_SUMMARY_EXPORT_PATH:-artifacts/verify-lite/verify-lite-run-summary.json}"
+LINT_BASELINE_PATH="${VERIFY_LITE_LINT_BASELINE:-config/verify-lite-lint-baseline.json}"
+VERIFY_LITE_LINT_ENFORCE="${VERIFY_LITE_LINT_ENFORCE:-${VERIFY_LITE_ENFORCE_LINT:-0}}"
 
 INSTALL_STATUS="success"
 INSTALL_NOTES="flags=${INSTALL_FLAGS_STR}"
@@ -145,6 +147,17 @@ fi
 if [[ -n "$SUMMARY_EXPORT_PATH" ]]; then
   mkdir -p "$(dirname "$SUMMARY_EXPORT_PATH")"
   cp "$SUMMARY_PATH" "$SUMMARY_EXPORT_PATH"
+fi
+
+if [[ -n "$LINT_SUMMARY_PATH" && -f "$LINT_SUMMARY_PATH" ]]; then
+  if node scripts/ci/enforce-verify-lite-lint.mjs "$LINT_SUMMARY_PATH" "$LINT_BASELINE_PATH"; then
+    true
+  else
+    status=$?
+    if [[ ${VERIFY_LITE_LINT_ENFORCE:-0} == "1" ]]; then
+      exit "$status"
+    fi
+  fi
 fi
 
 echo "[verify-lite] local run complete"
