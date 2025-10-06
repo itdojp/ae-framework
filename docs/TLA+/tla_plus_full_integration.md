@@ -208,6 +208,12 @@ THEOREM Safety == Spec => []NoOverwrite
    - mutation/coverage/trace 成果をまとめる可視化ダッシュボードを構築。  
    - 再開条件: Week2 以降の運用 Issues (#999/#1001) のクリティカル項目が解消されていること。
 
+#### Phase C 棚卸しメモ (2025-10-06)
+- ✅ Report Envelope スキーマと AJV 検証を整備し、Verify Lite / Trace conformance の両ジョブで `REPORT_ENVELOPE_*` を発行（PR #1043, #1044, #1049）。
+- ✅ Stage2 (collector) PoC を MinIO で再現できるようにし、payload メタデータを Envelope に添付する道筋を確立（PR #1045〜#1051）。
+- ⏳ 残るボトルネックは EnhancedStateManager 周辺の mutation survivors (#1016) と生成成果物ゲートの昇格。これらが収束した段階で、上記 Phase C TODO を再開する。
+- ⏳ ダッシュボード統合は Tempo/Jaeger PoC と Grafana ノートを基に、Week3/4 トラッカー (#1002/#1003) で具体的なパネル設計を進める。
+
 ### 実行ヒント
 
 ```bash
