@@ -18,6 +18,7 @@ INSTALL_FLAGS_STR="${INSTALL_FLAGS[*]}"
 
 RUN_TIMESTAMP="$(date -u "+%Y-%m-%dT%H:%M:%SZ")"
 SUMMARY_PATH="${VERIFY_LITE_SUMMARY_FILE:-verify-lite-run-summary.json}"
+SUMMARY_EXPORT_PATH="${VERIFY_LITE_SUMMARY_EXPORT_PATH:-artifacts/verify-lite/verify-lite-run-summary.json}"
 
 INSTALL_STATUS="success"
 INSTALL_NOTES="flags=${INSTALL_FLAGS_STR}"
@@ -139,6 +140,11 @@ export MUTATION_SUMMARY_PATH MUTATION_SURVIVORS_PATH
 if ! node scripts/ci/write-verify-lite-summary.mjs "$SUMMARY_PATH"; then
   echo "[verify-lite] failed to persist summary" >&2
   exit 1
+fi
+
+if [[ -n "$SUMMARY_EXPORT_PATH" ]]; then
+  mkdir -p "$(dirname "$SUMMARY_EXPORT_PATH")"
+  cp "$SUMMARY_PATH" "$SUMMARY_EXPORT_PATH"
 fi
 
 echo "[verify-lite] local run complete"

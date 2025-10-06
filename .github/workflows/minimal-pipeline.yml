@@ -53,13 +53,25 @@ jobs:
           VERIFY_LITE_RUN_MUTATION: '0'
           VERIFY_LITE_ENFORCE_LINT: ${{ github.event.inputs.enforce_lint == 'true' && '1' || '0' }}
           VERIFY_LITE_SUMMARY_FILE: verify-lite-run-summary.json
+          VERIFY_LITE_SUMMARY_EXPORT_PATH: artifacts/verify-lite/verify-lite-run-summary.json
         run: pnpm run verify:lite
+      - name: Validate verify-lite summary schema
+        if: always()
+        run: |
+          if [ -f verify-lite-run-summary.json ]; then
+            node scripts/ci/validate-verify-lite-summary.mjs \
+              verify-lite-run-summary.json \
+              schema/verify-lite-run-summary.schema.json
+          else
+            echo 'verify-lite summary missing; skipped validation'
+          fi
       - name: Upload verify-lite artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: verify-lite-report
           path: |
+            artifacts/verify-lite/verify-lite-run-summary.json
             verify-lite-run-summary.json
             verify-lite-lint.log
             verify-lite-lint-summary.json
