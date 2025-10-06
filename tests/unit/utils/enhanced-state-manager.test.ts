@@ -49,7 +49,6 @@ const getTransactions = (manager: EnhancedStateManager) => asInternal(manager).a
 const getOptions = (manager: EnhancedStateManager) => asInternal(manager).options;
 const getKeyIndex = (manager: EnhancedStateManager) => asInternal(manager).keyIndex;
 const getVersionIndex = (manager: EnhancedStateManager) => asInternal(manager).versionIndex;
-
 type ExportedState = Awaited<ReturnType<EnhancedStateManager['exportState']>>;
 
 const buildExportedState = (
@@ -1329,6 +1328,131 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     expect(importedSpy).toHaveBeenCalledWith({ entryCount: 1 });
     const restored = await manager.loadSSOT('bulk-entry');
     expect(restored).toEqual(payload);
+
+    await manager.shutdown();
+  });
+
+  it('infers version index when metadata map is absent', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-no-versionindex-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+    await manager.initialize();
+
+    const timestamp = new Date().toISOString();
+    const fullKey = `inventory_${timestamp}`;
+    const payload = { id: 'no-versionindex', stock: 4 };
+
+    const persistence = {
+      metadata: { version: '1.0.0' },
+      entries: [
+        {
+          logicalKey: 'inventory',
+          timestamp,
+          version: 6,
+          checksum: 'no-versionindex',
+          data: payload,
+          compressed: false,
+          metadata: {
+            size: JSON.stringify(payload).length,
+            created: timestamp,
+            accessed: timestamp,
+            source: 'no-versionindex-test'
+          }
+        }
+      ],
+      indices: {
+        keyIndex: { inventory: [fullKey] }
+      }
+    };
+
+    await manager.importState(persistence as any);
+
+    expect(getVersionIndex(manager).get('inventory')).toBe(6);
+
+    await manager.shutdown();
+  });
+
+  it('imports legacy entries when key index is missing', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-no-keyindex-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+    await manager.initialize();
+
+    const timestamp = new Date().toISOString();
+    const fullKey = `inventory_${timestamp}`;
+    const payload = { id: 'missing-keyindex', stock: 11 };
+
+    const persistence = {
+      metadata: { version: '1.0.0' },
+      entries: [
+        {
+          logicalKey: 'inventory',
+          timestamp,
+          version: 4,
+          checksum: 'missing-keyindex',
+          data: payload,
+          compressed: false,
+          metadata: {
+            size: JSON.stringify(payload).length,
+            created: timestamp,
+            accessed: timestamp,
+            source: 'no-keyindex-test'
+          }
+        }
+      ],
+      indices: {
+        versionIndex: { inventory: 4 }
+      }
+    };
+
+    await manager.importState(persistence as any);
+
+    await expect(manager.loadSSOT('inventory')).resolves.toEqual(payload);
+    expect(Array.from(getKeyIndex(manager).get('inventory') ?? [])).toContain(fullKey);
+
+    await manager.shutdown();
+  });
+
+  it('promotes version index when imported indices lag entries', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-version-promote-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+    await manager.initialize();
+
+    const timestamp = new Date().toISOString();
+    const fullKey = `inventory_${timestamp}`;
+    const payload = { id: 'promote-entry', stock: 6 };
+
+    const persistence = {
+      metadata: { version: '1.0.0' },
+      entries: [
+        {
+          logicalKey: 'inventory',
+          timestamp,
+          version: 8,
+          checksum: 'promote-entry',
+          data: payload,
+          compressed: false,
+          metadata: {
+            size: JSON.stringify(payload).length,
+            created: timestamp,
+            accessed: timestamp,
+            source: 'version-promote-test'
+          }
+        }
+      ],
+      indices: {
+        keyIndex: { inventory: [fullKey] },
+        versionIndex: { inventory: 2 }
+      }
+    };
+
+    await manager.importState(persistence as any);
+
+    expect(getVersionIndex(manager).get('inventory')).toBe(8);
 
     await manager.shutdown();
   });
