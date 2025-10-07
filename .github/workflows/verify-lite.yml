@@ -188,6 +188,12 @@ jobs:
             verify-lite-lint.log
             verify-lite-lint-summary.json
           if-no-files-found: ignore
+      - name: Upload runtime guard stats
+        if: ${{ always() && hashFiles('artifacts/runtime-guard/runtime-guard-stats.json') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-guard-stats
+          path: artifacts/runtime-guard/runtime-guard-stats.json
       - name: Append verify-lite run summary
         if: always()
         run: |
@@ -205,6 +211,10 @@ jobs:
           else
             echo 'Runtime contracts summary not generated.' >> "$GITHUB_STEP_SUMMARY"
           fi
+      - name: Append runtime guard summary
+        if: ${{ always() && hashFiles('artifacts/runtime-guard/runtime-guard-stats.json') != '' }}
+        run: |
+          node scripts/telemetry/render-runtime-guard-summary.mjs artifacts/runtime-guard/runtime-guard-stats.json >> "$GITHUB_STEP_SUMMARY"
       - name: Append lint summary (top rules)
         if: always()
         run: |

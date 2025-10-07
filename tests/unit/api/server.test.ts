@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import type { FastifyInstance } from 'fastify';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { createServer } from '../../../src/api/server.js';
+import { runtimeGuard } from '../../../src/telemetry/runtime-guards.js';
 
 describe('API server', () => {
   let app: FastifyInstance;
@@ -12,6 +15,15 @@ describe('API server', () => {
 
   afterAll(async () => {
     await app.close();
+
+    const stats = runtimeGuard.getViolationStats();
+    const outputDir = join(process.cwd(), 'artifacts', 'runtime-guard');
+    await mkdir(outputDir, { recursive: true });
+    await writeFile(
+      join(outputDir, 'runtime-guard-stats.json'),
+      JSON.stringify({ generatedAt: new Date().toISOString(), stats }, null, 2),
+      'utf8'
+    );
   });
 
   it('returns a healthy status from /health and sets security headers', async () => {
@@ -85,5 +97,11 @@ describe('API server', () => {
     expect(stats).toHaveProperty('violations');
     expect(stats.violations.total).toBeGreaterThanOrEqual(baselineTotal + 1);
     expect(stats.violations.byType.business_rule).toBeGreaterThanOrEqual(1);
+    expect(stats.violations.last24Hours.total).toBeGreaterThanOrEqual(1);
+    expect(stats.violations.last24Hours.byType.business_rule).toBeGreaterThanOrEqual(1);
+    expect(Array.isArray(stats.violations.last24Hours.hourlyBuckets)).toBe(true);
+    expect(stats.violations.last24Hours.hourlyBuckets.length).toBeGreaterThan(0);
+    expect((stats.violations.byEndpoint?.['POST /reservations'] ?? 0)).toBeGreaterThan(0);
+    expect(Array.isArray(stats.violations.recent)).toBe(true);
   });
 });

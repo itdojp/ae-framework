@@ -8,6 +8,8 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 import { enhancedTelemetry, TELEMETRY_ATTRIBUTES } from './enhanced-telemetry.js';
 import { trace, context } from '@opentelemetry/api';
 
+const HOUR_IN_MS = 60 * 60 * 1000;
+
 // Contract violation types
 export enum ViolationType {
   SCHEMA_VALIDATION = 'schema_validation',
@@ -35,6 +37,31 @@ export interface ContractViolation {
   requestId?: string;
   endpoint?: string;
   details?: Record<string, any>;
+}
+
+export interface HourlyViolationBucket {
+  hour: string;
+  count: number;
+}
+
+export interface ViolationStats {
+  total: number;
+  byType: Record<ViolationType, number>;
+  bySeverity: Record<ViolationSeverity, number>;
+  byEndpoint: Record<string, number>;
+  last24Hours: {
+    total: number;
+    byType: Record<ViolationType, number>;
+    bySeverity: Record<ViolationSeverity, number>;
+    hourlyBuckets: HourlyViolationBucket[];
+  };
+  recent: Array<{
+    id: string;
+    type: ViolationType;
+    severity: ViolationSeverity;
+    endpoint: string | null;
+    timestamp: string;
+  }>;
 }
 
 export interface ValidationResult {
@@ -327,41 +354,93 @@ export class RuntimeGuard {
   /**
    * Get violation statistics
    */
-  public getViolationStats(): {
-    total: number;
-    byType: Record<ViolationType, number>;
-    bySeverity: Record<ViolationSeverity, number>;
-    last24Hours: number;
-  } {
+  public getViolationStats(): ViolationStats {
     const now = new Date();
-    const last24Hours = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    
-    const byType = Object.values(ViolationType).reduce((acc, type) => {
+    const last24Threshold = new Date(now.getTime() - 24 * HOUR_IN_MS);
+
+    const initializeByType = () => Object.values(ViolationType).reduce((acc, type) => {
       acc[type] = 0;
       return acc;
     }, {} as Record<ViolationType, number>);
 
-    const bySeverity = Object.values(ViolationSeverity).reduce((acc, severity) => {
+    const initializeBySeverity = () => Object.values(ViolationSeverity).reduce((acc, severity) => {
       acc[severity] = 0;
       return acc;
     }, {} as Record<ViolationSeverity, number>);
 
-    let last24HoursCount = 0;
+    const byType = initializeByType();
+    const bySeverity = initializeBySeverity();
+    const byEndpoint = new Map<string, number>();
+    const last24ByType = initializeByType();
+    const last24BySeverity = initializeBySeverity();
+    const hourlyBuckets = new Map<string, number>();
 
-    this.violations.forEach(violation => {
-      byType[violation.type]++;
-      bySeverity[violation.severity]++;
-      
-      if (violation.timestamp >= last24Hours) {
-        last24HoursCount++;
+    let last24Total = 0;
+
+    for (const violation of this.violations) {
+      byType[violation.type] += 1;
+      bySeverity[violation.severity] += 1;
+
+      const endpointKey = violation.endpoint ?? 'unknown';
+      byEndpoint.set(endpointKey, (byEndpoint.get(endpointKey) ?? 0) + 1);
+    }
+
+    for (let idx = this.violations.length - 1; idx >= 0; idx -= 1) {
+      const violation = this.violations[idx];
+      if (!violation) {
+        continue;
       }
-    });
+      if (violation.timestamp < last24Threshold) {
+        break;
+      }
+
+      last24Total += 1;
+      last24ByType[violation.type] += 1;
+      last24BySeverity[violation.severity] += 1;
+
+      const bucketTime = new Date(Math.floor(violation.timestamp.getTime() / HOUR_IN_MS) * HOUR_IN_MS);
+      const bucketKey = bucketTime.toISOString();
+      hourlyBuckets.set(bucketKey, (hourlyBuckets.get(bucketKey) ?? 0) + 1);
+    }
+
+    const byEndpointObject = Array.from(byEndpoint.entries())
+      .sort((a, b) => b[1] - a[1])
+      .reduce((acc, [key, value]) => {
+        acc[key] = value;
+        return acc;
+      }, {} as Record<string, number>);
+
+    const hourlyBucketsArray: HourlyViolationBucket[] = Array.from(hourlyBuckets.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([hour, count]) => ({ hour, count }));
+
+    const recent: ViolationStats['recent'] = [];
+    for (let idx = this.violations.length - 1; idx >= 0 && recent.length < 10; idx -= 1) {
+      const violation = this.violations[idx];
+      if (!violation) {
+        continue;
+      }
+      recent.push({
+        id: violation.id,
+        type: violation.type,
+        severity: violation.severity,
+        endpoint: violation.endpoint ?? null,
+        timestamp: violation.timestamp.toISOString(),
+      });
+    }
 
     return {
       total: this.violations.length,
       byType,
       bySeverity,
-      last24Hours: last24HoursCount,
+      byEndpoint: byEndpointObject,
+      last24Hours: {
+        total: last24Total,
+        byType: last24ByType,
+        bySeverity: last24BySeverity,
+        hourlyBuckets: hourlyBucketsArray,
+      },
+      recent,
     };
   }
 

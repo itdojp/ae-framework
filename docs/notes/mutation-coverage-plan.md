@@ -3,6 +3,7 @@
 ## CI 連携メモ（2025-10-07 更新）
 - `scripts/mutation/publish-survivors-report.mjs` を GitHub Actions（mutation-quick / verify-lite）から実行し、`reports/mutation/mutation-summary.json` を解析してサバイバー情報を自動的に Issue とラベルへ反映する仕組みを導入。
 - サバイバーが 0 件になった場合は既存 Issue の自動クローズと `mutation:survivors` ラベル解除を行うため、Round9 以降の手動トリアージが不要になり、優先度付けを Issue 側で継続管理できる。
+- verify-lite のサマリに `scripts/telemetry/render-runtime-guard-summary.mjs` が追加され、`artifacts/runtime-guard/runtime-guard-stats.json` を読み込んで直近 24h の違反件数・型別内訳・タイムライン・最新違反を Markdown でステップサマリへ出力する。
 
 ## EnhancedStateManager 計測メモ（2025-10-07 更新）
 - `enablePerformanceMetrics` で `stringifyForStorage` の呼び出し時間・ペイロードサイズ・キャッシュヒット率・最近のサンプルを収集し、`getPerformanceMetrics()` で可視化できるようにした。直近 20 件のサンプルを保持し、`resetPerformanceMetrics()` でリセット可能。
