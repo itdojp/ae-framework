@@ -31,6 +31,7 @@
   - 走行時間: **約 10 分 58 秒**
   - ミューテーションスコア: **67.25%**（killed 310 / survived 151 / no-cover 0 / errors 0）
   - metadata/tags/id の保持テストと Buffer インスタンスの復元確認により `checksum`・`source`・`tags` 系のミュータントを除去。残りは `reviveEntryData` の TypedArray ハンドリングと `findLatestKey` の空セット処理に集約しているため、TypedArray/空配列用の追加テストが今後のターゲット。
+- Quick mutation run `./scripts/mutation/run-scoped.sh --quick` は TokenBucket/Bulkhead テストの修正で従来の queue full 起因のエラーは解消。ただし CircuitBreaker property/integration 系が残存し、引き続き initial run failure になる点を記録。
   - 走行時間: **約 11 分 04 秒**
   - ミューテーションスコア: **64.86%**（killed 299 / survived 162 / no-cover 0 / errors 0）
   - Buffer/metadata 復元・チェックサム・シャットダウン周りのユニットテストを追加し、`reviveEntryData` の Buffer 分岐や `persistToDisk`/`shutdown` の例外再throw をカバー。残サバイバーは `normalizeImportedEntry` 内のメタデータ補完（source／phase／tags 既存値の尊重）に集中しているため、既存メタデータを保持する回帰テストが次の候補。
