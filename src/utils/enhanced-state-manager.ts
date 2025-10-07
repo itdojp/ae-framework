@@ -777,7 +777,7 @@ export class EnhancedStateManager extends EventEmitter {
           const view = data as ArrayBufferView;
           return Buffer.from(view.buffer, view.byteOffset, view.byteLength);
         }
-        if (typeof ArrayBuffer !== 'undefined' && data instanceof ArrayBuffer) {
+        if (data instanceof ArrayBuffer) {
           return Buffer.from(new Uint8Array(data));
         }
       }
@@ -825,6 +825,8 @@ export class EnhancedStateManager extends EventEmitter {
     }
 
     if (pruned && keys.size === 0) {
+      // Only remove the keyIndex entry when every backing key has been pruned.
+      // This avoids dropping the mapping while valid versions are still cached for the logical key.
       this.keyIndex.delete(logicalKey);
     }
 
