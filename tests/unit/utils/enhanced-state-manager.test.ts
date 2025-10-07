@@ -1343,30 +1343,22 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     const fullKey = `inventory_${timestamp}`;
     const payload = { id: 'no-versionindex', stock: 4 };
 
-    const persistence = {
-      metadata: { version: '1.0.0' },
-      entries: [
-        {
-          logicalKey: 'inventory',
-          timestamp,
-          version: 6,
-          checksum: 'no-versionindex',
-          data: payload,
-          compressed: false,
-          metadata: {
-            size: JSON.stringify(payload).length,
-            created: timestamp,
-            accessed: timestamp,
-            source: 'no-versionindex-test'
-          }
-        }
-      ],
-      indices: {
-        keyIndex: { inventory: [fullKey] }
-      }
-    };
+    const entry = buildStateEntry('inventory', payload, {
+      timestamp,
+      version: 6,
+      metadata: { source: 'no-versionindex-test' },
+    });
 
-    await manager.importState(persistence as any);
+    const exported = buildExportedState(manager, {
+      metadata: { version: '1.0.0', timestamp },
+      entries: [entry],
+      indices: {
+        keyIndex: { inventory: [fullKey] },
+        versionIndex: {},
+      },
+    });
+
+    await manager.importState(exported);
 
     expect(getVersionIndex(manager).get('inventory')).toBe(6);
 
@@ -1384,30 +1376,22 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     const fullKey = `inventory_${timestamp}`;
     const payload = { id: 'missing-keyindex', stock: 11 };
 
-    const persistence = {
-      metadata: { version: '1.0.0' },
-      entries: [
-        {
-          logicalKey: 'inventory',
-          timestamp,
-          version: 4,
-          checksum: 'missing-keyindex',
-          data: payload,
-          compressed: false,
-          metadata: {
-            size: JSON.stringify(payload).length,
-            created: timestamp,
-            accessed: timestamp,
-            source: 'no-keyindex-test'
-          }
-        }
-      ],
-      indices: {
-        versionIndex: { inventory: 4 }
-      }
-    };
+    const entry = buildStateEntry('inventory', payload, {
+      timestamp,
+      version: 4,
+      metadata: { source: 'no-keyindex-test' },
+    });
 
-    await manager.importState(persistence as any);
+    const exported = buildExportedState(manager, {
+      metadata: { version: '1.0.0', timestamp },
+      entries: [entry],
+      indices: {
+        keyIndex: {},
+        versionIndex: { inventory: 4 },
+      },
+    });
+
+    await manager.importState(exported);
 
     await expect(manager.loadSSOT('inventory')).resolves.toEqual(payload);
     expect(Array.from(getKeyIndex(manager).get('inventory') ?? [])).toContain(fullKey);
@@ -1426,31 +1410,22 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     const fullKey = `inventory_${timestamp}`;
     const payload = { id: 'promote-entry', stock: 6 };
 
-    const persistence = {
-      metadata: { version: '1.0.0' },
-      entries: [
-        {
-          logicalKey: 'inventory',
-          timestamp,
-          version: 8,
-          checksum: 'promote-entry',
-          data: payload,
-          compressed: false,
-          metadata: {
-            size: JSON.stringify(payload).length,
-            created: timestamp,
-            accessed: timestamp,
-            source: 'version-promote-test'
-          }
-        }
-      ],
+    const entry = buildStateEntry('inventory', payload, {
+      timestamp,
+      version: 8,
+      metadata: { source: 'version-promote-test' },
+    });
+
+    const exported = buildExportedState(manager, {
+      metadata: { version: '1.0.0', timestamp },
+      entries: [entry],
       indices: {
         keyIndex: { inventory: [fullKey] },
-        versionIndex: { inventory: 2 }
-      }
-    };
+        versionIndex: { inventory: 2 },
+      },
+    });
 
-    await manager.importState(persistence as any);
+    await manager.importState(exported);
 
     expect(getVersionIndex(manager).get('inventory')).toBe(8);
 
