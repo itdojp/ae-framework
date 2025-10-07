@@ -1378,6 +1378,55 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     await importManager.shutdown();
   });
 
+  it('revives compressed typed array entries', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-typed-array-import-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, {
+      databasePath: 'state.db',
+      enableTransactions: false,
+      enableCompression: true,
+    });
+    await manager.initialize();
+
+    const payload = { id: 'typed-array', stage: 'imported' };
+    const timestamp = new Date().toISOString();
+    const compressed = gzipSync(Buffer.from(JSON.stringify(payload)));
+    const typed = new Uint8Array(compressed);
+
+    const entry: Partial<StateEntry> = {
+      id: 'typed-entry',
+      logicalKey: 'typed-entry',
+      timestamp,
+      version: 3,
+      checksum: '',
+      compressed: true,
+      data: typed,
+      metadata: {
+        size: typed.byteLength,
+        created: timestamp,
+        accessed: timestamp,
+        source: 'typed-array-test',
+      },
+    };
+
+    const exported = {
+      metadata: { version: '1.0.0', timestamp },
+      entries: [entry],
+      indices: {
+        keyIndex: { 'typed-entry': [`typed-entry_${timestamp}`] },
+        versionIndex: { 'typed-entry': 3 },
+      },
+    };
+
+    await manager.importState(exported as any);
+
+    const restored = await manager.loadSSOT('typed-entry');
+    expect(restored).toEqual(payload);
+
+    await manager.shutdown();
+  });
+
   it('restores ttl metadata when importing persistence entries', async () => {
     const root = await mkdtemp(join(tmpdir(), 'ae-framework-state-'));
     tempRoots.push(root);
