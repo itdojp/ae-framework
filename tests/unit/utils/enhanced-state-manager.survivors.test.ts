@@ -1,15 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { EnhancedStateManager } from '../../../src/utils/enhanced-state-manager.js';
 import type { StateEntry, AEIR } from '../../../src/utils/enhanced-state-manager.js';
-
-type EnhancedStateManagerTestHarness = EnhancedStateManager & {
-  calculateChecksum(data: unknown): string;
-  reviveEntryData(rawEntry: Partial<StateEntry>): Promise<AEIR | Buffer>;
-};
+import { asInternal, createManager as createTestManager, createTempProjectRoot, cleanupProjectRoot } from '../../_helpers/enhanced-state-manager.js';
 
 const defaultOptions = {
   databasePath: 'state.db',
@@ -20,22 +13,19 @@ describe('EnhancedStateManager survivors coverage', () => {
   let projectRoot: string;
 
   beforeEach(async () => {
-    projectRoot = await mkdtemp(join(tmpdir(), 'ae-enhanced-state-'));
+    projectRoot = await createTempProjectRoot();
   });
 
   afterEach(async () => {
-    if (projectRoot) {
-      await rm(projectRoot, { recursive: true, force: true });
-    }
+    await cleanupProjectRoot(projectRoot);
   });
 
-  const createManager = () => new EnhancedStateManager(projectRoot, { ...defaultOptions });
-  const asHarness = (manager: EnhancedStateManager) => manager as EnhancedStateManagerTestHarness;
+  const createManager = () => createTestManager(projectRoot, { ...defaultOptions });
 
   it('calculateChecksum produces deterministic sha256 hashes', async () => {
     const manager = createManager();
-    const harness = asHarness(manager);
-    const calculateChecksum = harness.calculateChecksum.bind(manager);
+    const internal = asInternal(manager);
+    const calculateChecksum = internal.calculateChecksum.bind(manager);
 
     const payload = { id: 'demo', stock: 3 };
     const expected = createHash('sha256').update(JSON.stringify(payload)).digest('hex');
@@ -56,8 +46,7 @@ describe('EnhancedStateManager survivors coverage', () => {
 
   it('reviveEntryData leaves compressed buffers untouched', async () => {
     const manager = createManager();
-    const harness = asHarness(manager);
-    const reviveEntryData = harness.reviveEntryData.bind(manager);
+    const reviveEntryData = asInternal(manager).reviveEntryData.bind(manager);
 
     const rawBuffer = Buffer.from([1, 2, 3]);
     const revived = await reviveEntryData({ compressed: true, data: rawBuffer });
@@ -68,8 +57,7 @@ describe('EnhancedStateManager survivors coverage', () => {
 
   it('reviveEntryData revives Buffer JSON representation', async () => {
     const manager = createManager();
-    const harness = asHarness(manager);
-    const reviveEntryData = harness.reviveEntryData.bind(manager);
+    const reviveEntryData = asInternal(manager).reviveEntryData.bind(manager);
 
     const representation = { type: 'Buffer', data: [1, 2, 3, 4] };
     const revived = await reviveEntryData({ compressed: true, data: representation });
@@ -81,8 +69,7 @@ describe('EnhancedStateManager survivors coverage', () => {
 
   it('reviveEntryData revives numeric arrays and plain AEIR payloads', async () => {
     const manager = createManager();
-    const harness = asHarness(manager);
-    const reviveEntryData = harness.reviveEntryData.bind(manager);
+    const reviveEntryData = asInternal(manager).reviveEntryData.bind(manager);
 
     const numericArray = [10, 20, 30];
     const revivedArray = await reviveEntryData({ compressed: true, data: numericArray });
