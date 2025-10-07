@@ -135,6 +135,7 @@ async function main() {
                 }
               }
             } catch (inferenceError) {
+              console.debug('[contracts-exec] Debug: failed to derive sample input from OpenAPI schema:', inferenceError);
               void inferenceError; // Best-effort inference; fall back to empty input when parsing fails
             }
           } else {
@@ -144,11 +145,13 @@ async function main() {
               try {
                 input = JSON.parse(jsonMatch[0]);
               } catch (parseError) {
+                console.debug('Ignored error parsing JSON block from YAML, falling back to defaults:', parseError);
                 void parseError; // ignore, fallback to defaults below
               }
             }
           }
         } catch (loaderError) {
+          console.debug(`[contracts-exec] Debug: failed to load OpenAPI sample input at ${openapiPath}:`, loaderError);
           void loaderError; // ignore loader failures and keep default input
         }
       }
