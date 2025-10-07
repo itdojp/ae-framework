@@ -122,24 +122,35 @@ async function main() {
                 if (derived) break;
               }
               if (!derived) {
-                if (names.length > 0) input = synth((schemas as any)[names[0]]);
-                else if (pathKeys.length > 0) input = { path: pathKeys[0] };
-              if (names.length > 0) {
-                input = synth((schemas as any)[names[0]]);
-              } else {
-                // Fallback: pick first path+op and build an object with the path only
-                const paths = oas.paths ? Object.keys(oas.paths) : [];
-                if (paths.length > 0) input = { path: paths[0] };
+                if (names.length > 0) {
+                  input = synth((schemas as any)[names[0]]);
+                } else if (pathKeys.length > 0) {
+                  input = { path: pathKeys[0] };
+                } else {
+                  // Fallback: pick first path+operation pair when available
+                  const paths = oas.paths ? Object.keys(oas.paths) : [];
+                  if (paths.length > 0) {
+                    input = { path: paths[0] };
+                  }
+                }
               }
-            } catch {}
+            } catch (inferenceError) {
+              void inferenceError; // Best-effort inference; fall back to empty input when parsing fails
+            }
           } else {
             // YAML: try to extract first JSON block as a best-effort
             const jsonMatch = txt.match(/\{[\s\S]*?\}/);
             if (jsonMatch) {
-              try { input = JSON.parse(jsonMatch[0]); } catch {}
+              try {
+                input = JSON.parse(jsonMatch[0]);
+              } catch (parseError) {
+                void parseError; // ignore, fallback to defaults below
+              }
             }
           }
-        } catch {}
+        } catch (loaderError) {
+          void loaderError; // ignore loader failures and keep default input
+        }
       }
       let preOk = true; let postOk = true; let parseInOk = true; let parseOutOk = true;
       try { schemas.InputSchema?.parse?.(input); } catch (e) { parseInOk = false; }

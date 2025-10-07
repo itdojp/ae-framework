@@ -6,14 +6,14 @@ describe('TokenBucket capacity cap after many intervals (fast)', () => {
     const maxTokens = 5;
     const rl = new TokenBucketRateLimiter({ tokensPerInterval: 3, interval: 5, maxTokens });
     // drain
-    rl.tryRemoveTokens(maxTokens);
+    await rl.consume(maxTokens);
     // wait multiple intervals
     for (let i = 0; i < 4; i++) await new Promise(r => setTimeout(r, 6));
     // now attempt to remove more than capacity
-    const allowed = rl.tryRemoveTokens(maxTokens + 1);
+    const allowed = await rl.consume(maxTokens + 1);
     expect(allowed).toBe(false);
     // exactly capacity should be allowed
-    const allowedExact = rl.tryRemoveTokens(maxTokens);
+    const allowedExact = await rl.consume(maxTokens);
     expect(allowedExact).toBe(true);
   });
 });

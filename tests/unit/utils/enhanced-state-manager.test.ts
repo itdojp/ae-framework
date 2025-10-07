@@ -684,6 +684,46 @@ describe('EnhancedStateManager transactions', () => {
 });
 
 describe('EnhancedStateManager helper behaviour', () => {
+  it('revives typed arrays as buffers during importState', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-typed-array-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+    const timestamp = new Date().toISOString();
+    const typed = new Uint8Array([1, 2, 3, 4]);
+    const legacyArray = Array.from(typed);
+
+    const entry = buildStateEntry('typed-buffer', legacyArray, {
+      timestamp,
+      version: 1,
+      compressed: true,
+      metadata: {
+        created: timestamp,
+        accessed: timestamp,
+        source: 'legacy-import',
+        size: legacyArray.length,
+      },
+    });
+
+    const exported = buildExportedState(manager, {
+      metadata: { version: '1.0.0', timestamp },
+      entries: [entry],
+      indices: {
+        keyIndex: { 'typed-buffer': [`typed-buffer_${timestamp}`] },
+        versionIndex: { 'typed-buffer': 1 },
+      },
+    });
+
+    await manager.importState(exported);
+
+    const storage = getStorage(manager);
+    const stored = storage.get(`typed-buffer_${timestamp}`);
+    expect(stored?.data).toBeInstanceOf(Buffer);
+    expect((stored?.data as Buffer).equals(Buffer.from(typed))).toBe(true);
+
+    await manager.shutdown();
+  });
+
   it('preserves buffer instances when importing compressed entries', async () => {
     const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-buffer-instance-'));
     tempRoots.push(root);
