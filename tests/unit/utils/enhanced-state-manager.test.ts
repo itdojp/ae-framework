@@ -1333,6 +1333,108 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     await manager.shutdown();
   });
 
+<<<<<<< HEAD
+=======
+  it('infers version index when metadata map is absent', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-no-versionindex-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+    await manager.initialize();
+
+    const timestamp = new Date().toISOString();
+    const fullKey = `inventory_${timestamp}`;
+    const payload = { id: 'no-versionindex', stock: 4 };
+
+    const entry = buildStateEntry('inventory', payload, {
+      timestamp,
+      version: 6,
+      metadata: { source: 'no-versionindex-test' },
+    });
+
+    const exported = buildExportedState(manager, {
+      metadata: { version: '1.0.0', timestamp },
+      entries: [entry],
+      indices: {
+        keyIndex: { inventory: [fullKey] },
+        versionIndex: {},
+      },
+    });
+
+    await manager.importState(exported);
+
+    expect(getVersionIndex(manager).get('inventory')).toBe(6);
+
+    await manager.shutdown();
+  });
+
+  it('imports legacy entries when key index is missing', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-no-keyindex-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+    await manager.initialize();
+
+    const timestamp = new Date().toISOString();
+    const fullKey = `inventory_${timestamp}`;
+    const payload = { id: 'missing-keyindex', stock: 11 };
+
+    const entry = buildStateEntry('inventory', payload, {
+      timestamp,
+      version: 4,
+      metadata: { source: 'no-keyindex-test' },
+    });
+
+    const exported = buildExportedState(manager, {
+      metadata: { version: '1.0.0', timestamp },
+      entries: [entry],
+      indices: {
+        keyIndex: {},
+        versionIndex: { inventory: 4 },
+      },
+    });
+
+    await manager.importState(exported);
+
+    await expect(manager.loadSSOT('inventory')).resolves.toEqual(payload);
+    expect(Array.from(getKeyIndex(manager).get('inventory') ?? [])).toContain(fullKey);
+
+    await manager.shutdown();
+  });
+
+  it('promotes version index when imported indices lag entries', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-version-promote-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+    await manager.initialize();
+
+    const timestamp = new Date().toISOString();
+    const fullKey = `inventory_${timestamp}`;
+    const payload = { id: 'promote-entry', stock: 6 };
+
+    const entry = buildStateEntry('inventory', payload, {
+      timestamp,
+      version: 8,
+      metadata: { source: 'version-promote-test' },
+    });
+
+    const exported = buildExportedState(manager, {
+      metadata: { version: '1.0.0', timestamp },
+      entries: [entry],
+      indices: {
+        keyIndex: { inventory: [fullKey] },
+        versionIndex: { inventory: 2 },
+      },
+    });
+
+    await manager.importState(exported);
+
+    expect(getVersionIndex(manager).get('inventory')).toBe(8);
+
+    await manager.shutdown();
+  });
+
   it('revives compressed buffer entries when importing legacy backups', async () => {
     const exportRoot = await mkdtemp(join(tmpdir(), 'ae-framework-state-export-'));
     const importRoot = await mkdtemp(join(tmpdir(), 'ae-framework-state-import-'));
