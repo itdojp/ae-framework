@@ -1333,8 +1333,6 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     await manager.shutdown();
   });
 
-<<<<<<< HEAD
-=======
   it('infers version index when metadata map is absent', async () => {
     const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-no-versionindex-'));
     tempRoots.push(root);
