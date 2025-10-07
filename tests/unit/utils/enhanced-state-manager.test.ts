@@ -741,6 +741,55 @@ describe('EnhancedStateManager helper behaviour', () => {
     await manager.shutdown();
   });
 
+  it('retains provided metadata, tags, and checksum during importState', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-retain-metadata-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+    const timestamp = new Date().toISOString();
+    const payload = { id: 'retained', state: 'active' };
+
+    const entry: Partial<StateEntry> = {
+      id: 'custom-entry',
+      logicalKey: 'inventory',
+      timestamp,
+      version: 4,
+      data: payload,
+      compressed: false,
+      tags: { team: 'alpha', env: 'test' },
+      metadata: {
+        size: JSON.stringify(payload).length,
+        created: timestamp,
+        accessed: timestamp,
+        source: 'import-test',
+        phase: 'beta',
+      },
+    };
+
+    const exported = buildExportedState(manager, {
+      metadata: { version: '1.0.0', timestamp },
+      entries: [entry as StateEntry],
+      indices: {
+        keyIndex: { inventory: [`inventory_${timestamp}`] },
+        versionIndex: { inventory: 4 },
+      },
+    });
+
+    await manager.importState(exported);
+
+    const storage = getStorage(manager);
+    const stored = storage.get(`inventory_${timestamp}`);
+    const expectedChecksum = createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+
+    expect(stored?.id).toBe('custom-entry');
+    expect(stored?.checksum).toBe(expectedChecksum);
+    expect(stored?.metadata?.source).toBe('import-test');
+    expect(stored?.metadata?.phase).toBe('beta');
+    expect(stored?.tags).toEqual({ team: 'alpha', env: 'test' });
+
+    await manager.shutdown();
+  });
+
   it('preserves malformed buffer metadata objects during importState', async () => {
     const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-malformed-buffer-'));
     tempRoots.push(root);
