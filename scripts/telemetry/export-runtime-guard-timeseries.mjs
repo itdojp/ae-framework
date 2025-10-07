@@ -15,12 +15,22 @@ let payload;
 try {
   payload = JSON.parse(readFileSync(inputPath, 'utf8'));
 } catch (error) {
-  console.error(`Failed to parse runtime guard stats: ${error instanceof Error ? error.message : String(error)}`);
+  console.error(`Failed to parse runtime guard stats: ${error.message}`);
   process.exit(1);
 }
 
-const stats = payload.stats ?? payload;
-const buckets = stats?.last24Hours?.hourlyBuckets;
+// The payload may either wrap stats under a `stats` key or provide the stats object directly.
+let stats;
+if (payload && typeof payload === 'object' && payload.stats && typeof payload.stats === 'object') {
+  stats = payload.stats;
+} else if (payload && typeof payload === 'object' && payload.last24Hours && typeof payload.last24Hours === 'object') {
+  stats = payload;
+} else {
+  console.error('Input file does not contain expected stats structure.');
+  process.exit(1);
+}
+
+const buckets = stats.last24Hours?.hourlyBuckets;
 if (!Array.isArray(buckets) || buckets.length === 0) {
   console.error('No hourly bucket information found in runtime guard stats.');
   process.exit(1);
