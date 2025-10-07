@@ -1,5 +1,14 @@
 # Mutation Coverage Improvement Plan (Week2)
 
+## CI 連携メモ（2025-10-07 更新）
+- `scripts/mutation/publish-survivors-report.mjs` を GitHub Actions（mutation-quick / verify-lite）から実行し、`reports/mutation/mutation-summary.json` を解析してサバイバー情報を自動的に Issue とラベルへ反映する仕組みを導入。
+- サバイバーが 0 件になった場合は既存 Issue の自動クローズと `mutation:survivors` ラベル解除を行うため、Round9 以降の手動トリアージが不要になり、優先度付けを Issue 側で継続管理できる。
+
+## EnhancedStateManager 計測メモ（2025-10-07 更新）
+- `enablePerformanceMetrics` で `stringifyForStorage` の呼び出し時間・ペイロードサイズ・キャッシュヒット率・最近のサンプルを収集し、`getPerformanceMetrics()` で可視化できるようにした。直近 20 件のサンプルを保持し、`resetPerformanceMetrics()` でリセット可能。
+- `enableSerializationCache` を true にすると `WeakMap` ベースのキャッシュが有効化され、同一オブジェクトの連続保存で `stringify` をスキップする。測定結果は `stringifyCacheHits/Misses` に反映。
+- `skipUnchangedPersistence` により `persistToDisk` はエントリ・インデックス・オプションのハッシュが変化しない限りディスク書き込みを省略するため、反復保存時の IO を削減できる（`skippedPersistWrites` で確認可能）。
+
 ## 現状サマリ（2025-10-06 更新）
 - `./scripts/mutation/run-scoped.sh --quick --mutate src/utils/enhanced-state-manager.ts`（2025-10-02 10:50 開始）
   - 走行時間: **約 135 分**（time-limit 未指定のため全 457 ミュータントを順次実行）

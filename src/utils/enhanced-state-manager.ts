@@ -57,6 +57,9 @@ export interface StorageOptions {
   maxVersions?: number;
   enableTransactions?: boolean;
   enablePerformanceMetrics?: boolean;
+  enableSerializationCache?: boolean;
+  performanceSampleSize?: number;
+  skipUnchangedPersistence?: boolean;
 }
 
 /**
@@ -103,6 +106,20 @@ interface TransactionContext {
   committed: boolean;
 }
 
+type SerializationCacheEntry = {
+  json: string;
+  size: number;
+  timestamp: number;
+};
+
+interface StringifySample {
+  context: string;
+  durationMs: number;
+  size: number;
+  cacheHit: boolean;
+  timestamp: string;
+}
+
 /**
  * Enhanced State Manager with SQLite-like storage, compression, and EventBus integration
  */
@@ -117,8 +134,17 @@ export class EnhancedStateManager extends EventEmitter {
   private performanceMetrics = {
     stringifyCalls: 0,
     stringifyDurationMs: 0,
+    stringifyMaxDurationMs: 0,
+    stringifyCacheHits: 0,
+    stringifyCacheMisses: 0,
     lastPayloadSize: 0,
+    persistedWrites: 0,
+    skippedPersistWrites: 0,
   };
+  private stringifySamples: StringifySample[] = [];
+  private readonly stringifySampleLimit: number;
+  private serializationCache?: WeakMap<object, SerializationCacheEntry>;
+  private lastPersistedChecksum: string | null = null;
 
   private readonly options: Required<StorageOptions>;
   private readonly dataDir: string;
@@ -136,11 +162,18 @@ export class EnhancedStateManager extends EventEmitter {
       maxVersions: options.maxVersions ?? 10,
       enableTransactions: options.enableTransactions ?? true,
       enablePerformanceMetrics: options.enablePerformanceMetrics ?? false,
+      enableSerializationCache: options.enableSerializationCache ?? options.enablePerformanceMetrics ?? false,
+      performanceSampleSize: options.performanceSampleSize ?? 20,
+      skipUnchangedPersistence: options.skipUnchangedPersistence ?? true,
     };
 
     const root = projectRoot || process.cwd();
     this.dataDir = path.join(root, '.ae');
     this.databaseFile = path.join(root, this.options.databasePath);
+    this.stringifySampleLimit = this.options.performanceSampleSize;
+    if (this.options.enableSerializationCache) {
+      this.serializationCache = new WeakMap();
+    }
   }
 
   /**
@@ -179,7 +212,7 @@ export class EnhancedStateManager extends EventEmitter {
     const timestamp = new Date().toISOString();
     const fullKey = `${logicalKey}_${timestamp}`;
     const version = this.getNextVersion(logicalKey);
-    const serializedData = this.stringifyForStorage(data);
+    const serializedData = this.stringifyForStorage(data, 'saveSSOT');
     const estimatedSize = this.measureSerializedSize(serializedData);
     const shouldCompress = this.shouldCompress(estimatedSize);
     const entryData: AEIR | Buffer = shouldCompress ? await this.compress(serializedData) : data;
@@ -280,7 +313,7 @@ export class EnhancedStateManager extends EventEmitter {
       }
     }
 
-    const serializedSnapshot = this.stringifyForStorage(snapshotData);
+    const serializedSnapshot = this.stringifyForStorage(snapshotData, 'createSnapshot');
     const snapshotSize = this.measureSerializedSize(serializedSnapshot);
     const snapshotMetadata: SnapshotMetadata = {
       id: snapshotId,
@@ -348,7 +381,7 @@ export class EnhancedStateManager extends EventEmitter {
     const timestamp = new Date().toISOString();
     const failureKey = `failure_${artifact.phase}_${timestamp}`;
     
-    const serializedArtifact = this.stringifyForStorage(artifact);
+    const serializedArtifact = this.stringifyForStorage(artifact, 'persistFailureArtifact');
     const artifactSize = this.measureSerializedSize(serializedArtifact);
 
     const entry: StateEntry<FailureArtifact> = {
@@ -629,9 +662,50 @@ export class EnhancedStateManager extends EventEmitter {
   getPerformanceMetrics(): {
     stringifyCalls: number;
     stringifyDurationMs: number;
+    stringifyMaxDurationMs: number;
+    averageDurationMs: number;
     lastPayloadSize: number;
+    stringifyCacheHits: number;
+    stringifyCacheMisses: number;
+    persistedWrites: number;
+    skippedPersistWrites: number;
+    samples: StringifySample[];
   } {
-    return { ...this.performanceMetrics };
+    const average = this.performanceMetrics.stringifyCalls === 0
+      ? 0
+      : this.performanceMetrics.stringifyDurationMs / this.performanceMetrics.stringifyCalls;
+    return {
+      stringifyCalls: this.performanceMetrics.stringifyCalls,
+      stringifyDurationMs: this.performanceMetrics.stringifyDurationMs,
+      stringifyMaxDurationMs: this.performanceMetrics.stringifyMaxDurationMs,
+      averageDurationMs: Number(average.toFixed(3)),
+      lastPayloadSize: this.performanceMetrics.lastPayloadSize,
+      stringifyCacheHits: this.performanceMetrics.stringifyCacheHits,
+      stringifyCacheMisses: this.performanceMetrics.stringifyCacheMisses,
+      persistedWrites: this.performanceMetrics.persistedWrites,
+      skippedPersistWrites: this.performanceMetrics.skippedPersistWrites,
+      samples: [...this.stringifySamples],
+    };
+  }
+
+  resetPerformanceMetrics(): void {
+    this.performanceMetrics = {
+      stringifyCalls: 0,
+      stringifyDurationMs: 0,
+      stringifyMaxDurationMs: 0,
+      stringifyCacheHits: 0,
+      stringifyCacheMisses: 0,
+      lastPayloadSize: 0,
+      persistedWrites: 0,
+      skippedPersistWrites: 0,
+    };
+    this.stringifySamples = [];
+    if (this.options.enableSerializationCache) {
+      this.serializationCache = new WeakMap();
+    } else {
+      this.serializationCache = undefined;
+    }
+    this.lastPersistedChecksum = null;
   }
 
   /**
@@ -735,7 +809,7 @@ export class EnhancedStateManager extends EventEmitter {
     } else if (isCompressed && Buffer.isBuffer(data)) {
       size = data.length;
     } else {
-      serialized = this.stringifyForStorage(data);
+      serialized = this.stringifyForStorage(data, 'normalizeImportedEntry');
       size = this.measureSerializedSize(serialized);
     }
 
@@ -749,7 +823,7 @@ export class EnhancedStateManager extends EventEmitter {
           checksum = '';
         }
       } else {
-        const serializedData = serialized ?? this.stringifyForStorage(data);
+        const serializedData = serialized ?? this.stringifyForStorage(data, 'normalizeImportedEntry');
         checksum = this.calculateChecksum(data, serializedData);
       }
     }
@@ -865,10 +939,62 @@ export class EnhancedStateManager extends EventEmitter {
     }
   }
 
-  private stringifyForStorage(value: unknown): string {
+  private recordStringifyMetrics(context: string, durationMs: number, size: number, cacheHit: boolean): void {
+    if (!this.options.enablePerformanceMetrics) {
+      return;
+    }
+
+    this.performanceMetrics.stringifyCalls += 1;
+    this.performanceMetrics.stringifyDurationMs += durationMs;
+    this.performanceMetrics.stringifyMaxDurationMs = Math.max(
+      this.performanceMetrics.stringifyMaxDurationMs,
+      durationMs,
+    );
+    this.performanceMetrics.lastPayloadSize = size;
+
+    if (this.options.enableSerializationCache) {
+      if (cacheHit) {
+        this.performanceMetrics.stringifyCacheHits += 1;
+      } else {
+        this.performanceMetrics.stringifyCacheMisses += 1;
+      }
+    }
+
+    const sample: StringifySample = {
+      context,
+      durationMs: Number(durationMs.toFixed(3)),
+      size,
+      cacheHit,
+      timestamp: new Date().toISOString(),
+    };
+    this.stringifySamples.push(sample);
+    if (this.stringifySamples.length > this.stringifySampleLimit) {
+      this.stringifySamples.shift();
+    }
+  }
+
+  private stringifyForStorage(value: unknown, context = 'generic'): string {
+    const metricsEnabled = this.options.enablePerformanceMetrics;
+    const canCache = Boolean(
+      this.options.enableSerializationCache
+        && this.serializationCache
+        && value !== null
+        && typeof value === 'object'
+    );
+
+    if (canCache) {
+      const cached = this.serializationCache!.get(value as object);
+      if (cached) {
+        this.recordStringifyMetrics(context, 0, cached.size, true);
+        return cached.json;
+      }
+    }
+
+    const start = metricsEnabled ? performance.now() : 0;
     const seen = new WeakSet<object>();
+    let serialized: string;
     try {
-      return JSON.stringify(value, (key, val) => {
+      serialized = JSON.stringify(value, (key, val) => {
         if (typeof val === 'object' && val !== null) {
           if (seen.has(val)) {
             return '[Circular]';
@@ -878,8 +1004,25 @@ export class EnhancedStateManager extends EventEmitter {
         return val;
       });
     } catch {
-      return JSON.stringify('[Unserializable]');
+      serialized = JSON.stringify('[Unserializable]');
     }
+
+    const size = this.measureSerializedSize(serialized);
+
+    if (canCache) {
+      this.serializationCache!.set(value as object, {
+        json: serialized,
+        size,
+        timestamp: Date.now(),
+      });
+    }
+
+    if (metricsEnabled) {
+      const duration = performance.now() - start;
+      this.recordStringifyMetrics(context, duration, size, false);
+    }
+
+    return serialized;
   }
 
   private measureSerializedSize(serializedData: string): number {
@@ -906,7 +1049,7 @@ export class EnhancedStateManager extends EventEmitter {
   }
 
   private calculateChecksum(data: any, serializedHint?: string): string {
-    const serialized = serializedHint ?? this.stringifyForStorage(data);
+    const serialized = serializedHint ?? this.stringifyForStorage(data, 'calculateChecksum');
     return createHash('sha256').update(serialized).digest('hex');
   }
 
@@ -962,7 +1105,21 @@ export class EnhancedStateManager extends EventEmitter {
   private async persistToDisk(): Promise<void> {
     try {
       const exportedState = await this.exportState();
-      const serialized = this.stringifyForStorage(exportedState);
+      const persistenceFingerprint = {
+        entries: exportedState.entries,
+        indices: exportedState.indices,
+        options: exportedState.metadata.options,
+      };
+      const fingerprintSerialized = this.stringifyForStorage(persistenceFingerprint, 'persistenceFingerprint');
+      const checksum = this.calculateChecksum(persistenceFingerprint, fingerprintSerialized);
+      const serialized = this.stringifyForStorage(exportedState, 'persistToDisk');
+
+      if (this.options.skipUnchangedPersistence && this.lastPersistedChecksum === checksum) {
+        this.performanceMetrics.skippedPersistWrites += 1;
+        this.emit('persistenceSkipped', { reason: 'unchanged', checksum });
+        return;
+      }
+
       let payload = serialized;
       try {
         payload = JSON.stringify(JSON.parse(serialized), null, 2);
@@ -970,6 +1127,8 @@ export class EnhancedStateManager extends EventEmitter {
         // Fallback to raw serialized output when pretty-printing fails
       }
       await fs.writeFile(this.databaseFile, payload);
+      this.lastPersistedChecksum = checksum;
+      this.performanceMetrics.persistedWrites += 1;
     } catch (error) {
       console.error('Failed to persist state to disk:', error);
       throw error;

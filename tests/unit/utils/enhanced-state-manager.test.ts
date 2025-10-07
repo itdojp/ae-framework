@@ -161,6 +161,10 @@ describe('EnhancedStateManager configuration', () => {
     expect(options.gcInterval).toBe(3600);
     expect(options.maxVersions).toBe(10);
     expect(options.enableTransactions).toBe(true);
+    expect(options.enablePerformanceMetrics).toBe(false);
+    expect(options.enableSerializationCache).toBe(false);
+    expect(options.performanceSampleSize).toBe(20);
+    expect(options.skipUnchangedPersistence).toBe(true);
 
     const databaseFile = asInternal(manager).databaseFile as string;
     expect(databaseFile.endsWith('.ae/enhanced-state.db')).toBe(true);
@@ -176,6 +180,10 @@ describe('EnhancedStateManager configuration', () => {
       gcInterval: 120,
       maxVersions: 5,
       enableTransactions: false,
+      enablePerformanceMetrics: true,
+      enableSerializationCache: true,
+      performanceSampleSize: 8,
+      skipUnchangedPersistence: false,
     });
     const options = getOptions(manager);
 
@@ -186,6 +194,10 @@ describe('EnhancedStateManager configuration', () => {
     expect(options.gcInterval).toBe(120);
     expect(options.maxVersions).toBe(5);
     expect(options.enableTransactions).toBe(false);
+    expect(options.enablePerformanceMetrics).toBe(true);
+    expect(options.enableSerializationCache).toBe(true);
+    expect(options.performanceSampleSize).toBe(8);
+    expect(options.skipUnchangedPersistence).toBe(false);
   });
 });
 
@@ -1127,6 +1139,60 @@ describe('EnhancedStateManager snapshots and artifacts', () => {
     });
 
     warnSpy.mockRestore();
+    await manager.shutdown();
+  });
+});
+
+describe('EnhancedStateManager performance metrics', () => {
+  it('collects stringify metrics and cache hits when enabled', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-perf-metrics-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, {
+      databasePath: 'state.db',
+      enableTransactions: false,
+      enablePerformanceMetrics: true,
+      enableSerializationCache: true,
+      performanceSampleSize: 10,
+    });
+
+    await manager.initialize();
+    manager.resetPerformanceMetrics();
+
+    const payload = { id: 'metrics', nested: { foo: 'bar' } };
+    await manager.saveSSOT('metrics.entry', payload);
+    await manager.saveSSOT('metrics.entry.clone', payload);
+
+    const metrics = manager.getPerformanceMetrics();
+    expect(metrics.stringifyCalls).toBeGreaterThanOrEqual(2);
+    expect(metrics.samples.length).toBeGreaterThan(0);
+    expect(metrics.stringifyCacheHits).toBeGreaterThanOrEqual(1);
+    await manager.shutdown();
+  });
+
+  it('skips persistence writes when state checksum is unchanged', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-persist-metrics-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, {
+      databasePath: 'state.db',
+      enableTransactions: false,
+      enablePerformanceMetrics: true,
+    });
+
+    await manager.initialize();
+    await manager.saveSSOT('persist.sample', { id: 'persist' });
+
+    const internal = asInternal(manager);
+    await internal.persistToDisk();
+
+    const firstMetrics = manager.getPerformanceMetrics();
+    expect(firstMetrics.persistedWrites).toBeGreaterThanOrEqual(1);
+
+    await internal.persistToDisk();
+    const secondMetrics = manager.getPerformanceMetrics();
+    expect(secondMetrics.skippedPersistWrites).toBeGreaterThanOrEqual(1);
+
     await manager.shutdown();
   });
 });
