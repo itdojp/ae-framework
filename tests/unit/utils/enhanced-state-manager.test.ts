@@ -49,7 +49,6 @@ const getTransactions = (manager: EnhancedStateManager) => asInternal(manager).a
 const getOptions = (manager: EnhancedStateManager) => asInternal(manager).options;
 const getKeyIndex = (manager: EnhancedStateManager) => asInternal(manager).keyIndex;
 const getVersionIndex = (manager: EnhancedStateManager) => asInternal(manager).versionIndex;
-
 type ExportedState = Awaited<ReturnType<EnhancedStateManager['exportState']>>;
 
 const buildExportedState = (
