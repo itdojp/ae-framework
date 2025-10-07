@@ -8,14 +8,18 @@ describe('PBT: TokenOptimizer trim-edge trailing comma boundary', () => {
     formatGWT('trailing comma/space', 'compressSteeringDocuments(trim-end)', 'no trailing comma remains'),
     async () => {
       await fc.assert(
-        fc.asyncProperty(fc.string({ minLength: 1, maxLength: 60 }), async (s) => {
-          const opt = new TokenOptimizer();
-          const docs = { product: `${s},  ` } as Record<string, string>;
-          const { compressed } = await opt.compressSteeringDocuments(docs, { maxTokens: 2000 });
-          const last = compressed.trimEnd().slice(-1);
-          expect([',', ';']).not.toContain(last);
-        }),
-        { numRuns: 12 }
+        // Ensure Stryker sandbox runs are reproducible with a fixed seed
+        fc.asyncProperty(
+          fc.string({ minLength: 1, maxLength: 48 }),
+          async (s) => {
+            const opt = new TokenOptimizer();
+            const docs = { product: `${s},  ` } as Record<string, string>;
+            const { compressed } = await opt.compressSteeringDocuments(docs, { maxTokens: 2000 });
+            const last = compressed.trimEnd().slice(-1);
+            expect([',', ';']).not.toContain(last);
+          }
+        ),
+        { numRuns: 24, seed: 0xAEF00D, path: '0:0:0', skipAllAfterTimeLimit: 5000, markInterruptAsFailure: true }
       );
     }
   );
