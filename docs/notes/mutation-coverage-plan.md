@@ -27,6 +27,10 @@
   - ミューテーションスコア: **62.69%**（killed 289 / survived 172 / no-cover 0 / errors 0）
   - 新規テストで importState 経路の型安全性を向上させた結果、`reviveEntryData` の Buffer 判定分岐や `calculateChecksum`／`loadFromPersistence` の例外処理が再びサバイバーとなった。次アクションは Buffer 判定の additional fixtures、checksum 再計算の負例、`shutdown`／`persistToDisk` の例外パスに対するユニットテスト追加。
 - `STRYKER_TIME_LIMIT=420 npx stryker run configs/stryker.enhanced.config.js --mutate src/utils/enhanced-state-manager.ts --concurrency 1`（2025-10-07 10:26 再実行）
+- `STRYKER_TIME_LIMIT=420 npx stryker run configs/stryker.enhanced.config.js --mutate src/utils/enhanced-state-manager.ts --concurrency 1`（2025-10-07 10:45 再実行）
+  - 走行時間: **約 10 分 58 秒**
+  - ミューテーションスコア: **67.25%**（killed 310 / survived 151 / no-cover 0 / errors 0）
+  - metadata/tags/id の保持テストと Buffer インスタンスの復元確認により `checksum`・`source`・`tags` 系のミュータントを除去。残りは `reviveEntryData` の TypedArray ハンドリングと `findLatestKey` の空セット処理に集約しているため、TypedArray/空配列用の追加テストが今後のターゲット。
   - 走行時間: **約 11 分 04 秒**
   - ミューテーションスコア: **64.86%**（killed 299 / survived 162 / no-cover 0 / errors 0）
   - Buffer/metadata 復元・チェックサム・シャットダウン周りのユニットテストを追加し、`reviveEntryData` の Buffer 分岐や `persistToDisk`/`shutdown` の例外再throw をカバー。残サバイバーは `normalizeImportedEntry` 内のメタデータ補完（source／phase／tags 既存値の尊重）に集中しているため、既存メタデータを保持する回帰テストが次の候補。
