@@ -268,7 +268,8 @@ describe('MCPCommand', () => {
       const result = await mcpCommand.handler(['plugins', 'enable'], testContext);
 
       expect(result.success).toBe(false);
-      expect(result.message).toBe('Please specify plugin name');
+      expect(result.message).toContain('Plugin name is required');
+      expect(result.message.startsWith('MCP command failed:')).toBe(true);
     });
   });
 
