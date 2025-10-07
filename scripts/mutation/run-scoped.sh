@@ -180,7 +180,7 @@ mkdir -p reports/mutation
 
 CMD=(pnpm exec stryker run "${args[@]}" --concurrency "$CONCURRENCY" --timeoutMS "$TIMEOUT")
 if [[ -n "$CONFIG_PATH" ]] ; then
-  CMD+=(--config "$CONFIG_PATH")
+  CMD+=("$CONFIG_PATH")
 fi
 if [[ ${#EXTRA_ARGS[@]} -gt 0 ]]; then
   CMD+=("${EXTRA_ARGS[@]}")
