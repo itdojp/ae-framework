@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { createHash } from 'crypto';
 import { promisify } from 'util';
 import { gzip, gunzip } from 'zlib';
+import { performance } from 'perf_hooks';
 // import { AEIR } from '@ae-framework/spec-compiler';  // Temporarily disabled for build fix
 
 /**
@@ -55,6 +56,7 @@ export interface StorageOptions {
   gcInterval?: number; // seconds
   maxVersions?: number;
   enableTransactions?: boolean;
+  enablePerformanceMetrics?: boolean;
 }
 
 /**
@@ -112,6 +114,11 @@ export class EnhancedStateManager extends EventEmitter {
   private activeTransactions = new Map<string, TransactionContext>();
   private gcTimer: NodeJS.Timeout | undefined;
   private isInitialized = false;
+  private performanceMetrics = {
+    stringifyCalls: 0,
+    stringifyDurationMs: 0,
+    lastPayloadSize: 0,
+  };
 
   private readonly options: Required<StorageOptions>;
   private readonly dataDir: string;
@@ -127,7 +134,8 @@ export class EnhancedStateManager extends EventEmitter {
       defaultTTL: options.defaultTTL ?? 86400 * 7, // 7 days
       gcInterval: options.gcInterval ?? 3600, // 1 hour
       maxVersions: options.maxVersions ?? 10,
-      enableTransactions: options.enableTransactions ?? true
+      enableTransactions: options.enableTransactions ?? true,
+      enablePerformanceMetrics: options.enablePerformanceMetrics ?? false,
     };
 
     const root = projectRoot || process.cwd();
@@ -171,16 +179,17 @@ export class EnhancedStateManager extends EventEmitter {
     const timestamp = new Date().toISOString();
     const fullKey = `${logicalKey}_${timestamp}`;
     const version = this.getNextVersion(logicalKey);
-    const estimatedSize = JSON.stringify(data).length;
+    const serializedData = this.stringifyForStorage(data);
+    const estimatedSize = this.measureSerializedSize(serializedData);
     const shouldCompress = this.shouldCompress(estimatedSize);
-    const entryData: AEIR | Buffer = shouldCompress ? await this.compress(data) : data;
+    const entryData: AEIR | Buffer = shouldCompress ? await this.compress(serializedData) : data;
 
     const entry: StateEntry<AEIR | Buffer> = {
       id: uuidv4(),
       logicalKey,
       timestamp,
       version,
-      checksum: this.calculateChecksum(data),
+      checksum: this.calculateChecksum(data, serializedData),
       data: entryData,
       compressed: shouldCompress,
       tags: options?.tags || {},
@@ -271,19 +280,21 @@ export class EnhancedStateManager extends EventEmitter {
       }
     }
 
+    const serializedSnapshot = this.stringifyForStorage(snapshotData);
+    const snapshotSize = this.measureSerializedSize(serializedSnapshot);
     const snapshotMetadata: SnapshotMetadata = {
       id: snapshotId,
       timestamp,
       phase,
       entities: entities || [],
-      checksum: this.calculateChecksum(snapshotData),
+      checksum: this.calculateChecksum(snapshotData, serializedSnapshot),
       compressed: true,
-      size: JSON.stringify(snapshotData).length,
+      size: snapshotSize,
       ttl: this.options.defaultTTL * 2 // Longer TTL for snapshots
     };
 
     // Compress snapshot data
-    const compressedData = await this.compress(snapshotData);
+    const compressedData = await this.compress(serializedSnapshot);
     
     // Store snapshot
     const snapshotEntry: StateEntry = {
@@ -337,12 +348,15 @@ export class EnhancedStateManager extends EventEmitter {
     const timestamp = new Date().toISOString();
     const failureKey = `failure_${artifact.phase}_${timestamp}`;
     
+    const serializedArtifact = this.stringifyForStorage(artifact);
+    const artifactSize = this.measureSerializedSize(serializedArtifact);
+
     const entry: StateEntry<FailureArtifact> = {
       id: uuidv4(),
       logicalKey: `failure_${artifact.phase}`,
       timestamp,
       version: 1,
-      checksum: this.calculateChecksum(artifact),
+      checksum: this.calculateChecksum(artifact, serializedArtifact),
       data: artifact,
       compressed: false,
       tags: { 
@@ -353,7 +367,7 @@ export class EnhancedStateManager extends EventEmitter {
       },
       ttl: this.options.defaultTTL,
       metadata: {
-        size: JSON.stringify(artifact).length,
+        size: artifactSize,
         created: timestamp,
         accessed: timestamp,
         source: 'failure_handler',
@@ -612,6 +626,14 @@ export class EnhancedStateManager extends EventEmitter {
     };
   }
 
+  getPerformanceMetrics(): {
+    stringifyCalls: number;
+    stringifyDurationMs: number;
+    lastPayloadSize: number;
+  } {
+    return { ...this.performanceMetrics };
+  }
+
   /**
    * Export state for backup or migration
    */
@@ -706,30 +728,29 @@ export class EnhancedStateManager extends EventEmitter {
     const created = rawMetadata.created ?? timestamp;
     const accessed = rawMetadata.accessed ?? created;
 
+    let serialized: string | undefined;
     let size: number;
     if (typeof rawMetadata.size === 'number') {
       size = rawMetadata.size;
     } else if (isCompressed && Buffer.isBuffer(data)) {
       size = data.length;
     } else {
-      try {
-        size = JSON.stringify(data).length;
-      } catch {
-        size = 0;
-      }
+      serialized = this.stringifyForStorage(data);
+      size = this.measureSerializedSize(serialized);
     }
 
     let checksum = rawEntry.checksum;
     if (!checksum) {
-      try {
-        if (isCompressed && Buffer.isBuffer(data)) {
+      if (isCompressed && Buffer.isBuffer(data)) {
+        try {
           const decompressed = await this.decompress(data);
           checksum = this.calculateChecksum(decompressed);
-        } else {
-          checksum = this.calculateChecksum(data);
+        } catch {
+          checksum = '';
         }
-      } catch {
-        checksum = '';
+      } else {
+        const serializedData = serialized ?? this.stringifyForStorage(data);
+        checksum = this.calculateChecksum(data, serializedData);
       }
     }
 
@@ -840,17 +861,43 @@ export class EnhancedStateManager extends EventEmitter {
     // Update TTL index
     if (entry.ttl) {
       const expiryTime = new Date(entry.timestamp).getTime() + (entry.ttl * 1000);
-      this.ttlIndex.set(fullKey, expiryTime);
+    this.ttlIndex.set(fullKey, expiryTime);
     }
+  }
+
+  private stringifyForStorage(value: unknown): string {
+    const seen = new WeakSet<object>();
+    try {
+      return JSON.stringify(value, (key, val) => {
+        if (typeof val === 'object' && val !== null) {
+          if (seen.has(val)) {
+            return '[Circular]';
+          }
+          seen.add(val);
+        }
+        return val;
+      });
+    } catch {
+      return JSON.stringify('[Unserializable]');
+    }
+  }
+
+  private measureSerializedSize(serializedData: string): number {
+    if (!serializedData) {
+      return 0;
+    }
+    if (serializedData === '"[Unserializable]"' || serializedData.includes('"[Circular]"')) {
+      return 0;
+    }
+    return serializedData.length;
   }
 
   private shouldCompress(size: number): boolean {
     return this.options.enableCompression && size > this.options.compressionThreshold;
   }
 
-  private async compress(data: any): Promise<Buffer> {
-    const jsonString = JSON.stringify(data);
-    return await gzipAsync(jsonString);
+  private async compress(serializedData: string): Promise<Buffer> {
+    return await gzipAsync(serializedData);
   }
 
   private async decompress(compressedData: Buffer): Promise<any> {
@@ -858,8 +905,9 @@ export class EnhancedStateManager extends EventEmitter {
     return JSON.parse(decompressed.toString());
   }
 
-  private calculateChecksum(data: any): string {
-    return createHash('sha256').update(JSON.stringify(data)).digest('hex');
+  private calculateChecksum(data: any, serializedHint?: string): string {
+    const serialized = serializedHint ?? this.stringifyForStorage(data);
+    return createHash('sha256').update(serialized).digest('hex');
   }
 
   private async saveEntry(key: string, entry: StateEntry): Promise<void> {
@@ -914,7 +962,14 @@ export class EnhancedStateManager extends EventEmitter {
   private async persistToDisk(): Promise<void> {
     try {
       const exportedState = await this.exportState();
-      await fs.writeFile(this.databaseFile, JSON.stringify(exportedState, null, 2));
+      const serialized = this.stringifyForStorage(exportedState);
+      let payload = serialized;
+      try {
+        payload = JSON.stringify(JSON.parse(serialized), null, 2);
+      } catch {
+        // Fallback to raw serialized output when pretty-printing fails
+      }
+      await fs.writeFile(this.databaseFile, payload);
     } catch (error) {
       console.error('Failed to persist state to disk:', error);
       throw error;

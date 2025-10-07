@@ -11,7 +11,9 @@ describe('PBT: TokenOptimizer preservePriority picks first present section', () 
     async () => {
       await fc.assert(
         fc.asyncProperty(
-          fc.set(fc.constantFrom(...PRIO), { minLength: 1, maxLength: 4 }),
+          fc.array(fc.constantFrom(...PRIO), { minLength: 1, maxLength: 4 }).map(
+            (values) => Array.from(new Set(values))
+          ),
           async (subset) => {
             const docs: Record<string,string> = {};
             for (const k of subset) docs[k] = `${k} content`;
@@ -24,7 +26,8 @@ describe('PBT: TokenOptimizer preservePriority picks first present section', () 
             if (res.compressed.trim().length === 0) return; // allow empty when content too small
             // earliest present key by priority order
             const firstPresent = PRIO.find(k => subset.includes(k));
-            const expectedHeader = `## ${firstPresent?.toUpperCase()}`;
+            if (!firstPresent) return;
+            const expectedHeader = `## ${firstPresent.toUpperCase()}`;
             expect(res.compressed.trim().startsWith(expectedHeader)).toBe(true);
           }
         ),
@@ -33,4 +36,3 @@ describe('PBT: TokenOptimizer preservePriority picks first present section', () 
     }
   );
 });
-

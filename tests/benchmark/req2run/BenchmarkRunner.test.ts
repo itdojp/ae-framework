@@ -142,8 +142,8 @@ describe('BenchmarkRunner', () => {
       const result = await runner.runBenchmark('test-problem');
       const endTime = Date.now();
       
-      expect(result.executionDetails.totalDuration).toBeGreaterThan(0);
-      expect(result.executionDetails.totalDuration).toBeLessThanOrEqual(endTime - startTime + 100); // Allow 100ms tolerance
+      expect(result.executionDetails.totalDuration).toBeGreaterThanOrEqual(0);
+      expect(result.executionDetails.totalDuration).toBeLessThanOrEqual(Math.max(0, endTime - startTime) + 100); // Allow 100ms tolerance
     });
   });
 

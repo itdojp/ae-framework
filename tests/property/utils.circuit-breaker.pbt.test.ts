@@ -14,9 +14,16 @@ describe('PBT: CircuitBreaker basic invariants', () => {
     await fc.assert(fc.asyncProperty(fc.array(fc.boolean(), { minLength: 1, maxLength: 50 }), async (arr) => {
       const cb = mk();
       for (const ok of arr) {
-        if (ok) await cb.execute(async () => 1);
-        else {
-          try { await cb.execute(async () => { throw new Error('x'); }); } catch {}
+        if (ok) {
+          try {
+            await cb.execute(async () => 1);
+          } catch (error) {
+            expect(error).toBeInstanceOf(Error);
+          }
+        } else {
+          try { await cb.execute(async () => { throw new Error('x'); }); } catch (error) {
+            expect(error).toBeInstanceOf(Error);
+          }
         }
         const stats = cb.getStats();
         expect(stats.failureCount).toBeGreaterThanOrEqual(0);

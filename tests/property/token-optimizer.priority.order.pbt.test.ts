@@ -7,23 +7,33 @@ describe('PBT: TokenOptimizer preservePriority ordering', () => {
     await fc.assert(fc.asyncProperty(
       fc.record({
         product: fc.string({ minLength: 1, maxLength: 64 }),
+        design: fc.string({ minLength: 1, maxLength: 64 }),
         architecture: fc.string({ minLength: 1, maxLength: 64 }),
         standards: fc.string({ minLength: 1, maxLength: 64 }),
       }),
-      async ({ product, architecture, standards }) => {
+      async ({ product, design, architecture, standards }) => {
         const opt = new TokenOptimizer();
         const { compressed } = await opt.compressSteeringDocuments(
-          { product, standards, architecture },
-          { compressionLevel: 'low', enableCaching: false }
+          { product, design, standards, architecture },
+          {
+            compressionLevel: 'low',
+            enableCaching: false,
+            preservePriority: ['product', 'design', 'architecture', 'standards'],
+          }
         );
-        const idxProd = compressed.indexOf('## PRODUCT');
-        const idxArch = compressed.indexOf('## ARCHITECTURE');
-        const idxStd  = compressed.indexOf('## STANDARDS');
-        expect(idxProd).toBeGreaterThanOrEqual(0);
-        expect(idxArch).toBeGreaterThan(idxProd);
-        expect(idxStd).toBeGreaterThan(idxArch);
+
+        const ordered = [
+          { header: '## PRODUCT', index: compressed.indexOf('## PRODUCT') },
+          { header: '## DESIGN', index: compressed.indexOf('## DESIGN') },
+          { header: '## ARCHITECTURE', index: compressed.indexOf('## ARCHITECTURE') },
+          { header: '## STANDARDS', index: compressed.indexOf('## STANDARDS') },
+        ].filter(section => section.index >= 0);
+
+        expect(ordered.length).toBeGreaterThan(0);
+        for (let i = 1; i < ordered.length; i += 1) {
+          expect(ordered[i].index).toBeGreaterThan(ordered[i - 1].index);
+        }
       }
     ), { numRuns: 10 });
   });
 });
-

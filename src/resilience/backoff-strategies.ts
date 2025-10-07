@@ -440,6 +440,13 @@ export class TokenBucketRateLimiter {
   }
 
   /**
+   * Backwards compatibility alias for legacy tests
+   */
+  public async tryRemoveTokens(tokens: number = 1): Promise<boolean> {
+    return this.consume(tokens);
+  }
+
+  /**
    * Wait until tokens are available
    */
   public async waitForTokens(tokens: number = 1): Promise<void> {

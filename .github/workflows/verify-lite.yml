@@ -39,6 +39,12 @@ jobs:
           VERIFY_LITE_LINT_ENFORCE: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-verify-lite-lint') && '1' || '0' }}
         run: |
           pnpm run verify:lite
+      - name: Runtime contracts report
+        if: always()
+        env:
+          CONTRACTS_ENFORCE: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-runtime-contracts') && '1' || '0' }}
+        run: |
+          pnpm tsx scripts/verify/execute-contracts.ts
       - name: Verify-lite lint baseline
         if: always()
         env:
@@ -132,7 +138,8 @@ jobs:
           if [ -f mutation-summary.md ]; then
             cat mutation-summary.md >> "$GITHUB_STEP_SUMMARY"
           elif [ -f reports/mutation/mutation.json ]; then
-            node scripts/mutation/post-quick-summary.mjs | tee mutation-summary.md
+            node scripts/mutation/post-quick-summary.mjs --format markdown | tee mutation-summary.md
+            node scripts/mutation/post-quick-summary.mjs --format json --output reports/mutation/mutation-summary.json >/dev/null
             cat mutation-summary.md >> "$GITHUB_STEP_SUMMARY"
           else
             printf 'No mutation report found; skipped summary.\n' | tee mutation-summary.md >> "$GITHUB_STEP_SUMMARY"
@@ -179,6 +186,14 @@ jobs:
             node scripts/ci/render-verify-lite-summary.mjs verify-lite-run-summary.json >> "$GITHUB_STEP_SUMMARY"
           else
             echo 'Verify Lite run summary not generated.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Append runtime contracts summary
+        if: always()
+        run: |
+          if [ -f artifacts/contracts/contracts-exec.json ]; then
+            node scripts/verify/render-contracts-summary.mjs artifacts/contracts/contracts-exec.json >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Runtime contracts summary not generated.' >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Append lint summary (top rules)
         if: always()

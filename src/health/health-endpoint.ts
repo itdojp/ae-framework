@@ -48,14 +48,16 @@ export interface HealthStatus {
 
 export async function registerHealthEndpoint(fastify: FastifyInstance): Promise<void> {
   // Simple health check endpoint
-  fastify.get('/health', async (request: FastifyRequest, reply: FastifyReply) => {
-    const healthStatus = await getHealthStatus();
-    
-    const httpStatus = healthStatus.status === 'healthy' ? 200 :
-                       healthStatus.status === 'degraded' ? 200 : 503;
-    
-    reply.status(httpStatus).send(healthStatus);
-  });
+  if (!fastify.hasRoute({ method: 'GET', url: '/health' })) {
+    fastify.get('/health', async (request: FastifyRequest, reply: FastifyReply) => {
+      const healthStatus = await getHealthStatus();
+      
+      const httpStatus = healthStatus.status === 'healthy' ? 200 :
+                         healthStatus.status === 'degraded' ? 200 : 503;
+      
+      reply.status(httpStatus).send(healthStatus);
+    });
+  }
 
   // Detailed health check for monitoring
   fastify.get('/health/detailed', async (request: FastifyRequest, reply: FastifyReply) => {

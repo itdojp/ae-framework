@@ -14,13 +14,11 @@ describe('PBT: TokenOptimizer trim-edge on large docs', () => {
       await fc.assert(
         fc.asyncProperty(uniqueKeysArb, async (keys) => {
           const docs: Record<string, string> = {};
+          const codeBlock = ['```ts', 'const x = 1;  ', '```'].join('\n');
           for (const k of keys) {
             docs[k] = [
               `# ${k}  `,
-              '```
-const x = 1;  
-```
-',
+              codeBlock,
               ('lorem '.repeat(80)).trim() + '  ',
             ].join('\n');
           }
@@ -47,4 +45,3 @@ const x = 1;
     }
   );
 });
-

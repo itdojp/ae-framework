@@ -74,7 +74,8 @@ jobs:
         if: ${{ always() }}
         run: |
           if [ -f reports/mutation/mutation.json ]; then
-            node scripts/mutation/post-quick-summary.mjs | tee mutation-summary.md
+            node scripts/mutation/post-quick-summary.mjs --format markdown | tee mutation-summary.md
+            node scripts/mutation/post-quick-summary.mjs --format json --output reports/mutation/mutation-summary.json >/dev/null
             cat mutation-summary.md >> "$GITHUB_STEP_SUMMARY"
           else
             printf 'No mutation report found; skipped summary.\n' | tee mutation-summary.md >> "$GITHUB_STEP_SUMMARY"
@@ -104,6 +105,7 @@ jobs:
           path: |
             reports/mutation/mutation.json
             reports/mutation/index.html
+            reports/mutation/mutation-summary.json
 
       - name: Upload mutation survivors
         if: ${{ always() && hashFiles('reports/mutation/survivors.json') != '' }}

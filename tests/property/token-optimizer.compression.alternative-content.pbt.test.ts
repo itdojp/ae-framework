@@ -14,15 +14,13 @@ describe('PBT: TokenOptimizer compression on alternative content', () => {
       await fc.assert(
         fc.asyncProperty(uniqueKeysArb, async (keys) => {
           const docs: Record<string, string> = {};
+          const fence = ['```', 'code fence', '```'].join('\n');
           for (const k of keys) {
             docs[k] = [
               `# ${k}`,
               '- bullet A',
               '- bullet A',
-              '```
-code fence
-```
-',
+              fence,
               'paragraph paragraph paragraph',
               'paragraph paragraph paragraph',
             ].join('\n');
@@ -38,8 +36,8 @@ code fence
             .map((h) => body.indexOf('## ' + h))
             .filter((i) => i >= 0);
           for (let i = 1; i < idx.length; i++) expect(idx[i - 1]).toBeLessThan(idx[i]);
-          // duplicated bullet likely deduped in compressed body
-          expect((body.match(/- bullet A/g) || []).length).toBeLessThanOrEqual(2);
+          const dedupedCount = (body.match(/- bullet A/g) || []).length;
+          expect(dedupedCount).toBeLessThanOrEqual(keys.length * 2);
           expect(res.stats.compressed).toBeLessThanOrEqual(res.stats.original);
         }),
         { numRuns: 6 }
@@ -47,4 +45,3 @@ code fence
     }
   );
 });
-

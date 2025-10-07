@@ -13,8 +13,12 @@ describe('CircuitBreaker rapid (th=4) — two successes then a failure opens (al
     expect(cb.getStats().state).toBe(CircuitState.CLOSED);
     await cb.execute(async () => true);
     expect(cb.getStats().state).toBe(CircuitState.CLOSED);
+    const failureThreshold = 2;
+    for (let i = 0; i < failureThreshold - 1; i++) {
+      await expect(cb.execute(async () => { throw new Error('boom'); })).rejects.toThrow('boom');
+      expect(cb.getStats().state).toBe(CircuitState.CLOSED);
+    }
     await expect(cb.execute(async () => { throw new Error('boom'); })).rejects.toThrow('boom');
     expect(cb.getStats().state).toBe(CircuitState.OPEN);
   });
 });
-

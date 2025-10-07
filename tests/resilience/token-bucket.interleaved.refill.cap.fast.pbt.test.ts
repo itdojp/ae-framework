@@ -6,15 +6,15 @@ describe('TokenBucket interleaved refill respects maxTokens (fast)', () => {
     const maxTokens = 4;
     const rl = new TokenBucketRateLimiter({ tokensPerInterval: 2, interval: 5, maxTokens });
     // remove 3 tokens if possible
-    rl.tryRemoveTokens(3);
+    await rl.consume(3);
     // wait one interval
     await new Promise(r => setTimeout(r, 6));
     // attempt to remove > capacity
-    const over = rl.tryRemoveTokens(maxTokens + 1);
+    const over = await rl.consume(maxTokens + 1);
     expect(over).toBe(false);
     // exactly capacity should eventually work after refills
     await new Promise(r => setTimeout(r, 6));
-    const ok = rl.tryRemoveTokens(maxTokens);
+    const ok = await rl.consume(maxTokens);
     expect(ok).toBe(true);
   });
 });

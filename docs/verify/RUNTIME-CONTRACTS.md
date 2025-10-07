@@ -68,3 +68,13 @@ Alternatively, add a PR label `enforce-contracts`. The verify workflow translate
 Set `CONTRACTS_SAMPLE_INPUT=/path/to/input.json` to feed a JSON object as input to the runtime contracts execution. This helps validate schemas and pre/post on a realistic shape. When absent, `{}` is used.
 
 Alternatively, set `CONTRACTS_OPENAPI_PATH` (defaults to `artifacts/codex/openapi.yaml` or `openapi.json`) and the runner will try to derive a simple sample. For JSON it prefers the first `components.schemas` object (by type) to synthesize an example; otherwise falls back to the first path; for YAML it extracts the first JSON block (best‑effort).
+
+### Running the report locally
+
+The lightweight report runner lives at `scripts/verify/execute-contracts.ts`. Execute it with `pnpm tsx` so TypeScript modules are resolved without a build:
+
+```bash
+pnpm tsx scripts/verify/execute-contracts.ts
+```
+
+The script emits structured warnings instead of hard failures when optional inputs (OpenAPI artifacts, sample JSON) are missing, and always writes the summary to `artifacts/contracts/contracts-exec.json`. In report-only mode (`CONTRACTS_ENFORCE` 未設定), errors are captured in `results.error`; enforce mode (`CONTRACTS_ENFORCE=1`) will cause the workflow to fail if any parse/pre/post check is unsuccessful.

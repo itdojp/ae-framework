@@ -14,21 +14,15 @@ describe('PBT: TokenOptimizer many code fences in large inputs', () => {
       await fc.assert(
         fc.asyncProperty(uniqueKeysArb, async (keys) => {
           const docs: Record<string, string> = {};
+          const fenceA = ['```', 'code A', '```'].join('\n');
+          const fenceB = ['```', 'code B', '```'].join('\n');
+          const fenceC = ['```', 'code C', '```'].join('\n');
           for (const k of keys) {
             docs[k] = [
               `# ${k}`,
-              '```
-code A
-```
-',
-              '```
-code B
-```
-',
-              '```
-code C
-```
-',
+              fenceA,
+              fenceB,
+              fenceC,
               ('lorem '.repeat(100)),
             ].join('\n');
           }
@@ -44,4 +38,3 @@ code C
     }
   );
 });
-

@@ -893,6 +893,43 @@ describe('EnhancedStateManager helper behaviour', () => {
     await manager.shutdown();
   });
 
+  it('records zero metadata size when imported data cannot be stringified', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-circular-size-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+    await manager.initialize();
+
+    const circular: any = { foo: 'bar' };
+    circular.self = circular;
+    const timestamp = new Date().toISOString();
+
+    const exported = buildExportedState(manager, {
+      metadata: { version: '1.0.0', timestamp },
+      entries: [
+        buildStateEntry('circular-entry', circular, {
+          timestamp,
+          version: 1,
+          metadata: {
+            source: 'legacy-import',
+            created: timestamp,
+            accessed: timestamp,
+          },
+          checksum: '',
+          compressed: false,
+        }),
+      ],
+      indices: {
+        keyIndex: { 'circular-entry': [`circular-entry_${timestamp}`] },
+        versionIndex: { 'circular-entry': 1 },
+      },
+    });
+
+    await manager.importState(exported);
+    const stored = getStorage(manager).get(`circular-entry_${timestamp}`);
+    expect(stored?.metadata.size).toBe(0);
+  });
+
   it('creates snapshots scoped by phase or entity filters', async () => {
     const root = await mkdtemp(join(tmpdir(), 'ae-framework-snapshot-'));
     tempRoots.push(root);

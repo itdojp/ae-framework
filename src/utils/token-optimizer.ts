@@ -556,15 +556,16 @@ export class TokenOptimizer {
     }
 
     const originalTokens = this.estimateTokens(original);
-    const compressedTokens = this.estimateTokens(compressed);
+    const rawCompressedTokens = this.estimateTokens(compressed);
+    const clampedCompressedTokens = Math.min(rawCompressedTokens, originalTokens);
     const reduction = originalTokens > 0 
-      ? ((originalTokens - compressedTokens) / originalTokens) * 100
+      ? ((originalTokens - clampedCompressedTokens) / originalTokens) * 100
       : 0;
     const normalizedReduction = Math.max(0, Math.round(reduction));
 
     return {
       original: originalTokens,
-      compressed: compressedTokens,
+      compressed: clampedCompressedTokens,
       reductionPercentage: normalizedReduction
     };
   }

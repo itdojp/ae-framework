@@ -25,12 +25,18 @@ describe('PBT: StandardizedBenchmarkRunner.normalizeSpecification', () => {
         };
         const out = normalize(specInput, 'p');
         expect(Array.isArray(out.requirements)).toBe(true);
-        expect(out.requirements).toContain(f1);
-        expect(out.requirements).toContain(f2);
-        expect(out.requirements).toContain(nfPerf);
-        expect(out.requirements).toContain(nfSec);
+        const checks = [
+          ['f1', f1],
+          ['f2', f2],
+          ['nfPerf', nfPerf],
+          ['nfSec', nfSec],
+        ] as const;
+        for (const [, value] of checks) {
+          const normalized = value.trim();
+          if (normalized.length === 0) continue;
+          expect(out.requirements).toContain(normalized);
+        }
       }
     ), { numRuns: 10 });
   });
 });
-
