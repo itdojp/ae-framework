@@ -3,9 +3,10 @@
 set -euo pipefail
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+ROOT_DIR=$(cd "${SCRIPT_DIR}/../.." && pwd)
 PATTERN_DIR="${SCRIPT_DIR}/patterns"
 RUN_SCOPED="${SCRIPT_DIR}/run-scoped.sh"
-DEFAULT_CONFIG="$(cd "${SCRIPT_DIR}/.." && pwd)/configs/stryker.config.js"
+DEFAULT_CONFIG="${ROOT_DIR}/configs/stryker.config.js"
 
 if [[ ! -x "${RUN_SCOPED}" ]]; then
   echo "run-scoped.sh not found or not executable: ${RUN_SCOPED}" >&2
