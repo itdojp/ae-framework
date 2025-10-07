@@ -1,5 +1,16 @@
 # Mutation Coverage Improvement Plan (Week2)
 
+## 残存サバイバー対応計画（2025-10-07 更新）
+- 優先サバイバー:
+  1. `versionIndex` 減算系（Math.min 変異）
+  2. `Buffer` 判定の OR 変異（`reviveEntryData`）
+  3. `findLatestKey` 空集合パスのフォールト注入
+- 対応アクション:
+  - `findLatestKey` の負例テストを追加し、空集合時の挙動を明示する。
+  - `reviveEntryData` に TypedArray/SharedArrayBuffer の fixture を追加し、`Buffer.isBuffer` 以外も安全化。
+  - `versionIndex` 減算系は import/export の差分検証テストを拡充し、算出結果を期待値で固定。
+- フォローアップ Issue: 追跡用に `EnhancedStateManager` 用の mutation backlog (#TODO) を作成して進捗を共有する。
+
 ## 現状サマリ（2025-10-06 更新）
 - `./scripts/mutation/run-scoped.sh --quick --mutate src/utils/enhanced-state-manager.ts`（2025-10-02 10:50 開始）
   - 走行時間: **約 135 分**（time-limit 未指定のため全 457 ミュータントを順次実行）
