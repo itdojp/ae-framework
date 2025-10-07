@@ -4,6 +4,7 @@
 export default {
   packageManager: "npm",
   reporters: ["html", "clear-text", "progress"],
+  plugins: ["@stryker-mutator/vitest-runner"],
   testRunner: "vitest",
   checkers: [], // Temporarily disabled TypeScript checker due to strict mode issues
   coverageAnalysis: "perTest",

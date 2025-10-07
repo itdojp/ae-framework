@@ -178,7 +178,7 @@ fi
 
 mkdir -p reports/mutation
 
-CMD=(npx stryker run "${args[@]}" --concurrency "$CONCURRENCY" --timeoutMS "$TIMEOUT")
+CMD=(pnpm exec stryker run "${args[@]}" --concurrency "$CONCURRENCY" --timeoutMS "$TIMEOUT")
 if [[ -n "$CONFIG_PATH" ]] ; then
   CMD+=(--config "$CONFIG_PATH")
 fi
