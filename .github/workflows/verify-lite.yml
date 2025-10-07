@@ -10,6 +10,10 @@ on:
 jobs:
   verify-lite:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
     steps:
       - name: Coverage policy (note)
         run: |
@@ -166,6 +170,12 @@ jobs:
         with:
           name: mutation-survivors-json
           path: reports/mutation/survivors.json
+      - name: Publish mutation survivors issue
+        if: ${{ always() && hashFiles('reports/mutation/mutation-summary.json') != '' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node scripts/mutation/publish-survivors-report.mjs --summary reports/mutation/mutation-summary.json --context verify-lite
       - name: Upload verify-lite report
         if: always()
         uses: actions/upload-artifact@v4

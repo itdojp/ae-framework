@@ -19,6 +19,8 @@ jobs:
     permissions:
       contents: read
       actions: write
+      issues: write
+      pull-requests: write
     env:
       EXTRA_MUTATE: ${{ inputs.mutate }}
       EXTRA_TIME_LIMIT: ${{ inputs.time_limit }}
@@ -96,6 +98,13 @@ jobs:
           else
             printf "%s\n" "No mutation report found; skipped survivors extraction." >> "$GITHUB_STEP_SUMMARY"
           fi
+
+      - name: Publish mutation survivors issue
+        if: ${{ always() && hashFiles('reports/mutation/mutation-summary.json') != '' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node scripts/mutation/publish-survivors-report.mjs --summary reports/mutation/mutation-summary.json --context mutation-quick
 
       - name: Upload mutation reports
         if: ${{ always() && hashFiles('reports/mutation/mutation.json') != '' }}
