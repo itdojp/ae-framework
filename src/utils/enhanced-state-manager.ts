@@ -703,7 +703,7 @@ export class EnhancedStateManager extends EventEmitter {
     if (this.options.enableSerializationCache) {
       this.serializationCache = new WeakMap();
     } else {
-      this.serializationCache = undefined;
+      delete this.serializationCache;
     }
     this.lastPersistedChecksum = null;
   }
