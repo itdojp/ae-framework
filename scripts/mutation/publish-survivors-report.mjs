@@ -35,7 +35,12 @@ function parseArgs(argv) {
         break;
       case '--label-color':
         if (next) {
-          args.labelColor = next.replace('#', '').slice(0, 6);
+          const color = next.replace('#', '').slice(0, 6);
+          if (/^[0-9a-fA-F]{6}$/.test(color)) {
+            args.labelColor = color.toLowerCase();
+          } else {
+            console.warn(`Warning: Invalid label color "${next}". Using default color "${args.labelColor}".`);
+          }
           i += 1;
         }
         break;
@@ -248,9 +253,15 @@ async function createOrUpdateIssue({
   const openIssues = await listOpenIssues(apiBase, token, owner, repo, label, dryRun);
   const target = openIssues[0];
   if (target) {
-    const labels = Array.isArray(target.labels)
-      ? Array.from(new Set(target.labels.map((entry) => (typeof entry === 'object' ? entry.name : entry)).filter(Boolean).concat(label)))
-      : [label];
+    let labels;
+    if (Array.isArray(target.labels)) {
+      const labelNames = target.labels.map((entry) => (typeof entry === 'object' ? entry.name : entry));
+      const filteredLabelNames = labelNames.filter(Boolean);
+      const allLabels = filteredLabelNames.concat(label);
+      labels = Array.from(new Set(allLabels));
+    } else {
+      labels = [label];
+    }
     await githubRequest(apiBase, token, 'PATCH', `/repos/${owner}/${repo}/issues/${target.number}`, {
       title,
       body,
@@ -318,7 +329,6 @@ async function main() {
   if (!repoSlug || !repoSlug.includes('/')) {
     console.error('Repository context is missing (set via --repo or GITHUB_REPOSITORY).');
     process.exit(1);
-    return;
   }
   const [owner, repo] = repoSlug.split('/');
 
