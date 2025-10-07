@@ -1,0 +1,3 @@
+src/utils/enhanced-state-manager.ts
+!src/utils/enhanced-state-manager.ts?(**snapshot**)
+!src/utils/enhanced-state-manager.ts?(**import**)

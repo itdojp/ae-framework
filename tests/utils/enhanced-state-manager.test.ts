@@ -3,6 +3,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { EnhancedStateManager, FailureArtifact } from '../../src/utils/enhanced-state-manager.js';
 import { AEIR } from '@ae-framework/spec-compiler';
+import { createManager as createTestManager, createTempProjectRoot, cleanupProjectRoot } from '../_helpers/enhanced-state-manager.js';
 
 describe('EnhancedStateManager', () => {
   let stateManager: EnhancedStateManager;
@@ -36,11 +37,10 @@ describe('EnhancedStateManager', () => {
 
   beforeEach(async () => {
     // Create temporary test directory
-    testDataDir = path.join(process.cwd(), 'test-enhanced-state');
-    await fs.mkdir(testDataDir, { recursive: true });
+    testDataDir = await createTempProjectRoot('ae-enhanced-util-');
     
     // Initialize state manager with test directory
-    stateManager = new EnhancedStateManager(testDataDir, {
+    stateManager = createTestManager(testDataDir, {
       enableCompression: true,
       compressionThreshold: 100,
       defaultTTL: 3600, // 1 hour for tests
@@ -55,12 +55,7 @@ describe('EnhancedStateManager', () => {
   afterEach(async () => {
     // Cleanup
     await stateManager.shutdown();
-    
-    try {
-      await fs.rm(testDataDir, { recursive: true, force: true });
-    } catch (error) {
-      // Ignore cleanup errors
-    }
+    await cleanupProjectRoot(testDataDir);
   });
 
   describe('SSOT Management', () => {
