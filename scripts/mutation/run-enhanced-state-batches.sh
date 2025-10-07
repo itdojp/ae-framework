@@ -83,7 +83,7 @@ for batch in "${BATCHES[@]}"; do
 
   printf '\n=== Running enhanced state mutation batch: %s ===\n' "${batch}"
   set +e
-  "${RUN_SCOPED}" "${RUN_ARGS[@]}" --mutate-file "${pattern_file}" "${PASS_THROUGH[@]}"
+  pnpm exec "${RUN_SCOPED}" "${RUN_ARGS[@]}" --mutate-file "${pattern_file}" "${PASS_THROUGH[@]}"
   status=$?
   set -e
 
