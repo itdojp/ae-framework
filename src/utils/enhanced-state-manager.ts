@@ -162,7 +162,7 @@ export class EnhancedStateManager extends EventEmitter {
       maxVersions: options.maxVersions ?? 10,
       enableTransactions: options.enableTransactions ?? true,
       enablePerformanceMetrics: options.enablePerformanceMetrics ?? false,
-      enableSerializationCache: options.enableSerializationCache ?? options.enablePerformanceMetrics ?? false,
+      enableSerializationCache: options.enableSerializationCache ?? false,
       performanceSampleSize: options.performanceSampleSize ?? 20,
       skipUnchangedPersistence: options.skipUnchangedPersistence ?? true,
     };
@@ -975,12 +975,11 @@ export class EnhancedStateManager extends EventEmitter {
 
   private stringifyForStorage(value: unknown, context = 'generic'): string {
     const metricsEnabled = this.options.enablePerformanceMetrics;
-    const canCache = Boolean(
+    const canCache =
       this.options.enableSerializationCache
         && this.serializationCache
         && value !== null
-        && typeof value === 'object'
-    );
+        && typeof value === 'object';
 
     if (canCache) {
       const cached = this.serializationCache!.get(value as object);
@@ -1105,13 +1104,11 @@ export class EnhancedStateManager extends EventEmitter {
   private async persistToDisk(): Promise<void> {
     try {
       const exportedState = await this.exportState();
-      const persistenceFingerprint = {
-        entries: exportedState.entries,
-        indices: exportedState.indices,
-        options: exportedState.metadata.options,
-      };
-      const fingerprintSerialized = this.stringifyForStorage(persistenceFingerprint, 'persistenceFingerprint');
-      const checksum = this.calculateChecksum(persistenceFingerprint, fingerprintSerialized);
+      const entriesFingerprint = this.stringifyForStorage(exportedState.entries, 'persistenceFingerprint_entries');
+      const indicesFingerprint = this.stringifyForStorage(exportedState.indices, 'persistenceFingerprint_indices');
+      const optionsFingerprint = this.stringifyForStorage(exportedState.metadata.options, 'persistenceFingerprint_options');
+      const fingerprintCombined = [entriesFingerprint, indicesFingerprint, optionsFingerprint].join('|:|');
+      const checksum = this.calculateChecksum(fingerprintCombined, fingerprintCombined);
       const serialized = this.stringifyForStorage(exportedState, 'persistToDisk');
 
       if (this.options.skipUnchangedPersistence && this.lastPersistedChecksum === checksum) {
