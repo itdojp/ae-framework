@@ -791,7 +791,9 @@ describe('EnhancedStateManager helper behaviour', () => {
     const invalidArray: Array<number | string> = [80, 'not-a-number', 82];
 
     const numericKey = `legacy-buffer_${timestamp}`;
-    const invalidKey = `legacy-invalid_${timestamp}`;    const exported = buildExportedState(manager, {
+    const invalidKey = `legacy-invalid_${timestamp}`;
+
+    const exported = buildExportedState(manager, {
       metadata: { version: '1.0.0', timestamp },
       entries: [
         buildStateEntry('legacy-buffer', numericArray, {
@@ -1200,18 +1202,22 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     await manager.initialize();
 
     const timestamp = '2024-03-03T00:00:00.000Z';
-    const legacyEntry = buildStateEntry('legacy-buffer', { type: 'Buffer', data: [65, 66, 67] }, {
+    const legacyEntry = {
+      logicalKey: 'legacy-buffer',
       timestamp,
       version: 2,
       compressed: true,
-      metadata: { source: 'legacy-import', created: timestamp, accessed: timestamp, size: 0 },
-      checksum: '',
-    });
-    Reflect.deleteProperty(legacyEntry.metadata, 'size');
+      data: { type: 'Buffer', data: [65, 66, 67] },
+      metadata: {
+        source: 'legacy-import',
+        created: timestamp,
+        accessed: timestamp,
+      },
+    } satisfies Partial<StateEntry>;
 
     const exported = buildExportedState(manager, {
       metadata: { version: '1.0.0', timestamp },
-      entries: [legacyEntry],
+      entries: [legacyEntry as unknown as StateEntry],
       indices: {
         keyIndex: { 'legacy-buffer': [`legacy-buffer_${timestamp}`] },
         versionIndex: { 'legacy-buffer': 2 },
@@ -1245,24 +1251,21 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     const compressedBuffer = gzipSync(Buffer.from(rawJson, 'utf8'));
     const timestamp = new Date().toISOString();
 
-    const bulkEntry = buildStateEntry('bulk-entry', { type: 'Buffer', data: Array.from(compressedBuffer) }, {
+    const bulkEntry = {
+      logicalKey: 'bulk-entry',
       timestamp,
       version: 3,
       compressed: true,
-      checksum: '',
+      data: { type: 'Buffer', data: Array.from(compressedBuffer) },
       metadata: {
         created: timestamp,
         accessed: timestamp,
-        source: 'legacy-import',
-        size: 0,
       },
-    });
-    Reflect.deleteProperty(bulkEntry.metadata, 'size');
-    Reflect.deleteProperty(bulkEntry.metadata, 'source');
+    } satisfies Partial<StateEntry>;
 
     const exported = buildExportedState(manager, {
       metadata: { version: '1.0.0', timestamp },
-      entries: [bulkEntry],
+      entries: [bulkEntry as unknown as StateEntry],
       indices: {
         keyIndex: { 'bulk-entry': [`bulk-entry_${timestamp}`] },
         versionIndex: { 'bulk-entry': 3 },
@@ -1306,20 +1309,16 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     const importState = buildExportedState(importManager, {
       metadata: exportedState.metadata,
       entries: [
-        buildStateEntry(sourceEntry.logicalKey, sourceEntry.data, {
-          id: sourceEntry.id,
+        {
+          logicalKey: sourceEntry.logicalKey,
           timestamp: sourceEntry.timestamp,
           version: sourceEntry.version,
           compressed: sourceEntry.compressed,
-          checksum: '',
-        }),
+          data: sourceEntry.data,
+        } as unknown as StateEntry,
       ],
       indices: exportedState.indices,
     });
-    const legacyEntry = importState.entries[0];
-    Reflect.deleteProperty(legacyEntry, 'metadata');
-    Reflect.deleteProperty(legacyEntry, 'tags');
-    Reflect.deleteProperty(legacyEntry, 'checksum');
 
     await importManager.importState(importState);
 

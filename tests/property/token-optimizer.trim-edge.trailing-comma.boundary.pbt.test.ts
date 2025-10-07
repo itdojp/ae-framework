@@ -8,7 +8,7 @@ describe('PBT: TokenOptimizer trim-edge trailing comma boundary', () => {
     formatGWT('trailing comma/space', 'compressSteeringDocuments(trim-end)', 'no trailing comma remains'),
     async () => {
       await fc.assert(
-        // 固定シードでStrykerサンドボックスの再現性を確保する
+        // Ensure Stryker sandbox runs are reproducible with a fixed seed
         fc.asyncProperty(
           fc.string({ minLength: 1, maxLength: 48 }),
           async (s) => {
