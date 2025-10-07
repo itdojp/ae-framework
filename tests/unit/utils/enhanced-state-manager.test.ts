@@ -305,6 +305,20 @@ describe('EnhancedStateManager indices', () => {
     await manager.shutdown();
   });
 
+  it('returns null when key index set is empty', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-state-empty-key-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+    await manager.initialize();
+
+    getKeyIndex(manager).set('inventory', new Set());
+
+    expect(asInternal(manager).findLatestKey('inventory')).toBeNull();
+
+    await manager.shutdown();
+  });
+
   it('returns null when requesting a version for an unseen logical key', async () => {
     const root = await mkdtemp(join(tmpdir(), 'ae-framework-state-'));
     tempRoots.push(root);
@@ -671,6 +685,102 @@ describe('EnhancedStateManager transactions', () => {
 });
 
 describe('EnhancedStateManager helper behaviour', () => {
+  it('preserves buffer instances when importing compressed entries', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-buffer-instance-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+    const timestamp = new Date().toISOString();
+    const buffer = Buffer.from([1, 2, 3]);
+
+    const entry = buildStateEntry('buffer-entry', buffer, {
+      timestamp,
+      version: 1,
+      compressed: true,
+      metadata: {
+        created: timestamp,
+        accessed: timestamp,
+        source: 'legacy-import',
+        size: buffer.length,
+      },
+    });
+
+    const exported = buildExportedState(manager, {
+      metadata: { version: '1.0.0', timestamp },
+      entries: [entry],
+      indices: {
+        keyIndex: { 'buffer-entry': [`buffer-entry_${timestamp}`] },
+        versionIndex: { 'buffer-entry': 1 },
+      },
+    });
+
+    await manager.importState(exported);
+
+    const storage = getStorage(manager);
+    const stored = storage.get(`buffer-entry_${timestamp}`);
+    expect(stored?.data).toBeInstanceOf(Buffer);
+    expect((stored?.data as Buffer).equals(buffer)).toBe(true);
+
+    await manager.shutdown();
+  });
+
+  it('computes deterministic checksums via internal helper', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-checksum-helper-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+    const internal = asInternal(manager);
+    const payload = { id: 'checksum', nested: { value: 42 } };
+
+    const checksum = internal.calculateChecksum(payload);
+    const expected = createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+
+    expect(checksum).toBe(expected);
+    expect(checksum).toHaveLength(64);
+
+    await manager.shutdown();
+  });
+
+  it('preserves malformed buffer metadata objects during importState', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-malformed-buffer-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+    const timestamp = new Date().toISOString();
+
+    const malformed = { type: 'Buffer', data: { nested: true } };
+    const entry = buildStateEntry('malformed-buffer', malformed, {
+      timestamp,
+      version: 1,
+      compressed: true,
+      metadata: {
+        created: timestamp,
+        accessed: timestamp,
+        source: 'legacy-import',
+        size: 0,
+      },
+      checksum: '',
+    });
+
+    const exported = buildExportedState(manager, {
+      metadata: { version: '1.0.0', timestamp },
+      entries: [entry],
+      indices: {
+        keyIndex: { 'malformed-buffer': [`malformed-buffer_${timestamp}`] },
+        versionIndex: { 'malformed-buffer': 1 },
+      },
+    });
+
+    await manager.importState(exported);
+
+    const storage = getStorage(manager);
+    const stored = storage.get(`malformed-buffer_${timestamp}`);
+    expect(Buffer.isBuffer(stored?.data)).toBe(false);
+    expect(stored?.data).toEqual(malformed);
+
+    await manager.shutdown();
+  });
+
   it('revives numeric arrays into buffers and preserves invalid arrays as-is via importState', async () => {
     const root = await mkdtemp(join(tmpdir(), 'ae-framework-revive-'));
     tempRoots.push(root);
@@ -935,6 +1045,97 @@ describe('EnhancedStateManager snapshots and artifacts', () => {
 
 
 describe('EnhancedStateManager persistence and shutdown', () => {
+  it('flushes state and rolls back transactions during shutdown', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-shutdown-rollbacks-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db' });
+    await manager.initialize();
+
+    const stopSpy = vi.spyOn(manager, 'stopGarbageCollection');
+    const persistSpy = vi.spyOn(asInternal(manager), 'persistToDisk').mockResolvedValue();
+    const rollbackSpy = vi.spyOn(manager, 'rollbackTransaction');
+    const shutdownSpy = vi.fn();
+    manager.on('stateManagerShutdown', shutdownSpy);
+
+    const txId = await manager.beginTransaction();
+    await manager.saveSSOT('orders', { id: 'txn-order' }, { transactionId: txId });
+
+    await manager.shutdown();
+
+    expect(stopSpy).toHaveBeenCalled();
+    expect(persistSpy).toHaveBeenCalled();
+    expect(rollbackSpy).toHaveBeenCalledWith(txId);
+    expect(shutdownSpy).toHaveBeenCalledTimes(1);
+
+    persistSpy.mockRestore();
+    stopSpy.mockRestore();
+    rollbackSpy.mockRestore();
+  });
+
+  it('propagates persistToDisk failures and logs the error', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-persist-error-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db' });
+    await manager.initialize();
+
+    const error = new Error('disk full');
+    const exportSpy = vi.spyOn(manager, 'exportState').mockRejectedValueOnce(error);
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await expect(asInternal(manager).persistToDisk()).rejects.toThrow(error);
+    expect(errorSpy).toHaveBeenCalledWith('Failed to persist state to disk:', error);
+
+    exportSpy.mockRestore();
+    errorSpy.mockRestore();
+    await manager.shutdown();
+  });
+
+  it('logs loaded entry count when metadata block is missing', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-persistence-log-'));
+    tempRoots.push(root);
+
+    const timestamp = new Date().toISOString();
+    const fullKey = `inventory_${timestamp}`;
+    const persistence = {
+      version: '1.0.0',
+      entries: [
+        buildStateEntry('inventory', { id: 'legacy', stock: 4 }, {
+          timestamp,
+          version: 2,
+          compressed: false,
+          checksum: 'legacy-checksum',
+          metadata: {
+            size: JSON.stringify({ id: 'legacy', stock: 4 }).length,
+            created: timestamp,
+            accessed: timestamp,
+            source: 'persistence-log-test',
+          },
+        }),
+      ],
+      indices: {
+        keyIndex: { inventory: [fullKey] },
+        versionIndex: { inventory: 2 },
+      },
+    };
+
+    await writeFile(join(root, 'state.db'), JSON.stringify(persistence));
+
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+
+    await manager.initialize();
+
+    expect(logSpy).toHaveBeenCalledWith(
+      expect.stringMatching(/📁 Loaded 1 entries from persistence/),
+    );
+    expect(await manager.loadSSOT('inventory', 2)).toEqual({ id: 'legacy', stock: 4 });
+
+    logSpy.mockRestore();
+    await manager.shutdown();
+  });
+
   it('logs when no persistence data exists during initialization', async () => {
     const root = await mkdtemp(join(tmpdir(), 'ae-framework-state-'));
     tempRoots.push(root);

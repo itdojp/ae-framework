@@ -26,6 +26,10 @@
   - 走行時間: **約 10 分 34 秒**（DisableTypeChecks の warning は継続）
   - ミューテーションスコア: **62.69%**（killed 289 / survived 172 / no-cover 0 / errors 0）
   - 新規テストで importState 経路の型安全性を向上させた結果、`reviveEntryData` の Buffer 判定分岐や `calculateChecksum`／`loadFromPersistence` の例外処理が再びサバイバーとなった。次アクションは Buffer 判定の additional fixtures、checksum 再計算の負例、`shutdown`／`persistToDisk` の例外パスに対するユニットテスト追加。
+- `STRYKER_TIME_LIMIT=420 npx stryker run configs/stryker.enhanced.config.js --mutate src/utils/enhanced-state-manager.ts --concurrency 1`（2025-10-07 10:26 再実行）
+  - 走行時間: **約 11 分 04 秒**
+  - ミューテーションスコア: **64.86%**（killed 299 / survived 162 / no-cover 0 / errors 0）
+  - Buffer/metadata 復元・チェックサム・シャットダウン周りのユニットテストを追加し、`reviveEntryData` の Buffer 分岐や `persistToDisk`/`shutdown` の例外再throw をカバー。残サバイバーは `normalizeImportedEntry` 内のメタデータ補完（source／phase／tags 既存値の尊重）に集中しているため、既存メタデータを保持する回帰テストが次の候補。
 - `./scripts/mutation/run-scoped.sh --quick --mutate src/api/server.ts`（2025-10-02 再実行）は **100.00%**（killed 155 / survived 0 / no-cover 0 / errors 0 / 実行 66s）。
 - `./scripts/mutation/run-scoped.sh --quick`（差分無しのデフォルト quick ラン）は 2025-10-02 10:43 時点で **完走 & score 100.00%**。TokenOptimizer が圧縮で空文字列化した際に元データへフォールバックするよう修正し、先の `seed:1083850253` failure を解消。
   - ただし `STRYKER_TIME_LIMIT=180` で再実行した際には `tests/property/token-optimizer.trim-edge.trailing-comma.boundary.pbt.test.ts` が sandbox で失敗し Dry run が中断。trim-edge 系プロパティの期待値調整が新たな課題。
