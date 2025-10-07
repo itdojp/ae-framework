@@ -773,6 +773,13 @@ export class EnhancedStateManager extends EventEmitter {
         if (Array.isArray(data) && data.every((value: any) => typeof value === 'number')) {
           return Buffer.from(data);
         }
+        if (ArrayBuffer.isView(data)) {
+          const view = data as ArrayBufferView;
+          return Buffer.from(view.buffer, view.byteOffset, view.byteLength);
+        }
+        if (data instanceof ArrayBuffer) {
+          return Buffer.from(new Uint8Array(data));
+        }
       }
     }
     return rawEntry.data as AEIR;
@@ -803,12 +810,24 @@ export class EnhancedStateManager extends EventEmitter {
     let latestKey: string | null = null;
     let latestVersion = -1;
 
+    let pruned = false;
     for (const key of Array.from(keys)) {
       const entry = this.storage.get(key);
-      if (entry && entry.version > latestVersion) {
+      if (!entry) {
+        keys.delete(key);
+        pruned = true;
+        continue;
+      }
+      if (entry.version > latestVersion) {
         latestVersion = entry.version;
         latestKey = key;
       }
+    }
+
+    if (pruned && keys.size === 0) {
+      // Only remove the keyIndex entry when every backing key has been pruned.
+      // This avoids dropping the mapping while valid versions are still cached for the logical key.
+      this.keyIndex.delete(logicalKey);
     }
 
     return latestKey;
