@@ -387,6 +387,9 @@ export class RuntimeGuard {
 
     for (let idx = this.violations.length - 1; idx >= 0; idx -= 1) {
       const violation = this.violations[idx];
+      if (!violation) {
+        continue;
+      }
       if (violation.timestamp < last24Threshold) {
         break;
       }
@@ -414,6 +417,9 @@ export class RuntimeGuard {
     const recent: ViolationStats['recent'] = [];
     for (let idx = this.violations.length - 1; idx >= 0 && recent.length < 10; idx -= 1) {
       const violation = this.violations[idx];
+      if (!violation) {
+        continue;
+      }
       recent.push({
         id: violation.id,
         type: violation.type,
