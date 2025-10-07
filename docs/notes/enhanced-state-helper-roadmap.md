@@ -12,7 +12,7 @@
 1. `tests/resilience` で `buildExportedState` を import し、既存の `as any` を削減する。
 2. 共通 fixture を `tests/fixtures/enhanced-state/*.ts` に切り出し、snapshot 的に再利用できるようにする。
 3. stringify キャッシュ（`enableSerializationCache`）のメトリクスを検証する専用テストを追加して helper の恩恵を定量化する。
-4. Mutation Quick の survivor 対応 Issue (#TODO) と連動させ、helper 展開によるスコア改善をトラッキングする。
+4. Mutation Quick の survivor 対応 Issue と連動させ、helper 展開によるスコア改善をトラッキングする。
 
 ## 次のアクション
 - [ ] `tests/resilience/import-state.*` 系テストに helper を導入する PR を作成
