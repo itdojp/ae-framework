@@ -383,16 +383,21 @@ export class RuntimeGuard {
 
       const endpointKey = violation.endpoint ?? 'unknown';
       byEndpoint.set(endpointKey, (byEndpoint.get(endpointKey) ?? 0) + 1);
+    }
 
-      if (violation.timestamp >= last24Threshold) {
-        last24Total += 1;
-        last24ByType[violation.type] += 1;
-        last24BySeverity[violation.severity] += 1;
-
-        const bucketTime = new Date(Math.floor(violation.timestamp.getTime() / HOUR_IN_MS) * HOUR_IN_MS);
-        const bucketKey = bucketTime.toISOString();
-        hourlyBuckets.set(bucketKey, (hourlyBuckets.get(bucketKey) ?? 0) + 1);
+    for (let idx = this.violations.length - 1; idx >= 0; idx -= 1) {
+      const violation = this.violations[idx];
+      if (violation.timestamp < last24Threshold) {
+        break;
       }
+
+      last24Total += 1;
+      last24ByType[violation.type] += 1;
+      last24BySeverity[violation.severity] += 1;
+
+      const bucketTime = new Date(Math.floor(violation.timestamp.getTime() / HOUR_IN_MS) * HOUR_IN_MS);
+      const bucketKey = bucketTime.toISOString();
+      hourlyBuckets.set(bucketKey, (hourlyBuckets.get(bucketKey) ?? 0) + 1);
     }
 
     const byEndpointObject = Array.from(byEndpoint.entries())
@@ -406,17 +411,17 @@ export class RuntimeGuard {
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([hour, count]) => ({ hour, count }));
 
-    const recent = this.violations
-      .slice()
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-      .slice(0, 10)
-      .map((violation) => ({
+    const recent: ViolationStats['recent'] = [];
+    for (let idx = this.violations.length - 1; idx >= 0 && recent.length < 10; idx -= 1) {
+      const violation = this.violations[idx];
+      recent.push({
         id: violation.id,
         type: violation.type,
         severity: violation.severity,
         endpoint: violation.endpoint ?? null,
         timestamp: violation.timestamp.toISOString(),
-      }));
+      });
+    }
 
     return {
       total: this.violations.length,
