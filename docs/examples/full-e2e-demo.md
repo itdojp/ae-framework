@@ -90,6 +90,7 @@ make test-api-fuzz
 6. `pnpm run contracts:verify`
 7. `make test-api-fuzz`
 8. `pnpm run mbt:cegis`
+9. `pnpm pipelines:trace --input samples/trace/kvonce-sample.ndjson --skip-replay`
 
 全て完了したら、`reports/` / `artifacts/` の差分を確認し、必要に応じて Issue / PR に最新状況をコメントしてください。
 
@@ -114,6 +115,7 @@ Verify Lite を起点に Pact / API fuzz / Mutation quick を順番に実行し�
   pnpm pipelines:pact --contract=contracts/reservations-consumer.json
   pnpm pipelines:api-fuzz --spec tests/cli/fuzz.spec.ts
   pnpm pipelines:mutation:quick -- --mutate src/utils/enhanced-state-manager.ts
+  pnpm pipelines:trace --input samples/trace/kvonce-sample.ndjson
   ```
 
 各ステップのレポート:

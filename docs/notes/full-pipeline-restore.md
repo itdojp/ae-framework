@@ -40,6 +40,7 @@
 - `pnpm pipelines:api-fuzz`: Schemathesis ベースの API fuzz を pnpm コマンド化し、Podman/Docker なしでもローカルで再現可能にします。
 - `pnpm pipelines:mutation:quick` / `pipelines:mutation:enhanced`: mutation quick ランを pnpm から直接呼び出し、`--mutate` オプションを `--` 以降で渡せるようにしました。
 - `pnpm pipelines:full`: verify:lite → Pact → API fuzz → mutation quick を順次呼び出す統合ドライバー。`--skip=pact` や `--mutation-target=src/utils/enhanced-state-manager.ts` で柔軟に制御できます。
+- `pnpm pipelines:trace`: KvOnce trace を projector → validator → TLC リプレイまで流し、`hermetic-reports/trace/` に成果物を集約します。
 
 ### CI 組み込みメモ (2025-10-09)
 - `scripts/pipelines/run-full-pipeline.mjs` はステップごとの開始・終了ログを出力し、Verify Lite の Step Summary に転記しやすい形式を維持します。

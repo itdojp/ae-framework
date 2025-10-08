@@ -28,6 +28,7 @@
    - Envelope の `metadata` → Tempo span attributes のマッピング表を docs に追記。
 
 ## 推奨される次手順
+- `pnpm pipelines:trace --input samples/trace/kvonce-sample.ndjson` で projector → validator → TLC の最小フローを一括実行し、`hermetic-reports/trace/` 以下にレポートを生成する。
 - Issue #1011 を編集し、本ドキュメントの Step3 作業キューをチェックリスト化する。
 - Stage3 実装タスクを小さな PR 単位（Projector, Validator, CI, Dashboard）に分割。
 - Verify Lite ワークフローに `pipelines:full` の mutation quick 結果を Step Summary として添付。
