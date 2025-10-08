@@ -48,90 +48,73 @@ async function main() {
           if (openapiPath.endsWith('.json')) {
             try {
               const oas = JSON.parse(txt);
-              const schemas = oas.components?.schemas || {};
-              const names = Object.keys(schemas);
+              const schemas = oas.components?.schemas ?? {};
+              const schemaNames = Object.keys(schemas);
               const seen = new Set<string>();
               const synth = (schema: any, depth = 0): any => {
                 if (!schema || depth > 5) return {};
-                if (schema.$ref && typeof schema.$ref === 'string') {
-                  const ref = schema.$ref.split('/').pop() as string;
+                if (typeof schema.$ref === 'string') {
+                  const ref = schema.$ref.split('/').pop() as string | undefined;
                   if (ref && schemas[ref] && !seen.has(ref)) {
                     seen.add(ref);
-                    const v = synth(schemas[ref], depth + 1);
+                    const resolved = synth(schemas[ref], depth + 1);
                     seen.delete(ref);
-                    return v;
-              if (names.length > 0) {
-                const first = schemas[names[0]] as any;
-                const sample: any = {};
-                if (first && first.type === 'object' && first.properties) {
-                  const req: string[] = Array.isArray(first.required) ? first.required : [];
-                  for (const [k, vAny] of Object.entries<any>(first.properties)) {
-                    const v = vAny as any;
-                    if (v.default !== undefined) { sample[k] = v.default; continue; }
-                    if (Array.isArray(v.enum) && v.enum.length > 0) { sample[k] = v.enum[0]; continue; }
-                    const t = v.type || 'string';
-                    switch (t) {
-                      case 'integer': sample[k] = 0; break;
-                      case 'number': sample[k] = 0; break;
-                      case 'boolean': sample[k] = false; break;
-                      case 'array': sample[k] = Array.isArray(v.items) ? [] : []; break;
-                      case 'object': sample[k] = {}; break;
-                      default: sample[k] = ''; break;
-                    }
-                    // Mark required fields explicitly even if default is empty
-                    if (req.includes(k) && (sample[k] === '' || sample[k] === null || sample[k] === undefined)) {
-                      sample[k] = sample[k] === '' ? 'REQUIRED' : sample[k];
-                    }
+                    return resolved;
                   }
                 }
                 if (schema.default !== undefined) return schema.default;
                 if (Array.isArray(schema.enum) && schema.enum.length > 0) return schema.enum[0];
-                const t = schema.type || (schema.properties ? 'object' : (schema.items ? 'array' : 'string'));
-                switch (t) {
+                const inferredType = schema.type || (schema.properties ? 'object' : (schema.items ? 'array' : 'string'));
+                switch (inferredType) {
                   case 'integer':
-                  case 'number': return 0;
-                  case 'boolean': return false;
+                  case 'number':
+                    return 0;
+                  case 'boolean':
+                    return false;
                   case 'array': {
                     const item = schema.items ? synth(schema.items, depth + 1) : null;
                     return item === null ? [] : [item];
                   }
                   case 'object': {
-                    const obj: any = {};
-                    const req: string[] = Array.isArray(schema.required) ? schema.required : [];
-                    for (const [k, v] of Object.entries<any>(schema.properties || {})) {
-                      obj[k] = synth(v, depth + 1);
-                      if (req.includes(k) && (obj[k] === '' || obj[k] === null || obj[k] === undefined)) {
-                        obj[k] = obj[k] === '' ? 'REQUIRED' : obj[k];
+                    const obj: Record<string, unknown> = {};
+                    const requiredKeys: string[] = Array.isArray(schema.required) ? schema.required : [];
+                    const properties = schema.properties ? Object.entries<any>(schema.properties) : [];
+                    for (const [key, value] of properties) {
+                      obj[key] = synth(value, depth + 1);
+                      if (requiredKeys.includes(key) && (obj[key] === '' || obj[key] === null || obj[key] === undefined)) {
+                        obj[key] = obj[key] === '' ? 'REQUIRED' : obj[key];
                       }
                     }
                     return obj;
                   }
-                  default: return '';
+                  default:
+                    return '';
                 }
               };
-              // Prefer requestBody of the first operation if available
-              const pathKeys: string[] = oas.paths ? Object.keys(oas.paths) : [];
-              let derived = false;
-              for (const pk of pathKeys) {
-                const ops = oas.paths[pk]; if (!ops) continue;
-                for (const m of Object.keys(ops)) {
-                  const op = (ops as any)[m];
-                  const rb = op?.requestBody?.content?.['application/json']?.schema;
-                  if (rb) { input = synth(rb); derived = true; break; }
-                }
-                if (derived) break;
-              }
-              if (!derived) {
-                if (names.length > 0) {
-                  input = synth((schemas as any)[names[0]]);
-                } else if (pathKeys.length > 0) {
-                  input = { path: pathKeys[0] };
-                } else {
-                  // Fallback: pick first path+operation pair when available
-                  const paths = oas.paths ? Object.keys(oas.paths) : [];
-                  if (paths.length > 0) {
-                    input = { path: paths[0] };
+              const deriveFromRequestBodies = (): unknown => {
+                const paths = oas.paths ? Object.keys(oas.paths) : [];
+                for (const route of paths) {
+                  const operations = oas.paths?.[route];
+                  if (!operations) continue;
+                  for (const method of Object.keys(operations)) {
+                    const operation = (operations as Record<string, any>)[method];
+                    const requestSchema = operation?.requestBody?.content?.['application/json']?.schema;
+                    if (requestSchema) {
+                      return synth(requestSchema);
+                    }
                   }
+                }
+                return undefined;
+              };
+              const derivedFromRequests = deriveFromRequestBodies();
+              if (derivedFromRequests !== undefined) {
+                input = derivedFromRequests;
+              } else if (schemaNames.length > 0) {
+                input = synth(schemas[schemaNames[0]]);
+              } else {
+                const pathKeys: string[] = oas.paths ? Object.keys(oas.paths) : [];
+                if (pathKeys.length > 0) {
+                  input = { path: pathKeys[0] };
                 }
               }
             } catch (inferenceError) {
