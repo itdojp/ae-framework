@@ -27,6 +27,8 @@
 ## Projector / Validator
 - `scripts/trace/projector-kvonce.mjs`
   - NDJSON を読み込み、キー単位の成功回数・再試行回数・失敗理由一覧、直近の `value` を集計します。
+  - `stats` にイベント種別の件数・ユニークキー数・成功率などを格納し、Envelope から簡易チェックが可能です。
+  - `--state-output hermetic-reports/trace/projected/kvonce-state-sequence.json` を指定すると、イベントごとの射影状態（`store[key]` の `written` / `value` / `retries` など）を別ファイルとして書き出します。
   - `retryContexts` / `successContexts` / `failureContexts` として、元イベントの `context` を配列で保持します。
 - `scripts/trace/validate-kvonce.mjs`
   - KvOnce の安全性（1回書き込み・再試行上限）を確認し、`kvonce-validation.json` に集計結果を出力します。

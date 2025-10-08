@@ -16,7 +16,7 @@
 1. Projector v1
    - NDJSON → spec state 射影。
    - スキーマ: `docs/trace/kvonce-trace-schema.md`
-   - 出力: `hermetic-reports/trace/projected/*.json`
+   - 出力: `hermetic-reports/trace/kvonce-projection.json` / `hermetic-reports/trace/projected/kvonce-state-sequence.json`
 2. Validator v1
    - Projector 出力を TLC/Apalache に投入し、不変条件と遷移差分を比較。
    - CLI: `pnpm verify:conformance --from-envelope`

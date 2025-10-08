@@ -80,6 +80,8 @@ mkdir -p "${OUTPUT_DIR}"
 NDJSON_PATH="${OUTPUT_DIR}/kvonce-events.ndjson"
 PROJECTION_PATH="${OUTPUT_DIR}/kvonce-projection.json"
 VALIDATION_PATH="${OUTPUT_DIR}/kvonce-validation.json"
+PROJECTED_DIR="${OUTPUT_DIR}/projected"
+STATE_SEQUENCE_PATH="${PROJECTED_DIR}/kvonce-state-sequence.json"
 
 echo "[kvonce-conformance] input=${INPUT} format=${FORMAT} output_dir=${OUTPUT_DIR}"
 
@@ -121,7 +123,8 @@ else
   exit 1
 fi
 
-node "${SCRIPT_DIR}/projector-kvonce.mjs" --input "${SOURCE_NDJSON}" --output "${PROJECTION_PATH}"
+mkdir -p "${PROJECTED_DIR}"
+node "${SCRIPT_DIR}/projector-kvonce.mjs" --input "${SOURCE_NDJSON}" --output "${PROJECTION_PATH}" --state-output "${STATE_SEQUENCE_PATH}"
 node "${SCRIPT_DIR}/validate-kvonce.mjs" --input "${PROJECTION_PATH}" --output "${VALIDATION_PATH}"
 
 if command -v jq >/dev/null 2>&1; then
