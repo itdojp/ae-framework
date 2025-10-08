@@ -137,6 +137,7 @@ Issue: #1011 / #1012 / #1036 / #1038
 3. `REPORT_ENVELOPE_TEMPO_LINK_TEMPLATE` を設定すると `tempoLinks[]` に Tempo Explore への URL が追加され、Step Summary やダッシュボードから対象 trace をすぐ開ける（例: `https://tempo.example.com/explore?traceId={traceId}`）。
 4. Trace 系ジョブでは、Collector から取得した payload のメタデータ (`kvonce-payload-metadata.json`) を artifacts 配列に追加し、`scripts/trace/build-kvonce-envelope-summary.mjs` で集計したサマリを `scripts/trace/create-report-envelope.mjs` でラップする。
 5. Dashboard / Tempo 連携は Envelope を単位としてインジェストし、必要に応じて `traceIds` から関連 span を引き直す。
+6. S3 などに Envelope を保存する場合は `scripts/trace/upload-envelope.mjs`（AWS CLI 要）を利用し、`REPORT_ENVELOPE_OUTPUT` を指すファイルを `REPORT_ENVELOPE_S3_BUCKET` / `REPORT_ENVELOPE_S3_KEY` でアップロードする。
 
 ## OTLP Attribute Mapping
 | Envelope Field | OTLP Span Attribute | 説明 |
