@@ -14,7 +14,7 @@
 | `make test-property` |✅| `tests/property` 用 Vitest プロジェクトを新設し、Reservation スキーマを Fast-check で検証。 |
 | `make test-mbt` |✅| `tests/mbt/run.js` を復元し、モデルベーステストで在庫遷移ロジックを確認。 |
 | `make test-mutation` | ⚠️ | 限定スコープ（`src/api/server.ts`, `src/utils/enhanced-state-manager.ts`, `src/domain/**`）で約 35 分。Quick モードは API server **100%** / EnhancedStateManager **58.33%**（survived 102 / no-cover 23 / errors 49）。`versionIndex` 更新・`stateImported` イベント・`findKeyByVersion` ガードのサバイバーが残課題。
-| `make test-contract` |✅| `scripts/contracts/verify-reservation-contract.ts` が Fastify プロバイダを起動しつつ Pact CLI で契約群を検証。複数 JSON（`PACT_CONTRACTS` で絞り込み可能）に対応。 |
+| `make test-contract` |✅| `scripts/pipelines/run-pact-contracts.mjs` が Fastify プロバイダを起動しつつ Pact CLI で契約群を検証。複数 JSON（`PACT_CONTRACTS` で絞り込み可能）に対応。 |
 | `make test-api-fuzz` |✅| Podman + Schemathesis コンテナで実行成功。Fastify スタブを OpenAPI と揃えた在庫初期化／検証に刷新し、警告ゼロで完走。 |
 | `make policy-test` |✅| `scripts/policy/ensure-opa.sh` で OPA v1.9.0 をローカルキャッシュし、Rego テスト 3 件が通過。 |
 | `make sbom` |✅| `syft scan dir:.` で CycloneDX JSON を生成し、`security/sbom/sbom.json` に保存（Makefile でキャッシュ済み）。 |
@@ -30,10 +30,22 @@
 - `specs/bdd/features/reservations.feature` / `specs/bdd/steps/reservations.steps.js`: Fastify を介した受け入れテストを実現。
 - `tests/property/*`・`tests/mbt/run.js`: Property / MBT 検証の再構築。
 - `tsconfig.stryker.json`・`stryker.config.js`・`vitest.stryker.config.ts`: Stryker + TypeScript Checker を限定構成で再有効化。
-- `scripts/contracts/verify-reservation-contract.ts`・`contracts/reservations-consumer.json`: Pact CLI によるローカル契約検証フロー。
+- `scripts/pipelines/run-pact-contracts.mjs`・`contracts/reservations-consumer.json`: Pact CLI によるローカル契約検証フロー。
 - `docs/infra/container-runtime.md`: Podman / Docker いずれにも対応するセットアップガイド。
 
 ## Week2 追加メモ（2025-Week2）
+
+### PnPM コマンド整備 (2025-10-09)
+- `pnpm pipelines:pact`: Pact Provider Verifier を pnpm 単体で実行し、`scripts/pipelines/run-pact-contracts.mjs` を通じて複数契約を検証します。
+- `pnpm pipelines:api-fuzz`: Schemathesis ベースの API fuzz を pnpm コマンド化し、Podman/Docker なしでもローカルで再現可能にします。
+- `pnpm pipelines:mutation:quick` / `pipelines:mutation:enhanced`: mutation quick ランを pnpm から直接呼び出し、`--mutate` オプションを `--` 以降で渡せるようにしました。
+- `pnpm pipelines:full`: verify:lite → Pact → API fuzz → mutation quick を順次呼び出す統合ドライバー。`--skip=pact` や `--mutation-target=src/utils/enhanced-state-manager.ts` で柔軟に制御できます。
+
+### CI 組み込みメモ (2025-10-09)
+- `scripts/pipelines/run-full-pipeline.mjs` はステップごとの開始・終了ログを出力し、Verify Lite の Step Summary に転記しやすい形式を維持します。
+- GitHub Actions では `pnpm pipelines:full --skip=api-fuzz` といった形でジョブを段階的に分割し、負荷の高いステップはラベルベースで opt-in する運用を想定しています。
+- mutation quick は `pipelines:mutation:enhanced` を使うことで EnhancedStateManager を 10〜12 分で再計測でき、Week3 以降のレポート復旧要件を満たします。
+
 
 ## Week3 完了見通し
 - Mutation quick / Verify Lite auto-diff 連携は完了。残る Week3 課題は mutation の残存 CompileError 監視と Verify Lite 拡張フェーズ（lint/spec/property/MBT/Pact）の本格導入。
@@ -57,6 +69,13 @@
 4. **コンテナ運用テストの拡張** – `PODMAN_COMPOSE_PROVIDER=podman-compose make test-docker-all` は順次成功。flake detection レポートの自動集計と安定性モニタリングを継続。
 5. **Policy / SBOM の CI 組み込み** – ローカルでは OPA/ Syft が通るようになったので、CI キャッシュ・成果物の保管/署名ポリシーを整備する。
 6. **End-to-End サンプルの拡張** – Property / MBT / BDD / Pact を単一シナリオ上で連携させ、フルパイプラインのデモを整備する。（進捗: shared fixture 実装済 / Pact 複数契約追加済）
+
+## Week5 プラン草案 (2025-10-09)
+- Verify Lite main job: `pnpm verify:lite` + mutation summary (必須)
+- Optional heavy gate: `pnpm pipelines:full --skip=api-fuzz` (nightly) / `--skip=verify:lite` (mutation focused)
+- Dashboard 集約: Tempo / Grafana ノートを `docs/trace/tempo-dashboard-notes.md` へ移行し、Step3 完了後に CI export を紐付け
+- Artifact 整理: Pact / API fuzz / Mutation / Projector / Validator の結果を `artifacts/full-pipeline/<step>/` に格納
+- 成果報告: Week5 終了時に #997 本体へダイジェスト（Verify Lite サマリ + Mutation トレンド + Trace dashboard スクリーンショット）を投稿
 
 ## 次のアクション候補
 - `docs/infra/container-runtime.md` を参照し、Podman もしくは Docker Compose を稼働させた上で `make test-docker-unit` / `make test-docker-all` の依存コンテナとネットワークを整備する。

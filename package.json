@@ -309,7 +309,12 @@
     "test:replay:relaxed": "REPLAY_DISABLE=allocated_le_onhand node scripts/testing/replay-runner.mjs",
     "artifacts:aggregate": "node scripts/adapters/aggregate-artifacts.mjs",
     "lint:actions": "bash scripts/ci/actionlint.sh",
-    "generate:artifacts:preview": "bash scripts/ci/run-generate-artifacts-preview.sh"
+    "generate:artifacts:preview": "bash scripts/ci/run-generate-artifacts-preview.sh",
+    "pipelines:api-fuzz": "node scripts/pipelines/run-api-fuzz.mjs",
+    "pipelines:mutation:quick": "bash scripts/mutation/run-scoped.sh --quick",
+    "pipelines:mutation:enhanced": "bash scripts/mutation/run-scoped.sh --quick --mutate src/utils/enhanced-state-manager.ts",
+    "pipelines:pact": "node scripts/pipelines/run-pact-contracts.mjs",
+    "pipelines:full": "node scripts/pipelines/run-full-pipeline.mjs"
   },
   "dependencies": {
     "@ae-framework/spec-compiler": "file:./packages/spec-compiler",

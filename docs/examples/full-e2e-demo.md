@@ -96,3 +96,31 @@ make test-api-fuzz
 ---
 
 この手順に沿って実施し、成果物をリンク付きで Issue #999 / #1001 / #1002 / #1003 へコメントすれば、Week2〜Week4 トラッカーの「エンドツーエンドデモ」要件を満たせます。
+
+## 7. pnpm pipelines コマンドの活用 (2025-10-09)
+
+Verify Lite を起点に Pact / API fuzz / Mutation quick を順番に実行したい場合は、ラッパーを利用すると便利です。
+
+- **Verify Lite → Pact → API fuzz → Mutation quick**
+  ```bash
+  pnpm pipelines:full --mutation-target=src/utils/enhanced-state-manager.ts
+  ```
+- 重いステップをスキップしたい場合:
+  ```bash
+  pnpm pipelines:full --skip=api-fuzz,mutation
+  ```
+- 個別ステップを直接呼び出す場合:
+  ```bash
+  pnpm pipelines:pact --contract=contracts/reservations-consumer.json
+  pnpm pipelines:api-fuzz --spec tests/cli/fuzz.spec.ts
+  pnpm pipelines:mutation:quick -- --mutate src/utils/enhanced-state-manager.ts
+  ```
+
+各ステップのレポート:
+- Verify Lite: `reports/verify-lite/`
+- Pact: `reports/contracts/`
+- API fuzz: `reports/api-fuzz/`
+- Mutation quick: `reports/mutation/`
+- BDD/MBT: `reports/bdd/`, `reports/mbt/`
+
+CI では Verify Lite を常設ジョブとし、Pact/API fuzz/Mutation quick はラベル `run-full-pipeline` で opt-in させる運用を想定しています。
