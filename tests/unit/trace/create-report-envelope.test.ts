@@ -92,4 +92,37 @@ describe('create-report-envelope CLI', () => {
     });
     expect(envelope.notes).toEqual(['note-one', 'note-two']);
   });
+
+  it('derives trace ids from the summary when env is empty', async () => {
+    const summaryPath = join(workdir, 'summary.json');
+    const outputPath = join(workdir, 'envelope.json');
+
+    const summary = {
+      schemaVersion: '1.0.0',
+      trace: {
+        status: 'valid',
+        traceIds: ['trace-a', 'trace-b']
+      }
+    };
+
+    await writeFile(summaryPath, JSON.stringify(summary));
+
+    const result = spawnSync(process.execPath, [scriptPath, summaryPath, outputPath], {
+      cwd: workdir,
+      env: {
+        ...process.env,
+        REPORT_ENVELOPE_SOURCE: 'trace-replay',
+        GITHUB_RUN_ID: '123',
+        GITHUB_WORKFLOW: 'trace-workflow',
+        GITHUB_SHA: 'abcdef0',
+        GITHUB_REF: 'refs/heads/test-branch'
+      }
+    });
+
+    expect(result.status).toBe(0);
+
+    const envelope = JSON.parse(await readFile(outputPath, 'utf8'));
+    expect(envelope.correlation.traceIds).toEqual(['trace-a', 'trace-b']);
+    expect(envelope.summary.trace.traceIds).toEqual(['trace-a', 'trace-b']);
+  });
 });

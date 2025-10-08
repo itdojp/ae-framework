@@ -257,6 +257,28 @@ async function runTracePipeline({ tracePath, format, outputDir, skipReplay }) {
     } else {
       summary.replay = { status: 'skipped' };
     }
+
+    const traceIdSet = new Set();
+    try {
+      const ndjsonContent = fs.readFileSync(ensured.ndjsonPath, 'utf8');
+      for (const line of ndjsonContent.split(/\r?\n/)) {
+        if (!line.trim()) continue;
+        try {
+          const event = JSON.parse(line);
+          const value = event && typeof event.traceId === 'string' ? event.traceId.trim() : '';
+          if (value) traceIdSet.add(value);
+        } catch (parseError) {
+          // ignore malformed line
+        }
+      }
+    } catch (readError) {
+      summary.traceReadError = readError.message;
+    }
+
+    if (traceIdSet.size > 0) {
+      summary.trace = summary.trace ?? {};
+      summary.trace.traceIds = Array.from(traceIdSet);
+    }
   } catch (error) {
     summary.status = 'error';
     summary.error = error.message;
