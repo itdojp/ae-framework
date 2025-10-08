@@ -1,4 +1,4 @@
-export const renderVerifyLiteSummary = (summary) => {
+export const renderVerifyLiteSummary = (summary, options = {}) => {
   if (!summary || typeof summary !== 'object') {
     throw new Error('Invalid summary payload');
   }
@@ -93,9 +93,24 @@ export const renderVerifyLiteSummary = (summary) => {
 
   const artifactLines = [];
   if (Object.keys(artifacts).length > 0) {
+    const { artifactsUrl } = options;
+    const formatArtifact = (value) => {
+      if (!value) return 'n/a';
+      if (/^https?:\/\//i.test(value)) {
+        return `[${value}](${value})`;
+      }
+      if (artifactsUrl) {
+        return `\`${value}\` ([Artifacts](${artifactsUrl}))`;
+      }
+      return value;
+    };
+
     artifactLines.push('\nArtifacts:');
     for (const [key, value] of Object.entries(artifacts)) {
-      artifactLines.push(`- ${key}: ${value ?? 'n/a'}`);
+      artifactLines.push(`- ${key}: ${formatArtifact(value)}`);
+    }
+    if (artifactsUrl) {
+      artifactLines.push(`- GitHub Artifacts: [Open](${artifactsUrl})`);
     }
   }
 

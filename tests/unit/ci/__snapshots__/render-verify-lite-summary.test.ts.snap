@@ -41,8 +41,9 @@ Schema Version: 1.0.0
 
 
 Artifacts:
-- lintSummary: verify-lite-lint-summary.json
-- lintLog: verify-lite-lint.log
-- mutationSummary: mutation-summary.md
-- mutationSurvivors: reports/mutation/survivors.json"
+- lintSummary: \`verify-lite-lint-summary.json\` ([Artifacts](https://example.com/artifacts))
+- lintLog: \`verify-lite-lint.log\` ([Artifacts](https://example.com/artifacts))
+- mutationSummary: \`mutation-summary.md\` ([Artifacts](https://example.com/artifacts))
+- mutationSurvivors: \`reports/mutation/survivors.json\` ([Artifacts](https://example.com/artifacts))
+- GitHub Artifacts: [Open](https://example.com/artifacts)"
 `;

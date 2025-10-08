@@ -28,7 +28,7 @@ describe('renderVerifyLiteSummary', () => {
   };
 
   it('renders markdown summary with schema version and flags', () => {
-    const result = renderVerifyLiteSummary(baseSummary);
+    const result = renderVerifyLiteSummary(baseSummary, { artifactsUrl: 'https://example.com/artifacts' });
     expect(result).toMatchSnapshot();
   });
 
