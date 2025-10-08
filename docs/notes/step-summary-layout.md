@@ -22,6 +22,15 @@ Issue refs: #1097 / #1096 / #1038
 - **Verify Lite セクション**: `pipelines:full` で `reports/verify-lite/verify-lite-run-summary.json` を Envelope に詰めたうえで、lint / mutation quick / property の結果を `summary.steps.*` から抜粋する。
 - **Trace セクション**: `verify:conformance` または `verify:conformance --from-envelope` の `summary.trace` を描画し、Projection/Validation/TLC の結果と issues 数を列挙する。`REPORT_ENVELOPE_TEMPO_LINK_TEMPLATE` を設定しておくと Tempo Explore へのリンクも自動生成できる。
   - `traceIds` や `artifacts` 情報（projection/validation/state sequence/replay）を付与しておくと、Step Summary から GitHub Artifacts へジャンプできる。
+  - Multi-domain 対応時は `summary.trace.domains[]` を検出し、下記フォーマットでドメインごとの結果を箇条書きする：
+
+```
+  - domains:
+    - inventory: status=valid issues=0 (traceIds: trace-inventory-1)
+    - reservation: status=invalid issues=2 (traceIds: trace-resv-8)
+```
+
+  - Tempo Links は `summary.trace.domains[].tempoLinks` および `summary.tempoLinks` をマージし、Step Summary の末尾にリンク一覧を表示する。
 
 ## 実装メモ (2025-10-09)
 - `scripts/ci/step-summary.mjs` が `appendSection` などの共通ユーティリティを提供し、`verify-conformance`・`pipelines:trace`・CI スクリプトから同じ Markdown フォーマットで出力できる。
