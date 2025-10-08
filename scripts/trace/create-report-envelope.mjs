@@ -73,7 +73,6 @@ const runId = process.env.GITHUB_RUN_ID ?? `local-${Date.now()}`;
 const commit = process.env.GITHUB_SHA ?? '0000000';
 
 const traceIdTemplate = process.env.REPORT_ENVELOPE_TEMPO_LINK_TEMPLATE;
-
 const derivedTraceIds = Array.isArray(summary?.trace?.traceIds)
   ? summary.trace.traceIds.map((value) => (typeof value === 'string' ? value.trim() : '')).filter(Boolean)
   : [];
@@ -85,7 +84,6 @@ for (const raw of traceIdsEnv.split(',')) {
   if (value) traceIdSet.add(value);
 }
 const traceIds = Array.from(traceIdSet);
-
 const tempoLinks = Array.from(new Set([
   ...(Array.isArray(summary?.tempoLinks) ? summary.tempoLinks : []),
   ...buildTempoLinks(traceIds, traceIdTemplate),
