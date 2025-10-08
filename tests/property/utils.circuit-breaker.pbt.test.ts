@@ -23,8 +23,15 @@ describe('PBT: CircuitBreaker basic invariants', () => {
         } else {
           try {
             await cb.execute(async () => { throw new Error('x'); });
-          } catch {
-            // ignore errors; circuit may transition to OPEN
+          } catch (err) {
+            if (err instanceof CircuitBreakerOpenError) {
+              continue;
+            }
+            if (err instanceof Error && err.message === 'x') {
+              // expected failure path
+            } else {
+              throw err;
+            }
           }
         }
         const stats = cb.getStats();
@@ -42,4 +49,3 @@ describe('PBT: CircuitBreaker basic invariants', () => {
     await expect(cb.execute(async () => 1)).rejects.toBeInstanceOf(CircuitBreakerOpenError);
   });
 });
-

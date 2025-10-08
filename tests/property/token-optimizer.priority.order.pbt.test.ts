@@ -16,12 +16,22 @@ describe('PBT: TokenOptimizer preservePriority ordering', () => {
           { product, standards, architecture },
           { compressionLevel: 'low', enableCaching: false }
         );
-        const idxProd = compressed.indexOf('## PRODUCT');
-        const idxArch = compressed.indexOf('## ARCHITECTURE');
-        const idxStd  = compressed.indexOf('## STANDARDS');
-        expect(idxProd).toBeGreaterThanOrEqual(0);
-        expect(idxArch).toBeGreaterThan(idxProd);
-        expect(idxStd).toBeGreaterThan(idxArch);
+        const sections = [
+          { key: 'product', heading: '## PRODUCT', index: compressed.indexOf('## PRODUCT'), source: product },
+          { key: 'architecture', heading: '## ARCHITECTURE', index: compressed.indexOf('## ARCHITECTURE'), source: architecture },
+          { key: 'standards', heading: '## STANDARDS', index: compressed.indexOf('## STANDARDS'), source: standards }
+        ];
+
+        const present = sections.filter(section => section.index >= 0);
+        // 少なくとも 1 セクションは出力される想定（空入力時は placeholder が挿入される）
+        expect(present.length).toBeGreaterThan(0);
+        for (let i = 1; i < present.length; i += 1) {
+          expect(present[i].index).toBeGreaterThan(present[i - 1].index);
+        }
+
+        for (const missing of sections.filter(section => section.index < 0)) {
+          expect((missing.source ?? '').trim().length).toBe(0);
+        }
       }
     ), { numRuns: 10 });
   });
