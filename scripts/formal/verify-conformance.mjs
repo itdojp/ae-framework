@@ -73,6 +73,11 @@ function parseArgs(argv) {
       args.traceOutput = arg.slice(15);
     } else if (arg === '--trace-skip-replay' || arg === '--trace-no-replay') {
       args.traceSkipReplay = true;
+    } else if ((arg === '--from-envelope' || arg === '--from') && next) {
+      args.fromEnvelope = next;
+      i += 1;
+    } else if (arg.startsWith('--from-envelope=')) {
+      args.fromEnvelope = arg.slice(16);
     } else {
       args._.push(arg);
     }
@@ -87,6 +92,7 @@ Options:
   -i, --in <file>                Input events JSON (default: samples/conformance/sample-traces.json)
   --schema <file>                Trace schema YAML (default: observability/trace-schema.yaml)
   --out <file>                   Output summary JSON (default: hermetic-reports/conformance/summary.json)
+  --from-envelope <file>         Load summary / trace metadata from report envelope JSON
   --disable-invariants <list>    Comma-separated invariants to disable (allocated_le_onhand,onhand_min)
   --onhand-min <number>          Minimum onHand for onhand_min invariant (default: 0)
   --trace <file>                 KvOnce trace (NDJSON or OTLP JSON) to project/validate
@@ -261,9 +267,9 @@ async function runTracePipeline({ tracePath, format, outputDir, skipReplay }) {
 
 function appendStepSummary(summary) {
   const lines = [
-    `- events: ${summary.events}`,
-    `- schema errors: ${summary.schemaErrors}`,
-    `- invariant violations: ${summary.invariantViolations}`,
+    `- events: ${summary.events ?? 'n/a'}`,
+    `- schema errors: ${summary.schemaErrors ?? 'n/a'}`,
+    `- invariant violations: ${summary.invariantViolations ?? 'n/a'}`,
   ];
   if (summary.trace) {
     lines.push('- trace:');
@@ -287,30 +293,52 @@ async function main() {
 
   const schemaPath = path.resolve(repoRoot, args.schema || path.join('observability', 'trace-schema.yaml'));
   const dataPath = path.resolve(repoRoot, args.in || path.join('samples', 'conformance', 'sample-traces.json'));
+  const envelopePath = args.fromEnvelope ? path.resolve(repoRoot, args.fromEnvelope) : null;
   const outFile = path.resolve(repoRoot, args.out || path.join('hermetic-reports', 'conformance', 'summary.json'));
 
-  const haveSchema = fs.existsSync(schemaPath);
-  const haveData = fs.existsSync(dataPath);
-  if (!haveSchema) {
-    console.error(`Schema not found: ${schemaPath}`);
-  }
-  if (!haveData) {
-    console.error(`Data not found: ${dataPath}`);
+  if (envelopePath && !fs.existsSync(envelopePath)) {
+    console.error(`Envelope not found: ${envelopePath}`);
+    process.exit(1);
   }
 
-  const disableList = (args.disable || '').split(',').map((s) => s.trim()).filter(Boolean);
-  const disableSet = new Set(disableList);
-  const onhandMin = Number.isFinite(Number(args.onhandMin)) ? Number(args.onhandMin) : 0;
-  const missingNotes = [];
-  if (!haveSchema) missingNotes.push('schema missing');
-  if (!haveData) missingNotes.push('input data missing');
+  if (envelopePath && (args.trace || args.traceFormat || args.traceOutput || args.traceSkipReplay)) {
+    console.warn('[verify:conformance] ignoring --trace options because --from-envelope was provided');
+  }
 
   let summary;
 
-  if (haveSchema && haveData) {
-    const schema = readYaml(schemaPath);
-    const data = readJson(dataPath);
-    const events = Array.isArray(data) ? data : [data];
+  if (envelopePath) {
+    const envelope = readJson(envelopePath);
+    if (!envelope || typeof envelope !== 'object' || typeof envelope.summary !== 'object') {
+      throw new Error(`Envelope ${envelopePath} does not contain summary field`);
+    }
+    summary = { ...envelope.summary };
+    summary.envelopePath = path.relative(repoRoot, envelopePath);
+    summary.timestamp = summary.timestamp ?? new Date().toISOString();
+    if (!summary.input) {
+      summary.input = '(from envelope)';
+    }
+  } else {
+    const haveSchema = fs.existsSync(schemaPath);
+    const haveData = fs.existsSync(dataPath);
+    if (!haveSchema) {
+      console.error(`Schema not found: ${schemaPath}`);
+    }
+    if (!haveData) {
+      console.error(`Data not found: ${dataPath}`);
+    }
+
+    const disableList = (args.disable || '').split(',').map((s) => s.trim()).filter(Boolean);
+    const disableSet = new Set(disableList);
+    const onhandMin = Number.isFinite(Number(args.onhandMin)) ? Number(args.onhandMin) : 0;
+    const missingNotes = [];
+    if (!haveSchema) missingNotes.push('schema missing');
+    if (!haveData) missingNotes.push('input data missing');
+
+    if (haveSchema && haveData) {
+      const schema = readYaml(schemaPath);
+      const data = readJson(dataPath);
+      const events = Array.isArray(data) ? data : [data];
 
     const ajv = new Ajv({ allErrors: true, strict: false });
     addFormats(ajv);
@@ -356,55 +384,61 @@ async function main() {
       }
     }
 
-    const totalEvents = events.length || 0;
-    const invCount = invariantViolations.length;
-    const violationRate = totalEvents > 0 ? +(invCount / totalEvents).toFixed(3) : 0;
-    const details = { schemaErrors, invariantViolations, options: { disable: disableList, onhandMin } };
-    if (missingNotes.length) details.notes = missingNotes;
-    summary = {
-      input: path.relative(repoRoot, dataPath),
-      events: totalEvents,
-      schemaErrors: schemaErrors.length,
-      invariantViolations: invCount,
-      violationRate,
-      timestamp: new Date().toISOString(),
-      firstInvariantViolation: invariantViolations[0] || null,
-      firstSchemaError: schemaErrors[0] || null,
-      byType,
-      details,
-    };
-  } else {
-    const details = { schemaErrors: [], invariantViolations: [], options: { disable: disableList, onhandMin } };
-    if (missingNotes.length) details.notes = missingNotes;
-    summary = {
-      input: haveData ? path.relative(repoRoot, dataPath) : '(missing)',
-      events: 0,
-      schemaErrors: 0,
-      invariantViolations: 0,
-      violationRate: 0,
-      timestamp: new Date().toISOString(),
-      firstInvariantViolation: null,
-      firstSchemaError: null,
-      byType: { onhand_min: 0, allocated_le_onhand: 0 },
-      details,
-    };
-  }
+      const totalEvents = events.length || 0;
+      const invCount = invariantViolations.length;
+      const violationRate = totalEvents > 0 ? +(invCount / totalEvents).toFixed(3) : 0;
+      const details = { schemaErrors, invariantViolations, options: { disable: disableList, onhandMin } };
+      if (missingNotes.length) details.notes = missingNotes;
+      summary = {
+        input: path.relative(repoRoot, dataPath),
+        events: totalEvents,
+        schemaErrors: schemaErrors.length,
+        invariantViolations: invCount,
+        violationRate,
+        timestamp: new Date().toISOString(),
+        firstInvariantViolation: invariantViolations[0] || null,
+        firstSchemaError: schemaErrors[0] || null,
+        byType,
+        details,
+      };
+    } else {
+      const details = { schemaErrors: [], invariantViolations: [], options: { disable: disableList, onhandMin } };
+      if (missingNotes.length) details.notes = missingNotes;
+      summary = {
+        input: haveData ? path.relative(repoRoot, dataPath) : '(missing)',
+        events: 0,
+        schemaErrors: 0,
+        invariantViolations: 0,
+        violationRate: 0,
+        timestamp: new Date().toISOString(),
+        firstInvariantViolation: null,
+        firstSchemaError: null,
+        byType: { onhand_min: 0, allocated_le_onhand: 0 },
+        details,
+      };
+    }
 
-  if (args.trace) {
-    summary.trace = await runTracePipeline({
-      tracePath: args.trace,
-      format: args.traceFormat,
-      outputDir: args.traceOutput,
-      skipReplay: Boolean(args.traceSkipReplay),
-    });
+    if (args.trace) {
+      summary.trace = await runTracePipeline({
+        tracePath: args.trace,
+        format: args.traceFormat,
+        outputDir: args.traceOutput,
+        skipReplay: Boolean(args.traceSkipReplay),
+      });
+    }
   }
 
   writeJson(outFile, summary);
   console.log(`Conformance summary written: ${path.relative(repoRoot, outFile)}`);
-  console.log(`- input=${summary.input} schema=${path.relative(repoRoot, schemaPath)}`);
-  console.log(`- events=${summary.events} schemaErrors=${summary.schemaErrors} invariantViolations=${summary.invariantViolations}`);
+  if (envelopePath) {
+    console.log(`- envelope=${summary.envelopePath}`);
+  } else {
+    console.log(`- input=${summary.input} schema=${path.relative(repoRoot, schemaPath)}`);
+    console.log(`- events=${summary.events} schemaErrors=${summary.schemaErrors} invariantViolations=${summary.invariantViolations}`);
+  }
   if (summary.trace) {
-    console.log(`- trace status=${summary.trace.status} (output=${summary.trace.outputDir})`);
+    const outputInfo = summary.trace.outputDir ? ` (output=${summary.trace.outputDir})` : '';
+    console.log(`- trace status=${summary.trace.status}${outputInfo}`);
   }
 
   appendStepSummary(summary);
