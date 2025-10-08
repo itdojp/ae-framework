@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
+import { appendSection } from '../ci/step-summary.mjs';
 
 const baseDir = path.join('hermetic-reports', 'trace');
 const cases = [
@@ -8,10 +9,9 @@ const cases = [
   { key: 'ndjson', label: 'NDJSON sample', dir: process.env.KVONCE_TRACE_NDJSON_DIR ?? path.join(baseDir, 'ndjson') },
 ];
 
-const summaryPath = process.env.GITHUB_STEP_SUMMARY;
 const outputPath = process.env.GITHUB_OUTPUT;
 const outputs = {};
-const lines = ['## KvOnce Trace Validation'];
+const lines = [];
 let exitCode = 0;
 const MAX_INLINE_ISSUES = 5;
 
@@ -65,9 +65,7 @@ for (const item of cases) {
   }
 }
 
-if (summaryPath) {
-  fs.appendFileSync(summaryPath, `${lines.join('\n')}\n`);
-}
+appendSection('KvOnce Trace Validation', lines);
 
 if (outputPath) {
   for (const [key, value] of Object.entries(outputs)) {

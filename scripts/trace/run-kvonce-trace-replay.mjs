@@ -2,6 +2,7 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { appendSection } from '../ci/step-summary.mjs';
 
 function parseArgs(argv) {
   const options = {
@@ -142,22 +143,19 @@ const summaryPath = path.join(outputDir, 'kvonce-trace-replay.json');
 fs.writeFileSync(summaryPath, JSON.stringify(summary, null, 2));
 console.log(`KvOnce trace replay summary: ${path.relative(repoRoot, summaryPath)}`);
 
-if (process.env.GITHUB_STEP_SUMMARY) {
-  const lines = [
-    '## KvOnce Trace Replay',
-    `- input: ${summary.input}`,
-    `- conformance: ${summary.conformance.status}`,
-  ];
-  if (summary.conformance.report) {
-    lines.push(`  - valid: ${summary.conformance.report.valid} (issues: ${summary.conformance.report.issues})`);
-  }
-  if (summary.tlc.summary) {
-    lines.push(`- TLC status: ${summary.tlc.summary.status} (engine=${summary.tlc.summary.engine})`);
-  } else {
-    lines.push(`- TLC status: ${summary.tlc.status}`);
-  }
-  fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${lines.join('\n')}\n`);
+const summaryLines = [
+  `- input: ${summary.input}`,
+  `- conformance: ${summary.conformance.status}`,
+];
+if (summary.conformance.report) {
+  summaryLines.push(`  - valid: ${summary.conformance.report.valid} (issues: ${summary.conformance.report.issues})`);
 }
+if (summary.tlc.summary) {
+  summaryLines.push(`- TLC status: ${summary.tlc.summary.status} (engine=${summary.tlc.summary.engine})`);
+} else {
+  summaryLines.push(`- TLC status: ${summary.tlc.status}`);
+}
+appendSection('KvOnce Trace Replay', summaryLines);
 
 if (summary.conformance.status === 'failed') {
   process.exitCode = 1;
