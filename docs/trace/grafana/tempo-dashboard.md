@@ -36,7 +36,8 @@ Issue refs: #1036 / #1038 / #1011
 4. 不整合が見つかった場合は Envelope の `summary.trace.validation.issues` と Tempo のエラー span を突合し、Projection/Validation の成果物（`artifacts[].path`）をダウンロードして調査する。
 
 ## Export / Import
-- Grafana UI から JSON をエクスポートし、`docs/trace/grafana/tempo-dashboard.json` としてリポジトリ管理することを推奨。
+- Grafana UI から JSON をエクスポートし、`docs/trace/grafana/tempo-dashboard.json` としてリポジトリ管理することを推奨。`scripts/trace/export-dashboard.mjs --uid <UID>` で API 経由の取得も可能。
+- ダッシュボードを環境へ適用する場合は `scripts/trace/import-dashboard.mjs --token <TOKEN>` を利用して API 経由でインポートする。
 - 将来的には `scripts/trace/export-dashboard.mjs`（TODO）で CI からダッシュボードを自動エクスポートし、差分をレビューできるようにする。
 
 ## TODO
