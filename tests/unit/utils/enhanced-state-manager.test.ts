@@ -562,6 +562,104 @@ describe('EnhancedStateManager transactions', () => {
 });
 
 describe('EnhancedStateManager helper behaviour', () => {
+
+  it('round-trips binary payloads through saveSSOT/loadSSOT', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-binary-roundtrip-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+
+    const buffer = Buffer.from([0xde, 0xad, 0xbe, 0xef]);
+    const arrayBuffer = new ArrayBuffer(4);
+    new Uint8Array(arrayBuffer).set([0x00, 0x11, 0x22, 0x33]);
+    const dataView = new DataView(arrayBuffer);
+    dataView.setUint16(0, 0x1234);
+    dataView.setUint16(2, 0xabcd);
+    const typed = new Uint16Array([1234, 5678]);
+    const sharedBuffer = typeof SharedArrayBuffer !== 'undefined' ? new SharedArrayBuffer(4) : null;
+    if (sharedBuffer) {
+      new Uint8Array(sharedBuffer).set([0xaa, 0xbb, 0xcc, 0xdd]);
+    }
+
+    const payload: Record<string, unknown> = {
+      buffer,
+      arrayBuffer,
+      dataView,
+      typed,
+    };
+    if (sharedBuffer) {
+      payload.sharedBuffer = sharedBuffer;
+    }
+
+    await manager.saveSSOT('binary-entry', payload);
+
+    const restored = await manager.loadSSOT('binary-entry');
+    expect(restored).not.toBeNull();
+    expect(restored?.buffer).toBeInstanceOf(Buffer);
+    expect((restored?.buffer as Buffer).equals(buffer)).toBe(true);
+    expect(restored?.arrayBuffer).toBeInstanceOf(ArrayBuffer);
+    expect(Array.from(new Uint8Array(restored?.arrayBuffer as ArrayBuffer))).toEqual(Array.from(new Uint8Array(arrayBuffer)));
+    expect(restored?.dataView).toBeInstanceOf(DataView);
+    const revivedView = restored?.dataView as DataView;
+    expect(revivedView.getUint16(0)).toBe(0x1234);
+    expect(revivedView.getUint16(2)).toBe(0xabcd);
+    expect(restored?.typed).toBeInstanceOf(Uint16Array);
+    expect(Array.from(restored?.typed as Uint16Array)).toEqual(Array.from(typed));
+    if (sharedBuffer) {
+      expect(restored?.sharedBuffer).toBeInstanceOf(SharedArrayBuffer);
+      expect(Array.from(new Uint8Array(restored?.sharedBuffer as SharedArrayBuffer))).toEqual([0xaa, 0xbb, 0xcc, 0xdd]);
+    } else {
+      expect(restored?.sharedBuffer).toBeUndefined();
+    }
+
+    await manager.shutdown();
+  });
+
+
+  it('encodes binary payloads with special markers during stringify', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-binary-stringify-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enablePerformanceMetrics: true, enableSerializationCache: false });
+    const internal = asInternal(manager);
+
+    const buffer = Buffer.from([0xde, 0xad, 0xbe, 0xef]);
+    const arrayBuffer = new ArrayBuffer(4);
+    new Uint8Array(arrayBuffer).set([0xff, 0x00, 0x11, 0x22]);
+    const dataView = new DataView(arrayBuffer.slice(0));
+    dataView.setUint32(0, 0xcafebabe);
+    const typed = new Uint32Array([0xc0ffee, 0xdeadbeef]);
+    const shared = typeof SharedArrayBuffer !== 'undefined' ? new SharedArrayBuffer(4) : null;
+    if (shared) {
+      new Uint8Array(shared).set([1, 2, 3, 4]);
+    }
+
+    const payload: Record<string, unknown> = {
+      buffer,
+      arrayBuffer,
+      dataView,
+      typed,
+    };
+    if (shared) {
+      payload.shared = shared;
+    }
+
+    const serialized = internal.stringifyForStorage(payload, 'binary-stringify');
+    const parsed = JSON.parse(serialized);
+
+    expect(parsed.buffer).toEqual({ type: 'Buffer', data: Array.from(buffer.values()) });
+    expect(parsed.arrayBuffer).toEqual({ __ae_type: 'ArrayBuffer', bytes: [0xff, 0x00, 0x11, 0x22] });
+    expect(parsed.dataView).toEqual({ __ae_type: 'DataView', bytes: Array.from(new Uint8Array(dataView.buffer)) });
+    expect(parsed.typed).toEqual({ __ae_type: 'TypedArray', name: 'Uint32Array', values: Array.from(typed) });
+    if (shared) {
+      expect(parsed.shared).toEqual({ __ae_type: 'SharedArrayBuffer', bytes: [1, 2, 3, 4] });
+    } else {
+      expect(parsed.shared).toBeUndefined();
+    }
+
+    await manager.shutdown();
+  });
+
   it('preserves buffer instances when importing compressed entries', async () => {
     const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-buffer-instance-'));
     tempRoots.push(root);
