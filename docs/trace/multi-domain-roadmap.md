@@ -33,7 +33,7 @@ Issue refs: #1011 / #997 / #1003
 |---------|------------|------|------|
 | Phase 1 | `pipelines:trace --skip-replay` (KvOnce) | `run-trace` ラベル | Projection / Validation / Envelope を artifacts 化。 |
 | Phase 2 | `pipelines:trace --input samples/trace/inventory-sample.ndjson` | `run-trace-inventory` ラベル | Inventory Schema と Refinement Mapping を検証。 |
-| Phase 3 | `pipelines:trace` (Reservation) + `verify:conformance`` | nightly | Tempo ダッシュボードに各ドメインの成功率・リトライ回数を集約。
+| Phase 3 | `pipelines:trace` (Reservation) + `verify:conformance` | nightly | Tempo ダッシュボードに各ドメインの成功率・リトライ回数を集約。
 
 ## 次のアクション
 - [ ] Inventory ドメインの Trace schema とサンプル NDJSON を追加する。
