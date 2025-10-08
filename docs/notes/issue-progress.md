@@ -3,13 +3,8 @@
 | Issue | Theme | Status | Latest Notes |
 |-------|-------|--------|--------------|
 | #997 | Week1: フルパイプライン復元の詳細化 | ⏳ 継続 | Resilience／Telemetry／Property 系の回帰を解消し、Bulkhead 統合テストも通過。`pnpm test:ci` は緑化済み。`PODMAN_COMPOSE_PROVIDER=podman-compose make test-docker-all` の順次成功と Podman 手順整備が完了し、現在は mutation survivor 解消と Verify ワークフロー拡張が主な残課題。Fail-Fast Spec ビルドの sparse checkout を調整し、ローカルアクション不足で落ちる事象を解消。|
-<<<<<<< HEAD
-| #999 | Week2: 継続運用計画の具体化 | ⏳ 継続 | Verify Lite / mutation-quick GitHub Check を整備済み。TokenOptimizer quick run は 100% を維持。EnhancedStateManager quick run は logicalKey 欠落・TTL 未指定・object 圧縮パス等のテスト拡充で **71.15%**（killed 328 / survived 133）を記録。Podman unit compose は `AE_HOST_STORE` キャッシュ導入で 45 秒程度まで短縮。`scripts/ci/run-verify-lite-local.sh` の追加に加え、`scripts/trace/run-kvonce-trace-replay.mjs` でトレース検証→TLC リプレイを自動化。残課題は versionIndex 周りのサバイバーと Verify Lite のラベル制御の本運用化。|
-| #1001 | Week2 Tracker | ✅ 進捗記録中 | `src/api/server.ts` の Mutation quick を 47%→67%→81%→88%→94%→98.69%→100% まで引き上げ。TokenOptimizer quick は 32.12%、EnhancedStateManager quick は import/gc/index テスト＋論理キー/TTL ガードで **71.15%**（survived 133）。性能プロジェクトは `vitest --passWithNoTests` 化してゲート継続、イベント/rollback 付近のフォローアップを継続する。Trace まわりは Projector/Validator/OTLP 変換の CLI テストと conformance 連結テストを追加済み。|
-=======
-| #999 | Week2: 継続運用計画の具体化 | ⏳ 継続 | Verify Lite / mutation-quick GitHub Check を整備済み。TokenOptimizer quick run は 100% を維持。EnhancedStateManager quick run は import 系テスト追加で **72.02%**（killed 332 / survived 129）まで向上。Podman unit compose は `AE_HOST_STORE` キャッシュ導入で 45 秒程度まで短縮。`scripts/ci/run-verify-lite-local.sh` の追加に加え、`scripts/trace/run-kvonce-trace-replay.mjs` でトレース検証→TLC リプレイを自動化。残課題はトランザクション／rollback 系サバイバーと Verify Lite のラベル制御の本運用化。|
-| #1001 | Week2 Tracker | ✅ 進捗記録中 | `src/api/server.ts` の Mutation quick を 47%→67%→81%→88%→94%→98.69%→100% まで引き上げ。TokenOptimizer quick は 32.12%、EnhancedStateManager quick は import/gc テスト追加で **72.02%**（survived 129）。性能プロジェクトは `vitest --passWithNoTests` 化してゲート継続、イベント/rollback 付近のフォローアップを継続する。Trace まわりは Projector/Validator/OTLP 変換の CLI テストと conformance 連結テストを追加済み。|
->>>>>>> 9cf6584 (test: capture missing key/version import cases)
+| #999 | Week2: 継続運用計画の具体化 | ⏳ 継続 | Verify Lite / mutation-quick の GitHub Check 再実行に向け、`scripts/mutation/run-enhanced-state-batches.sh` を追加し quick run を機能別に分割。TokenOptimizer quick run は 100% を維持。EnhancedStateManager は TypedArray 復元テストの追加後に **72.02%**（killed 332 / survived 129）まで改善。Podman unit compose は `AE_HOST_STORE` キャッシュ導入で 45 秒程度まで短縮。`scripts/ci/run-verify-lite-local.sh` と `scripts/trace/run-kvonce-trace-replay.mjs` によりトレース→TLC リプレイも自動化。現状のブロッカーは mutation quick 実行時に発生する `MCPCommand Plugin Management` の期待値差異（`Please specify plugin name`）で、本 fix を待って再度 GitHub Check を復旧予定。|
+| #1001 | Week2 Tracker | ✅ 進捗記録中 | `src/api/server.ts` の Mutation quick を 47%→67%→81%→88%→94%→98.69%→100% まで引き上げ。TokenOptimizer quick は 32.12%、EnhancedStateManager quick は import/gc テストと TypedArray 復元テストによって **72.02%**（survived 129）。性能プロジェクトは `vitest --passWithNoTests` 化してゲート継続、イベント/rollback 付近のフォローアップを継続する。Trace まわりは Projector/Validator/OTLP 変換の CLI テストと conformance 連結テストを追加済み。|
 | #1002 | Week3 準備 (予定) | 💤 未着手 | Week2 の残課題（Docker 実行環境整備・mutation survivors 対応）完了後に着手予定。現時点では準備メモのみ。|
 | #1003 | Week3 Tracker | 💤 未着手 | Week3 の進行条件となる CI/テスト基盤の整備待ち。前段となる #999/#1001 の完了がブロッカー。|
 |
@@ -44,7 +39,7 @@
 - [x] `PODMAN_COMPOSE_PROVIDER=podman-compose make test-docker-all` を順次成功まで実行し、ログとレポートを `docs/notes/full-pipeline-restore.md` に反映
 
 ### #999 Week2: 継続運用計画
-- [ ] Verify Lite / mutation-quick GitHub Check の動作確認（オンライン復旧後）
+- [ ] Verify Lite / mutation-quick GitHub Check の動作確認（quick バッチは整備済み / `MCPCommand` 期待値差異の解消待ち）
 - [x] Docker ベース e2e ターゲット（integration/e2e/performance）の成果物取得（Podman compose で全サービス成功。flakedetection レポートは別タスクで分析）
 - [x] Flake detection コンテナの `consistently-failing` レポート解析と環境要因の洗い出し（最新サマリは flake 0 件を確認）
 - [x] Mutation サバイバー整理計画の策定（#1001 から移管）
@@ -52,8 +47,8 @@
 
 ### #1001 Week2 Tracker
 - [x] 予約キャンセルフローと各種テスト資産の実装
-- [x] Mutation quick (API server 100% / EnhancedStateManager 67.90%) の結果ドキュメント化
-- [ ] EnhancedStateManager 残存ミュータント（`versionIndex` / `stateImported` / `findKeyByVersion`）に対するテスト実装
+- [x] Mutation quick (API server 100% / EnhancedStateManager 72.02%) の結果ドキュメント化
+- [x] EnhancedStateManager 残存ミュータント（`versionIndex` / `stateImported` / `findKeyByVersion`）に対するテスト実装
 - [ ] tinypool クラッシュ回避策の検証（Node 20 切替または Vitest 設定調整）
 - [x] ResilientHttpClient / IntelligentTestSelection / EvidenceValidator のテスト修正と再実行
 
