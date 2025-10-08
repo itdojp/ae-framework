@@ -153,6 +153,14 @@ jobs:
           else
             printf "%s\n" "No mutation report found; skipped survivors extraction." >> "$GITHUB_STEP_SUMMARY"
           fi
+      - name: Upload mutation quick report
+        if: ${{ github.event_name == 'pull_request' && hashFiles('reports/mutation/mutation.json') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-quick-report
+          path: |
+            reports/mutation/mutation.json
+            reports/mutation/index.html
       - name: Upload mutation survivors artifact
         if: ${{ github.event_name == 'pull_request' && hashFiles('reports/mutation/survivors.json') != '' }}
         uses: actions/upload-artifact@v4

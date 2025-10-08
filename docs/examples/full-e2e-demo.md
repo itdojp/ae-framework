@@ -1,57 +1,126 @@
-# Full E2E Demo (2025-10-09)
+# Full E2E Demo: Spec → Tests → Runtime
 
-## 概要
-Verify Lite → Pact → API fuzz → Mutation quick → BDD/MBT smoke を一気通貫で走らせるための手順を整理します。`pnpm pipelines:full` をベースに、必要に応じて個別ステップへ分岐します。
+このドキュメントは、`ae-framework` のサンプル資産を組み合わせて「仕様→テスト→コード→検証」までを一貫して再現する手順をまとめたものです。Verify Lite / Mutation Quick / Pact / MBT / BDD を連携させたいときの素振り用チェックリストとして利用できます。
 
-## 前提
-- `pnpm install`
-- OpenTelemetry 環境変数は未設定でも OK（Verify Lite がスタブ化済み）
-- Pact CLI / Schemathesis を利用する場合は Docker Desktop or Podman を起動
+> **前提**
+> - Node.js 20 / pnpm 8 系が利用可能であること
+> - `pnpm install` 済み
+> - Podman もしくは Docker Desktop が動作すること（Pact / API fuzz のコンテナ系タスクで利用）
 
-## 手順
-1. **Verify Lite**
-   ```bash
-   pnpm verify:lite
-   ```
-2. **Pact Provider**
-   ```bash
-   pnpm pipelines:pact --contract=contracts/reservations-consumer.json
-   ```
-3. **API fuzz (CLI fuzz harness)**
-   ```bash
-   pnpm pipelines:api-fuzz --spec tests/cli/fuzz.spec.ts
-   ```
-4. **Mutation quick (EnhancedStateManager)**
-   ```bash
-   pnpm pipelines:mutation:quick -- --mutate src/utils/enhanced-state-manager.ts
-   ```
-5. **BDD smoke**
-   ```bash
-   pnpm bdd --tags "@smoke"
-   ```
-6. **MBT smoke**
-   ```bash
-   node tests/mbt/run.js --smoke
-   ```
+## 1. 仕様と生成物の確認
 
-## `pipelines:full` の使いどころ
-- Verify Lite 後に Pact/API fuzz/Mutation を連続実行したい場合:
+1. KvOnce 仕様 (TLA+) を TLC/Apalache で実行:
+   ```bash
+   pnpm run spec:kv-once:tlc
+   pnpm run spec:kv-once:apalache # ツール導入済みの場合
+   ```
+2. 生成物 (BDD/OpenAPI/モニタ) を差分チェック:
+   ```bash
+   pnpm run generate:artifacts -- --dry-run
+   ```
+3. 生成物の検証結果は `artifacts/` 配下と `reports/formal/` に保存される。CI では `spec-generate-model.yml` が同じ流れを実行する。
+
+## 2. Verify Lite (ユニット/Property/Mutation)
+
+1. Verify Lite を実行し、ユニット・Property・Mutation quick (差分) をまとめて検証:
+   ```bash
+   pnpm run verify:lite
+   ```
+2. 実行結果:
+   - `verify-lite-run-summary.json` / `verify-lite-lint-summary.json`
+   - Mutation quick レポート `reports/mutation/mutation.json`
+   - Step Summary 用 `mutation-summary.md` (Verify Lite のラッパーが生成)
+3. CI (`verify-lite.yml`) では上記成果物をレポート Envelope 化し、`mutation-quick-report` / `mutation-survivors-json` をアーティファクトとして添付する。
+
+## 3. Mutation Quick の個別実行
+
+Verify Lite から切り離して Mutation Quick のみを検証したい場合は、以下を利用する。
+
+```bash
+./scripts/mutation/run-scoped.sh --quick --mutate src/utils/enhanced-state-manager.ts
+# 差分パターンを自動抽出
+./scripts/mutation/run-scoped.sh --quick --auto-diff
+```
+
+生成物:
+- `reports/mutation/mutation.json`
+- `reports/mutation/index.html`
+- `reports/mutation/survivors.json`
+
+GitHub Actions (`mutation-quick.yml`) では手動トリガーで同じコマンドを実行し、アーティファクトとしてアップロードする。
+
+## 4. BDD / Pact / API Fuzz
+
+### 4.1 BDD テスト
+```bash
+pnpm run bdd:test
+```
+- `tests/bdd/` 配下のシナリオを Vitest 経由で実行。
+- Lint/Step lint は `pnpm run bdd:lint` / `pnpm run bdd:step-lint` で個別実行可能。
+
+### 4.2 Pact Provider 検証
+```bash
+pnpm run contracts:verify # scripts/contracts/verify-reservation-contract.ts
+```
+- Pact ファイルは `artifacts/pacts/` に配置。
+- 追加契約を検証したい場合は `contracts/` 配下に JSON を追加し、同スクリプトに渡す。
+
+### 4.3 API Fuzz / Schemathesis
+```bash
+make test-api-fuzz
+```
+- Fastify スタブを起動し、Schemathesis コンテナで OpenAPI 仕様に対する fuzz を実行。
+- ログとレポートは `reports/api-fuzz/` に保存。
+
+## 5. MBT (Model-Based Testing)
+
+1. CEGIS を利用した生成テスト:
+   ```bash
+   pnpm run mbt:cegis
+   ```
+2. 生成されたケースは `artifacts/mbt/` に格納され、Verify Lite からも再利用可能。
+
+## 6. End-to-End チェックリスト
+
+1. `pnpm run spec:kv-once:tlc` / `pnpm run spec:kv-once:apalache`
+2. `pnpm run generate:artifacts -- --dry-run`
+3. `pnpm run verify:lite`
+4. (任意) `./scripts/mutation/run-scoped.sh --quick --auto-diff`
+5. `pnpm run bdd:test`
+6. `pnpm run contracts:verify`
+7. `make test-api-fuzz`
+8. `pnpm run mbt:cegis`
+
+全て完了したら、`reports/` / `artifacts/` の差分を確認し、必要に応じて Issue / PR に最新状況をコメントしてください。
+
+---
+
+この手順に沿って実施し、成果物をリンク付きで Issue #999 / #1001 / #1002 / #1003 へコメントすれば、Week2〜Week4 トラッカーの「エンドツーエンドデモ」要件を満たせます。
+
+## 7. pnpm pipelines コマンドの活用 (2025-10-09)
+
+Verify Lite を起点に Pact / API fuzz / Mutation quick を順番に実行したい場合は、ラッパーを利用すると便利です。
+
+- **Verify Lite → Pact → API fuzz → Mutation quick**
   ```bash
   pnpm pipelines:full --mutation-target=src/utils/enhanced-state-manager.ts
   ```
-- 重いステップを後回しにする場合:
+- 重いステップをスキップしたい場合:
   ```bash
   pnpm pipelines:full --skip=api-fuzz,mutation
   ```
+- 個別ステップを直接呼び出す場合:
+  ```bash
+  pnpm pipelines:pact --contract=contracts/reservations-consumer.json
+  pnpm pipelines:api-fuzz --spec tests/cli/fuzz.spec.ts
+  pnpm pipelines:mutation:quick -- --mutate src/utils/enhanced-state-manager.ts
+  ```
 
-## レポート
+各ステップのレポート:
 - Verify Lite: `reports/verify-lite/`
 - Pact: `reports/contracts/`
 - API fuzz: `reports/api-fuzz/`
 - Mutation quick: `reports/mutation/`
 - BDD/MBT: `reports/bdd/`, `reports/mbt/`
 
-## CI 組み込みのメモ
-- Verify Lite ジョブは常時実行。Pact/API fuzz/Mutation はラベル `run-full-pipeline` を付与した PR で opt-in。
-- `pipelines:full --skip=api-fuzz` をベースに matrix ジョブ化し、heavy load を夜間ジョブへ移す計画。
-- Mutation quick の Step Summary は `reports/mutation/mutation.json` から抽出し、Verify Lite のサマリーに統合予定。
+CI では Verify Lite を常設ジョブとし、Pact/API fuzz/Mutation quick はラベル `run-full-pipeline` で opt-in させる運用を想定しています。

@@ -4,7 +4,7 @@
 |-------|-------|--------|--------------|
 | #997 | Week1: フルパイプライン復元の詳細化 | ⏳ 継続 | Podman/Compose 手順と `make test-docker-all` は安定。mutation survivor の整理と Verify Lite ⇔ フルパイプライン連携の再整備が残課題。Spec ビルド sparse checkout やローカルアクション不足による失敗は解消済み。|
 | #999 | Week2: 継続運用計画の具体化 | ⏳ 継続 | Verify Lite / mutation-quick GitHub Check は main へ復帰済み。TokenOptimizer quick は 64.78% → 100%（PR #1091）、EnhancedStateManager quick は 64.78%（survived 243）。Step Summary/Artifact 再出力とラベル運用の本格化が残タスク。|
-| #1001 | Week2 Tracker | ✅ 進捗記録中 | API server mutation スコア 100% を維持しつつ、TokenOptimizer/CircuitBreaker PBT 安定化 (#1091) を完了。EnhancedStateManager survivor (`versionIndex` / `stateImported` / `findKeyByVersion`) 対策と tinypool 障害調査が継続タスク。|
+| #1001 | Week2 Tracker | ✅ 進捗記録中 | API server mutation スコア 100% を維持しつつ、TokenOptimizer/CircuitBreaker PBT 安定化 (#1091) を完了。EnhancedStateManager survivor (`versionIndex` / `stateImported` / `findKeyByVersion`) 対策と tinypool 障害調査が継続タスク。2025-10-09: versionIndex 連番確認と findKeyByVersion の正パス検証を unit test で補強。|
 | #1002 | Week3 準備 (予定) | 💤 未着手 | Week2 の残課題（EnhancedStateManager survivor、Verify Lite lint backlog）を整理した後に着手予定。Trace ダッシュボード案と Docker ジョブ計画書のドラフト化が必要。|
 | #1003 | Week3 Tracker | 💤 未着手 | Week3 着手条件（Docker runtime, tinypool 安定化, mutation 整理）が揃っていないため、Issue コメントと手順書は更新保留。|
 |
@@ -47,7 +47,7 @@
 ### #1001 Week2 Tracker
 - [x] 予約キャンセルフローと各種テスト資産の実装
 - [x] Mutation quick (API server 100% / EnhancedStateManager 67.90%) の結果ドキュメント化
-- [x] EnhancedStateManager 残存ミュータント（`versionIndex` / `stateImported` / `findKeyByVersion`）に対するテスト実装（PR #1094 で version index シーケンスを追加）
+- [x] EnhancedStateManager 残存ミュータント（`versionIndex` / `stateImported` / `findKeyByVersion`）に対するテスト実装（PR #1094 / 2025-10-09: 連番バージョン検証テストを追加）
 - [ ] tinypool クラッシュ回避策の検証（Node 20 切替または Vitest 設定調整）
 - [x] ResilientHttpClient / IntelligentTestSelection / EvidenceValidator のテスト修正と再実行
 

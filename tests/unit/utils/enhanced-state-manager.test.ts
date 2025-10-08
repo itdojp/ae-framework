@@ -135,6 +135,30 @@ describe('EnhancedStateManager indices', () => {
     await manager.shutdown();
   });
 
+  it('increments version indices sequentially for repeated saves', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-version-sequence-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+
+    const firstKey = await manager.saveSSOT('inventory', { id: 'item', stock: 10 });
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    const secondKey = await manager.saveSSOT('inventory', { id: 'item', stock: 15 });
+
+    const versionIndex = getVersionIndex(manager);
+    expect(versionIndex.get('inventory')).toBe(2);
+
+    const firstEntry = asInternal(manager).storage.get(firstKey);
+    const secondEntry = asInternal(manager).storage.get(secondKey);
+    expect(firstEntry?.version).toBe(1);
+    expect(secondEntry?.version).toBe(2);
+
+    expect(asInternal(manager).findKeyByVersion('inventory', 1)).toBe(firstKey);
+    expect(asInternal(manager).findKeyByVersion('inventory', 2)).toBe(secondKey);
+
+    await manager.shutdown();
+  });
+
   it('loads specific version when requested', async () => {
     const root = await mkdtemp(join(tmpdir(), 'ae-framework-state-'));
     tempRoots.push(root);
