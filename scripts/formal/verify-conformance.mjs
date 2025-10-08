@@ -302,6 +302,39 @@ function appendStepSummary(summary) {
     if (summary.trace.replay) {
       lines.push(`  - replay: ${summary.trace.replay.status}`);
     }
+    if (Array.isArray(summary.trace.traceIds) && summary.trace.traceIds.length > 0) {
+      lines.push(`  - trace ids: ${summary.trace.traceIds.join(', ')}`);
+    }
+
+    const artifactsUrl = (() => {
+      const server = process.env.GITHUB_SERVER_URL ?? 'https://github.com';
+      const repo = process.env.GITHUB_REPOSITORY;
+      const runId = process.env.GITHUB_RUN_ID;
+      if (!repo || !runId) return null;
+      return `${server}/${repo}/actions/runs/${runId}?check_suite_focus=true#artifacts`;
+    })();
+
+    const formatArtifact = (label, value) => {
+      if (!value) return null;
+      const display = `\`${value}\``;
+      if (artifactsUrl) {
+        return `    - ${label}: ${display} ([Artifacts](${artifactsUrl}))`;
+      }
+      return `    - ${label}: ${value}`;
+    };
+
+    const artifactLines = [];
+    const ndjsonPath = summary.trace.ndjson;
+    if (ndjsonPath) artifactLines.push(formatArtifact('ndjson', ndjsonPath));
+    if (summary.projection?.path) artifactLines.push(formatArtifact('projection', summary.projection.path));
+    if (summary.projection?.stateSequence) artifactLines.push(formatArtifact('state sequence', summary.projection.stateSequence));
+    if (summary.validation?.path) artifactLines.push(formatArtifact('validation', summary.validation.path));
+    if (summary.replay?.summaryPath) artifactLines.push(formatArtifact('replay summary', summary.replay.summaryPath));
+    const filtered = artifactLines.filter(Boolean);
+    if (filtered.length > 0) {
+      lines.push('  - artifacts:');
+      lines.push(...filtered);
+    }
   }
   appendSection('Verify Conformance', lines);
 }
