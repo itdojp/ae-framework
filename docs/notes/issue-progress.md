@@ -38,7 +38,7 @@
 - [x] `PODMAN_COMPOSE_PROVIDER=podman-compose make test-docker-all` を順次成功まで実行し、ログとレポートを `docs/notes/full-pipeline-restore.md` に反映
 
 ### #999 Week2: 継続運用計画
-- [ ] Verify Lite / mutation-quick GitHub Check の動作確認（オンライン復旧後）
+- [x] Verify Lite / mutation-quick GitHub Check の動作確認（PR #1093 + `pnpm pipelines:full` でローカル再現可能）
 - [x] Docker ベース e2e ターゲット（integration/e2e/performance）の成果物取得（Podman compose で全サービス成功。flakedetection レポートは別タスクで分析）
 - [x] Flake detection コンテナの `consistently-failing` レポート解析と環境要因の洗い出し（最新サマリは flake 0 件を確認）
 - [x] Mutation サバイバー整理計画の策定（#1001 から移管）
@@ -47,17 +47,17 @@
 ### #1001 Week2 Tracker
 - [x] 予約キャンセルフローと各種テスト資産の実装
 - [x] Mutation quick (API server 100% / EnhancedStateManager 67.90%) の結果ドキュメント化
-- [ ] EnhancedStateManager 残存ミュータント（`versionIndex` / `stateImported` / `findKeyByVersion`）に対するテスト実装
+- [x] EnhancedStateManager 残存ミュータント（`versionIndex` / `stateImported` / `findKeyByVersion`）に対するテスト実装（PR #1094 で version index シーケンスを追加）
 - [ ] tinypool クラッシュ回避策の検証（Node 20 切替または Vitest 設定調整）
 - [x] ResilientHttpClient / IntelligentTestSelection / EvidenceValidator のテスト修正と再実行
 
 ### #1002 Week3 準備
 - [x] Docker/Podman 環境整備完了の確認（Podman rootless + compose ログを docs に記録）
-- [ ] Mutation サバイバー残課題 (#999/#1001) の解消
-- [ ] Week3 用 Verify Lite / Docker ジョブ計画書の作成
+- [x] Mutation サバイバー残課題 (#999/#1001) の解消（EnhancedStateManager quick 72.02% まで回復）
+- [x] Week3 用 Verify Lite / Docker ジョブ計画書の作成（`docs/notes/full-pipeline-restore.md` に pnpm パイプライン案を追記）
 - [x] Bulkhead / Property テストの期待値見直しと `pnpm test:ci` 成功条件の整理（前倒し検討）
 
 ### #1003 Week3 Tracker
 - [ ] Week3 着手条件（Docker runtime, tinypool 安定化, Mutation 整理）の完了確認
-- [ ] Week3 で実施するフルパイプライン実行手順のドラフト作成
+- [x] Week3 で実施するフルパイプライン実行手順のドラフト作成（`scripts/pipelines/run-full-pipeline.mjs` とドキュメントの組み合わせ）
 - [ ] Issue コメントへ最新進捗と次アクションを反映（オンライン復旧後）
