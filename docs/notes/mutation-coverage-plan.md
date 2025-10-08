@@ -80,7 +80,7 @@
 - [x] Stryker の vitest ランナーに `configs/vitest.mutation.config.ts` を強制適用（`configFile` 設定 or command runner への切り替え）。
 - [ ] EnhancedStateManager survivor（`versionIndex` / `stateImported` / `findKeyByVersion`）向けユニットテストを追加。
 - [ ] TokenOptimizer trim-edge 系プロパティの sandbox failure を解消（trailing comma の期待値/実装を見直す）。
-- [ ] Quick ランが復旧したら `reports/mutation/mutation.json` を Step Summary / Artifact に再添付。
+- [x] Quick ランが復旧したら `reports/mutation/mutation.json` を Step Summary / Artifact に再添付。（verify-lite / mutation-quick ワークフローで Artifact アップロードを再有効化）
 - [ ] 一括モードの mutate 対象を差分ベースで自動抽出し、実行時間を短縮する。
 - [x] `tests/property/token-optimizer.priority.order.pbt.test.ts` の仕様を再定義し、Stryker サンドボックスでも deterministic に通るよう fast-check ジェネレータとアサーションを調整する（2025-10-02: フォールバック実装 & 追加ユニットテストでケア）。
 - [x] `src/api/server.ts` survivor のうち `span` 欠損時のガードを追加検証（no-span でも TypeError が出ないことをテストで保証）。
@@ -100,6 +100,7 @@
 - [ ] 永続化（`persistToDisk` / `shutdown`）時のエラー処理とログ出力を property-based テストで補強。
 
 ## 備考
+- 2025-10-08: EnhancedStateManager のバイナリ encode/round-trip テストを追加し、quick run スコアが 67.39%（killed 465 / survived 225）に到達。`verify-lite` ワークフローで mutation レポートを Step Summary とアーティファクトに再添付する整備を進める。
 - TokenOptimizer テスト緑化の詳細は `docs/notes/token-optimizer-test-status.md` にまとめ済み。
 - Podman rootless + compose での Stryker 実行は問題なし。Quick ランが緑化した段階で CI へ組み戻す。
 
