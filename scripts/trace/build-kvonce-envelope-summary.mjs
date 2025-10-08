@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
+import { collectTraceIdsFromNdjson, buildTempoLinks } from './tempo-link-utils.mjs';
 
 function parseArgs(argv) {
   const options = {
@@ -74,26 +75,10 @@ const readJsonSafe = (filePath) => {
   }
 };
 
-const collectTraceIds = (ndjsonPath) => {
-  if (!fs.existsSync(ndjsonPath)) return [];
-  const ids = new Set();
-  const content = fs.readFileSync(ndjsonPath, 'utf8');
-  for (const line of content.split(/\r?\n/)) {
-    if (!line.trim()) continue;
-    try {
-      const event = JSON.parse(line);
-      const value = event && typeof event.traceId === 'string' ? event.traceId.trim() : '';
-      if (value) ids.add(value);
-    } catch (error) {
-      // ignore malformed line
-    }
-  }
-  return Array.from(ids);
-};
-
 const metadata = readJsonSafe(path.join(traceDir, 'kvonce-payload-metadata.json')) ?? {};
 const casesSummary = [];
 const aggregateTraceIds = new Set();
+const aggregateTempoLinks = new Set();
 
 for (const item of cases) {
   if (!item?.dir) continue;
@@ -106,14 +91,13 @@ for (const item of cases) {
   const projection = readJsonSafe(projectionPath);
 
   if (!validation) {
-    const entry = {
+    casesSummary.push({
       format: item.key,
       label: item.label ?? item.key,
       status: 'missing',
       issues: [],
       note: 'validation file missing',
-    };
-    casesSummary.push(entry);
+    });
     continue;
   }
 
@@ -124,8 +108,10 @@ for (const item of cases) {
     message: issue.message ?? '',
   }));
   const projectionStats = projection?.stats ?? undefined;
-  const traceIds = collectTraceIds(ndjsonPath);
+  const traceIds = collectTraceIdsFromNdjson(ndjsonPath);
   traceIds.forEach((value) => aggregateTraceIds.add(value));
+  const tempoLinks = buildTempoLinks(traceIds);
+  tempoLinks.forEach((value) => aggregateTempoLinks.add(value));
 
   const entry = {
     format: item.key,
@@ -148,6 +134,9 @@ for (const item of cases) {
   if (traceIds.length > 0) {
     entry.traceIds = traceIds;
   }
+  if (tempoLinks.length > 0) {
+    entry.tempoLinks = tempoLinks;
+  }
 
   casesSummary.push(entry);
 }
@@ -161,6 +150,13 @@ if (Array.isArray(conformanceSummary?.trace?.traceIds)) {
   for (const value of conformanceSummary.trace.traceIds) {
     if (typeof value === 'string' && value.trim()) {
       aggregateTraceIds.add(value.trim());
+    }
+  }
+}
+if (Array.isArray(conformanceSummary?.tempoLinks)) {
+  for (const value of conformanceSummary.tempoLinks) {
+    if (typeof value === 'string' && value.trim()) {
+      aggregateTempoLinks.add(value.trim());
     }
   }
 }
@@ -183,6 +179,9 @@ if (conformanceSummary) {
 }
 if (aggregateTraceIds.size > 0) {
   output.traceIds = Array.from(aggregateTraceIds);
+}
+if (aggregateTempoLinks.size > 0) {
+  output.tempoLinks = Array.from(aggregateTempoLinks);
 }
 
 const destDir = path.dirname(outputPath);

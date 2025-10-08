@@ -60,8 +60,18 @@ describe('build-kvonce-envelope-summary.mjs', () => {
       const conformanceSummary = {
         trace: {
           status: 'valid',
+          projection: {
+            path: projectionPath,
+            events: 4,
+          },
+          validation: {
+            path: validationPath,
+            issues: 0,
+            valid: true,
+          },
           traceIds: ['trace-xyz'],
         },
+        tempoLinks: ['https://tempo.example.com/explore?traceId=trace-xyz'],
       };
       await writeFile(conformanceSummaryPath, JSON.stringify(conformanceSummary, null, 2));
 
@@ -77,10 +87,16 @@ describe('build-kvonce-envelope-summary.mjs', () => {
       ]);
 
       const summary = JSON.parse(await readFile(outputPath, 'utf8'));
-      expect(summary.traceIds).toEqual(['trace-xyz']);
-      const currentCase = summary.cases.find((entry) => entry.format === 'current');
+      expect(summary.conformance?.trace?.status).toBe('valid');
+      const currentCase = summary.cases.find((entry: { format: string }) => entry.format === 'current');
+      expect(currentCase).toBeDefined();
+      expect(currentCase?.valid).toBe(true);
+      expect(currentCase?.projectionPath).toMatch(/kvonce-projection\.json$/);
+      expect(currentCase?.validationPath).toMatch(/kvonce-validation\.json$/);
       expect(currentCase?.traceIds).toEqual(['trace-xyz']);
-      expect(summary.conformance.trace.traceIds).toEqual(['trace-xyz']);
+      expect(summary.traceIds).toEqual(['trace-xyz']);
+      expect(summary.tempoLinks).toContain('https://tempo.example.com/explore?traceId=trace-xyz');
+      expect(summary.conformance?.trace?.traceIds).toEqual(['trace-xyz']);
     });
   });
 });

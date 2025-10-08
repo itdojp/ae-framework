@@ -8,6 +8,7 @@ import yaml from 'yaml';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import { appendSection } from '../ci/step-summary.mjs';
+import { collectTraceIdsFromNdjson, buildTempoLinks } from '../trace/tempo-link-utils.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..', '..');
@@ -258,26 +259,17 @@ async function runTracePipeline({ tracePath, format, outputDir, skipReplay }) {
       summary.replay = { status: 'skipped' };
     }
 
-    const traceIdSet = new Set();
-    try {
-      const ndjsonContent = fs.readFileSync(ensured.ndjsonPath, 'utf8');
-      for (const line of ndjsonContent.split(/\r?\n/)) {
-        if (!line.trim()) continue;
-        try {
-          const event = JSON.parse(line);
-          const value = event && typeof event.traceId === 'string' ? event.traceId.trim() : '';
-          if (value) traceIdSet.add(value);
-        } catch (parseError) {
-          // ignore malformed line
-        }
-      }
-    } catch (readError) {
-      summary.traceReadError = readError.message;
-    }
-
-    if (traceIdSet.size > 0) {
+    const traceIds = collectTraceIdsFromNdjson(ensured.ndjsonPath);
+    if (traceIds.length > 0) {
       summary.trace = summary.trace ?? {};
-      summary.trace.traceIds = Array.from(traceIdSet);
+      summary.trace.traceIds = traceIds;
+      summary.traceIds = traceIds;
+    }
+    const tempoLinks = buildTempoLinks(traceIds);
+    if (tempoLinks.length > 0) {
+      summary.trace = summary.trace ?? {};
+      summary.trace.tempoLinks = tempoLinks;
+      summary.tempoLinks = tempoLinks;
     }
   } catch (error) {
     summary.status = 'error';
@@ -302,8 +294,13 @@ function appendStepSummary(summary) {
     if (summary.trace.replay) {
       lines.push(`  - replay: ${summary.trace.replay.status}`);
     }
-    if (Array.isArray(summary.trace.traceIds) && summary.trace.traceIds.length > 0) {
-      lines.push(`  - trace ids: ${summary.trace.traceIds.join(', ')}`);
+    const traceIds = Array.isArray(summary.trace?.traceIds) && summary.trace.traceIds.length > 0
+      ? summary.trace.traceIds
+      : Array.isArray(summary.traceIds) && summary.traceIds.length > 0
+        ? summary.traceIds
+        : [];
+    if (traceIds.length > 0) {
+      lines.push(`  - trace ids: ${traceIds.join(', ')}`);
     }
 
     const artifactsUrl = (() => {
@@ -324,7 +321,7 @@ function appendStepSummary(summary) {
     };
 
     const artifactLines = [];
-    const ndjsonPath = summary.trace.ndjson;
+    const ndjsonPath = summary.trace.ndjson ?? summary.ndjson;
     if (ndjsonPath) artifactLines.push(formatArtifact('ndjson', ndjsonPath));
     if (summary.projection?.path) artifactLines.push(formatArtifact('projection', summary.projection.path));
     if (summary.projection?.stateSequence) artifactLines.push(formatArtifact('state sequence', summary.projection.stateSequence));
@@ -334,6 +331,22 @@ function appendStepSummary(summary) {
     if (filtered.length > 0) {
       lines.push('  - artifacts:');
       lines.push(...filtered);
+    }
+
+    const tempoLinks = (() => {
+      if (Array.isArray(summary.trace?.tempoLinks) && summary.trace.tempoLinks.length > 0) {
+        return summary.trace.tempoLinks;
+      }
+      if (Array.isArray(summary.tempoLinks) && summary.tempoLinks.length > 0) {
+        return summary.tempoLinks;
+      }
+      return buildTempoLinks(traceIds);
+    })();
+    if (tempoLinks.length > 0) {
+      lines.push('  - tempo links:');
+      tempoLinks.forEach((link) => {
+        lines.push(`    - ${link}`);
+      });
     }
   }
   appendSection('Verify Conformance', lines);

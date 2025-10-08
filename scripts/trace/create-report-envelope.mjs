@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { buildTempoLinks } from './tempo-link-utils.mjs';
 
 const summaryPath = process.argv[2] ?? process.env.REPORT_ENVELOPE_SUMMARY ?? 'artifacts/verify-lite/verify-lite-run-summary.json';
 const outputPath = process.argv[3] ?? process.env.REPORT_ENVELOPE_OUTPUT ?? 'artifacts/report-envelope.json';
@@ -71,6 +72,7 @@ const branch = process.env.GITHUB_REF ?? 'local';
 const runId = process.env.GITHUB_RUN_ID ?? `local-${Date.now()}`;
 const commit = process.env.GITHUB_SHA ?? '0000000';
 
+const traceIdTemplate = process.env.REPORT_ENVELOPE_TEMPO_LINK_TEMPLATE;
 const derivedTraceIds = Array.isArray(summary?.trace?.traceIds)
   ? summary.trace.traceIds.map((value) => (typeof value === 'string' ? value.trim() : '')).filter(Boolean)
   : [];
@@ -82,11 +84,21 @@ for (const raw of traceIdsEnv.split(',')) {
   if (value) traceIdSet.add(value);
 }
 const traceIds = Array.from(traceIdSet);
+const tempoLinks = Array.from(new Set([
+  ...(Array.isArray(summary?.tempoLinks) ? summary.tempoLinks : []),
+  ...buildTempoLinks(traceIds, traceIdTemplate),
+]));
 
 const notes = noteEnv
   .split(/\r?\n/)
   .map((value) => value.trim())
   .filter(Boolean);
+
+if (tempoLinks.length > 0) {
+  for (const link of tempoLinks) {
+    notes.push(`Tempo: ${link}`);
+  }
+}
 
 const envelope = {
   schemaVersion: '1.0.0',
@@ -101,6 +113,7 @@ const envelope = {
   },
   summary,
   artifacts,
+  ...(tempoLinks.length > 0 ? { tempoLinks } : {}),
   ...(notes.length > 0 ? { notes } : {}),
 };
 
