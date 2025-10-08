@@ -36,6 +36,8 @@ describe('verify-conformance --from-envelope', () => {
         },
       ];
       await writeFile(eventsPath, JSON.stringify(events), 'utf8');
+      const tracePath = join(dir, 'trace.ndjson');
+      await writeFile(tracePath, events.map((item) => JSON.stringify(item)).join('\n'), 'utf8');
 
       await execFileAsync(nodePath, [
         scriptPath,
@@ -46,7 +48,7 @@ describe('verify-conformance --from-envelope', () => {
         '--out',
         summaryPath,
         '--trace',
-        'samples/trace/kvonce-sample.ndjson',
+        tracePath,
         '--trace-format',
         'ndjson',
         '--trace-output',
@@ -57,6 +59,7 @@ describe('verify-conformance --from-envelope', () => {
       const summary = JSON.parse(await readFile(summaryPath, 'utf8'));
       expect(summary.events).toBe(1);
       expect(summary.trace?.status).toBeDefined();
+      expect(summary.trace?.traceIds).toEqual(['trace-1']);
 
       const envelopePath = join(dir, 'envelope.json');
       const envelope = {
@@ -82,6 +85,7 @@ describe('verify-conformance --from-envelope', () => {
       expect(replaySummary.schemaErrors).toBe(summary.schemaErrors);
       expect(replaySummary.envelopePath).toBeDefined();
       expect(replaySummary.trace?.status).toBe(summary.trace?.status);
+      expect(replaySummary.trace?.traceIds).toEqual(['trace-1']);
     });
   });
 });
