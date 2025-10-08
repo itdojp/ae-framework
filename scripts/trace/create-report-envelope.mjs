@@ -6,7 +6,6 @@ import crypto from 'node:crypto';
 const summaryPath = process.argv[2] ?? process.env.REPORT_ENVELOPE_SUMMARY ?? 'artifacts/verify-lite/verify-lite-run-summary.json';
 const outputPath = process.argv[3] ?? process.env.REPORT_ENVELOPE_OUTPUT ?? 'artifacts/report-envelope.json';
 const source = process.env.REPORT_ENVELOPE_SOURCE ?? 'verify-lite';
-const traceIdsEnv = process.env.REPORT_ENVELOPE_TRACE_IDS ?? '';
 const noteEnv = process.env.REPORT_ENVELOPE_NOTES ?? '';
 
 const ensureFile = (filePath) => {
@@ -72,10 +71,17 @@ const branch = process.env.GITHUB_REF ?? 'local';
 const runId = process.env.GITHUB_RUN_ID ?? `local-${Date.now()}`;
 const commit = process.env.GITHUB_SHA ?? '0000000';
 
-const traceIds = traceIdsEnv
-  .split(',')
-  .map((value) => value.trim())
-  .filter(Boolean);
+const derivedTraceIds = Array.isArray(summary?.trace?.traceIds)
+  ? summary.trace.traceIds.map((value) => (typeof value === 'string' ? value.trim() : '')).filter(Boolean)
+  : [];
+
+const traceIdSet = new Set(derivedTraceIds);
+const traceIdsEnv = process.env.REPORT_ENVELOPE_TRACE_IDS ?? '';
+for (const raw of traceIdsEnv.split(',')) {
+  const value = raw.trim();
+  if (value) traceIdSet.add(value);
+}
+const traceIds = Array.from(traceIdSet);
 
 const notes = noteEnv
   .split(/\r?\n/)
