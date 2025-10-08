@@ -40,12 +40,15 @@ for (const item of cases) {
     key: issue.key ?? 'unknown',
     message: issue.message ?? ''
   }));
+  const projectionStats = projection?.stats ?? undefined;
+  const stateSequencePath = projection?.outputs?.stateSequence ?? undefined;
   casesSummary.push({
     format: item.key,
     valid: Boolean(validation.valid),
     issueCount: issues.length,
     issues: trimmedIssues,
-    projectionStats: projection?.stats ?? undefined
+    projectionStats,
+    ...(stateSequencePath ? { stateSequencePath } : {})
   });
 }
 

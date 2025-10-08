@@ -26,11 +26,18 @@ describe('run-kvonce-conformance.sh', () => {
       await execFileAsync('bash', [scriptPath, '--input', 'samples/trace/kvonce-sample.ndjson', '--format', 'ndjson', '--output-dir', outputDir]);
 
       const projection = JSON.parse(await readFile(join(outputDir, 'kvonce-projection.json'), 'utf8'));
+      const stateSequencePath = projection.outputs?.stateSequence
+        ? resolve(process.cwd(), projection.outputs.stateSequence)
+        : join(outputDir, 'projected/kvonce-state-sequence.json');
+      const stateSequence = JSON.parse(await readFile(stateSequencePath, 'utf8'));
       const validation = JSON.parse(await readFile(join(outputDir, 'kvonce-validation.json'), 'utf8'));
 
       expect(validation.valid).toBe(true);
       expect(projection.eventCount).toBeGreaterThan(0);
       expect(Object.keys(projection.perKey)).toContain('alpha');
+      expect(projection.stats).toBeDefined();
+      expect(Array.isArray(stateSequence)).toBe(true);
+      expect(stateSequence.length).toBe(projection.stats?.stateSequenceLength ?? projection.eventCount);
     });
   });
 

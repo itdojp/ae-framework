@@ -193,6 +193,22 @@ async function runTracePipeline({ tracePath, format, outputDir, skipReplay }) {
       events: projection.eventCount ?? (Array.isArray(projection.events) ? projection.events.length : 0),
       keys: Object.keys(projection.perKey ?? {}).length,
     };
+    if (projection.stats) {
+      summary.projection.stats = projection.stats;
+      if (typeof projection.stats.stateSequenceLength === 'number') {
+        summary.projection.stateSequenceLength = projection.stats.stateSequenceLength;
+      }
+    }
+    const stateOutput = projection.outputs?.stateSequence;
+    if (stateOutput) {
+      summary.projection.stateSequence = stateOutput;
+    } else if (Array.isArray(projection.stateSequence)) {
+      const projectedDir = path.join(targetDir, 'projected');
+      fs.mkdirSync(projectedDir, { recursive: true });
+      const sequencePath = path.join(projectedDir, 'kvonce-state-sequence.json');
+      fs.writeFileSync(sequencePath, JSON.stringify(projection.stateSequence, null, 2));
+      summary.projection.stateSequence = path.relative(repoRoot, sequencePath);
+    }
 
     const validatorScript = path.join(repoRoot, 'scripts', 'trace', 'validate-kvonce.mjs');
     const validatorResult = await runProcess(process.execPath, [validatorScript, '--input', projectionPath, '--output', validationPath]);
