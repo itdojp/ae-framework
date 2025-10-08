@@ -2,6 +2,7 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 function parseArgs(argv) {
   const options = {
@@ -84,6 +85,12 @@ function main() {
   upload(options);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+const isDirectExecution = (() => {
+  const argvPath = process.argv[1] ? path.resolve(process.argv[1]) : null;
+  if (!argvPath) return false;
+  return fileURLToPath(import.meta.url) === argvPath;
+})();
+
+if (isDirectExecution) {
   main();
 }

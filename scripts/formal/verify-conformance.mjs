@@ -8,41 +8,11 @@ import yaml from 'yaml';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import { appendSection } from '../ci/step-summary.mjs';
+import { collectTraceIdsFromNdjson, buildTempoLinks } from '../trace/tempo-link-utils.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..', '..');
 const DEFAULT_TRACE_DIR = path.join('hermetic-reports', 'trace');
-
-function collectTraceIds(ndjsonPath) {
-  if (!ndjsonPath || !fs.existsSync(ndjsonPath)) return [];
-  const ids = new Set();
-  const content = fs.readFileSync(ndjsonPath, 'utf8');
-  for (const line of content.split(/\r?\n/)) {
-    if (!line.trim()) continue;
-    try {
-      const event = JSON.parse(line);
-      const value = event && typeof event.traceId === 'string' ? event.traceId.trim() : '';
-      if (value) ids.add(value);
-    } catch (error) {
-      // ignore malformed line
-    }
-  }
-  return Array.from(ids);
-}
-
-function buildTempoLinks(traceIds) {
-  if (!Array.isArray(traceIds) || traceIds.length === 0) return [];
-  const template = process.env.REPORT_ENVELOPE_TEMPO_LINK_TEMPLATE;
-  if (!template) return [];
-  return traceIds.map((id) => {
-    const encoded = encodeURIComponent(id);
-    if (template.includes('{traceId}')) {
-      return template.replaceAll('{traceId}', encoded);
-    }
-    const separator = template.includes('?') ? '&' : '?';
-    return `${template}${separator}traceId=${encoded}`;
-  });
-}
 
 function readYaml(p) {
   return yaml.parse(fs.readFileSync(p, 'utf8'));
@@ -289,7 +259,7 @@ async function runTracePipeline({ tracePath, format, outputDir, skipReplay }) {
       summary.replay = { status: 'skipped' };
     }
 
-    const traceIds = collectTraceIds(ensured.ndjsonPath);
+    const traceIds = collectTraceIdsFromNdjson(ensured.ndjsonPath);
     if (traceIds.length > 0) {
       summary.traceIds = traceIds;
     }

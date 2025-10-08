@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { buildTempoLinks } from './tempo-link-utils.mjs';
 
 const summaryPath = process.argv[2] ?? process.env.REPORT_ENVELOPE_SUMMARY ?? 'artifacts/verify-lite/verify-lite-run-summary.json';
 const outputPath = process.argv[3] ?? process.env.REPORT_ENVELOPE_OUTPUT ?? 'artifacts/report-envelope.json';
@@ -85,21 +86,9 @@ for (const raw of traceIdsEnv.split(',')) {
 }
 const traceIds = Array.from(traceIdSet);
 
-const buildTempoLinks = (ids) => {
-  if (!Array.isArray(ids) || ids.length === 0 || !traceIdTemplate) return [];
-  return ids.map((id) => {
-    const encoded = encodeURIComponent(id);
-    if (traceIdTemplate.includes('{traceId}')) {
-      return traceIdTemplate.replaceAll('{traceId}', encoded);
-    }
-    const separator = traceIdTemplate.includes('?') ? '&' : '?';
-    return `${traceIdTemplate}${separator}traceId=${encoded}`;
-  });
-};
-
 const tempoLinks = Array.from(new Set([
   ...(Array.isArray(summary?.tempoLinks) ? summary.tempoLinks : []),
-  ...buildTempoLinks(traceIds),
+  ...buildTempoLinks(traceIds, traceIdTemplate),
 ]));
 
 const notes = noteEnv

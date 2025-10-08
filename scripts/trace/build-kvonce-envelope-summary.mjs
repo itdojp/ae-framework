@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
+import { collectTraceIdsFromNdjson, buildTempoLinks } from './tempo-link-utils.mjs';
 
 function parseArgs(argv) {
   const options = {
@@ -72,37 +73,6 @@ function readJsonSafe(filePath) {
   }
 }
 
-function collectTraceIds(ndjsonPath) {
-  if (!ndjsonPath || !fs.existsSync(ndjsonPath)) return [];
-  const ids = new Set();
-  const content = fs.readFileSync(ndjsonPath, 'utf8');
-  for (const line of content.split(/\r?\n/)) {
-    if (!line.trim()) continue;
-    try {
-      const event = JSON.parse(line);
-      const value = event && typeof event.traceId === 'string' ? event.traceId.trim() : '';
-      if (value) ids.add(value);
-    } catch (error) {
-      // ignore malformed line
-    }
-  }
-  return Array.from(ids);
-}
-
-function buildTempoLinks(traceIds) {
-  if (!Array.isArray(traceIds) || traceIds.length === 0) return [];
-  const template = process.env.REPORT_ENVELOPE_TEMPO_LINK_TEMPLATE;
-  if (!template) return [];
-  return traceIds.map((id) => {
-    const encoded = encodeURIComponent(id);
-    if (template.includes('{traceId}')) {
-      return template.replaceAll('{traceId}', encoded);
-    }
-    const separator = template.includes('?') ? '&' : '?';
-    return `${template}${separator}traceId=${encoded}`;
-  });
-}
-
 const cases = parseCases();
 const metadata = readJsonSafe(path.join(traceDir, 'kvonce-payload-metadata.json')) ?? {};
 const casesSummary = [];
@@ -137,7 +107,7 @@ for (const item of cases) {
     message: issue.message ?? '',
   }));
   const projectionStats = projection?.stats ?? undefined;
-  const traceIds = collectTraceIds(ndjsonPath);
+  const traceIds = collectTraceIdsFromNdjson(ndjsonPath);
   traceIds.forEach((value) => aggregateTraceIds.add(value));
   const tempoLinks = buildTempoLinks(traceIds);
   tempoLinks.forEach((value) => aggregateTempoLinks.add(value));
