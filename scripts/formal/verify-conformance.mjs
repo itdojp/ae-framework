@@ -13,6 +13,37 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..', '..');
 const DEFAULT_TRACE_DIR = path.join('hermetic-reports', 'trace');
 
+function collectTraceIds(ndjsonPath) {
+  if (!ndjsonPath || !fs.existsSync(ndjsonPath)) return [];
+  const ids = new Set();
+  const content = fs.readFileSync(ndjsonPath, 'utf8');
+  for (const line of content.split(/\r?\n/)) {
+    if (!line.trim()) continue;
+    try {
+      const event = JSON.parse(line);
+      const value = event && typeof event.traceId === 'string' ? event.traceId.trim() : '';
+      if (value) ids.add(value);
+    } catch (error) {
+      // ignore malformed line
+    }
+  }
+  return Array.from(ids);
+}
+
+function buildTempoLinks(traceIds) {
+  if (!Array.isArray(traceIds) || traceIds.length === 0) return [];
+  const template = process.env.REPORT_ENVELOPE_TEMPO_LINK_TEMPLATE;
+  if (!template) return [];
+  return traceIds.map((id) => {
+    const encoded = encodeURIComponent(id);
+    if (template.includes('{traceId}')) {
+      return template.replaceAll('{traceId}', encoded);
+    }
+    const separator = template.includes('?') ? '&' : '?';
+    return `${template}${separator}traceId=${encoded}`;
+  });
+}
+
 function readYaml(p) {
   return yaml.parse(fs.readFileSync(p, 'utf8'));
 }
@@ -257,6 +288,15 @@ async function runTracePipeline({ tracePath, format, outputDir, skipReplay }) {
     } else {
       summary.replay = { status: 'skipped' };
     }
+
+    const traceIds = collectTraceIds(ensured.ndjsonPath);
+    if (traceIds.length > 0) {
+      summary.traceIds = traceIds;
+    }
+    const tempoLinks = buildTempoLinks(traceIds);
+    if (tempoLinks.length > 0) {
+      summary.tempoLinks = tempoLinks;
+    }
   } catch (error) {
     summary.status = 'error';
     summary.error = error.message;
@@ -279,6 +319,54 @@ function appendStepSummary(summary) {
     }
     if (summary.trace.replay) {
       lines.push(`  - replay: ${summary.trace.replay.status}`);
+    }
+
+    const traceIds = Array.isArray(summary.trace.traceIds)
+      ? summary.trace.traceIds
+      : Array.isArray(summary.traceIds)
+        ? summary.traceIds
+        : [];
+    if (traceIds.length > 0) {
+      lines.push(`  - trace ids: ${traceIds.join(', ')}`);
+    }
+
+    const artifactsUrl = (() => {
+      const server = process.env.GITHUB_SERVER_URL ?? 'https://github.com';
+      const repo = process.env.GITHUB_REPOSITORY;
+      const runId = process.env.GITHUB_RUN_ID;
+      if (!repo || !runId) return null;
+      return `${server}/${repo}/actions/runs/${runId}?check_suite_focus=true#artifacts`;
+    })();
+
+    const formatArtifact = (label, value) => {
+      if (!value) return null;
+      if (artifactsUrl) {
+        return `    - ${label}: \`${value}\` ([Artifacts](${artifactsUrl}))`;
+      }
+      return `    - ${label}: ${value}`;
+    };
+
+    const artifactLines = [];
+    const ndjsonPath = summary.trace.ndjson ?? summary.ndjson;
+    if (ndjsonPath) artifactLines.push(formatArtifact('ndjson', ndjsonPath));
+    if (summary.projection?.path) artifactLines.push(formatArtifact('projection', summary.projection.path));
+    if (summary.projection?.stateSequence) artifactLines.push(formatArtifact('state sequence', summary.projection.stateSequence));
+    if (summary.validation?.path) artifactLines.push(formatArtifact('validation', summary.validation.path));
+    if (summary.replay?.summaryPath) artifactLines.push(formatArtifact('replay summary', summary.replay.summaryPath));
+    const renderedArtifacts = artifactLines.filter(Boolean);
+    if (renderedArtifacts.length > 0) {
+      lines.push('  - artifacts:');
+      lines.push(...renderedArtifacts);
+    }
+
+    const tempoLinks = Array.isArray(summary.tempoLinks) && summary.tempoLinks.length > 0
+      ? summary.tempoLinks
+      : buildTempoLinks(traceIds);
+    if (tempoLinks.length > 0) {
+      lines.push('  - tempo links:');
+      tempoLinks.forEach((link) => {
+        lines.push(`    - ${link}`);
+      });
     }
   }
   appendSection('Verify Conformance', lines);

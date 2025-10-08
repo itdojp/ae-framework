@@ -59,7 +59,9 @@ describe('build-kvonce-envelope-summary', () => {
             issues: 0,
             valid: true,
           },
+          traceIds: ['trace-xyz'],
         },
+        tempoLinks: ['https://tempo.example.com/explore?traceId=trace-xyz'],
       };
       await writeFile(conformanceSummaryPath, JSON.stringify(conformanceSummary, null, 2));
 
@@ -80,6 +82,8 @@ describe('build-kvonce-envelope-summary', () => {
       expect(currentCase.valid).toBe(true);
       expect(currentCase.projectionPath).toMatch(/kvonce-projection\.json$/);
       expect(currentCase.validationPath).toMatch(/kvonce-validation\.json$/);
+      expect(summary.traceIds).toContain('trace-xyz');
+      expect(summary.tempoLinks).toContain('https://tempo.example.com/explore?traceId=trace-xyz');
     });
   });
 });

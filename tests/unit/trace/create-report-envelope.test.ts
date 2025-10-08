@@ -17,7 +17,7 @@ describe('create-report-envelope CLI', () => {
     await rm(workdir, { recursive: true, force: true });
   });
 
-  it('generates an envelope with correlation, artifacts, and notes', async () => {
+  it('generates an envelope with correlation, artifacts, tempo links, and notes', async () => {
     const summaryPath = join(workdir, 'verify-lite-run-summary.json');
     const metadataPath = join(workdir, 'kvonce-payload-metadata.json');
     const extraArtifactPath = join(workdir, 'additional.json');
@@ -31,12 +31,13 @@ describe('create-report-envelope CLI', () => {
         noFrozen: false,
         keepLintLog: true,
         enforceLint: true,
-        runMutation: true
+        runMutation: true,
       },
       steps: {
         install: { status: 'success' },
-        lint: { status: 'failure', notes: 'baseline +5' }
-      }
+        lint: { status: 'failure', notes: 'baseline +5' },
+      },
+      tempoLinks: ['https://tempo.example.com/explore?traceId=summary-trace'],
     };
 
     await writeFile(summaryPath, JSON.stringify(summary));
@@ -55,8 +56,9 @@ describe('create-report-envelope CLI', () => {
         REPORT_ENVELOPE_TRACE_IDS: 'trace-1,trace-2',
         REPORT_ENVELOPE_NOTES: 'note-one\nnote-two',
         REPORT_ENVELOPE_PAYLOAD_METADATA: metadataPath,
-        REPORT_ENVELOPE_EXTRA_ARTIFACTS: extraArtifactPath
-      }
+        REPORT_ENVELOPE_EXTRA_ARTIFACTS: extraArtifactPath,
+        REPORT_ENVELOPE_TEMPO_LINK_TEMPLATE: 'https://tempo.example.com/explore?traceId={traceId}',
+      },
     });
 
     expect(result.status).toBe(0);
@@ -72,7 +74,7 @@ describe('create-report-envelope CLI', () => {
       workflow: 'Verify Lite',
       commit: '01a5c13d',
       branch: 'refs/heads/main',
-      traceIds: ['trace-1', 'trace-2']
+      traceIds: ['trace-1', 'trace-2'],
     });
     expect(envelope.summary).toEqual(summary);
     expect(envelope.artifacts).toHaveLength(3);
@@ -80,16 +82,66 @@ describe('create-report-envelope CLI', () => {
       type: 'application/json',
       path: expect.stringContaining('verify-lite-run-summary.json'),
       checksum: expect.stringMatching(/^sha256:[0-9a-f]{64}$/),
-      description: 'Raw summary artifact'
+      description: 'Raw summary artifact',
     });
     expect(envelope.artifacts[1]).toMatchObject({
       path: expect.stringContaining('kvonce-payload-metadata.json'),
-      description: 'Payload metadata'
+      description: 'Payload metadata',
     });
     expect(envelope.artifacts[2]).toMatchObject({
       path: expect.stringContaining('additional.json'),
-      checksum: expect.stringMatching(/^sha256:[0-9a-f]{64}$/)
+      checksum: expect.stringMatching(/^sha256:[0-9a-f]{64}$/),
     });
-    expect(envelope.notes).toEqual(['note-one', 'note-two']);
+    expect(envelope.notes).toEqual([
+      'note-one',
+      'note-two',
+      'Tempo: https://tempo.example.com/explore?traceId=summary-trace',
+      'Tempo: https://tempo.example.com/explore?traceId=trace-1',
+      'Tempo: https://tempo.example.com/explore?traceId=trace-2',
+    ]);
+    expect(envelope.tempoLinks).toEqual([
+      'https://tempo.example.com/explore?traceId=summary-trace',
+      'https://tempo.example.com/explore?traceId=trace-1',
+      'https://tempo.example.com/explore?traceId=trace-2',
+    ]);
+  });
+
+  it('derives trace ids and tempo links from the summary when env is absent', async () => {
+    const summaryPath = join(workdir, 'summary.json');
+    const outputPath = join(workdir, 'envelope.json');
+
+    const summary = {
+      schemaVersion: '1.0.0',
+      trace: {
+        status: 'valid',
+        traceIds: ['trace-a', 'trace-b'],
+      },
+      tempoLinks: ['https://tempo.example.com/explore?traceId=trace-a'],
+    };
+
+    await writeFile(summaryPath, JSON.stringify(summary));
+
+    const result = spawnSync(process.execPath, [scriptPath, summaryPath, outputPath], {
+      cwd: workdir,
+      env: {
+        ...process.env,
+        REPORT_ENVELOPE_SOURCE: 'trace-replay',
+        GITHUB_RUN_ID: '123',
+        GITHUB_WORKFLOW: 'trace-workflow',
+        GITHUB_SHA: 'abcdef0',
+        GITHUB_REF: 'refs/heads/test-branch',
+        REPORT_ENVELOPE_TEMPO_LINK_TEMPLATE: 'https://tempo.example.com/explore?traceId={traceId}',
+      },
+    });
+
+    expect(result.status).toBe(0);
+
+    const envelope = JSON.parse(await readFile(outputPath, 'utf8'));
+    expect(envelope.correlation.traceIds).toEqual(['trace-a', 'trace-b']);
+    expect(envelope.summary.trace.traceIds).toEqual(['trace-a', 'trace-b']);
+    expect(envelope.tempoLinks).toEqual([
+      'https://tempo.example.com/explore?traceId=trace-a',
+      'https://tempo.example.com/explore?traceId=trace-b',
+    ]);
   });
 });

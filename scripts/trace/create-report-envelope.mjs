@@ -6,7 +6,6 @@ import crypto from 'node:crypto';
 const summaryPath = process.argv[2] ?? process.env.REPORT_ENVELOPE_SUMMARY ?? 'artifacts/verify-lite/verify-lite-run-summary.json';
 const outputPath = process.argv[3] ?? process.env.REPORT_ENVELOPE_OUTPUT ?? 'artifacts/report-envelope.json';
 const source = process.env.REPORT_ENVELOPE_SOURCE ?? 'verify-lite';
-const traceIdsEnv = process.env.REPORT_ENVELOPE_TRACE_IDS ?? '';
 const noteEnv = process.env.REPORT_ENVELOPE_NOTES ?? '';
 
 const ensureFile = (filePath) => {
@@ -72,15 +71,47 @@ const branch = process.env.GITHUB_REF ?? 'local';
 const runId = process.env.GITHUB_RUN_ID ?? `local-${Date.now()}`;
 const commit = process.env.GITHUB_SHA ?? '0000000';
 
-const traceIds = traceIdsEnv
-  .split(',')
-  .map((value) => value.trim())
-  .filter(Boolean);
+const traceIdTemplate = process.env.REPORT_ENVELOPE_TEMPO_LINK_TEMPLATE;
+
+const derivedTraceIds = Array.isArray(summary?.trace?.traceIds)
+  ? summary.trace.traceIds.map((value) => (typeof value === 'string' ? value.trim() : '')).filter(Boolean)
+  : [];
+
+const traceIdSet = new Set(derivedTraceIds);
+const traceIdsEnv = process.env.REPORT_ENVELOPE_TRACE_IDS ?? '';
+for (const raw of traceIdsEnv.split(',')) {
+  const value = raw.trim();
+  if (value) traceIdSet.add(value);
+}
+const traceIds = Array.from(traceIdSet);
+
+const buildTempoLinks = (ids) => {
+  if (!Array.isArray(ids) || ids.length === 0 || !traceIdTemplate) return [];
+  return ids.map((id) => {
+    const encoded = encodeURIComponent(id);
+    if (traceIdTemplate.includes('{traceId}')) {
+      return traceIdTemplate.replaceAll('{traceId}', encoded);
+    }
+    const separator = traceIdTemplate.includes('?') ? '&' : '?';
+    return `${traceIdTemplate}${separator}traceId=${encoded}`;
+  });
+};
+
+const tempoLinks = Array.from(new Set([
+  ...(Array.isArray(summary?.tempoLinks) ? summary.tempoLinks : []),
+  ...buildTempoLinks(traceIds),
+]));
 
 const notes = noteEnv
   .split(/\r?\n/)
   .map((value) => value.trim())
   .filter(Boolean);
+
+if (tempoLinks.length > 0) {
+  for (const link of tempoLinks) {
+    notes.push(`Tempo: ${link}`);
+  }
+}
 
 const envelope = {
   schemaVersion: '1.0.0',
@@ -95,6 +126,7 @@ const envelope = {
   },
   summary,
   artifacts,
+  ...(tempoLinks.length > 0 ? { tempoLinks } : {}),
   ...(notes.length > 0 ? { notes } : {}),
 };
 
