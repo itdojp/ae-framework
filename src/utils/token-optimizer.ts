@@ -233,18 +233,23 @@ export class TokenOptimizer {
     let optimized = '';
     for (const chunk of scoredChunks) {
       const compressed = await Promise.resolve(this.compressText(chunk.content));
-      const newContext = optimized + '\n' + compressed;
-      
-      if (this.estimateTokens(newContext) <= maxTokens) {
-        optimized = newContext;
+      if (!compressed || compressed.trim().length === 0) {
+        continue;
+      }
+      const candidate = optimized.length > 0 ? `${optimized}
+${compressed}` : compressed;
+
+      if (this.estimateTokens(candidate) <= maxTokens) {
+        optimized = candidate;
       } else {
         break;
       }
     }
 
+    const trimmedOptimized = optimized.trim();
     return {
-      optimized: optimized.trim(),
-      stats: this.calculateStats(original, optimized)
+      optimized: trimmedOptimized,
+      stats: this.calculateStats(original, trimmedOptimized)
     };
   }
 
