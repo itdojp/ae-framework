@@ -11,7 +11,7 @@ describe('PBT: TokenOptimizer preservePriority picks first present section', () 
     async () => {
       await fc.assert(
         fc.asyncProperty(
-          fc.set(fc.constantFrom(...PRIO), { minLength: 1, maxLength: 4 }),
+          fc.uniqueArray(fc.constantFrom(...PRIO), { minLength: 1, maxLength: 4 }),
           async (subset) => {
             const docs: Record<string,string> = {};
             for (const k of subset) docs[k] = `${k} content`;

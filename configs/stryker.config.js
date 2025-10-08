@@ -7,6 +7,7 @@ export default {
   testRunner: "vitest",
   checkers: [], // Temporarily disabled TypeScript checker due to strict mode issues
   coverageAnalysis: "perTest",
+  disableTypeChecks: ["{src,tests}/**/*.{ts,tsx,js,jsx}"],
   mutate: [
     "src/**/*.ts",
     "!src/**/*.test.ts", 
@@ -20,6 +21,6 @@ export default {
     low: 60,
     break: 0  // Temporarily set to 0 to allow CI to pass, will improve test coverage later
   },
-  maxConcurrentTestRunners: 4, // Limit concurrency for stability
+  concurrency: 4, // Limit concurrency for stability
   timeoutMS: 60000 // Increase timeout
 };
