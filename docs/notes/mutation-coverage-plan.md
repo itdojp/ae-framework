@@ -9,6 +9,7 @@
   - `findLatestKey` の負例テストを追加し、空集合時の挙動を明示する。
   - `reviveEntryData` に TypedArray/SharedArrayBuffer の fixture を追加し、`Buffer.isBuffer` 以外も安全化。
   - `versionIndex` 減算系は import/export の差分検証テストを拡充し、算出結果を期待値で固定。
+  - 2025-10-09: 連続保存に対する versionIndex シーケンス確認と `findKeyByVersion` の正パスを unit test で追加済み。
 - フォローアップ Issue: 追跡用に `EnhancedStateManager` 用の mutation backlog (#TODO) を作成して進捗を共有する。
 
 ## 現状サマリ（2025-10-06 更新）
@@ -78,7 +79,7 @@
 - [x] `tests/integration/test-orchestrator.test.ts` のモック生成ヘルパーを追加し、ReferenceError を解消する。
 - [ ] Docker 最適化テスト用のフィクスチャ／スキップ戦略を整備し、ファイル依存の失敗を解消する。
 - [x] Stryker の vitest ランナーに `configs/vitest.mutation.config.ts` を強制適用（`configFile` 設定 or command runner への切り替え）。
-- [ ] EnhancedStateManager survivor（`versionIndex` / `stateImported` / `findKeyByVersion`）向けユニットテストを追加。
+- [x] EnhancedStateManager survivor（`versionIndex` / `stateImported` / `findKeyByVersion`）向けユニットテストを追加。`tests/unit/utils/enhanced-state-manager.test.ts` にバージョンシーケンス検証を追加し、findKeyByVersion の正パスも直接確認。
 - [ ] TokenOptimizer trim-edge 系プロパティの sandbox failure を解消（trailing comma の期待値/実装を見直す）。
 - [ ] Quick ランが復旧したら `reports/mutation/mutation.json` を Step Summary / Artifact に再添付。
 - [ ] 一括モードの mutate 対象を差分ベースで自動抽出し、実行時間を短縮する。
