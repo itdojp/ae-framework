@@ -117,6 +117,7 @@ Verify Lite を起点に Pact / API fuzz / Mutation quick を順番に実行し�
   pnpm pipelines:mutation:quick -- --mutate src/utils/enhanced-state-manager.ts
   pnpm pipelines:trace --input samples/trace/kvonce-sample.ndjson
   ```
+  - 実行後は `artifacts/trace/report-envelope.json` にトレース用 Envelope が生成され、`pnpm verify:conformance --from-envelope artifacts/trace/report-envelope.json` で結果を再利用できる。
 
 各ステップのレポート:
 - Verify Lite: `reports/verify-lite/`

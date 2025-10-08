@@ -29,6 +29,7 @@
 
 ## 推奨される次手順
 - `pnpm pipelines:trace --input samples/trace/kvonce-sample.ndjson` で projector → validator → TLC の最小フローを一括実行し、`hermetic-reports/trace/` 以下にレポートを生成する。
+- パイプライン実行後は `artifacts/trace/report-envelope.json` に Envelope が自動生成されるため、`pnpm verify:conformance --from-envelope` でサマリを再掲できる。
 - Issue #1011 を編集し、本ドキュメントの Step3 作業キューをチェックリスト化する。
 - Stage3 実装タスクを小さな PR 単位（Projector, Validator, CI, Dashboard）に分割。
 - Verify Lite ワークフローに `pipelines:full` の mutation quick 結果を Step Summary として添付。
