@@ -660,6 +660,54 @@ describe('EnhancedStateManager helper behaviour', () => {
     await manager.shutdown();
   });
 
+
+  it('marks circular and unserializable payloads as zero-sized during stringify', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-circular-size-check-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enablePerformanceMetrics: true });
+    const internal = asInternal(manager);
+
+    const circular: any = { id: 'circle' };
+    circular.self = circular;
+
+    const circularSerialized = internal.stringifyForStorage(circular, 'circular-test');
+    expect(circularSerialized).toContain('"[Circular]"');
+    expect(internal.measureSerializedSize(circularSerialized)).toBe(0);
+
+    const bigIntPayload = { id: 'bigint', value: 42n } as any;
+    const unserializable = internal.stringifyForStorage(bigIntPayload, 'unserializable-test');
+    expect(unserializable).toBe('"[Unserializable]"');
+    expect(internal.measureSerializedSize(unserializable)).toBe(0);
+
+    await manager.shutdown();
+  });
+
+  it('emits persistenceSkipped with unchanged checksum when skipUnchangedPersistence is true', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-persist-skip-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', skipUnchangedPersistence: true });
+    const internal = asInternal(manager);
+
+    await manager.saveSSOT('orders', { id: 'persist-1' });
+    await internal.persistToDisk();
+
+    const skipped = vi.fn();
+    manager.on('persistenceSkipped', skipped);
+
+    await internal.persistToDisk();
+
+    expect(skipped).toHaveBeenCalledTimes(1);
+    const payload = skipped.mock.calls[0][0];
+    expect(payload).toMatchObject({ reason: 'unchanged' });
+    expect(typeof payload.checksum).toBe('string');
+    expect(payload.checksum.length).toBe(64);
+
+    manager.removeAllListeners('persistenceSkipped');
+    await manager.shutdown();
+  });
+
   it('preserves buffer instances when importing compressed entries', async () => {
     const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-buffer-instance-'));
     tempRoots.push(root);

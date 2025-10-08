@@ -34,6 +34,7 @@ export type EnhancedStateManagerInternal = EnhancedStateManager & {
   calculateChecksum: (data: unknown, serializedHint?: string) => string;
   decompress: (buffer: Buffer) => Promise<unknown>;
   stringifyForStorage: (value: unknown, context?: string) => string;
+  measureSerializedSize: (serializedData: string) => number;
 };
 
 export const asInternal = (manager: EnhancedStateManager): EnhancedStateManagerInternal => manager as unknown as EnhancedStateManagerInternal;
