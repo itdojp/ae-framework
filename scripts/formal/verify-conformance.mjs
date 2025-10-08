@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import yaml from 'yaml';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
+import { appendSection } from '../ci/step-summary.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..', '..');
@@ -243,9 +244,7 @@ async function runTracePipeline({ tracePath, format, outputDir, skipReplay }) {
 }
 
 function appendStepSummary(summary) {
-  if (!process.env.GITHUB_STEP_SUMMARY) return;
   const lines = [
-    '## Verify Conformance',
     `- events: ${summary.events}`,
     `- schema errors: ${summary.schemaErrors}`,
     `- invariant violations: ${summary.invariantViolations}`,
@@ -260,7 +259,7 @@ function appendStepSummary(summary) {
       lines.push(`  - replay: ${summary.trace.replay.status}`);
     }
   }
-  fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
+  appendSection('Verify Conformance', lines);
 }
 
 async function main() {
