@@ -60,13 +60,13 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-RUN_ARGS=("--config" "${CONFIG_PATH}")
+RUN_ARGS=("${CONFIG_PATH}")
 if [[ "${USE_QUICK}" == true ]]; then
   RUN_ARGS=("--quick" "${RUN_ARGS[@]}")
 fi
 
 BATCHES=(
-  "state-import"
+  "import"
   "snapshot"
   "failure"
 )
@@ -94,6 +94,10 @@ for batch in "${BATCHES[@]}"; do
     printf 'Batch %s failed with status %s\n' "${batch}" "${status}" >&2
   fi
 done
+
+if [[ -z "${KEEP_STRYKER_TMP:-}" ]]; then
+  rm -rf "${REPO_ROOT}/.stryker-tmp"
+fi
 
 if [[ ${#FAILED[@]} -gt 0 ]]; then
   printf '\nBatches failed: %s\n' "${FAILED[*]}" >&2
