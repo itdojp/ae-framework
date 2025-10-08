@@ -136,6 +136,26 @@ Issue: #1011 / #1012 / #1036 / #1038
 3. Trace 系ジョブでは、Collector から取得した payload のメタデータ (`kvonce-payload-metadata.json`) を artifacts 配列に追加し、`scripts/trace/build-kvonce-envelope-summary.mjs` で集計したサマリを `scripts/trace/create-report-envelope.mjs` でラップする。
 4. Dashboard / Tempo 連携は Envelope を単位としてインジェストし、必要に応じて `traceIds` から関連 span を引き直す。
 
+## OTLP Attribute Mapping
+| Envelope Field | OTLP Span Attribute | 説明 |
+|---------------|---------------------|------|
+| `correlation.traceIds[]` | `trace_id` | Envelope と Tempo trace を突き合わせるための ID。`pipelines:trace` が Projector/Validator 実行時に書き戻す。 |
+| `correlation.runId` | `kvonce.run_id` | GitHub Actions の `GITHUB_RUN_ID`。Tempo では `kvonce.run_id` で TraceQL フィルタを行う。 |
+| `summary.validation.valid` | `kvonce.validation.valid` | Validator の結果を Tempo 側でも可視化するための boolean 属性。 |
+| `summary.projection.events` | `kvonce.projection.event_count` | Projector によるイベント件数。多すぎる／少なすぎるケースを Tempo で検知できる。 |
+| `artifacts[].path` | `kvonce.artifact_path` | Projection/Validation/TLC の成果物パス。Grafana Link パネルから直接ダウンロードできるようにする。 |
+| `metadata.branch` (予定) | `kvonce.branch` | CI ブランチ名。Tempo の TraceQL で `kvonce.branch = 'main'` のように範囲指定する。 |
+
+> ℹ️ **属性の付与ポイント**: `scripts/trace/build-kvonce-envelope-summary.mjs` で Envelope を組み立てた後、Collector や Tempo に投入する際に同じ値を span attributes (`kvonce.*`) としてコピーする。Collector 再取得時もこの表を参照し、欠損していれば `pipelines:trace` で警告を表示する。
+
+## Step Summary レイアウト指針
+Verify Lite / Trace / Spec ジョブの Step Summary は以下の順で統一する。
+1. **Spec**: TLC / Apalache の結果 (`spec:kv-once:*`)。成功可否と探索境界のメモを 1 行で表示。
+2. **Verify Lite**: lint / mutation quick / property test の集計。Envelope の `summary.steps.*` を短く要約し、差分があれば notes に残す。
+3. **Trace**: `verify:conformance` が出力する Projection/Validation/TLC 成果。`summary.trace` から status / issues 数を抜粋する。
+
+`verify-conformance.mjs` は上記フォーマットで Step Summary を出力するよう更新済み。今後 `pipelines:full` や `pipelines:trace` でも同一フォーマットを利用するため、共通テンプレートを `scripts/ci/step-summary.ts`（次フェーズで作成予定）に切り出す。
+
 ## TODO / 状態
 - [x] JSON Schema を `schema/report-envelope.schema.json` として整備し、AJV で検証する。（PR #1043）
 - [x] Verify Lite ワークフローで Envelope 生成＋ Artifact アップロードまで自動化する（PR #1044, #1048）。
