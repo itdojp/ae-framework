@@ -1,12 +1,23 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+function parseFolderIdValue(value) {
+  if (value === undefined || value === null || value === '') return 0;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    console.error(`[import-dashboard] invalid folder id: ${value}`);
+    process.exit(1);
+  }
+  return parsed;
+}
 
 function parseArgs(argv) {
   const options = {
     host: process.env.GRAFANA_HOST ?? 'http://localhost:3000',
     token: process.env.GRAFANA_API_TOKEN ?? null,
-    folderId: process.env.GRAFANA_FOLDER_ID ? Number(process.env.GRAFANA_FOLDER_ID) : 0,
+    folderId: parseFolderIdValue(process.env.GRAFANA_FOLDER_ID),
     overwrite: process.env.GRAFANA_OVERWRITE ? process.env.GRAFANA_OVERWRITE === 'true' : true,
     input: process.env.GRAFANA_DASHBOARD_PATH ?? 'docs/trace/grafana/tempo-dashboard.json',
   };
@@ -24,7 +35,7 @@ function parseArgs(argv) {
       options.input = next;
       i += 1;
     } else if (arg === '--folder-id' && next) {
-      options.folderId = Number(next);
+      options.folderId = parseFolderIdValue(next);
       i += 1;
     } else if (arg === '--no-overwrite') {
       options.overwrite = false;
@@ -57,7 +68,18 @@ function readDashboard(filePath) {
     console.error(`[import-dashboard] file not found: ${resolved}`);
     process.exit(1);
   }
-  return JSON.parse(fs.readFileSync(resolved, 'utf8'));
+  try {
+    const content = fs.readFileSync(resolved, 'utf8');
+    return JSON.parse(content);
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      console.error(`[import-dashboard] malformed JSON in dashboard file: ${resolved}`);
+    } else {
+      console.error(`[import-dashboard] error reading dashboard file: ${resolved}`);
+    }
+    console.error(error.message);
+    process.exit(1);
+  }
 }
 
 async function importDashboard({ host, token, folderId, overwrite, input }) {
@@ -95,6 +117,12 @@ async function main() {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+const isDirectExecution = (() => {
+  const argvPath = process.argv[1] ? path.resolve(process.argv[1]) : null;
+  if (!argvPath) return false;
+  return fileURLToPath(import.meta.url) === argvPath;
+})();
+
+if (isDirectExecution) {
   main();
 }
