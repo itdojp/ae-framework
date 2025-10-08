@@ -135,6 +135,12 @@ Issue: #1011 / #1012 / #1036 / #1038
    - Envelope が揃っている場合は `pnpm verify:conformance --from-envelope artifacts/report-envelope.json` でトレースサマリを再掲でき、CI なしの環境でも Step Summary を再利用できる。
 2. Envelope の生成時に `GITHUB_RUN_ID` / `GITHUB_WORKFLOW` / `GITHUB_SHA` / `GITHUB_REF` を自動埋め込み、他の CI でも環境変数から補完できるようにする。
 3. `REPORT_ENVELOPE_TEMPO_LINK_TEMPLATE` を設定すると `tempoLinks[]` に Tempo Explore への URL が追加され、Step Summary やダッシュボードから対象 trace をすぐ開ける（例: `https://tempo.example.com/explore?traceId={traceId}`）。
+
+### GitHub へのコメント展開
+- `scripts/trace/post-envelope-comment.mjs` を使うと、Envelope の内容を GitHub Issue / Pull Request コメントとして展開できる。
+  - `node scripts/trace/post-envelope-comment.mjs --envelope artifacts/trace/report-envelope.json --dry-run` で出力を確認。
+  - 実際に投稿する場合は `--repo <owner/repo>` と `--issue`（または `--pr`）を指定し、`gh` CLI が利用可能な環境で実行する。
+  - コメントには Trace IDs、Tempo Links、Artifacts、Cases などが Markdown で整形され、Slack や GitHub 上での共有を容易にする。
 4. Trace 系ジョブでは、Collector から取得した payload のメタデータ (`kvonce-payload-metadata.json`) を artifacts 配列に追加し、`scripts/trace/build-kvonce-envelope-summary.mjs` で集計したサマリを `scripts/trace/create-report-envelope.mjs` でラップする。
 5. Dashboard / Tempo 連携は Envelope を単位としてインジェストし、必要に応じて `traceIds` から関連 span を引き直す。
 6. S3 などに Envelope を保存する場合は `scripts/trace/upload-envelope.mjs`（AWS CLI 要）を利用し、`REPORT_ENVELOPE_OUTPUT` を指すファイルを `REPORT_ENVELOPE_S3_BUCKET` / `REPORT_ENVELOPE_S3_KEY` でアップロードする。
