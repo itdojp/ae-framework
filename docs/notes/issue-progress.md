@@ -1,20 +1,14 @@
-# Issue Progress Snapshot (2025-10-06)
+# Issue Progress Snapshot (2025-10-08)
 
 | Issue | Theme | Status | Latest Notes |
 |-------|-------|--------|--------------|
-| #997 | Week1: フルパイプライン復元の詳細化 | ⏳ 継続 | Resilience／Telemetry／Property 系の回帰を解消し、Bulkhead 統合テストも通過。`pnpm test:ci` は緑化済み。`PODMAN_COMPOSE_PROVIDER=podman-compose make test-docker-all` の順次成功と Podman 手順整備が完了し、現在は mutation survivor 解消と Verify ワークフロー拡張が主な残課題。Fail-Fast Spec ビルドの sparse checkout を調整し、ローカルアクション不足で落ちる事象を解消。|
-<<<<<<< HEAD
-| #999 | Week2: 継続運用計画の具体化 | ⏳ 継続 | Verify Lite / mutation-quick GitHub Check を整備済み。TokenOptimizer quick run は 100% を維持。EnhancedStateManager quick run は logicalKey 欠落・TTL 未指定・object 圧縮パス等のテスト拡充で **71.15%**（killed 328 / survived 133）を記録。Podman unit compose は `AE_HOST_STORE` キャッシュ導入で 45 秒程度まで短縮。`scripts/ci/run-verify-lite-local.sh` の追加に加え、`scripts/trace/run-kvonce-trace-replay.mjs` でトレース検証→TLC リプレイを自動化。残課題は versionIndex 周りのサバイバーと Verify Lite のラベル制御の本運用化。|
-| #1001 | Week2 Tracker | ✅ 進捗記録中 | `src/api/server.ts` の Mutation quick を 47%→67%→81%→88%→94%→98.69%→100% まで引き上げ。TokenOptimizer quick は 32.12%、EnhancedStateManager quick は import/gc/index テスト＋論理キー/TTL ガードで **71.15%**（survived 133）。性能プロジェクトは `vitest --passWithNoTests` 化してゲート継続、イベント/rollback 付近のフォローアップを継続する。Trace まわりは Projector/Validator/OTLP 変換の CLI テストと conformance 連結テストを追加済み。|
-=======
-| #999 | Week2: 継続運用計画の具体化 | ⏳ 継続 | Verify Lite / mutation-quick GitHub Check を整備済み。TokenOptimizer quick run は 100% を維持。EnhancedStateManager quick run は import 系テスト追加で **72.02%**（killed 332 / survived 129）まで向上。Podman unit compose は `AE_HOST_STORE` キャッシュ導入で 45 秒程度まで短縮。`scripts/ci/run-verify-lite-local.sh` の追加に加え、`scripts/trace/run-kvonce-trace-replay.mjs` でトレース検証→TLC リプレイを自動化。残課題はトランザクション／rollback 系サバイバーと Verify Lite のラベル制御の本運用化。|
-| #1001 | Week2 Tracker | ✅ 進捗記録中 | `src/api/server.ts` の Mutation quick を 47%→67%→81%→88%→94%→98.69%→100% まで引き上げ。TokenOptimizer quick は 32.12%、EnhancedStateManager quick は import/gc テスト追加で **72.02%**（survived 129）。性能プロジェクトは `vitest --passWithNoTests` 化してゲート継続、イベント/rollback 付近のフォローアップを継続する。Trace まわりは Projector/Validator/OTLP 変換の CLI テストと conformance 連結テストを追加済み。|
->>>>>>> 9cf6584 (test: capture missing key/version import cases)
-| #1002 | Week3 準備 (予定) | 💤 未着手 | Week2 の残課題（Docker 実行環境整備・mutation survivors 対応）完了後に着手予定。現時点では準備メモのみ。|
-| #1003 | Week3 Tracker | 💤 未着手 | Week3 の進行条件となる CI/テスト基盤の整備待ち。前段となる #999/#1001 の完了がブロッカー。|
+| #997 | Week1: フルパイプライン復元の詳細化 | ⏳ 継続 | Podman/Compose 手順と `make test-docker-all` は安定。mutation survivor の整理と Verify Lite ⇔ フルパイプライン連携の再整備が残課題。Spec ビルド sparse checkout やローカルアクション不足による失敗は解消済み。|
+| #999 | Week2: 継続運用計画の具体化 | ⏳ 継続 | Verify Lite / mutation-quick GitHub Check は main へ復帰済み。TokenOptimizer quick は 64.78% → 100%（PR #1091）、EnhancedStateManager quick は 64.78%（survived 243）。Step Summary/Artifact 再出力とラベル運用の本格化が残タスク。|
+| #1001 | Week2 Tracker | ✅ 進捗記録中 | API server mutation スコア 100% を維持しつつ、TokenOptimizer/CircuitBreaker PBT 安定化 (#1091) を完了。EnhancedStateManager survivor (`versionIndex` / `stateImported` / `findKeyByVersion`) 対策と tinypool 障害調査が継続タスク。|
+| #1002 | Week3 準備 (予定) | 💤 未着手 | Week2 の残課題（EnhancedStateManager survivor、Verify Lite lint backlog）を整理した後に着手予定。Trace ダッシュボード案と Docker ジョブ計画書のドラフト化が必要。|
+| #1003 | Week3 Tracker | 💤 未着手 | Week3 着手条件（Docker runtime, tinypool 安定化, mutation 整理）が揃っていないため、Issue コメントと手順書は更新保留。|
 |
-
-> メモ内容は GitHub Issues (#997, #999, #1001, #1002, #1003) にもコメントとして反映済み（2025-10-06 更新）。
+> メモ内容は GitHub Issues (#997, #999, #1001, #1002, #1003) にもコメントとして反映済み（2025-10-08 更新）。
 
 ### Latest PR / Follow-ups
 - Podman/WSL ランタイム最適化: PR [#1014](https://github.com/itdojp/ae-framework/pull/1014)

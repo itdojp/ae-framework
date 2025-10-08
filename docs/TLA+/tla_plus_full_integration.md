@@ -194,25 +194,27 @@ THEOREM Safety == Spec => []NoOverwrite
 - KvOnce のトレース検証 (`scripts/trace/run-kvonce-conformance.sh`) を CI ジョブに組み込み、NDJSON スキーマを `docs/trace/kvonce-trace-schema.md` に記録
 - KvOnce トレースを TLC へリプレイするプロトタイプ (`scripts/trace/run-kvonce-trace-replay.mjs`) を追加し、Spec Generate & Model workflow でサマリを取得
 
-### Phase C: 後回し項目と再開条件
-1. **生成成果物の完全ゲート化**  
-   - `generate-artifacts` ワークフローを必須チェックへ昇格する前に、生成差分のホワイトリスト運用と、誤検知を抑えるテンプレート整理を実施。  
-   - 再開条件: 仕様変更時の差分が安定してレビュー可能であること、Issue #1011 ステップ2の残タスクが収束していること。
-2. **Projector → Validator → TLC のトレースリプレイ**  
-   - 実装ログから自動抽出した NDJSON を TLC/Apalache で検証する再実行パイプラインを整備。  
-   - 再開条件: 現行 PoC (KvOnce) の end-to-end テストが緑化し、追加ドメインのトレース要件が確定していること。
-3. **BDD 生成フローの再導入**  
-   - TLA+ の Action から BDD ステップを再生成し、`tests/bdd` を自動更新する。  
-   - 再開条件: サンプル生成の品質が reviewer 合意を得られる水準となり、verify-lite lint backlog の整理計画 (#1016) が進んでいること。
-4. **ダッシュボード統合**  
-   - mutation/coverage/trace 成果をまとめる可視化ダッシュボードを構築。  
-   - 再開条件: Week2 以降の運用 Issues (#999/#1001) のクリティカル項目が解消されていること。
+### Phase C: 後回し項目と再開条件 (2025-10-08 更新)
+1. **Step2: Spec-driven CI の再構築**  
+   - [ ] `generate-artifacts` / `model-based-tests` / `conformance` ジョブを GitHub Actions に復帰させる。  
+   - [ ] 生成物差分のホワイトリスト化とテンプレート整理を完了し、必須チェック昇格の基準を明文化する。  
+   - ⚠️ ブロッカー: Verify Lite lint backlog (#1016) と EnhancedStateManager mutation survivor の整理が未完。
+2. **Step3: Trace Projector / Validator 本運用**  
+   - [ ] KvOnce で検証した Report Envelope / NDJSON スキーマを ISSUE #1011 の Step3 コメントに反映する。  
+   - [ ] Projector → Validator → TLC リプレイの CI テンプレートを整備し、PoC ログを自動検証できるようにする。  
+   - ✅ 進捗: Report Envelope スキーマと AJV 検証（PR #1043, #1044, #1049）、MinIO collector PoC（PR #1045〜#1051）。
+3. **Step4: verify:conformance 連携**  
+   - [ ] 仕様→BDD 生成を `tests/bdd` に再導入し、差分検証ルールを定義する。  
+   - [ ] 実装ログを Trace Validator へ入力するワークフローを設計し、CI レポート統合方針をまとめる。
+4. **Step5: 拡張と可視化**  
+   - [ ] 追加ドメイン仕様の候補と Refinement Mapping 拡張案を整理する。  
+   - [ ] mutation / coverage / trace 指標を集約するダッシュボード設計を Week3/4 トラッカー (#1002/#1003) で具体化する。
 
-#### Phase C 棚卸しメモ (2025-10-06)
-- ✅ Report Envelope スキーマと AJV 検証を整備し、Verify Lite / Trace conformance の両ジョブで `REPORT_ENVELOPE_*` を発行（PR #1043, #1044, #1049）。
-- ✅ Stage2 (collector) PoC を MinIO で再現できるようにし、payload メタデータを Envelope に添付する道筋を確立（PR #1045〜#1051）。
-- ⏳ 残るボトルネックは EnhancedStateManager 周辺の mutation survivors (#1016) と生成成果物ゲートの昇格。これらが収束した段階で、上記 Phase C TODO を再開する。
-- ⏳ ダッシュボード統合は Tempo/Jaeger PoC と Grafana ノートを基に、Week3/4 トラッカー (#1002/#1003) で具体的なパネル設計を進める。
+#### Phase C 棚卸しメモ (2025-10-08)
+- ✅ Verify Lite / Trace conformance ジョブの Report Envelope 出力と AJV 検証を整備（PR #1043, #1044, #1049）。
+- ✅ Stage2 (collector) PoC を MinIO 上で再現し、Envelope に payload メタデータを添付する道筋を確立（PR #1045〜#1051）。
+- ⏳ EnhancedStateManager 周辺の mutation survivors (#1016) と generate-artifacts の差分運用整理が Step2 復帰の条件。
+- ⏳ ダッシュボード統合は Tempo/Jaeger PoC と Grafana ノートをベースに Week3/4 トラッカー (#1002/#1003) で設計を継続する。
 
 ### 実行ヒント
 
