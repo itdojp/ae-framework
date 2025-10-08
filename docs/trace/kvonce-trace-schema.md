@@ -38,6 +38,8 @@
 - `scripts/trace/run-kvonce-trace-replay.mjs`
   - KvOnce サンプルトレースを検証したうえで、TLC (`pnpm run spec:kv-once:tlc`) を実行し、`hermetic-reports/trace/replay/kvonce-trace-replay.json` にサマリを出力します。
   - TLC ツールが未導入の場合は `tool_not_available` として記録しつつ、CI ではステップサマリに結果を追記します。
+- `scripts/trace/build-kvonce-envelope-summary.mjs`
+  - `--trace-dir` / `--summary` オプションを指定することで `artifacts/kvonce-trace-summary.json` に最新 Run の統計・成果物パス・`verify:conformance` のサマリを集約できます。
 
 ## 今後の拡張
 - Issue #1011 ステップ3: 生成されたトレースを実装ログから自動抽出し、このスキーマに準拠させる。
