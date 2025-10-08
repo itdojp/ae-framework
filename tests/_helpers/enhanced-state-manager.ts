@@ -6,7 +6,7 @@ import { EnhancedStateManager as Manager } from '../../src/utils/enhanced-state-
 import { createHash } from 'node:crypto';
 
 export type TransactionOperation = {
-  type: 'save' | 'delete' | 'update';
+  type: 'save' | 'delete';
   key: string;
   data?: StateEntry;
   previousData?: StateEntry;
