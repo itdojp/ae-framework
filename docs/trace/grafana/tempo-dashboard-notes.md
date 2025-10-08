@@ -17,3 +17,7 @@ Visualise KvOnce envelope data alongside Tempo traces.
 ## Next Steps
 - Establish ingestion workflow (e.g., push envelope to Loki/JSON API) and create prototype dashboard.
 - Document Grafana dashboard export once available.
+
+## Snapshot
+- 参考: [tempo-dashboard.md](./tempo-dashboard.md) でレイアウト、Query、更新フローを定義。
+- ダッシュボードのラフデザインは `images/tempo-overview.svg` を参照。

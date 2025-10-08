@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
+  <rect width="640" height="360" fill="#1f2933"/>
+  <text x="320" y="40" font-family="Arial" font-size="24" fill="#f5f7fa" text-anchor="middle">Tempo Dashboard Layout</text>
+  <rect x="40" y="70" width="260" height="110" fill="#243b53" stroke="#d9e2ec" stroke-width="2" rx="8"/>
+  <text x="170" y="110" font-family="Arial" font-size="16" fill="#d9e2ec" text-anchor="middle">Run Overview</text>
+  <text x="170" y="135" font-family="Arial" font-size="12" fill="#9fb3c8" text-anchor="middle">kvonce.run_id × count()</text>
+  <text x="170" y="155" font-family="Arial" font-size="12" fill="#9fb3c8" text-anchor="middle">branch / commit</text>
+
+  <rect x="340" y="70" width="260" height="110" fill="#243b53" stroke="#d9e2ec" stroke-width="2" rx="8"/>
+  <text x="470" y="110" font-family="Arial" font-size="16" fill="#d9e2ec" text-anchor="middle">Recent Errors</text>
+  <text x="470" y="135" font-family="Arial" font-size="12" fill="#9fb3c8" text-anchor="middle">status.code = ERROR</text>
+  <text x="470" y="155" font-family="Arial" font-size="12" fill="#9fb3c8" text-anchor="middle">kvonce.validation.valid = false</text>
+
+  <rect x="40" y="210" width="260" height="110" fill="#243b53" stroke="#d9e2ec" stroke-width="2" rx="8"/>
+  <text x="170" y="250" font-family="Arial" font-size="16" fill="#d9e2ec" text-anchor="middle">Trace Drilldown</text>
+  <text x="170" y="275" font-family="Arial" font-size="12" fill="#9fb3c8" text-anchor="middle">Link to Tempo Explore</text>
+
+  <rect x="340" y="210" width="260" height="110" fill="#243b53" stroke="#d9e2ec" stroke-width="2" rx="8"/>
+  <text x="470" y="250" font-family="Arial" font-size="16" fill="#d9e2ec" text-anchor="middle">Verify Lite Context</text>
+  <text x="470" y="275" font-family="Arial" font-size="12" fill="#9fb3c8" text-anchor="middle">mutation score / lint baseline</text>
+</svg>
