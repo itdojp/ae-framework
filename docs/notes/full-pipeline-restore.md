@@ -76,12 +76,6 @@
 - Dashboard 集約: Tempo / Grafana ノートを `docs/trace/tempo-dashboard-notes.md` へ移行し、Step3 完了後に CI export を紐付け
 - Artifact 整理: Pact / API fuzz / Mutation / Projector / Validator の結果を `artifacts/full-pipeline/<step>/` に格納
 - 成果報告: Week5 終了時に #997 本体へダイジェスト（Verify Lite サマリ + Mutation トレンド + Trace dashboard スクリーンショット）を投稿
-1. **Apalache ワークフローの一般化** – 今回はローカル実行で通ったが、CI 共有キャッシュやバージョン固定を整理する。
-2. **Mutation テストのカバレッジ改善** – Quick モードは API server 100% / EnhancedStateManager 58.33%（survivor 102）。`versionIndex` 更新・`stateImported` イベント・`findKeyByVersion` ガードの追加テストが必要。
-3. **Contract テストの拡充** – Pact Provider Verifier を複数契約に適用できるよう、状態セットアップや CI 連携を検討する。
-4. **コンテナ運用テストの拡張** – `PODMAN_COMPOSE_PROVIDER=podman-compose make test-docker-all` は順次成功。flake detection レポートの自動集計と安定性モニタリングを継続。
-5. **Policy / SBOM の CI 組み込み** – ローカルでは OPA/ Syft が通るようになったので、CI キャッシュ・成果物の保管/署名ポリシーを整備する。
-6. **End-to-End サンプルの拡張** – Property / MBT / BDD / Pact を単一シナリオ上で連携させ、フルパイプラインのデモを整備する。（進捗: shared fixture 実装済 / Pact 複数契約追加済）
 
 ## 次のアクション候補
 - `docs/infra/container-runtime.md` を参照し、Podman もしくは Docker Compose を稼働させた上で `make test-docker-unit` / `make test-docker-all` の依存コンテナとネットワークを整備する。

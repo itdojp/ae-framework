@@ -67,7 +67,7 @@ const run = async () => {
         if (code === 0) {
           resolve();
         } else {
-          reject(new Error(`${step.name} failed with exit code ${code}`));
+          reject(new Error(`${step.name} failed with exit code ${code ?? 'unknown (process terminated)'}`));
         }
       });
     });

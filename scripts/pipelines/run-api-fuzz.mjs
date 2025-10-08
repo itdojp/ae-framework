@@ -20,5 +20,5 @@ if (dryRun) {
 
 const child = spawn(command[0], command.slice(1), { stdio: 'inherit' });
 child.on('close', (code) => {
-  process.exit(code ?? 1);
+  process.exit(code == null ? 1 : code);
 });
