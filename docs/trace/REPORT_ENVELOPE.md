@@ -132,6 +132,7 @@ Issue: #1011 / #1012 / #1036 / #1038
 1. CI では `scripts/trace/create-report-envelope.mjs` を利用し、Verify Lite などのサマリを Envelope 化して `artifacts/report-envelope.json` に保存する。
    - スキーマは `schema/report-envelope.schema.json` で管理し、`scripts/ci/validate-report-envelope.mjs` で検証する。
    - 追加の成果物を添付する場合は `REPORT_ENVELOPE_PAYLOAD_METADATA`（単一ファイル）や `REPORT_ENVELOPE_EXTRA_ARTIFACTS`（カンマ区切りのパス列）を指定すると自動的に `artifacts` 配列へ追記される。
+   - Envelope が揃っている場合は `pnpm verify:conformance --from-envelope artifacts/report-envelope.json` でトレースサマリを再掲でき、CI なしの環境でも Step Summary を再利用できる。
 2. Envelope の生成時に `GITHUB_RUN_ID` / `GITHUB_WORKFLOW` / `GITHUB_SHA` / `GITHUB_REF` を自動埋め込み、他の CI でも環境変数から補完できるようにする。
 3. Trace 系ジョブでは、Collector から取得した payload のメタデータ (`kvonce-payload-metadata.json`) を artifacts 配列に追加し、`scripts/trace/build-kvonce-envelope-summary.mjs` で集計したサマリを `scripts/trace/create-report-envelope.mjs` でラップする。
 4. Dashboard / Tempo 連携は Envelope を単位としてインジェストし、必要に応じて `traceIds` から関連 span を引き直す。
