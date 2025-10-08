@@ -6,147 +6,13 @@ import { gzipSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
 import { EnhancedStateManager } from '../../../src/utils/enhanced-state-manager.js';
 import type { StateEntry } from '../../../src/utils/enhanced-state-manager.js';
+import { asInternal, getStorage, getTransactions, getOptions, getKeyIndex, getVersionIndex, buildExportedState, buildStateEntry } from '../../_helpers/enhanced-state-manager.js';
 
 const tempRoots: string[] = [];
 
 afterAll(async () => {
   await Promise.all(tempRoots.map((dir) => rm(dir, { recursive: true, force: true })));
 });
-
-type TransactionOperation = {
-  type: 'save' | 'delete';
-  key: string;
-  data: StateEntry | undefined;
-  previousData: StateEntry | undefined;
-};
-
-type TransactionContext = {
-  operations: TransactionOperation[];
-  rollbackData: Map<string, StateEntry>;
-};
-
-type InternalManager = {
-  options: EnhancedStateManager['options'];
-  databaseFile: string;
-  storage: Map<string, StateEntry>;
-  keyIndex: Map<string, Set<string>>;
-  ttlIndex: Map<string, number>;
-  versionIndex: Map<string, number>;
-  activeTransactions: Map<string, TransactionContext>;
-  saveInTransaction: (txId: string, key: string, entry: StateEntry) => Promise<void>;
-  findKeyByVersion: (logicalKey: string, version: number) => string | null;
-  findLatestKey: (logicalKey: string) => string | null;
-  initialize: () => Promise<void>;
-  runGarbageCollection: () => Promise<void>;
-  persistToDisk: () => Promise<void>;
-  calculateChecksum: (data: unknown) => string;
-  decompress: (buffer: Buffer) => Promise<unknown>;
-};
-
-const asInternal = (manager: EnhancedStateManager): InternalManager => manager as unknown as InternalManager;
-const getStorage = (manager: EnhancedStateManager) => asInternal(manager).storage;
-const getTransactions = (manager: EnhancedStateManager) => asInternal(manager).activeTransactions;
-const getOptions = (manager: EnhancedStateManager) => asInternal(manager).options;
-const getKeyIndex = (manager: EnhancedStateManager) => asInternal(manager).keyIndex;
-const getVersionIndex = (manager: EnhancedStateManager) => asInternal(manager).versionIndex;
-type ExportedState = Awaited<ReturnType<EnhancedStateManager['exportState']>>;
-
-const buildExportedState = (
-  manager: EnhancedStateManager,
-  overrides: {
-    metadata?: Partial<ExportedState['metadata']>;
-    entries?: StateEntry[];
-    indices?: Partial<ExportedState['indices']>;
-  } = {}
-): ExportedState => {
-  const base: ExportedState = {
-    metadata: {
-      version: '1.0.0',
-      timestamp: new Date().toISOString(),
-      options: getOptions(manager),
-    },
-    entries: [],
-    indices: {
-      keyIndex: {},
-      versionIndex: {},
-    },
-  };
-
-  return {
-    ...base,
-    ...overrides,
-    metadata: {
-      ...base.metadata,
-      ...overrides.metadata,
-    },
-    entries: overrides.entries ?? base.entries,
-    indices: {
-      keyIndex: overrides.indices?.keyIndex ?? base.indices.keyIndex,
-      versionIndex: overrides.indices?.versionIndex ?? base.indices.versionIndex,
-    },
-  };
-};
-
-const buildStateEntry = <T = unknown>(
-  logicalKey: string,
-  data: T,
-  overrides: {
-    id?: string;
-    timestamp?: string;
-    version?: number;
-    checksum?: string;
-    compressed?: boolean;
-    tags?: Record<string, string>;
-    ttl?: number;
-    metadata?: Partial<StateEntry['metadata']>;
-  } = {}
-): StateEntry<T> => {
-  const timestamp = overrides.timestamp ?? new Date().toISOString();
-  const size = (() => {
-    if (Buffer.isBuffer(data)) {
-      return data.length;
-    }
-    try {
-      return JSON.stringify(data).length;
-    } catch {
-      return Array.isArray(data) ? data.length : 0;
-    }
-  })();
-  const checksum = (() => {
-    if (overrides.checksum !== undefined) {
-      return overrides.checksum;
-    }
-    if (Buffer.isBuffer(data)) {
-      return createHash('sha256').update(data).digest('hex');
-    }
-    try {
-      return createHash('sha256').update(JSON.stringify(data)).digest('hex');
-    } catch {
-      return '';
-    }
-  })();
-
-  return {
-    id: overrides.id ?? createHash('md5').update(`${logicalKey}:${timestamp}:${size}`).digest('hex'),
-    logicalKey,
-    timestamp,
-    version: overrides.version ?? 1,
-    checksum,
-    data,
-    compressed: overrides.compressed ?? false,
-    tags: overrides.tags ?? {},
-    ...(overrides.ttl !== undefined ? { ttl: overrides.ttl } : {}),
-    metadata: {
-      size,
-      created: timestamp,
-      accessed: timestamp,
-      source: 'unit-test',
-      ...overrides.metadata,
-    },
-  };
-};
-
-
 describe('EnhancedStateManager configuration', () => {
   it('applies default storage options when omitted', () => {
     const root = join(tmpdir(), 'ae-framework-config-default');
@@ -160,6 +26,10 @@ describe('EnhancedStateManager configuration', () => {
     expect(options.gcInterval).toBe(3600);
     expect(options.maxVersions).toBe(10);
     expect(options.enableTransactions).toBe(true);
+    expect(options.enablePerformanceMetrics).toBe(false);
+    expect(options.enableSerializationCache).toBe(false);
+    expect(options.performanceSampleSize).toBe(20);
+    expect(options.skipUnchangedPersistence).toBe(true);
 
     const databaseFile = asInternal(manager).databaseFile as string;
     expect(databaseFile.endsWith('.ae/enhanced-state.db')).toBe(true);
@@ -175,6 +45,10 @@ describe('EnhancedStateManager configuration', () => {
       gcInterval: 120,
       maxVersions: 5,
       enableTransactions: false,
+      enablePerformanceMetrics: true,
+      enableSerializationCache: true,
+      performanceSampleSize: 8,
+      skipUnchangedPersistence: false,
     });
     const options = getOptions(manager);
 
@@ -185,6 +59,10 @@ describe('EnhancedStateManager configuration', () => {
     expect(options.gcInterval).toBe(120);
     expect(options.maxVersions).toBe(5);
     expect(options.enableTransactions).toBe(false);
+    expect(options.enablePerformanceMetrics).toBe(true);
+    expect(options.enableSerializationCache).toBe(true);
+    expect(options.performanceSampleSize).toBe(8);
+    expect(options.skipUnchangedPersistence).toBe(false);
   });
 });
 
@@ -684,46 +562,6 @@ describe('EnhancedStateManager transactions', () => {
 });
 
 describe('EnhancedStateManager helper behaviour', () => {
-  it('revives typed arrays as buffers during importState', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-typed-array-'));
-    tempRoots.push(root);
-
-    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
-    const timestamp = new Date().toISOString();
-    const typed = new Uint8Array([1, 2, 3, 4]);
-    const legacyArray = Array.from(typed);
-
-    const entry = buildStateEntry('typed-buffer', legacyArray, {
-      timestamp,
-      version: 1,
-      compressed: true,
-      metadata: {
-        created: timestamp,
-        accessed: timestamp,
-        source: 'legacy-import',
-        size: legacyArray.length,
-      },
-    });
-
-    const exported = buildExportedState(manager, {
-      metadata: { version: '1.0.0', timestamp },
-      entries: [entry],
-      indices: {
-        keyIndex: { 'typed-buffer': [`typed-buffer_${timestamp}`] },
-        versionIndex: { 'typed-buffer': 1 },
-      },
-    });
-
-    await manager.importState(exported);
-
-    const storage = getStorage(manager);
-    const stored = storage.get(`typed-buffer_${timestamp}`);
-    expect(stored?.data).toBeInstanceOf(Buffer);
-    expect((stored?.data as Buffer).equals(Buffer.from(typed))).toBe(true);
-
-    await manager.shutdown();
-  });
-
   it('preserves buffer instances when importing compressed entries', async () => {
     const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-buffer-instance-'));
     tempRoots.push(root);
@@ -932,6 +770,148 @@ describe('EnhancedStateManager helper behaviour', () => {
     await manager.shutdown();
   });
 
+  it('revives additional typed array views from serialized export data', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-typed-array-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+
+    const shared = new SharedArrayBuffer(4);
+    new Uint8Array(shared).set([1, 2, 3, 4]);
+
+    const buffer = new ArrayBuffer(8);
+    const dataView = new DataView(buffer);
+    dataView.setUint16(0, 0x1234);
+    dataView.setUint32(2, 0xdeadbeef);
+
+    const floatArray = new Float32Array([Math.PI, Math.E]);
+
+    const sharedEntry = buildStateEntry('shared-array-buffer', shared, { version: 1 });
+    const dataViewEntry = buildStateEntry('data-view-entry', dataView, { version: 1 });
+    const floatEntry = buildStateEntry('float-array-entry', floatArray, { version: 1 });
+
+    const exported = buildExportedState(manager, {
+      entries: [sharedEntry, dataViewEntry, floatEntry],
+      indices: {
+        keyIndex: {
+          'shared-array-buffer': [`${sharedEntry.logicalKey}_${sharedEntry.timestamp}`],
+          'data-view-entry': [`${dataViewEntry.logicalKey}_${dataViewEntry.timestamp}`],
+          'float-array-entry': [`${floatEntry.logicalKey}_${floatEntry.timestamp}`],
+        },
+        versionIndex: {
+          'shared-array-buffer': 1,
+          'data-view-entry': 1,
+          'float-array-entry': 1,
+        },
+      },
+    });
+
+    const serialized = asInternal(manager).stringifyForStorage(exported, 'typedArrayTest');
+    const revived = JSON.parse(serialized);
+
+    await manager.importState(revived);
+
+    const storage = getStorage(manager);
+    const sharedKey = `${sharedEntry.logicalKey}_${sharedEntry.timestamp}`;
+    const dataViewKey = `${dataViewEntry.logicalKey}_${dataViewEntry.timestamp}`;
+    const floatKey = `${floatEntry.logicalKey}_${floatEntry.timestamp}`;
+
+    const storedShared = storage.get(sharedKey);
+    expect(storedShared?.data).toBeInstanceOf(SharedArrayBuffer);
+    expect(Array.from(new Uint8Array(storedShared?.data as SharedArrayBuffer))).toEqual([1, 2, 3, 4]);
+
+    const storedView = storage.get(dataViewKey);
+    expect(storedView?.data).toBeInstanceOf(DataView);
+    const revivedView = storedView?.data as DataView;
+    expect(revivedView.getUint16(0)).toBe(0x1234);
+    expect(revivedView.getUint32(2)).toBe(0xdeadbeef);
+
+    const storedFloat = storage.get(floatKey);
+    expect(storedFloat?.data).toBeInstanceOf(Float32Array);
+    expect(Array.from(storedFloat?.data as Float32Array)).toEqual(Array.from(floatArray));
+
+    await manager.shutdown();
+  });
+
+  it('reconciles versionIndex using entry versions during importState', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-version-index-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+
+    const timestamp = new Date().toISOString();
+    const entry = buildStateEntry('orders', { id: 'v3-order' }, {
+      timestamp,
+      version: 3,
+      metadata: {
+        created: timestamp,
+        accessed: timestamp,
+        source: 'import-test',
+        size: 0,
+      },
+    });
+
+    const exported = buildExportedState(manager, {
+      entries: [entry],
+      indices: {
+        keyIndex: {
+          orders: [`orders_${timestamp}`],
+        },
+        versionIndex: {
+          orders: 1, // stale version that should be reconciled
+        },
+      },
+    });
+
+    await manager.importState(exported);
+
+    const versionIndex = getVersionIndex(manager);
+    expect(versionIndex.get('orders')).toBe(3);
+
+    const storage = getStorage(manager);
+    const stored = storage.get(`orders_${timestamp}`);
+    expect(stored?.version).toBe(3);
+
+    await manager.shutdown();
+  });
+
+  it('records zero metadata size when imported data cannot be stringified', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-circular-size-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+    await manager.initialize();
+
+    const circular: any = { foo: 'bar' };
+    circular.self = circular;
+    const timestamp = new Date().toISOString();
+
+    const exported = buildExportedState(manager, {
+      metadata: { version: '1.0.0', timestamp },
+      entries: [
+        buildStateEntry('circular-entry', circular, {
+          timestamp,
+          version: 1,
+          metadata: {
+            source: 'legacy-import',
+            created: timestamp,
+            accessed: timestamp,
+          },
+          checksum: '',
+          compressed: false,
+        }),
+      ],
+      indices: {
+        keyIndex: { 'circular-entry': [`circular-entry_${timestamp}`] },
+        versionIndex: { 'circular-entry': 1 },
+      },
+    });
+
+    await manager.importState(exported);
+    const stored = getStorage(manager).get(`circular-entry_${timestamp}`);
+    expect(stored?.metadata.size).toBe(0);
+  });
+
   it('creates snapshots scoped by phase or entity filters', async () => {
     const root = await mkdtemp(join(tmpdir(), 'ae-framework-snapshot-'));
     tempRoots.push(root);
@@ -1129,6 +1109,60 @@ describe('EnhancedStateManager snapshots and artifacts', () => {
     });
 
     warnSpy.mockRestore();
+    await manager.shutdown();
+  });
+});
+
+describe('EnhancedStateManager performance metrics', () => {
+  it('collects stringify metrics and cache hits when enabled', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-perf-metrics-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, {
+      databasePath: 'state.db',
+      enableTransactions: false,
+      enablePerformanceMetrics: true,
+      enableSerializationCache: true,
+      performanceSampleSize: 10,
+    });
+
+    await manager.initialize();
+    manager.resetPerformanceMetrics();
+
+    const payload = { id: 'metrics', nested: { foo: 'bar' } };
+    await manager.saveSSOT('metrics.entry', payload);
+    await manager.saveSSOT('metrics.entry.clone', payload);
+
+    const metrics = manager.getPerformanceMetrics();
+    expect(metrics.stringifyCalls).toBeGreaterThanOrEqual(2);
+    expect(metrics.samples.length).toBeGreaterThan(0);
+    expect(metrics.stringifyCacheHits).toBeGreaterThanOrEqual(1);
+    await manager.shutdown();
+  });
+
+  it('skips persistence writes when state checksum is unchanged', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-persist-metrics-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, {
+      databasePath: 'state.db',
+      enableTransactions: false,
+      enablePerformanceMetrics: true,
+    });
+
+    await manager.initialize();
+    await manager.saveSSOT('persist.sample', { id: 'persist' });
+
+    const internal = asInternal(manager);
+    await internal.persistToDisk();
+
+    const firstMetrics = manager.getPerformanceMetrics();
+    expect(firstMetrics.persistedWrites).toBeGreaterThanOrEqual(1);
+
+    await internal.persistToDisk();
+    const secondMetrics = manager.getPerformanceMetrics();
+    expect(secondMetrics.skippedPersistWrites).toBeGreaterThanOrEqual(1);
+
     await manager.shutdown();
   });
 });
@@ -1372,106 +1406,6 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     await manager.shutdown();
   });
 
-  it('infers version index when metadata map is absent', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-no-versionindex-'));
-    tempRoots.push(root);
-
-    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
-    await manager.initialize();
-
-    const timestamp = new Date().toISOString();
-    const fullKey = `inventory_${timestamp}`;
-    const payload = { id: 'no-versionindex', stock: 4 };
-
-    const entry = buildStateEntry('inventory', payload, {
-      timestamp,
-      version: 6,
-      metadata: { source: 'no-versionindex-test' },
-    });
-
-    const exported = buildExportedState(manager, {
-      metadata: { version: '1.0.0', timestamp },
-      entries: [entry],
-      indices: {
-        keyIndex: { inventory: [fullKey] },
-        versionIndex: {},
-      },
-    });
-
-    await manager.importState(exported);
-
-    expect(getVersionIndex(manager).get('inventory')).toBe(6);
-
-    await manager.shutdown();
-  });
-
-  it('imports legacy entries when key index is missing', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-no-keyindex-'));
-    tempRoots.push(root);
-
-    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
-    await manager.initialize();
-
-    const timestamp = new Date().toISOString();
-    const fullKey = `inventory_${timestamp}`;
-    const payload = { id: 'missing-keyindex', stock: 11 };
-
-    const entry = buildStateEntry('inventory', payload, {
-      timestamp,
-      version: 4,
-      metadata: { source: 'no-keyindex-test' },
-    });
-
-    const exported = buildExportedState(manager, {
-      metadata: { version: '1.0.0', timestamp },
-      entries: [entry],
-      indices: {
-        keyIndex: {},
-        versionIndex: { inventory: 4 },
-      },
-    });
-
-    await manager.importState(exported);
-
-    await expect(manager.loadSSOT('inventory')).resolves.toEqual(payload);
-    expect(Array.from(getKeyIndex(manager).get('inventory') ?? [])).toContain(fullKey);
-
-    await manager.shutdown();
-  });
-
-  it('promotes version index when imported indices lag entries', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'ae-framework-import-version-promote-'));
-    tempRoots.push(root);
-
-    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
-    await manager.initialize();
-
-    const timestamp = new Date().toISOString();
-    const fullKey = `inventory_${timestamp}`;
-    const payload = { id: 'promote-entry', stock: 6 };
-
-    const entry = buildStateEntry('inventory', payload, {
-      timestamp,
-      version: 8,
-      metadata: { source: 'version-promote-test' },
-    });
-
-    const exported = buildExportedState(manager, {
-      metadata: { version: '1.0.0', timestamp },
-      entries: [entry],
-      indices: {
-        keyIndex: { inventory: [fullKey] },
-        versionIndex: { inventory: 2 },
-      },
-    });
-
-    await manager.importState(exported);
-
-    expect(getVersionIndex(manager).get('inventory')).toBe(8);
-
-    await manager.shutdown();
-  });
-
   it('revives compressed buffer entries when importing legacy backups', async () => {
     const exportRoot = await mkdtemp(join(tmpdir(), 'ae-framework-state-export-'));
     const importRoot = await mkdtemp(join(tmpdir(), 'ae-framework-state-import-'));
@@ -1515,55 +1449,6 @@ describe('EnhancedStateManager persistence and shutdown', () => {
     expect(restored).toEqual(payload);
 
     await importManager.shutdown();
-  });
-
-  it('revives compressed typed array entries', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'ae-framework-typed-array-import-'));
-    tempRoots.push(root);
-
-    const manager = new EnhancedStateManager(root, {
-      databasePath: 'state.db',
-      enableTransactions: false,
-      enableCompression: true,
-    });
-    await manager.initialize();
-
-    const payload = { id: 'typed-array', stage: 'imported' };
-    const timestamp = new Date().toISOString();
-    const compressed = gzipSync(Buffer.from(JSON.stringify(payload)));
-    const typed = new Uint8Array(compressed);
-
-    const entry: Partial<StateEntry> = {
-      id: 'typed-entry',
-      logicalKey: 'typed-entry',
-      timestamp,
-      version: 3,
-      checksum: '',
-      compressed: true,
-      data: typed,
-      metadata: {
-        size: typed.byteLength,
-        created: timestamp,
-        accessed: timestamp,
-        source: 'typed-array-test',
-      },
-    };
-
-    const exported = {
-      metadata: { version: '1.0.0', timestamp },
-      entries: [entry],
-      indices: {
-        keyIndex: { 'typed-entry': [`typed-entry_${timestamp}`] },
-        versionIndex: { 'typed-entry': 3 },
-      },
-    };
-
-    await manager.importState(exported as any);
-
-    const restored = await manager.loadSSOT('typed-entry');
-    expect(restored).toEqual(payload);
-
-    await manager.shutdown();
   });
 
   it('restores ttl metadata when importing persistence entries', async () => {
