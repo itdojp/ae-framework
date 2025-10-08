@@ -36,7 +36,18 @@ function parseArgs(argv) {
 }
 
 function printHelp() {
-  console.log(`Usage: pnpm pipelines:trace [options]\n\nOptions:\n  -i, --input <file>        Trace file (NDJSON or OTLP JSON). Default: samples/trace/kvonce-sample.ndjson\n  -o, --output-dir <dir>    Output directory for artifacts (default: hermetic-reports/trace)\n  -f, --format <fmt>        Trace format (ndjson|otlp|auto). Default: auto\n      --skip-replay         Skip TLC replay step\n      --dry-run             Print the command without executing\n      --help                Show this message\n`);
+  const helpLines = [
+    'Usage: pnpm pipelines:trace [options]',
+    '',
+    'Options:',
+    '  -i, --input <file>        Trace file (NDJSON or OTLP JSON). Default: samples/trace/kvonce-sample.ndjson',
+    '  -o, --output-dir <dir>    Output directory for artifacts (default: hermetic-reports/trace)',
+    '  -f, --format <fmt>        Trace format (ndjson|otlp|auto). Default: auto',
+    '      --skip-replay         Skip TLC replay step',
+    '      --dry-run             Print the command without executing',
+    '      --help                Show this message',
+  ];
+  console.log(helpLines.join('\n'));
 }
 
 const opts = parseArgs(process.argv);

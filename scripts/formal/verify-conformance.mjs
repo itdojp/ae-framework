@@ -136,7 +136,9 @@ async function ensureNdjson(tracePath, format, outputDir) {
       return { status: 'no_events', format: finalFormat };
     }
     if (result.code !== 0) {
-      throw new Error(`convert-otlp-kvonce.mjs failed (exit ${result.code})`);
+      const stderr = result.stderr?.trim();
+      const hint = stderr ? `: ${stderr}` : '';
+      throw new Error(`convert-otlp-kvonce.mjs failed (exit ${result.code})${hint}`);
     }
     return { status: 'ok', format: finalFormat, ndjsonPath, sourcePath: ndjsonPath };
   }
@@ -180,7 +182,8 @@ async function runTracePipeline({ tracePath, format, outputDir, skipReplay }) {
     const projectorResult = await runProcess(process.execPath, [projectorScript, '--input', ensured.sourcePath, '--output', projectionPath]);
     if (projectorResult.code !== 0) {
       summary.status = 'projection_failed';
-      summary.projection = { exitCode: projectorResult.code };
+      const stderr = projectorResult.stderr?.trim();
+      summary.projection = stderr ? { exitCode: projectorResult.code, stderr } : { exitCode: projectorResult.code };
       return summary;
     }
     const projection = JSON.parse(fs.readFileSync(projectionPath, 'utf8'));
@@ -296,15 +299,20 @@ async function main() {
 
     const ajv = new Ajv({ allErrors: true, strict: false });
     addFormats(ajv);
-    const validate = ajv.compile({
+    const schemaConfig = {
       $id: 'TraceEvent',
       type: 'object',
       properties: schema.properties || {},
       required: schema.required || [],
       additionalProperties: true,
-      definitions: schema.definitions || undefined,
-      $defs: schema.$defs || undefined,
-    });
+    };
+    if (schema.definitions) {
+      schemaConfig.definitions = schema.definitions;
+    }
+    if (schema.$defs) {
+      schemaConfig.$defs = schema.$defs;
+    }
+    const validate = ajv.compile(schemaConfig);
 
     const schemaErrors = [];
     const invariantViolations = [];
