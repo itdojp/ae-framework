@@ -13,6 +13,11 @@ Issue refs: #1036 / #1038 / #1011
 - **JSON / Static data source**: `artifacts/trace/report-envelope.json` を JSON データソースとして登録し、`summary.*` / `artifacts[]` を取得する。S3 などに保管する場合は Presigned URL を利用する。
 - **Optional**: Verify Lite の Envelope (`artifacts/report-envelope.json`) も同じダッシュボードに読み込むと、Lint / Mutation の指標を一望できる。
 
+## テンプレート変数の自動生成
+- `scripts/trace/generate-grafana-variables.mjs` を実行すると、Envelope（`artifacts/trace/report-envelope.json`）や KvOnce Trace Summary（`artifacts/kvonce-trace-summary.json`）、Step Summary から `traceIds`・Tempo Explore リンクなどを収集し、Grafana のテンプレート変数向け JSON (`artifacts/trace/grafana-variables.json`) を生成できる。
+- 生成された JSON は JSON データソースとして読み込み、変数の `JSON Path` に `$.variables.traceIds[*].value` や `$.variables.tempoLinks[*].value` を指定することで、最新の Envelope 情報から自動的に候補値が反映される。
+- Step Summary しか手元にない場合でも、Markdown 内の `trace ids:` や `Tempo:` 行から値を抽出してテンプレート変数を構成する。
+
 ## 属性マッピング
 | Envelope Field | Grafana での用途 | Tempo 側属性 | 備考 |
 |----------------|------------------|--------------|------|
