@@ -51,7 +51,7 @@ const defaultCases = [
   { key: 'ndjson', label: 'NDJSON sample', dir: path.join(traceDir, 'ndjson') },
 ];
 
-function parseCases() {
+const parseCases = () => {
   if (!options.cases) return defaultCases;
   const entries = [];
   for (const chunk of options.cases.split(',')) {
@@ -63,17 +63,18 @@ function parseCases() {
     entries.push({ key, label: label ?? key, dir });
   }
   return entries.length > 0 ? entries : defaultCases;
-}
+};
 
-function readJsonSafe(filePath) {
+const cases = parseCases();
+
+const readJsonSafe = (filePath) => {
   try {
     return JSON.parse(fs.readFileSync(filePath, 'utf8'));
   } catch (error) {
     return null;
   }
-}
+};
 
-const cases = parseCases();
 const metadata = readJsonSafe(path.join(traceDir, 'kvonce-payload-metadata.json')) ?? {};
 const casesSummary = [];
 const aggregateTraceIds = new Set();
@@ -121,11 +122,21 @@ for (const item of cases) {
     projectionStats,
   };
 
-  if (fs.existsSync(reportPath)) entry.validationPath = path.relative(process.cwd(), reportPath);
-  if (fs.existsSync(projectionPath)) entry.projectionPath = path.relative(process.cwd(), projectionPath);
-  if (fs.existsSync(stateSequencePath)) entry.stateSequencePath = path.relative(process.cwd(), stateSequencePath);
-  if (traceIds.length > 0) entry.traceIds = traceIds;
-  if (tempoLinks.length > 0) entry.tempoLinks = tempoLinks;
+  if (fs.existsSync(reportPath)) {
+    entry.validationPath = path.relative(process.cwd(), reportPath);
+  }
+  if (fs.existsSync(projectionPath)) {
+    entry.projectionPath = path.relative(process.cwd(), projectionPath);
+  }
+  if (fs.existsSync(stateSequencePath)) {
+    entry.stateSequencePath = path.relative(process.cwd(), stateSequencePath);
+  }
+  if (traceIds.length > 0) {
+    entry.traceIds = traceIds;
+  }
+  if (tempoLinks.length > 0) {
+    entry.tempoLinks = tempoLinks;
+  }
 
   casesSummary.push(entry);
 }
@@ -137,16 +148,20 @@ const summaryPath = options.summary
 const conformanceSummary = fs.existsSync(summaryPath) ? readJsonSafe(summaryPath) : null;
 if (Array.isArray(conformanceSummary?.trace?.traceIds)) {
   for (const value of conformanceSummary.trace.traceIds) {
-    if (typeof value === 'string' && value.trim()) aggregateTraceIds.add(value.trim());
+    if (typeof value === 'string' && value.trim()) {
+      aggregateTraceIds.add(value.trim());
+    }
   }
 }
 if (Array.isArray(conformanceSummary?.tempoLinks)) {
   for (const value of conformanceSummary.tempoLinks) {
-    if (typeof value === 'string' && value.trim()) aggregateTempoLinks.add(value.trim());
+    if (typeof value === 'string' && value.trim()) {
+      aggregateTempoLinks.add(value.trim());
+    }
   }
 }
 
-const summary = {
+const output = {
   schemaVersion: '1.0.0',
   generatedAt: new Date().toISOString(),
   traceDir: path.relative(process.cwd(), traceDir),
@@ -160,13 +175,13 @@ const summary = {
 };
 
 if (conformanceSummary) {
-  summary.conformance = conformanceSummary;
+  output.conformance = conformanceSummary;
 }
 if (aggregateTraceIds.size > 0) {
-  summary.traceIds = Array.from(aggregateTraceIds);
+  output.traceIds = Array.from(aggregateTraceIds);
 }
 if (aggregateTempoLinks.size > 0) {
-  summary.tempoLinks = Array.from(aggregateTempoLinks);
+  output.tempoLinks = Array.from(aggregateTempoLinks);
 }
 
 const destDir = path.dirname(outputPath);
@@ -174,5 +189,5 @@ if (!fs.existsSync(destDir)) {
   fs.mkdirSync(destDir, { recursive: true });
 }
 
-fs.writeFileSync(outputPath, JSON.stringify(summary, null, 2));
+fs.writeFileSync(outputPath, JSON.stringify(output, null, 2));
 console.log(`[trace] wrote kvonce summary to ${outputPath}`);

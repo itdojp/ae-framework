@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 
 /**
- * Collect unique trace IDs from an NDJSON event stream.
- * Lines that fail to parse or do not contain a traceId are ignored.
+ * Collect unique trace IDs from an NDJSON stream of events.
+ * Lines that fail to parse or do not contain a string traceId are skipped.
  * @param {string | null | undefined} ndjsonPath
  * @returns {string[]}
  */
@@ -24,8 +24,8 @@ export function collectTraceIdsFromNdjson(ndjsonPath) {
 }
 
 /**
- * Build Tempo explore links for the provided trace IDs.
- * Falls back to REPORT_ENVELOPE_TEMPO_LINK_TEMPLATE when no template is passed.
+ * Build Tempo explore links for the given trace IDs using the provided template.
+ * When no template is supplied the REPORT_ENVELOPE_TEMPO_LINK_TEMPLATE env var is used.
  * @param {string[]} traceIds
  * @param {string | undefined} template
  * @returns {string[]}

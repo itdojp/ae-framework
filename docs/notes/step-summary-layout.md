@@ -21,6 +21,7 @@ Issue refs: #1097 / #1096 / #1038
 - **Spec セクション**: `verify:conformance` が TLC 実行時に `hermetic-reports/formal/tla-summary.json` のステータスを要約する（ツールが未導入の場合は `status: tool_not_available` を表示）。
 - **Verify Lite セクション**: `pipelines:full` で `reports/verify-lite/verify-lite-run-summary.json` を Envelope に詰めたうえで、lint / mutation quick / property の結果を `summary.steps.*` から抜粋する。
 - **Trace セクション**: `verify:conformance` または `verify:conformance --from-envelope` の `summary.trace` を描画し、Projection/Validation/TLC の結果と issues 数を列挙する。`REPORT_ENVELOPE_TEMPO_LINK_TEMPLATE` を設定しておくと Tempo Explore へのリンクも自動生成できる。
+  - `traceIds` や `artifacts` 情報（projection/validation/state sequence/replay）を付与しておくと、Step Summary から GitHub Artifacts へジャンプできる。
 
 ## 実装メモ (2025-10-09)
 - `scripts/ci/step-summary.mjs` が `appendSection` などの共通ユーティリティを提供し、`verify-conformance`・`pipelines:trace`・CI スクリプトから同じ Markdown フォーマットで出力できる。

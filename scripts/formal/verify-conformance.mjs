@@ -261,10 +261,14 @@ async function runTracePipeline({ tracePath, format, outputDir, skipReplay }) {
 
     const traceIds = collectTraceIdsFromNdjson(ensured.ndjsonPath);
     if (traceIds.length > 0) {
+      summary.trace = summary.trace ?? {};
+      summary.trace.traceIds = traceIds;
       summary.traceIds = traceIds;
     }
     const tempoLinks = buildTempoLinks(traceIds);
     if (tempoLinks.length > 0) {
+      summary.trace = summary.trace ?? {};
+      summary.trace.tempoLinks = tempoLinks;
       summary.tempoLinks = tempoLinks;
     }
   } catch (error) {
@@ -290,10 +294,9 @@ function appendStepSummary(summary) {
     if (summary.trace.replay) {
       lines.push(`  - replay: ${summary.trace.replay.status}`);
     }
-
-    const traceIds = Array.isArray(summary.trace.traceIds)
+    const traceIds = Array.isArray(summary.trace?.traceIds) && summary.trace.traceIds.length > 0
       ? summary.trace.traceIds
-      : Array.isArray(summary.traceIds)
+      : Array.isArray(summary.traceIds) && summary.traceIds.length > 0
         ? summary.traceIds
         : [];
     if (traceIds.length > 0) {
@@ -310,8 +313,9 @@ function appendStepSummary(summary) {
 
     const formatArtifact = (label, value) => {
       if (!value) return null;
+      const display = `\`${value}\``;
       if (artifactsUrl) {
-        return `    - ${label}: \`${value}\` ([Artifacts](${artifactsUrl}))`;
+        return `    - ${label}: ${display} ([Artifacts](${artifactsUrl}))`;
       }
       return `    - ${label}: ${value}`;
     };
@@ -323,15 +327,21 @@ function appendStepSummary(summary) {
     if (summary.projection?.stateSequence) artifactLines.push(formatArtifact('state sequence', summary.projection.stateSequence));
     if (summary.validation?.path) artifactLines.push(formatArtifact('validation', summary.validation.path));
     if (summary.replay?.summaryPath) artifactLines.push(formatArtifact('replay summary', summary.replay.summaryPath));
-    const renderedArtifacts = artifactLines.filter(Boolean);
-    if (renderedArtifacts.length > 0) {
+    const filtered = artifactLines.filter(Boolean);
+    if (filtered.length > 0) {
       lines.push('  - artifacts:');
-      lines.push(...renderedArtifacts);
+      lines.push(...filtered);
     }
 
-    const tempoLinks = Array.isArray(summary.tempoLinks) && summary.tempoLinks.length > 0
-      ? summary.tempoLinks
-      : buildTempoLinks(traceIds);
+    const tempoLinks = (() => {
+      if (Array.isArray(summary.trace?.tempoLinks) && summary.trace.tempoLinks.length > 0) {
+        return summary.trace.tempoLinks;
+      }
+      if (Array.isArray(summary.tempoLinks) && summary.tempoLinks.length > 0) {
+        return summary.tempoLinks;
+      }
+      return buildTempoLinks(traceIds);
+    })();
     if (tempoLinks.length > 0) {
       lines.push('  - tempo links:');
       tempoLinks.forEach((link) => {
