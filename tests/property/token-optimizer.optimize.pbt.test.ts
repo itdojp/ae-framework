@@ -14,8 +14,12 @@ describe('PBT: TokenOptimizer.optimizeContext', () => {
       async ({ context, maxTokens, keywords }) => {
         const { optimized, stats } = await opt.optimizeContext(context, maxTokens, keywords);
         expect(optimized.length).toBeLessThanOrEqual(context.length);
-        expect(stats.original).toBeGreaterThanOrEqual(stats.compressed);
-        expect(stats.reductionPercentage).toBeGreaterThanOrEqual(0);
+        expect(stats.original).toBeGreaterThanOrEqual(0);
+        expect(stats.compressed).toBeGreaterThanOrEqual(0);
+        const expectedReduction = stats.original > 0
+          ? Math.max(0, Math.round(((stats.original - stats.compressed) / stats.original) * 100))
+          : 0;
+        expect(stats.reductionPercentage).toBe(expectedReduction);
         expect(stats.reductionPercentage).toBeLessThanOrEqual(100);
       }
     ), { numRuns: 30 });

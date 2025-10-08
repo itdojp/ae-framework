@@ -142,7 +142,8 @@ describe('BenchmarkRunner', () => {
       const result = await runner.runBenchmark('test-problem');
       const endTime = Date.now();
       
-      expect(result.executionDetails.totalDuration).toBeGreaterThan(0);
+      // Stryker サンドボックスでは Date.now の粒度が粗く 0ms のケースが発生するため、0 以上を許容する
+      expect(result.executionDetails.totalDuration).toBeGreaterThanOrEqual(0);
       expect(result.executionDetails.totalDuration).toBeLessThanOrEqual(endTime - startTime + 100); // Allow 100ms tolerance
     });
   });

@@ -68,6 +68,7 @@
 - `./scripts/mutation/run-scoped.sh --quick`: concurrency=1 / timeoutMS=10000 / time-limit=420s。
 - `./scripts/mutation/gather-mutate-patterns.sh`: `git diff` から mutate 対象を抽出するヘルパー。CI は `origin/main...HEAD` 差分を前提。
 - `./scripts/mutation/run-scoped.sh --auto-diff[=<ref>]`: 差分 + 追加指定を組み合わせて quick ランを実行。
+- Stryker v8 では config ファイルを位置引数で渡す必要があるため、run-scoped.sh 側で `--config` を使わない実装に調整済み。
 
 ## TODO
 - [x] `scripts/verify/execute-contracts.ts` を try/catch で書き換え、Babel/Stryker が解釈できるようにする。
