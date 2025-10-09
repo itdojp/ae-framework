@@ -85,7 +85,6 @@ export class PersonaCommand extends BaseExtendedCommand {
           result = await this.handleExport(options.output);
           break;
         case 'import':
-          if (!args[1]) throw new Error('File path is required for import command');
           result = await this.handleImport(args[1]);
           break;
         case 'reset':
@@ -195,7 +194,7 @@ export class PersonaCommand extends BaseExtendedCommand {
     }
   }
 
-  private async handleImport(importPath: string): Promise<PersonaCommandResult> {
+  private async handleImport(importPath?: string): Promise<PersonaCommandResult> {
     if (!importPath) {
       return {
         action: 'import',

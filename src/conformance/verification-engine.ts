@@ -321,6 +321,11 @@ export class ConformanceVerificationEngine extends EventEmitter {
   getMetrics(): ConformanceMetrics {
     return {
       ...this.metrics,
+      counts: { ...this.metrics.counts },
+      performance: { ...this.metrics.performance },
+      period: { ...this.metrics.period },
+      violationTrends: [...this.metrics.violationTrends],
+      topViolations: [...this.metrics.topViolations],
       timestamp: new Date().toISOString()
     };
   }

@@ -1,3 +1,61 @@
+let cachedExpect = typeof globalThis.expect === 'function' ? globalThis.expect : undefined;
+let expectExtended = false;
+
+const tryResolveExpect = () => {
+  if (!cachedExpect && typeof require === 'function') {
+    try {
+      ({ expect: cachedExpect } = require('@jest/globals'));
+    } catch {
+      // ignore
+    }
+  }
+
+  if (!cachedExpect && typeof require === 'function') {
+    try {
+      ({ expect: cachedExpect } = require('vitest'));
+    } catch {
+      // ignore
+    }
+  }
+
+  return cachedExpect ?? globalThis.expect;
+};
+
+const registerMatcher = (instance) => {
+  if (!expectExtended && typeof instance?.extend === 'function') {
+    instance.extend({
+      toHaveNoViolations: async received => {
+        const results = await global.axe(received);
+        return {
+          pass: results.violations.length === 0,
+          message: () => results.violations.length > 0
+            ? `Found ${results.violations.length} accessibility violations`
+            : 'No accessibility violations found'
+        };
+      }
+    });
+    expectExtended = true;
+  }
+};
+
+const ensureExpectExtended = () => {
+  const instance = tryResolveExpect();
+  if (typeof instance === 'function') {
+    registerMatcher(instance);
+    cachedExpect = instance;
+  }
+};
+
+const getExpect = () => {
+  const instance = tryResolveExpect();
+  if (typeof instance !== 'function') {
+    throw new Error('Global expect is not available; ensure the test runner provides it');
+  }
+  registerMatcher(instance);
+  cachedExpect = instance;
+  return instance;
+};
+
 /**
  * Accessibility test setup for Phase 6 Quality Gates
  * Simplified version for Node.js environment
@@ -117,17 +175,6 @@ global.axe = async (element) => {
   return { violations };
 };
 
-// Basic matcher
-expect.extend({
-  toHaveNoViolations: async (received) => {
-    const results = await global.axe(received);
-    return {
-      pass: results.violations.length === 0,
-      message: () => results.violations.length > 0 
-        ? `Found ${results.violations.length} accessibility violations`
-        : 'No accessibility violations found'
-    };
-  }
-});
+ensureExpectExtended();
 
 console.log('✅ Accessibility test setup completed (Node.js mode)');

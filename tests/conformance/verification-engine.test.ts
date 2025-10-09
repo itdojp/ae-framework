@@ -95,11 +95,12 @@ describe('ConformanceVerificationEngine', () => {
   describe('rule management', () => {
     it('should add and retrieve rules', async () => {
       const rule: ConformanceRule = createTestRule('data_validation', 'major');
+      const initialCount = engine.getRules().length;
       
       await engine.addRule(rule);
       const rules = engine.getRules();
       
-      expect(rules).toHaveLength(3); // 2 default + 1 added (from setup)
+      expect(rules).toHaveLength(initialCount + 1);
       expect(rules.some(r => r.id === rule.id)).toBe(true);
     });
 

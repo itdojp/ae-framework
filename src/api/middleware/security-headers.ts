@@ -4,6 +4,7 @@
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import fp from 'fastify-plugin';
 
 export interface SecurityHeadersOptions {
   /** Enable/disable all security headers */
@@ -106,11 +107,11 @@ function generateHSTSValue(options: Required<SecurityHeadersOptions>['strictTran
 /**
  * Security headers hook function
  */
-async function securityHeadersHook(
+function securityHeadersHook(
   request: FastifyRequest,
   reply: FastifyReply,
   options: Required<SecurityHeadersOptions>
-): Promise<void> {
+): void {
   if (!options.enabled) {
     return;
   }
@@ -157,36 +158,63 @@ async function securityHeadersHook(
 }
 
 /**
+ * Merge user supplied options with defaults while preserving typing.
+ */
+function resolveSecurityHeaderOptions(
+  options: SecurityHeadersOptions = {}
+): Required<SecurityHeadersOptions> {
+  const resolved: Required<SecurityHeadersOptions> = {
+    enabled: options.enabled ?? DEFAULT_OPTIONS.enabled,
+    contentSecurityPolicy: {
+      enabled: (options.contentSecurityPolicy?.enabled ?? DEFAULT_OPTIONS.contentSecurityPolicy.enabled) as boolean,
+      directives: (options.contentSecurityPolicy?.directives ??
+        DEFAULT_OPTIONS.contentSecurityPolicy.directives) as string,
+    },
+    frameOptions: {
+      enabled: (options.frameOptions?.enabled ?? DEFAULT_OPTIONS.frameOptions.enabled) as boolean,
+      value: (options.frameOptions?.value ?? DEFAULT_OPTIONS.frameOptions.value) as string,
+    },
+    contentTypeOptions: {
+      enabled: (options.contentTypeOptions?.enabled ?? DEFAULT_OPTIONS.contentTypeOptions.enabled) as boolean,
+    },
+    referrerPolicy: {
+      enabled: (options.referrerPolicy?.enabled ?? DEFAULT_OPTIONS.referrerPolicy.enabled) as boolean,
+      value: (options.referrerPolicy?.value ?? DEFAULT_OPTIONS.referrerPolicy.value) as string,
+    },
+    strictTransportSecurity: {
+      enabled: (options.strictTransportSecurity?.enabled ?? DEFAULT_OPTIONS.strictTransportSecurity.enabled) as boolean,
+      maxAge: (options.strictTransportSecurity?.maxAge ?? DEFAULT_OPTIONS.strictTransportSecurity.maxAge) as number,
+      includeSubDomains: (options.strictTransportSecurity?.includeSubDomains ??
+        DEFAULT_OPTIONS.strictTransportSecurity.includeSubDomains) as boolean,
+      preload: (options.strictTransportSecurity?.preload ?? DEFAULT_OPTIONS.strictTransportSecurity.preload) as boolean,
+    },
+    xssProtection: {
+      enabled: (options.xssProtection?.enabled ?? DEFAULT_OPTIONS.xssProtection.enabled) as boolean,
+      value: (options.xssProtection?.value ?? DEFAULT_OPTIONS.xssProtection.value) as string,
+    },
+    permissionsPolicy: {
+      enabled: (options.permissionsPolicy?.enabled ?? DEFAULT_OPTIONS.permissionsPolicy.enabled) as boolean,
+      directives: (options.permissionsPolicy?.directives ?? DEFAULT_OPTIONS.permissionsPolicy.directives) as string,
+    },
+  };
+
+  return resolved;
+}
+
+/**
  * Fastify plugin for security headers
  */
-export async function securityHeadersPlugin(
-  fastify: FastifyInstance,
-  options: SecurityHeadersOptions = {}
-): Promise<void> {
-  const finalOptions = { ...DEFAULT_OPTIONS, ...options };
+export const securityHeadersPlugin = fp(
+  (fastify: FastifyInstance, options: SecurityHeadersOptions = {}) => {
+    const finalOptions = resolveSecurityHeaderOptions(options);
 
-  // Merge nested options
-  Object.keys(finalOptions).forEach(key => {
-    if (typeof finalOptions[key as keyof SecurityHeadersOptions] === 'object' && 
-        options[key as keyof SecurityHeadersOptions] && 
-        typeof options[key as keyof SecurityHeadersOptions] === 'object') {
-      const currentValue = finalOptions[key as keyof SecurityHeadersOptions];
-      const optionValue = options[key as keyof SecurityHeadersOptions];
-      
-      if (currentValue && optionValue && typeof currentValue === 'object' && typeof optionValue === 'object') {
-        finalOptions[key as keyof SecurityHeadersOptions] = {
-          ...currentValue,
-          ...optionValue
-        } as any;
-      }
-    }
-  });
-
-  // Register the hook for all routes using onRequest
-  fastify.addHook('onRequest', async (request, reply) => {
-    await securityHeadersHook(request, reply, finalOptions);
-  });
-}
+    fastify.addHook('onSend', (request, reply, payload, done) => {
+      securityHeadersHook(request, reply, finalOptions);
+      done(null, payload);
+    });
+  },
+  { name: 'security-headers-plugin' }
+);
 
 /**
  * Environment-specific security configurations
