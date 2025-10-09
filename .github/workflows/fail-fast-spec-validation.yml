@@ -103,7 +103,7 @@ jobs:
           mkdir -p .ae
           
           # Fail fast on compilation errors
-          if ! npx tsx src/cli/index.ts spec compile --input "$SPEC_FILE" --output .ae/ae-ir.json --no-verbose; then
+          if ! npx tsx src/cli/index.ts spec compile --input "$SPEC_FILE" --output .ae/ae-ir.json; then
             printf "%s\n" "::error::AE-Spec compilation failed"
             exit 1
           fi
