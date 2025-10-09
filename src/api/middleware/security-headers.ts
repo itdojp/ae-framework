@@ -163,44 +163,40 @@ function securityHeadersHook(
 function resolveSecurityHeaderOptions(
   options: SecurityHeadersOptions = {}
 ): Required<SecurityHeadersOptions> {
-  const pick = <T>(value: T | undefined, fallback: T): T =>
-    value === undefined ? fallback : value;
-
-  const resolved = {
-    enabled: pick(options.enabled, DEFAULT_OPTIONS.enabled),
+  const resolved: Required<SecurityHeadersOptions> = {
+    enabled: options.enabled ?? DEFAULT_OPTIONS.enabled,
     contentSecurityPolicy: {
-      enabled: pick(options.contentSecurityPolicy?.enabled, DEFAULT_OPTIONS.contentSecurityPolicy.enabled),
-      directives: pick(options.contentSecurityPolicy?.directives, DEFAULT_OPTIONS.contentSecurityPolicy.directives),
+      enabled: (options.contentSecurityPolicy?.enabled ?? DEFAULT_OPTIONS.contentSecurityPolicy.enabled) as boolean,
+      directives: (options.contentSecurityPolicy?.directives ??
+        DEFAULT_OPTIONS.contentSecurityPolicy.directives) as string,
     },
     frameOptions: {
-      enabled: pick(options.frameOptions?.enabled, DEFAULT_OPTIONS.frameOptions.enabled),
-      value: pick(options.frameOptions?.value, DEFAULT_OPTIONS.frameOptions.value),
+      enabled: (options.frameOptions?.enabled ?? DEFAULT_OPTIONS.frameOptions.enabled) as boolean,
+      value: (options.frameOptions?.value ?? DEFAULT_OPTIONS.frameOptions.value) as string,
     },
     contentTypeOptions: {
-      enabled: pick(options.contentTypeOptions?.enabled, DEFAULT_OPTIONS.contentTypeOptions.enabled),
+      enabled: (options.contentTypeOptions?.enabled ?? DEFAULT_OPTIONS.contentTypeOptions.enabled) as boolean,
     },
     referrerPolicy: {
-      enabled: pick(options.referrerPolicy?.enabled, DEFAULT_OPTIONS.referrerPolicy.enabled),
-      value: pick(options.referrerPolicy?.value, DEFAULT_OPTIONS.referrerPolicy.value),
+      enabled: (options.referrerPolicy?.enabled ?? DEFAULT_OPTIONS.referrerPolicy.enabled) as boolean,
+      value: (options.referrerPolicy?.value ?? DEFAULT_OPTIONS.referrerPolicy.value) as string,
     },
     strictTransportSecurity: {
-      enabled: pick(options.strictTransportSecurity?.enabled, DEFAULT_OPTIONS.strictTransportSecurity.enabled),
-      maxAge: pick(options.strictTransportSecurity?.maxAge, DEFAULT_OPTIONS.strictTransportSecurity.maxAge),
-      includeSubDomains: pick(
-        options.strictTransportSecurity?.includeSubDomains,
-        DEFAULT_OPTIONS.strictTransportSecurity.includeSubDomains
-      ),
-      preload: pick(options.strictTransportSecurity?.preload, DEFAULT_OPTIONS.strictTransportSecurity.preload),
+      enabled: (options.strictTransportSecurity?.enabled ?? DEFAULT_OPTIONS.strictTransportSecurity.enabled) as boolean,
+      maxAge: (options.strictTransportSecurity?.maxAge ?? DEFAULT_OPTIONS.strictTransportSecurity.maxAge) as number,
+      includeSubDomains: (options.strictTransportSecurity?.includeSubDomains ??
+        DEFAULT_OPTIONS.strictTransportSecurity.includeSubDomains) as boolean,
+      preload: (options.strictTransportSecurity?.preload ?? DEFAULT_OPTIONS.strictTransportSecurity.preload) as boolean,
     },
     xssProtection: {
-      enabled: pick(options.xssProtection?.enabled, DEFAULT_OPTIONS.xssProtection.enabled),
-      value: pick(options.xssProtection?.value, DEFAULT_OPTIONS.xssProtection.value),
+      enabled: (options.xssProtection?.enabled ?? DEFAULT_OPTIONS.xssProtection.enabled) as boolean,
+      value: (options.xssProtection?.value ?? DEFAULT_OPTIONS.xssProtection.value) as string,
     },
     permissionsPolicy: {
-      enabled: pick(options.permissionsPolicy?.enabled, DEFAULT_OPTIONS.permissionsPolicy.enabled),
-      directives: pick(options.permissionsPolicy?.directives, DEFAULT_OPTIONS.permissionsPolicy.directives),
+      enabled: (options.permissionsPolicy?.enabled ?? DEFAULT_OPTIONS.permissionsPolicy.enabled) as boolean,
+      directives: (options.permissionsPolicy?.directives ?? DEFAULT_OPTIONS.permissionsPolicy.directives) as string,
     },
-  } satisfies Required<SecurityHeadersOptions>;
+  };
 
   return resolved;
 }
