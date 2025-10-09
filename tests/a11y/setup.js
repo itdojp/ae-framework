@@ -1,8 +1,12 @@
-import { expect } from 'vitest';
 /**
  * Accessibility test setup for Phase 6 Quality Gates
  * Simplified version for Node.js environment
  */
+
+const { expect } = globalThis;
+if (typeof expect !== 'function') {
+  throw new Error('Global expect is not available; ensure the test runner provides it');
+}
 
 // Mock document object for Node.js environment with minimal tree support
 const createBody = () => {
