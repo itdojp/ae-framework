@@ -1,3 +1,5 @@
 dashboards:
   - uid: tempo-overview
     file: docs/trace/grafana/tempo-dashboard.json
+  - uid: tempo-inventory
+    file: docs/trace/grafana/tempo-inventory.json
