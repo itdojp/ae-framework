@@ -144,6 +144,7 @@ Issue: #1011 / #1012 / #1036 / #1038
 4. Trace 系ジョブでは、Collector から取得した payload のメタデータ (`kvonce-payload-metadata.json`) を artifacts 配列に追加し、`scripts/trace/build-kvonce-envelope-summary.mjs` で集計したサマリを `scripts/trace/create-report-envelope.mjs` でラップする。
 5. Dashboard / Tempo 連携は Envelope を単位としてインジェストし、必要に応じて `traceIds` から関連 span を引き直す。
 6. S3 などに Envelope を保存する場合は `scripts/trace/upload-envelope.mjs`（AWS CLI 要）を利用し、`REPORT_ENVELOPE_OUTPUT` を指すファイルを `REPORT_ENVELOPE_S3_BUCKET` / `REPORT_ENVELOPE_S3_KEY` でアップロードする。
+7. presigned URL や Slack 通知が必要な場合は `scripts/trace/publish-envelope.mjs` を利用する。`--dry-run` でプレビュー後、`--bucket` 等を指定して `upload-envelope` → `aws s3 presign` → Slack 通知までを一括で実行できる。
 
 ## OTLP Attribute Mapping
 | Envelope Field | OTLP Span Attribute | 説明 |
