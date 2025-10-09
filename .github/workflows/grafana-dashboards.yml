@@ -1,0 +1,80 @@
+name: grafana-dashboards
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * *'
+  pull_request:
+    paths:
+      - docs/trace/grafana/**
+      - scripts/trace/export-dashboard.mjs
+      - scripts/trace/import-dashboard.mjs
+      - .github/grafana-dashboards.yml
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Export dashboards (dry-run)
+        env:
+          GRAFANA_BASE_URL: ${{ secrets.GRAFANA_BASE_URL }}
+          GRAFANA_API_TOKEN: ${{ secrets.GRAFANA_API_TOKEN }}
+        run: |
+          node scripts/trace/export-dashboard.mjs --config .github/grafana-dashboards.yml --dry-run
+
+      - name: Check diff
+        id: diff
+        run: |
+          if git diff --exit-code; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload diff artifact
+        if: steps.diff.outputs.changed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: grafana-dashboards-diff
+          path: docs/trace/grafana
+
+      - name: Report diff summary
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number || '' }} --body "Grafana dashboard export diff detected."
+
+  import:
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    needs: export
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Import dashboards
+        env:
+          GRAFANA_BASE_URL: ${{ secrets.GRAFANA_BASE_URL }}
+          GRAFANA_API_TOKEN: ${{ secrets.GRAFANA_API_TOKEN }}
+        run: |
+          node scripts/trace/import-dashboard.mjs --config .github/grafana-dashboards.yml

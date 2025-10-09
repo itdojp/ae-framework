@@ -48,5 +48,10 @@ Issue refs: #1036 / #1038 / #1011
 ## TODO
 - [ ] Verify Lite Envelope を同じダッシュボードに統合し、Mutation/Lint 指標も可視化する。
 - [ ] `pipelines:trace` 実行時に Grafana Link パネル向け URL を Envelope の `notes` に追記する。
-- [ ] ダッシュボードの export/import スクリプトを `scripts/trace/` 配下に追加し、自動化する。
+- [x] ダッシュボードの export/import スクリプトを `scripts/trace/` 配下に追加し、自動化する (CI 設計済み)。
 - ダッシュボードの JSON は `scripts/trace/export-dashboard.mjs --uid <UID>` を使って取得し、`docs/trace/grafana/tempo-dashboard.json` に保存できる。GitHub Actions から自動取得する場合は `GRAFANA_HOST` / `GRAFANA_API_TOKEN` を環境変数で渡す。
+
+## CI 連携
+- Grafana ダッシュボードの Export/Import を GitHub Actions (`.github/workflows/grafana-dashboards.yml`) で自動実行し、差分が生じた場合は Artifact として添付する。
+- UID と JSON パスの対応は `.github/grafana-dashboards.yml` で管理する。
+- API Token は `GRAFANA_API_TOKEN`、ベース URL は `GRAFANA_BASE_URL` を Secrets で渡す。
