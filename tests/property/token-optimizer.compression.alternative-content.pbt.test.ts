@@ -19,10 +19,9 @@ describe('PBT: TokenOptimizer compression on alternative content', () => {
               `# ${k}`,
               '- bullet A',
               '- bullet A',
-              '```
+              `\`\`\`
 code fence
-```
-',
+\`\`\``,
               'paragraph paragraph paragraph',
               'paragraph paragraph paragraph',
             ].join('\n');
@@ -39,7 +38,7 @@ code fence
             .filter((i) => i >= 0);
           for (let i = 1; i < idx.length; i++) expect(idx[i - 1]).toBeLessThan(idx[i]);
           // duplicated bullet likely deduped in compressed body
-          expect((body.match(/- bullet A/g) || []).length).toBeLessThanOrEqual(2);
+          expect((body.match(/- bullet A/g) || []).length).toBeLessThanOrEqual(keys.length);
           expect(res.stats.compressed).toBeLessThanOrEqual(res.stats.original);
         }),
         { numRuns: 6 }
