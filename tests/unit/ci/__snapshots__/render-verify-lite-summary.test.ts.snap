@@ -16,10 +16,10 @@ Schema Version: 1.0.0
 
 
 Artifacts:
-- lintSummary: n/a
-- lintLog: n/a
-- mutationSummary: n/a
-- mutationSurvivors: n/a"
+- Lint Baseline Diff: n/a
+- Lint Log: n/a
+- Mutation HTML Report: n/a
+- Mutation Survivors JSON: n/a"
 `;
 
 exports[`renderVerifyLiteSummary > renders markdown summary with schema version and flags 1`] = `
@@ -41,9 +41,9 @@ Schema Version: 1.0.0
 
 
 Artifacts:
-- lintSummary: \`verify-lite-lint-summary.json\` ([Artifacts](https://example.com/artifacts))
-- lintLog: \`verify-lite-lint.log\` ([Artifacts](https://example.com/artifacts))
-- mutationSummary: \`mutation-summary.md\` ([Artifacts](https://example.com/artifacts))
-- mutationSurvivors: \`reports/mutation/survivors.json\` ([Artifacts](https://example.com/artifacts))
+- Lint Baseline Diff: \`verify-lite-lint-summary.json\` ([Data Link](https://example.com/artifacts))
+- Lint Log: \`verify-lite-lint.log\` ([Data Link](https://example.com/artifacts))
+- Mutation HTML Report: \`mutation-summary.md\` ([Data Link](https://example.com/artifacts))
+- Mutation Survivors JSON: \`reports/mutation/survivors.json\` ([Data Link](https://example.com/artifacts))
 - GitHub Artifacts: [Open](https://example.com/artifacts)"
 `;

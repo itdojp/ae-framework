@@ -94,19 +94,33 @@ export const renderVerifyLiteSummary = (summary, options = {}) => {
   const artifactLines = [];
   if (Object.keys(artifacts).length > 0) {
     const { artifactsUrl } = options;
+    const labelMap = {
+      lintSummary: 'Lint Baseline Diff',
+      lintLog: 'Lint Log',
+      mutationSummary: 'Mutation HTML Report',
+      mutationSurvivors: 'Mutation Survivors JSON',
+    };
     const formatArtifact = (value) => {
       if (!value) return 'n/a';
       if (/^https?:\/\//i.test(value)) {
-        return `[${value}](${value})`;
+        return `[Data Link](${value})`;
       }
       if (artifactsUrl) {
-        return `\`${value}\` ([Artifacts](${artifactsUrl}))`;
+        return `\`${value}\` ([Data Link](${artifactsUrl}))`;
       }
-      return value;
+      return `\`${value}\``;
     };
 
     artifactLines.push('\nArtifacts:');
+    const preferredOrder = ['lintSummary', 'lintLog', 'mutationSummary', 'mutationSurvivors'];
+    const handled = new Set();
+    for (const key of preferredOrder) {
+      if (!Object.prototype.hasOwnProperty.call(artifacts, key)) continue;
+      handled.add(key);
+      artifactLines.push(`- ${labelMap[key] ?? key}: ${formatArtifact(artifacts[key])}`);
+    }
     for (const [key, value] of Object.entries(artifacts)) {
+      if (handled.has(key)) continue;
       artifactLines.push(`- ${key}: ${formatArtifact(value)}`);
     }
     if (artifactsUrl) {
