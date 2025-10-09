@@ -239,7 +239,7 @@ function buildReport(projection, stateInfo, config) {
   const report = {
     schemaVersion: 'inventory/validation/v1',
     generatedAt: new Date().toISOString(),
-    valid: issues.some((item) => item.severity === 'error') ? false : true,
+    valid: !issues.some((item) => item.severity === 'error'),
     issues,
     config: {
       onhandMin: config.onhandMin,
