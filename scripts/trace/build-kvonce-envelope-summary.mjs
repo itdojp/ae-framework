@@ -9,6 +9,7 @@ function parseArgs(argv) {
     traceDir: path.join('hermetic-reports', 'trace'),
     summary: null,
     cases: null,
+    autoDomainSummaries: true,
     domainSummaries: [],
   };
   for (let i = 2; i < argv.length; i += 1) {
@@ -29,6 +30,8 @@ function parseArgs(argv) {
     } else if (arg === '--domain-summary' && next) {
       options.domainSummaries.push(next);
       i += 1;
+    } else if (arg === '--no-auto-domain-summaries') {
+      options.autoDomainSummaries = false;
     } else if (arg === '--help' || arg === '-h') {
       console.log(`Usage: node scripts/trace/build-kvonce-envelope-summary.mjs [options]
 
@@ -39,6 +42,8 @@ Options:
       --cases <list>       Comma-separated case descriptors key[:label[:subdir]]
       --domain-summary <file>
                            Additional domain summary JSON (repeatable)
+      --no-auto-domain-summaries
+                           Disable automatic discovery of domain summaries
   -h, --help               Show this message
 `);
       process.exit(0);
@@ -142,6 +147,73 @@ function normalizeDomainSummary(summary, sourcePath) {
   return { entry, meta, traceIds, tempoLinks };
 }
 
+const SUMMARY_FILENAME_PATTERN = /-domain-summary\.json$/i;
+const DIRECTORY_DENYLIST = new Set(['.git', 'node_modules', '.pnpm-store', '.cache', 'dist', 'tmp']);
+
+function addSearchRoot(roots, candidate) {
+  if (!candidate) return;
+  const absolute = path.resolve(candidate);
+  if (roots.has(absolute)) return;
+  try {
+    if (fs.existsSync(absolute) && fs.statSync(absolute).isDirectory()) {
+      roots.add(absolute);
+    }
+  } catch (error) {
+    // ignore unreadable paths
+  }
+}
+
+function discoverDomainSummaryFiles({ traceDir, outputPath, summaryPath, explicit }) {
+  const searchRoots = new Set();
+  addSearchRoot(searchRoots, traceDir);
+  addSearchRoot(searchRoots, path.join(traceDir, 'domain-summaries'));
+  addSearchRoot(searchRoots, path.resolve('artifacts/trace'));
+  addSearchRoot(searchRoots, path.join(path.resolve('artifacts/trace'), 'domain-summaries'));
+  if (summaryPath) {
+    addSearchRoot(searchRoots, path.dirname(summaryPath));
+  }
+
+  const explicitSet = new Set(explicit.map((value) => path.resolve(value)));
+  const outputResolved = path.resolve(outputPath);
+  const discovered = new Set();
+  const visitedDirs = new Set();
+
+  const visit = (dir, depth = 0) => {
+    const resolvedDir = path.resolve(dir);
+    if (visitedDirs.has(resolvedDir) || depth > 3) return;
+    visitedDirs.add(resolvedDir);
+    let entries;
+    try {
+      entries = fs.readdirSync(resolvedDir, { withFileTypes: true });
+    } catch (error) {
+      return;
+    }
+    for (const entry of entries) {
+      const fullPath = path.join(resolvedDir, entry.name);
+      if (entry.isFile()) {
+        if (SUMMARY_FILENAME_PATTERN.test(entry.name) && fullPath !== outputResolved) {
+          discovered.add(fullPath);
+        }
+      } else if (entry.isDirectory()) {
+        if (DIRECTORY_DENYLIST.has(entry.name)) continue;
+        visit(fullPath, depth + 1);
+      }
+    }
+  };
+
+  for (const root of searchRoots) {
+    visit(root, 0);
+  }
+
+  const results = [];
+  for (const filePath of discovered) {
+    if (!explicitSet.has(filePath)) {
+      results.push(filePath);
+    }
+  }
+  return results;
+}
+
 
 const metadata = readJsonSafe(path.join(traceDir, 'kvonce-payload-metadata.json')) ?? {};
 const casesSummary = [];
@@ -229,6 +301,32 @@ if (Array.isArray(conformanceSummary?.tempoLinks)) {
   }
 }
 
+const explicitDomainSummaries = options.domainSummaries.map((value) => path.resolve(value));
+const autoDomainSummaries = options.autoDomainSummaries
+  ? discoverDomainSummaryFiles({
+      traceDir,
+      outputPath,
+      summaryPath,
+      explicit: explicitDomainSummaries,
+    })
+  : [];
+
+const domainSummaryDescriptors = [];
+const seenSummaryPaths = new Set();
+const outputResolved = path.resolve(outputPath);
+
+const addDomainSummaryDescriptor = (filePath, mode) => {
+  if (!filePath) return;
+  const resolved = path.resolve(filePath);
+  if (resolved === outputResolved) return;
+  if (seenSummaryPaths.has(resolved)) return;
+  seenSummaryPaths.add(resolved);
+  domainSummaryDescriptors.push({ path: resolved, mode, raw: filePath });
+};
+
+explicitDomainSummaries.forEach((filePath) => addDomainSummaryDescriptor(filePath, 'manual'));
+autoDomainSummaries.forEach((filePath) => addDomainSummaryDescriptor(filePath, 'auto'));
+
 const domainEntries = casesSummary.map((entry) => {
   const status = entry.status ?? (entry.valid === true ? 'valid' : (entry.valid === false ? 'invalid' : 'unknown'));
   const artifacts = {};
@@ -251,28 +349,30 @@ const domainEntries = casesSummary.map((entry) => {
 });
 
 const domainSummaryMetadata = [];
-for (const summaryPath of options.domainSummaries) {
-  if (!summaryPath) continue;
-  const directPath = path.resolve(summaryPath);
-  const fallbackPath = path.resolve(traceDir, summaryPath);
+for (const descriptor of domainSummaryDescriptors) {
+  const summaryPath = descriptor.path;
+  const discoveryMode = descriptor.mode;
+  const directPath = summaryPath;
+  const rawInput = descriptor.raw;
+  const fallbackPath = rawInput ? path.resolve(traceDir, rawInput) : null;
   let resolved = null;
   if (fs.existsSync(directPath)) {
     resolved = directPath;
-  } else if (fs.existsSync(fallbackPath)) {
+  } else if (fallbackPath && fs.existsSync(fallbackPath)) {
     resolved = fallbackPath;
   }
   if (!resolved) {
-    console.warn(`[trace] domain summary not found: ${summaryPath}`);
+    console.warn(`[trace] domain summary not found (${discoveryMode}): ${path.relative(process.cwd(), summaryPath)}`);
     continue;
   }
   const summaryData = readJsonSafe(resolved);
   if (!summaryData) {
-    console.warn(`[trace] failed to parse domain summary: ${resolved}`);
+    console.warn(`[trace] failed to parse domain summary: ${path.relative(process.cwd(), resolved)}`);
     continue;
   }
   const normalized = normalizeDomainSummary(summaryData, resolved);
   if (!normalized) {
-    console.warn(`[trace] invalid domain summary structure: ${resolved}`);
+    console.warn(`[trace] invalid domain summary structure: ${path.relative(process.cwd(), resolved)}`);
     continue;
   }
   const {
@@ -284,6 +384,8 @@ for (const summaryPath of options.domainSummaries) {
   domainEntries.push(entry);
   extraTraceIds.forEach((value) => aggregateTraceIds.add(value));
   extraTempoLinks.forEach((value) => aggregateTempoLinks.add(value));
+  meta.discovery = discoveryMode;
+  meta.autoDiscovered = discoveryMode === 'auto';
   domainSummaryMetadata.push(meta);
 }
 
