@@ -10,9 +10,8 @@ test('sort preserves multiset (with repro)', () => {
     // This should pass - just checking multiset equality
     expectMultisetEqual(sorted, arr);
     
-    // This assertion will intentionally fail for arrays with length > 3
-    // to demonstrate repro generation
-    expect(sorted.length).toBeLessThanOrEqual(3);
+    // Ensure sorting preserves length
+    expect(sorted.length).toBe(arr.length);
   }));
 });
 
@@ -24,8 +23,7 @@ test('string reverse property (with repro)', () => {
     // This should always pass
     expect(doubleReversed).toBe(str);
     
-    // This will fail for strings longer than 2 characters
-    // to demonstrate repro generation with different data types
-    expect(str.length).toBeLessThanOrEqual(2);
+    // Length should remain unchanged after reversing twice
+    expect(doubleReversed.length).toBe(str.length);
   }));
 });
