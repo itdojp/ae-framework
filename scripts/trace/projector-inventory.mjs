@@ -2,7 +2,25 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+function ensureParentDir(filePath) {
+  if (!filePath) return;
+  const dir = path.dirname(filePath);
+  fs.mkdirSync(dir, { recursive: true });
+}
+
+function printUsage(scriptName) {
+  console.log(`Usage: ${scriptName} --input <ndjson> [--output <json>] [--state-output <json>]`);
+  console.log(`
+Options:
+  -i, --input <file>          Inventory NDJSON trace (required)
+  -o, --output <file>         Projection summary JSON (default: stdout)
+      --state-output <file>   Detailed state sequence JSON
+  -h, --help                  Show this message
+`);
+}
+
 function parseArgs() {
+  const scriptName = path.basename(process.argv[1] ?? 'projector-inventory.mjs');
   const args = process.argv.slice(2);
   const opts = { input: null, output: null, stateOutput: null };
   for (let i = 0; i < args.length; i += 1) {
@@ -18,20 +36,13 @@ function parseArgs() {
       opts.stateOutput = next;
       i += 1;
     } else if (arg === '--help' || arg === '-h') {
-      console.log(`Usage: node scripts/trace/projector-inventory.mjs --input <ndjson> [--output <json>] [--state-output <json>]
-
-Options:
-  -i, --input <file>          Inventory NDJSON trace (required)
-  -o, --output <file>         Projection summary JSON (default: stdout)
-      --state-output <file>   Detailed state sequence JSON
-  -h, --help                  Show this message
-`);
+      printUsage(scriptName);
       process.exit(0);
     }
   }
 
   if (!opts.input) {
-    console.error('Usage: projector-inventory --input <ndjson> [--output <json>] [--state-output <json>]');
+    console.error(`Usage: ${scriptName} --input <ndjson> [--output <json>] [--state-output <json>]`);
     process.exit(1);
   }
   return opts;
@@ -282,21 +293,21 @@ const { projection, stateSequence } = buildProjection(events);
 
 const resolvedStateOutput = stateOutput ? path.resolve(stateOutput) : null;
 if (resolvedStateOutput) {
-  fs.mkdirSync(path.dirname(resolvedStateOutput), { recursive: true });
+  ensureParentDir(resolvedStateOutput);
   fs.writeFileSync(resolvedStateOutput, JSON.stringify(stateSequence, null, 2));
   projection.outputs = {
     ...(projection.outputs ?? {}),
     stateSequence: path.relative(process.cwd(), resolvedStateOutput),
   };
-  projection.metrics.stateSequenceLength = stateSequence.length;
 } else {
   projection.stateSequence = stateSequence;
-  projection.metrics.stateSequenceLength = stateSequence.length;
 }
+
+projection.metrics.stateSequenceLength = stateSequence.length;
 
 const json = JSON.stringify(projection, null, 2);
 if (output) {
-  fs.mkdirSync(path.dirname(output), { recursive: true });
+  ensureParentDir(output);
   fs.writeFileSync(output, json);
 } else {
   process.stdout.write(json);
