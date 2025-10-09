@@ -163,7 +163,7 @@ function securityHeadersHook(
 function resolveSecurityHeaderOptions(
   options: SecurityHeadersOptions = {}
 ): Required<SecurityHeadersOptions> {
-  return {
+  const resolved = {
     enabled: options.enabled ?? DEFAULT_OPTIONS.enabled,
     contentSecurityPolicy: {
       enabled: options.contentSecurityPolicy?.enabled ?? DEFAULT_OPTIONS.contentSecurityPolicy.enabled,
@@ -195,7 +195,9 @@ function resolveSecurityHeaderOptions(
       enabled: options.permissionsPolicy?.enabled ?? DEFAULT_OPTIONS.permissionsPolicy.enabled,
       directives: options.permissionsPolicy?.directives ?? DEFAULT_OPTIONS.permissionsPolicy.directives,
     },
-  };
+  } satisfies Required<SecurityHeadersOptions>;
+
+  return resolved;
 }
 
 /**

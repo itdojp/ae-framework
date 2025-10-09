@@ -194,7 +194,7 @@ export class PersonaCommand extends BaseExtendedCommand {
     }
   }
 
-  private async handleImport(importPath: string): Promise<PersonaCommandResult> {
+  private async handleImport(importPath?: string): Promise<PersonaCommandResult> {
     if (!importPath) {
       return {
         action: 'import',
