@@ -145,6 +145,51 @@ describe('create-report-envelope CLI', () => {
     ]);
   });
 
+  it('merges domain trace metadata into the envelope', async () => {
+    const summaryPath = join(workdir, 'summary-with-domains.json');
+    const outputPath = join(workdir, 'envelope-domains.json');
+
+    const summary = {
+      schemaVersion: '1.0.0',
+      trace: {
+        status: 'invalid',
+        domains: [
+          {
+            key: 'inventory',
+            label: 'Inventory',
+            status: 'valid',
+            traceIds: ['inventory-trace-1'],
+            tempoLinks: ['https://tempo.example.com/explore?traceId=inventory-trace-1'],
+          },
+        ],
+      },
+    };
+
+    await writeFile(summaryPath, JSON.stringify(summary));
+
+    const result = spawnSync(process.execPath, [scriptPath, summaryPath, outputPath], {
+      cwd: workdir,
+      env: {
+        ...process.env,
+        REPORT_ENVELOPE_SOURCE: 'multi-domain',
+        GITHUB_RUN_ID: '9',
+        GITHUB_WORKFLOW: 'trace-workflow',
+        GITHUB_SHA: 'deadbeef',
+        GITHUB_REF: 'refs/heads/domains',
+        REPORT_ENVELOPE_TEMPO_LINK_TEMPLATE: 'https://tempo.example.com/explore?traceId={traceId}',
+      },
+    });
+
+    expect(result.status).toBe(0);
+
+    const envelope = JSON.parse(await readFile(outputPath, 'utf8'));
+    expect(envelope.correlation.traceIds).toEqual(['inventory-trace-1']);
+    expect(envelope.summary.trace.domains?.[0]?.key).toBe('inventory');
+    expect(envelope.summary.trace.domains?.[0]?.tempoLinks).toEqual(['https://tempo.example.com/explore?traceId=inventory-trace-1']);
+    expect(envelope.tempoLinks).toContain('https://tempo.example.com/explore?traceId=inventory-trace-1');
+    expect(envelope.notes).toContain('Tempo: https://tempo.example.com/explore?traceId=inventory-trace-1');
+  });
+
   it('derives trace ids from the summary when env is empty', async () => {
     const summaryPath = join(workdir, 'summary.json');
     const outputPath = join(workdir, 'envelope.json');

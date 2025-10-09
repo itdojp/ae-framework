@@ -97,6 +97,15 @@ describe('build-kvonce-envelope-summary.mjs', () => {
       expect(summary.traceIds).toEqual(['trace-xyz']);
       expect(summary.tempoLinks).toContain('https://tempo.example.com/explore?traceId=trace-xyz');
       expect(summary.conformance?.trace?.traceIds).toEqual(['trace-xyz']);
+      expect(summary.trace?.traceIds).toEqual(['trace-xyz']);
+      expect(summary.trace?.tempoLinks).toEqual(['https://tempo.example.com/explore?traceId=trace-xyz']);
+      const domain = summary.trace?.domains?.find((entry: { key: string }) => entry.key === 'current');
+      expect(domain).toBeDefined();
+      expect(domain?.status).toBe('valid');
+      expect(domain?.traceIds).toEqual(['trace-xyz']);
+      expect(summary.trace?.aggregate?.traceIds).toEqual(['trace-xyz']);
+      expect(summary.trace?.aggregate?.tempoLinks).toEqual(['https://tempo.example.com/explore?traceId=trace-xyz']);
+      expect(summary.trace?.aggregate?.issues).toBe(0);
     });
   });
 });

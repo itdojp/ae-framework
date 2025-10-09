@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "1.0.0",
+  "source": "multi-domain-trace",
+  "generatedAt": "2025-10-09T00:00:00Z",
+  "correlation": {
+    "runId": "12345",
+    "workflow": "trace-ci",
+    "branch": "feature/multi-domain",
+    "commit": "abcdef0",
+    "traceIds": ["inventory-trace-1", "reservation-trace-8"]
+  },
+  "summary": {
+    "trace": {
+      "status": "invalid",
+      "domains": [
+        {
+          "key": "inventory",
+          "label": "Inventory",
+          "status": "valid",
+          "issues": 0,
+          "traceIds": ["inventory-trace-1"],
+          "tempoLinks": [
+            "https://tempo.example.com/explore?traceId=inventory-trace-1"
+          ],
+          "artifacts": {
+            "validationPath": "hermetic-reports/trace/inventory/validation.json",
+            "projectionPath": "hermetic-reports/trace/inventory/projection.json",
+            "stateSequencePath": "hermetic-reports/trace/inventory/state-sequence.json"
+          },
+          "metrics": {
+            "eventCount": 32,
+            "replayStatus": "skipped"
+          }
+        },
+        {
+          "key": "reservation",
+          "label": "Reservation",
+          "status": "invalid",
+          "issues": 2,
+          "traceIds": ["reservation-trace-8"],
+          "tempoLinks": [
+            "https://tempo.example.com/explore?traceId=reservation-trace-8"
+          ],
+          "artifacts": {
+            "validationPath": "hermetic-reports/trace/reservation/validation.json",
+            "projectionPath": "hermetic-reports/trace/reservation/projection.json"
+          },
+          "metrics": {
+            "eventCount": 21,
+            "replayStatus": "ran"
+          }
+        }
+      ],
+      "aggregate": {
+        "traceIds": ["inventory-trace-1", "reservation-trace-8"],
+        "tempoLinks": [
+          "https://tempo.example.com/explore?traceId=inventory-trace-1",
+          "https://tempo.example.com/explore?traceId=reservation-trace-8"
+        ],
+        "issues": 2
+      }
+    }
+  },
+  "artifacts": [
+    {
+      "type": "application/json",
+      "path": "hermetic-reports/trace/inventory/validation.json",
+      "checksum": "sha256:deadbeef"
+    },
+    {
+      "type": "application/json",
+      "path": "hermetic-reports/trace/reservation/validation.json",
+      "checksum": "sha256:feedface"
+    }
+  ]
+}

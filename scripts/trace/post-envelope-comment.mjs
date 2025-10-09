@@ -115,6 +115,19 @@ function formatTempoLinks(envelope) {
   return ['### Tempo Links', ...items].join('\n');
 }
 
+function formatDomains(envelope) {
+  const domains = Array.isArray(envelope?.summary?.trace?.domains) ? envelope.summary.trace.domains : [];
+  if (domains.length === 0) return null;
+  const items = domains.map((domain) => {
+    const label = domain?.label ?? domain?.key ?? 'unknown';
+    const status = domain?.status ?? 'unknown';
+    const issues = domain?.issues ?? 0;
+    const traceIds = Array.isArray(domain?.traceIds) && domain.traceIds.length > 0 ? ` traceIds=${domain.traceIds.join(', ')}` : '';
+    return `- **${label}**: status=${status} issues=${issues}${traceIds}`;
+  });
+  return ['### Trace Domains', ...items].join('\n');
+}
+
 function getCaseValidity(value) {
   if (value === true) return 'valid';
   if (value === false) return 'invalid';
@@ -155,6 +168,7 @@ function buildComment(envelope) {
     header,
     formatTraceIds(envelope),
     formatTempoLinks(envelope),
+    formatDomains(envelope),
     formatArtifacts(envelope),
     formatCases(envelope),
   ].filter(Boolean);
