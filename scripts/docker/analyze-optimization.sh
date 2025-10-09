@@ -1,231 +1,119 @@
 #!/bin/bash
 #
-# Docker Image Analysis and Optimization Validator
-# Phase 1.4: Analyze Docker image security and performance
+# Podman Image Analysis and Optimization Validator
 #
 
 set -euo pipefail
 
-IMAGE_NAME="ae-framework"
+ENGINE_BIN="${CONTAINER_ENGINE:-}"
+if [[ -z "$ENGINE_BIN" ]]; then
+  if command -v podman >/dev/null 2>&1; then
+    ENGINE_BIN="podman"
+  elif command -v docker >/dev/null 2>&1; then
+    ENGINE_BIN="docker"
+  else
+    echo "❌ Podman/Docker が利用できません"
+    exit 1
+  fi
+fi
+
+IMAGE_NAME=${IMAGE_NAME:-ae-framework}
 TAG="${1:-latest}"
 FULL_IMAGE_NAME="${IMAGE_NAME}:${TAG}"
+DOCKERFILE_PATH="podman/Dockerfile"
 
-echo "🐳 Docker Image Analysis for ae-framework"
-echo "==========================================="
-
-# Function to check if Docker is available
-check_docker() {
-    if ! command -v docker >/dev/null 2>&1; then
-        echo "❌ Docker is not installed or not in PATH"
-        exit 1
-    fi
-    
-    if ! docker info >/dev/null 2>&1; then
-        echo "❌ Docker daemon is not running"
-        exit 1
-    fi
-    
-    echo "✅ Docker is available"
+log_section() {
+  echo
+  echo "==========================================="
+  echo "$1"
+  echo "==========================================="
 }
 
-# Function to build the image if it doesn't exist
+check_engine() {
+  if ! command -v "$ENGINE_BIN" >/dev/null 2>&1; then
+    echo "❌ $ENGINE_BIN が PATH にありません"
+    exit 1
+  fi
+  if ! "$ENGINE_BIN" info >/dev/null 2>&1; then
+    echo "❌ $ENGINE_BIN デーモンが起動していません"
+    exit 1
+  fi
+  echo "✅ $ENGINE_BIN を使用します"
+}
+
 ensure_image_exists() {
-    if ! docker image inspect "$FULL_IMAGE_NAME" >/dev/null 2>&1; then
-        echo "🔨 Image $FULL_IMAGE_NAME not found, building..."
-        docker build -t "$FULL_IMAGE_NAME" .
-    else
-        echo "✅ Image $FULL_IMAGE_NAME exists"
-    fi
+  if ! "$ENGINE_BIN" image inspect "$FULL_IMAGE_NAME" >/dev/null 2>&1; then
+    echo "🔨 $FULL_IMAGE_NAME が存在しないためビルドします"
+    "$ENGINE_BIN" build -t "$FULL_IMAGE_NAME" -f "$DOCKERFILE_PATH" .
+  else
+    echo "✅ $FULL_IMAGE_NAME が既に存在します"
+  fi
 }
 
-# Function to analyze image size
-analyze_image_size() {
-    echo "📏 Image Size Analysis"
-    echo "---------------------"
-    
-    local image_size=$(docker image inspect "$FULL_IMAGE_NAME" --format='{{.Size}}')
-    local size_mb=$((image_size / 1024 / 1024))
-    
-    echo "Image size: ${size_mb}MB"
-    
-    if [ $size_mb -lt 200 ]; then
-        echo "✅ Image size is excellent (< 200MB)"
-    elif [ $size_mb -lt 500 ]; then
-        echo "✅ Image size is good (< 500MB)"
-    elif [ $size_mb -lt 1000 ]; then
-        echo "⚠️  Image size is acceptable (< 1GB)"
-    else
-        echo "❌ Image size is too large (>= 1GB)"
-    fi
-    
-    echo
-    echo "📊 Layer Analysis:"
-    docker history "$FULL_IMAGE_NAME" --format "table {{.CreatedBy}}\t{{.Size}}" | head -10
-    echo
+analyze_size() {
+  log_section "📏 イメージサイズ分析"
+  local image_size size_mb
+  image_size=$("$ENGINE_BIN" image inspect "$FULL_IMAGE_NAME" --format='{{.Size}}')
+  size_mb=$((image_size / 1024 / 1024))
+  echo "イメージサイズ: ${size_mb}MB"
+  "$ENGINE_BIN" history "$FULL_IMAGE_NAME" --format "table {{.CreatedBy}}\t{{.Size}}" | head -12
 }
 
-# Function to analyze image layers
 analyze_layers() {
-    echo "🔍 Layer Analysis"
-    echo "-----------------"
-    
-    local layer_count=$(docker history "$FULL_IMAGE_NAME" --quiet | wc -l)
-    echo "Number of layers: $layer_count"
-    
-    if [ $layer_count -lt 20 ]; then
-        echo "✅ Layer count is optimal (< 20 layers)"
-    elif [ $layer_count -lt 50 ]; then
-        echo "⚠️  Layer count is acceptable (< 50 layers)"
-    else
-        echo "❌ Too many layers (>= 50 layers)"
-    fi
-    echo
+  log_section "🔍 レイヤー分析"
+  local layer_count
+  layer_count=$("$ENGINE_BIN" history "$FULL_IMAGE_NAME" --quiet | wc -l)
+  echo "レイヤー数: $layer_count"
 }
 
-# Function to test security configurations
 test_security() {
-    echo "🔒 Security Analysis"
-    echo "-------------------"
-    
-    # Test running as non-root user
-    local user_check=$(docker run --rm "$FULL_IMAGE_NAME" whoami 2>/dev/null || echo "root")
-    
-    if [ "$user_check" != "root" ]; then
-        echo "✅ Running as non-root user: $user_check"
-    else
-        echo "❌ Running as root user (security risk)"
-    fi
-    
-    # Check if image has shell access (security consideration)
-    local shell_check=$(docker run --rm "$FULL_IMAGE_NAME" which sh 2>/dev/null || echo "not_found")
-    
-    if [ "$shell_check" = "not_found" ]; then
-        echo "✅ No shell access (security hardened)"
-    else
-        echo "ℹ️  Shell access available at: $shell_check"
-    fi
-    
-    # Test file system permissions
-    local fs_check=$(docker run --rm "$FULL_IMAGE_NAME" ls -la /app | head -5)
-    echo "File system permissions:"
-    echo "$fs_check"
-    echo
+  log_section "🔒 セキュリティチェック"
+  local user_check shell_check
+  user_check=$("$ENGINE_BIN" run --rm "$FULL_IMAGE_NAME" whoami 2>/dev/null || echo "root")
+  echo "実行ユーザー: $user_check"
+  shell_check=$("$ENGINE_BIN" run --rm "$FULL_IMAGE_NAME" which sh 2>/dev/null || echo "なし")
+  echo "シェル有無: $shell_check"
 }
 
-# Function to test application startup
-test_application() {
-    echo "🚀 Application Testing"
-    echo "---------------------"
-    
-    # Test that the application can start (dry run)
-    echo "Testing application startup..."
-    
-    # Use random available port to avoid conflicts
-    local HOST_PORT=$(python3 -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()" 2>/dev/null || echo "3001")
-    local container_id=$(docker run -d --rm -p "${HOST_PORT}:3000" "$FULL_IMAGE_NAME" 2>/dev/null || echo "failed")
-    
-    if [ "$container_id" = "failed" ]; then
-        echo "❌ Application failed to start"
-        return 1
-    fi
-    
-    echo "Container started: $container_id"
-    
-    # Wait for startup
-    sleep 5
-    
-    # Test health endpoint if available
-    if curl -f http://localhost:${HOST_PORT}/health >/dev/null 2>&1; then
-        echo "✅ Health check passed"
-    else
-        echo "ℹ️  Health endpoint not available or not responding"
-    fi
-    
-    # Clean up
-    docker stop "$container_id" >/dev/null 2>&1 || true
-    echo "✅ Application test completed"
-    echo
+test_runtime() {
+  log_section "🚀 起動確認"
+  local host_port container_id
+  host_port=$(python3 -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()" 2>/dev/null || echo "3001")
+  container_id=$("$ENGINE_BIN" run -d --rm -p "${host_port}:3000" "$FULL_IMAGE_NAME" 2>/dev/null || echo "failed")
+  if [[ "$container_id" == "failed" ]]; then
+    echo "❌ 起動に失敗しました"
+    return 1
+  fi
+  echo "コンテナID: $container_id"
+  sleep 5
+  if curl -f "http://localhost:${host_port}/health" >/dev/null 2>&1; then
+    echo "✅ ヘルスチェック成功"
+  else
+    echo "ℹ️ ヘルスエンドポイントが応答しません"
+  fi
+  "$ENGINE_BIN" stop "$container_id" >/dev/null 2>&1 || true
 }
 
-# Function to analyze dependencies
-analyze_dependencies() {
-    echo "📦 Dependency Analysis"
-    echo "---------------------"
-    
-    # Count node_modules in final image
-    local node_modules_check=$(docker run --rm "$FULL_IMAGE_NAME" find /app/node_modules -name package.json 2>/dev/null | wc -l || echo "0")
-    
-    echo "Production dependencies: $node_modules_check packages"
-    
-    # Check for dev dependencies (should be minimal/none)
-    local dev_deps=$(docker run --rm "$FULL_IMAGE_NAME" find /app -name "*.test.*" 2>/dev/null | wc -l || echo "0")
-    
-    if [ "$dev_deps" -eq 0 ]; then
-        echo "✅ No test files found (production optimized)"
-    else
-        echo "⚠️  Found $dev_deps test files (consider excluding from production image)"
-    fi
-    
-    # Check for source files (should be minimal/none in production)
-    local src_files=$(docker run --rm "$FULL_IMAGE_NAME" find /app -name "*.ts" 2>/dev/null | wc -l || echo "0")
-    
-    if [ "$src_files" -eq 0 ]; then
-        echo "✅ No TypeScript source files (production optimized)"
-    else
-        echo "⚠️  Found $src_files TypeScript files (consider excluding from production image)"
-    fi
-    echo
+analyze_fs() {
+  log_section "📦 依存関係/ファイル確認"
+  local node_modules_count src_count
+  node_modules_count=$("$ENGINE_BIN" run --rm "$FULL_IMAGE_NAME" sh -c "find /app/node_modules -name package.json 2>/dev/null | wc -l" || echo "0")
+  echo "node_modules (prod): $node_modules_count"
+  src_count=$("$ENGINE_BIN" run --rm "$FULL_IMAGE_NAME" sh -c "find /app -name '*.ts' 2>/dev/null | wc -l" || echo "0")
+  echo "TypeScript ファイル数: $src_count"
 }
 
-# Function to generate optimization recommendations
-generate_recommendations() {
-    echo "💡 Optimization Recommendations"
-    echo "==============================="
-    
-    local image_size=$(docker image inspect "$FULL_IMAGE_NAME" --format='{{.Size}}')
-    local size_mb=$((image_size / 1024 / 1024))
-    
-    if [ $size_mb -gt 500 ]; then
-        echo "📉 Size Optimization:"
-        echo "  - Consider using distroless base image"
-        echo "  - Review and minimize dependencies"
-        echo "  - Use .dockerignore to exclude unnecessary files"
-        echo
-    fi
-    
-    local layer_count=$(docker history "$FULL_IMAGE_NAME" --quiet | wc -l)
-    if [ $layer_count -gt 30 ]; then
-        echo "🏗️  Layer Optimization:"
-        echo "  - Combine RUN commands to reduce layers"
-        echo "  - Use multi-stage builds effectively"
-        echo "  - Consider image squashing"
-        echo
-    fi
-    
-    echo "🔧 General Recommendations:"
-    echo "  - Regularly update base image for security patches"
-    echo "  - Use specific version tags instead of 'latest'"
-    echo "  - Implement proper health checks"
-    echo "  - Set resource limits in production"
-    echo "  - Use Docker secrets for sensitive data"
-    echo
-    
-    echo "✅ Phase 1.4 Docker Optimization Complete!"
-}
-
-# Main execution
 main() {
-    check_docker
-    ensure_image_exists
-    analyze_image_size
-    analyze_layers
-    test_security
-    test_application
-    analyze_dependencies
-    generate_recommendations
+  echo "🐳 Podman Image Analysis for ae-framework"
+  check_engine
+  ensure_image_exists
+  analyze_size
+  analyze_layers
+  test_security
+  test_runtime
+  analyze_fs
+  log_section "✅ 分析完了"
 }
 
-# Handle script errors
-trap 'echo "❌ Script failed at line $LINENO"' ERR
-
+trap 'echo "❌ 実行中にエラーが発生しました (line $LINENO)"' ERR
 main "$@"
