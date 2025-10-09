@@ -71,9 +71,19 @@ summary.trace = {
 - `scripts/trace/generate-grafana-variables.mjs` を拡張し、`variables.domains` として `{ value: "inventory", text: "Inventory" }` を出力。テンプレート変数でドメイン切り替えが可能になる。
 - Tempo 側 span 属性に `trace.domain=inventory` を付与し、Grafana ダッシュボードで `kvonce_domain` などのタグを使ってフィルタリング。
 
+## サンプル
+
+`docs/trace/multi-domain-samples/` には envelope とドメインサマリの例が含まれる。
+
+- `envelope-with-domains.json`: `summary.trace.domains[]` を含むサンプル envelope。
+- `inventory-domain-summary.json`: Inventory ドメインのドメインサマリ例。
+- `reservation-domain-summary.json`: Reservation ドメインのドメインサマリ例。
+
+実装やテストで multi-domain 構造を扱う際のリファレンスとして利用できる。
+
 ## TODO
 
 - [ ] Inventory サンプル NDJSON を用意し、`pipelines:trace` で `summary.trace.domains[]` に追加するスクリプトを実装。
-- [ ] `scripts/formal/verify-conformance.mjs` の Step Summary 出力を multi-domain 対応させる。
+- [x] `scripts/formal/verify-conformance.mjs` の Step Summary 出力を multi-domain 対応させる。
 - [ ] Grafana ダッシュボード JSON をドメイン別にエクスポートし、テンプレート変数から切り替えられるようにする。
-- [ ] GitHub コメント CLI (`post-envelope-comment.mjs`) で `### Trace Cases` セクションにドメイン名を含める。
+- [x] GitHub コメント CLI (`post-envelope-comment.mjs`) で `### Trace Cases` セクションにドメイン名を含める。

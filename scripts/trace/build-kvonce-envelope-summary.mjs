@@ -161,6 +161,48 @@ if (Array.isArray(conformanceSummary?.tempoLinks)) {
   }
 }
 
+const aggregateTraceIdsArray = Array.from(aggregateTraceIds);
+const aggregateTempoLinksArray = Array.from(aggregateTempoLinks);
+
+const domainEntries = casesSummary.map((entry) => {
+  const status = entry.status ?? (entry.valid === true ? 'valid' : (entry.valid === false ? 'invalid' : 'unknown'));
+  const artifacts = {};
+  if (entry.validationPath) artifacts.validationPath = entry.validationPath;
+  if (entry.projectionPath) artifacts.projectionPath = entry.projectionPath;
+  if (entry.stateSequencePath) artifacts.stateSequencePath = entry.stateSequencePath;
+  const metrics = {};
+  if (entry.projectionStats?.eventCount !== undefined) metrics.eventCount = entry.projectionStats.eventCount;
+  if (entry.projectionStats?.stateSequenceLength !== undefined) metrics.stateSequenceLength = entry.projectionStats.stateSequenceLength;
+  return {
+    key: entry.format,
+    label: entry.label ?? entry.format,
+    status,
+    issues: entry.issueCount ?? 0,
+    traceIds: Array.isArray(entry.traceIds) ? entry.traceIds : [],
+    tempoLinks: Array.isArray(entry.tempoLinks) ? entry.tempoLinks : [],
+    ...(Object.keys(artifacts).length > 0 ? { artifacts } : {}),
+    ...(Object.keys(metrics).length > 0 ? { metrics } : {}),
+  };
+});
+
+const aggregate = {
+  traceIds: aggregateTraceIdsArray,
+  tempoLinks: aggregateTempoLinksArray,
+  issues: domainEntries.reduce((total, domain) => total + (domain.issues ?? 0), 0),
+};
+
+const traceSummary = {
+  ...(conformanceSummary?.trace ?? {}),
+  domains: domainEntries,
+  aggregate,
+};
+if (aggregateTraceIdsArray.length > 0) {
+  traceSummary.traceIds = aggregateTraceIdsArray;
+}
+if (aggregateTempoLinksArray.length > 0) {
+  traceSummary.tempoLinks = aggregateTempoLinksArray;
+}
+
 const output = {
   schemaVersion: '1.0.0',
   generatedAt: new Date().toISOString(),
@@ -172,16 +214,27 @@ const output = {
     sizeBytes: metadata.sizeBytes ?? null,
   },
   cases: casesSummary,
+  trace: traceSummary,
 };
 
 if (conformanceSummary) {
-  output.conformance = conformanceSummary;
+  const conformanceTrace = {
+    ...(conformanceSummary.trace ?? {}),
+    domains: domainEntries,
+    traceIds: traceSummary.traceIds ?? [],
+    tempoLinks: traceSummary.tempoLinks ?? [],
+    aggregate,
+  };
+  output.conformance = {
+    ...conformanceSummary,
+    trace: conformanceTrace,
+  };
 }
-if (aggregateTraceIds.size > 0) {
-  output.traceIds = Array.from(aggregateTraceIds);
+if (aggregateTraceIdsArray.length > 0) {
+  output.traceIds = aggregateTraceIdsArray;
 }
-if (aggregateTempoLinks.size > 0) {
-  output.tempoLinks = Array.from(aggregateTempoLinks);
+if (aggregateTempoLinksArray.length > 0) {
+  output.tempoLinks = aggregateTempoLinksArray;
 }
 
 const destDir = path.dirname(outputPath);

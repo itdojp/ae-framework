@@ -271,6 +271,36 @@ async function runTracePipeline({ tracePath, format, outputDir, skipReplay }) {
       summary.trace.tempoLinks = tempoLinks;
       summary.tempoLinks = tempoLinks;
     }
+
+    const artifacts = {};
+    if (summary.validation?.path) artifacts.validationPath = summary.validation.path;
+    if (summary.projection?.path) artifacts.projectionPath = summary.projection.path;
+    if (summary.projection?.stateSequence) artifacts.stateSequencePath = summary.projection.stateSequence;
+    if (summary.trace?.ndjson ?? summary.ndjson) artifacts.ndjsonPath = summary.trace?.ndjson ?? summary.ndjson;
+
+    const metrics = {};
+    if (summary.projection?.events !== undefined) metrics.eventCount = summary.projection.events;
+    if (summary.projection?.stats?.stateSequenceLength !== undefined) {
+      metrics.stateSequenceLength = summary.projection.stats.stateSequenceLength;
+    }
+
+    const domainEntry = {
+      key: 'kvonce',
+      label: 'KvOnce',
+      status: summary.status ?? 'unknown',
+      issues: summary.validation?.issues ?? 0,
+      traceIds,
+      tempoLinks,
+      ...(Object.keys(artifacts).length > 0 ? { artifacts } : {}),
+      ...(Object.keys(metrics).length > 0 ? { metrics } : {}),
+    };
+
+    summary.domains = [domainEntry];
+    summary.aggregate = {
+      traceIds,
+      tempoLinks,
+      issues: domainEntry.issues ?? 0,
+    };
   } catch (error) {
     summary.status = 'error';
     summary.error = error.message;
@@ -301,6 +331,18 @@ function appendStepSummary(summary) {
         : [];
     if (traceIds.length > 0) {
       lines.push(`  - trace ids: ${traceIds.join(', ')}`);
+    }
+
+    const domains = Array.isArray(summary.trace?.domains) ? summary.trace.domains : [];
+    if (domains.length > 0) {
+      lines.push('  - domains:');
+      for (const domain of domains) {
+        const label = domain?.label ?? domain?.key ?? 'unknown';
+        const status = domain?.status ?? 'unknown';
+        const issues = domain?.issues ?? 0;
+        const domainIds = Array.isArray(domain?.traceIds) && domain.traceIds.length > 0 ? ` (traceIds: ${domain.traceIds.join(', ')})` : '';
+        lines.push(`    - ${label}: status=${status} issues=${issues}${domainIds}`);
+      }
     }
 
     const artifactsUrl = (() => {
@@ -334,11 +376,18 @@ function appendStepSummary(summary) {
     }
 
     const tempoLinks = (() => {
-      if (Array.isArray(summary.trace?.tempoLinks) && summary.trace.tempoLinks.length > 0) {
-        return summary.trace.tempoLinks;
-      }
-      if (Array.isArray(summary.tempoLinks) && summary.tempoLinks.length > 0) {
-        return summary.tempoLinks;
+      const fromTrace = Array.isArray(summary.trace?.tempoLinks) ? summary.trace.tempoLinks : [];
+      const fromTop = Array.isArray(summary.tempoLinks) ? summary.tempoLinks : [];
+      const fromDomains = Array.isArray(summary.trace?.domains)
+        ? summary.trace.domains.flatMap((domain) => (Array.isArray(domain?.tempoLinks) ? domain.tempoLinks : []))
+        : [];
+      const merged = [
+        ...fromTrace.filter((link) => typeof link === 'string' && link.trim()),
+        ...fromTop.filter((link) => typeof link === 'string' && link.trim()),
+        ...fromDomains.filter((link) => typeof link === 'string' && link.trim()),
+      ];
+      if (merged.length > 0) {
+        return Array.from(new Set(merged));
       }
       return buildTempoLinks(traceIds);
     })();

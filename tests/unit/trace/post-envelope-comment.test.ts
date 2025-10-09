@@ -32,6 +32,16 @@ describe('post-envelope-comment CLI', () => {
         trace: {
           status: 'valid',
           traceIds: ['trace-b'],
+          domains: [
+            {
+              key: 'inventory',
+              label: 'Inventory',
+              status: 'valid',
+              issues: 0,
+              traceIds: ['trace-b'],
+              tempoLinks: ['https://tempo.example.com/explore?traceId=trace-b'],
+            },
+          ],
         },
         cases: [
           { format: 'current', label: 'Current', valid: true, traceIds: ['trace-b'] },
@@ -54,6 +64,7 @@ describe('post-envelope-comment CLI', () => {
     expect(result.stdout).toContain('Tempo Links');
     expect(result.stdout).toContain('Trace IDs');
     expect(result.stdout).toContain('Trace Cases');
+    expect(result.stdout).toContain('Trace Domains');
   });
 
   it('writes output file when --output is specified', () => {

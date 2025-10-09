@@ -1,0 +1,16 @@
+{
+  "key": "reservation",
+  "label": "Reservation",
+  "status": "invalid",
+  "issues": 2,
+  "traceIds": ["reservation-trace-8"],
+  "tempoLinks": ["https://tempo.example.com/explore?traceId=reservation-trace-8"],
+  "artifacts": {
+    "validationPath": "hermetic-reports/trace/reservation/validation.json",
+    "projectionPath": "hermetic-reports/trace/reservation/projection.json"
+  },
+  "metrics": {
+    "eventCount": 21,
+    "replayStatus": "ran"
+  }
+}

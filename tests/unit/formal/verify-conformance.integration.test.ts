@@ -70,6 +70,8 @@ describe('verify-conformance --from-envelope', () => {
       expect(summary.trace?.status).toBeDefined();
       expect(summary.trace?.traceIds ?? summary.traceIds).toEqual(['trace-1']);
       expect(summary.trace?.tempoLinks ?? summary.tempoLinks).toEqual(['https://tempo.example.com/explore?traceId=trace-1']);
+      expect(summary.trace?.domains?.[0]?.key).toBe('kvonce');
+      expect(summary.trace?.domains?.[0]?.traceIds).toEqual(['trace-1']);
 
       const envelopePath = join(dir, 'envelope.json');
       const envelope = {
@@ -106,6 +108,8 @@ describe('verify-conformance --from-envelope', () => {
       expect(replaySummary.trace?.status).toBe(summary.trace?.status);
       expect(replaySummary.trace?.traceIds ?? replaySummary.traceIds).toEqual(['trace-1']);
       expect(replaySummary.trace?.tempoLinks ?? replaySummary.tempoLinks).toEqual(['https://tempo.example.com/explore?traceId=trace-1']);
+      expect(replaySummary.trace?.domains?.[0]?.key).toBe('kvonce');
+      expect(replaySummary.trace?.domains?.[0]?.traceIds).toEqual(['trace-1']);
     });
   });
 });

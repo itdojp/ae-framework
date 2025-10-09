@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+const isValidLink = (value) => typeof value === 'string' && value.trim();
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -77,17 +78,56 @@ const derivedTraceIds = Array.isArray(summary?.trace?.traceIds)
   ? summary.trace.traceIds.map((value) => (typeof value === 'string' ? value.trim() : '')).filter(Boolean)
   : [];
 
+const collectDomainTraceIds = () => {
+  if (!Array.isArray(summary?.trace?.domains)) return [];
+  const ids = new Set();
+  for (const domain of summary.trace.domains) {
+    if (!domain || !Array.isArray(domain.traceIds)) continue;
+    for (const value of domain.traceIds) {
+      if (typeof value === 'string' && value.trim()) ids.add(value.trim());
+    }
+  }
+  return Array.from(ids);
+};
+
 const traceIdSet = new Set(derivedTraceIds);
+collectDomainTraceIds().forEach((value) => traceIdSet.add(value));
 const traceIdsEnv = process.env.REPORT_ENVELOPE_TRACE_IDS ?? '';
 for (const raw of traceIdsEnv.split(',')) {
   const value = raw.trim();
   if (value) traceIdSet.add(value);
 }
 const traceIds = Array.from(traceIdSet);
+
+if (summary?.trace) {
+  if (!Array.isArray(summary.trace.traceIds) || summary.trace.traceIds.length === 0) {
+    summary.trace = { ...summary.trace, traceIds };
+  }
+}
+const collectDomainTempoLinks = () => {
+  if (!Array.isArray(summary?.trace?.domains)) return [];
+  const links = new Set();
+  for (const domain of summary.trace.domains) {
+    if (!domain || !Array.isArray(domain.tempoLinks)) continue;
+    for (const value of domain.tempoLinks) {
+      if (isValidLink(value)) links.add(value.trim());
+    }
+  }
+  return Array.from(links);
+};
+
 const tempoLinks = Array.from(new Set([
-  ...(Array.isArray(summary?.tempoLinks) ? summary.tempoLinks : []),
+  ...(Array.isArray(summary?.tempoLinks) ? summary.tempoLinks.filter(isValidLink) : []),
+  ...(Array.isArray(summary?.trace?.tempoLinks) ? summary.trace.tempoLinks.filter(isValidLink) : []),
+  ...collectDomainTempoLinks(),
   ...buildTempoLinks(traceIds, traceIdTemplate),
 ]));
+
+if (summary?.trace) {
+  if (!Array.isArray(summary.trace.tempoLinks) || summary.trace.tempoLinks.length === 0) {
+    summary.trace = { ...summary.trace, tempoLinks };
+  }
+}
 
 const notes = noteEnv
   .split(/\r?\n/)

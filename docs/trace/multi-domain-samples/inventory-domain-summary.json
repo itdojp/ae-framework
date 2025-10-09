@@ -1,0 +1,17 @@
+{
+  "key": "inventory",
+  "label": "Inventory",
+  "status": "valid",
+  "issues": 0,
+  "traceIds": ["inventory-trace-1"],
+  "tempoLinks": ["https://tempo.example.com/explore?traceId=inventory-trace-1"],
+  "artifacts": {
+    "validationPath": "hermetic-reports/trace/inventory/validation.json",
+    "projectionPath": "hermetic-reports/trace/inventory/projection.json",
+    "stateSequencePath": "hermetic-reports/trace/inventory/state-sequence.json"
+  },
+  "metrics": {
+    "eventCount": 32,
+    "replayStatus": "skipped"
+  }
+}
