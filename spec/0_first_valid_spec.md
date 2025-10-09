@@ -1,4 +1,4 @@
-# AE Framework Minimal Specification
+# AE_Framework_Minimal_Spec
 
 > 🌍 Language / 言語: English | 日本語
 
@@ -15,10 +15,6 @@ This is a minimal, valid AE-Spec used to satisfy fail-fast validation in CI.
 - **email** (string, required) - Email address
 - **createdAt** (date) - Created timestamp
 
-## Invariants
-
-- User email must be unique
-
 ## Use Cases
 
 ### Register User
@@ -29,7 +25,7 @@ This is a minimal, valid AE-Spec used to satisfy fail-fast validation in CI.
 ## API
 
 - POST /users - Register user
-- GET /users/{id} - Get user
+- GET /users/:id - Get user
 
 ---
 
