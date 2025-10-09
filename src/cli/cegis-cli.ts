@@ -137,6 +137,7 @@ export class CEGISCli {
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Auto-fix failed: ${toMessage(error)}`));
       safeExit(1);
+      throw error instanceof Error ? error : new Error(String(error));
     }
   }
 
@@ -192,6 +193,7 @@ export class CEGISCli {
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Analysis failed: ${toMessage(error)}`));
       safeExit(1);
+      throw error instanceof Error ? error : new Error(String(error));
     }
   }
 
@@ -268,6 +270,7 @@ export class CEGISCli {
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Failed to create artifact: ${toMessage(error)}`));
       safeExit(1);
+      throw error instanceof Error ? error : new Error(String(error));
     }
   }
 
@@ -303,7 +306,11 @@ export class CEGISCli {
     console.log('🛠️  Available Fix Strategies\n');
 
     const allCategories: FailureCategory[] = ['type_error', 'test_failure', 'contract_violation', 'lint_error', 'build_error'];
-    const categoriesToShow: FailureCategory[] = options.category && allCategories.includes(options.category as FailureCategory)
+    if (options.category && !allCategories.includes(options.category as FailureCategory)) {
+      console.log(`${options.category}: No strategies available`);
+      return;
+    }
+    const categoriesToShow: FailureCategory[] = options.category
       ? [options.category as FailureCategory]
       : allCategories;
 
@@ -350,7 +357,7 @@ export class CEGISCli {
         try {
           return FailureArtifactFactory.validate(artifact);
         } catch (error: unknown) {
-          console.warn(`⚠️  Invalid artifact skipped: ${toMessage(error)}`);
+          console.log(`⚠️  Invalid artifact skipped: ${toMessage(error)}`);
           return null;
         }
       }).filter(Boolean) as FailureArtifact[];

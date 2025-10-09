@@ -150,6 +150,7 @@ export class IntegrationTestOrchestrator extends EventEmitter {
       };
 
       this.emit('test_failed', { testId, error: errorResult.error });
+      this.emit('test_completed', { testId, status: errorResult.status, duration: errorResult.duration });
       return errorResult;
 
     } finally {
@@ -400,9 +401,13 @@ export class IntegrationTestOrchestrator extends EventEmitter {
    */
   private applyFilters(
     tests: TestCase[], 
-    filters: TestExecutionConfig['filters']
+    filters: TestExecutionConfig['filters'] = {}
   ): TestCase[] {
     let filtered = tests;
+
+    if (!filters) {
+      return filtered;
+    }
 
     // Filter by categories
     if (filters.categories && filters.categories.length > 0) {

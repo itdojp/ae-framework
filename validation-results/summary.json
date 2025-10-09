@@ -1,7 +1,7 @@
 {
-  "timestamp": "2025-09-13T12:52:13+09:00",
-  "total_files": 3,
-  "passed_files": 0,
-  "failed_files": 3,
-  "success_rate": 0
+  "timestamp": "2025-10-09T19:53:07+09:00",
+  "total_files": 1,
+  "passed_files": 1,
+  "failed_files": 0,
+  "success_rate": 100.00
 }

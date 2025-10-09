@@ -2,8 +2,10 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   test: {
-    include: ['tests/**/*.{test,spec}.ts'],
+    include: ['tests/**/*.{test,spec}.{ts,js}'],
+    exclude: ['**/.stryker-tmp/**', '**/.stryker-tmp-*/**'],
     reporters: ['default'],
+    setupFiles: ['tests/a11y/setup.js'],
   },
   projects: [
     {
