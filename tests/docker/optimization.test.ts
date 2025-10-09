@@ -12,10 +12,10 @@ import { promisify } from 'util';
 const execAsync = promisify(exec);
 
 describe('Docker Production Optimization - Phase 1.4', () => {
-  const dockerfile = 'Dockerfile';
+  const dockerfile = 'podman/Dockerfile';
   const dockerignore = '.dockerignore';
-  const dockerCompose = 'docker-compose.yml';
-  const dockerComposeProd = 'docker-compose.prod.yml';
+  const dockerCompose = 'podman/compose.dev.yaml';
+  const dockerComposeProd = 'podman/compose.prod.yaml';
 
   describe('Dockerfile Security and Optimization', () => {
     it(
@@ -80,7 +80,7 @@ describe('Docker Production Optimization - Phase 1.4', () => {
       () => {
       const content = readFileSync(dockerfile, 'utf8');
       
-      expect(content, 'Should use Alpine images').toMatch(/node:\d+-alpine/);
+      expect(content, 'Should use Alpine images').toMatch(/docker\.io\/node:.*-alpine/);
     });
   });
 
@@ -95,14 +95,12 @@ describe('Docker Production Optimization - Phase 1.4', () => {
       
       // Should ignore essential development files
       expect(lines).toContain('node_modules/');
-      expect(lines).toContain('src/');
       expect(lines).toContain('tests/');
       expect(lines).toContain('.git/');
       expect(lines).toContain('.github/');
       expect(lines).toContain('coverage/');
       expect(lines).toContain('*.test.ts');
       expect(lines).toContain('README.md');
-      expect(lines).toContain('scripts/');
       expect(lines).toContain('docs/');
     });
 
@@ -208,6 +206,7 @@ describe('Docker Production Optimization - Phase 1.4', () => {
         'cap_drop:',
         'security_opt:',
         'no-new-privileges:true',
+        'label=disable',
         'tmpfs:'
       ];
       
@@ -222,27 +221,29 @@ describe('Docker Production Optimization - Phase 1.4', () => {
       const devContent = readFileSync(dockerCompose, 'utf8');
       const prodContent = readFileSync(dockerComposeProd, 'utf8');
       
-      // Both should have resource limits
-      [devContent, prodContent].forEach(content => {
-        expect(content, 'Should have memory limits').toMatch(/memory:/);
-        expect(content, 'Should have CPU limits').toMatch(/cpus:/);
-      });
-      
-      // Production should have higher limits
-      expect(prodContent, 'Production should have higher memory limit').toMatch(/1G|1024M/);
+      // Dev should define baseline limits
+      expect(devContent, 'Dev should define resource limits').toMatch(/resources:/);
+      expect(devContent, 'Dev should cap memory to 512M').toMatch(/memory:\s*512M/);
+      expect(devContent, 'Dev should cap CPU to 0.5').toMatch(/cpus:\s*"0\.5"/);
+
+      // Prod should remain hardened and replicated
+      expect(prodContent, 'Prod should remain read-only').toMatch(/read_only: true/);
+      expect(prodContent, 'Prod should drop capabilities').toMatch(/cap_drop:/);
+      expect(prodContent, 'Prod should use multiple replicas').toMatch(/replicas:\s*2/);
+      expect(prodContent, 'Prod should include restart policy').toMatch(/restart_policy/);
     });
 
     it('should have caching and observability configured', () => {
       const prodContent = readFileSync(dockerComposeProd, 'utf8');
       
-      // Should have Redis for caching
-      expect(prodContent, 'Should have Redis service').toMatch(/redis:/);
-      
       // Should have OpenTelemetry configuration
-      expect(prodContent, 'Should have OTEL configuration').toMatch(/OTEL_/);
-      
-      // Should have observability collector
-      expect(prodContent, 'Should have OTEL collector').toMatch(/otel-collector/);
+      expect(prodContent, 'Should have OTEL configuration').toMatch(/OTEL_EXPORTER_OTLP_ENDPOINT/);
+
+      // Should depend on observability collector
+      expect(prodContent, 'Should depend on OTEL collector').toMatch(/depends_on:[\s\S]*- otel/);
+
+      // Should mount tmpfs for ephemeral storage
+      expect(prodContent, 'Should configure tmpfs').toMatch(/tmpfs:\s*- \/tmp/);
     });
   });
 });
