@@ -31,9 +31,9 @@ RUN apk add --no-cache \
     alsa-lib \
     nss \
     ca-certificates \
-    fonts-liberation \
-    fonts-noto \
-    fonts-noto-cjk
+    liberation-fonts \
+    noto-fonts \
+    noto-fonts-cjk
 
 ENV NODE_ENV=test \
     CI=true \
