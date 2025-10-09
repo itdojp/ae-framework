@@ -17,10 +17,9 @@ describe('PBT: TokenOptimizer trim-edge on large docs', () => {
           for (const k of keys) {
             docs[k] = [
               `# ${k}  `,
-              '```
+              `\`\`\`
 const x = 1;  
-```
-',
+\`\`\``,
               ('lorem '.repeat(80)).trim() + '  ',
             ].join('\n');
           }
