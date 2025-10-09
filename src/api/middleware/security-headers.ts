@@ -158,32 +158,60 @@ function securityHeadersHook(
 }
 
 /**
+ * Merge user supplied options with defaults while preserving typing.
+ */
+function resolveSecurityHeaderOptions(
+  options: SecurityHeadersOptions = {}
+): Required<SecurityHeadersOptions> {
+  return {
+    enabled: options.enabled ?? DEFAULT_OPTIONS.enabled,
+    contentSecurityPolicy: {
+      enabled: options.contentSecurityPolicy?.enabled ?? DEFAULT_OPTIONS.contentSecurityPolicy.enabled,
+      directives: options.contentSecurityPolicy?.directives ?? DEFAULT_OPTIONS.contentSecurityPolicy.directives,
+    },
+    frameOptions: {
+      enabled: options.frameOptions?.enabled ?? DEFAULT_OPTIONS.frameOptions.enabled,
+      value: options.frameOptions?.value ?? DEFAULT_OPTIONS.frameOptions.value,
+    },
+    contentTypeOptions: {
+      enabled: options.contentTypeOptions?.enabled ?? DEFAULT_OPTIONS.contentTypeOptions.enabled,
+    },
+    referrerPolicy: {
+      enabled: options.referrerPolicy?.enabled ?? DEFAULT_OPTIONS.referrerPolicy.enabled,
+      value: options.referrerPolicy?.value ?? DEFAULT_OPTIONS.referrerPolicy.value,
+    },
+    strictTransportSecurity: {
+      enabled: options.strictTransportSecurity?.enabled ?? DEFAULT_OPTIONS.strictTransportSecurity.enabled,
+      maxAge: options.strictTransportSecurity?.maxAge ?? DEFAULT_OPTIONS.strictTransportSecurity.maxAge,
+      includeSubDomains:
+        options.strictTransportSecurity?.includeSubDomains ?? DEFAULT_OPTIONS.strictTransportSecurity.includeSubDomains,
+      preload: options.strictTransportSecurity?.preload ?? DEFAULT_OPTIONS.strictTransportSecurity.preload,
+    },
+    xssProtection: {
+      enabled: options.xssProtection?.enabled ?? DEFAULT_OPTIONS.xssProtection.enabled,
+      value: options.xssProtection?.value ?? DEFAULT_OPTIONS.xssProtection.value,
+    },
+    permissionsPolicy: {
+      enabled: options.permissionsPolicy?.enabled ?? DEFAULT_OPTIONS.permissionsPolicy.enabled,
+      directives: options.permissionsPolicy?.directives ?? DEFAULT_OPTIONS.permissionsPolicy.directives,
+    },
+  };
+}
+
+/**
  * Fastify plugin for security headers
  */
-export const securityHeadersPlugin = fp(async (
-  fastify: FastifyInstance,
-  options: SecurityHeadersOptions = {}
-) => {
-  const finalOptions = { ...DEFAULT_OPTIONS, ...options } as Required<SecurityHeadersOptions>;
+export const securityHeadersPlugin = fp(
+  (fastify: FastifyInstance, options: SecurityHeadersOptions = {}) => {
+    const finalOptions = resolveSecurityHeaderOptions(options);
 
-  // Merge nested options
-  (Object.keys(finalOptions) as (keyof SecurityHeadersOptions)[]).forEach(key => {
-    const baseValue = finalOptions[key];
-    const overrideValue = options[key];
-
-    if (baseValue && typeof baseValue === 'object' && overrideValue && typeof overrideValue === 'object') {
-      finalOptions[key] = {
-        ...(baseValue as Record<string, any>),
-        ...(overrideValue as Record<string, any>)
-      } as any;
-    }
-  });
-
-  fastify.addHook('onSend', (request, reply, payload, done) => {
-    securityHeadersHook(request, reply, finalOptions);
-    done(null, payload);
-  });
-}, { name: 'security-headers-plugin' });
+    fastify.addHook('onSend', (request, reply, payload, done) => {
+      securityHeadersHook(request, reply, finalOptions);
+      done(null, payload);
+    });
+  },
+  { name: 'security-headers-plugin' }
+);
 
 /**
  * Environment-specific security configurations

@@ -711,8 +711,12 @@ export class ConformanceRuleEngine {
       throw new Error('Invalid rule: condition expression is required');
     }
 
-    if (!Array.isArray(rule.condition.variables) || rule.condition.variables.length === 0) {
-      throw new Error('Invalid rule: at least one condition variable is required');
+    if (!Array.isArray(rule.condition.variables)) {
+      throw new Error('Invalid rule: condition variables must be an array');
+    }
+
+    if (rule.condition.variables.some(variable => typeof variable !== 'string' || variable.trim() === '')) {
+      throw new Error('Invalid rule: condition variables must be non-empty strings');
     }
   }
 

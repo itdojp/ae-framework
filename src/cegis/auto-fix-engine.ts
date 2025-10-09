@@ -447,7 +447,6 @@ export class AutoFixEngine {
     
     return Array.from(patterns.entries())
       .map(([text, count]) => ({ text, count }))
-      .filter(p => p.count >= 1)
       .sort((a, b) => b.count - a.count);
   }
 
