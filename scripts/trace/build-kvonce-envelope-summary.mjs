@@ -149,6 +149,7 @@ function normalizeDomainSummary(summary, sourcePath) {
 
 const SUMMARY_FILENAME_PATTERN = /-domain-summary\.json$/i;
 const DIRECTORY_DENYLIST = new Set(['.git', 'node_modules', '.pnpm-store', '.cache', 'dist', 'tmp']);
+const MAX_DISCOVERY_DEPTH = 3;
 
 function addSearchRoot(roots, candidate) {
   if (!candidate) return;
@@ -180,7 +181,7 @@ function discoverDomainSummaryFiles({ traceDir, outputPath, summaryPath, explici
 
   const visit = (dir, depth = 0) => {
     const resolvedDir = path.resolve(dir);
-    if (visitedDirs.has(resolvedDir) || depth > 3) return;
+    if (visitedDirs.has(resolvedDir) || depth > MAX_DISCOVERY_DEPTH) return;
     visitedDirs.add(resolvedDir);
     let entries;
     try {
@@ -354,7 +355,7 @@ for (const descriptor of domainSummaryDescriptors) {
   const discoveryMode = descriptor.mode;
   const directPath = summaryPath;
   const rawInput = descriptor.raw;
-  const fallbackPath = rawInput ? path.resolve(traceDir, rawInput) : null;
+  const fallbackPath = rawInput && !path.isAbsolute(rawInput) ? path.resolve(traceDir, rawInput) : null;
   let resolved = null;
   if (fs.existsSync(directPath)) {
     resolved = directPath;
