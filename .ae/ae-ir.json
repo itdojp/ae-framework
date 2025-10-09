@@ -1,31 +1,15 @@
 {
   "version": "1.0.0",
   "metadata": {
-    "name": "E-Commerce Platform Specification",
-    "description": "A modern e-commerce platform for online retail operations.",
-    "created": "2025-08-18T22:57:55.700Z",
-    "updated": "2025-08-18T22:57:55.700Z"
+    "name": "AE_Framework_Minimal_Spec",
+    "created": "2025-10-09T10:50:37.653Z",
+    "updated": "2025-10-09T10:50:37.653Z",
+    "description": "> 🌍 Language / 言語: English | 日本語\n\nThis is a minimal, valid AE-Spec used to satisfy fail-fast validation in CI."
   },
   "glossary": [
     {
       "term": "User",
-      "definition": "A person who interacts with the system as customer or admin"
-    },
-    {
-      "term": "Product",
-      "definition": "An item available for purchase in the catalog"
-    },
-    {
-      "term": "Order",
-      "definition": "A collection of products requested by a user"
-    },
-    {
-      "term": "Cart",
-      "definition": "Temporary collection of products before checkout"
-    },
-    {
-      "term": "Inventory",
-      "definition": "Stock management system for products"
+      "definition": "An actor who uses the system"
     }
   ],
   "domain": [
@@ -34,162 +18,21 @@
       "fields": [
         {
           "name": "id",
-          "type": "UUID",
+          "type": "uuid",
           "required": true,
-          "description": "Unique user identifier"
+          "description": "Unique identifier"
         },
         {
           "name": "email",
           "type": "string",
           "required": true,
-          "description": "User email address for login"
-        },
-        {
-          "name": "name",
-          "type": "string",
-          "required": true,
-          "description": "User display name"
-        },
-        {
-          "name": "role",
-          "type": "enum: customer|admin",
-          "required": false,
-          "description": "User role in the system"
+          "description": "Email address"
         },
         {
           "name": "createdAt",
-          "type": "datetime",
-          "required": true,
-          "description": "Account creation timestamp"
-        },
-        {
-          "name": "lastLoginAt",
-          "type": "datetime",
+          "type": "date",
           "required": false,
-          "description": "Last login timestamp"
-        }
-      ]
-    },
-    {
-      "name": "Product",
-      "fields": [
-        {
-          "name": "id",
-          "type": "UUID",
-          "required": true,
-          "description": "Unique product identifier"
-        },
-        {
-          "name": "name",
-          "type": "string",
-          "required": true,
-          "description": "Product display name"
-        },
-        {
-          "name": "description",
-          "type": "text",
-          "required": false,
-          "description": "Detailed product description"
-        },
-        {
-          "name": "price",
-          "type": "decimal",
-          "required": true,
-          "description": "Product price in USD"
-        },
-        {
-          "name": "stock",
-          "type": "integer",
-          "required": true,
-          "description": "Available quantity in inventory"
-        },
-        {
-          "name": "category",
-          "type": "string",
-          "required": true,
-          "description": "Product category"
-        },
-        {
-          "name": "isActive",
-          "type": "boolean",
-          "required": true,
-          "description": "Whether product is available for sale"
-        }
-      ]
-    },
-    {
-      "name": "Order",
-      "fields": [
-        {
-          "name": "id",
-          "type": "UUID",
-          "required": true,
-          "description": "Unique order identifier"
-        },
-        {
-          "name": "userId",
-          "type": "UUID",
-          "required": true,
-          "description": "Reference to ordering user"
-        },
-        {
-          "name": "status",
-          "type": "enum: pending|processing|shipped|delivered|cancelled",
-          "required": true,
-          "description": "Order status"
-        },
-        {
-          "name": "totalAmount",
-          "type": "decimal",
-          "required": true,
-          "description": "Total order value"
-        },
-        {
-          "name": "createdAt",
-          "type": "datetime",
-          "required": true,
-          "description": "Order creation timestamp"
-        },
-        {
-          "name": "shippingAddress",
-          "type": "text",
-          "required": true,
-          "description": "Delivery address"
-        }
-      ]
-    },
-    {
-      "name": "OrderItem",
-      "fields": [
-        {
-          "name": "id",
-          "type": "UUID",
-          "required": true,
-          "description": "Unique order item identifier"
-        },
-        {
-          "name": "orderId",
-          "type": "UUID",
-          "required": true,
-          "description": "Reference to parent order"
-        },
-        {
-          "name": "productId",
-          "type": "UUID",
-          "required": true,
-          "description": "Reference to ordered product"
-        },
-        {
-          "name": "quantity",
-          "type": "integer",
-          "required": true,
-          "description": "Number of items ordered"
-        },
-        {
-          "name": "unitPrice",
-          "type": "decimal",
-          "required": true,
-          "description": "Price per item at time of order"
+          "description": "Created timestamp"
         }
       ]
     }
@@ -197,226 +40,30 @@
   "invariants": [
     {
       "id": "INV_001",
-      "description": "User email must be unique across the system",
-      "expression": "User email must be unique across the system",
-      "entities": [],
-      "severity": "error"
-    },
-    {
-      "id": "INV_002",
-      "description": "Product price must be greater than zero",
-      "expression": "Product price must be greater than zero",
-      "entities": [],
-      "severity": "error"
-    },
-    {
-      "id": "INV_003",
-      "description": "Product stock cannot be negative",
-      "expression": "Product stock cannot be negative",
-      "entities": [],
-      "severity": "error"
-    },
-    {
-      "id": "INV_004",
-      "description": "Order total amount must equal sum of order items",
-      "expression": "Order total amount must equal sum of order items",
-      "entities": [],
-      "severity": "error"
-    },
-    {
-      "id": "INV_005",
-      "description": "Order items quantity must be greater than zero",
-      "expression": "Order items quantity must be greater than zero",
-      "entities": [],
-      "severity": "error"
-    },
-    {
-      "id": "INV_006",
-      "description": "Order items unit price must be greater than zero",
-      "expression": "Order items unit price must be greater than zero",
-      "entities": [],
-      "severity": "error"
-    },
-    {
-      "id": "INV_007",
-      "description": "User cannot order more items than available stock",
-      "expression": "User cannot order more items than available stock",
+      "description": "User email must be unique within the system",
+      "expression": "User email must be unique within the system",
       "entities": [],
       "severity": "error"
     }
   ],
   "usecases": [
     {
-      "name": "User Registration",
+      "name": "Register User",
       "actor": "User",
       "steps": [
         {
           "step": 1,
-          "description": "User provides email, name, and password",
+          "description": "User submits email",
           "type": "action"
         },
         {
           "step": 2,
-          "description": "System validates email uniqueness",
+          "description": "System validates uniqueness",
           "type": "action"
         },
         {
           "step": 3,
-          "description": "System validates password strength",
-          "type": "action"
-        },
-        {
-          "step": 4,
-          "description": "System creates user account with customer role",
-          "type": "action"
-        },
-        {
-          "step": 5,
-          "description": "System sends email verification",
-          "type": "action"
-        }
-      ]
-    },
-    {
-      "name": "Product Catalog Browsing",
-      "actor": "User",
-      "steps": [
-        {
-          "step": 1,
-          "description": "User views list of active products",
-          "type": "action"
-        },
-        {
-          "step": 2,
-          "description": "User can filter by category",
-          "type": "action"
-        },
-        {
-          "step": 3,
-          "description": "User can search by name or description",
-          "type": "action"
-        },
-        {
-          "step": 4,
-          "description": "User views detailed product information",
-          "type": "action"
-        },
-        {
-          "step": 5,
-          "description": "System shows current stock availability",
-          "type": "action"
-        }
-      ]
-    },
-    {
-      "name": "Add to Cart",
-      "actor": "User",
-      "steps": [
-        {
-          "step": 1,
-          "description": "User selects product and quantity",
-          "type": "action"
-        },
-        {
-          "step": 2,
-          "description": "System validates product availability",
-          "type": "action"
-        },
-        {
-          "step": 3,
-          "description": "System checks stock quantity",
-          "type": "action"
-        },
-        {
-          "step": 4,
-          "description": "System adds item to user's cart",
-          "type": "action"
-        },
-        {
-          "step": 5,
-          "description": "System updates cart total",
-          "type": "action"
-        }
-      ]
-    },
-    {
-      "name": "Checkout Process",
-      "actor": "User",
-      "steps": [
-        {
-          "step": 1,
-          "description": "User reviews cart contents",
-          "type": "action"
-        },
-        {
-          "step": 2,
-          "description": "User provides shipping address",
-          "type": "action"
-        },
-        {
-          "step": 3,
-          "description": "User selects payment method",
-          "type": "action"
-        },
-        {
-          "step": 4,
-          "description": "System validates cart items availability",
-          "type": "action"
-        },
-        {
-          "step": 5,
-          "description": "System calculates total amount",
-          "type": "action"
-        },
-        {
-          "step": 6,
-          "description": "System processes payment",
-          "type": "action"
-        },
-        {
-          "step": 7,
-          "description": "System creates order with pending status",
-          "type": "action"
-        },
-        {
-          "step": 8,
-          "description": "System reduces product stock",
-          "type": "action"
-        },
-        {
-          "step": 9,
-          "description": "System sends order confirmation",
-          "type": "action"
-        }
-      ]
-    },
-    {
-      "name": "Order Management",
-      "actor": "User",
-      "steps": [
-        {
-          "step": 1,
-          "description": "Admin views all orders",
-          "type": "action"
-        },
-        {
-          "step": 2,
-          "description": "Admin can update order status",
-          "type": "action"
-        },
-        {
-          "step": 3,
-          "description": "Admin can cancel pending orders",
-          "type": "action"
-        },
-        {
-          "step": 4,
-          "description": "System notifies user of status changes",
-          "type": "action"
-        },
-        {
-          "step": 5,
-          "description": "System tracks order fulfillment",
+          "description": "System creates account",
           "type": "action"
         }
       ]
@@ -425,88 +72,13 @@
   "api": [
     {
       "method": "POST",
-      "path": "/auth/register",
-      "summary": "Register new user account"
-    },
-    {
-      "method": "POST",
-      "path": "/auth/login",
-      "summary": "User authentication"
+      "path": "/users",
+      "summary": "Register user"
     },
     {
       "method": "GET",
-      "path": "/users/{id}",
-      "summary": "Get user profile"
-    },
-    {
-      "method": "PUT",
-      "path": "/users/{id}",
-      "summary": "Update user profile"
-    },
-    {
-      "method": "GET",
-      "path": "/products",
-      "summary": "List products with filtering"
-    },
-    {
-      "method": "GET",
-      "path": "/products/{id}",
-      "summary": "Get product details"
-    },
-    {
-      "method": "POST",
-      "path": "/products",
-      "summary": "Create new product (admin only)"
-    },
-    {
-      "method": "PUT",
-      "path": "/products/{id}",
-      "summary": "Update product (admin only)"
-    },
-    {
-      "method": "DELETE",
-      "path": "/products/{id}",
-      "summary": "Deactivate product (admin only)"
-    },
-    {
-      "method": "GET",
-      "path": "/cart",
-      "summary": "Get user's cart contents"
-    },
-    {
-      "method": "POST",
-      "path": "/cart/items",
-      "summary": "Add item to cart"
-    },
-    {
-      "method": "PUT",
-      "path": "/cart/items/{id}",
-      "summary": "Update cart item quantity"
-    },
-    {
-      "method": "DELETE",
-      "path": "/cart/items/{id}",
-      "summary": "Remove item from cart"
-    },
-    {
-      "method": "POST",
-      "path": "/orders",
-      "summary": "Create new order (checkout)"
-    },
-    {
-      "method": "GET",
-      "path": "/orders",
-      "summary": "Get user's order history"
-    },
-    {
-      "method": "GET",
-      "path": "/orders/{id}",
-      "summary": "Get order details"
-    },
-    {
-      "method": "PUT",
-      "path": "/orders/{id}/status",
-      "summary": "Update order status (admin only)"
+      "path": "/users/:id",
+      "summary": "Get user"
     }
   ]
 }
