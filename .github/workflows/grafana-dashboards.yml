@@ -23,14 +23,23 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          # Override repo .npmrc setting so pnpm keeps using the lockfile
+          pnpm install --frozen-lockfile --config.package-lock=true
 
       - name: Export dashboards (dry-run)
         env:
           GRAFANA_BASE_URL: ${{ secrets.GRAFANA_BASE_URL }}
           GRAFANA_API_TOKEN: ${{ secrets.GRAFANA_API_TOKEN }}
         run: |
+          if [ -z "${GRAFANA_BASE_URL}" ] || [ -z "${GRAFANA_API_TOKEN}" ]; then
+            echo "Grafana credentials not configured; skipping export dry run."
+            exit 0
+          fi
           node scripts/trace/export-dashboard.mjs --config .github/grafana-dashboards.yml --dry-run
 
       - name: Check diff
@@ -69,12 +78,21 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          # Override repo .npmrc setting so pnpm keeps using the lockfile
+          pnpm install --frozen-lockfile --config.package-lock=true
 
       - name: Import dashboards
         env:
           GRAFANA_BASE_URL: ${{ secrets.GRAFANA_BASE_URL }}
           GRAFANA_API_TOKEN: ${{ secrets.GRAFANA_API_TOKEN }}
         run: |
+          if [ -z "${GRAFANA_BASE_URL}" ] || [ -z "${GRAFANA_API_TOKEN}" ]; then
+            echo "Grafana credentials not configured; skipping import."
+            exit 0
+          fi
           node scripts/trace/import-dashboard.mjs --config .github/grafana-dashboards.yml
