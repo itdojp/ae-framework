@@ -30,6 +30,7 @@ jobs:
             .ae
             packages/spec-compiler
             src/cli
+            src/integration
             src/utils
             .github/actions/setup-pnpm
             package.json
