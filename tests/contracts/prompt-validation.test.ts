@@ -435,7 +435,7 @@ describe('Prompt Contract Testing', () => {
     
     // Should have reasonable success rate (allowing for intentional errors)
     expect(testResults.passed + testResults.failed).toBe(10);
-    expect(testResults.passed).toBeGreaterThanOrEqual(3); // Allow ~30% success until prompts mature
+    expect(testResults.passed).toBeGreaterThanOrEqual(5); // Maintain 50% floor with deterministic mock
     
     console.log(`✅ AE-Spec Analysis: ${testResults.passed}/${testResults.passed + testResults.failed} passed`);
   });
@@ -451,7 +451,7 @@ describe('Prompt Contract Testing', () => {
     const testResults = validator.runContractTests('code-generation-plan', outputs);
     
     expect(testResults.passed + testResults.failed).toBe(8);
-    expect(testResults.passed).toBeGreaterThanOrEqual(3); // Allow ~37% success while prompts are still experimental
+    expect(testResults.passed).toBeGreaterThanOrEqual(4); // Maintain 50% floor with deterministic mock
     
     console.log(`✅ Code Generation Plans: ${testResults.passed}/${testResults.passed + testResults.failed} passed`);
   });
