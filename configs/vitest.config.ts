@@ -6,6 +6,8 @@ export default defineConfig({
     exclude: ['**/.stryker-tmp/**', '**/.stryker-tmp-*/**'],
     reporters: ['default'],
     setupFiles: ['tests/a11y/setup.js'],
+    pool: 'threads',
+    maxThreads: 4,
   },
   projects: [
     {

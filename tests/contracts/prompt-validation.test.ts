@@ -338,20 +338,22 @@ class PromptContractValidator {
 }
 
 class MockAIAgent {
+  private analysisCounter = 0;
+  private planCounter = 0;
+
   async generateAESpecAnalysis(spec: string): Promise<any> {
-    // Simulate AI agent output with occasional errors
-    const hasError = Math.random() < 0.3;
-    
+    // Deterministic cycle: pass, pass, fail, pass ... to keep tests meaningful but stable
+    const failPattern = [false, false, true, false];
+    const hasError = failPattern[this.analysisCounter % failPattern.length];
+    this.analysisCounter += 1;
+
     if (hasError) {
-      // Generate invalid output
       return {
-        entities: [], // Missing required fields
-        relationships: 'invalid', // Wrong type
-        // Missing recommendations
+        entities: [],
+        relationships: 'invalid',
       };
     }
 
-    // Generate valid output
     return {
       entities: [
         {
@@ -377,13 +379,15 @@ class MockAIAgent {
   }
 
   async generateCodePlan(requirements: string): Promise<any> {
-    const hasError = Math.random() < 0.25;
-    
+    const failPattern = [false, true, false, false];
+    const hasError = failPattern[this.planCounter % failPattern.length];
+    this.planCounter += 1;
+
     if (hasError) {
       return {
-        files: [{ path: '', type: 'invalid' }], // Invalid data
+        files: [{ path: '', type: 'invalid' }],
         dependencies: [],
-        steps: [] // Empty steps not allowed
+        steps: []
       };
     }
 
@@ -435,7 +439,7 @@ describe('Prompt Contract Testing', () => {
     
     // Should have reasonable success rate (allowing for intentional errors)
     expect(testResults.passed + testResults.failed).toBe(10);
-    expect(testResults.passed).toBeGreaterThanOrEqual(3); // Allow ~30% success until prompts mature
+    expect(testResults.passed).toBeGreaterThanOrEqual(6); // Deterministic mock ensures >=6/10 pass
     
     console.log(`✅ AE-Spec Analysis: ${testResults.passed}/${testResults.passed + testResults.failed} passed`);
   });
@@ -451,7 +455,7 @@ describe('Prompt Contract Testing', () => {
     const testResults = validator.runContractTests('code-generation-plan', outputs);
     
     expect(testResults.passed + testResults.failed).toBe(8);
-    expect(testResults.passed).toBeGreaterThanOrEqual(3); // Allow ~37% success while prompts are still experimental
+    expect(testResults.passed).toBeGreaterThanOrEqual(6); // Deterministic mock ensures >=6/8 pass
     
     console.log(`✅ Code Generation Plans: ${testResults.passed}/${testResults.passed + testResults.failed} passed`);
   });
