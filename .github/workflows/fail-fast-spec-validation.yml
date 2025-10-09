@@ -57,6 +57,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-
 
+      - name: Ensure lockfile config enabled
+        run: pnpm config set lockfile true
+
       - name: Install dependencies (fast)
         run: |
           pnpm install --frozen-lockfile --prefer-offline
