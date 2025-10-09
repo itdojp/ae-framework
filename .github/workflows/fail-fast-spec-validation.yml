@@ -26,7 +26,7 @@ jobs:
         with:
           # Only fetch files needed for spec validation
           sparse-checkout: |
-            spec
+            spec/**
             .ae
             packages/spec-compiler
             src/cli
