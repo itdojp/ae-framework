@@ -29,9 +29,7 @@ jobs:
             spec
             .ae
             packages/spec-compiler
-            src/cli
-            src/integration
-            src/utils
+            src
             .github/actions/setup-pnpm
             package.json
             pnpm-lock.yaml
