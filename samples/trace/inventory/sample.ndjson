@@ -1,0 +1,4 @@
+{"traceId":"inventory-trace-1","timestamp":"2025-10-09T00:00:00.000Z","type":"projection","key":"inventory","state":{"onHand":50,"allocated":10,"available":40}}
+{"traceId":"inventory-trace-1","timestamp":"2025-10-09T00:05:00.000Z","type":"allocation","key":"order-1001","delta":{"allocated":5},"state":{"onHand":50,"allocated":15,"available":35},"context":{"sku":"SKU-1","reservationId":"res-1001"}}
+{"traceId":"inventory-trace-1","timestamp":"2025-10-09T00:10:00.000Z","type":"release","key":"order-1001","delta":{"allocated":-3},"state":{"onHand":50,"allocated":12,"available":38},"context":{"reason":"order-cancelled"}}
+{"traceId":"inventory-trace-1","timestamp":"2025-10-09T00:15:00.000Z","type":"validation","key":"inventory","result":"pass","checks":{"allocated_le_onhand":true,"onhand_min":true},"state":{"onHand":50,"allocated":12,"available":38}}
