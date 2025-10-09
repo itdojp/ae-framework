@@ -97,7 +97,7 @@ node "${SCRIPT_DIR}/projector-inventory.mjs" \
 
 VALIDATOR_ARGS=("${SCRIPT_DIR}/validate-inventory.mjs" "--input" "${PROJECTION_PATH}" "--state" "${STATE_SEQUENCE_PATH}" "--output" "${VALIDATION_PATH}")
 
-if [[ "${ONHAND_MIN}" != "" ]]; then
+if [[ -n "${ONHAND_MIN}" ]]; then
   VALIDATOR_ARGS+=("--onhand-min" "${ONHAND_MIN}")
 fi
 if [[ -n "${DISABLE}" ]]; then
@@ -106,10 +106,11 @@ fi
 
 node "${VALIDATOR_ARGS[@]}"
 
+fallback_valid="unknown"
 if command -v jq >/dev/null 2>&1; then
-  VALID=$(jq -r '.valid' "${VALIDATION_PATH}" 2>/dev/null || echo unknown)
+  VALID=$(jq -r '.valid' "${VALIDATION_PATH}" 2>/dev/null || echo "${fallback_valid}")
 else
-  VALID=$(node "${SCRIPT_DIR}/read-validation-field.mjs" "${VALIDATION_PATH}" valid || echo unknown)
+  VALID=$(node "${SCRIPT_DIR}/read-validation-field.mjs" "${VALIDATION_PATH}" valid || echo "${fallback_valid}")
 fi
 
 if [[ "${VALID}" != "true" ]]; then
