@@ -36,6 +36,10 @@ jobs:
           GRAFANA_BASE_URL: ${{ secrets.GRAFANA_BASE_URL }}
           GRAFANA_API_TOKEN: ${{ secrets.GRAFANA_API_TOKEN }}
         run: |
+          if [ -z "${GRAFANA_BASE_URL}" ] || [ -z "${GRAFANA_API_TOKEN}" ]; then
+            echo "Grafana credentials not configured; skipping export dry run."
+            exit 0
+          fi
           node scripts/trace/export-dashboard.mjs --config .github/grafana-dashboards.yml --dry-run
 
       - name: Check diff
@@ -87,4 +91,8 @@ jobs:
           GRAFANA_BASE_URL: ${{ secrets.GRAFANA_BASE_URL }}
           GRAFANA_API_TOKEN: ${{ secrets.GRAFANA_API_TOKEN }}
         run: |
+          if [ -z "${GRAFANA_BASE_URL}" ] || [ -z "${GRAFANA_API_TOKEN}" ]; then
+            echo "Grafana credentials not configured; skipping import."
+            exit 0
+          fi
           node scripts/trace/import-dashboard.mjs --config .github/grafana-dashboards.yml
