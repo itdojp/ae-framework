@@ -1,0 +1,21 @@
+version: "3.9"
+
+services:
+  tests:
+    build:
+      context: ..
+      dockerfile: podman/Dockerfile.test
+      target: test-base
+    environment:
+      NODE_ENV: test
+      CI: "true"
+    volumes:
+      - ../:/workspace:Z
+      - pnpm_store:/pnpm
+    tmpfs:
+      - /tmp
+    user: "1000:1000"
+    entrypoint: ["pnpm", "test:ci:stable"]
+
+volumes:
+  pnpm_store:

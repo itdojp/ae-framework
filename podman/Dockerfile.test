@@ -1,0 +1,99 @@
+# syntax=docker/dockerfile:1
+#
+# Podman向けテスト環境イメージ
+#
+
+FROM docker.io/node:22-alpine AS test-base
+
+RUN apk add --no-cache \
+    git \
+    bash \
+    curl \
+    chromium \
+    chromium-chromedriver \
+    xvfb \
+    dbus \
+    fontconfig \
+    cairo \
+    pango \
+    gdk-pixbuf \
+    libx11 \
+    libxcomposite \
+    libxcursor \
+    libxdamage \
+    libxext \
+    libxfixes \
+    libxi \
+    libxrandr \
+    libxrender \
+    libxss \
+    libxtst \
+    alsa-lib \
+    nss \
+    ca-certificates \
+    liberation-fonts \
+    noto-fonts \
+    noto-fonts-cjk
+
+ENV NODE_ENV=test \
+    CI=true \
+    CHROMIUM_PATH=/usr/bin/chromium-browser \
+    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser \
+    PLAYWRIGHT_BROWSERS_PATH=/usr/bin \
+    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
+    NODE_OPTIONS="--max-old-space-size=2048 --expose-gc" \
+    VITEST_POOL_THREADS=2 \
+    VITEST_MAX_THREADS=2 \
+    VITEST_MIN_THREADS=1 \
+    DISPLAY=:99 \
+    XVFB_RES=1280x1024x24
+
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/*/package.json ./packages/*/
+
+RUN corepack enable pnpm && \
+    pnpm config set store-dir /pnpm && \
+    pnpm install --frozen-lockfile --include-workspace-root
+
+COPY vitest.config.ts vitest.ci.config.ts tsconfig.json jest.a11y.config.cjs ./
+COPY lighthouserc.js stryker.conf.json eslint.config.js ./
+COPY tests/_setup/ ./tests/_setup/
+COPY config/ ./config/
+COPY scripts/ ./scripts/
+
+RUN chmod +x scripts/*.sh scripts/*.mjs scripts/*.js
+
+COPY src/ ./src/
+COPY templates/ ./templates/
+COPY packages/ ./packages/
+COPY tests/ ./tests/
+
+RUN mkdir -p /app/reports /app/logs /app/tmp /app/.ae /app/coverage /app/.nyc_output /pnpm && \
+    chown -R node:node /app /pnpm
+
+USER node
+
+RUN pnpm exec playwright install --with-deps chromium 2>/dev/null || true
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD node -e "console.log('Test environment ready'); process.exit(0)"
+
+CMD ["pnpm", "test:ci:stable"]
+
+FROM test-base AS test-unit
+CMD ["pnpm", "test:unit"]
+
+FROM test-base AS test-integration
+CMD ["pnpm", "test:integration"]
+
+FROM test-base AS test-e2e
+CMD ["pnpm", "test:playwright"]
+
+FROM test-base AS test-quality
+CMD ["pnpm", "test:quality"]
+
+FROM test-base AS test-flake-detection
+CMD ["pnpm", "flake:detect:enhanced:quick"]
