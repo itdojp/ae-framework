@@ -18,6 +18,101 @@ import {
   TestDiscovery
 } from '../../src/integration/types.js';
 
+// Helper functions
+function createMockTestCase(id: string, name: string, category: any): TestCase {
+  return {
+    id,
+    name,
+    description: `Mock test case: ${name}`,
+    category,
+    severity: 'major',
+    enabled: true,
+    preconditions: [],
+    steps: [
+      {
+        id: 'step-1',
+        description: 'Mock step',
+        action: category === 'e2e' ? 'navigate:/' : 'api:request:GET:/health',
+        data: {},
+        expectedResult: 'Success'
+      }
+    ],
+    expectedResults: ['Test completes successfully'],
+    fixtures: [],
+    dependencies: [],
+    tags: ['mock', 'test'],
+    metadata: {
+      complexity: 'low',
+      stability: 'stable',
+      lastUpdated: new Date().toISOString()
+    }
+  };
+}
+
+function createMockTestSuite(id: string, name: string, tests: string[]): TestSuite {
+  return {
+    id,
+    name,
+    description: `Mock test suite: ${name}`,
+    category: 'integration',
+    tests,
+    fixtures: [],
+    configuration: {
+      parallel: false,
+      maxConcurrency: 1,
+      timeout: 60000,
+      retries: 1,
+      skipOnFailure: false,
+      failFast: false
+    },
+    setup: [],
+    teardown: [],
+    metadata: {
+      priority: 'medium',
+      tags: ['mock', 'suite']
+    }
+  };
+}
+
+function createMockFixture(id: string, name: string): TestFixture {
+  return {
+    id,
+    name,
+    description: `Mock test fixture: ${name}`,
+    category: 'unit',
+    data: { mockData: true },
+    setup: [],
+    teardown: [],
+    dependencies: [],
+    metadata: {
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      version: '1.0.0',
+      tags: ['mock', 'fixture']
+    }
+  };
+}
+
+function createMockEnvironment(): TestEnvironment {
+  return {
+    name: 'test',
+    baseUrl: 'http://localhost:3000',
+    apiUrl: 'http://localhost:3000/api',
+    variables: {
+      TEST_MODE: 'true'
+    },
+    timeouts: {
+      default: 30000,
+      api: 10000,
+      ui: 5000
+    },
+    retries: {
+      max: 2,
+      delay: 1000
+    }
+  };
+}
+
 // Mock test discovery
 class MockTestDiscovery implements TestDiscovery {
   async discoverTests(): Promise<TestCase[]> {
@@ -394,98 +489,4 @@ describe('IntegrationTestOrchestrator', () => {
     });
   });
 
-  // Helper functions
-  function createMockTestCase(id: string, name: string, category: any): TestCase {
-    return {
-      id,
-      name,
-      description: `Mock test case: ${name}`,
-      category,
-      severity: 'major',
-      enabled: true,
-      preconditions: [],
-      steps: [
-        {
-          id: 'step-1',
-          description: 'Mock step',
-          action: category === 'e2e' ? 'navigate:/' : 'api:request:GET:/health',
-          data: {},
-          expectedResult: 'Success'
-        }
-      ],
-      expectedResults: ['Test completes successfully'],
-      fixtures: [],
-      dependencies: [],
-      tags: ['mock', 'test'],
-      metadata: {
-        complexity: 'low',
-        stability: 'stable',
-        lastUpdated: new Date().toISOString()
-      }
-    };
-  }
-
-  function createMockTestSuite(id: string, name: string, tests: string[]): TestSuite {
-    return {
-      id,
-      name,
-      description: `Mock test suite: ${name}`,
-      category: 'integration',
-      tests,
-      fixtures: [],
-      configuration: {
-        parallel: false,
-        maxConcurrency: 1,
-        timeout: 60000,
-        retries: 1,
-        skipOnFailure: false,
-        failFast: false
-      },
-      setup: [],
-      teardown: [],
-      metadata: {
-        priority: 'medium',
-        tags: ['mock', 'suite']
-      }
-    };
-  }
-
-  function createMockFixture(id: string, name: string): TestFixture {
-    return {
-      id,
-      name,
-      description: `Mock test fixture: ${name}`,
-      category: 'unit',
-      data: { mockData: true },
-      setup: [],
-      teardown: [],
-      dependencies: [],
-      metadata: {
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        version: '1.0.0',
-        tags: ['mock', 'fixture']
-      }
-    };
-  }
-
-  function createMockEnvironment(): TestEnvironment {
-    return {
-      name: 'test',
-      baseUrl: 'http://localhost:3000',
-      apiUrl: 'http://localhost:3000/api',
-      variables: {
-        TEST_MODE: 'true'
-      },
-      timeouts: {
-        default: 30000,
-        api: 10000,
-        ui: 5000
-      },
-      retries: {
-        max: 2,
-        delay: 1000
-      }
-    };
-  }
 });

@@ -26,11 +26,10 @@ jobs:
         with:
           # Only fetch files needed for spec validation
           sparse-checkout: |
-            spec/**
+            spec
             .ae
             packages/spec-compiler
-            src/cli
-            src/utils
+            src
             .github/actions/setup-pnpm
             package.json
             pnpm-lock.yaml
@@ -92,7 +91,7 @@ jobs:
           printf "%s\n" "::group::AE-Spec → AE-IR Compilation"
           
           # Find the first spec file (or use specified one)
-          SPEC_FILE=$(find spec -name "*.md" -type f | head -1)
+          SPEC_FILE=$(find spec -type f -name "*.md" | sort | head -1)
           
           if [ -z "$SPEC_FILE" ]; then
             printf "%s\n" "::error::No markdown spec files found"
@@ -103,7 +102,7 @@ jobs:
           mkdir -p .ae
           
           # Fail fast on compilation errors
-          if ! npx tsx src/cli/index.ts spec compile --input "$SPEC_FILE" --output .ae/ae-ir.json --no-verbose; then
+          if ! npx tsx src/cli/index.ts spec compile --input "$SPEC_FILE" --output .ae/ae-ir.json; then
             printf "%s\n" "::error::AE-Spec compilation failed"
             exit 1
           fi

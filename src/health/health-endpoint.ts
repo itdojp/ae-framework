@@ -48,46 +48,54 @@ export interface HealthStatus {
 
 export async function registerHealthEndpoint(fastify: FastifyInstance): Promise<void> {
   // Simple health check endpoint
-  fastify.get('/health', async (request: FastifyRequest, reply: FastifyReply) => {
-    const healthStatus = await getHealthStatus();
-    
-    const httpStatus = healthStatus.status === 'healthy' ? 200 :
-                       healthStatus.status === 'degraded' ? 200 : 503;
-    
-    reply.status(httpStatus).send(healthStatus);
-  });
+  if (!fastify.hasRoute({ method: 'GET', url: '/health' })) {
+    fastify.get('/health', async (request: FastifyRequest, reply: FastifyReply) => {
+      const healthStatus = await getHealthStatus();
+      
+      const httpStatus = healthStatus.status === 'healthy' ? 200 :
+                         healthStatus.status === 'degraded' ? 200 : 503;
+      
+      reply.status(httpStatus).send(healthStatus);
+    });
+  }
 
   // Detailed health check for monitoring
-  fastify.get('/health/detailed', async (request: FastifyRequest, reply: FastifyReply) => {
-    const healthStatus = await getDetailedHealthStatus();
-    
-    const httpStatus = healthStatus.status === 'healthy' ? 200 :
-                       healthStatus.status === 'degraded' ? 200 : 503;
-    
-    reply.status(httpStatus).send(healthStatus);
-  });
+  if (!fastify.hasRoute({ method: 'GET', url: '/health/detailed' })) {
+    fastify.get('/health/detailed', async (request: FastifyRequest, reply: FastifyReply) => {
+      const healthStatus = await getDetailedHealthStatus();
+      
+      const httpStatus = healthStatus.status === 'healthy' ? 200 :
+                         healthStatus.status === 'degraded' ? 200 : 503;
+      
+      reply.status(httpStatus).send(healthStatus);
+    });
+  }
 
   // Readiness probe for Kubernetes/Docker orchestration
-  fastify.get('/ready', async (request: FastifyRequest, reply: FastifyReply) => {
-    // Check if application is ready to serve traffic
-    const isReady = await checkReadiness();
-    
-    if (isReady) {
-      reply.status(200).send({ status: 'ready', timestamp: new Date().toISOString() });
-    } else {
-      reply.status(503).send({ status: 'not ready', timestamp: new Date().toISOString() });
-    }
-  });
+  if (!fastify.hasRoute({ method: 'GET', url: '/ready' })) {
+    fastify.get('/ready', async (request: FastifyRequest, reply: FastifyReply) => {
+      // Check if application is ready to serve traffic
+      const isReady = await checkReadiness();
+      
+      if (isReady) {
+        reply.status(200).send({ status: 'ready', timestamp: new Date().toISOString() });
+      } else {
+        reply.status(503).send({ status: 'not ready', timestamp: new Date().toISOString() });
+      }
+    });
+  }
 
   // Liveness probe for Kubernetes/Docker orchestration
-  fastify.get('/alive', async (request: FastifyRequest, reply: FastifyReply) => {
-    // Simple liveness check - if we can respond, we're alive
-    reply.status(200).send({ 
-      status: 'alive', 
-      timestamp: new Date().toISOString(),
-      pid: process.pid
+  if (!fastify.hasRoute({ method: 'GET', url: '/alive' })) {
+    fastify.get('/alive', async (request: FastifyRequest, reply: FastifyReply) => {
+      // Simple liveness check - if we can respond, we're alive
+      reply.status(200).send({ 
+        status: 'alive', 
+        timestamp: new Date().toISOString(),
+        pid: process.pid
+      });
     });
-  });
+  }
 }
 
 async function getHealthStatus(): Promise<HealthStatus> {
