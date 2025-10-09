@@ -93,7 +93,7 @@ jobs:
           printf "%s\n" "::group::AE-Spec → AE-IR Compilation"
           
           # Find the first spec file (or use specified one)
-          SPEC_FILE=$(find spec -name "*.md" -type f | head -1)
+          SPEC_FILE=$(find spec -type f -name "*.md" | sort | head -1)
           
           if [ -z "$SPEC_FILE" ]; then
             printf "%s\n" "::error::No markdown spec files found"
