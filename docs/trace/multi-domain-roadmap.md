@@ -16,6 +16,7 @@ Issue refs: #1011 / #997 / #1003
 
 ## 実行ステップ
 1. **Trace Schema 定義**
+   - `docs/trace/multi-domain-trace-schema.md` に共通スキーマと Step Summary 表示ルールを整理する。
    - `docs/trace/schema/<domain>-trace-schema.md` を作成し、KvOnce で使った表形式テンプレートを流用する。
    - `observability/trace-schema.yaml` は共通フィールドを定義し、ドメイン固有フィールドは `definitions` で拡張する。
 2. **Projector/Validator 実装**
