@@ -20,6 +20,7 @@ Issue refs: #1097 / #1096 / #1038
 
 - **Spec セクション**: `verify:conformance` が TLC 実行時に `hermetic-reports/formal/tla-summary.json` のステータスを要約する（ツールが未導入の場合は `status: tool_not_available` を表示）。
 - **Verify Lite セクション**: `pipelines:full` で `reports/verify-lite/verify-lite-run-summary.json` を Envelope に詰めたうえで、lint / mutation quick / property の結果を `summary.steps.*` から抜粋する。
+  - Lint Baseline Diff や Mutation HTML レポートは Step Summary の “Artifacts” セクションに `Lint Baseline Diff` / `Mutation HTML Report` として表示し、GitHub Artifacts への Data Link を添付する。
 - **Trace セクション**: `verify:conformance` または `verify:conformance --from-envelope` の `summary.trace` を描画し、Projection/Validation/TLC の結果と issues 数を列挙する。`REPORT_ENVELOPE_TEMPO_LINK_TEMPLATE` を設定しておくと Tempo Explore へのリンクも自動生成できる。
   - `traceIds` や `artifacts` 情報（projection/validation/state sequence/replay）を付与しておくと、Step Summary から GitHub Artifacts へジャンプできる。
 
@@ -31,7 +32,7 @@ Issue refs: #1097 / #1096 / #1038
 - Tempo / Grafana へリンクを貼る場合は `docs/trace/grafana/tempo-dashboard.md` のプレイブックに沿って Data Link を設定する。
 
 ## TODO
-- [ ] Verify Lite ワークフローの Step Summary に mutation report / lint baseline diff へのリンクを追加する。
+- [x] Verify Lite ワークフローの Step Summary に mutation report / lint baseline diff へのリンクを追加する。
 - [ ] Trace Envelope の `artifacts[]` から Tempo / S3 への Data Link を生成し、Step Summary から直接遷移できるようにする。
 - [ ] Multi-domain Trace が実装されたら `summary.trace.domains[]` をサポートする。
 - [ ] Step Summary 再利用手順（`--from-envelope`）を CI ガイドラインに反映し、手動トラブルシュート手順を整備する。
