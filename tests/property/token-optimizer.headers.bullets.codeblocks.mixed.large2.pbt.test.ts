@@ -10,19 +10,13 @@ describe('PBT: TokenOptimizer headers+bullets+codeblocks mixed (large 2)', () =>
         product: [
           '# product',
           '- a',
-          '```
-block1
-```
-',
+          ['```', 'block1', '```'].join('\n'),
           '- a',
           ('lorem '.repeat(180))
         ].join('\n'),
         architecture: [
           '# architecture',
-          '```
-block2
-```
-',
+          ['```', 'block2', '```'].join('\n'),
           '- b',
           ('ipsum '.repeat(160))
         ].join('\n')
@@ -35,4 +29,3 @@ block2
     }
   );
 });
-

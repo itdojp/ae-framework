@@ -9,14 +9,14 @@ import * as path from 'path';
 
 // Mock fs module
 vi.mock('fs/promises');
-vi.mock('glob');
-
-const mockFs = vi.mocked(fs);
-const mockGlob = vi.fn();
-
+const { mockGlob } = vi.hoisted(() => ({
+  mockGlob: vi.fn()
+}));
 vi.mock('glob', () => ({
   glob: mockGlob,
 }));
+
+const mockFs = vi.mocked(fs);
 
 describe('SBOMGenerator', () => {
   let generator: SBOMGenerator;

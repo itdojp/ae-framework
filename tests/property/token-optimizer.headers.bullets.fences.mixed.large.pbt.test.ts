@@ -9,10 +9,7 @@ describe('PBT: TokenOptimizer headers+bullets+fences mixed (large)', () => {
       const docs: Record<string,string> = {
         product: [
           '# product',
-          '```
-code
-```
-',
+          ['```', 'code', '```'].join('\n'),
           '- a',
           '- a',
           ('lorem '.repeat(150))
@@ -32,4 +29,3 @@ code
     }
   );
 });
-

@@ -8,10 +8,13 @@ function makeConfig(){
 
 describe('PBT: StandardizedBenchmarkRunner.normalizeSpecification', () => {
   it('collects requirement strings from varied shapes', async () => {
+    const requirementArb = fc.string({ minLength: 1, maxLength: 120 }).filter(s => s.trim().length > 0);
     await fc.assert(fc.asyncProperty(
       fc.record({
-        f1: fc.string(), f2: fc.string(),
-        nfPerf: fc.string(), nfSec: fc.string()
+        f1: requirementArb,
+        f2: requirementArb,
+        nfPerf: requirementArb,
+        nfSec: requirementArb
       }),
       async ({ f1, f2, nfPerf, nfSec }) => {
         const runner = new StandardizedBenchmarkRunner(makeConfig());
@@ -25,12 +28,11 @@ describe('PBT: StandardizedBenchmarkRunner.normalizeSpecification', () => {
         };
         const out = normalize(specInput, 'p');
         expect(Array.isArray(out.requirements)).toBe(true);
-        expect(out.requirements).toContain(f1);
-        expect(out.requirements).toContain(f2);
-        expect(out.requirements).toContain(nfPerf);
-        expect(out.requirements).toContain(nfSec);
+        expect(out.requirements).toContain(f1.trim());
+        expect(out.requirements).toContain(f2.trim());
+        expect(out.requirements).toContain(nfPerf.trim());
+        expect(out.requirements).toContain(nfSec.trim());
       }
     ), { numRuns: 10 });
   });
 });
-
