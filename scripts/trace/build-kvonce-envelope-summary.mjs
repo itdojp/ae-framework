@@ -9,6 +9,7 @@ function parseArgs(argv) {
     traceDir: path.join('hermetic-reports', 'trace'),
     summary: null,
     cases: null,
+    domainSummaries: [],
   };
   for (let i = 2; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -25,6 +26,9 @@ function parseArgs(argv) {
     } else if (arg === '--cases' && next) {
       options.cases = next;
       i += 1;
+    } else if (arg === '--domain-summary' && next) {
+      options.domainSummaries.push(next);
+      i += 1;
     } else if (arg === '--help' || arg === '-h') {
       console.log(`Usage: node scripts/trace/build-kvonce-envelope-summary.mjs [options]
 
@@ -33,6 +37,8 @@ Options:
   -d, --trace-dir <dir>    Base directory containing trace artifacts (default: hermetic-reports/trace)
   -s, --summary <file>     Conformance summary JSON (default: <trace-dir>/kvonce-conformance-summary.json)
       --cases <list>       Comma-separated case descriptors key[:label[:subdir]]
+      --domain-summary <file>
+                           Additional domain summary JSON (repeatable)
   -h, --help               Show this message
 `);
       process.exit(0);
@@ -74,6 +80,68 @@ const readJsonSafe = (filePath) => {
     return null;
   }
 };
+
+const toStringArray = (value) => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => (typeof item === 'string' ? item.trim() : ''))
+    .filter(Boolean);
+};
+
+function normalizeDomainSummary(summary, sourcePath) {
+  if (!summary || typeof summary !== 'object') return null;
+  const defaultKey = path.basename(sourcePath, path.extname(sourcePath));
+  const keyCandidate = typeof summary.key === 'string' ? summary.key.trim() : '';
+  const key = keyCandidate || defaultKey;
+  const labelCandidate = typeof summary.label === 'string' ? summary.label.trim() : '';
+  const label = labelCandidate || key;
+  const statusCandidate = typeof summary.status === 'string' ? summary.status.trim() : '';
+  const status = statusCandidate || 'unknown';
+  const issuesValue = summary.issues;
+  let issues = 0;
+  if (typeof issuesValue === 'number' && Number.isFinite(issuesValue)) {
+    issues = issuesValue;
+  } else if (Array.isArray(issuesValue)) {
+    issues = issuesValue.length;
+  }
+  const traceIds = toStringArray(summary.traceIds);
+  const tempoLinks = toStringArray(summary.tempoLinks);
+  const artifacts = summary.artifacts && typeof summary.artifacts === 'object' ? summary.artifacts : null;
+  const metrics = summary.metrics && typeof summary.metrics === 'object' ? summary.metrics : null;
+  const notes = toStringArray(summary.notes);
+  const entry = {
+    key,
+    label,
+    status,
+    issues,
+    traceIds,
+    tempoLinks,
+  };
+  if (artifacts && Object.keys(artifacts).length > 0) {
+    entry.artifacts = artifacts;
+  }
+  if (metrics && Object.keys(metrics).length > 0) {
+    entry.metrics = metrics;
+  }
+  if (notes.length > 0) {
+    entry.notes = notes;
+  }
+  const sourceRelative = path.relative(process.cwd(), sourcePath);
+  const meta = {
+    key,
+    label,
+    status,
+    source: sourceRelative,
+  };
+  if (traceIds.length > 0) {
+    meta.traceIdCount = traceIds.length;
+  }
+  if (issues > 0) {
+    meta.issues = issues;
+  }
+  return { entry, meta, traceIds, tempoLinks };
+}
+
 
 const metadata = readJsonSafe(path.join(traceDir, 'kvonce-payload-metadata.json')) ?? {};
 const casesSummary = [];
@@ -161,9 +229,6 @@ if (Array.isArray(conformanceSummary?.tempoLinks)) {
   }
 }
 
-const aggregateTraceIdsArray = Array.from(aggregateTraceIds);
-const aggregateTempoLinksArray = Array.from(aggregateTempoLinks);
-
 const domainEntries = casesSummary.map((entry) => {
   const status = entry.status ?? (entry.valid === true ? 'valid' : (entry.valid === false ? 'invalid' : 'unknown'));
   const artifacts = {};
@@ -184,6 +249,46 @@ const domainEntries = casesSummary.map((entry) => {
     ...(Object.keys(metrics).length > 0 ? { metrics } : {}),
   };
 });
+
+const domainSummaryMetadata = [];
+for (const summaryPath of options.domainSummaries) {
+  if (!summaryPath) continue;
+  const directPath = path.resolve(summaryPath);
+  const fallbackPath = path.resolve(traceDir, summaryPath);
+  let resolved = null;
+  if (fs.existsSync(directPath)) {
+    resolved = directPath;
+  } else if (fs.existsSync(fallbackPath)) {
+    resolved = fallbackPath;
+  }
+  if (!resolved) {
+    console.warn(`[trace] domain summary not found: ${summaryPath}`);
+    continue;
+  }
+  const summaryData = readJsonSafe(resolved);
+  if (!summaryData) {
+    console.warn(`[trace] failed to parse domain summary: ${resolved}`);
+    continue;
+  }
+  const normalized = normalizeDomainSummary(summaryData, resolved);
+  if (!normalized) {
+    console.warn(`[trace] invalid domain summary structure: ${resolved}`);
+    continue;
+  }
+  const {
+    entry,
+    meta,
+    traceIds: extraTraceIds = [],
+    tempoLinks: extraTempoLinks = [],
+  } = normalized;
+  domainEntries.push(entry);
+  extraTraceIds.forEach((value) => aggregateTraceIds.add(value));
+  extraTempoLinks.forEach((value) => aggregateTempoLinks.add(value));
+  domainSummaryMetadata.push(meta);
+}
+
+const aggregateTraceIdsArray = Array.from(aggregateTraceIds);
+const aggregateTempoLinksArray = Array.from(aggregateTempoLinks);
 
 const aggregate = {
   traceIds: aggregateTraceIdsArray,
@@ -216,6 +321,10 @@ const output = {
   cases: casesSummary,
   trace: traceSummary,
 };
+
+if (domainSummaryMetadata.length > 0) {
+  output.domainSummaries = domainSummaryMetadata;
+}
 
 if (conformanceSummary) {
   const conformanceTrace = {
