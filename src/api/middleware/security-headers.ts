@@ -4,6 +4,7 @@
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import fp from 'fastify-plugin';
 
 export interface SecurityHeadersOptions {
   /** Enable/disable all security headers */
@@ -106,11 +107,11 @@ function generateHSTSValue(options: Required<SecurityHeadersOptions>['strictTran
 /**
  * Security headers hook function
  */
-async function securityHeadersHook(
+function securityHeadersHook(
   request: FastifyRequest,
   reply: FastifyReply,
   options: Required<SecurityHeadersOptions>
-): Promise<void> {
+): void {
   if (!options.enabled) {
     return;
   }
@@ -159,34 +160,30 @@ async function securityHeadersHook(
 /**
  * Fastify plugin for security headers
  */
-export async function securityHeadersPlugin(
+export const securityHeadersPlugin = fp(async (
   fastify: FastifyInstance,
   options: SecurityHeadersOptions = {}
-): Promise<void> {
-  const finalOptions = { ...DEFAULT_OPTIONS, ...options };
+) => {
+  const finalOptions = { ...DEFAULT_OPTIONS, ...options } as Required<SecurityHeadersOptions>;
 
   // Merge nested options
-  Object.keys(finalOptions).forEach(key => {
-    if (typeof finalOptions[key as keyof SecurityHeadersOptions] === 'object' && 
-        options[key as keyof SecurityHeadersOptions] && 
-        typeof options[key as keyof SecurityHeadersOptions] === 'object') {
-      const currentValue = finalOptions[key as keyof SecurityHeadersOptions];
-      const optionValue = options[key as keyof SecurityHeadersOptions];
-      
-      if (currentValue && optionValue && typeof currentValue === 'object' && typeof optionValue === 'object') {
-        finalOptions[key as keyof SecurityHeadersOptions] = {
-          ...currentValue,
-          ...optionValue
-        } as any;
-      }
+  (Object.keys(finalOptions) as (keyof SecurityHeadersOptions)[]).forEach(key => {
+    const baseValue = finalOptions[key];
+    const overrideValue = options[key];
+
+    if (baseValue && typeof baseValue === 'object' && overrideValue && typeof overrideValue === 'object') {
+      finalOptions[key] = {
+        ...(baseValue as Record<string, any>),
+        ...(overrideValue as Record<string, any>)
+      } as any;
     }
   });
 
-  // Register the hook for all routes using onRequest
-  fastify.addHook('onRequest', async (request, reply) => {
-    await securityHeadersHook(request, reply, finalOptions);
+  fastify.addHook('onSend', (request, reply, payload, done) => {
+    securityHeadersHook(request, reply, finalOptions);
+    done(null, payload);
   });
-}
+}, { name: 'security-headers-plugin' });
 
 /**
  * Environment-specific security configurations

@@ -37,6 +37,7 @@ export class ConformanceRuleEngine {
    * Add a conformance rule to the engine
    */
   async addRule(rule: ConformanceRule): Promise<void> {
+    this.validateRule(rule);
     this.rules.set(rule.id, rule);
   }
 
@@ -52,6 +53,7 @@ export class ConformanceRuleEngine {
    * Update an existing rule
    */
   async updateRule(rule: ConformanceRule): Promise<void> {
+    this.validateRule(rule);
     this.rules.set(rule.id, rule);
     this.clearRuleCache(rule.id);
   }
@@ -301,25 +303,7 @@ export class ConformanceRuleEngine {
       return { violated: false };
 
     } catch (error) {
-      // Rule evaluation error - treat as violation
-      const violation: ViolationDetails = {
-        ruleId: rule.id,
-        ruleName: rule.name,
-        category: rule.category,
-        severity: 'major',
-        message: `Rule evaluation error: ${error instanceof Error ? error.message : String(error)}`,
-        context: runtime,
-        stackTrace: error instanceof Error ? error.stack : undefined,
-        evidence: {
-          inputData: input,
-          metrics: DEFAULT_METRICS,
-          logs: DEFAULT_LOGS,
-          stateSnapshot: DEFAULT_STATE_SNAPSHOT,
-          traces: DEFAULT_TRACES
-        }
-      };
-
-      return { violated: true, violation };
+      throw error instanceof Error ? error : new Error(String(error));
     }
   }
 
@@ -365,12 +349,7 @@ export class ConformanceRuleEngine {
       };
 
     } catch (error) {
-      return {
-        passed: false,
-        message: `Expression evaluation failed: ${error instanceof Error ? error.message : String(error)}`,
-        actualValue: error,
-        expectedValue: true
-      };
+      throw error instanceof Error ? error : new Error(String(error));
     }
   }
 
@@ -705,6 +684,36 @@ export class ConformanceRuleEngine {
     this.metrics.set('total_verifications', (this.metrics.get('total_verifications') || 0) + 1);
     this.metrics.set('total_violations', (this.metrics.get('total_violations') || 0) + result.violations.length);
     this.metrics.set('total_duration', (this.metrics.get('total_duration') || 0) + totalDuration);
+  }
+
+  private validateRule(rule: ConformanceRule): void {
+    if (!rule) {
+      throw new Error('Invalid rule: rule payload is required');
+    }
+
+    if (!rule.id || typeof rule.id !== 'string' || rule.id.trim() === '') {
+      throw new Error('Invalid rule: id is required');
+    }
+
+    if (!rule.name || typeof rule.name !== 'string' || rule.name.trim() === '') {
+      throw new Error('Invalid rule: name is required');
+    }
+
+    if (!rule.category) {
+      throw new Error('Invalid rule: category is required');
+    }
+
+    if (!rule.severity) {
+      throw new Error('Invalid rule: severity is required');
+    }
+
+    if (!rule.condition || typeof rule.condition.expression !== 'string' || rule.condition.expression.trim() === '') {
+      throw new Error('Invalid rule: condition expression is required');
+    }
+
+    if (!Array.isArray(rule.condition.variables) || rule.condition.variables.length === 0) {
+      throw new Error('Invalid rule: at least one condition variable is required');
+    }
   }
 
   private getRuleFailureRate(ruleId: string): number {

@@ -40,7 +40,9 @@ export class AutoFixEngine {
         'test_failure',
         'contract_violation',
         'lint_error',
-        'build_error'
+        'build_error',
+        'runtime_error',
+        'performance_issue'
       ],
       maxFixesPerRun: 10,
       timeoutMs: 30000,
@@ -155,8 +157,8 @@ export class AutoFixEngine {
     for (const [category, categoryFailures] of categoryGroups) {
       // Analyze common error messages
       const errorMessages = categoryFailures
-        .map(f => f.evidence.errorMessage)
-        .filter(Boolean) as string[];
+        .map(f => f.evidence.errorMessage || f.description || f.title)
+        .filter((msg): msg is string => Boolean(msg));
       
       const messagePatterns = this.findCommonPatterns(errorMessages);
       
@@ -207,7 +209,12 @@ export class AutoFixEngine {
       }
       
       // Check if we have necessary information
-      if (!failure.location?.filePath) {
+      const categoriesWithoutLocation: FailureCategory[] = [
+        'runtime_error',
+        'build_error',
+        'performance_issue'
+      ];
+      if (!failure.location?.filePath && !categoriesWithoutLocation.includes(failure.category)) {
         return false;
       }
       
@@ -440,7 +447,7 @@ export class AutoFixEngine {
     
     return Array.from(patterns.entries())
       .map(([text, count]) => ({ text, count }))
-      .filter(p => p.count > 1)
+      .filter(p => p.count >= 1)
       .sort((a, b) => b.count - a.count);
   }
 

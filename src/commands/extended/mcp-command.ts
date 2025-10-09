@@ -274,23 +274,18 @@ export class MCPCommand extends BaseExtendedCommand {
         return await this.handleListPlugins(projectRoot);
 
       case 'load':
-        if (!args[1]) throw new Error('Plugin name is required for load command');
         return await this.handleLoadPlugin(args[1], projectRoot);
 
       case 'enable':
-        if (!args[1]) throw new Error('Plugin name is required for enable command');
         return await this.handleEnablePlugin(args[1], projectRoot);
 
       case 'disable':
-        if (!args[1]) throw new Error('Plugin name is required for disable command');
         return await this.handleDisablePlugin(args[1], projectRoot);
 
       case 'unload':
-        if (!args[1]) throw new Error('Plugin name is required for unload command');
         return await this.handleUnloadPlugin(args[1], projectRoot);
 
       case 'create':
-        if (!args[1]) throw new Error('Plugin name is required for create command');
         return await this.handleCreatePlugin(args[1], args[2] || projectRoot, projectRoot);
 
       case 'discover':
@@ -572,7 +567,7 @@ Examples:
     }
   }
 
-  private async handleLoadPlugin(pluginPath: string, projectRoot: string): Promise<MCPCommandResult> {
+  private async handleLoadPlugin(pluginPath: string | undefined, projectRoot: string): Promise<MCPCommandResult> {
     if (!pluginPath) {
       return this.createErrorResult('Please specify plugin path or directory');
     }
@@ -605,7 +600,7 @@ Examples:
     }
   }
 
-  private async handleEnablePlugin(pluginName: string, projectRoot: string): Promise<MCPCommandResult> {
+  private async handleEnablePlugin(pluginName: string | undefined, projectRoot: string): Promise<MCPCommandResult> {
     if (!pluginName) {
       return this.createErrorResult('Please specify plugin name');
     }
@@ -630,7 +625,7 @@ Examples:
     }
   }
 
-  private async handleDisablePlugin(pluginName: string, projectRoot: string): Promise<MCPCommandResult> {
+  private async handleDisablePlugin(pluginName: string | undefined, projectRoot: string): Promise<MCPCommandResult> {
     if (!pluginName) {
       return this.createErrorResult('Please specify plugin name');
     }
@@ -655,7 +650,7 @@ Examples:
     }
   }
 
-  private async handleUnloadPlugin(pluginName: string, projectRoot: string): Promise<MCPCommandResult> {
+  private async handleUnloadPlugin(pluginName: string | undefined, projectRoot: string): Promise<MCPCommandResult> {
     if (!pluginName) {
       return this.createErrorResult('Please specify plugin name');
     }
@@ -680,16 +675,17 @@ Examples:
     }
   }
 
-  private async handleCreatePlugin(pluginName: string, targetDir: string, projectRoot: string): Promise<MCPCommandResult> {
+  private async handleCreatePlugin(pluginName: string | undefined, targetDir: string | undefined, projectRoot: string): Promise<MCPCommandResult> {
     if (!pluginName) {
       return this.createErrorResult('Please specify plugin name');
     }
 
     try {
       const pluginManager = this.getPluginManager(projectRoot);
-      await pluginManager.createPluginTemplate(pluginName, targetDir);
+      const destinationDir = targetDir || projectRoot;
+      await pluginManager.createPluginTemplate(pluginName, destinationDir);
 
-      const pluginPath = path.join(targetDir, pluginName);
+      const pluginPath = path.join(destinationDir, pluginName);
 
       return {
         success: true,

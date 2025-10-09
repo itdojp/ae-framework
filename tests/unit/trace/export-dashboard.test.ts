@@ -14,6 +14,6 @@ describe('export-dashboard CLI', () => {
   it('fails when uid is missing', () => {
     const result = spawnSync(process.execPath, [scriptPath], { encoding: 'utf8' });
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain('missing required --uid');
+    expect(result.stderr).toContain('[export-dashboard] supply --uid or --config to specify dashboards');
   });
 });

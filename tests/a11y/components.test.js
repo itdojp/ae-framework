@@ -3,6 +3,8 @@
  * Validates WCAG 2.1 AA compliance for Phase 6 Quality Gates
  */
 
+import { describe, test, expect, beforeEach } from 'vitest';
+
 // Use global axe mock instead of jest-axe import
 // import { axe } from 'jest-axe';
 

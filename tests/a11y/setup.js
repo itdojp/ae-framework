@@ -1,3 +1,4 @@
+import { expect } from 'vitest';
 /**
  * Accessibility test setup for Phase 6 Quality Gates
  * Simplified version for Node.js environment
