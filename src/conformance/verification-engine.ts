@@ -559,24 +559,13 @@ export class ConformanceVerificationEngine extends EventEmitter {
         const uniqueKey = `${violation.ruleId}:${violation.message}`;
         this.seenViolations.add(uniqueKey);
 
-        const occurrence = this.violationOccurrences.get(uniqueKey) ?? {
-          ruleId: violation.ruleId,
-          ruleName: violation.ruleName,
-          count: 0,
-          lastOccurrence: ''
-        };
+        const occurrence = this.ensureViolationOccurrence(uniqueKey, violation);
         occurrence.count += 1;
         occurrence.lastOccurrence = new Date().toISOString();
-        this.violationOccurrences.set(uniqueKey, occurrence);
 
         const categoryKey = `${violation.category}:${violation.severity}`;
-        const categoryEntry = this.violationTrendTotals.get(categoryKey) ?? {
-          category: violation.category,
-          severity: violation.severity,
-          count: 0
-        };
+        const categoryEntry = this.ensureViolationTrend(categoryKey, violation);
         categoryEntry.count += 1;
-        this.violationTrendTotals.set(categoryKey, categoryEntry);
       }
     }
 
@@ -601,6 +590,37 @@ export class ConformanceVerificationEngine extends EventEmitter {
     if (result.overall === 'error') {
       this.metrics.performance.errors++;
     }
+  }
+
+  private ensureViolationOccurrence(key: string, violation: ViolationDetails) {
+    const existing = this.violationOccurrences.get(key);
+    if (existing) {
+      return existing;
+    }
+
+    const created = {
+      ruleId: violation.ruleId,
+      ruleName: violation.ruleName,
+      count: 0,
+      lastOccurrence: ''
+    };
+    this.violationOccurrences.set(key, created);
+    return created;
+  }
+
+  private ensureViolationTrend(key: string, violation: ViolationDetails) {
+    const existing = this.violationTrendTotals.get(key);
+    if (existing) {
+      return existing;
+    }
+
+    const created = {
+      category: violation.category,
+      severity: violation.severity,
+      count: 0
+    };
+    this.violationTrendTotals.set(key, created);
+    return created;
   }
 
   /**
