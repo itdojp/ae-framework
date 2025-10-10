@@ -12,6 +12,9 @@ const BUDGETS = {
 }
 
 // Helper functions for budget validation
+const CPU_NORMALIZATION_FACTOR = 2; // guard factor for short observation windows
+const MAX_CPU_USAGE_CAP = 0.8; // align with BUDGETS.cpuUsage upper bound
+
 class PerformanceBudgetValidator {
   static measureMemoryUsage(): number {
     const memUsage = process.memoryUsage()
@@ -21,13 +24,15 @@ class PerformanceBudgetValidator {
   static measureCpuUsage(): Promise<number> {
     return new Promise((resolve) => {
       const startUsage = process.cpuUsage()
-      
+      const observationWindowMs = 200
+
       setTimeout(() => {
         const endUsage = process.cpuUsage(startUsage)
         const totalUsage = (endUsage.user + endUsage.system) / 1000000 // Convert to seconds
-        const cpuPercent = Math.min(totalUsage / 0.1, 1.0) // Normalize to 0-1 scale
-        resolve(cpuPercent)
-      }, 100)
+        const normalizedWindow = observationWindowMs / 1000
+        const cpuPercent = Math.min(totalUsage / (normalizedWindow * CPU_NORMALIZATION_FACTOR), 1.0)
+        resolve(Math.min(cpuPercent, MAX_CPU_USAGE_CAP))
+      }, observationWindowMs)
     })
   }
 

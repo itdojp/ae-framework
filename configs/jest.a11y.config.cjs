@@ -8,6 +8,7 @@ module.exports = {
   rootDir,
   testMatch: ['<rootDir>/tests/a11y/**/*.test.{js,ts}'],
   testEnvironment: 'node',
+  testPathIgnorePatterns: ['<rootDir>/tests/a11y/.*\.vitest\.test\.ts$'],
   setupFilesAfterEnv: ['<rootDir>/tests/a11y/setup.js'],
   transform: {
     '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', {
