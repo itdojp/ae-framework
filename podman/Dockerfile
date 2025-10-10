@@ -8,11 +8,21 @@ FROM ${NODE_IMAGE} AS deps
 WORKDIR /app
 
 COPY package*.json pnpm-lock.yaml* ./
+COPY pnpm-workspace.yaml ./
+COPY packages ./packages
 RUN corepack enable pnpm && pnpm install --frozen-lockfile
 
 FROM deps AS build
 WORKDIR /app
+RUN cp -a packages /tmp/packages-with-deps
 COPY . .
+RUN for dir in /tmp/packages-with-deps/*; do \
+      pkg="$(basename "$dir")"; \
+      if [ -d "$dir/node_modules" ]; then \
+        rm -rf "packages/$pkg/node_modules"; \
+        cp -a "$dir/node_modules" "packages/$pkg/node_modules"; \
+      fi; \
+    done
 RUN pnpm run build && pnpm prune --prod
 
 FROM ${NODE_IMAGE} AS runtime
