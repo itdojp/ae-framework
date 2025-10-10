@@ -1,0 +1,27 @@
+name: Detect Container Manifest
+description: Resolve the container manifest path for Podman- or Docker-based builds
+outputs:
+  dockerfile:
+    description: Path to the Dockerfile to use for container builds
+    value: ${{ steps.detect.outputs.dockerfile }}
+  skip:
+    description: Whether container-related steps should be skipped
+    value: ${{ steps.detect.outputs.skip }}
+runs:
+  using: composite
+  steps:
+    - id: detect
+      shell: bash
+      run: |
+        set -euo pipefail
+        dockerfile=""
+        skip=true
+        if [[ -f podman/Dockerfile ]]; then
+          dockerfile="podman/Dockerfile"
+          skip=false
+        elif [[ -f docker/Dockerfile ]]; then
+          dockerfile="docker/Dockerfile"
+          skip=false
+        fi
+        echo "dockerfile=${dockerfile}" >> "$GITHUB_OUTPUT"
+        echo "skip=${skip}" >> "$GITHUB_OUTPUT"

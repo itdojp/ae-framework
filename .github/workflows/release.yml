@@ -26,6 +26,9 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v4
+      - name: Detect container manifest
+        id: container_manifest
+        uses: ./.github/actions/detect-container-manifest
       - name: Prepare pnpm
         uses: ./.github/actions/setup-pnpm
       - uses: actions/setup-node@v4
@@ -39,12 +42,25 @@ jobs:
       
       - name: Generate SBOM
         run: |
-          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b . v1.0.0
+          SYFT_VERSION="1.33.0"
+          SYFT_TAR="syft_${SYFT_VERSION}_linux_amd64.tar.gz"
+          SYFT_CHECKSUMS="syft_${SYFT_VERSION}_checksums.txt"
+          curl -fsSLO "https://github.com/anchore/syft/releases/download/v${SYFT_VERSION}/${SYFT_TAR}"
+          curl -fsSLO "https://github.com/anchore/syft/releases/download/v${SYFT_VERSION}/${SYFT_CHECKSUMS}"
+          grep "${SYFT_TAR}" "${SYFT_CHECKSUMS}" | sha256sum --check --status
+          tar -xzf "${SYFT_TAR}" syft
           ./syft packages dir:. -o cyclonedx-json > sbom.json
-      
-      - name: Build Docker image
+          rm -f "${SYFT_TAR}" "${SYFT_CHECKSUMS}" syft
+      - name: Install Podman
+        if: steps.container_manifest.outputs.skip != 'true'
         run: |
-          docker build -t ${{ github.repository }}:${{ github.ref_name }} .
+          sudo apt-get update
+          sudo apt-get install -y podman
+          podman version
+      - name: Build container image
+        if: steps.container_manifest.outputs.skip != 'true'
+        run: |
+          podman build -f "${{ steps.container_manifest.outputs.dockerfile }}" -t ${{ github.repository }}:${{ github.ref_name }} .
       
       - name: Sign with Sigstore
         run: |

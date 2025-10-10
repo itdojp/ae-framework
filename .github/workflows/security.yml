@@ -241,21 +241,39 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build Docker image
-        if: hashFiles('docker/Dockerfile') != ''
-        run: docker build -f docker/Dockerfile -t ae-framework:latest .
+      - name: Detect container manifest
+        id: container_manifest
+        uses: ./.github/actions/detect-container-manifest
+
+      - name: Install Podman and Trivy
+        if: steps.container_manifest.outputs.skip != 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y podman
+          TRIVY_VERSION="0.67.1"
+          TRIVY_TAR="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          TRIVY_CHECKSUMS="trivy_${TRIVY_VERSION}_checksums.txt"
+          curl -fsSLO "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${TRIVY_TAR}"
+          curl -fsSLO "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${TRIVY_CHECKSUMS}"
+          grep "${TRIVY_TAR}" "${TRIVY_CHECKSUMS}" | sha256sum --check --status
+          sudo tar -xzf "${TRIVY_TAR}" -C /usr/local/bin trivy
+          rm -f "${TRIVY_TAR}" "${TRIVY_CHECKSUMS}"
+
+      - name: Build container image
+        if: steps.container_manifest.outputs.skip != 'true'
+        run: podman build -f "${{ steps.container_manifest.outputs.dockerfile }}" -t ae-framework:latest .
+
+      - name: Export image archive
+        if: steps.container_manifest.outputs.skip != 'true'
+        run: podman save ae-framework:latest -o ae-framework.tar
 
       - name: Run Trivy vulnerability scanner
-        if: hashFiles('docker/Dockerfile') != ''
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: 'ae-framework:latest'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
+        if: steps.container_manifest.outputs.skip != 'true'
+        run: trivy image --input ae-framework.tar --format sarif --output trivy-results.sarif
 
       - name: Upload Trivy scan results
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        if: always() && steps.container_manifest.outputs.skip != 'true'
         with:
           sarif_file: 'trivy-results.sarif'
 
