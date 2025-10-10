@@ -8,8 +8,8 @@ The AE Framework implements a sophisticated parallel test execution strategy tha
 
 ## Key Components
 
-### 1. Docker-based Standardization
-- **Containerized Test Environment**: All tests run in standardized Docker containers
+### 1. Podman-based Standardization
+- **Containerized Test Environment**: All tests run in standardized Podman containers (Docker Desktop fallback is supported)
 - **Resource Constraints**: Consistent CPU and memory limits across test types
 - **Isolation**: Each test suite runs in its own container to prevent interference
 
@@ -45,7 +45,7 @@ strategy:
 # Run all test suites in parallel with optimal resource allocation
 pnpm run test:parallel
 
-# Docker-based parallel execution with resource constraints
+# Podman-based parallel execution with resource constraints (Docker Desktop fallback supported)
 make test:docker:all
 ```
 
@@ -67,7 +67,7 @@ The parallel execution strategy automatically activates in GitHub Actions:
 pnpm run test:parallel
 ```
 
-#### Docker-based Execution
+#### Podman-based Execution (Docker Desktop fallback)
 ```bash
 # All test suites
 make test:docker:all
@@ -77,6 +77,7 @@ make test:docker:unit
 make test:docker:integration
 make test:docker:e2e
 ```
+> ℹ️ `make test:docker:*` ターゲットは Podman の Docker 互換 CLI (`podman`/`podman-compose`) 上でもそのまま動作します。Docker Desktop を利用する場合も同じコマンドが使用可能です。
 
 #### Manual Coordination
 ```bash
@@ -153,9 +154,9 @@ RESOURCE_WEIGHT_MULTIPLIER=1.0
 ADAPTIVE_TIMEOUTS=true
 ```
 
-### Docker Compose Override
+### Podman Compose Override
 ```yaml
-# docker-compose.override.yml
+# podman-compose.override.yaml (Docker Desktop users can reuse the same file)
 services:
   test-unit:
     deploy:
@@ -193,9 +194,9 @@ services:
 - **Symptom**: Tests timeout or fail with memory errors
 - **Solution**: Reduce concurrency or increase resource limits
 
-#### Docker Issues
+#### Podman/Docker Issues
 - **Symptom**: Container start failures or permission errors
-- **Solution**: Check Docker daemon status and permissions
+- **Solution**: Check Podman service status (`podman info`) or Docker daemon permissions
 
 #### Dependency Conflicts
 - **Symptom**: Tests fail when run in parallel but pass individually
@@ -203,11 +204,11 @@ services:
 
 ### Debugging Commands
 ```bash
-# Check Docker resources
-docker system df
+# Check Podman resources (or `docker` if you use Docker Desktop)
+podman system df
 
 # Monitor container resources
-docker stats
+podman stats
 
 # View parallel execution logs
 tail -f logs/parallel-*.log
@@ -215,3 +216,4 @@ tail -f logs/parallel-*.log
 # Test environment validation
 make test:env:validate
 ```
+> ℹ️ Docker Desktop を使用している場合は `podman` コマンドを `docker` へ読み替えてください。

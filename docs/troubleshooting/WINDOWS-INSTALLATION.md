@@ -125,11 +125,14 @@ pnpm run build
 pnpm run setup-hooks:unix
 ```
 
-#### Method 3: Docker Development Environment
+#### Method 3: Podman Development Environment
 ```bash
-# Use the development Docker environment
-docker-compose -f docker-compose.test.yml up
+# Use the Podman-based development stack
+podman compose -f podman/compose.test.yaml up --detach
+# Verify containers
+podman ps --filter "name=ae-framework"
 ```
+> ℹ️ Docker Desktop を利用する場合は `docker compose -f podman/compose.test.yaml up` に置き換えて実行できます。
 
 ### ⚠️ Known Limitations on Windows
 
@@ -303,11 +306,14 @@ pnpm run build
 pnpm run setup-hooks:unix
 ```
 
-#### 方法 3: Docker開発環境
+#### 方法 3: Podman開発環境
 ```bash
-# 開発Docker環境を使用
-docker-compose -f docker-compose.test.yml up
+# Podman ベースの開発スタックを起動
+podman compose -f podman/compose.test.yaml up --detach
+# コンテナの起動確認
+podman ps --filter "name=ae-framework"
 ```
+> ℹ️ Docker Desktop に切り替える場合は `docker compose -f podman/compose.test.yaml up` へ読み替えてください。
 
 ### ⚠️ Windows での既知の制限
 

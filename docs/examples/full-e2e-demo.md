@@ -5,7 +5,8 @@
 > **前提**
 > - Node.js 20 / pnpm 8 系が利用可能であること
 > - `pnpm install` 済み
-> - Podman もしくは Docker Desktop が動作すること（Pact / API fuzz のコンテナ系タスクで利用）
+> - Podman (rootless) が利用可能であること（Pact / API fuzz などコンテナ系タスクで使用）
+>   - Docker Desktop を利用する場合は `podman/compose.*` の定義を `docker compose` で実行しても同等に動作
 
 ## 1. 仕様と生成物の確認
 

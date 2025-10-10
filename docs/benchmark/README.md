@@ -293,9 +293,11 @@ ae-benchmark run --fail-on-regression 10%
    ae-benchmark run --config config-high-memory.json
    ```
 
-3. **Docker Issues**
+3. **コンテナ実行 (Podman/Docker) の問題**
    ```bash
-   # Disable Docker isolation for debugging
+   # Podman が起動しているか確認
+   podman ps --filter "name=ae-framework"
+   # コンテナ隔離を無効化してデバッグ
    ae-benchmark run --no-docker
    ```
 
