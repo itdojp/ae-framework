@@ -6,10 +6,18 @@ PROJECT_DIR="$(cd "$(dirname "$0")/../../" && pwd)"
 
 ENGINE_BIN="${CONTAINER_ENGINE:-}"
 if [[ -n "$ENGINE_BIN" ]]; then
-  if ! command -v "$ENGINE_BIN" >/dev/null 2>&1; then
-    echo "[trace-minio] specified container engine '$ENGINE_BIN' not found" >&2
-    exit 1
-  fi
+  case "$ENGINE_BIN" in
+    podman|docker)
+      if ! command -v "$ENGINE_BIN" >/dev/null 2>&1; then
+        echo "[trace-minio] specified container engine '$ENGINE_BIN' not found" >&2
+        exit 1
+      fi
+      ;;
+    *)
+      echo "[trace-minio] unsupported CONTAINER_ENGINE value '$ENGINE_BIN' (expected podman or docker)" >&2
+      exit 1
+      ;;
+  esac
 else
   if command -v podman >/dev/null 2>&1; then
     ENGINE_BIN="podman"
@@ -31,7 +39,14 @@ if [[ "$ENGINE_BIN" == "docker" ]]; then
     exit 1
   fi
 else
-  COMPOSE_CMD=("$ENGINE_BIN" compose)
+  if "$ENGINE_BIN" compose version >/dev/null 2>&1; then
+    COMPOSE_CMD=("$ENGINE_BIN" compose)
+  elif command -v podman-compose >/dev/null 2>&1; then
+    COMPOSE_CMD=(podman-compose)
+  else
+    echo "[trace-minio] $ENGINE_BIN compose functionality not available (compose plugin or podman-compose missing)" >&2
+    exit 1
+  fi
 fi
 
 export COMPOSE_PROJECT_NAME="kvonce-trace"
