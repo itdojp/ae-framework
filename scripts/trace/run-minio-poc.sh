@@ -4,55 +4,23 @@ set -euo pipefail
 COMPOSE_FILE="$(dirname "$0")/../../docker/trace-s3/docker-compose.yml"
 PROJECT_DIR="$(cd "$(dirname "$0")/../../" && pwd)"
 
-ENGINE_BIN="${CONTAINER_ENGINE:-}"
-if [[ -n "$ENGINE_BIN" ]]; then
-  case "$ENGINE_BIN" in
-    podman|docker)
-      if ! command -v "$ENGINE_BIN" >/dev/null 2>&1; then
-        echo "[trace-minio] specified container engine '$ENGINE_BIN' not found" >&2
-        exit 1
-      fi
-      ;;
-    *)
-      echo "[trace-minio] unsupported CONTAINER_ENGINE value '$ENGINE_BIN' (expected podman or docker)" >&2
-      exit 1
-      ;;
-  esac
-else
-  if command -v podman >/dev/null 2>&1; then
-    ENGINE_BIN="podman"
-  elif command -v docker >/dev/null 2>&1; then
-    ENGINE_BIN="docker"
-  else
-    echo "[trace-minio] neither podman nor docker is available" >&2
-    exit 1
-  fi
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}" )" && pwd)"
+source "$SCRIPT_DIR/../lib/container.sh"
+
+if ! container::select_engine; then
+  echo "[trace-minio] failed to select container engine (set CONTAINER_ENGINE=podman or docker)" >&2
+  exit 1
 fi
 
-if [[ "$ENGINE_BIN" == "docker" ]]; then
-  if docker compose version >/dev/null 2>&1; then
-    COMPOSE_CMD=(docker compose)
-  elif command -v docker-compose >/dev/null 2>&1; then
-    COMPOSE_CMD=(docker-compose)
-  else
-    echo "[trace-minio] docker compose plugin or docker-compose binary not found" >&2
-    exit 1
-  fi
-else
-  if "$ENGINE_BIN" compose version >/dev/null 2>&1; then
-    COMPOSE_CMD=("$ENGINE_BIN" compose)
-  elif command -v podman-compose >/dev/null 2>&1; then
-    COMPOSE_CMD=(podman-compose)
-  else
-    echo "[trace-minio] $ENGINE_BIN compose functionality not available (compose plugin or podman-compose missing)" >&2
-    exit 1
-  fi
+if ! container::select_compose_command "$CONTAINER_ENGINE_BIN"; then
+  echo "[trace-minio] compose support not available for '$CONTAINER_ENGINE_BIN'" >&2
+  exit 1
 fi
 
 export COMPOSE_PROJECT_NAME="kvonce-trace"
 
 compose_run() {
-  "${COMPOSE_CMD[@]}" "$@"
+  container::compose "$@"
 }
 
 cleanup() {

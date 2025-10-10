@@ -1,110 +1,104 @@
 #!/bin/bash
 #
-# Podman Image Analysis and Optimization Validator
+# Container image analysis helper (Podman/Docker compatible)
 #
 
 set -euo pipefail
 
-ENGINE_BIN="${CONTAINER_ENGINE:-}"
-if [[ -z "$ENGINE_BIN" ]]; then
-  if command -v podman >/dev/null 2>&1; then
-    ENGINE_BIN="podman"
-  elif command -v docker >/dev/null 2>&1; then
-    ENGINE_BIN="docker"
-  else
-    echo "❌ Podman/Docker が利用できません"
-    exit 1
-  fi
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}" )" && pwd)"
+source "$SCRIPT_DIR/../lib/container.sh"
+
+if ! container::select_engine; then
+  echo "[analyze-image] no supported container engine found (install podman or docker)" >&2
+  exit 1
 fi
 
+ENGINE_BIN="$CONTAINER_ENGINE_BIN"
 IMAGE_NAME=${IMAGE_NAME:-ae-framework}
 TAG="${1:-latest}"
 FULL_IMAGE_NAME="${IMAGE_NAME}:${TAG}"
 DOCKERFILE_PATH="podman/Dockerfile"
 
 log_section() {
-  echo
-  echo "==========================================="
-  echo "$1"
-  echo "==========================================="
+  printf '
+===========================================
+%s
+===========================================
+' "$1"
 }
 
 check_engine() {
-  if ! command -v "$ENGINE_BIN" >/dev/null 2>&1; then
-    echo "❌ $ENGINE_BIN が PATH にありません"
-    exit 1
-  fi
   if ! "$ENGINE_BIN" info >/dev/null 2>&1; then
-    echo "❌ $ENGINE_BIN デーモンが起動していません"
-    exit 1
+    echo "[analyze-image] '$ENGINE_BIN info' failed; ensure the engine daemon is running" >&2
+    return 1
   fi
-  echo "✅ $ENGINE_BIN を使用します"
+  echo "[analyze-image] using container engine: $ENGINE_BIN"
 }
 
 ensure_image_exists() {
   if ! "$ENGINE_BIN" image inspect "$FULL_IMAGE_NAME" >/dev/null 2>&1; then
-    echo "🔨 $FULL_IMAGE_NAME が存在しないためビルドします"
+    echo "[analyze-image] building $FULL_IMAGE_NAME from $DOCKERFILE_PATH"
     "$ENGINE_BIN" build -t "$FULL_IMAGE_NAME" -f "$DOCKERFILE_PATH" .
   else
-    echo "✅ $FULL_IMAGE_NAME が既に存在します"
+    echo "[analyze-image] image $FULL_IMAGE_NAME already exists"
   fi
 }
 
 analyze_size() {
-  log_section "📏 イメージサイズ分析"
+  log_section "Image Size"
   local image_size size_mb
   image_size=$("$ENGINE_BIN" image inspect "$FULL_IMAGE_NAME" --format='{{.Size}}')
   size_mb=$((image_size / 1024 / 1024))
-  echo "イメージサイズ: ${size_mb}MB"
-  "$ENGINE_BIN" history "$FULL_IMAGE_NAME" --format "table {{.CreatedBy}}\t{{.Size}}" | head -12
+  echo "Image size: ${size_mb} MB"
+  "$ENGINE_BIN" history "$FULL_IMAGE_NAME" --format "table {{.CreatedBy}}	{{.Size}}" | head -12
 }
 
 analyze_layers() {
-  log_section "🔍 レイヤー分析"
+  log_section "Layer Count"
   local layer_count
   layer_count=$("$ENGINE_BIN" history "$FULL_IMAGE_NAME" --quiet | wc -l)
-  echo "レイヤー数: $layer_count"
+  echo "Layer count: $layer_count"
 }
 
 test_security() {
-  log_section "🔒 セキュリティチェック"
+  log_section "Runtime Security"
   local user_check shell_check
   user_check=$("$ENGINE_BIN" run --rm "$FULL_IMAGE_NAME" whoami 2>/dev/null || echo "root")
-  echo "実行ユーザー: $user_check"
-  shell_check=$("$ENGINE_BIN" run --rm "$FULL_IMAGE_NAME" which sh 2>/dev/null || echo "なし")
-  echo "シェル有無: $shell_check"
+  echo "Runtime user: $user_check"
+  shell_check=$("$ENGINE_BIN" run --rm "$FULL_IMAGE_NAME" which sh 2>/dev/null || echo "not present")
+  echo "Shell availability: $shell_check"
 }
 
 test_runtime() {
-  log_section "🚀 起動確認"
+  log_section "Runtime Smoke Test"
   local host_port container_id
   host_port=$(python3 -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()" 2>/dev/null || echo "3001")
   container_id=$("$ENGINE_BIN" run -d --rm -p "${host_port}:3000" "$FULL_IMAGE_NAME" 2>/dev/null || echo "failed")
   if [[ "$container_id" == "failed" ]]; then
-    echo "❌ 起動に失敗しました"
+    echo "[analyze-image] failed to start container"
     return 1
   fi
-  echo "コンテナID: $container_id"
+  echo "Container ID: $container_id"
   sleep 5
-  if curl -f "http://localhost:${host_port}/health" >/dev/null 2>&1; then
-    echo "✅ ヘルスチェック成功"
+  if curl -fsS "http://localhost:${host_port}/health" >/dev/null; then
+    echo "Health check succeeded"
   else
-    echo "ℹ️ ヘルスエンドポイントが応答しません"
+    echo "Health endpoint did not respond successfully"
   fi
   "$ENGINE_BIN" stop "$container_id" >/dev/null 2>&1 || true
 }
 
 analyze_fs() {
-  log_section "📦 依存関係/ファイル確認"
+  log_section "Filesystem Snapshot"
   local node_modules_count src_count
   node_modules_count=$("$ENGINE_BIN" run --rm "$FULL_IMAGE_NAME" sh -c "find /app/node_modules -name package.json 2>/dev/null | wc -l" || echo "0")
-  echo "node_modules (prod): $node_modules_count"
+  echo "Production node_modules packages: $node_modules_count"
   src_count=$("$ENGINE_BIN" run --rm "$FULL_IMAGE_NAME" sh -c "find /app -name '*.ts' 2>/dev/null | wc -l" || echo "0")
-  echo "TypeScript ファイル数: $src_count"
+  echo "TypeScript files inside image: $src_count"
 }
 
 main() {
-  echo "🐳 Podman Image Analysis for ae-framework"
+  echo "[analyze-image] analyzing $FULL_IMAGE_NAME"
   check_engine
   ensure_image_exists
   analyze_size
@@ -112,8 +106,8 @@ main() {
   test_security
   test_runtime
   analyze_fs
-  log_section "✅ 分析完了"
+  log_section "Analysis complete"
 }
 
-trap 'echo "❌ 実行中にエラーが発生しました (line $LINENO)"' ERR
+trap 'echo "[analyze-image] error occurred (line $LINENO)" >&2' ERR
 main "$@"
