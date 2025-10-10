@@ -241,21 +241,42 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build Docker image
-        if: hashFiles('docker/Dockerfile') != ''
-        run: docker build -f docker/Dockerfile -t ae-framework:latest .
+      - name: Detect container manifest
+        id: container_manifest
+        run: |
+          if [[ -f podman/Dockerfile ]]; then
+            echo "dockerfile=podman/Dockerfile" >> "$GITHUB_OUTPUT"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          elif [[ -f docker/Dockerfile ]]; then
+            echo "dockerfile=docker/Dockerfile" >> "$GITHUB_OUTPUT"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+        shell: bash
+
+      - name: Install Podman and Trivy
+        if: steps.container_manifest.outputs.skip != 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y podman
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin
+
+      - name: Build container image
+        if: steps.container_manifest.outputs.skip != 'true'
+        run: podman build -f "${{ steps.container_manifest.outputs.dockerfile }}" -t ae-framework:latest .
+
+      - name: Export image archive
+        if: steps.container_manifest.outputs.skip != 'true'
+        run: podman save ae-framework:latest -o ae-framework.tar
 
       - name: Run Trivy vulnerability scanner
-        if: hashFiles('docker/Dockerfile') != ''
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: 'ae-framework:latest'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
+        if: steps.container_manifest.outputs.skip != 'true'
+        run: trivy image --input ae-framework.tar --format sarif --output trivy-results.sarif
 
       - name: Upload Trivy scan results
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        if: always() && steps.container_manifest.outputs.skip != 'true'
         with:
           sarif_file: 'trivy-results.sarif'
 
