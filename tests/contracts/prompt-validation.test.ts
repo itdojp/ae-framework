@@ -338,9 +338,14 @@ class PromptContractValidator {
 }
 
 class MockAIAgent {
+  private readonly analysisPattern = [false, false, true, false, false, true, false, false, false, false];
+  private analysisIndex = 0;
+  private readonly planPattern = [false, false, true, false, false, false, false, false];
+  private planIndex = 0;
+
   async generateAESpecAnalysis(spec: string): Promise<any> {
-    // Simulate AI agent output with occasional errors
-    const hasError = Math.random() < 0.3;
+    // Simulate AI agent output with an intentional, deterministic error cadence
+    const hasError = this.analysisPattern[this.analysisIndex++ % this.analysisPattern.length];
     
     if (hasError) {
       // Generate invalid output
@@ -377,7 +382,8 @@ class MockAIAgent {
   }
 
   async generateCodePlan(requirements: string): Promise<any> {
-    const hasError = Math.random() < 0.25;
+    // Deterministic pattern keeps success rate above the 50% contract floor
+    const hasError = this.planPattern[this.planIndex++ % this.planPattern.length];
     
     if (hasError) {
       return {
@@ -435,7 +441,7 @@ describe('Prompt Contract Testing', () => {
     
     // Should have reasonable success rate (allowing for intentional errors)
     expect(testResults.passed + testResults.failed).toBe(10);
-    expect(testResults.passed).toBeGreaterThanOrEqual(5); // At least 50% success
+    expect(testResults.passed).toBeGreaterThanOrEqual(5); // Maintain 50% floor with deterministic mock
     
     console.log(`✅ AE-Spec Analysis: ${testResults.passed}/${testResults.passed + testResults.failed} passed`);
   });
@@ -451,7 +457,7 @@ describe('Prompt Contract Testing', () => {
     const testResults = validator.runContractTests('code-generation-plan', outputs);
     
     expect(testResults.passed + testResults.failed).toBe(8);
-    expect(testResults.passed).toBeGreaterThanOrEqual(4); // At least 50% success
+    expect(testResults.passed).toBeGreaterThanOrEqual(4); // Maintain 50% floor with deterministic mock
     
     console.log(`✅ Code Generation Plans: ${testResults.passed}/${testResults.passed + testResults.failed} passed`);
   });
