@@ -50,7 +50,7 @@ analyze_size() {
   image_size=$("$ENGINE_BIN" image inspect "$FULL_IMAGE_NAME" --format='{{.Size}}')
   size_mb=$((image_size / 1024 / 1024))
   echo "Image size: ${size_mb} MB"
-  "$ENGINE_BIN" history "$FULL_IMAGE_NAME" --format "table {{.CreatedBy}}	{{.Size}}" | head -12
+  "$ENGINE_BIN" history "$FULL_IMAGE_NAME" --format "table {{.CreatedBy}}\t{{.Size}}" | head -12
 }
 
 analyze_layers() {

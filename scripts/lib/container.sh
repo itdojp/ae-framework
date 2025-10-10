@@ -108,7 +108,7 @@ container::select_compose_command() {
 
 container::compose() {
   if [[ ${#CONTAINER_COMPOSE_CMD[@]} -eq 0 ]]; then
-    container::warn "compose command not initialised"
+    container::warn "compose command not initialized"
     return 1
   fi
   "${CONTAINER_COMPOSE_CMD[@]}" "$@"
