@@ -13,7 +13,10 @@ set -euo pipefail
 ROOT_DIR="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$ROOT_DIR"
 
-ENGINE_BIN="${CONTAINER_ENGINE:-podman}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../lib/container.sh"
+
+CLI_ENGINE_OVERRIDE=""
 COMPOSE_FILES=(
   "podman/compose.dev.yaml"
   "podman/compose.prod.yaml"
@@ -62,8 +65,8 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --engine)
       shift
-      ENGINE_BIN="${1:-}"
-      [[ -n "$ENGINE_BIN" ]] || fail "--engine requires a value"
+      CLI_ENGINE_OVERRIDE="${1:-}"
+      [[ -n "$CLI_ENGINE_OVERRIDE" ]] || fail "--engine requires a value"
       ;;
     --skip-build)
       SKIP_BUILD=true
@@ -92,24 +95,22 @@ while [[ $# -gt 0 ]]; do
   shift || true
 done
 
-command -v "$ENGINE_BIN" >/dev/null 2>&1 || fail "Container engine '$ENGINE_BIN' was not found in PATH"
-
-if ! "$ENGINE_BIN" info >/dev/null 2>&1; then
-  fail "'$ENGINE_BIN info' failed. Please verify that Podman is available."
+if [[ -n "$CLI_ENGINE_OVERRIDE" ]]; then
+  export CONTAINER_ENGINE="$CLI_ENGINE_OVERRIDE"
 fi
 
+if ! container::select_engine; then
+  fail "No supported container engine found (install podman or docker)"
+fi
+
+if ! container::select_compose_command "$CONTAINER_ENGINE_BIN"; then
+  fail "Compose support not available for '$CONTAINER_ENGINE_BIN'"
+fi
+
+ENGINE_BIN="$CONTAINER_ENGINE_BIN"
+
 compose_run() {
-  if "$ENGINE_BIN" compose version >/dev/null 2>&1; then
-    "$ENGINE_BIN" compose "$@"
-    return
-  fi
-
-  if command -v podman-compose >/dev/null 2>&1; then
-    podman-compose "$@"
-    return
-  fi
-
-  fail "podman compose / podman-compose is not available; cannot execute compose operations"
+  container::compose "$@"
 }
 
 cleanup() {
