@@ -338,9 +338,14 @@ class PromptContractValidator {
 }
 
 class MockAIAgent {
+  private readonly analysisPattern = [false, false, true, false, false, true, false, false, false, false];
+  private analysisIndex = 0;
+  private readonly planPattern = [false, false, true, false, false, false, false, false];
+  private planIndex = 0;
+
   async generateAESpecAnalysis(spec: string): Promise<any> {
-    // Simulate AI agent output with occasional errors
-    const hasError = Math.random() < 0.3;
+    // Simulate AI agent output with an intentional, deterministic error cadence
+    const hasError = this.analysisPattern[this.analysisIndex++ % this.analysisPattern.length];
     
     if (hasError) {
       // Generate invalid output
@@ -377,7 +382,8 @@ class MockAIAgent {
   }
 
   async generateCodePlan(requirements: string): Promise<any> {
-    const hasError = Math.random() < 0.25;
+    // Deterministic pattern keeps success rate above the 50% contract floor
+    const hasError = this.planPattern[this.planIndex++ % this.planPattern.length];
     
     if (hasError) {
       return {
