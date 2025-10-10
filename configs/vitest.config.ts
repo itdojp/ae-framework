@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config'
+import { defineConfig, defineProject } from 'vitest/config'
 
 export default defineConfig({
   test: {
@@ -10,7 +10,7 @@ export default defineConfig({
     maxThreads: 4,
   },
   projects: [
-    {
+    defineProject({
       test: {
         name: 'unit',
         include: ['tests/unit/**/*.test.ts'],
@@ -18,8 +18,8 @@ export default defineConfig({
         hookTimeout: 5000,
         pool: 'threads',
       },
-    },
-    {
+    }),
+    defineProject({
       test: {
         name: 'integration',
         include: ['tests/integration/**/*.test.ts', 'tests/optimization/system-integration.test.ts'],
@@ -29,8 +29,8 @@ export default defineConfig({
         pool: 'forks',        // リソース隔離を強める
         threads: false,       // 競合を避ける
       },
-    },
-    {
+    }),
+    defineProject({
       test: {
         name: 'performance',
         include: ['tests/optimization/performance-benchmarks.test.ts'],
@@ -39,6 +39,15 @@ export default defineConfig({
         pool: 'forks',
         threads: false,
       },
-    },
+    }),
+    defineProject({
+      test: {
+        name: 'quality',
+        include: ['tests/quality/**/*.{test,spec}.{ts,js}'],
+        testTimeout: 15000,
+        hookTimeout: 5000,
+        pool: 'threads',
+      },
+    }),
   ],
 })
