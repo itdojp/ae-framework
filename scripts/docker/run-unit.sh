@@ -58,29 +58,27 @@ if ! container::select_engine; then
   fallback_local "no supported container engine found"
 fi
 
-ENGINE_BIN="$CONTAINER_ENGINE_BIN"
-
-if ! timeout 30s "$ENGINE_BIN" ps >/dev/null 2>&1; then
-  fallback_local "$ENGINE_BIN ps failed (check rootless runtime)"
+if ! timeout 30s "$CONTAINER_ENGINE_BIN" ps >/dev/null 2>&1; then
+  fallback_local "$CONTAINER_ENGINE_BIN ps failed (check rootless runtime)"
 fi
 
-if ! timeout 30s "$ENGINE_BIN" system info >/dev/null 2>&1; then
-  fallback_local "$ENGINE_BIN system info failed"
+if ! timeout 30s "$CONTAINER_ENGINE_BIN" system info >/dev/null 2>&1; then
+  fallback_local "$CONTAINER_ENGINE_BIN system info failed"
 fi
 
 select_compose() {
   local preference="${1:-}"
   if [[ -n "$preference" ]]; then
-    if container::select_compose_command "$ENGINE_BIN" "$preference"; then
+    if container::select_compose_command "$CONTAINER_ENGINE_BIN" "$preference"; then
       return 0
     fi
     echo "[run-unit] provider=$preference unavailable; attempting auto-detect" >&2
   fi
-  container::select_compose_command "$ENGINE_BIN"
+  container::select_compose_command "$CONTAINER_ENGINE_BIN"
 }
 
 if ! select_compose "$PODMAN_COMPOSE_PROVIDER"; then
-  fallback_local "compose command not available for $ENGINE_BIN"
+  fallback_local "compose command not available for $CONTAINER_ENGINE_BIN"
 fi
 
 STORE_DIR="${AE_HOST_STORE:-$PROJECT_DIR/.pnpm-store}"

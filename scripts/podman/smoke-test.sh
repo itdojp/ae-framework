@@ -107,8 +107,6 @@ if ! container::select_compose_command "$CONTAINER_ENGINE_BIN"; then
   fail "Compose support not available for '$CONTAINER_ENGINE_BIN'"
 fi
 
-ENGINE_BIN="$CONTAINER_ENGINE_BIN"
-
 compose_run() {
   container::compose "$@"
 }
@@ -125,25 +123,25 @@ cleanup() {
   fi
 
   if [[ "$KEEP_IMAGES" == false ]]; then
-    "$ENGINE_BIN" image rm -f "$RUNTIME_TAG" >/dev/null 2>&1 || true
-    "$ENGINE_BIN" image rm -f "$TEST_TAG" >/dev/null 2>&1 || true
+    "$CONTAINER_ENGINE_BIN" image rm -f "$RUNTIME_TAG" >/dev/null 2>&1 || true
+    "$CONTAINER_ENGINE_BIN" image rm -f "$TEST_TAG" >/dev/null 2>&1 || true
   fi
   return $status
 }
 trap cleanup EXIT
 
-log "using engine: $ENGINE_BIN"
-"$ENGINE_BIN" version || warn "Failed to retrieve engine version information; continuing"
+log "using engine: $CONTAINER_ENGINE_BIN"
+"$CONTAINER_ENGINE_BIN" version || warn "Failed to retrieve engine version information; continuing"
 
 if [[ "$SKIP_BUILD" == false ]]; then
   log "building runtime image ($RUNTIME_TAG)"
-  "$ENGINE_BIN" build \
+  "$CONTAINER_ENGINE_BIN" build \
     --file podman/Dockerfile \
     --tag "$RUNTIME_TAG" \
     podman/.. || fail "Runtime image build failed"
 
   log "building test image ($TEST_TAG)"
-  "$ENGINE_BIN" build \
+  "$CONTAINER_ENGINE_BIN" build \
     --file podman/Dockerfile.test \
     --target test-base \
     --tag "$TEST_TAG" \
