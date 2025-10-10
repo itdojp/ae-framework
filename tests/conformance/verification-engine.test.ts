@@ -190,6 +190,30 @@ describe('ConformanceVerificationEngine', () => {
       expect(result.violations.length).toBeGreaterThan(0);
     });
 
+    it('updates metrics aggregates when violations occur', async () => {
+      const rule: ConformanceRule = createTestRule('security_policy', 'major', 'data.isEncrypted === true');
+      await engine.addRule(rule);
+
+      const result = await engine.verify({ isEncrypted: false }, context);
+
+      expect(result.overall).toBe('fail');
+      expect(result.violations.length).toBeGreaterThan(0);
+
+      const metrics = engine.getMetrics();
+      expect(metrics.counts.totalVerifications).toBeGreaterThanOrEqual(1);
+      expect(metrics.counts.totalViolations).toBeGreaterThan(0);
+      expect(metrics.counts.uniqueViolations).toBeGreaterThanOrEqual(1);
+      expect(metrics.topViolations[0]).toMatchObject({
+        ruleId: rule.id,
+        ruleName: rule.name,
+        count: expect.any(Number),
+        lastOccurrence: expect.any(String)
+      });
+      expect(metrics.violationTrends.some(trend =>
+        trend.category === 'security_policy' && trend.severity === 'major' && trend.count >= 1
+      )).toBe(true);
+    });
+
     it('should handle verification errors gracefully', async () => {
       const rule: ConformanceRule = createTestRule('data_validation', 'major', 'invalid.expression.that.throws');
       await engine.addRule(rule);
