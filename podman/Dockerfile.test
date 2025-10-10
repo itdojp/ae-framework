@@ -26,14 +26,14 @@ RUN apk add --no-cache \
     libxi \
     libxrandr \
     libxrender \
-    libxss \
+    libxscrnsaver \
     libxtst \
     alsa-lib \
     nss \
     ca-certificates \
-    liberation-fonts \
-    noto-fonts \
-    noto-fonts-cjk
+    font-liberation \
+    font-noto \
+    font-noto-cjk
 
 ENV NODE_ENV=test \
     CI=true \
@@ -53,13 +53,19 @@ WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/*/package.json ./packages/*/
+COPY packages/ ./packages/
 
 RUN corepack enable pnpm && \
     pnpm config set store-dir /pnpm && \
-    pnpm install --frozen-lockfile --include-workspace-root
+    pnpm install --no-frozen-lockfile --prefer-offline --include-workspace-root
 
-COPY vitest.config.ts vitest.ci.config.ts tsconfig.json jest.a11y.config.cjs ./
-COPY lighthouserc.js stryker.conf.json eslint.config.js ./
+COPY vitest.config.ts ./vitest.config.ts
+COPY configs/vitest.ci.config.ts ./configs/vitest.ci.config.ts
+COPY tsconfig.json ./tsconfig.json
+COPY configs/jest.a11y.config.cjs ./configs/jest.a11y.config.cjs
+COPY configs/lighthouserc.js ./configs/lighthouserc.js
+COPY configs/stryker.config.js ./configs/stryker.config.js
+COPY eslint.config.js ./eslint.config.js
 COPY tests/_setup/ ./tests/_setup/
 COPY config/ ./config/
 COPY scripts/ ./scripts/
@@ -68,7 +74,6 @@ RUN chmod +x scripts/*.sh scripts/*.mjs scripts/*.js
 
 COPY src/ ./src/
 COPY templates/ ./templates/
-COPY packages/ ./packages/
 COPY tests/ ./tests/
 
 RUN mkdir -p /app/reports /app/logs /app/tmp /app/.ae /app/coverage /app/.nyc_output /pnpm && \

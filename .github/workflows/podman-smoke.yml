@@ -1,0 +1,51 @@
+name: Podman Smoke Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'podman/**'
+      - 'infra/podman/**'
+      - 'scripts/podman/**'
+      - 'scripts/docker/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/podman-smoke.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'podman/**'
+      - 'infra/podman/**'
+      - 'scripts/podman/**'
+      - 'scripts/docker/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/podman-smoke.yml'
+
+jobs:
+  podman-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Podman
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y podman podman-compose
+
+      - name: Show Podman info
+        run: |
+          podman version
+          podman info --debug
+
+      - name: Setup pnpm
+        uses: ./.github/actions/setup-pnpm
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Run Podman smoke test
+        run: pnpm podman:smoke

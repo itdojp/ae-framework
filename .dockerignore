@@ -95,6 +95,17 @@ pnpm-workspace.yaml
 lerna.json
 rush.json
 
+# Allow required workspace metadata back into the build context
+!pnpm-workspace.yaml
+!pnpm-lock.yaml
+!vitest.config.ts
+!tsconfig.json
+!tsconfig.*.json
+!configs/**
+!config/**
+!eslint.config.js
+!tests/**
+
 # Quality assurance files
 .stryker-tmp/
 mutation-reports/
@@ -104,3 +115,6 @@ a11y-reports/
 # Scripts that shouldn't be in production
 scripts/
 hooks/
+
+# Allow build/CI helper scripts consumed during image build
+!scripts/**

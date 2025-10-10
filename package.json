@@ -315,7 +315,8 @@
     "pipelines:mutation:enhanced": "bash scripts/mutation/run-scoped.sh --quick --mutate src/utils/enhanced-state-manager.ts",
     "pipelines:pact": "node scripts/pipelines/run-pact-contracts.mjs",
     "pipelines:full": "node scripts/pipelines/run-full-pipeline.mjs",
-    "pipelines:trace": "node scripts/pipelines/run-trace-conformance.mjs"
+    "pipelines:trace": "node scripts/pipelines/run-trace-conformance.mjs",
+    "podman:smoke": "bash scripts/podman/smoke-test.sh"
   },
   "dependencies": {
     "@ae-framework/spec-compiler": "file:./packages/spec-compiler",

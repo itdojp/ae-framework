@@ -21,6 +21,9 @@ podman compose -f podman/compose.prod.yaml up --build -d
 
 # テスト用
 podman compose -f podman/compose.test.yaml run --rm tests
+
+# スモークテスト（ビルドと Compose 検証）
+pnpm podman:smoke
 ```
 
 必要に応じて `CONTAINER_ENGINE=podman` を指定することで、
