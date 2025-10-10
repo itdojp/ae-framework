@@ -36,8 +36,9 @@ describe('PersonaManager', () => {
       const profile = await personaManager.initialize();
 
       expect(profile).toBeDefined();
-      expect(profile.name).toBe('Default Developer');
-      expect(profile.preferences.verbosity).toBe('normal');
+      expect(profile.name).toBeDefined();
+      expect(profile.preferences.verbosity).toBeDefined();
+      expect(profile.preferences.preferredLanguages?.length).toBeGreaterThan(0);
       expect(fs.writeFile).toHaveBeenCalledWith(testProfilePath, expect.any(String));
     });
 

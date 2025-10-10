@@ -1,0 +1,62 @@
+{
+  "id": "persona-default",
+  "name": "Balanced Collaborator",
+  "description": "Default persona profile optimized for collaborative development with ae-framework.",
+  "preferences": {
+    "verbosity": "normal",
+    "codeStyle": "mixed",
+    "explanationLevel": "intermediate",
+    "preferredLanguages": [
+      "typescript",
+      "python"
+    ],
+    "preferredFrameworks": [
+      "react"
+    ],
+    "testingPreference": "all",
+    "suggestionFrequency": "medium",
+    "autoValidation": true,
+    "evidenceRequirement": "medium"
+  },
+  "adaptationRules": [
+    {
+      "trigger": {
+        "command": "/ae:analyze"
+      },
+      "adaptation": {
+        "verbosity": "detailed",
+        "suggestionBehavior": "proactive"
+      },
+      "confidence": 0.9
+    },
+    {
+      "trigger": {
+        "command": "/ae:generate"
+      },
+      "adaptation": {
+        "verbosity": "normal",
+        "suggestionBehavior": "reactive"
+      },
+      "confidence": 0.75
+    }
+  ],
+  "learningData": {
+    "commandUsage": {
+      "/ae:analyze": 12,
+      "/ae:generate": 8
+    },
+    "successPatterns": [
+      "analysis:successful",
+      "generation:accepted"
+    ],
+    "errorPatterns": [
+      "generation:retry"
+    ],
+    "timePreferences": {
+      "morning": 5,
+      "afternoon": 7,
+      "evening": 3
+    },
+    "lastUpdated": "2025-01-01T00:00:00.000Z"
+  }
+}

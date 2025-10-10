@@ -6,6 +6,7 @@
 import * as fs from 'node:fs/promises';
 import * as fsSync from 'node:fs';
 import * as path from 'node:path';
+import pino, { type Logger } from 'pino';
 
 export interface UserPreferences {
   // Communication style
@@ -69,15 +70,19 @@ export interface LearningData {
 }
 
 export class PersonaManager {
+  private readonly projectRoot: string;
   private profilePath: string;
   private currentProfile: PersonaProfile | null = null;
   private workingContext: WorkingContext;
   private interactionCount: number = 0;
   private saveThreshold: number = 10; // Save every 10 interactions
+  private readonly logger: Logger;
 
-  constructor(projectRoot: string) {
+  constructor(projectRoot: string, logger: Logger = pino({ name: 'persona-manager' })) {
+    this.projectRoot = projectRoot;
     this.profilePath = path.join(projectRoot, '.ae-framework', 'persona.json');
     this.workingContext = this.initializeWorkingContext(projectRoot);
+    this.logger = logger;
   }
 
   /**
@@ -95,7 +100,7 @@ export class PersonaManager {
       
       return this.currentProfile;
     } catch (error) {
-      console.warn('Failed to initialize persona profile, using default:', error);
+      this.logger.warn({ err: error }, 'Failed to initialize persona profile, using default');
       this.currentProfile = this.createEmergencyProfile();
       return this.currentProfile;
     }
@@ -346,7 +351,7 @@ export class PersonaManager {
   }
 
   private async createDefaultProfile(): Promise<PersonaProfile> {
-    return {
+    const fallback: PersonaProfile = {
       id: `persona-${Date.now()}`,
       name: 'Default Developer',
       description: 'Default persona profile for new users',
@@ -368,11 +373,11 @@ export class PersonaManager {
           confidence: 0.8
         },
         {
-          trigger: { context: { workSession: { 
+          trigger: { context: { workSession: {
             startTime: new Date().toISOString(),
             commandCount: 10,
             errorCount: 1,
-            successRate: 0.95 
+            successRate: 0.95
           } } },
           adaptation: { verbosity: 'minimal', suggestionBehavior: 'minimal' },
           confidence: 0.7
@@ -386,6 +391,66 @@ export class PersonaManager {
         lastUpdated: new Date().toISOString()
       }
     };
+
+    const sampleProfile = this.loadSamplePersonaProfile(fallback);
+    return sampleProfile ?? fallback;
+  }
+
+  private loadSamplePersonaProfile(fallback: PersonaProfile): PersonaProfile | null {
+    try {
+      const samplePath = path.join(this.projectRoot, 'samples', 'persona', 'default-profile.json');
+      if (!fsSync.existsSync(samplePath)) {
+        return null;
+      }
+      const content = fsSync.readFileSync(samplePath, 'utf-8');
+      const sample = JSON.parse(content);
+
+      const merged: PersonaProfile = {
+        ...fallback,
+        ...sample,
+        preferences: {
+          ...fallback.preferences,
+          ...(sample.preferences ?? {})
+        },
+        adaptationRules: Array.isArray(sample.adaptationRules) && sample.adaptationRules.length > 0
+          ? sample.adaptationRules
+          : fallback.adaptationRules,
+        learningData: {
+          ...fallback.learningData,
+          ...(sample.learningData ?? {}),
+          commandUsage: {
+            ...fallback.learningData.commandUsage,
+            ...((sample.learningData ?? {}).commandUsage ?? {})
+          },
+          successPatterns: (sample.learningData?.successPatterns ?? fallback.learningData.successPatterns).slice(),
+          errorPatterns: (sample.learningData?.errorPatterns ?? fallback.learningData.errorPatterns).slice(),
+          timePreferences: {
+            ...fallback.learningData.timePreferences,
+            ...((sample.learningData ?? {}).timePreferences ?? {})
+          },
+          lastUpdated: sample.learningData?.lastUpdated ?? new Date().toISOString()
+        }
+      };
+
+      merged.preferences.preferredLanguages = this.ensureNonEmptyArray(
+        merged.preferences.preferredLanguages,
+        fallback.preferences.preferredLanguages
+      );
+
+      merged.preferences.preferredFrameworks = this.ensureNonEmptyArray(
+        merged.preferences.preferredFrameworks,
+        fallback.preferences.preferredFrameworks
+      );
+
+      return merged;
+    } catch (error) {
+      this.logger.warn({ err: error }, 'Failed to load sample persona profile, falling back to defaults');
+      return null;
+    }
+  }
+
+  private ensureNonEmptyArray<T>(candidate: T[] | undefined | null, fallback: T[]): T[] {
+    return Array.isArray(candidate) && candidate.length > 0 ? candidate : fallback;
   }
 
   private createEmergencyProfile(): PersonaProfile {
