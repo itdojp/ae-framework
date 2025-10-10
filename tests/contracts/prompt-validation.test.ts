@@ -348,15 +348,12 @@ class MockAIAgent {
     const hasError = this.analysisPattern[this.analysisIndex++ % this.analysisPattern.length];
     
     if (hasError) {
-      // Generate invalid output
       return {
-        entities: [], // Missing required fields
-        relationships: 'invalid', // Wrong type
-        // Missing recommendations
+        entities: [],
+        relationships: 'invalid',
       };
     }
 
-    // Generate valid output
     return {
       entities: [
         {
@@ -387,9 +384,9 @@ class MockAIAgent {
     
     if (hasError) {
       return {
-        files: [{ path: '', type: 'invalid' }], // Invalid data
+        files: [{ path: '', type: 'invalid' }],
         dependencies: [],
-        steps: [] // Empty steps not allowed
+        steps: []
       };
     }
 
