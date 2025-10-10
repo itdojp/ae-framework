@@ -3,11 +3,14 @@
  * Validates WCAG 2.1 AA compliance for Phase 6 Quality Gates
  */
 
-const { describe, beforeEach, expect } = globalThis;
-const it = globalThis.it ?? globalThis.test;
+const globalContext = globalThis;
+const describe = globalContext.describe;
+const it = globalContext.it ?? globalContext.test;
+const expect = globalContext.expect;
+const beforeEach = globalContext.beforeEach;
 
-if (typeof describe !== 'function' || typeof it !== 'function' || typeof beforeEach !== 'function') {
-  throw new Error('Global test APIs are not available; ensure the test runner provides jest-style globals');
+if (typeof describe !== 'function' || typeof it !== 'function' || typeof expect !== 'function' || typeof beforeEach !== 'function') {
+  throw new Error('Test globals are not available; ensure Vitest or Jest provides them');
 }
 
 // Use global axe mock instead of jest-axe import

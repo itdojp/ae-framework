@@ -26,7 +26,7 @@ describe('PBT: TokenOptimizer compression alternative content', () => {
           const tolerance = 1; // heuristic estimate rounding can differ by a single token
           expect(L.stats.compressed + tolerance).toBeGreaterThanOrEqual(M.stats.compressed);
           expect(M.stats.compressed + tolerance).toBeGreaterThanOrEqual(H.stats.compressed);
-          expect(L.stats.compressed).toBeGreaterThanOrEqual(H.stats.compressed);
+          expect(L.stats.compressed + tolerance).toBeGreaterThanOrEqual(H.stats.compressed);
         }),
         { numRuns: 8 }
       );
