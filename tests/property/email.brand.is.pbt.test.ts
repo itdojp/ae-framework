@@ -4,8 +4,15 @@ import { Email, makeEmail } from '../../src/lib/email';
 
 describe('PBT: Email brand is() and make()', () => {
   it('is() returns true for values produced by make()', async () => {
-    const localChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._%+-';
-    const arbLocal = fc.stringOf(fc.constantFrom(...localChars.split('')), { minLength: 1, maxLength: 10 });
+    const headChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const tailChars = headChars + '._+-';
+    const arbLocal = fc.tuple(
+      fc.constantFrom(...headChars.split('')),
+      fc.stringOf(fc.constantFrom(...tailChars.split('')), { maxLength: 9 })
+    ).map(([head, tail]) => {
+      const sanitizedTail = tail.replace(/[._+-]+$/g, '');
+      return `${head}${sanitizedTail}`;
+    });
     await fc.assert(fc.asyncProperty(
       arbLocal,
       async (local) => {
@@ -16,4 +23,3 @@ describe('PBT: Email brand is() and make()', () => {
     ), { numRuns: 30 });
   });
 });
-

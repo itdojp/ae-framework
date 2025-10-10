@@ -26,6 +26,7 @@ export default ts.config(
       'policies/**',
       'validation-results/**',
       'temp-reports/**',
+      '.stryker-tmp/**',
       '.dependency-cruiser.js',
       // Temporarily exclude broad areas to stabilize Verify Lite; re-enable incrementally via follow-up PRs
       'src/ui/**',

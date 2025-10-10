@@ -3,9 +3,14 @@
  * Validates WCAG 2.1 AA compliance for Phase 6 Quality Gates
  */
 
-const { describe, test, expect, beforeEach } = globalThis;
-if (typeof describe !== 'function' || typeof test !== 'function') {
-  throw new Error('Global test APIs are not available; ensure the test runner provides jest-style globals');
+const globalContext = globalThis;
+const describe = globalContext.describe;
+const it = globalContext.it ?? globalContext.test;
+const expect = globalContext.expect;
+const beforeEach = globalContext.beforeEach;
+
+if (typeof describe !== 'function' || typeof it !== 'function' || typeof expect !== 'function' || typeof beforeEach !== 'function') {
+  throw new Error('Test globals are not available; ensure Vitest or Jest provides them');
 }
 
 // Use global axe mock instead of jest-axe import
@@ -17,7 +22,7 @@ describe('Component Accessibility Tests', () => {
   });
 
   describe('Button Component', () => {
-    test('should have accessible name', async () => {
+    it('should have accessible name', async () => {
       const button = createMockElement('button', {
         textContent: 'Click me',
         type: 'button'
@@ -28,7 +33,7 @@ describe('Component Accessibility Tests', () => {
       expect(results.violations).toHaveLength(0);
     });
 
-    test('should fail without accessible name', async () => {
+    it('should fail without accessible name', async () => {
       const button = createMockElement('button', {
         type: 'button'
       });
@@ -39,7 +44,7 @@ describe('Component Accessibility Tests', () => {
       expect(nameViolations.length).toBeGreaterThan(0);
     });
 
-    test('should support keyboard navigation', async () => {
+    it('should support keyboard navigation', async () => {
       const button = createMockElement('button', {
         textContent: 'Keyboard accessible',
         type: 'button',
@@ -53,7 +58,7 @@ describe('Component Accessibility Tests', () => {
   });
 
   describe('Form Input Component', () => {
-    test('should have proper label association', async () => {
+    it('should have proper label association', async () => {
       const label = createMockElement('label', {
         textContent: 'Email Address',
         htmlFor: 'email-input'
@@ -71,7 +76,7 @@ describe('Component Accessibility Tests', () => {
       expect(results.violations).toHaveLength(0);
     });
 
-    test('should fail without label', async () => {
+    it('should fail without label', async () => {
       const input = createMockElement('input', {
         type: 'email',
         name: 'email'
@@ -85,7 +90,7 @@ describe('Component Accessibility Tests', () => {
   });
 
   describe('Modal Component', () => {
-    test('should have proper focus management', async () => {
+    it('should have proper focus management', async () => {
       const modal = createMockElement('div', {
         role: 'dialog',
         'aria-labelledby': 'modal-title',
@@ -105,7 +110,7 @@ describe('Component Accessibility Tests', () => {
   });
 
   describe('Navigation Component', () => {
-    test('should use semantic navigation elements', async () => {
+    it('should use semantic navigation elements', async () => {
       const nav = createMockElement('nav', {
         'aria-label': 'Main navigation'
       });
@@ -127,7 +132,7 @@ describe('Component Accessibility Tests', () => {
   });
 
   describe('Color Contrast', () => {
-    test('should pass contrast requirements for normal text', async () => {
+    it('should pass contrast requirements for normal text', async () => {
       const text = createMockElement('p', {
         textContent: 'This is normal text',
         style: 'color: #333333; background-color: #ffffff; font-size: 16px;'

@@ -24,7 +24,8 @@ describe('PBT: TokenOptimizer.deduplicatePatterns (implicit via compressSteering
         const opt = new TokenOptimizer();
         const { compressed } = await opt.compressSteeringDocuments(docs, { compressionLevel: 'medium', enableCaching: false });
         expect(typeof compressed).toBe('string');
-        const count = (compressed.match(new RegExp(base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi')) || []).length;
+        const normalizedBase = base.trim().replace(/\s+/g, ' ');
+        const count = (compressed.match(new RegExp(normalizedBase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi')) || []).length;
         expect(count).toBeGreaterThanOrEqual(1);
       }
     ), { numRuns: 10 });

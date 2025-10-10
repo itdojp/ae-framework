@@ -17,19 +17,10 @@ describe('PBT: TokenOptimizer many code fences in large inputs', () => {
           for (const k of keys) {
             docs[k] = [
               `# ${k}`,
-              '```
-code A
-```
-',
-              '```
-code B
-```
-',
-              '```
-code C
-```
-',
-              ('lorem '.repeat(100)),
+              ['```', 'code A', '```'].join('\n'),
+              ['```', 'code B', '```'].join('\n'),
+              ['```', 'code C', '```'].join('\n'),
+              'lorem '.repeat(100),
             ].join('\n');
           }
           const opt = new TokenOptimizer();
@@ -44,4 +35,3 @@ code C
     }
   );
 });
-

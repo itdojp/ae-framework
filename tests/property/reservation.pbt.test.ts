@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fc from "fast-check";
 import { AEIR } from '@ae-framework/spec-compiler';
 import { DeterministicCodeGenerator } from '../../src/codegen/deterministic-generator';
