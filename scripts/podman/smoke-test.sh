@@ -92,10 +92,10 @@ while [[ $# -gt 0 ]]; do
   shift || true
 done
 
-command -v "$ENGINE_BIN" >/dev/null 2>&1 || fail "コンテナエンジン '$ENGINE_BIN' が見つかりません"
+command -v "$ENGINE_BIN" >/dev/null 2>&1 || fail "Container engine '$ENGINE_BIN' was not found in PATH"
 
 if ! "$ENGINE_BIN" info >/dev/null 2>&1; then
-  fail "'$ENGINE_BIN info' に失敗しました。Podman が利用可能か確認してください。"
+  fail "'$ENGINE_BIN info' failed. Please verify that Podman is available."
 fi
 
 compose_run() {
@@ -111,7 +111,7 @@ compose_run() {
     return
   fi
 
-  fail "podman compose / podman-compose が利用できないため compose 操作を実行できません"
+  fail "podman compose / podman-compose is not available; cannot execute compose operations"
 }
 
 cleanup() {
@@ -134,21 +134,21 @@ cleanup() {
 trap cleanup EXIT
 
 log "using engine: $ENGINE_BIN"
-"$ENGINE_BIN" version || warn "バージョン情報の取得に失敗しましたが続行します"
+"$ENGINE_BIN" version || warn "Failed to retrieve engine version information; continuing"
 
 if [[ "$SKIP_BUILD" == false ]]; then
   log "building runtime image ($RUNTIME_TAG)"
   "$ENGINE_BIN" build \
     --file podman/Dockerfile \
     --tag "$RUNTIME_TAG" \
-    podman/.. || fail "runtime イメージのビルドに失敗しました"
+    podman/.. || fail "Runtime image build failed"
 
   log "building test image ($TEST_TAG)"
   "$ENGINE_BIN" build \
     --file podman/Dockerfile.test \
     --target test-base \
     --tag "$TEST_TAG" \
-    podman/.. || fail "test イメージのビルドに失敗しました"
+    podman/.. || fail "Test image build failed"
 else
   log "skipping image build stage (--skip-build)"
 fi
@@ -156,23 +156,23 @@ fi
 if [[ "$SKIP_COMPOSE" == false ]]; then
   for file in "${COMPOSE_FILES[@]}"; do
     if [[ ! -f "$file" ]]; then
-      warn "compose ファイルが見つかりません: $file"
+      warn "Compose file not found: $file"
       continue
     fi
     log "validating compose file: $file"
-    compose_run config -f "$file" >/dev/null || fail "$file の Compose 構文検証に失敗しました"
+    compose_run config -f "$file" >/dev/null || fail "Compose validation failed for $file"
   done
 else
   log "skipping compose validation (--skip-compose)"
 fi
 
 if [[ "$DO_COMPOSE_UP" == true ]]; then
-  local test_compose="podman/compose.test.yaml"
+  test_compose="podman/compose.test.yaml"
   if [[ -f "$test_compose" ]]; then
     log "bringing up compose stack for smoke test ($test_compose)"
-    compose_run up -f "$test_compose" --build --abort-on-container-exit || fail "compose smoke run に失敗しました"
+    compose_run up -f "$test_compose" --build --abort-on-container-exit || fail "Compose smoke run failed"
   else
-    warn "テスト用 compose ファイルが見つからないため --up をスキップします: $test_compose"
+    warn "Compose test file not found; skipping --up: $test_compose"
   fi
 fi
 
