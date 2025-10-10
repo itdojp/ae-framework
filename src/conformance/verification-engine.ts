@@ -31,6 +31,9 @@ export class ConformanceVerificationEngine extends EventEmitter {
   private isRunning = false;
   private verificationCount = 0;
   private violationCount = 0;
+  private seenViolations = new Set<string>();
+  private violationOccurrences = new Map<string, { ruleId: string; ruleName: string; count: number; lastOccurrence: string }>();
+  private violationTrendTotals = new Map<string, { category: ConformanceRuleCategory; severity: ViolationSeverity; count: number }>();
 
   constructor(config: ConformanceConfig) {
     super();
@@ -551,8 +554,44 @@ export class ConformanceVerificationEngine extends EventEmitter {
     this.metrics.counts.totalViolations += result.violations.length;
     this.metrics.counts.uniqueRules = this.getRules().length;
 
+    if (result.violations.length) {
+      for (const violation of result.violations) {
+        const uniqueKey = `${violation.ruleId}:${violation.message}`;
+        this.seenViolations.add(uniqueKey);
+
+        const occurrence = this.violationOccurrences.get(uniqueKey) ?? {
+          ruleId: violation.ruleId,
+          ruleName: violation.ruleName,
+          count: 0,
+          lastOccurrence: ''
+        };
+        occurrence.count += 1;
+        occurrence.lastOccurrence = new Date().toISOString();
+        this.violationOccurrences.set(uniqueKey, occurrence);
+
+        const categoryKey = `${violation.category}:${violation.severity}`;
+        const categoryEntry = this.violationTrendTotals.get(categoryKey) ?? {
+          category: violation.category,
+          severity: violation.severity,
+          count: 0
+        };
+        categoryEntry.count += 1;
+        this.violationTrendTotals.set(categoryKey, categoryEntry);
+      }
+    }
+
+    this.metrics.counts.uniqueViolations = this.seenViolations.size;
+    this.metrics.topViolations = Array.from(this.violationOccurrences.values())
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5)
+      .map(entry => ({ ...entry }));
+    this.metrics.violationTrends = Array.from(this.violationTrendTotals.values()).map(entry => ({
+      ...entry,
+      trend: 'stable' as const
+    }));
+
     // Update performance metrics
-    this.metrics.performance.averageExecutionTime = 
+    this.metrics.performance.averageExecutionTime =
       (this.metrics.performance.averageExecutionTime * (this.verificationCount - 1) + duration) / this.verificationCount;
 
     // Simple p95/p99 estimation (in production, use proper percentile calculation)
