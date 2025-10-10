@@ -156,7 +156,8 @@ ADAPTIVE_TIMEOUTS=true
 
 ### Podman Compose Override
 ```yaml
-# podman-compose.override.yaml (Docker Desktop users can reuse the same file)
+# podman/compose.override.yaml (create alongside podman/compose.*.yaml)
+# docker-compose.override.yml (Docker Desktop users can mirror the same settings)
 services:
   test-unit:
     deploy:

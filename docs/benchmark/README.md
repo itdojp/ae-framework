@@ -297,8 +297,8 @@ ae-benchmark run --fail-on-regression 10%
    ```bash
    # Podman が起動しているか確認
    podman ps --filter "name=ae-framework"
-   # コンテナ隔離を無効化してデバッグ
-   ae-benchmark run --no-docker
+   # コンテナ隔離 (Podman/Docker) を無効化してデバッグ
+   ae-benchmark run --no-docker  # disables container isolation for both Podman and Docker backends
    ```
 
 #### Debug Mode
