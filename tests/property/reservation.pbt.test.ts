@@ -2,8 +2,9 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fc from "fast-check";
 import { AEIR } from '@ae-framework/spec-compiler';
 import { DeterministicCodeGenerator } from '../../src/codegen/deterministic-generator';
-import { writeFileSync, unlinkSync, existsSync, mkdirSync, rmSync } from 'fs';
+import { writeFileSync, readFileSync, unlinkSync, existsSync, mkdirSync, rmSync } from 'fs';
 import { join } from 'path';
+import { createHash } from 'crypto';
 
 describe("AE-IR Property-Based Tests", () => {
   const testOutputDir = join(__dirname, '../tmp/pbt-output');
@@ -104,121 +105,142 @@ describe("AE-IR Property-Based Tests", () => {
   });
 
   describe("Code Generation Stability Properties", () => {
-    it("should generate identical output for identical AE-IR input", () => {
-      fc.assert(
-        fc.property(
-          fc.record({
-            version: fc.constant('1.0.0'),
-            metadata: fc.record({
-              name: fc.constant('TestApp'),
-              created: fc.constant('2025-01-01T00:00:00Z'),
-              updated: fc.constant('2025-01-01T00:00:00Z')
+    const baseAeirForStability = fc.record({
+      version: fc.constant('1.0.0'),
+      metadata: fc.record({
+        name: fc.constant('TestApp'),
+        created: fc.constant('2025-01-01T00:00:00Z'),
+        updated: fc.constant('2025-01-01T00:00:00Z')
+      }),
+      glossary: fc.constant([]),
+      domain: fc.array(
+        fc.record({
+          name: fc.constantFrom('User', 'Product', 'Order'),
+          fields: fc.array(
+            fc.record({
+              name: fc.constantFrom('id', 'name', 'email', 'price'),
+              type: fc.constantFrom('UUID', 'string', 'decimal'),
+              required: fc.boolean()
             }),
-            glossary: fc.constant([]),
-            domain: fc.array(fc.record({
-              name: fc.constantFrom('User', 'Product', 'Order'),
-              fields: fc.array(fc.record({
-                name: fc.constantFrom('id', 'name', 'email', 'price'),
-                type: fc.constantFrom('UUID', 'string', 'decimal'),
-                required: fc.boolean()
-              }), { minLength: 1, maxLength: 3 })
-            }), { minLength: 1, maxLength: 2 }),
-            invariants: fc.constant([]),
-            usecases: fc.constant([]),
-            api: fc.constant([])
-          }),
-          fc.constantFrom('typescript', 'react', 'api', 'database')
-        ),
-        (aeir, target) => {
-          const inputPath = join(testOutputDir, 'test-aeir.json');
-          writeFileSync(inputPath, JSON.stringify(aeir, null, 2));
+            { minLength: 1, maxLength: 3 }
+          )
+        }),
+        { minLength: 1, maxLength: 2 }
+      ),
+      invariants: fc.constant([]),
+      usecases: fc.constant([]),
+      api: fc.constant([])
+    });
 
-          const generator1 = new DeterministicCodeGenerator({
-            inputPath,
-            outputDir: join(testOutputDir, 'gen1'),
-            target: target as any,
-            enableDriftDetection: false
-          });
+    const baseAeirForDrift = fc.record({
+      version: fc.constant('1.0.0'),
+      metadata: fc.record({
+        name: fc.constant('TestApp'),
+        created: fc.constant('2025-01-01T00:00:00Z'),
+        updated: fc.constant('2025-01-01T00:00:00Z')
+      }),
+      glossary: fc.constant([]),
+      domain: fc.array(
+        fc.record({
+          name: fc.constantFrom('User', 'Product'),
+          fields: fc.array(
+            fc.record({
+              name: fc.constantFrom('id', 'name'),
+              type: fc.constantFrom('UUID', 'string'),
+              required: fc.boolean()
+            }),
+            { minLength: 1, maxLength: 2 }
+          )
+        }),
+        { minLength: 1, maxLength: 1 }
+      ),
+      invariants: fc.constant([]),
+      usecases: fc.constant([]),
+      api: fc.constant([])
+    });
 
-          const generator2 = new DeterministicCodeGenerator({
-            inputPath,
-            outputDir: join(testOutputDir, 'gen2'),
-            target: target as any,
-            enableDriftDetection: false
-          });
+    it("should generate identical output for identical AE-IR input", async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          baseAeirForStability,
+          fc.constantFrom('typescript', 'react', 'api', 'database'),
+          async (aeir, target) => {
+            const inputPath = join(testOutputDir, 'test-aeir.json');
+            writeFileSync(inputPath, JSON.stringify(aeir, null, 2));
 
-          const manifest1 = generator1.generate();
-          const manifest2 = generator2.generate();
+            const generator1 = new DeterministicCodeGenerator({
+              inputPath,
+              outputDir: join(testOutputDir, 'gen1'),
+              target: target as any,
+              enableDriftDetection: false
+            });
 
-          expect(manifest1.files.length).toBe(manifest2.files.length);
-          
-          for (let i = 0; i < manifest1.files.length; i++) {
-            expect(manifest1.files[i].filePath).toBe(manifest2.files[i].filePath);
-            expect(manifest1.files[i].content).toBe(manifest2.files[i].content);
-            expect(manifest1.files[i].hash).toBe(manifest2.files[i].hash);
+            const generator2 = new DeterministicCodeGenerator({
+              inputPath,
+              outputDir: join(testOutputDir, 'gen2'),
+              target: target as any,
+              enableDriftDetection: false
+            });
+
+            const manifest1 = await generator1.generate();
+            const manifest2 = await generator2.generate();
+
+            expect(manifest1.files.length).toBe(manifest2.files.length);
+
+            for (let i = 0; i < manifest1.files.length; i++) {
+              expect(manifest1.files[i].filePath).toBe(manifest2.files[i].filePath);
+              expect(manifest1.files[i].content).toBe(manifest2.files[i].content);
+              expect(manifest1.files[i].hash).toBe(manifest2.files[i].hash);
+            }
           }
-        },
+        ),
         { numRuns: 20 }
       );
     });
 
-    it("should detect drift when AE-IR changes", () => {
-      fc.assert(
-        fc.property(
-          fc.record({
-            version: fc.constant('1.0.0'),
-            metadata: fc.record({
-              name: fc.constant('TestApp'),
-              created: fc.constant('2025-01-01T00:00:00Z'),
-              updated: fc.constant('2025-01-01T00:00:00Z')
-            }),
-            glossary: fc.constant([]),
-            domain: fc.array(fc.record({
-              name: fc.constantFrom('User', 'Product'),
-              fields: fc.array(fc.record({
-                name: fc.constantFrom('id', 'name'),
-                type: fc.constantFrom('UUID', 'string'),
-                required: fc.boolean()
-              }), { minLength: 1, maxLength: 2 })
-            }), { minLength: 1, maxLength: 1 }),
-            invariants: fc.constant([]),
-            usecases: fc.constant([]),
-            api: fc.constant([])
-          }),
-          fc.string({ minLength: 1, maxLength: 10 })
-        ),
-        (baseAEIR, newName) => {
-          const inputPath = join(testOutputDir, 'drift-test-aeir.json');
-          const outputDir = join(testOutputDir, 'drift-test');
-          
-          writeFileSync(inputPath, JSON.stringify(baseAEIR, null, 2));
+    it("should detect drift when AE-IR changes", async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          baseAeirForDrift,
+          fc.string({ minLength: 1, maxLength: 10 }),
+          async (baseAEIR, newName) => {
+            const inputPath = join(testOutputDir, 'drift-test-aeir.json');
+            const outputDir = join(testOutputDir, 'drift-test');
 
-          const generator = new DeterministicCodeGenerator({
-            inputPath,
-            outputDir,
-            target: 'typescript',
-            enableDriftDetection: true
-          });
+            writeFileSync(inputPath, JSON.stringify(baseAEIR, null, 2));
 
-          generator.generate();
+            const generator = new DeterministicCodeGenerator({
+              inputPath,
+              outputDir,
+              target: 'typescript',
+              enableDriftDetection: true
+            });
 
-          const modifiedAEIR = {
-            ...baseAEIR,
-            metadata: { ...baseAEIR.metadata, name: newName }
-          };
-          writeFileSync(inputPath, JSON.stringify(modifiedAEIR, null, 2));
+            const manifest = await generator.generate();
 
-          const driftResult = generator.detectDrift(
-            require('crypto').createHash('sha256')
-              .update(JSON.stringify(modifiedAEIR, null, 2))
-              .digest('hex')
-          );
+            const modifiedAEIR = {
+              ...baseAEIR,
+              metadata: { ...baseAEIR.metadata, name: newName }
+            };
+            writeFileSync(inputPath, JSON.stringify(modifiedAEIR, null, 2));
 
-          if (newName !== baseAEIR.metadata.name) {
-            expect(driftResult.hasDrift).toBe(true);
-            expect(driftResult.driftedFiles.length).toBeGreaterThan(0);
+            const firstGeneratedFile = manifest.files[0];
+            const generatedFilePath = join(outputDir, firstGeneratedFile.filePath);
+            const originalContent = readFileSync(generatedFilePath, 'utf-8');
+            writeFileSync(generatedFilePath, `${originalContent}\n// drift simulation for ${newName}`);
+
+            const driftResult = await generator.detectDrift(
+              createHash('sha256')
+                .update(JSON.stringify(modifiedAEIR, null, 2))
+                .digest('hex')
+            );
+
+            if (newName !== baseAEIR.metadata.name) {
+              expect(driftResult.hasDrift).toBe(true);
+              expect(driftResult.driftedFiles.length).toBeGreaterThan(0);
+            }
           }
-        },
+        ),
         { numRuns: 15 }
       );
     });
