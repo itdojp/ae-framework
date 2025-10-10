@@ -346,7 +346,7 @@ export class PersonaManager {
   }
 
   private async createDefaultProfile(): Promise<PersonaProfile> {
-    return {
+    const fallback: PersonaProfile = {
       id: `persona-${Date.now()}`,
       name: 'Default Developer',
       description: 'Default persona profile for new users',
@@ -368,11 +368,11 @@ export class PersonaManager {
           confidence: 0.8
         },
         {
-          trigger: { context: { workSession: { 
+          trigger: { context: { workSession: {
             startTime: new Date().toISOString(),
             commandCount: 10,
             errorCount: 1,
-            successRate: 0.95 
+            successRate: 0.95
           } } },
           adaptation: { verbosity: 'minimal', suggestionBehavior: 'minimal' },
           confidence: 0.7
@@ -386,6 +386,60 @@ export class PersonaManager {
         lastUpdated: new Date().toISOString()
       }
     };
+
+    const sampleProfile = this.loadSamplePersonaProfile(fallback);
+    return sampleProfile ?? fallback;
+  }
+
+  private loadSamplePersonaProfile(fallback: PersonaProfile): PersonaProfile | null {
+    try {
+      const samplePath = path.join(process.cwd(), 'samples', 'persona', 'default-profile.json');
+      if (!fsSync.existsSync(samplePath)) {
+        return null;
+      }
+      const content = fsSync.readFileSync(samplePath, 'utf-8');
+      const sample = JSON.parse(content);
+
+      const merged: PersonaProfile = {
+        ...fallback,
+        ...sample,
+        preferences: {
+          ...fallback.preferences,
+          ...(sample.preferences ?? {})
+        },
+        adaptationRules: Array.isArray(sample.adaptationRules) && sample.adaptationRules.length > 0
+          ? sample.adaptationRules
+          : fallback.adaptationRules,
+        learningData: {
+          ...fallback.learningData,
+          ...(sample.learningData ?? {}),
+          commandUsage: {
+            ...fallback.learningData.commandUsage,
+            ...((sample.learningData ?? {}).commandUsage ?? {})
+          },
+          successPatterns: (sample.learningData?.successPatterns ?? fallback.learningData.successPatterns).slice(),
+          errorPatterns: (sample.learningData?.errorPatterns ?? fallback.learningData.errorPatterns).slice(),
+          timePreferences: {
+            ...fallback.learningData.timePreferences,
+            ...((sample.learningData ?? {}).timePreferences ?? {})
+          },
+          lastUpdated: sample.learningData?.lastUpdated ?? new Date().toISOString()
+        }
+      };
+
+      merged.preferences.preferredLanguages = merged.preferences.preferredLanguages && merged.preferences.preferredLanguages.length > 0
+        ? merged.preferences.preferredLanguages
+        : fallback.preferences.preferredLanguages;
+
+      merged.preferences.preferredFrameworks = merged.preferences.preferredFrameworks && merged.preferences.preferredFrameworks.length > 0
+        ? merged.preferences.preferredFrameworks
+        : fallback.preferences.preferredFrameworks;
+
+      return merged;
+    } catch (error) {
+      console.warn('Failed to load sample persona profile, falling back to defaults:', error);
+      return null;
+    }
   }
 
   private createEmergencyProfile(): PersonaProfile {
