@@ -99,15 +99,13 @@ if ! "$ENGINE_BIN" info >/dev/null 2>&1; then
 fi
 
 compose_run() {
-  local subcommand="$1"
-  shift
   if "$ENGINE_BIN" compose version >/dev/null 2>&1; then
-    "$ENGINE_BIN" compose "$subcommand" "$@"
+    "$ENGINE_BIN" compose "$@"
     return
   fi
 
   if command -v podman-compose >/dev/null 2>&1; then
-    podman-compose "$subcommand" "$@"
+    podman-compose "$@"
     return
   fi
 
@@ -120,7 +118,7 @@ cleanup() {
     for file in "${COMPOSE_FILES[@]}"; do
       [[ -f "$file" ]] || continue
       if [[ "$file" == *compose.test.yaml ]]; then
-        compose_run down --remove-orphans -f "$file" >/dev/null 2>&1 || true
+        compose_run -f "$file" down --remove-orphans >/dev/null 2>&1 || true
       fi
     done
   fi
@@ -160,7 +158,7 @@ if [[ "$SKIP_COMPOSE" == false ]]; then
       continue
     fi
     log "validating compose file: $file"
-    compose_run config -f "$file" >/dev/null || fail "Compose validation failed for $file"
+    compose_run -f "$file" config >/dev/null || fail "Compose validation failed for $file"
   done
 else
   log "skipping compose validation (--skip-compose)"
@@ -170,7 +168,7 @@ if [[ "$DO_COMPOSE_UP" == true ]]; then
   test_compose="podman/compose.test.yaml"
   if [[ -f "$test_compose" ]]; then
     log "bringing up compose stack for smoke test ($test_compose)"
-    compose_run up -f "$test_compose" --build --abort-on-container-exit || fail "Compose smoke run failed"
+    compose_run -f "$test_compose" up --build --abort-on-container-exit || fail "Compose smoke run failed"
   else
     warn "Compose test file not found; skipping --up: $test_compose"
   fi
