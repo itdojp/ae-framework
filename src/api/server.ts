@@ -185,7 +185,7 @@ export async function createServer(): Promise<FastifyInstance> {
         });
       }
 
-      // TODO: service 層に委譲（在庫確認・冪等処理・トランザクション）
+      // TODO: delegate to service layer (inventory checks, idempotent handling, transactions)
       const responseData = { ok: true };
 
       // Validate response
