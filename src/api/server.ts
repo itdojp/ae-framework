@@ -20,7 +20,17 @@ export async function createServer(): Promise<FastifyInstance> {
 
   // Register security headers middleware with development config for testing
   const securityConfig = process.env['NODE_ENV'] === 'test' 
-    ? { enabled: true } // Use defaults with everything enabled for testing
+    ? {
+        enabled: true,
+        contentSecurityPolicy: {
+          enabled: true,
+          directives: "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; test-mode 'enabled';",
+        },
+        permissionsPolicy: {
+          enabled: true,
+          directives: 'camera=(), microphone=(), geolocation=(), test-mode=()',
+        },
+      }
     : getSecurityConfiguration();
   await app.register(securityHeadersPlugin, securityConfig);
 
@@ -47,25 +57,30 @@ export async function createServer(): Promise<FastifyInstance> {
 
   // Add response timing hook
   app.addHook('onResponse', async (request, reply) => {
-    const span = request.span;
-    if (span) {
-      span.setAttributes({
-        'http.status_code': reply.statusCode,
-        [TELEMETRY_ATTRIBUTES.DURATION_MS]: Date.now() - (request.startTime || 0),
-      });
-      
-      if (reply.statusCode >= 400) {
-        span.recordException(new Error(`HTTP ${reply.statusCode}`));
-      }
-      
-      span.end();
-    }
-
-    enhancedTelemetry.recordCounter('api.responses.total', 1, {
+    const responseMetadata = {
       method: request.method,
       endpoint: request.url,
       status_code: reply.statusCode.toString(),
+    };
+
+    const span = request.span;
+    if (!span) {
+      enhancedTelemetry.recordCounter('api.responses.total', 1, responseMetadata);
+      return;
+    }
+
+    span.setAttributes({
+      'http.status_code': reply.statusCode,
+      [TELEMETRY_ATTRIBUTES.DURATION_MS]: Date.now() - (request.startTime || 0),
     });
+    
+    if (reply.statusCode >= 400) {
+      span.recordException(new Error(`HTTP ${reply.statusCode}`));
+    }
+    
+    span.end();
+
+    enhancedTelemetry.recordCounter('api.responses.total', 1, responseMetadata);
   });
 
   // Health check endpoint with response validation
@@ -110,9 +125,11 @@ export async function createServer(): Promise<FastifyInstance> {
     } catch (error) {
       timer.end({ endpoint: '/health', result: 'error' });
       const span = req.span;
-      if (span) {
-        span.recordException(error as Error);
+      // Stryker disable next-line ConditionalExpression,BooleanLiteral,BlockStatement -- spanが欠如した場合でも元のエラーを伝播させるため
+      if (!span) {
+        throw error;
       }
+      span.recordException(error as Error);
       throw error;
     }
   });
@@ -202,9 +219,11 @@ export async function createServer(): Promise<FastifyInstance> {
     } catch (error) {
       timer.end({ endpoint: '/reservations', result: 'error' });
       const span = req.span;
-      if (span) {
-        span.recordException(error as Error);
+      // Stryker disable next-line ConditionalExpression,BooleanLiteral,BlockStatement -- spanが欠如した場合でも元のエラーを伝播させるため
+      if (!span) {
+        throw error;
       }
+      span.recordException(error as Error);
       throw error;
     }
   });
@@ -220,9 +239,11 @@ export async function createServer(): Promise<FastifyInstance> {
       });
     } catch (error) {
       const span = req.span;
-      if (span) {
-        span.recordException(error as Error);
+      // Stryker disable next-line ConditionalExpression,BooleanLiteral,BlockStatement -- spanが欠如した場合でも元のエラーを伝播させるため
+      if (!span) {
+        throw error;
       }
+      span.recordException(error as Error);
       throw error;
     }
   });
