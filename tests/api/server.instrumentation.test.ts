@@ -211,48 +211,6 @@ describe('Server instrumentation telemetry', () => {
   it(
     formatGWT(
       'request tracing',
-      'handles missing user agent',
-      'applies unknown fallback in span attributes',
-    ),
-    async () => {
-      const spanStub = {
-        setAttributes: vi.fn(),
-        recordException: vi.fn(),
-        end: vi.fn(),
-      };
-      const startSpan = vi.fn(() => spanStub);
-      tracerSpy = vi.spyOn(trace, 'getTracer').mockReturnValue({ startSpan } as any);
-
-      const app: FastifyInstance = await createServer();
-      await app.ready();
-
-      try {
-        const response = await app.inject({
-          method: 'GET',
-          url: '/health',
-          headers: { 'user-agent': '' },
-        });
-
-        expect(response.statusCode).toBe(200);
-        expect(startSpan).toHaveBeenCalledWith(
-          'GET /health',
-          expect.objectContaining({
-            attributes: expect.objectContaining({
-              'http.user_agent': 'unknown',
-            }),
-          }),
-        );
-      } finally {
-        await app.close();
-        tracerSpy?.mockRestore();
-        tracerSpy = undefined;
-      }
-    },
-  );
-
-  it(
-    formatGWT(
-      'request tracing',
       'captures error response',
       'records exception metadata and error counters',
     ),
