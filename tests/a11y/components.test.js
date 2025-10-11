@@ -7,7 +7,7 @@ const isJest = Boolean(
 
 if (!isJest) {
   if (typeof describe === 'function' && typeof describe.skip === 'function') {
-    describe.skip('Accessibility (Jest 専用スイート)', () => {
+    describe.skip('Accessibility (Jest-only suite)'), () => {
       if (typeof it === 'function') {
         it('is skipped outside Jest', () => {});
       }
