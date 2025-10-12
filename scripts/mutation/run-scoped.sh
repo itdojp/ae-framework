@@ -186,7 +186,7 @@ if [[ ${#EXTRA_ARGS[@]} -gt 0 ]]; then
   CMD+=("${EXTRA_ARGS[@]}")
 fi
 
-if command -v timeout >/dev/null 2>&1; then
+if command -v timeout >/dev/null 2>&1 && [[ -n "${TIME_LIMIT}" && "${TIME_LIMIT}" != "0" ]]; then
   timeout --foreground "${TIME_LIMIT}"s "${CMD[@]}"
 else
   "${CMD[@]}"
