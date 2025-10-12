@@ -7,6 +7,7 @@ import { Command } from 'commander';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import type { join } from 'path';
 import { ConformanceVerificationEngine } from '../conformance/verification-engine.js';
+import { createEncryptedChatDefaultRules } from '../conformance/default-rules.js';
 import chalk from 'chalk';
 import { toMessage } from '../utils/error-utils.js';
 import { safeExit } from '../utils/safe-exit.js';
@@ -580,74 +581,96 @@ export class ConformanceCli {
    */
   private createSampleRules(): ConformanceRule[] {
     const now = new Date().toISOString();
-    
-    return [
-      {
-        id: this.generateUUID(),
-        name: 'Required Email Field',
-        description: 'Ensures email field is present and valid',
-        category: 'data_validation',
-        severity: 'major',
-        enabled: true,
-        condition: {
-          expression: 'required && email',
-          variables: ['data.email'],
-          constraints: {}
-        },
-        actions: ['log_violation'],
-        metadata: {
-          createdAt: now,
-          updatedAt: now,
-          version: '1.0.0',
-          tags: ['email', 'required', 'sample']
-        }
-      },
-      {
-        id: this.generateUUID(),
-        name: 'API Response Time',
-        description: 'Ensures API responses are within acceptable time limits',
-        category: 'api_contract',
-        severity: 'minor',
-        enabled: true,
-        condition: {
-          expression: 'timeout',
-          variables: ['data.response.time'],
-          constraints: { maxMs: 1000 }
-        },
-        actions: ['log_violation', 'metric_increment'],
-        metadata: {
-          createdAt: now,
-          updatedAt: now,
-          version: '1.0.0',
-          tags: ['performance', 'api', 'sample']
-        }
-      }
-    ];
+    return createEncryptedChatDefaultRules(now);
   }
 
   /**
    * Create sample data for testing
    */
   private createSampleData(): any {
+    const now = new Date();
+    const sentAt = now.toISOString();
+    const receivedAt = new Date(now.getTime() + 120).toISOString();
+
+    const userId = this.generateUUID();
+    const deviceId = this.generateUUID();
+    const sessionId = this.generateUUID();
+    const messageId = this.generateUUID();
+
     return {
       user: {
-        email: 'test@example.com',
-        name: 'Test User',
-        age: 25
+        id: userId,
+        displayName: 'Alice Example',
+        devices: [
+          {
+            id: deviceId,
+            platform: 'ios',
+            status: 'active'
+          }
+        ],
+        createdAt: sentAt,
+        updatedAt: sentAt
       },
-      apiCall: {
-        method: 'GET',
-        url: 'https://api.example.com/users/123',
-        path: '/users/123',
-        headers: {
-          'Content-Type': 'application/json'
+      device: {
+        id: deviceId,
+        userId,
+        identityKey: 'MCowBQYDK2VuAyEAexampleIdentityKeyLzBhZVNlcg==',
+        signedPreKey: 'MCowBQYDK2VuAyEAexampleSignedPreKeym9yaWdpbg==',
+        preKeyStats: {
+          published: 128,
+          threshold: 100
         },
-        response: {
-          status: 200,
-          time: 150,
-          body: { id: 123, name: 'Test User' }
-        },
-        timestamp: new Date().toISOString()
+        platform: 'ios',
+        lastSeenAt: sentAt,
+        status: 'active'
+      },
+      session: {
+        id: sessionId,
+        state: 'active',
+        chainKeys: ['chain-key-initial'],
+        devicesActive: true,
+        messagesSinceRotation: 32,
+        hoursSinceRotation: 6
+      },
+      message: {
+        id: messageId,
+        sessionId,
+        messageType: 'text',
+        encryption: 'AES-256-GCM',
+        ciphertextLength: 256,
+        authTag: 'MTIzNDU2Nzg5MDEyMzQ1Ng==',
+        sentAt,
+        receivedAt,
+        validAuthTag: true
+      },
+      audit: {
+        appendOnly: true,
+        payloadAligned: true,
+        validActors: true,
+        entries: [
+          {
+            eventType: 'device_registered',
+            payload: {
+              eventType: 'device_registered',
+              deviceId
+            }
+          },
+          {
+            eventType: 'session_established',
+            payload: {
+              eventType: 'session_established',
+              sessionId
+            }
+          }
+        ]
+      },
+      metrics: {
+        activeDeviceCount: 1,
+        oneTimePreKeyCount: 128,
+        deliveryLatencyMs: 240,
+        gdprRetentionDays: 180,
+        rotationDue: false,
+        invalidAuthTagLogged: true
       }
     };
   }

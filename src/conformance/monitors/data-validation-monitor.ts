@@ -165,13 +165,16 @@ export class DataValidationMonitor implements ConformanceMonitor {
     rule: ConformanceRule,
     context: RuntimeContext
   ): Promise<{ violation?: ViolationDetails }> {
+    const target = this.resolveRuleTarget(data, rule.condition.variables);
+
     try {
+
       // Parse rule condition for validation schema
       const validationSchema = this.parseValidationSchema(rule);
       
       if (validationSchema) {
         // Use Zod schema validation
-        const result = validationSchema.safeParse(data);
+        const result = validationSchema.safeParse(target);
         
         if (!result.success) {
           const violation: ViolationDetails = {
@@ -180,11 +183,11 @@ export class DataValidationMonitor implements ConformanceMonitor {
             category: rule.category,
             severity: rule.severity,
             message: `Data validation failed: ${result.error.errors[0]?.message || 'Invalid data'}`,
-            actualValue: data,
+            actualValue: target,
             expectedValue: 'Valid data according to schema',
             context,
             evidence: {
-              inputData: data,
+              inputData: target,
               stateSnapshot: { errors: result.error.errors },
               logs: [`Validation failed for rule: ${rule.name}`],
               metrics: DEFAULT_METRICS,
@@ -201,9 +204,14 @@ export class DataValidationMonitor implements ConformanceMonitor {
         }
       } else {
         // Fall back to custom validation logic
-        const customValidation = await this.performCustomValidation(data, rule, context);
+        const customValidation = await this.performCustomValidation(target, rule, context);
         if (customValidation.violation) {
-          return customValidation;
+          return {
+            violation: {
+              ...customValidation.violation,
+              actualValue: target
+            }
+          };
         }
       }
 
@@ -216,20 +224,61 @@ export class DataValidationMonitor implements ConformanceMonitor {
         category: rule.category,
         severity: 'major',
         message: `Rule validation error: ${error instanceof Error ? error.message : String(error)}`,
-        actualValue: data,
+        actualValue: target ?? data,
         context,
         stackTrace: error instanceof Error ? error.stack : undefined,
-        evidence: { 
-        inputData: data,
-        metrics: DEFAULT_METRICS,
-        logs: DEFAULT_LOGS,
-        stateSnapshot: DEFAULT_STATE_SNAPSHOT,
-        traces: DEFAULT_TRACES
-      }
+        evidence: {
+          inputData: target ?? data,
+          metrics: DEFAULT_METRICS,
+          logs: DEFAULT_LOGS,
+          stateSnapshot: DEFAULT_STATE_SNAPSHOT,
+          traces: DEFAULT_TRACES
+        }
       };
 
       return { violation };
     }
+  }
+
+  /**
+   * Resolve the target value for validation based on rule variables
+   */
+  private resolveRuleTarget(data: any, variables?: string[]): any {
+    if (!variables || variables.length === 0) {
+      return data;
+    }
+
+    if (variables.length === 1) {
+      return this.getValueAtPath(data, variables[0]!);
+    }
+
+    return variables.reduce<Record<string, unknown>>((acc, variable, index) => {
+      const value = this.getValueAtPath(data, variable);
+      const key = this.normaliseVariableKey(variable, index);
+      acc[key] = value;
+      return acc;
+    }, {});
+  }
+
+  private normaliseVariableKey(variable: string, index: number): string {
+    const trimmed = variable.replace(/^data\./, '');
+    const segments = trimmed.split('.');
+    const candidate = segments[segments.length - 1];
+    return candidate || `var${index}`;
+  }
+
+  private getValueAtPath(source: any, variable: string): any {
+    const path = variable.replace(/^data\./, '');
+    if (!path) {
+      return source;
+    }
+
+    return path.split('.').reduce((current: any, segment: string) => {
+      if (current == null) {
+        return undefined;
+      }
+      return current[segment];
+    }, source);
   }
 
   /**
@@ -241,14 +290,11 @@ export class DataValidationMonitor implements ConformanceMonitor {
     if (cached) return cached;
 
     try {
-      // Try to parse Zod-like schema from rule condition
       const condition = rule.condition.expression;
       let schema: z.ZodSchema | null = null;
 
-      // Common validation patterns
-      if (condition.includes('required')) {
-        schema = z.object({}).nonstrict();
-      } else if (condition.includes('string')) {
+      // Identify base schema from condition tokens
+      if (condition.includes('string')) {
         schema = z.string();
       } else if (condition.includes('number')) {
         schema = z.number();
@@ -264,6 +310,18 @@ export class DataValidationMonitor implements ConformanceMonitor {
         schema = z.string().url();
       } else if (condition.includes('uuid')) {
         schema = z.string().uuid();
+      } else if (condition.includes('required')) {
+        schema = z.any();
+      }
+
+      // Apply "required" semantics for string/array types
+      if (schema && condition.includes('required')) {
+        if (schema instanceof z.ZodString) {
+          schema = schema.min(1);
+        }
+        if (schema instanceof z.ZodArray) {
+          schema = schema.min(1);
+        }
       }
 
       // Enhanced schema parsing based on constraints
@@ -345,7 +403,7 @@ export class DataValidationMonitor implements ConformanceMonitor {
    * Perform custom validation logic when schema parsing fails
    */
   private async performCustomValidation(
-    data: any,
+    value: any,
     rule: ConformanceRule,
     context: RuntimeContext
   ): Promise<{ violation?: ViolationDetails }> {
@@ -353,7 +411,7 @@ export class DataValidationMonitor implements ConformanceMonitor {
 
     try {
       // Basic type checks
-      if (condition.includes('required') && (data === null || data === undefined)) {
+      if (condition.includes('required') && (value === null || value === undefined)) {
         return {
           violation: {
             ruleId: rule.id,
@@ -361,90 +419,90 @@ export class DataValidationMonitor implements ConformanceMonitor {
             category: rule.category,
             severity: rule.severity,
             message: 'Required field is missing or null',
-            actualValue: data,
+            actualValue: value,
             expectedValue: 'Non-null value',
             context,
-            evidence: { 
-            inputData: data,
-            metrics: DEFAULT_METRICS,
-            logs: DEFAULT_LOGS,
-            stateSnapshot: DEFAULT_STATE_SNAPSHOT,
-            traces: DEFAULT_TRACES
-          }
+            evidence: {
+              inputData: value,
+              metrics: DEFAULT_METRICS,
+              logs: DEFAULT_LOGS,
+              stateSnapshot: DEFAULT_STATE_SNAPSHOT,
+              traces: DEFAULT_TRACES
+            }
           }
         };
       }
 
-      if (condition.includes('string') && typeof data !== 'string') {
+      if (condition.includes('string') && typeof value !== 'string') {
         return {
           violation: {
             ruleId: rule.id,
             ruleName: rule.name,
             category: rule.category,
             severity: rule.severity,
-            message: `Expected string, got ${typeof data}`,
-            actualValue: data,
+            message: `Expected string, got ${typeof value}`,
+            actualValue: value,
             expectedValue: 'string',
             context,
-            evidence: { 
-            inputData: data,
-            metrics: DEFAULT_METRICS,
-            logs: DEFAULT_LOGS,
-            stateSnapshot: DEFAULT_STATE_SNAPSHOT,
-            traces: DEFAULT_TRACES
-          }
+            evidence: {
+              inputData: value,
+              metrics: DEFAULT_METRICS,
+              logs: DEFAULT_LOGS,
+              stateSnapshot: DEFAULT_STATE_SNAPSHOT,
+              traces: DEFAULT_TRACES
+            }
           }
         };
       }
 
-      if (condition.includes('number') && typeof data !== 'number') {
+      if (condition.includes('number') && typeof value !== 'number') {
         return {
           violation: {
             ruleId: rule.id,
             ruleName: rule.name,
             category: rule.category,
             severity: rule.severity,
-            message: `Expected number, got ${typeof data}`,
-            actualValue: data,
+            message: `Expected number, got ${typeof value}`,
+            actualValue: value,
             expectedValue: 'number',
             context,
-            evidence: { 
-            inputData: data,
-            metrics: DEFAULT_METRICS,
-            logs: DEFAULT_LOGS,
-            stateSnapshot: DEFAULT_STATE_SNAPSHOT,
-            traces: DEFAULT_TRACES
-          }
+            evidence: {
+              inputData: value,
+              metrics: DEFAULT_METRICS,
+              logs: DEFAULT_LOGS,
+              stateSnapshot: DEFAULT_STATE_SNAPSHOT,
+              traces: DEFAULT_TRACES
+            }
           }
         };
       }
 
-      if (condition.includes('array') && !Array.isArray(data)) {
+      if (condition.includes('array') && !Array.isArray(value)) {
         return {
           violation: {
             ruleId: rule.id,
             ruleName: rule.name,
             category: rule.category,
             severity: rule.severity,
-            message: `Expected array, got ${typeof data}`,
-            actualValue: data,
+            message: `Expected array, got ${typeof value}`,
+            actualValue: value,
             expectedValue: 'array',
             context,
-            evidence: { 
-            inputData: data,
-            metrics: DEFAULT_METRICS,
-            logs: DEFAULT_LOGS,
-            stateSnapshot: DEFAULT_STATE_SNAPSHOT,
-            traces: DEFAULT_TRACES
-          }
+            evidence: {
+              inputData: value,
+              metrics: DEFAULT_METRICS,
+              logs: DEFAULT_LOGS,
+              stateSnapshot: DEFAULT_STATE_SNAPSHOT,
+              traces: DEFAULT_TRACES
+            }
           }
         };
       }
 
       // Email validation
-      if (condition.includes('email') && typeof data === 'string') {
+      if (condition.includes('email') && typeof value === 'string') {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(data)) {
+        if (!emailRegex.test(value)) {
           return {
             violation: {
               ruleId: rule.id,
@@ -452,25 +510,25 @@ export class DataValidationMonitor implements ConformanceMonitor {
               category: rule.category,
               severity: rule.severity,
               message: 'Invalid email format',
-              actualValue: data,
+              actualValue: value,
               expectedValue: 'Valid email address',
               context,
-              evidence: { 
-            inputData: data,
-            metrics: DEFAULT_METRICS,
-            logs: DEFAULT_LOGS,
-            stateSnapshot: DEFAULT_STATE_SNAPSHOT,
-            traces: DEFAULT_TRACES
-          }
+              evidence: {
+                inputData: value,
+                metrics: DEFAULT_METRICS,
+                logs: DEFAULT_LOGS,
+                stateSnapshot: DEFAULT_STATE_SNAPSHOT,
+                traces: DEFAULT_TRACES
+              }
             }
           };
         }
       }
 
       // URL validation
-      if (condition.includes('url') && typeof data === 'string') {
+      if (condition.includes('url') && typeof value === 'string') {
         try {
-          new URL(data);
+          new URL(value);
         } catch {
           return {
             violation: {
@@ -479,25 +537,25 @@ export class DataValidationMonitor implements ConformanceMonitor {
               category: rule.category,
               severity: rule.severity,
               message: 'Invalid URL format',
-              actualValue: data,
+              actualValue: value,
               expectedValue: 'Valid URL',
               context,
-              evidence: { 
-            inputData: data,
-            metrics: DEFAULT_METRICS,
-            logs: DEFAULT_LOGS,
-            stateSnapshot: DEFAULT_STATE_SNAPSHOT,
-            traces: DEFAULT_TRACES
-          }
+              evidence: {
+                inputData: value,
+                metrics: DEFAULT_METRICS,
+                logs: DEFAULT_LOGS,
+                stateSnapshot: DEFAULT_STATE_SNAPSHOT,
+                traces: DEFAULT_TRACES
+              }
             }
           };
         }
       }
 
       // UUID validation
-      if (condition.includes('uuid') && typeof data === 'string') {
+      if (condition.includes('uuid') && typeof value === 'string') {
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-        if (!uuidRegex.test(data)) {
+        if (!uuidRegex.test(value)) {
           return {
             violation: {
               ruleId: rule.id,
@@ -505,23 +563,22 @@ export class DataValidationMonitor implements ConformanceMonitor {
               category: rule.category,
               severity: rule.severity,
               message: 'Invalid UUID format',
-              actualValue: data,
+              actualValue: value,
               expectedValue: 'Valid UUID',
               context,
-              evidence: { 
-            inputData: data,
-            metrics: DEFAULT_METRICS,
-            logs: DEFAULT_LOGS,
-            stateSnapshot: DEFAULT_STATE_SNAPSHOT,
-            traces: DEFAULT_TRACES
-          }
+              evidence: {
+                inputData: value,
+                metrics: DEFAULT_METRICS,
+                logs: DEFAULT_LOGS,
+                stateSnapshot: DEFAULT_STATE_SNAPSHOT,
+                traces: DEFAULT_TRACES
+              }
             }
           };
         }
       }
 
       return {};
-
     } catch (error) {
       return {
         violation: {
@@ -530,11 +587,11 @@ export class DataValidationMonitor implements ConformanceMonitor {
           category: rule.category,
           severity: 'major',
           message: `Custom validation error: ${error instanceof Error ? error.message : String(error)}`,
-          actualValue: data,
+          actualValue: value,
           context,
           stackTrace: error instanceof Error ? error.stack : undefined,
-          evidence: { 
-            inputData: data,
+          evidence: {
+            inputData: value,
             metrics: DEFAULT_METRICS,
             logs: DEFAULT_LOGS,
             stateSnapshot: DEFAULT_STATE_SNAPSHOT,
@@ -632,34 +689,14 @@ export class DataValidationMonitor implements ConformanceMonitor {
     return [
       {
         id: uuidv4(),
-        name: 'Required String Fields',
-        description: 'Ensures required string fields are present and not empty',
+        name: 'User identifier is UUID',
+        description: 'Validates that encrypted chat user identifiers follow UUID format.',
         category: 'data_validation',
         severity: 'major',
         enabled: true,
         condition: {
-          expression: 'required && string',
-          variables: ['data'],
-          constraints: { minLength: 1 }
-        },
-        actions: ['log_violation'],
-        metadata: {
-          createdAt: now,
-          updatedAt: now,
-          version: '1.0.0',
-          tags: ['string', 'required']
-        }
-      },
-      {
-        id: uuidv4(),
-        name: 'Email Format Validation',
-        description: 'Validates email address format',
-        category: 'data_validation',
-        severity: 'minor',
-        enabled: true,
-        condition: {
-          expression: 'email',
-          variables: ['data'],
+          expression: 'uuid',
+          variables: ['user.id'],
           constraints: {}
         },
         actions: ['log_violation'],
@@ -667,27 +704,67 @@ export class DataValidationMonitor implements ConformanceMonitor {
           createdAt: now,
           updatedAt: now,
           version: '1.0.0',
-          tags: ['email', 'format']
+          tags: ['encrypted-chat', 'user', 'uuid']
         }
       },
       {
         id: uuidv4(),
-        name: 'Positive Number Validation',
-        description: 'Ensures numeric values are positive',
+        name: 'Device signed pre-key present',
+        description: 'Ensures device registrations ship a signed pre-key before sessions can be established.',
         category: 'data_validation',
-        severity: 'minor',
+        severity: 'major',
         enabled: true,
         condition: {
-          expression: 'number',
-          variables: ['data'],
-          constraints: { min: 0 }
+          expression: 'required && string',
+          variables: ['device.signedPreKey'],
+          constraints: { minLength: 1 }
         },
         actions: ['log_violation'],
         metadata: {
           createdAt: now,
           updatedAt: now,
           version: '1.0.0',
-          tags: ['number', 'positive']
+          tags: ['encrypted-chat', 'device', 'pre-key']
+        }
+      },
+      {
+        id: uuidv4(),
+        name: 'Session identifier is UUID',
+        description: 'Enforces UUID identifiers for encrypted chat sessions.',
+        category: 'data_validation',
+        severity: 'major',
+        enabled: true,
+        condition: {
+          expression: 'uuid',
+          variables: ['session.id'],
+          constraints: {}
+        },
+        actions: ['log_violation'],
+        metadata: {
+          createdAt: now,
+          updatedAt: now,
+          version: '1.0.0',
+          tags: ['encrypted-chat', 'session', 'uuid']
+        }
+      },
+      {
+        id: uuidv4(),
+        name: 'Audit entries captured as array',
+        description: 'Audit log entries must be serialised as arrays for append-only semantics.',
+        category: 'data_validation',
+        severity: 'minor',
+        enabled: true,
+        condition: {
+          expression: 'array',
+          variables: ['audit.entries'],
+          constraints: {}
+        },
+        actions: ['log_violation'],
+        metadata: {
+          createdAt: now,
+          updatedAt: now,
+          version: '1.0.0',
+          tags: ['encrypted-chat', 'audit', 'array']
         }
       }
     ];

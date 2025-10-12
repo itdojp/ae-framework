@@ -357,41 +357,66 @@ export class ConformanceRuleEngine {
    * Safe expression evaluation (simplified)
    */
   private safeEvaluate(expression: string, context: any): any {
-    // This is a very basic implementation
-    // In production, use a proper expression evaluator like expr-eval
-    
-    const allowedPatterns = [
-      /^data\./,
-      /^context\./,
-      /^validators\./,
-      /^utils\./
+    const trimmed = expression.trim();
+    if (!trimmed) {
+      return true;
+    }
+
+    // Simple keywords-only expressions (legacy rules) are treated as permissive
+    if (/^[\w\s&|]+$/.test(trimmed)) {
+      return true;
+    }
+
+    const forbiddenKeywords = [
+      '__proto__',
+      'constructor',
+      'prototype',
+      'process',
+      'global',
+      'globalThis',
+      'require',
+      'Function',
+      'eval',
+      'import',
+      'export',
+      'while',
+      'for',
+      'class'
     ];
 
-    // Check if expression uses only allowed patterns
-    const tokens = expression.split(/\s+/);
-    for (const token of tokens) {
-      if (token.includes('.') && !allowedPatterns.some(pattern => pattern.test(token))) {
-        throw new Error(`Unsafe expression: ${token}`);
+    for (const keyword of forbiddenKeywords) {
+      if (new RegExp(`\\b${keyword}\\b`).test(trimmed)) {
+        throw new Error(`Unsafe expression keyword: ${keyword}`);
       }
     }
 
-    // Simple property access evaluation
-    if (expression.startsWith('data.')) {
-      const path = expression.substring(5);
-      return this.getNestedProperty(context.data, path);
+    if (trimmed.includes(';') || trimmed.includes('`')) {
+      throw new Error('Unsafe expression syntax detected');
     }
 
-    if (expression.startsWith('context.')) {
-      const path = expression.substring(8);
-      return this.getNestedProperty(context.context, path);
+    if (!/^[\w\s.$<>=!&|?:+\-*/%(),'"[\]\\^{}$]+$/.test(trimmed)) {
+      throw new Error('Expression contains unsupported characters');
     }
 
-    // Boolean expressions
-    if (expression === 'true') return true;
-    if (expression === 'false') return false;
+    try {
+      // Evaluate expression within a restricted context
+      const evaluator = new Function(
+        'data',
+        'context',
+        'validators',
+        'utils',
+        `"use strict"; return (${trimmed});`
+      );
 
-    // Default to true for unrecognized expressions (permissive mode)
-    return true;
+      return evaluator(
+        context.data,
+        context.context,
+        context.validators,
+        context.utils
+      );
+    } catch (error) {
+      throw error instanceof Error ? error : new Error(String(error));
+    }
   }
 
   /**

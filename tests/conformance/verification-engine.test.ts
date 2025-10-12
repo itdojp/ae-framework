@@ -13,6 +13,75 @@ import {
   ViolationSeverity 
 } from '../../src/conformance/types.js';
 
+const BASE_CONFORMANCE_DATA = {
+  user: {
+    id: '11111111-1111-1111-1111-111111111111',
+    displayName: 'Test User',
+    devices: [
+      {
+        id: '22222222-2222-2222-2222-222222222222',
+        platform: 'ios',
+        status: 'active'
+      }
+    ],
+    createdAt: '2025-10-12T00:00:00.000Z',
+    updatedAt: '2025-10-12T00:00:00.000Z'
+  },
+  device: {
+    id: '22222222-2222-2222-2222-222222222222',
+    userId: '11111111-1111-1111-1111-111111111111',
+    identityKey: 'MCowBQYDK2VuAyEAexampleIdentityKeyLzBhZVNlcg==',
+    signedPreKey: 'MCowBQYDK2VuAyEAexampleSignedPreKeym9yaWdpbg==',
+    preKeyStats: {
+      published: 128,
+      threshold: 100
+    },
+    platform: 'ios',
+    lastSeenAt: '2025-10-12T00:00:00.000Z',
+    status: 'active'
+  },
+  session: {
+    id: '33333333-3333-3333-3333-333333333333',
+    state: 'active',
+    chainKeys: ['chain-key-initial'],
+    devicesActive: true,
+    messagesSinceRotation: 10,
+    hoursSinceRotation: 1
+  },
+  message: {
+    id: '44444444-4444-4444-4444-444444444444',
+    sessionId: '33333333-3333-3333-3333-333333333333',
+    messageType: 'text',
+    encryption: 'AES-256-GCM',
+    ciphertextLength: 256,
+    authTag: 'MTIzNDU2Nzg5MDEyMzQ1Ng==',
+    sentAt: '2025-10-12T00:00:00.000Z',
+    receivedAt: '2025-10-12T00:00:00.100Z',
+    validAuthTag: true
+  },
+  audit: {
+    appendOnly: true,
+    payloadAligned: true,
+    validActors: true,
+    entries: []
+  },
+  metrics: {
+    activeDeviceCount: 1,
+    oneTimePreKeyCount: 128,
+    deliveryLatencyMs: 200,
+    gdprRetentionDays: 180,
+    rotationDue: false,
+    invalidAuthTagLogged: true
+  }
+};
+
+function createValidConformanceData(extra: Record<string, any> = {}): any {
+  return {
+    ...JSON.parse(JSON.stringify(BASE_CONFORMANCE_DATA)),
+    ...extra
+  };
+}
+
 describe('ConformanceVerificationEngine', () => {
   let engine: ConformanceVerificationEngine;
   let config: ConformanceConfig;
@@ -171,7 +240,7 @@ describe('ConformanceVerificationEngine', () => {
       const rule: ConformanceRule = createTestRule('data_validation', 'major', 'data.required');
       await engine.addRule(rule);
 
-      const testData = { required: true, value: 'test' };
+      const testData = createValidConformanceData({ required: true, value: 'test' });
       const result = await engine.verify(testData, context);
 
       expect(result.overall).toBe('pass');
@@ -183,7 +252,7 @@ describe('ConformanceVerificationEngine', () => {
       const rule: ConformanceRule = createTestRule('data_validation', 'major', 'data.missing');
       await engine.addRule(rule);
 
-      const testData = { present: true };
+      const testData = createValidConformanceData({ present: true });
       const result = await engine.verify(testData, context);
 
       expect(result.overall).toBe('fail');
@@ -194,7 +263,7 @@ describe('ConformanceVerificationEngine', () => {
       const rule: ConformanceRule = createTestRule('security_policy', 'major', 'data.isEncrypted === true');
       await engine.addRule(rule);
 
-      const result = await engine.verify({ isEncrypted: false }, context);
+      const result = await engine.verify(createValidConformanceData({ isEncrypted: false }), context);
 
       expect(result.overall).toBe('fail');
       expect(result.violations.length).toBeGreaterThan(0);
@@ -218,7 +287,7 @@ describe('ConformanceVerificationEngine', () => {
       const rule: ConformanceRule = createTestRule('data_validation', 'major', 'invalid.expression.that.throws');
       await engine.addRule(rule);
 
-      const result = await engine.verify({}, context);
+      const result = await engine.verify(createValidConformanceData(), context);
 
       expect(result.overall).toBe('error');
       expect(result.results.some(r => r.status === 'error')).toBe(true);
@@ -231,7 +300,7 @@ describe('ConformanceVerificationEngine', () => {
       await engine.addRule(rule1);
       await engine.addRule(rule2);
 
-      const result = await engine.verify({}, context, { 
+      const result = await engine.verify(createValidConformanceData(), context, { 
         ruleIds: [rule1.id] 
       });
 
@@ -245,7 +314,7 @@ describe('ConformanceVerificationEngine', () => {
       await engine.addRule(rule1);
       await engine.addRule(rule2);
 
-      const result = await engine.verify({}, context, { 
+      const result = await engine.verify(createValidConformanceData(), context, { 
         skipCategories: ['api_contract'] 
       });
 
@@ -259,7 +328,7 @@ describe('ConformanceVerificationEngine', () => {
       let completedEvent = false;
       engine.on('verification_completed', () => { completedEvent = true; });
 
-      const testData = { test: true };
+      const testData = createValidConformanceData({ test: true });
       await engine.verify(testData, context);
 
       expect(completedEvent).toBe(true);
@@ -274,7 +343,7 @@ describe('ConformanceVerificationEngine', () => {
     it('should track verification metrics', async () => {
       const initialMetrics = engine.getMetrics();
       
-      const testData = { test: true };
+      const testData = createValidConformanceData({ test: true });
       await engine.verify(testData, context);
 
       const updatedMetrics = engine.getMetrics();
@@ -289,7 +358,7 @@ describe('ConformanceVerificationEngine', () => {
 
       const initialMetrics = engine.getMetrics();
       
-      const testData = { present: true }; // Missing required field
+      const testData = createValidConformanceData({ present: true }); // Missing required field
       await engine.verify(testData, context);
 
       const updatedMetrics = engine.getMetrics();
@@ -299,7 +368,7 @@ describe('ConformanceVerificationEngine', () => {
     });
 
     it('should reset metrics', async () => {
-      const testData = { test: true };
+      const testData = createValidConformanceData({ test: true });
       await engine.verify(testData, context);
 
       engine.resetMetrics();
@@ -356,7 +425,7 @@ describe('ConformanceVerificationEngine', () => {
   describe('error handling', () => {
     it('should handle verification when engine not running', async () => {
       // Engine not started
-      await expect(engine.verify({}, context)).rejects.toThrow('not running');
+      await expect(engine.verify(createValidConformanceData(), context)).rejects.toThrow('not running');
     });
 
     it('should handle invalid rule data gracefully', async () => {
@@ -386,7 +455,7 @@ describe('ConformanceVerificationEngine', () => {
         await engine.addRule(rule);
       }
 
-      const testData = { test: true };
+      const testData = createValidConformanceData({ test: true });
       const result = await engine.verify(testData, context);
 
       // With 50% sampling, should execute fewer rules than total available

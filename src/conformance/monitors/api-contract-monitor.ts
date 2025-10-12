@@ -703,54 +703,34 @@ export class APIContractMonitor implements ConformanceMonitor {
     return [
       {
         id: uuidv4(),
-        name: 'HTTP Method Compliance',
-        description: 'Ensures API calls use the correct HTTP method',
+        name: 'Device registration contract',
+        description: 'POST /v1/devices publishes key material and returns 201 with registration details.',
         category: 'api_contract',
         severity: 'major',
         enabled: true,
         condition: {
-          expression: 'method',
-          variables: ['data'],
+          expression: 'method status headers request_schema response_schema timeout',
+          variables: [],
           constraints: {}
         },
-        actions: ['log_violation'],
+        actions: ['log_violation', 'alert'],
         metadata: {
           createdAt: now,
           updatedAt: now,
           version: '1.0.0',
-          tags: ['http', 'method']
+          tags: ['encrypted-chat', 'devices', 'api']
         }
       },
       {
         id: uuidv4(),
-        name: 'Response Status Validation',
-        description: 'Validates API response status codes',
+        name: 'Session establishment contract',
+        description: 'POST /v1/sessions establishes an encrypted session and returns 201 payload.',
         category: 'api_contract',
         severity: 'major',
         enabled: true,
         condition: {
-          expression: 'status',
-          variables: ['data'],
-          constraints: {}
-        },
-        actions: ['log_violation'],
-        metadata: {
-          createdAt: now,
-          updatedAt: now,
-          version: '1.0.0',
-          tags: ['status', 'response']
-        }
-      },
-      {
-        id: uuidv4(),
-        name: 'Response Time Limit',
-        description: 'Ensures API responses meet performance requirements',
-        category: 'api_contract',
-        severity: 'minor',
-        enabled: true,
-        condition: {
-          expression: 'timeout',
-          variables: ['data'],
+          expression: 'method status headers request_schema response_schema timeout',
+          variables: [],
           constraints: {}
         },
         actions: ['log_violation', 'metric_increment'],
@@ -758,19 +738,39 @@ export class APIContractMonitor implements ConformanceMonitor {
           createdAt: now,
           updatedAt: now,
           version: '1.0.0',
-          tags: ['performance', 'timeout']
+          tags: ['encrypted-chat', 'sessions', 'api']
         }
       },
       {
         id: uuidv4(),
-        name: 'Required Headers Check',
-        description: 'Validates presence of required HTTP headers',
+        name: 'Encrypted message submission SLA',
+        description: 'POST /v1/messages enforces response code, latency, and headers for encrypted payload delivery.',
+        category: 'api_contract',
+        severity: 'minor',
+        enabled: true,
+        condition: {
+          expression: 'method status headers timeout rate_limit request_schema',
+          variables: [],
+          constraints: {}
+        },
+        actions: ['log_violation', 'metric_increment'],
+        metadata: {
+          createdAt: now,
+          updatedAt: now,
+          version: '1.0.0',
+          tags: ['encrypted-chat', 'messages', 'api']
+        }
+      },
+      {
+        id: uuidv4(),
+        name: 'Pending message retrieval contract',
+        description: 'GET /v1/messages/pending conforms to polling, rate limiting, and response contract.',
         category: 'api_contract',
         severity: 'major',
         enabled: true,
         condition: {
-          expression: 'headers',
-          variables: ['data'],
+          expression: 'method status headers rate_limit timeout',
+          variables: [],
           constraints: {}
         },
         actions: ['log_violation'],
@@ -778,7 +778,145 @@ export class APIContractMonitor implements ConformanceMonitor {
           createdAt: now,
           updatedAt: now,
           version: '1.0.0',
-          tags: ['headers', 'required']
+          tags: ['encrypted-chat', 'messages', 'polling']
+        }
+      }
+    ];
+  }
+
+  static createDefaultContracts(): Array<{ path: string; spec: APIContractSpec }> {
+    return [
+      {
+        path: '/v1/devices',
+        spec: {
+          method: 'POST',
+          path: '/v1/devices',
+          headers: {
+            'content-type': 'application/json'
+          },
+          statusCodes: [201],
+          timeout: 800,
+          requestSchema: {
+            required: ['identityKey', 'signedPreKey', 'oneTimePreKeys'],
+            properties: {
+              identityKey: { type: 'string' },
+              signedPreKey: { type: 'string' },
+              oneTimePreKeys: { type: 'object' }
+            }
+          },
+          responseSchema: {
+            required: ['deviceId', 'publishedPreKeys'],
+            properties: {
+              deviceId: { type: 'string' },
+              publishedPreKeys: { type: 'number' }
+            }
+          }
+        }
+      },
+      {
+        path: '/v1/sessions',
+        spec: {
+          method: 'POST',
+          path: '/v1/sessions',
+          headers: {
+            'content-type': 'application/json'
+          },
+          statusCodes: [201],
+          timeout: 700,
+          requestSchema: {
+            required: ['initiatorDeviceId', 'responderDeviceId'],
+            properties: {
+              initiatorDeviceId: { type: 'string' },
+              responderDeviceId: { type: 'string' },
+              preKeyBundle: { type: 'object' }
+            }
+          },
+          responseSchema: {
+            required: ['sessionId', 'state'],
+            properties: {
+              sessionId: { type: 'string' },
+              state: { type: 'string' }
+            }
+          }
+        }
+      },
+      {
+        path: '/v1/messages',
+        spec: {
+          method: 'POST',
+          path: '/v1/messages',
+          headers: {
+            'content-type': 'application/json'
+          },
+          statusCodes: [202],
+          timeout: 500,
+          rateLimit: {
+            requests: 300,
+            window: 60000
+          },
+          requestSchema: {
+            required: ['sessionId', 'ciphertext', 'authTag'],
+            properties: {
+              sessionId: { type: 'string' },
+              ciphertext: { type: 'string' },
+              authTag: { type: 'string' }
+            }
+          },
+          responseSchema: {
+            required: ['messageId', 'acceptedAt'],
+            properties: {
+              messageId: { type: 'string' },
+              acceptedAt: { type: 'string' }
+            }
+          }
+        }
+      },
+      {
+        path: '/v1/messages/pending',
+        spec: {
+          method: 'GET',
+          path: '/v1/messages/pending',
+          headers: {
+            accept: 'application/json'
+          },
+          statusCodes: [200],
+          timeout: 400,
+          rateLimit: {
+            requests: 120,
+            window: 60000
+          },
+          responseSchema: {
+            required: ['messages'],
+            properties: {
+              messages: { type: 'object' }
+            }
+          }
+        }
+      },
+      {
+        path: '/v1/keys/rotate',
+        spec: {
+          method: 'POST',
+          path: '/v1/keys/rotate',
+          headers: {
+            'content-type': 'application/json'
+          },
+          statusCodes: [202],
+          timeout: 800,
+          requestSchema: {
+            required: ['deviceId', 'rotationNonce'],
+            properties: {
+              deviceId: { type: 'string' },
+              rotationNonce: { type: 'string' }
+            }
+          },
+          responseSchema: {
+            required: ['accepted', 'queuedRotations'],
+            properties: {
+              accepted: { type: 'boolean' },
+              queuedRotations: { type: 'number' }
+            }
+          }
         }
       }
     ];
