@@ -208,30 +208,28 @@ describe('Server instrumentation telemetry', () => {
     },
   );
 
-  it(
-    formatGWT(
-      'request tracing',
-      'captures error response',
-      'records exception metadata and error counters',
-    ),
-    async () => {
-      const spanStub = {
-        setAttributes: vi.fn(),
-        recordException: vi.fn(),
-        end: vi.fn(),
-      };
-      const startSpan = vi.fn(() => spanStub);
-      tracerSpy = vi.spyOn(trace, 'getTracer').mockReturnValue({ startSpan } as any);
-
-      runtimeGuardMocks.validateResponse.mockImplementationOnce(() => {
-        throw new Error('response failure');
-      });
-
-      const app: FastifyInstance = await createServer();
-      await app.ready();
-
-      try {
-        const response = await app.inject({
+  const errorScenarios: Array<{
+    title: string;
+    expectation: string;
+    expectedStatus: number;
+    method: string;
+    endpoint: string;
+    setup?: () => void;
+    invoke: (app: FastifyInstance) => ReturnType<FastifyInstance['inject']>;
+  }> = [
+    {
+      title: 'captures error response',
+      expectation: 'records exception metadata and error counters',
+      expectedStatus: 500,
+      method: 'POST',
+      endpoint: '/reservations',
+      setup: () => {
+        runtimeGuardMocks.validateResponse.mockImplementationOnce(() => {
+          throw new Error('response failure');
+        });
+      },
+      invoke: (app) =>
+        app.inject({
           method: 'POST',
           url: '/reservations',
           payload: {
@@ -239,81 +237,72 @@ describe('Server instrumentation telemetry', () => {
             itemId: 'item-err',
             quantity: 2,
           },
-        });
-
-        expect(response.statusCode).toBe(500);
-        expect(spanStub.recordException).toHaveBeenCalledWith(
-          expect.objectContaining({ message: 'HTTP 500' }),
-        );
-        expect(recordCounterSpy).toHaveBeenCalledWith(
-          'api.responses.total',
-          1,
-          expect.objectContaining({
-            method: 'POST',
-            endpoint: '/reservations',
-            status_code: '500',
-          }),
-        );
-      } finally {
-        await app.close();
-        tracerSpy?.mockRestore();
-        tracerSpy = undefined;
-      }
+        }),
     },
-  );
-
-  it(
-    formatGWT(
-      'request tracing',
-      'captures validation failure',
-      'flags 400 responses as exceptions',
-    ),
-    async () => {
-      const spanStub = {
-        setAttributes: vi.fn(),
-        recordException: vi.fn(),
-        end: vi.fn(),
-      };
-      const startSpan = vi.fn(() => spanStub);
-      tracerSpy = vi.spyOn(trace, 'getTracer').mockReturnValue({ startSpan } as any);
-
-      runtimeGuardMocks.validateRequest.mockImplementationOnce(() => ({
-        valid: false,
-        violations: [
-          { id: 'reservation.quantity.min', type: 'schema', details: 'quantity must be >= 1' },
-        ],
-      }));
-
-      const app: FastifyInstance = await createServer();
-      await app.ready();
-
-      try {
-        const response = await app.inject({
+    {
+      title: 'captures validation failure',
+      expectation: 'flags 400 responses as exceptions',
+      expectedStatus: 400,
+      method: 'POST',
+      endpoint: '/reservations',
+      setup: () => {
+        runtimeGuardMocks.validateRequest.mockImplementationOnce(() => ({
+          valid: false,
+          violations: [
+            { id: 'reservation.quantity.min', type: 'schema', details: 'quantity must be >= 1' },
+          ],
+        }));
+      },
+      invoke: (app) =>
+        app.inject({
           method: 'POST',
           url: '/reservations',
           payload: {},
-        });
-
-        expect(response.statusCode).toBe(400);
-        expect(spanStub.recordException).toHaveBeenCalledWith(
-          expect.objectContaining({ message: 'HTTP 400' }),
-        );
-        expect(recordCounterSpy).toHaveBeenCalledWith(
-          'api.responses.total',
-          1,
-          expect.objectContaining({
-            method: 'POST',
-            endpoint: '/reservations',
-            status_code: '400',
-          }),
-        );
-      } finally {
-        await app.close();
-        tracerSpy?.mockRestore();
-        tracerSpy = undefined;
-      }
+        }),
     },
-  );
+  ];
+
+  for (const scenario of errorScenarios) {
+    it(
+      formatGWT('request tracing', scenario.title, scenario.expectation),
+      async () => {
+        const spanStub = {
+          setAttributes: vi.fn(),
+          recordException: vi.fn(),
+          end: vi.fn(),
+        };
+        const startSpan = vi.fn(() => spanStub);
+        tracerSpy = vi.spyOn(trace, 'getTracer').mockReturnValue({ startSpan } as any);
+
+        scenario.setup?.();
+
+        const app: FastifyInstance = await createServer();
+        await app.ready();
+
+        try {
+          const response = await scenario.invoke(app);
+
+          expect(response.statusCode).toBe(scenario.expectedStatus);
+          expect(spanStub.recordException).toHaveBeenCalledWith(
+            expect.objectContaining({ message: `HTTP ${scenario.expectedStatus}` }),
+          );
+          expect(recordCounterSpy).toHaveBeenCalledWith(
+            'api.responses.total',
+            1,
+            expect.objectContaining({
+              method: scenario.method,
+              endpoint: scenario.endpoint,
+              status_code: String(scenario.expectedStatus),
+            }),
+          );
+        } finally {
+          await app.close();
+          tracerSpy?.mockRestore();
+          tracerSpy = undefined;
+        }
+      },
+    );
+  }
 
   it(
     formatGWT(

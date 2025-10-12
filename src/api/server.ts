@@ -125,7 +125,7 @@ export async function createServer(): Promise<FastifyInstance> {
     } catch (error) {
       timer.end({ endpoint: '/health', result: 'error' });
       const span = req.span;
-      // Stryker disable next-line ConditionalExpression,BooleanLiteral,BlockStatement -- propagate original error when span is missing
+      // Stryker disable next-line ConditionalExpression,BooleanLiteral,BlockStatement -- propagate the original error even when the span is missing
       if (!span) {
         throw error;
       }
@@ -219,7 +219,7 @@ export async function createServer(): Promise<FastifyInstance> {
     } catch (error) {
       timer.end({ endpoint: '/reservations', result: 'error' });
       const span = req.span;
-      // Stryker disable next-line ConditionalExpression,BooleanLiteral,BlockStatement -- propagate original error when span is missing
+      // Stryker disable next-line ConditionalExpression,BooleanLiteral,BlockStatement -- propagate the original error even when the span is missing
       if (!span) {
         throw error;
       }
@@ -239,7 +239,7 @@ export async function createServer(): Promise<FastifyInstance> {
       });
     } catch (error) {
       const span = req.span;
-      // Stryker disable next-line ConditionalExpression,BooleanLiteral,BlockStatement -- propagate original error when span is missing
+      // Stryker disable next-line ConditionalExpression,BooleanLiteral,BlockStatement -- propagate the original error even when the span is missing
       if (!span) {
         throw error;
       }
