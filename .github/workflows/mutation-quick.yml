@@ -73,12 +73,10 @@ jobs:
       - name: Mutation quick summary
         if: ${{ always() }}
         run: |
-          if [ -f reports/mutation/mutation.json ]; then
-            node scripts/mutation/post-quick-summary.mjs | tee mutation-summary.md
-            cat mutation-summary.md >> "$GITHUB_STEP_SUMMARY"
-          else
-            printf 'No mutation report found; skipped summary.\n' | tee mutation-summary.md >> "$GITHUB_STEP_SUMMARY"
-          fi
+          pnpm mutation:report || {
+            printf 'Mutation report unavailable.\n' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          }
 
       - name: Mutation survivors JSON
         if: ${{ always() }}

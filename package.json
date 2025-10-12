@@ -316,7 +316,8 @@
     "pipelines:pact": "node scripts/pipelines/run-pact-contracts.mjs",
     "pipelines:full": "node scripts/pipelines/run-full-pipeline.mjs",
     "pipelines:trace": "node scripts/pipelines/run-trace-conformance.mjs",
-    "podman:smoke": "bash scripts/podman/smoke-test.sh"
+    "podman:smoke": "bash scripts/podman/smoke-test.sh",
+    "mutation:report": "node scripts/mutation/mutation-report.mjs"
   },
   "dependencies": {
     "@ae-framework/spec-compiler": "file:./packages/spec-compiler",
