@@ -21,6 +21,7 @@ import type {
 import { ConformanceRuleEngine } from './rule-engine.js';
 import { DataValidationMonitor } from './monitors/data-validation-monitor.js';
 import { APIContractMonitor } from './monitors/api-contract-monitor.js';
+import { createEncryptedChatDefaultRules } from './default-rules.js';
 
 export class ConformanceVerificationEngine extends EventEmitter {
   private config: ConformanceConfig;
@@ -369,14 +370,25 @@ export class ConformanceVerificationEngine extends EventEmitter {
     // Add API contract monitor  
     const apiMonitor = new APIContractMonitor();
     this.addMonitor(apiMonitor);
+    for (const { path, spec } of APIContractMonitor.createDefaultContracts()) {
+      apiMonitor.addContractSpec(path, spec);
+    }
 
     // Load default rules for each monitor
     const dataRules = DataValidationMonitor.createCommonRules();
     const apiRules = APIContractMonitor.createCommonRules();
+    const specRules = createEncryptedChatDefaultRules();
 
     Promise.all([
-      ...dataRules.map(rule => this.addRule(rule)),
-      ...apiRules.map(rule => this.addRule(rule))
+      ...dataRules.map(async rule => {
+        await dataMonitor.updateRule(rule);
+        await this.addRule(rule);
+      }),
+      ...apiRules.map(async rule => {
+        await apiMonitor.updateRule(rule);
+        await this.addRule(rule);
+      }),
+      ...specRules.map(rule => this.addRule(rule))
     ]).catch(error => {
       console.warn('Failed to load default rules:', error);
     });
