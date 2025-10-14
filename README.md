@@ -114,6 +114,7 @@ We welcome international contributions! Please see our [Contributing Guide](CONT
 ### 📚 Documentation
 
 - [Quick Start Guide](docs/getting-started/QUICK-START-GUIDE.md)
+- [Podman Shared Runner Setup](docs/infra/podman-shared-runner.md)
 - [Claude Code Integration](docs/integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)
 - [CodeX Integration](docs/integrations/CODEX-INTEGRATION.md)
   - [CodeX Quick Start](docs/integrations/QUICK-START-CODEX.md)
@@ -373,6 +374,7 @@ legacyApi.unsafeMethod(data);
 - **[🎯 Development Instructions Guide](docs/guides/DEVELOPMENT-INSTRUCTIONS-GUIDE.md)** - 実際の開発指示方法 / Practical development instruction methods
 - **[🚀 Claude Code Automation Guide](docs/guides/CLAUDE-CODE-AUTOMATION-GUIDE.md)** - 要求から実装まで完全自動化 / Complete automation from requirements to implementation
 - [Usage Guide](docs/guides/USAGE.md) - 一般的な使い方ガイド / General usage guide
+- [Podman Shared Runner Setup](docs/infra/podman-shared-runner.md) - GitHub Actions 用 Podman 共有ランナー構築手順
 
 ### 🎯 Phase-by-Phase Details / フェーズ別詳細
 - [Phase 2: Natural Language Requirements](docs/phases/PHASE-2-NATURAL-LANGUAGE-REQUIREMENTS.md) - 自然言語要件処理 / Natural language requirement processing
