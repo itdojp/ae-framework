@@ -35,16 +35,21 @@ async function loadReport() {
   }
   const payload = match[1];
   try {
-    return { report: JSON.parse(payload), source: htmlReport };
+    const parsed = JSON.parse(payload);
+    if (!isValidReportObject(parsed)) {
+      throw new Error('app.report payload missing or invalid structure');
+    }
+    return { report: parsed, source: htmlReport };
   } catch (jsonError) {
     try {
       const sanitizedPayload = payload
-        .replace(/\u2028|\u2029/g, (char) => char === '\u2028' ? '\u2028' : '\u2029');
+        .replace(/\u2028/g, '\\u2028')
+        .replace(/\u2029/g, '\\u2029');
       const sandbox = { app: {}, JSON, payloadText: sanitizedPayload };
       const script = new vm.Script('app.report = JSON.parse(payloadText);');
       script.runInNewContext(sandbox, { timeout: VM_TIMEOUT_MS });
-      if (!sandbox.app || typeof sandbox.app.report !== 'object') {
-        throw new Error('app.report payload missing');
+      if (!isValidReportObject(sandbox.app?.report)) {
+        throw new Error('app.report payload missing or invalid structure');
       }
       return { report: sandbox.app.report, source: htmlReport };
     } catch (vmError) {
@@ -61,6 +66,18 @@ async function loadReport() {
   }
 }
 
+function isValidReportObject(value) {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  if (value.schemaVersion && typeof value.schemaVersion !== 'string') {
+    return false;
+  }
+  if (!value.files || typeof value.files !== 'object') {
+    return false;
+  }
+  return true;
+}
 
 function deriveSummaryFromSerializedReport(serialized) {
   if (typeof serialized !== 'string' || serialized.length === 0) {
