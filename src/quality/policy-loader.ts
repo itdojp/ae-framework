@@ -121,6 +121,7 @@ export type CompositeGate = z.infer<typeof CompositeGateSchema>;
 export type QualityPolicy = z.infer<typeof QualityPolicySchema>;
 
 export interface QualityGateResult {
+  gateKey: string;
   gateName: string;
   passed: boolean;
   score?: number;
@@ -203,19 +204,38 @@ export class QualityPolicyLoader {
   }
 
   /**
+   * Resolve configuration key for a gate from either key or display name
+   */
+  public resolveGateKey(nameOrKey: string): string {
+    const policy = this.loadPolicy();
+    if (policy.qualityGates[nameOrKey]) {
+      return nameOrKey;
+    }
+
+    const match = Object.entries(policy.qualityGates)
+      .find(([, gate]) => gate.name === nameOrKey);
+
+    if (match) {
+      return match[0];
+    }
+
+    return nameOrKey;
+  }
+
+  /**
    * Get threshold for specific gate and environment
    */
   public getThreshold(gateName: string, environment: string = 'development'): QualityThreshold {
     const policy = this.loadPolicy();
-    const gate = policy.qualityGates[gateName];
-    
+    const key = this.resolveGateKey(gateName);
+    const gate = policy.qualityGates[key];
+
     if (!gate) {
       throw new Error(`Quality gate '${gateName}' not found in policy`);
     }
 
     const threshold = gate.thresholds[environment];
     if (!threshold) {
-      // Fallback to development environment
       const fallbackThreshold = gate.thresholds['development'];
       if (!fallbackThreshold) {
         throw new Error(`No threshold found for gate '${gateName}' in environment '${environment}'`);
@@ -363,7 +383,8 @@ export class QualityPolicyLoader {
     const policy = this.loadPolicy();
     
     for (const result of results) {
-      const gate = policy.qualityGates[result.gateName];
+      const gateKey = result.gateKey ?? this.resolveGateKey(result.gateName);
+      const gate = policy.qualityGates[gateKey];
       if (gate) {
         const category = gate.category;
         if (!byCategory[category]) {
@@ -378,7 +399,7 @@ export class QualityPolicyLoader {
 
     // Find blockers
     const blockers = results
-      .filter(r => !r.passed && this.shouldBlock(r.gateName, environment))
+      .filter(r => !r.passed && this.shouldBlock(r.gateKey ?? r.gateName, environment))
       .map(r => r.gateName);
 
     return {
