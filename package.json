@@ -77,7 +77,7 @@
     "typecov:check": "type-coverage -p tsconfig.verify.json --ignore-catch --threshold 65",
     "typecov:check:70": "type-coverage -p tsconfig.verify.json --ignore-catch --threshold 70",
     "coverage": "vitest run --coverage",
-    "bdd": "cucumber-js",
+    "bdd": "cucumber-js specs/bdd/features --import 'specs/bdd/steps/**/*.js'",
     "pbt": "vitest run -c tests/property/vitest.config.ts",
     "mbt": "node tests/mbt/run.js",
     "mutation": "stryker run",

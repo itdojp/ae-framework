@@ -2,7 +2,23 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-function listFeatureFiles(dir='features'){ try { return fs.readdirSync(dir).filter(f=>f.endsWith('.feature')).map(f=>path.join(dir,f)); } catch { return []; } }
+function listFeatureFiles() {
+  const directories = ['features', path.join('specs', 'bdd', 'features')];
+  const collected = [];
+  for (const dir of directories) {
+    try {
+      const entries = fs.readdirSync(dir);
+      for (const entry of entries) {
+        if (entry.endsWith('.feature')) {
+          collected.push(path.join(dir, entry));
+        }
+      }
+    } catch {
+      // directory not found; ignore
+    }
+  }
+  return collected;
+}
 function read(p){ try { return fs.readFileSync(p,'utf-8'); } catch { return ''; } }
 
 // Simple heuristic roots; overridable via env BDD_ROOTS (comma-separated)
@@ -11,7 +27,7 @@ const ROOTS = (() => {
   if (env && env.trim()) {
     return env.split(',').map(s=>s.trim()).filter(Boolean).map(n=>new RegExp(`\\b${n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`));
   }
-  return [/\bInventoryItem\b/];
+  return [/\bInventoryItem\b/, /\bEncryptedChat\b/, /\breserve\b/i];
 })();
 const STRICT = !!(process.env.BDD_LINT_STRICT && process.env.BDD_LINT_STRICT !== '0' && process.env.BDD_LINT_STRICT.toLowerCase() !== 'false');
 
