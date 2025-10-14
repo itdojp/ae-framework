@@ -1,0 +1,457 @@
+{
+  "generatedAt": "2025-10-14T23:07:32.778Z",
+  "totals": {
+    "totalIssues": 2668,
+    "fixableIssues": 46
+  },
+  "clusters": {
+    "unsafe": 1394,
+    "explicitAny": 620,
+    "unusedVars": 274,
+    "requireAwait": 205
+  },
+  "topRules": [
+    {
+      "rule": "@typescript-eslint/no-unsafe-member-access",
+      "count": 671
+    },
+    {
+      "rule": "@typescript-eslint/no-explicit-any",
+      "count": 620
+    },
+    {
+      "rule": "@typescript-eslint/no-unsafe-assignment",
+      "count": 412
+    },
+    {
+      "rule": "@typescript-eslint/no-unused-vars",
+      "count": 274
+    },
+    {
+      "rule": "@typescript-eslint/require-await",
+      "count": 205
+    },
+    {
+      "rule": "@typescript-eslint/no-unsafe-argument",
+      "count": 149
+    },
+    {
+      "rule": "@typescript-eslint/no-unsafe-call",
+      "count": 104
+    },
+    {
+      "rule": "@typescript-eslint/no-unsafe-return",
+      "count": 58
+    },
+    {
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 43
+    },
+    {
+      "rule": "no-case-declarations",
+      "count": 32
+    },
+    {
+      "rule": "@typescript-eslint/restrict-template-expressions",
+      "count": 27
+    },
+    {
+      "rule": "@typescript-eslint/switch-exhaustiveness-check",
+      "count": 20
+    },
+    {
+      "rule": "@typescript-eslint/no-floating-promises",
+      "count": 14
+    },
+    {
+      "rule": "@typescript-eslint/no-misused-promises",
+      "count": 13
+    },
+    {
+      "rule": "no-empty",
+      "count": 6
+    }
+  ],
+  "focusRules": [
+    {
+      "rule": "@typescript-eslint/no-unused-vars",
+      "total": 274,
+      "topFiles": [
+        {
+          "file": "src/inference/core/solution-composer.ts",
+          "count": 27
+        },
+        {
+          "file": "src/inference/core/validation-orchestrator.ts",
+          "count": 17
+        },
+        {
+          "file": "src/quality/quality-gate-runner.ts",
+          "count": 17
+        },
+        {
+          "file": "src/utils/evidence-validator.ts",
+          "count": 17
+        },
+        {
+          "file": "src/engines/sequential-inference-engine.ts",
+          "count": 13
+        },
+        {
+          "file": "src/testing/visual-regression.ts",
+          "count": 12
+        },
+        {
+          "file": "src/integration/runners/e2e-runner.ts",
+          "count": 11
+        },
+        {
+          "file": "src/inference/strategies/sequential-strategy.ts",
+          "count": 7
+        },
+        {
+          "file": "src/integration/reporters/html-reporter.ts",
+          "count": 7
+        },
+        {
+          "file": "src/self-improvement/phase5-verification-final.ts",
+          "count": 7
+        }
+      ]
+    },
+    {
+      "rule": "@typescript-eslint/require-await",
+      "total": 205,
+      "topFiles": [
+        {
+          "file": "src/integration/runners/e2e-runner.ts",
+          "count": 18
+        },
+        {
+          "file": "src/inference/core/solution-composer.ts",
+          "count": 14
+        },
+        {
+          "file": "src/inference/core/validation-orchestrator.ts",
+          "count": 9
+        },
+        {
+          "file": "src/cegis/strategies/type-error-strategy.ts",
+          "count": 8
+        },
+        {
+          "file": "src/inference/strategies/sequential-strategy.ts",
+          "count": 8
+        },
+        {
+          "file": "src/cegis/strategies/test-failure-strategy.ts",
+          "count": 6
+        },
+        {
+          "file": "src/engines/sequential-inference-engine.ts",
+          "count": 6
+        },
+        {
+          "file": "src/integration/hybrid-tdd-system.ts",
+          "count": 6
+        },
+        {
+          "file": "src/integration/test-orchestrator.ts",
+          "count": 6
+        },
+        {
+          "file": "src/utils/enhanced-state-manager.ts",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "rule": "@typescript-eslint/no-explicit-any",
+      "total": 620,
+      "topFiles": [
+        {
+          "file": "src/runtime/runtime-middleware.ts",
+          "count": 53
+        },
+        {
+          "file": "src/inference/core/solution-composer.ts",
+          "count": 37
+        },
+        {
+          "file": "src/inference/strategies/sequential-strategy.ts",
+          "count": 31
+        },
+        {
+          "file": "src/runtime/conformance-guards.ts",
+          "count": 31
+        },
+        {
+          "file": "src/inference/core/validation-orchestrator.ts",
+          "count": 22
+        },
+        {
+          "file": "src/server.ts",
+          "count": 22
+        },
+        {
+          "file": "src/conformance/rule-engine.ts",
+          "count": 20
+        },
+        {
+          "file": "src/integration/runners/api-runner.ts",
+          "count": 20
+        },
+        {
+          "file": "src/integration/circuit-breaker-integration.ts",
+          "count": 17
+        },
+        {
+          "file": "src/integration/hybrid-intent-system.ts",
+          "count": 17
+        }
+      ]
+    },
+    {
+      "rule": "@typescript-eslint/no-unsafe-assignment",
+      "total": 412,
+      "topFiles": [
+        {
+          "file": "src/runtime/runtime-middleware.ts",
+          "count": 43
+        },
+        {
+          "file": "src/inference/strategies/sequential-strategy.ts",
+          "count": 24
+        },
+        {
+          "file": "src/integration/runners/e2e-runner.ts",
+          "count": 19
+        },
+        {
+          "file": "src/runtime/conformance-guards.ts",
+          "count": 19
+        },
+        {
+          "file": "src/conformance/monitors/data-validation-monitor.ts",
+          "count": 18
+        },
+        {
+          "file": "src/inference/core/solution-composer.ts",
+          "count": 17
+        },
+        {
+          "file": "src/inference/strategies/parallel-strategy.ts",
+          "count": 17
+        },
+        {
+          "file": "src/integration/circuit-breaker-integration.ts",
+          "count": 16
+        },
+        {
+          "file": "src/utils/persona-manager.ts",
+          "count": 15
+        },
+        {
+          "file": "src/security/sbom-generator.ts",
+          "count": 14
+        }
+      ]
+    },
+    {
+      "rule": "@typescript-eslint/no-unsafe-member-access",
+      "total": 671,
+      "topFiles": [
+        {
+          "file": "src/runtime/runtime-middleware.ts",
+          "count": 45
+        },
+        {
+          "file": "src/codegen/deterministic-generator.ts",
+          "count": 36
+        },
+        {
+          "file": "src/runtime/conformance-guards.ts",
+          "count": 29
+        },
+        {
+          "file": "src/integration/runners/e2e-runner.ts",
+          "count": 28
+        },
+        {
+          "file": "src/security/sbom-generator.ts",
+          "count": 27
+        },
+        {
+          "file": "src/self-improvement/phase4-code-generation.ts",
+          "count": 27
+        },
+        {
+          "file": "src/integration/runners/api-runner.ts",
+          "count": 24
+        },
+        {
+          "file": "src/server.ts",
+          "count": 23
+        },
+        {
+          "file": "src/inference/strategies/sequential-strategy.ts",
+          "count": 22
+        },
+        {
+          "file": "src/testing/playwright-integration.ts",
+          "count": 20
+        }
+      ]
+    },
+    {
+      "rule": "@typescript-eslint/no-unsafe-argument",
+      "total": 149,
+      "topFiles": [
+        {
+          "file": "src/integration/runners/e2e-runner.ts",
+          "count": 20
+        },
+        {
+          "file": "src/inference/strategies/sequential-strategy.ts",
+          "count": 11
+        },
+        {
+          "file": "src/mcp-server/intent-server.ts",
+          "count": 9
+        },
+        {
+          "file": "src/integration/hybrid-intent-system.ts",
+          "count": 8
+        },
+        {
+          "file": "src/optimization/parallel/parallel-optimizer.ts",
+          "count": 8
+        },
+        {
+          "file": "src/self-improvement/phase4-code-generation.ts",
+          "count": 8
+        },
+        {
+          "file": "src/cegis/strategies/contract-violation-strategy.ts",
+          "count": 7
+        },
+        {
+          "file": "src/conformance/monitors/data-validation-monitor.ts",
+          "count": 7
+        },
+        {
+          "file": "src/integration/runners/api-runner.ts",
+          "count": 7
+        },
+        {
+          "file": "src/optimization/parallel/index.ts",
+          "count": 7
+        }
+      ]
+    },
+    {
+      "rule": "@typescript-eslint/no-unsafe-return",
+      "total": 58,
+      "topFiles": [
+        {
+          "file": "src/runtime/runtime-middleware.ts",
+          "count": 13
+        },
+        {
+          "file": "src/integration/circuit-breaker-integration.ts",
+          "count": 7
+        },
+        {
+          "file": "src/runtime/conformance-guards.ts",
+          "count": 5
+        },
+        {
+          "file": "src/codegen/drift-detector.ts",
+          "count": 3
+        },
+        {
+          "file": "src/codegen/deterministic-generator.ts",
+          "count": 2
+        },
+        {
+          "file": "src/conformance/rule-engine.ts",
+          "count": 2
+        },
+        {
+          "file": "src/testing/visual-regression.ts",
+          "count": 2
+        },
+        {
+          "file": "src/utils/circuit-breaker.ts",
+          "count": 2
+        },
+        {
+          "file": "src/utils/phase-state-manager.ts",
+          "count": 2
+        },
+        {
+          "file": "src/utils/quality-policy-loader.ts",
+          "count": 2
+        }
+      ]
+    }
+  ],
+  "fixable": {
+    "byRule": [
+      {
+        "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+        "count": 43
+      },
+      {
+        "rule": "prefer-const",
+        "count": 2
+      },
+      {
+        "rule": "unknown",
+        "count": 1
+      }
+    ],
+    "byFile": [
+      {
+        "file": "src/server.ts",
+        "count": 10
+      },
+      {
+        "file": "src/telemetry/enhanced-telemetry.ts",
+        "count": 6
+      },
+      {
+        "file": "src/utils/enhanced-state-manager.ts",
+        "count": 6
+      },
+      {
+        "file": "src/mcp-server/code-generation-server.ts",
+        "count": 4
+      },
+      {
+        "file": "src/mcp-server/test-generation-server.ts",
+        "count": 4
+      },
+      {
+        "file": "src/runtime/runtime-middleware.ts",
+        "count": 3
+      },
+      {
+        "file": "src/conformance/monitors/api-contract-monitor.ts",
+        "count": 2
+      },
+      {
+        "file": "src/conformance/monitors/data-validation-monitor.ts",
+        "count": 2
+      },
+      {
+        "file": "src/runtime/conformance-guards.ts",
+        "count": 2
+      },
+      {
+        "file": "src/inference/strategies/sequential-strategy.ts",
+        "count": 1
+      }
+    ]
+  }
+}
