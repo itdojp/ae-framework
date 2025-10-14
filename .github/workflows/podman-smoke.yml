@@ -41,6 +41,11 @@ jobs:
           podman version
           podman info --debug
 
+      - name: Verify Podman compose
+        run: |
+          podman compose version
+          podman compose --help | head -n 40
+
       - name: Setup pnpm
         uses: ./.github/actions/setup-pnpm
 
