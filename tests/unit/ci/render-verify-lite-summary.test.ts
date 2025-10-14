@@ -22,7 +22,7 @@ describe('renderVerifyLiteSummary', () => {
     artifacts: {
       lintSummary: 'verify-lite-lint-summary.json',
       lintLog: 'verify-lite-lint.log',
-      mutationSummary: 'mutation-summary.md',
+      mutationSummary: 'reports/mutation/summary.json',
       mutationSurvivors: 'reports/mutation/survivors.json'
     }
   };

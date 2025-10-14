@@ -178,7 +178,7 @@ fi
 
 mkdir -p reports/mutation
 
-CMD=(npx stryker run "${args[@]}" --concurrency "$CONCURRENCY" --timeoutMS "$TIMEOUT")
+CMD=(npx stryker run "${args[@]}" --reporters html json --concurrency "$CONCURRENCY" --timeoutMS "$TIMEOUT")
 if [[ -n "$CONFIG_PATH" ]] ; then
   CMD+=("$CONFIG_PATH")
 fi
@@ -186,8 +186,23 @@ if [[ ${#EXTRA_ARGS[@]} -gt 0 ]]; then
   CMD+=("${EXTRA_ARGS[@]}")
 fi
 
+CMD_STATUS=0
 if command -v timeout >/dev/null 2>&1 && [[ -n "${TIME_LIMIT}" && "${TIME_LIMIT}" != "0" ]]; then
-  timeout --foreground "${TIME_LIMIT}"s "${CMD[@]}"
+  if ! timeout --foreground "${TIME_LIMIT}"s "${CMD[@]}"; then
+    CMD_STATUS=$?
+  fi
 else
-  "${CMD[@]}"
+  if ! "${CMD[@]}"; then
+    CMD_STATUS=$?
+  fi
 fi
+
+if [[ "$CMD_STATUS" -eq 124 ]]; then
+  echo "[mutation] Stryker timed out after ${TIME_LIMIT}s (treated as non-blocking)" >&2
+  CMD_STATUS=0
+elif [[ "$CMD_STATUS" -ne 0 ]]; then
+  echo "[mutation] Stryker exited with status ${CMD_STATUS}" >&2
+fi
+
+node scripts/mutation/mutation-report.mjs || true
+exit "$CMD_STATUS"

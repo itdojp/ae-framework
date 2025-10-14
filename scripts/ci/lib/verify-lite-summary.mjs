@@ -97,7 +97,7 @@ export const renderVerifyLiteSummary = (summary, options = {}) => {
     const labelMap = {
       lintSummary: 'Lint Baseline Diff',
       lintLog: 'Lint Log',
-      mutationSummary: 'Mutation HTML Report',
+      mutationSummary: 'Mutation Summary JSON',
       mutationSurvivors: 'Mutation Survivors JSON',
     };
     const formatArtifact = (value) => {

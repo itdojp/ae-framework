@@ -29,7 +29,7 @@
 
 ## ログ保存ポリシー
 - `VERIFY_LITE_KEEP_LINT_LOG=1` で `pnpm run verify:lite` を実行し、生成された `verify-lite-lint-summary.json` / `verify-lite-lint.log` を `reports/verify-lite/<timestamp>/` に保管する。
-- Mutation Quick を併走させる場合は `VERIFY_LITE_RUN_MUTATION=1` を指定し、`reports/mutation/survivors.json` と `mutation-summary.md` を同一ディレクトリに移動する（Phase A の進捗エビデンスとして必須）。
+- Mutation Quick を併走させる場合は `VERIFY_LITE_RUN_MUTATION=1` を指定し、`reports/mutation/survivors.json` と `reports/mutation/summary.json` を同一ディレクトリに移動する（Phase A の進捗エビデンスとして必須）。
 - CI の Step Summary とローカルログの内容が乖離した場合は、Issue #1016 のコメントに原因と対処方針を追記する。
 - `verify-lite-run-summary.json` に各ステップの成功/失敗が出力されるため、Issue への報告時は JSON の添付または主要ステータスの抜粋を行う。
 - `config/verify-lite-lint-baseline.json` に基準値を保存し、`enforce-verify-lite-lint` ラベル付き PR では Verify Lite ワークフローが基準超過時に失敗するように構成されている。

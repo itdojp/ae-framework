@@ -8,7 +8,7 @@
   - Copilot Gate (`ae-ci`): ✅ 成功 ([18296726040](https://github.com/itdojp/ae-framework/actions/runs/18296726040))
   - Mutation Quick Summary / Survivors JSON: 正常に生成（Step Summary へ反映）
   - 新規 artifacts:
-    - `reports/mutation/mutation-summary.json`
+    - `reports/mutation/summary.json`
     - `reports/mutation/survivors.json`
     - `artifacts/runtime-guard/runtime-guard-stats.json`
 - 備考:

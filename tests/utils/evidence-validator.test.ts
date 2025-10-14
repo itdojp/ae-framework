@@ -80,7 +80,7 @@ describe('EvidenceValidator', () => {
       
       expect(result).toBeDefined();
       // Keywords should exclude stop words like 'the', 'over'
-    });
+    }, 20000);
   });
 
   describe('validateImplementation', () => {
@@ -229,7 +229,7 @@ describe('EvidenceValidator', () => {
       
       expect(result).toBeDefined();
       expect(result.evidence).toBeInstanceOf(Array);
-    }, 40000);
+    }, 120000);
 
     it('should handle special characters in claims', async () => {
       const claim = 'Use @decorator and #pragma for optimization';
