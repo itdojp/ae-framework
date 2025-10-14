@@ -1,25 +1,103 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
-import { collectSurvivors, readMutationReport } from './list-survivors.mjs';
+import vm from 'node:vm';
+import { readMutationReport } from './list-survivors.mjs';
 
 const DEFAULT_REPORT = path.resolve('reports/mutation/mutation.json');
-const REPORT_HTML = path.resolve('reports/mutation/mutation.html');
+const HTML_REPORT_CANDIDATES = [
+  path.resolve('reports/mutation/mutation.html'),
+  path.resolve('reports/mutation/index.html'),
+];
 const SUMMARY_JSON = path.resolve('reports/mutation/summary.json');
 
 async function loadReport() {
   if (fs.existsSync(DEFAULT_REPORT)) {
-    return readMutationReport(DEFAULT_REPORT);
+    return { report: await readMutationReport(DEFAULT_REPORT), source: DEFAULT_REPORT };
   }
-  if (!fs.existsSync(REPORT_HTML)) {
-    throw new Error('mutation report not found: ' + DEFAULT_REPORT);
+  const htmlReport = HTML_REPORT_CANDIDATES.find((candidate) =>
+    fs.existsSync(candidate),
+  );
+  if (!htmlReport) {
+    throw new Error(
+      'mutation report not found: ' +
+        [DEFAULT_REPORT, ...HTML_REPORT_CANDIDATES].join(', '),
+    );
   }
-  const html = fs.readFileSync(REPORT_HTML, 'utf8');
+  const html = fs.readFileSync(htmlReport, 'utf8');
   const match = html.match(/app\.report\s*=\s*(\{[\s\S]*?\});/);
   if (!match) {
     throw new Error('unable to locate app.report JSON payload in mutation report');
   }
-  return JSON.parse(match[1]);
+  const payload = match[1];
+  try {
+    return { report: JSON.parse(payload), source: htmlReport };
+  } catch (jsonError) {
+    try {
+      const sandbox = { app: {} };
+      const script = new vm.Script('app.report = ' + payload + ';');
+      script.runInNewContext(sandbox, { timeout: 1000 });
+      if (!sandbox.app || typeof sandbox.app.report !== 'object') {
+        throw new Error('app.report payload missing');
+      }
+      return { report: sandbox.app.report, source: htmlReport };
+    } catch (vmError) {
+      const summary = deriveSummaryFromSerializedReport(payload);
+      if (!summary) {
+        throw new Error('failed to parse mutation report: ' + (vmError.message ?? vmError));
+      }
+      console.warn('[mutation-report] fell back to text summary parsing:', vmError.message ?? vmError);
+      return { summary, source: htmlReport };
+    }
+  }
+}
+
+
+function deriveSummaryFromSerializedReport(serialized) {
+  if (typeof serialized !== 'string' || serialized.length === 0) {
+    return null;
+  }
+  const counters = {
+    Killed: 0,
+    Survived: 0,
+    Timeout: 0,
+    NoCoverage: 0,
+    Ignored: 0,
+    RuntimeError: 0,
+    CompileError: 0,
+    Skipped: 0,
+  };
+  for (const status of Object.keys(counters)) {
+    const pattern = '"status":"' + status + '"';
+    let count = 0;
+    let index = -1;
+    while ((index = serialized.indexOf(pattern, index + 1)) !== -1) {
+      count += 1;
+    }
+    counters[status] = count;
+  }
+  const total = Object.values(counters).reduce((sum, value) => sum + value, 0);
+  if (total === 0) {
+    return null;
+  }
+  const detected =
+    counters.Killed +
+    counters.Timeout +
+    counters.RuntimeError +
+    counters.CompileError;
+  const denominator = Math.max(total - counters.Ignored - counters.NoCoverage, 0);
+  const mutationScore = denominator === 0 ? 100 : (detected / denominator) * 100;
+  return {
+    totalMutants: total,
+    killed: counters.Killed,
+    survived: counters.Survived,
+    timedOut: counters.Timeout,
+    noCoverage: counters.NoCoverage,
+    ignored: counters.Ignored,
+    runtimeErrors: counters.RuntimeError,
+    compileErrors: counters.CompileError,
+    mutationScore: Number(mutationScore.toFixed(2)),
+  };
 }
 
 function computeSummary(report) {
@@ -116,8 +194,11 @@ function writeSummaryJson(summary) {
 
 async function main() {
   try {
-    const report = await loadReport();
-    const summary = computeSummary(report);
+    const loaded = await loadReport();
+    const summary = loaded.summary ?? computeSummary(loaded.report ?? {});
+    if (!summary) {
+      throw new Error('unable to derive mutation summary');
+    }
     writeSummaryJson(summary);
     renderConsole(summary);
     appendStepSummary(summary);

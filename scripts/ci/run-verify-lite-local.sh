@@ -120,10 +120,14 @@ else
   echo "[verify-lite] skipping mutation quick"
 fi
 
-echo "[verify-lite] summarising mutation survivors"
-if [[ -f reports/mutation/mutation.json ]]; then
-  if node scripts/mutation/post-quick-summary.mjs | tee mutation-summary.md; then
-    MUTATION_SUMMARY_PATH="mutation-summary.md"
+echo "[verify-lite] summarising mutation results"
+if [[ -f reports/mutation/mutation.json || -f reports/mutation/mutation.html || -f reports/mutation/index.html ]]; then
+  if node scripts/mutation/mutation-report.mjs; then
+    if [[ -f reports/mutation/summary.json ]]; then
+      MUTATION_SUMMARY_PATH="reports/mutation/summary.json"
+    fi
+  else
+    echo "[verify-lite] mutation summary generation failed" >&2
   fi
   if node scripts/mutation/list-survivors.mjs --limit 25 > reports/mutation/survivors.json; then
     MUTATION_SURVIVORS_PATH="reports/mutation/survivors.json"

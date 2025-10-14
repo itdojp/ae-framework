@@ -30,7 +30,7 @@
 2. 実行結果:
    - `verify-lite-run-summary.json` / `verify-lite-lint-summary.json`
    - Mutation quick レポート `reports/mutation/mutation.json`
-   - Step Summary 用 `mutation-summary.md` (Verify Lite のラッパーが生成)
+   - サマリ JSON `reports/mutation/summary.json`（Step Summary にも同様の概要を出力）
 3. CI (`verify-lite.yml`) では上記成果物をレポート Envelope 化し、`mutation-quick-report` / `mutation-survivors-json` をアーティファクトとして添付する。
 
 ## 3. Mutation Quick の個別実行

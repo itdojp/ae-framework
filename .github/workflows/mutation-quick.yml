@@ -102,6 +102,7 @@ jobs:
           path: |
             reports/mutation/mutation.json
             reports/mutation/index.html
+            reports/mutation/summary.json
 
       - name: Upload mutation survivors
         if: ${{ always() && hashFiles('reports/mutation/survivors.json') != '' }}

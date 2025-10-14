@@ -18,7 +18,7 @@ Schema Version: 1.0.0
 Artifacts:
 - Lint Baseline Diff: n/a
 - Lint Log: n/a
-- Mutation HTML Report: n/a
+- Mutation Summary JSON: n/a
 - Mutation Survivors JSON: n/a"
 `;
 
@@ -43,7 +43,7 @@ Schema Version: 1.0.0
 Artifacts:
 - Lint Baseline Diff: \`verify-lite-lint-summary.json\` ([Data Link](https://example.com/artifacts))
 - Lint Log: \`verify-lite-lint.log\` ([Data Link](https://example.com/artifacts))
-- Mutation HTML Report: \`mutation-summary.md\` ([Data Link](https://example.com/artifacts))
+- Mutation Summary JSON: \`reports/mutation/summary.json\` ([Data Link](https://example.com/artifacts))
 - Mutation Survivors JSON: \`reports/mutation/survivors.json\` ([Data Link](https://example.com/artifacts))
 - GitHub Artifacts: [Open](https://example.com/artifacts)"
 `;
