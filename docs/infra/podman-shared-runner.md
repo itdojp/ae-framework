@@ -104,7 +104,16 @@ PODMAN_COMPOSE_PROVIDER=podman pnpm pipelines:full --filter verify-lite
 
 `podman ps` でコンテナが起動し、`reports/` に成果物が出力されれば成功です。`podman system prune` を定期実行してサイズを抑制してください。
 
-## 7. トラブルシューティング
+## 7. アーティファクトのクリーンアップ
+
+`pnpm pipelines:full` 実行後は、大きな成果物 (verify-lite ストアや mutation レポート) を自動的にキャッシュディレクトリへ移動し、リポジトリをクリーンな状態に戻します。
+
+- 既定のキャッシュ先: `~/.cache/ae-framework/pipelines`
+- `PIPELINES_FULL_CACHE_ROOT` でルートを変更可能
+- 個別に `PIPELINES_FULL_VERIFY_LITE_CACHE` / `PIPELINES_FULL_MUTATION_CACHE` を指定可能
+- デバッグ用途で成果物を残したい場合は `PIPELINES_FULL_KEEP_ARTIFACTS=1` を設定
+
+## 8. トラブルシューティング
 
 | 症状 | 対処 |
 |------|------|
