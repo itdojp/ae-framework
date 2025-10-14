@@ -10,8 +10,10 @@ const HTML_REPORT_CANDIDATES = [
   path.resolve('reports/mutation/index.html'),
 ];
 const SUMMARY_JSON = path.resolve('reports/mutation/summary.json');
-const VM_TIMEOUT_MS =
-  Number.parseInt(process.env.MUTATION_REPORT_VM_TIMEOUT ?? '2000', 10) || 2000;
+const VM_TIMEOUT_MS = Number.parseInt(
+  process.env.MUTATION_REPORT_VM_TIMEOUT ?? '2000',
+  10,
+) || 2000;
 
 async function loadReport() {
   if (fs.existsSync(DEFAULT_REPORT)) {
@@ -33,15 +35,23 @@ async function loadReport() {
   }
   const payload = match[1];
   try {
-    return { report: JSON.parse(payload), source: htmlReport };
+    const parsed = JSON.parse(payload);
+    if (!isValidReportObject(parsed)) {
+      throw new Error('app.report payload missing or invalid structure');
+    }
+    return { report: parsed, source: htmlReport };
   } catch (jsonError) {
     try {
-      const script = new vm.Script(`(${payload})`);
-      const reportObject = script.runInNewContext({}, { timeout: VM_TIMEOUT_MS });
-      if (!reportObject || typeof reportObject !== 'object') {
-        throw new Error('app.report payload missing');
+      const sanitizedPayload = payload
+        .replace(/\u2028/g, '\\u2028')
+        .replace(/\u2029/g, '\\u2029');
+      const sandbox = { app: {}, JSON, payloadText: sanitizedPayload };
+      const script = new vm.Script('app.report = JSON.parse(payloadText);');
+      script.runInNewContext(sandbox, { timeout: VM_TIMEOUT_MS });
+      if (!isValidReportObject(sandbox.app?.report)) {
+        throw new Error('app.report payload missing or invalid structure');
       }
-      return { report: reportObject, source: htmlReport };
+      return { report: sandbox.app.report, source: htmlReport };
     } catch (vmError) {
       const summary = deriveSummaryFromSerializedReport(payload);
       if (!summary) {
@@ -55,7 +65,6 @@ async function loadReport() {
     }
   }
 }
-
 
 function isValidReportObject(value) {
   if (!value || typeof value !== 'object') {
