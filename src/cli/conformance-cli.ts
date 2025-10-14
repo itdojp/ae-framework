@@ -4,20 +4,104 @@
  */
 
 import { Command } from 'commander';
-import { readFileSync, writeFileSync, existsSync } from 'fs';
-import type { join } from 'path';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync } from 'fs';
 import { ConformanceVerificationEngine } from '../conformance/verification-engine.js';
+import path from 'node:path';
 import { createEncryptedChatDefaultRules } from '../conformance/default-rules.js';
 import chalk from 'chalk';
 import { toMessage } from '../utils/error-utils.js';
 import { safeExit } from '../utils/safe-exit.js';
+import { glob } from 'glob';
 import type { 
   ConformanceRule, 
   ConformanceConfig, 
   RuntimeContext,
   ConformanceRuleCategory,
 } from '../conformance/types.js';
-import type { ViolationSeverity } from '../conformance/types.js';
+import type { 
+  ViolationSeverity, 
+  ConformanceVerificationResult,
+  VerificationStatus,
+  ViolationDetails
+} from '../conformance/types.js';
+
+const REPORT_SCHEMA_VERSION = '1.0.0';
+const DEFAULT_REPORT_DIR = 'reports/conformance';
+const DEFAULT_REPORT_JSON = path.join(DEFAULT_REPORT_DIR, 'conformance-summary.json');
+const DEFAULT_REPORT_MARKDOWN = path.join(DEFAULT_REPORT_DIR, 'conformance-summary.md');
+const VIOLATION_SEVERITIES = ['critical', 'major', 'minor', 'info', 'warning'] as ViolationSeverity[];
+const CONFORMANCE_CATEGORIES = [
+  'data_validation',
+  'api_contract',
+  'business_logic',
+  'security_policy',
+  'performance_constraint',
+  'resource_usage',
+  'state_invariant',
+  'behavioral_constraint',
+  'integration_requirement',
+  'compliance_rule'
+] as ConformanceRuleCategory[];
+
+type ConformanceReportStatus = 'success' | 'failure' | 'skipped';
+
+interface AggregatedRunInput {
+  file: string;
+  absolutePath: string;
+  result: ConformanceVerificationResult;
+  timestamp: string;
+}
+
+interface ConformanceReportSummary {
+  schemaVersion: string;
+  generatedAt: string;
+  status: ConformanceReportStatus;
+  runsAnalyzed: number;
+  statusBreakdown: Record<VerificationStatus, number>;
+  totals: {
+    rulesExecuted: number;
+    rulesPassed: number;
+    rulesFailed: number;
+    rulesErrored: number;
+    rulesSkipped: number;
+    totalViolations: number;
+    uniqueRules: number;
+    uniqueViolationRules: number;
+  };
+  severityTotals: Record<ViolationSeverity, number>;
+  categoryTotals: Record<ConformanceRuleCategory, number>;
+  severityTrends: Array<{
+    severity: ViolationSeverity;
+    current: number;
+    previous: number;
+    trend: 'increasing' | 'decreasing' | 'stable';
+  }>;
+  topViolations: Array<{
+    ruleId: string;
+    ruleName: string;
+    count: number;
+    lastObserved: string | null;
+  }>;
+  latestRun?: {
+    file: string;
+    timestamp: string;
+    status: VerificationStatus;
+    environment: string;
+    version: string;
+    rulesExecuted: number;
+    rulesFailed: number;
+    totalViolations: number;
+  };
+  inputs: Array<{
+    file: string;
+    timestamp: string;
+    status: VerificationStatus;
+    environment: string;
+    version: string;
+    totalViolations: number;
+  }>;
+  notes?: string;
+}
 
 export class ConformanceCli {
   private engine: ConformanceVerificationEngine;
@@ -110,6 +194,21 @@ export class ConformanceCli {
       .option('--context <file>', 'Generate sample context file', 'sample-context.json')
       .action(async (options) => {
         await this.handleSampleCommand(options);
+      });
+
+    command
+      .command('report')
+      .description('Generate aggregated conformance report')
+      .option('-i, --inputs <files...>', 'Conformance result files to include')
+      .option('-g, --glob <patterns...>', 'Glob pattern(s) for locating result files')
+      .option('-d, --directory <dir>', 'Directory to search for result files', 'hermetic-reports/conformance')
+      .option('-p, --pattern <glob>', 'Glob pattern when using --directory', '*.json')
+      .option('-f, --format <format>', 'Output format (json, markdown, both)', 'json')
+      .option('-o, --output <file>', 'JSON output file path', DEFAULT_REPORT_JSON)
+      .option('--markdown-output <file>', 'Markdown output file path', DEFAULT_REPORT_MARKDOWN)
+      .option('--no-default-discovery', 'Disable default result discovery locations')
+      .action(async (options) => {
+        await this.handleReportCommand(options);
       });
 
     return command;
@@ -435,6 +534,73 @@ export class ConformanceCli {
   }
 
   /**
+   * Handle the report command
+   */
+  private async handleReportCommand(options: any): Promise<void> {
+    try {
+      const format = (options.format ?? 'json').toString().toLowerCase();
+      if (!['json', 'markdown', 'both'].includes(format)) {
+        console.error(chalk.red(`❌ Unsupported format "${options.format}". Use json, markdown, or both.`));
+        safeExit(1);
+        return;
+      }
+
+      const resultFiles = await this.resolveConformanceResultFiles({
+        inputs: this.normalizeToArray<string>(options.inputs),
+        globs: this.normalizeToArray<string>(options.glob),
+        directory: typeof options.directory === 'string' ? options.directory : undefined,
+        pattern: typeof options.pattern === 'string' ? options.pattern : undefined,
+        useDefaults: options.defaultDiscovery !== false
+      });
+
+      if (resultFiles.length === 0) {
+        console.log(chalk.yellow('⚠️  No conformance result files found. Creating empty summary.'));
+      } else {
+        console.log(chalk.blue(`📊 Aggregating ${resultFiles.length} conformance result file${resultFiles.length === 1 ? '' : 's'}...`));
+      }
+
+      const runs = this.loadConformanceResults(resultFiles);
+      const summary = this.buildConformanceReportSummary(runs);
+
+      const jsonOutput = path.resolve(typeof options.output === 'string' ? options.output : DEFAULT_REPORT_JSON);
+      const markdownOutput = path.resolve(typeof options.markdownOutput === 'string' ? options.markdownOutput : DEFAULT_REPORT_MARKDOWN);
+
+      const shouldWriteJson = format === 'json' || format === 'both';
+      const shouldWriteMarkdown = format === 'markdown' || format === 'both';
+
+      if (!shouldWriteJson && !shouldWriteMarkdown) {
+        console.error(chalk.red('❌ Nothing to do. Enable JSON or Markdown output.'));
+        safeExit(1);
+        return;
+      }
+
+      if (shouldWriteJson) {
+        this.ensureDirectoryFor(jsonOutput);
+        writeFileSync(jsonOutput, JSON.stringify(summary, null, 2));
+        console.log(`💾 JSON report written to ${this.toRelativePath(jsonOutput)}`);
+      }
+
+      if (shouldWriteMarkdown) {
+        this.ensureDirectoryFor(markdownOutput);
+        const markdown = this.renderConformanceMarkdown(summary);
+        writeFileSync(markdownOutput, markdown);
+        console.log(`📝 Markdown report written to ${this.toRelativePath(markdownOutput)}`);
+      }
+
+      const statusMessage =
+        summary.status === 'failure'
+          ? chalk.red('❌ Report generated with failing conformance runs detected.')
+          : summary.status === 'success'
+            ? chalk.green('✅ Conformance runs look healthy.')
+            : chalk.yellow('⚠️  Conformance runs not available.');
+      console.log(statusMessage);
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Report generation failed: ${toMessage(error)}`));
+      safeExit(1);
+    }
+  }
+
+  /**
    * Display verification results
    */
   private async displayVerificationResults(result: any, options: any): Promise<void> {
@@ -499,6 +665,444 @@ export class ConformanceCli {
         console.log('');
       });
     }
+  }
+
+  private normalizeToArray<T extends string>(value: T[] | T | undefined): T[] {
+    if (value === undefined || value === null) {
+      return [];
+    }
+    if (Array.isArray(value)) {
+      return value.filter((item) => typeof item === 'string' && item.length > 0);
+    }
+    return value.length > 0 ? [value] : [];
+  }
+
+  private async resolveConformanceResultFiles(options: {
+    inputs: string[];
+    globs: string[];
+    directory?: string;
+    pattern?: string;
+    useDefaults: boolean;
+  }): Promise<string[]> {
+    const resolved = new Set<string>();
+    const missingExplicit: string[] = [];
+    const patterns: string[] = [];
+
+    for (const inputPath of options.inputs) {
+      if (this.looksLikeGlob(inputPath)) {
+        patterns.push(path.resolve(inputPath));
+        continue;
+      }
+
+      const absolute = path.resolve(inputPath);
+      if (existsSync(absolute)) {
+        resolved.add(absolute);
+      } else {
+        missingExplicit.push(inputPath);
+      }
+    }
+
+    for (const globPattern of options.globs) {
+      if (globPattern.length > 0) {
+        patterns.push(path.resolve(globPattern));
+      }
+    }
+
+    if (options.directory) {
+      const baseDir = path.resolve(options.directory);
+      const derivedPattern = options.pattern ?? '*.json';
+      patterns.push(path.join(baseDir, derivedPattern));
+    }
+
+    if (options.useDefaults) {
+      const defaultCandidates = [
+        'conformance-results.json',
+        path.join('hermetic-reports', 'conformance', '*.json'),
+        path.join('reports', 'conformance', '*.json')
+      ];
+
+      for (const candidate of defaultCandidates) {
+        if (this.looksLikeGlob(candidate)) {
+          patterns.push(path.resolve(candidate));
+        } else {
+          const absolute = path.resolve(candidate);
+          if (existsSync(absolute)) {
+            resolved.add(absolute);
+          }
+        }
+      }
+    }
+
+    for (const patternPath of patterns) {
+      const matches = await glob(patternPath, { nodir: true, absolute: true });
+      for (const match of matches) {
+        if (existsSync(match)) {
+          resolved.add(path.resolve(match));
+        }
+      }
+    }
+
+    if (missingExplicit.length > 0) {
+      for (const missing of missingExplicit) {
+        console.warn(chalk.yellow(`⚠️  Conformance result not found: ${missing}`));
+      }
+    }
+
+    return Array.from(resolved).sort();
+  }
+
+  private looksLikeGlob(value: string): boolean {
+    return /[*?[\]]/.test(value);
+  }
+
+  private loadConformanceResults(files: string[]): AggregatedRunInput[] {
+    const runs: AggregatedRunInput[] = [];
+
+    for (const absolutePath of files) {
+      try {
+        const raw = readFileSync(absolutePath, 'utf-8');
+        const parsed = JSON.parse(raw) as ConformanceVerificationResult;
+        if (!parsed || typeof parsed !== 'object' || !parsed.summary) {
+          console.warn(chalk.yellow(`⚠️  Skipping ${this.toRelativePath(absolutePath)}: missing conformance summary.`));
+          continue;
+        }
+
+        const timestamp = this.resolveResultTimestamp(parsed, absolutePath);
+        runs.push({
+          file: this.toRelativePath(absolutePath),
+          absolutePath,
+          result: parsed,
+          timestamp
+        });
+      } catch (error: unknown) {
+        console.error(chalk.red(`❌ Failed to read result ${this.toRelativePath(absolutePath)}: ${toMessage(error)}`));
+      }
+    }
+
+    return runs;
+  }
+
+  private resolveResultTimestamp(result: ConformanceVerificationResult, filePath: string): string {
+    if (result?.metadata?.timestamp) {
+      return result.metadata.timestamp;
+    }
+
+    try {
+      const stats = statSync(filePath);
+      return stats.mtime.toISOString();
+    } catch {
+      return new Date().toISOString();
+    }
+  }
+
+  private parseTimestamp(value: string): number {
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+
+  private buildConformanceReportSummary(runs: AggregatedRunInput[]): ConformanceReportSummary {
+    const generatedAt = new Date().toISOString();
+    const statusBreakdown: Record<VerificationStatus, number> = {
+      pass: 0,
+      fail: 0,
+      skip: 0,
+      error: 0,
+      timeout: 0
+    };
+
+    if (runs.length === 0) {
+      return {
+        schemaVersion: REPORT_SCHEMA_VERSION,
+        generatedAt,
+        status: 'skipped',
+        runsAnalyzed: 0,
+        statusBreakdown,
+        totals: {
+          rulesExecuted: 0,
+          rulesPassed: 0,
+          rulesFailed: 0,
+          rulesErrored: 0,
+          rulesSkipped: 0,
+          totalViolations: 0,
+          uniqueRules: 0,
+          uniqueViolationRules: 0
+        },
+        severityTotals: this.createEmptySeverityMap(),
+        categoryTotals: this.createEmptyCategoryMap(),
+        severityTrends: VIOLATION_SEVERITIES.map((severity) => ({
+          severity,
+          current: 0,
+          previous: 0,
+          trend: 'stable' as const
+        })),
+        topViolations: [],
+        inputs: [],
+        notes: 'No conformance results were discovered.'
+      };
+    }
+
+    const totals = {
+      rulesExecuted: 0,
+      rulesPassed: 0,
+      rulesFailed: 0,
+      rulesErrored: 0,
+      rulesSkipped: 0,
+      totalViolations: 0,
+      uniqueRules: 0,
+      uniqueViolationRules: 0
+    };
+
+    const severityTotals = this.createEmptySeverityMap();
+    const categoryTotals = this.createEmptyCategoryMap();
+    const uniqueRules = new Set<string>();
+    const uniqueViolationRules = new Set<string>();
+    const violationAccumulator = new Map<string, { ruleId: string; ruleName: string; count: number; lastObserved: string | null }>();
+
+    const sortedRuns = [...runs].sort((a, b) => this.parseTimestamp(a.timestamp) - this.parseTimestamp(b.timestamp));
+    const inputsSummary: ConformanceReportSummary['inputs'] = [];
+
+    for (const run of sortedRuns) {
+      const { result } = run;
+      const overall = result.overall as VerificationStatus;
+      if (overall && Object.prototype.hasOwnProperty.call(statusBreakdown, overall)) {
+        statusBreakdown[overall] += 1;
+      }
+
+      totals.rulesExecuted += result.summary?.rulesExecuted ?? 0;
+      totals.rulesPassed += result.summary?.rulesPassed ?? 0;
+      totals.rulesFailed += result.summary?.rulesFailed ?? 0;
+      totals.rulesErrored += result.summary?.rulesError ?? 0;
+      totals.rulesSkipped += result.summary?.rulesSkipped ?? 0;
+      totals.totalViolations += result.violations?.length ?? 0;
+
+      for (const severity of VIOLATION_SEVERITIES) {
+        const value = result.summary?.violationsBySeverity?.[severity] ?? 0;
+        severityTotals[severity] += value;
+      }
+
+      for (const category of CONFORMANCE_CATEGORIES) {
+        const value = result.summary?.violationsByCategory?.[category] ?? 0;
+        categoryTotals[category] += value;
+      }
+
+      result.results?.forEach((res) => {
+        if (res?.ruleId) {
+          uniqueRules.add(res.ruleId);
+        }
+      });
+
+      result.violations?.forEach((violation) => {
+        if (violation.ruleId) {
+          uniqueViolationRules.add(violation.ruleId);
+        }
+
+        const key = violation.ruleId ?? `${violation.ruleName}:${violation.message}`;
+        if (!key) return;
+
+        const lastObserved = this.getViolationLastObserved(violation, run.timestamp);
+        const existing = violationAccumulator.get(key);
+        if (existing) {
+          existing.count += 1;
+          if (lastObserved && (!existing.lastObserved || lastObserved > existing.lastObserved)) {
+            existing.lastObserved = lastObserved;
+          }
+        } else {
+          violationAccumulator.set(key, {
+            ruleId: violation.ruleId,
+            ruleName: violation.ruleName ?? violation.ruleId ?? 'unknown',
+            count: 1,
+            lastObserved
+          });
+        }
+      });
+
+      inputsSummary.push({
+        file: run.file,
+        timestamp: run.timestamp,
+        status: overall,
+        environment: result.metadata?.environment ?? 'unknown',
+        version: result.metadata?.version ?? 'unknown',
+        totalViolations: result.violations?.length ?? 0
+      });
+    }
+
+    totals.uniqueRules = uniqueRules.size;
+    totals.uniqueViolationRules = uniqueViolationRules.size;
+
+    const latestRun = sortedRuns[sortedRuns.length - 1];
+    const previousRun = sortedRuns.length > 1 ? sortedRuns[sortedRuns.length - 2] : undefined;
+
+    const severityTrends = VIOLATION_SEVERITIES.map((severity) => {
+      const current = latestRun?.result.summary?.violationsBySeverity?.[severity] ?? 0;
+      const previous = previousRun?.result.summary?.violationsBySeverity?.[severity] ?? 0;
+      let trend: 'increasing' | 'decreasing' | 'stable' = 'stable';
+      if (current > previous) {
+        trend = 'increasing';
+      } else if (current < previous) {
+        trend = 'decreasing';
+      }
+      return { severity, current, previous, trend };
+    });
+
+    const status: ConformanceReportStatus =
+      statusBreakdown.fail > 0 || statusBreakdown.error > 0 || statusBreakdown.timeout > 0
+        ? 'failure'
+        : 'success';
+
+    const topViolations = Array.from(violationAccumulator.values())
+      .sort((a, b) => {
+        if (b.count !== a.count) {
+          return b.count - a.count;
+        }
+        const aTime = a.lastObserved ? this.parseTimestamp(a.lastObserved) : 0;
+        const bTime = b.lastObserved ? this.parseTimestamp(b.lastObserved) : 0;
+        return bTime - aTime;
+      })
+      .slice(0, 10);
+
+    const summary: ConformanceReportSummary = {
+      schemaVersion: REPORT_SCHEMA_VERSION,
+      generatedAt,
+      status,
+      runsAnalyzed: runs.length,
+      statusBreakdown,
+      totals,
+      severityTotals,
+      categoryTotals,
+      severityTrends,
+      topViolations,
+      inputs: inputsSummary,
+    };
+
+    if (latestRun) {
+      summary.latestRun = {
+        file: latestRun.file,
+        timestamp: latestRun.timestamp,
+        status: latestRun.result.overall,
+        environment: latestRun.result.metadata?.environment ?? 'unknown',
+        version: latestRun.result.metadata?.version ?? 'unknown',
+        rulesExecuted: latestRun.result.summary?.rulesExecuted ?? 0,
+        rulesFailed: latestRun.result.summary?.rulesFailed ?? 0,
+        totalViolations: latestRun.result.violations?.length ?? 0
+      };
+    }
+
+    if (status === 'failure') {
+      summary.notes = 'One or more runs reported failures, errors, or timeouts.';
+    }
+
+    return summary;
+  }
+
+  private createEmptySeverityMap(): Record<ViolationSeverity, number> {
+    return VIOLATION_SEVERITIES.reduce((acc, severity) => {
+      acc[severity] = 0;
+      return acc;
+    }, {} as Record<ViolationSeverity, number>);
+  }
+
+  private createEmptyCategoryMap(): Record<ConformanceRuleCategory, number> {
+    return CONFORMANCE_CATEGORIES.reduce((acc, category) => {
+      acc[category] = 0;
+      return acc;
+    }, {} as Record<ConformanceRuleCategory, number>);
+  }
+
+  private ensureDirectoryFor(filePath: string): void {
+    const targetDir = path.dirname(filePath);
+    if (!existsSync(targetDir)) {
+      mkdirSync(targetDir, { recursive: true });
+    }
+  }
+
+  private toRelativePath(filePath: string): string {
+    const relative = path.relative(process.cwd(), filePath);
+    if (!relative || relative.startsWith('..')) {
+      return filePath;
+    }
+    return relative;
+  }
+
+  private renderConformanceMarkdown(summary: ConformanceReportSummary): string {
+    const lines: string[] = [
+      '# Conformance Summary',
+      `- Generated: ${summary.generatedAt}`,
+      `- Status: ${summary.status}`,
+      `- Runs Analyzed: ${summary.runsAnalyzed}`,
+      ''
+    ];
+
+    lines.push('## Totals');
+    lines.push(`- Total Violations: ${summary.totals.totalViolations}`);
+    lines.push(`- Rules Failed: ${summary.totals.rulesFailed}`);
+    lines.push(`- Rules Passed: ${summary.totals.rulesPassed}`);
+    lines.push(`- Rules Skipped: ${summary.totals.rulesSkipped}`);
+    lines.push(`- Unique Rules Checked: ${summary.totals.uniqueRules}`);
+    lines.push(`- Unique Violating Rules: ${summary.totals.uniqueViolationRules}`);
+    lines.push('');
+
+    lines.push('## Severity Trends');
+    lines.push('| Severity | Current | Previous | Trend |');
+    lines.push('| --- | --- | --- | --- |');
+    for (const trend of summary.severityTrends) {
+      lines.push(`| ${trend.severity} | ${trend.current} | ${trend.previous} | ${trend.trend} |`);
+    }
+    lines.push('');
+
+    if (summary.topViolations.length > 0) {
+      lines.push('## Top Violations');
+      lines.push('| Rule | Count | Last Observed |');
+      lines.push('| --- | --- | --- |');
+      for (const violation of summary.topViolations) {
+        lines.push(`| ${violation.ruleName || violation.ruleId} | ${violation.count} | ${violation.lastObserved ?? 'n/a'} |`);
+      }
+      lines.push('');
+    } else {
+      lines.push('## Top Violations');
+      lines.push('No recurring violations detected.');
+      lines.push('');
+    }
+
+    lines.push('## Runs');
+    if (summary.inputs.length === 0) {
+      lines.push('No conformance runs were discovered.');
+    } else {
+      lines.push('| File | Status | Violations | Timestamp |');
+      lines.push('| --- | --- | --- | --- |');
+      for (const run of summary.inputs) {
+        lines.push(`| ${run.file} | ${run.status} | ${run.totalViolations} | ${run.timestamp} |`);
+      }
+    }
+
+    if (summary.latestRun) {
+      lines.push('');
+      lines.push('## Latest Run');
+      lines.push(`- File: ${summary.latestRun.file}`);
+      lines.push(`- Status: ${summary.latestRun.status}`);
+      lines.push(`- Environment: ${summary.latestRun.environment}`);
+      lines.push(`- Version: ${summary.latestRun.version}`);
+      lines.push(`- Rules Executed: ${summary.latestRun.rulesExecuted}`);
+      lines.push(`- Rules Failed: ${summary.latestRun.rulesFailed}`);
+      lines.push(`- Violations: ${summary.latestRun.totalViolations}`);
+    }
+
+    if (summary.notes) {
+      lines.push('');
+      lines.push(`_Notes_: ${summary.notes}`);
+    }
+
+    return lines.join('\n');
+  }
+
+  private getViolationLastObserved(violation: ViolationDetails, fallback: string): string | null {
+    const timestamp = violation.context?.timestamp;
+    if (timestamp && !Number.isNaN(Date.parse(timestamp))) {
+      return timestamp;
+    }
+    if (fallback && !Number.isNaN(Date.parse(fallback))) {
+      return fallback;
+    }
+    return null;
   }
 
   /**

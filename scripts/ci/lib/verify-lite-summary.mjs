@@ -56,6 +56,7 @@ export const renderVerifyLiteSummary = (summary, options = {}) => {
     'build',
     'bddLint',
     'mutationQuick',
+    'conformanceReport',
   ];
 
   const seen = new Set();
@@ -99,6 +100,8 @@ export const renderVerifyLiteSummary = (summary, options = {}) => {
       lintLog: 'Lint Log',
       mutationSummary: 'Mutation Summary JSON',
       mutationSurvivors: 'Mutation Survivors JSON',
+      conformanceSummary: 'Conformance Summary JSON',
+      conformanceSummaryMarkdown: 'Conformance Summary Markdown',
     };
     const formatArtifact = (value) => {
       if (!value) return 'n/a';
@@ -112,7 +115,14 @@ export const renderVerifyLiteSummary = (summary, options = {}) => {
     };
 
     artifactLines.push('\nArtifacts:');
-    const preferredOrder = ['lintSummary', 'lintLog', 'mutationSummary', 'mutationSurvivors'];
+    const preferredOrder = [
+      'lintSummary',
+      'lintLog',
+      'mutationSummary',
+      'mutationSurvivors',
+      'conformanceSummary',
+      'conformanceSummaryMarkdown',
+    ];
     const handled = new Set();
     for (const key of preferredOrder) {
       if (!Object.prototype.hasOwnProperty.call(artifacts, key)) continue;

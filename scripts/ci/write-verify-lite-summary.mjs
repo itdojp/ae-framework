@@ -41,12 +41,18 @@ const summary = {
       status: readStatus('MUTATION_STATUS', 'skipped'),
       notes: process.env.MUTATION_NOTES || null,
     },
+    conformanceReport: {
+      status: readStatus('CONFORMANCE_STATUS', 'skipped'),
+      notes: process.env.CONFORMANCE_NOTES || null,
+    },
   },
   artifacts: {
     lintSummary: existsOrNull(process.env.LINT_SUMMARY_PATH),
     lintLog: existsOrNull(process.env.LINT_LOG_EXPORT),
     mutationSummary: existsOrNull(process.env.MUTATION_SUMMARY_PATH),
     mutationSurvivors: existsOrNull(process.env.MUTATION_SURVIVORS_PATH),
+    conformanceSummary: existsOrNull(process.env.CONFORMANCE_SUMMARY_PATH),
+    conformanceSummaryMarkdown: existsOrNull(process.env.CONFORMANCE_SUMMARY_MARKDOWN_PATH),
   },
 };
 

@@ -48,6 +48,7 @@ describe('ConformanceCli', () => {
       expect(subcommands).toContain('metrics');
       expect(subcommands).toContain('status');
       expect(subcommands).toContain('sample');
+      expect(subcommands).toContain('report');
     });
   });
 
@@ -233,6 +234,142 @@ describe('ConformanceCli', () => {
         expect.stringContaining(`Results saved to ${outputFile}`)
       );
       expect(existsSync(outputFile)).toBe(true);
+    });
+  });
+
+  describe('report command', () => {
+    it('should generate empty report when no results are found', async () => {
+      const outputFile = 'conformance-report-empty.json';
+      testFiles.push(outputFile);
+
+      const command = cli.createCommand();
+      const args = [
+        'node', 'cli', 'report',
+        '--format', 'json',
+        '--output', outputFile,
+        '--no-default-discovery'
+      ];
+
+      await command.parseAsync(args);
+
+      expect(existsSync(outputFile)).toBe(true);
+      const summary = JSON.parse(readFileSync(outputFile, 'utf-8'));
+      expect(summary.status).toBe('skipped');
+      expect(summary.runsAnalyzed).toBe(0);
+    });
+
+    it('should aggregate provided conformance result files', async () => {
+      const resultFile = 'conformance-sample-result.json';
+      const outputFile = 'conformance-summary.json';
+      const markdownFile = 'conformance-summary.md';
+
+      const context = {
+        timestamp: '2024-01-01T00:00:00.000Z',
+        executionId: '11111111-1111-1111-1111-111111111111',
+        environment: 'cli',
+        version: '2.2.0',
+        metadata: {}
+      };
+
+      const sampleResult = {
+        overall: 'fail',
+        results: [
+          {
+            id: '22222222-2222-2222-2222-222222222222',
+            ruleId: '33333333-3333-3333-3333-333333333333',
+            status: 'fail',
+            timestamp: '2024-01-01T00:00:30.000Z',
+            duration: 120,
+            context,
+            metrics: {
+              executionTime: 120,
+              memoryUsage: 0,
+              cpuUsage: 0,
+              networkCalls: 0
+            }
+          }
+        ],
+        violations: [
+          {
+            ruleId: '33333333-3333-3333-3333-333333333333',
+            ruleName: 'Sample Rule',
+            category: 'business_logic',
+            severity: 'major',
+            message: 'Sample violation',
+            context,
+            evidence: {
+              stateSnapshot: {},
+              metrics: {},
+              logs: [],
+              traces: []
+            },
+            remediation: {
+              suggested: [],
+              automatic: false,
+              priority: 'high'
+            }
+          }
+        ],
+        summary: {
+          totalRules: 1,
+          rulesExecuted: 1,
+          rulesPassed: 0,
+          rulesFailed: 1,
+          rulesSkipped: 0,
+          rulesError: 0,
+          totalDuration: 120,
+          violationsBySeverity: {
+            critical: 0,
+            major: 1,
+            minor: 0,
+            info: 0,
+            warning: 0
+          },
+          violationsByCategory: {
+            data_validation: 0,
+            api_contract: 0,
+            business_logic: 1,
+            security_policy: 0,
+            performance_constraint: 0,
+            resource_usage: 0,
+            state_invariant: 0,
+            behavioral_constraint: 0,
+            integration_requirement: 0,
+            compliance_rule: 0
+          }
+        },
+        metadata: {
+          executionId: '11111111-1111-1111-1111-111111111111',
+          timestamp: '2024-01-01T00:00:00.000Z',
+          environment: 'cli',
+          version: '2.2.0'
+        }
+      };
+
+      writeFileSync(resultFile, JSON.stringify(sampleResult, null, 2));
+      testFiles.push(resultFile, outputFile, markdownFile);
+
+      const command = cli.createCommand();
+      const args = [
+        'node', 'cli', 'report',
+        '--inputs', resultFile,
+        '--format', 'both',
+        '--output', outputFile,
+        '--markdown-output', markdownFile,
+        '--no-default-discovery'
+      ];
+
+      await command.parseAsync(args);
+
+      expect(existsSync(outputFile)).toBe(true);
+      expect(existsSync(markdownFile)).toBe(true);
+
+      const summary = JSON.parse(readFileSync(outputFile, 'utf-8'));
+      expect(summary.status).toBe('failure');
+      expect(summary.runsAnalyzed).toBe(1);
+      expect(summary.totals.totalViolations).toBe(1);
+      expect(summary.topViolations[0].ruleName).toBe('Sample Rule');
+      expect(summary.latestRun.file).toBe(resultFile);
     });
   });
 

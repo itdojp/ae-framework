@@ -122,6 +122,7 @@ TLA: tool_not_available (tlc)
 Conformance sample (quick demo)
 - `pnpm run conformance:sample` — サンプルのルール/設定/データ/コンテキストを生成
 - `pnpm run conformance:verify:sample` — 生成データで検証を実行（JSONレポート出力）
+- `pnpm run conformance:report` — 既存の `conformance-results.json` や `hermetic-reports/conformance/*.json` を集約し `reports/conformance/verify-lite-summary.(json|md)` を生成
 
 ### Minimal YAML (example)
 ```yaml
@@ -148,6 +149,7 @@ jobs:
 - Reports: `hermetic-reports/`（各ツールのsummary/出力を保存）
   - Apalache: `hermetic-reports/formal/apalache-summary.json`, `hermetic-reports/formal/apalache-output.txt`
   - Formal summary: `hermetic-reports/formal/summary.json`（present/conformance/smt/alloy/tla/apalache を含む）
+  - Conformance aggregated summary (verify-lite): `reports/conformance/verify-lite-summary.json` / `.md`
 
 ### Samples
 - TLA+: `spec/tla/DomainSpec.tla`（最小の安全性不変と遷移の例）
