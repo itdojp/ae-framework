@@ -115,6 +115,7 @@ We welcome international contributions! Please see our [Contributing Guide](CONT
 
 - [Quick Start Guide](docs/getting-started/QUICK-START-GUIDE.md)
 - [Podman Shared Runner Setup](docs/infra/podman-shared-runner.md)
+- [Conformance Reporting Guide](docs/quality/formal-runbook.md#conformance-sample-quick-demo)
 - [Claude Code Integration](docs/integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)
 - [CodeX Integration](docs/integrations/CODEX-INTEGRATION.md)
   - [CodeX Quick Start](docs/integrations/QUICK-START-CODEX.md)
@@ -144,6 +145,7 @@ We welcome international contributions! Please see our [Contributing Guide](CONT
 ### 📢 最新アップデート
 - **🆕 [🧪 Phase 2.3: Integration Testing System](./docs/phases/PHASE-2-3-INTEGRATION-TESTING.md)** - 包括的統合テストとE2Eテストオーケストレーション
 - **🆕 [🛡️ Phase 2.2: Runtime Conformance System](./docs/phases/PHASE-2-2-RUNTIME-CONFORMANCE.md)** - リアルタイム適合性検証とCEGIS連携
+- **🆕 [コンフォーマンス集計レポート活用ガイド](./docs/quality/formal-runbook.md#conformance-sample-quick-demo)** - `pnpm conformance:report` で違反サマリを生成
 - **[🔧 Phase 2.1: CEGIS Auto-Fix System](./docs/architecture/CEGIS-DESIGN.md)** - 反例誘導帰納合成による自動コード修復
 - **[🎨 Phase 6 UI/UX & Frontend Delivery完全実装](./docs/phases/phase-6-uiux.md)** - React + Next.js UI自動生成とOpenTelemetryテレメトリ
 - **[🚀 Phase 2-5 Claude Code Task Tool統合](./docs/integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)** - 全フェーズの完全自動化を実現

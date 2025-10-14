@@ -83,7 +83,9 @@
         "lintSummary",
         "lintLog",
         "mutationSummary",
-        "mutationSurvivors"
+        "mutationSurvivors",
+        "conformanceSummary",
+        "conformanceSummaryMarkdown"
       ],
       "properties": {
         "lintSummary": {
@@ -105,6 +107,18 @@
           ]
         },
         "mutationSurvivors": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "conformanceSummary": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "conformanceSummaryMarkdown": {
           "oneOf": [
             { "type": "string", "minLength": 1 },
             { "type": "null" }
