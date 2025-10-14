@@ -371,6 +371,40 @@ describe('ConformanceCli', () => {
       expect(summary.topViolations[0].ruleName).toBe('Sample Rule');
       expect(summary.latestRun.file).toBe(resultFile);
     });
+
+    it('should surface failures when result files cannot be read', async () => {
+      const brokenFile = 'broken-conformance.json';
+      const outputFile = 'conformance-summary-error.json';
+
+      writeFileSync(brokenFile, '{ invalid json');
+      testFiles.push(brokenFile, outputFile);
+
+      const command = cli.createCommand();
+      const args = [
+        'node', 'cli', 'report',
+        '--inputs', brokenFile,
+        '--format', 'json',
+        '--output', outputFile,
+        '--no-default-discovery'
+      ];
+
+      await command.parseAsync(args);
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to read result')
+      );
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to load 1 conformance result file')
+      );
+
+      expect(existsSync(outputFile)).toBe(true);
+      const summary = JSON.parse(readFileSync(outputFile, 'utf-8'));
+      expect(summary.status).toBe('failure');
+      expect(summary.statusBreakdown.error).toBeGreaterThanOrEqual(1);
+      const failedEntry = summary.inputs.find((entry: any) => entry.file.includes(brokenFile));
+      expect(failedEntry).toBeDefined();
+      expect(failedEntry.status).toBe('error');
+    });
   });
 
   describe('rules command', () => {

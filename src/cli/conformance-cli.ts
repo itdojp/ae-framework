@@ -559,8 +559,8 @@ export class ConformanceCli {
         console.log(chalk.blue(`📊 Aggregating ${resultFiles.length} conformance result file${resultFiles.length === 1 ? '' : 's'}...`));
       }
 
-      const runs = this.loadConformanceResults(resultFiles);
-      const summary = this.buildConformanceReportSummary(runs);
+      const { runs, failedFiles } = this.loadConformanceResults(resultFiles);
+      const summary = this.buildConformanceReportSummary(runs, failedFiles);
 
       const jsonOutput = path.resolve(typeof options.output === 'string' ? options.output : DEFAULT_REPORT_JSON);
       const markdownOutput = path.resolve(typeof options.markdownOutput === 'string' ? options.markdownOutput : DEFAULT_REPORT_MARKDOWN);
@@ -594,6 +594,14 @@ export class ConformanceCli {
             ? chalk.green('✅ Conformance runs look healthy.')
             : chalk.yellow('⚠️  Conformance runs not available.');
       console.log(statusMessage);
+
+      if (failedFiles.length > 0) {
+        console.error(chalk.red(`❌ Failed to load ${failedFiles.length} conformance result file(s).`));
+        failedFiles.forEach((file) => {
+          console.error(chalk.red(`   - ${file}`));
+        });
+        safeExit(1);
+      }
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Report generation failed: ${toMessage(error)}`));
       safeExit(1);
@@ -755,8 +763,9 @@ export class ConformanceCli {
     return /[*?[\]]/.test(value);
   }
 
-  private loadConformanceResults(files: string[]): AggregatedRunInput[] {
+  private loadConformanceResults(files: string[]): { runs: AggregatedRunInput[]; failedFiles: string[] } {
     const runs: AggregatedRunInput[] = [];
+    const failedFiles: string[] = [];
 
     for (const absolutePath of files) {
       try {
@@ -776,10 +785,11 @@ export class ConformanceCli {
         });
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Failed to read result ${this.toRelativePath(absolutePath)}: ${toMessage(error)}`));
+        failedFiles.push(this.toRelativePath(absolutePath));
       }
     }
 
-    return runs;
+    return { runs, failedFiles };
   }
 
   private resolveResultTimestamp(result: ConformanceVerificationResult, filePath: string): string {
@@ -800,7 +810,10 @@ export class ConformanceCli {
     return Number.isNaN(parsed) ? 0 : parsed;
   }
 
-  private buildConformanceReportSummary(runs: AggregatedRunInput[]): ConformanceReportSummary {
+  private buildConformanceReportSummary(
+    runs: AggregatedRunInput[],
+    failedFiles: string[]
+  ): ConformanceReportSummary {
     const generatedAt = new Date().toISOString();
     const statusBreakdown: Record<VerificationStatus, number> = {
       pass: 0,
@@ -811,10 +824,10 @@ export class ConformanceCli {
     };
 
     if (runs.length === 0) {
-      return {
+      const summary: ConformanceReportSummary = {
         schemaVersion: REPORT_SCHEMA_VERSION,
         generatedAt,
-        status: 'skipped',
+        status: failedFiles.length > 0 ? 'failure' : 'skipped',
         runsAnalyzed: 0,
         statusBreakdown,
         totals: {
@@ -837,8 +850,27 @@ export class ConformanceCli {
         })),
         topViolations: [],
         inputs: [],
-        notes: 'No conformance results were discovered.'
+        notes: failedFiles.length > 0
+          ? `Failed to load ${failedFiles.length} conformance result file(s).`
+          : 'No conformance results were discovered.'
       };
+
+      if (failedFiles.length > 0) {
+        const now = new Date().toISOString();
+        failedFiles.forEach((file) => {
+          statusBreakdown.error += 1;
+          summary.inputs.push({
+            file,
+            timestamp: now,
+            status: 'error',
+            environment: 'unknown',
+            version: 'unknown',
+            totalViolations: 0
+          });
+        });
+      }
+
+      return summary;
     }
 
     const totals = {
@@ -916,14 +948,29 @@ export class ConformanceCli {
         }
       });
 
-      inputsSummary.push({
-        file: run.file,
-        timestamp: run.timestamp,
-        status: overall,
-        environment: result.metadata?.environment ?? 'unknown',
-        version: result.metadata?.version ?? 'unknown',
-        totalViolations: result.violations?.length ?? 0
-      });
+    inputsSummary.push({
+      file: run.file,
+      timestamp: run.timestamp,
+      status: overall,
+      environment: result.metadata?.environment ?? 'unknown',
+      version: result.metadata?.version ?? 'unknown',
+      totalViolations: result.violations?.length ?? 0
+    });
+  }
+
+    if (failedFiles.length > 0) {
+      const now = new Date().toISOString();
+      for (const failed of failedFiles) {
+        statusBreakdown.error += 1;
+        inputsSummary.push({
+          file: failed,
+          timestamp: now,
+          status: 'error',
+          environment: 'unknown',
+          version: 'unknown',
+          totalViolations: 0
+        });
+      }
     }
 
     totals.uniqueRules = uniqueRules.size;
@@ -989,6 +1036,11 @@ export class ConformanceCli {
 
     if (status === 'failure') {
       summary.notes = 'One or more runs reported failures, errors, or timeouts.';
+    }
+
+    if (failedFiles.length > 0) {
+      const failureNote = `Failed to load ${failedFiles.length} conformance result file(s).`;
+      summary.notes = summary.notes ? `${summary.notes} ${failureNote}` : failureNote;
     }
 
     return summary;
