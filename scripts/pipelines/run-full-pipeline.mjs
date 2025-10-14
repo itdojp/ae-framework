@@ -2,6 +2,8 @@
 
 import { spawn } from 'child_process';
 
+import { cleanupArtifacts } from './cleanup-artifacts.mjs';
+
 const args = process.argv.slice(2);
 const skipArg = args.find((arg) => arg.startsWith('--skip='));
 const skipSteps = new Set(
@@ -74,6 +76,12 @@ const run = async () => {
   }
 
   console.log(`${LOG_PREFIX} pipeline complete`);
+
+  if (dryRun) {
+    console.log(`${LOG_PREFIX} cleanup skipped (dry-run)`);
+  } else {
+    await cleanupArtifacts();
+  }
 };
 
 run().catch((error) => {
