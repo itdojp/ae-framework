@@ -73,30 +73,25 @@ export class QualityGateRunner {
       console.log(`🔍 Executing quality gates for environment: ${environment}`);
       
       // Get gates to execute
-      const allGateMap = this.policyLoader.getAllGates();
-      const gateRecords = requestedGates
+      const allGates = requestedGates
         ? requestedGates.map(name => {
-            const key = this.policyLoader.resolveGateKey(name);
-            const gate = allGateMap[key];
-            if (!gate) {
+            const gates = this.policyLoader.getAllGates();
+            if (!gates[name]) {
               throw new Error(`Quality gate '${name}' not found`);
             }
-            return { gate, key };
+            return gates[name];
           })
-        : this.policyLoader.getGatesForEnvironment(environment).map(gate => ({
-            gate,
-            key: this.policyLoader.resolveGateKey(gate.name),
-          }));
+        : this.policyLoader.getGatesForEnvironment(environment);
 
-      if (gateRecords.length === 0) {
+      if (allGates.length === 0) {
         console.log('⚠️  No quality gates found for execution');
         return this.generateEmptyReport(environment);
       }
 
-      console.log(`📋 Found ${gateRecords.length} quality gates to execute`);
+      console.log(`📋 Found ${allGates.length} quality gates to execute`);
       if (verbose) {
-        gateRecords.forEach(({ gate, key }) => {
-          console.log(`   • ${gate.name} (${gate.category}) [${key}]`);
+        allGates.forEach(gate => {
+          console.log(`   • ${gate.name} (${gate.category})`);
         });
       }
 
@@ -104,14 +99,12 @@ export class QualityGateRunner {
       this.results = [];
       if (parallel) {
         console.log('🚀 Executing gates in parallel...');
-        const promises = gateRecords.map(({ gate, key }) =>
-          this.executeGate(gate, key, environment, { timeout, dryRun, verbose })
-        );
+        const promises = allGates.map(gate => this.executeGate(gate, environment, { timeout, dryRun, verbose }));
         this.results = await Promise.all(promises);
       } else {
         console.log('⏭️  Executing gates sequentially...');
-        for (const { gate, key } of gateRecords) {
-          const result = await this.executeGate(gate, key, environment, { timeout, dryRun, verbose });
+        for (const gate of allGates) {
+          const result = await this.executeGate(gate, environment, { timeout, dryRun, verbose });
           this.results.push(result);
         }
       }
@@ -156,7 +149,6 @@ export class QualityGateRunner {
    */
   private async executeGate(
     gate: QualityGate,
-    gateKey: string,
     environment: string,
     options: { timeout: number; dryRun: boolean; verbose: boolean }
   ): Promise<QualityGateResult> {
@@ -165,7 +157,6 @@ export class QualityGateRunner {
     const gateTimer = mockTelemetry.createTimer('quality_gates.gate.execution', {
       [TELEMETRY_ATTRIBUTES.SERVICE_COMPONENT]: 'quality-gate',
       gate_name: gate.name,
-      gate_key: gateKey,
       gate_category: gate.category,
       environment,
     });
@@ -177,12 +168,11 @@ export class QualityGateRunner {
         console.log(`   Command: ${gate.commands.test}`);
       }
 
-      const threshold = this.policyLoader.getThreshold(gateKey, environment);
+      const threshold = this.policyLoader.getThreshold(gate.name, environment);
       
       if (dryRun) {
         console.log(`   🔄 DRY RUN: Would execute '${gate.commands.test}'`);
         return {
-          gateKey,
           gateName: gate.name,
           passed: true,
           score: 100,
@@ -202,7 +192,6 @@ export class QualityGateRunner {
       // Parse result based on gate type
       const gateResult = await this.parseGateResult(
         gate,
-        gateKey,
         result,
         this.pickNumericThresholds(threshold as unknown as Record<string, unknown>),
         environment,
@@ -233,13 +222,12 @@ export class QualityGateRunner {
       console.error(`❌ Error executing gate '${gate.name}':`, error);
       
       return {
-        gateKey,
         gateName: gate.name,
         passed: false,
         violations: [`Execution error: ${error}`],
         executionTime,
         environment,
-        threshold: this.policyLoader.getThreshold(gateKey, environment),
+        threshold: this.policyLoader.getThreshold(gate.name, environment),
         details: { error: String(error) },
       };
     }
@@ -411,14 +399,12 @@ export class QualityGateRunner {
    */
   private async parseGateResult(
     gate: QualityGate,
-    gateKey: string,
     result: { stdout: string; stderr: string; code: number },
     threshold: Record<string, number | undefined>,
     environment: string,
     executionTime: number
   ): Promise<QualityGateResult> {
     const baseResult: QualityGateResult = {
-      gateKey,
       gateName: gate.name,
       passed: result.code === 0,
       violations: [],
@@ -481,7 +467,7 @@ export class QualityGateRunner {
         baseResult.score = Math.round((coverage.lines + coverage.functions + coverage.branches + coverage.statements) / 4);
 
         // Validate against thresholds
-        const validation = this.policyLoader.validateGateResult(baseResult.gateKey ?? baseResult.gateName, baseResult, baseResult.environment);
+        const validation = this.policyLoader.validateGateResult(baseResult.gateName, baseResult, baseResult.environment);
         baseResult.passed = validation.passed;
         baseResult.violations = validation.violations;
       }
