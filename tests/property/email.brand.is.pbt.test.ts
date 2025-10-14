@@ -19,19 +19,22 @@ afterEach(() => {
   }
 });
 
-function normalizeLocalPart(head: string, tail: string): string {
-  const cleanedTail = tail
-    .replace(/[^a-zA-Z0-9._+-]/g, '')
-    .replace(/[._+-]+$/g, '')
+function normalizeDotsAndSymbols(value: string): string {
+  return value
     .replace(/\.+/g, '.')
     .replace(/[._+-]{2,}/g, (segment) => segment[0]);
+}
+
+function normalizeLocalPart(head: string, tail: string): string {
+  const cleanedTail = normalizeDotsAndSymbols(
+    tail
+      .replace(/[^a-zA-Z0-9._+-]/g, '')
+      .replace(/[._+-]+$/g, ''),
+  );
 
   const remainder = cleanedTail.length > 0 ? cleanedTail : '0';
 
-  return `${head}${remainder}`
-    .replace(/\.+/g, '.')
-    .replace(/[._+-]{2,}/g, (segment) => segment[0])
-    .replace(/\.$/, '');
+  return normalizeDotsAndSymbols(`${head}${remainder}`).replace(/\.$/, '');
 }
 
 describe('PBT: Email brand is() and make()', () => {

@@ -57,6 +57,19 @@ async function loadReport() {
 }
 
 
+function isValidReportObject(value) {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  if (value.schemaVersion && typeof value.schemaVersion !== 'string') {
+    return false;
+  }
+  if (!value.files || typeof value.files !== 'object') {
+    return false;
+  }
+  return true;
+}
+
 function deriveSummaryFromSerializedReport(serialized) {
   if (typeof serialized !== 'string' || serialized.length === 0) {
     return null;
