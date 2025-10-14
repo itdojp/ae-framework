@@ -31,7 +31,7 @@ sudo loginctl enable-linger gha-runner
 # runner ユーザーに切り替えて作業
 sudo -iu gha-runner bash
 
-# 初回移行（XFS 等 d_type が無効な環境で警告が出た場合にも有効）
+# 初回実行（XFS 等 d_type が無効な環境で警告が出た場合にも有効）
 podman system migrate
 
 # user systemd が有効な場合は podman.socket を常駐させておく
@@ -109,7 +109,7 @@ PODMAN_COMPOSE_PROVIDER=podman pnpm pipelines:full --filter verify-lite
 | 症状 | 対処 |
 |------|------|
 | `Error: podman socket: permission denied` | `systemctl --user enable --now podman.socket` を実行し、`loginctl show-user $USER -p Linger` が `Linger=yes` であることを確認する |
-| `overlay: the backing xfs filesystem is formatted without d_type support` | `podman system migrate` を実行するか、ext4 を利用する | 
+| `overlay: the backing xfs filesystem is formatted without d_type support` | `podman system migrate` を実行するか、ext4 を利用する |
 | `loginctl (pam_unix) session not found` | linger 未設定。`sudo loginctl enable-linger $USER` を再実行 |
 | GitHub Runner が Podman を参照できない | `.env` や `svc.sh` で `PATH` に `/usr/bin` が含まれているか、`podman` が rootless で動作するか確認 |
 
