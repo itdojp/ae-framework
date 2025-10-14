@@ -10,6 +10,8 @@ const HTML_REPORT_CANDIDATES = [
   path.resolve('reports/mutation/index.html'),
 ];
 const SUMMARY_JSON = path.resolve('reports/mutation/summary.json');
+const VM_TIMEOUT_MS =
+  Number.parseInt(process.env.MUTATION_REPORT_VM_TIMEOUT ?? '2000', 10) || 2000;
 
 async function loadReport() {
   if (fs.existsSync(DEFAULT_REPORT)) {
@@ -34,19 +36,21 @@ async function loadReport() {
     return { report: JSON.parse(payload), source: htmlReport };
   } catch (jsonError) {
     try {
-      const sandbox = { app: {} };
-      const script = new vm.Script('app.report = ' + payload + ';');
-      script.runInNewContext(sandbox, { timeout: 1000 });
-      if (!sandbox.app || typeof sandbox.app.report !== 'object') {
+      const script = new vm.Script(`(${payload})`);
+      const reportObject = script.runInNewContext({}, { timeout: VM_TIMEOUT_MS });
+      if (!reportObject || typeof reportObject !== 'object') {
         throw new Error('app.report payload missing');
       }
-      return { report: sandbox.app.report, source: htmlReport };
+      return { report: reportObject, source: htmlReport };
     } catch (vmError) {
       const summary = deriveSummaryFromSerializedReport(payload);
       if (!summary) {
         throw new Error('failed to parse mutation report: ' + (vmError.message ?? vmError));
       }
-      console.warn('[mutation-report] fell back to text summary parsing:', vmError.message ?? vmError);
+      console.warn(
+        '[mutation-report] fell back to text summary parsing:',
+        vmError.message ?? vmError,
+      );
       return { summary, source: htmlReport };
     }
   }
