@@ -54,6 +54,7 @@ temp-reports/
 cegis-report-*.json
 *-report-*.json
 conformance-results.json
+reports/conformance/
 sample-*.json
 invalid-sample-*.json
 clean-sample-*.json

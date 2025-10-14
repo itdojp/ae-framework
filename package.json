@@ -232,6 +232,7 @@
     "formal:summary": "node scripts/formal/aggregate-formal.mjs && node scripts/formal/print-summary.mjs",
     "conformance:sample": "tsx src/cli/index.ts conformance sample --rules samples/conformance/sample-rules.json --config samples/conformance/sample-config.json --data samples/conformance/sample-data.json --context samples/conformance/sample-context.json",
     "conformance:verify:sample": "tsx src/cli/index.ts conformance verify -i samples/conformance/sample-data.json --context-file samples/conformance/sample-context.json --rules samples/conformance/sample-rules.json --format json --output hermetic-reports/conformance/sample-results.json",
+    "conformance:report": "tsx src/cli/index.ts conformance report --format both",
     "tools:formal:check": "node scripts/formal/tools-check.mjs",
     "trace:validate": "node scripts/formal/trace-validate.mjs samples/conformance/sample-traces.json",
     "trace:kvonce:replay": "node scripts/trace/run-kvonce-trace-replay.mjs",

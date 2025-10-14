@@ -151,6 +151,7 @@ jobs:
 - Reports: `hermetic-reports/`（各ツールのsummary/出力を保存）
   - Apalache: `hermetic-reports/formal/apalache-summary.json`, `hermetic-reports/formal/apalache-output.txt`
   - Formal summary: `hermetic-reports/formal/summary.json`（present/conformance/smt/alloy/tla/apalache を含む）
+  - Conformance aggregated summary (verify-lite): `reports/conformance/verify-lite-summary.json` / `.md`
 
 ### Samples
 - TLA+: `spec/tla/DomainSpec.tla`（最小の安全性不変と遷移の例）

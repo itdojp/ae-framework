@@ -36,6 +36,10 @@ LINT_LOG_EXPORT=""
 LINT_SUMMARY_PATH=""
 MUTATION_SUMMARY_PATH=""
 MUTATION_SURVIVORS_PATH=""
+CONFORMANCE_STATUS="skipped"
+CONFORMANCE_NOTES="not_run"
+CONFORMANCE_SUMMARY_PATH="${VERIFY_LITE_CONFORMANCE_SUMMARY_FILE:-reports/conformance/verify-lite-summary.json}"
+CONFORMANCE_SUMMARY_MARKDOWN_PATH="${VERIFY_LITE_CONFORMANCE_MARKDOWN_FILE:-reports/conformance/verify-lite-summary.md}"
 
 echo "[verify-lite] installing dependencies (${INSTALL_FLAGS[*]})"
 if ! pnpm install "${INSTALL_FLAGS[@]}"; then
@@ -134,6 +138,27 @@ if [[ -f reports/mutation/mutation.json || -f reports/mutation/mutation.html || 
   fi
 fi
 
+echo "[verify-lite] conformance report"
+if pnpm -s tsx src/cli/index.ts conformance report \
+  --format both \
+  --output "$CONFORMANCE_SUMMARY_PATH" \
+  --markdown-output "$CONFORMANCE_SUMMARY_MARKDOWN_PATH"; then
+  if [[ -f "$CONFORMANCE_SUMMARY_PATH" ]]; then
+    if ! CONFORMANCE_STATUS="$(node --input-type=module -e "import fs from 'node:fs'; let status = 'unknown'; try { const data = JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); status = data?.status ?? 'unknown'; } catch {} process.stdout.write(status);" "$CONFORMANCE_SUMMARY_PATH")"; then
+      CONFORMANCE_STATUS="failure"
+    fi
+    if ! CONFORMANCE_NOTES="$(node --input-type=module -e "import fs from 'node:fs'; let note = 'summary_parse_failed'; try { const data = JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); const runs = data?.runsAnalyzed ?? 0; const violations = data?.totals?.totalViolations ?? 0; note = \`runs=${runs};violations=${violations}\`; } catch {} process.stdout.write(note);" "$CONFORMANCE_SUMMARY_PATH")"; then
+      CONFORMANCE_NOTES="summary_parse_failed"
+    fi
+  else
+    CONFORMANCE_STATUS="failure"
+    CONFORMANCE_NOTES="summary_missing"
+  fi
+else
+  CONFORMANCE_STATUS="failure"
+  CONFORMANCE_NOTES="command_failed"
+fi
+
 export RUN_TIMESTAMP
 export SUMMARY_PATH
 export INSTALL_STATUS INSTALL_NOTES INSTALL_RETRIED
@@ -142,6 +167,8 @@ export MUTATION_STATUS MUTATION_NOTES
 export INSTALL_FLAGS_STR
 export LINT_SUMMARY_PATH LINT_LOG_EXPORT
 export MUTATION_SUMMARY_PATH MUTATION_SURVIVORS_PATH
+export CONFORMANCE_STATUS CONFORMANCE_NOTES
+export CONFORMANCE_SUMMARY_PATH CONFORMANCE_SUMMARY_MARKDOWN_PATH
 
 if ! node scripts/ci/write-verify-lite-summary.mjs "$SUMMARY_PATH"; then
   echo "[verify-lite] failed to persist summary" >&2

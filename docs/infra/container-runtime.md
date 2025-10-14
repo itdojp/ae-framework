@@ -68,3 +68,11 @@ pnpm pipelines:mutation:quick
 ## CI との整合性
 
 GitHub Actions でも同じ Podman ベースのパイプラインが動作します。ローカルで `pnpm pipelines:full` を実行して Verify Lite／Pact／API fuzz／Mutation Quick がすべて緑化することを確認してから PR を作成してください。Podman で取得したレポート (`reports/`, `hermetic-reports/`) はそのまま CI の成果物構成と一致します。
+
+### CI 共有ランナー向け手順
+
+GitHub Actions 上で Podman を利用する場合は、rootless Podman を有効にした専用ランナーを用意する必要があります。パッケージの導入、`loginctl enable-linger`、`podman.socket` の常駐化など詳細な手順は以下を参照してください。
+
+- [Podman 共有ランナー構築ガイド](./podman-shared-runner.md)
+
+

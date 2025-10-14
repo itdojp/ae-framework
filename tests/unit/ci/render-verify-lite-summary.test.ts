@@ -17,13 +17,16 @@ describe('renderVerifyLiteSummary', () => {
       lint: { status: 'failure', notes: '2618 violations' },
       build: { status: 'success' },
       bddLint: { status: 'skipped' },
-      mutationQuick: { status: 'success', notes: 'score: 59.74%' }
+      mutationQuick: { status: 'success', notes: 'score: 59.74%' },
+      conformanceReport: { status: 'success', notes: 'runs=1;violations=0' }
     },
     artifacts: {
       lintSummary: 'verify-lite-lint-summary.json',
       lintLog: 'verify-lite-lint.log',
       mutationSummary: 'reports/mutation/summary.json',
-      mutationSurvivors: 'reports/mutation/survivors.json'
+      mutationSurvivors: 'reports/mutation/survivors.json',
+      conformanceSummary: 'reports/conformance/verify-lite-summary.json',
+      conformanceSummaryMarkdown: 'reports/conformance/verify-lite-summary.md'
     }
   };
 
@@ -51,7 +54,9 @@ describe('renderVerifyLiteSummary', () => {
         lintSummary: null,
         lintLog: null,
         mutationSummary: null,
-        mutationSurvivors: null
+        mutationSurvivors: null,
+        conformanceSummary: null,
+        conformanceSummaryMarkdown: null
       }
     };
 
