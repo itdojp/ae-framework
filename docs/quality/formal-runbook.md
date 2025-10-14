@@ -122,6 +122,9 @@ TLA: tool_not_available (tlc)
 Conformance sample (quick demo)
 - `pnpm run conformance:sample` — サンプルのルール/設定/データ/コンテキストを生成
 - `pnpm run conformance:verify:sample` — 生成データで検証を実行（JSONレポート出力）
+- `pnpm run conformance:report` — 既存の `conformance-results.json` や `hermetic-reports/conformance/*.json` を集約し `reports/conformance/verify-lite-summary.(json|md)` を生成
+- `pnpm bdd` — 暗号化チャットの BDD シナリオ（デバイス登録・セッション・鍵ローテーション）を実行し、`artifacts/bdd/encrypted-chat/*.json` にスナップショットを保存
+- `pnpm pipelines:pact` — Pact 契約テストを実行し、暗号化チャット API 契約（`tests/contracts/encrypted-chat-contracts.test.ts`）を検証
 
 ### Minimal YAML (example)
 ```yaml
