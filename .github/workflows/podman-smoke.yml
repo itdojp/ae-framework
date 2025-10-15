@@ -35,7 +35,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y podman podman-compose
-          sudo apt-get install -y podman-plugins || echo 'podman-plugins package not available; continuing with podman-compose shim'
+          if ! sudo apt-get install -y podman-plugins; then
+            echo 'podman-plugins package not available; continuing with podman-compose shim'
+          fi
 
       - name: Show Podman info
         run: |
