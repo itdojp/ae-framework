@@ -1,4 +1,11 @@
 {
+  "schemaVersion": "1.0.0",
+  "generator": {
+    "name": "verify-lite-lint-summary-manual",
+    "version": "0.1.0",
+    "eslintVersion": "9.8.0",
+    "configHash": "manual-baseline-20251014"
+  },
   "generatedAt": "2025-10-14T23:07:32.778Z",
   "totals": {
     "totalIssues": 2668,
@@ -407,8 +414,9 @@
         "count": 2
       },
       {
-        "rule": "unknown",
-        "count": 1
+        "rule": null,
+        "count": 1,
+        "notes": "Rule ID unavailable; could not be determined."
       }
     ],
     "byFile": [

@@ -11,13 +11,15 @@
 - 🛠 `--fix` で自動修正可能な指摘は 46 件（主に `no-unnecessary-type-assertion`）
 
 ### ファイル別インパクト（抜粋）
-| 主要ファイル | 代表的なルール | 指摘件数 |
+| 主要ファイル | 代表的なルール | 指摘件数<sup>*</sup> |
 | --- | --- | --- |
-| `src/runtime/runtime-middleware.ts` | no-explicit-any / no-unsafe-* | 146 |
-| `src/inference/core/solution-composer.ts` | no-unused-vars / require-await / no-explicit-any | 78 |
-| `src/inference/strategies/sequential-strategy.ts` | no-explicit-any / no-unsafe-* | 95 |
-| `src/integration/runners/e2e-runner.ts` | require-await / no-unsafe-* | 78 |
-| `src/runtime/conformance-guards.ts` | no-explicit-any / no-unsafe-* | 86 |
+| `src/runtime/runtime-middleware.ts` | no-explicit-any / no-unsafe-* | 154 |
+| `src/inference/core/solution-composer.ts` | no-unused-vars / require-await / no-explicit-any | 81 |
+| `src/inference/strategies/sequential-strategy.ts` | no-explicit-any / no-unsafe-* | 98 |
+| `src/integration/runners/e2e-runner.ts` | require-await / no-unsafe-* | 79 |
+| `src/runtime/conformance-guards.ts` | no-explicit-any / no-unsafe-* | 89 |
+
+<sup>*</sup> 指摘件数は `reports/lint/verify-lite-lint-summary.json` の該当ファイル・ルールの合計値。
 
 > English TL;DR: Unsafe typed interactions dominate (52%), followed by `any` usage (23%). Five files (`runtime-middleware`, `solution-composer`, `sequential-strategy`, `e2e-runner`, `conformance-guards`) account for ~20% of the backlog and should anchor the first remediation sprint.
 
