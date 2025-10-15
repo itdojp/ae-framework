@@ -1,6 +1,13 @@
 import { EventEmitter } from 'events';
 import type { createHash } from 'crypto';
 
+export type ErrorConstructorLike = new (...args: any[]) => Error;
+export type FallbackHandler<TResult = unknown> = (...args: unknown[]) => TResult;
+
+function isFallbackFor<T>(fallback: FallbackHandler | undefined): fallback is FallbackHandler<T> {
+  return typeof fallback === 'function';
+}
+
 /**
  * Circuit Breaker States
  */
@@ -23,9 +30,9 @@ export interface CircuitBreakerOptions {
   /** Monitor window for failures (ms, default: 60000) */
   monitoringWindow?: number;
   /** Expected error types that should trigger circuit breaking */
-  expectedErrors?: Array<new (...args: any[]) => Error>;
+  expectedErrors?: ReadonlyArray<ErrorConstructorLike>;
   /** Fallback function when circuit is open */
-  fallback?: (...args: any[]) => any;
+  fallback?: FallbackHandler;
   /** Enable detailed monitoring and metrics */
   enableMonitoring?: boolean;
   /** Maximum concurrent calls allowed while HALF_OPEN (default: Infinity) */
@@ -40,8 +47,8 @@ type NormalizedCircuitBreakerOptions = {
   timeout: number;
   resetTimeoutMs: number;
   monitoringWindow: number;
-  expectedErrors: Array<new (...args: any[]) => Error>;
-  fallback?: (...args: any[]) => any;
+  expectedErrors: ReadonlyArray<ErrorConstructorLike>;
+  fallback?: FallbackHandler;
   enableMonitoring: boolean;
   halfOpenMaxCalls: number;
 };
@@ -139,7 +146,7 @@ export class CircuitBreaker extends EventEmitter {
   /**
    * Execute a function with circuit breaker protection
    */
-  async execute<T>(operation: () => Promise<T>, ...args: any[]): Promise<T> {
+  async execute<T>(operation: () => Promise<T>, ...args: unknown[]): Promise<T> {
     const startTime = Date.now();
     this.totalRequests++;
 
@@ -156,10 +163,10 @@ export class CircuitBreaker extends EventEmitter {
           reason: 'Circuit is open' 
         });
         
-        if (this.options.fallback) {
-          return this.options.fallback(...args);
+        if (isFallbackFor<T>(this.options.fallback)) {
+          return await this.options.fallback(...args);
         }
-        
+
         throw new CircuitBreakerOpenError(`Circuit breaker '${this.name}' is OPEN`);
       }
     }
@@ -174,8 +181,8 @@ export class CircuitBreaker extends EventEmitter {
           reason: 'Half-open max calls exceeded',
         });
         this.transitionToOpen();
-        if (this.options.fallback) {
-          return this.options.fallback(...args);
+        if (isFallbackFor<T>(this.options.fallback)) {
+          return await this.options.fallback(...args);
         }
         throw new CircuitBreakerOpenError(`Circuit breaker '${this.name}' is HALF_OPEN`);
       }
@@ -522,7 +529,7 @@ export class CircuitBreaker extends EventEmitter {
   /**
    * Execute a synchronous function with circuit breaker protection
    */
-  executeSync<T>(operation: () => T, ...args: any[]): T {
+  executeSync<T>(operation: () => T, ...args: unknown[]): T {
     const startTime = Date.now();
     this.totalRequests++;
 
@@ -531,8 +538,7 @@ export class CircuitBreaker extends EventEmitter {
         this.transitionToHalfOpen();
       } else {
         this.emit('callRejected', { name: this.name, state: this.state, reason: 'Circuit is open' });
-        if (this.options.fallback) {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        if (isFallbackFor<T>(this.options.fallback)) {
           return this.options.fallback(...args);
         }
         throw new CircuitBreakerOpenError(`Circuit breaker '${this.name}' is OPEN`);

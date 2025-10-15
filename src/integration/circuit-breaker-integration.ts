@@ -1,4 +1,4 @@
-import { circuitBreakerManager, CircuitBreaker } from '../utils/circuit-breaker.js';
+import { circuitBreakerManager, CircuitBreaker, type ErrorConstructorLike, type FallbackHandler } from '../utils/circuit-breaker.js';
 import { EventEmitter } from 'events';
 
 /**
@@ -433,14 +433,14 @@ export function WithCircuitBreaker(
     failureThreshold?: number;
     successThreshold?: number;
     timeout?: number;
-    expectedErrors?: Array<new (...args: any[]) => Error>;
-    fallback?: (...args: any[]) => any;
+    expectedErrors?: ReadonlyArray<ErrorConstructorLike>;
+    fallback?: FallbackHandler;
   }
 ) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+  return function (target: unknown, propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
     
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: unknown[]) {
       const breaker = circuitBreakerManager.getCircuitBreaker(breakerName, {
         failureThreshold: 5,
         successThreshold: 3,

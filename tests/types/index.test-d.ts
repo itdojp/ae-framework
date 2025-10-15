@@ -18,6 +18,17 @@ const breaker = new CircuitBreaker('test', {
 });
 expectType<CircuitBreaker>(breaker);
 
+const breakerWithFallback = new CircuitBreaker('test-fallback', {
+  failureThreshold: 2,
+  successThreshold: 1,
+  timeout: 500,
+  monitoringWindow: 2000,
+  expectedErrors: [Error],
+  fallback: () => 'fallback',
+});
+expectType<CircuitBreaker>(breakerWithFallback);
+expectType<Promise<string>>(breakerWithFallback.execute(async () => 'ok'));
+
 // Test Quality Policy types
 const policy = loadQualityPolicy('ci');
 expectType<QualityPolicy>(policy);
