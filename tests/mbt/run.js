@@ -2,12 +2,18 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+// Deterministic PRNG for reproducible MBT runs.
+// See: https://github.com/bryc/code/blob/master/jshash/PRNGs.md
+const MULBERRY32_INCREMENT = 0x6D2B79F5;
+const MULBERRY32_MIX_CONSTANT = 61;
+
+// Lightweight 32-bit PRNG returning deterministic values in [0, 1).
 function mulberry32(seed) {
   let t = seed >>> 0;
   return () => {
-    t += 0x6D2B79F5;
+    t += MULBERRY32_INCREMENT;
     let r = Math.imul(t ^ (t >>> 15), t | 1);
-    r ^= r + Math.imul(r ^ (r >>> 7), r | 61);
+    r ^= r + Math.imul(r ^ (r >>> 7), r | MULBERRY32_MIX_CONSTANT);
     return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
   };
 }
