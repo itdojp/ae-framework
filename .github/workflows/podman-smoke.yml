@@ -35,11 +35,24 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y podman podman-compose
+          if ! sudo apt-get install -y podman-plugins; then
+            echo 'podman-plugins package not available; continuing with podman-compose shim'
+          fi
 
       - name: Show Podman info
         run: |
           podman version
           podman info --debug
+
+      - name: Verify Podman compose
+        run: |
+          if podman compose version >/dev/null 2>&1; then
+            podman compose version
+            podman compose --help | head -n 40
+          else
+            echo 'podman compose is unavailable; falling back to podman-compose shim'
+            podman-compose --version
+          fi
 
       - name: Setup pnpm
         uses: ./.github/actions/setup-pnpm

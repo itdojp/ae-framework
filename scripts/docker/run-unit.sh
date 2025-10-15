@@ -45,7 +45,7 @@ trap cleanup EXIT INT TERM
 
 fallback_local() {
   local reason="${1:-falling back to local vitest}"
-  echo "[run-unit] $reason"
+  echo "[run-unit][info] $reason"
   pnpm exec vitest run tests/unit --reporter dot
   exit $?
 }

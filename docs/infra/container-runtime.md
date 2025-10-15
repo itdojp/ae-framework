@@ -5,6 +5,7 @@ AE-Framework のフルパイプラインは Podman を第一候補として設�
 ## 前提条件
 
 - Podman 4.8 以降（rootless モード）
+- `podman-plugins` 1.7 以降（`podman compose` を提供）
 - `podman-compose` もしくは Podman ネイティブの Compose (`podman compose`) が利用可能であること
 - `PODMAN_COMPOSE_PROVIDER` として `podman` または `podman-compose` を切り替えられるシェル環境
 - Linux もしくは WSL2 上の Node.js 20（`pnpm` 10 系）
@@ -25,6 +26,15 @@ systemctl --user status podman.socket
 エラーが出る場合は `podman system migrate` を実行して設定を最新化してください。WSL2 では `sudo loginctl enable-linger $USER` を一度実行すると rootless サービスが安定します。
 
 ## Compose の切り替え
+
+> Ubuntu 24.04 LTS では `sudo apt-get install podman podman-plugins` を実行するとネイティブ `podman compose` が導入されます。
+> 最新の Podman Compose を利用できない場合は `podman-plugins` パッケージをアップグレードしてください。
+
+```bash
+# Compose のバージョン確認
+podman compose version
+podman compose --help | head -n 20
+```
 
 パイプラインスクリプトは `PODMAN_COMPOSE_PROVIDER` 環境変数で Compose 実装を切り替えます。
 
