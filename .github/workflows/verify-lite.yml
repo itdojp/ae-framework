@@ -39,6 +39,10 @@ jobs:
           VERIFY_LITE_LINT_ENFORCE: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-verify-lite-lint') && '1' || '0' }}
         run: |
           pnpm run verify:lite
+      - name: Property-based smoke
+        run: pnpm test:property
+      - name: Pact contract smoke
+        run: pnpm pipelines:pact
       - name: Verify-lite lint baseline
         if: always()
         env:
@@ -187,6 +191,21 @@ jobs:
             node scripts/ci/render-verify-lite-summary.mjs verify-lite-run-summary.json >> "$GITHUB_STEP_SUMMARY"
           else
             echo 'Verify Lite run summary not generated.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Append property harness summary
+        if: always()
+        run: |
+          if [ -f artifacts/properties/summary.json ]; then
+            echo '## Property Harness' >> "$GITHUB_STEP_SUMMARY"
+            jq -r '
+              "Trace ID: \(.traceId)",
+              "Seed: \(.seed)",
+              "Runs: \(.runs)",
+              "Passed: \(.passed)",
+              (if .note then "Note: \(.note)" else empty end)
+            ' artifacts/properties/summary.json >> "$GITHUB_STEP_SUMMARY" || echo 'Failed to parse property summary.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Property harness summary not generated.' >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Append lint summary (top rules)
         if: always()
