@@ -197,7 +197,13 @@ jobs:
         run: |
           if [ -f artifacts/properties/summary.json ]; then
             echo '## Property Harness' >> "$GITHUB_STEP_SUMMARY"
-            node -e $'const fs = require("fs");\ntry {\n  const data = JSON.parse(fs.readFileSync("artifacts/properties/summary.json", "utf8"));\n  console.log(`Trace ID: ${data.traceId}`);\n  console.log(`Seed: ${data.seed}`);\n  console.log(`Runs: ${data.runs}`);\n  console.log(`Passed: ${data.passed}`);\n  if (data.note) console.log(`Note: ${data.note}`);\n} catch (err) {\n  console.log("Failed to parse property summary: " + err.message);\n}' >> "$GITHUB_STEP_SUMMARY"
+            jq -r '
+              "Trace ID: \(.traceId)",
+              "Seed: \(.seed)",
+              "Runs: \(.runs)",
+              "Passed: \(.passed)",
+              (if .note then "Note: \(.note)" else empty end)
+            ' artifacts/properties/summary.json >> "$GITHUB_STEP_SUMMARY" || echo 'Failed to parse property summary.' >> "$GITHUB_STEP_SUMMARY"
           else
             echo 'Property harness summary not generated.' >> "$GITHUB_STEP_SUMMARY"
           fi
