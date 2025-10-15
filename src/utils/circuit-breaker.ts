@@ -1,10 +1,12 @@
 import { EventEmitter } from 'events';
 import type { createHash } from 'crypto';
 
-export type ErrorConstructorLike =
-  | (new (message: string, ...rest: unknown[]) => Error)
-  | (new (...args: [] | [message: string, ...rest: unknown[]]) => Error);
+export type ErrorConstructorLike = new (...args: unknown[]) => Error;
 export type FallbackHandler<TResult = unknown> = (...args: unknown[]) => TResult;
+
+function isFallbackFor<T>(fallback: FallbackHandler | undefined): fallback is FallbackHandler<T> {
+  return typeof fallback === 'function';
+}
 
 /**
  * Circuit Breaker States
@@ -161,10 +163,10 @@ export class CircuitBreaker extends EventEmitter {
           reason: 'Circuit is open' 
         });
         
-        if (this.options.fallback) {
-          return this.options.fallback(...args) as T;
+        if (isFallbackFor<T>(this.options.fallback)) {
+          return await this.options.fallback(...args);
         }
-        
+
         throw new CircuitBreakerOpenError(`Circuit breaker '${this.name}' is OPEN`);
       }
     }
@@ -179,8 +181,8 @@ export class CircuitBreaker extends EventEmitter {
           reason: 'Half-open max calls exceeded',
         });
         this.transitionToOpen();
-        if (this.options.fallback) {
-          return this.options.fallback(...args) as T;
+        if (isFallbackFor<T>(this.options.fallback)) {
+          return await this.options.fallback(...args);
         }
         throw new CircuitBreakerOpenError(`Circuit breaker '${this.name}' is HALF_OPEN`);
       }
@@ -536,8 +538,8 @@ export class CircuitBreaker extends EventEmitter {
         this.transitionToHalfOpen();
       } else {
         this.emit('callRejected', { name: this.name, state: this.state, reason: 'Circuit is open' });
-        if (this.options.fallback) {
-          return this.options.fallback(...args) as T;
+        if (isFallbackFor<T>(this.options.fallback)) {
+          return this.options.fallback(...args);
         }
         throw new CircuitBreakerOpenError(`Circuit breaker '${this.name}' is OPEN`);
       }
