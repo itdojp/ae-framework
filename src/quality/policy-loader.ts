@@ -383,7 +383,7 @@ export class QualityPolicyLoader {
     const policy = this.loadPolicy();
     
     for (const result of results) {
-      const gateKey = result.gateKey ?? this.resolveGateKey(result.gateName);
+      const gateKey = result.gateKey;
       const gate = policy.qualityGates[gateKey];
       if (gate) {
         const category = gate.category;
@@ -399,7 +399,7 @@ export class QualityPolicyLoader {
 
     // Find blockers
     const blockers = results
-      .filter(r => !r.passed && this.shouldBlock(r.gateKey ?? r.gateName, environment))
+      .filter(r => !r.passed && this.shouldBlock(r.gateKey, environment))
       .map(r => r.gateName);
 
     return {

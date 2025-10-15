@@ -481,7 +481,7 @@ export class QualityGateRunner {
         baseResult.score = Math.round((coverage.lines + coverage.functions + coverage.branches + coverage.statements) / 4);
 
         // Validate against thresholds
-        const validation = this.policyLoader.validateGateResult(baseResult.gateKey ?? baseResult.gateName, baseResult, baseResult.environment);
+        const validation = this.policyLoader.validateGateResult(baseResult.gateKey, baseResult, baseResult.environment);
         baseResult.passed = validation.passed;
         baseResult.violations = validation.violations;
       }
