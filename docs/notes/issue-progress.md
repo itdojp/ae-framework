@@ -48,7 +48,7 @@
 - [x] 予約キャンセルフローと各種テスト資産の実装
 - [x] Mutation quick (API server 100% / EnhancedStateManager 67.90%) の結果ドキュメント化
 - [x] EnhancedStateManager 残存ミュータント（`versionIndex` / `stateImported` / `findKeyByVersion`）に対するテスト実装（PR #1094 / 2025-10-09: 連番バージョン検証テストを追加）
-- [ ] tinypool クラッシュ回避策の検証（Node 20 切替または Vitest 設定調整）
+- [x] tinypool クラッシュ回避策の検証（Node 20 fallback + Vitest forks 戦略を導入済み）
 - [x] ResilientHttpClient / IntelligentTestSelection / EvidenceValidator のテスト修正と再実行
 
 ### #1002 Week3 準備

@@ -23,7 +23,10 @@
    - tinypool v2 以降 (Node 22 最適化) へアップデートした後に再度 Node 22 へ戻すかを比較。
    - GitHub Actions で self-hosted runner (Node 20 LTS 固定) を追加するオプションを検討。
 
+## 2025-10-15 更新
+- Verify Lite と mutation quick の CI ワークフローを Node.js 20 固定にし、`run-scoped.sh` Quick モードで `VITEST_POOL_STRATEGY=forks` / `VITEST_POOL_WORKERS=1` をデフォルト設定しました。
+- GitHub Actions での連続実行でも tinypool の sporadic crash が再現しないことを確認済みです（`Verify Lite` ワークフロー + mutation quick 手動実行）。
+
 ## 次のタスク
-- Verify Lite workflow に Node 20 fallback を試験導入し、クラッシュが再現しないかを確認 (#1001)。
-- mutation quick 実行ジョブに pool 戦略の環境変数を追加し、実行時間への影響を測定。
-- Node 22 ランナーでも tinypool v2 / Vitest v3 が安定するか定期的に確認し、報告する。
+- Node 22 ランナー向けに tinypool v2 / Vitest v3 の安定性を検証し、戻し計画を策定する。
+- Node 20 fallback 運用での実行時間とリソース利用を継続監視し、最適化が必要か判断する。

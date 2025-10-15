@@ -110,3 +110,8 @@
 2. 修正後に `./scripts/mutation/run-scoped.sh --quick` を再実行し、Dry run 成功と Mutation スコアを確認。レポート (`reports/mutation/*`) は再生成して差分を確認する。
 3. EnhancedStateManager 周辺の未対応サバイバーについて、`./scripts/mutation/run-scoped.sh --quick --mutate src/utils/enhanced-state-manager.ts` と `pnpm vitest run tests/unit/utils/enhanced-state-manager.test.ts --reporter dot` をセットで回し、テスト追加→再計測を繰り返す。
 4. Docker 最適化テスト用フィクスチャが整い次第、`make test-mutation` をフルスコープで再走し、CI 連携（Artifact 添付 & Step Summary）を復旧させる。
+
+## Node 20 fallback / Vitest pool 設定
+- CI では mutation quick / Verify Lite を Node.js 20 固定で実行し、tinypool crash を回避しています。
+- ローカルでも `pnpm env use --global 20` で Node 20 を利用し、`VITEST_POOL_STRATEGY=forks VITEST_POOL_WORKERS=1 ./scripts/mutation/run-scoped.sh --quick` を推奨。
+
