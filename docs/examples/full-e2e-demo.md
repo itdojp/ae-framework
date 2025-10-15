@@ -75,11 +75,11 @@ make test-api-fuzz
 
 ## 5. MBT (Model-Based Testing)
 
-1. CEGIS を利用した生成テスト:
+1. モデルベーステスト（在庫シミュレーション）:
    ```bash
-   pnpm run mbt:cegis
+   pnpm test:mbt
    ```
-2. 生成されたケースは `artifacts/mbt/` に格納され、Verify Lite からも再利用可能。
+2. 生成されたケースは `artifacts/mbt/summary.json` に保存され、Verify Lite からも再利用可能。
 
 ## 6. End-to-End チェックリスト
 
@@ -90,7 +90,7 @@ make test-api-fuzz
 5. `pnpm run bdd:test`
 6. `pnpm run contracts:verify`
 7. `make test-api-fuzz`
-8. `pnpm run mbt:cegis`
+8. `pnpm test:mbt`
 9. `pnpm pipelines:trace --input samples/trace/kvonce-sample.ndjson --skip-replay`
 
 全て完了したら、`reports/` / `artifacts/` の差分を確認し、必要に応じて Issue / PR に最新状況をコメントしてください。
