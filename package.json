@@ -301,6 +301,7 @@
     "test:performance": "vitest run --config configs/vitest.optimized.config.ts --reporter=verbose --run --coverage=false",
     "test:flake-detection": "vitest run --config configs/vitest.optimized.config.ts --retry=5 --reporter=json",
     "test:property": "node scripts/testing/property-harness.mjs",
+    "test:mbt": "node tests/mbt/run.js",
     "test:property:focus": "node scripts/testing/property-harness.mjs --focus=$TRACE_ID",
     "bdd:lint": "node scripts/bdd/lint.mjs",
     "bdd:suggest": "node scripts/bdd/ltl-suggest.mjs",
