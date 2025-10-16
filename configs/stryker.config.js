@@ -7,7 +7,7 @@ export default {
   testRunner: "vitest",
   checkers: [], // Temporarily disabled TypeScript checker due to strict mode issues
   coverageAnalysis: "perTest",
-  disableTypeChecks: ["{src,tests}/**/*.{ts,tsx,js,jsx}"],
+  disableTypeChecks: "{src,tests}/**/*.{ts,tsx,js,jsx}",
   mutate: [
     "src/**/*.ts",
     "!src/**/*.test.ts", 
