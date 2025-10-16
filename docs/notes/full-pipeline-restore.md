@@ -36,6 +36,11 @@
 ## Week2 追加メモ（2025-Week2）
 
 ### Week3 TODO (2025-10-15)
+### Verify Lite mutation auto-diff (2025-10-16)
+- Verify Lite workflow で `verify-lite` ステップ前に mutation-auto-diff コンポジットを実行し、`run-scoped.sh` の diff パターンと共通サマリを共有化。
+- `run-verify-lite-local.sh` は `VERIFY_LITE_SKIP_INSTALL` / `VERIFY_LITE_RUN_MUTATION=0` を受け取り、外部で生成した `reports/mutation` を利用して概要を起こすよう更新。
+- Step Summary の生成はコンポジットに委譲しつつ、従来の survivors JSON 生成フローはそのまま利用可能。
+
 
 ### Docker Tests workflow 運用メモ (2025-10-16)
 - GitHub Actions の `Docker Tests` ワークフローは `reports/consolidated-test-report.json` を生成した後、Step Summary にサマリを追記します。

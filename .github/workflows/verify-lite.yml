@@ -30,6 +30,32 @@ jobs:
         with:
           node-version: '20'
           cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+
+      - name: Prepare mutation auto diff args
+        id: vlite-mutation-args
+        run: |
+          set -euo pipefail
+          target_base="origin/main"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            target_base="origin/${{ github.event.pull_request.base.ref }}"
+          fi
+          git fetch --no-tags --depth=1 origin "${target_base#origin/}" || true
+          {
+            echo "base_ref=${target_base}"
+            echo 'args<<__VL_MUT_ARGS__'
+            echo '__VL_MUT_ARGS__'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Run mutation auto diff (verify-lite)
+        id: vlite-mutation
+        uses: ./.github/actions/mutation-auto-diff
+        with:
+          base-ref: ${{ steps.vlite-mutation-args.outputs.base_ref }}
+          quick: 'true'
+          extra-args: ${{ steps.vlite-mutation-args.outputs.args }}
       - name: Detect pact-related changes (PR only)
         id: pact-paths
         run: |
@@ -52,7 +78,8 @@ jobs:
       - name: Run verify-lite pipeline
         env:
           VERIFY_LITE_KEEP_LINT_LOG: '1'
-          VERIFY_LITE_RUN_MUTATION: ${{ github.event_name == 'pull_request' && '1' || '0' }}
+          VERIFY_LITE_RUN_MUTATION: '0'
+          VERIFY_LITE_SKIP_INSTALL: '1'
           VERIFY_LITE_NO_FROZEN: '0'
           VERIFY_LITE_SUMMARY_FILE: verify-lite-run-summary.json
           VERIFY_LITE_SUMMARY_EXPORT_PATH: artifacts/verify-lite/verify-lite-run-summary.json
@@ -158,17 +185,6 @@ jobs:
         run: |
           if [ -f scripts/summary/render-pr-summary.mjs ]; then node scripts/summary/render-pr-summary.mjs; fi
           [ -f artifacts/summary/PR_SUMMARY.md ] && cat artifacts/summary/PR_SUMMARY.md >> "$GITHUB_STEP_SUMMARY" || true
-      - name: Mutation quick summary
-        if: ${{ github.event_name == 'pull_request' }}
-        run: |
-          if [ -f mutation-summary.md ]; then
-            cat mutation-summary.md >> "$GITHUB_STEP_SUMMARY"
-          elif [ -f reports/mutation/mutation.json ]; then
-            node scripts/mutation/post-quick-summary.mjs | tee mutation-summary.md
-            cat mutation-summary.md >> "$GITHUB_STEP_SUMMARY"
-          else
-            printf 'No mutation report found; skipped summary.\n' | tee mutation-summary.md >> "$GITHUB_STEP_SUMMARY"
-          fi
       - name: Mutation survivors JSON
         if: ${{ github.event_name == 'pull_request' }}
         run: |
