@@ -3,32 +3,32 @@
 > 🌍 Language / 言語: 日本語 (English TL;DR included inline)
 
 ## 現状サマリ
-- 📊 合計 2,668 件（baseline 2,618 から +50）
-- 🛑 `no-unsafe-*` 系 1,394 件（52.3%）
-- ⚠️ `no-explicit-any` 620 件（23.2%）
-- 🔄 `no-unused-vars` 274 件（10.3%）
-- ⏳ `require-await` 205 件（7.7%）
-- 🛠 `--fix` で自動修正可能な指摘は 46 件（主に `no-unnecessary-type-assertion`）
+- 📊 合計 2,101 件（前回 2,202 件から **-101**）
+- 🛑 `no-unsafe-*` 系 1,078 件（51.3%）
+- ⚠️ `no-explicit-any` 469 件（22.3%）
+- 🔄 `no-unused-vars` 264 件（12.6%）
+- ⏳ `require-await` 195 件（9.3%）
+- 🛠 自動修正対象は 0 件（Stage 1 `--fix` 残タスクの `src/server.ts` を解消済み）
 
 ### ファイル別インパクト（抜粋）
 | 主要ファイル | 代表的なルール | 指摘件数<sup>*</sup> |
 | --- | --- | --- |
-| `src/runtime/runtime-middleware.ts` | no-explicit-any / no-unsafe-* | 154 |
-| `src/inference/core/solution-composer.ts` | no-unused-vars / require-await / no-explicit-any | 81 |
-| `src/inference/strategies/sequential-strategy.ts` | no-explicit-any / no-unsafe-* | 98 |
-| `src/integration/runners/e2e-runner.ts` | require-await / no-unsafe-* | 79 |
-| `src/runtime/conformance-guards.ts` | no-explicit-any / no-unsafe-* | 89 |
+| `src/integration/runners/e2e-runner.ts` | require-await / no-unsafe-* | 117 |
+| `src/inference/core/solution-composer.ts` | no-unused-vars / require-await / no-explicit-any | 97 |
+| `src/integration/runners/api-runner.ts` | no-explicit-any / no-unsafe-* | 79 |
+| `src/inference/core/validation-orchestrator.ts` | no-unused-vars / no-explicit-any | 73 |
+| `src/codegen/deterministic-generator.ts` | no-unsafe-member-access / require-await | 65 |
 
 <sup>*</sup> 指摘件数は `reports/lint/verify-lite-lint-summary.json` の該当ファイル・ルールの合計値。
 
-> English TL;DR: Unsafe typed interactions dominate (52%), followed by `any` usage (23%). Five files (`runtime-middleware`, `solution-composer`, `sequential-strategy`, `e2e-runner`, `conformance-guards`) account for ~20% of the backlog and should anchor the first remediation sprint.
+> English TL;DR: Unsafe typed interactions still dominate (~51%), followed by `any` usage (~22%). Five files (`e2e-runner`, `solution-composer`, `integration/runners/api-runner`, `validation-orchestrator`, `codegen/deterministic-generator`) now concentrate ~19% of the backlog and remain the primary remediation targets.
 
 ---
 
 ## ルール別チェックリスト
 各項目は **[ ]** → 未対応 / **[x]** → 解消済み で管理します。数字は現時点の残件数です（`reports/lint/verify-lite-lint-summary.json` から算出）。
 
-### 1. `@typescript-eslint/no-unused-vars`（274）
+### 1. `@typescript-eslint/no-unused-vars`（264）
 - [ ] `src/inference/core/solution-composer.ts` (27)
 - [ ] `src/inference/core/validation-orchestrator.ts` (17)
 - [ ] `src/quality/quality-gate-runner.ts` (17)
@@ -36,62 +36,60 @@
 - [ ] `src/engines/sequential-inference-engine.ts` (13)
 - [ ] `src/testing/visual-regression.ts` (12)
 - [ ] `src/integration/runners/e2e-runner.ts` (11)
-- [ ] `src/inference/strategies/sequential-strategy.ts` (7)
 - [ ] `src/integration/reporters/html-reporter.ts` (7)
 - [ ] `src/self-improvement/phase5-verification-final.ts` (7)
+- [ ] `src/self-improvement/codebase-analysis.ts` (6)
 
-### 2. `@typescript-eslint/require-await`（205）
+### 2. `@typescript-eslint/require-await`（195）
 - [ ] `src/integration/runners/e2e-runner.ts` (18)
 - [ ] `src/inference/core/solution-composer.ts` (14)
 - [ ] `src/inference/core/validation-orchestrator.ts` (9)
 - [ ] `src/cegis/strategies/type-error-strategy.ts` (8)
-- [ ] `src/inference/strategies/sequential-strategy.ts` (8)
 - [ ] `src/cegis/strategies/test-failure-strategy.ts` (6)
 - [ ] `src/engines/sequential-inference-engine.ts` (6)
 - [ ] `src/integration/hybrid-tdd-system.ts` (6)
 - [ ] `src/integration/test-orchestrator.ts` (6)
 - [ ] `src/utils/enhanced-state-manager.ts` (6)
+- [ ] `src/codegen/deterministic-generator.ts` (5)
 
-### 3. `@typescript-eslint/no-explicit-any`（620）
-- [ ] `src/runtime/runtime-middleware.ts` (53)
+### 3. `@typescript-eslint/no-explicit-any`（469）
 - [ ] `src/inference/core/solution-composer.ts` (37)
-- [ ] `src/inference/strategies/sequential-strategy.ts` (31)
-- [ ] `src/runtime/conformance-guards.ts` (31)
 - [ ] `src/inference/core/validation-orchestrator.ts` (22)
-- [ ] `src/server.ts` (22)
 - [ ] `src/conformance/rule-engine.ts` (20)
 - [ ] `src/integration/runners/api-runner.ts` (20)
 - [ ] `src/integration/circuit-breaker-integration.ts` (17)
 - [ ] `src/integration/hybrid-intent-system.ts` (17)
+- [ ] `src/integration/hybrid-tdd-system.ts` (17)
+- [ ] `src/inference/strategies/parallel-strategy.ts` (16)
+- [ ] `src/engines/sequential-inference-engine.ts` (15)
 
-### 4. `no-unsafe-*` クラスター（計 1,394）
-#### 4-1. `@typescript-eslint/no-unsafe-assignment`
-- [ ] `src/runtime/runtime-middleware.ts` (43)
-- [ ] `src/inference/strategies/sequential-strategy.ts` (24)
+### 4. `no-unsafe-*` クラスター（計 1,078）
+#### 4-1. `@typescript-eslint/no-unsafe-assignment`（304）
 - [ ] `src/integration/runners/e2e-runner.ts` (19)
-- [ ] `src/runtime/conformance-guards.ts` (19)
 - [ ] `src/conformance/monitors/data-validation-monitor.ts` (18)
 - [ ] `src/inference/core/solution-composer.ts` (17)
-- [ ] `src/inference/strategies/parallel-strategy.ts` (17)
 - [ ] `src/integration/circuit-breaker-integration.ts` (16)
 - [ ] `src/utils/persona-manager.ts` (15)
 - [ ] `src/security/sbom-generator.ts` (14)
+- [ ] `src/integration/runners/api-runner.ts` (13)
+- [ ] `src/inference/strategies/parallel-strategy.ts` (12)
+- [ ] `src/integration/hybrid-tdd-system.ts` (11)
+- [ ] `src/optimization/parallel/parallel-optimizer.ts` (11)
 
-#### 4-2. `@typescript-eslint/no-unsafe-member-access`
-- [ ] `src/runtime/runtime-middleware.ts` (45)
+#### 4-2. `@typescript-eslint/no-unsafe-member-access`（544）
 - [ ] `src/codegen/deterministic-generator.ts` (36)
-- [ ] `src/runtime/conformance-guards.ts` (29)
 - [ ] `src/integration/runners/e2e-runner.ts` (28)
 - [ ] `src/security/sbom-generator.ts` (27)
 - [ ] `src/self-improvement/phase4-code-generation.ts` (27)
 - [ ] `src/integration/runners/api-runner.ts` (24)
-- [ ] `src/server.ts` (23)
-- [ ] `src/inference/strategies/sequential-strategy.ts` (22)
 - [ ] `src/testing/playwright-integration.ts` (20)
+- [ ] `src/optimization/monitoring/demo.ts` (19)
+- [ ] `src/optimization/parallel/parallel-optimizer.ts` (18)
+- [ ] `src/utils/persona-manager.ts` (17)
+- [ ] `src/integration/hybrid-intent-system.ts` (16)
 
-#### 4-3. `@typescript-eslint/no-unsafe-argument`
+#### 4-3. `@typescript-eslint/no-unsafe-argument`（123）
 - [ ] `src/integration/runners/e2e-runner.ts` (20)
-- [ ] `src/inference/strategies/sequential-strategy.ts` (11)
 - [ ] `src/mcp-server/intent-server.ts` (9)
 - [ ] `src/integration/hybrid-intent-system.ts` (8)
 - [ ] `src/optimization/parallel/parallel-optimizer.ts` (8)
@@ -100,40 +98,36 @@
 - [ ] `src/conformance/monitors/data-validation-monitor.ts` (7)
 - [ ] `src/integration/runners/api-runner.ts` (7)
 - [ ] `src/optimization/parallel/index.ts` (7)
+- [ ] `src/security/sbom-generator.ts` (6)
 
-#### 4-4. `@typescript-eslint/no-unsafe-return`
-- [ ] `src/runtime/runtime-middleware.ts` (13)
+#### 4-4. `@typescript-eslint/no-unsafe-return`（36）
 - [ ] `src/integration/circuit-breaker-integration.ts` (7)
-- [ ] `src/runtime/conformance-guards.ts` (5)
 - [ ] `src/codegen/drift-detector.ts` (3)
 - [ ] `src/codegen/deterministic-generator.ts` (2)
 - [ ] `src/conformance/rule-engine.ts` (2)
 - [ ] `src/testing/visual-regression.ts` (2)
-- [ ] `src/utils/circuit-breaker.ts` (2)
-- [ ] `src/utils/phase-state-manager.ts` (2)
 - [ ] `src/utils/quality-policy-loader.ts` (2)
+- [ ] `src/conformance/monitors/api-contract-monitor.ts` (1)
+- [ ] `src/conformance/monitors/data-validation-monitor.ts` (1)
+- [ ] `src/generators/ui-scaffold-generator.ts` (1)
+- [ ] `src/inference/core/validation-orchestrator.ts` (1)
 
 ---
 
-## `--fix` 対応可能な指摘（46）
-- 43 件: `@typescript-eslint/no-unnecessary-type-assertion`
-  - 主なファイル: `src/server.ts` (10), `src/telemetry/enhanced-telemetry.ts` (6), `src/utils/enhanced-state-manager.ts` (6), `src/mcp-server/code-generation-server.ts` (4), `src/mcp-server/test-generation-server.ts` (4)
-- 2 件: `prefer-const`
-- 1 件: ルール ID なし（個別確認が必要）
-
-> ✅ これらは `pnpm exec eslint <targets> --fix` で安全に解消できるため、フェーズBの最初の PR 候補。
+## `--fix` 対応可能な指摘（0）
+- Stage 1 (`@typescript-eslint/no-unnecessary-type-assertion` / `prefer-const` / unused disable) は完了。残タスクは Stage 2 以降に集約。
 
 ---
 
 ## 段階的な移行ロードマップ案
 1. **Stage 0 — Baseline 整理（今）**  
    - 本ドキュメントでカテゴリ＆ファイル別の棚卸しを確定。  
-   - `reports/lint/verify-lite-lint-summary.json` を毎スプリント更新するスクリプト化（後述）。
-2. **Stage 1 — `--fix` バッチ適用**  
-   - `no-unnecessary-type-assertion` と `prefer-const` を一括修正。  
-   - `config/verify-lite-lint-baseline.json` を更新し、delta を 2600 → 2550 付近まで圧縮。
+   - `scripts/ci/analyze-lint-backlog.mjs` により `reports/lint/verify-lite-lint-summary.json` を自動生成。
+2. **Stage 1 — `--fix` バッチ適用（完了）**  
+   - `no-unnecessary-type-assertion` / `prefer-const` / unused disable を解消し、backlog を 2,202 件（fixable 0）まで削減。  
+   - `config/verify-lite-lint-baseline.json` を最新サマリに合わせて更新済み。
 3. **Stage 2 — 優先 5 ファイルの Unsafe & any 解消**  
-   - `runtime-middleware`, `solution-composer`, `sequential-strategy`, `e2e-runner`, `conformance-guards` を対象に型付けとユーティリティ抽出を実施。  
+   - `integration/runners/e2e-runner.ts`, `inference/core/solution-composer.ts`, `integration/runners/api-runner.ts`, `inference/core/validation-orchestrator.ts`, `codegen/deterministic-generator.ts` を対象に型付けとユーティリティ抽出を実施。  
    - ここで Unsafe 系を 25% 減らし、`no-explicit-any` はドメイン型を定義した DTO で置換。
 4. **Stage 3 — Verify Lite Lint の段階的強制**  
    - PR ラベル (`lint-blocking`) で opt-in → `main` で警告 → CI で `VERIFY_LITE_ENFORCE_LINT=1` に引き上げ。  
@@ -141,21 +135,21 @@
 
 ---
 
-## 自動化スクリプト（案）
-追跡のために以下を追加予定です（別 PR）。
+## 自動化スクリプト
+Verify Lite lint の集計は以下の手順で再現できる。
 
 ```bash
-pnpm exec eslint . --format json --output-file temp-reports/verify-lite-lint.json
+pnpm exec eslint --ext .ts,.tsx,.js,.mjs --format json --output-file temp-reports/verify-lite-lint.json
 node scripts/ci/analyze-lint-backlog.mjs --input temp-reports/verify-lite-lint.json --output reports/lint/verify-lite-lint-summary.json
 ```
 
-`analyze-lint-backlog.mjs` はルール単位の件数、上位ファイル、fixable 件数を出力し、本ドキュメントと同期を取りやすくします。
+`analyze-lint-backlog.mjs` はルール単位の件数、主要ファイル、fixable 集計を自動算出するため、本ドキュメント更新や baseline 比較を高速化できる。
 
 ---
 
 ## 次のステップ（Issue #1019 対応観点）
-1. `--fix` 対応 PR のドラフト（Stage 1）  
-2. 優先 5 ファイルの Unsafe/any 改修着手（Stage 2）  
+1. Stage 2: `conformance-guards.ts` / `solution-composer.ts` / `integration` 系ファイルの Unsafe/any 改修  
+2. Stage 2 完了後に lint サマリを Step Summary / CI に連携する運用案を整理  
 3. Verify Lite lint を警告モードで CI に組み込み、効果測定  
 4. 本ドキュメントに PBI／PR 単位で進捗を追記し、Issue コメントと連動させる
 

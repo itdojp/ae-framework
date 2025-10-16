@@ -5,8 +5,9 @@
 | #997 | Week1: フルパイプライン復元の詳細化 | ⏳ 継続 | Podman/Compose 手順と `make test-docker-all` は安定。mutation survivor の整理と Verify Lite ⇔ フルパイプライン連携の再整備が残課題。Spec ビルド sparse checkout やローカルアクション不足による失敗は解消済み。|
 | #999 | Week2: 継続運用計画の具体化 | ⏳ 継続 | Verify Lite / mutation-quick GitHub Check は main へ復帰済み。TokenOptimizer quick は 64.78% → 100%（PR #1091）、EnhancedStateManager quick は 64.78%（survived 243）。Step Summary/Artifact 再出力とラベル運用の本格化が残タスク。|
 | #1001 | Week2 Tracker | ✅ 進捗記録中 | API server mutation スコア 100% を維持しつつ、TokenOptimizer/CircuitBreaker PBT 安定化 (#1091) を完了。EnhancedStateManager survivor (`versionIndex` / `stateImported` / `findKeyByVersion`) 対策と tinypool 障害調査が継続タスク。2025-10-09: versionIndex 連番確認と findKeyByVersion の正パス検証を unit test で補強。|
-| #1002 | Week3 準備 (進行中) | 🚧 進行中 | Trace ダッシュボード案と Verify Lite / Mutation CI 連携の具体化を進める段階。Week2 で整理した残課題は解消済みで、Week3 実装タスクのブレークダウンが必要。|
-| #1003 | Week3 Tracker | 💤 未着手 | Week3 着手条件（Docker runtime, tinypool 安定化, mutation 整理）が揃っていないため、Issue コメントと手順書は更新保留。|
+| #1002 | Week3 準備 (進行中) | 🚧 進行中 | Runtime Guard ステータス API を `byEndpoint` / `hourlyBuckets` 付きで拡張し、Verify Lite 後処理に `generate-runtime-guard-stats.mjs` / `render-runtime-guard-summary.mjs` を追加済み。Grafana/Observable テンプレート草案を共有済みで、残タスクはダッシュボード導入レビューと conformance report CLI の周知。|
+| #1003 | Week3 Tracker | 🚧 準備中 | Runtime Guard 集計まで Verify Lite 側を整備済み。残ブロッカーは Node 20 fallback / tinypool 安定化の成否確認、mutation quick (Stryker config json) の復旧、Docker レポート共有フローの更新。|
+| #1019 | Verify Lite lint backlog | 🚧 進行中 | 2025-10-16: SequentialStrategy strict TS 対応完了。`scripts/ci/analyze-lint-backlog.mjs` で lint サマリ自動化し backlog 2,202 件（fixable 0）。2025-10-19: `runtime/conformance-guards.ts` の Unsafe/any を解消し backlog 2,101 件（-101）。Stage2 は `e2e-runner` / `solution-composer` / `integration/runners/api-runner` / `validation-orchestrator` / `codegen/deterministic-generator` へスコープを再編。|
 |
 > メモ内容は GitHub Issues (#997, #999, #1001, #1002, #1003) にもコメントとして反映済み（2025-10-08 更新）。
 
@@ -48,7 +49,11 @@
 - [x] 予約キャンセルフローと各種テスト資産の実装
 - [x] Mutation quick (API server 100% / EnhancedStateManager 67.90%) の結果ドキュメント化
 - [x] EnhancedStateManager 残存ミュータント（`versionIndex` / `stateImported` / `findKeyByVersion`）に対するテスト実装（PR #1094 / 2025-10-09: 連番バージョン検証テストを追加）
+<<<<<<< HEAD
 - [x] tinypool クラッシュ回避策の検証（Node 20 fallback + Vitest forks 戦略を導入済み）
+=======
+- [x] tinypool クラッシュ回避策の検証（Node 20 fallback + forks 戦略を Verify Lite / mutation quick に適用済み）
+>>>>>>> 3eee5be (refactor(runtime): harden conformance guard typing)
 - [x] ResilientHttpClient / IntelligentTestSelection / EvidenceValidator のテスト修正と再実行
 
 ### #1002 Week3 準備
@@ -58,12 +63,23 @@
 - [x] Bulkhead / Property テストの期待値見直しと `pnpm test:ci` 成功条件の整理（前倒し検討）
 
 #### 次のアクション (2025-10-15)
-- [ ] Trace / runtime guard ダッシュボード案を具体化し、必要なメトリクス抽出スクリプトを設計する。
-- [ ] Verify Lite / mutation quick / pipelines:full の成果物を CI で統合し、Step Summary 連携を図る。
-- [ ] Week3 tracker (#1003) との依存関係を整理し、実装順序と担当分担を Issue コメントへ反映する。
+- [x] Trace / runtime guard ダッシュボード案を具体化し、必要なメトリクス抽出スクリプトを設計する（stats API を拡張し検証済み）。
+- [x] Verify Lite / mutation quick / pipelines:full の成果物を CI で統合し、Step Summary 連携を図る（runtime guard サマリと timeseries を自動出力）。
+- [x] Full CI (ci.yml) ジョブにも Node 20 fallback / forks 設定を導入し、tinypool クラッシュを抑止。
+- [x] Week3 tracker (#1003) との依存関係を整理し、実装順序と担当分担を Issue コメントへ反映する。
+
+#### 次に着手するアクション (2025-10-16)
+- [x] runtime guard レポート CLI (conformance report) を Verify Lite 以外のジョブでもドキュメント化し、使用例を Issue #1002 に残す。
+- [x] Grafana/Observable テンプレートのドラフトを作成し、ダッシュボード展開の PoC を共有。
+- [x] Runtime guard timeseries CSV の長期保管・クリーンアップ運用を整備し、CI artifact 公開と Issue #1003 の TODO を更新。
+- [x] Observable Notebook サンプルと公開手順を docs に追加。
+- [x] Notebook lint を Verify Lite / minimal pipeline workflows に組み込み。
 
 
 ### #1003 Week3 Tracker
 - [ ] Week3 着手条件（Docker runtime, tinypool 安定化, Mutation 整理）の完了確認
+- [x] Node 20 fallback / tinypool pool 戦略の検証結果をまとめ、Verify Lite / mutation quick に適用
+- [x] mutation quick (Stryker config json) の復旧と GitHub Checks 連携の確認（専用 config を追加し quick ランが完走する状態を再現。スコア 100% / 生存 0 件）
+- [x] Verify Lite Step Summary で lint/conformance を期待スキップ扱いにし、警告の常態化を防止
 - [x] Week3 で実施するフルパイプライン実行手順のドラフト作成（`scripts/pipelines/run-full-pipeline.mjs` とドキュメントの組み合わせ）
 - [ ] Issue コメントへ最新進捗と次アクションを反映（オンライン復旧後）

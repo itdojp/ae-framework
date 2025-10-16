@@ -1,15 +1,21 @@
 {
-  "total": 2618,
+  "total": 2101,
   "rules": {
-    "Unsafe": 1357,
-    "Unexpected": 645,
-    "Async": 205,
-    "'error'": 49,
-    "This": 39,
-    "'context'": 32,
-    "Invalid": 27,
-    "Switch": 20,
-    "'result'": 13,
-    "Promise": 13
+    "@typescript-eslint/no-unsafe-member-access": 544,
+    "@typescript-eslint/no-explicit-any": 469,
+    "@typescript-eslint/no-unsafe-assignment": 304,
+    "@typescript-eslint/no-unused-vars": 264,
+    "@typescript-eslint/require-await": 195,
+    "@typescript-eslint/no-unsafe-argument": 123,
+    "@typescript-eslint/no-unsafe-call": 71,
+    "@typescript-eslint/no-unsafe-return": 36,
+    "@typescript-eslint/restrict-template-expressions": 26,
+    "@typescript-eslint/switch-exhaustiveness-check": 20,
+    "@typescript-eslint/no-floating-promises": 13,
+    "@typescript-eslint/no-misused-promises": 13,
+    "no-case-declarations": 8,
+    "no-empty": 5,
+    "no-useless-escape": 4,
+    "@typescript-eslint/no-base-to-string": 3
   }
 }

@@ -6,25 +6,45 @@
  */
 
 import { z } from 'zod';
-import { trace, metrics as otMetrics } from '@opentelemetry/api';
+import { trace, metrics as otMetrics, SpanStatusCode } from '@opentelemetry/api';
+import type { Attributes, Span } from '@opentelemetry/api';
+import type { FailureLocation } from '../cegis/failure-artifact-schema.js';
 import { FailureArtifactFactory } from '../cegis/failure-artifact-schema.js';
 
 // Telemetry instances (safe for partially mocked @opentelemetry/api)
 const tracer = trace.getTracer('ae-framework-runtime-conformance');
-type NoopCounter = { add: (value: number, attrs?: Record<string, any>) => void };
-type NoopHistogram = { record: (value: number, attrs?: Record<string, any>) => void };
-type SafeMeter = {
-  createCounter: (name: string, opts?: any) => NoopCounter;
-  createHistogram: (name: string, opts?: any) => NoopHistogram;
+
+type MiddlewareRequest = {
+  body: unknown;
+  query: unknown;
+  params: unknown;
+  method: string;
+  originalUrl: string;
+  ip?: string;
+  get: (name: string) => string | undefined;
 };
 
-function getSafeMeter(): SafeMeter {
+type MiddlewareResponse = {
+  status: (code: number) => { json: (payload: unknown) => unknown };
+};
+
+type MiddlewareNext = (err?: unknown) => void;
+
+type CounterLike = { add: (value: number, attrs?: Attributes) => void };
+type HistogramLike = { record: (value: number, attrs?: Attributes) => void };
+type MeterLike = {
+  createCounter: (name: string, opts?: Record<string, unknown>) => CounterLike;
+  createHistogram: (name: string, opts?: Record<string, unknown>) => HistogramLike;
+};
+
+function getSafeMeter(): MeterLike {
   try {
-    const m: any = (otMetrics as any);
-    if (m && typeof m.getMeter === 'function') {
-      return m.getMeter('ae-framework-runtime-conformance');
+    if (typeof otMetrics.getMeter === 'function') {
+      return otMetrics.getMeter('ae-framework-runtime-conformance');
     }
-  } catch {}
+  } catch {
+    // Metrics API may be partially mocked in tests; fall back to no-op meter.
+  }
   // No-op fallbacks
   return {
     createCounter: () => ({ add: () => {} }),
@@ -33,6 +53,30 @@ function getSafeMeter(): SafeMeter {
 }
 
 const meter = getSafeMeter();
+
+const mergeContext = (
+  base?: ConformanceContext,
+  incoming?: ConformanceContext
+): ConformanceContext | undefined => {
+  if (!base && !incoming) {
+    return undefined;
+  }
+  return {
+    ...(base ?? {}),
+    ...(incoming ?? {}),
+  };
+};
+
+const getOwnerName = (target: object): string => {
+  if (typeof target === 'function' && target.name) {
+    return target.name;
+  }
+  const constructorRef = (target as { constructor?: { name?: string } }).constructor;
+  if (constructorRef && typeof constructorRef.name === 'string' && constructorRef.name.length > 0) {
+    return constructorRef.name;
+  }
+  return 'Anonymous';
+};
 
 // Metrics
 const conformanceCounter = meter.createCounter('conformance_checks_total', {
@@ -48,7 +92,7 @@ const conformanceLatencyHistogram = meter.createHistogram('conformance_check_dur
 });
 
 // Conformance check result
-export interface ConformanceResult<T = any> {
+export interface ConformanceResult<T = unknown> {
   success: boolean;
   data?: T;
   errors: string[];
@@ -57,18 +101,29 @@ export interface ConformanceResult<T = any> {
     schemaName?: string;
     duration: number;
     timestamp: string;
-    context?: Record<string, any>;
+    context?: ConformanceContext;
   };
 }
 
 // Guard configuration
+export interface ConformanceContext extends Record<string, unknown> {
+  source?: string;
+  schema?: string;
+  schemaName?: string;
+  name?: string;
+  operation?: string;
+  type?: string;
+  eventType?: string;
+  location?: FailureLocation;
+}
+
 export interface GuardConfig {
   enabled: boolean;
   failOnViolation: boolean;
   logViolations: boolean;
   generateArtifacts: boolean;
   telemetryEnabled: boolean;
-  context?: Record<string, any>;
+  context?: ConformanceContext;
 }
 
 // Default guard configuration
@@ -103,25 +158,27 @@ export class ConformanceGuard<T> {
   /**
    * Validate input data against schema
    */
-  async validateInput(data: unknown, context?: Record<string, any>): Promise<ConformanceResult<T>> {
-    return this.validate(data, 'input', context);
+  validateInput(data: unknown, context?: ConformanceContext): Promise<ConformanceResult<T>> {
+    return Promise.resolve().then(() => this.validate(data, 'input', context));
   }
 
   /**
    * Validate output data against schema
    */
-  async validateOutput(data: unknown, context?: Record<string, any>): Promise<ConformanceResult<T>> {
-    return this.validate(data, 'output', context);
+  validateOutput(data: unknown, context?: ConformanceContext): Promise<ConformanceResult<T>> {
+    return Promise.resolve().then(() => this.validate(data, 'output', context));
   }
 
   /**
    * Core validation logic with telemetry
    */
-  private async validate(
-    data: unknown, 
+  private validate(
+    data: unknown,
     direction: 'input' | 'output',
-    context?: Record<string, any>
-  ): Promise<ConformanceResult<T>> {
+    context?: ConformanceContext
+  ): ConformanceResult<T> {
+    const mergedContext = mergeContext(this.config.context, context);
+
     if (!this.config.enabled) {
       return {
         success: true,
@@ -132,13 +189,13 @@ export class ConformanceGuard<T> {
           schemaName: this.schemaName,
           duration: 0,
           timestamp: new Date().toISOString(),
-          ...(context ? { context } : {}),
+          ...(mergedContext ? { context: mergedContext } : {}),
         },
       };
     }
 
     const startTime = Date.now();
-    let span;
+    let span: Span | undefined;
     
     if (this.config.telemetryEnabled) {
       span = tracer.startSpan(`conformance_check_${direction}`, {
@@ -174,7 +231,7 @@ export class ConformanceGuard<T> {
       if (result.success) {
         // Validation passed
         if (span) {
-          span.setStatus({ code: 1 as any });
+          span.setStatus({ code: SpanStatusCode.OK });
           span.setAttributes({
             'conformance.result': 'success',
             'conformance.duration_ms': duration,
@@ -198,7 +255,7 @@ export class ConformanceGuard<T> {
             schemaName: this.schemaName,
             duration,
             timestamp: new Date().toISOString(),
-            context: { ...this.config.context, ...context },
+            ...(mergedContext ? { context: mergedContext } : {}),
           },
         };
       } else {
@@ -209,7 +266,7 @@ export class ConformanceGuard<T> {
 
         if (span) {
           span.setStatus({
-            code: 2 as any,
+            code: SpanStatusCode.ERROR,
             message: `Conformance violation: ${errors.join(', ')}`,
           });
           span.setAttributes({
@@ -245,7 +302,7 @@ export class ConformanceGuard<T> {
 
         // Generate failure artifact if configured
         if (this.config.generateArtifacts) {
-          await this.generateFailureArtifact(errors, data, direction, context);
+          this.generateFailureArtifact(errors, data, direction, mergedContext);
         }
 
         // Throw error if configured to fail on violation
@@ -267,18 +324,17 @@ export class ConformanceGuard<T> {
             schemaName: this.schemaName,
             duration,
             timestamp: new Date().toISOString(),
-            context: { ...this.config.context, ...context },
+            ...(mergedContext ? { context: mergedContext } : {}),
           },
         };
       }
     } catch (error) {
-      const duration = Date.now() - startTime;
-      
       if (span) {
-        span.recordException(error as Error);
+        const normalizedError = error instanceof Error ? error : new Error(String(error));
+        span.recordException(normalizedError);
         span.setStatus({
-          code: 2 as any,
-          message: `Conformance check failed: ${error}`,
+          code: SpanStatusCode.ERROR,
+          message: `Conformance check failed: ${normalizedError.message}`,
         });
       }
 
@@ -293,31 +349,37 @@ export class ConformanceGuard<T> {
   /**
    * Generate failure artifact for conformance violations
    */
-  private async generateFailureArtifact(
+  private generateFailureArtifact(
     errors: string[],
     data: unknown,
     direction: 'input' | 'output',
-    context?: Record<string, any>
-  ): Promise<void> {
+    context?: ConformanceContext
+  ): void {
     try {
       const artifact = FailureArtifactFactory.fromContractViolation(
         `${this.schemaName} (${direction})`,
         'Schema validation',
         data,
-        context?.['location']
+        context?.location
       );
 
-      // Add additional context
       artifact.evidence.logs.push(
-        ...errors.map(error => `Validation error: ${error}`)
+        ...errors.map((error) => `Validation error: ${error}`)
       );
 
       if (context) {
+        let serializedContext: string | undefined;
+        try {
+          serializedContext = JSON.stringify(context);
+        } catch {
+          serializedContext = undefined;
+        }
+
         artifact.evidence.environmentInfo = {
           ...artifact.evidence.environmentInfo,
           direction,
           schema: this.schemaName,
-          context: JSON.stringify(context),
+          ...(serializedContext ? { context: serializedContext } : {}),
         };
       }
 
@@ -331,26 +393,46 @@ export class ConformanceGuard<T> {
   /**
    * Sanitize data for logging (remove sensitive information)
    */
-  private sanitizeForLogging(data: unknown): any {
-    if (typeof data !== 'object' || data === null) {
+  private sanitizeForLogging(data: unknown): unknown {
+    if (data === null || typeof data !== 'object') {
       return data;
     }
 
-    const sensitiveKeys = ['password', 'token', 'secret', 'key', 'authorization'];
-    const sanitized = JSON.parse(JSON.stringify(data));
+    const sensitiveFragments = ['password', 'token', 'secret', 'key', 'authorization'];
 
-    const sanitizeObject = (obj: any): any => {
-      for (const key in obj) {
-        if (typeof obj[key] === 'object' && obj[key] !== null) {
-          sanitizeObject(obj[key]);
-        } else if (sensitiveKeys.some(sk => key.toLowerCase().includes(sk))) {
-          obj[key] = '[REDACTED]';
+    let clone: unknown;
+    try {
+      clone = JSON.parse(JSON.stringify(data));
+    } catch {
+      return '[Unserializable payload]';
+    }
+
+    const sanitizeInPlace = (value: unknown): unknown => {
+      if (Array.isArray(value)) {
+        const arrayValue = value as unknown[];
+        for (let index = 0; index < arrayValue.length; index += 1) {
+          arrayValue[index] = sanitizeInPlace(arrayValue[index]);
         }
+        return arrayValue;
       }
-      return obj;
+
+      if (value && typeof value === 'object') {
+        const record = value as Record<string, unknown>;
+        for (const [key, nestedValue] of Object.entries(record)) {
+          const lowerKey = key.toLowerCase();
+          if (sensitiveFragments.some((fragment) => lowerKey.includes(fragment))) {
+            record[key] = '[REDACTED]';
+          } else {
+            record[key] = sanitizeInPlace(nestedValue);
+          }
+        }
+        return record;
+      }
+
+      return value;
     };
 
-    return sanitizeObject(sanitized);
+    return sanitizeInPlace(clone);
   }
 
   /**
@@ -365,6 +447,10 @@ export class ConformanceGuard<T> {
    */
   getConfig(): GuardConfig {
     return { ...this.config };
+  }
+
+  getSchemaName(): string {
+    return this.schemaName;
   }
 }
 
@@ -396,7 +482,11 @@ export class GuardFactory {
       failOnViolation: true,
       logViolations: true,
       generateArtifacts: true,
-      context: { type: 'api_request', operation: operationId },
+      context: {
+        type: 'api_request',
+        operation: operationId,
+        schemaName: `api.request.${operationId}`,
+      },
     });
   }
 
@@ -408,7 +498,11 @@ export class GuardFactory {
       failOnViolation: false, // Don't fail response validation in production
       logViolations: true,
       generateArtifacts: true,
-      context: { type: 'api_response', operation: operationId },
+      context: {
+        type: 'api_response',
+        operation: operationId,
+        schemaName: `api.response.${operationId}`,
+      },
     });
   }
 
@@ -420,7 +514,11 @@ export class GuardFactory {
       failOnViolation: true,
       logViolations: true,
       generateArtifacts: true,
-      context: { type: 'database_entity', entity: entityName },
+      context: {
+        type: 'database_entity',
+        entity: entityName,
+        schemaName: `db.entity.${entityName}`,
+      },
     });
   }
 
@@ -432,7 +530,11 @@ export class GuardFactory {
       failOnViolation: true,
       logViolations: true,
       generateArtifacts: false, // Config errors don't need artifacts
-      context: { type: 'configuration', config: configName },
+      context: {
+        type: 'configuration',
+        config: configName,
+        schemaName: `config.${configName}`,
+      },
     });
   }
 
@@ -444,7 +546,11 @@ export class GuardFactory {
       failOnViolation: false, // Events shouldn't break processing
       logViolations: true,
       generateArtifacts: true,
-      context: { type: 'event', eventType },
+      context: {
+        type: 'event',
+        eventType,
+        schemaName: `event.${eventType}`,
+      },
     });
   }
 }
@@ -453,40 +559,61 @@ export class GuardFactory {
  * Decorator for automatic method validation
  */
 export function ValidateInput<T>(guard: ConformanceGuard<T>) {
-  return function (target: any, propertyKey: string, descriptor?: PropertyDescriptor) {
-    // 防御的: デコレータ適用時にdescriptor未定義のケースに対応
-    const desc = descriptor || Object.getOwnPropertyDescriptor(target, propertyKey) || {
-      value: (target as any)[propertyKey],
-      writable: true,
-      configurable: true,
-      enumerable: false,
-    } as PropertyDescriptor;
-    const originalMethod = desc.value;
+  return function <
+    TTarget extends object,
+    TArgs extends unknown[],
+    TResult
+  >(
+    target: TTarget,
+    propertyKey: string,
+    descriptor?: TypedPropertyDescriptor<(input: unknown, ...args: TArgs) => Promise<TResult>>
+  ): TypedPropertyDescriptor<(input: unknown, ...args: TArgs) => Promise<TResult>> | void {
+    const resolvedDescriptor =
+      descriptor ?? Object.getOwnPropertyDescriptor(target, propertyKey);
 
-    desc.value = async function (input: unknown, ...args: any[]) {
+    const originalValue: unknown =
+      resolvedDescriptor?.value ?? (target as Record<string, unknown>)[propertyKey];
+    if (typeof originalValue !== 'function') {
+      return resolvedDescriptor;
+    }
+    const originalMethod = originalValue as (input: unknown, ...args: TArgs) => TResult | Promise<TResult>;
+
+    const ownerName = getOwnerName(target);
+
+    const wrapped = async function (this: unknown, input: unknown, ...args: TArgs): Promise<TResult> {
       const result = await guard.validateInput(input, {
-        method: `${target.constructor.name}.${propertyKey}`,
+        method: `${ownerName}.${propertyKey}`,
         timestamp: new Date().toISOString(),
       });
 
       if (!result.success && guard.getConfig().failOnViolation) {
         throw new ConformanceViolationError(
           `Input validation failed for ${propertyKey}`,
-          guard.getConfig().context?.['schema_name'] || 'unknown',
+          guard.getSchemaName(),
           'input',
           result.errors,
           input
         );
       }
 
-      return originalMethod.call(this, result.data ?? input, ...args);
+      const callArgs: unknown[] = [result.data ?? input, ...args];
+      return Promise.resolve(Reflect.apply(originalMethod, this, callArgs)) as Promise<TResult>;
     };
 
-    // 可能であればプロパティディスクリプタを再定義
+    const updatedDescriptor: TypedPropertyDescriptor<(input: unknown, ...args: TArgs) => Promise<TResult>> = {
+      value: wrapped,
+      configurable: resolvedDescriptor?.configurable ?? true,
+      enumerable: resolvedDescriptor?.enumerable ?? false,
+      writable: resolvedDescriptor?.writable ?? true,
+    };
+
     try {
-      Object.defineProperty(target, propertyKey, desc);
-    } catch {}
-    return desc;
+      Object.defineProperty(target, propertyKey, updatedDescriptor);
+    } catch {
+      // best-effort
+    }
+
+    return updatedDescriptor;
   };
 }
 
@@ -494,27 +621,39 @@ export function ValidateInput<T>(guard: ConformanceGuard<T>) {
  * Decorator for automatic output validation
  */
 export function ValidateOutput<T>(guard: ConformanceGuard<T>) {
-  return function (target: any, propertyKey: string, descriptor?: PropertyDescriptor) {
-    const desc = descriptor || Object.getOwnPropertyDescriptor(target, propertyKey) || {
-      value: (target as any)[propertyKey],
-      writable: true,
-      configurable: true,
-      enumerable: false,
-    } as PropertyDescriptor;
-    const originalMethod = desc.value;
+  return function <
+    TTarget extends object,
+    TArgs extends unknown[],
+    TResult
+  >(
+    target: TTarget,
+    propertyKey: string,
+    descriptor?: TypedPropertyDescriptor<(...args: TArgs) => Promise<TResult>>
+  ): TypedPropertyDescriptor<(...args: TArgs) => Promise<TResult>> | void {
+    const resolvedDescriptor =
+      descriptor ?? Object.getOwnPropertyDescriptor(target, propertyKey);
 
-    desc.value = async function (...args: any[]) {
-      const result = await originalMethod.apply(this, args);
-      
+    const originalValue: unknown =
+      resolvedDescriptor?.value ?? (target as Record<string, unknown>)[propertyKey];
+    if (typeof originalValue !== 'function') {
+      return resolvedDescriptor;
+    }
+    const originalMethod = originalValue as (...args: TArgs) => TResult | Promise<TResult>;
+
+    const ownerName = getOwnerName(target);
+
+    const wrapped = async function (this: unknown, ...args: TArgs): Promise<TResult> {
+      const result = await Reflect.apply(originalMethod, this, args) as TResult;
+
       const validationResult = await guard.validateOutput(result, {
-        method: `${target.constructor.name}.${propertyKey}`,
+        method: `${ownerName}.${propertyKey}`,
         timestamp: new Date().toISOString(),
       });
 
       if (!validationResult.success && guard.getConfig().failOnViolation) {
         throw new ConformanceViolationError(
           `Output validation failed for ${propertyKey}`,
-          guard.getConfig().context?.['schema_name'] || 'unknown',
+          guard.getSchemaName(),
           'output',
           validationResult.errors,
           result
@@ -524,10 +663,20 @@ export function ValidateOutput<T>(guard: ConformanceGuard<T>) {
       return result;
     };
 
+    const updatedDescriptor: TypedPropertyDescriptor<(...args: TArgs) => Promise<TResult>> = {
+      value: wrapped,
+      configurable: resolvedDescriptor?.configurable ?? true,
+      enumerable: resolvedDescriptor?.enumerable ?? false,
+      writable: resolvedDescriptor?.writable ?? true,
+    };
+
     try {
-      Object.defineProperty(target, propertyKey, desc);
-    } catch {}
-    return desc;
+      Object.defineProperty(target, propertyKey, updatedDescriptor);
+    } catch {
+      // best-effort
+    }
+
+    return updatedDescriptor;
   };
 }
 
@@ -538,11 +687,14 @@ export function createExpressMiddleware<T>(
   guard: ConformanceGuard<T>,
   target: 'body' | 'query' | 'params' = 'body'
 ) {
-  return async (req: any, res: any, next: any) => {
+  return async (req: MiddlewareRequest, res: MiddlewareResponse, next: MiddlewareNext) => {
     try {
-      const data = target === 'body' ? req.body : 
-                   target === 'query' ? req.query : 
-                   req.params;
+      const data =
+        target === 'body'
+          ? req.body
+          : target === 'query'
+            ? req.query
+            : req.params;
 
       const result = await guard.validateInput(data, {
         method: req.method,
@@ -553,11 +705,12 @@ export function createExpressMiddleware<T>(
 
       if (!result.success) {
         if (guard.getConfig().failOnViolation) {
-          return res.status(400).json({
+          res.status(400).json({
             error: 'Validation failed',
             details: result.errors,
             timestamp: result.metadata.timestamp,
           });
+          return;
         } else {
           // Log but continue
           console.warn('Validation failed but continuing:', result.errors);
@@ -565,18 +718,25 @@ export function createExpressMiddleware<T>(
       }
 
       // Attach validated data
-      if (target === 'body') req.body = result.data || req.body;
-      if (target === 'query') req.query = result.data || req.query;
-      if (target === 'params') req.params = result.data || req.params;
+      if (typeof result.data !== 'undefined') {
+        if (target === 'body') {
+          req.body = result.data;
+        } else if (target === 'query') {
+          req.query = result.data;
+        } else {
+          req.params = result.data;
+        }
+      }
 
       next();
     } catch (error) {
       console.error('Conformance middleware error:', error);
       if (guard.getConfig().failOnViolation) {
-        return res.status(500).json({
+        res.status(500).json({
           error: 'Internal validation error',
           timestamp: new Date().toISOString(),
         });
+        return;
       }
       next();
     }
@@ -588,8 +748,8 @@ export function createExpressMiddleware<T>(
  */
 export class ConformanceRegistry {
   private static instance: ConformanceRegistry;
-  private guards: Map<string, ConformanceGuard<any>> = new Map();
-  private schemas: Map<string, z.ZodSchema<any>> = new Map();
+  private guards: Map<string, ConformanceGuard<unknown>> = new Map();
+  private schemas: Map<string, z.ZodSchema<unknown>> = new Map();
 
   static getInstance(): ConformanceRegistry {
     if (!ConformanceRegistry.instance) {
@@ -602,47 +762,53 @@ export class ConformanceRegistry {
    * Register a schema with the registry
    */
   registerSchema<T>(name: string, schema: z.ZodSchema<T>): void {
-    this.schemas.set(name, schema);
+    this.schemas.set(name, schema as z.ZodSchema<unknown>);
   }
 
   /**
    * Register a guard with the registry
    */
   registerGuard<T>(name: string, guard: ConformanceGuard<T>): void {
-    this.guards.set(name, guard);
+    this.guards.set(name, guard as ConformanceGuard<unknown>);
   }
 
   /**
    * Get a guard by name
    */
   getGuard<T>(name: string): ConformanceGuard<T> | undefined {
-    return this.guards.get(name);
+    return this.guards.get(name) as ConformanceGuard<T> | undefined;
   }
 
   /**
    * Get a schema by name
    */
   getSchema<T>(name: string): z.ZodSchema<T> | undefined {
-    return this.schemas.get(name);
+    return this.schemas.get(name) as z.ZodSchema<T> | undefined;
   }
 
   /**
    * Create a guard from a registered schema
    */
   createGuard<T>(schemaName: string, guardName?: string, config?: Partial<GuardConfig>): ConformanceGuard<T> | null {
-    const schema = this.schemas.get(schemaName);
+    const schema = this.schemas.get(schemaName) as z.ZodSchema<T> | undefined;
     if (!schema) {
       console.warn(`Schema '${schemaName}' not found in registry`);
       return null;
     }
 
     // デフォルトのcontextを付与（テスト互換用）
-    const baseContext = { source: 'registry', schema: schemaName, name: guardName || schemaName } as Record<string, any>;
+    const baseContext: ConformanceContext = {
+      source: 'registry',
+      schema: schemaName,
+      schemaName,
+      name: guardName || schemaName,
+    };
+    const mergedContextValue = mergeContext(baseContext, config?.context);
     const mergedConfig: Partial<GuardConfig> = {
       ...(config || {}),
-      context: { ...(config?.context || {}), ...baseContext },
+      ...(mergedContextValue ? { context: mergedContextValue } : {}),
     };
-    const guard = new ConformanceGuard(schema, guardName || schemaName, mergedConfig);
+    const guard = new ConformanceGuard<T>(schema, guardName || schemaName, mergedConfig);
     if (guardName) {
       this.registerGuard(guardName, guard);
     }
