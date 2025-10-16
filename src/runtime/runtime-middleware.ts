@@ -138,7 +138,7 @@ export class ExpressConformanceMiddleware {
         }
 
         // Replace body with validated data
-        if (result.data !== undefined) {
+        if (Object.prototype.hasOwnProperty.call(result, 'data')) {
           req.body = result.data;
         }
         span.setStatus({ code: SpanStatusCode.OK });
@@ -267,6 +267,8 @@ export class ExpressConformanceMiddleware {
 
         const context = this.createValidationContext(req, operationId);
 
+        // Fire-and-forget validation so response streaming is not blocked.
+        // Telemetry spans capture completion/failure details asynchronously.
         void guard.validateOutput(payload, context)
           .then((result) => {
             span.setAttributes({

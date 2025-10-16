@@ -237,19 +237,19 @@ function computeDelta(summary, baseline) {
   let ruleDelta = 0;
   const details = [];
 
-  for (const [rule, baselineCount] of Object.entries(baselineRules)) {
+  const allRules = new Set([
+    ...Object.keys(baselineRules),
+    ...summaryRuleMap.keys(),
+  ]);
+
+  for (const rule of allRules) {
+    const baselineCount = baselineRules[rule] ?? 0;
     const actual = summaryRuleMap.get(rule) ?? 0;
     const delta = actual - baselineCount;
     if (delta > 0) {
       ruleDelta += delta;
       details.push({ rule, actual, baseline: baselineCount, delta });
     }
-  }
-
-  for (const [rule, actual] of summaryRuleMap.entries()) {
-    if (baselineRules[rule] !== undefined) continue;
-    ruleDelta += actual;
-    details.push({ rule, actual, baseline: 0, delta: actual });
   }
 
   details.sort((a, b) => b.delta - a.delta);

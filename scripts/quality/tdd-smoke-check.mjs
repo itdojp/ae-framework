@@ -56,12 +56,14 @@ function main() {
   const failed = stats.numFailedTests ?? 0;
   const suites = stats.numTotalTestSuites ?? 0;
 
-  if ((result.status ?? 1) !== 0 || failed > 0) {
+  const DEFAULT_ERROR_CODE = 1;
+  const exitCode = result.status ?? DEFAULT_ERROR_CODE;
+  if (exitCode !== 0 || failed > 0) {
     console.error('❌ TDD smoke check failed.');
     if (result.stderr) {
       console.error(result.stderr.trim());
     }
-    process.exit(result.status ?? 1);
+    process.exit(exitCode);
   }
 
   const summary = {
