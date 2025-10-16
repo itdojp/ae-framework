@@ -35,6 +35,11 @@
 
 ## Week2 追加メモ（2025-Week2）
 
+### Week3 TODO (2025-10-15)
+- Trace / runtime guard ダッシュボードで可視化する指標を洗い出し、`reports/` 出力のどれを再利用するか決める。
+- Verify Lite / mutation quick の成果物を `pipelines:full` 実行時に統合し、CI Step Summary で比較可能にする。
+- Week3 tracker (#1003) への引き継ぎ観点（Docker runtime 安定化、tinypool 監視、mutation survivors 減少計画）を整理してコメントへ反映する。
+
 ### PnPM コマンド整備 (2025-10-09)
 - `pnpm pipelines:pact`: Pact Provider Verifier を pnpm 単体で実行し、`scripts/pipelines/run-pact-contracts.mjs` を通じて複数契約を検証します。
 - `pnpm pipelines:api-fuzz`: Schemathesis ベースの API fuzz を pnpm コマンド化し、Podman/Docker なしでもローカルで再現可能にします。

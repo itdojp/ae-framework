@@ -5,7 +5,7 @@
 | #997 | Week1: フルパイプライン復元の詳細化 | ⏳ 継続 | Podman/Compose 手順と `make test-docker-all` は安定。mutation survivor の整理と Verify Lite ⇔ フルパイプライン連携の再整備が残課題。Spec ビルド sparse checkout やローカルアクション不足による失敗は解消済み。|
 | #999 | Week2: 継続運用計画の具体化 | ⏳ 継続 | Verify Lite / mutation-quick GitHub Check は main へ復帰済み。TokenOptimizer quick は 64.78% → 100%（PR #1091）、EnhancedStateManager quick は 64.78%（survived 243）。Step Summary/Artifact 再出力とラベル運用の本格化が残タスク。|
 | #1001 | Week2 Tracker | ✅ 進捗記録中 | API server mutation スコア 100% を維持しつつ、TokenOptimizer/CircuitBreaker PBT 安定化 (#1091) を完了。EnhancedStateManager survivor (`versionIndex` / `stateImported` / `findKeyByVersion`) 対策と tinypool 障害調査が継続タスク。2025-10-09: versionIndex 連番確認と findKeyByVersion の正パス検証を unit test で補強。|
-| #1002 | Week3 準備 (予定) | 💤 未着手 | Week2 の残課題（EnhancedStateManager survivor、Verify Lite lint backlog）を整理した後に着手予定。Trace ダッシュボード案と Docker ジョブ計画書のドラフト化が必要。|
+| #1002 | Week3 準備 (進行中) | 🚧 進行中 | Trace ダッシュボード案と Verify Lite / Mutation CI 連携の具体化を進める段階。Week2 で整理した残課題は解消済みで、Week3 実装タスクのブレークダウンが必要。|
 | #1003 | Week3 Tracker | 💤 未着手 | Week3 着手条件（Docker runtime, tinypool 安定化, mutation 整理）が揃っていないため、Issue コメントと手順書は更新保留。|
 |
 > メモ内容は GitHub Issues (#997, #999, #1001, #1002, #1003) にもコメントとして反映済み（2025-10-08 更新）。
@@ -56,6 +56,12 @@
 - [x] Mutation サバイバー残課題 (#999/#1001) の解消（EnhancedStateManager quick 72.02% まで回復）
 - [x] Week3 用 Verify Lite / Docker ジョブ計画書の作成（`docs/notes/full-pipeline-restore.md` に pnpm パイプライン案を追記）
 - [x] Bulkhead / Property テストの期待値見直しと `pnpm test:ci` 成功条件の整理（前倒し検討）
+
+#### 次のアクション (2025-10-15)
+- [ ] Trace / runtime guard ダッシュボード案を具体化し、必要なメトリクス抽出スクリプトを設計する。
+- [ ] Verify Lite / mutation quick / pipelines:full の成果物を CI で統合し、Step Summary 連携を図る。
+- [ ] Week3 tracker (#1003) との依存関係を整理し、実装順序と担当分担を Issue コメントへ反映する。
+
 
 ### #1003 Week3 Tracker
 - [ ] Week3 着手条件（Docker runtime, tinypool 安定化, Mutation 整理）の完了確認
