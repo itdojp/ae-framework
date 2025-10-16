@@ -114,7 +114,7 @@
 
 ---
 
-## `--fix` 対応可能な指摘（10）
+## `--fix` 対応可能な指摘（0）
 - Stage 1 (`@typescript-eslint/no-unnecessary-type-assertion` / `prefer-const` / unused disable) は完了。残タスクは Stage 2 以降に集約。
 
 ---

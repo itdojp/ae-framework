@@ -28,7 +28,7 @@ type MiddlewareResponse = {
   status: (code: number) => { json: (payload: unknown) => unknown };
 };
 
-type MiddlewareNext = () => void;
+type MiddlewareNext = (err?: unknown) => void;
 
 type CounterLike = { add: (value: number, attrs?: Attributes) => void };
 type HistogramLike = { record: (value: number, attrs?: Attributes) => void };
@@ -159,14 +159,14 @@ export class ConformanceGuard<T> {
    * Validate input data against schema
    */
   validateInput(data: unknown, context?: ConformanceContext): Promise<ConformanceResult<T>> {
-    return Promise.resolve(this.validate(data, 'input', context));
+    return Promise.resolve().then(() => this.validate(data, 'input', context));
   }
 
   /**
    * Validate output data against schema
    */
   validateOutput(data: unknown, context?: ConformanceContext): Promise<ConformanceResult<T>> {
-    return Promise.resolve(this.validate(data, 'output', context));
+    return Promise.resolve().then(() => this.validate(data, 'output', context));
   }
 
   /**
@@ -407,28 +407,32 @@ export class ConformanceGuard<T> {
       return '[Unserializable payload]';
     }
 
-    const sanitizeRecursive = (value: unknown): unknown => {
+    const sanitizeInPlace = (value: unknown): unknown => {
       if (Array.isArray(value)) {
-        return value.map(sanitizeRecursive);
+        const arrayValue = value as unknown[];
+        for (let index = 0; index < arrayValue.length; index += 1) {
+          arrayValue[index] = sanitizeInPlace(arrayValue[index]);
+        }
+        return arrayValue;
       }
 
       if (value && typeof value === 'object') {
-        const result: Record<string, unknown> = {};
-        for (const [key, nestedValue] of Object.entries(value as Record<string, unknown>)) {
+        const record = value as Record<string, unknown>;
+        for (const [key, nestedValue] of Object.entries(record)) {
           const lowerKey = key.toLowerCase();
           if (sensitiveFragments.some((fragment) => lowerKey.includes(fragment))) {
-            result[key] = '[REDACTED]';
+            record[key] = '[REDACTED]';
           } else {
-            result[key] = sanitizeRecursive(nestedValue);
+            record[key] = sanitizeInPlace(nestedValue);
           }
         }
-        return result;
+        return record;
       }
 
       return value;
     };
 
-    return sanitizeRecursive(clone);
+    return sanitizeInPlace(clone);
   }
 
   /**
@@ -562,16 +566,17 @@ export function ValidateInput<T>(guard: ConformanceGuard<T>) {
   >(
     target: TTarget,
     propertyKey: string,
-    descriptor?: TypedPropertyDescriptor<(...args: TArgs) => TResult>
-  ): TypedPropertyDescriptor<(...args: TArgs) => TResult> | void {
-    const baseDescriptor =
+    descriptor?: TypedPropertyDescriptor<(input: unknown, ...args: TArgs) => Promise<TResult>>
+  ): TypedPropertyDescriptor<(input: unknown, ...args: TArgs) => Promise<TResult>> | void {
+    const resolvedDescriptor =
       descriptor ?? Object.getOwnPropertyDescriptor(target, propertyKey);
 
-    const originalValue: unknown = baseDescriptor?.value;
+    const originalValue: unknown =
+      resolvedDescriptor?.value ?? (target as Record<string, unknown>)[propertyKey];
     if (typeof originalValue !== 'function') {
-      return baseDescriptor;
+      return resolvedDescriptor;
     }
-    const originalMethod = originalValue as (...args: TArgs) => TResult;
+    const originalMethod = originalValue as (input: unknown, ...args: TArgs) => TResult | Promise<TResult>;
 
     const ownerName = getOwnerName(target);
 
@@ -592,14 +597,14 @@ export function ValidateInput<T>(guard: ConformanceGuard<T>) {
       }
 
       const callArgs: unknown[] = [result.data ?? input, ...args];
-      return Reflect.apply(originalMethod, this, callArgs) as TResult;
+      return Promise.resolve(Reflect.apply(originalMethod, this, callArgs)) as Promise<TResult>;
     };
 
-    const updatedDescriptor: PropertyDescriptor = {
+    const updatedDescriptor: TypedPropertyDescriptor<(input: unknown, ...args: TArgs) => Promise<TResult>> = {
       value: wrapped,
-      configurable: baseDescriptor?.configurable ?? true,
-      enumerable: baseDescriptor?.enumerable ?? false,
-      writable: baseDescriptor?.writable ?? true,
+      configurable: resolvedDescriptor?.configurable ?? true,
+      enumerable: resolvedDescriptor?.enumerable ?? false,
+      writable: resolvedDescriptor?.writable ?? true,
     };
 
     try {
@@ -608,7 +613,7 @@ export function ValidateInput<T>(guard: ConformanceGuard<T>) {
       // best-effort
     }
 
-    return undefined;
+    return updatedDescriptor;
   };
 }
 
@@ -623,16 +628,17 @@ export function ValidateOutput<T>(guard: ConformanceGuard<T>) {
   >(
     target: TTarget,
     propertyKey: string,
-    descriptor?: TypedPropertyDescriptor<(...args: TArgs) => TResult>
-  ): TypedPropertyDescriptor<(...args: TArgs) => TResult> | void {
-    const baseDescriptor =
+    descriptor?: TypedPropertyDescriptor<(...args: TArgs) => Promise<TResult>>
+  ): TypedPropertyDescriptor<(...args: TArgs) => Promise<TResult>> | void {
+    const resolvedDescriptor =
       descriptor ?? Object.getOwnPropertyDescriptor(target, propertyKey);
 
-    const originalValue: unknown = baseDescriptor?.value;
+    const originalValue: unknown =
+      resolvedDescriptor?.value ?? (target as Record<string, unknown>)[propertyKey];
     if (typeof originalValue !== 'function') {
-      return baseDescriptor;
+      return resolvedDescriptor;
     }
-    const originalMethod = originalValue as (...args: TArgs) => TResult;
+    const originalMethod = originalValue as (...args: TArgs) => TResult | Promise<TResult>;
 
     const ownerName = getOwnerName(target);
 
@@ -657,11 +663,11 @@ export function ValidateOutput<T>(guard: ConformanceGuard<T>) {
       return result;
     };
 
-    const updatedDescriptor: PropertyDescriptor = {
+    const updatedDescriptor: TypedPropertyDescriptor<(...args: TArgs) => Promise<TResult>> = {
       value: wrapped,
-      configurable: baseDescriptor?.configurable ?? true,
-      enumerable: baseDescriptor?.enumerable ?? false,
-      writable: baseDescriptor?.writable ?? true,
+      configurable: resolvedDescriptor?.configurable ?? true,
+      enumerable: resolvedDescriptor?.enumerable ?? false,
+      writable: resolvedDescriptor?.writable ?? true,
     };
 
     try {
@@ -670,7 +676,7 @@ export function ValidateOutput<T>(guard: ConformanceGuard<T>) {
       // best-effort
     }
 
-    return undefined;
+    return updatedDescriptor;
   };
 }
 
