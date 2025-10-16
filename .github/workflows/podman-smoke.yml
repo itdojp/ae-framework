@@ -62,7 +62,7 @@ jobs:
               exit 1
             fi
           else
-            echo "::error::Failed to parse podman compose version from output:\n$output"
+            printf '::error::Failed to parse podman compose version from output\n%s\n' "$output"
             exit 1
           fi
           podman compose --help | head -n 40
