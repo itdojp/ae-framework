@@ -53,20 +53,17 @@ jobs:
             exit 1
           }
           printf '%s\n' "$output"
-          version="$(printf '%s\n' "$output" | head -n 1 | grep -Eo '[0-9]+(\.[0-9]+)*' | head -n 1)"
+          version="$(printf '%s\n' "$output" | grep -Eo '[0-9]+(\.[0-9]+)+' | head -n 1)"
           if [ -n "$version" ]; then
-            version="${version#v}"
-            IFS='.' read -r major minor patch <<EOF
-$version
-EOF
-            major=${major:-0}
-            minor=${minor:-0}
+            major=$(echo "$version" | awk -F. '{print $1+0}')
+            minor=$(echo "$version" | awk -F. '{print $2+0}')
             if [ "$major" -lt 1 ] || { [ "$major" -eq 1 ] && [ "$minor" -lt 7 ]; }; then
               echo "::error::podman compose version $version is older than 1.7"
               exit 1
             fi
           else
-            echo "::warning::Failed to parse podman compose version from: $output"
+            echo "::error::Failed to parse podman compose version from output:\n$output"
+            exit 1
           fi
           podman compose --help | head -n 40
 
