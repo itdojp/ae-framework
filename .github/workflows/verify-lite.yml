@@ -46,6 +46,8 @@ jobs:
           {
             echo "base_ref=${target_base}"
             echo 'args<<__VL_MUT_ARGS__'
+            echo '--configFile'
+            echo 'configs/stryker.config.js'
             echo '__VL_MUT_ARGS__'
           } >> "$GITHUB_OUTPUT"
 
