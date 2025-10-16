@@ -2711,7 +2711,7 @@ jobs:
         run: pnpm install --frozen-lockfile
       
       - name: Run TDD Guard
-        run: pnpm run validate-tdd
+        run: node scripts/quality/tdd-smoke-check.mjs
         
       - name: TypeScript Check
         run: pnpm run type-check

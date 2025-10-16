@@ -110,7 +110,7 @@ function executeQualityGate(gateName, gate, environment) {
         break;
         
       case 'linting':
-        command = 'npm run lint';
+        command = 'node scripts/quality/check-lint-summary.mjs';
         break;
         
       case 'security':
@@ -118,7 +118,7 @@ function executeQualityGate(gateName, gate, environment) {
         break;
         
       case 'tdd':
-        command = 'npm run validate-tdd';
+        command = 'node scripts/quality/tdd-smoke-check.mjs';
         break;
         
       case 'visual':

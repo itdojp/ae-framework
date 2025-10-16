@@ -1,0 +1,20 @@
+{
+  "id": "reservations-consumer",
+  "description": "Create reservation with standard payload",
+  "request": {
+    "method": "POST",
+    "path": "/reservations",
+    "body": {
+      "orderId": "ORDER-12345",
+      "itemId": "SKU-001",
+      "quantity": 3
+    }
+  },
+  "response": {
+    "status": 201,
+    "body": {
+      "ok": true,
+      "reservationId": "RES-12345"
+    }
+  }
+}

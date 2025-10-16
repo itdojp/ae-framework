@@ -5,17 +5,50 @@
  * with OpenTelemetry integration and failure artifact generation
  */
 
-// Express types - using any for maximum compatibility with optional dependency
-// This approach maintains backward compatibility while allowing the middleware
-// to work when Express is not installed
-type Request = any;  // Express.Request when available
-type Response = any; // Express.Response when available  
-type NextFunction = any; // Express.NextFunction when available
 import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
-import { z } from 'zod';
-import { ConformanceGuard, GuardFactory } from './conformance-guards.js';
+import { z, type ZodRawShape, type ZodTypeAny } from 'zod';
+import { GuardFactory } from './conformance-guards.js';
 import type { ConformanceResult } from './conformance-guards.js';
-import { trace } from '@opentelemetry/api';
+import { trace, SpanStatusCode } from '@opentelemetry/api';
+
+/**
+ * Minimal request/response types that remain compatible with Express but keep
+ * the middleware free from `any` usage. Express itself remains an optional
+ * dependency.
+ */
+interface ExpressRouteInfo {
+  path?: string;
+}
+
+export interface ExpressRequestLike {
+  method: string;
+  path: string;
+  route?: ExpressRouteInfo | null;
+  body: unknown;
+  query: unknown;
+  params: unknown;
+  headers?: Record<string, unknown>;
+  get(name: string): string | undefined;
+  ip?: string;
+  user?: { id?: string } | null;
+}
+
+export interface ExpressResponseLike {
+  status(code: number): ExpressResponseLike;
+  json(payload: unknown): ExpressResponseLike;
+  send(payload: unknown): ExpressResponseLike;
+  statusCode: number;
+}
+
+export type ExpressNextFunction = (error?: unknown) => void;
+
+type ExpressMiddleware = (
+  req: ExpressRequestLike,
+  res: ExpressResponseLike,
+  next: ExpressNextFunction
+) => void | Promise<void>;
+
+type ResponseInvoker = (payload: unknown) => ExpressResponseLike;
 
 const tracer = trace.getTracer('ae-framework-runtime-middleware');
 
@@ -26,7 +59,7 @@ export interface MiddlewareConfig {
   logErrors: boolean;
   generateArtifacts: boolean;
   includeRequestInfo: boolean;
-  customErrorHandler?: (error: any, req: any, res: any) => void;
+  customErrorHandler?: MiddlewareErrorHandler;
 }
 
 const defaultMiddlewareConfig: MiddlewareConfig = {
@@ -38,14 +71,30 @@ const defaultMiddlewareConfig: MiddlewareConfig = {
 };
 
 // Validation context for middleware
-interface ValidationContext {
+interface ValidationContext extends Record<string, unknown> {
   operationId: string;
   method: string;
   path: string;
   timestamp: string;
   requestId?: string;
   userId?: string;
-  [key: string]: any;
+  userAgent?: string;
+  ip?: string;
+}
+
+type MiddlewareErrorHandler = (
+  error: unknown,
+  req: ExpressRequestLike,
+  res: ExpressResponseLike
+) => void;
+
+interface RuntimeValidationError {
+  error: 'Validation Failed';
+  message: string;
+  details: string[];
+  timestamp: string;
+  path: string;
+  method: string;
 }
 
 /**
@@ -66,7 +115,7 @@ export class ExpressConformanceMiddleware {
     // ミドルウェア側でstrict処理を行うため、ガードは非例外化
     guard.updateConfig({ failOnViolation: false });
     
-    return async (req: Request, res: Response, next: NextFunction) => {
+    return async (req: ExpressRequestLike, res: ExpressResponseLike, next: ExpressNextFunction) => {
       if (!this.config.enabled) {
         return next();
       }
@@ -89,13 +138,15 @@ export class ExpressConformanceMiddleware {
         }
 
         // Replace body with validated data
-        req.body = result.data;
-        span.setStatus({ code: 1 as any });
+        if (Object.prototype.hasOwnProperty.call(result, 'data')) {
+          req.body = result.data;
+        }
+        span.setStatus({ code: SpanStatusCode.OK });
         next();
 
       } catch (error) {
         span.recordException(error as Error);
-        span.setStatus({ code: 2 as any });
+        span.setStatus({ code: SpanStatusCode.ERROR });
         this.handleMiddlewareError(error, req, res, next);
       } finally {
         span.end();
@@ -110,7 +161,7 @@ export class ExpressConformanceMiddleware {
     const guard = GuardFactory.apiRequest(schema, `${operationId}_query`);
     guard.updateConfig({ failOnViolation: false });
     
-    return async (req: Request, res: Response, next: NextFunction) => {
+    return async (req: ExpressRequestLike, res: ExpressResponseLike, next: ExpressNextFunction) => {
       if (!this.config.enabled) {
         return next();
       }
@@ -132,13 +183,15 @@ export class ExpressConformanceMiddleware {
           return this.handleValidationError(result, req, res, next, 'query_params');
         }
 
-        req.query = result.data as any;
-        span.setStatus({ code: 1 as any });
+        if (result.success && result.data !== undefined) {
+          req.query = result.data;
+        }
+        span.setStatus({ code: SpanStatusCode.OK });
         next();
 
       } catch (error) {
         span.recordException(error as Error);
-        span.setStatus({ code: 2 as any });
+        span.setStatus({ code: SpanStatusCode.ERROR });
         this.handleMiddlewareError(error, req, res, next);
       } finally {
         span.end();
@@ -153,7 +206,7 @@ export class ExpressConformanceMiddleware {
     const guard = GuardFactory.apiRequest(schema, `${operationId}_params`);
     guard.updateConfig({ failOnViolation: false });
     
-    return async (req: Request, res: Response, next: NextFunction) => {
+    return async (req: ExpressRequestLike, res: ExpressResponseLike, next: ExpressNextFunction) => {
       if (!this.config.enabled) {
         return next();
       }
@@ -175,13 +228,15 @@ export class ExpressConformanceMiddleware {
           return this.handleValidationError(result, req, res, next, 'path_params');
         }
 
-        req.params = result.data as any;
-        span.setStatus({ code: 1 as any });
+        if (result.success && result.data !== undefined) {
+          req.params = result.data;
+        }
+        span.setStatus({ code: SpanStatusCode.OK });
         next();
 
       } catch (error) {
         span.recordException(error as Error);
-        span.setStatus({ code: 2 as any });
+        span.setStatus({ code: SpanStatusCode.ERROR });
         this.handleMiddlewareError(error, req, res, next);
       } finally {
         span.end();
@@ -192,66 +247,62 @@ export class ExpressConformanceMiddleware {
   /**
    * Validate response data
    */
-  validateResponse<T>(schema: z.ZodSchema<T>, operationId: string) {
+  validateResponse<T>(schema: z.ZodSchema<T>, operationId: string): ExpressMiddleware {
     const guard = GuardFactory.apiResponse(schema, operationId);
     
-    return (req: Request, res: Response, next: NextFunction) => {
+    return (req: ExpressRequestLike, res: ExpressResponseLike, next: ExpressNextFunction) => {
       if (!this.config.enabled) {
-        return next();
+        next();
+        return;
       }
 
-      const originalSend = res.send;
-      const originalJson = res.json;
-      const mw = this; // preserve middleware instance for type-safe access
-
-      // Intercept res.send
-      res.send = function (this: Response, data: any) {
-        return validateAndSend(this, data, originalSend);
-      } as any;
-
-      // Intercept res.json
-      res.json = function (this: Response, data: any) {
-        return validateAndSend(this, data, originalJson);
-      } as any;
-
-      const validateAndSend = async function (that: Response, data: any, originalMethod: Function) {
+      const validateAndSend = (payload: unknown, invoke: ResponseInvoker): ExpressResponseLike => {
         const span = tracer.startSpan(`validate_response_${operationId}`);
-        
-        try {
-          const context = mw.createValidationContext(req, operationId);
-          const result = await guard.validateOutput(data, context);
+        span.setAttributes({
+          'http.method': req.method,
+          'http.route': req.route?.path || req.path,
+          'conformance.operation_id': operationId,
+          'http.status_code': res.statusCode,
+        });
 
-          span.setAttributes({
-            'http.method': req.method,
-            'http.route': req.route?.path || req.path,
-            'conformance.operation_id': operationId,
-            'conformance.validation_result': result.success ? 'success' : 'failure',
-            'http.status_code': res.statusCode,
+        const context = this.createValidationContext(req, operationId);
+
+        // Fire-and-forget validation so response streaming is not blocked.
+        // Telemetry spans capture completion/failure details asynchronously.
+        void guard.validateOutput(payload, context)
+          .then((result) => {
+            span.setAttributes({
+              'conformance.validation_result': result.success ? 'success' : 'failure',
+            });
+
+            if (!result.success && this.config.logErrors) {
+              console.warn(`🚨 Response validation failed for ${operationId}:`, result.errors);
+            }
+
+            span.setStatus({
+              code: result.success ? SpanStatusCode.OK : SpanStatusCode.ERROR,
+            });
+          })
+          .catch((error) => {
+            span.recordException(error as Error);
+            span.setStatus({ code: SpanStatusCode.ERROR });
+
+            if (this.config.logErrors) {
+              console.error(`Response validation error for ${operationId}:`, error);
+            }
+          })
+          .finally(() => {
+            span.end();
           });
 
-          if (!result.success && mw.config.logErrors) {
-            console.warn(`🚨 Response validation failed for ${operationId}:`, result.errors);
-          }
-
-          span.setStatus({ code: 1 as any });
-          
-          // Always send the original data (don't break responses)
-          return await Promise.resolve(originalMethod.call(that, data));
-
-        } catch (error) {
-          span.recordException(error as Error);
-          span.setStatus({ code: 2 as any });
-          
-          if (mw.config.logErrors) {
-            console.error(`Response validation error for ${operationId}:`, error);
-          }
-          
-          // Still send the response
-          return await Promise.resolve(originalMethod.call(that, data));
-        } finally {
-          span.end();
-        }
+        return invoke(payload);
       };
+
+      const originalSend = res.send.bind(res) as ResponseInvoker;
+      res.send = ((payload: unknown) => validateAndSend(payload, originalSend)) as typeof res.send;
+
+      const originalJson = res.json.bind(res) as ResponseInvoker;
+      res.json = ((payload: unknown) => validateAndSend(payload, originalJson)) as typeof res.json;
 
       next();
     };
@@ -266,17 +317,21 @@ export class ExpressConformanceMiddleware {
     operationId: string,
     target: 'body' | 'query' | 'params' = 'body'
   ) {
-    return [
+    const middlewares: Array<ExpressMiddleware | undefined> = [
       requestSchema ? (
         target === 'body' ? this.validateRequestBody(requestSchema, operationId) :
         target === 'query' ? this.validateQueryParams(requestSchema, operationId) :
         this.validatePathParams(requestSchema, operationId)
       ) : undefined,
       responseSchema ? this.validateResponse(responseSchema, operationId) : undefined,
-    ].filter(Boolean) as any[];
+    ];
+
+    return middlewares.filter(
+      (middleware): middleware is ExpressMiddleware => typeof middleware === 'function'
+    );
   }
 
-  private createValidationContext(req: Request, operationId: string): ValidationContext {
+  private createValidationContext(req: ExpressRequestLike, operationId: string): ValidationContext {
     const context: ValidationContext = {
       operationId,
       method: req.method,
@@ -285,10 +340,32 @@ export class ExpressConformanceMiddleware {
     };
 
     if (this.config.includeRequestInfo) {
-      context['requestId'] = req.headers['x-request-id'] as string;
-      context['userId'] = (req as any).user?.id;
-      context['userAgent'] = req.get('User-Agent');
-      context['ip'] = req.ip;
+      const headers = req.headers ?? {};
+      const requestIdHeader = headers['x-request-id'];
+      if (typeof requestIdHeader === 'string') {
+        context.requestId = requestIdHeader;
+      } else if (Array.isArray(requestIdHeader)) {
+        const stringId = requestIdHeader.find(
+          (value): value is string => typeof value === 'string' && value.length > 0
+        );
+        if (stringId) {
+          context.requestId = stringId;
+        }
+      }
+
+      const userId = req.user?.id;
+      if (typeof userId === 'string' && userId.length > 0) {
+        context.userId = userId;
+      }
+
+      const userAgent = req.get('User-Agent');
+      if (typeof userAgent === 'string' && userAgent.length > 0) {
+        context.userAgent = userAgent;
+      }
+
+      if (typeof req.ip === 'string' && req.ip.length > 0) {
+        context.ip = req.ip;
+      }
     }
 
     return context;
@@ -296,12 +373,12 @@ export class ExpressConformanceMiddleware {
 
   private handleValidationError(
     result: ConformanceResult,
-    req: Request,
-    res: Response,
-    next: NextFunction,
+    req: ExpressRequestLike,
+    res: ExpressResponseLike,
+    next: ExpressNextFunction,
     target: string
   ): void {
-    const error = {
+    const error: RuntimeValidationError = {
       error: 'Validation Failed',
       message: `${target} validation failed`,
       details: result.errors,
@@ -311,7 +388,8 @@ export class ExpressConformanceMiddleware {
     };
 
     if (this.config.customErrorHandler) {
-      return this.config.customErrorHandler(error, req, res);
+      this.config.customErrorHandler(error, req, res);
+      return;
     }
 
     if (this.config.strictMode) {
@@ -325,13 +403,14 @@ export class ExpressConformanceMiddleware {
   }
 
   private handleMiddlewareError(
-    error: any,
-    req: Request,
-    res: Response,
-    next: NextFunction
+    error: unknown,
+    req: ExpressRequestLike,
+    res: ExpressResponseLike,
+    next: ExpressNextFunction
   ): void {
     if (this.config.customErrorHandler) {
-      return this.config.customErrorHandler(error, req, res);
+      this.config.customErrorHandler(error, req, res);
+      return;
     }
 
     if (this.config.logErrors) {
@@ -350,18 +429,34 @@ export class ExpressConformanceMiddleware {
   }
 }
 
+interface RegisteredRoute {
+  operationId: string;
+  middlewares: ExpressMiddleware[];
+  schemas: {
+    request?: z.ZodSchema<unknown>;
+    response?: z.ZodSchema<unknown>;
+    query?: z.ZodSchema<unknown>;
+    params?: z.ZodSchema<unknown>;
+  };
+}
+
+const extractOperationId = (request: FastifyRequest): string | undefined => {
+  const candidate = (request as unknown as { routerMethod?: { operationId?: string } }).routerMethod;
+  return candidate?.operationId;
+};
+
 /**
  * Fastify Plugin for Runtime Conformance
  */
-export async function fastifyConformancePlugin(
+export function fastifyConformancePlugin(
   fastify: FastifyInstance,
   options: {
     config?: Partial<MiddlewareConfig>;
-    schemas?: Record<string, z.ZodSchema<any>>;
+    schemas?: Record<string, z.ZodSchema<unknown>>;
   } = {}
 ) {
   const config = { ...defaultMiddlewareConfig, ...options.config };
-  const { schemas = {} } = options;
+  const schemas = options.schemas ?? {};
 
   // Register schemas
   for (const [name, schema] of Object.entries(schemas)) {
@@ -372,11 +467,10 @@ export async function fastifyConformancePlugin(
   }
 
   // Add validation hook
-  fastify.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.addHook('preHandler', (request: FastifyRequest) => {
     if (!config.enabled) return;
 
-    const operationId = ((request as any).routerMethod as any)?.operationId || 
-                       `${request.method}_${request.url}`;
+    const operationId = extractOperationId(request) ?? `${request.method}_${request.url}`;
 
     const span = tracer.startSpan(`fastify_validate_${operationId}`);
 
@@ -390,11 +484,11 @@ export async function fastifyConformancePlugin(
       // Validation would be handled by Fastify's built-in JSON schema validation
       // This hook is mainly for telemetry and artifact generation
 
-      span.setStatus({ code: 1 as any });
+      span.setStatus({ code: SpanStatusCode.OK });
 
     } catch (error) {
       span.recordException(error as Error);
-      span.setStatus({ code: 2 as any });
+      span.setStatus({ code: SpanStatusCode.ERROR });
       throw error;
     } finally {
       span.end();
@@ -402,11 +496,10 @@ export async function fastifyConformancePlugin(
   });
 
   // Add response validation hook
-  fastify.addHook('onSend', async (request: FastifyRequest, reply: FastifyReply, payload: any) => {
+  fastify.addHook('onSend', (request: FastifyRequest, reply: FastifyReply, payload: unknown) => {
     if (!config.enabled) return payload;
 
-    const operationId = ((request as any).routerMethod as any)?.operationId || 
-                       `${request.method}_${request.url}`;
+    const operationId = extractOperationId(request) ?? `${request.method}_${request.url}`;
 
     const span = tracer.startSpan(`fastify_validate_response_${operationId}`);
 
@@ -421,11 +514,11 @@ export async function fastifyConformancePlugin(
       // Response validation would be handled by Fastify's built-in validation
       // This hook is mainly for telemetry
 
-      span.setStatus({ code: 1 as any });
+      span.setStatus({ code: SpanStatusCode.OK });
 
     } catch (error) {
       span.recordException(error as Error);
-      span.setStatus({ code: 2 as any });
+      span.setStatus({ code: SpanStatusCode.ERROR });
       
       if (config.logErrors) {
         console.error('Fastify response validation error:', error);
@@ -454,12 +547,12 @@ export class OpenAPIConformanceIntegration {
   generateMiddleware(
     operation: {
       operationId: string;
-      requestBody?: { schema: z.ZodSchema<any> };
-      parameters?: Array<{ schema: z.ZodSchema<any>; in: 'query' | 'path' }>;
-      responses?: { [status: string]: { schema: z.ZodSchema<any> } };
+      requestBody?: { schema: z.ZodSchema<unknown> };
+      parameters?: Array<{ schema: z.ZodSchema<unknown>; in: 'query' | 'path' }>;
+      responses?: Record<string, { schema: z.ZodSchema<unknown> }>;
     }
-  ) {
-    const middlewares: any[] = [];
+  ): ExpressMiddleware[] {
+    const middlewares: ExpressMiddleware[] = [];
 
     // Request body validation
     if (operation.requestBody) {
@@ -475,12 +568,11 @@ export class OpenAPIConformanceIntegration {
 
       if (queryParams.length > 0) {
         // Combine query parameter schemas
-        const querySchema = z.object(
-          queryParams.reduce((acc, param, index) => {
-            acc[`param_${index}`] = param.schema;
-            return acc;
-          }, {} as any)
-        );
+        const queryShape = queryParams.reduce<ZodRawShape>((acc, param, index) => {
+          acc[`param_${index}`] = param.schema;
+          return acc;
+        }, {});
+        const querySchema = z.object(queryShape);
         middlewares.push(
           this.middleware.validateQueryParams(querySchema, operation.operationId)
         );
@@ -488,12 +580,11 @@ export class OpenAPIConformanceIntegration {
 
       if (pathParams.length > 0) {
         // Combine path parameter schemas
-        const pathSchema = z.object(
-          pathParams.reduce((acc, param, index) => {
-            acc[`param_${index}`] = param.schema;
-            return acc;
-          }, {} as any)
-        );
+        const pathShape = pathParams.reduce<ZodRawShape>((acc, param, index) => {
+          acc[`param_${index}`] = param.schema;
+          return acc;
+        }, {});
+        const pathSchema = z.object(pathShape);
         middlewares.push(
           this.middleware.validatePathParams(pathSchema, operation.operationId)
         );
@@ -514,7 +605,7 @@ export class OpenAPIConformanceIntegration {
 /**
  * Utility function to convert Zod schema to JSON Schema (simplified)
  */
-function zodToJsonSchema(schema: z.ZodSchema<any>): any {
+function zodToJsonSchema(schema: ZodTypeAny): Record<string, unknown> {
   // This is a simplified implementation
   // In a real application, use a library like zod-to-json-schema
   if (schema instanceof z.ZodString) {
@@ -524,17 +615,22 @@ function zodToJsonSchema(schema: z.ZodSchema<any>): any {
   } else if (schema instanceof z.ZodBoolean) {
     return { type: 'boolean' };
   } else if (schema instanceof z.ZodObject) {
-    const properties: any = {};
-    const shape = (schema as any)._def.shape();
-    
-    for (const [key, value] of Object.entries(shape)) {
-      properties[key] = zodToJsonSchema(value as z.ZodSchema<any>);
+    const properties: Record<string, unknown> = {};
+    const shape = schema.shape as ZodRawShape;
+
+    for (const key of Object.keys(shape)) {
+      const rawValue = shape[key];
+      if (!rawValue) {
+        continue;
+      }
+      const value = rawValue as ZodTypeAny;
+      properties[key] = zodToJsonSchema(value);
     }
-    
+
     return {
       type: 'object',
       properties,
-      required: Object.keys(properties),
+      required: Object.keys(shape),
     };
   }
   
@@ -547,7 +643,7 @@ function zodToJsonSchema(schema: z.ZodSchema<any>): any {
 export class MiddlewareRegistry {
   private static instance: MiddlewareRegistry;
   private expressMiddleware: ExpressConformanceMiddleware;
-  private registeredRoutes: Map<string, any> = new Map();
+  private registeredRoutes: Map<string, RegisteredRoute> = new Map();
 
   constructor(config: Partial<MiddlewareConfig> = {}) {
     this.expressMiddleware = new ExpressConformanceMiddleware(config);
@@ -568,13 +664,13 @@ export class MiddlewareRegistry {
     method: string,
     operationId: string,
     schemas: {
-      request?: z.ZodSchema<any>;
-      response?: z.ZodSchema<any>;
-      query?: z.ZodSchema<any>;
-      params?: z.ZodSchema<any>;
+      request?: z.ZodSchema<unknown>;
+      response?: z.ZodSchema<unknown>;
+      query?: z.ZodSchema<unknown>;
+      params?: z.ZodSchema<unknown>;
     }
-  ): any[] {
-    const middlewares = [];
+  ): ExpressMiddleware[] {
+    const middlewares: ExpressMiddleware[] = [];
 
     if (schemas.request) {
       middlewares.push(
@@ -613,7 +709,7 @@ export class MiddlewareRegistry {
   /**
    * Get middleware for a route
    */
-  getMiddleware(path: string, method: string): any[] {
+  getMiddleware(path: string, method: string): ExpressMiddleware[] {
     const routeKey = `${method.toUpperCase()}:${path}`;
     const route = this.registeredRoutes.get(routeKey);
     return route ? route.middlewares : [];

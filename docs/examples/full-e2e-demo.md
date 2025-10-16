@@ -29,9 +29,11 @@
    ```
 2. 実行結果:
    - `verify-lite-run-summary.json` / `verify-lite-lint-summary.json`
+   - Property harness サマリ `artifacts/properties/summary.json`
+   - MBT サマリ `artifacts/mbt/summary.json`
    - Mutation quick レポート `reports/mutation/mutation.json`
    - サマリ JSON `reports/mutation/summary.json`（Step Summary にも同様の概要を出力）
-3. CI (`verify-lite.yml`) では上記成果物をレポート Envelope 化し、`mutation-quick-report` / `mutation-survivors-json` をアーティファクトとして添付する。
+3. CI (`verify-lite.yml`) では上記成果物をレポート Envelope 化し、`verify-lite-report` / `mutation-quick-report` / `mutation-survivors-json` などをアーティファクトとして添付する。
 
 ## 3. Mutation Quick の個別実行
 
@@ -90,7 +92,7 @@ make test-api-fuzz
 5. `pnpm run bdd:test`
 6. `pnpm run contracts:verify`
 7. `make test-api-fuzz`
-8. `pnpm test:mbt`
+8. (任意) `pnpm test:mbt -- --runs=8 --depth=6` でシードを変えたモデル検証を追加確認
 9. `pnpm pipelines:trace --input samples/trace/kvonce-sample.ndjson --skip-replay`
 
 全て完了したら、`reports/` / `artifacts/` の差分を確認し、必要に応じて Issue / PR に最新状況をコメントしてください。

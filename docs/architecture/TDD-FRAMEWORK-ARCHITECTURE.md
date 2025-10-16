@@ -184,7 +184,7 @@ export interface TaskResponse {
 
 **タスクタイプ**:
 - `implement-feature`: 新機能のTDD実装
-- `validate-tdd`: TDD遵守状況検証
+- `node scripts/quality/tdd-smoke-check.mjs`: TDD遵守状況検証 (lightweight smoke gate)
 - `guide-development`: 開発ガイダンス
 - `enforce-compliance`: コンプライアンス強制
 - `analyze-code`: コード分析とテスト提案

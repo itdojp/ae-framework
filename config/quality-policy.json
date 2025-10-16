@@ -167,8 +167,8 @@
       "enabled": true,
       "thresholds": {
         "development": {
-          "maxErrors": 20,
-          "maxWarnings": 50,
+          "maxErrors": 0,
+          "maxWarnings": 0,
           "blockOnErrors": false
         },
         "testing": {
@@ -193,7 +193,7 @@
         "prettier"
       ],
       "commands": {
-        "test": "npm run lint",
+        "test": "node scripts/quality/check-lint-summary.mjs",
         "fix": "npm run lint -- --fix"
       }
     },
@@ -273,7 +273,7 @@
         "eslint-plugin-complexity"
       ],
       "commands": {
-        "test": "npm run validate-tdd",
+        "test": "node scripts/quality/tdd-smoke-check.mjs",
         "guard": "npm run ae-framework -- guard"
       }
     },

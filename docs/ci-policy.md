@@ -15,6 +15,9 @@ This document defines CI policies to keep PR experience fast and stable while ma
 
 ### Required Checks (PR blocking)
 - Verify Lite (types:check / lint / build)
+- Quality Gates (development profile):
+  - Lint baseline enforcement via `node scripts/quality/check-lint-summary.mjs`
+  - TDD smoke validation via `node scripts/quality/tdd-smoke-check.mjs`
 - Copilot Review Gate（Copilotレビューの存在と未解決スレッドなし）
 - Optionally enable validate-artifacts-ajv / coverage-check as required
 
@@ -112,6 +115,9 @@ This document defines CI policies to keep PR experience fast and stable while ma
 
 ### 必須チェック（PR ブロッキング）
 - Verify Lite（types:check / lint / build）
+- Quality Gates（development プロファイル）:
+  - `node scripts/quality/check-lint-summary.mjs` による lint ベースライン差分チェック
+  - `node scripts/quality/tdd-smoke-check.mjs` による TDD スモーク検証
 - 必要に応じて validate-artifacts-ajv / coverage-check を必須化可能
  - カバレッジ運用とRequired化の詳細は `docs/quality/coverage-policy.md` を参照（しきい値の由来、ラベル/変数、main運用）
 

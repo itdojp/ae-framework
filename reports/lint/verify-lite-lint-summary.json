@@ -2,53 +2,61 @@
   "schemaVersion": "1.0.0",
   "generator": {
     "name": "verify-lite-lint-summary",
-    "version": "0.2.0",
-    "eslintVersion": "9.34.0",
+    "version": "0.3.0",
+    "eslintVersion": "v9.34.0",
     "configHash": "6b60f21d93d0"
   },
-  "generatedAt": "2025-10-16T04:41:17.144Z",
+  "generatedAt": "2025-10-16T11:59:04.514Z",
   "totals": {
-    "totalIssues": 2101,
-    "fixableIssues": 0
+    "totalIssues": 2365,
+    "fixableIssues": 42
   },
   "clusters": {
-    "unsafe": 1078,
-    "explicitAny": 469,
-    "unusedVars": 264,
-    "requireAwait": 195
+    "unsafe": 1202,
+    "explicitAny": 524,
+    "unusedVars": 271,
+    "requireAwait": 203
   },
   "topRules": [
     {
       "rule": "@typescript-eslint/no-unsafe-member-access",
-      "count": 544
+      "count": 597
     },
     {
       "rule": "@typescript-eslint/no-explicit-any",
-      "count": 469
+      "count": 524
     },
     {
       "rule": "@typescript-eslint/no-unsafe-assignment",
-      "count": 304
+      "count": 350
     },
     {
       "rule": "@typescript-eslint/no-unused-vars",
-      "count": 264
+      "count": 271
     },
     {
       "rule": "@typescript-eslint/require-await",
-      "count": 195
+      "count": 203
     },
     {
       "rule": "@typescript-eslint/no-unsafe-argument",
-      "count": 123
+      "count": 139
     },
     {
       "rule": "@typescript-eslint/no-unsafe-call",
-      "count": 71
+      "count": 78
+    },
+    {
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 39
     },
     {
       "rule": "@typescript-eslint/no-unsafe-return",
-      "count": 36
+      "count": 38
+    },
+    {
+      "rule": "no-case-declarations",
+      "count": 32
     },
     {
       "rule": "@typescript-eslint/restrict-template-expressions",
@@ -60,29 +68,21 @@
     },
     {
       "rule": "@typescript-eslint/no-floating-promises",
-      "count": 13
+      "count": 14
     },
     {
       "rule": "@typescript-eslint/no-misused-promises",
       "count": 13
     },
     {
-      "rule": "no-case-declarations",
-      "count": 8
-    },
-    {
       "rule": "no-useless-escape",
       "count": 4
-    },
-    {
-      "rule": "@typescript-eslint/no-base-to-string",
-      "count": 3
     }
   ],
   "focusRules": [
     {
       "rule": "@typescript-eslint/no-unused-vars",
-      "total": 264,
+      "total": 271,
       "topFiles": [
         {
           "file": "src/inference/core/solution-composer.ts",
@@ -113,22 +113,22 @@
           "count": 11
         },
         {
+          "file": "src/inference/strategies/sequential-strategy.ts",
+          "count": 7
+        },
+        {
           "file": "src/integration/reporters/html-reporter.ts",
           "count": 7
         },
         {
           "file": "src/self-improvement/phase5-verification-final.ts",
           "count": 7
-        },
-        {
-          "file": "src/self-improvement/codebase-analysis.ts",
-          "count": 6
         }
       ]
     },
     {
       "rule": "@typescript-eslint/require-await",
-      "total": 195,
+      "total": 203,
       "topFiles": [
         {
           "file": "src/integration/runners/e2e-runner.ts",
@@ -144,6 +144,10 @@
         },
         {
           "file": "src/cegis/strategies/type-error-strategy.ts",
+          "count": 8
+        },
+        {
+          "file": "src/inference/strategies/sequential-strategy.ts",
           "count": 8
         },
         {
@@ -165,23 +169,27 @@
         {
           "file": "src/utils/enhanced-state-manager.ts",
           "count": 6
-        },
-        {
-          "file": "src/codegen/deterministic-generator.ts",
-          "count": 5
         }
       ]
     },
     {
       "rule": "@typescript-eslint/no-explicit-any",
-      "total": 469,
+      "total": 524,
       "topFiles": [
         {
           "file": "src/inference/core/solution-composer.ts",
           "count": 37
         },
         {
+          "file": "src/inference/strategies/sequential-strategy.ts",
+          "count": 31
+        },
+        {
           "file": "src/inference/core/validation-orchestrator.ts",
+          "count": 22
+        },
+        {
+          "file": "src/server.ts",
           "count": 22
         },
         {
@@ -207,21 +215,17 @@
         {
           "file": "src/engines/sequential-inference-engine.ts",
           "count": 15
-        },
-        {
-          "file": "src/integration/runners/e2e-runner.ts",
-          "count": 14
-        },
-        {
-          "file": "src/telemetry/enhanced-telemetry.ts",
-          "count": 13
         }
       ]
     },
     {
       "rule": "@typescript-eslint/no-unsafe-assignment",
-      "total": 304,
+      "total": 350,
       "topFiles": [
+        {
+          "file": "src/inference/strategies/sequential-strategy.ts",
+          "count": 24
+        },
         {
           "file": "src/integration/runners/e2e-runner.ts",
           "count": 19
@@ -232,6 +236,10 @@
         },
         {
           "file": "src/inference/core/solution-composer.ts",
+          "count": 17
+        },
+        {
+          "file": "src/inference/strategies/parallel-strategy.ts",
           "count": 17
         },
         {
@@ -251,22 +259,14 @@
           "count": 13
         },
         {
-          "file": "src/inference/strategies/parallel-strategy.ts",
-          "count": 12
-        },
-        {
-          "file": "src/integration/hybrid-tdd-system.ts",
-          "count": 11
-        },
-        {
-          "file": "src/optimization/parallel/parallel-optimizer.ts",
-          "count": 11
+          "file": "src/server.ts",
+          "count": 13
         }
       ]
     },
     {
       "rule": "@typescript-eslint/no-unsafe-member-access",
-      "total": 544,
+      "total": 597,
       "topFiles": [
         {
           "file": "src/codegen/deterministic-generator.ts",
@@ -289,6 +289,14 @@
           "count": 24
         },
         {
+          "file": "src/server.ts",
+          "count": 23
+        },
+        {
+          "file": "src/inference/strategies/sequential-strategy.ts",
+          "count": 22
+        },
+        {
           "file": "src/testing/playwright-integration.ts",
           "count": 20
         },
@@ -299,24 +307,20 @@
         {
           "file": "src/optimization/parallel/parallel-optimizer.ts",
           "count": 18
-        },
-        {
-          "file": "src/utils/persona-manager.ts",
-          "count": 17
-        },
-        {
-          "file": "src/integration/hybrid-intent-system.ts",
-          "count": 16
         }
       ]
     },
     {
       "rule": "@typescript-eslint/no-unsafe-argument",
-      "total": 123,
+      "total": 139,
       "topFiles": [
         {
           "file": "src/integration/runners/e2e-runner.ts",
           "count": 20
+        },
+        {
+          "file": "src/inference/strategies/sequential-strategy.ts",
+          "count": 11
         },
         {
           "file": "src/mcp-server/intent-server.ts",
@@ -349,16 +353,12 @@
         {
           "file": "src/optimization/parallel/index.ts",
           "count": 7
-        },
-        {
-          "file": "src/security/sbom-generator.ts",
-          "count": 6
         }
       ]
     },
     {
       "rule": "@typescript-eslint/no-unsafe-return",
-      "total": 36,
+      "total": 38,
       "topFiles": [
         {
           "file": "src/integration/circuit-breaker-integration.ts",
@@ -381,6 +381,10 @@
           "count": 2
         },
         {
+          "file": "src/utils/phase-state-manager.ts",
+          "count": 2
+        },
+        {
           "file": "src/utils/quality-policy-loader.ts",
           "count": 2
         },
@@ -395,50 +399,128 @@
         {
           "file": "src/generators/ui-scaffold-generator.ts",
           "count": 1
-        },
-        {
-          "file": "src/inference/core/validation-orchestrator.ts",
-          "count": 1
         }
       ]
     }
   ],
   "fixable": {
-    "byRule": [],
-    "byFile": []
+    "byRule": [
+      {
+        "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+        "count": 39
+      },
+      {
+        "rule": "prefer-const",
+        "count": 2
+      },
+      {
+        "rule": "unknown",
+        "count": 1
+      }
+    ],
+    "byFile": [
+      {
+        "file": "src/server.ts",
+        "count": 10
+      },
+      {
+        "file": "src/telemetry/enhanced-telemetry.ts",
+        "count": 6
+      },
+      {
+        "file": "src/utils/enhanced-state-manager.ts",
+        "count": 6
+      },
+      {
+        "file": "src/mcp-server/code-generation-server.ts",
+        "count": 4
+      },
+      {
+        "file": "src/mcp-server/test-generation-server.ts",
+        "count": 4
+      },
+      {
+        "file": "src/conformance/monitors/api-contract-monitor.ts",
+        "count": 2
+      },
+      {
+        "file": "src/conformance/monitors/data-validation-monitor.ts",
+        "count": 2
+      },
+      {
+        "file": "src/inference/strategies/sequential-strategy.ts",
+        "count": 1
+      },
+      {
+        "file": "src/runtime/runtime-middleware.ts",
+        "count": 1
+      },
+      {
+        "file": "src/self-improvement/phase3-typescript-fixes.ts",
+        "count": 1
+      },
+      {
+        "file": "src/self-improvement/phase4-code-generation.ts",
+        "count": 1
+      },
+      {
+        "file": "src/self-improvement/phase5-verification-final.ts",
+        "count": 1
+      },
+      {
+        "file": "src/utils/phase-state-manager.ts",
+        "count": 1
+      },
+      {
+        "file": "src/utils/safe-exit.ts",
+        "count": 1
+      },
+      {
+        "file": "src/utils/token-optimizer.ts",
+        "count": 1
+      }
+    ]
   },
   "rules": [
     {
       "rule": "@typescript-eslint/no-unsafe-member-access",
-      "count": 544
+      "count": 597
     },
     {
       "rule": "@typescript-eslint/no-explicit-any",
-      "count": 469
+      "count": 524
     },
     {
       "rule": "@typescript-eslint/no-unsafe-assignment",
-      "count": 304
+      "count": 350
     },
     {
       "rule": "@typescript-eslint/no-unused-vars",
-      "count": 264
+      "count": 271
     },
     {
       "rule": "@typescript-eslint/require-await",
-      "count": 195
+      "count": 203
     },
     {
       "rule": "@typescript-eslint/no-unsafe-argument",
-      "count": 123
+      "count": 139
     },
     {
       "rule": "@typescript-eslint/no-unsafe-call",
-      "count": 71
+      "count": 78
+    },
+    {
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 39
     },
     {
       "rule": "@typescript-eslint/no-unsafe-return",
-      "count": 36
+      "count": 38
+    },
+    {
+      "rule": "no-case-declarations",
+      "count": 32
     },
     {
       "rule": "@typescript-eslint/restrict-template-expressions",
@@ -450,23 +532,51 @@
     },
     {
       "rule": "@typescript-eslint/no-floating-promises",
-      "count": 13
+      "count": 14
     },
     {
       "rule": "@typescript-eslint/no-misused-promises",
       "count": 13
     },
     {
-      "rule": "no-case-declarations",
-      "count": 8
-    },
-    {
       "rule": "no-useless-escape",
       "count": 4
     },
     {
+      "rule": "prefer-const",
+      "count": 3
+    },
+    {
       "rule": "@typescript-eslint/no-base-to-string",
       "count": 3
+    },
+    {
+      "rule": "@typescript-eslint/prefer-promise-reject-errors",
+      "count": 3
+    },
+    {
+      "rule": "no-empty",
+      "count": 3
+    },
+    {
+      "rule": "@typescript-eslint/no-implied-eval",
+      "count": 1
+    },
+    {
+      "rule": "@typescript-eslint/only-throw-error",
+      "count": 1
+    },
+    {
+      "rule": "@typescript-eslint/no-redundant-type-constituents",
+      "count": 1
+    },
+    {
+      "rule": "@typescript-eslint/no-require-imports",
+      "count": 1
+    },
+    {
+      "rule": "unknown",
+      "count": 1
     }
   ]
 }

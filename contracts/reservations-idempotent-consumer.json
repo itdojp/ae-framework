@@ -1,0 +1,20 @@
+{
+  "id": "reservations-idempotent-consumer",
+  "description": "Repeat reservation request should be idempotent",
+  "request": {
+    "method": "POST",
+    "path": "/reservations",
+    "body": {
+      "orderId": "ORDER-12345",
+      "itemId": "SKU-001",
+      "quantity": 1
+    }
+  },
+  "response": {
+    "status": 201,
+    "body": {
+      "ok": true,
+      "reservationId": "RES-12345"
+    }
+  }
+}
