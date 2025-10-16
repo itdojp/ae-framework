@@ -1,0 +1,12 @@
+{
+  "id": "reservations-cancel-consumer",
+  "description": "Cancel reservation and receive 204 response",
+  "request": {
+    "method": "DELETE",
+    "path": "/reservations/ORDER-12345"
+  },
+  "response": {
+    "status": 204,
+    "body": null
+  }
+}

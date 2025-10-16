@@ -99,7 +99,7 @@ async function testQualityScripts() {
   const tests = [
     {
       name: 'TDD Guard Validation',
-      command: 'npm run validate-tdd',
+      command: 'node scripts/quality/tdd-smoke-check.mjs',
       description: 'Test TDD guard functionality',
       timeout: 20000,
       expectedBehavior: 'Should detect files without tests and report them'

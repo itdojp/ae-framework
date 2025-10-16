@@ -30,7 +30,7 @@
 - `specs/bdd/features/reservations.feature` / `specs/bdd/steps/reservations.steps.js`: Fastify を介した受け入れテストを実現。
 - `tests/property/*`・`tests/mbt/run.js`: Property / MBT 検証の再構築。
 - `tsconfig.stryker.json`・`stryker.config.js`・`vitest.stryker.config.ts`: Stryker + TypeScript Checker を限定構成で再有効化。
-- `scripts/pipelines/run-pact-contracts.mjs`・`contracts/reservations-consumer.json`: Pact CLI によるローカル契約検証フロー。
+- `scripts/pipelines/run-pact-contracts.mjs`・`contracts/reservations-*.json`: Pact CLI によるローカル契約検証フロー（複数契約を自動検出）。
 - `docs/infra/container-runtime.md`: Podman / Docker いずれにも対応するセットアップガイド。
 
 ## Week2 追加メモ（2025-Week2）

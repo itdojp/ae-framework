@@ -1,4 +1,4 @@
-# Issue Progress Snapshot (2025-10-08)
+# Issue Progress Snapshot (2025-10-16)
 
 | Issue | Theme | Status | Latest Notes |
 |-------|-------|--------|--------------|
@@ -6,10 +6,10 @@
 | #999 | Week2: 継続運用計画の具体化 | ⏳ 継続 | Verify Lite / mutation-quick GitHub Check は main へ復帰済み。TokenOptimizer quick は 64.78% → 100%（PR #1091）、EnhancedStateManager quick は 64.78%（survived 243）。Step Summary/Artifact 再出力とラベル運用の本格化が残タスク。|
 | #1001 | Week2 Tracker | ✅ 進捗記録中 | API server mutation スコア 100% を維持しつつ、TokenOptimizer/CircuitBreaker PBT 安定化 (#1091) を完了。EnhancedStateManager survivor (`versionIndex` / `stateImported` / `findKeyByVersion`) 対策と tinypool 障害調査が継続タスク。2025-10-09: versionIndex 連番確認と findKeyByVersion の正パス検証を unit test で補強。|
 | #1002 | Week3 準備 (進行中) | 🚧 進行中 | Runtime Guard ステータス API を `byEndpoint` / `hourlyBuckets` 付きで拡張し、Verify Lite 後処理に `generate-runtime-guard-stats.mjs` / `render-runtime-guard-summary.mjs` を追加済み。Grafana/Observable テンプレート草案を共有済みで、残タスクはダッシュボード導入レビューと conformance report CLI の周知。|
-| #1003 | Week4 Tracker | 🚧 進行中 | Verify Lite workflow に Property / MBT / Pact smoke を常設化し、`contracts/*.json` を自動検出する path filter を導入。Quality Gate は lint baseline (`check-lint-summary.mjs`) と TDD smoke を 0 エラー閾値で運用開始。Mutation Auto Diff を `.github/actions/mutation-auto-diff` に集約し、`mutation-quick.yml` から本番利用。残タスクは mutation-auto-diff を他パイプラインへ展開しつつ、`make test-docker-all` の再実行フローを整備。|
+| #1003 | Week4 Tracker | 🚧 進行中 | Verify Lite workflow に Property / MBT / Pact smoke を常設化し、WATCH_PATH_PATTERN で `contracts/*.json` を自動検出。Quality Gate は lint baseline (`check-lint-summary.mjs`) と TDD smoke を 0 エラー閾値で運用開始。Mutation Auto Diff を `.github/actions/mutation-auto-diff` に集約し `mutation-quick.yml` で本番利用、Docker Tests workflow を nightly/schedule 実行可能に追加。残タスクは mutation-auto-diff の他パイプライン展開と `make test-docker-all` 再実行フローの仕上げ。|
 | #1019 | Verify Lite lint backlog | 🚧 進行中 | 2025-10-16: SequentialStrategy strict TS 対応完了。`scripts/ci/analyze-lint-backlog.mjs` で lint サマリ自動化し backlog 2,202 件（fixable 0）。2025-10-19: `runtime/conformance-guards.ts` の Unsafe/any を解消し backlog 2,101 件（-101）。Stage2 は `e2e-runner` / `solution-composer` / `integration/runners/api-runner` / `validation-orchestrator` / `codegen/deterministic-generator` へスコープを再編。|
 |
-> メモ内容は GitHub Issues (#997, #999, #1001, #1002, #1003) にもコメントとして反映済み（2025-10-08 更新）。
+> メモ内容は GitHub Issues (#997, #999, #1001, #1002, #1003) にもコメントとして反映済み（2025-10-16 更新）。
 
 ### Latest PR / Follow-ups
 - Podman/WSL ランタイム最適化: PR [#1014](https://github.com/itdojp/ae-framework/pull/1014)
@@ -49,11 +49,7 @@
 - [x] 予約キャンセルフローと各種テスト資産の実装
 - [x] Mutation quick (API server 100% / EnhancedStateManager 67.90%) の結果ドキュメント化
 - [x] EnhancedStateManager 残存ミュータント（`versionIndex` / `stateImported` / `findKeyByVersion`）に対するテスト実装（PR #1094 / 2025-10-09: 連番バージョン検証テストを追加）
-<<<<<<< HEAD
-- [x] tinypool クラッシュ回避策の検証（Node 20 fallback + Vitest forks 戦略を導入済み）
-=======
-- [x] tinypool クラッシュ回避策の検証（Node 20 fallback + forks 戦略を Verify Lite / mutation quick に適用済み）
->>>>>>> 3eee5be (refactor(runtime): harden conformance guard typing)
+- [x] tinypool クラッシュ回避策の検証（Node 20 fallback + Vitest forks 戦略を Verify Lite / mutation quick に適用済み）
 - [x] ResilientHttpClient / IntelligentTestSelection / EvidenceValidator のテスト修正と再実行
 
 ### #1002 Week3 準備

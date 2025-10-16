@@ -20,6 +20,8 @@ jobs:
           COVERAGE_ENFORCE_MAIN: ${{ vars.COVERAGE_ENFORCE_MAIN }}
           COVERAGE_DEFAULT_THRESHOLD: ${{ vars.COVERAGE_DEFAULT_THRESHOLD }}
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Prepare pnpm
         uses: ./.github/actions/setup-pnpm
       - name: Enable corepack
@@ -28,6 +30,23 @@ jobs:
         with:
           node-version: '20'
           cache: 'pnpm'
+      - name: Detect pact-related changes (PR only)
+        id: pact-paths
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "pact=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          set -eo pipefail
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          git fetch origin "$BASE_SHA" --depth=1
+          CHANGED="$(git diff --name-only "$BASE_SHA"...HEAD || true)"
+          printf '%s\n' "$CHANGED" > /tmp/changed-files.txt
+          if printf '%s\n' "$CHANGED" | grep -E '^(contracts/|src/api/|specs/openapi/|tests/contracts/)' >/dev/null; then
+            echo "pact=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "pact=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Run verify-lite pipeline
         env:
           VERIFY_LITE_KEEP_LINT_LOG: '1'
@@ -41,8 +60,14 @@ jobs:
           pnpm run verify:lite
       - name: Property-based smoke
         run: pnpm test:property
+      - name: MBT smoke
+        run: pnpm test:mbt -- --runs=8 --depth=6
       - name: Pact contract smoke
+        if: ${{ steps.pact-paths.outputs.pact == 'true' }}
         run: pnpm pipelines:pact
+      - name: Pact contract smoke (skipped)
+        if: ${{ github.event_name == 'pull_request' && steps.pact-paths.outputs.pact == 'false' }}
+        run: echo 'Pact contract smoke skipped: no relevant contract changes detected.' >> "$GITHUB_STEP_SUMMARY"
       - name: Verify-lite lint baseline
         if: always()
         env:
@@ -206,6 +231,20 @@ jobs:
             ' artifacts/properties/summary.json >> "$GITHUB_STEP_SUMMARY" || echo 'Failed to parse property summary.' >> "$GITHUB_STEP_SUMMARY"
           else
             echo 'Property harness summary not generated.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Append MBT summary
+        if: always()
+        run: |
+          if [ -f artifacts/mbt/summary.json ]; then
+            echo '## MBT Harness' >> "$GITHUB_STEP_SUMMARY"
+            jq -r '
+              "Seed: \(.seed)",
+              "Runs: \(.runs)",
+              "Depth: \(.depth)",
+              "Violations: \(.violations)"
+            ' artifacts/mbt/summary.json >> "$GITHUB_STEP_SUMMARY" || echo 'Failed to parse MBT summary.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'MBT summary not generated.' >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Append lint summary (top rules)
         if: always()
