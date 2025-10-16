@@ -63,6 +63,11 @@ jobs:
           if [ -n "${EXTRA_TIME_LIMIT}" ]; then
             echo "STRYKER_TIME_LIMIT=${EXTRA_TIME_LIMIT}" >> "$GITHUB_ENV"
           fi
+          target_base=${AUTO_DIFF_BASE:-}
+          if [ -z "$target_base" ]; then
+            target_base='origin/main'
+          fi
+          echo "base_ref=$target_base" >> "$GITHUB_OUTPUT"
           {
             echo 'args<<__MUT_ARGS__'
             if [ "${#args[@]}" -gt 0 ]; then
@@ -75,16 +80,16 @@ jobs:
         id: mutation
         uses: ./.github/actions/mutation-auto-diff
         with:
-          base-ref: ${{ env.AUTO_DIFF_BASE != '' && env.AUTO_DIFF_BASE || 'origin/main' }}
+          base-ref: ${{ steps.mutation-args.outputs.base_ref }}
           quick: 'true'
-          extra-args: ${{ steps['mutation-args'].outputs.args }}
+          extra-args: ${{ steps.mutation-args.outputs.args }}
 
       - name: Append mutation auto diff summary
         if: ${{ always() }}
         run: |
           cat <<'EOF' >> "$GITHUB_STEP_SUMMARY"
           ## Mutation auto diff
-          - Base ref: `${{ env.AUTO_DIFF_BASE != '' && env.AUTO_DIFF_BASE || 'origin/main' }}`
+          - Base ref: `${{ steps.mutation-args.outputs.base_ref }}`
           - Mutation score: `${{ steps.mutation.outputs['mutation-score'] }}`
           - Detected / Undetected: `${{ steps.mutation.outputs.detected }}` / `${{ steps.mutation.outputs.undetected }}`
           - Survived: `${{ steps.mutation.outputs.survived }}` (No coverage: `${{ steps.mutation.outputs['no-coverage'] }}`)

@@ -33,9 +33,7 @@ CMD+=("--auto-diff=$BASE_REF")
 
 if [[ -n "$EXTRA_ARGS_RAW" ]]; then
   while IFS= read -r token; do
-    # Trim whitespace and ignore empty lines
-    token="${token#"${token%%[![:space:]]*}"}"
-    token="${token%"${token##*[![:space:]]}"}"
+    token=$(echo "$token" | xargs)
     [[ -z "$token" ]] && continue
     CMD+=("$token")
   done <<< "$EXTRA_ARGS_RAW"
@@ -43,7 +41,10 @@ fi
 
 "${CMD[@]}"
 
-node scripts/mutation/print-summary.mjs > mutation-summary.txt
+if ! node scripts/mutation/print-summary.mjs > mutation-summary.txt; then
+  echo "ERROR: Failed to generate mutation-summary.txt. Ensure mutation.json exists and print-summary.mjs succeeds." >&2
+  exit 1
+fi
 
 while IFS='=' read -r key value; do
   sanitized_key=${key//-/_}

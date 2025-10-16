@@ -65,7 +65,7 @@ async function main() {
     const metrics = collectMetrics(report);
 
     const outputs = [
-      ['mutation-score', metrics.score.toFixed(2)],
+      ['mutation-score', Math.round(metrics.score * 100) / 100],
       ['detected', metrics.detected],
       ['undetected', metrics.undetected],
       ['survived', metrics.survived],
