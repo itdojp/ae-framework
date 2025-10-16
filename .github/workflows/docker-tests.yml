@@ -79,7 +79,20 @@ jobs:
             node scripts/generate-test-report.cjs || true
           fi
           if [ -f reports/consolidated-test-report.json ]; then
-            node -e "const fs=require('fs');const path='reports/consolidated-test-report.json';try{const data=JSON.parse(fs.readFileSync(path,'utf8'));const suites=data.suites||{};const lines=Object.entries(suites).map(([name,info])=>'- '+name+': '+((info&&info.status)||'unknown'));const body=['## Docker test suites'].concat(lines.length?lines:['- no suites reported']).join('\n');console.log(body);}catch(error){console.log('## Docker test suites\n- failed to summarize report: '+error.message);}}" >> "$GITHUB_STEP_SUMMARY"
+            node - <<'NODE' >> "$GITHUB_STEP_SUMMARY"
+const fs = require('fs');
+const reportPath = 'reports/consolidated-test-report.json';
+try {
+  const data = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+  const suites = data.suites ?? {};
+  const lines = Object.entries(suites).map(([name, info]) => `- ${name}: ${(info && info.status) || 'unknown'}`);
+  const output = ['## Docker test suites'].concat(lines.length ? lines : ['- no suites reported']);
+  console.log(output.join('\n'));
+} catch (error) {
+  console.log('## Docker test suites');
+  console.log(`- failed to summarize report: ${error instanceof Error ? error.message : error}`);
+}
+NODE
           fi
 
       - name: Upload artifacts
