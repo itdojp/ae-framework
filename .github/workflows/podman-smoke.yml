@@ -46,13 +46,26 @@ jobs:
 
       - name: Verify Podman compose
         run: |
-          if podman compose version >/dev/null 2>&1; then
-            podman compose version
-            podman compose --help | head -n 40
+          set -euo pipefail
+          output="$(podman compose version 2>&1)" || {
+            echo '::error::podman compose is unavailable. Install podman-plugins >= 1.7'
+            printf '%s\n' "$output"
+            exit 1
+          }
+          printf '%s\n' "$output"
+          version="$(printf '%s\n' "$output" | grep -Eo '[0-9]+(\.[0-9]+)+' | head -n 1)"
+          if [ -n "$version" ]; then
+            major=$(echo "$version" | awk -F. '{print $1+0}')
+            minor=$(echo "$version" | awk -F. '{print $2+0}')
+            if [ "$major" -lt 1 ] || { [ "$major" -eq 1 ] && [ "$minor" -lt 7 ]; }; then
+              echo "::error::podman compose version $version is older than 1.7"
+              exit 1
+            fi
           else
-            echo 'podman compose is unavailable; falling back to podman-compose shim'
-            podman-compose --version
+            printf '::error::Failed to parse podman compose version from output\n%s\n' "$output"
+            exit 1
           fi
+          podman compose --help | head -n 40
 
       - name: Setup pnpm
         uses: ./.github/actions/setup-pnpm
