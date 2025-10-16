@@ -289,7 +289,14 @@ function main() {
       console.log('✅ No lint regressions over baseline');
     }
 
-    process.exit(0);
+    const hasRegression = totalDelta > 0 || ruleDelta > 0;
+    const exitStatus = exitCode !== 0 ? exitCode : (hasRegression ? 1 : 0);
+
+    if (exitStatus !== 0) {
+      console.error('❌ Lint quality gate failed: regressions detected or ESLint exited with errors.');
+    }
+
+    process.exit(exitStatus);
   } catch (error) {
     console.error('❌ Failed to check lint baseline:', error instanceof Error ? error.message : error);
     process.exit(1);
