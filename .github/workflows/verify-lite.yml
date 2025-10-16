@@ -69,7 +69,8 @@ jobs:
         run: pnpm pipelines:pact
       - name: Pact contract smoke (skipped)
         if: ${{ github.event_name == 'pull_request' && steps.pact-paths.outputs.pact == 'false' }}
-        run: echo 'Pact contract smoke skipped: no relevant contract changes detected.' >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          echo 'Pact contract smoke skipped: no relevant contract changes detected.' >> "$GITHUB_STEP_SUMMARY"
       - name: Verify-lite lint baseline
         if: always()
         env:
