@@ -1,0 +1,73 @@
+name: "Mutation Auto Diff"
+description: "Run mutation quick scope with auto-diff patterns and expose summary outputs"
+
+inputs:
+  base-ref:
+    description: "Git reference to compare against (e.g. origin/main)"
+    required: false
+    default: "origin/main"
+  quick:
+    description: "Whether to pass --quick to run-scoped.sh"
+    required: false
+    default: "true"
+  extra-args:
+    description: "Additional arguments passed to run-scoped.sh (one token per line)"
+    required: false
+    default: ""
+
+outputs:
+  mutation-score:
+    description: "Mutation score percentage"
+    value: ${{ steps.run.outputs.mutation_score }}
+  detected:
+    description: "Detected mutants count"
+    value: ${{ steps.run.outputs.detected }}
+  undetected:
+    description: "Undetected mutants count"
+    value: ${{ steps.run.outputs.undetected }}
+  survived:
+    description: "Survived mutants count"
+    value: ${{ steps.run.outputs.survived }}
+  no-coverage:
+    description: "No coverage mutants count"
+    value: ${{ steps.run.outputs.no_coverage }}
+  timeout:
+    description: "Timeout mutants count"
+    value: ${{ steps.run.outputs.timeout }}
+  compile-errors:
+    description: "Compile error mutants count"
+    value: ${{ steps.run.outputs.compile_errors }}
+  runtime-errors:
+    description: "Runtime error mutants count"
+    value: ${{ steps.run.outputs.runtime_errors }}
+  report-path:
+    description: "Path to generated mutation reports directory"
+    value: ${{ steps.run.outputs.report_path }}
+  summary-path:
+    description: "Path to mutation summary file"
+    value: ${{ steps.run.outputs.summary_path }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: run
+      name: Run mutation auto diff
+      shell: bash
+      run: |
+        chmod +x .github/actions/mutation-auto-diff/entrypoint.sh
+        .github/actions/mutation-auto-diff/entrypoint.sh "${{ inputs.base-ref }}" "${{ inputs.quick }}" "${{ inputs.extra-args }}"
+
+    - name: Upload mutation summary
+      uses: actions/upload-artifact@v4
+      with:
+        name: mutation-summary
+        path: mutation-summary.txt
+        if-no-files-found: warn
+
+    - name: Upload mutation reports
+      if: ${{ hashFiles('reports/mutation/mutation.json') != '' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: mutation-reports
+        path: reports/mutation
+        if-no-files-found: warn

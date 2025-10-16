@@ -59,7 +59,7 @@
 
 - Scoped Stryker quick モード (2025-09-30) は約 6 分で完走し、mutation score **100.00%**（survived 0 / errors 25 / no-cov 0）を記録。`recordSpanMetrics` / `recordSpanError` helper と追加ユニットテストで span 関連ミュータントを完全に除去。
 - 直前の通常スコープ実行 (2025-09-28) では mutation score **92.52%**（survived 19 / no-cov 0 / errors 16）。残課題は `user-agent` の trim／`startTime` フォールバックなど (#1002)。
-- `scripts/mutation/run-scoped.sh` は quick / auto-diff オプションを実装済みで、JSON/HTML レポートを `reports/mutation/` に保存。Verify Lite からも呼び出し済み。
+- `scripts/mutation/run-scoped.sh` は quick / auto-diff オプションを実装済みで、JSON/HTML レポートを `reports/mutation/` に保存。Verify Lite からも呼び出し済み。GitHub Actions では `.github/actions/mutation-auto-diff` Composite Action 経由で `mutation-quick.yml` から再利用できるよう統合済み（summary/artifact を自動アップロード）。
 - TypeScript の型エラー（`code-generation-agent.ts` など 6 箇所）を解消し、Stryker の TypeScript Checker が通る状態を維持。
 - `make test-api-fuzz` は Podman + Schemathesis コンテナで警告ゼロまで改善。API スタブの初期化とバリデーションを OpenAPI と整合。
 - `make test-mutation` は限定スコープ構成で約 35 分。今後は Quick モード結果を基準に対象拡大を検討。
