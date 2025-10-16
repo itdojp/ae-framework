@@ -16,8 +16,8 @@ jobs:
   docker-tests:
     runs-on: ubuntu-latest
     env:
-      SERVICE_FILTER: ${{ inputs.service_filter || '' }}
-      TARGET_SHA: ${{ inputs.target_sha || github.sha }}
+      SERVICE_FILTER: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.service_filter) || '' }}
+      TARGET_SHA: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.target_sha) || github.sha }}
       REPORT_DIR: reports
       LOG_DIR: logs
     steps:
@@ -31,7 +31,7 @@ jobs:
           docker version
           docker compose version
           mkdir -p "$REPORT_DIR" "$LOG_DIR"
-          chmod 777 "$REPORT_DIR" "$LOG_DIR"
+          chmod 775 "$REPORT_DIR" "$LOG_DIR"
 
       - name: Restore pnpm cache
         uses: actions/cache@v4
@@ -55,6 +55,10 @@ jobs:
               docker compose -f "$compose_file" run --rm "$svc" || exit 1
             done
           else
+            if ! grep -Eq '^[[:space:]]*test-reporter:' "$compose_file"; then
+              echo "Error: Service 'test-reporter' not found in $compose_file." >&2
+              exit 1
+            fi
             docker compose -f "$compose_file" up --build --abort-on-container-exit --exit-code-from test-reporter
           fi
 
