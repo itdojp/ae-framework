@@ -16,8 +16,8 @@ jobs:
   docker-tests:
     runs-on: ubuntu-latest
     env:
-      SERVICE_FILTER: ${{ inputs.service_filter || '' }}
-      TARGET_SHA: ${{ inputs.target_sha || github.sha }}
+      SERVICE_FILTER: ${{ inputs.service_filter != '' ? inputs.service_filter : '' }}
+      TARGET_SHA: ${{ inputs.target_sha != '' ? inputs.target_sha : github.sha }}
       REPORT_DIR: reports
       LOG_DIR: logs
     steps:
