@@ -51,24 +51,50 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
-      - name: Run mutation quick
-        id: mutation
+      - name: Prepare mutation arguments
+        id: mutation-args
         run: |
           set -euo pipefail
-          mkdir -p reports/mutation
-          args=(--quick)
-          if [ -n "${AUTO_DIFF_BASE}" ]; then
-            args+=("--auto-diff=${AUTO_DIFF_BASE}")
-          else
-            args+=("--auto-diff")
-          fi
+          args=()
           if [ -n "${EXTRA_MUTATE}" ]; then
-            args+=("--mutate" "${EXTRA_MUTATE}")
+            args+=("--mutate")
+            args+=("${EXTRA_MUTATE}")
           fi
           if [ -n "${EXTRA_TIME_LIMIT}" ]; then
-            export STRYKER_TIME_LIMIT="${EXTRA_TIME_LIMIT}"
+            echo "STRYKER_TIME_LIMIT=${EXTRA_TIME_LIMIT}" >> "$GITHUB_ENV"
           fi
-          ./scripts/mutation/run-scoped.sh "${args[@]}"
+          target_base=${AUTO_DIFF_BASE:-}
+          if [ -z "$target_base" ]; then
+            target_base='origin/main'
+          fi
+          echo "base_ref=$target_base" >> "$GITHUB_OUTPUT"
+          {
+            echo 'args<<__MUT_ARGS__'
+            if [ "${#args[@]}" -gt 0 ]; then
+              printf '%s\n' "${args[@]}"
+            fi
+            echo '__MUT_ARGS__'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Run mutation auto diff
+        id: mutation
+        uses: ./.github/actions/mutation-auto-diff
+        with:
+          base-ref: ${{ steps.mutation-args.outputs.base_ref }}
+          quick: 'true'
+          extra-args: ${{ steps.mutation-args.outputs.args }}
+
+      - name: Append mutation auto diff summary
+        if: ${{ always() }}
+        run: |
+          cat <<'EOF' >> "$GITHUB_STEP_SUMMARY"
+          ## Mutation auto diff
+          - Base ref: `${{ steps.mutation-args.outputs.base_ref }}`
+          - Mutation score: `${{ steps.mutation.outputs['mutation-score'] }}`
+          - Detected / Undetected: `${{ steps.mutation.outputs.detected }}` / `${{ steps.mutation.outputs.undetected }}`
+          - Survived: `${{ steps.mutation.outputs.survived }}` (No coverage: `${{ steps.mutation.outputs['no-coverage'] }}`)
+          - Timeouts: `${{ steps.mutation.outputs.timeout }}` / Compile errors: `${{ steps.mutation.outputs['compile-errors'] }}`
+          EOF
 
       - name: Mutation quick summary
         if: ${{ always() }}
@@ -93,16 +119,6 @@ jobs:
           else
             printf "%s\n" "No mutation report found; skipped survivors extraction." >> "$GITHUB_STEP_SUMMARY"
           fi
-
-      - name: Upload mutation reports
-        if: ${{ always() && hashFiles('reports/mutation/mutation.json') != '' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: mutation-quick-report
-          path: |
-            reports/mutation/mutation.json
-            reports/mutation/index.html
-            reports/mutation/summary.json
 
       - name: Upload mutation survivors
         if: ${{ always() && hashFiles('reports/mutation/survivors.json') != '' }}
