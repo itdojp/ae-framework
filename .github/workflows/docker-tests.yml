@@ -1,0 +1,100 @@
+name: Docker Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_sha:
+        description: "検証対象の commit SHA"
+        required: false
+      service_filter:
+        description: "再実行対象サービス (例: test-unit,test-e2e)"
+        required: false
+  schedule:
+    - cron: "0 18 * * 1-5"
+
+jobs:
+  docker-tests:
+    runs-on: ubuntu-latest
+    env:
+      SERVICE_FILTER: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.service_filter) || '' }}
+      TARGET_SHA: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.target_sha) || github.sha }}
+      REPORT_DIR: reports
+      LOG_DIR: logs
+    steps:
+      - name: Checkout target
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_SHA }}
+
+      - name: Set up Docker Compose prerequisites
+        run: |
+          docker version
+          docker compose version
+          mkdir -p "$REPORT_DIR" "$LOG_DIR"
+          chmod 775 "$REPORT_DIR" "$LOG_DIR"
+
+      - name: Restore pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pnpm-store
+            ~/.cache/playwright
+          key: docker-tests-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Build and run test stack
+        id: compose
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          compose_file="docker/docker-compose.test.yml"
+          if [ -n "$SERVICE_FILTER" ]; then
+            IFS=',' read -ra services <<< "$SERVICE_FILTER"
+            for svc in "${services[@]}"; do
+              printf 'Running service %s\n' "$svc"
+              docker compose -f "$compose_file" build "$svc"
+              docker compose -f "$compose_file" run --rm "$svc" || exit 1
+            done
+          else
+            if ! grep -Eq '^[[:space:]]*test-reporter:' "$compose_file"; then
+              echo "Error: Service 'test-reporter' not found in $compose_file." >&2
+              exit 1
+            fi
+            docker compose -f "$compose_file" up --build --abort-on-container-exit --exit-code-from test-reporter
+          fi
+
+      - name: Capture docker logs
+        if: always()
+        run: |
+          docker compose -f docker/docker-compose.test.yml logs --timestamps > docker-compose.log || true
+
+      - name: Tear down stack
+        if: always()
+        run: |
+          docker compose -f docker/docker-compose.test.yml down -v --remove-orphans || true
+
+      - name: Aggregate test report
+        if: always()
+        run: |
+          if [ -f scripts/generate-test-report.cjs ]; then
+            node scripts/generate-test-report.cjs || true
+          fi
+          if [ -f reports/consolidated-test-report.json ]; then
+            node -e "const fs=require('fs');const path='reports/consolidated-test-report.json';try{const data=JSON.parse(fs.readFileSync(path,'utf8'));const suites=data.suites||{};const lines=Object.entries(suites).map(([name,info])=>'- '+name+': '+((info&&info.status)||'unknown'));const body=['## Docker test suites'].concat(lines.length?lines:['- no suites reported']).join('\n');console.log(body);}catch(error){console.log('## Docker test suites\n- failed to summarize report: '+error.message);}}" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-tests-artifacts
+          path: |
+            reports/**
+            logs/**
+            docker-compose.log
+            mutation-summary.txt
+            !**/node_modules/**
+          if-no-files-found: warn
+
+      - name: Fail job if compose step failed
+        if: steps.compose.outcome == 'failure'
+        run: exit 1
