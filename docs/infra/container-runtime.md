@@ -5,7 +5,7 @@ AE-Framework のフルパイプラインは Podman を第一候補として設�
 ## 前提条件
 
 - Podman 4.8 以降（rootless モード）
-- `podman-plugins` 1.7 以降（`podman compose` を提供）
+- `podman-plugins` 1.7 以降（`podman compose` を提供。CI の Podman smoke では 1.7 未満で失敗します）
 - `podman-compose` もしくは Podman ネイティブの Compose (`podman compose`) が利用可能であること
 - `PODMAN_COMPOSE_PROVIDER` として `podman` または `podman-compose` を切り替えられるシェル環境
 - Linux もしくは WSL2 上の Node.js 20（`pnpm` 10 系）
@@ -13,6 +13,24 @@ AE-Framework のフルパイプラインは Podman を第一候補として設�
 > Docker Desktop を利用していた従来の手順は互換層として残っていますが、CI とローカルの期待値を揃えるため Podman への切り替えを推奨します。
 
 ## Podman の起動確認
+
+### インストール手順例 (Ubuntu 24.04)
+
+```bash
+sudo apt-get update
+sudo apt-get install -y podman podman-plugins
+# 旧実装を併用する場合のみ
+sudo apt-get install -y podman-compose
+```
+
+インストール後は以下のコマンドでネイティブ compose が利用可能かを確認してください。
+
+```bash
+podman compose version
+podman compose --help | head -n 20
+```
+
+出力されたバージョンが `1.7` 以上でない場合は `podman-plugins` のアップグレードを行ってください。
 
 ```bash
 # バージョン確認

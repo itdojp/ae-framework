@@ -72,7 +72,7 @@ select_compose() {
     if container::select_compose_command "$CONTAINER_ENGINE_BIN" "$preference"; then
       return 0
     fi
-    echo "[run-unit] provider=$preference unavailable; attempting auto-detect" >&2
+    echo "[run-unit][info] provider=$preference unavailable; attempting auto-detect" >&2
   fi
   container::select_compose_command "$CONTAINER_ENGINE_BIN"
 }
@@ -92,7 +92,7 @@ if command -v pnpm >/dev/null 2>&1; then
   (cd "$PROJECT_DIR" && pnpm fetch --prefer-offline) || echo "[run-unit] pnpm fetch failed; continuing"
 fi
 
-echo "[run-unit] provider=$PODMAN_COMPOSE_PROVIDER project_dir=$PROJECT_DIR"
+echo "[run-unit][info] provider=$PODMAN_COMPOSE_PROVIDER project_dir=$PROJECT_DIR"
 export COMPOSE_PROJECT_NAME="$PROJECT_NAME"
 
 run_compose_tests() {
