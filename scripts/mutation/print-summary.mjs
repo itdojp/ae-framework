@@ -41,9 +41,11 @@ function collectMetrics(report) {
           metrics.noCoverage += 1;
           break;
         case 'RuntimeError':
+          metrics.detected += 1;
           metrics.runtimeErrors += 1;
           break;
         case 'CompileError':
+          metrics.detected += 1;
           metrics.compileErrors += 1;
           break;
         default:
