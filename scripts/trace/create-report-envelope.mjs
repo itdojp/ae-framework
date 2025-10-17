@@ -4,6 +4,8 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fromVerifyLite } from '@ae-framework/envelope';
 
+const isValidLink = (value) => typeof value === 'string' && value.trim();
+
 const summaryPath = process.argv[2] ?? process.env.REPORT_ENVELOPE_SUMMARY ?? 'artifacts/verify-lite/verify-lite-run-summary.json';
 const outputPath = process.argv[3] ?? process.env.REPORT_ENVELOPE_OUTPUT ?? 'artifacts/report-envelope.json';
 const source = process.env.REPORT_ENVELOPE_SOURCE ?? 'verify-lite';
@@ -44,32 +46,62 @@ const traceIdsSeed = traceIdsEnv
   .map((value) => value.trim())
   .filter(Boolean);
 
+const domainTraceIds = Array.isArray(summary?.trace?.domains)
+  ? summary.trace.domains.flatMap((domain) =>
+      Array.isArray(domain?.traceIds)
+        ? domain.traceIds.map((value) => (typeof value === 'string' ? value.trim() : '')).filter(Boolean)
+        : []
+    )
+  : [];
+
 const notesSeed = noteEnv
   .split(/\r?\n/)
   .map((value) => value.trim())
   .filter(Boolean);
 
-const envelope = fromVerifyLite(summary, {
-  source,
-  generatedAt: now,
-  correlation: {
-    runId,
-    workflow,
-    commit,
-    branch,
-    traceIds: [...derivedTraceIds, ...traceIdsSeed],
-  },
-  tempoLinkTemplate: process.env.REPORT_ENVELOPE_TEMPO_LINK_TEMPLATE,
-  notes: notesSeed,
-});
+const isVerifyLiteSummary = summary && typeof summary === 'object' && summary.flags && summary.steps && summary.artifacts;
+const traceIdsCombined = [...new Set([...derivedTraceIds, ...domainTraceIds, ...traceIdsSeed].filter((value) => value && value.trim()))];
+
+let envelope;
+
+if (isVerifyLiteSummary) {
+  envelope = fromVerifyLite(summary, {
+    source,
+    generatedAt: now,
+    correlation: {
+      runId,
+      workflow,
+      commit,
+      branch,
+      traceIds: traceIdsCombined,
+    },
+    tempoLinkTemplate: process.env.REPORT_ENVELOPE_TEMPO_LINK_TEMPLATE,
+    notes: notesSeed,
+  });
+  envelope.summary = summary;
+} else {
+  envelope = {
+    schemaVersion: '1.0.0',
+    source,
+    generatedAt: now,
+    traceCorrelation: {
+      runId,
+      workflow,
+      commit,
+      branch,
+      ...(traceIdsCombined.length > 0 ? { traceIds: traceIdsCombined } : {}),
+    },
+    summary,
+    ...(notesSeed.length > 0 ? { notes: [...notesSeed] } : {}),
+  };
+}
 
 const correlation = envelope.traceCorrelation;
 if (correlation) {
   envelope.correlation = correlation;
 }
 
-// Preserve the original summary structure for compatibility with downstream consumers
-envelope.summary = summary;
+delete envelope.traceCorrelation;
 
 const computeChecksum = (buffer) => `sha256:${crypto.createHash('sha256').update(buffer).digest('hex')}`;
 
@@ -129,6 +161,46 @@ const extraArtifacts = extraArtifactsEnv
 
 for (const artifactPath of extraArtifacts) {
   pushArtifact(artifactPath, {});
+}
+
+if (!isVerifyLiteSummary) {
+  const tempoSet = new Set();
+  const appendLinks = (values) => {
+    if (!Array.isArray(values)) return;
+    for (const value of values) {
+      if (isValidLink(value)) {
+        tempoSet.add(value.trim());
+      }
+    }
+  };
+
+  appendLinks(summary?.tempoLinks);
+  appendLinks(summary?.trace?.tempoLinks);
+  if (Array.isArray(summary?.trace?.domains)) {
+    for (const domain of summary.trace.domains) {
+      appendLinks(domain?.tempoLinks);
+    }
+  }
+
+  const template = process.env.REPORT_ENVELOPE_TEMPO_LINK_TEMPLATE;
+  if (template && template.includes('{traceId}')) {
+    for (const id of traceIdsCombined) {
+      tempoSet.add(template.replace('{traceId}', id));
+    }
+  }
+
+  if (tempoSet.size > 0) {
+    const tempoList = Array.from(tempoSet);
+    envelope.tempoLinks = tempoList;
+    const baseNotes = Array.isArray(envelope.notes) ? envelope.notes : [...notesSeed];
+    const noteSet = new Set(baseNotes);
+    for (const link of tempoList) {
+      noteSet.add(`Tempo: ${link}`);
+    }
+    envelope.notes = Array.from(noteSet);
+  } else if (notesSeed.length > 0 && !Array.isArray(envelope.notes)) {
+    envelope.notes = [...notesSeed];
+  }
 }
 
 envelope.artifacts = Array.from(artifactsByPath.values());
