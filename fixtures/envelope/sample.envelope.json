@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1.0.0",
+  "source": "verify-lite",
+  "generatedAt": "2025-10-17T00:00:00Z",
+  "traceCorrelation": {
+    "runId": "demo-run",
+    "commit": "HEAD",
+    "branch": "feature/demo"
+  },
+  "summary": {
+    "cases": 7,
+    "passed": 7
+  },
+  "artifacts": [
+    {
+      "type": "json",
+      "path": "artifacts/verify-lite/verify-lite-run-summary.json"
+    }
+  ]
+}

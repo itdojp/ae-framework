@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "0.1.0",
+  "nodes": [
+    {
+      "id": "n1",
+      "kind": "intent2formal",
+      "params": {
+        "language": "en"
+      },
+      "output": ["spec"]
+    },
+    {
+      "id": "n2",
+      "kind": "tests2code",
+      "input": ["spec"],
+      "params": {
+        "language": "ts"
+      },
+      "output": ["code"]
+    },
+    {
+      "id": "n3",
+      "kind": "code2verify",
+      "input": ["code"],
+      "params": {
+        "runner": "vitest"
+      },
+      "output": ["results"]
+    }
+  ],
+  "edges": [
+    { "from": "n1", "to": "n2" },
+    { "from": "n2", "to": "n3" }
+  ],
+  "metadata": {
+    "name": "demo-flow"
+  }
+}

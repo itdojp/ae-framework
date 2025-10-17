@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/flow.schema.json",
+  "title": "ae-flow",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "intent2formal",
+              "formal2tests",
+              "tests2code",
+              "code2verify",
+              "verify2operate"
+            ]
+          },
+          "params": { "type": "object" },
+          "input": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "output": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "required": ["id", "kind"],
+        "additionalProperties": true
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "from": { "type": "string" },
+          "to": { "type": "string" }
+        },
+        "required": ["from", "to"],
+        "additionalProperties": false
+      }
+    },
+    "metadata": { "type": "object" }
+  },
+  "required": ["schemaVersion", "nodes", "edges"],
+  "additionalProperties": true
+}
