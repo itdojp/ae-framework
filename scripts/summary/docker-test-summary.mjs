@@ -45,18 +45,18 @@ export function summarizeReport({
 
 export function main(argv = process.argv, log = console.log) {
   const [, , inputPath] = argv;
-  const summary = summarizeReport({ reportPath: inputPath ?? DEFAULT_REPORT_PATH });
+  const summary = summarizeReport({ reportPath: inputPath });
   log(summary);
 }
 
-const invokedDirectly = (() => {
+const isInvokedDirectly = () => {
   try {
     return path.resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url);
   } catch {
     return false;
   }
-})();
+};
 
-if (invokedDirectly) {
+if (isInvokedDirectly()) {
   main();
 }
