@@ -2,9 +2,10 @@
  * @type {import('@stryker-mutator/api/core').PartialStrykerOptions}
  */
 export default {
-  packageManager: "npm",
+  packageManager: "pnpm",
   reporters: ["html", "clear-text", "progress"],
   testRunner: "vitest",
+  plugins: ["@stryker-mutator/vitest-runner"],
   checkers: [], // Temporarily disabled TypeScript checker due to strict mode issues
   coverageAnalysis: "perTest",
   disableTypeChecks: "{src,tests}/**/*.{ts,tsx,js,jsx}",
