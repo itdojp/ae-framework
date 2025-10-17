@@ -69,6 +69,7 @@ syft
 
 # TypeScript compilation artifacts (prevent code generation drift)
 packages/*/src/**/*.js
+!packages/envelope/src/**/*.js
 packages/*/src/**/*.js.map
 packages/*/src/**/*.d.ts
 cegis-report-*.json

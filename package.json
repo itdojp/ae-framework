@@ -354,7 +354,8 @@
     "uuid": "^11.1.0",
     "which": "^5.0.0",
     "yaml": "^2.8.1",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "@ae-framework/envelope": "file:./packages/envelope"
   },
   "devDependencies": {
     "@babel/core": "^7.23.0",
