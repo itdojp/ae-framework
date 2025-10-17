@@ -13,7 +13,7 @@
 | `flags.*` | `summary.flags.*` | そのまま保持 |
 | `steps.*` | `summary.steps.*` | ステップ名はキーとして維持 |
 | `artifacts.*` | `artifacts` array へ変換 | 存在するパスのみ `type=application/json` + 説明を付与 |
-| `tempoLinks` / `trace.traceIds` | `traceCorrelation.traceIds` / `tempoLinks` / `notes` | 既存 `create-report-envelope.mjs` のロジックを流用予定 |
+| `tempoLinks` / `trace.traceIds` | `traceCorrelation.traceIds` / `TempoLinks` / `notes` | 既存 `create-report-envelope.mjs` のロジックを流用予定 |
 
 ## コンバータ設計
 - **入口**: `packages/envelope/src/from-verify-lite.ts`（新規）
@@ -27,7 +27,7 @@
      - `generatedAt`: 現在時刻 or Summary timestamp
      - `traceCorrelation`: runId/commit/branch は呼び出し元から受け取る（引数で `context` を受ける）
   3. アーティファクト配列への正規化（存在しないパスは除外）
-  4. tempo links・notes の付与（`buildTempoLinks` 相当）
+  4. Tempo links・notes の付与（`buildTempoLinks` 相当）
 - **補助構造**:
   - `packages/envelope/src/types.ts` に Envelope / Context / Artifact などの型。
   - テスト用 Fixture: `fixtures/envelope/from-verify-lite.sample.json` など追加予定。
@@ -36,7 +36,7 @@
 - `packages/envelope/src/from-verify-lite.test.ts`
   - 正常系: 代表的な Verify Lite summary から Envelope を生成し、Vitest snapshot で検証。
   - 省略フィールド: `artifacts.lintLog` が null の場合、出力から除外されるかを確認。
-  - Trace/tempo: summary 側の `traceDomains` などを含む場合のリンク集約を検証。
+  - Trace/Tempo: summary 側の `traceDomains` などを含む場合のリンク集約を検証。
 - `node scripts/ci/validate-json.mjs` を利用し、生成された Envelope が v1.0 スキーマに準拠しているか検証するヘルパを用意。
 
 ## 次ステップ（PR-2）
