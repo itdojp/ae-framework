@@ -8,32 +8,77 @@
       "type": "string",
       "pattern": "^\\d+\\.\\d+\\.\\d+$"
     },
-    "source": { "type": "string" },
-    "generatedAt": { "type": "string", "format": "date-time" },
-    "traceCorrelation": {
-      "type": "object",
-      "properties": {
-        "runId": { "type": "string" },
-        "commit": { "type": "string" },
-        "branch": { "type": "string" }
-      },
-      "required": ["runId"],
-      "additionalProperties": true
+    "source": {
+      "type": "string"
     },
-    "summary": { "type": "object" },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "traceCorrelation": {
+      "$ref": "#/$defs/correlation"
+    },
+    "summary": {
+      "type": "object"
+    },
     "artifacts": {
       "type": "array",
       "items": {
         "type": "object",
         "properties": {
-          "type": { "type": "string" },
-          "path": { "type": "string" }
+          "type": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          }
         },
-        "required": ["type", "path"],
+        "required": [
+          "type",
+          "path"
+        ],
         "additionalProperties": true
       }
+    },
+    "correlation": {
+      "$ref": "#/$defs/correlation"
     }
   },
-  "required": ["schemaVersion", "source", "generatedAt", "traceCorrelation", "summary"],
-  "additionalProperties": true
+  "required": [
+    "schemaVersion",
+    "source",
+    "generatedAt",
+    "traceCorrelation",
+    "summary"
+  ],
+  "additionalProperties": true,
+  "$defs": {
+    "correlation": {
+      "type": "object",
+      "properties": {
+        "runId": {
+          "type": "string"
+        },
+        "workflow": {
+          "type": "string"
+        },
+        "commit": {
+          "type": "string"
+        },
+        "branch": {
+          "type": "string"
+        },
+        "traceIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "runId"
+      ],
+      "additionalProperties": true
+    }
+  }
 }

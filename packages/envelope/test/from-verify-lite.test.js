@@ -31,6 +31,12 @@ describe('fromVerifyLite', () => {
       commit: '01a5c13d',
       branch: 'refs/heads/main',
     });
+    expect(envelope.correlation).toMatchObject({
+      runId: '18268371063',
+      workflow: 'Verify Lite',
+      commit: '01a5c13d',
+      branch: 'refs/heads/main',
+    });
     expect(envelope.artifacts.map((item) => item.path)).toEqual([
       'verify-lite-lint-summary.json',
       'reports/mutation/summary.json',

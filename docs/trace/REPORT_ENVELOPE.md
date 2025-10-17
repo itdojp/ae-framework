@@ -130,7 +130,7 @@ Issue: #1011 / #1012 / #1036 / #1038
 
 ## 運用ガイドライン
 1. CI では `scripts/trace/create-report-envelope.mjs` を利用し、Verify Lite などのサマリを Envelope 化して `artifacts/report-envelope.json` に保存する。
-   - スキーマは `schema/report-envelope.schema.json` で管理し、`scripts/ci/validate-report-envelope.mjs` で検証する。
+   - スキーマは `schema/envelope.schema.json` で管理し、`scripts/ci/validate-report-envelope.mjs` で検証する。
    - 追加の成果物を添付する場合は `REPORT_ENVELOPE_PAYLOAD_METADATA`（単一ファイル）や `REPORT_ENVELOPE_EXTRA_ARTIFACTS`（カンマ区切りのパス列）を指定すると自動的に `artifacts` 配列へ追記される。
    - Envelope が揃っている場合は `pnpm verify:conformance --from-envelope artifacts/report-envelope.json` でトレースサマリを再掲でき、CI なしの環境でも Step Summary を再利用できる。
 2. Envelope の生成時に `GITHUB_RUN_ID` / `GITHUB_WORKFLOW` / `GITHUB_SHA` / `GITHUB_REF` を自動埋め込み、他の CI でも環境変数から補完できるようにする。
@@ -167,7 +167,7 @@ Verify Lite / Trace / Spec ジョブの Step Summary は以下の順で統一す
 `verify-conformance.mjs` は上記フォーマットで Step Summary を出力するよう更新済み。今後 `pipelines:full` や `pipelines:trace` でも同一フォーマットを利用するため、共通テンプレートを `scripts/ci/step-summary.ts`（次フェーズで作成予定）に切り出す。
 
 ## TODO / 状態
-- [x] JSON Schema を `schema/report-envelope.schema.json` として整備し、AJV で検証する。（PR #1043）
+- [x] JSON Schema を `schema/envelope.schema.json` として整備し、AJV で検証する。（PR #1043）
 - [x] Verify Lite ワークフローで Envelope 生成＋ Artifact アップロードまで自動化する（PR #1044, #1048）。
 - [x] Trace conformance ジョブで Projector/Validator の出力を Envelope にまとめ、Issue #1011 Step3 の完了条件に組み込む（PR #1049）。
 - [ ] 将来的に `artifacts` へ S3 Presigned URL を許容する場合の署名方式を整理する。

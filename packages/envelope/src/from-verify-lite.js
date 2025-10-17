@@ -158,7 +158,7 @@ export function fromVerifyLite(summary, options) {
     ...(traceIds.length > 0 ? { traceIds } : {}),
   };
 
-  return {
+  const envelope = {
     schemaVersion: DEFAULT_SCHEMA_VERSION,
     source,
     generatedAt,
@@ -168,4 +168,10 @@ export function fromVerifyLite(summary, options) {
     ...(tempoLinks.length > 0 ? { tempoLinks } : {}),
     ...(notes.length > 0 ? { notes } : {}),
   };
+
+  if (!('correlation' in envelope)) {
+    envelope.correlation = correlation;
+  }
+
+  return envelope;
 }

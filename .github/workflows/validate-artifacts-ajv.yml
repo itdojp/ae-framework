@@ -40,7 +40,7 @@ jobs:
             echo "[ajv] no report envelopes found"
             exit 0
           else
-            schema_path="schema/report-envelope.schema.json"
+            schema_path="schema/envelope.schema.json"
             if [ ! -f "$schema_path" ] && [ -f docs/schemas/report-envelope.schema.json ]; then
               schema_path="docs/schemas/report-envelope.schema.json"
             fi

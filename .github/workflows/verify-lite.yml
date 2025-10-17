@@ -138,7 +138,7 @@ jobs:
         run: |
           node scripts/ci/validate-report-envelope.mjs \
             artifacts/report-envelope.json \
-            schema/report-envelope.schema.json
+            schema/envelope.schema.json
       - name: BDD lint (strict; label-gated)
         if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-bdd-lint') }}
         env:

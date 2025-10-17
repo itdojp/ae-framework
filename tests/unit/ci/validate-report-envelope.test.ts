@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 
 const validateScript = join(process.cwd(), 'scripts/ci/validate-report-envelope.mjs');
 const createEnvelope = join(process.cwd(), 'scripts/trace/create-report-envelope.mjs');
-const schemaPath = join(process.cwd(), 'schema/report-envelope.schema.json');
+const schemaPath = join(process.cwd(), 'schema/envelope.schema.json');
 
 describe('validate-report-envelope CLI', () => {
   let workdir: string;
@@ -45,6 +45,8 @@ describe('validate-report-envelope CLI', () => {
     expect(createResult.status).toBe(0);
     const envelope = JSON.parse(await readFile(envelopePath, 'utf8'));
     expect(envelope.source).toBe('unit-test');
+    expect(envelope.traceCorrelation).toBeDefined();
+    expect(envelope.correlation).toBeDefined();
 
     const validateResult = spawnSync(process.execPath, [validateScript, envelopePath, schemaPath], {
       cwd: workdir

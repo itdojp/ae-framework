@@ -96,12 +96,13 @@ if (isVerifyLiteSummary) {
   };
 }
 
-const correlation = envelope.traceCorrelation;
+const correlation = envelope.traceCorrelation ?? envelope.correlation;
 if (correlation) {
-  envelope.correlation = correlation;
+  envelope.traceCorrelation = correlation;
+  if (!envelope.correlation) {
+    envelope.correlation = correlation;
+  }
 }
-
-delete envelope.traceCorrelation;
 
 const computeChecksum = (buffer) => `sha256:${crypto.createHash('sha256').update(buffer).digest('hex')}`;
 
