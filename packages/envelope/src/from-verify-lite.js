@@ -169,9 +169,7 @@ export function fromVerifyLite(summary, options) {
     ...(notes.length > 0 ? { notes } : {}),
   };
 
-  if (!('correlation' in envelope)) {
-    envelope.correlation = correlation;
-  }
+  envelope.correlation = correlation;
 
   return envelope;
 }
