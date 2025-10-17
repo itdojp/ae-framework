@@ -36,6 +36,11 @@
 ## Week2 追加メモ（2025-Week2）
 
 ### Week3 TODO (2025-10-15)
+
+### Docker Tests workflow 運用メモ (2025-10-16)
+- GitHub Actions の `Docker Tests` ワークフローは `reports/consolidated-test-report.json` を生成した後、Step Summary にサマリを追記します。
+- 初回実行時は inline `node -e` で JSON を整形していましたが、シェル展開の問題で SyntaxError を起こしたため、`node - <<'NODE'` で HereDoc から実行する方式に修正済みです。
+- 失敗した場合でも `docker-tests-artifacts` にレポートと `docker-compose.log` が残るので、復旧時はまず該当成果物を確認し、Podman compose の exit code をチェックしてください。
 - Trace / runtime guard ダッシュボードで可視化する指標を洗い出し、`reports/` 出力のどれを再利用するか決める。
 - Verify Lite / mutation quick の成果物を `pipelines:full` 実行時に統合し、CI Step Summary で比較可能にする。
 - Week3 tracker (#1003) への引き継ぎ観点（Docker runtime 安定化、tinypool 監視、mutation survivors 減少計画）を整理してコメントへ反映する。
