@@ -177,6 +177,8 @@ export function executeFlow(flow, options = {}) {
   };
 }
 
+const ARG_PREFIX = '--';
+
 function parseArgs(argv) {
   const args = {
     flow: null,
@@ -189,16 +191,19 @@ function parseArgs(argv) {
     branch: null,
   };
   const tokens = argv.slice(2);
+  const consumed = new Set();
   for (let i = 0; i < tokens.length; i += 1) {
+    if (consumed.has(i)) continue;
     const token = tokens[i];
-    if (!token.startsWith('--')) continue;
-    const key = token.slice(2);
-    const value = tokens[i + 1];
-    if (value && !value.startsWith('--')) {
+    if (!token.startsWith(ARG_PREFIX)) continue;
+    const key = token.slice(ARG_PREFIX.length);
+    const nextIndex = i + 1;
+    const value = tokens[nextIndex];
+    if (value && !value.startsWith(ARG_PREFIX)) {
       if (key in args) {
         args[key] = value;
       }
-      tokens[i + 1] = '--consumed--';
+      consumed.add(nextIndex);
     } else if (key in args) {
       args[key] = true;
     }
@@ -215,7 +220,7 @@ export async function main(argv = process.argv) {
   }
 
   let verifyLiteSummary = null;
-  if (args.summary && args.summary !== '--consumed--') {
+  if (args.summary) {
     verifyLiteSummary = readJson(args.summary);
   }
 
