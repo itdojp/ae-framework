@@ -41,16 +41,22 @@ CONFORMANCE_NOTES="not_run"
 CONFORMANCE_SUMMARY_PATH="${VERIFY_LITE_CONFORMANCE_SUMMARY_FILE:-reports/conformance/verify-lite-summary.json}"
 CONFORMANCE_SUMMARY_MARKDOWN_PATH="${VERIFY_LITE_CONFORMANCE_MARKDOWN_FILE:-reports/conformance/verify-lite-summary.md}"
 
-echo "[verify-lite] installing dependencies (${INSTALL_FLAGS[*]})"
-if ! pnpm install "${INSTALL_FLAGS[@]}"; then
-  INSTALL_RETRIED=1
-  INSTALL_NOTES+=";retry_with=--no-frozen-lockfile"
-  echo "[verify-lite] initial pnpm install failed, retrying with --no-frozen-lockfile" >&2
-  if ! pnpm install --no-frozen-lockfile; then
-    INSTALL_STATUS="failure"
-    INSTALL_NOTES+=";retry_status=failed"
-    echo "[verify-lite] pnpm install failed after retry" >&2
-    exit 1
+if [[ "${VERIFY_LITE_SKIP_INSTALL:-0}" == "1" ]]; then
+  INSTALL_STATUS="skipped"
+  INSTALL_NOTES="skipped (preinstalled)"
+  echo "[verify-lite] skipping dependency install (VERIFY_LITE_SKIP_INSTALL=1)"
+else
+  echo "[verify-lite] installing dependencies (${INSTALL_FLAGS[*]})"
+  if ! pnpm install "${INSTALL_FLAGS[@]}"; then
+    INSTALL_RETRIED=1
+    INSTALL_NOTES+=";retry_with=--no-frozen-lockfile"
+    echo "[verify-lite] initial pnpm install failed, retrying with --no-frozen-lockfile" >&2
+    if ! pnpm install --no-frozen-lockfile; then
+      INSTALL_STATUS="failure"
+      INSTALL_NOTES+=";retry_status=failed"
+      echo "[verify-lite] pnpm install failed after retry" >&2
+      exit 1
+    fi
   fi
 fi
 
@@ -126,6 +132,12 @@ fi
 
 echo "[verify-lite] summarising mutation results"
 if [[ -f reports/mutation/mutation.json || -f reports/mutation/mutation.html || -f reports/mutation/index.html ]]; then
+  if [[ ${VERIFY_LITE_RUN_MUTATION:-0} != "1" && "$MUTATION_STATUS" == "skipped" ]]; then
+    MUTATION_STATUS="success"
+    if [[ -z "$MUTATION_NOTES" ]]; then
+      MUTATION_NOTES="external (composite action)"
+    fi
+  fi
   if node scripts/mutation/mutation-report.mjs; then
     if [[ -f reports/mutation/summary.json ]]; then
       MUTATION_SUMMARY_PATH="reports/mutation/summary.json"

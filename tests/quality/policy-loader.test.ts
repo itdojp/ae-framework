@@ -326,6 +326,7 @@ describe('Quality Policy Loader', () => {
     it('should generate quality report', () => {
       const results: QualityGateResult[] = [
         {
+          gateKey: 'test-gate',
           gateName: 'test-gate',
           passed: true,
           score: 85,
@@ -335,6 +336,7 @@ describe('Quality Policy Loader', () => {
           threshold: loader.getThreshold('test-gate', 'development'),
         },
         {
+          gateKey: 'coverage-gate',
           gateName: 'coverage-gate',
           passed: false,
           score: 55,
@@ -360,6 +362,7 @@ describe('Quality Policy Loader', () => {
     it('should identify blockers in report', () => {
       const results: QualityGateResult[] = [
         {
+          gateKey: 'test-gate',
           gateName: 'test-gate',
           passed: false,
           violations: ['Test failed'],

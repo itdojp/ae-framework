@@ -79,19 +79,24 @@ describe('EnhancedStateManager', () => {
 
     it('should handle versioning correctly', async () => {
       const logicalKey = 'versioned-spec';
-      
-      // Save multiple versions
-      const key1 = await stateManager.saveSSOT(logicalKey, mockAEIR);
-      
-      // Modify data for second version
-      const modifiedAEIR = { 
-        ...mockAEIR, 
-        metadata: { ...mockAEIR.metadata, description: 'Modified description' }
-      };
-      
-      const key2 = await stateManager.saveSSOT(logicalKey, modifiedAEIR);
-      
-      expect(key1).not.toBe(key2);
+      vi.useFakeTimers();
+      try {
+        // Save multiple versions
+        const key1 = await stateManager.saveSSOT(logicalKey, mockAEIR);
+        
+        // Modify data for second version
+        const modifiedAEIR = { 
+          ...mockAEIR, 
+          metadata: { ...mockAEIR.metadata, description: 'Modified description' }
+        };
+        
+        vi.advanceTimersByTime(1000);
+        const key2 = await stateManager.saveSSOT(logicalKey, modifiedAEIR);
+        
+        expect(key1).not.toBe(key2);
+      } finally {
+        vi.useRealTimers();
+      }
       
       // Get versions
       const versions = await stateManager.getVersions(logicalKey);

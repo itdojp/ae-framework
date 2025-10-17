@@ -6,7 +6,7 @@ beforeAll(() => {
   const isCI = process.env.CI === '1';
   fc.configureGlobal({
     numRuns: isCI ? 50 : 100,
-    interruptAfterTimeLimit: isCI ? 5000 : 0,
+    interruptAfterTimeLimit: isCI ? 5000 : undefined,
     endOnFailure: true,
   });
 });

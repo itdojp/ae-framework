@@ -185,7 +185,7 @@ fi
 
 mkdir -p reports/mutation
 
-CMD=(npx stryker run "${args[@]}" --reporters html json --concurrency "$CONCURRENCY" --timeoutMS "$TIMEOUT")
+CMD=(npx stryker run "${args[@]}" --reporters html --reporters json --concurrency "$CONCURRENCY" --timeoutMS "$TIMEOUT")
 if [[ -n "$CONFIG_PATH" ]] ; then
   CMD+=("$CONFIG_PATH")
 fi

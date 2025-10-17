@@ -297,7 +297,7 @@ describe('ExpressConformanceMiddleware', () => {
       };
 
       // Should not throw even with invalid response
-      await expect((mockRes.json as any)(invalidResponse)).resolves.not.toThrow();
+      expect(() => (mockRes.json as any)(invalidResponse)).not.toThrow();
     });
   });
 

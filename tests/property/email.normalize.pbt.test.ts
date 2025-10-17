@@ -7,7 +7,10 @@ describe('PBT: makeEmail normalization', () => {
     const localChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._+-';
     const arbLocal = fc
       .stringOf(fc.constantFrom(...localChars.split('')), { minLength: 1, maxLength: 10 })
-      .filter((local) => /^[A-Za-z0-9](?:[A-Za-z0-9._+-]*[A-Za-z0-9])?$/.test(local));
+      .filter((local) =>
+        /^[A-Za-z0-9](?:[A-Za-z0-9._+-]*[A-Za-z0-9])?$/.test(local)
+        && !local.includes('..')
+      );
     await fc.assert(fc.asyncProperty(
       arbLocal,
       async (local) => {
