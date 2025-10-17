@@ -54,6 +54,8 @@ jobs:
       - name: Run mutation auto diff (verify-lite)
         id: vlite-mutation
         uses: ./.github/actions/mutation-auto-diff
+        env:
+          STRYKER_TIME_LIMIT: '0'
         with:
           base-ref: ${{ steps.vlite-mutation-args.outputs.base_ref }}
           quick: 'true'
