@@ -5,7 +5,11 @@ import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 
 const envelopePath = process.argv[2] ?? 'artifacts/report-envelope.json';
-const schemaPath = process.argv[3] ?? 'schema/report-envelope.schema.json';
+const schemaArg = process.argv[3];
+const envelopeSchemaPath = 'schema/envelope.schema.json';
+const reportSchemaPath = 'schema/report-envelope.schema.json';
+const defaultSchema = fs.existsSync(envelopeSchemaPath) ? envelopeSchemaPath : reportSchemaPath;
+const schemaPath = schemaArg ?? defaultSchema;
 
 const resolvedEnvelope = path.resolve(envelopePath);
 const resolvedSchema = path.resolve(schemaPath);

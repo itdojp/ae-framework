@@ -66,6 +66,9 @@ jobs:
           else
             echo 'verify-lite summary missing; skipped validation'
           fi
+      - name: Validate flow/envelope fixtures
+        if: always()
+        run: node scripts/ci/validate-json.mjs
       - name: Create verify-lite report envelope
         if: always()
         env:
@@ -87,7 +90,7 @@ jobs:
         run: |
           node scripts/ci/validate-report-envelope.mjs \
             artifacts/report-envelope.json \
-            schema/report-envelope.schema.json
+            schema/envelope.schema.json
       - name: Upload verify-lite artifacts
         if: always()
         uses: actions/upload-artifact@v4

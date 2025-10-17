@@ -121,6 +121,9 @@ jobs:
           node scripts/ci/validate-verify-lite-summary.mjs \
             verify-lite-run-summary.json \
             schema/verify-lite-run-summary.schema.json
+      - name: Validate flow/envelope fixtures
+        if: always()
+        run: node scripts/ci/validate-json.mjs
       - name: Create verify-lite report envelope
         if: always()
         env:
@@ -138,7 +141,7 @@ jobs:
         run: |
           node scripts/ci/validate-report-envelope.mjs \
             artifacts/report-envelope.json \
-            schema/report-envelope.schema.json
+            schema/envelope.schema.json
       - name: BDD lint (strict; label-gated)
         if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-bdd-lint') }}
         env:

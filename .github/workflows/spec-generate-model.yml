@@ -287,7 +287,7 @@ jobs:
         run: |
           node ./scripts/ci/validate-report-envelope.mjs \
             artifacts/kvonce-trace-envelope.json \
-            schema/report-envelope.schema.json
+            schema/envelope.schema.json
       - name: Upload trace artifacts
         if: always()
         uses: actions/upload-artifact@v4
