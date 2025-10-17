@@ -121,6 +121,9 @@ jobs:
           node scripts/ci/validate-verify-lite-summary.mjs \
             verify-lite-run-summary.json \
             schema/verify-lite-run-summary.schema.json
+      - name: Validate flow/envelope fixtures
+        if: always()
+        run: node scripts/ci/validate-json.mjs
       - name: Create verify-lite report envelope
         if: always()
         env:
