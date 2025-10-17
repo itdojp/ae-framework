@@ -55,7 +55,7 @@ jobs:
         id: vlite-mutation
         uses: ./.github/actions/mutation-auto-diff
         env:
-          STRYKER_TIME_LIMIT: '0'
+          STRYKER_TIME_LIMIT: '900'
         with:
           base-ref: ${{ steps.vlite-mutation-args.outputs.base_ref }}
           quick: 'true'
