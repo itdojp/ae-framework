@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/envelope.schema.json",
+  "title": "ae-envelope",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "source": { "type": "string" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "traceCorrelation": {
+      "type": "object",
+      "properties": {
+        "runId": { "type": "string" },
+        "commit": { "type": "string" },
+        "branch": { "type": "string" }
+      },
+      "required": ["runId"],
+      "additionalProperties": true
+    },
+    "summary": { "type": "object" },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string" },
+          "path": { "type": "string" }
+        },
+        "required": ["type", "path"],
+        "additionalProperties": true
+      }
+    }
+  },
+  "required": ["schemaVersion", "source", "generatedAt", "traceCorrelation", "summary"],
+  "additionalProperties": true
+}
