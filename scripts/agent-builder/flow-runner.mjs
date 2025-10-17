@@ -59,6 +59,77 @@ function normalizeNameList(value, fallback) {
   return Array.isArray(fallback) && fallback.length > 0 ? fallback : [];
 }
 
+function deriveExecutionPlan(flow) {
+  const nodes = Array.isArray(flow?.nodes) ? flow.nodes : [];
+  if (nodes.length === 0) {
+    return [];
+  }
+
+  const nodeIndex = new Map();
+  nodes.forEach((node, idx) => {
+    const id = node?.id;
+    if (!id) {
+      throw new Error(`Flow node at index ${idx} is missing an "id"`);
+    }
+    if (nodeIndex.has(id)) {
+      throw new Error(`Duplicate flow node id detected: ${id}`);
+    }
+    nodeIndex.set(id, { node, index: idx });
+  });
+
+  const edges = Array.isArray(flow?.edges) ? flow.edges : [];
+  if (edges.length === 0) {
+    return nodes;
+  }
+
+  const adjacency = new Map();
+  const indegree = new Map();
+  nodes.forEach((node) => {
+    adjacency.set(node.id, []);
+    indegree.set(node.id, 0);
+  });
+
+  edges.forEach((edge, idx) => {
+    const from = edge?.from;
+    const to = edge?.to;
+    if (!from || !to) {
+      throw new Error(`Flow edge at index ${idx} is missing "from" or "to"`);
+    }
+    if (!nodeIndex.has(from) || !nodeIndex.has(to)) {
+      throw new Error(`Flow edge references unknown node: ${from ?? 'undefined'} -> ${to ?? 'undefined'}`);
+    }
+    adjacency.get(from).push(to);
+    indegree.set(to, (indegree.get(to) ?? 0) + 1);
+  });
+
+  const queue = nodes
+    .filter((node) => (indegree.get(node.id) ?? 0) === 0)
+    .map((node) => ({ node, index: nodeIndex.get(node.id).index }))
+    .sort((a, b) => a.index - b.index);
+
+  const plan = [];
+  while (queue.length > 0) {
+    const current = queue.shift();
+    plan.push(current.node);
+    const neighbours = adjacency.get(current.node.id) ?? [];
+    neighbours.forEach((neighbourId) => {
+      const nextDegree = (indegree.get(neighbourId) ?? 0) - 1;
+      indegree.set(neighbourId, nextDegree);
+      if (nextDegree === 0) {
+        const neighbourMeta = nodeIndex.get(neighbourId);
+        queue.push({ node: neighbourMeta.node, index: neighbourMeta.index });
+        queue.sort((a, b) => a.index - b.index);
+      }
+    });
+  }
+
+  if (plan.length !== nodes.length) {
+    throw new Error('Flow graph contains a cycle or disconnected dependency');
+  }
+
+  return plan;
+}
+
 function buildCorrelation(flow, options) {
   const provided = options.correlation ?? {};
   const name = flow?.metadata?.name ?? 'agent-builder-flow';
@@ -154,9 +225,17 @@ export function executeFlow(flow, options = {}) {
     envelope: null,
   };
 
-  const nodes = Array.isArray(flow.nodes) ? flow.nodes : [];
+  const nodes = deriveExecutionPlan(flow);
   for (const node of nodes) {
-    const inputs = normalizeNameList(node?.input, []).map((name) => state.outputs[name]);
+    const inputNames = normalizeNameList(node?.input, []);
+    const inputs = inputNames.map((name) => {
+      if (!(name in state.outputs)) {
+        throw new Error(
+          `Flow node "${node?.id ?? 'unknown'}" requires input "${name}" that has not been produced yet`,
+        );
+      }
+      return state.outputs[name];
+    });
     const { outputs, info } = simulateNode(node, flow, inputs, options, state);
     Object.entries(outputs).forEach(([name, value]) => {
       state.outputs[name] = value;

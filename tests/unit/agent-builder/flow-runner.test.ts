@@ -44,4 +44,36 @@ describe('agent builder flow runner', () => {
     expect(result.outputs.results.envelope).toBeDefined();
     expect(result.envelope?.traceCorrelation?.runId).toBe('run-123');
   });
+
+  it('respects edge ordering even when nodes are out of order', () => {
+    const summary = JSON.parse(readFileSync(summaryFixture, 'utf8'));
+    const flow = {
+      metadata: { name: 'edge-reordered' },
+      nodes: [
+        { id: 'n3', kind: 'code2verify', input: ['code'], output: ['results'] },
+        { id: 'n2', kind: 'tests2code', input: ['spec'], output: ['code'] },
+        { id: 'n1', kind: 'intent2formal', output: ['spec'] },
+      ],
+      edges: [
+        { from: 'n1', to: 'n2' },
+        { from: 'n2', to: 'n3' },
+      ],
+    };
+
+    const result = executeFlow(flow, { verifyLiteSummary: summary });
+    expect(result.steps.map((step) => step.nodeId)).toEqual(['n1', 'n2', 'n3']);
+    expect(result.outputs.results?.envelope).toBeDefined();
+  });
+
+  it('throws when a node is executed before its inputs exist', () => {
+    const flow = {
+      metadata: { name: 'invalid-flow' },
+      nodes: [
+        { id: 'n2', kind: 'tests2code', input: ['spec'], output: ['code'] },
+      ],
+    };
+
+    expect(() => executeFlow(flow)).toThrow(/requires input "spec"/);
+  });
+
 });
