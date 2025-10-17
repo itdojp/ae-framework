@@ -52,7 +52,7 @@ export function loadFlowDefinition(flowPath, { schemaPath = DEFAULT_FLOW_SCHEMA,
   };
 }
 
-function normaliseNameList(value, fallback) {
+function normalizeNameList(value, fallback) {
   if (Array.isArray(value) && value.length > 0) {
     return value;
   }
@@ -73,7 +73,7 @@ function buildCorrelation(flow, options) {
 
 function simulateNode(node, flow, inputs, options, state) {
   const params = node?.params ?? {};
-  const outputNames = normaliseNameList(node?.output, [node.id]);
+  const outputNames = normalizeNameList(node?.output, [node.id]);
   const outputs = {};
   const info = {};
 
@@ -156,7 +156,7 @@ export function executeFlow(flow, options = {}) {
 
   const nodes = Array.isArray(flow.nodes) ? flow.nodes : [];
   for (const node of nodes) {
-    const inputs = normaliseNameList(node?.input, []).map((name) => state.outputs[name]);
+    const inputs = normalizeNameList(node?.input, []).map((name) => state.outputs[name]);
     const { outputs, info } = simulateNode(node, flow, inputs, options, state);
     Object.entries(outputs).forEach(([name, value]) => {
       state.outputs[name] = value;
