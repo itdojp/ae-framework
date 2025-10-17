@@ -65,6 +65,29 @@ describe('agent builder flow runner', () => {
     expect(result.outputs.results?.envelope).toBeDefined();
   });
 
+  it('propagates multiple outputs declared for a node', () => {
+    const summary = JSON.parse(readFileSync(summaryFixture, 'utf8'));
+    const flow = {
+      metadata: { name: 'multi-output' },
+      nodes: [
+        { id: 'n1', kind: 'intent2formal', output: ['spec', 'specAlias'] },
+        { id: 'n2', kind: 'tests2code', input: ['specAlias'], output: ['code', 'codeMirror'] },
+        { id: 'n3', kind: 'code2verify', input: ['codeMirror'], output: ['results'] },
+      ],
+      edges: [
+        { from: 'n1', to: 'n2' },
+        { from: 'n2', to: 'n3' },
+      ],
+    };
+
+    const result = executeFlow(flow, { verifyLiteSummary: summary });
+    expect(result.outputs.spec).toBeDefined();
+    expect(result.outputs.specAlias).toBe(result.outputs.spec);
+    expect(result.outputs.code).toBeDefined();
+    expect(result.outputs.codeMirror).toBe(result.outputs.code);
+    expect(result.outputs.results?.envelope).toBeDefined();
+  });
+
   it('throws when a node is executed before its inputs exist', () => {
     const flow = {
       metadata: { name: 'invalid-flow' },

@@ -147,6 +147,11 @@ function simulateNode(node, flow, inputs, options, state) {
   const outputNames = normalizeNameList(node?.output, [node.id]);
   const outputs = {};
   const info = {};
+  const storeOutputs = (value) => {
+    outputNames.forEach((name) => {
+      outputs[name] = value;
+    });
+  };
 
   switch (node?.kind) {
     case 'intent2formal': {
@@ -156,7 +161,7 @@ function simulateNode(node, flow, inputs, options, state) {
         description: `Formal specification seeded for flow "${flow?.metadata?.name ?? node.id}"`,
         generatedAt: options.generatedAt ?? new Date().toISOString(),
       };
-      outputs[outputNames[0]] = spec;
+      storeOutputs(spec);
       info.type = 'spec';
       info.language = spec.language;
       break;
@@ -168,7 +173,7 @@ function simulateNode(node, flow, inputs, options, state) {
         generatedAt: options.generatedAt ?? new Date().toISOString(),
         basedOn: sourceSpec,
       };
-      outputs[outputNames[0]] = code;
+      storeOutputs(code);
       info.type = 'code';
       info.language = code.language;
       break;
@@ -192,7 +197,7 @@ function simulateNode(node, flow, inputs, options, state) {
         inputs,
         envelope,
       };
-      outputs[outputNames[0]] = result;
+      storeOutputs(result);
       if (envelope) {
         state.envelope = envelope;
       }
@@ -201,11 +206,12 @@ function simulateNode(node, flow, inputs, options, state) {
       break;
     }
     default: {
-      outputs[outputNames[0]] = {
+      const payload = {
         kind: node?.kind ?? 'unknown',
         params,
         inputs,
       };
+      storeOutputs(payload);
       info.type = 'noop';
       break;
     }
