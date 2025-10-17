@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "1.0.0",
+  "timestamp": "2025-10-06T02:29:59.000Z",
+  "flags": {
+    "install": "--frozen-lockfile",
+    "noFrozen": false,
+    "keepLintLog": true,
+    "enforceLint": true,
+    "runMutation": true
+  },
+  "steps": {
+    "install": { "status": "success", "retried": false },
+    "lint": { "status": "failure", "notes": "baseline +5" },
+    "mutationQuick": { "status": "success" }
+  },
+  "artifacts": {
+    "lintSummary": "verify-lite-lint-summary.json",
+    "lintLog": null,
+    "mutationSummary": "reports/mutation/summary.json",
+    "mutationSurvivors": "reports/mutation/survivors.json",
+    "conformanceSummary": "reports/conformance/verify-lite-summary.json",
+    "conformanceSummaryMarkdown": null
+  },
+  "trace": {
+    "status": "valid",
+    "traceIds": ["trace-1"],
+    "tempoLinks": ["https://tempo.example.com/explore?traceId=trace-1"],
+    "domains": [
+      {
+        "key": "inventory",
+        "traceIds": ["inventory-trace"],
+        "tempoLinks": ["https://tempo.example.com/explore?traceId=inventory-trace"]
+      }
+    ]
+  },
+  "tempoLinks": ["https://tempo.example.com/explore?traceId=summary-trace"]
+}

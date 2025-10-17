@@ -1,9 +1,10 @@
 #!/usr/bin/env node
-const isValidLink = (value) => typeof value === 'string' && value.trim();
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { buildTempoLinks } from './tempo-link-utils.mjs';
+import { fromVerifyLite } from '@ae-framework/envelope';
+
+const isValidLink = (value) => typeof value === 'string' && value.trim();
 
 const summaryPath = process.argv[2] ?? process.env.REPORT_ENVELOPE_SUMMARY ?? 'artifacts/verify-lite/verify-lite-run-summary.json';
 const outputPath = process.argv[3] ?? process.env.REPORT_ENVELOPE_OUTPUT ?? 'artifacts/report-envelope.json';
@@ -29,11 +30,106 @@ const readJson = (filePath) => {
 };
 
 const summary = readJson(summaryPath);
-const summaryBuffer = fs.readFileSync(summaryPath);
+const now = new Date().toISOString();
+const workflow = process.env.GITHUB_WORKFLOW ?? process.env.GITHUB_JOB ?? 'local-run';
+const branch = process.env.GITHUB_REF ?? 'local';
+const runId = process.env.GITHUB_RUN_ID ?? `local-${Date.now()}`;
+const commit = process.env.GITHUB_SHA ?? '0000000';
+
+const derivedTraceIds = Array.isArray(summary?.trace?.traceIds)
+  ? summary.trace.traceIds.map((value) => (typeof value === 'string' ? value.trim() : '')).filter(Boolean)
+  : [];
+
+const traceIdsEnv = process.env.REPORT_ENVELOPE_TRACE_IDS ?? '';
+const traceIdsSeed = traceIdsEnv
+  .split(',')
+  .map((value) => value.trim())
+  .filter(Boolean);
+
+const domainTraceIds = Array.isArray(summary?.trace?.domains)
+  ? summary.trace.domains.flatMap((domain) =>
+      Array.isArray(domain?.traceIds)
+        ? domain.traceIds.map((value) => (typeof value === 'string' ? value.trim() : '')).filter(Boolean)
+        : []
+    )
+  : [];
+
+const notesSeed = noteEnv
+  .split(/\r?\n/)
+  .map((value) => value.trim())
+  .filter(Boolean);
+
+const isVerifyLiteSummary = summary && typeof summary === 'object' && summary.flags && summary.steps && summary.artifacts;
+const traceIdsCombined = [...new Set([...derivedTraceIds, ...domainTraceIds, ...traceIdsSeed].filter((value) => value && value.trim()))];
+
+let envelope;
+
+if (isVerifyLiteSummary) {
+  envelope = fromVerifyLite(summary, {
+    source,
+    generatedAt: now,
+    correlation: {
+      runId,
+      workflow,
+      commit,
+      branch,
+      traceIds: traceIdsCombined,
+    },
+    tempoLinkTemplate: process.env.REPORT_ENVELOPE_TEMPO_LINK_TEMPLATE,
+    notes: notesSeed,
+  });
+  envelope.summary = summary;
+} else {
+  envelope = {
+    schemaVersion: '1.0.0',
+    source,
+    generatedAt: now,
+    traceCorrelation: {
+      runId,
+      workflow,
+      commit,
+      branch,
+      ...(traceIdsCombined.length > 0 ? { traceIds: traceIdsCombined } : {}),
+    },
+    summary,
+    ...(notesSeed.length > 0 ? { notes: [...notesSeed] } : {}),
+  };
+}
+
+const correlation = envelope.traceCorrelation;
+if (correlation) {
+  envelope.correlation = correlation;
+}
+
+delete envelope.traceCorrelation;
 
 const computeChecksum = (buffer) => `sha256:${crypto.createHash('sha256').update(buffer).digest('hex')}`;
 
-const artifacts = [];
+const artifactsByPath = new Map();
+const registerArtifact = (artifact) => {
+  if (!artifact || typeof artifact.path !== 'string' || !artifact.path.trim()) {
+    return;
+  }
+  const resolved = path.resolve(artifact.path);
+  const record = {
+    type: artifact.type ?? 'application/json',
+    description: artifact.description ?? null,
+  };
+  if (fs.existsSync(resolved)) {
+    const buffer = fs.readFileSync(resolved);
+    record.path = path.relative(process.cwd(), resolved);
+    record.checksum = computeChecksum(buffer);
+    artifactsByPath.set(resolved, record);
+  } else {
+    record.path = artifact.path;
+    artifactsByPath.set(artifact.path, record);
+  }
+};
+
+const existingArtifacts = Array.isArray(envelope.artifacts) ? envelope.artifacts : [];
+for (const artifact of existingArtifacts) {
+  registerArtifact(artifact);
+}
 
 const pushArtifact = (filePath, { type = 'application/json', description = null } = {}) => {
   const resolved = path.resolve(filePath);
@@ -42,7 +138,7 @@ const pushArtifact = (filePath, { type = 'application/json', description = null 
     return;
   }
   const buffer = fs.readFileSync(resolved);
-  artifacts.push({
+  registerArtifact({
     type,
     path: path.relative(process.cwd(), resolved),
     checksum: computeChecksum(buffer),
@@ -67,95 +163,47 @@ for (const artifactPath of extraArtifacts) {
   pushArtifact(artifactPath, {});
 }
 
-const now = new Date().toISOString();
-const workflow = process.env.GITHUB_WORKFLOW ?? process.env.GITHUB_JOB ?? 'local-run';
-const branch = process.env.GITHUB_REF ?? 'local';
-const runId = process.env.GITHUB_RUN_ID ?? `local-${Date.now()}`;
-const commit = process.env.GITHUB_SHA ?? '0000000';
+if (!isVerifyLiteSummary) {
+  const tempoSet = new Set();
+  const appendLinks = (values) => {
+    if (!Array.isArray(values)) return;
+    for (const value of values) {
+      if (isValidLink(value)) {
+        tempoSet.add(value.trim());
+      }
+    }
+  };
 
-const traceIdTemplate = process.env.REPORT_ENVELOPE_TEMPO_LINK_TEMPLATE;
-const derivedTraceIds = Array.isArray(summary?.trace?.traceIds)
-  ? summary.trace.traceIds.map((value) => (typeof value === 'string' ? value.trim() : '')).filter(Boolean)
-  : [];
-
-const collectDomainTraceIds = () => {
-  if (!Array.isArray(summary?.trace?.domains)) return [];
-  const ids = new Set();
-  for (const domain of summary.trace.domains) {
-    if (!domain || !Array.isArray(domain.traceIds)) continue;
-    for (const value of domain.traceIds) {
-      if (typeof value === 'string' && value.trim()) ids.add(value.trim());
+  appendLinks(summary?.tempoLinks);
+  appendLinks(summary?.trace?.tempoLinks);
+  if (Array.isArray(summary?.trace?.domains)) {
+    for (const domain of summary.trace.domains) {
+      appendLinks(domain?.tempoLinks);
     }
   }
-  return Array.from(ids);
-};
 
-const traceIdSet = new Set(derivedTraceIds);
-collectDomainTraceIds().forEach((value) => traceIdSet.add(value));
-const traceIdsEnv = process.env.REPORT_ENVELOPE_TRACE_IDS ?? '';
-for (const raw of traceIdsEnv.split(',')) {
-  const value = raw.trim();
-  if (value) traceIdSet.add(value);
-}
-const traceIds = Array.from(traceIdSet);
-
-if (summary?.trace) {
-  if (!Array.isArray(summary.trace.traceIds) || summary.trace.traceIds.length === 0) {
-    summary.trace = { ...summary.trace, traceIds };
-  }
-}
-const collectDomainTempoLinks = () => {
-  if (!Array.isArray(summary?.trace?.domains)) return [];
-  const links = new Set();
-  for (const domain of summary.trace.domains) {
-    if (!domain || !Array.isArray(domain.tempoLinks)) continue;
-    for (const value of domain.tempoLinks) {
-      if (isValidLink(value)) links.add(value.trim());
+  const template = process.env.REPORT_ENVELOPE_TEMPO_LINK_TEMPLATE;
+  if (template && template.includes('{traceId}')) {
+    for (const id of traceIdsCombined) {
+      tempoSet.add(template.replace('{traceId}', id));
     }
   }
-  return Array.from(links);
-};
 
-const tempoLinks = Array.from(new Set([
-  ...(Array.isArray(summary?.tempoLinks) ? summary.tempoLinks.filter(isValidLink) : []),
-  ...(Array.isArray(summary?.trace?.tempoLinks) ? summary.trace.tempoLinks.filter(isValidLink) : []),
-  ...collectDomainTempoLinks(),
-  ...buildTempoLinks(traceIds, traceIdTemplate),
-]));
-
-if (summary?.trace) {
-  if (!Array.isArray(summary.trace.tempoLinks) || summary.trace.tempoLinks.length === 0) {
-    summary.trace = { ...summary.trace, tempoLinks };
+  if (tempoSet.size > 0) {
+    const tempoList = Array.from(tempoSet);
+    envelope.tempoLinks = tempoList;
+    const baseNotes = Array.isArray(envelope.notes) ? envelope.notes : [...notesSeed];
+    const noteSet = new Set(baseNotes);
+    for (const link of tempoList) {
+      noteSet.add(`Tempo: ${link}`);
+    }
+    envelope.notes = Array.from(noteSet);
+  } else if (notesSeed.length > 0 && !Array.isArray(envelope.notes)) {
+    envelope.notes = [...notesSeed];
   }
 }
 
-const notes = noteEnv
-  .split(/\r?\n/)
-  .map((value) => value.trim())
-  .filter(Boolean);
-
-if (tempoLinks.length > 0) {
-  for (const link of tempoLinks) {
-    notes.push(`Tempo: ${link}`);
-  }
-}
-
-const envelope = {
-  schemaVersion: '1.0.0',
-  source,
-  generatedAt: now,
-  correlation: {
-    runId,
-    workflow,
-    commit,
-    branch,
-    ...(traceIds.length > 0 ? { traceIds } : {}),
-  },
-  summary,
-  artifacts,
-  ...(tempoLinks.length > 0 ? { tempoLinks } : {}),
-  ...(notes.length > 0 ? { notes } : {}),
-};
+envelope.artifacts = Array.from(artifactsByPath.values());
 
 const destDir = path.dirname(outputPath);
 if (!fs.existsSync(destDir)) {

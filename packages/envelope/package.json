@@ -1,0 +1,21 @@
+{
+  "name": "@ae-framework/envelope",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Utilities for building AE report envelopes",
+  "main": "src/index.js",
+  "files": [
+    "src",
+    "__fixtures__"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "vitest": "^2.0.5"
+  },
+  "exports": {
+    ".": "./src/index.js"
+  }
+}
