@@ -19,7 +19,7 @@ function withCiDefaults(config: Record<string, any>) {
   };
 }
 
-const baseTestConfig = mutationScope === 'runtime-guard'
+export const baseTestConfig = mutationScope === 'runtime-guard'
   ? withCiDefaults({
       include: [
         'tests/api/runtime-guard.reservations.test.ts',
@@ -32,7 +32,7 @@ const baseTestConfig = mutationScope === 'runtime-guard'
       exclude: ['**/.stryker-tmp/**', '**/.stryker-tmp-*/**', 'tests/a11y/components.test.js'],
     });
 
-const additionalProjects = mutationScope === 'runtime-guard'
+export const projectConfigs = mutationScope === 'runtime-guard'
   ? []
   : [
       defineProject({
@@ -76,7 +76,7 @@ const additionalProjects = mutationScope === 'runtime-guard'
       }),
     ];
 
-const rootTestConfig = {
+export const rootTestConfig = {
   ...baseTestConfig,
   reporters: ['default'],
   setupFiles: ['tests/a11y/setup.js'],
@@ -96,5 +96,5 @@ if (isCI) {
 
 export default defineConfig({
   test: rootTestConfig,
-  projects: additionalProjects,
+  projects: projectConfigs,
 })
