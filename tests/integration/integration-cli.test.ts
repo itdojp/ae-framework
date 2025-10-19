@@ -15,20 +15,20 @@ describe('IntegrationTestingCli', () => {
   let cli: IntegrationTestingCli;
   let consoleLogSpy: any;
   let consoleErrorSpy: any;
-  let originalCwd: string;
   let tempDir: string;
+  let cwdSpy: ReturnType<typeof vi.spyOn>;
+  const inTemp = (name: string): string => join(tempDir, name);
 
   beforeEach(async () => {
-    originalCwd = process.cwd();
     tempDir = await createIntegrationTempDir('integration-cli-');
-    process.chdir(tempDir);
+    cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
     cli = new IntegrationTestingCli();
     consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
-    process.chdir(originalCwd);
+    cwdSpy.mockRestore();
     consoleLogSpy.mockRestore();
     consoleErrorSpy.mockRestore();
   });
@@ -74,7 +74,7 @@ describe('IntegrationTestingCli', () => {
         }
       }];
 
-      const testFile = 'test-discovery.json';
+      const testFile = inTemp('test-discovery.json');
       writeFileSync(testFile, JSON.stringify(testData, null, 2));
 
       const command = cli.createCommand();
@@ -93,9 +93,9 @@ describe('IntegrationTestingCli', () => {
       const suiteData = createSampleSuiteData();
       const fixtureData = createSampleFixtureData();
 
-      const testFile = 'discover-tests.json';
-      const suiteFile = 'discover-suites.json';
-      const fixtureFile = 'discover-fixtures.json';
+      const testFile = inTemp('discover-tests.json');
+      const suiteFile = inTemp('discover-suites.json');
+      const fixtureFile = inTemp('discover-fixtures.json');
 
       writeFileSync(testFile, JSON.stringify([testData], null, 2));
       writeFileSync(suiteFile, JSON.stringify([suiteData], null, 2));
@@ -117,8 +117,8 @@ describe('IntegrationTestingCli', () => {
 
     it('should save discovery results to file', async () => {
       const testData = createSampleTestData();
-      const testFile = 'discover-input.json';
-      const outputFile = 'discovery-output.json';
+      const testFile = inTemp('discover-input.json');
+      const outputFile = inTemp('discovery-output.json');
 
       writeFileSync(testFile, JSON.stringify([testData], null, 2));
 
@@ -346,7 +346,7 @@ describe('IntegrationTestingCli', () => {
   describe('reports command', () => {
     it('should list reports when directory exists', async () => {
       // Create test reports directory
-      const reportsDir = './test-results';
+      const reportsDir = inTemp('test-results');
       if (!existsSync(reportsDir)) {
         mkdirSync(reportsDir, { recursive: true });
       }
@@ -380,7 +380,7 @@ describe('IntegrationTestingCli', () => {
     });
 
     it('should clean old reports', async () => {
-      const reportsDir = './test-results';
+      const reportsDir = inTemp('test-results');
       if (!existsSync(reportsDir)) {
         mkdirSync(reportsDir, { recursive: true });
       }
