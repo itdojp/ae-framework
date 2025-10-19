@@ -4,7 +4,7 @@
  * Goal: End-to-end validation of the unified architecture
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'vitest';
+import { describe, test, expect, beforeEach } from 'vitest';
 import { UnifiedAgent } from '../../src/agents/unified-agent.js';
 import { UnifiedServiceManager } from '../../src/services/unified-service-manager.js';
 import { ServiceRegistry } from '../../src/services/service-registry.js';
@@ -18,14 +18,27 @@ import {
   ServiceType, 
   ServiceConfig 
 } from '../../src/services/service-types.js';
+import {
+  createIntegrationTempDir,
+  registerIntegrationCleanup,
+} from '../_helpers/integration-test-utils.js';
 
 describe('System Validation - Phase 4 Integration Tests', () => {
   let agent: UnifiedAgent;
   let serviceManager: UnifiedServiceManager;
   let serviceRegistry: ServiceRegistry;
+  let phaseStateRoot: string;
+  let originalPhaseStateRoot: string | undefined;
+  let originalPhaseStateFile: string | undefined;
 
-  beforeAll(async () => {
-    // Initialize integrated system
+  beforeEach(async () => {
+    originalPhaseStateRoot = process.env.AE_PHASE_STATE_ROOT;
+    originalPhaseStateFile = process.env.AE_PHASE_STATE_FILE;
+
+    phaseStateRoot = await createIntegrationTempDir('ae-phase-state-');
+    process.env.AE_PHASE_STATE_ROOT = phaseStateRoot;
+    delete process.env.AE_PHASE_STATE_FILE;
+
     serviceRegistry = new ServiceRegistry();
     serviceManager = new UnifiedServiceManager(serviceRegistry);
     await serviceManager.initialize();
@@ -45,10 +58,30 @@ describe('System Validation - Phase 4 Integration Tests', () => {
 
     agent = new UnifiedAgent(agentConfig);
     await agent.initialize();
-  });
 
-  afterAll(async () => {
-    await serviceManager.shutdown();
+    const previousRoot = originalPhaseStateRoot;
+    const previousFile = originalPhaseStateFile;
+    const currentManager = serviceManager;
+
+    registerIntegrationCleanup(async () => {
+      try {
+        await currentManager.shutdown();
+      } catch (error) {
+        console.warn('System validation cleanup failed:', error);
+      }
+
+      if (previousRoot !== undefined) {
+        process.env.AE_PHASE_STATE_ROOT = previousRoot;
+      } else {
+        delete process.env.AE_PHASE_STATE_ROOT;
+      }
+
+      if (previousFile !== undefined) {
+        process.env.AE_PHASE_STATE_FILE = previousFile;
+      } else {
+        delete process.env.AE_PHASE_STATE_FILE;
+      }
+    });
   });
 
   describe('Agent-Service Integration', () => {
@@ -216,6 +249,14 @@ describe('System Validation - Phase 4 Integration Tests', () => {
       expect(agentResult.validation.strictModeCompatible).toBe(true);
 
       // Validate service TypeScript compliance
+      await serviceManager.enableOptimizations({
+        caching: true,
+        connectionPooling: true,
+        requestBatching: true,
+        compressionEnabled: true,
+        timeoutOptimization: true
+      });
+
       const serviceValidation = await serviceManager.validateServiceLayer();
       expect(serviceValidation.typeScriptCompliant).toBe(true);
       expect(serviceValidation.errorCount).toBe(0);
@@ -279,6 +320,19 @@ describe('System Validation - Phase 4 Integration Tests', () => {
 
   describe('System Integration Health Check', () => {
     test('should validate complete system health', async () => {
+      const healthServiceConfig: ServiceConfig = {
+        id: 'system-health-service',
+        type: ServiceType.MONITORING,
+        config: {
+          autoStart: true,
+          healthCheckInterval: 1000,
+          alertThreshold: 0.8
+        },
+        dependencies: []
+      };
+
+      await serviceManager.registerService(healthServiceConfig);
+
       // Health check for all registered services
       const allServices = await serviceRegistry.getAllServices();
       expect(allServices.length).toBeGreaterThan(0);
