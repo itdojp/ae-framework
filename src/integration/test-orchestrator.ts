@@ -31,6 +31,7 @@ export class IntegrationTestOrchestrator extends EventEmitter {
   private testSuites: Map<string, TestSuite> = new Map();
   private testFixtures: Map<string, TestFixture> = new Map();
   private activeExecutions: Map<string, Promise<TestExecutionSummary>> = new Map();
+  private runnerLocks: Map<string, Promise<void>> = new Map();
 
   constructor(config: IntegrationTestConfig) {
     super();
@@ -118,18 +119,11 @@ export class IntegrationTestOrchestrator extends EventEmitter {
 
     this.emit('test_started', { testId, environment: environmentName });
 
-    try {
-      // Setup fixtures
-      await this.setupFixtures(test.fixtures, environment);
+    return await this.withRunnerLock(runner.id, async () => {
+      let setupCompleted = false;
+      let testResult: TestResult | null = null;
 
-      // Execute test
-      const result = await runner.runTest(test, environment);
-
-      this.emit('test_completed', { testId, status: result.status, duration: result.duration });
-      return result;
-
-    } catch (error) {
-      const errorResult: TestResult = {
+      const buildErrorResult = (error: unknown): TestResult => ({
         id: uuidv4(),
         testId,
         status: 'error',
@@ -142,21 +136,71 @@ export class IntegrationTestOrchestrator extends EventEmitter {
         stackTrace: error instanceof Error ? error.stack : undefined,
         artifacts: [],
         screenshots: [],
-        logs: [`Test execution failed: ${error}`],
+        logs: [`Test execution failed: ${this.formatError(error)}`],
         metrics: {
           networkCalls: 0,
           databaseQueries: 0
         }
-      };
+      });
 
-      this.emit('test_failed', { testId, error: errorResult.error });
-      this.emit('test_completed', { testId, status: errorResult.status, duration: errorResult.duration });
-      return errorResult;
+      try {
+        if (runner.setup) {
+          await runner.setup(environment);
+          setupCompleted = true;
+        }
 
-    } finally {
-      // Teardown fixtures
-      await this.teardownFixtures(test.fixtures, environment);
-    }
+        await this.setupFixtures(test.fixtures, environment);
+        if (runner.beforeTest) {
+          await runner.beforeTest(test);
+        }
+
+        const result = await runner.runTest(test, environment);
+        testResult = result;
+        return result;
+
+      } catch (error) {
+        const errorResult = buildErrorResult(error);
+        testResult = errorResult;
+        this.emit('test_failed', { testId, error: errorResult.error });
+        return errorResult;
+
+      } finally {
+        if (testResult) {
+          try {
+            if (runner.afterTest) {
+              await runner.afterTest(test, testResult);
+            }
+          } catch (hookError) {
+            this.emit('after_test_hook_failed', {
+              testId,
+              error: this.formatError(hookError)
+            });
+          }
+        }
+
+        try {
+          await this.teardownFixtures(test.fixtures, environment);
+        } catch (fixtureError) {
+          this.emit('teardown_script_failed', { script: 'fixture_teardown', error: fixtureError });
+        }
+
+        if (runner.teardown && setupCompleted) {
+          try {
+            await runner.teardown(environment);
+          } catch (teardownError) {
+            this.emit('runner_teardown_failed', {
+              testId,
+              runnerId: runner.id,
+              error: this.formatError(teardownError)
+            });
+          }
+        }
+
+        if (testResult) {
+          this.emit('test_completed', { testId, status: testResult.status, duration: testResult.duration });
+        }
+      }
+    });
   }
 
   /**
@@ -648,6 +692,39 @@ export class IntegrationTestOrchestrator extends EventEmitter {
   private setupEnvironments(): void {
     for (const env of this.config.environments) {
       this.environments.set(env.name, env);
+    }
+  }
+
+  private async withRunnerLock<T>(runnerId: string, operation: () => Promise<T>): Promise<T> {
+    const previous = this.runnerLocks.get(runnerId) ?? Promise.resolve();
+    let release: (() => void) | undefined;
+    const current = new Promise<void>(resolve => {
+      release = resolve;
+    });
+    this.runnerLocks.set(runnerId, current);
+
+    await previous;
+    try {
+      return await operation();
+    } finally {
+      release?.();
+      if (this.runnerLocks.get(runnerId) === current) {
+        this.runnerLocks.delete(runnerId);
+      }
+    }
+  }
+
+  private formatError(error: unknown): string {
+    if (error instanceof Error) {
+      return `${error.name}: ${error.message}`;
+    }
+    if (typeof error === 'string') {
+      return error;
+    }
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return String(error);
     }
   }
 
