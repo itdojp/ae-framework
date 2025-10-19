@@ -25,5 +25,10 @@ This profile provides deterministic, faster test execution suitable for PR verif
 - For PR workflows aiming for reliability and speed, run `test:ci:stable` or target explicit suites (`test:unit`, `test:int`, `test:a11y`, `test:coverage`).
 - Keep Playwright/E2E runs label-gated (`run-e2e`) or scheduled/nightly.
 
+### Flake Diagnostics
+- 再実行時にハンドルリークなどを調査したい場合は、`gh run rerun <runId> -e AE_INTEGRATION_TRACE_HANDLES=1` を指定して `why-is-node-running` の詳細ログを取得します（ローカルでは `AE_INTEGRATION_TRACE_HANDLES=1 pnpm test:int`）。  
+- 詳細な運用手順は [`docs/testing/integration-runtime-helpers.md`](../testing/integration-runtime-helpers.md) を参照してください。  
+- 調査後は必ず環境変数を外し、常時有効化によるログ肥大や CI コスト増を避けます。
+
 ## Evolution
 - As we identify more flaky suites, we will either stabilize them (preferred) or move them to label/nightly until fixed.
