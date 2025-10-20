@@ -17,8 +17,8 @@
 
 ## 課題整理
 1. **テスト分類の明確化とワークフロー分割**  
-   - Verify Lite から Integration + Heavy を切り出し、`test:ci:stable`（fast系）と `test:ci:extended`（integration/MBT/mutation）に分割。
-   - `test:ci:stable` は PR デフォルト、`test:ci:extended` は label (`run-integration`, `run-mutation`) または nightly へ。
+   - Verify Lite から Integration + Heavy を切り出し、`test:ci:lite`（fast系）と `test:ci:extended`（integration/MBT/mutation）に分割。
+   - `test:ci:lite` は PR デフォルト、`test:ci:extended` は label (`run-integration`, `run-mutation`) または nightly へ。
 2. **ラベル駆動実行の棚卸し**  
    - `enforce-testing`, `enforce-coverage`, `run-qa`, `run-security` のトリガー先を docs に明記し、ワークフロー側の `if:` 条件を整理。
 3. **環境検出ロジック**  
@@ -26,14 +26,17 @@
 4. **テスト結果キャッシュ検討**  
    - MBT (`artifacts/mbt/summary.json`)、mutation auto diff `reports/mutation/` を再利用できるようにし、再実行時はスキップまたは replay のみ実施。
 
+## 実装状況（2025-10-19）
+- [x] `test:ci:lite` / `test:ci:extended` スクリプトを追加し、Verify Lite（安定系）と拡張テストの入口を分離。
+- [x] `.github/workflows/verify-lite.yml` から Property / MBT / Pact / Mutation ステップを削除し、軽量ジョブとして再構成。
+- [x] `.github/workflows/ci-extended.yml` を新設。`run-ci-extended` / `run-integration` / `run-property` / `run-mbt` / `run-mutation` ラベルで PR から opt-in 実行でき、main push / schedule では自動実行。
+- [x] Mutation auto diff / property / MBT サマリを新ワークフローに移設し、従来のレポート（survivors, summary）を維持。
+
 ## 次のアクション候補
-1. `docs/ci-policy.md` に CI hardening 方針を追記（テスト分類表、ラベル一覧、再実行時の TRACE_HANDLES / AE_INTEGRATION_RETRY 手順）。  
-2. 新ブランチ `feature/ci-hardening-phase2` で以下を順に実装:
-   1. `package.json` に `test:ci:extended`（integration + heavy）新設、Verify Lite から heavy ステップを切り出し。
-   2. `.github/workflows/verify-lite.yml` を軽量化し、`ci.yml` などに integration/heavy スイートを移行。
-   3. ラベル条件を `docs/ci/label-gating.md` と整合させ、CI `if:` 条件を更新。
-   4. キャッシュ/再試行手順のガイドを追加し、`docs/testing/integration-runtime-helpers.md` と連携。
-3. Mutation auto diff（Stryker quick）用の dry-run 成功条件を改善（workspace tempDir 参照など）し、Verify Lite 再実行時の失敗を減らす。
+1. [ ] `docs/ci-policy.md` / `docs/ci/label-gating.md` を刷新し、新ラベルと実行モード（stable vs extended）を明文化。  
+2. [ ] キャッシュ／再実行ガイドを整備し、MBT や mutation サマリの再利用手順を `docs/testing/integration-runtime-helpers.md` に反映。  
+3. [ ] Mutation auto diff（Stryker quick）のワークスペース制御を見直し、dry-run 時の一時ディレクトリ競合を解消。  
+4. [ ] Nightly での `ci-extended` 成果物（survivors / MBT summary）を自動比較し、トレンド可視化を導入。  
 
 ## 参考リンク
 - Issue #1005: Test Stability Issues - Flaky Test Resolution and CI Hardening

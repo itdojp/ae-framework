@@ -1,0 +1,249 @@
+name: CI Extended
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ['v*']
+  schedule:
+    - cron: '30 6 * * *'
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  extended:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork) }}
+    steps:
+      - name: Determine execution flags
+        id: flags
+        shell: bash
+        run: |
+          set -euo pipefail
+          RUN_EXTENDED=false
+          RUN_INTEGRATION=false
+          RUN_PROPERTY=false
+          RUN_MBT=false
+          RUN_MUTATION=false
+
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            RUN_EXTENDED=true
+            RUN_INTEGRATION=true
+            RUN_PROPERTY=true
+            RUN_MBT=true
+            RUN_MUTATION=true
+          else
+            LABELS="$(jq -r '.pull_request.labels[].name' "$GITHUB_EVENT_PATH" 2>/dev/null || true)"
+            has_label() {
+              printf '%s\n' "$LABELS" | grep -Fxq "$1"
+            }
+            if has_label "run-ci-extended"; then
+              RUN_EXTENDED=true
+              RUN_INTEGRATION=true
+              RUN_PROPERTY=true
+              RUN_MBT=true
+              RUN_MUTATION=true
+            fi
+            if has_label "run-integration"; then
+              RUN_INTEGRATION=true
+            fi
+            if has_label "run-property"; then
+              RUN_PROPERTY=true
+            fi
+            if has_label "run-mbt"; then
+              RUN_MBT=true
+            fi
+            if has_label "run-mutation"; then
+              RUN_MUTATION=true
+            fi
+          fi
+
+          SHOULD_RUN=false
+          if [ "$RUN_INTEGRATION" = "true" ] || [ "$RUN_PROPERTY" = "true" ] || [ "$RUN_MBT" = "true" ] || [ "$RUN_MUTATION" = "true" ]; then
+            SHOULD_RUN=true
+          fi
+
+          {
+            echo "run_extended=$RUN_EXTENDED"
+            echo "run_integration=$RUN_INTEGRATION"
+            echo "run_property=$RUN_PROPERTY"
+            echo "run_mbt=$RUN_MBT"
+            echo "run_mutation=$RUN_MUTATION"
+            echo "should_run=$SHOULD_RUN"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Skip (no extended suites requested)
+        if: ${{ steps.flags.outputs.should_run != 'true' }}
+        run: echo 'CI Extended suites were not requested for this event. Skipping remaining steps.'
+
+      - uses: actions/checkout@v4
+        if: ${{ steps.flags.outputs.should_run == 'true' }}
+        with:
+          fetch-depth: 0
+
+      - name: Prepare pnpm
+        if: ${{ steps.flags.outputs.should_run == 'true' }}
+        uses: ./.github/actions/setup-pnpm
+
+      - name: Enable corepack
+        if: ${{ steps.flags.outputs.should_run == 'true' }}
+        run: corepack enable
+
+      - uses: actions/setup-node@v4
+        if: ${{ steps.flags.outputs.should_run == 'true' }}
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        if: ${{ steps.flags.outputs.should_run == 'true' }}
+        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+
+      - name: Run integration tests
+        if: ${{ steps.flags.outputs.run_integration == 'true' }}
+        run: pnpm run test:int
+
+      - name: Property-based smoke
+        if: ${{ steps.flags.outputs.run_property == 'true' }}
+        run: pnpm run test:property
+
+      - name: MBT smoke
+        if: ${{ steps.flags.outputs.run_mbt == 'true' }}
+        run: pnpm run test:mbt:ci
+
+      - name: Detect pact-related changes (PR only)
+        if: ${{ github.event_name == 'pull_request' && steps.flags.outputs.run_integration == 'true' }}
+        id: pact-paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          WATCH_PATH_PATTERN='^(contracts/|src/api/|specs/openapi/|tests/contracts/)'
+
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          git fetch origin "$BASE_SHA" --depth=1
+          CHANGED="$(git diff --name-only "$BASE_SHA"...HEAD || true)"
+          printf '%s\n' "$CHANGED" > /tmp/changed-files.txt
+          if printf '%s\n' "$CHANGED" | grep -E "$WATCH_PATH_PATTERN" >/dev/null; then
+            echo "pact=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "pact=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Pact contract smoke
+        if: ${{ steps.flags.outputs.run_integration == 'true' && (github.event_name != 'pull_request' || steps.pact-paths.outputs.pact == 'true') }}
+        run: pnpm run pipelines:pact
+
+      - name: Pact contract smoke (skipped)
+        if: ${{ github.event_name == 'pull_request' && steps.flags.outputs.run_integration == 'true' && steps.pact-paths.outputs.pact == 'false' }}
+        run: |
+          echo 'Pact contract smoke skipped: no relevant contract changes detected.' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Prepare mutation auto diff args
+        if: ${{ steps.flags.outputs.run_mutation == 'true' }}
+        id: mutation-args
+        shell: bash
+        run: |
+          set -euo pipefail
+          target_base="origin/main"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            target_base="origin/${{ github.event.pull_request.base.ref }}"
+          fi
+          git fetch --no-tags --depth=1 origin "${target_base#origin/}" || true
+          {
+            echo "base_ref=${target_base}"
+            echo 'args<<__MUT_ARGS__'
+            echo '--configFile'
+            echo 'configs/stryker.config.js'
+            echo '__MUT_ARGS__'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Run mutation auto diff (extended)
+        if: ${{ steps.flags.outputs.run_mutation == 'true' }}
+        id: mutation
+        uses: ./.github/actions/mutation-auto-diff
+        env:
+          STRYKER_TIME_LIMIT: '900'
+        with:
+          base-ref: ${{ steps.mutation-args.outputs.base_ref }}
+          quick: 'true'
+          extra-args: ${{ steps.mutation-args.outputs.args }}
+
+      - name: Process mutation results
+        if: ${{ steps.flags.outputs.run_mutation == 'true' && hashFiles('reports/mutation/mutation.json') != '' }}
+        run: |
+          set -euo pipefail
+          node scripts/mutation/mutation-report.mjs
+          node scripts/mutation/list-survivors.mjs --limit 50 > reports/mutation/survivors.json
+          survivors_for_summary="$(node scripts/mutation/list-survivors.mjs --limit 10 || true)"
+          {
+            printf '%s\n' '## Mutation survivors (top 10)'
+            printf '%s\n' '```json'
+            printf '%s\n' "${survivors_for_summary:-[]}"
+            printf '%s\n' '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload mutation quick report
+        if: ${{ steps.flags.outputs.run_mutation == 'true' && hashFiles('reports/mutation/mutation.json') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-quick-report
+          path: |
+            reports/mutation/mutation.json
+            reports/mutation/index.html
+
+      - name: Upload mutation survivors artifact
+        if: ${{ steps.flags.outputs.run_mutation == 'true' && hashFiles('reports/mutation/survivors.json') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-survivors-json
+          path: reports/mutation/survivors.json
+
+      - name: Append property harness summary
+        if: ${{ steps.flags.outputs.run_property == 'true' }}
+        run: |
+          if [ -f artifacts/properties/summary.json ]; then
+            echo '## Property Harness' >> "$GITHUB_STEP_SUMMARY"
+            jq -r '
+              "Trace ID: \(.traceId)",
+              "Seed: \(.seed)",
+              "Runs: \(.runs)",
+              "Passed: \(.passed)",
+              (if .note then "Note: \(.note)" else empty end)
+            ' artifacts/properties/summary.json >> "$GITHUB_STEP_SUMMARY" || echo 'Failed to parse property summary.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Property harness summary not generated.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Append MBT summary
+        if: ${{ steps.flags.outputs.run_mbt == 'true' }}
+        run: |
+          if [ -f artifacts/mbt/summary.json ]; then
+            echo '## MBT Harness' >> "$GITHUB_STEP_SUMMARY"
+            jq -r '
+              "Seed: \(.seed)",
+              "Runs: \(.runs)",
+              "Depth: \(.depth)",
+              "Violations: \(.violations)"
+            ' artifacts/mbt/summary.json >> "$GITHUB_STEP_SUMMARY" || echo 'Failed to parse MBT summary.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'MBT summary not generated.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Append CI extended summary
+        if: ${{ steps.flags.outputs.should_run == 'true' }}
+        env:
+          RUN_EXTENDED: ${{ steps.flags.outputs.run_extended }}
+          RUN_INTEGRATION: ${{ steps.flags.outputs.run_integration }}
+          RUN_PROPERTY: ${{ steps.flags.outputs.run_property }}
+          RUN_MBT: ${{ steps.flags.outputs.run_mbt }}
+          RUN_MUTATION: ${{ steps.flags.outputs.run_mutation }}
+        run: |
+          {
+            echo '## CI Extended Execution Flags'
+            echo "- run_extended: ${RUN_EXTENDED}"
+            echo "- run_integration: ${RUN_INTEGRATION}"
+            echo "- run_property: ${RUN_PROPERTY}"
+            echo "- run_mbt: ${RUN_MBT}"
+            echo "- run_mutation: ${RUN_MUTATION}"
+          } >> "$GITHUB_STEP_SUMMARY"
