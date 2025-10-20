@@ -552,8 +552,7 @@ export class IntegrationTestingCli {
           const reportFiles = files.filter(f => f.endsWith('.html') || f.endsWith('.json'));
           
           if (reportFiles.length === 0) {
-            console.log('Reports directory does not exist. Run tests to generate reports.');
-            console.log('No reports found. Run tests to generate reports.');
+            console.log('No reports found in the reports directory. Run tests to generate reports.');
           } else {
             reportFiles.forEach((file, index) => {
               console.log(`${index + 1}. ${file}`);
