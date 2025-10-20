@@ -5,41 +5,32 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { IntegrationTestingCli } from '../../src/cli/integration-cli.js';
-import { writeFileSync, unlinkSync, existsSync, mkdirSync, rmSync } from 'fs';
+import { writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
+import { createIntegrationTempDir, applyIntegrationRetry } from '../_helpers/integration-test-utils.js';
+
+applyIntegrationRetry(it);
 
 describe('IntegrationTestingCli', () => {
   let cli: IntegrationTestingCli;
   let consoleLogSpy: any;
   let consoleErrorSpy: any;
-  let testFiles: string[] = [];
-  let testDirs: string[] = [];
+  let tempDir: string;
+  let cwdSpy: ReturnType<typeof vi.spyOn>;
+  const inTemp = (name: string): string => join(tempDir, name);
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    tempDir = await createIntegrationTempDir('integration-cli-');
+    cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
     cli = new IntegrationTestingCli();
     consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    testFiles = [];
-    testDirs = [];
   });
 
   afterEach(() => {
+    cwdSpy.mockRestore();
     consoleLogSpy.mockRestore();
     consoleErrorSpy.mockRestore();
-    
-    // Cleanup test files
-    testFiles.forEach(file => {
-      if (existsSync(file)) {
-        unlinkSync(file);
-      }
-    });
-
-    // Cleanup test directories
-    testDirs.forEach(dir => {
-      if (existsSync(dir)) {
-        rmSync(dir, { recursive: true, force: true });
-      }
-    });
   });
 
   describe('command creation', () => {
@@ -83,9 +74,8 @@ describe('IntegrationTestingCli', () => {
         }
       }];
 
-      const testFile = 'test-discovery.json';
+      const testFile = inTemp('test-discovery.json');
       writeFileSync(testFile, JSON.stringify(testData, null, 2));
-      testFiles.push(testFile);
 
       const command = cli.createCommand();
       const args = ['node', 'cli', 'discover', '--patterns', testFile, '--type', 'tests'];
@@ -103,15 +93,13 @@ describe('IntegrationTestingCli', () => {
       const suiteData = createSampleSuiteData();
       const fixtureData = createSampleFixtureData();
 
-      const testFile = 'discover-tests.json';
-      const suiteFile = 'discover-suites.json';
-      const fixtureFile = 'discover-fixtures.json';
+      const testFile = inTemp('discover-tests.json');
+      const suiteFile = inTemp('discover-suites.json');
+      const fixtureFile = inTemp('discover-fixtures.json');
 
       writeFileSync(testFile, JSON.stringify([testData], null, 2));
       writeFileSync(suiteFile, JSON.stringify([suiteData], null, 2));
       writeFileSync(fixtureFile, JSON.stringify([fixtureData], null, 2));
-
-      testFiles.push(testFile, suiteFile, fixtureFile);
 
       const command = cli.createCommand();
       const args = [
@@ -129,11 +117,10 @@ describe('IntegrationTestingCli', () => {
 
     it('should save discovery results to file', async () => {
       const testData = createSampleTestData();
-      const testFile = 'discover-input.json';
-      const outputFile = 'discovery-output.json';
+      const testFile = inTemp('discover-input.json');
+      const outputFile = inTemp('discovery-output.json');
 
       writeFileSync(testFile, JSON.stringify([testData], null, 2));
-      testFiles.push(testFile, outputFile);
 
       const command = cli.createCommand();
       const args = [
@@ -216,7 +203,6 @@ describe('IntegrationTestingCli', () => {
   describe('generate command', () => {
     it('should generate sample test', async () => {
       const outputFile = 'generated-test.json';
-      testFiles.push(outputFile);
 
       const command = cli.createCommand();
       const args = [
@@ -240,7 +226,6 @@ describe('IntegrationTestingCli', () => {
 
     it('should generate sample suite', async () => {
       const outputFile = 'generated-suite.json';
-      testFiles.push(outputFile);
 
       const command = cli.createCommand();
       const args = [
@@ -260,7 +245,6 @@ describe('IntegrationTestingCli', () => {
 
     it('should generate sample fixture', async () => {
       const outputFile = 'generated-fixture.json';
-      testFiles.push(outputFile);
 
       const command = cli.createCommand();
       const args = [
@@ -280,7 +264,6 @@ describe('IntegrationTestingCli', () => {
 
     it('should generate sample environment', async () => {
       const outputFile = 'generated-environment.json';
-      testFiles.push(outputFile);
 
       const command = cli.createCommand();
       const args = [
@@ -363,10 +346,9 @@ describe('IntegrationTestingCli', () => {
   describe('reports command', () => {
     it('should list reports when directory exists', async () => {
       // Create test reports directory
-      const reportsDir = './test-results';
+      const reportsDir = inTemp('test-results');
       if (!existsSync(reportsDir)) {
         mkdirSync(reportsDir, { recursive: true });
-        testDirs.push(reportsDir);
       }
 
       // Create sample report files
@@ -374,7 +356,6 @@ describe('IntegrationTestingCli', () => {
       reportFiles.forEach(file => {
         const filePath = join(reportsDir, file);
         writeFileSync(filePath, 'sample report content');
-        testFiles.push(filePath);
       });
 
       const command = cli.createCommand();
@@ -399,10 +380,9 @@ describe('IntegrationTestingCli', () => {
     });
 
     it('should clean old reports', async () => {
-      const reportsDir = './test-results';
+      const reportsDir = inTemp('test-results');
       if (!existsSync(reportsDir)) {
         mkdirSync(reportsDir, { recursive: true });
-        testDirs.push(reportsDir);
       }
 
       // Create old report file
@@ -410,7 +390,6 @@ describe('IntegrationTestingCli', () => {
       writeFileSync(oldReportPath, 'old report');
       
       // Modify file time to make it appear old (simplified)
-      testFiles.push(oldReportPath);
 
       const command = cli.createCommand();
       const args = ['node', 'cli', 'reports', '--clean', '--days', '0'];
@@ -452,10 +431,8 @@ describe('IntegrationTestingCli', () => {
 
       writeFileSync(testFile, JSON.stringify([testData], null, 2));
       writeFileSync(suiteFile, JSON.stringify([suiteData], null, 2));
-      testFiles.push(testFile, suiteFile);
 
       const outputDir = './test-results-run';
-      testDirs.push(outputDir);
 
       const command = cli.createCommand();
       const args = [
@@ -478,7 +455,6 @@ describe('IntegrationTestingCli', () => {
       const testData = createSampleTestData();
       const testFile = 'filtered-test.json';
       writeFileSync(testFile, JSON.stringify([testData], null, 2));
-      testFiles.push(testFile);
 
       const command = cli.createCommand();
       const args = [
@@ -501,7 +477,6 @@ describe('IntegrationTestingCli', () => {
       const testData = createSampleTestData();
       const testFile = 'parallel-test.json';
       writeFileSync(testFile, JSON.stringify([testData], null, 2));
-      testFiles.push(testFile);
 
       const command = cli.createCommand();
       const args = [
@@ -556,7 +531,6 @@ describe('IntegrationTestingCli', () => {
     it('should support complete testing workflow', async () => {
       // 1. Generate sample test
       const testFile = 'workflow-test.json';
-      testFiles.push(testFile);
 
       let command = cli.createCommand();
       await command.parseAsync([

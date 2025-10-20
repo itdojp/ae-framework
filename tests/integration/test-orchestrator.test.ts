@@ -3,7 +3,8 @@
  * Phase 2.3: Test suite for integration test orchestrator
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { join } from 'path';
 import { IntegrationTestOrchestrator } from '../../src/integration/test-orchestrator.js';
 import { E2ETestRunner } from '../../src/integration/runners/e2e-runner.js';
 import { APITestRunner } from '../../src/integration/runners/api-runner.js';
@@ -15,8 +16,17 @@ import {
   TestEnvironment,
   TestExecutionConfig,
   IntegrationTestConfig,
-  TestDiscovery
+  TestDiscovery,
+  TestRunner,
+  TestResult
 } from '../../src/integration/types.js';
+import {
+  createIntegrationTempDir,
+  registerIntegrationCleanup,
+  applyIntegrationRetry,
+} from '../_helpers/integration-test-utils.js';
+
+applyIntegrationRetry(it);
 
 // Helper functions
 function createMockTestCase(id: string, name: string, category: any): TestCase {
@@ -139,8 +149,13 @@ describe('IntegrationTestOrchestrator', () => {
   let orchestrator: IntegrationTestOrchestrator;
   let mockDiscovery: TestDiscovery;
   let config: IntegrationTestConfig;
+  let integrationTempDir: string;
+  const getOutputDir = (suffix = 'test-results') =>
+    join(integrationTempDir, suffix);
 
   beforeEach(async () => {
+    integrationTempDir = await createIntegrationTempDir('integration-orchestrator-');
+
     config = {
       environments: [createMockEnvironment()],
       defaultEnvironment: 'test',
@@ -179,10 +194,10 @@ describe('IntegrationTestOrchestrator', () => {
     mockDiscovery = new MockTestDiscovery();
     
     await orchestrator.initialize();
-  });
 
-  afterEach(() => {
-    // Clean up any resources
+    registerIntegrationCleanup(() => {
+      orchestrator.removeAllListeners();
+    });
   });
 
   describe('initialization', () => {
@@ -273,7 +288,7 @@ describe('IntegrationTestOrchestrator', () => {
         timeout: 60000,
         retries: 1,
         generateReport: false,
-        outputDir: './test-results'
+        outputDir: getOutputDir()
       };
 
       const result = await orchestrator.executeTest('test-1', 'test', config);
@@ -290,7 +305,7 @@ describe('IntegrationTestOrchestrator', () => {
     it('should handle test not found', async () => {
       const config: TestExecutionConfig = {
         environment: 'test',
-        outputDir: './test-results'
+        outputDir: getOutputDir()
       };
 
       await expect(orchestrator.executeTest('nonexistent', 'test', config))
@@ -300,7 +315,7 @@ describe('IntegrationTestOrchestrator', () => {
     it('should handle environment not found', async () => {
       const config: TestExecutionConfig = {
         environment: 'nonexistent',
-        outputDir: './test-results'
+        outputDir: getOutputDir()
       };
 
       await expect(orchestrator.executeTest('test-1', 'nonexistent', config))
@@ -327,7 +342,7 @@ describe('IntegrationTestOrchestrator', () => {
         timeout: 60000,
         retries: 1,
         generateReport: false,
-        outputDir: './test-results'
+        outputDir: getOutputDir()
       };
 
       const summary = await orchestrator.executeSuite('suite-1', 'test', config);
@@ -344,7 +359,7 @@ describe('IntegrationTestOrchestrator', () => {
     it('should handle suite not found', async () => {
       const config: TestExecutionConfig = {
         environment: 'test',
-        outputDir: './test-results'
+        outputDir: getOutputDir()
       };
 
       await expect(orchestrator.executeSuite('nonexistent', 'test', config))
@@ -354,7 +369,7 @@ describe('IntegrationTestOrchestrator', () => {
     it('should prevent concurrent execution of same suite', async () => {
       const config: TestExecutionConfig = {
         environment: 'test',
-        outputDir: './test-results'
+        outputDir: getOutputDir()
       };
 
       // Start first execution
@@ -377,7 +392,7 @@ describe('IntegrationTestOrchestrator', () => {
     it('should filter tests by category', async () => {
       const config: TestExecutionConfig = {
         environment: 'test',
-        outputDir: './test-results',
+        outputDir: getOutputDir(),
         filters: {
           categories: ['e2e']
         }
@@ -392,7 +407,7 @@ describe('IntegrationTestOrchestrator', () => {
     it('should filter tests by tags', async () => {
       const config: TestExecutionConfig = {
         environment: 'test',
-        outputDir: './test-results',
+        outputDir: getOutputDir(),
         filters: {
           tags: ['smoke']
         }
@@ -405,7 +420,7 @@ describe('IntegrationTestOrchestrator', () => {
     it('should exclude specific tests', async () => {
       const config: TestExecutionConfig = {
         environment: 'test',
-        outputDir: './test-results',
+        outputDir: getOutputDir(),
         filters: {
           exclude: ['test-1']
         }
@@ -427,7 +442,7 @@ describe('IntegrationTestOrchestrator', () => {
     it('should report running status during execution', async () => {
       const config: TestExecutionConfig = {
         environment: 'test',
-        outputDir: './test-results'
+        outputDir: getOutputDir()
       };
 
       await orchestrator.discoverTests(mockDiscovery, ['./test/**/*.json']);
@@ -486,6 +501,143 @@ describe('IntegrationTestOrchestrator', () => {
       expect(testCaseAdded).toHaveBeenCalledWith({ testId: 'event-test' });
       expect(testSuiteAdded).toHaveBeenCalledWith({ suiteId: 'event-suite' });
       expect(testFixtureAdded).toHaveBeenCalledWith({ fixtureId: 'event-fixture' });
+    });
+  });
+
+  describe('runner lifecycle management', () => {
+    class LifecycleRunner implements TestRunner {
+      readonly id = 'lifecycle-runner';
+      readonly name = 'Lifecycle Runner';
+      readonly category = 'integration' as const;
+
+      setup = vi.fn(async () => {});
+      teardown = vi.fn(async () => {});
+      beforeTest = vi.fn(async () => {});
+      afterTest = vi.fn(async (_test: TestCase, _result: TestResult) => {});
+      runTest = vi.fn(async (test: TestCase, environment: TestEnvironment): Promise<TestResult> => ({
+        id: `result-${test.id}`,
+        testId: test.id,
+        status: 'passed',
+        startTime: new Date().toISOString(),
+        endTime: new Date().toISOString(),
+        duration: 5,
+        environment: environment.name,
+        steps: [],
+        screenshots: [],
+        logs: [],
+        metrics: {
+          networkCalls: 0,
+          databaseQueries: 0
+        },
+        artifacts: []
+      }));
+      runSuite = vi.fn(async () => {
+        throw new Error('Suite execution not supported');
+      });
+
+      canRun(): boolean {
+        return true;
+      }
+    }
+
+    class ThrowingLifecycleRunner extends LifecycleRunner {
+      runTest = vi.fn(async () => {
+        throw new Error('Run failure');
+      });
+    }
+
+    const lifecycleConfig = (runner: TestRunner): IntegrationTestConfig => ({
+      environments: [createMockEnvironment()],
+      defaultEnvironment: 'test',
+      runners: [runner],
+      reporters: [],
+      globalTimeout: 60000,
+      globalRetries: 1,
+      parallelSuites: false,
+      maxSuiteConcurrency: 1,
+      artifactRetention: { days: 7, maxSize: 100 },
+      notifications: { enabled: false, channels: [], onFailure: false, onSuccess: false }
+    });
+
+    const lifecycleTestCase = (id: string): TestCase => ({
+      id,
+      name: `Lifecycle Test ${id}`,
+      description: 'Verifies runner lifecycle hooks',
+      category: 'integration',
+      severity: 'major',
+      enabled: true,
+      preconditions: [],
+      steps: [],
+      expectedResults: ['Lifecycle hooks executed'],
+      fixtures: [],
+      dependencies: [],
+      tags: [],
+      metadata: {
+        complexity: 'low',
+        stability: 'stable',
+        lastUpdated: new Date().toISOString()
+      }
+    });
+
+    const createExecutionConfig = (): TestExecutionConfig => ({
+      environment: 'test',
+      parallel: false,
+      maxConcurrency: 1,
+      timeout: 60000,
+      retries: 0,
+      skipOnFailure: false,
+      failFast: false,
+      generateReport: false,
+      captureScreenshots: false,
+      recordVideo: false,
+      collectLogs: true,
+      measureCoverage: false,
+      outputDir: getOutputDir('lifecycle-results'),
+      reportFormat: ['json'],
+      filters: {}
+    });
+
+    it('should invoke setup, hooks, and teardown for successful runs', async () => {
+      const runner = new LifecycleRunner();
+      const lifecycleOrchestrator = new IntegrationTestOrchestrator(lifecycleConfig(runner));
+      await lifecycleOrchestrator.initialize();
+      lifecycleOrchestrator.addTestCase(lifecycleTestCase('lifecycle-success'));
+
+      const result = await lifecycleOrchestrator.executeTest(
+        'lifecycle-success',
+        'test',
+        createExecutionConfig(),
+      );
+
+      expect(result.status).toBe('passed');
+      expect(runner.setup).toHaveBeenCalledTimes(1);
+      expect(runner.beforeTest).toHaveBeenCalledTimes(1);
+      expect(runner.afterTest).toHaveBeenCalledTimes(1);
+      expect(runner.afterTest).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'lifecycle-success' }),
+        expect.objectContaining({ status: 'passed' })
+      );
+      expect(runner.teardown).toHaveBeenCalledTimes(1);
+    });
+
+    it('should still teardown and call afterTest when runTest throws', async () => {
+      const runner = new ThrowingLifecycleRunner();
+      const lifecycleOrchestrator = new IntegrationTestOrchestrator(lifecycleConfig(runner));
+      await lifecycleOrchestrator.initialize();
+      lifecycleOrchestrator.addTestCase(lifecycleTestCase('lifecycle-failure'));
+
+      const result = await lifecycleOrchestrator.executeTest(
+        'lifecycle-failure',
+        'test',
+        createExecutionConfig(),
+      );
+
+      expect(result.status).toBe('error');
+      expect(runner.setup).toHaveBeenCalledTimes(1);
+      expect(runner.beforeTest).toHaveBeenCalledTimes(1);
+      expect(runner.afterTest).toHaveBeenCalledTimes(1);
+      expect(runner.afterTest?.mock.calls[0]?.[1].status).toBe('error');
+      expect(runner.teardown).toHaveBeenCalledTimes(1);
     });
   });
 

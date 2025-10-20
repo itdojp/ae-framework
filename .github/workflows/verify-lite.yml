@@ -10,6 +10,9 @@ on:
 jobs:
   verify-lite:
     runs-on: ubuntu-latest
+    env:
+      # Integration retryはデフォルトで無効（1回のみ）。flake調査時は手動再実行で AE_INTEGRATION_RETRY を上書きする。
+      AE_INTEGRATION_RETRY: '1'
     steps:
       - name: Coverage policy (note)
         run: |

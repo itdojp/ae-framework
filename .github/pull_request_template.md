@@ -9,6 +9,7 @@ CI Labels (optional)
 - Add `run-security` to execute Security/Compliance checks
 - Add `ci-non-blocking` to allow non-critical checks to continue-on-error
 - Add `coverage:<pct>` to set coverage threshold (default 80)
+- For integration flake diagnostics, rerun the failing job with `AE_INTEGRATION_TRACE_HANDLES=1` (see `docs/testing/integration-runtime-helpers.md`)
 
 Checklist
 - [ ] Verify Lite passes locally (`pnpm types:check && pnpm lint && pnpm build`)

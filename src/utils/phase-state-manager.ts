@@ -62,7 +62,14 @@ export class PhaseStateManager {
   private state: PhaseState | null = null;
 
   constructor(projectRoot?: string) {
-    const root = projectRoot || process.cwd();
+    const envFile = process.env.AE_PHASE_STATE_FILE;
+    if (envFile && envFile.trim().length > 0) {
+      this.stateFilePath = path.resolve(envFile);
+      return;
+    }
+
+    const configuredRoot = projectRoot ?? process.env.AE_PHASE_STATE_ROOT;
+    const root = configuredRoot ? path.resolve(configuredRoot) : process.cwd();
     this.stateFilePath = path.join(root, '.ae', 'phase-state.json');
   }
 
