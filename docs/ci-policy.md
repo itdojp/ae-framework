@@ -14,7 +14,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - Comprehensive checks run on main and scheduled jobs
 
 ### Required Checks (PR blocking)
-- Verify Lite (types:check / lint / build)
+- Verify Lite (`test:ci:lite`=types:check / lint / build / conformance)
 - Quality Gates (development profile):
   - Lint baseline enforcement via `node scripts/quality/check-lint-summary.mjs`
   - TDD smoke validation via `node scripts/quality/tdd-smoke-check.mjs`
@@ -24,6 +24,11 @@ This document defines CI policies to keep PR experience fast and stable while ma
 ### Opt-in Labels
 - `ci-non-blocking`: run selected jobs with continue-on-error (traceability, model-check, contracts, security, etc.)
 - `run-security`: run heavy security jobs (Security Scanning, Dependency Audit, License Compliance, CodeQL)
+- `run-ci-extended`: trigger CI Extended workflow (`test:int`, property harness, MBT smoke, Pact smoke, mutation auto diff)
+- `run-integration`: request the integration subset of CI Extended (integration vitest + pact smoke)
+- `run-property`: execute property harness smoke within CI Extended
+- `run-mbt`: execute MBT smoke (`test:mbt:ci`) within CI Extended
+- `run-mutation`: execute mutation auto diff (extended pipeline)
 - `qa --light`: run QA in light mode (vitest -> `test:fast`); used in `ae-ci`
 - `ae-benchmark run --ci --light --dry-run`: benchmark config validation only in PRs (fast & stable)
 - `run-qa`: run `ae-ci` workflow’s `qa-bench` on PRs (default off)
@@ -90,6 +95,12 @@ This document defines CI policies to keep PR experience fast and stable while ma
   - Second batch: reintroduced `tests/traceability/**` (skipped smoke test only)
   - Third batch: reintroduced `tests/utils/circuit-breaker*.test.ts`（実装を整合させ全緑化）
   - Fourth batch: reintroduced `tests/utils/phase-1-validation.test.ts`（初期化を明示し外部状態依存を解消）
+
+### test:ci lite / extended
+- `test:ci:lite`: entry point for Verify Lite locally. Runs types:check / lint / build / conformance report to mirror the PR blocking suite.
+- `test:ci:extended`: runs Integration (`test:int`), property harness, `test:mbt:ci`, `pipelines:pact`, and finishes with `pipelines:mutation:quick` for local reproduction of the heavy suite.
+- `.github/workflows/ci-extended.yml`: triggered automatically on `main` pushes / nightly schedule, and opt-in for PRs via `run-ci-extended`. Use `run-integration` / `run-property` / `run-mbt` / `run-mutation` for subset execution.
+- Vitest-based stable profile remains available as `test:ci:stable` (used by Docker/Podman smoke images).
   - Fifth batch: reintroduced `tests/contracts/**`（contract validation はCI安定範囲に調整済）
 
 ### Security/Compliance
@@ -114,7 +125,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - main と定期実行（スケジュール）で包括的な検査を実施
 
 ### 必須チェック（PR ブロッキング）
-- Verify Lite（types:check / lint / build）
+- Verify Lite（`test:ci:lite` = types:check / lint / build / conformance）
 - Quality Gates（development プロファイル）:
   - `node scripts/quality/check-lint-summary.mjs` による lint ベースライン差分チェック
   - `node scripts/quality/tdd-smoke-check.mjs` による TDD スモーク検証
@@ -124,6 +135,11 @@ This document defines CI policies to keep PR experience fast and stable while ma
 ### ラベル運用（Opt-in）
 - `ci-non-blocking`: 一部ジョブ（traceability, model-check, contracts, security 等）を continue-on-error で実行し PR をブロックしない
 - `run-security`: 重いセキュリティ系（Security Scanning, Dependency Audit, License Compliance, CodeQL 等）を PR で実行
+- `run-ci-extended`: CI Extended ワークフローを起動（integration / property / MBT / pact / mutation auto diff のフルスイート）
+- `run-integration`: CI Extended の統合テスト＋pact のみを実行
+- `run-property`: CI Extended の property harness のみを実行
+- `run-mbt`: CI Extended の `test:mbt:ci` のみを実行
+- `run-mutation`: CI Extended の mutation auto diff のみを実行
 - `qa --light`: QA を軽量実行（vitest は `test:fast` 実行）。`ae-ci` の QA ステップに適用済み
 - `ae-benchmark run --ci --light --dry-run`: ベンチは PR では構成検証のみに留め、時間・安定性を優先
 - `run-qa`: `ae-ci` ワークフローの `qa-bench` を PR で実行（既定は非実行）
@@ -146,6 +162,12 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - 目的: Resilience/主要ユニットと軽量統合を即時検証。重い/環境依存テストは除外
 - 主な除外: `examples/**`, `**/__e2e__/**`, `tests/examples/**`, `tests/docker/**`, `tests/a11y/**`, `tests/property/**`, `tests/traceability/**`, `tests/security/**`, `tests/contracts/**`, `tests/integration/**`, `tests/resilience/integration.test.ts`, `tests/conformance/**`, `tests/cegis/**`, `tests/cli/**`, `tests/commands/**`, `tests/api/**`, `tests/tdd-setup.test.ts`
 - 再導入: 小PRでカテゴリ毎に緑化→除外解除。失敗時は即 revert 可能な粒度。第一弾として `tests/utils/**`、第二弾として `tests/traceability/**`（skip の軽量テストのみ）を再導入。
+
+### test:ci（ライト / 拡張）
+- `test:ci:lite`: Verify Lite のローカル実行口。types:check / lint / build / conformance report をまとめて実行し、PR ブロッキングの最小セットを再現。
+- `test:ci:extended`: Integration（`test:int`）/ property harness / `test:mbt:ci` / `pipelines:pact` を連続実行し、最後に `pipelines:mutation:quick` で mutation quick を叩くローカル向け統合スイート。
+- `.github/workflows/ci-extended.yml`: `run-ci-extended` で上記一式を PR から opt-in。`run-integration` / `run-property` / `run-mbt` / `run-mutation` で部分実行を選択でき、main push / schedule では常時稼働。
+- Vitest ベースの安定プロファイルは従来通り `test:ci:stable`（Docker/Podman smoke イメージで利用）として提供。
 
 ### QA CLI
 - `ae qa --light`: 軽量 QA 実行（`vitest` の `test:fast` を実行）。`ae-ci` の QA ステップで使用。

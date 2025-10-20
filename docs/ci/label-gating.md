@@ -8,6 +8,7 @@
 
 PR ラベルでゲートを段階的に強化するための方針です（既定は非ブロッキング）。
 - `enforce-artifacts`, `enforce-testing`, `enforce-coverage`, `coverage:<pct>`, `trace:<id>`, `pr-summary:detailed`
+- `run-ci-extended`, `run-integration`, `run-property`, `run-mbt`, `run-mutation`
 - 各ワークフローがラベルを読み取り、`continue-on-error` 等を切り替え
 
 詳細な動作は以下の英語セクションの Workflows/Automation を参照してください。
@@ -20,6 +21,11 @@ Labels
 - `enforce-testing`: make testing scripts (property/replay/BDD lint) blocking
 - `trace:<id>`: set TRACE_ID for focused runs in property/replay scripts
 - `pr-summary:detailed`: render a more detailed PR summary (vs. digest)
+- `run-ci-extended`: launch the heavy CI Extended workflow (integration, property, MBT, pact, mutation auto diff)
+- `run-integration`: run only the integration + pact portion of CI Extended
+- `run-property`: run only the property harness portion of CI Extended
+- `run-mbt`: run only the MBT smoke (`test:mbt:ci`) portion of CI Extended
+- `run-mutation`: run only the mutation auto diff step of CI Extended
 
 Workflows
 - validate-artifacts-ajv.yml: reads `enforce-artifacts` and toggles `continue-on-error`

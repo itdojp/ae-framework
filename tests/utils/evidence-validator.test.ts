@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { EvidenceValidator } from '../../src/utils/evidence-validator.js';
 
 describe('EvidenceValidator', () => {
@@ -6,6 +6,56 @@ describe('EvidenceValidator', () => {
 
   beforeEach(() => {
     validator = new EvidenceValidator();
+    vi.spyOn(validator as any, 'searchOfficialDocs').mockImplementation(async (claim: string) => {
+      if (!claim.trim()) return [];
+      return [
+        {
+          type: 'documentation',
+          source: 'MockDoc',
+          content: 'Relevant documentation snippet',
+          relevance: 0.8,
+        },
+      ];
+    });
+    vi.spyOn(validator as any, 'searchPackageDocs').mockResolvedValue([]);
+    vi.spyOn(validator as any, 'findCodeEvidence').mockImplementation(async (claim: string) => {
+      if (!claim.trim()) return [];
+      return [
+        {
+          type: 'code',
+          source: 'mock.ts',
+          content: 'const example = true;',
+          relevance: 0.6,
+        },
+      ];
+    });
+    vi.spyOn(validator as any, 'findUsagePatterns').mockResolvedValue([]);
+    vi.spyOn(validator as any, 'checkTestResults').mockImplementation(async (claim: string) => {
+      if (!claim.trim()) return [];
+      return [
+        {
+          type: 'test',
+          source: 'mock.test.ts',
+          content: 'All relevant tests passed',
+          relevance: 0.9,
+        },
+      ];
+    });
+    vi.spyOn(validator as any, 'checkStandards').mockImplementation(async (claim: string) => {
+      if (!claim.trim()) return [];
+      return [
+        {
+          type: 'standard',
+          source: 'Project Standards',
+          content: 'Follow internal coding standards',
+          relevance: 0.7,
+        },
+      ];
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('validateClaim', () => {
@@ -22,7 +72,7 @@ describe('EvidenceValidator', () => {
       expect(result.confidence).toBeGreaterThanOrEqual(0);
       expect(result.confidence).toBeLessThanOrEqual(1);
       expect(result.evidence).toBeInstanceOf(Array);
-    }, 10000);
+    }, 2000);
 
     it('should provide suggestions when confidence is low', async () => {
       const claim = 'Using unknown framework XYZ';
@@ -80,7 +130,7 @@ describe('EvidenceValidator', () => {
       
       expect(result).toBeDefined();
       // Keywords should exclude stop words like 'the', 'over'
-    }, 20000);
+    }, 2000);
   });
 
   describe('validateImplementation', () => {
@@ -156,7 +206,7 @@ describe('EvidenceValidator', () => {
       expect(result).toBeDefined();
       expect(result.evidence).toBeInstanceOf(Array);
       expect(result.confidence).toBeGreaterThanOrEqual(0);
-    }, 10000);
+    }, 2000);
 
     it('should handle solutions without code blocks', async () => {
       const problem = 'Need to improve performance';
@@ -229,7 +279,7 @@ describe('EvidenceValidator', () => {
       
       expect(result).toBeDefined();
       expect(result.evidence).toBeInstanceOf(Array);
-    }, 120000);
+    }, 3000);
 
     it('should handle special characters in claims', async () => {
       const claim = 'Use @decorator and #pragma for optimization';
@@ -275,7 +325,7 @@ describe('EvidenceValidator', () => {
         expect(result.confidence).toBeGreaterThanOrEqual(0);
         expect(result.confidence).toBeLessThanOrEqual(1);
       }
-    }, 10000);
+    }, 2000);
   });
 
   describe('Integration Tests', () => {

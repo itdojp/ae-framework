@@ -8,20 +8,24 @@
 
 PR 検証向けに決定的かつ高速なテスト実行を提供するプロファイルです。重い/不安定なスイートはラベルやナイトリーに退避します。
 
-- コマンド: `pnpm run test:ci` / `pnpm run test:ci:stable`
+- コマンド: `pnpm run test:ci` / `pnpm run test:ci:stable` / `pnpm run test:ci:lite`
 - 除外例: `**/system-integration.test.ts`
-- ワークフロー: PR は安定サブセット、E2E はラベル `run-e2e` またはスケジュールで実行
+- ワークフロー: PR は安定サブセット（Verify Lite = `test:ci:lite`）、拡張スイートは `ci-extended`（ラベル `run-ci-extended` / nightly）で実行
 
 This profile provides deterministic, faster test execution suitable for PR verification. Heavy or flaky suites are gated behind labels or nightly jobs.
 
 ## Commands
 - Full CI config: `pnpm run test:ci`
-- Stable subset: `pnpm run test:ci:stable`
+- Stable Vitest subset: `pnpm run test:ci:stable`
+- Verify Lite equivalent (types/lint/build/conformance): `pnpm run test:ci:lite`
+- Extended pipeline (integration/property/MBT/pact + mutation quick): `pnpm run test:ci:extended`
 
 `test:ci:stable` currently excludes:
 - `**/system-integration.test.ts`
 
 ## Usage in Workflows
+- Verify Lite (`.github/workflows/verify-lite.yml`) uses `test:ci:lite` to keep PR-blocking checks fast.
+- `.github/workflows/ci-extended.yml` orchestrates the heavy suites and runs on `main` pushes / nightly. Use labels (`run-ci-extended`, `run-integration`, `run-property`, `run-mbt`, `run-mutation`) to opt-in per PR.
 - For PR workflows aiming for reliability and speed, run `test:ci:stable` or target explicit suites (`test:unit`, `test:int`, `test:a11y`, `test:coverage`).
 - Keep Playwright/E2E runs label-gated (`run-e2e`) or scheduled/nightly.
 

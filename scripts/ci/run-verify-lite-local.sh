@@ -159,7 +159,7 @@ if pnpm -s tsx src/cli/index.ts conformance report \
     if ! CONFORMANCE_STATUS="$(node --input-type=module -e "import fs from 'node:fs'; let status = 'unknown'; try { const data = JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); status = data?.status ?? 'unknown'; } catch {} process.stdout.write(status);" "$CONFORMANCE_SUMMARY_PATH")"; then
       CONFORMANCE_STATUS="failure"
     fi
-    if ! CONFORMANCE_NOTES="$(node --input-type=module -e "import fs from 'node:fs'; let note = 'summary_parse_failed'; try { const data = JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); const runs = data?.runsAnalyzed ?? 0; const violations = data?.totals?.totalViolations ?? 0; note = \`runs=${runs};violations=${violations}\`; } catch {} process.stdout.write(note);" "$CONFORMANCE_SUMMARY_PATH")"; then
+    if ! CONFORMANCE_NOTES="$(node --input-type=module -e "import fs from 'node:fs'; let note = 'summary_parse_failed'; try { const data = JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); const runs = data?.runsAnalyzed ?? 0; const violations = data?.totals?.totalViolations ?? 0; note = \`runs=\${runs};violations=\${violations}\`; } catch {} process.stdout.write(note);" "$CONFORMANCE_SUMMARY_PATH")"; then
       CONFORMANCE_NOTES="summary_parse_failed"
     fi
   else

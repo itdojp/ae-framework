@@ -37,51 +37,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
-      - name: Prepare mutation auto diff args
-        id: vlite-mutation-args
-        run: |
-          set -euo pipefail
-          target_base="origin/main"
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            target_base="origin/${{ github.event.pull_request.base.ref }}"
-          fi
-          git fetch --no-tags --depth=1 origin "${target_base#origin/}" || true
-          {
-            echo "base_ref=${target_base}"
-            echo 'args<<__VL_MUT_ARGS__'
-            echo '--configFile'
-            echo 'configs/stryker.config.js'
-            echo '__VL_MUT_ARGS__'
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Run mutation auto diff (verify-lite)
-        id: vlite-mutation
-        uses: ./.github/actions/mutation-auto-diff
-        env:
-          STRYKER_TIME_LIMIT: '900'
-        with:
-          base-ref: ${{ steps.vlite-mutation-args.outputs.base_ref }}
-          quick: 'true'
-          extra-args: ${{ steps.vlite-mutation-args.outputs.args }}
-      - name: Detect pact-related changes (PR only)
-        id: pact-paths
-        run: |
-          WATCH_PATH_PATTERN='^(contracts/|src/api/|specs/openapi/|tests/contracts/)'
-
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            set -eo pipefail
-            BASE_SHA="${{ github.event.pull_request.base.sha }}"
-            git fetch origin "$BASE_SHA" --depth=1
-            CHANGED="$(git diff --name-only "$BASE_SHA"...HEAD || true)"
-            printf '%s\n' "$CHANGED" > /tmp/changed-files.txt
-            if printf '%s\n' "$CHANGED" | grep -E "$WATCH_PATH_PATTERN" >/dev/null; then
-              echo "pact=true" >> "$GITHUB_OUTPUT"
-            else
-              echo "pact=false" >> "$GITHUB_OUTPUT"
-            fi
-          else
-            echo "pact=true" >> "$GITHUB_OUTPUT"
-          fi
       - name: Run verify-lite pipeline
         env:
           VERIFY_LITE_KEEP_LINT_LOG: '1'
@@ -94,17 +49,6 @@ jobs:
           VERIFY_LITE_LINT_ENFORCE: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-verify-lite-lint') && '1' || '0' }}
         run: |
           pnpm run verify:lite
-      - name: Property-based smoke
-        run: pnpm test:property
-      - name: MBT smoke
-        run: pnpm test:mbt -- --runs=8 --depth=6
-      - name: Pact contract smoke
-        if: ${{ steps.pact-paths.outputs.pact == 'true' }}
-        run: pnpm pipelines:pact
-      - name: Pact contract smoke (skipped)
-        if: ${{ github.event_name == 'pull_request' && steps.pact-paths.outputs.pact == 'false' }}
-        run: |
-          echo 'Pact contract smoke skipped: no relevant contract changes detected.' >> "$GITHUB_STEP_SUMMARY"
       - name: Verify-lite lint baseline
         if: always()
         env:
@@ -195,36 +139,6 @@ jobs:
         run: |
           if [ -f scripts/summary/render-pr-summary.mjs ]; then node scripts/summary/render-pr-summary.mjs; fi
           [ -f artifacts/summary/PR_SUMMARY.md ] && cat artifacts/summary/PR_SUMMARY.md >> "$GITHUB_STEP_SUMMARY" || true
-      - name: Mutation survivors JSON
-        if: ${{ github.event_name == 'pull_request' }}
-        run: |
-          if [ -f reports/mutation/mutation.json ]; then
-            mkdir -p reports/mutation
-            node scripts/mutation/list-survivors.mjs --limit 50 > reports/mutation/survivors.json
-            survivors_for_summary="$(node scripts/mutation/list-survivors.mjs --limit 10)"
-            {
-              printf '%s\n' '## Mutation survivors (top 10)'
-              printf '%s\n' '```json'
-              printf '%s\n' "$survivors_for_summary"
-              printf '%s\n' '```'
-            } >> "$GITHUB_STEP_SUMMARY"
-          else
-            printf "%s\n" "No mutation report found; skipped survivors extraction." >> "$GITHUB_STEP_SUMMARY"
-          fi
-      - name: Upload mutation quick report
-        if: ${{ github.event_name == 'pull_request' && hashFiles('reports/mutation/mutation.json') != '' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: mutation-quick-report
-          path: |
-            reports/mutation/mutation.json
-            reports/mutation/index.html
-      - name: Upload mutation survivors artifact
-        if: ${{ github.event_name == 'pull_request' && hashFiles('reports/mutation/survivors.json') != '' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: mutation-survivors-json
-          path: reports/mutation/survivors.json
       - name: Upload verify-lite report
         if: always()
         uses: actions/upload-artifact@v4
@@ -245,35 +159,6 @@ jobs:
             node scripts/ci/render-verify-lite-summary.mjs verify-lite-run-summary.json >> "$GITHUB_STEP_SUMMARY"
           else
             echo 'Verify Lite run summary not generated.' >> "$GITHUB_STEP_SUMMARY"
-          fi
-      - name: Append property harness summary
-        if: always()
-        run: |
-          if [ -f artifacts/properties/summary.json ]; then
-            echo '## Property Harness' >> "$GITHUB_STEP_SUMMARY"
-            jq -r '
-              "Trace ID: \(.traceId)",
-              "Seed: \(.seed)",
-              "Runs: \(.runs)",
-              "Passed: \(.passed)",
-              (if .note then "Note: \(.note)" else empty end)
-            ' artifacts/properties/summary.json >> "$GITHUB_STEP_SUMMARY" || echo 'Failed to parse property summary.' >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo 'Property harness summary not generated.' >> "$GITHUB_STEP_SUMMARY"
-          fi
-      - name: Append MBT summary
-        if: always()
-        run: |
-          if [ -f artifacts/mbt/summary.json ]; then
-            echo '## MBT Harness' >> "$GITHUB_STEP_SUMMARY"
-            jq -r '
-              "Seed: \(.seed)",
-              "Runs: \(.runs)",
-              "Depth: \(.depth)",
-              "Violations: \(.violations)"
-            ' artifacts/mbt/summary.json >> "$GITHUB_STEP_SUMMARY" || echo 'Failed to parse MBT summary.' >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo 'MBT summary not generated.' >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Append lint summary (top rules)
         if: always()

@@ -62,13 +62,13 @@ export class PhaseStateManager {
   private state: PhaseState | null = null;
 
   constructor(projectRoot?: string) {
-    const envFile = process.env.AE_PHASE_STATE_FILE;
+    const envFile = process.env['AE_PHASE_STATE_FILE'];
     if (envFile && envFile.trim().length > 0) {
       this.stateFilePath = path.resolve(envFile);
       return;
     }
 
-    const configuredRoot = projectRoot ?? process.env.AE_PHASE_STATE_ROOT;
+    const configuredRoot = projectRoot ?? process.env['AE_PHASE_STATE_ROOT'];
     const root = configuredRoot ? path.resolve(configuredRoot) : process.cwd();
     this.stateFilePath = path.join(root, '.ae', 'phase-state.json');
   }
@@ -359,9 +359,9 @@ export class PhaseStateManager {
    * Add metadata to state
    */
   async addMetadata(key: string, value: any): Promise<void> {
-    const state = await this.getCurrentState();
+    let state = await this.getCurrentState();
     if (!state) {
-      throw new Error('No project state found.');
+      state = await this.initializeProject(undefined, true);
     }
 
     if (!state.metadata) {
