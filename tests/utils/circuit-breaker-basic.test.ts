@@ -1,19 +1,12 @@
-import { describe, test, expect, beforeEach, vi, beforeAll, afterAll } from 'vitest';
+import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { formatGWT } from '../utils/gwt-format';
 import { CircuitBreaker, CircuitState } from '../../src/utils/circuit-breaker.js';
 
 describe('CircuitBreaker - Basic Functionality', () => {
   let circuitBreaker: CircuitBreaker;
-  
-  beforeAll(() => {
-    vi.useFakeTimers();
-  });
-
-  afterAll(() => {
-    vi.useRealTimers();
-  });
 
   beforeEach(() => {
+    vi.useFakeTimers();
     circuitBreaker = new CircuitBreaker('test-breaker', {
       failureThreshold: 3,
       successThreshold: 2,
@@ -21,6 +14,10 @@ describe('CircuitBreaker - Basic Functionality', () => {
       monitoringWindow: 60000,
       enableMonitoring: true
     });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   test(formatGWT('new breaker', 'constructed', 'starts in CLOSED'), () => {

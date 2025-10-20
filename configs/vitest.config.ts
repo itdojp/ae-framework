@@ -2,9 +2,11 @@ import { defineConfig, defineProject } from 'vitest/config'
 
 const mutationScope = process.env.VITEST_MUTATION_SCOPE;
 const isCI = process.env.CI === '1';
+const isStryker = Boolean(process.env.STRYKER_MUTATOR);
+const isCiLike = isCI || isStryker;
 
 function withCiDefaults(config: Record<string, any>) {
-  if (!isCI) {
+  if (!isCiLike) {
     return config;
   }
   return {
@@ -79,12 +81,12 @@ export const projectConfigs = mutationScope === 'runtime-guard'
 export const rootTestConfig = {
   ...baseTestConfig,
   reporters: ['default'],
-  setupFiles: ['tests/a11y/setup.js'],
+  setupFiles: ['tests/setup/ci-vitest.ts', 'tests/a11y/setup.js'],
   pool: baseTestConfig.pool ?? 'threads',
   maxThreads: baseTestConfig.maxThreads ?? 4,
 };
 
-if (isCI) {
+if (isCiLike) {
   rootTestConfig.pool = 'forks';
   rootTestConfig.threads = false;
   rootTestConfig.watch = false;

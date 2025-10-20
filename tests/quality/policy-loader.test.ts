@@ -6,11 +6,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
-import { fileURLToPath } from 'url';
+import { createTempDir, writeTempJson, rmrf } from '../_helpers/tmpfs.js';
 import { QualityPolicyLoader, QualityGateResult } from '../../src/quality/policy-loader.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Mock quality policy for testing
 const mockPolicy = {
@@ -130,21 +128,18 @@ const mockPolicy = {
 };
 
 describe('Quality Policy Loader', () => {
+  let tempPolicyDir: string;
   let tempPolicyPath: string;
   let loader: QualityPolicyLoader;
 
   beforeEach(() => {
-    // Create temporary policy file
-    tempPolicyPath = path.join(__dirname, 'test-policy.json');
-    fs.writeFileSync(tempPolicyPath, JSON.stringify(mockPolicy, null, 2));
+    tempPolicyDir = createTempDir('quality-policy-test-');
+    tempPolicyPath = writeTempJson(tempPolicyDir, 'test-policy.json', mockPolicy);
     loader = new QualityPolicyLoader(tempPolicyPath);
   });
 
   afterEach(() => {
-    // Clean up temporary file
-    if (fs.existsSync(tempPolicyPath)) {
-      fs.unlinkSync(tempPolicyPath);
-    }
+    rmrf(tempPolicyDir);
   });
 
   describe('Policy Loading', () => {
