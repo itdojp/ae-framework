@@ -122,5 +122,6 @@ node scripts/pipelines/sync-test-results.mjs --store
 - `gh run rerun <runId>` 実行時、キャッシュがヒットすれば自動的に成果物を展開し、その後のステップで再計算をスキップできます。
 - キャッシュキーは `ci-heavy-${{ runner.os }}-${{ github.sha }}` を基にしているため、同一コミットの再実行で有効です。別ブランチやコミットに跨ぐ再利用が必要な場合はキー方針を見直すか、ラベル経由での分離運用を検討してください。
 - ローカルで更新した成果物を共有したい場合は GitHub Actions の rerun ではなく、ブランチ／PR 内で `node scripts/pipelines/sync-test-results.mjs --store` を一度実行してから push し、キャッシュを更新させてください。
+- スケジュール実行（`github.event_name == 'schedule'`）では `reports/heavy-test-trends-history/<timestamp>.json` が自動生成され、アーティファクト `heavy-test-trends-history`（保持 30 日）として保存されます。JSON 内の `context` フィールドに runId / runNumber / SHA などの GitHub Actions 情報が含まれるため、履歴解析や可視化に活用できます。
 
 この仕組みを活用することで、MBT や mutation quick の長時間処理を繰り返し実行せず、再検証やレポート整合性の確認を効率化できます。
