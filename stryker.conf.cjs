@@ -1,3 +1,5 @@
+/* eslint-env node */
+/* eslint-disable no-undef */
 /** @type {import('@stryker-mutator/api/core').StrykerOptions} */
 module.exports = {
   packageManager: 'pnpm',
@@ -16,6 +18,7 @@ module.exports = {
   coverageAnalysis: 'perTest',
   timeoutMS: 120000,
   tempDirName: '.stryker-tmp',
+  ignoreStatic: true,
   reporters: ['html', 'progress', 'dashboard'],
   plugins: ['@stryker-mutator/vitest-runner'],
   disableTypeChecks: '{src,tests}/**/*.{ts,tsx,js,jsx}',

@@ -566,7 +566,7 @@ export class IntegrationTestingCli {
             });
           }
         } else {
-          console.log('Reports directory does not exist. Run tests to generate reports.');
+          console.log('No reports found in the reports directory. Run tests to generate reports.');
         }
       } catch (error) {
                 console.error(chalk.red(`❌ Failed to list reports: ${toMessage(error)}`));

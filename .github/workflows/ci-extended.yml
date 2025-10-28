@@ -100,6 +100,24 @@ jobs:
         if: ${{ steps.flags.outputs.should_run == 'true' }}
         run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
+      - name: Restore heavy test cache
+        if: ${{ steps.flags.outputs.should_run == 'true' }}
+        id: restore-heavy
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/test-results
+          key: ci-heavy-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            ci-heavy-${{ runner.os }}-
+
+      - name: Rehydrate cached test artifacts
+        if: ${{ steps.flags.outputs.should_run == 'true' && steps.restore-heavy.outputs.cache-hit == 'true' }}
+        run: node scripts/pipelines/sync-test-results.mjs --restore
+
+      - name: Snapshot heavy test baseline
+        if: ${{ steps.flags.outputs.should_run == 'true' }}
+        run: node scripts/pipelines/sync-test-results.mjs --snapshot
+
       - name: Run integration tests
         if: ${{ steps.flags.outputs.run_integration == 'true' }}
         run: pnpm run test:int
@@ -247,3 +265,27 @@ jobs:
             echo "- run_mbt: ${RUN_MBT}"
             echo "- run_mutation: ${RUN_MUTATION}"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Compare heavy test trends
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' }}
+        run: node scripts/pipelines/compare-test-trends.mjs
+
+      - name: Upload heavy test trend report
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: heavy-test-trends
+          path: reports/heavy-test-trends.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Stage test results for caching
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' }}
+        run: node scripts/pipelines/sync-test-results.mjs --store
+
+      - name: Save heavy test cache
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' && steps.restore-heavy.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/test-results
+          key: ci-heavy-${{ runner.os }}-${{ github.sha }}

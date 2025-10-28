@@ -29,6 +29,8 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - `run-property`: execute property harness smoke within CI Extended
 - `run-mbt`: execute MBT smoke (`test:mbt:ci`) within CI Extended
 - `run-mutation`: execute mutation auto diff (extended pipeline)
+
+CI Extended restores cached heavy test artifacts (`.cache/test-results`) when rerunning; the cache is refreshed at the end of each run via `node scripts/pipelines/sync-test-results.mjs --store`. Check or warm the cache locally with `--status` / `--restore` before dispatching reruns. Nightly runs also call `node scripts/pipelines/compare-test-trends.mjs` to produce a Markdown diff (posted to the Step Summary) and persist `reports/heavy-test-trends.json`, which is uploaded as the `heavy-test-trends` artifact for historical comparison.
 - `qa --light`: run QA in light mode (vitest -> `test:fast`); used in `ae-ci`
 - `ae-benchmark run --ci --light --dry-run`: benchmark config validation only in PRs (fast & stable)
 - `run-qa`: run `ae-ci` workflow’s `qa-bench` on PRs (default off)
@@ -140,6 +142,8 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - `run-property`: CI Extended の property harness のみを実行
 - `run-mbt`: CI Extended の `test:mbt:ci` のみを実行
 - `run-mutation`: CI Extended の mutation auto diff のみを実行
+
+CI Extended 実行後は heavy テスト成果物を `.cache/test-results` に保存し、再実行時に自動復元します。必要に応じて `node scripts/pipelines/sync-test-results.mjs --status` / `--restore` でキャッシュの状態を確認・展開してから再実行できます。差分の確認は `node scripts/pipelines/compare-test-trends.mjs` を実行すると Markdown と JSON で出力され、Step Summary にも自動追記されます。
 - `qa --light`: QA を軽量実行（vitest は `test:fast` 実行）。`ae-ci` の QA ステップに適用済み
 - `ae-benchmark run --ci --light --dry-run`: ベンチは PR では構成検証のみに留め、時間・安定性を優先
 - `run-qa`: `ae-ci` ワークフローの `qa-bench` を PR で実行（既定は非実行）
@@ -166,6 +170,8 @@ This document defines CI policies to keep PR experience fast and stable while ma
 ### test:ci（ライト / 拡張）
 - `test:ci:lite`: Verify Lite のローカル実行口。types:check / lint / build / conformance report をまとめて実行し、PR ブロッキングの最小セットを再現。
 - `test:ci:extended`: Integration（`test:int`）/ property harness / `test:mbt:ci` / `pipelines:pact` を連続実行し、最後に `pipelines:mutation:quick` で mutation quick を叩くローカル向け統合スイート。
+- Heavy test artifacts for the extended suite are cached under `.cache/test-results`; run `node scripts/pipelines/sync-test-results.mjs --restore` before reruns to reuse survivors, MBT summaries, and property harness outputs, then `--store` after local runs to refresh the cache.
+- 拡張スイートで生成される成果物は `.cache/test-results` にキャッシュされるため、再実行前に `node scripts/pipelines/sync-test-results.mjs --restore` を実行すると mutation survivors / MBT summary / property summary を再利用できます（ローカル実行後は `--store` で更新）。
 - `.github/workflows/ci-extended.yml`: `run-ci-extended` で上記一式を PR から opt-in。`run-integration` / `run-property` / `run-mbt` / `run-mutation` で部分実行を選択でき、main push / schedule では常時稼働。
 - Vitest ベースの安定プロファイルは従来通り `test:ci:stable`（Docker/Podman smoke イメージで利用）として提供。
 
