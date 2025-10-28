@@ -39,7 +39,7 @@
 ## 次のアクション候補
 1. [ ] `docs/ci-policy.md` / `docs/ci/label-gating.md` を刷新し、新ラベルと実行モード （stable vs extended）を明文化。  
 2. [ ] 静的ミュートを無視したままにせず、対象箇所へ追加テスト or 設計見直しを行うための follow-up プランを整理する。  
-3. [ ] Nightly トレンド比較結果を成果物（JSON/Markdown）として保存し、長期的な履歴を可視化する。  
+3. [ ] Nightly トレンド比較結果を成果物（JSON/Markdown）として保存し、長期的な履歴を可視化する（案: `docs/ci/heavy-test-trend-archive.md` を参照）。  
 
 ## 参考リンク
 - Issue #1005: Test Stability Issues - Flaky Test Resolution and CI Hardening

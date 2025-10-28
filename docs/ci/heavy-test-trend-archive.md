@@ -1,0 +1,77 @@
+# Heavy Test Trend Archive Requirements
+
+## 目的
+- Mutation quick / Property harness / MBT smoke などの heavy テスト結果を Nightly で継続的に追跡し、性能・品質退行を早期検知する。
+- `.cache/test-results` に蓄えた成果物を再利用しつつ、`reports/heavy-test-trends.json` を履歴として収集・可視化できるようにする。
+- ISSUE #1160 フェーズD（特に #1005 Phase3）で掲げている「CI 安定化・計測強化」の次ステップとして、基盤要件を整理する。
+
+## 現状の実装 (2025-10-28 時点)
+- `ci-extended.yml` は以下の流れで heavy テスト成果物を扱う（PR #1192）:
+  1. `actions/cache/restore` で `.cache/test-results` を復元
+  2. `node scripts/pipelines/sync-test-results.mjs --restore` と `--snapshot` で baseline (`.cache/test-results-baseline`) を準備
+  3. heavy スイート（integration/property/MBT/mutation）を実行
+  4. `node scripts/pipelines/compare-test-trends.mjs` で baseline vs current の Markdown/JSON を生成 (`reports/heavy-test-trends.json`)
+  5. `node scripts/pipelines/sync-test-results.mjs --store` で最新結果をキャッシュへ格納
+  6. `actions/upload-artifact` で `heavy-test-trends` アーティファクトを 14 日保持
+- `reports/heavy-test-trends.json` は単一ランの比較結果のみ保持（最新 1 件）。長期履歴は別途保管されない。
+- Baseline は `.cache/test-results-baseline` 内で最新スナップショットを上書きするため、複数日分は残らない。
+
+## 既知の課題
+- 「直近ランとの差分」は把握できるが、「週次・月次トレンド」が追跡できない。
+- Nightly / Scheduled 実行で `heavy-test-trends` アーティファクトをダウンロードしない限り、過去結果が失われる。
+- `.cache/test-results` のキーが `ci-heavy-${ runner.os }-${ github.sha }` のため、main の連続実行では新しいキャッシュが毎回作成され、履歴が散逸する。
+- 可視化手段が Step Summary の Markdown と JSON のみであり、ダッシュボードや CSV などの二次利用が想定されていない。
+
+## Nightly アーカイブに必要な要件
+
+### 機能要件
+1. **履歴保存**  
+   - Nightly / schedule 実行ごとに `reports/heavy-test-trends.json` のコピーを日付付きで保存する。  
+   - 保存先候補:  
+     - (A) リポジトリ内ヒストリーファイル（例: `reports/heavy-test-trends/history/2025-10-28.json` を生成してコミット/PR）  
+     - (B) GitHub Artifacts (e.g. `heavy-test-trends-YYYYMMDD.json`, retention ≥ 30 日)  
+     - (C) 外部ストレージ (S3 / GCS / Supabase 等) に API 経由でアップロード  
+   - 初期段階では (B) を優先し、手動ダウンロード可能な形で履歴を確保する。将来 (A) で差分 PR を自動作成する案も検討。
+2. **Baseline 運用**  
+   - Nightly 開始時に「前回 Nightly の成果物」を baseline として復元できること。  
+   - キャッシュキーを `ci-heavy-nightly-${ runner.os }` など「コミットハッシュ非依存」に変更する案を検討し、Nightly 間で継続利用できるようにする。
+3. **メタデータ付与**  
+   - JSON 出力に `runId`, `commit`, `workflow`, `branch`, `timestamp` などのメタ情報を付与し、履歴データ間の参照性を高める。  
+   - `compare-test-trends.mjs` に追加フィールドを渡す or Nightly workflow 側でラップ JSON を生成する。
+4. **通知/可視化フック**  
+   - Δ が閾値を超えた場合に issue/Slack 通知を出す設計を検討（例: mutation score < 95%、MBT violations > 0 など）。  
+   - 将来的に Observable / Grafana での可視化を想定し、NDJSON or CSV への変換スクリプトを用意する。
+
+### 非機能要件
+1. **保持期間**: 最低 30 日分の履歴を保持し、古いアーティファクトは自動削除。手動でダウンロードする場合は README に手順を記載。  
+2. **再実行耐性**: rerun 時も同じ日付ファイルを上書き・追記できるよう、workflow dispatch で `RUN_ID` を含めたファイル名規則を定義。  
+3. **コスト/時間**: 既存の CI Extended と同じ heavy テストを使うため、Nightly では `ci-extended.yml` を `workflow_call`（または `uses`）で再利用し、追加のジョブ時間を最小化する。  
+4. **アクセス性**: 開発者がローカルで `node scripts/pipelines/sync-test-results.mjs --restore` → `compare-test-trends.mjs -o reports/heavy-test-trends.<date>.json` を実行し、Nightly と同じ出力形式で再現できるようにする。
+
+## Nightly フロー案（ラフ案）
+1. `nightly.yml` から `workflow_call` で `ci-extended.yml` を再利用する（main 最新コミットを対象に実行）。  
+2. heavy suite 完了後に以下を追加:
+   ```yaml
+   - name: Archive heavy test trend (JSON)
+     run: |
+       DATE=$(date -u +'%Y-%m-%dT%H-%M-%SZ')
+       mkdir -p reports/heavy-test-trends-history
+       cp reports/heavy-test-trends.json "reports/heavy-test-trends-history/${DATE}.json"
+   - name: Upload heavy trend history
+     uses: actions/upload-artifact@v4
+     with:
+       name: heavy-test-trends-history
+       path: reports/heavy-test-trends-history/
+       retention-days: 30
+   ```
+3. 将来: 上記 JSON をまとめた `heavy-test-trends.ndjson` を生成し、Grafana / Observable Notebook に連携。
+
+## 次ステップ候補
+1. キャッシュキー & メタデータ改善（`ci-heavy-nightly-*`、`compare-test-trends` へのメタ情報追加）。  
+2. Nightly workflow での履歴アーカイブ実装（最初は GitHub Artifact ベース）。  
+3. 収集データの可視化 PoC（Observable Notebook or static Markdown レポート生成）。  
+4. 通知基準（閾値）と Slack/Issue 連携の設計。
+
+---
+
+最新状況や決定事項は Issue #1005 / #1160 に同期し、実装着手時には本ドキュメントを更新する。
