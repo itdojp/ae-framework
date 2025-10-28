@@ -243,12 +243,32 @@ async function main() {
 
   const jsonReport = {
     generatedAt: new Date().toISOString(),
+    context: collectGithubContext(),
     entries: comparisons,
   };
   const outputPath = path.resolve(repoRoot, args.jsonOutput);
   await mkdir(path.dirname(outputPath), { recursive: true });
   await writeFile(outputPath, JSON.stringify(jsonReport, null, 2), 'utf8');
   console.log(`Trend comparison JSON written to ${path.relative(repoRoot, outputPath)}`);
+}
+
+function collectGithubContext() {
+  const context = {
+    eventName: process.env.GITHUB_EVENT_NAME ?? null,
+    workflow: process.env.GITHUB_WORKFLOW ?? null,
+    job: process.env.GITHUB_JOB ?? null,
+    runId: process.env.GITHUB_RUN_ID ?? null,
+    runNumber: process.env.GITHUB_RUN_NUMBER ?? null,
+    runAttempt: process.env.GITHUB_RUN_ATTEMPT ?? null,
+    repository: process.env.GITHUB_REPOSITORY ?? null,
+    sha: process.env.GITHUB_SHA ?? null,
+    ref: process.env.GITHUB_REF ?? null,
+    actor: process.env.GITHUB_ACTOR ?? null,
+  };
+  if (Object.values(context).every(value => value === null)) {
+    return null;
+  }
+  return context;
 }
 
 function parseArgs(argv) {

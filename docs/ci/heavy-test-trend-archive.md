@@ -50,7 +50,7 @@
 
 ## Nightly フロー案（ラフ案）
 1. `nightly.yml` から `workflow_call` で `ci-extended.yml` を再利用する（main 最新コミットを対象に実行）。  
-2. heavy suite 完了後に以下を追加:
+2. heavy suite 完了後に以下を追加（スケジュール実行のみ archive する条件付き）:
    ```yaml
    - name: Archive heavy test trend (JSON)
      run: |
@@ -78,6 +78,10 @@
 
 初期案では A（`workflow_call` を追加）を採用するのが最小の修正で済む。Nightly 実行時は `workflow_call` に渡す inputs として「重いテスト実行を必ず有効化」「アーカイブをオンにするフラグ」などを追加し、`Determine execution flags` ステップで `RUN_EXTENDED=true` を強制する分岐を設ける。  
 将来的に B または C へ移行する場合は、本ドキュメントに手順と影響範囲を追記する。
+
+### メタデータ
+- `compare-test-trends.mjs` は `generatedAt` に加え、GitHub Actions の runId/runNumber/sha/ref などを `context` フィールドに自動付与する。  
+- スケジュール実行で生成された `reports/heavy-test-trends-history/<timestamp>.json` には同じ `context` 情報が含まれるため、後段で履歴解析する際に run 単位で突合できる。
 
 ## 次ステップ候補
 1. キャッシュキー & メタデータ改善（`ci-heavy-nightly-*`、`compare-test-trends` へのメタ情報追加）。  

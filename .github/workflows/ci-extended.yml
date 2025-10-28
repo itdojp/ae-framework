@@ -270,6 +270,20 @@ jobs:
         if: ${{ always() && steps.flags.outputs.should_run == 'true' }}
         run: node scripts/pipelines/compare-test-trends.mjs
 
+      - name: Archive heavy test trend history
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' && github.event_name == 'schedule' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f reports/heavy-test-trends.json ]; then
+            echo "Trend report not generated; skipping archive."
+            exit 0
+          fi
+          mkdir -p reports/heavy-test-trends-history
+          timestamp="$(date -u +'%Y-%m-%dT%H-%M-%SZ')"
+          cp reports/heavy-test-trends.json "reports/heavy-test-trends-history/${timestamp}.json"
+          printf 'Archived heavy test trend snapshot: %s\n' "${timestamp}"
+
       - name: Upload heavy test trend report
         if: ${{ always() && steps.flags.outputs.should_run == 'true' }}
         uses: actions/upload-artifact@v4
@@ -282,6 +296,15 @@ jobs:
       - name: Stage test results for caching
         if: ${{ always() && steps.flags.outputs.should_run == 'true' }}
         run: node scripts/pipelines/sync-test-results.mjs --store
+
+      - name: Upload heavy test trend history
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' && github.event_name == 'schedule' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: heavy-test-trends-history
+          path: reports/heavy-test-trends-history
+          if-no-files-found: ignore
+          retention-days: 30
 
       - name: Save heavy test cache
         if: ${{ always() && steps.flags.outputs.should_run == 'true' && steps.restore-heavy.outputs.cache-hit != 'true' }}
