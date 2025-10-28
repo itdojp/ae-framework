@@ -66,6 +66,19 @@
    ```
 3. 将来: 上記 JSON をまとめた `heavy-test-trends.ndjson` を生成し、Grafana / Observable Notebook に連携。
 
+### ci-extended 再利用方針の検討
+
+`ci-extended.yml` を Nightly から再利用する方法としては以下の選択肢がある。現状のラベル判定ロジックや restore/cache 処理との整合性を踏まえて決定する。
+
+| 方針 | 概要 | メリット | 懸念点 |
+|------|------|-----------|--------|
+| A. `workflow_call` を既存 `ci-extended.yml` に追加 | `on: [pull_request, push, schedule, workflow_dispatch, workflow_call]` とし、Nightly から `uses: ./.github/workflows/ci-extended.yml` で呼び出す | 単一ファイルでロジックを共有できる。Nightly 側は inputs/secret を渡すだけで済む | `workflow_call` 実行時の `github.event_name` は `workflow_call` になるため、ラベルベースの条件判定を見直す必要がある（ただし `!= pull_request` 分岐でフル実行するため影響は軽微）。 |
+| B. `ci-extended.yml` の job を `workflow_call` 専用ファイルに切り出し (`ci-extended-job.yml`) | 既存 `ci-extended.yml` は従来トリガーのまま、Nightly からは切り出した再利用 workflow を呼ぶ | PR/PUSH 等の既存挙動に影響しない。Nightly 用に別 inputs を定義しやすい | 切り出し後の同期コストが発生。重複更新リスク。 |
+| C. Composite Action 化 | `./.github/actions/run-ci-extended` に処理をまとめ、既存 `ci-extended` や Nightly から参照 | ワークフローファイルの記述を簡素化できる | 大量の `run` ステップ（cache/save/summary 等）を composite 内に移すとロギングが追いづらくなる。環境変数や `if` 条件の互換性を再調整する必要がある。 |
+
+初期案では A（`workflow_call` を追加）を採用するのが最小の修正で済む。Nightly 実行時は `workflow_call` に渡す inputs として「重いテスト実行を必ず有効化」「アーカイブをオンにするフラグ」などを追加し、`Determine execution flags` ステップで `RUN_EXTENDED=true` を強制する分岐を設ける。  
+将来的に B または C へ移行する場合は、本ドキュメントに手順と影響範囲を追記する。
+
 ## 次ステップ候補
 1. キャッシュキー & メタデータ改善（`ci-heavy-nightly-*`、`compare-test-trends` へのメタ情報追加）。  
 2. Nightly workflow での履歴アーカイブ実装（最初は GitHub Artifact ベース）。  
