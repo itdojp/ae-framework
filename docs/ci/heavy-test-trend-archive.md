@@ -13,13 +13,14 @@
   4. `node scripts/pipelines/compare-test-trends.mjs` で baseline vs current の Markdown/JSON を生成 (`reports/heavy-test-trends.json`)
   5. `node scripts/pipelines/sync-test-results.mjs --store` で最新結果をキャッシュへ格納
   6. `actions/upload-artifact` で `heavy-test-trends` アーティファクトを 14 日保持
+- スケジュール実行時は heavy テストトレンドを `reports/heavy-test-trends-history/<timestamp>.json` に保存し、アーティファクト `heavy-test-trends-history`（保持 30 日）として公開。  
+- `.cache/test-results` はイベントに応じたキャッシュキーを使用し、Pull Request / Push では `ci-heavy-${ runner.os }-${ github.sha }`、スケジュール実行では `ci-heavy-${ runner.os }-schedule` を用いる。
 - `reports/heavy-test-trends.json` は単一ランの比較結果のみ保持（最新 1 件）。長期履歴は別途保管されない。
 - Baseline は `.cache/test-results-baseline` 内で最新スナップショットを上書きするため、複数日分は残らない。
 
 ## 既知の課題
 - 「直近ランとの差分」は把握できるが、「週次・月次トレンド」が追跡できない。
 - Nightly / Scheduled 実行で `heavy-test-trends` アーティファクトをダウンロードしない限り、過去結果が失われる。
-- `.cache/test-results` のキーが `ci-heavy-${ runner.os }-${ github.sha }` のため、main の連続実行では新しいキャッシュが毎回作成され、履歴が散逸する。
 - 可視化手段が Step Summary の Markdown と JSON のみであり、ダッシュボードや CSV などの二次利用が想定されていない。
 
 ## Nightly アーカイブに必要な要件
@@ -33,8 +34,8 @@
      - (C) 外部ストレージ (S3 / GCS / Supabase 等) に API 経由でアップロード  
    - 初期段階では (B) を優先し、手動ダウンロード可能な形で履歴を確保する。将来 (A) で差分 PR を自動作成する案も検討。
 2. **Baseline 運用**  
-   - Nightly 開始時に「前回 Nightly の成果物」を baseline として復元できること。  
-   - キャッシュキーを `ci-heavy-nightly-${ runner.os }` など「コミットハッシュ非依存」に変更する案を検討し、Nightly 間で継続利用できるようにする。
+   - ✅ スケジュール実行時は `.cache/test-results` を `ci-heavy-${ runner.os }-schedule` で共有し、前回 Nightly の成果物を baseline として復元できる。  
+   - Pull Request / Push は従来通りコミット SHA ベースのキーを利用し、異なるイベント間での衝突を防ぐ。
 3. **メタデータ付与**  
    - JSON 出力に `runId`, `commit`, `workflow`, `branch`, `timestamp` などのメタ情報を付与し、履歴データ間の参照性を高める。  
    - `compare-test-trends.mjs` に追加フィールドを渡す or Nightly workflow 側でラップ JSON を生成する。
@@ -84,10 +85,10 @@
 - スケジュール実行で生成された `reports/heavy-test-trends-history/<timestamp>.json` には同じ `context` 情報が含まれるため、後段で履歴解析する際に run 単位で突合できる。
 
 ## 次ステップ候補
-1. キャッシュキー & メタデータ改善（`ci-heavy-nightly-*`、`compare-test-trends` へのメタ情報追加）。  
-2. Nightly workflow での履歴アーカイブ実装（最初は GitHub Artifact ベース）。  
-3. 収集データの可視化 PoC（Observable Notebook or static Markdown レポート生成）。  
-4. 通知基準（閾値）と Slack/Issue 連携の設計。
+1. 収集データの可視化 PoC（Observable Notebook or static Markdown レポート生成）。  
+2. 通知基準（閾値）と Slack/Issue 連携の設計。  
+3. Nightly 以外（手動 dispatch など）で履歴保存を有効化するかの検討。  
+4. `.cache/test-results-baseline` のローテーションやサイズ制御ルール整備。
 
 ---
 

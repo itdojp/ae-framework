@@ -100,15 +100,35 @@ jobs:
         if: ${{ steps.flags.outputs.should_run == 'true' }}
         run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
+      - name: Determine heavy test cache key
+        if: ${{ steps.flags.outputs.should_run == 'true' }}
+        id: heavy-cache-key
+        shell: bash
+        run: |
+          set -euo pipefail
+          prefix="ci-heavy-${{ runner.os }}"
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            key="${prefix}-schedule"
+            restore_keys="${prefix}-schedule"$'\n'"${prefix}-"
+          else
+            key="${prefix}-${GITHUB_SHA}"
+            restore_keys="${prefix}-"
+          fi
+          {
+            echo "key=${key}"
+            echo "restore_keys<<__RESTORE__"
+            printf '%s\n' "${restore_keys}"
+            echo "__RESTORE__"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Restore heavy test cache
         if: ${{ steps.flags.outputs.should_run == 'true' }}
         id: restore-heavy
         uses: actions/cache/restore@v4
         with:
           path: .cache/test-results
-          key: ci-heavy-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            ci-heavy-${{ runner.os }}-
+          key: ${{ steps.heavy-cache-key.outputs.key }}
+          restore-keys: ${{ steps.heavy-cache-key.outputs.restore_keys }}
 
       - name: Rehydrate cached test artifacts
         if: ${{ steps.flags.outputs.should_run == 'true' && steps.restore-heavy.outputs.cache-hit == 'true' }}
@@ -311,4 +331,4 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: .cache/test-results
-          key: ci-heavy-${{ runner.os }}-${{ github.sha }}
+          key: ${{ steps.heavy-cache-key.outputs.key }}
