@@ -125,3 +125,6 @@ node scripts/pipelines/sync-test-results.mjs --store
 - スケジュール実行（`github.event_name == 'schedule'`）では `reports/heavy-test-trends-history/<timestamp>.json` が自動生成され、アーティファクト `heavy-test-trends-history`（保持 30 日）として保存されます。JSON 内の `context` フィールドに runId / runNumber / SHA などの GitHub Actions 情報が含まれるため、履歴解析や可視化に活用できます。
 
 この仕組みを活用することで、MBT や mutation quick の長時間処理を繰り返し実行せず、再検証やレポート整合性の確認を効率化できます。
+
+
+`pnpm node scripts/pipelines/render-heavy-trend-summary.mjs --limit 5` を実行すると、履歴 JSON から最新のサマリ Markdown を生成し Step Summary に追記できます。

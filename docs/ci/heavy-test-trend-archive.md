@@ -82,7 +82,8 @@
 
 ### メタデータ
 - `compare-test-trends.mjs` は `generatedAt` に加え、GitHub Actions の runId/runNumber/sha/ref などを `context` フィールドに自動付与する。  
-- スケジュール実行で生成された `reports/heavy-test-trends-history/<timestamp>.json` には同じ `context` 情報が含まれるため、後段で履歴解析する際に run 単位で突合できる。
+- スケジュール実行で生成された `reports/heavy-test-trends-history/<timestamp>.json` には同じ `context` 情報が含まれるため、後段で履歴解析する際に run 単位で突合できる。  
+- PoC として `scripts/pipelines/render-heavy-trend-summary.mjs` を追加済み。履歴ディレクトリを走査し、直近スナップショットを Markdown として標準出力・`summary.md`・Step Summary に出力する。
 
 ## 次ステップ候補
 1. 収集データの可視化 PoC（Observable Notebook or static Markdown レポート生成）。  
