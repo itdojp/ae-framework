@@ -87,7 +87,7 @@
 
 ## 次ステップ候補
 1. 収集データの可視化 PoC（Observable Notebook or static Markdown レポート生成）。  
-2. 通知基準（閾値）と Slack/Issue 連携の設計。  
+2. [heavy-test-alerts](heavy-test-alerts.md) に沿った通知閾値の実装。  
 3. Nightly 以外（手動 dispatch など）で履歴保存を有効化するかの検討。  
 4. `.cache/test-results-baseline` のローテーションやサイズ制御ルール整備。
 
