@@ -63,5 +63,5 @@
 ## TODO
 - [x] `render-heavy-trend-summary.mjs` への閾値オプション追加
 - [x] Slack Webhook 通知ステップの実装（`ci-extended.yml` スケジュール実行に追加済み）
-- [ ] 自動 Issue 起票フローの設計（Critical 判定時）
+- [x] 自動 Issue 起票フローの設計（Critical 判定時）
 - [ ] 閾値リファインのためのメトリクス実測データ収集

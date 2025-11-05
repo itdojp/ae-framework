@@ -13,6 +13,9 @@ permissions: read-all
 
 jobs:
   extended:
+    permissions:
+      contents: read
+      issues: write
     runs-on: ubuntu-latest
     if: ${{ github.event_name != 'pull_request' || (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork) }}
     steps:
@@ -353,6 +356,52 @@ jobs:
             ${{ steps.heavy-summary.outputs.severity == 'critical' && ':rotating_light:' || ':warning:' }} Heavy test trend ${{ steps.heavy-summary.outputs.severity }} detected in ${{ github.workflow }}
             • run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
             • summary: heavy-test-trends-history/summary.md
+
+      - name: Create heavy trend issue
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' && github.event_name == 'schedule' && steps.heavy-summary.outputs.severity == 'critical' }}
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const summaryPath = path.resolve('reports/heavy-test-trends-history/summary.json');
+            const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
+            const snapshots = Array.isArray(summary.snapshots) ? summary.snapshots : [];
+            const criticalSnapshot = snapshots.find(s => (s.severity || '').toLowerCase() === 'critical');
+            if (!criticalSnapshot) {
+              core.info('No critical snapshot detected; skipping issue creation.');
+              return;
+            }
+            const criticalEntries = (criticalSnapshot.entries || []).filter(e => (e.severity || '').toLowerCase() === 'critical');
+            const detailLines = criticalEntries.map(entry => {
+              const reasons = (entry.reasons || []).join('; ') || 'threshold exceeded';
+              return `- **${entry.label}**: ${reasons}`;
+            }).join('\n');
+            const title = `[CI Extended] Heavy test critical alert - ${criticalSnapshot.label}`;
+            const body = [
+              '## Alert',
+              `- Workflow: ${context.workflow} (run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`,
+              '- Severity: critical',
+              `- Snapshot: ${criticalSnapshot.label}`,
+              '- Summary: reports/heavy-test-trends-history/summary.md',
+              '- JSON: reports/heavy-test-trends-history/summary.json',
+              '',
+              '### Details',
+              detailLines || '- (no critical entry details recorded)',
+              '',
+              '## Next Steps',
+              '- [ ] Download artifacts and inspect mutation/property/MBT outputs',
+              '- [ ] Update issue with root cause and resolution plan',
+            ].join('\n');
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+              labels: ['flaky-test', 'ci-stability', 'needs-investigation'],
+            });
+            core.info(`Issue created for snapshot ${criticalSnapshot.label}`);
 
       - name: Stage test results for caching
         if: ${{ always() && steps.flags.outputs.should_run == 'true' }}
