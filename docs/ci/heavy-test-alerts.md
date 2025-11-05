@@ -21,6 +21,29 @@
 
 ## 通知フロー案
 1. `render-heavy-trend-summary.mjs` に閾値判定オプションを追加し、Markdown 出力内に :warning:/:rotating_light: を埋め込む。
+2. Warning 以上の項目が存在する場合は Slack Webhook（`ci-extended.yml` スケジュール実行に追加済み）でメッセージ送信。
+3. Critical 判定時は GitHub Issue（`flaky-test` ラベル）を自動作成し、関連ログ／アーティファクトへのリンクを添付。
+4. PR 上で手動 rerun を行う際も同スクリプトを実行し、Step Summary に判定結果を表示する。
+
+### Critical 判定時の Issue 起票案
+- 作成先: `itdojp/ae-framework` / labels: `flaky-test`, `ci-stability`, `needs-investigation`
+- タイトル例: `[CI Extended] Heavy test critical alert - mutation score < 96`
+- 本文テンプレート:
+  ```md
+  ## Alert
+  - Workflow: ${{ github.workflow }} (run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+  - Severity: critical
+  - Snapshot: <timestamp>
+  - Summary: heavy-test-trends-history/summary.md
+  - JSON: heavy-test-trends-history/summary.json
+
+  ## Next Steps
+  - [ ] Download artifacts and inspect mutation/property/MBT outputs
+  - [ ] Update issue with root cause and resolution plan
+  ```
+- 実装案: `ci-extended.yml` で `severity == 'critical'` の場合に `gh issue create` を呼び出す（`GITHUB_TOKEN` の権限を要確認）。
+
+1. `render-heavy-trend-summary.mjs` に閾値判定オプションを追加し、Markdown 出力内に :warning:/:rotating_light: を埋め込む。
 2. Warning 以上の項目が存在する場合は Slack Webhook（`nightly-monitoring` 既存通知を再利用）でメッセージ送信。
 3. Critical 判定時は GitHub Issue（`flaky-test` ラベル）を自動作成し、関連ログ／アーティファクトへのリンクを添付。
 4. PR 上で手動 rerun を行う際も同スクリプトを実行し、Step Summary に判定結果を表示する。
