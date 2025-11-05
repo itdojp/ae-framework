@@ -304,6 +304,27 @@ jobs:
           cp reports/heavy-test-trends.json "reports/heavy-test-trends-history/${timestamp}.json"
           printf 'Archived heavy test trend snapshot: %s\n' "${timestamp}"
 
+      - name: Render heavy test trend summary
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' && github.event_name == 'schedule' }}
+        id: heavy-summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/pipelines/render-heavy-trend-summary.mjs \
+            --limit 5 \
+            --json-output reports/heavy-test-trends-history/summary.json \
+            --warn-mutation-score 98 \
+            --critical-mutation-score 96 \
+            --warn-mutation-delta -1.0 \
+            --critical-mutation-delta -2.5 \
+            --warn-property-failed 1 \
+            --critical-property-failed 3 \
+            --warn-property-failure-rate 0.1 \
+            --warn-mbt-violations 1 \
+            --critical-mbt-violations 3
+          severity=$(jq -r '.highestSeverity' reports/heavy-test-trends-history/summary.json)
+          echo "severity=${severity}" >> "$GITHUB_OUTPUT"
+
       - name: Upload heavy test trend report
         if: ${{ always() && steps.flags.outputs.should_run == 'true' }}
         uses: actions/upload-artifact@v4
@@ -313,10 +334,6 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-      - name: Stage test results for caching
-        if: ${{ always() && steps.flags.outputs.should_run == 'true' }}
-        run: node scripts/pipelines/sync-test-results.mjs --store
-
       - name: Upload heavy test trend history
         if: ${{ always() && steps.flags.outputs.should_run == 'true' && github.event_name == 'schedule' }}
         uses: actions/upload-artifact@v4
@@ -325,6 +342,21 @@ jobs:
           path: reports/heavy-test-trends-history
           if-no-files-found: ignore
           retention-days: 30
+
+      - name: Notify Slack (heavy trend alert)
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' && github.event_name == 'schedule' && steps.heavy-summary.outputs.severity != 'ok' && secrets.SLACK_WEBHOOK_URL }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_COLOR: ${{ steps.heavy-summary.outputs.severity == 'critical' && '#E01E5A' || '#FFC107' }}
+          SLACK_MESSAGE: |
+            ${{ steps.heavy-summary.outputs.severity == 'critical' && ':rotating_light:' || ':warning:' }} Heavy test trend ${{ steps.heavy-summary.outputs.severity }} detected in ${{ github.workflow }}
+            • run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            • summary: heavy-test-trends-history/summary.md
+
+      - name: Stage test results for caching
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' }}
+        run: node scripts/pipelines/sync-test-results.mjs --store
 
       - name: Save heavy test cache
         if: ${{ always() && steps.flags.outputs.should_run == 'true' && steps.restore-heavy.outputs.cache-hit != 'true' }}

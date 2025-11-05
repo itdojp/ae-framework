@@ -127,4 +127,4 @@ node scripts/pipelines/sync-test-results.mjs --store
 この仕組みを活用することで、MBT や mutation quick の長時間処理を繰り返し実行せず、再検証やレポート整合性の確認を効率化できます。
 
 
-`pnpm node scripts/pipelines/render-heavy-trend-summary.mjs --limit 5` を実行すると、履歴 JSON から最新のサマリ Markdown を生成し Step Summary に追記できます。
+`pnpm node scripts/pipelines/render-heavy-trend-summary.mjs --limit 5` を実行すると、履歴 JSON から最新のサマリ Markdown を生成し Step Summary に追記できます。閾値をカスタマイズしたい場合は `--warn-*` / `--critical-*` オプションを指定し、`--json-output` でアラート判定を取得できます。

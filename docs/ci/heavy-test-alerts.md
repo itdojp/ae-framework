@@ -10,6 +10,8 @@
 - **MBT harness**
   - `violations` 件数、および `runs` / `depth` の極端な変化。
 
+`scripts/pipelines/render-heavy-trend-summary.mjs` で ``--warn-*`` / ``--critical-*`` オプションを指定し、`summary.md` / `summary.json` から自動判定できるようになりました。
+
 ## 初期閾値案
 | メトリクス | Warning | Critical | 備考 |
 |------------|---------|----------|------|
@@ -36,7 +38,7 @@
 - Issue 起票時には関連する `heavy-test-trends-history/<timestamp>.json` と `summary.md`、該当 run の URL を必ず添付する。
 
 ## TODO
-- [ ] `render-heavy-trend-summary.mjs` への閾値オプション追加
-- [ ] Slack Webhook 通知ステップの実装（`nightly-monitoring.yml` で共用）
+- [x] `render-heavy-trend-summary.mjs` への閾値オプション追加
+- [x] Slack Webhook 通知ステップの実装（`ci-extended.yml` スケジュール実行に追加済み）
 - [ ] 自動 Issue 起票フローの設計（Critical 判定時）
 - [ ] 閾値リファインのためのメトリクス実測データ収集
