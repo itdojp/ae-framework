@@ -196,7 +196,18 @@ if [[ -n "${STRYKER_TEMP_DIR:-}" ]]; then
   mkdir -p "${STRYKER_TEMP_DIR}"
   CMD+=("--tempDirName" "${STRYKER_TEMP_DIR}")
 else
-  WORKSPACE_DIR=$(mktemp -d "${TMPDIR:-/tmp}/stryker-workspace-XXXXXX")
+  choose_temp_base() {
+    for candidate in "${TMPDIR:-}" "${TEMP:-}" "${TMP:-}" /tmp; do
+      if [[ -n "$candidate" && -d "$candidate" && -w "$candidate" ]]; then
+        printf '%s' "$candidate"
+        return 0
+      fi
+    done
+    echo "Unable to locate a writable temporary directory. Set TMPDIR, TEMP, or TMP to a writable path." >&2
+    exit 1
+  }
+  TEMP_BASE=$(choose_temp_base)
+  WORKSPACE_DIR=$(mktemp -d "${TEMP_BASE}/stryker-workspace-XXXXXX")
   TEMP_PATHS+=("$WORKSPACE_DIR")
   CMD+=("--tempDirName" "${WORKSPACE_DIR}")
 fi
