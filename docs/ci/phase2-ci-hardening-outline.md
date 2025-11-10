@@ -32,13 +32,14 @@
 - [x] `.github/workflows/ci-extended.yml` を新設。`run-ci-extended` / `run-integration` / `run-property` / `run-mbt` / `run-mutation` ラベルで PR から opt-in 実行でき、main push / schedule では自動実行。
 - [x] Mutation auto diff / property / MBT サマリを新ワークフローに移設し、従来のレポート （survivors, summary）を維持。
 - [x] テストスイートの Stryker/CI セーフ化 （tmpfs ヘルパー導入・Vitest conservative モード追加）。`CI=1 pnpm vitest run tests --pool=forks --watch=false --reporter=dot` と `CI=1 pnpm run test:ci:extended` （mutation quick 含む）が完走 （mutation score 100%、静的ミュート警告あり）。
+- [x] `ci-extended` にテスト結果キャッシュ復元・保存ステップと `scripts/pipelines/sync-test-results.mjs` を追加し、MBT / property / mutation 成果物を再実行時に再利用可能化。
+- [x] Heavy テスト成果物のトレンド比較スクリプト（`scripts/pipelines/compare-test-trends.mjs`）を追加し、Nightly / rerun で前回値との差分を Step Summary に報告。
+- [x] 静的ミュート 23 件を `ignoreStatic: true`（`stryker.conf.cjs`）で無視し、mutation quick の実行時間を短縮。
 
 ## 次のアクション候補
 1. [ ] `docs/ci-policy.md` / `docs/ci/label-gating.md` を刷新し、新ラベルと実行モード （stable vs extended）を明文化。  
-2. [ ] キャッシュ／再実行ガイドを整備し、MBT や mutation サマリの再利用手順を `docs/testing/integration-runtime-helpers.md` に反映。  
-3. [ ] Mutation auto diff （Stryker quick） のワークスペース制御を見直し、dry-run 時の一時ディレクトリ競合を解消。  
-4. [ ] Nightly での `ci-extended` 成果物 （survivors / MBT summary）を自動比較し、トレンド可視化を導入。  
-5. [ ] Mutation quick で報告された静的ミュート （23件）への対応 （`ignoreStatic` 等）を検討し、実行時間の最適化とレポート品質の向上を図る。  
+2. [ ] 静的ミュートを無視したままにせず、対象箇所へ追加テスト or 設計見直しを行うための follow-up プランを整理する。  
+3. [ ] Nightly トレンド比較結果を成果物（JSON/Markdown）として保存し、長期的な履歴を可視化する（案: `docs/ci/heavy-test-trend-archive.md` を参照）。  
 
 ## 参考リンク
 - Issue #1005: Test Stability Issues - Flaky Test Resolution and CI Hardening

@@ -375,7 +375,7 @@ describe('IntegrationTestingCli', () => {
       await command.parseAsync(args);
 
       expect(consoleLogSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Reports directory does not exist')
+        expect.stringContaining('No reports found in the reports directory')
       );
     });
 

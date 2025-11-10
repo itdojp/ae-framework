@@ -91,3 +91,41 @@ why-is-node-running? There are 2 handle(s) keeping the process running
    既存スイート（`integration-cli` / `system-validation` / `test-orchestrator` / `optimization/system`）を雛形として流用すると高速です。
 
 これらの手順に従うことで、リソースリークやテスト間干渉を最小化しつつ、必要に応じて詳細なデバッグ情報を取得できます。
+
+## Heavy Test Artifacts Cache（CI Extended / Mutation / MBT）
+
+CI Extended（`run-ci-extended` / `run-mutation` / `run-mbt` / `run-property`）を再実行する際は、heavy テスト成果物を `.cache/test-results` から復元して再利用できます。mutation survivors や MBT summary、property harness summary を活用すると再実行時間が短縮され、サマリ確認や差分比較が容易になります。
+
+### ローカル／rerun 手順
+
+```bash
+# キャッシュ状況の確認
+node scripts/pipelines/sync-test-results.mjs --status
+
+# 既存キャッシュを復元し baseline をスナップショット
+node scripts/pipelines/sync-test-results.mjs --restore
+node scripts/pipelines/sync-test-results.mjs --snapshot
+
+# CI Extended 相当のスイートを実行
+pnpm run test:ci:extended
+
+# baseline との比較結果を確認（Markdown が標準出力 / Step Summary に出力される）
+node scripts/pipelines/compare-test-trends.mjs
+
+# 成果物をキャッシュへ反映（ローカル更新後）
+node scripts/pipelines/sync-test-results.mjs --store
+```
+
+`--status` は各カテゴリ（Mutation / MBT / Property）の source / cache / baseline の有無を表示します。CI では `.github/workflows/ci-extended.yml` が依存インストール後に `--restore`・`--snapshot` を呼び出し、ステップ終了後に `--store` で更新するため、再実行（rerun）でも `.cache/test-results` が復元対象として利用されます。`compare-test-trends.mjs` は baseline が存在する場合に差分（スコア・violations 等）を Markdown で出力し、`GITHUB_STEP_SUMMARY` が設定されていれば Step Summary に追記します。
+
+#### GitHub Actions での利用
+- `gh run rerun <runId>` 実行時、キャッシュがヒットすれば自動的に成果物を展開し、その後のステップで再計算をスキップできます。
+- キャッシュキーは Pull Request / Push では `ci-heavy-${{ runner.os }}-${{ github.sha }}`、スケジュール実行では `ci-heavy-${{ runner.os }}-schedule` を使用します。Nightly 間で baseline を共有しつつ、PR や手動実行ではコミットごとの独立性を維持します。
+- ローカルで更新した成果物を共有したい場合は GitHub Actions の rerun ではなく、ブランチ／PR 内で `node scripts/pipelines/sync-test-results.mjs --store` を一度実行してから push し、キャッシュを更新させてください。
+- スケジュール実行（`github.event_name == 'schedule'`）では `reports/heavy-test-trends-history/<timestamp>.json` が自動生成され、アーティファクト `heavy-test-trends-history`（保持 30 日）として保存されます。JSON 内の `context` フィールドに runId / runNumber / SHA などの GitHub Actions 情報が含まれるため、履歴解析や可視化に活用できます。
+
+この仕組みを活用することで、MBT や mutation quick の長時間処理を繰り返し実行せず、再検証やレポート整合性の確認を効率化できます。
+
+
+`pnpm node scripts/pipelines/render-heavy-trend-summary.mjs --limit 5` を実行すると、履歴 JSON から最新のサマリ Markdown を生成し Step Summary に追記できます。閾値をカスタマイズしたい場合は `--warn-*` / `--critical-*` オプションを指定し、`--json-output` でアラート判定を取得できます。
+`pnpm node scripts/pipelines/export-heavy-trend-history.mjs` を実行すると、履歴から `history.csv` / `history.md` を生成でき、Observable などでトレンドを可視化しやすくなります。

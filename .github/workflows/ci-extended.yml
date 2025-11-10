@@ -13,6 +13,11 @@ permissions: read-all
 
 jobs:
   extended:
+    permissions:
+      contents: read
+      issues: write
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     runs-on: ubuntu-latest
     if: ${{ github.event_name != 'pull_request' || (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork) }}
     steps:
@@ -99,6 +104,44 @@ jobs:
       - name: Install dependencies
         if: ${{ steps.flags.outputs.should_run == 'true' }}
         run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+
+      - name: Determine heavy test cache key
+        if: ${{ steps.flags.outputs.should_run == 'true' }}
+        id: heavy-cache-key
+        shell: bash
+        run: |
+          set -euo pipefail
+          prefix="ci-heavy-${{ runner.os }}"
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            key="${prefix}-schedule"
+            restore_keys="${prefix}-schedule"$'\n'"${prefix}-"
+          else
+            key="${prefix}-${GITHUB_SHA}"
+            restore_keys="${prefix}-"
+          fi
+          {
+            echo "key=${key}"
+            echo "restore_keys<<__RESTORE__"
+            printf '%s\n' "${restore_keys}"
+            echo "__RESTORE__"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Restore heavy test cache
+        if: ${{ steps.flags.outputs.should_run == 'true' }}
+        id: restore-heavy
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/test-results
+          key: ${{ steps.heavy-cache-key.outputs.key }}
+          restore-keys: ${{ steps.heavy-cache-key.outputs.restore_keys }}
+
+      - name: Rehydrate cached test artifacts
+        if: ${{ steps.flags.outputs.should_run == 'true' && steps.restore-heavy.outputs.cache-hit == 'true' }}
+        run: node scripts/pipelines/sync-test-results.mjs --restore
+
+      - name: Snapshot heavy test baseline
+        if: ${{ steps.flags.outputs.should_run == 'true' }}
+        run: node scripts/pipelines/sync-test-results.mjs --snapshot
 
       - name: Run integration tests
         if: ${{ steps.flags.outputs.run_integration == 'true' }}
@@ -247,3 +290,128 @@ jobs:
             echo "- run_mbt: ${RUN_MBT}"
             echo "- run_mutation: ${RUN_MUTATION}"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Compare heavy test trends
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' }}
+        run: node scripts/pipelines/compare-test-trends.mjs
+
+      - name: Archive heavy test trend history
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' && github.event_name == 'schedule' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f reports/heavy-test-trends.json ]; then
+            echo "Trend report not generated; skipping archive."
+            exit 0
+          fi
+          mkdir -p reports/heavy-test-trends-history
+          timestamp="$(date -u +'%Y-%m-%dT%H-%M-%SZ')"
+          cp reports/heavy-test-trends.json "reports/heavy-test-trends-history/${timestamp}.json"
+          printf 'Archived heavy test trend snapshot: %s\n' "${timestamp}"
+
+      - name: Render heavy test trend summary
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' && github.event_name == 'schedule' }}
+        id: heavy-summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/pipelines/render-heavy-trend-summary.mjs \
+            --limit 5 \
+            --json-output reports/heavy-test-trends-history/summary.json \
+            --warn-mutation-score 98 \
+            --critical-mutation-score 96 \
+            --warn-mutation-delta -1.0 \
+            --critical-mutation-delta -2.5 \
+            --warn-property-failed 1 \
+            --critical-property-failed 3 \
+            --warn-property-failure-rate 0.1 \
+            --warn-mbt-violations 1 \
+            --critical-mbt-violations 3
+          severity=$(jq -r '.highestSeverity' reports/heavy-test-trends-history/summary.json)
+          echo "severity=${severity}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload heavy test trend report
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: heavy-test-trends
+          path: reports/heavy-test-trends.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload heavy test trend history
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' && github.event_name == 'schedule' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: heavy-test-trends-history
+          path: reports/heavy-test-trends-history
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Notify Slack (heavy trend alert)
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' && github.event_name == 'schedule' && steps.heavy-summary.outputs.severity != 'ok' && env.SLACK_WEBHOOK_URL != '' }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ env.SLACK_WEBHOOK_URL }}
+          SLACK_COLOR: ${{ steps.heavy-summary.outputs.severity == 'critical' && '#E01E5A' || '#FFC107' }}
+          SLACK_MESSAGE: |
+            ${{ steps.heavy-summary.outputs.severity == 'critical' && ':rotating_light:' || ':warning:' }} Heavy test trend ${{ steps.heavy-summary.outputs.severity }} detected in ${{ github.workflow }}
+            • run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            • summary: heavy-test-trends-history/summary.md
+
+      - name: Create heavy trend issue
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' && github.event_name == 'schedule' && steps.heavy-summary.outputs.severity == 'critical' }}
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const summaryPath = path.resolve('reports/heavy-test-trends-history/summary.json');
+            const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
+            const snapshots = Array.isArray(summary.snapshots) ? summary.snapshots : [];
+            const criticalSnapshot = snapshots.find(s => (s.severity || '').toLowerCase() === 'critical');
+            if (!criticalSnapshot) {
+              core.info('No critical snapshot detected; skipping issue creation.');
+              return;
+            }
+            const criticalEntries = (criticalSnapshot.entries || []).filter(e => (e.severity || '').toLowerCase() === 'critical');
+            const detailLines = criticalEntries.map(entry => {
+              const reasons = (entry.reasons || []).join('; ') || 'threshold exceeded';
+              return `- **${entry.label}**: ${reasons}`;
+            }).join('\n');
+            const title = `[CI Extended] Heavy test critical alert - ${criticalSnapshot.label}`;
+            const body = [
+              '## Alert',
+              `- Workflow: ${context.workflow} (run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`,
+              '- Severity: critical',
+              `- Snapshot: ${criticalSnapshot.label}`,
+              '- Summary: reports/heavy-test-trends-history/summary.md',
+              '- JSON: reports/heavy-test-trends-history/summary.json',
+              '',
+              '### Details',
+              detailLines || '- (no critical entry details recorded)',
+              '',
+              '## Next Steps',
+              '- [ ] Download artifacts and inspect mutation/property/MBT outputs',
+              '- [ ] Update issue with root cause and resolution plan',
+            ].join('\n');
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+              labels: ['flaky-test', 'ci-stability', 'needs-investigation'],
+            });
+            core.info(`Issue created for snapshot ${criticalSnapshot.label}`);
+
+      - name: Stage test results for caching
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' }}
+        run: node scripts/pipelines/sync-test-results.mjs --store
+
+      - name: Save heavy test cache
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' && steps.restore-heavy.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/test-results
+          key: ${{ steps.heavy-cache-key.outputs.key }}

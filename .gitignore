@@ -55,6 +55,8 @@ cegis-report-*.json
 *-report-*.json
 conformance-results.json
 reports/conformance/
+reports/heavy-test-trends.json
+reports/heavy-test-trends-history/
 sample-*.json
 invalid-sample-*.json
 clean-sample-*.json

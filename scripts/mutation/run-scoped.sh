@@ -9,12 +9,17 @@ CONFIG_PATH=""
 EXTRA_ARGS=()
 AUTO_DIFF=false
 AUTO_DIFF_REF="origin/main"
-TEMP_FILES=()
+TEMP_PATHS=()
 
 cleanup() {
-  local file
-  for file in "${TEMP_FILES[@]}"; do
-    [[ -n "$file" && -f "$file" ]] && rm -f "$file"
+  local path
+  for path in "${TEMP_PATHS[@]}"; do
+    [[ -z "$path" ]] && continue
+    if [[ -d "$path" ]]; then
+      rm -rf "$path"
+    elif [[ -f "$path" ]]; then
+      rm -f "$path"
+    fi
   done
 }
 
@@ -98,7 +103,7 @@ if [[ "$AUTO_DIFF" == "true" ]]; then
     exit 1
   fi
   AUTO_DIFF_FILE=$(mktemp)
-  TEMP_FILES+=("$AUTO_DIFF_FILE")
+  TEMP_PATHS+=("$AUTO_DIFF_FILE")
   ./scripts/mutation/gather-mutate-patterns.sh "$AUTO_DIFF_REF" --output "$AUTO_DIFF_FILE" --silent
   CUSTOM_PATTERN_FILES+=("$AUTO_DIFF_FILE")
 fi
@@ -186,6 +191,26 @@ fi
 mkdir -p reports/mutation
 
 CMD=(npx stryker run "${args[@]}" --reporters html --reporters json --concurrency "$CONCURRENCY" --timeoutMS "$TIMEOUT")
+
+if [[ -n "${STRYKER_TEMP_DIR:-}" ]]; then
+  mkdir -p "${STRYKER_TEMP_DIR}"
+  CMD+=("--tempDirName" "${STRYKER_TEMP_DIR}")
+else
+  choose_temp_base() {
+    for candidate in "${TMPDIR:-}" "${TEMP:-}" "${TMP:-}" /tmp; do
+      if [[ -n "$candidate" && -d "$candidate" && -w "$candidate" ]]; then
+        printf '%s' "$candidate"
+        return 0
+      fi
+    done
+    echo "Unable to locate a writable temporary directory. Set TMPDIR, TEMP, or TMP to a writable path." >&2
+    exit 1
+  }
+  TEMP_BASE=$(choose_temp_base)
+  WORKSPACE_DIR=$(mktemp -d "${TEMP_BASE}/stryker-workspace-XXXXXX")
+  TEMP_PATHS+=("$WORKSPACE_DIR")
+  CMD+=("--tempDirName" "${WORKSPACE_DIR}")
+fi
 if [[ -n "$CONFIG_PATH" ]] ; then
   CMD+=("$CONFIG_PATH")
 fi
