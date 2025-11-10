@@ -16,6 +16,8 @@ jobs:
     permissions:
       contents: read
       issues: write
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     runs-on: ubuntu-latest
     if: ${{ github.event_name != 'pull_request' || (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork) }}
     steps:
@@ -347,10 +349,10 @@ jobs:
           retention-days: 30
 
       - name: Notify Slack (heavy trend alert)
-        if: ${{ always() && steps.flags.outputs.should_run == 'true' && github.event_name == 'schedule' && steps.heavy-summary.outputs.severity != 'ok' && secrets.SLACK_WEBHOOK_URL }}
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' && github.event_name == 'schedule' && steps.heavy-summary.outputs.severity != 'ok' && env.SLACK_WEBHOOK_URL != '' }}
         uses: rtCamp/action-slack-notify@v2
         env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK: ${{ env.SLACK_WEBHOOK_URL }}
           SLACK_COLOR: ${{ steps.heavy-summary.outputs.severity == 'critical' && '#E01E5A' || '#FFC107' }}
           SLACK_MESSAGE: |
             ${{ steps.heavy-summary.outputs.severity == 'critical' && ':rotating_light:' || ':warning:' }} Heavy test trend ${{ steps.heavy-summary.outputs.severity }} detected in ${{ github.workflow }}
