@@ -7,7 +7,8 @@ heavy-test トレンドの履歴 (`reports/heavy-test-trends-history/*.json`) �
 pnpm node scripts/pipelines/export-heavy-trend-history.mjs   --history-dir reports/heavy-test-trends-history   --csv-output reports/heavy-test-trends-history/history.csv   --markdown-output reports/heavy-test-trends-history/history.md   --markdown-limit 20
 ```
 - `history.csv`: 全スナップショットの `snapshot,label,metric,baseline,current,delta` を含む。Observable や Excel での分析に利用。  
-- `history.md`: 直近 N 件を Markdown テーブルで出力し、PR やドキュメントに貼り付け可能。
+- `history.md`: 直近 N 件を Markdown テーブルで出力し、PR やドキュメントに貼り付け可能。  
+- `stats.json`: メトリクス毎の件数・平均・標準偏差・最小/最大を含む。Nightly の閾値調整に活用。
 
 ## Markdown プレビュー例
 | Snapshot | Label | Metric | Baseline | Current | Δ |

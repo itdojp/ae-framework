@@ -128,4 +128,4 @@ node scripts/pipelines/sync-test-results.mjs --store
 
 
 `pnpm node scripts/pipelines/render-heavy-trend-summary.mjs --limit 5` を実行すると、履歴 JSON から最新のサマリ Markdown を生成し Step Summary に追記できます。閾値をカスタマイズしたい場合は `--warn-*` / `--critical-*` オプションを指定し、`--json-output` でアラート判定を取得できます。
-`pnpm node scripts/pipelines/export-heavy-trend-history.mjs` を実行すると、履歴から `history.csv` / `history.md` を生成でき、Observable などでトレンドを可視化しやすくなります。
+`pnpm node scripts/pipelines/export-heavy-trend-history.mjs` を実行すると、履歴から `history.csv` / `history.md` / `stats.json` を生成でき、Observable などでトレンドや統計を可視化しやすくなります。

@@ -32,6 +32,9 @@ async function main() {
   if (options.markdownOutput) {
     await writeMarkdown(options.markdownOutput, rows, options.limitMarkdown);
   }
+  if (options.statsOutput) {
+    await writeStats(options.statsOutput, rows);
+  }
 }
 
 function parseArgs(argv) {
@@ -40,6 +43,7 @@ function parseArgs(argv) {
     csvOutput: path.resolve(repoRoot, 'reports', 'heavy-test-trends-history', 'history.csv'),
     markdownOutput: path.resolve(repoRoot, 'reports', 'heavy-test-trends-history', 'history.md'),
     limitMarkdown: 10,
+    statsOutput: path.resolve(repoRoot, 'reports', 'heavy-test-trends-history', 'stats.json'),
   };
 
   for (let i = 2; i < argv.length; i += 1) {
@@ -57,6 +61,10 @@ function parseArgs(argv) {
       if (!Number.isNaN(parsed) && parsed > 0) {
         defaults.limitMarkdown = parsed;
       }
+    } else if ((current === '--stats-output' || current === '--stats') && argv[i + 1]) {
+      defaults.statsOutput = path.resolve(repoRoot, argv[++i]);
+    } else if (current === '--no-stats') {
+      defaults.statsOutput = null;
     }
   }
   return defaults;
@@ -126,6 +134,47 @@ function formatValue(value) {
     return '—';
   }
   return value;
+}
+
+async function writeStats(outputPath, rows) {
+  const grouped = {};
+  for (const row of rows) {
+    if (row.current === '' || row.current === null || typeof row.current === 'undefined') {
+      continue;
+    }
+    const key = `${row.label}::${row.metric}`;
+    if (!grouped[key]) {
+      grouped[key] = [];
+    }
+    grouped[key].push(Number(row.current));
+  }
+  const stats = Object.entries(grouped).map(([key, values]) => {
+    const [label, metric] = key.split('::');
+    return {
+      label,
+      metric,
+      count: values.length,
+      mean: Number(mean(values).toFixed(3)),
+      stddev: values.length > 1 ? Number(stddev(values).toFixed(3)) : 0,
+      min: Number(Math.min(...values).toFixed(3)),
+      max: Number(Math.max(...values).toFixed(3)),
+    };
+  });
+  await mkdir(path.dirname(outputPath), { recursive: true });
+  await writeFile(outputPath, `${JSON.stringify({ generatedAt: new Date().toISOString(), stats }, null, 2)}\n`, 'utf8');
+  console.log(`Stats written to ${path.relative(repoRoot, outputPath)}`);
+}
+
+function mean(values) {
+  if (values.length === 0) return 0;
+  return values.reduce((acc, cur) => acc + cur, 0) / values.length;
+}
+
+function stddev(values) {
+  if (values.length <= 1) return 0;
+  const avg = mean(values);
+  const variance = values.reduce((acc, cur) => acc + (cur - avg) ** 2, 0) / (values.length - 1);
+  return Math.sqrt(variance);
 }
 
 await main();
