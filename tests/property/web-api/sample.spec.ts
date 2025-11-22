@@ -1,17 +1,18 @@
 import fc from 'fast-check';
+import { reservationArb, defaultRuns } from './fast-check.config';
 
-// NOTE: ドキュメント用サンプル。実行環境が整うまで skip。
+// NOTE: 足場用。実装前なので skip。
 describe.skip('property: web api reservation', () => {
   it('idempotent request does not double-book', async () => {
     await fc.assert(
-      fc.asyncProperty(
-        fc.uuid(),
-        fc.integer({ min: 1, max: 3 }),
-        async (requestId, qty) => {
-          // arrange/act/assert: 実装後に埋める
-        },
-      ),
-      { numRuns: 10 },
+      fc.asyncProperty(reservationArb, async ({ requestId, sku, quantity, userId }) => {
+        // arrange/act/assert: 実装後に埋める
+        void requestId;
+        void sku;
+        void quantity;
+        void userId;
+      }),
+      { numRuns: defaultRuns },
     );
   });
 });
