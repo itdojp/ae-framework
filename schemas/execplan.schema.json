@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ExecPlan",
+  "type": "object",
+  "properties": {
+    "id": { "type": "string" },
+    "title": { "type": "string" },
+    "description": { "type": "string" },
+    "inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Expected input files or contexts (paths or identifiers)."
+    },
+    "outputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Expected output artifacts (paths)."
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "commands": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Shell commands or CLI invocations"
+          }
+        },
+        "required": ["title"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["title", "steps"],
+  "additionalProperties": false
+}
