@@ -17,6 +17,6 @@ Checklist
 - [ ] Docs updated if behavior changes (see `docs/ci-policy.md`)
 
 If applicable (Web API + DB flow)
-- [ ] Spec links記載: OpenAPI / BDD / Property
+- [ ] Spec links 記載: OpenAPI / BDD / Property
 - [ ] 実行テストを列挙: lint / test:fast / test:integration / test:property / mutation quick(任意)
 - [ ] キャッシュ操作を記載: sync-test-results (restore/store/snapshot) / trend比較結果

@@ -11,7 +11,7 @@
 - `spec/api/openapi.yml` (skeleton)
 - `spec/bdd/web-api-sample.md` updated with scenarios and examples
 - `spec/properties/web-api-sample.md` updated with property list and generators (pseudo-code allowed)
-- Trace notes in `docs/flows/web-api-agent.md#trace`
+- Trace notes in `docs/flows/web-api-agent.md`
 
 ## Steps
 1) Summarize intent → list endpoints (CRUD + auth) and data model (1-2 tables) in Markdown.

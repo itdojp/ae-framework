@@ -32,4 +32,8 @@
 - Mutation（任意）: `STRYKER_TIME_LIMIT=0 pnpm run pipelines:mutation:quick`
 
 ## Trace/ログのメモ先
-- ExecPlan 実行ログは `docs/flows/web-api-agent.md#trace` セクションに追記（自由形式）
+- ExecPlan 実行ログは本ファイル末尾の `## Trace` セクションに追記（自由形式）
+
+## Trace
+
+（このセクションは実行ログのプレースホルダーです。必要に応じて追記してください）
