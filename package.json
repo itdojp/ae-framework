@@ -40,6 +40,7 @@
     "benchmark:init": "tsx src/cli/benchmark-cli.ts init",
     "lint": "eslint .",
     "types:check": "tsc -p tsconfig.verify.json --noEmit",
+    "test:property:webapi": "vitest run --dir tests/property/web-api --passWithNoTests",
     "lint:frontend": "pnpm --filter @ae-framework/ui lint && pnpm --filter @ae-framework/web lint",
     "type-check:frontend": "pnpm --filter @ae-framework/ui type-check && pnpm --filter @ae-framework/web type-check",
     "clean:frontend": "pnpm --filter @ae-framework/design-tokens clean && pnpm --filter @ae-framework/ui clean",

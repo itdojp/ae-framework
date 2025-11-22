@@ -1,0 +1,46 @@
+openapi: 3.1.0
+info:
+  title: Web API Sample
+  version: 0.0.1
+paths:
+  /reservations:
+    post:
+      summary: Create reservation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReservationRequest'
+      responses:
+        '200':
+          description: Reservation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservationResponse'
+        '409':
+          description: Conflict when stock is insufficient
+        '400':
+          description: Validation error
+components:
+  schemas:
+    CreateReservationRequest:
+      type: object
+      properties:
+        sku:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+        requestId:
+          type: string
+      required: [sku, quantity, requestId]
+    ReservationResponse:
+      type: object
+      properties:
+        reservationId:
+          type: string
+        status:
+          type: string
+      required: [reservationId, status]
