@@ -7,7 +7,7 @@
 
 ## ジェネレータ方針
 - requestId: fc.uuid()
-- quantity: fc.integer({ min: 0, max: 5 })
+- quantity: fc.integer({ min: 1, max: 5 })
 - users: fc.constantFrom('u1','u2','u3')
 - inventory seed: fc.array(fc.record({ sku: fc.string(), stock: fc.integer({min:0, max:10}) }), {minLength:1, maxLength:3})
 
