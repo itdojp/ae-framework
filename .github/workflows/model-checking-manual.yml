@@ -1,0 +1,43 @@
+name: Model Checking (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      engine:
+        description: "Engine (tlc|apalache|alloy)"
+        required: false
+        default: "tlc"
+      spec_path:
+        description: "Spec file path"
+        required: true
+        default: "specs/formal/tla+/Inventory.tla"
+
+jobs:
+  model-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      - name: Enable corepack
+        run: corepack enable
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+      - name: Run model checking (TLA+)
+        if: ${{ inputs.engine == 'tlc' }}
+        run: pnpm run verify:tla -- --engine=tlc --file ${{ inputs.spec_path }}
+      - name: Run model checking (Apalache)
+        if: ${{ inputs.engine == 'apalache' }}
+        run: pnpm run verify:tla -- --engine=apalache --file ${{ inputs.spec_path }}
+      - name: Run Alloy (stub)
+        if: ${{ inputs.engine == 'alloy' }}
+        run: echo "Alloy execution not configured; please add runner if needed" && exit 0
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-check-logs
+          path: artifacts/**
