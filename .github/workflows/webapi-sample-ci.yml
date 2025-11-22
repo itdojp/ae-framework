@@ -1,0 +1,44 @@
+name: Web API Sample CI (manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-webapi-sample:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      - name: Enable corepack
+        run: corepack enable
+      - name: Install dependencies
+        run: pnpm install
+      - name: Lint
+        run: pnpm run lint
+        continue-on-error: true
+      - name: Fast tests
+        run: pnpm run test:fast
+        continue-on-error: true
+      - name: Integration tests (if available)
+        run: pnpm run test:integration -- --runInBand
+        continue-on-error: true
+      - name: Property tests (if available)
+        run: pnpm run test:property -- --runInBand --maxWorkers=50%
+        continue-on-error: true
+      - name: Mutation quick (optional)
+        run: STRYKER_TIME_LIMIT=0 pnpm run pipelines:mutation:quick
+        continue-on-error: true
+      - name: Cache snapshot (optional)
+        run: |
+          node scripts/pipelines/sync-test-results.mjs --store
+          node scripts/pipelines/sync-test-results.mjs --snapshot
+        continue-on-error: true
+      - name: Compare trends (optional)
+        run: node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-trends.json
+        continue-on-error: true
