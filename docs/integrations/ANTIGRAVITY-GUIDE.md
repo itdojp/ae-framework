@@ -5,21 +5,21 @@
 - 入出力は Markdown/JSON に限定し、AJV/Schema で検証可能な形に固定する。
 
 ## 前提
-- リポ構成: `spec/`, `tests/`, `plans/common/*` もしくは `plans/web-api/*`
+- リポ構成: `spec/`, `tests/`, `plans/web-api/*`（共通テンプレは今後 `plans/common/*` に追加予定）
 - Antigravity 側で repo をチェックアウト済み、コマンド実行が可能
 
 ## 実行フロー（例）
 1. 仕様生成
-   - `plans/common/01-spec.md` をプロンプトとして渡し、OpenAPI/BDD/Property を生成
+   - `plans/web-api/01-spec.md` をプロンプトとして渡し、OpenAPI/BDD/Property を生成
    - 生成先は必ずファイルパスで指定（例: `spec/api/openapi.yml`）
 2. テスト骨子
-   - `plans/common/02-tests.md` を渡し、テストスケルトンを生成（必要に応じて skip）
+   - `plans/web-api/02-tests.md` を渡し、テストスケルトンを生成（必要に応じて skip）
 3. 実装
-   - `plans/common/03-impl.md` を渡し、handler/service/repo を生成
+   - `plans/web-api/03-impl.md` を渡し、handler/service/repo を生成
 4. 検証
-   - `plans/common/04-verify.md` のコマンドをシェルで実行（lint/type/unit/integration/property）
+   - `plans/web-api/04-verify.md` のコマンドをシェルで実行（lint/type/unit/integration/property）
 5. PR 仕上げ
-   - `plans/common/05-pr.md` をもとに PR 本文を作成
+   - `plans/web-api/05-pr.md` をもとに PR 本文を作成
 
 ## 成果物検証
 - Schema/JSON: `pnpm lint` / `pnpm spec:validate` が通ること

@@ -5,15 +5,15 @@
 - Markdown/JSON 入出力を徹底し、AJV/Schema で検証可能な形に固定する。
 
 ## 前提
-- リポ構成: `spec/`, `tests/`, `plans/common/*` (またはドメイン別 ExecPlan)
+- リポ構成: `spec/`, `tests/`, `plans/web-api/*`（`plans/common/*` は今後追加予定、現時点では `plans/web-api/` をテンプレとして利用）
 - Gemini からシェルコマンド実行/ファイル編集が可能
 
 ## 実行フロー（例）
-1. 仕様生成: `plans/common/01-spec.md` を入力し、OpenAPI/BDD/Property を生成
-2. テスト骨子: `plans/common/02-tests.md` を入力し、テストスケルトンを生成（skip許容）
-3. 実装: `plans/common/03-impl.md` を入力し、実装を生成
-4. 検証: `plans/common/04-verify.md` のコマンドを実行
-5. PR: `plans/common/05-pr.md` をもとに PR 本文を作成
+1. 仕様生成: `plans/web-api/01-spec.md` を入力し、OpenAPI/BDD/Property を生成
+2. テスト骨子: `plans/web-api/02-tests.md` を入力し、テストスケルトンを生成（skip許容）
+3. 実装: `plans/web-api/03-impl.md` を入力し、実装を生成
+4. 検証: `plans/web-api/04-verify.md` のコマンドを実行
+5. PR: `plans/web-api/05-pr.md` をもとに PR 本文を作成
 
 ## 検証コマンド例
 - `pnpm run lint`
