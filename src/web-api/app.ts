@@ -55,3 +55,14 @@ export function buildApp(): FastifyInstance {
   app.decorate('store', store);
   return app;
 }
+
+export function seedStore(
+  app: FastifyInstance & { store: ReturnType<typeof createStore> },
+  entries: Record<string, number>,
+) {
+  app.store.stock.clear();
+  app.store.reservations.clear();
+  for (const [sku, stock] of Object.entries(entries)) {
+    app.store.stock.set(sku, stock);
+  }
+}
