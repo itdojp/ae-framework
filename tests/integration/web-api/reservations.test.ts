@@ -1,45 +1,78 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { buildApp, seedStore } from '../../../src/web-api/app';
+import { describe, expect, it } from 'vitest';
+import { buildApp, seedRepo } from '../../../src/web-api/app';
+import { InMemoryReservationRepository } from '../../../src/web-api/repository';
 
-// NOTE: test:fast では除外されるが、手動/CIでの動作確認用として有効化。
+// test:integration:webapi で実行
+
+async function buildTestApp() {
+  const repo = new InMemoryReservationRepository();
+  const app = buildApp(repo);
+  await app.ready();
+  return { repo, app };
+}
+
 describe('web api / reservations', () => {
-  const app = buildApp();
-
-  beforeAll(async () => {
-    await app.ready();
-    seedStore(app, { 'item-1': 5 });
-  });
-
-  afterAll(async () => {
-    await app.close();
-  });
-
   it('creates a reservation when stock is sufficient', async () => {
-    const res = await app.inject({
-      method: 'POST',
-      url: '/reservations',
-      payload: { sku: 'item-1', quantity: 1, requestId: 'r1', userId: 'u1' },
-    });
-    expect(res.statusCode).toBe(200);
-    expect(app.store.stock.get('item-1')).toBe(4);
+    const { repo, app } = await buildTestApp();
+    try {
+      seedRepo(repo, { 'item-1': 5 });
+      const res = await app.inject({
+        method: 'POST',
+        url: '/reservations',
+        payload: { sku: 'item-1', quantity: 1, requestId: 'r1', userId: 'u1' },
+      });
+      expect(res.statusCode).toBe(200);
+      expect(repo.getStock('item-1')).toBe(4);
+    } finally {
+      await app.close();
+    }
   });
 
   it('is idempotent for the same requestId', async () => {
-    const payload = { sku: 'item-1', quantity: 1, requestId: 'r2', userId: 'u1' };
-    const first = await app.inject({ method: 'POST', url: '/reservations', payload });
-    const second = await app.inject({ method: 'POST', url: '/reservations', payload });
-    expect(first.statusCode).toBe(200);
-    expect(second.statusCode).toBe(200);
-    expect(first.json()).toEqual(second.json());
-    expect(app.store.stock.get('item-1')).toBe(3);
+    const { repo, app } = await buildTestApp();
+    try {
+      seedRepo(repo, { 'item-1': 5 });
+      const payload = { sku: 'item-1', quantity: 1, requestId: 'r2', userId: 'u1' };
+      const first = await app.inject({ method: 'POST', url: '/reservations', payload });
+      const second = await app.inject({ method: 'POST', url: '/reservations', payload });
+      expect(first.statusCode).toBe(200);
+      expect(second.statusCode).toBe(200);
+      expect(first.json()).toEqual(second.json());
+      expect(repo.getStock('item-1')).toBe(4);
+    } finally {
+      await app.close();
+    }
   });
 
-  it('returns 409 when stock is insufficient', async () => {
-    const res = await app.inject({
-      method: 'POST',
-      url: '/reservations',
-      payload: { sku: 'item-1', quantity: 10, requestId: 'r3', userId: 'u1' },
-    });
-    expect(res.statusCode).toBe(409);
+  it('returns 409 when stock is insufficient and caches rejection', async () => {
+    const { repo, app } = await buildTestApp();
+    try {
+      seedRepo(repo, { 'item-1': 1 });
+      const payload = { sku: 'item-1', quantity: 10, requestId: 'r3', userId: 'u1' };
+      const first = await app.inject({ method: 'POST', url: '/reservations', payload });
+      const second = await app.inject({ method: 'POST', url: '/reservations', payload });
+      expect(first.statusCode).toBe(409);
+      expect(second.statusCode).toBe(409);
+      expect(first.json()).toEqual(second.json());
+      expect(repo.getStock('item-1')).toBe(1);
+    } finally {
+      await app.close();
+    }
+  });
+
+  it('returns 400 when requestId is missing', async () => {
+    const { repo, app } = await buildTestApp();
+    try {
+      seedRepo(repo, { 'item-1': 5 });
+      const res = await app.inject({
+        method: 'POST',
+        url: '/reservations',
+        payload: { sku: 'item-1', quantity: 1, userId: 'u1' },
+      });
+      expect(res.statusCode).toBe(400);
+      expect(res.json()).toMatchObject({ error: 'invalid_request' });
+    } finally {
+      await app.close();
+    }
   });
 });

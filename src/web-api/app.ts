@@ -1,5 +1,5 @@
 import Fastify, { type FastifyInstance } from 'fastify';
-import { randomUUID } from 'node:crypto';
+import { InMemoryReservationRepository, type ReservationRepository, type ReservationRecord } from './repository.js';
 
 export type ReservationRequest = {
   sku: string;
@@ -8,77 +8,54 @@ export type ReservationRequest = {
   userId?: string;
 };
 
-export type ReservationResponse = {
-  reservationId: string;
-  status: 'reserved' | 'rejected';
-  error?: string;
-};
-
 type ValidationErrorResponse = { error: 'invalid_request'; details: string[] };
-type ConflictResponse = { error: 'insufficient_stock'; reservationId: string; status: 'rejected'; remainingStock: number };
+type ConflictResponse = { error: 'insufficient_stock'; record: ReservationRecord; remainingStock: number };
 
-function createStore(initialStock: Record<string, number> = {}) {
-  const stock = new Map<string, number>();
-  const reservations = new Map<string, ReservationResponse>();
-  for (const [sku, qty] of Object.entries(initialStock)) {
-    stock.set(sku, qty);
-  }
-  return { stock, reservations };
+function createRepo(): ReservationRepository {
+  return new InMemoryReservationRepository();
 }
 
 declare module 'fastify' {
   interface FastifyInstance {
-    store: ReturnType<typeof createStore>;
+    repo: ReservationRepository;
   }
 }
 
-export function buildApp(initialStock: Record<string, number> = {}): FastifyInstance {
-  const app = Fastify({ logger: true });
-  const store = createStore(initialStock);
+export function buildApp(repo: ReservationRepository = createRepo()): FastifyInstance {
+  const app = Fastify({ logger: false });
 
   app.get('/health', async () => ({ status: 'ok' }));
 
-  app.post<{
-    Body: ReservationRequest;
-    Reply: ReservationResponse | ValidationErrorResponse | ConflictResponse;
-  }>(
+  app.post<{ Body: ReservationRequest; Reply: ReservationRecord | ValidationErrorResponse | ConflictResponse }>(
     '/reservations',
     async (request, reply) => {
-      const errors = validateRequest(request.body);
-      if (errors.length > 0) {
-        return reply.code(400).send({ error: 'invalid_request', details: errors });
+      const validationErrors = validateRequest(request.body);
+      if (validationErrors.length > 0) {
+        return reply.code(400).send({ error: 'invalid_request', details: validationErrors });
       }
-      const { sku, quantity, requestId } = request.body;
-      if (store.reservations.has(requestId)) {
-        return store.reservations.get(requestId)!;
-      }
-      const current = store.stock.get(sku) ?? 0;
-      if (current < quantity) {
+
+      const result = repo.upsertReservation({
+        requestId: request.body.requestId,
+        sku: request.body.sku,
+        quantity: request.body.quantity,
+      });
+
+      if (result.record.status === 'rejected') {
         return reply
           .code(409)
-          .send({ error: 'insufficient_stock', reservationId: '', status: 'rejected', remainingStock: current });
+          .send({ error: 'insufficient_stock', record: result.record, remainingStock: result.stock });
       }
-      store.stock.set(sku, current - quantity);
-      const reservation = { reservationId: randomUUID(), status: 'reserved' } as const;
-      store.reservations.set(requestId, reservation);
-      return reservation;
+
+      return reply.send(result.record);
     },
   );
 
-  // exposed for tests and potential plugin usage
-  app.decorate('store', store);
+  app.decorate('repo', repo);
   return app;
 }
 
-export function seedStore(
-  app: FastifyInstance & { store: ReturnType<typeof createStore> },
-  entries: Record<string, number>,
-) {
-  app.store.stock.clear();
-  app.store.reservations.clear();
-  for (const [sku, stock] of Object.entries(entries)) {
-    app.store.stock.set(sku, stock);
-  }
+export function seedRepo(repo: ReservationRepository, entries: Record<string, number>) {
+  repo.reset(entries);
 }
 
 function validateRequest(body: ReservationRequest): string[] {
