@@ -19,6 +19,12 @@ function createStore() {
   return { stock, reservations };
 }
 
+declare module 'fastify' {
+  interface FastifyInstance {
+    store: ReturnType<typeof createStore>;
+  }
+}
+
 export function buildApp(): FastifyInstance {
   const app = Fastify({ logger: false });
   const store = createStore();
