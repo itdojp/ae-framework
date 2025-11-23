@@ -19,6 +19,9 @@
    - `plans/web-api/03-impl.md` で handler/service/repo を実装
 4. 検証
    - `plans/web-api/04-verify.md` のコマンドを順に実行
+   - Web API テストの推奨コマンド
+     - `pnpm run test:integration:webapi`
+     - `pnpm run test:property:webapi`
    - キャッシュ復元がある場合: `node scripts/pipelines/sync-test-results.mjs --restore`
    - トレンド比較: `node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-trends.json`
 5. PR 仕上げ

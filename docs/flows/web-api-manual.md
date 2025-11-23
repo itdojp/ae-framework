@@ -17,8 +17,8 @@
 4. 検証
    - `pnpm run lint`
    - `pnpm run test:fast`
-   - `pnpm run test:integration -- --runInBand`
-   - `pnpm run test:property -- --runInBand --maxWorkers=50%`
+   - `pnpm run test:integration:webapi`
+   - `pnpm run test:property:webapi`
    - 任意: `STRYKER_TIME_LIMIT=0 pnpm run pipelines:mutation:quick`
    - 任意: キャッシュ/トレンド比較
      - `node scripts/pipelines/sync-test-results.mjs --store`
