@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { buildApp } from '../../../src/web-api/app';
+import { buildApp, seedStore } from '../../../src/web-api/app';
 
 // NOTE: test:fast では除外されるが、手動/CIでの動作確認用として有効化。
 describe('web api / reservations', () => {
@@ -7,7 +7,7 @@ describe('web api / reservations', () => {
 
   beforeAll(async () => {
     await app.ready();
-    app.store.stock.set('item-1', 5);
+    seedStore(app, { 'item-1': 5 });
   });
 
   afterAll(async () => {
@@ -25,16 +25,9 @@ describe('web api / reservations', () => {
   });
 
   it('is idempotent for the same requestId', async () => {
-    const first = await app.inject({
-      method: 'POST',
-      url: '/reservations',
-      payload: { sku: 'item-1', quantity: 1, requestId: 'r2', userId: 'u1' },
-    });
-    const second = await app.inject({
-      method: 'POST',
-      url: '/reservations',
-      payload: { sku: 'item-1', quantity: 1, requestId: 'r2', userId: 'u1' },
-    });
+    const payload = { sku: 'item-1', quantity: 1, requestId: 'r2', userId: 'u1' };
+    const first = await app.inject({ method: 'POST', url: '/reservations', payload });
+    const second = await app.inject({ method: 'POST', url: '/reservations', payload });
     expect(first.statusCode).toBe(200);
     expect(second.statusCode).toBe(200);
     expect(first.json()).toEqual(second.json());
