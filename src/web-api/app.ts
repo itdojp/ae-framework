@@ -1,4 +1,4 @@
-import Fastify, { FastifyInstance } from 'fastify';
+import Fastify, { type FastifyInstance } from 'fastify';
 import { InMemoryReservationRepository, ReservationRepository, ReservationRecord } from './repository';
 
 export type ReservationRequest = {
