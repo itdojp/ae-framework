@@ -39,7 +39,7 @@ export class InMemoryReservationRepository implements ReservationRepository {
     return this.stock.get(sku) ?? 0;
   }
 
-  upsertReservation(input: { requestId: string; sku: string; quantity: number }) {
+  upsertReservation(input: { requestId: string; sku: string; quantity: number }): UpsertResult {
     const { requestId, sku, quantity } = input;
     if (this.reservations.has(requestId)) {
       const record = this.reservations.get(requestId)!;
