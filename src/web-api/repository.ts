@@ -11,6 +11,10 @@ export type ReservationRecord = {
 export interface ReservationRepository {
   reset(stock: Record<string, number>): void;
   getStock(sku: string): number;
+  /**
+   * Idempotently create or fetch a reservation for the given requestId.
+   * Implementations should ensure this operation is atomic to avoid races on stock/reservations.
+   */
   upsertReservation(input: {
     requestId: string;
     sku: string;
