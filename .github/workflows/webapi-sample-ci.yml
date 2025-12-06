@@ -2,6 +2,9 @@ name: Web API Sample CI (manual)
 
 on:
   workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
 
 permissions:
   contents: read
