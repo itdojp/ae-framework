@@ -115,7 +115,7 @@ jobs:
 
   secrets-scan:
     needs: gate
-    if: ${{ needs.gate.outputs.run_security == 'true' && secrets.GITLEAKS_LICENSE != '' }}
+    if: ${{ needs.gate.outputs.run_security == 'true' }}
     name: Secrets Scanning
     runs-on: ubuntu-latest
     
@@ -125,20 +125,24 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Maybe skip (GITLEAKS_LICENSE missing)
+        id: license_gate
+        run: |
+          if [ -z "${{ secrets.GITLEAKS_LICENSE }}" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "GITLEAKS_LICENSE is not set; skipping gitleaks."
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Run Gitleaks
+        if: steps.license_gate.outputs.skip != 'true'
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
         with:
           config-path: .gitleaks.toml
-
-  secrets-scan-skip:
-    needs: gate
-    if: ${{ needs.gate.outputs.run_security == 'true' && secrets.GITLEAKS_LICENSE == '' }}
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Skipping Gitleaks scan because GITLEAKS_LICENSE secret is not set."
 
   codeql-analysis:
     needs: gate
