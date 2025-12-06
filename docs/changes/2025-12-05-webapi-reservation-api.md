@@ -14,7 +14,7 @@
   - `tests/property/web-api/fast-check.config.ts` で FC_WEBAPI_RUNS 等の環境変数で実行回数を調整可能に。
 
 ## 影響/注意点
-- 既知警告: テスト実行時に MaxListenersExceededWarning が発生（機能影響なし）。抑止はバックログ化。
+- 既知警告: テスト実行時の MaxListenersExceededWarning は `tests/setup/ci-vitest.ts` で setMaxListeners(0) を設定済み。依然発生する場合は Socket などの追加対処を検討。
 - CI: 現状 gate/verify-lite 等は緑。Security Analysis の gitleaks ライセンス未設定などはリポジトリ共通課題として別途対応予定。
 
 ## 次ステップ
