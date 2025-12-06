@@ -80,7 +80,7 @@ jobs:
     if: ${{ needs.gate.outputs.run_security == 'true' }}
     name: Dependency Audit
     runs-on: ubuntu-latest
-    continue-on-error: true
+    continue-on-error: ${{ github.event_name == 'pull_request' }}
     
     steps:
       - name: Checkout code
@@ -129,8 +129,14 @@ jobs:
         id: license_gate
         run: |
           if [ -z "${{ secrets.GITLEAKS_LICENSE }}" ]; then
-            echo "skip=true" >> $GITHUB_OUTPUT
-            echo "GITLEAKS_LICENSE is not set; skipping gitleaks."
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              echo "skip=true" >> $GITHUB_OUTPUT
+              echo "GITLEAKS_LICENSE is not set; skipping gitleaks for PR."
+            else
+              echo "skip=false" >> $GITHUB_OUTPUT
+              echo "GITLEAKS_LICENSE is required on push/schedule. Failing."
+              exit 1
+            fi
           else
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
@@ -143,6 +149,15 @@ jobs:
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
         with:
           config-path: .gitleaks.toml
+
+  secrets-scan-skip:
+    needs: gate
+    if: ${{ needs.gate.outputs.run_security == 'true' && secrets.GITLEAKS_LICENSE == '' && github.event_name == 'pull_request' }}
+    name: Secrets Scanning (Skipped)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - run: echo "Skipping Gitleaks scan because GITLEAKS_LICENSE secret is not set (PR only)."
 
   codeql-analysis:
     needs: gate
@@ -184,7 +199,7 @@ jobs:
     if: ${{ needs.gate.outputs.run_security == 'true' }}
     name: License Compliance
     runs-on: ubuntu-latest
-    continue-on-error: true
+    continue-on-error: ${{ github.event_name == 'pull_request' }}
     
     steps:
       - name: Checkout code
