@@ -4,7 +4,13 @@ on:
     branches: [ main ]
     tags: ['v*']
   pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   qa_gate:
