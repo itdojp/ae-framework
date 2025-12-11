@@ -27,8 +27,13 @@ jobs:
           script: |
             const isPR = context.eventName === 'pull_request';
             const labels = (context.payload.pull_request?.labels || []).map(l=>l.name);
-            const shouldRun = !isPR || labels.includes('run-qa');
+            const runByLabel = labels.includes('run-qa');
+            const runByDispatch = context.eventName === 'workflow_dispatch';
+            const enablePush = process.env.AE_QA_BENCH_PUSH === 'true' && context.eventName === 'push';
+            const shouldRun = runByLabel || runByDispatch || enablePush;
             core.setOutput('run', String(shouldRun));
+        env:
+          AE_QA_BENCH_PUSH: ${{ vars.AE_QA_BENCH_PUSH }}
   qa-bench:
     needs: qa_gate
     if: ${{ needs.qa_gate.outputs.run == 'true' }}
