@@ -6,6 +6,9 @@ on:
       - '*.md'
   push:
     branches: [ main ]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true

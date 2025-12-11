@@ -5,6 +5,9 @@ on:
   workflow_dispatch:      # 手動実行
   push:
     tags: ['v*']          # リリースタグ時
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
