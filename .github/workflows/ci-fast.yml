@@ -1,9 +1,15 @@
 name: CI Fast
 on:
   pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
   push:
     branches: [main, develop]
     tags: ['v*']
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
   workflow_dispatch:
   workflow_call:
     # Allow release workflow to reuse this fast CI
