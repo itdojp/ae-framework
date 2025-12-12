@@ -12,15 +12,14 @@ on:
       - 'types/**'
   push:
     tags: ['v*']
-    paths-ignore:
-      - 'docs/**'
-      - '*.md'
     paths:
       - 'src/**'
       - 'packages/**'
       - 'apps/**'
       - 'tests/**'
       - '.github/workflows/quality-gates-centralized.yml'
+      - '!docs/**'
+      - '!**/*.md'
   workflow_call:
     # Allow reuse from other workflows (e.g., release)
     inputs:
