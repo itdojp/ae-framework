@@ -3,6 +3,9 @@ name: SBOM Generation and Security Scanning
 on:
   push:
     branches: [ main, develop ]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
   pull_request:
     branches: [ main ]
     # Run SBOM only when dependency or code manifests change
@@ -22,6 +25,9 @@ on:
         required: false
         default: 'true'
         type: boolean
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   sbom-generation:
@@ -156,9 +162,9 @@ jobs:
         
   security-analysis:
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'run-security')
     continue-on-error: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking') }}
     needs: sbom-generation
-    if: always()
     
     steps:
     - name: Checkout code
