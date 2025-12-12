@@ -3,6 +3,9 @@ name: Security Analysis
 on:
   push:
     branches: [ main, develop ]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
   pull_request:
     branches: [ main ]
     # Avoid running heavy scans for docs-only changes
