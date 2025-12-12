@@ -15,6 +15,12 @@ on:
     paths-ignore:
       - 'docs/**'
       - '*.md'
+    paths:
+      - 'src/**'
+      - 'packages/**'
+      - 'apps/**'
+      - 'tests/**'
+      - '.github/workflows/quality-gates-centralized.yml'
   workflow_call:
     # Allow reuse from other workflows (e.g., release)
     inputs:

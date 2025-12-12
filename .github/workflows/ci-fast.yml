@@ -4,12 +4,24 @@ on:
     paths-ignore:
       - 'docs/**'
       - '*.md'
+    paths:
+      - 'src/**'
+      - 'packages/**'
+      - 'apps/**'
+      - 'tests/**'
+      - '.github/workflows/ci-fast.yml'
   push:
     branches: [main, develop]
     tags: ['v*']
     paths-ignore:
       - 'docs/**'
       - '*.md'
+    paths:
+      - 'src/**'
+      - 'packages/**'
+      - 'apps/**'
+      - 'tests/**'
+      - '.github/workflows/ci-fast.yml'
   workflow_dispatch:
   workflow_call:
     # Allow release workflow to reuse this fast CI
