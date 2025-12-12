@@ -12,7 +12,7 @@ on:
       - 'docs/**'
       - '*.md'
   schedule:
-    - cron: '30 6 * * *'
+    - cron: '30 6 * * 1' # weekly (Mon)
   workflow_dispatch:
 
 concurrency:
@@ -341,7 +341,7 @@ jobs:
           echo "severity=${severity}" >> "$GITHUB_OUTPUT"
 
       - name: Upload heavy test trend report
-        if: ${{ always() && steps.flags.outputs.should_run == 'true' }}
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' && github.event_name != 'pull_request' }}
         uses: actions/upload-artifact@v4
         with:
           name: heavy-test-trends
