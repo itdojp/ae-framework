@@ -347,7 +347,7 @@ jobs:
           name: heavy-test-trends
           path: reports/heavy-test-trends.json
           if-no-files-found: ignore
-          retention-days: 14
+          retention-days: 7
 
       - name: Upload heavy test trend history
         if: ${{ always() && steps.flags.outputs.should_run == 'true' && github.event_name == 'schedule' }}
@@ -356,7 +356,7 @@ jobs:
           name: heavy-test-trends-history
           path: reports/heavy-test-trends-history
           if-no-files-found: ignore
-          retention-days: 30
+          retention-days: 14
 
       - name: Notify Slack (heavy trend alert)
         if: ${{ always() && steps.flags.outputs.should_run == 'true' && github.event_name == 'schedule' && steps.heavy-summary.outputs.severity != 'ok' && env.SLACK_WEBHOOK_URL != '' }}
