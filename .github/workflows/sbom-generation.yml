@@ -16,8 +16,8 @@ on:
       - 'apps/**'
       - 'src/**'
   schedule:
-    # Run daily at 2 AM UTC
-    - cron: '0 2 * * *'
+    # Run weekly to reduce cost (Mon 05:40 UTC)
+    - cron: '40 5 * * 1'
   workflow_dispatch:
     inputs:
       include_vulnerabilities:
