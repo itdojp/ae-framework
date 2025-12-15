@@ -36,6 +36,10 @@ CI Extended restores cached heavy test artifacts (`.cache/test-results`) when re
 - `run-qa`: run `ae-ci` workflow’s `qa-bench` on PRs (default off)
 - `run-spec`: enable spec fail-fast on PRs
 - `run-drift`: enable codegen drift detection on PRs
+- Quick when-to-use (opt-in labels)
+  - `run-security`: trigger Security/SBOM on PRs when touching deps, crypto/security code, or before release; otherwise weekly cron covers the baseline
+  - `run-hermetic`: trigger Hermetic CI on PRs when build determinism or network isolation must be validated
+  - `run-qa`: run QA bench on PRs when behavior/perf regressions are suspected; otherwise cron/main covers it
 - `run-hermetic`: enable Hermetic CI on PRs
 - `run-quality`: enable quality matrix in parallel tests
 - `run-flake`: enable flake-detection on PRs
@@ -149,6 +153,10 @@ CI Extended 実行後は heavy テスト成果物を `.cache/test-results` に�
 - `run-qa`: `ae-ci` ワークフローの `qa-bench` を PR で実行（既定は非実行）
 - `run-spec`: 仕様 Fail-Fast を PR で有効化
 - `run-drift`: Codegen Drift 検出を PR で有効化
+- 使い所（オプトイン ラベル）
+  - `run-security`: 依存・暗号/セキュリティ関連変更やリリース前に Security/SBOM をPRで即時実行（通常は週次cronでベースライン実行）
+  - `run-hermetic`: ビルド決定性やネットワーク隔離をPRで確認したい場合に Hermetic CI を実行
+  - `run-qa`: 挙動/性能劣化が疑われるPRで QA bench を実行（通常は main/cron がカバー）
  - `run-adapters`: Adapter Thresholds（a11y/perf/Lighthouse）をPRでレポート（report-only）。`adapter-thresholds.yml` が要約コメントを投稿
  - `enforce-perf`: perf スコアのしきい値を強制（`perf:<pct>` ラベルで上書き、既定は `vars.PERF_DEFAULT_THRESHOLD` または 75）
  - `enforce-lh`: Lighthouse performance スコアのしきい値を強制（`lh:<pct>` ラベルで上書き、既定は `vars.LH_DEFAULT_THRESHOLD` または 80）
