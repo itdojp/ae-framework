@@ -4,6 +4,11 @@ Summary
 - What changed and why
 - Risk/impact
 
+Positioning fit (optional)
+- Does this change keep specs / verification outputs / regression signals **versioned & schema-validated** so they remain auditable/reproducible?
+- Does it respect CI quality gates / label gating so “what can merge” stays policy-driven?
+- If AI/agent-generated artifacts are involved, are they captured and validated (AJV/tests) for traceability?
+
 CI Labels (optional)
 - Add `run-qa` to execute QA/Bench on this PR
 - Add `run-security` to execute Security/Compliance checks

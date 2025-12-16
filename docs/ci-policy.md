@@ -6,7 +6,7 @@
 
 ## English
 
-This document defines CI policies to keep PR experience fast and stable while maintaining quality.
+This document defines CI policies to keep PR experience fast and stable while maintaining quality. It aligns with the project’s positioning: **turning specs, verification outputs, and regression signals into versioned, schema-validated artifacts enforced in CI**, so AI-assisted changes stay auditable, reproducible, and policy-driven.
 
 ### Goals
 - Block only lightweight, deterministic checks on PRs
@@ -30,7 +30,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - `run-mbt`: execute MBT smoke (`test:mbt:ci`) within CI Extended
 - `run-mutation`: execute mutation auto diff (extended pipeline)
 
-CI Extended restores cached heavy test artifacts (`.cache/test-results`) when rerunning; the cache is refreshed at the end of each run via `node scripts/pipelines/sync-test-results.mjs --store`. Check or warm the cache locally with `--status` / `--restore` before dispatching reruns. Nightly runs use a stable cache key (`ci-heavy-${ runner.os }-schedule`) so the previous baseline is rehydrated before execution, call `node scripts/pipelines/compare-test-trends.mjs` to produce a Markdown diff (posted to the Step Summary), and persist both `reports/heavy-test-trends.json` and `reports/heavy-test-trends-history/<timestamp>.json` as artifacts (`heavy-test-trends`, `heavy-test-trends-history`).
+CI Extended restores cached heavy test artifacts (`.cache/test-results`) when rerunning; the cache is refreshed at the end of each run via `node scripts/pipelines/sync-test-results.mjs --store`. Check or warm the cache locally with `--status` / `--restore` before dispatching reruns. Nightly runs use a stable cache key (`ci-heavy-${ runner.os }-schedule`) so the previous baseline is rehydrated before execution, call `node scripts/pipelines/compare-test-trends.mjs` to produce a Markdown diff (posted to the Step Summary), and persist both `reports/heavy-test-trends.json` and `reports/heavy-test-trends-history/<timestamp>.json` as artifacts (`heavy-test-trends`, `heavy-test-trends-history`). This makes heavy-test evidence repeatable and auditable across PRs and schedules.
 - `qa --light`: run QA in light mode (vitest -> `test:fast`); used in `ae-ci`
 - `ae-benchmark run --ci --light --dry-run`: benchmark config validation only in PRs (fast & stable)
 - `run-qa`: run `ae-ci` workflow’s `qa-bench` on PRs (default off)
