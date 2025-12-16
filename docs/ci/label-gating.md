@@ -9,6 +9,7 @@
 PR ラベルでゲートを段階的に強化するための方針です（既定は非ブロッキング）。
 - `enforce-artifacts`, `enforce-testing`, `enforce-coverage`, `coverage:<pct>`, `trace:<id>`, `pr-summary:detailed`
 - `run-ci-extended`, `run-integration`, `run-property`, `run-mbt`, `run-mutation`
+- オプトイン系: `run-security`（Security/SBOM）、`run-hermetic`（Hermetic CI）、`run-qa`（QA bench）
 - 各ワークフローがラベルを読み取り、`continue-on-error` 等を切り替え
 
 CI Extended を再実行する際は `.cache/test-results` に保存された成果物が自動復元されます。必要に応じて `node scripts/pipelines/sync-test-results.mjs --status` / `--restore` を実行し、完了後は `--store` で更新してください。差分概要は `node scripts/pipelines/compare-test-trends.mjs` で確認でき、Step Summary にトレンド比較が追記されます。スケジュール実行では `ci-heavy-${ runner.os }-schedule` キーを使って直近 Nightly の baseline を共有し、`heavy-test-trends-history` アーティファクトに履歴を蓄積します。
@@ -28,6 +29,10 @@ Labels
 - `run-property`: run only the property harness portion of CI Extended
 - `run-mbt`: run only the MBT smoke (`test:mbt:ci`) portion of CI Extended
 - `run-mutation`: run only the mutation auto diff step of CI Extended
+- Opt-in (heavy/conditional)
+  - `run-security`: trigger Security/SBOM on PRs when deps/crypto/security code change or before release (otherwise weekly cron covers baseline)
+  - `run-hermetic`: run Hermetic CI on PRs to validate determinism/network isolation when needed
+  - `run-qa`: run QA bench on PRs when behavior/perf regressions are suspected (cron/main covers normal cases)
 
 The CI Extended workflow restores cached heavy test artifacts from `.cache/test-results`. To reuse MBT/property/mutation outputs when re-running locally or via dispatch, run `node scripts/pipelines/sync-test-results.mjs --restore` beforehand (and `--store` afterwards to refresh the cache). Scheduled runs share the `ci-heavy-${ runner.os }-schedule` cache key so that Nightly executions inherit the previous baseline and publish `heavy-test-trends-history` artifacts.
 

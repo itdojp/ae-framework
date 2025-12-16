@@ -330,7 +330,7 @@
   "dependencies": {
     "@ae-framework/spec-compiler": "file:./packages/spec-compiler",
     "@aws-sdk/client-s3": "^3.901.0",
-    "@modelcontextprotocol/sdk": "^0.5.0",
+    "@modelcontextprotocol/sdk": "^1.25.0",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/api-logs": "^0.52.0",
     "@opentelemetry/auto-instrumentations-node": "^0.47.0",
@@ -350,9 +350,9 @@
     "fastify-openapi-glue": "^4.5.0",
     "fastify-plugin": "5",
     "gitleaks": "^1.0.0",
-    "glob": "^10.3.0",
+    "glob": "^10.5.0",
     "handlebars": "^4.7.8",
-    "js-yaml": "^4.1.0",
+    "js-yaml": "^4.1.1",
     "micromatch": "^4.0.8",
     "pg": "^8.12.0",
     "pino": "^9.0.0",
@@ -436,5 +436,10 @@
   "exports": {
     ".": "./dist/src/index.js"
   },
-  "packageManager": "pnpm@10.0.0"
+  "packageManager": "pnpm@10.0.0",
+  "pnpm": {
+    "overrides": {
+      "esbuild": "0.27.1"
+    }
+  }
 }
