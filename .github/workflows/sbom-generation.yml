@@ -491,7 +491,7 @@ jobs:
       env:
         COSIGN_EXPERIMENTAL: 1
       run: |
-        cosign sign-blob sbom.json --output-signature sbom.json.sig --output-certificate sbom.json.crt
+        cosign sign-blob --yes sbom.json --output-signature sbom.json.sig --output-certificate sbom.json.crt
         
     - name: Upload signed SBOM
       uses: actions/upload-artifact@v4
