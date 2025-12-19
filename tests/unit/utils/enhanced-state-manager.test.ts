@@ -1,12 +1,12 @@
 import { afterAll, describe, expect, it, vi } from 'vitest';
-import { mkdtemp, mkdir, rm, readFile, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
 import { EnhancedStateManager } from '../../../src/utils/enhanced-state-manager.js';
 import type { StateEntry } from '../../../src/utils/enhanced-state-manager.js';
-import { asInternal, getStorage, getTransactions, getOptions, getKeyIndex, getVersionIndex, buildExportedState, buildStateEntry } from '../../_helpers/enhanced-state-manager.js';
+import { asInternal, getStorage, getOptions, getKeyIndex, getVersionIndex, buildExportedState, buildStateEntry } from '../../_helpers/enhanced-state-manager.js';
 
 const tempRoots: string[] = [];
 
