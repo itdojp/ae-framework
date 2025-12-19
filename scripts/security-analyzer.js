@@ -73,7 +73,7 @@ class SecurityAnalyzer {
     
     try {
       // Run gitleaks
-      const gitleaksResult = execSync('npx gitleaks detect --no-git --verbose', {
+      execSync('npx gitleaks detect --no-git --verbose --redact', {
         cwd: this.projectRoot,
         encoding: 'utf-8',
         stdio: 'pipe'
@@ -102,11 +102,18 @@ class SecurityAnalyzer {
       
     } catch (error) {
       if (error.status === 1) {
+        const output = [error.stdout, error.stderr]
+          .map(value => (value == null ? '' : String(value).trim()))
+          .filter(Boolean)
+          .join('\n');
+        if (output) {
+          console.error(output);
+        }
         // Gitleaks found secrets
         return {
           status: 'failed',
           tool: 'gitleaks',
-          details: ['Secrets detected by gitleaks - check output above']
+          details: ['Secrets detected by gitleaks - see redacted details above']
         };
       } else {
         return {
