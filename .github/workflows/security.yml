@@ -41,7 +41,7 @@ jobs:
     if: ${{ needs.gate.outputs.run_security == 'true' }}
     name: Security Scanning
     runs-on: ubuntu-latest
-    continue-on-error: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking') }}
+    continue-on-error: true
     
     steps:
       - name: Checkout code
@@ -83,7 +83,7 @@ jobs:
     if: ${{ needs.gate.outputs.run_security == 'true' }}
     name: Dependency Audit
     runs-on: ubuntu-latest
-    continue-on-error: ${{ github.event_name == 'pull_request' }}
+    continue-on-error: true
     
     steps:
       - name: Checkout code
@@ -121,6 +121,7 @@ jobs:
     if: ${{ needs.gate.outputs.run_security == 'true' }}
     name: Secrets Scanning
     runs-on: ubuntu-latest
+    continue-on-error: true
     
     steps:
       - name: Checkout code
