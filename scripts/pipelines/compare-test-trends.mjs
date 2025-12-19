@@ -9,7 +9,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..', '..');
 
-const CACHE_ROOT = path.join(repoRoot, '.cache', 'test-results');
 const BASELINE_ROOT = path.join(repoRoot, '.cache', 'test-results-baseline');
 
 const TARGETS = [
@@ -130,8 +129,8 @@ function diffMetrics(baseline, current) {
     );
   }
   const keys = new Set([
-    ...Object.keys(baseline ?? {}),
-    ...Object.keys(current ?? {}),
+    ...Object.keys(baseline),
+    ...Object.keys(current),
   ]);
   const result = {};
   for (const key of keys) {

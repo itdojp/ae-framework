@@ -102,9 +102,10 @@ async function exportDashboard({ host, uid, token, output, dryRun }) {
   const data = await response.json();
   const destPath = path.resolve(output);
   fs.mkdirSync(path.dirname(destPath), { recursive: true });
+  // codeql[js/http-to-file-access] Exporting dashboards to disk is an explicit CLI action.
   fs.writeFileSync(destPath, JSON.stringify(data, null, 2));
   const suffix = dryRun ? ' (dry-run)' : '';
-  console.log(`[export-dashboard] wrote dashboard "${uid}" to ${destPath}${suffix}`);
+  console.log(`[export-dashboard] dashboard export completed for uid=${uid} -> ${destPath}${suffix}`);
 }
 
 async function main() {

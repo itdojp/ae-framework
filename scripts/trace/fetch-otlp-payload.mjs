@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
@@ -109,6 +108,7 @@ const copyFile = async (source, fallbackType) => {
 };
 
 const writeBuffer = async (buffer, fallbackType, fallbackDetail) => {
+  // codeql[js/http-to-file-access] Persisting fetched payloads is an explicit CLI action.
   await fsp.writeFile(targetPath, buffer);
   setSource(fallbackType, fallbackDetail);
 };

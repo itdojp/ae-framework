@@ -61,10 +61,7 @@ function extractAttributeValue(attrValue) {
       ])
     );
   }
-  const debugValue =
-    attrValue && typeof attrValue === "object"
-      ? Object.keys(attrValue)
-      : typeof attrValue;
+  const debugValue = Object.keys(attrValue);
   console.warn(
     "[convert-otlp-kvonce] unsupported OTLP attribute representation encountered; returning undefined (keys)",
     debugValue

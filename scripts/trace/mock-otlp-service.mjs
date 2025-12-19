@@ -11,8 +11,7 @@ import fs from "node:fs/promises";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, "..", "..");
-const outputDir = path.join(projectRoot, "hermetic-reports", "trace");
-const outputFile = path.join(outputDir, "collected-kvonce-otlp.json");
+const defaultOutputFile = path.join(projectRoot, "hermetic-reports", "trace", "collected-kvonce-otlp.json");
 
 diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.ERROR);
 
@@ -70,7 +69,9 @@ function spanToOtlp(span) {
   };
 }
 
-async function main() {
+export async function produceMockOtlp(outputPath = defaultOutputFile) {
+  const resolvedOutputPath = path.resolve(outputPath);
+  const outputDir = path.dirname(resolvedOutputPath);
   const provider = new BasicTracerProvider({
     resource: new Resource({
       [SemanticResourceAttributes.SERVICE_NAME]: "kvonce-mock-service",
@@ -111,9 +112,7 @@ async function main() {
     const port = typeof serverAddress === "object" && serverAddress ? serverAddress.port : 0;
     url = `http://127.0.0.1:${port}/event`;
   } catch (error) {
-    console.error("[mock-otlp] failed to start server:", error.message);
-    process.exitCode = 1;
-    return;
+    throw new Error(`[mock-otlp] failed to start server: ${error.message}`);
   }
 
   const events = [
@@ -137,9 +136,7 @@ async function main() {
 
   const spans = exporter.spans;
   if (!spans.length) {
-    console.error("[mock-otlp] no spans captured");
-    process.exitCode = 1;
-    return;
+    throw new Error("[mock-otlp] no spans captured");
   }
 
   const resourceAttributes = Object.entries(spans[0].resource.attributes ?? {}).map(([key, val]) => ({
@@ -170,11 +167,20 @@ async function main() {
   };
 
   await fs.mkdir(outputDir, { recursive: true });
-  await fs.writeFile(outputFile, JSON.stringify(payload, null, 2), "utf8");
-  console.log(`[mock-otlp] wrote payload to ${outputFile}`);
+  await fs.writeFile(resolvedOutputPath, JSON.stringify(payload, null, 2), "utf8");
+  console.log(`[mock-otlp] wrote payload to ${resolvedOutputPath}`);
+  return resolvedOutputPath;
 }
 
-main().catch((error) => {
-  console.error("[mock-otlp] failed:", error.message);
-  process.exitCode = 1;
-});
+async function main() {
+  try {
+    await produceMockOtlp();
+  } catch (error) {
+    console.error("[mock-otlp] failed:", error.message);
+    process.exitCode = 1;
+  }
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main();
+}
