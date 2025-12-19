@@ -5,7 +5,6 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as fs from 'fs';
-import * as path from 'path';
 import { createTempDir, writeTempJson, rmrf } from '../_helpers/tmpfs.js';
 import { QualityPolicyLoader, QualityGateResult } from '../../src/quality/policy-loader.js';
 
