@@ -1,7 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createHash } from 'node:crypto';
-import { EnhancedStateManager } from '../../../src/utils/enhanced-state-manager.js';
-import type { StateEntry, AEIR } from '../../../src/utils/enhanced-state-manager.js';
 import { asInternal, createManager as createTestManager, createTempProjectRoot, cleanupProjectRoot } from '../../_helpers/enhanced-state-manager.js';
 
 const defaultOptions = {
