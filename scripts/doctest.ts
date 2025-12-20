@@ -399,9 +399,17 @@ class DocumentationTester {
     // In a full implementation, this would make HTTP requests
     
     // Skip validation for localhost and example domains
-    if (link.url.includes('localhost') || 
-        link.url.includes('example.com') ||
-        link.url.includes('127.0.0.1')) {
+    let hostname = '';
+    try {
+      hostname = new URL(link.url).hostname.toLowerCase();
+    } catch {
+      return 'valid';
+    }
+    if (hostname === 'localhost' ||
+        hostname === '127.0.0.1' ||
+        hostname === '::1' ||
+        hostname === 'example.com' ||
+        hostname.endsWith('.example.com')) {
       return 'valid';
     }
 
