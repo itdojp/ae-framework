@@ -311,10 +311,12 @@ function parseArgs(argv) {
     const key = token.slice(ARG_PREFIX.length);
     const nextIndex = i + 1;
     const value = tokens[nextIndex];
-    if (key === 'note' || key === 'notes') {
+    if (key === 'note') {
       if (value && !value.startsWith(ARG_PREFIX)) {
         args.notes.push(value);
         consumed.add(nextIndex);
+      } else {
+        throw new Error('Missing value for --note flag');
       }
       continue;
     }
