@@ -1,12 +1,15 @@
 import { writeFile, mkdir } from 'node:fs/promises';
 
 const JSON_UNSAFE_REGEX = /[<>\u2028\u2029/]/g;
+const ESCAPED_LINE_SEPARATOR = '\\u2028';
+const ESCAPED_PARAGRAPH_SEPARATOR = '\\u2029';
+
 const JSON_UNSAFE_MAP: Record<string, string> = {
   '<': '\\u003C',
   '>': '\\u003E',
   '/': '\\u002F',
-  '\u2028': '\\u2028',
-  '\u2029': '\\u2029',
+  '\u2028': ESCAPED_LINE_SEPARATOR,
+  '\u2029': ESCAPED_PARAGRAPH_SEPARATOR,
 };
 
 function escapeJsonForCode(value: string): string {
