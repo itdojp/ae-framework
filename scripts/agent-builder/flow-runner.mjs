@@ -278,6 +278,8 @@ Options:
   --workflow <name> Trace correlation workflow name override (optional)
   --commit <sha>    Trace correlation commit override (optional)
   --branch <name>   Trace correlation branch override (optional)
+  --tempoLinkTemplate <url> Tempo link template (e.g. https://tempo/{traceId})
+  --note <text>     Attach a note to the envelope (repeatable)
   --help, -h        Show this help
 `);
 }
@@ -292,6 +294,8 @@ function parseArgs(argv) {
     workflow: null,
     commit: null,
     branch: null,
+    tempoLinkTemplate: null,
+    notes: [],
     help: false,
   };
   const tokens = argv.slice(2);
@@ -307,6 +311,13 @@ function parseArgs(argv) {
     const key = token.slice(ARG_PREFIX.length);
     const nextIndex = i + 1;
     const value = tokens[nextIndex];
+    if (key === 'note' || key === 'notes') {
+      if (value && !value.startsWith(ARG_PREFIX)) {
+        args.notes.push(value);
+        consumed.add(nextIndex);
+      }
+      continue;
+    }
     if (value && !value.startsWith(ARG_PREFIX)) {
       if (key in args) {
         args[key] = value;
@@ -351,6 +362,8 @@ export async function main(argv = process.argv) {
   const result = executeFlow(flow, {
     verifyLiteSummary,
     correlation,
+    ...(args.tempoLinkTemplate ? { tempoLinkTemplate: args.tempoLinkTemplate } : {}),
+    ...(args.notes.length > 0 ? { notes: args.notes } : {}),
   });
 
   if (args.output && result.envelope) {
