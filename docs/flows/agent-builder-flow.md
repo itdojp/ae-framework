@@ -24,7 +24,7 @@ node scripts/agent-builder/flow-runner.mjs \
 
 ## 出力
 - 標準出力にノード実行サマリ（nodeId/kind/info）が出力される。
-- `--summary` を指定した場合は、Envelope JSON が生成される。
+- `--summary` を指定した場合は Envelope JSON が生成され、`--output` を併用するとファイルに出力される。
 
 ## 備考
 - `--help` でオプション一覧を表示できる。
