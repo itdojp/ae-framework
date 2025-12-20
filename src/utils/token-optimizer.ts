@@ -137,7 +137,6 @@ export class TokenOptimizer {
       const sourceTokens = this.estimateTokens(trimmedSource);
       if (processedTokens > sourceTokens) {
         processedContent = trimmedSource;
-        processedTokens = sourceTokens;
       }
 
       // Remove dangling commas or semicolons that often appear in loose notes
