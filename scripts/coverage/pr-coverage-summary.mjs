@@ -226,6 +226,7 @@ const base = `https://api.github.com/repos/${owner}/${repo}`;
 const headers = { 'authorization': `Bearer ${token}`, 'accept': 'application/vnd.github+json' };
 
 try {
+  // codeql[js/file-access-to-http] Posting coverage summary metadata to GitHub is an explicit CI action.
   const list = await fetch(`${base}/issues/${number}/comments?per_page=100`, { headers });
   if (!list.ok) {
     console.error('Non-fatal: failed to list comments', list.status, await list.text());
@@ -234,6 +235,7 @@ try {
   const comments = await list.json();
   const mine = comments.find(c => typeof c.body === 'string' && c.body.startsWith(HEADER));
   if (mine) {
+    // codeql[js/file-access-to-http] Updating coverage summary comments is an intentional CI-side operation.
     const res = await fetch(`${base}/issues/comments/${mine.id}`, { method: 'PATCH', headers: { ...headers, 'content-type': 'application/json' }, body: JSON.stringify({ body }) });
     if (!res.ok) {
       console.error('Non-fatal: failed to update comment', res.status, await res.text());
@@ -241,6 +243,7 @@ try {
     }
     console.log('Updated AE-COVERAGE-SUMMARY');
   } else {
+    // codeql[js/file-access-to-http] Creating coverage summary comments is an intentional CI-side operation.
     const res = await fetch(`${base}/issues/${number}/comments`, { method: 'POST', headers: { ...headers, 'content-type': 'application/json' }, body: JSON.stringify({ body }) });
     if (!res.ok) {
       console.error('Non-fatal: failed to create comment', res.status, await res.text());
