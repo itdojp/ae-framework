@@ -45,6 +45,20 @@ describe('agent builder flow runner', () => {
     expect(result.envelope?.traceCorrelation?.runId).toBe('run-123');
   });
 
+  it('passes notes and tempo link templates into the envelope', () => {
+    const { flow } = loadFlowDefinition(flowFixture);
+    const summary = JSON.parse(readFileSync(summaryFixture, 'utf8'));
+
+    const result = executeFlow(flow, {
+      verifyLiteSummary: summary,
+      notes: ['agent-builder note'],
+      tempoLinkTemplate: 'https://tempo.local/trace/{traceId}',
+    });
+
+    expect(result.envelope?.notes).toContain('agent-builder note');
+    expect(result.envelope?.tempoLinks).toContain('https://tempo.local/trace/trace-1');
+  });
+
   it('respects edge ordering even when nodes are out of order', () => {
     const summary = JSON.parse(readFileSync(summaryFixture, 'utf8'));
     const flow = {
