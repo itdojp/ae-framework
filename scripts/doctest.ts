@@ -402,8 +402,9 @@ class DocumentationTester {
     let hostname = '';
     try {
       hostname = new URL(link.url).hostname.toLowerCase();
-    } catch {
-      return 'valid';
+    } catch (error) {
+      console.warn(`⚠️ Skipping malformed URL in documentation: "${link.url}" (${(error as Error).message})`);
+      return 'invalid';
     }
     if (hostname === 'localhost' ||
         hostname === '127.0.0.1' ||
