@@ -3,7 +3,7 @@
  * Tests for centralized quality policy management
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import { createTempDir, writeTempJson, rmrf } from '../_helpers/tmpfs.js';
 import { QualityPolicyLoader, QualityGateResult } from '../../src/quality/policy-loader.js';
