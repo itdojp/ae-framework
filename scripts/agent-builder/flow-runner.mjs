@@ -264,6 +264,24 @@ export function executeFlow(flow, options = {}) {
 
 const ARG_PREFIX = '--';
 
+function printUsage() {
+  console.log(`
+Usage:
+  node scripts/agent-builder/flow-runner.mjs --flow <path> [options]
+
+Options:
+  --flow <path>     Flow JSON path (required)
+  --summary <path>  Verify-lite summary JSON path (optional)
+  --output <path>   Output path for generated envelope JSON (optional)
+  --schema <path>   Flow schema path (default: schema/flow.schema.json)
+  --runId <id>      Trace correlation run id override (optional)
+  --workflow <name> Trace correlation workflow name override (optional)
+  --commit <sha>    Trace correlation commit override (optional)
+  --branch <name>   Trace correlation branch override (optional)
+  --help, -h        Show this help
+`);
+}
+
 function parseArgs(argv) {
   const args = {
     flow: null,
@@ -274,12 +292,17 @@ function parseArgs(argv) {
     workflow: null,
     commit: null,
     branch: null,
+    help: false,
   };
   const tokens = argv.slice(2);
   const consumed = new Set();
   for (let i = 0; i < tokens.length; i += 1) {
     if (consumed.has(i)) continue;
     const token = tokens[i];
+    if (token === '-h') {
+      args.help = true;
+      continue;
+    }
     if (!token.startsWith(ARG_PREFIX)) continue;
     const key = token.slice(ARG_PREFIX.length);
     const nextIndex = i + 1;
@@ -298,9 +321,14 @@ function parseArgs(argv) {
 
 export async function main(argv = process.argv) {
   const args = parseArgs(argv);
+  if (args.help) {
+    printUsage();
+    process.exit(0);
+  }
   const flowPath = args.flow;
   if (!flowPath) {
     console.error('[agent-builder] --flow <path> is required');
+    printUsage();
     process.exit(1);
   }
 
