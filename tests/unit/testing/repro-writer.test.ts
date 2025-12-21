@@ -37,10 +37,16 @@ describe('writeRepro', () => {
     expect(writeFile).toHaveBeenCalledWith(expectedPath, expect.any(String));
 
     const body = writeFile.mock.calls[0]?.[1] ?? '';
-    expect(body).toContain(`JSON.parse(${JSON.stringify(JSON.stringify(data))})`);
-    expect(body).toContain('test(');
-    expect(body).toContain('process.env.AE_SEED=');
-    expect(body).toContain('JSON.parse(');
+    const testNameMatch = body.match(/test\(("(?:[^"\\]|\\.)*")/);
+    const seedMatch = body.match(/process\.env\.AE_SEED=("(?:[^"\\]|\\.)*")/);
+    const dataMatch = body.match(/JSON\.parse\(("(?:[^"\\]|\\.)*")\)/);
+
+    expect(testNameMatch).not.toBeNull();
+    expect(seedMatch).not.toBeNull();
+    expect(dataMatch).not.toBeNull();
+    expect(JSON.parse(testNameMatch?.[1] ?? '""')).toBe(`${name} repro`);
+    expect(JSON.parse(seedMatch?.[1] ?? '""')).toBe(String(seed));
+    expect(JSON.parse(dataMatch?.[1] ?? '""')).toBe(JSON.stringify(data));
     expect(body.endsWith(');')).toBe(true);
   });
 
@@ -64,9 +70,11 @@ describe('writeRepro', () => {
     const safeName = sanitizeFilename(name);
     const expectedPath = `artifacts/repros/${safeName}.repro.ts`;
 
-    expect(writeFile).toHaveBeenCalledWith(
-      expectedPath,
-      expect.stringContaining(JSON.stringify(`${name} repro`))
-    );
+    const body = writeFile.mock.calls[0]?.[1] ?? '';
+    const testNameMatch = body.match(/test\(("(?:[^"\\]|\\.)*")/);
+
+    expect(writeFile).toHaveBeenCalledWith(expectedPath, expect.any(String));
+    expect(testNameMatch).not.toBeNull();
+    expect(JSON.parse(testNameMatch?.[1] ?? '""')).toBe(`${name} repro`);
   });
 });
