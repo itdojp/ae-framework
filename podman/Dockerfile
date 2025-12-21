@@ -11,7 +11,7 @@ COPY package*.json pnpm-lock.yaml* ./
 COPY pnpm-workspace.yaml ./
 COPY tsconfig*.json ./
 COPY packages ./packages
-RUN corepack enable pnpm && pnpm install --frozen-lockfile
+RUN npm install -g npm@11.7.0 && corepack enable pnpm && pnpm install --frozen-lockfile
 
 FROM deps AS build
 WORKDIR /app
@@ -28,6 +28,9 @@ RUN pnpm run build && pnpm prune --prod
 
 FROM ${NODE_IMAGE} AS runtime
 WORKDIR /app
+
+# Update npm to remove vulnerable glob from the base image
+RUN npm install -g npm@11.7.0
 
 # Rootless user (matches tests期待)
 RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
