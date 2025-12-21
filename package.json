@@ -328,6 +328,7 @@
     "mutation:report": "node scripts/mutation/mutation-report.mjs"
   },
   "dependencies": {
+    "@ae-framework/envelope": "file:./packages/envelope",
     "@ae-framework/spec-compiler": "file:./packages/spec-compiler",
     "@aws-sdk/client-s3": "^3.901.0",
     "@modelcontextprotocol/sdk": "^1.25.0",
@@ -360,8 +361,7 @@
     "uuid": "^11.1.0",
     "which": "^5.0.0",
     "yaml": "^2.8.1",
-    "zod": "^3.23.8",
-    "@ae-framework/envelope": "file:./packages/envelope"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@babel/core": "^7.23.0",
@@ -373,7 +373,7 @@
     "@lhci/cli": "^0.12.0",
     "@microsoft/api-extractor": "^7.52.11",
     "@microsoft/api-extractor-model": "^7.30.7",
-    "@playwright/test": "^1.47.0",
+    "@playwright/test": "^1.55.1",
     "@stryker-mutator/core": "^8.5.0",
     "@stryker-mutator/typescript-checker": "^8.7.1",
     "@stryker-mutator/vitest-runner": "^8.7.1",
@@ -399,7 +399,7 @@
     "jest-junit": "^16.0.0",
     "jsdom": "^22.1.0",
     "nyc": "^15.1.0",
-    "playwright": "^1.47.0",
+    "playwright": "^1.55.1",
     "ts-morph": "^26.0.0",
     "tsd": "^0.33.0",
     "tsx": "^4.16.0",

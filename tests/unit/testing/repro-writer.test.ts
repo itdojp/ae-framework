@@ -43,7 +43,23 @@ describe('writeRepro', () => {
 
     const body = writeFile.mock.calls[0]?.[1] ?? '';
     expect(body).toContain(`JSON.parse(${JSON.stringify(JSON.stringify(data))})`);
-    expect(() => new Function(body)).not.toThrow();
+    expect(body).toContain('test(');
+    expect(body).toContain('process.env.AE_SEED=');
+    expect(body).toContain('JSON.parse(');
+    expect(body.endsWith(');')).toBe(true);
+  });
+
+  it('escapes unsafe characters for code generation', async () => {
+    const name = '<tag>\u2028';
+    const data = { text: '</script>\u2029' };
+
+    await writeRepro(name, 1, data);
+
+    const body = writeFile.mock.calls[0]?.[1] ?? '';
+    expect(body).toContain('\\u003Ctag\\u003E');
+    expect(body).toContain('\\u2028');
+    expect(body).toContain('\\u003C\\u002Fscript\\u003E');
+    expect(body).toContain('\\u2029');
   });
 
   it('sanitizes unicode names for filenames', async () => {
@@ -52,7 +68,6 @@ describe('writeRepro', () => {
 
     const safeName = sanitizeFilename(name);
     const expectedPath = `artifacts/repros/${safeName}.repro.ts`;
-    const body = writeFile.mock.calls[0]?.[1] ?? '';
 
     expect(writeFile).toHaveBeenCalledWith(
       expectedPath,
