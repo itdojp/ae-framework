@@ -80,7 +80,7 @@ describe('Docker Production Optimization - Phase 1.4', () => {
       () => {
       const content = readFileSync(dockerfile, 'utf8');
       
-      expect(content, 'Should use Alpine images').toMatch(/docker\.io\/node:.*-alpine/);
+      expect(content, 'Should use Alpine images').toMatch(/^ARG\s+NODE_IMAGE=docker\.io\/node:[^\s]+-alpine$/m);
     });
   });
 
