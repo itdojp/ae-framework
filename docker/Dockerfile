@@ -7,7 +7,7 @@ COPY package*.json ./
 COPY pnpm-lock.yaml* ./
 
 # Install all dependencies first (needed for building)
-RUN corepack enable pnpm && \
+RUN npm install -g npm@11.7.0 && corepack enable pnpm && \
     pnpm install --frozen-lockfile
 
 # Stage 2: Build the application
@@ -26,6 +26,9 @@ RUN pnpm prune --prod
 # Stage 3: Production runtime with minimal dependencies
 FROM docker.io/node:22-alpine AS runtime
 WORKDIR /app
+
+# Update npm to remove vulnerable glob from the base image
+RUN npm install -g npm@11.7.0
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
