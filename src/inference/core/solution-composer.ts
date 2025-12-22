@@ -504,7 +504,7 @@ export class SolutionComposer {
   private resolveSubSolutionDependencies(solution: SubSolution, allSolutions: SubSolution[]): Record<string, any> {
     const resolved: Record<string, any> = {};
     
-    for (const [depId, depValue] of Object.entries(solution.dependencies)) {
+    for (const depId of Object.keys(solution.dependencies)) {
       const depSolution = allSolutions.find(s => s.subProblemId === depId);
       if (depSolution && depSolution.success) {
         resolved[depId] = depSolution.result;
