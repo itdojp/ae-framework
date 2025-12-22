@@ -201,7 +201,7 @@ class ParallelTestCoordinator {
     await Promise.race(activePromises);
     
     // Clean up completed jobs from active list
-    for (const [name, job] of this.activeJobs.entries()) {
+    for (const name of this.activeJobs.keys()) {
       if (this.completedJobs.has(name) || this.failedJobs.has(name)) {
         this.activeJobs.delete(name);
       }
