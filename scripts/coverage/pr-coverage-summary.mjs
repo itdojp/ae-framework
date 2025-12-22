@@ -226,8 +226,7 @@ const base = `https://api.github.com/repos/${owner}/${repo}`;
 const headers = { 'authorization': `Bearer ${token}`, 'accept': 'application/vnd.github+json' };
 
 try {
-  // codeql[js/file-access-to-http] Posting coverage summary metadata to GitHub is an explicit CI action.
-  const list = await fetch(`${base}/issues/${number}/comments?per_page=100`, { headers });
+  const list = await fetch(`${base}/issues/${number}/comments?per_page=100`, { headers }); // codeql[js/file-access-to-http] CI posts a coverage summary to GitHub by design.
   if (!list.ok) {
     console.error('Non-fatal: failed to list comments', list.status, await list.text());
     process.exit(0);
@@ -235,16 +234,14 @@ try {
   const comments = await list.json();
   const mine = comments.find(c => typeof c.body === 'string' && c.body.startsWith(HEADER));
   if (mine) {
-    // codeql[js/file-access-to-http] Updating coverage summary comments is an intentional CI-side operation.
-    const res = await fetch(`${base}/issues/comments/${mine.id}`, { method: 'PATCH', headers: { ...headers, 'content-type': 'application/json' }, body: JSON.stringify({ body }) });
+    const res = await fetch(`${base}/issues/comments/${mine.id}`, { method: 'PATCH', headers: { ...headers, 'content-type': 'application/json' }, body: JSON.stringify({ body }) }); // codeql[js/file-access-to-http] CI updates the coverage summary comment intentionally.
     if (!res.ok) {
       console.error('Non-fatal: failed to update comment', res.status, await res.text());
       process.exit(0);
     }
     console.log('Updated AE-COVERAGE-SUMMARY');
   } else {
-    // codeql[js/file-access-to-http] Creating coverage summary comments is an intentional CI-side operation.
-    const res = await fetch(`${base}/issues/${number}/comments`, { method: 'POST', headers: { ...headers, 'content-type': 'application/json' }, body: JSON.stringify({ body }) });
+    const res = await fetch(`${base}/issues/${number}/comments`, { method: 'POST', headers: { ...headers, 'content-type': 'application/json' }, body: JSON.stringify({ body }) }); // codeql[js/file-access-to-http] CI creates the coverage summary comment intentionally.
     if (!res.ok) {
       console.error('Non-fatal: failed to create comment', res.status, await res.text());
       process.exit(0);
