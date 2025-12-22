@@ -154,15 +154,14 @@ export function createCodegenCommand(): Command {
         console.log(chalk.blue('👀 Starting watch mode...'));
         console.log(chalk.yellow('  Press Ctrl+C to stop'));
 
-        let watchFn: undefined | ((paths: string | readonly string[], options?: { ignoreInitial?: boolean }) => any);
+        type Watcher = {
+          on(event: 'add' | 'change', handler: () => void): Watcher;
+          close(): Promise<void> | void;
+        };
+        let watchFn!: (paths: string | readonly string[], options?: { ignoreInitial?: boolean }) => Watcher;
         try {
           ({ watch: watchFn } = await import('chokidar'));
         } catch (error: unknown) {
-          console.log(chalk.yellow('Watch mode not available - chokidar not installed'));
-          console.log('Install with: npm install chokidar');
-          return;
-        }
-        if (!watchFn) {
           console.log(chalk.yellow('Watch mode not available - chokidar not installed'));
           console.log('Install with: npm install chokidar');
           return;
