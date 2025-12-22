@@ -153,13 +153,24 @@ export function createCodegenCommand(): Command {
       try {
         console.log(chalk.blue('👀 Starting watch mode...'));
         console.log(chalk.yellow('  Press Ctrl+C to stop'));
-        
-        // const { watch } = await import('chokidar');
-        console.log('Watch mode not available - chokidar not installed');
-        return;
-        
-        let timeout: NodeJS.Timeout;
-        const debounceMs = parseInt(options.debounce);
+
+        let watchFn: undefined | ((paths: string | readonly string[], options?: { ignoreInitial?: boolean }) => any);
+        try {
+          ({ watch: watchFn } = await import('chokidar'));
+        } catch (error: unknown) {
+          console.log(chalk.yellow('Watch mode not available - chokidar not installed'));
+          console.log('Install with: npm install chokidar');
+          return;
+        }
+        if (!watchFn) {
+          console.log(chalk.yellow('Watch mode not available - chokidar not installed'));
+          console.log('Install with: npm install chokidar');
+          return;
+        }
+
+        let timeout: NodeJS.Timeout | undefined;
+        const debounceMs = Number.parseInt(options.debounce, 10);
+        const debounceDelay = Number.isNaN(debounceMs) ? 1000 : debounceMs;
 
         const regenerate = async () => {
           try {
@@ -182,11 +193,19 @@ export function createCodegenCommand(): Command {
             console.error(chalk.red(`❌ Regeneration failed: ${toMessage(error)}`));
           }
         };
+        const watchTargets = [resolve(options.input)];
+        const watcher = watchFn(watchTargets, { ignoreInitial: true });
+        const scheduleRegenerate = () => {
+          if (timeout) clearTimeout(timeout);
+          timeout = setTimeout(regenerate, debounceDelay);
+        };
 
-        console.log(chalk.yellow('Watch mode requires chokidar dependency'));
-        console.log('Install with: npm install chokidar');
-        console.log('Watch mode not available in current setup');
-        return;
+        watcher.on('add', scheduleRegenerate).on('change', scheduleRegenerate);
+        console.log(chalk.green(`Watching ${watchTargets.join(', ')}`));
+        process.on('SIGINT', async () => {
+          await watcher.close();
+          process.exit(0);
+        });
 
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Watch mode failed: ${toMessage(error)}`));
