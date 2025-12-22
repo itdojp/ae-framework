@@ -19,9 +19,7 @@ export function summarizeSuites(suites) {
   }
   return entries.map(([name, info]) => {
     const status =
-      info && typeof info === 'object' && info !== null && 'status' in info
-        ? info.status
-        : undefined;
+      info && typeof info === 'object' && 'status' in info ? info.status : undefined;
     return `- ${name}: ${status ?? 'unknown'}`;
   });
 }
