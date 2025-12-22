@@ -121,7 +121,7 @@ function validateQualityPolicy() {
         
         // Validate override paths
         if (env.overrides) {
-          for (const [overridePath, value] of Object.entries(env.overrides)) {
+          for (const overridePath of Object.keys(env.overrides)) {
             const pathParts = overridePath.split('.');
             
             if (pathParts.length < 2) {
