@@ -5,7 +5,7 @@
 
 import { Command } from 'commander';
 import chalk from 'chalk';
-import { QualityPolicyLoader, qualityPolicy } from '../quality/policy-loader.js';
+import { qualityPolicy } from '../quality/policy-loader.js';
 import { toMessage } from '../utils/error-utils.js';
 import { safeExit } from '../utils/safe-exit.js';
 import { QualityGateRunner } from '../quality/quality-gate-runner.js';
