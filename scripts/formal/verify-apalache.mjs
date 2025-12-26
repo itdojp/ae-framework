@@ -3,7 +3,7 @@
 // - Detects apalache CLI presence (apalache-mc or apalache)
 // - Optionally runs a quick check when available
 // - Always writes a summary JSON (non-blocking)
-import { execSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { computeOkFromOutput } from './heuristics.mjs';
@@ -22,16 +22,44 @@ function parseArgs(argv){
   return args;
 }
 
-function has(cmd){ try { execSync(`bash -lc 'command -v ${cmd}'`, {stdio:'ignore'}); return true; } catch { return false; } }
-function shWithCode(cmd){
-  try {
-    const out = execSync(cmd, {encoding:'utf8'});
-    return { out, code: 0 };
-  } catch(e){
-    const out = (e.stdout?.toString?.()||'') + (e.stderr?.toString?.()||'');
-    const code = typeof e.status === 'number' ? e.status : (typeof e.code === 'number' ? e.code : 1);
-    return { out, code };
+function commandExists(cmd){
+  const result = spawnSync(cmd, [], { stdio: 'ignore' });
+  if (result.error && result.error.code === 'ENOENT') {
+    return false;
   }
+  return true;
+}
+
+function runCommand(cmd, cmdArgs){
+  const result = spawnSync(cmd, cmdArgs, { encoding: 'utf8' });
+  if (result.error) {
+    if (result.error.code === 'ENOENT') {
+      return { available: false, success: false, status: null, signal: null, output: '' };
+    }
+    return {
+      available: true,
+      success: false,
+      status: result.status ?? null,
+      signal: result.signal ?? null,
+      output: result.error.message ?? '',
+    };
+  }
+  const stdout = result.stdout ?? '';
+  const stderr = result.stderr ?? '';
+  return {
+    available: true,
+    success: result.status === 0,
+    status: result.status ?? null,
+    signal: result.signal ?? null,
+    output: `${stdout}${stderr}`,
+  };
+}
+
+function resolveCommandPath(cmd){
+  if (!commandExists('which')) return '';
+  const result = runCommand('which', [cmd]);
+  if (!result.available || !result.success) return '';
+  return result.output.trim().split(/\r?\n/)[0] || '';
 }
 
 const args = parseArgs(process.argv);
@@ -48,10 +76,11 @@ const outFile = path.join(outDir, 'apalache-summary.json');
 const outLog = path.join(outDir, 'apalache-output.txt');
 fs.mkdirSync(outDir, { recursive: true });
 
-const haveApalacheMc = has('apalache-mc');
-const haveApalache = haveApalacheMc || has('apalache');
+const haveApalacheMc = commandExists('apalache-mc');
+const haveApalache = haveApalacheMc || commandExists('apalache');
+const haveTimeout = commandExists('timeout');
 const apalacheCmd = haveApalacheMc ? 'apalache-mc' : (haveApalache ? 'apalache' : '');
-let status = 'skipped';
+let status;
 let ran = false;
 let output = '';
 let version = '';
@@ -66,27 +95,32 @@ if (!fs.existsSync(absFile)){
   output = 'Apalache CLI not found. Install apalache or ensure apalache-mc is on PATH. See docs/quality/formal-tools-setup.md';
 } else {
   // Minimal "typecheck" like run; apalache-mc supports: apalache-mc check <Spec>
-  let baseCmd = `${apalacheCmd} check ${absFile.replace(/'/g, "'\\''")}`;
-  // Optional timeout wrapper (GNU timeout)
-  if (args.timeout && Number.isFinite(args.timeout) && args.timeout > 0 && has('timeout')) {
-    const secs = Math.max(1, Math.floor(Number(args.timeout)/1000));
-    baseCmd = `timeout ${secs}s ${baseCmd}`;
-  }
+  const baseCmd = { cmd: apalacheCmd, args: ['check', absFile] };
+  const useTimeout = Boolean(args.timeout && Number.isFinite(args.timeout) && args.timeout > 0 && haveTimeout);
+  const timeoutSecs = useTimeout ? Math.max(1, Math.floor(Number(args.timeout)/1000)) : 0;
+  const runSpec = useTimeout
+    ? { cmd: 'timeout', args: [`${timeoutSecs}s`, baseCmd.cmd, ...baseCmd.args] }
+    : baseCmd;
   const t0 = Date.now();
-  const res = shWithCode(`bash -lc '${baseCmd} 2>&1'`);
-  output = res.out;
+  const res = runCommand(runSpec.cmd, runSpec.args);
   timeMs = Date.now() - t0;
-  // Detect timeout exit (GNU timeout returns 124)
-  if (args.timeout && haveApalache && has('timeout') && (res.code === 124 || /timeout:/.test(output))) {
-    status = 'timeout';
-    ran = true;
+  if (!res.available) {
+    status = 'tool_not_available';
+    output = 'Apalache CLI not found. Install apalache or ensure apalache-mc is on PATH. See docs/quality/formal-tools-setup.md';
   } else {
-    status = 'ran';
+    output = res.output;
     ran = true;
+    // Detect timeout exit (GNU timeout returns 124)
+    if (useTimeout && (res.status === 124 || /timeout:/.test(output))) {
+      status = 'timeout';
+    } else {
+      status = 'ran';
+    }
   }
   // Try to get version string
-  version = shWithCode(`bash -lc '${apalacheCmd} version 2>&1 || true'`).out.trim().split(/\n/)[0] || '';
-  toolPath = shWithCode(`bash -lc 'command -v ${apalacheCmd} || true'`).out.trim();
+  const versionRes = runCommand(apalacheCmd, ['version']);
+  version = versionRes.output.trim().split(/\r?\n/)[0] || '';
+  toolPath = resolveCommandPath(apalacheCmd);
 }
 
 // Tuning via env (defaults keep current behavior)
