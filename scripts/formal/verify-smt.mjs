@@ -27,28 +27,31 @@ function commandExists(cmd) {
 
 function runCommand(cmd, cmdArgs) {
   const result = spawnSync(cmd, cmdArgs, { encoding: 'utf8' });
-  if (result.error) {
-    if (result.error.code === 'ENOENT') {
-      return { available: false, status: null, output: '' };
-    }
-    return {
-      available: true,
-      status: result.status ?? null,
-      output: result.error.message ?? '',
-    };
-  }
   const stdout = result.stdout ?? '';
   const stderr = result.stderr ?? '';
+  let output = `${stdout}${stderr}`;
+  if (result.error) {
+    if (!output && result.error.message) {
+      output = result.error.message;
+    }
+    return {
+      available: result.error.code !== 'ENOENT',
+      status: result.status ?? null,
+      output,
+    };
+  }
   return {
     available: true,
     status: result.status ?? null,
-    output: `${stdout}${stderr}`,
+    output,
   };
 }
 
 const args = parseArgs(process.argv);
 const timeoutSec = args.timeout ? Math.max(1, Math.floor(Number(args.timeout)/1000)) : 0;
 const haveTimeout = commandExists('timeout');
+const timeoutRequested = timeoutSec > 0;
+const timeoutIgnored = timeoutRequested && !haveTimeout;
 if (args.help) {
   console.log(`Usage: node scripts/formal/verify-smt.mjs [--solver=z3|cvc5] [--file path/to/input.smt2]`);
   console.log('See docs/quality/formal-tools-setup.md for solver setup.');
@@ -80,11 +83,18 @@ if (!file) {
   const result = runCommand(runSpec.cmd, runSpec.args);
   if (!result.available) {
     status = 'solver_not_available';
-    output = `Solver '${solver}' not found. See docs/quality/formal-tools-setup.md`;
+    if (runSpec.cmd === 'timeout') {
+      output = `Command 'timeout' not found while invoking solver '${solver}'. See docs/quality/formal-tools-setup.md`;
+    } else {
+      output = `Solver '${solver}' not found. See docs/quality/formal-tools-setup.md`;
+    }
   } else {
     output = result.output;
     ran = true;
     status = (timeoutSec && haveTimeout && result.status === 124) ? 'timeout' : 'ran';
+    if (timeoutIgnored) {
+      output = `Timeout requested (${timeoutSec}s) but 'timeout' is unavailable; running without timeout.\n${output}`;
+    }
   }
 } else if (solver === 'cvc5' && commandExists('cvc5')) {
   const baseCmd = { cmd: 'cvc5', args: ['--lang=smt2', file] };
@@ -94,15 +104,26 @@ if (!file) {
   const result = runCommand(runSpec.cmd, runSpec.args);
   if (!result.available) {
     status = 'solver_not_available';
-    output = `Solver '${solver}' not found. See docs/quality/formal-tools-setup.md`;
+    if (runSpec.cmd === 'timeout') {
+      output = `Command 'timeout' not found while invoking solver '${solver}'. See docs/quality/formal-tools-setup.md`;
+    } else {
+      output = `Solver '${solver}' not found. See docs/quality/formal-tools-setup.md`;
+    }
   } else {
     output = result.output;
     ran = true;
     status = (timeoutSec && haveTimeout && result.status === 124) ? 'timeout' : 'ran';
+    if (timeoutIgnored) {
+      output = `Timeout requested (${timeoutSec}s) but 'timeout' is unavailable; running without timeout.\n${output}`;
+    }
   }
 } else {
   status = 'solver_not_available';
   output = `Solver '${solver}' not found. See docs/quality/formal-tools-setup.md`;
+}
+
+if (!status) {
+  status = 'unknown';
 }
 
 const summary = {
