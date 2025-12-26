@@ -106,7 +106,11 @@ if (!fs.existsSync(absFile)){
   timeMs = Date.now() - t0;
   if (!res.available) {
     status = 'tool_not_available';
-    output = 'Apalache CLI not found. Install apalache or ensure apalache-mc is on PATH. See docs/quality/formal-tools-setup.md';
+    if (useTimeout) {
+      output = 'Failed to execute Apalache via timeout wrapper. Ensure both the `timeout` command and the Apalache CLI (apalache or apalache-mc) are installed and on PATH. See docs/quality/formal-tools-setup.md';
+    } else {
+      output = 'Failed to execute Apalache command, even though it was previously detected. Verify that the Apalache CLI (apalache or apalache-mc) is still installed and on PATH. See docs/quality/formal-tools-setup.md';
+    }
   } else {
     output = res.output;
     ran = true;
