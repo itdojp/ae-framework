@@ -394,7 +394,7 @@ export class ConformanceRuleEngine {
       throw new Error('Unsafe expression syntax detected');
     }
 
-    if (!/^[\w\s.$<>=!&|?:+\-*/%(),'"[\]\\^{}$]+$/.test(trimmed)) {
+    if (!/^[\w\s.$<>=!&|?:+\-*/%(),'"[\]\\^{}]+$/.test(trimmed)) {
       throw new Error('Expression contains unsupported characters');
     }
 

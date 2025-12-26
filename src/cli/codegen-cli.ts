@@ -158,9 +158,11 @@ export function createCodegenCommand(): Command {
           on(event: 'add' | 'change', handler: () => void): Watcher;
           close(): Promise<void> | void;
         };
+        const moduleName: string = 'chokidar';
         let watchFn!: (paths: string | readonly string[], options?: { ignoreInitial?: boolean }) => Watcher;
         try {
-          ({ watch: watchFn } = await import('chokidar'));
+          const mod = await import(moduleName);
+          watchFn = mod.watch;
         } catch (error: unknown) {
           console.log(chalk.yellow('Watch mode not available - chokidar not installed'));
           console.log('Install with: npm install chokidar');

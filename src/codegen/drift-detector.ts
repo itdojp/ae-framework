@@ -5,7 +5,7 @@
 
 import { createHash } from 'crypto';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { join, dirname } from 'path';
+import { join } from 'path';
 import { glob } from 'glob';
 import chalk from 'chalk';
 import type { CodegenManifest, DriftDetectionResult } from './deterministic-generator.js';

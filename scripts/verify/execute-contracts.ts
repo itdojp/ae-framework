@@ -138,7 +138,10 @@ async function main() {
           void loaderError; // ignore loader failures and keep default input
         }
       }
-      let preOk = true; let postOk = true; let parseInOk = true; let parseOutOk = true;
+      let parseInOk = true;
+      let parseOutOk = true;
+      let preOk: boolean;
+      let postOk: boolean;
       try { schemas.InputSchema?.parse?.(input); } catch (e) { parseInOk = false; }
       try { preOk = !!conds.pre?.(input); } catch (e) { preOk = false; }
       const output: unknown = {};
