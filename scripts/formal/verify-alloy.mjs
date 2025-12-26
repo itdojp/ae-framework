@@ -2,6 +2,7 @@
 // Lightweight Alloy runner: accepts --file and tries to run Alloy if available; otherwise prints guidance. Non-blocking.
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 
 function parseArgs(argv){
@@ -22,13 +23,22 @@ function runCommand(cmd, cmdArgs){
   const result = spawnSync(cmd, cmdArgs, { encoding: 'utf8' });
   if (result.error) {
     if (result.error.code === 'ENOENT') {
-      return { available: false, output: '' };
+      return { available: false, success: false, output: '' };
     }
-    return { available: true, output: result.error.message ?? '' };
+    return { available: true, success: false, output: result.error.message ?? '' };
   }
   const stdout = result.stdout ?? '';
   const stderr = result.stderr ?? '';
-  return { available: true, output: `${stdout}${stderr}` };
+  return { available: true, success: result.status === 0, output: `${stdout}${stderr}` };
+}
+
+function expandHome(inputPath){
+  if (!inputPath || inputPath[0] !== '~') return inputPath;
+  if (inputPath === '~') return os.homedir();
+  if (inputPath.startsWith('~/') || inputPath.startsWith('~\\')) {
+    return path.join(os.homedir(), inputPath.slice(2));
+  }
+  return inputPath;
 }
 
 const args = parseArgs(process.argv);
@@ -60,15 +70,20 @@ if (!fs.existsSync(absFile)){
     status = 'ran';
   } else if (process.env.ALLOY_JAR || args.jar){
     const jar = args.jar || process.env.ALLOY_JAR;
-    const jarPath = path.resolve(jar);
+    const jarPath = path.resolve(expandHome(jar));
     if (!fs.existsSync(jarPath)) {
       status = 'jar_not_found';
-      output = `Alloy jar not found: ${jarPath}`;
+      output = `Alloy jar not found: ${jarPath}. Set ALLOY_JAR to a valid path, use --jar /path/to/alloy.jar, or check that the file exists.`;
     } else {
       const javaResult = runCommand('java', ['-jar', jarPath, absFile]);
-      output = javaResult.output;
-      ran = true;
-      status = 'ran';
+      if (!javaResult.available) {
+        status = 'java_not_available';
+        output = 'Java runtime not found. Ensure `java` is installed and on PATH to run the Alloy jar.';
+      } else {
+        output = javaResult.output;
+        ran = true;
+        status = 'ran';
+      }
     }
   } else {
     status = 'tool_not_available';
