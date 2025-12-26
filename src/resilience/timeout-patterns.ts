@@ -201,25 +201,15 @@ export class AdaptiveTimeout {
 
     const recentExecutions = this.executionTimes.slice(-this.options.windowSize);
     const averageTime = recentExecutions.reduce((sum, time) => sum + time, 0) / recentExecutions.length;
-    const maxTime = Math.max(...recentExecutions);
     const p95Time = this.calculatePercentile(recentExecutions, 0.95);
 
-    if (success) {
-      // Operation succeeded, potentially decrease timeout if we're being too conservative
-      const targetTimeout = Math.max(p95Time * 1.5, averageTime * 2);
-      
-      if (this.currentTimeoutMs > targetTimeout * 1.2) {
-        this.currentTimeoutMs = Math.max(
-          this.currentTimeoutMs * (1 - this.options.adaptationFactor),
-          this.options.minTimeoutMs
-        );
-      }
-    } else {
-      // Timeout occurred, increase timeout
-      const targetTimeout = Math.max(maxTime * 1.5, p95Time * 2);
-      this.currentTimeoutMs = Math.min(
-        Math.max(targetTimeout, this.currentTimeoutMs * (1 + this.options.adaptationFactor)),
-        this.options.maxTimeoutMs
+    // Operation succeeded, potentially decrease timeout if we're being too conservative
+    const targetTimeout = Math.max(p95Time * 1.5, averageTime * 2);
+
+    if (this.currentTimeoutMs > targetTimeout * 1.2) {
+      this.currentTimeoutMs = Math.max(
+        this.currentTimeoutMs * (1 - this.options.adaptationFactor),
+        this.options.minTimeoutMs
       );
     }
   }
