@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Lightweight Alloy runner: accepts --file and tries to run Alloy if available; otherwise prints guidance. Non-blocking.
-import { execSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -18,8 +18,18 @@ function parseArgs(argv){
   return args;
 }
 
-function has(cmd){ try { execSync(`bash -lc 'command -v ${cmd}'`, {stdio:'ignore'}); return true; } catch { return false; } }
-function sh(cmd){ try { return execSync(cmd, {encoding:'utf8'}); } catch(e){ return (e.stdout?.toString?.()||'') + (e.stderr?.toString?.()||''); } }
+function runCommand(cmd, cmdArgs){
+  const result = spawnSync(cmd, cmdArgs, { encoding: 'utf8' });
+  if (result.error) {
+    if (result.error.code === 'ENOENT') {
+      return { available: false, output: '' };
+    }
+    return { available: true, output: result.error.message ?? '' };
+  }
+  const stdout = result.stdout ?? '';
+  const stderr = result.stderr ?? '';
+  return { available: true, output: `${stdout}${stderr}` };
+}
 
 const args = parseArgs(process.argv);
 if (args.help){
@@ -35,23 +45,35 @@ const outFile = path.join(outDir, 'alloy-summary.json');
 fs.mkdirSync(outDir, { recursive: true });
 
 let ran = false;
-let status = 'skipped';
+let status;
 let output = '';
 let temporal = { present: false, operators: [], pastOperators: [] };
 
 if (!fs.existsSync(absFile)){
   status = 'file_not_found';
   output = `Alloy file not found: ${absFile}`;
-} else if (has('alloy')) {
-  output = sh(`bash -lc 'alloy ${absFile.replace(/'/g, "'\\''")} 2>&1 || true'`);
-  ran = true; status = 'ran';
-} else if (process.env.ALLOY_JAR || args.jar){
-  const jar = args.jar || process.env.ALLOY_JAR;
-  output = sh(`bash -lc 'java -jar ${jar} ${absFile.replace(/'/g, "'\\''")} 2>&1 || true'`);
-  ran = true; status = 'ran';
 } else {
-  status = 'tool_not_available';
-  output = 'Alloy CLI not found. Set ALLOY_JAR=/path/to/alloy.jar or install Alloy CLI. See docs/quality/formal-tools-setup.md';
+  const alloyResult = runCommand('alloy', [absFile]);
+  if (alloyResult.available) {
+    output = alloyResult.output;
+    ran = true;
+    status = 'ran';
+  } else if (process.env.ALLOY_JAR || args.jar){
+    const jar = args.jar || process.env.ALLOY_JAR;
+    const jarPath = path.resolve(jar);
+    if (!fs.existsSync(jarPath)) {
+      status = 'jar_not_found';
+      output = `Alloy jar not found: ${jarPath}`;
+    } else {
+      const javaResult = runCommand('java', ['-jar', jarPath, absFile]);
+      output = javaResult.output;
+      ran = true;
+      status = 'ran';
+    }
+  } else {
+    status = 'tool_not_available';
+    output = 'Alloy CLI not found. Set ALLOY_JAR=/path/to/alloy.jar or install Alloy CLI. See docs/quality/formal-tools-setup.md';
+  }
 }
 
 // Best-effort presence detection of temporal operators (Alloy 6 LTL / past operators)
