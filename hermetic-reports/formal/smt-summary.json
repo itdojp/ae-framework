@@ -1,8 +1,8 @@
 {
-  "solver": "cvc5",
-  "file": "nonexistent.smt2",
+  "solver": "z3",
+  "file": null,
   "ran": false,
-  "status": "file_not_found",
-  "timestamp": "2025-09-17T19:57:44.879Z",
-  "output": "SMT-LIB file not found: nonexistent.smt2"
+  "status": "no_file",
+  "timestamp": "2025-12-26T22:21:11.341Z",
+  "output": ""
 }
