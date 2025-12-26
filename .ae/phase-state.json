@@ -1,0 +1,130 @@
+{
+  "projectId": "1e9bd215-48e9-4c67-86c8-32d5b25dcc0c",
+  "projectName": "phase1-integration",
+  "createdAt": "2025-12-26T20:46:15.967Z",
+  "updatedAt": "2025-12-26T20:46:20.671Z",
+  "currentPhase": "intent",
+  "phaseStatus": {
+    "intent": {
+      "completed": false,
+      "approved": false,
+      "artifacts": []
+    },
+    "formal": {
+      "completed": false,
+      "approved": false,
+      "artifacts": []
+    },
+    "test": {
+      "completed": false,
+      "approved": false,
+      "artifacts": []
+    },
+    "code": {
+      "completed": false,
+      "approved": false,
+      "artifacts": []
+    },
+    "verify": {
+      "completed": false,
+      "approved": false,
+      "artifacts": []
+    },
+    "operate": {
+      "completed": false,
+      "approved": false,
+      "artifacts": []
+    }
+  },
+  "approvalsRequired": true,
+  "metadata": {
+    "integration-test": {
+      "ready": true
+    },
+    "test-agent_task_started_1766781980635": {
+      "activity": "task_started",
+      "agentId": "test-agent",
+      "agentType": "code-generation",
+      "timestamp": "2025-12-26T20:46:20.635Z",
+      "taskId": "test-task-1",
+      "type": "code-generation"
+    },
+    "test-agent_task_completed_1766781980636": {
+      "activity": "task_completed",
+      "agentId": "test-agent",
+      "agentType": "code-generation",
+      "timestamp": "2025-12-26T20:46:20.636Z",
+      "taskId": "test-task-1",
+      "success": true,
+      "executionTime": 1
+    },
+    "test-agent_task_started_1766781980639": {
+      "activity": "task_started",
+      "agentId": "test-agent",
+      "agentType": "code-generation",
+      "timestamp": "2025-12-26T20:46:20.639Z",
+      "taskId": "tdd-task",
+      "type": "test-generation"
+    },
+    "test-agent_task_completed_1766781980640": {
+      "activity": "task_completed",
+      "agentId": "test-agent",
+      "agentType": "code-generation",
+      "timestamp": "2025-12-26T20:46:20.640Z",
+      "taskId": "tdd-task",
+      "success": true,
+      "executionTime": 1
+    },
+    "test-agent_task_started_1766781980649": {
+      "activity": "task_started",
+      "agentId": "test-agent",
+      "agentType": "code-generation",
+      "timestamp": "2025-12-26T20:46:20.649Z",
+      "taskId": "validation-test",
+      "type": "validation"
+    },
+    "test-agent_task_completed_1766781980650": {
+      "activity": "task_completed",
+      "agentId": "test-agent",
+      "agentType": "code-generation",
+      "timestamp": "2025-12-26T20:46:20.650Z",
+      "taskId": "validation-test",
+      "success": true,
+      "executionTime": 1
+    },
+    "test-agent_task_started_1766781980652": {
+      "activity": "task_started",
+      "agentId": "test-agent",
+      "agentType": "code-generation",
+      "timestamp": "2025-12-26T20:46:20.652Z",
+      "taskId": "coverage-test",
+      "type": "quality-assurance"
+    },
+    "test-agent_task_completed_1766781980652": {
+      "activity": "task_completed",
+      "agentId": "test-agent",
+      "agentType": "code-generation",
+      "timestamp": "2025-12-26T20:46:20.652Z",
+      "taskId": "coverage-test",
+      "success": true,
+      "executionTime": 0
+    },
+    "test-agent_task_started_1766781980655": {
+      "activity": "task_started",
+      "agentId": "test-agent",
+      "agentType": "code-generation",
+      "timestamp": "2025-12-26T20:46:20.655Z",
+      "taskId": "phase-transition",
+      "type": "phase-validation"
+    },
+    "test-agent_task_completed_1766781980670": {
+      "activity": "task_completed",
+      "agentId": "test-agent",
+      "agentType": "code-generation",
+      "timestamp": "2025-12-26T20:46:20.670Z",
+      "taskId": "phase-transition",
+      "success": true,
+      "executionTime": 15
+    }
+  }
+}
