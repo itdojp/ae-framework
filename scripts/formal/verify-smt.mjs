@@ -35,15 +35,17 @@ function runCommand(cmd, cmdArgs) {
       output = result.error.message;
     }
     return {
-      available: result.error.code !== 'ENOENT',
+      available: false,
       status: result.status ?? null,
       output,
+      errorCode: result.error.code ?? null,
     };
   }
   return {
     available: true,
     status: result.status ?? null,
     output,
+    errorCode: null,
   };
 }
 
@@ -85,6 +87,8 @@ if (!file) {
     status = 'solver_not_available';
     if (runSpec.cmd === 'timeout') {
       output = `Command 'timeout' not found while invoking solver '${solver}'. See docs/quality/formal-tools-setup.md`;
+    } else if (result.errorCode && result.errorCode !== 'ENOENT') {
+      output = `Failed to execute solver '${solver}' (${result.errorCode}). See docs/quality/formal-tools-setup.md`;
     } else {
       output = `Solver '${solver}' not found. See docs/quality/formal-tools-setup.md`;
     }
@@ -106,6 +110,8 @@ if (!file) {
     status = 'solver_not_available';
     if (runSpec.cmd === 'timeout') {
       output = `Command 'timeout' not found while invoking solver '${solver}'. See docs/quality/formal-tools-setup.md`;
+    } else if (result.errorCode && result.errorCode !== 'ENOENT') {
+      output = `Failed to execute solver '${solver}' (${result.errorCode}). See docs/quality/formal-tools-setup.md`;
     } else {
       output = `Solver '${solver}' not found. See docs/quality/formal-tools-setup.md`;
     }
