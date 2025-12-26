@@ -62,10 +62,6 @@ describe('verify-apalache helper functions', () => {
     vi.clearAllMocks();
   });
 
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('commandExists', () => {
     it('returns true when command exists', () => {
       mockSpawnSync.mockReturnValue({
