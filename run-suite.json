@@ -1,0 +1,29 @@
+[
+  {
+    "id": "sample-suite-1766781961179",
+    "name": "Sample Suite",
+    "description": "A sample test suite for testing",
+    "category": "e2e",
+    "tests": [
+      "sample-test-1766781961179"
+    ],
+    "fixtures": [],
+    "configuration": {
+      "parallel": false,
+      "maxConcurrency": 1,
+      "timeout": 60000,
+      "retries": 1,
+      "skipOnFailure": false,
+      "failFast": false
+    },
+    "setup": [],
+    "teardown": [],
+    "metadata": {
+      "priority": "medium",
+      "tags": [
+        "sample",
+        "suite"
+      ]
+    }
+  }
+]
