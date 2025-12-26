@@ -18,8 +18,8 @@ function parseArgs(argv){
   return args;
 }
 
-function commandAvailable(cmd){
-  const result = spawnSync(cmd, ['--version'], { encoding: 'utf8' });
+function commandExists(cmd){
+  const result = spawnSync(cmd, [], { stdio: 'ignore' });
   if (result.error && result.error.code === 'ENOENT') {
     return false;
   }
@@ -30,18 +30,30 @@ function runCommand(cmd, cmdArgs){
   const result = spawnSync(cmd, cmdArgs, { encoding: 'utf8' });
   if (result.error) {
     if (result.error.code === 'ENOENT') {
-      return { available: false, output: '' };
+      return { available: false, success: false, status: null, signal: null, output: '' };
     }
-    return { available: true, output: result.error.message ?? '' };
+    return {
+      available: true,
+      success: false,
+      status: result.status ?? null,
+      signal: result.signal ?? null,
+      output: result.error.message ?? '',
+    };
   }
   const stdout = result.stdout ?? '';
   const stderr = result.stderr ?? '';
-  return { available: true, output: `${stdout}${stderr}` };
+  return {
+    available: true,
+    success: result.status === 0,
+    status: result.status ?? null,
+    signal: result.signal ?? null,
+    output: `${stdout}${stderr}`,
+  };
 }
 
 const args = parseArgs(process.argv);
 const timeoutSec = args.timeout ? Math.max(1, Math.floor(Number(args.timeout)/1000)) : 0;
-const haveTimeout = commandAvailable('timeout');
+const haveTimeout = commandExists('timeout');
 if (args.help){
   console.log(`Usage: node scripts/formal/verify-tla.mjs [--engine=tlc|apalache] [--file spec/tla/DomainSpec.tla] [--timeout <ms>]`);
   console.log('See docs/quality/formal-tools-setup.md for TLC/Apalache setup.');
@@ -65,18 +77,23 @@ if (!fs.existsSync(absFile)){
   status = 'file_not_found';
   output = `TLA file not found: ${absFile}`;
 } else if (engine === 'apalache'){
-  const baseCmd = { cmd: 'apalache-mc', args: ['check', '--inv=Invariant', absFile] };
-  const runSpec = (timeoutSec && haveTimeout)
-    ? { cmd: 'timeout', args: [`${timeoutSec}s`, baseCmd.cmd, ...baseCmd.args] }
-    : baseCmd;
-  const result = runCommand(runSpec.cmd, runSpec.args);
-  if (!result.available) {
+  if (!commandExists('apalache-mc')) {
     status = 'tool_not_available';
     output = 'Apalache not found. See docs/quality/formal-tools-setup.md';
   } else {
-    output = result.output;
-    ran = true;
-    status = 'ran';
+    const baseCmd = { cmd: 'apalache-mc', args: ['check', '--inv=Invariant', absFile] };
+    const runSpec = (timeoutSec && haveTimeout)
+      ? { cmd: 'timeout', args: [`${timeoutSec}s`, baseCmd.cmd, ...baseCmd.args] }
+      : baseCmd;
+    const result = runCommand(runSpec.cmd, runSpec.args);
+    if (!result.available) {
+      status = 'tool_not_available';
+      output = 'Apalache not found. See docs/quality/formal-tools-setup.md';
+    } else {
+      output = result.output;
+      ran = true;
+      status = 'ran';
+    }
   }
 } else {
   // TLC via TLA_TOOLS_JAR
@@ -86,18 +103,23 @@ if (!fs.existsSync(absFile)){
       status = 'jar_not_found';
       output = `TLA tools jar not found: ${jarPath}`;
     } else {
-      const baseCmd = { cmd: 'java', args: ['-cp', jarPath, 'tlc2.TLC', absFile] };
-      const runSpec = (timeoutSec && haveTimeout)
-        ? { cmd: 'timeout', args: [`${timeoutSec}s`, baseCmd.cmd, ...baseCmd.args] }
-        : baseCmd;
-      const result = runCommand(runSpec.cmd, runSpec.args);
-      if (!result.available) {
+      if (!commandExists('java')) {
         status = 'tool_not_available';
         output = 'TLC not available (java not found). See docs/quality/formal-tools-setup.md';
       } else {
-        output = result.output;
-        ran = true;
-        status = 'ran';
+        const baseCmd = { cmd: 'java', args: ['-cp', jarPath, 'tlc2.TLC', absFile] };
+        const runSpec = (timeoutSec && haveTimeout)
+          ? { cmd: 'timeout', args: [`${timeoutSec}s`, baseCmd.cmd, ...baseCmd.args] }
+          : baseCmd;
+        const result = runCommand(runSpec.cmd, runSpec.args);
+        if (!result.available) {
+          status = 'tool_not_available';
+          output = 'TLC not available (java not found). See docs/quality/formal-tools-setup.md';
+        } else {
+          output = result.output;
+          ran = true;
+          status = 'ran';
+        }
       }
     }
   } else {
