@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Lightweight SMT runner: accepts --solver and --file, runs if available, writes a summary. Non-blocking.
-import { execSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -17,13 +17,38 @@ function parseArgs(argv) {
   return args;
 }
 
-function has(cmd) { try { execSync(`bash -lc 'command -v ${cmd}'`, {stdio:'ignore'}); return true; } catch { return false; } }
-function sh(cmd) { try { return execSync(cmd, { encoding: 'utf8' }); } catch (e) { return (e.stdout?.toString?.() || '') + (e.stderr?.toString?.() || ''); } }
+function commandExists(cmd) {
+  const result = spawnSync(cmd, [], { stdio: 'ignore' });
+  if (result.error && result.error.code === 'ENOENT') {
+    return false;
+  }
+  return true;
+}
+
+function runCommand(cmd, cmdArgs) {
+  const result = spawnSync(cmd, cmdArgs, { encoding: 'utf8' });
+  if (result.error) {
+    if (result.error.code === 'ENOENT') {
+      return { available: false, status: null, output: '' };
+    }
+    return {
+      available: true,
+      status: result.status ?? null,
+      output: result.error.message ?? '',
+    };
+  }
+  const stdout = result.stdout ?? '';
+  const stderr = result.stderr ?? '';
+  return {
+    available: true,
+    status: result.status ?? null,
+    output: `${stdout}${stderr}`,
+  };
+}
 
 const args = parseArgs(process.argv);
 const timeoutSec = args.timeout ? Math.max(1, Math.floor(Number(args.timeout)/1000)) : 0;
-function hasTimeout(){ try { execSync(`bash -lc 'command -v timeout'`, {stdio:'ignore'}); return true; } catch { return false; } }
-const haveTimeout = hasTimeout();
+const haveTimeout = commandExists('timeout');
 if (args.help) {
   console.log(`Usage: node scripts/formal/verify-smt.mjs [--solver=z3|cvc5] [--file path/to/input.smt2]`);
   console.log('See docs/quality/formal-tools-setup.md for solver setup.');
@@ -38,7 +63,7 @@ const outDir = path.join(repoRoot, 'hermetic-reports', 'formal');
 const outFile = path.join(outDir, 'smt-summary.json');
 fs.mkdirSync(outDir, { recursive: true });
 
-let status = 'skipped';
+let status;
 let output = '';
 let ran = false;
 
@@ -47,16 +72,34 @@ if (!file) {
 } else if (!fs.existsSync(file)) {
   status = 'file_not_found';
   output = `SMT-LIB file not found: ${file}`;
-} else if (solver === 'z3' && has('z3')) {
-  const base = `z3 -smt2 ${file.replace(/'/g, "'\\''")}`;
-  const cmd = timeoutSec && haveTimeout ? `timeout ${timeoutSec}s ${base}` : base;
-  output = sh(`bash -lc '${cmd} 2>&1 || true'`);
-  status = 'ran'; ran = true;
-} else if (solver === 'cvc5' && has('cvc5')) {
-  const base = `cvc5 --lang=smt2 ${file.replace(/'/g, "'\\''")}`;
-  const cmd = timeoutSec && haveTimeout ? `timeout ${timeoutSec}s ${base}` : base;
-  output = sh(`bash -lc '${cmd} 2>&1 || true'`);
-  status = 'ran'; ran = true;
+} else if (solver === 'z3' && commandExists('z3')) {
+  const baseCmd = { cmd: 'z3', args: ['-smt2', file] };
+  const runSpec = (timeoutSec && haveTimeout)
+    ? { cmd: 'timeout', args: [`${timeoutSec}s`, baseCmd.cmd, ...baseCmd.args] }
+    : baseCmd;
+  const result = runCommand(runSpec.cmd, runSpec.args);
+  if (!result.available) {
+    status = 'solver_not_available';
+    output = `Solver '${solver}' not found. See docs/quality/formal-tools-setup.md`;
+  } else {
+    output = result.output;
+    ran = true;
+    status = (timeoutSec && haveTimeout && result.status === 124) ? 'timeout' : 'ran';
+  }
+} else if (solver === 'cvc5' && commandExists('cvc5')) {
+  const baseCmd = { cmd: 'cvc5', args: ['--lang=smt2', file] };
+  const runSpec = (timeoutSec && haveTimeout)
+    ? { cmd: 'timeout', args: [`${timeoutSec}s`, baseCmd.cmd, ...baseCmd.args] }
+    : baseCmd;
+  const result = runCommand(runSpec.cmd, runSpec.args);
+  if (!result.available) {
+    status = 'solver_not_available';
+    output = `Solver '${solver}' not found. See docs/quality/formal-tools-setup.md`;
+  } else {
+    output = result.output;
+    ran = true;
+    status = (timeoutSec && haveTimeout && result.status === 124) ? 'timeout' : 'ran';
+  }
 } else {
   status = 'solver_not_available';
   output = `Solver '${solver}' not found. See docs/quality/formal-tools-setup.md`;
