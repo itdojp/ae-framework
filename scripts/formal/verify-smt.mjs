@@ -12,6 +12,8 @@ function parseArgs(argv) {
     else if (a === '--file' && argv[i+1]) { args.file = argv[++i]; }
     else if (a.startsWith('--file=')) { args.file = a.slice(7); }
     else if (a.startsWith('--solver=')) { args.solver = a.slice(9); }
+    else if (a === '--timeout' && argv[i+1]) { args.timeout = argv[++i]; }
+    else if (a.startsWith('--timeout=')) { args.timeout = a.slice(10); }
     else { args._.push(a); }
   }
   return args;
@@ -50,7 +52,7 @@ const args = parseArgs(process.argv);
 const timeoutSec = args.timeout ? Math.max(1, Math.floor(Number(args.timeout)/1000)) : 0;
 const haveTimeout = commandExists('timeout');
 if (args.help) {
-  console.log(`Usage: node scripts/formal/verify-smt.mjs [--solver=z3|cvc5] [--file path/to/input.smt2]`);
+  console.log(`Usage: node scripts/formal/verify-smt.mjs [--solver=z3|cvc5] [--file path/to/input.smt2] [--timeout=<ms>]`);
   console.log('See docs/quality/formal-tools-setup.md for solver setup.');
   process.exit(0);
 }
