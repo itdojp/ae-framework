@@ -4,7 +4,7 @@
  */
 
 import { createHash } from 'crypto';
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { glob } from 'glob';
 import chalk from 'chalk';

@@ -128,10 +128,6 @@ if (!file) {
   output = `Solver '${solver}' not found. See docs/quality/formal-tools-setup.md`;
 }
 
-if (!status) {
-  status = 'unknown';
-}
-
 const summary = {
   solver,
   file: file || null,
