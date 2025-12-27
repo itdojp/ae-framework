@@ -3,16 +3,9 @@ import { join } from 'node:path';
 
 const writeFile = vi.fn();
 const mkdir = vi.fn();
-const rm = vi.fn();
-const existsSync = vi.fn(() => false);
-
 vi.mock('node:fs/promises', () => ({
   writeFile,
   mkdir,
-  rm
-}));
-vi.mock('node:fs', () => ({
-  existsSync
 }));
 
 const sanitizeFilename = (value: string) => value.replace(/[^a-zA-Z0-9-_]/g, '_');
@@ -26,9 +19,6 @@ beforeAll(async () => {
 beforeEach(() => {
   writeFile.mockReset();
   mkdir.mockReset();
-  rm.mockReset();
-  existsSync.mockReset();
-  existsSync.mockReturnValue(false);
 });
 
 describe('writeRepro', () => {
