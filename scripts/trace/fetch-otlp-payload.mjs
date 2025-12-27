@@ -108,7 +108,7 @@ const copyFile = async (source, fallbackType) => {
 };
 
 const writeBuffer = async (buffer, fallbackType, fallbackDetail) => {
-  await fsp.writeFile(targetPath, buffer); // codeql[js/http-to-file-access] Persisting fetched payloads is an explicit CLI action.
+  await fsp.writeFile(targetPath, buffer); // lgtm[js/http-to-file-access] Persisting fetched payloads is an explicit CLI action.
   setSource(fallbackType, fallbackDetail);
 };
 
