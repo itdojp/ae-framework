@@ -1,21 +1,48 @@
 #!/usr/bin/env node
 // Lightweight TLA+ checker: prefers Apalache if installed; otherwise tries TLC via TLA_TOOLS_JAR.
-import { execSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import path from 'node:path';
 
-function has(cmd) { try { execSync(`bash -lc 'command -v ${cmd}'`, {stdio:'ignore'}); return true; } catch { return false; } }
-function run(cmd) { try { console.log(`$ ${cmd}`); execSync(cmd, { stdio: 'inherit' }); return 0; } catch (e) { return 1; } }
+function commandExists(cmd) {
+  const locator = process.platform === 'win32' ? 'where' : 'which';
+  const result = spawnSync(locator, [cmd], { stdio: 'ignore' });
+  if (result.error) return false;
+  return result.status === 0;
+}
+
+function run(cmd, args) {
+  const display = [cmd, ...args].join(' ');
+  console.log(`$ ${display}`);
+  const result = spawnSync(cmd, args, { stdio: 'inherit' });
+  if (result.error) return 1;
+  return result.status ?? 0;
+}
 
 const spec = process.argv[2] || 'spec/tla/DomainSpec.tla';
-if (!fs.existsSync(spec)) { console.log(`Spec not found: ${spec} (skipping)`); process.exit(0); }
-
-if (has('apalache-mc')) {
-  process.exit(run(`bash -lc 'apalache-mc check --inv=Invariant ${spec}'`) ? 0 : 0);
-} else if (process.env.TLA_TOOLS_JAR) {
-  const jar = process.env.TLA_TOOLS_JAR;
-  process.exit(run(`bash -lc 'java -cp ${jar} tlc2.TLC ${spec}'`) ? 0 : 0);
-} else {
-  console.log('No Apalache or TLA_TOOLS_JAR set. Use tools:formal:check and see formal-tools-setup.md');
+if (!fs.existsSync(spec)) {
+  console.log(`Spec not found: ${spec} (skipping)`);
   process.exit(0);
 }
 
+if (commandExists('apalache-mc')) {
+  const code = run('apalache-mc', ['check', '--inv=Invariant', spec]);
+  process.exit(code);
+}
+
+if (process.env.TLA_TOOLS_JAR) {
+  const jar = path.resolve(process.env.TLA_TOOLS_JAR);
+  if (!fs.existsSync(jar)) {
+    console.log(`TLA tools jar not found: ${jar} (skipping)`);
+    process.exit(0);
+  }
+  if (!commandExists('java')) {
+    console.log('Java runtime not found (skipping). See docs/quality/formal-tools-setup.md');
+    process.exit(0);
+  }
+  const code = run('java', ['-cp', jar, 'tlc2.TLC', spec]);
+  process.exit(code);
+}
+
+console.log('No Apalache or TLA_TOOLS_JAR set. Use tools:formal:check and see formal-tools-setup.md');
+process.exit(0);
