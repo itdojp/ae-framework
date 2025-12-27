@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { writeFile, mkdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -42,12 +43,22 @@ export async function writeRepro(name: string, seed: number, data: unknown) {
     `test(${testNameLiteral}, () => { process.env.AE_SEED=${seedLiteral}; const data = JSON.parse(readFileSync(join(__dirname, ${jsonFilenameLiteral}), 'utf8')); /* TODO: call SUT(data) */ });`,
   ].join('\n');
 
+  const jsonExisted = existsSync(jsonPath);
+  const tsExisted = existsSync(tsPath);
+  let jsonWritten = false;
+  let tsWritten = false;
   try {
     await writeFile(jsonPath, jsonPayload);
+    jsonWritten = true;
     await writeFile(tsPath, body);
+    tsWritten = true;
   } catch (error) {
-    await rm(jsonPath, { force: true });
-    await rm(tsPath, { force: true });
+    if (tsWritten && !tsExisted) {
+      await rm(tsPath, { force: true });
+    }
+    if (jsonWritten && !jsonExisted) {
+      await rm(jsonPath, { force: true });
+    }
     throw error;
   }
 }
