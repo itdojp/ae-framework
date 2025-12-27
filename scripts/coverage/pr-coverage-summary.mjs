@@ -29,10 +29,12 @@ function parseNumToken(raw) {
 }
 
 const HEADER = '<!-- AE-COVERAGE-SUMMARY -->\n';
+const MAX_COMMENT_VALUE = 200;
 const dryFlag = process.env['AE_COVERAGE_DRY_RUN'];
 const isDryRun = dryFlag === '1' || (typeof dryFlag === 'string' && dryFlag.toLowerCase() === 'true');
 const skipFlag = process.env['AE_COVERAGE_SKIP_COMMENT'];
 const isSkip = skipFlag === '1' || (typeof skipFlag === 'string' && skipFlag.toLowerCase() === 'true');
+const includePaths = process.env['AE_COVERAGE_INCLUDE_PATHS'] === '1';
 if (isSkip) {
   console.log('Note: AE_COVERAGE_SKIP_COMMENT set; skipping PR coverage comment upsert');
   process.exit(0);
@@ -57,6 +59,11 @@ const hasRepoVar = typeof rawRepoVar !== 'undefined' && rawRepoVar !== '';
 const repoVarIsNumeric = isFinite(defTh);
 const repoVarValidRange = repoVarIsNumeric && defTh >= 0 && defTh <= 100;
 const enforceMain = (process.env['COVERAGE_ENFORCE_MAIN'] || '0') === '1';
+const sanitizeCommentValue = (value, fallback = 'n/a') => {
+  const raw = String(value ?? '');
+  const cleaned = raw.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, MAX_COMMENT_VALUE);
+  return cleaned.length ? cleaned : fallback;
+};
 
 // Load coverage summary (optional). If missing, still post a summary with n/a.
 const overrideSummary = process.env['AE_COVERAGE_SUMMARY_PATH'];
@@ -153,32 +160,33 @@ if (strict) {
 }
 
 const lines = [];
-lines.push(`Coverage (lines): ${pct}%`);
+lines.push(`Coverage (lines): ${sanitizeCommentValue(pct)}%`);
 // Include additional metrics when available (compact form)
 const parts = [];
-if (typeof pctFns !== 'undefined') parts.push(`functions=${pctFns}%`);
-if (typeof pctBranches !== 'undefined') parts.push(`branches=${pctBranches}%`);
-if (typeof pctStmts !== 'undefined') parts.push(`statements=${pctStmts}%`);
+if (typeof pctFns !== 'undefined') parts.push(`functions=${sanitizeCommentValue(pctFns)}%`);
+if (typeof pctBranches !== 'undefined') parts.push(`branches=${sanitizeCommentValue(pctBranches)}%`);
+if (typeof pctStmts !== 'undefined') parts.push(`statements=${sanitizeCommentValue(pctStmts)}%`);
 if (parts.length) lines.push(`Metrics: ${parts.join(', ')}`);
-lines.push(`Threshold (effective): ${effTh}%`);
+lines.push(`Threshold (effective): ${sanitizeCommentValue(effTh)}%`);
 // Gate status (informational)
   if (isFinite(pctNum) && isFinite(effNumeric)) {
   const ok = pctNum >= effNumeric;
     const cmp = ok ? '>=' : '<';
     const mode = ` ${strict ? '[blocking]' : '[non-blocking]'}`;
-    lines.push(`Gate: ${ok ? 'OK' : 'BELOW'} (${fmtPct(pctNum)}% ${cmp} ${effTh}%)${mode}`);
+    lines.push(`Gate: ${ok ? 'OK' : 'BELOW'} (${sanitizeCommentValue(fmtPct(pctNum))}% ${cmp} ${sanitizeCommentValue(effTh)}%)${mode}`);
     if (!ok) {
       lines.push('Action: add tests to raise coverage or adjust threshold via /coverage <pct>');
     }
   }
   if (covLabel) {
-  if (hasValidLabel) lines.push(`- via label: ${covLabel}`);
-  else lines.push(`- via label: ${covLabel} (invalid, ignored)`);
+  const safeCovLabel = sanitizeCommentValue(covLabel, 'label');
+  if (hasValidLabel) lines.push(`- via label: ${safeCovLabel}`);
+  else lines.push(`- via label: ${safeCovLabel} (invalid, ignored)`);
 }
 if (hasRepoVar) {
   const valStr = repoVarIsNumeric ? `${fmtPct(defTh)}%` : 'n/a%';
   const note = repoVarValidRange ? '' : ' (invalid, ignored)';
-  lines.push(`- repo var: COVERAGE_DEFAULT_THRESHOLD=${valStr}${note}`);
+  lines.push(`- repo var: COVERAGE_DEFAULT_THRESHOLD=${sanitizeCommentValue(valStr)}${note}`);
 }
 lines.push(`- default: 80%`);
 lines.push('Derived: label > repo var > default');
@@ -191,7 +199,7 @@ lines.push('Docs: docs/ci/label-gating.md');
 lines.push('Tips: /coverage <pct> to override; /enforce-coverage to enforce');
 if (!summaryPath) {
   const msg = overrideSummary
-    ? `Note: no coverage-summary.json found (override path '${overrideSummary}' not found; looked in coverage/ and artifacts/coverage/)`
+    ? 'Note: no coverage-summary.json found (override path not found; looked in coverage/ and artifacts/coverage/)'
     : 'Note: no coverage-summary.json found (looked in coverage/ and artifacts/coverage/)';
   lines.push(msg);
 }
@@ -201,15 +209,17 @@ if (summaryPath && !isFinite(pctNum)) {
 }
 lines.push('Reproduce: coverage → coverage/coverage-summary.json → total.lines.pct');
 lines.push('Reproduce: threshold → label coverage:<pct> > vars.COVERAGE_DEFAULT_THRESHOLD > default 80');
-// Report path hints (if present in workspace)
-const htmlHintPath = fs.existsSync('coverage/index.html')
-  ? 'coverage/index.html'
-  : (fs.existsSync('artifacts/coverage/index.html') ? 'artifacts/coverage/index.html' : '');
-if (htmlHintPath) lines.push(`Report (HTML): ${htmlHintPath}`);
-const jsonHintPath = summaryPath || (fs.existsSync('coverage/coverage-summary.json')
-  ? 'coverage/coverage-summary.json'
-  : (fs.existsSync('artifacts/coverage/coverage-summary.json') ? 'artifacts/coverage/coverage-summary.json' : (overrideSummary || '')));
-if (jsonHintPath) lines.push(`Report (JSON): ${jsonHintPath}`);
+// Report path hints (opt-in)
+if (includePaths) {
+  const htmlHintPath = fs.existsSync('coverage/index.html')
+    ? 'coverage/index.html'
+    : (fs.existsSync('artifacts/coverage/index.html') ? 'artifacts/coverage/index.html' : '');
+  if (htmlHintPath) lines.push(`Report (HTML): ${sanitizeCommentValue(htmlHintPath, '')}`);
+  const jsonHintPath = summaryPath || (fs.existsSync('coverage/coverage-summary.json')
+    ? 'coverage/coverage-summary.json'
+    : (fs.existsSync('artifacts/coverage/coverage-summary.json') ? 'artifacts/coverage/coverage-summary.json' : ''));
+  if (jsonHintPath) lines.push(`Report (JSON): ${sanitizeCommentValue(jsonHintPath, '')}`);
+}
 // Threshold source line (concise) should be part of the rendered body
 const src = hasValidLabel ? 'label' : (repoVarValidRange ? 'repo var' : 'default');
 lines.push(`Source: ${src}`);
