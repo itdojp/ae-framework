@@ -12,7 +12,6 @@ const statusCounts = adaptersArr.reduce((acc,a)=>{ const s=(a.status||'ok').toLo
 const adaptersLine = adaptersArr.map(a=>`${a.adapter||a.name}: ${a.summary} (${a.status})`).join(', ');
 const adaptersList = adaptersArr.map(a=>`  - ${a.adapter||a.name}: ${a.summary} (${a.status})`).join('\n');
 const formalObj = c.formal || r('formal/summary.json') || r('hermetic-reports/formal/summary.json') || {};
-const formalHerm = r('hermetic-reports/formal/summary.json') || {};
 const formalAgg = r('artifacts/formal/formal-aggregate.json') || {};
 const formal = formalObj.result || t('n/a','不明');
 const gwt = r('artifacts/formal/gwt.summary.json');
@@ -45,9 +44,6 @@ if (Array.isArray(props) && props.length) {
     }
   }
 }
-const propsLine = propsCount
-  ? t(`Props: ${propsCount}`, `プロパティ: ${propsCount}`)
-  : t('Props: n/a','プロパティ: なし');
 const ltlLine = ltlSug && typeof ltlSug.count === 'number'
   ? t(`LTL sugg: ${ltlSug.count}`, `LTL候補: ${ltlSug.count}`)
   : t('LTL sugg: n/a', 'LTL候補: なし');
