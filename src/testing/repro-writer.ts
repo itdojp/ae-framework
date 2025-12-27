@@ -1,4 +1,4 @@
-import { writeFile, mkdir } from 'node:fs/promises';
+import { writeFile, mkdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const JSON_UNSAFE_REGEX = /[<>\u2028\u2029/]/g;
@@ -27,17 +27,27 @@ export async function writeRepro(name: string, seed: number, data: unknown) {
   const testNameLiteral = escapeJsonForCode(JSON.stringify(`${name} repro`));
   const seedLiteral = escapeJsonForCode(JSON.stringify(String(seed)));
   const safeNameForFile = sanitizeFilename(name) || 'repro';
-  const jsonPath = join(REPRO_DIR, `${safeNameForFile}.repro.json`);
+  const jsonFilename = `${safeNameForFile}.repro.json`;
+  const jsonPath = join(REPRO_DIR, jsonFilename);
   const tsPath = join(REPRO_DIR, `${safeNameForFile}.repro.ts`);
-  const jsonPayload = escapeJsonForCode(JSON.stringify(data, null, 2));
-  const dataPathLiteral = escapeJsonForCode(JSON.stringify(jsonPath));
-
-  await writeFile(jsonPath, jsonPayload);
+  const jsonPayload = JSON.stringify(data, null, 2);
+  const jsonFilenameLiteral = escapeJsonForCode(JSON.stringify(jsonFilename));
 
   const body = [
     "import { readFileSync } from 'node:fs';",
-    `test(${testNameLiteral}, () => { process.env.AE_SEED=${seedLiteral}; const data = JSON.parse(readFileSync(${dataPathLiteral}, 'utf8')); /* TODO: call SUT(data) */ });`,
+    "import { dirname, join } from 'node:path';",
+    "import { fileURLToPath } from 'node:url';",
+    "const __filename = fileURLToPath(import.meta.url);",
+    "const __dirname = dirname(__filename);",
+    `test(${testNameLiteral}, () => { process.env.AE_SEED=${seedLiteral}; const data = JSON.parse(readFileSync(join(__dirname, ${jsonFilenameLiteral}), 'utf8')); /* TODO: call SUT(data) */ });`,
   ].join('\n');
 
-  await writeFile(tsPath, body);
+  try {
+    await writeFile(jsonPath, jsonPayload);
+    await writeFile(tsPath, body);
+  } catch (error) {
+    await rm(jsonPath, { force: true });
+    await rm(tsPath, { force: true });
+    throw error;
+  }
 }

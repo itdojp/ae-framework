@@ -1,12 +1,14 @@
 import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
-import { join } from 'path';
+import { join } from 'node:path';
 
 const writeFile = vi.fn();
 const mkdir = vi.fn();
+const rm = vi.fn();
 
 vi.mock('node:fs/promises', () => ({
   writeFile,
-  mkdir
+  mkdir,
+  rm
 }));
 
 const sanitizeFilename = (value: string) => value.replace(/[^a-zA-Z0-9-_]/g, '_');
@@ -20,6 +22,7 @@ beforeAll(async () => {
 beforeEach(() => {
   writeFile.mockReset();
   mkdir.mockReset();
+  rm.mockReset();
 });
 
 describe('writeRepro', () => {
@@ -43,14 +46,14 @@ describe('writeRepro', () => {
     const body = writeFile.mock.calls.find((call) => call[0] === expectedPath)?.[1] ?? '';
     const testNameMatch = body.match(/test\(("(?:[^"\\]|\\.)*")/);
     const seedMatch = body.match(/process\.env\.AE_SEED=("(?:[^"\\]|\\.)*")/);
-    const dataPathMatch = body.match(/readFileSync\(("(?:[^"\\]|\\.)*"),/);
+    const dataPathMatch = body.match(/join\(__dirname,\s*("(?:[^"\\]|\\.)*")\)/);
 
     expect(testNameMatch).not.toBeNull();
     expect(seedMatch).not.toBeNull();
     expect(dataPathMatch).not.toBeNull();
     expect(JSON.parse(testNameMatch?.[1] ?? '""')).toBe(`${name} repro`);
     expect(JSON.parse(seedMatch?.[1] ?? '""')).toBe(String(seed));
-    expect(JSON.parse(dataPathMatch?.[1] ?? '""')).toBe(expectedJsonPath);
+    expect(JSON.parse(dataPathMatch?.[1] ?? '""')).toBe(`${safeName}.repro.json`);
     expect(JSON.parse(jsonBody)).toEqual(data);
     expect(body.endsWith(');')).toBe(true);
   });
@@ -69,8 +72,7 @@ describe('writeRepro', () => {
 
     expect(body).toContain('\\u003Ctag\\u003E');
     expect(body).toContain('\\u2028');
-    expect(jsonBody).toContain('\\u003C\\u002Fscript\\u003E');
-    expect(jsonBody).toContain('\\u2029');
+    expect(JSON.parse(jsonBody)).toEqual(data);
   });
 
   it('sanitizes unicode names for filenames', async () => {
