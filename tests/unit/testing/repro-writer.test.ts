@@ -1,11 +1,18 @@
 import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
+import { join } from 'node:path';
 
 const writeFile = vi.fn();
 const mkdir = vi.fn();
+const rm = vi.fn();
+const existsSync = vi.fn(() => false);
 
 vi.mock('node:fs/promises', () => ({
   writeFile,
-  mkdir
+  mkdir,
+  rm
+}));
+vi.mock('node:fs', () => ({
+  existsSync
 }));
 
 const sanitizeFilename = (value: string) => value.replace(/[^a-zA-Z0-9-_]/g, '_');
@@ -19,6 +26,9 @@ beforeAll(async () => {
 beforeEach(() => {
   writeFile.mockReset();
   mkdir.mockReset();
+  rm.mockReset();
+  existsSync.mockReset();
+  existsSync.mockReturnValue(false);
 });
 
 describe('writeRepro', () => {
@@ -30,23 +40,27 @@ describe('writeRepro', () => {
     await writeRepro(name, seed, data);
 
     const safeName = sanitizeFilename(name);
-    const expectedPath = `artifacts/repros/${safeName}.repro.ts`;
+    const expectedJsonPath = join('artifacts', 'repros', `${safeName}.repro.json`);
+    const expectedPath = join('artifacts', 'repros', `${safeName}.repro.ts`);
 
     expect(mkdir).toHaveBeenCalledWith('artifacts/repros', { recursive: true });
-    expect(writeFile).toHaveBeenCalledTimes(1);
+    expect(writeFile).toHaveBeenCalledTimes(2);
+    expect(writeFile).toHaveBeenCalledWith(expectedJsonPath, expect.any(String));
     expect(writeFile).toHaveBeenCalledWith(expectedPath, expect.any(String));
 
-    const body = writeFile.mock.calls[0]?.[1] ?? '';
+    const jsonBody = writeFile.mock.calls.find((call) => call[0] === expectedJsonPath)?.[1] ?? '';
+    const body = writeFile.mock.calls.find((call) => call[0] === expectedPath)?.[1] ?? '';
     const testNameMatch = body.match(/test\(("(?:[^"\\]|\\.)*")/);
     const seedMatch = body.match(/process\.env\.AE_SEED=("(?:[^"\\]|\\.)*")/);
-    const dataMatch = body.match(/JSON\.parse\(("(?:[^"\\]|\\.)*")\)/);
+    const dataPathMatch = body.match(/join\(__dirname,\s*("(?:[^"\\]|\\.)*")\)/);
 
     expect(testNameMatch).not.toBeNull();
     expect(seedMatch).not.toBeNull();
-    expect(dataMatch).not.toBeNull();
+    expect(dataPathMatch).not.toBeNull();
     expect(JSON.parse(testNameMatch?.[1] ?? '""')).toBe(`${name} repro`);
     expect(JSON.parse(seedMatch?.[1] ?? '""')).toBe(String(seed));
-    expect(JSON.parse(dataMatch?.[1] ?? '""')).toBe(JSON.stringify(data));
+    expect(JSON.parse(dataPathMatch?.[1] ?? '""')).toBe(`${safeName}.repro.json`);
+    expect(JSON.parse(jsonBody)).toEqual(data);
     expect(body.endsWith(');')).toBe(true);
   });
 
@@ -56,11 +70,15 @@ describe('writeRepro', () => {
 
     await writeRepro(name, 1, data);
 
-    const body = writeFile.mock.calls[0]?.[1] ?? '';
+    const safeName = sanitizeFilename(name);
+    const expectedJsonPath = join('artifacts', 'repros', `${safeName}.repro.json`);
+    const expectedPath = join('artifacts', 'repros', `${safeName}.repro.ts`);
+    const jsonBody = writeFile.mock.calls.find((call) => call[0] === expectedJsonPath)?.[1] ?? '';
+    const body = writeFile.mock.calls.find((call) => call[0] === expectedPath)?.[1] ?? '';
+
     expect(body).toContain('\\u003Ctag\\u003E');
     expect(body).toContain('\\u2028');
-    expect(body).toContain('\\u003C\\u002Fscript\\u003E');
-    expect(body).toContain('\\u2029');
+    expect(JSON.parse(jsonBody)).toEqual(data);
   });
 
   it('sanitizes unicode names for filenames', async () => {
@@ -68,11 +86,13 @@ describe('writeRepro', () => {
     await writeRepro(name, 0, { ok: true });
 
     const safeName = sanitizeFilename(name);
-    const expectedPath = `artifacts/repros/${safeName}.repro.ts`;
+    const expectedJsonPath = join('artifacts', 'repros', `${safeName}.repro.json`);
+    const expectedPath = join('artifacts', 'repros', `${safeName}.repro.ts`);
 
-    const body = writeFile.mock.calls[0]?.[1] ?? '';
+    const body = writeFile.mock.calls.find((call) => call[0] === expectedPath)?.[1] ?? '';
     const testNameMatch = body.match(/test\(("(?:[^"\\]|\\.)*")/);
 
+    expect(writeFile).toHaveBeenCalledWith(expectedJsonPath, expect.any(String));
     expect(writeFile).toHaveBeenCalledWith(expectedPath, expect.any(String));
     expect(testNameMatch).not.toBeNull();
     expect(JSON.parse(testNameMatch?.[1] ?? '""')).toBe(`${name} repro`);
