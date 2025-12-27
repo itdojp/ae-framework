@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { buildApp, seedRepo } from '../../../src/web-api/app';
 import { InMemoryReservationRepository } from '../../../src/web-api/repository';
+import { applyIntegrationRetry } from '../../_helpers/integration-test-utils.js';
 
 // test:integration:webapi で実行
+
+applyIntegrationRetry(it);
 
 async function buildTestApp() {
   const repo = new InMemoryReservationRepository();

@@ -1,8 +1,11 @@
-import { writeFile, mkdir } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { writeFile, mkdir, rm } from 'node:fs/promises';
+import { join } from 'node:path';
 
 const JSON_UNSAFE_REGEX = /[<>\u2028\u2029/]/g;
 const ESCAPED_LINE_SEPARATOR = '\\u2028';
 const ESCAPED_PARAGRAPH_SEPARATOR = '\\u2029';
+const REPRO_DIR = 'artifacts/repros';
 
 const JSON_UNSAFE_MAP: Record<string, string> = {
   '<': '\\u003C',
@@ -21,11 +24,41 @@ function sanitizeFilename(str: string): string {
 }
 
 export async function writeRepro(name: string, seed: number, data: unknown) {
-  await mkdir('artifacts/repros', { recursive: true });
+  await mkdir(REPRO_DIR, { recursive: true });
   const testNameLiteral = escapeJsonForCode(JSON.stringify(`${name} repro`));
   const seedLiteral = escapeJsonForCode(JSON.stringify(String(seed)));
-  const safeNameForFile = sanitizeFilename(name);
-  const serializedData = escapeJsonForCode(JSON.stringify(JSON.stringify(data)));
-  const body = `test(${testNameLiteral}, () => { process.env.AE_SEED=${seedLiteral}; const data = JSON.parse(${serializedData}); /* TODO: call SUT(data) */ });`;
-  await writeFile(`artifacts/repros/${safeNameForFile}.repro.ts`, body);
+  const safeNameForFile = sanitizeFilename(name) || 'repro';
+  const jsonFilename = `${safeNameForFile}.repro.json`;
+  const jsonPath = join(REPRO_DIR, jsonFilename);
+  const tsPath = join(REPRO_DIR, `${safeNameForFile}.repro.ts`);
+  const jsonPayload = JSON.stringify(data, null, 2);
+  const jsonFilenameLiteral = escapeJsonForCode(JSON.stringify(jsonFilename));
+
+  const body = [
+    "import { readFileSync } from 'node:fs';",
+    "import { dirname, join } from 'node:path';",
+    "import { fileURLToPath } from 'node:url';",
+    "const __filename = fileURLToPath(import.meta.url);",
+    "const __dirname = dirname(__filename);",
+    `test(${testNameLiteral}, () => { process.env.AE_SEED=${seedLiteral}; const data = JSON.parse(readFileSync(join(__dirname, ${jsonFilenameLiteral}), 'utf8')); /* TODO: call SUT(data) */ });`,
+  ].join('\n');
+
+  const jsonExisted = existsSync(jsonPath);
+  const tsExisted = existsSync(tsPath);
+  let jsonWritten = false;
+  let tsWritten = false;
+  try {
+    await writeFile(jsonPath, jsonPayload);
+    jsonWritten = true;
+    await writeFile(tsPath, body);
+    tsWritten = true;
+  } catch (error) {
+    if (tsWritten && !tsExisted) {
+      await rm(tsPath, { force: true });
+    }
+    if (jsonWritten && !jsonExisted) {
+      await rm(jsonPath, { force: true });
+    }
+    throw error;
+  }
 }
