@@ -5,9 +5,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 function commandExists(cmd) {
-  const result = spawnSync(cmd, [], { stdio: 'ignore' });
-  if (result.error && result.error.code === 'ENOENT') return false;
-  return true;
+  const locator = process.platform === 'win32' ? 'where' : 'which';
+  const result = spawnSync(locator, [cmd], { stdio: 'ignore' });
+  if (result.error) return false;
+  return result.status === 0;
 }
 
 function run(cmd, args) {
@@ -25,8 +26,8 @@ if (!fs.existsSync(spec)) {
 }
 
 if (commandExists('apalache-mc')) {
-  run('apalache-mc', ['check', '--inv=Invariant', spec]);
-  process.exit(0);
+  const code = run('apalache-mc', ['check', '--inv=Invariant', spec]);
+  process.exit(code);
 }
 
 if (process.env.TLA_TOOLS_JAR) {
@@ -39,8 +40,8 @@ if (process.env.TLA_TOOLS_JAR) {
     console.log('Java runtime not found (skipping). See docs/quality/formal-tools-setup.md');
     process.exit(0);
   }
-  run('java', ['-cp', jar, 'tlc2.TLC', spec]);
-  process.exit(0);
+  const code = run('java', ['-cp', jar, 'tlc2.TLC', spec]);
+  process.exit(code);
 }
 
 console.log('No Apalache or TLA_TOOLS_JAR set. Use tools:formal:check and see formal-tools-setup.md');
