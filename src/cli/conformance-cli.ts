@@ -7,6 +7,7 @@ import { Command } from 'commander';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync } from 'fs';
 import { ConformanceVerificationEngine } from '../conformance/verification-engine.js';
 import path from 'node:path';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { createEncryptedChatDefaultRules } from '../conformance/default-rules.js';
 import chalk from 'chalk';
 import { toMessage } from '../utils/error-utils.js';
@@ -1335,11 +1336,14 @@ export class ConformanceCli {
    * Simple UUID generator
    */
   private generateUUID(): string {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      const r = Math.random() * 16 | 0;
-      const v = c === 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
-    });
+    if (typeof randomUUID === 'function') {
+      return randomUUID();
+    }
+    const bytes = randomBytes(16);
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
   }
 }
 
