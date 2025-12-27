@@ -3,9 +3,10 @@
 // - Detects apalache CLI presence (apalache-mc or apalache)
 // - Optionally runs a quick check when available
 // - Always writes a summary JSON (non-blocking)
-import { execSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { computeOkFromOutput } from './heuristics.mjs';
 
 function parseArgs(argv){
@@ -20,73 +21,6 @@ function parseArgs(argv){
     else { args._.push(a); }
   }
   return args;
-}
-
-function has(cmd){ try { execSync(`bash -lc 'command -v ${cmd}'`, {stdio:'ignore'}); return true; } catch { return false; } }
-function shWithCode(cmd){
-  try {
-    const out = execSync(cmd, {encoding:'utf8'});
-    return { out, code: 0 };
-  } catch(e){
-    const out = (e.stdout?.toString?.()||'') + (e.stderr?.toString?.()||'');
-    const code = typeof e.status === 'number' ? e.status : (typeof e.code === 'number' ? e.code : 1);
-    return { out, code };
-  }
-}
-
-const args = parseArgs(process.argv);
-if (args.help){
-  console.log('Usage: node scripts/formal/verify-apalache.mjs [--file spec/tla/DomainSpec.tla]');
-  process.exit(0);
-}
-
-const repoRoot = path.resolve(process.cwd());
-const file = args.file || process.env.APALACHE_FILE || path.join('spec','tla','DomainSpec.tla');
-const absFile = path.resolve(repoRoot, file);
-const outDir = path.join(repoRoot, 'hermetic-reports', 'formal');
-const outFile = path.join(outDir, 'apalache-summary.json');
-const outLog = path.join(outDir, 'apalache-output.txt');
-fs.mkdirSync(outDir, { recursive: true });
-
-const haveApalacheMc = has('apalache-mc');
-const haveApalache = haveApalacheMc || has('apalache');
-const apalacheCmd = haveApalacheMc ? 'apalache-mc' : (haveApalache ? 'apalache' : '');
-let status = 'skipped';
-let ran = false;
-let output = '';
-let version = '';
-let toolPath = '';
-let timeMs = 0;
-
-if (!fs.existsSync(absFile)){
-  status = 'file_not_found';
-  output = `TLA file not found: ${absFile}\nSee docs/quality/formal-runbook.md (Reproduce Locally).`;
-} else if (!haveApalache){
-  status = 'tool_not_available';
-  output = 'Apalache CLI not found. Install apalache or ensure apalache-mc is on PATH. See docs/quality/formal-tools-setup.md';
-} else {
-  // Minimal "typecheck" like run; apalache-mc supports: apalache-mc check <Spec>
-  let baseCmd = `${apalacheCmd} check ${absFile.replace(/'/g, "'\\''")}`;
-  // Optional timeout wrapper (GNU timeout)
-  if (args.timeout && Number.isFinite(args.timeout) && args.timeout > 0 && has('timeout')) {
-    const secs = Math.max(1, Math.floor(Number(args.timeout)/1000));
-    baseCmd = `timeout ${secs}s ${baseCmd}`;
-  }
-  const t0 = Date.now();
-  const res = shWithCode(`bash -lc '${baseCmd} 2>&1'`);
-  output = res.out;
-  timeMs = Date.now() - t0;
-  // Detect timeout exit (GNU timeout returns 124)
-  if (args.timeout && haveApalache && has('timeout') && (res.code === 124 || /timeout:/.test(output))) {
-    status = 'timeout';
-    ran = true;
-  } else {
-    status = 'ran';
-    ran = true;
-  }
-  // Try to get version string
-  version = shWithCode(`bash -lc '${apalacheCmd} version 2>&1 || true'`).out.trim().split(/\n/)[0] || '';
-  toolPath = shWithCode(`bash -lc 'command -v ${apalacheCmd} || true'`).out.trim();
 }
 
 // Tuning via env (defaults keep current behavior)
@@ -130,37 +64,150 @@ function extractErrorSnippet(out, before=SNIPPET_BEFORE, after=SNIPPET_AFTER){
   return null;
 }
 
-// Persist raw output for artifact consumers
-try { fs.writeFileSync(outLog, output, 'utf-8'); } catch {}
+export function commandExists(cmd){
+  const result = spawnSync(cmd, [], { stdio: 'ignore' });
+  if (result.error && result.error.code === 'ENOENT') {
+    return false;
+  }
+  return true;
+}
 
-// computeOkFromOutput imported from heuristics.mjs
+export function runCommand(cmd, cmdArgs){
+  const result = spawnSync(cmd, cmdArgs, { encoding: 'utf8' });
+  if (result.error) {
+    const stdout = result.stdout ?? '';
+    const stderr = result.stderr ?? '';
+    const combined = `${stdout}${stderr}`;
+    const suffix = result.error.message ?? '';
+    const output = combined ? `${combined}${suffix ? `\n${suffix}` : ''}` : suffix;
+    if (result.error.code === 'ENOENT') {
+      return { available: false, success: false, status: null, signal: null, output };
+    }
+    return {
+      available: true,
+      success: false,
+      status: result.status ?? null,
+      signal: result.signal ?? null,
+      output,
+    };
+  }
+  const stdout = result.stdout ?? '';
+  const stderr = result.stderr ?? '';
+  return {
+    available: true,
+    success: result.status === 0,
+    status: result.status ?? null,
+    signal: result.signal ?? null,
+    output: `${stdout}${stderr}`,
+  };
+}
 
-const summary = {
-  tool: 'apalache',
-  file: path.relative(repoRoot, absFile),
-  detected: haveApalache,
-  ran,
-  status,
-  version: version || null,
-  ok: ran ? (computeOkFromOutput(output)) : null,
-  hints: ran ? ( /success|ok|no\s+(?:errors|counterexamples?)/i.test(output) ? 'success-indicators-found' : null ) : null,
-  timeMs: timeMs || null,
-  toolPath: toolPath || null,
-  run: (process.env.GITHUB_SERVER_URL && process.env.GITHUB_REPOSITORY && process.env.GITHUB_RUN_ID)
-    ? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
-    : null,
-  timestamp: new Date().toISOString(),
-  errors: ran ? extractErrors(output) : [],
-  errorCount: ran ? countErrors(output) : 0,
-  errorSnippet: ran ? extractErrorSnippet(output) : null,
-  // capped raw output preview (full log saved to outputFile)
-  output: output ? String(output).slice(0, OUTPUT_CLAMP) : '',
-  outputFile: path.relative(repoRoot, outLog)
-};
+export function resolveCommandPath(cmd){
+  if (!commandExists('which')) return '';
+  const result = runCommand('which', [cmd]);
+  if (!result.available || !result.success) return '';
+  return result.output.trim().split(/\r?\n/)[0] || '';
+}
 
-fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));
-console.log(`Apalache summary written: ${path.relative(repoRoot, outFile)}`);
-console.log(`- detected=${haveApalache} status=${status}`);
+export function main(argv = process.argv){
+  const args = parseArgs(argv);
+  if (args.help){
+    console.log('Usage: node scripts/formal/verify-apalache.mjs [--file spec/tla/DomainSpec.tla]');
+    return 0;
+  }
 
-// Non-blocking
-process.exit(0);
+  const repoRoot = path.resolve(process.cwd());
+  const file = args.file || process.env.APALACHE_FILE || path.join('spec','tla','DomainSpec.tla');
+  const absFile = path.resolve(repoRoot, file);
+  const outDir = path.join(repoRoot, 'hermetic-reports', 'formal');
+  const outFile = path.join(outDir, 'apalache-summary.json');
+  const outLog = path.join(outDir, 'apalache-output.txt');
+  fs.mkdirSync(outDir, { recursive: true });
+
+  const haveApalacheMc = commandExists('apalache-mc');
+  const haveApalache = haveApalacheMc || commandExists('apalache');
+  const haveTimeout = commandExists('timeout');
+  const apalacheCmd = haveApalacheMc ? 'apalache-mc' : (haveApalache ? 'apalache' : '');
+  let status;
+  let ran = false;
+  let output = '';
+  let version = '';
+  let toolPath = '';
+  let timeMs = 0;
+
+  if (!fs.existsSync(absFile)){
+    status = 'file_not_found';
+    output = `TLA file not found: ${absFile}\nSee docs/quality/formal-runbook.md (Reproduce Locally).`;
+  } else if (!haveApalache){
+    status = 'tool_not_available';
+    output = 'Apalache CLI not found. Install apalache or ensure apalache-mc is on PATH. See docs/quality/formal-tools-setup.md';
+  } else {
+    // Minimal "typecheck" like run; apalache-mc supports: apalache-mc check <Spec>
+    const baseCmd = { cmd: apalacheCmd, args: ['check', absFile] };
+    const useTimeout = Boolean(args.timeout && Number.isFinite(args.timeout) && args.timeout > 0 && haveTimeout);
+    const timeoutSecs = useTimeout ? Math.max(1, Math.floor(Number(args.timeout)/1000)) : 0;
+    const runSpec = useTimeout
+      ? { cmd: 'timeout', args: [`${timeoutSecs}s`, baseCmd.cmd, ...baseCmd.args] }
+      : baseCmd;
+    const t0 = Date.now();
+    const res = runCommand(runSpec.cmd, runSpec.args);
+    timeMs = Date.now() - t0;
+    if (!res.available) {
+      status = 'tool_not_available';
+      if (useTimeout) {
+        output = 'Failed to execute Apalache via timeout wrapper. Ensure both the `timeout` command and the Apalache CLI (apalache or apalache-mc) are installed and on PATH. See docs/quality/formal-tools-setup.md';
+      } else {
+        output = 'Failed to execute Apalache command, even though it was previously detected. Verify that the Apalache CLI (apalache or apalache-mc) is still installed and on PATH. See docs/quality/formal-tools-setup.md';
+      }
+    } else {
+      output = res.output;
+      ran = true;
+      // Detect timeout exit (GNU timeout returns 124)
+      if (useTimeout && (res.status === 124 || /timeout:/.test(output))) {
+        status = 'timeout';
+      } else {
+        status = 'ran';
+      }
+    }
+    // Try to get version string
+    const versionRes = runCommand(apalacheCmd, ['version']);
+    version = versionRes.output.trim().split(/\r?\n/)[0] || '';
+    toolPath = resolveCommandPath(apalacheCmd);
+  }
+
+  // Persist raw output for artifact consumers
+  try { fs.writeFileSync(outLog, output, 'utf-8'); } catch {}
+
+  const summary = {
+    tool: 'apalache',
+    file: path.relative(repoRoot, absFile),
+    detected: haveApalache,
+    ran,
+    status,
+    version: version || null,
+    ok: ran ? (computeOkFromOutput(output)) : null,
+    hints: ran ? ( /success|ok|no\s+(?:errors|counterexamples?)/i.test(output) ? 'success-indicators-found' : null ) : null,
+    timeMs: timeMs || null,
+    toolPath: toolPath || null,
+    run: (process.env.GITHUB_SERVER_URL && process.env.GITHUB_REPOSITORY && process.env.GITHUB_RUN_ID)
+      ? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
+      : null,
+    timestamp: new Date().toISOString(),
+    errors: ran ? extractErrors(output) : [],
+    errorCount: ran ? countErrors(output) : 0,
+    errorSnippet: ran ? extractErrorSnippet(output) : null,
+    // capped raw output preview (full log saved to outputFile)
+    output: output ? String(output).slice(0, OUTPUT_CLAMP) : '',
+    outputFile: path.relative(repoRoot, outLog)
+  };
+
+  fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));
+  console.log(`Apalache summary written: ${path.relative(repoRoot, outFile)}`);
+  console.log(`- detected=${haveApalache} status=${status}`);
+  return 0;
+}
+
+const selfUrl = pathToFileURL(process.argv[1] || '').href;
+if (selfUrl === import.meta.url) {
+  process.exit(main());
+}
