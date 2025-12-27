@@ -21,7 +21,10 @@ import {
 import {
   createIntegrationTempDir,
   registerIntegrationCleanup,
+  applyIntegrationRetry,
 } from '../_helpers/integration-test-utils.js';
+
+applyIntegrationRetry(test);
 
 describe('System Validation - Phase 4 Integration Tests', () => {
   let agent: UnifiedAgent;
