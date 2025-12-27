@@ -33,17 +33,6 @@ for (const p of props) if (p?.traceId) traceIds.add(p.traceId);
 const replayLine = replay.totalEvents!==undefined 
   ? t(`Replay ev/viol=${replay.totalEvents}/${(replay.violatedInvariants||[]).length}`, `リプレイ ev/viol=${replay.totalEvents}/${(replay.violatedInvariants||[]).length}`)
   : t('Replay: n/a','リプレイ: なし');
-// Properties (PBT) quick count: prefer aggregate 'count' or fallback to array length
-let propsCount = 0;
-if (Array.isArray(props) && props.length) {
-  for (const p of props) {
-    if (p && typeof p.count === 'number') {
-      propsCount += p.count;
-    } else {
-      propsCount += 1;
-    }
-  }
-}
 const ltlLine = ltlSug && typeof ltlSug.count === 'number'
   ? t(`LTL sugg: ${ltlSug.count}`, `LTL候補: ${ltlSug.count}`)
   : t('LTL sugg: n/a', 'LTL候補: なし');

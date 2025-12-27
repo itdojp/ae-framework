@@ -122,7 +122,7 @@ async function runSpecCompile(context) {
   const out = path.join(dir, 'ir.json');
   const log = path.join(dir, 'spec-compile.log');
   const cmd = `node dist/src/cli/index.js spec compile -i ${specIn} -o ${path.relative(CWD, out)} || pnpm -s ae-framework spec compile -i ${specIn} -o ${path.relative(CWD, out)} || pnpm -s tsx src/cli/index.ts spec compile -i ${specIn} -o ${path.relative(CWD, out)}`;
-  await teeTo(log, (hooks) => sh('bash', ['-lc', cmd], hooks));
+  const res = await teeTo(log, (hooks) => sh('bash', ['-lc', cmd], hooks));
   const ok = res.code === 0;
   await savePhase(context, 'spec', { code: res.code, log, output: ok ? out : null, input: specIn });
   return ok;
