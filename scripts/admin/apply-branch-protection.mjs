@@ -30,7 +30,7 @@ async function main() {
   const file = path.resolve(process.cwd(), presetPath);
   const body = await fs.readFile(file, 'utf8');
 
-  const res = await fetch(api, { // codeql[js/file-access-to-http] Applying branch protection is an explicit admin CLI action.
+  const res = await fetch(api, { // lgtm[js/file-access-to-http] Applying branch protection is an explicit admin CLI action.
     method: 'PUT',
     headers: {
       'Authorization': `token ${token}`,
