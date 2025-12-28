@@ -5,7 +5,7 @@
  * Following TDD principles: RED-GREEN-REFACTOR cycle enforcement.
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { formatGWT } from '../utils/gwt-format';
 import { SelfImprovementTDDSetup, createSelfImprovementTDDSetup } from '../../src/self-improvement/tdd-setup.js';
 import * as fs from 'node:fs';
