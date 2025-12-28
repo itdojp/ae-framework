@@ -2,7 +2,7 @@
  * Tests for Phase 3.3 Monitoring System
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { formatGWT } from '../utils/gwt-format';
 import { PerformanceMonitor } from '../../src/optimization/monitoring/performance-monitor.js';
 import { MetricsCollector } from '../../src/optimization/monitoring/metrics-collector.js';
