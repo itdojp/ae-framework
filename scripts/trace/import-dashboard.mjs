@@ -90,7 +90,8 @@ async function importDashboard({ host, token, folderId, overwrite, input }) {
     overwrite,
   };
 
-  const response = await fetch(new URL('/api/dashboards/db', host), { // lgtm [js/file-access-to-http] Uploading dashboards is an explicit CLI action.
+  // codeql [js/file-access-to-http] Uploading dashboards is an explicit CLI action.
+  const response = await fetch(new URL('/api/dashboards/db', host), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
