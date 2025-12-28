@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fromVerifyLite } from '../src/from-verify-lite.js';
-import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 const fixturePath = fileURLToPath(new URL('../__fixtures__/verify-lite-summary.json', import.meta.url));
 const loadSummary = () => JSON.parse(readFileSync(fixturePath, 'utf8'));

@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
-  DEFAULT_REPORT_PATH,
   DOCKER_TEST_HEADER,
   resolveReportPath,
   summarizeReport,

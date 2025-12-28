@@ -2,7 +2,7 @@
  * Tests for Req2Run Benchmark Runner
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { formatGWT } from '../../utils/gwt-format';
 import { BenchmarkRunner } from '../../../src/benchmark/req2run/runners/BenchmarkRunner.js';
 import { 

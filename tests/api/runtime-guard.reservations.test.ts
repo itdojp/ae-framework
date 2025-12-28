@@ -4,7 +4,6 @@ import { FastifyInstance } from 'fastify';
 import { trace } from '@opentelemetry/api';
 import { formatGWT } from '../utils/gwt-format';
 import * as SecurityHeaders from '../../src/api/middleware/security-headers.js';
-import { TELEMETRY_ATTRIBUTES } from '../../src/telemetry/enhanced-telemetry.js';
 import getServer, { createServer } from '../../src/api/server.js';
 
 const {
