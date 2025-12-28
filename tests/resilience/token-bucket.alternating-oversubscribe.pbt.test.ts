@@ -17,9 +17,9 @@ describe('PBT: TokenBucket alternating oversubscribe with waits', () => {
           const rl = new TokenBucketRateLimiter({ tokensPerInterval: tokens, interval, maxTokens: max });
           // Begin with a partial drain to avoid trivial full bucket behavior
           await rl.consume(Math.min(max, Math.ceil(max / 2)));
-          let last = rl.getTokenCount();
-          expect(last).toBeGreaterThanOrEqual(0);
-          expect(last).toBeLessThanOrEqual(max);
+          const initialCount = rl.getTokenCount();
+          expect(initialCount).toBeGreaterThanOrEqual(0);
+          expect(initialCount).toBeLessThanOrEqual(max);
 
           for (let i = 0; i < steps; i++) {
             // Oversubscribe request alternates around capacity boundaries
@@ -35,8 +35,7 @@ describe('PBT: TokenBucket alternating oversubscribe with waits', () => {
             c = rl.getTokenCount();
             expect(c).toBeGreaterThanOrEqual(0);
             expect(c).toBeLessThanOrEqual(max);
-            // Monotonicity not guaranteed, but ensure no wild swings beyond bounds
-            last = c;
+            // Monotonicity not guaranteed; invariants are enforced by bounds checks above.
           }
         }
       ),

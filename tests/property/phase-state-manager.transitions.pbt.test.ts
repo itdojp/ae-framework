@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { PhaseStateManager, PhaseType } from '../../src/utils/phase-state-manager';
+import { PhaseStateManager } from '../../src/utils/phase-state-manager';
 import fc from 'fast-check';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -33,4 +33,3 @@ describe('PBT: PhaseStateManager transitions and invariants', () => {
     ), { numRuns: 12 });
   });
 });
-

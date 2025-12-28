@@ -22,7 +22,7 @@ describe('Resilience: TokenBucket tiny-interval alternate short waits (fast)', (
       // When consume failed (no token yet), wait a bit more to avoid flakiness and try again
       if (!ok) {
         await new Promise((r) => setTimeout(r, Math.max(1, interval - w)));
-        const ok2 = await rl.consume(1);
+        await rl.consume(1);
         const t2 = rl.getTokenCount();
         expect(t2).toBeGreaterThanOrEqual(0);
         expect(t2).toBeLessThanOrEqual(3);
