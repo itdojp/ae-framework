@@ -1207,18 +1207,24 @@ export class ConformanceCli {
   }
 
   /**
+   * Guard against prototype pollution key segments.
+   */
+  private isUnsafeKeySegment(seg: string): boolean {
+    return seg === '__proto__' || seg === 'prototype' || seg === 'constructor';
+  }
+
+  /**
    * Parse configuration value
    */
   private parseConfigValue(key: string, value: string): any {
     const keys = key.split('.');
     let result: any = {};
     let current = result;
-    const isUnsafeKey = (seg: string) => seg === '__proto__' || seg === 'prototype' || seg === 'constructor';
 
     for (let i = 0; i < keys.length - 1; i++) {
       const seg = keys[i];
       if (!seg) continue;
-      if (isUnsafeKey(seg)) {
+      if (this.isUnsafeKeySegment(seg)) {
         throw new Error(`Unsafe config key segment: ${seg}`);
       }
       if (!current[seg]) current[seg] = {};
@@ -1233,7 +1239,7 @@ export class ConformanceCli {
 
     const lastKey = keys[keys.length - 1];
     if (!lastKey) return result;
-    if (isUnsafeKey(lastKey)) {
+    if (this.isUnsafeKeySegment(lastKey)) {
       throw new Error(`Unsafe config key segment: ${lastKey}`);
     }
     current[lastKey] = parsedValue;
