@@ -1,4 +1,4 @@
-// snapshot sha1=dc3049f0cabc4b5b7a59e91fd895f04eb9434b22
+// snapshot sha1=5c9877db79b9e96edf2dcff6c6d63badf66f1eea
 // ---- agents/domain-types.d.ts ----
 /**
  * @fileoverview Domain Types for Unified Agent System
@@ -10278,11 +10278,9 @@ export interface FailurePattern {
 }
 
 // ---- src/cli.d.ts ----
-#!/usr/bin/env node
 export {};
 
 // ---- src/cli/ae-fix-cli.d.ts ----
-#!/usr/bin/env node
 /**
  * AE-Framework Auto-Fix CLI
  *
@@ -10292,18 +10290,15 @@ export {};
 export {};
 
 // ---- src/cli/ae-ui-alias.d.ts ----
-#!/usr/bin/env node
 export {};
 
 // ---- src/cli/approval-cli.d.ts ----
-#!/usr/bin/env node
 /**
  * CLI for managing approval workflows in ae-framework
  */
 export {};
 
 // ---- src/cli/benchmark-cli.d.ts ----
-#!/usr/bin/env node
 /**
  * Req2Run Benchmark CLI
  * Command-line interface for running AE Framework benchmarks
@@ -10362,7 +10357,6 @@ export declare class CEGISCli {
 export declare function executeCEGISCli(args: string[]): Promise<void>;
 
 // ---- src/cli/circuit-breaker-cli.d.ts ----
-#!/usr/bin/env node
 import { Command } from 'commander';
 /**
  * Circuit Breaker CLI
@@ -10427,7 +10421,6 @@ export declare class CircuitBreakerCLI {
 export declare function createCircuitBreakerCommand(): Command;
 
 // ---- src/cli/codegen-cli.d.ts ----
-#!/usr/bin/env node
 /**
  * Code Generation CLI
  * Command-line interface for deterministic code generation and drift detection
@@ -10517,7 +10510,6 @@ export declare class ConformanceCli {
 export declare function executeConformanceCli(args: string[]): Promise<void>;
 
 // ---- src/cli/enhanced-state-cli.d.ts ----
-#!/usr/bin/env node
 import { Command } from 'commander';
 /**
  * Enhanced State Manager CLI
@@ -10617,7 +10609,6 @@ export declare class GuardRunner {
 }
 
 // ---- src/cli/index.d.ts ----
-#!/usr/bin/env node
 import { Phase } from './types.js';
 import { TaskRequest, TaskResponse, TaskHandler } from '../agents/task-types.js';
 import '../telemetry/telemetry-setup.js';
@@ -10786,7 +10777,6 @@ export declare class MetricsCollector {
 }
 
 // ---- src/cli/phase-cli.d.ts ----
-#!/usr/bin/env node
 /**
  * CLI for managing ae-framework phase state
  */
@@ -10802,7 +10792,6 @@ export declare function createQualityCommand(): Command;
 export default createQualityCommand;
 
 // ---- src/cli/resilience-cli.d.ts ----
-#!/usr/bin/env node
 import { Command } from 'commander';
 /**
  * Resilience System CLI
@@ -10851,7 +10840,6 @@ export declare class ResilienceCLI {
 export declare function createResilienceCommand(): Command;
 
 // ---- src/cli/sbom-cli.d.ts ----
-#!/usr/bin/env node
 import { Command } from 'commander';
 /**
  * SBOM (Software Bill of Materials) CLI
@@ -10921,14 +10909,12 @@ export declare function createSecurityCommand(): Command;
 export default createSecurityCommand;
 
 // ---- src/cli/slash-cli.d.ts ----
-#!/usr/bin/env node
 /**
  * Interactive slash command CLI for ae-framework
  */
 export {};
 
 // ---- src/cli/spec-cli.d.ts ----
-#!/usr/bin/env node
 /**
  * AE-Framework Spec CLI Integration
  * Integrates spec-compiler into main ae-framework CLI
@@ -11044,7 +11030,6 @@ export interface PhaseCheckpoint {
 }
 
 // ---- src/cli/ui-scaffold-cli.d.ts ----
-#!/usr/bin/env node
 export {};
 
 // ---- src/cli/validators/PhaseValidator.d.ts ----
@@ -16760,7 +16745,6 @@ export declare class ContainerServer {
 }
 
 // ---- src/mcp-server/formal-server.d.ts ----
-#!/usr/bin/env node
 /**
  * MCP Server for Formal Agent
  * Provides tools for formal specification generation, validation, and model checking
@@ -16787,7 +16771,6 @@ export declare function createFormalServer(): Promise<FormalMCPServer>;
 export { FormalMCPServer };
 
 // ---- src/mcp-server/intent-server.d.ts ----
-#!/usr/bin/env node
 /**
  * MCP Server for Intent Agent
  * Exposes Intent Agent capabilities as MCP tools for Phase 1 of ae-framework
@@ -16795,15 +16778,12 @@ export { FormalMCPServer };
 export {};
 
 // ---- src/mcp-server/operate-server.d.ts ----
-#!/usr/bin/env node
 export {};
 
 // ---- src/mcp-server/tdd-server.d.ts ----
-#!/usr/bin/env node
 export {};
 
 // ---- src/mcp-server/test-generation-server.d.ts ----
-#!/usr/bin/env node
 export {};
 
 // ---- src/mcp-server/verify-server.d.ts ----
@@ -17169,7 +17149,6 @@ export declare class AlertManager extends EventEmitter {
 }
 
 // ---- src/optimization/monitoring/demo.d.ts ----
-#!/usr/bin/env tsx
 /**
  * Phase 3.3 Monitoring System Demo
  * Demonstrates the performance monitoring, metrics collection, and alerting capabilities
