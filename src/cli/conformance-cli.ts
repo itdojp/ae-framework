@@ -1213,10 +1213,14 @@ export class ConformanceCli {
     const keys = key.split('.');
     let result: any = {};
     let current = result;
+    const isUnsafeKey = (seg: string) => seg === '__proto__' || seg === 'prototype' || seg === 'constructor';
 
     for (let i = 0; i < keys.length - 1; i++) {
       const seg = keys[i];
       if (!seg) continue;
+      if (isUnsafeKey(seg)) {
+        throw new Error(`Unsafe config key segment: ${seg}`);
+      }
       if (!current[seg]) current[seg] = {};
       current = current[seg];
     }
@@ -1229,6 +1233,9 @@ export class ConformanceCli {
 
     const lastKey = keys[keys.length - 1];
     if (!lastKey) return result;
+    if (isUnsafeKey(lastKey)) {
+      throw new Error(`Unsafe config key segment: ${lastKey}`);
+    }
     current[lastKey] = parsedValue;
     return result;
   }
