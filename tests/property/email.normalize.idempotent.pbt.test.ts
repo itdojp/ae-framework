@@ -29,17 +29,14 @@ describe('PBT: Email normalization is idempotent and case/space-insensitive', ()
           casing
         }),
         async ({ email, leading, trailing, casing }) => {
-          let mixedCase = email;
-          if (casing === 'upper') {
-            mixedCase = email.toUpperCase();
-          } else if (casing === 'lower') {
-            mixedCase = email.toLowerCase();
-          } else {
-            mixedCase = email
-              .split('')
-              .map((char, idx) => (idx % 2 === 0 ? char.toUpperCase() : char.toLowerCase()))
-              .join('');
-          }
+          const mixedCase = casing === 'upper'
+            ? email.toUpperCase()
+            : (casing === 'lower'
+              ? email.toLowerCase()
+              : email
+                .split('')
+                .map((char, idx) => (idx % 2 === 0 ? char.toUpperCase() : char.toLowerCase()))
+                .join(''));
           const raw = `${leading}${mixedCase}${trailing}`;
           const e1 = makeEmail(raw) as unknown as string;
           const e2 = makeEmail(e1) as unknown as string;
