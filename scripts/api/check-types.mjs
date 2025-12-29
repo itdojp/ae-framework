@@ -37,7 +37,7 @@ if (!snap) {
 }
 
 // Remove hash line from snapshot for comparison
-const snapContent = stripShebang(snap.replace(/^\/\/ snapshot sha1=.*\n/, ''));
+const snapContent = snap.replace(/^\/\/ snapshot sha1=.*\n/, '');
 const isSame = snapContent.replace(/\r\n/g,'\n') === current.replace(/\r\n/g,'\n');
 if (!isSame) {
   console.log('[api:check] type snapshot changed. Run `pnpm api:update` to accept.');
