@@ -3,6 +3,8 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
+const stripShebang = (content) => content.replace(/^#!.*(?:\r?\n)?/gm, '');
+
 function run(cmd, args) {
   return new Promise((res) => {
     const p = spawn(cmd, args, { stdio: 'inherit' });
@@ -22,7 +24,7 @@ const files = (await glob('artifacts/types/**/*.d.ts')).sort();
 let current = '';
 for (const f of files) {
   const rel = path.relative('artifacts/types', f);
-  const txt = await rf(f, 'utf8');
+  const txt = stripShebang(await rf(f, 'utf8'));
   current += `// ---- ${rel} ----\n${txt}\n`;
 }
 
