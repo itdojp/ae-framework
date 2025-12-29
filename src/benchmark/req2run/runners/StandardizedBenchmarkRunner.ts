@@ -38,7 +38,7 @@ import type {
   UIUXOutput,
   UIComponent
 } from '../../../agents/interfaces/standard-interfaces.js';
-import { BenchmarkCategory, DifficultyLevel, TestType, OutputType } from '../types/index.js';
+import { BenchmarkCategory, DifficultyLevel, OutputType } from '../types/index.js';
 
 // Minimal generated file descriptor used within this runner (file-local type)
 type GeneratedFile = { path: string; content: string; type: 'typescript' | 'markdown' | 'config' | string; size: number };
