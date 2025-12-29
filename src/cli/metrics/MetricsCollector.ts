@@ -1,4 +1,4 @@
-import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'fs';
+import { writeFileSync, appendFileSync, mkdirSync } from 'fs';
 import * as path from 'path';
 import type { AEFrameworkConfig } from '../types.js';
 import { toMessage } from '../../utils/error-utils.js';
@@ -206,12 +206,7 @@ export class MetricsCollector {
     const logEntry = `${violation.timestamp.toISOString()} [${violation.severity.toUpperCase()}] ${violation.type}: ${violation.message} (Phase: ${violation.phase})\n`;
     
     try {
-      if (existsSync(logFile)) {
-        const currentLog = readFileSync(logFile, 'utf8');
-        writeFileSync(logFile, currentLog + logEntry);
-      } else {
-        writeFileSync(logFile, logEntry);
-      }
+      appendFileSync(logFile, logEntry);
     } catch (error: unknown) {
       console.warn(`Could not save violation log: ${toMessage(error)}`);
     }
