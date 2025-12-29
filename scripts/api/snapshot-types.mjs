@@ -7,12 +7,14 @@ const OUT_DIR = 'artifacts/types';
 const SNAP_DIR = 'api';
 const SNAP_FILE = path.join(SNAP_DIR, 'public-types.d.ts');
 
+const stripShebang = (content) => content.replace(/^#!.*(?:\r?\n)?/gm, '');
+
 async function collect() {
   const files = (await glob(`${OUT_DIR}/**/*.d.ts`)).sort();
   let bundle = '';
   for (const f of files) {
     const rel = path.relative(OUT_DIR, f);
-    const txt = await readFile(f, 'utf8');
+    const txt = stripShebang(await readFile(f, 'utf8'));
     bundle += `// ---- ${rel} ----\n${txt}\n`;
   }
   const hash = crypto.createHash('sha1').update(bundle).digest('hex');
