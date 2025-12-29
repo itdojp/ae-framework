@@ -5,7 +5,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SBOMGenerator, type SBOMGeneratorOptions, type SBOM } from '../../src/security/sbom-generator.js';
 import * as fs from 'fs/promises';
-import * as path from 'path';
 
 // Mock fs module
 vi.mock('fs/promises');

@@ -46,16 +46,6 @@ const ensureExpectExtended = () => {
   }
 };
 
-const getExpect = () => {
-  const instance = tryResolveExpect();
-  if (typeof instance !== 'function') {
-    throw new Error('Global expect is not available; ensure the test runner provides it');
-  }
-  registerMatcher(instance);
-  cachedExpect = instance;
-  return instance;
-};
-
 /**
  * Accessibility test setup for Phase 6 Quality Gates
  * Simplified version for Node.js environment
