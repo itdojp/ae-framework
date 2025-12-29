@@ -204,7 +204,7 @@ async function main() {
 - **Modified**: ${analysis.modified.length} signatures (breaking)
 - **Status**: ${analysis.breaking ? '❌ BREAKING CHANGES DETECTED' : '✅ No breaking changes'}
 
-${analysis.breaking ? '💡 To accept these changes, set `ALLOW_API_BREAKING=1` or update baseline with `cp "${currentReportPath}" "${baselineReportPath}"`' : ''}
+${analysis.breaking ? `💡 To accept these changes, set \`ALLOW_API_BREAKING=1\` or update baseline with \`cp "${currentReportPath}" "${baselineReportPath}"\`` : ''}
 `;
     
     console.log(summary);
