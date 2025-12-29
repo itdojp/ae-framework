@@ -1,4 +1,4 @@
-import { writeFileSync, appendFileSync, mkdirSync } from 'fs';
+import { writeFileSync, appendFileSync, mkdirSync, existsSync, readFileSync } from 'fs';
 import * as path from 'path';
 import type { AEFrameworkConfig } from '../types.js';
 import { toMessage } from '../../utils/error-utils.js';

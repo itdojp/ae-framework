@@ -155,7 +155,7 @@ describe('TDD Infrastructure Setup - Phase 0', () => {
     test('should demonstrate red-green-refactor cycle capability', () => {
       // Red phase: Write a failing test
       const failingTest = () => {
-        const actualValue = 'tdd-failing';
+        const actualValue = undefined;
         const expectedValue = 'tdd-working';
         return actualValue === expectedValue;
       };
