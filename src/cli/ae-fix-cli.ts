@@ -259,58 +259,6 @@ async function createFailureArtifact(options: any): Promise<void> {
   console.log(chalk.gray(`   Category: ${artifact.category}`));
 }
 
-// Transform artifact location properties to expected format
-interface TransformedArtifactLocation {
-  filePath?: string;
-  startLine?: number;
-  endLine?: number;
-  startColumn?: number;
-  endColumn?: number;
-  functionName?: string;
-  className?: string;
-}
-
-interface SourceArtifactLocation {
-  file?: string;
-  line?: number;
-  column?: number;
-  function?: string;
-  module?: string;
-}
-
-interface SourceFailureArtifact {
-  location?: SourceArtifactLocation;
-  [key: string]: any;
-}
-
-interface TransformedFailureArtifact {
-  location?: TransformedArtifactLocation;
-  [key: string]: any;
-}
-
-function transformArtifactLocation(artifact: SourceFailureArtifact): TransformedFailureArtifact {
-  if (artifact.location) {
-    const { location, ...rest } = artifact;
-    const loc: any = {};
-    if (location.file) loc.filePath = location.file;
-    if (typeof location.line === 'number') {
-      loc.startLine = location.line;
-      loc.endLine = location.line;
-    }
-    if (typeof location.column === 'number') {
-      loc.startColumn = location.column;
-      loc.endColumn = location.column;
-    }
-    if (location.function) loc.functionName = location.function;
-    if (location.module) loc.className = location.module;
-    return {
-      ...rest,
-      ...(Object.keys(loc).length > 0 ? { location: loc } : {}),
-    } as TransformedFailureArtifact;
-  }
-  return artifact as TransformedFailureArtifact;
-}
-
 // Validate artifacts
 async function validateArtifacts(options: any): Promise<void> {
   console.log(chalk.blue('✅ Validating Failure Artifacts'));

@@ -990,7 +990,6 @@ start();
       case 'string':
         return JSON.stringify('');
       case 'array': {
-        const itemLit = schema.items ? this.buildSampleLiteral(schema.items, components, depth + 1) : null;
         // keep minimal; empty array is safe
         return '[]';
       }
