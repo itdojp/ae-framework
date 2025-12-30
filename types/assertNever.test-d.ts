@@ -63,3 +63,6 @@ function nonExhaustiveSwitch(value: TestEnum): string {
       return 'unreachable';
   }
 }
+
+expectType<(value: TestEnum) => string>(exhaustiveSwitch);
+expectType<(value: TestEnum) => string>(nonExhaustiveSwitch);
