@@ -5,7 +5,6 @@
  * test isolation to catch order-dependent failures and side effects.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { randomBytes } from 'crypto';
 
 interface TestCase {

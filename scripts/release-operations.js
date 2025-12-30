@@ -409,6 +409,7 @@ class ReleaseOperationsManager {
     const workflowDir = join(this.projectRoot, '.github/workflows');
     mkdirSync(workflowDir, { recursive: true });
     
+    const ghaConcurrency = '${{ github.workflow }}-${{ github.ref }}';
     const releaseWorkflow = `name: Release
 
 on:
@@ -417,7 +418,7 @@ on:
       - main
   workflow_dispatch:
 
-concurrency: \\${{ github.workflow }}-\\${{ github.ref }}
+concurrency: ${ghaConcurrency}
 
 jobs:
   release:
