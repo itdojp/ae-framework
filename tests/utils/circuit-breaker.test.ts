@@ -521,7 +521,6 @@ describe('CircuitBreakerManager', () => {
 
     it('should determine overall health correctly', async () => {
       const breaker1 = manager.getCircuitBreaker('test-1');
-      const breaker2 = manager.getCircuitBreaker('test-2');
       
       // All healthy
       let report = manager.generateHealthReport();
