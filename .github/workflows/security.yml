@@ -180,6 +180,10 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           queries: security-extended,security-and-quality
+          config: |
+            paths-ignore:
+              - api/public-types.d.ts
+              - artifacts/public-types.current.d.ts
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
