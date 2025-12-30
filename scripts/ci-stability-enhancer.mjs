@@ -65,14 +65,14 @@ class CIStabilityEnhancer {
       };
       
       fs.writeFileSync(this.configPath, JSON.stringify(this.config, null, 2));
-      console.log(`✅ CI stability config saved to ${this.configPath}`);
+      console.log(`[OK] CI stability config saved to ${this.configPath}`);
     } catch (error) {
       console.error(`Error saving CI stability config: ${error.message}`);
     }
   }
 
   async enhanceVitestConfig() {
-    console.log('🔧 Enhancing Vitest configuration for CI stability...');
+    console.log('[INFO] Enhancing Vitest configuration for CI stability...');
     
     const vitestConfig = {
       test: {
@@ -130,13 +130,13 @@ export default defineConfig(${JSON.stringify(vitestConfig, null, 2)});
 `;
     
     fs.writeFileSync(configPath, configContent);
-    console.log(`📝 Enhanced Vitest config saved: ${configPath}`);
+    console.log(`[OK] Enhanced Vitest config saved: ${configPath}`);
     
     return vitestConfig;
   }
 
   async createCITestExclusions() {
-    console.log('📋 Creating CI-specific test exclusions...');
+    console.log('[INFO] Creating CI-specific test exclusions...');
     
     const ciExclusions = {
       // Exclude known problematic tests in CI
@@ -173,14 +173,14 @@ export default defineConfig(${JSON.stringify(vitestConfig, null, 2)});
     const exclusionPath = './config/ci-test-exclusions.json';
     fs.writeFileSync(exclusionPath, JSON.stringify(ciExclusions, null, 2));
     
-    console.log(`📝 CI test exclusions saved: ${exclusionPath}`);
+    console.log(`[OK] CI test exclusions saved: ${exclusionPath}`);
     console.log(`   Excluded patterns: ${ciExclusions.patterns.length}`);
     
     return ciExclusions;
   }
 
   async setupResourceMonitoring() {
-    console.log('📊 Setting up CI resource monitoring...');
+    console.log('[INFO] Setting up CI resource monitoring...');
     
     const monitoringScript = `
 #!/usr/bin/env node
@@ -200,7 +200,7 @@ class CIResourceMonitor {
   }
 
   start() {
-    console.log('🔍 Starting CI resource monitoring...');
+    console.log('[INFO] Starting CI resource monitoring...');
     this.interval = setInterval(() => {
       this.collectMetrics();
     }, 5000); // Every 5 seconds
@@ -264,14 +264,14 @@ class CIResourceMonitor {
       report.recommendations.push('Consider splitting long-running tests');
     }
     
-    console.log('\\n📊 CI Resource Report:');
+    console.log('\\n[REPORT] CI Resource Report:');
     console.log(`   Duration: ${(duration / 1000).toFixed(1)}s`);
     console.log(`   Average Memory: ${report.averageMemoryUsage}`);
     console.log(`   Peak Memory: ${report.peakMemoryUsage}`);
     
     if (report.recommendations.length > 0) {
-      console.log('\\n💡 Recommendations:');
-      report.recommendations.forEach(rec => console.log(`   • ${rec}`));
+      console.log('\\n[HINT] Recommendations:');
+      report.recommendations.forEach(rec => console.log(`   - ${rec}`));
     }
     
     return report;
@@ -301,19 +301,19 @@ export { CIResourceMonitor };
     fs.writeFileSync(monitorPath, monitoringScript);
     fs.chmodSync(monitorPath, '755');
     
-    console.log(`📊 Resource monitoring script saved: ${monitorPath}`);
+    console.log(`[OK] Resource monitoring script saved: ${monitorPath}`);
     
     return monitorPath;
   }
 
   async createCIHelperScripts() {
-    console.log('🛠️  Creating CI helper scripts...');
+    console.log('[INFO] Creating CI helper scripts...');
     
     // Pre-test setup script
     const preTestScript = `#!/bin/bash
 # CI Pre-test Setup Script
 
-echo "🚀 Setting up CI environment for stable testing..."
+echo "[INFO] Setting up CI environment for stable testing..."
 
 # Set CI-specific environment variables
 export NODE_ENV=test
@@ -333,7 +333,7 @@ rm -rf tmp/ .tmp/ || true
 # Set resource limits if available
 ulimit -n 4096 2>/dev/null || true
 
-echo "✅ CI environment setup complete"
+echo "[OK] CI environment setup complete"
 `;
     
     fs.writeFileSync('./scripts/ci-pre-test.sh', preTestScript);
@@ -343,7 +343,7 @@ echo "✅ CI environment setup complete"
     const postTestScript = `#!/bin/bash
 # CI Post-test Cleanup Script
 
-echo "🧹 Cleaning up CI environment after testing..."
+echo "[INFO] Cleaning up CI environment after testing..."
 
 # Kill any remaining test processes
 pkill -f "vitest" || true
@@ -357,19 +357,19 @@ rm -rf .nyc_output/ || true
 
 # Collect any remaining logs
 if [ -d "logs" ]; then
-  echo "📄 Collecting test logs..."
+  echo "[INFO] Collecting test logs..."
   ls -la logs/ || true
 fi
 
-echo "✅ CI cleanup complete"
+echo "[OK] CI cleanup complete"
 `;
     
     fs.writeFileSync('./scripts/ci-post-test.sh', postTestScript);
     fs.chmodSync('./scripts/ci-post-test.sh', '755');
     
-    console.log('📝 CI helper scripts created');
-    console.log('   • ./scripts/ci-pre-test.sh');
-    console.log('   • ./scripts/ci-post-test.sh');
+    console.log('[OK] CI helper scripts created');
+    console.log('   - ./scripts/ci-pre-test.sh');
+    console.log('   - ./scripts/ci-post-test.sh');
     
     return {
       preTest: './scripts/ci-pre-test.sh',
@@ -378,7 +378,7 @@ echo "✅ CI cleanup complete"
   }
 
   async updatePackageScripts() {
-    console.log('📦 Updating package.json with CI-optimized scripts...');
+    console.log('[INFO] Updating package.json with CI-optimized scripts...');
     
     try {
       const packagePath = './package.json';
@@ -398,7 +398,7 @@ echo "✅ CI cleanup complete"
       packageJson.scripts = { ...packageJson.scripts, ...ciScripts };
       
       fs.writeFileSync(packagePath, JSON.stringify(packageJson, null, 2));
-      console.log('✅ Package.json updated with CI scripts');
+      console.log('[OK] Package.json updated with CI scripts');
       
       return ciScripts;
     } catch (error) {
@@ -408,7 +408,7 @@ echo "✅ CI cleanup complete"
   }
 
   async generateStabilityReport() {
-    console.log('📊 Generating CI stability report...');
+    console.log('[INFO] Generating CI stability report...');
     
     const report = {
       summary: {
@@ -447,19 +447,19 @@ echo "✅ CI cleanup complete"
     }
     
     fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
-    console.log(`📄 CI stability report saved: ${reportPath}`);
+    console.log(`[OK] CI stability report saved: ${reportPath}`);
     
     // Display summary
-    console.log('\\n📋 CI Stability Enhancements Applied:');
+    console.log('\\n[SUMMARY] CI Stability Enhancements Applied:');
     Object.entries(report.enhancements).forEach(([key, value]) => {
       if (value) {
-        console.log(`   ✅ ${key.replace(/([A-Z])/g, ' $1').toLowerCase()}`);
+        console.log(`   - ${key.replace(/([A-Z])/g, ' $1').toLowerCase()}`);
       }
     });
     
-    console.log('\\n🎯 Recommended CI Commands:');
+    console.log('\\n[INFO] Recommended CI Commands:');
     report.recommendations.forEach(rec => {
-      console.log(`   • ${rec}`);
+      console.log(`   - ${rec}`);
     });
     
     return report;
@@ -503,7 +503,7 @@ async function main() {
         process.exit(1);
     }
   } catch (error) {
-    console.error(`❌ Error: ${error.message}`);
+    console.error(`[ERROR] ${error.message}`);
     process.exit(1);
   }
 }
