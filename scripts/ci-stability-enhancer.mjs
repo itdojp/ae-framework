@@ -233,7 +233,7 @@ class CIResourceMonitor {
       const memoryPercent = ((metrics.totalMemory - metrics.freeMemory) / metrics.totalMemory * 100).toFixed(1);
       
       if (memoryPercent > 90) {
-        console.warn(`⚠️  High memory usage: ${memoryPercent}% (${memoryUsage}MB heap)`);
+        console.warn(`[WARN] High memory usage: ${memoryPercent}% (${memoryUsage}MB heap)`);
       }
       
     } catch (error) {
