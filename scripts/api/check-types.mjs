@@ -1,6 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const stripShebang = (content) => content.replace(/^#!.*(?:\r?\n)?/gm, '');

@@ -180,7 +180,7 @@ async function runFormal(context, opts = {}) {
   }
 
   const cmd = cmds.join(' && ');
-  const res = await teeTo(log, (hooks) => sh('bash', ['-lc', cmd], hooks));
+  await teeTo(log, (hooks) => sh('bash', ['-lc', cmd], hooks));
 
   // Collect known outputs (if generated)
   const hr = path.join(CWD, 'hermetic-reports', 'formal');
