@@ -697,8 +697,6 @@ export class ValidationOrchestrator extends EventEmitter {
     context: ValidationContext,
     config: ValidatorConfig
   ): Promise<ValidationResult> {
-    const thresholds = config.parameters['performanceThresholds'] || {};
-    
     return {
       criterion: 'performance_metrics',
       passed: true,
