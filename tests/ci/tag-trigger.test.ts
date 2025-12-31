@@ -134,7 +134,6 @@ describe('CI/CD Tag Trigger Configuration - Phase 1.3', () => {
       workflowFiles.forEach(workflowFile => {
         const content = readFileSync(workflowFile, 'utf8');
         const workflow = yaml.load(content) as GitHubWorkflow;
-        const workflowName = path.basename(workflowFile, '.yml');
 
         // Check for common anti-patterns
         if (workflow.on.push?.tags) {

@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, vi } from 'vitest';
+import { describe, test, expect, beforeEach } from 'vitest';
 import { SequentialInferenceEngine } from '../../src/engines/sequential-inference-engine.js';
 import type { 
   ComplexQuery, 
