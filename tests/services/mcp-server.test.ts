@@ -1,6 +1,5 @@
 import { describe, test, expect, beforeEach, vi, afterEach } from 'vitest';
 import { MCPServer, MCPServerConfig, MCPPlugin, MCPRequest, MCPResponse } from '../../src/services/mcp-server.js';
-import { EventEmitter } from 'events';
 
 describe('MCPServer', () => {
   let server: MCPServer;

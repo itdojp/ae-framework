@@ -7,7 +7,7 @@
 import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 import { UnifiedServiceManager } from '../../src/services/unified-service-manager.js';
 import { ServiceRegistry } from '../../src/services/service-registry.js';
-import { ServiceTask, ServiceType, ServiceResult, ServiceConfig } from '../../src/services/service-types.js';
+import { ServiceTask, ServiceType, ServiceConfig } from '../../src/services/service-types.js';
 
 describe('UnifiedServiceManager - Service Layer Architecture', () => {
   let serviceManager: UnifiedServiceManager;
