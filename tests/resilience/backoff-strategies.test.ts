@@ -9,9 +9,7 @@ import {
   CircuitState,
   TokenBucketRateLimiter,
   ResilientHttpClient,
-  RetryOptions,
   CircuitBreakerOptions,
-  RateLimiterOptions,
 } from '../../src/resilience/backoff-strategies.js';
 
 describe('BackoffStrategy', () => {
