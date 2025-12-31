@@ -129,7 +129,6 @@ describe('Enhanced OpenTelemetry', () => {
 
   it('should handle errors in metric collection gracefully', () => {
     // Test that metric collection errors don't crash the application
-    const originalConsoleError = console.error;
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     // This should not throw even if there are internal errors

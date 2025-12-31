@@ -3,7 +3,7 @@
  * Tests for request/response validation and contract violation tracking
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { z } from 'zod';
 import { RuntimeGuard, ViolationType, ViolationSeverity, CommonSchemas } from '../../src/telemetry/runtime-guards.js';
 
