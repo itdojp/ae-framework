@@ -60,7 +60,7 @@ describe('EnhancedStateManager Compression Fix', () => {
     };
 
     // Save and load small data
-    const savedKey = await stateManager.saveSSOT('test-small', smallData);
+    await stateManager.saveSSOT('test-small', smallData);
     const loadedData = await stateManager.loadSSOT('test-small');
     
     expect(loadedData).toEqual(smallData);

@@ -130,7 +130,7 @@ describe('EnhancedStateManager', () => {
         }))
       };
       
-      const savedKey = await stateManager.saveSSOT(logicalKey, largeAEIR);
+      await stateManager.saveSSOT(logicalKey, largeAEIR);
       const loadedData = await stateManager.loadSSOT(logicalKey);
       
       expect(loadedData).toEqual(largeAEIR);
@@ -148,7 +148,7 @@ describe('EnhancedStateManager', () => {
       const txId = await stateManager.beginTransaction();
       expect(txId).toBeTruthy();
       
-      const savedKey = await stateManager.saveSSOT(logicalKey, mockAEIR, {
+      await stateManager.saveSSOT(logicalKey, mockAEIR, {
         phase: 'test',
         transactionId: txId
       });
@@ -166,7 +166,7 @@ describe('EnhancedStateManager', () => {
       const txId = await stateManager.beginTransaction();
       
       // Save data within the transaction
-      const savedKey = await stateManager.saveSSOT(logicalKey, mockAEIR, {
+      await stateManager.saveSSOT(logicalKey, mockAEIR, {
         transactionId: txId
       });
       

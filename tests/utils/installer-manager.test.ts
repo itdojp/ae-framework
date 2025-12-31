@@ -211,7 +211,7 @@ describe('InstallerManager', () => {
     test('should suggest starter templates when no package.json exists', async () => {
       vi.mocked(fs.access).mockRejectedValue(new Error('File not found'));
 
-      const { suggestions, reasoning } = await installerManager.suggestTemplates();
+      const { reasoning } = await installerManager.suggestTemplates();
       
       expect(suggestions).toContain('typescript-node');
       expect(reasoning).toContain('No existing package.json found - suggesting starter templates');
