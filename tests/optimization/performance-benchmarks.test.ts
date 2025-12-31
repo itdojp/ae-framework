@@ -124,7 +124,6 @@ describe('Performance Benchmarks', () => {
     it('should maintain throughput under sustained load', async () => {
       const testName = 'Sustained Load Throughput';
       const loadDuration = 3000; // 3 seconds
-      const operationsPerSecond = 200;
       
       const startTime = performance.now();
       let operationCount = 0;

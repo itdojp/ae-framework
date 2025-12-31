@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fc from "fast-check";
-import { AEIR } from '@ae-framework/spec-compiler';
 import { DeterministicCodeGenerator } from '../../src/codegen/deterministic-generator';
 import { writeFileSync, readFileSync, existsSync, mkdirSync, rmSync } from 'fs';
 import { join } from 'path';

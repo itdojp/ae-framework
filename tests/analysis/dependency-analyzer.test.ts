@@ -2,7 +2,7 @@
  * Tests for Dependency Analyzer - Phase 3.1 Implementation
  */
 
-import { describe, test, expect, beforeEach, vi } from 'vitest';
+import { describe, test, expect, beforeEach } from 'vitest';
 import { DependencyAnalyzer } from '../../src/analysis/dependency-analyzer.js';
 import type { 
   DependencyAnalysisRequest, 
