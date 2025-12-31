@@ -2,7 +2,7 @@
  * Simple tests to verify core resilience functionality
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   BackoffStrategy,
   CircuitBreaker,

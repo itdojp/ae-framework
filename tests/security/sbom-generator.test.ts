@@ -2,7 +2,7 @@
  * Tests for SBOM Generator
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SBOMGenerator, type SBOMGeneratorOptions, type SBOM } from '../../src/security/sbom-generator.js';
 import * as fs from 'fs/promises';
 
