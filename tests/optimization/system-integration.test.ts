@@ -84,7 +84,7 @@ describe('Complete Optimization System Integration', () => {
       formatGWT('system initialization', 'create monitoring and parallel subsystems', 'both subsystems are present'),
       () => {
       const monitoringSystem = optimizationSystem.getMonitoringSystem();
-      optimizationSystem.getParallelOptimizationSystem();
+      const parallelOptimization = optimizationSystem.getParallelOptimizationSystem();
       
       expect(monitoringSystem).toBeTruthy();
       expect(parallelOptimization).toBeTruthy();
