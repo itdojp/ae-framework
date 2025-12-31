@@ -199,7 +199,7 @@ describe('InstallerManager', () => {
       };
       vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(mockPackageJson));
 
-      const { suggestions, reasoning } = await installerManager.suggestTemplates();
+      const { reasoning } = await installerManager.suggestTemplates();
       
       expect(suggestions.length).toBeGreaterThan(0);
       expect(suggestions).toContain('react-vite');
