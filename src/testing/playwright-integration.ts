@@ -381,9 +381,6 @@ export class PlaywrightIntegration extends EventEmitter {
     dependencyAnalysis: DependencyAnalysisResult
   ): Promise<TestCoverage> {
     const totalComponents = dependencyAnalysis.nodes.length;
-    const criticalComponents = dependencyAnalysis.nodes.filter(
-      n => n.metadata['importance'] === 'critical' || n.metadata['importance'] === 'high'
-    );
 
     // Calculate component coverage
     const testedComponents = new Set<string>();
