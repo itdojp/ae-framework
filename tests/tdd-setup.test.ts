@@ -4,7 +4,7 @@
  * Goal: Ensure TDD system is operational and metrics collection is active
  */
 
-import { describe, test, expect, beforeEach, afterEach } from 'vitest';
+import { describe, test, expect } from 'vitest';
 import { readFileSync, writeFileSync, unlinkSync } from 'fs';
 import { join } from 'path';
 
