@@ -2,7 +2,6 @@ import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import { SlashCommandManager } from '../../src/commands/slash-command-manager.js';
-import { PhaseStateManager } from '../../src/utils/phase-state-manager.js';
 
 describe('SlashCommandManager', () => {
   const testDir = path.join(process.cwd(), '.test-slash-commands');

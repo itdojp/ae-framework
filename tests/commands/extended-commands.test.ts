@@ -1,7 +1,6 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { SlashCommandManager } from '../../src/commands/slash-command-manager.js';
 import * as fs from 'fs/promises';
-import * as path from 'path';
 
 // Mock file system
 vi.mock('fs/promises');
