@@ -6,10 +6,6 @@
 import { describe, it, expect } from 'vitest';
 import { formatGWT } from '../utils/gwt-format';
 import { readFileSync, existsSync } from 'fs';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
-const execAsync = promisify(exec);
 
 describe('Docker Production Optimization - Phase 1.4', () => {
   const dockerfile = 'podman/Dockerfile';
