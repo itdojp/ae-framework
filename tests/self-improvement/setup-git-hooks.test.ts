@@ -8,7 +8,6 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { formatGWT } from '../utils/gwt-format';
 import { GitHooksSetup, createGitHooksSetup } from '../../src/self-improvement/setup-git-hooks.js';
 import * as fs from 'node:fs';
-import * as path from 'node:path';
 
 // Mock fs module
 vi.mock('node:fs', () => ({
