@@ -233,11 +233,11 @@ class CIResourceMonitor {
       const memoryPercent = ((metrics.totalMemory - metrics.freeMemory) / metrics.totalMemory * 100).toFixed(1);
       
       if (memoryPercent > 90) {
-        console.warn(`[WARN] High memory usage: ${memoryPercent}% (${memoryUsage}MB heap)`);
+        console.warn('[WARN] High memory usage: ' + memoryPercent + '% (' + memoryUsage + 'MB heap)');
       }
       
     } catch (error) {
-      console.warn(`Warning: Could not collect metrics: ${error.message}`);
+      console.warn('Warning: Could not collect metrics: ' + error.message);
     }
   }
 
@@ -265,13 +265,13 @@ class CIResourceMonitor {
     }
     
     console.log('\\n[REPORT] CI Resource Report:');
-    console.log(`   Duration: ${(duration / 1000).toFixed(1)}s`);
-    console.log(`   Average Memory: ${report.averageMemoryUsage}`);
-    console.log(`   Peak Memory: ${report.peakMemoryUsage}`);
+    console.log('   Duration: ' + (duration / 1000).toFixed(1) + 's');
+    console.log('   Average Memory: ' + report.averageMemoryUsage);
+    console.log('   Peak Memory: ' + report.peakMemoryUsage);
     
     if (report.recommendations.length > 0) {
       console.log('\\n[HINT] Recommendations:');
-      report.recommendations.forEach(rec => console.log(`   - ${rec}`));
+      report.recommendations.forEach(rec => console.log('   - ' + rec));
     }
     
     return report;
@@ -279,7 +279,7 @@ class CIResourceMonitor {
 }
 
 // Auto-start if run directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url === 'file://' + process.argv[1]) {
   const monitor = new CIResourceMonitor();
   monitor.start();
   
