@@ -3,7 +3,7 @@
  * Phase 3 of Issue #37: Podman-specific container engine implementation
  */
 
-import { execSync, exec, spawn } from 'child_process';
+import { exec, spawn } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
 import type * as fs from 'fs/promises';
