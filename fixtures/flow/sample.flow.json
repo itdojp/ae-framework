@@ -34,5 +34,10 @@
   ],
   "metadata": {
     "name": "demo-flow"
+  },
+  "correlation": {
+    "runId": "demo-run",
+    "commit": "HEAD",
+    "branch": "feat/agent-builder"
   }
 }
