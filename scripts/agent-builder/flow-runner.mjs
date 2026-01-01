@@ -131,14 +131,16 @@ function deriveExecutionPlan(flow) {
 }
 
 function buildCorrelation(flow, options) {
+  const fromFlow = flow?.correlation ?? {};
   const provided = options.correlation ?? {};
+  const merged = { ...fromFlow, ...provided };
   const name = flow?.metadata?.name ?? 'agent-builder-flow';
   return {
-    runId: provided.runId ?? `flow-${name}`,
-    workflow: provided.workflow ?? name,
-    commit: provided.commit ?? process.env.GITHUB_SHA ?? 'local',
-    branch: provided.branch ?? process.env.GITHUB_REF ?? 'local',
-    ...(provided.traceIds ? { traceIds: provided.traceIds } : {}),
+    runId: merged.runId ?? `flow-${name}`,
+    workflow: merged.workflow ?? name,
+    commit: merged.commit ?? process.env.GITHUB_SHA ?? 'local',
+    branch: merged.branch ?? process.env.GITHUB_REF ?? 'local',
+    ...(merged.traceIds ? { traceIds: merged.traceIds } : {}),
   };
 }
 
