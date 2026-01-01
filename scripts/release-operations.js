@@ -464,18 +464,18 @@ jobs:
           commit: "chore: release packages"
           title: "chore: release packages"
         env:
-          GITHUB_TOKEN: \\${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: \\${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: \${{ secrets.NPM_TOKEN }}
           
       - name: Create GitHub Release
         if: steps.changesets.outputs.published == 'true'
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: \\${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v\\${{ steps.changesets.outputs.version }}
-          release_name: Release v\\${{ steps.changesets.outputs.version }}
-          body: \\${{ steps.changesets.outputs.changelog }}
+          tag_name: v\${{ steps.changesets.outputs.version }}
+          release_name: Release v\${{ steps.changesets.outputs.version }}
+          body: \${{ steps.changesets.outputs.changelog }}
           draft: false
           prerelease: false
 `;
