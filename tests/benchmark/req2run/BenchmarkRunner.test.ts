@@ -7,10 +7,8 @@ import { formatGWT } from '../../utils/gwt-format';
 import { BenchmarkRunner } from '../../../src/benchmark/req2run/runners/BenchmarkRunner.js';
 import { 
   BenchmarkConfig, 
-  RequirementSpec, 
   BenchmarkCategory, 
-  DifficultyLevel,
-  AEFrameworkPhase 
+  DifficultyLevel
 } from '../../../src/benchmark/req2run/types/index.js';
 
 describe('BenchmarkRunner', () => {

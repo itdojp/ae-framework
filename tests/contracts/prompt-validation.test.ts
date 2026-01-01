@@ -6,7 +6,6 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import { join } from 'path';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 
