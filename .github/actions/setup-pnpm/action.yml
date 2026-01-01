@@ -12,8 +12,18 @@ runs:
     - run: |
         set -euo pipefail
         VERSION="${{ inputs.version }}"
-        node -e "const [major, minor] = process.versions.npm.split('.').map(Number); if (major < 10 || (major === 10 && minor < 5)) process.exit(1);" \
-          || npm install -g "npm@10.5.0"
+        MIN_NPM="10.5.0"
+        CURRENT_NPM="$(npm --version 2>/dev/null || true)"
+        if [ -z "$CURRENT_NPM" ]; then
+          echo "npm not found; installing npm@latest-10"
+          npm install -g "npm@latest-10"
+        else
+          LOWEST="$(printf '%s\n' "$MIN_NPM" "$CURRENT_NPM" | sort -V | head -n1)"
+          if [ "$LOWEST" != "$MIN_NPM" ]; then
+            echo "Detected npm version $CURRENT_NPM < $MIN_NPM; upgrading to npm@latest-10"
+            npm install -g "npm@latest-10"
+          fi
+        fi
         if command -v corepack >/dev/null 2>&1; then
           corepack enable > /dev/null 2>&1 || true
           corepack prepare "pnpm@${VERSION}" --activate
