@@ -50,8 +50,28 @@
         "additionalProperties": false
       }
     },
-    "metadata": { "type": "object" }
+    "metadata": { "type": "object" },
+    "correlation": {
+      "$ref": "#/$defs/correlation"
+    }
   },
   "required": ["schemaVersion", "nodes", "edges"],
-  "additionalProperties": true
+  "additionalProperties": true,
+  "$defs": {
+    "correlation": {
+      "type": "object",
+      "properties": {
+        "runId": { "type": "string" },
+        "workflow": { "type": "string" },
+        "commit": { "type": "string" },
+        "branch": { "type": "string" },
+        "traceIds": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["runId", "commit", "branch"],
+      "additionalProperties": true
+    }
+  }
 }
