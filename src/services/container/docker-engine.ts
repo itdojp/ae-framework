@@ -3,7 +3,7 @@
  * Phase 3 of Issue #37: Docker container engine implementation for comparison with Podman
  */
 
-import { execSync, exec, spawn } from 'child_process';
+import { exec, spawn } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
 import { ContainerEngine } from './container-engine.js';
