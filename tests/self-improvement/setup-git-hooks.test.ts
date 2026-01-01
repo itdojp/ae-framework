@@ -104,9 +104,7 @@ describe('GitHooksSetup', () => {
 
     it('should skip installation if hooks already exist and not force overwrite', async () => {
       // Arrange: Mock existing hooks
-      vi.mocked(fs.existsSync).mockImplementation((path: any) => {
-        return true; // Everything exists
-      });
+      vi.mocked(fs.existsSync).mockImplementation(() => true); // Everything exists
 
       // Act: Setup git hooks without force overwrite
       const result = await gitHooksSetup.setupGitHooks();
