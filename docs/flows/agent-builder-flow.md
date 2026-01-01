@@ -8,7 +8,7 @@
 - Flow スキーマ: `schema/flow.schema.json`
 - Flow サンプル: `fixtures/flow/sample.flow.json`
 - 実行スクリプト: `scripts/agent-builder/flow-runner.mjs`
-- 相関情報: `correlation.runId/commit/branch`（任意。監査/再現性の手がかり）
+- 相関情報: `correlation.runId`（必須）/`commit`/`branch`（任意。監査/再現性の手がかり）
 
 ## 使い方（最小）
 ```bash
