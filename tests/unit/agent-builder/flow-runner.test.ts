@@ -59,6 +59,23 @@ describe('agent builder flow runner', () => {
     expect(result.envelope?.traceCorrelation?.branch).toBe('feat/agent-builder');
   });
 
+  it('prefers explicit correlation options over flow defaults', () => {
+    const { flow } = loadFlowDefinition(flowFixture);
+    const summary = JSON.parse(readFileSync(summaryFixture, 'utf8'));
+
+    const result = executeFlow(flow, {
+      verifyLiteSummary: summary,
+      correlation: {
+        runId: 'cli-override',
+      },
+      generatedAt: '2025-01-01T00:00:00.000Z',
+    });
+
+    expect(result.envelope?.traceCorrelation?.runId).toBe('cli-override');
+    expect(result.envelope?.traceCorrelation?.commit).toBe('HEAD');
+    expect(result.envelope?.traceCorrelation?.branch).toBe('feat/agent-builder');
+  });
+
   it('passes notes and tempo link templates into the envelope', () => {
     const { flow } = loadFlowDefinition(flowFixture);
     const summary = JSON.parse(readFileSync(summaryFixture, 'utf8'));
