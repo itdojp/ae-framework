@@ -103,10 +103,7 @@ describe('GitHooksSetup', () => {
 
     it('should skip installation if hooks already exist and not force overwrite', async () => {
       // Arrange: Mock existing hooks
-      vi.mocked(fs.existsSync).mockImplementation((path: any) => {
-        const pathStr = String(path);
-        return true; // Everything exists
-      });
+      vi.mocked(fs.existsSync).mockImplementation(() => true); // Everything exists
 
       // Act: Setup git hooks without force overwrite
       const result = await gitHooksSetup.setupGitHooks();
@@ -300,8 +297,6 @@ describe('Git Hooks Integration Tests', () => {
 
     // Act: Install hooks and validate
     const setupResult = await gitHooksSetup.setupGitHooks();
-    const validation = await gitHooksSetup.validateGitHooks();
-
     // Assert: TDD enforcement should be operational
     expect(setupResult.success).toBe(true);
     expect(setupResult.hooksInstalled).toContain('pre-commit');

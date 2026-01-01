@@ -237,7 +237,6 @@ describe('SelfImprovementTDDSetup', () => {
     it('should handle component initialization errors gracefully', async () => {
       // Arrange: Mock error during component setup
       vi.mocked(fs.existsSync).mockReturnValue(true);
-      const mockError = new Error('Component initialization failed');
       
       // Create a new setup that will fail by using non-existent config
       const failingSetup = new SelfImprovementTDDSetup({
