@@ -303,7 +303,6 @@ describe('Complete Optimization System Integration', () => {
       await optimizationSystem.start();
       
       const startTime = Date.now();
-      const operations = [];
       
       // Generate sustained load for a short period (reduced from 1000ms to 200ms)
       const loadDuration = 200; // 200ms - much faster for testing

@@ -473,7 +473,6 @@ describe('Monitoring System Integration', () => {
 
   it('should emit integration events', (done) => {
     let eventCount = 0;
-    const expectedEvents = ['metricsUpdated'];
     
     monitoringSystem.on('metricsUpdated', () => {
       eventCount++;

@@ -172,12 +172,6 @@ describe('Performance Budgets Enforcement', () => {
       }
 
       // Store metrics for trend analysis (in real scenario, would persist to database)
-      const trendData = {
-        current: metrics,
-        baseline: BUDGETS,
-        trend: 'stable' // This would be calculated from historical data
-      }
-
       expect(metrics.startup).toBeLessThanOrEqual(BUDGETS.systemStartup * 1.1) // 10% tolerance
       expect(metrics.memory).toBeLessThanOrEqual(BUDGETS.memoryBytes * 1.1)
       

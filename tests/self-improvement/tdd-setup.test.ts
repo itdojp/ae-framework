@@ -9,7 +9,6 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { formatGWT } from '../utils/gwt-format';
 import { SelfImprovementTDDSetup, createSelfImprovementTDDSetup } from '../../src/self-improvement/tdd-setup.js';
 import * as fs from 'node:fs';
-import * as path from 'node:path';
 
 // Mock dependencies at module level
 vi.mock('../../src/integration/hybrid-tdd-system.js', () => ({
@@ -238,7 +237,6 @@ describe('SelfImprovementTDDSetup', () => {
     it('should handle component initialization errors gracefully', async () => {
       // Arrange: Mock error during component setup
       vi.mocked(fs.existsSync).mockReturnValue(true);
-      const mockError = new Error('Component initialization failed');
       
       // Create a new setup that will fail by using non-existent config
       const failingSetup = new SelfImprovementTDDSetup({

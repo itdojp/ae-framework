@@ -6,7 +6,7 @@
 
 import { describe, test, expect, beforeEach } from 'vitest';
 import { UnifiedAgent } from '../../src/agents/unified-agent.js';
-import { AgentTask, TaskType, TaskResult, AgentContext } from '../../src/agents/domain-types.js';
+import { AgentTask, TaskType, TaskResult } from '../../src/agents/domain-types.js';
 
 describe('UnifiedAgent - Domain Model Architecture', () => {
   let agent: UnifiedAgent;
