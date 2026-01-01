@@ -9,8 +9,6 @@
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import { spawn } from 'child_process';
-import { promisify } from 'util';
 import { glob } from 'glob';
 
 interface GenerationConfig {
@@ -169,7 +167,6 @@ class DifferentialTester {
   }
 
   private generateComponent(entity: any, config: GenerationConfig): string {
-    const complexity = config.settings.complexity || 'medium';
     const accessibility = config.settings.accessibility || 'standard';
     
     let componentCode = `// Generated with ${config.name}\n`;
