@@ -42,6 +42,7 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
       GITHUB_EVENT_NAME: 'pull_request',
       GITHUB_EVENT_PATH: eventPath,
       AE_COVERAGE_DRY_RUN: '1',
+      AE_COVERAGE_INCLUDE_PATHS: '1',
       COVERAGE_DEFAULT_THRESHOLD: '80'
     } as NodeJS.ProcessEnv;
 
@@ -81,6 +82,7 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
       GITHUB_EVENT_NAME: 'pull_request',
       GITHUB_EVENT_PATH: eventPath,
       AE_COVERAGE_DRY_RUN: '1',
+      AE_COVERAGE_INCLUDE_PATHS: '1',
       COVERAGE_DEFAULT_THRESHOLD: '80'
     } as NodeJS.ProcessEnv;
 
@@ -950,6 +952,7 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
       GITHUB_EVENT_NAME: 'pull_request',
       GITHUB_EVENT_PATH: eventPath,
       AE_COVERAGE_DRY_RUN: '1',
+      AE_COVERAGE_INCLUDE_PATHS: '1',
       AE_COVERAGE_SUMMARY_PATH: 'custom/summary.json'
     } as NodeJS.ProcessEnv;
 
@@ -983,7 +986,8 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
       GITHUB_REPOSITORY: 'owner/repo',
       GITHUB_EVENT_NAME: 'pull_request',
       GITHUB_EVENT_PATH: eventPath,
-      AE_COVERAGE_DRY_RUN: '1'
+      AE_COVERAGE_DRY_RUN: '1',
+      AE_COVERAGE_INCLUDE_PATHS: '1'
     } as NodeJS.ProcessEnv;
 
     const res = spawnSync('node', ['scripts/coverage/pr-coverage-summary.mjs'], { cwd, env, encoding: 'utf8' });
@@ -1054,6 +1058,7 @@ describe('pr-coverage-summary.mjs (dry-run)', () => {
       GITHUB_EVENT_NAME: 'pull_request',
       GITHUB_EVENT_PATH: eventPath,
       AE_COVERAGE_DRY_RUN: '1',
+      AE_COVERAGE_INCLUDE_PATHS: '1',
       AE_COVERAGE_SUMMARY_PATH: 'custom2/summary.json'
     } as NodeJS.ProcessEnv;
 

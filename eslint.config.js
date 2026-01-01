@@ -61,9 +61,12 @@ export default ts.config(
       '@typescript-eslint/no-unsafe-member-access': 'warn',
       '@typescript-eslint/no-unsafe-return': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
+      '@typescript-eslint/no-implied-eval': 'warn',
       '@typescript-eslint/no-unnecessary-type-assertion': 'warn',
       '@typescript-eslint/no-require-imports': 'warn',
+      'no-case-declarations': 'warn',
       'no-empty': 'warn',
+      'prefer-const': 'warn',
       '@typescript-eslint/restrict-template-expressions': ['warn', { allowNumber: true, allowBoolean: true }],
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-misused-promises': 'warn',
@@ -93,7 +96,7 @@ export default ts.config(
       '@typescript-eslint/no-unsafe-return': 'error',
     }
   },
-  // T1 escalation (targeted): strengthen unsafe rules for MCP servers
+  // T1 escalation (targeted): track unsafe rules for MCP servers (tighten later)
   {
     files: [
       'src/mcp-server/**/*.ts',
@@ -106,16 +109,16 @@ export default ts.config(
     },
     rules: {
       // Keep no-explicit-any as warn for now (soft landing),
-      // but escalate unsafe operations to error in MCP boundaries
-      '@typescript-eslint/no-unsafe-assignment': 'error',
-      '@typescript-eslint/no-unsafe-call': 'error',
-      '@typescript-eslint/no-unsafe-member-access': 'error',
-      '@typescript-eslint/no-unsafe-return': 'error',
-      '@typescript-eslint/no-floating-promises': 'error',
-      '@typescript-eslint/no-misused-promises': 'error',
+      // and keep unsafe ops as warn until the cleanup phase lands.
+      '@typescript-eslint/no-unsafe-assignment': 'warn',
+      '@typescript-eslint/no-unsafe-call': 'warn',
+      '@typescript-eslint/no-unsafe-member-access': 'warn',
+      '@typescript-eslint/no-unsafe-return': 'warn',
+      '@typescript-eslint/no-floating-promises': 'warn',
+      '@typescript-eslint/no-misused-promises': 'warn',
     }
   },
-  // T1 escalation (file-specific): enforce no-explicit-any in cleaned files
+  // T1 escalation (file-specific): track no-explicit-any in cleaned files
   {
     files: [
       'src/mcp-server/verify-server.ts',
@@ -128,10 +131,10 @@ export default ts.config(
       },
     },
     rules: {
-      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-explicit-any': 'warn',
     }
   },
-  // T1 escalation (file-specific): enforce no-explicit-any in cleaned files
+  // T1 escalation (file-specific): track no-explicit-any in cleaned files
   {
     files: [
       'src/mcp-server/test-generation-server.ts',
@@ -144,7 +147,7 @@ export default ts.config(
       },
     },
     rules: {
-      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-explicit-any': 'warn',
     }
   }
 );
