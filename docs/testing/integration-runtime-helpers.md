@@ -39,6 +39,34 @@ applyIntegrationRetry(it); // describe 前で呼び出す
 
 CLI から再試行回数を増やす場合は `AE_INTEGRATION_RETRY=3 pnpm test:int` のように環境変数を指定します。値が数値でない場合や 1 以下の場合は無視され、デフォルトで 1（再試行なし）となります。
 
+## Integration テスト一覧（現状）
+
+Integration プロジェクトは `pnpm test:int`（vitest workspace の integration プロジェクト）で実行されます。現在の対象は以下の通りです。
+
+| ファイル | 主な対象 | 依存/外部要因 | メモ |
+|---|---|---|---|
+| `tests/integration/test-orchestrator.test.ts` | IntegrationTestOrchestrator / E2E・API Runner / HTML Reporter | テンポラリディレクトリ（`createIntegrationTempDir`） | テストケースはモック中心。Runner は生成するため、実行時にブラウザ依存が走る場合は CI で要注意。 |
+| `tests/integration/system-validation.test.ts` | UnifiedAgent / UnifiedServiceManager / ServiceRegistry | `AE_PHASE_STATE_ROOT` を一時ディレクトリへ切替 | エージェント/サービスの協調検証。外部 API 前提はないが、タイムアウト/後処理漏れに注意。 |
+| `tests/integration/integration-cli.test.ts` | Integration CLI コマンド群 | 一時ディレクトリ + `process.cwd` 差し替え | ファイル I/O ベースの CLI 解析が中心。 |
+| `tests/integration/web-api/reservations.test.ts` | Fastify app + InMemoryRepository | in-process app.inject のみ | ネットワーク/DB 依存なし。`pnpm test:integration:webapi` でも個別実行可。 |
+| `tests/optimization/system-integration.test.ts` | Optimization System 統合テスト | タイマー/ワーカー/リソースプール | 並列/監視/最適化の統合。異常系はログ出力が多いので flake 調査時は重点確認。 |
+| `tests/integration/setup.ts` | 共通 afterEach 登録 | `tests/_setup/afterEach.integration.ts` | cleanup/handle leak を検出する入口。 |
+
+### 実行経路（CI/ローカル）
+
+- `pnpm test:int` → Integration プロジェクト一式
+- `pnpm test:integration:webapi` → Web API だけを単独実行
+- `pnpm test:ci:extended` → `test:int` を含む拡張 CI スイート
+
+### flake 調査の最低限メモ
+
+1. **再現条件を固定**（OS/Node 版/環境変数を記録）
+2. **一時リトライを付与**: `AE_INTEGRATION_RETRY=3 pnpm test:int`
+3. **ハンドルリークの確認**: `AE_INTEGRATION_TRACE_HANDLES=1 pnpm test:int`
+4. **対象テストを絞る**: `pnpm test:int -- --testNamePattern "<name>"`（vitest のパターン指定）
+
+再現ログに `AE_PHASE_STATE_ROOT` / `AE_INTEGRATION_RETRY` の値を記載し、再現率が 50% 以上なら隔離 or 修正方針を決定します。
+
 ## AE_INTEGRATION_TRACE_HANDLES でハンドルリーク調査
 
 共通 afterEach ではデフォルトで `why-is-node-running` を読み込まずオーバーヘッドを抑えています。ハンドルリークの詳細を確認したいときは、以下のように環境変数を設定してください。
