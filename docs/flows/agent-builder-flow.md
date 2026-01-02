@@ -15,6 +15,19 @@
 node scripts/agent-builder/flow-runner.mjs --flow fixtures/flow/sample.flow.json
 ```
 
+### Agent Builder 形式のJSONを取り込む場合
+```bash
+node scripts/agent-builder/flow-runner.mjs \
+  --flow /path/to/agent-builder.json \
+  --adapter agent-builder
+```
+
+アダプタは以下の最小変換を行います。
+- `type` → `kind`
+- `parameters`/`config` → `params`
+- `inputs`/`outputs` → `input`/`output`
+- `source`/`target` → `from`/`to`
+
 ### verify-lite サマリを使う場合（任意）
 ```bash
 node scripts/agent-builder/flow-runner.mjs \
