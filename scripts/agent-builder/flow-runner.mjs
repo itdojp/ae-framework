@@ -28,17 +28,21 @@ function getValidator(schemaPath) {
   return validate;
 }
 
-export function loadFlowDefinition(flowPath, { schemaPath = DEFAULT_FLOW_SCHEMA, validate = true } = {}) {
+export function loadFlowDefinition(
+  flowPath,
+  { schemaPath = DEFAULT_FLOW_SCHEMA, validate = true, adapter = null } = {},
+) {
   const resolvedFlow = path.resolve(flowPath);
   if (!fs.existsSync(resolvedFlow)) {
     throw new Error(`Flow definition not found: ${resolvedFlow}`);
   }
 
-  const data = readJson(resolvedFlow);
+  const raw = readJson(resolvedFlow);
+  const flow = adapter ? adapter(raw) : raw;
 
   if (validate) {
     const validateFn = getValidator(schemaPath);
-    const ok = validateFn(data);
+    const ok = validateFn(flow);
     if (!ok) {
       const error = new Error('Flow definition failed schema validation');
       error.validationErrors = validateFn.errors ?? [];
@@ -47,8 +51,9 @@ export function loadFlowDefinition(flowPath, { schemaPath = DEFAULT_FLOW_SCHEMA,
   }
 
   return {
-    flow: data,
+    flow,
     path: resolvedFlow,
+    raw,
   };
 }
 
@@ -57,6 +62,66 @@ function normalizeNameList(value, fallback) {
     return value;
   }
   return Array.isArray(fallback) && fallback.length > 0 ? fallback : [];
+}
+
+function adaptAgentBuilderFlow(rawFlow) {
+  if (!rawFlow || typeof rawFlow !== 'object') {
+    return rawFlow;
+  }
+
+  const nodes = Array.isArray(rawFlow.nodes) ? rawFlow.nodes : [];
+  const edges = Array.isArray(rawFlow.edges) ? rawFlow.edges : [];
+
+  const adaptedNodes = nodes.map((node) => {
+    if (!node || typeof node !== 'object') {
+      return node;
+    }
+    const id = node.id ?? node.name ?? node.key;
+    const kind = node.kind ?? node.type ?? node.action ?? node.role;
+    const params = node.params ?? node.parameters ?? node.config ?? node.settings;
+    const input = normalizeNameList(node.input, node.inputs);
+    const output = normalizeNameList(node.output, node.outputs);
+    return {
+      ...node,
+      ...(id ? { id } : {}),
+      ...(kind ? { kind } : {}),
+      ...(params ? { params } : {}),
+      ...(input.length > 0 ? { input } : {}),
+      ...(output.length > 0 ? { output } : {}),
+    };
+  });
+
+  const adaptedEdges = edges.map((edge) => {
+    if (!edge || typeof edge !== 'object') {
+      return edge;
+    }
+    const from = edge.from ?? edge.source;
+    const to = edge.to ?? edge.target;
+    return {
+      ...(from ? { from } : {}),
+      ...(to ? { to } : {}),
+    };
+  });
+
+  const metadata = rawFlow.metadata ?? rawFlow.meta ?? rawFlow.info;
+  const correlation =
+    rawFlow.correlation ??
+    (rawFlow.context && typeof rawFlow.context === 'object' ? rawFlow.context.correlation : undefined);
+
+  return {
+    ...rawFlow,
+    schemaVersion: rawFlow.schemaVersion ?? '0.1.0',
+    nodes: adaptedNodes,
+    edges: adaptedEdges,
+    ...(metadata ? { metadata } : {}),
+    ...(correlation ? { correlation } : {}),
+  };
+}
+
+function resolveAdapter(name) {
+  if (!name) return null;
+  if (name === 'agent-builder') return adaptAgentBuilderFlow;
+  throw new Error(`[agent-builder] Unknown adapter: ${name}`);
 }
 
 function deriveExecutionPlan(flow) {
@@ -275,6 +340,7 @@ Options:
   --flow <path>     Flow JSON path (required)
   --summary <path>  Verify-lite summary JSON path (optional)
   --output <path>   Output path for generated envelope JSON (optional)
+  --adapter <name>  Flow adapter (agent-builder)
   --schema <path>   Flow schema path (default: schema/flow.schema.json)
   --runId <id>      Trace correlation run id override (optional)
   --workflow <name> Trace correlation workflow name override (optional)
@@ -291,6 +357,7 @@ function parseArgs(argv) {
     flow: null,
     summary: null,
     output: null,
+    adapter: null,
     schema: DEFAULT_FLOW_SCHEMA,
     runId: null,
     workflow: null,
@@ -362,7 +429,8 @@ export async function main(argv = process.argv) {
     };
   }
 
-  const { flow } = loadFlowDefinition(flowPath, { schemaPath: args.schema });
+  const adapter = resolveAdapter(args.adapter);
+  const { flow } = loadFlowDefinition(flowPath, { schemaPath: args.schema, adapter });
   const result = executeFlow(flow, {
     verifyLiteSummary,
     correlation,
