@@ -74,22 +74,50 @@ jobs:
             : [];
 
           const failureCounts = new Map();
+          const invalidFiles = [];
           for (const file of files) {
-            const data = JSON.parse(fs.readFileSync(file, 'utf8'));
-            const suites = data.testResults || [];
+            let data;
+            try {
+              data = JSON.parse(fs.readFileSync(file, 'utf8'));
+            } catch (error) {
+              invalidFiles.push({
+                file: path.basename(file),
+                error: error && error.message ? error.message : String(error),
+              });
+              continue;
+            }
+
+            const suites = Array.isArray(data.testResults)
+              ? data.testResults
+              : Array.isArray(data.data && data.data.testResults)
+                ? data.data.testResults
+                : Array.isArray(data.results)
+                  ? data.results
+                  : [];
             for (const suite of suites) {
-              const assertions = suite.assertionResults || [];
+              const assertions = Array.isArray(suite.assertionResults)
+                ? suite.assertionResults
+                : Array.isArray(suite.tests)
+                  ? suite.tests
+                  : [];
               if (assertions.length > 0) {
                 for (const test of assertions) {
                   if (test.status === 'failed') {
-                    const name = test.fullName || [ ...(test.ancestorTitles || []), test.title ]
+                    const name = test.fullName || [ ...(test.ancestorTitles || []), test.title || test.name ]
                       .filter(Boolean)
                       .join(' > ');
                     failureCounts.set(name, (failureCounts.get(name) || 0) + 1);
                   }
                 }
-              } else if (suite.status === 'failed') {
-                const suiteName = suite.name || 'unknown suite';
+              } else {
+                const suiteFailed = suite.status === 'failed'
+                  || suite.numFailingTests > 0
+                  || suite.success === false
+                  || Boolean(suite.failureMessage);
+                if (!suiteFailed) {
+                  continue;
+                }
+                const suiteName = suite.name || suite.testFilePath || 'unknown suite';
                 const key = `[suite] ${suiteName}`;
                 failureCounts.set(key, (failureCounts.get(key) || 0) + 1);
               }
@@ -97,18 +125,24 @@ jobs:
           }
 
           const totalRuns = files.length || 0;
+          const parsedRuns = Math.max(totalRuns - invalidFiles.length, 0);
+          const runDenominator = parsedRuns || totalRuns || 0;
           const failures = [...failureCounts.entries()]
             .sort((a, b) => b[1] - a[1])
             .map(([name, count]) => ({ name, count }));
 
-          const markdown = failures.length
-            ? failures.map(item => `- ${item.name} (failed ${item.count}/${totalRuns})`).join('\n')
+          let markdown = failures.length
+            ? failures.map(item => `- ${item.name} (failed ${item.count}/${runDenominator})`).join('\n')
             : '- 失敗テストは検出されませんでした';
+          if (invalidFiles.length > 0) {
+            const invalidList = invalidFiles.map(item => item.file).join(', ');
+            markdown += `\n\n- ⚠️ 解析に失敗したレポート: ${invalidList} (${invalidFiles.length}/${totalRuns})`;
+          }
 
           fs.writeFileSync('reports/flake-detection-failures.md', markdown);
           fs.writeFileSync(
             'reports/flake-detection-failures.json',
-            JSON.stringify({ totalRuns, failures }, null, 2),
+            JSON.stringify({ totalRuns, parsedRuns, invalidFiles, failures }, null, 2),
           );
 
           console.log('Failing tests summary:');
