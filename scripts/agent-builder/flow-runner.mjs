@@ -98,7 +98,6 @@ function adaptAgentBuilderFlow(rawFlow) {
     const from = edge.from ?? edge.source;
     const to = edge.to ?? edge.target;
     return {
-      ...edge,
       ...(from ? { from } : {}),
       ...(to ? { to } : {}),
     };
@@ -107,9 +106,7 @@ function adaptAgentBuilderFlow(rawFlow) {
   const metadata = rawFlow.metadata ?? rawFlow.meta ?? rawFlow.info;
   const correlation =
     rawFlow.correlation ??
-    (rawFlow.context && typeof rawFlow.context === 'object'
-      ? rawFlow.context.correlation ?? rawFlow.context
-      : undefined);
+    (rawFlow.context && typeof rawFlow.context === 'object' ? rawFlow.context.correlation : undefined);
 
   return {
     ...rawFlow,
