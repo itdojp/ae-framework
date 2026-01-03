@@ -34,8 +34,8 @@ jobs:
           
           for ((i=1; i<=total_runs; i++)); do
             printf "%s\n" "📊 Run #$i of $total_runs"
-            
-            if pnpm run test:int -- --reporter=json --outputFile "reports/flake-detection/run-$i.json"; then
+            report_file="reports/flake-detection/run-$i.json"
+            if pnpm exec vitest run --workspace vitest.workspace.ts --project integration --reporter=json --outputFile "$report_file"; then
               printf "%s\n" "✅ Run #$i passed"
             else
               printf "%s\n" "❌ Run #$i failed"
@@ -58,19 +58,97 @@ jobs:
           printf "%s\n" "   Total runs: $total_runs"
           printf "%s\n" "   Failures: $fails"
           printf "%s\n" "   Failure rate: ${failure_rate}%"
-          
-          if ls reports/flake-detection/run-*.json >/dev/null 2>&1; then
-            failed_list=$(jq -r '.testResults[].assertionResults[] | select(.status == "failed") | .fullName' reports/flake-detection/run-*.json | sort -u)
-          else
-            failed_list=""
-          fi
-          printf "%s\n" "$failed_list" > reports/flake-detection/failed-tests.txt
-          {
-            printf "%s\n" "FAILED_TESTS<<EOF"
-            printf "%s\n" "$failed_list"
-            printf "%s\n" "EOF"
-          } >> "$GITHUB_ENV"
-      
+
+      - name: Summarize failing tests
+        if: always()
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+
+          const dir = 'reports/flake-detection';
+          const files = fs.existsSync(dir)
+            ? fs.readdirSync(dir)
+              .filter(name => name.startsWith('run-') && name.endsWith('.json'))
+              .map(name => path.join(dir, name))
+            : [];
+
+          const failureCounts = new Map();
+          const invalidFiles = [];
+          for (const file of files) {
+            let data;
+            try {
+              data = JSON.parse(fs.readFileSync(file, 'utf8'));
+            } catch (error) {
+              invalidFiles.push({
+                file: path.basename(file),
+                error: error && error.message ? error.message : String(error),
+              });
+              continue;
+            }
+
+            const suites = Array.isArray(data.testResults)
+              ? data.testResults
+              : Array.isArray(data.data && data.data.testResults)
+                ? data.data.testResults
+                : Array.isArray(data.results)
+                  ? data.results
+                  : [];
+            for (const suite of suites) {
+              const assertions = Array.isArray(suite.assertionResults)
+                ? suite.assertionResults
+                : Array.isArray(suite.tests)
+                  ? suite.tests
+                  : [];
+              if (assertions.length > 0) {
+                for (const test of assertions) {
+                  if (test.status === 'failed') {
+                    const name = test.fullName || [ ...(test.ancestorTitles || []), test.title || test.name ]
+                      .filter(Boolean)
+                      .join(' > ');
+                    failureCounts.set(name, (failureCounts.get(name) || 0) + 1);
+                  }
+                }
+              } else {
+                const suiteFailed = suite.status === 'failed'
+                  || suite.numFailingTests > 0
+                  || suite.success === false
+                  || Boolean(suite.failureMessage);
+                if (!suiteFailed) {
+                  continue;
+                }
+                const suiteName = suite.name || suite.testFilePath || 'unknown suite';
+                const key = `[suite] ${suiteName}`;
+                failureCounts.set(key, (failureCounts.get(key) || 0) + 1);
+              }
+            }
+          }
+
+          const totalRuns = files.length || 0;
+          const parsedRuns = Math.max(totalRuns - invalidFiles.length, 0);
+          const runDenominator = parsedRuns || totalRuns || 0;
+          const failures = [...failureCounts.entries()]
+            .sort((a, b) => b[1] - a[1])
+            .map(([name, count]) => ({ name, count }));
+
+          let markdown = failures.length
+            ? failures.map(item => `- ${item.name} (failed ${item.count}/${runDenominator})`).join('\n')
+            : '- 失敗テストは検出されませんでした';
+          if (invalidFiles.length > 0) {
+            const invalidList = invalidFiles.map(item => item.file).join(', ');
+            markdown += `\n\n- ⚠️ 解析に失敗したレポート: ${invalidList} (${invalidFiles.length}/${totalRuns})`;
+          }
+
+          fs.writeFileSync('reports/flake-detection-failures.md', markdown);
+          fs.writeFileSync(
+            'reports/flake-detection-failures.json',
+            JSON.stringify({ totalRuns, parsedRuns, invalidFiles, failures }, null, 2),
+          );
+
+          console.log('Failing tests summary:');
+          console.log(markdown);
+          NODE
+
       - name: Create flake detection report
         run: |
           mkdir -p reports
@@ -78,8 +156,6 @@ jobs:
           if [ "$(printf "%s\n" "$FAILURE_RATE > 30.0" | bc -l)" -eq 1 ]; then
             status="flaky"
           fi
-          
-          failed_tests=$(jq -R -s -c 'split("\n") | map(select(length>0))' reports/flake-detection/failed-tests.txt)
 
           cat > reports/flake-detection-report.json <<EOF
           {
@@ -90,8 +166,7 @@ jobs:
             "threshold": 30.0,
             "status": "$status",
             "testSuite": "integration",
-            "environment": "ci",
-            "failedTests": $failed_tests
+            "environment": "ci"
           }
           EOF
       
@@ -112,7 +187,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: flake-detection-report
-          path: reports/flake-detection-report.json
+          path: |
+            reports/flake-detection-report.json
+            reports/flake-detection-failures.json
+            reports/flake-detection-failures.md
+            reports/flake-detection/run-*.json
           retention-days: 30
       
       - name: Create GitHub issue for flaky tests
@@ -124,11 +203,14 @@ jobs:
             const totalRuns = '${{ env.TOTAL_RUNS }}';
             const failures = '${{ env.FAILS }}';
             const fs = require('fs');
-            const failedTests = fs.existsSync('reports/flake-detection/failed-tests.txt')
-              ? fs.readFileSync('reports/flake-detection/failed-tests.txt', 'utf8').trim().split('\n').filter(Boolean)
-              : [];
-            const failedBlock = failedTests.length
-              ? `\n\n### ❌ Failed tests (unique, top ${Math.min(10, failedTests.length)})\n${failedTests.slice(0, 10).map(t => `- ${t}`).join('\n')}`
+            let failureSummary = '';
+            try {
+              failureSummary = fs.readFileSync('reports/flake-detection-failures.md', 'utf8').trim();
+            } catch (error) {
+              failureSummary = '';
+            }
+            const failureSection = failureSummary
+              ? `### ❗ Failing tests (latest runs)\n${failureSummary}\n`
               : '';
             
             const title = `🔍 Flaky Test Detected - Integration Tests (${failureRate}% failure rate)`;
@@ -145,6 +227,8 @@ jobs:
             - **Failed Runs:** ${failures}
             - **Success Runs:** ${totalRuns - failures}
             - **Failure Rate:** ${failureRate}%
+
+            ${failureSection}
             
             ### 🎯 Recommended Actions
             1. **Immediate:** Isolate flaky tests to prevent CI blocking
@@ -163,7 +247,7 @@ jobs:
             - \`priority-high\`: High priority due to CI impact
             
             **Auto-generated by Flake Detection Workflow**  
-            *Workflow Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}*${failedBlock}`;
+            *Workflow Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}*`;
             
             // Check if similar issue already exists
             const existingIssues = await github.rest.issues.listForRepo({
@@ -186,7 +270,7 @@ jobs:
               ---
               
               ## 🔄 Recent Detection - ${new Date().toISOString()}
-              **Failure Rate:** ${failureRate}% (${failures}/${totalRuns} runs failed)${failedBlock}`;
+              **Failure Rate:** ${failureRate}% (${failures}/${totalRuns} runs failed)`;
               
               await github.rest.issues.update({
                 owner: context.repo.owner,
@@ -199,7 +283,7 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: duplicateIssue.number,
-                body: `🚨 **Flake still detected** - ${failureRate}% failure rate in latest run`
+                body: `🚨 **Flake still detected** - ${failureRate}% failure rate in latest run${failureSummary ? `\n\nFailing tests:\n${failureSummary}` : ''}`
               });
               
             } else {
