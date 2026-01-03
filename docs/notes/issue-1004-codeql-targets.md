@@ -21,6 +21,29 @@ This note captures the current open CodeQL alerts related to Issue #1004 so fixe
 | `js/indirect-command-line-injection` | 2 |
 | `js/insecure-randomness` | 1 |
 
+### Warning hotspots: `js/file-system-race` (top paths)
+
+- `scripts/cegis-report-cleanup.mjs`: 2
+- `src/commands/adapt/jest.ts`: 2
+- `src/commands/adapt/vitest.ts`: 2
+- `scripts/check-a11y-threshold.cjs`: 1
+- `scripts/check-opa-compliance.cjs`: 1
+- `scripts/hermetic-ci-enhancer.js`: 1
+- `scripts/integrated-ci-test-optimizer.mjs`: 1
+- `src/cli/quality-cli.ts`: 1
+- `src/commands/ci/scaffold.ts`: 1
+- `src/integration/hybrid-intent-system.ts`: 1
+- `src/providers/recorder.ts`: 1
+- `src/self-improvement/setup-git-hooks.ts`: 1
+
+### Warning hotspots: `js/shell-command-injection-from-environment` (top paths)
+
+- `src/agents/rust-verification-agent.ts`: 6
+- `scripts/accessibility-analyzer.js`: 4
+- `scripts/security-analyzer.js`: 3
+- `src/services/container/docker-engine.ts`: 1
+- `src/services/container/podman-engine.ts`: 1
+
 ### `src/testing/repro-writer.ts`
 
 - **No open alerts** found in the current CodeQL open list.
