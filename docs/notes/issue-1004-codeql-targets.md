@@ -13,10 +13,10 @@ This note captures the current open CodeQL alerts related to Issue #1004 so fixe
 
 | Alert | Rule | Severity | Line | Message | Link |
 | --- | --- | --- | --- | --- | --- |
-| #936 | `js/file-access-to-http` | warning | 257 | Outbound network request depends on file data. | https://github.com/itdojp/ae-framework/security/code-scanning/936 |
-| #935 | `js/file-access-to-http` | warning | 257 | Outbound network request depends on file data. | https://github.com/itdojp/ae-framework/security/code-scanning/935 |
-| #934 | `js/file-access-to-http` | warning | 249 | Outbound network request depends on file data. | https://github.com/itdojp/ae-framework/security/code-scanning/934 |
-| #933 | `js/file-access-to-http` | warning | 249 | Outbound network request depends on file data. | https://github.com/itdojp/ae-framework/security/code-scanning/933 |
+| #936 | `js/file-access-to-http` | warning | 255 | Outbound network request depends on file data. | https://github.com/itdojp/ae-framework/security/code-scanning/936 |
+| #935 | `js/file-access-to-http` | warning | 255 | Outbound network request depends on file data. | https://github.com/itdojp/ae-framework/security/code-scanning/935 |
+| #934 | `js/file-access-to-http` | warning | 248 | Outbound network request depends on file data. | https://github.com/itdojp/ae-framework/security/code-scanning/934 |
+| #933 | `js/file-access-to-http` | warning | 248 | Outbound network request depends on file data. | https://github.com/itdojp/ae-framework/security/code-scanning/933 |
 | #932 | `js/file-access-to-http` | warning | 240 | Outbound network request depends on file data. | https://github.com/itdojp/ae-framework/security/code-scanning/932 |
 
 ## Dependency notes
@@ -29,4 +29,3 @@ This note captures the current open CodeQL alerts related to Issue #1004 so fixe
 
 1. Address `scripts/coverage/pr-coverage-summary.mjs` alerts by narrowing outbound requests to exclude file-derived payloads or introducing explicit sanitization/allowlists.
 2. Re-validate dependency alerts in GitHub Security to confirm whether any critical/high CVEs remain open for `ws` or `esbuild`.
-
