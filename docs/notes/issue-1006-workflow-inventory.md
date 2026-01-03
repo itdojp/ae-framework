@@ -40,6 +40,7 @@
 - auto: 1
 - ae: 1
 - adapter: 1
+- total: 47 (matches workflow count)
 
 ## Workflow files (sorted)
 - adapter-thresholds.yml
