@@ -33,6 +33,8 @@ This note captures the current open CodeQL alerts related to Issue #1004 so fixe
 - `src/cli/quality-cli.ts`: 1
 - `src/commands/ci/scaffold.ts`: 1
 - `src/integration/hybrid-intent-system.ts`: 1
+- `src/providers/recorder.ts`: 1
+- `src/self-improvement/setup-git-hooks.ts`: 1
 
 ### Warning hotspots: `js/shell-command-injection-from-environment` (top paths)
 
