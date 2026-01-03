@@ -6,7 +6,7 @@ This note captures the current open CodeQL alerts related to Issue #1004 so fixe
 
 ### Severity distribution
 
-- Open alerts are currently **note** and **warning** only (no error/critical in the CodeQL list).
+- Open **CodeQL code scanning alerts** are currently **note** and **warning** only (no error/critical severities in the CodeQL list). This statement applies only to CodeQL alerts and does **not** include dependency vulnerability alerts (e.g., CVEs), which are tracked separately in Issue #1004 and may still include HIGH/CRITICAL severities.
 
 ### Warning rules (open counts)
 
