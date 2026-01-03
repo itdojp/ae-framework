@@ -4,6 +4,23 @@ This note captures the current open CodeQL alerts related to Issue #1004 so fixe
 
 ## Current alert status (open)
 
+### Severity distribution
+
+- Open alerts are currently **note** and **warning** only (no error/critical in the CodeQL list).
+
+### Warning rules (open counts)
+
+| Rule | Count |
+| --- | --- |
+| `js/file-system-race` | 15 |
+| `js/shell-command-injection-from-environment` | 15 |
+| `js/file-access-to-http` | 7 |
+| `js/useless-assignment-to-local` | 5 |
+| `js/http-to-file-access` | 2 |
+| `js/incomplete-sanitization` | 2 |
+| `js/indirect-command-line-injection` | 2 |
+| `js/insecure-randomness` | 1 |
+
 ### `src/testing/repro-writer.ts`
 
 - **No open alerts** found in the current CodeQL open list.
