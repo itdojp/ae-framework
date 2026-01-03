@@ -23,7 +23,7 @@ import {
   registerIntegrationCleanup,
   applyIntegrationRetry,
 } from '../_helpers/integration-test-utils.js';
-import '../integration/setup';
+import './setup';
 
 applyIntegrationRetry(test);
 
