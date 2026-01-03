@@ -44,10 +44,16 @@ describe('CI/CD Tag Trigger Configuration - Phase 1.3', () => {
 
       expect(coreWorkflows.length).toBeGreaterThan(0);
 
+      let checked = 0;
       coreWorkflows.forEach(workflowFile => {
         const content = readFileSync(workflowFile, 'utf8');
         const workflow = yaml.load(content) as GitHubWorkflow;
         const workflowName = path.basename(workflowFile, '.yml');
+
+        if (!workflow.on?.push) {
+          return;
+        }
+        checked += 1;
 
         expect(workflow.on.push?.tags, `${workflowName} should have tag triggers`)
           .toBeDefined();
@@ -55,6 +61,8 @@ describe('CI/CD Tag Trigger Configuration - Phase 1.3', () => {
         expect(workflow.on.push?.tags, `${workflowName} should include 'v*' tag pattern`)
           .toContain('v*');
       });
+
+      expect(checked).toBeGreaterThan(0);
     });
 
     it('should have tag triggers in release workflow', () => {

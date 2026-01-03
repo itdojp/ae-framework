@@ -199,7 +199,7 @@ lines.push('Docs: docs/ci/label-gating.md');
 lines.push('Tips: /coverage <pct> to override; /enforce-coverage to enforce');
 if (!summaryPath) {
   const msg = overrideSummary
-    ? 'Note: no coverage-summary.json found (override path not found; looked in coverage/ and artifacts/coverage/)'
+    ? `Note: no coverage-summary.json found (override path '${overrideSummary}' not found; looked in coverage/ and artifacts/coverage/)`
     : 'Note: no coverage-summary.json found (looked in coverage/ and artifacts/coverage/)';
   lines.push(msg);
 }
