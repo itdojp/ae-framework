@@ -1,0 +1,95 @@
+# Issue 1006: Workflow Inventory (Phase 1)
+
+## Snapshot
+- Commit: 61f30b60
+- .github/workflows/*.yml count: 47
+
+## Prefix counts (file name before first '-' or '.')
+- ci: 4
+- spec: 3
+- verify: 2
+- release: 2
+- pr: 2
+- nightly: 2
+- formal: 2
+- flake: 2
+- agent: 2
+- workflow: 1
+- webapi: 1
+- validate: 1
+- testing: 1
+- security: 1
+- sbom: 1
+- quality: 1
+- podman: 1
+- phase6: 1
+- parallel: 1
+- mutation: 1
+- model: 1
+- minimal: 1
+- hermetic: 1
+- grafana: 1
+- generate: 1
+- fail: 1
+- docker: 1
+- coverage: 1
+- copilot: 1
+- codegen: 1
+- cedar: 1
+- branch: 1
+- auto: 1
+- ae: 1
+- adapter: 1
+
+## Workflow files (sorted)
+- adapter-thresholds.yml
+- ae-ci.yml
+- agent-commands.yml
+- agent-slash-commands.yml
+- auto-labels.yml
+- branch-protection-apply.yml
+- cedar-quality-gates.yml
+- ci-core.yml
+- ci-extended.yml
+- ci-fast.yml
+- ci.yml
+- codegen-drift-check.yml
+- copilot-review-gate.yml
+- coverage-check.yml
+- docker-tests.yml
+- fail-fast-spec-validation.yml
+- flake-detect.yml
+- flake-maintenance.yml
+- formal-aggregate.yml
+- formal-verify.yml
+- generate-artifacts-preview.yml
+- grafana-dashboards.yml
+- hermetic-ci.yml
+- minimal-pipeline.yml
+- model-checking-manual.yml
+- mutation-quick.yml
+- nightly-monitoring.yml
+- nightly.yml
+- parallel-test-execution.yml
+- phase6-validation.yml
+- podman-smoke.yml
+- pr-summary-comment.yml
+- pr-verify.yml
+- quality-gates-centralized.yml
+- release-quality-artifacts.yml
+- release.yml
+- sbom-generation.yml
+- security.yml
+- spec-check.yml
+- spec-generate-model.yml
+- spec-validation.yml
+- testing-ddd-scripts.yml
+- validate-artifacts-ajv.yml
+- verify-lite.yml
+- verify.yml
+- webapi-sample-ci.yml
+- workflow-lint.yml
+
+## Notes
+- The prefix counts help spot areas with many workflows that may be candidates for consolidation.
+- Next step: map these workflows to ci profiles (fast/verify-lite/extended/security/formal) and identify overlap.
