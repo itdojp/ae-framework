@@ -17,3 +17,4 @@
 ## Notes
 - Trivy/Code Scanning 側のアラート解消可否は、Security/SBOM ワークフロー再実行の結果で確認する。
 - 新たな警告が出た場合はこの表に追記して小粒PRへ分割する。
+- SBOM はワークフロー生成物のため、再実行まで package.json と差分が残る可能性がある。
