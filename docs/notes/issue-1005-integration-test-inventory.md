@@ -7,7 +7,7 @@
 ## Files and helper usage
 | file | temp dir | cleanup | retry | integration setup |
 | --- | --- | --- | --- | --- |
-| tests/integration/integration-cli.test.ts | yes | no | yes | no |
+| tests/integration/integration-cli.test.ts | yes | yes (temp dir) | yes | no |
 | tests/integration/system-validation.test.ts | yes | yes | yes | no |
 | tests/integration/test-orchestrator.test.ts | yes | yes | yes | no |
 | tests/integration/web-api/reservations.test.ts | no | no | yes | no |
@@ -15,4 +15,5 @@
 
 ## Notes
 - This inventory is a baseline for flake investigation and cleanup planning.
+- `createIntegrationTempDir` registers cleanup automatically; the cleanup column treats that as covered.
 - If a file shows "no" across cleanup helpers, review its teardown behavior first.
