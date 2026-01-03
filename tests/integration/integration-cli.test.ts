@@ -8,6 +8,7 @@ import { IntegrationTestingCli } from '../../src/cli/integration-cli.js';
 import { writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { createIntegrationTempDir, applyIntegrationRetry } from '../_helpers/integration-test-utils.js';
+import './setup';
 
 applyIntegrationRetry(it);
 

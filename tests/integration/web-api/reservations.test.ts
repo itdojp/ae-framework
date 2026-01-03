@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { buildApp, seedRepo } from '../../../src/web-api/app';
 import { InMemoryReservationRepository } from '../../../src/web-api/repository';
 import { applyIntegrationRetry } from '../../_helpers/integration-test-utils.js';
+import '../setup';
 
 // test:integration:webapi で実行
 
