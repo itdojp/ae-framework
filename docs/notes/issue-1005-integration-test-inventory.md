@@ -1,16 +1,16 @@
 # Issue 1005: Integration Test Inventory (Phase 1)
 
 ## Snapshot
-- Commit: 61f30b60
+- Commit: b44585eb
 - Integration project files: 5
 
 ## Files and helper usage
 | file | temp dir | cleanup | retry | integration setup |
 | --- | --- | --- | --- | --- |
-| tests/integration/integration-cli.test.ts | yes | yes (temp dir) | yes | no |
-| tests/integration/system-validation.test.ts | yes | yes | yes | no |
-| tests/integration/test-orchestrator.test.ts | yes | yes | yes | no |
-| tests/integration/web-api/reservations.test.ts | no | no | yes | no |
+| tests/integration/integration-cli.test.ts | yes | yes (temp dir) | yes | yes |
+| tests/integration/system-validation.test.ts | yes | yes | yes | yes |
+| tests/integration/test-orchestrator.test.ts | yes | yes | yes | yes |
+| tests/integration/web-api/reservations.test.ts | no | no | yes | yes |
 | tests/optimization/system-integration.test.ts | no | yes | no | yes |
 
 ## Notes
