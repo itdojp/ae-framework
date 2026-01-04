@@ -19,7 +19,13 @@ function checkOpaCompliance() {
   try {
     let results;
     try {
-      results = JSON.parse(fs.readFileSync(opaResultsPath, 'utf8'));
+      const raw = fs.readFileSync(opaResultsPath, 'utf8');
+      try {
+        results = JSON.parse(raw);
+      } catch (parseError) {
+        console.error(`❌ OPA results file is not valid JSON: ${parseError.message}`);
+        return false;
+      }
     } catch (error) {
       if (error.code !== 'ENOENT') {
         throw error;
