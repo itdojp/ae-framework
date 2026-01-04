@@ -3,6 +3,8 @@
  * Provides sophisticated timeout handling strategies
  */
 
+import { normalizeError } from './error-utils.js';
+
 export interface TimeoutOptions {
   timeoutMs: number;
   onTimeout?: (duration: number) => void;
@@ -26,17 +28,6 @@ export interface TimeoutStats {
   timeoutRate: number;
   currentTimeoutMs: number;
 }
-
-const normalizeError = (error: unknown, fallbackMessage: string): Error => {
-  if (error instanceof Error) return error;
-  if (typeof error === 'string') return new Error(error);
-  try {
-    const serialized = JSON.stringify(error);
-    return new Error(serialized ?? fallbackMessage);
-  } catch {
-    return new Error(fallbackMessage);
-  }
-};
 
 /**
  * Basic timeout wrapper for operations

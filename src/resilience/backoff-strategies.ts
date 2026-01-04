@@ -3,6 +3,8 @@
  * Implements resilient retry strategies with various jitter options
  */
 
+import { normalizeError } from './error-utils.js';
+
 export interface RetryOptions {
   maxRetries: number;
   baseDelayMs: number;
@@ -22,17 +24,6 @@ export interface RetryResult<T> {
   totalTime: number;
   delays: number[];
 }
-
-const normalizeError = (error: unknown, fallbackMessage: string): Error => {
-  if (error instanceof Error) return error;
-  if (typeof error === 'string') return new Error(error);
-  try {
-    const serialized = JSON.stringify(error);
-    return new Error(serialized ?? fallbackMessage);
-  } catch {
-    return new Error(fallbackMessage);
-  }
-};
 
 export class BackoffStrategy {
   private options: Required<RetryOptions>;
@@ -75,7 +66,7 @@ export class BackoffStrategy {
           delays,
         };
       } catch (error) {
-        lastError = error as Error;
+        lastError = normalizeError(error, `Operation ${operationName} failed`);
         
         // Check if we should retry
         const msg = lastError.message || '';
@@ -611,8 +602,8 @@ export class ResilientHttpClient {
         }
       }
       // Defer rejection via microtask to avoid timer dependency
-      const normalizedError = normalizeError(result.error, 'Operation failed');
-      return new Promise<never>((_, reject) => Promise.resolve().then(() => reject(normalizedError)));
+      const error = result.error ?? new Error('Operation failed');
+      return new Promise<never>((_, reject) => Promise.resolve().then(() => reject(error)));
     }
 
     // Successful result; clear forced OPEN hint so health reflects real state
