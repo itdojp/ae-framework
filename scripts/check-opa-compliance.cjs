@@ -17,8 +17,13 @@ const opaResultsPath = path.join(process.cwd(), 'reports/opa-results.json');
 
 function checkOpaCompliance() {
   try {
-    // Check if OPA results exist
-    if (!fs.existsSync(opaResultsPath)) {
+    let results;
+    try {
+      results = JSON.parse(fs.readFileSync(opaResultsPath, 'utf8'));
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        throw error;
+      }
       console.log('⚠️  OPA results not found, creating empty report for development');
       // Create empty report for development phase
       fs.mkdirSync(path.dirname(opaResultsPath), { recursive: true });
@@ -31,8 +36,6 @@ function checkOpaCompliance() {
       console.log('✅ Empty OPA report created - all policies passed');
       return true;
     }
-
-    const results = JSON.parse(fs.readFileSync(opaResultsPath, 'utf8'));
     const violations = results.violations || [];
     
     console.log(`📊 OPA Policy Results:`);
