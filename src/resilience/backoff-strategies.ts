@@ -602,8 +602,8 @@ export class ResilientHttpClient {
         }
       }
       // Defer rejection via microtask to avoid timer dependency
-      const error = result.error ?? new Error('Operation failed');
-      return new Promise<never>((_, reject) => Promise.resolve().then(() => reject(error)));
+      const normalizedError = normalizeError(result.error, 'Operation failed');
+      return new Promise<never>((_, reject) => Promise.resolve().then(() => reject(normalizedError)));
     }
 
     // Successful result; clear forced OPEN hint so health reflects real state
