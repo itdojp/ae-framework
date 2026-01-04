@@ -84,8 +84,13 @@ const reportPath = path.join(process.cwd(), 'reports/a11y-results.json');
 
 function checkA11yThreshold() {
   try {
-    // Check if report exists
-    if (!fs.existsSync(reportPath)) {
+    let report;
+    try {
+      report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        throw error;
+      }
       console.log('⚠️  A11y report not found, creating empty report for development');
       // Create empty report for development phase
       fs.mkdirSync(path.dirname(reportPath), { recursive: true });
@@ -102,8 +107,6 @@ function checkA11yThreshold() {
       console.log('✅ Empty a11y report created - all thresholds passed');
       return true;
     }
-
-    const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
     const violations = report.violations || {};
     
     const criticalCount = violations.critical || 0;
