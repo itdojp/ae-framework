@@ -25,7 +25,8 @@
     ".js"
   ],
   "require": [
-    "tsx/cjs"
+    "tsx/cjs",
+    "scripts/nyc/tsx-module-id.cjs"
   ],
   "reporter": [
     "text",
