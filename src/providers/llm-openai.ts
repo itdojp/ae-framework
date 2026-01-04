@@ -32,12 +32,13 @@ const OpenAIProvider: LLM = {
   async complete({ prompt, system, temperature }) {
     const mod = await loadOpenAIModule();
     const client = new mod.default({ apiKey: process.env['OPENAI_API_KEY'] });
+    const messages: OpenAIChatMessage[] = [
+      ...(system ? [{ role: 'system' as const, content: system }] : []),
+      { role: 'user' as const, content: prompt }
+    ];
     const res: unknown = await client.chat.completions.create({
       model: process.env['OPENAI_MODEL'] ?? 'gpt-4o-mini',
-      messages: [
-        ...(system ? [{ role: 'system', content: system }] : []),
-        { role: 'user', content: prompt }
-      ],
+      messages,
       temperature: temperature ?? 0
     });
     const parsed = OpenAIChat.safeParse(res);
