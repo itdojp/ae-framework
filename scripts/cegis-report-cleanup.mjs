@@ -19,15 +19,10 @@ class CEGISReportCleanup {
 
   async createArchiveDirectory() {
     console.log('📁 Creating archive directory...');
-    
-    if (!fs.existsSync('./temp-reports')) {
-      fs.mkdirSync('./temp-reports', { recursive: true });
-    }
-    
-    if (!fs.existsSync(this.archiveDir)) {
-      fs.mkdirSync(this.archiveDir, { recursive: true });
-    }
-    
+
+    await fsp.mkdir('./temp-reports', { recursive: true });
+    await fsp.mkdir(this.archiveDir, { recursive: true });
+
     console.log(`✅ Archive directory created: ${this.archiveDir}`);
   }
 
@@ -175,8 +170,10 @@ class CEGISReportCleanup {
     ];
     
     let gitignoreContent = '';
-    if (fs.existsSync(gitignorePath)) {
-      gitignoreContent = fs.readFileSync(gitignorePath, 'utf8');
+    try {
+      gitignoreContent = await fsp.readFile(gitignorePath, 'utf8');
+    } catch (error) {
+      if (error?.code !== 'ENOENT') throw error;
     }
     
     let updated = false;
