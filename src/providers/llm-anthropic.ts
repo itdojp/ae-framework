@@ -1,5 +1,6 @@
 import type { LLM } from './index.js';
 import { AnthropicMsg } from '../schemas/llm.js';
+import { hasConstructorProperty, stringifyUnknown } from './provider-utils.js';
 
 type AnthropicMessage = { role: 'user' | 'system'; content: string };
 type AnthropicClient = {
@@ -14,12 +15,8 @@ type AnthropicClient = {
 };
 type AnthropicModule = { default: new (options: { apiKey?: string }) => AnthropicClient };
 
-const isAnthropicModule = (value: unknown): value is AnthropicModule => {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-  return 'default' in value;
-};
+const isAnthropicModule = (value: unknown): value is AnthropicModule =>
+  hasConstructorProperty(value, 'default');
 
 const loadAnthropicModule = async (): Promise<AnthropicModule> => {
   const raw: unknown = await eval('import("@anthropic-ai/sdk")');
@@ -27,19 +24,6 @@ const loadAnthropicModule = async (): Promise<AnthropicModule> => {
     throw new Error('Anthropic SDK module did not provide a default export.');
   }
   return raw;
-};
-
-const stringifyUnknown = (value: unknown): string => {
-  if (value == null) return '';
-  if (typeof value === 'string') return value;
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-  if (value instanceof Error) return value.message;
-  try {
-    const serialized = JSON.stringify(value);
-    return serialized ?? '[unserializable]';
-  } catch {
-    return '[unserializable]';
-  }
 };
 
 const AnthropicProvider: LLM = {

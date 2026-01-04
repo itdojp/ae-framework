@@ -1,5 +1,6 @@
 import type { LLM } from './index.js';
 import { GeminiResp } from '../schemas/llm.js';
+import { hasConstructorProperty, stringifyUnknown } from './provider-utils.js';
 
 type GeminiContentPart = { text: string };
 type GeminiGenerationConfig = { temperature?: number };
@@ -16,12 +17,8 @@ type GeminiModule = {
   GoogleGenerativeAI: new (apiKey?: string) => GeminiClient;
 };
 
-const isGeminiModule = (value: unknown): value is GeminiModule => {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-  return 'GoogleGenerativeAI' in value;
-};
+const isGeminiModule = (value: unknown): value is GeminiModule =>
+  hasConstructorProperty(value, 'GoogleGenerativeAI');
 
 const loadGeminiModule = async (): Promise<GeminiModule> => {
   const raw: unknown = await eval('import("@google/generative-ai")');
@@ -29,19 +26,6 @@ const loadGeminiModule = async (): Promise<GeminiModule> => {
     throw new Error('Gemini SDK module did not provide GoogleGenerativeAI.');
   }
   return raw;
-};
-
-const stringifyUnknown = (value: unknown): string => {
-  if (value == null) return '';
-  if (typeof value === 'string') return value;
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-  if (value instanceof Error) return value.message;
-  try {
-    const serialized = JSON.stringify(value);
-    return serialized ?? '[unserializable]';
-  } catch {
-    return '[unserializable]';
-  }
 };
 
 const GeminiProvider: LLM = {

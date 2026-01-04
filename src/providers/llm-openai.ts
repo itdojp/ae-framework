@@ -1,5 +1,6 @@
 import type { LLM } from './index.js';
 import { OpenAIChat } from '../schemas/llm.js';
+import { hasConstructorProperty, stringifyUnknown } from './provider-utils.js';
 
 type OpenAIChatMessage = { role: 'system' | 'user'; content: string };
 type OpenAIChatClient = {
@@ -15,12 +16,8 @@ type OpenAIChatClient = {
 };
 type OpenAIModule = { default: new (options: { apiKey?: string }) => OpenAIChatClient };
 
-const isOpenAIModule = (value: unknown): value is OpenAIModule => {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-  return 'default' in value;
-};
+const isOpenAIModule = (value: unknown): value is OpenAIModule =>
+  hasConstructorProperty(value, 'default');
 
 const loadOpenAIModule = async (): Promise<OpenAIModule> => {
   const raw: unknown = await eval('import("openai")');
@@ -28,19 +25,6 @@ const loadOpenAIModule = async (): Promise<OpenAIModule> => {
     throw new Error('OpenAI SDK module did not provide a default export.');
   }
   return raw;
-};
-
-const stringifyUnknown = (value: unknown): string => {
-  if (value == null) return '';
-  if (typeof value === 'string') return value;
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-  if (value instanceof Error) return value.message;
-  try {
-    const serialized = JSON.stringify(value);
-    return serialized ?? '[unserializable]';
-  } catch {
-    return '[unserializable]';
-  }
 };
 
 const OpenAIProvider: LLM = {
