@@ -3,6 +3,8 @@
  * Implements resilient retry strategies with various jitter options
  */
 
+import { normalizeError } from './error-utils.js';
+
 export interface RetryOptions {
   maxRetries: number;
   baseDelayMs: number;
@@ -64,7 +66,7 @@ export class BackoffStrategy {
           delays,
         };
       } catch (error) {
-        lastError = error as Error;
+        lastError = normalizeError(error, `Operation ${operationName} failed`);
         
         // Check if we should retry
         const msg = lastError.message || '';
@@ -163,7 +165,7 @@ export class BackoffStrategy {
         })
         .catch(error => {
           if (timeoutId) clearTimeout(timeoutId);
-          reject(error);
+          reject(normalizeError(error, 'Operation failed'));
         });
     });
   }
@@ -600,7 +602,8 @@ export class ResilientHttpClient {
         }
       }
       // Defer rejection via microtask to avoid timer dependency
-      return new Promise<never>((_, reject) => Promise.resolve().then(() => reject(result.error)));
+      const error = result.error ?? new Error('Operation failed');
+      return new Promise<never>((_, reject) => Promise.resolve().then(() => reject(error)));
     }
 
     // Successful result; clear forced OPEN hint so health reflects real state
