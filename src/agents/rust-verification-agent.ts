@@ -563,10 +563,29 @@ export class RustVerificationAgent {
 
   private resolveRustSources(projectPath: string): string[] {
     const srcDir = path.join(projectPath, 'src');
-    const entries = readdirSync(srcDir, { withFileTypes: true });
-    const files = entries
-      .filter(entry => entry.isFile() && entry.name.endsWith('.rs'))
-      .map(entry => path.join('src', entry.name));
+    const files: string[] = [];
+
+    const visitDir = (absoluteDir: string, relativeDir: string): void => {
+      let entries;
+      try {
+        entries = readdirSync(absoluteDir, { withFileTypes: true });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(`Failed to read Rust source directory at "${absoluteDir}": ${message}`);
+      }
+
+      for (const entry of entries) {
+        if (entry.isDirectory()) {
+          const nextAbsoluteDir = path.join(absoluteDir, entry.name);
+          const nextRelativeDir = path.join(relativeDir, entry.name);
+          visitDir(nextAbsoluteDir, nextRelativeDir);
+        } else if (entry.isFile() && entry.name.endsWith('.rs')) {
+          files.push(path.join(relativeDir, entry.name));
+        }
+      }
+    };
+
+    visitDir(srcDir, 'src');
     if (files.length === 0) {
       throw new Error('No Rust source files found in src/');
     }
