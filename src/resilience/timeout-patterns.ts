@@ -3,6 +3,8 @@
  * Provides sophisticated timeout handling strategies
  */
 
+import { normalizeError } from './error-utils.js';
+
 export interface TimeoutOptions {
   timeoutMs: number;
   onTimeout?: (duration: number) => void;
@@ -352,7 +354,7 @@ export class HierarchicalTimeout {
           if (!completed) {
             completed = true;
             this.cleanupOperation(operationId);
-            reject(error);
+            reject(normalizeError(error, `Operation '${operationId}' failed`));
           }
         });
     });

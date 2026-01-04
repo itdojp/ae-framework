@@ -17,7 +17,7 @@ async function tryAutoRegisterFromOpenAPI() {
     const root = process.cwd()
     const y = path.join(root, 'artifacts', 'codex', 'openapi.yaml')
     const j = path.join(root, 'artifacts', 'codex', 'openapi.json')
-    let spec: any | null = null
+    let spec: { paths?: Record<string, unknown> } | null = null
     if (fs.existsSync(j)) spec = JSON.parse(fs.readFileSync(j, 'utf8'))
     else if (fs.existsSync(y)) spec = yaml.parse(fs.readFileSync(y, 'utf8'))
     if (!spec || !spec.paths) return false
