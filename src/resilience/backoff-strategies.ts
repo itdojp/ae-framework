@@ -23,6 +23,17 @@ export interface RetryResult<T> {
   delays: number[];
 }
 
+const normalizeError = (error: unknown, fallbackMessage: string): Error => {
+  if (error instanceof Error) return error;
+  if (typeof error === 'string') return new Error(error);
+  try {
+    const serialized = JSON.stringify(error);
+    return new Error(serialized ?? fallbackMessage);
+  } catch {
+    return new Error(fallbackMessage);
+  }
+};
+
 export class BackoffStrategy {
   private options: Required<RetryOptions>;
 
@@ -163,7 +174,7 @@ export class BackoffStrategy {
         })
         .catch(error => {
           if (timeoutId) clearTimeout(timeoutId);
-          reject(error);
+          reject(normalizeError(error, 'Operation failed'));
         });
     });
   }
@@ -600,7 +611,8 @@ export class ResilientHttpClient {
         }
       }
       // Defer rejection via microtask to avoid timer dependency
-      return new Promise<never>((_, reject) => Promise.resolve().then(() => reject(result.error)));
+      const normalizedError = normalizeError(result.error, 'Operation failed');
+      return new Promise<never>((_, reject) => Promise.resolve().then(() => reject(normalizedError)));
     }
 
     // Successful result; clear forced OPEN hint so health reflects real state
