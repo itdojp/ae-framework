@@ -5,7 +5,7 @@
  * Comprehensive security analysis for ae-framework
  */
 
-import { execFileSync } from 'child_process';
+import { execFileSync, spawn } from 'child_process';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -73,7 +73,7 @@ class SecurityAnalyzer {
     
     try {
       // Run gitleaks
-      execFileSync('npx', ['gitleaks', 'detect', '--no-git', '--verbose', '--redact'], {
+      execFileSync('npx', ['--yes', 'gitleaks', 'detect', '--no-git', '--verbose', '--redact'], {
         cwd: this.projectRoot,
         encoding: 'utf-8',
         stdio: 'pipe'
@@ -203,14 +203,14 @@ class SecurityAnalyzer {
     try {
       // Create CodeQL database
       const dbPath = join(this.reportDir, 'codeql-db');
-      execFileSync('codeql', ['database', 'create', dbPath, '--language=javascript', `--source-root=${this.projectRoot}`], {
+      execFileSync('codeql', ['database', 'create', dbPath, '--language=javascript', '--source-root', this.projectRoot], {
         cwd: this.projectRoot,
         stdio: 'pipe'
       });
 
       // Run security queries
       const resultsPath = join(this.reportDir, 'codeql-results.sarif');
-      execFileSync('codeql', ['database', 'analyze', dbPath, '--format=sarif-latest', `--output=${resultsPath}`], {
+      execFileSync('codeql', ['database', 'analyze', dbPath, '--format=sarif-latest', '--output', resultsPath], {
         cwd: this.projectRoot,
         stdio: 'pipe'
       });
@@ -355,20 +355,17 @@ class SecurityAnalyzer {
     const extensions = ['.js', '.ts', '.jsx', '.tsx', '.json', '.yml', '.yaml', '.env'];
     
     // Recursive file scan (simplified implementation)
-    const scanDirectory = (dir) => {
+    const scanDirectory = async (dir) => {
       try {
-        const findArgs = [dir, '-type', 'f', '('];
+        const findArgs = [dir, '-type', 'f', '\\('];
         extensions.forEach((ext, index) => {
           findArgs.push('-name', `*${ext}`);
           if (index < extensions.length - 1) {
             findArgs.push('-o');
           }
         });
-        findArgs.push(')');
-        const files = execFileSync('find', findArgs, {
-          encoding: 'utf-8',
-          cwd: this.projectRoot
-        }).split('\n').filter(Boolean).slice(0, 1000);
+        findArgs.push('\\)');
+        const files = await this.collectFiles(findArgs, 1000);
         
         for (const file of files) {
           if (file.includes('node_modules') || file.includes('.git')) continue;
@@ -397,8 +394,47 @@ class SecurityAnalyzer {
       }
     };
     
-    scanDirectory(this.projectRoot);
+    await scanDirectory(this.projectRoot);
     return findings;
+  }
+
+  collectFiles(findArgs, limit) {
+    return new Promise((resolve) => {
+      const files = [];
+      let buffer = '';
+      let sawLimit = false;
+      const proc = spawn('find', findArgs, { cwd: this.projectRoot });
+
+      proc.stdout.on('data', chunk => {
+        buffer += chunk.toString('utf-8');
+        const parts = buffer.split('\n');
+        buffer = parts.pop();
+        for (const line of parts) {
+          if (!line) continue;
+          files.push(line);
+          if (files.length >= limit) {
+            sawLimit = true;
+            proc.kill('SIGTERM');
+            break;
+          }
+        }
+      });
+
+      proc.on('close', (code) => {
+        if (!sawLimit && buffer && files.length < limit) {
+          files.push(buffer);
+        }
+        if (code && !sawLimit) {
+          console.warn(`Warning: find exited with code ${code}`);
+        }
+        resolve(files.slice(0, limit));
+      });
+
+      proc.on('error', (error) => {
+        console.warn(`Warning: find failed: ${error.message}`);
+        resolve(files);
+      });
+    });
   }
 
   ensureReportDirectory() {
