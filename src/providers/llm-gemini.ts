@@ -1,6 +1,6 @@
 import type { LLM } from './index.js';
 import { GeminiResp } from '../schemas/llm.js';
-import { hasConstructorProperty, stringifyUnknown } from './provider-utils.js';
+import { extractGeminiText, hasConstructorProperty, stringifyUnknown } from './provider-utils.js';
 
 type GeminiContentPart = { text: string };
 type GeminiGenerationConfig = { temperature?: number };
@@ -34,15 +34,15 @@ const GeminiProvider: LLM = {
     const mod = await loadGeminiModule();
     const client = new mod.GoogleGenerativeAI(process.env['GEMINI_API_KEY']);
     const model = client.getGenerativeModel({ model: process.env['GEMINI_MODEL'] ?? 'gemini-1.5-pro' });
-    const res: unknown = await model.generateContent([
+    const parts: GeminiContentPart[] = [
       ...(system ? [{ text: system }] : []),
       { text: prompt }
-    ], { generationConfig: { temperature: temperature ?? 0 } });
+    ];
+    const res: unknown = await model.generateContent(parts, { generationConfig: { temperature: temperature ?? 0 } });
     const parsed = GeminiResp.safeParse(res);
     if (parsed.success) {
       // SDK差異を吸収して文字列へ
-      const out = (parsed.data.response?.text?.() ?? parsed.data.response?.candidates?.[0]?.content?.parts?.[0]?.text ?? '').toString();
-      return out;
+      return extractGeminiText(parsed.data.response);
     }
     return stringifyUnknown(res);
   }

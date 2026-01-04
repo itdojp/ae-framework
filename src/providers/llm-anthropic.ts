@@ -1,6 +1,6 @@
 import type { LLM } from './index.js';
 import { AnthropicMsg } from '../schemas/llm.js';
-import { hasConstructorProperty, stringifyUnknown } from './provider-utils.js';
+import { extractAnthropicText, hasConstructorProperty, stringifyUnknown } from './provider-utils.js';
 
 type AnthropicMessage = { role: 'user' | 'system'; content: string };
 type AnthropicClient = {
@@ -31,19 +31,19 @@ const AnthropicProvider: LLM = {
   async complete({ prompt, system, temperature }) {
     const mod = await loadAnthropicModule();
     const client = new mod.default({ apiKey: process.env['ANTHROPIC_API_KEY'] });
+    const messages: AnthropicMessage[] = [
+      ...(system ? [{ role: 'user' as const, content: system }] : []),
+      { role: 'user' as const, content: prompt }
+    ];
     const res: unknown = await client.messages.create({
       model: process.env['ANTHROPIC_MODEL'] ?? 'claude-3-5-sonnet-20240620',
       max_tokens: 1024,
       temperature: temperature ?? 0,
-      messages: [
-        ...(system ? [{ role: 'user', content: system }] : []),
-        { role: 'user', content: prompt }
-      ]
+      messages
     });
     const parsed = AnthropicMsg.safeParse(res);
     if (parsed.success) {
-      const c = Array.isArray(parsed.data.content) ? parsed.data.content[0] : parsed.data.content;
-      return (c?.text ?? c ?? '').toString();
+      return extractAnthropicText(parsed.data.content);
     }
     return stringifyUnknown(res);
   }
