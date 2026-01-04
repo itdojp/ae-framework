@@ -43,6 +43,8 @@ const hasTextMethod = (value: unknown): value is { text: () => string } => {
   return typeof (value as { text?: unknown }).text === 'function';
 };
 
+const isUnknownArray = (value: unknown): value is unknown[] => Array.isArray(value);
+
 export const extractGeminiText = (response: unknown): string => {
   if (hasTextMethod(response)) {
     const text = response.text();
@@ -50,13 +52,13 @@ export const extractGeminiText = (response: unknown): string => {
   }
   if (response && typeof response === 'object') {
     const candidates = (response as { candidates?: unknown }).candidates;
-    if (Array.isArray(candidates) && candidates.length > 0) {
+    if (isUnknownArray(candidates) && candidates.length > 0) {
       const first = candidates[0];
       if (first && typeof first === 'object') {
         const content = (first as { content?: unknown }).content;
         if (content && typeof content === 'object') {
           const parts = (content as { parts?: unknown }).parts;
-          if (Array.isArray(parts) && parts.length > 0) {
+          if (isUnknownArray(parts) && parts.length > 0) {
             const part = parts[0];
             if (part && typeof part === 'object') {
               const text = (part as { text?: unknown }).text;
