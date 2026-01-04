@@ -6,6 +6,16 @@ import * as path from 'node:path';
 // Cache echo provider to avoid repeated imports
 let echoProviderPromise: Promise<{ default: LLM }> | null = null;
 
+const isErrnoException = (value: unknown): value is { code: string } => {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  if (!('code' in value)) {
+    return false;
+  }
+  return typeof (value as { code?: unknown }).code === 'string';
+};
+
 export function withRecorder(base: LLM, opts?: { dir?: string; replay?: boolean }) : LLM {
   const dir = opts?.dir ?? 'artifacts/cassettes';
   const replay = opts?.replay ?? false;
@@ -44,7 +54,7 @@ export function withRecorder(base: LLM, opts?: { dir?: string; replay?: boolean 
           const hit = content as { output: string };
           return hit.output;
         } catch (error) {
-          if (error && typeof error === 'object' && 'code' in error && (error as any).code === 'ENOENT') {
+          if (isErrnoException(error) && error.code === 'ENOENT') {
             throw new Error(`Cassette not found: ${hashFile}. Run with --record first.`);
           } else if (error instanceof SyntaxError) {
             throw new Error(`Cassette file is invalid JSON.`);
