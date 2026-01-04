@@ -3,8 +3,8 @@
  * Phase 2 of Issue #33: Advanced Rust formal verification with Prusti, Kani, and CBMC
  */
 
-import { execSync } from 'child_process';
-import { readFileSync, existsSync, writeFileSync } from 'fs';
+import { execFileSync } from 'child_process';
+import { readFileSync, existsSync, writeFileSync, readdirSync } from 'fs';
 import * as path from 'path';
 
 export interface RustVerificationRequest {
@@ -176,8 +176,8 @@ export class RustVerificationAgent {
 
     try {
       // Run Prusti verification
-      const prustiCmd = `cd ${request.projectPath} && cargo prusti`;
-      const output = execSync(prustiCmd, { 
+      const output = execFileSync('cargo', ['prusti'], {
+        cwd: request.projectPath,
         timeout: (request.options.timeout || 300) * 1000,
         encoding: 'utf8',
         maxBuffer: 10 * 1024 * 1024 // 10MB buffer
@@ -239,17 +239,18 @@ export class RustVerificationAgent {
 
     try {
       // Build Kani command with options
-      let kaniCmd = `cd ${request.projectPath} && cargo kani`;
+      const kaniArgs = ['kani'];
       
       if (request.options.unwindLimit) {
-        kaniCmd += ` --unwind ${request.options.unwindLimit}`;
+        kaniArgs.push('--unwind', String(request.options.unwindLimit));
       }
       
       if (request.options.checkOverflow) {
-        kaniCmd += ` --overflow-checks`;
+        kaniArgs.push('--overflow-checks');
       }
 
-      const output = execSync(kaniCmd, { 
+      const output = execFileSync('cargo', kaniArgs, {
+        cwd: request.projectPath,
         timeout: (request.options.timeout || 600) * 1000,
         encoding: 'utf8',
         maxBuffer: 20 * 1024 * 1024 // 20MB buffer
@@ -311,21 +312,25 @@ export class RustVerificationAgent {
 
     try {
       // CBMC requires compilation to GOTO programs first
-      const gotoCmd = `cd ${request.projectPath} && goto-cc -o program.goto src/*.rs`;
-      execSync(gotoCmd, { encoding: 'utf8' });
+      const rustSources = this.resolveRustSources(request.projectPath);
+      execFileSync('goto-cc', ['-o', 'program.goto', ...rustSources], {
+        cwd: request.projectPath,
+        encoding: 'utf8'
+      });
 
       // Run CBMC
-      let cbmcCmd = `cd ${request.projectPath} && cbmc program.goto`;
+      const cbmcArgs = ['program.goto'];
       
       if (request.options.unwindLimit) {
-        cbmcCmd += ` --unwind ${request.options.unwindLimit}`;
+        cbmcArgs.push('--unwind', String(request.options.unwindLimit));
       }
       
       if (request.options.strictMode) {
-        cbmcCmd += ` --bounds-check --pointer-check --memory-leak-check`;
+        cbmcArgs.push('--bounds-check', '--pointer-check', '--memory-leak-check');
       }
 
-      const output = execSync(cbmcCmd, { 
+      const output = execFileSync('cbmc', cbmcArgs, {
+        cwd: request.projectPath,
         timeout: (request.options.timeout || 1200) * 1000,
         encoding: 'utf8',
         maxBuffer: 50 * 1024 * 1024 // 50MB buffer
@@ -386,8 +391,8 @@ export class RustVerificationAgent {
     const warnings: VerificationWarning[] = [];
 
     try {
-      const miriCmd = `cd ${request.projectPath} && cargo miri test`;
-      const output = execSync(miriCmd, { 
+      const output = execFileSync('cargo', ['miri', 'test'], {
+        cwd: request.projectPath,
         timeout: (request.options.timeout || 600) * 1000,
         encoding: 'utf8'
       });
@@ -445,19 +450,19 @@ export class RustVerificationAgent {
       try {
         switch (tool) {
           case 'prusti':
-            execSync('cargo prusti --version', { stdio: 'pipe' });
+            execFileSync('cargo', ['prusti', '--version'], { stdio: 'pipe' });
             this.installedTools.add(tool);
             break;
           case 'kani':
-            execSync('cargo kani --version', { stdio: 'pipe' });
+            execFileSync('cargo', ['kani', '--version'], { stdio: 'pipe' });
             this.installedTools.add(tool);
             break;
           case 'cbmc':
-            execSync('cbmc --version', { stdio: 'pipe' });
+            execFileSync('cbmc', ['--version'], { stdio: 'pipe' });
             this.installedTools.add(tool);
             break;
           case 'miri':
-            execSync('cargo miri --version', { stdio: 'pipe' });
+            execFileSync('cargo', ['miri', '--version'], { stdio: 'pipe' });
             this.installedTools.add(tool);
             break;
           case 'loom':
@@ -495,8 +500,8 @@ export class RustVerificationAgent {
     const startTime = Date.now();
     
     try {
-      const loomCmd = `cd ${request.projectPath} && cargo test --features loom`;
-      const output = execSync(loomCmd, { 
+      const output = execFileSync('cargo', ['test', '--features', 'loom'], {
+        cwd: request.projectPath,
         timeout: (request.options.timeout || 300) * 1000,
         encoding: 'utf8'
       });
@@ -554,6 +559,37 @@ export class RustVerificationAgent {
     if (!existsSync(srcPath)) {
       throw new Error('Not a valid Rust project: src directory not found');
     }
+  }
+
+  private resolveRustSources(projectPath: string): string[] {
+    const srcDir = path.join(projectPath, 'src');
+    const files: string[] = [];
+
+    const visitDir = (absoluteDir: string, relativeDir: string): void => {
+      let entries;
+      try {
+        entries = readdirSync(absoluteDir, { withFileTypes: true });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(`Failed to read Rust source directory at "${absoluteDir}": ${message}`);
+      }
+
+      for (const entry of entries) {
+        if (entry.isDirectory()) {
+          const nextAbsoluteDir = path.join(absoluteDir, entry.name);
+          const nextRelativeDir = path.join(relativeDir, entry.name);
+          visitDir(nextAbsoluteDir, nextRelativeDir);
+        } else if (entry.isFile() && entry.name.endsWith('.rs')) {
+          files.push(path.join(relativeDir, entry.name));
+        }
+      }
+    };
+
+    visitDir(srcDir, 'src');
+    if (files.length === 0) {
+      throw new Error('No Rust source files found in src/');
+    }
+    return files;
   }
 
   private async prepareProjectForVerification(request: RustVerificationRequest): Promise<void> {

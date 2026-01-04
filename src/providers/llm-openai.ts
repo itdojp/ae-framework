@@ -31,7 +31,8 @@ const OpenAIProvider: LLM = {
   name: 'openai',
   async complete({ prompt, system, temperature }) {
     const mod = await loadOpenAIModule();
-    const client = new mod.default({ apiKey: process.env['OPENAI_API_KEY'] });
+    const apiKey = process.env['OPENAI_API_KEY'];
+    const client = new mod.default(apiKey ? { apiKey } : {});
     const messages: OpenAIChatMessage[] = [
       ...(system ? [{ role: 'system' as const, content: system }] : []),
       { role: 'user' as const, content: prompt }

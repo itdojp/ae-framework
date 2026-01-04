@@ -30,7 +30,8 @@ const AnthropicProvider: LLM = {
   name: 'anthropic',
   async complete({ prompt, system, temperature }) {
     const mod = await loadAnthropicModule();
-    const client = new mod.default({ apiKey: process.env['ANTHROPIC_API_KEY'] });
+    const apiKey = process.env['ANTHROPIC_API_KEY'];
+    const client = new mod.default(apiKey ? { apiKey } : {});
     const messages: AnthropicMessage[] = [
       ...(system ? [{ role: 'user' as const, content: system }] : []),
       { role: 'user' as const, content: prompt }
