@@ -72,7 +72,7 @@
     "test:a11y:report": "node scripts/generate-a11y-report.cjs",
     "test:visual": "vitest run tests/testing/visual-regression.test.ts",
     "test:visual:report": "node scripts/generate-visual-report.cjs",
-    "test:coverage": "nyc npm test",
+    "test:coverage": "pnpm run coverage",
     "test:coverage:ci": "nyc --reporter=text-lcov npm test | tee coverage/lcov.info",
     "test:phase3.2:core": "vitest run tests/testing/playwright-integration.test.ts tests/testing/visual-regression.test.ts",
     "pretest:types": "pnpm run build",

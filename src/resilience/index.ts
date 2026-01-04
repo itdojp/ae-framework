@@ -298,7 +298,7 @@ export class ResilienceSystem {
     if (this.backoffStrategy) {
       const result = await this.backoffStrategy.executeWithRetry(wrappedOperation, operationName);
       if (!result.success) {
-        throw result.error;
+        throw result.error ?? new Error('Operation failed');
       }
       return result.result!;
     }
