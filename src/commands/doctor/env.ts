@@ -1,6 +1,6 @@
 import * as os from 'node:os';
 import * as process from 'node:process';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import chalk from 'chalk';
 
 interface CheckResult {
@@ -13,7 +13,7 @@ interface CheckResult {
 
 function checkCommand(command: string): boolean {
   try {
-    execSync(`which ${command}`, { stdio: 'pipe' });
+    execFileSync('which', [command], { stdio: 'pipe' });
     return true;
   } catch {
     return false;
