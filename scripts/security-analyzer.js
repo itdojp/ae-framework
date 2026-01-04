@@ -5,7 +5,7 @@
  * Comprehensive security analysis for ae-framework
  */
 
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -73,7 +73,7 @@ class SecurityAnalyzer {
     
     try {
       // Run gitleaks
-      execSync('npx gitleaks detect --no-git --verbose --redact', {
+      execFileSync('npx', ['gitleaks', 'detect', '--no-git', '--verbose', '--redact'], {
         cwd: this.projectRoot,
         encoding: 'utf-8',
         stdio: 'pipe'
@@ -129,7 +129,7 @@ class SecurityAnalyzer {
     console.log('📦 Auditing dependencies for vulnerabilities...');
     
     try {
-      const auditResult = execSync('npm audit --audit-level=moderate --json', {
+      const auditResult = execFileSync('npm', ['audit', '--audit-level=moderate', '--json'], {
         cwd: this.projectRoot,
         encoding: 'utf-8',
         stdio: 'pipe'
@@ -190,7 +190,7 @@ class SecurityAnalyzer {
     
     // Check if CodeQL is available
     try {
-      execSync('which codeql', { stdio: 'pipe' });
+      execFileSync('codeql', ['--version'], { stdio: 'pipe' });
     } catch {
       console.log('  ⚠️  CodeQL not installed - skipping analysis');
       return {
@@ -203,14 +203,14 @@ class SecurityAnalyzer {
     try {
       // Create CodeQL database
       const dbPath = join(this.reportDir, 'codeql-db');
-      execSync(`codeql database create ${dbPath} --language=javascript --source-root=${this.projectRoot}`, {
+      execFileSync('codeql', ['database', 'create', dbPath, '--language=javascript', `--source-root=${this.projectRoot}`], {
         cwd: this.projectRoot,
         stdio: 'pipe'
       });
 
       // Run security queries
       const resultsPath = join(this.reportDir, 'codeql-results.sarif');
-      execSync(`codeql database analyze ${dbPath} --format=sarif-latest --output=${resultsPath}`, {
+      execFileSync('codeql', ['database', 'analyze', dbPath, '--format=sarif-latest', `--output=${resultsPath}`], {
         cwd: this.projectRoot,
         stdio: 'pipe'
       });
@@ -357,10 +357,18 @@ class SecurityAnalyzer {
     // Recursive file scan (simplified implementation)
     const scanDirectory = (dir) => {
       try {
-        const files = execSync(`find ${dir} -type f \\( ${extensions.map(ext => `-name "*${ext}"`).join(' -o ')} \\) | head -1000`, {
+        const findArgs = [dir, '-type', 'f', '('];
+        extensions.forEach((ext, index) => {
+          findArgs.push('-name', `*${ext}`);
+          if (index < extensions.length - 1) {
+            findArgs.push('-o');
+          }
+        });
+        findArgs.push(')');
+        const files = execFileSync('find', findArgs, {
           encoding: 'utf-8',
           cwd: this.projectRoot
-        }).split('\n').filter(Boolean);
+        }).split('\n').filter(Boolean).slice(0, 1000);
         
         for (const file of files) {
           if (file.includes('node_modules') || file.includes('.git')) continue;
