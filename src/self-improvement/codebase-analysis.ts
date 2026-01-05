@@ -103,7 +103,7 @@ Please provide recommendations for improving code quality, resolving TypeScript 
   private async countTypeScriptErrors(): Promise<number> {
     try {
       const { execSync } = await import('child_process');
-      const output = execSync('npm run build', { 
+      execSync('npm run build', { 
         encoding: 'utf-8',
         cwd: process.cwd(),
         stdio: 'pipe'

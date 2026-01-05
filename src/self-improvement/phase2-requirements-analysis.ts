@@ -6,7 +6,6 @@
  */
 
 import { NaturalLanguageTaskAdapter, type ProcessedRequirements } from '../agents/natural-language-task-adapter.js';
-import type { TaskRequest } from '../agents/task-types.js';
 import type * as fs from 'fs/promises';
 import type * as path from 'path';
 
@@ -106,13 +105,6 @@ The system must resolve 278 identified TypeScript compilation errors through sys
 - The system must handle Buffer, Promise, and complex object types correctly
     `;
 
-    const request: TaskRequest = {
-      description: 'Analyze TypeScript error resolution requirements',
-      prompt: requirements,
-      subagent_type: 'general-purpose'
-    };
-
-    const response = await this.adapter.handleNaturalLanguageTask(request);
     return await this.adapter.processNaturalLanguageRequirements(requirements);
   }
 

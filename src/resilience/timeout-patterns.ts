@@ -315,7 +315,6 @@ export class HierarchicalTimeout {
   ): Promise<T> {
     // Check if parent timeout would trigger before this timeout
     if (parentOperationId && this.activeTimeouts.has(parentOperationId)) {
-      const parentStartTime = Date.now();
       // Estimate remaining parent timeout (simplified)
       if (timeoutMs > HierarchicalTimeout.MAX_TIMEOUT_MS) { // If timeout is too long, restrict it
         timeoutMs = Math.min(timeoutMs, HierarchicalTimeout.FALLBACK_TIMEOUT_MS);

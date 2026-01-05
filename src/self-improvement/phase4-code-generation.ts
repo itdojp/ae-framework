@@ -6,7 +6,7 @@
  * and TDD guidance from Phase 3.
  */
 
-import { CodeGenerationAgent, type CodeGenerationRequest } from '../agents/code-generation-agent.js';
+import { CodeGenerationAgent } from '../agents/code-generation-agent.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -82,7 +82,7 @@ export class Phase4CodeGeneration {
   private async analyzeCurrentErrors(): Promise<any[]> {
     try {
       const { execSync } = await import('child_process');
-      const buildOutput = execSync('npm run build', { 
+      execSync('npm run build', { 
         encoding: 'utf-8', 
         stdio: 'pipe' 
       });
@@ -163,26 +163,6 @@ export class Phase4CodeGeneration {
     problemLine: string,
     context: string
   ): Promise<any> {
-    // Create a code generation request based on the error
-    const request: CodeGenerationRequest = {
-      tests: [], // Will be populated if needed
-      specifications: {
-        requirements: [
-          `Fix TypeScript error ${errorCode}: ${description}`,
-          'Maintain existing functionality',
-          'Preserve type safety',
-          'Follow TypeScript best practices'
-        ]
-      },
-      language: 'typescript',
-      style: {
-        indentation: 'spaces',
-        // semicolons: true, // removed as not part of CodingStyle interface
-        // trailingComma: 'es5' // removed as not part of CodingStyle interface
-        naming: 'camelCase'
-      }
-    };
-
     // Generate fix based on error type
     return await this.generateSpecificFix(errorCode, description, problemLine, context);
   }
@@ -347,7 +327,7 @@ export class Phase4CodeGeneration {
       
       // Run tests to ensure no regressions
       console.log('🧪 Running tests to verify fixes...');
-      const testOutput = execSync('npm test', { encoding: 'utf-8', stdio: 'pipe' });
+      execSync('npm test', { encoding: 'utf-8', stdio: 'pipe' });
       
       return {
         success: true,
