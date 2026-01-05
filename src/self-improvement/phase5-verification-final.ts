@@ -386,7 +386,7 @@ export class Phase5VerificationFinal {
       
       // Run tests
       console.log('🧪 Running test suite...');
-      const testOutput = execSync('npm test', { encoding: 'utf-8', stdio: 'pipe' });
+      execSync('npm test', { encoding: 'utf-8', stdio: 'pipe' });
       
       return {
         compilationSuccess: true,
