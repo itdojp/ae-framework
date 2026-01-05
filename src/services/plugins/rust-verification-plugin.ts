@@ -497,7 +497,6 @@ export class RustVerificationPlugin implements MCPPlugin {
         if (hasCargoToml) {
           try {
             const cargoPath = path.join(dir, 'Cargo.toml');
-            const cargoContent = await fs.readFile(cargoPath, 'utf-8');
             const hasTests = items.some(item => item.isDirectory() && item.name === 'tests');
             
             projects.push({
