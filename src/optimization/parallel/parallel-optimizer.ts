@@ -380,11 +380,8 @@ export class ParallelOptimizer extends EventEmitter {
     const executingTask = this.executingTasks.get(taskId);
     if (executingTask) {
       // Find and terminate the worker
-      for (const [workerId, worker] of this.activeWorkers) {
-        // In a real implementation, we'd track which worker is executing which task
-        // For now, we'll simulate cancellation
-        break;
-      }
+      // In a real implementation, we'd track which worker is executing which task
+      // For now, we'll simulate cancellation without targeting a specific worker
       
       this.executingTasks.delete(taskId);
       this.completedTasks.set(taskId, {
@@ -718,7 +715,6 @@ export class ParallelOptimizer extends EventEmitter {
 
   private calculateThroughput(): number {
     // Tasks completed in the last minute
-    const oneMinuteAgo = Date.now() - 60000;
     const recentCompletions = Array.from(this.completedTasks.values())
       .filter(r => (Date.now() - r.executionTime) < 60000);
     

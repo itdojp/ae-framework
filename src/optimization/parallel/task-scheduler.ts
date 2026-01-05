@@ -915,7 +915,6 @@ export class TaskScheduler extends EventEmitter {
 
   private calculateThroughput(): number {
     // Tasks completed in the last minute
-    const oneMinuteAgo = Date.now() - 60000;
     const recentCompletions = Array.from(this.completedTasks.values())
       .filter(r => (Date.now() - r.executionTime) < 60000);
     
