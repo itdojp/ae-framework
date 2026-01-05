@@ -112,7 +112,7 @@ The system must resolve 278 identified TypeScript compilation errors through sys
       subagent_type: 'general-purpose'
     };
 
-    const response = await this.adapter.handleNaturalLanguageTask(request);
+    await this.adapter.handleNaturalLanguageTask(request);
     return await this.adapter.processNaturalLanguageRequirements(requirements);
   }
 
