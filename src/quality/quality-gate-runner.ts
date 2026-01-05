@@ -3,8 +3,7 @@
  * Executes quality gates based on centralized policy configuration
  */
 
-import { spawn, exec } from 'child_process';
-import { promisify } from 'util';
+import { spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import { QualityPolicyLoader, type QualityGateResult, type QualityReport, type QualityGate } from './policy-loader.js';
@@ -29,8 +28,6 @@ const TELEMETRY_ATTRIBUTES = {
   SERVICE_COMPONENT: 'service.component',
   SERVICE_OPERATION: 'service.operation',
 };
-
-const execAsync = promisify(exec);
 
 export interface QualityGateExecutionOptions {
   environment?: string;
@@ -132,7 +129,7 @@ export class QualityGateRunner {
         component: 'runner',
       });
 
-      const executionTime = timer.end({
+      timer.end({
         total_gates: report.totalGates,
         passed_gates: report.passedGates,
         failed_gates: report.failedGates,
