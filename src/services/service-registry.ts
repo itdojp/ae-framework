@@ -87,7 +87,7 @@ export class ServiceRegistry implements ServiceRegistryInterface {
 
       // Clean up dependency graph
       this.dependencyGraph.delete(id);
-      for (const [serviceId, deps] of this.dependencyGraph.entries()) {
+      for (const deps of this.dependencyGraph.values()) {
         deps.delete(id);
       }
 

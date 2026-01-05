@@ -670,8 +670,6 @@ export class VisualRegressionTesting extends EventEmitter {
 
   private calculateVisualTrends(results: VisualTestResult[]): VisualTrend[] {
     // Calculate trends based on historical data
-    const currentFailureRate = results.filter(r => r.status === 'failed').length / results.length;
-    
     return [
       {
         metric: 'difference_rate',
