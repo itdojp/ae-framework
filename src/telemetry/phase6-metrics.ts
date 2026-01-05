@@ -1,4 +1,5 @@
 import { metrics, trace, SpanStatusCode } from '@opentelemetry/api';
+import type { ObservableGauge } from '@opentelemetry/api';
 
 // Phase 6 metrics interface
 export interface Phase6Metrics {
@@ -70,6 +71,29 @@ const a11yScoreGauge = meter.createObservableGauge('phase6_a11y_score_percent', 
 const performanceScoreGauge = meter.createObservableGauge('phase6_performance_score_percent', {
   description: 'Performance score percentage',
 });
+
+const qualitySnapshot: Partial<Phase6Metrics['quality']> = {};
+
+type Attrs = Record<string, string | number | boolean>;
+interface MinimalObservableResult {
+  observe: (instrument: ObservableGauge | undefined, value: number, attributes?: Attrs) => void;
+}
+
+meter.addBatchObservableCallback(
+  (observableResult) => {
+    const observer = observableResult as unknown as MinimalObservableResult;
+    if (typeof qualitySnapshot.coverage === 'number') {
+      observer.observe(coverageGauge, qualitySnapshot.coverage, { metric: 'coverage' });
+    }
+    if (typeof qualitySnapshot.a11yScore === 'number') {
+      observer.observe(a11yScoreGauge, qualitySnapshot.a11yScore, { metric: 'a11y' });
+    }
+    if (typeof qualitySnapshot.performanceScore === 'number') {
+      observer.observe(performanceScoreGauge, qualitySnapshot.performanceScore, { metric: 'performance' });
+    }
+  },
+  [coverageGauge, a11yScoreGauge, performanceScoreGauge]
+);
 
 // Telemetry helpers
 export class Phase6Telemetry {
@@ -323,6 +347,7 @@ export class Phase6Telemetry {
   // Record quality metrics
   static recordQualityMetrics(metrics: Partial<Phase6Metrics['quality']>): void {
     if (metrics.coverage !== undefined) {
+      qualitySnapshot.coverage = metrics.coverage;
       console.log(`📊 Test Coverage: ${metrics.coverage}% (threshold: ${PHASE6_THRESHOLDS.coverage}%)`);
       if (metrics.coverage < PHASE6_THRESHOLDS.coverage) {
         console.warn(`⚠️ Test coverage below threshold: ${metrics.coverage}% < ${PHASE6_THRESHOLDS.coverage}%`);
@@ -330,6 +355,7 @@ export class Phase6Telemetry {
     }
 
     if (metrics.a11yScore !== undefined) {
+      qualitySnapshot.a11yScore = metrics.a11yScore;
       console.log(`♿ A11y Score: ${metrics.a11yScore}% (threshold: ${PHASE6_THRESHOLDS.a11yScore}%)`);
       if (metrics.a11yScore < PHASE6_THRESHOLDS.a11yScore) {
         console.warn(`⚠️ Accessibility score below threshold: ${metrics.a11yScore}% < ${PHASE6_THRESHOLDS.a11yScore}%`);
@@ -337,6 +363,7 @@ export class Phase6Telemetry {
     }
 
     if (metrics.performanceScore !== undefined) {
+      qualitySnapshot.performanceScore = metrics.performanceScore;
       console.log(`⚡ Performance Score: ${metrics.performanceScore}% (threshold: ${PHASE6_THRESHOLDS.performanceScore}%)`);
       if (metrics.performanceScore < PHASE6_THRESHOLDS.performanceScore) {
         console.warn(`⚠️ Performance score below threshold: ${metrics.performanceScore}% < ${PHASE6_THRESHOLDS.performanceScore}%`);
