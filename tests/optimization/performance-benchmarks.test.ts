@@ -441,7 +441,6 @@ describe('Performance Benchmarks', () => {
       const startTime = performance.now();
       
       // Generate baseline performance
-      const baselineStart = performance.now();
       for (let i = 0; i < 50; i++) {
         optimizationSystem.trackOperation(`baseline-${i}`, performance.now() - 10);
       }
@@ -450,7 +449,6 @@ describe('Performance Benchmarks', () => {
       const baselineStability = baselineMetrics.integration.systemStability;
       
       // Introduce errors
-      const errorStart = performance.now();
       for (let i = 0; i < 20; i++) {
         optimizationSystem.trackError(`benchmark-error-${i}`);
       }
