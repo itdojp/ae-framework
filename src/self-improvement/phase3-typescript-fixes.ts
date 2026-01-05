@@ -138,8 +138,6 @@ export class Phase3TypeScriptFixer {
     const filePath = path.join(process.cwd(), 'src/benchmark/req2run/runners/BenchmarkRunner.ts');
     
     try {
-      const content = await fs.readFile(filePath, 'utf-8');
-      
       // This is a more complex fix that would require understanding the type mismatch
       // For now, we'll document it for later resolution
       console.log('📋 Documented Benchmark Runner type mismatch for future resolution');
@@ -209,7 +207,7 @@ export class Phase3TypeScriptFixer {
   private async countCurrentErrors(): Promise<number> {
     try {
       const { execSync } = await import('child_process');
-      const output = execSync('npm run build', { 
+      execSync('npm run build', { 
         encoding: 'utf-8',
         stdio: 'pipe'
       });
