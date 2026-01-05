@@ -3,8 +3,6 @@
  * Provides extensible server capabilities and plugin architecture
  */
 
-import type * as fs from 'fs/promises';
-import * as path from 'path';
 import { EventEmitter } from 'events';
 
 export interface MCPServerConfig {
