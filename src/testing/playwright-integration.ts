@@ -265,7 +265,7 @@ export class PlaywrightIntegration extends EventEmitter {
         priority: 'high' as const
       };
 
-      const inferenceResult = await this.inferenceEngine.processComplexQuery(analysisQuery);
+      await this.inferenceEngine.processComplexQuery(analysisQuery);
 
       // Generate tests based on components and user flows
       const generatedTests = await this.generateTestsFromAnalysis(request);

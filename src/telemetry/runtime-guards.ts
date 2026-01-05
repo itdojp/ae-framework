@@ -6,7 +6,7 @@
 import { z } from 'zod';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { enhancedTelemetry, TELEMETRY_ATTRIBUTES } from './enhanced-telemetry.js';
-import { trace, context } from '@opentelemetry/api';
+import { trace } from '@opentelemetry/api';
 
 // Contract violation types
 export enum ViolationType {

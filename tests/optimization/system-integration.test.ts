@@ -171,7 +171,6 @@ describe('Complete Optimization System Integration', () => {
       await optimizationSystem.start();
       
       const monitoringSystem = optimizationSystem.getMonitoringSystem();
-      const parallelOptimization = optimizationSystem.getParallelOptimizationSystem();
       
       // Test that operations are tracked in both systems
       const operationStart = performance.now();
