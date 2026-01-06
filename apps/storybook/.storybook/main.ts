@@ -33,10 +33,6 @@ const config: StorybookConfig = {
       ...(config.resolve.alias || {}),
       '@ae-framework/ui/components': path.resolve(__dirname, '../../../packages/ui/src'),
     };
-    config.resolve.modules = [
-      ...(config.resolve.modules || []),
-      path.resolve(__dirname, '../../web/node_modules'),
-    ];
     return config;
   },
 };

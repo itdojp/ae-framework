@@ -264,12 +264,24 @@ importers:
       '@ae-framework/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@hookform/resolvers':
+        specifier: ^3.3.4
+        version: 3.10.0(react-hook-form@7.62.0(react@18.3.1))
+      '@tanstack/react-query':
+        specifier: ^5.20.1
+        version: 5.85.5(react@18.3.1)
       react:
         specifier: ^18.2.0
         version: 18.3.1
       react-dom:
         specifier: ^18.2.0
         version: 18.3.1(react@18.3.1)
+      react-hook-form:
+        specifier: ^7.49.3
+        version: 7.62.0(react@18.3.1)
+      zod:
+        specifier: ^3.22.4
+        version: 3.25.76
     devDependencies:
       '@storybook/addon-a11y':
         specifier: ^7.6.10
