@@ -11,7 +11,7 @@
 | tests/integration/system-validation.test.ts | yes | yes | yes | yes |
 | tests/integration/test-orchestrator.test.ts | yes | yes | yes | yes |
 | tests/integration/web-api/reservations.test.ts | no | yes | yes | yes |
-| tests/optimization/system-integration.test.ts | no | yes | no | yes |
+| tests/optimization/system-integration.test.ts | no | yes | yes | yes |
 
 ## Notes
 - This inventory is a baseline for flake investigation and cleanup planning.
