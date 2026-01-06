@@ -3,7 +3,7 @@
 ## 概要
 - 対象: `package.json` の `scripts`
 - 集計方法: `:` の前半プレフィックスで分類（例: `test:ci` → `test`）
-- 総数: 311
+- 総数: 309
 
 ## プレフィックス別の件数
 | prefix | count |
@@ -47,10 +47,8 @@
 | agents | 1 |
 | analyze | 1 |
 | artifacts | 1 |
-| demo | 1 |
 | dependency | 1 |
 | e2e | 1 |
-| flow | 1 |
 | formal | 1 |
 | formal-agent | 1 |
 | generate | 1 |
