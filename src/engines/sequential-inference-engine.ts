@@ -258,7 +258,6 @@ export class SequentialInferenceEngine extends EventEmitter {
    * Analyze deep dependencies in a project context
    */
   async analyzeDeepDependencies(context: ProjectContext): Promise<DependencyGraph> {
-    const startTime = Date.now();
     const nodes: DependencyNode[] = [];
     const edges: Array<{ from: string; to: string; type: string; weight: number }> = [];
 
