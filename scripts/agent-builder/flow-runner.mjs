@@ -64,7 +64,7 @@ function normalizeNameList(value, fallback) {
   return Array.isArray(fallback) && fallback.length > 0 ? fallback : [];
 }
 
-function adaptAgentBuilderFlow(rawFlow) {
+export function adaptAgentBuilderFlow(rawFlow) {
   if (!rawFlow || typeof rawFlow !== 'object') {
     return rawFlow;
   }

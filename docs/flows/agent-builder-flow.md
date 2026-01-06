@@ -24,6 +24,13 @@ node scripts/agent-builder/flow-runner.mjs \
   --adapter agent-builder
 ```
 
+サンプル: `fixtures/flow/sample.agent-builder.json`
+```bash
+node scripts/agent-builder/flow-runner.mjs \
+  --flow fixtures/flow/sample.agent-builder.json \
+  --adapter agent-builder
+```
+
 アダプタは以下の最小変換を行います。
 - `id`/`name`/`key` → `id`（左から順に優先）
 - `kind`/`type`/`action`/`role` → `kind`（左から順に優先）
