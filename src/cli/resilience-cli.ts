@@ -8,7 +8,6 @@ import {
   ResilienceSystem,
   createResilienceSystem,
   CircuitState,
-  type ResilienceConfig,
 } from '../resilience/index.js';
 
 /**
@@ -75,7 +74,6 @@ export class ResilienceCLI {
 
     for (const [name, system] of this.systems) {
       const health = system.getSystemHealth();
-      const config = system.getConfig();
       
       const healthIcon = health.overall ? '✅' : '❌';
       const healthColor = health.overall ? chalk.green : chalk.red;

@@ -8,7 +8,7 @@ import { toMessage } from '../utils/error-utils.js';
 import { safeExit } from '../utils/safe-exit.js';
 import chalk from 'chalk';
 import { promises as fs } from 'fs';
-import { join, resolve } from 'path';
+import { join } from 'path';
 import { existsSync } from 'fs';
 import { IntegrationTestOrchestrator } from '../integration/test-orchestrator.js';
 import { E2ETestRunner } from '../integration/runners/e2e-runner.js';
