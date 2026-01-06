@@ -532,10 +532,6 @@ export class HTMLTestReporter implements TestReporter {
       return '<p style="color: #6c757d; text-align: center; padding-top: 2rem;">No test data available</p>';
     }
 
-    const passedAngle = (stats.passed / total) * 360;
-    const failedAngle = (stats.failed / total) * 360;
-    const skippedAngle = (stats.skipped / total) * 360;
-    
     return `
     <svg width="200" height="200" viewBox="0 0 42 42" style="margin: 0 auto; display: block;">
         <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#28a745" 
