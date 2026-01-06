@@ -2,12 +2,13 @@ import { describe, expect, it } from 'vitest';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
-import { executeFlow, loadFlowDefinition } from '../../../scripts/agent-builder/flow-runner.mjs';
+import { adaptAgentBuilderFlow, executeFlow, loadFlowDefinition } from '../../../scripts/agent-builder/flow-runner.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const flowFixture = path.resolve(__dirname, '../../../fixtures/flow/sample.flow.json');
+const agentBuilderFixture = path.resolve(__dirname, '../../../fixtures/flow/sample.agent-builder.json');
 const summaryFixture = path.resolve(
   __dirname,
   '../../../packages/envelope/__fixtures__/verify-lite-summary.json',
@@ -19,6 +20,23 @@ describe('agent builder flow runner', () => {
     expect(flow).toBeTruthy();
     expect(Array.isArray(flow.nodes)).toBe(true);
     expect(flow.nodes.length).toBeGreaterThan(0);
+  });
+
+  it('adapts an agent-builder style flow definition', () => {
+    const { flow } = loadFlowDefinition(agentBuilderFixture, {
+      adapter: adaptAgentBuilderFlow,
+      validate: false,
+    });
+    expect(flow.schemaVersion).toBe('0.1.0');
+    expect(flow.metadata?.name).toBe('agent-builder-demo');
+    expect(flow.nodes[0].id).toBe('intent');
+    expect(flow.nodes[0].kind).toBe('intent2formal');
+    expect(flow.nodes[0].params?.language).toBe('en');
+    expect(flow.nodes[0].output).toEqual(['spec']);
+    expect(flow.nodes[1].input).toEqual(['spec']);
+    expect(flow.edges[0].from).toBe('intent');
+    expect(flow.edges[0].to).toBe('codegen');
+    expect(flow.correlation?.runId).toBe('ab-run');
   });
 
   it('executes the flow and produces an envelope when summary is provided', () => {

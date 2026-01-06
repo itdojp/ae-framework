@@ -1,0 +1,44 @@
+{
+  "info": {
+    "name": "agent-builder-demo"
+  },
+  "nodes": [
+    {
+      "name": "intent",
+      "type": "intent2formal",
+      "parameters": {
+        "language": "en"
+      },
+      "outputs": ["spec"]
+    },
+    {
+      "name": "codegen",
+      "type": "tests2code",
+      "inputs": ["spec"],
+      "parameters": {
+        "language": "ts"
+      },
+      "outputs": ["code"]
+    },
+    {
+      "name": "verify",
+      "type": "code2verify",
+      "inputs": ["code"],
+      "parameters": {
+        "runner": "vitest"
+      },
+      "outputs": ["results"]
+    }
+  ],
+  "edges": [
+    { "source": "intent", "target": "codegen" },
+    { "source": "codegen", "target": "verify" }
+  ],
+  "context": {
+    "correlation": {
+      "runId": "ab-run",
+      "commit": "HEAD",
+      "branch": "feat/agent-builder"
+    }
+  }
+}

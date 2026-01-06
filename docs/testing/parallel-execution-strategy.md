@@ -6,6 +6,10 @@
 
 The AE Framework implements a sophisticated parallel test execution strategy that maximizes CI efficiency while maintaining test reliability and resource optimization.
 
+## Related
+
+- Test categorization: `docs/testing/test-categorization.md`
+
 ## Key Components
 
 ### 1. Podman-based Standardization
