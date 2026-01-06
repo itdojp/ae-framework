@@ -15,6 +15,8 @@
 node scripts/agent-builder/flow-runner.mjs --flow fixtures/flow/sample.flow.json
 ```
 
+`npm run flow:run` でも同じサンプルフローを実行できる。
+
 ### Agent Builder 形式のJSONを取り込む場合
 ```bash
 node scripts/agent-builder/flow-runner.mjs \
@@ -36,6 +38,8 @@ node scripts/agent-builder/flow-runner.mjs \
   --summary /path/to/verify-lite-summary.json \
   --output artifacts/agent-builder/envelope.json
 ```
+
+`npm run demo:ab-poc` では、サンプルの verify-lite サマリを使った最小 PoC を実行できる。
 
 ## 出力
 - 標準出力にノード実行サマリ（nodeId/kind/info）が出力される。
