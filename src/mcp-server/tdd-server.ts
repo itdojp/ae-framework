@@ -290,7 +290,7 @@ class TDDGuardServer {
     const { testCommand, expectRed }: RedGreenCycleArgs = parseOrThrow(RedGreenCycleArgsSchema, args);
     
     try {
-      const result = execSync(`${testCommand} --silent`, { encoding: 'utf8', stdio: 'pipe' });
+      execSync(`${testCommand} --silent`, { encoding: 'utf8', stdio: 'pipe' });
       
       if (expectRed) {
         return {

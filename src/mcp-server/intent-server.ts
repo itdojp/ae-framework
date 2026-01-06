@@ -38,7 +38,6 @@ import {
   type ValidateCompletenessArgs,
   type AnalyzeStakeholderConcernsArgs,
 } from './schemas.js';
-import { SteeringLoader } from '../utils/steering-loader.js';
 
 class IntentMCPServer {
   private server: Server;
