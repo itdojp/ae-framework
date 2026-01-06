@@ -1,3 +1,6 @@
+/**
+ * Normalize unknown error values into an Error instance with preserved metadata.
+ */
 export const normalizeError = (error: unknown, fallbackMessage: string): Error => {
   if (error instanceof Error) return error;
   if (typeof error === 'string') return new Error(error);

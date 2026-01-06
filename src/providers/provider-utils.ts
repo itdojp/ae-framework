@@ -1,3 +1,6 @@
+/**
+ * Convert unknown values to a string for logging/debugging.
+ */
 export const stringifyUnknown = (value: unknown, fallback = '[unserializable]'): string => {
   if (value == null) return '';
   if (typeof value === 'string') return value;
@@ -19,6 +22,9 @@ const hasTextField = (value: unknown): value is { text: string } => {
   return typeof text === 'string';
 };
 
+/**
+ * Extract the first available text from Anthropic response content.
+ */
 export const extractAnthropicText = (content: unknown): string => {
   if (Array.isArray(content)) {
     for (const entry of content) {
@@ -45,6 +51,9 @@ const hasTextMethod = (value: unknown): value is { text: () => string } => {
 
 const isUnknownArray = (value: unknown): value is unknown[] => Array.isArray(value);
 
+/**
+ * Extract text from Gemini SDK response shapes.
+ */
 export const extractGeminiText = (response: unknown): string => {
   if (hasTextMethod(response)) {
     const text = response.text();
@@ -72,6 +81,9 @@ export const extractGeminiText = (response: unknown): string => {
   return '';
 };
 
+/**
+ * Type guard for modules exposing a constructor under the given key.
+ */
 export const hasConstructorProperty = <TKey extends string>(
   value: unknown,
   key: TKey
