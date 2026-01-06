@@ -90,14 +90,13 @@ async function importDashboard({ host, token, folderId, overwrite, input }) {
     overwrite,
   };
 
-  // codeql[js/file-access-to-http] Uploading dashboards is an explicit CLI action.
+  // codeql[js/file-access-to-http] Uploading dashboards (including the payload) is an explicit CLI action.
   const response = await fetch(new URL('/api/dashboards/db', host), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    // codeql[js/file-access-to-http] Explicit CLI import of a user-provided dashboard payload.
     body: JSON.stringify(body),
   });
 
