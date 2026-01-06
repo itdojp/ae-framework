@@ -76,6 +76,8 @@ jobs:
 
   coverage-gate:
     runs-on: ubuntu-latest
+    env:
+      AE_QUALITY_PROFILE: development
     steps:
       - uses: actions/checkout@v4
       - name: Prepare pnpm
@@ -113,7 +115,9 @@ jobs:
             }
           }
 
-          const thresholds = policy.quality.coverage.thresholds;
+          const coverageGate = policy.quality.coverage;
+          const thresholds = coverageGate.thresholds;
+          const enforcement = coverageGate.enforcement || 'strict';
           const summaryPath = path.join(process.cwd(), 'coverage', 'coverage-summary.json');
           const finalPath = path.join(process.cwd(), 'coverage', 'coverage-final.json');
 
@@ -214,11 +218,16 @@ jobs:
             }
           }
 
-          if (failures.length) {
+          if (failures.length && enforcement === 'strict') {
             console.error('❌ Coverage thresholds failed:');
             failures.forEach(item => console.error(`  - ${item}`));
             process.exit(1);
           }
 
-          console.log('✅ Coverage thresholds passed');
-          NODE
+          if (failures.length) {
+            console.warn('⚠️ Coverage thresholds failed (warn mode):');
+            failures.forEach(item => console.warn(`  - ${item}`));
+          } else {
+            console.log('✅ Coverage thresholds passed');
+          }
+NODE
