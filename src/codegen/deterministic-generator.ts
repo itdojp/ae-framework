@@ -5,7 +5,7 @@
 
 import { createHash } from 'crypto';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
-import { dirname, join, relative } from 'path';
+import { dirname, join } from 'path';
 import type { AEIR } from '@ae-framework/spec-compiler';
 
 export interface CodegenOptions {

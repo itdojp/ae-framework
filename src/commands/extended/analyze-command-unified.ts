@@ -331,13 +331,6 @@ export class UnifiedAnalyzeCommand extends BaseExtendedCommand {
     const issues: Issue[] = [];
 
     try {
-      const sourceFile = ts.createSourceFile(
-        filePath,
-        content,
-        ts.ScriptTarget.Latest,
-        true
-      );
-
       const program = ts.createProgram([filePath], {
         noEmit: true,
         strict: true
@@ -364,7 +357,6 @@ export class UnifiedAnalyzeCommand extends BaseExtendedCommand {
   }
 
   private calculateCodeMetrics(content: string) {
-    const lines = content.split('\n');
     const functions = (content.match(/function\s+\w+|=>\s*{|async\s+\w+/g) || []).length;
     const classes = (content.match(/class\s+\w+/g) || []).length;
     const dependencies = this.extractDependencies(content);
