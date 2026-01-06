@@ -4,7 +4,7 @@ export const normalizeError = (error: unknown, fallbackMessage: string): Error =
 
   if (error && typeof error === 'object') {
     const record = error as Record<string, unknown>;
-    const rawMessage = typeof record.message === 'string' ? record.message : null;
+    const rawMessage = typeof record['message'] === 'string' ? record['message'] : null;
     let message = rawMessage ?? fallbackMessage;
 
     if (!rawMessage) {
@@ -19,19 +19,20 @@ export const normalizeError = (error: unknown, fallbackMessage: string): Error =
     }
 
     const normalized = new Error(message);
-    if (typeof record.name === 'string') {
-      normalized.name = record.name;
+    if (typeof record['name'] === 'string') {
+      normalized.name = record['name'];
     }
 
+    const normalizedRecord = normalized as unknown as Record<string, unknown>;
     for (const [key, value] of Object.entries(record)) {
       if (key === 'message' || key === 'name') continue;
-      (normalized as Record<string, unknown>)[key] = value;
+      normalizedRecord[key] = value;
     }
 
-    if ('status' in record && (normalized as Record<string, unknown>).status === undefined) {
-      const status = (record as { status?: unknown }).status;
+    if ('status' in record && normalizedRecord['status'] === undefined) {
+      const status = record['status'];
       if (status !== undefined) {
-        (normalized as Record<string, unknown>).status = status;
+        normalizedRecord['status'] = status;
       }
     }
 
