@@ -88,7 +88,6 @@ export function createQualityCommand(): Command {
             const allGates = qualityPolicy.getAllGates();
             const gateKey = Object?.keys(allGates)?.find(key => allGates[key]?.name === gate?.name) || gate?.name;
             
-            const threshold = qualityPolicy.getThreshold(gateKey, options.env);
             const shouldBlock = qualityPolicy.shouldBlock(gateKey, options.env);
             
             console.log(chalk.cyan(`${gate.name}:`));
