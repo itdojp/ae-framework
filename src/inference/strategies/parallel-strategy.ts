@@ -52,7 +52,6 @@ export class ParallelStrategy {
    * Execute parallel reasoning strategy
    */
   async execute(context: ReasoningContext): Promise<StrategyResult> {
-    const startTime = Date.now();
     const steps: ReasoningStep[] = [];
     const reasoning: string[] = [];
 
@@ -368,7 +367,7 @@ export class ParallelStrategy {
   }
 
   private async processValidationTask(task: ParallelTask): Promise<any> {
-    const { constraint, dependencyResults } = task.input;
+    const { constraint } = task.input;
     
     // Simulate validation
     await new Promise(resolve => setTimeout(resolve, Math.random() * 300 + 100));

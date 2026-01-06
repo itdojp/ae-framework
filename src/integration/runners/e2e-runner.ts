@@ -519,7 +519,7 @@ export class E2ETestRunner implements TestRunner {
     await fs.mkdir('./test-results/screenshots', { recursive: true });
 
     // Capture screenshot
-    const buffer = await this.currentPage.screenshot({ 
+    await this.currentPage.screenshot({ 
       path: filePath, 
       fullPage: true 
     });

@@ -135,8 +135,6 @@ export class Phase3TypeScriptFixer {
    * Fix Benchmark Runner type mismatch
    */
   private async fixBenchmarkRunnerTypeMismatch(): Promise<void> {
-    const filePath = path.join(process.cwd(), 'src/benchmark/req2run/runners/BenchmarkRunner.ts');
-    
     try {
       // This is a more complex fix that would require understanding the type mismatch
       // For now, we'll document it for later resolution
