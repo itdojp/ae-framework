@@ -1,10 +1,14 @@
 package ui
 
+# Allow modern keywords on older engines.
+import future.keywords.if
+import future.keywords.contains
+
 # UI Accessibility Policy Rules for Phase 6 Quality Gates
 # Validates components against WCAG 2.1 AA requirements
 
 # Violation: Presentational elements without proper labeling
-violations[v] {
+violations contains v if {
   some c
   input[c].role == "presentation"
   not input[c].aria_label
@@ -18,7 +22,7 @@ violations[v] {
 }
 
 # Violation: Interactive elements without accessible names
-violations[v] {
+violations contains v if {
   some c
   input[c].interactive == true
   not input[c].aria_label
@@ -35,7 +39,7 @@ violations[v] {
 }
 
 # Violation: Form inputs without labels
-violations[v] {
+violations contains v if {
   some c
   input[c].type == "input"
   not input[c].aria_label
@@ -51,7 +55,7 @@ violations[v] {
 }
 
 # Violation: Poor color contrast
-violations[v] {
+violations contains v if {
   some c
   input[c].contrast_ratio < 4.5
   input[c].font_size < 18
@@ -65,11 +69,11 @@ violations[v] {
 }
 
 # Helper functions
-has_text_content(element) {
+has_text_content(element) if {
   element.text_content
   trim_space(element.text_content) != ""
 }
 
-has_associated_label(element) {
+has_associated_label(element) if {
   element.label_for == element.id
 }

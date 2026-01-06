@@ -1,10 +1,14 @@
 package ui
 
+# Allow modern keywords on older engines.
+import future.keywords.if
+import future.keywords.contains
+
 # Design System Consistency Policy for Phase 6 Quality Gates
 # Validates components follow design token standards
 
 # Violation: Components using non-standard colors
-violations[v] {
+violations contains v if {
   some c
   input[c].styles.color
   not is_design_token_color(input[c].styles.color)
@@ -18,7 +22,7 @@ violations[v] {
 }
 
 # Violation: Components using non-standard spacing
-violations[v] {
+violations contains v if {
   some c
   input[c].styles.margin
   not is_design_token_spacing(input[c].styles.margin)
@@ -32,7 +36,7 @@ violations[v] {
 }
 
 # Violation: Components using non-standard typography
-violations[v] {
+violations contains v if {
   some c
   input[c].styles.font_size
   not is_design_token_font_size(input[c].styles.font_size)
@@ -46,15 +50,15 @@ violations[v] {
 }
 
 # Standard design token validation functions
-is_design_token_color(color) {
+is_design_token_color(color) if {
   design_token_colors[_] == color
 }
 
-is_design_token_spacing(spacing) {
+is_design_token_spacing(spacing) if {
   design_token_spacing[_] == spacing
 }
 
-is_design_token_font_size(size) {
+is_design_token_font_size(size) if {
   design_token_font_sizes[_] == size
 }
 

@@ -1,9 +1,10 @@
+import path from 'path';
 import type { StorybookConfig } from '@storybook/nextjs';
 
 const config: StorybookConfig = {
   stories: [
     '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)',
-    '../../packages/ui/src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
+    '../../../packages/ui/src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
   ],
   addons: [
     '@storybook/addon-links',
@@ -25,6 +26,15 @@ const config: StorybookConfig = {
       shouldExtractLiteralValuesFromEnum: true,
       propFilter: (prop) => (prop.parent ? !/node_modules/.test(prop.parent.fileName) : true),
     },
+  },
+  webpackFinal: async (config) => {
+    config.resolve = config.resolve || {};
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      '@ae-framework/ui': path.resolve(__dirname, '../../../packages/ui/src'),
+      '@ae-framework/ui/components': path.resolve(__dirname, '../../../packages/ui/src'),
+    };
+    return config;
   },
 };
 
