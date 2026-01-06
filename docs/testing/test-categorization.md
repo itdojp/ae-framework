@@ -9,7 +9,7 @@ This document summarizes how tests are grouped in ae-framework so contributors c
 ## Categories
 
 | Category | Primary purpose | Typical scripts | Notes |
-| --- | --- | --- | --- |
+| -------- | --------------- | -------------- | ----- |
 | **Fast / Unit** | Quick feedback on core logic | `pnpm run test:fast`, `pnpm run test:unit` | Use for local iteration and pre-commit checks. |
 | **Integration** | Validate cross-module behavior | `pnpm run test:int`, `pnpm run test:integration:webapi` | Higher cost; usually run in CI or before release. |
 | **Property-based** | Explore edge cases via generators | `pnpm run test:property`, `pnpm run pbt` | Prefer for invariants and fuzz-friendly logic. |
@@ -28,4 +28,4 @@ This document summarizes how tests are grouped in ae-framework so contributors c
 
 ## Related
 
-- Parallel execution strategy: `docs/testing/parallel-execution-strategy.md`
+- `docs/testing/parallel-execution-strategy.md`
