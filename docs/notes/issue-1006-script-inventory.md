@@ -96,6 +96,10 @@
 - validate-specs
 - validate-tdd
 
+## 再生成
+```bash
+node scripts/admin/generate-script-inventory.mjs docs/notes/issue-1006-script-inventory.md
+```
 ## メモ
 - `test`/`quality`/`verify`/`flake`/`security` で過半を占めるため、Phase 1 の統合対象候補。
 - `(root)` は移行後にカテゴリへ再配置する前提で精査が必要。
