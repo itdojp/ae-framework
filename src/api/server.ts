@@ -1,6 +1,5 @@
 import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
-import { Reservation } from "../domain/contracts.js";
 import { securityHeadersPlugin, getSecurityConfiguration } from "./middleware/security-headers.js";
 import { runtimeGuard, CommonSchemas, ViolationSeverity } from "../telemetry/runtime-guards.js";
 import { enhancedTelemetry, TELEMETRY_ATTRIBUTES } from "../telemetry/enhanced-telemetry.js";
@@ -110,7 +109,7 @@ export async function createServer(): Promise<FastifyInstance> {
         // Still return the data in case of validation error to maintain availability
       }
 
-      const duration = timer.end({
+      timer.end({
         endpoint: '/health',
         validation_result: validation.valid ? 'success' : 'failure',
       });
@@ -203,7 +202,7 @@ export async function createServer(): Promise<FastifyInstance> {
         console.error('Reservation response validation failed:', responseValidation.violations);
       }
 
-      const duration = timer.end({
+      timer.end({
         endpoint: '/reservations',
         result: 'success',
         validation_result: responseValidation.valid ? 'success' : 'failure',
