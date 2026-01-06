@@ -3,7 +3,7 @@
 ## 概要
 - 対象: `package.json` の `scripts`
 - 集計方法: `:` の前半プレフィックスで分類（例: `test:ci` → `test`）
-- 総数: 309
+- 総数: 311
 
 ## プレフィックス別の件数
 | prefix | count |
@@ -47,8 +47,10 @@
 | agents | 1 |
 | analyze | 1 |
 | artifacts | 1 |
+| demo | 1 |
 | dependency | 1 |
 | e2e | 1 |
+| flow | 1 |
 | formal | 1 |
 | formal-agent | 1 |
 | generate | 1 |
@@ -69,6 +71,30 @@
 | type-check | 1 |
 | types | 1 |
 | visual | 1 |
+
+## (root) scripts 一覧
+- ae-framework
+- bdd
+- benchmark
+- build
+- contract
+- coverage
+- dev
+- formal-agent
+- formal-spec
+- generate-tla
+- intent-agent
+- lint
+- mbt
+- model-check
+- mutation
+- pbt
+- phase
+- setup-hooks
+- test
+- typecov
+- validate-specs
+- validate-tdd
 
 ## メモ
 - `test`/`quality`/`verify`/`flake`/`security` で過半を占めるため、Phase 1 の統合対象候補。
