@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ProductForm } from '../../../../apps/web/components/ProductForm';
+import { ProductForm } from '../../web/components/ProductForm';
 import { ProductCard } from '../../../../apps/web/components/ProductCard';
 
 // Create a mock query client for Storybook

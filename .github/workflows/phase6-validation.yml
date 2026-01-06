@@ -70,7 +70,7 @@ jobs:
           {"components":[]}
           JSON
       - name: Validate UI components policy
-        run: opa eval --rego-version v0 -d policies/ui/ -i reports/opa-input.json "data.ui.violations"
+        run: opa eval -d policies/ui/ -i reports/opa-input.json "data.ui.violations"
       - name: Check policy compliance
         run: node scripts/check-opa-compliance.js --ui-violations=0
 
