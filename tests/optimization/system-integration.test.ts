@@ -12,10 +12,15 @@ import {
   type SystemMetrics,
   type OptimizationDashboard 
 } from '../../src/optimization/index.js';
-import { registerIntegrationCleanup } from '../_helpers/integration-test-utils.js';
+import {
+  applyIntegrationRetry,
+  registerIntegrationCleanup,
+} from '../_helpers/integration-test-utils.js';
 
 // Import integration setup for resource leak detection
 import '../integration/setup';
+
+applyIntegrationRetry(it);
 
 describe('Complete Optimization System Integration', () => {
   let optimizationSystem: OptimizationSystem;
