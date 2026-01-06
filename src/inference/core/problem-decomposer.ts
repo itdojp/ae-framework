@@ -616,7 +616,7 @@ export class ProblemDecomposer {
     
     // Calculate time for each phase (parallel execution within phase)
     let totalTime = 0;
-    for (const [phase, nodes] of phases) {
+    for (const nodes of phases.values()) {
       const maxTimeInPhase = Math.max(...nodes.map(n => n.estimatedEndTime - n.estimatedStartTime));
       totalTime += maxTimeInPhase;
     }
