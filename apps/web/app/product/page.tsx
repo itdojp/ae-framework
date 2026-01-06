@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { Button } from '@ae-framework/ui/components/button';
-import { Input } from '@ae-framework/ui/components/input';
+import { Button, Input } from '@ae-framework/ui';
 import { ProductCard } from '../../components/ProductCard';
 
 interface Product {

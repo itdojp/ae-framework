@@ -3,10 +3,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Button } from '@ae-framework/ui/components/button';
-import { Input } from '@ae-framework/ui/components/input';
-import { Textarea } from '@ae-framework/ui/components/textarea';
-import { Checkbox } from '@ae-framework/ui/components/checkbox';
+import { Button, Checkbox, Input, Textarea } from '@ae-framework/ui';
 
 // Zod schema for Product validation
 const productSchema = z.object({

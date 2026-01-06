@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ProductForm } from '../../../components/ProductForm';
-import { Button } from '@ae-framework/ui/components/button';
+import { Button } from '@ae-framework/ui';
 import Link from 'next/link';
 
 interface ProductCreateData {
