@@ -363,7 +363,6 @@ export class ValidationOrchestrator extends EventEmitter {
     requirements?: any
   ): ValidatorConfig[] {
     const configs: ValidatorConfig[] = [];
-    const categories = requirements?.categories || ['structural', 'functional', 'performance', 'security', 'consistency', 'completeness', 'integration', 'business_rules', 'data_quality'];
 
     for (const [validatorId, validator] of this.validators) {
       if (validator.canHandle(target, context)) {

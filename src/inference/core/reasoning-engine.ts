@@ -283,7 +283,6 @@ export class ReasoningEngine extends EventEmitter {
 
   private async executeAdaptiveStrategy(context: ReasoningContext): Promise<StrategyResult> {
     // Analyze context to choose best strategy
-    const complexity = this.analyzeComplexity(context);
     const dataSize = this.estimateDataSize(context);
     const hasParallelizableWork = this.hasParallelizableWork(context);
 

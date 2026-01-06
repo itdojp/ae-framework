@@ -414,7 +414,7 @@ export class HybridIntentSystem {
       // Optionally trigger automatic reanalysis
       if (this.config.enforceRealTime) {
         try {
-          const result = await this.executeIntentCommand({
+          await this.executeIntentCommand({
             command: 'analyze',
             sources: [{ type: 'document', content: filePath }]
           });
