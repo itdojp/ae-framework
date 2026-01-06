@@ -1,4 +1,4 @@
-const { tailwindTokens } = require('@ae-framework/design-tokens/dist/tailwind');
+const { tailwindTokens } = require('@ae-framework/design-tokens/tailwind');
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
