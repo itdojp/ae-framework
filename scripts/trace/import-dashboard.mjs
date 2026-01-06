@@ -97,6 +97,7 @@ async function importDashboard({ host, token, folderId, overwrite, input }) {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
+    // codeql[js/file-access-to-http] Explicit CLI import of a user-provided dashboard payload.
     body: JSON.stringify(body),
   });
 
