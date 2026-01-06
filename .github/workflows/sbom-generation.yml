@@ -190,7 +190,6 @@ jobs:
         config: |
           paths-ignore:
             - api/public-types.d.ts
-            - artifacts/public-types.current.d.ts
             - artifacts/**
             - examples/**
             - src/ui/components/generated/**
