@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Button } from '@ae-framework/ui/components/button';
+import { Button } from '@ae-framework/ui';
 import { ProductForm } from '../../../components/ProductForm';
 import Link from 'next/link';
 

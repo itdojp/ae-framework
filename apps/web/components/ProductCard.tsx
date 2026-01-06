@@ -1,8 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Button } from '@ae-framework/ui/components/button';
-import { Badge } from '@ae-framework/ui/components/badge';
+import { Badge, Button } from '@ae-framework/ui';
 
 interface Product {
   id: string;

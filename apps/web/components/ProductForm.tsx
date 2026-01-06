@@ -3,11 +3,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Button } from '@ae-framework/ui/components/button';
-import { Input } from '@ae-framework/ui/components/input';
-import { Textarea } from '@ae-framework/ui/components/textarea';
-import { Checkbox } from '@ae-framework/ui/components/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ae-framework/ui/components/select';
+import { Button, Checkbox, Input, Textarea } from '@ae-framework/ui';
 
 // Zod schema for Product validation
 const productSchema = z.object({
@@ -40,8 +36,6 @@ export function ProductForm({
     register,
     handleSubmit,
     formState: { errors },
-    setValue,
-    watch
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: initialData
