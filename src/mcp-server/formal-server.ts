@@ -9,7 +9,7 @@ import {
   McpError,
 } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import { FormalAgent, FormalAgentConfig } from "../agents/formal-agent.js";
+import { FormalAgent } from "../agents/formal-agent.js";
 
 // Input schemas for MCP tools
 const GenerateFormalSpecSchema = z.object({
