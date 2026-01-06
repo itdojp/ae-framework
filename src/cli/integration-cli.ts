@@ -380,7 +380,7 @@ export class IntegrationTestingCli {
 
       const patterns = options.patterns.split(',').map((p: string) => p.trim());
       
-      let items: any[] = [];
+      let items: any = [];
       let itemType = '';
 
       switch (options.type) {
