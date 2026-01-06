@@ -191,6 +191,9 @@ jobs:
           paths-ignore:
             - api/public-types.d.ts
             - artifacts/public-types.current.d.ts
+            - artifacts/**
+            - examples/**
+            - src/ui/components/generated/**
         
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
