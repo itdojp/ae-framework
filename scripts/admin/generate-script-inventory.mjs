@@ -1,11 +1,65 @@
-import { readFileSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import {
+  accessSync,
+  constants,
+  existsSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
+import { dirname, resolve } from 'node:path';
 
 const args = process.argv.slice(2);
 const outputPath = args[0] ? resolve(args[0]) : null;
 const now = new Date().toISOString().slice(0, 10);
 
-const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+const findPackageJson = (startDir = process.cwd()) => {
+  let dir = startDir;
+  while (true) {
+    const candidate = resolve(dir, 'package.json');
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+    const parent = dirname(dir);
+    if (parent === dir) {
+      break;
+    }
+    dir = parent;
+  }
+  throw new Error(`Could not find package.json starting from ${startDir}`);
+};
+
+if (outputPath) {
+  try {
+    const stats = statSync(outputPath);
+    if (stats.isDirectory()) {
+      console.error(`Error: output path "${outputPath}" is a directory.`);
+      process.exit(1);
+    }
+  } catch (error) {
+    if (error?.code !== 'ENOENT') {
+      throw error;
+    }
+    const dir = dirname(outputPath);
+    try {
+      accessSync(dir, constants.W_OK);
+    } catch {
+      console.error(`Error: cannot write to directory "${dir}".`);
+      process.exit(1);
+    }
+  }
+}
+
+let pkg;
+try {
+  const pkgPath = findPackageJson();
+  pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+} catch (error) {
+  const message =
+    error instanceof Error ? error.message : String(error ?? 'unknown error');
+  console.error(`Failed to load package.json: ${message}`);
+  process.exit(1);
+}
+
 const scripts = pkg.scripts ?? {};
 const counts = new Map();
 const rootScripts = [];
@@ -61,7 +115,14 @@ lines.push('');
 const output = lines.join('\n');
 
 if (outputPath) {
-  writeFileSync(outputPath, output);
+  try {
+    writeFileSync(outputPath, output);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : String(error ?? 'unknown error');
+    console.error(`Failed to write script inventory to "${outputPath}": ${message}`);
+    process.exit(1);
+  }
 } else {
   process.stdout.write(output);
 }
