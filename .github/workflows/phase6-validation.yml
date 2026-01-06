@@ -70,7 +70,7 @@ jobs:
           {"components":[]}
           JSON
       - name: Validate UI components policy
-        run: opa eval -d policies/ui/ -i reports/opa-input.json "data.ui.violations"
+        run: opa eval --rego-version v0 -d policies/ui/ -i reports/opa-input.json "data.ui.violations"
       - name: Check policy compliance
         run: node scripts/check-opa-compliance.js --ui-violations=0
 
@@ -114,11 +114,83 @@ jobs:
 
           const thresholds = policy.quality.coverage.thresholds;
           const summaryPath = path.join(process.cwd(), 'coverage', 'coverage-summary.json');
-          if (!fs.existsSync(summaryPath)) {
-            console.error('❌ coverage/coverage-summary.json not found');
-            process.exit(1);
+          const finalPath = path.join(process.cwd(), 'coverage', 'coverage-final.json');
+
+          function hasAllMetrics(total) {
+            return total?.lines?.pct !== undefined
+              && total?.functions?.pct !== undefined
+              && total?.branches?.pct !== undefined
+              && total?.statements?.pct !== undefined;
           }
-          const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8')).total;
+
+          function loadSummaryFromCoverageFinal() {
+            if (!fs.existsSync(finalPath)) {
+              console.error('❌ coverage/coverage-final.json not found');
+              process.exit(1);
+            }
+            const final = JSON.parse(fs.readFileSync(finalPath, 'utf8'));
+            const totals = {
+              statements: { covered: 0, total: 0 },
+              functions: { covered: 0, total: 0 },
+              branches: { covered: 0, total: 0 },
+              lines: { covered: 0, total: 0 },
+            };
+            const lineCoverage = new Map();
+            for (const fileCoverage of Object.values(final)) {
+              for (const [id, count] of Object.entries(fileCoverage.s || {})) {
+                totals.statements.total += 1;
+                if (count > 0) {
+                  totals.statements.covered += 1;
+                }
+                const line = fileCoverage.statementMap?.[id]?.start?.line;
+                if (line !== undefined) {
+                  const key = `${fileCoverage.path}:${line}`;
+                  const current = lineCoverage.get(key) || false;
+                  lineCoverage.set(key, current || count > 0);
+                }
+              }
+              for (const count of Object.values(fileCoverage.f || {})) {
+                totals.functions.total += 1;
+                if (count > 0) {
+                  totals.functions.covered += 1;
+                }
+              }
+              for (const branches of Object.values(fileCoverage.b || {})) {
+                for (const count of branches) {
+                  totals.branches.total += 1;
+                  if (count > 0) {
+                    totals.branches.covered += 1;
+                  }
+                }
+              }
+            }
+            totals.lines.total = lineCoverage.size;
+            totals.lines.covered = Array.from(lineCoverage.values()).filter(Boolean).length;
+
+            function pct({ covered, total }) {
+              if (total === 0) return 100;
+              return Math.round((covered / total) * 10000) / 100;
+            }
+
+            return {
+              lines: { pct: pct(totals.lines) },
+              functions: { pct: pct(totals.functions) },
+              branches: { pct: pct(totals.branches) },
+              statements: { pct: pct(totals.statements) },
+            };
+          }
+
+          let summary;
+          if (fs.existsSync(summaryPath)) {
+            const parsed = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
+            if (hasAllMetrics(parsed?.total)) {
+              summary = parsed.total;
+            }
+          }
+
+          if (!summary) {
+            summary = loadSummaryFromCoverageFinal();
+          }
 
           const checks = [
             ['lines', summary.lines.pct],

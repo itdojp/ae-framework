@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { Button } from '@ae-framework/ui/components/button';
 import { Input } from '@ae-framework/ui/components/input';
-import { ProductCard } from '../../../components/ProductCard';
+import { ProductCard } from '../../components/ProductCard';
 
 interface Product {
   id: string;
