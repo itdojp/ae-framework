@@ -72,7 +72,7 @@ jobs:
       - name: Validate UI components policy
         run: opa eval -d policies/ui/ -i reports/opa-input.json "data.ui.violations"
       - name: Check policy compliance
-        run: node scripts/check-opa-compliance.js --ui-violations=0
+        run: node scripts/check-opa-compliance.cjs --ui-violations=0
 
   coverage-gate:
     runs-on: ubuntu-latest
@@ -95,6 +95,7 @@ jobs:
           const policyPath = path.join(process.cwd(), 'policy', 'quality.json');
           const policy = JSON.parse(fs.readFileSync(policyPath, 'utf8'));
           const env = process.env.AE_QUALITY_PROFILE || 'ci';
+          const coverageRoot = path.join(process.cwd(), 'src') + path.sep;
 
           if (policy.environments?.[env]?.overrides) {
             const overrides = policy.environments[env].overrides;
@@ -125,10 +126,15 @@ jobs:
 
           function loadSummaryFromCoverageFinal() {
             if (!fs.existsSync(finalPath)) {
-              console.error('❌ coverage/coverage-final.json not found');
-              process.exit(1);
+              return null;
             }
             const final = JSON.parse(fs.readFileSync(finalPath, 'utf8'));
+            const entries = Object.values(final);
+            const scopedEntries = entries.filter((fileCoverage) => {
+              const filePath = fileCoverage?.path;
+              return typeof filePath === 'string' && filePath.startsWith(coverageRoot);
+            });
+            const coverageEntries = scopedEntries.length > 0 ? scopedEntries : entries;
             const totals = {
               statements: { covered: 0, total: 0 },
               functions: { covered: 0, total: 0 },
@@ -136,7 +142,7 @@ jobs:
               lines: { covered: 0, total: 0 },
             };
             const lineCoverage = new Map();
-            for (const fileCoverage of Object.values(final)) {
+            for (const fileCoverage of coverageEntries) {
               for (const [id, count] of Object.entries(fileCoverage.s || {})) {
                 totals.statements.total += 1;
                 if (count > 0) {
@@ -181,15 +187,16 @@ jobs:
           }
 
           let summary;
-          if (fs.existsSync(summaryPath)) {
+          summary = loadSummaryFromCoverageFinal();
+          if (!summary && fs.existsSync(summaryPath)) {
             const parsed = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
             if (hasAllMetrics(parsed?.total)) {
               summary = parsed.total;
             }
           }
-
           if (!summary) {
-            summary = loadSummaryFromCoverageFinal();
+            console.error('❌ Coverage summary unavailable');
+            process.exit(1);
           }
 
           const checks = [
