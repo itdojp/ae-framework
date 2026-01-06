@@ -98,6 +98,7 @@ export function adaptAgentBuilderFlow(rawFlow) {
     const from = edge.from ?? edge.source;
     const to = edge.to ?? edge.target;
     return {
+      ...edge,
       ...(from ? { from } : {}),
       ...(to ? { to } : {}),
     };

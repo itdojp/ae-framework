@@ -23,10 +23,17 @@ describe('agent builder flow runner', () => {
   });
 
   it('adapts an agent-builder style flow definition', () => {
-    const { flow } = loadFlowDefinition(agentBuilderFixture, { adapter: adaptAgentBuilderFlow });
+    const { flow } = loadFlowDefinition(agentBuilderFixture, {
+      adapter: adaptAgentBuilderFlow,
+      validate: false,
+    });
+    expect(flow.schemaVersion).toBe('0.1.0');
     expect(flow.metadata?.name).toBe('agent-builder-demo');
     expect(flow.nodes[0].id).toBe('intent');
     expect(flow.nodes[0].kind).toBe('intent2formal');
+    expect(flow.nodes[0].params?.language).toBe('en');
+    expect(flow.nodes[0].output).toEqual(['spec']);
+    expect(flow.nodes[1].input).toEqual(['spec']);
     expect(flow.edges[0].from).toBe('intent');
     expect(flow.edges[0].to).toBe('codegen');
     expect(flow.correlation?.runId).toBe('ab-run');

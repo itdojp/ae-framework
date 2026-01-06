@@ -34,7 +34,7 @@ node scripts/agent-builder/flow-runner.mjs \
 アダプタは以下の最小変換を行います。
 - `id`/`name`/`key` → `id`（左から順に優先）
 - `kind`/`type`/`action`/`role` → `kind`（左から順に優先）
-- `parameters`/`config` → `params`
+- `params`/`parameters`/`config`/`settings` → `params`
 - `inputs`/`outputs` → `input`/`output`
 - `source`/`target` → `from`/`to`
 
