@@ -4,7 +4,7 @@
  */
 
 import type { execSync } from 'child_process';
-import { readFileSync, existsSync } from 'fs';
+import { existsSync } from 'fs';
 import * as path from 'path';
 import { RustVerificationAgent, type RustVerificationRequest, type RustVerificationResult } from './rust-verification-agent.js';
 import { ContainerAgent, type ContainerVerificationRequest } from './container-agent.js';
@@ -446,14 +446,6 @@ export class VerifyAgent {
    */
   async runPerformanceTests(request: VerificationRequest): Promise<VerificationCheck> {
     try {
-      const perfResults = {
-        responseTime: 0,
-        throughput: 0,
-        errorRate: 0,
-        cpuUsage: 0,
-        memoryUsage: 0,
-      };
-
       // Run performance benchmarks
       const benchmarks = await this.runBenchmarks(request.codeFiles);
       
