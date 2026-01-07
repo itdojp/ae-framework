@@ -348,14 +348,14 @@ export function createQualityCommand(): Command {
       try {
         const configPath = path.join(process.cwd(), 'config', 'quality-policy.json');
         const existingConfig = readFileIfExists(configPath);
-        if (existingConfig && !options.force) {
+        if (existingConfig !== null && !options.force) {
           console.log(chalk.yellow('⚠️  Quality policy already exists. Use --force to overwrite.'));
           return;
         }
 
         // Ensure config directory exists
         const configDir = path.dirname(configPath);
-        if (!readDirIfExists(configDir)) {
+        if (readDirIfExists(configDir) === null) {
           fs.mkdirSync(configDir, { recursive: true });
         }
 
@@ -363,7 +363,7 @@ export function createQualityCommand(): Command {
         console.log(`📁 Creating: ${configPath}`);
         
         // The config is already created in the file, just confirm it exists
-        if (readFileIfExists(configPath)) {
+        if (readFileIfExists(configPath) !== null) {
           console.log(chalk.green('✅ Quality policy configuration initialized successfully'));
           console.log(chalk.cyan('\nNext steps:'));
           console.log('  • Review and customize the policy in config/quality-policy.json');
