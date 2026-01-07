@@ -12,6 +12,38 @@ import { QualityGateRunner } from '../quality/quality-gate-runner.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
+const isErrnoException = (value: unknown): value is NodeJS.ErrnoException => {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  if (!('code' in value)) {
+    return false;
+  }
+  return typeof (value as { code?: unknown }).code === 'string';
+};
+
+const readFileIfExists = (filePath: string): string | null => {
+  try {
+    return fs.readFileSync(filePath, 'utf8');
+  } catch (error) {
+    if (isErrnoException(error) && error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  }
+};
+
+const readDirIfExists = (dirPath: string): string[] | null => {
+  try {
+    return fs.readdirSync(dirPath);
+  } catch (error) {
+    if (isErrnoException(error) && error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  }
+};
+
 export function createQualityCommand(): Command {
   const quality = new Command('quality');
   quality.description('Quality gates and policy management');
@@ -245,8 +277,8 @@ export function createQualityCommand(): Command {
     .action(async (options) => {
       try {
         const reportsDir = path.join(process.cwd(), 'reports', 'quality-gates');
-        
-        if (!fs.existsSync(reportsDir)) {
+        const reportFiles = readDirIfExists(reportsDir);
+        if (!reportFiles) {
           console.log(chalk.yellow('⚠️  No quality reports found'));
           return;
         }
@@ -254,13 +286,13 @@ export function createQualityCommand(): Command {
         if (options.latest) {
           // Show latest report
           const latestFile = path.join(reportsDir, `quality-report-${options.env}-latest.json`);
-          
-          if (!fs.existsSync(latestFile)) {
+
+          const latestRaw = readFileIfExists(latestFile);
+          if (!latestRaw) {
             console.log(chalk.yellow(`⚠️  No latest report found for environment '${options.env}'`));
             return;
           }
-
-          const report = JSON.parse(fs.readFileSync(latestFile, 'utf8'));
+          const report = JSON.parse(latestRaw);
           
           if (options.format === 'json') {
             console.log(JSON.stringify(report, null, 2));
@@ -277,7 +309,7 @@ export function createQualityCommand(): Command {
           }
         } else {
           // List available reports
-          const files = fs.readdirSync(reportsDir)
+          const files = reportFiles
             .filter(f => f.startsWith(`quality-report-${options.env}-`) && f.endsWith('.json') && !f.includes('latest'))
             .sort()
             .reverse();
@@ -315,15 +347,15 @@ export function createQualityCommand(): Command {
     .action(async (options) => {
       try {
         const configPath = path.join(process.cwd(), 'config', 'quality-policy.json');
-        
-        if (fs.existsSync(configPath) && !options.force) {
+        const existingConfig = readFileIfExists(configPath);
+        if (existingConfig !== null && !options.force) {
           console.log(chalk.yellow('⚠️  Quality policy already exists. Use --force to overwrite.'));
           return;
         }
 
         // Ensure config directory exists
         const configDir = path.dirname(configPath);
-        if (!fs.existsSync(configDir)) {
+        if (readDirIfExists(configDir) === null) {
           fs.mkdirSync(configDir, { recursive: true });
         }
 
@@ -331,7 +363,7 @@ export function createQualityCommand(): Command {
         console.log(`📁 Creating: ${configPath}`);
         
         // The config is already created in the file, just confirm it exists
-        if (fs.existsSync(configPath)) {
+        if (readFileIfExists(configPath) !== null) {
           console.log(chalk.green('✅ Quality policy configuration initialized successfully'));
           console.log(chalk.cyan('\nNext steps:'));
           console.log('  • Review and customize the policy in config/quality-policy.json');
