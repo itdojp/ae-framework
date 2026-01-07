@@ -340,17 +340,10 @@ export class TestGenerationAgent {
   private convertToExUnitTest(testCase: TestCase): string {
     let test = `  test "${testCase.description}" do\n`;
     
-    // Convert basic test patterns to ExUnit
-    if (testCase.code.includes('expect(')) {
-      // Convert expect() calls to ExUnit assertions
-      test += `    # ${testCase.description}\n`;
-      test += `    # TODO: Implement test logic\n`;
-      test += `    assert true\n`;
-    } else {
-      test += `    # ${testCase.description}\n`;
-      test += `    # TODO: Implement test logic\n`;
-      test += `    assert true\n`;
-    }
+    // TODO: Convert expect() calls to ExUnit assertions when present.
+    test += `    # ${testCase.description}\n`;
+    test += `    # TODO: Implement test logic\n`;
+    test += `    assert true\n`;
     
     test += `  end`;
     
