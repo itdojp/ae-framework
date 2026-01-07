@@ -7,6 +7,16 @@ interface PackageJson {
   [key: string]: any;
 }
 
+const isErrnoException = (value: unknown): value is NodeJS.ErrnoException => {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  if (!('code' in value)) {
+    return false;
+  }
+  return typeof (value as { code?: unknown }).code === 'string';
+};
+
 function generateVitestConfigTemplate(thresholds = { lines: 80, functions: 80, branches: 80, statements: 80 }) {
   return `import { defineConfig } from 'vitest/config';
 
@@ -27,24 +37,35 @@ export default defineConfig({
 }
 
 function backupFile(filePath: string): void {
-  if (fs.existsSync(filePath)) {
-    const backupPath = `${filePath}.bak`;
+  const backupPath = `${filePath}.bak`;
+  try {
     fs.copyFileSync(filePath, backupPath);
     console.log(chalk.blue(`📋 Backed up ${path.basename(filePath)} to ${path.basename(backupPath)}`));
+  } catch (error) {
+    if (isErrnoException(error) && error.code === 'ENOENT') {
+      return;
+    }
+    throw error;
   }
 }
 
 function updatePackageJson(): boolean {
   const packageJsonPath = path.join(process.cwd(), 'package.json');
-  
-  if (!fs.existsSync(packageJsonPath)) {
-    console.log(chalk.red('❌ package.json not found'));
-    return false;
-  }
 
   backupFile(packageJsonPath);
   
-  const packageJson: PackageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+  let packageJsonRaw: string;
+  try {
+    packageJsonRaw = fs.readFileSync(packageJsonPath, 'utf8');
+  } catch (error) {
+    if (isErrnoException(error) && error.code === 'ENOENT') {
+      console.log(chalk.red('❌ package.json not found'));
+      return false;
+    }
+    throw error;
+  }
+  
+  const packageJson: PackageJson = JSON.parse(packageJsonRaw);
   
   let modified = false;
 
@@ -100,7 +121,19 @@ function createVitestConfig(customThresholds?: { statements: number; branches: n
     'vite.config.js'
   ];
   
-  const existingConfig = configPaths.find(p => fs.existsSync(path.join(process.cwd(), p)));
+  const hasConfig = (configPath: string) => {
+    try {
+      fs.readFileSync(configPath, 'utf8');
+      return true;
+    } catch (error) {
+      if (isErrnoException(error) && error.code === 'ENOENT') {
+        return false;
+      }
+      throw error;
+    }
+  };
+
+  const existingConfig = configPaths.find(p => hasConfig(path.join(process.cwd(), p)));
   
   const thresholds = customThresholds || { lines: 80, functions: 80, branches: 80, statements: 80 };
 
@@ -112,22 +145,34 @@ function createVitestConfig(customThresholds?: { statements: number; branches: n
   }
 
   const configPath = path.join(process.cwd(), 'vitest.config.ts');
-  fs.writeFileSync(configPath, generateVitestConfigTemplate(thresholds));
-  console.log(chalk.green('✅ Created vitest.config.ts with coverage thresholds'));
+  try {
+    fs.writeFileSync(configPath, generateVitestConfigTemplate(thresholds), { flag: 'wx' });
+    console.log(chalk.green('✅ Created vitest.config.ts with coverage thresholds'));
+  } catch (error) {
+    if (isErrnoException(error) && error.code === 'EEXIST') {
+      console.log(chalk.blue('ℹ️  vitest.config.ts already exists, skipping creation'));
+      return;
+    }
+    throw error;
+  }
 }
 
 function updatePreCommitHook(): void {
   const huskyPath = path.join(process.cwd(), '.husky');
   const preCommitPath = path.join(huskyPath, 'pre-commit');
-  
-  if (!fs.existsSync(preCommitPath)) {
-    console.log(chalk.blue('ℹ️  No .husky/pre-commit found, skipping guard setup'));
-    return;
-  }
 
   backupFile(preCommitPath);
   
-  const preCommitContent = fs.readFileSync(preCommitPath, 'utf8');
+  let preCommitContent: string;
+  try {
+    preCommitContent = fs.readFileSync(preCommitPath, 'utf8');
+  } catch (error) {
+    if (isErrnoException(error) && error.code === 'ENOENT') {
+      console.log(chalk.blue('ℹ️  No .husky/pre-commit found, skipping guard setup'));
+      return;
+    }
+    throw error;
+  }
   
   if (preCommitContent.includes('ae tdd:guard')) {
     console.log(chalk.blue('ℹ️  TDD guard already configured in pre-commit hook'));

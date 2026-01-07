@@ -380,7 +380,7 @@ export class IntegrationTestingCli {
 
       const patterns = options.patterns.split(',').map((p: string) => p.trim());
       
-      let items: any[] = [];
+      let items: any = [];
       let itemType = '';
 
       switch (options.type) {
@@ -402,7 +402,7 @@ export class IntegrationTestingCli {
             this.discovery.discoverSuites(patterns),
             this.discovery.discoverFixtures(patterns)
           ]);
-    // items = { tests, suites, fixtures }; // TODO: Verify property exists in interface
+          items = { tests, suites, fixtures };
           itemType = 'all';
           break;
         default:

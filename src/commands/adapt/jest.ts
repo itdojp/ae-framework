@@ -16,11 +16,26 @@ const DEFAULT_COVERAGE_THRESHOLD = {
   }
 };
 
+const isErrnoException = (value: unknown): value is NodeJS.ErrnoException => {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  if (!('code' in value)) {
+    return false;
+  }
+  return typeof (value as { code?: unknown }).code === 'string';
+};
+
 function backupFile(filePath: string): void {
-  if (fs.existsSync(filePath)) {
-    const backupPath = `${filePath}.bak`;
+  const backupPath = `${filePath}.bak`;
+  try {
     fs.copyFileSync(filePath, backupPath);
     console.log(chalk.blue(`📋 Backed up ${path.basename(filePath)} to ${path.basename(backupPath)}`));
+  } catch (error) {
+    if (isErrnoException(error) && error.code === 'ENOENT') {
+      return;
+    }
+    throw error;
   }
 }
 
@@ -32,14 +47,20 @@ function shellEscapeForSingleQuotes(str: string): string {
 function updatePackageJson(customThresholds?: { statements: number; branches: number; functions: number; lines: number }): boolean {
   const packageJsonPath = path.join(process.cwd(), 'package.json');
   
-  if (!fs.existsSync(packageJsonPath)) {
-    console.log(chalk.red('❌ package.json not found'));
-    return false;
+  backupFile(packageJsonPath);
+
+  let packageJsonRaw: string;
+  try {
+    packageJsonRaw = fs.readFileSync(packageJsonPath, 'utf8');
+  } catch (error) {
+    if (isErrnoException(error) && error.code === 'ENOENT') {
+      console.log(chalk.red('❌ package.json not found'));
+      return false;
+    }
+    throw error;
   }
 
-  backupFile(packageJsonPath);
-  
-  const packageJson: PackageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+  const packageJson: PackageJson = JSON.parse(packageJsonRaw);
   
   let modified = false;
 
@@ -90,14 +111,18 @@ function updatePreCommitHook(): void {
   const huskyPath = path.join(process.cwd(), '.husky');
   const preCommitPath = path.join(huskyPath, 'pre-commit');
   
-  if (!fs.existsSync(preCommitPath)) {
-    console.log(chalk.blue('ℹ️  No .husky/pre-commit found, skipping guard setup'));
-    return;
-  }
-
   backupFile(preCommitPath);
   
-  const preCommitContent = fs.readFileSync(preCommitPath, 'utf8');
+  let preCommitContent: string;
+  try {
+    preCommitContent = fs.readFileSync(preCommitPath, 'utf8');
+  } catch (error) {
+    if (isErrnoException(error) && error.code === 'ENOENT') {
+      console.log(chalk.blue('ℹ️  No .husky/pre-commit found, skipping guard setup'));
+      return;
+    }
+    throw error;
+  }
   
   if (preCommitContent.includes('ae tdd:guard')) {
     console.log(chalk.blue('ℹ️  TDD guard already configured in pre-commit hook'));
