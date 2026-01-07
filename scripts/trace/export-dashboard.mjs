@@ -85,7 +85,7 @@ function loadDashboardConfig(configPath) {
     parsed = YAML.parse(content);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`[export-dashboard] failed to read config: ${message}`);
+    throw new Error(`[export-dashboard] failed to parse config: ${message}`);
   }
   const dashboards = Array.isArray(parsed?.dashboards) ? parsed.dashboards : [];
   if (dashboards.length === 0) {
