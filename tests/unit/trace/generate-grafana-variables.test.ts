@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync, readFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import os from 'node:os';
 
@@ -113,5 +113,37 @@ describe('generate-grafana-variables CLI', () => {
 
     expect(output.trace.traceIds).toEqual(['trace-x']);
     expect(output.trace.tempoLinks).toEqual(['https://tempo.example.com/explore?traceId=trace-x']);
+  });
+
+  it('fails when envelope JSON is invalid', () => {
+    const envelopePath = join(tempDir, 'envelope.json');
+    const outputPath = join(tempDir, 'variables.json');
+
+    writeFileSync(envelopePath, '{invalid json');
+
+    const result = spawnSync(process.execPath, [
+      scriptPath,
+      '--envelope', envelopePath,
+      '--output', outputPath,
+    ], { encoding: 'utf8' });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('failed to parse JSON');
+  });
+
+  it('fails when envelope cannot be read', () => {
+    const envelopePath = join(tempDir, 'envelope.json');
+    const outputPath = join(tempDir, 'variables.json');
+
+    mkdirSync(envelopePath, { recursive: true });
+
+    const result = spawnSync(process.execPath, [
+      scriptPath,
+      '--envelope', envelopePath,
+      '--output', outputPath,
+    ], { encoding: 'utf8' });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('failed to read file');
   });
 });
