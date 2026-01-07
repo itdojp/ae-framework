@@ -83,4 +83,17 @@ describe('post-envelope-comment CLI', () => {
     expect(existsSync(outputPath)).toBe(true);
     expect(readFileSync(outputPath, 'utf8')).toContain('Trace Envelope Summary');
   });
+
+  it('fails when envelope is missing', () => {
+    const missingPath = join(tempDir, 'missing-envelope.json');
+
+    const result = spawnSync(process.execPath, [
+      scriptPath,
+      '--envelope', missingPath,
+      '--dry-run',
+    ], { encoding: 'utf8' });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('envelope not found');
+  });
 });
