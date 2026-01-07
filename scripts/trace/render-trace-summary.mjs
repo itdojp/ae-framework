@@ -37,28 +37,28 @@ let exitCode = 0;
 const MAX_INLINE_ISSUES = 5;
 
 const metadataPath = path.join(baseDir, 'kvonce-payload-metadata.json');
-const metadataRaw = readFileIfExists(metadataPath);
-if (metadataRaw) {
-  try {
+try {
+  const metadataRaw = readFileIfExists(metadataPath);
+  if (metadataRaw) {
     const metadata = JSON.parse(metadataRaw);
     lines.push(`- payload source: ${metadata.sourceType ?? 'unknown'} (${metadata.sourceDetail ?? 'n/a'})`);
     lines.push(`- sha256: ${metadata.sha256 ?? 'unknown'}`);
     lines.push(`- size: ${metadata.sizeBytes ?? 'n/a'} bytes`);
-  } catch (error) {
-    lines.push('- payload metadata: ⚠️ failed to parse');
   }
+} catch (error) {
+  lines.push('- payload metadata: ⚠️ failed to parse');
 }
 
 for (const item of cases) {
   const reportPath = path.join(item.dir, 'kvonce-validation.json');
-  const reportRaw = readFileIfExists(reportPath);
-  if (!reportRaw) {
-    lines.push(`- ${item.label}: ⚠️ validation file missing`);
-    outputs[`valid_${item.key}`] = 'missing';
-    outputs[`issues_${item.key}`] = 'N/A';
-    continue;
-  }
   try {
+    const reportRaw = readFileIfExists(reportPath);
+    if (reportRaw === null) {
+      lines.push(`- ${item.label}: ⚠️ validation file missing`);
+      outputs[`valid_${item.key}`] = 'missing';
+      outputs[`issues_${item.key}`] = 'N/A';
+      continue;
+    }
     const report = JSON.parse(reportRaw);
     const issues = Array.isArray(report.issues) ? report.issues : [];
     const status = report.valid ? '✅ valid' : '❌ invalid';
