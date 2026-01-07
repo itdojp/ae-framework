@@ -3,27 +3,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { appendSection } from '../ci/step-summary.mjs';
 
-const isErrnoException = (value) => {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-  if (!('code' in value)) {
-    return false;
-  }
-  return typeof value.code === 'string';
-};
-
-const readFileIfExists = (filePath) => {
-  try {
-    return fs.readFileSync(filePath, 'utf8');
-  } catch (error) {
-    if (isErrnoException(error) && error.code === 'ENOENT') {
-      return null;
-    }
-    throw error;
-  }
-};
-
 const baseDir = path.join('hermetic-reports', 'trace');
 const cases = [
   { key: 'otlp', label: 'OTLP payload', dir: process.env.KVONCE_TRACE_OTLP_DIR ?? path.join(baseDir, 'otlp') },
@@ -36,30 +15,59 @@ const lines = [];
 let exitCode = 0;
 const MAX_INLINE_ISSUES = 5;
 
+function isErrnoException(error) {
+  return error instanceof Error && 'code' in error;
+}
+
+function readFileIfExists(filePath) {
+  if (!filePath) return { content: null, found: false, error: null };
+  try {
+    return { content: fs.readFileSync(filePath, 'utf8'), found: true, error: null };
+  } catch (error) {
+    if (isErrnoException(error) && error.code === 'ENOENT') {
+      return { content: null, found: false, error: null };
+    }
+    return { content: null, found: false, error };
+  }
+}
+
+function formatErrorMessage(error) {
+  return error instanceof Error ? error.message : String(error);
+}
+
 const metadataPath = path.join(baseDir, 'kvonce-payload-metadata.json');
-try {
-  const metadataRaw = readFileIfExists(metadataPath);
-  if (metadataRaw) {
-    const metadata = JSON.parse(metadataRaw);
+const metadataResult = readFileIfExists(metadataPath);
+if (metadataResult.error) {
+  lines.push(`- payload metadata: ⚠️ failed to read (${formatErrorMessage(metadataResult.error)})`);
+} else if (metadataResult.found) {
+  try {
+    const metadata = JSON.parse(metadataResult.content);
     lines.push(`- payload source: ${metadata.sourceType ?? 'unknown'} (${metadata.sourceDetail ?? 'n/a'})`);
     lines.push(`- sha256: ${metadata.sha256 ?? 'unknown'}`);
     lines.push(`- size: ${metadata.sizeBytes ?? 'n/a'} bytes`);
+  } catch (error) {
+    lines.push('- payload metadata: ⚠️ failed to parse');
   }
-} catch (error) {
-  lines.push('- payload metadata: ⚠️ failed to parse');
 }
 
 for (const item of cases) {
   const reportPath = path.join(item.dir, 'kvonce-validation.json');
+  const reportResult = readFileIfExists(reportPath);
+  if (reportResult.error) {
+    lines.push(`- ${item.label}: ⚠️ failed to read validation (${formatErrorMessage(reportResult.error)})`);
+    outputs[`valid_${item.key}`] = 'error';
+    outputs[`issues_${item.key}`] = 'N/A';
+    exitCode = 1;
+    continue;
+  }
+  if (!reportResult.found) {
+    lines.push(`- ${item.label}: ⚠️ validation file missing`);
+    outputs[`valid_${item.key}`] = 'missing';
+    outputs[`issues_${item.key}`] = 'N/A';
+    continue;
+  }
   try {
-    const reportRaw = readFileIfExists(reportPath);
-    if (reportRaw === null) {
-      lines.push(`- ${item.label}: ⚠️ validation file missing`);
-      outputs[`valid_${item.key}`] = 'missing';
-      outputs[`issues_${item.key}`] = 'N/A';
-      continue;
-    }
-    const report = JSON.parse(reportRaw);
+    const report = JSON.parse(reportResult.content);
     const issues = Array.isArray(report.issues) ? report.issues : [];
     const status = report.valid ? '✅ valid' : '❌ invalid';
     lines.push(`- ${item.label}: ${status} (issues: ${issues.length})`);
@@ -81,8 +89,7 @@ for (const item of cases) {
       exitCode = 1;
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'unknown error';
-    lines.push(`- ${item.label}: ⚠️ failed to read validation (${message})`);
+    lines.push(`- ${item.label}: ⚠️ failed to parse validation (${formatErrorMessage(error)})`);
     outputs[`valid_${item.key}`] = 'error';
     outputs[`issues_${item.key}`] = 'N/A';
     exitCode = 1;
