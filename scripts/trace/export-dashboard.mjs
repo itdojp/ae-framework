@@ -3,6 +3,23 @@ import fs from 'node:fs';
 import path from 'node:path';
 import YAML from 'yaml';
 
+function isErrnoException(value) {
+  if (!value || typeof value !== 'object') return false;
+  if (!('code' in value)) return false;
+  return typeof value.code === 'string';
+}
+
+function readFileIfExists(filePath) {
+  try {
+    return fs.readFileSync(filePath, 'utf8');
+  } catch (error) {
+    if (isErrnoException(error) && error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  }
+}
+
 function parseArgs(argv) {
   const options = {
     host: process.env.GRAFANA_BASE_URL ?? process.env.GRAFANA_HOST ?? 'http://localhost:3000',
@@ -59,15 +76,16 @@ Options:
 
 function loadDashboardConfig(configPath) {
   const resolved = path.resolve(configPath);
-  if (!fs.existsSync(resolved)) {
+  const content = readFileIfExists(resolved);
+  if (content === null) {
     throw new Error(`[export-dashboard] config not found: ${resolved}`);
   }
   let parsed;
   try {
-    const content = fs.readFileSync(resolved, 'utf8');
     parsed = YAML.parse(content);
   } catch (error) {
-    throw new Error(`[export-dashboard] failed to read config: ${error.message}`);
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`[export-dashboard] failed to parse config: ${message}`);
   }
   const dashboards = Array.isArray(parsed?.dashboards) ? parsed.dashboards : [];
   if (dashboards.length === 0) {
@@ -127,7 +145,8 @@ async function main() {
       });
     }
   } catch (error) {
-    console.error('[export-dashboard] error:', error.message);
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[export-dashboard] error:', message);
     process.exit(1);
   }
 }
