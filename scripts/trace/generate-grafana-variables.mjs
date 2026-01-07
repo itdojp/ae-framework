@@ -44,10 +44,29 @@ Options:
   return options;
 }
 
-function readJsonSafe(resolvedPath) {
-  if (!resolvedPath || !fs.existsSync(resolvedPath)) return null;
+function isErrnoException(error) {
+  return error instanceof Error && 'code' in error;
+}
+
+function readFileIfExists(resolvedPath) {
+  if (!resolvedPath) return null;
   try {
-    return JSON.parse(fs.readFileSync(resolvedPath, 'utf8'));
+    return fs.readFileSync(resolvedPath, 'utf8');
+  } catch (error) {
+    if (isErrnoException(error) && error.code === 'ENOENT') {
+      return null;
+    }
+    console.error(`[grafana-variables] failed to read file: ${resolvedPath}`);
+    console.error(error.message);
+    process.exit(1);
+  }
+}
+
+function readJsonSafe(resolvedPath) {
+  const content = readFileIfExists(resolvedPath);
+  if (content === null) return { value: null, found: false };
+  try {
+    return { value: JSON.parse(content), found: true };
   } catch (error) {
     console.error(`[grafana-variables] failed to parse JSON: ${resolvedPath}`);
     console.error(error.message);
@@ -56,14 +75,9 @@ function readJsonSafe(resolvedPath) {
 }
 
 function readTextSafe(resolvedPath) {
-  if (!resolvedPath || !fs.existsSync(resolvedPath)) return null;
-  try {
-    return fs.readFileSync(resolvedPath, 'utf8');
-  } catch (error) {
-    console.error(`[grafana-variables] failed to read text: ${resolvedPath}`);
-    console.error(error.message);
-    process.exit(1);
-  }
+  const content = readFileIfExists(resolvedPath);
+  if (content === null) return { value: null, found: false };
+  return { value: content, found: true };
 }
 
 function coerceArray(value) {
@@ -149,9 +163,13 @@ function main() {
   const traceSummaryPath = options.summary ? path.resolve(options.summary) : null;
   const stepSummaryPath = options.stepSummary ? path.resolve(options.stepSummary) : null;
 
-  const envelope = readJsonSafe(envelopePath);
-  const traceSummary = readJsonSafe(traceSummaryPath);
-  const stepSummaryMarkdown = readTextSafe(stepSummaryPath);
+  const envelopeResult = readJsonSafe(envelopePath);
+  const traceSummaryResult = readJsonSafe(traceSummaryPath);
+  const stepSummaryResult = readTextSafe(stepSummaryPath);
+
+  const envelope = envelopeResult.value;
+  const traceSummary = traceSummaryResult.value;
+  const stepSummaryMarkdown = stepSummaryResult.value;
 
   const traceIds = new Set();
   const tempoLinks = new Set();
@@ -205,9 +223,9 @@ function main() {
     schemaVersion: '2025-10-variables',
     generatedAt: new Date().toISOString(),
     sources: {
-      envelope: envelopePath && fs.existsSync(envelopePath) ? path.relative(process.cwd(), envelopePath) : null,
-      traceSummary: traceSummaryPath && fs.existsSync(traceSummaryPath) ? path.relative(process.cwd(), traceSummaryPath) : null,
-      stepSummary: stepSummaryPath && fs.existsSync(stepSummaryPath) ? path.relative(process.cwd(), stepSummaryPath) : null,
+      envelope: envelopeResult.found ? path.relative(process.cwd(), envelopePath) : null,
+      traceSummary: traceSummaryResult.found ? path.relative(process.cwd(), traceSummaryPath) : null,
+      stepSummary: stepSummaryResult.found ? path.relative(process.cwd(), stepSummaryPath) : null,
     },
     metadata,
     trace: {
