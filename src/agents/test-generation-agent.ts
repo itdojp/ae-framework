@@ -338,19 +338,11 @@ export class TestGenerationAgent {
   }
 
   private convertToExUnitTest(testCase: TestCase): string {
-    const testName = testCase.name.toLowerCase().replace(/\s+/g, '_');
-    
     let test = `  test "${testCase.description}" do\n`;
     
     // Convert basic test patterns to ExUnit
     if (testCase.code.includes('expect(')) {
       // Convert expect() calls to ExUnit assertions
-      const converted = testCase.code
-        .replace(/expect\(([^)]+)\)\.toBe\(([^)]+)\)/g, 'assert $1 == $2')
-        .replace(/expect\(([^)]+)\)\.toEqual\(([^)]+)\)/g, 'assert $1 == $2')
-        .replace(/expect\(([^)]+)\)\.toBeTruthy\(\)/g, 'assert $1')
-        .replace(/expect\(([^)]+)\)\.toBeFalsy\(\)/g, 'refute $1');
-      
       test += `    # ${testCase.description}\n`;
       test += `    # TODO: Implement test logic\n`;
       test += `    assert true\n`;
