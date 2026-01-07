@@ -4,6 +4,23 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
+function isErrnoException(value) {
+  if (!value || typeof value !== 'object') return false;
+  if (!('code' in value)) return false;
+  return typeof value.code === 'string';
+}
+
+function readFileIfExists(filePath) {
+  try {
+    return fs.readFileSync(filePath, 'utf8');
+  } catch (error) {
+    if (isErrnoException(error) && error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  }
+}
+
 function parseArgs(argv) {
   const options = {
     envelope: process.env.ENVELOPE_COMMENT_SOURCE ?? 'artifacts/trace/report-envelope.json',
@@ -57,15 +74,17 @@ Options:
 
 function readEnvelope(filePath) {
   const resolved = path.resolve(filePath);
-  if (!fs.existsSync(resolved)) {
+  const content = readFileIfExists(resolved);
+  if (content === null) {
     console.error(`[envelope-comment] envelope not found: ${resolved}`);
     process.exit(1);
   }
   try {
-    return JSON.parse(fs.readFileSync(resolved, 'utf8'));
+    return JSON.parse(content);
   } catch (error) {
     console.error(`[envelope-comment] failed to parse envelope: ${resolved}`);
-    console.error(error.message);
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(message);
     process.exit(1);
   }
 }
