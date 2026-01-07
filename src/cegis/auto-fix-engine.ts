@@ -170,7 +170,7 @@ export class AutoFixEngine {
           commonLocations: categoryFailures
             .filter(f => f.location)
             .map(f => f.location!),
-          suggestedStrategies: this.getSuggestedStrategies(category, pattern.text),
+          suggestedStrategies: this.getSuggestedStrategies(category),
           confidence: this.calculatePatternConfidence(pattern.count, categoryFailures.length)
         });
       }
@@ -450,7 +450,7 @@ export class AutoFixEngine {
       .sort((a, b) => b.count - a.count);
   }
 
-  private getSuggestedStrategies(category: FailureCategory, pattern: string): string[] {
+  private getSuggestedStrategies(category: FailureCategory): string[] {
     const strategies = this.strategies.get(category) || [];
     return strategies.map(s => s.name);
   }

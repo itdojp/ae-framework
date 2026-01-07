@@ -4,11 +4,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import type { 
-  FailureArtifact, 
-  FailureCategory, 
-  CodeLocation
-} from './types.js';
+import type { FailureArtifact, CodeLocation } from './types.js';
 import { FailureArtifactSchema } from './types.js';
 
 export class FailureArtifactFactory {
@@ -18,7 +14,7 @@ export class FailureArtifactFactory {
   static fromError(
     error: Error,
     location?: CodeLocation,
-    context?: Record<string, any>
+    context?: Record<string, unknown>
   ): FailureArtifact {
     const artifact: FailureArtifact = {
       id: uuidv4(),
@@ -61,8 +57,8 @@ export class FailureArtifactFactory {
    */
   static fromTestFailure(
     testName: string,
-    expected: any,
-    actual: any,
+    expected: unknown,
+    actual: unknown,
     location?: CodeLocation,
     testOutput?: string
   ): FailureArtifact {
@@ -160,7 +156,7 @@ export class FailureArtifactFactory {
   static fromContractViolation(
     contractName: string,
     violationType: 'input' | 'output' | 'schema',
-    actualData: any,
+    actualData: unknown,
     location?: CodeLocation,
     expectedSchema?: string
   ): FailureArtifact {
@@ -375,7 +371,7 @@ export class FailureArtifactFactory {
     threshold: number,
     actual: number,
     location?: CodeLocation,
-    context?: Record<string, any>
+    context?: Record<string, unknown>
   ): FailureArtifact {
     const artifact: FailureArtifact = {
       id: uuidv4(),
@@ -423,7 +419,7 @@ export class FailureArtifactFactory {
   /**
    * Validate and enrich an existing failure artifact
    */
-  static validate(artifact: any): FailureArtifact {
+  static validate(artifact: unknown): FailureArtifact {
     return FailureArtifactSchema.parse(artifact);
   }
 

@@ -43,9 +43,10 @@ export function withRecorder(base: LLM, opts?: { dir?: string; replay?: boolean 
         try {
           // Try hash-based file first, then fall back to legacy file.
           let content: unknown;
-          const readCassette = async (filePath: string) => {
+          const readCassette = async (filePath: string): Promise<unknown> => {
             try {
-              return JSON.parse(await readFile(filePath, 'utf8'));
+              const parsed: unknown = JSON.parse(await readFile(filePath, 'utf8'));
+              return parsed;
             } catch (innerError) {
               if (innerError instanceof SyntaxError) {
                 throw new Error(`Cassette file is invalid JSON: ${filePath}`);
