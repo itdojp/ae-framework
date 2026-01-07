@@ -2,6 +2,16 @@ import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
 
+const isErrnoException = (value: unknown): value is NodeJS.ErrnoException => {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  if (!('code' in value)) {
+    return false;
+  }
+  return typeof (value as { code?: unknown }).code === 'string';
+};
+
 const CI_WORKFLOW_TEMPLATE = `name: ae-ci
 on:
   push:
@@ -38,24 +48,28 @@ export async function ciScaffold(force = false) {
   const workflowDir = path.join(process.cwd(), '.github', 'workflows');
   const workflowFile = path.join(workflowDir, 'ae-ci.yml');
 
-  // Check if file already exists
-  const fileExists = fs.existsSync(workflowFile);
-  if (fileExists && !force) {
-    console.log(chalk.yellow('⚠️  CI workflow file already exists: .github/workflows/ae-ci.yml'));
-    console.log(chalk.yellow('   Use --force to overwrite'));
-    return;
-  }
-
   // Create .github/workflows directory if it doesn't exist
-  if (!fs.existsSync(workflowDir)) {
+  try {
     fs.mkdirSync(workflowDir, { recursive: true });
-    console.log(chalk.blue('📁 Created .github/workflows directory'));
+  } catch (error) {
+    if (!isErrnoException(error) || error.code !== 'EEXIST') {
+      throw error;
+    }
   }
 
   // Write workflow file
-  fs.writeFileSync(workflowFile, CI_WORKFLOW_TEMPLATE.trim());
+  try {
+    fs.writeFileSync(workflowFile, CI_WORKFLOW_TEMPLATE.trim(), { flag: force ? 'w' : 'wx' });
+  } catch (error) {
+    if (!force && isErrnoException(error) && error.code === 'EEXIST') {
+      console.log(chalk.yellow('⚠️  CI workflow file already exists: .github/workflows/ae-ci.yml'));
+      console.log(chalk.yellow('   Use --force to overwrite'));
+      return;
+    }
+    throw error;
+  }
   
-  const action = fileExists ? 'Updated' : 'Created';
+  const action = force ? 'Updated' : 'Created';
   console.log(chalk.green(`✅ ${action} CI workflow: .github/workflows/ae-ci.yml`));
   
   console.log(chalk.cyan('\n📋 Workflow includes:'));
