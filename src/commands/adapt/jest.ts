@@ -47,6 +47,8 @@ function shellEscapeForSingleQuotes(str: string): string {
 function updatePackageJson(customThresholds?: { statements: number; branches: number; functions: number; lines: number }): boolean {
   const packageJsonPath = path.join(process.cwd(), 'package.json');
   
+  backupFile(packageJsonPath);
+
   let packageJsonRaw: string;
   try {
     packageJsonRaw = fs.readFileSync(packageJsonPath, 'utf8');
@@ -58,8 +60,6 @@ function updatePackageJson(customThresholds?: { statements: number; branches: nu
     throw error;
   }
 
-  backupFile(packageJsonPath);
-  
   const packageJson: PackageJson = JSON.parse(packageJsonRaw);
   
   let modified = false;
@@ -111,6 +111,8 @@ function updatePreCommitHook(): void {
   const huskyPath = path.join(process.cwd(), '.husky');
   const preCommitPath = path.join(huskyPath, 'pre-commit');
   
+  backupFile(preCommitPath);
+  
   let preCommitContent: string;
   try {
     preCommitContent = fs.readFileSync(preCommitPath, 'utf8');
@@ -121,8 +123,6 @@ function updatePreCommitHook(): void {
     }
     throw error;
   }
-
-  backupFile(preCommitPath);
   
   if (preCommitContent.includes('ae tdd:guard')) {
     console.log(chalk.blue('ℹ️  TDD guard already configured in pre-commit hook'));
