@@ -3,6 +3,23 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+function isErrnoException(value) {
+  if (!value || typeof value !== 'object') return false;
+  if (!('code' in value)) return false;
+  return typeof value.code === 'string';
+}
+
+function readFileIfExists(filePath) {
+  try {
+    return fs.readFileSync(filePath, 'utf8');
+  } catch (error) {
+    if (isErrnoException(error) && error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  }
+}
+
 function parseFolderIdValue(value) {
   if (value === undefined || value === null || value === '') return 0;
   const parsed = Number(value);
@@ -64,12 +81,12 @@ Options:
 
 function readDashboard(filePath) {
   const resolved = path.resolve(filePath);
-  if (!fs.existsSync(resolved)) {
+  const content = readFileIfExists(resolved);
+  if (!content) {
     console.error(`[import-dashboard] file not found: ${resolved}`);
     process.exit(1);
   }
   try {
-    const content = fs.readFileSync(resolved, 'utf8');
     return JSON.parse(content);
   } catch (error) {
     if (error instanceof SyntaxError) {
@@ -77,7 +94,8 @@ function readDashboard(filePath) {
     } else {
       console.error(`[import-dashboard] error reading dashboard file: ${resolved}`);
     }
-    console.error(error.message);
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(message);
     process.exit(1);
   }
 }
@@ -113,7 +131,8 @@ async function main() {
   try {
     await importDashboard(options);
   } catch (error) {
-    console.error('[import-dashboard] error:', error.message);
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[import-dashboard] error:', message);
     process.exit(1);
   }
 }
