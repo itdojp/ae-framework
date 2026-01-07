@@ -7,6 +7,42 @@ interface PackageJson {
   [key: string]: any;
 }
 
+const isErrnoException = (value: unknown): value is NodeJS.ErrnoException => {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  if (!('code' in value)) {
+    return false;
+  }
+  return typeof (value as { code?: unknown }).code === 'string';
+};
+
+const readFileIfExists = (filePath: string): string | null => {
+  try {
+    return fs.readFileSync(filePath, 'utf8');
+  } catch (error) {
+    if (isErrnoException(error) && error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  }
+};
+
+const findExistingConfig = (configPaths: string[]): string | null => {
+  for (const candidate of configPaths) {
+    try {
+      fs.statSync(path.join(process.cwd(), candidate));
+      return candidate;
+    } catch (error) {
+      if (isErrnoException(error) && error.code === 'ENOENT') {
+        continue;
+      }
+      throw error;
+    }
+  }
+  return null;
+};
+
 function generateVitestConfigTemplate(thresholds = { lines: 80, functions: 80, branches: 80, statements: 80 }) {
   return `import { defineConfig } from 'vitest/config';
 
@@ -27,24 +63,30 @@ export default defineConfig({
 }
 
 function backupFile(filePath: string): void {
-  if (fs.existsSync(filePath)) {
+  try {
     const backupPath = `${filePath}.bak`;
     fs.copyFileSync(filePath, backupPath);
     console.log(chalk.blue(`📋 Backed up ${path.basename(filePath)} to ${path.basename(backupPath)}`));
+  } catch (error) {
+    if (isErrnoException(error) && error.code === 'ENOENT') {
+      return;
+    }
+    throw error;
   }
 }
 
 function updatePackageJson(): boolean {
   const packageJsonPath = path.join(process.cwd(), 'package.json');
   
-  if (!fs.existsSync(packageJsonPath)) {
+  const packageJsonRaw = readFileIfExists(packageJsonPath);
+  if (!packageJsonRaw) {
     console.log(chalk.red('❌ package.json not found'));
     return false;
   }
 
   backupFile(packageJsonPath);
   
-  const packageJson: PackageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+  const packageJson: PackageJson = JSON.parse(packageJsonRaw);
   
   let modified = false;
 
@@ -100,7 +142,7 @@ function createVitestConfig(customThresholds?: { statements: number; branches: n
     'vite.config.js'
   ];
   
-  const existingConfig = configPaths.find(p => fs.existsSync(path.join(process.cwd(), p)));
+  const existingConfig = findExistingConfig(configPaths);
   
   const thresholds = customThresholds || { lines: 80, functions: 80, branches: 80, statements: 80 };
 
@@ -120,14 +162,13 @@ function updatePreCommitHook(): void {
   const huskyPath = path.join(process.cwd(), '.husky');
   const preCommitPath = path.join(huskyPath, 'pre-commit');
   
-  if (!fs.existsSync(preCommitPath)) {
+  const preCommitContent = readFileIfExists(preCommitPath);
+  if (!preCommitContent) {
     console.log(chalk.blue('ℹ️  No .husky/pre-commit found, skipping guard setup'));
     return;
   }
 
   backupFile(preCommitPath);
-  
-  const preCommitContent = fs.readFileSync(preCommitPath, 'utf8');
   
   if (preCommitContent.includes('ae tdd:guard')) {
     console.log(chalk.blue('ℹ️  TDD guard already configured in pre-commit hook'));
