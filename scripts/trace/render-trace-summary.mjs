@@ -3,6 +3,27 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { appendSection } from '../ci/step-summary.mjs';
 
+const isErrnoException = (value) => {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  if (!('code' in value)) {
+    return false;
+  }
+  return typeof value.code === 'string';
+};
+
+const readFileIfExists = (filePath) => {
+  try {
+    return fs.readFileSync(filePath, 'utf8');
+  } catch (error) {
+    if (isErrnoException(error) && error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  }
+};
+
 const baseDir = path.join('hermetic-reports', 'trace');
 const cases = [
   { key: 'otlp', label: 'OTLP payload', dir: process.env.KVONCE_TRACE_OTLP_DIR ?? path.join(baseDir, 'otlp') },
@@ -16,9 +37,10 @@ let exitCode = 0;
 const MAX_INLINE_ISSUES = 5;
 
 const metadataPath = path.join(baseDir, 'kvonce-payload-metadata.json');
-if (fs.existsSync(metadataPath)) {
+const metadataRaw = readFileIfExists(metadataPath);
+if (metadataRaw) {
   try {
-    const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+    const metadata = JSON.parse(metadataRaw);
     lines.push(`- payload source: ${metadata.sourceType ?? 'unknown'} (${metadata.sourceDetail ?? 'n/a'})`);
     lines.push(`- sha256: ${metadata.sha256 ?? 'unknown'}`);
     lines.push(`- size: ${metadata.sizeBytes ?? 'n/a'} bytes`);
@@ -29,14 +51,15 @@ if (fs.existsSync(metadataPath)) {
 
 for (const item of cases) {
   const reportPath = path.join(item.dir, 'kvonce-validation.json');
-  if (!fs.existsSync(reportPath)) {
+  const reportRaw = readFileIfExists(reportPath);
+  if (!reportRaw) {
     lines.push(`- ${item.label}: ⚠️ validation file missing`);
     outputs[`valid_${item.key}`] = 'missing';
     outputs[`issues_${item.key}`] = 'N/A';
     continue;
   }
   try {
-    const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+    const report = JSON.parse(reportRaw);
     const issues = Array.isArray(report.issues) ? report.issues : [];
     const status = report.valid ? '✅ valid' : '❌ invalid';
     lines.push(`- ${item.label}: ${status} (issues: ${issues.length})`);
@@ -58,7 +81,8 @@ for (const item of cases) {
       exitCode = 1;
     }
   } catch (error) {
-    lines.push(`- ${item.label}: ⚠️ failed to read validation (${error.message})`);
+    const message = error instanceof Error ? error.message : 'unknown error';
+    lines.push(`- ${item.label}: ⚠️ failed to read validation (${message})`);
     outputs[`valid_${item.key}`] = 'error';
     outputs[`issues_${item.key}`] = 'N/A';
     exitCode = 1;
