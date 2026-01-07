@@ -64,7 +64,7 @@ function readFileIfExists(resolvedPath) {
 
 function readJsonSafe(resolvedPath) {
   const content = readFileIfExists(resolvedPath);
-  if (content == null) return { value: null, found: false };
+  if (content === null) return { value: null, found: false };
   try {
     return { value: JSON.parse(content), found: true };
   } catch (error) {
@@ -76,7 +76,7 @@ function readJsonSafe(resolvedPath) {
 
 function readTextSafe(resolvedPath) {
   const content = readFileIfExists(resolvedPath);
-  if (content == null) return { value: null, found: false };
+  if (content === null) return { value: null, found: false };
   return { value: content, found: true };
 }
 
