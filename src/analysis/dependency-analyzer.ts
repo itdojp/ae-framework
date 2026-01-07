@@ -8,6 +8,8 @@ import { SequentialInferenceEngine } from '../engines/sequential-inference-engin
 import { ProblemDecomposer, type Problem, type DecompositionResult } from '../inference/core/problem-decomposer.js';
 import type { ComplexQuery, DependencyGraph, ImpactAnalysis, DependencyNode } from '../engines/sequential-inference-engine.js';
 
+type ImportanceLevel = 'low' | 'medium' | 'high' | 'critical';
+
 export interface CircularDependency {
   id: string;
   cycle: string[];
@@ -350,7 +352,7 @@ export class DependencyAnalyzer extends EventEmitter {
 
   private async buildDependencyGraph(request: DependencyAnalysisRequest): Promise<DependencyGraph> {
     // Use Sequential Inference Engine for dependency analysis
-    const dependencyData: DependencyGraph = await this.inferenceEngine.analyzeDeepDependencies({
+    const dependencyData = await this.inferenceEngine.analyzeDeepDependencies({
       projectRoot: request.projectRoot,
       sourceFiles: request.targetFiles || [],
       dependencies: {},
@@ -560,7 +562,7 @@ export class DependencyAnalyzer extends EventEmitter {
     return Math.min(10, deps.length + (path.includes('node_modules') ? 0 : 1));
   }
 
-  private assessNodeImportance(path: string, deps: string[]): DependencyNode['metadata']['importance'] {
+  private assessNodeImportance(path: string, deps: string[]): ImportanceLevel {
     if (deps.length > 10) return 'critical';
     if (deps.length > 5) return 'high';
     if (deps.length > 2) return 'medium';
