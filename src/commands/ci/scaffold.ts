@@ -49,27 +49,36 @@ export async function ciScaffold(force = false) {
   const workflowFile = path.join(workflowDir, 'ae-ci.yml');
 
   // Create .github/workflows directory if it doesn't exist
-  try {
-    fs.mkdirSync(workflowDir, { recursive: true });
-  } catch (error) {
-    if (!isErrnoException(error) || error.code !== 'EEXIST') {
+  fs.mkdirSync(workflowDir, { recursive: true });
+
+  // Write workflow file
+  let action: 'Created' | 'Updated' = 'Created';
+  const template = CI_WORKFLOW_TEMPLATE.trim();
+
+  if (force) {
+    try {
+      fs.writeFileSync(workflowFile, template, { flag: 'wx' });
+    } catch (error) {
+      if (isErrnoException(error) && error.code === 'EEXIST') {
+        fs.writeFileSync(workflowFile, template, { flag: 'w' });
+        action = 'Updated';
+      } else {
+        throw error;
+      }
+    }
+  } else {
+    try {
+      fs.writeFileSync(workflowFile, template, { flag: 'wx' });
+    } catch (error) {
+      if (isErrnoException(error) && error.code === 'EEXIST') {
+        console.log(chalk.yellow('⚠️  CI workflow file already exists: .github/workflows/ae-ci.yml'));
+        console.log(chalk.yellow('   Use --force to overwrite'));
+        return;
+      }
       throw error;
     }
   }
 
-  // Write workflow file
-  try {
-    fs.writeFileSync(workflowFile, CI_WORKFLOW_TEMPLATE.trim(), { flag: force ? 'w' : 'wx' });
-  } catch (error) {
-    if (!force && isErrnoException(error) && error.code === 'EEXIST') {
-      console.log(chalk.yellow('⚠️  CI workflow file already exists: .github/workflows/ae-ci.yml'));
-      console.log(chalk.yellow('   Use --force to overwrite'));
-      return;
-    }
-    throw error;
-  }
-  
-  const action = force ? 'Updated' : 'Created';
   console.log(chalk.green(`✅ ${action} CI workflow: .github/workflows/ae-ci.yml`));
   
   console.log(chalk.cyan('\n📋 Workflow includes:'));
