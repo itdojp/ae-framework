@@ -43,11 +43,21 @@ export function withRecorder(base: LLM, opts?: { dir?: string; replay?: boolean 
         try {
           // Try hash-based file first, then fall back to legacy file.
           let content: unknown;
+          const readCassette = async (filePath: string) => {
+            try {
+              return JSON.parse(await readFile(filePath, 'utf8'));
+            } catch (innerError) {
+              if (innerError instanceof SyntaxError) {
+                throw new Error(`Cassette file is invalid JSON: ${filePath}`);
+              }
+              throw innerError;
+            }
+          };
           try {
-            content = JSON.parse(await readFile(hashFile, 'utf8'));
+            content = await readCassette(hashFile);
           } catch (innerError) {
             if (isErrnoException(innerError) && innerError.code === 'ENOENT') {
-              content = JSON.parse(await readFile(legacyFile, 'utf8'));
+              content = await readCassette(legacyFile);
             } else {
               throw innerError;
             }
@@ -57,8 +67,6 @@ export function withRecorder(base: LLM, opts?: { dir?: string; replay?: boolean 
         } catch (error) {
           if (isErrnoException(error) && error.code === 'ENOENT') {
             throw new Error(`Cassette not found: ${hashFile}. Run with --record first.`);
-          } else if (error instanceof SyntaxError) {
-            throw new Error(`Cassette file is invalid JSON.`);
           } else {
             throw error;
           }
