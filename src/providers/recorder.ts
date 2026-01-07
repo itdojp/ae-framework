@@ -1,5 +1,5 @@
 import type { LLM } from './index.js';
-import { readFile, writeFile, mkdir, access } from 'node:fs/promises';
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import * as path from 'node:path';
 
@@ -41,16 +41,17 @@ export function withRecorder(base: LLM, opts?: { dir?: string; replay?: boolean 
       
       if (replay) {
         try {
-          // Try hash-based file first
-          let file = hashFile;
+          // Try hash-based file first, then fall back to legacy file.
+          let content: unknown;
           try {
-            await access(hashFile);
-          } catch {
-            // Fall back to legacy file if hash file doesn't exist
-            file = legacyFile;
+            content = JSON.parse(await readFile(hashFile, 'utf8'));
+          } catch (innerError) {
+            if (isErrnoException(innerError) && innerError.code === 'ENOENT') {
+              content = JSON.parse(await readFile(legacyFile, 'utf8'));
+            } else {
+              throw innerError;
+            }
           }
-          
-          const content: unknown = JSON.parse(await readFile(file, 'utf8'));
           const hit = content as { output: string };
           return hit.output;
         } catch (error) {
