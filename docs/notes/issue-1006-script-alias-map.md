@@ -5,6 +5,7 @@
 - Provide a reference for which legacy scripts should point to the new entry points.
 
 ## Draft aliases (Phase 1)
+Note: the JSON source of truth is `scripts/admin/script-alias-map.json`. This document summarizes it for review.
 | Legacy script | Proposed alias target | Rationale |
 | --- | --- | --- |
 | `test:ci` | `scripts/test/run.mjs --profile=ci` | Preserve CI entry while moving to unified test entry point. |
