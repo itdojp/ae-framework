@@ -91,10 +91,11 @@ lines.push('- 集計方法: `:` の前半プレフィックスで分類（例: `
 lines.push(`- 総数: ${total}`);
 lines.push('');
 lines.push('## プレフィックス別の件数');
-lines.push('| prefix | count |');
-lines.push('| --- | ---: |');
+lines.push('| prefix | count | share |');
+lines.push('| --- | ---: | ---: |');
 for (const [prefix, count] of entries) {
-  lines.push(`| ${prefix} | ${count} |`);
+  const share = total === 0 ? 0 : (count / total) * 100;
+  lines.push(`| ${prefix} | ${count} | ${share.toFixed(1)}% |`);
 }
 lines.push('');
 lines.push('## (root) scripts 一覧');
