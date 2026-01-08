@@ -26,6 +26,12 @@ This document summarizes how tests are grouped in ae-framework so contributors c
 - **Before PR**: `test:ci:lite` (verify-lite) for a balanced signal.
 - **Nightly / heavy**: run mutation, MBT, and full formal checks for regression coverage.
 
+## CI gating notes
+
+- Heavy suites are **label-gated** to avoid unstable or expensive runs on every PR.
+- Use `docs/ci/label-gating.md` for labels (`run-ci-extended`, `run-mbt`, `run-mutation`, `run-property`).
+- Prefer the stable profile for CI baselines: `docs/ci/stable-profile.md`.
+
 ## Related
 
 - `docs/testing/parallel-execution-strategy.md`
