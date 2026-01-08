@@ -1,6 +1,29 @@
 #!/usr/bin/env node
+/**
+ * CLI entry point for running verification profiles.
+ *
+ * This script resolves a named "verify profile" (e.g. `lite`, `conformance`, `formal`)
+ * to one or more underlying package scripts and executes them sequentially.
+ * It provides a consistent interface for verify tasks in CLI/CI.
+ *
+ * Usage:
+ *   node scripts/verify/run.mjs --profile <name> [--list] [--dry-run]
+ *
+ * Options:
+ *   -p, --profile <name>   Name of the verify profile to run.
+ *   --list                 Print all available profile names and exit.
+ *   --dry-run              Print the resolved commands instead of executing them.
+ *   -h, --help             Show this usage information and exit.
+ *
+ * Exit codes:
+ *   0  - Success (including help or list output).
+ *   2  - Unknown profile name.
+ *   3  - Invalid or missing arguments.
+ *   >0 - Non-zero exit code from a child verify command.
+ */
 import { spawnSync } from 'node:child_process';
-import { pathToFileURL } from 'node:url';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const PROFILE_COMMANDS = {
   lite: [['pnpm', 'run', 'verify:lite']],
@@ -13,22 +36,29 @@ export function listProfiles() {
 }
 
 export function resolveProfile(profile) {
-  return PROFILE_COMMANDS[profile] ?? null;
+  return Object.prototype.hasOwnProperty.call(PROFILE_COMMANDS, profile)
+    ? PROFILE_COMMANDS[profile]
+    : null;
 }
 
-function parseArgs(argv) {
+export function parseArgs(argv) {
   const options = {
     profile: null,
     list: false,
     dryRun: false,
     help: false,
+    profileError: false,
     unknown: [],
   };
 
   for (let i = 2; i < argv.length; i += 1) {
     const arg = argv[i];
     const next = argv[i + 1];
-    if ((arg === '--profile' || arg === '-p') && next) {
+    if (arg === '--profile' || arg === '-p') {
+      if (!next || next.startsWith('-')) {
+        options.profileError = true;
+        continue;
+      }
       options.profile = next;
       i += 1;
     } else if (arg === '--list') {
@@ -56,7 +86,7 @@ Options:
 `);
 }
 
-function runVerify(options) {
+export function runVerify(options) {
   if (options.help) {
     printHelp();
     return 0;
@@ -65,6 +95,11 @@ function runVerify(options) {
   if (options.list) {
     console.log(listProfiles().join('\n'));
     return 0;
+  }
+
+  if (options.profileError) {
+    console.error('[verify-runner] missing value for --profile');
+    return 3;
   }
 
   if (options.unknown.length > 0) {
@@ -95,6 +130,12 @@ function runVerify(options) {
       stdio: 'inherit',
       env: process.env,
     });
+    if (result.error) {
+      console.error(
+        `[verify-runner] failed to spawn command: ${command.join(' ')}: ${result.error.message ?? result.error}`
+      );
+      return result.error.code === 'ENOENT' ? 127 : 1;
+    }
     if (result.status !== 0) {
       return result.status ?? 1;
     }
@@ -102,8 +143,13 @@ function runVerify(options) {
   return 0;
 }
 
-function isCliInvocation(argv) {
-  return import.meta.url === pathToFileURL(argv[1]).href;
+export function isCliInvocation(argv) {
+  if (!argv[1]) return false;
+  try {
+    return fileURLToPath(import.meta.url) === path.resolve(argv[1]);
+  } catch {
+    return false;
+  }
 }
 
 if (isCliInvocation(process.argv)) {
