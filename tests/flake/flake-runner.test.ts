@@ -60,6 +60,12 @@ describe('flake runner arg parsing', () => {
     expect(options.profileError).toBe(false);
   });
 
+  it('parses profile value with equals form', () => {
+    const options = parseArgs(['node', 'script', '--profile=detect']);
+    expect(options.profile).toBe('detect');
+    expect(options.profileError).toBe(false);
+  });
+
   it('flags missing profile value', () => {
     const options = parseArgs(['node', 'script', '--profile']);
     expect(options.profileError).toBe(true);
@@ -67,6 +73,11 @@ describe('flake runner arg parsing', () => {
 });
 
 describe('flake runner execution', () => {
+  it('returns 0 for help', () => {
+    const options = parseArgs(['node', 'script', '--help']);
+    expect(runFlake(options)).toBe(0);
+  });
+
   it('returns 0 for list', () => {
     const options = parseArgs(['node', 'script', '--list']);
     expect(runFlake(options)).toBe(0);
@@ -92,6 +103,19 @@ describe('flake runner execution', () => {
     expect(runFlake(options)).toBe(0);
   });
 
+  it('returns 0 when command succeeds', () => {
+    spawnSyncMock.mockReturnValueOnce({ status: 0 });
+    const options = parseArgs(['node', 'script', '--profile', 'detect']);
+    expect(runFlake(options)).toBe(0);
+    expect(spawnSyncMock).toHaveBeenCalled();
+  });
+
+  it('returns child exit status for failures', () => {
+    spawnSyncMock.mockReturnValueOnce({ status: 5 });
+    const options = parseArgs(['node', 'script', '--profile', 'detect']);
+    expect(runFlake(options)).toBe(5);
+  });
+
   it('handles spawn errors', () => {
     spawnSyncMock.mockReturnValueOnce({
       error: Object.assign(new Error('not found'), { code: 'ENOENT' }),
@@ -99,6 +123,15 @@ describe('flake runner execution', () => {
     });
     const options = parseArgs(['node', 'script', '--profile', 'detect']);
     expect(runFlake(options)).toBe(127);
+  });
+
+  it('handles spawn errors with non-ENOENT codes', () => {
+    spawnSyncMock.mockReturnValueOnce({
+      error: Object.assign(new Error('permission denied'), { code: 'EACCES' }),
+      status: null,
+    });
+    const options = parseArgs(['node', 'script', '--profile', 'detect']);
+    expect(runFlake(options)).toBe(1);
   });
 
   it('detects non-cli invocation', () => {

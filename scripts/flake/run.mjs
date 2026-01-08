@@ -63,7 +63,21 @@ export function parseArgs(argv) {
   for (let i = 2; i < argv.length; i += 1) {
     const arg = argv[i];
     const next = argv[i + 1];
-    if (arg === '--profile' || arg === '-p') {
+    if (arg.startsWith('--profile=')) {
+      const value = arg.slice('--profile='.length);
+      if (!value) {
+        options.profileError = true;
+        continue;
+      }
+      options.profile = value;
+    } else if (arg.startsWith('-p=')) {
+      const value = arg.slice('-p='.length);
+      if (!value) {
+        options.profileError = true;
+        continue;
+      }
+      options.profile = value;
+    } else if (arg === '--profile' || arg === '-p') {
       if (!next || next.startsWith('-')) {
         options.profileError = true;
         continue;
