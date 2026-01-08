@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "0.1.0",
+  "taskIntent": "post-envelope-comment: missing envelope file should fail with clear error",
+  "systemConstraints": [
+    "Node.js 20",
+    "TypeScript",
+    "No breaking changes"
+  ],
+  "roles": ["cli", "tests"],
+  "artifacts": [
+    {
+      "type": "source",
+      "path": "src/trace/post-envelope-comment.ts",
+      "role": "cli",
+      "commit": "HEAD",
+      "description": "CLI entry for posting envelope comments"
+    },
+    {
+      "type": "test",
+      "path": "tests/unit/trace/post-envelope-comment.test.ts",
+      "role": "tests",
+      "description": "Regression tests for missing envelope handling"
+    },
+    {
+      "type": "schema",
+      "path": "schema/envelope.schema.json",
+      "role": "spec",
+      "description": "Envelope schema (traceCorrelation, artifacts)"
+    }
+  ],
+  "assumptions": [
+    "CLI exits with code 1 on fatal error"
+  ],
+  "openQuestions": [
+    "Should stderr message format be asserted strictly?"
+  ],
+  "contextVacuum": {
+    "status": "ok",
+    "missing": []
+  },
+  "metadata": {
+    "owner": "trace",
+    "priority": "medium"
+  }
+}
