@@ -40,6 +40,11 @@ const checks = [
     schema: 'schema/flow.schema.json',
     fixtures: ['fixtures/flow/sample.flow.json'],
     label: 'Flow schema validation'
+  },
+  {
+    schema: 'schema/context-bundle.schema.json',
+    fixtures: ['fixtures/context-bundle/sample.context-bundle.json'],
+    label: 'Context Bundle schema validation'
   }
 ];
 
