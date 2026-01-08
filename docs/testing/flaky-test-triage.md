@@ -12,7 +12,7 @@ Purpose: Provide a minimal, repeatable checklist to diagnose flaky tests without
   - `pnpm run test:ci:lite`
   - or the specific suite (unit/integration/property/mbt)
 - If Vitest stalls, try:
-  - `vitest --run --reporter=verbose --maxWorkers=50% --bail=1`
+  - `vitest --run --reporter=verbose --maxWorkers=50% --bail`
 
 ## 3) Isolate the test
 - Use a name or file filter to limit scope
