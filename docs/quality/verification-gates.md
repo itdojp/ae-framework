@@ -17,7 +17,7 @@ Verification gates standardize **verify-then-merge**. This guide lists the avail
 ## ゲート種別
 
 - 基本ゲート: lint / types / coverage
-- 追加ゲート: property / contract / mutation / MBT / perf / a11y / lighthouse
+- 追加ゲート: property / contract / mutation / MBT / perf / a11y / lighthouse / heavy (CI Extended)
 - Formal: TLA+ / Alloy / conformance (report-only → opt-in)
 
 ## 有効化の指針（既存運用のまとめ）
@@ -36,10 +36,11 @@ Verification gates standardize **verify-then-merge**. This guide lists the avail
 | Gate | How to enable | Primary output | Notes |
 | --- | --- | --- | --- |
 | property | label `run-property` | `artifacts/properties/` | CI Extended 側で実行 |
-| contract | `pnpm pipelines:pact` | `artifacts/contracts/` | API契約の検証 |
+| contract | `pnpm run pipelines:pact` | `artifacts/contracts/` | API契約の検証 |
 | mutation | label `run-mutation` | `reports/mutation/` | quick mode + ignoreStatic |
 | MBT | label `run-mbt` | `artifacts/mbt/` | CI Extended 側 |
 | perf/a11y/lh | label `enforce-perf` / `enforce-a11y` / `enforce-lh` | `reports/*.json` | しきい値でブロッキング |
+| heavy tests | label `run-ci-extended` | `reports/heavy-test-trends.json` | integration/property/MBT/mutation の集約 |
 
 ## PRレポート
 
