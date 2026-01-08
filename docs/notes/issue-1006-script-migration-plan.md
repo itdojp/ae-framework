@@ -10,12 +10,14 @@
 
 ## Strategy
 1) Define top-level categories (core, quality, verify, ci, agents, formal, benchmark, tools).
-2) For each category, create a single entry script under scripts/<category>/run.mjs.
+   Note: The `agents` and `formal` categories are reserved for later phases and are included here to define the long-term category taxonomy.
+2) For each category, create a single entry script under scripts/<category>/run.mjs (where `<category>` is a placeholder; for example, scripts/test/run.mjs).
 3) Preserve existing scripts as aliases while emitting deprecation warnings.
 4) Add pnpm run help to list new categories and recommended entry points.
 
 ## Phase 1 (Week 1-2)
-- Focus categories: test, quality, verify, flake, security.
+- Focus categories (within the Strategy taxonomy): test, quality, verify, flake, security.
+  Note: Phase 1 keeps finer-grained labels (test/flake/security) while they are mapped into the final top-level categories.
 - For each category:
   - Identify the top 5 most used scripts.
   - Group them into run targets with flags.
