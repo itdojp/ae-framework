@@ -5,8 +5,7 @@ Alerts: {{alerts}}
 
 Digest
 ```
-Quality: {{coverage.value*100 | round}}% (>= {{coverage.threshold*100 | round}}) {{coverage.ok ? '✅' : '❌'}} [{{coverage.delta*100 | sign}}%] | Formal: {{formal.result}} | Adapters: {{adapters.line}} | GWT: {{gwt.count}} | Replay: {{replay.totalEvents}} ev, {{replay.violations.length}} viol | Trace: {{traceIds.join(', ')}}
- | Gates: {{gates.line}}
+Quality: {{coverage.value*100 | round}}% (>= {{coverage.threshold*100 | round}}) {{coverage.ok ? '✅' : '❌'}} [{{coverage.delta*100 | sign}}%] | Formal: {{formal.result}} | Adapters: {{adapters.line}} | GWT: {{gwt.count}} | Replay: {{replay.totalEvents}} ev, {{replay.violations.length}} viol | Trace: {{traceIds.join(', ')}} | Gates: {{gates.line}}
 ```
 
 Detailed
@@ -24,8 +23,9 @@ Detailed
 - Mutation: {{mutation.result}} — {{mutation.score}} (>= {{mutation.threshold}})
 - Contract: {{contract.result}} — {{contract.link}}
 - Property: {{property.result}} — {{property.link}}
-- Performance: {{performance.result}} — {{performance.summary}}
-- Heavy tests: {{heavy.result}} — {{heavy.reportLink}}
+- MBT: {{mbt.result}} — {{mbt.link}}
+- Performance (perf/a11y/lighthouse): {{performance.result}} — {{performance.summary}}
+- Heavy tests (CI Extended aggregate): {{heavy.result}} — {{heavy.link}}
 ```
 
 Notes
