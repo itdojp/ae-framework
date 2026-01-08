@@ -1,0 +1,56 @@
+{
+  "phase": "1",
+  "note": "Draft alias map for script consolidation. No runtime wiring yet.",
+  "aliases": [
+    {
+      "legacy": "test:ci",
+      "target": "scripts/test/run.mjs --profile=ci",
+      "rationale": "Preserve CI entry while moving to unified test entry point."
+    },
+    {
+      "legacy": "test:ci:lite",
+      "target": "scripts/test/run.mjs --profile=ci-lite",
+      "rationale": "Keep Verify Lite split intact."
+    },
+    {
+      "legacy": "test:ci:extended",
+      "target": "scripts/test/run.mjs --profile=ci-extended",
+      "rationale": "Heavy suite remains opt-in via profile."
+    },
+    {
+      "legacy": "quality:run:all",
+      "target": "scripts/quality/run.mjs --profile=all",
+      "rationale": "Keep existing aggregation behavior."
+    },
+    {
+      "legacy": "quality:gates",
+      "target": "scripts/quality/run.mjs --profile=gates",
+      "rationale": "CI still calls gates; alias keeps the entry stable."
+    },
+    {
+      "legacy": "verify:lite",
+      "target": "scripts/verify/run.mjs --profile=lite",
+      "rationale": "Map to Verify Lite default profile."
+    },
+    {
+      "legacy": "verify:conformance",
+      "target": "scripts/verify/run.mjs --profile=conformance",
+      "rationale": "Maintain conformance as a named profile."
+    },
+    {
+      "legacy": "flake:detect",
+      "target": "scripts/flake/run.mjs --profile=detect",
+      "rationale": "Align detect with unified flake entry."
+    },
+    {
+      "legacy": "flake:detect:quick",
+      "target": "scripts/flake/run.mjs --profile=quick",
+      "rationale": "Keep quick as profile flag."
+    },
+    {
+      "legacy": "security:integrated:quick",
+      "target": "scripts/security/run.mjs --profile=quick",
+      "rationale": "Default quick path for PR gating."
+    }
+  ]
+}
