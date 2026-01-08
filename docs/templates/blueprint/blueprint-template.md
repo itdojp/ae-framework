@@ -38,3 +38,4 @@
 
 ## 10) Ownership / 説明責任
 - ADR/Runbook/Failure modes の追加予定:
+- 参照: `docs/quality/ownership-dod.md`
