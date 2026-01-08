@@ -6,7 +6,7 @@
 
 ## English (summary)
 
-Use this checklist to ensure the minimal context is present before delegating to LLM/agents.
+Use this checklist to ensure the minimum required context is present before delegating to LLM/agents.
 If any item is missing, add **open questions** or **assumptions** to the Context Bundle.
 
 ---
