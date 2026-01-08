@@ -6,6 +6,7 @@ Alerts: {{alerts}}
 Digest
 ```
 Quality: {{coverage.value*100 | round}}% (>= {{coverage.threshold*100 | round}}) {{coverage.ok ? '✅' : '❌'}} [{{coverage.delta*100 | sign}}%] | Formal: {{formal.result}} | Adapters: {{adapters.line}} | GWT: {{gwt.count}} | Replay: {{replay.totalEvents}} ev, {{replay.violations.length}} viol | Trace: {{traceIds.join(', ')}}
+ | Gates: {{gates.line}}
 ```
 
 Detailed
@@ -18,8 +19,16 @@ Detailed
 - Formal: {{formal.result}} — {{formal.link}}
 - Replay: {{replay.totalEvents}} events ({{replay.byTypeLine}}), {{replay.violations.length}} violations
 - Trace IDs: {{traceIds.join(', ')}}
+
+## Verification Gates (optional)
+- Mutation: {{mutation.result}} — {{mutation.score}} (>= {{mutation.threshold}})
+- Contract: {{contract.result}} — {{contract.link}}
+- Property: {{property.result}} — {{property.link}}
+- Performance: {{performance.result}} — {{performance.summary}}
+- Heavy tests: {{heavy.result}} — {{heavy.reportLink}}
 ```
 
 Notes
 - Inputs should come from normalized artifacts and combined.json (see docs/quality/pr-summary-tool.md).
 - Template engine is implementation-defined; variables above illustrate expected fields.
+- Include only enabled gates; omit unused sections to keep summaries lean.
