@@ -11,6 +11,7 @@
 主なポイント
 - ディレクトリ構成の原則（関心の分離、アーカイブ戦略、レポート整理、ビルド成果物管理）
 - クリーニングスクリプト（`pnpm run clean:*`）と自動化
+- スクリプトの発見（`pnpm run help` / `pnpm run | less`）
 - レポート/一時ファイルのカテゴリと保持方針
 - 運用スケジュール（毎日/毎週/毎月）とベストプラクティス
 
@@ -168,6 +169,15 @@ export MAX_ARCHIVE_SIZE=1000
 
 # Enable aggressive cleanup
 export AGGRESSIVE_CLEANUP=true
+```
+
+### Script discovery
+
+Use the built-in help to browse script groups quickly:
+
+```bash
+pnpm run help
+pnpm run | less
 ```
 
 ### Integration with Build Tools
