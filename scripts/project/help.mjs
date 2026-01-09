@@ -7,7 +7,15 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..', '..');
 const pkgPath = path.join(root, 'package.json');
 
-const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+let pkg;
+try {
+  const pkgContent = fs.readFileSync(pkgPath, 'utf8');
+  pkg = JSON.parse(pkgContent);
+} catch (err) {
+  const message = err instanceof Error ? err.message : String(err);
+  console.error(`Failed to read or parse package.json at "${pkgPath}": ${message}`);
+  process.exit(1);
+}
 const scripts = pkg.scripts || {};
 
 const groups = new Map();
@@ -20,12 +28,16 @@ for (const name of Object.keys(scripts).sort()) {
 }
 
 const lines = [];
-lines.push('ae-framework script groups (pnpm run <script>):');
+const projectName = pkg.name || 'project';
+lines.push(`${projectName} script groups (pnpm run <script>):`);
 lines.push('');
 
 for (const [prefix, names] of [...groups.entries()].sort()) {
-  const sample = names.slice(0, 5).join(', ');
-  lines.push(`- ${prefix} (${names.length}): ${sample}`);
+  const shownCount = Math.min(5, names.length);
+  const sample = names.slice(0, shownCount).join(', ');
+  const suffix =
+    names.length > shownCount ? ` ... (showing ${shownCount} of ${names.length})` : '';
+  lines.push(`- ${prefix} (${names.length}): ${sample}${suffix}`);
 }
 
 lines.push('');
