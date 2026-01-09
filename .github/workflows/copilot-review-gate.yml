@@ -3,6 +3,12 @@ name: Copilot Review Gate
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to check (optional; required for manual runs on main)"
+        required: false
+        type: number
 
 permissions:
   contents: read
@@ -20,7 +26,13 @@ jobs:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const number = context.payload.pull_request.number;
+            const inputNumber = core.getInput('pr_number');
+            const parsedInput = inputNumber ? Number(inputNumber) : null;
+            const number = context.payload.pull_request?.number ?? parsedInput;
+            if (!number || Number.isNaN(number)) {
+              core.notice('No PR context or valid pr_number provided; skipping gate.');
+              return;
+            }
             const actors = (process.env.COPILOT_ACTORS || 'github-copilot,github-copilot[bot]')
               .split(',')
               .map(s => s.trim())
