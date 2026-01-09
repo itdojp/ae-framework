@@ -2,9 +2,6 @@ name: Verify Lite
 
 on:
   pull_request:
-    paths-ignore:
-      - 'docs/**'
-      - '*.md'
   push:
     branches: [main]
     tags: ['v*']
@@ -34,19 +31,55 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Detect docs-only change
+        id: docs-only
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          base="${{ github.event.pull_request.base.sha }}"
+          head="${{ github.sha }}"
+          if [ -z "$base" ]; then
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          files="$(git diff --name-only "$base" "$head")"
+          if [ -z "$files" ]; then
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          docs_only=true
+          while IFS= read -r file; do
+            if [[ "$file" == docs/* || "$file" == *.md ]]; then
+              continue
+            fi
+            docs_only=false
+            break
+          done <<< "$files"
+          echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
+          if [ "$docs_only" = "true" ]; then
+            echo "Docs-only changes detected; verify-lite full pipeline skipped." >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: Prepare pnpm
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
         uses: ./.github/actions/setup-pnpm
       - name: Enable corepack
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
         run: corepack enable
       - uses: actions/setup-node@v4
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
         with:
           node-version: '20'
           cache: 'pnpm'
 
       - name: Install dependencies
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
         run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
       - name: Run verify-lite pipeline
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
         env:
           VERIFY_LITE_KEEP_LINT_LOG: '1'
           VERIFY_LITE_RUN_MUTATION: '0'
@@ -59,7 +92,7 @@ jobs:
         run: |
           pnpm run verify:lite
       - name: Verify-lite lint baseline
-        if: always()
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
         env:
           VERIFY_LITE_LINT_ENFORCE: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-verify-lite-lint') && '1' || '0' }}
         run: |
@@ -73,15 +106,16 @@ jobs:
             echo 'verify-lite lint summary missing; skipped baseline enforcement' | tee -a "$GITHUB_STEP_SUMMARY"
           fi
       - name: Validate verify-lite summary schema
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
         run: |
           node scripts/ci/validate-verify-lite-summary.mjs \
             verify-lite-run-summary.json \
             schema/verify-lite-run-summary.schema.json
       - name: Validate flow/envelope fixtures
-        if: always()
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
         run: node scripts/ci/validate-json.mjs
       - name: Create verify-lite report envelope
-        if: always()
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
         env:
           REPORT_ENVELOPE_SOURCE: verify-lite
         run: |
@@ -93,27 +127,29 @@ jobs:
             echo 'verify-lite summary missing; skipped envelope generation'
           fi
       - name: Validate report envelope schema
-        if: always()
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
         run: |
           node scripts/ci/validate-report-envelope.mjs \
             artifacts/report-envelope.json \
             schema/envelope.schema.json
       - name: BDD lint (strict; label-gated)
-        if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-bdd-lint') }}
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' && github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-bdd-lint') }}
         env:
           BDD_LINT_STRICT: '1'
           BDD_ROOTS: ${{ vars.BDD_ROOTS }}
         run: |
           node scripts/bdd/lint.mjs
       - name: BDD → LTL suggestions (report-only)
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
         run: |
           if npm run -s | grep -q "bdd:suggest"; then pnpm -s run bdd:suggest; else printf "No BDD suggest script\n"; fi
       - name: Formal tools check (non-blocking)
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
         continue-on-error: true
         run: |
           if [ -f scripts/formal/tools-check.mjs ]; then node scripts/formal/tools-check.mjs; fi
       - name: "Run formal (label gated: run-formal)"
-        if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'run-formal') }}
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'run-formal')) }}
         run: |
           node scripts/formal/verify-conformance.mjs || true
           node scripts/formal/verify-alloy.mjs || true
@@ -124,24 +160,27 @@ jobs:
           node scripts/formal/aggregate-formal.mjs || true
           node scripts/formal/print-summary.mjs || true
       - name: Aggregate adapters/formal/properties (non-blocking)
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
         continue-on-error: true
         run: |
           if npm run -s | grep -q "artifacts:aggregate"; then pnpm -s run artifacts:aggregate; fi
           node scripts/simulation/deterministic-runner.mjs || true
       - name: Resilience quick (label-gated, non-blocking)
-        if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-resilience') }}
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' && github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-resilience') }}
         continue-on-error: true
         run: |
           pnpm -s vitest run "tests/resilience/**/*.fast.*.test.ts" --reporter=verbose --run --coverage=false || true
       - name: BDD step lint (non-blocking)
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
         continue-on-error: true
         run: |
           if [ -f scripts/bdd/step-lint.mjs ]; then node scripts/bdd/step-lint.mjs || true; fi
       - name: BDD step lint (strict; label-gated)
-        if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-bdd-lint') }}
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' && github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-bdd-lint') }}
         run: |
           if [ -f scripts/bdd/step-lint.mjs ]; then node scripts/bdd/step-lint.mjs; fi
       - name: Render PR summary (digest)
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
         env:
           SUMMARY_MODE: digest
           SUMMARY_LANG: ${{ (github.event.pull_request && contains(github.event.pull_request.labels.*.name, 'lang:ja')) && 'ja' || 'en' }}
@@ -149,7 +188,7 @@ jobs:
           if [ -f scripts/summary/render-pr-summary.mjs ]; then node scripts/summary/render-pr-summary.mjs; fi
           [ -f artifacts/summary/PR_SUMMARY.md ] && cat artifacts/summary/PR_SUMMARY.md >> "$GITHUB_STEP_SUMMARY" || true
       - name: Upload verify-lite report
-        if: always()
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
         uses: actions/upload-artifact@v4
         with:
           name: verify-lite-report
@@ -161,7 +200,7 @@ jobs:
             verify-lite-lint-summary.json
           if-no-files-found: ignore
       - name: Append verify-lite run summary
-        if: always()
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
         run: |
           if [ -f verify-lite-run-summary.json ]; then
             echo '## Verify Lite Run Summary' >> "$GITHUB_STEP_SUMMARY"
@@ -170,7 +209,7 @@ jobs:
             echo 'Verify Lite run summary not generated.' >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Append lint summary (top rules)
-        if: always()
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
         run: |
           if [ -f verify-lite-lint-summary.json ]; then
             echo '## Verify Lite Lint Summary' >> "$GITHUB_STEP_SUMMARY"
