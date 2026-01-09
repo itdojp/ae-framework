@@ -29,8 +29,16 @@ jobs:
             const inputNumber = core.getInput('pr_number');
             const parsedInput = inputNumber ? Number(inputNumber) : null;
             const number = context.payload.pull_request?.number ?? parsedInput;
-            if (!number || Number.isNaN(number)) {
-              core.notice('No PR context or valid pr_number provided; skipping gate.');
+            const isValidNumber = typeof number === 'number' && Number.isFinite(number) && number > 0;
+            if (!isValidNumber) {
+              const defaultBranch = context.payload.repository?.default_branch;
+              const isDefaultBranch =
+                defaultBranch && context.ref === `refs/heads/${defaultBranch}`;
+              if (context.eventName === 'workflow_dispatch' && isDefaultBranch) {
+                core.notice('No PR context or valid pr_number provided; skipping gate on default branch.');
+                return;
+              }
+              core.setFailed('No PR context or valid pr_number provided; manual runs on non-default branches must supply pr_number.');
               return;
             }
             const actors = (process.env.COPILOT_ACTORS || 'github-copilot,github-copilot[bot]')
