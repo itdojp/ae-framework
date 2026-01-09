@@ -32,6 +32,7 @@ const PROFILE_COMMANDS = {
   headers: [['pnpm', 'run', 'security:check-headers']],
   analyze: [['pnpm', 'run', 'security:analyze']],
   integrated: [['pnpm', 'run', 'security:integrated']],
+  quick: [['pnpm', 'run', 'security:integrated:quick']],
   'integrated-quick': [['pnpm', 'run', 'security:integrated:quick']],
   'integrated-full': [['pnpm', 'run', 'security:integrated:full']],
   'integrated-compliance': [['pnpm', 'run', 'security:integrated:compliance']],

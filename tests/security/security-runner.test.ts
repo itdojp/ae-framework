@@ -35,6 +35,7 @@ describe('security runner profiles', () => {
       'headers',
       'analyze',
       'integrated',
+      'quick',
       'integrated-quick',
       'integrated-full',
       'integrated-compliance',
@@ -43,7 +44,7 @@ describe('security runner profiles', () => {
   });
 
   it('resolves profile commands', () => {
-    expect(resolveProfile('integrated-quick')).toEqual([
+    expect(resolveProfile('quick')).toEqual([
       ['pnpm', 'run', 'security:integrated:quick'],
     ]);
   });
