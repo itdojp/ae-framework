@@ -333,8 +333,8 @@
   "dependencies": {
     "@ae-framework/envelope": "file:./packages/envelope",
     "@ae-framework/spec-compiler": "file:./packages/spec-compiler",
-    "@aws-sdk/client-s3": "^3.901.0",
-    "@modelcontextprotocol/sdk": "^1.25.1",
+    "@aws-sdk/client-s3": "^3.966.0",
+    "@modelcontextprotocol/sdk": "^1.25.2",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/api-logs": "^0.52.0",
     "@opentelemetry/auto-instrumentations-node": "^0.47.0",
