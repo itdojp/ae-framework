@@ -36,31 +36,30 @@ jobs:
         shell: bash
         run: |
           if [ "${{ github.event_name }}" != "pull_request" ]; then
-            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "docs_only=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           base="${{ github.event.pull_request.base.sha }}"
           head="${{ github.sha }}"
           if [ -z "$base" ]; then
-            echo "docs_only=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          files="$(git diff --name-only "$base" "$head")"
-          if [ -z "$files" ]; then
-            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "docs_only=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           docs_only=true
-          while IFS= read -r file; do
-            if [[ "$file" == docs/* || "$file" == *.md ]]; then
+          if git diff --name-only --quiet "$base" "$head"; then
+            printf '%s\n' "docs_only=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          while IFS= read -r -d '' file; do
+            if [[ "$file" =~ ^docs/ || ( "$file" == *.md && "$file" != */* ) ]]; then
               continue
             fi
             docs_only=false
             break
-          done <<< "$files"
-          echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
+          done < <(git diff --name-only -z "$base" "$head")
+          printf '%s\n' "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
           if [ "$docs_only" = "true" ]; then
-            echo "Docs-only changes detected; verify-lite full pipeline skipped." >> "$GITHUB_STEP_SUMMARY"
+            printf '%s\n' "Docs-only changes detected; verify-lite full pipeline skipped." >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Prepare pnpm
         if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
