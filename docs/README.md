@@ -19,6 +19,7 @@ Comprehensive documentation for the AI‑Enhanced Development Framework.
 - Phase 2 Advanced Features (2.1–2.3): `guides/PHASE-2-ADVANCED-FEATURES-GUIDE.md`
 - Advanced Troubleshooting: `guides/ADVANCED-TROUBLESHOOTING-GUIDE.md`
 - General Usage: `guides/USAGE.md`
+- ExecPlan JSON schema: `guides/EXECPLAN-SCHEMA.md`
 
 ### Phases
 - Natural Language Requirements: `phases/PHASE-2-NATURAL-LANGUAGE-REQUIREMENTS.md`
@@ -79,6 +80,7 @@ ae-frameworkは、AI-Powered TDDによる6フェーズでソフトウェア開�
 - **🆕 [ADVANCED-TROUBLESHOOTING-GUIDE.md](./guides/ADVANCED-TROUBLESHOOTING-GUIDE.md)** ⭐ **NEW** - 高度な機能のトラブルシューティング
 - [USAGE.md](./guides/USAGE.md) - 一般的な使い方ガイド
 - [test-generation-guide.md](./guides/test-generation-guide.md) - テスト生成ガイド
+- [EXECPLAN-SCHEMA.md](./guides/EXECPLAN-SCHEMA.md) - ExecPlan JSONスキーマ
 
 ### 🎯 [phases/](./phases/) - フェーズ別詳細ドキュメント
 6フェーズの詳細仕様とガイド

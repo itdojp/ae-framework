@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "0.1.0",
+  "planId": "execplan-sample-web-api",
+  "name": "Sample ExecPlan (Web API)",
+  "description": "Minimal sample exec plan for schema validation.",
+  "inputs": [
+    {
+      "type": "requirements",
+      "path": "requirements/README.md",
+      "description": "Initial requirements"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "spec",
+      "path": "spec/bdd/web-api-sample.md",
+      "description": "BDD scenarios"
+    }
+  ],
+  "steps": [
+    {
+      "id": "spec",
+      "title": "Draft spec artifacts",
+      "description": "Create OpenAPI + BDD + property notes",
+      "outputs": [
+        {
+          "type": "spec",
+          "path": "spec/api/web-api-openapi.yml"
+        }
+      ],
+      "commands": [
+        {
+          "run": "pnpm lint:md"
+        }
+      ],
+      "checks": ["markdownlint"],
+      "notes": ["Replace <domain> labels in templates."]
+    },
+    {
+      "id": "verify",
+      "title": "Run verification",
+      "commands": [
+        {
+          "run": "pnpm test:unit"
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "owner": "example-team",
+    "updatedAt": "2026-01-10T00:00:00Z"
+  }
+}

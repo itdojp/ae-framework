@@ -45,6 +45,11 @@ const checks = [
     schema: 'schema/context-bundle.schema.json',
     fixtures: ['fixtures/context-bundle/sample.context-bundle.json'],
     label: 'Context Bundle schema validation'
+  },
+  {
+    schema: 'schema/execplan.schema.json',
+    fixtures: ['fixtures/execplan/sample.execplan.json'],
+    label: 'ExecPlan schema validation'
   }
 ];
 
