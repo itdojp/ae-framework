@@ -9,8 +9,8 @@
 - Go (オプション、fast-check 相当は `gopter` を候補)
 
 ## 含める要素（TS）
-- BDD: `spec/bdd/*.md` を `.feature` に昇格可能な雛形 + step スケルトン (CucumberJS)
-- Property: `spec/properties/*.md` → `tests/property/**/*.test.ts` に写経可能なテンプレ + fast-check 設定
+- BDD: `docs/templates/spec-kit/bdd-template.feature` + step スケルトンを `specs/bdd/` にコピーして利用 (CucumberJS)
+- Property: `docs/templates/spec-kit/property-template.md` → `tests/property/**/*.test.ts` に写経可能なテンプレ + fast-check 設定
 - Lint/Static/Type: `pnpm lint`, `pnpm types:check`, `pnpm run test:fast`
 - CLI: `pnpm run test:property -- --runInBand --maxWorkers=50%`
 - CI: workflow テンプレートで lint/type/unit/property を一括実行（workflow_dispatch または再利用可能 action）
@@ -21,7 +21,7 @@
    - `pnpm types:check`
    - `pnpm run test:fast`
    - `pnpm run test:property -- --runInBand --maxWorkers=50%`
-2. `spec/bdd/template.feature` と `spec/properties/template.ts` をコピーして編集
+2. `docs/templates/spec-kit/bdd-template.feature` と `docs/templates/spec-kit/property-template.md` をコピーして編集
 3. `pnpm run test:property` が green になるようジェネレータ/不変条件を埋める
 4. CI (workflow_dispatch テンプレ) で lint/type/unit/property を確認
 
@@ -32,8 +32,8 @@
 - Makefile/Taskfile で TS/Go の二言語をまとめて実行
 
 ## TODO（実装タスク）
-- [ ] `spec/bdd/template.feature` と step スケルトンの追加（実行されない doc テンプレ）
-- [ ] `spec/properties/template.md` + fast-check boilerplate（ジェネレータ/不変条件入り）
+- [x] `docs/templates/spec-kit/bdd-template.feature` と step スケルトンの追加（実行されない doc テンプレ）
+- [x] `docs/templates/spec-kit/property-template.md` + fast-check boilerplate（ジェネレータ/不変条件入り）
 - [ ] `package.json` に `types:check`, `test:property` の標準スクリプトを確認・不足なら追加
 - [ ] CI テンプレ（workflow_dispatch）で lint/type/unit/property を並列 or 直列実行
 - [ ] README/Docs に「有効化手順」を追記
