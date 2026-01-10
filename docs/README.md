@@ -35,7 +35,7 @@ Comprehensive documentation for the AI‑Enhanced Development Framework.
 ### Reference
 - CLI Commands: `reference/CLI-COMMANDS-REFERENCE.md`
 - API Reference: `reference/API.md`
- - Legacy ExecPlan (6-phase, deprecated): `../plans/archive/legacy-6-phase.md`
+- Legacy ExecPlan (6-phase, deprecated): `../plans/archive/legacy-6-phase.md`
 
 ### Architecture
 - TDD Framework Architecture: `architecture/TDD-FRAMEWORK-ARCHITECTURE.md`
