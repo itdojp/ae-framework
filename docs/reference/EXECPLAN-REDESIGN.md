@@ -13,6 +13,15 @@
 - **アーカイブ**: 独自ランタイム/IDE 依存、ブラウザ制御、6フェーズ特化の旧プラン。
 - **要更新**: コンテキスト/変数名が古いが流用価値があるもの。
 
+## 既存 ExecPlan / Flow インベントリ（2026-01）
+| 種別 | 位置 | 仕分け | メモ |
+| --- | --- | --- | --- |
+| ExecPlan | `plans/web-api/01-05-*.md` | 維持 | Web API + DB リファレンス用の基準テンプレ |
+| ExecPlan | `plans/common/01-05-*.md` | 維持 | ドメイン非依存の共通テンプレ（新規） |
+| Flow | `docs/flows/web-api-agent.md` | 維持 | エージェント併用の実行手順とトレース |
+| Flow | `docs/flows/web-api-manual.md` | 維持 | 人手運用の実行手順とトレース |
+| Flow | `docs/flows/agent-builder-flow.md` | 要更新 | Agent Builder 設計の差分を確認中 |
+
 ## 新しい標準 ExecPlan セット（草案）
 - `plans/web-api/01-05-*.md`（#1195 で追加済み）をベースラインにする。
 - 汎用スケルトン（他ドメイン向け）
@@ -32,7 +41,7 @@
 - JSON 版のパラメタライズ（例: steps, inputs, outputs）を用意し、将来 API 経由で渡せるようにする（別タスク）。
 
 ## TODO
-- [ ] 既存 ExecPlan の棚卸しリストを作成（維持/アーカイブ/要更新の分類表）
-- [ ] 汎用スケルトン（01-05）を `plans/common/` に複製し、変数化（projectName, domain 等）
+- [x] 既存 ExecPlan の棚卸しリストを作成（維持/アーカイブ/要更新の分類表）
+- [x] 汎用スケルトン（01-05）を `plans/common/` に複製し、変数化（projectName, domain 等）
 - [ ] 旧6フェーズ系 ExecPlan を `plans/archive/` に移動し、README で非推奨を明記
 - [ ] JSON 版 ExecPlan schema をドラフト化（steps/inputs/outputs/commands）
