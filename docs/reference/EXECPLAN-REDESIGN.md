@@ -45,4 +45,4 @@
 - [x] 既存 ExecPlan の棚卸しリストを作成（維持/アーカイブ/要更新の分類表）
 - [x] 汎用スケルトン（01-05）を `plans/common/` に複製し、変数化（projectName, domain 等）
 - [x] 旧6フェーズ系 ExecPlan を `plans/archive/` に移動し、README で非推奨を明記
-- [ ] JSON 版 ExecPlan schema をドラフト化（steps/inputs/outputs/commands）
+- [x] JSON 版 ExecPlan schema をドラフト化（steps/inputs/outputs/commands）
