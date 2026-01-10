@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/execplan.schema.json",
+  "title": "ae-execplan",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "planId": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "inputs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/resource" }
+    },
+    "outputs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/resource" }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/step" }
+    },
+    "metadata": {
+      "type": "object"
+    }
+  },
+  "required": ["schemaVersion", "planId", "name", "steps"],
+  "additionalProperties": true,
+  "$defs": {
+    "resource": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string" },
+        "path": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "required": ["type", "path"],
+      "additionalProperties": true
+    },
+    "command": {
+      "type": "object",
+      "properties": {
+        "run": { "type": "string" },
+        "cwd": { "type": "string" },
+        "env": { "type": "object" }
+      },
+      "required": ["run"],
+      "additionalProperties": true
+    },
+    "step": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "inputs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/resource" }
+        },
+        "outputs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/resource" }
+        },
+        "commands": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/command" }
+        },
+        "checks": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "notes": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["id", "title"],
+      "additionalProperties": true
+    }
+  }
+}
