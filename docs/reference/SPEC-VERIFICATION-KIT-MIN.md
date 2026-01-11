@@ -14,6 +14,7 @@
 - Lint/Static/Type: `pnpm lint`, `pnpm types:check`, `pnpm run test:fast`
 - CLI: `pnpm run test:property -- --runInBand`
 - CI: `docs/templates/ci/spec-kit-min.workflow.yml` で lint/type/unit/property を一括実行（workflow_dispatch）
+- Template seed: `templates/spec-kit-min/` に最小構成の雛形（repo初期化用）
 
 ## 有効化フロー（TS）
 1. `pnpm install` 後、下記を実行できる状態にする:
@@ -36,4 +37,5 @@
 - [x] `docs/templates/spec-kit/property-template.md` + fast-check boilerplate（ジェネレータ/不変条件入り）
 - [x] `package.json` に `types:check`, `test:property` の標準スクリプトを確認・不足なら追加
 - [x] CI テンプレ（workflow_dispatch）で lint/type/unit/property を並列 or 直列実行
-- [ ] README/Docs に「有効化手順」を追記
+- [x] など初期化テンプレ/テンプレ repo で一式生成（`templates/spec-kit-min/` を追加）
+- [x] README/Docs に「有効化手順」を追記
