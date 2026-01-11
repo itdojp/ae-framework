@@ -30,15 +30,17 @@ const assertValidEdge = (edge, index, nodeIds) => {
   if (!isNonEmptyString(edge.from) || !isNonEmptyString(edge.to)) {
     throw new Error(`Flow edge at index ${index} must include from/to.`);
   }
-  if (!nodeIds.has(edge.from)) {
-    throw new Error(`Flow edge from=${edge.from} does not match a node id.`);
+  const from = edge.from.trim();
+  const to = edge.to.trim();
+  if (!nodeIds.has(from)) {
+    throw new Error(`Flow edge from=${from} does not match a node id.`);
   }
-  if (!nodeIds.has(edge.to)) {
-    throw new Error(`Flow edge to=${edge.to} does not match a node id.`);
+  if (!nodeIds.has(to)) {
+    throw new Error(`Flow edge to=${to} does not match a node id.`);
   }
   return {
-    from: edge.from,
-    to: edge.to,
+    from,
+    to,
   };
 };
 

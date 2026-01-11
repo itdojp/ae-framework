@@ -1,5 +1,4 @@
 import { parseFlow } from './parse-flow.js';
-import { FLOW_SCHEMA_VERSION } from './types.js';
 
 const DEFAULT_RUN_ID = 'sim-run';
 
@@ -16,7 +15,7 @@ export const simulateFlow = (flow, options = {}) => {
   }));
 
   return {
-    schemaVersion: parsed.schemaVersion ?? FLOW_SCHEMA_VERSION,
+    schemaVersion: parsed.schemaVersion,
     runId,
     startedAt,
     nodes: nodeResults,
