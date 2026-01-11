@@ -1,0 +1,13 @@
+{
+  "name": "@ae-framework/agent-builder-adapter",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Adapter utilities for Agent Builder flow artifacts",
+  "main": "src/index.js",
+  "files": [
+    "src"
+  ],
+  "exports": {
+    ".": "./src/index.js"
+  }
+}
