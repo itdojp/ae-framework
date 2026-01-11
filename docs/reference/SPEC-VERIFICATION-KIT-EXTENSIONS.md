@@ -6,8 +6,8 @@
 
 ## 拡張の優先順位（案）
 1. **Model Checking 入口**
-   - TLA+ / Alloy の最小テンプレと実行手順を用意する
-   - 成果物: `specs/formal/` のテンプレ、`docs/quality/formal-runbook.md` の補足
+   - TLA+ / Alloy の最小テンプレートと実行手順を用意する
+   - 成果物: `specs/formal/` のテンプレート、`docs/quality/formal-runbook.md` の補足
 2. **Conformance / Traceability 連携**
    - Trace/Envelope からモデルチェック結果を結び付ける
    - 成果物: `docs/trace/` のリンク整備、`scripts/formal/` のサマリ出力拡張
@@ -16,10 +16,10 @@
    - 成果物: `scripts/verify/` の統合CLI / profile設計（例: `verify:formal`）
 4. **Policy/Contract 強化**
    - Cedar/OPA などのポリシー検証を Spec Kit の標準オプションへ
-   - 成果物: `specs/policy/` テンプレ、AJV/OPA 実行テンプレ
+   - 成果物: `specs/policy/` テンプレート、AJV/OPA 実行テンプレート
 
 ## 最小要件（各拡張のゴール）
-- **テンプレ**: コピーして使える雛形（Spec/Tests/Runbook）
+- **テンプレート**: コピーして使える雛形（Spec/Tests/Runbook）
 - **コマンド**: `pnpm run` または `node scripts/...` で実行可能
 - **CI**: `docs/templates/ci/` に workflow snippet を用意
 - **証跡**: 出力物の配置ルール（`artifacts/` or `reports/`）
