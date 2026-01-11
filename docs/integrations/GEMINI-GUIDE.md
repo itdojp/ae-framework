@@ -5,7 +5,7 @@
 - Markdown/JSON 入出力を徹底し、AJV/Schema で検証可能な形に固定する。
 
 ## 前提
-- リポ構成: `specs/`, `tests/`, `plans/common/*`（汎用テンプレ）、`plans/web-api/*`（Web API + DB リファレンス）
+- リポ構成: `spec/`, `tests/`, `plans/common/*`（汎用テンプレ）、`plans/web-api/*`（Web API + DB リファレンス）
 - Gemini からシェルコマンド実行/ファイル編集が可能
 
 ## 実行フロー（例）
@@ -18,7 +18,7 @@
 ## 検証コマンド例
 - `pnpm run lint`
 - `pnpm run test:fast`
-- `pnpm run test:property -- --runInBand`
+- `pnpm run test:property`
 - (任意) `STRYKER_TIME_LIMIT=0 pnpm run pipelines:mutation:quick`
 
 ## I/O ポリシー

@@ -5,13 +5,13 @@
 - 入出力は Markdown/JSON に限定し、AJV/Schema で検証可能な形に固定する。
 
 ## 前提
-- リポ構成: `specs/`, `tests/`, `plans/common/*`（汎用テンプレ）、`plans/web-api/*`（Web API + DB リファレンス）
+- リポ構成: `spec/`, `tests/`, `plans/common/*`（汎用テンプレ）、`plans/web-api/*`（Web API + DB リファレンス）
 - Antigravity 側で repo をチェックアウト済み、コマンド実行が可能
 
 ## 実行フロー（例）
 1. 仕様生成
    - `plans/common/01-spec.md` をプロンプトとして渡し、Spec/BDD/Property の骨子を生成
-   - 生成先は必ずファイルパスで指定（例: `specs/openapi/openapi.yml`, `specs/bdd/features/*.feature`）
+   - 生成先は必ずファイルパスで指定（例: `spec/api/openapi.yml`, `spec/bdd/<domain>-sample.md`, `spec/properties/<domain>-sample.md`）
 2. テスト骨子
    - `plans/common/02-tests.md` を渡し、テストスケルトンを生成（必要に応じて skip）
 3. 実装
@@ -23,7 +23,7 @@
 
 ## 成果物検証
 - Schema/JSON: `pnpm lint` / `pnpm spec:validate` が通ること
-- テスト: `pnpm run test:fast`, `pnpm run test:property -- --runInBand`（対象に応じ調整）
+- テスト: `pnpm run test:fast`, `pnpm run test:property`（対象に応じ調整）
 - heavy-test (任意): `node scripts/pipelines/compare-test-trends.mjs ...`
 
 ## 注意
