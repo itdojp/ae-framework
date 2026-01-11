@@ -1,0 +1,28 @@
+# Template: copy to .github/workflows/spec-kit-min.yml
+name: Spec Kit Minimal
+
+on:
+  workflow_dispatch:
+
+jobs:
+  spec-kit-min:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Lint
+        run: pnpm lint
+      - name: Type check
+        run: pnpm types:check
+      - name: Unit tests (fast)
+        run: pnpm run test:fast
+      - name: Property tests
+        run: pnpm run test:property -- --runInBand
