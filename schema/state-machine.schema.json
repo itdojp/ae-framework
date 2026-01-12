@@ -3,86 +3,79 @@
   "$id": "https://ae-framework/schema/state-machine.schema.json",
   "title": "ae-state-machine",
   "type": "object",
-  "additionalProperties": false,
   "properties": {
     "schemaVersion": {
       "type": "string",
-      "pattern": "^\\d+\\.\\d+\\.\\d+$",
-      "description": "Semantic version for the state machine schema."
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
     },
-    "id": {
-      "type": "string",
-      "minLength": 1
-    },
-    "initial": {
-      "type": "string",
-      "minLength": 1,
-      "description": "Name of the initial state; implementations MUST validate that this value matches the 'name' of one of the entries in the 'states' array."
-    },
+    "id": { "type": "string" },
+    "name": { "type": "string" },
+    "description": { "type": "string" },
+    "initial": { "type": "string" },
     "states": {
       "type": "array",
-      "minItems": 1,
-      "description": "List of states. State names should be unique; implementations MUST enforce uniqueness.",
       "items": {
         "type": "object",
-        "additionalProperties": false,
         "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1
-          }
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "entry": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "exit": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "meta": { "type": "object" }
         },
-        "required": ["name"]
+        "required": ["name"],
+        "additionalProperties": true
       }
     },
     "events": {
       "type": "array",
-      "description": "List of event identifiers. Event names should be unique; implementations MUST enforce uniqueness.",
-      "items": {
-        "type": "string",
-        "minLength": 1
-      }
+      "items": { "type": "string" }
     },
     "transitions": {
       "type": "array",
-      "description": "Transitions must reference existing states/events; implementations MUST validate referential integrity.",
       "items": {
         "type": "object",
-        "additionalProperties": false,
         "properties": {
-          "from": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Source state name; must exist in 'states'."
-          },
-          "event": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Event name; must exist in 'events'."
-          },
-          "to": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Target state name; must exist in 'states'."
-          },
-          "guard": {
-            "type": "string",
-            "minLength": 1
-          },
+          "from": { "type": "string" },
+          "to": { "type": "string" },
+          "event": { "type": "string" },
+          "guard": { "type": "string" },
           "actions": {
             "type": "array",
-            "items": {
-              "type": "string",
-              "minLength": 1
-            }
-          }
+            "items": { "type": "string" }
+          },
+          "meta": { "type": "object" }
         },
-        "required": ["from", "event", "to"]
+        "required": ["from", "to", "event"],
+        "additionalProperties": true
       }
     },
-    "metadata": {
-      "type": "object"
-    }
+    "metadata": { "type": "object" },
+    "correlation": { "$ref": "#/$defs/correlation" }
   },
-  "required": ["schemaVersion", "id", "initial", "states", "events", "transitions"]
+  "required": ["schemaVersion", "initial", "states", "events", "transitions"],
+  "additionalProperties": true,
+  "$defs": {
+    "correlation": {
+      "type": "object",
+      "properties": {
+        "runId": { "type": "string" },
+        "workflow": { "type": "string" },
+        "commit": { "type": "string" },
+        "branch": { "type": "string" },
+        "traceIds": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["runId"],
+      "additionalProperties": true
+    }
+  }
 }
