@@ -34,4 +34,43 @@ describe('adaptAgentBuilderFlow', () => {
     expect(adapted.metadata).toEqual({ name: 'sample-flow' });
     expect(adapted.correlation).toEqual({ runId: 'run-1' });
   });
+
+  it('returns non-object inputs as-is', () => {
+    expect(adaptAgentBuilderFlow(null)).toBeNull();
+    expect(adaptAgentBuilderFlow('flow')).toBe('flow');
+  });
+
+  it('handles empty arrays and missing metadata/correlation', () => {
+    const adapted = adaptAgentBuilderFlow({ nodes: [], edges: [] });
+
+    expect(adapted.nodes).toEqual([]);
+    expect(adapted.edges).toEqual([]);
+    expect(adapted.metadata).toBeUndefined();
+    expect(adapted.correlation).toBeUndefined();
+  });
+
+  it('prefers alternate field names and omits empty input/output', () => {
+    const adapted = adaptAgentBuilderFlow({
+      nodes: [
+        {
+          key: 'node-key',
+          action: 'tests2code',
+          config: { alpha: true },
+          inputs: [],
+        },
+      ],
+      edges: [
+        { source: 'node-key', target: 'node-next' },
+      ],
+    });
+
+    expect(adapted.nodes[0]).toMatchObject({
+      id: 'node-key',
+      kind: 'tests2code',
+      params: { alpha: true },
+    });
+    expect(adapted.nodes[0].input).toBeUndefined();
+    expect(adapted.nodes[0].output).toBeUndefined();
+    expect(adapted.edges[0]).toMatchObject({ from: 'node-key', to: 'node-next' });
+  });
 });
