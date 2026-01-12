@@ -82,7 +82,24 @@ export function createStateMachineCommand(): Command {
 
         const results = files.map((file) => {
           const raw = readFileSync(file, 'utf8');
-          const data = JSON.parse(raw);
+          let data: unknown;
+          try {
+            data = JSON.parse(raw);
+          } catch (error: unknown) {
+            return {
+              file,
+              ok: false,
+              issues: [
+                {
+                  code: 'PARSE_ERROR',
+                  severity: 'error',
+                  message: `Failed to parse JSON: ${toMessage(error)}`
+                }
+              ],
+              summary: { states: 0, events: 0, transitions: 0 }
+            };
+          }
+
           const validation = validateStateMachineDefinition(data);
           return {
             file,

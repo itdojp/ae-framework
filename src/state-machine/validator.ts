@@ -1,5 +1,6 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 
@@ -29,8 +30,24 @@ addFormats(ajv);
 
 let cachedValidator: ReturnType<typeof ajv.compile> | null = null;
 
+function resolveSchemaPath() {
+  const cwdPath = path.resolve(process.cwd(), 'schema/state-machine.schema.json');
+  const modulePath = path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    '../../schema/state-machine.schema.json'
+  );
+  const candidates = [cwdPath, modulePath];
+  const resolved = candidates.find((candidate) => existsSync(candidate));
+  if (!resolved) {
+    throw new Error(
+      `State machine schema not found. Looked in: ${candidates.map((candidate) => candidate).join(', ')}`
+    );
+  }
+  return resolved;
+}
+
 function loadSchema() {
-  const schemaPath = path.resolve(process.cwd(), 'schema/state-machine.schema.json');
+  const schemaPath = resolveSchemaPath();
   return JSON.parse(readFileSync(schemaPath, 'utf8'));
 }
 
@@ -60,6 +77,9 @@ function collectDuplicates(values: string[]) {
   return Array.from(duplicates);
 }
 
+/**
+ * Validate a state machine definition against the schema and semantic rules.
+ */
 export function validateStateMachineDefinition(data: unknown): StateMachineValidationResult {
   const issues: StateMachineIssue[] = [];
   const summary = countSummary(data);
