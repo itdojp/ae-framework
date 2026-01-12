@@ -1,8 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import Ajv2020 from 'ajv/dist/2020';
-import type { ErrorObject, ValidateFunction } from 'ajv';
+import Ajv, { type ErrorObject, type ValidateFunction } from 'ajv';
 import addFormats from 'ajv-formats';
 
 export type StateMachineIssueSeverity = 'error' | 'warn';
@@ -56,10 +55,10 @@ interface StateMachineDefinition {
   correlation?: Record<string, unknown>;
 }
 
-const ajv = new Ajv2020({ allErrors: true, strict: false });
+const ajv = new Ajv({ allErrors: true, strict: false });
 addFormats(ajv);
 
-let cachedValidator: ValidateFunction<unknown> | null = null;
+let cachedValidator: ValidateFunction<unknown> | undefined;
 
 function resolveSchemaPath() {
   const cwdPath = path.resolve(process.cwd(), 'schema/state-machine.schema.json');
@@ -84,7 +83,7 @@ function loadSchema() {
 
 function getValidator(): ValidateFunction<unknown> {
   if (!cachedValidator) {
-    cachedValidator = ajv.compile(loadSchema());
+    cachedValidator = ajv.compile(loadSchema()) as ValidateFunction<unknown>;
   }
   return cachedValidator;
 }
