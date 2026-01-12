@@ -5,9 +5,10 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
-    "schema_version": {
-      "type": "integer",
-      "minimum": 1
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version for the state machine schema."
     },
     "id": {
       "type": "string",
@@ -15,11 +16,13 @@
     },
     "initial": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "description": "Name of the initial state; implementations MUST validate that this value matches the 'name' of one of the entries in the 'states' array."
     },
     "states": {
       "type": "array",
       "minItems": 1,
+      "description": "List of states. State names should be unique; implementations MUST enforce uniqueness.",
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -34,6 +37,7 @@
     },
     "events": {
       "type": "array",
+      "description": "List of event identifiers. Event names should be unique; implementations MUST enforce uniqueness.",
       "items": {
         "type": "string",
         "minLength": 1
@@ -41,21 +45,25 @@
     },
     "transitions": {
       "type": "array",
+      "description": "Transitions must reference existing states/events; implementations MUST validate referential integrity.",
       "items": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
           "from": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "description": "Source state name; must exist in 'states'."
           },
           "event": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "description": "Event name; must exist in 'events'."
           },
           "to": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "description": "Target state name; must exist in 'states'."
           },
           "guard": {
             "type": "string",
@@ -72,9 +80,9 @@
         "required": ["from", "event", "to"]
       }
     },
-    "meta": {
+    "metadata": {
       "type": "object"
     }
   },
-  "required": ["schema_version", "id", "initial", "states", "events", "transitions"]
+  "required": ["schemaVersion", "id", "initial", "states", "events", "transitions"]
 }

@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schemaVersion": "1.0.0",
   "id": "order_estimate",
   "initial": "IDLE",
   "states": [
@@ -35,13 +35,19 @@
       "actions": ["show_warning"]
     },
     {
+      "from": "INSUFFICIENT",
+      "event": "AMOUNT_ENTERED",
+      "to": "CHECKING",
+      "actions": ["fetch_orderbook"]
+    },
+    {
       "from": "CONFIRMED",
       "event": "TIMER_10S",
       "to": "CHECKING",
       "actions": ["fetch_orderbook"]
     }
   ],
-  "meta": {
+  "metadata": {
     "owner": "team-x",
     "component": "pricing-ui"
   }
