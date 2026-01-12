@@ -55,6 +55,8 @@ cegis-report-*.json
 *-report-*.json
 conformance-results.json
 reports/conformance/
+reports/benchmark/req2run-benchmark-*.json
+reports/benchmark/req2run-benchmark-*.md
 reports/heavy-test-trends.json
 reports/heavy-test-trends-history/
 sample-*.json
@@ -64,6 +66,17 @@ artifacts/cassettes/
 artifacts/codex/
 artifacts/codex-quickstart-summary.md
 tests/api/generated/
+test-results/
+test-results-run/
+custom/
+custom2/
+generated-*.json
+run-*.json
+tmp-gh-event*.json
+workflow-test.json
+parallel-test.json
+filtered-test.json
+hermetic-reports/formal/tla-summary.json
 
 # Generated files
 traceability.csv
