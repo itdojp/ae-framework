@@ -5,6 +5,7 @@ import chalk from 'chalk';
 import { PhaseValidator } from './validators/PhaseValidator.js';
 import { toMessage } from '../utils/error-utils.js';
 import { createSpecCommand } from './spec-cli.js';
+import { createStateMachineCommand } from './state-machine-cli.js';
 import { createCodegenCommand } from './codegen-cli.js';
 import { CEGISCli } from './cegis-cli.js';
 import { GuardRunner } from './guards/GuardRunner.js';
@@ -599,6 +600,7 @@ program
 
 // Add spec commands
 program.addCommand(createSpecCommand());
+program.addCommand(createStateMachineCommand());
 
 // Add codegen commands
 program.addCommand(createCodegenCommand());
