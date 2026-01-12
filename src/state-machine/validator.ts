@@ -1,7 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import Ajv2020, { type ErrorObject, type ValidateFunction } from 'ajv/dist/2020';
+import Ajv2020 from 'ajv/dist/2020';
+import type { ErrorObject, ValidateFunction } from 'ajv';
 import addFormats from 'ajv-formats';
 
 export type StateMachineIssueSeverity = 'error' | 'warn';
