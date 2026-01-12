@@ -2,7 +2,6 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Ajv, type ErrorObject, type ValidateFunction } from 'ajv';
-import addFormats from 'ajv-formats';
 
 export type StateMachineIssueSeverity = 'error' | 'warn';
 
@@ -56,7 +55,6 @@ interface StateMachineDefinition {
 }
 
 const ajv = new Ajv({ allErrors: true, strict: false });
-addFormats(ajv);
 
 let cachedValidator: ValidateFunction<unknown> | undefined;
 
