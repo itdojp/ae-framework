@@ -1,0 +1,34 @@
+[
+  {
+    "id": "sample-test-1768180670115",
+    "name": "Sample Test",
+    "description": "A sample test case for testing",
+    "category": "e2e",
+    "severity": "major",
+    "enabled": true,
+    "preconditions": [],
+    "steps": [
+      {
+        "id": "step-1",
+        "description": "Sample step",
+        "action": "navigate:/",
+        "data": {},
+        "expectedResult": "Success"
+      }
+    ],
+    "expectedResults": [
+      "Test passes"
+    ],
+    "fixtures": [],
+    "dependencies": [],
+    "tags": [
+      "sample",
+      "smoke"
+    ],
+    "metadata": {
+      "complexity": "low",
+      "stability": "stable",
+      "lastUpdated": "2026-01-12T01:17:50.115Z"
+    }
+  }
+]

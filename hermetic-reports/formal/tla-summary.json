@@ -1,0 +1,8 @@
+{
+  "engine": "tlc",
+  "file": "specs/formal/10_abstract/KvOnce.tla",
+  "ran": false,
+  "status": "tool_not_available",
+  "timestamp": "2026-01-12T01:18:45.789Z",
+  "output": "TLC not available (TLA_TOOLS_JAR not set). See docs/quality/formal-tools-setup.md"
+}

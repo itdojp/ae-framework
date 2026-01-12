@@ -1,7 +1,7 @@
 {
   "metadata": {
     "version": "1.0.0",
-    "timestamp": "2025-09-18T07:17:11.977Z",
+    "timestamp": "2026-01-12T01:18:05.769Z",
     "options": {
       "databasePath": ".ae/enhanced-state.db",
       "enableCompression": true,
@@ -9,7 +9,11 @@
       "defaultTTL": 604800,
       "gcInterval": 3600,
       "maxVersions": 10,
-      "enableTransactions": true
+      "enableTransactions": true,
+      "enablePerformanceMetrics": false,
+      "enableSerializationCache": false,
+      "performanceSampleSize": 20,
+      "skipUnchangedPersistence": true
     }
   },
   "entries": [
@@ -25,11 +29,51 @@
       },
       "compressed": false,
       "tags": {},
-      "ttl": 604800,
       "metadata": {
         "size": 28,
         "created": "2025-09-18T07:17:11.977Z",
         "accessed": "2025-09-18T07:17:11.977Z",
+        "source": "unknown"
+      },
+      "ttl": 604800
+    },
+    {
+      "id": "2d6f9eab-ed09-480b-9973-3f45035baee7",
+      "logicalKey": "test",
+      "timestamp": "2026-01-12T01:18:05.763Z",
+      "version": 1,
+      "checksum": "91b6f8a7e39e35e50dcd133b3ba9f640b811e3552e614744c0bd3e71e0a03839",
+      "data": {
+        "id": "test",
+        "name": "value"
+      },
+      "compressed": false,
+      "tags": {},
+      "metadata": {
+        "size": 28,
+        "created": "2026-01-12T01:18:05.763Z",
+        "accessed": "2026-01-12T01:18:05.763Z",
+        "source": "unknown"
+      },
+      "ttl": 604800
+    },
+    {
+      "id": "13a3bcfe-2c6d-48c6-98d4-f90137a721b4",
+      "logicalKey": "integration-ready",
+      "timestamp": "2026-01-12T01:18:05.769Z",
+      "version": 2,
+      "checksum": "0094478148422a83dc50a368102314e8ddf937293f6679096c4b66f5d989afcb",
+      "data": {
+        "id": "ready",
+        "name": "true"
+      },
+      "compressed": false,
+      "tags": {},
+      "ttl": 604800,
+      "metadata": {
+        "size": 28,
+        "created": "2026-01-12T01:18:05.769Z",
+        "accessed": "2026-01-12T01:18:05.769Z",
         "source": "unknown"
       }
     }
@@ -37,11 +81,16 @@
   "indices": {
     "keyIndex": {
       "integration-ready": [
-        "integration-ready_2025-09-18T07:17:11.977Z"
+        "integration-ready_2025-09-18T07:17:11.977Z",
+        "integration-ready_2026-01-12T01:18:05.769Z"
+      ],
+      "test": [
+        "test_2026-01-12T01:18:05.763Z"
       ]
     },
     "versionIndex": {
-      "integration-ready": 1
+      "integration-ready": 2,
+      "test": 1
     }
   }
 }

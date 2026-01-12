@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
-import { adaptAgentBuilderFlow, executeFlow, loadFlowDefinition } from '../../../scripts/agent-builder/flow-runner.mjs';
+import { executeFlow, loadFlowDefinition } from '../../../scripts/agent-builder/flow-runner.mjs';
+import { adaptAgentBuilderFlow } from '../../../packages/agent-builder-adapter/src/adapter.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
