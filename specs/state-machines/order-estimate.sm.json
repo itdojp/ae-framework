@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "id": "order_estimate",
+  "initial": "IDLE",
+  "states": [
+    { "name": "IDLE" },
+    { "name": "CHECKING" },
+    { "name": "CONFIRMED" },
+    { "name": "INSUFFICIENT" }
+  ],
+  "events": [
+    "AMOUNT_ENTERED",
+    "ORDERBOOK_UPDATED",
+    "TIMER_10S"
+  ],
+  "transitions": [
+    {
+      "from": "IDLE",
+      "event": "AMOUNT_ENTERED",
+      "to": "CHECKING",
+      "actions": ["fetch_orderbook"]
+    },
+    {
+      "from": "CHECKING",
+      "event": "ORDERBOOK_UPDATED",
+      "guard": "can_fill_true",
+      "to": "CONFIRMED",
+      "actions": ["show_estimate"]
+    },
+    {
+      "from": "CHECKING",
+      "event": "ORDERBOOK_UPDATED",
+      "guard": "can_fill_false",
+      "to": "INSUFFICIENT",
+      "actions": ["show_warning"]
+    },
+    {
+      "from": "CONFIRMED",
+      "event": "TIMER_10S",
+      "to": "CHECKING",
+      "actions": ["fetch_orderbook"]
+    }
+  ],
+  "meta": {
+    "owner": "team-x",
+    "component": "pricing-ui"
+  }
+}
