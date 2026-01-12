@@ -9,6 +9,8 @@ import { fromVerifyLite } from '@ae-framework/envelope';
 
 const DEFAULT_FLOW_SCHEMA = 'schema/flow.schema.json';
 
+export { adaptAgentBuilderFlow };
+
 const ajvCache = new Map();
 
 function readJson(filePath) {
