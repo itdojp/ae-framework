@@ -5,7 +5,7 @@ Provide a machine-readable SSOT for state machines that can be validated in CI a
 
 ## Files
 - Schema: `schema/state-machine.schema.json`
-- Sample: `specs/state-machines/order-estimate.sm.json`
+- Specs: `**/*.sm.json` (place your specs in any directory)
 
 ## Required fields
 - `schemaVersion` (semver)
@@ -25,8 +25,26 @@ Each transition should include:
 - `to`
 - optional `guard`, `actions[]`
 
+## Example
+```json
+{
+  "schemaVersion": "1.0.0",
+  "id": "order-estimate",
+  "initial": "DRAFT",
+  "states": [
+    { "name": "DRAFT" },
+    { "name": "SUBMITTED" }
+  ],
+  "events": ["SUBMIT", "RESET"],
+  "transitions": [
+    { "from": "DRAFT", "event": "SUBMIT", "to": "SUBMITTED" },
+    { "from": "SUBMITTED", "event": "RESET", "to": "DRAFT" }
+  ]
+}
+```
+
 ## Validation
-- CLI: `node dist/cli.js sm validate specs/state-machines --format json`
+- CLI: `node dist/cli.js sm validate path/to/specs --format json`
 - The schema enforces structure and required fields.
 - Referencing checks (initial/state/event validity, duplicates, ambiguous transitions) are enforced by `sm validate`.
 
