@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import Ajv2020 from 'ajv/dist/2020.js';
+import Ajv2020, { type ErrorObject, type ValidateFunction } from 'ajv/dist/2020';
 import addFormats from 'ajv-formats';
 
 export type StateMachineIssueSeverity = 'error' | 'warn';
@@ -25,10 +25,40 @@ export interface StateMachineValidationResult {
   summary: StateMachineSummary;
 }
 
+interface StateMachineState {
+  name: string;
+  description?: string;
+  entry?: string[];
+  exit?: string[];
+  meta?: Record<string, unknown>;
+}
+
+interface StateMachineTransition {
+  from: string;
+  to: string;
+  event: string;
+  guard?: string;
+  actions?: string[];
+  meta?: Record<string, unknown>;
+}
+
+interface StateMachineDefinition {
+  schemaVersion: string;
+  id?: string;
+  name?: string;
+  description?: string;
+  initial: string;
+  states: StateMachineState[];
+  events: string[];
+  transitions: StateMachineTransition[];
+  metadata?: Record<string, unknown>;
+  correlation?: Record<string, unknown>;
+}
+
 const ajv = new Ajv2020({ allErrors: true, strict: false });
 addFormats(ajv);
 
-let cachedValidator: ReturnType<typeof ajv.compile> | null = null;
+let cachedValidator: ValidateFunction<unknown> | null = null;
 
 function resolveSchemaPath() {
   const cwdPath = path.resolve(process.cwd(), 'schema/state-machine.schema.json');
@@ -48,20 +78,24 @@ function resolveSchemaPath() {
 
 function loadSchema() {
   const schemaPath = resolveSchemaPath();
-  return JSON.parse(readFileSync(schemaPath, 'utf8'));
+  return JSON.parse(readFileSync(schemaPath, 'utf8')) as Record<string, unknown>;
 }
 
-function getValidator() {
+function getValidator(): ValidateFunction<unknown> {
   if (!cachedValidator) {
     cachedValidator = ajv.compile(loadSchema());
   }
   return cachedValidator;
 }
 
-function countSummary(machine: any): StateMachineSummary {
-  const states = Array.isArray(machine?.states) ? machine.states.length : 0;
-  const events = Array.isArray(machine?.events) ? machine.events.length : 0;
-  const transitions = Array.isArray(machine?.transitions) ? machine.transitions.length : 0;
+function countSummary(machine: unknown): StateMachineSummary {
+  if (!machine || typeof machine !== 'object') {
+    return { states: 0, events: 0, transitions: 0 };
+  }
+  const candidate = machine as Partial<StateMachineDefinition>;
+  const states = Array.isArray(candidate.states) ? candidate.states.length : 0;
+  const events = Array.isArray(candidate.events) ? candidate.events.length : 0;
+  const transitions = Array.isArray(candidate.transitions) ? candidate.transitions.length : 0;
   return { states, events, transitions };
 }
 
@@ -87,7 +121,8 @@ export function validateStateMachineDefinition(data: unknown): StateMachineValid
   const schemaOk = validate(data);
 
   if (!schemaOk) {
-    for (const error of validate.errors ?? []) {
+    const errors = (validate.errors ?? []) as ErrorObject[];
+    for (const error of errors) {
       issues.push({
         code: 'SCHEMA_INVALID',
         severity: 'error',
@@ -98,12 +133,12 @@ export function validateStateMachineDefinition(data: unknown): StateMachineValid
     return { ok: false, issues, summary };
   }
 
-  const machine = data as any;
+  const machine = data as StateMachineDefinition;
   const stateNames = Array.isArray(machine.states)
-    ? machine.states.map((state: any) => state?.name).filter(Boolean)
+    ? machine.states.map((state) => state?.name).filter(Boolean)
     : [];
   const eventNames = Array.isArray(machine.events)
-    ? machine.events.filter((event: any) => typeof event === 'string')
+    ? machine.events.filter((event): event is string => typeof event === 'string')
     : [];
 
   for (const name of collectDuplicates(stateNames)) {
