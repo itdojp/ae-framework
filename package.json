@@ -332,8 +332,9 @@
     "mutation:report": "node scripts/mutation/mutation-report.mjs"
   },
   "dependencies": {
-    "@ae-framework/envelope": "file:./packages/envelope",
-    "@ae-framework/spec-compiler": "file:./packages/spec-compiler",
+  "@ae-framework/agent-builder-adapter": "file:./packages/agent-builder-adapter",
+  "@ae-framework/envelope": "file:./packages/envelope",
+  "@ae-framework/spec-compiler": "file:./packages/spec-compiler",
     "@aws-sdk/client-s3": "^3.966.0",
     "@modelcontextprotocol/sdk": "^1.25.2",
     "@opentelemetry/api": "^1.9.0",

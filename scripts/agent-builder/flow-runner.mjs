@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
+import { parseFlow } from '@ae-framework/agent-builder-adapter';
 import { fromVerifyLite } from '@ae-framework/envelope';
 
 const DEFAULT_FLOW_SCHEMA = 'schema/flow.schema.json';
@@ -50,8 +51,10 @@ export function loadFlowDefinition(
     }
   }
 
+  const parsed = parseFlow(flow);
+
   return {
-    flow,
+    flow: parsed,
     path: resolvedFlow,
     raw,
   };
