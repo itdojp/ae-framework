@@ -25,6 +25,7 @@ Track where candidate config files are referenced so relocation can update both 
 
 ### sample-config.json
 - `src/cli/conformance-cli.ts` (default `sample-config.json`)
+- `package.json` (`conformance:sample` uses `samples/conformance/sample-config.json`)
 - `docs/getting-started/SETUP.md`
 - `docs/guides/USAGE.md`
 - `docs/reference/CLI-COMMANDS-REFERENCE.md`
