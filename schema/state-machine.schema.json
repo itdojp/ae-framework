@@ -81,13 +81,13 @@
         "workflow": { "type": "string" },
         "commit": { "type": "string" },
         "branch": { "type": "string" },
-      "traceIds": {
-        "type": "array",
-        "items": { "type": "string" }
-      }
-    },
-    "required": ["runId"],
-    "additionalProperties": true
+        "traceIds": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["runId"],
+      "additionalProperties": true
     }
   }
 }
