@@ -1,8 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Ajv, type ErrorObject, type ValidateFunction } from 'ajv';
+import { Ajv2020, type ErrorObject, type ValidateFunction } from 'ajv/dist/2020.js';
 
 export type StateMachineIssueSeverity = 'error' | 'warn';
 
@@ -55,19 +54,7 @@ interface StateMachineDefinition {
   correlation?: Record<string, unknown>;
 }
 
-const ajv = new Ajv({ allErrors: true, strict: false });
-const require = createRequire(import.meta.url);
-const META_SCHEMA_ROOT_ID = 'https://json-schema.org/draft/2020-12/schema';
-const META_SCHEMA_FILES = [
-  'ajv/dist/refs/json-schema-2020-12/meta/core.json',
-  'ajv/dist/refs/json-schema-2020-12/meta/applicator.json',
-  'ajv/dist/refs/json-schema-2020-12/meta/unevaluated.json',
-  'ajv/dist/refs/json-schema-2020-12/meta/validation.json',
-  'ajv/dist/refs/json-schema-2020-12/meta/meta-data.json',
-  'ajv/dist/refs/json-schema-2020-12/meta/format-annotation.json',
-  'ajv/dist/refs/json-schema-2020-12/meta/content.json',
-  'ajv/dist/refs/json-schema-2020-12/schema.json',
-];
+const ajv = new Ajv2020({ allErrors: true, strict: false });
 
 let cachedValidator: ValidateFunction<unknown> | undefined;
 let metaSchemasRegistered = false;
@@ -102,26 +89,7 @@ function ensure2020MetaSchemas() {
   if (metaSchemasRegistered) {
     return;
   }
-  if (ajv.getSchema(META_SCHEMA_ROOT_ID)) {
-    metaSchemasRegistered = true;
-    return;
-  }
-  for (const file of META_SCHEMA_FILES) {
-    let schema: unknown;
-    try {
-      schema = require(file);
-    } catch (error) {
-      const messageParts = [
-        `Failed to load meta schema file "${file}".`,
-        'Ensure that the "ajv" package and its meta schema files are installed and accessible.',
-      ];
-      if (error && typeof error === 'object' && 'message' in error) {
-        messageParts.push(`Original error: ${(error as Error).message}`);
-      }
-      throw new Error(messageParts.join(' '));
-    }
-    ajv.addMetaSchema(schema as object, undefined, false);
-  }
+  // Ajv2020 registers the default 2020-12 meta schema on construction.
   metaSchemasRegistered = true;
 }
 
