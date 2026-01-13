@@ -43,9 +43,7 @@ function resolveSchemaPath() {
   const candidates = [cwdPath, modulePath, packageRootPath];
   const resolved = candidates.find((candidate) => existsSync(candidate));
   if (!resolved) {
-    throw new Error(
-      `State machine schema not found. Looked in: ${candidates.join(', ')}`
-    );
+    throw new Error(`State machine schema not found. Looked in: ${candidates.join(', ')}`);
   }
   return resolved;
 }
