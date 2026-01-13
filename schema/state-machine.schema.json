@@ -83,11 +83,11 @@
         "branch": { "type": "string" },
         "traceIds": {
           "type": "array",
-          "items": { "type": "string", "minLength": 1 }
+          "items": { "type": "string" }
         }
       },
       "required": ["runId"],
-      "additionalProperties": false
+      "additionalProperties": true
     }
   }
 }
