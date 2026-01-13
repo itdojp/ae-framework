@@ -30,6 +30,7 @@ TYPECHECK_STATUS="pending"
 LINT_STATUS="skipped"
 BUILD_STATUS="pending"
 BDD_LINT_STATUS="skipped"
+STATE_MACHINE_STATUS="pending"
 MUTATION_STATUS="skipped"
 MUTATION_NOTES=""
 LINT_LOG_EXPORT=""
@@ -111,8 +112,9 @@ fi
 
 echo "[verify-lite] state machine validation"
 if node dist/src/cli/index.js sm validate specs/state-machines --format json; then
-  true
+  STATE_MACHINE_STATUS="success"
 else
+  STATE_MACHINE_STATUS="failure"
   echo "[verify-lite] state machine validation failed" >&2
   exit 1
 fi
@@ -182,7 +184,7 @@ fi
 export RUN_TIMESTAMP
 export SUMMARY_PATH
 export INSTALL_STATUS INSTALL_NOTES INSTALL_RETRIED
-export SPEC_COMPILER_STATUS TYPECHECK_STATUS LINT_STATUS BUILD_STATUS BDD_LINT_STATUS
+export SPEC_COMPILER_STATUS TYPECHECK_STATUS LINT_STATUS BUILD_STATUS BDD_LINT_STATUS STATE_MACHINE_STATUS
 export MUTATION_STATUS MUTATION_NOTES
 export INSTALL_FLAGS_STR
 export LINT_SUMMARY_PATH LINT_LOG_EXPORT
