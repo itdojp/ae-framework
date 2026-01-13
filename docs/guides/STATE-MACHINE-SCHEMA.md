@@ -49,6 +49,12 @@ Each transition should include:
 - Referencing checks (initial/state/event validity, duplicates, ambiguous transitions) are enforced by `sm validate`.
 - CI: verify-lite runs `sm validate specs/state-machines --format json` and fails on errors.
 
+## Rendering (Mermaid)
+- CLI: `node dist/src/cli/index.js sm render path/to/specs --out artifacts/state-machines`
+- Determinism check: `node dist/src/cli/index.js sm render path/to/specs --out artifacts/state-machines --check`
+- CI: verify-lite renders to `artifacts/state-machines` and runs `--check` to ensure stable output.
+
 ## Notes
 - Use `metadata` for ownership and component hints.
 - Keep events and states unique to avoid ambiguous behavior.
+- Mermaid outputs are generated as CI artifacts (`artifacts/state-machines`) and are not committed by default.

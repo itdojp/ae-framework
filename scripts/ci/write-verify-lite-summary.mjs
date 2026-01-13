@@ -37,6 +37,7 @@ const summary = {
     lint: { status: readStatus('LINT_STATUS', 'unknown') },
     build: { status: readStatus('BUILD_STATUS', 'unknown') },
     stateMachineValidation: { status: readStatus('STATE_MACHINE_STATUS', 'unknown') },
+    stateMachineRender: { status: readStatus('STATE_MACHINE_RENDER_STATUS', 'unknown') },
     bddLint: { status: readStatus('BDD_LINT_STATUS', 'skipped') },
     mutationQuick: {
       status: readStatus('MUTATION_STATUS', 'skipped'),
