@@ -1,6 +1,6 @@
 # Lean Proofs (PoC)
 
-Purpose: Provide a minimal Lean 4 workspace for formal proof experiments.
+Purpose: Provide a minimal Lean 4 workspace for formal proof experiments within ae-framework (AEFW). See the top-level README for context.
 
 ## Quick start
 

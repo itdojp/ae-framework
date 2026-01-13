@@ -4,4 +4,4 @@ open Lake DSL
 package aeFrameworkProofs
 
 @[default_target]
-lean_lib AEFWProofs
+lean_lib AEFrameworkProofs
