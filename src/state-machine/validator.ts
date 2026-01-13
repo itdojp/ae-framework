@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Ajv, type ErrorObject, type ValidateFunction } from 'ajv';
@@ -55,8 +56,21 @@ interface StateMachineDefinition {
 }
 
 const ajv = new Ajv({ allErrors: true, strict: false });
+const require = createRequire(import.meta.url);
+const META_SCHEMA_ROOT_ID = 'https://json-schema.org/draft/2020-12/schema';
+const META_SCHEMA_FILES = [
+  'ajv/dist/refs/json-schema-2020-12/meta/core.json',
+  'ajv/dist/refs/json-schema-2020-12/meta/applicator.json',
+  'ajv/dist/refs/json-schema-2020-12/meta/unevaluated.json',
+  'ajv/dist/refs/json-schema-2020-12/meta/validation.json',
+  'ajv/dist/refs/json-schema-2020-12/meta/meta-data.json',
+  'ajv/dist/refs/json-schema-2020-12/meta/format-annotation.json',
+  'ajv/dist/refs/json-schema-2020-12/meta/content.json',
+  'ajv/dist/refs/json-schema-2020-12/schema.json',
+];
 
 let cachedValidator: ValidateFunction<unknown> | undefined;
+let metaSchemasRegistered = false;
 
 function resolveSchemaPath() {
   const cwdPath = path.resolve(process.cwd(), 'schema/state-machine.schema.json');
@@ -77,15 +91,31 @@ function resolveSchemaPath() {
 function loadSchema() {
   const schemaPath = resolveSchemaPath();
   const schema = JSON.parse(readFileSync(schemaPath, 'utf8')) as Record<string, unknown>;
-  if (typeof schema.$schema === 'string') {
-    delete schema.$schema;
-  }
   return schema;
+}
+
+function ensure2020MetaSchemas() {
+  if (metaSchemasRegistered) {
+    return;
+  }
+  if (ajv.getSchema(META_SCHEMA_ROOT_ID)) {
+    metaSchemasRegistered = true;
+    return;
+  }
+  for (const file of META_SCHEMA_FILES) {
+    const schema = require(file);
+    ajv.addMetaSchema(schema, undefined, false);
+  }
+  metaSchemasRegistered = true;
 }
 
 function getValidator(): ValidateFunction<unknown> {
   if (!cachedValidator) {
-    cachedValidator = ajv.compile(loadSchema()) as ValidateFunction<unknown>;
+    ensure2020MetaSchemas();
+    const schema = loadSchema();
+    const schemaId = typeof schema.$id === 'string' ? schema.$id : undefined;
+    const existing = schemaId ? ajv.getSchema(schemaId) : undefined;
+    cachedValidator = (existing ?? ajv.compile(schema)) as ValidateFunction<unknown>;
   }
   return cachedValidator;
 }
