@@ -9,6 +9,7 @@ import { safeExit } from '../utils/safe-exit.js';
 import { toMessage } from '../utils/error-utils.js';
 import {
   type StateMachineIssue,
+  type StateMachineSummary,
   validateStateMachineDefinition
 } from '../state-machine/validator.js';
 
@@ -45,7 +46,9 @@ async function resolveFiles(inputs: string[]): Promise<string[]> {
   return Array.from(files).sort();
 }
 
-function renderText(results: Array<{ file: string; ok: boolean; issues: StateMachineIssue[] }>) {
+function renderText(
+  results: Array<{ file: string; ok: boolean; issues: StateMachineIssue[]; summary: StateMachineSummary }>
+) {
   let hasErrors = false;
   for (const result of results) {
     if (result.ok) {
@@ -89,16 +92,17 @@ export function createStateMachineCommand(): Command {
           try {
             data = JSON.parse(raw);
           } catch (error: unknown) {
+            const issues: StateMachineIssue[] = [
+              {
+                code: 'PARSE_ERROR',
+                severity: 'error',
+                message: `Failed to parse JSON: ${toMessage(error)}`
+              }
+            ];
             return {
               file,
               ok: false,
-              issues: [
-                {
-                  code: 'PARSE_ERROR',
-                  severity: 'error',
-                  message: `Failed to parse JSON: ${toMessage(error)}`
-                }
-              ],
+              issues,
               summary: { states: 0, events: 0, transitions: 0 }
             };
           }

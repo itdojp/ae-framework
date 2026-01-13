@@ -125,7 +125,7 @@ function getValidator(): ValidateFunction<unknown> {
   if (!cachedValidator) {
     ensure2020MetaSchemas();
     const schema = loadSchema();
-    const schemaId = typeof schema.$id === 'string' ? schema.$id : undefined;
+    const schemaId = typeof schema['$id'] === 'string' ? schema['$id'] : undefined;
     const existing = schemaId ? ajv.getSchema(schemaId) : undefined;
     cachedValidator = (existing ?? ajv.compile(schema)) as ValidateFunction<unknown>;
   }
