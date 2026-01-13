@@ -419,6 +419,7 @@
     "dist/**",
     "templates/**",
     "docs/**",
+    "schema/**",
     "types/**",
     "packages/**",
     "ae.config.ts",

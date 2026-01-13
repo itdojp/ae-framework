@@ -1,7 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Ajv, type ErrorObject, type ValidateFunction } from 'ajv';
+import { Ajv2020, type ErrorObject, type ValidateFunction } from 'ajv/dist/2020.js';
+import type { StateMachineDefinition } from './types.js';
 
 export type StateMachineIssueSeverity = 'error' | 'warn';
 
@@ -24,39 +25,10 @@ export interface StateMachineValidationResult {
   summary: StateMachineSummary;
 }
 
-interface StateMachineState {
-  name: string;
-  description?: string;
-  entry?: string[];
-  exit?: string[];
-  meta?: Record<string, unknown>;
-}
-
-interface StateMachineTransition {
-  from: string;
-  to: string;
-  event: string;
-  guard?: string;
-  actions?: string[];
-  meta?: Record<string, unknown>;
-}
-
-interface StateMachineDefinition {
-  schemaVersion: string;
-  id?: string;
-  name?: string;
-  description?: string;
-  initial: string;
-  states: StateMachineState[];
-  events: string[];
-  transitions: StateMachineTransition[];
-  metadata?: Record<string, unknown>;
-  correlation?: Record<string, unknown>;
-}
-
-const ajv = new Ajv({ allErrors: true, strict: false });
+const ajv = new Ajv2020({ allErrors: true, strict: false });
 
 let cachedValidator: ValidateFunction<unknown> | undefined;
+let metaSchemasRegistered = false;
 
 function resolveSchemaPath() {
   const cwdPath = path.resolve(process.cwd(), 'schema/state-machine.schema.json');
@@ -64,12 +36,14 @@ function resolveSchemaPath() {
     path.dirname(fileURLToPath(import.meta.url)),
     '../../schema/state-machine.schema.json'
   );
-  const candidates = [cwdPath, modulePath];
+  const packageRootPath = path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    '../../../schema/state-machine.schema.json'
+  );
+  const candidates = [cwdPath, modulePath, packageRootPath];
   const resolved = candidates.find((candidate) => existsSync(candidate));
   if (!resolved) {
-    throw new Error(
-      `State machine schema not found. Looked in: ${candidates.map((candidate) => candidate).join(', ')}`
-    );
+    throw new Error(`State machine schema not found. Looked in: ${candidates.join(', ')}`);
   }
   return resolved;
 }
@@ -77,15 +51,24 @@ function resolveSchemaPath() {
 function loadSchema() {
   const schemaPath = resolveSchemaPath();
   const schema = JSON.parse(readFileSync(schemaPath, 'utf8')) as Record<string, unknown>;
-  if (typeof schema['$schema'] === 'string') {
-    delete schema['$schema'];
-  }
   return schema;
+}
+
+function ensure2020MetaSchemas() {
+  if (metaSchemasRegistered) {
+    return;
+  }
+  // Ajv2020 registers the default 2020-12 meta schema on construction.
+  metaSchemasRegistered = true;
 }
 
 function getValidator(): ValidateFunction<unknown> {
   if (!cachedValidator) {
-    cachedValidator = ajv.compile(loadSchema()) as ValidateFunction<unknown>;
+    ensure2020MetaSchemas();
+    const schema = loadSchema();
+    const schemaId = typeof schema['$id'] === 'string' ? schema['$id'] : undefined;
+    const existing = schemaId ? ajv.getSchema(schemaId) : undefined;
+    cachedValidator = (existing ?? ajv.compile(schema)) as ValidateFunction<unknown>;
   }
   return cachedValidator;
 }
@@ -137,11 +120,35 @@ export function validateStateMachineDefinition(data: unknown): StateMachineValid
 
   const machine = data as StateMachineDefinition;
   const stateNames = Array.isArray(machine.states)
-    ? machine.states.map((state) => state?.name).filter(Boolean)
+    ? machine.states
+        .map((state) => state?.name)
+        .filter((name): name is string => typeof name === 'string')
     : [];
   const eventNames = Array.isArray(machine.events)
     ? machine.events.filter((event): event is string => typeof event === 'string')
     : [];
+
+  for (const [index, name] of stateNames.entries()) {
+    if (!name.trim()) {
+      issues.push({
+        code: 'EMPTY_STATE_NAME',
+        severity: 'error',
+        message: 'State name must be a non-empty string',
+        location: { jsonPointer: `/states/${index}/name` }
+      });
+    }
+  }
+
+  for (const [index, name] of eventNames.entries()) {
+    if (!name.trim()) {
+      issues.push({
+        code: 'EMPTY_EVENT_NAME',
+        severity: 'error',
+        message: 'Event name must be a non-empty string',
+        location: { jsonPointer: `/events/${index}` }
+      });
+    }
+  }
 
   for (const name of collectDuplicates(stateNames)) {
     issues.push({
