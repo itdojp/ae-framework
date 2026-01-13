@@ -19,3 +19,4 @@ Context Bundle と Spec Kit を受け取り、verify-then-merge を成立させ�
 ## Templates
 
 - `blueprint-template.md`
+- `blueprint-task-breakdown.md` (Task breakdown checklist / 実行タスク分解チェックリスト)
