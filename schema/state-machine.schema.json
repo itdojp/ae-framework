@@ -14,6 +14,8 @@
       "type": "string",
       "minLength": 1
     },
+    "name": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
     "initial": {
       "type": "string",
       "minLength": 1,
@@ -27,10 +29,17 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1
-          }
+          "name": { "type": "string", "minLength": 1 },
+          "description": { "type": "string" },
+          "entry": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "exit": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "meta": { "type": "object" }
         },
         "required": ["name"]
       }
@@ -38,10 +47,7 @@
     "events": {
       "type": "array",
       "description": "List of event identifiers. Event names should be unique; implementations MUST enforce uniqueness.",
-      "items": {
-        "type": "string",
-        "minLength": 1
-      }
+      "items": { "type": "string", "minLength": 1 }
     },
     "transitions": {
       "type": "array",
@@ -50,39 +56,38 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "from": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Source state name; must exist in 'states'."
-          },
-          "event": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Event name; must exist in 'events'."
-          },
-          "to": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Target state name; must exist in 'states'."
-          },
-          "guard": {
-            "type": "string",
-            "minLength": 1
-          },
+          "from": { "type": "string", "minLength": 1 },
+          "to": { "type": "string", "minLength": 1 },
+          "event": { "type": "string", "minLength": 1 },
+          "guard": { "type": "string", "minLength": 1 },
           "actions": {
             "type": "array",
-            "items": {
-              "type": "string",
-              "minLength": 1
-            }
-          }
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "meta": { "type": "object" }
         },
-        "required": ["from", "event", "to"]
+        "required": ["from", "to", "event"]
       }
     },
-    "metadata": {
-      "type": "object"
-    }
+    "metadata": { "type": "object" },
+    "correlation": { "$ref": "#/$defs/correlation" }
   },
-  "required": ["schemaVersion", "id", "initial", "states", "events", "transitions"]
+  "required": ["schemaVersion", "id", "initial", "states", "events", "transitions"],
+  "$defs": {
+    "correlation": {
+      "type": "object",
+      "properties": {
+        "runId": { "type": "string" },
+        "workflow": { "type": "string" },
+        "commit": { "type": "string" },
+        "branch": { "type": "string" },
+        "traceIds": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "required": ["runId"],
+      "additionalProperties": false
+    }
+  }
 }
