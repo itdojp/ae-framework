@@ -78,7 +78,11 @@ function resolveSchemaPath() {
     path.dirname(fileURLToPath(import.meta.url)),
     '../../schema/state-machine.schema.json'
   );
-  const candidates = [cwdPath, modulePath];
+  const packageRootPath = path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    '../../../schema/state-machine.schema.json'
+  );
+  const candidates = [cwdPath, modulePath, packageRootPath];
   const resolved = candidates.find((candidate) => existsSync(candidate));
   if (!resolved) {
     throw new Error(
