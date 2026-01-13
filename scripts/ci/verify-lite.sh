@@ -35,6 +35,9 @@ fi
 echo "[verify-lite] build"
 pnpm run build
 
+echo "[verify-lite] state machine validation"
+node dist/src/cli/index.js sm validate specs/state-machines --format json
+
 echo "[verify-lite] BDD lint (non-blocking)"
 if [[ -f scripts/bdd/lint.mjs ]]; then
   if [[ "${VERIFY_LITE_ENFORCE_BDD:-0}" == "1" ]]; then
