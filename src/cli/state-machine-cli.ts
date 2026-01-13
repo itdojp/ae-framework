@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import { readFileSync, statSync } from 'node:fs';
+import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import chalk from 'chalk';
 import { glob } from 'glob';
@@ -12,6 +12,7 @@ import {
   type StateMachineSummary,
   validateStateMachineDefinition
 } from '../state-machine/validator.js';
+import { renderMermaidStateMachine, type StateMachineDefinition } from '../state-machine/render.js';
 
 function looksLikeGlob(value: string) {
   return /[*?\[\]{}()]/.test(value);
@@ -66,6 +67,23 @@ function renderText(
   if (hasErrors) {
     safeExit(1);
   }
+}
+
+function renderIssues(file: string, issues: StateMachineIssue[]) {
+  console.log(chalk.red(`❌ ${file}`));
+  for (const issue of issues) {
+    const marker = issue.severity === 'error' ? chalk.red('error') : chalk.yellow('warn');
+    const location = issue.location?.jsonPointer ? ` (${issue.location.jsonPointer})` : '';
+    console.log(`  - [${marker}] ${issue.code}: ${issue.message}${location}`);
+  }
+}
+
+function resolveOutputName(machine: StateMachineDefinition, file: string) {
+  if (typeof machine.id === 'string' && machine.id.trim().length > 0) {
+    return `${machine.id.trim()}.mmd`;
+  }
+  const base = path.basename(file).replace(/\\.sm\\.json$/i, '');
+  return `${base}.mmd`;
 }
 
 export function createStateMachineCommand(): Command {
@@ -132,6 +150,134 @@ export function createStateMachineCommand(): Command {
         renderText(results);
       } catch (error: unknown) {
         console.error(chalk.red(`❌ State machine validation failed: ${toMessage(error)}`));
+        safeExit(2);
+      }
+    });
+
+  sm
+    .command('render')
+    .description('Render state machine specs to Mermaid diagrams (.mmd)')
+    .argument('<paths...>', 'Files, directories, or glob patterns')
+    .option('--format <format>', 'Output format: mermaid', 'mermaid')
+    .option('--out <dir>', 'Output directory', 'docs/diagrams/state-machines')
+    .option('--check', 'Fail if rendered output differs from existing files', false)
+    .action(async (paths: string[], options: { format: string; out: string; check: boolean }) => {
+      try {
+        if (options.format !== 'mermaid') {
+          console.error(chalk.red(`❌ Unsupported format: ${options.format}`));
+          safeExit(3);
+          return;
+        }
+
+        const files = await resolveFiles(paths);
+        if (files.length === 0) {
+          console.log(chalk.yellow('⚠️  No state machine files found'));
+          safeExit(1);
+          return;
+        }
+
+        const invalidResults: Array<{
+          file: string;
+          ok: boolean;
+          issues: StateMachineIssue[];
+          summary: StateMachineSummary;
+        }> = [];
+        const machines: Array<{ file: string; data: StateMachineDefinition }> = [];
+
+        for (const file of files) {
+          const raw = readFileSync(file, 'utf8');
+          let data: unknown;
+          try {
+            data = JSON.parse(raw);
+          } catch (error: unknown) {
+            invalidResults.push({
+              file,
+              ok: false,
+              issues: [
+                {
+                  code: 'PARSE_ERROR',
+                  severity: 'error',
+                  message: `Failed to parse JSON: ${toMessage(error)}`
+                }
+              ],
+              summary: { states: 0, events: 0, transitions: 0 }
+            });
+            continue;
+          }
+
+          const validation = validateStateMachineDefinition(data);
+          if (!validation.ok) {
+            invalidResults.push({
+              file,
+              ok: false,
+              issues: validation.issues,
+              summary: validation.summary
+            });
+            continue;
+          }
+
+          machines.push({ file, data: data as StateMachineDefinition });
+        }
+
+        if (invalidResults.length > 0) {
+          renderText(invalidResults);
+          return;
+        }
+
+        const outDir = path.resolve(options.out);
+        if (!options.check) {
+          mkdirSync(outDir, { recursive: true });
+        }
+
+        const renderIssuesList: Array<{ file: string; issues: StateMachineIssue[] }> = [];
+
+        for (const machine of machines) {
+          const outputName = resolveOutputName(machine.data, machine.file);
+          const outputPath = path.join(outDir, outputName);
+          const rendered = renderMermaidStateMachine(machine.data);
+
+          if (options.check) {
+            try {
+              const existing = readFileSync(outputPath, 'utf8');
+              if (existing !== rendered) {
+                renderIssuesList.push({
+                  file: machine.file,
+                  issues: [
+                    {
+                      code: 'MERMAID_OUT_OF_DATE',
+                      severity: 'error',
+                      message: `Rendered output differs: ${outputPath}`
+                    }
+                  ]
+                });
+              }
+            } catch {
+              renderIssuesList.push({
+                file: machine.file,
+                issues: [
+                  {
+                    code: 'MERMAID_MISSING',
+                    severity: 'error',
+                    message: `Rendered output missing: ${outputPath}`
+                  }
+                ]
+              });
+            }
+            continue;
+          }
+
+          writeFileSync(outputPath, rendered, 'utf8');
+          console.log(chalk.green(`✅ ${outputPath}`));
+        }
+
+        if (renderIssuesList.length > 0) {
+          for (const item of renderIssuesList) {
+            renderIssues(item.file, item.issues);
+          }
+          safeExit(1);
+        }
+      } catch (error: unknown) {
+        console.error(chalk.red(`❌ State machine rendering failed: ${toMessage(error)}`));
         safeExit(2);
       }
     });
