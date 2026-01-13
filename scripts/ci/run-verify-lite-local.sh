@@ -31,6 +31,7 @@ LINT_STATUS="skipped"
 BUILD_STATUS="pending"
 BDD_LINT_STATUS="skipped"
 STATE_MACHINE_STATUS="pending"
+STATE_MACHINE_RENDER_STATUS="pending"
 MUTATION_STATUS="skipped"
 MUTATION_NOTES=""
 LINT_LOG_EXPORT=""
@@ -119,6 +120,22 @@ else
   exit 1
 fi
 
+echo "[verify-lite] state machine render"
+if node dist/src/cli/index.js sm render specs/state-machines --out artifacts/state-machines; then
+  if node dist/src/cli/index.js sm render specs/state-machines --out artifacts/state-machines --check; then
+    STATE_MACHINE_RENDER_STATUS="success"
+    true
+  else
+    STATE_MACHINE_RENDER_STATUS="failure"
+    echo "[verify-lite] state machine render check failed" >&2
+    exit 1
+  fi
+else
+  STATE_MACHINE_RENDER_STATUS="failure"
+  echo "[verify-lite] state machine render failed" >&2
+  exit 1
+fi
+
 echo "[verify-lite] optional BDD lint"
 if [[ -f scripts/bdd/lint.mjs ]]; then
   if node scripts/bdd/lint.mjs; then
@@ -184,7 +201,7 @@ fi
 export RUN_TIMESTAMP
 export SUMMARY_PATH
 export INSTALL_STATUS INSTALL_NOTES INSTALL_RETRIED
-export SPEC_COMPILER_STATUS TYPECHECK_STATUS LINT_STATUS BUILD_STATUS BDD_LINT_STATUS STATE_MACHINE_STATUS
+export SPEC_COMPILER_STATUS TYPECHECK_STATUS LINT_STATUS BUILD_STATUS BDD_LINT_STATUS STATE_MACHINE_STATUS STATE_MACHINE_RENDER_STATUS
 export MUTATION_STATUS MUTATION_NOTES
 export INSTALL_FLAGS_STR
 export LINT_SUMMARY_PATH LINT_LOG_EXPORT
