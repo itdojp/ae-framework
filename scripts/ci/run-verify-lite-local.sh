@@ -109,6 +109,14 @@ else
   exit 1
 fi
 
+echo "[verify-lite] state machine validation"
+if node dist/src/cli/index.js sm validate specs/state-machines --format json; then
+  true
+else
+  echo "[verify-lite] state machine validation failed" >&2
+  exit 1
+fi
+
 echo "[verify-lite] optional BDD lint"
 if [[ -f scripts/bdd/lint.mjs ]]; then
   if node scripts/bdd/lint.mjs; then

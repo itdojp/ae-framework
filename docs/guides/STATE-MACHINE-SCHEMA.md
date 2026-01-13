@@ -47,6 +47,7 @@ Each transition should include:
 - CLI: `node dist/cli.js sm validate path/to/specs --format json`
 - The schema enforces structure and required fields.
 - Referencing checks (initial/state/event validity, duplicates, ambiguous transitions) are enforced by `sm validate`.
+- CI: verify-lite runs `sm validate specs/state-machines --format json` and fails on errors.
 
 ## Notes
 - Use `metadata` for ownership and component hints.
