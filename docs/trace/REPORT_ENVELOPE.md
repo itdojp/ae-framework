@@ -24,6 +24,9 @@ Issue: #1011 / #1012 / #1036 / #1038
 | `correlation.commit` | string | ✓ | 対象コミット SHA。 |
 | `correlation.branch` | string | ✓ | 対象ブランチ (短縮表記)。 |
 | `correlation.traceIds` | string[] | - | OTLP Span や replay 実行など、関連する trace/span ID のリスト。 |
+
+補足: `correlation` は `schema/flow.schema.json` と `schema/state-machine.schema.json` でも共有されるため、
+追加プロパティを許容しつつ、`traceIds` は文字列配列として統一します。
 | `summary` | object | ✓ | 元サマリ JSON の抜粋 (Verify Lite の場合は `verify-lite-run-summary.json`)。大きすぎる場合は要約を入れ、完全版は artifacts で参照。 |
 | `artifacts` | array | ✓ | 付随成果物のリスト。各要素は `type` / `path` / `checksum` / `description` を持つ。 |
 | `notes` | array (string) | - | 補足メッセージ。CI で WARNING を並べる用途。 |
