@@ -12,7 +12,8 @@ import {
   type StateMachineSummary,
   validateStateMachineDefinition
 } from '../state-machine/validator.js';
-import { renderMermaidStateMachine, type StateMachineDefinition } from '../state-machine/render.js';
+import { renderMermaidStateMachine } from '../state-machine/render.js';
+import type { StateMachineDefinition } from '../state-machine/types.js';
 
 function looksLikeGlob(value: string) {
   return /[*?\[\]{}()]/.test(value);
@@ -78,12 +79,26 @@ function renderIssues(file: string, issues: StateMachineIssue[]) {
   }
 }
 
+function sanitizeOutputSegment(value: string) {
+  const base = path.basename(value);
+  const sanitized = base.replace(/[^A-Za-z0-9._-]/g, '-').replace(/-+/g, '-');
+  const trimmed = sanitized.replace(/^[-.]+/, '').replace(/[-.]+$/, '');
+  if (!trimmed || trimmed === '.' || trimmed === '..') {
+    return '';
+  }
+  return trimmed;
+}
+
 function resolveOutputName(machine: StateMachineDefinition, file: string) {
   if (typeof machine.id === 'string' && machine.id.trim().length > 0) {
-    return `${machine.id.trim()}.mmd`;
+    const safeId = sanitizeOutputSegment(machine.id.trim());
+    if (safeId) {
+      return `${safeId}.mmd`;
+    }
   }
   const base = path.basename(file).replace(/\\.sm\\.json$/i, '');
-  return `${base}.mmd`;
+  const safeBase = sanitizeOutputSegment(base) || 'state-machine';
+  return `${safeBase}.mmd`;
 }
 
 export function createStateMachineCommand(): Command {
@@ -220,6 +235,7 @@ export function createStateMachineCommand(): Command {
         }
 
         if (invalidResults.length > 0) {
+          // renderText handles reporting validation errors and calling safeExit(1).
           renderText(invalidResults);
           return;
         }
@@ -276,6 +292,7 @@ export function createStateMachineCommand(): Command {
           }
           safeExit(1);
         }
+        safeExit(0);
       } catch (error: unknown) {
         console.error(chalk.red(`❌ State machine rendering failed: ${toMessage(error)}`));
         safeExit(2);

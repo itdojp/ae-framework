@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Ajv2020, type ErrorObject, type ValidateFunction } from 'ajv/dist/2020.js';
+import type { StateMachineDefinition } from './types.js';
 
 export type StateMachineIssueSeverity = 'error' | 'warn';
 
@@ -22,36 +23,6 @@ export interface StateMachineValidationResult {
   ok: boolean;
   issues: StateMachineIssue[];
   summary: StateMachineSummary;
-}
-
-interface StateMachineState {
-  name: string;
-  description?: string;
-  entry?: string[];
-  exit?: string[];
-  meta?: Record<string, unknown>;
-}
-
-interface StateMachineTransition {
-  from: string;
-  to: string;
-  event: string;
-  guard?: string;
-  actions?: string[];
-  meta?: Record<string, unknown>;
-}
-
-interface StateMachineDefinition {
-  schemaVersion: string;
-  id?: string;
-  name?: string;
-  description?: string;
-  initial: string;
-  states: StateMachineState[];
-  events: string[];
-  transitions: StateMachineTransition[];
-  metadata?: Record<string, unknown>;
-  correlation?: Record<string, unknown>;
 }
 
 const ajv = new Ajv2020({ allErrors: true, strict: false });

@@ -1,37 +1,17 @@
-export interface StateMachineState {
-  name: string;
-  description?: string;
-  entry?: string[];
-  exit?: string[];
-  meta?: Record<string, unknown>;
-}
+import type { StateMachineDefinition, StateMachineTransition } from './types.js';
 
-export interface StateMachineTransition {
-  from: string;
-  to: string;
-  event: string;
-  guard?: string;
-  actions?: string[];
-  meta?: Record<string, unknown>;
-}
-
-export interface StateMachineDefinition {
-  schemaVersion: string;
-  id?: string;
-  name?: string;
-  description?: string;
-  initial: string;
-  states: StateMachineState[];
-  events: string[];
-  transitions: StateMachineTransition[];
-  metadata?: Record<string, unknown>;
-  correlation?: Record<string, unknown>;
-}
-
+/**
+ * Generate a Mermaid-safe state ID with deterministic collision handling.
+ * - Non-alphanumeric characters are replaced with "_".
+ * - IDs starting with digits are prefixed with "S_".
+ * - Collisions are resolved by appending "_<n>".
+ */
 function toMermaidId(name: string, used: Set<string>) {
   const base = name.replace(/[^A-Za-z0-9_]/g, '_');
-  const prefixed = base.length > 0 && !/^[0-9]/.test(base) ? base : `S_${base}`;
-  let candidate = prefixed || 'S';
+  const collapsed = base.replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+  const normalized = collapsed.length === 0 ? 'state' : collapsed;
+  const prefixed = /^[0-9]/.test(normalized) ? `S_${normalized}` : normalized;
+  let candidate = prefixed;
   let counter = 1;
   while (used.has(candidate)) {
     candidate = `${prefixed}_${counter}`;
@@ -41,17 +21,37 @@ function toMermaidId(name: string, used: Set<string>) {
   return candidate;
 }
 
+function sanitizeMermaidText(value: string) {
+  return value.replace(/\r?\n/g, ' ').trim();
+}
+
+function escapeMermaidLabel(value: string) {
+  return sanitizeMermaidText(value).replace(/"/g, "'");
+}
+
 function buildLabel(transition: StateMachineTransition) {
-  const parts: string[] = [transition.event];
+  const parts: string[] = [sanitizeMermaidText(transition.event)];
   if (transition.guard) {
-    parts.push(`[${transition.guard}]`);
+    parts.push(`[${sanitizeMermaidText(transition.guard)}]`);
   }
   if (transition.actions && transition.actions.length > 0) {
-    parts.push(`/ ${transition.actions.join(', ')}`);
+    const actions = transition.actions.map((action) => sanitizeMermaidText(action)).join(', ');
+    parts.push(`/ ${actions}`);
   }
   return parts.join(' ');
 }
 
+function requireStateId(stateIds: Map<string, string>, stateName: string) {
+  const id = stateIds.get(stateName);
+  if (!id) {
+    throw new Error(`State not found while rendering: ${stateName}`);
+  }
+  return id;
+}
+
+/**
+ * Render a Mermaid stateDiagram-v2 from a validated state machine definition.
+ */
 export function renderMermaidStateMachine(machine: StateMachineDefinition): string {
   const usedIds = new Set<string>();
   const stateIds = new Map<string, string>();
@@ -61,21 +61,21 @@ export function renderMermaidStateMachine(machine: StateMachineDefinition): stri
 
   const lines: string[] = ['stateDiagram-v2'];
   const indent = '  ';
-  const initialId = stateIds.get(machine.initial) ?? toMermaidId(machine.initial, usedIds);
+  const initialId = requireStateId(stateIds, machine.initial);
   lines.push(`${indent}[*] --> ${initialId}`);
 
   for (const state of machine.states) {
-    const id = stateIds.get(state.name) ?? toMermaidId(state.name, usedIds);
-    if (id === state.name) {
+    const id = requireStateId(stateIds, state.name);
+    if (id === state.name && id === sanitizeMermaidText(state.name)) {
       lines.push(`${indent}state ${id}`);
     } else {
-      lines.push(`${indent}state "${state.name}" as ${id}`);
+      lines.push(`${indent}state "${escapeMermaidLabel(state.name)}" as ${id}`);
     }
   }
 
   for (const transition of machine.transitions) {
-    const fromId = stateIds.get(transition.from) ?? toMermaidId(transition.from, usedIds);
-    const toId = stateIds.get(transition.to) ?? toMermaidId(transition.to, usedIds);
+    const fromId = requireStateId(stateIds, transition.from);
+    const toId = requireStateId(stateIds, transition.to);
     const label = buildLabel(transition);
     lines.push(`${indent}${fromId} --> ${toId}: ${label}`);
   }

@@ -27,4 +27,29 @@ describe('renderMermaidStateMachine', () => {
     expect(output).toContain('[*] --> Start_State');
     expect(output).toContain('Start_State --> End_State: GO [ready] / notify');
   });
+
+  it('escapes labels and ensures unique IDs', () => {
+    const output = renderMermaidStateMachine({
+      schemaVersion: '1.0.0',
+      id: 'edge-cases',
+      initial: 'Quote "State"\n',
+      states: [
+        { name: 'Quote "State"\n' },
+        { name: 'A-B' },
+        { name: 'A B' },
+        { name: '!!!' },
+      ],
+      events: ['GO'],
+      transitions: [
+        { from: 'Quote "State"\n', event: 'GO', to: 'A-B' },
+        { from: 'A-B', event: 'GO', to: 'A B' },
+        { from: 'A B', event: 'GO', to: '!!!' },
+      ],
+    });
+
+    expect(output).toContain('state "Quote \'State\'" as Quote_State');
+    expect(output).toContain('state "A-B" as A_B');
+    expect(output).toContain('state "A B" as A_B_1');
+    expect(output).toContain('state "!!!" as state');
+  });
 });
