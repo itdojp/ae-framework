@@ -1,0 +1,38 @@
+name: Lean Proofs
+
+on:
+  pull_request:
+    paths:
+      - "proofs/lean/**"
+  push:
+    branches:
+      - main
+    paths:
+      - "proofs/lean/**"
+
+jobs:
+  lean-proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install elan
+        run: |
+          curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Lean build
+        working-directory: proofs/lean
+        run: lake build
+      - name: Check for sorry
+        run: |
+          set -euo pipefail
+          if command -v rg >/dev/null 2>&1; then
+            if rg -n --glob '*.lean' 'sorry' proofs/lean; then
+              echo "Found sorry in Lean proofs."
+              exit 1
+            fi
+          else
+            if grep -R -n --include='*.lean' 'sorry' proofs/lean; then
+              echo "Found sorry in Lean proofs."
+              exit 1
+            fi
+          fi
