@@ -82,7 +82,7 @@ function resolveSchemaPath() {
   const resolved = candidates.find((candidate) => existsSync(candidate));
   if (!resolved) {
     throw new Error(
-      `State machine schema not found. Looked in: ${candidates.map((candidate) => candidate).join(', ')}`
+      `State machine schema not found. Looked in: ${candidates.join(', ')}`
     );
   }
   return resolved;
@@ -103,8 +103,20 @@ function ensure2020MetaSchemas() {
     return;
   }
   for (const file of META_SCHEMA_FILES) {
-    const schema = require(file);
-    ajv.addMetaSchema(schema, undefined, false);
+    let schema: unknown;
+    try {
+      schema = require(file);
+    } catch (error) {
+      const messageParts = [
+        `Failed to load meta schema file "${file}".`,
+        'Ensure that the "ajv" package and its meta schema files are installed and accessible.',
+      ];
+      if (error && typeof error === 'object' && 'message' in error) {
+        messageParts.push(`Original error: ${(error as Error).message}`);
+      }
+      throw new Error(messageParts.join(' '));
+    }
+    ajv.addMetaSchema(schema as object, undefined, false);
   }
   metaSchemasRegistered = true;
 }
@@ -167,11 +179,35 @@ export function validateStateMachineDefinition(data: unknown): StateMachineValid
 
   const machine = data as StateMachineDefinition;
   const stateNames = Array.isArray(machine.states)
-    ? machine.states.map((state) => state?.name).filter(Boolean)
+    ? machine.states
+        .map((state) => state?.name)
+        .filter((name): name is string => typeof name === 'string')
     : [];
   const eventNames = Array.isArray(machine.events)
     ? machine.events.filter((event): event is string => typeof event === 'string')
     : [];
+
+  for (const [index, name] of stateNames.entries()) {
+    if (!name.trim()) {
+      issues.push({
+        code: 'EMPTY_STATE_NAME',
+        severity: 'error',
+        message: 'State name must be a non-empty string',
+        location: { jsonPointer: `/states/${index}/name` }
+      });
+    }
+  }
+
+  for (const [index, name] of eventNames.entries()) {
+    if (!name.trim()) {
+      issues.push({
+        code: 'EMPTY_EVENT_NAME',
+        severity: 'error',
+        message: 'Event name must be a non-empty string',
+        location: { jsonPointer: `/events/${index}` }
+      });
+    }
+  }
 
   for (const name of collectDuplicates(stateNames)) {
     issues.push({

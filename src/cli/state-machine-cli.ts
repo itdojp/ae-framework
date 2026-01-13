@@ -7,7 +7,10 @@ import chalk from 'chalk';
 import { glob } from 'glob';
 import { safeExit } from '../utils/safe-exit.js';
 import { toMessage } from '../utils/error-utils.js';
-import { validateStateMachineDefinition } from '../state-machine/validator.js';
+import {
+  type StateMachineIssue,
+  validateStateMachineDefinition
+} from '../state-machine/validator.js';
 
 function looksLikeGlob(value: string) {
   return /[*?\[\]{}()]/.test(value);
@@ -42,7 +45,7 @@ async function resolveFiles(inputs: string[]): Promise<string[]> {
   return Array.from(files).sort();
 }
 
-function renderText(results: Array<{ file: string; ok: boolean; issues: any[] }>) {
+function renderText(results: Array<{ file: string; ok: boolean; issues: StateMachineIssue[] }>) {
   let hasErrors = false;
   for (const result of results) {
     if (result.ok) {

@@ -3,64 +3,76 @@
   "$id": "https://ae-framework/schema/state-machine.schema.json",
   "title": "ae-state-machine",
   "type": "object",
+  "additionalProperties": false,
   "properties": {
     "schemaVersion": {
       "type": "string",
-      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version for the state machine schema."
     },
-    "id": { "type": "string" },
-    "name": { "type": "string" },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "name": { "type": "string", "minLength": 1 },
     "description": { "type": "string" },
-    "initial": { "type": "string" },
+    "initial": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Name of the initial state; implementations MUST validate that this value matches the 'name' of one of the entries in the 'states' array."
+    },
     "states": {
       "type": "array",
+      "minItems": 1,
+      "description": "List of states. State names should be unique; implementations MUST enforce uniqueness.",
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "properties": {
-          "name": { "type": "string" },
+          "name": { "type": "string", "minLength": 1 },
           "description": { "type": "string" },
           "entry": {
             "type": "array",
-            "items": { "type": "string" }
+            "items": { "type": "string", "minLength": 1 }
           },
           "exit": {
             "type": "array",
-            "items": { "type": "string" }
+            "items": { "type": "string", "minLength": 1 }
           },
           "meta": { "type": "object" }
         },
-        "required": ["name"],
-        "additionalProperties": true
+        "required": ["name"]
       }
     },
     "events": {
       "type": "array",
-      "items": { "type": "string" }
+      "description": "List of event identifiers. Event names should be unique; implementations MUST enforce uniqueness.",
+      "items": { "type": "string", "minLength": 1 }
     },
     "transitions": {
       "type": "array",
+      "description": "Transitions must reference existing states/events; implementations MUST validate referential integrity.",
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "properties": {
-          "from": { "type": "string" },
-          "to": { "type": "string" },
-          "event": { "type": "string" },
-          "guard": { "type": "string" },
+          "from": { "type": "string", "minLength": 1 },
+          "to": { "type": "string", "minLength": 1 },
+          "event": { "type": "string", "minLength": 1 },
+          "guard": { "type": "string", "minLength": 1 },
           "actions": {
             "type": "array",
-            "items": { "type": "string" }
+            "items": { "type": "string", "minLength": 1 }
           },
           "meta": { "type": "object" }
         },
-        "required": ["from", "to", "event"],
-        "additionalProperties": true
+        "required": ["from", "to", "event"]
       }
     },
     "metadata": { "type": "object" },
     "correlation": { "$ref": "#/$defs/correlation" }
   },
-  "required": ["schemaVersion", "initial", "states", "events", "transitions"],
-  "additionalProperties": true,
+  "required": ["schemaVersion", "id", "initial", "states", "events", "transitions"],
   "$defs": {
     "correlation": {
       "type": "object",
@@ -71,11 +83,11 @@
         "branch": { "type": "string" },
         "traceIds": {
           "type": "array",
-          "items": { "type": "string" }
+          "items": { "type": "string", "minLength": 1 }
         }
       },
       "required": ["runId"],
-      "additionalProperties": true
+      "additionalProperties": false
     }
   }
 }
