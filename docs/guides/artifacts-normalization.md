@@ -15,3 +15,15 @@
   - `artifacts/properties/summary.json` for property tests
 - Conform to schemas in `docs/schemas/`.
 - Include `traceId` wherever applicable.
+
+## JSON Schema 2020-12 policy / 運用方針
+
+- `docs/schemas/` と `schema/` の JSON Schema は 2020-12 を前提とし、`$schema` を削除しない。
+- Ajv の 2020-12 メタスキーマを手動登録して検証する（NodeNext では `ajv/dist/2020` の直接 import が解決しづらいため）。
+- メタスキーマ登録に失敗した場合は、`ajv` の依存解決と `dist/refs/json-schema-2020-12` の存在を確認する。
+- Ajv2020 を正式採用する方針は #1508 で検討中。
+
+- JSON Schemas in `docs/schemas/` and `schema/` target 2020-12 and should keep `$schema`.
+- Validation uses Ajv with manually registered 2020-12 meta schemas (NodeNext cannot reliably resolve `ajv/dist/2020` imports).
+- If meta schema registration fails, verify the `ajv` dependency and the `dist/refs/json-schema-2020-12` files.
+- The long-term Ajv2020 adoption plan is tracked in #1508.
