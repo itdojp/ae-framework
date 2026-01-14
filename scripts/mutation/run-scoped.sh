@@ -172,7 +172,8 @@ fi
 CONCURRENCY=${STRYKER_CONCURRENCY:-2}
 TIMEOUT=${STRYKER_TIMEOUT:-15000}
 TIME_LIMIT=${STRYKER_TIME_LIMIT:-900}
-CONFIG_PATH=${CONFIG_PATH:-${STRYKER_CONFIG:-}}
+DEFAULT_CONFIG_PATH="configs/stryker/stryker.conf.cjs"
+CONFIG_PATH=${CONFIG_PATH:-${STRYKER_CONFIG:-$DEFAULT_CONFIG_PATH}}
 
 args=()
 while IFS= read -r pattern; do
@@ -212,7 +213,7 @@ else
   CMD+=("--tempDirName" "${WORKSPACE_DIR}")
 fi
 if [[ -n "$CONFIG_PATH" ]] ; then
-  CMD+=("$CONFIG_PATH")
+  CMD+=("--config" "$CONFIG_PATH")
 fi
 if [[ ${#EXTRA_ARGS[@]} -gt 0 ]]; then
   CMD+=("${EXTRA_ARGS[@]}")
