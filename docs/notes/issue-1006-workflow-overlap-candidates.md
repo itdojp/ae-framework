@@ -38,6 +38,12 @@
 - workflow-lint.yml / branch-protection-apply.yml / auto-labels.yml / pr-summary-comment.yml
   - Candidate: keep separate, but ensure they do not duplicate gating outputs.
 
+#### Trigger mapping (misc utilities group)
+- workflow-lint.yml: pull_request + push (branches: main, develop)
+- branch-protection-apply.yml: workflow_dispatch (inputs: preset, branch)
+- auto-labels.yml: pull_request (types: opened, edited, synchronize, reopened)
+- pr-summary-comment.yml: pull_request (types: opened, synchronize, reopened)
+
 ## Next steps
 - Map each candidate group to its actual trigger (PR gate, label-gate, nightly, manual).
 - Identify 1-2 lowest-risk consolidation moves (docs-only or wiring reuse).
