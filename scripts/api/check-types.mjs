@@ -12,7 +12,7 @@ function run(cmd, args) {
 }
 
 // 1) emit d.ts
-const code = await run('tsc', ['-p', 'tsconfig.types.json']);
+const code = await run('tsc', ['-p', 'configs/tsconfig/tsconfig.types.json']);
 if (code !== 0) process.exit(code);
 
 // 2) 生成されたバンドルを一時ファイルへ
