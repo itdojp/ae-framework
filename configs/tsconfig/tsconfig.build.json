@@ -1,5 +1,5 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "noEmitOnError": false,
     "skipLibCheck": true,
@@ -9,14 +9,14 @@
     "allowSyntheticDefaultImports": true
   },
   "include": [
-    "src/**/*.ts",
-    "types/**/*.d.ts"
+    "../../src/**/*.ts",
+    "../../types/**/*.d.ts"
   ],
   "exclude": [
-    "node_modules",
-    "dist",
-    "tests",
-    "**/*.test.ts",
-    "**/*.spec.ts"
+    "../../node_modules",
+    "../../dist",
+    "../../tests",
+    "../../**/*.test.ts",
+    "../../**/*.spec.ts"
   ]
 }

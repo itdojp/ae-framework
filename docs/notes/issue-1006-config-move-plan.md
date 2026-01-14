@@ -39,7 +39,7 @@ configs/
 | --- | --- | --- | --- | --- |
 | api-extractor.json | configs/api-extractor.json | Update API Extractor invocation | Default path is root; must update scripts. | Done (PR #1534)
 | benchmark-config.json | configs/benchmark-config.json | Update benchmark scripts | Ensure benchmark runner reads new path. | Done (PR #1533)
-| mcp-config.json | configs/mcp-config.json | Update runtime lookup | Confirm where MCP server reads config. | Planned
+| mcp-config.json | configs/mcp-config.json | Update runtime lookup | Confirm where MCP server reads config. | Done (PR #1543)
 | sample-config.json | configs/samples/sample-config.json | Update references | Could also move to `samples/`. | Done (PR #1535)
 | stryker.conf.cjs | configs/stryker/stryker.conf.cjs | Update stryker command | Already have configs/stryker*.js; consolidate. | Done (PR #1537)
 | tsconfig.build.json | configs/tsconfig/tsconfig.build.json | Update build scripts | Keep tsconfig.json at root. | Planned

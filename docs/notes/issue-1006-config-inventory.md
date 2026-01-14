@@ -14,7 +14,6 @@
 | `ae.config.ts` | AE core config | Keep | Root entry is conventional.
 | `eslint.config.js` | ESLint root config | Keep (short-term) | Already have `configs/eslint.config.js`; consolidate later.
 | `issues.yaml` | Issue templates/data | Keep | GitHub expects root.
-| `mcp-config.json` | MCP server config | Candidate | Depends on runtime lookup path.
 | `pnpm-lock.yaml` | pnpm lockfile | Keep | Tooling expects root.
 | `pnpm-workspace.yaml` | workspace config | Keep | Tooling expects root.
 | `sample-config.json` | Sample config | Candidate | CLI sample outputs now default to `configs/samples` (PR #1535).
@@ -34,6 +33,7 @@
 - `configs/benchmark-config.json` (PR #1533)
 - `configs/stryker/stryker.conf.cjs` (PR #1537)
 - `configs/vitest/vitest.workspace.ts` (PR #1538)
+- `configs/mcp-config.json` (PR #1543)
 
 ## Next (Phase 2)
 - Confirm actual lookup paths from scripts/CI before moving.

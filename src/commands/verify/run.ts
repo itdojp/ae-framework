@@ -134,8 +134,8 @@ export async function verifyRun(): Promise<Result<{ logs: string[]; duration: st
           console.log(`[ae][verify] TypeScript Types: using project ${tscProject}`);
         } else if (await hasFile('tsconfig.verify.json')) {
           args = ['-p', 'tsconfig.verify.json'];
-        } else if (await hasFile('tsconfig.build.json')) {
-          args = ['-p', 'tsconfig.build.json'];
+        } else if (await hasFile('configs/tsconfig/tsconfig.build.json')) {
+          args = ['-p', 'configs/tsconfig/tsconfig.build.json'];
         } else {
           args = ['--noEmit'];
         }

@@ -33,7 +33,7 @@
   ```
 - **Hotfix Branch Build**: ✅ Exit 0 (SUCCESS)
   ```bash
-  > tsc -p tsconfig.build.json
+  > tsc -p configs/tsconfig/tsconfig.build.json
   # Completed without errors
   ```
 
