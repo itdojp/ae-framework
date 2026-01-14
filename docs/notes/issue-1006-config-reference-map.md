@@ -20,11 +20,11 @@ Track where candidate config files are referenced so relocation can update both 
 - `docs/reference/CLI-COMMANDS-REFERENCE.md`
 
 ### configs/mcp-config.json (moved in PR #1543)
-- No direct code references found via `rg`.
-- Check runtime config lookup in scripts or deployment docs before moving.
+- No direct code references found via `rg` (as of PR #1543).
+- Runtime lookup was updated in PR #1543.
 
-### sample-config.json
-- Done: PR #1535 updates defaults to `configs/samples/sample-config.json`.
+### configs/samples/sample-config.json (moved in PR #1551)
+- Defaults updated in PR #1535; file moved in PR #1551.
 - `src/cli/conformance-cli.ts` (default now `configs/samples/sample-config.json`)
 - `package.json` (`conformance:sample` uses `configs/samples/sample-config.json`)
 - `docs/getting-started/SETUP.md`
