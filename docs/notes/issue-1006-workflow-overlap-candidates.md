@@ -61,6 +61,10 @@
 - agent-commands.yml / agent-slash-commands.yml
   - Candidate: merge slash command routing if triggers overlap.
 
+#### Trigger mapping (agent automation group)
+- agent-commands.yml: issue_comment (types: created; job only on PR comments)
+- agent-slash-commands.yml: issue_comment (types: created; job only on issue comments)
+
 ### Security / compliance
 - security.yml / sbom-generation.yml / cedar-quality-gates.yml
   - Candidate: map which are required for PR gating vs nightly audit.
