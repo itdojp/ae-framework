@@ -4,6 +4,11 @@
 - Commit: 61f30b60
 - Source: docs/notes/issue-1006-workflow-inventory.md
 
+## Required checks snapshot (main protection)
+- Date: 2026-01-14
+- Required status checks: `verify-lite`, `gate`
+- Note: Consolidation proposals must keep these checks intact.
+
 ## Overlap candidates (by naming proximity)
 
 ### CI / verification core
