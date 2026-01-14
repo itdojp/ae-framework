@@ -189,10 +189,10 @@ export class ConformanceCli {
     command
       .command('sample')
       .description('Generate sample configurations and data')
-      .option('--rules <file>', 'Generate sample rules file', 'sample-rules.json')
-      .option('--config <file>', 'Generate sample config file', 'sample-config.json')
-      .option('--data <file>', 'Generate sample data file', 'sample-data.json')
-      .option('--context <file>', 'Generate sample context file', 'sample-context.json')
+      .option('--rules <file>', 'Generate sample rules file', 'configs/samples/sample-rules.json')
+      .option('--config <file>', 'Generate sample config file', 'configs/samples/sample-config.json')
+      .option('--data <file>', 'Generate sample data file', 'configs/samples/sample-data.json')
+      .option('--context <file>', 'Generate sample context file', 'configs/samples/sample-context.json')
       .action(async (options) => {
         await this.handleSampleCommand(options);
       });
@@ -506,6 +506,7 @@ export class ConformanceCli {
     // Generate sample rules
     if (options.rules) {
       const sampleRules = this.createSampleRules();
+      this.ensureDirectoryFor(options.rules);
       writeFileSync(options.rules, JSON.stringify(sampleRules, null, 2));
       console.log(`📜 Sample rules generated: ${options.rules}`);
     }
@@ -513,6 +514,7 @@ export class ConformanceCli {
     // Generate sample config
     if (options.config) {
       const sampleConfig = this.loadDefaultConfig();
+      this.ensureDirectoryFor(options.config);
       writeFileSync(options.config, JSON.stringify(sampleConfig, null, 2));
       console.log(`⚙️  Sample config generated: ${options.config}`);
     }
@@ -520,6 +522,7 @@ export class ConformanceCli {
     // Generate sample data
     if (options.data) {
       const sampleData = this.createSampleData();
+      this.ensureDirectoryFor(options.data);
       writeFileSync(options.data, JSON.stringify(sampleData, null, 2));
       console.log(`📄 Sample data generated: ${options.data}`);
     }
@@ -527,6 +530,7 @@ export class ConformanceCli {
     // Generate sample context
     if (options.context) {
       const sampleContext = this.createDefaultContext();
+      this.ensureDirectoryFor(options.context);
       writeFileSync(options.context, JSON.stringify(sampleContext, null, 2));
       console.log(`📋 Sample context generated: ${options.context}`);
     }
