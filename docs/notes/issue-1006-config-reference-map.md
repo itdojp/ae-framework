@@ -24,9 +24,9 @@ Track where candidate config files are referenced so relocation can update both 
 - Check runtime config lookup in scripts or deployment docs before moving.
 
 ### sample-config.json
-- In progress: PR #1535 updates defaults to `configs/samples/sample-config.json`.
-- `src/cli/conformance-cli.ts` (default currently `sample-config.json`)
-- `package.json` (`conformance:sample` uses `samples/conformance/sample-config.json`)
+- Done: PR #1535 updates defaults to `configs/samples/sample-config.json`.
+- `src/cli/conformance-cli.ts` (default now `configs/samples/sample-config.json`)
+- `package.json` (`conformance:sample` uses `configs/samples/sample-config.json`)
 - `docs/getting-started/SETUP.md`
 - `docs/guides/USAGE.md`
 - `docs/reference/CLI-COMMANDS-REFERENCE.md`
