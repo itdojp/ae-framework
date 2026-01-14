@@ -38,7 +38,7 @@
 | `.github/workflows/pr-verify.yml` | ✅ | 2025-08-26 00:12:57 | `AE_TYPES_STRICT: "1"` found on line 40 |
 | `.github/workflows/nightly.yml` | ⚠️  | Found but wrong cron | `cron: '0 18 * * *'` (should be `15 19 * * *`) |
 | `eslint.config.js` | ✅ | 2025-08-26 00:12:57 | ban-ts-comment configured, switch-exhaustiveness enabled |
-| `tsconfig.verify.json` | ✅ | 2025-08-25 22:07:04 | strict: true, exactOptionalPropertyTypes: true |
+| `configs/tsconfig/tsconfig.verify.json` | ✅ | 2025-08-25 22:07:04 | strict: true, exactOptionalPropertyTypes: true |
 | `scripts/ci/check-expect-error.mjs` | ✅ | 2025-08-26 00:12:57 | Policy checker present |
 | `configs/api-extractor.json` | ✅ | 2025-08-26 00:17:28 | API Extractor configured |
 | `scripts/api/diff-api.mjs` | ✅ | Present | Breaking change detection |
