@@ -69,6 +69,18 @@ async function hasScript(scriptName: string): Promise<boolean> {
   }
 }
 
+async function getVerifyConfigPath(): Promise<string> {
+  if (await hasFile('configs/tsconfig/tsconfig.verify.json')) {
+    return 'configs/tsconfig/tsconfig.verify.json';
+  }
+
+  if (await hasFile('tsconfig.verify.json')) {
+    return 'tsconfig.verify.json';
+  }
+
+  return '';
+}
+
 export async function verifyRun(): Promise<Result<{ logs: string[]; duration: string }, AppError>> {
   console.log('[ae][verify] Starting verification pipeline...');
   await mkdir('artifacts', { recursive: true });
@@ -122,6 +134,7 @@ export async function verifyRun(): Promise<Result<{ logs: string[]; duration: st
   const isStrict = process.env['AE_TYPES_STRICT'] === '1';
   
   try {
+    const verifyConfigPath = await getVerifyConfigPath();
     // 1) TypeScript type check (prioritize scoped config)
     try {
       if (await hasBin('tsc')) {
@@ -132,8 +145,8 @@ export async function verifyRun(): Promise<Result<{ logs: string[]; duration: st
           // Use explicit project specified by AE_TSC_PROJECT
           args = ['-p', tscProject];
           console.log(`[ae][verify] TypeScript Types: using project ${tscProject}`);
-        } else if (await hasFile('tsconfig.verify.json')) {
-          args = ['-p', 'tsconfig.verify.json'];
+        } else if (verifyConfigPath) {
+          args = ['-p', verifyConfigPath];
         } else if (await hasFile('configs/tsconfig/tsconfig.build.json')) {
           args = ['-p', 'configs/tsconfig/tsconfig.build.json'];
         } else {
@@ -232,7 +245,12 @@ export async function verifyRun(): Promise<Result<{ logs: string[]; duration: st
     // 6) Type coverage (non-blocking)
     try {
       if (await hasBin('type-coverage')) {
-        await softStep('Type Coverage', 'type-coverage', ['-p', 'tsconfig.verify.json', '--ignore-catch']);
+        if (verifyConfigPath) {
+          await softStep('Type Coverage', 'type-coverage', ['-p', verifyConfigPath, '--ignore-catch']);
+        } else {
+          logs.push('## Type Coverage\nℹ️  Skipped (tsconfig.verify.json not found)');
+          console.log('[ae][verify] Type Coverage: SKIPPED (no tsconfig.verify.json)');
+        }
       } else {
         logs.push('## Type Coverage\nℹ️  Skipped (type-coverage not available)');
         console.log('[ae][verify] Type Coverage: SKIPPED (type-coverage not available)');
@@ -259,9 +277,9 @@ export async function verifyRun(): Promise<Result<{ logs: string[]; duration: st
 
     // 8) Strict TypeScript verification (strict mode only)
     try {
-      if (await hasFile('tsconfig.verify.json')) {
+      if (verifyConfigPath) {
         const stepFn = isStrict ? step : softStep;
-        await stepFn('Strict TypeScript Check', 'tsc', ['-p', 'tsconfig.verify.json', '--noEmit']);
+        await stepFn('Strict TypeScript Check', 'tsc', ['-p', verifyConfigPath, '--noEmit']);
       } else {
         logs.push('## Strict TypeScript Check\nℹ️  Skipped (tsconfig.verify.json not found)');
         console.log('[ae][verify] Strict TypeScript Check: SKIPPED (no tsconfig.verify.json)');

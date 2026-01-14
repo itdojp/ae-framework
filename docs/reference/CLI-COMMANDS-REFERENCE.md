@@ -663,7 +663,7 @@ AE_TSC_PROJECT=configs/tsconfig/tsconfig.build.json ae-framework verify
 AE_LINT_SCOPE=src/core ae-framework verify
 
 # Combined scoped verification
-AE_TSC_PROJECT=tsconfig.verify.json AE_LINT_SCOPE=src ae-framework verify
+AE_TSC_PROJECT=configs/tsconfig/tsconfig.verify.json AE_LINT_SCOPE=src ae-framework verify
 
 # Strict mode (fail on any step failure)
 AE_TYPES_STRICT=1 ae-framework verify

@@ -37,13 +37,13 @@ Track where candidate config files are referenced so relocation can update both 
 - `docs/notes/mutation-coverage-plan.md`
 - `docs/notes/pipeline-baseline.md`
 
-### tsconfig.build.json
+### tsconfig.build.json (moved in PR #1544)
 - `package.json` (`build` script)
 - `src/commands/verify/run.ts` (fallback for verify)
 - `docs/reference/CLI-COMMANDS-REFERENCE.md`
 - `artifacts/recovery-verify.md`
 
-### tsconfig.types.json
+### tsconfig.types.json (moved in PR #1545)
 - `package.json` (`api:emit`, type extraction)
 - `scripts/api/check-types.mjs`
 - `artifacts/types-hardening-validation.md`
