@@ -17,7 +17,7 @@
 | `mcp-config.json` | MCP server config | Candidate | Depends on runtime lookup path.
 | `pnpm-lock.yaml` | pnpm lockfile | Keep | Tooling expects root.
 | `pnpm-workspace.yaml` | workspace config | Keep | Tooling expects root.
-| `sample-config.json` | Sample config | Candidate | Could move to `configs/` or `samples/`.
+| `sample-config.json` | Sample config | Candidate | CLI sample outputs now default to `configs/samples` (PR #1535).
 | `tsconfig.json` | TS base config | Keep | Tooling expects root.
 | `tsconfig.build.json` | TS build config | Candidate | Can move if `extends` paths updated.
 | `tsconfig.types.json` | TS types config | Candidate | Same as above.
