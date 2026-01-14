@@ -18,7 +18,6 @@
 | `pnpm-lock.yaml` | pnpm lockfile | Keep | Tooling expects root.
 | `pnpm-workspace.yaml` | workspace config | Keep | Tooling expects root.
 | `sample-config.json` | Sample config | Candidate | Could move to `configs/` or `samples/`.
-| `stryker.conf.cjs` | Stryker root config | Candidate | Already have `configs/stryker*.js`.
 | `tsconfig.json` | TS base config | Keep | Tooling expects root.
 | `tsconfig.build.json` | TS build config | Candidate | Can move if `extends` paths updated.
 | `tsconfig.types.json` | TS types config | Candidate | Same as above.
@@ -34,6 +33,7 @@
 ## Moved in Phase 2
 - `configs/api-extractor.json` (PR #1534)
 - `configs/benchmark-config.json` (PR #1533)
+- `configs/stryker/stryker.conf.cjs` (PR #1537)
 
 ## Next (Phase 2)
 - Confirm actual lookup paths from scripts/CI before moving.
