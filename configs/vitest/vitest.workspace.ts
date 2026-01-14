@@ -1,5 +1,5 @@
 import { defineWorkspace } from 'vitest/config';
-import { rootTestConfig, projectConfigs } from './configs/vitest.config.ts';
+import { rootTestConfig, projectConfigs } from '../vitest.config.ts';
 
 const rootProject = {
   test: {
