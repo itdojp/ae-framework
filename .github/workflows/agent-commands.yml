@@ -11,14 +11,14 @@ permissions:
 
 jobs:
   handle_pr:
-    if: github.event.issue.pull_request
+    if: ${{ github.event.issue.pull_request }}
     runs-on: ubuntu-latest
     steps:
       - name: Parse and apply agent commands
         uses: actions/github-script@v7
         with:
           script: |
-            const body = context.payload.comment.body.trim();
+            const body = (context.payload.comment.body || '').trim();
             const { owner, repo } = context.repo;
             const issue_number = context.issue.number;
 
@@ -318,7 +318,7 @@ jobs:
     if: ${{ ! github.event.issue.pull_request }}
     runs-on: ubuntu-latest
     steps:
-      - name: Handle issue slash commands
+      - name: Parse and apply issue commands
         uses: actions/github-script@v7
         with:
           script: |
@@ -375,6 +375,7 @@ jobs:
               return core.info('No assignee parsed');
             }
             // /handoff @user → assign and set status:review
+            // NOTE: PR comments use /handoff A|B|C for agent handoff; issues use /handoff @user.
             if (body.startsWith('/handoff')) {
               const m = body.match(/^\/handoff\s+@?([A-Za-z0-9-]+)/);
               if (m && m[1]) {
