@@ -23,6 +23,9 @@ configs/
   mcp-config.json
   samples/
     sample-config.json
+    sample-context.json
+    sample-data.json
+    sample-rules.json
   stryker/
     stryker.conf.cjs
   tsconfig/
@@ -41,6 +44,9 @@ configs/
 | benchmark-config.json | configs/benchmark-config.json | Update benchmark scripts | Ensure benchmark runner reads new path. | Done (PR #1533)
 | mcp-config.json | configs/mcp-config.json | Update runtime lookup | Confirm where MCP server reads config. | Done (PR #1543)
 | sample-config.json | configs/samples/sample-config.json | Update references | Defaults updated in PR #1535; file moved in PR #1551. | Done (PR #1551)
+| sample-context.json | configs/samples/sample-context.json | Update references | Defaults updated in PR #1535; file moved in PR #1551. | Done (PR #1551)
+| sample-data.json | configs/samples/sample-data.json | Update references | Defaults updated in PR #1535; file moved in PR #1551. | Done (PR #1551)
+| sample-rules.json | configs/samples/sample-rules.json | Update references | Defaults updated in PR #1535; file moved in PR #1551. | Done (PR #1551)
 | stryker.conf.cjs | configs/stryker/stryker.conf.cjs | Update stryker command | Already have configs/stryker*.js; consolidate. | Done (PR #1537)
 | tsconfig.build.json | configs/tsconfig/tsconfig.build.json | Update build scripts | Keep tsconfig.json at root. | Done (PR #1544)
 | tsconfig.types.json | configs/tsconfig/tsconfig.types.json | Update scripts | Keep tsconfig.json at root. | Done (PR #1545)
