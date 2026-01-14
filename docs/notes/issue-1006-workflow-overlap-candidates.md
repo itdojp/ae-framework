@@ -53,6 +53,10 @@
 - release.yml / release-quality-artifacts.yml
   - Candidate: confirm whether both are needed or can be chained in one workflow.
 
+#### Trigger mapping (release group)
+- release.yml: push (tags: v*)
+- release-quality-artifacts.yml: release (published) + push (tags: v*) + workflow_dispatch
+
 ### Agent automation
 - agent-commands.yml / agent-slash-commands.yml
   - Candidate: merge slash command routing if triggers overlap.
