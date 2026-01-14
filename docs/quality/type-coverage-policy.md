@@ -10,7 +10,7 @@ English
 - Local runs:
   - Quick check: `pnpm types:check && pnpm typecov`
   - Enforced check (70%): `pnpm typecov:check:70`
-- Scope: Uses `tsconfig.verify.json` to focus on framework/core paths; test scaffolding and examples are excluded.
+- Scope: Uses `configs/tsconfig/tsconfig.verify.json` to focus on framework/core paths; test scaffolding and examples are excluded.
 - Exceptions: Catch blocks are ignored (`--ignore-catch`). Prefer narrowing, not `any`.
 - Error handling: Use unknown-first in `catch (error: unknown)` and convert via a shared helper (e.g., `toMessage(error)`), avoiding unsafe `error.message` access.
 - Escalation path: If a PR cannot meet the raised threshold, remove the label and leave a short note explaining hotspots and follow-ups.
@@ -23,7 +23,7 @@ Japanese (日本語)
 - ローカル実行:
   - 迅速な確認: `pnpm types:check && pnpm typecov`
   - 強制チェック（70%）: `pnpm typecov:check:70`
-- 対象範囲: `tsconfig.verify.json` を使用し、フレームワーク/コアを中心に計測。テスト・サンプルは除外。
+- 対象範囲: `configs/tsconfig/tsconfig.verify.json` を使用し、フレームワーク/コアを中心に計測。テスト・サンプルは除外。
 - 例外: `catch` 節は `--ignore-catch` で除外。`any` ではなくナローイングを推奨。
 - エラー処理: `catch (error: unknown)` を基本とし、共通ヘルパ（例: `toMessage(error)`）で安全に文字列化。`error.message` の直接参照は避ける。
 - エスカレーション: PR で閾値を満たせない場合はラベルを外し、ホットスポットと後続対応を簡潔に記載してください。
