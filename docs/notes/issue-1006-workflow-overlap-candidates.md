@@ -90,9 +90,8 @@
 These are proposals to reduce overlap without changing required checks or safety gates. Execute after confirming triggers and required status checks.
 
 1) Spec / artifact validation
-   - Treat `spec-validation.yml` as the canonical PR gate.
-   - Fold `validate-artifacts-ajv.yml` into `spec-validation.yml` or call it via a reusable workflow.
-   - Keep `fail-fast-spec-validation.yml` as an alias only if the PR gate cannot be updated safely.
+   - ✅ Completed: `spec-validation.yml` をPRゲートとして採用し、`validate-artifacts-ajv.yml` を workflow_call で呼び出す構成に統合済み。
+   - ✅ Completed: required checks への影響なしで統合を反映済み。
 
 2) Artifact preview vs generation
    - ✅ Completed: preview step/comment を `spec-generate-model.yml` に集約し、重複していた `generate-artifacts-preview.yml` を削除。

@@ -7,7 +7,7 @@
 ## Trigger counts
 - issue_comment: 1
 - pull_request: 30
-- push: 24
+- push: 23
 - release: 1
 - schedule: 10
 - workflow_call: 6
@@ -50,7 +50,7 @@
 - verify.yml
 - workflow-lint.yml
 
-### push (24)
+### push (23)
 - ae-ci.yml
 - cedar-quality-gates.yml
 - ci-extended.yml
@@ -65,7 +65,6 @@
 - podman-smoke.yml
 - pr-verify.yml
 - quality-gates-centralized.yml
-- release-quality-artifacts.yml
 - release.yml
 - sbom-generation.yml
 - security.yml

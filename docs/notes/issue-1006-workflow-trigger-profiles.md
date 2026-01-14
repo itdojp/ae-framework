@@ -71,7 +71,7 @@
 ### push (1)
 - release.yml
 
-### push, release, workflow_dispatch (1)
+### release, workflow_dispatch (1)
 - release-quality-artifacts.yml
 
 ### push, schedule, workflow_dispatch (1)
