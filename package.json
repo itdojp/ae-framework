@@ -25,7 +25,7 @@
     "dev:web": "pnpm --filter @ae-framework/web dev",
     "dev:storybook": "pnpm --filter @ae-framework/storybook dev",
     "help": "node scripts/project/help.mjs",
-    "build": "pnpm build:spec-compiler && tsc -p tsconfig.build.json && ( [ -f scripts/ci/ensure-bin-executables.mjs ] && node scripts/ci/ensure-bin-executables.mjs || true )",
+    "build": "pnpm build:spec-compiler && tsc -p configs/tsconfig/tsconfig.build.json && ( [ -f scripts/ci/ensure-bin-executables.mjs ] && node scripts/ci/ensure-bin-executables.mjs || true )",
     "build:spec-compiler": "pnpm --filter @ae-framework/spec-compiler build",
     "build:windows": "tsc --project configs/tsconfig.windows.json",
     "build:frontend": "pnpm run build:tokens && pnpm run build:ui && pnpm --filter @ae-framework/web build",
