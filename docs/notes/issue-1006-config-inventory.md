@@ -16,7 +16,7 @@
 | `issues.yaml` | Issue templates/data | Keep | GitHub expects root.
 | `pnpm-lock.yaml` | pnpm lockfile | Keep | Tooling expects root.
 | `pnpm-workspace.yaml` | workspace config | Keep | Tooling expects root.
-| `sample-config.json` | Sample config | Moved | Relocated to `configs/samples/sample-config.json` (this PR).
+| `sample-config.json` | Sample config | Moved | Relocated to `configs/samples/sample-config.json` (PR #1551).
 | `tsconfig.json` | TS base config | Keep | Tooling expects root.
 | `tsconfig.build.json` | TS build config | Moved | Relocated to `configs/tsconfig/tsconfig.build.json` (PR #1544).
 | `tsconfig.types.json` | TS types config | Moved | Relocated to `configs/tsconfig/tsconfig.types.json` (PR #1545).
@@ -34,10 +34,10 @@
 - `configs/stryker/stryker.conf.cjs` (PR #1537)
 - `configs/vitest/vitest.workspace.ts` (PR #1538)
 - `configs/mcp-config.json` (PR #1543)
-- `configs/samples/sample-config.json` (this PR)
-- `configs/samples/sample-context.json` (this PR)
-- `configs/samples/sample-data.json` (this PR)
-- `configs/samples/sample-rules.json` (this PR)
+- `configs/samples/sample-config.json` (PR #1551)
+- `configs/samples/sample-context.json` (PR #1551)
+- `configs/samples/sample-data.json` (PR #1551)
+- `configs/samples/sample-rules.json` (PR #1551)
 - `configs/tsconfig/tsconfig.build.json` (PR #1544)
 - `configs/tsconfig/tsconfig.types.json` (PR #1545)
 - `configs/tsconfig/tsconfig.verify.json` (PR #1547)
