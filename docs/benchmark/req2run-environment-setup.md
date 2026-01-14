@@ -85,8 +85,8 @@ The CI profile writes results to `reports/benchmark` and shortens execution for 
 You can generate and pass a benchmark config file:
 
 ```bash
-pnpm benchmark:init               # writes ./benchmark-config.json
-pnpm benchmark -- --config ./benchmark-config.json
+pnpm benchmark:init               # writes ./configs/benchmark-config.json
+pnpm benchmark -- --config ./configs/benchmark-config.json
 ```
 
 In code, the default report directory is `./reports/benchmark` (see `config.default.ts`).

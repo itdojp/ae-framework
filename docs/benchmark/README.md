@@ -47,10 +47,10 @@ ae-benchmark run --difficulty basic
 ae-benchmark run --problems web-api-basic-001 cli-tool-basic-001
 
 # Generate configuration template
-ae-benchmark init --output benchmark-config.json
+ae-benchmark init --output configs/benchmark-config.json
 
 # Run with custom configuration
-ae-benchmark run --config benchmark-config.json
+ae-benchmark run --config configs/benchmark-config.json
 ```
 
 #### Scripts
@@ -95,7 +95,7 @@ const ciConfig = getCIConfig();
 
 #### Custom Configuration
 
-Create a `benchmark-config.json` file:
+Create a `configs/benchmark-config.json` file:
 
 ```json
 {
@@ -400,10 +400,10 @@ ae-benchmark run --difficulty basic
 ae-benchmark run --problems web-api-basic-001 cli-tool-basic-001
 
 # 設定テンプレートを生成
-ae-benchmark init --output benchmark-config.json
+ae-benchmark init --output configs/benchmark-config.json
 
 # カスタム設定で実行
-ae-benchmark run --config benchmark-config.json
+ae-benchmark run --config configs/benchmark-config.json
 ```
 
 #### NPMスクリプト
@@ -444,7 +444,7 @@ const ciConfig = getCIConfig();
 
 #### カスタム設定
 
-`benchmark-config.json`ファイルを作成：
+`configs/benchmark-config.json`ファイルを作成：
 
 ```json
 {

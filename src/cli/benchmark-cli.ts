@@ -184,7 +184,7 @@ program
 program
   .command('init')
   .description('Generate sample configuration file')
-  .option('-o, --output <path>', 'Output file path', './benchmark-config.json')
+  .option('-o, --output <path>', 'Output file path', './configs/benchmark-config.json')
   .option('--difficulty <level>', 'Template for specific difficulty')
   .option('--ci', 'Generate CI-optimized configuration')
   .action(async (options) => {
