@@ -58,12 +58,11 @@
 - release-quality-artifacts.yml: release (published) + push (tags: v*) + workflow_dispatch
 
 ### Agent automation
-- agent-commands.yml / agent-slash-commands.yml
-  - Candidate: merge slash command routing if triggers overlap.
+- agent-commands.yml
+  - Consolidate PR/Issue slash command routing into a single workflow.
 
 #### Trigger mapping (agent automation group)
-- agent-commands.yml: issue_comment (types: created; job only on PR comments)
-- agent-slash-commands.yml: issue_comment (types: created; job only on issue comments)
+- agent-commands.yml: issue_comment (types: created; job for PR comments + job for issue comments)
 
 ### Security / compliance
 - security.yml / sbom-generation.yml / cedar-quality-gates.yml
@@ -101,7 +100,7 @@ These are proposals to reduce overlap without changing required checks or safety
    - Option: move the preview step into `spec-generate-model.yml` as a separate job and remove duplication.
 
 3) Agent command routing
-   - If `agent-commands.yml` and `agent-slash-commands.yml` share triggers, merge into a single workflow with separate jobs.
+   - ✅ Completed: `agent-commands.yml` が PR/Issue の slash command をジョブ分岐で処理する構成に統合済み。
 
 ## Readiness checklist
 - Confirm which workflows are required by branch protection.

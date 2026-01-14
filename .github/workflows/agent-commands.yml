@@ -10,15 +10,15 @@ permissions:
   pull-requests: write
 
 jobs:
-  handle:
-    if: github.event.issue.pull_request
+  handle_pr:
+    if: ${{ github.event.issue.pull_request }}
     runs-on: ubuntu-latest
     steps:
       - name: Parse and apply agent commands
         uses: actions/github-script@v7
         with:
           script: |
-            const body = context.payload.comment.body.trim();
+            const body = (context.payload.comment.body || '').trim();
             const { owner, repo } = context.repo;
             const issue_number = context.issue.number;
 
@@ -312,3 +312,93 @@ jobs:
               default:
                 return; // ignore
             }
+
+  handle_issue:
+    # Ignore PR comments; we want Issue comments only
+    if: ${{ ! github.event.issue.pull_request }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Parse and apply issue commands
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = (context.payload.comment.body || '').trim();
+            const issue_number = context.issue.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const actor = context.actor;
+
+            async function add(labels){
+              if (!labels || labels.length===0) return;
+              await github.rest.issues.addLabels({ owner, repo, issue_number, labels });
+            }
+            async function remove(name){
+              try { await github.rest.issues.removeLabel({ owner, repo, issue_number, name }); } catch {}
+            }
+            async function assign(user){
+              try { await github.rest.issues.addAssignees({ owner, repo, issue_number, assignees: [user] }); } catch {}
+            }
+
+            if (body.startsWith('/start')) {
+              await remove('status:ready');
+              await add(['status:in-progress']);
+              await assign(actor);
+              return core.notice(`Moved to in-progress and assigned to ${actor}`);
+            }
+            if (body.startsWith('/ready-for-review')) {
+              await remove('status:in-progress');
+              await add(['status:review']);
+              return core.notice('Moved to review');
+            }
+            if (body.startsWith('/done')) {
+              await remove('status:review');
+              await remove('status:in-progress');
+              await add(['status:done']);
+              return core.notice('Marked as done');
+            }
+            if (body.startsWith('/block')) {
+              await add(['status:blocked']);
+              return core.notice('Marked as blocked');
+            }
+            if (body.startsWith('/unblock')) {
+              await remove('status:blocked');
+              await add(['status:in-progress']);
+              return core.notice('Unblocked');
+            }
+            // /assign @user or /assign user
+            if (body.startsWith('/assign')) {
+              const m = body.match(/^\/assign\s+@?([A-Za-z0-9-]+)/);
+              if (m && m[1]) {
+                await assign(m[1]);
+                return core.notice(`Assigned to @${m[1]}`);
+              }
+              return core.info('No assignee parsed');
+            }
+            // /handoff @user → assign and set status:review
+            // NOTE: PR comments use /handoff A|B|C for agent handoff; issues use /handoff @user.
+            if (body.startsWith('/handoff')) {
+              const m = body.match(/^\/handoff\s+@?([A-Za-z0-9-]+)/);
+              if (m && m[1]) {
+                await assign(m[1]);
+                await remove('status:in-progress');
+                await add(['status:review']);
+                return core.notice(`Handoff to @${m[1]} → review`);
+              }
+              return core.info('No handoff target parsed');
+            }
+            // /plan → post a standard checklist as a comment
+            if (body.startsWith('/plan')) {
+              const plan = [
+                '## Plan Checklist',
+                '',
+                '- [ ] Branch is prepared and up to date',
+                '- [ ] Minimal implementation complete',
+                '- [ ] Unit tests (basic) green locally',
+                '- [ ] PR description updated (what/why/how/limits/next)',
+                '- [ ] CI policy noted: fix PR-caused failures here; global failures in separate PR',
+                '- [ ] Stop: leave in review and await automation rollout',
+              ].join('\n');
+              await github.rest.issues.createComment({ owner, repo, issue_number, body: plan });
+              return core.notice('Posted plan checklist');
+            }
+            core.info('No recognized slash command');
