@@ -6,7 +6,7 @@
     "declaration": true,
     "emitDeclarationOnly": true,
     "declarationMap": false,
-    "outDir": "artifacts/types",
+    "outDir": "../../artifacts/types",
     "skipLibCheck": true,
     "noEmit": false,
     "strict": false,
@@ -19,6 +19,6 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true
   },
-  "include": ["src/agents/domain-types.ts", "src/core/assertNever.ts", "src/core/result.ts"],
-  "exclude": ["**/*.test.ts", "**/*.spec.ts", "tests/**/*", "packages/**/*", "node_modules", "dist"]
+  "include": ["../../src/agents/domain-types.ts", "../../src/core/assertNever.ts", "../../src/core/result.ts"],
+  "exclude": ["../../**/*.test.ts", "../../**/*.spec.ts", "../../tests/**/*", "../../packages/**/*", "../../node_modules", "../../dist"]
 }

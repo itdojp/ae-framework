@@ -46,7 +46,7 @@ This report validates the implementation of Types T5/T6/T7 hardening measures ac
 ### T7: Public API Type Snapshot ✅ PASS
 
 **Snapshot Status:**
-- ✅ Type extraction successful: `tsc -p tsconfig.types.json`
+- ✅ Type extraction successful: `tsc -p configs/tsconfig/tsconfig.types.json`
 - ✅ Snapshot generation: 773,187 bytes (sha1=dc3049f0cabc4b5b7a59e91fd895f04eb9434b22)
 - ✅ Current types generated: 773,409 bytes
 - ✅ No breaking API changes detected
