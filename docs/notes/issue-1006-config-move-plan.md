@@ -40,10 +40,10 @@ configs/
 | api-extractor.json | configs/api-extractor.json | Update API Extractor invocation | Default path is root; must update scripts. | Done (PR #1534)
 | benchmark-config.json | configs/benchmark-config.json | Update benchmark scripts | Ensure benchmark runner reads new path. | Done (PR #1533)
 | mcp-config.json | configs/mcp-config.json | Update runtime lookup | Confirm where MCP server reads config. | Done (PR #1543)
-| sample-config.json | configs/samples/sample-config.json | Update references | Could also move to `samples/`. | Done (PR #1535)
+| sample-config.json | configs/samples/sample-config.json | Update references | Defaults updated in PR #1535; file moved in PR #1551. | Done (PR #1551)
 | stryker.conf.cjs | configs/stryker/stryker.conf.cjs | Update stryker command | Already have configs/stryker*.js; consolidate. | Done (PR #1537)
-| tsconfig.build.json | configs/tsconfig/tsconfig.build.json | Update build scripts | Keep tsconfig.json at root. | Planned
-| tsconfig.types.json | configs/tsconfig/tsconfig.types.json | Update scripts | Keep tsconfig.json at root. | Planned
+| tsconfig.build.json | configs/tsconfig/tsconfig.build.json | Update build scripts | Keep tsconfig.json at root. | Done (PR #1544)
+| tsconfig.types.json | configs/tsconfig/tsconfig.types.json | Update scripts | Keep tsconfig.json at root. | Done (PR #1545)
 | tsconfig.verify.json | configs/tsconfig/tsconfig.verify.json | Update scripts | Keep tsconfig.json at root. | Done (PR #1547)
 | vitest.workspace.ts | configs/vitest/vitest.workspace.ts | Update test scripts | Vitest defaults to root; must pass config explicitly. | Done (PR #1538)
 
