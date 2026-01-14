@@ -424,7 +424,7 @@
     "packages/**",
     "ae.config.ts",
     "ae-framework*.yml",
-    "api-extractor.json"
+    "configs/api-extractor.json"
   ],
   "peerDependenciesMeta": {
     "@anthropic-ai/sdk": {
