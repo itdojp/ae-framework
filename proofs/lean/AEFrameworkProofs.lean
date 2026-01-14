@@ -1,5 +1,7 @@
+import Thresholds
+
 namespace AEFrameworkProofs
 
--- Placeholder module for Lean proofs.
+-- Aggregates core proofs for the PoC workspace.
 
 end AEFrameworkProofs
