@@ -6,8 +6,10 @@
 
 ## Required checks snapshot (main protection)
 - Date: 2026-01-14
-- Required status checks: `verify-lite`, `gate`
-- Note: Consolidation proposals must keep these checks intact.
+- Required status checks:
+  - `Verify Lite / verify-lite`
+  - `Copilot Review Gate / gate`
+- Note: Consolidation proposals must keep these checks intact (see docs/ci/branch-protection-operations.md).
 
 ## Overlap candidates (by naming proximity)
 
