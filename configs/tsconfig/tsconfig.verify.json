@@ -1,5 +1,5 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
@@ -18,12 +18,12 @@
     "resolveJsonModule": true
   },
   "include": [
-    "src/**/*.ts"
+    "../../src/**/*.ts"
   ],
   "exclude": [
-    "tests/**/*",
-    "scripts/**/*",
-    "dist/**/*",
-    "node_modules/**/*"
+    "../../tests/**/*",
+    "../../scripts/**/*",
+    "../../dist/**/*",
+    "../../node_modules/**/*"
   ]
 }
