@@ -43,6 +43,12 @@
 - flake-detect.yml / flake-maintenance.yml / nightly-monitoring.yml / parallel-test-execution.yml
   - Candidate: consolidate flake-related reporting artifacts and reduce duplicated scheduling.
 
+#### Trigger mapping (flake/stability group)
+- flake-detect.yml: schedule (cron: 0 21 * * * UTC) + workflow_dispatch
+- flake-maintenance.yml: schedule (cron: 0 10 * * * UTC) + workflow_dispatch
+- nightly-monitoring.yml: schedule (cron: 15 19 * * * UTC) + workflow_dispatch
+- parallel-test-execution.yml: pull_request (branches: main; paths: src/**, packages/**, apps/**, tests/**, configs/**, scripts/**, types/**) + push (branches: main, develop)
+
 ### Release
 - release.yml / release-quality-artifacts.yml
   - Candidate: confirm whether both are needed or can be chained in one workflow.
