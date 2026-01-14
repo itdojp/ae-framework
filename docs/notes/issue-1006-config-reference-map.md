@@ -1,7 +1,7 @@
 # Issue 1006: Config Reference Map (Phase 2 draft)
 
 ## Snapshot
-- Date: 2026-01-12
+- Date: 2026-01-14
 - Source: `rg` across repo
 
 ## Purpose
@@ -9,12 +9,12 @@ Track where candidate config files are referenced so relocation can update both 
 
 ## Reference map (candidates)
 
-### api-extractor.json
-- `package.json` (files list includes `api-extractor.json`)
+### configs/api-extractor.json (moved in PR #1534)
+- `package.json` (files list includes `configs/api-extractor.json`)
 - `artifacts/types-gate-ci-validation.md` (link/reference)
 
-### benchmark-config.json
-- `src/cli/benchmark-cli.ts` (default `./benchmark-config.json`)
+### configs/benchmark-config.json (moved in PR #1533)
+- `src/cli/benchmark-cli.ts` (default `./configs/benchmark-config.json`)
 - `docs/benchmark/README.md` (multiple examples)
 - `docs/benchmark/req2run-environment-setup.md`
 - `docs/reference/CLI-COMMANDS-REFERENCE.md`
@@ -24,7 +24,8 @@ Track where candidate config files are referenced so relocation can update both 
 - Check runtime config lookup in scripts or deployment docs before moving.
 
 ### sample-config.json
-- `src/cli/conformance-cli.ts` (default `sample-config.json`)
+- In progress: PR #1535 updates defaults to `configs/samples/sample-config.json`.
+- `src/cli/conformance-cli.ts` (default currently `sample-config.json`)
 - `package.json` (`conformance:sample` uses `samples/conformance/sample-config.json`)
 - `docs/getting-started/SETUP.md`
 - `docs/guides/USAGE.md`
