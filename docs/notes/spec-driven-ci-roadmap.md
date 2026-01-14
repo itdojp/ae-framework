@@ -7,7 +7,7 @@
 ## 構成案
 
 ### 1. generate-artifacts ジョブ
-- プロトタイプ: `pnpm run generate:artifacts:preview` と `.github/workflows/spec-generate-model.yml` で quickstart を実行し、`hermetic-reports/spec/generate-artifacts-diff.json` に差分サマリを出力（PR コメント/Step Summary にも反映）。
+- プロトタイプ: `pnpm run generate:artifacts:preview` と `.github/workflows/spec-generate-model.yml` で quickstart を実行し、`hermetic-reports/spec/generate-artifacts-diff.json` に差分サマリを出力（PR コメントは非fork PRのみ/Step Summary に反映）。
   - サンプル: 差分が無い場合は `{ "targets": [{ "path": ..., "hasChanges": false }] }` のような JSON が出力され、差分がある場合は `files` に `NAME	path` が列挙される。
   - 直近のサマリ例:
 
@@ -54,7 +54,7 @@
 - 長期: ダッシュボード（Issue #1011 ステップ5）に引き継ぐ
 
 ## 次アクション候補
-4. ✅ PR コメント投稿は `spec-generate-model.yml` に統合済み。次は通知方針（差分閾値/投稿条件）の整理が必要。
+4. ✅ PR コメント投稿は `spec-generate-model.yml` に統合済み（非fork PRのみ）。次は通知方針（差分閾値/投稿条件）の整理が必要。
 1. Q4 中に generate-artifacts ジョブを設計するための spike ブランチを切り、差分検出方法を評価。
 2. モデルベーステスト対象を `kv-once` のみで実行できるよう `tests/property/reservation-schema.property.test.ts` を分割・軽量化。
 3. トレーススキーマのドラフトを `docs/TLA+/kv-once-poc.md` から派生させ、Issue #1011 に共有。
