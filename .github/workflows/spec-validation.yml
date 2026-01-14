@@ -1,10 +1,26 @@
 name: Spec Validation
 on:
   pull_request:
-    paths: ['spec/**', '.ae/**', 'docs/**']
+    paths:
+      - 'spec/**'
+      - '.ae/**'
+      - 'docs/**'
+      - 'artifacts/**'
+      - 'schema/**'
+      - 'formal/**'
+      - '.github/workflows/spec-validation.yml'
+      - '.github/workflows/validate-artifacts-ajv.yml'
   push:
     branches: [main, develop]
-    paths: ['spec/**', '.ae/**', 'docs/**']
+    paths:
+      - 'spec/**'
+      - '.ae/**'
+      - 'docs/**'
+      - 'artifacts/**'
+      - 'schema/**'
+      - 'formal/**'
+      - '.github/workflows/spec-validation.yml'
+      - '.github/workflows/validate-artifacts-ajv.yml'
   workflow_call:
     # Allow other workflows to call this validation
 
@@ -201,3 +217,7 @@ jobs:
           printf "%s\n" "ℹ️ No AE-Spec file found - skipping validation"
           printf "%s\n" "To enable spec validation, create a file at: spec/ae-spec.md"
           printf "%s\n" "See documentation for AE-Spec format guidelines."
+
+  validate-artifacts:
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/validate-artifacts-ajv.yml
