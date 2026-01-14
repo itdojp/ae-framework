@@ -49,12 +49,12 @@ jobs:
           set -euo pipefail
           if command -v rg >/dev/null 2>&1; then
             if rg -n --glob '*.lean' 'sorry' proofs/lean; then
-              echo "Found sorry in Lean proofs."
+              printf '%s\n' "Found sorry in Lean proofs." >&2
               exit 1
             fi
           else
             if grep -R -n --include='*.lean' 'sorry' proofs/lean; then
-              echo "Found sorry in Lean proofs."
+              printf '%s\n' "Found sorry in Lean proofs." >&2
               exit 1
             fi
           fi
