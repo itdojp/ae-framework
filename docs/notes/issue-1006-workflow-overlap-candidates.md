@@ -41,3 +41,23 @@
 ## Next steps
 - Map each candidate group to its actual trigger (PR gate, label-gate, nightly, manual).
 - Identify 1-2 lowest-risk consolidation moves (docs-only or wiring reuse).
+
+## Phase 2 shortlist (low-risk consolidation)
+These are proposals to reduce overlap without changing required checks or safety gates. Execute after confirming triggers and required status checks.
+
+1) Spec / artifact validation
+   - Treat `spec-validation.yml` as the canonical PR gate.
+   - Fold `validate-artifacts-ajv.yml` into `spec-validation.yml` or call it via a reusable workflow.
+   - Keep `fail-fast-spec-validation.yml` as an alias only if the PR gate cannot be updated safely.
+
+2) Artifact preview vs generation
+   - Clarify the role split between `generate-artifacts-preview.yml` and `spec-generate-model.yml`.
+   - Option: move the preview step into `spec-generate-model.yml` as a separate job and remove duplication.
+
+3) Agent command routing
+   - If `agent-commands.yml` and `agent-slash-commands.yml` share triggers, merge into a single workflow with separate jobs.
+
+## Readiness checklist
+- Confirm which workflows are required by branch protection.
+- Confirm whether any workflow is used by external automation or documentation.
+- Verify that consolidated workflows still publish the same summary comments/artifacts.
