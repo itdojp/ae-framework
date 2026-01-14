@@ -58,12 +58,11 @@
 - release-quality-artifacts.yml: release (published) + push (tags: v*) + workflow_dispatch
 
 ### Agent automation
-- agent-commands.yml / agent-slash-commands.yml
-  - Candidate: merge slash command routing if triggers overlap.
+- agent-commands.yml
+  - Consolidate PR/Issue slash command routing into a single workflow.
 
 #### Trigger mapping (agent automation group)
-- agent-commands.yml: issue_comment (types: created; job only on PR comments)
-- agent-slash-commands.yml: issue_comment (types: created; job only on issue comments)
+- agent-commands.yml: issue_comment (types: created; job for PR comments + job for issue comments)
 
 ### Security / compliance
 - security.yml / sbom-generation.yml / cedar-quality-gates.yml
