@@ -7,7 +7,7 @@ on:
       - 'docs/**'
       - 'artifacts/**'
       - 'schema/**'
-      - 'formal/**'
+      - 'specs/formal/**'
       - '.github/workflows/spec-validation.yml'
       - '.github/workflows/validate-artifacts-ajv.yml'
   push:
@@ -18,7 +18,7 @@ on:
       - 'docs/**'
       - 'artifacts/**'
       - 'schema/**'
-      - 'formal/**'
+      - 'specs/formal/**'
       - '.github/workflows/spec-validation.yml'
       - '.github/workflows/validate-artifacts-ajv.yml'
   workflow_call:
@@ -221,3 +221,5 @@ jobs:
   validate-artifacts:
     if: github.event_name == 'pull_request'
     uses: ./.github/workflows/validate-artifacts-ajv.yml
+    with:
+      strict: ${{ contains(github.event.pull_request.labels.*.name, 'enforce-artifacts') }}
