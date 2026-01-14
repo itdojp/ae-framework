@@ -1,7 +1,7 @@
 # Issue 1006: Config Relocation Plan (Phase 2 draft)
 
 ## Snapshot
-- Date: 2026-01-12
+- Date: 2026-01-14
 - Inputs: issue-1006-config-inventory.md
 
 ## Goals
@@ -35,17 +35,17 @@ configs/
 
 ## Candidate moves
 
-| File | Proposed destination | Preconditions | Notes |
-| --- | --- | --- | --- |
-| api-extractor.json | configs/api-extractor.json | Update API Extractor invocation | Default path is root; must update scripts.
-| benchmark-config.json | configs/benchmark-config.json | Update benchmark scripts | Ensure benchmark runner reads new path.
-| mcp-config.json | configs/mcp-config.json | Update runtime lookup | Confirm where MCP server reads config.
-| sample-config.json | configs/samples/sample-config.json | Update references | Could also move to `samples/`.
-| stryker.conf.cjs | configs/stryker/stryker.conf.cjs | Update stryker command | Already have configs/stryker*.js; consolidate.
-| tsconfig.build.json | configs/tsconfig/tsconfig.build.json | Update build scripts | Keep tsconfig.json at root.
-| tsconfig.types.json | configs/tsconfig/tsconfig.types.json | Update scripts | Keep tsconfig.json at root.
-| tsconfig.verify.json | configs/tsconfig/tsconfig.verify.json | Update scripts | Keep tsconfig.json at root.
-| vitest.workspace.ts | configs/vitest/vitest.workspace.ts | Update test scripts | Vitest defaults to root; must pass config explicitly.
+| File | Proposed destination | Preconditions | Notes | Status |
+| --- | --- | --- | --- | --- |
+| api-extractor.json | configs/api-extractor.json | Update API Extractor invocation | Default path is root; must update scripts. | Done (PR #1534)
+| benchmark-config.json | configs/benchmark-config.json | Update benchmark scripts | Ensure benchmark runner reads new path. | Done (PR #1533)
+| mcp-config.json | configs/mcp-config.json | Update runtime lookup | Confirm where MCP server reads config. | Planned
+| sample-config.json | configs/samples/sample-config.json | Update references | Could also move to `samples/`. | In progress (PR #1535)
+| stryker.conf.cjs | configs/stryker/stryker.conf.cjs | Update stryker command | Already have configs/stryker*.js; consolidate. | Planned
+| tsconfig.build.json | configs/tsconfig/tsconfig.build.json | Update build scripts | Keep tsconfig.json at root. | Planned
+| tsconfig.types.json | configs/tsconfig/tsconfig.types.json | Update scripts | Keep tsconfig.json at root. | Planned
+| tsconfig.verify.json | configs/tsconfig/tsconfig.verify.json | Update scripts | Keep tsconfig.json at root. | Planned
+| vitest.workspace.ts | configs/vitest/vitest.workspace.ts | Update test scripts | Vitest defaults to root; must pass config explicitly. | Planned
 
 ## Files to keep at root (for now)
 - .editorconfig
