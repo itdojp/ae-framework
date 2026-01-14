@@ -19,7 +19,7 @@ Track where candidate config files are referenced so relocation can update both 
 - `docs/benchmark/req2run-environment-setup.md`
 - `docs/reference/CLI-COMMANDS-REFERENCE.md`
 
-### mcp-config.json
+### configs/mcp-config.json (moved in PR #TBD)
 - No direct code references found via `rg`.
 - Check runtime config lookup in scripts or deployment docs before moving.
 
