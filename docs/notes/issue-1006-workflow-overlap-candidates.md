@@ -34,6 +34,11 @@
 - security.yml / sbom-generation.yml / cedar-quality-gates.yml
   - Candidate: map which are required for PR gating vs nightly audit.
 
+#### Trigger mapping (security/compliance group)
+- security.yml: pull_request (branches: main; paths-ignore: docs/**, **/*.md; jobs gated by label "run-security") + push (branches: main, develop; paths-ignore: docs/**, *.md; jobs gated by label "run-security") + schedule (cron: 20 5 * * 1 UTC) + workflow_dispatch
+- sbom-generation.yml: pull_request (branches: main; paths: package.json, pnpm-lock.yaml, packages/**, apps/**, src/**; job gated by label "run-security") + push (branches: main, develop; paths-ignore: docs/**, *.md) + schedule (cron: 40 5 * * 1 UTC) + workflow_dispatch (input: include_vulnerabilities)
+- cedar-quality-gates.yml: pull_request (job gated by labels "run-security" or "run-cedar", enforce with "enforce-security") + push (branch: main; tags: v*) + workflow_dispatch
+
 ### Misc utilities
 - workflow-lint.yml / branch-protection-apply.yml / auto-labels.yml / pr-summary-comment.yml
   - Candidate: keep separate, but ensure they do not duplicate gating outputs.
