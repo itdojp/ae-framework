@@ -8,7 +8,7 @@ Status: ❌ Some verification steps failed
 
 ## TypeScript Types
 ```bash
-tsc -p tsconfig.verify.json
+tsc -p configs/tsconfig/tsconfig.verify.json
 ```
 
 ❌ TypeScript Types: FAILED (exit 2)
@@ -35,7 +35,7 @@ tsd
 
 ## Type Coverage
 ```bash
-type-coverage -p tsconfig.verify.json --ignore-catch
+type-coverage -p configs/tsconfig/tsconfig.verify.json --ignore-catch
 ```
 
 ⚠️  Type Coverage: INFO (exit undefined)
