@@ -15,13 +15,13 @@
   - Candidate: unify schema/artifact validation into a single gating entry point.
 
 #### Trigger mapping (spec/artifact validation group)
-- spec-check.yml: pull_request (paths: specs/formal/**, scripts/formal/verify-tla.mjs, package.json, workflow) + workflow_dispatch
+- spec-check.yml: pull_request (paths: specs/formal/**, scripts/formal/verify-tla.mjs, package.json, .github/workflows/spec-check.yml) + workflow_dispatch
 - spec-validation.yml: pull_request (paths: spec/**, .ae/**, docs/**) + push (main, develop; same paths) + workflow_call
-- fail-fast-spec-validation.yml: pull_request (paths: spec/**, .ae/**) + push (main) + workflow_call
+- fail-fast-spec-validation.yml: pull_request (paths: spec/**, .ae/**) + push (main; no path filter) + workflow_call
 - validate-artifacts-ajv.yml: pull_request (all PRs; strictness gated by label "enforce-artifacts")
-- spec-generate-model.yml: pull_request (paths: specs/**, templates/**, scripts/**, docs/**, tests/**, artifacts/**, workflow) + workflow_dispatch
-- codegen-drift-check.yml: pull_request (branches: main) + push (main; paths: spec/**/*.md, .ae/ae-ir.json, src/codegen/**, templates/**, workflow) + workflow_call
-- generate-artifacts-preview.yml: pull_request (paths: specs/**, templates/**, scripts/**, docs/**, tests/**, artifacts/**, workflow) + workflow_dispatch
+- spec-generate-model.yml: pull_request (paths: specs/**, templates/**, scripts/**, docs/**, tests/**, artifacts/**, .github/workflows/spec-generate-model.yml) + workflow_dispatch
+- codegen-drift-check.yml: pull_request (all PRs to main; execution gated by label "run-drift") + push (main; paths: spec/**/*.md, .ae/ae-ir.json, src/codegen/**, templates/**, .github/workflows/codegen-drift-check.yml) + workflow_call
+- generate-artifacts-preview.yml: pull_request (paths: specs/**, templates/**, scripts/**, docs/**, tests/**, artifacts/**, .github/workflows/generate-artifacts-preview.yml) + workflow_dispatch
 
 ### Formal verification
 - formal-verify.yml / formal-aggregate.yml / model-checking-manual.yml
