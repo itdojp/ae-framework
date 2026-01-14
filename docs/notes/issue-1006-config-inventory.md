@@ -23,7 +23,6 @@
 | `tsconfig.types.json` | TS types config | Candidate | Same as above.
 | `tsconfig.verify.json` | TS verify config | Candidate | Same as above.
 | `vitest.config.ts` | Vitest root config | Keep (short-term) | Default lookup expects root.
-| `vitest.workspace.ts` | Vitest workspace config | Candidate | Can move if `--config` is always passed.
 
 ## Notes
 - "Keep" means root is required or convenient for default tool lookup.
@@ -34,6 +33,7 @@
 - `configs/api-extractor.json` (PR #1534)
 - `configs/benchmark-config.json` (PR #1533)
 - `configs/stryker/stryker.conf.cjs` (PR #1537)
+- `configs/vitest/vitest.workspace.ts` (PR #1538)
 
 ## Next (Phase 2)
 - Confirm actual lookup paths from scripts/CI before moving.
