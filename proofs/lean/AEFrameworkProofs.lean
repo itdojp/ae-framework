@@ -1,4 +1,4 @@
-import Thresholds
+import AEFrameworkProofs.Thresholds
 
 namespace AEFrameworkProofs
 
