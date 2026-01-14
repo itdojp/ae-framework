@@ -34,7 +34,7 @@
 - [x] テストスイートの Stryker/CI セーフ化 （tmpfs ヘルパー導入・Vitest conservative モード追加）。`CI=1 pnpm vitest run tests --pool=forks --watch=false --reporter=dot` と `CI=1 pnpm run test:ci:extended` （mutation quick 含む）が完走 （mutation score 100%、静的ミュート警告あり）。
 - [x] `ci-extended` にテスト結果キャッシュ復元・保存ステップと `scripts/pipelines/sync-test-results.mjs` を追加し、MBT / property / mutation 成果物を再実行時に再利用可能化。
 - [x] Heavy テスト成果物のトレンド比較スクリプト（`scripts/pipelines/compare-test-trends.mjs`）を追加し、Nightly / rerun で前回値との差分を Step Summary に報告。
-- [x] 静的ミュート 23 件を `ignoreStatic: true`（`stryker.conf.cjs`）で無視し、mutation quick の実行時間を短縮。
+- [x] 静的ミュート 23 件を `ignoreStatic: true`（`configs/stryker/stryker.conf.cjs`）で無視し、mutation quick の実行時間を短縮。
 
 ## 次のアクション候補
 1. [ ] `docs/ci-policy.md` / `docs/ci/label-gating.md` を刷新し、新ラベルと実行モード （stable vs extended）を明文化。  

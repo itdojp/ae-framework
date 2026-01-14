@@ -87,7 +87,7 @@
     "bdd": "cucumber-js specs/bdd/features --import 'specs/bdd/steps/**/*.js'",
     "pbt": "vitest run -c tests/property/vitest.config.ts",
     "mbt": "node tests/mbt/run.js",
-    "mutation": "stryker run",
+    "mutation": "stryker run --config configs/stryker/stryker.conf.cjs",
     "perf:budgets": "node scripts/performance-budget-validator.js",
     "perf:budgets:dev": "NODE_ENV=development node scripts/performance-budget-validator.js",
     "perf:budgets:prod": "NODE_ENV=production node scripts/performance-budget-validator.js",
