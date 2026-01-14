@@ -32,7 +32,7 @@ Track where candidate config files are referenced so relocation can update both 
 - `docs/reference/CLI-COMMANDS-REFERENCE.md`
 - Note: tests reference `all-sample-config.json` (not the same file).
 
-### stryker.conf.cjs
+### configs/stryker/stryker.conf.cjs (moved in PR #1537)
 - `docs/ci/phase2-ci-hardening-outline.md` (mentioned)
 - `docs/notes/mutation-coverage-plan.md`
 - `docs/notes/pipeline-baseline.md`
