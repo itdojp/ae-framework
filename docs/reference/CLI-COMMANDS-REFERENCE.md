@@ -288,7 +288,7 @@ ae-framework conformance rules --validate rules.json --output validation-report.
 
 # System configuration
 ae-framework conformance config --show
-ae-framework conformance config --create-sample --output sample-config.json
+ae-framework conformance config --create-sample --output configs/samples/sample-config.json
 
 # System status monitoring
 ae-framework conformance status --detailed
