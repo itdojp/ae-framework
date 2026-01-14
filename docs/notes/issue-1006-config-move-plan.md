@@ -45,7 +45,7 @@ configs/
 | tsconfig.build.json | configs/tsconfig/tsconfig.build.json | Update build scripts | Keep tsconfig.json at root. | Planned
 | tsconfig.types.json | configs/tsconfig/tsconfig.types.json | Update scripts | Keep tsconfig.json at root. | Planned
 | tsconfig.verify.json | configs/tsconfig/tsconfig.verify.json | Update scripts | Keep tsconfig.json at root. | Planned
-| vitest.workspace.ts | configs/vitest/vitest.workspace.ts | Update test scripts | Vitest defaults to root; must pass config explicitly. | In review (PR #1538)
+| vitest.workspace.ts | configs/vitest/vitest.workspace.ts | Update test scripts | Vitest defaults to root; must pass config explicitly. | Done (PR #1538)
 
 ## Files to keep at root (for now)
 - .editorconfig

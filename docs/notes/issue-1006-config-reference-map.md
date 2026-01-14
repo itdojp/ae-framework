@@ -55,7 +55,7 @@ Track where candidate config files are referenced so relocation can update both 
 - `docs/reference/CLI-COMMANDS-REFERENCE.md`
 - `artifacts/verify.md`, `artifacts/types-gate-ci-validation.md`
 
-### configs/vitest/vitest.workspace.ts
+### configs/vitest/vitest.workspace.ts (moved in PR #1538)
 - `package.json` (`test:unit`, `test:int`, `test:perf`)
 - `docs/ci/phase2-ci-hardening-outline.md`
 
