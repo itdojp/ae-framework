@@ -160,7 +160,7 @@ ae-framework benchmark list --enabled-only
 ae-framework benchmark run --ci --dry-run
 
 # Generate sample config
-ae-framework benchmark init --output benchmark-config.json --difficulty basic
+ae-framework benchmark init --output configs/benchmark-config.json --difficulty basic
 ```
 
 ## Quality Gates

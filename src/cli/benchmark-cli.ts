@@ -184,7 +184,7 @@ program
 program
   .command('init')
   .description('Generate sample configuration file')
-  .option('-o, --output <path>', 'Output file path', './benchmark-config.json')
+  .option('-o, --output <path>', 'Output file path', './configs/benchmark-config.json')
   .option('--difficulty <level>', 'Template for specific difficulty')
   .option('--ci', 'Generate CI-optimized configuration')
   .action(async (options) => {
@@ -200,6 +200,10 @@ program
         config = DEFAULT_BENCHMARK_CONFIG;
       }
       
+      const outputDir = path.dirname(options.output);
+      if (outputDir && outputDir !== '.') {
+        await fs.mkdir(outputDir, { recursive: true });
+      }
       await fs.writeFile(options.output, JSON.stringify(config, null, 2));
       console.log(`✅ Configuration template saved to ${options.output}`);
       
