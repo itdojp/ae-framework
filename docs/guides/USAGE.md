@@ -77,15 +77,15 @@ pnpm run operate:server
 ```bash
 # 1) Runtime Conformance（サンプル生成→検証）
 pnpm tsx src/cli/conformance-cli.ts sample \
-  --rules samples/sample-rules.json \
-  --config samples/sample-config.json \
-  --data samples/sample-data.json \
-  --context samples/sample-context.json
+  --rules configs/samples/sample-rules.json \
+  --config configs/samples/sample-config.json \
+  --data configs/samples/sample-data.json \
+  --context configs/samples/sample-context.json
 
 pnpm tsx src/cli/conformance-cli.ts verify \
-  --input samples/sample-data.json \
-  --context-file samples/sample-context.json \
-  --rules samples/sample-rules.json --format json \
+  --input configs/samples/sample-data.json \
+  --context-file configs/samples/sample-context.json \
+  --rules configs/samples/sample-rules.json --format json \
   --output conformance-results.json
 
 # 2) SBOM 生成
