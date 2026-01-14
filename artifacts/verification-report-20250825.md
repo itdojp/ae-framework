@@ -97,7 +97,7 @@ Status: ❌ Some verification steps failed
 - システム設定の包括的チェック機能
 
 ### PR#224: verify パイプライン強化
-- scoped TypeScript設定 (`tsconfig.verify.json`) の優先利用
+- scoped TypeScript設定 (`configs/tsconfig/tsconfig.verify.json`) の優先利用
 - ESLint v9 flat config 対応
 - エラー時でも詳細レポート生成
 
