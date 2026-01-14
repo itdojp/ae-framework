@@ -14,6 +14,15 @@
 - spec-check.yml / spec-validation.yml / fail-fast-spec-validation.yml / validate-artifacts-ajv.yml / spec-generate-model.yml / codegen-drift-check.yml / generate-artifacts-preview.yml
   - Candidate: unify schema/artifact validation into a single gating entry point.
 
+#### Trigger mapping (spec/artifact validation group)
+- spec-check.yml: pull_request (paths: specs/formal/**, scripts/formal/verify-tla.mjs, package.json, workflow) + workflow_dispatch
+- spec-validation.yml: pull_request (paths: spec/**, .ae/**, docs/**) + push (main, develop; same paths) + workflow_call
+- fail-fast-spec-validation.yml: pull_request (paths: spec/**, .ae/**) + push (main) + workflow_call
+- validate-artifacts-ajv.yml: pull_request (all PRs; strictness gated by label "enforce-artifacts")
+- spec-generate-model.yml: pull_request (paths: specs/**, templates/**, scripts/**, docs/**, tests/**, artifacts/**, workflow) + workflow_dispatch
+- codegen-drift-check.yml: pull_request (branches: main) + push (main; paths: spec/**/*.md, .ae/ae-ir.json, src/codegen/**, templates/**, workflow) + workflow_call
+- generate-artifacts-preview.yml: pull_request (paths: specs/**, templates/**, scripts/**, docs/**, tests/**, artifacts/**, workflow) + workflow_dispatch
+
 ### Formal verification
 - formal-verify.yml / formal-aggregate.yml / model-checking-manual.yml
   - Candidate: define a single formal "entry" and document when manual vs automated runs apply.
