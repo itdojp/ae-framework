@@ -1,8 +1,8 @@
 # Issue 1006: Workflow Inventory (Phase 1)
 
 ## Snapshot
-- Commit: 61f30b60
-- .github/workflows/*.yml count: 45
+- Commit: 6f9fce7b
+- .github/workflows/*.yml count: 46
 
 ## Prefix counts (file name before first '-' or '.')
 - ci: 4
@@ -28,6 +28,7 @@
 - model: 1
 - minimal: 1
 - hermetic: 1
+- lean: 1
 - grafana: 1
 - fail: 1
 - docker: 1
@@ -39,7 +40,7 @@
 - auto: 1
 - ae: 1
 - adapter: 1
-- total: 45 (matches workflow count)
+- total: 46 (matches workflow count)
 
 ## Workflow files (sorted)
 - adapter-thresholds.yml
@@ -63,6 +64,7 @@
 - formal-verify.yml
 - grafana-dashboards.yml
 - hermetic-ci.yml
+- lean-proof.yml
 - minimal-pipeline.yml
 - model-checking-manual.yml
 - mutation-quick.yml

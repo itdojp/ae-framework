@@ -1,7 +1,7 @@
 # Issue 1006: Workflow Overlap Candidates (Phase 1.5 draft)
 
 ## Snapshot
-- Commit: 61f30b60
+- Commit: 6f9fce7b
 - Source: docs/notes/issue-1006-workflow-inventory.md
 
 ## Required checks snapshot (main protection)
@@ -30,13 +30,14 @@
 - codegen-drift-check.yml: pull_request (all PRs to main; execution gated by label "run-drift") + push (main; paths: spec/**/*.md, .ae/ae-ir.json, src/codegen/**, templates/**, .github/workflows/codegen-drift-check.yml) + workflow_call
 
 ### Formal verification
-- formal-verify.yml / formal-aggregate.yml / model-checking-manual.yml
+- formal-verify.yml / formal-aggregate.yml / model-checking-manual.yml / lean-proof.yml
   - Candidate: define a single formal "entry" and document when manual vs automated runs apply.
 
 #### Trigger mapping (formal verification group)
 - formal-verify.yml: pull_request (types: opened, synchronize, reopened, ready_for_review, labeled; jobs gated by label "run-formal") + push (tags: v*) + workflow_dispatch (inputs.target)
 - formal-aggregate.yml: pull_request (types: opened, synchronize, reopened, labeled; job gated by label "run-formal") + workflow_dispatch
 - model-checking-manual.yml: workflow_dispatch (inputs.engine, spec_path)
+- lean-proof.yml: pull_request (paths: proofs/lean/**, .github/workflows/lean-proof.yml) + push (main; same paths)
 
 ### Flake and stability
 - flake-detect.yml / flake-maintenance.yml / nightly-monitoring.yml / parallel-test-execution.yml
@@ -54,7 +55,7 @@
 
 #### Trigger mapping (release group)
 - release.yml: push (tags: v*)
-- release-quality-artifacts.yml: release (published) + push (tags: v*) + workflow_dispatch
+- release-quality-artifacts.yml: release (published) + workflow_dispatch
 
 ### Agent automation
 - agent-commands.yml

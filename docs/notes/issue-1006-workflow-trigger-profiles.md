@@ -1,21 +1,20 @@
 # Issue 1006: Workflow Trigger Profiles (Phase 1.5 draft)
 
 ## Snapshot
-- Commit: 61f30b60
-- Total workflows: 45
+- Commit: 6f9fce7b
+- Total workflows: 46
 
 ## Trigger signatures
 
-### pull_request (6)
+### pull_request (4)
 - adapter-thresholds.yml
 - auto-labels.yml
-- copilot-review-gate.yml
 - phase6-validation.yml
 - pr-summary-comment.yml
-- validate-artifacts-ajv.yml
 
-### pull_request, push (6)
+### pull_request, push (7)
 - coverage-check.yml
+- lean-proof.yml
 - parallel-test-execution.yml
 - pr-verify.yml
 - testing-ddd-scripts.yml
@@ -43,7 +42,8 @@
 - quality-gates-centralized.yml
 - spec-validation.yml
 
-### pull_request, workflow_dispatch (3)
+### pull_request, workflow_dispatch (4)
+- copilot-review-gate.yml
 - formal-aggregate.yml
 - spec-check.yml
 - spec-generate-model.yml
@@ -82,6 +82,9 @@
 
 ### workflow_call (1)
 - ci-core.yml
+
+### workflow_call, workflow_dispatch (1)
+- validate-artifacts-ajv.yml
 
 ## Notes
 - Use this profile map to identify overused trigger combinations (e.g., pull_request+push) for consolidation.
