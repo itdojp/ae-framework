@@ -4,21 +4,43 @@ on:
   pull_request:
     paths:
       - "proofs/lean/**"
+      - ".github/workflows/lean-proof.yml"
   push:
     branches:
       - main
     paths:
       - "proofs/lean/**"
+      - ".github/workflows/lean-proof.yml"
+
+concurrency:
+  group: lean-proof-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: read-all
 
 jobs:
   lean-proof:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Cache elan
+        uses: actions/cache@v4
+        with:
+          path: ~/.elan
+          key: elan-${{ hashFiles('proofs/lean/lean-toolchain') }}
+          restore-keys: |
+            elan-
       - name: Install elan
         run: |
           curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y
           printf '%s\n' "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Cache Lake dependencies
+        uses: actions/cache@v4
+        with:
+          path: proofs/lean/.lake/packages
+          key: lake-${{ hashFiles('proofs/lean/lean-toolchain', 'proofs/lean/lakefile.lean') }}
+          restore-keys: |
+            lake-
       - name: Lean build
         working-directory: proofs/lean
         run: lake build
