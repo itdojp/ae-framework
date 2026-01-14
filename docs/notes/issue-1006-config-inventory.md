@@ -18,8 +18,8 @@
 | `pnpm-workspace.yaml` | workspace config | Keep | Tooling expects root.
 | `sample-config.json` | Sample config | Candidate | CLI sample outputs now default to `configs/samples` (PR #1535).
 | `tsconfig.json` | TS base config | Keep | Tooling expects root.
-| `tsconfig.build.json` | TS build config | Candidate | Can move if `extends` paths updated.
-| `tsconfig.types.json` | TS types config | Candidate | Same as above.
+| `tsconfig.build.json` | TS build config | Moved | Relocated to `configs/tsconfig/tsconfig.build.json` (PR #1544).
+| `tsconfig.types.json` | TS types config | In review | Moving to `configs/tsconfig/tsconfig.types.json` (PR #1545).
 | `tsconfig.verify.json` | TS verify config | Candidate | Same as above.
 | `vitest.config.ts` | Vitest root config | Keep (short-term) | Default lookup expects root.
 
@@ -34,6 +34,7 @@
 - `configs/stryker/stryker.conf.cjs` (PR #1537)
 - `configs/vitest/vitest.workspace.ts` (PR #1538)
 - `configs/mcp-config.json` (PR #1543)
+- `configs/tsconfig/tsconfig.build.json` (PR #1544)
 
 ## Next (Phase 2)
 - Confirm actual lookup paths from scripts/CI before moving.
