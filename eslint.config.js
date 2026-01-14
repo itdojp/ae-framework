@@ -45,7 +45,7 @@ export default ts.config(
     extends: [...ts.configs.recommendedTypeChecked],
     languageOptions: {
       parserOptions: {
-        project: ['./tsconfig.verify.json'],
+        project: ['./configs/tsconfig/tsconfig.verify.json'],
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -103,7 +103,7 @@ export default ts.config(
     ],
     languageOptions: {
       parserOptions: {
-        project: ['./tsconfig.verify.json'],
+        project: ['./configs/tsconfig/tsconfig.verify.json'],
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -126,7 +126,7 @@ export default ts.config(
     ],
     languageOptions: {
       parserOptions: {
-        project: ['./tsconfig.verify.json'],
+        project: ['./configs/tsconfig/tsconfig.verify.json'],
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -142,7 +142,7 @@ export default ts.config(
     ],
     languageOptions: {
       parserOptions: {
-        project: ['./tsconfig.verify.json'],
+        project: ['./configs/tsconfig/tsconfig.verify.json'],
         tsconfigRootDir: import.meta.dirname,
       },
     },
