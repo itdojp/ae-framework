@@ -20,7 +20,7 @@
 | `tsconfig.json` | TS base config | Keep | Tooling expects root.
 | `tsconfig.build.json` | TS build config | Moved | Relocated to `configs/tsconfig/tsconfig.build.json` (PR #1544).
 | `tsconfig.types.json` | TS types config | Moved | Relocated to `configs/tsconfig/tsconfig.types.json` (PR #1545).
-| `tsconfig.verify.json` | TS verify config | Candidate | Same as above.
+| `tsconfig.verify.json` | TS verify config | Moved | Relocated to `configs/tsconfig/tsconfig.verify.json` (PR #1547).
 | `vitest.config.ts` | Vitest root config | Keep (short-term) | Default lookup expects root.
 
 ## Notes
@@ -35,6 +35,8 @@
 - `configs/vitest/vitest.workspace.ts` (PR #1538)
 - `configs/mcp-config.json` (PR #1543)
 - `configs/tsconfig/tsconfig.build.json` (PR #1544)
+- `configs/tsconfig/tsconfig.types.json` (PR #1545)
+- `configs/tsconfig/tsconfig.verify.json` (PR #1547)
 
 ## Next (Phase 2)
 - Confirm actual lookup paths from scripts/CI before moving.

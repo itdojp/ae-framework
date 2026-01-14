@@ -48,7 +48,7 @@ Track where candidate config files are referenced so relocation can update both 
 - `scripts/api/check-types.mjs`
 - `artifacts/types-hardening-validation.md`
 
-### tsconfig.verify.json
+### tsconfig.verify.json (moved in PR #1547)
 - `package.json` (`types:check`, type-coverage)
 - `src/commands/verify/run.ts` (primary verify path)
 - `docs/quality/type-coverage-policy.md`
