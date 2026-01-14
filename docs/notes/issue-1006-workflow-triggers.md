@@ -2,10 +2,10 @@
 
 ## Snapshot
 - Commit: 61f30b60
-- Total workflows: 47
+- Total workflows: 46
 
 ## Trigger counts
-- issue_comment: 2
+- issue_comment: 1
 - pull_request: 31
 - push: 24
 - release: 1
@@ -15,9 +15,8 @@
 
 ## Trigger → workflow files
 
-### issue_comment (2)
+### issue_comment (1)
 - agent-commands.yml
-- agent-slash-commands.yml
 
 ### pull_request (31)
 - adapter-thresholds.yml

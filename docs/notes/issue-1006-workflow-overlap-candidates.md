@@ -100,7 +100,7 @@ These are proposals to reduce overlap without changing required checks or safety
    - Option: move the preview step into `spec-generate-model.yml` as a separate job and remove duplication.
 
 3) Agent command routing
-   - If `agent-commands.yml` and `agent-slash-commands.yml` share triggers, merge into a single workflow with separate jobs.
+   - ✅ Completed: `agent-commands.yml` が PR/Issue の slash command をジョブ分岐で処理する構成に統合済み。
 
 ## Readiness checklist
 - Confirm which workflows are required by branch protection.

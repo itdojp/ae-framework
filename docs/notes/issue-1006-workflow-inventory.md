@@ -2,7 +2,7 @@
 
 ## Snapshot
 - Commit: 61f30b60
-- .github/workflows/*.yml count: 47
+- .github/workflows/*.yml count: 46
 
 ## Prefix counts (file name before first '-' or '.')
 - ci: 4
@@ -13,7 +13,7 @@
 - nightly: 2
 - formal: 2
 - flake: 2
-- agent: 2
+- agent: 1
 - workflow: 1
 - webapi: 1
 - validate: 1
@@ -40,13 +40,12 @@
 - auto: 1
 - ae: 1
 - adapter: 1
-- total: 47 (matches workflow count)
+- total: 46 (matches workflow count)
 
 ## Workflow files (sorted)
 - adapter-thresholds.yml
 - ae-ci.yml
 - agent-commands.yml
-- agent-slash-commands.yml
 - auto-labels.yml
 - branch-protection-apply.yml
 - cedar-quality-gates.yml
