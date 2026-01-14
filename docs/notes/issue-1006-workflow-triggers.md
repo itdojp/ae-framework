@@ -1,17 +1,17 @@
 # Issue 1006: Workflow Trigger Map (Phase 1.5 draft)
 
 ## Snapshot
-- Commit: 61f30b60
-- Total workflows: 45
+- Commit: 6f9fce7b
+- Total workflows: 46
 
 ## Trigger counts
 - issue_comment: 1
 - pull_request: 30
-- push: 23
+- push: 24
 - release: 1
 - schedule: 10
-- workflow_call: 6
-- workflow_dispatch: 26
+- workflow_call: 7
+- workflow_dispatch: 28
 
 ## Trigger → workflow files
 
@@ -33,6 +33,7 @@
 - formal-verify.yml
 - grafana-dashboards.yml
 - hermetic-ci.yml
+- lean-proof.yml
 - parallel-test-execution.yml
 - phase6-validation.yml
 - podman-smoke.yml
@@ -45,12 +46,11 @@
 - spec-generate-model.yml
 - spec-validation.yml
 - testing-ddd-scripts.yml
-- validate-artifacts-ajv.yml
 - verify-lite.yml
 - verify.yml
 - workflow-lint.yml
 
-### push (23)
+### push (24)
 - ae-ci.yml
 - cedar-quality-gates.yml
 - ci-extended.yml
@@ -61,6 +61,7 @@
 - fail-fast-spec-validation.yml
 - formal-verify.yml
 - hermetic-ci.yml
+- lean-proof.yml
 - parallel-test-execution.yml
 - podman-smoke.yml
 - pr-verify.yml
@@ -90,21 +91,23 @@
 - sbom-generation.yml
 - security.yml
 
-### workflow_call (6)
+### workflow_call (7)
 - ci-core.yml
 - ci-fast.yml
 - codegen-drift-check.yml
 - fail-fast-spec-validation.yml
 - quality-gates-centralized.yml
 - spec-validation.yml
+- validate-artifacts-ajv.yml
 
-### workflow_dispatch (26)
+### workflow_dispatch (28)
 - ae-ci.yml
 - branch-protection-apply.yml
 - cedar-quality-gates.yml
 - ci-extended.yml
 - ci-fast.yml
 - ci.yml
+- copilot-review-gate.yml
 - docker-tests.yml
 - flake-detect.yml
 - flake-maintenance.yml
@@ -123,6 +126,7 @@
 - security.yml
 - spec-check.yml
 - spec-generate-model.yml
+- validate-artifacts-ajv.yml
 - verify-lite.yml
 - webapi-sample-ci.yml
 
