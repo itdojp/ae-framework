@@ -2,7 +2,7 @@
 
 ## Snapshot
 - Commit: 61f30b60
-- Total workflows: 46
+- Total workflows: 45
 
 ## Trigger signatures
 
@@ -43,9 +43,8 @@
 - quality-gates-centralized.yml
 - spec-validation.yml
 
-### pull_request, workflow_dispatch (4)
+### pull_request, workflow_dispatch (3)
 - formal-aggregate.yml
-- generate-artifacts-preview.yml
 - spec-check.yml
 - spec-generate-model.yml
 
