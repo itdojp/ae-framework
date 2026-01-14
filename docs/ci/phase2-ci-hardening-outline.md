@@ -8,7 +8,7 @@
 ## 現状のテスト分類
 | 種別 | npm script / workflow | 備考 |
 |------|----------------------|------|
-| Fast / deterministic | `pnpm test:unit`, `pnpm test:fast`, `pnpm test:fast:plus` | Vitest workspace 導入により `vitest.workspace.ts` 切替可能 |
+| Fast / deterministic | `pnpm test:unit`, `pnpm test:fast`, `pnpm test:fast:plus` | Vitest workspace 導入により `configs/vitest/vitest.workspace.ts` 切替可能 |
 | Integration (slow) | `pnpm test:int`, `pnpm pipelines:pact` | Verify Lite でも実行。mutation auto diff 初期 dry-run 依存 |
 | Heavy (mutation / MBT) | `pnpm test:mbt`, mutation auto diff (stryker quick) | Verify Lite 専用ステップとして存在 |
 | Property-based / replay | `pnpm test:property`, `pnpm test:replay` | ラベル `enforce-testing` で厳格化可能 |
