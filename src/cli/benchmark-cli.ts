@@ -200,6 +200,10 @@ program
         config = DEFAULT_BENCHMARK_CONFIG;
       }
       
+      const outputDir = path.dirname(options.output);
+      if (outputDir && outputDir !== '.') {
+        await fs.mkdir(outputDir, { recursive: true });
+      }
       await fs.writeFile(options.output, JSON.stringify(config, null, 2));
       console.log(`✅ Configuration template saved to ${options.output}`);
       
