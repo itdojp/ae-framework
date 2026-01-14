@@ -18,7 +18,7 @@
   - Candidate: clarify required vs optional vs experimental pipelines.
 
 ### Spec / artifact validation
-- spec-check.yml / spec-validation.yml / fail-fast-spec-validation.yml / validate-artifacts-ajv.yml / spec-generate-model.yml / codegen-drift-check.yml / generate-artifacts-preview.yml
+- spec-check.yml / spec-validation.yml / fail-fast-spec-validation.yml / validate-artifacts-ajv.yml / spec-generate-model.yml / codegen-drift-check.yml
   - Candidate: unify schema/artifact validation into a single gating entry point.
 
 #### Trigger mapping (spec/artifact validation group)
@@ -28,7 +28,6 @@
 - validate-artifacts-ajv.yml: workflow_call (invoked from spec-validation on PRs) + workflow_dispatch
 - spec-generate-model.yml: pull_request (paths: specs/**, templates/**, scripts/**, docs/**, tests/**, artifacts/**, .github/workflows/spec-generate-model.yml) + workflow_dispatch
 - codegen-drift-check.yml: pull_request (all PRs to main; execution gated by label "run-drift") + push (main; paths: spec/**/*.md, .ae/ae-ir.json, src/codegen/**, templates/**, .github/workflows/codegen-drift-check.yml) + workflow_call
-- generate-artifacts-preview.yml: pull_request (paths: specs/**, templates/**, scripts/**, docs/**, tests/**, artifacts/**, .github/workflows/generate-artifacts-preview.yml) + workflow_dispatch
 
 ### Formal verification
 - formal-verify.yml / formal-aggregate.yml / model-checking-manual.yml
@@ -96,8 +95,7 @@ These are proposals to reduce overlap without changing required checks or safety
    - Keep `fail-fast-spec-validation.yml` as an alias only if the PR gate cannot be updated safely.
 
 2) Artifact preview vs generation
-   - Clarify the role split between `generate-artifacts-preview.yml` and `spec-generate-model.yml`.
-   - Option: move the preview step into `spec-generate-model.yml` as a separate job and remove duplication.
+   - ✅ Completed: preview step/comment を `spec-generate-model.yml` に集約し、重複していた `generate-artifacts-preview.yml` を削除。
 
 3) Agent command routing
    - ✅ Completed: `agent-commands.yml` が PR/Issue の slash command をジョブ分岐で処理する構成に統合済み。

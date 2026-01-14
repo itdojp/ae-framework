@@ -2,7 +2,7 @@
 
 ## Snapshot
 - Commit: 61f30b60
-- .github/workflows/*.yml count: 46
+- .github/workflows/*.yml count: 45
 
 ## Prefix counts (file name before first '-' or '.')
 - ci: 4
@@ -29,7 +29,6 @@
 - minimal: 1
 - hermetic: 1
 - grafana: 1
-- generate: 1
 - fail: 1
 - docker: 1
 - coverage: 1
@@ -40,7 +39,7 @@
 - auto: 1
 - ae: 1
 - adapter: 1
-- total: 46 (matches workflow count)
+- total: 45 (matches workflow count)
 
 ## Workflow files (sorted)
 - adapter-thresholds.yml
@@ -62,7 +61,6 @@
 - flake-maintenance.yml
 - formal-aggregate.yml
 - formal-verify.yml
-- generate-artifacts-preview.yml
 - grafana-dashboards.yml
 - hermetic-ci.yml
 - minimal-pipeline.yml

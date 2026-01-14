@@ -2,23 +2,23 @@
 
 ## Snapshot
 - Commit: 61f30b60
-- Total workflows: 46
+- Total workflows: 45
 
 ## Trigger counts
 - issue_comment: 1
-- pull_request: 31
+- pull_request: 30
 - push: 24
 - release: 1
 - schedule: 10
 - workflow_call: 6
-- workflow_dispatch: 27
+- workflow_dispatch: 26
 
 ## Trigger → workflow files
 
 ### issue_comment (1)
 - agent-commands.yml
 
-### pull_request (31)
+### pull_request (30)
 - adapter-thresholds.yml
 - ae-ci.yml
 - auto-labels.yml
@@ -31,7 +31,6 @@
 - fail-fast-spec-validation.yml
 - formal-aggregate.yml
 - formal-verify.yml
-- generate-artifacts-preview.yml
 - grafana-dashboards.yml
 - hermetic-ci.yml
 - parallel-test-execution.yml
@@ -100,7 +99,7 @@
 - quality-gates-centralized.yml
 - spec-validation.yml
 
-### workflow_dispatch (27)
+### workflow_dispatch (26)
 - ae-ci.yml
 - branch-protection-apply.yml
 - cedar-quality-gates.yml
@@ -112,7 +111,6 @@
 - flake-maintenance.yml
 - formal-aggregate.yml
 - formal-verify.yml
-- generate-artifacts-preview.yml
 - grafana-dashboards.yml
 - hermetic-ci.yml
 - minimal-pipeline.yml
