@@ -298,7 +298,7 @@
     "test:randomize": "vitest run tests/utils/test-randomizer.spec.ts",
     "test:quality": "npm run test:golden && npm run test:metamorphic && npm run test:cli:fuzz && npm run test:contracts && npm run test:doctest && npm run test:randomize",
     "test:quality:fast": "npm run test:golden && npm run test:cli:fuzz && npm run test:doctest",
-    "api:emit": "tsc -p tsconfig.types.json",
+    "api:emit": "tsc -p configs/tsconfig/tsconfig.types.json",
     "api:snapshot": "node scripts/api/snapshot-types.mjs",
     "api:check": "node scripts/api/check-types.mjs",
     "api:update": "pnpm api:emit && pnpm api:snapshot",
