@@ -43,7 +43,7 @@ Track where candidate config files are referenced so relocation can update both 
 - `docs/reference/CLI-COMMANDS-REFERENCE.md`
 - `artifacts/recovery-verify.md`
 
-### tsconfig.types.json (in review: PR #1545)
+### tsconfig.types.json (moved in PR #1545)
 - `package.json` (`api:emit`, type extraction)
 - `scripts/api/check-types.mjs`
 - `artifacts/types-hardening-validation.md`
