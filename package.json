@@ -302,7 +302,7 @@
     "api:snapshot": "node scripts/api/snapshot-types.mjs",
     "api:check": "node scripts/api/check-types.mjs",
     "api:update": "pnpm api:emit && pnpm api:snapshot",
-    "api:report": "api-extractor run --local",
+    "api:report": "api-extractor run --local --config ./configs/api-extractor.json",
     "api:diff": "node scripts/api/diff-api.mjs",
     "test:ci": "vitest run --config configs/vitest.ci.config.ts",
     "test:ci:stable": "vitest run --config configs/vitest.ci.config.ts --exclude \"**/system-integration.test.ts\"",
@@ -424,7 +424,7 @@
     "packages/**",
     "ae.config.ts",
     "ae-framework*.yml",
-    "api-extractor.json"
+    "configs/api-extractor.json"
   ],
   "peerDependenciesMeta": {
     "@anthropic-ai/sdk": {

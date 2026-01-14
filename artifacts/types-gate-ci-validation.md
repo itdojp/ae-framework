@@ -40,7 +40,7 @@
 | `eslint.config.js` | ✅ | 2025-08-26 00:12:57 | ban-ts-comment configured, switch-exhaustiveness enabled |
 | `tsconfig.verify.json` | ✅ | 2025-08-25 22:07:04 | strict: true, exactOptionalPropertyTypes: true |
 | `scripts/ci/check-expect-error.mjs` | ✅ | 2025-08-26 00:12:57 | Policy checker present |
-| `api-extractor.json` | ✅ | 2025-08-26 00:17:28 | API Extractor configured |
+| `configs/api-extractor.json` | ✅ | 2025-08-26 00:17:28 | API Extractor configured |
 | `scripts/api/diff-api.mjs` | ✅ | Present | Breaking change detection |
 | `api/public-types.d.ts` | ✅ | 2025-08-25 23:00:00 | 773KB snapshot |
 | `api/public.api.md` | ✅ | Present | API report baseline |
@@ -171,7 +171,7 @@ node dist/src/cli.js qa:flake --times 5 --workers 50% --pattern "tests/**"
 ## Related Documentation
 
 - **[T5/T6/T7 Implementation Validation Report](./types-t5-t6-t7-implementation-validation.md)** - Initial implementation validation from PR #244-246 merges
-- **[API Extractor Configuration](../api-extractor.json)** - T7 breaking change detection setup
+- **[API Extractor Configuration](../configs/api-extractor.json)** - T7 breaking change detection setup
 - **[ESLint Type Policy](../eslint.config.js)** - T5 comment banning rules
 - **[@ts-expect-error Policy Checker](../scripts/ci/check-expect-error.mjs)** - T5 enforcement script
 
