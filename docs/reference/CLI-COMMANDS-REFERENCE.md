@@ -657,7 +657,7 @@ Comprehensive verification with staged execution and scope controls
 ae-framework verify
 
 # Scoped TypeScript verification  
-AE_TSC_PROJECT=tsconfig.build.json ae-framework verify
+AE_TSC_PROJECT=configs/tsconfig/tsconfig.build.json ae-framework verify
 
 # Scoped ESLint verification
 AE_LINT_SCOPE=src/core ae-framework verify
@@ -671,7 +671,7 @@ AE_TYPES_STRICT=1 ae-framework verify
 
 **Options:**
 - Environment Variables:
-  - `AE_TSC_PROJECT`: Specify TypeScript project file (e.g., `tsconfig.build.json`)
+  - `AE_TSC_PROJECT`: Specify TypeScript project file (e.g., `configs/tsconfig/tsconfig.build.json`)
   - `AE_LINT_SCOPE`: Limit ESLint scope to specific directory (e.g., `src/core`)
   - `AE_TYPES_STRICT=1`: Enable strict mode (exit on failures)
 
