@@ -5,7 +5,7 @@ on:
     branches: [ main, develop ]
     paths-ignore:
       - 'docs/**'
-      - '*.md'
+      - '**/*.md'
   pull_request:
     branches: [ main ]
     # Run SBOM only when dependency or code manifests change
