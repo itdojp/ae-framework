@@ -4,7 +4,7 @@ on:
     types: [opened, edited, synchronize, reopened]
     paths-ignore:
       - 'docs/**'
-      - '*.md'
+      - '**/*.md'
 permissions:
   contents: read
   pull-requests: write
