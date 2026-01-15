@@ -21,6 +21,25 @@ jobs:
           cache: 'pnpm'
       - run: corepack enable
       - run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+      - name: Capture environment details
+        run: |
+          mkdir -p reports/flake-detection
+          NODE_VERSION="$(node -v)"
+          PNPM_VERSION="$(pnpm -v)"
+          VITEST_VERSION="$(pnpm exec vitest --version || printf '%s\n' 'unknown')"
+          {
+            printf "%s\n" "NODE_VERSION=$NODE_VERSION"
+            printf "%s\n" "PNPM_VERSION=$PNPM_VERSION"
+            printf "%s\n" "VITEST_VERSION=$VITEST_VERSION"
+          } >> "$GITHUB_ENV"
+          cat > reports/flake-detection-env.json <<EOF
+          {
+            "node": "$NODE_VERSION",
+            "pnpm": "$PNPM_VERSION",
+            "vitest": "$VITEST_VERSION",
+            "runUrl": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          }
+          EOF
       
       - name: Run tests multiple times
         id: flake-test
@@ -211,7 +230,9 @@ jobs:
             }
             const failureSection = failureSummary
               ? `### ❗ Failing tests (latest runs)\n${failureSummary}\n`
-              : '';
+              : '### ❗ Failing tests (latest runs)\n- Summary not available. See flake-detection-report artifacts.\n';
+            const envSection = `### 🧪 Environment\n- Node: ${process.env.NODE_VERSION || 'unknown'}\n- pnpm: ${process.env.PNPM_VERSION || 'unknown'}\n- Vitest: ${process.env.VITEST_VERSION || 'unknown'}\n- Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\n`;
+            const reproSection = `### ▶️ Reproduction command\n\`pnpm exec vitest run --workspace vitest.workspace.ts --project integration --reporter=json\`\n`;
             
             const title = `🔍 Flaky Test Detected - Integration Tests (${failureRate}% failure rate)`;
             
@@ -229,6 +250,10 @@ jobs:
             - **Failure Rate:** ${failureRate}%
 
             ${failureSection}
+            
+            ${envSection}
+            
+            ${reproSection}
             
             ### 🎯 Recommended Actions
             1. **Immediate:** Isolate flaky tests to prevent CI blocking
