@@ -3,6 +3,9 @@ name: Formal Verify
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, labeled]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
   push:
     tags: ['v*']
   workflow_dispatch:

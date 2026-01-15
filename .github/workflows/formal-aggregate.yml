@@ -3,6 +3,9 @@ name: Formal Reports Aggregate
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
   workflow_dispatch:
 
 permissions: read-all
