@@ -81,7 +81,7 @@
 - workflow-lint.yml: pull_request (paths: .github/workflows/**) + push (branches: main, develop; paths: .github/workflows/**)
 - branch-protection-apply.yml: workflow_dispatch (inputs: preset, branch)
 - auto-labels.yml: pull_request (types: opened, edited, synchronize, reopened)
-- pr-summary-comment.yml: pull_request (types: opened, synchronize, reopened)
+- pr-summary-comment.yml: pull_request (types: opened, synchronize, reopened; paths-ignore: docs/**, **/*.md)
 
 ## Next steps
 - Map each candidate group to its actual trigger (PR gate, label-gate, nightly, manual).
