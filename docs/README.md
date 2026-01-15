@@ -13,6 +13,12 @@ Comprehensive documentation for the AI‑Enhanced Development Framework.
 - Phase 6 Quick Start (UI/UX): `getting-started/PHASE-6-GETTING-STARTED.md`
 - Setup: `getting-started/SETUP.md`
 
+### Positioning maps (concept / flow / use cases)
+- Concept & system diagrams: `architecture/ARCHITECTURE.md`
+- Reference flow (Web API + DB): `reference/REFERENCE-FLOW-WEB-API-DB.md`
+- Minimal adoption flow: `quality/adoption-sample-flow.md`
+- Formal mini flow: `quality/formal-mini-flow.md`
+
 ### Guides
 - Development Instructions: `guides/DEVELOPMENT-INSTRUCTIONS-GUIDE.md`
 - Claude Code Automation Guide: `guides/CLAUDE-CODE-AUTOMATION-GUIDE.md`
@@ -72,6 +78,12 @@ ae-frameworkは、AI-Powered TDDによる6フェーズでソフトウェア開�
 - **[QUICK-START-GUIDE.md](./getting-started/QUICK-START-GUIDE.md)** ⭐ **推奨** - 15分で始めるae-framework
 - **[PHASE-6-GETTING-STARTED.md](./getting-started/PHASE-6-GETTING-STARTED.md)** ⭐ **最新** - Phase 6 UI/UX専用クイックスタート  
 - [SETUP.md](./getting-started/SETUP.md) - 基本セットアップ手順
+
+### 🧭 ポジショニングの図とフロー
+- 概念図/システム図: `architecture/ARCHITECTURE.md`
+- リファレンスフロー（Web API + DB）: `reference/REFERENCE-FLOW-WEB-API-DB.md`
+- 導入の最小フロー: `quality/adoption-sample-flow.md`
+- フォーマル最小フロー: `quality/formal-mini-flow.md`
 
 ### 📖 [guides/](./guides/) - 実用ガイド・チュートリアル
 実際の開発で使える実用ガイド
