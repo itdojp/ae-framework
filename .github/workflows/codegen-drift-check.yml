@@ -12,6 +12,9 @@ on:
   pull_request:
     # Run on ALL PRs for contract drift detection (issue #71)
     branches: [ main ]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
   workflow_call:
     # Allow this workflow to be called by other workflows
 
