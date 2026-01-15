@@ -4,9 +4,9 @@ on:
     paths:
       - 'spec/**'
       - '.ae/**'
-      - 'docs/**'
       - 'artifacts/**'
       - 'schema/**'
+      - 'docs/schemas/**'
       - 'specs/formal/**'
       - '.github/workflows/spec-validation.yml'
       - '.github/workflows/validate-artifacts-ajv.yml'
@@ -15,9 +15,9 @@ on:
     paths:
       - 'spec/**'
       - '.ae/**'
-      - 'docs/**'
       - 'artifacts/**'
       - 'schema/**'
+      - 'docs/schemas/**'
       - 'specs/formal/**'
       - '.github/workflows/spec-validation.yml'
       - '.github/workflows/validate-artifacts-ajv.yml'
