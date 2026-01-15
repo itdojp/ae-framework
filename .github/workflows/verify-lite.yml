@@ -7,7 +7,7 @@ on:
     tags: ['v*']
     paths-ignore:
       - 'docs/**'
-      - '*.md'
+      - '**/*.md'
   workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
