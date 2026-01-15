@@ -95,7 +95,12 @@ jobs:
           const failureCounts = new Map();
           const invalidFiles = [];
           const runErrors = [];
-          const isFailedStatus = (value) => ['failed', 'fail', 'error'].includes(value);
+          const MAX_RUN_ERRORS = 10;
+          const isFailedStatus = (value) => {
+            if (!value) return false;
+            const normalized = String(value).toLowerCase();
+            return ['failed', 'fail', 'error'].includes(normalized);
+          };
           const normalizeError = (err) => {
             if (!err) return 'unknown error';
             if (typeof err === 'string') return err;
@@ -137,7 +142,7 @@ jobs:
               suiteErrors.push(data.error);
             }
             for (const error of suiteErrors) {
-              runErrors.push(`[run error] ${normalizeError(error)}`);
+              runErrors.push(normalizeError(error));
             }
             for (const suite of suites) {
               const assertions = Array.isArray(suite.assertionResults)
@@ -178,9 +183,17 @@ jobs:
           const totalRuns = files.length || 0;
           const parsedRuns = Math.max(totalRuns - invalidFiles.length, 0);
           const runDenominator = parsedRuns || totalRuns || 0;
-          if (failureCounts.size === 0 && runErrors.length > 0) {
-            for (const error of runErrors.slice(0, 10)) {
-              failureCounts.set(error, (failureCounts.get(error) || 0) + 1);
+          const runErrorCounts = new Map();
+          for (const error of runErrors) {
+            runErrorCounts.set(error, (runErrorCounts.get(error) || 0) + 1);
+          }
+          const topRunErrors = [...runErrorCounts.entries()]
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, MAX_RUN_ERRORS);
+          if (failureCounts.size === 0 && topRunErrors.length > 0) {
+            for (const [error, count] of topRunErrors) {
+              const key = `[run error] ${error}`;
+              failureCounts.set(key, (failureCounts.get(key) || 0) + count);
             }
           }
           const failures = [...failureCounts.entries()]
@@ -190,6 +203,13 @@ jobs:
           let markdown = failures.length
             ? failures.map(item => `- ${item.name} (failed ${item.count}/${runDenominator})`).join('\n')
             : '- 失敗テストは検出されませんでした';
+          const runErrorDenominator = runDenominator || totalRuns || 1;
+          if (topRunErrors.length > 0) {
+            const runErrorLines = topRunErrors
+              .map(([message, count]) => `- [run error] ${message} (${count}/${runErrorDenominator})`)
+              .join('\n');
+            markdown += `\n\n#### Run-level errors\n${runErrorLines}`;
+          }
           if (invalidFiles.length > 0) {
             const invalidList = invalidFiles.map(item => item.file).join(', ');
             markdown += `\n\n- ⚠️ 解析に失敗したレポート: ${invalidList} (${invalidFiles.length}/${totalRuns})`;
@@ -198,7 +218,13 @@ jobs:
           fs.writeFileSync('reports/flake-detection-failures.md', markdown);
           fs.writeFileSync(
             'reports/flake-detection-failures.json',
-            JSON.stringify({ totalRuns, parsedRuns, invalidFiles, failures }, null, 2),
+            JSON.stringify({
+              totalRuns,
+              parsedRuns,
+              invalidFiles,
+              failures,
+              runErrors: topRunErrors.map(([message, count]) => ({ message, count })),
+            }, null, 2),
           );
 
           console.log('Failing tests summary:');
