@@ -4,13 +4,13 @@ on:
   pull_request:
     paths-ignore:
       - 'docs/**'
-      - '*.md'
+      - '**/*.md'
   push:
     branches: [main]
     tags: ['v*']
     paths-ignore:
       - 'docs/**'
-      - '*.md'
+      - '**/*.md'
   schedule:
     - cron: '30 6 * * 1' # weekly (Mon)
   workflow_dispatch:
