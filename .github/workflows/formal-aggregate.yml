@@ -5,7 +5,7 @@ on:
     types: [opened, synchronize, reopened, labeled]
     paths-ignore:
       - 'docs/**'
-      - '*.md'
+      - '**/*.md'
   workflow_dispatch:
 
 permissions: read-all
