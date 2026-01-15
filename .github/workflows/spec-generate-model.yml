@@ -17,7 +17,6 @@ on:
       - 'specs/**'
       - 'templates/**'
       - 'scripts/**'
-      - 'docs/**'
       - 'tests/**'
       - 'artifacts/**'
       - '.github/workflows/spec-generate-model.yml'
