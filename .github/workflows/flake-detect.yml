@@ -54,7 +54,7 @@ jobs:
           for ((i=1; i<=total_runs; i++)); do
             printf "%s\n" "📊 Run #$i of $total_runs"
             report_file="reports/flake-detection/run-$i.json"
-            if pnpm exec vitest run --workspace vitest.workspace.ts --project integration --reporter=json --outputFile "$report_file"; then
+            if pnpm exec vitest run --workspace configs/vitest/vitest.workspace.ts --project integration --reporter=json --outputFile "$report_file"; then
               printf "%s\n" "✅ Run #$i passed"
             else
               printf "%s\n" "❌ Run #$i failed"
@@ -296,7 +296,7 @@ jobs:
               ? `### ❗ Failing tests (latest runs)\n${failureSummary}\n`
               : '### ❗ Failing tests (latest runs)\n- Summary not available. See flake-detection-report artifacts.\n';
             const envSection = `### 🧪 Environment\n- Node: ${process.env.NODE_VERSION || 'unknown'}\n- pnpm: ${process.env.PNPM_VERSION || 'unknown'}\n- Vitest: ${process.env.VITEST_VERSION || 'unknown'}\n- Run: ${process.env.RUN_URL || 'unknown'}\n`;
-            const reproSection = `### ▶️ Reproduction command\n\`pnpm exec vitest run --workspace vitest.workspace.ts --project integration --reporter=json\`\n`;
+            const reproSection = `### ▶️ Reproduction command\n\`pnpm exec vitest run --workspace configs/vitest/vitest.workspace.ts --project integration --reporter=json\`\n`;
             
             const title = `🔍 Flaky Test Detected - Integration Tests (${failureRate}% failure rate)`;
             
