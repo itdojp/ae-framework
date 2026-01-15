@@ -78,7 +78,7 @@
   - Candidate: keep separate, but ensure they do not duplicate gating outputs.
 
 #### Trigger mapping (misc utilities group)
-- workflow-lint.yml: pull_request + push (branches: main, develop)
+- workflow-lint.yml: pull_request (paths: .github/workflows/**) + push (branches: main, develop; paths: .github/workflows/**)
 - branch-protection-apply.yml: workflow_dispatch (inputs: preset, branch)
 - auto-labels.yml: pull_request (types: opened, edited, synchronize, reopened)
 - pr-summary-comment.yml: pull_request (types: opened, synchronize, reopened)
