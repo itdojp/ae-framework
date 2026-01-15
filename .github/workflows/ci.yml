@@ -7,7 +7,7 @@ on:
     tags: ['v*']          # リリースタグ時
     paths-ignore:
       - 'docs/**'
-      - '*.md'
+      - '**/*.md'
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
