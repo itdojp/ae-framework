@@ -10,11 +10,12 @@ on:
       - 'templates/**'
       - '.github/workflows/codegen-drift-check.yml'
   pull_request:
-    # Run on ALL PRs for contract drift detection (issue #71)
+    # Run on PRs with code/spec changes for contract drift detection (issue #71); docs-only changes are skipped for CI cost optimization
     branches: [ main ]
+    types: [opened, synchronize, reopened, labeled]
     paths-ignore:
       - 'docs/**'
-      - '*.md'
+      - '**/*.md'
   workflow_call:
     # Allow this workflow to be called by other workflows
 

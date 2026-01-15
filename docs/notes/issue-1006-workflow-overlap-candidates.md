@@ -27,7 +27,7 @@
 - fail-fast-spec-validation.yml: pull_request (paths: spec/**, .ae/**) + push (main; no path filter) + workflow_call
 - validate-artifacts-ajv.yml: workflow_call (invoked from spec-validation on PRs) + workflow_dispatch
 - spec-generate-model.yml: pull_request (paths: specs/**, templates/**, scripts/**, docs/**, tests/**, artifacts/**, .github/workflows/spec-generate-model.yml) + workflow_dispatch
-- codegen-drift-check.yml: pull_request (all PRs to main; paths-ignore: docs/**, *.md; execution gated by label "run-drift") + push (main; paths: spec/**/*.md, .ae/ae-ir.json, src/codegen/**, templates/**, .github/workflows/codegen-drift-check.yml) + workflow_call
+- codegen-drift-check.yml: pull_request (all PRs to main; types: opened, synchronize, reopened, labeled; paths-ignore: docs/**, **/*.md; execution gated by label "run-drift") + push (main; paths: spec/**/*.md, .ae/ae-ir.json, src/codegen/**, templates/**, .github/workflows/codegen-drift-check.yml) + workflow_call
 
 ### Formal verification
 - formal-verify.yml / formal-aggregate.yml / model-checking-manual.yml / lean-proof.yml
