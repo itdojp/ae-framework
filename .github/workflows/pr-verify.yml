@@ -5,7 +5,7 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
     paths-ignore:
       - 'docs/**'
-      - '*.md'
+      - '**/*.md'
   push:
     tags: ['v*']
 
