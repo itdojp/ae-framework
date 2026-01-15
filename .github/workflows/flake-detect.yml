@@ -75,6 +75,19 @@ jobs:
 
           const failureCounts = new Map();
           const invalidFiles = [];
+          const runErrors = [];
+          const isFailedStatus = (value) => ['failed', 'fail', 'error'].includes(value);
+          const normalizeError = (err) => {
+            if (!err) return 'unknown error';
+            if (typeof err === 'string') return err;
+            if (err.message) return err.message;
+            if (err.stack) return err.stack;
+            try {
+              return JSON.stringify(err);
+            } catch {
+              return String(err);
+            }
+          };
           for (const file of files) {
             let data;
             try {
@@ -94,6 +107,19 @@ jobs:
                 : Array.isArray(data.results)
                   ? data.results
                   : [];
+            const suiteErrors = [];
+            if (Array.isArray(data.unhandledErrors)) {
+              suiteErrors.push(...data.unhandledErrors);
+            }
+            if (Array.isArray(data.errors)) {
+              suiteErrors.push(...data.errors);
+            }
+            if (data.error) {
+              suiteErrors.push(data.error);
+            }
+            for (const error of suiteErrors) {
+              runErrors.push(`[run error] ${normalizeError(error)}`);
+            }
             for (const suite of suites) {
               const assertions = Array.isArray(suite.assertionResults)
                 ? suite.assertionResults
@@ -102,7 +128,12 @@ jobs:
                   : [];
               if (assertions.length > 0) {
                 for (const test of assertions) {
-                  if (test.status === 'failed') {
+                  const status = test.status || test.state || test.result;
+                  const failed = Boolean(test.failed)
+                    || isFailedStatus(status)
+                    || Boolean(test.failureMessage)
+                    || (Array.isArray(test.errors) && test.errors.length > 0);
+                  if (failed) {
                     const name = test.fullName || [ ...(test.ancestorTitles || []), test.title || test.name ]
                       .filter(Boolean)
                       .join(' > ');
@@ -110,7 +141,8 @@ jobs:
                   }
                 }
               } else {
-                const suiteFailed = suite.status === 'failed'
+                const suiteStatus = suite.status || suite.state || suite.result;
+                const suiteFailed = isFailedStatus(suiteStatus)
                   || suite.numFailingTests > 0
                   || suite.success === false
                   || Boolean(suite.failureMessage);
@@ -127,6 +159,11 @@ jobs:
           const totalRuns = files.length || 0;
           const parsedRuns = Math.max(totalRuns - invalidFiles.length, 0);
           const runDenominator = parsedRuns || totalRuns || 0;
+          if (failureCounts.size === 0 && runErrors.length > 0) {
+            for (const error of runErrors.slice(0, 10)) {
+              failureCounts.set(error, (failureCounts.get(error) || 0) + 1);
+            }
+          }
           const failures = [...failureCounts.entries()]
             .sort((a, b) => b[1] - a[1])
             .map(([name, count]) => ({ name, count }));
