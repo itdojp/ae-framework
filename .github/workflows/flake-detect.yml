@@ -21,6 +21,26 @@ jobs:
           cache: 'pnpm'
       - run: corepack enable
       - run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+      - name: Capture environment details
+        run: |
+          mkdir -p reports/flake-detection
+          NODE_VERSION="$(node -v)"
+          PNPM_VERSION="$(pnpm -v)"
+          VITEST_VERSION="$(pnpm exec vitest --version || printf '%s\n' 'unknown')"
+          RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          {
+            printf "%s\n" "NODE_VERSION=$NODE_VERSION"
+            printf "%s\n" "PNPM_VERSION=$PNPM_VERSION"
+            printf "%s\n" "VITEST_VERSION=$VITEST_VERSION"
+            printf "%s\n" "RUN_URL=$RUN_URL"
+          } >> "$GITHUB_ENV"
+          jq -n \
+            --arg node "$NODE_VERSION" \
+            --arg pnpm "$PNPM_VERSION" \
+            --arg vitest "$VITEST_VERSION" \
+            --arg url "$RUN_URL" \
+            '{node: $node, pnpm: $pnpm, vitest: $vitest, runUrl: $url}' \
+            > reports/flake-detection-env.json
       
       - name: Run tests multiple times
         id: flake-test
@@ -28,7 +48,6 @@ jobs:
           set -e
           fails=0
           total_runs=3
-          mkdir -p reports/flake-detection
           
           printf "%s\n" "🔍 Starting flake detection with $total_runs runs"
           
@@ -228,6 +247,7 @@ jobs:
             reports/flake-detection-report.json
             reports/flake-detection-failures.json
             reports/flake-detection-failures.md
+            reports/flake-detection-env.json
             reports/flake-detection/run-*.json
           retention-days: 30
       
@@ -248,7 +268,9 @@ jobs:
             }
             const failureSection = failureSummary
               ? `### ❗ Failing tests (latest runs)\n${failureSummary}\n`
-              : '';
+              : '### ❗ Failing tests (latest runs)\n- Summary not available. See flake-detection-report artifacts.\n';
+            const envSection = `### 🧪 Environment\n- Node: ${process.env.NODE_VERSION || 'unknown'}\n- pnpm: ${process.env.PNPM_VERSION || 'unknown'}\n- Vitest: ${process.env.VITEST_VERSION || 'unknown'}\n- Run: ${process.env.RUN_URL || 'unknown'}\n`;
+            const reproSection = `### ▶️ Reproduction command\n\`pnpm exec vitest run --workspace vitest.workspace.ts --project integration --reporter=json\`\n`;
             
             const title = `🔍 Flaky Test Detected - Integration Tests (${failureRate}% failure rate)`;
             
@@ -266,6 +288,10 @@ jobs:
             - **Failure Rate:** ${failureRate}%
 
             ${failureSection}
+            
+            ${envSection}
+            
+            ${reproSection}
             
             ### 🎯 Recommended Actions
             1. **Immediate:** Isolate flaky tests to prevent CI blocking
