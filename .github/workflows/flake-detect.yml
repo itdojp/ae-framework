@@ -397,6 +397,7 @@ jobs:
             const failureRate = '${{ env.FAILURE_RATE }}';
             const totalRuns = '${{ env.TOTAL_RUNS }}';
             const failures = '${{ env.FAILS }}';
+            const timestamp = new Date().toISOString();
             const envSection = `### 🧪 Environment\n- Node: ${process.env.NODE_VERSION || 'unknown'}\n- pnpm: ${process.env.PNPM_VERSION || 'unknown'}\n- Vitest: ${process.env.VITEST_VERSION || 'unknown'}\n- Run: ${process.env.RUN_URL || 'unknown'}\n`;
 
             const existingIssues = await github.rest.issues.listForRepo({
@@ -416,7 +417,7 @@ jobs:
               return;
             }
 
-            const body = `✅ **Stable run** - ${failureRate}% failure rate (${failures}/${totalRuns})\\n\\n${envSection}`;
+            const body = `✅ **Stable run** - ${failureRate}% failure rate (${failures}/${totalRuns})\n\n**Timestamp:** ${timestamp}\n\n${envSection}`;
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
