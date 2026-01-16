@@ -10,7 +10,7 @@ permissions: read-all
 
 jobs:
   summarize-a11y:
-    if: !github.event.pull_request.head.repo.fork && contains(github.event.pull_request.labels.*.name, 'run-adapters')
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false && contains(github.event.pull_request.labels.*.name, 'run-adapters')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -95,7 +95,7 @@ jobs:
           path: reports/a11y-results.json
 
   summarize-perf:
-    if: !github.event.pull_request.head.repo.fork && contains(github.event.pull_request.labels.*.name, 'run-adapters')
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false && contains(github.event.pull_request.labels.*.name, 'run-adapters')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -180,7 +180,7 @@ jobs:
           fi
 
   summarize-lh:
-    if: !github.event.pull_request.head.repo.fork && contains(github.event.pull_request.labels.*.name, 'run-adapters')
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false && contains(github.event.pull_request.labels.*.name, 'run-adapters')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
