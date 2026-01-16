@@ -6,7 +6,6 @@ on:
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
-    tags: ['v*']
   pull_request:
     branches: [ main ]
     paths-ignore:
