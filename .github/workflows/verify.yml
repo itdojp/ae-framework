@@ -2,7 +2,6 @@ name: Verify Traceability
 on:
   push:
     branches: [main]
-    tags: ['v*'] # Verify traceability on releases
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
@@ -11,6 +10,7 @@ on:
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
+  workflow_call:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
