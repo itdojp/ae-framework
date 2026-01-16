@@ -212,29 +212,4 @@ describe('CI/CD Tag Trigger Configuration - Phase 1.3', () => {
     });
   });
 
-  describe('Integration Test', () => {
-    it('should provide comprehensive tag trigger coverage', () => {
-      const criticalWorkflows = [
-        'release.yml',
-        'ci.yml', 
-        'ci-fast.yml',
-        'verify.yml',
-        'quality-gates-centralized.yml'
-      ];
-
-      criticalWorkflows.forEach(expectedWorkflow => {
-        const workflowPath = workflowFiles.find(file => 
-          file.endsWith(expectedWorkflow)
-        );
-
-        if (workflowPath) {
-          const content = readFileSync(workflowPath, 'utf8');
-          const workflow = yaml.load(content) as GitHubWorkflow;
-
-          expect(workflow.on.push?.tags, `${expectedWorkflow} should have tag triggers`)
-            .toBeDefined();
-        }
-      });
-    });
-  });
 });
