@@ -72,7 +72,6 @@
 - testing-ddd-scripts.yml
 - verify-lite.yml
 - verify.yml
-- webapi-sample-ci.yml
 - workflow-lint.yml
 
 ### release (1)

@@ -48,11 +48,12 @@
 - spec-check.yml
 - spec-generate-model.yml
 
-### workflow_dispatch (4)
+### workflow_dispatch (5)
 - branch-protection-apply.yml
 - minimal-pipeline.yml
 - model-checking-manual.yml
 - mutation-quick.yml
+- webapi-sample-ci.yml
 
 ### pull_request, push, schedule, workflow_dispatch (3)
 - ci-extended.yml
@@ -76,9 +77,6 @@
 
 ### push, schedule, workflow_dispatch (1)
 - ci.yml
-
-### push, workflow_dispatch (1)
-- webapi-sample-ci.yml
 
 ### workflow_call (1)
 - ci-core.yml
