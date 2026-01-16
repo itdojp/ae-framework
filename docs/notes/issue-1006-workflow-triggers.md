@@ -50,9 +50,8 @@
 - verify.yml
 - workflow-lint.yml
 
-### push (24)
+### push (23)
 - ae-ci.yml
-- cedar-quality-gates.yml
 - ci-extended.yml
 - ci-fast.yml
 - ci.yml

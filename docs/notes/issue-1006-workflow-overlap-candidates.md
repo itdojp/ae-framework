@@ -71,7 +71,7 @@
 #### Trigger mapping (security/compliance group)
 - security.yml: pull_request (branches: main; paths-ignore: docs/**, **/*.md; jobs gated by label "run-security") + push (branches: main, develop; paths-ignore: docs/**, **/*.md; jobs run unconditionally) + schedule (cron: 20 5 * * 1 UTC) + workflow_dispatch
 - sbom-generation.yml: pull_request (branches: main; paths: package.json, pnpm-lock.yaml, packages/**, apps/**, src/**; job gated by label "run-security") + push (branches: main, develop; paths-ignore: docs/**, **/*.md; job runs unconditionally) + schedule (cron: 40 5 * * 1 UTC) + workflow_dispatch (input: include_vulnerabilities)
-- cedar-quality-gates.yml: pull_request (job gated by labels "run-security" or "run-cedar"; enforce with "enforce-security") + push (branch: main; tags: v*) + workflow_dispatch (note: job is effectively skipped on push/dispatch because it depends on PR labels)
+- cedar-quality-gates.yml: pull_request (paths-ignore: docs/**, **/*.md; job gated by labels "run-security" or "run-cedar"; enforce with "enforce-security") + workflow_dispatch (note: pushトリガーは削除済み)
 
 ### Misc utilities
 - workflow-lint.yml / branch-protection-apply.yml / auto-labels.yml / pr-summary-comment.yml
