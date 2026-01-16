@@ -39,10 +39,7 @@ describe('CI/CD Tag Trigger Configuration - Phase 1.3', () => {
       const allowedTagWorkflows = new Set([
         'ae-ci',
         'ci',
-        'formal-verify',
         'hermetic-ci',
-        'pr-verify',
-        'quality-gates-centralized',
         'release',
         'verify'
       ]);

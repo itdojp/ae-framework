@@ -20,9 +20,8 @@
 - verify.yml
 - workflow-lint.yml
 
-### pull_request, push, workflow_dispatch (5)
+### pull_request, push, workflow_dispatch (4)
 - ae-ci.yml
-- formal-verify.yml
 - hermetic-ci.yml
 - podman-smoke.yml
 - verify-lite.yml
@@ -40,10 +39,11 @@
 - spec-validation.yml
 - quality-gates-centralized.yml
 
-### pull_request, workflow_dispatch (5)
+### pull_request, workflow_dispatch (6)
 - cedar-quality-gates.yml
 - copilot-review-gate.yml
 - formal-aggregate.yml
+- formal-verify.yml
 - spec-check.yml
 - spec-generate-model.yml
 

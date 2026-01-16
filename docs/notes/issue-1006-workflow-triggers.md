@@ -58,7 +58,6 @@
 - codegen-drift-check.yml
 - coverage-check.yml
 - fail-fast-spec-validation.yml
-- formal-verify.yml
 - hermetic-ci.yml
 - lean-proof.yml
 - parallel-test-execution.yml
