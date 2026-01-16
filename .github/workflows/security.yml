@@ -33,9 +33,11 @@ jobs:
         with:
           script: |
             const isPR = context.eventName === 'pull_request';
+            const isFork = isPR && context.payload.pull_request?.head?.repo?.fork;
             const labels = (context.payload.pull_request?.labels || []).map(l=>l.name);
-            const runSecurity = !isPR || labels.includes('run-security');
+            const runSecurity = !isPR || (!isFork && labels.includes('run-security'));
             core.setOutput('run_security', String(runSecurity));
+            core.setOutput('is_fork', String(Boolean(isFork)));
   security-scan:
     needs: gate
     if: ${{ needs.gate.outputs.run_security == 'true' }}
