@@ -24,7 +24,7 @@
 #### Trigger mapping (spec/artifact validation group)
 - spec-check.yml: pull_request (paths: specs/formal/**, scripts/formal/verify-tla.mjs, package.json, .github/workflows/spec-check.yml) + workflow_dispatch
 - spec-validation.yml: pull_request (paths: spec/**, .ae/**, artifacts/**, schema/**, docs/schemas/**, specs/formal/**, .github/workflows/spec-validation.yml, .github/workflows/validate-artifacts-ajv.yml) + push (main, develop; same paths) + workflow_call
-- fail-fast-spec-validation.yml: pull_request (paths: spec/**, .ae/**) + push (main; no path filter) + workflow_call
+- fail-fast-spec-validation.yml: pull_request (paths: spec/**, .ae/**) + push (main; paths: spec/**, .ae/**, artifacts/**, schema/**, specs/formal/**, docs/schemas/**, packages/spec-compiler/**, src/cli/**, package.json, pnpm-lock.yaml, .github/workflows/fail-fast-spec-validation.yml) + workflow_call
 - validate-artifacts-ajv.yml: workflow_call (invoked from spec-validation on PRs) + workflow_dispatch
 - spec-generate-model.yml: pull_request (paths: specs/**, templates/**, scripts/**, tests/**, artifacts/**, .github/workflows/spec-generate-model.yml) + workflow_dispatch
 - codegen-drift-check.yml: pull_request (all PRs to main; types: opened, synchronize, reopened, labeled; paths-ignore: docs/**, **/*.md; execution gated by label "run-drift") + push (main; paths: spec/**/*.md, .ae/ae-ir.json, src/codegen/**, templates/**, .github/workflows/codegen-drift-check.yml) + workflow_call
@@ -71,7 +71,7 @@
 #### Trigger mapping (security/compliance group)
 - security.yml: pull_request (branches: main; paths-ignore: docs/**, **/*.md; jobs gated by label "run-security") + push (branches: main, develop; paths-ignore: docs/**, **/*.md; jobs run unconditionally) + schedule (cron: 20 5 * * 1 UTC) + workflow_dispatch
 - sbom-generation.yml: pull_request (branches: main; paths: package.json, pnpm-lock.yaml, packages/**, apps/**, src/**; job gated by label "run-security") + push (branches: main, develop; paths-ignore: docs/**, **/*.md; job runs unconditionally) + schedule (cron: 40 5 * * 1 UTC) + workflow_dispatch (input: include_vulnerabilities)
-- cedar-quality-gates.yml: pull_request (job gated by labels "run-security" or "run-cedar"; enforce with "enforce-security") + push (branch: main; tags: v*) + workflow_dispatch (note: job is effectively skipped on push/dispatch because it depends on PR labels)
+- cedar-quality-gates.yml: pull_request (paths-ignore: docs/**, **/*.md; job gated by labels "run-security" or "run-cedar"; enforce with "enforce-security") + workflow_dispatch (note: pushトリガーは削除済み)
 
 ### Misc utilities
 - workflow-lint.yml / branch-protection-apply.yml / auto-labels.yml / pr-summary-comment.yml
