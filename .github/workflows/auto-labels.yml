@@ -10,6 +10,7 @@ permissions:
   pull-requests: write
 jobs:
   label:
+    if: ${{ !github.event.pull_request.head.repo.fork }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v7
