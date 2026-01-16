@@ -11,6 +11,8 @@ on:
       - 'scripts/**'
       - 'types/**'
   push:
+    branches:
+      - main
     paths:
       - 'src/**'
       - 'packages/**'

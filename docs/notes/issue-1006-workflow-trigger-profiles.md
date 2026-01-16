@@ -35,12 +35,10 @@
 - nightly-monitoring.yml
 - nightly.yml
 
-### pull_request, push, workflow_call (3)
+### pull_request, push, workflow_call (4)
 - codegen-drift-check.yml
 - fail-fast-spec-validation.yml
 - spec-validation.yml
-
-### pull_request, workflow_call (1)
 - quality-gates-centralized.yml
 
 ### pull_request, workflow_dispatch (5)
