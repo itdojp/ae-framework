@@ -3,11 +3,6 @@ on:
   schedule:
     - cron: '0 2 * * 0'  # 毎週日曜日 2:00 UTC
   workflow_dispatch:      # 手動実行
-  push:
-    tags: ['v*']          # リリースタグ時
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true

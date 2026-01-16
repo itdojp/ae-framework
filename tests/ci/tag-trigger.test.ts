@@ -37,7 +37,6 @@ describe('CI/CD Tag Trigger Configuration - Phase 1.3', () => {
   describe('Tag Trigger Consistency', () => {
     it('should limit tag triggers to approved workflows', () => {
       const allowedTagWorkflows = new Set([
-        'ci',
         'release',
         'verify'
       ]);
