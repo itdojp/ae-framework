@@ -388,6 +388,42 @@ jobs:
               
               console.log(`Created issue #${issue.data.number}`);
             }
+
+      - name: Comment on existing flake issue when stable
+        if: steps.flake-check.outputs.flaky == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const failureRate = '${{ env.FAILURE_RATE }}';
+            const totalRuns = '${{ env.TOTAL_RUNS }}';
+            const failures = '${{ env.FAILS }}';
+            const timestamp = new Date().toISOString();
+            const envSection = `### 🧪 Environment\n- Node: ${process.env.NODE_VERSION || 'unknown'}\n- pnpm: ${process.env.PNPM_VERSION || 'unknown'}\n- Vitest: ${process.env.VITEST_VERSION || 'unknown'}\n- Run: ${process.env.RUN_URL || 'unknown'}\n`;
+
+            const existingIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'flaky-test',
+              state: 'open'
+            });
+
+            const targetIssue = existingIssues.data.find(issue =>
+              issue.title.includes('Integration Tests') &&
+              issue.title.includes('Flaky Test Detected')
+            );
+
+            if (!targetIssue) {
+              console.log('No open flaky-test issue found for Integration Tests.');
+              return;
+            }
+
+            const body = `✅ **Stable run** - ${failureRate}% failure rate (${failures}/${totalRuns})\n\n**Timestamp:** ${timestamp}\n\n${envSection}`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: targetIssue.number,
+              body
+            });
       
       - name: Report final status
         run: |
