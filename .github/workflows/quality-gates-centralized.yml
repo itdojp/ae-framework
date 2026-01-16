@@ -11,7 +11,8 @@ on:
       - 'scripts/**'
       - 'types/**'
   push:
-    tags: ['v*']
+    branches:
+      - main
     paths:
       - 'src/**'
       - 'packages/**'
