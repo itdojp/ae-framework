@@ -45,8 +45,7 @@ describe('CI/CD Tag Trigger Configuration - Phase 1.3', () => {
         'pr-verify',
         'quality-gates-centralized',
         'release',
-        'verify',
-        'verify-lite'
+        'verify'
       ]);
 
       const workflowsWithTags: string[] = [];
