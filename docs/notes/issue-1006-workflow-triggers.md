@@ -7,7 +7,7 @@
 ## Trigger counts
 - issue_comment: 1
 - pull_request: 30
-- push: 23
+- push: 22
 - release: 1
 - schedule: 10
 - workflow_call: 7
@@ -50,11 +50,10 @@
 - verify.yml
 - workflow-lint.yml
 
-### push (23)
+### push (22)
 - ae-ci.yml
 - ci-extended.yml
 - ci-fast.yml
-- ci.yml
 - codegen-drift-check.yml
 - coverage-check.yml
 - fail-fast-spec-validation.yml

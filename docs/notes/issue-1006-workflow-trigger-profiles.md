@@ -26,7 +26,8 @@
 - podman-smoke.yml
 - verify-lite.yml
 
-### schedule, workflow_dispatch (5)
+### schedule, workflow_dispatch (6)
+- ci.yml
 - docker-tests.yml
 - flake-detect.yml
 - flake-maintenance.yml
@@ -73,9 +74,6 @@
 
 ### release, workflow_dispatch (1)
 - release-quality-artifacts.yml
-
-### push, schedule, workflow_dispatch (1)
-- ci.yml
 
 ### workflow_call (1)
 - ci-core.yml
