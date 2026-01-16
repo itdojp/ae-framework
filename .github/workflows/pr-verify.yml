@@ -6,8 +6,6 @@ on:
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
-  push:
-    tags: ['v*']
 
 concurrency:
   group: pr-verify-${{ github.ref }}

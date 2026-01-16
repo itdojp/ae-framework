@@ -12,11 +12,10 @@
 - phase6-validation.yml
 - pr-summary-comment.yml
 
-### pull_request, push (7)
+### pull_request, push (6)
 - coverage-check.yml
 - lean-proof.yml
 - parallel-test-execution.yml
-- pr-verify.yml
 - testing-ddd-scripts.yml
 - verify.yml
 - workflow-lint.yml
