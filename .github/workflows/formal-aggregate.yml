@@ -12,7 +12,7 @@ permissions: read-all
 
 jobs:
   aggregate:
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && contains(github.event.pull_request.labels.*.name, 'run-formal')) }}
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && contains(github.event.pull_request.labels.*.name, 'run-formal'))
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
