@@ -64,7 +64,6 @@
 - parallel-test-execution.yml
 - podman-smoke.yml
 - pr-verify.yml
-- quality-gates-centralized.yml
 - release.yml
 - sbom-generation.yml
 - security.yml
