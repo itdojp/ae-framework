@@ -14,6 +14,10 @@ on:
       - 'schema/**'
       - 'docs/schemas/**'
       - 'specs/formal/**'
+      - 'packages/spec-compiler/**'
+      - 'src/cli/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
       - '.github/workflows/fail-fast-spec-validation.yml'
   workflow_call:
     # Allow this workflow to be called by other workflows

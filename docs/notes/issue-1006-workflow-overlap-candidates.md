@@ -24,7 +24,7 @@
 #### Trigger mapping (spec/artifact validation group)
 - spec-check.yml: pull_request (paths: specs/formal/**, scripts/formal/verify-tla.mjs, package.json, .github/workflows/spec-check.yml) + workflow_dispatch
 - spec-validation.yml: pull_request (paths: spec/**, .ae/**, artifacts/**, schema/**, docs/schemas/**, specs/formal/**, .github/workflows/spec-validation.yml, .github/workflows/validate-artifacts-ajv.yml) + push (main, develop; same paths) + workflow_call
-- fail-fast-spec-validation.yml: pull_request (paths: spec/**, .ae/**) + push (main; spec/ae/artifacts/schema/specs/formal/docs/schemas + workflow file) + workflow_call
+- fail-fast-spec-validation.yml: pull_request (paths: spec/**, .ae/**) + push (main; paths: spec/**, .ae/**, artifacts/**, schema/**, specs/formal/**, docs/schemas/**, packages/spec-compiler/**, src/cli/**, package.json, pnpm-lock.yaml, .github/workflows/fail-fast-spec-validation.yml) + workflow_call
 - validate-artifacts-ajv.yml: workflow_call (invoked from spec-validation on PRs) + workflow_dispatch
 - spec-generate-model.yml: pull_request (paths: specs/**, templates/**, scripts/**, tests/**, artifacts/**, .github/workflows/spec-generate-model.yml) + workflow_dispatch
 - codegen-drift-check.yml: pull_request (all PRs to main; types: opened, synchronize, reopened, labeled; paths-ignore: docs/**, **/*.md; execution gated by label "run-drift") + push (main; paths: spec/**/*.md, .ae/ae-ir.json, src/codegen/**, templates/**, .github/workflows/codegen-drift-check.yml) + workflow_call
