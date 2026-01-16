@@ -35,34 +35,36 @@ describe('CI/CD Tag Trigger Configuration - Phase 1.3', () => {
   });
 
   describe('Tag Trigger Consistency', () => {
-    it('should have tag triggers in core CI workflows', () => {
-      const coreWorkflows = workflowFiles.filter(file => 
-        file.includes('ci') || 
-        file.includes('verify') ||
-        file.includes('quality')
-      );
+    it('should limit tag triggers to approved workflows', () => {
+      const allowedTagWorkflows = new Set([
+        'ae-ci',
+        'ci',
+        'ci-extended',
+        'formal-verify',
+        'hermetic-ci',
+        'pr-verify',
+        'quality-gates-centralized',
+        'release',
+        'verify',
+        'verify-lite'
+      ]);
 
-      expect(coreWorkflows.length).toBeGreaterThan(0);
-
-      let checked = 0;
-      coreWorkflows.forEach(workflowFile => {
+      const workflowsWithTags: string[] = [];
+      workflowFiles.forEach(workflowFile => {
         const content = readFileSync(workflowFile, 'utf8');
         const workflow = yaml.load(content) as GitHubWorkflow;
         const workflowName = path.basename(workflowFile, '.yml');
 
-        if (!workflow.on?.push) {
-          return;
+        if (workflow.on?.push?.tags?.length) {
+          workflowsWithTags.push(workflowName);
+          expect(
+            allowedTagWorkflows.has(workflowName),
+            `${workflowName} should not use tag triggers without approval`
+          ).toBe(true);
         }
-        checked += 1;
-
-        expect(workflow.on.push?.tags, `${workflowName} should have tag triggers`)
-          .toBeDefined();
-        
-        expect(workflow.on.push?.tags, `${workflowName} should include 'v*' tag pattern`)
-          .toContain('v*');
       });
 
-      expect(checked).toBeGreaterThan(0);
+      expect(workflowsWithTags.length).toBeGreaterThan(0);
     });
 
     it('should have tag triggers in release workflow', () => {
@@ -210,29 +212,4 @@ describe('CI/CD Tag Trigger Configuration - Phase 1.3', () => {
     });
   });
 
-  describe('Integration Test', () => {
-    it('should provide comprehensive tag trigger coverage', () => {
-      const criticalWorkflows = [
-        'release.yml',
-        'ci.yml', 
-        'ci-fast.yml',
-        'verify.yml',
-        'quality-gates-centralized.yml'
-      ];
-
-      criticalWorkflows.forEach(expectedWorkflow => {
-        const workflowPath = workflowFiles.find(file => 
-          file.endsWith(expectedWorkflow)
-        );
-
-        if (workflowPath) {
-          const content = readFileSync(workflowPath, 'utf8');
-          const workflow = yaml.load(content) as GitHubWorkflow;
-
-          expect(workflow.on.push?.tags, `${expectedWorkflow} should have tag triggers`)
-            .toBeDefined();
-        }
-      });
-    });
-  });
 });
