@@ -82,6 +82,14 @@ jobs:
                 body: decoratedBody
               });
             };
+            const safeUpsertComment = async (body, contextLabel) => {
+              try {
+                await upsertComment(body);
+              } catch (error) {
+                const message = error && error.message ? error.message : String(error);
+                core.warning(`Failed to post PR comment (${contextLabel}): ${message}`);
+              }
+            };
 
             const query = `query($owner:String!, $repo:String!, $number:Int!) {
               repository(owner:$owner, name:$repo) {
@@ -130,7 +138,7 @@ jobs:
                 `Expected reviewers: ${actors.join(', ')}`,
                 'Action: request Copilot review and re-run the gate.'
               ].join('\n');
-              await upsertComment(body);
+              await safeUpsertComment(body, 'missing-review');
               core.setFailed(`No Copilot review found (expected reviewers: ${actors.join(', ')})`);
               return;
             }
@@ -169,7 +177,7 @@ jobs:
                 '',
                 'Action: resolve the Copilot review threads and re-run the gate.'
               ].join('\n');
-              await upsertComment(body);
+              await safeUpsertComment(body, 'unresolved-threads');
               core.setFailed(`Unresolved Copilot review threads: ${unresolved.length}. Resolve conversations before merge.`);
               return;
             }
