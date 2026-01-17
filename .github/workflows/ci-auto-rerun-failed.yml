@@ -33,7 +33,13 @@ jobs:
             const repo = context.repo.repo;
             const runId = context.payload.workflow_run.id;
             const workflowName = context.payload.workflow_run.name;
-            await github.rest.actions.reRunWorkflowFailedJobs({ owner, repo, run_id: runId });
+            try {
+              await github.rest.actions.reRunWorkflowFailedJobs({ owner, repo, run_id: runId });
+            } catch (error) {
+              const message = error && error.message ? error.message : String(error);
+              core.setFailed(`Failed to rerun failed jobs for workflow run ${runId}: ${message}`);
+              return;
+            }
 
             const pr = (context.payload.workflow_run.pull_requests || [])[0];
             if (!pr || !pr.number) {
@@ -47,10 +53,14 @@ jobs:
               `Triggered a one-time rerun of failed jobs for run ${runId}.`,
               'If it fails again, please investigate the root cause.'
             ].join('\n');
-
-            await github.rest.issues.createComment({
-              owner,
-              repo,
-              issue_number: pr.number,
-              body
-            });
+            try {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: pr.number,
+                body
+              });
+            } catch (error) {
+              const message = error && error.message ? error.message : String(error);
+              core.warning(`Failed to post rerun comment to PR #${pr.number}: ${message}`);
+            }
