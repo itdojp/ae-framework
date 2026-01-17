@@ -1,0 +1,98 @@
+name: Auto Update Branch (PR)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to update (optional)'
+        required: false
+        type: number
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  update-branch:
+    if: >-
+      github.event.pull_request.head.repo.fork == false ||
+      github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update branch if behind
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const inputNumber = core.getInput('pr_number');
+            const parsedInput = inputNumber ? Number(inputNumber) : null;
+            const prNumber = context.payload.pull_request?.number ?? parsedInput;
+            if (!prNumber || Number.isNaN(prNumber)) {
+              core.notice('No PR number provided; skipping.');
+              return;
+            }
+
+            const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+            const maxAttempts = 3;
+            const waitMs = 10000;
+            let mergeableState = 'unknown';
+            let pr = null;
+
+            for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+              const { data } = await github.rest.pulls.get({
+                owner,
+                repo,
+                pull_number: prNumber
+              });
+              pr = data;
+              if (pr.draft) {
+                core.notice('PR is draft; skipping update.');
+                return;
+              }
+              mergeableState = pr.mergeable_state || 'unknown';
+              if (mergeableState !== 'unknown') {
+                break;
+              }
+              if (attempt < maxAttempts) {
+                await sleep(waitMs);
+              }
+            }
+
+            if (mergeableState !== 'behind') {
+              core.notice(`PR #${prNumber} mergeable_state=${mergeableState}; update not required.`);
+              return;
+            }
+
+            try {
+              await github.rest.pulls.updateBranch({
+                owner,
+                repo,
+                pull_number: prNumber
+              });
+            } catch (error) {
+              const message = error && error.message ? error.message : String(error);
+              core.setFailed(`Failed to update branch for PR #${prNumber}: ${message}`);
+              return;
+            }
+
+            const body = [
+              '### Auto Update Branch',
+              `PR #${prNumber} was behind base; triggered branch update.`,
+              'If conflicts remain, manual resolution is required.'
+            ].join('\n');
+
+            try {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: prNumber,
+                body
+              });
+            } catch (error) {
+              const message = error && error.message ? error.message : String(error);
+              core.warning(`Failed to post update comment on PR #${prNumber}: ${message}`);
+            }
