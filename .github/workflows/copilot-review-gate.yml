@@ -13,6 +13,7 @@ on:
 permissions:
   contents: read
   pull-requests: read
+  issues: write
 
 jobs:
   gate:
@@ -22,6 +23,8 @@ jobs:
         uses: actions/github-script@v7
         env:
           COPILOT_ACTORS: copilot-pull-request-reviewer,github-copilot,github-copilot[bot],copilot,copilot[bot]
+          COPILOT_REVIEW_WAIT_MINUTES: '5'
+          COPILOT_REVIEW_MAX_ATTEMPTS: '3'
         with:
           script: |
             const owner = context.repo.owner;
@@ -45,6 +48,38 @@ jobs:
               .split(',')
               .map(s => s.trim())
               .filter(Boolean);
+            const waitMinutesRaw = Number(process.env.COPILOT_REVIEW_WAIT_MINUTES || '5');
+            const maxAttemptsRaw = Number(process.env.COPILOT_REVIEW_MAX_ATTEMPTS || '3');
+            const waitMinutes = Number.isFinite(waitMinutesRaw) && waitMinutesRaw >= 0 ? waitMinutesRaw : 5;
+            const maxAttempts = Number.isFinite(maxAttemptsRaw) && maxAttemptsRaw > 0 ? maxAttemptsRaw : 3;
+            const waitMs = waitMinutes * 60 * 1000;
+
+            const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+            const marker = '<!-- copilot-review-gate -->';
+            const upsertComment = async (body) => {
+              const decoratedBody = `${body}\n\n${marker}`;
+              const { data: existing } = await github.rest.issues.listComments({
+                owner,
+                repo,
+                issue_number: number
+              });
+              const previous = existing.find((c) => c.user?.login === 'github-actions[bot]' && c.body?.includes(marker));
+              if (previous) {
+                await github.rest.issues.updateComment({
+                  owner,
+                  repo,
+                  comment_id: previous.id,
+                  body: decoratedBody
+                });
+                return;
+              }
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: number,
+                body: decoratedBody
+              });
+            };
 
             const query = `query($owner:String!, $repo:String!, $number:Int!) {
               repository(owner:$owner, name:$repo) {
@@ -62,16 +97,33 @@ jobs:
               }
             }`;
 
-            const data = await github.graphql(query, { owner, repo, number });
-            const pr = data.repository.pullRequest;
-            if (!pr) {
-              core.setFailed('Cannot load PR via GraphQL');
-              return;
+            let pr = null;
+            let hasCopilotReview = false;
+            for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+              const data = await github.graphql(query, { owner, repo, number });
+              pr = data.repository.pullRequest;
+              if (!pr) {
+                core.setFailed('Cannot load PR via GraphQL');
+                return;
+              }
+              const reviewAuthors = pr.reviews.nodes.map(r => r.author && r.author.login).filter(Boolean);
+              hasCopilotReview = reviewAuthors.some(login => actors.includes(login));
+              if (hasCopilotReview) {
+                break;
+              }
+              if (attempt < maxAttempts && waitMs > 0) {
+                core.notice(`No Copilot review found. Waiting ${waitMinutes} minutes before retry ${attempt + 1}/${maxAttempts}.`);
+                await sleep(waitMs);
+              }
             }
-
-            const reviewAuthors = pr.reviews.nodes.map(r => r.author && r.author.login).filter(Boolean);
-            const hasCopilotReview = reviewAuthors.some(login => actors.includes(login));
             if (!hasCopilotReview) {
+              const body = [
+                '### Copilot Review Gate',
+                `No Copilot review found after ${maxAttempts} attempt(s) with ${waitMinutes} minute wait.`,
+                `Expected reviewers: ${actors.join(', ')}`,
+                'Action: request Copilot review and re-run the gate.'
+              ].join('\n');
+              await upsertComment(body);
               core.setFailed(`No Copilot review found (expected reviewers: ${actors.join(', ')})`);
               return;
             }
@@ -81,6 +133,21 @@ jobs:
             );
             const unresolved = copilotThreads.filter(t => !t.isResolved);
             if (unresolved.length > 0) {
+              const unresolvedLines = unresolved.slice(0, 5).map((thread, index) => {
+                const firstComment = thread.comments.nodes.find(c => c.author && actors.includes(c.author.login)) || thread.comments.nodes[0];
+                const snippet = (firstComment?.bodyText || '').replace(/\s+/g, ' ').slice(0, 140);
+                return `- Thread ${index + 1}: ${snippet || '(no comment body)'}`;
+              });
+              const body = [
+                '### Copilot Review Gate',
+                `Unresolved Copilot review threads: ${unresolved.length}.`,
+                '',
+                'Sample unresolved threads:',
+                ...unresolvedLines,
+                '',
+                'Action: resolve the Copilot review threads and re-run the gate.'
+              ].join('\n');
+              await upsertComment(body);
               core.setFailed(`Unresolved Copilot review threads: ${unresolved.length}. Resolve conversations before merge.`);
               return;
             }
