@@ -111,15 +111,20 @@ jobs:
               if (hasCopilotReview) {
                 break;
               }
-              if (attempt < maxAttempts && waitMs > 0) {
-                core.notice(`No Copilot review found. Waiting ${waitMinutes} minutes before retry ${attempt + 1}/${maxAttempts}.`);
-                await sleep(waitMs);
+              if (attempt < maxAttempts) {
+                const attemptLabel = `attempt ${attempt + 1} of ${maxAttempts}`;
+                if (waitMinutes > 0) {
+                  core.notice(`No Copilot review found. Retrying in ${waitMinutes} minute${waitMinutes === 1 ? '' : 's'} (${attemptLabel}).`);
+                  await sleep(waitMs);
+                } else {
+                  core.notice(`No Copilot review found. Retrying shortly (${attemptLabel}).`);
+                }
               }
             }
             if (!hasCopilotReview) {
               const body = [
                 '### Copilot Review Gate',
-                `No Copilot review found after ${maxAttempts} attempt(s) with ${waitMinutes} minute wait.`,
+                `No Copilot review found after ${maxAttempts} attempt${maxAttempts === 1 ? '' : 's'} with ${waitMinutes} minute${waitMinutes === 1 ? '' : 's'} wait.`,
                 `Expected reviewers: ${actors.join(', ')}`,
                 'Action: request Copilot review and re-run the gate.'
               ].join('\n');
@@ -128,6 +133,21 @@ jobs:
               return;
             }
 
+            const truncateUnicodeSafe = (text, maxChars) => {
+              const normalized = (text || '').replace(/\s+/g, ' ').trim();
+              const chars = Array.from(normalized);
+              if (maxChars <= 0) {
+                return '';
+              }
+              if (chars.length <= maxChars) {
+                return normalized;
+              }
+              if (maxChars <= 3) {
+                return chars.slice(0, maxChars).join('');
+              }
+              return `${chars.slice(0, maxChars - 3).join('')}...`;
+            };
+
             const copilotThreads = pr.reviewThreads.nodes.filter(t =>
               t.comments.nodes.some(c => c.author && actors.includes(c.author.login))
             );
@@ -135,7 +155,7 @@ jobs:
             if (unresolved.length > 0) {
               const unresolvedLines = unresolved.slice(0, 5).map((thread, index) => {
                 const firstComment = thread.comments.nodes.find(c => c.author && actors.includes(c.author.login)) || thread.comments.nodes[0];
-                const snippet = (firstComment?.bodyText || '').replace(/\s+/g, ' ').slice(0, 140);
+                const snippet = truncateUnicodeSafe(firstComment?.bodyText || '', 140);
                 return `- Thread ${index + 1}: ${snippet || '(no comment body)'}`;
               });
               const body = [
