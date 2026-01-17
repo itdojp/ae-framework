@@ -3,6 +3,10 @@ name: Copilot Review Gate
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+  pull_request_review:
+    types: [submitted]
+  pull_request_review_thread:
+    types: [resolved]
   workflow_dispatch:
     inputs:
       pr_number:
