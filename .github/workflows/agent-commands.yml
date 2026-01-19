@@ -69,6 +69,28 @@ jobs:
               }
               return null;
             };
+            const dispatchWithResult = async (item, ref) => {
+              const result = {
+                name: item.name,
+                workflow_id: item.workflow_id,
+                ok: true,
+                error: null,
+                url: null
+              };
+              try {
+                await dispatchWorkflow(item.workflow_id, ref, item.inputs);
+              } catch (error) {
+                result.ok = false;
+                result.error = error?.message ?? String(error);
+                return result;
+              }
+              try {
+                result.url = await findLatestDispatchRun(item.workflow_id, ref);
+              } catch (error) {
+                result.url = null;
+              }
+              return result;
+            };
 
             // Supported commands:
             // /run-qa, /run-security, /non-blocking, /ready, /pr-digest, /pr-detailed
@@ -174,25 +196,35 @@ jobs:
                 if (!isTrusted) return reply(`Permission denied for /review (association: ${association}).`);
                 const pr = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
                 const ref = pr.data.head.ref;
+                const strict = arg === 'strict';
                 const dispatched = [];
                 const labels = [];
-                if (['strict', 'enforce-coverage'].includes(arg)) {
+                if (strict) {
                   labels.push('enforce-coverage');
-                  dispatched.push({ name: 'coverage-check', workflow_id: 'coverage-check.yml' });
+                  dispatched.push({
+                    name: 'coverage-check',
+                    workflow_id: 'coverage-check.yml',
+                    inputs: { strict: 'true' }
+                  });
                 }
                 dispatched.push({ name: 'Verify Lite', workflow_id: 'verify-lite.yml' });
                 dispatched.push({ name: 'CI Fast', workflow_id: 'ci-fast.yml' });
                 if (labels.length > 0) await addLabels(labels);
+                const results = [];
                 for (const item of dispatched) {
-                  await dispatchWorkflow(item.workflow_id, ref);
+                  results.push(await dispatchWithResult(item, ref));
                 }
-                const links = [];
-                for (const item of dispatched) {
-                  const url = await findLatestDispatchRun(item.workflow_id, ref);
-                  links.push(`- ${item.name}: ${url || 'run not found yet'}`);
-                }
+                const links = results.map((item) => {
+                  if (!item.ok) return `- ${item.name}: dispatch failed (${item.error})`;
+                  return `- ${item.name}: ${item.url || 'latest run not found yet'}`;
+                });
                 const labelLine = labels.length > 0 ? `Labels: ${labels.join(', ')}` : 'Labels: (none)';
-                return reply(['Dispatched /review workflows:', labelLine, ...links].join('\n'));
+                return reply([
+                  `Dispatched /review workflows${strict ? ' (strict)' : ''}:`,
+                  labelLine,
+                  ...links,
+                  'Note: run links show the latest workflow_dispatch on this ref and may be approximate.'
+                ].join('\n'));
               }
               case '/run-qa-dispatch': {
                 if (!context.payload.issue.pull_request) return reply('Not a PR');

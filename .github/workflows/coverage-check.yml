@@ -9,11 +9,18 @@ on:
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
+  workflow_dispatch:
+    inputs:
+      strict:
+        description: 'Force strict coverage enforcement'
+        required: false
+        type: boolean
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 permissions:
   contents: read
+  pull-requests: read
 jobs:
   gate:
     runs-on: ubuntu-latest
@@ -27,10 +34,15 @@ jobs:
           script: |
             const labels = (context.payload.pull_request?.labels || []).map(l=>l.name);
             let strict = labels.includes('enforce-coverage');
+            const strictInputRaw = context.payload.inputs?.strict;
+            const strictInput = typeof strictInputRaw === 'string'
+              ? strictInputRaw.toLowerCase() === 'true'
+              : Boolean(strictInputRaw);
             // Enforce on main if repo variable COVERAGE_ENFORCE_MAIN == '1'
             const onMainPush = context.eventName === 'push' && context.ref === 'refs/heads/main';
             const enforceMain = (process.env.COVERAGE_ENFORCE_MAIN || '0') === '1';
             if (onMainPush && enforceMain) strict = true;
+            if (context.eventName === 'workflow_dispatch' && strictInput) strict = true;
             core.setOutput('strict', String(strict));
         env:
           COVERAGE_ENFORCE_MAIN: ${{ vars.COVERAGE_ENFORCE_MAIN }}
