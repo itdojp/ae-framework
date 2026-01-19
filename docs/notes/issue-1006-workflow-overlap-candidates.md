@@ -87,6 +87,19 @@
 - Map each candidate group to its actual trigger (PR gate, label-gate, nightly, manual).
 - Identify 1-2 lowest-risk consolidation moves (docs-only or wiring reuse).
 
+## Trigger class map (draft)
+分類は上記のトリガー記載に基づく。required checks は `verify-lite`/`gate` を維持する前提。
+
+| Group | Trigger class | Notes (consolidation constraints) |
+| --- | --- | --- |
+| CI / verification core | PR gate + push + manual | required checks を含むため、統合時は `verify-lite`/`gate` を維持 |
+| Spec / artifact validation | PR gate + push + workflow_call + manual | spec-validation を主ゲートとして維持済み |
+| Formal verification | label-gate + manual + tag | `run-formal` ラベルで実行、手動/タグを分離維持 |
+| Flake / stability | schedule + manual + PR/push | スケジュールの重複を削減しやすい |
+| Release | tag + release + manual | リリースイベント連携の保持が前提 |
+| Security / compliance | label-gate + push + schedule + manual | PRゲート/夜間監査の線引きを明確化 |
+| Misc utilities | PR + manual | required checks 以外の補助系。統合はリスク低 |
+
 ## Phase 2 shortlist (low-risk consolidation)
 These are proposals to reduce overlap without changing required checks or safety gates. Execute after confirming triggers and required status checks.
 
@@ -99,6 +112,11 @@ These are proposals to reduce overlap without changing required checks or safety
 
 3) Agent command routing
    - ✅ Completed: `agent-commands.yml` が PR/Issue の slash command をジョブ分岐で処理する構成に統合済み。
+
+4) Flake / stability scheduling
+   - Proposed: `flake-detect.yml` と `flake-maintenance.yml` を単一ワークフローへ集約し、同一スケジュールで job を分割。
+   - Guardrails: required checks への影響なし（schedule/dispatch のみ）。manual 実行は input で job を選択。
+   - Acceptance: 既存の成果物/サマリー出力が維持されることを確認。
 
 ## Readiness checklist
 - Confirm which workflows are required by branch protection.
