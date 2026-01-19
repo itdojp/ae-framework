@@ -63,6 +63,14 @@ jobs:
         run: |
           if [ -f formal/summary.json ]; then npx ajv -s docs/schemas/formal-summary.schema.json -d formal/summary.json --strict=false; fi
         continue-on-error: ${{ github.ref != 'refs/heads/main' && needs.gate.outputs.strict != 'true' }}
+      - name: Validate flow fixtures
+        run: |
+          if [ -f schema/flow.schema.json ] && [ -f fixtures/flow/sample.flow.json ]; then
+            npx ajv -s schema/flow.schema.json -d fixtures/flow/sample.flow.json --strict=false;
+          else
+            printf "%s\n" "[ajv] flow schema or fixture not found; skipping"
+          fi
+        continue-on-error: ${{ github.ref != 'refs/heads/main' && needs.gate.outputs.strict != 'true' }}
       - name: Validate property summaries
         run: |
           if [ -f artifacts/properties/summary.json ]; then \
