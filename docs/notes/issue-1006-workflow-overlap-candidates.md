@@ -100,6 +100,11 @@ These are proposals to reduce overlap without changing required checks or safety
 3) Agent command routing
    - ✅ Completed: `agent-commands.yml` が PR/Issue の slash command をジョブ分岐で処理する構成に統合済み。
 
+4) Flake / stability scheduling
+   - Proposed: `flake-detect.yml` と `flake-maintenance.yml` を単一ワークフローへ集約し、同一スケジュールで job を分割。
+   - Guardrails: required checks への影響なし（schedule/dispatch のみ）。manual 実行は input で job を選択。
+   - Acceptance: 既存の成果物/サマリー出力が維持されることを確認。
+
 ## Readiness checklist
 - Confirm which workflows are required by branch protection.
 - Confirm whether any workflow is used by external automation or documentation.
