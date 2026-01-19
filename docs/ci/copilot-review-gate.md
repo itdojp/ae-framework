@@ -18,7 +18,7 @@
 - 通常のレビュー運用と同様に、Copilotにレビューを依頼（UIのCopilotレビュー機能）
 - 指摘に対応し、PR上の「Resolve conversation」でスレッドを解決
 - ワークフローが自動でグリーンになります
-- 手動実行: Actions の `Copilot Review Gate` を `workflow_dispatch` で起動し、`pr_number` を指定（main 以外の手動実行では必須）
+- 手動実行: Actions の `Copilot Review Gate` を `workflow_dispatch` で起動し、`pr_number` を指定（デフォルトブランチ以外の手動実行では必須）
 
 ### 補足: 既定のCopilotアクター
 - 既定で検出するアクター: `copilot-pull-request-reviewer`, `github-copilot`, `github-copilot[bot]`, `copilot`, `copilot[bot]`
