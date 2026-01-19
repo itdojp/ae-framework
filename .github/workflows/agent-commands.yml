@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: read
+  actions: write
   issues: write
   pull-requests: write
 
@@ -40,9 +41,60 @@ jobs:
             const reply = async (msg) => {
               await github.rest.issues.createComment({ owner, repo, issue_number, body: `<!-- AE-AGENTS-REPLY -->\n${msg}` });
             };
+            const association = context.payload.comment.author_association || '';
+            const isTrusted = ['MEMBER', 'OWNER', 'COLLABORATOR'].includes(association);
+            const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+            const dispatchWorkflow = async (workflow_id, ref, inputs = undefined) => {
+              await github.rest.actions.createWorkflowDispatch({
+                owner,
+                repo,
+                workflow_id,
+                ref,
+                inputs
+              });
+            };
+            const findLatestDispatchRun = async (workflow_id, ref) => {
+              for (let i = 0; i < 3; i += 1) {
+                const { data } = await github.rest.actions.listWorkflowRuns({
+                  owner,
+                  repo,
+                  workflow_id,
+                  event: 'workflow_dispatch',
+                  branch: ref,
+                  per_page: 1
+                });
+                const run = data.workflow_runs?.[0];
+                if (run?.html_url) return run.html_url;
+                await wait(5000);
+              }
+              return null;
+            };
+            const dispatchWithResult = async (item, ref) => {
+              const result = {
+                name: item.name,
+                workflow_id: item.workflow_id,
+                ok: true,
+                error: null,
+                url: null
+              };
+              try {
+                await dispatchWorkflow(item.workflow_id, ref, item.inputs);
+              } catch (error) {
+                result.ok = false;
+                result.error = error?.message ?? String(error);
+                return result;
+              }
+              try {
+                result.url = await findLatestDispatchRun(item.workflow_id, ref);
+              } catch (error) {
+                result.url = null;
+              }
+              return result;
+            };
 
             // Supported commands:
             // /run-qa, /run-security, /non-blocking, /ready, /pr-digest, /pr-detailed
+            // /review [strict]
             // /handoff A|B|C
             // Dispatchers (require workflow_dispatch on target):
             // /verify-lite, /run-qa-dispatch, /run-security-dispatch, /ci-fast-dispatch, /formal-verify-dispatch
@@ -138,6 +190,41 @@ jobs:
                 const ref = pr.data.head.ref;
                 await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'verify-lite.yml', ref });
                 return reply(`Dispatched verify-lite on ${ref}`);
+              }
+              case '/review': {
+                if (!context.payload.issue.pull_request) return reply('Not a PR');
+                if (!isTrusted) return reply(`Permission denied for /review (association: ${association}).`);
+                const pr = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
+                const ref = pr.data.head.ref;
+                const strict = arg === 'strict';
+                const dispatched = [];
+                const labels = [];
+                if (strict) {
+                  labels.push('enforce-coverage');
+                  dispatched.push({
+                    name: 'coverage-check',
+                    workflow_id: 'coverage-check.yml',
+                    inputs: { strict: 'true' }
+                  });
+                }
+                dispatched.push({ name: 'Verify Lite', workflow_id: 'verify-lite.yml' });
+                dispatched.push({ name: 'CI Fast', workflow_id: 'ci-fast.yml' });
+                if (labels.length > 0) await addLabels(labels);
+                const results = [];
+                for (const item of dispatched) {
+                  results.push(await dispatchWithResult(item, ref));
+                }
+                const links = results.map((item) => {
+                  if (!item.ok) return `- ${item.name}: dispatch failed (${item.error})`;
+                  return `- ${item.name}: ${item.url || 'latest run not found yet'}`;
+                });
+                const labelLine = labels.length > 0 ? `Labels: ${labels.join(', ')}` : 'Labels: (none)';
+                return reply([
+                  `Dispatched /review workflows${strict ? ' (strict)' : ''}:`,
+                  labelLine,
+                  ...links,
+                  'Note: run links show the latest workflow_dispatch on this ref and may be approximate.'
+                ].join('\n'));
               }
               case '/run-qa-dispatch': {
                 if (!context.payload.issue.pull_request) return reply('Not a PR');
