@@ -2,9 +2,8 @@ name: Verify Lite
 
 on:
   pull_request:
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
+    # NOTE: verify-lite is a required status check; keep the workflow running
+    # even for docs-only PRs so the status is reported and merge gates pass.
   push:
     branches: [main]
     paths-ignore:
