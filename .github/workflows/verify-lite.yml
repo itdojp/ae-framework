@@ -62,17 +62,11 @@ jobs:
           if [ "$docs_only" = "true" ]; then
             printf '%s\n' "Docs-only changes detected; verify-lite full pipeline skipped." >> "$GITHUB_STEP_SUMMARY"
           fi
-      - name: Prepare pnpm
+      - name: Setup Node + pnpm
         if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
-        uses: ./.github/actions/setup-pnpm
-      - name: Enable corepack
-        if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
-        run: corepack enable
-      - uses: actions/setup-node@v4
-        if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
+        uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '20'
-          cache: 'pnpm'
 
       - name: Install dependencies
         if: ${{ steps.docs-only.outputs.docs_only != 'true' }}

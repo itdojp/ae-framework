@@ -1,0 +1,27 @@
+name: "Setup Node + pnpm"
+description: "Sets up Node.js and pnpm with cache enabled"
+author: "ae-framework-maintainers"
+inputs:
+  node-version:
+    description: "Node.js version"
+    default: "20"
+    required: false
+  pnpm-version:
+    description: "pnpm version to activate"
+    default: "10.0.0"
+    required: false
+  cache-dependency-path:
+    description: "Path to lockfile for cache"
+    default: "pnpm-lock.yaml"
+    required: false
+runs:
+  using: "composite"
+  steps:
+    - uses: ./.github/actions/setup-pnpm
+      with:
+        version: ${{ inputs.pnpm-version }}
+    - uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: 'pnpm'
+        cache-dependency-path: ${{ inputs.cache-dependency-path }}
