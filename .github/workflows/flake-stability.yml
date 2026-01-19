@@ -19,13 +19,10 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-      - name: Prepare pnpm
-        uses: ./.github/actions/setup-pnpm
-      - uses: actions/setup-node@v4
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '20'
-          cache: 'pnpm'
-      - run: corepack enable
       - run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
       - name: Install bc for calculations
         run: sudo apt-get update && sudo apt-get install -y bc
@@ -451,13 +448,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Prepare pnpm
-        uses: ./.github/actions/setup-pnpm
-      - uses: actions/setup-node@v4
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '20'
-          cache: 'pnpm'
-      - run: corepack enable
       - run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
       - name: Install bc for calculations
