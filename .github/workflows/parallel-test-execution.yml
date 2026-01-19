@@ -49,18 +49,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Prepare pnpm
-        uses: ./.github/actions/setup-pnpm
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '20'
-          cache: 'pnpm'
       
-      - name: Enable corepack and install deps
+      - name: Install deps
         run: |
-          corepack enable
           pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
       - name: Create reports directory
@@ -105,18 +100,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Prepare pnpm
-        uses: ./.github/actions/setup-pnpm
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '20'
-          cache: 'pnpm'
       
-      - name: Enable corepack and install deps
+      - name: Install deps
         run: |
-          corepack enable
           pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
       - name: Create reports directory
