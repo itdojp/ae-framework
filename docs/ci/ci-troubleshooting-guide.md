@@ -21,6 +21,10 @@ Purpose: Provide a short, deterministic path to diagnose common CI failures.
 - Use stable profile for baseline (`docs/ci/stable-profile.md`)
 - Document the fix and add a follow-up issue if needed
 
+## 5) Automation notes
+- Failed job は `ci-auto-rerun-failed` が **1回だけ**自動再実行します（再実行ログを確認）。
+- `pr-auto-update-branch` が behind の PR を自動更新します。競合時は手動解決が必要です。
+
 ## References
 - `docs/ci/ci-baseline-checklist.md`
 - `docs/testing/test-categorization.md`
