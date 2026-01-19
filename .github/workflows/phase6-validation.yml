@@ -8,11 +8,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Prepare pnpm
-        uses: ./.github/actions/setup-pnpm
-      - uses: actions/setup-node@v4
-        with: { node-version: '20', cache: 'pnpm' }
-      - run: corepack enable
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with: { node-version: '20' }
       - run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
       - name: Run accessibility tests
         run: |
@@ -25,11 +23,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Prepare pnpm
-        uses: ./.github/actions/setup-pnpm
-      - uses: actions/setup-node@v4
-        with: { node-version: '20', cache: 'pnpm' }
-      - run: corepack enable
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with: { node-version: '20' }
       - run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
       - run: pnpm run build:storybook
       - name: Run visual regression tests
@@ -41,11 +37,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Prepare pnpm
-        uses: ./.github/actions/setup-pnpm
-      - uses: actions/setup-node@v4
-        with: { node-version: '20', cache: 'pnpm' }
-      - run: corepack enable
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with: { node-version: '20' }
       - run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
       - name: Build application
         run: pnpm run build:frontend
@@ -80,11 +74,9 @@ jobs:
       AE_QUALITY_PROFILE: development
     steps:
       - uses: actions/checkout@v4
-      - name: Prepare pnpm
-        uses: ./.github/actions/setup-pnpm
-      - uses: actions/setup-node@v4
-        with: { node-version: '20', cache: 'pnpm' }
-      - run: corepack enable
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with: { node-version: '20' }
       - run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
       - name: Run tests with coverage
         run: pnpm run test:coverage
