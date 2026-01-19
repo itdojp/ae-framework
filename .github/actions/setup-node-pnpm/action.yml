@@ -17,6 +17,9 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - uses: ./.github/actions/setup-pnpm
+      with:
+        version: ${{ inputs.pnpm-version }}
     - uses: actions/setup-node@v4
       with:
         node-version: ${{ inputs.node-version }}
