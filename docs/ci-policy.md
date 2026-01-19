@@ -58,6 +58,7 @@ CI Extended restores cached heavy test artifacts (`.cache/test-results`) when re
 ### Slash Commands (Instant Dispatch / Labels)
 - コメントで以下を投稿すると、対象ワークフローの即時起動やラベル付与ができます（main取り込み後有効）。
   - Dispatch（workflow_dispatch 直起動）
+    - `/review [strict]` … Verify Lite + CI Fast を実行（`strict` 指定時は `enforce-coverage` を付与し coverage-check を併走）
     - `/verify-lite` … Verify Lite を実行
     - `/run-qa-dispatch` … ae-ci（QA light）を実行
     - `/run-security-dispatch` … sbom-generation（Security/SBOM）を実行
@@ -82,6 +83,7 @@ CI Extended restores cached heavy test artifacts (`.cache/test-results`) when re
   - 使い分け例（推奨）
     - 追加確認したいカテゴリのみラベル付与 → `/ci-fast-dispatch` で即時起動
     - Verify Lite のみを再実行 → `/verify-lite`
+    - 基本ゲートをまとめて起動 → `/review`（必要なら `/review strict`）
 
 ### 参考ドキュメント
 - Branch Protection運用（プリセット適用/復元）: docs/ci/branch-protection-operations.md
