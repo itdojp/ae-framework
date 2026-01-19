@@ -25,6 +25,3 @@ runs:
         node-version: ${{ inputs.node-version }}
         cache: 'pnpm'
         cache-dependency-path: ${{ inputs.cache-dependency-path }}
-    - uses: ./.github/actions/setup-pnpm
-      with:
-        version: ${{ inputs.pnpm-version }}
