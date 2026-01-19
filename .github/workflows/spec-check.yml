@@ -17,7 +17,7 @@ jobs:
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: 20
+          node-version: '20'
       - name: Install dependencies
         run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
       - name: Run KvOnce TLC (non-blocking)
