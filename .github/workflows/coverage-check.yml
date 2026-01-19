@@ -80,15 +80,10 @@ jobs:
           AE_COVERAGE_SKIP_COMMENT: ${{ env.AE_COVERAGE_SKIP_COMMENT }}
           AE_COVERAGE_SUMMARY_PATH: ${{ env.AE_COVERAGE_SUMMARY_PATH }}
       - uses: actions/checkout@v4
-      - name: Prepare pnpm
-        uses: ./.github/actions/setup-pnpm
-      - uses: actions/setup-node@v4
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '20'
-          cache: 'pnpm'
-          cache-dependency-path: pnpm-lock.yaml
-      - name: Enable corepack
-        run: corepack enable
       - name: Install deps (pnpm)
         run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
       - name: Run coverage
