@@ -31,7 +31,7 @@ jobs:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const inputNumber = core.getInput('pr_number');
+            const inputNumber = core.getInput('pr_number') || context.payload.inputs?.pr_number;
             const parsedInput = inputNumber ? Number(inputNumber) : null;
             const number = context.payload.pull_request?.number ?? parsedInput;
             const isValidNumber = typeof number === 'number' && Number.isFinite(number) && number > 0;
