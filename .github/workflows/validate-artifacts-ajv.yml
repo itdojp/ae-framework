@@ -30,10 +30,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with: { node-version: '20' }
-      - name: Enable corepack
-        run: corepack enable
       - name: Install deps (pnpm)
         run: pnpm install --no-frozen-lockfile
       - name: Ensure ajv, ajv-cli, jq
