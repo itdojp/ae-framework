@@ -55,6 +55,7 @@ jobs:
             const waitMinutes = Number.isFinite(waitMinutesRaw) && waitMinutesRaw >= 0 ? waitMinutesRaw : 5;
             const maxAttempts = Number.isFinite(maxAttemptsRaw) && maxAttemptsRaw > 0 ? maxAttemptsRaw : 3;
             const waitMs = waitMinutes * 60 * 1000;
+            const allowComment = context.payload.pull_request?.head?.repo?.fork !== true;
 
             const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
             const marker = '<!-- copilot-review-gate -->';
@@ -83,6 +84,10 @@ jobs:
               });
             };
             const safeUpsertComment = async (body, contextLabel) => {
+              if (!allowComment) {
+                core.notice(`Skipping PR comment (${contextLabel}): forked PR has no comment permission.`);
+                return;
+              }
               try {
                 await upsertComment(body);
               } catch (error) {
