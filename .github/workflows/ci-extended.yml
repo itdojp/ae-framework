@@ -96,19 +96,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Prepare pnpm
+      - name: Setup Node + pnpm
         if: ${{ steps.flags.outputs.should_run == 'true' }}
-        uses: ./.github/actions/setup-pnpm
-
-      - name: Enable corepack
-        if: ${{ steps.flags.outputs.should_run == 'true' }}
-        run: corepack enable
-
-      - uses: actions/setup-node@v4
-        if: ${{ steps.flags.outputs.should_run == 'true' }}
+        uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '20'
-          cache: 'pnpm'
 
       - name: Install dependencies
         if: ${{ steps.flags.outputs.should_run == 'true' }}
