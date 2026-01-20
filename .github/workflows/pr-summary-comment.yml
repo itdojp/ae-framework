@@ -30,8 +30,10 @@ jobs:
             const detailed = labels.includes('pr-summary:detailed');
             core.setOutput('mode', detailed ? 'detailed' : 'digest');
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '20' }
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: '20'
       - name: Aggregate artifacts if present
         run: |
           if npm run -s | grep -q "artifacts:aggregate"; then npm run artifacts:aggregate || true; fi
