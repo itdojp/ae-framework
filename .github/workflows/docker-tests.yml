@@ -11,6 +11,9 @@ on:
         required: false
   schedule:
     - cron: "0 18 * * 1-5"
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.inputs.target_sha || github.ref }}-${{ github.event.inputs.service_filter || 'all' }}
+  cancel-in-progress: true
 
 jobs:
   docker-tests:
