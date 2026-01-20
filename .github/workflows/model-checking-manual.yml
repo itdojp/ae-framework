@@ -12,6 +12,10 @@ on:
         required: true
         default: "specs/formal/tla+/Inventory.tla"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.engine || 'tlc' }}-${{ inputs.spec_path || 'default' }}
+  cancel-in-progress: true
+
 jobs:
   model-check:
     runs-on: ubuntu-latest
