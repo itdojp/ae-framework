@@ -43,23 +43,16 @@ jobs:
             packages/spec-compiler
             src
             .github/actions/setup-pnpm
+            .github/actions/setup-node-pnpm
             package.json
             pnpm-lock.yaml
             tsconfig.json
 
-      - name: Prepare pnpm
-        uses: ./.github/actions/setup-pnpm
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
 
       - name: Cache dependencies
         uses: actions/cache@v4
