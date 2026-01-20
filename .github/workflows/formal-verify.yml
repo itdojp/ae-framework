@@ -33,7 +33,7 @@ on:
         required: false
         default: ""
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event.inputs.target || 'all' }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ inputs.target || 'all' }}
   cancel-in-progress: true
 
 jobs:
