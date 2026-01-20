@@ -3,6 +3,10 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 21 * * *' # JST 06:00
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   issues: write
