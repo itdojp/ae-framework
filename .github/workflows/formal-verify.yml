@@ -32,6 +32,9 @@ on:
         description: "Path to TLA+ tla2tools.jar (optional)"
         required: false
         default: ""
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event.inputs.target || 'all' }}
+  cancel-in-progress: true
 
 jobs:
   verify-conformance:
