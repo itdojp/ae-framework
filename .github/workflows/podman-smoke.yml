@@ -68,10 +68,9 @@ jobs:
           podman compose --help | head -n 40
 
       - name: Setup pnpm
-        uses: ./.github/actions/setup-pnpm
-
-      - name: Enable Corepack
-        run: corepack enable
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: '20'
 
       - name: Run Podman smoke test
         run: pnpm podman:smoke

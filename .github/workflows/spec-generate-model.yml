@@ -36,8 +36,10 @@ jobs:
       PNPM_STORE_PATH: ${{ github.workspace }}/.pnpm-store
     steps:
       - uses: actions/checkout@v4
-      - name: Prepare pnpm
-        uses: ./.github/actions/setup-pnpm
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: 22
       - name: Ensure pnpm cache dir
         run: mkdir -p "$AE_HOST_STORE"
       - name: Cache pnpm store
@@ -47,11 +49,6 @@ jobs:
           key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Enable corepack
-        run: corepack enable
       - name: Install dependencies
         run: |
           pnpm fetch --prefer-offline
@@ -146,8 +143,10 @@ jobs:
       PNPM_STORE_PATH: ${{ github.workspace }}/.pnpm-store
     steps:
       - uses: actions/checkout@v4
-      - name: Prepare pnpm
-        uses: ./.github/actions/setup-pnpm
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: 22
       - name: Ensure pnpm cache dir
         run: mkdir -p "$AE_HOST_STORE"
       - name: Cache pnpm store
@@ -157,11 +156,6 @@ jobs:
           key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Enable corepack
-        run: corepack enable
       - name: Install dependencies
         run: |
           pnpm fetch --prefer-offline
@@ -200,8 +194,10 @@ jobs:
       KVONCE_OTLP_PAYLOAD_URL: ${{ github.event.inputs.kvonce_otlp_payload_url || '' }}
     steps:
       - uses: actions/checkout@v4
-      - name: Prepare pnpm
-        uses: ./.github/actions/setup-pnpm
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: 22
       - name: Ensure pnpm cache dir
         run: mkdir -p "$AE_HOST_STORE"
       - name: Cache pnpm store
@@ -211,11 +207,6 @@ jobs:
           key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Enable corepack
-        run: corepack enable
       - name: Install dependencies
         run: |
           pnpm fetch --prefer-offline
