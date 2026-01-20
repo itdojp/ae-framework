@@ -106,16 +106,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         
-      - name: Prepare pnpm
-        uses: ./.github/actions/setup-pnpm
-
-      - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
-      - name: Enable corepack
-        run: corepack enable
           
       - name: Create deterministic environment
         run: |
@@ -199,16 +193,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         
-      - name: Prepare pnpm
-        uses: ./.github/actions/setup-pnpm
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '18'
-          cache: 'pnpm'
-      - name: Enable corepack
-        run: corepack enable
           
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --prefer-offline || pnpm install --no-frozen-lockfile --prefer-offline
@@ -270,16 +258,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         
-      - name: Prepare pnpm
-        uses: ./.github/actions/setup-pnpm
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '18'
-          cache: 'pnpm'
-      - name: Enable corepack
-        run: corepack enable
           
       - name: Analyze dependency hermeticity
         run: |
@@ -345,16 +327,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         
-      - name: Prepare pnpm
-        uses: ./.github/actions/setup-pnpm
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '18'
-          cache: 'pnpm'
-      - name: Enable corepack
-        run: corepack enable
           
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --prefer-offline
