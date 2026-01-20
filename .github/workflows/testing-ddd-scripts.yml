@@ -21,13 +21,10 @@ jobs:
       strict: ${{ steps.gate.outputs.strict }}
     steps:
       - uses: actions/checkout@v4
-      - name: Prepare pnpm
-        uses: ./.github/actions/setup-pnpm
-      - uses: actions/setup-node@v4
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '20'
-          cache: 'pnpm'
-      - run: corepack enable
       - run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
       - name: Derive strict gate from labels
         id: gate
