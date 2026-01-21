@@ -18,6 +18,8 @@ try {
   );
   const pnpmPattern = /\bpnpm\b/m;
   const nodePattern = /\bnode\s+\S/m;
+  // Workflows that intentionally use setup-node (not setup-node-pnpm)
+  // for node-only operations without pnpm dependencies.
   const nodeOnlyAllowlist = new Set(['cedar-quality-gates.yml']);
   /**
    * Extracts shell command content from all `run:` blocks in a workflow YAML file.
