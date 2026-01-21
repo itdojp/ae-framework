@@ -11,6 +11,10 @@ on:
         required: false
         default: "false"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.pr_number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   pull-requests: write
