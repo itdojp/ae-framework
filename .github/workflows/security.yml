@@ -16,6 +16,9 @@ on:
     # Run security scan weekly to reduce cost (Mon 05:20 UTC)
     - cron: '20 5 * * 1'
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
