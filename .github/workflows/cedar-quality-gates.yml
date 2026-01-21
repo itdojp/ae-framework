@@ -18,8 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Node + pnpm
-        uses: ./.github/actions/setup-node-pnpm
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
       - name: Validate Cedar policies (non-blocking)
