@@ -5,6 +5,10 @@ on:
     - cron: "15 19 * * *"   # 毎日 04:15 JST（19:15 UTC）
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   monitor:
     runs-on: ubuntu-latest
