@@ -1,16 +1,34 @@
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 
 const repo = process.env.GITHUB_REPOSITORY;
 if (!repo) {
   console.error('[pr-ci-status] GITHUB_REPOSITORY is required.');
   process.exit(1);
 }
+if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo)) {
+  console.error('[pr-ci-status] GITHUB_REPOSITORY format is invalid.');
+  process.exit(1);
+}
 
-const marker = '<!-- AE-CI-STATUS -->';
+const marker = '<!-- AE-CI-STATUS v1 -->';
+const FAILED_LIST_LIMIT = 5;
+const PR_LIMIT = 50;
+const PR_SLEEP_MS = 150;
 
-const execJson = (command) => {
-  const output = execSync(command, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-  return JSON.parse(output);
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const execJson = (args, input) => {
+  try {
+    const output = execFileSync('gh', args, {
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+      input,
+    });
+    return JSON.parse(output);
+  } catch (error) {
+    console.error('[pr-ci-status] gh failed:', error && error.message ? error.message : error);
+    throw error;
+  }
 };
 
 const summarizeChecks = (rollup = []) => {
@@ -62,11 +80,11 @@ const summarizeChecks = (rollup = []) => {
     }
   }
 
-  return { counts, failed: failed.slice(0, 5) };
+  return { counts, failed: failed.slice(0, FAILED_LIST_LIMIT) };
 };
 
 const listOpenPrs = () =>
-  execJson('gh pr list --state open --json number,title,updatedAt');
+  execJson(['pr', 'list', '--state', 'open', '--limit', String(PR_LIMIT), '--json', 'number,title,updatedAt']);
 
 const buildBody = (pr, view) => {
   const rollup = view.statusCheckRollup || [];
@@ -86,25 +104,41 @@ const buildBody = (pr, view) => {
 };
 
 const upsertComment = (number, body) => {
-  const comments = execJson(`gh api repos/${repo}/issues/${number}/comments`);
-  const existing = comments.find((comment) => comment.body && comment.body.includes(marker));
+  const comments = execJson(['api', `repos/${repo}/issues/${number}/comments`]);
+  const existing = comments.find((comment) => comment.body && comment.body.startsWith(marker));
+  const payload = JSON.stringify({ body });
   if (existing) {
-    execSync(
-      `gh api --method PATCH repos/${repo}/issues/comments/${existing.id} -f body=${JSON.stringify(body)}`,
-      { stdio: 'inherit' }
+    execFileSync(
+      'gh',
+      ['api', '--method', 'PATCH', `repos/${repo}/issues/comments/${existing.id}`, '--input', '-'],
+      { stdio: ['pipe', 'inherit', 'inherit'], input: payload }
     );
     return;
   }
-  execSync(`gh api repos/${repo}/issues/${number}/comments -f body=${JSON.stringify(body)}`, {
-    stdio: 'inherit',
+  execFileSync('gh', ['api', `repos/${repo}/issues/${number}/comments`, '--input', '-'], {
+    stdio: ['pipe', 'inherit', 'inherit'],
+    input: payload,
   });
 };
 
-const prs = listOpenPrs();
-for (const pr of prs) {
-  const view = execJson(
-    `gh pr view ${pr.number} --json number,title,mergeable,reviewDecision,statusCheckRollup`
-  );
-  const body = buildBody(pr, view);
-  upsertComment(pr.number, body);
-}
+const main = async () => {
+  const prs = listOpenPrs();
+  for (const pr of prs) {
+    try {
+      const view = execJson([
+        'pr',
+        'view',
+        String(pr.number),
+        '--json',
+        'number,title,mergeable,reviewDecision,statusCheckRollup',
+      ]);
+      const body = buildBody(pr, view);
+      upsertComment(pr.number, body);
+    } catch (error) {
+      console.error(`[pr-ci-status] Failed to process PR #${pr.number}:`, error);
+    }
+    await sleep(PR_SLEEP_MS);
+  }
+};
+
+await main();
