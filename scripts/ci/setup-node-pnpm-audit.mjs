@@ -6,12 +6,17 @@ const workflowsDir = join(process.cwd(), '.github', 'workflows');
 const setupAction = './.github/actions/setup-node-pnpm';
 
 try {
+  const escapeForRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const usesPattern = new RegExp(
+    String.raw`^[ \t]*uses:\s*['"]?${escapeForRegex(setupAction)}['"]?`,
+    'm'
+  );
   const files = readdirSync(workflowsDir).filter((name) => name.endsWith('.yml') || name.endsWith('.yaml'));
   const missing = [];
   for (const name of files) {
     const path = join(workflowsDir, name);
     const contents = readFileSync(path, 'utf8');
-    if (!contents.includes(`uses: ${setupAction}`)) {
+    if (!usesPattern.test(contents)) {
       missing.push(name);
     }
   }
@@ -26,7 +31,7 @@ try {
   for (const name of missing) {
     console.log(`- ${name}`);
   }
-  process.exitCode = 1;
+  process.exit(1);
 } catch (error) {
   console.error(`Failed to audit setup-node-pnpm usage in "${workflowsDir}":`);
   console.error(error instanceof Error ? error.message : error);
