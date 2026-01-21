@@ -26,6 +26,7 @@ jobs:
           node-version: "20"
       - name: Evaluate auto-merge eligibility
         env:
+          # Prefer github.token; GH_TOKEN allows an explicit PAT when org policies require it.
           GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
           PR_NUMBER: ${{ inputs.pr_number }}
           ENABLE_AUTO_MERGE: ${{ inputs.enable_auto_merge }}
