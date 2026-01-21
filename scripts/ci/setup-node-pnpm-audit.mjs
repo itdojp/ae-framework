@@ -17,6 +17,59 @@ try {
     'm'
   );
   const pnpmOrNodePattern = /\bpnpm\b|\bnode\s+\S/m;
+  /**
+   * Extracts shell command content from all `run:` blocks in a workflow YAML file.
+   *
+   * This performs a lightweight, line-based parse of the YAML:
+   * - Matches lines containing a `run:` key (optionally prefixed with `- `).
+   * - If the `run:` value is inline (e.g. `run: echo hello`), the trimmed value
+   *   is captured directly.
+   * - If the `run:` value uses a block scalar indicator (`|` or `>`), the
+   *   subsequent indented lines are collected until the indentation returns to
+   *   the level of the `run:` key or less. The collected lines are joined with
+   *   `\n` and added as a single block.
+   *
+   * Note: This is intentionally a minimal parser tailored to GitHub Actions
+   * workflows and does not aim to be a full YAML parser.
+   *
+   * @param {string} contents - The full contents of a workflow YAML file.
+   * @returns {string} A single string containing all extracted run block contents.
+   */
+  const extractRunBlocks = (contents) => {
+    const lines = contents.split('\n');
+    const blocks = [];
+    for (let i = 0; i < lines.length; i += 1) {
+      const line = lines[i];
+      const match = line.match(/^([ \t]*)(?:- )?run:\s*(.*)$/);
+      if (!match) continue;
+      const baseIndent = match[1].length;
+      const tail = match[2];
+      const trimmedTail = tail ? tail.trim() : '';
+      if (trimmedTail && !trimmedTail.startsWith('|') && !trimmedTail.startsWith('>')) {
+        blocks.push(trimmedTail);
+        continue;
+      }
+      const blockLines = [];
+      for (let j = i + 1; j < lines.length; j += 1) {
+        const next = lines[j];
+        if (next.trim() === '') {
+          blockLines.push('');
+          continue;
+        }
+        const indent = next.match(/^[ \t]*/)[0].length;
+        if (indent <= baseIndent) {
+          i = j - 1;
+          break;
+        }
+        blockLines.push(next.trimStart());
+        if (j === lines.length - 1) {
+          i = j;
+        }
+      }
+      if (blockLines.length > 0) blocks.push(blockLines.join('\n'));
+    }
+    return blocks.join('\n');
+  };
   const files = readdirSync(workflowsDir).filter((name) => name.endsWith('.yml') || name.endsWith('.yaml'));
   const missing = [];
   const reviewOnly = [];
@@ -24,7 +77,8 @@ try {
     const path = join(workflowsDir, name);
     const contents = readFileSync(path, 'utf8');
     if (usesPattern.test(contents) || reusablePattern.test(contents)) continue;
-    if (pnpmOrNodePattern.test(contents)) {
+    const runBlocks = extractRunBlocks(contents);
+    if (pnpmOrNodePattern.test(runBlocks)) {
       missing.push(name);
       continue;
     }
