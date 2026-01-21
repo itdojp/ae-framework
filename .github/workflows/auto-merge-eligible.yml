@@ -1,0 +1,33 @@
+name: Auto-merge Eligibility Check
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "Pull request number"
+        required: true
+      enable_auto_merge:
+        description: "Enable auto-merge if eligible"
+        required: false
+        default: "false"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Evaluate auto-merge eligibility
+        env:
+          # Prefer github.token; GH_TOKEN allows an explicit PAT when org policies require it.
+          GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          ENABLE_AUTO_MERGE: ${{ inputs.enable_auto_merge }}
+        run: node scripts/ci/auto-merge-eligible.mjs
