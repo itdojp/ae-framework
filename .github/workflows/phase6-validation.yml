@@ -3,6 +3,10 @@ on:
   pull_request:
     paths: ['src/ui/**', 'examples/**', 'packages/ui/**', 'apps/web/**']
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   accessibility-audit:
     runs-on: ubuntu-latest
