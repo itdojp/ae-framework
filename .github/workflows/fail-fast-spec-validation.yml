@@ -22,6 +22,10 @@ on:
   workflow_call:
     # Allow this workflow to be called by other workflows
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 env:
   NODE_VERSION: '20'
   PNPM_VERSION: '10'
