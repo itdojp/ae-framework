@@ -11,12 +11,17 @@ try {
     String.raw`^[ \t]*uses:\s*['"]?${escapeForRegex(setupAction)}['"]?`,
     'm'
   );
+  const reusableWorkflows = ['./.github/workflows/ci-core.yml', './.github/workflows/flake-stability.yml'];
+  const reusablePattern = new RegExp(
+    String.raw`^[ \t]*uses:\s*['"]?(?:${reusableWorkflows.map(escapeForRegex).join('|')})['"]?`,
+    'm'
+  );
   const files = readdirSync(workflowsDir).filter((name) => name.endsWith('.yml') || name.endsWith('.yaml'));
   const missing = [];
   for (const name of files) {
     const path = join(workflowsDir, name);
     const contents = readFileSync(path, 'utf8');
-    if (!usesPattern.test(contents)) {
+    if (!usesPattern.test(contents) && !reusablePattern.test(contents)) {
       missing.push(name);
     }
   }
