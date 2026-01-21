@@ -19,10 +19,6 @@ jobs:
     if: ${{ github.event.issue.pull_request }}
     runs-on: ubuntu-latest
     steps:
-      - name: Setup Node + pnpm
-        uses: ./.github/actions/setup-node-pnpm
-        with:
-          node-version: "20"
       - name: Parse and apply agent commands
         uses: actions/github-script@v7
         with:
