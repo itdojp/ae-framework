@@ -13,6 +13,10 @@ on:
         description: "auto-diff 用の比較ブランチ (default: origin/main)"
         required: false
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   mutation-quick:
     runs-on: ubuntu-latest
