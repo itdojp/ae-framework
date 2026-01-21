@@ -16,27 +16,76 @@ try {
     String.raw`^[ \t]*uses:\s*(["'])?(?:${reusableWorkflows.map(escapeForRegex).join('|')})\1?`,
     'm'
   );
+  const pnpmOrNodePattern = /\bpnpm\b|\bnode\s+\S/m;
+  const extractRunBlocks = (contents) => {
+    const lines = contents.split('\n');
+    const blocks = [];
+    for (let i = 0; i < lines.length; i += 1) {
+      const line = lines[i];
+      const match = line.match(/^([ \t]*)(?:- )?run:\s*(.*)$/);
+      if (!match) continue;
+      const baseIndent = match[1].length;
+      const tail = match[2];
+      if (tail && tail.trim() !== '|' && tail.trim() !== '>') {
+        blocks.push(tail.trim());
+        continue;
+      }
+      const blockLines = [];
+      for (let j = i + 1; j < lines.length; j += 1) {
+        const next = lines[j];
+        if (next.trim() === '') {
+          blockLines.push('');
+          continue;
+        }
+        const indent = next.match(/^[ \t]*/)[0].length;
+        if (indent <= baseIndent) {
+          i = j - 1;
+          break;
+        }
+        blockLines.push(next.trimStart());
+        if (j === lines.length - 1) {
+          i = j;
+        }
+      }
+      if (blockLines.length > 0) blocks.push(blockLines.join('\n'));
+    }
+    return blocks.join('\n');
+  };
   const files = readdirSync(workflowsDir).filter((name) => name.endsWith('.yml') || name.endsWith('.yaml'));
   const missing = [];
+  const reviewOnly = [];
   for (const name of files) {
     const path = join(workflowsDir, name);
     const contents = readFileSync(path, 'utf8');
-    if (!usesPattern.test(contents) && !reusablePattern.test(contents)) {
+    if (usesPattern.test(contents) || reusablePattern.test(contents)) continue;
+    const runBlocks = extractRunBlocks(contents);
+    if (pnpmOrNodePattern.test(runBlocks)) {
       missing.push(name);
+      continue;
     }
+    reviewOnly.push(name);
   }
 
   missing.sort();
-  if (missing.length === 0) {
-    console.log('All workflows use setup-node-pnpm.');
+  reviewOnly.sort();
+  if (missing.length === 0 && reviewOnly.length === 0) {
+    console.log('All workflows use setup-node-pnpm or do not need pnpm/node.');
     process.exit(0);
   }
 
-  console.log('Workflows not using setup-node-pnpm:');
-  for (const name of missing) {
-    console.log(`- ${name}`);
+  if (missing.length > 0) {
+    console.log('Workflows missing setup-node-pnpm (pnpm/node detected):');
+    for (const name of missing) {
+      console.log(`- ${name}`);
+    }
   }
-  process.exit(1);
+  if (reviewOnly.length > 0) {
+    console.log('Workflows without pnpm/node usage (review if needed):');
+    for (const name of reviewOnly) {
+      console.log(`- ${name}`);
+    }
+  }
+  process.exit(missing.length > 0 ? 1 : 0);
 } catch (error) {
   console.error(`Failed to audit setup-node-pnpm usage in "${workflowsDir}":`);
   console.error(error instanceof Error ? error.message : error);
