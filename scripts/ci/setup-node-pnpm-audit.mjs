@@ -8,12 +8,12 @@ const setupAction = './.github/actions/setup-node-pnpm';
 try {
   const escapeForRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const usesPattern = new RegExp(
-    String.raw`^[ \t]*uses:\s*['"]?${escapeForRegex(setupAction)}['"]?`,
+    String.raw`^[ \t]*uses:\s*(["'])?${escapeForRegex(setupAction)}\1?`,
     'm'
   );
   const reusableWorkflows = ['./.github/workflows/ci-core.yml', './.github/workflows/flake-stability.yml'];
   const reusablePattern = new RegExp(
-    String.raw`^[ \t]*uses:\s*['"]?(?:${reusableWorkflows.map(escapeForRegex).join('|')})['"]?`,
+    String.raw`^[ \t]*uses:\s*(["'])?(?:${reusableWorkflows.map(escapeForRegex).join('|')})\1?`,
     'm'
   );
   const pnpmOrNodePattern = /\bpnpm\b|\bnode\s+\S/m;
