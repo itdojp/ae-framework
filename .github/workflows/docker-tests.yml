@@ -29,6 +29,11 @@ jobs:
         with:
           ref: ${{ env.TARGET_SHA }}
 
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: '20'
+
       - name: Set up Docker Compose prerequisites
         run: |
           docker version
