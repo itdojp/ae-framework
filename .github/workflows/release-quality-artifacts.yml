@@ -3,6 +3,11 @@ on:
   workflow_dispatch:
   release:
     types: [published]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'release' }}
+
 permissions:
   contents: write
 jobs:

@@ -23,6 +23,10 @@ on:
       - 'pnpm-lock.yaml'
       - '.github/workflows/podman-smoke.yml'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   podman-smoke:
     runs-on: ubuntu-latest
