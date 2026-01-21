@@ -1,0 +1,25 @@
+name: PR CI Status Comment
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  post-status:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Post CI status summary
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci/pr-ci-status-comment.mjs
