@@ -19,6 +19,10 @@ on:
   workflow_call:
     # Allow this workflow to be called by other workflows
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   drift-detection:
     name: Code Generation Drift Detection
