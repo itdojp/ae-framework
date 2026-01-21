@@ -17,6 +17,24 @@ try {
     'm'
   );
   const pnpmOrNodePattern = /\bpnpm\b|\bnode\s+\S/m;
+  /**
+   * Extracts shell command content from all `run:` blocks in a workflow YAML file.
+   *
+   * This performs a lightweight, line-based parse of the YAML:
+   * - Matches lines containing a `run:` key (optionally prefixed with `- `).
+   * - If the `run:` value is inline (e.g. `run: echo hello`), the trimmed value
+   *   is captured directly.
+   * - If the `run:` value uses a block scalar indicator (`|` or `>`), the
+   *   subsequent indented lines are collected until the indentation returns to
+   *   the level of the `run:` key or less. The collected lines are joined with
+   *   `\n` and added as a single block.
+   *
+   * Note: This is intentionally a minimal parser tailored to GitHub Actions
+   * workflows and does not aim to be a full YAML parser.
+   *
+   * @param {string} contents - The full contents of a workflow YAML file.
+   * @returns {string} A single string containing all extracted run block contents.
+   */
   const extractRunBlocks = (contents) => {
     const lines = contents.split('\n');
     const blocks = [];
@@ -26,8 +44,9 @@ try {
       if (!match) continue;
       const baseIndent = match[1].length;
       const tail = match[2];
-      if (tail && tail.trim() !== '|' && tail.trim() !== '>') {
-        blocks.push(tail.trim());
+      const trimmedTail = tail ? tail.trim() : '';
+      if (trimmedTail && !trimmedTail.startsWith('|') && !trimmedTail.startsWith('>')) {
+        blocks.push(trimmedTail);
         continue;
       }
       const blockLines = [];
