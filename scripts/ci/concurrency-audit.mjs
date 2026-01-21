@@ -41,27 +41,42 @@ try {
     const inlineOn = lines[start].match(/^on\s*:\s*(.+)$/);
     const inlineTriggers = new Set();
     if (inlineOn && inlineOn[1]) {
+      const stripQuotes = (value) => value.replace(/^['"]+|['"]+$/g, '');
       const inline = inlineOn[1].trim();
       if (inline.startsWith('[') && inline.endsWith(']')) {
         for (const raw of inline.slice(1, -1).split(',')) {
           const token = raw.trim();
-          if (token) inlineTriggers.add(token);
+          if (token) inlineTriggers.add(stripQuotes(token));
         }
       } else {
-        inlineTriggers.add(inline);
+        inlineTriggers.add(stripQuotes(inline));
       }
     }
 
     const hasWorkflowCall = inlineTriggers.has('workflow_call') ||
       blockHas(lines, start, end, /^\s*workflow_call\s*:/);
+
+    const onIndentMatch = lines[start].match(/^(\s*)on\s*:/);
+    const onIndent = onIndentMatch ? onIndentMatch[1] : '';
+    const childIndent = `${onIndent}  `;
+    let hasOtherBlockTriggers = false;
+    for (let i = start + 1; i < end; i++) {
+      const line = lines[i];
+      if (/^\s*$/.test(line)) continue;
+      const trimmed = line.trimStart();
+      if (trimmed.startsWith('#')) continue;
+      const match = line.match(/^(\s*)([A-Za-z_][\w-]*)\s*:/);
+      if (!match) continue;
+      const indent = match[1];
+      const key = match[2];
+      if (indent === childIndent && key !== 'workflow_call') {
+        hasOtherBlockTriggers = true;
+        break;
+      }
+    }
+
     const hasOtherTriggers =
-      inlineTriggers.size > (hasWorkflowCall ? 1 : 0) ||
-      blockHas(
-        lines,
-        start,
-        end,
-        /^\s*(push|pull_request|schedule|workflow_dispatch|workflow_run|release)\s*:/
-      );
+      inlineTriggers.size > (hasWorkflowCall ? 1 : 0) || hasOtherBlockTriggers;
     return hasWorkflowCall && !hasOtherTriggers;
   };
 
