@@ -16,7 +16,9 @@ try {
     String.raw`^[ \t]*uses:\s*(["'])?(?:${reusableWorkflows.map(escapeForRegex).join('|')})\1?`,
     'm'
   );
-  const pnpmOrNodePattern = /\bpnpm\b|\bnode\s+\S/m;
+  const pnpmPattern = /\bpnpm\b/m;
+  const nodePattern = /\bnode\s+\S/m;
+  const nodeOnlyAllowlist = new Set(['cedar-quality-gates.yml']);
   /**
    * Extracts shell command content from all `run:` blocks in a workflow YAML file.
    *
@@ -73,12 +75,25 @@ try {
   const files = readdirSync(workflowsDir).filter((name) => name.endsWith('.yml') || name.endsWith('.yaml'));
   const missing = [];
   const reviewOnly = [];
+  const nodeOnlyAllowed = [];
   for (const name of files) {
     const path = join(workflowsDir, name);
     const contents = readFileSync(path, 'utf8');
     if (usesPattern.test(contents) || reusablePattern.test(contents)) continue;
     const runBlocks = extractRunBlocks(contents);
-    if (pnpmOrNodePattern.test(runBlocks)) {
+    const hasPnpm = pnpmPattern.test(runBlocks);
+    const hasNode = nodePattern.test(runBlocks);
+    if (nodeOnlyAllowlist.has(name)) {
+      if (hasPnpm) {
+        missing.push(name);
+        continue;
+      }
+      if (hasNode) {
+        nodeOnlyAllowed.push(name);
+        continue;
+      }
+    }
+    if (hasPnpm || hasNode) {
       missing.push(name);
       continue;
     }
@@ -87,7 +102,8 @@ try {
 
   missing.sort();
   reviewOnly.sort();
-  if (missing.length === 0 && reviewOnly.length === 0) {
+  nodeOnlyAllowed.sort();
+  if (missing.length === 0 && reviewOnly.length === 0 && nodeOnlyAllowed.length === 0) {
     console.log('All workflows use setup-node-pnpm or do not need pnpm/node.');
     process.exit(0);
   }
@@ -101,6 +117,12 @@ try {
   if (reviewOnly.length > 0) {
     console.log('Workflows without pnpm/node usage (review if needed):');
     for (const name of reviewOnly) {
+      console.log(`- ${name}`);
+    }
+  }
+  if (nodeOnlyAllowed.length > 0) {
+    console.log('Workflows allowed to use setup-node (node-only allowlist):');
+    for (const name of nodeOnlyAllowed) {
       console.log(`- ${name}`);
     }
   }
