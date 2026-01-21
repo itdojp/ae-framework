@@ -3,6 +3,11 @@ on:
   schedule:
     - cron: '15 19 * * *'   # 毎日 04:15 JST
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions: read-all
 jobs:
   matrix-test:
