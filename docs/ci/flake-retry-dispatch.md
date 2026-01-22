@@ -22,6 +22,18 @@ Actions から `Flake Retry Dispatch (Phase 3)` を起動し、必要に応じ�
 - `dry_run`  
   既定: `false`（true の場合は rerun-failed-jobs を実行しない）
 
+## 使い方（例）
+- dry-run で結果だけ確認する場合:
+  - `dry_run=true` にして実行
+- verify-lite の retry eligibility を使う場合:
+  - `workflow_file=verify-lite.yml`
+  - `eligibility_artifact=verify-lite-report`
+  - `eligibility_path=artifacts/verify-lite/verify-lite-retry-eligibility.json`
+- pr-verify の retry eligibility を使う場合:
+  - `workflow_file=pr-verify.yml`
+  - `eligibility_artifact=ae-artifacts`
+  - `eligibility_path=artifacts/pr-verify/pr-verify-retry-eligibility.json`
+
 ## 出力
 Step Summary に以下が出力される。
 - `workflow_file`
