@@ -28,4 +28,5 @@ Step Summary に以下が出力される。
 ## 失敗時の代表的な原因
 - eligibility アーティファクトが存在しない（`reason=no_artifact`）
 - zip 展開に失敗（`reason=unzip_failed`）
+- eligibility JSON ファイルが存在するが中身が空（`reason=missing_file`）
 - `retriable=false` のため再試行を実施しない
