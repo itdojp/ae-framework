@@ -37,5 +37,7 @@ Define a minimal, safe automation loop that retries flaky CI jobs once, records 
 - Validate behavior on a dry-run schedule.
 
 ## Status update (2026-01)
-- Flake Stability: retry eligibility artifact (`reports/flake-retry-eligibility.json`) を追加済み。残りは verify-lite / pr-verify への適用と、dispatcher の試作。
-- Dispatcher: flake-detect 失敗ランの eligibility を確認し、条件一致時に rerun-failed-jobs を実行する最小ワークフローを追加（PR#1722）。
+- Flake Stability: retry eligibility artifact (`reports/flake-retry-eligibility.json`) を追加済み。
+- Verify-lite: eligibility artifact を追加済み。
+- pr-verify: `ae-artifacts` に eligibility JSON を同梱（`artifacts/pr-verify/pr-verify-retry-eligibility.json`）。
+- Dispatcher: flake-detect 失敗ランの eligibility を確認し、条件一致時に rerun-failed-jobs を実行する最小ワークフローを追加（PR#1722）。`eligibility_path` 入力で verify-lite / pr-verify を切替可能。
