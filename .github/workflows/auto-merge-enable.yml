@@ -10,7 +10,8 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  # Prefer github.token; GH_TOKEN allows an explicit PAT when org policies require it.
+  contents: write
   pull-requests: write
 
 jobs:
@@ -24,5 +25,5 @@ jobs:
           node-version: "20"
       - name: Enable auto-merge when eligible
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
+          GH_TOKEN: ${{ github.token || secrets.GH_TOKEN }}
         run: node scripts/ci/auto-merge-enabler.mjs

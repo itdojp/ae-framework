@@ -52,13 +52,13 @@ const fetchRequiredContexts = (repoName, baseRefName) => {
   }
 };
 
-const summarizeChecks = (rollup = [], requiredContexts = []) => {
+const summarizeChecks = (rollup = [], requiredContexts) => {
   const counts = { success: 0, failure: 0, pending: 0, skipped: 0, neutral: 0 };
   const failed = [];
-  const requiredSet = new Set(requiredContexts);
+  const requiredSet = Array.isArray(requiredContexts) ? new Set(requiredContexts) : null;
   for (const item of rollup) {
     if (item.__typename === 'CheckRun') {
-      if (requiredSet.size > 0 && !requiredSet.has(item.name)) continue;
+      if (requiredSet && requiredSet.size > 0 && !requiredSet.has(item.name)) continue;
       if (item.status !== 'COMPLETED') {
         counts.pending += 1;
         continue;
@@ -85,7 +85,7 @@ const summarizeChecks = (rollup = [], requiredContexts = []) => {
       continue;
     }
     if (item.__typename === 'StatusContext') {
-      if (requiredSet.size > 0 && !requiredSet.has(item.context)) continue;
+      if (requiredSet && requiredSet.size > 0 && !requiredSet.has(item.context)) continue;
       switch (item.state) {
         case 'SUCCESS':
           counts.success += 1;
@@ -105,6 +105,26 @@ const summarizeChecks = (rollup = [], requiredContexts = []) => {
     }
   }
   return { counts, failed: failed.slice(0, FAILED_LIST_LIMIT) };
+};
+
+const listComments = (number) => {
+  const comments = [];
+  let page = 1;
+  while (true) {
+    const chunk = execJson([
+      'api',
+      `repos/${repo}/issues/${number}/comments`,
+      '-F',
+      'per_page=100',
+      '-F',
+      `page=${page}`,
+    ]);
+    if (!Array.isArray(chunk) || chunk.length === 0) break;
+    comments.push(...chunk);
+    if (chunk.length < 100) break;
+    page += 1;
+  }
+  return comments;
 };
 
 const listOpenPrs = () =>
@@ -132,8 +152,10 @@ const buildStatusBody = (pr, view, reasons, summary) => {
 };
 
 const upsertComment = (number, body) => {
-  const comments = execJson(['api', `repos/${repo}/issues/${number}/comments`]);
-  const existing = comments.find((comment) => comment.body && comment.body.startsWith(marker));
+  const comments = listComments(number);
+  const existing = comments.find(
+    (comment) => comment.body && typeof comment.body === 'string' && comment.body.startsWith(marker)
+  );
   const payload = JSON.stringify({ body });
   if (existing) {
     execFileSync('gh', ['api', '--method', 'PATCH', `repos/${repo}/issues/comments/${existing.id}`, '--input', '-'], {
@@ -176,13 +198,16 @@ const main = async () => {
         await sleep(PR_SLEEP_MS);
         continue;
       }
-      const summary = summarizeChecks(view.statusCheckRollup || [], requiredContexts);
+      const summaryAll = summarizeChecks(view.statusCheckRollup || [], null);
+      const summaryRequired = requiredContexts.length > 0
+        ? summarizeChecks(view.statusCheckRollup || [], requiredContexts)
+        : { counts: { success: 0, failure: 0, pending: 0, skipped: 0, neutral: 0 }, failed: [] };
       const reasons = [];
       if (view.isDraft) reasons.push('draft');
       if (view.mergeable !== 'MERGEABLE') reasons.push(`mergeable=${view.mergeable || 'UNKNOWN'}`);
       if (view.reviewDecision !== 'APPROVED') reasons.push(`review=${view.reviewDecision || 'NONE'}`);
-      if (summary.counts.failure > 0) reasons.push('checks failed');
-      if (summary.counts.pending > 0) reasons.push('checks pending');
+      if (summaryRequired.counts.failure > 0) reasons.push('checks failed');
+      if (summaryRequired.counts.pending > 0) reasons.push('checks pending');
 
       if (reasons.length === 0 && !view.autoMergeRequest) {
         try {
@@ -192,7 +217,7 @@ const main = async () => {
           reasons.push(`auto-merge enable failed: ${message}`);
         }
       }
-      const body = buildStatusBody(pr, view, reasons, summary);
+      const body = buildStatusBody(pr, view, reasons, summaryAll);
       upsertComment(pr.number, body);
     } catch (error) {
       console.error(`[auto-merge-enabler] Failed to process PR #${pr.number}:`, error);
