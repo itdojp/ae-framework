@@ -16,6 +16,8 @@ Actions から `Flake Retry Dispatch (Phase 3)` を起動し、必要に応じ�
   既定: `flake-detect.yml`
 - `eligibility_artifact`  
   既定: `flake-detection-report`
+- `dry_run`  
+  既定: `false`（true の場合は rerun-failed-jobs を実行しない）
 
 ## 出力
 Step Summary に以下が出力される。
