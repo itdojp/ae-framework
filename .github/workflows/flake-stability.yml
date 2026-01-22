@@ -259,8 +259,15 @@ jobs:
 
       - name: Check flake threshold
         id: flake-check
+        if: always()
         run: |
           threshold=30.0
+
+          if [ -z "${FAILURE_RATE}" ]; then
+            printf "%s\n" "⚠️ FAILURE_RATE is empty; flake status unknown"
+            printf "%s\n" "flaky=unknown" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
           if [ "$(printf "%s\n" "$FAILURE_RATE > $threshold" | bc -l)" -eq 1 ]; then
             printf "%s\n" "🚨 Flake detected! Failure rate: ${FAILURE_RATE}% exceeds threshold: ${threshold}%"
@@ -276,8 +283,18 @@ jobs:
           mkdir -p reports
           retriable="false"
           reason="stable_or_below_threshold"
+          conclusion="${{ steps.flake-check.conclusion }}"
+          flaky="${{ steps.flake-check.outputs.flaky }}"
+          failure_rate_value="null"
 
-          if [ "${{ steps.flake-check.outputs.flaky }}" = "true" ]; then
+          if [ -n "${FAILURE_RATE}" ]; then
+            failure_rate_value="${FAILURE_RATE}"
+          fi
+
+          if [ "$conclusion" != "success" ] || [ -z "$flaky" ] || [ "$flaky" = "unknown" ]; then
+            retriable="false"
+            reason="unknown_flake_status"
+          elif [ "$flaky" = "true" ]; then
             retriable="true"
             reason="failure_rate_exceeds_threshold"
           fi
@@ -290,7 +307,7 @@ jobs:
             "sha": "${{ github.sha }}",
             "retriable": ${retriable},
             "reason": "${reason}",
-            "failureRate": "${FAILURE_RATE}",
+            "failureRate": ${failure_rate_value},
             "threshold": 30.0
           }
           EOF
