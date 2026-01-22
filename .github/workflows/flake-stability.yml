@@ -259,8 +259,15 @@ jobs:
 
       - name: Check flake threshold
         id: flake-check
+        if: always()
         run: |
           threshold=30.0
+
+          if [ -z "${FAILURE_RATE}" ]; then
+            printf "%s\n" "⚠️ FAILURE_RATE is empty; flake status unknown"
+            printf "%s\n" "flaky=unknown" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
           if [ "$(printf "%s\n" "$FAILURE_RATE > $threshold" | bc -l)" -eq 1 ]; then
             printf "%s\n" "🚨 Flake detected! Failure rate: ${FAILURE_RATE}% exceeds threshold: ${threshold}%"
@@ -269,6 +276,41 @@ jobs:
             printf "%s\n" "✅ Tests stable. Failure rate: ${FAILURE_RATE}% below threshold: ${threshold}%"
             printf "%s\n" "flaky=false" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Write flake retry eligibility
+        if: always()
+        run: |
+          mkdir -p reports
+          retriable="false"
+          reason="stable_or_below_threshold"
+          conclusion="${{ steps.flake-check.conclusion }}"
+          flaky="${{ steps.flake-check.outputs.flaky }}"
+          failure_rate_value="null"
+
+          if [ -n "${FAILURE_RATE}" ]; then
+            failure_rate_value="${FAILURE_RATE}"
+          fi
+
+          if [ "$conclusion" != "success" ] || [ -z "$flaky" ] || [ "$flaky" = "unknown" ]; then
+            retriable="false"
+            reason="unknown_flake_status"
+          elif [ "$flaky" = "true" ]; then
+            retriable="true"
+            reason="failure_rate_exceeds_threshold"
+          fi
+
+          cat > reports/flake-retry-eligibility.json <<EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "workflow": "flake-stability",
+            "runId": "${{ github.run_id }}",
+            "sha": "${{ github.sha }}",
+            "retriable": ${retriable},
+            "reason": "${reason}",
+            "failureRate": ${failure_rate_value},
+            "threshold": 30.0
+          }
+          EOF
 
       - name: Upload flake detection report
         uses: actions/upload-artifact@v4
@@ -279,6 +321,7 @@ jobs:
             reports/flake-detection-failures.json
             reports/flake-detection-failures.md
             reports/flake-detection-env.json
+            reports/flake-retry-eligibility.json
             reports/flake-detection/run-*.json
           retention-days: 30
 
