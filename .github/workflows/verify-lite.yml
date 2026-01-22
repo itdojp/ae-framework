@@ -206,7 +206,7 @@ jobs:
           }
           EOF
       - name: Upload verify-lite report
-        if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
+        if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: verify-lite-report
