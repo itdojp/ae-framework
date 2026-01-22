@@ -32,3 +32,5 @@
 - スレッドが解決にならない場合、PR画面で各会話の「Resolve conversation」を押すか、対応コメントを行ってから解決してください。
 - ゲートが検出しない場合、`COPILOT_ACTORS` の一覧に実際のアカウント名が含まれているか確認してください。
 - fork PR では Actions がコメントを投稿できないため、ゲートはコメントを残さず `notice` のみ出力します（判定自体は実行されます）。
+- Required checks が `Expected — Waiting for status to be reported` のまま止まる場合は、branch protection に登録したチェック名が実際のジョブ名と一致しているか、PR条件でワークフローが実行されているかを確認してください。
+  - 参考: docs/ci/branch-protection-operations.md の「Required checks が Pending のまま」セクション
