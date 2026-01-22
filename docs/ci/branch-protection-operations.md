@@ -58,3 +58,9 @@ ADMIN_TOKEN=ghp_xxx REPO=itdojp/ae-framework BRANCH=main \
 - [ ] Copilot Review Gate / gate が Required に含まれている
 - [ ] Verify Lite / verify-lite が Required に含まれている
 - [ ] main で想定外の Required チェックが残っていない
+
+## トラブルシューティング（Required checks が Pending のまま）
+GitHub で `Expected — Waiting for status to be reported` が出続ける場合、以下を確認してください。
+- Branch protection に登録した Required check 名が **実際のチェック名と一致**しているか
+- 対象ワークフローが **PR条件で実行される設定**になっているか（path/label条件で未実行になっていないか）
+- 不要になった Required check は preset から削除し、保護設定を再適用する
