@@ -35,3 +35,6 @@ Define a minimal, safe automation loop that retries flaky CI jobs once, records 
 - Identify candidate workflows and add a retry eligibility flag in summaries.
 - Add a lightweight dispatcher that reads the summary and calls rerun API.
 - Validate behavior on a dry-run schedule.
+
+## Status update (2026-01)
+- Flake Stability: retry eligibility artifact (`reports/flake-retry-eligibility.json`) を追加済み。残りは verify-lite / pr-verify への適用と、dispatcher の試作。
