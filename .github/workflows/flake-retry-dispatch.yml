@@ -11,6 +11,10 @@ on:
         description: Artifact name containing retry eligibility JSON
         required: false
         default: flake-detection-report
+      eligibility_path:
+        description: Path inside artifact zip to retry eligibility JSON
+        required: false
+        default: reports/flake-retry-eligibility.json
       dry_run:
         description: Skip rerun and only report decision (true/false)
         type: boolean
@@ -35,6 +39,7 @@ jobs:
       REPO: ${{ github.repository }}
       WORKFLOW_FILE: ${{ github.event.inputs.workflow_file || 'flake-detect.yml' }}
       ELIGIBILITY_ARTIFACT: ${{ github.event.inputs.eligibility_artifact || 'flake-detection-report' }}
+      ELIGIBILITY_PATH: ${{ github.event.inputs.eligibility_path || 'reports/flake-retry-eligibility.json' }}
       DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
     steps:
       - name: Select latest failed run (first attempt)
@@ -66,7 +71,7 @@ jobs:
           fi
           gh api "repos/${REPO}/actions/artifacts/${artifact_id}/zip" > /tmp/eligibility.zip
           set +e
-          unzip -p /tmp/eligibility.zip "reports/flake-retry-eligibility.json" > /tmp/eligibility.json
+          unzip -p /tmp/eligibility.zip "${ELIGIBILITY_PATH}" > /tmp/eligibility.json
           unzip_status=$?
           set -e
           if [ "$unzip_status" -ne 0 ]; then
@@ -99,6 +104,7 @@ jobs:
             printf '%s\n' "## Flake Retry Dispatch"
             printf '%s\n' "- workflow_file: ${WORKFLOW_FILE}"
             printf '%s\n' "- eligibility_artifact: ${ELIGIBILITY_ARTIFACT}"
+            printf '%s\n' "- eligibility_path: ${ELIGIBILITY_PATH}"
             printf '%s\n' "- dry_run: ${DRY_RUN}"
             printf '%s\n' "- run_id: ${{ steps.select.outputs.run_id != '' && steps.select.outputs.run_id || 'none' }}"
             printf '%s\n' "- retriable: ${{ steps.eligibility.outputs.retriable || 'n/a' }}"
