@@ -36,4 +36,6 @@ Step Summary に以下が出力される。
 - eligibility アーティファクトが存在しない（`reason=no_artifact`）
 - zip 展開に失敗（`reason=unzip_failed`）
 - eligibility JSON ファイルが存在するが中身が空（`reason=missing_file`）
+- `eligibility_path` に不正な文字が含まれる（`reason=invalid_path`）
+- eligibility JSON の解析に失敗（`reason=parse_failed`）
 - `retriable=false` のため再試行を実施しない
