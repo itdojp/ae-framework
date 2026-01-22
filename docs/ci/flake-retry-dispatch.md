@@ -13,12 +13,12 @@ flake-detect で検知したフレークのうち、**再試行可否が true** 
 Actions から `Flake Retry Dispatch (Phase 3)` を起動し、必要に応じて以下を指定する。
 
 - `workflow_file`  
-  既定: `flake-detect.yml`
+  既定: `flake-detect.yml`（例: verify-lite の場合は `verify-lite.yml`）
 - `eligibility_artifact`  
-  既定: `flake-detection-report`
+  既定: `flake-detection-report`（例: verify-lite の場合は `verify-lite-report`）
 - `eligibility_path`  
   既定: `reports/flake-retry-eligibility.json`  
-  例: verify-lite は `artifacts/verify-lite/verify-lite-retry-eligibility.json`
+  例: verify-lite の場合は `artifacts/verify-lite/verify-lite-retry-eligibility.json`
 - `dry_run`  
   既定: `false`（true の場合は rerun-failed-jobs を実行しない）
 
@@ -26,6 +26,8 @@ Actions から `Flake Retry Dispatch (Phase 3)` を起動し、必要に応じ�
 Step Summary に以下が出力される。
 - `workflow_file`
 - `eligibility_artifact`
+- `eligibility_path`
+- `dry_run`
 - `run_id`
 - `retriable`
 - `reason`
