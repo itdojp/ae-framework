@@ -5,8 +5,8 @@ flake-detect で検知したフレークのうち、**再試行可否が true** 
 `rerun-failed-jobs` を実行する最小ディスパッチャ。
 
 ## 前提
-- 対象は flake-detect の **run_attempt=1** の失敗ランのみ
-- 再試行可否は `reports/flake-retry-eligibility.json` に記録される
+- 対象は `workflow_file` で指定したワークフローの **run_attempt=1** の失敗ランのみ
+- 再試行可否は `eligibility_path` で指定する JSON に記録される（既定: `reports/flake-retry-eligibility.json`）
 - required check は自動再試行対象外
 
 ## 手動実行（workflow_dispatch）
