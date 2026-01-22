@@ -1,0 +1,84 @@
+name: Flake Retry Dispatch (Phase 3)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 22 * * *' # JST 07:00 (after flake-detect)
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+      WORKFLOW_FILE: flake-detect.yml
+      ELIGIBILITY_ARTIFACT: flake-detection-report
+    steps:
+      - name: Select latest failed run (first attempt)
+        id: select
+        run: |
+          set -euo pipefail
+          wf_id=$(gh api "repos/${REPO}/actions/workflows/${WORKFLOW_FILE}" --jq '.id')
+          runs=$(gh api "repos/${REPO}/actions/workflows/${wf_id}/runs" -f per_page=10 -f status=completed)
+          run_id=$(echo "$runs" | jq -r '.workflow_runs[]
+            | select((.run_attempt // 1) == 1)
+            | select(.conclusion == "failure" or .conclusion == "cancelled" or .conclusion == "timed_out" or .conclusion == "action_required")
+            | .id' | head -n1)
+          if [ -z "$run_id" ]; then
+            printf '%s\n' "run_id=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          printf '%s\n' "run_id=$run_id" >> "$GITHUB_OUTPUT"
+      - name: Fetch retry eligibility artifact
+        id: eligibility
+        if: ${{ steps.select.outputs.run_id }}
+        run: |
+          set -euo pipefail
+          run_id="${{ steps.select.outputs.run_id }}"
+          artifact_id=$(gh api "repos/${REPO}/actions/runs/${run_id}/artifacts" --jq '.artifacts[] | select(.name == "'"$ELIGIBILITY_ARTIFACT"'") | .id' | head -n1)
+          if [ -z "$artifact_id" ]; then
+            printf '%s\n' "retriable=false" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "reason=no_artifact" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          gh api "repos/${REPO}/actions/artifacts/${artifact_id}/zip" > /tmp/eligibility.zip
+          set +e
+          unzip -p /tmp/eligibility.zip "reports/flake-retry-eligibility.json" > /tmp/eligibility.json
+          unzip_status=$?
+          set -e
+          if [ "$unzip_status" -ne 0 ]; then
+            printf '%s\n' "retriable=false" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "reason=unzip_failed" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ ! -s /tmp/eligibility.json ]; then
+            printf '%s\n' "retriable=false" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "reason=missing_file" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          retriable=$(jq -r '.retriable // "false"' /tmp/eligibility.json)
+          reason=$(jq -r '.reason // "unknown"' /tmp/eligibility.json)
+          printf '%s\n' "retriable=$retriable" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "reason=$reason" >> "$GITHUB_OUTPUT"
+      - name: Rerun failed jobs (one-shot)
+        if: ${{ steps.select.outputs.run_id && steps.eligibility.outputs.retriable == 'true' }}
+        run: |
+          set -euo pipefail
+          gh api -X POST "repos/${REPO}/actions/runs/${{ steps.select.outputs.run_id }}/rerun-failed-jobs"
+      - name: Summary
+        if: always()
+        run: |
+          {
+            printf '%s\n' "## Flake Retry Dispatch"
+            printf '%s\n' "- run_id: ${{ steps.select.outputs.run_id != '' && steps.select.outputs.run_id || 'none' }}"
+            printf '%s\n' "- retriable: ${{ steps.eligibility.outputs.retriable || 'n/a' }}"
+            printf '%s\n' "- reason: ${{ steps.eligibility.outputs.reason || 'n/a' }}"
+          } >> "$GITHUB_STEP_SUMMARY"
