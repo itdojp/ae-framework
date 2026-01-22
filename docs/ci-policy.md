@@ -170,6 +170,9 @@ CI Extended 実行後は heavy テスト成果物を `.cache/test-results` に�
 - `run-e2e`: E2E テストを PR で有効化
 - `coverage:<pct>`: coverage-check のしきい値を上書き（既定 80）。例: `coverage:75`
 
+### 手動実行（Actions UI）
+- `Flake Retry Dispatch (Phase 3)` は workflow_dispatch で `workflow_file` / `eligibility_artifact` / `eligibility_path` / `dry_run` を指定可能
+
 ### パス条件
 - 仕様関連の変更（`spec/**`, `.ae/**`）のみ Fail-Fast を発火
 - 依存や大規模コード変更時のみ SBOM/Security を発火
