@@ -212,3 +212,15 @@ CI Extended 実行後は heavy テスト成果物を `.cache/test-results` に�
 - 緊急時は `ci-non-blocking` ラベルで PR をブロックしない運用に切替可能
 - マージ後は main の包括的 CI（夜間/週次）でカバー
 - 必須チェックは基本 Verify Lite を中心に、その他は非必須
+
+
+## ワークフロー正規化ツール（自動化）
+
+反復的な修正を減らすため、正規化スクリプトを用意しています。
+
+- 一覧表示: `node scripts/ci/normalize-workflows.mjs --list`
+- concurrency 追加（dry-run）: `node scripts/ci/normalize-workflows.mjs --rule=concurrency`
+- concurrency 追加（適用）: `node scripts/ci/normalize-workflows.mjs --rule=concurrency --apply`
+- setup-node-pnpm 監査（report-only）: `node scripts/ci/normalize-workflows.mjs --rule=setup-node-pnpm`
+
+※ `setup-node-pnpm` は現在 audit-only で、適用は手動PRで行います。

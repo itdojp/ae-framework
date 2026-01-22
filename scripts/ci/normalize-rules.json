@@ -1,0 +1,15 @@
+{
+  "rules": [
+    {
+      "name": "concurrency",
+      "description": "Add concurrency block to workflows missing it",
+      "command": "node scripts/ci/concurrency-apply.mjs",
+      "applyFlag": "--apply"
+    },
+    {
+      "name": "setup-node-pnpm",
+      "description": "Audit workflows for setup-node-pnpm usage (report-only)",
+      "command": "node scripts/ci/setup-node-pnpm-audit.mjs"
+    }
+  ]
+}
