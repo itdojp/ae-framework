@@ -76,7 +76,9 @@ jobs:
       - name: Summary
         if: always()
         run: |
-          printf '%s\n' "## Flake Retry Dispatch" >> "$GITHUB_STEP_SUMMARY"
-          printf '%s\n' "- run_id: ${{ steps.select.outputs.run_id != '' && steps.select.outputs.run_id || 'none' }}" >> "$GITHUB_STEP_SUMMARY"
-          printf '%s\n' "- retriable: ${{ steps.eligibility.outputs.retriable || 'n/a' }}" >> "$GITHUB_STEP_SUMMARY"
-          printf '%s\n' "- reason: ${{ steps.eligibility.outputs.reason || 'n/a' }}" >> "$GITHUB_STEP_SUMMARY"
+          {
+            printf '%s\n' "## Flake Retry Dispatch"
+            printf '%s\n' "- run_id: ${{ steps.select.outputs.run_id != '' && steps.select.outputs.run_id || 'none' }}"
+            printf '%s\n' "- retriable: ${{ steps.eligibility.outputs.retriable || 'n/a' }}"
+            printf '%s\n' "- reason: ${{ steps.eligibility.outputs.reason || 'n/a' }}"
+          } >> "$GITHUB_STEP_SUMMARY"
