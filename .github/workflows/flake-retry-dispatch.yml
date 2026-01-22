@@ -63,6 +63,13 @@ jobs:
         run: |
           set -euo pipefail
           run_id="${{ steps.select.outputs.run_id }}"
+          case "$ELIGIBILITY_PATH" in
+            -*|*'?'*|*'*'*|*'['*|*']'*)
+              printf '%s\n' "retriable=false" >> "$GITHUB_OUTPUT"
+              printf '%s\n' "reason=invalid_path" >> "$GITHUB_OUTPUT"
+              exit 0
+              ;;
+          esac
           artifact_id=$(gh api "repos/${REPO}/actions/runs/${run_id}/artifacts" --jq '.artifacts[] | select(.name == "'"$ELIGIBILITY_ARTIFACT"'") | .id' | head -n1)
           if [ -z "$artifact_id" ]; then
             printf '%s\n' "retriable=false" >> "$GITHUB_OUTPUT"
@@ -84,8 +91,17 @@ jobs:
             printf '%s\n' "reason=missing_file" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          set +e
           retriable=$(jq -r '.retriable // "false"' /tmp/eligibility.json)
+          retriable_status=$?
           reason=$(jq -r '.reason // "unknown"' /tmp/eligibility.json)
+          reason_status=$?
+          set -e
+          if [ "$retriable_status" -ne 0 ] || [ "$reason_status" -ne 0 ]; then
+            printf '%s\n' "retriable=false" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "reason=parse_failed" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           printf '%s\n' "retriable=$retriable" >> "$GITHUB_OUTPUT"
           printf '%s\n' "reason=$reason" >> "$GITHUB_OUTPUT"
       - name: Rerun failed jobs (one-shot)
