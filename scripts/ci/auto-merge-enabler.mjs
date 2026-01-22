@@ -185,7 +185,12 @@ const main = async () => {
       if (summary.counts.pending > 0) reasons.push('checks pending');
 
       if (reasons.length === 0 && !view.autoMergeRequest) {
-        enableAutoMerge(pr.number);
+        try {
+          enableAutoMerge(pr.number);
+        } catch (error) {
+          const message = error && error.message ? error.message : String(error);
+          reasons.push(`auto-merge enable failed: ${message}`);
+        }
       }
       const body = buildStatusBody(pr, view, reasons, summary);
       upsertComment(pr.number, body);
