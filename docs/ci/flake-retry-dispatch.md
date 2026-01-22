@@ -19,6 +19,7 @@ Actions から `Flake Retry Dispatch (Phase 3)` を起動し、必要に応じ�
 - `eligibility_path`  
   既定: `reports/flake-retry-eligibility.json`  
   例: verify-lite は `artifacts/verify-lite/verify-lite-retry-eligibility.json` / pr-verify は `artifacts/pr-verify/pr-verify-retry-eligibility.json`
+  制約: 先頭 `-` やワイルドカード（`*`/`?`/`[]`）は拒否される
 - `dry_run`  
   既定: `false`（true の場合は rerun-failed-jobs を実行しない）
 
