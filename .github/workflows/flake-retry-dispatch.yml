@@ -11,6 +11,10 @@ on:
         description: Artifact name containing retry eligibility JSON
         required: false
         default: flake-detection-report
+      dry_run:
+        description: Skip rerun and only report decision (true/false)
+        required: false
+        default: "false"
   schedule:
     - cron: '0 22 * * *' # JST 07:00 (after flake-detect)
 
@@ -30,6 +34,7 @@ jobs:
       REPO: ${{ github.repository }}
       WORKFLOW_FILE: ${{ github.event.inputs.workflow_file || 'flake-detect.yml' }}
       ELIGIBILITY_ARTIFACT: ${{ github.event.inputs.eligibility_artifact || 'flake-detection-report' }}
+      DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
     steps:
       - name: Select latest failed run (first attempt)
         id: select
@@ -81,6 +86,10 @@ jobs:
         if: ${{ steps.select.outputs.run_id && steps.eligibility.outputs.retriable == 'true' }}
         run: |
           set -euo pipefail
+          if [ "${DRY_RUN}" = "true" ]; then
+            printf '%s\n' "dry_run enabled; skipping rerun-failed-jobs"
+            exit 0
+          fi
           gh api -X POST "repos/${REPO}/actions/runs/${{ steps.select.outputs.run_id }}/rerun-failed-jobs"
       - name: Summary
         if: always()
@@ -89,6 +98,7 @@ jobs:
             printf '%s\n' "## Flake Retry Dispatch"
             printf '%s\n' "- workflow_file: ${WORKFLOW_FILE}"
             printf '%s\n' "- eligibility_artifact: ${ELIGIBILITY_ARTIFACT}"
+            printf '%s\n' "- dry_run: ${DRY_RUN}"
             printf '%s\n' "- run_id: ${{ steps.select.outputs.run_id != '' && steps.select.outputs.run_id || 'none' }}"
             printf '%s\n' "- retriable: ${{ steps.eligibility.outputs.retriable || 'n/a' }}"
             printf '%s\n' "- reason: ${{ steps.eligibility.outputs.reason || 'n/a' }}"
