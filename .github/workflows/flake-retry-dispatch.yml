@@ -13,8 +13,9 @@ on:
         default: flake-detection-report
       dry_run:
         description: Skip rerun and only report decision (true/false)
+        type: boolean
         required: false
-        default: "false"
+        default: false
   schedule:
     - cron: '0 22 * * *' # JST 07:00 (after flake-detect)
 
