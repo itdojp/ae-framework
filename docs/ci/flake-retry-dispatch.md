@@ -5,20 +5,20 @@ flake-detect で検知したフレークのうち、**再試行可否が true** 
 `rerun-failed-jobs` を実行する最小ディスパッチャ。
 
 ## 前提
-- 対象は flake-detect の **run_attempt=1** の失敗ランのみ
-- 再試行可否は `reports/flake-retry-eligibility.json` に記録される
+- 対象は `workflow_file` で指定したワークフローの **run_attempt=1** の失敗ランのみ
+- 再試行可否は `eligibility_path` で指定する JSON に記録される（既定: `reports/flake-retry-eligibility.json`）
 - required check は自動再試行対象外
 
 ## 手動実行（workflow_dispatch）
 Actions から `Flake Retry Dispatch (Phase 3)` を起動し、必要に応じて以下を指定する。
 
 - `workflow_file`  
-  既定: `flake-detect.yml`（例: verify-lite の場合は `verify-lite.yml`）
+  既定: `flake-detect.yml`（例: verify-lite は `verify-lite.yml` / pr-verify は `pr-verify.yml`）
 - `eligibility_artifact`  
-  既定: `flake-detection-report`（例: verify-lite の場合は `verify-lite-report`）
+  既定: `flake-detection-report`（例: verify-lite は `verify-lite-report` / pr-verify は `ae-artifacts`）
 - `eligibility_path`  
   既定: `reports/flake-retry-eligibility.json`  
-  例: verify-lite の場合は `artifacts/verify-lite/verify-lite-retry-eligibility.json`
+  例: verify-lite は `artifacts/verify-lite/verify-lite-retry-eligibility.json` / pr-verify は `artifacts/pr-verify/pr-verify-retry-eligibility.json`
 - `dry_run`  
   既定: `false`（true の場合は rerun-failed-jobs を実行しない）
 
@@ -48,4 +48,6 @@ Step Summary に以下が出力される。
 - eligibility アーティファクトが存在しない（`reason=no_artifact`）
 - zip 展開に失敗（`reason=unzip_failed`）
 - eligibility JSON ファイルが存在するが中身が空（`reason=missing_file`）
+- `eligibility_path` に不正な文字が含まれる（`reason=invalid_path`）
+- eligibility JSON の解析に失敗（`reason=parse_failed`）
 - `retriable=false` のため再試行を実施しない
