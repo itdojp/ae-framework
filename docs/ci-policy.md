@@ -67,6 +67,8 @@ CI Extended restores cached heavy test artifacts (`.cache/test-results`) when re
     - `/formal-aggregate-dispatch` … Formal Reports Aggregate を実行（`run-formal` 併用時に集約コメントを生成）
     - `/run-flake-dispatch` … flake-detect を実行
     - `/spec-validation-dispatch` … spec-validation を実行
+  - 手動実行（Actions UI）
+    - `Flake Retry Dispatch (Phase 3)` は workflow_dispatch で `workflow_file` / `eligibility_artifact` を指定可能
   - ラベル付与（Opt-in 実行/ポリシー切替）
     - `/run-qa` … `run-qa` を付与（ae-ci の QA 実行）
     - `/run-security` … `run-security` を付与（Security/SBOM 実行。PR要約も投稿）
