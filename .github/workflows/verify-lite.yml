@@ -181,6 +181,30 @@ jobs:
         run: |
           if [ -f scripts/summary/render-pr-summary.mjs ]; then node scripts/summary/render-pr-summary.mjs; fi
           [ -f artifacts/summary/PR_SUMMARY.md ] && cat artifacts/summary/PR_SUMMARY.md >> "$GITHUB_STEP_SUMMARY" || true
+      - name: Write verify-lite retry eligibility
+        if: ${{ always() }}
+        run: |
+          mkdir -p artifacts/verify-lite
+          retriable="false"
+          reason="required_check"
+          docs_only="${{ steps.docs-only.outputs.docs_only }}"
+
+          if [ "$docs_only" = "true" ]; then
+            reason="docs_only_skipped"
+          fi
+
+          cat > artifacts/verify-lite/verify-lite-retry-eligibility.json <<EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "workflow": "verify-lite",
+            "runId": "${{ github.run_id }}",
+            "sha": "${{ github.sha }}",
+            "required": true,
+            "docsOnly": ${docs_only:-false},
+            "retriable": ${retriable},
+            "reason": "${reason}"
+          }
+          EOF
       - name: Upload verify-lite report
         if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
         uses: actions/upload-artifact@v4
@@ -188,6 +212,7 @@ jobs:
           name: verify-lite-report
           path: |
             artifacts/verify-lite/verify-lite-run-summary.json
+            artifacts/verify-lite/verify-lite-retry-eligibility.json
             artifacts/report-envelope.json
             verify-lite-run-summary.json
             verify-lite-lint.log
