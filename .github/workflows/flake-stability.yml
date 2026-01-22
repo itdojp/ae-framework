@@ -270,6 +270,31 @@ jobs:
             printf "%s\n" "flaky=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Write flake retry eligibility
+        if: always()
+        run: |
+          mkdir -p reports
+          retriable="false"
+          reason="stable_or_below_threshold"
+
+          if [ "${{ steps.flake-check.outputs.flaky }}" = "true" ]; then
+            retriable="true"
+            reason="failure_rate_exceeds_threshold"
+          fi
+
+          cat > reports/flake-retry-eligibility.json <<EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "workflow": "flake-stability",
+            "runId": "${{ github.run_id }}",
+            "sha": "${{ github.sha }}",
+            "retriable": ${retriable},
+            "reason": "${reason}",
+            "failureRate": "${FAILURE_RATE}",
+            "threshold": 30.0
+          }
+          EOF
+
       - name: Upload flake detection report
         uses: actions/upload-artifact@v4
         with:
@@ -279,6 +304,7 @@ jobs:
             reports/flake-detection-failures.json
             reports/flake-detection-failures.md
             reports/flake-detection-env.json
+            reports/flake-retry-eligibility.json
             reports/flake-detection/run-*.json
           retention-days: 30
 
