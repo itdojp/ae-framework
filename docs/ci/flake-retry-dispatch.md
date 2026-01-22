@@ -16,6 +16,9 @@ Actions から `Flake Retry Dispatch (Phase 3)` を起動し、必要に応じ�
   既定: `flake-detect.yml`
 - `eligibility_artifact`  
   既定: `flake-detection-report`
+- `eligibility_path`  
+  既定: `reports/flake-retry-eligibility.json`  
+  例: verify-lite は `artifacts/verify-lite/verify-lite-retry-eligibility.json`
 - `dry_run`  
   既定: `false`（true の場合は rerun-failed-jobs を実行しない）
 
