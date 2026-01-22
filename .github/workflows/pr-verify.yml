@@ -123,16 +123,16 @@ jobs:
         run: |
           mkdir -p artifacts/pr-verify
           cat > artifacts/pr-verify/pr-verify-retry-eligibility.json <<EOF
-          {
-            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-            "workflow": "pr-verify",
-            "runId": "${{ github.run_id }}",
-            "sha": "${{ github.sha }}",
-            "required": false,
-            "retriable": false,
-            "reason": "not_evaluated"
-          }
-          EOF
+{
+  "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "workflow": "pr-verify",
+  "runId": "${{ github.run_id }}",
+  "sha": "${{ github.sha }}",
+  "required": false,
+  "retriable": false,
+  "reason": "not_evaluated"
+}
+EOF
 
       - name: Comment summary on PR
         if: github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork
