@@ -67,8 +67,9 @@ CI Extended restores cached heavy test artifacts (`.cache/test-results`) when re
     - `/formal-aggregate-dispatch` … Formal Reports Aggregate を実行（`run-formal` 併用時に集約コメントを生成）
     - `/run-flake-dispatch` … flake-detect を実行
     - `/spec-validation-dispatch` … spec-validation を実行
-  - Manual run (Actions UI)
-    - `Flake Retry Dispatch (Phase 3)` supports workflow_dispatch inputs: `workflow_file` / `eligibility_artifact` / `eligibility_path` / `dry_run`
+  - 手動実行（Actions UI）
+    - `Flake Retry Dispatch (Phase 3)` は workflow_dispatch で `workflow_file` / `eligibility_artifact` / `eligibility_path` / `dry_run` を指定可能
+    - 詳細: docs/ci/flake-retry-dispatch.md
   - ラベル付与（Opt-in 実行/ポリシー切替）
     - `/run-qa` … `run-qa` を付与（ae-ci の QA 実行）
     - `/run-security` … `run-security` を付与（Security/SBOM 実行。PR要約も投稿）
@@ -172,6 +173,7 @@ CI Extended 実行後は heavy テスト成果物を `.cache/test-results` に�
 
 ### 手動実行（Actions UI）
 - `Flake Retry Dispatch (Phase 3)` は workflow_dispatch で `workflow_file` / `eligibility_artifact` / `eligibility_path` / `dry_run` を指定可能
+  - 詳細: docs/ci/flake-retry-dispatch.md
 
 ### パス条件
 - 仕様関連の変更（`spec/**`, `.ae/**`）のみ Fail-Fast を発火
