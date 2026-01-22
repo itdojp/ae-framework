@@ -2,6 +2,15 @@ name: Flake Retry Dispatch (Phase 3)
 
 on:
   workflow_dispatch:
+    inputs:
+      workflow_file:
+        description: Target workflow file (e.g. flake-detect.yml)
+        required: false
+        default: flake-detect.yml
+      eligibility_artifact:
+        description: Artifact name containing retry eligibility JSON
+        required: false
+        default: flake-detection-report
   schedule:
     - cron: '0 22 * * *' # JST 07:00 (after flake-detect)
 
@@ -19,8 +28,8 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       REPO: ${{ github.repository }}
-      WORKFLOW_FILE: flake-detect.yml
-      ELIGIBILITY_ARTIFACT: flake-detection-report
+      WORKFLOW_FILE: ${{ github.event.inputs.workflow_file || 'flake-detect.yml' }}
+      ELIGIBILITY_ARTIFACT: ${{ github.event.inputs.eligibility_artifact || 'flake-detection-report' }}
     steps:
       - name: Select latest failed run (first attempt)
         id: select
@@ -78,6 +87,8 @@ jobs:
         run: |
           {
             printf '%s\n' "## Flake Retry Dispatch"
+            printf '%s\n' "- workflow_file: ${WORKFLOW_FILE}"
+            printf '%s\n' "- eligibility_artifact: ${ELIGIBILITY_ARTIFACT}"
             printf '%s\n' "- run_id: ${{ steps.select.outputs.run_id != '' && steps.select.outputs.run_id || 'none' }}"
             printf '%s\n' "- retriable: ${{ steps.eligibility.outputs.retriable || 'n/a' }}"
             printf '%s\n' "- reason: ${{ steps.eligibility.outputs.reason || 'n/a' }}"
