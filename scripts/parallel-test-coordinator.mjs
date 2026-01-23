@@ -115,6 +115,12 @@ class ParallelTestCoordinator {
       selectedNames.delete(name);
     }
 
+    if (selectedNames.size === 0) {
+      throw new Error(
+        '[parallel] no suites selected (check AE_PARALLEL_SUITES / AE_PARALLEL_EXCLUDE_SUITES)'
+      );
+    }
+
     // Validate dependencies for the final selection.
     for (const name of selectedNames) {
       const suite = suiteByName.get(name);
