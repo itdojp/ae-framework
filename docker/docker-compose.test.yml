@@ -237,7 +237,5 @@ networks:
       com.docker.network.bridge.name: test-br0
 
 volumes:
-  test-cache:
-    driver: local
   test-db-data:
     driver: local
