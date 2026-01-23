@@ -1,14 +1,12 @@
 # Docker Compose for Standardized Test Environment
 # Provides consistent resource constraints and environment settings
 
-version: '3.8'
-
 services:
   # Base test environment with standardized resources
   test-base:
     build:
-      context: .
-      dockerfile: Dockerfile.test
+      context: ..
+      dockerfile: docker/Dockerfile.test
       target: test-base
     environment:
       - NODE_ENV=test
@@ -26,10 +24,8 @@ services:
           cpus: '1.0'
           memory: 1G
     volumes:
-      - ./reports:/app/reports
-      - ./logs:/app/logs
-      - test-cache:/app/.cache
-      - test-node-modules:/app/node_modules
+      - ../reports:/app/reports
+      - ../logs:/app/logs
     tmpfs:
       - /app/tmp:size=512M,uid=1000,gid=1000
     shm_size: 1g
@@ -40,6 +36,8 @@ services:
   test-unit:
     extends: test-base
     build:
+      context: ..
+      dockerfile: docker/Dockerfile.test
       target: test-unit
     command: ["pnpm", "test:unit"]
     deploy:
@@ -58,6 +56,8 @@ services:
   test-integration:
     extends: test-base
     build:
+      context: ..
+      dockerfile: docker/Dockerfile.test
       target: test-integration
     command: ["pnpm", "test:ci", "--exclude", "**/system-integration.test.ts"]
     deploy:
@@ -76,6 +76,8 @@ services:
   test-e2e:
     extends: test-base
     build:
+      context: ..
+      dockerfile: docker/Dockerfile.test
       target: test-e2e
     command: ["pnpm", "test:playwright"]
     deploy:
@@ -91,15 +93,16 @@ services:
       - PLAYWRIGHT_WORKERS=1
       - CHROMIUM_FLAGS=--no-sandbox --disable-dev-shm-usage
     volumes:
-      - ./reports:/app/reports
-      - ./logs:/app/logs
-      - test-cache:/app/.cache
+      - ../reports:/app/reports
+      - ../logs:/app/logs
     shm_size: 2g
 
   # Quality tests (Golden, Metamorphic, etc.)
   test-quality:
     extends: test-base
     build:
+      context: ..
+      dockerfile: docker/Dockerfile.test
       target: test-quality
     command: ["pnpm", "test:quality"]
     deploy:
@@ -118,6 +121,8 @@ services:
   test-flake-detection:
     extends: test-base
     build:
+      context: ..
+      dockerfile: docker/Dockerfile.test
       target: test-flake-detection
     command: ["pnpm", "flake:detect:enhanced:quick"]
     deploy:
@@ -132,7 +137,7 @@ services:
       - TEST_TYPE=flake-detection
       - FLAKE_DETECTION_TIMEOUT=300000
     volumes:
-      - ./reports/flake-detection:/app/reports/flake-detection
+      - ../reports/flake-detection:/app/reports/flake-detection
 
   # Performance testing with monitoring
   test-performance:
@@ -150,7 +155,7 @@ services:
       - TEST_TYPE=performance
       - PERFORMANCE_MONITORING=true
     volumes:
-      - ./benchmarks:/app/benchmarks
+      - ../benchmarks:/app/benchmarks
 
   # Test database for integration tests
   test-db:
@@ -213,8 +218,8 @@ services:
       - test-integration
       - test-quality
     volumes:
-      - ./reports:/app/reports
-      - ./scripts:/app/scripts
+      - ../reports:/app/reports
+      - ../scripts:/app/scripts
     deploy:
       resources:
         limits:
@@ -234,7 +239,5 @@ networks:
 volumes:
   test-cache:
     driver: local
-  test-node-modules:
-    driver: local  
   test-db-data:
     driver: local

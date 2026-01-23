@@ -64,9 +64,9 @@ RUN corepack enable pnpm && \
     pnpm config set store-dir /pnpm && \
     pnpm install --frozen-lockfile --include-workspace-root
 
-# Copy test configuration files
-COPY vitest.config.ts vitest.ci.config.ts tsconfig.json jest.a11y.config.cjs ./
-COPY lighthouserc.js stryker.conf.json eslint.config.js ./
+# Copy configuration files used by CI/test scripts.
+COPY vitest.config.ts tsconfig.json eslint.config.js ./
+COPY configs/ ./configs/
 
 # Copy test setup and utilities
 COPY tests/_setup/ ./tests/_setup/
