@@ -23,6 +23,9 @@ env:
   NODE_ENV: ci
   CI: true
   DETERMINISTIC_BUILD: true
+  # pnpm lockfile must be enabled for hermetic verification (some runners set these to false).
+  NPM_CONFIG_LOCKFILE: true
+  NPM_CONFIG_USE_LOCKFILE: true
   # Disable analytics and telemetry
   NEXT_TELEMETRY_DISABLED: 1
   NETLIFY_TELEMETRY_DISABLED: 1
@@ -100,7 +103,7 @@ jobs:
     
     strategy:
       matrix:
-        node-version: [18]
+        node-version: [20]
         
     steps:
       - name: Checkout code
@@ -196,7 +199,7 @@ jobs:
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: '18'
+          node-version: '20'
           
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --prefer-offline || pnpm install --no-frozen-lockfile --prefer-offline
@@ -261,7 +264,7 @@ jobs:
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: '18'
+          node-version: '20'
           
       - name: Analyze dependency hermeticity
         run: |
@@ -330,7 +333,7 @@ jobs:
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: '18'
+          node-version: '20'
           
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --prefer-offline
