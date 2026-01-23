@@ -997,7 +997,7 @@ export class EnhancedStateManager extends EventEmitter {
         // Legacy number[] form
         if (Array.isArray(data)) {
           let allNumbers = true;
-          const buffer = Buffer.allocUnsafe(data.length);
+          const buffer = Buffer.alloc(data.length);
           for (let i = 0; i < data.length; i++) {
             const value = (data as any)[i];
             if (typeof value !== 'number') {
@@ -1012,21 +1012,9 @@ export class EnhancedStateManager extends EventEmitter {
         }
       }
 
-      const logicalKey = rawEntry.logicalKey ?? 'unknown';
-      const id = rawEntry.id ?? 'unknown';
-      const description = data === null
-        ? 'null'
-        : data === undefined
-          ? 'undefined'
-          : Array.isArray(data)
-            ? `Array(len=${data.length})`
-            : typeof data === 'object'
-              ? ((data as any)?.constructor?.name ?? 'object')
-              : typeof data;
-      throw new Error(
-        `[EnhancedStateManager] Invalid compressed entry data (logicalKey=${logicalKey}, id=${id}): ${description}. ` +
-        `Expected Buffer, TypedArray/DataView, ArrayBuffer, SharedArrayBuffer, Buffer JSON form, or number[].`
-      );
+      // Keep legacy behavior: if we can't map the payload into a byte representation, preserve it as-is.
+      // Note: downstream decompression may fail if callers attempt to treat it as bytes.
+      return data as AEIR;
     }
     return reviveSpecialValue(rawEntry.data) as AEIR;
   }
