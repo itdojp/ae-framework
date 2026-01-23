@@ -46,8 +46,9 @@ export class DockerEngine extends ContainerEngine {
 
   async checkAvailability(): Promise<boolean> {
     try {
+      const checkTimeout = process.env['CI'] ? 2000 : 5000;
       // Check if docker is available
-      const versionResult = await execAsync(`${this.dockerPath} --version`);
+      const versionResult = await execAsync(`${this.dockerPath} --version`, { timeout: checkTimeout });
       const versionMatch = versionResult.stdout.match(/Docker version (\d+\.\d+\.\d+)/);
       
       if (!versionMatch) {
@@ -56,18 +57,29 @@ export class DockerEngine extends ContainerEngine {
       }
 
       this.engineInfo.version = versionMatch[1] || 'unknown';
+      // Verify the Docker daemon is reachable (docker CLI can exist even when the daemon isn't running).
+      // Keep this bounded with a timeout to avoid hanging in CI.
+      let info: any;
+      try {
+        const infoResult = await execAsync(`${this.dockerPath} info --format json`, { timeout: checkTimeout });
+        info = JSON.parse(infoResult.stdout);
+      } catch {
+        this.engineInfo.available = false;
+        return false;
+      }
+
       this.engineInfo.available = true;
 
       // Check for docker-compose
       try {
-        await execAsync('docker-compose --version');
+        await execAsync('docker-compose --version', { timeout: checkTimeout });
         this.engineInfo.composeCommand = 'docker-compose';
         this.engineInfo.capabilities.compose = true;
         this.composePath = 'docker-compose';
       } catch {
         // Check for docker compose (newer syntax)
         try {
-          await execAsync(`${this.dockerPath} compose version`);
+          await execAsync(`${this.dockerPath} compose version`, { timeout: checkTimeout });
           this.engineInfo.composeCommand = 'docker compose';
           this.engineInfo.capabilities.compose = true;
           this.composePath = 'docker compose';
@@ -78,7 +90,7 @@ export class DockerEngine extends ContainerEngine {
 
       // Check for buildx
       try {
-        await execAsync(`${this.dockerPath} buildx version`);
+        await execAsync(`${this.dockerPath} buildx version`, { timeout: checkTimeout });
         this.engineInfo.capabilities.buildx = true;
       } catch {
         // Buildx not available
@@ -86,8 +98,6 @@ export class DockerEngine extends ContainerEngine {
 
       // Check if running in rootless mode (Docker Desktop on macOS/Windows is always rootless)
       try {
-        const infoResult = await execAsync(`${this.dockerPath} info --format json`);
-        const info = JSON.parse(infoResult.stdout);
         this.engineInfo.capabilities.rootless = info.SecurityOptions?.includes('rootless') || false;
       } catch {
         // Assume not rootless if we can't determine
