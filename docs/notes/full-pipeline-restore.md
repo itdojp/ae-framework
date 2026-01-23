@@ -101,10 +101,13 @@
 
 ### CI 再実行フロー設計メモ（2025-Week4）
 - `.github/workflows/docker-tests.yml` を新設し、`workflow_dispatch` や平日深夜の `schedule` で起動できるようにする。重いジョブのため並列数は 1、本番前までは手動実行で検証する。
-- ジョブは `ubuntu-latest` 1 本。`docker compose version` を確認後、`reports/` / `logs/` を `mkdir -p` し `chmod 777` でボリューム書き込みを許可。`actions/cache` を使い `~/.pnpm-store` / `~/.cache/playwright` などを共有してビルド時間を抑える。
-- 実行は `docker compose -f docker/docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from test-reporter` を採用し、完了後に `docker compose logs --timestamps | tee docker-compose.log` を取得。`docker compose down -v --remove-orphans` を `if: always()` で実行する。
-- 成果物として `reports/**`, `logs/**`, `docker-compose.log`, `mutation-summary.txt`, `reports/consolidated-test-report.json` をアップロードし、Step Summary には test-unit/integration/e2e/quality/flake/performance の結果と flake 判定・パフォーマンス指標を抜粋。
-- 再実行フローの入力として `service_filter`（例: `test-unit`, `test-e2e`）と `target_sha` を用意し、部分的な `docker compose run --rm` 実行も選択できるようにする（後続タスクで実装）。
+- ジョブは `ubuntu-latest` 1 本。`docker compose version` を確認後、`reports/` / `logs/` を `mkdir -p` し、コンテナユーザ（node:1000）と runner の uid/gid 不一致を吸収するため `chmod -R a+rwX` で既存ファイルを含めて書き込み可にする。`actions/cache` を使い `~/.pnpm-store` / `~/.cache/playwright` などを共有してビルド時間を抑える。
+- 実行は `--abort-on-container-exit` を避け、one-shot なテストコンテナがある前提で `docker compose build <service>` → `docker compose run --rm <service>` を順次実行する。
+  - `service_filter` 未指定（schedule/手動のデフォルト）は、安定性優先で `test-unit`, `test-integration`, `test-quality` を実行する。
+  - 重いスイート（例: `test-e2e`, `test-flake-detection`, `test-performance`）は `service_filter` で明示指定して実行する。
+- 完了後に `docker compose logs --timestamps > docker-compose.log` を取得し、`docker compose down -v --remove-orphans` を `if: always()` で実行する。
+- 成果物として `reports/**`, `logs/**`, `docker-compose.log`, `mutation-summary.txt`, `reports/consolidated-test-report.json` をアップロードし、Step Summary は `reports/consolidated-test-report.json` を `scripts/summary/docker-test-summary.mjs` で要約する。
+- 再実行フローの入力として `service_filter`（例: `test-unit,test-e2e`）と `target_sha` を用意し、部分実行できるようにする。
 
 ### Flake detection (2025-09-30)
 - 旧ツールが `npm test` を呼び出していたため全試行が 415 (環境エラー) で失敗。`scripts/flake-detector.js` を `pnpm test:ci` ベースに更新し、`FLAKE_COMMAND`/`FLAKE_ARGS` で上書き可能にした。
