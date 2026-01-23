@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/counterexample.schema.json",
+  "title": "ae-counterexample",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "backend": {
+      "type": "string"
+    },
+    "spec": {
+      "type": "string"
+    },
+    "violated": {
+      "$ref": "#/$defs/violatedProperty"
+    },
+    "trace": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/traceStep"
+      }
+    },
+    "hints": {
+      "type": "object"
+    },
+    "raw": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "violated",
+    "trace"
+  ],
+  "additionalProperties": true,
+  "$defs": {
+    "violatedProperty": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "INVARIANT",
+            "LIVENESS",
+            "THEOREM",
+            "CONFORMANCE",
+            "UNKNOWN"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "name"
+      ],
+      "additionalProperties": true
+    },
+    "traceStep": {
+      "type": "object",
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "state": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "action": {
+          "type": "string"
+        },
+        "meta": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "index",
+        "state"
+      ],
+      "additionalProperties": true
+    }
+  }
+}

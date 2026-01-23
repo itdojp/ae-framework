@@ -50,6 +50,11 @@ const checks = [
     schema: 'schema/execplan.schema.json',
     fixtures: ['fixtures/execplan/sample.execplan.json'],
     label: 'ExecPlan schema validation'
+  },
+  {
+    schema: 'schema/counterexample.schema.json',
+    fixtures: ['fixtures/counterexample/sample.counterexample.json'],
+    label: 'Counterexample schema validation'
   }
 ];
 

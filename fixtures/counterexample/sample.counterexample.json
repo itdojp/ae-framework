@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "1.0.0",
+  "backend": "tlc",
+  "spec": "spec/tla/DomainSpec.tla",
+  "violated": {
+    "kind": "INVARIANT",
+    "name": "Invariant",
+    "message": "Invariant violated in state 2"
+  },
+  "trace": [
+    {
+      "index": 0,
+      "state": {
+        "mode": "Init",
+        "counter": 0
+      }
+    },
+    {
+      "index": 1,
+      "action": "Next",
+      "state": {
+        "mode": "Running",
+        "counter": 1
+      }
+    },
+    {
+      "index": 2,
+      "action": "Next",
+      "state": {
+        "mode": "Running",
+        "counter": -1
+      }
+    }
+  ],
+  "hints": {
+    "note": "This is a schema fixture. Backends may attach tool-specific fields under raw/hints."
+  }
+}
