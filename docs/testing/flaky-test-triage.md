@@ -27,6 +27,7 @@ Purpose: Provide a minimal, repeatable checklist to diagnose flaky tests without
 
 ## 5) Mitigate safely
 - Add deterministic fixtures or mocks
+- Follow `docs/testing/mock-fixture-strategy.md` for baseline patterns
 - Add explicit timeouts and cleanup
 - Gate heavy tests with labels (`docs/ci/label-gating.md`)
 - Prefer stable profile (`docs/ci/stable-profile.md`) for baseline
@@ -39,5 +40,6 @@ Purpose: Provide a minimal, repeatable checklist to diagnose flaky tests without
 ## References
 - `docs/testing/test-categorization.md`
 - `docs/testing/parallel-execution-strategy.md`
+- `docs/testing/mock-fixture-strategy.md`
 - `docs/ci/label-gating.md`
 - `docs/ci/stable-profile.md`
