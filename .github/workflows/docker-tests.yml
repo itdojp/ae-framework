@@ -56,7 +56,7 @@ jobs:
           docker compose version
           mkdir -p "$REPORT_DIR" "$LOG_DIR"
           # Container user (node:1000) may not match runner uid/gid; make mounts writable.
-          chmod 777 "$REPORT_DIR" "$LOG_DIR"
+          chmod -R a+rwX "$REPORT_DIR" "$LOG_DIR"
 
       - name: Restore pnpm cache
         uses: actions/cache@v4

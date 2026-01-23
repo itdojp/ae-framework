@@ -69,8 +69,7 @@ services:
         "configs/vitest/vitest.workspace.ts",
         "--project",
         "integration",
-        "--exclude",
-        "**/system-integration.test.ts",
+        "tests/integration",
         "--passWithNoTests"
       ]
     deploy:
