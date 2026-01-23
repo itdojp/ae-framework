@@ -91,12 +91,19 @@ function getEslintVersion() {
 }
 
 function computeConfigHash() {
-  const configPath = path.resolve('eslint.config.js');
-  const content = readFileIfExists(configPath);
-  if (!content) {
-    return 'n/a';
+  const candidatePaths = [
+    path.resolve('configs/eslint.config.js'),
+    path.resolve('eslint.config.js'),
+  ];
+
+  for (const configPath of candidatePaths) {
+    const content = readFileIfExists(configPath);
+    if (content) {
+      return createHash('sha256').update(content).digest('hex').slice(0, 12);
+    }
   }
-  return createHash('sha256').update(content).digest('hex').slice(0, 12);
+
+  return 'n/a';
 }
 
 function normalizePath(filePath) {
