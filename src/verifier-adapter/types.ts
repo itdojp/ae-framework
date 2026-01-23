@@ -36,3 +36,41 @@ export interface Counterexample {
 
 // Naming alias for consistency with the existing CounterExample naming in FormalAgent.
 export type CounterExample = Counterexample;
+
+export type VerifierVerdict = 'satisfied' | 'violated' | 'unknown' | 'error' | 'not_run';
+
+export interface VerificationProperty {
+  kind: CounterexamplePropertyKind;
+  name: string;
+  status: 'satisfied' | 'violated' | 'unknown';
+  message?: string;
+}
+
+export interface VerificationResult {
+  backend: string;
+  verdict: VerifierVerdict;
+  properties: VerificationProperty[];
+  counterexamples: Counterexample[];
+  summary?: Record<string, unknown>;
+}
+
+export interface TlcSummary {
+  engine: string;
+  file: string;
+  ran: boolean;
+  status: string;
+  output?: string;
+  timestamp?: string;
+}
+
+export interface ApalacheSummary {
+  tool: 'apalache';
+  file: string;
+  ran: boolean;
+  status: string;
+  ok?: boolean | null;
+  errorCount?: number;
+  timeMs?: number | null;
+  output?: string;
+  timestamp?: string;
+}
