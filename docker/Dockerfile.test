@@ -58,8 +58,8 @@ WORKDIR /app
 
 # Copy package files first for better layer caching
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-# Keep workspace package manifests in the expected paths for pnpm install.
-COPY --parents packages/*/package.json ./
+# Copy workspace packages so pnpm can validate the lockfile against workspace manifests.
+COPY packages/ ./packages/
 
 # Enable pnpm and install all dependencies (including dev dependencies for testing)
 RUN corepack enable pnpm && \
@@ -81,7 +81,6 @@ RUN chmod +x scripts/*.sh scripts/*.mjs scripts/*.js
 # Copy source code (needed for testing)
 COPY src/ ./src/
 COPY templates/ ./templates/
-COPY packages/ ./packages/
 
 # Copy test files
 COPY tests/ ./tests/
