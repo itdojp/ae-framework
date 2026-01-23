@@ -5,20 +5,22 @@ export type CounterexamplePropertyKind =
   | 'CONFORMANCE'
   | 'UNKNOWN';
 
+export type CounterexampleTraceIndex = number;
+
+export type NonEmptyArray<T> = [T, ...T[]];
+
 export interface CounterexampleViolatedProperty {
   kind: CounterexamplePropertyKind;
   name: string;
   message?: string;
-  // Allow backends to attach extra details without widening the core contract.
-  [key: string]: unknown;
 }
 
 export interface CounterexampleTraceStep {
-  index: number;
+  // Non-negative integer. Enforced at runtime by schema/counterexample.schema.json.
+  index: CounterexampleTraceIndex;
   state: Record<string, unknown>;
   action?: string;
   meta?: Record<string, unknown>;
-  [key: string]: unknown;
 }
 
 export interface Counterexample {
@@ -26,9 +28,11 @@ export interface Counterexample {
   backend?: string;
   spec?: string;
   violated: CounterexampleViolatedProperty;
-  trace: CounterexampleTraceStep[];
+  // Non-empty array. Enforced at runtime by schema/counterexample.schema.json.
+  trace: NonEmptyArray<CounterexampleTraceStep>;
   hints?: Record<string, unknown>;
   raw?: Record<string, unknown>;
-  [key: string]: unknown;
 }
 
+// Naming alias for consistency with the existing CounterExample naming in FormalAgent.
+export type CounterExample = Counterexample;
