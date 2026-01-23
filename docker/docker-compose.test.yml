@@ -59,7 +59,19 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.test
       target: test-integration
-    command: ["pnpm", "test:ci", "--exclude", "**/system-integration.test.ts"]
+    # Run only the integration project (avoid scanning the whole repo / node_modules)
+    command:
+      [
+        "pnpm",
+        "vitest",
+        "run",
+        "--workspace",
+        "configs/vitest/vitest.workspace.ts",
+        "--project",
+        "integration",
+        "tests/integration",
+        "--passWithNoTests"
+      ]
     deploy:
       resources:
         limits:
