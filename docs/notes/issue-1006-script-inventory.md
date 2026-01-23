@@ -1,26 +1,26 @@
-# Issue #1006: Script Inventory (2026-01-07)
+# Issue #1006: Script Inventory (2026-01-23)
 
 ## 概要
 - 対象: `package.json` の `scripts`
 - 集計方法: `:` の前半プレフィックスで分類（例: `test:ci` → `test`）
-- 総数: 311
+- 総数: 313
 
 ## プレフィックス別の件数
 | prefix | count | share |
 | --- | ---: | ---: |
-| test | 69 | 22.2% |
-| (root) | 22 | 7.1% |
+| test | 70 | 22.4% |
+| (root) | 23 | 7.3% |
 | quality | 15 | 4.8% |
 | codex | 13 | 4.2% |
 | verify | 13 | 4.2% |
-| flake | 12 | 3.9% |
-| security | 12 | 3.9% |
+| flake | 12 | 3.8% |
+| security | 12 | 3.8% |
 | spec | 10 | 3.2% |
 | state | 8 | 2.6% |
-| benchmark | 7 | 2.3% |
-| build | 7 | 2.3% |
-| circuit-breaker | 7 | 2.3% |
-| codegen | 7 | 2.3% |
+| benchmark | 7 | 2.2% |
+| build | 7 | 2.2% |
+| circuit-breaker | 7 | 2.2% |
+| codegen | 7 | 2.2% |
 | api | 6 | 1.9% |
 | pipelines | 6 | 1.9% |
 | hermetic | 5 | 1.6% |
@@ -83,6 +83,7 @@
 - formal-agent
 - formal-spec
 - generate-tla
+- help
 - intent-agent
 - lint
 - mbt
