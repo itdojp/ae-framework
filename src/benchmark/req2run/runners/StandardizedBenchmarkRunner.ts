@@ -8,6 +8,7 @@ import type {
   RequirementSpec, 
   BenchmarkResult, 
   BenchmarkMetrics, 
+  AgenticProgrammingMetrics,
   BenchmarkConfig, 
   PhaseExecution,
   ExecutionDetails,
@@ -460,6 +461,22 @@ export class StandardizedBenchmarkRunner {
     // Calculate performance metrics
     const performanceScore = this.calculatePerformanceScore(pipelineResult);
 
+    const turnCount = pipelineResult.metadata.dataFlowTrace.length;
+    const avgLen =
+      turnCount > 0
+        ? Math.round(
+            pipelineResult.metadata.dataFlowTrace.reduce((sum, t) => sum + t.outputSize, 0) / turnCount
+          )
+        : 0;
+    const agentic: AgenticProgrammingMetrics = {
+      schemaVersion: '2.0.0',
+      tokens: { prompt: null, completion: null, tool: null, total: null },
+      costUsd: null,
+      memoryHitRatio: null,
+      turns: { count: turnCount, avgLen },
+      latencyMs: pipelineResult.totalDuration,
+    };
+
     return {
       overallScore: Math.min(100, baseScore + functionalCoverage * 0.3 + codeQualityScore * 0.1),
       functionalCoverage,
@@ -488,6 +505,7 @@ export class StandardizedBenchmarkRunner {
         securityHeaders: 75
       },
       timeToCompletion: pipelineResult.totalDuration,
+      agentic,
       resourceUsage: {
         maxMemoryUsage: Math.round(process.memoryUsage().heapTotal / (1024 * 1024)),
         avgCpuUsage: 0,
@@ -542,6 +560,7 @@ export class StandardizedBenchmarkRunner {
           success: result.success,
           score: result.metrics.overallScore,
           executionTime: result.executionDetails.totalDuration,
+          agentic: result.metrics.agentic ?? null,
           functionalCoverage: result.metrics.functionalCoverage,
           phases: result.executionDetails.phaseExecutions.map(pe => ({
             phase: pe.phase,

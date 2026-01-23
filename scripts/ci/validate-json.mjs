@@ -55,6 +55,11 @@ const checks = [
     schema: 'schema/counterexample.schema.json',
     fixtures: ['fixtures/counterexample/sample.counterexample.json'],
     label: 'Counterexample schema validation'
+  },
+  {
+    schema: 'schema/agentic-metrics.schema.json',
+    fixtures: ['fixtures/agentic-metrics/sample.agentic-metrics.json'],
+    label: 'Agentic metrics schema validation'
   }
 ];
 

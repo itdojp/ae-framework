@@ -48,8 +48,31 @@ export interface BenchmarkMetrics {
   codeQuality: QualityMetrics;       // コード品質 (10-20%)
   security: SecurityMetrics;         // セキュリティ (10-20%)
   timeToCompletion: number;          // 完了時間 (ms)
+  agentic?: AgenticProgrammingMetrics; // Agentic Survey metrics (v2 scaffold)
   resourceUsage: ResourceMetrics;    // リソース使用量
   phaseMetrics: PhaseMetrics[];      // フェーズ別メトリクス
+}
+
+export interface AgenticMetricsTokens {
+  prompt: number | null;
+  completion: number | null;
+  tool: number | null;
+  total: number | null;
+}
+
+export interface AgenticMetricsTurns {
+  count: number;
+  // Average output length (chars), derived from JSON.stringify(output).length where available.
+  avgLen: number;
+}
+
+export interface AgenticProgrammingMetrics {
+  schemaVersion: string; // e.g. 2.0.0
+  tokens: AgenticMetricsTokens;
+  costUsd: number | null;
+  memoryHitRatio: number | null;
+  turns: AgenticMetricsTurns;
+  latencyMs: number;
 }
 
 export interface PerformanceMetrics {

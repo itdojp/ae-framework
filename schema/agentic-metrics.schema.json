@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/agentic-metrics.schema.json",
+  "title": "ae-agentic-metrics",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "tokens": {
+      "type": "object",
+      "properties": {
+        "prompt": { "type": ["integer", "null"], "minimum": 0 },
+        "completion": { "type": ["integer", "null"], "minimum": 0 },
+        "tool": { "type": ["integer", "null"], "minimum": 0 },
+        "total": { "type": ["integer", "null"], "minimum": 0 }
+      },
+      "additionalProperties": true
+    },
+    "costUsd": {
+      "type": ["number", "null"],
+      "minimum": 0
+    },
+    "memoryHitRatio": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "turns": {
+      "type": "object",
+      "properties": {
+        "count": { "type": "integer", "minimum": 0 },
+        "avgLen": { "type": "number", "minimum": 0 }
+      },
+      "required": ["count", "avgLen"],
+      "additionalProperties": true
+    },
+    "latencyMs": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "required": ["schemaVersion", "turns", "latencyMs"],
+  "additionalProperties": true
+}

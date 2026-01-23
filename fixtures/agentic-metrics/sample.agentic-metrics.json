@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "2.0.0",
+  "tokens": {
+    "prompt": null,
+    "completion": null,
+    "tool": null,
+    "total": null
+  },
+  "costUsd": null,
+  "memoryHitRatio": null,
+  "turns": {
+    "count": 6,
+    "avgLen": 1234
+  },
+  "latencyMs": 54321
+}
