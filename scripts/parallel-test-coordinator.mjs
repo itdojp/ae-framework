@@ -21,7 +21,7 @@ class ParallelTestCoordinator {
     this.activeJobs = new Map();
     this.completedJobs = new Map();
     this.failedJobs = new Map();
-    this.testSuites = [
+    const allSuites = [
       {
         name: 'unit',
         command: ['pnpm', 'run', 'test:unit'],
@@ -64,6 +64,74 @@ class ParallelTestCoordinator {
         dependencies: []
       }
     ];
+
+    // Optional suite selection for partial runs (useful for CI/triage).
+    // NOTE: Dependencies are validated to prevent deadlocks (e.g. running "integration" without "unit").
+    const parseSuiteList = (value) =>
+      String(value ?? '')
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+
+    const includeRaw = parseSuiteList(process.env.AE_PARALLEL_SUITES);
+    const excludeRaw = parseSuiteList(process.env.AE_PARALLEL_EXCLUDE_SUITES);
+
+    const suiteByName = new Map(allSuites.map((suite) => [suite.name, suite]));
+    const knownNames = new Set(suiteByName.keys());
+
+    const assertKnown = (names, label) => {
+      const unknown = names.filter((name) => !knownNames.has(name));
+      if (unknown.length > 0) {
+        throw new Error(`[parallel] unknown ${label} suite(s): ${unknown.join(', ')}`);
+      }
+    };
+
+    assertKnown(includeRaw, 'include');
+    assertKnown(excludeRaw, 'exclude');
+
+    const exclude = new Set(excludeRaw);
+
+    const selectWithDependencies = (names) => {
+      const selected = new Set();
+      const stack = [...new Set(names)];
+      while (stack.length > 0) {
+        const name = stack.pop();
+        if (!name || selected.has(name)) continue;
+        const suite = suiteByName.get(name);
+        if (!suite) continue;
+        selected.add(name);
+        for (const dep of suite.dependencies ?? []) {
+          if (!selected.has(dep)) stack.push(dep);
+        }
+      }
+      return selected;
+    };
+
+    let selectedNames = includeRaw.length > 0
+      ? selectWithDependencies(includeRaw)
+      : new Set(knownNames);
+
+    for (const name of exclude) {
+      selectedNames.delete(name);
+    }
+
+    if (selectedNames.size === 0) {
+      throw new Error(
+        '[parallel] no suites selected (check AE_PARALLEL_SUITES / AE_PARALLEL_EXCLUDE_SUITES)'
+      );
+    }
+
+    // Validate dependencies for the final selection.
+    for (const name of selectedNames) {
+      const suite = suiteByName.get(name);
+      for (const dep of suite?.dependencies ?? []) {
+        if (!selectedNames.has(dep)) {
+          throw new Error(`[parallel] suite "${name}" requires "${dep}" (excluded or not selected)`);
+        }
+      }
+    }
+
+    this.testSuites = Array.from(selectedNames).map((name) => suiteByName.get(name));
   }
 
   async execute() {

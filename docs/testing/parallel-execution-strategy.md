@@ -69,6 +69,12 @@ The parallel execution strategy automatically activates in GitHub Actions:
 3. **Performance Tests**: Run only on main branch pushes
 4. **Result Consolidation**: All results are merged into a comprehensive report
 
+Additionally, a manual workflow is available for ad-hoc runs:
+
+- **Parallel Test Coordinator**: `.github/workflows/parallel-test-coordinator.yml` (workflow_dispatch)
+  - Inputs: `suites`, `exclude_suites`, `max_concurrency`, `use_container_unit`
+  - Default suites: `unit,integration,quality`
+
 ### Local Development
 
 #### Quick Parallel Run
@@ -159,6 +165,14 @@ RESOURCE_WEIGHT_MULTIPLIER=1.0
 
 # Use containerized unit tests inside the coordinator
 AE_PARALLEL_USE_CONTAINER=1
+
+# Run only specific suites (comma-separated). Dependencies are auto-included.
+# Example: e2e implies unit + integration.
+AE_PARALLEL_SUITES=unit,integration,quality
+
+# Exclude suites from the selected set (comma-separated).
+# NOTE: Excluding a required dependency will fail fast.
+AE_PARALLEL_EXCLUDE_SUITES=e2e,flake-detection
 
 # Reserved (not implemented yet)
 # ADAPTIVE_TIMEOUTS=true
