@@ -85,6 +85,7 @@ COPY templates/ ./templates/
 COPY fixtures/ ./fixtures/
 COPY samples/ ./samples/
 COPY schema/ ./schema/
+COPY observability/ ./observability/
 
 # Copy test files
 COPY tests/ ./tests/
