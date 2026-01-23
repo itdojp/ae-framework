@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 # Test Environment Dockerfile
 # Optimized for stable, reproducible test execution across different environments
 
@@ -7,6 +8,7 @@ FROM node:22-alpine AS test-base
 RUN apk add --no-cache \
     git \
     bash \
+    coreutils \
     curl \
     chromium \
     chromium-chromedriver \
@@ -25,14 +27,14 @@ RUN apk add --no-cache \
     libxi \
     libxrandr \
     libxrender \
-    libxss \
+    libxscrnsaver \
     libxtst \
     alsa-lib \
     nss \
     ca-certificates \
-    fonts-liberation \
-    fonts-noto \
-    fonts-noto-cjk
+    font-liberation \
+    font-noto \
+    font-noto-cjk
 
 # Set environment variables for consistent test execution
 ENV NODE_ENV=test
@@ -57,16 +59,17 @@ WORKDIR /app
 
 # Copy package files first for better layer caching
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY packages/*/package.json ./packages/*/
+# Copy workspace packages so pnpm can validate the lockfile against workspace manifests.
+COPY packages/ ./packages/
 
 # Enable pnpm and install all dependencies (including dev dependencies for testing)
 RUN corepack enable pnpm && \
     pnpm config set store-dir /pnpm && \
     pnpm install --frozen-lockfile --include-workspace-root
 
-# Copy test configuration files
-COPY vitest.config.ts vitest.ci.config.ts tsconfig.json jest.a11y.config.cjs ./
-COPY lighthouserc.js stryker.conf.json eslint.config.js ./
+# Copy configuration files used by CI/test scripts.
+COPY vitest.config.ts tsconfig.json eslint.config.js ./
+COPY configs/ ./configs/
 
 # Copy test setup and utilities
 COPY tests/_setup/ ./tests/_setup/
@@ -79,7 +82,10 @@ RUN chmod +x scripts/*.sh scripts/*.mjs scripts/*.js
 # Copy source code (needed for testing)
 COPY src/ ./src/
 COPY templates/ ./templates/
-COPY packages/ ./packages/
+COPY fixtures/ ./fixtures/
+COPY samples/ ./samples/
+COPY schema/ ./schema/
+COPY observability/ ./observability/
 
 # Copy test files
 COPY tests/ ./tests/
