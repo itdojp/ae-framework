@@ -997,6 +997,90 @@ describe('EnhancedStateManager helper behaviour', () => {
     await manager.shutdown();
   });
 
+  it('computes versionIndex from entry versions when export omits versionIndex', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-version-index-missing-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+
+    const timestamp = new Date().toISOString();
+    const entry = buildStateEntry('orders', { id: 'v2-order' }, {
+      timestamp,
+      version: 2,
+      metadata: {
+        created: timestamp,
+        accessed: timestamp,
+        source: 'import-test',
+        size: 0,
+      },
+    });
+
+    const exported = buildExportedState(manager, {
+      entries: [entry],
+      indices: {
+        keyIndex: {
+          orders: [`orders_${timestamp}`],
+        },
+        versionIndex: {},
+      },
+    });
+
+    await manager.importState(exported);
+
+    const versionIndex = getVersionIndex(manager);
+    expect(versionIndex.get('orders')).toBe(2);
+
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    const nextKey = await manager.saveSSOT('orders', { id: 'v3-order' });
+    const nextEntry = getStorage(manager).get(nextKey);
+    expect(nextEntry?.version).toBe(3);
+
+    await manager.shutdown();
+  });
+
+  it('preserves imported versionIndex when it is ahead of entry versions', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ae-framework-version-index-ahead-'));
+    tempRoots.push(root);
+
+    const manager = new EnhancedStateManager(root, { databasePath: 'state.db', enableTransactions: false });
+
+    const timestamp = new Date().toISOString();
+    const entry = buildStateEntry('orders', { id: 'v3-order' }, {
+      timestamp,
+      version: 3,
+      metadata: {
+        created: timestamp,
+        accessed: timestamp,
+        source: 'import-test',
+        size: 0,
+      },
+    });
+
+    const exported = buildExportedState(manager, {
+      entries: [entry],
+      indices: {
+        keyIndex: {
+          orders: [`orders_${timestamp}`],
+        },
+        versionIndex: {
+          orders: 10,
+        },
+      },
+    });
+
+    await manager.importState(exported);
+
+    const versionIndex = getVersionIndex(manager);
+    expect(versionIndex.get('orders')).toBe(10);
+
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    const nextKey = await manager.saveSSOT('orders', { id: 'v11-order' });
+    const nextEntry = getStorage(manager).get(nextKey);
+    expect(nextEntry?.version).toBe(11);
+
+    await manager.shutdown();
+  });
+
   it('records zero metadata size when imported data cannot be stringified', async () => {
     const root = await mkdtemp(join(tmpdir(), 'ae-framework-circular-size-'));
     tempRoots.push(root);
