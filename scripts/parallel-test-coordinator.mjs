@@ -137,7 +137,7 @@ class ParallelTestCoordinator {
 
   async startTestJob(suite) {
     const { cmd, args, mode } = await this.resolveCommand(suite);
-    console.log(`🏃 Starting ${suite.name} test suite (mode: ${mode}, priority: ${suite.priority}, weight: ${suite.resourceWeight})`);
+    console.log(`🏃 Starting ${suite.name} test suite (mode: ${mode}, priority: ${suite.priority}, weight: ${this.getResourceWeight(suite)})`);
 
     const startTime = Date.now();
     const logFile = path.join('logs', `parallel-${suite.name}-${Date.now()}.log`);
