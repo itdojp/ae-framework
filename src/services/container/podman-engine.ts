@@ -47,8 +47,9 @@ export class PodmanEngine extends ContainerEngine {
 
   async checkAvailability(): Promise<boolean> {
     try {
+      const checkTimeout = process.env['CI'] ? 2000 : 5000;
       // Check if podman is available
-      const versionResult = await execAsync(`${this.podmanPath} --version`);
+      const versionResult = await execAsync(`${this.podmanPath} --version`, { timeout: checkTimeout });
       const versionMatch = versionResult.stdout.match(/podman version (\d+\.\d+\.\d+)/);
       
       if (!versionMatch) {
@@ -57,18 +58,29 @@ export class PodmanEngine extends ContainerEngine {
       }
 
       this.engineInfo.version = versionMatch[1] ?? '';
+      // Verify Podman is usable (podman CLI can exist even when the backend isn't reachable).
+      // Keep this bounded with a timeout to avoid hanging in CI.
+      let info: any;
+      try {
+        const infoResult = await execAsync(`${this.podmanPath} info --format json`, { timeout: checkTimeout });
+        info = JSON.parse(infoResult.stdout);
+      } catch {
+        this.engineInfo.available = false;
+        return false;
+      }
+
       this.engineInfo.available = true;
 
       // Check for podman-compose
       try {
-        await execAsync('podman-compose --version');
+        await execAsync('podman-compose --version', { timeout: checkTimeout });
         this.engineInfo.composeCommand = 'podman-compose';
         this.engineInfo.capabilities.compose = true;
         this.composePath = 'podman-compose';
       } catch {
         // Check for docker-compose with podman
         try {
-          await execAsync('docker-compose --version');
+          await execAsync('docker-compose --version', { timeout: checkTimeout });
           this.engineInfo.composeCommand = 'docker-compose';
           this.engineInfo.capabilities.compose = true;
           this.composePath = 'docker-compose';
@@ -79,8 +91,6 @@ export class PodmanEngine extends ContainerEngine {
 
       // Check if running rootless
       try {
-        const infoResult = await execAsync(`${this.podmanPath} info --format json`);
-        const info = JSON.parse(infoResult.stdout);
         this.engineInfo.capabilities.rootless = !info.host?.security?.rootless === false;
       } catch {
         // Assume rootless if we can't determine
