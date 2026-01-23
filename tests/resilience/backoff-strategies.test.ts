@@ -442,7 +442,7 @@ describe('ResilientHttpClient', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     mockFetch = vi.fn();
-    global.fetch = mockFetch;
+    vi.stubGlobal('fetch', mockFetch);
   });
 
   afterEach(() => {
@@ -662,7 +662,7 @@ describe('Integration Tests', () => {
     });
 
     const mockFetch = vi.fn();
-    global.fetch = mockFetch;
+    vi.stubGlobal('fetch', mockFetch);
 
     // Simulate initial failures followed by recovery
     mockFetch
