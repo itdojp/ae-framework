@@ -1036,7 +1036,7 @@ export class EnhancedStateManager extends EventEmitter {
 
   private findLatestKey(logicalKey: string): string | null {
     const keys = this.keyIndex.get(logicalKey);
-    if (!keys || keys.size === 0) {
+    if (!keys) {
       return null;
     }
 
@@ -1044,7 +1044,7 @@ export class EnhancedStateManager extends EventEmitter {
     let latestKey: string | null = null;
     let latestVersion = -1;
 
-    for (const key of Array.from(keys)) {
+    for (const key of keys) {
       const entry = this.storage.get(key);
       if (entry && entry.version > latestVersion) {
         latestVersion = entry.version;

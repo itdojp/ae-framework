@@ -1,18 +1,24 @@
 # Mutation Coverage Improvement Plan (Week2)
 
-## 残存サバイバー対応計画（2025-10-07 更新）
+## 残存サバイバー対応計画（2026-01-23 更新）
 - 優先サバイバー:
-  1. `versionIndex` 減算系（Math.min 変異）
-  2. `Buffer` 判定の OR 変異（`reviveEntryData`）
-  3. `findLatestKey` 空集合パスのフォールト注入
-- 対応アクション:
-  - `findLatestKey` の負例テストを追加し、空集合時の挙動を明示する。
-  - `reviveEntryData` に TypedArray/SharedArrayBuffer の fixture を追加し、`Buffer.isBuffer` 以外も安全化。
-  - `versionIndex` 減算系は import/export の差分検証テストを拡充し、算出結果を期待値で固定。
-  - 2025-10-09: 連続保存に対する versionIndex シーケンス確認と `findKeyByVersion` の正パスを unit test で追加済み。
-- フォローアップ Issue: 追跡用に `EnhancedStateManager` 用の mutation backlog (#TODO) を作成して進捗を共有する。
+  1. `versionIndex` 算出（`Math.min` 等の変異が生き残るケース）
+  2. `reviveEntryData` の compressed import（byte 表現差分の許容）
+  3. `findLatestKey` 空集合パス（equivalent mutant 対策）
+- 対応アクション（#1080）:
+  - `reviveEntryData` の復元許容を拡張（`Buffer`/`Uint8Array`/`ArrayBuffer`/`SharedArrayBuffer`/Buffer JSON/number[]）+ テスト追加（PR #1742）。
+  - importState の `versionIndex` を「exported indices と entry.version の max」で固定するテストを追加（import/export の差分検証）。
+  - `findLatestKey` の空集合ガードが実質 equivalent mutant となるため、`keys.size === 0` の早期 return を削除してミュータント自体を除去。
+- フォローアップ Issue: #1080
 
-## 現状サマリ（2025-10-06 更新）
+## 現状サマリ（2026-01-23 更新）
+- `STRYKER_TIME_LIMIT=1800 ./scripts/mutation/run-scoped.sh --quick --mutate src/utils/enhanced-state-manager.ts -c configs/stryker.enhanced.config.js`
+  - ミューテーションスコア: **64.60%**（killed 465 / survived 257 / timeout 4 / total 726）
+- `STRYKER_TIME_LIMIT=1800 ./scripts/mutation/run-scoped.sh --quick --mutate src/utils/enhanced-state-manager.ts -c configs/stryker.enhanced.config.js -- --force`
+  - ミューテーションスコア: **65.01%**（killed 466 / survived 253 / timeout 4 / total 723）
+  - `versionIndex` 算出テスト追加により importState 周辺のサバイバーを削減し、`findLatestKey` は空集合ガード削除で equivalent mutant を解消。
+
+## 現状サマリ（2025-10-06 更新、参考）
 - `./scripts/mutation/run-scoped.sh --quick --mutate src/utils/enhanced-state-manager.ts`（2025-10-02 10:50 開始）
   - 走行時間: **約 135 分**（time-limit 未指定のため全 457 ミュータントを順次実行）
   - ミューテーションスコア: **9.85%**（killed 45 / survived 412 / no-cover 0 / errors 0）
@@ -114,4 +120,3 @@
 ## Node 20 fallback / Vitest pool 設定
 - CI では mutation quick / Verify Lite を Node.js 20 固定で実行し、tinypool crash を回避しています。
 - ローカルでも `pnpm env use --global 20` で Node 20 を利用し、`VITEST_POOL_STRATEGY=forks VITEST_POOL_WORKERS=1 ./scripts/mutation/run-scoped.sh --quick` を推奨。
-
