@@ -44,7 +44,7 @@ describe('verifier-adapter summary normalization', () => {
     const summary: ApalacheSummary = {
       tool: 'apalache',
       file: 'spec/tla/DomainSpec.tla',
-      ran: false,
+      ran: true,
       status: 'timeout',
       ok: null
     };
@@ -70,6 +70,28 @@ describe('verifier-adapter summary normalization', () => {
       file: 'spec/tla/DomainSpec.tla',
       ran: false,
       status: 'timeout'
+    };
+    const result = normalizeTlcSummary(summary);
+    expect(result.verdict).toBe('error');
+  });
+
+  it('maps tlc tool_not_available to not_run', () => {
+    const summary: TlcSummary = {
+      engine: 'tlc',
+      file: 'spec/tla/DomainSpec.tla',
+      ran: false,
+      status: 'tool_not_available'
+    };
+    const result = normalizeTlcSummary(summary);
+    expect(result.verdict).toBe('not_run');
+  });
+
+  it('maps tlc file_not_found to error', () => {
+    const summary: TlcSummary = {
+      engine: 'tlc',
+      file: 'spec/tla/DomainSpec.tla',
+      ran: false,
+      status: 'file_not_found'
     };
     const result = normalizeTlcSummary(summary);
     expect(result.verdict).toBe('error');

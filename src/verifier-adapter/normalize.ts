@@ -6,8 +6,11 @@ import type {
 } from './types.js';
 
 function verdictFromApalache(summary: ApalacheSummary): VerifierVerdict {
+  if (summary.status === 'timeout') {
+    return 'error';
+  }
   if (!summary.ran) {
-    return summary.status === 'timeout' ? 'error' : 'not_run';
+    return summary.status === 'tool_not_available' ? 'not_run' : 'error';
   }
   if (summary.ok === true) return 'satisfied';
   if (summary.ok === false) return 'violated';
@@ -15,8 +18,11 @@ function verdictFromApalache(summary: ApalacheSummary): VerifierVerdict {
 }
 
 function verdictFromTlc(summary: TlcSummary): VerifierVerdict {
+  if (summary.status === 'timeout') {
+    return 'error';
+  }
   if (!summary.ran) {
-    return summary.status === 'timeout' ? 'error' : 'not_run';
+    return summary.status === 'tool_not_available' ? 'not_run' : 'error';
   }
   return 'unknown';
 }

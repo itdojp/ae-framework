@@ -64,7 +64,8 @@ export interface TlcSummary {
 }
 
 export interface ApalacheSummary {
-  tool: 'apalache';
+  tool?: 'apalache';
+  engine?: 'apalache';
   file: string;
   ran: boolean;
   status: string;
