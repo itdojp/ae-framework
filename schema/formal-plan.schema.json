@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/formal-plan.schema.json",
+  "title": "ae-formal-plan",
+  "type": "object",
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+    },
+    "namedFormula": {
+      "type": "object",
+      "properties": {
+        "name": { "$ref": "#/$defs/identifier" },
+        "tla": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" }
+      },
+      "required": ["name", "tla"],
+      "additionalProperties": true
+    },
+    "variable": {
+      "type": "object",
+      "properties": {
+        "name": { "$ref": "#/$defs/identifier" },
+        "type": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" },
+        "domain": { "type": "string" }
+      },
+      "required": ["name", "type"],
+      "additionalProperties": true
+    },
+    "constant": {
+      "type": "object",
+      "properties": {
+        "name": { "$ref": "#/$defs/identifier" },
+        "type": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" },
+        "value": { "type": "string" }
+      },
+      "required": ["name", "type"],
+      "additionalProperties": true
+    },
+    "action": {
+      "type": "object",
+      "properties": {
+        "name": { "$ref": "#/$defs/identifier" },
+        "tla": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" },
+        "preconditions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "effects": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["name", "tla"],
+      "additionalProperties": true
+    },
+    "requirement": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "text": { "type": "string", "minLength": 1 }
+      },
+      "required": ["id", "text"],
+      "additionalProperties": true
+    }
+  },
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "source": { "type": "string" },
+        "generatedAt": { "type": "string", "format": "date-time" },
+        "model": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "version": { "type": "string" }
+          },
+          "required": ["name"],
+          "additionalProperties": true
+        }
+      },
+      "required": ["source", "generatedAt"],
+      "additionalProperties": true
+    },
+    "requirements": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/requirement" }
+    },
+    "variables": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/variable" },
+      "minItems": 1
+    },
+    "constants": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/constant" }
+    },
+    "actions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/action" },
+      "minItems": 1
+    },
+    "invariants": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/namedFormula" },
+      "minItems": 1
+    },
+    "liveness": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/namedFormula" }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/namedFormula" }
+    }
+  },
+  "required": ["schemaVersion", "metadata", "variables", "actions", "invariants"],
+  "additionalProperties": true
+}
