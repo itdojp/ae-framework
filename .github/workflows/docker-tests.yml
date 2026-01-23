@@ -73,18 +73,17 @@ jobs:
           compose_file="docker/docker-compose.test.yml"
           if [ -n "$SERVICE_FILTER" ]; then
             IFS=',' read -ra services <<< "$SERVICE_FILTER"
-            for svc in "${services[@]}"; do
-              printf 'Running service %s\n' "$svc"
-              docker compose -f "$compose_file" build "$svc"
-              docker compose -f "$compose_file" run --rm "$svc" || exit 1
-            done
           else
-            if ! grep -Eq '^[[:space:]]*test-reporter:' "$compose_file"; then
-              echo "Error: Service 'test-reporter' not found in $compose_file." >&2
-              exit 1
-            fi
-            docker compose -f "$compose_file" up --build --abort-on-container-exit --exit-code-from test-reporter
+            # Keep schedule runs deterministic and avoid abort-on-container-exit semantics
+            # which are brittle with one-shot test containers.
+            services=(test-unit test-integration test-quality)
           fi
+
+          for svc in "${services[@]}"; do
+            printf 'Running service %s\n' "$svc"
+            docker compose -f "$compose_file" build "$svc"
+            docker compose -f "$compose_file" run --rm "$svc" || exit 1
+          done
 
       - name: Capture docker logs
         if: always()
