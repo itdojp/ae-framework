@@ -82,7 +82,7 @@ RUN chmod +x scripts/*.sh scripts/*.mjs scripts/*.js
 # Copy source code (needed for testing)
 COPY src/ ./src/
 COPY templates/ ./templates/
-COPY examples/ ./examples/
+COPY examples/inventory/ ./examples/inventory/
 COPY fixtures/ ./fixtures/
 COPY samples/ ./samples/
 COPY schema/ ./schema/
