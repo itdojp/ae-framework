@@ -20,7 +20,7 @@ const scripts = pkg.scripts || {};
 
 const groups = new Map();
 for (const name of Object.keys(scripts).sort()) {
-  const prefix = name.includes(':') ? name.split(':')[0] : 'core';
+  const prefix = name.includes(':') ? name.split(':')[0] : '(root)';
   if (!groups.has(prefix)) {
     groups.set(prefix, []);
   }
@@ -38,6 +38,25 @@ for (const [prefix, names] of [...groups.entries()].sort()) {
   const suffix =
     names.length > shownCount ? ` ... (showing ${shownCount} of ${names.length})` : '';
   lines.push(`- ${prefix} (${names.length}): ${sample}${suffix}`);
+}
+
+const runnerCandidates = [
+  { category: 'test', entry: 'scripts/test/run.mjs' },
+  { category: 'quality', entry: 'scripts/quality/run.mjs' },
+  { category: 'verify', entry: 'scripts/verify/run.mjs' },
+  { category: 'flake', entry: 'scripts/flake/run.mjs' },
+  { category: 'security', entry: 'scripts/security/run.mjs' },
+];
+const availableRunners = runnerCandidates.filter((runner) =>
+  fs.existsSync(path.join(root, runner.entry))
+);
+
+if (availableRunners.length > 0) {
+  lines.push('');
+  lines.push('Consolidated runners (Phase 1):');
+  for (const runner of availableRunners) {
+    lines.push(`- ${runner.category}: node ${runner.entry} --list`);
+  }
 }
 
 lines.push('');
