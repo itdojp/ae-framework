@@ -12,14 +12,20 @@ import path from 'path';
 
 class ParallelTestCoordinator {
   constructor() {
-    this.maxConcurrency = Math.min(cpus().length, 4); // Limit to prevent resource exhaustion
+    const envMax = Number.parseInt(process.env.MAX_TEST_CONCURRENCY ?? '', 10);
+    const defaultMax = Math.min(cpus().length, 4); // Limit to prevent resource exhaustion
+    this.maxConcurrency = Number.isFinite(envMax) && envMax > 0 ? envMax : defaultMax;
+    const envMultiplier = Number.parseFloat(process.env.RESOURCE_WEIGHT_MULTIPLIER ?? '1');
+    this.resourceWeightMultiplier = Number.isFinite(envMultiplier) && envMultiplier > 0 ? envMultiplier : 1;
+    this.useContainerTests = process.env.AE_PARALLEL_USE_CONTAINER === '1';
     this.activeJobs = new Map();
     this.completedJobs = new Map();
     this.failedJobs = new Map();
     this.testSuites = [
       {
         name: 'unit',
-        command: 'test:docker:unit',
+        command: ['pnpm', 'run', 'test:unit'],
+        containerCommand: ['bash', 'scripts/docker/run-unit.sh'],
         priority: 1,
         estimatedDuration: 300000, // 5 minutes
         resourceWeight: 1,
@@ -27,7 +33,7 @@ class ParallelTestCoordinator {
       },
       {
         name: 'integration',
-        command: 'test:docker:integration', 
+        command: ['pnpm', 'run', 'test:int'],
         priority: 2,
         estimatedDuration: 600000, // 10 minutes
         resourceWeight: 2,
@@ -35,7 +41,7 @@ class ParallelTestCoordinator {
       },
       {
         name: 'quality',
-        command: 'test:docker:quality',
+        command: ['pnpm', 'run', 'test:quality:fast'],
         priority: 2,
         estimatedDuration: 900000, // 15 minutes
         resourceWeight: 2,
@@ -43,7 +49,7 @@ class ParallelTestCoordinator {
       },
       {
         name: 'e2e',
-        command: 'test:docker:e2e',
+        command: ['pnpm', 'run', 'test:e2e'],
         priority: 3,
         estimatedDuration: 1200000, // 20 minutes
         resourceWeight: 3,
@@ -51,7 +57,7 @@ class ParallelTestCoordinator {
       },
       {
         name: 'flake-detection',
-        command: 'test:docker:flake',
+        command: ['pnpm', 'run', 'test:flake-detection'],
         priority: 4,
         estimatedDuration: 800000, // 13 minutes
         resourceWeight: 2,
@@ -63,14 +69,14 @@ class ParallelTestCoordinator {
   async execute() {
     console.log('🚀 Starting parallel test execution coordinator...');
     console.log(`📊 Available CPU cores: ${cpus().length}, Max concurrency: ${this.maxConcurrency}`);
-    
+
     const startTime = Date.now();
     await this.createReportsDirectory();
-    
+
     try {
       await this.executeTestSuites();
       await this.generateExecutionReport(startTime);
-      
+
       if (this.failedJobs.size > 0) {
         console.log(`❌ ${this.failedJobs.size} test suite(s) failed`);
         process.exit(1);
@@ -93,7 +99,7 @@ class ParallelTestCoordinator {
 
   async executeTestSuites() {
     const executionQueue = [...this.testSuites].sort((a, b) => a.priority - b.priority);
-    
+
     while (executionQueue.length > 0 || this.activeJobs.size > 0) {
       // Start new jobs if resources allow
       while (this.canStartNewJob() && executionQueue.length > 0) {
@@ -116,8 +122,8 @@ class ParallelTestCoordinator {
 
   canStartNewJob() {
     const currentResourceLoad = Array.from(this.activeJobs.values())
-      .reduce((sum, job) => sum + job.suite.resourceWeight, 0);
-    
+      .reduce((sum, job) => sum + this.getResourceWeight(job.suite), 0);
+
     return this.activeJobs.size < this.maxConcurrency && currentResourceLoad < this.maxConcurrency * 2;
   }
 
@@ -130,14 +136,15 @@ class ParallelTestCoordinator {
   }
 
   async startTestJob(suite) {
-    console.log(`🏃 Starting ${suite.name} test suite (priority: ${suite.priority}, weight: ${suite.resourceWeight})`);
-    
+    const { cmd, args, mode } = await this.resolveCommand(suite);
+    console.log(`🏃 Starting ${suite.name} test suite (mode: ${mode}, priority: ${suite.priority}, weight: ${suite.resourceWeight})`);
+
     const startTime = Date.now();
     const logFile = path.join('logs', `parallel-${suite.name}-${Date.now()}.log`);
-    
+
     const jobPromise = new Promise((resolve, reject) => {
       // Avoid shadowing global `process` (Node.js). Use `child` for the spawned process.
-      const child = spawn('make', [suite.command], {
+      const child = spawn(cmd, args, {
         stdio: 'pipe',
         // Use the real Node.js process.env explicitly to prevent CodeQL issue (property access on non-object)
         env: { ...process.env, TEST_SUITE: suite.name }
@@ -157,7 +164,7 @@ class ParallelTestCoordinator {
       child.on('close', async (code) => {
         const endTime = Date.now();
         const duration = endTime - startTime;
-        
+
         const result = {
           suite,
           code,
@@ -165,12 +172,14 @@ class ParallelTestCoordinator {
           stdout,
           stderr,
           startTime,
-          endTime
+          endTime,
+          command: [cmd, ...args].join(' '),
+          mode
         };
 
         // Save execution log
         await this.saveExecutionLog(logFile, result);
-        
+
         if (code === 0) {
           console.log(`✅ ${suite.name} completed successfully in ${(duration / 1000).toFixed(1)}s`);
           this.completedJobs.set(suite.name, result);
@@ -189,17 +198,17 @@ class ParallelTestCoordinator {
     });
 
     this.activeJobs.set(suite.name, { suite, promise: jobPromise, startTime });
-    
+
     return jobPromise;
   }
 
   async waitForNextCompletion() {
-    const activePromises = Array.from(this.activeJobs.values()).map(job => 
+    const activePromises = Array.from(this.activeJobs.values()).map(job =>
       job.promise.catch(() => {}) // Ignore rejections here, handle in job completion
     );
-    
+
     await Promise.race(activePromises);
-    
+
     // Clean up completed jobs from active list
     for (const name of this.activeJobs.keys()) {
       if (this.completedJobs.has(name) || this.failedJobs.has(name)) {
@@ -213,6 +222,8 @@ class ParallelTestCoordinator {
       timestamp: new Date().toISOString(),
       suite: result.suite.name,
       exitCode: result.code,
+      mode: result.mode,
+      command: result.command,
       duration: result.duration,
       estimatedDuration: result.suite.estimatedDuration,
       variance: result.duration - result.suite.estimatedDuration,
@@ -226,11 +237,12 @@ class ParallelTestCoordinator {
   async generateExecutionReport(startTime) {
     const totalDuration = Date.now() - startTime;
     const allJobs = new Map([...this.completedJobs, ...this.failedJobs]);
-    
+
     const report = {
       timestamp: new Date().toISOString(),
       totalDuration,
       maxConcurrency: this.maxConcurrency,
+      resourceWeightMultiplier: this.resourceWeightMultiplier,
       summary: {
         total: allJobs.size,
         completed: this.completedJobs.size,
@@ -253,6 +265,7 @@ class ParallelTestCoordinator {
             estimatedDuration: job.suite.estimatedDuration,
             variance: job.duration - job.suite.estimatedDuration,
             resourceWeight: job.suite.resourceWeight,
+            effectiveResourceWeight: this.getResourceWeight(job.suite),
             priority: job.suite.priority
           }
         ])
@@ -263,43 +276,44 @@ class ParallelTestCoordinator {
 
     const reportPath = path.join('reports', 'parallel-execution', `execution-report-${Date.now()}.json`);
     await fs.writeFile(reportPath, JSON.stringify(report, null, 2));
-    
+
     console.log(`📊 Execution report saved: ${reportPath}`);
     console.log(`⏱️  Total execution time: ${(totalDuration / 1000).toFixed(1)}s`);
     console.log(`🎯 Parallel efficiency: ${report.performance.parallelEfficiency.toFixed(1)}%`);
-    
+
     return report;
   }
 
   calculateParallelEfficiency(allJobs, totalDuration) {
     const sequentialTime = Array.from(allJobs.values())
       .reduce((sum, job) => sum + job.duration, 0);
-    
+
     return (sequentialTime / totalDuration) * 100;
   }
 
   calculateResourceUtilization(allJobs) {
     const jobsByWeight = Array.from(allJobs.values())
       .reduce((acc, job) => {
-        acc[job.suite.resourceWeight] = (acc[job.suite.resourceWeight] || 0) + 1;
+        const weight = this.getResourceWeight(job.suite);
+        acc[weight] = (acc[weight] || 0) + 1;
         return acc;
       }, {});
 
     return {
       distributionByWeight: jobsByWeight,
       averageWeight: Array.from(allJobs.values())
-        .reduce((sum, job) => sum + job.suite.resourceWeight, 0) / allJobs.size
+        .reduce((sum, job) => sum + this.getResourceWeight(job.suite), 0) / allJobs.size
     };
   }
 
   generateOptimizationRecommendations(allJobs, totalDuration) {
     const recommendations = [];
-    
+
     // Analyze duration variances
     const highVarianceJobs = Array.from(allJobs.values())
       .filter(job => Math.abs(job.duration - job.suite.estimatedDuration) > 60000)
       .map(job => job.suite.name);
-    
+
     if (highVarianceJobs.length > 0) {
       recommendations.push({
         type: 'duration_estimation',
@@ -328,6 +342,35 @@ class ParallelTestCoordinator {
     }
 
     return recommendations;
+  }
+
+  getResourceWeight(suite) {
+    return suite.resourceWeight * this.resourceWeightMultiplier;
+  }
+
+  async resolveCommand(suite) {
+    if (this.useContainerTests && suite.containerCommand) {
+      const [cmd, ...args] = suite.containerCommand;
+      if (await this.isCommandRunnable(cmd, args)) {
+        return { cmd, args, mode: 'container' };
+      }
+      console.warn(`[parallel] container command unavailable for ${suite.name}; falling back to host`);
+    }
+    const [cmd, ...args] = suite.command;
+    return { cmd, args, mode: 'host' };
+  }
+
+  async isCommandRunnable(cmd, args) {
+    if (cmd === 'bash' && args.length > 0) {
+      const target = path.resolve(process.cwd(), args[0]);
+      try {
+        await fs.access(target);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    return true;
   }
 }
 

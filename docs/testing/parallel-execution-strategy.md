@@ -13,9 +13,9 @@ The AE Framework implements a sophisticated parallel test execution strategy tha
 ## Key Components
 
 ### 1. Podman-based Standardization
-- **Containerized Test Environment**: All tests run in standardized Podman containers (Docker Desktop fallback is supported)
-- **Resource Constraints**: Consistent CPU and memory limits across test types
-- **Isolation**: Each test suite runs in its own container to prevent interference
+- **Containerized Unit Tests (Current)**: Unit suite can run in Podman/Docker via `scripts/docker/run-unit.sh` and `infra/podman/unit-compose.yml`
+- **Host-based Suites (Current)**: Integration/quality/flake/e2e run on host by default; container expansion is planned (see `docs/ci/hermetic-container-plan.md`)
+- **Resource Constraints**: Consistent CPU and memory limits across test types (compose/pnpm settings)
 
 ### 2. Intelligent Test Distribution
 
@@ -27,6 +27,8 @@ The AE Framework implements a sophisticated parallel test execution strategy tha
 | Quality | 2 | 2 | 15 min | None |
 | E2E | 3 | 3 | 20 min | Unit, Integration |
 | Flake Detection | 4 | 2 | 13 min | None |
+
+Note: `test:e2e` is an alias to `test:phase3.2:core` (Playwright integration + visual regression).
 
 #### Resource Allocation
 - **CPU Limits**: 0.5-2.0 cores per container
@@ -49,8 +51,11 @@ strategy:
 # Run all test suites in parallel with optimal resource allocation
 pnpm run test:parallel
 
-# Podman-based parallel execution with resource constraints (Docker Desktop fallback supported)
-make test:docker:all
+# Use containerized unit tests inside the coordinator (others remain host-based)
+AE_PARALLEL_USE_CONTAINER=1 pnpm run test:parallel
+
+# Run only the unit suite in a container
+bash scripts/docker/run-unit.sh
 ```
 
 ## Usage
@@ -73,15 +78,13 @@ pnpm run test:parallel
 
 #### Podman-based Execution (Docker Desktop fallback)
 ```bash
-# All test suites
-make test:docker:all
+# Unit suite via container runtime (Podman preferred, Docker fallback)
+bash scripts/docker/run-unit.sh
 
-# Specific test suite
-make test:docker:unit
-make test:docker:integration
-make test:docker:e2e
+# Validate container toolchain (Podman/Docker + compose)
+pnpm run podman:smoke
 ```
-> ℹ️ `make test:docker:*` ターゲットは Podman の Docker 互換 CLI (`podman`/`podman-compose`) 上でもそのまま動作します。Docker Desktop を利用する場合も同じコマンドが使用可能です。
+> ℹ️ Docker Desktop を使う場合も `scripts/docker/run-unit.sh` は `docker compose` へ自動フォールバックします。
 
 #### Manual Coordination
 ```bash
@@ -154,8 +157,11 @@ MAX_TEST_CONCURRENCY=4
 # Resource weight multiplier
 RESOURCE_WEIGHT_MULTIPLIER=1.0
 
-# Enable adaptive timeouts
-ADAPTIVE_TIMEOUTS=true
+# Use containerized unit tests inside the coordinator
+AE_PARALLEL_USE_CONTAINER=1
+
+# Reserved (not implemented yet)
+# ADAPTIVE_TIMEOUTS=true
 ```
 
 ### Podman Compose Override
@@ -219,6 +225,6 @@ podman stats
 tail -f logs/parallel-*.log
 
 # Test environment validation
-make test:env:validate
+pnpm run podman:smoke
 ```
 > ℹ️ Docker Desktop を使用している場合は `podman` コマンドを `docker` へ読み替えてください。
