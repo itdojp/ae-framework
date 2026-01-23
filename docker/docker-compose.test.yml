@@ -70,7 +70,7 @@ services:
         "--project",
         "integration",
         "--exclude",
-        "tests/optimization/system-integration.test.ts",
+        "**/system-integration.test.ts",
         "--passWithNoTests"
       ]
     deploy:
