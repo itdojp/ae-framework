@@ -109,16 +109,17 @@ type EnhancedReportData = {
   };
   configuration: BenchmarkConfig;
   analytics: AnalyticsData;
-  results: Array<{
-    problemId: string;
-    success: boolean;
-    score: number;
-    executionTime: number;
-    functionalCoverage: number;
-    phases: PhaseSummary[];
-    errors: string[];
-  }>;
-};
+	  results: Array<{
+	    problemId: string;
+	    success: boolean;
+	    score: number;
+	    executionTime: number;
+	    agentic: AgenticProgrammingMetrics | null;
+	    functionalCoverage: number;
+	    phases: PhaseSummary[];
+	    errors: string[];
+	  }>;
+	};
 
 /**
  * Standardized Benchmark Runner

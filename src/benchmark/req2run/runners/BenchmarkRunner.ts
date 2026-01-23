@@ -143,10 +143,31 @@ export class BenchmarkRunner {
       const metrics = await this.evaluateResult(application, spec, phaseExecutions);
 
       const endTime = new Date();
+      const duration = endTime.getTime() - startTime.getTime();
+      const turnCount = phaseExecutions.length;
+      const avgLen =
+        turnCount > 0
+          ? Math.round(
+              phaseExecutions.reduce((sum, p) => {
+                try {
+                  return sum + JSON.stringify(p.output ?? null).length;
+                } catch {
+                  return sum;
+                }
+              }, 0) / turnCount
+            )
+          : 0;
+      const normalizedMetrics: BenchmarkMetrics = {
+        ...metrics,
+        timeToCompletion: duration,
+        ...(metrics.agentic
+          ? { agentic: { ...metrics.agentic, turns: { count: turnCount, avgLen }, latencyMs: duration } }
+          : {}),
+      };
       const executionDetails: ExecutionDetails = {
         startTime,
         endTime,
-        totalDuration: endTime.getTime() - startTime.getTime(),
+        totalDuration: duration,
         phaseExecutions,
         environment: await this.getExecutionEnvironment(),
         logs
@@ -156,7 +177,7 @@ export class BenchmarkRunner {
         problemId,
         timestamp: endTime,
         success: errors.length === 0,
-        metrics,
+        metrics: normalizedMetrics,
         executionDetails,
         generatedArtifacts,
         ...(errors.length > 0 ? { errors } : {})
@@ -173,15 +194,46 @@ export class BenchmarkRunner {
       errors.push(benchmarkError);
 
       const endTime = new Date();
+      const duration = endTime.getTime() - startTime.getTime();
+      const baseMetrics = this.getDefaultMetrics();
+      const turnCount = phaseExecutions.length;
+      const avgLen =
+        turnCount > 0
+          ? Math.round(
+              phaseExecutions.reduce((sum, p) => {
+                try {
+                  return sum + JSON.stringify(p.output ?? null).length;
+                } catch {
+                  return sum;
+                }
+              }, 0) / turnCount
+            )
+          : 0;
+      const metrics: BenchmarkMetrics = {
+        ...baseMetrics,
+        timeToCompletion: duration,
+        agentic: {
+          ...(baseMetrics.agentic ?? {
+            schemaVersion: '2.0.0',
+            tokens: { prompt: null, completion: null, tool: null, total: null },
+            costUsd: null,
+            memoryHitRatio: null,
+            turns: { count: 0, avgLen: 0 },
+            latencyMs: 0,
+          }),
+          turns: { count: turnCount, avgLen },
+          latencyMs: duration,
+        },
+      };
       return {
         problemId,
         timestamp: endTime,
         success: false,
-        metrics: this.getDefaultMetrics(),
+        metrics,
         executionDetails: {
           startTime,
           endTime,
-          totalDuration: endTime.getTime() - startTime.getTime(),
+          totalDuration: duration,
           phaseExecutions,
           environment: await this.getExecutionEnvironment(),
           logs
@@ -656,6 +708,14 @@ export class BenchmarkRunner {
         securityHeaders: 0
       },
       timeToCompletion: 0,
+      agentic: {
+        schemaVersion: '2.0.0',
+        tokens: { prompt: null, completion: null, tool: null, total: null },
+        costUsd: null,
+        memoryHitRatio: null,
+        turns: { count: 0, avgLen: 0 },
+        latencyMs: 0,
+      },
       resourceUsage: {
         maxMemoryUsage: 0,
         avgCpuUsage: 0,
