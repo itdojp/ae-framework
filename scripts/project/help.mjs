@@ -20,7 +20,7 @@ const scripts = pkg.scripts || {};
 
 const groups = new Map();
 for (const name of Object.keys(scripts).sort()) {
-  const prefix = name.includes(':') ? name.split(':')[0] : 'core';
+  const prefix = name.includes(':') ? name.split(':')[0] : '(root)';
   if (!groups.has(prefix)) {
     groups.set(prefix, []);
   }
