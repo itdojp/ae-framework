@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 # Test Environment Dockerfile
 # Optimized for stable, reproducible test execution across different environments
 
@@ -57,7 +58,8 @@ WORKDIR /app
 
 # Copy package files first for better layer caching
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY packages/*/package.json ./packages/*/
+# Keep workspace package manifests in the expected paths for pnpm install.
+COPY --parents packages/*/package.json ./
 
 # Enable pnpm and install all dependencies (including dev dependencies for testing)
 RUN corepack enable pnpm && \
