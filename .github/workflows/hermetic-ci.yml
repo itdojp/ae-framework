@@ -408,7 +408,8 @@ jobs:
     name: Hermetic Deployment Validation
     runs-on: ubuntu-latest
     needs: hermetic-quality-gates
-    if: github.ref == 'refs/heads/main'
+    # Restrict to main for automatic runs, but allow manual workflow_dispatch on branches for validation.
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     
     steps:
       - name: Checkout code
@@ -417,15 +418,32 @@ jobs:
       - name: Download hermetic build
         uses: actions/download-artifact@v4
         with:
-          name: hermetic-build-18
+          pattern: hermetic-build-*
           path: hermetic-build
+
+      - name: Resolve hermetic build directory
+        run: |
+          set -euo pipefail
+
+          # Expect at least one build artifact directory like hermetic-build/hermetic-build-20/.
+          # If multiple artifacts exist (e.g. when the deterministic build matrix expands),
+          # pick the highest version directory to avoid lexicographic mis-selection.
+          BUILD_DIR="$(find hermetic-build -maxdepth 1 -mindepth 1 -type d -name 'hermetic-build-*' -print 2>/dev/null | sort -V | tail -n 1 || true)"
+          if [ -z "${BUILD_DIR:-}" ]; then
+            printf "%s\n" "❌ No hermetic-build-* artifact found"
+            ls -la hermetic-build || true
+            exit 1
+          fi
+
+          printf "%s\n" "✅ Using build artifact: $BUILD_DIR"
+          printf "%s\n" "HERMETIC_BUILD_DIR=$BUILD_DIR" >> "$GITHUB_ENV"
           
       - name: Validate deployment hermeticity
         run: |
           printf "%s\n" "🚀 Validating deployment hermeticity..."
           
           # Verify build checksums
-          if [ -f hermetic-build/build1.checksums ]; then
+          if [ -f "$HERMETIC_BUILD_DIR/build1.checksums" ]; then
             printf "%s\n" "✅ Hermetic build artifacts verified"
           else
             printf "%s\n" "❌ Missing hermetic build verification"
