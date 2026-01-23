@@ -8,6 +8,7 @@ FROM node:22-alpine AS test-base
 RUN apk add --no-cache \
     git \
     bash \
+    coreutils \
     curl \
     chromium \
     chromium-chromedriver \
@@ -81,7 +82,9 @@ RUN chmod +x scripts/*.sh scripts/*.mjs scripts/*.js
 # Copy source code (needed for testing)
 COPY src/ ./src/
 COPY templates/ ./templates/
+COPY fixtures/ ./fixtures/
 COPY samples/ ./samples/
+COPY schema/ ./schema/
 
 # Copy test files
 COPY tests/ ./tests/
