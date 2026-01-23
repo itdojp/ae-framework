@@ -82,6 +82,7 @@ afterEach(async () => {
 
   vi.restoreAllMocks();
   vi.clearAllMocks();
+  vi.unstubAllGlobals();
   vi.useRealTimers();
 
   const afterHandles = (process as any)['_getActiveHandles']?.().length ?? 0

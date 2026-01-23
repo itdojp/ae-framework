@@ -326,9 +326,8 @@ describe('IntegrationTestingCli', () => {
 
     it('should handle watch mode setup', async () => {
       // Mock setInterval to prevent actual watching
-      const originalSetInterval = global.setInterval;
-      const mockSetInterval = vi.fn();
-      global.setInterval = mockSetInterval;
+      const mockSetInterval = vi.fn(() => 0 as any);
+      vi.stubGlobal('setInterval', mockSetInterval);
 
       const command = cli.createCommand();
       const args = ['node', 'cli', 'status', '--watch', '--refresh', '2'];
@@ -338,9 +337,6 @@ describe('IntegrationTestingCli', () => {
       expect(consoleLogSpy).toHaveBeenCalledWith(
         expect.stringContaining('Watching test execution status')
       );
-
-      // Restore original
-      global.setInterval = originalSetInterval;
     });
   });
 

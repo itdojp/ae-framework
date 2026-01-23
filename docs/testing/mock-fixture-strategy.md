@@ -23,6 +23,10 @@
 
 ## Recommended patterns
 
+### Globals (fetch, timers, etc)
+- Prefer `vi.stubGlobal(...)` over direct assignment (e.g. `globalThis.fetch = ...`).
+- Ensure globals are reverted via `vi.unstubAllGlobals()` (CI test setup does this in `tests/setup/ci-vitest.ts`).
+
 ### Time
 - Use `vi.useFakeTimers()` and `vi.setSystemTime(...)`.
 - Restore timers in `afterEach` to avoid cross-test leakage.

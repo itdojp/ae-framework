@@ -15,6 +15,11 @@ beforeAll(() => {
 
 afterEach(() => {
   try {
+    vi.unstubAllGlobals();
+  } catch {
+    // ignore: globals may already be real/unstubbed
+  }
+  try {
     vi.useRealTimers();
   } catch {
     // ignore: timers may already be real
