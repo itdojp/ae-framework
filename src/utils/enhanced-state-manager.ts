@@ -964,9 +964,11 @@ export class EnhancedStateManager extends EventEmitter {
       // `compressed` entries are expected to carry byte payloads (Buffer/Uint8Array/etc).
       // Accept multiple representations to support persisted/imported state shapes.
       const rawData = rawEntry.data as any;
-      // Only revive marker objects (e.g. {__ae_type: ...}); do not traverse real TypedArray instances,
+      // Only revive marker objects (e.g. {__ae_type: string}); do not traverse real TypedArray instances,
       // otherwise they get converted into plain objects and become unusable as byte payloads.
-      const data = rawData && typeof rawData === 'object' && rawData.__ae_type
+      const data = rawData &&
+        typeof rawData === 'object' &&
+        typeof (rawData as any).__ae_type === 'string'
         ? (reviveSpecialValue(rawData) as any)
         : rawData;
 
@@ -993,12 +995,38 @@ export class EnhancedStateManager extends EventEmitter {
           return Buffer.from(data.data);
         }
         // Legacy number[] form
-        if (Array.isArray(data) && data.every((value: any) => typeof value === 'number')) {
-          return Buffer.from(data);
+        if (Array.isArray(data)) {
+          let allNumbers = true;
+          const buffer = Buffer.allocUnsafe(data.length);
+          for (let i = 0; i < data.length; i++) {
+            const value = (data as any)[i];
+            if (typeof value !== 'number') {
+              allNumbers = false;
+              break;
+            }
+            buffer[i] = value;
+          }
+          if (allNumbers) {
+            return buffer;
+          }
         }
       }
 
-      return data as AEIR;
+      const logicalKey = rawEntry.logicalKey ?? 'unknown';
+      const id = rawEntry.id ?? 'unknown';
+      const description = data === null
+        ? 'null'
+        : data === undefined
+          ? 'undefined'
+          : Array.isArray(data)
+            ? `Array(len=${data.length})`
+            : typeof data === 'object'
+              ? ((data as any)?.constructor?.name ?? 'object')
+              : typeof data;
+      throw new Error(
+        `[EnhancedStateManager] Invalid compressed entry data (logicalKey=${logicalKey}, id=${id}): ${description}. ` +
+        `Expected Buffer, TypedArray/DataView, ArrayBuffer, SharedArrayBuffer, Buffer JSON form, or number[].`
+      );
     }
     return reviveSpecialValue(rawEntry.data) as AEIR;
   }
