@@ -7,14 +7,14 @@
 ## 進行状況
 - ✅ 要件・ロードマップは #1047 / #1053 で定義済み。
 - ✅ Flow Schema / Envelope / Ajv CI などのベース実装は PR #1184/#1186/#1187 で整備済み。
-- ✅ Agent Builder Adapter スケルトン（flow-runner + tests）は整備済み。
-- ☐ Verify Lite PoC は未完（demo 実行手順の整備が残り）。
+- ✅ Agent Builder Adapter スケルトン（flow-runner + tests）は PR #1189 で整備済み。
+- ✅ Verify Lite PoC（Intent→Formal→Code→Verify）は `npm run demo:ab-poc` とドキュメントで再現可能（PR #1394/#1397/#1398、改善: #1489/#1491）。
 
 ## 直近のアクション候補
 1. ✅ PR-1: Flow Schema v0.1 + Envelope v1.0 + Ajv CI（#1184/#1186/#1187）。
 2. ✅ PR-2: Verify Lite → Envelope 変換の実装とテスト（#1186）。
-3. ✅ PR-3: Agent Builder Adapter スケルトン（flow JSON 取り込み・ノード実行モック・Envelope出力整合）。
-4. 🔄 PR-4: Intent→Formal→Code→Verify PoC（Adapter + Verify Lite + Formal ツール連携での e2e 実験）。
+3. ✅ PR-3: Agent Builder Adapter スケルトン（flow JSON 取り込み・ノード実行モック・Envelope出力整合）（#1189）。
+4. ✅ PR-4: Intent→Formal→Code→Verify PoC（Adapter + Verify Lite + Envelope出力）（#1394/#1397/#1398）。
 
 ## リスク
 - スキーマ変更の影響 → semver 管理、スナップショットテスト。
