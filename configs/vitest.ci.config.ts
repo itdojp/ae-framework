@@ -19,6 +19,7 @@ export default defineConfig({
     retry: 2,
     reporter: ['verbose'],
     exclude: [
+      '**/node_modules/**',
       'tests/optimization/system-integration.test.ts',
       'tests/**/*.flaky.test.*',
       'tests/**/*.e2e.test.*'
