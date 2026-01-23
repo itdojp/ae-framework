@@ -426,7 +426,7 @@ jobs:
           set -euo pipefail
 
           # Expect at least one build artifact directory like hermetic-build/hermetic-build-20/.
-          BUILD_DIR="$(ls -d hermetic-build/hermetic-build-* 2>/dev/null | sort | head -n 1 || true)"
+          BUILD_DIR="$(find hermetic-build -maxdepth 1 -mindepth 1 -type d -name 'hermetic-build-*' -print 2>/dev/null | sort | head -n 1 || true)"
           if [ -z "${BUILD_DIR:-}" ]; then
             printf "%s\n" "❌ No hermetic-build-* artifact found"
             ls -la hermetic-build || true
