@@ -212,11 +212,12 @@ else
   TEMP_PATHS+=("$WORKSPACE_DIR")
   CMD+=("--tempDirName" "${WORKSPACE_DIR}")
 fi
-if [[ -n "$CONFIG_PATH" ]] ; then
-  CMD+=("--config" "$CONFIG_PATH")
-fi
 if [[ ${#EXTRA_ARGS[@]} -gt 0 ]]; then
   CMD+=("${EXTRA_ARGS[@]}")
+fi
+# StrykerJS v8 expects the config file as the final positional argument (not via --config).
+if [[ -n "$CONFIG_PATH" ]] ; then
+  CMD+=("$CONFIG_PATH")
 fi
 
 CMD_STATUS=0
