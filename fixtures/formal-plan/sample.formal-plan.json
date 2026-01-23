@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "0.1.0",
+  "metadata": {
+    "source": "formalize-planner",
+    "generatedAt": "2026-01-01T00:00:00Z",
+    "model": {
+      "name": "token-bucket",
+      "version": "v0"
+    }
+  },
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "text": "The bucket never exceeds its capacity."
+    }
+  ],
+  "variables": [
+    {
+      "name": "tokens",
+      "type": "Int",
+      "description": "Current token count"
+    },
+    {
+      "name": "capacity",
+      "type": "Int",
+      "description": "Maximum allowed tokens"
+    }
+  ],
+  "constants": [
+    {
+      "name": "MaxCapacity",
+      "type": "Int",
+      "description": "Upper bound for capacity"
+    }
+  ],
+  "actions": [
+    {
+      "name": "Init",
+      "tla": "tokens = 0 /\\ capacity \\in Nat",
+      "description": "Initialize state"
+    },
+    {
+      "name": "Refill",
+      "tla": "tokens' = Min(capacity, tokens + 1)",
+      "description": "Add a token"
+    }
+  ],
+  "invariants": [
+    {
+      "name": "CapInvariant",
+      "tla": "tokens <= capacity"
+    }
+  ],
+  "liveness": [
+    {
+      "name": "EventuallyRefill",
+      "tla": "<> (tokens > 0)"
+    }
+  ],
+  "assumptions": [
+    {
+      "name": "CapacityNonNeg",
+      "tla": "capacity \\in Nat"
+    }
+  ]
+}

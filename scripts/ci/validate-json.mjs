@@ -60,6 +60,11 @@ const checks = [
     schema: 'schema/agentic-metrics.schema.json',
     fixtures: ['fixtures/agentic-metrics/sample.agentic-metrics.json'],
     label: 'Agentic metrics schema validation'
+  },
+  {
+    schema: 'schema/formal-plan.schema.json',
+    fixtures: ['fixtures/formal-plan/sample.formal-plan.json'],
+    label: 'Formal plan schema validation'
   }
 ];
 
