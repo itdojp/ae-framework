@@ -125,6 +125,7 @@ describe('BenchmarkRunner', () => {
       expect(result.metrics).toHaveProperty('codeQuality');
       expect(result.metrics).toHaveProperty('security');
       expect(result.metrics).toHaveProperty('timeToCompletion');
+      expect(result.metrics).toHaveProperty('agentic');
       expect(result.metrics).toHaveProperty('resourceUsage');
       
       // Check execution details
@@ -133,6 +134,25 @@ describe('BenchmarkRunner', () => {
       expect(result.executionDetails).toHaveProperty('totalDuration');
       expect(result.executionDetails).toHaveProperty('phaseExecutions');
       expect(result.executionDetails).toHaveProperty('environment');
+
+      expect(result.metrics.agentic).toBeDefined();
+      expect(result.metrics.agentic!.turns.count).toBe(result.executionDetails.phaseExecutions.length);
+      expect(result.metrics.agentic!.latencyMs).toBe(result.executionDetails.totalDuration);
+
+      const turnCount = result.executionDetails.phaseExecutions.length;
+      const expectedAvgLen =
+        turnCount > 0
+          ? Math.round(
+              result.executionDetails.phaseExecutions.reduce((sum, p) => {
+                try {
+                  return sum + JSON.stringify((p as any).output ?? null).length;
+                } catch {
+                  return sum;
+                }
+              }, 0) / turnCount
+            )
+          : 0;
+      expect(result.metrics.agentic!.turns.avgLen).toBe(expectedAvgLen);
     });
 
     it(formatGWT('runBenchmark timing', 'measure execution duration', 'returns positive duration within tolerance'), async () => {
