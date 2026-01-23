@@ -961,19 +961,44 @@ export class EnhancedStateManager extends EventEmitter {
 
   private async reviveEntryData(rawEntry: Partial<StateEntry>): Promise<AEIR | Buffer> {
     if (rawEntry.compressed) {
-      const data = rawEntry.data as any;
+      // `compressed` entries are expected to carry byte payloads (Buffer/Uint8Array/etc).
+      // Accept multiple representations to support persisted/imported state shapes.
+      const rawData = rawEntry.data as any;
+      // Only revive marker objects (e.g. {__ae_type: ...}); do not traverse real TypedArray instances,
+      // otherwise they get converted into plain objects and become unusable as byte payloads.
+      const data = rawData && typeof rawData === 'object' && rawData.__ae_type
+        ? (reviveSpecialValue(rawData) as any)
+        : rawData;
+
       if (Buffer.isBuffer(data)) {
         return data;
       }
+
       if (data && typeof data === 'object') {
+        // TypedArray / DataView
+        if (ArrayBuffer.isView(data)) {
+          const view = data as ArrayBufferView;
+          return Buffer.from(new Uint8Array(view.buffer, view.byteOffset, view.byteLength));
+        }
+        // ArrayBuffer
+        if (typeof ArrayBuffer !== 'undefined' && data instanceof ArrayBuffer) {
+          return Buffer.from(new Uint8Array(data));
+        }
+        // SharedArrayBuffer (Node 20+)
+        if (typeof SharedArrayBuffer !== 'undefined' && data instanceof SharedArrayBuffer) {
+          return Buffer.from(new Uint8Array(data));
+        }
+        // Buffer JSON form (e.g. {"type":"Buffer","data":[...]})
         if (data.type === 'Buffer' && Array.isArray(data.data)) {
           return Buffer.from(data.data);
         }
+        // Legacy number[] form
         if (Array.isArray(data) && data.every((value: any) => typeof value === 'number')) {
           return Buffer.from(data);
         }
       }
-      return rawEntry.data as AEIR;
+
+      return data as AEIR;
     }
     return reviveSpecialValue(rawEntry.data) as AEIR;
   }
