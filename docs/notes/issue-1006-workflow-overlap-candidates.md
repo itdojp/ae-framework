@@ -73,14 +73,13 @@
 - cedar-quality-gates.yml: pull_request (paths-ignore: docs/**, **/*.md; job gated by labels "run-security" or "run-cedar"; enforce with "enforce-security") + workflow_dispatch (note: pushトリガーは削除済み)
 
 ### Misc utilities
-- workflow-lint.yml / branch-protection-apply.yml / auto-labels.yml / pr-summary-comment.yml
+- workflow-lint.yml / branch-protection-apply.yml / pr-summary-comment.yml
   - Candidate: keep separate, but ensure they do not duplicate gating outputs.
 
 #### Trigger mapping (misc utilities group)
 - workflow-lint.yml: pull_request (paths: .github/workflows/**) + push (branches: main, develop; paths: .github/workflows/**)
 - branch-protection-apply.yml: workflow_dispatch (inputs: preset, branch)
-- auto-labels.yml: pull_request (types: opened, edited, synchronize, reopened; paths-ignore: docs/**, **/*.md)
-- pr-summary-comment.yml: pull_request (types: opened, synchronize, reopened; paths-ignore: docs/**, **/*.md)
+- pr-summary-comment.yml: pull_request (types: opened, edited, synchronize, reopened; paths-ignore: docs/**, **/*.md)
 
 ## Next steps
 - Map each candidate group to its actual trigger (PR gate, label-gate, nightly, manual).
@@ -116,6 +115,10 @@ These are proposals to reduce overlap without changing required checks or safety
    - ✅ Completed: `flake-stability.yml` を reusable とし、`flake-detect.yml` に detect/maintenance の両スケジュールと mode input を集約。
    - Guardrails: required checks への影響なし（schedule/dispatch のみ）。manual 実行は input で job を選択。
    - Acceptance: 既存の成果物/サマリー出力が維持されることを確認。
+
+5) PR annotations
+   - ✅ Completed: `auto-labels.yml` を `pr-summary-comment.yml` に統合し、PR trigger を集約。
+   - Guardrails: required checks への影響なし（PR補助のみ）。
 
 ## Readiness checklist
 - Confirm which workflows are required by branch protection.

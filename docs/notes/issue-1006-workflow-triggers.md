@@ -1,12 +1,12 @@
 # Issue 1006: Workflow Trigger Map (Phase 1.5 draft)
 
 ## Snapshot
-- Commit: worktree (post auto-merge eligibility consolidation)
-- Total workflows: 51
+- Commit: worktree (post pr annotations consolidation)
+- Total workflows: 50
 
 ## Trigger counts
 - issue_comment: 1
-- pull_request: 31
+- pull_request: 30
 - pull_request_review: 1
 - push: 19
 - release: 1
@@ -20,10 +20,9 @@
 ### issue_comment (1)
 - agent-commands.yml
 
-### pull_request (31)
+### pull_request (30)
 - adapter-thresholds.yml
 - ae-ci.yml
-- auto-labels.yml
 - cedar-quality-gates.yml
 - ci-extended.yml
 - ci-fast.yml
