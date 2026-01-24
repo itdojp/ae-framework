@@ -12,12 +12,12 @@
 | `ae-framework.yml` | Project config (pipeline/runtime) | Keep | Referenced from root by scripts/tools.
 | `ae-framework-v2.yml` | Project config v2 | Keep | Same as above.
 | `ae.config.ts` | AE core config | Keep | Root entry is conventional.
-| `eslint.config.js` | ESLint root config | Keep (short-term) | Already have `configs/eslint.config.js`; consolidate later.
+| `eslint.config.js` | ESLint root config (shim) | Keep (shim) | Canonical config is `configs/eslint.config.js` (PR #1756); root file is compatibility shim.
 | `issues.yaml` | Issue templates/data | Keep | GitHub expects root.
 | `pnpm-lock.yaml` | pnpm lockfile | Keep | Tooling expects root.
 | `pnpm-workspace.yaml` | workspace config | Keep | Tooling expects root.
 | `sample-config.json` | Sample config | Moved | Relocated to `configs/samples/sample-config.json` (PR #1551).
-| `tsconfig.json` | TS base config | Keep | Tooling expects root.
+| `tsconfig.json` | TS base config (shim) | Keep (shim) | Root extends `configs/tsconfig/tsconfig.root.json` (PR #1757) for tooling defaults.
 | `tsconfig.build.json` | TS build config | Moved | Relocated to `configs/tsconfig/tsconfig.build.json` (PR #1544).
 | `tsconfig.types.json` | TS types config | Moved | Relocated to `configs/tsconfig/tsconfig.types.json` (PR #1545).
 | `tsconfig.verify.json` | TS verify config | Moved | Relocated to `configs/tsconfig/tsconfig.verify.json` (PR #1547).
