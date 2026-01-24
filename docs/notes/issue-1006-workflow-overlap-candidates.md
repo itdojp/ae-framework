@@ -40,12 +40,11 @@
 - lean-proof.yml: pull_request (paths: proofs/lean/**, .github/workflows/lean-proof.yml) + push (main; same paths)
 
 ### Flake and stability
-- flake-detect.yml / flake-maintenance.yml / nightly-monitoring.yml / parallel-test-execution.yml
+- flake-detect.yml / nightly-monitoring.yml / parallel-test-execution.yml
   - Candidate: consolidate flake-related reporting artifacts and reduce duplicated scheduling.
 
 #### Trigger mapping (flake/stability group)
-- flake-detect.yml: schedule (cron: 0 21 * * * UTC) + workflow_dispatch
-- flake-maintenance.yml: schedule (cron: 0 10 * * * UTC) + workflow_dispatch
+- flake-detect.yml: schedule (cron: 0 21 / 0 10 UTC) + workflow_dispatch (mode: detect/maintenance/both)
 - nightly-monitoring.yml: schedule (cron: 15 19 * * * UTC) + workflow_dispatch
 - parallel-test-execution.yml: pull_request (branches: main; paths: src/**, packages/**, apps/**, tests/**, configs/**, scripts/**, types/**) + push (branches: main, develop)
 
@@ -114,8 +113,7 @@ These are proposals to reduce overlap without changing required checks or safety
    - ✅ Completed: `agent-commands.yml` が PR/Issue の slash command をジョブ分岐で処理する構成に統合済み。
 
 4) Flake / stability scheduling
-   - Partially implemented: `flake-stability.yml` を reusable 化して重複ロジックを統合（PR #1622）。`flake-detect.yml` / `flake-maintenance.yml` は wrapper として残存。
-   - Remaining: スケジュール統合の是非を判断し、必要なら単一 workflow + mode input へ移行。
+   - ✅ Completed: `flake-stability.yml` を reusable とし、`flake-detect.yml` に detect/maintenance の両スケジュールと mode input を集約。
    - Guardrails: required checks への影響なし（schedule/dispatch のみ）。manual 実行は input で job を選択。
    - Acceptance: 既存の成果物/サマリー出力が維持されることを確認。
 

@@ -1,54 +1,57 @@
 # Issue 1006: Workflow Inventory (Phase 1)
 
 ## Snapshot
-- Commit: 6f9fce7b
-- .github/workflows/*.yml count: 46
+- Commit: worktree (post flake schedule consolidation)
+- .github/workflows/*.yml count: 53
 
 ## Prefix counts (file name before first '-' or '.')
-- ci: 4
-- spec: 3
-- verify: 2
-- release: 2
-- pr: 2
-- nightly: 2
-- formal: 2
-- flake: 2
+- adapter: 1
+- ae: 1
 - agent: 1
-- workflow: 1
-- webapi: 1
-- validate: 1
-- testing: 1
-- security: 1
-- sbom: 1
-- quality: 1
-- podman: 1
-- phase6: 1
-- parallel: 1
-- mutation: 1
-- model: 1
-- minimal: 1
+- auto: 3
+- branch: 1
+- cedar: 1
+- ci: 5
+- codegen: 1
+- copilot: 1
+- coverage: 1
+- docker: 1
+- fail: 1
+- flake: 3
+- formal: 2
+- grafana: 1
 - hermetic: 1
 - lean: 1
-- grafana: 1
-- fail: 1
-- docker: 1
-- coverage: 1
-- copilot: 1
-- codegen: 1
-- cedar: 1
-- branch: 1
-- auto: 1
-- ae: 1
-- adapter: 1
-- total: 46 (matches workflow count)
+- minimal: 1
+- model: 1
+- mutation: 1
+- nightly: 2
+- parallel: 2
+- phase6: 1
+- podman: 1
+- pr: 4
+- quality: 1
+- release: 2
+- sbom: 1
+- security: 1
+- spec: 3
+- testing: 1
+- validate: 1
+- verify: 2
+- webapi: 1
+- workflow: 1
+- total: 53 (matches workflow count)
 
 ## Workflow files (sorted)
 - adapter-thresholds.yml
 - ae-ci.yml
 - agent-commands.yml
 - auto-labels.yml
+- auto-merge-eligible.yml
+- auto-merge-enable.yml
 - branch-protection-apply.yml
 - cedar-quality-gates.yml
+- ci-auto-rerun-failed.yml
 - ci-core.yml
 - ci-extended.yml
 - ci-fast.yml
@@ -59,7 +62,8 @@
 - docker-tests.yml
 - fail-fast-spec-validation.yml
 - flake-detect.yml
-- flake-maintenance.yml
+- flake-retry-dispatch.yml
+- flake-stability.yml
 - formal-aggregate.yml
 - formal-verify.yml
 - grafana-dashboards.yml
@@ -70,9 +74,12 @@
 - mutation-quick.yml
 - nightly-monitoring.yml
 - nightly.yml
+- parallel-test-coordinator.yml
 - parallel-test-execution.yml
 - phase6-validation.yml
 - podman-smoke.yml
+- pr-auto-update-branch.yml
+- pr-ci-status-comment.yml
 - pr-summary-comment.yml
 - pr-verify.yml
 - quality-gates-centralized.yml
