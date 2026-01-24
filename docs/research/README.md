@@ -13,3 +13,4 @@ ae-framework に関連する理論調査・実証研究・サーベイを集約�
 ## 目次
 
 - [ae-framework-foundation-survey.md](./ae-framework-foundation-survey.md) — AE Framework 基礎調査（Formal Methods × AI）
+- [issue-1062-research-survey.md](./issue-1062-research-survey.md) — 研究サーベイ（Issue #1062 要約）
