@@ -65,10 +65,33 @@ ae-framework intent --analyze --format=json --output=intent-analysis.json
 ```
 ✅ Intent Analysis Complete - 12 requirements identified
 📋 Next steps:
+  • Run tests:suggest (tests-first default after intent)
   • Proceed to Phase 2 (Natural Language Requirements)
   • Review extracted requirements for completeness
   • Validate stakeholder understanding
 ```
+
+## Tests-First Default (Recommended after Intent)
+
+### tests:suggest command
+Generate tests-first prompts immediately after intent capture.
+
+```bash
+# Quick prompt from inline intent text
+ae tests:suggest --template http-api --intent "Build a minimal todo API"
+
+# Load intent/requirements from file
+ae tests:suggest --template queue --input requirements.md
+
+# Write prompt output to file
+ae tests:suggest --template auth --intent "Add SSO login" --output tests-first-prompt.md
+```
+
+**Options:**
+- `--template <name>`: Template name (`http-api`, `queue`, `auth`, `math`) or file path
+- `--intent <text>`: Intent text to inject into the prompt
+- `--input <file>`: Intent/requirements file path
+- `--output <file>`: Write output to file instead of stdout
 
 ## Phase 2: Natural Language Requirements
 
@@ -136,6 +159,7 @@ ae-framework sbom compare base.json head.json --verbose
 
 ### フェーズ別コマンド（要点）
 - Phase 1: `intent` — 要件/意図分析（`--analyze`, `--validate`, `--sources`）
+- 推奨（Intent直後）: `tests:suggest` — tests-first プロンプト生成（`--template`, `--intent`, `--input`, `--output`）
 - Phase 2: `natural-language` — NL 要件の構造化/検証（`--extract-entities`, `--resolve-ambiguity` など）
 - Phase 2.1: `cegis` — 自動修復（`fix`, `analyze`, `generate-candidates`）
 - Phase 2.2: `conformance` — ランタイム適合（`verify`, `rules`, `config`, `metrics`, `status`）

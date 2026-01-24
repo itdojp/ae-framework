@@ -7,6 +7,7 @@ import { qaFlake } from '../commands/qa/flake.js';
 import { verifyRun } from '../commands/verify/run.js';
 import { agentComplete } from '../commands/agent/complete.js';
 import { doctorEnv } from '../commands/doctor/env.js';
+import { handleTestsSuggest } from '../commands/tdd/suggest.js';
 
 export async function main() {
   const cli = cac('ae');
@@ -49,6 +50,18 @@ export async function main() {
     .option('--replay', 'Replay mode') 
     .option('--cassette-dir <dir>', 'Cassette directory')
     .action((opts) => agentComplete(opts.prompt, opts.system, opts));
+
+  cli.command('tests:suggest', 'Generate tests-first prompt after intent capture')
+    .option('--template <name>', 'Template name (http-api|queue|auth|math or file path)')
+    .option('--intent <text>', 'Intent text to inject into the prompt')
+    .option('--input <file>', 'Intent/requirements file path')
+    .option('--output <file>', 'Write output to file instead of stdout')
+    .action((opts) => handleTestsSuggest({
+      template: opts.template,
+      intent: opts.intent,
+      input: opts.input,
+      output: opts.output,
+    }));
   
   cli.command('doctor env', 'diagnose environment & LLM keys')
     .action(doctorEnv);
