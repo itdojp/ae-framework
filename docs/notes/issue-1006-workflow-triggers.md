@@ -1,8 +1,8 @@
 # Issue 1006: Workflow Trigger Map (Phase 1.5 draft)
 
 ## Snapshot
-- Commit: worktree (post flake schedule consolidation)
-- Total workflows: 53
+- Commit: worktree (post pr maintenance consolidation)
+- Total workflows: 52
 
 ## Trigger counts
 - issue_comment: 1
@@ -10,9 +10,9 @@
 - pull_request_review: 1
 - push: 19
 - release: 1
-- schedule: 12
+- schedule: 11
 - workflow_call: 9
-- workflow_dispatch: 34
+- workflow_dispatch: 33
 - workflow_run: 1
 
 ## Trigger → workflow files
@@ -80,8 +80,7 @@
 ### release (1)
 - release-quality-artifacts.yml
 
-### schedule (12)
-- auto-merge-enable.yml
+### schedule (11)
 - ci-extended.yml
 - ci.yml
 - docker-tests.yml
@@ -105,10 +104,9 @@
 - validate-artifacts-ajv.yml
 - verify.yml
 
-### workflow_dispatch (34)
+### workflow_dispatch (33)
 - ae-ci.yml
 - auto-merge-eligible.yml
-- auto-merge-enable.yml
 - branch-protection-apply.yml
 - cedar-quality-gates.yml
 - ci-extended.yml

@@ -1,21 +1,33 @@
-name: PR CI Status Comment
+name: PR Maintenance
 
 on:
   schedule:
     - cron: "*/30 * * * *"
   workflow_dispatch:
+    inputs:
+      mode:
+        description: Select maintenance job(s).
+        type: choice
+        options:
+          - status
+          - auto-merge
+          - both
+        default: both
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}-${{ github.event_name == 'schedule' && 'schedule' || inputs.mode || 'dispatch' }}
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
   issues: write
   pull-requests: write
 
 jobs:
   post-status:
+    if: >-
+      (github.event_name == 'schedule')
+      || (github.event_name == 'workflow_dispatch' && (inputs.mode == 'status' || inputs.mode == 'both'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,3 +39,19 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
         run: node scripts/ci/pr-ci-status-comment.mjs
+
+  enable-auto-merge:
+    if: >-
+      (github.event_name == 'schedule')
+      || (github.event_name == 'workflow_dispatch' && (inputs.mode == 'auto-merge' || inputs.mode == 'both'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: "20"
+      - name: Enable auto-merge when eligible
+        env:
+          GH_TOKEN: ${{ github.token || secrets.GH_TOKEN }}
+        run: node scripts/ci/auto-merge-enabler.mjs
