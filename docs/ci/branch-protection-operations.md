@@ -37,6 +37,7 @@ ADMIN_TOKEN=ghp_xxx REPO=itdojp/ae-framework BRANCH=main \
 
 ## 運用指針（レビューを外す代替ガード）
 - Branch protection: Required checks を維持（`Verify Lite / verify-lite` + `Copilot Review Gate / gate` を推奨）
+- `PR Verify / verify` を Required に含めない（verify-lite 運用時）
 - Auto-merge を許可（Checks が緑になれば自動マージ）
 - ラベルで強制ゲートを任意化（`enforce-coverage`, `enforce-typecov` など）
 
@@ -57,6 +58,7 @@ ADMIN_TOKEN=ghp_xxx REPO=itdojp/ae-framework BRANCH=main \
 - [ ] ADMIN_TOKEN を登録済み（docs/ci/admin-token-setup.md）
 - [ ] Copilot Review Gate / gate が Required に含まれている
 - [ ] Verify Lite / verify-lite が Required に含まれている
+- [ ] PR Verify / verify が Required に含まれていない（verify-lite 運用時）
 - [ ] main で想定外の Required チェックが残っていない
 
 ## トラブルシューティング（Required checks が Pending のまま）
