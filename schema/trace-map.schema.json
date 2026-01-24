@@ -63,6 +63,11 @@
               "contains": { "type": "string" }
             },
             "required": ["field"],
+            "oneOf": [
+              { "required": ["equals"] },
+              { "required": ["pattern"] },
+              { "required": ["contains"] }
+            ],
             "additionalProperties": true
           },
           "action": { "type": "string" },

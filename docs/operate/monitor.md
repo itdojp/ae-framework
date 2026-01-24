@@ -21,6 +21,16 @@ It defines:
 - **correlationKeys**: how to group events (trace/span/session).
 - **mappings**: event match rules + variable assignments + optional action name.
 
+### Mapping fields
+
+- `name`: logical mapping name (used as a label in reports).
+- `match`: matching rule for a source event.
+  - `field` is required.
+  - choose **one** of `equals`, `pattern`, or `contains`.
+- `action`: spec action name to apply when the match is satisfied.
+- `event`: optional source event label (defaults to `name` when omitted).
+- `assigns`: list of `{ variable, value }` assignments (value can be JSONPath or literal).
+
 ### Example
 
 See `fixtures/trace-map/sample.trace-map.json` for a minimal example.
