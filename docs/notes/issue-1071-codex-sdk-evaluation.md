@@ -3,6 +3,7 @@
 ## Snapshot
 - Date: 2026-01-24
 - Sources: OpenAI Codex SDK docs + GA announcement (see References)
+- Verified at: 2026-01-24
 
 ## What the SDK provides (official)
 - TypeScript SDK for programmatic Codex control
@@ -31,3 +32,4 @@
 ## References
 - Codex SDK docs (developers.openai.com/codex/sdk)
 - Codex GA announcement (openai.com/index/codex-now-generally-available)
+- If links move, search the OpenAI docs for “Codex SDK” and re-verify.
