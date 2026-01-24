@@ -45,7 +45,7 @@ export function buildCoderPrompt({
     '- Emit a TLA+ module skeleton using the plan fields.',
     '- Preserve action/invariant formulas as named definitions.',
     '- Ensure Init/Next are defined; Next should disjoin non-init actions.',
-    '- Add Spec = Init /\\ [][Next]_vars for model checking.',
+    '- Add Spec == Init /\\ [][Next]_vars for model checking.',
     '',
     'Required Sections:',
     ...FORMAL_CODER_REQUIRED_SECTIONS.map((section) => `- ${section}`),
