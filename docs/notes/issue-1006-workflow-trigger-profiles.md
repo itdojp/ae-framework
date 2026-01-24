@@ -1,8 +1,8 @@
 # Issue 1006: Workflow Trigger Profiles (Phase 1.5 draft)
 
 ## Snapshot
-- Commit: worktree (post pr maintenance consolidation)
-- Total workflows: 52
+- Commit: worktree (post auto-merge eligibility consolidation)
+- Total workflows: 51
 
 ## Trigger signatures
 
@@ -23,8 +23,7 @@
 - ci-core.yml
 - flake-stability.yml
 
-### workflow_dispatch (7)
-- auto-merge-eligible.yml
+### workflow_dispatch (6)
 - branch-protection-apply.yml
 - minimal-pipeline.yml
 - model-checking-manual.yml
