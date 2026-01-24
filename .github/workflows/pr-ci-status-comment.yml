@@ -19,7 +19,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write
+  contents: read
   issues: write
   pull-requests: write
 
@@ -53,5 +53,5 @@ jobs:
           node-version: "20"
       - name: Enable auto-merge when eligible
         env:
-          GH_TOKEN: ${{ github.token || secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
         run: node scripts/ci/auto-merge-enabler.mjs
