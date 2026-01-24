@@ -1,8 +1,8 @@
 # Issue 1006: Workflow Trigger Profiles (Phase 1.5 draft)
 
 ## Snapshot
-- Commit: worktree (post pr annotations consolidation)
-- Total workflows: 50
+- Commit: worktree (post nightly monitoring consolidation)
+- Total workflows: 49
 
 ## Trigger signatures
 
@@ -50,12 +50,11 @@
 ### release, workflow_dispatch (1)
 - release-quality-artifacts.yml
 
-### schedule, workflow_dispatch (7)
+### schedule, workflow_dispatch (6)
 - ci.yml
 - docker-tests.yml
 - flake-detect.yml
 - flake-retry-dispatch.yml
-- nightly-monitoring.yml
 - nightly.yml
 - pr-ci-status-comment.yml
 

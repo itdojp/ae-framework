@@ -40,12 +40,12 @@
 - lean-proof.yml: pull_request (paths: proofs/lean/**, .github/workflows/lean-proof.yml) + push (main; same paths)
 
 ### Flake and stability
-- flake-detect.yml / nightly-monitoring.yml / parallel-test-execution.yml
+- flake-detect.yml / nightly.yml (monitor job) / parallel-test-execution.yml
   - Candidate: consolidate flake-related reporting artifacts and reduce duplicated scheduling.
 
 #### Trigger mapping (flake/stability group)
 - flake-detect.yml: schedule (cron: 0 21 / 0 10 UTC) + workflow_dispatch (mode: detect/maintenance/both)
-- nightly-monitoring.yml: schedule (cron: 15 19 * * * UTC) + workflow_dispatch
+- nightly.yml (monitor job): schedule (cron: 15 19 * * * UTC) + workflow_dispatch (mode=monitor)
 - parallel-test-execution.yml: pull_request (branches: main; paths: src/**, packages/**, apps/**, tests/**, configs/**, scripts/**, types/**) + push (branches: main, develop)
 
 ### Release

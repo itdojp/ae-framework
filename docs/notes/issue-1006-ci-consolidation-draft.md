@@ -21,6 +21,7 @@
 ## 既存の整理（要旨）
 - PR ゲート系 / 監査系 / 手動実行系が混在
 - flake 系は reusable 化済みであり、schedule を単一ワークフローへ集約済み（PR #1769）
+- nightly-monitoring の監視ジョブを nightly.yml に統合（worktree）
 
 ## 統合方針
 1) required checks は単独維持（ジョブ再配置のみ、workflow 名は維持）
