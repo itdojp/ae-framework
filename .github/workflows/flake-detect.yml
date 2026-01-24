@@ -14,7 +14,7 @@ on:
     - cron: '0 21 * * *' # JST 06:00 (detect)
     - cron: '0 10 * * *' # JST 19:00 (maintenance)
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}-${{ github.event_name == 'schedule' && github.event.schedule || inputs.mode || 'dispatch' }}
   cancel-in-progress: true
 
 permissions:
