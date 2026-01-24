@@ -1,8 +1,8 @@
 # Issue 1006: Workflow Trigger Profiles (Phase 1.5 draft)
 
 ## Snapshot
-- Commit: worktree (post flake schedule consolidation)
-- Total workflows: 53
+- Commit: worktree (post pr maintenance consolidation)
+- Total workflows: 52
 
 ## Trigger signatures
 
@@ -52,8 +52,7 @@
 ### release, workflow_dispatch (1)
 - release-quality-artifacts.yml
 
-### schedule, workflow_dispatch (8)
-- auto-merge-enable.yml
+### schedule, workflow_dispatch (7)
 - ci.yml
 - docker-tests.yml
 - flake-detect.yml
