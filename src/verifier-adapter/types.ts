@@ -46,12 +46,14 @@ export interface VerificationProperty {
   message?: string;
 }
 
+export type VerifierSummary = Record<string, unknown> | TlcSummary | ApalacheSummary;
+
 export interface VerificationResult {
   backend: string;
   verdict: VerifierVerdict;
   properties: VerificationProperty[];
   counterexamples: Counterexample[];
-  summary?: Record<string, unknown>;
+  summary?: VerifierSummary;
 }
 
 export interface TlcSummary {

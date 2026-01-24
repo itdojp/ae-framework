@@ -33,7 +33,7 @@ export function normalizeApalacheSummary(summary: ApalacheSummary): Verification
     verdict: verdictFromApalache(summary),
     properties: [],
     counterexamples: [],
-    summary: summary as Record<string, unknown>
+    summary
   };
 }
 
@@ -44,6 +44,6 @@ export function normalizeTlcSummary(summary: TlcSummary): VerificationResult {
     verdict: verdictFromTlc(summary),
     properties: [],
     counterexamples: [],
-    summary: summary as Record<string, unknown>
+    summary
   };
 }
