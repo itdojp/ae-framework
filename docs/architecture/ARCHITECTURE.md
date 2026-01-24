@@ -475,6 +475,8 @@ graph TD
     style P33 fill:#fff8e1
 ```
 
+注記: `tsconfig.json` と `eslint.config.js` は互換用のシムで、実体は `configs/tsconfig/tsconfig.root.json` と `configs/eslint.config.js` に集約済み（PR #1757/#1756）。
+
 ## ファイル・ドキュメント関係図
 
 ```mermaid
