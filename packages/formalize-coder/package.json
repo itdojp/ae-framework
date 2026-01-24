@@ -1,0 +1,13 @@
+{
+  "name": "@ae-framework/formalize-coder",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Prompt and template helpers for formalize coder stage",
+  "main": "src/index.ts",
+  "files": [
+    "src"
+  ],
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}
