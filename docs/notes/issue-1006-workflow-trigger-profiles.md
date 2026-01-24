@@ -1,17 +1,16 @@
 # Issue 1006: Workflow Trigger Profiles (Phase 1.5 draft)
 
 ## Snapshot
-- Commit: worktree (post auto-merge eligibility consolidation)
-- Total workflows: 51
+- Commit: worktree (post pr annotations consolidation)
+- Total workflows: 50
 
 ## Trigger signatures
 
 ### issue_comment (1)
 - agent-commands.yml
 
-### pull_request (5)
+### pull_request (4)
 - adapter-thresholds.yml
-- auto-labels.yml
 - phase6-validation.yml
 - pr-summary-comment.yml
 - pr-verify.yml
