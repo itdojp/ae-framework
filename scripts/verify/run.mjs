@@ -26,8 +26,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const PROFILE_COMMANDS = {
-  lite: [['pnpm', 'run', 'verify:lite']],
-  conformance: [['pnpm', 'run', 'verify:conformance']],
+  lite: [['bash', 'scripts/ci/run-verify-lite-local.sh']],
+  conformance: [['node', 'scripts/formal/verify-conformance.mjs']],
   formal: [['pnpm', 'run', 'verify:formal']],
 };
 

@@ -26,9 +26,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const PROFILE_COMMANDS = {
-  detect: [['pnpm', 'run', 'flake:detect']],
-  'detect-quick': [['pnpm', 'run', 'flake:detect:quick']],
-  'detect-thorough': [['pnpm', 'run', 'flake:detect:thorough']],
+  detect: [['node', 'scripts/flake-detector.js']],
+  quick: [['node', 'scripts/flake-detector.js', '--runs', '5', '--threshold', '0.2']],
+  thorough: [['node', 'scripts/flake-detector.js', '--runs', '20', '--threshold', '0.05']],
+  'detect-quick': [['node', 'scripts/flake-detector.js', '--runs', '5', '--threshold', '0.2']],
+  'detect-thorough': [['node', 'scripts/flake-detector.js', '--runs', '20', '--threshold', '0.05']],
   'detect-enhanced': [['pnpm', 'run', 'flake:detect:enhanced']],
   'detect-enhanced-quick': [['pnpm', 'run', 'flake:detect:enhanced:quick']],
   'detect-enhanced-deep': [['pnpm', 'run', 'flake:detect:enhanced:deep']],
@@ -102,7 +104,7 @@ function printHelp() {
   console.log(`Usage: node scripts/flake/run.mjs --profile <name> [--list] [--dry-run]
 
 Options:
-  -p, --profile <name>   Profile name (e.g. detect, report, isolate)
+  -p, --profile <name>   Profile name (e.g. detect, quick, report, isolate)
   --list                 Print available profiles
   --dry-run              Print resolved commands without executing
   -h, --help             Show this message
