@@ -1,14 +1,13 @@
 # Issue 1006: Workflow Inventory (Phase 1)
 
 ## Snapshot
-- Commit: worktree (post auto-merge eligibility consolidation)
-- .github/workflows/*.yml count: 51
+- Commit: worktree (post pr annotations consolidation)
+- .github/workflows/*.yml count: 50
 
 ## Prefix counts (file name before first '-' or '.')
 - adapter: 1
 - ae: 1
 - agent: 1
-- auto: 1
 - branch: 1
 - cedar: 1
 - ci: 5
@@ -40,13 +39,12 @@
 - verify: 2
 - webapi: 1
 - workflow: 1
-- total: 51 (matches workflow count)
+- total: 50 (matches workflow count)
 
 ## Workflow files (sorted)
 - adapter-thresholds.yml
 - ae-ci.yml
 - agent-commands.yml
-- auto-labels.yml
 - branch-protection-apply.yml
 - cedar-quality-gates.yml
 - ci-auto-rerun-failed.yml
