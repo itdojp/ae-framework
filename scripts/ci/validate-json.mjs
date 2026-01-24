@@ -65,6 +65,11 @@ const checks = [
     schema: 'schema/formal-plan.schema.json',
     fixtures: ['fixtures/formal-plan/sample.formal-plan.json'],
     label: 'Formal plan schema validation'
+  },
+  {
+    schema: 'schema/trace-map.schema.json',
+    fixtures: ['fixtures/trace-map/sample.trace-map.json'],
+    label: 'Trace map schema validation'
   }
 ];
 

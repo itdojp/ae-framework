@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/trace-map.schema.json",
+  "title": "ae-trace-map",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "source": { "type": "string" },
+        "generatedAt": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": true
+    },
+    "spec": {
+      "type": "object",
+      "properties": {
+        "module": { "type": "string" },
+        "variables": { "type": "array", "items": { "type": "string" } },
+        "actions": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "time": {
+      "type": "object",
+      "properties": {
+        "field": { "type": "string" },
+        "format": { "type": "string", "enum": ["iso8601", "unix_ms", "unix_s"] }
+      },
+      "required": ["field"],
+      "additionalProperties": true
+    },
+    "correlationKeys": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "field": { "type": "string" },
+          "required": { "type": "boolean", "default": false }
+        },
+        "required": ["name", "field"],
+        "additionalProperties": true
+      }
+    },
+    "mappings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "match": {
+            "type": "object",
+            "properties": {
+              "field": { "type": "string" },
+              "equals": { "type": "string" },
+              "pattern": { "type": "string" },
+              "contains": { "type": "string" }
+            },
+            "required": ["field"],
+            "oneOf": [
+              { "required": ["equals"] },
+              { "required": ["pattern"] },
+              { "required": ["contains"] }
+            ],
+            "additionalProperties": true
+          },
+          "action": { "type": "string" },
+          "event": { "type": "string" },
+          "assigns": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "variable": { "type": "string" },
+                "value": { "type": "string" }
+              },
+              "required": ["variable", "value"],
+              "additionalProperties": true
+            }
+          },
+          "notes": { "type": "string" }
+        },
+        "required": ["name", "match"],
+        "additionalProperties": true
+      }
+    }
+  },
+  "required": ["schemaVersion", "mappings"],
+  "additionalProperties": true
+}

@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "0.1.0",
+  "metadata": {
+    "source": "operate-monitor",
+    "generatedAt": "2026-01-01T00:00:00Z"
+  },
+  "spec": {
+    "module": "OrderSpec",
+    "variables": ["orders"],
+    "actions": ["PlaceOrder"]
+  },
+  "time": {
+    "field": "timestamp",
+    "format": "iso8601"
+  },
+  "correlationKeys": [
+    {
+      "name": "traceId",
+      "field": "traceId",
+      "required": true
+    }
+  ],
+  "mappings": [
+    {
+      "name": "order.placed",
+      "match": {
+        "field": "event",
+        "equals": "order.placed"
+      },
+      "action": "PlaceOrder",
+      "assigns": [
+        {
+          "variable": "orders",
+          "value": "$.payload.orderId"
+        }
+      ],
+      "notes": "Map order.placed to a spec action and state update."
+    }
+  ]
+}
