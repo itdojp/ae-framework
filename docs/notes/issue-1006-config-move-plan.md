@@ -20,6 +20,7 @@
 configs/
   api-extractor.json
   benchmark-config.json
+  eslint.config.js
   mcp-config.json
   samples/
     sample-config.json
@@ -29,6 +30,7 @@ configs/
   stryker/
     stryker.conf.cjs
   tsconfig/
+    tsconfig.root.json
     tsconfig.build.json
     tsconfig.types.json
     tsconfig.verify.json
@@ -42,6 +44,7 @@ configs/
 | --- | --- | --- | --- | --- |
 | api-extractor.json | configs/api-extractor.json | Update API Extractor invocation | Default path is root; must update scripts. | Done (PR #1534)
 | benchmark-config.json | configs/benchmark-config.json | Update benchmark scripts | Ensure benchmark runner reads new path. | Done (PR #1533)
+| eslint.config.js | configs/eslint.config.js | Consolidate ESLint config | Keep root shim for compatibility. | Done (PR #1756)
 | mcp-config.json | configs/mcp-config.json | Update runtime lookup | Confirm where MCP server reads config. | Done (PR #1543)
 | sample-config.json | configs/samples/sample-config.json | Update references | Defaults updated in PR #1535; file moved in PR #1551. | Done (PR #1551)
 | sample-context.json | configs/samples/sample-context.json | Update references | Defaults updated in PR #1535; file moved in PR #1551. | Done (PR #1551)
@@ -57,9 +60,9 @@ configs/
 - .editorconfig
 - pnpm-lock.yaml
 - pnpm-workspace.yaml
-- tsconfig.json (base)
+- tsconfig.json (shim -> configs/tsconfig/tsconfig.root.json, PR #1757)
 - vitest.config.ts (default lookup)
-- eslint.config.js (until ESLint config consolidation)
+- eslint.config.js (shim -> configs/eslint.config.js, PR #1756)
 - ae-framework.yml / ae-framework-v2.yml / ae.config.ts
 
 ## Migration steps (staged)
