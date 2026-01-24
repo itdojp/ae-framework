@@ -3,7 +3,7 @@ export {
   FORMAL_PLAN_REQUIRED_FIELDS,
   plannerSystemPrompt,
   buildPlannerPrompt,
-} from './prompt.ts';
+} from './prompt.js';
 
-export { samplingDefaults, samplingProfiles } from './sampling.ts';
-export type { SamplingOptions } from './sampling.ts';
+export { samplingDefaults, samplingProfiles } from './sampling.js';
+export type { SamplingOptions } from './sampling.js';
