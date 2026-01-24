@@ -25,6 +25,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { createSecurityCommand } from './security-cli.js';
 import { safeExit } from '../utils/safe-exit.js';
+import { handleTestsSuggest } from '../commands/tdd/suggest.js';
 
 const program = new Command();
 
@@ -157,9 +158,13 @@ class AEFrameworkCLI {
           console.log(chalk.green(`   Found ${result.response.requirements.length} requirements`));
         }
         
-        if (result.followUp) {
+        const nextSteps = [
+          'Run `ae tests:suggest` to generate tests-first prompts (recommended next step)',
+          ...(result.followUp ?? []),
+        ];
+        if (nextSteps.length > 0) {
           console.log(chalk.cyan('\n📋 Next steps:'));
-          result.followUp.forEach((step: string) => {
+          nextSteps.forEach((step: string) => {
             console.log(chalk.cyan(`  • ${step}`));
           });
         }
@@ -403,6 +408,22 @@ program
   .action(async (options) => {
     const cli = new AEFrameworkCLI();
     await cli.runIntent(options);
+  });
+
+program
+  .command('tests:suggest')
+  .description('Generate tests-first prompt after intent capture')
+  .option('--template <name>', 'Template name (http-api|queue|auth|math or file path)', 'http-api')
+  .option('--intent <text>', 'Intent text to inject into the prompt')
+  .option('--input <file>', 'Intent/requirements file path')
+  .option('--output <file>', 'Write output to file instead of stdout')
+  .action((options) => {
+    handleTestsSuggest({
+      template: options.template,
+      intent: options.intent,
+      input: options.input,
+      output: options.output,
+    });
   });
 
 // Phase 2: Natural Language Requirements CLI

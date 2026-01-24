@@ -22,6 +22,8 @@ AE Framework supports software development through the following 6 phases:
 5. **Verify Agent** (Phase 5): Quality verification and auditing
 6. **Operate Agent** (Phase 6): Operations and monitoring
 
+Default after intent: run `ae tests:suggest` to generate tests-first prompts before proceeding to later phases.
+
 ### 🔄 Basic Development Flow
 
 #### Complete Project Example
@@ -32,7 +34,10 @@ Development flow for creating a new web application:
 # 1. Requirements analysis
 pnpm run intent-agent
 
-# 2. Formal specification generation
+# 1a. Tests-first prompt (default after intent)
+ae tests:suggest --template http-api --intent "Build a minimal todo API"
+
+# 2. Formal specification generation (optional)
 pnpm run formal-agent
 
 # 3. Test generation (Phase 3.1 & 3.2)
@@ -417,6 +422,8 @@ ae-frameworkは以下の6フェーズでソフトウェア開発を支援しま�
 5. **Verify Agent** (Phase 5): 品質検証・監査
 6. **Operate Agent** (Phase 6): 運用・監視
 
+Intent 直後の既定ステップ: `ae tests:suggest` で tests-first プロンプトを生成します。
+
 ### 🔄 基本的な開発フロー
 
 #### 完全なプロジェクト例
@@ -427,7 +434,10 @@ ae-frameworkは以下の6フェーズでソフトウェア開発を支援しま�
 # 1. 要件分析
 pnpm run intent-agent
 
-# 2. 形式仕様生成
+# 1a. tests-first プロンプト（Intent直後の既定）
+ae tests:suggest --template http-api --intent "最低限のTodo APIを作る"
+
+# 2. 形式仕様生成（任意）
 pnpm run formal-agent
 
 # 3. テスト生成 (Phase 3.1 & 3.2)

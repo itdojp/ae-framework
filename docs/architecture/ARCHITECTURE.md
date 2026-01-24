@@ -577,6 +577,8 @@ ae-frameworkは以下の特徴を持つ包括的な開発フレームワーク�
 5. **Verify** → 証拠ベース品質検証
 6. **Operate** → 運用・デプロイ自動化
 
+Intent 直後の既定ステップ: `ae tests:suggest` で tests-first プロンプトを生成。
+
 ### 🤖 **Claude Code完全統合**
 - MCPプロトコルによる7つの専用サーバー
 - 自然言語による直感的な操作
