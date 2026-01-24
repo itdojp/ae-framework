@@ -1,85 +1,97 @@
 # Issue 1006: Workflow Trigger Profiles (Phase 1.5 draft)
 
 ## Snapshot
-- Commit: 6f9fce7b
-- Total workflows: 46
+- Commit: worktree (post flake schedule consolidation)
+- Total workflows: 53
 
 ## Trigger signatures
 
-### pull_request (4)
+### issue_comment (1)
+- agent-commands.yml
+
+### pull_request (5)
 - adapter-thresholds.yml
 - auto-labels.yml
 - phase6-validation.yml
 - pr-summary-comment.yml
+- pr-verify.yml
 
-### pull_request, push (6)
-- coverage-check.yml
-- lean-proof.yml
-- parallel-test-execution.yml
-- testing-ddd-scripts.yml
-- verify.yml
-- workflow-lint.yml
+### push (1)
+- release.yml
 
-### pull_request, push, workflow_dispatch (4)
-- ae-ci.yml
-- hermetic-ci.yml
-- podman-smoke.yml
-- verify-lite.yml
+### workflow_call (2)
+- ci-core.yml
+- flake-stability.yml
 
-### schedule, workflow_dispatch (6)
-- ci.yml
-- docker-tests.yml
-- flake-detect.yml
-- flake-maintenance.yml
-- nightly-monitoring.yml
-- nightly.yml
-
-### pull_request, push, workflow_call (4)
-- codegen-drift-check.yml
-- fail-fast-spec-validation.yml
-- spec-validation.yml
-- quality-gates-centralized.yml
-
-### pull_request, workflow_dispatch (6)
-- cedar-quality-gates.yml
-- copilot-review-gate.yml
-- formal-aggregate.yml
-- formal-verify.yml
-- spec-check.yml
-- spec-generate-model.yml
-
-### workflow_dispatch (5)
+### workflow_dispatch (7)
+- auto-merge-eligible.yml
 - branch-protection-apply.yml
 - minimal-pipeline.yml
 - model-checking-manual.yml
 - mutation-quick.yml
+- parallel-test-coordinator.yml
 - webapi-sample-ci.yml
+
+### workflow_run (1)
+- ci-auto-rerun-failed.yml
+
+### pull_request, push (4)
+- lean-proof.yml
+- parallel-test-execution.yml
+- testing-ddd-scripts.yml
+- workflow-lint.yml
+
+### pull_request, workflow_dispatch (6)
+- cedar-quality-gates.yml
+- formal-aggregate.yml
+- formal-verify.yml
+- pr-auto-update-branch.yml
+- spec-check.yml
+- spec-generate-model.yml
+
+### release, workflow_dispatch (1)
+- release-quality-artifacts.yml
+
+### schedule, workflow_dispatch (8)
+- auto-merge-enable.yml
+- ci.yml
+- docker-tests.yml
+- flake-detect.yml
+- flake-retry-dispatch.yml
+- nightly-monitoring.yml
+- nightly.yml
+- pr-ci-status-comment.yml
+
+### workflow_call, workflow_dispatch (1)
+- validate-artifacts-ajv.yml
+
+### pull_request, pull_request_review, workflow_dispatch (1)
+- copilot-review-gate.yml
+
+### pull_request, push, workflow_call (5)
+- codegen-drift-check.yml
+- fail-fast-spec-validation.yml
+- quality-gates-centralized.yml
+- spec-validation.yml
+- verify.yml
+
+### pull_request, push, workflow_dispatch (5)
+- ae-ci.yml
+- coverage-check.yml
+- hermetic-ci.yml
+- podman-smoke.yml
+- verify-lite.yml
+
+### pull_request, schedule, workflow_dispatch (1)
+- grafana-dashboards.yml
 
 ### pull_request, push, schedule, workflow_dispatch (3)
 - ci-extended.yml
 - sbom-generation.yml
 - security.yml
 
-### issue_comment (1)
-- agent-commands.yml
-
 ### pull_request, push, workflow_call, workflow_dispatch (1)
 - ci-fast.yml
-
-### pull_request, schedule, workflow_dispatch (1)
-- grafana-dashboards.yml
-
-### push (1)
-- release.yml
-
-### release, workflow_dispatch (1)
-- release-quality-artifacts.yml
-
-### workflow_call (1)
-- ci-core.yml
-
-### workflow_call, workflow_dispatch (1)
-- validate-artifacts-ajv.yml
 
 ## Notes
 - Use this profile map to identify overused trigger combinations (e.g., pull_request+push) for consolidation.

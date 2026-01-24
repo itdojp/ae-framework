@@ -2541,36 +2541,28 @@ describe('Performance Budgets Enforcement', () => {
 #### Flake Detection Workflow
 ```yaml
 # .github/workflows/flake-detect.yml
-name: Flake Detect
+name: Flake Stability Schedule
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        type: choice
+        options: [detect, maintenance, both]
+        default: detect
   schedule:
-    - cron: '0 21 * * *' # JST 06:00
+    - cron: '0 21 * * *' # JST 06:00 (detect)
+    - cron: '0 10 * * *' # JST 19:00 (maintenance)
 jobs:
-  run3:
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    steps:
-      - name: Run tests multiple times
-        run: |
-          fails=0
-          total_runs=3
-          
-          for i in $(seq 1 $total_runs); do
-            if pnpm run test:int; then
-              echo "✅ Run #$i passed"
-            else
-              echo "❌ Run #$i failed"
-              fails=$((fails+1))
-            fi
-          done
-          
-          failure_rate=$(echo "scale=2; $fails / $total_runs * 100" | bc -l)
-          
-          if [ $(echo "$failure_rate > 30.0" | bc -l) -eq 1 ]; then
-            echo "🚨 Flake detected! Failure rate: ${failure_rate}%"
-            echo "flaky=true" >> $GITHUB_OUTPUT
-          fi
+  flake-detect:
+    if: github.event.schedule == '0 21 * * *'
+    uses: ./.github/workflows/flake-stability.yml
+    with:
+      mode: detect
+  flake-maintenance:
+    if: github.event.schedule == '0 10 * * *'
+    uses: ./.github/workflows/flake-stability.yml
+    with:
+      mode: maintenance
 ```
 
 #### Isolation Manager System
@@ -2637,32 +2629,7 @@ export class FlakeIsolationManager {
 ```
 
 #### Daily Maintenance System
-```yaml
-# .github/workflows/flake-maintenance.yml
-name: Daily Flake Maintenance
-on:
-  schedule:
-    - cron: '0 10 * * *' # Daily at 19:00 JST
-jobs:
-  maintenance:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run flake maintenance
-        run: pnpm run flake:maintenance
-      
-      - name: Create recovery notification
-        if: steps.recovery-check.outputs.recovered_count > 0
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `🎉 Flaky Test Recovery - ${recoveredCount} Tests Recovered`,
-              body: `Recovery notification with comprehensive details...`,
-              labels: ['flaky-test', 'recovered', 'maintenance', 'automated']
-            });
-```
+Flake maintenance is scheduled in the same workflow via the `mode: maintenance` job.
 
 #### Script Integration
 ```json

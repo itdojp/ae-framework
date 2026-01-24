@@ -1,10 +1,20 @@
-name: Flake Detect
+name: Flake Stability Schedule
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: Select flake stability run mode.
+        type: choice
+        options:
+          - detect
+          - maintenance
+          - both
+        default: detect
   schedule:
-    - cron: '0 21 * * *' # JST 06:00
+    - cron: '0 21 * * *' # JST 06:00 (detect)
+    - cron: '0 10 * * *' # JST 19:00 (maintenance)
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}-${{ github.event_name == 'schedule' && github.event.schedule || inputs.mode || 'dispatch' }}
   cancel-in-progress: true
 
 permissions:
@@ -12,7 +22,17 @@ permissions:
   issues: write
   pull-requests: write
 jobs:
-  flake-detection:
+  flake-detect:
+    if: >-
+      (github.event_name == 'schedule' && github.event.schedule == '0 21 * * *')
+      || (github.event_name == 'workflow_dispatch' && (inputs.mode == 'detect' || inputs.mode == 'both'))
     uses: ./.github/workflows/flake-stability.yml
     with:
       mode: detect
+  flake-maintenance:
+    if: >-
+      (github.event_name == 'schedule' && github.event.schedule == '0 10 * * *')
+      || (github.event_name == 'workflow_dispatch' && (inputs.mode == 'maintenance' || inputs.mode == 'both'))
+    uses: ./.github/workflows/flake-stability.yml
+    with:
+      mode: maintenance
