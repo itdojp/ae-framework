@@ -52,7 +52,7 @@ export async function main() {
     .action((opts) => agentComplete(opts.prompt, opts.system, opts));
 
   cli.command('tests:suggest', 'Generate tests-first prompt after intent capture')
-    .option('--template <name>', 'Template name (http-api|queue|auth|math or file path)')
+    .option('--template <name>', 'Template name (http-api|queue|auth|math or file path)', { default: 'http-api' })
     .option('--intent <text>', 'Intent text to inject into the prompt')
     .option('--input <file>', 'Intent/requirements file path')
     .option('--output <file>', 'Write output to file instead of stdout')

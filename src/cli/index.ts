@@ -159,7 +159,7 @@ class AEFrameworkCLI {
         }
         
         const nextSteps = [
-          'Run tests:suggest to generate tests-first prompts (default after intent)',
+          'Run `ae tests:suggest` to generate tests-first prompts (recommended next step)',
           ...(result.followUp ?? []),
         ];
         if (nextSteps.length > 0) {
@@ -417,7 +417,7 @@ program
   .option('--intent <text>', 'Intent text to inject into the prompt')
   .option('--input <file>', 'Intent/requirements file path')
   .option('--output <file>', 'Write output to file instead of stdout')
-  .action(async (options) => {
+  .action((options) => {
     handleTestsSuggest({
       template: options.template,
       intent: options.intent,
