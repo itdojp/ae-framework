@@ -44,7 +44,7 @@
 - 実装案: `ci-extended.yml` で `severity == 'critical'` の場合に `gh issue create` を呼び出す（`GITHUB_TOKEN` の権限を要確認）。
 
 1. `render-heavy-trend-summary.mjs` に閾値判定オプションを追加し、Markdown 出力内に :warning:/:rotating_light: を埋め込む。
-2. Warning 以上の項目が存在する場合は Slack Webhook（`nightly-monitoring` 既存通知を再利用）でメッセージ送信。
+2. Warning 以上の項目が存在する場合は Slack Webhook（`nightly.yml` の monitor ジョブ通知を再利用）でメッセージ送信。
 3. Critical 判定時は GitHub Issue（`flaky-test` ラベル）を自動作成し、関連ログ／アーティファクトへのリンクを添付。
 4. PR 上で手動 rerun を行う際も同スクリプトを実行し、Step Summary に判定結果を表示する。
 
@@ -52,7 +52,7 @@
 1. `render-heavy-trend-summary.mjs` を拡張し、`--warn-mutation-score`, `--critical-mutation-score` 等の CLI オプションで閾値を受け取り、Markdown 内にバッジを表示する。
 2. CLI から JSON 形式の判定結果を吐き出す (`--json-output`)、Slack ワークフローで利用できるようにする。
 3. `ci-extended` のスケジュール実行後に判定スクリプトを実行し、Warning 以上の場合は Slack 通知ステップを追加する。
-4. Critical の場合は `gh issue create` を用いた自動起票か、既存 `nightly-monitoring` に統合する。
+4. Critical の場合は `gh issue create` を用いた自動起票か、既存 `nightly.yml` の monitor ジョブに統合する。
 
 ## 運用上の注意
 - 閾値は初期案。実データに基づき 2〜3 週間運用した後に見直す。
