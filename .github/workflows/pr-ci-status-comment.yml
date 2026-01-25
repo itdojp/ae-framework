@@ -27,7 +27,7 @@ on:
 
 concurrency:
   group: >-
-    ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event_name }}-${{ (github.event_name == 'workflow_dispatch' && inputs.mode == 'eligibility' && inputs.pr_number) || (github.event_name == 'workflow_dispatch' && inputs.mode == 'update-branch' && inputs.pr_number) || (github.event_name == 'schedule' && 'schedule') || (github.event_name == 'workflow_dispatch' && inputs.mode) || 'pr' }}
+    ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event_name }}-${{ (github.event_name == 'pull_request' && github.event.action) || (github.event_name == 'workflow_dispatch' && inputs.mode) || (github.event_name == 'schedule' && 'schedule') || 'dispatch' }}-${{ (github.event_name == 'workflow_dispatch' && inputs.pr_number) || 'pr' }}
   cancel-in-progress: true
 
 permissions:
@@ -37,6 +37,7 @@ permissions:
 
 jobs:
   update-branch:
+    # Skip edited events to avoid branch updates on metadata-only changes.
     if: >-
       (github.event_name == 'pull_request' && github.event.action != 'edited' && github.event.pull_request.head.repo.fork == false)
       || (github.event_name == 'workflow_dispatch' && inputs.mode == 'update-branch')
@@ -194,7 +195,7 @@ jobs:
             }
 
   summarize:
-    if: ${{ github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && github.event.action != 'edited' }}
+    if: github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && github.event.action != 'edited'
     runs-on: ubuntu-latest
     steps:
       - name: Determine summary language
