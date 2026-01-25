@@ -26,7 +26,7 @@
 - parallel-test-coordinator を parallel-test-execution.yml の workflow_dispatch に統合（PR #1779 merged）
 - nightly-monitoring の監視ジョブを nightly.yml に統合（PR #1775 merged）
 - pr-auto-update-branch を pr-ci-status-comment.yml に統合（PR #1780 merged）
-- pr-summary-comment を pr-ci-status-comment.yml に統合（worktree）
+- pr-summary-comment を pr-ci-status-comment.yml に統合（PR #1781 merged）
 
 ## 統合方針
 1) required checks は単独維持（ジョブ再配置のみ、workflow 名は維持）
@@ -59,5 +59,9 @@
 
 ## オープン事項
 - schedule 統合対象の優先順位
+- schedule 統合の優先度案（暫定）
+  - 優先度A: security.yml + sbom-generation.yml の週次スケジュールを一本化（監査系の重複削減。PR/label-gateの挙動は維持）
+  - 優先度B: ci.yml / ci-extended.yml の週次スケジュールの役割分担整理（統合ではなく責務の明確化が主目的）
+  - 優先度C: その他の schedule（grafana-dashboards / docker-tests / nightly / PR Maintenance）は現状維持（外部依存と運用手順の確認が先）
 - external automation から参照される workflow の把握
 - required checks の名称変更可否
