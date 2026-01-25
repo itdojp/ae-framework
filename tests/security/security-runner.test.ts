@@ -45,7 +45,7 @@ describe('security runner profiles', () => {
 
   it('resolves profile commands', () => {
     expect(resolveProfile('quick')).toEqual([
-      ['pnpm', 'run', 'security:integrated:quick'],
+      ['node', 'scripts/integrated-security-audit.mjs', '--quick'],
     ]);
   });
 

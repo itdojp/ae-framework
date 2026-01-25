@@ -14,8 +14,8 @@
 | security | security:scan, security:audit, security:secrets, security:check-headers, security:integrated:quick | scripts/security/run.mjs --profile=quick | CI uses integrated:quick as default. |
 
 ## Notes
-- The "Proposed entry point" column is a draft target; implementation is a separate PR.
-- Mapping should remain backward compatible until the alias/deprecation policy is in place.
+- "Proposed entry point" は実装済みだが、後方互換のため alias/deprecation を併用する。
+- Mapping は削除前提ではなく、移行期間中の互換を優先する。
 
 ## Next steps
 - Validate this mapping against CI usage (workflows + docs).

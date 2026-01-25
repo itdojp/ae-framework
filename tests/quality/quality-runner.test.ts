@@ -32,7 +32,9 @@ describe('quality runner profiles', () => {
   });
 
   it('resolves profile commands', () => {
-    expect(resolveProfile('gates')).toEqual([['pnpm', 'run', 'quality:gates']]);
+    expect(resolveProfile('gates')).toEqual([
+      ['pnpm', 'exec', 'tsx', 'src/cli/index.ts', 'quality', 'run'],
+    ]);
   });
 
   it('returns null for unknown profiles', () => {
