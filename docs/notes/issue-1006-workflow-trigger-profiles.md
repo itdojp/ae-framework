@@ -2,7 +2,7 @@
 
 ## Snapshot
 - Commit: worktree (post nightly monitoring consolidation)
-- Total workflows: 49
+- Total workflows: 48
 
 ## Trigger signatures
 
@@ -22,10 +22,9 @@
 - ci-core.yml
 - flake-stability.yml
 
-### workflow_dispatch (6)
+### workflow_dispatch (5)
 - branch-protection-apply.yml
 - minimal-pipeline.yml
-- model-checking-manual.yml
 - mutation-quick.yml
 - parallel-test-coordinator.yml
 - webapi-sample-ci.yml

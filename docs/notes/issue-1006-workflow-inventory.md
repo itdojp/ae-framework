@@ -2,7 +2,7 @@
 
 ## Snapshot
 - Commit: worktree (post nightly monitoring consolidation)
-- .github/workflows/*.yml count: 49
+- .github/workflows/*.yml count: 48
 
 ## Prefix counts (file name before first '-' or '.')
 - adapter: 1
@@ -22,7 +22,6 @@
 - hermetic: 1
 - lean: 1
 - minimal: 1
-- model: 1
 - mutation: 1
 - nightly: 1
 - parallel: 2
@@ -39,7 +38,7 @@
 - verify: 2
 - webapi: 1
 - workflow: 1
-- total: 49 (matches workflow count)
+- total: 48 (matches workflow count)
 
 ## Workflow files (sorted)
 - adapter-thresholds.yml
@@ -66,7 +65,6 @@
 - hermetic-ci.yml
 - lean-proof.yml
 - minimal-pipeline.yml
-- model-checking-manual.yml
 - mutation-quick.yml
 - nightly.yml
 - parallel-test-coordinator.yml

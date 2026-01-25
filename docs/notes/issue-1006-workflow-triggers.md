@@ -2,7 +2,7 @@
 
 ## Snapshot
 - Commit: worktree (post nightly monitoring consolidation)
-- Total workflows: 49
+- Total workflows: 48
 
 ## Trigger counts
 - issue_comment: 1
@@ -12,7 +12,7 @@
 - release: 1
 - schedule: 10
 - workflow_call: 9
-- workflow_dispatch: 31
+- workflow_dispatch: 30
 - workflow_run: 1
 
 ## Trigger → workflow files
@@ -119,7 +119,6 @@
 - grafana-dashboards.yml
 - hermetic-ci.yml
 - minimal-pipeline.yml
-- model-checking-manual.yml
 - mutation-quick.yml
 - nightly.yml
 - parallel-test-coordinator.yml

@@ -21,7 +21,8 @@
 ## 既存の整理（要旨）
 - PR ゲート系 / 監査系 / 手動実行系が混在
 - flake 系は reusable 化済みであり、schedule を単一ワークフローへ集約済み（PR #1769）
-- nightly-monitoring の監視ジョブを nightly.yml に統合（worktree）
+- model-checking-manual を formal-verify.yml の workflow_dispatch に統合（worktree）
+- nightly-monitoring の監視ジョブを nightly.yml に統合（PR #1775 merged）
 
 ## 統合方針
 1) required checks は単独維持（ジョブ再配置のみ、workflow 名は維持）
@@ -32,6 +33,7 @@
 ## 候補とリスク評価
 ### 低リスク
 - schedule 系の統合（flake: 完了）
+- 手動実行系の統合（model-checking-manual → formal-verify）
 - 状態コメント/ラベル付与のワークフロー整理（実行結果に影響しないもの）
 
 ### 中リスク
