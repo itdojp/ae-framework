@@ -68,7 +68,7 @@ CI Extended restores cached heavy test artifacts (`.cache/test-results`) when re
     - `/run-flake-dispatch` … flake-detect を実行
     - `/spec-validation-dispatch` … spec-validation を実行
   - 手動実行（Actions UI）
-    - `Flake Retry Dispatch (Phase 3)` は workflow_dispatch で `workflow_file` / `eligibility_artifact` / `eligibility_path` / `dry_run` を指定可能
+    - `Flake Stability Schedule`（`flake-detect.yml`）は workflow_dispatch で `mode=retry` と `workflow_file` / `eligibility_artifact` / `eligibility_path` / `dry_run` を指定可能
     - 詳細: docs/ci/flake-retry-dispatch.md
   - ラベル付与（Opt-in 実行/ポリシー切替）
     - `/run-qa` … `run-qa` を付与（ae-ci の QA 実行）
@@ -172,7 +172,7 @@ CI Extended 実行後は heavy テスト成果物を `.cache/test-results` に�
 - `coverage:<pct>`: coverage-check のしきい値を上書き（既定 80）。例: `coverage:75`
 
 ### 手動実行（Actions UI）
-- `Flake Retry Dispatch (Phase 3)` は workflow_dispatch で `workflow_file` / `eligibility_artifact` / `eligibility_path` / `dry_run` を指定可能
+- `Flake Stability Schedule`（`flake-detect.yml`）は workflow_dispatch で `mode=retry` と `workflow_file` / `eligibility_artifact` / `eligibility_path` / `dry_run` を指定可能
   - 詳細: docs/ci/flake-retry-dispatch.md
 
 ### パス条件
