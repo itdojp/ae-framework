@@ -1,18 +1,17 @@
 # Issue 1006: Workflow Trigger Profiles (Phase 1.5 draft)
 
 ## Snapshot
-- Commit: worktree (post nightly monitoring + flake retry + manual model-checking + parallel coordinator + pr auto-update consolidation)
-- Total workflows: 45
+- Commit: worktree (post nightly monitoring + flake retry + manual model-checking + parallel coordinator + pr auto-update + pr summary consolidation)
+- Total workflows: 44
 
 ## Trigger signatures
 
 ### issue_comment (1)
 - agent-commands.yml
 
-### pull_request (4)
+### pull_request (3)
 - adapter-thresholds.yml
 - phase6-validation.yml
-- pr-summary-comment.yml
 - pr-verify.yml
 
 ### push (1)
