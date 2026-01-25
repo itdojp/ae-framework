@@ -116,11 +116,6 @@ export function runVerify(options) {
     return 3;
   }
 
-  if (options.unknown.length > 0) {
-    console.error(`[verify-runner] unknown args: ${options.unknown.join(' ')}`);
-    return 3;
-  }
-
   if (!options.profile) {
     console.error('[verify-runner] missing --profile');
     return 3;
@@ -132,15 +127,16 @@ export function runVerify(options) {
     return 2;
   }
 
+  const extraArgs = options.unknown;
   if (options.dryRun) {
     for (const command of commands) {
-      console.log(command.join(' '));
+      console.log([...command, ...extraArgs].join(' '));
     }
     return 0;
   }
 
   for (const command of commands) {
-    const result = spawnSync(command[0], command.slice(1), {
+    const result = spawnSync(command[0], [...command.slice(1), ...extraArgs], {
       stdio: 'inherit',
       env: process.env,
     });
