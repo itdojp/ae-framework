@@ -1,8 +1,8 @@
 # Issue 1006: Workflow Trigger Map (Phase 1.5 draft)
 
 ## Snapshot
-- Commit: worktree (post nightly monitoring + flake retry + manual model-checking + parallel coordinator consolidation)
-- Total workflows: 46
+- Commit: worktree (post nightly monitoring + flake retry + manual model-checking + parallel coordinator + pr auto-update consolidation)
+- Total workflows: 45
 
 ## Trigger counts
 - issue_comment: 1
@@ -12,7 +12,7 @@
 - release: 1
 - schedule: 9
 - workflow_call: 9
-- workflow_dispatch: 30
+- workflow_dispatch: 29
 - workflow_run: 1
 
 ## Trigger → workflow files
@@ -38,7 +38,7 @@
 - parallel-test-execution.yml
 - phase6-validation.yml
 - podman-smoke.yml
-- pr-auto-update-branch.yml
+- pr-ci-status-comment.yml
 - pr-summary-comment.yml
 - pr-verify.yml
 - quality-gates-centralized.yml
@@ -101,7 +101,7 @@
 - validate-artifacts-ajv.yml
 - verify.yml
 
-### workflow_dispatch (30)
+### workflow_dispatch (29)
 - ae-ci.yml
 - branch-protection-apply.yml
 - cedar-quality-gates.yml
@@ -121,7 +121,6 @@
 - nightly.yml
 - parallel-test-execution.yml
 - podman-smoke.yml
-- pr-auto-update-branch.yml
 - pr-ci-status-comment.yml
 - release-quality-artifacts.yml
 - sbom-generation.yml
