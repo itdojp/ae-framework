@@ -39,17 +39,18 @@ if (policy || removalTarget) {
 }
 
 const splitArgs = (command) => {
-  const parts = command.match(/(?:[^\\s\"']+|\"[^\"]*\"|'[^']*')+/g) || [];
+  const parts = command.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g) || [];
   return parts.map((part) => part.replace(/^['"]|['"]$/g, ''));
 };
 
 const [command, ...args] = splitArgs(alias.target);
+const forwardArgs = process.argv.slice(3);
 if (!command) {
   console.error(`[script-alias] invalid target command for ${legacy}`);
   process.exit(3);
 }
 
-const result = spawnSync(command, args, {
+const result = spawnSync(command, [...args, ...forwardArgs], {
   stdio: 'inherit',
   env: process.env,
 });
