@@ -32,7 +32,9 @@ describe('verify runner profiles', () => {
   });
 
   it('resolves profile commands', () => {
-    expect(resolveProfile('conformance')).toEqual([['pnpm', 'run', 'verify:conformance']]);
+    expect(resolveProfile('conformance')).toEqual([
+      ['node', 'scripts/formal/verify-conformance.mjs'],
+    ]);
   });
 
   it('returns null for unknown profiles', () => {

@@ -30,6 +30,8 @@ describe('flake runner profiles', () => {
   it('lists supported profiles', () => {
     expect(listProfiles()).toEqual([
       'detect',
+      'quick',
+      'thorough',
       'detect-quick',
       'detect-thorough',
       'detect-enhanced',
@@ -45,7 +47,7 @@ describe('flake runner profiles', () => {
   });
 
   it('resolves profile commands', () => {
-    expect(resolveProfile('detect')).toEqual([['pnpm', 'run', 'flake:detect']]);
+    expect(resolveProfile('detect')).toEqual([['node', 'scripts/flake-detector.js']]);
   });
 
   it('returns null for unknown profiles', () => {
