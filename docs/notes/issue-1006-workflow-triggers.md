@@ -1,8 +1,8 @@
 # Issue 1006: Workflow Trigger Map (Phase 1.5 draft)
 
 ## Snapshot
-- Commit: worktree (post nightly monitoring + flake retry + manual model-checking consolidation)
-- Total workflows: 48
+- Commit: worktree (post nightly monitoring + flake retry + manual model-checking + parallel coordinator consolidation)
+- Total workflows: 46
 
 ## Trigger counts
 - issue_comment: 1
@@ -119,7 +119,7 @@
 - minimal-pipeline.yml
 - mutation-quick.yml
 - nightly.yml
-- parallel-test-coordinator.yml
+- parallel-test-execution.yml
 - podman-smoke.yml
 - pr-auto-update-branch.yml
 - pr-ci-status-comment.yml

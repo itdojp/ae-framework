@@ -22,7 +22,8 @@
 - PR ゲート系 / 監査系 / 手動実行系が混在
 - flake 系は reusable 化済みであり、schedule を単一ワークフローへ集約済み（PR #1769）
 - flake retry dispatch を flake-detect.yml に統合（mode=retry）
-- model-checking-manual を formal-verify.yml の workflow_dispatch に統合（worktree）
+- model-checking-manual を formal-verify.yml の workflow_dispatch に統合（PR #1778 merged）
+- parallel-test-coordinator を parallel-test-execution.yml の workflow_dispatch に統合（worktree）
 - nightly-monitoring の監視ジョブを nightly.yml に統合（PR #1775 merged）
 
 ## 統合方針
@@ -35,6 +36,7 @@
 ### 低リスク
 - schedule 系の統合（flake: detect/maintenance/retry まで完了）
 - 手動実行系の統合（model-checking-manual → formal-verify）
+- 手動実行系の統合（parallel-test-coordinator → parallel-test-execution）
 - 状態コメント/ラベル付与のワークフロー整理（実行結果に影響しないもの）
 
 ### 中リスク
