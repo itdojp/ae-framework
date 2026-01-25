@@ -1,8 +1,8 @@
 # Issue 1006: Workflow Inventory (Phase 1)
 
 ## Snapshot
-- Commit: worktree (post nightly monitoring + flake retry + manual model-checking + parallel coordinator + pr auto-update consolidation)
-- .github/workflows/*.yml count: 45
+- Commit: worktree (post nightly monitoring + flake retry + manual model-checking + parallel coordinator + pr auto-update + pr summary consolidation)
+- .github/workflows/*.yml count: 44
 
 ## Prefix counts (file name before first '-' or '.')
 - adapter: 1
@@ -27,7 +27,7 @@
 - parallel: 1
 - phase6: 1
 - podman: 1
-- pr: 3
+- pr: 2
 - quality: 1
 - release: 2
 - sbom: 1
@@ -38,7 +38,7 @@
 - verify: 2
 - webapi: 1
 - workflow: 1
-- total: 45 (matches workflow count)
+- total: 44 (matches workflow count)
 
 ## Workflow files (sorted)
 - adapter-thresholds.yml
@@ -70,7 +70,6 @@
 - phase6-validation.yml
 - podman-smoke.yml
 - pr-ci-status-comment.yml
-- pr-summary-comment.yml
 - pr-verify.yml
 - quality-gates-centralized.yml
 - release-quality-artifacts.yml

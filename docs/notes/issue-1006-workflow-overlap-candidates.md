@@ -72,13 +72,13 @@
 - cedar-quality-gates.yml: pull_request (paths-ignore: docs/**, **/*.md; job gated by labels "run-security" or "run-cedar"; enforce with "enforce-security") + workflow_dispatch (note: pushトリガーは削除済み)
 
 ### Misc utilities
-- workflow-lint.yml / branch-protection-apply.yml / pr-summary-comment.yml
+- workflow-lint.yml / branch-protection-apply.yml / pr-ci-status-comment.yml
   - Candidate: keep separate, but ensure they do not duplicate gating outputs.
 
 #### Trigger mapping (misc utilities group)
 - workflow-lint.yml: pull_request (paths: .github/workflows/**) + push (branches: main, develop; paths: .github/workflows/**)
 - branch-protection-apply.yml: workflow_dispatch (inputs: preset, branch)
-- pr-summary-comment.yml: pull_request (types: opened, edited, synchronize, reopened; paths-ignore: docs/**, **/*.md)
+- pr-ci-status-comment.yml: pull_request (types: opened, edited, synchronize, reopened, ready_for_review) + schedule + workflow_dispatch
 
 ## Next steps
 - Map each candidate group to its actual trigger (PR gate, label-gate, nightly, manual).
@@ -117,7 +117,7 @@ These are proposals to reduce overlap without changing required checks or safety
    - Acceptance: 既存の成果物/サマリー出力が維持されることを確認。
 
 5) PR annotations
-   - ✅ Completed: `auto-labels.yml` を `pr-summary-comment.yml` に統合し、PR trigger を集約。
+   - ✅ Completed: `auto-labels.yml` を `pr-ci-status-comment.yml` に統合し、PR trigger を集約。
    - Guardrails: required checks への影響なし（PR補助のみ）。
 
 ## Readiness checklist

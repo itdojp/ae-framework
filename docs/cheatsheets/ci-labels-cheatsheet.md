@@ -15,7 +15,7 @@ PR ラベルの早見表です。`enforce-*` 系でブロッキング化、`cove
 - trace:<id> — focus property/replay runs (e.g., trace:inv-001)
 - pr-summary:detailed — detailed PR summary view
 
-Markers (pr-summary-comment label job)
+Markers (pr-ci-status-comment label job)
 - [detailed] — adds pr-summary:detailed
 - [enforce-coverage] — adds enforce-coverage
 - [cov=85] — adds coverage:85

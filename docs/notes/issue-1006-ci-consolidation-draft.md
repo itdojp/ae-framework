@@ -25,7 +25,8 @@
 - model-checking-manual を formal-verify.yml の workflow_dispatch に統合（PR #1778 merged）
 - parallel-test-coordinator を parallel-test-execution.yml の workflow_dispatch に統合（PR #1779 merged）
 - nightly-monitoring の監視ジョブを nightly.yml に統合（PR #1775 merged）
-- pr-auto-update-branch を pr-ci-status-comment.yml に統合（worktree）
+- pr-auto-update-branch を pr-ci-status-comment.yml に統合（PR #1780 merged）
+- pr-summary-comment を pr-ci-status-comment.yml に統合（worktree）
 
 ## 統合方針
 1) required checks は単独維持（ジョブ再配置のみ、workflow 名は維持）
@@ -40,6 +41,7 @@
 - 手動実行系の統合（parallel-test-coordinator → parallel-test-execution）
 - 状態コメント/ラベル付与のワークフロー整理（実行結果に影響しないもの）
 - PR運用補助の統合（pr-auto-update-branch → pr-ci-status-comment）
+- PR要約の統合（pr-summary-comment → pr-ci-status-comment）
 
 ### 中リスク
 - CI 速度別の分割（ci-fast/ci-extended/ci-core）
