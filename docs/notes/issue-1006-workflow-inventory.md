@@ -1,7 +1,7 @@
 # Issue 1006: Workflow Inventory (Phase 1)
 
 ## Snapshot
-- Commit: worktree (post nightly monitoring consolidation)
+- Commit: worktree (post nightly monitoring + flake retry + manual model-checking consolidation)
 - .github/workflows/*.yml count: 48
 
 ## Prefix counts (file name before first '-' or '.')
@@ -16,7 +16,7 @@
 - coverage: 1
 - docker: 1
 - fail: 1
-- flake: 3
+- flake: 2
 - formal: 2
 - grafana: 1
 - hermetic: 1
@@ -57,7 +57,6 @@
 - docker-tests.yml
 - fail-fast-spec-validation.yml
 - flake-detect.yml
-- flake-retry-dispatch.yml
 - flake-stability.yml
 - formal-aggregate.yml
 - formal-verify.yml

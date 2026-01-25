@@ -43,7 +43,9 @@ describe('test runner profiles', () => {
   });
 
   it('resolves profile commands', () => {
-    expect(resolveProfile('ci-lite')).toEqual([['pnpm', 'run', 'test:ci:lite']]);
+    expect(resolveProfile('ci-lite')).toEqual([
+      ['bash', 'scripts/ci/run-verify-lite-local.sh'],
+    ]);
   });
 
   it('returns null for unknown profiles', () => {

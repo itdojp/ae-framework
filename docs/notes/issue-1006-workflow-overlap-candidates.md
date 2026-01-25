@@ -34,7 +34,7 @@
   - Candidate: define a single formal "entry" and document when manual vs automated runs apply.
 
 #### Trigger mapping (formal verification group)
-- formal-verify.yml: pull_request (types: opened, synchronize, reopened, ready_for_review, labeled; paths-ignore: docs/**, **/*.md; jobs gated by label "run-formal") + push (tags: v*) + workflow_dispatch (inputs.target/engine/tlaFile)
+- formal-verify.yml: pull_request (types: opened, synchronize, reopened, ready_for_review, labeled; paths-ignore: docs/**, **/*.md; jobs gated by label "run-formal") + workflow_dispatch (inputs.target/engine/tlaFile)
 - formal-aggregate.yml: pull_request (types: opened, synchronize, reopened, labeled; paths-ignore: docs/**, **/*.md; job gated by label "run-formal") + workflow_dispatch
 - lean-proof.yml: pull_request (paths: proofs/lean/**, .github/workflows/lean-proof.yml) + push (main; same paths)
 
@@ -43,7 +43,7 @@
   - Candidate: consolidate flake-related reporting artifacts and reduce duplicated scheduling.
 
 #### Trigger mapping (flake/stability group)
-- flake-detect.yml: schedule (cron: 0 21 / 0 10 UTC) + workflow_dispatch (mode: detect/maintenance/both)
+- flake-detect.yml: schedule (cron: 0 21 / 0 10 / 0 22 UTC) + workflow_dispatch (mode: detect/maintenance/retry/both)
 - nightly.yml (monitor job): schedule (cron: 15 19 * * * UTC) + workflow_dispatch (mode=monitor)
 - parallel-test-execution.yml: pull_request (branches: main; paths: src/**, packages/**, apps/**, tests/**, configs/**, scripts/**, types/**) + push (branches: main, develop)
 
@@ -112,6 +112,7 @@ These are proposals to reduce overlap without changing required checks or safety
 
 4) Flake / stability scheduling
    - ✅ Completed: `flake-stability.yml` を reusable とし、`flake-detect.yml` に detect/maintenance の両スケジュールと mode input を集約。
+   - ✅ Completed: `flake-retry-dispatch.yml` を `flake-detect.yml` の retry mode に統合。
    - Guardrails: required checks への影響なし（schedule/dispatch のみ）。manual 実行は input で job を選択。
    - Acceptance: 既存の成果物/サマリー出力が維持されることを確認。
 

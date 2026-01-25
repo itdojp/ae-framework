@@ -35,4 +35,7 @@ node scripts/<category>/run.mjs --profile=<name> [--dry-run] [--list]
 ## DoD (Phase 1)
 - Runner interface doc published.
 - Alias map JSON + mapping doc exist.
-- No runtime changes yet (docs only).
+
+## DoD (Phase 2)
+- `scripts/admin/run-script-alias.mjs` による alias 配線と警告表示。
+- alias 対象の legacy script は entry runner へ転送。

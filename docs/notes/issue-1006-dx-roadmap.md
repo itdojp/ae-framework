@@ -36,6 +36,12 @@
 3) `pnpm run help` をカテゴリ表示へ拡張
 4) docs で新旧コマンド対応表を明示
 
+## 進捗 (2026-01-24)
+- [x] test/quality/verify/flake/security の entry script を用意
+- [x] alias map を参照し legacy 実行時に警告 + 転送
+- [x] `pnpm run help` のカテゴリ/推奨エントリ表示（既存）
+- [ ] docs の統一/移行ガイド整備
+
 ## リスクと対策
 - 互換性: alias による後方互換 + 段階的削除
 - 可観測性: help 出力の変更前後で差分を記録

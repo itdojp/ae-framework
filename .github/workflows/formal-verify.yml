@@ -35,7 +35,7 @@ on:
 concurrency:
   group: >-
     ${{ github.event_name == 'workflow_dispatch'
-      && format('{0}-{1}-{2}-{3}', github.workflow, github.ref, inputs.target || 'all', inputs.tlaFile || inputs.engine || 'manual')
+      && format('{0}-{1}-{2}-{3}-{4}', github.workflow, github.ref, inputs.target || 'all', inputs.engine || 'tlc', inputs.tlaFile || 'manual')
       || format('{0}-{1}-{2}', github.workflow, github.event.pull_request.number || github.ref, inputs.target || 'all') }}
   cancel-in-progress: true
 
