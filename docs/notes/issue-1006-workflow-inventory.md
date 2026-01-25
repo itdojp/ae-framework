@@ -1,8 +1,8 @@
 # Issue 1006: Workflow Inventory (Phase 1)
 
 ## Snapshot
-- Commit: worktree (post pr annotations consolidation)
-- .github/workflows/*.yml count: 50
+- Commit: worktree (post nightly monitoring consolidation)
+- .github/workflows/*.yml count: 49
 
 ## Prefix counts (file name before first '-' or '.')
 - adapter: 1
@@ -24,7 +24,7 @@
 - minimal: 1
 - model: 1
 - mutation: 1
-- nightly: 2
+- nightly: 1
 - parallel: 2
 - phase6: 1
 - podman: 1
@@ -39,7 +39,7 @@
 - verify: 2
 - webapi: 1
 - workflow: 1
-- total: 50 (matches workflow count)
+- total: 49 (matches workflow count)
 
 ## Workflow files (sorted)
 - adapter-thresholds.yml
@@ -68,7 +68,6 @@
 - minimal-pipeline.yml
 - model-checking-manual.yml
 - mutation-quick.yml
-- nightly-monitoring.yml
 - nightly.yml
 - parallel-test-coordinator.yml
 - parallel-test-execution.yml

@@ -3,6 +3,17 @@ on:
   schedule:
     - cron: '15 19 * * *'   # 毎日 04:15 JST
   workflow_dispatch:
+    inputs:
+      mode:
+        description: Select which nightly jobs to run.
+        type: choice
+        required: false
+        default: all
+        options:
+          - all
+          - matrix
+          - monitor
+          - perf
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -11,6 +22,10 @@ concurrency:
 permissions: read-all
 jobs:
   matrix-test:
+    if: >-
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' &&
+        (github.event.inputs.mode == 'all' || github.event.inputs.mode == 'matrix'))
     strategy:
       fail-fast: false
       matrix:
@@ -28,7 +43,61 @@ jobs:
       - run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
       - run: pnpm run test:${{ matrix.kind }}
   perf:
+    if: >-
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' &&
+        (github.event.inputs.mode == 'all' || github.event.inputs.mode == 'perf'))
     uses: ./.github/workflows/ci-core.yml
     with:
       node-version: '22'
       run-script: test:perf
+
+  monitor:
+    if: >-
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' &&
+        (github.event.inputs.mode == 'all' || github.event.inputs.mode == 'monitor'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: '20'
+      - name: Install
+        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+      - name: Build
+        run: pnpm run build
+      - name: Bin smoke check
+        run: node scripts/ci/check-bins.mjs
+      - name: Flake (30x)
+        run: node dist/src/cli/index.js qa:flake --times 30 --timeoutMs 240000 --workers 50% --pattern "tests/**"
+      - name: Bench #1
+        run: |
+          rm -rf artifacts/bench.json || true
+          AE_SEED=321 node dist/src/cli/index.js bench
+          cp artifacts/bench.json artifacts/bench-1.json
+      - name: Bench #2
+        run: |
+          AE_SEED=321 node dist/src/cli/index.js bench
+          cp artifacts/bench.json artifacts/bench-2.json
+      - name: Compare benches (<=5% tolerance)
+        run: node scripts/ci/compare-bench.mjs artifacts/bench-1.json artifacts/bench-2.json 0.05
+      - name: Replay smoke
+        run: AE_RECORDER_MODE=replay node dist/src/cli/index.js agent:complete --prompt "Hello, ae!"
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-artifacts
+          path: artifacts/
+          retention-days: 14
+      - name: Notify Slack on failure
+        if: failure() && env.SLACK_WEBHOOK != null
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_MESSAGE: |
+            🚨 ${{ github.workflow }} failed on ${{ github.ref }}
+            • run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            • artifacts: (see workflow page)
+          SLACK_COLOR: "#E01E5A"
