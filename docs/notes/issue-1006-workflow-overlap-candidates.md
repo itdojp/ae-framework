@@ -30,13 +30,12 @@
 - codegen-drift-check.yml: pull_request (all PRs to main; types: opened, synchronize, reopened, labeled; paths-ignore: docs/**, **/*.md; execution gated by label "run-drift") + push (main; paths: spec/**/*.md, .ae/ae-ir.json, src/codegen/**, templates/**, .github/workflows/codegen-drift-check.yml) + workflow_call
 
 ### Formal verification
-- formal-verify.yml / formal-aggregate.yml / model-checking-manual.yml / lean-proof.yml
+- formal-verify.yml / formal-aggregate.yml / lean-proof.yml
   - Candidate: define a single formal "entry" and document when manual vs automated runs apply.
 
 #### Trigger mapping (formal verification group)
-- formal-verify.yml: pull_request (types: opened, synchronize, reopened, ready_for_review, labeled; paths-ignore: docs/**, **/*.md; jobs gated by label "run-formal") + push (tags: v*) + workflow_dispatch (inputs.target)
+- formal-verify.yml: pull_request (types: opened, synchronize, reopened, ready_for_review, labeled; paths-ignore: docs/**, **/*.md; jobs gated by label "run-formal") + workflow_dispatch (inputs.target/engine/tlaFile)
 - formal-aggregate.yml: pull_request (types: opened, synchronize, reopened, labeled; paths-ignore: docs/**, **/*.md; job gated by label "run-formal") + workflow_dispatch
-- model-checking-manual.yml: workflow_dispatch (inputs.engine, spec_path)
 - lean-proof.yml: pull_request (paths: proofs/lean/**, .github/workflows/lean-proof.yml) + push (main; same paths)
 
 ### Flake and stability

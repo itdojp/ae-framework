@@ -1,7 +1,7 @@
 # Issue 1006: Workflow Inventory (Phase 1)
 
 ## Snapshot
-- Commit: worktree (post nightly monitoring + flake retry consolidation)
+- Commit: worktree (post nightly monitoring + flake retry + manual model-checking consolidation)
 - .github/workflows/*.yml count: 48
 
 ## Prefix counts (file name before first '-' or '.')
@@ -22,7 +22,6 @@
 - hermetic: 1
 - lean: 1
 - minimal: 1
-- model: 1
 - mutation: 1
 - nightly: 1
 - parallel: 2
@@ -65,7 +64,6 @@
 - hermetic-ci.yml
 - lean-proof.yml
 - minimal-pipeline.yml
-- model-checking-manual.yml
 - mutation-quick.yml
 - nightly.yml
 - parallel-test-coordinator.yml

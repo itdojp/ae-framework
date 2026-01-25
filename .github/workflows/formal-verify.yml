@@ -33,7 +33,10 @@ on:
         required: false
         default: ""
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ inputs.target || 'all' }}
+  group: >-
+    ${{ github.event_name == 'workflow_dispatch'
+      && format('{0}-{1}-{2}-{3}-{4}', github.workflow, github.ref, inputs.target || 'all', inputs.engine || 'tlc', inputs.tlaFile || 'manual')
+      || format('{0}-{1}-{2}', github.workflow, github.event.pull_request.number || github.ref, inputs.target || 'all') }}
   cancel-in-progress: true
 
 jobs:
@@ -116,7 +119,8 @@ jobs:
         env:
           TLA_ENGINE: ${{ github.event_name == 'workflow_dispatch' && inputs.engine || 'tlc' }}
           TLA_TOOLS_JAR: ${{ github.event_name == 'workflow_dispatch' && inputs.tlaToolsJar || '' }}
-        run: node scripts/formal/verify-tla.mjs --engine="$TLA_ENGINE" --file spec/tla/DomainSpec.tla || true
+          TLA_FILE: ${{ github.event_name == 'workflow_dispatch' && inputs.tlaFile || 'spec/tla/DomainSpec.tla' }}
+        run: node scripts/formal/verify-tla.mjs --engine="$TLA_ENGINE" --file "$TLA_FILE" || true
       - name: Upload TLA summary (artifact)
         uses: actions/upload-artifact@v4
         if: always()
