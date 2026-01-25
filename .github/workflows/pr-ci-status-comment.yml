@@ -18,7 +18,7 @@ on:
           - both
         default: both
       pr_number:
-        description: "PR number (required for eligibility)"
+        description: "PR number (required for eligibility or update-branch)"
         required: false
       enable_auto_merge:
         description: "Enable auto-merge if eligible (eligibility mode only)"
@@ -27,7 +27,7 @@ on:
 
 concurrency:
   group: >-
-    ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event_name }}-${{ (github.event_name == 'workflow_dispatch' && inputs.mode == 'eligibility' && inputs.pr_number) || (github.event_name == 'schedule' && 'schedule') || (github.event_name == 'workflow_dispatch' && inputs.mode) || 'pr' }}
+    ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event_name }}-${{ (github.event_name == 'workflow_dispatch' && inputs.mode == 'eligibility' && inputs.pr_number) || (github.event_name == 'workflow_dispatch' && inputs.mode == 'update-branch' && inputs.pr_number) || (github.event_name == 'schedule' && 'schedule') || (github.event_name == 'workflow_dispatch' && inputs.mode) || 'pr' }}
   cancel-in-progress: true
 
 permissions:

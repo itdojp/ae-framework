@@ -101,7 +101,7 @@
 - validate-artifacts-ajv.yml
 - verify.yml
 
-### workflow_dispatch (29)
+### workflow_dispatch (28)
 - ae-ci.yml
 - branch-protection-apply.yml
 - cedar-quality-gates.yml
