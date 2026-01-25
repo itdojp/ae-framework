@@ -1,8 +1,8 @@
 # Issue 1006: Workflow Inventory (Phase 1)
 
 ## Snapshot
-- Commit: worktree (post nightly monitoring consolidation)
-- .github/workflows/*.yml count: 49
+- Commit: worktree (post nightly monitoring + flake retry consolidation)
+- .github/workflows/*.yml count: 48
 
 ## Prefix counts (file name before first '-' or '.')
 - adapter: 1
@@ -16,7 +16,7 @@
 - coverage: 1
 - docker: 1
 - fail: 1
-- flake: 3
+- flake: 2
 - formal: 2
 - grafana: 1
 - hermetic: 1
@@ -39,7 +39,7 @@
 - verify: 2
 - webapi: 1
 - workflow: 1
-- total: 49 (matches workflow count)
+- total: 48 (matches workflow count)
 
 ## Workflow files (sorted)
 - adapter-thresholds.yml
@@ -58,7 +58,6 @@
 - docker-tests.yml
 - fail-fast-spec-validation.yml
 - flake-detect.yml
-- flake-retry-dispatch.yml
 - flake-stability.yml
 - formal-aggregate.yml
 - formal-verify.yml

@@ -2,7 +2,8 @@
 
 ## 目的
 flake-detect で検知したフレークのうち、**再試行可否が true** のものだけを対象に
-`rerun-failed-jobs` を実行する最小ディスパッチャ。
+`rerun-failed-jobs` を実行する最小ディスパッチャ。現在は `flake-detect.yml` の
+`mode=retry` に統合されている。
 
 ## 前提
 - 対象は `workflow_file` で指定したワークフローの **run_attempt=1** の失敗ランのみ
@@ -10,7 +11,8 @@ flake-detect で検知したフレークのうち、**再試行可否が true** 
 - required check は自動再試行対象外
 
 ## 手動実行（workflow_dispatch）
-Actions から `Flake Retry Dispatch (Phase 3)` を起動し、必要に応じて以下を指定する。
+Actions から `Flake Stability Schedule` を起動し、`mode=retry` を指定する。
+必要に応じて以下を指定する。
 
 - `workflow_file`  
   既定: `flake-detect.yml`（例: verify-lite は `verify-lite.yml` / pr-verify は `pr-verify.yml`）
@@ -25,12 +27,14 @@ Actions から `Flake Retry Dispatch (Phase 3)` を起動し、必要に応じ�
 
 ## 使い方（例）
 - dry-run で結果だけ確認する場合:
-  - `dry_run=true` にして実行
+  - `mode=retry` と `dry_run=true` にして実行
 - verify-lite の retry eligibility を使う場合:
+  - `mode=retry`
   - `workflow_file=verify-lite.yml`
   - `eligibility_artifact=verify-lite-report`
   - `eligibility_path=artifacts/verify-lite/verify-lite-retry-eligibility.json`
 - pr-verify の retry eligibility を使う場合:
+  - `mode=retry`
   - `workflow_file=pr-verify.yml`
   - `eligibility_artifact=ae-artifacts`
   - `eligibility_path=artifacts/pr-verify/pr-verify-retry-eligibility.json`
