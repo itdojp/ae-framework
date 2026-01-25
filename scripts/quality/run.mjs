@@ -27,8 +27,18 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const PROFILE_COMMANDS = {
-  all: [['pnpm', 'run', 'quality:run:all']],
-  gates: [['pnpm', 'run', 'quality:gates']],
+  all: [
+    [
+      'pnpm',
+      'exec',
+      'tsx',
+      'src/cli/index.ts',
+      'quality',
+      'run',
+      '--gates=accessibility,coverage,lighthouse,linting,security,tdd',
+    ],
+  ],
+  gates: [['pnpm', 'exec', 'tsx', 'src/cli/index.ts', 'quality', 'run']],
   policy: [['pnpm', 'run', 'quality:policy']],
 };
 

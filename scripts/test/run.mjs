@@ -32,10 +32,16 @@ const PROFILE_COMMANDS = {
   unit: [['pnpm', 'run', 'test:unit']],
   integration: [['pnpm', 'run', 'test:int']],
   perf: [['pnpm', 'run', 'test:perf']],
-  ci: [['pnpm', 'run', 'test:ci']],
+  ci: [['pnpm', 'exec', 'vitest', 'run', '--config', 'configs/vitest.ci.config.ts']],
   'ci-stable': [['pnpm', 'run', 'test:ci:stable']],
-  'ci-lite': [['pnpm', 'run', 'test:ci:lite']],
-  'ci-extended': [['pnpm', 'run', 'test:ci:extended']],
+  'ci-lite': [['bash', 'scripts/ci/run-verify-lite-local.sh']],
+  'ci-extended': [
+    ['pnpm', 'run', 'test:int'],
+    ['pnpm', 'run', 'test:property'],
+    ['pnpm', 'run', 'test:mbt:ci'],
+    ['pnpm', 'run', 'pipelines:pact'],
+    ['pnpm', 'run', 'pipelines:mutation:quick'],
+  ],
 };
 
 export function listProfiles() {
