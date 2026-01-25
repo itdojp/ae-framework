@@ -43,7 +43,7 @@ ADMIN_TOKEN=ghp_xxx REPO=itdojp/ae-framework BRANCH=main \
 
 ## 運用補助（自動化）
 - `ci-auto-rerun-failed` が失敗ジョブを **1回だけ** 自動再実行します（最終判断はログで確認）。
-- `pr-auto-update-branch` が behind の PR ブランチを自動更新します。競合時は手動解決が必要です。
+- `pr-ci-status-comment`（PR Maintenance）が behind の PR ブランチを自動更新します。競合時は手動解決が必要です。
 
 ## 参考
 - 必要になれば Auto-Approve のワークフローも導入可能（PAT が必要）。レビュー要件を残したまま、特定ラベルや特定作者の PR を自動承認する運用にできます。

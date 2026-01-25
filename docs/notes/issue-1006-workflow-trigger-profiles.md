@@ -1,8 +1,8 @@
 # Issue 1006: Workflow Trigger Profiles (Phase 1.5 draft)
 
 ## Snapshot
-- Commit: worktree (post nightly monitoring + flake retry + manual model-checking + parallel coordinator consolidation)
-- Total workflows: 46
+- Commit: worktree (post nightly monitoring + flake retry + manual model-checking + parallel coordinator + pr auto-update consolidation)
+- Total workflows: 45
 
 ## Trigger signatures
 
@@ -36,23 +36,21 @@
 - testing-ddd-scripts.yml
 - workflow-lint.yml
 
-### pull_request, workflow_dispatch (6)
+### pull_request, workflow_dispatch (5)
 - cedar-quality-gates.yml
 - formal-aggregate.yml
 - formal-verify.yml
-- pr-auto-update-branch.yml
 - spec-check.yml
 - spec-generate-model.yml
 
 ### release, workflow_dispatch (1)
 - release-quality-artifacts.yml
 
-### schedule, workflow_dispatch (5)
+### schedule, workflow_dispatch (4)
 - ci.yml
 - docker-tests.yml
 - flake-detect.yml
 - nightly.yml
-- pr-ci-status-comment.yml
 
 ### workflow_call, workflow_dispatch (1)
 - validate-artifacts-ajv.yml
@@ -75,8 +73,9 @@
 - podman-smoke.yml
 - verify-lite.yml
 
-### pull_request, schedule, workflow_dispatch (1)
+### pull_request, schedule, workflow_dispatch (2)
 - grafana-dashboards.yml
+- pr-ci-status-comment.yml
 
 ### pull_request, push, schedule, workflow_dispatch (3)
 - ci-extended.yml

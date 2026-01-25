@@ -1,6 +1,8 @@
 name: PR Maintenance
 
 on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
   schedule:
     - cron: "*/30 * * * *"
   workflow_dispatch:
@@ -11,11 +13,12 @@ on:
         options:
           - status
           - auto-merge
+          - update-branch
           - eligibility
           - both
         default: both
       pr_number:
-        description: "PR number (required for eligibility)"
+        description: "PR number (required for eligibility or update-branch)"
         required: false
       enable_auto_merge:
         description: "Enable auto-merge if eligible (eligibility mode only)"
@@ -23,7 +26,8 @@ on:
         default: "false"
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}-${{ (inputs.mode == 'eligibility' && inputs.pr_number) || (github.event_name == 'schedule' && 'schedule') || inputs.mode || 'dispatch' }}
+  group: >-
+    ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event_name }}-${{ (github.event_name == 'workflow_dispatch' && inputs.mode == 'eligibility' && inputs.pr_number) || (github.event_name == 'workflow_dispatch' && inputs.mode == 'update-branch' && inputs.pr_number) || (github.event_name == 'schedule' && 'schedule') || (github.event_name == 'workflow_dispatch' && inputs.mode) || 'pr' }}
   cancel-in-progress: true
 
 permissions:
@@ -32,6 +36,136 @@ permissions:
   pull-requests: write
 
 jobs:
+  update-branch:
+    if: >-
+      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false)
+      || (github.event_name == 'workflow_dispatch' && inputs.mode == 'update-branch')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Update branch if behind
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.AE_AUTO_UPDATE_TOKEN || github.token }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const inputNumber = context.payload.inputs?.pr_number ?? core.getInput('pr_number');
+            const parsedInput = inputNumber ? Number(inputNumber) : null;
+            const prNumber = context.payload.pull_request?.number ?? parsedInput;
+            if (!Number.isFinite(prNumber)) {
+              core.notice('No PR number provided; skipping.');
+              return;
+            }
+
+            const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+            const maxAttempts = 3;
+            const waitMs = 10000;
+            let mergeableState = 'unknown';
+            let pr = null;
+            const marker = '<!-- AE-PR-AUTO-UPDATE -->';
+            const upsertComment = async (content) => {
+              const body = [marker, content].join('\n\n');
+              const { data: comments } = await github.rest.issues.listComments({
+                owner,
+                repo,
+                issue_number: prNumber,
+                per_page: 100
+              });
+              const existing = comments.find((comment) =>
+                typeof comment.body === 'string' && comment.body.includes(marker)
+              );
+              if (existing) {
+                await github.rest.issues.updateComment({
+                  owner,
+                  repo,
+                  comment_id: existing.id,
+                  body
+                });
+                return;
+              }
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: prNumber,
+                body
+              });
+            };
+            const safeComment = async (content, contextLabel) => {
+              try {
+                await upsertComment(content);
+              } catch (error) {
+                const message = error?.message ?? String(error);
+                core.warning(`Failed to post update comment (${contextLabel}) on PR #${prNumber}: ${message}`);
+              }
+            };
+
+            for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+              const { data } = await github.rest.pulls.get({
+                owner,
+                repo,
+                pull_number: prNumber
+              });
+              pr = data;
+              if (pr.draft) {
+                core.notice('PR is draft; skipping update.');
+                return;
+              }
+              mergeableState = pr.mergeable_state || 'unknown';
+              if (mergeableState !== 'unknown') {
+                break;
+              }
+              if (attempt < maxAttempts) {
+                core.info(`Attempt ${attempt}/${maxAttempts}: mergeable_state still unknown, waiting ${waitMs / 1000}s before retry...`);
+                await sleep(waitMs);
+              }
+            }
+
+            if (mergeableState === 'unknown') {
+              core.warning(`PR #${prNumber} mergeable_state remains unknown after ${maxAttempts} attempts; skipping auto-update.`);
+              return;
+            }
+
+            if (mergeableState !== 'behind') {
+              core.notice(`PR #${prNumber} mergeable_state=${mergeableState}; update not required.`);
+              return;
+            }
+
+            try {
+              await github.rest.pulls.updateBranch({
+                owner,
+                repo,
+                pull_number: prNumber
+              });
+            } catch (error) {
+              const message = error?.message ?? String(error);
+              const status = error?.status ?? error?.response?.status;
+              const looksLikeConflict = status === 409 || /conflict/i.test(message);
+              if (looksLikeConflict) {
+                const content = [
+                  '### Auto Update Branch',
+                  `PR #${prNumber} could not be auto-updated due to conflicts.`,
+                  `Details: ${message}`,
+                  'Please resolve conflicts manually.'
+                ].join('\n');
+                await safeComment(content, 'conflict');
+                core.notice(`Auto-update skipped for PR #${prNumber} due to conflicts.`);
+                return;
+              }
+              core.setFailed(`Failed to update branch for PR #${prNumber}: ${message}`);
+              return;
+            }
+
+            const content = [
+              '### Auto Update Branch',
+              `PR #${prNumber} was behind base; triggered branch update.`,
+              'If conflicts remain, manual resolution is required.'
+            ].join('\n');
+            await safeComment(content, 'updated');
+
   post-status:
     if: >-
       (github.event_name == 'schedule')
