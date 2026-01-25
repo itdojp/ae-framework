@@ -1,8 +1,8 @@
 # Issue 1006: Workflow Trigger Profiles (Phase 1.5 draft)
 
 ## Snapshot
-- Commit: worktree (post nightly monitoring + flake retry + manual model-checking consolidation)
-- Total workflows: 48
+- Commit: worktree (post nightly monitoring + flake retry + manual model-checking + parallel coordinator consolidation)
+- Total workflows: 46
 
 ## Trigger signatures
 
@@ -22,19 +22,17 @@
 - ci-core.yml
 - flake-stability.yml
 
-### workflow_dispatch (5)
+### workflow_dispatch (4)
 - branch-protection-apply.yml
 - minimal-pipeline.yml
 - mutation-quick.yml
-- parallel-test-coordinator.yml
 - webapi-sample-ci.yml
 
 ### workflow_run (1)
 - ci-auto-rerun-failed.yml
 
-### pull_request, push (4)
+### pull_request, push (3)
 - lean-proof.yml
-- parallel-test-execution.yml
 - testing-ddd-scripts.yml
 - workflow-lint.yml
 
@@ -69,10 +67,11 @@
 - spec-validation.yml
 - verify.yml
 
-### pull_request, push, workflow_dispatch (5)
+### pull_request, push, workflow_dispatch (6)
 - ae-ci.yml
 - coverage-check.yml
 - hermetic-ci.yml
+- parallel-test-execution.yml
 - podman-smoke.yml
 - verify-lite.yml
 

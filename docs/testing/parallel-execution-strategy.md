@@ -71,7 +71,7 @@ The parallel execution strategy automatically activates in GitHub Actions:
 
 Additionally, a manual workflow is available for ad-hoc runs:
 
-- **Parallel Test Coordinator**: `.github/workflows/parallel-test-coordinator.yml` (workflow_dispatch)
+- **Parallel Test Coordinator**: `.github/workflows/parallel-test-execution.yml` (workflow_dispatch, `mode=coordinator`)
   - Inputs: `suites`, `exclude_suites`, `max_concurrency`, `use_container_unit`
   - Default suites: `unit,integration,quality`
 
