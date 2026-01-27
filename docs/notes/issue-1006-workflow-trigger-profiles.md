@@ -1,7 +1,8 @@
 # Issue 1006: Workflow Trigger Profiles (Phase 1.5 draft)
 
 ## Snapshot
-- Commit: worktree (post nightly monitoring + flake retry + manual model-checking + parallel coordinator + pr auto-update + pr summary consolidation)
+- Commit: 65b40e9a
+- Generated: 2026-01-27 15:03:25 UTC
 - Total workflows: 44
 
 ## Trigger signatures
@@ -35,33 +36,29 @@
 - testing-ddd-scripts.yml
 - workflow-lint.yml
 
-### pull_request, workflow_dispatch (5)
+### pull_request, workflow_dispatch (3)
 - cedar-quality-gates.yml
-- formal-aggregate.yml
 - formal-verify.yml
-- spec-check.yml
 - spec-generate-model.yml
 
-### release, workflow_dispatch (1)
-- release-quality-artifacts.yml
-
-### schedule, workflow_dispatch (4)
-- ci.yml
+### schedule, workflow_dispatch (3)
 - docker-tests.yml
 - flake-detect.yml
 - nightly.yml
 
-### workflow_call, workflow_dispatch (1)
+### workflow_call, workflow_dispatch (5)
+- fail-fast-spec-validation.yml
+- formal-aggregate.yml
+- release-quality-artifacts.yml
+- spec-check.yml
 - validate-artifacts-ajv.yml
 
 ### pull_request, pull_request_review, workflow_dispatch (1)
 - copilot-review-gate.yml
 
-### pull_request, push, workflow_call (5)
+### pull_request, push, workflow_call (3)
 - codegen-drift-check.yml
-- fail-fast-spec-validation.yml
 - quality-gates-centralized.yml
-- spec-validation.yml
 - verify.yml
 
 ### pull_request, push, workflow_dispatch (6)
@@ -76,13 +73,17 @@
 - grafana-dashboards.yml
 - pr-ci-status-comment.yml
 
-### pull_request, push, schedule, workflow_dispatch (3)
-- ci-extended.yml
-- sbom-generation.yml
+### schedule, workflow_call, workflow_dispatch (1)
+- ci.yml
+
+### pull_request, push, schedule, workflow_dispatch (1)
 - security.yml
 
-### pull_request, push, workflow_call, workflow_dispatch (1)
+### pull_request, push, workflow_call, workflow_dispatch (4)
+- ci-extended.yml
 - ci-fast.yml
+- sbom-generation.yml
+- spec-validation.yml
 
 ## Notes
 - Use this profile map to identify overused trigger combinations (e.g., pull_request+push) for consolidation.
