@@ -82,18 +82,24 @@ jobs:
         id: check-spec
         run: |
           if [ -f "spec/ae-spec.md" ]; then
+            SPEC_FILE="spec/ae-spec.md"
+          else
+            SPEC_FILE="$(find spec -type f -name '*.md' | sort | head -1)"
+          fi
+          if [ -n "$SPEC_FILE" ]; then
             printf "%s\n" "spec_exists=true" >> "$GITHUB_OUTPUT"
-            printf "%s\n" "📄 Found AE-Spec file: spec/ae-spec.md"
+            printf "%s\n" "spec_file=${SPEC_FILE}" >> "$GITHUB_OUTPUT"
+            printf "%s\n" "📄 Found AE-Spec file: ${SPEC_FILE}"
           else
             printf "%s\n" "spec_exists=false" >> "$GITHUB_OUTPUT"
-            printf "%s\n" "⚠️ No AE-Spec file found at spec/ae-spec.md"
+            printf "%s\n" "⚠️ No AE-Spec files found under spec/"
           fi
       
       - name: Compile AE-Spec → AE-IR
         if: steps.check-spec.outputs.spec_exists == 'true'
         run: |
           printf "%s\n" "🔄 Compiling AE-Spec to AE-IR..."
-          pnpm spec:compile --in spec/ae-spec.md --out .ae/ae-ir.json
+          pnpm spec:compile --in "${{ steps.check-spec.outputs.spec_file }}" --out .ae/ae-ir.json
           printf "%s\n" "✅ Compilation successful"
 
       - name: Generate contracts & replay fixtures (non-blocking)
