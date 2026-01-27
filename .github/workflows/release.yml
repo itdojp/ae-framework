@@ -87,3 +87,11 @@ jobs:
         run: |
           printf "%s\n" "Deploying canary version..."
           # Placeholder for canary deployment
+
+  release-quality-artifacts:
+    name: Release Quality Artifacts
+    needs: release
+    uses: ./.github/workflows/release-quality-artifacts.yml
+    permissions:
+      contents: write
+    secrets: inherit
