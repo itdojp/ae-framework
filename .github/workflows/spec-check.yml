@@ -1,12 +1,7 @@
 name: Spec Check
 
 on:
-  pull_request:
-    paths:
-      - 'specs/formal/**'
-      - '.github/workflows/spec-check.yml'
-      - 'scripts/formal/verify-tla.mjs'
-      - 'package.json'
+  workflow_call:
   workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}

@@ -8,8 +8,15 @@ on:
       - 'schema/**'
       - 'docs/schemas/**'
       - 'specs/formal/**'
+      - 'packages/spec-compiler/**'
+      - 'src/cli/**'
+      - 'scripts/formal/verify-tla.mjs'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
       - '.github/workflows/spec-validation.yml'
       - '.github/workflows/validate-artifacts-ajv.yml'
+      - '.github/workflows/fail-fast-spec-validation.yml'
+      - '.github/workflows/spec-check.yml'
   push:
     branches: [main, develop]
     paths:
@@ -19,8 +26,16 @@ on:
       - 'schema/**'
       - 'docs/schemas/**'
       - 'specs/formal/**'
+      - 'packages/spec-compiler/**'
+      - 'src/cli/**'
+      - 'scripts/formal/verify-tla.mjs'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
       - '.github/workflows/spec-validation.yml'
       - '.github/workflows/validate-artifacts-ajv.yml'
+      - '.github/workflows/fail-fast-spec-validation.yml'
+      - '.github/workflows/spec-check.yml'
+  workflow_dispatch:
   workflow_call:
     # Allow other workflows to call this validation
 
@@ -33,7 +48,20 @@ permissions:
   pull-requests: write
 
 jobs:
+  fail-fast-spec:
+    name: Fail-Fast Spec Validation
+    if: github.event_name != 'push' || github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/fail-fast-spec-validation.yml
+
+  spec-check:
+    name: Spec Check
+    needs: fail-fast-spec
+    if: (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch') && needs.fail-fast-spec.result != 'failure'
+    uses: ./.github/workflows/spec-check.yml
+
   spec-validation:
+    needs: fail-fast-spec
+    if: always() && needs.fail-fast-spec.result != 'failure'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     
@@ -221,7 +249,8 @@ jobs:
           printf "%s\n" "See documentation for AE-Spec format guidelines."
 
   validate-artifacts:
-    if: github.event_name == 'pull_request'
+    needs: fail-fast-spec
+    if: always() && needs.fail-fast-spec.result != 'failure' && github.event_name == 'pull_request'
     uses: ./.github/workflows/validate-artifacts-ajv.yml
     with:
       strict: ${{ contains(github.event.pull_request.labels.*.name, 'enforce-artifacts') }}
