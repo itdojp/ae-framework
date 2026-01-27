@@ -8,11 +8,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  # Issue #71: CI最前段にSpec Validation追加（fail-fast）
+  # Issue #71: CI最前段にSpec Validation追加
   spec-validation:
-    name: 🚦 Fail-Fast Spec Validation
+    name: Spec Validation
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.schedule == '0 2 * * 0' }}
-    uses: ./.github/workflows/fail-fast-spec-validation.yml
+    uses: ./.github/workflows/spec-validation.yml
     secrets: inherit
 
   build-test:
