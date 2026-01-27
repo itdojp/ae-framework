@@ -1,10 +1,11 @@
 # Issue 1006: Workflow Inventory (Phase 1)
 
 ## Snapshot
-- Commit: worktree (post nightly monitoring + flake retry + manual model-checking + parallel coordinator + pr auto-update + pr summary consolidation)
+- Commit: 65b40e9a
+- Generated: 2026-01-27 14:45:35 UTC
 - .github/workflows/*.yml count: 44
 
-## Prefix counts (file name before first '-' or '.')
+## Prefix counts (file name before first "-" or ".")
 - adapter: 1
 - ae: 1
 - agent: 1
