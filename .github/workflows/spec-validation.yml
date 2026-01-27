@@ -8,8 +8,15 @@ on:
       - 'schema/**'
       - 'docs/schemas/**'
       - 'specs/formal/**'
+      - 'packages/spec-compiler/**'
+      - 'src/cli/**'
+      - 'scripts/formal/verify-tla.mjs'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
       - '.github/workflows/spec-validation.yml'
       - '.github/workflows/validate-artifacts-ajv.yml'
+      - '.github/workflows/fail-fast-spec-validation.yml'
+      - '.github/workflows/spec-check.yml'
   push:
     branches: [main, develop]
     paths:
@@ -19,8 +26,16 @@ on:
       - 'schema/**'
       - 'docs/schemas/**'
       - 'specs/formal/**'
+      - 'packages/spec-compiler/**'
+      - 'src/cli/**'
+      - 'scripts/formal/verify-tla.mjs'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
       - '.github/workflows/spec-validation.yml'
       - '.github/workflows/validate-artifacts-ajv.yml'
+      - '.github/workflows/fail-fast-spec-validation.yml'
+      - '.github/workflows/spec-check.yml'
+  workflow_dispatch:
   workflow_call:
     # Allow other workflows to call this validation
 
@@ -33,6 +48,16 @@ permissions:
   pull-requests: write
 
 jobs:
+  fail-fast-spec:
+    name: Fail-Fast Spec Validation
+    if: github.event_name != 'push' || github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/fail-fast-spec-validation.yml
+
+  spec-check:
+    name: Spec Check
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/spec-check.yml
+
   spec-validation:
     runs-on: ubuntu-latest
     timeout-minutes: 10
