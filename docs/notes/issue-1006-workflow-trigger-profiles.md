@@ -1,8 +1,8 @@
 # Issue 1006: Workflow Trigger Profiles (Phase 1.5 draft)
 
 ## Snapshot
-- Commit: 65b40e9a
-- Generated: 2026-01-27 15:03:25 UTC
+- Commit: worktree
+- Generated: 2026-01-27 16:05:47 UTC
 - Total workflows: 44
 
 ## Trigger signatures
@@ -46,7 +46,8 @@
 - flake-detect.yml
 - nightly.yml
 
-### workflow_call, workflow_dispatch (5)
+### workflow_call, workflow_dispatch (6)
+- ci-fast.yml
 - fail-fast-spec-validation.yml
 - formal-aggregate.yml
 - release-quality-artifacts.yml
@@ -73,15 +74,14 @@
 - grafana-dashboards.yml
 - pr-ci-status-comment.yml
 
-### schedule, workflow_call, workflow_dispatch (1)
-- ci.yml
-
 ### pull_request, push, schedule, workflow_dispatch (1)
 - security.yml
 
-### pull_request, push, workflow_call, workflow_dispatch (4)
+### pull_request, push, schedule, workflow_call, workflow_dispatch (1)
+- ci.yml
+
+### pull_request, push, workflow_call, workflow_dispatch (3)
 - ci-extended.yml
-- ci-fast.yml
 - sbom-generation.yml
 - spec-validation.yml
 
