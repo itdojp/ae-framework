@@ -1,21 +1,41 @@
 name: Formal Reports Aggregate
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, labeled]
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
+  workflow_call:
+    inputs:
+      source_run_id:
+        description: "Workflow run id to download artifacts from"
+        required: false
+        type: string
+      pr_number:
+        description: "Pull request number to comment on"
+        required: false
+        type: string
+    secrets:
+      GITHUB_TOKEN:
+        required: false
   workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: "Workflow run id to download artifacts from"
+        required: false
+        type: string
+      pr_number:
+        description: "Pull request number to comment on"
+        required: false
+        type: string
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ inputs.pr_number || github.ref }}
   cancel-in-progress: true
 
-permissions: read-all
+permissions:
+  contents: read
+  actions: read
+  issues: write
 
 jobs:
   aggregate:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && contains(github.event.pull_request.labels.*.name, 'run-formal'))
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call'
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
@@ -28,6 +48,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts_dl
+          run-id: ${{ inputs.source_run_id != '' && inputs.source_run_id || github.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN || github.token }}
       - name: Aggregate formal reports
         id: agg
         run: |
@@ -269,20 +291,27 @@ jobs:
         run: |
           node scripts/formal/validate-conformance-summary.mjs || true
       - name: Comment on PR (upsert)
-        if: github.event_name == 'pull_request'
+        if: (github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch') && inputs.pr_number != ''
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
             const header = '<!-- AE-FORMAL-AGGREGATE -->\n';
             const body = header + fs.readFileSync('artifacts/formal/formal-aggregate.md','utf-8');
-            const { owner, repo, number } = context.issue;
-            const comments = await github.rest.issues.listComments({ owner, repo, issue_number: number, per_page: 100 });
+            const { owner, repo } = context.repo;
+            const issue_number = Number(process.env.PR_NUMBER || 0);
+            if (!issue_number) {
+              core.info('PR number not provided; skipping comment.');
+              return;
+            }
+            const comments = await github.rest.issues.listComments({ owner, repo, issue_number, per_page: 100 });
             const mine = comments.data.find(c => c.body && c.body.startsWith('<!-- AE-FORMAL-AGGREGATE -->'));
             if (mine && mine.body === body) {
               core.info('Aggregate unchanged; skipping update');
             } else if (mine) {
               await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
             } else {
-              await github.rest.issues.createComment({ owner, repo, issue_number: number, body });
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
             }
+        env:
+          PR_NUMBER: ${{ inputs.pr_number }}
