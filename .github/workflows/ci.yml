@@ -4,6 +4,18 @@ on:
     - cron: '0 2 * * 0'   # 毎週日曜日 2:00 UTC (Full CI)
     - cron: '30 6 * * 1'  # 毎週月曜日 6:30 UTC (CI Extended)
   workflow_dispatch:      # 手動実行
+  workflow_call:
+    inputs:
+      mode:
+        description: 'CI mode (full, extended, fast)'
+        required: false
+        default: 'full'
+        type: string
+      trigger:
+        description: 'Origin event for scheduled runs'
+        required: false
+        default: 'workflow_call'
+        type: string
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -11,14 +23,14 @@ jobs:
   # Issue #71: CI最前段にSpec Validation追加
   spec-validation:
     name: Spec Validation
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.schedule == '0 2 * * 0' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_call' && inputs.mode == 'full') || github.event.schedule == '0 2 * * 0' }}
     uses: ./.github/workflows/spec-validation.yml
     secrets: inherit
 
   build-test:
     runs-on: ubuntu-latest
     needs: spec-validation  # Spec validation must pass first
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.schedule == '0 2 * * 0' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_call' && inputs.mode == 'full') || github.event.schedule == '0 2 * * 0' }}
     env:
       AE_HOST_STORE: ${{ github.workspace }}/.pnpm-store
       PNPM_STORE_PATH: ${{ github.workspace }}/.pnpm-store
@@ -54,11 +66,17 @@ jobs:
 
   ci-extended-schedule:
     name: CI Extended (scheduled)
-    if: ${{ github.event_name == 'schedule' && github.event.schedule == '30 6 * * 1' }}
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '30 6 * * 1') || (github.event_name == 'workflow_call' && inputs.mode == 'extended') }}
     uses: ./.github/workflows/ci-extended.yml
     secrets: inherit
     permissions:
       contents: read
       issues: write
     with:
-      trigger: schedule
+      trigger: ${{ github.event_name == 'schedule' && 'schedule' || inputs.trigger }}
+
+  ci-fast-call:
+    name: CI Fast (entry)
+    if: ${{ github.event_name == 'workflow_call' && inputs.mode == 'fast' }}
+    uses: ./.github/workflows/ci-fast.yml
+    secrets: inherit
