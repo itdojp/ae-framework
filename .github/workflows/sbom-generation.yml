@@ -22,6 +22,9 @@ on:
         required: false
         default: true
         type: boolean
+    secrets:
+      DEPENDENCY_TRACK_API_KEY:
+        required: false
   workflow_dispatch:
     inputs:
       include_vulnerabilities:
