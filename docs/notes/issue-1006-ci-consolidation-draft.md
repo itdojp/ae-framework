@@ -3,7 +3,7 @@
 ## ステータス
 - v1 確定: 2026-01-26
 - 対象: Month 2
-- 参考PR: #1769 #1775 #1777 #1778 #1779 #1780 #1781 #1782
+- 参考PR: #1769 #1775 #1777 #1778 #1779 #1780 #1781 #1782 #1785 #1786 #1787 #1788 #1789 #1790 #1791
 
 ## 目的
 - ワークフロー数の削減と運用負荷の低減
@@ -32,6 +32,13 @@
 - nightly-monitoring の監視ジョブを nightly.yml に統合（PR #1775）
 - pr-auto-update-branch を pr-ci-status-comment.yml に統合（PR #1780）
 - pr-summary-comment を pr-ci-status-comment.yml に統合（PR #1781）
+- security schedule を security.yml に統合（PR #1785）
+- ci-extended schedule を ci.yml に統合（PR #1786）
+- release-quality-artifacts を release.yml に統合（PR #1787）
+- formal aggregate を formal-verify の workflow_call に統合（PR #1788）
+- spec validation entry を spec-validation.yml に集約（PR #1789）
+- full CI の spec validation entry を更新（PR #1790）
+- ci.yml に workflow_call の mode/trigger を追加（PR #1791）
 
 ## 統合スコープと指標
 - スコープ: PR ゲート / CI / 検証 / 監査系（schedule/manual）
@@ -58,11 +65,11 @@
 | Release | release.yml, release-quality-artifacts.yml | release.yml | なし | release event + workflow_dispatch を一本化 |
 
 ## 移行順序（PR 連投前提）
-1) Security schedule 統合（priority A）: security.yml に sbom/cedar の schedule/dispatch を統合
-2) CI core の entry 整理: ci.yml に mode を追加し、ci-fast/ci-extended/ci-core を reusable へ移行
-3) Spec/artifact の entry 化: spec-validation.yml に fail-fast/spec-check を mode 化で吸収
-4) Formal の entry 化: formal-verify.yml に aggregate を workflow_call で統合
-5) Release の一本化: release-quality-artifacts を release.yml に統合
+1) Security schedule 統合（priority A）: security.yml に sbom/cedar の schedule/dispatch を統合（PR #1785）
+2) CI core の entry 整理: ci.yml に mode を追加し、ci-fast/ci-extended/ci-core を reusable へ移行（PR #1791 まで実施）
+3) Spec/artifact の entry 化: spec-validation.yml に fail-fast/spec-check を mode 化で吸収（PR #1789 / #1790）
+4) Formal の entry 化: formal-verify.yml に aggregate を workflow_call で統合（PR #1788）
+5) Release の一本化: release-quality-artifacts を release.yml に統合（PR #1787）
 
 ## ロールバック指針
 - 1 PR 1 統合を厳守し、各 PR は revert で巻き戻せるようにする
