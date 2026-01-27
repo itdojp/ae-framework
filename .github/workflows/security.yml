@@ -222,6 +222,21 @@ jobs:
           path: license-summary.txt
           retention-days: 30
 
+  sbom-generation:
+    name: SBOM Generation (schedule/dispatch)
+    needs: gate
+    if: ${{ needs.gate.outputs.run_security == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
+    uses: ./.github/workflows/sbom-generation.yml
+    secrets: inherit
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+      id-token: write
+      attestations: write
+    with:
+      include_vulnerabilities: true
+
   security-policy-check:
     name: Security Policy Validation
     runs-on: ubuntu-latest
