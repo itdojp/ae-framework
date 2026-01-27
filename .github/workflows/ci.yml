@@ -1,7 +1,8 @@
 name: Full CI (Comprehensive Testing)
 on: 
   schedule:
-    - cron: '0 2 * * 0'  # 毎週日曜日 2:00 UTC
+    - cron: '0 2 * * 0'   # 毎週日曜日 2:00 UTC (Full CI)
+    - cron: '30 6 * * 1'  # 毎週月曜日 6:30 UTC (CI Extended)
   workflow_dispatch:      # 手動実行
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -10,12 +11,14 @@ jobs:
   # Issue #71: CI最前段にSpec Validation追加（fail-fast）
   spec-validation:
     name: 🚦 Fail-Fast Spec Validation
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.schedule == '0 2 * * 0' }}
     uses: ./.github/workflows/fail-fast-spec-validation.yml
     secrets: inherit
 
   build-test:
     runs-on: ubuntu-latest
     needs: spec-validation  # Spec validation must pass first
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.schedule == '0 2 * * 0' }}
     env:
       AE_HOST_STORE: ${{ github.workspace }}/.pnpm-store
       PNPM_STORE_PATH: ${{ github.workspace }}/.pnpm-store
@@ -48,3 +51,14 @@ jobs:
         run: |
           curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b . v1.0.0
           ./syft packages dir:. -o cyclonedx-json > security/sbom/sbom.json
+
+  ci-extended-schedule:
+    name: CI Extended (scheduled)
+    if: ${{ github.event_name == 'schedule' && github.event.schedule == '30 6 * * 1' }}
+    uses: ./.github/workflows/ci-extended.yml
+    secrets: inherit
+    permissions:
+      contents: read
+      issues: write
+    with:
+      trigger: schedule

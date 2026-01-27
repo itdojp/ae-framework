@@ -10,9 +10,14 @@ on:
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
-  schedule:
-    - cron: '30 6 * * 1' # weekly (Mon)
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      trigger:
+        description: 'Origin event for scheduled runs'
+        required: false
+        default: 'workflow_call'
+        type: string
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -113,7 +118,7 @@ jobs:
         run: |
           set -euo pipefail
           prefix="ci-heavy-${{ runner.os }}"
-          if [ "${{ github.event_name }}" = "schedule" ]; then
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.trigger }}" = "schedule" ]; then
             key="${prefix}-schedule"
             restore_keys="${prefix}-schedule"$'\n'"${prefix}-"
           else
@@ -297,7 +302,7 @@ jobs:
         run: node scripts/pipelines/compare-test-trends.mjs
 
       - name: Archive heavy test trend history
-        if: ${{ always() && steps.flags.outputs.should_run == 'true' && github.event_name == 'schedule' }}
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' && (github.event_name == 'schedule' || inputs.trigger == 'schedule') }}
         shell: bash
         run: |
           set -euo pipefail
@@ -311,7 +316,7 @@ jobs:
           printf 'Archived heavy test trend snapshot: %s\n' "${timestamp}"
 
       - name: Render heavy test trend summary
-        if: ${{ always() && steps.flags.outputs.should_run == 'true' && github.event_name == 'schedule' }}
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' && (github.event_name == 'schedule' || inputs.trigger == 'schedule') }}
         id: heavy-summary
         shell: bash
         run: |
@@ -341,7 +346,7 @@ jobs:
           retention-days: 7
 
       - name: Upload heavy test trend history
-        if: ${{ always() && steps.flags.outputs.should_run == 'true' && github.event_name == 'schedule' }}
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' && (github.event_name == 'schedule' || inputs.trigger == 'schedule') }}
         uses: actions/upload-artifact@v4
         with:
           name: heavy-test-trends-history
@@ -350,7 +355,7 @@ jobs:
           retention-days: 14
 
       - name: Notify Slack (heavy trend alert)
-        if: ${{ always() && steps.flags.outputs.should_run == 'true' && github.event_name == 'schedule' && steps.heavy-summary.outputs.severity != 'ok' && env.SLACK_WEBHOOK_URL != '' }}
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' && (github.event_name == 'schedule' || inputs.trigger == 'schedule') && steps.heavy-summary.outputs.severity != 'ok' && env.SLACK_WEBHOOK_URL != '' }}
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ env.SLACK_WEBHOOK_URL }}
@@ -361,7 +366,7 @@ jobs:
             • summary: heavy-test-trends-history/summary.md
 
       - name: Create heavy trend issue
-        if: ${{ always() && steps.flags.outputs.should_run == 'true' && github.event_name == 'schedule' && steps.heavy-summary.outputs.severity == 'critical' }}
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' && (github.event_name == 'schedule' || inputs.trigger == 'schedule') && steps.heavy-summary.outputs.severity == 'critical' }}
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
