@@ -1,4 +1,9 @@
-# Issue #1006: CI Consolidation Draft (Month 2)
+# Issue #1006: CI Consolidation Strategy v1 (Month 2)
+
+## ステータス
+- v1 確定: 2026-01-26
+- 対象: Month 2
+- 参考PR: #1769 #1775 #1777 #1778 #1779 #1780 #1781 #1782
 
 ## 目的
 - ワークフロー数の削減と運用負荷の低減
@@ -21,12 +26,17 @@
 ## 既存の整理（要旨）
 - PR ゲート系 / 監査系 / 手動実行系が混在
 - flake 系は reusable 化済みであり、schedule を単一ワークフローへ集約済み（PR #1769）
-- flake retry dispatch を flake-detect.yml に統合（mode=retry）
-- model-checking-manual を formal-verify.yml の workflow_dispatch に統合（PR #1778 merged）
-- parallel-test-coordinator を parallel-test-execution.yml の workflow_dispatch に統合（PR #1779 merged）
-- nightly-monitoring の監視ジョブを nightly.yml に統合（PR #1775 merged）
-- pr-auto-update-branch を pr-ci-status-comment.yml に統合（PR #1780 merged）
-- pr-summary-comment を pr-ci-status-comment.yml に統合（PR #1781 merged）
+- flake retry dispatch を flake-detect.yml に統合（PR #1777）
+- model-checking-manual を formal-verify.yml の workflow_dispatch に統合（PR #1778）
+- parallel-test-coordinator を parallel-test-execution.yml の workflow_dispatch に統合（PR #1779）
+- nightly-monitoring の監視ジョブを nightly.yml に統合（PR #1775）
+- pr-auto-update-branch を pr-ci-status-comment.yml に統合（PR #1780）
+- pr-summary-comment を pr-ci-status-comment.yml に統合（PR #1781）
+
+## 統合スコープと指標
+- スコープ: PR ゲート / CI / 検証 / 監査系（schedule/manual）
+- 目標: エントリーワークフロー 5-10 に収束（required checks を含む）
+- 補足: ユーティリティ系（workflow-lint / branch-protection-apply / agent-commands / pr-ci-status-comment 等）は対象外とし、必要に応じて個別最適を継続
 
 ## 統合方針
 1) required checks は単独維持（ジョブ再配置のみ、workflow 名は維持）
@@ -34,34 +44,31 @@
 3) workflow_call を提供するワークフローは entry と reusable を分離（呼び出し側の安定性優先）
 4) ドキュメントと CLI からの参照に影響するものは、互換 alias を設けて段階移行
 
-## 候補とリスク評価
-### 低リスク
-- schedule 系の統合（flake: detect/maintenance/retry まで完了）
-- 手動実行系の統合（model-checking-manual → formal-verify）
-- 手動実行系の統合（parallel-test-coordinator → parallel-test-execution）
-- 状態コメント/ラベル付与のワークフロー整理（実行結果に影響しないもの）
-- PR運用補助の統合（pr-auto-update-branch → pr-ci-status-comment）
-- PR要約の統合（pr-summary-comment → pr-ci-status-comment）
+## ターゲットセット（エントリー）
+以下を Month2 の「統合後のエントリーワークフロー」として定義し、現行の重複や schedule をこの集合へ集約する。
 
-### 中リスク
-- CI 速度別の分割（ci-fast/ci-extended/ci-core）
-  - workflow_call の呼び出し関係を維持しつつ、entry を整理
+| Group | 現行の主な対象 | Target entry | Required checks 影響 | メモ |
+| --- | --- | --- | --- | --- |
+| PR gate | verify-lite.yml, copilot-review-gate.yml | verify-lite.yml / copilot-review-gate.yml | あり | 名称は維持、ジョブのみ最適化可 |
+| CI core | ci.yml, ci-core.yml, ci-fast.yml, ci-extended.yml, hermetic-ci.yml, minimal-pipeline.yml, ae-ci.yml, pr-verify.yml, verify.yml | ci.yml | なし | mode input で fast/extended/hermetic/qa を切替、reusable は維持 |
+| Spec/artifact | spec-check.yml, spec-validation.yml, fail-fast-spec-validation.yml, validate-artifacts-ajv.yml | spec-validation.yml | なし | fail-fast/spec-check を mode 化し、validate-artifacts-ajv は workflow_call として維持 |
+| Formal | formal-verify.yml, formal-aggregate.yml, lean-proof.yml | formal-verify.yml | なし | aggregate は workflow_call 化、lean-proof は手動/独立のまま残す |
+| Flake/stability | flake-detect.yml, flake-stability.yml | flake-detect.yml | なし | detect/maintenance/retry を mode 化済み。nightly は ops として対象外 |
+| Security/compliance | security.yml, sbom-generation.yml, cedar-quality-gates.yml | security.yml | なし | schedule を security.yml へ集約し、sbom/cedar は mode で切替 |
+| Release | release.yml, release-quality-artifacts.yml | release.yml | なし | release event + workflow_dispatch を一本化 |
 
-### 高リスク
-- PR ゲートの統合（verify-lite / gate など）
-  - required checks の互換性が最優先のため、設計段階で止める
+## 移行順序（PR 連投前提）
+1) Security schedule 統合（priority A）: security.yml に sbom/cedar の schedule/dispatch を統合
+2) CI core の entry 整理: ci.yml に mode を追加し、ci-fast/ci-extended/ci-core を reusable へ移行
+3) Spec/artifact の entry 化: spec-validation.yml に fail-fast/spec-check を mode 化で吸収
+4) Formal の entry 化: formal-verify.yml に aggregate を workflow_call で統合
+5) Release の一本化: release-quality-artifacts を release.yml に統合
 
-## Month 2 プラン（案）
-1) schedule 統合の追加候補を選定し、mode input での切替可否を確認
-2) workflow_call の依存関係を確認し、entry 側だけの統合で済む範囲を確定
-3) 実行結果の互換性確認（アーティファクト名・summary comment）
-4) 低リスクの統合 PR を段階作成（1 PR 1 統合）
+## ロールバック指針
+- 1 PR 1 統合を厳守し、各 PR は revert で巻き戻せるようにする
+- required checks 名称は変更しない（verify-lite/gate の name を維持）
+- 既存のアーティファクト名・summary comment を維持し、差分が出た場合は同 PR で修正
 
-## オープン事項
-- schedule 統合対象の優先順位
-- schedule 統合の優先度案（暫定）
-  - 優先度A: security.yml + sbom-generation.yml の週次スケジュールを一本化（監査系の重複削減。PR/label-gateの挙動は維持）
-  - 優先度B: ci.yml / ci-extended.yml の週次スケジュールの役割分担整理（統合ではなく責務の明確化が主目的）
-  - 優先度C: その他の schedule（grafana-dashboards / docker-tests / nightly / PR Maintenance）は現状維持（外部依存と運用手順の確認が先）
-- external automation から参照される workflow の把握
-- required checks の名称変更可否
+## 残オープン事項
+- external automation から参照される workflow の把握（runner/dispatch 依存を棚卸し）
+- required checks 以外で「暗黙的に required」扱いされているジョブの確認
