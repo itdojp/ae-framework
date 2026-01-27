@@ -57,5 +57,8 @@ jobs:
     if: ${{ github.event_name == 'schedule' && github.event.schedule == '30 6 * * 1' }}
     uses: ./.github/workflows/ci-extended.yml
     secrets: inherit
+    permissions:
+      contents: read
+      issues: write
     with:
       trigger: schedule
