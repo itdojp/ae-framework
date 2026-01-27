@@ -1,7 +1,8 @@
 # Issue 1006: Workflow Overlap Candidates (Phase 1.5 draft)
 
 ## Snapshot
-- Commit: 6f9fce7b
+- Commit: worktree
+- Updated: 2026-01-27
 - Source: docs/notes/issue-1006-workflow-inventory.md
 
 ## Required checks snapshot (main protection)
@@ -22,20 +23,20 @@
   - Candidate: unify schema/artifact validation into a single gating entry point.
 
 #### Trigger mapping (spec/artifact validation group)
-- spec-check.yml: pull_request (paths: specs/formal/**, scripts/formal/verify-tla.mjs, package.json, .github/workflows/spec-check.yml) + workflow_dispatch
-- spec-validation.yml: pull_request (paths: spec/**, .ae/**, artifacts/**, schema/**, docs/schemas/**, specs/formal/**, .github/workflows/spec-validation.yml, .github/workflows/validate-artifacts-ajv.yml) + push (main, develop; same paths) + workflow_call
-- fail-fast-spec-validation.yml: pull_request (paths: spec/**, .ae/**) + push (main; paths: spec/**, .ae/**, artifacts/**, schema/**, specs/formal/**, docs/schemas/**, packages/spec-compiler/**, src/cli/**, package.json, pnpm-lock.yaml, .github/workflows/fail-fast-spec-validation.yml) + workflow_call
+- spec-check.yml: workflow_call + workflow_dispatch
+- spec-validation.yml: pull_request (paths: spec/**, .ae/**, artifacts/**, schema/**, docs/schemas/**, specs/formal/**, packages/spec-compiler/**, src/cli/**, scripts/formal/verify-tla.mjs, package.json, pnpm-lock.yaml, .github/workflows/spec-validation.yml, .github/workflows/validate-artifacts-ajv.yml, .github/workflows/fail-fast-spec-validation.yml, .github/workflows/spec-check.yml) + push (main, develop; same paths) + workflow_call + workflow_dispatch
+- fail-fast-spec-validation.yml: workflow_call + workflow_dispatch
 - validate-artifacts-ajv.yml: workflow_call (invoked from spec-validation on PRs) + workflow_dispatch
 - spec-generate-model.yml: pull_request (paths: specs/**, templates/**, scripts/**, tests/**, artifacts/**, .github/workflows/spec-generate-model.yml) + workflow_dispatch
-- codegen-drift-check.yml: pull_request (all PRs to main; types: opened, synchronize, reopened, labeled; paths-ignore: docs/**, **/*.md; execution gated by label "run-drift") + push (main; paths: spec/**/*.md, .ae/ae-ir.json, src/codegen/**, templates/**, .github/workflows/codegen-drift-check.yml) + workflow_call
+- codegen-drift-check.yml: pull_request (all PRs to main; types: opened, synchronize, reopened, labeled; paths-ignore: docs/**, **/*.md; execution gated by label \"run-drift\") + push (main; paths: spec/**/*.md, .ae/ae-ir.json, src/codegen/**, templates/**, .github/workflows/codegen-drift-check.yml) + workflow_call
 
 ### Formal verification
 - formal-verify.yml / formal-aggregate.yml / lean-proof.yml
   - Candidate: define a single formal "entry" and document when manual vs automated runs apply.
 
 #### Trigger mapping (formal verification group)
-- formal-verify.yml: pull_request (types: opened, synchronize, reopened, ready_for_review, labeled; paths-ignore: docs/**, **/*.md; jobs gated by label "run-formal") + workflow_dispatch (inputs.target/engine/tlaFile)
-- formal-aggregate.yml: pull_request (types: opened, synchronize, reopened, labeled; paths-ignore: docs/**, **/*.md; job gated by label "run-formal") + workflow_dispatch
+- formal-verify.yml: pull_request (types: opened, synchronize, reopened, ready_for_review, labeled; paths-ignore: docs/**, **/*.md; jobs gated by label \"run-formal\") + workflow_dispatch (inputs.target/engine/tlaFile)
+- formal-aggregate.yml: workflow_call + workflow_dispatch
 - lean-proof.yml: pull_request (paths: proofs/lean/**, .github/workflows/lean-proof.yml) + push (main; same paths)
 
 ### Flake and stability
@@ -53,7 +54,7 @@
 
 #### Trigger mapping (release group)
 - release.yml: push (tags: v*)
-- release-quality-artifacts.yml: release (published) + workflow_dispatch
+- release-quality-artifacts.yml: workflow_call + workflow_dispatch
 
 ### Agent automation
 - agent-commands.yml
@@ -67,9 +68,9 @@
   - Candidate: map which are required for PR gating vs nightly audit.
 
 #### Trigger mapping (security/compliance group)
-- security.yml: pull_request (branches: main; paths-ignore: docs/**, **/*.md; jobs gated by label "run-security") + push (branches: main, develop; paths-ignore: docs/**, **/*.md; jobs run unconditionally) + schedule (cron: 20 5 * * 1 UTC) + workflow_dispatch
-- sbom-generation.yml: pull_request (branches: main; paths: package.json, pnpm-lock.yaml, packages/**, apps/**, src/**; job gated by label "run-security") + push (branches: main, develop; paths-ignore: docs/**, **/*.md; job runs unconditionally) + schedule (cron: 40 5 * * 1 UTC) + workflow_dispatch (input: include_vulnerabilities)
-- cedar-quality-gates.yml: pull_request (paths-ignore: docs/**, **/*.md; job gated by labels "run-security" or "run-cedar"; enforce with "enforce-security") + workflow_dispatch (note: pushトリガーは削除済み)
+- security.yml: pull_request (branches: main; paths-ignore: docs/**, **/*.md; jobs gated by label \"run-security\") + push (branches: main, develop; paths-ignore: docs/**, **/*.md; jobs run unconditionally) + schedule (cron: 20 5 * * 1 UTC) + workflow_dispatch
+- sbom-generation.yml: pull_request (branches: main; paths: package.json, pnpm-lock.yaml, packages/**, apps/**, src/**; job gated by label \"run-security\") + push (branches: main, develop; paths-ignore: docs/**, **/*.md; job runs unconditionally) + workflow_call + workflow_dispatch (input: include_vulnerabilities)
+- cedar-quality-gates.yml: pull_request (paths-ignore: docs/**, **/*.md; job gated by labels \"run-security\" or \"run-cedar\"; enforce with \"enforce-security\") + workflow_dispatch
 
 ### Misc utilities
 - workflow-lint.yml / branch-protection-apply.yml / pr-ci-status-comment.yml
@@ -93,7 +94,7 @@
 | Spec / artifact validation | PR gate + push + workflow_call + manual | spec-validation を主ゲートとして維持済み |
 | Formal verification | label-gate + manual + tag | `run-formal` ラベルで実行、手動/タグを分離維持 |
 | Flake / stability | schedule + manual + PR/push | スケジュールの重複を削減しやすい |
-| Release | tag + release + manual | リリースイベント連携の保持が前提 |
+| Release | tag + manual | リリースイベント連携の保持が前提 |
 | Security / compliance | label-gate + push + schedule + manual | PRゲート/夜間監査の線引きを明確化 |
 | Misc utilities | PR + manual | required checks 以外の補助系。統合はリスク低 |
 
@@ -102,6 +103,7 @@ These are proposals to reduce overlap without changing required checks or safety
 
 1) Spec / artifact validation
    - ✅ Completed: `spec-validation.yml` をPRゲートとして採用し、`validate-artifacts-ajv.yml` を workflow_call で呼び出す構成に統合済み。
+   - ✅ Completed: `spec-check.yml` / `fail-fast-spec-validation.yml` を workflow_call 化し entry に統合済み。
    - ✅ Completed: required checks への影響なしで統合を反映済み。
 
 2) Artifact preview vs generation
@@ -119,6 +121,9 @@ These are proposals to reduce overlap without changing required checks or safety
 5) PR annotations
    - ✅ Completed: `auto-labels.yml` を `pr-ci-status-comment.yml` に統合し、PR trigger を集約。
    - Guardrails: required checks への影響なし（PR補助のみ）。
+
+6) CI core entry
+   - ✅ Completed: `ci.yml` を workflow_call で再利用できるよう mode 入力を追加。
 
 ## Readiness checklist
 - Confirm which workflows are required by branch protection.
