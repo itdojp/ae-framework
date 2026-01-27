@@ -220,3 +220,22 @@ jobs:
         with:
           name: formal-reports-kani
           path: hermetic-reports/formal/kani-summary.json
+
+  formal-aggregate:
+    name: Formal Reports Aggregate
+    needs:
+      - verify-conformance
+      - verify-alloy
+      - verify-tla
+      - verify-smt
+      - verify-apalache
+      - verify-kani
+    if: (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && contains(github.event.pull_request.labels.*.name, 'run-formal')) || github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/formal-aggregate.yml
+    permissions:
+      contents: read
+      actions: read
+      issues: write
+    with:
+      source_run_id: ${{ github.run_id }}
+      pr_number: ${{ github.event_name == 'pull_request' && github.event.pull_request.number || '' }}
