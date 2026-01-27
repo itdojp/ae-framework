@@ -181,10 +181,3 @@ jobs:
             AE_IR_SIZE=$(du -h .ae/ae-ir.json | cut -f1)
             printf "%s\n" "::notice::Generated AE-IR size: $AE_IR_SIZE"
           fi
-
-  # Call dependent workflows only after validation passes
-  downstream-validation:
-    needs: fail-fast-validation
-    if: success()
-    uses: ./.github/workflows/spec-validation.yml
-    secrets: inherit

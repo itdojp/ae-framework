@@ -55,10 +55,13 @@ jobs:
 
   spec-check:
     name: Spec Check
-    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    needs: fail-fast-spec
+    if: (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch') && needs.fail-fast-spec.result != 'failure'
     uses: ./.github/workflows/spec-check.yml
 
   spec-validation:
+    needs: fail-fast-spec
+    if: always() && needs.fail-fast-spec.result != 'failure'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     
@@ -246,7 +249,8 @@ jobs:
           printf "%s\n" "See documentation for AE-Spec format guidelines."
 
   validate-artifacts:
-    if: github.event_name == 'pull_request'
+    needs: fail-fast-spec
+    if: always() && needs.fail-fast-spec.result != 'failure' && github.event_name == 'pull_request'
     uses: ./.github/workflows/validate-artifacts-ajv.yml
     with:
       strict: ${{ contains(github.event.pull_request.labels.*.name, 'enforce-artifacts') }}
