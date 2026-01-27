@@ -15,9 +15,13 @@ on:
       - 'packages/**'
       - 'apps/**'
       - 'src/**'
-  schedule:
-    # Run weekly to reduce cost (Mon 05:40 UTC)
-    - cron: '40 5 * * 1'
+  workflow_call:
+    inputs:
+      include_vulnerabilities:
+        description: 'Include vulnerability scanning'
+        required: false
+        default: true
+        type: boolean
   workflow_dispatch:
     inputs:
       include_vulnerabilities:
@@ -58,11 +62,19 @@ jobs:
       run: node scripts/ci/check-bins.mjs
       
     - name: Generate SBOM (JSON format)
+      env:
+        INCLUDE_VULNS: ${{ inputs.include_vulnerabilities }}
+        INCLUDE_VULNS_FALLBACK: ${{ github.event.inputs.include_vulnerabilities }}
       run: |
+        INCLUDE="${INCLUDE_VULNS:-${INCLUDE_VULNS_FALLBACK:-true}}"
+        EXTRA=""
+        if [ "$INCLUDE" = "true" ]; then
+          EXTRA="--include-vulns"
+        fi
         pnpm run ae-framework sbom generate \
           --format json \
           --include-dev-deps \
-          ${{ github.event.inputs.include_vulnerabilities == 'true' && '--include-vulns' || '' }} \
+          $EXTRA \
           --output sbom.json \
           --verbose
           
