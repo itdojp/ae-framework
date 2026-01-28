@@ -10,10 +10,9 @@
 ### issue_comment (1)
 - agent-commands.yml
 
-### pull_request (3)
+### pull_request (2)
 - adapter-thresholds.yml
 - phase6-validation.yml
-- pr-verify.yml
 
 ### push (1)
 - release.yml
@@ -47,7 +46,7 @@
 - flake-detect.yml
 - nightly.yml
 
-### workflow_call, workflow_dispatch (10)
+### workflow_call, workflow_dispatch (11)
 - ae-ci.yml
 - ci-fast.yml
 - fail-fast-spec-validation.yml
@@ -55,6 +54,7 @@
 - hermetic-ci.yml
 - parallel-test-execution.yml
 - podman-smoke.yml
+- pr-verify.yml
 - release-quality-artifacts.yml
 - spec-check.yml
 - validate-artifacts-ajv.yml
