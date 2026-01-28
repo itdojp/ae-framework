@@ -7,12 +7,12 @@
 
 ## Trigger counts
 - issue_comment: 1
-- pull_request: 21
+- pull_request: 20
 - pull_request_review: 1
 - push: 13
 - schedule: 7
-- workflow_call: 19
-- workflow_dispatch: 29
+- workflow_call: 20
+- workflow_dispatch: 30
 - workflow_run: 1
 
 ## Trigger → workflow files
@@ -20,7 +20,7 @@
 ### issue_comment (1)
 - agent-commands.yml
 
-### pull_request (21)
+### pull_request (20)
 - adapter-thresholds.yml
 - cedar-quality-gates.yml
 - ci.yml
@@ -32,7 +32,6 @@
 - lean-proof.yml
 - phase6-validation.yml
 - pr-ci-status-comment.yml
-- pr-verify.yml
 - quality-gates-centralized.yml
 - sbom-generation.yml
 - security.yml
@@ -70,7 +69,7 @@
 - pr-ci-status-comment.yml
 - security.yml
 
-### workflow_call (19)
+### workflow_call (20)
 - ae-ci.yml
 - ci-core.yml
 - ci-extended.yml
@@ -83,6 +82,7 @@
 - parallel-test-execution.yml
 - podman-smoke.yml
 - hermetic-ci.yml
+- pr-verify.yml
 - quality-gates-centralized.yml
 - release-quality-artifacts.yml
 - sbom-generation.yml
@@ -91,7 +91,7 @@
 - validate-artifacts-ajv.yml
 - verify.yml
 
-### workflow_dispatch (29)
+### workflow_dispatch (30)
 - ae-ci.yml
 - branch-protection-apply.yml
 - cedar-quality-gates.yml
@@ -112,6 +112,7 @@
 - parallel-test-execution.yml
 - podman-smoke.yml
 - pr-ci-status-comment.yml
+- pr-verify.yml
 - release-quality-artifacts.yml
 - sbom-generation.yml
 - security.yml

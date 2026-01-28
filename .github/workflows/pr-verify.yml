@@ -1,14 +1,53 @@
 name: PR Verify
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
+  workflow_call:
+    inputs:
+      trigger:
+        description: 'Origin event name (pull_request/push/workflow_call)'
+        required: false
+        default: 'workflow_call'
+        type: string
+      pr_labels:
+        description: 'Comma-separated PR labels'
+        required: false
+        default: ''
+        type: string
+      pr_is_fork:
+        description: 'Whether the PR head is from a fork'
+        required: false
+        default: 'false'
+        type: string
+      pr_number:
+        description: 'PR number for comment posting'
+        required: false
+        default: ''
+        type: string
+  workflow_dispatch:
+    inputs:
+      trigger:
+        description: 'Origin event name (pull_request/push/workflow_call)'
+        required: false
+        default: 'workflow_dispatch'
+        type: string
+      pr_labels:
+        description: 'Comma-separated PR labels'
+        required: false
+        default: ''
+        type: string
+      pr_is_fork:
+        description: 'Whether the PR head is from a fork'
+        required: false
+        default: 'false'
+        type: string
+      pr_number:
+        description: 'PR number for comment posting'
+        required: false
+        default: ''
+        type: string
 
 concurrency:
-  group: pr-verify-${{ github.ref }}
+  group: pr-verify-${{ inputs.pr_number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -17,7 +56,11 @@ jobs:
     env:
       AE_HOST_STORE: ${{ github.workspace }}/.pnpm-store
       PNPM_STORE_PATH: ${{ github.workspace }}/.pnpm-store
-    continue-on-error: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking') }}
+    continue-on-error: >-
+      ${{
+        (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking'))
+        || (github.event_name == 'workflow_call' && inputs.trigger == 'pull_request' && contains(inputs.pr_labels, 'ci-non-blocking'))
+      }}
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node + pnpm
@@ -135,7 +178,11 @@ jobs:
           EOF
 
       - name: Comment summary on PR
-        if: github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork
+        if: >-
+          ${{
+            (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork)
+            || (github.event_name == 'workflow_call' && inputs.trigger == 'pull_request' && inputs.pr_is_fork != 'true')
+          }}
         uses: actions/github-script@v7
         with:
           script: |
@@ -145,12 +192,19 @@ jobs:
               return;
             }
             const body = fs.readFileSync('codex-summary.md', 'utf8');
+            const issueNumber = context.payload.pull_request?.number || Number(process.env.PR_NUMBER || 0);
+            if (!issueNumber) {
+              core.info('PR number unavailable; skipping CodeX comment');
+              return;
+            }
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
+              issue_number: issueNumber,
               body
             });
+        env:
+          PR_NUMBER: ${{ inputs.pr_number }}
       - name: Show CodeX summary (head)
         if: always()
         run: |
@@ -195,7 +249,11 @@ jobs:
           SLACK_COLOR: "#E01E5A"
 
   flake-optin:
-    if: contains(join(fromJSON(toJSON(github.event.pull_request.labels)).*.name, ','), 'run-flake')
+    if: >-
+      ${{
+        (github.event_name == 'pull_request' && contains(join(fromJSON(toJSON(github.event.pull_request.labels)).*.name, ','), 'run-flake'))
+        || (github.event_name == 'workflow_call' && inputs.trigger == 'pull_request' && contains(inputs.pr_labels, 'run-flake'))
+      }}
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
