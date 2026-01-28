@@ -81,6 +81,9 @@ const resolveTemplateChoice = (
   }
   const index = Number(trimmed);
   if (!Number.isNaN(index) && Number.isInteger(index)) {
+    if (index < 1 || index > templates.length) {
+      return undefined;
+    }
     const candidate = templates[index - 1];
     return candidate?.id;
   }
@@ -232,7 +235,14 @@ export function createSetupCommand(): Command {
       const defaultTemplate = templates[0]?.id ?? '';
       const templateInput = await promptText('Template ID or number', defaultTemplate);
       const templateId = resolveTemplateChoice(templateInput, templates);
-      if (!templateId || !manager.getTemplate(templateId)) {
+      if (!templateId) {
+        console.error(
+          chalk.red(`❌ Invalid selection. Choose 1-${templates.length} or a template ID.`)
+        );
+        safeExit(2);
+        return;
+      }
+      if (!manager.getTemplate(templateId)) {
         console.error(chalk.red(`❌ Template not found: ${templateInput}`));
         safeExit(2);
         return;

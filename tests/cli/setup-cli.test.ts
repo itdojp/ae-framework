@@ -220,6 +220,95 @@ describe('setup CLI', () => {
       projectName: 'my-app',
       packageManager: 'pnpm',
     });
+    expect(readlineCloseMock).toHaveBeenCalledTimes(4);
+
+    Object.defineProperty(process.stdin, 'isTTY', { value: originalStdinTTY, configurable: true });
+    Object.defineProperty(process.stdout, 'isTTY', { value: originalStdoutTTY, configurable: true });
+    consoleLogSpy.mockRestore();
+  });
+
+  it('rejects invalid wizard template selection', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const originalStdinTTY = process.stdin.isTTY;
+    const originalStdoutTTY = process.stdout.isTTY;
+
+    Object.defineProperty(process.stdin, 'isTTY', { value: true, configurable: true });
+    Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
+
+    getAvailableTemplatesMock.mockReturnValue([
+      { id: 'typescript-node', name: 'TypeScript Node', description: '', category: 'api', language: 'typescript' },
+    ]);
+    readlineQuestionMock.mockResolvedValueOnce('9');
+
+    const command = createSetupCommand();
+    await command.parseAsync(['node', 'cli', 'wizard']);
+
+    expect(installTemplateMock).not.toHaveBeenCalled();
+    expect(safeExitMock).toHaveBeenCalledWith(2);
+    expect(readlineCloseMock).toHaveBeenCalledTimes(1);
+
+    Object.defineProperty(process.stdin, 'isTTY', { value: originalStdinTTY, configurable: true });
+    Object.defineProperty(process.stdout, 'isTTY', { value: originalStdoutTTY, configurable: true });
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('rejects invalid wizard package manager input', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const originalStdinTTY = process.stdin.isTTY;
+    const originalStdoutTTY = process.stdout.isTTY;
+
+    Object.defineProperty(process.stdin, 'isTTY', { value: true, configurable: true });
+    Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
+
+    getAvailableTemplatesMock.mockReturnValue([
+      { id: 'typescript-node', name: 'TypeScript Node', description: '', category: 'api', language: 'typescript' },
+    ]);
+    getTemplateMock.mockReturnValue({ id: 'typescript-node' });
+    detectPackageManagerMock.mockResolvedValue('pnpm');
+
+    readlineQuestionMock
+      .mockResolvedValueOnce('1')
+      .mockResolvedValueOnce('my-app')
+      .mockResolvedValueOnce('invalid');
+
+    const command = createSetupCommand();
+    await command.parseAsync(['node', 'cli', 'wizard']);
+
+    expect(installTemplateMock).not.toHaveBeenCalled();
+    expect(safeExitMock).toHaveBeenCalledWith(2);
+    expect(readlineCloseMock).toHaveBeenCalledTimes(3);
+
+    Object.defineProperty(process.stdin, 'isTTY', { value: originalStdinTTY, configurable: true });
+    Object.defineProperty(process.stdout, 'isTTY', { value: originalStdoutTTY, configurable: true });
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('cancels wizard when confirmation declines', async () => {
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const originalStdinTTY = process.stdin.isTTY;
+    const originalStdoutTTY = process.stdout.isTTY;
+
+    Object.defineProperty(process.stdin, 'isTTY', { value: true, configurable: true });
+    Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
+
+    getAvailableTemplatesMock.mockReturnValue([
+      { id: 'typescript-node', name: 'TypeScript Node', description: '', category: 'api', language: 'typescript' },
+    ]);
+    getTemplateMock.mockReturnValue({ id: 'typescript-node' });
+    detectPackageManagerMock.mockResolvedValue('pnpm');
+
+    readlineQuestionMock
+      .mockResolvedValueOnce('1')
+      .mockResolvedValueOnce('my-app')
+      .mockResolvedValueOnce('pnpm')
+      .mockResolvedValueOnce('n');
+
+    const command = createSetupCommand();
+    await command.parseAsync(['node', 'cli', 'wizard']);
+
+    expect(installTemplateMock).not.toHaveBeenCalled();
+    expect(safeExitMock).not.toHaveBeenCalled();
+    expect(readlineCloseMock).toHaveBeenCalledTimes(4);
 
     Object.defineProperty(process.stdin, 'isTTY', { value: originalStdinTTY, configurable: true });
     Object.defineProperty(process.stdout, 'isTTY', { value: originalStdoutTTY, configurable: true });
