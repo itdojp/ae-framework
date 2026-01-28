@@ -25,6 +25,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { createSecurityCommand } from './security-cli.js';
 import { createEntryRunnerCommand } from './entry-runner-cli.js';
+import { createHelpCommand } from './help-cli.js';
 import { safeExit } from '../utils/safe-exit.js';
 import { handleTestsSuggest } from '../commands/tdd/suggest.js';
 
@@ -644,6 +645,9 @@ program.addCommand(createSecurityCommand());
 
 // Consolidated runner entry command
 program.addCommand(createEntryRunnerCommand());
+
+// Help command (parity with pnpm run help)
+program.addCommand(createHelpCommand());
 
 // Quality gates commands
 import { createQualityCommand } from './quality-cli.js';
