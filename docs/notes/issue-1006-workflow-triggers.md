@@ -2,16 +2,16 @@
 
 ## Snapshot
 - Commit: worktree
-- Generated: 2026-01-28 01:25:38 UTC
+- Generated: 2026-01-28 03:57:49 UTC
 - Total workflows: 44
 
 ## Trigger counts
 - issue_comment: 1
-- pull_request: 24
+- pull_request: 23
 - pull_request_review: 1
-- push: 16
+- push: 15
 - schedule: 7
-- workflow_call: 16
+- workflow_call: 17
 - workflow_dispatch: 30
 - workflow_run: 1
 
@@ -20,7 +20,7 @@
 ### issue_comment (1)
 - agent-commands.yml
 
-### pull_request (24)
+### pull_request (23)
 - adapter-thresholds.yml
 - ae-ci.yml
 - cedar-quality-gates.yml
@@ -31,7 +31,6 @@
 - formal-verify.yml
 - grafana-dashboards.yml
 - lean-proof.yml
-- parallel-test-execution.yml
 - phase6-validation.yml
 - podman-smoke.yml
 - pr-ci-status-comment.yml
@@ -49,13 +48,12 @@
 ### pull_request_review (1)
 - copilot-review-gate.yml
 
-### push (16)
+### push (15)
 - ae-ci.yml
 - ci.yml
 - codegen-drift-check.yml
 - coverage-check.yml
 - lean-proof.yml
-- parallel-test-execution.yml
 - podman-smoke.yml
 - quality-gates-centralized.yml
 - release.yml
@@ -76,7 +74,7 @@
 - pr-ci-status-comment.yml
 - security.yml
 
-### workflow_call (16)
+### workflow_call (17)
 - ci-core.yml
 - ci-extended.yml
 - ci-fast.yml
@@ -85,6 +83,7 @@
 - fail-fast-spec-validation.yml
 - flake-stability.yml
 - formal-aggregate.yml
+- parallel-test-execution.yml
 - hermetic-ci.yml
 - quality-gates-centralized.yml
 - release-quality-artifacts.yml

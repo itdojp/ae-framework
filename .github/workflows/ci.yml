@@ -108,6 +108,48 @@ jobs:
       trigger: ${{ github.event_name }}
       pr_labels: ${{ github.event_name == 'pull_request' && join(github.event.pull_request.labels.*.name, ',') || '' }}
 
+  detect-parallel-changes:
+    name: Detect Parallel Test Paths
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
+    outputs:
+      should_run: ${{ steps.diff.outputs.should_run }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Detect relevant changes
+        id: diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          base=""
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            base="${{ github.event.before }}"
+          fi
+          if [ -z "$base" ]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git diff --name-only "$base" "${{ github.sha }}" > /tmp/changed-files.txt
+          if grep -E '^(src|packages|apps|tests|configs|scripts|types)/' /tmp/changed-files.txt >/dev/null; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  parallel-test-entry:
+    name: "Parallel Tests (entry: pr/push)"
+    needs: detect-parallel-changes
+    if: ${{ (github.event_name == 'pull_request' || github.event_name == 'push') && needs.detect-parallel-changes.outputs.should_run == 'true' }}
+    uses: ./.github/workflows/parallel-test-execution.yml
+    secrets: inherit
+    with:
+      trigger: ${{ github.event_name }}
+      pr_labels: ${{ github.event_name == 'pull_request' && join(github.event.pull_request.labels.*.name, ',') || '' }}
+
   ci-fast-entry:
     name: "CI Fast (entry: pr/push)"
     if: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
