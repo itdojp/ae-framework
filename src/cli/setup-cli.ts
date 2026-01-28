@@ -6,6 +6,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import path from 'node:path';
+import { createInterface } from 'node:readline/promises';
 import { InstallerManager } from '../utils/installer-manager.js';
 import { safeExit } from '../utils/safe-exit.js';
 
@@ -26,6 +27,65 @@ const normalizePackageManager = (value?: string): PackageManager | undefined => 
 };
 
 const resolveRoot = (root?: string): string => path.resolve(root || process.cwd());
+
+const ensureInteractiveSession = (): boolean => {
+  if (!process.stdin.isTTY || !process.stdout.isTTY) {
+    console.error(chalk.red('❌ Interactive setup requires a TTY session.'));
+    console.error('Use ae setup list/suggest/<template-id> for non-interactive usage.');
+    safeExit(2);
+    return false;
+  }
+  return true;
+};
+
+const promptText = async (
+  prompt: string,
+  defaultValue?: string
+): Promise<string> => {
+  const suffix = defaultValue ? ` [${defaultValue}]` : '';
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    const answer = await rl.question(`${prompt}${suffix}: `);
+    const trimmed = answer.trim();
+    if (trimmed.length === 0) {
+      return defaultValue ?? '';
+    }
+    return trimmed;
+  } finally {
+    rl.close();
+  }
+};
+
+const promptConfirm = async (prompt: string, defaultValue = true): Promise<boolean> => {
+  const suffix = defaultValue ? ' [Y/n]' : ' [y/N]';
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    const answer = await rl.question(`${prompt}${suffix}: `);
+    const normalized = answer.trim().toLowerCase();
+    if (!normalized) {
+      return defaultValue;
+    }
+    return ['y', 'yes'].includes(normalized);
+  } finally {
+    rl.close();
+  }
+};
+
+const resolveTemplateChoice = (
+  input: string,
+  templates: { id: string }[]
+): string | undefined => {
+  const trimmed = input.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  const index = Number(trimmed);
+  if (!Number.isNaN(index) && Number.isInteger(index)) {
+    const candidate = templates[index - 1];
+    return candidate?.id;
+  }
+  return trimmed;
+};
 
 const renderTemplateList = (manager: InstallerManager): void => {
   const templates = manager.getAvailableTemplates();
@@ -110,6 +170,13 @@ const renderInstallResult = (templateId: string, result: Awaited<ReturnType<Inst
   console.log(`\nCompleted in ${result.duration}ms`);
 };
 
+const renderTemplateSummary = (templates: { id: string; name: string }[]): void => {
+  console.log(chalk.cyan('Templates:'));
+  templates.forEach((template, index) => {
+    console.log(`  ${index + 1}. ${template.id} - ${template.name}`);
+  });
+};
+
 export function createSetupCommand(): Command {
   const setup = new Command('setup');
   setup
@@ -137,6 +204,84 @@ export function createSetupCommand(): Command {
         await renderSuggestionList(manager);
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Failed to suggest templates: ${String(error)}`));
+        safeExit(1);
+      }
+    });
+
+  setup
+    .command('wizard')
+    .description('Interactive setup wizard')
+    .option('--root <path>', 'Project root (default: cwd)')
+    .option('--name <projectName>', 'Override project name')
+    .option('--package-manager <npm|yarn|pnpm>', 'Override package manager')
+    .action(async (options: SetupOptions) => {
+      if (!ensureInteractiveSession()) {
+        return;
+      }
+
+      const root = resolveRoot(options.root ?? setup.opts()['root']);
+      const manager = new InstallerManager(root);
+      const templates = manager.getAvailableTemplates();
+      if (templates.length === 0) {
+        console.log(chalk.yellow('No templates available.'));
+        return;
+      }
+
+      renderTemplateSummary(templates);
+
+      const defaultTemplate = templates[0]?.id ?? '';
+      const templateInput = await promptText('Template ID or number', defaultTemplate);
+      const templateId = resolveTemplateChoice(templateInput, templates);
+      if (!templateId || !manager.getTemplate(templateId)) {
+        console.error(chalk.red(`❌ Template not found: ${templateInput}`));
+        safeExit(2);
+        return;
+      }
+
+      const projectName = await promptText(
+        'Project name',
+        options.name ?? path.basename(root)
+      );
+
+      const preferredPackageManager = normalizePackageManager(options.packageManager);
+      if (options.packageManager && !preferredPackageManager) {
+        console.error(chalk.red(`❌ Invalid package manager: ${options.packageManager}`));
+        safeExit(2);
+        return;
+      }
+
+      const detectedPackageManager = preferredPackageManager ?? await manager.detectPackageManager();
+      const packageInput = await promptText(
+        'Package manager (npm/yarn/pnpm)',
+        detectedPackageManager
+      );
+      const packageManager = normalizePackageManager(packageInput);
+      if (!packageManager) {
+        console.error(chalk.red(`❌ Invalid package manager: ${packageInput}`));
+        safeExit(2);
+        return;
+      }
+
+      const shouldProceed = await promptConfirm(
+        `Install template '${templateId}' into ${root}?`,
+        true
+      );
+      if (!shouldProceed) {
+        console.log(chalk.yellow('Setup cancelled.'));
+        return;
+      }
+
+      const installContext: { projectName?: string; packageManager?: PackageManager } = {};
+      if (projectName) {
+        installContext.projectName = projectName;
+      }
+      installContext.packageManager = packageManager;
+
+      try {
+        const result = await manager.installTemplate(templateId, installContext);
+        renderInstallResult(templateId, result);
+      } catch (error: unknown) {
+        console.error(chalk.red(`❌ Setup failed: ${String(error)}`));
         safeExit(1);
       }
     });
