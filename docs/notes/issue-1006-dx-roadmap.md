@@ -45,11 +45,11 @@
 3) `pnpm run help` と `ae help` を同期
 4) docs の統一と migration guide を公開
 
-## 進捗 (2026-01-26)
+## 進捗 (2026-01-28)
 - [x] test/quality/verify/flake/security の entry script を用意
 - [x] alias map を参照し legacy 実行時に警告 + 転送
 - [x] `pnpm run help` のカテゴリ/推奨エントリ表示（既存）
-- [ ] 統一 CLI 入口から entry runner へルーティング（ae/ae-framework の接続）
+- [x] 統一 CLI 入口から entry runner へルーティング（`ae entry <category>` で接続）
 - [ ] docs の統一/移行ガイド整備
 
 ## リスクと対策
