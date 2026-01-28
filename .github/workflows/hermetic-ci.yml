@@ -1,17 +1,19 @@
 name: Hermetic CI/CD Pipeline
 
 on:
-  push:
-    branches: [ main, develop ]
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
-  pull_request:
-    branches: [ main ]
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      trigger:
+        description: 'Origin event name (pull_request/push/workflow_call)'
+        required: false
+        default: 'workflow_call'
+        type: string
+      pr_labels:
+        description: 'Comma-separated PR labels'
+        required: false
+        default: ''
+        type: string
 
 # Ensure hermetic execution
 concurrency:
@@ -37,8 +39,8 @@ jobs:
   hermetic-validation:
     name: Hermetic Environment Validation
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' || contains(join(fromJSON(toJSON(github.event.pull_request.labels)).*.name, ','), 'run-hermetic')
-    continue-on-error: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking') }}
+    if: ${{ (inputs.trigger || github.event_name) != 'pull_request' || contains(inputs.pr_labels || '', 'run-hermetic') }}
+    continue-on-error: ${{ (inputs.trigger || github.event_name) == 'pull_request' && contains(inputs.pr_labels || '', 'ci-non-blocking') }}
     
     steps:
       - name: Checkout code
@@ -98,8 +100,8 @@ jobs:
     name: Deterministic Build Verification
     runs-on: ubuntu-latest
     needs: hermetic-validation
-    if: github.event_name != 'pull_request' || contains(join(fromJSON(toJSON(github.event.pull_request.labels)).*.name, ','), 'run-hermetic')
-    continue-on-error: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking') }}
+    if: ${{ (inputs.trigger || github.event_name) != 'pull_request' || contains(inputs.pr_labels || '', 'run-hermetic') }}
+    continue-on-error: ${{ (inputs.trigger || github.event_name) == 'pull_request' && contains(inputs.pr_labels || '', 'ci-non-blocking') }}
     
     strategy:
       matrix:

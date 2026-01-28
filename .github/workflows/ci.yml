@@ -99,6 +99,15 @@ jobs:
       pr_base_sha: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || '' }}
       pr_is_fork: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork && 'true' || 'false' }}
 
+  ci-hermetic-entry:
+    name: "Hermetic CI (entry: pr/push)"
+    if: ${{ github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-hermetic')) }}
+    uses: ./.github/workflows/hermetic-ci.yml
+    secrets: inherit
+    with:
+      trigger: ${{ github.event_name }}
+      pr_labels: ${{ github.event_name == 'pull_request' && join(github.event.pull_request.labels.*.name, ',') || '' }}
+
   ci-fast-entry:
     name: "CI Fast (entry: pr/push)"
     if: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
