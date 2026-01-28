@@ -17,10 +17,11 @@
 ## スコープ
 - 新コマンド: `ae setup` を CLI に追加（Month 3 の最小セット）。
 - 機能: テンプレート一覧/提案/導入の 3 種。
+- 追加: 対話型の `ae setup wizard`（TTY のみ、テンプレート選択/プロジェクト名/パッケージマネージャ指定）。
 - 実行基盤: `InstallerManager` を直接呼び出し、既存テンプレートを利用。
 
 ## 非スコープ
-- 対話 UI（TUI/GUI）やウィザード画面の導入。
+- 高度な対話 UI（TUI/GUI）や複雑なフロー制御の導入。
 - 外部テンプレートレジストリやリモート取得。
 - 既存テンプレート仕様の全面的な再設計。
 
@@ -35,6 +36,9 @@ ae setup suggest
 ae setup <template-id> [options]
   - テンプレートを導入
 
+ae setup wizard
+  - 対話型でテンプレート選択〜導入まで実行
+
 options:
   --name <projectName>
   --package-manager <npm|yarn|pnpm>
@@ -46,6 +50,11 @@ options:
 2) `ae setup suggest` で推奨テンプレートを確認。
 3) `ae setup <template-id>` で導入実行。
 4) 成功時は作成ファイル/導入依存/次アクションを要約表示。
+
+## UX フロー（wizard）
+1) `ae setup wizard` でテンプレート一覧を表示。
+2) テンプレートID/番号、プロジェクト名、パッケージマネージャを入力。
+3) 確認後に導入を実行。
 
 ## 実装方針
 - `src/cli/index.ts` に `createSetupCommand()` を追加。
