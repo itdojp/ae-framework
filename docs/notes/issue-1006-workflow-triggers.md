@@ -2,16 +2,16 @@
 
 ## Snapshot
 - Commit: worktree
-- Generated: 2026-01-28 00:50:20 UTC
+- Generated: 2026-01-28 01:25:38 UTC
 - Total workflows: 44
 
 ## Trigger counts
 - issue_comment: 1
-- pull_request: 25
+- pull_request: 24
 - pull_request_review: 1
-- push: 17
+- push: 16
 - schedule: 7
-- workflow_call: 15
+- workflow_call: 16
 - workflow_dispatch: 30
 - workflow_run: 1
 
@@ -20,7 +20,7 @@
 ### issue_comment (1)
 - agent-commands.yml
 
-### pull_request (25)
+### pull_request (24)
 - adapter-thresholds.yml
 - ae-ci.yml
 - cedar-quality-gates.yml
@@ -30,7 +30,6 @@
 - coverage-check.yml
 - formal-verify.yml
 - grafana-dashboards.yml
-- hermetic-ci.yml
 - lean-proof.yml
 - parallel-test-execution.yml
 - phase6-validation.yml
@@ -50,12 +49,11 @@
 ### pull_request_review (1)
 - copilot-review-gate.yml
 
-### push (17)
+### push (16)
 - ae-ci.yml
 - ci.yml
 - codegen-drift-check.yml
 - coverage-check.yml
-- hermetic-ci.yml
 - lean-proof.yml
 - parallel-test-execution.yml
 - podman-smoke.yml
@@ -78,7 +76,7 @@
 - pr-ci-status-comment.yml
 - security.yml
 
-### workflow_call (15)
+### workflow_call (16)
 - ci-core.yml
 - ci-extended.yml
 - ci-fast.yml
@@ -87,6 +85,7 @@
 - fail-fast-spec-validation.yml
 - flake-stability.yml
 - formal-aggregate.yml
+- hermetic-ci.yml
 - quality-gates-centralized.yml
 - release-quality-artifacts.yml
 - sbom-generation.yml
