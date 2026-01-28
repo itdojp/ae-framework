@@ -2,7 +2,7 @@
 
 ## Snapshot
 - Commit: worktree
-- Generated: 2026-01-27 16:05:47 UTC
+- Generated: 2026-01-28 00:50:20 UTC
 - Total workflows: 44
 
 ## Trigger signatures
@@ -46,7 +46,8 @@
 - flake-detect.yml
 - nightly.yml
 
-### workflow_call, workflow_dispatch (6)
+### workflow_call, workflow_dispatch (7)
+- ci-extended.yml
 - ci-fast.yml
 - fail-fast-spec-validation.yml
 - formal-aggregate.yml
@@ -80,8 +81,7 @@
 ### pull_request, push, schedule, workflow_call, workflow_dispatch (1)
 - ci.yml
 
-### pull_request, push, workflow_call, workflow_dispatch (3)
-- ci-extended.yml
+### pull_request, push, workflow_call, workflow_dispatch (2)
 - sbom-generation.yml
 - spec-validation.yml
 

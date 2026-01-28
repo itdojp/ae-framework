@@ -1,26 +1,14 @@
 name: Full CI (Comprehensive Testing)
 on: 
   pull_request:
-    paths:
-      - 'src/**'
-      - 'packages/**'
-      - 'apps/**'
-      - 'tests/**'
-      - '.github/workflows/ci.yml'
-      - '.github/workflows/ci-fast.yml'
-      - '!docs/**'
-      - '!**/*.md'
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
   push:
     branches: [main, develop]
-    paths:
-      - 'src/**'
-      - 'packages/**'
-      - 'apps/**'
-      - 'tests/**'
-      - '.github/workflows/ci.yml'
-      - '.github/workflows/ci-fast.yml'
-      - '!docs/**'
-      - '!**/*.md'
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
   schedule:
     - cron: '0 2 * * 0'   # 毎週日曜日 2:00 UTC (Full CI)
     - cron: '30 6 * * 1'  # 毎週月曜日 6:30 UTC (CI Extended)
@@ -95,6 +83,21 @@ jobs:
       issues: write
     with:
       trigger: ${{ github.event_name == 'schedule' && 'schedule' || inputs.trigger }}
+
+  ci-extended-entry:
+    name: "CI Extended (entry: pr/push)"
+    if: ${{ github.event_name == 'push' || (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork) }}
+    uses: ./.github/workflows/ci-extended.yml
+    secrets: inherit
+    permissions:
+      contents: read
+      issues: write
+    with:
+      trigger: ${{ github.event_name }}
+      pr_labels: ${{ github.event_name == 'pull_request' && join(github.event.pull_request.labels.*.name, ',') || '' }}
+      pr_base_ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref || '' }}
+      pr_base_sha: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || '' }}
+      pr_is_fork: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork && 'true' || 'false' }}
 
   ci-fast-entry:
     name: "CI Fast (entry: pr/push)"
