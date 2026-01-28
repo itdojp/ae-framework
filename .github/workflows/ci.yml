@@ -156,6 +156,55 @@ jobs:
       trigger: ${{ github.event_name }}
       pr_labels: ${{ github.event_name == 'pull_request' && join(github.event.pull_request.labels.*.name, ',') || '' }}
 
+  detect-podman-changes:
+    name: Detect Podman Smoke Paths
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
+    outputs:
+      should_run: ${{ steps.diff.outputs.should_run }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Detect relevant changes
+        id: diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          base=""
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            base="${{ github.event.before }}"
+          fi
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then
+            echo "No valid base commit (empty or all-zero SHA); defaulting should_run=true"
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
+            echo "Base commit ${base} is not reachable; defaulting should_run=true"
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git diff --name-only "$base" "${{ github.sha }}" > /tmp/changed-files.txt
+          if grep -E '^(podman/|infra/podman/|scripts/podman/|scripts/docker/)' /tmp/changed-files.txt >/dev/null; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if grep -E '^(package.json|pnpm-lock.yaml|\\.github/workflows/podman-smoke.yml|\\.github/workflows/ci.yml)$' /tmp/changed-files.txt >/dev/null; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "should_run=false" >> "$GITHUB_OUTPUT"
+
+  podman-smoke-entry:
+    name: "Podman Smoke (entry: pr/push)"
+    needs: detect-podman-changes
+    if: ${{ ((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main')) && needs.detect-podman-changes.outputs.should_run == 'true' }}
+    uses: ./.github/workflows/podman-smoke.yml
+    secrets: inherit
+
   ci-fast-entry:
     name: "CI Fast (entry: pr/push)"
     if: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
