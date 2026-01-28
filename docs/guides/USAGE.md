@@ -24,6 +24,10 @@ AE Framework supports software development through the following 6 phases:
 
 Default after intent: run `ae tests:suggest` to generate tests-first prompts before proceeding to later phases.
 
+### CLI Reference
+- Canonical command list: `docs/reference/CLI-COMMANDS-REFERENCE.md`
+- Entry migration guide: `docs/guides/CLI-MIGRATION.md`
+
 ### 🔄 Basic Development Flow
 
 #### Complete Project Example
@@ -405,6 +409,10 @@ console.log('Test results:', executionResult.summary);
 ---
 
 ## Japanese
+
+### CLI リファレンス
+- コマンド一覧: `docs/reference/CLI-COMMANDS-REFERENCE.md`
+- 統一 entry の移行ガイド: `docs/guides/CLI-MIGRATION.md`
 
 **ae-frameworkの全6フェーズエージェントの使用方法と実践例を詳しく説明します**
 
