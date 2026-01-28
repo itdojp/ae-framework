@@ -65,6 +65,28 @@ ae entry test --profile ci-lite --root /path/to/repo
 - `--dry-run`: print resolved commands without executing
 - `--root <path>`: project root (changes working directory)
 
+## Setup Wizard (setup)
+Install project templates and guide initial setup.
+
+```bash
+# List available templates
+ae setup list
+
+# Suggest templates based on current project
+ae setup suggest
+
+# Install a template (non-interactive)
+ae setup typescript-node --name my-app --package-manager pnpm
+
+# Interactive wizard (TTY only)
+ae setup wizard
+```
+
+**Options:**
+- `--root <path>`: project root (changes working directory)
+- `--name <projectName>`: override project name (install/wizard)
+- `--package-manager <npm|yarn|pnpm>`: override package manager (install/wizard)
+
 ## Phase 1: Intent Analysis
 
 ### intent command
@@ -191,6 +213,7 @@ ae-framework sbom compare base.json head.json --verbose
 
 ### フェーズ別コマンド（要点）
 - entry: 統一 runner へのルーティング（test/quality/verify/flake/security）
+- setup: テンプレート導入と初期セットアップ（list/suggest/wizard）
 - Phase 1: `intent` — 要件/意図分析（`--analyze`, `--validate`, `--sources`）
 - 推奨（Intent直後）: `tests:suggest` — tests-first プロンプト生成（`--template`, `--intent`, `--input`, `--output`）
 - Phase 2: `natural-language` — NL 要件の構造化/検証（`--extract-entities`, `--resolve-ambiguity` など）

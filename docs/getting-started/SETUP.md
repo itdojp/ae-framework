@@ -79,6 +79,11 @@ pnpm run help
 
 # CLI parity with pnpm run help
 ae help
+
+# Project setup templates (optional)
+ae setup list
+ae setup suggest
+ae setup wizard
 ```
 
 See `docs/reference/CLI-COMMANDS-REFERENCE.md` and `docs/guides/CLI-MIGRATION.md` for the full CLI reference and migration details.
@@ -450,6 +455,11 @@ pnpm run help
 
 # CLI から同等の一覧を表示
 ae help
+
+# テンプレート導入（任意）
+ae setup list
+ae setup suggest
+ae setup wizard
 ```
 
 詳細は `docs/reference/CLI-COMMANDS-REFERENCE.md` と `docs/guides/CLI-MIGRATION.md` を参照してください。
