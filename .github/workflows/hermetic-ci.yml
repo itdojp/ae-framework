@@ -39,8 +39,8 @@ jobs:
   hermetic-validation:
     name: Hermetic Environment Validation
     runs-on: ubuntu-latest
-    if: ${{ (inputs.trigger || github.event_name) != 'pull_request' || contains(inputs.pr_labels || '', 'run-hermetic') }}
-    continue-on-error: ${{ (inputs.trigger || github.event_name) == 'pull_request' && contains(inputs.pr_labels || '', 'ci-non-blocking') }}
+    if: ${{ (inputs.trigger || github.event_name) != 'pull_request' || contains(format(',{0},', inputs.pr_labels || ''), ',run-hermetic,') }}
+    continue-on-error: ${{ (inputs.trigger || github.event_name) == 'pull_request' && contains(format(',{0},', inputs.pr_labels || ''), ',ci-non-blocking,') }}
     
     steps:
       - name: Checkout code
@@ -100,8 +100,8 @@ jobs:
     name: Deterministic Build Verification
     runs-on: ubuntu-latest
     needs: hermetic-validation
-    if: ${{ (inputs.trigger || github.event_name) != 'pull_request' || contains(inputs.pr_labels || '', 'run-hermetic') }}
-    continue-on-error: ${{ (inputs.trigger || github.event_name) == 'pull_request' && contains(inputs.pr_labels || '', 'ci-non-blocking') }}
+    if: ${{ (inputs.trigger || github.event_name) != 'pull_request' || contains(format(',{0},', inputs.pr_labels || ''), ',run-hermetic,') }}
+    continue-on-error: ${{ (inputs.trigger || github.event_name) == 'pull_request' && contains(format(',{0},', inputs.pr_labels || ''), ',ci-non-blocking,') }}
     
     strategy:
       matrix:
