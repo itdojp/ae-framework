@@ -129,7 +129,13 @@ jobs:
           elif [ "${{ github.event_name }}" = "push" ]; then
             base="${{ github.event.before }}"
           fi
-          if [ -z "$base" ]; then
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then
+            echo "No valid base commit (empty or all-zero SHA); defaulting should_run=true"
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
+            echo "Base commit ${base} is not reachable; defaulting should_run=true"
             echo "should_run=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -143,7 +149,7 @@ jobs:
   parallel-test-entry:
     name: "Parallel Tests (entry: pr/push)"
     needs: detect-parallel-changes
-    if: ${{ (github.event_name == 'pull_request' || github.event_name == 'push') && needs.detect-parallel-changes.outputs.should_run == 'true' }}
+    if: ${{ (github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main')) && needs.detect-parallel-changes.outputs.should_run == 'true' }}
     uses: ./.github/workflows/parallel-test-execution.yml
     secrets: inherit
     with:
