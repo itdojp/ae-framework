@@ -97,7 +97,7 @@ jobs:
       trigger: ${{ github.event_name == 'schedule' && 'schedule' || inputs.trigger }}
 
   ci-fast-entry:
-    name: CI Fast (entry: pr/push)
+    name: "CI Fast (entry: pr/push)"
     if: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
     uses: ./.github/workflows/ci-fast.yml
     secrets: inherit
@@ -106,7 +106,7 @@ jobs:
       pr_labels: ${{ github.event_name == 'pull_request' && join(github.event.pull_request.labels.*.name, ',') || '' }}
 
   ci-fast-call:
-    name: CI Fast (entry: call)
+    name: "CI Fast (entry: call)"
     if: ${{ github.event_name == 'workflow_call' && inputs.mode == 'fast' }}
     uses: ./.github/workflows/ci-fast.yml
     secrets: inherit
