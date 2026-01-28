@@ -46,7 +46,7 @@
 - flake-detect.yml
 - nightly.yml
 
-### workflow_call, workflow_dispatch (11)
+### workflow_call, workflow_dispatch (12)
 - ae-ci.yml
 - ci-fast.yml
 - fail-fast-spec-validation.yml
@@ -58,14 +58,14 @@
 - release-quality-artifacts.yml
 - spec-check.yml
 - validate-artifacts-ajv.yml
+- verify.yml
 
 ### pull_request, pull_request_review, workflow_dispatch (1)
 - copilot-review-gate.yml
 
-### pull_request, push, workflow_call (3)
+### pull_request, push, workflow_call (2)
 - codegen-drift-check.yml
 - quality-gates-centralized.yml
-- verify.yml
 
 ### pull_request, push, workflow_dispatch (2)
 - coverage-check.yml
