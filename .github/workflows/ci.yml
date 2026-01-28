@@ -223,7 +223,7 @@ jobs:
       trigger: ${{ inputs.trigger || github.event_name }}
   qa-entry:
     name: "QA Bench (entry: pr/push)"
-    if: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
+    if: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
     uses: ./.github/workflows/ae-ci.yml
     secrets: inherit
     with:

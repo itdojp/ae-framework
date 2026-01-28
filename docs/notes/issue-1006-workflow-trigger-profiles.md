@@ -2,7 +2,7 @@
 
 ## Snapshot
 - Commit: worktree
-- Generated: 2026-01-28 (manual update)
+- Generated: 2026-01-28 (manual)
 - Total workflows: 44
 
 ## Trigger signatures

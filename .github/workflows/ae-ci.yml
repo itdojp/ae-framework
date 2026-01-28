@@ -12,11 +12,6 @@ on:
         required: false
         default: ''
         type: string
-      run_qa:
-        description: 'Force QA execution (true/false)'
-        required: false
-        default: false
-        type: boolean
   workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -42,16 +37,14 @@ jobs:
             const runByLabel = labels.includes('run-qa');
             const nonBlocking = labels.includes('ci-non-blocking');
             const runByDispatch = eventName === 'workflow_dispatch';
-            const runByInput = process.env.RUN_QA === 'true';
             const enablePush = process.env.AE_QA_BENCH_PUSH === 'true' && (eventName === 'push' || trigger === 'push');
-            const shouldRun = runByLabel || runByDispatch || runByInput || enablePush;
+            const shouldRun = runByLabel || runByDispatch || enablePush;
             core.setOutput('run', String(shouldRun));
             core.setOutput('non_blocking', String(nonBlocking));
         env:
           AE_QA_BENCH_PUSH: ${{ vars.AE_QA_BENCH_PUSH }}
           TRIGGER: ${{ inputs.trigger }}
           PR_LABELS: ${{ inputs.pr_labels }}
-          RUN_QA: ${{ inputs.run_qa }}
   qa-bench:
     needs: qa_gate
     if: ${{ needs.qa_gate.outputs.run == 'true' }}
