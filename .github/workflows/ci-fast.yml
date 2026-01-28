@@ -1,5 +1,6 @@
 name: CI Fast
 on:
+  workflow_dispatch:
   workflow_call:
     # Allow release workflow to reuse this fast CI
     inputs:
