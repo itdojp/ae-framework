@@ -50,7 +50,7 @@
 - [x] alias map を参照し legacy 実行時に警告 + 転送
 - [x] `pnpm run help` のカテゴリ/推奨エントリ表示（既存）
 - [x] 統一 CLI 入口から entry runner へルーティング（`ae entry <category>` で接続）
-- [ ] docs の統一/移行ガイド整備
+- [x] docs の統一/移行ガイド整備（USAGE/CLI reference/CLI-MIGRATION）
 
 ## リスクと対策
 - 互換性: alias による後方互換 + 段階的削除
