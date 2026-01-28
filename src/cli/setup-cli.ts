@@ -119,9 +119,9 @@ export function createSetupCommand(): Command {
   setup
     .command('list')
     .description('List available templates')
-    .option('--root <path>', 'Project root (default: cwd)', process.cwd())
+    .option('--root <path>', 'Project root (default: cwd)')
     .action((options: { root?: string }) => {
-      const root = resolveRoot(options.root ?? setup.opts().root);
+      const root = resolveRoot(options.root ?? setup.opts()['root']);
       const manager = new InstallerManager(root);
       renderTemplateList(manager);
     });
@@ -129,9 +129,9 @@ export function createSetupCommand(): Command {
   setup
     .command('suggest')
     .description('Suggest templates based on current project')
-    .option('--root <path>', 'Project root (default: cwd)', process.cwd())
+    .option('--root <path>', 'Project root (default: cwd)')
     .action(async (options: { root?: string }) => {
-      const root = resolveRoot(options.root ?? setup.opts().root);
+      const root = resolveRoot(options.root ?? setup.opts()['root']);
       const manager = new InstallerManager(root);
       try {
         await renderSuggestionList(manager);
@@ -151,7 +151,7 @@ export function createSetupCommand(): Command {
         return;
       }
 
-      const root = resolveRoot(setup.opts().root);
+      const root = resolveRoot(setup.opts()['root']);
       const manager = new InstallerManager(root);
       if (!manager.getTemplate(templateId)) {
         console.error(chalk.red(`❌ Template not found: ${templateId}`));
@@ -168,11 +168,16 @@ export function createSetupCommand(): Command {
         return;
       }
 
+      const installContext: { projectName?: string; packageManager?: PackageManager } = {};
+      if (options.name) {
+        installContext.projectName = options.name;
+      }
+      if (packageManager) {
+        installContext.packageManager = packageManager;
+      }
+
       try {
-        const result = await manager.installTemplate(templateId, {
-          projectName: options.name,
-          packageManager,
-        });
+        const result = await manager.installTemplate(templateId, installContext);
         renderInstallResult(templateId, result);
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Setup failed: ${String(error)}`));
