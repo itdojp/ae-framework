@@ -2,8 +2,9 @@
 
 ## ステータス
 - v1 確定: 2026-01-26
+- 更新: 2026-01-28
 - 対象: Month 2
-- 参考PR: #1769 #1775 #1777 #1778 #1779 #1780 #1781 #1782 #1785 #1786 #1787 #1788 #1789 #1790 #1791
+- 参考PR: #1769 #1775 #1777 #1778 #1779 #1780 #1781 #1782 #1785 #1786 #1787 #1788 #1789 #1790 #1791 #1792 #1793 #1794 #1795 #1796 #1797 #1798 #1799 #1800 #1801
 
 ## 目的
 - ワークフロー数の削減と運用負荷の低減
@@ -39,6 +40,16 @@
 - spec validation entry を spec-validation.yml に集約（PR #1789）
 - full CI の spec validation entry を更新（PR #1790）
 - ci.yml に workflow_call の mode/trigger を追加（PR #1791）
+- ci consolidation draft update（PR #1792）
+- workflow trigger map update（PR #1793）
+- workflow overlap candidates update（PR #1794）
+- workflow inventory update（PR #1795）
+- workflow trigger profiles update（PR #1796）
+- ci-fast entry consolidation（PR #1797）
+- ci-extended entry consolidation（PR #1798）
+- hermetic entry consolidation（PR #1799）
+- parallel tests entry consolidation（PR #1800）
+- podman smoke entry consolidation（PR #1801）
 
 ## 統合スコープと指標
 - スコープ: PR ゲート / CI / 検証 / 監査系（schedule/manual）
@@ -70,6 +81,11 @@
 3) Spec/artifact の entry 化: spec-validation.yml に fail-fast/spec-check を mode 化で吸収（PR #1789 / #1790）
 4) Formal の entry 化: formal-verify.yml に aggregate を workflow_call で統合（PR #1788）
 5) Release の一本化: release-quality-artifacts を release.yml に統合（PR #1787）
+
+## 進捗 (2026-01-28)
+- [x] エントリーワークフローの追加統合（ci-fast/ci-extended/hermetic/parallel-tests/podman-smoke）: PR #1797/#1798/#1799/#1800/#1801
+- [x] 補助ドキュメントの更新（inventory/trigger map/profiles/overlap）: PR #1793/#1794/#1795/#1796
+- [x] consolidation draft 更新: PR #1792
 
 ## ロールバック指針
 - 1 PR 1 統合を厳守し、各 PR は revert で巻き戻せるようにする
