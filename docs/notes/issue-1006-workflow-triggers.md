@@ -2,17 +2,17 @@
 
 ## Snapshot
 - Commit: worktree
-- Generated: 2026-01-28 04:34:46 UTC
+- Generated: 2026-01-28 (manual update)
 - Total workflows: 44
 
 ## Trigger counts
 - issue_comment: 1
-- pull_request: 22
+- pull_request: 21
 - pull_request_review: 1
-- push: 14
+- push: 13
 - schedule: 7
-- workflow_call: 18
-- workflow_dispatch: 30
+- workflow_call: 19
+- workflow_dispatch: 29
 - workflow_run: 1
 
 ## Trigger → workflow files
@@ -20,9 +20,8 @@
 ### issue_comment (1)
 - agent-commands.yml
 
-### pull_request (22)
+### pull_request (21)
 - adapter-thresholds.yml
-- ae-ci.yml
 - cedar-quality-gates.yml
 - ci.yml
 - codegen-drift-check.yml
@@ -47,8 +46,7 @@
 ### pull_request_review (1)
 - copilot-review-gate.yml
 
-### push (14)
-- ae-ci.yml
+### push (13)
 - ci.yml
 - codegen-drift-check.yml
 - coverage-check.yml
@@ -72,7 +70,8 @@
 - pr-ci-status-comment.yml
 - security.yml
 
-### workflow_call (18)
+### workflow_call (19)
+- ae-ci.yml
 - ci-core.yml
 - ci-extended.yml
 - ci-fast.yml
@@ -92,11 +91,10 @@
 - validate-artifacts-ajv.yml
 - verify.yml
 
-### workflow_dispatch (30)
+### workflow_dispatch (29)
 - ae-ci.yml
 - branch-protection-apply.yml
 - cedar-quality-gates.yml
-- ci-extended.yml
 - ci-fast.yml
 - ci.yml
 - copilot-review-gate.yml

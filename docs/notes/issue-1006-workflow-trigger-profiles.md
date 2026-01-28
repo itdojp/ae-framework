@@ -2,7 +2,7 @@
 
 ## Snapshot
 - Commit: worktree
-- Generated: 2026-01-28 04:34:46 UTC
+- Generated: 2026-01-28 (manual update)
 - Total workflows: 44
 
 ## Trigger signatures
@@ -18,8 +18,9 @@
 ### push (1)
 - release.yml
 
-### workflow_call (2)
+### workflow_call (3)
 - ci-core.yml
+- ci-extended.yml
 - flake-stability.yml
 
 ### workflow_dispatch (4)
@@ -47,7 +48,7 @@
 - nightly.yml
 
 ### workflow_call, workflow_dispatch (10)
-- ci-extended.yml
+- ae-ci.yml
 - ci-fast.yml
 - fail-fast-spec-validation.yml
 - formal-aggregate.yml
@@ -66,8 +67,7 @@
 - quality-gates-centralized.yml
 - verify.yml
 
-### pull_request, push, workflow_dispatch (3)
-- ae-ci.yml
+### pull_request, push, workflow_dispatch (2)
 - coverage-check.yml
 - verify-lite.yml
 
