@@ -94,4 +94,5 @@
 
 ## 残オープン事項
 - external automation から参照される workflow の把握（runner/dispatch 依存を棚卸し）
+  - agent-commands.yml 経由の workflow_dispatch 依存: verify-lite.yml / coverage-check.yml(strict) / ci-fast.yml / ae-ci.yml / sbom-generation.yml / formal-verify.yml(apalache) / flake-detect.yml / spec-validation.yml / cedar-quality-gates.yml / formal-aggregate.yml
 - required checks 以外で「暗黙的に required」扱いされているジョブの確認
