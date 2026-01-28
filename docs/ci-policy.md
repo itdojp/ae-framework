@@ -31,9 +31,9 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - `run-mutation`: execute mutation auto diff (extended pipeline)
 
 CI Extended restores cached heavy test artifacts (`.cache/test-results`) when rerunning; the cache is refreshed at the end of each run via `node scripts/pipelines/sync-test-results.mjs --store`. Check or warm the cache locally with `--status` / `--restore` before dispatching reruns. Nightly runs use a stable cache key (`ci-heavy-${ runner.os }-schedule`) so the previous baseline is rehydrated before execution, call `node scripts/pipelines/compare-test-trends.mjs` to produce a Markdown diff (posted to the Step Summary), and persist both `reports/heavy-test-trends.json` and `reports/heavy-test-trends-history/<timestamp>.json` as artifacts (`heavy-test-trends`, `heavy-test-trends-history`).
-- `qa --light`: run QA in light mode (vitest -> `test:fast`); used in `ae-ci`
+- `qa --light`: run QA in light mode (vitest -> `test:fast`); QA bench (`ae-ci`, ci.yml から呼び出し) で使用
 - `ae-benchmark run --ci --light --dry-run`: benchmark config validation only in PRs (fast & stable)
-- `run-qa`: run `ae-ci` workflow’s `qa-bench` on PRs (default off)
+- `run-qa`: PR で QA bench を実行（ci.yml から `ae-ci` を呼び出し、既定は非実行）
 - `run-spec`: enable spec fail-fast on PRs
 - `run-drift`: enable codegen drift detection on PRs
 - Quick when-to-use (opt-in labels)
@@ -71,7 +71,7 @@ CI Extended restores cached heavy test artifacts (`.cache/test-results`) when re
     - `Flake Stability Schedule`（`flake-detect.yml`）は workflow_dispatch で `mode=retry` と `workflow_file` / `eligibility_artifact` / `eligibility_path` / `dry_run` を指定可能
     - 詳細: docs/ci/flake-retry-dispatch.md
   - ラベル付与（Opt-in 実行/ポリシー切替）
-    - `/run-qa` … `run-qa` を付与（ae-ci の QA 実行）
+    - `/run-qa` … `run-qa` を付与（ci.yml から QA bench を実行）
     - `/run-security` … `run-security` を付与（Security/SBOM 実行。PR要約も投稿）
     - `/run-hermetic` … `run-hermetic` を付与（Hermetic CI 実行）
     - `/run-spec` … `run-spec` を付与（Fail-Fast Spec 実行）
@@ -153,9 +153,9 @@ CI Extended restores cached heavy test artifacts (`.cache/test-results`) when re
 - `run-mutation`: CI Extended の mutation auto diff のみを実行
 
 CI Extended 実行後は heavy テスト成果物を `.cache/test-results` に保存し、再実行時に自動復元します。必要に応じて `node scripts/pipelines/sync-test-results.mjs --status` / `--restore` でキャッシュの状態を確認・展開してから再実行できます。差分の確認は `node scripts/pipelines/compare-test-trends.mjs` を実行すると Markdown と JSON で出力され、Step Summary にも自動追記されます。
-- `qa --light`: QA を軽量実行（vitest は `test:fast` 実行）。`ae-ci` の QA ステップに適用済み
+- `qa --light`: QA を軽量実行（vitest は `test:fast` 実行）。QA bench（`ae-ci`）に適用済み
 - `ae-benchmark run --ci --light --dry-run`: ベンチは PR では構成検証のみに留め、時間・安定性を優先
-- `run-qa`: `ae-ci` ワークフローの `qa-bench` を PR で実行（既定は非実行）
+- `run-qa`: PR で QA bench を実行（ci.yml から `ae-ci` を呼び出し、既定は非実行）
 - `run-spec`: 仕様 Fail-Fast を PR で有効化
 - `run-drift`: Codegen Drift 検出を PR で有効化
 - 使い所（オプトイン ラベル）
@@ -193,7 +193,7 @@ CI Extended 実行後は heavy テスト成果物を `.cache/test-results` に�
 - Vitest ベースの安定プロファイルは従来通り `test:ci:stable`（Docker/Podman smoke イメージで利用）として提供。
 
 ### QA CLI
-- `ae qa --light`: 軽量 QA 実行（`vitest` の `test:fast` を実行）。`ae-ci` の QA ステップで使用。
+- `ae qa --light`: 軽量 QA 実行（`vitest` の `test:fast` を実行）。QA bench（`ae-ci`）で使用。
 
 ### セキュリティ/コンプライアンス
 - 既定では PR で非必須（`run-security` ラベル時のみ実行）。結果は artifacts に集約
