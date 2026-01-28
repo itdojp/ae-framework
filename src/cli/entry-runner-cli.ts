@@ -1,3 +1,8 @@
+/**
+ * Entry Runner CLI commands for the AE-Framework
+ * Provides commands to route to consolidated runner entry points.
+ */
+
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { spawnSync } from 'node:child_process';
@@ -24,6 +29,10 @@ export function createEntryRunnerCommand(): Command {
   const entry = new Command('entry');
   entry
     .description('Run consolidated runner entry points (test/quality/verify/flake/security)')
+    .addHelpText(
+      'after',
+      `\nExamples:\n  $ ae entry test --profile fast\n  $ ae entry quality --list\n  $ ae entry verify --dry-run --profile lite\n`
+    )
     .argument('<category>', 'Runner category (test, quality, verify, flake, security)')
     .option('-p, --profile <name>', 'Profile name to run')
     .option('--list', 'List available profiles')
@@ -57,11 +66,14 @@ export function createEntryRunnerCommand(): Command {
         args.push('--dry-run');
       }
 
-      console.log(chalk.blue(`▶ Running entry: ${normalized} (${runnerPath})`));
+      if (!options.list && !options.dryRun) {
+        console.log(chalk.blue(`▶ Running entry: ${normalized} (${runnerPath})`));
+      }
 
       const result = spawnSync(process.execPath, args, {
         stdio: 'inherit',
         env: process.env,
+        cwd: root,
       });
 
       if (result.error) {
@@ -70,11 +82,12 @@ export function createEntryRunnerCommand(): Command {
             `❌ Failed to spawn runner: ${result.error.message ?? String(result.error)}`
           )
         );
-        safeExit(result.error.code === 'ENOENT' ? 127 : 1);
+        const errorCode = (result.error as NodeJS.ErrnoException).code;
+        safeExit(errorCode === 'ENOENT' ? 127 : 1);
         return;
       }
 
-      safeExit(result.status ?? 1);
+      safeExit(result.status !== null ? result.status : 1);
     });
 
   return entry;
