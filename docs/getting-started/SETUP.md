@@ -69,6 +69,20 @@ Set up pre-commit hooks to enable TDD enforcement features:
 pnpm run setup-hooks
 ```
 
+### 🔎 Command Discovery
+
+After setup, use the following commands to discover available scripts and consolidated runners:
+
+```bash
+# Script groups and consolidated runner entry points
+pnpm run help
+
+# CLI parity with pnpm run help
+ae help
+```
+
+See `docs/reference/CLI-COMMANDS-REFERENCE.md` and `docs/guides/CLI-MIGRATION.md` for the full CLI reference and migration details.
+
 ### 🔧 Configuration
 
 #### 1. Environment Variables
@@ -425,6 +439,20 @@ TDD強制機能を有効にするためのpre-commitフックを設定：
 ```bash
 pnpm run setup-hooks
 ```
+
+### 🔎 コマンドの確認
+
+セットアップ後に利用できるスクリプトと統一 runner を確認します。
+
+```bash
+# スクリプト群と統一 runner の一覧
+pnpm run help
+
+# CLI から同等の一覧を表示
+ae help
+```
+
+詳細は `docs/reference/CLI-COMMANDS-REFERENCE.md` と `docs/guides/CLI-MIGRATION.md` を参照してください。
 
 ### 🔧 設定
 
