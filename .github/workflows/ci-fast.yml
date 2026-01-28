@@ -1,27 +1,19 @@
 name: CI Fast
 on:
-  pull_request:
-    paths:
-      - 'src/**'
-      - 'packages/**'
-      - 'apps/**'
-      - 'tests/**'
-      - '.github/workflows/ci-fast.yml'
-      - '!docs/**'
-      - '!**/*.md'
-  push:
-    branches: [main, develop]
-    paths:
-      - 'src/**'
-      - 'packages/**'
-      - 'apps/**'
-      - 'tests/**'
-      - '.github/workflows/ci-fast.yml'
-      - '!docs/**'
-      - '!**/*.md'
   workflow_dispatch:
   workflow_call:
     # Allow release workflow to reuse this fast CI
+    inputs:
+      trigger:
+        description: 'Origin event name (pull_request/push/workflow_call)'
+        required: false
+        default: 'workflow_call'
+        type: string
+      pr_labels:
+        description: 'Comma-separated PR labels'
+        required: false
+        default: ''
+        type: string
 concurrency:
   group: ci-fast-${{ github.ref }}
   cancel-in-progress: true
@@ -38,25 +30,25 @@ jobs:
       node-version: '20'
       run-script: test:fast
   fast-commands:
-    if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'qa-batch:commands') }}
+    if: ${{ (inputs.trigger || github.event_name) != 'pull_request' || contains(inputs.pr_labels, 'qa-batch:commands') }}
     uses: ./.github/workflows/ci-core.yml
     with:
       node-version: '20'
       run-script: test:fast:batch:commands
   fast-cli:
-    if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'qa-batch:cli') }}
+    if: ${{ (inputs.trigger || github.event_name) != 'pull_request' || contains(inputs.pr_labels, 'qa-batch:cli') }}
     uses: ./.github/workflows/ci-core.yml
     with:
       node-version: '20'
       run-script: test:fast:batch:cli
   fast-property:
-    if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'qa-batch:property') }}
+    if: ${{ (inputs.trigger || github.event_name) != 'pull_request' || contains(inputs.pr_labels, 'qa-batch:property') }}
     uses: ./.github/workflows/ci-core.yml
     with:
       node-version: '20'
       run-script: test:fast:batch:property
   fast-agents:
-    if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'qa-batch:agents') }}
+    if: ${{ (inputs.trigger || github.event_name) != 'pull_request' || contains(inputs.pr_labels, 'qa-batch:agents') }}
     uses: ./.github/workflows/ci-core.yml
     with:
       node-version: '20'

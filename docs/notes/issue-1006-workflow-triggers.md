@@ -1,8 +1,8 @@
 # Issue 1006: Workflow Trigger Map (Phase 1.5 draft)
 
 ## Snapshot
-- Commit: 65b40e9a
-- Generated: 2026-01-27 14:08:32 UTC
+- Commit: worktree
+- Generated: 2026-01-27 16:05:47 UTC
 - Total workflows: 44
 
 ## Trigger counts
@@ -25,7 +25,7 @@
 - ae-ci.yml
 - cedar-quality-gates.yml
 - ci-extended.yml
-- ci-fast.yml
+- ci.yml
 - codegen-drift-check.yml
 - copilot-review-gate.yml
 - coverage-check.yml
@@ -54,7 +54,7 @@
 ### push (18)
 - ae-ci.yml
 - ci-extended.yml
-- ci-fast.yml
+- ci.yml
 - codegen-drift-check.yml
 - coverage-check.yml
 - hermetic-ci.yml
