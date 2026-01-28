@@ -86,6 +86,7 @@
 - [x] エントリーワークフローの追加統合（ci-fast/ci-extended/hermetic/parallel-tests/podman-smoke）: PR #1797/#1798/#1799/#1800/#1801
 - [x] 補助ドキュメントの更新（inventory/trigger map/profiles/overlap）: PR #1793/#1794/#1795/#1796
 - [x] consolidation draft 更新: PR #1792
+- [x] QA bench の entry を ci.yml に集約（ae-ci を workflow_call 化）: PR #1813
 
 ## ロールバック指針
 - 1 PR 1 統合を厳守し、各 PR は revert で巻き戻せるようにする
