@@ -1,15 +1,6 @@
 name: CI Extended
 
 on:
-  pull_request:
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
-  push:
-    branches: [main]
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
   workflow_dispatch:
   workflow_call:
     inputs:
@@ -17,6 +8,26 @@ on:
         description: 'Origin event for scheduled runs'
         required: false
         default: 'workflow_call'
+        type: string
+      pr_labels:
+        description: 'Comma-separated PR labels'
+        required: false
+        default: ''
+        type: string
+      pr_base_ref:
+        description: 'Base ref name for pull_request'
+        required: false
+        default: ''
+        type: string
+      pr_base_sha:
+        description: 'Base sha for pull_request'
+        required: false
+        default: ''
+        type: string
+      pr_is_fork:
+        description: 'Whether the PR head is from a fork'
+        required: false
+        default: 'false'
         type: string
 
 concurrency:
@@ -33,29 +44,33 @@ jobs:
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     runs-on: ubuntu-latest
-    if: ${{ github.event_name != 'pull_request' || (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork) }}
+    if: ${{ (github.event_name != 'pull_request' && inputs.trigger != 'pull_request') || (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork) || (inputs.trigger == 'pull_request' && inputs.pr_is_fork != 'true') }}
     steps:
       - name: Determine execution flags
         id: flags
         shell: bash
         run: |
           set -euo pipefail
+          EVENT_NAME="${{ inputs.trigger || github.event_name }}"
           RUN_EXTENDED=false
           RUN_INTEGRATION=false
           RUN_PROPERTY=false
           RUN_MBT=false
           RUN_MUTATION=false
 
-          if [ "${{ github.event_name }}" != "pull_request" ]; then
+          if [ "$EVENT_NAME" != "pull_request" ]; then
             RUN_EXTENDED=true
             RUN_INTEGRATION=true
             RUN_PROPERTY=true
             RUN_MBT=true
             RUN_MUTATION=true
           else
-            LABELS="$(jq -r '.pull_request.labels[].name' "$GITHUB_EVENT_PATH" 2>/dev/null || true)"
+            LABELS="${{ inputs.pr_labels }}"
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              LABELS="$(jq -r '.pull_request.labels[].name' "$GITHUB_EVENT_PATH" 2>/dev/null || true)"
+            fi
             has_label() {
-              printf '%s\n' "$LABELS" | grep -Fxq "$1"
+              printf '%s\n' "$LABELS" | tr ',' '\n' | sed -e 's/^ *//' -e 's/ *$//' -e '/^$/d' | grep -Fxq "$1"
             }
             if has_label "run-ci-extended"; then
               RUN_EXTENDED=true
@@ -162,14 +177,32 @@ jobs:
         run: pnpm run test:mbt:ci
 
       - name: Detect pact-related changes (PR only)
-        if: ${{ github.event_name == 'pull_request' && steps.flags.outputs.run_integration == 'true' }}
+        if: ${{ (github.event_name == 'pull_request' || inputs.trigger == 'pull_request') && steps.flags.outputs.run_integration == 'true' }}
         id: pact-paths
         shell: bash
         run: |
           set -euo pipefail
           WATCH_PATH_PATTERN='^(contracts/|src/api/|specs/openapi/|tests/contracts/)'
 
-          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          BASE_SHA="${{ inputs.pr_base_sha }}"
+          if [ -z "$BASE_SHA" ] && [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          fi
+          if [ -z "$BASE_SHA" ]; then
+            BASE_REF="${{ inputs.pr_base_ref }}"
+            if [ -z "$BASE_REF" ] && [ "${{ github.event_name }}" = "pull_request" ]; then
+              BASE_REF="${{ github.event.pull_request.base.ref }}"
+            fi
+            if [ -n "$BASE_REF" ]; then
+              git fetch origin "$BASE_REF" --depth=1 || true
+              BASE_SHA="$(git rev-parse FETCH_HEAD 2>/dev/null || true)"
+            fi
+          fi
+          if [ -z "$BASE_SHA" ]; then
+            echo "pact=false" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "Pact diff skipped: base SHA unavailable." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           git fetch origin "$BASE_SHA" --depth=1
           CHANGED="$(git diff --name-only "$BASE_SHA"...HEAD || true)"
           printf '%s\n' "$CHANGED" > /tmp/changed-files.txt
@@ -180,11 +213,11 @@ jobs:
           fi
 
       - name: Pact contract smoke
-        if: ${{ steps.flags.outputs.run_integration == 'true' && (github.event_name != 'pull_request' || steps.pact-paths.outputs.pact == 'true') }}
+        if: ${{ steps.flags.outputs.run_integration == 'true' && ((github.event_name != 'pull_request' && inputs.trigger != 'pull_request') || steps.pact-paths.outputs.pact == 'true') }}
         run: pnpm run pipelines:pact
 
       - name: Pact contract smoke (skipped)
-        if: ${{ github.event_name == 'pull_request' && steps.flags.outputs.run_integration == 'true' && steps.pact-paths.outputs.pact == 'false' }}
+        if: ${{ (github.event_name == 'pull_request' || inputs.trigger == 'pull_request') && steps.flags.outputs.run_integration == 'true' && steps.pact-paths.outputs.pact == 'false' }}
         run: |
           echo 'Pact contract smoke skipped: no relevant contract changes detected.' >> "$GITHUB_STEP_SUMMARY"
 
@@ -194,9 +227,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          EVENT_NAME="${{ inputs.trigger || github.event_name }}"
           target_base="origin/main"
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            target_base="origin/${{ github.event.pull_request.base.ref }}"
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            base_ref="${{ inputs.pr_base_ref }}"
+            if [ -z "$base_ref" ] && [ "${{ github.event_name }}" = "pull_request" ]; then
+              base_ref="${{ github.event.pull_request.base.ref }}"
+            fi
+            if [ -n "$base_ref" ]; then
+              target_base="origin/${base_ref}"
+            fi
           fi
           git fetch --no-tags --depth=1 origin "${target_base#origin/}" || true
           {
@@ -337,7 +377,7 @@ jobs:
           echo "severity=${severity}" >> "$GITHUB_OUTPUT"
 
       - name: Upload heavy test trend report
-        if: ${{ always() && steps.flags.outputs.should_run == 'true' && github.event_name != 'pull_request' }}
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' && github.event_name != 'pull_request' && inputs.trigger != 'pull_request' }}
         uses: actions/upload-artifact@v4
         with:
           name: heavy-test-trends
