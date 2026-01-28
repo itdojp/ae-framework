@@ -24,6 +24,27 @@ on:
         default: ''
         type: string
   workflow_dispatch:
+    inputs:
+      trigger:
+        description: 'Origin event name (pull_request/push/workflow_call)'
+        required: false
+        default: 'workflow_dispatch'
+        type: string
+      pr_labels:
+        description: 'Comma-separated PR labels'
+        required: false
+        default: ''
+        type: string
+      pr_is_fork:
+        description: 'Whether the PR head is from a fork'
+        required: false
+        default: 'false'
+        type: string
+      pr_number:
+        description: 'PR number for comment posting'
+        required: false
+        default: ''
+        type: string
 
 concurrency:
   group: pr-verify-${{ inputs.pr_number || github.ref }}
