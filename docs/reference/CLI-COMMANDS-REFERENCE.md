@@ -12,6 +12,10 @@
 
 The ae-framework CLI commands support the complete 6-phase software development workflow. Alongside Claude Code Task Tool integration, it provides a command-line environment for developers.
 
+See also:
+- Workflow guide: `docs/guides/USAGE.md`
+- Entry migration guide: `docs/guides/CLI-MIGRATION.md`
+
 ### Basic Syntax
 
 ```bash
@@ -36,6 +40,30 @@ ae-framework <command> [options] [flags]
 --output <file>     # Output file specification
 --no-color          # Disable color output
 ```
+
+## Consolidated Runner Entry (entry)
+Route to the consolidated runner entry points for test/quality/verify/flake/security.
+
+```bash
+# Basic usage
+ae entry <category> --profile <name>
+
+# List available profiles
+ae entry test --list
+
+# Dry-run
+ae entry verify --dry-run --profile lite
+
+# Run from another directory
+ae entry test --profile ci-lite --root /path/to/repo
+```
+
+**Options:**
+- `<category>`: test | quality | verify | flake | security
+- `--profile <name>`: runner profile to execute
+- `--list`: list available profiles
+- `--dry-run`: print resolved commands without executing
+- `--root <path>`: project root (changes working directory)
 
 ## Phase 1: Intent Analysis
 
@@ -154,10 +182,15 @@ ae-framework sbom compare base.json head.json --verbose
 ### 基本構文
 `ae-framework <command> [options] [flags]`
 
+参照:
+- ワークフローガイド: `docs/guides/USAGE.md`
+- 統一 entry 移行ガイド: `docs/guides/CLI-MIGRATION.md`
+
 ### 共通オプション（抜粋）
 `--help/-h`, `--version/-v`, `--config <path>`, `--verbose`, `--quiet`, `--format <json|yaml|table|markdown>`, `--output <file>`
 
 ### フェーズ別コマンド（要点）
+- entry: 統一 runner へのルーティング（test/quality/verify/flake/security）
 - Phase 1: `intent` — 要件/意図分析（`--analyze`, `--validate`, `--sources`）
 - 推奨（Intent直後）: `tests:suggest` — tests-first プロンプト生成（`--template`, `--intent`, `--input`, `--output`）
 - Phase 2: `natural-language` — NL 要件の構造化/検証（`--extract-entities`, `--resolve-ambiguity` など）
