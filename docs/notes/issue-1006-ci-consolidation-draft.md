@@ -88,6 +88,7 @@
 - [x] consolidation draft 更新: PR #1792
 - [x] QA bench の entry を ci.yml に集約（ae-ci を workflow_call 化）: PR #1813
 - [x] pr-verify の entry を ci.yml に集約（workflow_call 化）: PR #1815
+- [x] verify の entry を ci.yml に集約（workflow_call/dispatch 化）: PR #1816
 
 ## ロールバック指針
 - 1 PR 1 統合を厳守し、各 PR は revert で巻き戻せるようにする
