@@ -2,7 +2,7 @@
 
 ## Snapshot
 - Commit: worktree
-- Generated: 2026-01-28 03:57:49 UTC
+- Generated: 2026-01-28 04:34:46 UTC
 - Total workflows: 44
 
 ## Trigger signatures
@@ -46,13 +46,14 @@
 - flake-detect.yml
 - nightly.yml
 
-### workflow_call, workflow_dispatch (9)
+### workflow_call, workflow_dispatch (10)
 - ci-extended.yml
 - ci-fast.yml
 - fail-fast-spec-validation.yml
 - formal-aggregate.yml
 - hermetic-ci.yml
 - parallel-test-execution.yml
+- podman-smoke.yml
 - release-quality-artifacts.yml
 - spec-check.yml
 - validate-artifacts-ajv.yml
@@ -65,10 +66,9 @@
 - quality-gates-centralized.yml
 - verify.yml
 
-### pull_request, push, workflow_dispatch (4)
+### pull_request, push, workflow_dispatch (3)
 - ae-ci.yml
 - coverage-check.yml
-- podman-smoke.yml
 - verify-lite.yml
 
 ### pull_request, schedule, workflow_dispatch (2)

@@ -2,26 +2,7 @@ name: Podman Smoke Test
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
-    paths:
-      - 'podman/**'
-      - 'infra/podman/**'
-      - 'scripts/podman/**'
-      - 'scripts/docker/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - '.github/workflows/podman-smoke.yml'
-  pull_request:
-    branches: [ main ]
-    paths:
-      - 'podman/**'
-      - 'infra/podman/**'
-      - 'scripts/podman/**'
-      - 'scripts/docker/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - '.github/workflows/podman-smoke.yml'
+  workflow_call:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
