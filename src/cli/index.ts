@@ -24,6 +24,7 @@ import '../telemetry/telemetry-setup.js'; // Initialize telemetry
 import * as fs from 'fs';
 import * as path from 'path';
 import { createSecurityCommand } from './security-cli.js';
+import { createEntryRunnerCommand } from './entry-runner-cli.js';
 import { safeExit } from '../utils/safe-exit.js';
 import { handleTestsSuggest } from '../commands/tdd/suggest.js';
 
@@ -640,6 +641,9 @@ program.addCommand(createCircuitBreakerCommand());
 
 // Security commands
 program.addCommand(createSecurityCommand());
+
+// Consolidated runner entry command
+program.addCommand(createEntryRunnerCommand());
 
 // Quality gates commands
 import { createQualityCommand } from './quality-cli.js';
