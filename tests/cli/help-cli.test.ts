@@ -71,4 +71,27 @@ describe('help CLI', () => {
 
     expect(safeExitMock).toHaveBeenCalledWith(127);
   });
+
+  it('propagates non-zero exit codes', async () => {
+    const root = process.cwd();
+    spawnSyncMock.mockReturnValueOnce({ status: 7, error: null });
+
+    const command = createHelpCommand();
+    await command.parseAsync(['node', 'cli', '--root', root]);
+
+    expect(safeExitMock).toHaveBeenCalledWith(7);
+  });
+
+  it('returns 1 for spawn errors without ENOENT', async () => {
+    const root = process.cwd();
+    spawnSyncMock.mockReturnValueOnce({
+      status: null,
+      error: Object.assign(new Error('spawn failed'), { code: 'EACCES' }),
+    });
+
+    const command = createHelpCommand();
+    await command.parseAsync(['node', 'cli', '--root', root]);
+
+    expect(safeExitMock).toHaveBeenCalledWith(1);
+  });
 });
