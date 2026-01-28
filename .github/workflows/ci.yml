@@ -192,7 +192,7 @@ jobs:
             echo "should_run=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          if grep -E '^(package.json|pnpm-lock.yaml|\\.github/workflows/podman-smoke.yml)$' /tmp/changed-files.txt >/dev/null; then
+          if grep -E '^(package.json|pnpm-lock.yaml|\\.github/workflows/podman-smoke.yml|\\.github/workflows/ci.yml)$' /tmp/changed-files.txt >/dev/null; then
             echo "should_run=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
