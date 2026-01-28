@@ -1,18 +1,6 @@
 name: Parallel Test Execution Strategy
 
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
-    paths:
-      - 'src/**'
-      - 'packages/**'
-      - 'apps/**'
-      - 'tests/**'
-      - 'configs/**'
-      - 'scripts/**'
-      - 'types/**'
   workflow_dispatch:
     inputs:
       mode:
@@ -38,6 +26,18 @@ on:
         description: "Run unit suite in container (AE_PARALLEL_USE_CONTAINER=1)"
         required: false
         default: "0"
+  workflow_call:
+    inputs:
+      trigger:
+        description: 'Origin event name (pull_request/push/workflow_call)'
+        required: false
+        default: 'workflow_call'
+        type: string
+      pr_labels:
+        description: 'Comma-separated PR labels'
+        required: false
+        default: ''
+        type: string
 
 concurrency:
   group: >-
@@ -96,7 +96,7 @@ jobs:
     name: Test Suite (${{ matrix.test-type }})
     runs-on: ubuntu-latest
     # Job-level gating removed to satisfy actionlint; gate at step level instead
-    continue-on-error: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking') }}
+    continue-on-error: ${{ (inputs.trigger || github.event_name) == 'pull_request' && contains(format(',{0},', inputs.pr_labels || ''), ',ci-non-blocking,') }}
     timeout-minutes: 30
     
     strategy:
@@ -163,9 +163,9 @@ jobs:
   test-e2e:
     name: E2E Tests
     runs-on: ubuntu-latest
-    continue-on-error: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking') }}
+    continue-on-error: ${{ (inputs.trigger || github.event_name) == 'pull_request' && contains(format(',{0},', inputs.pr_labels || ''), ',ci-non-blocking,') }}
     # Only run on PR when explicitly requested via label; always on push
-    if: (github.event_name != 'pull_request' || contains(join(fromJSON(toJSON(github.event.pull_request.labels)).*.name, ','), 'run-e2e')) && (github.event_name != 'workflow_dispatch' || inputs.mode != 'coordinator')
+    if: ${{ ((inputs.trigger || github.event_name) != 'pull_request' || contains(format(',{0},', inputs.pr_labels || ''), ',run-e2e,')) && (github.event_name != 'workflow_dispatch' || inputs.mode != 'coordinator') }}
     timeout-minutes: 45
     
     steps:
@@ -207,9 +207,9 @@ jobs:
   test-performance:
     name: Performance Tests
     runs-on: ubuntu-latest
-    continue-on-error: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking') }}
+    continue-on-error: ${{ (inputs.trigger || github.event_name) == 'pull_request' && contains(format(',{0},', inputs.pr_labels || ''), ',ci-non-blocking,') }}
     timeout-minutes: 35
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: ${{ (inputs.trigger || github.event_name) == 'push' && github.ref == 'refs/heads/main' }}
     
     steps:
       - name: Checkout code
@@ -245,7 +245,7 @@ jobs:
     name: Test Result Consolidation
     runs-on: ubuntu-latest
     needs: [test-matrix, test-e2e]
-    continue-on-error: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking') }}
+    continue-on-error: ${{ (inputs.trigger || github.event_name) == 'pull_request' && contains(format(',{0},', inputs.pr_labels || ''), ',ci-non-blocking,') }}
     if: ${{ always() && (github.event_name != 'workflow_dispatch' || inputs.mode != 'coordinator') }}
     
     steps:
