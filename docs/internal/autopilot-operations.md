@@ -7,7 +7,7 @@ watcher / ブリッジ / Autopilot を安全に停止・再開するための運
 ## 停止（干渉防止）
 - watcher を停止（各ワークスペースで実行中の `watch.sh` を終了）
 - Autopilot 停止:
-  - `pkill -f '/home/devuser/work/CodeX/ae/codex-autopilot.sh' || true`
+  - `pkill -f '~/work/CodeX/ae/codex-autopilot.sh' || true`
 - READY の新規付与を控える（watcher が拾うため）
 
 ## 再開（必要時）
