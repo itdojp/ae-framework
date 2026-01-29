@@ -1,6 +1,12 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createHash } from 'node:crypto';
-import { asInternal, createManager as createTestManager, createTempProjectRoot, cleanupProjectRoot } from '../../_helpers/enhanced-state-manager.js';
+import {
+  asInternal,
+  buildExportedState,
+  createManager as createTestManager,
+  createTempProjectRoot,
+  cleanupProjectRoot,
+} from '../../_helpers/enhanced-state-manager.js';
 
 const defaultOptions = {
   databasePath: 'state.db',
@@ -77,6 +83,40 @@ describe('EnhancedStateManager survivors coverage', () => {
     const aeirPayload = { id: 'sample', type: 'state' };
     const revivedAeir = await reviveEntryData({ compressed: false, data: aeirPayload });
     expect(revivedAeir).toEqual(aeirPayload);
+
+    await manager.shutdown();
+  });
+
+  it('findKeyByVersion returns null for missing or stale keys', async () => {
+    const manager = createManager();
+    const internal = asInternal(manager);
+
+    expect(internal.findKeyByVersion('missing', 1)).toBeNull();
+
+    internal.keyIndex.set('stale', new Set(['stale_2026-01-01T00:00:00.000Z']));
+    expect(internal.findKeyByVersion('stale', 1)).toBeNull();
+
+    await manager.shutdown();
+  });
+
+  it('importState preserves versionIndex and skips invalid keyIndex entries', async () => {
+    const manager = createManager();
+    const importedSpy = vi.fn();
+    manager.on('stateImported', importedSpy);
+
+    const exported = buildExportedState(manager, {
+      entries: [],
+      indices: {
+        keyIndex: { ghost: ['ghost_2026-01-01T00:00:00.000Z'] },
+        versionIndex: { inventory: 5 },
+      },
+    });
+
+    await manager.importState(exported);
+
+    expect(importedSpy).toHaveBeenCalledWith({ entryCount: 0 });
+    expect(asInternal(manager).versionIndex.get('inventory')).toBe(5);
+    expect(asInternal(manager).keyIndex.has('ghost')).toBe(false);
 
     await manager.shutdown();
   });
