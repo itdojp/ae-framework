@@ -259,7 +259,10 @@ describe('Quality Policy Loader', () => {
       const testGate = overrideLoader.getThreshold('test-gate', 'development');
       expect(testGate.maxViolations).toBe(5);
 
-      expect(warn).toHaveBeenCalled();
+      expect(warn).toHaveBeenCalledTimes(2);
+      const messages = warn.mock.calls.map(call => call[0]).join(' ');
+      expect(messages).toContain('coverage-gate.lines');
+      expect(messages).toContain('coverage-gate.branches');
     });
   });
 

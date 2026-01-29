@@ -78,15 +78,19 @@ export class QualityGateRunner {
         for (const name of requestedGates) {
           const composite = this.policyLoader.getCompositeGate(name);
           if (composite) {
-            composites[name] = composite.gates;
+            const compositeKeys: string[] = [];
             composite.gates.forEach(gateName => {
               const key = this.policyLoader.resolveGateKey(gateName);
               const gate = allGateMap[key];
               if (!gate) {
                 throw new Error(`Quality gate '${gateName}' not found`);
               }
-              gateKeys.add(key);
+              if (gate.enabled) {
+                gateKeys.add(key);
+                compositeKeys.push(key);
+              }
             });
+            composites[name] = compositeKeys;
             continue;
           }
           const key = this.policyLoader.resolveGateKey(name);
@@ -94,13 +98,18 @@ export class QualityGateRunner {
           if (!gate) {
             throw new Error(`Quality gate '${name}' not found`);
           }
-          gateKeys.add(key);
+          if (gate.enabled) {
+            gateKeys.add(key);
+          }
         }
         gateRecords = Array.from(gateKeys).map(key => ({ gate: allGateMap[key], key }));
       } else {
         const compositeForEnv = this.policyLoader.getCompositeGateForEnvironment(environment);
         if (compositeForEnv) {
-          composites[compositeForEnv.key] = compositeForEnv.gate.gates;
+          const compositeKeys = compositeForEnv.gate.gates
+            .map(gateName => this.policyLoader.resolveGateKey(gateName))
+            .filter(key => allGateMap[key]?.enabled);
+          composites[compositeForEnv.key] = compositeKeys;
         }
         gateRecords = this.policyLoader.getGatesForEnvironment(environment).map(gate => ({
           gate,
@@ -141,7 +150,7 @@ export class QualityGateRunner {
       if (Object.keys(composites).length > 0) {
         report.composites = {};
         Object.entries(composites).forEach(([name, gates]) => {
-          const resolvedGates = gates.map(gateName => this.policyLoader.resolveGateKey(gateName));
+          const resolvedGates = gates;
           const failed = resolvedGates.filter(key => {
             const result = this.results.find(item => item.gateKey === key);
             return !result || !result.passed;

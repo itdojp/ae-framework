@@ -381,9 +381,9 @@
       "environments": ["production"]
     },
     "dod": {
-      "description": "Definition of Done (composite)",
+      "description": "Definition of Done (composite, explicit use only)",
       "gates": ["linting", "coverage", "security"],
-      "environments": ["development", "testing", "staging", "production"]
+      "environments": []
     }
   },
 

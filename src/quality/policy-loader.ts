@@ -250,7 +250,7 @@ export class QualityPolicyLoader {
       if (!fallbackThreshold) {
         throw new Error(`No threshold found for gate '${gateName}' in environment '${environment}'`);
       }
-      return fallbackThreshold;
+      return this.mergeThresholds(key, gateName, fallbackThreshold, environment);
     }
 
     const merged = this.mergeThresholds(key, gateName, threshold, environment);
@@ -293,7 +293,7 @@ export class QualityPolicyLoader {
       const baseValue = target[metricKey];
 
       if (baseValue === undefined) {
-        target[metricKey] = overrideValue as QualityThreshold[keyof QualityThreshold];
+        target[metricKey] = overrideValue as typeof baseValue;
         return;
       }
 
@@ -304,7 +304,7 @@ export class QualityPolicyLoader {
         try {
           const chosen = strictest(baseExpr, overrideExpr);
           if (chosen === overrideExpr) {
-            target[metricKey] = overrideValue;
+            target[metricKey] = overrideValue as typeof baseValue;
             return;
           }
           if (overrideValue !== baseValue) {
@@ -325,13 +325,36 @@ export class QualityPolicyLoader {
 
       if (typeof baseValue === 'boolean' && typeof overrideValue === 'boolean') {
         const mergedValue = baseValue || overrideValue;
-        target[metricKey] = mergedValue;
-        if (!mergedValue && overrideValue !== baseValue) {
+        target[metricKey] = mergedValue as typeof baseValue;
+        if (baseValue && !overrideValue) {
           this.logger.warn(
             `[quality-policy] ${source} override ignored for ${gateKey}.${metric} (${environment}): ` +
             `policy=${baseValue}, override=${overrideValue}`
           );
         }
+        return;
+      }
+
+      if (typeof baseValue === 'string' && typeof overrideValue === 'string') {
+        if (metric === 'maxMemoryUsage') {
+          const baseSize = parseMemorySize(baseValue);
+          const overrideSize = parseMemorySize(overrideValue);
+          if (baseSize && overrideSize) {
+            if (overrideSize.bytes <= baseSize.bytes) {
+              target[metricKey] = overrideValue as typeof baseValue;
+              return;
+            }
+            this.logger.warn(
+              `[quality-policy] ${source} override ignored for ${gateKey}.${metric} (${environment}): ` +
+              `${overrideValue} is weaker than policy ${baseValue}`
+            );
+            return;
+          }
+        }
+        this.logger.warn(
+          `[quality-policy] ${source} override ignored for ${gateKey}.${metric} (${environment}): ` +
+          `unsupported string threshold (policy=${baseValue}, override=${overrideValue})`
+        );
         return;
       }
 
@@ -566,6 +589,40 @@ Description: ${policy.description}`;
 
 // Global instance for easy access
 export const qualityPolicy = new QualityPolicyLoader();
+
+const SIZE_UNITS: Record<string, number> = {
+  b: 1,
+  kb: 1000,
+  mb: 1000 * 1000,
+  gb: 1000 * 1000 * 1000,
+  tb: 1000 * 1000 * 1000 * 1000,
+  kib: 1024,
+  mib: 1024 * 1024,
+  gib: 1024 * 1024 * 1024,
+  tib: 1024 * 1024 * 1024 * 1024,
+};
+
+function parseMemorySize(value: string): { bytes: number } | null {
+  const trimmed = value.trim();
+  const match = trimmed.match(/^([+-]?\d+(?:\.\d+)?)\s*([a-zA-Z]+)?$/);
+  if (!match) {
+    return null;
+  }
+  const numberText = match[1];
+  if (!numberText) {
+    return null;
+  }
+  const amount = Number.parseFloat(numberText);
+  if (Number.isNaN(amount)) {
+    return null;
+  }
+  const unitText = (match[2] || 'b').toLowerCase();
+  const unit = SIZE_UNITS[unitText];
+  if (!unit) {
+    return null;
+  }
+  return { bytes: amount * unit };
+}
 
 const LOWER_IS_BETTER_METRICS = new Set([
   'maxViolations',
