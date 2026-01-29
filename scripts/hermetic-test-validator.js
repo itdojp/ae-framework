@@ -14,7 +14,7 @@ class HermeticTestValidator {
     this.testPattern = options.testPattern || 'tests/**/*.test.ts';
     this.runs = options.runs || 3;
     this.timeoutMs = options.timeoutMs || 30000;
-    this.reportDir = options.reportDir || './hermetic-reports';
+    this.reportDir = options.reportDir || './artifacts/hermetic-reports';
     
     this.violations = [];
     this.ensureDirectories();

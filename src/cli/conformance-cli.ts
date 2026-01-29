@@ -202,7 +202,7 @@ export class ConformanceCli {
       .description('Generate aggregated conformance report')
       .option('-i, --inputs <files...>', 'Conformance result files to include')
       .option('-g, --glob <patterns...>', 'Glob pattern(s) for locating result files')
-      .option('-d, --directory <dir>', 'Directory to search for result files', 'hermetic-reports/conformance')
+      .option('-d, --directory <dir>', 'Directory to search for result files', 'artifacts/hermetic-reports/conformance')
       .option('-p, --pattern <glob>', 'Glob pattern when using --directory', '*.json')
       .option('-f, --format <format>', 'Output format (json, markdown, both)', 'json')
       .option('-o, --output <file>', 'JSON output file path', DEFAULT_REPORT_JSON)
@@ -730,7 +730,7 @@ export class ConformanceCli {
     if (options.useDefaults) {
       const defaultCandidates = [
         'conformance-results.json',
-        path.join('hermetic-reports', 'conformance', '*.json'),
+        path.join('artifacts/hermetic-reports', 'conformance', '*.json'),
         path.join('reports', 'conformance', '*.json')
       ];
 

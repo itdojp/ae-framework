@@ -12,7 +12,7 @@ import { collectTraceIdsFromNdjson, buildTempoLinks } from '../trace/tempo-link-
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..', '..');
-const DEFAULT_TRACE_DIR = path.join('hermetic-reports', 'trace');
+const DEFAULT_TRACE_DIR = path.join('artifacts/hermetic-reports', 'trace');
 
 function readYaml(p) {
   return yaml.parse(fs.readFileSync(p, 'utf8'));
@@ -92,13 +92,13 @@ function printHelp() {
 Options:
   -i, --in <file>                Input events JSON (default: samples/conformance/sample-traces.json)
   --schema <file>                Trace schema YAML (default: observability/trace-schema.yaml)
-  --out <file>                   Output summary JSON (default: hermetic-reports/conformance/summary.json)
+  --out <file>                   Output summary JSON (default: artifacts/hermetic-reports/conformance/summary.json)
   --from-envelope <file>         Load summary / trace metadata from report envelope JSON
   --disable-invariants <list>    Comma-separated invariants to disable (allocated_le_onhand,onhand_min)
   --onhand-min <number>          Minimum onHand for onhand_min invariant (default: 0)
   --trace <file>                 KvOnce trace (NDJSON or OTLP JSON) to project/validate
   --trace-format <fmt>           Trace format (ndjson|otlp|auto, default auto)
-  --trace-output <dir>           Trace artifacts output directory (default: hermetic-reports/trace)
+  --trace-output <dir>           Trace artifacts output directory (default: artifacts/hermetic-reports/trace)
   --trace-skip-replay            Skip TLC replay step
   -h, --help                     Show this help
 `);
@@ -242,7 +242,7 @@ async function runTracePipeline({ tracePath, format, outputDir, skipReplay }) {
         exitCode: tlcResult.code,
         status: tlcResult.code === 0 ? 'ran' : 'failed',
       };
-      const tlaSummaryPath = path.join(repoRoot, 'hermetic-reports', 'formal', 'tla-summary.json');
+      const tlaSummaryPath = path.join(repoRoot, 'artifacts/hermetic-reports', 'formal', 'tla-summary.json');
       if (fs.existsSync(tlaSummaryPath)) {
         const replayTarget = path.join(targetDir, 'tla-summary.json');
         fs.copyFileSync(tlaSummaryPath, replayTarget);
@@ -411,7 +411,7 @@ async function main() {
   const schemaPath = path.resolve(repoRoot, args.schema || path.join('observability', 'trace-schema.yaml'));
   const dataPath = path.resolve(repoRoot, args.in || path.join('samples', 'conformance', 'sample-traces.json'));
   const envelopePath = args.fromEnvelope ? path.resolve(repoRoot, args.fromEnvelope) : null;
-  const outFile = path.resolve(repoRoot, args.out || path.join('hermetic-reports', 'conformance', 'summary.json'));
+  const outFile = path.resolve(repoRoot, args.out || path.join('artifacts/hermetic-reports', 'conformance', 'summary.json'));
 
   if (envelopePath && !fs.existsSync(envelopePath)) {
     console.error(`Envelope not found: ${envelopePath}`);

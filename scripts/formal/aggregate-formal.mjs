@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-// Aggregate formal reports into hermetic-reports/formal/summary.json
+// Aggregate formal reports into artifacts/hermetic-reports/formal/summary.json
 import fs from 'node:fs';
 import path from 'node:path';
 
 const repoRoot = process.cwd();
-const formalDir = path.join(repoRoot, 'hermetic-reports', 'formal');
-const confDir = path.join(repoRoot, 'hermetic-reports', 'conformance');
+const formalDir = path.join(repoRoot, 'artifacts/hermetic-reports', 'formal');
+const confDir = path.join(repoRoot, 'artifacts/hermetic-reports', 'conformance');
 fs.mkdirSync(formalDir, { recursive: true });
 
 function readJsonSafe(p){ try { return JSON.parse(fs.readFileSync(p,'utf8')); } catch { return undefined; } }

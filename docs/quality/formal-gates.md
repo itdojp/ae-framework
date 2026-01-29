@@ -37,7 +37,7 @@ Workflow
 
 Artifacts
 - Trace schema: `observability/trace-schema.yaml`
-- Reports: `hermetic-reports/conformance/`
+- Reports: `artifacts/hermetic-reports/conformance/`
 
 Status
 - v0.2: establish stubs in CI and wire engines incrementally
@@ -63,7 +63,7 @@ Workflow
 
 Artifacts
 - Trace schema: observability/trace-schema.yaml
-- Reports: hermetic-reports/conformance/
+- Reports: artifacts/hermetic-reports/conformance/
 
 Status
 - v0.2: Establish gates as stubs in CI; incrementally wire real engines

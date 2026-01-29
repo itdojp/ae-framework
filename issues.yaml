@@ -9,7 +9,7 @@ issues:
       - CLI: `ae verify:conformance`
       - トレーススキーマ: `observability/trace-schema.yaml`
       - CI ジョブ: `verify:conformance`（反例→tests/に失敗テスト）
-      - レポート: `hermetic-reports/conformance/`
+      - レポート: `artifacts/hermetic-reports/conformance/`
   - title: "feat(alloy6): BDD→時間プロパティ導出＋Alloy 6 LTL/過去演算検証を追加"
     labels: [feature, alloy, quick-win]
     body: |

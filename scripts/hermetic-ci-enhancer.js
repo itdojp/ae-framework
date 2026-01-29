@@ -16,7 +16,7 @@ const __dirname = dirname(__filename);
 class HermeticCIEnhancer {
   constructor() {
     this.projectRoot = join(__dirname, '..');
-    this.reportsDir = join(this.projectRoot, 'hermetic-reports');
+    this.reportsDir = join(this.projectRoot, 'artifacts/hermetic-reports');
     this.timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   }
 

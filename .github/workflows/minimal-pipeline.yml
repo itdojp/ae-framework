@@ -137,22 +137,22 @@ jobs:
       - name: KvOnce TLC (informational)
         run: |
           pnpm run spec:kv-once:tlc
-          if [ -f hermetic-reports/formal/tla-summary.json ]; then
-            cp hermetic-reports/formal/tla-summary.json hermetic-reports/formal/kvonce-tlc-summary.json
+          if [ -f artifacts/hermetic-reports/formal/tla-summary.json ]; then
+            cp artifacts/hermetic-reports/formal/tla-summary.json artifacts/hermetic-reports/formal/kvonce-tlc-summary.json
           fi
       - name: KvOnce Apalache (informational)
         run: |
           pnpm run spec:kv-once:apalache
-          if [ -f hermetic-reports/formal/tla-summary.json ]; then
-            cp hermetic-reports/formal/tla-summary.json hermetic-reports/formal/kvonce-apalache-summary.json
-            rm -f hermetic-reports/formal/tla-summary.json
+          if [ -f artifacts/hermetic-reports/formal/tla-summary.json ]; then
+            cp artifacts/hermetic-reports/formal/tla-summary.json artifacts/hermetic-reports/formal/kvonce-apalache-summary.json
+            rm -f artifacts/hermetic-reports/formal/tla-summary.json
           fi
       - name: Upload formal summary (legacy path)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: formal-tla-summary
-          path: hermetic-reports/formal/tla-summary.json
+          path: artifacts/hermetic-reports/formal/tla-summary.json
           if-no-files-found: ignore
       - name: Upload KvOnce summaries
         if: always()
@@ -160,6 +160,6 @@ jobs:
         with:
           name: formal-kvonce-summaries
           path: |
-            hermetic-reports/formal/kvonce-tlc-summary.json
-            hermetic-reports/formal/kvonce-apalache-summary.json
+            artifacts/hermetic-reports/formal/kvonce-tlc-summary.json
+            artifacts/hermetic-reports/formal/kvonce-apalache-summary.json
           if-no-files-found: ignore

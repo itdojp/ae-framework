@@ -10,7 +10,7 @@ import path from 'path';
 
 class QuickHermeticValidator {
   constructor(options = {}) {
-    this.reportDir = options.reportDir || './hermetic-reports';
+    this.reportDir = options.reportDir || './artifacts/hermetic-reports';
     this.ensureDirectories();
   }
 

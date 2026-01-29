@@ -6,7 +6,7 @@ import { collectTraceIdsFromNdjson, buildTempoLinks } from './tempo-link-utils.m
 function parseArgs(argv) {
   const options = {
     output: 'artifacts/kvonce-trace-summary.json',
-    traceDir: path.join('hermetic-reports', 'trace'),
+    traceDir: path.join('artifacts/hermetic-reports', 'trace'),
     summary: null,
     cases: null,
     autoDomainSummaries: true,
@@ -37,7 +37,7 @@ function parseArgs(argv) {
 
 Options:
   -o, --output <file>      Output JSON path (default: artifacts/kvonce-trace-summary.json)
-  -d, --trace-dir <dir>    Base directory containing trace artifacts (default: hermetic-reports/trace)
+  -d, --trace-dir <dir>    Base directory containing trace artifacts (default: artifacts/hermetic-reports/trace)
   -s, --summary <file>     Conformance summary JSON (default: <trace-dir>/kvonce-conformance-summary.json)
       --cases <list>       Comma-separated case descriptors key[:label[:subdir]]
       --domain-summary <file>

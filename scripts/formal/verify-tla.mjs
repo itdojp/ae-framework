@@ -65,7 +65,7 @@ const repoRoot = process.cwd();
 const file = args.file || path.join('spec','tla','DomainSpec.tla');
 const absFile = path.resolve(repoRoot, file);
 
-const outDir = path.join(repoRoot, 'hermetic-reports', 'formal');
+const outDir = path.join(repoRoot, 'artifacts/hermetic-reports', 'formal');
 const outFile = path.join(outDir, 'tla-summary.json');
 fs.mkdirSync(outDir, { recursive: true });
 

@@ -11,7 +11,7 @@ import fs from "node:fs/promises";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, "..", "..");
-const defaultOutputFile = path.join(projectRoot, "hermetic-reports", "trace", "collected-kvonce-otlp.json");
+const defaultOutputFile = path.join(projectRoot, "artifacts/hermetic-reports", "trace", "collected-kvonce-otlp.json");
 
 diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.ERROR);
 

@@ -19,7 +19,7 @@ summary.trace = {
       traceIds: ["trace-123"],
       tempoLinks: ["https://tempo.example.com/explore?traceId=..."],
       artifacts: {
-        validationPath: "hermetic-reports/trace/inventory/validation.json",
+        validationPath: "artifacts/hermetic-reports/trace/inventory/validation.json",
         projectionPath: "...",
         stateSequencePath: "..."
       },

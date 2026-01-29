@@ -70,14 +70,14 @@ jobs:
         with:
           name: formal-reports
           path: |
-            hermetic-reports/
+            artifacts/hermetic-reports/
       - name: Upload conformance summary (artifact)
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: formal-reports-conformance
           path: |
-            hermetic-reports/formal/conformance-summary.json
+            artifacts/hermetic-reports/formal/conformance-summary.json
 
   verify-alloy:
     name: verify:alloy (stub)
@@ -103,7 +103,7 @@ jobs:
         with:
           name: formal-reports-alloy
           path: |
-            hermetic-reports/formal/alloy-summary.json
+            artifacts/hermetic-reports/formal/alloy-summary.json
 
   verify-tla:
     name: verify:tla (stub)
@@ -127,7 +127,7 @@ jobs:
         with:
           name: formal-reports-tla
           path: |
-            hermetic-reports/formal/tla-summary.json
+            artifacts/hermetic-reports/formal/tla-summary.json
 
   verify-smt:
     name: verify:smt (stub)
@@ -153,7 +153,7 @@ jobs:
         with:
           name: formal-reports-smt
           path: |
-            hermetic-reports/formal/smt-summary.json
+            artifacts/hermetic-reports/formal/smt-summary.json
 
   verify-apalache:
     name: verify:apalache (stub)
@@ -177,8 +177,8 @@ jobs:
         with:
           name: formal-reports-apalache
           path: |
-            hermetic-reports/formal/apalache-summary.json
-            hermetic-reports/formal/apalache-output.txt
+            artifacts/hermetic-reports/formal/apalache-summary.json
+            artifacts/hermetic-reports/formal/apalache-output.txt
       - name: Validate Apalache summary shape (non-blocking)
         if: always()
         run: |
@@ -186,7 +186,7 @@ jobs:
       - name: "Enforce Apalache (label: enforce-formal)"
         if: contains(github.event.pull_request.labels.*.name, 'enforce-formal')
         run: |
-          FILE="hermetic-reports/formal/apalache-summary.json"
+          FILE="artifacts/hermetic-reports/formal/apalache-summary.json"
           if [ ! -f "$FILE" ]; then
             printf "%s\n" "::error::apalache-summary.json not found"
             exit 1
@@ -219,7 +219,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: formal-reports-kani
-          path: hermetic-reports/formal/kani-summary.json
+          path: artifacts/hermetic-reports/formal/kani-summary.json
 
   formal-aggregate:
     name: Formal Reports Aggregate

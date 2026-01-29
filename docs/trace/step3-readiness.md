@@ -16,7 +16,7 @@
 1. Projector v1
    - NDJSON → spec state 射影。
    - スキーマ: `docs/trace/kvonce-trace-schema.md`
-   - 出力: `hermetic-reports/trace/kvonce-projection.json` / `hermetic-reports/trace/projected/kvonce-state-sequence.json`
+   - 出力: `artifacts/hermetic-reports/trace/kvonce-projection.json` / `artifacts/hermetic-reports/trace/projected/kvonce-state-sequence.json`
 2. Validator v1
    - Projector 出力を TLC/Apalache に投入し、不変条件と遷移差分を比較。
    - CLI: `pnpm verify:conformance --from-envelope`
@@ -28,7 +28,7 @@
    - Envelope の `metadata` → Tempo span attributes のマッピング表を docs に追記。
 
 ## 推奨される次手順
-- `pnpm pipelines:trace --input samples/trace/kvonce-sample.ndjson` で projector → validator → TLC の最小フローを一括実行し、`hermetic-reports/trace/` 以下にレポートを生成する。
+- `pnpm pipelines:trace --input samples/trace/kvonce-sample.ndjson` で projector → validator → TLC の最小フローを一括実行し、`artifacts/hermetic-reports/trace/` 以下にレポートを生成する。
 - パイプライン実行後は `artifacts/trace/report-envelope.json` に Envelope が自動生成されるため、`pnpm verify:conformance --from-envelope` でサマリを再掲できる。
 - Issue #1011 を編集し、本ドキュメントの Step3 作業キューをチェックリスト化する。
 - Stage3 実装タスクを小さな PR 単位（Projector, Validator, CI, Dashboard）に分割。

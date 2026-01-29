@@ -7,7 +7,7 @@ import { produceMockOtlp } from "./mock-otlp-service.mjs";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, "..", "..");
-const targetPath = path.join(projectRoot, "hermetic-reports", "trace", "collected-kvonce-otlp.json");
+const targetPath = path.join(projectRoot, "artifacts/hermetic-reports", "trace", "collected-kvonce-otlp.json");
 const samplePath = path.join(projectRoot, "samples", "trace", "kvonce-otlp.json");
 
 async function ensureDir() {

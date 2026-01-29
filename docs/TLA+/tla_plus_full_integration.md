@@ -229,7 +229,7 @@ pnpm run spec:kv-once:apalache
 bash scripts/trace/run-kvonce-conformance.sh
 ```
 
-- 駆動結果は `hermetic-reports/formal/tla-summary.json` に出力される。
+- 駆動結果は `artifacts/hermetic-reports/formal/tla-summary.json` に出力される。
 - CI 取り込み時はラベル `run-formal` などで opt-in しつつ、成功時に summary を PR コメントへ反映させる予定。
 
 次ステップ：Spec Check の結果を Issue #1011 に紐付ける自動コメント、及び generate-artifacts/model-based-tests/conformance の追加。

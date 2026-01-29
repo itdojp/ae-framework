@@ -29,14 +29,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: tla-summary
-          path: hermetic-reports/formal/tla-summary.json
+          path: artifacts/hermetic-reports/formal/tla-summary.json
           if-no-files-found: ignore
       - name: Append summary to job log
         if: always()
         run: |
-          if [ -f hermetic-reports/formal/tla-summary.json ]; then
+          if [ -f artifacts/hermetic-reports/formal/tla-summary.json ]; then
             echo '## KvOnce TLA summary' >> "$GITHUB_STEP_SUMMARY"
-            cat hermetic-reports/formal/tla-summary.json >> "$GITHUB_STEP_SUMMARY"
+            cat artifacts/hermetic-reports/formal/tla-summary.json >> "$GITHUB_STEP_SUMMARY"
           else
             echo 'KvOnce TLA summary not generated (tool unavailable).' >> "$GITHUB_STEP_SUMMARY"
           fi

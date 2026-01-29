@@ -45,7 +45,7 @@ hour,count
 
 ## CI 連携計画
 - `scripts/ci/run-verify-lite-local.sh` に runtime guard fetch + summary + timeseries export をフックし、Step Summary と artifact を常に更新する。
-- `pnpm pipelines:full` 実行時にも同じ処理を走らせ、フルパイプラインで生成される `hermetic-reports` に CSV/JSON を配置。
+- `pnpm pipelines:full` 実行時にも同じ処理を走らせ、フルパイプラインで生成される `artifacts/hermetic-reports` に CSV/JSON を配置。
 - 将来的には timeseries CSV を Tempo/Grafana に push するジョブ、もしくは S3 へ転送するスクリプトを整備する。
 
 ## TODO / 次のアクション

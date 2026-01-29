@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { appendSection } from '../ci/step-summary.mjs';
 
-const baseDir = path.join('hermetic-reports', 'trace');
+const baseDir = path.join('artifacts/hermetic-reports', 'trace');
 const cases = [
   { key: 'otlp', label: 'OTLP payload', dir: process.env.KVONCE_TRACE_OTLP_DIR ?? path.join(baseDir, 'otlp') },
   { key: 'ndjson', label: 'NDJSON sample', dir: process.env.KVONCE_TRACE_NDJSON_DIR ?? path.join(baseDir, 'ndjson') },
