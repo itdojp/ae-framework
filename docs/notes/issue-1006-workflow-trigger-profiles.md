@@ -46,7 +46,7 @@
 - flake-detect.yml
 - nightly.yml
 
-### workflow_call, workflow_dispatch (12)
+### workflow_call, workflow_dispatch (11)
 - ae-ci.yml
 - ci-fast.yml
 - fail-fast-spec-validation.yml
@@ -58,6 +58,8 @@
 - release-quality-artifacts.yml
 - spec-check.yml
 - validate-artifacts-ajv.yml
+
+### pull_request, workflow_call, workflow_dispatch (1)
 - verify.yml
 
 ### pull_request, pull_request_review, workflow_dispatch (1)

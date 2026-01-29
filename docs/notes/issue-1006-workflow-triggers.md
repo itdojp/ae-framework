@@ -7,7 +7,7 @@
 
 ## Trigger counts
 - issue_comment: 1
-- pull_request: 19
+- pull_request: 20
 - pull_request_review: 1
 - push: 12
 - schedule: 7
@@ -20,7 +20,7 @@
 ### issue_comment (1)
 - agent-commands.yml
 
-### pull_request (19)
+### pull_request (20)
 - adapter-thresholds.yml
 - cedar-quality-gates.yml
 - ci.yml
@@ -39,6 +39,7 @@
 - spec-validation.yml
 - testing-ddd-scripts.yml
 - verify-lite.yml
+- verify.yml
 - workflow-lint.yml
 
 ### pull_request_review (1)
