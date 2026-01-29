@@ -30,41 +30,57 @@ export const AeConfigSchema = z.object({
 
 export type AeConfig = z.infer<typeof AeConfigSchema>;
 
-export async function loadConfig(): Promise<AeConfig> {
-  // ae.config.ts/js/json の順に探す。なければデフォルト
-  const base: Partial<AeConfig> = {};
-  const cwd = process.cwd();
-  
-  const candidates = [
-    'config/ae.config.ts',
-    'config/ae.config.js',
-    'config/ae.config.json',
-    'ae.config.ts',
-    'ae.config.js',
-    'ae.config.json'
-  ];
+const CONFIG_CANDIDATES = [
+  'config/ae.config.ts',
+  'config/ae.config.js',
+  'config/ae.config.json',
+  'ae.config.ts',
+  'ae.config.js',
+  'ae.config.json'
+] as const;
 
-  for (const filename of candidates) {
+export type ConfigSource = {
+  path?: string;
+  raw?: unknown;
+};
+
+async function loadConfigSourceInternal(): Promise<ConfigSource> {
+  const cwd = process.cwd();
+
+  for (const filename of CONFIG_CANDIDATES) {
     try {
       const filePath = path.join(cwd, filename);
-      
+
       if (path.extname(filePath) === '.json') {
         const content = await readFile(filePath, 'utf8');
         const raw = JSON.parse(content);
-        Object.assign(base, raw);
-        break;
-      } else {
-        // TypeScript/JavaScript files
-        const fileUrl = pathToFileURL(filePath).href;
-        const mod = await import(fileUrl);
-        Object.assign(base, mod.default ?? mod);
-        break;
+        return { path: filePath, raw };
       }
+
+      const fileUrl = pathToFileURL(filePath).href;
+      const mod = await import(fileUrl);
+      const raw = mod.default ?? mod;
+      return { path: filePath, raw };
     } catch (error) {
-      // File not found, try next
       continue;
     }
   }
-  
-  return AeConfigSchema.parse(base);
+
+  return {};
+}
+
+export async function loadConfigSource(): Promise<ConfigSource> {
+  return loadConfigSourceInternal();
+}
+
+export async function loadConfigWithSource(): Promise<{ config: AeConfig; source: ConfigSource }> {
+  // ae.config.ts/js/json の順に探す。なければデフォルト
+  const source = await loadConfigSource();
+  const base = source.raw && typeof source.raw === 'object' ? source.raw : {};
+  return { config: AeConfigSchema.parse(base), source };
+}
+
+export async function loadConfig(): Promise<AeConfig> {
+  const { config } = await loadConfigWithSource();
+  return config;
 }

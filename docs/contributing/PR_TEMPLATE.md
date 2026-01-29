@@ -63,6 +63,8 @@ export default {
 };
 ```
 
+補足: QA の coverage しきい値は `policy/quality.json` が単一情報源です。`config/ae.config.*` の `qa.coverageThreshold` はローカルヒント扱いで、CI では無視されます。
+
 ## ✅ 検証結果
 
 ### 動作確認ログ
