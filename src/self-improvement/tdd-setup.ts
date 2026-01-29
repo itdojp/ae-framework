@@ -30,7 +30,7 @@ export class SelfImprovementTDDSetup {
   constructor(config: Partial<SelfImprovementTDDConfig> = {}) {
     this.config = {
       projectRoot: process.cwd(),
-      configFile: 'ae-framework-v2.yml',
+      configFile: 'config/ae-framework-v2.yml',
       enableRealTimeMonitoring: true,
       strictModeEnforcement: true,
       targetCoverage: 80,
@@ -54,7 +54,7 @@ export class SelfImprovementTDDSetup {
     try {
       console.log('🚀 Initializing ae-framework Self-Improvement TDD Infrastructure...');
 
-      // 1. Load ae-framework-v2.yml configuration
+      // 1. Load config/ae-framework-v2.yml configuration
       const aeConfig = this.loadSelfImprovementConfig();
       
       // 2. Set up HybridTDDSystem
@@ -189,7 +189,7 @@ export class SelfImprovementTDDSetup {
       this.metricsCollector.startPhase('0-tdd-setup');
       
       // Record initial baseline
-      this.metricsCollector.recordArtifact('ae-framework-v2.yml');
+      this.metricsCollector.recordArtifact('config/ae-framework-v2.yml');
       
       console.log('✅ MetricsCollector initialized for self-improvement tracking');
       return true;
@@ -226,7 +226,7 @@ export class SelfImprovementTDDSetup {
     if (!checks.hybridTDDActive) recommendations.push('Initialize HybridTDDSystem');
     if (!checks.tddAgentReady) recommendations.push('Configure TDDAgent');
     if (!checks.metricsCollecting) recommendations.push('Set up MetricsCollector');
-    if (!checks.configValid) recommendations.push('Create ae-framework-v2.yml configuration');
+    if (!checks.configValid) recommendations.push('Create config/ae-framework-v2.yml configuration');
 
     return {
       operational,

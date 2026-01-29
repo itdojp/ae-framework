@@ -307,7 +307,7 @@ export AE_TEST_OUTPUT_DIR=tests/
 ## Troubleshooting
 
 ### Issue: Generated tests don't match coding style
-**Solution**: Configure test templates in `ae-framework.yml`
+**Solution**: Configure test templates in `config/ae-framework.yml`
 
 ### Issue: Too many edge case tests generated
 **Solution**: Use priority filtering to focus on critical tests first

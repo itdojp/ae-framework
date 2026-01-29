@@ -29,7 +29,7 @@ export class SimplePhase0Setup {
 
     try {
       // Step 1: Validate configuration
-      console.log('📋 Step 1: Validating ae-framework-v2.yml...');
+      console.log('📋 Step 1: Validating config/ae-framework-v2.yml...');
       const configValid = await this.validateConfiguration();
       console.log(`✅ Configuration: ${configValid ? 'VALID' : 'NEEDS_ATTENTION'}`);
 
@@ -72,11 +72,11 @@ export class SimplePhase0Setup {
   }
 
   /**
-   * Validate ae-framework-v2.yml exists and has basic structure
+   * Validate config/ae-framework-v2.yml exists and has basic structure
    */
   private async validateConfiguration(): Promise<boolean> {
     try {
-      const configPath = path.join(process.cwd(), 'ae-framework-v2.yml');
+      const configPath = path.join(process.cwd(), 'config/ae-framework-v2.yml');
       const configContent = await fs.readFile(configPath, 'utf-8');
       
       // Basic validation - check for required sections
@@ -177,7 +177,7 @@ exit 0
 ## Infrastructure Components
 
 ### ✅ Configuration
-- **ae-framework-v2.yml**: ${results.configurationValid ? 'Valid' : 'Needs attention'}
+- **config/ae-framework-v2.yml**: ${results.configurationValid ? 'Valid' : 'Needs attention'}
 - **Directory Structure**: Created
 - **Phase Dependencies**: Ready
 
