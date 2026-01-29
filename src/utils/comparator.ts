@@ -73,7 +73,11 @@ export function parseComparator(expr: string): ParsedComparator {
   }
 
   const operator = (match[1] as ComparatorOperator) ?? '>=';
-  const numeric = Number.parseFloat(match[2]);
+  const numericText = match[2];
+  if (!numericText) {
+    throw new Error(`Invalid comparator value: ${expr}`);
+  }
+  const numeric = Number.parseFloat(numericText);
   if (Number.isNaN(numeric)) {
     throw new Error(`Invalid comparator value: ${expr}`);
   }
@@ -105,7 +109,11 @@ function normalizeActualValue(actual: number | string, comparator: ParsedCompara
     throw new Error(`Invalid actual value: ${actual}`);
   }
 
-  const value = Number.parseFloat(match[2]);
+  const valueText = match[2];
+  if (!valueText) {
+    throw new Error(`Invalid actual value: ${actual}`);
+  }
+  const value = Number.parseFloat(valueText);
   if (Number.isNaN(value)) {
     throw new Error(`Invalid actual value: ${actual}`);
   }
