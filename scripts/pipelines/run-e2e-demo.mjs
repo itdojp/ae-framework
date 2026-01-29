@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { spawn } from 'node:child_process';
+import { spawn } from 'child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -40,7 +40,7 @@ const steps = [
   },
 ];
 
-const LOG_PREFIX = '[e2e-demo]';
+const LOG_PREFIX = '\u001b[36m[pipelines]\u001b[0m';
 const summaryPath = 'artifacts/e2e-demo/summary.json';
 
 const ensureSummaryDir = () => {
@@ -51,6 +51,10 @@ const runStep = (step) =>
   new Promise((resolve, reject) => {
     const child = spawn(step.command[0], step.command.slice(1), {
       stdio: 'inherit',
+    });
+
+    child.on('error', (error) => {
+      reject(new Error(`${step.name} failed to start: ${error.message}`));
     });
 
     child.on('close', (code) => {
@@ -99,28 +103,47 @@ const run = async () => {
         continue;
       }
 
-      await runStep(step);
-      summary.steps.push({
-        id: step.identifier,
-        name: step.name,
-        command: step.command.join(' '),
-        status: 'success',
-        startedAt,
-        finishedAt: new Date().toISOString(),
-      });
+      try {
+        await runStep(step);
+        summary.steps.push({
+          id: step.identifier,
+          name: step.name,
+          command: step.command.join(' '),
+          status: 'success',
+          startedAt,
+          finishedAt: new Date().toISOString(),
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error(`${LOG_PREFIX} ${message}`);
+        summary.steps.push({
+          id: step.identifier,
+          name: step.name,
+          command: step.command.join(' '),
+          status: 'failed',
+          error: message,
+          startedAt,
+          finishedAt: new Date().toISOString(),
+        });
+        process.exitCode = 1;
+        throw error;
+      }
     }
 
     console.log(`${LOG_PREFIX} demo complete`);
   } catch (error) {
-    console.error(`${LOG_PREFIX} ${error.message}`);
-    summary.steps.push({
-      id: 'failed',
-      name: 'pipeline',
-      status: 'failed',
-      error: error.message,
-      finishedAt: new Date().toISOString(),
-    });
-    process.exitCode = 1;
+    if (!process.exitCode) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`${LOG_PREFIX} ${message}`);
+      summary.steps.push({
+        id: 'pipeline',
+        name: 'pipeline',
+        status: 'failed',
+        error: message,
+        finishedAt: new Date().toISOString(),
+      });
+      process.exitCode = 1;
+    }
   } finally {
     ensureSummaryDir();
     fs.writeFileSync(summaryPath, JSON.stringify(summary, null, 2));
