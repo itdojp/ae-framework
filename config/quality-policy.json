@@ -379,6 +379,11 @@
       "description": "Production-grade quality gates with maximum enforcement",
       "gates": ["accessibility", "coverage", "lighthouse", "linting", "security", "tdd", "performance", "api-validation"],
       "environments": ["production"]
+    },
+    "dod": {
+      "description": "Definition of Done (composite, explicit use only)",
+      "gates": ["linting", "coverage", "security"],
+      "environments": []
     }
   },
 

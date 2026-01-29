@@ -71,19 +71,59 @@ export class QualityGateRunner {
       
       // Get gates to execute
       const allGateMap = this.policyLoader.getAllGates();
-      const gateRecords = requestedGates
-        ? requestedGates.map(name => {
-            const key = this.policyLoader.resolveGateKey(name);
+      const composites: Record<string, string[]> = {};
+      let gateRecords: Array<{ gate: QualityGate; key: string }> = [];
+      if (requestedGates) {
+        const gateKeys = new Set<string>();
+        for (const name of requestedGates) {
+          const composite = this.policyLoader.getCompositeGate(name);
+          if (composite) {
+            const compositeKeys: string[] = [];
+            composite.gates.forEach(gateName => {
+              const key = this.policyLoader.resolveGateKey(gateName);
+              const gate = allGateMap[key];
+              if (!gate) {
+                throw new Error(`Quality gate '${gateName}' not found`);
+              }
+              if (gate.enabled) {
+                gateKeys.add(key);
+                compositeKeys.push(key);
+              }
+            });
+            composites[name] = compositeKeys;
+            continue;
+          }
+          const key = this.policyLoader.resolveGateKey(name);
+          const gate = allGateMap[key];
+          if (!gate) {
+            throw new Error(`Quality gate '${name}' not found`);
+          }
+          if (gate.enabled) {
+            gateKeys.add(key);
+          }
+        }
+        gateRecords = Array.from(gateKeys)
+          .map(key => {
             const gate = allGateMap[key];
             if (!gate) {
-              throw new Error(`Quality gate '${name}' not found`);
+              return null;
             }
             return { gate, key };
           })
-        : this.policyLoader.getGatesForEnvironment(environment).map(gate => ({
-            gate,
-            key: this.policyLoader.resolveGateKey(gate.name),
-          }));
+          .filter((record): record is { gate: QualityGate; key: string } => record !== null);
+      } else {
+        const compositeForEnv = this.policyLoader.getCompositeGateForEnvironment(environment);
+        if (compositeForEnv) {
+          const compositeKeys = compositeForEnv.gate.gates
+            .map(gateName => this.policyLoader.resolveGateKey(gateName))
+            .filter(key => allGateMap[key]?.enabled);
+          composites[compositeForEnv.key] = compositeKeys;
+        }
+        gateRecords = this.policyLoader.getGatesForEnvironment(environment).map(gate => ({
+          gate,
+          key: this.policyLoader.resolveGateKey(gate.name),
+        }));
+      }
 
       if (gateRecords.length === 0) {
         console.log('⚠️  No quality gates found for execution');
@@ -115,6 +155,21 @@ export class QualityGateRunner {
 
       // Generate report
       const report = this.policyLoader.generateReport(this.results, environment);
+      if (Object.keys(composites).length > 0) {
+        report.composites = {};
+        Object.entries(composites).forEach(([name, gates]) => {
+          const resolvedGates = gates;
+          const failed = resolvedGates.filter(key => {
+            const result = this.results.find(item => item.gateKey === key);
+            return !result || !result.passed;
+          });
+          report.composites![name] = {
+            gates: resolvedGates,
+            passed: failed.length === 0,
+            failedGates: failed,
+          };
+        });
+      }
       
       // Save report
       if (!dryRun) {
@@ -653,6 +708,17 @@ export class QualityGateRunner {
       console.log(`\n🚫 BLOCKERS (${report.summary.blockers.length}):`);
       report.summary.blockers.forEach(blocker => {
         console.log(`   • ${blocker}`);
+      });
+    }
+
+    if (report.composites && Object.keys(report.composites).length > 0) {
+      console.log('\n🧩 COMPOSITES:');
+      Object.entries(report.composites).forEach(([name, composite]) => {
+        const icon = composite.passed ? '✅' : '❌';
+        console.log(`   ${icon} ${name} (${composite.gates.join(', ')})`);
+        if (!composite.passed && composite.failedGates.length > 0) {
+          console.log(`      Failed: ${composite.failedGates.join(', ')}`);
+        }
       });
     }
 
