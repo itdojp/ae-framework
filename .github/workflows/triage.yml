@@ -1,0 +1,62 @@
+name: triage
+
+on:
+  issues:
+    types: [opened, reopened, labeled, edited]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  normalize_labels:
+    if: ${{ github.event.issue.pull_request == null }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Normalize role/status labels
+        uses: actions/github-script@v7
+        env:
+          AE_ROLE_ASSIGNMENTS: ${{ vars.AE_ROLE_ASSIGNMENTS }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const label = context.payload.label?.name || '';
+            const issue = context.payload.issue;
+            const labels = (issue?.labels || []).map((l) => l.name);
+
+            const removeLabel = async (name) => {
+              try {
+                await github.rest.issues.removeLabel({ owner, repo, issue_number, name });
+              } catch {
+                // ignore
+              }
+            };
+
+            const removeByPrefix = async (prefix) => {
+              const targets = labels.filter((name) => name.startsWith(prefix) && name !== label);
+              for (const name of targets) {
+                await removeLabel(name);
+              }
+            };
+
+            if (label.startsWith('status:')) {
+              await removeByPrefix('status:');
+            }
+
+            if (label.startsWith('role:')) {
+              await removeByPrefix('role:');
+            }
+
+            const assignmentJson = process.env.AE_ROLE_ASSIGNMENTS;
+            if (label.startsWith('role:') && assignmentJson) {
+              try {
+                const mapping = JSON.parse(assignmentJson);
+                const assignees = mapping[label];
+                if (Array.isArray(assignees) && assignees.length > 0) {
+                  await github.rest.issues.addAssignees({ owner, repo, issue_number, assignees });
+                }
+              } catch (error) {
+                core.warning(`AE_ROLE_ASSIGNMENTS parse error: ${error.message || error}`);
+              }
+            }

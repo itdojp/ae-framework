@@ -1,0 +1,168 @@
+name: slash-commands
+
+on:
+  issue_comment:
+    types: [created]
+
+concurrency:
+  group: slash-commands-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  handle_issue_commands:
+    if: ${{ github.event.issue.pull_request == null && vars.AE_SLASH_COMMANDS_ISSUE == '1' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Parse slash commands
+        uses: actions/github-script@v7
+        env:
+          AE_ROLE_ASSIGNMENTS: ${{ vars.AE_ROLE_ASSIGNMENTS }}
+        with:
+          script: |
+            const body = (context.payload.comment.body || '').trim();
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const association = context.payload.comment.author_association || '';
+            const isTrusted = ['MEMBER', 'OWNER', 'COLLABORATOR'].includes(association);
+            const commenter = context.payload.comment.user?.login;
+            const isBot = (context.payload.comment.user?.type || '').toLowerCase() === 'bot';
+
+            if (!isTrusted) {
+              return;
+            }
+
+            const addLabels = async (labels) => {
+              if (!labels || labels.length === 0) return;
+              await github.rest.issues.addLabels({ owner, repo, issue_number, labels });
+            };
+            const removeLabel = async (name) => {
+              try {
+                await github.rest.issues.removeLabel({ owner, repo, issue_number, name });
+              } catch {
+                // ignore
+              }
+            };
+            const listLabels = async () => {
+              const { data } = await github.rest.issues.listLabelsOnIssue({ owner, repo, issue_number, per_page: 100 });
+              return data.map((label) => label.name);
+            };
+
+            const setStatus = async (labelName) => {
+              const labels = await listLabels();
+              for (const name of labels) {
+                if (name.startsWith('status:') && name !== labelName) {
+                  await removeLabel(name);
+                }
+              }
+              await addLabels([labelName]);
+            };
+
+            const setRole = async (labelName) => {
+              const labels = await listLabels();
+              for (const name of labels) {
+                if (name.startsWith('role:') && name !== labelName) {
+                  await removeLabel(name);
+                }
+              }
+              await addLabels([labelName]);
+            };
+
+            const maybeAssignFromRole = async (labelName) => {
+              const assignmentJson = process.env.AE_ROLE_ASSIGNMENTS;
+              if (!assignmentJson) return;
+              try {
+                const mapping = JSON.parse(assignmentJson);
+                const assignees = mapping[labelName];
+                if (Array.isArray(assignees) && assignees.length > 0) {
+                  await github.rest.issues.addAssignees({ owner, repo, issue_number, assignees });
+                }
+              } catch (error) {
+                core.warning(`AE_ROLE_ASSIGNMENTS parse error: ${error.message || error}`);
+              }
+            };
+
+            const reply = async (message) => {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body: `<!-- AE-SLASH-REPLY -->\n${message}` });
+            };
+
+            let cmd = '';
+            let arg = '';
+
+            if (body) {
+              const firstSpaceIndex = body.search(/\s/);
+              if (firstSpaceIndex === -1) {
+                cmd = body;
+              } else {
+                cmd = body.slice(0, firstSpaceIndex);
+                arg = body.slice(firstSpaceIndex + 1).trim();
+              }
+            }
+
+            switch (cmd) {
+              case '/start': {
+                await setStatus('status:in-progress');
+                if (commenter && !isBot) {
+                  try {
+                    await github.rest.issues.addAssignees({ owner, repo, issue_number, assignees: [commenter] });
+                  } catch {
+                    // ignore
+                  }
+                }
+                await reply('status:in-progress を付与しました。Draft PR の自動作成は未実装のため、必要なら手動で作成してください。');
+                return;
+              }
+              case '/plan': {
+                await reply([
+                  'Plan (draft):',
+                  '- [ ] Scope/acceptance criteria',
+                  '- [ ] Implementation steps',
+                  '- [ ] Tests/validation',
+                  '- [ ] Docs/notes',
+                ].join('\n'));
+                return;
+              }
+              case '/ready-for-review': {
+                await setStatus('status:review');
+                await reply('status:review を付与しました。CODEOWNERSレビューを依頼してください。');
+                return;
+              }
+              case '/block': {
+                await setStatus('status:blocked');
+                const reason = arg ? `Reason: ${arg}` : 'Reason: (not provided)';
+                await reply(`status:blocked を付与しました。${reason}`);
+                return;
+              }
+              case '/unblock': {
+                await setStatus('status:in-progress');
+                await reply('status:in-progress に戻しました。');
+                return;
+              }
+              case '/handoff': {
+                let roleLabel = '';
+                const rawArg = (arg || '').trim();
+                const normalizedArg = rawArg.replace(/^@+/, '');
+                if (normalizedArg.startsWith('role:')) {
+                  roleLabel = normalizedArg;
+                } else if (normalizedArg.toUpperCase().includes('ARCH')) {
+                  roleLabel = 'role:ARCH-HIGH';
+                } else if (normalizedArg.toUpperCase().includes('PM')) {
+                  roleLabel = 'role:PM-HIGH';
+                } else if (normalizedArg.toUpperCase().includes('IMPL')) {
+                  roleLabel = `role:${normalizedArg.toUpperCase()}`;
+                }
+                if (!roleLabel) {
+                  await reply('roleラベルが判別できませんでした。例: /handoff role:ARCH-HIGH');
+                  return;
+                }
+                await setRole(roleLabel);
+                await maybeAssignFromRole(roleLabel);
+                await reply(`${roleLabel} を付与しました。`);
+                return;
+              }
+              default:
+                return;
+            }
