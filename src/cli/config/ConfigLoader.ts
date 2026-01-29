@@ -12,11 +12,7 @@ export class ConfigLoader {
       'ae-framework.yml',
       'ae-framework.yaml', 
       '.ae-framework.yml',
-      '.ae-framework.yaml',
-      path.join(process.cwd(), 'config/ae-framework.yml'),
-      path.join(process.cwd(), 'config/ae-framework.yaml'),
-      path.join(process.cwd(), 'ae-framework.yml'),
-      path.join(process.cwd(), '.ae-framework.yml')
+      '.ae-framework.yaml'
     ].filter(Boolean) as string[];
 
     for (const configFile of possiblePaths) {
