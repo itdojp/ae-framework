@@ -58,19 +58,19 @@ jobs:
             args+=("${EXTRA_MUTATE}")
           fi
           if [ -n "${EXTRA_TIME_LIMIT}" ]; then
-            echo "STRYKER_TIME_LIMIT=${EXTRA_TIME_LIMIT}" >> "$GITHUB_ENV"
+            printf '%s\n' "STRYKER_TIME_LIMIT=${EXTRA_TIME_LIMIT}" >> "$GITHUB_ENV"
           fi
           target_base=${AUTO_DIFF_BASE:-}
           if [ -z "$target_base" ]; then
             target_base='origin/main'
           fi
-          echo "base_ref=$target_base" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "base_ref=$target_base" >> "$GITHUB_OUTPUT"
           {
-            echo 'args<<__MUT_ARGS__'
+            printf '%s\n' 'args<<__MUT_ARGS__'
             if [ "${#args[@]}" -gt 0 ]; then
               printf '%s\n' "${args[@]}"
             fi
-            echo '__MUT_ARGS__'
+            printf '%s\n' '__MUT_ARGS__'
           } >> "$GITHUB_OUTPUT"
 
       - name: Run mutation auto diff

@@ -33,9 +33,9 @@ jobs:
         id: setup-node-pnpm
         run: |
           if [ -d ".github/actions/setup-node-pnpm" ]; then
-            echo "available=true" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "available=true" >> "$GITHUB_OUTPUT"
           else
-            echo "available=false" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "available=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Setup Node + pnpm

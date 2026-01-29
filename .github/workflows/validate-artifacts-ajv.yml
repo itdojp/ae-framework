@@ -29,7 +29,7 @@ jobs:
     steps:
       - id: gate
         run: |
-          echo "strict=${{ inputs.strict }}" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "strict=${{ inputs.strict }}" >> "$GITHUB_OUTPUT"
   validate:
     needs: gate
     runs-on: ubuntu-latest

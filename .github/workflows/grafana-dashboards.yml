@@ -47,9 +47,9 @@ jobs:
         id: diff
         run: |
           if git diff --exit-code; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "changed=false" >> "$GITHUB_OUTPUT"
           else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Upload diff artifact

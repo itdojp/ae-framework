@@ -98,12 +98,12 @@ jobs:
           fi
 
           {
-            echo "run_extended=$RUN_EXTENDED"
-            echo "run_integration=$RUN_INTEGRATION"
-            echo "run_property=$RUN_PROPERTY"
-            echo "run_mbt=$RUN_MBT"
-            echo "run_mutation=$RUN_MUTATION"
-            echo "should_run=$SHOULD_RUN"
+            printf '%s\n' "run_extended=$RUN_EXTENDED"
+            printf '%s\n' "run_integration=$RUN_INTEGRATION"
+            printf '%s\n' "run_property=$RUN_PROPERTY"
+            printf '%s\n' "run_mbt=$RUN_MBT"
+            printf '%s\n' "run_mutation=$RUN_MUTATION"
+            printf '%s\n' "should_run=$SHOULD_RUN"
           } >> "$GITHUB_OUTPUT"
 
       - name: Skip (no extended suites requested)
@@ -140,10 +140,10 @@ jobs:
             restore_keys="${prefix}-"
           fi
           {
-            echo "key=${key}"
-            echo "restore_keys<<__RESTORE__"
+            printf '%s\n' "key=${key}"
+            printf '%s\n' "restore_keys<<__RESTORE__"
             printf '%s\n' "${restore_keys}"
-            echo "__RESTORE__"
+            printf '%s\n' "__RESTORE__"
           } >> "$GITHUB_OUTPUT"
 
       - name: Restore heavy test cache
@@ -198,7 +198,7 @@ jobs:
             fi
           fi
           if [ -z "$BASE_SHA" ]; then
-            echo "pact=false" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "pact=false" >> "$GITHUB_OUTPUT"
             printf '%s\n' "Pact diff skipped: base SHA unavailable." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
@@ -206,9 +206,9 @@ jobs:
           CHANGED="$(git diff --name-only "$BASE_SHA"...HEAD || true)"
           printf '%s\n' "$CHANGED" > /tmp/changed-files.txt
           if printf '%s\n' "$CHANGED" | grep -E "$WATCH_PATH_PATTERN" >/dev/null; then
-            echo "pact=true" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "pact=true" >> "$GITHUB_OUTPUT"
           else
-            echo "pact=false" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "pact=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Pact contract smoke
@@ -239,11 +239,11 @@ jobs:
           fi
           git fetch --no-tags --depth=1 origin "${target_base#origin/}" || true
           {
-            echo "base_ref=${target_base}"
-            echo 'args<<__MUT_ARGS__'
-            echo '--configFile'
-            echo 'configs/stryker.config.js'
-            echo '__MUT_ARGS__'
+            printf '%s\n' "base_ref=${target_base}"
+            printf '%s\n' 'args<<__MUT_ARGS__'
+            printf '%s\n' '--configFile'
+            printf '%s\n' 'configs/stryker.config.js'
+            printf '%s\n' '__MUT_ARGS__'
           } >> "$GITHUB_OUTPUT"
 
       - name: Run mutation auto diff (extended)
@@ -373,7 +373,7 @@ jobs:
             --warn-mbt-violations 1 \
             --critical-mbt-violations 3
           severity=$(jq -r '.highestSeverity' reports/heavy-test-trends-history/summary.json)
-          echo "severity=${severity}" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "severity=${severity}" >> "$GITHUB_OUTPUT"
 
       - name: Upload heavy test trend report
         if: ${{ always() && steps.flags.outputs.should_run == 'true' && github.event_name != 'pull_request' && inputs.trigger != 'pull_request' }}
