@@ -159,7 +159,7 @@ export class PhaseValidator {
   private async validateTestsExist(): Promise<{ passed: boolean; message?: string }> {
     try {
       const testFiles = await glob('tests/**/*.test.ts');
-      const specFiles = await glob('specs/bdd/**/*.feature');
+      const specFiles = await glob('spec/bdd/**/*.feature');
       
       const hasTests = testFiles.length > 0 || specFiles.length > 0;
       

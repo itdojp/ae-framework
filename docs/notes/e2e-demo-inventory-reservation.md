@@ -4,8 +4,8 @@
 Inventory reservation ドメインを単一シナリオとして捉え、BDD / Pact / Property / MBT を連動して実行する最小デモを提供する。
 
 ## 対象の対応表
-- BDD: `specs/bdd/features/inventory_reservation.feature`
-- BDD steps: `specs/bdd/steps/reservations.steps.js`
+- BDD: `spec/bdd/features/inventory_reservation.feature`
+- BDD steps: `spec/bdd/steps/reservations.steps.js`
 - Pact contracts: `contracts/reservations-*.json`
 - Property tests: `tests/property/web-api/reservation.spec.ts`
 - MBT harness: `tests/mbt/run.js`

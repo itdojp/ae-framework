@@ -1,4 +1,4 @@
-# Template: copy to specs/bdd/features/<feature>.feature
+# Template: copy to spec/bdd/features/<feature>.feature
 # Tags: @spec @trace:<trace-id>
 
 Feature: <feature title>

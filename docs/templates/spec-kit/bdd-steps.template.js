@@ -1,4 +1,4 @@
-// Template: copy to specs/bdd/steps/<feature>.steps.js
+// Template: copy to spec/bdd/steps/<feature>.steps.js
 import assert from 'node:assert/strict';
 import { Before, Given, When, Then } from '@cucumber/cucumber';
 

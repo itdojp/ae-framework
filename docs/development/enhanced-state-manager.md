@@ -751,7 +751,7 @@ stateManager.on('transaction:failed', (event) => {
 
 ```bash
 # SSOT保存
-ae-framework enhanced-state save-ssot user-management ./specs/user-spec.json
+ae-framework enhanced-state save-ssot user-management ./spec/user-spec.json
 
 # SSOT読み込み
 ae-framework enhanced-state load-ssot user-management

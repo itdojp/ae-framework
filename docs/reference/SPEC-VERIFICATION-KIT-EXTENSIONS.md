@@ -7,7 +7,7 @@
 ## 拡張の優先順位（案）
 1. **Model Checking 入口**
    - TLA+ / Alloy の最小テンプレートと実行手順を用意する
-   - 成果物: `specs/formal/` のテンプレート、`docs/quality/formal-runbook.md` の補足
+   - 成果物: `spec/formal/` のテンプレート、`docs/quality/formal-runbook.md` の補足
 2. **Conformance / Traceability 連携**
    - Trace/Envelope からモデルチェック結果を結び付ける
    - 成果物: `docs/trace/` のリンク整備、`scripts/formal/` のサマリ出力拡張
@@ -16,7 +16,7 @@
    - 成果物: `scripts/verify/` の統合CLI / profile設計（例: `verify:formal`）
 4. **Policy/Contract 強化**
    - Cedar/OPA などのポリシー検証を Spec Kit の標準オプションへ
-   - 成果物: `specs/policy/` テンプレート、AJV/OPA 実行テンプレート
+   - 成果物: `spec/policy/` テンプレート、AJV/OPA 実行テンプレート
 
 ## 最小要件（各拡張のゴール）
 - **テンプレート**: コピーして使える雛形（Spec/Tests/Runbook）
@@ -26,11 +26,11 @@
 
 ## 既存資産との対応
 - `docs/quality/formal-runbook.md` / `docs/quality/formal-gates.md`
-- `specs/formal/`（TLA+/Alloy）
+- `spec/formal/`（TLA+/Alloy）
 - `scripts/formal/verify-conformance.mjs`
 - `docs/trace/*` / `scripts/trace/*`
 
 ## 次のタスク（案）
-- TLA+ / Alloy の最小テンプレを `specs/formal/` に追加
+- TLA+ / Alloy の最小テンプレを `spec/formal/` に追加
 - Model checking の実行サンプルを `docs/quality/formal-runbook.md` に追記
 - Traceability と model check の結合例を `docs/trace/` に記載

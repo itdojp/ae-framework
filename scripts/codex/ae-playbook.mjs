@@ -77,16 +77,19 @@ async function savePhase(context, name, data) {
 
 async function discoverSpec() {
   const candidates = [];
-  const specDir = path.join(CWD, 'specs');
-  try {
-    const entries = await fs.readdir(specDir, { withFileTypes: true });
-    for (const e of entries) {
-      if (!e.isFile()) continue;
-      if (/\.(ya?ml|md)$/i.test(e.name)) candidates.push(path.join('specs', e.name));
-    }
-  } catch { /* ignore */ }
+  const specRoots = ['spec', 'specs'];
+  for (const root of specRoots) {
+    const specDir = path.join(CWD, root);
+    try {
+      const entries = await fs.readdir(specDir, { withFileTypes: true });
+      for (const e of entries) {
+        if (!e.isFile()) continue;
+        if (/\.(ya?ml|md)$/i.test(e.name)) candidates.push(path.join(root, e.name));
+      }
+    } catch { /* ignore */ }
+  }
   // fallback common path
-  const fallback = ['specs/app.yaml', 'spec/app.yaml', 'spec/app.yml'];
+  const fallback = ['spec/app.yaml', 'spec/app.yml', 'specs/app.yaml', 'specs/app.yml'];
   for (const f of fallback) {
     try { await fs.access(path.join(CWD, f)); candidates.unshift(f); break; } catch {}
   }

@@ -181,7 +181,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          WATCH_PATH_PATTERN='^(contracts/|src/api/|specs/openapi/|tests/contracts/)'
+          WATCH_PATH_PATTERN='^(contracts/|src/api/|spec/openapi/|tests/contracts/)'
 
           BASE_SHA="${{ inputs.pr_base_sha }}"
           if [ -z "$BASE_SHA" ] && [ "${{ github.event_name }}" = "pull_request" ]; then

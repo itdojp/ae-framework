@@ -2,7 +2,7 @@
   "count": 3,
   "items": [
     {
-      "file": "specs/bdd/features/inventory_reservation.feature",
+      "file": "spec/bdd/features/inventory_reservation.feature",
       "title": "Successful reservation",
       "given": [],
       "when": [
@@ -20,7 +20,7 @@
       ]
     },
     {
-      "file": "specs/bdd/features/inventory_reservation.feature",
+      "file": "spec/bdd/features/inventory_reservation.feature",
       "title": "Prevent negative stock",
       "given": [],
       "when": [
@@ -38,7 +38,7 @@
       ]
     },
     {
-      "file": "specs/bdd/features/inventory_reservation.feature",
+      "file": "spec/bdd/features/inventory_reservation.feature",
       "title": "Idempotent by order id",
       "given": [
         "order \"ORD-3\" already reserved 2 units"

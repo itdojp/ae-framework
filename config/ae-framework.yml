@@ -11,9 +11,9 @@ phases:
     name: "Intent Definition"
     description: "Define requirements, specifications, and API contracts"
     required_artifacts:
-      - "specs/gates.yaml"
-      - "specs/openapi/*.yaml"
-      - "specs/nonfunctional/*.yaml"
+      - "spec/gates.yaml"
+      - "spec/openapi/*.yaml"
+      - "spec/nonfunctional/*.yaml"
     validation:
       - check_requirements_completeness
       
@@ -21,8 +21,8 @@ phases:
     name: "Formal Specification" 
     description: "Create formal specifications using TLA+, state charts"
     required_artifacts:
-      - "specs/formal/tla+/*.tla"
-      - "specs/formal/tla+/*.cfg"
+      - "spec/formal/tla+/*.tla"
+      - "spec/formal/tla+/*.cfg"
     validation:
       - validate_formal_specs
       
@@ -31,8 +31,8 @@ phases:
     description: "Write tests before implementation (RED phase)"
     required_artifacts:
       - "tests/**/*.test.ts"
-      - "specs/bdd/features/*.feature"
-      - "specs/bdd/step_definitions/*.ts"
+      - "spec/bdd/features/*.feature"
+      - "spec/bdd/steps/**/*.{js,ts}"
     validation:
       - ensure_tests_exist
       - run_tests_expect_red

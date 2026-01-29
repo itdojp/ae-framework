@@ -65,7 +65,7 @@ function suggestLTL(s){
   return props;
 }
 
-const featureFiles = globFeatures('specs/bdd');
+const featureFiles = globFeatures('spec/bdd');
 const fallbackFiles = featureFiles.length ? [] : globFeatures('features');
 const files = featureFiles.length ? featureFiles : fallbackFiles;
 

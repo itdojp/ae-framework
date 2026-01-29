@@ -726,11 +726,11 @@ export class VerifyMCPServer {
     
     // Default specification paths
     const defaultPaths = [
-      'specs/openapi/api.yaml',
-      'specs/openapi/api.json',
-      'specs/asyncapi/events.yaml',
-      'specs/formal/tla+/*.tla',
-      'specs/graphql/schema.graphql'
+      'spec/openapi/api.yaml',
+      'spec/openapi/api.json',
+      'spec/asyncapi/events.yaml',
+      'spec/formal/tla+/*.tla',
+      'spec/graphql/schema.graphql'
     ];
     
     const pathsToCheck = specPaths.length > 0 ? specPaths : defaultPaths;

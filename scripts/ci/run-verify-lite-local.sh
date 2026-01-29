@@ -112,7 +112,7 @@ else
 fi
 
 echo "[verify-lite] state machine validation"
-if node dist/src/cli/index.js sm validate specs/state-machines --format json; then
+if node dist/src/cli/index.js sm validate spec/state-machines --format json; then
   STATE_MACHINE_STATUS="success"
 else
   STATE_MACHINE_STATUS="failure"
@@ -121,8 +121,8 @@ else
 fi
 
 echo "[verify-lite] state machine render"
-if node dist/src/cli/index.js sm render specs/state-machines --out artifacts/state-machines; then
-  if node dist/src/cli/index.js sm render specs/state-machines --out artifacts/state-machines --check; then
+if node dist/src/cli/index.js sm render spec/state-machines --out artifacts/state-machines; then
+  if node dist/src/cli/index.js sm render spec/state-machines --out artifacts/state-machines --check; then
     STATE_MACHINE_RENDER_STATUS="success"
     true
   else

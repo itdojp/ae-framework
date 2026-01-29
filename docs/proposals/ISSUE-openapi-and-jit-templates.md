@@ -27,15 +27,15 @@ Scope
 
 Provide upfront (repo-level templates)
 - API/Comm:
-  - OpenAPI minimal template (YAML/JSON) under `artifacts/codex/openapi.yaml` (or `specs/openapi/*.yaml`).
+  - OpenAPI minimal template (YAML/JSON) under `artifacts/codex/openapi.yaml` (or `spec/openapi/*.yaml`).
   - JSON Schema base folder if needed later (`schemas/json/`).
 - Formal verification:
-  - TLA+ minimal module skeleton (Init/Next/Spec/Property) under `specs/formal/tla+/`.
-  - Alloy minimal skeleton (sig/assert/check) under `specs/formal/alloy/`.
+  - TLA+ minimal module skeleton (Init/Next/Spec/Property) under `spec/formal/tla+/`.
+  - Alloy minimal skeleton (sig/assert/check) under `spec/formal/alloy/`.
 - Runtime contracts:
   - `src/contracts/` skeleton files (`schemas.ts`, `conditions.ts`, `machine.ts`).
 - BDD/Traceability:
-  - Gherkin Feature/Scenario template with tag/slug guidance under `specs/bdd/features/`.
+  - Gherkin Feature/Scenario template with tag/slug guidance under `spec/bdd/features/`.
 - CI
   - Verify workflow runs traceability, TLC/Alloy (report-only), and contracts presence/exec. Docs explain env toggles and labels.
 
@@ -47,7 +47,7 @@ JIT (AI-assisted) per domain/product
 
 Recommended locations
 - `artifacts/codex/openapi.yaml|json` (default lookup by contracts-exec)
-- `specs/openapi/`, `specs/formal/tla+/`, `specs/formal/alloy/`, `specs/bdd/features/`
+- `spec/openapi/`, `spec/formal/tla+/`, `spec/formal/alloy/`, `spec/bdd/features/`
 - `src/contracts/` for runtime contracts
 
 CI implications (current state)

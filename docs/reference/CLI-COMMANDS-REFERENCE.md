@@ -100,7 +100,7 @@ ae-framework intent --analyze --sources="requirements.md"
 ae-framework intent --validate
 
 # Analyze specific source files
-ae-framework intent --analyze --sources="docs/requirements.md,specs/features.md"
+ae-framework intent --analyze --sources="docs/requirements.md,spec/features.md"
 
 # Output in JSON format
 ae-framework intent --analyze --format=json --output=intent-analysis.json
@@ -521,7 +521,7 @@ ae-framework validate --requirements --sources="requirements.md"
 ae-framework validate --stories --sources="user-stories.md"
 
 # Specification validation
-ae-framework validate --specifications --sources="specs/"
+ae-framework validate --specifications --sources="spec/"
 
 # Traceability validation
 ae-framework validate --traceability --sources="project/"
@@ -533,7 +533,7 @@ ae-framework validate --completeness --sources="all-artifacts/"
 ae-framework validate --consistency --sources="documentation/"
 
 # Feasibility validation
-ae-framework validate --feasibility --sources="technical-specs/"
+ae-framework validate --feasibility --sources="technical-spec/"
 
 # Cross validation (all phases)
 ae-framework validate --cross-validate --sources="complete-project/"
@@ -940,7 +940,7 @@ ae-framework intent --analyze --sources="requirements.md"
 ae-framework intent --validate
 
 # 特定のソースファイルを分析
-ae-framework intent --analyze --sources="docs/requirements.md,specs/features.md"
+ae-framework intent --analyze --sources="docs/requirements.md,spec/features.md"
 
 # JSON形式で出力
 ae-framework intent --analyze --format=json --output=intent-analysis.json
