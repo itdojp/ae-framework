@@ -64,6 +64,8 @@ artifacts/cassettes/
 artifacts/codex/
 artifacts/codex-quickstart-summary.md
 tests/api/generated/
+sbom.json
+traceability.json
 
 # Generated files
 traceability.csv
