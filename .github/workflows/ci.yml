@@ -232,6 +232,16 @@ jobs:
       pr_labels: ${{ join(github.event.pull_request.labels.*.name, ',') }}
       pr_is_fork: ${{ github.event.pull_request.head.repo.fork && 'true' || 'false' }}
       pr_number: ${{ github.event.pull_request.number }}
+  verify-entry:
+    name: "Verify Traceability (entry: pr/push)"
+    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+    uses: ./.github/workflows/verify.yml
+    secrets: inherit
+    with:
+      trigger: ${{ github.event_name }}
+      pr_labels: ${{ github.event_name == 'pull_request' && join(github.event.pull_request.labels.*.name, ',') || '' }}
+      pr_number: ${{ github.event_name == 'pull_request' && github.event.pull_request.number || '' }}
+      pr_head_sha: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || '' }}
   qa-entry:
     name: "QA Bench (entry: pr/push)"
     if: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}

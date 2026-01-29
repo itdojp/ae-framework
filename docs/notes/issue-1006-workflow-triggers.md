@@ -9,10 +9,10 @@
 - issue_comment: 1
 - pull_request: 20
 - pull_request_review: 1
-- push: 13
+- push: 12
 - schedule: 7
 - workflow_call: 20
-- workflow_dispatch: 30
+- workflow_dispatch: 31
 - workflow_run: 1
 
 ## Trigger → workflow files
@@ -45,7 +45,7 @@
 ### pull_request_review (1)
 - copilot-review-gate.yml
 
-### push (13)
+### push (12)
 - ci.yml
 - codegen-drift-check.yml
 - coverage-check.yml
@@ -57,7 +57,6 @@
 - spec-validation.yml
 - testing-ddd-scripts.yml
 - verify-lite.yml
-- verify.yml
 - workflow-lint.yml
 
 ### schedule (7)
@@ -91,7 +90,7 @@
 - validate-artifacts-ajv.yml
 - verify.yml
 
-### workflow_dispatch (30)
+### workflow_dispatch (31)
 - ae-ci.yml
 - branch-protection-apply.yml
 - cedar-quality-gates.yml
@@ -121,6 +120,7 @@
 - spec-validation.yml
 - validate-artifacts-ajv.yml
 - verify-lite.yml
+- verify.yml
 - webapi-sample-ci.yml
 
 ### workflow_run (1)

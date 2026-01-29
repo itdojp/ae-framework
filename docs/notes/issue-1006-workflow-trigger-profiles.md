@@ -59,13 +59,15 @@
 - spec-check.yml
 - validate-artifacts-ajv.yml
 
+### pull_request, workflow_call, workflow_dispatch (1)
+- verify.yml
+
 ### pull_request, pull_request_review, workflow_dispatch (1)
 - copilot-review-gate.yml
 
-### pull_request, push, workflow_call (3)
+### pull_request, push, workflow_call (2)
 - codegen-drift-check.yml
 - quality-gates-centralized.yml
-- verify.yml
 
 ### pull_request, push, workflow_dispatch (2)
 - coverage-check.yml
