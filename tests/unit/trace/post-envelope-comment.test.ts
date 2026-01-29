@@ -49,7 +49,7 @@ describe('post-envelope-comment CLI', () => {
         tempoLinks: ['https://tempo.example.com/explore?traceId=trace-a'],
       },
       artifacts: [
-        { description: 'Validation', path: 'hermetic-reports/trace/kvonce-validation.json' },
+        { description: 'Validation', path: 'artifacts/hermetic-reports/trace/kvonce-validation.json' },
       ],
     }, null, 2));
 

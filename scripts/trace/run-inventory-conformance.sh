@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-DEFAULT_OUTPUT_DIR="${PROJECT_ROOT}/hermetic-reports/trace/inventory"
+DEFAULT_OUTPUT_DIR="${PROJECT_ROOT}/artifacts/hermetic-reports/trace/inventory"
 DEFAULT_INPUT="${PROJECT_ROOT}/samples/trace/inventory/sample.ndjson"
 
 INPUT="${DEFAULT_INPUT}"
@@ -15,7 +15,7 @@ usage() {
   cat <<'USAGE'
 Usage: run-inventory-conformance.sh [options]
   --input <file>           Inventory NDJSON trace (default: samples/trace/inventory/sample.ndjson)
-  --output-dir <dir>       Directory for generated artifacts (default: hermetic-reports/trace/inventory)
+  --output-dir <dir>       Directory for generated artifacts (default: artifacts/hermetic-reports/trace/inventory)
   --onhand-min <number>    Minimum allowed onHand for validation (default: 0)
   --disable <list>         Comma-separated invariant ids to disable
   --help                   Show this help message

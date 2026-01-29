@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-DEFAULT_TRACE_DIR="${PROJECT_ROOT}/hermetic-reports/trace"
+DEFAULT_TRACE_DIR="${PROJECT_ROOT}/artifacts/hermetic-reports/trace"
 DEFAULT_OTLP_PAYLOAD="${DEFAULT_TRACE_DIR}/collected-kvonce-otlp.json"
 EXIT_NO_EVENTS=2
 
@@ -13,7 +13,7 @@ usage() {
   cat <<'USAGE'
 Usage: run-kvonce-conformance.sh [--input <file>] [--output-dir <dir>] [--format ndjson|otlp]
   --input       Path to KvOnce trace (NDJSON or OTLP JSON). Omit to use prepared payload.
-  --output-dir  Directory where projection/validation outputs are written (default: hermetic-reports/trace).
+  --output-dir  Directory where projection/validation outputs are written (default: artifacts/hermetic-reports/trace).
   --format      Explicit input format. If omitted, inferred from file extension (.ndjson => ndjson).
 USAGE
 }

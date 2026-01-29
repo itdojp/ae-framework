@@ -66,21 +66,21 @@ jobs:
         run: pnpm run generate:artifacts:preview
       - name: Check diff summary
         id: diffcheck
-        run: node ./scripts/ci/check-generate-artifacts-diff.mjs hermetic-reports/spec/generate-artifacts-diff.json
+        run: node ./scripts/ci/check-generate-artifacts-diff.mjs artifacts/hermetic-reports/spec/generate-artifacts-diff.json
       - name: Upload diff summary
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: generate-artifacts-diff
-          path: hermetic-reports/spec/generate-artifacts-diff.json
+          path: artifacts/hermetic-reports/spec/generate-artifacts-diff.json
           if-no-files-found: warn
       - name: Append diff summary to step report
         if: always()
         run: |
-          if [[ -f hermetic-reports/spec/generate-artifacts-diff.json ]]; then
+          if [[ -f artifacts/hermetic-reports/spec/generate-artifacts-diff.json ]]; then
             {
               echo '## Generate Artifacts Summary'
-              node scripts/ci/render-generate-artifacts-summary.mjs hermetic-reports/spec/generate-artifacts-diff.json
+              node scripts/ci/render-generate-artifacts-summary.mjs artifacts/hermetic-reports/spec/generate-artifacts-diff.json
             } >> "$GITHUB_STEP_SUMMARY"
           else
             echo '## Generate Artifacts Summary' >> "$GITHUB_STEP_SUMMARY"
@@ -92,7 +92,7 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const path = 'hermetic-reports/spec/generate-artifacts-diff.json';
+            const path = 'artifacts/hermetic-reports/spec/generate-artifacts-diff.json';
             const summary = fs.existsSync(path) ? JSON.parse(fs.readFileSync(path, 'utf8')) : null;
             const lines = [];
             lines.push('### Generate Artifacts Preview');
@@ -226,14 +226,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.KVONCE_PAYLOAD_ARTIFACT }}
-          path: hermetic-reports/trace/source
+          path: artifacts/hermetic-reports/trace/source
       - name: Fetch OTLP payload
         run: |
           set -euo pipefail
-          mkdir -p hermetic-reports/trace
+          mkdir -p artifacts/hermetic-reports/trace
           ARTIFACT_DIR="${{ steps.kvonce_artifact.outputs.download-path }}"
           URL_INPUT="${{ env.KVONCE_OTLP_PAYLOAD_URL }}"
-          TARGET="hermetic-reports/trace/collected-kvonce-otlp.json"
+          TARGET="artifacts/hermetic-reports/trace/collected-kvonce-otlp.json"
           source scripts/trace/path-utils.sh
           EXTRA_ARGS=()
           if [[ -n "${ARTIFACT_DIR}" ]]; then
@@ -277,7 +277,7 @@ jobs:
           fi
           node ./scripts/trace/fetch-otlp-payload.mjs --target "${TARGET}" "${EXTRA_ARGS[@]}"
       - name: Export payload path
-        run: printf '%s\n' "KVONCE_OTLP_PAYLOAD=$(pwd)/hermetic-reports/trace/collected-kvonce-otlp.json" >> "$GITHUB_ENV"
+        run: printf '%s\n' "KVONCE_OTLP_PAYLOAD=$(pwd)/artifacts/hermetic-reports/trace/collected-kvonce-otlp.json" >> "$GITHUB_ENV"
       - name: Run KvOnce trace conformance pipeline (OTLP)
         run: |
           if [[ ! -f ./scripts/trace/convert-otlp-kvonce.mjs ]]; then
@@ -287,19 +287,19 @@ jobs:
           bash ./scripts/trace/run-kvonce-conformance.sh \
             --input "${KVONCE_OTLP_PAYLOAD}" \
             --format otlp \
-            --output-dir hermetic-reports/trace/otlp
+            --output-dir artifacts/hermetic-reports/trace/otlp
       - name: Run KvOnce trace conformance pipeline (NDJSON sample)
         run: |
           bash ./scripts/trace/run-kvonce-conformance.sh \
             --input samples/trace/kvonce-sample.ndjson \
             --format ndjson \
-            --output-dir hermetic-reports/trace/ndjson
+            --output-dir artifacts/hermetic-reports/trace/ndjson
       - name: Replay KvOnce trace against TLC
         run: |
           node ./scripts/trace/run-kvonce-trace-replay.mjs \
             --input samples/trace/kvonce-sample.ndjson \
             --format ndjson \
-            --output-dir hermetic-reports/trace/replay
+            --output-dir artifacts/hermetic-reports/trace/replay
       - name: Summarize trace validation
         id: trace_summary
         run: node ./scripts/trace/render-trace-summary.mjs
@@ -315,11 +315,11 @@ jobs:
           REPORT_ENVELOPE_NOTES: |
             OTLP valid: ${{ steps.trace_summary.outputs.valid_otlp }}
             NDJSON valid: ${{ steps.trace_summary.outputs.valid_ndjson }}
-          REPORT_ENVELOPE_PAYLOAD_METADATA: hermetic-reports/trace/kvonce-payload-metadata.json
+          REPORT_ENVELOPE_PAYLOAD_METADATA: artifacts/hermetic-reports/trace/kvonce-payload-metadata.json
           REPORT_ENVELOPE_EXTRA_ARTIFACTS: >-
             artifacts/kvonce-trace-summary.json,
-            hermetic-reports/trace/otlp/kvonce-validation.json,
-            hermetic-reports/trace/ndjson/kvonce-validation.json
+            artifacts/hermetic-reports/trace/otlp/kvonce-validation.json,
+            artifacts/hermetic-reports/trace/ndjson/kvonce-validation.json
         run: |
           if [ -f artifacts/kvonce-trace-summary.json ]; then
             node ./scripts/trace/create-report-envelope.mjs \
@@ -340,16 +340,16 @@ jobs:
         with:
           name: kvonce-trace-results
           path: |
-            hermetic-reports/trace/collected-kvonce-otlp.json
-            hermetic-reports/trace/kvonce-payload-metadata.json
+            artifacts/hermetic-reports/trace/collected-kvonce-otlp.json
+            artifacts/hermetic-reports/trace/kvonce-payload-metadata.json
             artifacts/kvonce-trace-summary.json
             artifacts/kvonce-trace-envelope.json
-            hermetic-reports/trace/otlp/kvonce-events.ndjson
-            hermetic-reports/trace/otlp/kvonce-projection.json
-            hermetic-reports/trace/otlp/kvonce-validation.json
-            hermetic-reports/trace/ndjson/kvonce-events.ndjson
-            hermetic-reports/trace/ndjson/kvonce-projection.json
-            hermetic-reports/trace/ndjson/kvonce-validation.json
+            artifacts/hermetic-reports/trace/otlp/kvonce-events.ndjson
+            artifacts/hermetic-reports/trace/otlp/kvonce-projection.json
+            artifacts/hermetic-reports/trace/otlp/kvonce-validation.json
+            artifacts/hermetic-reports/trace/ndjson/kvonce-events.ndjson
+            artifacts/hermetic-reports/trace/ndjson/kvonce-projection.json
+            artifacts/hermetic-reports/trace/ndjson/kvonce-validation.json
           if-no-files-found: warn
       - name: Update PR with trace summary
         if: github.event_name == 'pull_request'
@@ -360,8 +360,8 @@ jobs:
             const path = require('path');
             const marker = '<!-- kvonce-trace-summary -->';
             const cases = [
-              { key: 'OTLP', dir: 'hermetic-reports/trace/otlp' },
-              { key: 'NDJSON', dir: 'hermetic-reports/trace/ndjson' },
+              { key: 'OTLP', dir: 'artifacts/hermetic-reports/trace/otlp' },
+              { key: 'NDJSON', dir: 'artifacts/hermetic-reports/trace/ndjson' },
             ];
 
             let body = `${marker}\n### KvOnce Trace Validation`;

@@ -25,7 +25,7 @@ pnpm run spec:kv-once:tlc
 pnpm run spec:kv-once:apalache
 ```
 - `scripts/formal/verify-tla.mjs` が両エンジンをラップしており、`timeout` コマンドや `TLA_TOOLS_JAR` / `apalache-mc` の有無を自動判定します。
-- 実行結果は `hermetic-reports/formal/tla-summary.json` に書き出されます。CI ではステップごとにコピーし、`kvonce-tlc-summary.json` / `kvonce-apalache-summary.json` として保存しています。
+- 実行結果は `artifacts/hermetic-reports/formal/tla-summary.json` に書き出されます。CI ではステップごとにコピーし、`kvonce-tlc-summary.json` / `kvonce-apalache-summary.json` として保存しています。
 - ツールが未インストールの場合は `status: tool_not_available` として非致命的に終了します（Issue #1012 Phase B ではインストール手順整備が残課題）。
 
 ## イベントモデル
@@ -41,10 +41,10 @@ pnpm run spec:kv-once:apalache
 
 ## 参考
 - `docs/TLA+/tla_plus_full_integration.md` — 全体ロードマップ
-- `scripts/trace/projector-kvonce.mjs`, `scripts/trace/validate-kvonce.mjs` — NDJSON ログを射影・検証する雛形（例: `hermetic-reports/trace/kvonce-sample.ndjson`).
+- `scripts/trace/projector-kvonce.mjs`, `scripts/trace/validate-kvonce.mjs` — NDJSON ログを射影・検証する雛形（例: `artifacts/hermetic-reports/trace/kvonce-sample.ndjson`).
 - `tests/property/kvonce.safety.property.test.ts` — PoC の振る舞いを確認する property テスト。minimal pipeline で実行されます。
 - `docs/notes/verify-lite-lint-plan.md` — verify-lite lint 改善計画
 - `.github/workflows/minimal-pipeline.yml` — TLC/Apalache を含む最小パイプライン
 - `docs/trace/kvonce-trace-schema.md` — NDJSON トレースのドラフトスキーマと拡張メモ
-- `scripts/trace/run-kvonce-conformance.sh` — Projector / Validator をまとめて実行し、`hermetic-reports/trace/` に結果を出力
+- `scripts/trace/run-kvonce-conformance.sh` — Projector / Validator をまとめて実行し、`artifacts/hermetic-reports/trace/` に結果を出力
 - `samples/trace/kvonce-otlp.json` — OTLP ResourceSpans から NDJSON へ変換するためのサンプル入力

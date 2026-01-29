@@ -4,9 +4,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const repoRoot = process.cwd();
-const p = path.join(repoRoot, 'hermetic-reports', 'formal', 'summary.json');
+const p = path.join(repoRoot, 'artifacts/hermetic-reports', 'formal', 'summary.json');
 if (!fs.existsSync(p)) {
-  console.log('No formal summary found (hermetic-reports/formal/summary.json)');
+  console.log('No formal summary found (artifacts/hermetic-reports/formal/summary.json)');
   process.exit(0);
 }
 // Allow suppressing console summary via QUIET env

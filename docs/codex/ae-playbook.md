@@ -46,7 +46,7 @@
    - `node scripts/formal/verify-tla.mjs` → `artifacts/formal/tla-summary.json`
    - `node scripts/formal/verify-apalache.mjs`（存在時）→ `artifacts/formal/apalache-summary.json`
    - `node scripts/formal/validate-conformance-summary.mjs`（non-blocking）
-   - （本プレイブック最小統合は verify-tla/verify-apalache を順次起動し、hermetic-reports/formal 直下の summary/log を検出して context.json に記録。aggregateは今後の拡張で対応）
+   - （本プレイブック最小統合は verify-tla/verify-apalache を順次起動し、artifacts/hermetic-reports/formal 直下の summary/log を検出して context.json に記録。aggregateは今後の拡張で対応）
 8)（任意）ビルド・スモーク実行
    - `pnpm build`（再）/ `node dist/...` 最小実行
    - 出力: `artifacts/ae/build/smoke.log`

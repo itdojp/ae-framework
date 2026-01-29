@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 cd "$ROOT_DIR"
 
-PREVIEW_DIR="hermetic-reports/spec"
+PREVIEW_DIR="artifacts/hermetic-reports/spec"
 mkdir -p "$PREVIEW_DIR"
 
 # Clean previous preview artifacts

@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import { appendSection } from './step-summary.mjs';
 
 const [, , summaryFileArg] = process.argv;
-const summaryFile = summaryFileArg ?? 'hermetic-reports/spec/generate-artifacts-diff.json';
+const summaryFile = summaryFileArg ?? 'artifacts/hermetic-reports/spec/generate-artifacts-diff.json';
 if (!fs.existsSync(summaryFile)) {
   console.log('No summary generated.');
   appendSection('Generate Artifacts Drift', ['- summary file missing']);

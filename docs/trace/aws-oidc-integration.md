@@ -64,7 +64,7 @@ GitHub Actions から S3 バケットへ OTLP payload をアップロードす�
   run: |
     set -euo pipefail
     KEY="kvonce/${{ github.run_id }}/kvonce-otlp.json"
-    aws s3 cp hermetic-reports/trace/collected-kvonce-otlp.json \
+    aws s3 cp artifacts/hermetic-reports/trace/collected-kvonce-otlp.json \
       "s3://ae-trace-payloads/${KEY}"
     PRESIGNED=$(aws s3 presign "s3://ae-trace-payloads/${KEY}" --expires-in 3600)
     echo "KVONCE_OTLP_S3_URI=s3://ae-trace-payloads/${KEY}" >> "$GITHUB_ENV"

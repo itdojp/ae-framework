@@ -9,7 +9,7 @@ import path from 'node:path';
 function has(cmd){ try { execSync(`bash -lc 'command -v ${cmd}'`, {stdio:'ignore'}); return true; } catch { return false; } }
 function sh(cmd){ try { return execSync(cmd, {encoding:'utf8'}); } catch(e){ return (e.stdout?.toString?.()||'') + (e.stderr?.toString?.()||''); } }
 
-const outDir = path.join(process.cwd(), 'hermetic-reports', 'formal');
+const outDir = path.join(process.cwd(), 'artifacts/hermetic-reports', 'formal');
 const outFile = path.join(outDir, 'kani-summary.json');
 fs.mkdirSync(outDir, { recursive: true });
 

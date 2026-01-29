@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 # Configuration
 CONFIG_FILE=".ae/spec-validation.config.json"
 SPEC_DIR="spec"
-RESULTS_DIR="validation-results"
+RESULTS_DIR="artifacts/validation-results"
 
 # Function to print colored output
 print_colored() {

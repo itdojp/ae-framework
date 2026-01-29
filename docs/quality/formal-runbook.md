@@ -27,11 +27,11 @@
 - `pnpm run verify:tla -- --engine=apalache|tlc` — prints stub
 - `pnpm run verify:smt -- --solver=z3|cvc5` — prints stub
 - `pnpm run verify:formal` — 上記4種の連続実行（ローカル確認用）
-  - 集計: `hermetic-reports/formal/summary.json` に要約を出力
+  - 集計: `artifacts/hermetic-reports/formal/summary.json` に要約を出力
   - 表示: 実行後にコンソールへ簡易サマリを表示
 
 ### Runtime Hooks（PObserve 型）取り込み（Phase 2.2）
-- ランタイムフック JSON を（任意で）`hermetic-reports/runtime/hooks.json` に保存し、ドライバーが再生サマリと突き合わせます。
+- ランタイムフック JSON を（任意で）`artifacts/hermetic-reports/runtime/hooks.json` に保存し、ドライバーが再生サマリと突き合わせます。
 - 環境変数:
   - `RUNTIME_HOOKS` または `CONFORMANCE_RUNTIME_HOOKS` — フック JSON のパス
   - `CONFORMANCE_TRACE` — リプレイサマリ（既定: `artifacts/domain/replay.summary.json`）
@@ -64,7 +64,7 @@ Timeout（任意）
 ### Troubleshooting（よくある確認ポイント）
 - PATH: `apalache` または `apalache-mc` が見つからない場合は `node scripts/formal/check-apalache.mjs` で存在/バージョンを確認
 - Timeout: 長時間のログが出続ける場合は `--timeout` を設定し、aggregate コメントの `status: "timeout"` を目安に切り上げ
-- Logs: 生ログは `hermetic-reports/formal/apalache-output.txt` に保存（aggregate コメントは長行をトリム/折返し）
+- Logs: 生ログは `artifacts/hermetic-reports/formal/apalache-output.txt` に保存（aggregate コメントは長行をトリム/折返し）
 
 Advanced toggles（運用向け）
 - Aggregate wrap 幅: `FORMAL_AGG_WRAP_WIDTH`（0=無効、推奨 80–100）
@@ -122,7 +122,7 @@ TLA: tool_not_available (tlc)
 Conformance sample (quick demo)
 - `pnpm run conformance:sample` — サンプルのルール/設定/データ/コンテキストを生成
 - `pnpm run conformance:verify:sample` — 生成データで検証を実行（JSONレポート出力）
-- `pnpm run conformance:report` — 既存の `conformance-results.json` や `hermetic-reports/conformance/*.json` を集約し `reports/conformance/verify-lite-summary.(json|md)` を生成
+- `pnpm run conformance:report` — 既存の `conformance-results.json` や `artifacts/hermetic-reports/conformance/*.json` を集約し `reports/conformance/verify-lite-summary.(json|md)` を生成
 - `pnpm bdd` — 暗号化チャットの BDD シナリオ（デバイス登録・セッション・鍵ローテーション）を実行し、`artifacts/bdd/encrypted-chat/*.json` にスナップショットを保存
 - `pnpm pipelines:pact` — Pact 契約テストを実行し、暗号化チャット API 契約（`tests/contracts/encrypted-chat-contracts.test.ts`）を検証
 
@@ -148,9 +148,9 @@ jobs:
 - TLA+: `spec/tla/` (README with skeleton)
 - Alloy 6: `spec/alloy/` (README with skeleton)
 - Trace schema: `observability/trace-schema.yaml`
-- Reports: `hermetic-reports/`（各ツールのsummary/出力を保存）
-  - Apalache: `hermetic-reports/formal/apalache-summary.json`, `hermetic-reports/formal/apalache-output.txt`
-  - Formal summary: `hermetic-reports/formal/summary.json`（present/conformance/smt/alloy/tla/apalache を含む）
+- Reports: `artifacts/hermetic-reports/`（各ツールのsummary/出力を保存）
+  - Apalache: `artifacts/hermetic-reports/formal/apalache-summary.json`, `artifacts/hermetic-reports/formal/apalache-output.txt`
+  - Formal summary: `artifacts/hermetic-reports/formal/summary.json`（present/conformance/smt/alloy/tla/apalache を含む）
   - Conformance aggregated summary (verify-lite): `reports/conformance/verify-lite-summary.json` / `.md`
 
 ### Samples
@@ -169,7 +169,7 @@ Tools
 verify:conformance オプション
 - `-i, --in <file>` 入力イベントJSON（既定: `samples/conformance/sample-traces.json`）
 - `--schema <file>` トレーススキーマYAML（既定: `observability/trace-schema.yaml`）
-- `--out <file>` 出力先（既定: `hermetic-reports/conformance/summary.json`）
+- `--out <file>` 出力先（既定: `artifacts/hermetic-reports/conformance/summary.json`）
 - `--disable-invariants <list>` 無効化する不変（`,`区切り。`allocated_le_onhand,onhand_min`）
 - `--onhand-min <number>` onHand の最小値（既定: 0）
 
@@ -201,7 +201,7 @@ Alloy CLI（環境がある場合）
 
 Tips（出力・色・抑制）
 - コンソール要約は色分け表示。色を無効化するには `NO_COLOR=1` を指定（CI等）
-- 実行ログのサマリは `hermetic-reports/formal/summary.json` でも確認可能
+- 実行ログのサマリは `artifacts/hermetic-reports/formal/summary.json` でも確認可能
 - PRサマリにも Formal summary を1行で表示（サマリが生成されている場合）
 - `file_not_found`: `--file` の指定パスを確認（SMT/TLA/Alloy）
  - コンソール要約の抑制: `QUIET=1` を指定で print-summary を抑止（CIログを簡潔にしたい場合）
@@ -226,16 +226,16 @@ Formal Verify の実行（target=all）
   3. 結果は: コンソール要約（logs）、`formal-reports` アーティファクトに集約
 
 Artifacts（Formal Reports）
-- `hermetic-reports/formal/summary.json`: 形式結果の集約（Conformance/SMT/Alloy/TLA/Apalache）
-- `hermetic-reports/formal/tla-summary.json`: TLA ランナーの簡易要約（engine/file/status/output）
-- `hermetic-reports/formal/alloy-summary.json`: Alloy ランナーの簡易要約（file/status/output）
-- `hermetic-reports/formal/smt-summary.json`: SMT ランナーの簡易要約（solver/file/status/output）
-- `hermetic-reports/conformance/summary.json`: Conformance 要約（events/schemaErrors/invariantViolations/violationRate/first/byType）
+- `artifacts/hermetic-reports/formal/summary.json`: 形式結果の集約（Conformance/SMT/Alloy/TLA/Apalache）
+- `artifacts/hermetic-reports/formal/tla-summary.json`: TLA ランナーの簡易要約（engine/file/status/output）
+- `artifacts/hermetic-reports/formal/alloy-summary.json`: Alloy ランナーの簡易要約（file/status/output）
+- `artifacts/hermetic-reports/formal/smt-summary.json`: SMT ランナーの簡易要約（solver/file/status/output）
+- `artifacts/hermetic-reports/conformance/summary.json`: Conformance 要約（events/schemaErrors/invariantViolations/violationRate/first/byType）
 
 Artifacts のクイック確認（jq）
-- 集約のpresence: `jq '.present' hermetic-reports/formal/summary.json`
-- Conformance byType: `jq '.conformance.byType' hermetic-reports/formal/summary.json`
-- 最初の不変違反: `jq '.conformance.firstInvariantViolation' hermetic-reports/formal/summary.json`
+- 集約のpresence: `jq '.present' artifacts/hermetic-reports/formal/summary.json`
+- Conformance byType: `jq '.conformance.byType' artifacts/hermetic-reports/formal/summary.json`
+- 最初の不変違反: `jq '.conformance.firstInvariantViolation' artifacts/hermetic-reports/formal/summary.json`
 
 Keys quick reference（aggregate JSON）
 - `info.present`: 各レポートの有無（tla/alloy/smt/apalache/conformance）
@@ -297,7 +297,7 @@ Field リファレンス（抜粋）
 - TLA+: `spec/tla/`（最小スケルトンあり）
 - Alloy 6: `spec/alloy/`（最小スケルトンあり）
 - トレーススキーマ: `observability/trace-schema.yaml`
-- レポート（計画）: `hermetic-reports/`
+- レポート（計画）: `artifacts/hermetic-reports/`
 
 ### 環境変数（出力の調整）
 - verify-apalache.mjs（要約の整形）

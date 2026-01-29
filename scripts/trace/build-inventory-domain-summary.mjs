@@ -54,7 +54,7 @@ async function loadTempoUtils() {
 
 function parseArgs(argv) {
   const options = {
-    traceDir: path.join('hermetic-reports', 'trace', 'inventory'),
+    traceDir: path.join('artifacts/hermetic-reports', 'trace', 'inventory'),
     output: path.join('artifacts', 'trace', 'inventory-domain-summary.json'),
     key: 'inventory',
     label: 'Inventory',
@@ -103,7 +103,7 @@ function parseArgs(argv) {
         console.log(`Usage: node scripts/trace/build-inventory-domain-summary.mjs [options]
 
 Options:
-  -d, --trace-dir <dir>   Directory containing inventory projection/validation artifacts (default: hermetic-reports/trace/inventory)
+  -d, --trace-dir <dir>   Directory containing inventory projection/validation artifacts (default: artifacts/hermetic-reports/trace/inventory)
   -o, --output <file>     Output JSON path (default: artifacts/trace/inventory-domain-summary.json)
       --key <name>        Domain key (default: inventory)
       --label <label>     Domain label (default: Inventory)

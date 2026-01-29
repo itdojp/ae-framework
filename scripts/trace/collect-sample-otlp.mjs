@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, "..", "..");
 
 const samplePath = path.join(projectRoot, "samples", "trace", "kvonce-otlp.json");
-const outputDir = process.env.KVONCE_OTLP_OUTDIR || path.join(projectRoot, "hermetic-reports", "trace");
+const outputDir = process.env.KVONCE_OTLP_OUTDIR || path.join(projectRoot, "artifacts/hermetic-reports", "trace");
 const outputPath = path.join(outputDir, "collected-kvonce-otlp.json");
 
 async function main() {

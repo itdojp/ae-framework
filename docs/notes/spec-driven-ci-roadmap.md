@@ -7,7 +7,7 @@
 ## 構成案
 
 ### 1. generate-artifacts ジョブ
-- プロトタイプ: `pnpm run generate:artifacts:preview` と `.github/workflows/spec-generate-model.yml` で quickstart を実行し、`hermetic-reports/spec/generate-artifacts-diff.json` に差分サマリを出力（PR コメントは非fork PRのみ/Step Summary に反映）。
+- プロトタイプ: `pnpm run generate:artifacts:preview` と `.github/workflows/spec-generate-model.yml` で quickstart を実行し、`artifacts/hermetic-reports/spec/generate-artifacts-diff.json` に差分サマリを出力（PR コメントは非fork PRのみ/Step Summary に反映）。
   - サンプル: 差分が無い場合は `{ "targets": [{ "path": ..., "hasChanges": false }] }` のような JSON が出力され、差分がある場合は `files` に `NAME	path` が列挙される。
   - 直近のサマリ例:
 
@@ -45,7 +45,7 @@
 - 現状: Projector / Validator が未整備。先にトレーススキーマを決定する必要あり。
 - TODO
   - [x] トレーススキーマ案（NDJSON）を `docs/trace/kvonce-trace-schema.md` として整理し、Issue #1011 にリンク
-  - [x] Projector/Validator をまとめて実行する `scripts/trace/run-kvonce-conformance.sh` を追加し、`hermetic-reports/trace` に結果を書き込む
+  - [x] Projector/Validator をまとめて実行する `scripts/trace/run-kvonce-conformance.sh` を追加し、`artifacts/hermetic-reports/trace` に結果を書き込む
   - [x] 実装ログからの自動抽出（OTLP→NDJSON 変換）を実装（`scripts/trace/convert-otlp-kvonce.mjs` + workflow連携）
 
 ### 4. Report / Dashboard

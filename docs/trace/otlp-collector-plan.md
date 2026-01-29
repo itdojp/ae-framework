@@ -33,7 +33,7 @@ Issue: #1011 / #1012
 
 ### ダウンロードコマンド
 - [x] `scripts/trace/fetch-otlp-payload.mjs` を追加し、`KVONCE_OTLP_PAYLOAD_FILE` / `KVONCE_OTLP_PAYLOAD_URL` が指定された場合に payload を取得して `KVONCE_OTLP_PAYLOAD` を再設定する。
-- [x] 取得後に SHA256 を記録し、`hermetic-reports/trace/kvonce-payload-metadata.json` を出力。
+- [x] 取得後に SHA256 を記録し、`artifacts/hermetic-reports/trace/kvonce-payload-metadata.json` を出力。
 - [x] `KVONCE_OTLP_S3_URI` / `KVONCE_OTLP_S3_MOCK_DIR` 経由で S3/MinIO バケットを参照できるようにした（CI 実行時は OIDC 資格情報を使用、ローカル検証はモックディレクトリで代替）。
 
 ### プライバシー / PII

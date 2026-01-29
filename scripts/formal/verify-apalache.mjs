@@ -119,7 +119,7 @@ export function main(argv = process.argv){
   const repoRoot = path.resolve(process.cwd());
   const file = args.file || process.env.APALACHE_FILE || path.join('spec','tla','DomainSpec.tla');
   const absFile = path.resolve(repoRoot, file);
-  const outDir = path.join(repoRoot, 'hermetic-reports', 'formal');
+  const outDir = path.join(repoRoot, 'artifacts/hermetic-reports', 'formal');
   const outFile = path.join(outDir, 'apalache-summary.json');
   const outLog = path.join(outDir, 'apalache-output.txt');
   fs.mkdirSync(outDir, { recursive: true });

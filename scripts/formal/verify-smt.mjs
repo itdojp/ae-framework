@@ -64,7 +64,7 @@ const solver = (args.solver || 'z3').toLowerCase();
 const file = args.file;
 
 const repoRoot = path.resolve(process.cwd());
-const outDir = path.join(repoRoot, 'hermetic-reports', 'formal');
+const outDir = path.join(repoRoot, 'artifacts/hermetic-reports', 'formal');
 const outFile = path.join(outDir, 'smt-summary.json');
 fs.mkdirSync(outDir, { recursive: true });
 

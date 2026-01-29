@@ -14,7 +14,7 @@ describe('render-trace-summary CLI', () => {
 
   beforeEach(() => {
     tempDir = mkdtempSync(join(os.tmpdir(), 'trace-summary-'));
-    reportDir = join(tempDir, 'hermetic-reports', 'trace');
+    reportDir = join(tempDir, 'artifacts/hermetic-reports', 'trace');
     mkdirSync(reportDir, { recursive: true });
     summaryPath = join(tempDir, 'summary.md');
     outputPath = join(tempDir, 'outputs.txt');

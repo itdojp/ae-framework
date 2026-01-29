@@ -11,7 +11,7 @@ const adaptersArr = (c.adapters||[]);
 const statusCounts = adaptersArr.reduce((acc,a)=>{ const s=(a.status||'ok').toLowerCase(); acc[s]=(acc[s]||0)+1; return acc; },{});
 const adaptersLine = adaptersArr.map(a=>`${a.adapter||a.name}: ${a.summary} (${a.status})`).join(', ');
 const adaptersList = adaptersArr.map(a=>`  - ${a.adapter||a.name}: ${a.summary} (${a.status})`).join('\n');
-const formalObj = c.formal || r('formal/summary.json') || r('hermetic-reports/formal/summary.json') || {};
+const formalObj = c.formal || r('formal/summary.json') || r('artifacts/hermetic-reports/formal/summary.json') || {};
 const formalAgg = r('artifacts/formal/formal-aggregate.json') || {};
 const formal = formalObj.result || t('n/a','不明');
 const gwt = r('artifacts/formal/gwt.summary.json');
@@ -77,7 +77,7 @@ const alertsLine = alerts.length ? t(`Alerts: ${alerts.join(', ')}`, `警告: ${
 // Conformance short line (violationRate / hooks matchRate)
 let conformanceLine = '';
 try {
-  const conf = (formalAgg?.conformance) || (r('hermetic-reports/formal/summary.json')?.conformance) || {};
+  const conf = (formalAgg?.conformance) || (r('artifacts/hermetic-reports/formal/summary.json')?.conformance) || {};
   const vr = (typeof conf.violationRate === 'number') ? conf.violationRate : null;
   const mr = (typeof formalAgg?.info?.conformance?.hookReplayMatchRate === 'number')
     ? formalAgg.info.conformance.hookReplayMatchRate

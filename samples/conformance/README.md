@@ -6,6 +6,6 @@ Generate sample files and run verification:
 - Verify: `pnpm run conformance:verify:sample`
 
 Outputs
-- Results: `hermetic-reports/conformance/sample-results.json`
+- Results: `artifacts/hermetic-reports/conformance/sample-results.json`
 - Sample files: `samples/conformance/`
 

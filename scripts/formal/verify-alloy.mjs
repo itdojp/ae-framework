@@ -50,7 +50,7 @@ if (args.help){
 const repoRoot = path.resolve(process.cwd());
 const file = args.file || path.join('spec','alloy','Domain.als');
 const absFile = path.resolve(repoRoot, file);
-const outDir = path.join(repoRoot, 'hermetic-reports', 'formal');
+const outDir = path.join(repoRoot, 'artifacts/hermetic-reports', 'formal');
 const outFile = path.join(outDir, 'alloy-summary.json');
 fs.mkdirSync(outDir, { recursive: true });
 

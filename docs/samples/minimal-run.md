@@ -42,20 +42,20 @@
   pnpm run spec:kv-once:tlc
   pnpm run spec:kv-once:apalache   # Apalache が導入済みの場合
   ```
-  - 実行結果は `hermetic-reports/formal/kvonce-*-summary.json` に保存されます（minimal pipeline でも取得）。
+  - 実行結果は `artifacts/hermetic-reports/formal/kvonce-*-summary.json` に保存されます（minimal pipeline でも取得）。
 
 6. **KvOnce トレース検証（任意）**
    ```bash
    # OTLP サンプル（prepare-otlp が自動で payload を配置）
-   scripts/trace/run-kvonce-conformance.sh --output-dir hermetic-reports/trace/otlp
+   scripts/trace/run-kvonce-conformance.sh --output-dir artifacts/hermetic-reports/trace/otlp
 
    # NDJSON サンプル（リポジトリ同梱のトレースを直接検証）
    scripts/trace/run-kvonce-conformance.sh \
      --input samples/trace/kvonce-sample.ndjson \
      --format ndjson \
-     --output-dir hermetic-reports/trace/ndjson
+     --output-dir artifacts/hermetic-reports/trace/ndjson
    ```
-   - `hermetic-reports/trace/<mode>/kvonce-validation.json` に結果が出力されます。`valid: true` を確認し、issues が残る場合は `kvonce-projection.json` と併せて調査してください。
+   - `artifacts/hermetic-reports/trace/<mode>/kvonce-validation.json` に結果が出力されます。`valid: true` を確認し、issues が残る場合は `kvonce-projection.json` と併せて調査してください。
 
 7. **Mutation quick（任意）**
   ```bash

@@ -23,9 +23,9 @@
             "https://tempo.example.com/explore?traceId=inventory-trace-1"
           ],
           "artifacts": {
-            "validationPath": "hermetic-reports/trace/inventory/validation.json",
-            "projectionPath": "hermetic-reports/trace/inventory/projection.json",
-            "stateSequencePath": "hermetic-reports/trace/inventory/state-sequence.json"
+            "validationPath": "artifacts/hermetic-reports/trace/inventory/validation.json",
+            "projectionPath": "artifacts/hermetic-reports/trace/inventory/projection.json",
+            "stateSequencePath": "artifacts/hermetic-reports/trace/inventory/state-sequence.json"
           },
           "metrics": {
             "eventCount": 32,
@@ -42,8 +42,8 @@
             "https://tempo.example.com/explore?traceId=reservation-trace-8"
           ],
           "artifacts": {
-            "validationPath": "hermetic-reports/trace/reservation/validation.json",
-            "projectionPath": "hermetic-reports/trace/reservation/projection.json"
+            "validationPath": "artifacts/hermetic-reports/trace/reservation/validation.json",
+            "projectionPath": "artifacts/hermetic-reports/trace/reservation/projection.json"
           },
           "metrics": {
             "eventCount": 21,
@@ -64,12 +64,12 @@
   "artifacts": [
     {
       "type": "application/json",
-      "path": "hermetic-reports/trace/inventory/validation.json",
+      "path": "artifacts/hermetic-reports/trace/inventory/validation.json",
       "checksum": "sha256:deadbeef"
     },
     {
       "type": "application/json",
-      "path": "hermetic-reports/trace/reservation/validation.json",
+      "path": "artifacts/hermetic-reports/trace/reservation/validation.json",
       "checksum": "sha256:feedface"
     }
   ]

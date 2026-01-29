@@ -7,7 +7,7 @@ import { appendSection } from '../ci/step-summary.mjs';
 function parseArgs(argv) {
   const options = {
     input: 'samples/trace/kvonce-sample.ndjson',
-    outputDir: path.join('hermetic-reports', 'trace', 'replay'),
+    outputDir: path.join('artifacts/hermetic-reports', 'trace', 'replay'),
     format: 'auto',
   };
   for (let i = 2; i < argv.length; i += 1) {
@@ -122,7 +122,7 @@ if (!fs.existsSync(resolvedInput)) {
   summary.tlc.stderr = tlcResult.stderr.slice(0, OUTPUT_TRUNCATE_LIMIT);
   summary.tlc.status = tlcResult.status === 0 ? 'ran' : 'failed';
 
-  const tlaSummaryPath = path.join(repoRoot, 'hermetic-reports', 'formal', 'tla-summary.json');
+  const tlaSummaryPath = path.join(repoRoot, 'artifacts/hermetic-reports', 'formal', 'tla-summary.json');
   if (fs.existsSync(tlaSummaryPath)) {
     try {
       const tlaSummary = JSON.parse(fs.readFileSync(tlaSummaryPath, 'utf8'));

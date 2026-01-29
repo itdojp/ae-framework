@@ -9,7 +9,7 @@ function parseArgs(argv) {
   const options = {
     input: null,
     format: 'auto',
-    outputDir: path.join('hermetic-reports', 'trace'),
+    outputDir: path.join('artifacts/hermetic-reports', 'trace'),
     summaryOut: null,
     envelope: true,
     envelopeOut: path.join('artifacts', 'trace', 'report-envelope.json'),
@@ -53,7 +53,7 @@ function printHelp() {
     '',
     'Options:',
     '  -i, --input <file>        Trace file (NDJSON or OTLP JSON). Default: samples/trace/kvonce-sample.ndjson',
-    '  -o, --output-dir <dir>    Output directory for artifacts (default: hermetic-reports/trace)',
+    '  -o, --output-dir <dir>    Output directory for artifacts (default: artifacts/hermetic-reports/trace)',
     '  -f, --format <fmt>        Trace format (ndjson|otlp|auto). Default: auto',
     '      --summary-out <file>  Conformance summary JSON path (default: <output-dir>/kvonce-conformance-summary.json)',
     '      --envelope-out <file> Report envelope output path (default: artifacts/trace/report-envelope.json)',

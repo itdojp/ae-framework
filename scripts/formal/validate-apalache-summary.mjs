@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const file = process.argv[2] || path.join('hermetic-reports','formal','apalache-summary.json');
+const file = process.argv[2] || path.join('artifacts/hermetic-reports','formal','apalache-summary.json');
 if (!fs.existsSync(file)) {
   console.log(`No summary found: ${file}`);
   process.exit(0);

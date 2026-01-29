@@ -183,7 +183,7 @@ async function runFormal(context, opts = {}) {
   await teeTo(log, (hooks) => sh('bash', ['-lc', cmd], hooks));
 
   // Collect known outputs (if generated)
-  const hr = path.join(CWD, 'hermetic-reports', 'formal');
+  const hr = path.join(CWD, 'artifacts/hermetic-reports', 'formal');
   const summary = {};
   const files = [
     { key: 'tlaSummary', file: path.join(hr, 'tla-summary.json') },

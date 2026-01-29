@@ -144,7 +144,7 @@ ae-framework ui-scaffold --state
 Artifacts (examples)
 - `artifacts/summary/PR_SUMMARY.md` — condensed PR report
 - `coverage/coverage-summary.json` — coverage
-- `hermetic-reports/formal/summary.json` — formal summary (if enabled)
+- `artifacts/hermetic-reports/formal/summary.json` — formal summary (if enabled)
 - `artifacts/codex/*` — when running via CodeX quickstart/adapter
 
 CI tips

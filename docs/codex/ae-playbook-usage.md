@@ -25,7 +25,7 @@
 - コンテキスト: `artifacts/ae/context.json`
   - 各フェーズの結果・ログ・検出ファイルパス（coverage/adapters 等）を記録
 - フェーズログ: `artifacts/ae/<phase>/*.log`
-- Formal要約: `hermetic-reports/formal/{tla-summary.json, apalache-summary.json, apalache-output.txt}`
+- Formal要約: `artifacts/hermetic-reports/formal/{tla-summary.json, apalache-summary.json, apalache-output.txt}`
 - Coverage検出: `coverage/coverage-summary.json`（優先）または `artifacts/coverage/coverage-summary.json`
 - Adapters検出: `artifacts/adapters/**/summary.json`, `artifacts/lighthouse/summary.json` など
 - Adapters検証: `artifacts/ae/adapters/adapters-validation.json`（{count, warnings[]}; 警告のみ）

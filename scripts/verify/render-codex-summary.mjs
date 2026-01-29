@@ -81,7 +81,7 @@ try {
   push(`• Tests: PBT files=${pbtCount}, BDD features=${bddCount}`);
 } catch {}
 
-const formalSummary = readJson('hermetic-reports/formal/summary.json');
+const formalSummary = readJson('artifacts/hermetic-reports/formal/summary.json');
 if (formalSummary) {
   const tag = (ok) => ok ? '[OK]' : '[WARN]';
   const info = '[INFO]';

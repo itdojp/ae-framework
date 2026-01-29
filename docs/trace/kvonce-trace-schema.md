@@ -28,15 +28,15 @@
 - `scripts/trace/projector-kvonce.mjs`
   - NDJSON を読み込み、キー単位の成功回数・再試行回数・失敗理由一覧、直近の `value` を集計します。
   - `stats` にイベント種別の件数・ユニークキー数・成功率などを格納し、Envelope から簡易チェックが可能です。
-  - `--state-output hermetic-reports/trace/projected/kvonce-state-sequence.json` を指定すると、イベントごとの射影状態（`store[key]` の `written` / `value` / `retries` など）を別ファイルとして書き出します。
+  - `--state-output artifacts/hermetic-reports/trace/projected/kvonce-state-sequence.json` を指定すると、イベントごとの射影状態（`store[key]` の `written` / `value` / `retries` など）を別ファイルとして書き出します。
   - `retryContexts` / `successContexts` / `failureContexts` として、元イベントの `context` を配列で保持します。
 - `scripts/trace/validate-kvonce.mjs`
   - KvOnce の安全性（1回書き込み・再試行上限）を確認し、`kvonce-validation.json` に集計結果を出力します。
   - `retryContexts` に `attempt` または `attempts` を含めると、連番チェックと成功の整合性チェックが有効化されます。
 - `scripts/trace/run-kvonce-conformance.sh`
-  - 上記の両スクリプトを連続起動し、結果を `hermetic-reports/trace/` に保存します。CI では `spec-generate-model` ワークフロー内で利用。
+  - 上記の両スクリプトを連続起動し、結果を `artifacts/hermetic-reports/trace/` に保存します。CI では `spec-generate-model` ワークフロー内で利用。
 - `scripts/trace/run-kvonce-trace-replay.mjs`
-  - KvOnce サンプルトレースを検証したうえで、TLC (`pnpm run spec:kv-once:tlc`) を実行し、`hermetic-reports/trace/replay/kvonce-trace-replay.json` にサマリを出力します。
+  - KvOnce サンプルトレースを検証したうえで、TLC (`pnpm run spec:kv-once:tlc`) を実行し、`artifacts/hermetic-reports/trace/replay/kvonce-trace-replay.json` にサマリを出力します。
   - TLC ツールが未導入の場合は `tool_not_available` として記録しつつ、CI ではステップサマリに結果を追記します。
 - `scripts/trace/build-kvonce-envelope-summary.mjs`
   - `--trace-dir` / `--summary` オプションを指定することで `artifacts/kvonce-trace-summary.json` に最新 Run の統計・成果物パス・`verify:conformance` のサマリを集約できます。
