@@ -22,9 +22,19 @@ describe('comparator utils', () => {
     expect(seconds.normalizedValue).toBe(500);
   });
 
+  it('parses negative and large values', () => {
+    const negative = parseComparator('>=-0.0001');
+    expect(negative.value).toBeCloseTo(-0.0001);
+
+    const large = parseComparator('>=10000000000');
+    expect(large.value).toBe(10000000000);
+  });
+
   it('compares percent and ratio values', () => {
     expect(compare(0.92, '>=90%')).toBe(true);
     expect(compare(0.75, '>=90%')).toBe(false);
+    expect(compare('90', '>=90%')).toBe(true);
+    expect(compare('0.9', '>=90%')).toBe(true);
   });
 
   it('compares values with compatible units', () => {
@@ -36,9 +46,19 @@ describe('comparator utils', () => {
     expect(compare('120rpm', '>=2rps')).toBe(true);
   });
 
+  it('supports != comparisons', () => {
+    expect(compare(5, '!=4')).toBe(true);
+    expect(compare(5, '!=5')).toBe(false);
+  });
+
   it('selects strictest comparator for >= and <=', () => {
     expect(strictest('>=0.9', '>=0.85')).toBe('>=0.9');
     expect(strictest('<=200ms', '<=0.5s')).toBe('<=200ms');
+  });
+
+  it('selects strict operators when values are equal', () => {
+    expect(strictest('>5', '>=5')).toBe('>5');
+    expect(strictest('<5', '<=5')).toBe('<5');
   });
 
   it('selects equality when compatible', () => {
@@ -48,5 +68,9 @@ describe('comparator utils', () => {
   it('throws on unit mismatch', () => {
     expect(() => strictest('>=90%', '<=100ms')).toThrow();
     expect(() => compare('90%', '>=0.9')).toThrow();
+  });
+
+  it('throws on incompatible operators', () => {
+    expect(() => strictest('>=1', '<=2')).toThrow();
   });
 });

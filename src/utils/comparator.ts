@@ -11,6 +11,7 @@ export interface ParsedComparator {
 }
 
 const OPERATOR_PATTERN = /^(>=|<=|==|!=|>|<)?\s*([+-]?\d+(?:\.\d+)?)\s*([a-zA-Z%/]+)?$/;
+const EPSILON = 1e-9;
 
 const UNIT_ALIASES: Record<string, { baseUnit: ComparatorBaseUnit; factor: number; unit: string } | null> = {
   '%': { baseUnit: 'percent', factor: 1, unit: '%' },
@@ -56,6 +57,12 @@ function normalizeUnit(rawUnit: string | undefined): { baseUnit: ComparatorBaseU
   }
 
   return { baseUnit: info.baseUnit, normalizedValue: info.factor, unit: info.unit };
+}
+
+function nearlyEqual(a: number, b: number): boolean {
+  const diff = Math.abs(a - b);
+  const scale = Math.max(1, Math.abs(a), Math.abs(b));
+  return diff <= Math.max(EPSILON, scale * 1e-12);
 }
 
 export function parseComparator(expr: string): ParsedComparator {
@@ -108,6 +115,9 @@ function normalizeActualValue(actual: number | string, comparator: ParsedCompara
     if (comparator.baseUnit === 'percent' && unitInfo.baseUnit === 'unitless' && value <= 1) {
       return value * 100;
     }
+    if (comparator.baseUnit === 'percent' && unitInfo.baseUnit === 'unitless') {
+      return value;
+    }
     if (comparator.baseUnit === 'unitless' && unitInfo.baseUnit !== 'unitless') {
       throw new Error(`Unit mismatch: expected unitless, got ${match[3] ?? 'unknown'}`);
     }
@@ -132,9 +142,9 @@ export function compare(actual: number | string, expr: string): boolean {
     case '<=':
       return actualValue <= expected;
     case '==':
-      return actualValue === expected;
+      return nearlyEqual(actualValue, expected);
     case '!=':
-      return actualValue !== expected;
+      return !nearlyEqual(actualValue, expected);
     default: {
       const exhaustive: never = comparator.operator;
       return exhaustive;
@@ -179,7 +189,7 @@ export function strictest(exprA: string, exprB: string): string {
   }
 
   if (isGreaterOperator(comparatorA.operator) && isGreaterOperator(comparatorB.operator)) {
-    if (comparatorA.normalizedValue === comparatorB.normalizedValue) {
+    if (nearlyEqual(comparatorA.normalizedValue, comparatorB.normalizedValue)) {
       if (isStrictOperator(comparatorA.operator) && !isStrictOperator(comparatorB.operator)) {
         return comparatorA.raw;
       }
@@ -192,7 +202,7 @@ export function strictest(exprA: string, exprB: string): string {
   }
 
   if (isLessOperator(comparatorA.operator) && isLessOperator(comparatorB.operator)) {
-    if (comparatorA.normalizedValue === comparatorB.normalizedValue) {
+    if (nearlyEqual(comparatorA.normalizedValue, comparatorB.normalizedValue)) {
       if (isStrictOperator(comparatorA.operator) && !isStrictOperator(comparatorB.operator)) {
         return comparatorA.raw;
       }

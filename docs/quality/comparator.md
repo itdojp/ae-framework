@@ -18,7 +18,8 @@ This document describes the shared comparator utility used for threshold parsing
 
 - `%`, `percent`, `pct`
 - Normalization: stored as percent value (e.g., `90%` -> `90`)
-- Actual values: when comparator is percent, `0.85` is treated as `85`
+- Actual values: when comparator is percent, ratio-style values are treated as percents (e.g., `0.85` as `85`). Unitless numeric strings are handled the same way.
+- Mixing unitless comparators with percent actuals is not supported (for example, `compare('90%', '>=0.9')` raises a unit mismatch).
 
 ### Time
 
@@ -51,6 +52,7 @@ When combining two threshold expressions:
 
 - Prefer explicit units (`ms`, `%`, `rps`) to avoid ambiguity.
 - For accuracy/coverage, choose either ratio (`>=0.9`) or percent (`>=90%`) and keep it consistent.
+- Be cautious when using `==` with non-integer thresholds: normalization and floating-point precision can make values that should be equal compare as different. Prefer range checks (`>=`, `<=`) for normalized floats.
 - For latency, prefer `ms`-based thresholds.
 - For throughput, use `rps` or `rpm` explicitly.
 - Use `strictest` when merging policy thresholds with AE-IR or configuration hints.
