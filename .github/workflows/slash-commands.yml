@@ -4,13 +4,17 @@ on:
   issue_comment:
     types: [created]
 
+concurrency:
+  group: slash-commands-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
 permissions:
   contents: read
   issues: write
 
 jobs:
   handle_issue_commands:
-    if: ${{ github.event.issue.pull_request == null }}
+    if: ${{ github.event.issue.pull_request == null && vars.AE_SLASH_COMMANDS_ISSUE == '1' }}
     runs-on: ubuntu-latest
     steps:
       - name: Parse slash commands
@@ -85,8 +89,18 @@ jobs:
               await github.rest.issues.createComment({ owner, repo, issue_number, body: `<!-- AE-SLASH-REPLY -->\n${message}` });
             };
 
-            const [cmd, argRaw] = body.split(/\s+/, 2);
-            const arg = (argRaw || '').trim();
+            let cmd = '';
+            let arg = '';
+
+            if (body) {
+              const firstSpaceIndex = body.search(/\s/);
+              if (firstSpaceIndex === -1) {
+                cmd = body;
+              } else {
+                cmd = body.slice(0, firstSpaceIndex);
+                arg = body.slice(firstSpaceIndex + 1).trim();
+              }
+            }
 
             switch (cmd) {
               case '/start': {

@@ -63,7 +63,7 @@ docs/**              @org/pm-team
 
 ### GitHub Actions（最小）
 - triage.yml（issues labeled/edited）: status/role ラベルの単一化。`AE_ROLE_ASSIGNMENTS` で任意の自動アサインを有効化
-- slash-commands.yml（issue_comment）: `/start`, `/ready-for-review`, `/block` などを解釈（PRのスラッシュは `agent-commands.yml` で対応）
+- slash-commands.yml（issue_comment）: `/start`, `/ready-for-review`, `/block` などを解釈（既定は無効。`AE_SLASH_COMMANDS_ISSUE=1` で有効化。Issue向けコマンドは通常 `agent-commands.yml` が担当）
 - pr-quality.yml は現在未導入。品質ゲートは `verify-lite.yml` / `quality-gates-centralized.yml` を利用
 （aggregator/model-eval 導入後に progress-summary.yml / model-eval.yml を追加）
 
@@ -74,7 +74,8 @@ docs/**              @org/pm-team
 - `.github/pull_request_template.md`
 - `.github/workflows/triage.yml`
 - `.github/workflows/slash-commands.yml`
-- `.github/workflows/pr-quality.yml`（未導入）
+- `.github/workflows/verify-lite.yml`
+- `.github/workflows/quality-gates-centralized.yml`
 - `policy/quality.json`（DoD 合成ゲートを段階導入: warn → block）
 
 ## 3) 各エージェントのワークスペース準備（WSL）

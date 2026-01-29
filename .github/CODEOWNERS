@@ -1,7 +1,7 @@
 # Default owners for review routing
 * @ootakazuhiko
 
-# Explicit paths (keep in sync with docs/development/agent-collaboration-setup.md)
+# Explicit paths (keep path patterns in sync with docs/development/agent-collaboration-setup.md)
 policy/** @ootakazuhiko
 quality/** @ootakazuhiko
 packages/spec-compiler/** @ootakazuhiko
