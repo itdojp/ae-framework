@@ -14,7 +14,7 @@
 
 ```
 ae-framework/
-├─ specs/
+├─ spec/
 │  ├─ formal/
 │  │  ├─ 00_core/                    # 共通モジュール
 │  │  ├─ 10_abstract/                # 抽象仕様
@@ -82,9 +82,9 @@ jobs:
       - name: Setup TLA+ / Apalache
         run: tools/ci/setup-tla.sh
       - name: TLC
-        run: tools/ci/run-tlc.sh specs/formal
+        run: tools/ci/run-tlc.sh spec/formal
       - name: Apalache
-        run: tools/ci/run-apalache.sh specs/formal
+        run: tools/ci/run-apalache.sh spec/formal
 
   generate-artifacts:
     needs: spec-check
@@ -107,7 +107,7 @@ jobs:
     steps:
       - run: tools/ci/run-e2e-with-tracing.sh
       - run: tools/trace/projectors/project.sh traces/*.ndjson > traces/projected.ndjson
-      - run: tools/trace/validators/validate.sh traces/projected.ndjson specs/formal/30_impl
+      - run: tools/trace/validators/validate.sh traces/projected.ndjson spec/formal/30_impl
 ```
 
 ---
@@ -130,7 +130,7 @@ jobs:
 
 ## ミニサンプル
 
-`specs/formal/10_abstract/KvOnce.tla`
+`spec/formal/10_abstract/KvOnce.tla`
 ```tla
 --------------------------- MODULE KvOnce ---------------------------
 EXTENDS Naturals, Sequences
@@ -155,7 +155,7 @@ THEOREM Safety == Spec => []NoOverwrite
 ====================================================================
 ```
 
-`specs/formal/mappings/KvOnce.impl.json`
+`spec/formal/mappings/KvOnce.impl.json`
 ```json
 {
   "stateMap": {

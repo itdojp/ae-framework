@@ -21,7 +21,7 @@
       ]
     }
     ```
-- 入力: `specs/formal/**`, `templates/**`, `config/ae-framework.yml`
+- 入力: `spec/formal/**`, `templates/**`, `config/ae-framework.yml`
 - 出力: `tests/api/generated/**`, `artifacts/formal/**`, `artifacts/spec/**`
 - 残課題
   - [ ] 生成物の整合性チェック（`git diff --exit-code` ではなく JSON/YAML 正規化）

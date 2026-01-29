@@ -278,7 +278,7 @@ export class UnifiedAgent {
   private handleFormalSpecification(task: AgentTask, result: TaskResult): TaskResult {
     result.success = true;
     result.validation.typeScriptCompliant = true;
-    result.artifacts = [`specs/formal-spec-${task.id}.json`];
+    result.artifacts = [`spec/formal-spec-${task.id}.json`];
     return result;
   }
 

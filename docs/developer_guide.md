@@ -80,7 +80,7 @@ ae-framework は **自然言語の要求から、曖昧さのない厳密仕様�
 ## 4. 実際の開発フロー
 
 1. **要求を追加**  
-   `specs/bdd/features/*.feature` に新しいシナリオを記述（または生成）。
+   `spec/bdd/features/*.feature` に新しいシナリオを記述（または生成）。
 2. **形式仕様を生成**  
    `src/agents/formal-agent.ts` が TLA+/Alloy を生成。  
    CI の `verify` で自動チェック。

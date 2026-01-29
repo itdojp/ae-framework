@@ -58,13 +58,13 @@ export class ConfigLoader {
         "1-intent": {
           name: "Intent Definition",
           description: "Define requirements, specifications, and API contracts",
-          required_artifacts: ["specs/gates.yaml"],
+          required_artifacts: ["spec/gates.yaml"],
           validation: ["check_requirements_completeness"]
         },
         "2-formal": {
           name: "Formal Specification",
           description: "Create formal specifications using TLA+, state charts",
-          required_artifacts: ["specs/formal/tla+/*.tla"],
+          required_artifacts: ["spec/formal/tla+/*.tla"],
           validation: ["validate_formal_specs"]
         },
         "3-tests": {

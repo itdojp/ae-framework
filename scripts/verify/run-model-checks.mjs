@@ -74,7 +74,7 @@ async function main() {
   const tlaCandidates = await findFiles([
     'artifacts/codex',
     'artifacts',
-    'specs/formal',
+    'spec/formal',
     'specs',
     'docs/formal',
   ]);

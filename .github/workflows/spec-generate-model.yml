@@ -14,7 +14,7 @@ on:
         required: false
   pull_request:
     paths:
-      - 'specs/**'
+      - 'spec/**'
       - 'templates/**'
       - 'scripts/**'
       - 'tests/**'

@@ -355,7 +355,7 @@ class TDDGuardServer {
       return '4-code';
     } else if (existsSync('tests') || existsSync('specs')) {
       return '3-tests';
-    } else if (existsSync('specs/formal')) {
+    } else if (existsSync('spec/formal')) {
       return '2-formal';
     } else {
       return '1-intent';
@@ -391,7 +391,7 @@ class TDDGuardServer {
     
     switch (phase) {
       case '1-intent':
-        return 'Create formal specifications in specs/formal/';
+        return 'Create formal specifications in spec/formal/';
       case '2-formal':
         return 'Write tests first (RED phase) in tests/';
       case '3-tests':

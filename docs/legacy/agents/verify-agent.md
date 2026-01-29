@@ -201,11 +201,11 @@ The Verify Agent automatically discovers files in the following locations:
 - `tests/**/*.pbt.test.ts` (property-based tests)
 
 **Specifications:**
-- `specs/openapi/api.yaml`
-- `specs/openapi/api.json`
-- `specs/asyncapi/events.yaml`
-- `specs/formal/tla+/*.tla`
-- `specs/graphql/schema.graphql`
+- `spec/openapi/api.yaml`
+- `spec/openapi/api.json`
+- `spec/asyncapi/events.yaml`
+- `spec/formal/tla+/*.tla`
+- `spec/graphql/schema.graphql`
 
 ### Test Type Detection
 

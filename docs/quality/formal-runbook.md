@@ -38,7 +38,7 @@
 - conformance-summary には `runtimeHooks: {present, path, count, uniqueEvents[], traceId, matchesReplayTraceId}` が追加されます。
 
 ### BDD → LTL プロパティ候補（レポートのみ）
-- `pnpm run bdd:suggest` で `specs/bdd/**/*.feature`（フォールバック: `features/`）から GWT を抽出し、LTL 候補を出力します。
+- `pnpm run bdd:suggest` で `spec/bdd/**/*.feature`（フォールバック: `features/`）から GWT を抽出し、LTL 候補を出力します。
   - 出力: 
     - `artifacts/bdd/scenarios.json` — PRサマリ用の {title, criteriaCount}
     - `artifacts/properties/ltl-suggestions.json` — {count, items[]}（集約/参考用）

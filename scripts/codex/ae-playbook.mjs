@@ -86,7 +86,7 @@ async function discoverSpec() {
     }
   } catch { /* ignore */ }
   // fallback common path
-  const fallback = ['specs/app.yaml', 'spec/app.yaml', 'spec/app.yml'];
+  const fallback = ['spec/app.yaml', 'spec/app.yaml', 'spec/app.yml'];
   for (const f of fallback) {
     try { await fs.access(path.join(CWD, f)); candidates.unshift(f); break; } catch {}
   }

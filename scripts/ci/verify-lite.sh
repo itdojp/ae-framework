@@ -36,11 +36,11 @@ echo "[verify-lite] build"
 pnpm run build
 
 echo "[verify-lite] state machine validation"
-node dist/src/cli/index.js sm validate specs/state-machines --format json
+node dist/src/cli/index.js sm validate spec/state-machines --format json
 
 echo "[verify-lite] state machine render"
-node dist/src/cli/index.js sm render specs/state-machines --out artifacts/state-machines
-node dist/src/cli/index.js sm render specs/state-machines --out artifacts/state-machines --check
+node dist/src/cli/index.js sm render spec/state-machines --out artifacts/state-machines
+node dist/src/cli/index.js sm render spec/state-machines --out artifacts/state-machines --check
 
 echo "[verify-lite] BDD lint (non-blocking)"
 if [[ -f scripts/bdd/lint.mjs ]]; then

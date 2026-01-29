@@ -47,7 +47,7 @@ Each transition should include:
 - CLI: `node dist/src/cli/index.js sm validate path/to/specs --format json`
 - The schema enforces structure and required fields.
 - Referencing checks (initial/state/event validity, duplicates, ambiguous transitions) are enforced by `sm validate`.
-- CI: verify-lite runs `sm validate specs/state-machines --format json` and fails on errors.
+- CI: verify-lite runs `sm validate spec/state-machines --format json` and fails on errors.
 
 ## Rendering (Mermaid)
 - CLI: `node dist/src/cli/index.js sm render path/to/specs --out artifacts/state-machines`

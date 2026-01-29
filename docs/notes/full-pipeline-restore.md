@@ -24,10 +24,10 @@
 
 ## 今回追加・復旧した主な成果物
 - `scripts/formal/run-apalache.sh`: Apalache のオンデマンドダウンロードと実行ラッパー。
-- `specs/formal/tla+/Inventory.tla` / `Inventory.cfg`: Apalache で検証可能な形へ再定義。
+- `spec/formal/tla+/Inventory.tla` / `Inventory.cfg`: Apalache で検証可能な形へ再定義。
 - `.spectral.yaml` / `.gherkin-lintrc`: OpenAPI & BDD lint 用設定。
-- `specs/openapi/api.yaml`: Lint を通すための `servers`・`tags`・レスポンス詳細を補強。
-- `specs/bdd/features/reservations.feature` / `specs/bdd/steps/reservations.steps.js`: Fastify を介した受け入れテストを実現。
+- `spec/openapi/api.yaml`: Lint を通すための `servers`・`tags`・レスポンス詳細を補強。
+- `spec/bdd/features/reservations.feature` / `spec/bdd/steps/reservations.steps.js`: Fastify を介した受け入れテストを実現。
 - `tests/property/*`・`tests/mbt/run.js`: Property / MBT 検証の再構築。
 - `tsconfig.stryker.json`・`stryker.config.js`・`vitest.stryker.config.ts`: Stryker + TypeScript Checker を限定構成で再有効化。
 - `scripts/pipelines/run-pact-contracts.mjs`・`contracts/reservations-*.json`: Pact CLI によるローカル契約検証フロー（複数契約を自動検出）。

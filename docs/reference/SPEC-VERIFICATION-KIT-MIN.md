@@ -9,7 +9,7 @@
 - Go (オプション、fast-check 相当は `gopter` を候補)
 
 ## 含める要素（TS）
-- BDD: `docs/templates/spec-kit/bdd-template.feature` + step スケルトンを `specs/bdd/` にコピーして利用 (CucumberJS)
+- BDD: `docs/templates/spec-kit/bdd-template.feature` + step スケルトンを `spec/bdd/` にコピーして利用 (CucumberJS)
 - Property: `docs/templates/spec-kit/property-template.md` → `tests/property/**/*.test.ts` に写経可能なテンプレ + fast-check 設定
 - Lint/Static/Type: `pnpm lint`, `pnpm types:check`, `pnpm run test:fast`
 - CLI: `pnpm run test:property -- --runInBand`

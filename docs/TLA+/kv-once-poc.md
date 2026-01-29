@@ -8,11 +8,11 @@
 ## モジュール構成
 | 階層 | ファイル | 概要 |
 |------|----------|------|
-| 抽象 | `specs/formal/10_abstract/KvOnce.tla` | 一度だけ書き込める Key-Value ストアの安全性（NoOverwrite）を定義 |
-| 準抽象 | `specs/formal/20_refined/KvOnceRefinement.tla` | 再試行（Retry）回数を制限しつつ書き込み成功を表現 |
-| 実装 | `specs/formal/30_impl/KvOnceImpl.tla` | イベントログを保持し、成功 / リトライ / 失敗（重複）を記録 |
-| Mapping | `specs/formal/mappings/KvOnce.impl.json` | 各層の状態変数対応およびイベントトレース情報 |
-| cfg | `specs/formal/configs/*.cfg` | TLC / Apalache で利用する初期状態・定数定義 |
+| 抽象 | `spec/formal/10_abstract/KvOnce.tla` | 一度だけ書き込める Key-Value ストアの安全性（NoOverwrite）を定義 |
+| 準抽象 | `spec/formal/20_refined/KvOnceRefinement.tla` | 再試行（Retry）回数を制限しつつ書き込み成功を表現 |
+| 実装 | `spec/formal/30_impl/KvOnceImpl.tla` | イベントログを保持し、成功 / リトライ / 失敗（重複）を記録 |
+| Mapping | `spec/formal/mappings/KvOnce.impl.json` | 各層の状態変数対応およびイベントトレース情報 |
+| cfg | `spec/formal/configs/*.cfg` | TLC / Apalache で利用する初期状態・定数定義 |
 
 ## 実行方法
 ローカルで TLC / Apalache を実行する場合:

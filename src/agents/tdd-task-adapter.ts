@@ -317,7 +317,7 @@ ${testSuggestion.testCases
       return '4-code';
     } else if (require('fs').existsSync('tests') || require('fs').existsSync('specs')) {
       return '3-tests';
-    } else if (require('fs').existsSync('specs/formal')) {
+    } else if (require('fs').existsSync('spec/formal')) {
       return '2-formal';
     } else {
       return '1-intent';

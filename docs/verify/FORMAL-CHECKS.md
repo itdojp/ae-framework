@@ -24,7 +24,7 @@ This document explains how formal model checking is executed in CI and where to 
   - Workflow: `.github/workflows/verify.yml` (job `model-check`)
   - Tools: `actions/setup-java` + auto-download of `tla2tools.jar`
   - Runner script: `scripts/verify/run-model-checks.mjs`
-  - Behavior: scans for `.tla` files under `artifacts/`, `specs/`, `docs/formal/`
+  - Behavior: scans for `.tla` files under `artifacts/`, `spec/`, `docs/formal/`
   - Output artifacts: `artifacts/codex/model-check.json`, `artifacts/codex/*.tlc.log.txt`
   - Default: report-only (does not fail CI yet)
 
@@ -166,7 +166,7 @@ ALLOY_FAIL_REGEX='Exception|ERROR|FAILED|Counterexample|assertion' npm run verif
   - ワークフロー: `.github/workflows/verify.yml`（ジョブ `model-check`）
   - 使用ツール: `actions/setup-java` + `tla2tools.jar` 自動取得
   - ランナー: `scripts/verify/run-model-checks.mjs`
-  - 動作: `artifacts/`, `specs/`, `docs/formal/` 配下の `.tla` を走査
+  - 動作: `artifacts/`, `spec/`, `docs/formal/` 配下の `.tla` を走査
   - 出力: `artifacts/codex/model-check.json`, `artifacts/codex/*.tlc.log.txt`
   - 既定: レポートのみ（CI を失敗させない）
 

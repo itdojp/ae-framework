@@ -332,7 +332,7 @@ export class HybridIntentSystem {
   private setupRequirementWatchers(): void {
     // Set up file system watchers for requirements files
     
-    const watchPaths = ['requirements/', 'specs/', 'docs/requirements/', '.'];
+    const watchPaths = ['requirements/', 'spec/', 'docs/requirements/', '.'];
     
     for (const watchPath of watchPaths) {
       if (fs.existsSync(watchPath)) {

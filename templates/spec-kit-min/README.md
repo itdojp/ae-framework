@@ -4,13 +4,13 @@ This folder is a seed template for a minimal Spec & Verification Kit setup.
 Copy this directory into a new repository and populate the spec/test artifacts.
 
 ## What this seed contains
-- `specs/bdd/` placeholder for Gherkin features and steps
+- `spec/bdd/` placeholder for Gherkin features and steps
 - `tests/property/` placeholder for property-based tests
 
 ## Suggested next steps
 1. Copy templates from `docs/templates/spec-kit/` into your repo:
-   - `bdd-template.feature` -> `specs/bdd/features/<feature>.feature`
-   - `bdd-steps.template.js` -> `specs/bdd/steps/<feature>.steps.js`
+   - `bdd-template.feature` -> `spec/bdd/features/<feature>.feature`
+   - `bdd-steps.template.js` -> `spec/bdd/steps/<feature>.steps.js`
    - `property-template.md` -> design your `tests/property/*.test.ts`
 2. Add or adapt scripts in your `package.json`:
    - `pnpm lint`, `pnpm types:check`, `pnpm run test:fast`

@@ -15,14 +15,14 @@ First, let me define the requirements:
 2. [REQUIREMENT_2] 
 3. [REQUIREMENT_3]
 
-Before proceeding to tests, I will create the formal specifications in specs/ directory.
+Before proceeding to tests, I will create the formal specifications in spec/ directory.
 ```
 
 ### Phase 2: Formal Specification
 ```
 Now I'll create the formal specifications for [FEATURE_NAME]:
 
-1. Create TLA+ specification in specs/formal/tla+/
+1. Create TLA+ specification in spec/formal/tla+/
 2. Define the behavior and invariants
 3. Validate the specification
 
