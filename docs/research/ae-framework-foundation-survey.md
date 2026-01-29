@@ -42,7 +42,7 @@ Foundation survey for implementing a pipeline from NL → BDD → Formal Specs �
 | 6. UI/UX & Frontend Delivery | 受入/E2E テストをオラクル化、A11y/Perf を品質ゲート | Playwright/Storybook/Vitest + Lighthouse/AXE を**仕様に紐づく**ゲートへ |
 
 > **既存ディレクトリとの対応（推奨配置）**  
-> `spec/` or `spec/`：TLA+/Alloy/Dafny 等の正式仕様、`tests/`：MBT/プロパティ/適合性テスト、`policies/`：Cedar/OPA 等、`observability/`：OpenTelemetry 設定、`artifacts/hermetic-reports/`：モデル検査ログ・反例、`docs/quality/`：品質ゲート基準、`templates/`：シナリオ/仕様テンプレ。
+> `spec/`：TLA+/Alloy/Dafny 等の正式仕様、`tests/`：MBT/プロパティ/適合性テスト、`policies/`：Cedar/OPA 等、`observability/`：OpenTelemetry 設定、`artifacts/hermetic-reports/`：モデル検査ログ・反例、`docs/quality/`：品質ゲート基準、`templates/`：シナリオ/仕様テンプレ。
 
 ---
 

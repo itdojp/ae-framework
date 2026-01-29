@@ -353,7 +353,7 @@ class TDDGuardServer {
     // Detect phase based on existing artifacts
     if (existsSync('src') && existsSync('tests')) {
       return '4-code';
-    } else if (existsSync('tests') || existsSync('specs')) {
+    } else if (existsSync('tests') || existsSync('spec') || existsSync('specs')) {
       return '3-tests';
     } else if (existsSync('spec/formal')) {
       return '2-formal';

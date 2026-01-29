@@ -75,6 +75,7 @@ async function main() {
     'artifacts/codex',
     'artifacts',
     'spec/formal',
+    'spec',
     'specs',
     'docs/formal',
   ]);
@@ -101,7 +102,7 @@ async function main() {
     }
   }
   // Alloy (optional, scaffold)
-  const alloyCandidates = await findFiles(['artifacts', 'specs', 'docs/formal']);
+  const alloyCandidates = await findFiles(['artifacts', 'spec/formal', 'spec', 'specs', 'docs/formal']);
   const alsFiles = alloyCandidates.filter((f) => f.endsWith('.als'));
   if (alsFiles.length === 0) {
     summary.alloy.skipped.push('No .als found');

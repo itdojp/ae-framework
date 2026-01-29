@@ -315,7 +315,11 @@ ${testSuggestion.testCases
     // Detect current development phase
     if (require('fs').existsSync('src') && require('fs').existsSync('tests')) {
       return '4-code';
-    } else if (require('fs').existsSync('tests') || require('fs').existsSync('specs')) {
+    } else if (
+      require('fs').existsSync('tests') ||
+      require('fs').existsSync('spec') ||
+      require('fs').existsSync('specs')
+    ) {
       return '3-tests';
     } else if (require('fs').existsSync('spec/formal')) {
       return '2-formal';

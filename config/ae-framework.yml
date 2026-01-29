@@ -32,7 +32,7 @@ phases:
     required_artifacts:
       - "tests/**/*.test.ts"
       - "spec/bdd/features/*.feature"
-      - "spec/bdd/step_definitions/*.ts"
+      - "spec/bdd/steps/**/*.{js,ts}"
     validation:
       - ensure_tests_exist
       - run_tests_expect_red
