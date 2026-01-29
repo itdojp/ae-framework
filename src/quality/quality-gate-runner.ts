@@ -102,7 +102,15 @@ export class QualityGateRunner {
             gateKeys.add(key);
           }
         }
-        gateRecords = Array.from(gateKeys).map(key => ({ gate: allGateMap[key], key }));
+        gateRecords = Array.from(gateKeys)
+          .map(key => {
+            const gate = allGateMap[key];
+            if (!gate) {
+              return null;
+            }
+            return { gate, key };
+          })
+          .filter((record): record is { gate: QualityGate; key: string } => record !== null);
       } else {
         const compositeForEnv = this.policyLoader.getCompositeGateForEnvironment(environment);
         if (compositeForEnv) {

@@ -284,6 +284,8 @@ export class QualityPolicyLoader {
       return;
     }
 
+    const mutableTarget = target as Record<string, unknown>;
+
     Object.entries(overrides).forEach(([metric, overrideValue]) => {
       if (overrideValue === undefined) {
         return;
@@ -293,7 +295,7 @@ export class QualityPolicyLoader {
       const baseValue = target[metricKey];
 
       if (baseValue === undefined) {
-        target[metricKey] = overrideValue as typeof baseValue;
+        mutableTarget[metricKey] = overrideValue;
         return;
       }
 
@@ -304,7 +306,7 @@ export class QualityPolicyLoader {
         try {
           const chosen = strictest(baseExpr, overrideExpr);
           if (chosen === overrideExpr) {
-            target[metricKey] = overrideValue as typeof baseValue;
+            mutableTarget[metricKey] = overrideValue;
             return;
           }
           if (overrideValue !== baseValue) {
@@ -325,7 +327,7 @@ export class QualityPolicyLoader {
 
       if (typeof baseValue === 'boolean' && typeof overrideValue === 'boolean') {
         const mergedValue = baseValue || overrideValue;
-        target[metricKey] = mergedValue as typeof baseValue;
+        mutableTarget[metricKey] = mergedValue;
         if (baseValue && !overrideValue) {
           this.logger.warn(
             `[quality-policy] ${source} override ignored for ${gateKey}.${metric} (${environment}): ` +
@@ -340,8 +342,8 @@ export class QualityPolicyLoader {
           const baseSize = parseMemorySize(baseValue);
           const overrideSize = parseMemorySize(overrideValue);
           if (baseSize && overrideSize) {
-            if (overrideSize.bytes <= baseSize.bytes) {
-              target[metricKey] = overrideValue as typeof baseValue;
+          if (overrideSize.bytes <= baseSize.bytes) {
+              mutableTarget[metricKey] = overrideValue;
               return;
             }
             this.logger.warn(
