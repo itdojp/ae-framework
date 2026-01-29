@@ -54,6 +54,8 @@ temp-reports/
 cegis-report-*.json
 *-report-*.json
 conformance-results.json
+benchmarks/current/
+benchmarks/reports/
 reports/conformance/
 reports/heavy-test-trends.json
 reports/heavy-test-trends-history/
