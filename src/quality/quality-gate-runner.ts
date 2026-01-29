@@ -7,6 +7,7 @@ import { spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import { QualityPolicyLoader, type QualityGateResult, type QualityReport, type QualityGate } from './policy-loader.js';
+import { buildReportMeta } from '../utils/report-meta.js';
 
 type CoverageThreshold = { lines?: number; functions?: number; branches?: number; statements?: number };
 type LintThreshold = { maxErrors?: number; maxWarnings?: number };
@@ -676,9 +677,11 @@ export class QualityGateRunner {
    * Generate empty report for when no gates are found
    */
   private generateEmptyReport(environment: string): QualityReport {
+    const timestamp = new Date().toISOString();
     return {
-      timestamp: new Date().toISOString(),
+      timestamp,
       environment,
+      meta: buildReportMeta({ createdAt: timestamp }),
       overallScore: 100,
       totalGates: 0,
       passedGates: 0,

@@ -8,6 +8,10 @@
 
 Verification gates standardize **verify-then-merge**. This guide lists the available gate types, how to enable them, and where results are reported.
 
+### Report metadata
+
+Quality gate reports (`reports/quality-gates/quality-report-*.json`) include a `meta` object with run context (`runId`, `commitSha`, `branch`, `createdAt`, `agent`, `model`, `traceId`). Values are derived from CI/local environment variables when available and are optional beyond `runId`/`createdAt`.
+
 ---
 
 ## 日本語（概要）
@@ -48,6 +52,12 @@ Verification gates standardize **verify-then-merge**. This guide lists the avail
 - 既存テンプレ: `docs/quality/pr-summary-template.md`
 - 仕様: `docs/quality/pr-summary-tool.md`
 - 目的: 検証結果を PR に要約して**人間が判断**できる形にする
+
+## レポートメタ情報
+
+- quality-gates レポート（`reports/quality-gates/quality-report-*.json`）には `meta` を付与
+- 代表項目: `runId` / `commitSha` / `branch` / `createdAt` / `agent` / `model` / `traceId`
+- 値はCI/ローカルの環境変数から取得し、存在するもののみ付与（`runId` と `createdAt` は常に付与）
 
 ## 注意（machine verifying machine）
 
