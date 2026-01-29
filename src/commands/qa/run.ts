@@ -1,5 +1,5 @@
 import { execa } from 'execa';
-import { loadConfig, loadConfigSource } from '../../core/config.js';
+import { loadConfigWithSource } from '../../core/config.js';
 import { readFile, stat } from 'node:fs/promises';
 import { getThreshold } from '../../utils/quality-policy-loader.js';
 
@@ -11,8 +11,7 @@ type CoverageThresholds = {
 };
 
 export async function qaRun(options?: { light?: boolean }) {
-  const cfg = await loadConfig();
-  const configSource = await loadConfigSource();
+  const { config: cfg, source: configSource } = await loadConfigWithSource();
   const pm = (await detectPM()) ?? 'npm';
   const runner = await detectRunner();
   const isCI = isCi();
@@ -32,7 +31,7 @@ export async function qaRun(options?: { light?: boolean }) {
       console.warn(`[ae:qa] ${sourceLabel} coverageThreshold is a local hint only; policy/quality.json is the source of truth`);
     }
 
-    if (!policyCoverage && !isCI) {
+    if (!policyCoverage && !isCI && configCoverage) {
       console.warn('[ae:qa] quality policy not available; falling back to ae.config coverageThreshold (local hint only)');
     }
 

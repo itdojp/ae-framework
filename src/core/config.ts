@@ -73,9 +73,14 @@ export async function loadConfigSource(): Promise<ConfigSource> {
   return loadConfigSourceInternal();
 }
 
-export async function loadConfig(): Promise<AeConfig> {
+export async function loadConfigWithSource(): Promise<{ config: AeConfig; source: ConfigSource }> {
   // ae.config.ts/js/json の順に探す。なければデフォルト
-  const source = await loadConfigSourceInternal();
+  const source = await loadConfigSource();
   const base = source.raw && typeof source.raw === 'object' ? source.raw : {};
-  return AeConfigSchema.parse(base);
+  return { config: AeConfigSchema.parse(base), source };
+}
+
+export async function loadConfig(): Promise<AeConfig> {
+  const { config } = await loadConfigWithSource();
+  return config;
 }
