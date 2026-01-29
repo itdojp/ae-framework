@@ -143,14 +143,16 @@ jobs:
               }
               case '/handoff': {
                 let roleLabel = '';
-                if (arg.startsWith('role:')) {
-                  roleLabel = arg;
-                } else if (arg.toUpperCase().includes('ARCH')) {
+                const rawArg = (arg || '').trim();
+                const normalizedArg = rawArg.replace(/^@+/, '');
+                if (normalizedArg.startsWith('role:')) {
+                  roleLabel = normalizedArg;
+                } else if (normalizedArg.toUpperCase().includes('ARCH')) {
                   roleLabel = 'role:ARCH-HIGH';
-                } else if (arg.toUpperCase().includes('PM')) {
+                } else if (normalizedArg.toUpperCase().includes('PM')) {
                   roleLabel = 'role:PM-HIGH';
-                } else if (arg.toUpperCase().includes('IMPL')) {
-                  roleLabel = `role:${arg.toUpperCase()}`;
+                } else if (normalizedArg.toUpperCase().includes('IMPL')) {
+                  roleLabel = `role:${normalizedArg.toUpperCase()}`;
                 }
                 if (!roleLabel) {
                   await reply('roleラベルが判別できませんでした。例: /handoff role:ARCH-HIGH');
