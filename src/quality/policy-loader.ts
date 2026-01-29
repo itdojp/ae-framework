@@ -6,6 +6,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { z } from 'zod';
+import { strictest } from '../utils/comparator.js';
 
 // Type definitions for Quality Policy
 export const QualityThresholdSchema = z.object({
@@ -120,6 +121,13 @@ export type EnvironmentConfig = z.infer<typeof EnvironmentConfigSchema>;
 export type CompositeGate = z.infer<typeof CompositeGateSchema>;
 export type QualityPolicy = z.infer<typeof QualityPolicySchema>;
 
+export interface ThresholdOverrides {
+  aeIr?: Record<string, Partial<QualityThreshold>>;
+  config?: Record<string, Partial<QualityThreshold>>;
+}
+
+type WarningLogger = Pick<Console, 'warn'>;
+
 export interface QualityGateResult {
   gateKey: string;
   gateName: string;
@@ -140,6 +148,7 @@ export interface QualityReport {
   passedGates: number;
   failedGates: number;
   results: QualityGateResult[];
+  composites?: Record<string, { gates: string[]; passed: boolean; failedGates: string[] }>;
   summary: {
     byCategory: Record<string, { passed: number; total: number }>;
     executionTime: number;
@@ -150,9 +159,13 @@ export interface QualityReport {
 export class QualityPolicyLoader {
   private policy: QualityPolicy | null = null;
   private policyPath: string;
+  private overrides: ThresholdOverrides;
+  private logger: WarningLogger;
 
-  constructor(policyPath?: string) {
+  constructor(policyPath?: string, overrides: ThresholdOverrides = {}, logger: WarningLogger = console) {
     this.policyPath = policyPath || path.join(process.cwd(), 'config', 'quality-policy.json');
+    this.overrides = overrides;
+    this.logger = logger;
   }
 
   /**
@@ -188,17 +201,14 @@ export class QualityPolicyLoader {
    */
   public getGatesForEnvironment(environment: string = 'development'): QualityGate[] {
     const policy = this.loadPolicy();
-    
-    // Find composite gate for environment
-    const compositeGate = Object.values(policy.compositeGates)
-      .find(gate => gate.environments.includes(environment));
+    const compositeGate = this.getCompositeGateForEnvironment(environment);
 
     if (!compositeGate) {
       // Fallback to all enabled gates
       return Object.values(policy.qualityGates).filter(gate => gate.enabled);
     }
 
-    return compositeGate.gates
+    return compositeGate.gate.gates
       .map(gateName => policy.qualityGates[gateName])
       .filter((gate): gate is QualityGate => Boolean(gate && gate.enabled));
   }
@@ -243,7 +253,95 @@ export class QualityPolicyLoader {
       return fallbackThreshold;
     }
 
-    return threshold;
+    const merged = this.mergeThresholds(key, gateName, threshold, environment);
+    return merged;
+  }
+
+  private mergeThresholds(
+    gateKey: string,
+    gateName: string,
+    base: QualityThreshold,
+    environment: string
+  ): QualityThreshold {
+    const merged: QualityThreshold = { ...base };
+    const aeIr = this.overrides.aeIr?.[gateKey] ?? this.overrides.aeIr?.[gateName];
+    const config = this.overrides.config?.[gateKey] ?? this.overrides.config?.[gateName];
+
+    this.applyThresholdOverride(merged, gateKey, environment, 'ae-ir', aeIr);
+    this.applyThresholdOverride(merged, gateKey, environment, 'ae.config', config);
+
+    return merged;
+  }
+
+  private applyThresholdOverride(
+    target: QualityThreshold,
+    gateKey: string,
+    environment: string,
+    source: string,
+    overrides?: Partial<QualityThreshold>
+  ): void {
+    if (!overrides) {
+      return;
+    }
+
+    Object.entries(overrides).forEach(([metric, overrideValue]) => {
+      if (overrideValue === undefined) {
+        return;
+      }
+
+      const metricKey = metric as keyof QualityThreshold;
+      const baseValue = target[metricKey];
+
+      if (baseValue === undefined) {
+        target[metricKey] = overrideValue as QualityThreshold[keyof QualityThreshold];
+        return;
+      }
+
+      if (typeof baseValue === 'number' && typeof overrideValue === 'number') {
+        const op = isLowerBetter(metric) ? '<=' : '>=';
+        const baseExpr = `${op}${baseValue}`;
+        const overrideExpr = `${op}${overrideValue}`;
+        try {
+          const chosen = strictest(baseExpr, overrideExpr);
+          if (chosen === overrideExpr) {
+            target[metricKey] = overrideValue;
+            return;
+          }
+          if (overrideValue !== baseValue) {
+            this.logger.warn(
+              `[quality-policy] ${source} override ignored for ${gateKey}.${metric} (${environment}): ` +
+              `${overrideValue} is weaker than policy ${baseValue}`
+            );
+          }
+          return;
+        } catch (error) {
+          this.logger.warn(
+            `[quality-policy] ${source} override rejected for ${gateKey}.${metric} (${environment}): ` +
+            `policy=${baseValue}, override=${overrideValue}, reason=${String(error)}`
+          );
+          return;
+        }
+      }
+
+      if (typeof baseValue === 'boolean' && typeof overrideValue === 'boolean') {
+        const mergedValue = baseValue || overrideValue;
+        target[metricKey] = mergedValue;
+        if (!mergedValue && overrideValue !== baseValue) {
+          this.logger.warn(
+            `[quality-policy] ${source} override ignored for ${gateKey}.${metric} (${environment}): ` +
+            `policy=${baseValue}, override=${overrideValue}`
+          );
+        }
+        return;
+      }
+
+      if (overrideValue !== baseValue) {
+        this.logger.warn(
+          `[quality-policy] ${source} override ignored for ${gateKey}.${metric} (${environment}): ` +
+          `policy=${String(baseValue)}, override=${String(overrideValue)}`
+        );
+      }
+    });
   }
 
   /**
@@ -295,6 +393,19 @@ export class QualityPolicyLoader {
   public getCompositeGate(gateName: string): CompositeGate | null {
     const policy = this.loadPolicy();
     return policy.compositeGates[gateName] || null;
+  }
+
+  /**
+   * Get composite gate definition for an environment (first match)
+   */
+  public getCompositeGateForEnvironment(environment: string): { key: string; gate: CompositeGate } | null {
+    const policy = this.loadPolicy();
+    const match = Object.entries(policy.compositeGates)
+      .find(([, gate]) => gate.environments.includes(environment));
+    if (!match) {
+      return null;
+    }
+    return { key: match[0], gate: match[1] };
   }
 
   /**
@@ -455,3 +566,19 @@ Description: ${policy.description}`;
 
 // Global instance for easy access
 export const qualityPolicy = new QualityPolicyLoader();
+
+const LOWER_IS_BETTER_METRICS = new Set([
+  'maxViolations',
+  'maxResponseTime',
+  'maxCritical',
+  'maxHigh',
+  'maxMedium',
+  'maxErrors',
+  'maxWarnings',
+  'maxCyclomaticComplexity',
+  'maxContractViolations',
+]);
+
+function isLowerBetter(metric: string): boolean {
+  return LOWER_IS_BETTER_METRICS.has(metric);
+}

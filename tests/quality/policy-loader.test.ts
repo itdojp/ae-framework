@@ -3,7 +3,7 @@
  * Tests for centralized quality policy management
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as fs from 'fs';
 import { createTempDir, writeTempJson, rmrf } from '../_helpers/tmpfs.js';
 import { QualityPolicyLoader, QualityGateResult } from '../../src/quality/policy-loader.js';
@@ -228,6 +228,41 @@ describe('Quality Policy Loader', () => {
     });
   });
 
+  describe('Threshold Overrides', () => {
+    it('should merge thresholds with strictest and warn on weaker overrides', () => {
+      const warn = vi.fn();
+      const overrideLoader = new QualityPolicyLoader(
+        tempPolicyPath,
+        {
+          aeIr: {
+            'coverage-gate': {
+              lines: 75,
+              branches: 40,
+            },
+            'test-gate': {
+              maxViolations: 5,
+            },
+          },
+          config: {
+            'coverage-gate': {
+              lines: 65,
+            },
+          },
+        },
+        { warn }
+      );
+
+      const coverage = overrideLoader.getThreshold('coverage-gate', 'development');
+      expect(coverage.lines).toBe(75);
+      expect(coverage.branches).toBe(50);
+
+      const testGate = overrideLoader.getThreshold('test-gate', 'development');
+      expect(testGate.maxViolations).toBe(5);
+
+      expect(warn).toHaveBeenCalled();
+    });
+  });
+
   describe('Blocking Behavior', () => {
     it('should block for production environment', () => {
       const shouldBlock = loader.shouldBlock('test-gate', 'production');
@@ -412,6 +447,13 @@ describe('Quality Policy Loader', () => {
       expect(compositeGate).toBeDefined();
       expect(compositeGate?.gates).toContain('test-gate');
       expect(compositeGate?.environments).toContain('development');
+    });
+
+    it('should get composite gate for environment', () => {
+      const composite = loader.getCompositeGateForEnvironment('development');
+
+      expect(composite?.key).toBe('minimal');
+      expect(composite?.gate.gates).toContain('test-gate');
     });
 
     it('should return null for unknown composite gate', () => {
