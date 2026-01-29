@@ -46,7 +46,7 @@ export class Phase0TDDInfrastructureSetup {
 
     try {
       // Step 1: Load and validate configuration
-      console.log('📋 Step 1: Loading ae-framework-v2.yml configuration...');
+      console.log('📋 Step 1: Loading config/ae-framework-v2.yml configuration...');
       const config = await this.loadConfiguration();
       console.log('✅ Configuration loaded successfully');
 
@@ -107,11 +107,11 @@ export class Phase0TDDInfrastructureSetup {
   }
 
   /**
-   * Load and validate ae-framework-v2.yml configuration
+   * Load and validate config/ae-framework-v2.yml configuration
    */
   private async loadConfiguration(): Promise<any> {
     try {
-      const configPath = path.join(process.cwd(), 'ae-framework-v2.yml');
+      const configPath = path.join(process.cwd(), 'config/ae-framework-v2.yml');
       const config = await this.configLoader.loadConfig(configPath);
       
       // Validate required sections
@@ -332,7 +332,7 @@ exit 0
 - **Quality Gates**: ${results.gitHooksInstalled ? 'Enforced' : 'Advisory'}
 
 ### ✅ Configuration
-- **ae-framework-v2.yml**: ${results.configurationValid ? 'Valid' : 'Invalid'}
+- **config/ae-framework-v2.yml**: ${results.configurationValid ? 'Valid' : 'Invalid'}
 - **Phase Dependencies**: Validated
 - **Component Integration**: Configured
 

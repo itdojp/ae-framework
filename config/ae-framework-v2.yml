@@ -6,7 +6,7 @@ phases:
   "0-tdd-setup":
     name: "TDD Infrastructure Setup"
     description: "Set up ae-framework TDD functionality for quality-controlled development"
-    required_artifacts: ["ae-framework-v2.yml", "tests/tdd-setup.test.ts"]
+    required_artifacts: ["config/ae-framework-v2.yml", "tests/tdd-setup.test.ts"]
     validation: ["tdd_system_operational", "metrics_collection_active"]
     enforce_red_first: true
     block_code_without_test: true

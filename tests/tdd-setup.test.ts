@@ -10,8 +10,8 @@ import { join } from 'path';
 
 describe('TDD Infrastructure Setup - Phase 0', () => {
   describe('TDD System Operational', () => {
-    test('should validate ae-framework-v2.yml configuration exists', () => {
-      const configPath = join(process.cwd(), 'ae-framework-v2.yml');
+    test('should validate config/ae-framework-v2.yml configuration exists', () => {
+      const configPath = join(process.cwd(), 'config/ae-framework-v2.yml');
       expect(() => readFileSync(configPath, 'utf8')).not.toThrow();
       
       const config = readFileSync(configPath, 'utf8');
@@ -21,7 +21,7 @@ describe('TDD Infrastructure Setup - Phase 0', () => {
     });
 
     test('should enforce red-first TDD workflow', () => {
-      const config = readFileSync(join(process.cwd(), 'ae-framework-v2.yml'), 'utf8');
+      const config = readFileSync(join(process.cwd(), 'config/ae-framework-v2.yml'), 'utf8');
       expect(config).toContain('enforce_red_first: true');
       expect(config).toContain('block_code_without_test: true');
     });
@@ -60,7 +60,7 @@ describe('TDD Infrastructure Setup - Phase 0', () => {
     });
 
     test('should validate coverage threshold configuration', () => {
-      const config = readFileSync(join(process.cwd(), 'ae-framework-v2.yml'), 'utf8');
+      const config = readFileSync(join(process.cwd(), 'config/ae-framework-v2.yml'), 'utf8');
       expect(config).toContain('coverage_threshold: 80');
     });
   });
@@ -114,7 +114,7 @@ describe('TDD Infrastructure Setup - Phase 0', () => {
       expect(state?.phaseStatus).toBeDefined();
       expect(state?.currentPhase).toBeDefined();
       
-      // Validate phase structure matches ae-framework-v2.yml
+      // Validate phase structure matches config/ae-framework-v2.yml
       const expectedPhases = ['intent', 'formal', 'test', 'code', 'verify', 'operate'];
       expectedPhases.forEach(phase => {
         expect(state?.phaseStatus[phase as any]).toBeDefined();
@@ -122,7 +122,7 @@ describe('TDD Infrastructure Setup - Phase 0', () => {
     });
 
     test('should validate TDD guards implementation', () => {
-      const config = readFileSync(join(process.cwd(), 'ae-framework-v2.yml'), 'utf8');
+      const config = readFileSync(join(process.cwd(), 'config/ae-framework-v2.yml'), 'utf8');
       
       // Validate guard configurations
       expect(config).toContain('Self-Improvement TDD Guard');
@@ -132,7 +132,7 @@ describe('TDD Infrastructure Setup - Phase 0', () => {
     });
 
     test('should validate CLI integration exists', () => {
-      const config = readFileSync(join(process.cwd(), 'ae-framework-v2.yml'), 'utf8');
+      const config = readFileSync(join(process.cwd(), 'config/ae-framework-v2.yml'), 'utf8');
       
       // Validate CLI configuration
       expect(config).toContain('checkpoint_validation: true');
@@ -141,7 +141,7 @@ describe('TDD Infrastructure Setup - Phase 0', () => {
     });
 
     test('should validate self-improvement configuration', () => {
-      const config = readFileSync(join(process.cwd(), 'ae-framework-v2.yml'), 'utf8');
+      const config = readFileSync(join(process.cwd(), 'config/ae-framework-v2.yml'), 'utf8');
       
       // Validate self-improvement metrics
       expect(config).toContain('target_typescript_errors: 0');
@@ -198,7 +198,7 @@ describe('TDD Infrastructure Setup - Phase 0', () => {
     });
 
     test('should validate continuous integration support', () => {
-      const config = readFileSync(join(process.cwd(), 'ae-framework-v2.yml'), 'utf8');
+      const config = readFileSync(join(process.cwd(), 'config/ae-framework-v2.yml'), 'utf8');
       
       // Validate CI/CD configuration
       expect(config).toContain('validate_on_push: true');
@@ -208,7 +208,7 @@ describe('TDD Infrastructure Setup - Phase 0', () => {
 
   describe('Quality Gates', () => {
     test('should validate Phase 0 completion criteria', () => {
-      const config = readFileSync(join(process.cwd(), 'ae-framework-v2.yml'), 'utf8');
+      const config = readFileSync(join(process.cwd(), 'config/ae-framework-v2.yml'), 'utf8');
       
       // Check Phase 0 quality gate criteria
       expect(config).toContain('TDD system operational');
@@ -232,7 +232,7 @@ describe('TDD Infrastructure Setup - Phase 0', () => {
     });
 
     test('should validate integration with Claude Code', () => {
-      const config = readFileSync(join(process.cwd(), 'ae-framework-v2.yml'), 'utf8');
+      const config = readFileSync(join(process.cwd(), 'config/ae-framework-v2.yml'), 'utf8');
       
       // Validate Claude Code integration
       expect(config).toContain('task_tool_integration: true');

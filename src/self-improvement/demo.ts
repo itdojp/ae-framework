@@ -25,7 +25,7 @@ export class SelfImprovementDemo {
   constructor(config: Partial<DemoConfig> = {}) {
     this.config = {
       projectRoot: process.cwd(),
-      configFile: 'ae-framework-v2.yml',
+      configFile: 'config/ae-framework-v2.yml',
       validateComponents: true,
       runSampleTDDCycle: false,
       ...config

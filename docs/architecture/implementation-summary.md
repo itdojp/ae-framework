@@ -6,7 +6,7 @@
 
 ## 日本語（概要）
 
-`ae-framework-v2.yml` に基づくコアシステム再実装の最終まとめです。TDD とドメインモデリングで各フェーズを完了し、型/品質/性能の目標を達成しました。成果物・検証基準・テスト結果の詳細は以下の英語セクションを参照してください。
+`config/ae-framework-v2.yml` に基づくコアシステム再実装の最終まとめです。TDD とドメインモデリングで各フェーズを完了し、型/品質/性能の目標を達成しました。成果物・検証基準・テスト結果の詳細は以下の英語セクションを参照してください。
 
 ## 🎯 Project Completion Status: SUCCESS ✅
 
@@ -14,7 +14,7 @@
 
 ## 📋 Implementation Overview
 
-Following the ae-framework-v2.yml specification, we successfully completed a comprehensive system re-implementation using TDD and domain modeling approaches.
+Following the config/ae-framework-v2.yml specification, we successfully completed a comprehensive system re-implementation using TDD and domain modeling approaches.
 
 ### 🏗️ Architecture Phases Completed
 

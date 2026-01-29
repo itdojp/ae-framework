@@ -9,11 +9,11 @@
 | File | Purpose (guess) | Move candidate | Notes |
 | --- | --- | --- | --- |
 | `.editorconfig` | Editor defaults | Keep | Tooling expects root.
-| `ae-framework.yml` | Project config (pipeline/runtime) | Keep | Referenced from root by scripts/tools.
-| `ae-framework-v2.yml` | Project config v2 | Keep | Same as above.
-| `ae.config.ts` | AE core config | Keep | Root entry is conventional.
+| `config/ae-framework.yml` | Project config (pipeline/runtime) | Moved | Root references updated to config/.
+| `config/ae-framework-v2.yml` | Project config v2 | Moved | Root references updated to config/.
+| `config/ae.config.ts` | AE core config | Moved | Loader now checks config/ first.
 | `eslint.config.js` | ESLint root config (shim) | Keep (shim) | Canonical config is `configs/eslint.config.js` (PR #1756); root file is compatibility shim.
-| `issues.yaml` | Issue templates/data | Keep | GitHub expects root.
+| `config/issues.yaml` | Issue templates/data | Moved | Root usage removed; verify external tooling expectations.
 | `pnpm-lock.yaml` | pnpm lockfile | Keep | Tooling expects root.
 | `pnpm-workspace.yaml` | workspace config | Keep | Tooling expects root.
 | `sample-config.json` | Sample config | Moved | Relocated to `configs/samples/sample-config.json` (PR #1551).

@@ -7,12 +7,12 @@ export class ConfigLoader {
   static load(configPath?: string): AEFrameworkConfig {
     const possiblePaths = [
       configPath,
+      'config/ae-framework.yml',
+      'config/ae-framework.yaml',
       'ae-framework.yml',
       'ae-framework.yaml', 
       '.ae-framework.yml',
-      '.ae-framework.yaml',
-      path.join(process.cwd(), 'ae-framework.yml'),
-      path.join(process.cwd(), '.ae-framework.yml')
+      '.ae-framework.yaml'
     ].filter(Boolean) as string[];
 
     for (const configFile of possiblePaths) {

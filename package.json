@@ -424,8 +424,8 @@
     "schema/**",
     "types/**",
     "packages/**",
-    "ae.config.ts",
-    "ae-framework*.yml",
+    "config/ae.config.ts",
+    "config/ae-framework*.yml",
     "configs/api-extractor.json"
   ],
   "peerDependenciesMeta": {

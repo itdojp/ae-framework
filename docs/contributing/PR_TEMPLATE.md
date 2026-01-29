@@ -37,7 +37,7 @@ AE_SKIP_GUARD=1 npx ae tdd:guard
 AE_SEED=42 npx ae bench
 ```
 
-### 設定ファイル (ae.config.ts)
+### 設定ファイル (config/ae.config.ts)
 
 ```typescript
 export default {
@@ -132,15 +132,15 @@ $ AE_SKIP_GUARD=1 npx ae tdd:guard
 AE_SKIP_GUARD=1 git commit -m "message"
 
 # 設定で恒久的に無効化
-echo 'export default { tddGuard: { enabled: false } }' > ae.config.ts
+echo 'export default { tddGuard: { enabled: false } }' > config/ae.config.ts
 
 # CIでのみ有効化
-echo 'export default { tddGuard: { ciOnly: true } }' > ae.config.ts
+echo 'export default { tddGuard: { ciOnly: true } }' > config/ae.config.ts
 ```
 
 ### ファイルスコープ調整
 ```typescript
-// ae.config.ts
+// config/ae.config.ts
 export default {
   tddGuard: {
     include: ['src/**/*.ts'], // テスト対象を限定
@@ -161,7 +161,7 @@ npm install
 ### 新規ファイルの削除
 ```bash
 rm -rf src/core src/runner src/commands/tdd src/commands/bench src/commands/qa
-rm ae.config.ts src/cli.ts
+rm config/ae.config.ts src/cli.ts
 ```
 
 ### pre-commit フック削除（該当する場合）
@@ -180,7 +180,7 @@ sed -i '/npx ae-framework.*ae tdd:guard/d' .husky/pre-commit
 - `src/commands/tdd/guard.ts` - スコープ限定TDDガード
 - `src/commands/bench/run.ts` - tinybench + アーティファクト生成
 - `src/commands/qa/run.ts` - カバレッジ閾値強制
-- `ae.config.ts` - サンプル設定ファイル
+- `config/ae.config.ts` - サンプル設定ファイル
 
 ### package.json 変更点
 - `"ae": "./dist/cli.js"` bin エントリ追加

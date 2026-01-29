@@ -63,7 +63,7 @@ configs/
 - tsconfig.json (shim -> configs/tsconfig/tsconfig.root.json, PR #1757)
 - vitest.config.ts (default lookup)
 - eslint.config.js (shim -> configs/eslint.config.js, PR #1756)
-- ae-framework.yml / ae-framework-v2.yml / ae.config.ts
+- config/ae-framework.yml / config/ae-framework-v2.yml / config/ae.config.ts
 
 ## Migration steps (staged)
 

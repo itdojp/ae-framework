@@ -156,11 +156,11 @@ if ! npx tsc --noEmit --strict; then
     exit 1
 fi
 
-# Check for ae-framework-v2.yml configuration
-if [ -f "ae-framework-v2.yml" ]; then
+# Check for config/ae-framework-v2.yml configuration
+if [ -f "config/ae-framework-v2.yml" ]; then
     echo "✅ Self-improvement configuration found"
 else
-    echo "⚠️ ae-framework-v2.yml not found - ensure self-improvement setup is complete"
+    echo "⚠️ config/ae-framework-v2.yml not found - ensure self-improvement setup is complete"
 fi
 
 echo "✅ Pre-push validation passed - pushing changes..."

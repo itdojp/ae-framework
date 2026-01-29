@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { pathToFileURL } from 'node:url';
+import path from 'node:path';
 import { readFile } from 'node:fs/promises';
 
 export const AeConfigSchema = z.object({
@@ -34,11 +35,20 @@ export async function loadConfig(): Promise<AeConfig> {
   const base: Partial<AeConfig> = {};
   const cwd = process.cwd();
   
-  for (const filename of ['ae.config.ts', 'ae.config.js', 'ae.config.json']) {
+  const candidates = [
+    'config/ae.config.ts',
+    'config/ae.config.js',
+    'config/ae.config.json',
+    'ae.config.ts',
+    'ae.config.js',
+    'ae.config.json'
+  ];
+
+  for (const filename of candidates) {
     try {
-      const filePath = `${cwd}/${filename}`;
+      const filePath = path.join(cwd, filename);
       
-      if (filename.endsWith('.json')) {
+      if (path.extname(filePath) === '.json') {
         const content = await readFile(filePath, 'utf8');
         const raw = JSON.parse(content);
         Object.assign(base, raw);

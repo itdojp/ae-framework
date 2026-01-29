@@ -53,7 +53,7 @@ describe('SelfImprovementTDDSetup', () => {
 
     tddSetup = new SelfImprovementTDDSetup({
       projectRoot: '/test/project',
-      configFile: 'ae-framework-v2.yml',
+      configFile: 'config/ae-framework-v2.yml',
       enableRealTimeMonitoring: true,
       strictModeEnforcement: true,
       targetCoverage: 80,
@@ -167,7 +167,7 @@ describe('SelfImprovementTDDSetup', () => {
       expect(validation.recommendations).toContain('Initialize HybridTDDSystem');
       expect(validation.recommendations).toContain('Configure TDDAgent');
       expect(validation.recommendations).toContain('Set up MetricsCollector');
-      expect(validation.recommendations).toContain('Create ae-framework-v2.yml configuration');
+      expect(validation.recommendations).toContain('Create config/ae-framework-v2.yml configuration');
     });
   });
 

@@ -12,6 +12,9 @@ console.log('='.repeat(60));
 
 let validationsPassed = 0;
 let totalValidations = 0;
+const configPath = existsSync('config/ae-framework-v2.yml')
+  ? 'config/ae-framework-v2.yml'
+  : 'ae-framework-v2.yml';
 
 function validate(description, condition) {
   totalValidations++;
@@ -21,10 +24,10 @@ function validate(description, condition) {
   return condition;
 }
 
-// 1. Check ae-framework-v2.yml exists
+// 1. Check config/ae-framework-v2.yml exists
 validate(
-  'ae-framework-v2.yml configuration file exists',
-  existsSync('ae-framework-v2.yml')
+  `Configuration file exists (${configPath})`,
+  existsSync(configPath)
 );
 
 // 2. Check TDD setup source exists
@@ -65,9 +68,9 @@ validate(
 
 // 8. Validate configuration content
 let configValid = false;
-if (existsSync('ae-framework-v2.yml')) {
+if (existsSync(configPath)) {
   try {
-    const configContent = readFileSync('ae-framework-v2.yml', 'utf8');
+    const configContent = readFileSync(configPath, 'utf8');
     configValid = configContent.includes('self-improvement') && 
                   configContent.includes('0-tdd-setup') &&
                   configContent.includes('version: "2.0"');
