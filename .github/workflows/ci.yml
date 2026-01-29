@@ -132,19 +132,19 @@ jobs:
           fi
           if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then
             echo "No valid base commit (empty or all-zero SHA); defaulting should_run=true"
-            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "should_run=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           if ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
             echo "Base commit ${base} is not reachable; defaulting should_run=true"
-            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "should_run=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git diff --name-only "$base" "${{ github.sha }}" > /tmp/changed-files.txt
           if grep -E '^(src|packages|apps|tests|configs|scripts|types)/' /tmp/changed-files.txt >/dev/null; then
-            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "should_run=true" >> "$GITHUB_OUTPUT"
           else
-            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "should_run=false" >> "$GITHUB_OUTPUT"
           fi
 
   parallel-test-entry:
@@ -180,24 +180,24 @@ jobs:
           fi
           if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then
             echo "No valid base commit (empty or all-zero SHA); defaulting should_run=true"
-            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "should_run=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           if ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
             echo "Base commit ${base} is not reachable; defaulting should_run=true"
-            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "should_run=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git diff --name-only "$base" "${{ github.sha }}" > /tmp/changed-files.txt
           if grep -E '^(podman/|infra/podman/|scripts/podman/|scripts/docker/)' /tmp/changed-files.txt >/dev/null; then
-            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "should_run=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           if grep -E '^(package.json|pnpm-lock.yaml|\\.github/workflows/podman-smoke.yml|\\.github/workflows/ci.yml)$' /tmp/changed-files.txt >/dev/null; then
-            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "should_run=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          echo "should_run=false" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "should_run=false" >> "$GITHUB_OUTPUT"
 
   podman-smoke-entry:
     name: "Podman Smoke (entry: pr/push)"

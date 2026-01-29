@@ -277,7 +277,7 @@ jobs:
           fi
           node ./scripts/trace/fetch-otlp-payload.mjs --target "${TARGET}" "${EXTRA_ARGS[@]}"
       - name: Export payload path
-        run: echo "KVONCE_OTLP_PAYLOAD=$(pwd)/hermetic-reports/trace/collected-kvonce-otlp.json" >> "$GITHUB_ENV"
+        run: printf '%s\n' "KVONCE_OTLP_PAYLOAD=$(pwd)/hermetic-reports/trace/collected-kvonce-otlp.json" >> "$GITHUB_ENV"
       - name: Run KvOnce trace conformance pipeline (OTLP)
         run: |
           if [[ ! -f ./scripts/trace/convert-otlp-kvonce.mjs ]]; then
