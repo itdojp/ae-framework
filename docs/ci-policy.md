@@ -32,6 +32,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 
 CI Extended restores cached heavy test artifacts (`.cache/test-results`) when rerunning; the cache is refreshed at the end of each run via `node scripts/pipelines/sync-test-results.mjs --store`. Check or warm the cache locally with `--status` / `--restore` before dispatching reruns. Nightly runs use a stable cache key (`ci-heavy-${ runner.os }-schedule`) so the previous baseline is rehydrated before execution, call `node scripts/pipelines/compare-test-trends.mjs` to produce a Markdown diff (posted to the Step Summary), and persist both `reports/heavy-test-trends.json` and `reports/heavy-test-trends-history/<timestamp>.json` as artifacts (`heavy-test-trends`, `heavy-test-trends-history`).
 - `qa --light`: run QA in light mode (vitest -> `test:fast`); QA bench (`ae-ci`, ci.yml から呼び出し) で使用
+- Note: QA coverage thresholds are sourced from `policy/quality.json`. `config/ae.config.*` coverageThreshold is a local hint only and is ignored in CI. Local runs will emit a warning when it is present.
 - `ae-benchmark run --ci --light --dry-run`: benchmark config validation only in PRs (fast & stable)
 - `run-qa`: PR で QA bench を実行（ci.yml から `ae-ci` を呼び出し、既定は非実行）
 - `run-spec`: enable spec fail-fast on PRs
@@ -194,6 +195,7 @@ CI Extended 実行後は heavy テスト成果物を `.cache/test-results` に�
 
 ### QA CLI
 - `ae qa --light`: 軽量 QA 実行（`vitest` の `test:fast` を実行）。QA bench（`ae-ci`）で使用。
+  - QA の coverage しきい値は `policy/quality.json` が単一情報源。`config/ae.config.*` の coverageThreshold はローカルヒント扱いで、CI では無視される。ローカル実行では設定検出時に警告を出す。
 
 ### セキュリティ/コンプライアンス
 - 既定では PR で非必須（`run-security` ラベル時のみ実行）。結果は artifacts に集約
