@@ -30,6 +30,7 @@ Verification gates standardize **verify-then-merge**. This guide lists the avail
 - `docs/ci/label-gating.md`
 - `docs/ci/stable-profile.md`
 - `docs/quality/adapter-thresholds.md`
+- `docs/quality/comparator.md`
 
 ## 代表的なゲートと入口
 
