@@ -66,6 +66,7 @@ clean-sample-*.json
 artifacts/cassettes/
 artifacts/codex/
 artifacts/codex-quickstart-summary.md
+artifacts/api/.tmp/
 tests/api/generated/
 sbom.json
 traceability.json
