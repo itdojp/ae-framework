@@ -29,6 +29,7 @@ import { createHelpCommand } from './help-cli.js';
 import { createSetupCommand } from './setup-cli.js';
 import { safeExit } from '../utils/safe-exit.js';
 import { handleTestsSuggest } from '../commands/tdd/suggest.js';
+import { createProgressCommands } from './progress-cli.js';
 
 const program = new Command();
 
@@ -660,6 +661,11 @@ program.addCommand(createQualityCommand());
 // QA command (lightweight QA maps to vitest test:fast)
 import { createQaCommand } from './qa-cli.js';
 program.addCommand(createQaCommand());
+
+// Progress commands (status/board)
+for (const cmd of createProgressCommands()) {
+  program.addCommand(cmd);
+}
 
 // Conformance verification commands  
 import { ConformanceCli } from './conformance-cli.js';
