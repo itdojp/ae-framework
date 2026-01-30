@@ -11,13 +11,18 @@ describe('PBT: TokenOptimizer sections order stable under random docs', () => {
         ['product', 'design', 'architecture', 'standards'],
         { minLength: 2, maxLength: 4 }
       );
+      const keysWithOrderArb = sectionKeysArb.chain((keys) =>
+        fc
+          .shuffledSubarray(keys, { minLength: keys.length, maxLength: keys.length })
+          .map((insertionOrder) => ({ keys, insertionOrder }))
+      );
       const preservePriority = ['product', 'design', 'architecture', 'standards'];
       const headers = ['PRODUCT', 'DESIGN', 'ARCHITECTURE', 'STANDARDS'];
 
       await fc.assert(
-        fc.asyncProperty(sectionKeysArb, async (keys) => {
+        fc.asyncProperty(keysWithOrderArb, async ({ keys, insertionOrder }) => {
           const docs: Record<string,string> = {};
-          for (const k of keys) docs[k] = `${k} content`.repeat(2);
+          for (const k of insertionOrder) docs[k] = `${k} content`.repeat(2);
           const opt = new TokenOptimizer();
           const res = await opt.compressSteeringDocuments(docs, {
             preservePriority,
