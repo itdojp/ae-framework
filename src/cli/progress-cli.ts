@@ -57,7 +57,7 @@ const DEFAULT_SUMMARY_PATH = path.join('artifacts', 'progress', 'summary.json');
 const readSummary = (summaryPath: string): ProgressSummary => {
   const resolved = path.resolve(summaryPath);
   if (!fs.existsSync(resolved)) {
-    throw new Error(`progress summary not found: ${summaryPath}`);
+    throw new Error(`progress summary not found: ${resolved}`);
   }
   return JSON.parse(fs.readFileSync(resolved, 'utf8')) as ProgressSummary;
 };
@@ -74,7 +74,7 @@ const formatRatio = (value?: number) => {
 
 const formatProgressLine = (progress: ProgressSummary['progress']) => {
   if (!progress) return null;
-  const percent = typeof progress.percent === 'number' ? `${progress.percent}%` : 'n/a';
+  const percent = formatPercent(progress.percent);
   const currentPhase = progress.currentPhase ?? 'n/a';
   const completed = progress.phasesCompleted ?? 0;
   const total = progress.phasesTotal ?? 0;
@@ -140,7 +140,7 @@ const printBoard = (summary: ProgressSummary) => {
 
   if (summary.progress) {
     const progress = summary.progress;
-    console.log(`\nProgress: ${progress.percent ?? 'n/a'}%`);
+    console.log(`\nProgress: ${formatPercent(progress.percent)}`);
     console.log(`- Current: ${progress.currentPhase ?? 'n/a'}`);
     console.log(`- Completed: ${progress.phasesCompleted ?? 0}/${progress.phasesTotal ?? 0}`);
     console.log(`- Approvals: ${progress.approvalsRequired ? 'required' : 'none'}`);
