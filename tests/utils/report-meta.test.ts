@@ -59,6 +59,8 @@ describe('report-meta', () => {
   });
 
   it('captures optional environment metadata when available', () => {
+    delete process.env['GITHUB_HEAD_REF'];
+    delete process.env['GITHUB_REF_NAME'];
     process.env['GITHUB_SHA'] = 'abc123';
     process.env['GITHUB_REF_NAME'] = 'feature/test';
     process.env['AE_AGENT_NAME'] = 'agent-alpha';
@@ -73,6 +75,14 @@ describe('report-meta', () => {
   });
 
   it('omits optional fields when env is missing', () => {
+    [
+      'GITHUB_SHA', 'CI_COMMIT_SHA', 'GIT_COMMIT', 'COMMIT_SHA',
+      'GITHUB_HEAD_REF', 'GITHUB_REF_NAME', 'GIT_BRANCH', 'CI_COMMIT_REF_NAME', 'BRANCH_NAME',
+      'AE_AGENT_NAME', 'AGENT_NAME', 'AE_AGENT', 'AGENT',
+      'AE_MODEL', 'OPENAI_MODEL', 'ANTHROPIC_MODEL', 'GEMINI_MODEL', 'LLM_MODEL',
+      'AE_TRACE_ID', 'TRACE_ID', 'REPORT_TRACE_ID', 'REPORT_ENVELOPE_TRACE_IDS', 'TRACE_IDS',
+    ].forEach((key) => { delete process.env[key]; });
+
     const meta = buildReportMeta({ runId: 'run-1', createdAt: '2026-01-01T00:00:00.000Z' });
     expect(meta.commitSha).toBeUndefined();
     expect(meta.branch).toBeUndefined();
