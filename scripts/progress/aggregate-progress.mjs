@@ -58,8 +58,12 @@ const pickQualityReport = () => {
 
 const metricsPath = path.resolve(process.env.PROGRESS_METRICS ?? path.join(cwd, 'metrics', 'project-metrics.json'));
 const traceabilityPath = path.resolve(process.env.PROGRESS_TRACEABILITY ?? path.join(cwd, 'traceability.json'));
+const phaseStateRoot = process.env.AE_PHASE_STATE_ROOT;
+const phaseStateFallback = phaseStateRoot
+  ? path.join(path.resolve(phaseStateRoot), '.ae', 'phase-state.json')
+  : path.join(cwd, '.ae', 'phase-state.json');
 const phaseStatePath = path.resolve(
-  process.env.PROGRESS_PHASE_STATE ?? process.env.AE_PHASE_STATE_FILE ?? path.join(cwd, '.ae', 'phase-state.json')
+  process.env.PROGRESS_PHASE_STATE ?? process.env.AE_PHASE_STATE_FILE ?? phaseStateFallback
 );
 const qualityPath = pickQualityReport();
 const outputPath = path.resolve(process.env.PROGRESS_SUMMARY_OUTPUT ?? path.join(cwd, 'artifacts', 'progress', 'summary.json'));
@@ -71,7 +75,7 @@ const quality = qualityPath && fs.existsSync(qualityPath) ? readJson(qualityPath
 
 const phases = ['intent', 'formal', 'test', 'code', 'verify', 'operate'];
 const phaseStatus = phaseState?.phaseStatus ?? {};
-const completedCount = phases.filter((phase) => phaseStatus?.[phase]?.completed).length;
+const completedCount = phases.filter((phase) => phaseStatus[phase]?.completed).length;
 const progressPercent = phases.length > 0 ? Math.round((completedCount / phases.length) * 100) : 0;
 
 const qualitySummary = quality

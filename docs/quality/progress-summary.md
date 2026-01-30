@@ -29,6 +29,8 @@ pnpm run progress:summary
 - `PROGRESS_PHASE_STATE`
 - `PROGRESS_SUMMARY_OUTPUT`
 
+Note: Phase state resolution checks `PROGRESS_PHASE_STATE` first, then falls back to `AE_PHASE_STATE_FILE` when set. If neither is provided, `AE_PHASE_STATE_ROOT` is honored (using `<root>/.ae/phase-state.json`) before falling back to `.ae/phase-state.json` in the current working directory.
+
 ## Output shape (high level)
 
 - `generatedAt`
