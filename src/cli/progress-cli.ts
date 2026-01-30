@@ -94,9 +94,9 @@ const formatQualityLine = (quality: ProgressSummary['quality']) => {
 const formatTraceabilityLine = (trace: ProgressSummary['traceability']) => {
   if (!trace) return null;
   const total = trace.total ?? 0;
-  const tests = trace.coverage?.tests ?? null;
-  const impl = trace.coverage?.impl ?? null;
-  const formal = trace.coverage?.formal ?? null;
+  const tests = trace.coverage?.tests;
+  const impl = trace.coverage?.impl;
+  const formal = trace.coverage?.formal;
   return `Traceability: tests=${formatRatio(tests)} impl=${formatRatio(impl)} formal=${formatRatio(formal)} (total=${total})`;
 };
 
