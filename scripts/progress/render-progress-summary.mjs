@@ -2,11 +2,22 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const readJson = (p) => {
+const readJsonOptional = (p) => {
   try {
     return JSON.parse(fs.readFileSync(p, 'utf8'));
   } catch {
     return undefined;
+  }
+};
+
+const readJsonRequired = (p) => {
+  try {
+    return JSON.parse(fs.readFileSync(p, 'utf8'));
+  } catch (error) {
+    if (error?.code === 'ENOENT') {
+      throw new Error(`progress summary not found: ${p}`);
+    }
+    throw new Error(`progress summary is invalid JSON: ${p}`);
   }
 };
 
@@ -36,13 +47,15 @@ const summaryPath = process.env.PROGRESS_SUMMARY_PATH ?? path.join('artifacts', 
 const previousPath = process.env.PROGRESS_SUMMARY_PREVIOUS;
 const outputPath = process.env.PROGRESS_SUMMARY_MD ?? path.join('artifacts', 'progress', 'PR_PROGRESS.md');
 
-const summary = readJson(summaryPath);
-if (!summary) {
-  console.error(`progress summary not found: ${summaryPath}`);
+let summary;
+try {
+  summary = readJsonRequired(summaryPath);
+} catch (error) {
+  console.error(error?.message ?? error);
   process.exit(1);
 }
 
-const previous = previousPath ? readJson(previousPath) : undefined;
+const previous = previousPath ? readJsonOptional(previousPath) : undefined;
 
 const progress = summary.progress || null;
 const quality = summary.quality || null;

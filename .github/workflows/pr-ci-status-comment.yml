@@ -272,7 +272,6 @@ jobs:
           script: |
             const fs = require('fs');
             const marker = '<!-- AE-PR-PROGRESS -->';
-            const jsonMarker = '<!-- AE-PR-PROGRESS-JSON ';
             const { owner, repo, number } = context.issue;
             const comments = await github.rest.issues.listComments({ owner, repo, issue_number: number, per_page: 100 });
             const existing = comments.data.find(c => typeof c.body === 'string' && c.body.includes(marker));

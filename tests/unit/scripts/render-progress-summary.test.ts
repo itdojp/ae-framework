@@ -69,4 +69,23 @@ describe('render-progress-summary', () => {
 
     rmSync(dir, { recursive: true, force: true });
   });
+
+  it('exits with error when summary is invalid JSON', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'render-progress-invalid-'));
+    const progressDir = join(dir, 'artifacts', 'progress');
+    mkdirSync(progressDir, { recursive: true });
+    const summaryPath = join(progressDir, 'summary.json');
+    const outputPath = join(progressDir, 'PR_PROGRESS.md');
+    writeFileSync(summaryPath, '{ invalid json }');
+
+    const result = runScript(dir, {
+      PROGRESS_SUMMARY_PATH: summaryPath,
+      PROGRESS_SUMMARY_MD: outputPath
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('progress summary is invalid JSON');
+
+    rmSync(dir, { recursive: true, force: true });
+  });
 });
