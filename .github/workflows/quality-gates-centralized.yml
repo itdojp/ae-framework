@@ -52,6 +52,17 @@ jobs:
     with:
       node-version: '20'
       run-script: test:coverage
+  dod:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: '20'
+      - run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+      - name: Run DoD composite gate
+        run: pnpm run quality:run -- --env=testing --gates=dod --sequential
   type-coverage:
     uses: ./.github/workflows/ci-core.yml
     with:
