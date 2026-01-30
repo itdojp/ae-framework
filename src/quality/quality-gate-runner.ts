@@ -594,11 +594,17 @@ export class QualityGateRunner {
       const highMatches = result.stdout.match(/(\d+)\s+high/i);
       const mediumMatches = result.stdout.match(/(\d+)\s+moderate/i);
 
-    const critical = parseInt(criticalMatches?.[1] || '0', 10);
-    const high = parseInt(highMatches?.[1] || '0', 10);
-    const medium = parseInt(mediumMatches?.[1] || '0', 10);
+      const critical = parseInt(criticalMatches?.[1] || '0', 10);
+      const high = parseInt(highMatches?.[1] || '0', 10);
+      const medium = parseInt(mediumMatches?.[1] || '0', 10);
 
       baseResult.details = { critical, high, medium };
+
+      const exitCode = result.code ?? 0;
+      const hasCounts = Boolean(criticalMatches || highMatches || mediumMatches);
+      if (exitCode !== 0 && !hasCounts) {
+        baseResult.violations.push(`Security scan failed with exit code ${exitCode}`);
+      }
       
       // Check against thresholds
       if (threshold.maxCritical !== undefined && critical > threshold.maxCritical) {
