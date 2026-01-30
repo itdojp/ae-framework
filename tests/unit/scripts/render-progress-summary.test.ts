@@ -49,6 +49,7 @@ describe('render-progress-summary', () => {
     const md = readFileSync(outputPath, 'utf8');
     expect(md).toContain('Progress Summary');
     expect(md).toContain('Δ +10%');
+    expect(md).toContain('tests=50% (Δ +10%)');
     expect(md).toContain('Traceability');
 
     rmSync(dir, { recursive: true, force: true });

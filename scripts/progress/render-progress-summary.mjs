@@ -27,6 +27,11 @@ const formatDelta = (current, previous, unit = '%') => {
   return ` (Δ ${sign}${delta}${unit})`;
 };
 
+const formatRatioDelta = (current, previous) => {
+  if (typeof current !== 'number' || typeof previous !== 'number') return '';
+  return formatDelta(current * 100, previous * 100);
+};
+
 const summaryPath = process.env.PROGRESS_SUMMARY_PATH ?? path.join('artifacts', 'progress', 'summary.json');
 const previousPath = process.env.PROGRESS_SUMMARY_PREVIOUS;
 const outputPath = process.env.PROGRESS_SUMMARY_MD ?? path.join('artifacts', 'progress', 'PR_PROGRESS.md');
@@ -79,11 +84,11 @@ if (metrics) {
 if (traceability) {
   const total = traceability.total ?? 0;
   const tests = formatRatio(traceability.coverage?.tests);
-  const testsDelta = formatDelta(traceability.coverage?.tests, previous?.traceability?.coverage?.tests);
+  const testsDelta = formatRatioDelta(traceability.coverage?.tests, previous?.traceability?.coverage?.tests);
   const impl = formatRatio(traceability.coverage?.impl);
-  const implDelta = formatDelta(traceability.coverage?.impl, previous?.traceability?.coverage?.impl);
+  const implDelta = formatRatioDelta(traceability.coverage?.impl, previous?.traceability?.coverage?.impl);
   const formal = formatRatio(traceability.coverage?.formal);
-  const formalDelta = formatDelta(traceability.coverage?.formal, previous?.traceability?.coverage?.formal);
+  const formalDelta = formatRatioDelta(traceability.coverage?.formal, previous?.traceability?.coverage?.formal);
   lines.push(`- Traceability: tests=${tests}${testsDelta} impl=${impl}${implDelta} formal=${formal}${formalDelta} (total=${total})`);
 }
 
