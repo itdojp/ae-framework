@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { z } from 'zod';
 import { strictest } from '../utils/comparator.js';
+import { buildReportMeta, type ReportMeta } from '../utils/report-meta.js';
 
 // Type definitions for Quality Policy
 export const QualityThresholdSchema = z.object({
@@ -143,6 +144,7 @@ export interface QualityGateResult {
 export interface QualityReport {
   timestamp: string;
   environment: string;
+  meta?: ReportMeta;
   overallScore: number;
   totalGates: number;
   passedGates: number;
@@ -504,6 +506,7 @@ export class QualityPolicyLoader {
    */
   public generateReport(results: QualityGateResult[], environment: string): QualityReport {
     const timestamp = new Date().toISOString();
+    const meta = buildReportMeta({ createdAt: timestamp });
     const totalGates = results.length;
     const passedGates = results.filter(r => r.passed).length;
     const failedGates = totalGates - passedGates;
@@ -541,6 +544,7 @@ export class QualityPolicyLoader {
     return {
       timestamp,
       environment,
+      meta,
       overallScore,
       totalGates,
       passedGates,
