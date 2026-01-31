@@ -199,13 +199,14 @@ jobs:
           // By-type/present summary（簡潔・Present行の補助、一行で整形）
           // Deterministic by-type present line (JSON→MDと順序を完全同期)
           const presentList = ['tla','alloy','smt','apalache','conformance'].filter(k => present[k]);
-          lines.push(`By-type present: ${presentList.length}/5${presentList.length? ` (${presentList.join(', ')})` : ''}`);
+          lines.push('### Aggregate Status');
+          lines.push(`- By-type present: ${presentList.length}/5${presentList.length? ` (${presentList.join(', ')})` : ''}`);
           if (apalacheSum && apalache) {
-            lines.push(`Ran/OK summary: apalache ran=${apalache.ran? 'yes':'no'} ok=${apalache.ok==null? 'n/a': (apalache.ok? 'yes':'no')}`);
+            lines.push(`- Apalache ran/ok: ran=${apalache.ran? 'yes':'no'} ok=${apalache.ok==null? 'n/a': (apalache.ok? 'yes':'no')}`);
           }
-          lines.push("");
+          lines.push('');
           // Footer meta（順序を統一: Tools → Reproduce → Policy → Clamp → Generated）
-          lines.push("\n---");
+          lines.push('---');
           lines.push("_Tools check: pnpm run tools:formal:check_");
           lines.push("_Reproduce locally: pnpm run verify:tla -- --engine=apalache_ (see docs/quality/formal-runbook.md)");
           lines.push("_Non-blocking. Add/remove label run-formal to control._");
