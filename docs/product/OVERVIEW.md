@@ -63,3 +63,4 @@ ae-framework は、エージェント協調型のSDLCを実行するための「
 - 典型的な利用シナリオ: `docs/product/USE-CASES.md`
 - 全体ナビゲーション: `docs/README.md`
 - 構成と運用: `docs/project-organization.md`
+- コマンド体系（実行モード別）: `docs/product/COMMAND-MODES.md`

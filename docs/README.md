@@ -17,7 +17,7 @@ Comprehensive documentation for the AI‑Enhanced Development Framework.
 - Overview: `product/OVERVIEW.md`
 - Detailed description: `product/DETAIL.md`
 - User manual: `product/USER-MANUAL.md`
-- Use cases: `product/USE-CASES.md`
+- Command modes: `product/COMMAND-MODES.md`
 
 ### Positioning maps (concept / flow / use cases)
 - Concept & system diagrams: `architecture/ARCHITECTURE.md`
@@ -91,7 +91,7 @@ ae-frameworkは、AI-Powered TDDによる6フェーズでソフトウェア開�
 - [OVERVIEW.md](./product/OVERVIEW.md) - 概要説明資料
 - [DETAIL.md](./product/DETAIL.md) - 詳細説明資料
 - [USER-MANUAL.md](./product/USER-MANUAL.md) - 利用マニュアル
-- [USE-CASES.md](./product/USE-CASES.md) - 典型的な利用シナリオ（具体例）
+- [COMMAND-MODES.md](./product/COMMAND-MODES.md) - コマンド体系（実行モード別）
 
 ### 🧭 ポジショニングの図とフロー
 - 概念図/システム図: `architecture/ARCHITECTURE.md`
