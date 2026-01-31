@@ -63,4 +63,4 @@ ae-framework は、エージェント協調型のSDLCを実行するための「
 - Minimal Adoption: `docs/product/MINIMAL-ADOPTION.md`
 - 全体ナビゲーション: `docs/README.md`
 - 構成と運用: `docs/project-organization.md`
-- コマンド体系（実行モード別）: `docs/product/COMMAND-MODES.md`
+- 位置づけ/比較: `docs/product/POSITIONING.md`
