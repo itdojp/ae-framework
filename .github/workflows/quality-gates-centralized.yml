@@ -156,7 +156,16 @@ jobs:
           comment=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --jq '.[] | select(.body | contains("'"$marker"'")) | .body' | head -n1 || true)
           if [ -n "$comment" ]; then
             export BODY="$comment"
-            node -e "const fs=require('fs');const body=process.env.BODY||'';const match=body.match(/<!-- AE-PR-QUALITY-JSON ([\\s\\S]*?) -->/);if(match&&match[1]){fs.mkdirSync('artifacts/quality',{recursive:true});fs.writeFileSync('artifacts/quality/summary.prev.json',match[1]);console.log('Loaded previous quality summary');}" || true
+            node - <<'NODE' || true
+            const fs = require('fs');
+            const body = process.env.BODY || '';
+            const match = body.match(/<!-- AE-PR-QUALITY-JSON ([\s\S]*?) -->/);
+            if (match && match[1]) {
+              fs.mkdirSync('artifacts/quality', { recursive: true });
+              fs.writeFileSync('artifacts/quality/summary.prev.json', match[1]);
+              console.log('Loaded previous quality summary');
+            }
+          NODE
           fi
       - name: Render quality summary
         env:
