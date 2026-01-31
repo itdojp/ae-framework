@@ -17,6 +17,6 @@ describe('TokenOptimizer — compression levels monotonicity', () => {
     const high = await optimizer.compressSteeringDocuments(docs, { compressionLevel: 'high', maxTokens: 4000 });
 
     expect(med.stats.compressed).toBeLessThanOrEqual(low.stats.compressed + ALLOWED_TOKEN_DELTA);
-    expect(high.stats.compressed).toBeLessThanOrEqual(low.stats.compressed + ALLOWED_TOKEN_DELTA);
+    expect(high.stats.compressed).toBeLessThanOrEqual(med.stats.compressed + ALLOWED_TOKEN_DELTA);
   });
 });
