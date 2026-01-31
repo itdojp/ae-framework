@@ -34,6 +34,43 @@ type AiModelSpec = {
   safety?: { prohibitedOutputs?: string[] };
 };
 
+const stableStringify = (value: unknown): string => {
+  const seen = new WeakSet<object>();
+  const replacer = (_key: string, val: unknown) => {
+    if (val && typeof val === 'object') {
+      const obj = val as object;
+      if (seen.has(obj)) {
+        return '[Circular]';
+      }
+      seen.add(obj);
+      if (Array.isArray(obj)) {
+        return obj;
+      }
+      const sorted: Record<string, unknown> = {};
+      Object.keys(obj as Record<string, unknown>).sort().forEach((key) => {
+        sorted[key] = (obj as Record<string, unknown>)[key];
+      });
+      return sorted;
+    }
+    return val;
+  };
+  return JSON.stringify(value, replacer);
+};
+
+const toComparable = (value: unknown): string => {
+  if (value === null || value === undefined) return String(value);
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  try {
+    return stableStringify(value);
+  } catch {
+    return String(value);
+  }
+};
+
+const isEquivalent = (left: unknown, right: unknown): boolean => toComparable(left) === toComparable(right);
+
 const args = process.argv.slice(2);
 
 const getArg = (name: string): string | undefined => {
@@ -98,6 +135,10 @@ if (aeirPath && modelName) {
 
 const datasetRaw = readJson<Dataset | CaseRow[]>(inputPath);
 const cases: CaseRow[] = Array.isArray(datasetRaw) ? datasetRaw : (datasetRaw.cases ?? []);
+if (cases.length === 0) {
+  console.error('model-eval: dataset contains no cases to evaluate');
+  process.exit(2);
+}
 
 const prohibitedTerms: string[] = [];
 if (prohibitedCsv) {
@@ -132,7 +173,7 @@ cases.forEach((row) => {
   const actual = takeValue(row, ['actual', 'predicted', 'output']);
   if (expected !== undefined && actual !== undefined) {
     totalForAccuracy += 1;
-    if (String(actual) === String(expected)) {
+    if (isEquivalent(actual, expected)) {
       correct += 1;
     }
   }
@@ -143,7 +184,7 @@ cases.forEach((row) => {
     totalLatency += latencyRaw;
   }
 
-  const outputText = takeValue(row, ['outputText', 'output']);
+  const outputText = takeValue(row, ['outputText', 'output', 'actual', 'predicted']);
   if (typeof outputText === 'string' && uniqueProhibited.length > 0) {
     outputsChecked += 1;
     const lower = outputText.toLowerCase();
@@ -206,8 +247,13 @@ const summary = {
   passed: failed === 0,
 };
 
-fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-fs.writeFileSync(outputPath, JSON.stringify(summary, null, 2));
-console.log(`✓ Wrote ${outputPath}`);
+try {
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  fs.writeFileSync(outputPath, JSON.stringify(summary, null, 2));
+  console.log(`✓ Wrote ${outputPath}`);
+} catch (error) {
+  console.error(`model-eval: failed to write output (${outputPath}): ${toMessage(error)}`);
+  process.exit(2);
+}
 
 process.exitCode = failed === 0 ? 0 : 1;
