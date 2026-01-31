@@ -13,6 +13,11 @@ Comprehensive documentation for the AI‑Enhanced Development Framework.
 - Phase 6 Quick Start (UI/UX): `getting-started/PHASE-6-GETTING-STARTED.md`
 - Setup: `getting-started/SETUP.md`
 
+### Product Docs
+- Overview: `product/OVERVIEW.md`
+- Detailed description: `product/DETAIL.md`
+- User manual: `product/USER-MANUAL.md`
+
 ### Positioning maps (concept / flow / use cases)
 - Concept & system diagrams: `architecture/ARCHITECTURE.md`
 - Reference flow (Web API + DB): `reference/REFERENCE-FLOW-WEB-API-DB.md`
@@ -79,6 +84,11 @@ ae-frameworkは、AI-Powered TDDによる6フェーズでソフトウェア開�
 - **[QUICK-START-GUIDE.md](./getting-started/QUICK-START-GUIDE.md)** ⭐ **推奨** - 15分で始めるae-framework
 - **[PHASE-6-GETTING-STARTED.md](./getting-started/PHASE-6-GETTING-STARTED.md)** ⭐ **最新** - Phase 6 UI/UX専用クイックスタート  
 - [SETUP.md](./getting-started/SETUP.md) - 基本セットアップ手順
+
+### 🧩 [product/](./product/) - プロダクト資料
+- [OVERVIEW.md](./product/OVERVIEW.md) - 概要説明資料
+- [DETAIL.md](./product/DETAIL.md) - 詳細説明資料
+- [USER-MANUAL.md](./product/USER-MANUAL.md) - 利用マニュアル
 
 ### 🧭 ポジショニングの図とフロー
 - 概念図/システム図: `architecture/ARCHITECTURE.md`
