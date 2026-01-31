@@ -63,6 +63,13 @@ jobs:
       - run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
       - name: Run DoD composite gate
         run: pnpm run quality:run -- --env=testing --gates=dod --sequential
+      - name: Upload quality report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-gates-report
+          path: reports/quality-gates
+          if-no-files-found: warn
   type-coverage:
     uses: ./.github/workflows/ci-core.yml
     with:
@@ -118,6 +125,69 @@ jobs:
     with:
       node-version: '20'
       run-script: typecov:check:70
+  pr-quality-comment:
+    if: ${{ always() && github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    needs: [dod]
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download quality report
+        uses: actions/download-artifact@v4
+        with:
+          name: quality-gates-report
+          path: quality-reports
+      - name: Locate quality report
+        id: report
+        run: |
+          REPORT=$(find quality-reports -name 'quality-report-*-latest.json' | head -n1 || true)
+          printf "report=%s\n" "$REPORT" >> "$GITHUB_OUTPUT"
+      - name: Load previous quality summary
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -e
+          mkdir -p artifacts/quality
+          marker='<!-- AE-PR-QUALITY -->'
+          comment=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --jq '.[] | select(.body | contains("'"$marker"'")) | .body' | head -n1 || true)
+          if [ -n "$comment" ]; then
+            export BODY="$comment"
+            node <<'JS'
+            const fs = require('fs');
+            const body = process.env.BODY || '';
+            const match = body.match(/<!-- AE-PR-QUALITY-JSON ([\s\S]*?) -->/);
+            if (match && match[1]) {
+              fs.mkdirSync('artifacts/quality', { recursive: true });
+              fs.writeFileSync('artifacts/quality/summary.prev.json', match[1]);
+              console.log('Loaded previous quality summary');
+            }
+            JS
+          fi
+      - name: Render quality summary
+        env:
+          QUALITY_REPORT_PATH: ${{ steps.report.outputs.report }}
+          QUALITY_PREVIOUS_SUMMARY: artifacts/quality/summary.prev.json
+        run: node scripts/quality/render-quality-pr-comment.mjs
+      - name: Post or update quality comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -e
+          marker='<!-- AE-PR-QUALITY -->'
+          body=$(cat artifacts/quality/PR_QUALITY.md)
+          summary=$(cat artifacts/quality/summary.json)
+          payload="${marker}\n\n${body}\n\n<!-- AE-PR-QUALITY-JSON ${summary} -->"
+          existing_id=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --jq '.[] | select(.body | contains("'"$marker"'")) | .id' | head -n1 || true)
+          if [ -n "$existing_id" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$existing_id" -f body="$payload"
+          else
+            gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" -f body="$payload"
+          fi
   types-tests:
     uses: ./.github/workflows/ci-core.yml
     with:
