@@ -63,6 +63,7 @@ Comprehensive documentation for the AI‑Enhanced Development Framework.
 - Guarded automation template: `quality/guarded-automation-template.md`
 - Incident triage template: `quality/incident-triage-template.md`
 - Adoption sample flow: `quality/adoption-sample-flow.md`
+- Opt-in controls catalog: `ci/OPT-IN-CONTROLS.md`
 - Runbooks / Traceability / Runtime Contracts: see `docs/quality` and `docs/verify`
  - Coverage policy: `quality/coverage-policy.md`（しきい値の由来/Required化の運用）
  - Formal runbook: `quality/formal-runbook.md`（ラベル/dispatch/要約/環境変数）
@@ -155,6 +156,7 @@ Claude CodeやMCPとの統合
 - [guarded-automation-template.md](./quality/guarded-automation-template.md) - Guarded automation 運用テンプレ
 - [incident-triage-template.md](./quality/incident-triage-template.md) - インシデント一次切り分けテンプレ
 - [adoption-sample-flow.md](./quality/adoption-sample-flow.md) - 導入の最小フロー（エンドツーエンド）
+- [./ci/OPT-IN-CONTROLS.md](./ci/OPT-IN-CONTROLS.md) - opt-in ラベル/Slash のカタログ
 - [formal-runbook.md](./quality/formal-runbook.md) - 実行・運用手順（ラベルゲート/手動実行）
 - [formal-tools-setup.md](./quality/formal-tools-setup.md) - ローカル環境セットアップ（Apalache/TLC/Z3/cvc5）
  - [formal-mini-flow.md](./quality/formal-mini-flow.md) - 反例→失敗テスト→修正→緑の最小フロー
