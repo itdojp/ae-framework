@@ -9,6 +9,9 @@ import { qualityPolicy } from '../quality/policy-loader.js';
 import { toMessage } from '../utils/error-utils.js';
 import { safeExit } from '../utils/safe-exit.js';
 import { QualityGateRunner } from '../quality/quality-gate-runner.js';
+import { AutoFixEngine } from '../cegis/auto-fix-engine.js';
+import type { FailureArtifact, FailureArtifactCollection } from '../cegis/failure-artifact-schema.js';
+import { validateFailureArtifact, validateFailureArtifactCollection } from '../cegis/failure-artifact-schema.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -42,6 +45,50 @@ const readDirIfExists = (dirPath: string): string[] | null => {
     }
     throw error;
   }
+};
+
+const COMMON_FAILURE_PATHS = [
+  '.ae/failures.json',
+  'failure-artifacts.json',
+  'failures.json',
+  '.ae/auto-fix/failures.json',
+];
+
+const loadFailureArtifacts = (inputPath?: string): FailureArtifact[] => {
+  let resolvedPath = inputPath;
+  if (!resolvedPath) {
+    for (const tryPath of COMMON_FAILURE_PATHS) {
+      if (fs.existsSync(tryPath)) {
+        resolvedPath = tryPath;
+        console.log(chalk.gray(`📁 Found failure artifacts at: ${tryPath}`));
+        break;
+      }
+    }
+  }
+
+  if (!resolvedPath) {
+    throw new Error(
+      'No input file specified and no failure artifacts found in common locations.\n' +
+        'Use --fix-input to specify input file, or run "ae-fix demo" to generate test data.'
+    );
+  }
+
+  if (!fs.existsSync(resolvedPath)) {
+    throw new Error(`Input file not found: ${resolvedPath}`);
+  }
+
+  const data = JSON.parse(fs.readFileSync(resolvedPath, 'utf8')) as
+    | FailureArtifact[]
+    | FailureArtifactCollection
+    | FailureArtifact;
+
+  if (Array.isArray(data)) {
+    return data.map(validateFailureArtifact);
+  }
+  if ('failures' in data) {
+    return validateFailureArtifactCollection(data).failures;
+  }
+  return [validateFailureArtifact(data)];
 };
 
 export function createQualityCommand(): Command {
@@ -85,6 +132,89 @@ export function createQualityCommand(): Command {
         }
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Error running quality gates: ${toMessage(error)}`));
+        safeExit(1);
+      }
+    });
+
+  quality
+    .command('reconcile')
+    .description('Run quality gates and auto-fix until pass or max rounds')
+    .option('-e, --env <environment>', 'Target environment', process.env['NODE_ENV'] || 'development')
+    .option('-g, --gates <gates>', 'Comma-separated list of specific gates to run')
+    .option('--sequential', 'Run gates sequentially instead of in parallel')
+    .option('--dry-run', 'Show what would be executed without running')
+    .option('-v, --verbose', 'Verbose output with detailed results')
+    .option('-t, --timeout <ms>', 'Timeout for each gate in milliseconds', '300000')
+    .option('-o, --output <dir>', 'Output directory for reports', 'reports/quality-gates')
+    .option('--max-rounds <number>', 'Maximum reconciliation rounds', '3')
+    .option('--fix-input <path>', 'Failure artifacts JSON file for auto-fix')
+    .option('--fix-output <dir>', 'Output directory for auto-fix', '.ae/auto-fix')
+    .option('--fix-iterations <number>', 'Auto-fix max iterations', '10')
+    .option('--fix-confidence <threshold>', 'Auto-fix confidence threshold', '0.7')
+    .action(async (options) => {
+      try {
+        const maxRounds = Math.max(1, parseInt(options.maxRounds, 10) || 1);
+        const runner = new QualityGateRunner();
+        let lastReport: Awaited<ReturnType<QualityGateRunner['executeGates']>> | null = null;
+
+        for (let round = 1; round <= maxRounds; round += 1) {
+          console.log(chalk.blue(`🔁 Reconciliation round ${round}/${maxRounds}`));
+          console.log(chalk.blue(`🔍 Running quality gates for ${options.env} environment`));
+
+          const report = await runner.executeGates({
+            environment: options.env,
+            gates: options.gates ? options.gates.split(',').map((g: string) => g.trim()) : undefined,
+            parallel: !options.sequential,
+            dryRun: options.dryRun,
+            verbose: options.verbose,
+            timeout: parseInt(options.timeout, 10),
+            outputDir: options.output,
+          });
+
+          lastReport = report;
+
+          if (report.summary.blockers.length > 0) {
+            console.log(chalk.red(`\n❌ ${report.summary.blockers.length} blocking quality gate(s) failed`));
+          } else if (report.failedGates > 0) {
+            console.log(chalk.yellow(`\n⚠️  ${report.failedGates} quality gate(s) failed (non-blocking)`));
+          } else {
+            console.log(chalk.green('\n✅ All quality gates passed!'));
+            return;
+          }
+
+          if (options.dryRun) {
+            console.log(chalk.yellow('ℹ️  Dry-run mode enabled; skipping auto-fix.'));
+            break;
+          }
+
+          if (report.summary.blockers.length === 0) {
+            console.log(chalk.yellow('ℹ️  No blocking gates failed; stopping reconciliation.'));
+            break;
+          }
+
+          if (round >= maxRounds) {
+            break;
+          }
+
+          const failures = loadFailureArtifacts(options.fixInput);
+          const engine = new AutoFixEngine();
+          const fixResult = await engine.executeFixes(failures, {
+            outputDir: options.fixOutput,
+            maxIterations: parseInt(options.fixIterations, 10) || 10,
+            confidenceThreshold: parseFloat(options.fixConfidence) || 0.7,
+          });
+
+          if (!fixResult.success) {
+            console.log(chalk.yellow('⚠️  Auto-fix did not apply any changes. Stopping reconciliation.'));
+            break;
+          }
+        }
+
+        if (lastReport && lastReport.summary.blockers.length > 0) {
+          safeExit(1);
+        }
+      } catch (error: unknown) {
+        console.error(chalk.red(`❌ Error running reconciliation: ${toMessage(error)}`));
         safeExit(1);
       }
     });

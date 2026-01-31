@@ -252,6 +252,9 @@ Execute environment-specific quality gates
 # Run (parallel by default)
 ae-framework quality run --env development --dry-run
 
+# Reconcile (quality -> auto-fix -> re-run)
+ae-framework quality reconcile --env development --max-rounds 3 --fix-input .ae/failures.json
+
 # List configured gates
 ae-framework quality list --env development --format summary
 
