@@ -165,7 +165,7 @@ jobs:
               fs.writeFileSync('artifacts/quality/summary.prev.json', match[1]);
               console.log('Loaded previous quality summary');
             }
-NODE
+            NODE
           fi
       - name: Render quality summary
         env:
