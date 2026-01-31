@@ -29,7 +29,7 @@ const ERROR_LINE_CLAMP = Number(process.env.APALACHE_ERROR_LINE_CLAMP || '200');
 const SNIPPET_BEFORE = Number(process.env.APALACHE_SNIPPET_BEFORE || '2');
 const SNIPPET_AFTER = Number(process.env.APALACHE_SNIPPET_AFTER || '2');
 const OUTPUT_CLAMP = Number(process.env.APALACHE_OUTPUT_CLAMP || '4000');
-const ERROR_KEY = /error|violat|counterexample|fail|\bunsat\b|\bunsatisfied\b|\bunsatisfiable\b|dead[-\s]*lock|dead[-\s]*end/i;
+const ERROR_KEY = /error|violat|counterexample|fail|unsat\b|unsatisfied\b|unsatisfiable\b|dead[-\s]*lock|dead[-\s]*end/i;
 
 function extractErrors(out){
   const lines = (out || '').split(/\r?\n/);
