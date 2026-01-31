@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { TokenOptimizer } from '../../src/utils/token-optimizer.js';
+import { formatGWT } from './gwt-format';
 
 describe('TokenOptimizer', () => {
   let optimizer: TokenOptimizer;
@@ -61,36 +62,42 @@ describe('TokenOptimizer', () => {
       expect(result.stats.reductionPercentage).toBeGreaterThan(0);
     });
 
-    test('should respect token limit', async () => {
-      const largeDoc = {
-        content: 'x'.repeat(10000) // Very large document
-      };
+    test(
+      formatGWT('large doc', 'compress with maxTokens=100', 'compressed tokens <= limit'),
+      async () => {
+        const largeDoc = {
+          content: 'x'.repeat(10000) // Very large document
+        };
 
-      const result = await optimizer.compressSteeringDocuments(largeDoc, {
-        maxTokens: 100
-      });
+        const result = await optimizer.compressSteeringDocuments(largeDoc, {
+          maxTokens: 100
+        });
 
-      // Estimated tokens should be under limit (with some tolerance)
-      expect(result.stats.compressed).toBeLessThanOrEqual(110);
-    });
+        // Estimated tokens should be under limit (with some tolerance)
+        expect(result.stats.compressed).toBeLessThanOrEqual(110);
+      }
+    );
 
-    test('should prioritize documents', async () => {
-      const docs = {
-        low: 'Low priority content',
-        high: 'High priority content',
-        medium: 'Medium priority content'
-      };
+    test(
+      formatGWT('docs with priority list', 'compress with preservePriority', 'HIGH appears before MEDIUM'),
+      async () => {
+        const docs = {
+          low: 'Low priority content',
+          high: 'High priority content',
+          medium: 'Medium priority content'
+        };
 
-      const result = await optimizer.compressSteeringDocuments(docs, {
-        maxTokens: 50,
-        preservePriority: ['high', 'medium', 'low']
-      });
+        const result = await optimizer.compressSteeringDocuments(docs, {
+          maxTokens: 50,
+          preservePriority: ['high', 'medium', 'low']
+        });
 
-      // High priority should appear first
-      expect(result.compressed.indexOf('HIGH')).toBeLessThan(
-        result.compressed.indexOf('MEDIUM')
-      );
-    });
+        // High priority should appear first
+        expect(result.compressed.indexOf('HIGH')).toBeLessThan(
+          result.compressed.indexOf('MEDIUM')
+        );
+      }
+    );
 
     test('should use cache for repeated compressions', async () => {
       const docs = {
