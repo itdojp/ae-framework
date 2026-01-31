@@ -322,6 +322,24 @@ const NFRSchema = z.object({
   }).strict().optional()
 }).strict();
 
+const AIModelSchema = z.object({
+  name: IdentifierSchema,
+  type: z.string().min(2).max(50),
+  provider: z.string().min(2).max(200),
+  inputs: z.array(IdentifierSchema).min(1).max(20),
+  outputs: z.array(IdentifierSchema).min(1).max(20),
+  metrics: z.record(z.string().min(1).max(50)).optional(),
+  safety: z.object({
+    prohibitedOutputs: z.array(z.string().min(1).max(100)).max(50).optional(),
+    fallback: z.string().min(1).max(200).optional(),
+  }).strict().optional(),
+  evaluation: z.object({
+    dataset: z.string().min(1).max(200).optional(),
+    method: z.string().min(1).max(100).optional(),
+    frequency: z.string().min(1).max(50).optional(),
+  }).strict().optional(),
+}).strict();
+
 // Main AEIR Schema
 export const StrictAEIRSchema = z.object({
   version: VersionSchema,
@@ -357,7 +375,8 @@ export const StrictAEIRSchema = z.object({
       }).strict()).min(1).max(20)
     }).strict()).max(50).optional()
   }).strict().optional(),
-  nfr: NFRSchema.optional()
+  nfr: NFRSchema.optional(),
+  aiModels: z.array(AIModelSchema).max(50).optional()
 }).strict().superRefine((aeir, ctx) => {
   // Cross-reference validation
   const entityNames = new Set(aeir.domain.map(e => e.name));
