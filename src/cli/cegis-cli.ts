@@ -7,12 +7,15 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import type { join } from 'path';
+import { spawnSync } from 'node:child_process';
+import path from 'node:path';
 import { AutoFixEngine } from '../cegis/auto-fix-engine.js';
 import type { FailureCategory } from '../cegis/types.js';
 import { FailureArtifactFactory } from '../cegis/failure-artifact-factory.js';
 import type { FailureArtifact, AutoFixOptions } from '../cegis/types.js';
 import { toMessage } from '../utils/error-utils.js';
 import { safeExit } from '../utils/safe-exit.js';
+import { loadConfig } from '../core/config.js';
 
 export class CEGISCli {
   private engine: AutoFixEngine;
@@ -36,11 +39,14 @@ export class CEGISCli {
       .option('-i, --input <file>', 'Input failure artifacts JSON file')
       .option('-o, --output <dir>', 'Output directory for fixed files', './cegis-output')
       .option('--dry-run', 'Show proposed fixes without applying them')
+      .option('--apply', 'Apply fixes even when mode=copilot')
       .option('--confidence <threshold>', 'Minimum confidence threshold (0.0-1.0)', '0.7')
       .option('--max-risk <level>', 'Maximum risk level (1-5)', '3')
       .option('--max-fixes <count>', 'Maximum number of fixes to apply', '10')
       .option('--no-backup', 'Skip creating backup files')
       .option('--no-report', 'Skip generating fix report')
+      .option('--verify', 'Run verify profile after apply')
+      .option('--verify-profile <name>', 'Verify profile to run', 'lite')
       .action(async (options) => {
         await this.handleApplyCommand(options);
       });
@@ -95,6 +101,15 @@ export class CEGISCli {
    */
   private async handleApplyCommand(options: any): Promise<void> {
     try {
+      const config = await loadConfig();
+      const mode = config.mode ?? 'copilot';
+      const enforcedDryRun = mode === 'copilot' && !options.apply;
+      const dryRun = Boolean(options.dryRun || enforcedDryRun);
+      options.dryRun = dryRun;
+      if (enforcedDryRun && !options.dryRun) {
+        console.log('[ae:fix] copilot mode defaults to dry-run. Use --apply to execute fixes.');
+      }
+
       console.log('🔧 Starting CEGIS auto-fix process...');
 
       // Load failure artifacts
@@ -108,7 +123,7 @@ export class CEGISCli {
 
       // Configure auto-fix options
       const autoFixOptions: AutoFixOptions = {
-        dryRun: options.dryRun || false,
+        dryRun,
         confidenceThreshold: parseFloat(options.confidence),
         maxRiskLevel: parseInt(options.maxRisk),
         timeoutMs: 30000
@@ -133,6 +148,34 @@ export class CEGISCli {
 
       // Display results
       await this.displayResults(result, options);
+
+      const shouldVerify = mode === 'delegated' || Boolean(options.verify);
+      if (shouldVerify && !dryRun) {
+        const profile = options.verifyProfile || 'lite';
+        const verifyScript = path.join(process.cwd(), 'scripts', 'verify', 'run.mjs');
+        if (!existsSync(verifyScript)) {
+          console.error(chalk.red(`❌ verify runner not found: ${verifyScript}`));
+          safeExit(1);
+          return;
+        }
+
+        console.log(chalk.blue(`🔍 Running verify profile: ${profile}`));
+        const verifyResult = spawnSync(process.execPath, [verifyScript, '--profile', profile], {
+          stdio: 'inherit',
+          env: process.env,
+        });
+        if (verifyResult.error) {
+          console.error(chalk.red(`❌ verify failed to start: ${toMessage(verifyResult.error)}`));
+          safeExit(1);
+          return;
+        }
+        if (verifyResult.status && verifyResult.status !== 0) {
+          safeExit(verifyResult.status);
+          return;
+        }
+      } else if (shouldVerify && dryRun) {
+        console.log(chalk.yellow('ℹ️  Dry-run mode: skipping verify run.'));
+      }
 
     } catch (error: unknown) {
       console.error(chalk.red(`❌ Auto-fix failed: ${toMessage(error)}`));
