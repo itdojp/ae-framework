@@ -57,10 +57,13 @@ CLIは YAML 設定を探索して読み込みます（`src/cli/config/ConfigLoad
 
 ### 4.1 仕様の登録と検証
 - 仕様の配置: `spec/`（詳細は `docs/spec/registry.md`）
-- 検証コマンド:
+- 検証コマンド（例: `spec/example-spec.md`）:
 ```bash
-pnpm run spec:lint
-pnpm run spec:validate
+# AE-Spec (Markdown) -> AE-IR (JSON)
+pnpm run spec:validate -- -i spec/example-spec.md --output .ae/ae-ir.json
+
+# AE-IR lint
+pnpm run spec:lint -- -i .ae/ae-ir.json
 ```
 
 ### 4.2 形式検証（任意）
@@ -128,8 +131,8 @@ pnpm run ae-framework -- sbom --help
 # 形式検証サマリ
 pnpm run formal:summary
 
-# 仕様ツールのチェック
-pnpm run spec:validate
+# 仕様ツール（例: AE-Specのvalidate）
+pnpm run spec:validate -- -i spec/example-spec.md --output .ae/ae-ir.json
 
 # CI向け最小検証
 pnpm run verify:lite
@@ -155,4 +158,5 @@ pnpm run security:integrated:quick
 ## 9. 参考資料
 - 概要説明資料: `docs/product/OVERVIEW.md`
 - 詳細説明資料: `docs/product/DETAIL.md`
+- 典型的な利用シナリオ: `docs/product/USE-CASES.md`
 - 全体ナビゲーション: `docs/README.md`
