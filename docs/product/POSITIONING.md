@@ -53,15 +53,15 @@ ae-framework の導入判断を支援するため、**類似カテゴリとの�
 
 ### 5.1 既存CIはあるが運用が揺れている
 → **verify-lite + Copilot gate の最小導入** から開始  
-（`docs/product/MINIMAL-ADOPTION.md` を参照）
+（`docs/quality/adoption-sample-flow.md` を参照）
 
 ### 5.2 仕様運用が未整備
 → AE-Spec / AE-IR を導入し、**仕様→検証の基線** を作る  
-（`docs/product/USE-CASES.md` の「仕様運用」）
+（`docs/product/OVERVIEW.md` の「仕様運用・ユースケース」）
 
 ### 5.3 重い検証や形式検証を段階導入したい
 → opt-in ラベル/Slash による **段階的な検証強化** を選択  
-（`docs/ci/OPT-IN-CONTROLS.md`）
+（`docs/ci/label-gating.md`）
 
 ### 5.4 エージェント活用を進めたい
 → CodeX/Claude Code の playbook による **成果物収集** を導入  
@@ -74,5 +74,5 @@ ae-framework の導入判断を支援するため、**類似カテゴリとの�
 
 ## 7. 参照
 - `docs/product/OVERVIEW.md`
-- `docs/product/MINIMAL-ADOPTION.md`
-- `docs/ci/OPT-IN-CONTROLS.md`
+- `docs/quality/adoption-sample-flow.md`
+- `docs/ci/label-gating.md`
