@@ -139,11 +139,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: quality-gates-report
-          path: quality-reports
+          path: reports/quality-gates
       - name: Locate quality report
         id: report
         run: |
-          REPORT=$(find quality-reports -name 'quality-report-*-latest.json' | head -n1 || true)
+          REPORT=$(find reports/quality-gates -name 'quality-report-*-latest.json' | head -n1 || true)
           printf "report=%s\n" "$REPORT" >> "$GITHUB_OUTPUT"
       - name: Load previous quality summary
         env:
@@ -156,16 +156,7 @@ jobs:
           comment=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --jq '.[] | select(.body | contains("'"$marker"'")) | .body' | head -n1 || true)
           if [ -n "$comment" ]; then
             export BODY="$comment"
-            node <<'JS'
-            const fs = require('fs');
-            const body = process.env.BODY || '';
-            const match = body.match(/<!-- AE-PR-QUALITY-JSON ([\s\S]*?) -->/);
-            if (match && match[1]) {
-              fs.mkdirSync('artifacts/quality', { recursive: true });
-              fs.writeFileSync('artifacts/quality/summary.prev.json', match[1]);
-              console.log('Loaded previous quality summary');
-            }
-            JS
+            node -e "const fs=require('fs');const body=process.env.BODY||'';const match=body.match(/<!-- AE-PR-QUALITY-JSON ([\\s\\S]*?) -->/);if(match&&match[1]){fs.mkdirSync('artifacts/quality',{recursive:true});fs.writeFileSync('artifacts/quality/summary.prev.json',match[1]);console.log('Loaded previous quality summary');}" || true
           fi
       - name: Render quality summary
         env:
@@ -179,14 +170,18 @@ jobs:
         run: |
           set -e
           marker='<!-- AE-PR-QUALITY -->'
-          body=$(cat artifacts/quality/PR_QUALITY.md)
-          summary=$(cat artifacts/quality/summary.json)
-          payload="${marker}\n\n${body}\n\n<!-- AE-PR-QUALITY-JSON ${summary} -->"
+          {
+            printf '%s\n\n' "$marker"
+            cat artifacts/quality/PR_QUALITY.md
+            printf '\n\n<!-- AE-PR-QUALITY-JSON '
+            cat artifacts/quality/summary.json
+            printf ' -->\n'
+          } > artifacts/quality/comment-body.txt
           existing_id=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --jq '.[] | select(.body | contains("'"$marker"'")) | .id' | head -n1 || true)
           if [ -n "$existing_id" ]; then
-            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$existing_id" -f body="$payload"
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$existing_id" -f body=@artifacts/quality/comment-body.txt
           else
-            gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" -f body="$payload"
+            gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" -f body=@artifacts/quality/comment-body.txt
           fi
   types-tests:
     uses: ./.github/workflows/ci-core.yml

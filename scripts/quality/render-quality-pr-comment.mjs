@@ -1,4 +1,22 @@
 #!/usr/bin/env node
+/**
+ * @fileoverview
+ * Render a markdown summary and JSON sidecar for the latest quality-gates report
+ * so it can be posted as a PR comment with optional delta hints.
+ *
+ * Usage:
+ *   node scripts/quality/render-quality-pr-comment.mjs
+ *
+ * Environment variables:
+ * - QUALITY_REPORT_PATH: explicit path to a quality report JSON file.
+ * - QUALITY_COMMENT_OUTPUT: markdown output path (default: artifacts/quality/PR_QUALITY.md).
+ * - QUALITY_SUMMARY_OUTPUT: JSON summary output path (default: artifacts/quality/summary.json).
+ * - QUALITY_PREVIOUS_SUMMARY: path to previous summary JSON for delta comparisons.
+ *
+ * Exit codes:
+ * - 0: success
+ * - 3: failed to write outputs
+ */
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -58,6 +76,20 @@ const reportPath = findLatestReport();
 const report = reportPath ? readJsonOptional(reportPath) : undefined;
 const previous = previousPath ? readJsonOptional(previousPath) : undefined;
 
+if (reportPath) {
+  console.log(`Using quality report: ${path.relative(cwd, reportPath)}`);
+} else {
+  console.log('No quality report found; emitting N/A summary.');
+}
+
+if (reportPath && !report) {
+  console.warn(`Failed to parse quality report: ${path.relative(cwd, reportPath)}`);
+}
+
+if (previousPath && !previous) {
+  console.warn(`Failed to parse previous summary: ${previousPath}`);
+}
+
 const results = Array.isArray(report?.results) ? report.results : [];
 const failedResults = results.filter((result) => !result.passed);
 const failedGateKeys = Array.from(
@@ -107,6 +139,13 @@ const formatCount = (value) => {
   return `${value}`;
 };
 
+const formatListWithMore = (items, limit) => {
+  if (!items.length) return '';
+  const shown = items.slice(0, limit).join(', ');
+  const remaining = items.length - limit;
+  return remaining > 0 ? `${shown}... (and ${remaining} more)` : shown;
+};
+
 const prevFailed = Array.isArray(previous?.failedGateKeys) ? previous.failedGateKeys : [];
 const newFailures = failedGateKeys.filter((key) => !prevFailed.includes(key));
 const resolvedFailures = prevFailed.filter((key) => !failedGateKeys.includes(key));
@@ -121,23 +160,34 @@ if (!report) {
   const env = summary.environment ?? 'n/a';
   const score = formatScore(summary.overallScore);
   const scoreDelta = formatDelta(summary.overallScore, previous?.overallScore, 1);
-  const gates = summary.passedGates !== null && summary.totalGates !== null
-    ? `${summary.passedGates}/${summary.totalGates}${formatDelta(summary.passedGates, previous?.passedGates, 0)}`
+  const hasGateCounts = typeof summary.passedGates === 'number' && typeof summary.totalGates === 'number';
+  const gatesDelta = hasGateCounts && typeof previous?.passedGates === 'number'
+    ? formatDelta(summary.passedGates, previous.passedGates, 0)
+    : '';
+  const gates = hasGateCounts
+    ? `${summary.passedGates}/${summary.totalGates}${gatesDelta}`
     : 'n/a';
   const blockersText = `${formatCount(blockersCount)}${formatDelta(blockersCount, previous?.blockersCount, 0)}`;
   lines.push(`- Status: ${summary.status} | env=${env} | score=${score}${scoreDelta} | gates=${gates} | blockers=${blockersText}`);
 
-  const failedList = failedGateKeys.length ? failedGateKeys.slice(0, 3).join(', ') : 'none';
+  const failedList = failedGateKeys.length ? formatListWithMore(failedGateKeys, 3) : 'none';
   const diffParts = [];
-  if (newFailures.length) diffParts.push(`new: ${newFailures.slice(0, 3).join(', ')}`);
-  if (resolvedFailures.length) diffParts.push(`resolved: ${resolvedFailures.slice(0, 3).join(', ')}`);
+  if (newFailures.length) diffParts.push(`new: ${formatListWithMore(newFailures, 3)}`);
+  if (resolvedFailures.length) diffParts.push(`resolved: ${formatListWithMore(resolvedFailures, 3)}`);
   const diffNote = diffParts.length ? ` (${diffParts.join('; ')})` : '';
   lines.push(`- Failed: ${failedList}${diffNote}`);
   lines.push(`- Report: ${summary.source ?? 'n/a'}`);
 }
 
-fs.mkdirSync(path.dirname(outputMd), { recursive: true });
-fs.mkdirSync(path.dirname(outputJson), { recursive: true });
-fs.writeFileSync(outputMd, `${lines.join('\n')}\n`, 'utf8');
-fs.writeFileSync(outputJson, JSON.stringify(summary));
-console.log(`✓ Wrote ${outputMd}`);
+try {
+  fs.mkdirSync(path.dirname(outputMd), { recursive: true });
+  fs.mkdirSync(path.dirname(outputJson), { recursive: true });
+  fs.writeFileSync(outputMd, `${lines.join('\n')}\n`, 'utf8');
+  fs.writeFileSync(outputJson, JSON.stringify(summary, null, 2));
+  console.log(`✓ Wrote ${outputMd}`);
+  process.exitCode = 0;
+} catch (error) {
+  const message = error instanceof Error ? error.message : String(error);
+  console.error('Failed to write quality PR comment outputs:', message);
+  process.exitCode = 3;
+}
