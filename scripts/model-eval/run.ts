@@ -1,0 +1,213 @@
+#!/usr/bin/env node
+/**
+ * Minimal model evaluation runner for AE-IR aiModels.
+ *
+ * Usage:
+ *   tsx scripts/model-eval/run.ts --input <dataset.json> [--aeir <ae-ir.json> --model <name>] \
+ *     [--threshold key=expr] [--prohibited term1,term2] [--output <path>]
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+import { compare } from '../../src/utils/comparator.js';
+import { toMessage } from '../../src/utils/error-utils.js';
+
+type Thresholds = Record<string, string>;
+
+type CaseRow = {
+  expected?: unknown;
+  actual?: unknown;
+  predicted?: unknown;
+  output?: unknown;
+  outputText?: unknown;
+  latencyMs?: unknown;
+};
+
+type Dataset = {
+  cases?: CaseRow[];
+  prohibited?: string[];
+};
+
+type AiModelSpec = {
+  name: string;
+  provider?: string;
+  metrics?: Record<string, string>;
+  safety?: { prohibitedOutputs?: string[] };
+};
+
+const args = process.argv.slice(2);
+
+const getArg = (name: string): string | undefined => {
+  const idx = args.indexOf(name);
+  if (idx === -1) return undefined;
+  return args[idx + 1];
+};
+
+const getArgs = (name: string): string[] => {
+  const values: string[] = [];
+  for (let i = 0; i < args.length; i += 1) {
+    if (args[i] === name && args[i + 1]) {
+      values.push(args[i + 1]);
+    }
+    if (args[i].startsWith(`${name}=`)) {
+      values.push(args[i].split('=')[1] ?? '');
+    }
+  }
+  return values.filter(Boolean);
+};
+
+const inputPath = getArg('--input') ?? getArg('-i');
+const aeirPath = getArg('--aeir') ?? getArg('--ir');
+const modelName = getArg('--model');
+const outputPath = getArg('--output') ?? 'artifacts/model-eval/summary.json';
+const prohibitedCsv = getArg('--prohibited');
+
+if (!inputPath) {
+  console.error('model-eval: --input is required');
+  process.exit(2);
+}
+
+const readJson = <T>(p: string): T => {
+  const raw = fs.readFileSync(p, 'utf8');
+  return JSON.parse(raw) as T;
+};
+
+const thresholds: Thresholds = {};
+for (const entry of getArgs('--threshold')) {
+  const [key, expr] = entry.split('=');
+  if (!key || !expr) {
+    console.error(`model-eval: invalid --threshold ${entry} (use key=expr)`);
+    process.exit(2);
+  }
+  thresholds[key.trim()] = expr.trim();
+}
+
+let aiModel: AiModelSpec | undefined;
+if (aeirPath && modelName) {
+  try {
+    const aeir = readJson<{ aiModels?: AiModelSpec[] }>(aeirPath);
+    aiModel = aeir.aiModels?.find((m) => m.name === modelName);
+    if (!aiModel) {
+      console.error(`model-eval: aiModels entry not found for name=${modelName}`);
+      process.exit(2);
+    }
+  } catch (error) {
+    console.error(`model-eval: failed to load AE-IR: ${toMessage(error)}`);
+    process.exit(2);
+  }
+}
+
+const datasetRaw = readJson<Dataset | CaseRow[]>(inputPath);
+const cases: CaseRow[] = Array.isArray(datasetRaw) ? datasetRaw : (datasetRaw.cases ?? []);
+
+const prohibitedTerms: string[] = [];
+if (prohibitedCsv) {
+  prohibitedTerms.push(...prohibitedCsv.split(',').map((t) => t.trim()).filter(Boolean));
+}
+if (Array.isArray((datasetRaw as Dataset).prohibited)) {
+  prohibitedTerms.push(...(datasetRaw as Dataset).prohibited!.map((t) => t.trim()).filter(Boolean));
+}
+if (aiModel?.safety?.prohibitedOutputs) {
+  prohibitedTerms.push(...aiModel.safety.prohibitedOutputs.map((t) => t.trim()).filter(Boolean));
+}
+
+const uniqueProhibited = Array.from(new Set(prohibitedTerms)).filter(Boolean);
+
+const takeValue = (row: CaseRow, keys: Array<keyof CaseRow>): unknown => {
+  for (const key of keys) {
+    const value = row[key];
+    if (value !== undefined && value !== null) return value;
+  }
+  return undefined;
+};
+
+let correct = 0;
+let totalForAccuracy = 0;
+let totalLatency = 0;
+let latencySamples = 0;
+let prohibitedHits = 0;
+let outputsChecked = 0;
+
+cases.forEach((row) => {
+  const expected = takeValue(row, ['expected']);
+  const actual = takeValue(row, ['actual', 'predicted', 'output']);
+  if (expected !== undefined && actual !== undefined) {
+    totalForAccuracy += 1;
+    if (String(actual) === String(expected)) {
+      correct += 1;
+    }
+  }
+
+  const latencyRaw = row.latencyMs;
+  if (typeof latencyRaw === 'number' && Number.isFinite(latencyRaw)) {
+    latencySamples += 1;
+    totalLatency += latencyRaw;
+  }
+
+  const outputText = takeValue(row, ['outputText', 'output']);
+  if (typeof outputText === 'string' && uniqueProhibited.length > 0) {
+    outputsChecked += 1;
+    const lower = outputText.toLowerCase();
+    if (uniqueProhibited.some((term) => lower.includes(term.toLowerCase()))) {
+      prohibitedHits += 1;
+    }
+  }
+});
+
+const accuracy = totalForAccuracy > 0 ? correct / totalForAccuracy : null;
+const latencyMs = latencySamples > 0 ? totalLatency / latencySamples : null;
+const prohibitedRate = outputsChecked > 0 ? prohibitedHits / outputsChecked : null;
+
+const metrics: Record<string, number | null> = {
+  accuracy,
+  latencyMs,
+  prohibitedRate,
+};
+
+const mergedThresholds: Thresholds = {
+  ...(aiModel?.metrics ?? {}),
+  ...thresholds,
+};
+
+const evaluations: Record<string, { value: number | null; threshold: string; passed: boolean; reason?: string }> = {};
+let failed = 0;
+
+for (const [key, expr] of Object.entries(mergedThresholds)) {
+  const value = metrics[key];
+  if (value === null || value === undefined) {
+    evaluations[key] = { value: null, threshold: expr, passed: false, reason: 'metric_unavailable' };
+    failed += 1;
+    continue;
+  }
+  let passed = false;
+  try {
+    passed = compare(value, expr);
+  } catch (error) {
+    evaluations[key] = { value, threshold: expr, passed: false, reason: toMessage(error) };
+    failed += 1;
+    continue;
+  }
+  evaluations[key] = { value, threshold: expr, passed };
+  if (!passed) failed += 1;
+}
+
+const summary = {
+  generatedAt: new Date().toISOString(),
+  model: aiModel ? { name: aiModel.name, provider: aiModel.provider ?? null } : null,
+  dataset: {
+    totalCases: cases.length,
+    accuracySamples: totalForAccuracy,
+    latencySamples,
+    outputsChecked,
+    prohibitedTerms: uniqueProhibited,
+  },
+  metrics,
+  thresholds: mergedThresholds,
+  evaluations,
+  passed: failed === 0,
+};
+
+fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+fs.writeFileSync(outputPath, JSON.stringify(summary, null, 2));
+console.log(`✓ Wrote ${outputPath}`);
+
+process.exitCode = failed === 0 ? 0 : 1;

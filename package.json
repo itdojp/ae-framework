@@ -257,6 +257,7 @@
     "quality:gates": "node scripts/admin/run-script-alias.mjs quality:gates",
     "quality:gates:dev": "pnpm run quality:run:dev",
     "quality:gates:prod": "pnpm run quality:run:prod",
+    "model:eval": "tsx scripts/model-eval/run.ts",
     "lint:unused": "ts-prune",
     "lint:deps": "madge --circular --extensions ts src",
     "state:save": "tsx src/cli/index.ts enhanced-state save",
