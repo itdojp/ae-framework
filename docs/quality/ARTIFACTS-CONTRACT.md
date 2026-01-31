@@ -13,7 +13,7 @@ Defines required vs optional artifacts and how to validate them in CI.
 ## 日本語
 
 ## 1. 目的
-CIが生成する成果物（artifacts/reports）について **最低限の契約（contract）** を定義し、\nmissing/invalid を早期に検出できるようにします。
+CIが生成する成果物（artifacts/reports）について **最低限の契約（contract）** を定義し、missing/invalid を早期に検出できるようにします。
 
 ## 2. Required（必須）成果物
 
@@ -39,8 +39,8 @@ CIが生成する成果物（artifacts/reports）について **最低限の契�
 node scripts/ci/check-required-artifacts.mjs
 
 # 必須成果物を明示して厳格チェック
-REQUIRED_ARTIFACTS=artifacts/verify-lite/verify-lite-run-summary.json,artifacts/report-envelope.json \\
-REQUIRED_ARTIFACTS_STRICT=1 \\
+REQUIRED_ARTIFACTS=artifacts/verify-lite/verify-lite-run-summary.json,artifacts/report-envelope.json \
+REQUIRED_ARTIFACTS_STRICT=1 \
 node scripts/ci/check-required-artifacts.mjs --strict
 ```
 

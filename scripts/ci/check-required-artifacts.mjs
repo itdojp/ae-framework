@@ -29,7 +29,7 @@ for (const relPath of requiredList) {
     missing.push(relPath);
     continue;
   }
-  if (resolved.endsWith('.json')) {
+  if (relPath.endsWith('.json')) {
     try {
       JSON.parse(fs.readFileSync(resolved, 'utf8'));
     } catch (error) {

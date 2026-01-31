@@ -128,7 +128,7 @@ jobs:
             schema/envelope.schema.json
       - name: Check required artifacts (non-blocking)
         if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
-        continue-on-error: true
+        continue-on-error: ${{ !(github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-artifacts')) }}
         env:
           REQUIRED_ARTIFACTS: artifacts/verify-lite/verify-lite-run-summary.json,artifacts/report-envelope.json
           REQUIRED_ARTIFACTS_STRICT: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-artifacts') && '1' || '0' }}
