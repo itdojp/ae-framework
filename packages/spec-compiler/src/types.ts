@@ -161,6 +161,25 @@ export interface AEIR {
     };
   };
 
+  /** AI model specifications (optional) */
+  aiModels?: Array<{
+    name: string;
+    type: string;
+    provider: string;
+    inputs: string[];
+    outputs: string[];
+    metrics?: Record<string, string>;
+    safety?: {
+      prohibitedOutputs?: string[];
+      fallback?: string;
+    };
+    evaluation?: {
+      dataset?: string;
+      method?: string;
+      frequency?: string;
+    };
+  }>;
+
   /**
    * Optional DDD fields (backward-compatible)
    * See docs/ddd/ae-ir-ddd.md
