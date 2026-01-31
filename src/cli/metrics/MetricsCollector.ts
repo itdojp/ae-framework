@@ -219,9 +219,9 @@ export class MetricsCollector {
     const incident: MTTRIncident = {
       id: this.generateSessionId(),
       detectedAt: new Date(),
-      source,
-      message: details.message,
-      severity: details.severity,
+      ...(source ? { source } : {}),
+      ...(details.message ? { message: details.message } : {}),
+      ...(details.severity ? { severity: details.severity } : {}),
     };
 
     this.projectMetrics.incidents.push(incident);
