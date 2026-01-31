@@ -126,6 +126,14 @@ jobs:
           node scripts/ci/validate-report-envelope.mjs \
             artifacts/report-envelope.json \
             schema/envelope.schema.json
+      - name: Check required artifacts (non-blocking)
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
+        continue-on-error: ${{ !(github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-artifacts')) }}
+        env:
+          REQUIRED_ARTIFACTS: artifacts/verify-lite/verify-lite-run-summary.json,artifacts/report-envelope.json
+          REQUIRED_ARTIFACTS_STRICT: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-artifacts') && '1' || '0' }}
+        run: |
+          node scripts/ci/check-required-artifacts.mjs
       - name: BDD lint (strict; label-gated)
         if: ${{ steps.docs-only.outputs.docs_only != 'true' && github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-bdd-lint') }}
         env:
