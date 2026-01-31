@@ -12,6 +12,7 @@ import { readFileSync } from 'fs';
 import chalk from 'chalk';
 import { toMessage } from '../utils/error-utils.js';
 import { safeExit } from '../utils/safe-exit.js';
+import { exportKiroSpec } from './spec-exporter.js';
 
 export function createSpecCommand(): Command {
   const spec = new Command('spec');
@@ -183,6 +184,32 @@ export function createSpecCommand(): Command {
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Validation failed: ${toMessage(error)}`));
         process.exit(1);
+      }
+    });
+
+  spec
+    .command('export')
+    .description('Export AE-IR to external spec formats (default: kiro)')
+    .option('-i, --input <file>', 'Input AE-IR JSON file', '.ae/ae-ir.json')
+    .option('-f, --format <format>', 'Export format', 'kiro')
+    .option('-o, --out <dir>', 'Output directory (default: .kiro/specs/<spec-id>/)')
+    .option('--spec-id <id>', 'Spec identifier override')
+    .action(async (options) => {
+      try {
+        const result = exportKiroSpec({
+          inputPath: resolve(options.input),
+          format: options.format,
+          outputDir: options.out,
+          specId: options.specId,
+        });
+        console.log(chalk.green('✅ Spec export completed'));
+        console.log(chalk.gray(`   Format: ${options.format}`));
+        console.log(chalk.gray(`   Spec ID: ${result.specId}`));
+        console.log(chalk.gray(`   Output: ${result.outputDir}`));
+        console.log(chalk.gray(`   Files: ${result.files.join(', ')}`));
+      } catch (error: unknown) {
+        console.error(chalk.red(`❌ Spec export failed: ${toMessage(error)}`));
+        safeExit(1);
       }
     });
 
