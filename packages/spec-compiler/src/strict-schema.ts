@@ -326,9 +326,33 @@ const AIModelSchema = z.object({
   name: IdentifierSchema,
   type: z.string().min(2).max(50),
   provider: z.string().min(2).max(200),
-  inputs: z.array(IdentifierSchema).min(1).max(20),
-  outputs: z.array(IdentifierSchema).min(1).max(20),
-  metrics: z.record(z.string().min(1).max(50)).optional(),
+  inputs: z.array(IdentifierSchema).min(1).max(20).superRefine((items, ctx) => {
+    const seen = new Set<string>();
+    items.forEach((item, index) => {
+      if (seen.has(item)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Duplicate input identifier: ${item}`,
+          path: [index],
+        });
+      }
+      seen.add(item);
+    });
+  }),
+  outputs: z.array(IdentifierSchema).min(1).max(20).superRefine((items, ctx) => {
+    const seen = new Set<string>();
+    items.forEach((item, index) => {
+      if (seen.has(item)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Duplicate output identifier: ${item}`,
+          path: [index],
+        });
+      }
+      seen.add(item);
+    });
+  }),
+  metrics: z.record(IdentifierSchema, z.string().min(1).max(50)).optional(),
   safety: z.object({
     prohibitedOutputs: z.array(z.string().min(1).max(100)).max(50).optional(),
     fallback: z.string().min(1).max(200).optional(),
@@ -417,6 +441,18 @@ export const StrictAEIRSchema = z.object({
       });
     }
     apiPaths.add(pathKey);
+  });
+
+  const aiModelNames = new Set<string>();
+  aeir.aiModels?.forEach((model, index) => {
+    if (aiModelNames.has(model.name)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Duplicate aiModel name: ${model.name}`,
+        path: ['aiModels', index, 'name']
+      });
+    }
+    aiModelNames.add(model.name);
   });
 });
 
