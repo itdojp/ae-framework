@@ -11,7 +11,7 @@ describe('PBT: TokenBucket tiny-interval short variation 10 (fast)', () => {
       for (let k = 0; k < 3; k++) await rl.consume(1).catch(() => void 0);
       const waits = [1, Math.max(1, Math.floor(i/2)), Math.max(1, Math.floor(i/3)), i, 2*i];
       for (const w of waits) {
-        await new Promise((r) => setTimeout(r, w));
+        await new Promise(r => setTimeout(r, w));
         await rl.consume(1).catch(() => void 0);
         const t = rl.getTokenCount();
         expect(t).toBeGreaterThanOrEqual(0);
