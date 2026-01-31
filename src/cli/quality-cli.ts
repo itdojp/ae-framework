@@ -261,7 +261,7 @@ export function createQualityCommand(): Command {
             parallel: !options.sequential,
             dryRun: options.dryRun,
             verbose: options.verbose,
-            timeout: parseInt(options.timeout, 10),
+            timeout: parseInt(options.timeout, 10) || 300000,
             outputDir: options.output,
           });
 
