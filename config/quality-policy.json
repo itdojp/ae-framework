@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastUpdated": "2025-01-19T09:40:00Z",
+  "lastUpdated": "2026-01-31T00:00:00Z",
   "description": "Centralized Quality Policy for AE-Framework - Single Source of Truth for quality gates and standards",
   
   "environments": {
@@ -356,6 +356,34 @@
         "test": "npm run validate:api",
         "generate": "npm run openapi:generate"
       }
+    },
+
+    "model-eval": {
+      "name": "AI Model Evaluation",
+      "description": "AI model accuracy/latency/safety evaluation gate",
+      "category": "ai-model",
+      "enabled": true,
+      "thresholds": {
+        "development": {
+          "blockOnFail": false
+        },
+        "testing": {
+          "blockOnFail": true
+        },
+        "staging": {
+          "blockOnFail": true
+        },
+        "production": {
+          "blockOnFail": true
+        }
+      },
+      "tools": [
+        "pnpm",
+        "model:eval"
+      ],
+      "commands": {
+        "test": "node scripts/quality/model-eval-gate.mjs"
+      }
     }
   },
 
@@ -367,17 +395,17 @@
     },
     "standard": {
       "description": "Standard quality gates for regular development",
-      "gates": ["linting", "coverage", "security", "tdd"],
+      "gates": ["linting", "coverage", "security", "tdd", "model-eval"],
       "environments": ["testing"]
     },
     "comprehensive": {
       "description": "Comprehensive quality gates for production readiness",
-      "gates": ["accessibility", "coverage", "lighthouse", "linting", "security", "tdd", "performance"],
+      "gates": ["accessibility", "coverage", "lighthouse", "linting", "security", "tdd", "performance", "model-eval"],
       "environments": ["staging"]
     },
     "production": {
       "description": "Production-grade quality gates with maximum enforcement",
-      "gates": ["accessibility", "coverage", "lighthouse", "linting", "security", "tdd", "performance", "api-validation"],
+      "gates": ["accessibility", "coverage", "lighthouse", "linting", "security", "tdd", "performance", "api-validation", "model-eval"],
       "environments": ["production"]
     },
     "dod": {
