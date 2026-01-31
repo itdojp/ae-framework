@@ -1,0 +1,95 @@
+# Opt-in Controls Catalog（ラベル / Slash / dispatch）
+
+> Language / 言語: English | 日本語
+
+---
+
+## English (Summary)
+
+This document catalogs PR labels and slash commands that opt-in heavy CI jobs or change gating behavior. It is derived from `.github/workflows/agent-commands.yml`, `verify-lite.yml`, and related workflows.
+
+---
+
+## 日本語
+
+## 1. 目的
+PRやIssueで **必要な検証だけを opt-in で起動** し、CIコストとレビュー負荷を最小化するための操作カタログです。  
+（一次情報: `.github/workflows/agent-commands.yml`, `.github/workflows/verify-lite.yml`, `.github/workflows/slash-commands.yml`）
+
+## 2. 対象範囲
+- PR向け: **ラベル** と **Slashコマンド（PRコメント）**
+- Issue向け: **Slashコマンド（Issueコメント）**
+
+## 3. PR向けラベル（代表）
+
+| ラベル | 効果 | 起動/影響する主なWF・ジョブ | 補足 |
+| --- | --- | --- | --- |
+| `run-qa` | QA相当のステップ実行 | `ae-ci.yml` | `/run-qa` で付与 |
+| `run-security` | セキュリティ/SBOM実行 | `security.yml`, `sbom-generation.yml`, `cedar-quality-gates.yml` | fork PRは制限あり |
+| `run-cedar` | Cedar品質ゲート実行（report-only想定） | `cedar-quality-gates.yml` | `/run-cedar` で付与 |
+| `run-formal` | 形式検証実行 | `verify-lite.yml` 内 `Run formal` | verify-lite の label-gated |
+| `run-resilience` | Resilience quick実行 | `verify-lite.yml` 内 `Resilience quick` | `/run-resilience` で付与 |
+| `run-hermetic` | Hermetic CI 実行 | `ci.yml`, `hermetic-ci.yml` | `/run-hermetic` で付与 |
+| `run-spec` | fail-fast spec validation | `spec-validation.yml` | `/run-spec` で付与 |
+| `run-drift` | codegen drift detection | `codegen-drift-check.yml` | `/run-drift` で付与 |
+| `enforce-bdd-lint` | BDD lint を strict 化 | `verify-lite.yml` | `/enforce-bdd-lint` で付与 |
+| `enforce-verify-lite-lint` | verify-lite lint baseline を enforce | `verify-lite.yml` | PRラベルで制御 |
+| `ci-non-blocking` | 一部ジョブを non-blocking 化 | 各workflowのcontinue-on-error設定 | `/non-blocking` で付与 |
+| `enforce-coverage` | coverageゲートの強制 | `coverage-check.yml` | `/enforce-coverage` で付与 |
+| `coverage:<pct>` | coverage閾値上書き | `coverage-check.yml` | `/coverage 75` 等で付与 |
+| `pr-summary:digest` | PR summary を簡潔化 | `pr-ci-status-comment.yml` | `/pr-digest` で付与 |
+| `pr-summary:detailed` | PR summary を詳細化 | `pr-ci-status-comment.yml` | `/pr-detailed` で付与 |
+
+## 4. PR向け Slash コマンド（PRコメント）
+
+> 入口: `.github/workflows/agent-commands.yml`  
+> 権限: 多くのコマンドは `author_association` 制限なし（ラベル付与型）。`/review` のみ trusted 必須（`MEMBER/OWNER/COLLABORATOR`）。
+
+### 4.1 主要コマンド
+- `/verify-lite`  
+  - `verify-lite.yml` を workflow_dispatch で実行
+- `/review [strict]`  
+  - verify-lite + ci-fast を dispatch
+  - `strict` なら coverage-check を追加 + `enforce-coverage` を付与
+- `/run-qa` / `/run-security` / `/run-cedar` / `/run-resilience` / `/run-spec` / `/run-drift` / `/run-hermetic` / `/run-formal`  
+  - 対応ラベルを付与し、ラベル条件で各WFを起動
+- `/non-blocking` / `/blocking`  
+  - `ci-non-blocking` の付与/解除
+- `/coverage <pct|clear>`  
+  - `coverage:<pct>` を付与／クリア
+- `/enforce-coverage`  
+  - coverage ゲートを強制
+- `/pr-digest` / `/pr-detailed`  
+  - PR summary の出力モードを切替
+- `/formal-help` / `/formal-quickstart`  
+  - formal 実行のtipsをコメントで返す
+
+### 4.2 dispatch 系コマンド（workflow_dispatch）
+- `/run-qa-dispatch`
+- `/run-security-dispatch`
+- `/ci-fast-dispatch`
+- `/formal-verify-dispatch`
+- `/formal-apalache-dispatch`
+- `/run-flake-dispatch`
+- `/spec-validation-dispatch`
+- `/run-cedar-dispatch`
+- `/formal-aggregate-dispatch`
+
+## 5. Issue向け Slash コマンド（Issueコメント）
+
+> 入口（2系統）:  
+> - `.github/workflows/agent-commands.yml`（常時有効 / `author_association` 制限なし）  
+> - `.github/workflows/slash-commands.yml`（`AE_SLASH_COMMANDS_ISSUE=1` かつ `MEMBER/OWNER/COLLABORATOR` のみ）
+
+- `/start` → `status:in-progress` 付与（commenter をアサイン）
+- `/plan` → Planテンプレコメント
+- `/ready-for-review` → `status:review`
+- `/block [reason]` → `status:blocked`
+- `/unblock` → `status:in-progress`
+- `/handoff <role:...>` → `role:*` ラベルを付与（`AE_ROLE_ASSIGNMENTS` によりアサイン）
+
+## 6. 参照ドキュメント
+- Branch protection: `docs/ci/branch-protection-operations.md`
+- Copilot Review Gate: `docs/ci/copilot-review-gate.md`
+- Verify Lite: `.github/workflows/verify-lite.yml`
+- Slash/Agent commands: `.github/workflows/agent-commands.yml`, `.github/workflows/slash-commands.yml`

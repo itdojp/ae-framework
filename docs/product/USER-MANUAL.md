@@ -89,6 +89,7 @@ pnpm run test:int
 - 詳細: `docs/ci/branch-protection-operations.md`, `docs/quality/formal-runbook.md`
 
 ## 5. CLI利用の基本
+実行モードの使い分けは `docs/product/COMMAND-MODES.md` を参照してください。
 
 ### 5.1 開発時のCLI確認
 ```bash
@@ -110,7 +111,7 @@ CLIの詳細は `docs/reference/CLI-COMMANDS-REFERENCE.md` を参照してくだ
 開発時（TypeScript実行）は `pnpm run ae-framework -- <command>` を使用します。
 
 ```bash
-pnpm run ae-framework -- help
+pnpm run ae-framework -- --help
 pnpm run ae-framework -- spec --help
 pnpm run ae-framework -- quality run --env development
 pnpm run ae-framework -- security --help
@@ -131,8 +132,8 @@ pnpm run ae-framework -- sbom --help
 # 形式検証サマリ
 pnpm run formal:summary
 
-# 仕様ツール（例: AE-Specのvalidate）
-pnpm run spec:validate -- -i spec/example-spec.md --output .ae/ae-ir.json
+# 仕様ツールのチェック
+pnpm run spec:validate
 
 # CI向け最小検証
 pnpm run verify:lite
@@ -158,5 +159,5 @@ pnpm run security:integrated:quick
 ## 9. 参考資料
 - 概要説明資料: `docs/product/OVERVIEW.md`
 - 詳細説明資料: `docs/product/DETAIL.md`
-- 典型的な利用シナリオ: `docs/product/USE-CASES.md`
+- コマンド体系（実行モード別）: `docs/product/COMMAND-MODES.md`
 - 全体ナビゲーション: `docs/README.md`
