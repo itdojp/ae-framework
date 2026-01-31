@@ -17,7 +17,7 @@ Comprehensive documentation for the AI‑Enhanced Development Framework.
 - Overview: `product/OVERVIEW.md`
 - Detailed description: `product/DETAIL.md`
 - User manual: `product/USER-MANUAL.md`
-- Minimal adoption: `product/MINIMAL-ADOPTION.md`
+- Positioning / comparison: `product/POSITIONING.md`
 
 ### Positioning maps (concept / flow / use cases)
 - Concept & system diagrams: `architecture/ARCHITECTURE.md`
@@ -90,7 +90,7 @@ ae-frameworkは、AI-Powered TDDによる6フェーズでソフトウェア開�
 - [OVERVIEW.md](./product/OVERVIEW.md) - 概要説明資料
 - [DETAIL.md](./product/DETAIL.md) - 詳細説明資料
 - [USER-MANUAL.md](./product/USER-MANUAL.md) - 利用マニュアル
-- [MINIMAL-ADOPTION.md](./product/MINIMAL-ADOPTION.md) - 最小導入パッケージ
+- [POSITIONING.md](./product/POSITIONING.md) - 類似ツールとの棲み分け・導入指針
 
 ### 🧭 ポジショニングの図とフロー
 - 概念図/システム図: `architecture/ARCHITECTURE.md`
