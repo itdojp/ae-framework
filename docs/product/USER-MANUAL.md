@@ -40,6 +40,19 @@ pnpm run lint
 pnpm run test:fast
 ```
 
+### 3.4 設定ファイル（任意）
+CLIは YAML 設定を探索して読み込みます（`src/cli/config/ConfigLoader.ts`）。
+
+探索順（上から優先）:
+- `config/ae-framework.yml`
+- `config/ae-framework.yaml`
+- `ae-framework.yml`
+- `ae-framework.yaml`
+- `.ae-framework.yml`
+- `.ae-framework.yaml`
+
+設定ファイルが存在しない場合は、デフォルト設定で動作します。
+
 ## 4. 基本ワークフロー
 
 ### 4.1 仕様の登録と検証
