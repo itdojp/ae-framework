@@ -17,7 +17,7 @@ Comprehensive documentation for the AI‑Enhanced Development Framework.
 - Overview: `product/OVERVIEW.md`
 - Detailed description: `product/DETAIL.md`
 - User manual: `product/USER-MANUAL.md`
-- Command modes: `product/COMMAND-MODES.md`
+- Minimal adoption: `product/MINIMAL-ADOPTION.md`
 
 ### Positioning maps (concept / flow / use cases)
 - Concept & system diagrams: `architecture/ARCHITECTURE.md`
@@ -63,7 +63,6 @@ Comprehensive documentation for the AI‑Enhanced Development Framework.
 - Guarded automation template: `quality/guarded-automation-template.md`
 - Incident triage template: `quality/incident-triage-template.md`
 - Adoption sample flow: `quality/adoption-sample-flow.md`
-- Opt-in controls catalog: `ci/OPT-IN-CONTROLS.md`
 - Runbooks / Traceability / Runtime Contracts: see `docs/quality` and `docs/verify`
  - Coverage policy: `quality/coverage-policy.md`（しきい値の由来/Required化の運用）
  - Formal runbook: `quality/formal-runbook.md`（ラベル/dispatch/要約/環境変数）
@@ -91,7 +90,7 @@ ae-frameworkは、AI-Powered TDDによる6フェーズでソフトウェア開�
 - [OVERVIEW.md](./product/OVERVIEW.md) - 概要説明資料
 - [DETAIL.md](./product/DETAIL.md) - 詳細説明資料
 - [USER-MANUAL.md](./product/USER-MANUAL.md) - 利用マニュアル
-- [COMMAND-MODES.md](./product/COMMAND-MODES.md) - コマンド体系（実行モード別）
+- [MINIMAL-ADOPTION.md](./product/MINIMAL-ADOPTION.md) - 最小導入パッケージ
 
 ### 🧭 ポジショニングの図とフロー
 - 概念図/システム図: `architecture/ARCHITECTURE.md`
@@ -156,7 +155,6 @@ Claude CodeやMCPとの統合
 - [guarded-automation-template.md](./quality/guarded-automation-template.md) - Guarded automation 運用テンプレ
 - [incident-triage-template.md](./quality/incident-triage-template.md) - インシデント一次切り分けテンプレ
 - [adoption-sample-flow.md](./quality/adoption-sample-flow.md) - 導入の最小フロー（エンドツーエンド）
-- [./ci/OPT-IN-CONTROLS.md](./ci/OPT-IN-CONTROLS.md) - opt-in ラベル/Slash のカタログ
 - [formal-runbook.md](./quality/formal-runbook.md) - 実行・運用手順（ラベルゲート/手動実行）
 - [formal-tools-setup.md](./quality/formal-tools-setup.md) - ローカル環境セットアップ（Apalache/TLC/Z3/cvc5）
  - [formal-mini-flow.md](./quality/formal-mini-flow.md) - 反例→失敗テスト→修正→緑の最小フロー
