@@ -55,7 +55,7 @@ pnpm run verify:lite
 
 ### 4.3 QA/テスト担当
 - verify-lite のサマリを確認し、必要時のみ追加ゲートを要求
-- opt-in ラベル/Slash の選定（`docs/ci/OPT-IN-CONTROLS.md`）
+- opt-in ラベル/Slash の選定（`docs/ci/label-gating.md`）
 
 ### 4.4 運用/インフラ
 - CI実行権限と必要なSecretの有無を確認
@@ -100,5 +100,5 @@ pnpm run codex:run
 
 ## 7. 参照
 - `docs/product/USER-MANUAL.md`
-- `docs/ci/OPT-IN-CONTROLS.md`
+- `docs/ci/label-gating.md`
 - `docs/ci/branch-protection-operations.md`
