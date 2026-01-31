@@ -28,7 +28,7 @@ ae-framework は **複数の実行モード**（開発/配布/CI）を持ちま�
 ## 3. 開発時の推奨入口（TypeScript）
 
 ```bash
-pnpm run ae-framework -- help
+pnpm run ae-framework -- --help
 pnpm run ae-framework -- spec --help
 pnpm run ae-framework -- quality run --env development
 ```
@@ -62,7 +62,7 @@ pnpm run spec:validate -- -i spec/example-spec.md --output .ae/ae-ir.json
 
 ### 6.2 `help` の表示
 `pnpm run help` は `scripts/project/help.mjs` を実行し、**script群の一覧**を表示します。  
-一方、`pnpm run ae-framework -- help` は **CLIのサブコマンド** を案内します。
+一方、`pnpm run ae-framework -- --help`（または `pnpm exec ae --help`）は **CLIのサブコマンド** を案内します。
 
 ## 7. 例外: 直接スクリプトを使う場合
 以下のように **ドキュメントで指示されている場合のみ** 直叩きを許容します。
