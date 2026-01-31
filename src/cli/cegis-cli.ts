@@ -106,7 +106,7 @@ export class CEGISCli {
       const enforcedDryRun = mode === 'copilot' && !options.apply;
       const dryRun = Boolean(options.dryRun || enforcedDryRun);
       options.dryRun = dryRun;
-      if (enforcedDryRun && !options.dryRun) {
+      if (enforcedDryRun) {
         console.log('[ae:fix] copilot mode defaults to dry-run. Use --apply to execute fixes.');
       }
 
@@ -125,7 +125,7 @@ export class CEGISCli {
       const autoFixOptions: AutoFixOptions = {
         dryRun,
         confidenceThreshold: parseFloat(options.confidence),
-        maxRiskLevel: parseInt(options.maxRisk),
+        maxRiskLevel: parseInt(options.maxRisk, 10),
         timeoutMs: 30000
       };
 

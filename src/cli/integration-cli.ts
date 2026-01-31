@@ -25,8 +25,9 @@ import type {
   TestDiscovery
 } from '../integration/types.js';
 
-const parseOptionalBoolean = (value?: string): boolean => {
+const parseOptionalBoolean = (value?: string | boolean): boolean => {
   if (value === undefined) return true;
+  if (typeof value === 'boolean') return value;
   const normalized = value.toLowerCase();
   return normalized === 'true' || normalized === '1' || normalized === 'yes' || normalized === 'y';
 };
@@ -295,7 +296,7 @@ export class IntegrationTestingCli {
         parallel,
         maxConcurrency,
         timeout: parseInt(options.timeout, 10) || 600000,
-        retries: parseInt(options.retries),
+        retries: parseInt(options.retries, 10),
         skipOnFailure: options.skipOnFailure || false,
         failFast: options.failFast || false,
         generateReport: true,
