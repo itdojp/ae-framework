@@ -5,6 +5,22 @@
  * Usage:
  *   tsx scripts/model-eval/run.ts --input <dataset.json> [--aeir <ae-ir.json> --model <name>] \
  *     [--threshold key=expr] [--prohibited term1,term2] [--output <path>]
+ *
+ * Exit codes:
+ *   0 - All checks pass.
+ *   1 - Evaluation failed (thresholds not met / prohibited content detected).
+ *   2 - Configuration or operational error (invalid flags, unreadable files, malformed input).
+ *
+ * Thresholds:
+ *   - aiModel.metrics from --aeir are merged with --threshold CLI flags.
+ *   - CLI --threshold overrides take precedence on key conflicts.
+ *   - If a threshold is defined but its metric is unavailable, the gate fails with metric_unavailable.
+ *
+ * Prohibited terms:
+ *   - Merged from dataset.prohibited, aiModel.safety.prohibitedOutputs, and --prohibited flag.
+ *
+ * Dataset JSON format:
+ *   - Either an array of cases, or an object with { cases: CaseRow[], prohibited?: string[] }.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -76,7 +92,9 @@ const args = process.argv.slice(2);
 const getArg = (name: string): string | undefined => {
   const idx = args.indexOf(name);
   if (idx === -1) return undefined;
-  return args[idx + 1];
+  const value = args[idx + 1];
+  if (!value || value.startsWith('-')) return undefined;
+  return value;
 };
 
 const getArgs = (name: string): string[] => {
@@ -86,7 +104,8 @@ const getArgs = (name: string): string[] => {
       values.push(args[i + 1]);
     }
     if (args[i].startsWith(`${name}=`)) {
-      values.push(args[i].split('=')[1] ?? '');
+      const eqIndex = args[i].indexOf('=');
+      values.push(eqIndex >= 0 ? args[i].slice(eqIndex + 1) : '');
     }
   }
   return values.filter(Boolean);
@@ -110,7 +129,9 @@ const readJson = <T>(p: string): T => {
 
 const thresholds: Thresholds = {};
 for (const entry of getArgs('--threshold')) {
-  const [key, expr] = entry.split('=');
+  const eqIndex = entry.indexOf('=');
+  const key = eqIndex >= 0 ? entry.slice(0, eqIndex) : '';
+  const expr = eqIndex >= 0 ? entry.slice(eqIndex + 1) : '';
   if (!key || !expr) {
     console.error(`model-eval: invalid --threshold ${entry} (use key=expr)`);
     process.exit(2);
@@ -133,7 +154,13 @@ if (aeirPath && modelName) {
   }
 }
 
-const datasetRaw = readJson<Dataset | CaseRow[]>(inputPath);
+let datasetRaw: Dataset | CaseRow[];
+try {
+  datasetRaw = readJson<Dataset | CaseRow[]>(inputPath);
+} catch (error) {
+  console.error(`model-eval: failed to load dataset: ${toMessage(error)}`);
+  process.exit(2);
+}
 const cases: CaseRow[] = Array.isArray(datasetRaw) ? datasetRaw : (datasetRaw.cases ?? []);
 if (cases.length === 0) {
   console.error('model-eval: dataset contains no cases to evaluate');
@@ -144,14 +171,15 @@ const prohibitedTerms: string[] = [];
 if (prohibitedCsv) {
   prohibitedTerms.push(...prohibitedCsv.split(',').map((t) => t.trim()).filter(Boolean));
 }
-if (Array.isArray((datasetRaw as Dataset).prohibited)) {
-  prohibitedTerms.push(...(datasetRaw as Dataset).prohibited!.map((t) => t.trim()).filter(Boolean));
+const datasetProhibited = (datasetRaw as Dataset).prohibited;
+if (Array.isArray(datasetProhibited)) {
+  prohibitedTerms.push(...datasetProhibited.map((t) => t.trim()).filter(Boolean));
 }
-if (aiModel?.safety?.prohibitedOutputs) {
-  prohibitedTerms.push(...aiModel.safety.prohibitedOutputs.map((t) => t.trim()).filter(Boolean));
-}
+const modelProhibited = aiModel?.safety?.prohibitedOutputs ?? [];
+prohibitedTerms.push(...modelProhibited.map((t) => t.trim()).filter(Boolean));
 
 const uniqueProhibited = Array.from(new Set(prohibitedTerms)).filter(Boolean);
+const uniqueProhibitedLower = uniqueProhibited.map((term) => term.toLowerCase());
 
 const takeValue = (row: CaseRow, keys: Array<keyof CaseRow>): unknown => {
   for (const key of keys) {
@@ -185,10 +213,10 @@ cases.forEach((row) => {
   }
 
   const outputText = takeValue(row, ['outputText', 'output', 'actual', 'predicted']);
-  if (typeof outputText === 'string' && uniqueProhibited.length > 0) {
+  if (typeof outputText === 'string' && uniqueProhibitedLower.length > 0) {
     outputsChecked += 1;
     const lower = outputText.toLowerCase();
-    if (uniqueProhibited.some((term) => lower.includes(term.toLowerCase()))) {
+    if (uniqueProhibitedLower.some((term) => lower.includes(term))) {
       prohibitedHits += 1;
     }
   }
