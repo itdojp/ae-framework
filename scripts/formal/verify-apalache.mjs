@@ -29,21 +29,21 @@ const ERROR_LINE_CLAMP = Number(process.env.APALACHE_ERROR_LINE_CLAMP || '200');
 const SNIPPET_BEFORE = Number(process.env.APALACHE_SNIPPET_BEFORE || '2');
 const SNIPPET_AFTER = Number(process.env.APALACHE_SNIPPET_AFTER || '2');
 const OUTPUT_CLAMP = Number(process.env.APALACHE_OUTPUT_CLAMP || '4000');
-const ERROR_KEY = /error|violat|counterexample|fail|unsat\b|unsatisfied\b|unsatisfiable\b|dead[-\s]*lock|dead[-\s]*end/i;
+const ERROR_KEY = /\b(?:error|errors?|fail(?:ed|ure|ures)?|violat(?:e|ed|ion|ions)|unsat|unsatisfied|unsatisfiable|counter-?examples?|dead[-\s]*lock|dead[-\s]*end)\b/i;
 
-function extractErrors(out){
+export function extractErrors(out){
   const lines = (out || '').split(/\r?\n/);
   const picked = [];
   for (const l of lines) { if (ERROR_KEY.test(l)) picked.push(l.trim()); if (picked.length>=ERRORS_LIMIT) break; }
   // Trim very long lines for readability in aggregate comments
   return picked.map(l => l.length > ERROR_LINE_CLAMP ? (l.slice(0, ERROR_LINE_CLAMP) + '…') : l);
 }
-function countErrors(out){
+export function countErrors(out){
   const lines = (out || '').split(/\r?\n/);
   let n = 0; for (const l of lines) if (ERROR_KEY.test(l)) n++;
   return n;
 }
-function extractErrorSnippet(out, before=SNIPPET_BEFORE, after=SNIPPET_AFTER){
+export function extractErrorSnippet(out, before=SNIPPET_BEFORE, after=SNIPPET_AFTER){
   const lines = (out || '').split(/\r?\n/);
   for (let i=0;i<lines.length;i++){
     if (ERROR_KEY.test(lines[i])){
