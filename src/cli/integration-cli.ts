@@ -10,6 +10,7 @@ import chalk from 'chalk';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { existsSync } from 'fs';
+import { loadConfig } from '../core/config.js';
 import { IntegrationTestOrchestrator } from '../integration/test-orchestrator.js';
 import { E2ETestRunner } from '../integration/runners/e2e-runner.js';
 import { APITestRunner } from '../integration/runners/api-runner.js';
@@ -23,6 +24,13 @@ import type {
   IntegrationTestConfig,
   TestDiscovery
 } from '../integration/types.js';
+
+const parseOptionalBoolean = (value?: string | boolean): boolean => {
+  if (value === undefined) return true;
+  if (typeof value === 'boolean') return value;
+  const normalized = value.toLowerCase();
+  return normalized === 'true' || normalized === '1' || normalized === 'yes' || normalized === 'y';
+};
 
 // Simple test discovery implementation
 class FileSystemTestDiscovery implements TestDiscovery {
@@ -164,8 +172,8 @@ export class IntegrationTestingCli {
       .option('-s, --suites <patterns>', 'Test suite patterns (comma-separated)', '')
       .option('-t, --tests <patterns>', 'Test case patterns (comma-separated)', '')
       .option('-e, --environment <name>', 'Test environment', 'default')
-      .option('-p, --parallel', 'Run tests in parallel')
-      .option('--max-concurrency <num>', 'Maximum parallel tests', '4')
+      .option('-p, --parallel [boolean]', 'Run tests in parallel', parseOptionalBoolean)
+      .option('--max-concurrency <num>', 'Maximum parallel tests', (value) => parseInt(value, 10))
       .option('--timeout <ms>', 'Global timeout in milliseconds', '600000')
       .option('--retries <num>', 'Number of retries for failed tests', '1')
       .option('--fail-fast', 'Stop execution on first failure')
@@ -245,6 +253,8 @@ export class IntegrationTestingCli {
    */
   private async handleRunCommand(options: any): Promise<void> {
     try {
+      const cfg = await loadConfig();
+      const mode = cfg.mode ?? 'copilot';
       console.log('🚀 Starting integration test execution...');
 
       // Initialize orchestrator
@@ -272,12 +282,21 @@ export class IntegrationTestingCli {
       }
 
       // Create execution configuration
+      const parallel = typeof options.parallel === 'boolean'
+        ? options.parallel
+        : mode === 'delegated';
+      const maxConcurrency = Number.isFinite(options.maxConcurrency)
+        ? options.maxConcurrency
+        : parallel
+          ? 4
+          : 1;
+
       const config: TestExecutionConfig = {
         environment: options.environment,
-        parallel: options.parallel || false,
-        maxConcurrency: parseInt(options.maxConcurrency),
-        timeout: parseInt(options.timeout),
-        retries: parseInt(options.retries),
+        parallel,
+        maxConcurrency,
+        timeout: parseInt(options.timeout, 10) || 600000,
+        retries: parseInt(options.retries, 10),
         skipOnFailure: options.skipOnFailure || false,
         failFast: options.failFast || false,
         generateReport: true,

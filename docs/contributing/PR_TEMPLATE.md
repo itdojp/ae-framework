@@ -41,6 +41,7 @@ AE_SEED=42 npx ae bench
 
 ```typescript
 export default {
+  mode: 'copilot', // 'copilot' | 'delegated'
   tddGuard: {
     enabled: true,
     onlyChanged: true,
@@ -64,6 +65,7 @@ export default {
 ```
 
 補足: QA の coverage しきい値は `policy/quality.json` が単一情報源です。`config/ae.config.*` の `qa.coverageThreshold` はローカルヒント扱いで、CI では無視されます。
+補足: `mode` はCLI挙動の既定値に影響します（copilot=自動修復はdry-run既定、delegated=修復後verify実行・統合テスト並列既定）。
 
 ## ✅ 検証結果
 

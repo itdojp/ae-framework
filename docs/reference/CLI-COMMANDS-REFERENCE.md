@@ -41,6 +41,12 @@ ae-framework <command> [options] [flags]
 --no-color          # Disable color output
 ```
 
+### Mode (ae.config)
+Set `mode` in `config/ae.config.*` to switch CLI behavior:
+
+- `copilot`: auto-fix defaults to dry-run (use `--apply` to execute); integration tests default to sequential execution.
+- `delegated`: auto-fix runs verify (profile `lite`) after applying changes; integration tests default to parallel execution.
+
 ## Consolidated Runner Entry (entry)
 Route to the consolidated runner entry points for test/quality/verify/flake/security.
 
@@ -933,6 +939,12 @@ ae-framework <command> [options] [flags]
 --output <file>     # 出力ファイル指定
 --no-color          # カラー出力無効化
 ```
+
+### モード (ae.config)
+`config/ae.config.*` の `mode` でCLIの挙動が切り替わります。
+
+- `copilot`: 自動修復は dry-run が既定（実行する場合は `--apply`）。統合テストは逐次実行が既定。
+- `delegated`: 修復適用後に verify（`lite`）を実行。統合テストは並列実行が既定。
 
 ## Phase 1: Intent Analysis
 

@@ -1,4 +1,5 @@
 export default {
+  mode: 'copilot',
   tddGuard: {
     enabled: true,
     onlyChanged: true,

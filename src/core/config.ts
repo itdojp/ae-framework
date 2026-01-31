@@ -4,6 +4,7 @@ import path from 'node:path';
 import { readFile } from 'node:fs/promises';
 
 export const AeConfigSchema = z.object({
+  mode: z.enum(['copilot', 'delegated']).default('copilot'),
   tddGuard: z.object({
     enabled: z.boolean().default(true),
     onlyChanged: z.boolean().default(true),
