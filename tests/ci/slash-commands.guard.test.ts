@@ -14,7 +14,7 @@ interface GitHubWorkflow {
   };
   permissions?: Record<string, string>;
   concurrency?: {
-    cancel-in-progress?: boolean;
+    'cancel-in-progress'?: boolean;
   };
   jobs?: Record<string, any>;
 }
