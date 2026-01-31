@@ -199,7 +199,7 @@ export function createSpecCommand(): Command {
         const result = exportKiroSpec({
           inputPath: resolve(options.input),
           format: options.format,
-          outputDir: options.out,
+          outputDir: options.out ? resolve(options.out) : options.out,
           specId: options.specId,
         });
         console.log(chalk.green('✅ Spec export completed'));
