@@ -252,6 +252,13 @@ Execute environment-specific quality gates
 # Run (parallel by default)
 ae-framework quality run --env development --dry-run
 
+# Reconcile (quality -> auto-fix -> re-run)
+# NOTE: Quality gates do NOT automatically create failure artifacts.
+# Generate artifacts first (example):
+# ae-fix demo --output .ae/failures.json
+# Then reconcile using the generated failures file.
+ae-framework quality reconcile --env development --max-rounds 3 --fix-input .ae/failures.json
+
 # List configured gates
 ae-framework quality list --env development --format summary
 
