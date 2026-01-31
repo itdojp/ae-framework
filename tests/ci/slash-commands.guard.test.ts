@@ -1,3 +1,7 @@
+/**
+ * Slash commands workflow safety guard.
+ * Ensures issue-only triggers, minimal permissions, and idempotent concurrency.
+ */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import yaml from 'js-yaml';
@@ -22,12 +26,20 @@ describe('Slash commands workflow safety guard', () => {
   it('is issue-comment only and gated for non-PR issues', () => {
     expect(workflow.on?.issue_comment?.types).toContain('created');
 
+    const onConfig = ((workflow as any).on ?? {}) as Record<string, unknown>;
+    const onKeys = Object.keys(onConfig);
+    const disallowedEvents = ['pull_request_comment', 'pull_request_target', 'workflow_dispatch', 'pull_request'];
+    for (const event of disallowedEvents) {
+      expect(onKeys).not.toContain(event);
+    }
+
     const job = workflow.jobs?.handle_issue_commands;
     expect(job).toBeDefined();
 
     const ifExpr = String(job.if || '');
-    expect(ifExpr).toContain('github.event.issue.pull_request == null');
-    expect(ifExpr).toContain("vars.AE_SLASH_COMMANDS_ISSUE == '1'");
+    expect(ifExpr).toMatch(
+      /github\.event\.issue\.pull_request\s*==\s*null\s*&&\s*vars\.AE_SLASH_COMMANDS_ISSUE\s*==\s*'1'/
+    );
   });
 
   it('limits permissions to read contents + write issues', () => {
@@ -36,6 +48,16 @@ describe('Slash commands workflow safety guard', () => {
     expect(perms.issues).toBe('write');
     const keys = Object.keys(perms);
     expect(keys.sort()).toEqual(['contents', 'issues']);
+    expect(perms['id-token']).toBeUndefined();
+    expect(perms['pull-requests']).toBeUndefined();
+    expect(perms.packages).toBeUndefined();
+
+    const jobPerms = workflow.jobs?.handle_issue_commands?.permissions;
+    if (jobPerms) {
+      expect(jobPerms.contents).toBe('read');
+      expect(jobPerms.issues).toBe('write');
+      expect(Object.keys(jobPerms).sort()).toEqual(['contents', 'issues']);
+    }
   });
 
   it('does not cancel in-flight runs for idempotency', () => {
