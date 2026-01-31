@@ -8,7 +8,6 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const cwd = process.cwd();
 const aeirPath = process.env.AE_MODEL_EVAL_AEIR || '.ae/ae-ir.json';
 const modelFilter = process.env.AE_MODEL_EVAL_MODEL;
 const inputOverride = process.env.AE_MODEL_EVAL_INPUT;
@@ -54,6 +53,18 @@ const aiModels = Array.isArray(aeir?.aiModels) ? aeir.aiModels : [];
 
 function selectModels() {
   if (!aiModels.length) {
+    if (modelFilter) {
+      if (aeirLoadFailed) {
+        console.error(
+          `[model-eval-gate] AE-IR at ${aeirPath} could not be loaded, but AE_MODEL_EVAL_MODEL=${modelFilter} was provided.`
+        );
+      } else {
+        console.error(
+          `[model-eval-gate] No aiModels entries found in AE-IR at ${aeirPath}, but AE_MODEL_EVAL_MODEL=${modelFilter} was provided.`
+        );
+      }
+      process.exit(2);
+    }
     return [];
   }
   if (!modelFilter) {
@@ -94,15 +105,17 @@ if (inputOverride && !fileExists(inputOverride)) {
 const evaluations = selectedModels.length ? selectedModels : [null];
 let failed = false;
 
-for (const model of evaluations) {
+for (const [index, model] of evaluations.entries()) {
   const dataset = resolveDataset(model);
   if (!dataset) {
-    console.error('[model-eval-gate] Dataset not specified for model evaluation.');
+    const modelLabel = model?.name ? `"${model.name}"` : `#${index + 1}`;
+    console.error(`[model-eval-gate] Dataset not specified for model evaluation for model ${modelLabel}.`);
     failed = true;
     break;
   }
   if (!fileExists(dataset)) {
-    console.error(`[model-eval-gate] Dataset not found: ${dataset}`);
+    const modelInfo = model?.name ? ` for model "${model.name}"` : '';
+    console.error(`[model-eval-gate] Dataset not found${modelInfo}: ${dataset}`);
     failed = true;
     break;
   }
