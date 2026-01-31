@@ -95,6 +95,8 @@ Prereqs: Node 20 (>= 20.11), corepack-enabled pnpm.
 4) CLI smoke (TS via tsx)
 - Phase check: `pnpm tsx src/cli/index.ts check`
 - Quality gates dry-run: `pnpm tsx src/cli/quality-cli.ts run --env development --dry-run`
+- Quality reconcile (requires failure artifacts): `pnpm tsx src/cli/quality-cli.ts reconcile --env development --max-rounds 2 --fix-input .ae/failures.json`
+  - Failure artifacts are not generated automatically. Example: `pnpm tsx src/cli/ae-fix-cli.ts demo --output .ae/failures.json`
 - Security config: `pnpm tsx src/cli/security-cli.ts show-config --env development`
 - SBOM quick run (no external upload): `pnpm tsx src/cli/sbom-cli.ts generate --format json --output sbom.json --verbose`
 
