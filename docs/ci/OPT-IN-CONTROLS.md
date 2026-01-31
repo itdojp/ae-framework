@@ -43,7 +43,7 @@ PRやIssueで **必要な検証だけを opt-in で起動** し、CIコストと
 ## 4. PR向け Slash コマンド（PRコメント）
 
 > 入口: `.github/workflows/agent-commands.yml`  
-> 権限: PRコメントの `author_association` が trusted の場合に動作
+> 権限: 多くのコマンドは `author_association` 制限なし（ラベル付与型）。`/review` のみ trusted 必須（`MEMBER/OWNER/COLLABORATOR`）。
 
 ### 4.1 主要コマンド
 - `/verify-lite`  
@@ -51,7 +51,7 @@ PRやIssueで **必要な検証だけを opt-in で起動** し、CIコストと
 - `/review [strict]`  
   - verify-lite + ci-fast を dispatch
   - `strict` なら coverage-check を追加 + `enforce-coverage` を付与
-- `/run-qa` / `/run-security` / `/run-cedar` / `/run-resilience` / `/run-spec` / `/run-drift` / `/run-hermetic`  
+- `/run-qa` / `/run-security` / `/run-cedar` / `/run-resilience` / `/run-spec` / `/run-drift` / `/run-hermetic` / `/run-formal`  
   - 対応ラベルを付与し、ラベル条件で各WFを起動
 - `/non-blocking` / `/blocking`  
   - `ci-non-blocking` の付与/解除
@@ -72,13 +72,14 @@ PRやIssueで **必要な検証だけを opt-in で起動** し、CIコストと
 - `/formal-apalache-dispatch`
 - `/run-flake-dispatch`
 - `/spec-validation-dispatch`
+- `/run-cedar-dispatch`
 - `/formal-aggregate-dispatch`
 
 ## 5. Issue向け Slash コマンド（Issueコメント）
 
-> 入口: `.github/workflows/slash-commands.yml`  
-> 権限: `MEMBER/OWNER/COLLABORATOR` のみ  
-> 変数: `AE_SLASH_COMMANDS_ISSUE=1` の場合のみ有効
+> 入口（2系統）:  
+> - `.github/workflows/agent-commands.yml`（常時有効 / `author_association` 制限なし）  
+> - `.github/workflows/slash-commands.yml`（`AE_SLASH_COMMANDS_ISSUE=1` かつ `MEMBER/OWNER/COLLABORATOR` のみ）
 
 - `/start` → `status:in-progress` 付与（commenter をアサイン）
 - `/plan` → Planテンプレコメント
