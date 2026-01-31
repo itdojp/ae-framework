@@ -53,6 +53,28 @@ ae-framework は、エージェント協調型SDLCを支える「仕様・検証
 - `ae-benchmark`: ベンチマークCLI（`src/cli/benchmark-cli.ts`）
 - `ae-server`: サーバー起動（`src/cli/server-runner.ts`）
 
+上記とは別に、メインCLI（`src/cli/index.ts`）は **サブコマンド** を登録しており、開発時は `pnpm run ae-framework -- <command>` 形式で呼び出せます。
+
+代表的なサブコマンド（定義元）は以下です。
+
+- `spec`（`src/cli/spec-cli.ts`）
+- `state-machine`（`src/cli/state-machine-cli.ts`）
+- `codegen`（`src/cli/codegen-cli.ts`）
+- `cegis`（`src/cli/cegis-cli.ts`）
+- `enhanced-state`（`src/cli/enhanced-state-cli.ts`）
+- `circuit-breaker`（`src/cli/circuit-breaker-cli.ts`）
+- `security`（`src/cli/security-cli.ts`）
+- `entry`（`src/cli/entry-runner-cli.ts`）
+- `help`（`src/cli/help-cli.ts`。`pnpm run help` と同等の出力を目標）
+- `setup`（`src/cli/setup-cli.ts`）
+- `quality`（`src/cli/quality-cli.ts`）
+- `qa`（`src/cli/qa-cli.ts`）
+- `conformance`（`src/cli/conformance-cli.ts`）
+- `integration`（`src/cli/integration-cli.ts`）
+- `resilience`（`src/cli/resilience-cli.ts`）
+- `sbom`（`src/cli/sbom-cli.ts`）
+- `status` / `board`（`src/cli/progress-cli.ts`。`pnpm run progress:summary` の結果を参照）
+
 #### 仕様と検証
 - 仕様レジストリ: `docs/spec/registry.md`
 - フォーマル検証: `docs/quality/formal-runbook.md`, `scripts/formal/*`

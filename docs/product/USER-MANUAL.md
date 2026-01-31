@@ -68,6 +68,7 @@ pnpm run test:int
 
 ### 4.4 CI運用の基本
 - PR作成時に verify-lite を基本ゲートとします
+- Branch protection の Required checks では、`Verify Lite / verify-lite` と `Copilot Review Gate / gate` を必須化する運用が想定されています（詳細: `docs/ci/branch-protection-operations.md`, `docs/ci/copilot-review-gate.md`）
 - 必要に応じて `ci-extended` や `formal-verify` を追加実行します
 - 詳細: `docs/ci/branch-protection-operations.md`, `docs/quality/formal-runbook.md`
 
@@ -79,13 +80,29 @@ pnpm run ae-framework -- --help
 ```
 
 ### 5.2 ビルド後のCLI
-ビルド後に `ae` または `ae-framework` を利用します。
+ビルド後に `ae` または `ae-framework` を利用します（`package.json bin` が `dist/src/cli/*` を指します）。
 ```bash
 pnpm run build
-ae --help
+pnpm exec ae --help
+# または
+pnpm exec ae-framework --help
 ```
 
 CLIの詳細は `docs/reference/CLI-COMMANDS-REFERENCE.md` を参照してください。
+
+### 5.3 代表的なCLIサブコマンド（開発時）
+開発時（TypeScript実行）は `pnpm run ae-framework -- <command>` を使用します。
+
+```bash
+pnpm run ae-framework -- help
+pnpm run ae-framework -- spec --help
+pnpm run ae-framework -- quality run --env development
+pnpm run ae-framework -- security --help
+pnpm run ae-framework -- conformance --help
+pnpm run ae-framework -- integration --help
+pnpm run ae-framework -- resilience --help
+pnpm run ae-framework -- sbom --help
+```
 
 ## 6. エージェント統合
 - CodeX 連携: `docs/integrations/CODEX-INTEGRATION.md`
@@ -111,8 +128,10 @@ pnpm run security:integrated:quick
 ## 8. トラブルシューティング
 
 ### 8.1 verify-lite ゲートの失敗
-- 未解決のレビュー指摘が残っていないかを確認
+- `Verify Lite / verify-lite` が Required の場合、まず `verify-lite` のログ/サマリを確認
+- `Copilot Review Gate / gate` が Required の場合、Copilotのレビューが存在し、**Copilotが関与したスレッドがすべて解決済み**かを確認（PR画面で「Resolve conversation」）
 - `docs/ci/ci-troubleshooting-guide.md` を参照
+  - Copilot Review Gate の詳細: `docs/ci/copilot-review-gate.md`
 
 ### 8.2 Node バージョン不一致
 - `node -v` を確認し、`>=20.11 <23` の範囲に調整
