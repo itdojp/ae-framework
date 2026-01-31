@@ -32,6 +32,29 @@ export interface ProjectMetrics {
   tddCompliance: number; // percentage
   overallCoverage: number;
   sessionId: string;
+  incidents: MTTRIncident[];
+}
+
+export interface MTTRIncident {
+  id: string;
+  detectedAt: Date;
+  recoveredAt?: Date;
+  durationMs?: number;
+  source?: string;
+  message?: string;
+  severity?: 'error' | 'warning';
+}
+
+export interface MTTRSummary {
+  overallMs: number | null;
+  overallHours: number | null;
+  weekly: Array<{
+    week: string;
+    count: number;
+    avgMs: number;
+    avgHours: number;
+  }>;
+  openIncidents: number;
 }
 
 export interface Logger {
@@ -78,6 +101,13 @@ export class MetricsCollector {
             violation.timestamp = new Date(violation.timestamp);
           });
         });
+        if (!Array.isArray(metrics.incidents)) {
+          metrics.incidents = [];
+        }
+        metrics.incidents.forEach((incident: any) => {
+          incident.detectedAt = new Date(incident.detectedAt);
+          if (incident.recoveredAt) incident.recoveredAt = new Date(incident.recoveredAt);
+        });
         return metrics;
       } catch (error: unknown) {
         console.warn(`Could not load existing metrics: ${toMessage(error)}`);
@@ -91,7 +121,8 @@ export class MetricsCollector {
       totalViolations: 0,
       tddCompliance: 100,
       overallCoverage: 0,
-      sessionId: this.generateSessionId()
+      sessionId: this.generateSessionId(),
+      incidents: [],
     };
   }
 
@@ -121,6 +152,7 @@ export class MetricsCollector {
     if (currentPhase && !currentPhase.endTime) {
       currentPhase.endTime = new Date();
       currentPhase.duration = currentPhase.endTime.getTime() - currentPhase.startTime.getTime();
+      this.resolveIncidentsForPhase(currentPhase);
       this.saveMetrics();
     }
   }
@@ -147,6 +179,14 @@ export class MetricsCollector {
     
     // Save detailed violation log
     this.saveViolationLog(fullViolation);
+
+    if (violation.severity === 'error') {
+      this.recordFailureDetected({
+        source: `tdd_violation:${violation.type}`,
+        message: violation.message,
+        severity: violation.severity,
+      });
+    }
   }
 
   recordArtifact(artifactPath: string): void {
@@ -168,6 +208,54 @@ export class MetricsCollector {
       this.updateOverallCoverage();
       this.saveMetrics();
     }
+  }
+
+  recordFailureDetected(details: { source?: string; message?: string; severity?: 'error' | 'warning' }): string {
+    const source = details.source;
+    if (source && this.projectMetrics.incidents.some((incident) => !incident.recoveredAt && incident.source === source)) {
+      return this.projectMetrics.incidents.find((incident) => !incident.recoveredAt && incident.source === source)?.id ?? '';
+    }
+
+    const incident: MTTRIncident = {
+      id: this.generateSessionId(),
+      detectedAt: new Date(),
+      ...(source ? { source } : {}),
+      ...(details.message ? { message: details.message } : {}),
+      ...(details.severity ? { severity: details.severity } : {}),
+    };
+
+    this.projectMetrics.incidents.push(incident);
+    this.saveMetrics();
+    return incident.id;
+  }
+
+  recordFailureRecovered(incidentId: string): boolean {
+    const incident = this.projectMetrics.incidents.find((entry) => entry.id === incidentId);
+    if (!incident || incident.recoveredAt) {
+      return false;
+    }
+    incident.recoveredAt = new Date();
+    incident.durationMs = incident.recoveredAt.getTime() - incident.detectedAt.getTime();
+    this.saveMetrics();
+    return true;
+  }
+
+  resolveOpenIncidents(reason?: string): number {
+    const now = new Date();
+    let resolved = 0;
+    this.projectMetrics.incidents.forEach((incident) => {
+      if (incident.recoveredAt) return;
+      incident.recoveredAt = now;
+      incident.durationMs = incident.recoveredAt.getTime() - incident.detectedAt.getTime();
+      if (reason && !incident.message) {
+        incident.message = reason;
+      }
+      resolved += 1;
+    });
+    if (resolved > 0) {
+      this.saveMetrics();
+    }
+    return resolved;
   }
 
   private getCurrentPhase(): PhaseMetrics | undefined {
@@ -196,6 +284,18 @@ export class MetricsCollector {
     }
   }
 
+  private resolveIncidentsForPhase(phase: PhaseMetrics): void {
+    if (!phase.endTime || phase.violations.length === 0) return;
+    const sources = new Set(phase.violations.map((v) => `tdd_violation:${v.type}`));
+    const endTime = phase.endTime;
+    this.projectMetrics.incidents.forEach((incident) => {
+      if (incident.recoveredAt) return;
+      if (!incident.source || !sources.has(incident.source)) return;
+      incident.recoveredAt = endTime;
+      incident.durationMs = incident.recoveredAt.getTime() - incident.detectedAt.getTime();
+    });
+  }
+
   private saveMetrics(): void {
     const metricsFile = path.join(this.metricsPath, 'project-metrics.json');
     writeFileSync(metricsFile, JSON.stringify(this.projectMetrics, null, 2));
@@ -219,6 +319,7 @@ export class MetricsCollector {
   }
 
   generateReport(): string {
+    const mttr = this.computeMTTRSummary();
     const report = {
       summary: {
         project: this.projectMetrics.projectName,
@@ -228,8 +329,11 @@ export class MetricsCollector {
         total_phases: this.projectMetrics.phases.length,
         tdd_compliance: `${this.projectMetrics.tddCompliance.toFixed(1)}%`,
         overall_coverage: `${this.projectMetrics.overallCoverage.toFixed(1)}%`,
-        total_violations: this.projectMetrics.totalViolations
+        total_violations: this.projectMetrics.totalViolations,
+        mttr_hours: mttr.overallHours ?? 'n/a',
+        mttr_open_incidents: mttr.openIncidents,
       },
+      mttr,
       phases: this.projectMetrics.phases.map(phase => ({
         name: phase.phase,
         duration: phase.duration ? `${(phase.duration / 1000).toFixed(1)}s` : 'In progress',
@@ -243,6 +347,53 @@ export class MetricsCollector {
     };
 
     return JSON.stringify(report, null, 2);
+  }
+
+  private computeMTTRSummary(): MTTRSummary {
+    const completed = this.projectMetrics.incidents.filter((incident) => incident.recoveredAt && incident.durationMs !== undefined);
+    const openIncidents = this.projectMetrics.incidents.filter((incident) => !incident.recoveredAt).length;
+    if (completed.length === 0) {
+      return { overallMs: null, overallHours: null, weekly: [], openIncidents };
+    }
+
+    const overallMs = completed.reduce((sum, incident) => sum + (incident.durationMs ?? 0), 0) / completed.length;
+    const overallHours = Number((overallMs / (1000 * 60 * 60)).toFixed(2));
+
+    const weeklyMap = new Map<string, number[]>();
+    completed.forEach((incident) => {
+      const recoveredAt = incident.recoveredAt ?? incident.detectedAt;
+      const week = this.toIsoWeek(recoveredAt);
+      if (!weeklyMap.has(week)) weeklyMap.set(week, []);
+      weeklyMap.get(week)?.push(incident.durationMs ?? 0);
+    });
+
+    const weekly = Array.from(weeklyMap.entries())
+      .map(([week, durations]) => {
+        const avgMs = durations.reduce((sum, value) => sum + value, 0) / durations.length;
+        return {
+          week,
+          count: durations.length,
+          avgMs,
+          avgHours: Number((avgMs / (1000 * 60 * 60)).toFixed(2)),
+        };
+      })
+      .sort((a, b) => a.week.localeCompare(b.week));
+
+    return {
+      overallMs,
+      overallHours,
+      weekly,
+      openIncidents,
+    };
+  }
+
+  private toIsoWeek(date: Date): string {
+    const temp = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+    const dayNum = temp.getUTCDay() || 7;
+    temp.setUTCDate(temp.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(temp.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((temp.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+    return `${temp.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
   }
 
   private getTopViolations(): Array<{type: string, count: number}> {
