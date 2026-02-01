@@ -114,11 +114,11 @@ pnpm run quality:gates:dev
 pnpm run quality:gates:prod
 
 # Run specific gates only
-pnpm run quality:accessibility
-pnpm run quality:coverage
+pnpm run quality:run:accessibility
+pnpm run quality:run:coverage
 
 # Run comprehensive quality check
-pnpm run quality:all
+pnpm run quality:run:all
 ```
 
 #### Advanced Usage
@@ -255,7 +255,7 @@ The system includes robust error handling:
 ```javascript
 // In scripts/run-quality-gates.cjs
 case 'myCustomGate':
-  command = 'pnpm run custom-check';
+  command = 'pnpm run <your-custom-check>'; // user-defined example
   break;
 ```
 
@@ -526,11 +526,11 @@ pnpm run quality:gates:dev
 pnpm run quality:gates:prod
 
 # 特定ゲートのみ実行
-pnpm run quality:accessibility
-pnpm run quality:coverage
+pnpm run quality:run:accessibility
+pnpm run quality:run:coverage
 
 # 包括的品質チェック実行
-pnpm run quality:all
+pnpm run quality:run:all
 ```
 
 ##### 高度な使用法
@@ -667,7 +667,7 @@ jobs:
 ```javascript
 // scripts/run-quality-gates.cjs内で
 case 'myCustomGate':
-  command = 'pnpm run custom-check';
+  command = 'pnpm run <your-custom-check>'; // user-defined example
   break;
 ```
 

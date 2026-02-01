@@ -28,8 +28,8 @@
   - Quality gate integration
 
 #### 🔌 MCP Server Integration
-- **File**: [MCP-SERVER-INTEGRATION.md](./MCP-SERVER-INTEGRATION.md)
-- **Overview**: Model Context Protocol Server implementation
+- **File**: [CODEX-INTEGRATION.md](./CODEX-INTEGRATION.md)
+- **Overview**: Model Context Protocol (MCP) integration and server usage
 - **Features**:
   - Backup integration method
   - Standalone execution support
@@ -59,7 +59,7 @@ npx ae-framework generate --domain "Product Management" --ui react
 #### 3. MCP Server Integration (Backup)
 ```bash
 # Execution via MCP Server
-pnpm run mcp:start
+pnpm run codex:mcp:intent
 ```
 
 ### 📊 Integration Method Comparison
@@ -131,8 +131,8 @@ ae-framework ui scaffold --input domain-model.json
   - 品質ゲート統合
 
 #### 🔌 MCP Server統合
-- **ファイル**: [MCP-SERVER-INTEGRATION.md](./MCP-SERVER-INTEGRATION.md)
-- **概要**: Model Context Protocol Server実装
+- **ファイル**: [CODEX-INTEGRATION.md](./CODEX-INTEGRATION.md)
+- **概要**: Model Context Protocol (MCP) 統合とサーバ利用方法
 - **特徴**:
   - バックアップ統合方式
   - スタンドアロン実行対応
@@ -162,7 +162,7 @@ npx ae-framework generate --domain "商品管理" --ui react
 #### 3. MCP Server統合 (バックアップ)
 ```bash
 # MCP Server経由実行
-pnpm run mcp:start
+pnpm run codex:mcp:intent
 ```
 
 ### 📊 統合方式比較

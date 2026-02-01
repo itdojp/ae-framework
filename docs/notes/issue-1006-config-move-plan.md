@@ -73,7 +73,7 @@ configs/
 4) Remove root duplicates only after CI passes in two consecutive runs.
 
 ## Validation
-- Run `pnpm run test:ci:lite` and `pnpm run verify-lite` after path updates.
+- Run `pnpm run test:ci:lite` and `pnpm run verify:lite` after path updates.
 - Ensure `pnpm run help` still lists valid scripts.
 
 ## Risks

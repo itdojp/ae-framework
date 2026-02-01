@@ -13,7 +13,7 @@
 ## コマンドヘルス一覧
 | 区分 | コマンド | 最終確認 | 結果 | 備考 |
 |------|----------|----------|------|------|
-| Unit | `pnpm vitest run tests/unit/utils/enhanced-state-manager.test.ts tests/unit/utils/enhanced-state-manager.rollback.test.ts --reporter dot` | 2025-10-04 | ✅ | EnhancedStateManager 系 49 ケースがローカルで緑化。ログは `reports/unit-20251004.log` に保存予定 (TODO)。 |
+| Unit | `pnpm exec vitest run tests/unit/utils/enhanced-state-manager.test.ts tests/unit/utils/enhanced-state-manager.rollback.test.ts --reporter dot` | 2025-10-04 | ✅ | EnhancedStateManager 系 49 ケースがローカルで緑化。ログは `reports/unit-20251004.log` に保存予定 (TODO)。 |
 | Unit (Docker) | `AE_HOST_STORE=$(pwd)/.pnpm-store scripts/docker/run-unit.sh` | 2025-10-04 | ✅ | Podman フォールバックで 83 ケースが約 45s で完走。`podman compose -f` 非対応時は `podman-compose` に自動切替。 |
 | Mutation (Quick) | `STRYKER_TIME_LIMIT=480 ./scripts/mutation/run-scoped.sh --quick -m src/utils/enhanced-state-manager.ts -c configs/stryker.enhanced.config.js` | 2025-10-04 | ⚠️ | score 59.74% / survived 184。`calculateChecksum` / `reviveEntryData` 周辺が要追加テスト (Issue #1016)。 |
 | Verify Lite | `pnpm run verify:lite` | 2025-10-05 | ✅ | 新規 `scripts/ci/run-verify-lite-local.sh` を追加。TypeScript / lint / build / mutation quick をローカルで一括再現し、lint サマリと mutation survivors を生成。`VERIFY_LITE_NO_FROZEN=1` で install relax 可能。 |
@@ -27,7 +27,7 @@
 ### 未検証だが Phase A で確認が必要なコマンド
 - `pnpm run test:fast` / `pnpm run test:int`
 - `pnpm run mutation` (フルスコープ)
-- `pnpm run spec:lint` / `pnpm run spec:check` (該当スクリプト要調査)
+- `pnpm run spec:lint` / `pnpm run spec:validate` / `pnpm run spec:check:tla` / `pnpm run spec:check:alloy`
 - `scripts/ci/verify-lite-demo.sh`
 
 ### Verify Lite lint（enforce モード）の現状
@@ -66,7 +66,7 @@
 
 ### Minimal Pipeline ワークフローログ
 - `.github/workflows/minimal-pipeline.yml` は「Verify Lite → EnhancedStateManager Unit → KvOnce TLC」を通しで実行し、Verify Lite の Step Summary に lint 上位ルール、Trace Replay に TLC 実行結果を掲載する。
-- 手元で同一構成を再現したい場合は `pnpm run verify:lite` → `pnpm vitest --project unit` → `pnpm run trace:kvonce:replay` を順番に実行し、各コマンドのログを `reports/minimal-pipeline/<timestamp>/` に保存する。
+- 手元で同一構成を再現したい場合は `pnpm run verify:lite` → `pnpm exec vitest --project unit` → `pnpm run trace:kvonce:replay` を順番に実行し、各コマンドのログを `reports/minimal-pipeline/<timestamp>/` に保存する。
 - TLC を利用できない環境では Trace Replay が `tool_not_available` を記録するだけで失敗扱いにはならない旨を報告に含める。
 
 ## 既存ドキュメント
@@ -85,7 +85,7 @@
 - ステップ案:
   1. `pnpm run build`
   2. `CODEX_SKIP_QUALITY=1 CODEX_TOLERANT=1 pnpm run codex:quickstart`
-  3. `pnpm vitest run --project unit --reporter dot`
+  3. `pnpm exec vitest run --project unit --reporter dot`
   4. `STRYKER_TIME_LIMIT=480 ./scripts/mutation/run-scoped.sh --quick -m src/utils/enhanced-state-manager.ts -c configs/stryker.enhanced.config.js`（オプション）
   5. アーティファクト: `artifacts/codex-quickstart-summary.md`, `tests/api/generated/**`, mutation レポート
 - 必要な環境変数: `AE_HOST_STORE=$GITHUB_WORKSPACE/.pnpm-store`

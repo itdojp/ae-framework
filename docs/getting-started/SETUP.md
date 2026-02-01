@@ -184,13 +184,13 @@ pnpm run intent-agent
 **Test Generation Agent**
 ```bash
 pnpm run mcp:test
-# Should display "Test Generation MCP server running on stdio"
+# The MCP server starts and waits for stdio requests (it may not print a startup log)
 ```
 
-**UI Generation Agent (Phase 6)**
+**Operate Agent (Phase 6)**
 ```bash
-pnpm run ui:server
-# Should display "UI Generation MCP server running on stdio"
+pnpm run operate:server
+# Should display "Operate MCP server running on stdio"
 ```
 
 #### 5. Latest CI/CD System Verification ✨ **NEW**
@@ -241,8 +241,8 @@ pnpm run intent-agent:build
 # Formal Agent (development)  
 pnpm run formal-agent:dev
 
-# UI Generation Agent (development)
-pnpm run ui:dev
+# Operate Agent (development)
+pnpm run operate:dev
 ```
 
 #### 2. Coverage Measurement
@@ -560,13 +560,13 @@ pnpm run intent-agent
 **Test Generation Agent**
 ```bash
 pnpm run mcp:test
-# "Test Generation MCP server running on stdio" が表示されればOK
+# 起動し、stdio のリクエスト待ち状態になればOK（明示ログが出ない場合があります）
 ```
 
-**UI Generation Agent (Phase 6)**
+**Operate Agent (Phase 6)**
 ```bash
-pnpm run ui:server
-# "UI Generation MCP server running on stdio" が表示されればOK
+pnpm run operate:server
+# "Operate MCP server running on stdio" が表示されればOK
 ```
 
 #### 5. Issue #127 最新CI/CDシステムの動作確認 ✨ **NEW**
@@ -616,8 +616,8 @@ pnpm run intent-agent:build
 # Formal Agent (開発用)  
 pnpm run formal-agent:dev
 
-# UI Generation Agent (開発用)
-pnpm run ui:dev
+# Operate Agent (開発用)
+pnpm run operate:dev
 ```
 
 #### 2. カバレッジ測定
