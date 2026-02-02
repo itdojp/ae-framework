@@ -407,7 +407,7 @@ jobs:
     - name: Phase 2.3 - Integration Testing
       run: |
         # テスト環境の起動
-        pnpm run start:test-env &
+        pnpm run start:server &
         TEST_PID=$!
         
         # テストの実行

@@ -177,9 +177,9 @@ jobs:
       - name: Alloy 6
         run: pnpm run verify:alloy # LTL/過去演算の性質
       - name: Conformance
-        run: pnpm run verify:conf  # トレース適合検査
+        run: pnpm run verify:conformance  # トレース適合検査
       - name: Coverage/A11y/Perf gates
-        run: pnpm run quality:gate # ≥80%/≥95%/≥75% を既定
+        run: pnpm run quality:gates # ≥80%/≥95%/≥75% を既定
 ```
 
 ### 6.2 既定ゲート（リポジトリ整合）

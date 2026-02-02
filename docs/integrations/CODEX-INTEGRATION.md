@@ -270,7 +270,7 @@ set CODEX_RUN_FORMAL=1 && pnpm run build && pnpm run codex:quickstart
 このドキュメントは、CodeX 環境で ae-framework を利用するための方法をまとめたものです。Claude Code が主統合ですが、CodeX でも以下の 3 方式で利用できます。
 
 - CLI ブリッジ（PoC）: `pnpm run codex:quickstart` などで CLI を直接呼び出し、`artifacts/` に成果を保存
-- MCP 統合（推奨）: `pnpm run codex:mcp:*` で MCP サーバを起動し、CodeX クライアントから stdio で接続
+- MCP 統合（推奨）: `pnpm run codex:mcp:intent` / `pnpm run codex:mcp:test` / `pnpm run codex:mcp:verify` / `pnpm run codex:mcp:code` / `pnpm run codex:mcp:spec` で MCP サーバを起動し、CodeX クライアントから stdio で接続
 - タスクアダプター（stdio）: TODO/Plan/Tool を ae-framework の各フェーズ（intent/formal/stories/validation/modeling/ui）へマッピング
 
 運用上の注意（抜粋）

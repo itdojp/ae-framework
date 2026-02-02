@@ -831,7 +831,7 @@ jobs:
       
     - name: Start test environment
       run: |
-        pnpm run start:test-env &
+        pnpm run start:server &
         npx wait-on http://localhost:3000
         
     - name: Run integration tests
@@ -919,7 +919,7 @@ fi
 
 # 1. テスト環境の起動
 echo "Starting test environment..."
-pnpm run start:test-env &
+pnpm run start:server &
 TEST_SERVER_PID=$!
 
 # 健全性チェック
