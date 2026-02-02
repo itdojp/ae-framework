@@ -57,7 +57,19 @@ ae-framework は、エージェント協調型のSDLCを実行するための「
 2. 開発フック: `pnpm run setup-hooks`
 3. 最小検証: `pnpm run lint` と `pnpm run test:fast`
 
-### 9. 関連資料
+### 9. 現行全体像（2026-02-02 時点）
+- **主要バイナリ**: `ae` / `ae-framework`（同一）、`ae-phase`、`ae-approve`、`ae-slash`、`ae-ui`、`ae-benchmark` 等
+- **フェーズ運用**: `check` / `next` / `guard` / `tdd`、`status` / `board`
+- **仕様・検証**: `spec`、`conformance`（Phase 2.2）、`integration`（Phase 2.3）、`fix`（Phase 2.1）
+- **品質/運用**: `quality` / `qa` / `security` / `sbom` / `resilience` / `circuit-breaker`
+- **エージェント/MCP**: `src/mcp-server/*` に intent/test-generation/verify 等のサーバ実装
+- **UI/Phase 6**: `ui-scaffold`、`packages/ui` / `packages/design-tokens`、`apps/web` / `apps/storybook`
+- **成果物の代表例**: `artifacts/progress/summary.json`、`reports/quality-gates/*`、`conformance-results.json`、`test-results/test-report-*.html`、`.ae/phase-state.json`
+- **設定体系**: `ae-framework.yml`（フェーズ/ガード）と `ae.config.*`（mode/ガード詳細）の二系統
+- **npm公開API**: `createServer` / `DomainServices` / `Infra` のみ（それ以外は内部API）
+- **既知制約**: IntegrationのレポートはHTMLのみ、内部API import はリポジトリ内利用前提
+
+### 10. 関連資料
 - 詳細説明資料: `docs/product/DETAIL.md`
 - 利用マニュアル: `docs/product/USER-MANUAL.md`
 - Minimal Adoption: `docs/product/MINIMAL-ADOPTION.md`
