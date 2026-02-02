@@ -3,7 +3,7 @@
 [![validate-artifacts-ajv](https://github.com/itdojp/ae-framework/actions/workflows/validate-artifacts-ajv.yml/badge.svg)](https://github.com/itdojp/ae-framework/actions/workflows/validate-artifacts-ajv.yml)
 [![testing-ddd-scripts](https://github.com/itdojp/ae-framework/actions/workflows/testing-ddd-scripts.yml/badge.svg)](https://github.com/itdojp/ae-framework/actions/workflows/testing-ddd-scripts.yml)
 [![coverage-check](https://github.com/itdojp/ae-framework/actions/workflows/coverage-check.yml/badge.svg)](https://github.com/itdojp/ae-framework/actions/workflows/coverage-check.yml)
-[![pr-summary-comment](https://github.com/itdojp/ae-framework/actions/workflows/pr-summary-comment.yml/badge.svg)](https://github.com/itdojp/ae-framework/actions/workflows/pr-summary-comment.yml)
+[![pr-ci-status-comment](https://github.com/itdojp/ae-framework/actions/workflows/pr-ci-status-comment.yml/badge.svg)](https://github.com/itdojp/ae-framework/actions/workflows/pr-ci-status-comment.yml)
 
 > **🌍 Language / 言語**: [English](#english) | [日本語](#japanese) | [Documentation / ドキュメント](#documentation-ドキュメント)
 
@@ -14,7 +14,7 @@
 ae-framework is a project skeleton plus verification toolkit that **orchestrates agent-driven SDLC work**. It standardises specifications, verification, and CI automation so human/agent collaboration stays auditable and repeatable.
 
 ### What this repository provides
-- **Agentic SDLC orchestrator**: Ready-to-run GitHub Actions (PR verify, nightly heavy tests, Slack alerts) and CLI scripts that keep requirements, tests, and regression signals aligned.
+- **Agentic SDLC orchestrator**: Ready-to-run GitHub Actions (PR verify / verify-lite, nightly heavy tests, Slack alerts) and CLI scripts that keep requirements, tests, and regression signals aligned.
 - **Spec & Verification Kit**: Traceable spec format, mutation/MBT/property verification pipelines, and comparison tooling for heavy test trends (`scripts/pipelines/compare-test-trends.mjs`).
 - **Project scaffolding & policies**: pnpm workspace layout, lint/test/type-coverage gates, label gating (typecov, flake), and TDD-friendly Git hooks.
 - **Cacheable heavy test artifacts**: `scripts/pipelines/sync-test-results.mjs` to restore/store/snapshot mutation + MBT results; `heavy-test-trends` artifacts for CI triage.
@@ -27,7 +27,7 @@ ae-framework is a project skeleton plus verification toolkit that **orchestrates
 
 ### Quick start (local)
 ```bash
-# Prereqs: Node.js 20+, pnpm (corepack enable)
+# Prereqs: Node.js 20.11+ (<23), pnpm 10 (corepack enable)
 pnpm install
 pnpm run setup-hooks
 
@@ -72,7 +72,7 @@ ae-framework は **エージェント協調型のSDLCオーケストレーター
 
 ### すぐ試す
 ```bash
-# 前提: Node.js 20+, pnpm (corepack enable)
+# 前提: Node.js 20.11+ (<23), pnpm 10 (corepack enable)
 pnpm install
 pnpm run setup-hooks
 
