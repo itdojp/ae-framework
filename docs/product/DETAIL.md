@@ -60,7 +60,7 @@ ae-framework は、エージェント協調型SDLCを支える「仕様・検証
 - `spec`（`src/cli/spec-cli.ts`）
 - `state-machine`（`src/cli/state-machine-cli.ts`）
 - `codegen`（`src/cli/codegen-cli.ts`）
-- `cegis`（`src/cli/cegis-cli.ts`）
+- `fix`（CEGIS自動修復、`src/cli/cegis-cli.ts`）
 - `enhanced-state`（`src/cli/enhanced-state-cli.ts`）
 - `circuit-breaker`（`src/cli/circuit-breaker-cli.ts`）
 - `security`（`src/cli/security-cli.ts`）

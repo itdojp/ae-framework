@@ -8,6 +8,15 @@
 
 **Complete API reference for ae-framework's 6-phase software development workflow system**
 
+### Public API (npm)
+The published package currently exposes a minimal surface:
+
+```typescript
+import { createServer, DomainServices, Infra } from 'ae-framework';
+```
+
+Other modules shown in this document are internal (source-level) APIs intended for use within this repository or via direct source access.
+
 ### 📦 Package Structure
 
 ```
@@ -700,6 +709,15 @@ const context = await loader.getSteeringContext();
 ## 日本語
 
 **ae-framework の 6 フェーズ開発ワークフローを支える API の概要と使用例**
+
+### 公開API（npm）
+公開パッケージのトップレベルは最小構成です。
+
+```typescript
+import { createServer, DomainServices, Infra } from 'ae-framework';
+```
+
+本書の他のAPIは、主にリポジトリ内/ソースレベルの利用を想定した内部APIです。
 
 ### パッケージ構成（抜粋）
 ```

@@ -13,16 +13,17 @@ Practical workflows leveraging Phase 2.1–2.3: CEGIS Auto‑Fix (counterexample
 ### Quick Start (15 minutes)
 ```bash
 # Conformance samples
-ae-framework conformance sample --rules --output rules.json
-ae-framework conformance config --create-sample --output conformance-config.json
+ae-framework conformance sample --rules rules.json
+ae-framework conformance sample --config conformance-config.json
 
 # Integration testing samples
 ae-framework integration generate --type environment --name test --output test-env.json
 ae-framework integration generate --type test --test-type e2e --name "Sample Login Test" --output login-test.json
 ae-framework integration generate --type test --test-type api --name "Users API Test" --output users-api-test.json
 
-# CEGIS demo (violations.json with counterexamples) then fix
-ae-framework cegis fix --files src/ --violations violations.json
+# CEGIS demo (failure artifacts) then fix
+ae-framework fix create-artifact --type error --message "Sample failure" --file src/app.ts --line 10 --output failure.json
+ae-framework fix apply --input failure.json --output .ae/auto-fix --dry-run
 ```
 
 ### Interoperability
@@ -30,9 +31,9 @@ ae-framework cegis fix --files src/ --violations violations.json
 - 2.3 (Integration) provides E2E/API feedback → informs conformance rules and repair priorities
 
 ### Reports & Artifacts
-- Conformance: `artifacts/conformance/*.json`, HTML metrics (optional)
-- Integration: `artifacts/integration/*.json`, report listings
-- CEGIS: fix stats and file diffs
+- Conformance: `conformance-results.json` / `reports/conformance/**` (集計)
+- Integration: `./test-results/**`（`--output-dir` で変更）
+- CEGIS: `.ae/auto-fix/**`（適用結果/レポート）
 
 > Phase 2.1-2.3の新機能を活用した実践的な開発ワークフロー
 
@@ -55,21 +56,21 @@ Phase 2では、従来の自然言語要件処理に加えて、3つの高度な
 mkdir my-ae-project
 cd my-ae-project
 
-# ae-frameworkの初期化
-ae-framework init . --with-advanced-features
+# ae-frameworkの導入
+pnpm add ae-framework
 
-# 基本構造の確認
-tree .
+# CLI確認
+npx ae-framework --help
 ```
 
 ### ステップ2: Phase 2.2 Runtime Conformance の設定
 
 ```bash
 # サンプル規則の生成
-ae-framework conformance sample --rules --output rules.json
+ae-framework conformance sample --rules rules.json
 
 # サンプル設定の生成
-ae-framework conformance config --create-sample --output conformance-config.json
+ae-framework conformance sample --config conformance-config.json
 
 # 生成されたファイルの確認
 cat rules.json | jq '.rules[0]'
@@ -125,42 +126,16 @@ export class UserValidator {
 }
 EOF
 
-# 違反定義の作成
-cat > violations.json << 'EOF'
-{
-  "violations": [
-    {
-      "id": "email-validation-incomplete",
-      "type": "logic_error",
-      "severity": "medium",
-      "file": "src/user-validator.ts",
-      "line": 12,
-      "message": "Email validation is incomplete - should check for valid email format",
-      "counterExample": {
-        "input": {"email": "@invalid"},
-        "expectedBehavior": "should return false",
-        "actualBehavior": "returns true"
-      }
-    },
-    {
-      "id": "age-validation-incomplete", 
-      "type": "logic_error",
-      "severity": "low",
-      "file": "src/user-validator.ts",
-      "line": 18,
-      "message": "Age validation should include upper bound check",
-      "counterExample": {
-        "input": {"age": 200},
-        "expectedBehavior": "should return false",
-        "actualBehavior": "returns true"
-      }
-    }
-  ]
-}
-EOF
+# 失敗アーティファクトの作成
+ae-framework fix create-artifact \
+  --type error \
+  --message "Email validation is incomplete" \
+  --file src/user-validator.ts \
+  --line 12 \
+  --output failure.json
 
-# CEGIS修復の実行
-ae-framework cegis fix --files src/ --violations violations.json
+# CEGIS修復の実行（dry-run）
+ae-framework fix apply --input failure.json --output .ae/auto-fix --dry-run
 
 # 修復結果の確認
 cat src/user-validator.ts
@@ -170,7 +145,7 @@ cat src/user-validator.ts
 
 ```bash
 # 1. Runtime Conformance による検証
-ae-framework conformance verify --rules rules.json --collect-metrics
+ae-framework conformance verify --input data.json --rules rules.json
 
 # 2. Integration Testing の実行
 ae-framework integration run --tests login-test.json,users-api-test.json --environment test
@@ -180,7 +155,7 @@ ae-framework conformance status
 ae-framework integration status
 
 # 4. 総合レポートの生成
-ae-framework conformance metrics --format html --output conformance-report.html
+ae-framework conformance metrics --format json --export conformance-metrics.json
 ae-framework integration reports --list
 ```
 
@@ -188,12 +163,27 @@ ae-framework integration reports --list
 
 ### 2.2 Conformance – Sample metrics JSON
 ```json
-{ "rulesExecuted": 25, "violations": 3, "successRate": 0.88 }
+{
+  "counts": {
+    "totalVerifications": 25,
+    "totalViolations": 3,
+    "uniqueRules": 25,
+    "uniqueViolations": 2
+  },
+  "performance": {
+    "averageExecutionTime": 12.4,
+    "p95ExecutionTime": 18.7,
+    "p99ExecutionTime": 22.0,
+    "timeouts": 0,
+    "errors": 0
+  }
+}
 ```
 
-### 2.3 Integration – E2E run summary (JSON)
-```json
-{ "suites": 2, "tests": 14, "passed": 13, "failed": 1 }
+### 2.3 Integration – E2E run summary (text)
+```
+Suite completed: 14 total, 13 passed (92.8%)
+Report: test-results/test-report-<id>.html
 ```
 
 ### 2.1 CEGIS – Fix stats (text)
@@ -214,9 +204,11 @@ time=3.2s, confidence=0.78
 ```
 
 ### 2.3 Integration – Attachments
-- Screenshots: `artifacts/integration/screenshots/*.png`
-- Traces: `artifacts/integration/traces/*.zip`
-- Summary: `artifacts/integration/summary.json`
+- Reports: `test-results/test-report-*.html`
+- Screenshots: `test-results/screenshots/*.png`（`--screenshots` 有効時）
+- Traces: `test-results/traces/*`（`--trace` 有効時）
+- Videos: `test-results/videos/*`（`--video` 有効時）
+※ 現行実装ではスクリーンショット/トレース/動画の保存先は `./test-results` 固定（`--output-dir` はレポートのみ対象）。
 
 ### 2.1 CEGIS – Diff example (pseudo)
 ```diff
@@ -235,12 +227,27 @@ time=3.2s, confidence=0.78
 
 ### 2.2 Conformance – メトリクスJSON（例）
 ```json
-{ "rulesExecuted": 25, "violations": 3, "successRate": 0.88 }
+{
+  "counts": {
+    "totalVerifications": 25,
+    "totalViolations": 3,
+    "uniqueRules": 25,
+    "uniqueViolations": 2
+  },
+  "performance": {
+    "averageExecutionTime": 12.4,
+    "p95ExecutionTime": 18.7,
+    "p99ExecutionTime": 22.0,
+    "timeouts": 0,
+    "errors": 0
+  }
+}
 ```
 
-### 2.3 Integration – 実行サマリ（JSON）
-```json
-{ "suites": 2, "tests": 14, "passed": 13, "failed": 1 }
+### 2.3 Integration – 実行サマリ（テキスト例）
+```
+Suite completed: 14 total, 13 passed (92.8%)
+Report: test-results/test-report-<id>.html
 ```
 
 ### 2.1 CEGIS – 修復サマリ（テキスト）
@@ -252,26 +259,33 @@ time=3.2s, confidence=0.78
 
 ### 2.2 Conformance – Gate excerpt (text)
 ```
-🛡️ Runtime Conformance Verification - Processing 25 rules
-Rules Executed: 25 / Violations: 3 / Success Rate: 88%
+🔧 Rules Executed: 25
+✅ Rules Passed: 22
+❌ Rules Failed: 3
+⏭️  Rules Skipped: 0
+🚨 Rules Error: 0
 ```
 
 ### 2.3 Integration – Summary (text)
 ```
-Suites: 2 / Tests: 14 / Passed: 13 / Failed: 1
-Artifacts: artifacts/integration/summary.json
+Overall Summary:
+Total Tests: 14
+Passed: 13
+Pass Rate: 92.8%
+Report: test-results/test-report-<id>.html
 ```
 
 ### 2.3 Integration – Attachments (paths)
 ```
-Screenshots: artifacts/integration/screenshots/*.png
-Traces:     artifacts/integration/traces/*.zip
-Summary:    artifacts/integration/summary.json
+Reports:     test-results/test-report-*.html
+Screenshots: test-results/screenshots/*.png
+Traces:      test-results/traces/*
+Videos:      test-results/videos/*
 ```
 
 ### 2.3 Integration – Discovered tests (path)
 ```
-artifacts/integration/discovered.json
+例: test-results/discovered.json（--output で指定したパスに出力）
 ```
 
 ### 2.1 CEGIS – Candidates (JSON excerpt)
@@ -289,7 +303,7 @@ artifacts/integration/discovered.json
 
 ### 2.2 Conformance – Metrics path
 ```
-artifacts/conformance/summary.json
+reports/conformance/conformance-summary.json
 ```
 
 ### 2.1 CEGIS – Applied fix (text)
@@ -307,10 +321,10 @@ Verified: 2/2
 
 ```bash
 # プロジェクト状態の確認
-ae-framework status --all-phases
+ae-framework status
 
 # 適合性規則の設定
-ae-framework conformance config --validate
+ae-framework conformance config --show
 
 # テスト環境の準備
 ae-framework integration list --type environments
@@ -319,19 +333,19 @@ ae-framework integration list --type environments
 #### 2. コーディング中
 
 ```bash
-# リアルタイム適合性監視（別ターミナルで実行）
-ae-framework conformance verify --rules rules.json --live
+# 適合性検証（別ターミナルで定期実行）
+ae-framework conformance verify --input data.json --rules rules.json
 
-# ファイル変更の監視とCEGIS修復
-ae-framework cegis fix --files src/ --watch --auto-apply
+# CEGIS修復（failure artifactベース）
+ae-framework fix apply --input failures.json --apply
 ```
 
 #### 3. テスト実行前
 
 ```bash
 # CEGIS による事前修復
-ae-framework cegis analyze --violations violations.json
-ae-framework cegis fix --files src/ --verify-fix
+ae-framework fix analyze --input failures.json
+ae-framework fix apply --input failures.json --verify
 
 # 統合テストの発見と準備
 ae-framework integration discover --patterns "./tests/**/*.json" --type all
@@ -346,20 +360,19 @@ ae-framework integration run \
   --environment test \
   --parallel \
   --max-concurrency 4 \
-  --report-format html,json
+  --report-format html
 ```
 
 #### 5. 結果分析
 
 ```bash
 # 包括的な状態確認
-ae-framework conformance metrics --detailed
-ae-framework integration status --detailed
-ae-framework cegis stats --format table
+ae-framework conformance metrics --format json
+ae-framework integration status
+ae-framework fix status
 
 # 問題の特定と修復
-ae-framework cegis history --limit 5
-ae-framework conformance status --live
+ae-framework conformance status --monitors
 ```
 
 ### CI/CDパイプライン統合
@@ -393,16 +406,17 @@ jobs:
       
     - name: Phase 2.1 - CEGIS Auto-Fix
       run: |
-        ae-framework cegis analyze --violations .ae/violations.json
-        ae-framework cegis fix --files src/ --verify-fix --timeout 300000
+        ae-framework fix analyze --input .ae/failures.json
+        ae-framework fix apply --input .ae/failures.json --output .ae/auto-fix --verify --verify-profile lite
         
     - name: Phase 2.2 - Runtime Conformance
       run: |
+        mkdir -p ./conformance-results
         ae-framework conformance verify \
+          --input .ae/conformance-data.json \
+          --context-file .ae/conformance-context.json \
           --rules .ae/conformance-rules.json \
-          --collect-metrics \
-          --timeout 180000 \
-          --output-dir ./conformance-results
+          --output ./conformance-results/conformance-results.json
           
     - name: Phase 2.3 - Integration Testing
       run: |
@@ -418,7 +432,7 @@ jobs:
           --max-concurrency 4 \
           --timeout 600000 \
           --output-dir ./integration-results \
-          --report-format json,html
+          --report-format html
           
         # クリーンアップ
         kill $TEST_PID
@@ -435,20 +449,14 @@ jobs:
     - name: Quality Gate Check
       run: |
         # 最低品質基準のチェック
-        conformance_success=$(jq -r '.success' ./conformance-results/metrics.json)
-        integration_pass_rate=$(jq -r '.statistics.passRate' ./integration-results/summary.json)
-        
-        if [[ "$conformance_success" != "true" ]]; then
+        conformance_status=$(jq -r '.overall' ./conformance-results/conformance-results.json)
+        if [[ "$conformance_status" != "pass" ]]; then
           echo "❌ Conformance verification failed"
           exit 1
         fi
-        
-        if (( $(echo "$integration_pass_rate < 90" | bc -l) )); then
-          echo "❌ Integration test pass rate below 90%: $integration_pass_rate%"
-          exit 1
-        fi
-        
-        echo "✅ All Phase 2 advanced quality gates passed"
+
+        echo "ℹ️ Integration reports: ./integration-results/test-report-*.html"
+        echo "✅ Phase 2 advanced quality gates (conformance) passed"
 ```
 
 ## 📊 監視とメトリクス
@@ -459,31 +467,29 @@ jobs:
 
 ```bash
 # メトリクス収集の開始
-ae-framework conformance metrics --live --refresh 30 --output metrics.json &
-ae-framework integration status --watch --refresh 60 --json > integration-status.json &
+ae-framework conformance metrics --format json --export metrics.json
+ae-framework integration status --watch --refresh 60 > integration-status.log &
 
 # ダッシュボード用データの準備
 cat > dashboard-data.js << 'EOF'
 // リアルタイムメトリクスの取得
+const fs = require('fs');
 const conformanceMetrics = require('./metrics.json');
-const integrationStatus = require('./integration-status.json');
+const integrationReportPath = './integration-results/test-report-*.html';
 
 // グラフ用データの生成
 const generateDashboardData = () => {
   return {
     conformance: {
-      successRate: conformanceMetrics.execution?.successRate || 0,
-      violations: conformanceMetrics.violations?.total || 0,
-      responseTime: conformanceMetrics.performance?.averageResponseTime || 0
+      totalVerifications: conformanceMetrics.counts?.totalVerifications || 0,
+      totalViolations: conformanceMetrics.counts?.totalViolations || 0,
+      averageExecutionTimeMs: conformanceMetrics.performance?.averageExecutionTime || 0
     },
     integration: {
-      passRate: integrationStatus.statistics?.passRate || 0,
-      totalTests: integrationStatus.statistics?.total || 0,
-      executionTime: integrationStatus.lastExecution?.duration || 0
-    },
-    cegis: {
-      fixesApplied: 0, // CEGISメトリクスを追加
-      violationsResolved: 0
+      reportPath: integrationReportPath,
+      passRate: null,      // HTMLのみのため機械集計はカスタム実装が必要
+      totalTests: null,
+      executionTimeMs: null
     }
   };
 };
@@ -500,28 +506,18 @@ node dashboard-data.js
 # 品質閾値の設定
 cat > quality-thresholds.yaml << 'EOF'
 conformance:
-  successRate:
-    warning: 95
-    critical: 90
-  responseTime:
-    warning: 1000
-    critical: 2000
-  violations:
+  totalViolations:
     warning: 5
     critical: 10
+  averageExecutionTimeMs:
+    warning: 1000
+    critical: 2000
 
 integration:
+  # HTMLレポートのみのため、機械判定が必要ならカスタムReporterを実装
   passRate:
     warning: 95
     critical: 90
-  executionTime:
-    warning: 600000  # 10分
-    critical: 900000 # 15分
-
-cegis:
-  unfixableViolations:
-    warning: 3
-    critical: 5
 EOF
 
 # アラート監視スクリプト
@@ -533,28 +529,26 @@ check_thresholds() {
   local thresholds_file=$2
   
   # メトリクスの取得
-  local success_rate=$(jq -r '.execution.successRate' $metrics_file)
-  local violations=$(jq -r '.violations.total' $metrics_file)
+  local violations=$(jq -r '.counts.totalViolations' $metrics_file)
+  local avg_exec=$(jq -r '.performance.averageExecutionTime' $metrics_file)
   
   # 閾値チェック
-  if (( $(echo "$success_rate < 90" | bc -l) )); then
-    echo "🚨 CRITICAL: Conformance success rate below 90%: $success_rate%"
-    # Slack通知やメール送信
-    # curl -X POST -H 'Content-type: application/json' --data '{"text":"Critical: Conformance failure"}' $SLACK_WEBHOOK
-  elif (( $(echo "$success_rate < 95" | bc -l) )); then
-    echo "⚠️  WARNING: Conformance success rate below 95%: $success_rate%"
-  fi
-  
   if (( violations > 10 )); then
     echo "🚨 CRITICAL: Too many violations detected: $violations"
   elif (( violations > 5 )); then
     echo "⚠️  WARNING: Multiple violations detected: $violations"
   fi
+
+  if (( $(echo "$avg_exec > 2000" | bc -l) )); then
+    echo "🚨 CRITICAL: Average execution time above 2000ms: $avg_exec"
+  elif (( $(echo "$avg_exec > 1000" | bc -l) )); then
+    echo "⚠️  WARNING: Average execution time above 1000ms: $avg_exec"
+  fi
 }
 
 # 定期チェックの実行
 while true; do
-  ae-framework conformance metrics --format json --output current-metrics.json
+  ae-framework conformance metrics --format json --export current-metrics.json
   check_thresholds current-metrics.json quality-thresholds.yaml
   sleep 300  # 5分間隔でチェック
 done
@@ -570,67 +564,44 @@ chmod +x monitor-quality.sh
 #### 1. CEGIS修復の失敗
 
 ```bash
-# 問題: 修復候補が生成されない
-ae-framework cegis generate-candidates --violations violations.json --max-candidates 10 --verbose
+# 問題: 修復候補が適用されない
+ae-framework fix analyze --input failures.json
 
-# 解決: 違反定義の詳細化
-cat > detailed-violations.json << 'EOF'
-{
-  "violations": [
-    {
-      "id": "validation-issue",
-      "type": "logic_error",
-      "severity": "medium",
-      "file": "src/validator.ts",
-      "line": 15,
-      "message": "Validation logic incomplete",
-      "counterExample": {
-        "input": {"value": "invalid@"},
-        "expectedBehavior": "return false",
-        "actualBehavior": "return true"
-      },
-      "context": {
-        "functionName": "validateEmail",
-        "className": "UserValidator",
-        "relatedCode": ["email.includes('@')", "email.length > 5"]
-      },
-      "fixHints": [
-        "Add proper email regex validation",
-        "Check for domain part after @",
-        "Validate email format completely"
-      ]
-    }
-  ]
-}
-EOF
-
-ae-framework cegis fix --violations detailed-violations.json --files src/
+# 解決: failure artifact の情報を増やす
+ae-framework fix create-artifact \
+  --type error \
+  --message "Validation logic incomplete" \
+  --file src/validator.ts \
+  --line 15 \
+  --output failure.json
+ae-framework fix apply --input failure.json --output .ae/auto-fix --dry-run
 ```
 
 #### 2. Runtime Conformance パフォーマンス問題
 
 ```bash
 # 問題: 検証が遅い
-ae-framework conformance metrics --detailed
+ae-framework conformance metrics --format json
 
 # 解決: サンプリング率の調整
-ae-framework conformance verify --rules rules.json --sample-rate 0.1
+ae-framework conformance config --set sampling.enabled=true
+ae-framework conformance config --set sampling.rate=0.1
 
 # 並行実行数の調整
-ae-framework conformance config --set maxConcurrentRules=5
+ae-framework conformance config --set performance.maxConcurrentChecks=5
 ```
 
 #### 3. Integration Testing の不安定性
 
 ```bash
 # 問題: テストが断続的に失敗
-ae-framework integration status --detailed
+ae-framework integration status
 
 # 解決: タイムアウトの調整
 ae-framework integration run --tests tests.json --timeout 60000 --retries 3
 
 # テスト環境の確認
-ae-framework integration list --type environments --detailed
+ae-framework integration list --type environments
 ```
 
 ## 🎯 ベストプラクティス
@@ -639,16 +610,16 @@ ae-framework integration list --type environments --detailed
 
 ```bash
 # Step 1: Runtime Conformance から開始
-ae-framework conformance sample --rules --output basic-rules.json
-ae-framework conformance verify --rules basic-rules.json --sample-rate 0.05
+ae-framework conformance sample --rules basic-rules.json
+ae-framework conformance verify --input data.json --rules basic-rules.json
 
 # Step 2: Integration Testing の追加
 ae-framework integration generate --type test --test-type api --output basic-api-test.json
 ae-framework integration run --tests basic-api-test.json --environment dev
 
 # Step 3: CEGIS の統合
-ae-framework cegis analyze --violations simple-violations.json
-ae-framework cegis fix --files src/ --violations simple-violations.json --verify-fix
+ae-framework fix analyze --input simple-failures.json
+ae-framework fix apply --input simple-failures.json --verify
 ```
 
 ### 2. チーム連携
@@ -665,13 +636,16 @@ cat > scripts/team-validation.sh << 'EOF'
 echo "🚀 Running team validation workflow..."
 
 # 1. 適合性検証
-ae-framework conformance verify --rules .ae/shared/conformance-rules.json
+ae-framework conformance verify \
+  --input .ae/shared/conformance-data.json \
+  --context-file .ae/shared/conformance-context.json \
+  --rules .ae/shared/conformance-rules.json
 
 # 2. 統合テスト（基本セット）
 ae-framework integration run --suites .ae/shared/basic-test-suite.json --environment shared
 
 # 3. 修復が必要な問題の確認
-ae-framework cegis analyze --violations .ae/shared/common-violations.json
+ae-framework fix analyze --input .ae/shared/common-failures.json
 
 echo "✅ Team validation complete"
 EOF
@@ -681,61 +655,15 @@ chmod +x scripts/team-validation.sh
 
 ### 3. 継続的改善
 
+現行CLIには履歴メトリクスの自動集計コマンドがありません。CIで保存した成果物を外部で集計してください。
+
+- Conformance: `conformance-results.json` / `reports/conformance/**`
+- Integration: `test-report-*.html`（出力ディレクトリ配下、現行はHTMLのみ）
+- CEGIS: `.ae/auto-fix/**`（適用結果/レポート）
+
+例: Conformance結果の集計
 ```bash
-# メトリクス分析スクリプト
-cat > scripts/analyze-trends.sh << 'EOF'
-#!/bin/bash
-
-# 過去30日のメトリクス分析
-ae-framework conformance metrics --historical --days 30 --format json > conformance-trends.json
-ae-framework integration reports --list --last-30-days --format json > integration-trends.json
-ae-framework cegis stats --historical --days 30 --format json > cegis-trends.json
-
-# トレンド分析レポートの生成
-node scripts/generate-trend-report.js conformance-trends.json integration-trends.json cegis-trends.json
-EOF
-
-# トレンド分析ツール
-cat > scripts/generate-trend-report.js << 'EOF'
-const fs = require('fs');
-
-const [conformanceFile, integrationFile, cegisFile] = process.argv.slice(2);
-
-const conformanceData = JSON.parse(fs.readFileSync(conformanceFile, 'utf8'));
-const integrationData = JSON.parse(fs.readFileSync(integrationFile, 'utf8'));
-const cegisData = JSON.parse(fs.readFileSync(cegisFile, 'utf8'));
-
-console.log('# Phase 2 Advanced Features - 30-Day Trend Report\n');
-
-console.log('## Runtime Conformance Trends');
-console.log(`- Average Success Rate: ${conformanceData.averageSuccessRate}%`);
-console.log(`- Violation Trend: ${conformanceData.violationTrend}`);
-console.log(`- Performance Trend: ${conformanceData.performanceTrend}\n`);
-
-console.log('## Integration Testing Trends');
-console.log(`- Average Pass Rate: ${integrationData.averagePassRate}%`);
-console.log(`- Execution Time Trend: ${integrationData.executionTimeTrend}`);
-console.log(`- Stability Trend: ${integrationData.stabilityTrend}\n`);
-
-console.log('## CEGIS Auto-Fix Trends');
-console.log(`- Fix Success Rate: ${cegisData.fixSuccessRate}%`);
-console.log(`- Average Fixes Per Day: ${cegisData.averageFixesPerDay}`);
-console.log(`- Complexity Trend: ${cegisData.complexityTrend}\n`);
-
-// 改善提案の生成
-console.log('## Recommendations');
-if (conformanceData.averageSuccessRate < 95) {
-  console.log('- 🎯 Focus on improving conformance rules and system stability');
-}
-if (integrationData.averagePassRate < 90) {
-  console.log('- 🧪 Review integration test stability and environment setup');
-}
-if (cegisData.fixSuccessRate < 80) {
-  console.log('- 🔧 Enhance violation definitions and fix candidate generation');
-}
-EOF
-
-chmod +x scripts/analyze-trends.sh
+ae-framework conformance report --directory artifacts/hermetic-reports/conformance --format both
 ```
 
 ## 🚀 次のステップ
@@ -746,13 +674,13 @@ Phase 2の高度な機能をマスターしたら、以下のステップに進�
 
 ```bash
 # カスタム規則の作成
-ae-framework conformance generate-rule-template --output custom-rule-template.json
+ae-framework conformance sample --rules custom-rule-template.json
 
 # カスタムテストランナーの作成
-ae-framework integration generate-runner-template --type custom --output custom-runner-template.ts
+ae-framework integration generate --type test --test-type api --name "Custom API Test" --output custom-test.json
 
 # カスタム修復戦略の実装
-ae-framework cegis generate-strategy-template --output custom-strategy-template.ts
+ae-framework fix create-artifact --type error --message "Custom failure" --file src/app.ts --line 1 --output custom-failure.json
 ```
 
 ### 2. エンタープライズ統合

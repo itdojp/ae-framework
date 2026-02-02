@@ -24,7 +24,7 @@
 
 ### 🚀 Installation
 
-Note: With Node.js 20+, enable Corepack to use the bundled pnpm:
+Note: With Node.js 20.11+ (<23), enable Corepack to use the bundled pnpm:
 ```bash
 corepack enable
 corepack prepare pnpm@10 --activate  # 推奨の固定
@@ -78,12 +78,12 @@ After setup, use the following commands to discover available scripts and consol
 pnpm run help
 
 # CLI parity with pnpm run help
-ae help
+pnpm exec ae help
 
 # Project setup templates (optional)
-ae setup list
-ae setup suggest
-ae setup wizard
+pnpm exec ae setup list
+pnpm exec ae setup suggest
+pnpm exec ae setup wizard
 ```
 
 See `docs/reference/CLI-COMMANDS-REFERENCE.md` and `docs/guides/CLI-MIGRATION.md` for the full CLI reference and migration details.
@@ -394,8 +394,8 @@ Regular updates are recommended to get the latest features and fixes.
 ### 📋 前提条件
 
 #### システム要件
-- **Node.js**: 20.11 以上
-- **pnpm**: 9.x (推奨パッケージマネージャー)
+- **Node.js**: 20.11 以上（<23）
+- **pnpm**: 10.x（Corepack 推奨）
 - **TypeScript**: 5.5.0 以上
 - **Git**: 2.0 以上
 - **Playwright**: 1.47.0 以上 (E2Eテスト用)
@@ -454,12 +454,12 @@ pnpm run setup-hooks
 pnpm run help
 
 # CLI から同等の一覧を表示
-ae help
+pnpm exec ae help
 
 # テンプレート導入（任意）
-ae setup list
-ae setup suggest
-ae setup wizard
+pnpm exec ae setup list
+pnpm exec ae setup suggest
+pnpm exec ae setup wizard
 ```
 
 詳細は `docs/reference/CLI-COMMANDS-REFERENCE.md` と `docs/guides/CLI-MIGRATION.md` を参照してください。
@@ -649,7 +649,7 @@ pnpm run accessibility:full
 ```bash
 Error: Node.js version 16.x is not supported
 ```
-**解決方法**: Node.js 18以上にアップデート
+**解決方法**: Node.js 20.11以上（<23）にアップデート
 
 **2. TypeScriptコンパイルエラー**
 ```bash
