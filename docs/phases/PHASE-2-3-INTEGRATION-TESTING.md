@@ -996,8 +996,11 @@ const artifactConfig = {
 ERROR: Browser launch failed: Failed to launch chromium
 
 # 解決方法
-docker run --cap-add=SYS_ADMIN --security-opt seccomp=unconfined
+# 推奨: Playwright公式イメージの利用、または依存関係の導入
+# 例（隔離を保ったまま /dev/shm を拡張）
+docker run --rm --ipc=host --shm-size=1g mcr.microsoft.com/playwright:v1.40.0-jammy
 
+# 追加の権限（SYS_ADMIN / seccomp=unconfined）は避ける
 # ヘッドレス設定はランナー側で調整（CLIフラグは現行未提供）
 ```
 

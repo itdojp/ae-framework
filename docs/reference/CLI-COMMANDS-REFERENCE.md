@@ -114,7 +114,7 @@ ae domain-model --language --sources "glossary.md"
  ae ui-scaffold --tokens
  ae ui-scaffold --a11y
 
-# UI alias
+# UI alias (ae-ui = ae-framework ui-scaffold; subcommand required)
  ae-ui scaffold --components
 ```
 
