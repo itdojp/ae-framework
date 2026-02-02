@@ -173,7 +173,7 @@ Claude Code: Running Intent Task Adapter...
 
 ### Phase-by-Phase Cheatsheet (English)
 - Phase 1 (Intent): `ae-framework intent --analyze --sources=requirements.md`
-- Phase 2 (Natural Language): `ae-framework natural-language --structure --sources=raw.md`
+- Phase 2 (Natural Language): `ae-framework natural-language --analyze --sources=raw.md`
 - Phase 3 (Stories): generate user stories + AC (Gherkin-friendly)
 - Phase 4 (Validation): cross-validate, produce traceability matrix
 - Phase 5 (Modeling): DDD entities/BCs/services
@@ -186,16 +186,15 @@ Claude Code: Running Intent Task Adapter...
 - Validation: `artifacts/validation/traceability.json`
 - Modeling: `artifacts/modeling/domain.json` (entities/BC/services)
 - UI: `artifacts/ui/ui-summary.json`; E2E traces under `apps/web/__e2e__/`
+※ CLIは標準でstdout出力のため、ファイル化はリダイレクト/エージェント経由で行うこと
 
 #### Minimal Commands per Phase (English)
 ```bash
 # 1) Intent
-ae-framework intent --analyze --sources=requirements.md \
-  --format json --output artifacts/intent/summary.json
+ae-framework intent --analyze --sources=requirements.md > artifacts/intent/summary.txt
 
 # 2) Natural Language
-ae-framework natural-language --structure --sources=raw.md \
-  --format json --output artifacts/nl/requirements.json
+ae-framework natural-language --analyze --sources=raw.md > artifacts/nl/requirements.txt
 
 # 4) Validation
 ae-framework quality policy --env development
@@ -205,12 +204,12 @@ ae-framework quality validate
 ae-framework ui-scaffold --components
 
 # (Optional) Conformance run (2.2)
-ae-framework conformance verify --rules rules.json --collect-metrics
+ae-framework conformance verify --input data.json --rules rules.json --output artifacts/conformance/conformance-results.json
 
 # (Optional) Integration (2.3)
 ae-framework integration discover --patterns "./e2e/**/*.json" --type tests \
   --output artifacts/integration/discovered.json
-ae-framework integration run --ci
+ae-framework integration run --tests artifacts/integration/discovered.json --environment default --output-dir artifacts/integration
 
 トラブルシューティング（簡易）
 - UIファイルが出ない → Phase State の `entities` を確認して再スキャフォールド
@@ -222,8 +221,8 @@ ae-framework integration run --ci
 - Some phases (Stories/Modeling) are primarily orchestrated by the agent; artifacts are collected under `artifacts/stories/*` and `artifacts/modeling/*` when available.
 
 #### Chained Example (English)
-1) Intent → writes `artifacts/intent/summary.json`
-2) Natural Language → `artifacts/nl/requirements.json`
+1) Intent → stdout を `artifacts/intent/summary.txt` にリダイレクト
+2) Natural Language → stdout を `artifacts/nl/requirements.txt` にリダイレクト
 3) Stories → `artifacts/stories/summary.json`
 4) Validation → `artifacts/validation/traceability.json`
 5) Modeling → `artifacts/modeling/domain.json`
@@ -231,8 +230,8 @@ ae-framework integration run --ci
 
 ```bash
 # Sample flow (commands)
-ae-framework intent --analyze --sources=requirements.md --format json --output artifacts/intent/summary.json
-ae-framework natural-language --structure --sources=raw.md --format json --output artifacts/nl/requirements.json
+ae-framework intent --analyze --sources=requirements.md > artifacts/intent/summary.txt
+ae-framework natural-language --analyze --sources=raw.md > artifacts/nl/requirements.txt
 ae-framework quality policy --env development && ae-framework quality validate
 ae-framework ui-scaffold --components
 ```
@@ -278,10 +277,10 @@ jobs:
 ### フェーズ最小コマンド
 ```bash
 # 1) Intent
-ae-framework intent --analyze --sources=requirements.md --format json --output artifacts/intent/summary.json
+ae-framework intent --analyze --sources=requirements.md > artifacts/intent/summary.txt
 
 # 2) 自然言語要件
-ae-framework natural-language --structure --sources=raw.md --format json --output artifacts/nl/requirements.json
+ae-framework natural-language --analyze --sources=raw.md > artifacts/nl/requirements.txt
 
 # 4) 検証
 ae-framework quality policy --env development && ae-framework quality validate
@@ -291,8 +290,8 @@ ae-framework ui-scaffold --components
 ```
 
 ### 成果物受け渡し（例）
-- Intent: `artifacts/intent/summary.json`
-- NL: `artifacts/nl/requirements.json`
+- Intent: `artifacts/intent/summary.txt`
+- NL: `artifacts/nl/requirements.txt`
 - Stories: `artifacts/stories/summary.json`
 - Validation: `artifacts/validation/traceability.json`
 - Modeling: `artifacts/modeling/domain.json`

@@ -85,32 +85,30 @@ pnpm run operate:server
 
 ```bash
 # 1) Runtime Conformance（サンプル生成→検証）
-pnpm tsx src/cli/conformance-cli.ts sample \
+pnpm run ae-framework -- conformance sample \
   --rules configs/samples/sample-rules.json \
   --config configs/samples/sample-config.json \
   --data configs/samples/sample-data.json \
   --context configs/samples/sample-context.json
 
-pnpm tsx src/cli/conformance-cli.ts verify \
+pnpm run ae-framework -- conformance verify \
   --input configs/samples/sample-data.json \
   --context-file configs/samples/sample-context.json \
   --rules configs/samples/sample-rules.json --format json \
   --output conformance-results.json
 
 # 2) SBOM 生成
-pnpm tsx src/cli/index.ts sbom generate --format json --output sbom.json --verbose
+pnpm run ae-framework -- sbom generate --format json --output sbom.json --verbose
 
-# 3) UI スキャフォールド（Dry Run）
-pnpm tsx src/cli/ui-scaffold-cli.ts generate \
-  --state samples/phase-state.example.json \
-  --output ./.ae/ui --dry-run
+# 3) UI スキャフォールド（標準 CLI）
+pnpm run ae-framework -- ui-scaffold --components
 
 # 4) ベンチマーク（一覧とドライラン）
-pnpm tsx src/cli/benchmark-cli.ts list --enabled-only
-pnpm tsx src/cli/benchmark-cli.ts run --ci --dry-run
+ae-benchmark list --enabled-only
+ae-benchmark run --ci --dry-run
 
 # 5) セキュリティ設定の表示
-pnpm tsx src/cli/index.ts security show-config --env development
+pnpm run ae-framework -- security show-config --env development
 ```
 
 ---

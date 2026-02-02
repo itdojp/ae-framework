@@ -30,16 +30,18 @@ See the Japanese sections for the full architecture and CLI details.
 
 ### CLI (high level)
 ```bash
-ae-framework conformance verify        # run runtime checks
-ae-framework conformance rules         # list/manage rules
-ae-framework conformance config        # show/edit configuration
-ae-framework conformance metrics       # export metrics
-ae-framework conformance status        # current status
+ae conformance verify --input data.json --rules rules.json   # run runtime checks
+ae conformance rules --list                                  # list/manage rules
+ae conformance config --show                                 # show/edit configuration
+ae conformance metrics --format table                        # show metrics
+ae conformance status                                        # current status
+ae conformance sample --rules rules.json --data data.json    # generate samples
+ae conformance report --format both                          # aggregate reports
 ```
 
 ### Artifacts
-- `artifacts/conformance/summary.json` — results and counters
-- `artifacts/conformance/violations.json` — violations (with rule ids)
+- `conformance-results.json` — verification result (default output)
+- `reports/conformance/conformance-summary.{json,md}` — aggregated reports
 - PR summary integration when enabled
 
 ### Minimal YAML (CI example)
@@ -54,10 +56,11 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
       - run: pnpm install --frozen-lockfile
-      - run: ae-framework conformance verify --rules rules.json --collect-metrics
+      - run: pnpm run ae-framework -- conformance sample --rules rules.json --data data.json --context context.json
+      - run: pnpm run ae-framework -- conformance verify --input data.json --context-file context.json --rules rules.json --output reports/conformance/conformance-results.json
       - uses: actions/upload-artifact@v4
         if: always()
-        with: { name: conformance, path: artifacts/conformance/** }
+        with: { name: conformance, path: reports/conformance/** }
 ```
 
 ### Integration
@@ -131,7 +134,7 @@ ae-framework conformance --help
 
 ```bash
 # サンプル設定の生成
-ae-framework conformance config --create-sample
+ae-framework conformance sample --config conformance-config.json
 
 # 設定ファイルの編集
 # conformance-config.json が生成されます
@@ -146,7 +149,7 @@ ae-framework conformance config --create-sample
 ae-framework conformance status
 
 # サンプル規則の作成
-ae-framework conformance sample --rules --output rules.json
+ae-framework conformance sample --rules rules.json
 ```
 
 ### 2. 規則定義
@@ -207,13 +210,11 @@ ae-framework conformance sample --rules --output rules.json
 
 ```bash
 # 基本検証の実行
-ae-framework conformance verify --rules rules.json
+ae-framework conformance verify --input data.json --rules rules.json
 
-# メトリクス付き検証
-ae-framework conformance verify --rules rules.json --collect-metrics
-
-# 出力ディレクトリ指定
-ae-framework conformance verify --rules rules.json --output-dir ./results
+# 出力ファイル指定（JSON）
+ae-framework conformance verify --input data.json --rules rules.json \
+  --context-file context.json --format json --output conformance-results.json
 ```
 
 ### 4. メトリクス確認
@@ -223,23 +224,32 @@ ae-framework conformance verify --rules rules.json --output-dir ./results
 ae-framework conformance metrics
 
 # 詳細メトリクス（JSON出力）
-ae-framework conformance metrics --format json --output metrics.json
+ae-framework conformance metrics --format json --export metrics.json
 ```
 
 ## プログラマティック使用
 
+※ 以下のAPI例はリポジトリ内の `src/` を直接参照する場合のみ有効です（npm公開版では未提供）。import パスは利用環境に合わせて調整してください。
+
 ### 基本的なAPI使用
 
 ```typescript
-import { VerificationEngine } from 'ae-framework/conformance';
-import { DataValidationMonitor } from 'ae-framework/conformance/monitors';
+import { ConformanceVerificationEngine } from '<repo>/src/conformance/verification-engine.js';
+import { DataValidationMonitor } from '<repo>/src/conformance/monitors/data-validation-monitor.js';
 
 // 検証エンジンの初期化
-const engine = new VerificationEngine({
-  samplingRate: 0.1,
-  cacheEnabled: true,
-  performanceOptimization: true,
-  concurrentExecution: true
+const engine = new ConformanceVerificationEngine({
+  enabled: true,
+  mode: 'permissive',
+  sampling: { enabled: false, rate: 1.0, strategy: 'random' },
+  performance: {
+    timeoutMs: 5000,
+    maxConcurrentChecks: 10,
+    cacheResults: true,
+    cacheTtlMs: 300000
+  },
+  reporting: { destinations: ['console'], batchSize: 100, flushIntervalMs: 30000 },
+  alerting: { enabled: false, thresholds: {}, channels: [] }
 });
 
 // データ検証モニターの追加
@@ -262,48 +272,37 @@ const context = {
   data: { username: 'test', email: 'test@example.com' }
 };
 
-const result = await engine.executeRule(rule, context);
+const result = await engine.verify({ username: 'test', email: 'test@example.com' }, context);
 ```
 
 ### 高度な設定
 
 ```typescript
-import { 
-  VerificationEngine, 
-  RuleEngine, 
-  APIContractMonitor 
-} from 'ae-framework/conformance';
+import { ConformanceVerificationEngine } from '<repo>/src/conformance/verification-engine.js';
+import { APIContractMonitor } from '<repo>/src/conformance/monitors/api-contract-monitor.js';
 
-// 高度なルールエンジン設定
-const ruleEngine = new RuleEngine({
-  executionTimeout: 30000,
-  maxConcurrentRules: 10,
-  patternAnalysis: {
-    enabled: true,
-    windowSize: 100,
-    threshold: 0.8
+// エンジン設定（現行実装の構造）
+const engine = new ConformanceVerificationEngine({
+  enabled: true,
+  mode: 'permissive',
+  sampling: { enabled: false, rate: 1.0, strategy: 'random' },
+  performance: {
+    timeoutMs: 30000,
+    maxConcurrentChecks: 10,
+    cacheResults: true,
+    cacheTtlMs: 300000
   },
-  riskAssessment: {
-    enabled: true,
-    factors: ['frequency', 'severity', 'impact']
-  }
+  reporting: {
+    destinations: ['console'],
+    batchSize: 100,
+    flushIntervalMs: 30000
+  },
+  alerting: { enabled: false, thresholds: {}, channels: [] }
 });
 
-// API契約監視の設定
-const apiMonitor = new APIContractMonitor({
-  endpoints: ['/api/users', '/api/orders'],
-  validateHeaders: true,
-  validatePayload: true,
-  rateLimitChecks: true
-});
-
-// 検証エンジンに統合
-const engine = new VerificationEngine({
-  ruleEngine,
-  monitors: [apiMonitor],
-  realTimeMetrics: true,
-  eventDriven: true
-});
+// API契約監視の設定（現行実装ではオプションなし）
+const apiMonitor = new APIContractMonitor();
+engine.addMonitor(apiMonitor);
 ```
 
 ## 監視とメトリクス
@@ -332,48 +331,35 @@ const engine = new VerificationEngine({
 
 ```typescript
 // リアルタイムメトリクス
-engine.on('metrics_updated', (metrics) => {
-  console.log('Execution metrics:', metrics.execution);
-  console.log('Violation metrics:', metrics.violations);
-  console.log('Performance metrics:', metrics.performance);
+engine.on('metrics_collected', (metrics) => {
+  console.log('Counts:', metrics.counts);
+  console.log('Performance:', metrics.performance);
+  console.log('Top violations:', metrics.topViolations);
 });
 
 // 定期メトリクス取得
-setInterval(async () => {
-  const metrics = await engine.getMetrics();
+setInterval(() => {
+  const metrics = engine.getMetrics();
   // メトリクスの保存や可視化処理
 }, 60000);
 ```
 
 ## CEGIS連携
 
-Runtime Conformance SystemはCEGIS自動修復システム（Phase 2.1）と連携し、違反検出時の自動修正を実現します。
+Runtime Conformance Systemは違反検出結果を failure artifact に落とし込み、CEGIS（Phase 2.1）の `fix` フローへ引き渡す運用を想定します。現行実装では自動連携クラスは提供されていないため、CLIまたは独自連携で対応します。
 
 ### 自動修正フロー
 
-```typescript
-// CEGIS連携の設定
-import { CEGISAutoFixer } from 'ae-framework/cegis';
+```bash
+# 例: 違反情報を failure artifact に整形して fix へ渡す
+ae-framework fix create-artifact \
+  --type contract \
+  --message "Conformance violation" \
+  --file src/app.ts \
+  --line 42 \
+  --output failure.json
 
-const autoFixer = new CEGISAutoFixer();
-
-engine.on('violation_detected', async (violation) => {
-  console.log(`Violation detected: ${violation.type}`);
-  
-  // CEGIS修正の試行
-  const fixResult = await autoFixer.attemptFix(violation);
-  
-  if (fixResult.success) {
-    console.log('Auto-fix applied successfully');
-    
-    // 修正後の再検証
-    const revalidationResult = await engine.revalidate(violation.ruleId);
-    console.log('Revalidation result:', revalidationResult);
-  } else {
-    console.log('Auto-fix failed, manual intervention required');
-    // 手動対応のアラート送信
-  }
-});
+ae-framework fix apply --input failure.json --output .ae/auto-fix --dry-run
 ```
 
 ## CLI コマンドリファレンス
@@ -385,12 +371,14 @@ engine.on('violation_detected', async (violation) => {
 ae-framework conformance verify [options]
 
 Options:
-  --rules <file>           規則定義ファイル
-  --config <file>         設定ファイル
-  --output-dir <dir>      出力ディレクトリ
-  --collect-metrics       メトリクス収集を有効化
-  --sample-rate <rate>    サンプリング率 (0.0-1.0)
-  --timeout <ms>          実行タイムアウト
+  --input <file>          入力データ(JSON)ファイル（必須）
+  --rules <file>          規則定義ファイル
+  --output <file>         出力ファイル（default: conformance-results.json）
+  --rule-ids <ids>         実行する規則ID（カンマ区切り）
+  --skip-categories <cats> スキップするカテゴリ（カンマ区切り）
+  --context-file <file>   ランタイムコンテキスト(JSON)
+  --format <format>       出力形式 (json|markdown)
+  --verbose               詳細出力
 ```
 
 ### `ae-framework conformance rules`
@@ -401,10 +389,11 @@ ae-framework conformance rules [options]
 
 Options:
   --list                  規則一覧の表示
-  --validate <file>       規則ファイルの検証
-  --enable <id>           規則の有効化
-  --disable <id>          規則の無効化
-  --info <id>             規則の詳細表示
+  --category <category>   カテゴリでフィルタ
+  --add <file>            規則ファイルの追加
+  --remove <id>           規則の削除
+  --export <file>         規則のエクスポート
+  --import <file>         規則のインポート
 ```
 
 ### `ae-framework conformance config`
@@ -415,10 +404,10 @@ ae-framework conformance config [options]
 
 Options:
   --show                  現在の設定表示
-  --validate              設定の検証
-  --create-sample         サンプル設定の作成
+  --update <file>         設定の更新(JSON)
+  --set <key=value>       設定値の更新
   --export <file>         設定のエクスポート
-  --import <file>         設定のインポート
+  --reset                 デフォルト設定へ戻す
 ```
 
 ### `ae-framework conformance metrics`
@@ -429,10 +418,8 @@ ae-framework conformance metrics [options]
 
 Options:
   --format <format>       出力形式 (table|json)
-  --output <file>         出力ファイル
-  --live                  リアルタイム監視
-  --refresh <seconds>     更新間隔
-  --filter <type>         メトリクスタイプのフィルター
+  --export <file>         出力ファイル
+  --reset                 メトリクスのリセット
 ```
 
 ### `ae-framework conformance status`
@@ -442,9 +429,8 @@ Options:
 ae-framework conformance status [options]
 
 Options:
-  --detailed              詳細状態表示
-  --json                  JSON形式出力
-  --check-health          ヘルスチェック実行
+  --monitors              モニター情報を表示
+  --handlers              違反ハンドラ情報を表示
 ```
 
 ### `ae-framework conformance sample`
@@ -454,10 +440,10 @@ Options:
 ae-framework conformance sample [options]
 
 Options:
-  --rules                 規則サンプル生成
-  --config                設定サンプル生成
-  --output <file>         出力ファイル指定
-  --template <type>       テンプレートタイプ
+  --rules <file>          規則サンプル生成（出力ファイル指定）
+  --config <file>         設定サンプル生成（出力ファイル指定）
+  --data <file>           入力データサンプル生成
+  --context <file>        ランタイムコンテキスト生成
 ```
 
 ## 実践的な使用例
@@ -467,22 +453,21 @@ Options:
 ```typescript
 // Express.js アプリケーションでの使用例
 import express from 'express';
-import { VerificationEngine, APIContractMonitor } from 'ae-framework/conformance';
+import { ConformanceVerificationEngine } from '<repo>/src/conformance/verification-engine.js';
+import { APIContractMonitor } from '<repo>/src/conformance/monitors/api-contract-monitor.js';
 
 const app = express();
-const engine = new VerificationEngine({
-  realTimeMetrics: true,
-  eventDriven: true
+const engine = new ConformanceVerificationEngine({
+  enabled: true,
+  mode: 'permissive',
+  sampling: { enabled: false, rate: 1.0, strategy: 'random' },
+  performance: { timeoutMs: 5000, maxConcurrentChecks: 10, cacheResults: true, cacheTtlMs: 300000 },
+  reporting: { destinations: ['console'], batchSize: 100, flushIntervalMs: 30000 },
+  alerting: { enabled: false, thresholds: {}, channels: [] }
 });
 
 // API監視の設定
-const apiMonitor = new APIContractMonitor({
-  validateResponses: true,
-  checkRateLimits: true,
-  monitorPerformance: true
-});
-
-engine.addMonitor(apiMonitor);
+engine.addMonitor(new APIContractMonitor());
 await engine.start();
 
 // ミドルウェアとして統合
@@ -495,10 +480,17 @@ app.use(async (req, res, next) => {
   };
 
   // リクエスト検証
-  const validationResult = await engine.validateRequest(context);
-  
-  if (!validationResult.valid) {
-    return res.status(400).json({ error: 'Validation failed' });
+  const apiCall = {
+    method: req.method,
+    url: req.originalUrl ?? req.url,
+    path: req.path,
+    headers: req.headers as Record<string, string>,
+    body: req.body,
+    timestamp: new Date().toISOString()
+  };
+  const result = await engine.verify(apiCall, context);
+  if (result.violations.length > 0) {
+    return res.status(400).json({ error: 'Conformance violation', violations: result.violations });
   }
 
   next();
@@ -509,16 +501,19 @@ app.use(async (req, res, next) => {
 
 ```typescript
 // データ処理パイプラインでの使用例
-import { VerificationEngine, DataValidationMonitor } from 'ae-framework/conformance';
+import { ConformanceVerificationEngine } from '<repo>/src/conformance/verification-engine.js';
+import { DataValidationMonitor } from '<repo>/src/conformance/monitors/data-validation-monitor.js';
 
-const engine = new VerificationEngine();
-const dataMonitor = new DataValidationMonitor({
-  schemaValidation: true,
-  dataQualityChecks: true,
-  anomalyDetection: true
+const engine = new ConformanceVerificationEngine({
+  enabled: true,
+  mode: 'permissive',
+  sampling: { enabled: false, rate: 1.0, strategy: 'random' },
+  performance: { timeoutMs: 5000, maxConcurrentChecks: 10, cacheResults: true, cacheTtlMs: 300000 },
+  reporting: { destinations: ['console'], batchSize: 100, flushIntervalMs: 30000 },
+  alerting: { enabled: false, thresholds: {}, channels: [] }
 });
 
-engine.addMonitor(dataMonitor);
+engine.addMonitor(new DataValidationMonitor());
 
 // データ処理関数
 async function processData(data: unknown[]) {
@@ -530,10 +525,10 @@ async function processData(data: unknown[]) {
     };
 
     // データ適合性検証
-    const validation = await engine.validateData(context);
+    const validation = await engine.verify(record, context);
     
-    if (!validation.valid) {
-      console.log(`Data validation failed: ${validation.violations}`);
+    if (validation.violations.length > 0) {
+      console.log(`Data validation failed: ${validation.violations.length}`);
       
       // 不正データの隔離
       await quarantineData(record, validation.violations);
@@ -552,29 +547,28 @@ async function processData(data: unknown[]) {
 
 #### 1. パフォーマンス問題
 ```bash
-# サンプリング率を下げる
-ae-framework conformance verify --sample-rate 0.05
+# サンプリング率を下げる（設定更新）
+ae-framework conformance config --set sampling.enabled=true
+ae-framework conformance config --set sampling.rate=0.05
 
 # 並行実行数を調整
-ae-framework conformance config --set maxConcurrentRules=5
+ae-framework conformance config --set performance.maxConcurrentChecks=5
 ```
 
 #### 2. メモリ使用量の増加
 ```bash
-# キャッシュサイズを制限
-ae-framework conformance config --set cacheMaxSize=1000
-
-# ガベージコレクションの強制実行
-ae-framework conformance config --set forceGC=true
+# キャッシュの無効化/TTL短縮
+ae-framework conformance config --set performance.cacheResults=false
+ae-framework conformance config --set performance.cacheTtlMs=60000
 ```
 
 #### 3. 規則実行の失敗
 ```bash
-# 規則の妥当性チェック
-ae-framework conformance rules --validate rules.json
+# 規則の一覧表示
+ae-framework conformance rules --list
 
-# デバッグモードでの実行
-DEBUG=conformance:* ae-framework conformance verify --rules rules.json
+# 詳細出力での実行
+ae-framework conformance verify --input data.json --rules rules.json --verbose
 ```
 
 ## 最適化のガイドライン

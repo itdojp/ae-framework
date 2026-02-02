@@ -177,7 +177,13 @@ pnpm run dev:storybook
 
 ### ♻ Persona Samples
 
-The repository ships with a reusable persona profile at `samples/persona/default-profile.json`. Import it via `pnpm ae persona import samples/persona/default-profile.json` to bootstrap the `/ae:persona` commands without manual setup.
+The repository ships with a reusable persona profile at `samples/persona/default-profile.json`. After running `pnpm run build`, import it via:
+
+```bash
+pnpm exec ae-slash exec "/ae:persona import samples/persona/default-profile.json"
+```
+
+This boots the `/ae:persona` commands without manual setup.
 
 ### 🎯 Common Development Scenarios
 
@@ -767,7 +773,13 @@ Week 2: チーム導入と本格運用開始
 
 ### ♻ ペルソナサンプル
 
-リポジトリには `samples/persona/default-profile.json` が同梱されています。`pnpm ae persona import samples/persona/default-profile.json` でインポートすると、`/ae:persona` コマンドをすぐに体験できます。
+リポジトリには `samples/persona/default-profile.json` が同梱されています。`pnpm run build` 実行後、次のコマンドでインポートできます。
+
+```bash
+pnpm exec ae-slash exec "/ae:persona import samples/persona/default-profile.json"
+```
+
+これにより `/ae:persona` コマンドをすぐに体験できます。
 
 ### 🎉 次のステップ
 

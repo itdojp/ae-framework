@@ -15,7 +15,7 @@ Phase 2.1〜2.3 の高度機能（CEGIS/Runtime Conformance/Integration Testing�
 ### Phase 2.1: CEGIS Auto-Fix – No candidates generated
 Symptoms
 ```bash
-ae-framework cegis fix --files src/ --violations violations.json
+ae-framework fix apply --input failures.json --dry-run
 # Output: No fix candidates generated
 ```
 Causes & Fixes
@@ -133,11 +133,13 @@ Fixes
 
 ## 🔧 Phase 2.1: CEGIS Auto-Fix System
 
+※ 現行CLIでは `cegis` サブコマンドは提供されず、`ae-framework fix ...` に統合されています。入力は failure artifacts JSON を想定します（`fix create-artifact` で生成可）。
+
 ### 問題1: 修復候補が生成されない
 
 **症状:**
 ```bash
-ae-framework cegis fix --files src/ --violations violations.json
+ae-framework fix apply --input failures.json --dry-run
 # 出力: No fix candidates generated
 ```
 
@@ -191,21 +193,21 @@ pwd
 ls -la src/
 
 # デバッグ情報の確認
-ae-framework cegis fix --files src/ --violations violations.json --verbose
+ae-framework fix apply --input failures.json --dry-run
 ```
 
 #### 3. 複雑すぎる修復対象
 ```bash
 # 段階的なアプローチ
-ae-framework cegis fix --files src/simple-module.ts --violations simple-violations.json
-ae-framework cegis generate-candidates --violations violations.json --max-candidates 10 --verbose
+ae-framework fix apply --input simple-failures.json --dry-run
+ae-framework fix analyze --input failures.json
 ```
 
 ### 問題2: 修復の検証に失敗
 
 **症状:**
 ```bash
-ae-framework cegis fix --files src/ --verify-fix
+ae-framework fix apply --input failures.json --verify
 # 出力: Fix verification failed: Tests still failing
 ```
 
@@ -225,17 +227,16 @@ find . -name "*.test.*" -o -name "*.spec.*"
 #### 2. 修復スコープの調整
 ```bash
 # より限定的な修復
-ae-framework cegis fix --files src/specific-file.ts --violations specific-violations.json --verify-fix
+ae-framework fix apply --input specific-failures.json --verify
 
 # 修復後の手動テスト
-ae-framework cegis fix --files src/ --no-verify
+ae-framework fix apply --input failures.json
 pnpm test
 ```
 
 #### 3. 修復履歴の確認
 ```bash
-ae-framework cegis history --limit 5
-ae-framework cegis stats --format table
+ae-framework fix status
 ```
 
 ### 問題3: メモリ不足エラー
@@ -250,14 +251,14 @@ FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memor
 
 ```bash
 # Node.jsヒープサイズの増加
-node --max-old-space-size=8192 node_modules/.bin/ae-framework cegis fix --files src/
+node --max-old-space-size=8192 node_modules/.bin/ae-framework fix apply --input failures.json
 
-# 並行処理の制限
-ae-framework cegis fix --files src/ --max-concurrent-fixes 2
+# 並行処理の制限（現行CLIには専用フラグなし）
+# 必要に応じて失敗アーティファクトの分割を検討
 
 # バッチ処理
-ae-framework cegis fix --files src/module1/ --violations violations1.json
-ae-framework cegis fix --files src/module2/ --violations violations2.json
+ae-framework fix apply --input failures1.json
+ae-framework fix apply --input failures2.json
 ```
 
 ## 🛡️ Phase 2.2: Runtime Conformance System
@@ -266,7 +267,7 @@ ae-framework cegis fix --files src/module2/ --violations violations2.json
 
 **症状:**
 ```bash
-ae-framework conformance verify --rules rules.json
+ae-framework conformance verify --input data.json --rules rules.json
 # 出力: Rule execution taking over 30 seconds
 ```
 
@@ -275,21 +276,22 @@ ae-framework conformance verify --rules rules.json
 #### 1. サンプリング率の調整
 ```bash
 # サンプリング率を下げる
-ae-framework conformance verify --rules rules.json --sample-rate 0.1
+ae-framework conformance config --set sampling.enabled=true
+ae-framework conformance config --set sampling.rate=0.1
 
 # 段階的にサンプリング率を上げる
-ae-framework conformance verify --rules rules.json --sample-rate 0.01  # 1%
-ae-framework conformance verify --rules rules.json --sample-rate 0.05  # 5%
-ae-framework conformance verify --rules rules.json --sample-rate 0.1   # 10%
+ae-framework conformance config --set sampling.rate=0.01  # 1%
+ae-framework conformance config --set sampling.rate=0.05  # 5%
+ae-framework conformance config --set sampling.rate=0.1   # 10%
 ```
 
 #### 2. 並行実行の最適化
 ```bash
 # 並行数を制限
-ae-framework conformance config --set maxConcurrentRules=3
+ae-framework conformance config --set performance.maxConcurrentChecks=3
 
 # タイムアウトの調整
-ae-framework conformance verify --rules rules.json --timeout 10000
+ae-framework conformance config --set performance.timeoutMs=10000
 ```
 
 #### 3. 規則の最適化
@@ -313,7 +315,7 @@ ae-framework conformance verify --rules rules.json --timeout 10000
 **症状:**
 ```bash
 # メモリ使用量が継続的に増加
-ae-framework conformance metrics --live
+ae-framework conformance metrics --format json --export metrics.json
 # プロセスのメモリ使用量: 2GB+ and growing
 ```
 
@@ -322,19 +324,17 @@ ae-framework conformance metrics --live
 #### 1. メトリクス収集間隔の調整
 ```bash
 # 収集間隔を長くする
-ae-framework conformance metrics --live --refresh 300  # 5分間隔
+ae-framework conformance metrics --format json --export metrics.json  # 定期実行
 
-# バッファサイズの制限
-ae-framework conformance config --set metricsBufferSize=1000
+# バッチサイズの調整
+ae-framework conformance config --set reporting.batchSize=1000
+ae-framework conformance config --set reporting.flushIntervalMs=300000
 ```
 
 #### 2. ガベージコレクションの強制実行
 ```bash
 # ガベージコレクション付きで実行
-node --expose-gc node_modules/.bin/ae-framework conformance verify --rules rules.json
-
-# メモリ使用量の監視
-ae-framework conformance metrics --memory-monitoring
+node --expose-gc node_modules/.bin/ae-framework conformance verify --input data.json --rules rules.json
 ```
 
 #### 3. メトリクス設定の最適化
@@ -354,7 +354,7 @@ ae-framework conformance metrics --memory-monitoring
 **症状:**
 ```bash
 # 正常な動作が違反として検出される
-ae-framework conformance verify --rules rules.json
+ae-framework conformance verify --input data.json --rules rules.json
 # 出力: Violation detected: Normal API response flagged as error
 ```
 
@@ -377,22 +377,16 @@ ae-framework conformance verify --rules rules.json
 }
 ```
 
-#### 2. 学習期間の設定
+#### 2. 運用モードの調整
 ```bash
-# 学習モードで実行
-ae-framework conformance verify --rules rules.json --learning-mode --duration 3600
+# 監視のみ（違反を検知するが厳格に失敗させない）
+ae-framework conformance config --set mode=monitor_only
 
-# ベースライン設定
-ae-framework conformance config --set-baseline --duration 24h
-```
+# 緩和モード（デフォルト）
+ae-framework conformance config --set mode=permissive
 
-#### 3. 段階的ルール適用
-```bash
-# 警告レベルから開始
-ae-framework conformance verify --rules rules.json --violation-level warning
-
-# 段階的に厳しくする
-ae-framework conformance verify --rules rules.json --violation-level error
+# 厳格モード
+ae-framework conformance config --set mode=strict
 ```
 
 ## 🧪 Phase 2.3: Integration Testing System
@@ -496,7 +490,7 @@ export TEST_API_TOKEN=$(curl -s -X POST \
   http://localhost:3000/auth/login | jq -r '.token')
 
 # 環境設定の確認
-ae-framework integration list --type environments --detailed
+ae-framework integration list --type environments
 ```
 
 #### 3. 認証フローの自動化
@@ -609,23 +603,21 @@ cp -r .ae/ .ae-backup-$(date +%Y%m%d_%H%M%S)
 
 # デフォルト設定の復元
 ae-framework conformance config --reset
-ae-framework integration config --reset
-ae-framework cegis config --reset
 
 # 設定の検証
-ae-framework conformance config --validate
+ae-framework conformance config --show
 ae-framework integration list --type environments
-ae-framework cegis status
+ae-framework fix status
 ```
 
 ### ログ収集と診断
 
 ```bash
 # 詳細ログの収集
-DEBUG=ae-framework:* ae-framework conformance verify --rules rules.json > debug.log 2>&1
+ae-framework conformance verify --input data.json --rules rules.json --verbose > debug.log 2>&1
 
 # システム状態の包括的レポート
-ae-framework status --all-phases --detailed --format json > system-status.json
+ae-framework status > system-status.txt
 
 # 診断用データの収集
 cat > collect-diagnostics.sh << 'EOF'
@@ -641,8 +633,9 @@ pnpm list ae-framework > $DIAG_DIR/package-version.txt
 
 # 設定情報
 ae-framework conformance config --show > $DIAG_DIR/conformance-config.json
-ae-framework integration list --type all --format json > $DIAG_DIR/integration-resources.json
-ae-framework cegis stats --format json > $DIAG_DIR/cegis-stats.json
+ae-framework integration list --type environments > $DIAG_DIR/integration-environments.txt
+ae-framework integration list --type runners > $DIAG_DIR/integration-runners.txt
+ae-framework fix status > $DIAG_DIR/fix-status.txt
 
 # ログファイル
 cp -r .ae/logs/ $DIAG_DIR/ 2>/dev/null || echo "No logs directory found"

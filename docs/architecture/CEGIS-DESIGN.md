@@ -282,23 +282,25 @@ Enhance quality.json with CEGIS configuration:
 }
 ```
 
-#### 4.3.3 CLI Enhancement
+#### 4.3.3 CLI (Current + Roadmap)
 
-Add CEGIS commands to the CLI:
+Current CLI uses the `fix` command group:
 
 ```bash
-# Monitor and collect counterexamples
-pnpm ae-framework cegis monitor --target=production --duration=24h
+# Apply fixes from failure artifacts
+pnpm run ae-framework -- fix apply --input failures.json --output .ae/auto-fix --dry-run
 
-# Synthesize repairs for collected counterexamples
-pnpm ae-framework cegis repair --counterexample-id=ce_001 --strategy=reactive
+# Analyze failure artifacts
+pnpm run ae-framework -- fix analyze --input failures.json
 
-# Learn from repair history
-pnpm ae-framework cegis learn --pattern=validation_failures --domain=orders
+# Create a failure artifact
+pnpm run ae-framework -- fix create-artifact --type error --message "Failure" --file src/app.ts --line 10 --output failure.json
 
-# Status and metrics
-pnpm ae-framework cegis status --detailed
+# Status
+pnpm run ae-framework -- fix status
 ```
+
+Roadmap (not in current CLI): monitor/repair/learn workflows for continuous counterexample collection and adaptive strategies.
 
 ## 5. Technical Implementation
 

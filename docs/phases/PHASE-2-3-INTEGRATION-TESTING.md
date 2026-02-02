@@ -25,17 +25,17 @@ See the Japanese sections for system architecture and CLI examples.
 
 ### CLI
 ```bash
-ae-framework integration discover         # detect suites
-ae-framework integration list             # list tests/suites
-ae-framework integration run --ci         # run with CI profile
+ae-framework integration discover         # detect suites/tests/fixtures
+ae-framework integration list             # list environments/runners/reporters
+ae-framework integration run              # run suites/tests
 ae-framework integration generate         # scaffold samples
-ae-framework integration reports          # open/print reports
+ae-framework integration reports          # list/clean reports
 ```
 
 ### Reports & Artifacts
 - HTML reporter with filters
-- `artifacts/integration/*.json` for machine-readable summaries
-- Attachments: screenshots, traces, HARs
+- Default output: `./test-results` (reports only; change with `--output-dir`)
+- Attachments: screenshots/traces/videos are currently written under `./test-results` regardless of `--output-dir`
 
 ### Minimal CI YAML (English)
 ```yaml
@@ -49,14 +49,14 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
       - run: pnpm install --frozen-lockfile
-      - run: ae-framework integration discover --patterns "./tests/**/*.json" --type tests --output artifacts/integration/discovery.json
-      - run: ae-framework integration run --ci
+      - run: ae-framework integration discover --patterns "./tests/**/*.json" --type tests --output test-results/discovery.json
+      - run: ae-framework integration run --suites ./tests/integration/suites/*.json --environment default --output-dir test-results
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: integration-artifacts
           path: |
-            artifacts/integration/**
+            test-results/**
             apps/**/__e2e__/**
 ```
 
@@ -423,15 +423,15 @@ ae-framework integration reports --clean --days 7
 
 ## プログラマティック使用
 
+※ 以下のAPI例はリポジトリ内の `src/integration` を直接参照する場合のみ有効です（npm公開版では未提供）。import パスは利用環境に合わせて調整してください。
+
 ### 基本的なAPI使用
 
 ```typescript
-import { 
-  IntegrationTestOrchestrator,
-  E2ETestRunner,
-  APITestRunner,
-  HTMLTestReporter
-} from 'ae-framework/integration';
+import { IntegrationTestOrchestrator } from '<repo>/src/integration/test-orchestrator.js';
+import { E2ETestRunner } from '<repo>/src/integration/runners/e2e-runner.js';
+import { APITestRunner } from '<repo>/src/integration/runners/api-runner.js';
+import { HTMLTestReporter } from '<repo>/src/integration/reporters/html-reporter.js';
 
 // オーケストレーター設定
 const config = {
@@ -544,7 +544,7 @@ const suiteResult = await orchestrator.executeSuite(
     captureScreenshots: true,
     collectLogs: true,
     outputDir: './test-results',
-    reportFormat: ['json', 'html'],
+    reportFormat: ['html'], // 現行実装はHTMLのみ
     filters: {
       categories: ['e2e'],
       tags: ['smoke'],
@@ -587,7 +587,7 @@ orchestrator.on('violation_detected', (violation) => {
 ### 基本的な使用方法
 
 ```typescript
-import { E2ETestRunner } from 'ae-framework/integration/runners';
+import { E2ETestRunner } from '<repo>/src/integration/runners/e2e-runner.js';
 
 const e2eRunner = new E2ETestRunner({
   browser: 'chromium',
@@ -637,7 +637,7 @@ E2Eテストランナーは以下のアクションをサポートします：
 ### 基本的な使用方法
 
 ```typescript
-import { APITestRunner } from 'ae-framework/integration/runners';
+import { APITestRunner } from '<repo>/src/integration/runners/api-runner.js';
 
 const apiRunner = new APITestRunner({
   timeout: 15000,
@@ -681,17 +681,11 @@ HTMLレポーターは、テスト結果を視覚的に分析できるインタ�
 ### カスタマイズ
 
 ```typescript
-import { HTMLTestReporter } from 'ae-framework/integration/reporters';
+import { HTMLTestReporter } from '<repo>/src/integration/reporters/html-reporter.js';
 
-const htmlReporter = new HTMLTestReporter({
-  title: 'Custom Test Report',
-  includeCharts: true,
-  includeLogs: true,
-  includeScreenshots: true,
-  theme: 'dark', // 'light' | 'dark'
-  customCSS: './custom-styles.css',
-  templatePath: './custom-template.html'
-});
+// 現行実装ではオプション引数は未提供。
+// カスタムレポートが必要な場合は独自Reporterを実装して差し替える。
+const htmlReporter = new HTMLTestReporter();
 ```
 
 ## CLI コマンドリファレンス
@@ -707,17 +701,19 @@ Options:
   --suites <files>        スイートファイル（カンマ区切り）
   --environment <name>    実行環境
   --categories <list>     カテゴリフィルター
-  --tags <list>          タグフィルター
-  --exclude <list>       除外テストID
-  --parallel             並列実行
-  --max-concurrency <n>  最大並行数
-  --timeout <ms>         実行タイムアウト
-  --retries <n>          リトライ回数
-  --fail-fast            最初の失敗で停止
-  --output-dir <dir>     出力ディレクトリ
-  --report-format <fmt>  レポート形式 (json,html)
-  --no-screenshots       スクリーンショット無効化
-  --no-logs              ログ収集無効化
+  --tags <list>           タグフィルター
+  --exclude <list>        除外テストID
+  --parallel [boolean]    並列実行
+  --max-concurrency <n>   最大並行数
+  --timeout <ms>          実行タイムアウト
+  --retries <n>           リトライ回数
+  --fail-fast             最初の失敗で停止
+  --skip-on-failure       失敗後の残りテストをスキップ
+  --output-dir <dir>      出力ディレクトリ
+  --report-format <fmt>   レポート形式 (html。json/xml/junitは未実装)
+  --screenshots           失敗時スクリーンショット
+  --video                 実行動画を保存
+  --coverage              カバレッジ計測
 ```
 
 ### `ae-framework integration discover`
@@ -730,9 +726,7 @@ Options:
   --patterns <patterns>   検索パターン（カンマ区切り）
   --type <type>          リソースタイプ (tests|suites|fixtures|all)
   --output <file>        出力ファイル
-  --recursive            再帰検索
-  --include <patterns>   包含パターン
-  --exclude <patterns>   除外パターン
+  --format <format>      出力形式 (json|table)
 ```
 
 ### `ae-framework integration list`
@@ -743,9 +737,6 @@ ae-framework integration list [options]
 
 Options:
   --type <type>          リソースタイプ (environments|runners|reporters)
-  --format <format>      出力形式 (table|json|yaml)
-  --output <file>        出力ファイル
-  --detailed             詳細情報表示
 ```
 
 ### `ae-framework integration generate`
@@ -756,10 +747,9 @@ ae-framework integration generate [options]
 
 Options:
   --type <type>          生成タイプ (test|suite|fixture|environment)
-  --test-type <type>     テストタイプ (e2e|api|integration)
+  --test-type <type>     テストタイプ (e2e|api|unit)
   --name <name>          名前
   --output <file>        出力ファイル
-  --template <template>  テンプレートタイプ
 ```
 
 ### `ae-framework integration status`
@@ -771,8 +761,6 @@ ae-framework integration status [options]
 Options:
   --watch                ウォッチモード
   --refresh <seconds>    更新間隔
-  --json                 JSON出力
-  --detailed             詳細表示
 ```
 
 ### `ae-framework integration reports`
@@ -783,10 +771,9 @@ ae-framework integration reports [options]
 
 Options:
   --list                 レポート一覧
+  --view <reportId>      レポートの表示
   --clean                古いレポート削除
   --days <days>          保持期間（日数）
-  --open <file>          レポートを開く
-  --export <format>      レポートエクスポート
 ```
 
 ## 実践的な使用例
@@ -844,7 +831,7 @@ jobs:
           --timeout 300000 \
           --retries 2 \
           --output-dir ./test-results \
-          --report-format json,html
+          --report-format html
           
     - name: Upload test results
       uses: actions/upload-artifact@v3
@@ -852,14 +839,7 @@ jobs:
       with:
         name: integration-test-results
         path: ./test-results/
-        
-    - name: Publish test summary
-      uses: dorny/test-reporter@v1
-      if: success() || failure()
-      with:
-        name: Integration Test Results
-        path: './test-results/*.json'
-        reporter: 'java-junit'
+      # NOTE: 現行実装はHTMLレポートのみ。JUnit/JSONが必要ならカスタムReporterを追加。
 ```
 
 ### Docker環境での実行
@@ -902,7 +882,7 @@ ae-framework integration run \
   --max-concurrency ${MAX_CONCURRENCY} \
   --timeout ${TEST_TIMEOUT:-300000} \
   --output-dir ${OUTPUT_DIR:-"./test-results"} \
-  --report-format json,html
+  --report-format html
 
 # 結果の後処理
 if [ -n "${POST_PROCESS_SCRIPT}" ]; then
@@ -1018,8 +998,7 @@ ERROR: Browser launch failed: Failed to launch chromium
 # 解決方法
 docker run --cap-add=SYS_ADMIN --security-opt seccomp=unconfined
 
-# または、ヘッドレスモードの強制
-ae-framework integration run --tests tests.json --headless
+# ヘッドレス設定はランナー側で調整（CLIフラグは現行未提供）
 ```
 
 #### 2. タイムアウトエラー

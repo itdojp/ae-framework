@@ -341,11 +341,11 @@ const inventoryReservationContract: RuntimeContract = {
 
 **Deliverables**:
 ```bash
-# CLI commands for Phase 7
-pnpm ae-framework conformance generate --spec=.ae/ae-ir.json
-pnpm ae-framework conformance monitor --target=api --strategy=sampling
-pnpm ae-framework conformance status --detailed
-pnpm ae-framework conformance violations --since=24h
+# CLI commands (current implementation)
+pnpm run ae-framework -- conformance sample --rules configs/samples/sample-rules.json
+pnpm run ae-framework -- conformance verify --input configs/samples/sample-data.json --rules configs/samples/sample-rules.json
+pnpm run ae-framework -- conformance status --monitors
+pnpm run ae-framework -- conformance report --format both
 ```
 
 ### 5.2 Phase 8: Advanced Features
@@ -364,11 +364,8 @@ pnpm ae-framework conformance violations --since=24h
 
 **Deliverables**:
 ```bash
-# Advanced CLI commands for Phase 8
-pnpm ae-framework conformance analyze --pattern=violations --timerange=7d
-pnpm ae-framework conformance predict --entity=Order --horizon=1h
-pnpm ae-framework conformance adapt --threshold=auto --entity=User
-pnpm ae-framework conformance repair --violation-id=viol_001 --strategy=cegis
+# Advanced CLI commands for Phase 8 (roadmap; not in current CLI)
+# conformance analyze / predict / adapt / repair
 ```
 
 ## 6. Technical Implementation
@@ -729,11 +726,11 @@ describe('ContractEngine', () => {
 # Deploy monitoring infrastructure
 kubectl apply -f k8s/runtime-conformance/
 
-# Configure monitoring targets
-pnpm ae-framework conformance configure --env=production --config=prod-monitoring.yaml
+# Configure monitoring targets (current CLI uses config update)
+pnpm run ae-framework -- conformance config --update prod-monitoring.json
 
-# Start monitoring
-pnpm ae-framework conformance start --verify-setup
+# Run verification (manual trigger in current CLI)
+pnpm run ae-framework -- conformance verify --input data.json --rules rules.json
 ```
 
 **Health Checks**:
