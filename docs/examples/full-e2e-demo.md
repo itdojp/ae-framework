@@ -65,7 +65,7 @@ pnpm run bdd
 ```bash
 pnpm run pipelines:pact
 # 特定の契約のみ検証する場合:
-pnpm run pipelines:pact -- --contract=contracts/reservations-consumer.json
+pnpm run pipelines:pact -- --contract=reservations-consumer.json
 ```
 - 契約は `contracts/*.json` に配置し、`--contract=...` で絞り込み可能。
 
@@ -116,7 +116,7 @@ Verify Lite を起点に Pact / API fuzz / Mutation quick を順番に実行し�
   ```
 - 個別ステップを直接呼び出す場合:
   ```bash
-  pnpm run pipelines:pact -- --contract=contracts/reservations-consumer.json
+  pnpm run pipelines:pact -- --contract=reservations-consumer.json
   pnpm run pipelines:api-fuzz -- --spec tests/cli/fuzz.spec.ts
   pnpm run pipelines:mutation:quick -- --mutate src/utils/enhanced-state-manager.ts
   pnpm run pipelines:trace -- --input samples/trace/kvonce-sample.ndjson
