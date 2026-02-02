@@ -2681,7 +2681,7 @@ jobs:
         run: node scripts/quality/tdd-smoke-check.mjs
         
       - name: TypeScript Check
-        run: pnpm run type-check
+        run: pnpm run types:check
         
       - name: Lint Check
         run: pnpm run lint

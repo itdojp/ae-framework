@@ -143,7 +143,7 @@ pnpm run lint:frontend
 pnpm run type-check:frontend
 
 # Run tests
-pnpm run test:frontend
+pnpm run test:visual
 pnpm run test:e2e
 
 # Build
@@ -336,7 +336,7 @@ test.describe('Product Management', () => {
 #### Automated Quality Monitoring
 ```bash
 # Run all quality gates
-pnpm run quality:check
+pnpm run quality:gates
 
 # Individual checks
 pnpm run lint:frontend
@@ -561,7 +561,7 @@ pnpm run lint:frontend
 pnpm run type-check:frontend
 
 # テスト実行
-pnpm run test:frontend
+pnpm run test:visual
 pnpm run test:e2e
 
 # ビルド
@@ -754,7 +754,7 @@ test.describe('Product Management', () => {
 #### 自動品質監視
 ```bash
 # 全品質ゲート実行
-pnpm run quality:check
+pnpm run quality:gates
 
 # 個別チェック
 pnpm run lint:frontend

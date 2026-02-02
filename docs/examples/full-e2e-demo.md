@@ -3,7 +3,7 @@
 このドキュメントは、`ae-framework` のサンプル資産を組み合わせて「仕様→テスト→コード→検証」までを一貫して再現する手順をまとめたものです。Verify Lite / Mutation Quick / Pact / MBT / BDD を連携させたいときの素振り用チェックリストとして利用できます。
 
 > **前提**
-> - Node.js 20 / pnpm 8 系が利用可能であること
+> - Node.js 20.11+ / pnpm 10 が利用可能であること（Corepack 推奨）
 > - `pnpm install` 済み
 > - Podman (rootless) が利用可能であること（Pact / API fuzz などコンテナ系タスクで使用）
 >   - Docker Desktop を利用する場合は `podman/compose.*` の定義を `docker compose` で実行しても同等に動作
@@ -17,9 +17,9 @@
    ```
 2. 生成物 (BDD/OpenAPI/モニタ) を差分チェック:
    ```bash
-   pnpm run generate:artifacts -- --dry-run
+   pnpm run generate:artifacts:preview
    ```
-3. 生成物の検証結果は `artifacts/` 配下と `reports/formal/` に保存される。CI では `spec-generate-model.yml` が同じ流れを実行する。
+3. 生成物の差分サマリは `artifacts/hermetic-reports/spec/generate-artifacts-diff.json` に保存される。CI では `spec-generate-model.yml` が同じ流れを実行する。
 
 ## 2. Verify Lite (ユニット/Property/Mutation)
 
@@ -56,17 +56,18 @@ GitHub Actions (`mutation-quick.yml`) では手動トリガーで同じコマン
 
 ### 4.1 BDD テスト
 ```bash
-pnpm run bdd:test
+pnpm run bdd
 ```
-- `tests/bdd/` 配下のシナリオを Vitest 経由で実行。
-- Lint/Step lint は `pnpm run bdd:lint` / `pnpm run bdd:step-lint` で個別実行可能。
+- `spec/bdd/features` 配下のシナリオを `cucumber-js` で実行。
+- Lint は `pnpm run bdd:lint` で実行可能。
 
 ### 4.2 Pact Provider 検証
 ```bash
-pnpm run contracts:verify # scripts/contracts/verify-reservation-contract.ts
+pnpm run pipelines:pact
+# 特定の契約のみ検証する場合:
+pnpm run pipelines:pact -- --contract=reservations-consumer.json
 ```
-- Pact ファイルは `artifacts/pacts/` に配置。
-- 追加契約を検証したい場合は `contracts/` 配下に JSON を追加し、同スクリプトに渡す。
+- 契約は `contracts/*.json` に配置し、`--contract=...` で絞り込み可能。
 
 ### 4.3 API Fuzz / Schemathesis
 ```bash
@@ -79,21 +80,21 @@ make test-api-fuzz
 
 1. モデルベーステスト（在庫シミュレーション）:
    ```bash
-   pnpm test:mbt
+   pnpm run test:mbt
    ```
 2. 生成されたケースは `artifacts/mbt/summary.json` に保存され、Verify Lite からも再利用可能。
 
 ## 6. End-to-End チェックリスト
 
 1. `pnpm run spec:kv-once:tlc` / `pnpm run spec:kv-once:apalache`
-2. `pnpm run generate:artifacts -- --dry-run`
+2. `pnpm run generate:artifacts:preview`
 3. `pnpm run verify:lite`
 4. (任意) `./scripts/mutation/run-scoped.sh --quick --auto-diff`
-5. `pnpm run bdd:test`
-6. `pnpm run contracts:verify`
+5. `pnpm run bdd`
+6. `pnpm run pipelines:pact`
 7. `make test-api-fuzz`
-8. (任意) `pnpm test:mbt -- --runs=8 --depth=6` でシードを変えたモデル検証を追加確認
-9. `pnpm pipelines:trace --input samples/trace/kvonce-sample.ndjson --skip-replay`
+8. (任意) `pnpm run test:mbt -- --runs=8 --depth=6` でシードを変えたモデル検証を追加確認
+9. `pnpm run pipelines:trace -- --input samples/trace/kvonce-sample.ndjson --skip-replay`
 
 全て完了したら、`reports/` / `artifacts/` の差分を確認し、必要に応じて Issue / PR に最新状況をコメントしてください。
 
@@ -107,20 +108,20 @@ Verify Lite を起点に Pact / API fuzz / Mutation quick を順番に実行し�
 
 - **Verify Lite → Pact → API fuzz → Mutation quick**
   ```bash
-  pnpm pipelines:full --mutation-target=src/utils/enhanced-state-manager.ts
+  pnpm run pipelines:full -- --mutation-target=src/utils/enhanced-state-manager.ts
   ```
 - 重いステップをスキップしたい場合:
   ```bash
-  pnpm pipelines:full --skip=api-fuzz,mutation
+  pnpm run pipelines:full -- --skip=api-fuzz,mutation
   ```
 - 個別ステップを直接呼び出す場合:
   ```bash
-  pnpm pipelines:pact --contract=contracts/reservations-consumer.json
-  pnpm pipelines:api-fuzz --spec tests/cli/fuzz.spec.ts
-  pnpm pipelines:mutation:quick -- --mutate src/utils/enhanced-state-manager.ts
-  pnpm pipelines:trace --input samples/trace/kvonce-sample.ndjson
+  pnpm run pipelines:pact -- --contract=reservations-consumer.json
+  pnpm run pipelines:api-fuzz -- --spec tests/cli/fuzz.spec.ts
+  pnpm run pipelines:mutation:quick -- --mutate src/utils/enhanced-state-manager.ts
+  pnpm run pipelines:trace -- --input samples/trace/kvonce-sample.ndjson
   ```
-  - 実行後は `artifacts/trace/report-envelope.json` にトレース用 Envelope が生成され、`pnpm verify:conformance --from-envelope artifacts/trace/report-envelope.json` で結果を再利用できる。
+  - 実行後は `artifacts/trace/report-envelope.json` にトレース用 Envelope が生成され、`pnpm run verify:conformance -- --from-envelope artifacts/trace/report-envelope.json` で結果を再利用できる。
 
 各ステップのレポート:
 - Verify Lite: `reports/verify-lite/`

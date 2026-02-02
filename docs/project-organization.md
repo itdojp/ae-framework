@@ -10,7 +10,7 @@
 
 主なポイント
 - ディレクトリ構成の原則（関心の分離、アーカイブ戦略、レポート整理、ビルド成果物管理）
-- クリーニングスクリプト（`pnpm run clean:*`）と自動化
+- クリーニングスクリプト（`pnpm run clean:all` / `pnpm run clean:project` / `pnpm run clean:reports` / `pnpm run clean:frontend`）と自動化
 - スクリプトの発見（`pnpm run help` / `pnpm run | less`）
 - レポート/一時ファイルのカテゴリと保持方針
 - 運用スケジュール（毎日/毎週/毎月）とベストプラクティス
