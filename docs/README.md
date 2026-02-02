@@ -6,7 +6,7 @@
 
 ## English
 
-Comprehensive documentation for the AI‑Enhanced Development Framework.
+Comprehensive documentation for the agentic SDLC orchestrator & spec/verification kit.
 
 ### Getting Started
 - Quick Start (15 minutes): `getting-started/QUICK-START-GUIDE.md`
@@ -38,7 +38,12 @@ Comprehensive documentation for the AI‑Enhanced Development Framework.
 - Natural Language Requirements: `phases/PHASE-2-NATURAL-LANGUAGE-REQUIREMENTS.md`
 - Runtime Conformance: `phases/PHASE-2-2-RUNTIME-CONFORMANCE.md`
 - Integration Testing / E2E: `phases/PHASE-2-3-INTEGRATION-TESTING.md`
-- User Stories, Validation, DDD Modeling, Phase 6 UI/UX, Telemetry
+- User Stories: `phases/PHASE-3-USER-STORIES-CREATION.md`
+- Validation: `phases/PHASE-4-VALIDATION.md`
+- Domain Modeling: `phases/PHASE-5-DOMAIN-MODELING.md`
+- Phase 6 UI/UX: `phases/phase-6-uiux.md`
+- Frontend foundation: `phases/frontend-foundation.md`
+- Telemetry configuration: `phases/telemetry-configuration.md`
 
 ### Integrations
 - Claude Code Task Tool Integration: `integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md`
@@ -72,11 +77,11 @@ For the complete navigation with highlights, see the Japanese section below (sam
 
 ---
 
-> AI-Enhanced Development Framework の包括的ドキュメント
+> エージェント協調型SDLCオーケストレーター／仕様・検証キットの包括的ドキュメント
 
 ## 🚀 はじめに
 
-ae-frameworkは、AI-Powered TDDによる6フェーズでソフトウェア開発を自動化するフレームワークです。Claude Codeと統合し、要件分析からUI/UX実装まで一気通貫でサポートします。
+ae-frameworkは、エージェント協調型のSDLCオーケストレーター兼 仕様・検証キットです。Claude Code / CodeX 連携やMCPサーバを通じて、要件→仕様→検証→運用のフローを統一します。
 
 ## 📖 ドキュメント構成
 
@@ -129,6 +134,7 @@ Claude CodeやMCPとの統合
 
 - **[CLAUDE-CODE-TASK-TOOL-INTEGRATION.md](./integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)** ⭐ **重要** - Task Tool統合仕様
 - [CLAUDECODE-WORKFLOW.md](./integrations/CLAUDECODE-WORKFLOW.md) - Claude Codeワークフロー
+- [CODEX-INTEGRATION.md](./integrations/CODEX-INTEGRATION.md) - CodeX統合（PoC/MCP/Adapter）
 
 ### 📚 [reference/](./reference/) - リファレンス・API仕様
 コマンドやAPIの詳細仕様
@@ -241,7 +247,6 @@ Claude CodeやMCPとの統合
 
 - **GitHub Issues**: [https://github.com/itdojp/ae-framework/issues](https://github.com/itdojp/ae-framework/issues)
 - **Pull Requests**: ドキュメント改善・追加をお待ちしています
-- **Discord**: リアルタイム質問・情報交換
 
 ## 🎉 次のステップ
 
