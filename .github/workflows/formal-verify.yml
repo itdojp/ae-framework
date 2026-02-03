@@ -186,6 +186,11 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '20'
+      - name: Cache Apalache
+        uses: actions/cache@v4
+        with:
+          path: .cache/tools/apalache
+          key: ${{ runner.os }}-apalache-${{ env.APALACHE_VERSION }}
       - name: Install Apalache (cached)
         run: |
           set -euo pipefail
@@ -246,6 +251,11 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '20'
+      - name: Cache Kani
+        uses: actions/cache@v4
+        with:
+          path: .cache/tools/kani
+          key: ${{ runner.os }}-kani-${{ env.KANI_VERSION }}
       - name: Install Kani (prebuilt)
         run: |
           set -euo pipefail
@@ -262,6 +272,7 @@ jobs:
         run: node scripts/formal/verify-kani.mjs || true
       - name: Upload Kani summary (artifact)
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: formal-reports-kani
           path: artifacts/hermetic-reports/formal/kani-summary.json

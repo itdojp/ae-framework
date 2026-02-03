@@ -40,7 +40,7 @@ Kani
   - `export PATH="$PWD/kani-0.67.0/bin:$PATH"`
 - Verify:
   - `kani-driver --version`
-  - (cargo plugin installedの場合) `cargo kani --version`
+  - (if the cargo plugin is installed) `cargo kani --version`
 
 Notes
 - Tools are not required to work with AE-Framework; they enhance the formal workflow when present.
