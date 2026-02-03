@@ -1,0 +1,17 @@
+artifacts/codex/2026-02-03/artifacts-list.txt
+artifacts/codex/2026-02-03/env.txt
+artifacts/codex/2026-02-03/file-checks.txt
+artifacts/codex/2026-02-03/git-status-after.txt
+artifacts/codex/2026-02-03/git-status-before.txt
+artifacts/codex/2026-02-03/old-version.txt
+artifacts/codex/2026-02-03/pnpm-install.log
+artifacts/codex/2026-02-03/trace-validate.log
+artifacts/codex/2026-02-03/verification-report.md
+artifacts/codex/2026-02-03/verify-alloy.log
+artifacts/codex/2026-02-03/verify-apalache.log
+artifacts/codex/2026-02-03/verify-conformance.log
+artifacts/codex/2026-02-03/verify-formal.log
+artifacts/codex/2026-02-03/verify-kani.log
+artifacts/codex/2026-02-03/verify-model.log
+artifacts/codex/2026-02-03/verify-smt.log
+artifacts/codex/2026-02-03/verify-tla.log
