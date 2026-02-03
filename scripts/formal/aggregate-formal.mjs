@@ -15,6 +15,10 @@ const smt = readJsonSafe(path.join(formalDir, 'smt-summary.json'));
 const alloy = readJsonSafe(path.join(formalDir, 'alloy-summary.json'));
 const tla = readJsonSafe(path.join(formalDir, 'tla-summary.json'));
 const apalache = readJsonSafe(path.join(formalDir, 'apalache-summary.json'));
+const kani = readJsonSafe(path.join(formalDir, 'kani-summary.json'));
+const spin = readJsonSafe(path.join(formalDir, 'spin-summary.json'));
+const csp = readJsonSafe(path.join(formalDir, 'csp-summary.json'));
+const lean = readJsonSafe(path.join(formalDir, 'lean-summary.json'));
 
 const summary = {
   timestamp: new Date().toISOString(),
@@ -23,13 +27,21 @@ const summary = {
     smt: !!smt,
     alloy: !!alloy,
     tla: !!tla,
-    apalache: !!apalache
+    apalache: !!apalache,
+    kani: !!kani,
+    spin: !!spin,
+    csp: !!csp,
+    lean: !!lean
   },
   conformance: conformance || null,
   smt: smt || null,
   alloy: alloy || null,
   tla: tla || null,
-  apalache: apalache || null
+  apalache: apalache || null,
+  kani: kani || null,
+  spin: spin || null,
+  csp: csp || null,
+  lean: lean || null
 };
 
 const outFile = path.join(formalDir, 'summary.json');

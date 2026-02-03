@@ -6,13 +6,29 @@ function has(cmd) {
 }
 
 function version(cmd, args = ['--version']) {
-  try { return execSync(`bash -lc '${cmd} ${args.join(' ')}'`, { encoding: 'utf8' }).trim(); } catch { return 'n/a'; }
+  try { return execSync(`bash -lc '${cmd} ${args.join(' ')} 2>&1'`, { encoding: 'utf8' }).trim(); } catch { return 'n/a'; }
 }
 function shortVer(tool, raw) {
   if (!raw || raw === 'n/a') return 'n/a';
   try {
     const line = String(raw).split('\n')[0];
     // Heuristics per tool
+    if (tool === 'spin') {
+      // "Spin Version 6.5.2 -- 2 May 2019"
+      const m = /Spin Version\s+([\w\.-]+)/i.exec(line); return m ? m[1] : line;
+    }
+    if (tool === 'gcc') {
+      // "gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0"
+      const m = /\b(\d+\.\d+(?:\.\d+)?)\b/.exec(line); return m ? m[1] : line;
+    }
+    if (tool === 'elan') {
+      // "elan 4.0.0 (....)"
+      const m = /elan\s+([\w\.-]+)/i.exec(line); return m ? m[1] : line;
+    }
+    if (tool === 'lake') {
+      // "Lake version x.y.z" (best-effort)
+      const m = /Lake(?:\s+version)?\s+([\w\.-]+)/i.exec(line); return m ? m[1] : line;
+    }
     if (tool === 'z3') {
       // "Z3 version 4.12.4 - 64 bit"
       const m = /Z3 version\s+([\w\.-]+)/i.exec(line); return m ? m[1] : line;
@@ -63,6 +79,24 @@ const hasKani = has('kani') || has('cargo-kani') || has('kani-driver');
 const kaniTool = has('kani') ? 'kani' : (has('cargo-kani') ? 'cargo-kani' : (has('kani-driver') ? 'kani-driver' : ''));
 report.push({ tool: 'kani', present: hasKani, version: hasKani ? shortVer('kani', version(kaniTool, ['--version'])) : 'n/a' });
 
+// SPIN
+const hasSpin = has('spin');
+report.push({ tool: 'spin', present: hasSpin, version: hasSpin ? shortVer('spin', version('spin', ['-V'])) : 'n/a' });
+
+// GCC (pan build)
+const hasGcc = has('gcc');
+report.push({ tool: 'gcc', present: hasGcc, version: hasGcc ? shortVer('gcc', version('gcc', ['--version'])) : 'n/a' });
+
+// CSP (runner configuration)
+const cspRunCmdSet = Boolean((process.env.CSP_RUN_CMD || '').trim());
+report.push({ tool: 'CSP_RUN_CMD', present: cspRunCmdSet, path: cspRunCmdSet ? 'set (command hidden)' : 'unset (set CSP_RUN_CMD to run a CSP tool)' });
+
+// Lean4
+const hasElan = has('elan');
+report.push({ tool: 'elan', present: hasElan, version: hasElan ? shortVer('elan', version('elan', ['--version'])) : 'n/a' });
+const hasLake = has('lake');
+report.push({ tool: 'lake', present: hasLake, version: hasLake ? shortVer('lake', version('lake', ['--version'])) : 'n/a' });
+
 console.log('Formal tools status');
 for (const r of report) {
   const status = r.present ? '✅' : '❌';
@@ -79,6 +113,10 @@ try {
   const z3 = map['z3'] ? `yes(${vers['z3']||'n/a'})` : 'no';
   const c5 = map['cvc5'] ? `yes(${vers['cvc5']||'n/a'})` : 'no';
   const kani = map['kani'] ? `yes(${vers['kani']||'n/a'})` : 'no';
+  const spin = map['spin'] ? `yes(${vers['spin']||'n/a'})` : 'no';
+  const gcc = map['gcc'] ? `yes(${vers['gcc']||'n/a'})` : 'no';
+  const lean = map['lake'] ? `yes(${vers['lake']||'n/a'})` : 'no';
+  const csp = map['CSP_RUN_CMD'] ? 'configured' : 'unset';
   const jv = vers['java'] || 'n/a';
   const line = [
     `tlc=${tlc?'yes':'no'}`,
@@ -86,6 +124,10 @@ try {
     `z3=${z3}`,
     `cvc5=${c5}`,
     `kani=${kani}`,
+    `spin=${spin}`,
+    `gcc=${gcc}`,
+    `csp=${csp}`,
+    `lean=${lean}`,
     `java=${jv}`
   ].join(' ');
   console.log(`Tools: ${line}`);
