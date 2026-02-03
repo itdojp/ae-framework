@@ -8,6 +8,7 @@
 
 `scripts/verify/run-model-checks.mjs` で任意のヘッドレス Alloy 実行をサポートします。
 - `ALLOY_JAR` を指定すると `java -jar $ALLOY_JAR <file>.als` を実行
+- `ALLOY_RUN_CMD` でコマンドを上書き（`{file}`/`$ALLOY_JAR` 対応）
 - 追加引数は `ALLOY_CMD_JSON`（推奨）か `ALLOY_CMD_ARGS`
 - 失敗検出は `ALLOY_FAIL_REGEX` で調整、タイムアウトは `ALLOY_TIMEOUT_MS`
 
@@ -17,6 +18,7 @@ This repo supports optional headless Alloy execution in `scripts/verify/run-mode
 
 Environment variables
 - `ALLOY_JAR`: path to Alloy jar. When present, the runner uses `java -jar $ALLOY_JAR <file>.als`.
+- `ALLOY_RUN_CMD`: override the execution command (supports `{file}` placeholder, `$ALLOY_JAR` replacement).
 - `ALLOY_CMD_JSON`: JSON array of extra args for the jar (preferred、空白や引用符に安全）。
 - `ALLOY_CMD_ARGS`: 文字列引数（フォールバック）。
 - `ALLOY_FAIL_REGEX`: 失敗判定の正規表現（既定: `Exception|ERROR|FAILED|Counterexample|assertion`）。
@@ -26,6 +28,11 @@ Examples
 ```bash
 # Minimal
 ALLOY_JAR=$HOME/tools/alloy.jar npm run verify:model
+
+# Alloy 6 CLI (exec subcommand)
+ALLOY_JAR=$HOME/tools/alloy.jar \
+  ALLOY_RUN_CMD='java -jar $ALLOY_JAR exec -q -o - -f {file}' \
+  npm run verify:model
 
 # JSON-array args（空白/引用符を安全に扱える）
 ALLOY_JAR=$HOME/tools/alloy.jar \

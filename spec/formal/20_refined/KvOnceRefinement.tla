@@ -26,8 +26,8 @@ Retry(k) ==
   /\ retries' = [retries EXCEPT ![k] = retries[k] + 1]
 
 Next ==
-  \E k \in Keys, v \in Values: Put(k, v)
-  \/ \E k \in Keys: Retry(k)
+  \E k1 \in Keys, v \in Values: Put(k1, v)
+  \/ \E k2 \in Keys: Retry(k2)
 
 TypeInvariant ==
   /\ store \in [Keys -> [written: BOOLEAN, val: Values \cup {NULL}]]

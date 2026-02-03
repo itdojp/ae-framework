@@ -99,7 +99,24 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
+      - name: Cache Alloy jar
+        uses: actions/cache@v4
+        with:
+          path: .cache/tools/alloy.jar
+          key: ${{ runner.os }}-alloy-6.2.0
+      - name: Download Alloy jar
+        run: |
+          set -euo pipefail
+          JAR_PATH="$PWD/.cache/tools/alloy.jar"
+          if [ ! -f "$JAR_PATH" ]; then
+            mkdir -p "$(dirname "$JAR_PATH")"
+            curl -L -sS -o "$JAR_PATH" "https://github.com/AlloyTools/org.alloytools.alloy/releases/download/v6.2.0/org.alloytools.alloy.dist.jar"
+          fi
       - name: Run model checks (TLA+)
+        env:
+          ALLOY_JAR: ${{ github.workspace }}/.cache/tools/alloy.jar
+          ALLOY_RUN_CMD: java -jar $ALLOY_JAR exec -q -o - -f {file}
+          JAVA_TOOL_OPTIONS: -Djava.awt.headless=true
         run: |
           node --version
           java -version

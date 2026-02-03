@@ -3,9 +3,6 @@ name: Formal Verify
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, labeled]
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
   workflow_dispatch:
     inputs:
       target:
@@ -89,17 +86,37 @@ jobs:
     if: (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'alloy'))
     steps:
       - uses: actions/checkout@v4
+      - name: Setup Java (Alloy)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '20'
+      - name: Cache Alloy jar
+        uses: actions/cache@v4
+        with:
+          path: .cache/tools/alloy.jar
+          key: ${{ runner.os }}-alloy-6.2.0
+      - name: Download Alloy jar
+        run: |
+          set -euo pipefail
+          JAR_PATH="$PWD/.cache/tools/alloy.jar"
+          if [ ! -f "$JAR_PATH" ]; then
+            mkdir -p "$(dirname "$JAR_PATH")"
+            curl -L -sS -o "$JAR_PATH" "https://github.com/AlloyTools/org.alloytools.alloy/releases/download/v6.2.0/org.alloytools.alloy.dist.jar"
+          fi
       - name: Check Alloy tooling presence (non-blocking)
         run: |
           printf "%s\n" "Checking Alloy tooling..."
           node -e "console.log('Alloy tooling check stub ok')"
       - name: Run verify:alloy (sample)
         env:
-          ALLOY_JAR: ${{ github.event_name == 'workflow_dispatch' && inputs.alloyJar || '' }}
+          ALLOY_JAR: ${{ github.event_name == 'workflow_dispatch' && inputs.alloyJar || format('{0}/.cache/tools/alloy.jar', github.workspace) }}
+          ALLOY_RUN_CMD: java -jar $ALLOY_JAR exec -q -o - -f {file}
+          JAVA_TOOL_OPTIONS: -Djava.awt.headless=true
         run: node scripts/formal/verify-alloy.mjs --file spec/alloy/Domain.als || true
       - name: Upload Alloy summary (artifact)
         uses: actions/upload-artifact@v4

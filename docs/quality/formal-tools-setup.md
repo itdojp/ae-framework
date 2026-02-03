@@ -5,6 +5,7 @@ This guide outlines local setup for formal verification tools used alongside AE-
 Supported tools
 - TLA+ (TLC)
 - Apalache (SMT/BMC + inductive invariants)
+- Alloy (Alloy Analyzer / Alloy 6 CLI)
 - SMT solvers: Z3, cvc5
 - Kani (Rust bounded model checking)
 
@@ -25,6 +26,14 @@ Apalache
   - `apalache-mc version`
 - Example:
   - `apalache-mc check --inv=Invariant spec/tla/DomainSpec.tla`
+
+Alloy
+- Download Alloy 6 jar (example):
+  - `curl -L -o alloy.jar https://github.com/AlloyTools/org.alloytools.alloy/releases/download/v6.2.0/org.alloytools.alloy.dist.jar`
+- Verify (CLI):
+  - `java -jar alloy.jar help`
+- Run (CLI exec):
+  - `ALLOY_JAR=$PWD/alloy.jar ALLOY_RUN_CMD='java -jar $ALLOY_JAR exec -q -o - -f {file}' pnpm run verify:model`
 
 Z3 / cvc5
 - Install via package manager or releases
