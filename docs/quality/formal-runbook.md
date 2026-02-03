@@ -7,6 +7,7 @@
 ## 日本語（概要）
 
 負担の小さい形式検査の運用手順です。PR ラベルでの起動（`run-formal`）、手動トリガー、CLI スタブ、仕様/アーティファクトの配置、ロードマップ適合を簡潔にまとめています。
+全ツールのスモークテスト手順は `docs/quality/formal-full-run.md` を参照してください。
 
 ## English
 
@@ -20,6 +21,7 @@
     - `solver`: z3|cvc5（smt用）
     - `alloyJar`: Alloy jar のパス（任意）
     - `tlaToolsJar`: tla2tools.jar のパス（任意）
+Full smoke test instructions: `docs/quality/formal-full-run.md`.
 
 ### CLI Stubs (to be wired)
 - `pnpm run verify:conformance` — prints stub; use `ae conformance verify` for real engine
