@@ -1,6 +1,10 @@
 # Domain (Z notation, Phase 0)
 
-This is a **minimal** Z spec aligned with `spec/tla/DomainSpec.tla` and `spec/alloy/Domain.als`.
+This is a **minimal** Z spec aligned with `spec/tla/DomainSpec.tla` and (partially) with `spec/alloy/Domain.als`.
+
+Note:
+- The `onHand <= MaxOnHand` bound is aligned with the TLA+ skeleton.
+- The current Alloy skeleton does **not** model `MaxOnHand` yet (Phase 0).
 
 > Note: The content is written in LaTeX-ish Z using ASCII-only tokens so it can be reviewed in plain text.
 
@@ -63,4 +67,4 @@ This is a **minimal** Z spec aligned with `spec/tla/DomainSpec.tla` and `spec/al
 - TLA+ invariant: `state.onHand >= 0 /\ state.allocated <= state.onHand /\ state.onHand <= MaxOnHand`
   - Z: `DomainState` constraints.
 - Alloy invariant: `s.onHand >= 0 and s.allocated <= s.onHand`
-  - Z: `DomainState` constraints.
+  - Z: subset of `DomainState` constraints: `allocated <= onHand` (Alloy omits `onHand <= MaxOnHand`).
