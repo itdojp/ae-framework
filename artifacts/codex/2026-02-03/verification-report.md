@@ -4,7 +4,7 @@
 - リポジトリ: /home/devuser/work/CodeX/ae-framework_exp01/ae-framework
 - 旧版: v1.0.0 (14b3a49d9203eb7b1844802ccd6c7e9cab74a7fd)
   - 利用可能なタグが v1.0.0 のみのため、本タグを旧版として選定
-- ブランチ: chore/ci-formal-old-20260203
+- ブランチ: chore/ci-formal-old-report-20260203
 
 ## 環境
 - Node: v22.19.0
