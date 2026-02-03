@@ -8,7 +8,7 @@
 
 This guide shows how to run **all formal verification tools** end-to-end for a smoke test.
 
-### Recommended: CI (covers Apalache / SMT / Alloy / TLA / Kani / SPIN / Lean; CSP is stub)
+### Recommended: CI (covers Apalache / SMT / Alloy / TLA / Kani / SPIN / Lean; CSP is non-blocking unless a backend is available)
 
 1) **Label-gated (PR)**
 - Add label `run-formal` to the PR.
@@ -43,7 +43,7 @@ Pre-reqs:
 - Optional: Alloy jar, Apalache, Kani
 - Optional: SPIN (`spin` + `gcc`)
 - Optional: Lean4 (`elan` + `lake`)
-- Optional: CSP tool (configure via `CSP_RUN_CMD`)
+- Optional: CSP tool (`refines` or `cspmchecker`, or configure via `CSP_RUN_CMD`)
 
 #### 1) Base run (conformance + alloy + TLA + SMT + Apalache + Kani + SPIN + CSP + Lean + aggregate)
 ```bash
@@ -94,8 +94,14 @@ pnpm run verify:lean
 
 #### 8) Run CSP (when configured)
 ```bash
-# {file} will be replaced with the absolute file path
-CSP_RUN_CMD='echo Running CSP tool on {file}' pnpm run verify:csp -- --file spec/csp/sample.cspm
+# Typecheck (safe default):
+pnpm run verify:csp -- --file spec/csp/sample.cspm --mode typecheck
+
+# Assertions (requires FDR `refines`):
+pnpm run verify:csp -- --file spec/csp/sample.cspm --mode assertions
+
+# Or, run via custom backend command (shell). {file} is replaced with the absolute file path:
+CSP_RUN_CMD='echo Running CSP tool on {file}' pnpm run verify:csp -- --file spec/csp/sample.cspm --mode typecheck
 ```
 
 #### 9) Model check (TLC/Alloy scan)
@@ -114,7 +120,7 @@ Outputs:
 
 この手順は、**すべての形式検査ツールをまとめて動作確認**するためのスモークテストです。
 
-### 推奨: CI（Apalache / SMT / Alloy / TLA / Kani / SPIN / Lean をまとめて実行。CSP は stub）
+### 推奨: CI（Apalache / SMT / Alloy / TLA / Kani / SPIN / Lean をまとめて実行。CSP はバックエンドが無い場合は non-blocking）
 
 1) **PRラベル実行**
 - PR に `run-formal` ラベルを付与
@@ -149,7 +155,7 @@ Outputs:
 - 任意: Alloy jar / Apalache / Kani
 - 任意: SPIN（`spin` + `gcc`）
 - 任意: Lean4（`elan` + `lake`）
-- 任意: CSP ツール（`CSP_RUN_CMD` で設定）
+- 任意: CSP ツール（`refines` / `cspmchecker` または `CSP_RUN_CMD` で設定）
 
 #### 1) ベース実行（conformance + alloy + TLA + SMT + Apalache + Kani + SPIN + CSP + Lean + 集約）
 ```bash
@@ -200,8 +206,14 @@ pnpm run verify:lean
 
 #### 8) CSP を実行（設定済みの場合）
 ```bash
-# {file} は絶対パスへ置換されます
-CSP_RUN_CMD='echo Running CSP tool on {file}' pnpm run verify:csp -- --file spec/csp/sample.cspm
+# Typecheck（安全な既定）:
+pnpm run verify:csp -- --file spec/csp/sample.cspm --mode typecheck
+
+# Assertions（FDR `refines` が必要）:
+pnpm run verify:csp -- --file spec/csp/sample.cspm --mode assertions
+
+# 任意のバックエンドをコマンドで実行（シェル経由）。{file} は絶対パスへ置換されます:
+CSP_RUN_CMD='echo Running CSP tool on {file}' pnpm run verify:csp -- --file spec/csp/sample.cspm --mode typecheck
 ```
 
 #### 9) モデル検査（TLC/Alloy スキャン）
