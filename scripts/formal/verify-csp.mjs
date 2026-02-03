@@ -16,6 +16,8 @@ function parseArgs(argv) {
     if (a === '--help' || a === '-h') args.help = true;
     else if (a === '--file' && next) { args.file = next; i += 1; }
     else if (a.startsWith('--file=')) { args.file = a.slice(7); }
+    else if (a === '--mode' && next) { args.mode = next; i += 1; }
+    else if (a.startsWith('--mode=')) { args.mode = a.slice(7); }
     else { args._.push(a); }
   }
   return args;
@@ -51,6 +53,8 @@ function clamp(s, n = 4000) {
 const args = parseArgs(process.argv);
 if (args.help) {
   console.log('Usage: node scripts/formal/verify-csp.mjs [--file spec/csp/sample.cspm]');
+  console.log('Options:');
+  console.log('  --mode typecheck|assertions  (default: typecheck; only affects FDR refines backend)');
   console.log('Optional: set CSP_RUN_CMD to execute a CSP tool (supports {file}).');
   process.exit(0);
 }
@@ -83,12 +87,18 @@ if (!fs.existsSync(absFile)) {
     backend = 'CSP_RUN_CMD';
   } else if (commandExists('refines')) {
     // FDR (commercial): allow local runs when installed.
-    const res = runCommand('refines', ['--typecheck', '--format', 'plain', absFile]);
+    const mode = (args.mode || 'typecheck').toLowerCase();
+    const refinesArgs = (mode === 'assertions')
+      // Run all assertions in the file (best-effort). Keep output small.
+      ? ['--brief', '--quiet', '--format', 'plain', absFile]
+      // Fast path: typecheck only (safe default).
+      : ['--typecheck', '--format', 'plain', absFile];
+    const res = runCommand('refines', refinesArgs);
     ran = res.available;
     exitCode = res.status;
     status = res.available ? (res.status === 0 ? 'ran' : 'failed') : 'tool_not_available';
     output = clamp(res.output || 'refines produced no output');
-    backend = 'refines';
+    backend = `refines:${mode}`;
   } else if (commandExists('cspmchecker')) {
     // libcspm/cspmchecker (OSS): typecheck-only (no refinement).
     const res = runCommand('cspmchecker', [absFile]);

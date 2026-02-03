@@ -21,7 +21,13 @@ FDR (commercial) example:
 
 ```bash
 refines --typecheck --format plain spec/csp/sample.cspm
-pnpm run verify:csp -- --file spec/csp/sample.cspm
+pnpm run verify:csp -- --file spec/csp/sample.cspm --mode typecheck
+```
+
+If your CSPM file includes FDR assertions (e.g., deadlock freedom), you can run them:
+
+```bash
+pnpm run verify:csp -- --file spec/csp/sample.cspm --mode assertions
 ```
 
 `cspmchecker` example:
@@ -101,7 +107,13 @@ FDR（商用）例:
 
 ```bash
 refines --typecheck --format plain spec/csp/sample.cspm
-pnpm run verify:csp -- --file spec/csp/sample.cspm
+pnpm run verify:csp -- --file spec/csp/sample.cspm --mode typecheck
+```
+
+FDR の assertion（例: deadlock free）を実行したい場合:
+
+```bash
+pnpm run verify:csp -- --file spec/csp/sample.cspm --mode assertions
 ```
 
 `cspmchecker` 例:
