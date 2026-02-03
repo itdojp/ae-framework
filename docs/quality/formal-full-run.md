@@ -77,7 +77,7 @@ node scripts/formal/verify-kani.mjs
 
 #### 6) Model check (TLC/Alloy scan)
 ```bash
-npm run verify:model
+pnpm run verify:model
 ```
 
 Outputs:
@@ -160,7 +160,7 @@ node scripts/formal/verify-kani.mjs
 
 #### 6) モデル検査（TLC/Alloy スキャン）
 ```bash
-npm run verify:model
+pnpm run verify:model
 ```
 
 成果物:

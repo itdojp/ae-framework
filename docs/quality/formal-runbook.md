@@ -20,7 +20,7 @@
     - `engine`: tlc|apalache（tla用）
     - `solver`: z3|cvc5（smt用）
     - `alloyJar`: Alloy jar のパス（任意）
-  - `tlaToolsJar`: tla2tools.jar のパス（任意）
+    - `tlaToolsJar`: tla2tools.jar のパス（任意）
 Full smoke test instructions: `docs/quality/formal-full-run.md`.
 
 ### CLI Stubs (to be wired)
