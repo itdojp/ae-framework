@@ -11,9 +11,6 @@ on:
         description: "Pull request number to comment on"
         required: false
         type: string
-    secrets:
-      GITHUB_TOKEN:
-        required: false
   workflow_dispatch:
     inputs:
       source_run_id:
