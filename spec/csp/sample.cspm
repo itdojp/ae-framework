@@ -1,9 +1,11 @@
--- CSPM-style sample: minimal rendezvous
+-- CSPM-style sample: minimal rendezvous (deadlock-free)
 
 channel ch : {0..1}
 
-Sender = ch!1 -> STOP
-Receiver = ch?x -> STOP
+Sender = ch!1 -> Sender
+Receiver = ch?x -> Receiver
 
-System = Sender ||| Receiver
+System = Sender [|{|ch|}|] Receiver
 
+-- FDR assertion (optional backend): deadlock freedom (Failures model)
+assert System :[deadlock free [F]]

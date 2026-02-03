@@ -7,7 +7,35 @@ This directory contains CSP / CSPM-style specifications for concurrency/protocol
 ## Current status
 
 - CI integration is provided as a **non-blocking stub** until a concrete toolchain is selected.
-- To execute CSP checks, set `CSP_RUN_CMD` (see below) or install a supported tool and wire it in.
+- To execute CSP checks, set `CSP_RUN_CMD` (see below) or install a supported tool.
+
+## Toolchain options (local)
+
+The runner supports these backends (best-effort, in this order):
+
+1) `CSP_RUN_CMD` (shell command)
+2) FDR `refines` (typecheck)
+3) `cspmchecker` (typecheck, OSS)
+
+FDR (commercial) example:
+
+```bash
+refines --typecheck --format plain spec/csp/sample.cspm
+pnpm run verify:csp -- --file spec/csp/sample.cspm --mode typecheck
+```
+
+If your CSPM file includes FDR assertions (e.g., deadlock freedom), you can run them:
+
+```bash
+pnpm run verify:csp -- --file spec/csp/sample.cspm --mode assertions
+```
+
+`cspmchecker` example:
+
+```bash
+cspmchecker spec/csp/sample.cspm
+pnpm run verify:csp -- --file spec/csp/sample.cspm
+```
 
 ## Files
 
@@ -64,3 +92,33 @@ CSP_RUN_CMD='echo Running CSP tool on {file}' pnpm run verify:csp -- --file spec
 
 成果物:
 - `artifacts/hermetic-reports/formal/csp-summary.json`
+
+---
+
+## ツール候補（ローカル）
+
+ランナーは次のバックエンドを（利用可能なら）優先順に使用します。
+
+1) `CSP_RUN_CMD`（シェル実行）
+2) FDR `refines`（型検査）
+3) `cspmchecker`（型検査、OSS）
+
+FDR（商用）例:
+
+```bash
+refines --typecheck --format plain spec/csp/sample.cspm
+pnpm run verify:csp -- --file spec/csp/sample.cspm --mode typecheck
+```
+
+FDR の assertion（例: deadlock free）を実行したい場合:
+
+```bash
+pnpm run verify:csp -- --file spec/csp/sample.cspm --mode assertions
+```
+
+`cspmchecker` 例:
+
+```bash
+cspmchecker spec/csp/sample.cspm
+pnpm run verify:csp -- --file spec/csp/sample.cspm
+```

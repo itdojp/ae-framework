@@ -1,5 +1,9 @@
 #!/usr/bin/env node
-// Lightweight CSP runner stub: executes CSP_RUN_CMD if provided and writes a summary JSON. Non-blocking.
+// Lightweight CSP runner:
+// - If CSP_RUN_CMD is set, execute it via shell (supports {file} placeholder).
+// - Else, if FDR `refines` exists, run a typecheck (non-blocking summary).
+// - Else, if `cspmchecker` exists, run a typecheck (non-blocking summary).
+// - Else, report tool_not_available.
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -12,6 +16,8 @@ function parseArgs(argv) {
     if (a === '--help' || a === '-h') args.help = true;
     else if (a === '--file' && next) { args.file = next; i += 1; }
     else if (a.startsWith('--file=')) { args.file = a.slice(7); }
+    else if (a === '--mode' && next) { args.mode = next; i += 1; }
+    else if (a.startsWith('--mode=')) { args.mode = a.slice(7); }
     else { args._.push(a); }
   }
   return args;
@@ -39,6 +45,20 @@ function runShell(cmd) {
   return { available: true, success: result.status === 0, status: result.status ?? 0, output };
 }
 
+function runCommand(cmd, cmdArgs, options = {}) {
+  const result = spawnSync(cmd, cmdArgs, { encoding: 'utf8', cwd: options.cwd });
+  const stdout = result.stdout ?? '';
+  const stderr = result.stderr ?? '';
+  const output = `${stdout}${stderr}`.trim();
+  if (result.error) {
+    if (result.error.code === 'ENOENT') {
+      return { available: false, status: null, output: output || (result.error.message ?? '') };
+    }
+    return { available: true, status: result.status ?? null, output: output || (result.error.message ?? '') };
+  }
+  return { available: true, status: result.status ?? 0, output };
+}
+
 function clamp(s, n = 4000) {
   const t = String(s || '');
   return t.length > n ? `${t.slice(0, n)}…` : t;
@@ -47,6 +67,8 @@ function clamp(s, n = 4000) {
 const args = parseArgs(process.argv);
 if (args.help) {
   console.log('Usage: node scripts/formal/verify-csp.mjs [--file spec/csp/sample.cspm]');
+  console.log('Options:');
+  console.log('  --mode typecheck|assertions  (default: typecheck; only affects FDR refines backend)');
   console.log('Optional: set CSP_RUN_CMD to execute a CSP tool (supports {file}).');
   process.exit(0);
 }
@@ -62,6 +84,7 @@ let ran = false;
 let status;
 let output = '';
 let exitCode = null;
+let backend = null;
 
 if (!fs.existsSync(absFile)) {
   status = 'file_not_found';
@@ -75,20 +98,51 @@ if (!fs.existsSync(absFile)) {
     exitCode = res.status;
     status = res.available ? (res.success ? 'ran' : 'failed') : 'tool_not_available';
     output = clamp(res.output || 'CSP_RUN_CMD produced no output');
+    backend = 'CSP_RUN_CMD';
+  } else if (commandExists('refines')) {
+    // FDR (commercial): allow local runs when installed.
+    const rawMode = args.mode || 'typecheck';
+    let mode = rawMode.toLowerCase();
+    if (args.mode && mode !== 'typecheck' && mode !== 'assertions') {
+      console.error(
+        `Unknown --mode value '${args.mode}'. Expected 'typecheck' or 'assertions'. Defaulting to 'typecheck'.`,
+      );
+      mode = 'typecheck';
+    }
+    const refinesArgs = (mode === 'assertions')
+      // Run all assertions in the file (best-effort). Keep output small.
+      ? ['--brief', '--quiet', '--format', 'plain', absFile]
+      // Fast path: typecheck only (safe default).
+      : ['--typecheck', '--format', 'plain', absFile];
+    const res = runCommand('refines', refinesArgs);
+    ran = res.available;
+    exitCode = res.status;
+    status = res.available ? (res.status === 0 ? 'ran' : 'failed') : 'tool_not_available';
+    output = clamp(res.output || 'refines produced no output');
+    backend = `refines:${mode}`;
+  } else if (commandExists('cspmchecker')) {
+    // libcspm/cspmchecker (OSS): typecheck-only (no refinement).
+    const res = runCommand('cspmchecker', [absFile]);
+    ran = res.available;
+    exitCode = res.status;
+    status = res.available ? (res.status === 0 ? 'ran' : 'failed') : 'tool_not_available';
+    output = clamp(res.output || 'cspmchecker produced no output');
+    backend = 'cspmchecker';
   } else {
     // Best-effort detection: actual execution depends on selected toolchain.
-    const known = ['fdr4', 'fdr', 'refines', 'cspm'];
+    const known = ['refines', 'cspmchecker', 'cspm', 'csp0', 'fdr4', 'fdr'];
     const found = known.filter((c) => commandExists(c));
     status = 'tool_not_available';
     output = found.length
-      ? `CSP tool detected (${found.join(', ')}), but CSP_RUN_CMD is not set; execution is not configured.`
-      : 'No CSP tool configured. Set CSP_RUN_CMD or install a CSP tool.';
+      ? `CSP tool detected (${found.join(', ')}), but runner supports only CSP_RUN_CMD/refines/cspmchecker. Configure CSP_RUN_CMD or install a supported backend.`
+      : 'No CSP tool configured. Set CSP_RUN_CMD, install FDR (refines), or install cspmchecker.';
   }
 }
 
 const summary = {
   tool: 'csp',
   file: path.relative(repoRoot, absFile),
+  backend,
   ran,
   status,
   exitCode,
@@ -97,5 +151,5 @@ const summary = {
 };
 fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));
 console.log(`CSP summary written: ${path.relative(repoRoot, outFile)}`);
-console.log(`- file=${summary.file} status=${status}`);
+console.log(`- file=${summary.file} status=${status}${backend ? ` backend=${backend}` : ''}`);
 process.exit(0);
