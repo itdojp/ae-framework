@@ -12,10 +12,11 @@ try {
     process.exit(0);
   }
   const j = JSON.parse(fs.readFileSync(p,'utf-8'));
-  const keys = ['tlc','alloy','tla','smt','apalache','conformance','info'];
+  const keys = ['tlc','alloy','tla','smt','apalache','conformance','kani','spin','csp','lean','info'];
   for (const k of keys){ if (!(k in j)) warn(`missing top-level key: ${k}`); }
   if (!j.info || !j.info.present) warn('info.present missing');
   if (j.info && typeof j.info.presentCount !== 'number') warn('info.presentCount not a number');
+  if (j.info && typeof j.info.presentTotal !== 'number') warn('info.presentTotal not a number');
   if (j.info && j.info.ranOk && j.info.ranOk.apalache){
     const r = j.info.ranOk.apalache;
     if (typeof r.ran !== 'boolean') warn('ranOk.apalache.ran not boolean');
@@ -25,4 +26,3 @@ try {
 } catch (e) {
   warn(`aggregate schema check failed: ${String(e && e.message || e)}`);
 }
-

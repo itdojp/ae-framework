@@ -75,6 +75,44 @@ if (f.tla) {
   lines.push(tlaLine);
 }
 
+if (f.apalache) {
+  const st = f.apalache.status;
+  const ok = (typeof f.apalache.ok === 'boolean') ? f.apalache.ok : null;
+  const tag = (st === 'ran' && ok === true)
+    ? c.green('[OK]')
+    : (st === 'tool_not_available' ? c.gray('[INFO]') : c.yellow('[WARN]'));
+  const apLine = `${tag} Apalache: ${st} ran=${f.apalache.ran ? 'yes' : 'no'} ok=${ok === null ? 'n/a' : (ok ? 'yes' : 'no')}`;
+  lines.push(apLine);
+}
+
+if (f.kani) {
+  const st = f.kani.status;
+  const tag = (st === 'detected') ? c.green('[OK]') : c.gray('[INFO]');
+  const kaniLine = `${tag} Kani: ${st}${f.kani.version ? ` (${f.kani.version})` : ''}`;
+  lines.push(kaniLine);
+}
+
+if (f.spin) {
+  const st = f.spin.status;
+  const tag = (st === 'ran') ? c.green('[OK]') : ((st === 'tool_not_available' || st === 'compile_not_available') ? c.gray('[INFO]') : c.yellow('[WARN]'));
+  const spinLine = `${tag} SPIN: ${st}${f.spin.ltl ? ` (ltl=${f.spin.ltl})` : ''}`;
+  lines.push(spinLine);
+}
+
+if (f.csp) {
+  const st = f.csp.status;
+  const tag = (st === 'ran') ? c.green('[OK]') : (st === 'tool_not_available' ? c.gray('[INFO]') : c.yellow('[WARN]'));
+  const cspLine = `${tag} CSP: ${st}`;
+  lines.push(cspLine);
+}
+
+if (f.lean) {
+  const st = f.lean.status;
+  const tag = (st === 'ran') ? c.green('[OK]') : (st === 'tool_not_available' ? c.gray('[INFO]') : c.yellow('[WARN]'));
+  const leanLine = `${tag} Lean: ${st}`;
+  lines.push(leanLine);
+}
+
 if (lines.length) {
   console.log(c.bold('--- Formal Summary ---'));
   for (const l of lines) console.log(l);

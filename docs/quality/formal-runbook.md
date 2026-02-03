@@ -16,7 +16,7 @@
 - Enforcement: add PR label `enforce-formal` to gate Apalache result (`ok==true`)
 - Manual run: trigger `Formal Verify` via `workflow_dispatch`
   - inputs:
-    - `target`: all|conformance|alloy|tla|smt
+    - `target`: all|conformance|alloy|tla|smt|apalache|kani|spin|csp|lean
     - `engine`: tlc|apalache（tla用）
     - `solver`: z3|cvc5（smt用）
     - `alloyJar`: Alloy jar のパス（任意）
@@ -28,7 +28,11 @@ Full smoke test instructions: `docs/quality/formal-full-run.md`.
 - `pnpm run verify:alloy` — prints stub
 - `pnpm run verify:tla -- --engine=apalache|tlc` — prints stub
 - `pnpm run verify:smt -- --solver=z3|cvc5` — prints stub
-- `pnpm run verify:formal` — 上記4種の連続実行（ローカル確認用）
+- `pnpm run verify:kani` — presence check stub (non-blocking)
+- `pnpm run verify:spin` — Promela/SPIN runner (non-blocking)
+- `pnpm run verify:csp` — CSP runner stub (non-blocking; toolchain TBD)
+- `pnpm run verify:lean` — Lean4 `lake build` runner (non-blocking)
+- `pnpm run verify:formal` — 上記の連続実行（ローカル確認用、non-blocking）
   - 集計: `artifacts/hermetic-reports/formal/summary.json` に要約を出力
   - 表示: 実行後にコンソールへ簡易サマリを表示
 
@@ -77,9 +81,10 @@ Aggregate JSON の軽量検証（非ブロッキング）
 - 集約ワークフローでは `artifacts/formal/formal-aggregate.json` を出力し、最小スキーマを警告レベルで検証します。
 - ローカル確認: `node scripts/formal/validate-aggregate-json.mjs`（存在時に検証、欠損/不正は `::warning::` 出力）
 - 1行サマリを表示する簡易CLI（ローカル）:
-  - `node -e "const p='artifacts/formal/formal-aggregate.json';const j=require('fs').existsSync(p)?require('./'+p):null;if(!j){console.log('no aggregate');process.exit(0)}const pr=j.info?.present||{};const keys=Object.entries(pr).filter(([,v])=>v).map(([k])=>k);console.log('Present:', keys.length+'/5', keys.length?('('+keys.join(', ')+')'):'');"`
+  - `node -e "const p='artifacts/formal/formal-aggregate.json';const j=require('fs').existsSync(p)?require('./'+p):null;if(!j){console.log('no aggregate');process.exit(0)}const pr=j.info?.present||{};const keys=Object.entries(pr).filter(([,v])=>v).map(([k])=>k);const total=(typeof j.info?.presentTotal==='number')?j.info.presentTotal:Object.keys(pr).length;console.log('Present:', keys.length+'/'+total, keys.length?('('+keys.join(', ')+')'):'');"`
   - jq 例（presentCount/by-type）:
     - `jq '.info.presentCount' artifacts/formal/formal-aggregate.json`
+    - `jq '.info.presentTotal' artifacts/formal/formal-aggregate.json`
     - `jq -r '.info.present | to_entries | map("\(.key)=\(.value|tostring)") | join(", ")' artifacts/formal/formal-aggregate.json`
   - ran/ok（Apalache の例）:
     - `jq -r '.info.ranOk.apalache' artifacts/formal/formal-aggregate.json`
@@ -97,8 +102,9 @@ Single source of truth
 - Aggregate JSON `artifacts/formal/formal-aggregate.json` が present/ran/ok の唯一の正とし、PRコメントはそこから生成
 
 Keys quick reference (aggregate JSON)
-- `info.present`: presence flags for tla/alloy/smt/apalache/conformance
-- `info.presentCount`: number of present summaries (0..5)
+- `info.present`: presence flags for tla/alloy/smt/apalache/conformance/kani/spin/csp/lean
+- `info.presentCount`: number of present summaries
+- `info.presentTotal`: total number of tracked summaries (denominator)
 - `info.ranOk.apalache`: `{ ran: boolean, ok: boolean|null }` (null = indeterminate)
   - jq: `jq '.info.ranOk.apalache' artifacts/formal/formal-aggregate.json`
 
@@ -225,19 +231,24 @@ Formal Verify の実行（target=all）
   2. CIが起動し、Formal Verify が label-gated で実行（非ブロッキング）
   3. 結果は: コンソール要約（logs）、`formal-reports` アーティファクト、PRサマリの Formal 行に反映
 - 手動実行（Actions > Formal Verify）
-  1. Actions タブで `Formal Verify` を選択し `Run workflow`
-  2. inputs（任意）
-     - `target=all`（または個別: conformance|alloy|tla|smt）
+     1. Actions タブで `Formal Verify` を選択し `Run workflow`
+     2. inputs（任意）
+     - `target=all`（または個別: conformance|alloy|tla|smt|apalache|kani|spin|csp|lean）
      - `engine`（tla: tlc|apalache）
      - `solver`（smt: z3|cvc5）
      - `alloyJar`/`tlaToolsJar`（ツールJarパス／環境によって指定）
-  3. 結果は: コンソール要約（logs）、`formal-reports` アーティファクトに集約
+     3. 結果は: コンソール要約（logs）、`formal-reports` アーティファクトに集約
 
 Artifacts（Formal Reports）
-- `artifacts/hermetic-reports/formal/summary.json`: 形式結果の集約（Conformance/SMT/Alloy/TLA/Apalache）
+- `artifacts/hermetic-reports/formal/summary.json`: 形式結果の集約（Conformance/SMT/Alloy/TLA/Apalache/Kani/SPIN/CSP/Lean）
 - `artifacts/hermetic-reports/formal/tla-summary.json`: TLA ランナーの簡易要約（engine/file/status/output）
 - `artifacts/hermetic-reports/formal/alloy-summary.json`: Alloy ランナーの簡易要約（file/status/output）
 - `artifacts/hermetic-reports/formal/smt-summary.json`: SMT ランナーの簡易要約（solver/file/status/output）
+- `artifacts/hermetic-reports/formal/apalache-summary.json`: Apalache ランナーの簡易要約（ran/ok/errors/snippet/outputFile）
+- `artifacts/hermetic-reports/formal/kani-summary.json`: Kani 検出の要約（detected/version）
+- `artifacts/hermetic-reports/formal/spin-summary.json`: SPIN ランナーの簡易要約（file/ltl/status/output）
+- `artifacts/hermetic-reports/formal/csp-summary.json`: CSP ランナーの簡易要約（file/status/output）
+- `artifacts/hermetic-reports/formal/lean-summary.json`: Lean4 ランナーの簡易要約（project/status/output）
 - `artifacts/hermetic-reports/conformance/summary.json`: Conformance 要約（events/schemaErrors/invariantViolations/violationRate/first/byType）
 
 Artifacts のクイック確認（jq）
@@ -246,8 +257,9 @@ Artifacts のクイック確認（jq）
 - 最初の不変違反: `jq '.conformance.firstInvariantViolation' artifacts/hermetic-reports/formal/summary.json`
 
 Keys quick reference（aggregate JSON）
-- `info.present`: 各レポートの有無（tla/alloy/smt/apalache/conformance）
-- `info.presentCount`: present の合計数（0..5）
+- `info.present`: 各レポートの有無（tla/alloy/smt/apalache/conformance/kani/spin/csp/lean）
+- `info.presentCount`: present の合計数
+- `info.presentTotal`: 追跡対象の総数（分母）
 - `info.ranOk.apalache`: `{ ran: boolean, ok: boolean|null }`（null は不確定）
   - jq 例: `jq '.info.ranOk.apalache' artifacts/formal/formal-aggregate.json`
 

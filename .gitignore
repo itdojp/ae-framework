@@ -10,6 +10,10 @@ dist/
 build/
 *.tsbuildinfo
 
+# Lean / Lake
+.lake/
+lake-packages/
+
 # Testing
 coverage/
 .nyc_output
@@ -49,6 +53,7 @@ tmp/
 temp/
 temp-reports/
 .cache/
+_apalache-out/
 
 # Generated reports and artifacts
 cegis-report-*.json
@@ -66,6 +71,7 @@ clean-sample-*.json
 artifacts/cassettes/
 artifacts/codex/
 artifacts/codex-quickstart-summary.md
+artifacts/hermetic-reports/
 artifacts/api/.tmp/
 tests/api/generated/
 sbom.json

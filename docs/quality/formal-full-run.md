@@ -8,7 +8,7 @@
 
 This guide shows how to run **all formal verification tools** end-to-end for a smoke test.
 
-### Recommended: CI (covers Apalache / SMT / Alloy / TLA / Kani)
+### Recommended: CI (covers Apalache / SMT / Alloy / TLA / Kani / SPIN / Lean; CSP is stub)
 
 1) **Label-gated (PR)**
 - Add label `run-formal` to the PR.
@@ -29,6 +29,9 @@ This guide shows how to run **all formal verification tools** end-to-end for a s
 - `formal-reports-alloy`: `alloy-summary.json`
 - `formal-reports-tla`: `tla-summary.json`
 - `formal-reports-kani`: `kani-summary.json`
+- `formal-reports-spin`: `spin-summary.json`
+- `formal-reports-csp`: `csp-summary.json`
+- `formal-reports-lean`: `lean-summary.json`
 
 ### Local (when you want a quick smoke test)
 
@@ -38,8 +41,11 @@ Pre-reqs:
 - `TLA_TOOLS_JAR` for TLC (see `docs/quality/formal-tools-setup.md`)
 - z3/cvc5 for SMT
 - Optional: Alloy jar, Apalache, Kani
+- Optional: SPIN (`spin` + `gcc`)
+- Optional: Lean4 (`elan` + `lake`)
+- Optional: CSP tool (configure via `CSP_RUN_CMD`)
 
-#### 1) Base run (conformance + alloy + TLA + SMT + aggregate)
+#### 1) Base run (conformance + alloy + TLA + SMT + Apalache + Kani + SPIN + CSP + Lean + aggregate)
 ```bash
 pnpm install
 pnpm run verify:formal
@@ -48,6 +54,7 @@ pnpm run verify:formal
 Notes:
 - Alloy needs `ALLOY_JAR` or `ALLOY_RUN_CMD` to run (otherwise `tool_not_available`).
 - SMT needs an input file to run. Use the sample below.
+- SPIN/Lean/CSP are non-blocking; if tools are not installed, they will report `tool_not_available`.
 
 #### 2) Ensure SMT actually runs
 ```bash
@@ -75,7 +82,23 @@ node scripts/formal/verify-apalache.mjs --file spec/tla/DomainSpec.tla
 node scripts/formal/verify-kani.mjs
 ```
 
-#### 6) Model check (TLC/Alloy scan)
+#### 6) Run SPIN (if installed)
+```bash
+pnpm run verify:spin -- --file spec/spin/sample.pml --ltl p_done
+```
+
+#### 7) Run Lean4 (if installed)
+```bash
+pnpm run verify:lean
+```
+
+#### 8) Run CSP (when configured)
+```bash
+# {file} will be replaced with the absolute file path
+CSP_RUN_CMD='echo Running CSP tool on {file}' pnpm run verify:csp -- --file spec/csp/sample.cspm
+```
+
+#### 9) Model check (TLC/Alloy scan)
 ```bash
 pnpm run verify:model
 ```
@@ -91,7 +114,7 @@ Outputs:
 
 この手順は、**すべての形式検査ツールをまとめて動作確認**するためのスモークテストです。
 
-### 推奨: CI（Apalache / SMT / Alloy / TLA / Kani をまとめて実行）
+### 推奨: CI（Apalache / SMT / Alloy / TLA / Kani / SPIN / Lean をまとめて実行。CSP は stub）
 
 1) **PRラベル実行**
 - PR に `run-formal` ラベルを付与
@@ -112,6 +135,9 @@ Outputs:
 - `formal-reports-alloy`（`alloy-summary.json`）
 - `formal-reports-tla`（`tla-summary.json`）
 - `formal-reports-kani`（`kani-summary.json`）
+- `formal-reports-spin`（`spin-summary.json`）
+- `formal-reports-csp`（`csp-summary.json`）
+- `formal-reports-lean`（`lean-summary.json`）
 
 ### ローカル（簡易スモークテスト）
 
@@ -121,8 +147,11 @@ Outputs:
 - TLC 用の `TLA_TOOLS_JAR`（`docs/quality/formal-tools-setup.md` 参照）
 - SMT ソルバ（z3/cvc5）
 - 任意: Alloy jar / Apalache / Kani
+- 任意: SPIN（`spin` + `gcc`）
+- 任意: Lean4（`elan` + `lake`）
+- 任意: CSP ツール（`CSP_RUN_CMD` で設定）
 
-#### 1) ベース実行（conformance + alloy + TLA + SMT + 集約）
+#### 1) ベース実行（conformance + alloy + TLA + SMT + Apalache + Kani + SPIN + CSP + Lean + 集約）
 ```bash
 pnpm install
 pnpm run verify:formal
@@ -131,6 +160,7 @@ pnpm run verify:formal
 補足:
 - Alloy は `ALLOY_JAR` / `ALLOY_RUN_CMD` 未設定だと `tool_not_available` になります。
 - SMT は入力ファイル指定が必要です（次の手順）。
+- SPIN/Lean/CSP は non-blocking です。未導入の場合は `tool_not_available` として記録されます。
 
 #### 2) SMT を実行
 ```bash
@@ -158,7 +188,23 @@ node scripts/formal/verify-apalache.mjs --file spec/tla/DomainSpec.tla
 node scripts/formal/verify-kani.mjs
 ```
 
-#### 6) モデル検査（TLC/Alloy スキャン）
+#### 6) SPIN を実行（インストール済みの場合）
+```bash
+pnpm run verify:spin -- --file spec/spin/sample.pml --ltl p_done
+```
+
+#### 7) Lean4 を実行（インストール済みの場合）
+```bash
+pnpm run verify:lean
+```
+
+#### 8) CSP を実行（設定済みの場合）
+```bash
+# {file} は絶対パスへ置換されます
+CSP_RUN_CMD='echo Running CSP tool on {file}' pnpm run verify:csp -- --file spec/csp/sample.cspm
+```
+
+#### 9) モデル検査（TLC/Alloy スキャン）
 ```bash
 pnpm run verify:model
 ```

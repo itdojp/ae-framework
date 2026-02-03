@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       target:
-        description: "Target to run (all|conformance|alloy|tla|smt)"
+        description: "Target to run (all|conformance|alloy|tla|smt|apalache|kani|spin|csp|lean)"
         required: false
         default: "all"
       tlaFile:
@@ -263,7 +263,7 @@ jobs:
   verify-kani:
     name: verify:kani (presence)
     runs-on: ubuntu-latest
-    if: (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all'))
+    if: (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'kani'))
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node + pnpm
@@ -296,6 +296,86 @@ jobs:
           name: formal-reports-kani
           path: artifacts/hermetic-reports/formal/kani-summary.json
 
+  verify-spin:
+    name: verify:spin (Promela)
+    runs-on: ubuntu-latest
+    if: (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'spin'))
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: '20'
+      - name: Install SPIN + gcc
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y spin gcc
+          spin -V || true
+          gcc --version || true
+      - name: Run verify:spin (sample)
+        run: node scripts/formal/verify-spin.mjs --file spec/spin/sample.pml --ltl p_done || true
+      - name: Upload SPIN summary (artifact)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: formal-reports-spin
+          path: artifacts/hermetic-reports/formal/spin-summary.json
+
+  verify-csp:
+    name: verify:csp (stub)
+    runs-on: ubuntu-latest
+    if: (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'csp'))
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: '20'
+      - name: Run verify:csp (sample, stub)
+        run: node scripts/formal/verify-csp.mjs --file spec/csp/sample.cspm || true
+      - name: Upload CSP summary (artifact)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: formal-reports-csp
+          path: artifacts/hermetic-reports/formal/csp-summary.json
+
+  verify-lean:
+    name: verify:lean (Lean4)
+    runs-on: ubuntu-latest
+    if: (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'lean'))
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: '20'
+      - name: Cache elan + lake (Lean4)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.elan
+            spec/lean/.lake
+          key: ${{ runner.os }}-lean-${{ hashFiles('spec/lean/lean-toolchain', 'spec/lean/lakefile.lean', 'spec/lean/SpecLean.lean') }}
+      - name: Install elan (Lean toolchain installer)
+        run: |
+          set -euo pipefail
+          if [ ! -x "$HOME/.elan/bin/elan" ]; then
+            curl -L -sS https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y
+          fi
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+          elan --version || true
+          lake --version || true
+      - name: Run verify:lean (lake build, non-blocking)
+        run: node scripts/formal/verify-lean.mjs --timeout 600000 || true
+      - name: Upload Lean summary (artifact)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: formal-reports-lean
+          path: artifacts/hermetic-reports/formal/lean-summary.json
+
   formal-aggregate:
     name: Formal Reports Aggregate
     needs:
@@ -305,6 +385,9 @@ jobs:
       - verify-smt
       - verify-apalache
       - verify-kani
+      - verify-spin
+      - verify-csp
+      - verify-lean
     if: always() && ((github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && contains(github.event.pull_request.labels.*.name, 'run-formal')) || github.event_name == 'workflow_dispatch')
     uses: ./.github/workflows/formal-aggregate.yml
     permissions:

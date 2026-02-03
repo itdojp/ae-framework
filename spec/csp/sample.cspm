@@ -1,0 +1,9 @@
+-- CSPM-style sample: minimal rendezvous
+
+channel ch : {0..1}
+
+Sender = ch!1 -> STOP
+Receiver = ch?x -> STOP
+
+System = Sender ||| Receiver
+
