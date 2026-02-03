@@ -49,3 +49,4 @@ ALLOY_JAR=$HOME/tools/alloy.jar \
 Notes
 - jar を指定しない場合、`.als` の検出のみ（report-only）。
 - 失敗文字列は jar/版で揺れることがあるため、`ALLOY_FAIL_REGEX` を適宜調整してください。
+- `ALLOY_RUN_CMD` はシェル経由で実行されるため、信頼できる入力のみを使用してください。

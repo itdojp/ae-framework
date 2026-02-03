@@ -33,6 +33,8 @@ function runCommand(cmd, cmdArgs){
 }
 
 function runShell(cmd){
+  // ALLOY_RUN_CMD is intentionally executed via shell to allow flexible commands.
+  // Only use with trusted inputs (CI/env-controlled).
   const result = spawnSync(cmd, { shell: true, encoding: 'utf8' });
   const stdout = result.stdout ?? '';
   const stderr = result.stderr ?? '';
@@ -88,7 +90,9 @@ if (!fs.existsSync(absFile)){
       status = 'jar_not_found';
       output = `Alloy jar not found: ${jarPath}. Set ALLOY_JAR to a valid path, use --jar /path/to/alloy.jar, or check that the file exists.`;
     } else {
-      const cmd = runCmd.replace('{file}', absFile).replace('$ALLOY_JAR', jarPath);
+      const cmd = runCmd
+        .replace(/{file}/g, absFile)
+        .replace(/\$ALLOY_JAR/g, jarPath);
       const res = runShell(cmd);
       if (!res.available) {
         status = 'tool_not_available';
@@ -96,7 +100,7 @@ if (!fs.existsSync(absFile)){
       } else {
         output = res.output;
         ran = true;
-        status = 'ran';
+        status = res.success ? 'ran' : 'failed';
       }
     }
   } else {
@@ -104,7 +108,7 @@ if (!fs.existsSync(absFile)){
     if (alloyResult.available) {
       output = alloyResult.output;
       ran = true;
-      status = 'ran';
+      status = alloyResult.success ? 'ran' : 'failed';
     } else if (process.env.ALLOY_JAR || args.jar){
       const jar = args.jar || process.env.ALLOY_JAR;
       const jarPath = path.resolve(expandHome(jar));
@@ -119,7 +123,7 @@ if (!fs.existsSync(absFile)){
         } else {
           output = javaResult.output;
           ran = true;
-          status = 'ran';
+          status = javaResult.success ? 'ran' : 'failed';
         }
       }
     } else {
