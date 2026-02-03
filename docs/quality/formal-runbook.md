@@ -175,6 +175,9 @@ verify:conformance オプション
 - `--disable-invariants <list>` 無効化する不変（`,`区切り。`allocated_le_onhand,onhand_min`）
 - `--onhand-min <number>` onHand の最小値（既定: 0）
 
+補足
+- `samples/conformance/sample-traces.json` はリポジトリに同梱されています（`verify:conformance` / `trace:validate` の既定入力）。
+
 Roadmap Fit (Issue #493)
 - Non‑blocking, label‑gated CI first
 - Wire real engines behind the above stubs incrementally
