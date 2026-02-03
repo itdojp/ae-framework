@@ -29,6 +29,9 @@ function shortVer(tool, raw) {
       // "openjdk version \"21.0.2\" 2024-01-16"
       const m = /version\s+"([\w\.-]+)"/i.exec(line); return m ? m[1] : line;
     }
+    if (tool === 'kani') {
+      const m = /kani(?:-driver)?\s+([\w\.-]+)/i.exec(line); return m ? m[1] : line;
+    }
     return line;
   } catch { return raw; }
 }
@@ -55,6 +58,11 @@ report.push({ tool: 'z3', present: hasZ3, version: hasZ3 ? shortVer('z3', versio
 const hasCvc5 = has('cvc5');
 report.push({ tool: 'cvc5', present: hasCvc5, version: hasCvc5 ? shortVer('cvc5', version('cvc5', ['--version'])) : 'n/a' });
 
+// Kani
+const hasKani = has('kani') || has('cargo-kani') || has('kani-driver');
+const kaniTool = has('kani') ? 'kani' : (has('cargo-kani') ? 'cargo-kani' : (has('kani-driver') ? 'kani-driver' : ''));
+report.push({ tool: 'kani', present: hasKani, version: hasKani ? shortVer('kani', version(kaniTool, ['--version'])) : 'n/a' });
+
 console.log('Formal tools status');
 for (const r of report) {
   const status = r.present ? '✅' : '❌';
@@ -70,12 +78,14 @@ try {
   const ap = map['apalache-mc'] ? `yes(${vers['apalache-mc']||'n/a'})` : 'no';
   const z3 = map['z3'] ? `yes(${vers['z3']||'n/a'})` : 'no';
   const c5 = map['cvc5'] ? `yes(${vers['cvc5']||'n/a'})` : 'no';
+  const kani = map['kani'] ? `yes(${vers['kani']||'n/a'})` : 'no';
   const jv = vers['java'] || 'n/a';
   const line = [
     `tlc=${tlc?'yes':'no'}`,
     `apalache=${ap}`,
     `z3=${z3}`,
     `cvc5=${c5}`,
+    `kani=${kani}`,
     `java=${jv}`
   ].join(' ');
   console.log(`Tools: ${line}`);
