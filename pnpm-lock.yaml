@@ -416,10 +416,6 @@ importers:
         specifier: ^2.0.5
         version: 2.1.9(@types/node@22.17.2)(jsdom@22.1.0)(terser@5.43.1)
 
-  packages/formalize-coder: {}
-
-  packages/formalize-planner: {}
-
   packages/spec-compiler:
     dependencies:
       js-yaml:

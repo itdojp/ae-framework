@@ -59,7 +59,7 @@ const timeoutSec = timeoutMs > 0 ? Math.max(1, Math.floor(timeoutMs / 1000)) : 0
 const haveTimeout = commandExists('timeout');
 
 let ran = false;
-let status = 'n/a';
+let status;
 let output = '';
 let exitCode = null;
 
@@ -100,4 +100,3 @@ fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));
 console.log(`Lean summary written: ${path.relative(repoRoot, outFile)}`);
 console.log(`- project=${summary.project} status=${status}`);
 process.exit(0);
-

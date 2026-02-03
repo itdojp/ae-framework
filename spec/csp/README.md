@@ -28,6 +28,10 @@ Example (placeholder):
 CSP_RUN_CMD='echo Running CSP tool on {file}' pnpm run verify:csp -- --file spec/csp/sample.cspm
 ```
 
+Security note
+- `CSP_RUN_CMD` is executed via a shell. Do not source it from untrusted input.
+- In CI, avoid running `CSP_RUN_CMD` for untrusted PRs (e.g., from forks).
+
 Artifacts:
 - `artifacts/hermetic-reports/formal/csp-summary.json`
 
@@ -53,6 +57,10 @@ pnpm run verify:csp -- --file spec/csp/sample.cspm
 ```bash
 CSP_RUN_CMD='echo Running CSP tool on {file}' pnpm run verify:csp -- --file spec/csp/sample.cspm
 ```
+
+セキュリティ注意
+- `CSP_RUN_CMD` はシェル経由で実行されます。信頼できない入力から値を組み立てないでください。
+- CI では、Fork PR 等の「不特定入力」に対して `CSP_RUN_CMD` を実行しない運用を推奨します。
 
 成果物:
 - `artifacts/hermetic-reports/formal/csp-summary.json`

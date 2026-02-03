@@ -59,7 +59,7 @@ const outFile = path.join(outDir, 'csp-summary.json');
 fs.mkdirSync(outDir, { recursive: true });
 
 let ran = false;
-let status = 'n/a';
+let status;
 let output = '';
 let exitCode = null;
 
@@ -99,4 +99,3 @@ fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));
 console.log(`CSP summary written: ${path.relative(repoRoot, outFile)}`);
 console.log(`- file=${summary.file} status=${status}`);
 process.exit(0);
-
