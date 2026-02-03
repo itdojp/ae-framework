@@ -14,6 +14,27 @@ async function ensureDir(dir) {
   await fs.mkdir(dir, { recursive: true });
 }
 
+async function statFile(p) {
+  try {
+    const st = await fs.stat(p);
+    return st.isFile() ? st : null;
+  } catch {
+    return null;
+  }
+}
+
+function uniqueAbs(paths) {
+  const seen = new Set();
+  const out = [];
+  for (const p of paths) {
+    const abs = path.resolve(p);
+    if (seen.has(abs)) continue;
+    seen.add(abs);
+    out.push(abs);
+  }
+  return out;
+}
+
 async function findFiles(globs) {
   const results = [];
   async function walk(dir) {
@@ -44,12 +65,32 @@ async function download(url, dest) {
   });
 }
 
-async function runTLC(modulePath) {
+async function resolveTlaConfig(modulePath) {
+  const moduleName = path.basename(modulePath, '.tla');
+  const moduleDir = path.dirname(modulePath);
+  const candidates = [
+    path.join(moduleDir, `${moduleName}.cfg`),
+    path.join(repoRoot, 'spec', 'formal', 'configs', `${moduleName}.cfg`),
+    path.join(repoRoot, 'spec', 'formal', 'tla+', `${moduleName}.cfg`),
+    path.join(repoRoot, 'spec', 'formal', `${moduleName}.cfg`),
+    path.join(repoRoot, 'spec', 'tla', `${moduleName}.cfg`),
+  ];
+  for (const cfg of candidates) {
+    if (await statFile(cfg)) return cfg;
+  }
+  return null;
+}
+
+async function runTLC(modulePath, configPath) {
   const moduleDir = path.dirname(modulePath);
   const moduleName = path.basename(modulePath, '.tla');
   const logPath = path.join(outDir, `${moduleName}.tlc.log.txt`);
   await ensureDir(outDir);
-  const args = ['-XX:+UseSerialGC', '-Xmx512m', '-cp', tlaJar, 'tlc2.TLC', '-deadlock', '-workers', '2', moduleName];
+  const args = ['-XX:+UseSerialGC', '-Xmx512m', '-cp', tlaJar, 'tlc2.TLC', '-deadlock', '-workers', '2'];
+  if (configPath) {
+    args.push('-config', configPath);
+  }
+  args.push(moduleName);
   return await new Promise((resolve) => {
     const proc = spawn('java', args, { cwd: moduleDir });
     let out = '';
@@ -79,7 +120,7 @@ async function main() {
     'specs',
     'docs/formal',
   ]);
-  const tlaFiles = tlaCandidates.filter((f) => f.endsWith('.tla'));
+  const tlaFiles = uniqueAbs(tlaCandidates.filter((f) => f.endsWith('.tla')));
   if (tlaFiles.length === 0) {
     console.log('No TLA+ modules found. Skipping TLC.');
     summary.tlc.skipped.push('No .tla found');
@@ -94,8 +135,20 @@ async function main() {
     }
     for (const f of tlaFiles) {
       try {
-        const res = await runTLC(f);
-        summary.tlc.results.push({ module: res.module, ok: res.ok, code: res.code, log: res.log });
+        const moduleName = path.basename(f, '.tla');
+        const configPath = await resolveTlaConfig(f);
+        if (!configPath) {
+          summary.tlc.skipped.push(`${moduleName} (${path.relative(repoRoot, f)}): no .cfg found`);
+          continue;
+        }
+        const res = await runTLC(f, configPath);
+        summary.tlc.results.push({
+          module: res.module,
+          ok: res.ok,
+          code: res.code,
+          log: res.log,
+          config: path.relative(repoRoot, configPath),
+        });
       } catch (e) {
         summary.tlc.errors.push({ file: path.relative(repoRoot, f), error: String(e) });
       }
@@ -103,7 +156,7 @@ async function main() {
   }
   // Alloy (optional, scaffold)
   const alloyCandidates = await findFiles(['artifacts', 'spec/formal', 'spec', 'specs', 'docs/formal']);
-  const alsFiles = alloyCandidates.filter((f) => f.endsWith('.als'));
+  const alsFiles = uniqueAbs(alloyCandidates.filter((f) => f.endsWith('.als')));
   if (alsFiles.length === 0) {
     summary.alloy.skipped.push('No .als found');
   } else {
