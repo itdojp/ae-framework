@@ -6,8 +6,10 @@ This directory contains CSP / CSPM-style specifications for concurrency/protocol
 
 ## Current status
 
-- CI integration is provided as a **non-blocking stub** until a concrete toolchain is selected.
-- To execute CSP checks, set `CSP_RUN_CMD` (see below) or install a supported tool.
+- CI integration is wired as **non-blocking**.
+  - On GitHub-hosted runners it will typically report `tool_not_available` unless a CSP backend is available.
+  - For CI execution, consider a self-hosted runner (with `refines`/`cspmchecker`) or a trusted `CSP_RUN_CMD` setup.
+- To execute CSP checks locally, set `CSP_RUN_CMD` (see below) or install a supported tool.
 
 ## Toolchain options (local)
 
@@ -71,8 +73,10 @@ Artifacts:
 
 ### 現状
 
-- CI 統合は **non-blocking stub** として提供します（ツールチェーン未確定のため）。  
-- 実際に CSP ツールを実行する場合は `CSP_RUN_CMD` を設定してください。
+- CI 統合は **non-blocking** です。  
+  - GitHub-hosted runner では CSP バックエンドが無い限り `tool_not_available` になります。  
+  - CI で実行したい場合は self-hosted runner（`refines`/`cspmchecker`）または信頼できる `CSP_RUN_CMD` の運用を検討してください。
+- 実際に CSP ツールを実行する場合は `CSP_RUN_CMD` を設定するか、対応ツール（`refines`/`cspmchecker`）を導入してください。
 
 ### ローカル実行（例）
 
