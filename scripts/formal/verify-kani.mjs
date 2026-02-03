@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Lightweight Kani runner (stub/minimal):
-// - Detects Kani presence (kani or cargo-kani)
+// - Detects Kani presence (kani / cargo-kani / kani-driver)
 // - Optionally runs `kani --version` and writes a summary JSON (non-blocking)
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -13,8 +13,8 @@ const outDir = path.join(process.cwd(), 'artifacts/hermetic-reports', 'formal');
 const outFile = path.join(outDir, 'kani-summary.json');
 fs.mkdirSync(outDir, { recursive: true });
 
-const haveKani = has('kani') || has('cargo-kani');
-const tool = has('kani') ? 'kani' : (has('cargo-kani') ? 'cargo-kani' : '');
+const haveKani = has('kani') || has('cargo-kani') || has('kani-driver');
+const tool = has('kani') ? 'kani' : (has('cargo-kani') ? 'cargo-kani' : (has('kani-driver') ? 'kani-driver' : ''));
 let version = '';
 if (tool) {
   version = sh(`bash -lc '${tool} --version 2>&1 || true'`).trim().split(/\n/)[0] || '';
@@ -33,4 +33,3 @@ fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));
 console.log(`Kani summary written: ${path.relative(process.cwd(), outFile)}`);
 console.log(`- detected=${haveKani} tool=${tool||'n/a'}`);
 process.exit(0);
-

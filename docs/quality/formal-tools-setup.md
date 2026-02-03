@@ -6,6 +6,7 @@ Supported tools
 - TLA+ (TLC)
 - Apalache (SMT/BMC + inductive invariants)
 - SMT solvers: Z3, cvc5
+- Kani (Rust bounded model checking)
 
 Quick checks
 - Run `pnpm run tools:formal:check` to see which tools are available on your machine.
@@ -31,7 +32,16 @@ Z3 / cvc5
   - `z3 --version`
   - `cvc5 --version`
 
+Kani
+- Install via releases or cargo (see https://github.com/model-checking/kani)
+- Example (Linux x86_64, prebuilt):
+  - `curl -L -o kani.tar.gz https://github.com/model-checking/kani/releases/download/kani-0.67.0/kani-0.67.0-x86_64-unknown-linux-gnu.tar.gz`
+  - `tar -xzf kani.tar.gz`
+  - `export PATH="$PWD/kani-0.67.0/bin:$PATH"`
+- Verify:
+  - `kani-driver --version`
+  - (if the cargo plugin is installed) `cargo kani --version`
+
 Notes
 - Tools are not required to work with AE-Framework; they enhance the formal workflow when present.
 - Use `Formal Verify` workflow with `run-formal` label or manual dispatch to run CI stubs. Engines will be wired incrementally.
-

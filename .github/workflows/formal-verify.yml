@@ -39,6 +39,10 @@ concurrency:
       || format('{0}-{1}-{2}', github.workflow, github.event.pull_request.number || github.ref, inputs.target || 'all') }}
   cancel-in-progress: true
 
+env:
+  APALACHE_VERSION: '0.50.3'
+  KANI_VERSION: '0.67.0'
+
 jobs:
   verify-conformance:
     name: verify:conformance (stub)
@@ -139,6 +143,18 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '20'
+      - name: Install SMT solvers (z3/cvc5)
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y z3
+          if apt-cache show cvc5 >/dev/null 2>&1; then
+            sudo apt-get install -y cvc5
+          else
+            echo "cvc5 not available via apt; skipping"
+          fi
+          z3 --version || true
+          cvc5 --version || true
       - name: Check SMT tooling presence (non-blocking)
         run: |
           printf "%s\n" "Checking SMT tooling..."
@@ -161,10 +177,32 @@ jobs:
     if: (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'apalache'))
     steps:
       - uses: actions/checkout@v4
+      - name: Setup Java (Apalache)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '20'
+      - name: Cache Apalache
+        uses: actions/cache@v4
+        with:
+          path: .cache/tools/apalache
+          key: ${{ runner.os }}-apalache-${{ env.APALACHE_VERSION }}
+      - name: Install Apalache (cached)
+        run: |
+          set -euo pipefail
+          TOOL_DIR="$PWD/.cache/tools/apalache"
+          mkdir -p "$TOOL_DIR"
+          if [ ! -x "$TOOL_DIR/bin/apalache-mc" ]; then
+            curl -L -sS -o /tmp/apalache.tgz "https://github.com/apalache-mc/apalache/releases/download/v${APALACHE_VERSION}/apalache-${APALACHE_VERSION}.tgz"
+            tar -xzf /tmp/apalache.tgz -C "$TOOL_DIR" --strip-components=1
+          fi
+          export PATH="$TOOL_DIR/bin:$PATH"
+          echo "$TOOL_DIR/bin" >> "$GITHUB_PATH"
+          apalache-mc version || true
       - name: Check Apalache presence (non-blocking)
         run: |
           node scripts/formal/check-apalache.mjs || true
@@ -213,10 +251,28 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '20'
+      - name: Cache Kani
+        uses: actions/cache@v4
+        with:
+          path: .cache/tools/kani
+          key: ${{ runner.os }}-kani-${{ env.KANI_VERSION }}
+      - name: Install Kani (prebuilt)
+        run: |
+          set -euo pipefail
+          TOOL_DIR="$PWD/.cache/tools/kani"
+          mkdir -p "$TOOL_DIR"
+          if [ ! -x "$TOOL_DIR/bin/kani-driver" ]; then
+            curl -L -sS -o /tmp/kani.tar.gz "https://github.com/model-checking/kani/releases/download/kani-${KANI_VERSION}/kani-${KANI_VERSION}-x86_64-unknown-linux-gnu.tar.gz"
+            tar -xzf /tmp/kani.tar.gz -C "$TOOL_DIR" --strip-components=1
+          fi
+          export PATH="$TOOL_DIR/bin:$PATH"
+          echo "$TOOL_DIR/bin" >> "$GITHUB_PATH"
+          kani-driver --version || true
       - name: Kani presence (non-blocking)
         run: node scripts/formal/verify-kani.mjs || true
       - name: Upload Kani summary (artifact)
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: formal-reports-kani
           path: artifacts/hermetic-reports/formal/kani-summary.json
