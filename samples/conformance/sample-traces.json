@@ -1,0 +1,26 @@
+[
+  {
+    "traceId": "sample-2026-02-03-001",
+    "timestamp": "2026-02-03T00:00:00Z",
+    "actor": "inventory-service",
+    "event": "InventoryAllocated",
+    "action": "Allocate",
+    "state": {
+      "onHand": 10,
+      "allocated": 3
+    },
+    "outcome": "success"
+  },
+  {
+    "traceId": "sample-2026-02-03-001",
+    "timestamp": "2026-02-03T00:00:10Z",
+    "actor": "inventory-service",
+    "event": "InventoryUpdated",
+    "action": "UpdateOnHand",
+    "state": {
+      "onHand": 12,
+      "allocated": 3
+    },
+    "outcome": "success"
+  }
+]

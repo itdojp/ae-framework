@@ -51,6 +51,8 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '20'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
       - name: Print run context
         run: node scripts/formal/print-context.mjs || true
       - name: Show formal tools availability (non-blocking)
