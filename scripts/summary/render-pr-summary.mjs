@@ -105,8 +105,11 @@ if (mode === 'digest') {
 try {
   if ((formal === 'n/a' || formal === '不明') && formalAgg?.info && typeof formalAgg.info.presentCount === 'number') {
     const pc = Number(formalAgg.info.presentCount || 0);
+    const total = (formalAgg.info && typeof formalAgg.info.presentTotal === 'number')
+      ? Number(formalAgg.info.presentTotal || 0)
+      : 5; // backward-compatible default
     const presentKeys = Object.entries(formalAgg.info.present || {}).filter(([,v])=>v).map(([k])=>k).join(', ');
-    const line = t(`Formal: present ${pc}/5${pc? ` (${presentKeys})`:''}`, `フォーマル: present ${pc}/5${pc? `（${presentKeys}）`:''}`);
+    const line = t(`Formal: present ${pc}/${total}${pc? ` (${presentKeys})`:''}`, `フォーマル: present ${pc}/${total}${pc? `（${presentKeys}）`:''}`);
     if (mode === 'digest') md += ` | ${line}`; else md += `\n- ${line}`;
   }
 } catch {}
