@@ -62,8 +62,9 @@ SPIN
   - `gcc --version`
 
 CSP
-- Toolchain is not fixed yet; the runner is wired as a **non-blocking stub**.
-- To run a CSP tool locally, configure `CSP_RUN_CMD` and call `pnpm run verify:csp`.
+- Toolchain is not fixed yet; CI runs as **non-blocking stub**.
+- Local runner supports (best-effort): `CSP_RUN_CMD` → `refines` (FDR) → `cspmchecker`.
+- To run a CSP tool locally, either install a backend or configure `CSP_RUN_CMD` and call `pnpm run verify:csp`.
   - `CSP_RUN_CMD` supports `{file}` placeholder (absolute file path).
 - Example (placeholder):
   - `CSP_RUN_CMD='echo Running CSP tool on {file}' pnpm run verify:csp -- --file spec/csp/sample.cspm`
