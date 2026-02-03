@@ -165,6 +165,7 @@ Claude CodeやMCPとの統合
 - [adoption-sample-flow.md](./quality/adoption-sample-flow.md) - 導入の最小フロー（エンドツーエンド）
 - [formal-runbook.md](./quality/formal-runbook.md) - 実行・運用手順（ラベルゲート/手動実行）
 - [formal-tools-setup.md](./quality/formal-tools-setup.md) - ローカル環境セットアップ（Apalache/TLC/Z3/cvc5）
+ - [formal-full-run.md](./quality/formal-full-run.md) - 全ツールのスモークテスト手順（CI/ローカル）
  - [formal-mini-flow.md](./quality/formal-mini-flow.md) - 反例→失敗テスト→修正→緑の最小フロー
 
 ### 📐 [spec/](./spec/) - 仕様レジストリ
