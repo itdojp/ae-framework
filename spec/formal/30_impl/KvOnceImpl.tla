@@ -1,21 +1,26 @@
 ------------------------- MODULE KvOnceImpl -------------------------
 EXTENDS Naturals, Sequences, TLC
 
-CONSTANTS Keys, Values, NULL, MAX_RETRIES
+CONSTANTS Keys, Values, NULL, MAX_RETRIES, MAX_EVENTS
 VARIABLES store, retries, events
 
 ASSUME NULL \notin Values
 ASSUME MAX_RETRIES \in Nat
+ASSUME MAX_EVENTS \in Nat
 
 Init ==
   /\ store = [k \in Keys |-> [written |-> FALSE, val |-> NULL]]
   /\ retries = [k \in Keys |-> 0]
   /\ events = << >>
 
+CanAppend ==
+  Len(events) < MAX_EVENTS
+
 Put(k, v) ==
   /\ k \in Keys
   /\ v \in Values
   /\ ~store[k].written
+  /\ CanAppend
   /\ store' = [store EXCEPT ![k] = [written |-> TRUE, val |-> v]]
   /\ retries' = retries
   /\ events' = Append(events, [
@@ -28,6 +33,7 @@ Put(k, v) ==
 Retry(k, reason) ==
   /\ k \in Keys
   /\ retries[k] < MAX_RETRIES
+  /\ CanAppend
   /\ store' = store
   /\ retries' = [retries EXCEPT ![k] = retries[k] + 1]
   /\ events' = Append(events, [
@@ -39,6 +45,7 @@ Retry(k, reason) ==
 
 Failure(k, reason) ==
   /\ k \in Keys
+  /\ CanAppend
   /\ store' = store
   /\ retries' = retries
   /\ events' = Append(events, [
@@ -49,9 +56,9 @@ Failure(k, reason) ==
       ])
 
 Next ==
-  \E k \in Keys, v \in Values: Put(k, v)
-  \/ \E k \in Keys: Retry(k, "transient")
-  \/ \E k \in Keys: store[k].written /\ Failure(k, "duplicate")
+  \E k1 \in Keys, v \in Values: Put(k1, v)
+  \/ \E k2 \in Keys: Retry(k2, "transient")
+  \/ \E k3 \in Keys: store[k3].written /\ Failure(k3, "duplicate")
 
 TypeInvariant ==
   /\ store \in [Keys -> [written: BOOLEAN, val: Values \cup {NULL}]]
@@ -62,6 +69,7 @@ TypeInvariant ==
         value: Values \cup {NULL},
         reason: STRING \cup {NULL}
       ])
+  /\ Len(events) <= MAX_EVENTS
 
 NoOverwrite == \A k \in Keys: store[k].written => store[k].val # NULL
 

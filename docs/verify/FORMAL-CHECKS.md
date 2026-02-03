@@ -9,7 +9,7 @@
 CI でのフォーマル検査（TLA+/Alloy）の実行内容と成果物の場所を説明します。
 
 - TLC (TLA+): `.github/workflows/verify.yml` の `model-check` ジョブで実行。`scripts/verify/run-model-checks.mjs` が `.tla` を探索し、`artifacts/codex/model-check.json` 等を出力（既定はレポートのみ）。
-- Alloy: `.als` を検出して `model-check.json` に含めます。`ALLOY_JAR` 指定時にヘッドレス実行が可能（タイムアウト/失敗検出を環境変数で調整）。
+- Alloy: `.als` を検出して `model-check.json` に含めます。CI では Alloy 6 jar を取得してヘッドレス実行（`ALLOY_RUN_CMD`）し、必要に応じて `ALLOY_JAR`/`ALLOY_RUN_CMD` を上書き可能。
 - ローカル実行例や CI での PR サマリ内容（トレース/OK数/非OK上位など）を記載。
 
 詳細は以下の英語セクションを参照してください。
@@ -25,13 +25,22 @@ This document explains how formal model checking is executed in CI and where to 
   - Tools: `actions/setup-java` + auto-download of `tla2tools.jar`
   - Runner script: `scripts/verify/run-model-checks.mjs`
   - Behavior: scans for `.tla` files under `artifacts/`, `spec/`, `docs/formal/`
+  - Config resolution order (when present):
+    1. `<module>.cfg` next to the `.tla`
+    2. `spec/formal/configs/<module>.cfg`
+    3. `spec/formal/tla+/<module>.cfg`
+    4. `spec/formal/<module>.cfg`
+    5. `spec/tla/<module>.cfg`
   - Output artifacts: `artifacts/codex/model-check.json`, `artifacts/codex/*.tlc.log.txt`
   - Default: report-only (does not fail CI yet)
 
-- Alloy (Alloy Analyzer): scaffolded detection
+- Alloy (Alloy Analyzer)
   - The runner lists `.als` files and includes them in `model-check.json`
-  - Execution (headless) is supported when `ALLOY_JAR` is provided (safe default: `java -jar $ALLOY_JAR {file}`)
+  - CI downloads an Alloy 6 jar and runs headless by default (via `ALLOY_RUN_CMD`)
+  - Execution can be customized with `ALLOY_JAR` / `ALLOY_RUN_CMD` (safe default: `java -jar $ALLOY_JAR {file}`)
+  - Alloy 6 CLI (exec) example: `ALLOY_RUN_CMD='java -jar $ALLOY_JAR exec -q -o - -f {file}'`
   - Optional:
+    - `ALLOY_RUN_CMD`: override command (supports `{file}` and `$ALLOY_JAR`)
     - `ALLOY_CMD_JSON`: JSON array of extra arguments (preferred, safe)
     - `ALLOY_CMD_ARGS`: whitespace‑separated extra arguments (fallback)
     - `ALLOY_FAIL_REGEX`: regex for failure detection (default: `Exception|ERROR|FAILED|Counterexample|assertion`, case‑insensitive)
@@ -48,6 +57,11 @@ TLA_TOOLS_URL=https://example.com/tla2tools.jar npm run verify:model
 
 # Optional: prepare Alloy jar path and run headless
 ALLOY_JAR=$HOME/tools/alloy.jar npm run verify:model
+
+# Alloy 6 CLI (exec)
+ALLOY_JAR=$HOME/tools/alloy.jar \
+  ALLOY_RUN_CMD='java -jar $ALLOY_JAR exec -q -o - -f {file}' \
+  npm run verify:model
 
 # Extra arguments and timeout (optional)
 ALLOY_JAR=$HOME/tools/alloy.jar ALLOY_CMD_ARGS="-someFlag" ALLOY_TIMEOUT_MS=180000 npm run verify:model
@@ -66,6 +80,18 @@ ALLOY_JAR=$HOME/tools/alloy.jar \
   - alloy.results/skipped/errors: detection and readiness info
 - `artifacts/codex/*.tlc.log.txt`: Raw TLC logs per module
 - `artifacts/codex/*.alloy.log.txt`: Raw Alloy logs per spec (when executed)
+
+### TLA modules and configs (current)
+
+| Module | Spec path | Config path |
+| --- | --- | --- |
+| DomainSpec | `spec/tla/DomainSpec.tla` | `spec/tla/DomainSpec.cfg` |
+| Inventory | `spec/formal/tla+/Inventory.tla` | `spec/formal/tla+/Inventory.cfg` |
+| KvOnce | `spec/formal/10_abstract/KvOnce.tla` | `spec/formal/configs/KvOnce.cfg` |
+| KvOnceRefinement | `spec/formal/20_refined/KvOnceRefinement.tla` | `spec/formal/configs/KvOnceRefinement.cfg` |
+| KvOnceImpl | `spec/formal/30_impl/KvOnceImpl.tla` | `spec/formal/configs/KvOnceImpl.cfg` |
+
+Note: Apalache-specific configs (`*_apalache.cfg`) are used by Apalache runs, not TLC in `verify.yml`.
 
 ### PR summary
 
@@ -209,6 +235,18 @@ ALLOY_JAR=$HOME/tools/alloy.jar \
 - `artifacts/codex/*.tlc.log.txt`: TLC の生ログ（モジュールごと）
 - `artifacts/codex/*.alloy.log.txt`: Alloy の生ログ（実行した場合）
 
+### TLA モジュールと cfg（現行）
+
+| モジュール | Spec パス | cfg パス |
+| --- | --- | --- |
+| DomainSpec | `spec/tla/DomainSpec.tla` | `spec/tla/DomainSpec.cfg` |
+| Inventory | `spec/formal/tla+/Inventory.tla` | `spec/formal/tla+/Inventory.cfg` |
+| KvOnce | `spec/formal/10_abstract/KvOnce.tla` | `spec/formal/configs/KvOnce.cfg` |
+| KvOnceRefinement | `spec/formal/20_refined/KvOnceRefinement.tla` | `spec/formal/configs/KvOnceRefinement.cfg` |
+| KvOnceImpl | `spec/formal/30_impl/KvOnceImpl.tla` | `spec/formal/configs/KvOnceImpl.cfg` |
+
+※ Apalache 用の `*_apalache.cfg` は Apalache 実行に使用し、TLC では使用しません。
+
 ### PR サマリ
 
 PR に検証サマリを投稿します:
@@ -222,6 +260,11 @@ PR に検証サマリを投稿します:
 ```bash
 # 最小
 ALLOY_JAR=$HOME/tools/alloy.jar npm run verify:model
+
+# Alloy 6 CLI (exec) を使う場合
+ALLOY_JAR=$HOME/tools/alloy.jar \
+  ALLOY_RUN_CMD='java -jar $ALLOY_JAR exec -q -o - -f {file}' \
+  npm run verify:model
 
 # JSON 配列の引数（空白/引用に強い）
 ALLOY_JAR=$HOME/tools/alloy.jar \

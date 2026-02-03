@@ -32,6 +32,22 @@ function runCommand(cmd, cmdArgs){
   return { available: true, success: result.status === 0, output: `${stdout}${stderr}` };
 }
 
+function runShell(cmd){
+  // ALLOY_RUN_CMD is intentionally executed via shell to allow flexible commands.
+  // Only use with trusted inputs (CI/env-controlled).
+  const result = spawnSync(cmd, { shell: true, encoding: 'utf8' });
+  const stdout = result.stdout ?? '';
+  const stderr = result.stderr ?? '';
+  if (result.error) {
+    return {
+      available: false,
+      success: false,
+      output: `${stdout}${stderr}${result.error.message ? `\n${result.error.message}` : ''}`.trim()
+    };
+  }
+  return { available: true, success: result.status === 0, output: `${stdout}${stderr}` };
+}
+
 function expandHome(inputPath){
   if (!inputPath || inputPath[0] !== '~') return inputPath;
   if (inputPath === '~') return os.homedir();
@@ -63,31 +79,57 @@ if (!fs.existsSync(absFile)){
   status = 'file_not_found';
   output = `Alloy file not found: ${absFile}`;
 } else {
-  const alloyResult = runCommand('alloy', [absFile]);
-  if (alloyResult.available) {
-    output = alloyResult.output;
-    ran = true;
-    status = 'ran';
-  } else if (process.env.ALLOY_JAR || args.jar){
-    const jar = args.jar || process.env.ALLOY_JAR;
-    const jarPath = path.resolve(expandHome(jar));
-    if (!fs.existsSync(jarPath)) {
+  const runCmd = process.env.ALLOY_RUN_CMD;
+  if (runCmd) {
+    const jar = args.jar || process.env.ALLOY_JAR || '';
+    const jarPath = jar ? path.resolve(expandHome(jar)) : '';
+    if (runCmd.includes('$ALLOY_JAR') && !jarPath) {
+      status = 'jar_not_set';
+      output = 'ALLOY_RUN_CMD requires $ALLOY_JAR, but ALLOY_JAR is not set.';
+    } else if (runCmd.includes('$ALLOY_JAR') && !fs.existsSync(jarPath)) {
       status = 'jar_not_found';
       output = `Alloy jar not found: ${jarPath}. Set ALLOY_JAR to a valid path, use --jar /path/to/alloy.jar, or check that the file exists.`;
     } else {
-      const javaResult = runCommand('java', ['-jar', jarPath, absFile]);
-      if (!javaResult.available) {
-        status = 'java_not_available';
-        output = 'Java runtime not found. Ensure `java` is installed and on PATH to run the Alloy jar.';
+      const cmd = runCmd
+        .replace(/{file}/g, absFile)
+        .replace(/\$ALLOY_JAR/g, jarPath);
+      const res = runShell(cmd);
+      if (!res.available) {
+        status = 'tool_not_available';
+        output = res.output || 'Failed to execute ALLOY_RUN_CMD.';
       } else {
-        output = javaResult.output;
+        output = res.output;
         ran = true;
-        status = 'ran';
+        status = res.success ? 'ran' : 'failed';
       }
     }
   } else {
-    status = 'tool_not_available';
-    output = 'Alloy CLI not found. Set ALLOY_JAR=/path/to/alloy.jar or install Alloy CLI. See docs/quality/formal-tools-setup.md';
+    const alloyResult = runCommand('alloy', [absFile]);
+    if (alloyResult.available) {
+      output = alloyResult.output;
+      ran = true;
+      status = alloyResult.success ? 'ran' : 'failed';
+    } else if (process.env.ALLOY_JAR || args.jar){
+      const jar = args.jar || process.env.ALLOY_JAR;
+      const jarPath = path.resolve(expandHome(jar));
+      if (!fs.existsSync(jarPath)) {
+        status = 'jar_not_found';
+        output = `Alloy jar not found: ${jarPath}. Set ALLOY_JAR to a valid path, use --jar /path/to/alloy.jar, or check that the file exists.`;
+      } else {
+        const javaResult = runCommand('java', ['-jar', jarPath, absFile]);
+        if (!javaResult.available) {
+          status = 'java_not_available';
+          output = 'Java runtime not found. Ensure `java` is installed and on PATH to run the Alloy jar.';
+        } else {
+          output = javaResult.output;
+          ran = true;
+          status = javaResult.success ? 'ran' : 'failed';
+        }
+      }
+    } else {
+      status = 'tool_not_available';
+      output = 'Alloy CLI not found. Set ALLOY_JAR=/path/to/alloy.jar or install Alloy CLI. See docs/quality/formal-tools-setup.md';
+    }
   }
 }
 

@@ -200,6 +200,7 @@ TLA+/Apalache/SMT コマンド例（ローカル）
 Alloy CLI（環境がある場合）
 - `pnpm run verify:alloy -- --file spec/alloy/Domain.als`
 - CLI が無い場合は `ALLOY_JAR=/path/to/alloy.jar` を設定し、`java -jar $ALLOY_JAR spec/alloy/Domain.als`
+ - Alloy 6 CLI（exec）を使う場合は `ALLOY_RUN_CMD='java -jar $ALLOY_JAR exec -q -o - -f {file}'` を設定
 
 Tips（出力・色・抑制）
 - コンソール要約は色分け表示。色を無効化するには `NO_COLOR=1` を指定（CI等）
