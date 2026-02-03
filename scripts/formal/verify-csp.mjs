@@ -45,6 +45,20 @@ function runShell(cmd) {
   return { available: true, success: result.status === 0, status: result.status ?? 0, output };
 }
 
+function runCommand(cmd, cmdArgs, options = {}) {
+  const result = spawnSync(cmd, cmdArgs, { encoding: 'utf8', cwd: options.cwd });
+  const stdout = result.stdout ?? '';
+  const stderr = result.stderr ?? '';
+  const output = `${stdout}${stderr}`.trim();
+  if (result.error) {
+    if (result.error.code === 'ENOENT') {
+      return { available: false, status: null, output: output || (result.error.message ?? '') };
+    }
+    return { available: true, status: result.status ?? null, output: output || (result.error.message ?? '') };
+  }
+  return { available: true, status: result.status ?? 0, output };
+}
+
 function clamp(s, n = 4000) {
   const t = String(s || '');
   return t.length > n ? `${t.slice(0, n)}…` : t;
@@ -87,7 +101,14 @@ if (!fs.existsSync(absFile)) {
     backend = 'CSP_RUN_CMD';
   } else if (commandExists('refines')) {
     // FDR (commercial): allow local runs when installed.
-    const mode = (args.mode || 'typecheck').toLowerCase();
+    const rawMode = args.mode || 'typecheck';
+    let mode = rawMode.toLowerCase();
+    if (args.mode && mode !== 'typecheck' && mode !== 'assertions') {
+      console.error(
+        `Unknown --mode value '${args.mode}'. Expected 'typecheck' or 'assertions'. Defaulting to 'typecheck'.`,
+      );
+      mode = 'typecheck';
+    }
     const refinesArgs = (mode === 'assertions')
       // Run all assertions in the file (best-effort). Keep output small.
       ? ['--brief', '--quiet', '--format', 'plain', absFile]
@@ -113,7 +134,7 @@ if (!fs.existsSync(absFile)) {
     const found = known.filter((c) => commandExists(c));
     status = 'tool_not_available';
     output = found.length
-      ? `CSP tool detected (${found.join(', ')}), but CSP_RUN_CMD is not set; execution is not configured.`
+      ? `CSP tool detected (${found.join(', ')}), but runner supports only CSP_RUN_CMD/refines/cspmchecker. Configure CSP_RUN_CMD or install a supported backend.`
       : 'No CSP tool configured. Set CSP_RUN_CMD, install FDR (refines), or install cspmchecker.';
   }
 }
