@@ -33,13 +33,20 @@ const data = readJson(dataPath);
 const ajv = new Ajv({ allErrors: true, strict: false });
 addFormats(ajv);
 
-const validate = ajv.compile({
+const schemaConfig = {
   $id: 'TraceEvent',
   type: 'object',
   properties: schema.properties || {},
   required: schema.required || [],
   additionalProperties: true
-});
+};
+if (schema.definitions) {
+  schemaConfig.definitions = schema.definitions;
+}
+if (schema.$defs) {
+  schemaConfig.$defs = schema.$defs;
+}
+const validate = ajv.compile(schemaConfig);
 
 const events = Array.isArray(data) ? data : [data];
 let ok = true;
@@ -61,4 +68,3 @@ if (ok) {
 } else {
   process.exit(1);
 }
-
