@@ -85,12 +85,20 @@ jobs:
           const apalacheSum = find(base, "formal-reports-apalache/apalache-summary.json");
           const apalacheOut = find(base, "formal-reports-apalache/apalache-output.txt");
           const confSum = find(base, "formal-reports-conformance/conformance-summary.json");
+          const kaniSum = find(base, "formal-reports-kani/kani-summary.json");
+          const spinSum = find(base, "formal-reports-spin/spin-summary.json");
+          const cspSum = find(base, "formal-reports-csp/csp-summary.json");
+          const leanSum = find(base, "formal-reports-lean/lean-summary.json");
 
           const apalache = apalacheSum ? rj(apalacheSum) : undefined;
           const tla = tlaSum ? rj(tlaSum) : undefined;
           const smt = smtSum ? rj(smtSum) : undefined;
           const alloyS = alloySum ? rj(alloySum) : undefined;
           const conf = confSum ? rj(confSum) : undefined;
+          const kani = kaniSum ? rj(kaniSum) : undefined;
+          const spin = spinSum ? rj(spinSum) : undefined;
+          const csp = cspSum ? rj(cspSum) : undefined;
+          const lean = leanSum ? rj(leanSum) : undefined;
           const clampInfo = {
             lineClamp: process.env.FORMAL_AGG_LINE_CLAMP || '200',
             errorsLimit: process.env.FORMAL_AGG_ERRORS_LIMIT || '5'
@@ -116,6 +124,26 @@ jobs:
             ].join(' ');
             lines.push(`- SMT: ${ss}`);
           }
+          lines.push(kaniSum ? `- Kani summary file: ${path.basename(kaniSum)}` : "- Kani summary: n/a");
+          if (kani) {
+            const ks = [
+              `status=${kani.status || 'n/a'}`,
+              `detected=${kani.detected ? 'yes' : 'no'}`
+            ].join(' ');
+            lines.push(`- Kani: ${ks}`);
+          }
+          lines.push(spinSum ? `- SPIN summary file: ${path.basename(spinSum)}` : "- SPIN summary: n/a");
+          if (spin) {
+            lines.push(`- SPIN: status=${spin.status || 'n/a'}${spin.ltl ? ` ltl=${spin.ltl}` : ''}`);
+          }
+          lines.push(cspSum ? `- CSP summary file: ${path.basename(cspSum)}` : "- CSP summary: n/a");
+          if (csp) {
+            lines.push(`- CSP: status=${csp.status || 'n/a'}`);
+          }
+          lines.push(leanSum ? `- Lean summary file: ${path.basename(leanSum)}` : "- Lean summary: n/a");
+          if (lean) {
+            lines.push(`- Lean: status=${lean.status || 'n/a'}`);
+          }
           if (conf && conf.runtimeHooks) {
             const h = conf.runtimeHooks;
             const info = `present=${h.present? 'yes':'no'} count=${h.count||0} traceId=${h.traceId||'n/a'} match=${h.matchesReplayTraceId? 'yes':'no'}`;
@@ -127,15 +155,19 @@ jobs:
             alloy: !!alloySum,
             smt: !!smtSum,
             apalache: !!apalacheSum,
-            conformance: !!confSum
+            conformance: !!confSum,
+            kani: !!kaniSum,
+            spin: !!spinSum,
+            csp: !!cspSum,
+            lean: !!leanSum
           };
           // Quick one-line present/ran summary（MD表示とJSONのpresentを完全同期）
-          const order = ['tla','alloy','smt','apalache','conformance'];
+          const order = ['tla','alloy','smt','apalache','conformance','kani','spin','csp','lean'];
           const presentKeys = order.filter(k => present[k]);
           const presentCount = presentKeys.length;
-          const apLine = apalacheSum && apalache ? `ran=${apalache.ran? 'yes':'no'} ok=${apalache.ok==null? 'n/a': (apalache.ok? 'yes':'no')}` : 'n/a';
+          const presentTotal = order.length;
           lines.push('### Presence');
-          lines.push(`Present: ${presentCount}/5${presentCount? ` (${presentKeys.join(', ')})` : ''}`);
+          lines.push(`Present: ${presentCount}/${presentTotal}${presentCount? ` (${presentKeys.join(', ')})` : ''}`);
           // Alloy temporal operator presence (if summary includes it)
           try {
             const t = alloyS && alloyS.temporal;
@@ -195,9 +227,9 @@ jobs:
           lines.push(confSum ? `- Conformance summary file: ${path.basename(confSum)}` : "- Conformance summary: n/a");
           // By-type/present summary（簡潔・Present行の補助、一行で整形）
           // Deterministic by-type present line (JSON→MDと順序を完全同期)
-          const presentList = ['tla','alloy','smt','apalache','conformance'].filter(k => present[k]);
+          const presentList = order.filter(k => present[k]);
           lines.push('### Aggregate Status');
-          lines.push(`- By-type present: ${presentList.length}/5${presentList.length? ` (${presentList.join(', ')})` : ''}`);
+          lines.push(`- By-type present: ${presentList.length}/${presentTotal}${presentList.length? ` (${presentList.join(', ')})` : ''}`);
           if (apalacheSum && apalache) {
             lines.push(`- Apalache ran/ok: ran=${apalache.ran? 'yes':'no'} ok=${apalache.ok==null? 'n/a': (apalache.ok? 'yes':'no')}`);
           }
@@ -247,12 +279,18 @@ jobs:
             smt: smt || null,
             apalache: apalache || null,
             conformance: conf || null,
+            kani: kani || null,
+            spin: spin || null,
+            csp: csp || null,
+            lean: lean || null,
             info: { 
               lineClamp: LINE_CLAMP, 
               errorsLimit: ERRORS_LIMIT, 
               generatedAt: GENERATED_AT, 
               present, 
               presentCount,
+              presentTotal,
+              presentOrder: order,
               ranOk: {
                 apalache: apalache ? { ran: !!apalache.ran, ok: (typeof apalache.ok === 'boolean' ? apalache.ok : null) } : null
               },
@@ -262,7 +300,7 @@ jobs:
             }
           };
           // Append an explicit consistency line referencing JSON info.present
-          lines.push(`Consistency: MD=JSON present (${presentCount}/5)`);
+          lines.push(`Consistency: MD=JSON present (${presentCount}/${presentTotal})`);
           lines.push('_Source: info.present (aggregate JSON)_');
           const md = normalizeMd(lines);
           fs.writeFileSync(outMd, md);

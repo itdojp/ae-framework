@@ -13,6 +13,13 @@ Canonical locations for specifications and related assets.
 Locations
 - TLA+: `spec/tla/`
 - Alloy 6: `spec/alloy/`
+- SMT-LIB2: `spec/smt/`
+- SPIN/Promela: `spec/spin/`
+- CSP: `spec/csp/`
+- Lean4: `spec/lean/`
+- Formal examples (refinement/mappings): `spec/formal/`
+- BDD (GWT): `spec/bdd/` (fallback: `features/`)
+- Properties (LTL/PBT seeds): `spec/properties/`
 - Runtime Trace Schema: `observability/trace-schema.yaml`
 - Policy (Cedar): `policies/cedar/`
 
@@ -22,6 +29,4 @@ Conventions
 - Record assumptions and known limitations per spec
 
 Roadmap
-- Wire `verify:conformance` against trace schema
-- Add `verify:alloy` and `verify:tla` engines
-- Enable `verify:smt` with z3 and cvc5
+- Keep CI runs non-blocking; evolve toolchains incrementally (see `docs/quality/formal-runbook.md`)

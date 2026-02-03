@@ -8,6 +8,9 @@ Supported tools
 - Alloy (Alloy Analyzer / Alloy 6 CLI)
 - SMT solvers: Z3, cvc5
 - Kani (Rust bounded model checking)
+- SPIN (Promela model checking)
+- CSP (runner stub; toolchain TBD)
+- Lean4 (theorem proving / typechecking via lake)
 
 Quick checks
 - Run `pnpm run tools:formal:check` to see which tools are available on your machine.
@@ -50,6 +53,30 @@ Kani
 - Verify:
   - `kani-driver --version`
   - (if the cargo plugin is installed) `cargo kani --version`
+
+SPIN
+- Install via package manager (Linux example):
+  - `sudo apt-get update && sudo apt-get install -y spin gcc`
+- Verify:
+  - `spin -V`
+  - `gcc --version`
+
+CSP
+- Toolchain is not fixed yet; the runner is wired as a **non-blocking stub**.
+- To run a CSP tool locally, configure `CSP_RUN_CMD` and call `pnpm run verify:csp`.
+  - `CSP_RUN_CMD` supports `{file}` placeholder (absolute file path).
+- Example (placeholder):
+  - `CSP_RUN_CMD='echo Running CSP tool on {file}' pnpm run verify:csp -- --file spec/csp/sample.cspm`
+
+Lean4 (elan + lake)
+- Install `elan` (recommended):
+  - `curl -L -sS https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y`
+  - `export PATH="$HOME/.elan/bin:$PATH"`
+- Verify:
+  - `elan --version`
+  - `lake --version`
+- Build (project under `spec/lean/`):
+  - `pnpm run verify:lean`
 
 Notes
 - Tools are not required to work with AE-Framework; they enhance the formal workflow when present.
