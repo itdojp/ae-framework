@@ -138,7 +138,9 @@ jobs:
           }
           lines.push(cspSum ? `- CSP summary file: ${path.basename(cspSum)}` : "- CSP summary: n/a");
           if (csp) {
-            lines.push(`- CSP: status=${csp.status || 'n/a'}`);
+            const backend = csp.backend ? ` backend=${csp.backend}` : '';
+            const resultStatus = csp.resultStatus ? ` result=${csp.resultStatus}` : '';
+            lines.push(`- CSP: status=${csp.status || 'n/a'}${backend}${resultStatus}`);
           }
           lines.push(leanSum ? `- Lean summary file: ${path.basename(leanSum)}` : "- Lean summary: n/a");
           if (lean) {

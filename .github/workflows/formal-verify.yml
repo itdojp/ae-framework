@@ -39,6 +39,9 @@ concurrency:
 env:
   APALACHE_VERSION: '0.50.3'
   KANI_VERSION: '0.67.0'
+  CSPX_REPO: 'https://github.com/itdojp/cspx'
+  # Pinned for reproducibility (cspx tag m5.1). Update intentionally.
+  CSPX_TAG: 'm5.1'
 
 jobs:
   verify-conformance:
@@ -323,7 +326,7 @@ jobs:
           path: artifacts/hermetic-reports/formal/spin-summary.json
 
   verify-csp:
-    name: verify:csp (stub)
+    name: verify:csp (cspx)
     runs-on: ubuntu-latest
     if: (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'csp'))
     steps:
@@ -332,14 +335,39 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '20'
-      - name: Run verify:csp (sample, stub)
-        run: node scripts/formal/verify-csp.mjs --file spec/csp/sample.cspm || true
-      - name: Upload CSP summary (artifact)
+      - name: Setup Rust toolchain (for cspx)
+        uses: dtolnay/rust-toolchain@stable
+      - name: Cache cargo (cspx)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin/cspx
+          key: ${{ runner.os }}-cspx-${{ env.CSPX_TAG }}
+      - name: Install cspx (pinned)
+        run: |
+          set -euo pipefail
+          # Persist for subsequent steps as well (not just this shell).
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.cargo/bin:$PATH"
+          if command -v cspx >/dev/null 2>&1; then
+            cspx --version || true
+          else
+            cargo install --git "$CSPX_REPO" --tag "$CSPX_TAG" --locked cspx
+            cspx --version || true
+          fi
+      - name: Run verify:csp (cspx, sample)
+        run: node scripts/formal/verify-csp.mjs --file spec/csp/cspx-smoke.cspm --mode typecheck || true
+      - name: Upload CSP reports (artifact)
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: formal-reports-csp
-          path: artifacts/hermetic-reports/formal/csp-summary.json
+          path: |
+            artifacts/hermetic-reports/formal/csp-summary.json
+            artifacts/hermetic-reports/formal/cspx-result.json
+          if-no-files-found: ignore
 
   verify-lean:
     name: verify:lean (Lean4)

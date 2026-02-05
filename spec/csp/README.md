@@ -7,8 +7,8 @@ This directory contains CSP / CSPM-style specifications for concurrency/protocol
 ## Current status
 
 - CI integration is wired as **non-blocking**.
-  - On GitHub-hosted runners it will typically report `tool_not_available` unless a CSP backend is available.
-  - For CI execution, consider a self-hosted runner (with `refines`/`cspmchecker`) or a trusted `CSP_RUN_CMD` setup.
+  - In `Formal Verify`, the `verify:csp` job installs and uses `cspx` on GitHub-hosted runners (label/dispatch gated).
+  - The CI smoke target uses `spec/csp/cspx-smoke.cspm` to stay within cspx's currently supported subset.
 - To execute CSP checks locally, set `CSP_RUN_CMD` (see below) or install a supported tool.
 
 ## Toolchain options (local)
@@ -16,8 +16,17 @@ This directory contains CSP / CSPM-style specifications for concurrency/protocol
 The runner supports these backends (best-effort, in this order):
 
 1) `CSP_RUN_CMD` (shell command)
-2) FDR `refines` (typecheck)
-3) `cspmchecker` (typecheck, OSS)
+2) `cspx` (typecheck / basic assertion check, OSS)
+3) FDR `refines` (typecheck)
+4) `cspmchecker` (typecheck, OSS)
+
+`cspx` example (recommended):
+
+```bash
+# Smoke sample within cspx's currently supported frontend subset:
+cspx --version
+pnpm run verify:csp -- --file spec/csp/cspx-smoke.cspm --mode typecheck
+```
 
 FDR (commercial) example:
 
@@ -42,6 +51,7 @@ pnpm run verify:csp -- --file spec/csp/sample.cspm
 ## Files
 
 - `sample.cspm`: minimal send/receive example (CSPM-like)
+- `cspx-smoke.cspm`: minimal smoke sample designed to be accepted by `cspx` (v0.1 subset)
 
 ## Running (local)
 
@@ -74,8 +84,8 @@ Artifacts:
 ### 現状
 
 - CI 統合は **non-blocking** です。  
-  - GitHub-hosted runner では CSP バックエンドが無い限り `tool_not_available` になります。  
-  - CI で実行したい場合は self-hosted runner（`refines`/`cspmchecker`）または信頼できる `CSP_RUN_CMD` の運用を検討してください。
+  - `Formal Verify` の `verify:csp` ジョブでは、GitHub-hosted runner に `cspx` を導入して実行します（ラベル/dispatchで制御）。  
+  - CI のスモーク対象は、cspx の現行対応サブセットに合わせて `spec/csp/cspx-smoke.cspm` を使用します。  
 - 実際に CSP ツールを実行する場合は `CSP_RUN_CMD` を設定するか、対応ツール（`refines`/`cspmchecker`）を導入してください。
 
 ### ローカル実行（例）
@@ -104,8 +114,16 @@ CSP_RUN_CMD='echo Running CSP tool on {file}' pnpm run verify:csp -- --file spec
 ランナーは次のバックエンドを（利用可能なら）優先順に使用します。
 
 1) `CSP_RUN_CMD`（シェル実行）
-2) FDR `refines`（型検査）
-3) `cspmchecker`（型検査、OSS）
+2) `cspx`（型検査/基本チェック、OSS）
+3) FDR `refines`（型検査）
+4) `cspmchecker`（型検査、OSS）
+
+`cspx` 例（推奨）:
+
+```bash
+cspx --version
+pnpm run verify:csp -- --file spec/csp/cspx-smoke.cspm --mode typecheck
+```
 
 FDR（商用）例:
 

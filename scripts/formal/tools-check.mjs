@@ -48,6 +48,10 @@ function shortVer(tool, raw) {
     if (tool === 'kani') {
       const m = /kani(?:-driver)?\s+([\w\.-]+)/i.exec(line); return m ? m[1] : line;
     }
+    if (tool === 'cspx') {
+      // "cspx 0.1.0"
+      const m = /\bcspx\s+([\w\.-]+)/i.exec(line); return m ? m[1] : line;
+    }
     return line;
   } catch { return raw; }
 }
@@ -90,6 +94,8 @@ report.push({ tool: 'gcc', present: hasGcc, version: hasGcc ? shortVer('gcc', ve
 // CSP (runner configuration)
 const cspRunCmdSet = Boolean((process.env.CSP_RUN_CMD || '').trim());
 report.push({ tool: 'CSP_RUN_CMD', present: cspRunCmdSet, path: cspRunCmdSet ? 'set (command hidden)' : 'unset (set CSP_RUN_CMD to run a CSP tool)' });
+const hasCspx = has('cspx');
+report.push({ tool: 'cspx', present: hasCspx, version: hasCspx ? shortVer('cspx', version('cspx', ['--version'])) : 'n/a' });
 const hasRefines = has('refines');
 report.push({ tool: 'refines', present: hasRefines, version: hasRefines ? shortVer('refines', version('refines', ['--version'])) : 'n/a' });
 const hasCspmchecker = has('cspmchecker');
@@ -120,7 +126,13 @@ try {
   const spin = map['spin'] ? `yes(${vers['spin']||'n/a'})` : 'no';
   const gcc = map['gcc'] ? `yes(${vers['gcc']||'n/a'})` : 'no';
   const lean = map['lake'] ? `yes(${vers['lake']||'n/a'})` : 'no';
-  const csp = map['CSP_RUN_CMD'] ? 'CSP_RUN_CMD' : (map['refines'] ? 'refines' : (map['cspmchecker'] ? 'cspmchecker' : 'unset'));
+  const csp = map['CSP_RUN_CMD']
+    ? 'CSP_RUN_CMD'
+    : (map['cspx']
+      ? `cspx(${vers['cspx']||'n/a'})`
+      : (map['refines']
+        ? `refines(${vers['refines']||'n/a'})`
+        : (map['cspmchecker'] ? 'cspmchecker' : 'unset')));
   const jv = vers['java'] || 'n/a';
   const line = [
     `tlc=${tlc?'yes':'no'}`,
