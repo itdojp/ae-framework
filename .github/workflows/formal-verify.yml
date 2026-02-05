@@ -40,8 +40,8 @@ env:
   APALACHE_VERSION: '0.50.3'
   KANI_VERSION: '0.67.0'
   CSPX_REPO: 'https://github.com/itdojp/cspx'
-  # Pinned for reproducibility (tag m5 -> commit 4e7c6ac5...). Update intentionally.
-  CSPX_REF: '4e7c6ac57b88369009517cb8b797e1d526e4b1e4'
+  # Pinned for reproducibility (cspx main @ 9883d1c8...). Update intentionally.
+  CSPX_REF: '9883d1c80bbd806a30a5e08167c9d7414e4e610c'
 
 jobs:
   verify-conformance:

@@ -65,7 +65,7 @@ CSP
 - CI is wired as **non-blocking**: it always produces `csp-summary.json` and does not fail the workflow by default.
 - Recommended backend: `cspx` (OSS, Apache-2.0) — CI-first CSPM checks with JSON output.
   - Install (example: pinned to a commit for reproducibility):
-    - `cargo install --git https://github.com/itdojp/cspx --rev 4e7c6ac57b88369009517cb8b797e1d526e4b1e4 --locked cspx`
+    - `cargo install --git https://github.com/itdojp/cspx --rev 9883d1c80bbd806a30a5e08167c9d7414e4e610c --locked cspx`
   - Verify:
     - `cspx --version`
   - Run (sample within currently supported subset):
