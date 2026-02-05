@@ -9,7 +9,7 @@ Supported tools
 - SMT solvers: Z3, cvc5
 - Kani (Rust bounded model checking)
 - SPIN (Promela model checking)
-- CSP (runner stub; toolchain TBD)
+- CSP (CSPM checks via `cspx` or configured backend)
 - Lean4 (theorem proving / typechecking via lake)
 
 Quick checks
@@ -62,12 +62,18 @@ SPIN
   - `gcc --version`
 
 CSP
-- Toolchain is not fixed yet; CI runs as **non-blocking stub**.
-- Local runner supports (best-effort): `CSP_RUN_CMD` → `refines` (FDR) → `cspmchecker`.
-- To run a CSP tool locally, either install a backend or configure `CSP_RUN_CMD` and call `pnpm run verify:csp`.
+- CI is wired as **non-blocking**: it always produces `csp-summary.json` and does not fail the workflow by default.
+- Recommended backend: `cspx` (OSS, Apache-2.0) — CI-first CSPM checks with JSON output.
+  - Install (example: pinned to a commit for reproducibility):
+    - `cargo install --git https://github.com/itdojp/cspx --rev 4e7c6ac57b88369009517cb8b797e1d526e4b1e4 --locked cspx`
+  - Verify:
+    - `cspx --version`
+  - Run (sample within currently supported subset):
+    - `pnpm run verify:csp -- --file spec/csp/cspx-smoke.cspm --mode typecheck`
+- Fallback backends (best-effort): `CSP_RUN_CMD` → `cspx` → `refines` (FDR) → `cspmchecker`.
   - `CSP_RUN_CMD` supports `{file}` placeholder (absolute file path).
-- Example (placeholder):
-  - `CSP_RUN_CMD='echo Running CSP tool on {file}' pnpm run verify:csp -- --file spec/csp/sample.cspm`
+  - Example (placeholder):
+    - `CSP_RUN_CMD='echo Running CSP tool on {file}' pnpm run verify:csp -- --file spec/csp/sample.cspm`
 
 Lean4 (elan + lake)
 - Install `elan` (recommended):

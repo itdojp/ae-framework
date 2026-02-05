@@ -30,7 +30,7 @@ Full smoke test instructions: `docs/quality/formal-full-run.md`.
 - `pnpm run verify:smt -- --solver=z3|cvc5` — prints stub
 - `pnpm run verify:kani` — presence check stub (non-blocking)
 - `pnpm run verify:spin` — Promela/SPIN runner (non-blocking)
-- `pnpm run verify:csp` — CSP runner stub (non-blocking; toolchain TBD)
+- `pnpm run verify:csp` — CSP runner (non-blocking; supports `cspx`/`refines`/`cspmchecker`/`CSP_RUN_CMD`)
 - `pnpm run verify:lean` — Lean4 `lake build` runner (non-blocking)
 - `pnpm run verify:formal` — 上記の連続実行（ローカル確認用、non-blocking）
   - 集計: `artifacts/hermetic-reports/formal/summary.json` に要約を出力
