@@ -1,0 +1,5 @@
+-- cspx smoke sample: minimal supported CSPM subset (v0.1)
+-- NOTE: Keep this file within cspx's currently supported frontend subset.
+
+SYSTEM = STOP
+

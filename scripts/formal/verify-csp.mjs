@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Lightweight CSP runner:
 // - If CSP_RUN_CMD is set, execute it via shell (supports {file} placeholder).
+// - Else, if `cspx` exists, run typecheck or a basic assertion check (non-blocking summary).
 // - Else, if FDR `refines` exists, run a typecheck (non-blocking summary).
 // - Else, if `cspmchecker` exists, run a typecheck (non-blocking summary).
 // - Else, report tool_not_available.
@@ -64,11 +65,43 @@ function clamp(s, n = 4000) {
   return t.length > n ? `${t.slice(0, n)}…` : t;
 }
 
+function readJsonSafe(p) {
+  try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return undefined; }
+}
+
+function mapCspxStatusToSummaryStatus(s) {
+  const v = String(s || '').toLowerCase();
+  if (v === 'pass') return 'ran';
+  if (v === 'fail') return 'failed';
+  if (v === 'unsupported') return 'unsupported';
+  if (v === 'timeout') return 'timeout';
+  if (v === 'out_of_memory') return 'out_of_memory';
+  if (v === 'error') return 'error';
+  return 'failed';
+}
+
+function summarizeCspxResult(result) {
+  if (!result || typeof result !== 'object') return 'cspx: no result JSON produced';
+  const status = result.status || 'n/a';
+  const exitCode = result.exit_code ?? 'n/a';
+  const schema = result.schema_version || 'n/a';
+  const checks = Array.isArray(result.checks) ? result.checks : [];
+  const checksLine = checks.length
+    ? `checks=${checks.map((c) => `${c.name}:${c.status}`).join(',')}`
+    : 'checks=n/a';
+  const reason = checks.find((c) => c && c.reason)?.reason;
+  const reasonLine = reason && reason.kind
+    ? ` reason=${reason.kind}${reason.message ? `:${String(reason.message).slice(0, 120)}` : ''}`
+    : '';
+  return `cspx schema=${schema} status=${status} exit_code=${exitCode} ${checksLine}${reasonLine}`.trim();
+}
+
 const args = parseArgs(process.argv);
 if (args.help) {
   console.log('Usage: node scripts/formal/verify-csp.mjs [--file spec/csp/sample.cspm]');
   console.log('Options:');
-  console.log('  --mode typecheck|assertions  (default: typecheck; only affects FDR refines backend)');
+  console.log('  --mode typecheck|assertions  (default: typecheck; affects cspx/refines backends)');
+  console.log('Backends (best-effort): CSP_RUN_CMD -> cspx -> refines -> cspmchecker');
   console.log('Optional: set CSP_RUN_CMD to execute a CSP tool (supports {file}).');
   process.exit(0);
 }
@@ -78,6 +111,7 @@ const file = args.file || path.join('spec', 'csp', 'sample.cspm');
 const absFile = path.resolve(repoRoot, file);
 const outDir = path.join(repoRoot, 'artifacts', 'hermetic-reports', 'formal');
 const outFile = path.join(outDir, 'csp-summary.json');
+const cspxOutFile = path.join(outDir, 'cspx-result.json');
 fs.mkdirSync(outDir, { recursive: true });
 
 let ran = false;
@@ -85,6 +119,8 @@ let status;
 let output = '';
 let exitCode = null;
 let backend = null;
+let detailsFile = null;
+let resultStatus = null;
 
 if (!fs.existsSync(absFile)) {
   status = 'file_not_found';
@@ -99,6 +135,46 @@ if (!fs.existsSync(absFile)) {
     status = res.available ? (res.success ? 'ran' : 'failed') : 'tool_not_available';
     output = clamp(res.output || 'CSP_RUN_CMD produced no output');
     backend = 'CSP_RUN_CMD';
+  } else if (commandExists('cspx')) {
+    // cspx (OSS): CI-first CSPM checker with JSON output.
+    const rawMode = args.mode || 'typecheck';
+    let mode = rawMode.toLowerCase();
+    if (args.mode && mode !== 'typecheck' && mode !== 'assertions') {
+      console.error(
+        `Unknown --mode value '${args.mode}'. Expected 'typecheck' or 'assertions'. Defaulting to 'typecheck'.`,
+      );
+      mode = 'typecheck';
+    }
+
+    // Keep the v0.1 integration intentionally narrow and reproducible.
+    // - typecheck: cspx typecheck
+    // - assertions: currently mapped to a single canonical assertion (deadlock freedom)
+    const cspxArgs = (mode === 'assertions')
+      ? ['check', '--assert', 'deadlock free', absFile, '--format', 'json', '--output', cspxOutFile]
+      : ['typecheck', absFile, '--format', 'json', '--output', cspxOutFile];
+
+    const res = runCommand('cspx', cspxArgs);
+    ran = res.available;
+    exitCode = res.status;
+    backend = `cspx:${mode}`;
+    detailsFile = path.relative(repoRoot, cspxOutFile);
+
+    const result = fs.existsSync(cspxOutFile) ? readJsonSafe(cspxOutFile) : undefined;
+    const schemaVersion = result?.schema_version;
+    if (!res.available) {
+      status = 'tool_not_available';
+      output = clamp(res.output || 'cspx not available');
+    } else if (!result) {
+      status = res.status === 0 ? 'ran' : 'failed';
+      output = clamp(res.output || 'cspx produced no JSON result');
+    } else if (schemaVersion !== '0.1') {
+      status = 'unsupported';
+      output = clamp(`cspx schema_version mismatch: expected 0.1, got ${schemaVersion || 'n/a'}`);
+    } else {
+      resultStatus = result.status || null;
+      status = mapCspxStatusToSummaryStatus(result.status);
+      output = clamp([summarizeCspxResult(result), res.output].filter(Boolean).join('\n'));
+    }
   } else if (commandExists('refines')) {
     // FDR (commercial): allow local runs when installed.
     const rawMode = args.mode || 'typecheck';
@@ -130,12 +206,12 @@ if (!fs.existsSync(absFile)) {
     backend = 'cspmchecker';
   } else {
     // Best-effort detection: actual execution depends on selected toolchain.
-    const known = ['refines', 'cspmchecker', 'cspm', 'csp0', 'fdr4', 'fdr'];
+    const known = ['cspx', 'refines', 'cspmchecker', 'cspm', 'csp0', 'fdr4', 'fdr'];
     const found = known.filter((c) => commandExists(c));
     status = 'tool_not_available';
     output = found.length
-      ? `CSP tool detected (${found.join(', ')}), but runner supports only CSP_RUN_CMD/refines/cspmchecker. Configure CSP_RUN_CMD or install a supported backend.`
-      : 'No CSP tool configured. Set CSP_RUN_CMD, install FDR (refines), or install cspmchecker.';
+      ? `CSP tool detected (${found.join(', ')}), but runner supports only CSP_RUN_CMD/cspx/refines/cspmchecker. Configure CSP_RUN_CMD or install a supported backend.`
+      : 'No CSP tool configured. Set CSP_RUN_CMD, install cspx, install FDR (refines), or install cspmchecker.';
   }
 }
 
@@ -143,6 +219,8 @@ const summary = {
   tool: 'csp',
   file: path.relative(repoRoot, absFile),
   backend,
+  detailsFile,
+  resultStatus,
   ran,
   status,
   exitCode,
