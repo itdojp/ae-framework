@@ -153,6 +153,9 @@ if (!fs.existsSync(absFile)) {
       ? ['check', '--assert', 'deadlock free', absFile, '--format', 'json', '--output', cspxOutFile]
       : ['typecheck', absFile, '--format', 'json', '--output', cspxOutFile];
 
+    // Avoid stale reads: if cspx fails before writing a new JSON, a previous run's file must not be reused.
+    try { fs.rmSync(cspxOutFile, { force: true }); } catch {}
+
     const res = runCommand('cspx', cspxArgs);
     ran = res.available;
     exitCode = res.status;

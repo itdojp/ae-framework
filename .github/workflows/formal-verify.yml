@@ -348,14 +348,15 @@ jobs:
       - name: Install cspx (pinned)
         run: |
           set -euo pipefail
+          # Persist for subsequent steps as well (not just this shell).
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
           export PATH="$HOME/.cargo/bin:$PATH"
           if command -v cspx >/dev/null 2>&1; then
             cspx --version || true
-            exit 0
+          else
+            cargo install --git "$CSPX_REPO" --rev "$CSPX_REF" --locked cspx
+            cspx --version || true
           fi
-          cargo install --git "$CSPX_REPO" --rev "$CSPX_REF" --locked cspx
-          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
-          cspx --version || true
       - name: Run verify:csp (cspx, sample)
         run: node scripts/formal/verify-csp.mjs --file spec/csp/cspx-smoke.cspm --mode typecheck || true
       - name: Upload CSP reports (artifact)
