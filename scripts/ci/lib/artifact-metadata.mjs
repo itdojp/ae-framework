@@ -24,7 +24,7 @@ const formatLocalIso = (date) => {
 };
 
 const pickFirst = (...values) =>
-  values.find((value) => value !== undefined && value !== null && String(value).length > 0);
+  values.find((value) => value !== undefined && value !== null && String(value).length > 0) ?? null;
 
 const readGit = (cmd) => {
   try {
