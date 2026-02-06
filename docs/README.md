@@ -72,6 +72,7 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - Runbooks / Traceability / Runtime Contracts: see `docs/quality` and `docs/verify`
  - Coverage policy: `quality/coverage-policy.md`（しきい値の由来/Required化の運用）
  - Formal runbook: `quality/formal-runbook.md`（ラベル/dispatch/要約/環境変数）
+ - CSP verification (cspx runner): `quality/formal-csp.md`（使い方/成果物/実行結果例）
 
 For the complete navigation with highlights, see the Japanese section below (same links).
 
@@ -164,6 +165,7 @@ Claude CodeやMCPとの統合
 - [ARTIFACTS-CONTRACT.md](./quality/ARTIFACTS-CONTRACT.md) - 成果物契約（Required/Optional）
 - [adoption-sample-flow.md](./quality/adoption-sample-flow.md) - 導入の最小フロー（エンドツーエンド）
 - [formal-runbook.md](./quality/formal-runbook.md) - 実行・運用手順（ラベルゲート/手動実行）
+- [formal-csp.md](./quality/formal-csp.md) - CSP検査（cspxランナー）の使い方（成果物/実行結果例）
 - [formal-tools-setup.md](./quality/formal-tools-setup.md) - ローカル環境セットアップ（Apalache/TLC/Z3/cvc5）
 - [formal-full-run.md](./quality/formal-full-run.md) - 全ツールのスモークテスト手順（CI/ローカル）
 - [formal-mini-flow.md](./quality/formal-mini-flow.md) - 反例→失敗テスト→修正→緑の最小フロー

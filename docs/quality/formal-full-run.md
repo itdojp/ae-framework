@@ -109,6 +109,8 @@ pnpm run verify:csp -- --file spec/csp/sample.cspm --mode assertions
 CSP_RUN_CMD='echo Running CSP tool on {file}' pnpm run verify:csp -- --file spec/csp/sample.cspm --mode typecheck
 ```
 
+For details (artifacts / example outputs), see: `docs/quality/formal-csp.md`.
+
 #### 9) Model check (TLC/Alloy scan)
 ```bash
 pnpm run verify:model
@@ -225,6 +227,8 @@ pnpm run verify:csp -- --file spec/csp/sample.cspm --mode assertions
 # 任意のバックエンドをコマンドで実行（シェル経由）。{file} は絶対パスへ置換されます:
 CSP_RUN_CMD='echo Running CSP tool on {file}' pnpm run verify:csp -- --file spec/csp/sample.cspm --mode typecheck
 ```
+
+詳細（成果物/実行結果例）は `docs/quality/formal-csp.md` を参照してください。
 
 #### 9) モデル検査（TLC/Alloy スキャン）
 ```bash

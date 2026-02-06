@@ -31,6 +31,7 @@ Full smoke test instructions: `docs/quality/formal-full-run.md`.
 - `pnpm run verify:kani` — presence check stub (non-blocking)
 - `pnpm run verify:spin` — Promela/SPIN runner (non-blocking)
 - `pnpm run verify:csp` — CSP runner (non-blocking; supports `cspx`/`refines`/`cspmchecker`/`CSP_RUN_CMD`)
+  - Details (artifacts / example outputs): `docs/quality/formal-csp.md`
 - `pnpm run verify:lean` — Lean4 `lake build` runner (non-blocking)
 - `pnpm run verify:formal` — 上記の連続実行（ローカル確認用、non-blocking）
   - 集計: `artifacts/hermetic-reports/formal/summary.json` に要約を出力
@@ -247,7 +248,8 @@ Artifacts（Formal Reports）
 - `artifacts/hermetic-reports/formal/apalache-summary.json`: Apalache ランナーの簡易要約（ran/ok/errors/snippet/outputFile）
 - `artifacts/hermetic-reports/formal/kani-summary.json`: Kani 検出の要約（detected/version）
 - `artifacts/hermetic-reports/formal/spin-summary.json`: SPIN ランナーの簡易要約（file/ltl/status/output）
-- `artifacts/hermetic-reports/formal/csp-summary.json`: CSP ランナーの簡易要約（file/status/output）
+- `artifacts/hermetic-reports/formal/csp-summary.json`: CSP ランナーの簡易要約（file/backend/status/resultStatus/detailsFile/output）
+- `artifacts/hermetic-reports/formal/cspx-result.json`: cspx の実行結果（cspx 使用時）
 - `artifacts/hermetic-reports/formal/lean-summary.json`: Lean4 ランナーの簡易要約（project/status/output）
 - `artifacts/hermetic-reports/conformance/summary.json`: Conformance 要約（events/schemaErrors/invariantViolations/violationRate/first/byType）
 
