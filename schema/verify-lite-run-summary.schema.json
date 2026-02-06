@@ -7,6 +7,7 @@
   "required": [
     "schemaVersion",
     "timestamp",
+    "metadata",
     "flags",
     "steps",
     "artifacts"
@@ -20,6 +21,9 @@
     "timestamp": {
       "type": "string",
       "format": "date-time"
+    },
+    "metadata": {
+      "$ref": "https://github.com/itdojp/ae-framework/schema/artifact-metadata.schema.json"
     },
     "flags": {
       "type": "object",

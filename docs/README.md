@@ -165,6 +165,7 @@ Claude CodeやMCPとの統合
 - [ARTIFACTS-CONTRACT.md](./quality/ARTIFACTS-CONTRACT.md) - 成果物契約（Required/Optional）
 - [adoption-sample-flow.md](./quality/adoption-sample-flow.md) - 導入の最小フロー（エンドツーエンド）
 - [formal-runbook.md](./quality/formal-runbook.md) - 実行・運用手順（ラベルゲート/手動実行）
+- [formal-ops-guidelines.md](./quality/formal-ops-guidelines.md) - 運用パターン/命名/証跡/CI分割の指針
 - [formal-csp.md](./quality/formal-csp.md) - CSP検査（cspxランナー）の使い方（成果物/実行結果例）
 - [formal-tools-setup.md](./quality/formal-tools-setup.md) - ローカル環境セットアップ（Apalache/TLC/Z3/cvc5）
 - [formal-full-run.md](./quality/formal-full-run.md) - 全ツールのスモークテスト手順（CI/ローカル）

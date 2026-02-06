@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
+import { buildArtifactMetadata } from './lib/artifact-metadata.mjs';
 
 const summaryPathFromArg = process.argv[2];
 const summaryPath = summaryPathFromArg ?? process.env.VERIFY_LITE_SUMMARY_FILE ?? 'verify-lite-run-summary.json';
@@ -16,9 +17,16 @@ const readStatus = (name, fallback) => {
 
 const SCHEMA_VERSION = process.env.VERIFY_LITE_SUMMARY_SCHEMA_VERSION ?? '1.0.0';
 
+const runTimestamp = process.env.RUN_TIMESTAMP || new Date().toISOString();
+const pnpmVersion =
+  process.env.PNPM_VERSION || process.env.npm_config_user_agent?.match(/pnpm\/([^\s]+)/)?.[1];
+const toolVersions = {};
+if (pnpmVersion) toolVersions.pnpm = pnpmVersion;
+
 const summary = {
   schemaVersion: SCHEMA_VERSION,
-  timestamp: process.env.RUN_TIMESTAMP || new Date().toISOString(),
+  timestamp: runTimestamp,
+  metadata: buildArtifactMetadata({ now: runTimestamp, toolVersions }),
   flags: {
     install: process.env.INSTALL_FLAGS_STR || '',
     noFrozen: bool(process.env.VERIFY_LITE_NO_FROZEN || '0'),
