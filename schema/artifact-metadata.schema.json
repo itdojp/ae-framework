@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/itdojp/ae-framework/schema/artifact-metadata.schema.json",
+  "title": "Artifact Metadata",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "generatedAtUtc",
+    "generatedAtLocal",
+    "timezoneOffset",
+    "gitCommit",
+    "branch",
+    "runner",
+    "toolVersions"
+  ],
+  "properties": {
+    "generatedAtUtc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "generatedAtLocal": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "timezoneOffset": {
+      "type": "string",
+      "pattern": "^[+-]\\d{2}:\\d{2}$"
+    },
+    "gitCommit": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{7,40}$"
+    },
+    "branch": {
+      "type": ["string", "null"]
+    },
+    "runner": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "os", "arch", "ci"],
+      "properties": {
+        "name": { "type": ["string", "null"] },
+        "os": { "type": ["string", "null"] },
+        "arch": { "type": ["string", "null"] },
+        "ci": { "type": "boolean" }
+      }
+    },
+    "toolVersions": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  }
+}

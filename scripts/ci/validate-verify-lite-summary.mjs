@@ -38,6 +38,19 @@ try {
 
 const ajv = new Ajv2020({ allErrors: true, strict: false });
 addFormats(ajv);
+const metadataSchemaPath = path.resolve(path.dirname(resolvedSchema), 'artifact-metadata.schema.json');
+if (fs.existsSync(metadataSchemaPath)) {
+  try {
+    const metadataSchema = JSON.parse(fs.readFileSync(metadataSchemaPath, 'utf8'));
+    ajv.addSchema(metadataSchema);
+  } catch (error) {
+    console.error(`[verify-lite] failed to read metadata schema ${metadataSchemaPath}:`, error);
+    process.exit(1);
+  }
+} else if (JSON.stringify(schema).includes('artifact-metadata.schema.json')) {
+  console.error(`[verify-lite] metadata schema not found at ${metadataSchemaPath}`);
+  process.exit(1);
+}
 const validate = ajv.compile(schema);
 
 const valid = validate(data);

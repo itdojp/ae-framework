@@ -25,6 +25,11 @@ CIが生成する成果物（artifacts/reports）について **最低限の契�
 > スキーマ検証は既に `verify-lite.yml` に含まれています。  
 > 本ドキュメントは「**存在と最低限の整合性**」を必須化する目的です。
 
+### 成果物メタデータ（共通）
+- `verify-lite-run-summary.json` と `formal/summary.json` には `metadata` を付与します。
+- 共通スキーマ: `schema/artifact-metadata.schema.json`
+- 主要フィールド: `generatedAtUtc`, `generatedAtLocal`, `timezoneOffset`, `gitCommit`, `branch`, `runner`, `toolVersions`
+
 ## 3. Optional（条件付き）成果物
 
 | 成果物 | 条件 | 備考 |
@@ -52,3 +57,4 @@ node scripts/ci/check-required-artifacts.mjs --strict
 ## 6. 参照
 - `.github/workflows/verify-lite.yml`
 - `scripts/ci/check-required-artifacts.mjs`
+- `schema/artifact-metadata.schema.json`

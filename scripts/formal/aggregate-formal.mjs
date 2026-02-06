@@ -2,6 +2,7 @@
 // Aggregate formal reports into artifacts/hermetic-reports/formal/summary.json
 import fs from 'node:fs';
 import path from 'node:path';
+import { buildArtifactMetadata } from '../ci/lib/artifact-metadata.mjs';
 
 const repoRoot = process.cwd();
 const formalDir = path.join(repoRoot, 'artifacts/hermetic-reports', 'formal');
@@ -20,8 +21,10 @@ const spin = readJsonSafe(path.join(formalDir, 'spin-summary.json'));
 const csp = readJsonSafe(path.join(formalDir, 'csp-summary.json'));
 const lean = readJsonSafe(path.join(formalDir, 'lean-summary.json'));
 
+const runTimestamp = process.env.RUN_TIMESTAMP || new Date().toISOString();
 const summary = {
-  timestamp: new Date().toISOString(),
+  timestamp: runTimestamp,
+  metadata: buildArtifactMetadata({ now: runTimestamp }),
   present: {
     conformance: !!conformance,
     smt: !!smt,

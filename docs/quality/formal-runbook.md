@@ -162,6 +162,7 @@ jobs:
 - Reports: `artifacts/hermetic-reports/`（各ツールのsummary/出力を保存）
   - Apalache: `artifacts/hermetic-reports/formal/apalache-summary.json`, `artifacts/hermetic-reports/formal/apalache-output.txt`
   - Formal summary: `artifacts/hermetic-reports/formal/summary.json`（present/conformance/smt/alloy/tla/apalache を含む）
+  - `metadata`: `generatedAtUtc`, `generatedAtLocal`, `timezoneOffset`, `gitCommit`, `branch`, `runner`, `toolVersions`
   - Conformance aggregated summary (verify-lite): `reports/conformance/verify-lite-summary.json` / `.md`
 
 ### Samples
@@ -172,6 +173,7 @@ jobs:
 Tools
 - ローカル確認: `pnpm run tools:formal:check`（インストール済みツールを一覧）
 - セットアップ手順: [formal-tools-setup.md](./formal-tools-setup.md)
+- 運用パターン/CI 分割: [formal-ops-guidelines.md](./formal-ops-guidelines.md)
 - トレース検証（軽量）: `pnpm run trace:validate`（サンプルイベントのスキーマ整合を確認）
  - SMT サンプル: `spec/smt/sample.smt2`（動作確認用）
  - 実行例: `pnpm run verify:smt -- --solver=z3 --file spec/smt/sample.smt2`
