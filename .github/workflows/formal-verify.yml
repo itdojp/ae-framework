@@ -40,8 +40,9 @@ env:
   APALACHE_VERSION: '0.50.3'
   KANI_VERSION: '0.67.0'
   CSPX_REPO: 'https://github.com/itdojp/cspx'
-  # Pinned for reproducibility (cspx tag m5.1). Update intentionally.
-  CSPX_TAG: 'm5.1'
+  # Pinned for reproducibility and supply-chain hardening (immutable commit).
+  # Note: cspx tag m5.1 points to this commit.
+  CSPX_REF: '9883d1c80bbd806a30a5e08167c9d7414e4e610c'
 
 jobs:
   verify-conformance:
@@ -344,7 +345,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             ~/.cargo/bin/cspx
-          key: ${{ runner.os }}-cspx-${{ env.CSPX_TAG }}
+          key: ${{ runner.os }}-cspx-${{ env.CSPX_REF }}
       - name: Install cspx (pinned)
         run: |
           set -euo pipefail
@@ -354,7 +355,7 @@ jobs:
           if command -v cspx >/dev/null 2>&1; then
             cspx --version || true
           else
-            cargo install --git "$CSPX_REPO" --tag "$CSPX_TAG" --locked cspx
+            cargo install --git "$CSPX_REPO" --rev "$CSPX_REF" --locked cspx
             cspx --version || true
           fi
       - name: Run verify:csp (cspx, sample)
