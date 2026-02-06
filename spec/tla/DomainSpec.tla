@@ -3,9 +3,15 @@ EXTENDS Naturals, Sequences
 
 (* Minimal skeleton for illustration. Replace with domain-specific spec. *)
 
-CONSTANTS MaxQty, MaxOnHand
+CONSTANTS
+  \* @type: Int;
+  MaxQty,
+  \* @type: Int;
+  MaxOnHand
 
-VARIABLES state
+VARIABLES
+  \* @type: { onHand: Int, allocated: Int };
+  state
 
 ASSUME MaxQty \in Nat /\ MaxOnHand \in Nat /\ MaxQty > 0 /\ MaxOnHand > 0
 

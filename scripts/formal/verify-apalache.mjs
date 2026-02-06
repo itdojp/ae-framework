@@ -16,6 +16,8 @@ function parseArgs(argv){
     if (a==='-h' || a==='--help') args.help = true;
     else if (a==='--file' && argv[i+1]) { args.file = argv[++i]; }
     else if (a.startsWith('--file=')) { args.file = a.slice(7); }
+    else if (a==='--config' && argv[i+1]) { args.config = argv[++i]; }
+    else if (a.startsWith('--config=')) { args.config = a.slice(9); }
     else if (a==='--timeout' && argv[i+1]) { args.timeout = Number(argv[++i]); }
     else if (a.startsWith('--timeout=')) { args.timeout = Number(a.slice(10)); }
     else { args._.push(a); }
@@ -117,6 +119,10 @@ export function main(argv = process.argv){
   const repoRoot = path.resolve(process.cwd());
   const file = args.file || process.env.APALACHE_FILE || path.join('spec','tla','DomainSpec.tla');
   const absFile = path.resolve(repoRoot, file);
+  const cfgFromArg = args.config || process.env.APALACHE_CONFIG || process.env.APALACHE_CFG || '';
+  const autoCfg = path.format({ ...path.parse(absFile), base: '', ext: '.cfg' });
+  const absCfg = path.resolve(repoRoot, cfgFromArg || autoCfg);
+  const hasCfg = fs.existsSync(absCfg);
   const outDir = path.join(repoRoot, 'artifacts/hermetic-reports', 'formal');
   const outFile = path.join(outDir, 'apalache-summary.json');
   const outLog = path.join(outDir, 'apalache-output.txt');
@@ -136,12 +142,18 @@ export function main(argv = process.argv){
   if (!fs.existsSync(absFile)){
     status = 'file_not_found';
     output = `TLA file not found: ${absFile}\nSee docs/quality/formal-runbook.md (Reproduce Locally).`;
+  } else if (cfgFromArg && !hasCfg) {
+    status = 'config_not_found';
+    output = `TLC/Apalache config file not found: ${absCfg}`;
   } else if (!haveApalache){
     status = 'tool_not_available';
     output = 'Apalache CLI not found. Install apalache or ensure apalache-mc is on PATH. See docs/quality/formal-tools-setup.md';
   } else {
-    // Minimal "typecheck" like run; apalache-mc supports: apalache-mc check <Spec>
-    const baseCmd = { cmd: apalacheCmd, args: ['check', absFile] };
+    // Run check; if a matching .cfg exists, include it to initialize constants.
+    const baseArgs = ['check'];
+    if (hasCfg) baseArgs.push(`--config=${absCfg}`);
+    baseArgs.push(absFile);
+    const baseCmd = { cmd: apalacheCmd, args: baseArgs };
     const useTimeout = Boolean(args.timeout && Number.isFinite(args.timeout) && args.timeout > 0 && haveTimeout);
     const timeoutSecs = useTimeout ? Math.max(1, Math.floor(Number(args.timeout)/1000)) : 0;
     const runSpec = useTimeout
@@ -179,6 +191,7 @@ export function main(argv = process.argv){
   const summary = {
     tool: 'apalache',
     file: path.relative(repoRoot, absFile),
+    config: hasCfg ? path.relative(repoRoot, absCfg) : null,
     detected: haveApalache,
     ran,
     status,

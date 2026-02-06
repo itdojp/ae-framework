@@ -59,6 +59,7 @@ Full smoke test instructions: `docs/quality/formal-full-run.md`.
 ### Apalache Quickstart（任意）
 - Presence/version check: `node scripts/formal/check-apalache.mjs`
 - Verify (non-blocking summary): `node scripts/formal/verify-apalache.mjs --file spec/tla/DomainSpec.tla`
+- 同名の `*.cfg`（例: `spec/tla/DomainSpec.cfg`）が存在する場合、ランナーは自動で `--config` を適用
 - Notes:
   - formal-verify に非ブロッキングの presence/version ガードステップを追加済み（verify:apalache）
   - aggregate コメントには Apalache ran/ok とエラー断片を一行で要約（長行は折り返し／トリム）
