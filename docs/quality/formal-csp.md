@@ -31,7 +31,7 @@ Pre-reqs:
 
 Install:
 ```bash
-cargo install --git https://github.com/itdojp/cspx --tag m5.1 --locked cspx
+cargo install --git https://github.com/itdojp/cspx --rev 9883d1c80bbd806a30a5e08167c9d7414e4e610c --locked cspx
 ```
 
 Verify:
@@ -40,7 +40,8 @@ cspx --version
 ```
 
 Notes:
-- CI uses `cargo install --tag m5.1 --locked cspx` (see `.github/workflows/formal-verify.yml`).
+- CI uses `cargo install --rev 9883d1c80bbd806a30a5e08167c9d7414e4e610c --locked cspx` (see `.github/workflows/formal-verify.yml`).
+- Tag `m5.1` currently points to this commit, but git tags can be retagged; prefer `--rev` (immutable).
 
 ### Run
 
@@ -154,7 +155,7 @@ Assertions example (expected failure for STOP-only sample):
 
 インストール（再現性のため tag pin 推奨）:
 ```bash
-cargo install --git https://github.com/itdojp/cspx --tag m5.1 --locked cspx
+cargo install --git https://github.com/itdojp/cspx --rev 9883d1c80bbd806a30a5e08167c9d7414e4e610c --locked cspx
 ```
 
 確認:
@@ -163,7 +164,8 @@ cspx --version
 ```
 
 補足:
-- CI も `m5.1` に pin して導入します（`.github/workflows/formal-verify.yml`）。
+- CI は commit SHA に pin して導入します（`.github/workflows/formal-verify.yml`）。
+- tag `m5.1` は現状この commit を指しますが、tag は付け替え可能なため、`--rev`（不変）を推奨します。
 
 ### 実行方法
 
@@ -247,4 +249,3 @@ CSP summary written: artifacts/hermetic-reports/formal/csp-summary.json
 Assertions の結果例（STOP のため意図通り fail）:
 - `spec/csp/cspx-smoke.cspm` は `SYSTEM = STOP` を定義しています（deadlock 状態）。
 - `--mode assertions` は `deadlock free` を評価するため、`resultStatus: fail` と `deadlock` タグ付き counterexample を返します。
-

@@ -64,8 +64,9 @@ SPIN
 CSP
 - CI is wired as **non-blocking**: it always produces `csp-summary.json` and does not fail the workflow by default.
 - Recommended backend: `cspx` (OSS, Apache-2.0) — CI-first CSPM checks with JSON output.
-  - Install (example: pinned to a tag for reproducibility):
-    - `cargo install --git https://github.com/itdojp/cspx --tag m5.1 --locked cspx`
+  - Install (recommended: pin to an immutable commit SHA):
+    - `cargo install --git https://github.com/itdojp/cspx --rev 9883d1c80bbd806a30a5e08167c9d7414e4e610c --locked cspx`
+    - Note: tag `m5.1` points to this commit, but git tags can be retagged; prefer `--rev` in CI.
   - Verify:
     - `cspx --version`
   - Run (sample within currently supported subset):
