@@ -1,0 +1,251 @@
+# CSP Verification (cspx runner)
+
+> 🌍 Language / 言語: English | 日本語
+
+---
+
+## English
+
+This document describes **how to run CSP checks** in ae-framework, and what artifacts to expect.
+
+Scope:
+- Runner: `pnpm run verify:csp` (`scripts/formal/verify-csp.mjs`)
+- Recommended backend: `cspx` (OSS)
+- CI: `Formal Verify` workflow (label/dispatch gated; non-blocking)
+
+### What this runner does (important)
+
+- **Non-blocking**: the runner always exits `0`. It writes a summary JSON and returns successfully even when the CSP check fails.
+  - To *enforce* failures, consume `artifacts/hermetic-reports/formal/csp-summary.json` in a gate (not done by default).
+- Backend selection order (best-effort):
+  1) `CSP_RUN_CMD` (shell)
+  2) `cspx`
+  3) FDR `refines`
+  4) `cspmchecker`
+
+### Install (recommended: cspx)
+
+Pre-reqs:
+- Rust toolchain (`cargo`)
+- `~/.cargo/bin` is in `PATH`
+
+Install:
+```bash
+cargo install --git https://github.com/itdojp/cspx --rev 9883d1c80bbd806a30a5e08167c9d7414e4e610c --locked cspx
+```
+
+Verify:
+```bash
+cspx --version
+```
+
+Notes:
+- CI uses `cargo install --rev 9883d1c80bbd806a30a5e08167c9d7414e4e610c --locked cspx` (see `.github/workflows/formal-verify.yml`).
+- Tag `m5.1` currently points to this commit, but git tags can be retagged; prefer `--rev` (immutable).
+
+### Run
+
+Typecheck (safe default, used for CI smoke):
+```bash
+pnpm run verify:csp -- --file spec/csp/cspx-smoke.cspm --mode typecheck
+```
+
+Assertions:
+- `cspx` backend maps `--mode assertions` to a single canonical check:
+  - `cspx check --assert "deadlock free" ...`
+```bash
+pnpm run verify:csp -- --file spec/csp/sample.cspm --mode assertions
+```
+
+Custom backend command (shell):
+```bash
+# {file} is replaced with the absolute file path
+CSP_RUN_CMD='echo Running CSP tool on {file}' \
+  pnpm run verify:csp -- --file spec/csp/sample.cspm --mode typecheck
+```
+
+Security note:
+- `CSP_RUN_CMD` is executed via a shell. Do not build it from untrusted input.
+
+### Artifacts
+
+Always produced:
+- `artifacts/hermetic-reports/formal/csp-summary.json`
+
+Produced when `cspx` is used:
+- `artifacts/hermetic-reports/formal/cspx-result.json`
+
+### Example results (actual run on main)
+
+Environment:
+- `node v22.19.0`
+- `pnpm 10.0.0`
+- `cspx 0.1.0`
+
+Command:
+```bash
+pnpm -s run verify:csp -- --file spec/csp/cspx-smoke.cspm --mode typecheck
+```
+
+Console output:
+```text
+CSP summary written: artifacts/hermetic-reports/formal/csp-summary.json
+- file=spec/csp/cspx-smoke.cspm status=ran backend=cspx:typecheck
+```
+
+`csp-summary.json` (excerpt):
+```json
+{
+  "tool": "csp",
+  "file": "spec/csp/cspx-smoke.cspm",
+  "backend": "cspx:typecheck",
+  "detailsFile": "artifacts/hermetic-reports/formal/cspx-result.json",
+  "resultStatus": "pass",
+  "ran": true,
+  "status": "ran",
+  "exitCode": 0,
+  "timestamp": "2026-02-05T23:49:08.300Z",
+  "output": "cspx schema=0.1 status=pass exit_code=0 checks=typecheck:pass"
+}
+```
+
+`cspx-result.json` (excerpt):
+```json
+{
+  "schema_version": "0.1",
+  "tool": { "name": "cspx", "version": "0.1.0" },
+  "status": "pass",
+  "exit_code": 0,
+  "checks": [
+    { "name": "typecheck", "status": "pass" }
+  ]
+}
+```
+
+Assertions example (expected failure for STOP-only sample):
+- `spec/csp/cspx-smoke.cspm` defines `SYSTEM = STOP`, which is a deadlock state.
+- Running `--mode assertions` triggers `deadlock free` and therefore reports `fail` with a counterexample tagged `deadlock`.
+
+---
+
+## 日本語
+
+本ドキュメントは、ae-framework における **CSP 検査（cspx ランナー）**の使い方と、生成される成果物（実行結果）を整理したものです。
+
+対象範囲:
+- 実行エントリ: `pnpm run verify:csp`（`scripts/formal/verify-csp.mjs`）
+- 推奨バックエンド: `cspx`（OSS）
+- CI: `Formal Verify` ワークフロー（ラベル/手動実行で起動、non-blocking）
+
+### このランナーの前提（重要）
+
+- **non-blocking**: 失敗しても `verify:csp` 自体は終了コード `0` で終了します。  
+  成否は `artifacts/hermetic-reports/formal/csp-summary.json` を参照して判断します（既定では「ゲート化」しません）。
+- バックエンド選択は（利用可能なら）次の優先順位です:
+  1) `CSP_RUN_CMD`（シェル実行）
+  2) `cspx`
+  3) FDR `refines`
+  4) `cspmchecker`
+
+### 導入（推奨: cspx）
+
+前提:
+- Rust ツールチェーン（`cargo`）
+- `~/.cargo/bin` が `PATH` に含まれていること
+
+インストール（再現性のため tag pin 推奨）:
+```bash
+cargo install --git https://github.com/itdojp/cspx --rev 9883d1c80bbd806a30a5e08167c9d7414e4e610c --locked cspx
+```
+
+確認:
+```bash
+cspx --version
+```
+
+補足:
+- CI は commit SHA に pin して導入します（`.github/workflows/formal-verify.yml`）。
+- tag `m5.1` は現状この commit を指しますが、tag は付け替え可能なため、`--rev`（不変）を推奨します。
+
+### 実行方法
+
+型検査（安全な既定。CI スモークで使用）:
+```bash
+pnpm run verify:csp -- --file spec/csp/cspx-smoke.cspm --mode typecheck
+```
+
+Assertions:
+- `cspx` バックエンドの `--mode assertions` は、v0.1 では **1種類の代表チェック**にマップしています:
+  - `cspx check --assert "deadlock free" ...`
+```bash
+pnpm run verify:csp -- --file spec/csp/sample.cspm --mode assertions
+```
+
+任意のツールをコマンドで実行（シェル経由）:
+```bash
+# {file} は対象ファイルの絶対パスへ置換されます
+CSP_RUN_CMD='echo Running CSP tool on {file}' \
+  pnpm run verify:csp -- --file spec/csp/sample.cspm --mode typecheck
+```
+
+セキュリティ注意:
+- `CSP_RUN_CMD` はシェルで実行されます。信頼できない入力を連結して設定しないでください。
+
+### 成果物（実行結果）
+
+常に生成:
+- `artifacts/hermetic-reports/formal/csp-summary.json`
+
+`cspx` 利用時に生成:
+- `artifacts/hermetic-reports/formal/cspx-result.json`
+
+### 実行結果例（main での実測）
+
+環境:
+- `node v22.19.0`
+- `pnpm 10.0.0`
+- `cspx 0.1.0`
+
+コマンド:
+```bash
+pnpm -s run verify:csp -- --file spec/csp/cspx-smoke.cspm --mode typecheck
+```
+
+標準出力:
+```text
+CSP summary written: artifacts/hermetic-reports/formal/csp-summary.json
+- file=spec/csp/cspx-smoke.cspm status=ran backend=cspx:typecheck
+```
+
+`csp-summary.json`（抜粋）:
+```json
+{
+  "tool": "csp",
+  "file": "spec/csp/cspx-smoke.cspm",
+  "backend": "cspx:typecheck",
+  "detailsFile": "artifacts/hermetic-reports/formal/cspx-result.json",
+  "resultStatus": "pass",
+  "ran": true,
+  "status": "ran",
+  "exitCode": 0,
+  "timestamp": "2026-02-05T23:49:08.300Z",
+  "output": "cspx schema=0.1 status=pass exit_code=0 checks=typecheck:pass"
+}
+```
+
+`cspx-result.json`（抜粋）:
+```json
+{
+  "schema_version": "0.1",
+  "tool": { "name": "cspx", "version": "0.1.0" },
+  "status": "pass",
+  "exit_code": 0,
+  "checks": [
+    { "name": "typecheck", "status": "pass" }
+  ]
+}
+```
+
+Assertions の結果例（STOP のため意図通り fail）:
+- `spec/csp/cspx-smoke.cspm` は `SYSTEM = STOP` を定義しています（deadlock 状態）。
+- `--mode assertions` は `deadlock free` を評価するため、`resultStatus: fail` と `deadlock` タグ付き counterexample を返します。

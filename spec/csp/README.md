@@ -74,6 +74,10 @@ Security note
 
 Artifacts:
 - `artifacts/hermetic-reports/formal/csp-summary.json`
+- `artifacts/hermetic-reports/formal/cspx-result.json` (when `cspx` backend is used)
+
+See also:
+- `docs/quality/formal-csp.md` (usage / artifact schema / example outputs)
 
 ---
 
@@ -106,6 +110,10 @@ CSP_RUN_CMD='echo Running CSP tool on {file}' pnpm run verify:csp -- --file spec
 
 成果物:
 - `artifacts/hermetic-reports/formal/csp-summary.json`
+- `artifacts/hermetic-reports/formal/cspx-result.json`（`cspx` 利用時）
+
+関連ドキュメント:
+- `../../docs/quality/formal-csp.md`（使い方/成果物/実行結果例）
 
 ---
 
