@@ -178,6 +178,12 @@ if (!fs.existsSync(absFile)) {
     if (!res.available) {
       status = 'tool_not_available';
       output = clamp(res.output || 'cspx not available');
+    } else if (cspSummary && typeof cspSummary === 'object' && !result) {
+      // Prefer cspx-generated summary when detail JSON is missing.
+      status = cspSummary.status || (res.status === 0 ? 'ran' : 'failed');
+      resultStatus = cspSummary.resultStatus || null;
+      output = clamp([cspSummary.output, res.output].filter(Boolean).join('\n'));
+      forceWriteSummary = false;
     } else if (!result) {
       status = res.status === 0 ? 'ran' : 'failed';
       output = clamp(res.output || 'cspx produced no JSON result');
@@ -260,7 +266,7 @@ if (forceWriteSummary) {
   summary.resultStatus = summary.resultStatus || resultStatus;
   summary.status = summary.status || status;
   summary.exitCode = typeof summary.exitCode === 'number' ? summary.exitCode : (exitCode ?? 0);
-  summary.output = clamp([summary.output, output].filter(Boolean).join('\n'));
+  summary.output = clamp(output || summary.output || '');
   fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));
 }
 const finalSummary = readJsonSafe(outFile) || {};

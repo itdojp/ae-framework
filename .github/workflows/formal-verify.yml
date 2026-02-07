@@ -352,7 +352,11 @@ jobs:
           # Persist for subsequent steps as well (not just this shell).
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
           export PATH="$HOME/.cargo/bin:$PATH"
-          cargo install --git "$CSPX_REPO" --rev "$CSPX_REF" --locked --force cspx
+          if ! command -v cspx >/dev/null 2>&1; then
+            cargo install --git "$CSPX_REPO" --rev "$CSPX_REF" --locked cspx
+          elif ! cspx typecheck --help | grep -q -- '--summary-json'; then
+            cargo install --git "$CSPX_REPO" --rev "$CSPX_REF" --locked --force cspx
+          fi
           cspx --version || true
           cspx typecheck --help | grep -q -- '--summary-json'
       - name: Run verify:csp (cspx, sample)

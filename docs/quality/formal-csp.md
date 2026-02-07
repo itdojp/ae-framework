@@ -41,7 +41,7 @@ cspx typecheck --help | grep -- --summary-json
 ```
 
 Notes:
-- CI uses `cargo install --rev 82b08a4324e8a15bc1b7d6e4ba39f3b5d071a07b --locked --force cspx` (see `.github/workflows/formal-verify.yml`).
+- CI installs pinned `cspx` when missing, and only forces reinstall when `--summary-json` is not supported (see `.github/workflows/formal-verify.yml`).
 - This pin includes `--summary-json` (ae-framework aggregate contract).
 
 ### Run
