@@ -69,6 +69,14 @@ function readJsonSafe(p) {
   try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return undefined; }
 }
 
+function normalizeRepoPath(p, repoRoot) {
+  if (typeof p !== 'string' || !p) return p;
+  if (!path.isAbsolute(p)) return p;
+  const rel = path.relative(repoRoot, p);
+  if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) return p;
+  return rel;
+}
+
 function mapCspxStatusToSummaryStatus(s) {
   const v = String(s || '').toLowerCase();
   if (v === 'pass') return 'ran';
@@ -121,6 +129,7 @@ let exitCode = null;
 let backend = null;
 let detailsFile = null;
 let resultStatus = null;
+let forceWriteSummary = true;
 
 if (!fs.existsSync(absFile)) {
   status = 'file_not_found';
@@ -150,11 +159,12 @@ if (!fs.existsSync(absFile)) {
     // - typecheck: cspx typecheck
     // - assertions: currently mapped to a single canonical assertion (deadlock freedom)
     const cspxArgs = (mode === 'assertions')
-      ? ['check', '--assert', 'deadlock free', absFile, '--format', 'json', '--output', cspxOutFile]
-      : ['typecheck', absFile, '--format', 'json', '--output', cspxOutFile];
+      ? ['check', '--assert', 'deadlock free', absFile, '--format', 'json', '--output', cspxOutFile, '--summary-json', outFile]
+      : ['typecheck', absFile, '--format', 'json', '--output', cspxOutFile, '--summary-json', outFile];
 
     // Avoid stale reads: if cspx fails before writing a new JSON, a previous run's file must not be reused.
     try { fs.rmSync(cspxOutFile, { force: true }); } catch {}
+    try { fs.rmSync(outFile, { force: true }); } catch {}
 
     const res = runCommand('cspx', cspxArgs);
     ran = res.available;
@@ -163,6 +173,7 @@ if (!fs.existsSync(absFile)) {
     detailsFile = path.relative(repoRoot, cspxOutFile);
 
     const result = fs.existsSync(cspxOutFile) ? readJsonSafe(cspxOutFile) : undefined;
+    const cspSummary = fs.existsSync(outFile) ? readJsonSafe(outFile) : undefined;
     const schemaVersion = result?.schema_version;
     if (!res.available) {
       status = 'tool_not_available';
@@ -174,9 +185,17 @@ if (!fs.existsSync(absFile)) {
       status = 'unsupported';
       output = clamp(`cspx schema_version mismatch: expected 0.1, got ${schemaVersion || 'n/a'}`);
     } else {
-      resultStatus = result.status || null;
-      status = mapCspxStatusToSummaryStatus(result.status);
-      output = clamp([summarizeCspxResult(result), res.output].filter(Boolean).join('\n'));
+      if (cspSummary && typeof cspSummary === 'object') {
+        status = cspSummary.status || mapCspxStatusToSummaryStatus(result.status);
+        resultStatus = cspSummary.resultStatus || result.status || null;
+        output = clamp([cspSummary.output, res.output].filter(Boolean).join('\n'));
+        // cspx-generated summary already follows the contract path and schema.
+        forceWriteSummary = false;
+      } else {
+        resultStatus = result.status || null;
+        status = mapCspxStatusToSummaryStatus(result.status);
+        output = clamp([summarizeCspxResult(result), res.output].filter(Boolean).join('\n'));
+      }
     }
   } else if (commandExists('refines')) {
     // FDR (commercial): allow local runs when installed.
@@ -218,19 +237,33 @@ if (!fs.existsSync(absFile)) {
   }
 }
 
-const summary = {
-  tool: 'csp',
-  file: path.relative(repoRoot, absFile),
-  backend,
-  detailsFile,
-  resultStatus,
-  ran,
-  status,
-  exitCode,
-  timestamp: new Date().toISOString(),
-  output,
-};
-fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));
+if (forceWriteSummary) {
+  const summary = {
+    tool: 'csp',
+    file: path.relative(repoRoot, absFile),
+    backend,
+    detailsFile,
+    resultStatus,
+    ran,
+    status,
+    exitCode,
+    timestamp: new Date().toISOString(),
+    output,
+  };
+  fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));
+} else {
+  // Keep cspx-generated summary file and only refresh fields needed by this runner.
+  const summary = readJsonSafe(outFile) || {};
+  summary.file = normalizeRepoPath(summary.file, repoRoot) || path.relative(repoRoot, absFile);
+  summary.backend = summary.backend || backend;
+  summary.detailsFile = normalizeRepoPath(summary.detailsFile, repoRoot) || detailsFile;
+  summary.resultStatus = summary.resultStatus || resultStatus;
+  summary.status = summary.status || status;
+  summary.exitCode = typeof summary.exitCode === 'number' ? summary.exitCode : (exitCode ?? 0);
+  summary.output = clamp([summary.output, output].filter(Boolean).join('\n'));
+  fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));
+}
+const finalSummary = readJsonSafe(outFile) || {};
 console.log(`CSP summary written: ${path.relative(repoRoot, outFile)}`);
-console.log(`- file=${summary.file} status=${status}${backend ? ` backend=${backend}` : ''}`);
+console.log(`- file=${finalSummary.file || path.relative(repoRoot, absFile)} status=${finalSummary.status || status}${(finalSummary.backend || backend) ? ` backend=${finalSummary.backend || backend}` : ''}`);
 process.exit(0);

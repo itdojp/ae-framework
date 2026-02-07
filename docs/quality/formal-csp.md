@@ -31,17 +31,18 @@ Pre-reqs:
 
 Install:
 ```bash
-cargo install --git https://github.com/itdojp/cspx --rev 9883d1c80bbd806a30a5e08167c9d7414e4e610c --locked cspx
+cargo install --git https://github.com/itdojp/cspx --rev 82b08a4324e8a15bc1b7d6e4ba39f3b5d071a07b --locked cspx
 ```
 
 Verify:
 ```bash
 cspx --version
+cspx typecheck --help | grep -- --summary-json
 ```
 
 Notes:
-- CI uses `cargo install --rev 9883d1c80bbd806a30a5e08167c9d7414e4e610c --locked cspx` (see `.github/workflows/formal-verify.yml`).
-- Tag `m5.1` currently points to this commit, but git tags can be retagged; prefer `--rev` (immutable).
+- CI uses `cargo install --rev 82b08a4324e8a15bc1b7d6e4ba39f3b5d071a07b --locked --force cspx` (see `.github/workflows/formal-verify.yml`).
+- This pin includes `--summary-json` (ae-framework aggregate contract).
 
 ### Run
 
@@ -74,6 +75,10 @@ Always produced:
 
 Produced when `cspx` is used:
 - `artifacts/hermetic-reports/formal/cspx-result.json`
+
+`cspx` backend invocation contract:
+- `--output artifacts/hermetic-reports/formal/cspx-result.json`
+- `--summary-json artifacts/hermetic-reports/formal/csp-summary.json`
 
 ### Example results (actual run on main)
 
@@ -155,17 +160,18 @@ Assertions example (expected failure for STOP-only sample):
 
 インストール（再現性のため tag pin 推奨）:
 ```bash
-cargo install --git https://github.com/itdojp/cspx --rev 9883d1c80bbd806a30a5e08167c9d7414e4e610c --locked cspx
+cargo install --git https://github.com/itdojp/cspx --rev 82b08a4324e8a15bc1b7d6e4ba39f3b5d071a07b --locked cspx
 ```
 
 確認:
 ```bash
 cspx --version
+cspx typecheck --help | grep -- --summary-json
 ```
 
 補足:
 - CI は commit SHA に pin して導入します（`.github/workflows/formal-verify.yml`）。
-- tag `m5.1` は現状この commit を指しますが、tag は付け替え可能なため、`--rev`（不変）を推奨します。
+- この pin は ae-framework 連携用の `--summary-json` を含みます。
 
 ### 実行方法
 
@@ -198,6 +204,10 @@ CSP_RUN_CMD='echo Running CSP tool on {file}' \
 
 `cspx` 利用時に生成:
 - `artifacts/hermetic-reports/formal/cspx-result.json`
+
+`cspx` バックエンド呼び出し契約:
+- `--output artifacts/hermetic-reports/formal/cspx-result.json`
+- `--summary-json artifacts/hermetic-reports/formal/csp-summary.json`
 
 ### 実行結果例（main での実測）
 
