@@ -65,10 +65,11 @@ CSP
 - CI is wired as **non-blocking**: it always produces `csp-summary.json` and does not fail the workflow by default.
 - Recommended backend: `cspx` (OSS, Apache-2.0) — CI-first CSPM checks with JSON output.
   - Install (recommended: pin to an immutable commit SHA):
-    - `cargo install --git https://github.com/itdojp/cspx --rev 9883d1c80bbd806a30a5e08167c9d7414e4e610c --locked cspx`
-    - Note: tag `m5.1` points to this commit, but git tags can be retagged; prefer `--rev` in CI.
+    - `cargo install --git https://github.com/itdojp/cspx --rev 82b08a4324e8a15bc1b7d6e4ba39f3b5d071a07b --locked cspx`
+    - This pinned commit includes `--summary-json` for ae-framework integration.
   - Verify:
     - `cspx --version`
+    - `cspx typecheck --help | grep -- --summary-json`
   - Run (sample within currently supported subset):
     - `pnpm run verify:csp -- --file spec/csp/cspx-smoke.cspm --mode typecheck`
 - Fallback backends (best-effort): `CSP_RUN_CMD` → `cspx` → `refines` (FDR) → `cspmchecker`.

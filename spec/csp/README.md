@@ -25,6 +25,7 @@ The runner supports these backends (best-effort, in this order):
 ```bash
 # Smoke sample within cspx's currently supported frontend subset:
 cspx --version
+cspx typecheck --help | grep -- --summary-json
 pnpm run verify:csp -- --file spec/csp/cspx-smoke.cspm --mode typecheck
 ```
 
@@ -75,6 +76,10 @@ Security note
 Artifacts:
 - `artifacts/hermetic-reports/formal/csp-summary.json`
 - `artifacts/hermetic-reports/formal/cspx-result.json` (when `cspx` backend is used)
+
+`verify:csp` with `cspx` uses the contract pair:
+- `--output artifacts/hermetic-reports/formal/cspx-result.json`
+- `--summary-json artifacts/hermetic-reports/formal/csp-summary.json`
 
 See also:
 - `docs/quality/formal-csp.md` (usage / artifact schema / example outputs)

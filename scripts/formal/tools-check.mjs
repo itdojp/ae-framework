@@ -8,6 +8,15 @@ function has(cmd) {
 function version(cmd, args = ['--version']) {
   try { return execSync(`bash -lc '${cmd} ${args.join(' ')} 2>&1'`, { encoding: 'utf8' }).trim(); } catch { return 'n/a'; }
 }
+function supportsSummaryJson() {
+  try {
+    const out = execSync("bash -lc 'cspx typecheck --help 2>&1'", { encoding: 'utf8' });
+    return String(out).includes('--summary-json');
+  } catch (e) {
+    const out = `${e?.stdout ? String(e.stdout) : ''}${e?.stderr ? String(e.stderr) : ''}`;
+    return out.includes('--summary-json');
+  }
+}
 function shortVer(tool, raw) {
   if (!raw || raw === 'n/a') return 'n/a';
   try {
@@ -96,6 +105,12 @@ const cspRunCmdSet = Boolean((process.env.CSP_RUN_CMD || '').trim());
 report.push({ tool: 'CSP_RUN_CMD', present: cspRunCmdSet, path: cspRunCmdSet ? 'set (command hidden)' : 'unset (set CSP_RUN_CMD to run a CSP tool)' });
 const hasCspx = has('cspx');
 report.push({ tool: 'cspx', present: hasCspx, version: hasCspx ? shortVer('cspx', version('cspx', ['--version'])) : 'n/a' });
+const cspxSummaryJson = hasCspx ? supportsSummaryJson() : false;
+report.push({
+  tool: 'cspx --summary-json',
+  present: cspxSummaryJson,
+  path: cspxSummaryJson ? 'supported' : 'missing (install pinned cspx with summary contract support)',
+});
 const hasRefines = has('refines');
 report.push({ tool: 'refines', present: hasRefines, version: hasRefines ? shortVer('refines', version('refines', ['--version'])) : 'n/a' });
 const hasCspmchecker = has('cspmchecker');
@@ -129,7 +144,7 @@ try {
   const csp = map['CSP_RUN_CMD']
     ? 'CSP_RUN_CMD'
     : (map['cspx']
-      ? `cspx(${vers['cspx']||'n/a'})`
+      ? `cspx(${vers['cspx']||'n/a'},summary-json=${map['cspx --summary-json'] ? 'yes' : 'no'})`
       : (map['refines']
         ? `refines(${vers['refines']||'n/a'})`
         : (map['cspmchecker'] ? 'cspmchecker' : 'unset')));

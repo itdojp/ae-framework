@@ -30,7 +30,7 @@ This guide shows how to run **all formal verification tools** end-to-end for a s
 - `formal-reports-tla`: `tla-summary.json`
 - `formal-reports-kani`: `kani-summary.json`
 - `formal-reports-spin`: `spin-summary.json`
-- `formal-reports-csp`: `csp-summary.json`
+- `formal-reports-csp`: `csp-summary.json`, `cspx-result.json`
 - `formal-reports-lean`: `lean-summary.json`
 
 ### Local (when you want a quick smoke test)
@@ -149,7 +149,7 @@ Outputs:
 - `formal-reports-tla`（`tla-summary.json`）
 - `formal-reports-kani`（`kani-summary.json`）
 - `formal-reports-spin`（`spin-summary.json`）
-- `formal-reports-csp`（`csp-summary.json`）
+- `formal-reports-csp`（`csp-summary.json`, `cspx-result.json`）
 - `formal-reports-lean`（`lean-summary.json`）
 
 ### ローカル（簡易スモークテスト）
