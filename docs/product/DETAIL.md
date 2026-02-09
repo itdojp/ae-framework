@@ -157,5 +157,6 @@ ae-framework は、エージェント協調型SDLCを支える「仕様・検証
 ## 8. 関連資料
 - 概要説明資料: `docs/product/OVERVIEW.md`
 - 利用マニュアル: `docs/product/USER-MANUAL.md`
+- 適用対象・入力/出力・ツール適性: `docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`
 - 実装準拠の全体構成: `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md`
 - 全体ナビゲーション: `docs/README.md`

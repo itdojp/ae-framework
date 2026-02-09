@@ -12,6 +12,8 @@ This document lists typical ae-framework usage scenarios with concrete commands,
 
 ## 日本語
 
+このドキュメントは「実行シナリオ中心」です。導入判断（どのプロダクトに何を入力し、何が出力されるか／どのツールが適するか）は `docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md` を参照してください。
+
 ## 0. 前提: 実行モード（ローカル/CI）
 
 ### 0.1 開発時（TypeScript実行）
@@ -188,4 +190,3 @@ node scripts/codex/ae-playbook.mjs --enable-formal --formal-timeout=60000
 ### 参考（根拠）
 - 設計と運用詳細: `docs/codex/ae-playbook.md`
 - CodeX統合: `docs/integrations/CODEX-INTEGRATION.md`
-

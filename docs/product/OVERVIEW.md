@@ -72,6 +72,7 @@ ae-framework は、エージェント協調型のSDLCを実行するための「
 ### 10. 関連資料
 - 詳細説明資料: `docs/product/DETAIL.md`
 - 利用マニュアル: `docs/product/USER-MANUAL.md`
+- 適用対象・入力/出力・ツール適性: `docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`
 - 現行全体構成（実装準拠）: `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md`
 - Minimal Adoption: `docs/product/MINIMAL-ADOPTION.md`
 - 全体ナビゲーション: `docs/README.md`
