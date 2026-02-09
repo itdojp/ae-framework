@@ -133,10 +133,10 @@ Assertions example (expected failure for STOP-only sample):
 - Running `--mode assertions` triggers `deadlock free` and therefore reports `fail` with a counterexample tagged `deadlock`.
 
 Upstream references (cspx):
-- `https://github.com/itdojp/cspx/blob/main/docs/integrations/ae-framework.md`
-- `https://github.com/itdojp/cspx/blob/main/docs/result-json.md`
-- `https://github.com/itdojp/cspx/blob/main/docs/explainability.md`
-- `https://github.com/itdojp/cspx/blob/main/docs/validation-report.md`
+- https://github.com/itdojp/cspx/blob/main/docs/integrations/ae-framework.md
+- https://github.com/itdojp/cspx/blob/main/docs/result-json.md
+- https://github.com/itdojp/cspx/blob/main/docs/explainability.md
+- https://github.com/itdojp/cspx/blob/main/docs/validation-report.md
 
 ---
 
@@ -165,7 +165,7 @@ Upstream references (cspx):
 - Rust ツールチェーン（`cargo`）
 - `~/.cargo/bin` が `PATH` に含まれていること
 
-インストール（再現性のため tag pin 推奨）:
+インストール（再現性のため commit SHA pin 推奨）:
 ```bash
 cargo install --git https://github.com/itdojp/cspx --rev 8a67639ea4d3f715e27feb8cd728f46866a905db --locked cspx
 ```
@@ -269,7 +269,7 @@ Assertions の結果例（STOP のため意図通り fail）:
 - `--mode assertions` は `deadlock free` を評価するため、`resultStatus: fail` と `deadlock` タグ付き counterexample を返します。
 
 参照先（cspx）:
-- `https://github.com/itdojp/cspx/blob/main/docs/integrations/ae-framework.md`
-- `https://github.com/itdojp/cspx/blob/main/docs/result-json.md`
-- `https://github.com/itdojp/cspx/blob/main/docs/explainability.md`
-- `https://github.com/itdojp/cspx/blob/main/docs/validation-report.md`
+- https://github.com/itdojp/cspx/blob/main/docs/integrations/ae-framework.md
+- https://github.com/itdojp/cspx/blob/main/docs/result-json.md
+- https://github.com/itdojp/cspx/blob/main/docs/explainability.md
+- https://github.com/itdojp/cspx/blob/main/docs/validation-report.md

@@ -92,7 +92,7 @@ Notes
 - Use `Formal Verify` workflow with `run-formal` label or manual dispatch to run CI stubs. Engines will be wired incrementally.
 
 Upstream references (cspx)
-- Integration contract: `https://github.com/itdojp/cspx/blob/main/docs/integrations/ae-framework.md`
-- Result JSON contract: `https://github.com/itdojp/cspx/blob/main/docs/result-json.md`
-- Explainability guide: `https://github.com/itdojp/cspx/blob/main/docs/explainability.md`
-- Validation report: `https://github.com/itdojp/cspx/blob/main/docs/validation-report.md`
+- Integration contract: https://github.com/itdojp/cspx/blob/main/docs/integrations/ae-framework.md
+- Result JSON contract: https://github.com/itdojp/cspx/blob/main/docs/result-json.md
+- Explainability guide: https://github.com/itdojp/cspx/blob/main/docs/explainability.md
+- Validation report: https://github.com/itdojp/cspx/blob/main/docs/validation-report.md

@@ -84,10 +84,10 @@ Artifacts:
 
 See also:
 - `docs/quality/formal-csp.md` (usage / artifact schema / example outputs)
-- `https://github.com/itdojp/cspx/blob/main/docs/integrations/ae-framework.md`
-- `https://github.com/itdojp/cspx/blob/main/docs/result-json.md`
-- `https://github.com/itdojp/cspx/blob/main/docs/explainability.md`
-- `https://github.com/itdojp/cspx/blob/main/docs/validation-report.md`
+- https://github.com/itdojp/cspx/blob/main/docs/integrations/ae-framework.md
+- https://github.com/itdojp/cspx/blob/main/docs/result-json.md
+- https://github.com/itdojp/cspx/blob/main/docs/explainability.md
+- https://github.com/itdojp/cspx/blob/main/docs/validation-report.md
 
 ---
 
@@ -125,10 +125,10 @@ CSP_RUN_CMD='echo Running CSP tool on {file}' pnpm run verify:csp -- --file spec
 
 関連ドキュメント:
 - `../../docs/quality/formal-csp.md`（使い方/成果物/実行結果例）
-- `https://github.com/itdojp/cspx/blob/main/docs/integrations/ae-framework.md`
-- `https://github.com/itdojp/cspx/blob/main/docs/result-json.md`
-- `https://github.com/itdojp/cspx/blob/main/docs/explainability.md`
-- `https://github.com/itdojp/cspx/blob/main/docs/validation-report.md`
+- https://github.com/itdojp/cspx/blob/main/docs/integrations/ae-framework.md
+- https://github.com/itdojp/cspx/blob/main/docs/result-json.md
+- https://github.com/itdojp/cspx/blob/main/docs/explainability.md
+- https://github.com/itdojp/cspx/blob/main/docs/validation-report.md
 
 ---
 
