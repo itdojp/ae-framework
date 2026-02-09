@@ -77,11 +77,11 @@ ae-framework を導入する際に、次を一目で判断できるようにす�
 | ツール/コマンド | 適している分野 | 入力 | 主出力 | 注意点 |
 | --- | --- | --- | --- | --- |
 | `pnpm run verify:lite` | 日常PRゲート、品質の下限担保 | 通常のソースとテスト | verify-lite summary | 必須ゲート運用向き |
-| `pnpm run ae-framework -- spec validate/lint` | 仕様主導開発、契約整合 | AE-Spec Markdown / AE-IR JSON | `.ae/ae-ir.json` | 仕様品質の起点を作る |
+| `pnpm run ae-framework -- spec validate ...` / `pnpm run ae-framework -- spec lint ...` | 仕様主導開発、契約整合 | AE-Spec Markdown / AE-IR JSON | `.ae/ae-ir.json` | 仕様品質の起点を作る |
 | `pnpm run verify:formal` | 形式検証の全体スモーク | 形式仕様一式 | formal summary 一式 | non-blocking 前提 |
 | `pnpm run verify:tla -- --engine=tlc` | 小さな状態空間の高速検査 | TLA+ + cfg/jar | `tla-summary.json` | `TLA_TOOLS_JAR` が必要 |
 | `node scripts/formal/verify-apalache.mjs` | BMC/大きめ制約の TLA+ 検査 | TLA+ | `apalache-summary.json` | CLI導入が必要 |
-| `pnpm run verify:smt -- --solver=z3|cvc5` | 数式制約・境界条件の検証 | SMT-LIB2 | `smt-summary.json` | solver導入が必要 |
+| `pnpm run verify:smt -- --file spec/smt/sample.smt2 --solver=z3|cvc5` | 数式制約・境界条件の検証 | SMT-LIB2 | `smt-summary.json` | solver導入が必要。ファイル未指定時は `status: no_file` で検証未実行 |
 | `pnpm run verify:alloy` | 構造/関係モデル検証 | Alloy model | `alloy-summary.json` | `ALLOY_JAR` 等の準備 |
 | `pnpm run verify:csp` | 並行プロトコル、deadlock系 | CSPM | `csp-summary.json`, `cspx-result.json` | `cspx` 推奨、`metrics` は optional |
 | `pnpm run verify:spin` | Promelaモデル検査 | `.pml` + LTL | `spin-summary.json` | `spin` と `gcc` が必要 |
