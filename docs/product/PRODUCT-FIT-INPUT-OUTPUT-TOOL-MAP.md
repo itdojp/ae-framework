@@ -30,6 +30,24 @@ ae-framework を導入する際に、次を一目で判断できるようにす�
 - pnpm `10.0.0`（`package.json` `packageManager`）
 - CI 実行基盤として GitHub Actions
 
+## 1.1 実装言語・実行基盤の制約（現行実装）
+
+| 区分 | 制約 | 根拠 |
+| --- | --- | --- |
+| フレームワーク本体 | Node.js 上の TypeScript/JavaScript 実装 | `package.json` の `type: module`, `bin`, `scripts`（`ae-framework: tsx src/cli/index.ts`） |
+| 必須実行環境 | Node.js + pnpm + GitHub Actions 前提。`verify:lite` は bash 実行が必要 | `package.json` `engines`/`packageManager`, `.github/workflows/*`, `scripts/verify/run.mjs`, `scripts/ci/run-verify-lite-local.sh` |
+| フルセット導入 | `verify:lite` をそのまま使う場合は JS/TS ツールチェーン前提 | `scripts/ci/run-verify-lite-local.sh` が `pnpm types:check`, `pnpm lint`, `pnpm run build` を実行 |
+| 他言語プロダクト | 仕様/形式検証系は導入可能。ただし lint/test/build ゲートは対象言語向けに別実装が必要 | `verify:formal`/`verify:conformance` は仕様入力中心、`verify:lite` は JS/TS 前提 |
+
+## 1.2 分野適合の制約（費用対効果）
+
+| 分類 | 向いている度合い | 補足 |
+| --- | --- | --- |
+| 仕様・監査要求が強い分野（API、イベント駆動、並行制御、高信頼系） | 高い | 仕様→検証→成果物集約の効果が出やすい |
+| 一般的な業務アプリ（CRUD中心） | 中程度 | 最小導入（`verify:lite` + spec validate）で十分な場合が多い |
+| 単発PoC・短命スクリプト | 低い | 設定/CIコストが成果を上回りやすい |
+| CIを使えない運用、成果物保全が不要な運用 | 非推奨 | ae-framework の主要価値（再現性/監査性）を活かせない |
+
 ## 2. プロダクト適用マップ（何に向いているか）
 
 | プロダクト類型 | 典型課題 | 最小入力 | 推奨開始コマンド | 主な出力 |

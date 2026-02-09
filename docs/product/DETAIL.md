@@ -153,6 +153,8 @@ ae-framework は、エージェント協調型SDLCを支える「仕様・検証
 ## 7. 制約と注意点
 - 本プロダクトはCI/CDの定義と運用基盤を提供するが、運用代行は行いません
 - エージェントの実行環境は外部に依存します
+- `verify:lite` は `scripts/ci/run-verify-lite-local.sh` を通じて `pnpm types:check` / `pnpm lint` / `pnpm run build` を実行するため、JS/TS ツールチェーン前提です
+- 他言語プロダクトは `verify:formal` / `verify:conformance` など仕様入力中心の機能を先行導入し、言語依存ゲートは別実装で接続する前提です
 
 ## 8. 関連資料
 - 概要説明資料: `docs/product/OVERVIEW.md`
