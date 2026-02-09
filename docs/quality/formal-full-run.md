@@ -110,6 +110,9 @@ CSP_RUN_CMD='echo Running CSP tool on {file}' pnpm run verify:csp -- --file spec
 ```
 
 For details (artifacts / example outputs), see: `docs/quality/formal-csp.md`.
+Upstream cspx references:
+- `https://github.com/itdojp/cspx/blob/main/docs/integrations/ae-framework.md`
+- `https://github.com/itdojp/cspx/blob/main/docs/validation-report.md`
 
 #### 9) Model check (TLC/Alloy scan)
 ```bash
@@ -229,6 +232,9 @@ CSP_RUN_CMD='echo Running CSP tool on {file}' pnpm run verify:csp -- --file spec
 ```
 
 詳細（成果物/実行結果例）は `docs/quality/formal-csp.md` を参照してください。
+上流 cspx の参照先:
+- `https://github.com/itdojp/cspx/blob/main/docs/integrations/ae-framework.md`
+- `https://github.com/itdojp/cspx/blob/main/docs/validation-report.md`
 
 #### 9) モデル検査（TLC/Alloy スキャン）
 ```bash

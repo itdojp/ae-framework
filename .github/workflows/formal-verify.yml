@@ -41,8 +41,8 @@ env:
   KANI_VERSION: '0.67.0'
   CSPX_REPO: 'https://github.com/itdojp/cspx'
   # Pinned for reproducibility and supply-chain hardening (immutable commit).
-  # Includes ae-framework integration contract (--summary-json).
-  CSPX_REF: '82b08a4324e8a15bc1b7d6e4ba39f3b5d071a07b'
+  # Includes expanded cspx docs/report updates and ae-framework summary contract.
+  CSPX_REF: '8a67639ea4d3f715e27feb8cd728f46866a905db'
 
 jobs:
   verify-conformance:

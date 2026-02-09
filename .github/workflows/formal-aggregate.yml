@@ -140,7 +140,8 @@ jobs:
           if (csp) {
             const backend = csp.backend ? ` backend=${csp.backend}` : '';
             const resultStatus = csp.resultStatus ? ` result=${csp.resultStatus}` : '';
-            lines.push(`- CSP: status=${csp.status || 'n/a'}${backend}${resultStatus}`);
+            const exitCode = (typeof csp.exitCode === 'number') ? ` exitCode=${csp.exitCode}` : '';
+            lines.push(`- CSP: status=${csp.status || 'n/a'}${backend}${resultStatus}${exitCode}`);
           }
           lines.push(leanSum ? `- Lean summary file: ${path.basename(leanSum)}` : "- Lean summary: n/a");
           if (lean) {

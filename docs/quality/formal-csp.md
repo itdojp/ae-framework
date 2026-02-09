@@ -31,7 +31,7 @@ Pre-reqs:
 
 Install:
 ```bash
-cargo install --git https://github.com/itdojp/cspx --rev 82b08a4324e8a15bc1b7d6e4ba39f3b5d071a07b --locked cspx
+cargo install --git https://github.com/itdojp/cspx --rev 8a67639ea4d3f715e27feb8cd728f46866a905db --locked cspx
 ```
 
 Verify:
@@ -43,6 +43,7 @@ cspx typecheck --help | grep -- --summary-json
 Notes:
 - CI installs pinned `cspx` when missing, and only forces reinstall when `--summary-json` is not supported (see `.github/workflows/formal-verify.yml`).
 - This pin includes `--summary-json` (ae-framework aggregate contract).
+- `metrics` in `cspx-result.json` is optional; ae-framework consumes required fields and ignores optional extensions safely.
 
 ### Run
 
@@ -131,6 +132,12 @@ Assertions example (expected failure for STOP-only sample):
 - `spec/csp/cspx-smoke.cspm` defines `SYSTEM = STOP`, which is a deadlock state.
 - Running `--mode assertions` triggers `deadlock free` and therefore reports `fail` with a counterexample tagged `deadlock`.
 
+Upstream references (cspx):
+- `https://github.com/itdojp/cspx/blob/main/docs/integrations/ae-framework.md`
+- `https://github.com/itdojp/cspx/blob/main/docs/result-json.md`
+- `https://github.com/itdojp/cspx/blob/main/docs/explainability.md`
+- `https://github.com/itdojp/cspx/blob/main/docs/validation-report.md`
+
 ---
 
 ## 日本語
@@ -160,7 +167,7 @@ Assertions example (expected failure for STOP-only sample):
 
 インストール（再現性のため tag pin 推奨）:
 ```bash
-cargo install --git https://github.com/itdojp/cspx --rev 82b08a4324e8a15bc1b7d6e4ba39f3b5d071a07b --locked cspx
+cargo install --git https://github.com/itdojp/cspx --rev 8a67639ea4d3f715e27feb8cd728f46866a905db --locked cspx
 ```
 
 確認:
@@ -172,6 +179,7 @@ cspx typecheck --help | grep -- --summary-json
 補足:
 - CI は commit SHA に pin して導入します（`.github/workflows/formal-verify.yml`）。
 - この pin は ae-framework 連携用の `--summary-json` を含みます。
+- `cspx-result.json` の `metrics` は optional です。ae-framework 側は必須フィールドを利用し、拡張フィールドを安全に読み飛ばします。
 
 ### 実行方法
 
@@ -259,3 +267,9 @@ CSP summary written: artifacts/hermetic-reports/formal/csp-summary.json
 Assertions の結果例（STOP のため意図通り fail）:
 - `spec/csp/cspx-smoke.cspm` は `SYSTEM = STOP` を定義しています（deadlock 状態）。
 - `--mode assertions` は `deadlock free` を評価するため、`resultStatus: fail` と `deadlock` タグ付き counterexample を返します。
+
+参照先（cspx）:
+- `https://github.com/itdojp/cspx/blob/main/docs/integrations/ae-framework.md`
+- `https://github.com/itdojp/cspx/blob/main/docs/result-json.md`
+- `https://github.com/itdojp/cspx/blob/main/docs/explainability.md`
+- `https://github.com/itdojp/cspx/blob/main/docs/validation-report.md`
