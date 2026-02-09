@@ -102,6 +102,7 @@ ae-frameworkは、エージェント協調型のSDLCオーケストレーター�
 - [DETAIL.md](./product/DETAIL.md) - 詳細説明資料
 - [USER-MANUAL.md](./product/USER-MANUAL.md) - 利用マニュアル
 - [POSITIONING.md](./product/POSITIONING.md) - 類似ツールとの棲み分け・導入指針
+- [PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md](./product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md) - 適用対象 × 入力 × 出力 × ツール適性
 
 ### 🧭 ポジショニングの図とフロー
 - 概念図/システム図: `architecture/ARCHITECTURE.md`

@@ -16,6 +16,9 @@ This manual explains setup, common workflows, and operational commands for ae-fr
 - プロダクト開発者、QA、運用担当
 - 仕様検証やCI品質ゲートを運用するチーム
 - エージェント統合を検討しているチーム
+- 導入対象の見極め（入力/出力/ツール適性）を行いたいチーム
+
+適用判断の全体像は `docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md` を参照してください。
 
 ## 2. 前提条件（根拠）
 - Node.js: `>=20.11 <23`（`package.json` の `engines.node`）
@@ -184,6 +187,7 @@ pnpm run security:integrated:quick
 ## 9. 参考資料
 - 概要説明資料: `docs/product/OVERVIEW.md`
 - 詳細説明資料: `docs/product/DETAIL.md`
+- 適用対象・入力/出力・ツール適性: `docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`
 - コマンド体系（実行モード別）: `docs/product/COMMAND-MODES.md`
 - 実装準拠の全体構成: `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md`
 - 全体ナビゲーション: `docs/README.md`
