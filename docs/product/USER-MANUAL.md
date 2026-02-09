@@ -73,6 +73,26 @@ pnpm run spec:lint -- -i .ae/ae-ir.json
 pnpm run verify:formal
 ```
 
+#### CSP(cspx) を利用する場合（推奨）
+`verify:csp` は `cspx` を優先バックエンドとして利用できます。
+
+```bash
+# 再現性のため commit pin で導入
+cargo install --git https://github.com/itdojp/cspx --rev 8a67639ea4d3f715e27feb8cd728f46866a905db --locked cspx
+
+# 機能確認（summary-json 対応）
+cspx --version
+cspx typecheck --help | grep -- --summary-json
+
+# smoke 実行
+pnpm run verify:csp -- --file spec/csp/cspx-smoke.cspm --mode typecheck
+```
+
+確認ポイント:
+- `artifacts/hermetic-reports/formal/csp-summary.json` が生成される
+- `artifacts/hermetic-reports/formal/cspx-result.json` が生成される
+- `csp-summary.json` の `backend/status/resultStatus/exitCode` が記録される
+
 ### 4.3 テスト実行
 ```bash
 pnpm run test:fast
@@ -142,6 +162,11 @@ pnpm run verify:lite
 pnpm run security:integrated:quick
 ```
 
+補足:
+- Full smoke は `pnpm run verify:formal`
+- Formal ツールの導入状況確認は `pnpm run tools:formal:check`
+- CSP 詳細手順は `docs/quality/formal-csp.md`
+
 ## 8. トラブルシューティング
 
 ### 8.1 verify-lite ゲートの失敗
@@ -160,4 +185,5 @@ pnpm run security:integrated:quick
 - 概要説明資料: `docs/product/OVERVIEW.md`
 - 詳細説明資料: `docs/product/DETAIL.md`
 - コマンド体系（実行モード別）: `docs/product/COMMAND-MODES.md`
+- 実装準拠の全体構成: `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md`
 - 全体ナビゲーション: `docs/README.md`

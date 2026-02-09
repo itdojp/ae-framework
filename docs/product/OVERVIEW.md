@@ -57,21 +57,22 @@ ae-framework は、エージェント協調型のSDLCを実行するための「
 2. 開発フック: `pnpm run setup-hooks`
 3. 最小検証: `pnpm run lint` と `pnpm run test:fast`
 
-### 9. 現行全体像（2026-02-02 時点）
-- **主要バイナリ**: `ae` / `ae-framework`（同一）、`ae-phase`、`ae-approve`、`ae-slash`、`ae-ui`、`ae-benchmark` 等
-- **フェーズ運用**: `check` / `next` / `guard` / `tdd`、`status` / `board`
-- **仕様・検証**: `spec`、`conformance`（Phase 2.2）、`integration`（Phase 2.3）、`fix`（Phase 2.1）
-- **品質/運用**: `quality` / `qa` / `security` / `sbom` / `resilience` / `circuit-breaker`
-- **エージェント/MCP**: `src/mcp-server/*` に intent/test-generation/verify 等のサーバ実装
-- **UI/Phase 6**: `ui-scaffold`、`packages/ui` / `packages/design-tokens`、`apps/web` / `apps/storybook`
-- **成果物の代表例**: `artifacts/progress/summary.json`、`reports/quality-gates/*`、`conformance-results.json`、`test-results/test-report-*.html`、`.ae/phase-state.json`
+### 9. 現行全体像（2026-02-09 時点）
+- **主要バイナリ**: `ae` / `ae-framework`、`ae-phase`、`ae-approve`、`ae-slash`、`ae-ui`、`ae-sbom`、`ae-resilience`、`ae-benchmark`、`ae-server`
+- **運用方式**: `verify-lite` を必須ゲート、重い検証はラベル/dispatch で opt-in 実行（`.github/workflows/`）
+- **形式検証スタック**: `verify:formal` で conformance/Alloy/TLA/SMT/Apalache/Kani/SPIN/CSP/Lean4 を非ブロッキング統合
+- **CSP 拡張連携**: `verify:csp` が `cspx` を優先利用し、`csp-summary.json` と `cspx-result.json` を契約化（`schema_version=0.1` 前提）
+- **集約の可観測性**: `formal-aggregate` が `backend/status/resultStatus/exitCode` をPR向けに集約表示
+- **エージェント/MCP**: `src/mcp-server/*` に intent/test-generation/verify/spec-synthesis 等のサーバ実装
+- **フロントエンド基盤**: `apps/web`、`apps/storybook`、`packages/ui`、`packages/design-tokens`
+- **成果物の代表例**: `artifacts/hermetic-reports/formal/*.json`、`artifacts/hermetic-reports/conformance/summary.json`、`artifacts/progress/summary.json`、`reports/quality-gates/*`
 - **設定体系**: `ae-framework.yml`（フェーズ/ガード）と `ae.config.*`（mode/ガード詳細）の二系統
-- **npm公開API**: `createServer` / `DomainServices` / `Infra` のみ（それ以外は内部API）
-- **既知制約**: IntegrationのレポートはHTMLのみ、内部API import はリポジトリ内利用前提
+- **公開境界**: npm export は `dist/src/index.js`、CLIは `bin` で公開（`package.json`）
 
 ### 10. 関連資料
 - 詳細説明資料: `docs/product/DETAIL.md`
 - 利用マニュアル: `docs/product/USER-MANUAL.md`
+- 現行全体構成（実装準拠）: `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md`
 - Minimal Adoption: `docs/product/MINIMAL-ADOPTION.md`
 - 全体ナビゲーション: `docs/README.md`
 - 構成と運用: `docs/project-organization.md`
