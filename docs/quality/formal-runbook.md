@@ -23,16 +23,18 @@
     - `tlaToolsJar`: tla2tools.jar のパス（任意）
 Full smoke test instructions: `docs/quality/formal-full-run.md`.
 
-### CLI Stubs (to be wired)
-- `pnpm run verify:conformance` — prints stub; use `ae conformance verify` for real engine
-- `pnpm run verify:alloy` — prints stub
-- `pnpm run verify:tla -- --engine=apalache|tlc` — prints stub
-- `pnpm run verify:smt -- --solver=z3|cvc5` — prints stub
-- `pnpm run verify:kani` — presence check stub (non-blocking)
-- `pnpm run verify:spin` — Promela/SPIN runner (non-blocking)
-- `pnpm run verify:csp` — CSP runner (non-blocking; supports `cspx`/`refines`/`cspmchecker`/`CSP_RUN_CMD`)
+### CLI Runners (non-blocking)
+- `pnpm run verify:conformance` — conformance summary runner（必要に応じて `ae conformance verify` と併用）
+- `pnpm run verify:alloy` — Alloy runner（`ALLOY_RUN_CMD` / `ALLOY_JAR` / `alloy` CLI を利用）
+- `pnpm run verify:tla -- --engine=apalache|tlc` — TLA runner（`TLA_TOOLS_JAR` または `apalache` を利用）
+- `pnpm run verify:smt -- --solver=z3|cvc5` — SMT runner
+- `pnpm run verify:kani` — Kani 検出ランナー（presence summary）
+- `pnpm run verify:spin` — Promela/SPIN runner
+- `pnpm run verify:csp` — CSP runner（`CSP_RUN_CMD`/`cspx`/`refines`/`cspmchecker`）
+  - `cspx` 使用時は `csp-summary.json` と `cspx-result.json` を出力
+  - `schema_version=0.1` 非互換は `status=unsupported` として記録
   - Details (artifacts / example outputs): `docs/quality/formal-csp.md`
-- `pnpm run verify:lean` — Lean4 `lake build` runner (non-blocking)
+- `pnpm run verify:lean` — Lean4 `lake build` runner
 - `pnpm run verify:formal` — 上記の連続実行（ローカル確認用、non-blocking）
   - 集計: `artifacts/hermetic-reports/formal/summary.json` に要約を出力
   - 表示: 実行後にコンソールへ簡易サマリを表示

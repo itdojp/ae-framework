@@ -92,6 +92,19 @@ ae-framework は、エージェント協調型SDLCを支える「仕様・検証
 - セキュリティ: `security.yml`, `sbom-generation.yml`
 - その他: `ci-fast.yml`, `ci-extended.yml`, `pr-verify.yml`
 
+### 2.3 形式検証スタック（拡張後）
+`scripts/formal/*` は全ツールを non-blocking で統一運用し、`artifacts/hermetic-reports/formal/` に summary を出力します。
+
+- ランナー: `verify:conformance`, `verify:alloy`, `verify:tla`, `verify:smt`, `verify:kani`, `verify:spin`, `verify:csp`, `verify:lean`, `scripts/formal/verify-apalache.mjs`
+- 統合実行: `pnpm run verify:formal`
+- 集約: `pnpm run formal:summary`（`aggregate-formal.mjs` + `print-summary.mjs`）
+
+**CSP(cspx) 拡張点**
+- `verify:csp` は `CSP_RUN_CMD -> cspx -> refines -> cspmchecker` の順でバックエンド選択
+- `cspx` 利用時は `csp-summary.json` と `cspx-result.json` を固定パス出力
+- `schema_version=0.1` を互換基準とし、非互換は `status=unsupported` として要約
+- `formal-aggregate.yml` の PR 集約は `backend/status/resultStatus/exitCode` を表示
+
 ## 3. リポジトリ構成（主要ディレクトリ）
 
 | ディレクトリ | 役割 |
@@ -116,7 +129,8 @@ ae-framework は、エージェント協調型SDLCを支える「仕様・検証
 ### 4.2 CIフロー（例）
 1. PR作成
 2. `verify-lite` を中心に軽量ゲートを通過
-3. 必要に応じて `ci-extended` や `formal-verify` をopt-inで実行
+3. 必要に応じて `run-formal` ラベルまたは `workflow_dispatch` で `formal-verify` を実行
+4. 必要なら `enforce-formal` ラベルで Apalache `ran/ok` をゲート化
 
 ### 4.3 仕様検証フロー
 1. 仕様の登録と更新（`spec/`）
@@ -127,6 +141,8 @@ ae-framework は、エージェント協調型SDLCを支える「仕様・検証
 
 - `artifacts/` と `reports/` にCI成果物を集約
 - 形式検証やテスト結果の要約は CI コメントと連動
+- 形式検証の主成果物: `artifacts/hermetic-reports/formal/summary.json`
+- CSP 詳細成果物: `artifacts/hermetic-reports/formal/csp-summary.json`, `artifacts/hermetic-reports/formal/cspx-result.json`
 - トレーサビリティ設計は `docs/verify/TRACEABILITY-GUIDE.md` を参照
 
 ## 6. セキュリティとコンプライアンス
@@ -141,4 +157,5 @@ ae-framework は、エージェント協調型SDLCを支える「仕様・検証
 ## 8. 関連資料
 - 概要説明資料: `docs/product/OVERVIEW.md`
 - 利用マニュアル: `docs/product/USER-MANUAL.md`
+- 実装準拠の全体構成: `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md`
 - 全体ナビゲーション: `docs/README.md`

@@ -15,7 +15,7 @@ ae-framework is a project skeleton plus verification toolkit that **orchestrates
 
 ### What this repository provides
 - **Agentic SDLC orchestrator**: Ready-to-run GitHub Actions (PR verify / verify-lite, nightly heavy tests, Slack alerts) and CLI scripts that keep requirements, tests, and regression signals aligned.
-- **Spec & Verification Kit**: Traceable spec format, mutation/MBT/property verification pipelines, and comparison tooling for heavy test trends (`scripts/pipelines/compare-test-trends.mjs`).
+- **Spec & Verification Kit**: Traceable spec format, mutation/MBT/property verification pipelines, and formal runners for Alloy/TLA/SMT/Apalache/Kani/SPIN/CSP(cspx)/Lean4 with unified summaries.
 - **Project scaffolding & policies**: pnpm workspace layout, lint/test/type-coverage gates, label gating (typecov, flake), and TDD-friendly Git hooks.
 - **Cacheable heavy test artifacts**: `scripts/pipelines/sync-test-results.mjs` to restore/store/snapshot mutation + MBT results; `heavy-test-trends` artifacts for CI triage.
 - **Agent integrations**: Playbooks and connectors for Claude Code / CodeX; JSON-first outputs and AJV validation to keep agent-produced artifacts safe.
@@ -38,6 +38,10 @@ pnpm run test:fast
 # Mutation quick run (mktemp-based; supports STRYKER_TEMP_DIR)
 STRYKER_TIME_LIMIT=0 pnpm run pipelines:mutation:quick
 
+# Formal smoke (non-blocking summary; cspx backend preferred)
+pnpm run verify:formal
+pnpm run verify:csp -- --file spec/csp/cspx-smoke.cspm --mode typecheck
+
 # Heavy test cache & trend snapshot
 node scripts/pipelines/sync-test-results.mjs --store
 node scripts/pipelines/sync-test-results.mjs --snapshot
@@ -46,9 +50,10 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 
 ### Documentation pointers
 - Overview & nav: `docs/README.md`, `docs/project-organization.md`
+- Current architecture snapshot: `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md`
 - CI/quality gates: `docs/ci/phase2-ci-hardening-outline.md`, `docs/ci/label-gating.md`
 - Heavy test observability: `docs/ci/heavy-test-trend-archive.md`, `docs/ci/heavy-test-alerts.md`, `docs/ci/heavy-test-album.md`
-- Specification & verification: `docs/quality/`, `docs/ci-policy.md`, `docs/testing/integration-runtime-helpers.md`
+- Specification & verification: `docs/quality/`, `docs/quality/formal-csp.md`, `docs/ci-policy.md`, `docs/testing/integration-runtime-helpers.md`
 - Spec & Verification Kit (minimal activation guide): `docs/reference/SPEC-VERIFICATION-KIT-MIN.md`
 - Connectors & agent workflows: `docs/integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md`, `docs/integrations/CODEX-INTEGRATION.md`
 
@@ -90,9 +95,10 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 
 ### ドキュメントへの入り口
 - 全体概要: `docs/README.md`, `docs/project-organization.md`
+- 現行アーキテクチャ全体像: `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md`
 - CI/品質ゲート: `docs/ci/phase2-ci-hardening-outline.md`, `docs/ci/label-gating.md`
 - ヘビーテスト観測: `docs/ci/heavy-test-trend-archive.md`, `docs/ci/heavy-test-alerts.md`, `docs/ci/heavy-test-album.md`
-- 仕様と検証: `docs/ci-policy.md`, `docs/testing/integration-runtime-helpers.md`, `docs/quality/`
+- 仕様と検証: `docs/ci-policy.md`, `docs/testing/integration-runtime-helpers.md`, `docs/quality/`, `docs/quality/formal-csp.md`
 - Spec & Verification Kit（最小パッケージ・有効化手順）: `docs/reference/SPEC-VERIFICATION-KIT-MIN.md`
 - エージェント統合: `docs/integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md`, `docs/integrations/CODEX-INTEGRATION.md`
 

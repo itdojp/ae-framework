@@ -8,6 +8,10 @@
 
 Comprehensive documentation for the agentic SDLC orchestrator & spec/verification kit.
 
+### Current implementation snapshot (recommended first read)
+- System overview (implementation-aligned): `architecture/CURRENT-SYSTEM-OVERVIEW.md`
+- Product summary: `product/OVERVIEW.md`, `product/DETAIL.md`, `product/USER-MANUAL.md`
+
 ### Getting Started
 - Quick Start (15 minutes): `getting-started/QUICK-START-GUIDE.md`
 - Phase 6 Quick Start (UI/UX): `getting-started/PHASE-6-GETTING-STARTED.md`
@@ -158,18 +162,24 @@ Claude CodeやMCPとの統合
 フォーマル検証や品質基準
 
 - **[formal-gates.md](./quality/formal-gates.md)** ⭐ フォーマル品質ゲート（v0.2 DoD）
+- **[formal-csp.md](./quality/formal-csp.md)** ⭐ CSP 検証（cspx 連携・summary/result 契約）
+- **[formal-full-run.md](./quality/formal-full-run.md)** ⭐ 全形式ツールのスモークテスト（CSP/Lean 含む）
+- **[formal-runbook.md](./quality/formal-runbook.md)** ⭐ 実行運用（ラベルゲート/dispatch/集約）
 - [ownership-dod.md](./quality/ownership-dod.md) - Ownership DoD（説明責任/運用/ロールバック）
 - [llm-first-review-checklist.md](./quality/llm-first-review-checklist.md) - LLM一次レビューの標準チェック
 - [guarded-automation-template.md](./quality/guarded-automation-template.md) - Guarded automation 運用テンプレ
 - [incident-triage-template.md](./quality/incident-triage-template.md) - インシデント一次切り分けテンプレ
 - [ARTIFACTS-CONTRACT.md](./quality/ARTIFACTS-CONTRACT.md) - 成果物契約（Required/Optional）
 - [adoption-sample-flow.md](./quality/adoption-sample-flow.md) - 導入の最小フロー（エンドツーエンド）
-- [formal-runbook.md](./quality/formal-runbook.md) - 実行・運用手順（ラベルゲート/手動実行）
 - [formal-ops-guidelines.md](./quality/formal-ops-guidelines.md) - 運用パターン/命名/証跡/CI分割の指針
-- [formal-csp.md](./quality/formal-csp.md) - CSP検査（cspxランナー）の使い方（成果物/実行結果例）
 - [formal-tools-setup.md](./quality/formal-tools-setup.md) - ローカル環境セットアップ（Apalache/TLC/Z3/cvc5）
-- [formal-full-run.md](./quality/formal-full-run.md) - 全ツールのスモークテスト手順（CI/ローカル）
 - [formal-mini-flow.md](./quality/formal-mini-flow.md) - 反例→失敗テスト→修正→緑の最小フロー
+
+### 🧠 現行実装ベース全体像（推奨）
+- **[architecture/CURRENT-SYSTEM-OVERVIEW.md](./architecture/CURRENT-SYSTEM-OVERVIEW.md)** - 2026-02 時点の全体構成（CLI/CI/Formal/Artifacts）
+- [product/OVERVIEW.md](./product/OVERVIEW.md) - 概要説明資料
+- [product/DETAIL.md](./product/DETAIL.md) - 詳細説明資料
+- [product/USER-MANUAL.md](./product/USER-MANUAL.md) - 利用マニュアル
 
 ### 📐 [spec/](./spec/) - 仕様レジストリ
 仕様の配置と規約

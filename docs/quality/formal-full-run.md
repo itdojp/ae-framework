@@ -110,6 +110,7 @@ CSP_RUN_CMD='echo Running CSP tool on {file}' pnpm run verify:csp -- --file spec
 ```
 
 For details (artifacts / example outputs), see: [formal-csp.md](docs/quality/formal-csp.md).
+For implementation-aligned architecture context, see: [CURRENT-SYSTEM-OVERVIEW.md](docs/architecture/CURRENT-SYSTEM-OVERVIEW.md).
 Upstream cspx references:
 - https://github.com/itdojp/cspx/blob/main/docs/integrations/ae-framework.md
 - https://github.com/itdojp/cspx/blob/main/docs/validation-report.md
@@ -232,6 +233,7 @@ CSP_RUN_CMD='echo Running CSP tool on {file}' pnpm run verify:csp -- --file spec
 ```
 
 詳細（成果物/実行結果例）は `docs/quality/formal-csp.md` を参照してください。
+現行実装準拠の全体構成は `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md` を参照してください。
 上流 cspx の参照先:
 - https://github.com/itdojp/cspx/blob/main/docs/integrations/ae-framework.md
 - https://github.com/itdojp/cspx/blob/main/docs/validation-report.md
