@@ -251,7 +251,7 @@ Artifacts（Formal Reports）
 - `artifacts/hermetic-reports/formal/apalache-summary.json`: Apalache ランナーの簡易要約（ran/ok/errors/snippet/outputFile）
 - `artifacts/hermetic-reports/formal/kani-summary.json`: Kani 検出の要約（detected/version）
 - `artifacts/hermetic-reports/formal/spin-summary.json`: SPIN ランナーの簡易要約（file/ltl/status/output）
-- `artifacts/hermetic-reports/formal/csp-summary.json`: CSP ランナーの簡易要約（file/backend/status/resultStatus/detailsFile/output）
+- `artifacts/hermetic-reports/formal/csp-summary.json`: CSP ランナーの簡易要約（file/backend/status/resultStatus/exitCode/detailsFile/output）
 - `artifacts/hermetic-reports/formal/cspx-result.json`: cspx の実行結果（cspx 使用時）
 - `artifacts/hermetic-reports/formal/lean-summary.json`: Lean4 ランナーの簡易要約（project/status/output）
 - `artifacts/hermetic-reports/conformance/summary.json`: Conformance 要約（events/schemaErrors/invariantViolations/violationRate/first/byType）

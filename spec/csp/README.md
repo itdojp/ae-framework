@@ -76,6 +76,7 @@ Security note
 Artifacts:
 - `artifacts/hermetic-reports/formal/csp-summary.json`
 - `artifacts/hermetic-reports/formal/cspx-result.json` (when `cspx` backend is used)
+- `metrics` in `cspx-result.json` is optional; ae-framework consumes required fields and ignores optional extensions.
 
 `verify:csp` with `cspx` uses the contract pair:
 - `--output artifacts/hermetic-reports/formal/cspx-result.json`
@@ -83,6 +84,10 @@ Artifacts:
 
 See also:
 - `docs/quality/formal-csp.md` (usage / artifact schema / example outputs)
+- https://github.com/itdojp/cspx/blob/main/docs/integrations/ae-framework.md
+- https://github.com/itdojp/cspx/blob/main/docs/result-json.md
+- https://github.com/itdojp/cspx/blob/main/docs/explainability.md
+- https://github.com/itdojp/cspx/blob/main/docs/validation-report.md
 
 ---
 
@@ -116,9 +121,14 @@ CSP_RUN_CMD='echo Running CSP tool on {file}' pnpm run verify:csp -- --file spec
 成果物:
 - `artifacts/hermetic-reports/formal/csp-summary.json`
 - `artifacts/hermetic-reports/formal/cspx-result.json`（`cspx` 利用時）
+- `cspx-result.json` の `metrics` は optional です。ae-framework は必須フィールドを利用し、拡張フィールドを安全に読み飛ばします。
 
 関連ドキュメント:
 - `../../docs/quality/formal-csp.md`（使い方/成果物/実行結果例）
+- https://github.com/itdojp/cspx/blob/main/docs/integrations/ae-framework.md
+- https://github.com/itdojp/cspx/blob/main/docs/result-json.md
+- https://github.com/itdojp/cspx/blob/main/docs/explainability.md
+- https://github.com/itdojp/cspx/blob/main/docs/validation-report.md
 
 ---
 

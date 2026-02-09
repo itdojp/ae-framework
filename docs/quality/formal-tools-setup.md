@@ -65,8 +65,8 @@ CSP
 - CI is wired as **non-blocking**: it always produces `csp-summary.json` and does not fail the workflow by default.
 - Recommended backend: `cspx` (OSS, Apache-2.0) — CI-first CSPM checks with JSON output.
   - Install (recommended: pin to an immutable commit SHA):
-    - `cargo install --git https://github.com/itdojp/cspx --rev 82b08a4324e8a15bc1b7d6e4ba39f3b5d071a07b --locked cspx`
-    - This pinned commit includes `--summary-json` for ae-framework integration.
+    - `cargo install --git https://github.com/itdojp/cspx --rev 8a67639ea4d3f715e27feb8cd728f46866a905db --locked cspx`
+    - This pin includes `--summary-json` contract docs and updated validation report references.
   - Verify:
     - `cspx --version`
     - `cspx typecheck --help | grep -- --summary-json`
@@ -90,3 +90,9 @@ Lean4 (elan + lake)
 Notes
 - Tools are not required to work with AE-Framework; they enhance the formal workflow when present.
 - Use `Formal Verify` workflow with `run-formal` label or manual dispatch to run CI stubs. Engines will be wired incrementally.
+
+Upstream references (cspx)
+- Integration contract: https://github.com/itdojp/cspx/blob/main/docs/integrations/ae-framework.md
+- Result JSON contract: https://github.com/itdojp/cspx/blob/main/docs/result-json.md
+- Explainability guide: https://github.com/itdojp/cspx/blob/main/docs/explainability.md
+- Validation report: https://github.com/itdojp/cspx/blob/main/docs/validation-report.md
