@@ -8,6 +8,7 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { normalizeArtifactPath } from '../ci/lib/path-normalization.mjs';
 
 function parseArgs(argv) {
   const args = { _: [] };
@@ -67,14 +68,6 @@ function clamp(s, n = 4000) {
 
 function readJsonSafe(p) {
   try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return undefined; }
-}
-
-function normalizeRepoPath(p, repoRoot) {
-  if (typeof p !== 'string' || !p) return p;
-  if (!path.isAbsolute(p)) return p;
-  const rel = path.relative(repoRoot, p);
-  if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) return p;
-  return rel;
 }
 
 function mapCspxStatusToSummaryStatus(s) {
@@ -170,7 +163,7 @@ if (!fs.existsSync(absFile)) {
     ran = res.available;
     exitCode = res.status;
     backend = `cspx:${mode}`;
-    detailsFile = path.relative(repoRoot, cspxOutFile);
+    detailsFile = normalizeArtifactPath(cspxOutFile, { repoRoot });
 
     const result = fs.existsSync(cspxOutFile) ? readJsonSafe(cspxOutFile) : undefined;
     const cspSummary = fs.existsSync(outFile) ? readJsonSafe(outFile) : undefined;
@@ -246,7 +239,7 @@ if (!fs.existsSync(absFile)) {
 if (forceWriteSummary) {
   const summary = {
     tool: 'csp',
-    file: path.relative(repoRoot, absFile),
+    file: normalizeArtifactPath(absFile, { repoRoot }) ?? path.relative(repoRoot, absFile),
     backend,
     detailsFile,
     resultStatus,
@@ -260,9 +253,9 @@ if (forceWriteSummary) {
 } else {
   // Keep cspx-generated summary file and only refresh fields needed by this runner.
   const summary = readJsonSafe(outFile) || {};
-  summary.file = normalizeRepoPath(summary.file, repoRoot) || path.relative(repoRoot, absFile);
+  summary.file = normalizeArtifactPath(summary.file, { repoRoot }) ?? normalizeArtifactPath(absFile, { repoRoot }) ?? path.relative(repoRoot, absFile);
   summary.backend = summary.backend || backend;
-  summary.detailsFile = normalizeRepoPath(summary.detailsFile, repoRoot) || detailsFile;
+  summary.detailsFile = normalizeArtifactPath(summary.detailsFile, { repoRoot }) ?? detailsFile;
   summary.resultStatus = summary.resultStatus || resultStatus;
   summary.status = summary.status || status;
   summary.exitCode = typeof summary.exitCode === 'number' ? summary.exitCode : (exitCode ?? 0);

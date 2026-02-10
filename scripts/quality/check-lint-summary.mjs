@@ -15,6 +15,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { createHash } from 'node:crypto';
+import { normalizeArtifactPath } from '../ci/lib/path-normalization.mjs';
 
 const SUMMARY_DEFAULT = 'reports/lint/verify-lite-lint-summary.json';
 const BASELINE_DEFAULT = 'config/verify-lite-lint-baseline.json';
@@ -107,9 +108,7 @@ function computeConfigHash() {
 }
 
 function normalizePath(filePath) {
-  if (!filePath) return 'unknown';
-  const relative = path.relative(process.cwd(), filePath);
-  return relative && !relative.startsWith('..') ? relative : filePath;
+  return normalizeArtifactPath(filePath, { repoRoot: process.cwd() }) ?? 'unknown';
 }
 
 function incrementMap(map, key, delta = 1) {

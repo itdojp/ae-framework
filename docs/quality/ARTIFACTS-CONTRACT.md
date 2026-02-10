@@ -58,3 +58,4 @@ node scripts/ci/check-required-artifacts.mjs --strict
 - `.github/workflows/verify-lite.yml`
 - `scripts/ci/check-required-artifacts.mjs`
 - `schema/artifact-metadata.schema.json`
+- `docs/quality/path-normalization-contract.md`
