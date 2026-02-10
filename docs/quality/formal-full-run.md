@@ -12,7 +12,7 @@ This guide shows how to run **all formal verification tools** end-to-end for a s
 
 1) **Label-gated (PR)**
 - Add label `run-formal` to the PR.
-- Optional: add `enforce-formal` to gate Apalache `ran/ok`.
+- Optional: add `enforce-formal` to gate Apalache `ran/ok` and enforce Formal Summary v1 schema.
 
 2) **Manual (workflow_dispatch)**
 - Actions → **Formal Verify** → Run workflow
@@ -32,6 +32,7 @@ This guide shows how to run **all formal verification tools** end-to-end for a s
 - `formal-reports-spin`: `spin-summary.json`
 - `formal-reports-csp`: `csp-summary.json`, `cspx-result.json`
 - `formal-reports-lean`: `lean-summary.json`
+- `formal-summary-v1`: `artifacts/formal/formal-summary-v1.json` (normalized)
 
 ### Local (when you want a quick smoke test)
 

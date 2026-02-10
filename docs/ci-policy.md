@@ -207,7 +207,7 @@ CI Extended 実行後は heavy テスト成果物を `.cache/test-results` に�
 - `run-formal` ラベル時のみ、Formal Verify（stub）と成果物の集約（Alloy/TLA/SMT/Apalache の要約）を実行（非ブロッキング）
 - 集約結果は PR コメントにアップサート（重複を避けるためヘッダー識別）
 - 必須化・閾値強化は段階導入（別Issueで合意のうえ切替）
-- `enforce-formal` ラベル時は Apalache 実行結果（summary.ok）が `true` であることをチェック（非true で失敗）
+- `enforce-formal` ラベル時は Apalache 実行結果（summary.ok）が `true` であることをチェック（非true で失敗）し、Formal Summary v1 のスキーマ検証も strict にします。
 
 #### 表示/要約の調整（環境変数）
 - verify-apalache（要約整形）: `APALACHE_ERRORS_LIMIT`（既定 5）/ `APALACHE_ERROR_LINE_CLAMP`（既定 200）/ `APALACHE_SNIPPET_BEFORE`・`_AFTER`（既定 2/2）

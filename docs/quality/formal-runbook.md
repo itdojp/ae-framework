@@ -84,6 +84,11 @@ Advanced toggles（運用向け）
 Aggregate JSON の軽量検証（非ブロッキング）
 - 集約ワークフローでは `artifacts/formal/formal-aggregate.json` を出力し、最小スキーマを警告レベルで検証します。
 - ローカル確認: `node scripts/formal/validate-aggregate-json.mjs`（存在時に検証、欠損/不正は `::warning::` 出力）
+
+Formal Summary v1（Normalized / 段階導入）
+- 集約ワークフローは `artifacts/formal/formal-summary-v1.json` も出力します（スキーマ: `schema/formal-summary-v1.schema.json`）。
+- ローカル確認: `node scripts/ci/validate-formal-summary-v1.mjs artifacts/formal/formal-summary-v1.json schema/formal-summary-v1.schema.json`
+- strict（欠損/不正で失敗）: PRラベル `enforce-formal` が付与されている場合、Formal Reports Aggregate 内で v1 を必須検証します。
 - 1行サマリを表示する簡易CLI（ローカル）:
   - `node -e "const p='artifacts/formal/formal-aggregate.json';const j=require('fs').existsSync(p)?require('./'+p):null;if(!j){console.log('no aggregate');process.exit(0)}const pr=j.info?.present||{};const keys=Object.entries(pr).filter(([,v])=>v).map(([k])=>k);const total=(typeof j.info?.presentTotal==='number')?j.info.presentTotal:Object.keys(pr).length;console.log('Present:', keys.length+'/'+total, keys.length?('('+keys.join(', ')+')'):'');"`
   - jq 例（presentCount/by-type）:

@@ -36,6 +36,7 @@ CIが生成する成果物（artifacts/reports）について **最低限の契�
 | --- | --- | --- |
 | `artifacts/hermetic-reports/conformance/summary.json` | conformance 検証を実行した場合 | `verify-conformance.mjs` の出力 |
 | `artifacts/hermetic-reports/formal/summary.json` | formal aggregate を実行した場合 | `aggregate-formal.mjs` の出力 |
+| `artifacts/formal/formal-summary-v1.json` | formal aggregate を実行した場合 | Formal Summary v1（normalized、スキーマ: `schema/formal-summary-v1.schema.json`） |
 
 ## 4. 検証スクリプト
 
@@ -56,7 +57,11 @@ node scripts/ci/check-required-artifacts.mjs --strict
 
 ## 6. 参照
 - `.github/workflows/verify-lite.yml`
+- `.github/workflows/formal-aggregate.yml`
+- `.github/workflows/formal-verify.yml`
 - `scripts/ci/check-required-artifacts.mjs`
+- `scripts/ci/validate-formal-summary-v1.mjs`
 - `schema/artifact-metadata.schema.json`
+- `schema/formal-summary-v1.schema.json`
 - `docs/quality/path-normalization-contract.md`
 - `docs/quality/run-manifest-freshness-contract.md`

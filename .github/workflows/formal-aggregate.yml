@@ -11,6 +11,11 @@ on:
         description: "Pull request number to comment on"
         required: false
         type: string
+      strict_formal_summary_v1:
+        description: "Fail the workflow if Formal Summary v1 is missing/invalid"
+        required: false
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       source_run_id:
@@ -21,6 +26,11 @@ on:
         description: "Pull request number to comment on"
         required: false
         type: string
+      strict_formal_summary_v1:
+        description: "Fail the workflow if Formal Summary v1 is missing/invalid"
+        required: false
+        type: boolean
+        default: false
 concurrency:
   group: ${{ github.workflow }}-${{ inputs.pr_number || github.ref }}
   cancel-in-progress: true
@@ -34,7 +44,7 @@ jobs:
   aggregate:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call'
     runs-on: ubuntu-latest
-    continue-on-error: true
+    continue-on-error: ${{ inputs.strict_formal_summary_v1 != true }}
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node + pnpm
@@ -311,16 +321,37 @@ jobs:
           const aggPresent = fs.existsSync(outJson) ? 'yes' : 'no';
           console.log(md + "\nArtifacts: aggregate-json=" + aggPresent);
           JS
+      - name: Generate Formal Summary v1 (non-blocking)
+        if: always()
+        continue-on-error: ${{ inputs.strict_formal_summary_v1 != true }}
+        run: |
+          node scripts/formal/generate-formal-summary-v1.mjs --in artifacts_dl --out artifacts/formal/formal-summary-v1.json
       - name: Upload aggregate
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: formal-reports-aggregate
           path: artifacts/formal/formal-aggregate.md
       - name: Upload aggregate JSON
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: formal-reports-aggregate-json
           path: artifacts/formal/formal-aggregate.json
+      - name: Upload Formal Summary v1 JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: formal-summary-v1
+          path: artifacts/formal/formal-summary-v1.json
+      - name: Validate Formal Summary v1 JSON (non-blocking)
+        if: always()
+        run: |
+          node scripts/ci/validate-formal-summary-v1.mjs artifacts/formal/formal-summary-v1.json schema/formal-summary-v1.schema.json || true
+      - name: Enforce Formal Summary v1 JSON (strict)
+        if: inputs.strict_formal_summary_v1 == true
+        run: |
+          node scripts/ci/validate-formal-summary-v1.mjs --require artifacts/formal/formal-summary-v1.json schema/formal-summary-v1.schema.json
       - name: Validate aggregate JSON (non-blocking)
         if: always()
         run: |
