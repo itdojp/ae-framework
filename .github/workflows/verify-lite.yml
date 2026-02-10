@@ -160,7 +160,13 @@ jobs:
           node scripts/formal/verify-kani.mjs || true
           node scripts/formal/presets-apply.mjs || true
           node scripts/formal/aggregate-formal.mjs || true
+          node scripts/formal/generate-formal-summary-v1.mjs --layout hermetic --in artifacts/hermetic-reports --out artifacts/formal/formal-summary-v1.json || true
           node scripts/formal/print-summary.mjs || true
+      - name: Validate formal summary v1 schema (non-blocking)
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
+        continue-on-error: true
+        run: |
+          node scripts/ci/validate-formal-summary-v1.mjs
       - name: Aggregate adapters/formal/properties (non-blocking)
         if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
         continue-on-error: true
@@ -207,7 +213,7 @@ jobs:
         if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
         continue-on-error: ${{ !(github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-run-manifest')) }}
         env:
-          RUN_MANIFEST_REQUIRE_FRESH: ${{ (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-formal')) && 'verifyLite,reportEnvelope,formal' || 'verifyLite,reportEnvelope' }}
+          RUN_MANIFEST_REQUIRE_FRESH: ${{ (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-formal')) && 'verifyLite,reportEnvelope,formal,formalSummaryV1' || 'verifyLite,reportEnvelope' }}
         run: |
           node scripts/ci/check-run-manifest.mjs \
             --manifest artifacts/run-manifest.json \

@@ -170,6 +170,7 @@ export function main(argv = process.argv) {
     { name: 'verifyLite', relPath: path.join('artifacts', 'verify-lite', 'verify-lite-run-summary.json') },
     { name: 'reportEnvelope', relPath: path.join('artifacts', 'report-envelope.json') },
     { name: 'formal', relPath: path.join('artifacts', 'hermetic-reports', 'formal', 'summary.json') },
+    { name: 'formalSummaryV1', relPath: path.join('artifacts', 'formal', 'formal-summary-v1.json') },
     { name: 'conformance', relPath: path.join('artifacts', 'hermetic-reports', 'conformance', 'summary.json') },
     { name: 'progress', relPath: path.join('artifacts', 'progress', 'summary.json') },
   ];
