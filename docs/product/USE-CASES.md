@@ -52,6 +52,10 @@ pnpm exec ae --help
    - 追加で `/review strict`（coverage等の追加検証）も選択可能
 5) 必須チェックがGreenになったらマージ
 
+### オプション（自動化）
+- Copilot suggestion の自動適用（auto-fix）: `AE_COPILOT_AUTO_FIX=1`（Repository Variables）。詳細: `docs/ci/copilot-auto-fix.md`
+- auto-merge の自動有効化（auto-merge）: `AE_AUTO_MERGE=1`（Repository Variables）。詳細: `docs/ci/auto-merge.md`
+
 ### 期待される成果物（代表）
 - `artifacts/verify-lite/verify-lite-run-summary.json`（verify-liteの要約; CIで `VERIFY_LITE_SUMMARY_EXPORT_PATH` により出力）
 - `verify-lite-lint-summary.json`（verify-lite lintの要約; CIのbaseline比較に使用）

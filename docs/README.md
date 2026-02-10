@@ -77,6 +77,11 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
  - Coverage policy: `quality/coverage-policy.md`（しきい値の由来/Required化の運用）
  - Formal runbook: `quality/formal-runbook.md`（ラベル/dispatch/要約/環境変数）
  - CSP verification (cspx runner): `quality/formal-csp.md`（使い方/成果物/実行結果例）
+ - CI policy: `ci-policy.md`（PR必須ゲート/opt-in/運用方針）
+ - Opt-in controls: `ci/OPT-IN-CONTROLS.md`（ラベル/Slash/dispatchの一覧）
+ - Copilot Review Gate: `ci/copilot-review-gate.md`（レビュー必須化）
+ - Copilot Auto Fix: `ci/copilot-auto-fix.md`（suggestion自動適用）
+ - Auto Merge: `ci/auto-merge.md`（auto-merge自動有効化）
 
 For the complete navigation with highlights, see the Japanese section below (same links).
 
