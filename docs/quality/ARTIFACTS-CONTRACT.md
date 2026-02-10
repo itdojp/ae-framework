@@ -59,3 +59,4 @@ node scripts/ci/check-required-artifacts.mjs --strict
 - `scripts/ci/check-required-artifacts.mjs`
 - `schema/artifact-metadata.schema.json`
 - `docs/quality/path-normalization-contract.md`
+- `docs/quality/run-manifest-freshness-contract.md`

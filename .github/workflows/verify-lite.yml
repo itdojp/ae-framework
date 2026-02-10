@@ -134,6 +134,30 @@ jobs:
           REQUIRED_ARTIFACTS_STRICT: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-artifacts') && '1' || '0' }}
         run: |
           node scripts/ci/check-required-artifacts.mjs
+      - name: Generate run manifest (non-blocking)
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
+        continue-on-error: true
+        env:
+          RUN_MANIFEST_TOP_LEVEL_COMMAND: verify-lite
+        run: |
+          node scripts/ci/generate-run-manifest.mjs --out artifacts/run-manifest.json
+      - name: Validate run manifest schema (non-blocking)
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
+        continue-on-error: true
+        run: |
+          node scripts/ci/validate-run-manifest.mjs \
+            artifacts/run-manifest.json \
+            schema/run-manifest.schema.json
+      - name: Check run manifest freshness (non-blocking)
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
+        continue-on-error: ${{ !(github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-run-manifest')) }}
+        env:
+          RUN_MANIFEST_REQUIRE_FRESH: ${{ (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-formal')) && 'verifyLite,reportEnvelope,formal' || 'verifyLite,reportEnvelope' }}
+        run: |
+          node scripts/ci/check-run-manifest.mjs \
+            --manifest artifacts/run-manifest.json \
+            --require-fresh "${RUN_MANIFEST_REQUIRE_FRESH}" \
+            --result artifacts/run-manifest-check.json
       - name: BDD lint (strict; label-gated)
         if: ${{ steps.docs-only.outputs.docs_only != 'true' && github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-bdd-lint') }}
         env:
@@ -222,6 +246,8 @@ jobs:
             artifacts/verify-lite/verify-lite-run-summary.json
             artifacts/verify-lite/verify-lite-retry-eligibility.json
             artifacts/report-envelope.json
+            artifacts/run-manifest.json
+            artifacts/run-manifest-check.json
             verify-lite-run-summary.json
             verify-lite-lint.log
             verify-lite-lint-summary.json
