@@ -323,14 +323,17 @@ jobs:
           JS
       - name: Generate Formal Summary v1 (non-blocking)
         if: always()
+        continue-on-error: ${{ inputs.strict_formal_summary_v1 != true }}
         run: |
           node scripts/formal/generate-formal-summary-v1.mjs --in artifacts_dl --out artifacts/formal/formal-summary-v1.json
       - name: Upload aggregate
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: formal-reports-aggregate
           path: artifacts/formal/formal-aggregate.md
       - name: Upload aggregate JSON
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: formal-reports-aggregate-json

@@ -83,6 +83,14 @@ function mapStatus({ raw, present }) {
     return { status: 'skipped', reason: status };
   }
 
+  if (status === 'gen_failed' || status === 'compile_failed') {
+    return { status: 'failed', reason: status };
+  }
+
+  if (status === 'timeout') {
+    return { status: 'unknown', reason: status };
+  }
+
   if (exitCode !== null && exitCode !== 0) return { status: 'failed', reason: status || `exitCode=${exitCode}` };
   if (status === 'failed') return { status: 'failed', reason: status };
 
@@ -130,11 +138,16 @@ function main() {
   const repoRoot = process.cwd();
   const baseDir = path.resolve(repoRoot, args.inDir);
   if (!fs.existsSync(baseDir)) {
-    console.error(`Input directory not found: ${baseDir}`);
-    return 2;
+    console.warn(`Input directory not found: ${baseDir} (emitting all-missing summary)`);
   }
 
-  const runTimestamp = process.env.RUN_TIMESTAMP || new Date().toISOString();
+  const runTimestampRaw = process.env.RUN_TIMESTAMP;
+  const now = (() => {
+    if (!runTimestampRaw) return new Date();
+    const parsed = new Date(runTimestampRaw);
+    return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+  })();
+  const metadata = buildArtifactMetadata({ now });
 
   const inputs = [
     { name: 'tla', rel: path.join('formal-reports-tla', 'tla-summary.json') },
@@ -160,8 +173,8 @@ function main() {
     tool: 'aggregate',
     status: computed.status,
     ok: computed.ok,
-    generatedAtUtc: runTimestamp,
-    metadata: buildArtifactMetadata({ now: runTimestamp }),
+    generatedAtUtc: metadata.generatedAtUtc,
+    metadata,
     results,
   };
 
@@ -173,4 +186,3 @@ function main() {
 }
 
 process.exit(main());
-
