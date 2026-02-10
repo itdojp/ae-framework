@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/itdojp/ae-framework/schema/formal-summary-v1.schema.json",
+  "title": "Formal Summary v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "tool",
+    "status",
+    "ok",
+    "generatedAtUtc",
+    "metadata",
+    "results"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "formal-summary/v1",
+      "description": "Schema identifier for Formal Summary v1."
+    },
+    "tool": {
+      "type": "string",
+      "description": "Tool identifier for this summary (or aggregate).",
+      "enum": [
+        "tla",
+        "apalache",
+        "smt",
+        "alloy",
+        "conformance",
+        "kani",
+        "spin",
+        "csp",
+        "lean",
+        "model",
+        "aggregate"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "description": "High-level status for this summary.",
+      "enum": [
+        "ok",
+        "failed",
+        "skipped",
+        "missing",
+        "unknown"
+      ]
+    },
+    "ok": {
+      "type": "boolean",
+      "description": "True only when all results are ok."
+    },
+    "generatedAtUtc": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this summary was generated (UTC ISO8601)."
+    },
+    "metadata": {
+      "$ref": "https://github.com/itdojp/ae-framework/schema/artifact-metadata.schema.json"
+    },
+    "results": {
+      "type": "array",
+      "description": "Normalized result items (even for single-task tools).",
+      "items": {
+        "$ref": "#/$defs/resultItem"
+      }
+    }
+  },
+  "$defs": {
+    "resultItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "status",
+        "code",
+        "durationMs",
+        "logPath",
+        "reason"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "failed",
+            "skipped",
+            "missing",
+            "unknown"
+          ]
+        },
+        "code": {
+          "oneOf": [
+            { "type": "integer" },
+            { "type": "null" }
+          ]
+        },
+        "durationMs": {
+          "oneOf": [
+            { "type": "number" },
+            { "type": "null" }
+          ]
+        },
+        "logPath": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "reason": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        }
+      }
+    }
+  }
+}
+
