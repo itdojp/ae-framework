@@ -6,6 +6,7 @@ import path from 'node:path';
 const repo = process.env.GITHUB_REPOSITORY;
 const prNumberRaw = process.env.PR_NUMBER ? String(process.env.PR_NUMBER).trim() : '';
 const prHeadRef = process.env.PR_HEAD_REF ? String(process.env.PR_HEAD_REF).trim() : '';
+const prHeadSha = process.env.PR_HEAD_SHA ? String(process.env.PR_HEAD_SHA).trim() : '';
 const scope = String(process.env.AE_COPILOT_AUTO_FIX_SCOPE || 'docs').toLowerCase();
 const optInLabel = String(process.env.AE_COPILOT_AUTO_FIX_LABEL || '').trim();
 const actor = String(process.env.GITHUB_ACTOR || '').trim();
@@ -13,6 +14,7 @@ const copilotActors = (process.env.COPILOT_ACTORS || 'github-copilot,github-copi
   .split(',')
   .map((s) => s.trim())
   .filter(Boolean);
+const copilotActorSet = new Set(copilotActors.map((s) => s.toLowerCase()));
 
 if (!repo) {
   console.error('[copilot-auto-fix] GITHUB_REPOSITORY is required.');
@@ -28,7 +30,7 @@ if (!/^[1-9][0-9]*$/.test(prNumberRaw)) {
 }
 const prNumber = Number(prNumberRaw);
 
-if (!copilotActors.includes(actor)) {
+if (!copilotActorSet.has(actor.toLowerCase())) {
   console.log(`[copilot-auto-fix] Skip: actor ${actor || '(empty)'} is not in COPILOT_ACTORS.`);
   process.exit(0);
 }
@@ -59,11 +61,7 @@ const listComments = (number) => {
   while (true) {
     const chunk = execJson([
       'api',
-      `repos/${repo}/issues/${number}/comments`,
-      '-F',
-      'per_page=100',
-      '-F',
-      `page=${page}`,
+      `repos/${repo}/issues/${number}/comments?per_page=100&page=${page}`,
     ]);
     if (!Array.isArray(chunk) || chunk.length === 0) break;
     comments.push(...chunk);
@@ -101,11 +99,7 @@ const listPullFiles = async (number) => {
   while (true) {
     const chunk = execJson([
       'api',
-      `repos/${repo}/pulls/${number}/files`,
-      '-F',
-      'per_page=100',
-      '-F',
-      `page=${page}`,
+      `repos/${repo}/pulls/${number}/files?per_page=100&page=${page}`,
     ]);
     if (!Array.isArray(chunk) || chunk.length === 0) break;
     files.push(...chunk);
@@ -130,11 +124,7 @@ const listReviewComments = async (number) => {
   while (true) {
     const chunk = execJson([
       'api',
-      `repos/${repo}/pulls/${number}/comments`,
-      '-F',
-      'per_page=100',
-      '-F',
-      `page=${page}`,
+      `repos/${repo}/pulls/${number}/comments?per_page=100&page=${page}`,
     ]);
     if (!Array.isArray(chunk) || chunk.length === 0) break;
     comments.push(...chunk);
@@ -148,21 +138,36 @@ const listReviewComments = async (number) => {
 const extractSuggestionBlocks = (body) => {
   const blocks = [];
   const text = String(body || '');
-  const re = /```suggestion\\s*\\n([\\s\\S]*?)```/g;
+  const re = /```suggestion\s*\n([\s\S]*?)```/g;
   let match = null;
   while ((match = re.exec(text))) {
     let block = match[1] || '';
-    block = block.replace(/\\r\\n/g, '\\n');
-    if (block.endsWith('\\n')) block = block.slice(0, -1);
+    block = block.replace(/\r\n/g, '\n');
+    if (block.endsWith('\n')) block = block.slice(0, -1);
     blocks.push(block);
   }
   return blocks;
 };
 
-const safeJoinRepoPath = (repoRoot, filePath) => {
-  const normalized = String(filePath || '');
-  if (!normalized || normalized.includes('..') || path.isAbsolute(normalized)) return null;
-  return path.join(repoRoot, normalized);
+const isSubpath = (root, candidate) => candidate === root || candidate.startsWith(`${root}${path.sep}`);
+
+const resolveSafeRepoFilePath = (repoRoot, filePath) => {
+  const raw = String(filePath || '');
+  if (!raw) return null;
+  if (path.isAbsolute(raw)) return null;
+  const normalized = path.normalize(raw);
+  if (normalized === '..' || normalized.startsWith(`..${path.sep}`)) return null;
+  const absolutePath = path.resolve(repoRoot, normalized);
+  try {
+    const repoReal = fs.realpathSync(repoRoot);
+    const targetReal = fs.realpathSync(absolutePath);
+    if (!isSubpath(repoReal, targetReal)) return null;
+    const stat = fs.lstatSync(absolutePath);
+    if (stat.isSymbolicLink()) return null;
+  } catch {
+    return null;
+  }
+  return absolutePath;
 };
 
 const formatSummary = (summary) => {
@@ -268,9 +273,44 @@ const main = async () => {
     return;
   }
 
+  if (prHeadSha) {
+    const checkedOutSha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+    if (checkedOutSha && checkedOutSha !== prHeadSha) {
+      upsertComment(
+        prNumber,
+        formatSummary({
+          appliedCount: 0,
+          alreadyCount: 0,
+          resolvedThreads: 0,
+          changedFiles: [],
+          skipped: [],
+          note: `PR_HEAD_SHA mismatch; expected=${prHeadSha} actual=${checkedOutSha}. Skipping to avoid applying suggestions to the wrong commit.`,
+        })
+      );
+      return;
+    }
+
+    const prView = execJson(['api', `repos/${repo}/pulls/${prNumber}`]);
+    const currentHeadSha = prView && prView.head && prView.head.sha ? String(prView.head.sha) : '';
+    if (currentHeadSha && currentHeadSha !== prHeadSha) {
+      upsertComment(
+        prNumber,
+        formatSummary({
+          appliedCount: 0,
+          alreadyCount: 0,
+          resolvedThreads: 0,
+          changedFiles: [],
+          skipped: [],
+          note: `PR head advanced after review event; expected=${prHeadSha} current=${currentHeadSha}. Skipping to avoid line-number misapplication.`,
+        })
+      );
+      return;
+    }
+  }
+
   const reviewComments = await listReviewComments(prNumber);
   const copilotReviewComments = reviewComments.filter(
-    (c) => c && c.user && copilotActors.includes(String(c.user.login || ''))
+    (c) => c && c.user && copilotActorSet.has(String(c.user.login || '').toLowerCase())
   );
 
   const ops = [];
@@ -281,8 +321,17 @@ const main = async () => {
     const filePath = c && c.path;
     const line = c && c.line;
     const startLine = c && c.start_line;
+    const commentCommitId = c && c.commit_id ? String(c.commit_id) : '';
     if (!commentId || !filePath || !Number.isFinite(line)) {
       skipped.push(`comment=${commentId || 'unknown'}: missing path/line`);
+      continue;
+    }
+    if (prHeadSha && !commentCommitId) {
+      skipped.push(`comment=${commentId} path=${filePath}: missing commit_id; skipping`);
+      continue;
+    }
+    if (prHeadSha && commentCommitId && commentCommitId !== prHeadSha) {
+      skipped.push(`comment=${commentId} path=${filePath}: commit_id mismatch; skipping`);
       continue;
     }
     if (scope === 'docs' && !isDocPath(filePath)) {
@@ -325,17 +374,12 @@ const main = async () => {
   let alreadyCount = 0;
 
   for (const [filePath, fileOps] of opsByFile.entries()) {
-    const absolutePath = safeJoinRepoPath(repoRoot, filePath);
+    const absolutePath = resolveSafeRepoFilePath(repoRoot, filePath);
     if (!absolutePath) {
-      skipped.push(`path=${filePath}: invalid path`);
-      continue;
-    }
-    if (!fs.existsSync(absolutePath)) {
-      skipped.push(`path=${filePath}: file not found`);
+      skipped.push(`path=${filePath}: invalid or unsafe path`);
       continue;
     }
     const original = fs.readFileSync(absolutePath, 'utf8');
-    const hadFinalNewline = original.endsWith('\n');
     const lines = original.split('\n');
 
     // Apply from bottom to top to keep line numbers stable.
@@ -370,8 +414,7 @@ const main = async () => {
       appliedRanges.push({ start: op.startLine, end: op.endLine });
     }
 
-    let next = lines.join('\n');
-    if (hadFinalNewline) next += '\n';
+    const next = lines.join('\n');
     if (next !== original) {
       fs.writeFileSync(absolutePath, next, 'utf8');
     }
@@ -403,7 +446,9 @@ const main = async () => {
     const threads = data?.data?.repository?.pullRequest?.reviewThreads?.nodes || [];
     for (const thread of threads) {
       const comments = thread?.comments?.nodes || [];
-      const copilotComments = comments.filter((c) => c?.author?.login && copilotActors.includes(c.author.login));
+      const copilotComments = comments.filter(
+        (c) => c?.author?.login && copilotActorSet.has(String(c.author.login).toLowerCase())
+      );
       if (copilotComments.length === 0) continue;
       const allHandled = copilotComments.every((c) => handledCommentIds.has(Number(c.databaseId)));
       if (!allHandled) continue;

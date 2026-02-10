@@ -4,6 +4,9 @@ on:
   pull_request_review:
     types: [submitted]
 
+env:
+  COPILOT_ACTORS: copilot-pull-request-reviewer,github-copilot,github-copilot[bot],copilot,copilot[bot],Copilot
+
 concurrency:
   group: copilot-auto-fix-${{ github.event.pull_request.number }}
   cancel-in-progress: true
@@ -18,11 +21,12 @@ jobs:
     if: >-
       github.event.pull_request.head.repo.fork == false
       && vars.AE_COPILOT_AUTO_FIX == '1'
+      && contains(format(',{0},', env.COPILOT_ACTORS), format(',{0},', github.actor))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
@@ -33,8 +37,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           AE_COPILOT_AUTO_FIX_SCOPE: ${{ vars.AE_COPILOT_AUTO_FIX_SCOPE || 'docs' }}
           AE_COPILOT_AUTO_FIX_LABEL: ${{ vars.AE_COPILOT_AUTO_FIX_LABEL || '' }}
-          COPILOT_ACTORS: copilot-pull-request-reviewer,github-copilot,github-copilot[bot],copilot,copilot[bot]
         run: node scripts/ci/copilot-auto-fix.mjs
-
