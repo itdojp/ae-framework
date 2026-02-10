@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
+import { normalizeArtifactPath } from '../ci/lib/path-normalization.mjs';
 
 const cwd = process.cwd();
 
@@ -12,7 +13,7 @@ const readJson = (p) => {
   }
 };
 
-const normalizePath = (p) => (p ? path.relative(cwd, p) : null);
+const normalizePath = (p) => normalizeArtifactPath(p, { repoRoot: cwd });
 
 const pickQualityReport = () => {
   const explicit = process.env.PROGRESS_QUALITY;

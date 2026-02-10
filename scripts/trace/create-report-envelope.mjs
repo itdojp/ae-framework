@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fromVerifyLite } from '@ae-framework/envelope';
+import { normalizeArtifactPath } from '../ci/lib/path-normalization.mjs';
 
 const isValidLink = (value) => typeof value === 'string' && value.trim();
 
@@ -111,19 +112,20 @@ const registerArtifact = (artifact) => {
   if (!artifact || typeof artifact.path !== 'string' || !artifact.path.trim()) {
     return;
   }
-  const resolved = path.resolve(artifact.path);
+  const rawPath = artifact.path.trim();
+  const resolved = path.resolve(rawPath);
   const record = {
     type: artifact.type ?? 'application/json',
     description: artifact.description ?? null,
   };
   if (fs.existsSync(resolved)) {
     const buffer = fs.readFileSync(resolved);
-    record.path = path.relative(process.cwd(), resolved);
+    record.path = normalizeArtifactPath(resolved, { repoRoot: process.cwd() }) ?? rawPath;
     record.checksum = computeChecksum(buffer);
-    artifactsByPath.set(resolved, record);
+    artifactsByPath.set(record.path, record);
   } else {
-    record.path = artifact.path;
-    artifactsByPath.set(artifact.path, record);
+    record.path = normalizeArtifactPath(rawPath, { repoRoot: process.cwd() }) ?? rawPath;
+    artifactsByPath.set(record.path, record);
   }
 };
 
@@ -141,7 +143,7 @@ const pushArtifact = (filePath, { type = 'application/json', description = null 
   const buffer = fs.readFileSync(resolved);
   registerArtifact({
     type,
-    path: path.relative(process.cwd(), resolved),
+    path: normalizeArtifactPath(resolved, { repoRoot: process.cwd() }) ?? filePath,
     checksum: computeChecksum(buffer),
     ...(description ? { description } : {}),
   });

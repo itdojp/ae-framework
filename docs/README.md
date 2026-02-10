@@ -176,6 +176,7 @@ Claude CodeやMCPとの統合
 - [guarded-automation-template.md](./quality/guarded-automation-template.md) - Guarded automation 運用テンプレ
 - [incident-triage-template.md](./quality/incident-triage-template.md) - インシデント一次切り分けテンプレ
 - [ARTIFACTS-CONTRACT.md](./quality/ARTIFACTS-CONTRACT.md) - 成果物契約（Required/Optional）
+- [path-normalization-contract.md](./quality/path-normalization-contract.md) - 成果物パス正規化契約（repo-relative優先）
 - [adoption-sample-flow.md](./quality/adoption-sample-flow.md) - 導入の最小フロー（エンドツーエンド）
 - [formal-ops-guidelines.md](./quality/formal-ops-guidelines.md) - 運用パターン/命名/証跡/CI分割の指針
 - [formal-tools-setup.md](./quality/formal-tools-setup.md) - ローカル環境セットアップ（Apalache/TLC/Z3/cvc5）
