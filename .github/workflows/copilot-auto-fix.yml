@@ -21,7 +21,7 @@ jobs:
     if: >-
       github.event.pull_request.head.repo.fork == false
       && vars.AE_COPILOT_AUTO_FIX == '1'
-      && contains(format(',{0},', env.COPILOT_ACTORS), format(',{0},', github.actor))
+      && contains(fromJSON('["copilot-pull-request-reviewer","github-copilot","github-copilot[bot]","copilot","copilot[bot]","Copilot"]'), github.actor)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
