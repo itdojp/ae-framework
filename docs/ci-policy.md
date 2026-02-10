@@ -92,6 +92,8 @@ CI Extended restores cached heavy test artifacts (`.cache/test-results`) when re
 ### 参考ドキュメント
 - Branch Protection運用（プリセット適用/復元）: docs/ci/branch-protection-operations.md
 - Copilot Review Gate運用: docs/ci/copilot-review-gate.md
+- Copilot Auto Fix（suggestion 自動適用）: docs/ci/copilot-auto-fix.md
+- Auto Merge（auto-merge 自動有効化）: docs/ci/auto-merge.md
 
 <!-- duplicate section removed: Slash Commands (Instant Dispatch) repeated -->
 

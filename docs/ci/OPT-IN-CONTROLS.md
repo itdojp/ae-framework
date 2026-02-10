@@ -40,6 +40,17 @@ PRやIssueで **必要な検証だけを opt-in で起動** し、CIコストと
 | `pr-summary:digest` | PR summary を簡潔化 | `pr-ci-status-comment.yml` | `/pr-digest` で付与 |
 | `pr-summary:detailed` | PR summary を詳細化 | `pr-ci-status-comment.yml` | `/pr-detailed` で付与 |
 
+補足: PR の自動化（auto-fix / auto-merge）は、ラベルではなく **Repository Variables** でプロジェクト単位に有効化できます。
+
+| 変数 | 役割 | 既定 | 詳細 |
+| --- | --- | --- | --- |
+| `AE_COPILOT_AUTO_FIX` | Copilot suggestion 自動適用（ON/OFF） | 未設定（OFF） | `docs/ci/copilot-auto-fix.md` |
+| `AE_COPILOT_AUTO_FIX_SCOPE` | 対象スコープ（`docs` / `all`） | `docs` | `docs/ci/copilot-auto-fix.md` |
+| `AE_COPILOT_AUTO_FIX_LABEL` | ラベルopt-in（任意） | 未設定 | `docs/ci/copilot-auto-fix.md` |
+| `AE_AUTO_MERGE` | auto-merge 自動有効化（ON/OFF） | 未設定（OFF） | `docs/ci/auto-merge.md` |
+| `AE_AUTO_MERGE_MODE` | 対象方式（`all` / `label`） | `all` | `docs/ci/auto-merge.md` |
+| `AE_AUTO_MERGE_LABEL` | opt-in ラベル名（`label` モード時） | 未設定 | `docs/ci/auto-merge.md` |
+
 ## 4. PR向け Slash コマンド（PRコメント）
 
 > 入口: `.github/workflows/agent-commands.yml`  
@@ -91,5 +102,7 @@ PRやIssueで **必要な検証だけを opt-in で起動** し、CIコストと
 ## 6. 参照ドキュメント
 - Branch protection: `docs/ci/branch-protection-operations.md`
 - Copilot Review Gate: `docs/ci/copilot-review-gate.md`
+- Copilot Auto Fix: `docs/ci/copilot-auto-fix.md`
+- Auto Merge: `docs/ci/auto-merge.md`
 - Verify Lite: `.github/workflows/verify-lite.yml`
 - Slash/Agent commands: `.github/workflows/agent-commands.yml`, `.github/workflows/slash-commands.yml`

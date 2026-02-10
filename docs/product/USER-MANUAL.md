@@ -110,6 +110,8 @@ pnpm run test:int
 ### 4.4 CI運用の基本
 - PR作成時に verify-lite を基本ゲートとします
 - Branch protection の Required checks では、`Verify Lite / verify-lite` と `Copilot Review Gate / gate` を必須化する運用が想定されています（詳細: `docs/ci/branch-protection-operations.md`, `docs/ci/copilot-review-gate.md`）
+- （任意）Copilot suggestion の自動適用（auto-fix）を有効化できます（プロジェクト単位のRepository Variables）。詳細: `docs/ci/copilot-auto-fix.md`
+- （任意）auto-merge を自動有効化し、人手マージを省略する運用にできます（プロジェクト単位のRepository Variables）。詳細: `docs/ci/auto-merge.md`
 - 必要に応じて `ci-extended` や `formal-verify` を追加実行します
 - 詳細: `docs/ci/branch-protection-operations.md`, `docs/quality/formal-runbook.md`
 

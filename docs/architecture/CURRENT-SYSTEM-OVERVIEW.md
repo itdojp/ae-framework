@@ -79,6 +79,8 @@ This document captures the implementation-aligned architecture of `ae-framework`
 | --- | --- | --- |
 | 必須軽量ゲート | `verify-lite.yml`, `coverage-check.yml`, `workflow-lint.yml` | 日常PRの安定ゲート |
 | レビューゲート | `copilot-review-gate.yml` | Copilotレビュー存在 + スレッド解決確認 |
+| レビュー対応（auto-fix） | `copilot-auto-fix.yml` | Copilot suggestion をPRへ自動適用（コミット/push）+ スレッド解決（任意） |
+| 自動マージ（auto-merge） | `pr-ci-status-comment.yml` | 条件成立時に auto-merge を自動有効化し、人手マージを省略（任意） |
 | 形式検証（opt-in） | `formal-verify.yml` | `run-formal` ラベル/dispatchで重い検証を実行 |
 | 形式集約 | `formal-aggregate.yml` | formal出力をPRコメント向けに集約 |
 | セキュリティ | `security.yml`, `sbom-generation.yml` | 依存・脆弱性・SBOM運用 |
