@@ -16,6 +16,11 @@ const PR_LIMIT = 50;
 const PR_SLEEP_MS = 150;
 const FAILED_LIST_LIMIT = 5;
 
+const AUTO_MERGE_MODE = String(process.env.AE_AUTO_MERGE_MODE || 'all').toLowerCase();
+const AUTO_MERGE_LABEL = String(process.env.AE_AUTO_MERGE_LABEL || '').trim();
+const PR_NUMBER_RAW = process.env.PR_NUMBER ? String(process.env.PR_NUMBER).trim() : '';
+const PR_NUMBER = /^[1-9][0-9]*$/.test(PR_NUMBER_RAW) ? Number(PR_NUMBER_RAW) : null;
+
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const execJson = (args, input) => {
@@ -48,6 +53,28 @@ const fetchRequiredContexts = (repoName, baseRefName) => {
       return [];
     }
     console.error('[auto-merge-enabler] Failed to fetch required status checks:', message);
+    return null;
+  }
+};
+
+const fetchReviewRequirement = (repoName, baseRefName) => {
+  try {
+    const protection = execJson(['api', `repos/${repoName}/branches/${baseRefName}/protection`]);
+    const reviews = protection && protection.required_pull_request_reviews;
+    if (!reviews) {
+      return { approvalRequired: false, requiredApprovals: 0 };
+    }
+    const requiredApprovals = Number(reviews.required_approving_review_count ?? 0);
+    return {
+      approvalRequired: Number.isFinite(requiredApprovals) && requiredApprovals > 0,
+      requiredApprovals: Number.isFinite(requiredApprovals) ? requiredApprovals : 0,
+    };
+  } catch (error) {
+    const message = error && error.message ? error.message : String(error);
+    if (message.includes('Not Found') || message.includes('404')) {
+      return { approvalRequired: false, requiredApprovals: 0 };
+    }
+    console.error('[auto-merge-enabler] Failed to fetch review requirements:', message);
     return null;
   }
 };
@@ -130,13 +157,15 @@ const listComments = (number) => {
 const listOpenPrs = () =>
   execJson(['pr', 'list', '--state', 'open', '--limit', String(PR_LIMIT), '--json', 'number,title']);
 
-const buildStatusBody = (pr, view, reasons, summary) => {
+const buildStatusBody = (pr, view, reasons, summary, reviewRequirement) => {
   const lines = [
     marker,
     `## Auto-merge Status (${new Date().toISOString()})`,
-    `- #${pr.number} ${pr.title}`,
+    `- #${pr.number} ${view.title || pr.title || ''}`.trimEnd(),
     `- mergeable: ${view.mergeable || 'UNKNOWN'}`,
-    `- review: ${view.reviewDecision || 'NONE'}`,
+    `- review: ${view.reviewDecision || 'NONE'} (required: ${
+      reviewRequirement ? (reviewRequirement.approvalRequired ? `yes/${reviewRequirement.requiredApprovals}` : 'no') : 'unknown'
+    })`,
     `- checks: ✅${summary.counts.success} ❌${summary.counts.failure} ⏳${summary.counts.pending}`,
   ];
   if (summary.failed.length > 0) {
@@ -177,7 +206,7 @@ const enableAutoMerge = (number) => {
 };
 
 const main = async () => {
-  const prs = listOpenPrs();
+  const prs = PR_NUMBER ? [{ number: PR_NUMBER, title: '' }] : listOpenPrs();
   for (const pr of prs) {
     try {
       const view = execJson([
@@ -187,14 +216,23 @@ const main = async () => {
         '--repo',
         repo,
         '--json',
-        'number,title,mergeable,reviewDecision,statusCheckRollup,baseRefName,isDraft,autoMergeRequest',
+        'number,title,mergeable,reviewDecision,statusCheckRollup,baseRefName,isDraft,autoMergeRequest,labels',
       ]);
       const requiredContexts = fetchRequiredContexts(repo, view.baseRefName);
       if (requiredContexts === null) {
         upsertComment(pr.number, buildStatusBody(pr, view, ['required status checks unavailable'], {
           counts: { success: 0, failure: 0, pending: 0 },
           failed: [],
-        }));
+        }, null));
+        await sleep(PR_SLEEP_MS);
+        continue;
+      }
+      const reviewRequirement = fetchReviewRequirement(repo, view.baseRefName);
+      if (reviewRequirement === null) {
+        upsertComment(pr.number, buildStatusBody(pr, view, ['review requirement unavailable'], {
+          counts: { success: 0, failure: 0, pending: 0 },
+          failed: [],
+        }, null));
         await sleep(PR_SLEEP_MS);
         continue;
       }
@@ -205,7 +243,21 @@ const main = async () => {
       const reasons = [];
       if (view.isDraft) reasons.push('draft');
       if (view.mergeable !== 'MERGEABLE') reasons.push(`mergeable=${view.mergeable || 'UNKNOWN'}`);
-      if (view.reviewDecision !== 'APPROVED') reasons.push(`review=${view.reviewDecision || 'NONE'}`);
+      if (AUTO_MERGE_MODE === 'label') {
+        if (!AUTO_MERGE_LABEL) {
+          reasons.push('auto-merge label mode but AE_AUTO_MERGE_LABEL is empty');
+        } else {
+          const labels = Array.isArray(view.labels) ? view.labels.map((l) => l && l.name).filter(Boolean) : [];
+          if (!labels.includes(AUTO_MERGE_LABEL)) {
+            reasons.push(`missing label=${AUTO_MERGE_LABEL}`);
+          }
+        }
+      } else if (AUTO_MERGE_MODE !== 'all') {
+        reasons.push(`unknown AE_AUTO_MERGE_MODE=${AUTO_MERGE_MODE}`);
+      }
+      if (reviewRequirement.approvalRequired && view.reviewDecision !== 'APPROVED') {
+        reasons.push(`review=${view.reviewDecision || 'NONE'}`);
+      }
       if (summaryRequired.counts.failure > 0) reasons.push('checks failed');
       if (summaryRequired.counts.pending > 0) reasons.push('checks pending');
 
@@ -217,7 +269,7 @@ const main = async () => {
           reasons.push(`auto-merge enable failed: ${message}`);
         }
       }
-      const body = buildStatusBody(pr, view, reasons, summaryAll);
+      const body = buildStatusBody(pr, view, reasons, summaryAll, reviewRequirement);
       upsertComment(pr.number, body);
     } catch (error) {
       console.error(`[auto-merge-enabler] Failed to process PR #${pr.number}:`, error);

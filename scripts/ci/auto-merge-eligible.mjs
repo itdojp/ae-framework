@@ -4,6 +4,8 @@ import { execFileSync } from 'node:child_process';
 const repo = process.env.GITHUB_REPOSITORY;
 const prNumber = process.env.PR_NUMBER;
 const enable = process.env.ENABLE_AUTO_MERGE === 'true';
+const autoMergeMode = String(process.env.AE_AUTO_MERGE_MODE || 'all').toLowerCase();
+const autoMergeLabel = String(process.env.AE_AUTO_MERGE_LABEL || '').trim();
 
 if (!repo) {
   console.error('[auto-merge] GITHUB_REPOSITORY is required.');
@@ -46,6 +48,28 @@ const fetchRequiredContexts = (repoName, baseRefName) => {
       return [];
     }
     console.error('[auto-merge] Failed to fetch required status checks:', message);
+    return null;
+  }
+};
+
+const fetchReviewRequirement = (repoName, baseRefName) => {
+  try {
+    const protection = execJson(['api', `repos/${repoName}/branches/${baseRefName}/protection`]);
+    const reviews = protection && protection.required_pull_request_reviews;
+    if (!reviews) {
+      return { approvalRequired: false, requiredApprovals: 0 };
+    }
+    const requiredApprovals = Number(reviews.required_approving_review_count ?? 0);
+    return {
+      approvalRequired: Number.isFinite(requiredApprovals) && requiredApprovals > 0,
+      requiredApprovals: Number.isFinite(requiredApprovals) ? requiredApprovals : 0,
+    };
+  } catch (error) {
+    const message = error && error.message ? error.message : String(error);
+    if (message.includes('Not Found') || message.includes('404')) {
+      return { approvalRequired: false, requiredApprovals: 0 };
+    }
+    console.error('[auto-merge] Failed to fetch review requirements:', message);
     return null;
   }
 };
@@ -116,7 +140,7 @@ const pr = execJson([
   '--repo',
   repo,
   '--json',
-  'number,title,mergeable,reviewDecision,statusCheckRollup,baseRefName',
+  'number,title,mergeable,reviewDecision,statusCheckRollup,baseRefName,labels',
 ]);
 
 const requiredContexts = fetchRequiredContexts(repo, pr.baseRefName);
@@ -124,15 +148,25 @@ if (requiredContexts === null) {
   console.log('[auto-merge] Not eligible (required status checks unavailable).');
   process.exit(0);
 }
+const reviewRequirement = fetchReviewRequirement(repo, pr.baseRefName);
+if (reviewRequirement === null) {
+  console.log('[auto-merge] Not eligible (review requirement unavailable).');
+  process.exit(0);
+}
 const { counts, failed } = summarizeChecks(pr.statusCheckRollup || [], requiredContexts);
-const eligible =
-  pr.mergeable === 'MERGEABLE' &&
-  pr.reviewDecision === 'APPROVED' &&
-  counts.failure === 0 &&
-  counts.pending === 0;
+const labels = Array.isArray(pr.labels) ? pr.labels.map((l) => l && l.name).filter(Boolean) : [];
+const labelEligible = (() => {
+  if (autoMergeMode === 'all') return true;
+  if (autoMergeMode !== 'label') return false;
+  if (!autoMergeLabel) return false;
+  return labels.includes(autoMergeLabel);
+})();
+const reviewEligible = reviewRequirement.approvalRequired ? pr.reviewDecision === 'APPROVED' : true;
+const eligible = pr.mergeable === 'MERGEABLE' && labelEligible && reviewEligible && counts.failure === 0 && counts.pending === 0;
 
 console.log(`[auto-merge] PR #${pr.number}: ${pr.title}`);
-console.log(`[auto-merge] mergeable=${pr.mergeable} review=${pr.reviewDecision}`);
+console.log(`[auto-merge] mergeable=${pr.mergeable} review=${pr.reviewDecision} (required=${reviewRequirement.approvalRequired ? `yes/${reviewRequirement.requiredApprovals}` : 'no'})`);
+console.log(`[auto-merge] mode=${autoMergeMode} label=${autoMergeLabel || '(none)'} hasLabel=${labels.includes(autoMergeLabel)}`);
 console.log(
   `[auto-merge] required checks: ${requiredContexts.length || 'none'} | success=${counts.success} failure=${counts.failure} pending=${counts.pending}`
 );
