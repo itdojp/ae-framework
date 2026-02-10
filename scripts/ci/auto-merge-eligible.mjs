@@ -35,41 +35,67 @@ const execJson = (args) => {
   }
 };
 
-const fetchRequiredContexts = (repoName, baseRefName) => {
+const encodeRef = (refName) => encodeURIComponent(String(refName || ''));
+
+const fetchBranchMeta = (repoName, baseRefName) => {
   try {
-    const contexts = execJson([
-      'api',
-      `repos/${repoName}/branches/${baseRefName}/protection/required_status_checks/contexts`,
-    ]);
-    return Array.isArray(contexts) ? contexts : [];
+    const encodedRef = encodeRef(baseRefName);
+    const branch = execJson(['api', `repos/${repoName}/branches/${encodedRef}`]);
+    return { protected: Boolean(branch && branch.protected) };
   } catch (error) {
     const message = error && error.message ? error.message : String(error);
-    if (message.includes('Not Found') || message.includes('404')) {
-      return [];
-    }
-    console.error('[auto-merge] Failed to fetch required status checks:', message);
+    console.error('[auto-merge] Failed to fetch branch metadata:', message);
     return null;
   }
 };
 
-const fetchReviewRequirement = (repoName, baseRefName) => {
+const fetchProtectionSummary = (repoName, baseRefName, branchMeta) => {
   try {
-    const protection = execJson(['api', `repos/${repoName}/branches/${baseRefName}/protection`]);
+    if (branchMeta && branchMeta.protected === false) {
+      return {
+        requiredContexts: [],
+        reviewRequirement: { approvalRequired: false, requiredApprovals: 0 },
+      };
+    }
+    const encodedRef = encodeRef(baseRefName);
+    const protection = execJson(['api', `repos/${repoName}/branches/${encodedRef}/protection`]);
+    const requiredContexts = Array.isArray(protection?.required_status_checks?.contexts)
+      ? protection.required_status_checks.contexts
+      : [];
     const reviews = protection && protection.required_pull_request_reviews;
     if (!reviews) {
-      return { approvalRequired: false, requiredApprovals: 0 };
+      return {
+        requiredContexts,
+        reviewRequirement: { approvalRequired: false, requiredApprovals: 0 },
+      };
     }
     const requiredApprovals = Number(reviews.required_approving_review_count ?? 0);
+    const requireCodeOwnerReviews = Boolean(reviews.require_code_owner_reviews);
+    const requireLastPushApproval = Boolean(reviews.require_last_push_approval);
+    const approvalRequired =
+      (Number.isFinite(requiredApprovals) && requiredApprovals > 0) ||
+      requireCodeOwnerReviews ||
+      requireLastPushApproval;
     return {
-      approvalRequired: Number.isFinite(requiredApprovals) && requiredApprovals > 0,
-      requiredApprovals: Number.isFinite(requiredApprovals) ? requiredApprovals : 0,
+      requiredContexts,
+      reviewRequirement: {
+        approvalRequired,
+        requiredApprovals: Number.isFinite(requiredApprovals) ? requiredApprovals : 0,
+      },
     };
   } catch (error) {
     const message = error && error.message ? error.message : String(error);
     if (message.includes('Not Found') || message.includes('404')) {
-      return { approvalRequired: false, requiredApprovals: 0 };
+      // If the branch is protected but protection metadata is not accessible, fail closed.
+      if (branchMeta && branchMeta.protected) {
+        return null;
+      }
+      return {
+        requiredContexts: [],
+        reviewRequirement: { approvalRequired: false, requiredApprovals: 0 },
+      };
     }
-    console.error('[auto-merge] Failed to fetch review requirements:', message);
+    console.error('[auto-merge] Failed to fetch branch protection:', message);
     return null;
   }
 };
@@ -143,16 +169,18 @@ const pr = execJson([
   'number,title,mergeable,reviewDecision,statusCheckRollup,baseRefName,labels',
 ]);
 
-const requiredContexts = fetchRequiredContexts(repo, pr.baseRefName);
-if (requiredContexts === null) {
-  console.log('[auto-merge] Not eligible (required status checks unavailable).');
+const branchMeta = fetchBranchMeta(repo, pr.baseRefName);
+if (branchMeta === null) {
+  console.log('[auto-merge] Not eligible (branch metadata unavailable).');
   process.exit(0);
 }
-const reviewRequirement = fetchReviewRequirement(repo, pr.baseRefName);
-if (reviewRequirement === null) {
-  console.log('[auto-merge] Not eligible (review requirement unavailable).');
+
+const protectionSummary = fetchProtectionSummary(repo, pr.baseRefName, branchMeta);
+if (protectionSummary === null) {
+  console.log('[auto-merge] Not eligible (branch protection unavailable).');
   process.exit(0);
 }
+const { requiredContexts, reviewRequirement } = protectionSummary;
 const { counts, failed } = summarizeChecks(pr.statusCheckRollup || [], requiredContexts);
 const labels = Array.isArray(pr.labels) ? pr.labels.map((l) => l && l.name).filter(Boolean) : [];
 const labelEligible = (() => {

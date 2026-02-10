@@ -367,4 +367,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
           PR_NUMBER: ${{ inputs.pr_number }}
           ENABLE_AUTO_MERGE: ${{ inputs.enable_auto_merge }}
+          AE_AUTO_MERGE_MODE: ${{ vars.AE_AUTO_MERGE_MODE || 'all' }}
+          AE_AUTO_MERGE_LABEL: ${{ vars.AE_AUTO_MERGE_LABEL || '' }}
         run: node scripts/ci/auto-merge-eligible.mjs
