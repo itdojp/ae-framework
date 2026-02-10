@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/itdojp/ae-framework/schema/run-manifest.schema.json",
+  "title": "Run Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "topLevelCommand",
+    "metadata",
+    "summaries"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "description": "Semver identifier for this manifest format.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "topLevelCommand": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable identifier for the top-level command/workflow that produced this run."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the manifest was generated (UTC ISO8601)."
+    },
+    "metadata": {
+      "$ref": "https://github.com/itdojp/ae-framework/schema/artifact-metadata.schema.json"
+    },
+    "summaries": {
+      "type": "object",
+      "description": "Named summaries/artifacts produced by the run.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "status",
+          "producedByCommit",
+          "staleComparedToCurrentCommit"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Presence/parse status (e.g., present, missing, invalid_json)."
+          },
+          "producedByCommit": {
+            "description": "Commit SHA recorded inside the artifact itself (best-effort).",
+            "oneOf": [
+              { "type": "string", "minLength": 1 },
+              { "type": "null" }
+            ]
+          },
+          "staleComparedToCurrentCommit": {
+            "description": "Whether producedByCommit differs from metadata.gitCommit (best-effort).",
+            "oneOf": [
+              { "type": "boolean" },
+              { "type": "null" }
+            ]
+          },
+          "commitSource": {
+            "description": "Where producedByCommit was extracted from (diagnostic).",
+            "oneOf": [
+              { "type": "string", "minLength": 1 },
+              { "type": "null" }
+            ]
+          },
+          "notes": {
+            "oneOf": [
+              { "type": "string", "minLength": 1 },
+              { "type": "null" }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+
