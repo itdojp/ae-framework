@@ -12,22 +12,30 @@ import { buildArtifactMetadata } from '../ci/lib/artifact-metadata.mjs';
 
 const DEFAULT_IN = 'artifacts_dl';
 const DEFAULT_OUT = path.join('artifacts', 'formal', 'formal-summary-v1.json');
+const DEFAULT_LAYOUT = 'downloaded';
 
 function parseArgs(argv) {
-  const args = { inDir: DEFAULT_IN, outFile: DEFAULT_OUT };
+  const args = { inDir: DEFAULT_IN, outFile: DEFAULT_OUT, layout: DEFAULT_LAYOUT, inProvided: false };
   for (let i = 2; i < argv.length; i += 1) {
     const a = argv[i];
     const next = argv[i + 1];
     if (a === '--in' && next) {
       args.inDir = next;
+      args.inProvided = true;
       i += 1;
     } else if (a.startsWith('--in=')) {
       args.inDir = a.slice('--in='.length);
+      args.inProvided = true;
     } else if (a === '--out' && next) {
       args.outFile = next;
       i += 1;
     } else if (a.startsWith('--out=')) {
       args.outFile = a.slice('--out='.length);
+    } else if (a === '--layout' && next) {
+      args.layout = next;
+      i += 1;
+    } else if (a.startsWith('--layout=')) {
+      args.layout = a.slice('--layout='.length);
     } else if (a === '--help' || a === '-h') {
       args.help = true;
     }
@@ -36,12 +44,15 @@ function parseArgs(argv) {
 }
 
 function printHelp() {
-  console.log(`Usage: node scripts/formal/generate-formal-summary-v1.mjs [--in <dir>] [--out <file>]
+  console.log(`Usage: node scripts/formal/generate-formal-summary-v1.mjs [--layout <downloaded|hermetic>] [--in <dir>] [--out <file>]
 
 Options:
-  --in <dir>   Input directory containing downloaded artifacts (default: ${DEFAULT_IN})
-  --out <file> Output JSON file path (default: ${DEFAULT_OUT})
-  -h, --help   Show this help
+  --layout <downloaded|hermetic> Input layout (default: ${DEFAULT_LAYOUT})
+  --in <dir>                   Input directory (default: ${DEFAULT_IN})
+                               downloaded: expects formal-reports-*/... under <dir>
+                               hermetic: expects artifacts/hermetic-reports layout under <dir>
+  --out <file>                 Output JSON file path (default: ${DEFAULT_OUT})
+  -h, --help                   Show this help
 `);
 }
 
@@ -56,6 +67,16 @@ function readJsonSafe(p) {
 function find(baseDir, relPath) {
   const p = path.join(baseDir, relPath);
   return fs.existsSync(p) ? p : undefined;
+}
+
+function normalizeLayout(layout) {
+  const s = String(layout || '')
+    .trim()
+    .toLowerCase();
+  if (!s) return DEFAULT_LAYOUT;
+  if (s === 'downloaded' || s === 'ci' || s === 'artifacts_dl') return 'downloaded';
+  if (s === 'hermetic' || s === 'local' || s === 'workspace') return 'hermetic';
+  return s;
 }
 
 function mapStatus({ raw, present }) {
@@ -128,6 +149,34 @@ function computeAggregateStatus(results) {
   return { ok: false, status: 'unknown' };
 }
 
+function getInputs(layout) {
+  if (layout === 'hermetic') {
+    return [
+      { name: 'tla', rel: path.join('formal', 'tla-summary.json') },
+      { name: 'alloy', rel: path.join('formal', 'alloy-summary.json') },
+      { name: 'smt', rel: path.join('formal', 'smt-summary.json') },
+      { name: 'apalache', rel: path.join('formal', 'apalache-summary.json') },
+      { name: 'conformance', rel: path.join('conformance', 'summary.json') },
+      { name: 'kani', rel: path.join('formal', 'kani-summary.json') },
+      { name: 'spin', rel: path.join('formal', 'spin-summary.json') },
+      { name: 'csp', rel: path.join('formal', 'csp-summary.json') },
+      { name: 'lean', rel: path.join('formal', 'lean-summary.json') },
+    ];
+  }
+
+  return [
+    { name: 'tla', rel: path.join('formal-reports-tla', 'tla-summary.json') },
+    { name: 'alloy', rel: path.join('formal-reports-alloy', 'alloy-summary.json') },
+    { name: 'smt', rel: path.join('formal-reports-smt', 'smt-summary.json') },
+    { name: 'apalache', rel: path.join('formal-reports-apalache', 'apalache-summary.json') },
+    { name: 'conformance', rel: path.join('formal-reports-conformance', 'conformance-summary.json') },
+    { name: 'kani', rel: path.join('formal-reports-kani', 'kani-summary.json') },
+    { name: 'spin', rel: path.join('formal-reports-spin', 'spin-summary.json') },
+    { name: 'csp', rel: path.join('formal-reports-csp', 'csp-summary.json') },
+    { name: 'lean', rel: path.join('formal-reports-lean', 'lean-summary.json') },
+  ];
+}
+
 function main() {
   const args = parseArgs(process.argv);
   if (args.help) {
@@ -136,7 +185,16 @@ function main() {
   }
 
   const repoRoot = process.cwd();
-  const baseDir = path.resolve(repoRoot, args.inDir);
+  const layout = normalizeLayout(args.layout);
+  if (layout !== 'downloaded' && layout !== 'hermetic') {
+    console.error(`Unsupported --layout: ${args.layout} (expected: downloaded|hermetic)`);
+    return 2;
+  }
+
+  const inDir =
+    layout === 'hermetic' && !args.inProvided ? path.join('artifacts', 'hermetic-reports') : args.inDir;
+
+  const baseDir = path.resolve(repoRoot, inDir);
   if (!fs.existsSync(baseDir)) {
     console.warn(`Input directory not found: ${baseDir} (emitting all-missing summary)`);
   }
@@ -149,17 +207,7 @@ function main() {
   })();
   const metadata = buildArtifactMetadata({ now });
 
-  const inputs = [
-    { name: 'tla', rel: path.join('formal-reports-tla', 'tla-summary.json') },
-    { name: 'alloy', rel: path.join('formal-reports-alloy', 'alloy-summary.json') },
-    { name: 'smt', rel: path.join('formal-reports-smt', 'smt-summary.json') },
-    { name: 'apalache', rel: path.join('formal-reports-apalache', 'apalache-summary.json') },
-    { name: 'conformance', rel: path.join('formal-reports-conformance', 'conformance-summary.json') },
-    { name: 'kani', rel: path.join('formal-reports-kani', 'kani-summary.json') },
-    { name: 'spin', rel: path.join('formal-reports-spin', 'spin-summary.json') },
-    { name: 'csp', rel: path.join('formal-reports-csp', 'csp-summary.json') },
-    { name: 'lean', rel: path.join('formal-reports-lean', 'lean-summary.json') },
-  ];
+  const inputs = getInputs(layout);
 
   const results = inputs.map(({ name, rel }) => {
     const p = find(baseDir, rel);

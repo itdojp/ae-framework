@@ -28,9 +28,11 @@ describe('run-manifest (generate + check)', () => {
 
       const verifyLitePath = join(dir, 'artifacts', 'verify-lite', 'verify-lite-run-summary.json');
       const envelopePath = join(dir, 'artifacts', 'report-envelope.json');
+      const formalSummaryV1Path = join(dir, 'artifacts', 'formal', 'formal-summary-v1.json');
 
       writeJson(verifyLitePath, { metadata: { gitCommit: commit } });
       writeJson(envelopePath, { correlation: { commit } });
+      writeJson(formalSummaryV1Path, { metadata: { gitCommit: commit } });
 
       const gen = runNode(
         dir,
@@ -51,7 +53,7 @@ describe('run-manifest (generate + check)', () => {
       const check = runNode(
         dir,
         checkScript,
-        ['--manifest', 'artifacts/run-manifest.json', '--require-fresh', 'verifyLite,reportEnvelope', '--result', 'artifacts/run-manifest-check.json'],
+        ['--manifest', 'artifacts/run-manifest.json', '--require-fresh', 'verifyLite,reportEnvelope,formalSummaryV1', '--result', 'artifacts/run-manifest-check.json'],
         {},
       );
       expect(check.status).toBe(0);

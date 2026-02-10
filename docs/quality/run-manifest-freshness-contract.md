@@ -31,7 +31,7 @@ node scripts/ci/generate-run-manifest.mjs \
 ```bash
 node scripts/ci/check-run-manifest.mjs \
   --manifest artifacts/run-manifest.json \
-  --require-fresh verifyLite,reportEnvelope,formal \
+  --require-fresh verifyLite,reportEnvelope,formal,formalSummaryV1 \
   --result artifacts/run-manifest-check.json
 ```
 
@@ -51,4 +51,3 @@ node scripts/ci/check-run-manifest.mjs \
 - `schema/run-manifest.schema.json`
 - `scripts/ci/generate-run-manifest.mjs`
 - `scripts/ci/check-run-manifest.mjs`
-

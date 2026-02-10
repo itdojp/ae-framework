@@ -86,7 +86,7 @@ Aggregate JSON の軽量検証（非ブロッキング）
 - ローカル確認: `node scripts/formal/validate-aggregate-json.mjs`（存在時に検証、欠損/不正は `::warning::` 出力）
 
 Formal Summary v1（Normalized / 段階導入）
-- 集約ワークフローは `artifacts/formal/formal-summary-v1.json` も出力します（スキーマ: `schema/formal-summary-v1.schema.json`）。
+- 集約ワークフロー（および verify-lite の `run-formal` 実行）は `artifacts/formal/formal-summary-v1.json` を出力します（スキーマ: `schema/formal-summary-v1.schema.json`）。
 - ローカル確認: `node scripts/ci/validate-formal-summary-v1.mjs artifacts/formal/formal-summary-v1.json schema/formal-summary-v1.schema.json`
 - strict（欠損/不正で失敗）: PRラベル `enforce-formal` が付与されている場合、Formal Reports Aggregate 内で v1 を必須検証します。
 - 1行サマリを表示する簡易CLI（ローカル）:
