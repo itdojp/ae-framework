@@ -2,16 +2,42 @@
 // NOTE: moved from .github/workflows/formal-aggregate.yml inline script.
 // Keep behavior consistent for CI and PR comments.
 
-const fs=require("fs"), path=require("path");
+import fs from 'node:fs';
+import path from 'node:path';
+
+function parseNonNegativeInt(name, rawValue, fallback) {
+  if (rawValue === undefined || rawValue === null) return fallback;
+  const text = String(rawValue).trim();
+  if (!text) return fallback;
+  const value = Number.parseInt(text, 10);
+  if (!Number.isFinite(value) || value < 0) {
+    console.warn(`[formal-aggregate] invalid ${name}=${JSON.stringify(rawValue)}; using ${fallback}`);
+    return fallback;
+  }
+  return value;
+}
+
+function parsePositiveInt(name, rawValue, fallback) {
+  if (rawValue === undefined || rawValue === null) return fallback;
+  const text = String(rawValue).trim();
+  if (!text) return fallback;
+  const value = Number.parseInt(text, 10);
+  if (!Number.isFinite(value) || value <= 0) {
+    console.warn(`[formal-aggregate] invalid ${name}=${JSON.stringify(rawValue)}; using ${fallback}`);
+    return fallback;
+  }
+  return value;
+}
 function rj(p){ try { return JSON.parse(fs.readFileSync(p,"utf-8")); } catch { return undefined; } }
 function find(dir, name){ try { const p = path.join(dir, name); return fs.existsSync(p) ? p : undefined; } catch { return undefined; } }
-const LINE_CLAMP = parseInt(process.env.FORMAL_AGG_LINE_CLAMP || '200', 10);
-const ERRORS_LIMIT = parseInt(process.env.FORMAL_AGG_ERRORS_LIMIT || '5', 10);
+const LINE_CLAMP = parsePositiveInt('FORMAL_AGG_LINE_CLAMP', process.env.FORMAL_AGG_LINE_CLAMP, 200);
+const ERRORS_LIMIT = parsePositiveInt('FORMAL_AGG_ERRORS_LIMIT', process.env.FORMAL_AGG_ERRORS_LIMIT, 5);
 function escMd(s){
   if (!s) return '';
   // Basic Markdown escaping to avoid breaking PR rendering
   return String(s)
     .replace(/`/g, "`\u200b")
+    .replace(/@/g, "@\u200b")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 }
@@ -51,8 +77,8 @@ const spin = spinSum ? rj(spinSum) : undefined;
 const csp = cspSum ? rj(cspSum) : undefined;
 const lean = leanSum ? rj(leanSum) : undefined;
 const clampInfo = {
-  lineClamp: process.env.FORMAL_AGG_LINE_CLAMP || '200',
-  errorsLimit: process.env.FORMAL_AGG_ERRORS_LIMIT || '5'
+  lineClamp: LINE_CLAMP,
+  errorsLimit: ERRORS_LIMIT
 };
 
 const lines = [];
@@ -64,43 +90,43 @@ lines.push(tlaSum ? `- TLA summary file: ${path.basename(tlaSum)}` : "- TLA summ
 lines.push(alloySum ? `- Alloy summary file: ${path.basename(alloySum)}` : "- Alloy summary: n/a");
 if (alloyS && alloyS.temporal) {
   const t = alloyS.temporal;
-  const ops = Array.isArray(t.operators) && t.operators.length ? ` (ops: ${t.operators.join(', ')})` : '';
+  const ops = Array.isArray(t.operators) && t.operators.length ? ` (ops: ${t.operators.map(escMd).join(', ')})` : '';
   lines.push(`- Alloy temporal: ${t.present ? 'present' : 'absent'}${ops}`);
 }
 lines.push(smtSum ? `- SMT summary file: ${path.basename(smtSum)}` : "- SMT summary: n/a");
 if (smt) {
   const ss = [
-    `solver=${smt.solver || 'n/a'}`,
-    `status=${smt.status || 'n/a'}`
+    `solver=${escMd(smt.solver || 'n/a')}`,
+    `status=${escMd(smt.status || 'n/a')}`
   ].join(' ');
   lines.push(`- SMT: ${ss}`);
 }
 lines.push(kaniSum ? `- Kani summary file: ${path.basename(kaniSum)}` : "- Kani summary: n/a");
 if (kani) {
   const ks = [
-    `status=${kani.status || 'n/a'}`,
+    `status=${escMd(kani.status || 'n/a')}`,
     `detected=${kani.detected ? 'yes' : 'no'}`
   ].join(' ');
   lines.push(`- Kani: ${ks}`);
 }
 lines.push(spinSum ? `- SPIN summary file: ${path.basename(spinSum)}` : "- SPIN summary: n/a");
 if (spin) {
-  lines.push(`- SPIN: status=${spin.status || 'n/a'}${spin.ltl ? ` ltl=${spin.ltl}` : ''}`);
+  lines.push(`- SPIN: status=${escMd(spin.status || 'n/a')}${spin.ltl ? ` ltl=${escMd(spin.ltl)}` : ''}`);
 }
 lines.push(cspSum ? `- CSP summary file: ${path.basename(cspSum)}` : "- CSP summary: n/a");
 if (csp) {
-  const backend = csp.backend ? ` backend=${csp.backend}` : '';
-  const resultStatus = csp.resultStatus ? ` result=${csp.resultStatus}` : '';
+  const backend = csp.backend ? ` backend=${escMd(csp.backend)}` : '';
+  const resultStatus = csp.resultStatus ? ` result=${escMd(csp.resultStatus)}` : '';
   const exitCode = (typeof csp.exitCode === 'number') ? ` exitCode=${csp.exitCode}` : '';
-  lines.push(`- CSP: status=${csp.status || 'n/a'}${backend}${resultStatus}${exitCode}`);
+  lines.push(`- CSP: status=${escMd(csp.status || 'n/a')}${backend}${resultStatus}${exitCode}`);
 }
 lines.push(leanSum ? `- Lean summary file: ${path.basename(leanSum)}` : "- Lean summary: n/a");
 if (lean) {
-  lines.push(`- Lean: status=${lean.status || 'n/a'}`);
+  lines.push(`- Lean: status=${escMd(lean.status || 'n/a')}`);
 }
 if (conf && conf.runtimeHooks) {
   const h = conf.runtimeHooks;
-  const info = `present=${h.present? 'yes':'no'} count=${h.count||0} traceId=${h.traceId||'n/a'} match=${h.matchesReplayTraceId? 'yes':'no'}`;
+  const info = `present=${h.present? 'yes':'no'} count=${h.count||0} traceId=${escMd(h.traceId||'n/a')} match=${h.matchesReplayTraceId? 'yes':'no'}`;
   lines.push(`- Runtime hooks: ${info}`);
 }
 // Present map (single source for MD + JSON)
@@ -126,8 +152,8 @@ lines.push(`Present: ${presentCount}/${presentTotal}${presentCount? ` (${present
 try {
   const t = alloyS && alloyS.temporal;
   if (t && (t.present || (Array.isArray(t.operators) && t.operators.length))) {
-    const ops = Array.isArray(t.operators) ? t.operators.join(', ') : '';
-    const pops = Array.isArray(t.pastOperators) ? t.pastOperators.join(', ') : '';
+    const ops = Array.isArray(t.operators) ? t.operators.map(escMd).join(', ') : '';
+    const pops = Array.isArray(t.pastOperators) ? t.pastOperators.map(escMd).join(', ') : '';
     lines.push(`Alloy temporal: present=${!!t.present}${ops? ` ops=[${ops}]`:''}${pops? ` past=[${pops}]`:''}`);
   }
 } catch {}
@@ -146,11 +172,11 @@ if (apalacheSum && apalache) {
   const toolPath = apalache.toolPath || '';
   const run = apalache.run || '';
   const ec = (typeof apalache.errorCount === 'number') ? apalache.errorCount : null;
-  lines.push(`- Apalache: ran=${ran? 'yes':'no'} ok=${ok==null? 'n/a': (ok? 'yes':'no')} status=${status||'n/a'}${ec!=null?`, errors=${ec}`:''} (v=${v}${timeMs?`, ${Math.round(timeMs/1000)}s`:''})`);
+  lines.push(`- Apalache: ran=${ran? 'yes':'no'} ok=${ok==null? 'n/a': (ok? 'yes':'no')} status=${escMd(status||'n/a')}${ec!=null?`, errors=${ec}`:''} (v=${escMd(v)}${timeMs?`, ${Math.round(timeMs/1000)}s`:''})`);
   const hints=[];
-  if (toolPath) hints.push(`tool: ${toolPath}`);
-  if (run) hints.push(`run: ${run}`);
-  if (apalacheOut) hints.push(`output: ${path.basename(apalacheOut)}`);
+  if (toolPath) hints.push(`tool: ${escMd(toolPath)}`);
+  if (run) hints.push(`run: ${escMd(run)}`);
+  if (apalacheOut) hints.push(`output: ${escMd(path.basename(apalacheOut))}`);
   if (hints.length) lines.push('  - ' + hints.join(' | '));
   if (ok === false && Array.isArray(apalache.errors) && apalache.errors.length > 0) {
     lines.push('');
@@ -163,7 +189,7 @@ if (apalacheSum && apalache) {
     lines.push('</details>');
   }
   if (ok === false && apalache.errorSnippet && Array.isArray(apalache.errorSnippet.lines)) {
-    const MAX_LINES = parseInt(process.env.FORMAL_AGG_SNIPPET_MAX_LINES || '20', 10);
+    const MAX_LINES = parsePositiveInt('FORMAL_AGG_SNIPPET_MAX_LINES', process.env.FORMAL_AGG_SNIPPET_MAX_LINES, 20);
     const ctxAll = apalache.errorSnippet.lines.map(l => escMd(clamp(l))).filter(l => String(l).trim().length>0);
     const ctxLines = ctxAll.slice(0, Math.max(0, MAX_LINES));
     if (ctxLines.length) {
@@ -198,7 +224,7 @@ lines.push(`_Generated: ${GENERATED_AT}_`);
 // Normalize markdown: collapse excessive empty lines + optional long-line wrap (outside code fences)
 function normalizeMd(arr){
   const out=[]; let prevEmpty=false; let inFence=false;
-  const wrapWidth = parseInt(process.env.FORMAL_AGG_WRAP_WIDTH || '0', 10); // 0=disable
+  const wrapWidth = parseNonNegativeInt('FORMAL_AGG_WRAP_WIDTH', process.env.FORMAL_AGG_WRAP_WIDTH, 0); // 0=disable
   for (let raw of arr){
     let l = String(raw).replace(/\s+$/,''); // trim trailing spaces
     if (l.startsWith('```')) inFence = !inFence; // toggle on code fences

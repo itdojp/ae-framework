@@ -59,8 +59,9 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN || github.token }}
       - name: Aggregate formal reports
         id: agg
+        # Requires actions/checkout: runs a repository script.
         run: |
-          node scripts/formal/aggregate-formal-reports.cjs
+          node scripts/formal/aggregate-formal-reports.mjs
       - name: Generate Formal Summary v1 (non-blocking)
         if: always()
         continue-on-error: ${{ inputs.strict_formal_summary_v1 != true }}
