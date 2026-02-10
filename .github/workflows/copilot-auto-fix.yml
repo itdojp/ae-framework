@@ -1,0 +1,40 @@
+name: Copilot Auto Fix
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+concurrency:
+  group: copilot-auto-fix-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  auto-fix:
+    if: >-
+      github.event.pull_request.head.repo.fork == false
+      && vars.AE_COPILOT_AUTO_FIX == '1'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: "20"
+      - name: Apply Copilot suggestions
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          AE_COPILOT_AUTO_FIX_SCOPE: ${{ vars.AE_COPILOT_AUTO_FIX_SCOPE || 'docs' }}
+          AE_COPILOT_AUTO_FIX_LABEL: ${{ vars.AE_COPILOT_AUTO_FIX_LABEL || '' }}
+          COPILOT_ACTORS: copilot-pull-request-reviewer,github-copilot,github-copilot[bot],copilot,copilot[bot]
+        run: node scripts/ci/copilot-auto-fix.mjs
+
