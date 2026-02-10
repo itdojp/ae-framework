@@ -24,6 +24,8 @@ This manual explains setup, common workflows, and operational commands for ae-fr
 - Node.js: `>=20.11 <23`（`package.json` の `engines.node`）
 - pnpm: `10.0.0`（`package.json` の `packageManager`）
 - GitHub Actions 利用可能なリポジトリ
+- `verify:lite` をそのまま利用する場合は JS/TS ツールチェーン前提（`pnpm types:check`, `pnpm lint`, `pnpm run build`。CI の Verify Lite ワークフローではこれに加えて `vitest` が実行されます）
+- 非JS/TSプロダクトは `verify:formal` / `verify:conformance` を先行導入し、lint/test/build は対象言語向けジョブを別途定義
 
 ## 3. セットアップ
 
