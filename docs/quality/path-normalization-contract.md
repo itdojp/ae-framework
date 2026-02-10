@@ -41,4 +41,4 @@ Defines how `path`-like fields in generated JSON artifacts/reports must be norma
 - 入力: `/home/runner/work/repo/repo/artifacts/report-envelope.json`（repo配下絶対） → 出力: `artifacts/report-envelope.json`
 - 入力: `/tmp/tool.log`（repo外絶対） → 出力: `/tmp/tool.log`
 - 入力: `reports\\lint\\verify-lite-lint-summary.json`（Windows区切り） → 出力: `reports/lint/verify-lite-lint-summary.json`
-
+- 入力: `\\\\server\\share\\artifact.json`（UNC） → 出力: `//server/share/artifact.json`

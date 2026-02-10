@@ -5,6 +5,14 @@ const toPosixPath = (value: string): string => value.replace(/\\/g, '/');
 const looksLikeWindowsAbs = (value: string): boolean =>
   /^[A-Za-z]:[\\/]/.test(value) || value.startsWith('\\\\');
 
+const normalizeUncPath = (raw: string): string => {
+  const posix = toPosixPath(raw);
+  const withoutLeadingSlashes = posix.replace(/^\/+/, '');
+  const normalizedWithRoot = path.posix.normalize(`/${withoutLeadingSlashes}`);
+  const normalized = normalizedWithRoot.replace(/^\/+/, '');
+  return `//${normalized}`;
+};
+
 export type NormalizeArtifactPathOptions = {
   repoRoot?: string;
 };
@@ -27,6 +35,19 @@ export function normalizeArtifactPath(
 
   const repoRoot = options.repoRoot ?? process.cwd();
 
+  // Preserve UNC semantics: `\\server\share\...` should become `//server/share/...` after normalization.
+  if (raw.startsWith('\\\\') || raw.startsWith('//')) {
+    if (path.isAbsolute(raw)) {
+      const root = path.resolve(repoRoot);
+      const abs = path.resolve(raw);
+      const rel = path.relative(root, abs);
+      if (!rel.startsWith('..') && !path.isAbsolute(rel)) {
+        return path.posix.normalize(toPosixPath(rel));
+      }
+    }
+    return normalizeUncPath(raw);
+  }
+
   // On POSIX hosts, Windows absolute paths are treated as external absolute paths (portable representation only).
   // On Windows hosts, we let `path.isAbsolute()` handle them so they can become repo-relative when applicable.
   if (looksLikeWindowsAbs(raw) && !path.isAbsolute(raw)) {
@@ -38,7 +59,7 @@ export function normalizeArtifactPath(
     const root = path.resolve(repoRoot);
     const abs = path.resolve(raw);
     const rel = path.relative(root, abs);
-    if (rel && !rel.startsWith('..') && !path.isAbsolute(rel)) {
+    if (!rel.startsWith('..') && !path.isAbsolute(rel)) {
       return path.posix.normalize(toPosixPath(rel));
     }
     return path.posix.normalize(toPosixPath(abs));
