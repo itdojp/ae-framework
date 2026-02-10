@@ -11,6 +11,11 @@ on:
         description: "Pull request number to comment on"
         required: false
         type: string
+      strict_formal_summary_v1:
+        description: "Fail the workflow if Formal Summary v1 is missing/invalid"
+        required: false
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       source_run_id:
@@ -21,6 +26,11 @@ on:
         description: "Pull request number to comment on"
         required: false
         type: string
+      strict_formal_summary_v1:
+        description: "Fail the workflow if Formal Summary v1 is missing/invalid"
+        required: false
+        type: boolean
+        default: false
 concurrency:
   group: ${{ github.workflow }}-${{ inputs.pr_number || github.ref }}
   cancel-in-progress: true
@@ -34,7 +44,7 @@ jobs:
   aggregate:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call'
     runs-on: ubuntu-latest
-    continue-on-error: true
+    continue-on-error: ${{ inputs.strict_formal_summary_v1 != true }}
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node + pnpm
@@ -331,6 +341,14 @@ jobs:
         with:
           name: formal-summary-v1
           path: artifacts/formal/formal-summary-v1.json
+      - name: Validate Formal Summary v1 JSON (non-blocking)
+        if: always()
+        run: |
+          node scripts/ci/validate-formal-summary-v1.mjs artifacts/formal/formal-summary-v1.json schema/formal-summary-v1.schema.json || true
+      - name: Enforce Formal Summary v1 JSON (strict)
+        if: inputs.strict_formal_summary_v1 == true
+        run: |
+          node scripts/ci/validate-formal-summary-v1.mjs --require artifacts/formal/formal-summary-v1.json schema/formal-summary-v1.schema.json
       - name: Validate aggregate JSON (non-blocking)
         if: always()
         run: |

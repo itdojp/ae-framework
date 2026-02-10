@@ -427,3 +427,4 @@ jobs:
     with:
       source_run_id: ${{ github.run_id }}
       pr_number: ${{ github.event_name == 'pull_request' && github.event.pull_request.number || '' }}
+      strict_formal_summary_v1: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-formal') }}
