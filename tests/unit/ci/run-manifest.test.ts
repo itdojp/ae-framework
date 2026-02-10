@@ -62,6 +62,32 @@ describe('run-manifest (generate + check)', () => {
     }
   });
 
+  it('reports commitSource for traceCorrelation.commit', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'run-manifest-trace-correlation-'));
+    try {
+      const commit = '0123456789abcdef0123456789abcdef01234567';
+
+      const envelopePath = join(dir, 'artifacts', 'report-envelope.json');
+      writeJson(envelopePath, { traceCorrelation: { commit } });
+
+      const gen = runNode(
+        dir,
+        generateScript,
+        ['--out', 'artifacts/run-manifest.json', '--top-level-command', 'unit-test'],
+        { GIT_COMMIT: commit },
+      );
+      expect(gen.status).toBe(0);
+
+      const manifestPath = join(dir, 'artifacts', 'run-manifest.json');
+      const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+      expect(manifest.summaries.reportEnvelope.producedByCommit).toBe(commit);
+      expect(manifest.summaries.reportEnvelope.commitSource).toBe('traceCorrelation.commit');
+      expect(manifest.summaries.reportEnvelope.staleComparedToCurrentCommit).toBe(false);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it('fails when a required artifact is stale', () => {
     const dir = mkdtempSync(join(tmpdir(), 'run-manifest-stale-'));
     try {

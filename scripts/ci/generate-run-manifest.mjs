@@ -78,8 +78,10 @@ function extractProducedCommit(payload) {
   if (!payload || typeof payload !== 'object') return { commit: null, source: null };
   const metaCommit = coerceCommit(payload?.metadata?.gitCommit);
   if (metaCommit) return { commit: metaCommit, source: 'metadata.gitCommit' };
-  const correlationCommit = coerceCommit(payload?.correlation?.commit ?? payload?.traceCorrelation?.commit);
+  const correlationCommit = coerceCommit(payload?.correlation?.commit);
   if (correlationCommit) return { commit: correlationCommit, source: 'correlation.commit' };
+  const traceCorrelationCommit = coerceCommit(payload?.traceCorrelation?.commit);
+  if (traceCorrelationCommit) return { commit: traceCorrelationCommit, source: 'traceCorrelation.commit' };
   return { commit: null, source: null };
 }
 
