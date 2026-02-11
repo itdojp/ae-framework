@@ -150,6 +150,9 @@ auto-merge（ラベルopt-in）:
 
 それでも失敗する場合は、Actions の rerun（failedのみ）で再試行してください。
 
+補足:
+- CI で調整する場合、これらは Repository Variables として設定し、ワークフロー側で `env:` に渡します（本リポジトリの `copilot-auto-fix.yml` / `pr-ci-status-comment.yml` は `vars.*` を参照）。
+
 ## 6. 参照
 
 - `docs/ci/copilot-review-gate.md`
