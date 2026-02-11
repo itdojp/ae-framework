@@ -5,6 +5,9 @@ describe('Formal heuristics: computeOkFromOutput', () => {
   it('detects positive outputs', () => {
     const samples = [
       'No counterexamples found. Verification successful.',
+      'The outcome is: NoError',
+      'Checker reports no error up to computation length 10',
+      'EXITCODE: OK',
       'OK: all properties hold',
       'Invariant holds and no violations',
       'Aucun contre-exemple',
@@ -16,6 +19,8 @@ describe('Formal heuristics: computeOkFromOutput', () => {
   it('detects negative outputs', () => {
     const samples = [
       'Error: violation detected',
+      'The outcome is: Error',
+      'EXITCODE: FAILED',
       'Counterexample found at step 12',
       'Failed to prove property',
       'Deadlock found in state graph',
