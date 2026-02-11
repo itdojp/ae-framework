@@ -55,6 +55,19 @@ temp-reports/
 .cache/
 _apalache-out/
 
+# Local generated files (dev/test)
+artifacts/formal/
+test-results/
+test-results-run/
+tmp-gh-event*.json
+generated-*.json
+filtered-test.json
+parallel-test.json
+run-suite.json
+run-test.json
+workflow-test.json
+verify-lite-lint-summary.json
+
 # Generated reports and artifacts
 cegis-report-*.json
 *-report-*.json
