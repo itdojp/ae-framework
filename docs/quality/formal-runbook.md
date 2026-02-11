@@ -32,7 +32,7 @@ Full smoke test instructions: `docs/quality/formal-full-run.md`.
 - `pnpm run verify:spin` — Promela/SPIN runner
 - `pnpm run verify:csp` — CSP runner（`CSP_RUN_CMD`/`cspx`/`refines`/`cspmchecker`）
   - `cspx` 使用時は `csp-summary.json` と `cspx-result.json` を出力
-  - `schema_version=0.1` 非互換は `status=unsupported` として記録
+  - `schema_version=0.1` 非互換は `status: "unsupported"` として記録
   - Details (artifacts / example outputs): `docs/quality/formal-csp.md`
 - `pnpm run verify:lean` — Lean4 `lake build` runner
 - `pnpm run verify:formal` — 上記の連続実行（ローカル確認用、non-blocking）
@@ -75,8 +75,9 @@ Timeout（任意）
 - PATH: `apalache` または `apalache-mc` が見つからない場合は `node scripts/formal/check-apalache.mjs` で存在/バージョンを確認
 - Timeout: 長時間のログが出続ける場合は `--timeout` を設定し、aggregate コメントの `status: "timeout"` を目安に切り上げ
 - CSP unsupported:
-  - `csp-summary.json` が `status=unsupported` かつ `output` に `--summary-json` のエラーが含まれる場合、`cspx` が古く互換性がありません（`cspx typecheck --help | grep -- --summary-json` で確認し、`docs/quality/formal-tools-setup.md` のピン留め手順で更新）
+  - `artifacts/hermetic-reports/formal/csp-summary.json` の `status` が `"unsupported"` で、`output` または `outputFile`（例: `artifacts/hermetic-reports/formal/csp-output.txt`）に `--summary-json` に関する CLI エラー（例: `unexpected argument`, `unknown argument`, `wasn't expected` 等）が含まれる場合、`cspx` が古く互換性がありません（`cspx typecheck --help | grep -- --summary-json` で確認し、`docs/quality/formal-tools-setup.md` のピン留め手順で更新。代替として `CSP_RUN_CMD` も利用可能）
   - `schema_version mismatch` の場合は `cspx-result.json` の `schema_version` を確認し、現行の契約（`schema_version=0.1`）に合わせて `cspx` を更新してください
+  - 詳細: `docs/quality/formal-csp.md`
 - Logs: 生ログは `artifacts/hermetic-reports/formal/<tool>-output.txt` に保存（例: `apalache-output.txt`, `tla-output.txt`, `smt-output.txt`, `alloy-output.txt`, `spin-output.txt`, `csp-output.txt`, `lean-output.txt`）
   - Formal Summary v1（`artifacts/formal/formal-summary-v1.json`）の `results[].logPath` は、ログが存在する場合にそのパス（repo-relative）を設定します
 
