@@ -13,6 +13,8 @@ function parseArgs(argv){
     else if ((a==='--engine' || a==='-e') && argv[i+1]) { args.engine=argv[++i]; }
     else if (a.startsWith('--file=')) { args.file=a.slice(7); }
     else if (a==='--file' && argv[i+1]) { args.file=argv[++i]; }
+    else if (a==='--timeout' && argv[i+1]) { args.timeout = Number(argv[++i]); }
+    else if (a.startsWith('--timeout=')) { args.timeout = Number(a.slice(10)); }
     else { args._.push(a); }
   }
   return args;
@@ -67,11 +69,15 @@ const absFile = path.resolve(repoRoot, file);
 
 const outDir = path.join(repoRoot, 'artifacts/hermetic-reports', 'formal');
 const outFile = path.join(outDir, 'tla-summary.json');
+const outLog = path.join(outDir, 'tla-output.txt');
 fs.mkdirSync(outDir, { recursive: true });
 
 let ran = false;
 let status;
 let output = '';
+let exitCode = null;
+let ok = null;
+let timeMs = null;
 
 if (!fs.existsSync(absFile)){
   status = 'file_not_found';
@@ -85,14 +91,23 @@ if (!fs.existsSync(absFile)){
     const runSpec = (timeoutSec && haveTimeout)
       ? { cmd: 'timeout', args: [`${timeoutSec}s`, baseCmd.cmd, ...baseCmd.args] }
       : baseCmd;
+    const t0 = Date.now();
     const result = runCommand(runSpec.cmd, runSpec.args);
+    timeMs = Date.now() - t0;
     if (!result.available) {
       status = 'tool_not_available';
       output = 'Apalache not found. See docs/quality/formal-tools-setup.md';
     } else {
       output = result.output;
       ran = true;
-      status = 'ran';
+      exitCode = result.status;
+      if (timeoutSec && haveTimeout && result.status === 124) {
+        status = 'timeout';
+        ok = null;
+      } else {
+        status = result.success ? 'ran' : 'failed';
+        ok = result.success;
+      }
     }
   }
 } else {
@@ -111,14 +126,23 @@ if (!fs.existsSync(absFile)){
         const runSpec = (timeoutSec && haveTimeout)
           ? { cmd: 'timeout', args: [`${timeoutSec}s`, baseCmd.cmd, ...baseCmd.args] }
           : baseCmd;
+        const t0 = Date.now();
         const result = runCommand(runSpec.cmd, runSpec.args);
+        timeMs = Date.now() - t0;
         if (!result.available) {
           status = 'tool_not_available';
           output = 'TLC not available (java not found). See docs/quality/formal-tools-setup.md';
         } else {
           output = result.output;
           ran = true;
-          status = 'ran';
+          exitCode = result.status;
+          if (timeoutSec && haveTimeout && result.status === 124) {
+            status = 'timeout';
+            ok = null;
+          } else {
+            status = result.success ? 'ran' : 'failed';
+            ok = result.success;
+          }
         }
       }
     }
@@ -128,13 +152,19 @@ if (!fs.existsSync(absFile)){
   }
 }
 
+try { fs.writeFileSync(outLog, output, 'utf-8'); } catch {}
+
 const summary = {
   engine,
   file: path.relative(repoRoot, absFile),
   ran,
   status,
+  ok,
+  exitCode,
+  timeMs,
   timestamp: new Date().toISOString(),
-  output: output.slice(0, 4000)
+  output: output.slice(0, 4000),
+  outputFile: path.relative(repoRoot, outLog),
 };
 fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));
 console.log(`TLA summary written: ${path.relative(repoRoot, outFile)}`);

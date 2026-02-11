@@ -23,13 +23,13 @@ function runCommand(cmd, cmdArgs){
   const result = spawnSync(cmd, cmdArgs, { encoding: 'utf8' });
   if (result.error) {
     if (result.error.code === 'ENOENT') {
-      return { available: false, success: false, output: '' };
+      return { available: false, success: false, status: null, output: '' };
     }
-    return { available: true, success: false, output: result.error.message ?? '' };
+    return { available: true, success: false, status: result.status ?? null, output: result.error.message ?? '' };
   }
   const stdout = result.stdout ?? '';
   const stderr = result.stderr ?? '';
-  return { available: true, success: result.status === 0, output: `${stdout}${stderr}` };
+  return { available: true, success: result.status === 0, status: result.status ?? null, output: `${stdout}${stderr}` };
 }
 
 function runShell(cmd){
@@ -42,10 +42,11 @@ function runShell(cmd){
     return {
       available: false,
       success: false,
+      status: result.status ?? null,
       output: `${stdout}${stderr}${result.error.message ? `\n${result.error.message}` : ''}`.trim()
     };
   }
-  return { available: true, success: result.status === 0, output: `${stdout}${stderr}` };
+  return { available: true, success: result.status === 0, status: result.status ?? null, output: `${stdout}${stderr}` };
 }
 
 function expandHome(inputPath){
@@ -68,12 +69,16 @@ const file = args.file || path.join('spec','alloy','Domain.als');
 const absFile = path.resolve(repoRoot, file);
 const outDir = path.join(repoRoot, 'artifacts/hermetic-reports', 'formal');
 const outFile = path.join(outDir, 'alloy-summary.json');
+const outLog = path.join(outDir, 'alloy-output.txt');
 fs.mkdirSync(outDir, { recursive: true });
 
 let ran = false;
 let status;
 let output = '';
 let temporal = { present: false, operators: [], pastOperators: [] };
+let exitCode = null;
+let ok = null;
+let timeMs = null;
 
 if (!fs.existsSync(absFile)){
   status = 'file_not_found';
@@ -93,22 +98,30 @@ if (!fs.existsSync(absFile)){
       const cmd = runCmd
         .replace(/{file}/g, absFile)
         .replace(/\$ALLOY_JAR/g, jarPath);
+      const t0 = Date.now();
       const res = runShell(cmd);
+      if (res.available) timeMs = Date.now() - t0;
       if (!res.available) {
         status = 'tool_not_available';
         output = res.output || 'Failed to execute ALLOY_RUN_CMD.';
       } else {
         output = res.output;
         ran = true;
+        exitCode = res.status;
         status = res.success ? 'ran' : 'failed';
+        ok = status === 'ran';
       }
     }
   } else {
+    const t0 = Date.now();
     const alloyResult = runCommand('alloy', [absFile]);
     if (alloyResult.available) {
+      timeMs = Date.now() - t0;
       output = alloyResult.output;
       ran = true;
+      exitCode = alloyResult.status;
       status = alloyResult.success ? 'ran' : 'failed';
+      ok = status === 'ran';
     } else if (process.env.ALLOY_JAR || args.jar){
       const jar = args.jar || process.env.ALLOY_JAR;
       const jarPath = path.resolve(expandHome(jar));
@@ -116,14 +129,18 @@ if (!fs.existsSync(absFile)){
         status = 'jar_not_found';
         output = `Alloy jar not found: ${jarPath}. Set ALLOY_JAR to a valid path, use --jar /path/to/alloy.jar, or check that the file exists.`;
       } else {
+        const t1 = Date.now();
         const javaResult = runCommand('java', ['-jar', jarPath, absFile]);
         if (!javaResult.available) {
           status = 'java_not_available';
           output = 'Java runtime not found. Ensure `java` is installed and on PATH to run the Alloy jar.';
         } else {
+          timeMs = Date.now() - t1;
           output = javaResult.output;
           ran = true;
+          exitCode = javaResult.status;
           status = javaResult.success ? 'ran' : 'failed';
+          ok = status === 'ran';
         }
       }
     } else {
@@ -155,12 +172,18 @@ try {
   temporal.pastOperators = Array.from(foundPast);
 } catch {}
 
+try { fs.writeFileSync(outLog, output, 'utf-8'); } catch {}
+
 const summary = {
   file: path.relative(repoRoot, absFile),
   ran,
   status,
+  ok,
+  exitCode,
+  timeMs,
   timestamp: new Date().toISOString(),
   output: output.slice(0, 4000),
+  outputFile: path.relative(repoRoot, outLog),
   temporal
 };
 fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));

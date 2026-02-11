@@ -52,6 +52,7 @@ const project = args.project || path.join('spec', 'lean');
 const projectDir = path.resolve(repoRoot, project);
 const outDir = path.join(repoRoot, 'artifacts', 'hermetic-reports', 'formal');
 const outFile = path.join(outDir, 'lean-summary.json');
+const outLog = path.join(outDir, 'lean-output.txt');
 fs.mkdirSync(outDir, { recursive: true });
 
 const timeoutMs = Number.isFinite(Number(args.timeout)) ? Number(args.timeout) : 0;
@@ -61,39 +62,57 @@ const haveTimeout = commandExists('timeout');
 let ran = false;
 let status;
 let output = '';
+let outputFull = '';
 let exitCode = null;
+let ok = null;
+let timeMs = null;
 
 if (!fs.existsSync(projectDir)) {
   status = 'project_not_found';
-  output = `Lean project directory not found: ${projectDir}`;
+  outputFull = `Lean project directory not found: ${projectDir}`;
+  output = outputFull;
 } else if (!commandExists('lake')) {
   status = 'tool_not_available';
-  output = 'lake not found. Install Lean4 via elan and ensure $HOME/.elan/bin is on PATH.';
+  outputFull = 'lake not found. Install Lean4 via elan and ensure $HOME/.elan/bin is on PATH.';
+  output = outputFull;
 } else {
   const baseCmd = { cmd: 'lake', args: ['build'] };
   const runSpec = (timeoutSec > 0 && haveTimeout)
     ? { cmd: 'timeout', args: [`${timeoutSec}s`, baseCmd.cmd, ...baseCmd.args] }
     : baseCmd;
+  const t0 = Date.now();
   const res = runCommand(runSpec.cmd, runSpec.args, { cwd: projectDir });
+  timeMs = res.available ? (Date.now() - t0) : null;
   ran = res.available;
   exitCode = res.status;
   if (!res.available) {
     status = 'tool_not_available';
-    output = clamp(res.output);
+    outputFull = res.output;
+    output = clamp(outputFull);
   } else {
     status = (timeoutSec > 0 && haveTimeout && res.status === 124) ? 'timeout' : (res.status === 0 ? 'ran' : 'failed');
-    output = clamp(res.output);
+    outputFull = res.output;
+    output = clamp(outputFull);
   }
 }
+
+if (ran) {
+  ok = status === 'ran' ? true : (status === 'failed' ? false : null);
+}
+
+try { fs.writeFileSync(outLog, outputFull || output, 'utf-8'); } catch {}
 
 const summary = {
   tool: 'lean4',
   project: path.relative(repoRoot, projectDir),
   ran,
   status,
+  ok,
   exitCode,
+  timeMs,
   timestamp: new Date().toISOString(),
   output,
+  outputFile: path.relative(repoRoot, outLog),
 };
 
 fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));

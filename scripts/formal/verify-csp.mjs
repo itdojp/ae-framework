@@ -113,12 +113,16 @@ const absFile = path.resolve(repoRoot, file);
 const outDir = path.join(repoRoot, 'artifacts', 'hermetic-reports', 'formal');
 const outFile = path.join(outDir, 'csp-summary.json');
 const cspxOutFile = path.join(outDir, 'cspx-result.json');
+const outLog = path.join(outDir, 'csp-output.txt');
 fs.mkdirSync(outDir, { recursive: true });
 
 let ran = false;
 let status;
 let output = '';
+let outputFull = '';
 let exitCode = null;
+let ok = null;
+let timeMs = null;
 let backend = null;
 let detailsFile = null;
 let resultStatus = null;
@@ -126,16 +130,20 @@ let forceWriteSummary = true;
 
 if (!fs.existsSync(absFile)) {
   status = 'file_not_found';
-  output = `CSP file not found: ${absFile}`;
+  outputFull = `CSP file not found: ${absFile}`;
+  output = clamp(outputFull);
 } else {
   const runCmd = process.env.CSP_RUN_CMD;
   if (runCmd) {
     const cmd = runCmd.replace(/{file}/g, absFile);
+    const t0 = Date.now();
     const res = runShell(cmd);
+    timeMs = res.available ? (Date.now() - t0) : null;
     ran = res.available;
     exitCode = res.status;
     status = res.available ? (res.success ? 'ran' : 'failed') : 'tool_not_available';
-    output = clamp(res.output || 'CSP_RUN_CMD produced no output');
+    outputFull = res.output || 'CSP_RUN_CMD produced no output';
+    output = clamp(outputFull);
     backend = 'CSP_RUN_CMD';
   } else if (commandExists('cspx')) {
     // cspx (OSS): CI-first CSPM checker with JSON output.
@@ -159,7 +167,9 @@ if (!fs.existsSync(absFile)) {
     try { fs.rmSync(cspxOutFile, { force: true }); } catch {}
     try { fs.rmSync(outFile, { force: true }); } catch {}
 
+    const t0 = Date.now();
     const res = runCommand('cspx', cspxArgs);
+    timeMs = res.available ? (Date.now() - t0) : null;
     ran = res.available;
     exitCode = res.status;
     backend = `cspx:${mode}`;
@@ -170,30 +180,36 @@ if (!fs.existsSync(absFile)) {
     const schemaVersion = result?.schema_version;
     if (!res.available) {
       status = 'tool_not_available';
-      output = clamp(res.output || 'cspx not available');
+      outputFull = res.output || 'cspx not available';
+      output = clamp(outputFull);
     } else if (cspSummary && typeof cspSummary === 'object' && !result) {
       // Prefer cspx-generated summary when detail JSON is missing.
       status = cspSummary.status || (res.status === 0 ? 'ran' : 'failed');
       resultStatus = cspSummary.resultStatus || null;
-      output = clamp([cspSummary.output, res.output].filter(Boolean).join('\n'));
+      outputFull = [cspSummary.output, res.output].filter(Boolean).join('\n');
+      output = clamp(outputFull);
       forceWriteSummary = false;
     } else if (!result) {
       status = res.status === 0 ? 'ran' : 'failed';
-      output = clamp(res.output || 'cspx produced no JSON result');
+      outputFull = res.output || 'cspx produced no JSON result';
+      output = clamp(outputFull);
     } else if (schemaVersion !== '0.1') {
       status = 'unsupported';
-      output = clamp(`cspx schema_version mismatch: expected 0.1, got ${schemaVersion || 'n/a'}`);
+      outputFull = `cspx schema_version mismatch: expected 0.1, got ${schemaVersion || 'n/a'}`;
+      output = clamp(outputFull);
     } else {
       if (cspSummary && typeof cspSummary === 'object') {
         status = cspSummary.status || mapCspxStatusToSummaryStatus(result.status);
         resultStatus = cspSummary.resultStatus || result.status || null;
-        output = clamp([cspSummary.output, res.output].filter(Boolean).join('\n'));
+        outputFull = [cspSummary.output, res.output].filter(Boolean).join('\n');
+        output = clamp(outputFull);
         // cspx-generated summary already follows the contract path and schema.
         forceWriteSummary = false;
       } else {
         resultStatus = result.status || null;
         status = mapCspxStatusToSummaryStatus(result.status);
-        output = clamp([summarizeCspxResult(result), res.output].filter(Boolean).join('\n'));
+        outputFull = [summarizeCspxResult(result), res.output].filter(Boolean).join('\n');
+        output = clamp(outputFull);
       }
     }
   } else if (commandExists('refines')) {
@@ -211,30 +227,43 @@ if (!fs.existsSync(absFile)) {
       ? ['--brief', '--quiet', '--format', 'plain', absFile]
       // Fast path: typecheck only (safe default).
       : ['--typecheck', '--format', 'plain', absFile];
+    const t0 = Date.now();
     const res = runCommand('refines', refinesArgs);
+    timeMs = res.available ? (Date.now() - t0) : null;
     ran = res.available;
     exitCode = res.status;
     status = res.available ? (res.status === 0 ? 'ran' : 'failed') : 'tool_not_available';
-    output = clamp(res.output || 'refines produced no output');
+    outputFull = res.output || 'refines produced no output';
+    output = clamp(outputFull);
     backend = `refines:${mode}`;
   } else if (commandExists('cspmchecker')) {
     // libcspm/cspmchecker (OSS): typecheck-only (no refinement).
+    const t0 = Date.now();
     const res = runCommand('cspmchecker', [absFile]);
+    timeMs = res.available ? (Date.now() - t0) : null;
     ran = res.available;
     exitCode = res.status;
     status = res.available ? (res.status === 0 ? 'ran' : 'failed') : 'tool_not_available';
-    output = clamp(res.output || 'cspmchecker produced no output');
+    outputFull = res.output || 'cspmchecker produced no output';
+    output = clamp(outputFull);
     backend = 'cspmchecker';
   } else {
     // Best-effort detection: actual execution depends on selected toolchain.
     const known = ['cspx', 'refines', 'cspmchecker', 'cspm', 'csp0', 'fdr4', 'fdr'];
     const found = known.filter((c) => commandExists(c));
     status = 'tool_not_available';
-    output = found.length
+    outputFull = found.length
       ? `CSP tool detected (${found.join(', ')}), but runner supports only CSP_RUN_CMD/cspx/refines/cspmchecker. Configure CSP_RUN_CMD or install a supported backend.`
       : 'No CSP tool configured. Set CSP_RUN_CMD, install cspx, install FDR (refines), or install cspmchecker.';
+    output = clamp(outputFull);
   }
 }
+
+if (ran) {
+  ok = status === 'ran' ? true : (status === 'failed' ? false : null);
+}
+
+try { fs.writeFileSync(outLog, outputFull || output || '', 'utf-8'); } catch {}
 
 if (forceWriteSummary) {
   const summary = {
@@ -245,9 +274,12 @@ if (forceWriteSummary) {
     resultStatus,
     ran,
     status,
+    ok,
     exitCode,
+    timeMs,
     timestamp: new Date().toISOString(),
     output,
+    outputFile: normalizeArtifactPath(outLog, { repoRoot }),
   };
   fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));
 } else {
@@ -258,8 +290,15 @@ if (forceWriteSummary) {
   summary.detailsFile = normalizeArtifactPath(summary.detailsFile, { repoRoot }) ?? detailsFile;
   summary.resultStatus = summary.resultStatus || resultStatus;
   summary.status = summary.status || status;
-  summary.exitCode = typeof summary.exitCode === 'number' ? summary.exitCode : (exitCode ?? 0);
+  summary.ok = typeof summary.ok === 'boolean' ? summary.ok : ok;
+  summary.exitCode = typeof summary.exitCode === 'number'
+    ? summary.exitCode
+    : (typeof exitCode === 'number' ? exitCode : null);
+  summary.timeMs = typeof summary.timeMs === 'number' ? summary.timeMs : timeMs;
   summary.output = clamp(output || summary.output || '');
+  summary.outputFile = typeof summary.outputFile === 'string' && summary.outputFile.trim()
+    ? normalizeArtifactPath(summary.outputFile, { repoRoot })
+    : normalizeArtifactPath(outLog, { repoRoot });
   fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));
 }
 const finalSummary = readJsonSafe(outFile) || {};

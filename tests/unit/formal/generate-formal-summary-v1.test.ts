@@ -26,7 +26,9 @@ describe('formal-summary/v1 generator', () => {
       const commit = '0123456789abcdef0123456789abcdef01234567';
 
       writeJson(join(dir, 'input', 'formal', 'tla-summary.json'), { ran: true, status: 'ran' });
+      writeFileSync(join(dir, 'input', 'formal', 'tla-output.txt'), 'tla output\n', 'utf8');
       writeJson(join(dir, 'input', 'formal', 'alloy-summary.json'), { ok: true, exitCode: 0, timeMs: 10 });
+      writeFileSync(join(dir, 'input', 'formal', 'alloy-output.txt'), 'alloy output\n', 'utf8');
       writeJson(join(dir, 'input', 'conformance', 'summary.json'), { ok: true, exitCode: 0, timeMs: 5 });
 
       const out = join(dir, 'out', 'formal-summary-v1.json');
@@ -53,6 +55,8 @@ describe('formal-summary/v1 generator', () => {
       // ran without ok flag is normalized to unknown (fact-only)
       expect(byName.tla.status).toBe('unknown');
       expect(byName.tla.reason).toBe('ran_without_ok');
+      expect(byName.tla.logPath).toBe('input/formal/tla-output.txt');
+      expect(byName.alloy.logPath).toBe('input/formal/alloy-output.txt');
 
       // missing inputs still get an explicit result entry
       expect(byName.smt.status).toBe('missing');
@@ -61,5 +65,36 @@ describe('formal-summary/v1 generator', () => {
       rmSync(dir, { recursive: true, force: true });
     }
   });
-});
 
+  it('supports downloaded layout inputs', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'formal-summary-v1-'));
+    try {
+      const commit = '0123456789abcdef0123456789abcdef01234567';
+
+      // Simulate a downloaded artifacts layout (artifacts_dl/formal-reports-*/...).
+      // raw.outputFile points to a hermetic path that might exist in the workspace; generator must prefer the downloaded log.
+      writeJson(join(dir, 'input', 'formal-reports-apalache', 'apalache-summary.json'), {
+        ok: true,
+        exitCode: 0,
+        timeMs: 12,
+        outputFile: 'artifacts/hermetic-reports/formal/apalache-output.txt',
+      });
+      writeFileSync(join(dir, 'input', 'formal-reports-apalache', 'apalache-output.txt'), 'downloaded log\n', 'utf8');
+
+      // Workspace log with the same repo-relative path (should NOT be picked when baseDir is 'input').
+      mkdirSync(join(dir, 'artifacts', 'hermetic-reports', 'formal'), { recursive: true });
+      writeFileSync(join(dir, 'artifacts', 'hermetic-reports', 'formal', 'apalache-output.txt'), 'workspace log\n', 'utf8');
+
+      const out = join(dir, 'out', 'formal-summary-v1.json');
+      const result = runNode(dir, ['--layout', 'downloaded', '--in', 'input', '--out', out], { GIT_COMMIT: commit });
+      expect(result.status).toBe(0);
+
+      const payload = JSON.parse(readFileSync(out, 'utf8'));
+      const byName = Object.fromEntries(payload.results.map((r: any) => [r.name, r]));
+      expect(byName.apalache.status).toBe('ok');
+      expect(byName.apalache.logPath).toBe('input/formal-reports-apalache/apalache-output.txt');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});

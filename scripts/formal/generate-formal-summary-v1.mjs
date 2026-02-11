@@ -9,6 +9,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { buildArtifactMetadata } from '../ci/lib/artifact-metadata.mjs';
+import { normalizeArtifactPath } from '../ci/lib/path-normalization.mjs';
 
 const DEFAULT_IN = 'artifacts_dl';
 const DEFAULT_OUT = path.join('artifacts', 'formal', 'formal-summary-v1.json');
@@ -124,11 +125,50 @@ function mapStatus({ raw, present }) {
   return { status: 'unknown', reason: status || null };
 }
 
-function buildResultItem({ name, raw, present }) {
+function resolveLogPath({ repoRoot, baseDir, name, raw, summaryPath, summaryRel }) {
+  const candidates = [];
+  const push = (p) => { if (p) candidates.push(p); };
+  const baseRoot = path.resolve(baseDir);
+  const isWithinBaseDir = (p) => {
+    const rel = path.relative(baseRoot, p);
+    return !rel.startsWith('..') && !path.isAbsolute(rel);
+  };
+
+  const rawPaths = [];
+  if (typeof raw?.logPath === 'string' && raw.logPath.trim()) rawPaths.push(raw.logPath.trim());
+  if (typeof raw?.outputFile === 'string' && raw.outputFile.trim()) rawPaths.push(raw.outputFile.trim());
+
+  for (const rp of rawPaths) {
+    if (path.isAbsolute(rp)) {
+      push(path.resolve(rp));
+      continue;
+    }
+    // Prefer paths relative to the summary/input dirs, then fall back to repo-relative (contract).
+    if (summaryPath) push(path.resolve(path.dirname(summaryPath), rp));
+    push(path.resolve(baseDir, rp));
+    push(path.resolve(repoRoot, rp));
+  }
+
+  // Conventional log filename: <tool>-output.txt next to the summary file.
+  if (summaryPath) {
+    push(path.join(path.dirname(summaryPath), `${name}-output.txt`));
+  } else if (summaryRel) {
+    push(path.join(baseDir, path.dirname(summaryRel), `${name}-output.txt`));
+  }
+
+  for (const p of candidates) {
+    if (!p) continue;
+    const abs = path.resolve(p);
+    if (!isWithinBaseDir(abs)) continue;
+    if (fs.existsSync(abs)) return normalizeArtifactPath(abs, { repoRoot });
+  }
+  return null;
+}
+
+function buildResultItem({ name, raw, present, logPath }) {
   const mapped = mapStatus({ raw, present });
   const code = typeof raw?.exitCode === 'number' ? raw.exitCode : (typeof raw?.code === 'number' ? raw.code : null);
   const durationMs = typeof raw?.timeMs === 'number' ? raw.timeMs : (typeof raw?.durationMs === 'number' ? raw.durationMs : null);
-  const logPath = null;
   return {
     name,
     status: mapped.status,
@@ -212,7 +252,8 @@ function main() {
   const results = inputs.map(({ name, rel }) => {
     const p = find(baseDir, rel);
     const raw = p ? readJsonSafe(p) : undefined;
-    return buildResultItem({ name, raw, present: Boolean(p) });
+    const logPath = resolveLogPath({ repoRoot, baseDir, name, raw, summaryPath: p, summaryRel: rel });
+    return buildResultItem({ name, raw, present: Boolean(p), logPath });
   });
 
   const computed = computeAggregateStatus(results);
