@@ -32,15 +32,27 @@ const SNIPPET_BEFORE = Number(process.env.APALACHE_SNIPPET_BEFORE || '2');
 const SNIPPET_AFTER = Number(process.env.APALACHE_SNIPPET_AFTER || '2');
 const OUTPUT_CLAMP = Number(process.env.APALACHE_OUTPUT_CLAMP || '4000');
 const ERROR_KEY = /\b(?:error|errors?|fail(?:ed|ure|ures)?|violat(?:e|ed|ion|ions)|unsat|unsatisfied|unsatisfiable|counter-?examples?|dead[-\s]*lock|dead[-\s]*end)\b/i;
-const NO_ERROR_CONTEXT = /\b(?:no\s+error(?:s)?|noerror|no\s+violations?|no\s+(?:errors?|counterexamples?)\s+(?:found|detected|present)|checker\s+reports\s+no\s+error|the\s+outcome\s+is:\s*noerror|exitcode:\s*ok)\b/i;
+const SUCCESS_LINE_PATTERNS = [
+  /\bchecker\s+reports\s+no\s+error\b/i,
+  /\bthe\s+outcome\s+is:\s*noerror\b/i,
+  /\bexitcode:\s*ok\b/i,
+  /\bfound\s+0\s+error\(s\)/i,
+  /\bno\s+(?:errors?|counterexamples?)\s+(?:found|detected|present)\b/i,
+  /\bno\s+violations?\b/i,
+];
+// Error indicators that should win even if a line also contains a success marker.
+// Keep this stricter than ERROR_KEY to avoid false positives for "no error".
+const STRONG_ERROR_MARKER = /\b(?:the\s+outcome\s+is:\s*error|exitcode:\s*(?:error|fail(?:ed)?)|counter-?examples?\s+(?:found|detected|present|exists?)|deadlock\s+(?:found|detected)|\bviolation\b|error:|assertion\s+failed|unsatisfied|unsatisfiable|\bfail(?:ed)?\b|dead[-\s]*end)\b/i;
 
 function isErrorLine(line) {
   const s = String(line || '');
   if (!ERROR_KEY.test(s)) return false;
-  // Avoid false positives on successful runs (e.g. "Checker reports no error").
-  if (NO_ERROR_CONTEXT.test(s)) return false;
-  // "Found 0 error(s)" is a success indicator; treat as non-error.
-  if (/\bfound\s+0\s+error/i.test(s)) return false;
+  const isSuccessLine = SUCCESS_LINE_PATTERNS.some((re) => re.test(s));
+  if (isSuccessLine) {
+    // If both success markers and strong error indicators appear on one line,
+    // treat it as an error line to avoid hiding actionable diagnostics.
+    return STRONG_ERROR_MARKER.test(s);
+  }
   return true;
 }
 

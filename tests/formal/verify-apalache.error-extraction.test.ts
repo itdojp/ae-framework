@@ -42,6 +42,25 @@ describe('verify-apalache error extraction', () => {
     expect(extractErrorSnippet(output)).toBeNull();
   });
 
+  it('still reports real errors when success markers are present', () => {
+    const output = [
+      'Checker reports no error up to computation length 10',
+      'violation detected',
+      'The outcome is: NoError'
+    ].join('\n');
+
+    const errors = extractErrors(output);
+    expect(errors).toContain('violation detected');
+    expect(errors).not.toContain('Checker reports no error up to computation length 10');
+    expect(countErrors(output)).toBe(1);
+  });
+
+  it('treats mixed success/error on one line as an error', () => {
+    const output = 'Checker reports no error ... violation detected';
+    expect(extractErrors(output)).toEqual([output]);
+    expect(countErrors(output)).toBe(1);
+  });
+
   it('returns a snippet around the first matched line', () => {
     const output = [
       'line 1',
