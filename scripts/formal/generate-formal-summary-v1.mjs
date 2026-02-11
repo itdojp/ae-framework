@@ -128,6 +128,11 @@ function mapStatus({ raw, present }) {
 function resolveLogPath({ repoRoot, baseDir, name, raw, summaryPath, summaryRel }) {
   const candidates = [];
   const push = (p) => { if (p) candidates.push(p); };
+  const baseRoot = path.resolve(baseDir);
+  const isWithinBaseDir = (p) => {
+    const rel = path.relative(baseRoot, p);
+    return !rel.startsWith('..') && !path.isAbsolute(rel);
+  };
 
   const rawPaths = [];
   if (typeof raw?.logPath === 'string' && raw.logPath.trim()) rawPaths.push(raw.logPath.trim());
@@ -138,10 +143,10 @@ function resolveLogPath({ repoRoot, baseDir, name, raw, summaryPath, summaryRel 
       push(path.resolve(rp));
       continue;
     }
-    // Prefer repo-relative paths (contract), but also accept paths relative to the input dir or the summary dir.
-    push(path.resolve(repoRoot, rp));
-    push(path.resolve(baseDir, rp));
+    // Prefer paths relative to the summary/input dirs, then fall back to repo-relative (contract).
     if (summaryPath) push(path.resolve(path.dirname(summaryPath), rp));
+    push(path.resolve(baseDir, rp));
+    push(path.resolve(repoRoot, rp));
   }
 
   // Conventional log filename: <tool>-output.txt next to the summary file.
@@ -153,7 +158,9 @@ function resolveLogPath({ repoRoot, baseDir, name, raw, summaryPath, summaryRel 
 
   for (const p of candidates) {
     if (!p) continue;
-    if (fs.existsSync(p)) return normalizeArtifactPath(p, { repoRoot });
+    const abs = path.resolve(p);
+    if (!isWithinBaseDir(abs)) continue;
+    if (fs.existsSync(abs)) return normalizeArtifactPath(abs, { repoRoot });
   }
   return null;
 }

@@ -291,7 +291,9 @@ if (forceWriteSummary) {
   summary.resultStatus = summary.resultStatus || resultStatus;
   summary.status = summary.status || status;
   summary.ok = typeof summary.ok === 'boolean' ? summary.ok : ok;
-  summary.exitCode = typeof summary.exitCode === 'number' ? summary.exitCode : (exitCode ?? 0);
+  summary.exitCode = typeof summary.exitCode === 'number'
+    ? summary.exitCode
+    : (typeof exitCode === 'number' ? exitCode : null);
   summary.timeMs = typeof summary.timeMs === 'number' ? summary.timeMs : timeMs;
   summary.output = clamp(output || summary.output || '');
   summary.outputFile = typeof summary.outputFile === 'string' && summary.outputFile.trim()

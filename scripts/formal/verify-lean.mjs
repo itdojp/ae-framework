@@ -62,16 +62,19 @@ const haveTimeout = commandExists('timeout');
 let ran = false;
 let status;
 let output = '';
+let outputFull = '';
 let exitCode = null;
 let ok = null;
 let timeMs = null;
 
 if (!fs.existsSync(projectDir)) {
   status = 'project_not_found';
-  output = `Lean project directory not found: ${projectDir}`;
+  outputFull = `Lean project directory not found: ${projectDir}`;
+  output = outputFull;
 } else if (!commandExists('lake')) {
   status = 'tool_not_available';
-  output = 'lake not found. Install Lean4 via elan and ensure $HOME/.elan/bin is on PATH.';
+  outputFull = 'lake not found. Install Lean4 via elan and ensure $HOME/.elan/bin is on PATH.';
+  output = outputFull;
 } else {
   const baseCmd = { cmd: 'lake', args: ['build'] };
   const runSpec = (timeoutSec > 0 && haveTimeout)
@@ -79,15 +82,17 @@ if (!fs.existsSync(projectDir)) {
     : baseCmd;
   const t0 = Date.now();
   const res = runCommand(runSpec.cmd, runSpec.args, { cwd: projectDir });
-  timeMs = Date.now() - t0;
+  timeMs = res.available ? (Date.now() - t0) : null;
   ran = res.available;
   exitCode = res.status;
   if (!res.available) {
     status = 'tool_not_available';
-    output = clamp(res.output);
+    outputFull = res.output;
+    output = clamp(outputFull);
   } else {
     status = (timeoutSec > 0 && haveTimeout && res.status === 124) ? 'timeout' : (res.status === 0 ? 'ran' : 'failed');
-    output = clamp(res.output);
+    outputFull = res.output;
+    output = clamp(outputFull);
   }
 }
 
@@ -95,7 +100,7 @@ if (ran) {
   ok = status === 'ran' ? true : (status === 'failed' ? false : null);
 }
 
-try { fs.writeFileSync(outLog, output, 'utf-8'); } catch {}
+try { fs.writeFileSync(outLog, outputFull || output, 'utf-8'); } catch {}
 
 const summary = {
   tool: 'lean4',
