@@ -1,4 +1,4 @@
-import { execFileSync } from 'node:child_process';
+import { execGh, execGhJson } from './lib/gh-exec.mjs';
 
 const repo = process.env.GITHUB_REPOSITORY;
 if (!repo) {
@@ -19,12 +19,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const execJson = (args, input) => {
   try {
-    const output = execFileSync('gh', args, {
-      encoding: 'utf8',
-      stdio: ['pipe', 'pipe', 'pipe'],
-      input,
-    });
-    return JSON.parse(output);
+    return execGhJson(args, { input });
   } catch (error) {
     console.error('[pr-ci-status] gh failed:', error && error.message ? error.message : error);
     throw error;
@@ -108,17 +103,12 @@ const upsertComment = (number, body) => {
   const existing = comments.find((comment) => comment.body && comment.body.startsWith(marker));
   const payload = JSON.stringify({ body });
   if (existing) {
-    execFileSync(
-      'gh',
-      ['api', '--method', 'PATCH', `repos/${repo}/issues/comments/${existing.id}`, '--input', '-'],
-      { stdio: ['pipe', 'inherit', 'inherit'], input: payload }
-    );
+    execGh(['api', '--method', 'PATCH', `repos/${repo}/issues/comments/${existing.id}`, '--input', '-'], {
+      input: payload,
+    });
     return;
   }
-  execFileSync('gh', ['api', `repos/${repo}/issues/${number}/comments`, '--input', '-'], {
-    stdio: ['pipe', 'inherit', 'inherit'],
-    input: payload,
-  });
+  execGh(['api', `repos/${repo}/issues/${number}/comments`, '--input', '-'], { input: payload });
 };
 
 const main = async () => {

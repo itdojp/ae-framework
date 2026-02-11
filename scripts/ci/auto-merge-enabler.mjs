@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { execFileSync } from 'node:child_process';
+import { execGh, execGhJson } from './lib/gh-exec.mjs';
 
 const repo = process.env.GITHUB_REPOSITORY;
 if (!repo) {
@@ -32,12 +32,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const execJson = (args, input) => {
   try {
-    const output = execFileSync('gh', args, {
-      encoding: 'utf8',
-      stdio: ['pipe', 'pipe', 'pipe'],
-      input,
-    });
-    return JSON.parse(output);
+    return execGhJson(args, { input });
   } catch (error) {
     console.error(
       '[auto-merge-enabler] gh failed:',
@@ -219,22 +214,16 @@ const upsertComment = (number, body) => {
   );
   const payload = JSON.stringify({ body });
   if (existing) {
-    execFileSync('gh', ['api', '--method', 'PATCH', `repos/${repo}/issues/comments/${existing.id}`, '--input', '-'], {
-      stdio: ['pipe', 'inherit', 'inherit'],
+    execGh(['api', '--method', 'PATCH', `repos/${repo}/issues/comments/${existing.id}`, '--input', '-'], {
       input: payload,
     });
     return;
   }
-  execFileSync('gh', ['api', `repos/${repo}/issues/${number}/comments`, '--input', '-'], {
-    stdio: ['pipe', 'inherit', 'inherit'],
-    input: payload,
-  });
+  execGh(['api', `repos/${repo}/issues/${number}/comments`, '--input', '-'], { input: payload });
 };
 
 const enableAutoMerge = (number) => {
-  execFileSync('gh', ['pr', 'merge', String(number), '--repo', repo, '--auto', '--squash'], {
-    stdio: 'inherit',
-  });
+  execGh(['pr', 'merge', String(number), '--repo', repo, '--auto', '--squash'], { stdio: 'inherit' });
 };
 
 const main = async () => {
