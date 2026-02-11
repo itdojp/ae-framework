@@ -138,6 +138,7 @@ export function main(argv = process.argv){
   let version = '';
   let toolPath = '';
   let timeMs = 0;
+  let exitCode = null;
 
   if (!fs.existsSync(absFile)){
     status = 'file_not_found';
@@ -172,6 +173,7 @@ export function main(argv = process.argv){
     } else {
       output = res.output;
       ran = true;
+      exitCode = res.status;
       // Detect timeout exit (GNU timeout returns 124)
       if (useTimeout && (res.status === 124 || /timeout:/.test(output))) {
         status = 'timeout';
@@ -197,6 +199,7 @@ export function main(argv = process.argv){
     status,
     version: version || null,
     ok: ran ? (computeOkFromOutput(output)) : null,
+    exitCode,
     hints: ran ? ( /success|ok|no\s+(?:errors|counterexamples?)/i.test(output) ? 'success-indicators-found' : null ) : null,
     timeMs: timeMs || null,
     toolPath: toolPath || null,

@@ -12,6 +12,8 @@ function parseArgs(argv) {
     else if (a === '--file' && argv[i+1]) { args.file = argv[++i]; }
     else if (a.startsWith('--file=')) { args.file = a.slice(7); }
     else if (a.startsWith('--solver=')) { args.solver = a.slice(9); }
+    else if (a === '--timeout' && argv[i+1]) { args.timeout = Number(argv[++i]); }
+    else if (a.startsWith('--timeout=')) { args.timeout = Number(a.slice(10)); }
     else { args._.push(a); }
   }
   return args;
@@ -55,7 +57,7 @@ const haveTimeout = commandExists('timeout');
 const timeoutRequested = timeoutSec > 0;
 const timeoutIgnored = timeoutRequested && !haveTimeout;
 if (args.help) {
-  console.log(`Usage: node scripts/formal/verify-smt.mjs [--solver=z3|cvc5] [--file path/to/input.smt2]`);
+  console.log(`Usage: node scripts/formal/verify-smt.mjs [--solver=z3|cvc5] [--file path/to/input.smt2] [--timeout <ms>]`);
   console.log('See docs/quality/formal-tools-setup.md for solver setup.');
   process.exit(0);
 }
@@ -66,11 +68,15 @@ const file = args.file;
 const repoRoot = path.resolve(process.cwd());
 const outDir = path.join(repoRoot, 'artifacts/hermetic-reports', 'formal');
 const outFile = path.join(outDir, 'smt-summary.json');
+const outLog = path.join(outDir, 'smt-output.txt');
 fs.mkdirSync(outDir, { recursive: true });
 
 let status;
 let output = '';
 let ran = false;
+let exitCode = null;
+let ok = null;
+let timeMs = null;
 
 if (!file) {
   status = 'no_file';
@@ -82,7 +88,9 @@ if (!file) {
   const runSpec = (timeoutSec && haveTimeout)
     ? { cmd: 'timeout', args: [`${timeoutSec}s`, baseCmd.cmd, ...baseCmd.args] }
     : baseCmd;
+  const t0 = Date.now();
   const result = runCommand(runSpec.cmd, runSpec.args);
+  timeMs = Date.now() - t0;
   if (!result.available) {
     status = 'solver_not_available';
     if (runSpec.cmd === 'timeout') {
@@ -95,7 +103,9 @@ if (!file) {
   } else {
     output = result.output;
     ran = true;
-    status = (timeoutSec && haveTimeout && result.status === 124) ? 'timeout' : 'ran';
+    exitCode = result.status;
+    status = (timeoutSec && haveTimeout && result.status === 124) ? 'timeout' : (result.status === 0 ? 'ran' : 'failed');
+    ok = status === 'ran' ? true : (status === 'failed' ? false : null);
     if (timeoutIgnored) {
       output = `Timeout requested (${timeoutSec}s) but 'timeout' is unavailable; running without timeout.\n${output}`;
     }
@@ -105,7 +115,9 @@ if (!file) {
   const runSpec = (timeoutSec && haveTimeout)
     ? { cmd: 'timeout', args: [`${timeoutSec}s`, baseCmd.cmd, ...baseCmd.args] }
     : baseCmd;
+  const t0 = Date.now();
   const result = runCommand(runSpec.cmd, runSpec.args);
+  timeMs = Date.now() - t0;
   if (!result.available) {
     status = 'solver_not_available';
     if (runSpec.cmd === 'timeout') {
@@ -118,7 +130,9 @@ if (!file) {
   } else {
     output = result.output;
     ran = true;
-    status = (timeoutSec && haveTimeout && result.status === 124) ? 'timeout' : 'ran';
+    exitCode = result.status;
+    status = (timeoutSec && haveTimeout && result.status === 124) ? 'timeout' : (result.status === 0 ? 'ran' : 'failed');
+    ok = status === 'ran' ? true : (status === 'failed' ? false : null);
     if (timeoutIgnored) {
       output = `Timeout requested (${timeoutSec}s) but 'timeout' is unavailable; running without timeout.\n${output}`;
     }
@@ -128,13 +142,19 @@ if (!file) {
   output = `Solver '${solver}' not found. See docs/quality/formal-tools-setup.md`;
 }
 
+try { fs.writeFileSync(outLog, output, 'utf-8'); } catch {}
+
 const summary = {
   solver,
   file: file || null,
   ran,
   status,
+  ok,
+  exitCode,
+  timeMs,
   timestamp: new Date().toISOString(),
-  output: output.slice(0, 4000)
+  output: output.slice(0, 4000),
+  outputFile: path.relative(repoRoot, outLog),
 };
 
 fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));

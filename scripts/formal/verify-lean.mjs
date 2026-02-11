@@ -52,6 +52,7 @@ const project = args.project || path.join('spec', 'lean');
 const projectDir = path.resolve(repoRoot, project);
 const outDir = path.join(repoRoot, 'artifacts', 'hermetic-reports', 'formal');
 const outFile = path.join(outDir, 'lean-summary.json');
+const outLog = path.join(outDir, 'lean-output.txt');
 fs.mkdirSync(outDir, { recursive: true });
 
 const timeoutMs = Number.isFinite(Number(args.timeout)) ? Number(args.timeout) : 0;
@@ -62,6 +63,8 @@ let ran = false;
 let status;
 let output = '';
 let exitCode = null;
+let ok = null;
+let timeMs = null;
 
 if (!fs.existsSync(projectDir)) {
   status = 'project_not_found';
@@ -74,7 +77,9 @@ if (!fs.existsSync(projectDir)) {
   const runSpec = (timeoutSec > 0 && haveTimeout)
     ? { cmd: 'timeout', args: [`${timeoutSec}s`, baseCmd.cmd, ...baseCmd.args] }
     : baseCmd;
+  const t0 = Date.now();
   const res = runCommand(runSpec.cmd, runSpec.args, { cwd: projectDir });
+  timeMs = Date.now() - t0;
   ran = res.available;
   exitCode = res.status;
   if (!res.available) {
@@ -86,14 +91,23 @@ if (!fs.existsSync(projectDir)) {
   }
 }
 
+if (ran) {
+  ok = status === 'ran' ? true : (status === 'failed' ? false : null);
+}
+
+try { fs.writeFileSync(outLog, output, 'utf-8'); } catch {}
+
 const summary = {
   tool: 'lean4',
   project: path.relative(repoRoot, projectDir),
   ran,
   status,
+  ok,
   exitCode,
+  timeMs,
   timestamp: new Date().toISOString(),
   output,
+  outputFile: path.relative(repoRoot, outLog),
 };
 
 fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));
