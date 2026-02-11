@@ -8,7 +8,7 @@
 
 This document describes an end-to-end PR automation runbook:
 - Require Copilot review + resolved threads (Copilot Review Gate)
-- Auto-apply Copilot ` ```suggestion` blocks (Copilot Auto Fix)
+- Auto-apply Copilot ```` ```suggestion ```` blocks (Copilot Auto Fix)
 - Enable GitHub auto-merge when eligible (Auto Merge)
 
 It is controlled per repository via GitHub Repository Variables.
@@ -49,12 +49,14 @@ PR運用を以下の形に収束させます。
 
 - `Copilot Auto Fix`（`.github/workflows/copilot-auto-fix.yml`）
   - `pull_request_review: submitted` で起動
-  - Copilotのインラインコメント本文の ` ```suggestion` を抽出し、PRへ適用（commit + push）
+  - Copilotのインラインコメント本文の ```` ```suggestion ```` を抽出し、PRへ適用（commit + push）
   - 適用（または既適用）と判断できた Copilot スレッドを resolve（保守的）
 
 重要:
 - Copilotが「コメント」だけを残し、レビューとして `submitted` されない場合は、auto-fix も gate も期待通りに動きません。
-- fork PR は token 権限制約により auto-fix / auto-merge がスキップされます（workflow条件で除外）。
+- fork PR の扱い:
+  - auto-fix は fork PR を workflow 条件で除外します（`.github/workflows/copilot-auto-fix.yml`）。
+  - auto-merge は `pull_request` 経路では fork PR を除外しますが、`schedule` 経路は open PR を列挙するため fork PR も対象になり得ます（`.github/workflows/pr-ci-status-comment.yml`, `scripts/ci/auto-merge-enabler.mjs`）。
 
 ### 2.3 Auto Merge（GitHub auto-merge の自動有効化）
 
