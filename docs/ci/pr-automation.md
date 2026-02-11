@@ -119,7 +119,7 @@ auto-merge（ラベルopt-in）:
 - "Unresolved Copilot review threads"
   - PR上で Resolve conversation
   - auto-fix が commit/push を行わない場合（既適用など）、ゲート再評価が走らないことがあるため、Actions から gate を rerun
-  - auto-fix が動作している場合は、auto-fix の結果コメント更新をトリガーに dispatcher が `workflow_dispatch` で gate を PR head に対して再実行します（`issue_comment` -> `workflow_dispatch` 経路）
+  - auto-fix が動作している場合は、auto-fix の結果コメント更新をトリガーに Copilot Review Gate の `dispatch` job（issue_comment→workflow_dispatch）が gate を PR head に対して再実行します（`issue_comment` -> `workflow_dispatch` 経路）
 
 ### 5.2 Copilot Auto Fix がスキップされる
 
