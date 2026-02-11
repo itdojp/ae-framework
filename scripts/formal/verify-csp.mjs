@@ -173,14 +173,24 @@ if (!fs.existsSync(absFile)) {
     ran = res.available;
     exitCode = res.status;
     backend = `cspx:${mode}`;
-    detailsFile = normalizeArtifactPath(cspxOutFile, { repoRoot });
+    const detailsFileCandidate = normalizeArtifactPath(cspxOutFile, { repoRoot });
 
-    const result = fs.existsSync(cspxOutFile) ? readJsonSafe(cspxOutFile) : undefined;
+    const detailsJsonExists = fs.existsSync(cspxOutFile);
+    const result = detailsJsonExists ? readJsonSafe(cspxOutFile) : undefined;
     const cspSummary = fs.existsSync(outFile) ? readJsonSafe(outFile) : undefined;
     const schemaVersion = result?.schema_version;
+    detailsFile = detailsJsonExists ? detailsFileCandidate : null;
     if (!res.available) {
       status = 'tool_not_available';
       outputFull = res.output || 'cspx not available';
+      output = clamp(outputFull);
+    } else if (/--summary-json/.test(res.output) && /(unexpected\s+argument|unknown\s+argument|wasn['’]t\s+expected)/i.test(res.output)) {
+      status = 'unsupported';
+      outputFull = [
+        'cspx does not support `--summary-json` (required by ae-framework integration).',
+        'Update cspx per docs/quality/formal-tools-setup.md, or set CSP_RUN_CMD to use another backend.',
+        res.output,
+      ].filter(Boolean).join('\n');
       output = clamp(outputFull);
     } else if (cspSummary && typeof cspSummary === 'object' && !result) {
       // Prefer cspx-generated summary when detail JSON is missing.
@@ -260,7 +270,7 @@ if (!fs.existsSync(absFile)) {
 }
 
 if (ran) {
-  ok = status === 'ran' ? true : (status === 'failed' ? false : null);
+  ok = status === 'ran' ? true : ((status === 'failed' || status === 'unsupported') ? false : null);
 }
 
 try { fs.writeFileSync(outLog, outputFull || output || '', 'utf-8'); } catch {}

@@ -1,8 +1,11 @@
 // Shared heuristics for Apalache output classification
 export const POSITIVE_PATTERNS = [
+  // Apalache-specific success markers
+  /\bthe\s+outcome\s+is:\s*noerror\b/i,
+  /\bchecker\s+reports\s+no\s+error\b/i,
+  /\bexitcode:\s*ok\b/i,
   /no\s+(?:errors?|counterexamples?)\s+(?:found|detected|present)\b/i,
   /verification\s+successful/i,
-  /\bok\b/i,
   /invariant[^\n]*holds/i,
   /no\s+violations?/i,
   /all\s+propert(?:y|ies)\s+hold/i,
@@ -23,6 +26,9 @@ export const POSITIVE_PATTERNS = [
 
 export const NEGATIVE_PATTERNS = [
   /\bviolation\b/i,
+  // Apalache-specific failure markers
+  /\bthe\s+outcome\s+is:\s*error\b/i,
+  /\bexitcode:\s*(?:error|fail(?:ed)?)\b/i,
   // Counterexample: require contextual negatives to reduce false positives
   /counter-?examples?\s+(?:found|detected|present|exists?)/i,
   /\bfail(?:ed)?\b/i,
