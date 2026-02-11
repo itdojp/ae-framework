@@ -45,6 +45,12 @@ Notes:
 - This pin includes `--summary-json` (ae-framework aggregate contract).
 - `metrics` in `cspx-result.json` is optional; ae-framework consumes required fields and ignores optional extensions safely.
 
+### Troubleshooting
+
+- If `csp-summary.json` reports `status: "unsupported"` and `csp-output.txt` mentions `unexpected argument '--summary-json'`, your `cspx` is too old (upgrade per `docs/quality/formal-tools-setup.md`, or set `CSP_RUN_CMD`).
+- If it reports `schema_version mismatch: expected 0.1`, check `cspx-result.json` and align `cspx` to the current contract (`schema_version=0.1`).
+- If `detailsFile` is `null`, `cspx` did not produce a details JSON; inspect `csp-output.txt` for the underlying CLI error.
+
 ### Run
 
 Typecheck (safe default, used for CI smoke):
@@ -180,6 +186,12 @@ cspx typecheck --help | grep -- --summary-json
 - CI は commit SHA に pin して導入します（`.github/workflows/formal-verify.yml`）。
 - この pin は ae-framework 連携用の `--summary-json` を含みます。
 - `cspx-result.json` の `metrics` は optional です。ae-framework 側は必須フィールドを利用し、拡張フィールドを安全に読み飛ばします。
+
+### トラブルシューティング
+
+- `csp-summary.json` が `status: "unsupported"` かつ `csp-output.txt` に `unexpected argument '--summary-json'` が出る場合、`cspx` が古く互換性がありません（`docs/quality/formal-tools-setup.md` の手順で更新、または `CSP_RUN_CMD` を設定）。
+- `schema_version mismatch: expected 0.1` の場合は `cspx-result.json` の `schema_version` を確認し、現行の契約（`schema_version=0.1`）に合わせて `cspx` を更新してください。
+- `detailsFile` が `null` の場合、`cspx` が details JSON を生成できていません。`csp-output.txt` のCLIエラーを確認してください。
 
 ### 実行方法
 

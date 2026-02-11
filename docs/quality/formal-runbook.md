@@ -74,6 +74,9 @@ Timeout（任意）
 ### Troubleshooting（よくある確認ポイント）
 - PATH: `apalache` または `apalache-mc` が見つからない場合は `node scripts/formal/check-apalache.mjs` で存在/バージョンを確認
 - Timeout: 長時間のログが出続ける場合は `--timeout` を設定し、aggregate コメントの `status: "timeout"` を目安に切り上げ
+- CSP unsupported:
+  - `csp-summary.json` が `status=unsupported` かつ `output` に `--summary-json` のエラーが含まれる場合、`cspx` が古く互換性がありません（`cspx typecheck --help | grep -- --summary-json` で確認し、`docs/quality/formal-tools-setup.md` のピン留め手順で更新）
+  - `schema_version mismatch` の場合は `cspx-result.json` の `schema_version` を確認し、現行の契約（`schema_version=0.1`）に合わせて `cspx` を更新してください
 - Logs: 生ログは `artifacts/hermetic-reports/formal/<tool>-output.txt` に保存（例: `apalache-output.txt`, `tla-output.txt`, `smt-output.txt`, `alloy-output.txt`, `spin-output.txt`, `csp-output.txt`, `lean-output.txt`）
   - Formal Summary v1（`artifacts/formal/formal-summary-v1.json`）の `results[].logPath` は、ログが存在する場合にそのパス（repo-relative）を設定します
 
