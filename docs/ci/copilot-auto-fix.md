@@ -24,6 +24,9 @@ Copilot レビューのインラインコメントに含まれる ` ```suggestio
 - (1)PR作成 → (2)Copilotレビュー → (3)対応 のうち、(3)の一部を自動化する
 - docs のような低リスク領域から段階導入する
 
+関連:
+- PR自動化の運用全体像（Copilot→auto-fix→auto-merge）: `docs/ci/pr-automation.md`
+
 ## 2. 有効化（プロジェクト単位）
 
 本機能は **リポジトリ毎**に GitHub Repository Variables で制御します。
@@ -105,4 +108,6 @@ Copilot レビューのインラインコメントに含まれる ` ```suggestio
 - Copilot Review Gate が失敗のまま:
   - auto-fix が commit/push を行わない場合（既適用など）、ゲートの再評価が走らないことがあります
   - `Copilot Review Gate` の再実行（Actions UI）や、PR の更新（空コミット等）で再評価してください
-
+- GitHub API 429 / secondary rate limit:
+  - `gh` の一時的失敗が発生する場合があります（HTTP 429 等）
+  - 必要に応じて `AE_GH_RETRY_*` を調整してください（詳細: `docs/ci/pr-automation.md` / 実装: `scripts/ci/lib/gh-exec.mjs`）。
