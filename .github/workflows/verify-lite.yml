@@ -252,6 +252,10 @@ jobs:
             artifacts/verify-lite/verify-lite-run-summary.json
             artifacts/verify-lite/verify-lite-retry-eligibility.json
             artifacts/report-envelope.json
+            artifacts/formal/formal-summary-v1.json
+            artifacts/hermetic-reports/conformance/summary.json
+            artifacts/hermetic-reports/formal/*.json
+            artifacts/hermetic-reports/formal/*.txt
             artifacts/run-manifest.json
             artifacts/run-manifest-check.json
             verify-lite-run-summary.json
