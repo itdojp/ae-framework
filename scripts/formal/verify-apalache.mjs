@@ -32,23 +32,46 @@ const SNIPPET_BEFORE = Number(process.env.APALACHE_SNIPPET_BEFORE || '2');
 const SNIPPET_AFTER = Number(process.env.APALACHE_SNIPPET_AFTER || '2');
 const OUTPUT_CLAMP = Number(process.env.APALACHE_OUTPUT_CLAMP || '4000');
 const ERROR_KEY = /\b(?:error|errors?|fail(?:ed|ure|ures)?|violat(?:e|ed|ion|ions)|unsat|unsatisfied|unsatisfiable|counter-?examples?|dead[-\s]*lock|dead[-\s]*end)\b/i;
+const SUCCESS_LINE_PATTERNS = [
+  /\bchecker\s+reports\s+no\s+error\b/i,
+  /\bthe\s+outcome\s+is:\s*noerror\b/i,
+  /\bexitcode:\s*ok\b/i,
+  /\bfound\s+0\s+error\(s\)/i,
+  /\bno\s+(?:errors?|counterexamples?)\s+(?:found|detected|present)\b/i,
+  /\bno\s+violations?\b/i,
+];
+// Error indicators that should win even if a line also contains a success marker.
+// Keep this stricter than ERROR_KEY to avoid false positives for "no error".
+const STRONG_ERROR_MARKER = /\b(?:the\s+outcome\s+is:\s*error|exitcode:\s*(?:error|fail(?:ed)?)|counter-?examples?\s+(?:found|detected|present|exists?)|deadlock\s+(?:found|detected)|\bviolation\b|error:|assertion\s+failed|unsatisfied|unsatisfiable|\bfail(?:ed)?\b|dead[-\s]*end)\b/i;
+
+function isErrorLine(line) {
+  const s = String(line || '');
+  if (!ERROR_KEY.test(s)) return false;
+  const isSuccessLine = SUCCESS_LINE_PATTERNS.some((re) => re.test(s));
+  if (isSuccessLine) {
+    // If both success markers and strong error indicators appear on one line,
+    // treat it as an error line to avoid hiding actionable diagnostics.
+    return STRONG_ERROR_MARKER.test(s);
+  }
+  return true;
+}
 
 export function extractErrors(out){
   const lines = (out || '').split(/\r?\n/);
   const picked = [];
-  for (const l of lines) { if (ERROR_KEY.test(l)) picked.push(l.trim()); if (picked.length>=ERRORS_LIMIT) break; }
+  for (const l of lines) { if (isErrorLine(l)) picked.push(l.trim()); if (picked.length>=ERRORS_LIMIT) break; }
   // Trim very long lines for readability in aggregate comments
   return picked.map(l => l.length > ERROR_LINE_CLAMP ? (l.slice(0, ERROR_LINE_CLAMP) + '…') : l);
 }
 export function countErrors(out){
   const lines = (out || '').split(/\r?\n/);
-  let n = 0; for (const l of lines) if (ERROR_KEY.test(l)) n++;
+  let n = 0; for (const l of lines) if (isErrorLine(l)) n++;
   return n;
 }
 export function extractErrorSnippet(out, before=SNIPPET_BEFORE, after=SNIPPET_AFTER){
   const lines = (out || '').split(/\r?\n/);
   for (let i=0;i<lines.length;i++){
-    if (ERROR_KEY.test(lines[i])){
+    if (isErrorLine(lines[i])){
       const start = Math.max(0, i-before);
       const end = Math.min(lines.length, i+after+1);
       return {
