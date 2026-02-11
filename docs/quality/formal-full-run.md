@@ -25,13 +25,13 @@ This guide shows how to run **all formal verification tools** end-to-end for a s
 - `formal-reports` artifact (folder): `artifacts/hermetic-reports/formal/*`
 - `formal-reports-conformance`: `conformance-summary.json`
 - `formal-reports-apalache`: `apalache-summary.json`, `apalache-output.txt`
-- `formal-reports-smt`: `smt-summary.json`
-- `formal-reports-alloy`: `alloy-summary.json`
-- `formal-reports-tla`: `tla-summary.json`
+- `formal-reports-smt`: `smt-summary.json`, `smt-output.txt`
+- `formal-reports-alloy`: `alloy-summary.json`, `alloy-output.txt`
+- `formal-reports-tla`: `tla-summary.json`, `tla-output.txt`
 - `formal-reports-kani`: `kani-summary.json`
-- `formal-reports-spin`: `spin-summary.json`
-- `formal-reports-csp`: `csp-summary.json`, `cspx-result.json`
-- `formal-reports-lean`: `lean-summary.json`
+- `formal-reports-spin`: `spin-summary.json`, `spin-output.txt`
+- `formal-reports-csp`: `csp-summary.json`, `csp-output.txt`, `cspx-result.json`
+- `formal-reports-lean`: `lean-summary.json`, `lean-output.txt`
 - `formal-summary-v1`: `artifacts/formal/formal-summary-v1.json` (normalized)
 
 ### Local (when you want a quick smoke test)
