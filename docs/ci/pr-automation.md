@@ -144,10 +144,14 @@ auto-merge（ラベルopt-in）:
 - `AE_GH_RETRY_MAX_ATTEMPTS`（既定 8）
 - `AE_GH_RETRY_INITIAL_DELAY_MS`（既定 750）
 - `AE_GH_RETRY_MAX_DELAY_MS`（既定 60000）
+- `AE_GH_THROTTLE_MS`（既定 0。`gh` 呼び出し間の最小間隔ms）
 - `AE_GH_RETRY_DEBUG=1`（retryログ出力）
 - `AE_GH_RETRY_NO_SLEEP=1`（テスト用途: sleep無効）
 
 それでも失敗する場合は、Actions の rerun（failedのみ）で再試行してください。
+
+補足:
+- CI で調整する場合、これらは Repository Variables として設定し、ワークフロー側で `env:` に渡します（本リポジトリの `copilot-auto-fix.yml` / `pr-ci-status-comment.yml` は `vars.*` を参照）。
 
 ## 6. 参照
 
