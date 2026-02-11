@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { chmodSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join, resolve, delimiter } from 'node:path';
 
 const scriptPath = resolve('scripts/formal/verify-csp.mjs');
 
@@ -58,6 +58,13 @@ process.exit(exit_code);
 `;
   writeFileSync(p, script, { encoding: 'utf8' });
   chmodSync(p, 0o755);
+
+  // Windows: child_process spawn relies on PATHEXT; provide a cmd shim.
+  // Keeping the JS entrypoint at "cspx" makes Unix runners work via shebang.
+  const cmd = join(binDir, 'cspx.cmd');
+  const cmdBody = `@echo off\r\nsetlocal\r\nnode \"%~dp0cspx\" %*\r\n`;
+  writeFileSync(cmd, cmdBody, { encoding: 'utf8' });
+
   return p;
 }
 
@@ -78,6 +85,11 @@ process.exit(0);
 `;
   writeFileSync(p, script, { encoding: 'utf8' });
   chmodSync(p, 0o755);
+
+  const cmd = join(binDir, 'cspx.cmd');
+  const cmdBody = `@echo off\r\nsetlocal\r\nnode \"%~dp0cspx\" %*\r\n`;
+  writeFileSync(cmd, cmdBody, { encoding: 'utf8' });
+
   return p;
 }
 
@@ -103,7 +115,7 @@ describe('verify-csp (cspx backend)', () => {
     const result = runVerifyCsp(
       dir,
       ['--file', 'spec/csp/ok.cspm', '--mode', 'typecheck'],
-      { PATH: `${binDir}:${process.env.PATH || ''}` },
+      { PATH: `${binDir}${delimiter}${process.env.PATH || ''}` },
     );
     expect(result.status).toBe(0);
 
@@ -135,7 +147,7 @@ describe('verify-csp (cspx backend)', () => {
     const result = runVerifyCsp(
       dir,
       ['--file', 'spec/csp/ok.cspm', '--mode', 'assertions'],
-      { PATH: `${binDir}:${process.env.PATH || ''}` },
+      { PATH: `${binDir}${delimiter}${process.env.PATH || ''}` },
     );
     expect(result.status).toBe(0);
 
@@ -162,7 +174,7 @@ describe('verify-csp (cspx backend)', () => {
     const result = runVerifyCsp(
       dir,
       ['--file', 'spec/csp/ok.cspm', '--mode', 'typecheck'],
-      { PATH: `${binDir}:${process.env.PATH || ''}` },
+      { PATH: `${binDir}${delimiter}${process.env.PATH || ''}` },
     );
     expect(result.status).toBe(0);
 
