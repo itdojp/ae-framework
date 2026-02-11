@@ -3,6 +3,9 @@ import { execFileSync } from 'node:child_process';
 const DEFAULT_MAX_ATTEMPTS = 8;
 const DEFAULT_INITIAL_DELAY_MS = 750;
 const DEFAULT_MAX_DELAY_MS = 60_000;
+const DEFAULT_THROTTLE_MS = 0;
+
+let lastGhInvocationAtMs = 0;
 
 const toInteger = (value) => {
   if (value === null || value === undefined) return null;
@@ -24,6 +27,17 @@ const sleepSync = (ms) => {
   if (process.env.AE_GH_RETRY_NO_SLEEP === '1') return;
   // Node >=20.11 (engines) supports Atomics.wait in the main thread.
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+};
+
+const throttleSync = () => {
+  const throttleMs = Math.max(0, readEnvInt('AE_GH_THROTTLE_MS', DEFAULT_THROTTLE_MS));
+  if (throttleMs <= 0) return;
+  const now = Date.now();
+  const earliest = lastGhInvocationAtMs + throttleMs;
+  if (earliest > now) {
+    sleepSync(earliest - now);
+  }
+  lastGhInvocationAtMs = Date.now();
 };
 
 const shouldRetry = (text) => {
@@ -58,6 +72,7 @@ export function execGh(args, { input, encoding = 'utf8', cwd, env, stdio } = {})
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
+      throttleSync();
       return execFileSync('gh', args, {
         encoding,
         stdio: resolvedStdio,
