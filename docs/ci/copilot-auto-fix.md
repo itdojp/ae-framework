@@ -6,7 +6,7 @@
 
 ## English (Summary)
 
-- Automatically applies GitHub Copilot review ` ```suggestion` blocks to the PR branch.
+- Automatically applies GitHub Copilot review ```` ```suggestion ```` blocks to the PR branch.
 - Can be enabled per repository with variables (`AE_COPILOT_AUTO_FIX`, `AE_COPILOT_AUTO_FIX_SCOPE`, `AE_COPILOT_AUTO_FIX_LABEL`).
 - In `docs` scope mode, the entire auto-fix is skipped if the PR contains non-doc changes (fail-safe).
 
@@ -18,11 +18,14 @@ Primary sources: `.github/workflows/copilot-auto-fix.yml`, `scripts/ci/copilot-a
 
 ## 1. 目的
 
-Copilot レビューのインラインコメントに含まれる ` ```suggestion` ブロックを抽出し、PR ブランチへ **自動適用（コミット + push）**します。
+Copilot レビューのインラインコメントに含まれる ```` ```suggestion ```` ブロックを抽出し、PR ブランチへ **自動適用（コミット + push）**します。
 
 狙い:
 - (1)PR作成 → (2)Copilotレビュー → (3)対応 のうち、(3)の一部を自動化する
 - docs のような低リスク領域から段階導入する
+
+関連:
+- PR自動化の運用全体像（Copilot→auto-fix→auto-merge）: `docs/ci/pr-automation.md`
 
 ## 2. 有効化（プロジェクト単位）
 
@@ -58,7 +61,7 @@ Copilot レビューのインラインコメントに含まれる ` ```suggestio
   - `vars.AE_COPILOT_AUTO_FIX == '1'` を満たす場合のみ実行
   - `github.actor` が Copilot 系アクターに一致する場合のみ実行（workflow 側で制限）
 - 実行: `node scripts/ci/copilot-auto-fix.mjs`
-  - PR review comments（`pulls/{number}/comments`）から ` ```suggestion` を抽出
+  - PR review comments（`pulls/{number}/comments`）から ```` ```suggestion ```` を抽出
   - 行番号レンジ（`start_line`〜`line`）を suggestion で置換
   - 変更があれば commit して PR head ブランチへ push
   - 適用（または既適用）と判断できた Copilot コメントのスレッドのみ resolve（保守的）
@@ -79,7 +82,7 @@ Copilot レビューのインラインコメントに含まれる ` ```suggestio
 
 ## 5. 対応範囲（suggestion の扱い）
 
-- 対応: レビューコメント本文の ` ```suggestion` ブロック（最初の1つのみ）
+- 対応: レビューコメント本文の ```` ```suggestion ```` ブロック（最初の1つのみ）
 - 非対応（スキップ扱い）:
   - suggestion ブロックが無いコメント
   - suggestion が重なっている（同一ファイルで行レンジが重複）
@@ -105,4 +108,6 @@ Copilot レビューのインラインコメントに含まれる ` ```suggestio
 - Copilot Review Gate が失敗のまま:
   - auto-fix が commit/push を行わない場合（既適用など）、ゲートの再評価が走らないことがあります
   - `Copilot Review Gate` の再実行（Actions UI）や、PR の更新（空コミット等）で再評価してください
-
+- GitHub API 429 / secondary rate limit:
+  - `gh` の一時的失敗が発生する場合があります（HTTP 429 等）
+  - 必要に応じて `AE_GH_RETRY_*` を調整してください（詳細: `docs/ci/pr-automation.md` / 実装: `scripts/ci/lib/gh-exec.mjs`）。

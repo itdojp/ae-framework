@@ -81,6 +81,7 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
  - Opt-in controls: `ci/OPT-IN-CONTROLS.md`（ラベル/Slash/dispatchの一覧）
  - Copilot Review Gate: `ci/copilot-review-gate.md`（レビュー必須化）
  - Copilot Auto Fix: `ci/copilot-auto-fix.md`（suggestion自動適用）
+ - PR automation runbook: `ci/pr-automation.md`（Copilot→auto-fix→auto-merge）
  - Auto Merge: `ci/auto-merge.md`（auto-merge自動有効化）
 
 For the complete navigation with highlights, see the Japanese section below (same links).

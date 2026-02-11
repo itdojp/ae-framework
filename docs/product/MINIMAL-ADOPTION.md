@@ -66,6 +66,7 @@ pnpm run verify:lite
 ### 5.1 PR運用の標準化（最小）
 - Required checks を verify-lite + Copilot gate に統一
 - 追加検証は opt-in（`run-security`, `run-formal`, `run-resilience` など）
+- （任意）Copilot→auto-fix→auto-merge により、レビュー対応とマージ操作を段階的に自動化できます（Repository Variables）。詳細: `docs/ci/pr-automation.md`
 
 ### 5.2 仕様運用を開始したい（最小）
 ```bash

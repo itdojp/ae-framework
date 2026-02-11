@@ -51,6 +51,9 @@ PRやIssueで **必要な検証だけを opt-in で起動** し、CIコストと
 | `AE_AUTO_MERGE_MODE` | 対象方式（`all` / `label`） | `all` | `docs/ci/auto-merge.md` |
 | `AE_AUTO_MERGE_LABEL` | opt-in ラベル名（`label` モード時） | 未設定 | `docs/ci/auto-merge.md` |
 
+関連:
+- PR自動化の全体像: `docs/ci/pr-automation.md`
+
 ## 4. PR向け Slash コマンド（PRコメント）
 
 > 入口: `.github/workflows/agent-commands.yml`  

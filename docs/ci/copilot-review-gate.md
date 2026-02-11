@@ -11,6 +11,7 @@
 
 関連:
 - Copilot suggestion の自動適用（auto-fix）: `docs/ci/copilot-auto-fix.md`
+- PR自動化の運用全体像（Copilot→auto-fix→auto-merge）: `docs/ci/pr-automation.md`
   
 
 ## 必須化（Branch protection）
@@ -26,6 +27,9 @@
 ### 補足: 既定のCopilotアクター
 - 既定で検出するアクター: `copilot-pull-request-reviewer`, `github-copilot`, `github-copilot[bot]`, `copilot`, `copilot[bot]`
 - もし組織内で別アカウント名の場合は、`.github/workflows/copilot-review-gate.yml` の `COPILOT_ACTORS` を編集してください。
+
+### 補足: wait/retry の調整（レビュー到着待ち）
+- workflow 側 env の `COPILOT_REVIEW_WAIT_MINUTES` / `COPILOT_REVIEW_MAX_ATTEMPTS` を調整できます（既定: 5分 x 3回）。
 
 ## 例外運用
 - Copilot が利用できない環境では、Requiredチェックに含めない運用、または `COPILOT_ACTORS` を空にして無効化できます（workflow の `env` を編集）。

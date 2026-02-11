@@ -23,6 +23,10 @@ PR の状態が「マージ可能」かつ「Required checks/レビュー条件�
 注意:
 - ここで行うのは「auto-merge の有効化」です。実際のマージは GitHub が条件成立後に実施します。
 - ブランチ保護の設定が不十分な場合、CI/レビュー要件を正しく推論できません（Required checks が空の場合など）。
+- GitHub リポジトリ設定で "Allow auto-merge" が無効な場合、`gh pr merge --auto` は失敗します。
+
+関連:
+- PR自動化の運用全体像（Copilot→auto-fix→auto-merge）: `docs/ci/pr-automation.md`
 
 ## 2. 有効化（プロジェクト単位）
 
@@ -93,3 +97,6 @@ Actions UI から `PR Maintenance`（`.github/workflows/pr-ci-status-comment.yml
   - base ブランチ保護が取得不可になっていないか（token権限/Not Found）確認
 - self-hosted runner:
   - `gh` CLI の導入が必要です
+- GitHub API 429 / secondary rate limit:
+  - `gh` の一時的失敗が発生する場合があります（HTTP 429 等）
+  - 必要に応じて `AE_GH_RETRY_*` を調整してください（詳細: `docs/ci/pr-automation.md` / 実装: `scripts/ci/lib/gh-exec.mjs`）。
