@@ -4,6 +4,7 @@
 
 ## 仕組み
 - Workflow: `.github/workflows/copilot-review-gate.yml`
+- トリガー: `pull_request`, `pull_request_review`, `issue_comment`（auto-fix結果コメント更新時）, `workflow_dispatch`
 - 動作: PRのレビュー一覧とレビュー・スレッドをGraphQLで取得
   - Copilot アカウント（`github-copilot` / `github-copilot[bot]`）のレビューが存在するか
   - Copilot が関与したスレッド（コメントを含む）がすべて `isResolved=true` であるか

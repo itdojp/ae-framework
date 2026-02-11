@@ -5,6 +5,8 @@ on:
     types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
   pull_request_review:
     types: [submitted]
+  issue_comment:
+    types: [created, edited]
   workflow_dispatch:
     inputs:
       pr_number:
@@ -13,7 +15,7 @@ on:
         type: number
 
 concurrency:
-  group: copilot-review-gate-${{ github.event.pull_request.number || github.event.inputs.pr_number || github.ref }}
+  group: copilot-review-gate-${{ github.event.pull_request.number || github.event.issue.number || github.event.inputs.pr_number || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -23,6 +25,9 @@ permissions:
 
 jobs:
   gate:
+    if: >-
+      github.event_name != 'issue_comment'
+      || (github.event.issue.pull_request && contains(github.event.comment.body, '<!-- AE-COPILOT-AUTO-FIX v1 -->'))
     runs-on: ubuntu-latest
     steps:
       - name: Check Copilot review presence and resolution
@@ -37,7 +42,7 @@ jobs:
             const repo = context.repo.repo;
             const inputNumber = core.getInput('pr_number') || context.payload.inputs?.pr_number;
             const parsedInput = inputNumber ? Number(inputNumber) : null;
-            const number = context.payload.pull_request?.number ?? parsedInput;
+            const number = context.payload.pull_request?.number ?? context.payload.issue?.number ?? parsedInput;
             const isValidNumber = typeof number === 'number' && Number.isFinite(number) && number > 0;
             if (!isValidNumber) {
               const defaultBranch = context.payload.repository?.default_branch;
@@ -50,6 +55,10 @@ jobs:
               core.setFailed('No PR context or valid pr_number provided; manual runs on non-default branches must supply pr_number.');
               return;
             }
+            if (context.eventName === 'issue_comment' && !context.payload.issue?.pull_request) {
+              core.notice('Issue comment is not for a pull request; skipping.');
+              return;
+            }
             const actors = (process.env.COPILOT_ACTORS || 'github-copilot,github-copilot[bot]')
               .split(',')
               .map(s => s.trim())
@@ -59,7 +68,8 @@ jobs:
             const waitMinutes = Number.isFinite(waitMinutesRaw) && waitMinutesRaw >= 0 ? waitMinutesRaw : 5;
             const maxAttempts = Number.isFinite(maxAttemptsRaw) && maxAttemptsRaw > 0 ? maxAttemptsRaw : 3;
             const waitMs = waitMinutes * 60 * 1000;
-            const allowComment = context.payload.pull_request?.head?.repo?.fork !== true;
+            const allowComment =
+              context.eventName === 'issue_comment' ? true : context.payload.pull_request?.head?.repo?.fork !== true;
 
             const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
             const marker = '<!-- copilot-review-gate -->';
