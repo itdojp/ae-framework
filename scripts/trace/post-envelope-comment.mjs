@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { execGh } from '../ci/lib/gh-exec.mjs';
 
 function isErrnoException(value) {
   if (!value || typeof value !== 'object') return false;
@@ -223,10 +223,14 @@ function postToGithub({ repo, issueNumber, body }) {
     '--input',
     '-',
   ];
-  const result = spawnSync('gh', args, { stdio: ['pipe', 'inherit', 'inherit'], input: payload });
-  if (result.status !== 0) {
+  try {
+    execGh(args, { input: payload, stdio: ['pipe', 'inherit', 'inherit'] });
+  } catch (error) {
+    const stderr = error && error.stderr ? String(error.stderr) : '';
+    if (stderr) process.stderr.write(stderr);
     console.error('[envelope-comment] failed to post comment with gh');
-    process.exit(result.status ?? 1);
+    const status = error && typeof error.status === 'number' ? error.status : 1;
+    process.exit(status);
   }
 }
 

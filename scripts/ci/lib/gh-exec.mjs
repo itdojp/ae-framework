@@ -1,8 +1,8 @@
 import { execFileSync } from 'node:child_process';
 
-const DEFAULT_MAX_ATTEMPTS = 6;
+const DEFAULT_MAX_ATTEMPTS = 8;
 const DEFAULT_INITIAL_DELAY_MS = 750;
-const DEFAULT_MAX_DELAY_MS = 30_000;
+const DEFAULT_MAX_DELAY_MS = 60_000;
 
 const toInteger = (value) => {
   if (value === null || value === undefined) return null;
@@ -31,6 +31,7 @@ const shouldRetry = (text) => {
   if (!value) return false;
   return (
     /\bHTTP\s+429\b/i.test(value) ||
+    /exceeded retry limit/i.test(value) ||
     /too many requests/i.test(value) ||
     /secondary rate limit/i.test(value) ||
     /exceeded a secondary rate limit/i.test(value) ||
@@ -50,6 +51,7 @@ export function execGh(args, { input, encoding = 'utf8', cwd, env, stdio } = {})
   const initialDelay = Math.max(0, readEnvInt('AE_GH_RETRY_INITIAL_DELAY_MS', DEFAULT_INITIAL_DELAY_MS));
   const maxDelay = Math.max(initialDelay, readEnvInt('AE_GH_RETRY_MAX_DELAY_MS', DEFAULT_MAX_DELAY_MS));
   const resolvedStdio = stdio === undefined ? ['pipe', 'pipe', 'pipe'] : stdio;
+  const debug = process.env.AE_GH_RETRY_DEBUG === '1';
 
   let delay = initialDelay;
   let lastError = null;
@@ -69,6 +71,11 @@ export function execGh(args, { input, encoding = 'utf8', cwd, env, stdio } = {})
       const retryable = shouldRetry(failureText);
       if (!retryable || attempt >= maxAttempts) {
         throw error;
+      }
+      if (debug) {
+        process.stderr.write(
+          `[gh-exec] retryable failure (attempt ${attempt}/${maxAttempts}); sleeping ${delay}ms\n`
+        );
       }
       sleepSync(delay);
       delay = Math.min(maxDelay, Math.max(1, delay) * 2);
