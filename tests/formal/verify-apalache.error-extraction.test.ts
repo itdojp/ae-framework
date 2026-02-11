@@ -27,6 +27,21 @@ describe('verify-apalache error extraction', () => {
     expect(countErrors(output)).toBe(5);
   });
 
+  it('does not treat "no error" markers as errors', () => {
+    const output = [
+      'The outcome is: NoError',
+      'Checker reports no error up to computation length 10',
+      'EXITCODE: OK (0)',
+      'No errors found',
+      'No violations found',
+      'Found 0 error(s)'
+    ].join('\n');
+
+    expect(extractErrors(output)).toEqual([]);
+    expect(countErrors(output)).toBe(0);
+    expect(extractErrorSnippet(output)).toBeNull();
+  });
+
   it('returns a snippet around the first matched line', () => {
     const output = [
       'line 1',
