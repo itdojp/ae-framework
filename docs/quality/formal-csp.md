@@ -45,6 +45,12 @@ Notes:
 - This pin includes `--summary-json` (ae-framework aggregate contract).
 - `metrics` in `cspx-result.json` is optional; ae-framework consumes required fields and ignores optional extensions safely.
 
+### Troubleshooting
+
+- If `csp-summary.json` reports `status: "unsupported"` and `artifacts/hermetic-reports/formal/csp-output.txt` (or the path in `outputFile`) shows a CLI error about `--summary-json` (for example, messages containing `unexpected argument`, `unknown argument`, or `wasn't expected`), your `cspx` is too old (upgrade per `docs/quality/formal-tools-setup.md`, or set `CSP_RUN_CMD`).
+- If it reports `schema_version mismatch: expected 0.1`, check `cspx-result.json` and align `cspx` to the current contract (`schema_version=0.1`).
+- If `detailsFile` is `null`, first verify that `backend` in `csp-summary.json` is `cspx:*`. If `backend` is `cspx:*` and `detailsFile` is `null`, `cspx` did not produce a details JSON; inspect `artifacts/hermetic-reports/formal/csp-output.txt` (or the path in `outputFile`) for the underlying CLI error. For `CSP_RUN_CMD` / `refines` / `cspmchecker` backends, `detailsFile: null` is expected.
+
 ### Run
 
 Typecheck (safe default, used for CI smoke):
@@ -180,6 +186,12 @@ cspx typecheck --help | grep -- --summary-json
 - CI は commit SHA に pin して導入します（`.github/workflows/formal-verify.yml`）。
 - この pin は ae-framework 連携用の `--summary-json` を含みます。
 - `cspx-result.json` の `metrics` は optional です。ae-framework 側は必須フィールドを利用し、拡張フィールドを安全に読み飛ばします。
+
+### トラブルシューティング
+
+- `csp-summary.json` の `status` が `"unsupported"` で、`artifacts/hermetic-reports/formal/csp-output.txt`（または `csp-summary.json` の `outputFile`）に `--summary-json` に関する CLI エラー（例: `unexpected argument`, `unknown argument`, `wasn't expected` など）が出る場合、`cspx` が古く互換性がありません（`docs/quality/formal-tools-setup.md` の手順で更新、または `CSP_RUN_CMD` を設定）。
+- `schema_version mismatch: expected 0.1` の場合は `cspx-result.json` の `schema_version` を確認し、現行の契約（`schema_version=0.1`）に合わせて `cspx` を更新してください。
+- `detailsFile` が `null` の場合は、まず `csp-summary.json` の `backend` が `cspx:*` であることを確認してください。`backend` が `cspx:*` かつ `detailsFile` が `null` の場合、`cspx` が details JSON を生成できていません。`artifacts/hermetic-reports/formal/csp-output.txt`（または `outputFile`）の CLI エラーを確認してください（`backend` が `CSP_RUN_CMD` / `refines` / `cspmchecker` の場合、`detailsFile: null` は通常動作です）。
 
 ### 実行方法
 
