@@ -4,7 +4,9 @@
 
 ## 仕組み
 - Workflow: `.github/workflows/copilot-review-gate.yml`
-- トリガー: `pull_request`, `pull_request_review`, `issue_comment`（auto-fix結果コメント更新時）, `workflow_dispatch`
+- トリガー: `pull_request`, `pull_request_review`, `workflow_dispatch`
+- 補助トリガー: `issue_comment`（auto-fix結果コメント `<!-- AE-COPILOT-AUTO-FIX v1 -->` が作成/更新されたとき）
+  - `issue_comment` のランは Required checks を直接更新しないため、PR head の ref に対して `workflow_dispatch` を起動して再評価します
 - 動作: PRのレビュー一覧とレビュー・スレッドをGraphQLで取得
   - Copilot アカウント（`github-copilot` / `github-copilot[bot]`）のレビューが存在するか
   - Copilot が関与したスレッド（コメントを含む）がすべて `isResolved=true` であるか
