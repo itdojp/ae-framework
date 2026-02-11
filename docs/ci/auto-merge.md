@@ -99,4 +99,4 @@ Actions UI から `PR Maintenance`（`.github/workflows/pr-ci-status-comment.yml
   - `gh` CLI の導入が必要です
 - GitHub API 429 / secondary rate limit:
   - `gh` の一時的失敗が発生する場合があります（HTTP 429 等）
-  - 必要に応じて `AE_GH_RETRY_*` を調整してください（詳細: `docs/ci/pr-automation.md` / 実装: `scripts/ci/lib/gh-exec.mjs`）。
+  - 必要に応じて `AE_GH_THROTTLE_MS` と `AE_GH_RETRY_*` を調整してください（詳細: `docs/ci/pr-automation.md` / 実装: `scripts/ci/lib/gh-exec.mjs`）。
