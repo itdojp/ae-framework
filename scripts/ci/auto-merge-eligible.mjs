@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { execFileSync } from 'node:child_process';
+import { execGh, execGhJson } from './lib/gh-exec.mjs';
 
 const repo = process.env.GITHUB_REPOSITORY;
 const prNumber = process.env.PR_NUMBER;
@@ -26,8 +26,7 @@ if (!/^[1-9][0-9]*$/.test(String(prNumber))) {
 
 const execJson = (args) => {
   try {
-    const output = execFileSync('gh', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-    return JSON.parse(output);
+    return execGhJson(args);
   } catch (error) {
     const message = error && error.message ? error.message : String(error);
     console.error('[auto-merge] gh failed:', message);
@@ -212,6 +211,4 @@ if (!enable) {
   process.exit(0);
 }
 
-execFileSync('gh', ['pr', 'merge', String(prNumber), '--repo', repo, '--auto', '--squash'], {
-  stdio: 'inherit',
-});
+execGh(['pr', 'merge', String(prNumber), '--repo', repo, '--auto', '--squash']);

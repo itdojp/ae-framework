@@ -2,6 +2,7 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { execGh, execGhJson } from './lib/gh-exec.mjs';
 
 const repo = process.env.GITHUB_REPOSITORY;
 const prNumberRaw = process.env.PR_NUMBER ? String(process.env.PR_NUMBER).trim() : '';
@@ -42,12 +43,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const execJson = (args, input) => {
   try {
-    const output = execFileSync('gh', args, {
-      encoding: 'utf8',
-      stdio: ['pipe', 'pipe', 'pipe'],
-      input,
-    });
-    return JSON.parse(output);
+    return execGhJson(args, { input });
   } catch (error) {
     const message = error && error.message ? error.message : String(error);
     console.error('[copilot-auto-fix] gh failed:', message);
@@ -78,17 +74,12 @@ const upsertComment = (number, body) => {
   );
   const payload = JSON.stringify({ body });
   if (existing) {
-    execFileSync(
-      'gh',
-      ['api', '--method', 'PATCH', `repos/${repo}/issues/comments/${existing.id}`, '--input', '-'],
-      { stdio: ['pipe', 'inherit', 'inherit'], input: payload }
-    );
+    execGh(['api', '--method', 'PATCH', `repos/${repo}/issues/comments/${existing.id}`, '--input', '-'], {
+      input: payload,
+    });
     return;
   }
-  execFileSync('gh', ['api', `repos/${repo}/issues/${number}/comments`, '--input', '-'], {
-    stdio: ['pipe', 'inherit', 'inherit'],
-    input: payload,
-  });
+  execGh(['api', `repos/${repo}/issues/${number}/comments`, '--input', '-'], { input: payload });
 };
 
 const isDocPath = (filePath) => docsAllowlist.some((re) => re.test(filePath));
