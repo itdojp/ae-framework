@@ -56,7 +56,7 @@ GitHub API の 429 / secondary rate limit が出る場合は、以下の Reposit
 | 変数 | 役割 | 既定 | 詳細 |
 | --- | --- | --- | --- |
 | `AE_GH_THROTTLE_MS` | `gh` 呼び出し間の最小間隔（ms） | `0` | `docs/ci/pr-automation.md` |
-| `AE_GH_RETRY_MAX_ATTEMPTS` | retry回数 | `8` | `docs/ci/pr-automation.md` |
+| `AE_GH_RETRY_MAX_ATTEMPTS` | 最大試行回数（初回実行を含む） | `8` | `docs/ci/pr-automation.md` |
 | `AE_GH_RETRY_INITIAL_DELAY_MS` | retry初期待ち（ms） | `750` | `docs/ci/pr-automation.md` |
 | `AE_GH_RETRY_MAX_DELAY_MS` | retry最大待ち（ms） | `60000` | `docs/ci/pr-automation.md` |
 | `AE_GH_RETRY_DEBUG` | retryログ出力（`1`） | 未設定 | `docs/ci/pr-automation.md` |
