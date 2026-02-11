@@ -224,7 +224,7 @@ function postToGithub({ repo, issueNumber, body }) {
     '-',
   ];
   try {
-    execGh(args, { input: payload, stdio: ['pipe', 'inherit', 'inherit'] });
+    execGh(args, { input: payload });
   } catch (error) {
     const stderr = error && error.stderr ? String(error.stderr) : '';
     if (stderr) process.stderr.write(stderr);
