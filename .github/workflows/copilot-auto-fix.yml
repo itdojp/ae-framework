@@ -40,4 +40,9 @@ jobs:
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           AE_COPILOT_AUTO_FIX_SCOPE: ${{ vars.AE_COPILOT_AUTO_FIX_SCOPE || 'docs' }}
           AE_COPILOT_AUTO_FIX_LABEL: ${{ vars.AE_COPILOT_AUTO_FIX_LABEL || '' }}
+          AE_GH_THROTTLE_MS: ${{ vars.AE_GH_THROTTLE_MS || '0' }}
+          AE_GH_RETRY_MAX_ATTEMPTS: ${{ vars.AE_GH_RETRY_MAX_ATTEMPTS || '' }}
+          AE_GH_RETRY_INITIAL_DELAY_MS: ${{ vars.AE_GH_RETRY_INITIAL_DELAY_MS || '' }}
+          AE_GH_RETRY_MAX_DELAY_MS: ${{ vars.AE_GH_RETRY_MAX_DELAY_MS || '' }}
+          AE_GH_RETRY_DEBUG: ${{ vars.AE_GH_RETRY_DEBUG || '' }}
         run: node scripts/ci/copilot-auto-fix.mjs
