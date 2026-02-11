@@ -211,4 +211,4 @@ if (!enable) {
   process.exit(0);
 }
 
-execGh(['pr', 'merge', String(prNumber), '--repo', repo, '--auto', '--squash']);
+execGh(['pr', 'merge', String(prNumber), '--repo', repo, '--auto', '--squash'], { stdio: 'inherit' });

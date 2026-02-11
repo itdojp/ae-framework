@@ -45,10 +45,11 @@ const buildFailureText = (error) => {
   return [message, stderr, stdout].filter(Boolean).join('\n');
 };
 
-export function execGh(args, { input, encoding = 'utf8', cwd, env } = {}) {
+export function execGh(args, { input, encoding = 'utf8', cwd, env, stdio } = {}) {
   const maxAttempts = Math.max(1, readEnvInt('AE_GH_RETRY_MAX_ATTEMPTS', DEFAULT_MAX_ATTEMPTS));
   const initialDelay = Math.max(0, readEnvInt('AE_GH_RETRY_INITIAL_DELAY_MS', DEFAULT_INITIAL_DELAY_MS));
   const maxDelay = Math.max(initialDelay, readEnvInt('AE_GH_RETRY_MAX_DELAY_MS', DEFAULT_MAX_DELAY_MS));
+  const resolvedStdio = stdio === undefined ? ['pipe', 'pipe', 'pipe'] : stdio;
 
   let delay = initialDelay;
   let lastError = null;
@@ -57,7 +58,7 @@ export function execGh(args, { input, encoding = 'utf8', cwd, env } = {}) {
     try {
       return execFileSync('gh', args, {
         encoding,
-        stdio: ['pipe', 'pipe', 'pipe'],
+        stdio: resolvedStdio,
         input,
         cwd,
         env,
@@ -78,12 +79,11 @@ export function execGh(args, { input, encoding = 'utf8', cwd, env } = {}) {
   throw lastError || new Error('gh failed');
 }
 
-export function execGhJson(args, options) {
-  const output = execGh(args, options);
+export function execGhJson(args, { input, encoding = 'utf8', cwd, env } = {}) {
+  const output = execGh(args, { input, encoding, cwd, env, stdio: ['pipe', 'pipe', 'pipe'] });
   return JSON.parse(output);
 }
 
 export function __testOnly_shouldRetry(text) {
   return shouldRetry(text);
 }
-

@@ -1,9 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const baseEnv = { ...process.env };
+const baseEnv = {
+  AE_GH_RETRY_NO_SLEEP: process.env.AE_GH_RETRY_NO_SLEEP,
+  AE_GH_RETRY_MAX_ATTEMPTS: process.env.AE_GH_RETRY_MAX_ATTEMPTS,
+  AE_GH_RETRY_INITIAL_DELAY_MS: process.env.AE_GH_RETRY_INITIAL_DELAY_MS,
+  AE_GH_RETRY_MAX_DELAY_MS: process.env.AE_GH_RETRY_MAX_DELAY_MS,
+};
 
 const resetEnv = () => {
-  process.env = { ...baseEnv };
+  for (const [key, value] of Object.entries(baseEnv)) {
+    if (value === undefined) {
+      delete process.env[key];
+    } else {
+      process.env[key] = value;
+    }
+  }
 };
 
 describe('gh-exec', () => {
@@ -71,4 +82,3 @@ describe('gh-exec', () => {
     expect(execFileSyncMock).toHaveBeenCalledTimes(1);
   });
 });
-

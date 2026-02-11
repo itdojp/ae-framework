@@ -223,7 +223,7 @@ const upsertComment = (number, body) => {
 };
 
 const enableAutoMerge = (number) => {
-  execGh(['pr', 'merge', String(number), '--repo', repo, '--auto', '--squash']);
+  execGh(['pr', 'merge', String(number), '--repo', repo, '--auto', '--squash'], { stdio: 'inherit' });
 };
 
 const main = async () => {
