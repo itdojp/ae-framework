@@ -17,7 +17,7 @@ Primary sources:
 - Workflows: `.github/workflows/copilot-review-gate.yml`, `.github/workflows/copilot-auto-fix.yml`, `.github/workflows/pr-ci-status-comment.yml`
 - Workflows (self-heal): `.github/workflows/pr-self-heal.yml`
 - Workflow (autopilot lane): `.github/workflows/codex-autopilot-lane.yml`
-- Scripts: `scripts/ci/copilot-auto-fix.mjs`, `scripts/ci/auto-merge-enabler.mjs`, `scripts/ci/auto-merge-eligible.mjs`, `scripts/ci/pr-self-heal.mjs`, `scripts/ci/lib/automation-config.mjs`
+- Scripts: `scripts/ci/copilot-auto-fix.mjs`, `scripts/ci/auto-merge-enabler.mjs`, `scripts/ci/auto-merge-eligible.mjs`, `scripts/ci/pr-self-heal.mjs`, `scripts/ci/codex-autopilot-lane.mjs`, `scripts/ci/lib/automation-config.mjs`
 
 ---
 
