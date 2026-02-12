@@ -28,6 +28,8 @@ Repository Variables に `AE_AUTOMATION_PROFILE` を設定します。
 
 つまり、プロファイルを有効化していても、個別変数を指定すればその値が優先されます。
 
+文字列系の個別変数（例: `AE_COPILOT_AUTO_FIX_LABEL`, `AE_AUTO_MERGE_LABEL`）を明示的に空文字へ上書きしたい場合は、`(empty)` を設定します。
+
 ## 3. プロファイル内容
 
 | Key | conservative | balanced | aggressive |
