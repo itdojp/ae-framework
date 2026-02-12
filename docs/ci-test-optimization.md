@@ -346,8 +346,8 @@ The optimizer integrates well with:
 
 ### Documentation
 - [Vitest Configuration Guide](https://vitest.dev/config/)
-- [CI Best Practices](./testing/ci-best-practices.md)
-- [Performance Optimization](./testing/performance-optimization.md)
+- [Test Categorization Guide](./testing/test-categorization.md)
+- [Parallel Execution Strategy](./testing/parallel-execution-strategy.md)
 
 ### Community
 - Report issues via GitHub Issues
