@@ -56,6 +56,30 @@ describe('pr-self-heal helpers', () => {
     expect(summary.mixedKeys.length).toBe(1);
   });
 
+  it('detects mixed status contexts', () => {
+    const now = Date.UTC(2026, 1, 12, 10, 0, 0);
+    const summary = summarizeCheckRollup([
+      {
+        __typename: 'StatusContext',
+        context: 'external/check',
+        state: 'FAILURE',
+      },
+      {
+        __typename: 'StatusContext',
+        context: 'external/check',
+        state: 'SUCCESS',
+      },
+    ], {
+      nowMs: now,
+      maxAgeMs: 10 * 60 * 1000,
+      rerunBlacklist: new Set(),
+    });
+
+    expect(summary.counts.failure).toBe(1);
+    expect(summary.counts.success).toBe(1);
+    expect(summary.mixedKeys).toContain('status-context::external/check');
+  });
+
   it('classifies actionable PR with behind + failed checks', () => {
     const state = classifyPr(
       {

@@ -28,7 +28,7 @@ concurrency:
   group: >-
     pr-self-heal-${{
       github.event_name == 'workflow_dispatch' && (inputs.pr_number || 'manual')
-      || github.event_name == 'workflow_run' && (github.event.workflow_run.pull_requests[0].number || github.event.workflow_run.id)
+      || github.event_name == 'workflow_run' && github.event.workflow_run.id
       || github.ref
     }}
   cancel-in-progress: true
@@ -46,7 +46,14 @@ jobs:
       || (vars.AE_SELF_HEAL_ENABLED == '1'
         && (
           github.event_name == 'schedule'
-          || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion != 'success')
+          || (github.event_name == 'workflow_run'
+            && join(github.event.workflow_run.pull_requests.*.number, '') != ''
+            && (
+              github.event.workflow_run.conclusion == 'failure'
+              || github.event.workflow_run.conclusion == 'timed_out'
+              || github.event.workflow_run.conclusion == 'cancelled'
+            )
+          )
         )
       )
     runs-on: ubuntu-latest
@@ -79,10 +86,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
           PR_NUMBER: ${{ github.event_name == 'workflow_dispatch' && inputs.pr_number || '' }}
-          WORKFLOW_RUN_PR_NUMBER: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.pull_requests[0].number || '' }}
+          WORKFLOW_RUN_PR_NUMBERS: ${{ github.event_name == 'workflow_run' && join(github.event.workflow_run.pull_requests.*.number, ',') || '' }}
           AE_SELF_HEAL_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || vars.AE_SELF_HEAL_DRY_RUN || 'false' }}
           AE_SELF_HEAL_MAX_ROUNDS: ${{ github.event_name == 'workflow_dispatch' && inputs.max_rounds || vars.AE_SELF_HEAL_MAX_ROUNDS || '3' }}
           AE_SELF_HEAL_MAX_AGE_MINUTES: ${{ vars.AE_SELF_HEAL_MAX_AGE_MINUTES || '180' }}
           AE_SELF_HEAL_MAX_PRS: ${{ vars.AE_SELF_HEAL_MAX_PRS || '20' }}
-          AE_SELF_HEAL_ROUND_WAIT_SECONDS: ${{ vars.AE_SELF_HEAL_ROUND_WAIT_SECONDS || '8' }}
+          AE_SELF_HEAL_ROUND_WAIT_SECONDS: ${{ vars.AE_SELF_HEAL_ROUND_WAIT_SECONDS || '60' }}
         run: node scripts/ci/pr-self-heal.mjs

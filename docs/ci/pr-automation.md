@@ -176,6 +176,7 @@ auto-merge（ラベルopt-in）:
   - `AE_SELF_HEAL_MAX_ROUNDS`（既定 `3`）
   - `AE_SELF_HEAL_MAX_AGE_MINUTES`（既定 `180`）
   - `AE_SELF_HEAL_MAX_PRS`（既定 `20`）
+  - `AE_SELF_HEAL_ROUND_WAIT_SECONDS`（既定 `60`）
 
 補足:
 - CI で調整する場合、これらは Repository Variables として設定し、ワークフロー側で `env:` に渡します（本リポジトリの `copilot-auto-fix.yml` / `pr-ci-status-comment.yml` は `vars.*` を参照）。
