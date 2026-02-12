@@ -20,10 +20,6 @@ jobs:
   auto-fix:
     if: >-
       github.event.pull_request.head.repo.fork == false
-      && (
-        vars.AE_COPILOT_AUTO_FIX == '1'
-        || (vars.AE_COPILOT_AUTO_FIX == '' && contains(fromJSON('["conservative","balanced","aggressive"]'), vars.AE_AUTOMATION_PROFILE))
-      )
       && contains(fromJSON('["copilot-pull-request-reviewer","github-copilot","github-copilot[bot]","copilot","copilot[bot]","Copilot"]'), github.actor)
     runs-on: ubuntu-latest
     steps:

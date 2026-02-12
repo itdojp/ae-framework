@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  EXPLICIT_EMPTY_SENTINEL,
   resolveAutomationConfig,
   toGithubEnv,
 } from '../../../scripts/ci/lib/automation-config.mjs';
@@ -40,6 +41,15 @@ describe('automation-config', () => {
     expect(config.values.AE_AUTO_MERGE_LABEL).toBe('manual-opt-in');
   });
 
+  it('supports explicit empty string override for string fields', () => {
+    const config = resolveAutomationConfig({
+      AE_AUTOMATION_PROFILE: 'conservative',
+      AE_COPILOT_AUTO_FIX_LABEL: EXPLICIT_EMPTY_SENTINEL,
+    });
+    expect(config.values.AE_COPILOT_AUTO_FIX_LABEL).toBe('');
+    expect(config.sources.AE_COPILOT_AUTO_FIX_LABEL).toBe('explicit');
+  });
+
   it('falls back on invalid explicit values with warnings', () => {
     const config = resolveAutomationConfig({
       AE_AUTOMATION_PROFILE: 'balanced',
@@ -69,5 +79,13 @@ describe('automation-config', () => {
     expect(envBody).toContain('AE_AUTOMATION_PROFILE_RESOLVED=conservative');
     expect(envBody).toContain('AE_COPILOT_AUTO_FIX=1');
     expect(envBody).toContain('AE_AUTO_MERGE_MODE=label');
+  });
+
+  it('sanitizes newline characters when exporting GitHub env lines', () => {
+    const config = resolveAutomationConfig({
+      AE_COPILOT_AUTO_FIX_LABEL: 'copilot\nauto-fix',
+    });
+    const envBody = toGithubEnv(config);
+    expect(envBody).toContain('AE_COPILOT_AUTO_FIX_LABEL=copilot auto-fix');
   });
 });

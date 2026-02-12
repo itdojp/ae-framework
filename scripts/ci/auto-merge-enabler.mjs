@@ -16,6 +16,7 @@ const PR_LIMIT = 50;
 const PR_SLEEP_MS = 150;
 const FAILED_LIST_LIMIT = 5;
 
+const AUTO_MERGE_ENABLED = String(process.env.AE_AUTO_MERGE || '').trim() === '1';
 const AUTO_MERGE_MODE = String(process.env.AE_AUTO_MERGE_MODE || 'all').toLowerCase();
 const AUTO_MERGE_LABEL = String(process.env.AE_AUTO_MERGE_LABEL || '').trim();
 const PR_NUMBER_RAW = process.env.PR_NUMBER !== undefined ? String(process.env.PR_NUMBER).trim() : '';
@@ -29,6 +30,11 @@ if (PR_NUMBER_RAW !== '') {
 }
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+if (!AUTO_MERGE_ENABLED) {
+  console.log('[auto-merge-enabler] Skip: AE_AUTO_MERGE is disabled after config resolution.');
+  process.exit(0);
+}
 
 const execJson = (args, input) => {
   try {

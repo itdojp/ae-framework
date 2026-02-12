@@ -1,6 +1,9 @@
 #!/usr/bin/env node
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const KNOWN_PROFILES = ['conservative', 'balanced', 'aggressive'];
+const EXPLICIT_EMPTY_SENTINEL = '(empty)';
 
 const PROFILE_PRESETS = {
   conservative: {
@@ -103,11 +106,21 @@ function normalizeField(field, value) {
   return { valid: true, value: String(value ?? '').trim() };
 }
 
-function hasExplicitValue(env, key) {
+function parseExplicitValue(field, env, key) {
   if (!Object.prototype.hasOwnProperty.call(env, key)) {
-    return false;
+    return { hasExplicit: false, value: null };
   }
-  return String(env[key] ?? '').trim() !== '';
+
+  const raw = String(env[key] ?? '').trim();
+  if (raw === '') {
+    return { hasExplicit: false, value: null };
+  }
+
+  if (field.type === 'string' && raw.toLowerCase() === EXPLICIT_EMPTY_SENTINEL) {
+    return { hasExplicit: true, value: '' };
+  }
+
+  return { hasExplicit: true, value: raw };
 }
 
 function resolveProfile(rawProfile) {
@@ -139,15 +152,16 @@ function resolveAutomationConfig(env = process.env) {
 
   for (const field of FIELD_SPECS) {
     const key = field.key;
-    const explicit = hasExplicitValue(env, key) ? String(env[key]).trim() : null;
-    if (explicit !== null) {
-      const normalized = normalizeField(field, explicit);
+    const explicitState = parseExplicitValue(field, env, key);
+    if (explicitState.hasExplicit) {
+      const normalized = normalizeField(field, explicitState.value);
       if (normalized.valid) {
         values[key] = normalized.value;
         sources[key] = 'explicit';
         continue;
       }
-      warnings.push(`${key}=${explicit} is invalid; falling back.`);
+      const explicitText = explicitState.value === '' ? EXPLICIT_EMPTY_SENTINEL : explicitState.value;
+      warnings.push(`${key}=${explicitText} is invalid; falling back.`);
     }
 
     if (profilePreset && Object.prototype.hasOwnProperty.call(profilePreset, key)) {
@@ -186,13 +200,20 @@ function resolveAutomationConfig(env = process.env) {
   };
 }
 
+function sanitizeGithubEnvValue(value) {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  return String(value).replace(/[\r\n]/g, ' ');
+}
+
 function toGithubEnv(config) {
   const lines = [
-    `AE_AUTOMATION_PROFILE_RESOLVED=${config.profile.resolved}`,
-    `AE_AUTOMATION_PROFILE_SOURCE=${config.profile.source}`,
+    `AE_AUTOMATION_PROFILE_RESOLVED=${sanitizeGithubEnvValue(config.profile.resolved)}`,
+    `AE_AUTOMATION_PROFILE_SOURCE=${sanitizeGithubEnvValue(config.profile.source)}`,
   ];
   for (const field of FIELD_SPECS) {
-    lines.push(`${field.key}=${config.values[field.key] ?? ''}`);
+    lines.push(`${field.key}=${sanitizeGithubEnvValue(config.values[field.key] ?? '')}`);
   }
   return `${lines.join('\n')}\n`;
 }
@@ -253,11 +274,20 @@ function main() {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+function isDirectExecution() {
+  const entry = process.argv[1];
+  if (!entry) {
+    return false;
+  }
+  return import.meta.url === pathToFileURL(resolve(entry)).href;
+}
+
+if (isDirectExecution()) {
   main();
 }
 
 export {
+  EXPLICIT_EMPTY_SENTINEL,
   KNOWN_PROFILES,
   PROFILE_PRESETS,
   resolveAutomationConfig,
