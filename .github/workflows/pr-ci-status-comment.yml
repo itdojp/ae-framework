@@ -351,18 +351,8 @@ jobs:
 
   enable-auto-merge:
     if: >-
-      (github.event_name == 'pull_request' && github.event.action != 'edited' && github.event.pull_request.head.repo.fork == false
-        && (
-          vars.AE_AUTO_MERGE == '1'
-          || (vars.AE_AUTO_MERGE == '' && contains(fromJSON('["conservative","balanced","aggressive"]'), vars.AE_AUTOMATION_PROFILE))
-        )
-      )
-      || (github.event_name == 'schedule'
-        && (
-          vars.AE_AUTO_MERGE == '1'
-          || (vars.AE_AUTO_MERGE == '' && contains(fromJSON('["conservative","balanced","aggressive"]'), vars.AE_AUTOMATION_PROFILE))
-        )
-      )
+      (github.event_name == 'pull_request' && github.event.action != 'edited' && github.event.pull_request.head.repo.fork == false)
+      || (github.event_name == 'schedule')
       || (github.event_name == 'workflow_dispatch' && (inputs.mode == 'auto-merge' || inputs.mode == 'both'))
     runs-on: ubuntu-latest
     steps:
