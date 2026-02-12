@@ -4,10 +4,26 @@ heavy-test トレンドの履歴 (`reports/heavy-test-trends-history/*.json`) �
 
 ## CSV / Markdown 生成スクリプト
 ```bash
-pnpm node scripts/pipelines/export-heavy-trend-history.mjs   --history-dir reports/heavy-test-trends-history   --csv-output reports/heavy-test-trends-history/history.csv   --markdown-output reports/heavy-test-trends-history/history.md   --markdown-limit 20
+pnpm node scripts/pipelines/export-heavy-trend-history.mjs \
+  --history-dir reports/heavy-test-trends-history \
+  --csv-output reports/heavy-test-trends-history/history.csv \
+  --markdown-output reports/heavy-test-trends-history/history.md \
+  --markdown-limit 20
 ```
 - `history.csv`: 全スナップショットの `snapshot,label,metric,baseline,current,delta` を含む。Observable や Excel での分析に利用。  
 - `history.md`: 直近 N 件を Markdown テーブルで出力し、PR やドキュメントに貼り付け可能。
+
+## 閾値見直しレポート生成
+```bash
+pnpm node scripts/pipelines/recommend-heavy-trend-thresholds.mjs \
+  --history-dir reports/heavy-test-trends-history \
+  --markdown-output reports/heavy-test-trends-history/threshold-recommendation.md \
+  --json-output reports/heavy-test-trends-history/threshold-recommendation.json \
+  --min-snapshots 14
+```
+- `threshold-recommendation.md`: 現在の閾値と提案値（Warning/Critical）を比較するレポート。  
+- `threshold-recommendation.json`: 閾値提案の機械可読データ（サンプル数・quantile 設定含む）。  
+- `Status: ready` までは運用データ不足なので、workflow 閾値の更新は保留する。
 
 ## Markdown プレビュー例
 | Snapshot | Label | Metric | Baseline | Current | Δ |
