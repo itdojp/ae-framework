@@ -15,7 +15,7 @@ It is controlled per repository via GitHub Repository Variables.
 
 Primary sources:
 - Workflows: `.github/workflows/copilot-review-gate.yml`, `.github/workflows/copilot-auto-fix.yml`, `.github/workflows/pr-ci-status-comment.yml`
-- Scripts: `scripts/ci/copilot-auto-fix.mjs`, `scripts/ci/auto-merge-enabler.mjs`, `scripts/ci/auto-merge-eligible.mjs`
+- Scripts: `scripts/ci/copilot-auto-fix.mjs`, `scripts/ci/auto-merge-enabler.mjs`, `scripts/ci/auto-merge-eligible.mjs`, `scripts/ci/lib/automation-config.mjs`
 
 ---
 
@@ -71,12 +71,19 @@ PR運用を以下の形に収束させます。
 
 いずれも GitHub Repository Variables（Settings -> Secrets and variables -> Actions -> Variables）で制御します。
 
+### 3.0 プロファイル方式（推奨）
+
+- `AE_AUTOMATION_PROFILE` を設定すると、auto-fix / auto-merge / retry / gate wait の既定値をまとめて適用できます。
+  - `conservative` / `balanced` / `aggressive`
+- 個別変数（`AE_COPILOT_AUTO_FIX*`, `AE_AUTO_MERGE*`, `AE_GH_*`, `COPILOT_REVIEW_*`）を設定した場合は、そちらが優先されます。
+- 詳細: `docs/ci/automation-profiles.md`
+
 ### 3.1 推奨導入順（手戻りを減らす）
 
 1. Branch protection で Required checks を整備（最小: `Verify Lite / verify-lite` + `Copilot Review Gate / gate`）
-2. `AE_COPILOT_AUTO_FIX=1` + `AE_COPILOT_AUTO_FIX_SCOPE=docs` で docs領域から auto-fix を段階導入
-3. `AE_AUTO_MERGE=1` + `AE_AUTO_MERGE_MODE=label` で opt-in から auto-merge を段階導入
-4. 問題がなければスコープ/モードを拡張（`all` へ）
+2. `AE_AUTOMATION_PROFILE=conservative` で docs領域 + label opt-in から段階導入
+3. 問題がなければ `balanced` / `aggressive` へ拡張
+4. 必要時のみ個別変数で上書き
 
 ### 3.2 変数セット例（保守的）
 
