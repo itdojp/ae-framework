@@ -123,6 +123,9 @@ auto-merge（ラベルopt-in）:
 - "pull_request_review run is action_required"
   - `pull_request_review` 経路の実行が `action_required` になる場合があります
   - 最終判定は PR の `Copilot Review Gate / gate` が PR head SHA で green かどうかで確認し、必要なら `workflow_dispatch`（`pr_number` 指定）で再実行
+- "Copilot Review Gate / gate が success/failure 混在で残る"
+  - 同一 head SHA 上で `gate` の success と failure が混在した場合、失敗した `Copilot Review Gate` ランを `rerun failed jobs` で再実行してください（CLI例: `gh run rerun <run-id> --failed`）
+  - head SHA 単位で check-runs を確認し、最新 SHA 上の `gate` を基準に判定してください
 
 ### 5.2 Copilot Auto Fix がスキップされる
 

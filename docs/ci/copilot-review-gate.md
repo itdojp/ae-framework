@@ -42,6 +42,7 @@
 - スレッドが解決にならない場合、PR画面で各会話の「Resolve conversation」を押すか、対応コメントを行ってから解決してください。
 - Copilot Auto Fix がスレッドを resolve しても、変更が push されない場合（既適用など）は、ゲートの再評価が走らないことがあります。Actions から `Copilot Review Gate` を再実行してください。
 - `pull_request_review` 経路の実行が `action_required` になる場合があります。最終判定は PR の `Copilot Review Gate / gate` が PR head SHA で green かどうかで確認してください（必要なら `workflow_dispatch` で `pr_number` を指定して再実行）。
+- `Copilot Review Gate / gate` が同一 head SHA で success/failure 混在になった場合は、失敗した gate run を再実行してください（Actions UI または `gh run rerun <run-id> --failed`）。最新 head SHA の check-runs を優先して判定します。
 - ゲートが検出しない場合、`COPILOT_ACTORS` の一覧に実際のアカウント名が含まれているか確認してください。
 - fork PR では Actions がコメントを投稿できないため、ゲートはコメントを残さず `notice` のみ出力します（判定自体は実行されます）。
 - Required checks が `Expected — Waiting for status to be reported` のまま止まる場合は、branch protection に登録したチェック名が実際のジョブ名と一致しているか、PR条件でワークフローが実行されているかを確認してください。
