@@ -384,6 +384,15 @@ jobs:
             --history-dir reports/heavy-test-trends-history \
             --markdown-output reports/heavy-test-trends-history/threshold-recommendation.md \
             --json-output reports/heavy-test-trends-history/threshold-recommendation.json \
+            --warn-mutation-score 98 \
+            --critical-mutation-score 96 \
+            --warn-mutation-delta -1.0 \
+            --critical-mutation-delta -2.5 \
+            --warn-property-failed 1 \
+            --critical-property-failed 3 \
+            --warn-property-failure-rate 0.1 \
+            --warn-mbt-violations 1 \
+            --critical-mbt-violations 3 \
             --min-snapshots 14
           if [ -f reports/heavy-test-trends-history/threshold-recommendation.md ]; then
             printf '\n' >> "$GITHUB_STEP_SUMMARY"

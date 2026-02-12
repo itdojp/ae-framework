@@ -27,16 +27,10 @@ async function main() {
   const files = await listJsonFiles(historyDir);
 
   if (files.length === 0) {
-    const message = `No heavy test trend snapshots found under ${historyDirLabel}`;
-    console.log(message);
-    await writeOutputs(options, message, {
-      generatedAt: new Date().toISOString(),
-      historyDir: historyDirLabel,
-      snapshotCount: 0,
-      minSnapshots: options.minSnapshots,
-      status: 'no_data',
-      recommendations: null,
-    });
+    const recommendation = buildNoDataRecommendation(options, historyDirLabel);
+    const markdown = renderMarkdown(historyDirLabel, recommendation);
+    console.log(markdown);
+    await writeOutputs(options, markdown, recommendation);
     return;
   }
 
@@ -71,6 +65,7 @@ function parseArgs(argv) {
     historyDir: 'reports/heavy-test-trends-history',
     markdownOutput: path.resolve(repoRoot, 'reports', 'heavy-test-trends-history', 'threshold-recommendation.md'),
     jsonOutput: path.resolve(repoRoot, 'reports', 'heavy-test-trends-history', 'threshold-recommendation.json'),
+    currentThresholds: { ...DEFAULT_THRESHOLDS },
     minSnapshots: 14,
     warnLowQuantile: 0.1,
     criticalLowQuantile: 0.05,
@@ -99,6 +94,48 @@ function parseArgs(argv) {
       options.warnHighQuantile = clampQuantile(argv[++i], options.warnHighQuantile);
     } else if (current === '--critical-high-quantile' && argv[i + 1]) {
       options.criticalHighQuantile = clampQuantile(argv[++i], options.criticalHighQuantile);
+    } else {
+      const next = argv[i + 1];
+      switch (current) {
+        case '--warn-mutation-score':
+          options.currentThresholds.warnMutationScore = parseFloat(next);
+          i += 1;
+          break;
+        case '--critical-mutation-score':
+          options.currentThresholds.criticalMutationScore = parseFloat(next);
+          i += 1;
+          break;
+        case '--warn-mutation-delta':
+          options.currentThresholds.warnMutationDelta = parseFloat(next);
+          i += 1;
+          break;
+        case '--critical-mutation-delta':
+          options.currentThresholds.criticalMutationDelta = parseFloat(next);
+          i += 1;
+          break;
+        case '--warn-property-failed':
+          options.currentThresholds.warnPropertyFailed = Number.parseInt(next, 10);
+          i += 1;
+          break;
+        case '--critical-property-failed':
+          options.currentThresholds.criticalPropertyFailed = Number.parseInt(next, 10);
+          i += 1;
+          break;
+        case '--warn-property-failure-rate':
+          options.currentThresholds.warnPropertyFailureRate = parseFloat(next);
+          i += 1;
+          break;
+        case '--warn-mbt-violations':
+          options.currentThresholds.warnMbtViolations = Number.parseInt(next, 10);
+          i += 1;
+          break;
+        case '--critical-mbt-violations':
+          options.currentThresholds.criticalMbtViolations = Number.parseInt(next, 10);
+          i += 1;
+          break;
+        default:
+          break;
+      }
     }
   }
 
@@ -174,13 +211,13 @@ function buildRecommendation(aggregated, options, snapshotCount, historyDirLabel
     : null;
 
   const suggestedWarnMutationDelta = mutationDeltaStats.count > 0
-    ? roundDown(quantile(mutationDeltaStats.sorted, options.warnLowQuantile), 1)
+    ? Math.min(0, roundDown(quantile(mutationDeltaStats.sorted, options.warnLowQuantile), 1))
     : null;
   const suggestedCriticalMutationDelta = mutationDeltaStats.count > 0
-    ? Math.min(
+    ? Math.min(0, Math.min(
       roundDown(quantile(mutationDeltaStats.sorted, options.criticalLowQuantile), 1),
-      suggestedWarnMutationDelta ?? Number.POSITIVE_INFINITY,
-    )
+      suggestedWarnMutationDelta ?? 0,
+    ))
     : null;
 
   const suggestedWarnPropertyFailedRaw = propertyFailedStats.count > 0
@@ -225,7 +262,7 @@ function buildRecommendation(aggregated, options, snapshotCount, historyDirLabel
       warnHigh: options.warnHighQuantile,
       criticalHigh: options.criticalHighQuantile,
     },
-    currentThresholds: DEFAULT_THRESHOLDS,
+    currentThresholds: options.currentThresholds,
     sampleCounts: {
       mutationScore: mutationScoreStats.count,
       mutationDelta: mutationDeltaStats.count,
@@ -243,6 +280,41 @@ function buildRecommendation(aggregated, options, snapshotCount, historyDirLabel
       warnPropertyFailureRate: suggestedWarnPropertyFailureRate,
       warnMbtViolations: suggestedWarnMbtViolations,
       criticalMbtViolations: suggestedCriticalMbtViolations,
+    },
+  };
+}
+
+function buildNoDataRecommendation(options, historyDirLabel) {
+  return {
+    generatedAt: new Date().toISOString(),
+    historyDir: historyDirLabel,
+    snapshotCount: 0,
+    minSnapshots: options.minSnapshots,
+    status: 'no_data',
+    quantiles: {
+      warnLow: options.warnLowQuantile,
+      criticalLow: options.criticalLowQuantile,
+      warnHigh: options.warnHighQuantile,
+      criticalHigh: options.criticalHighQuantile,
+    },
+    currentThresholds: options.currentThresholds,
+    sampleCounts: {
+      mutationScore: 0,
+      mutationDelta: 0,
+      propertyFailed: 0,
+      propertyFailureRate: 0,
+      mbtViolations: 0,
+    },
+    recommendations: {
+      warnMutationScore: null,
+      criticalMutationScore: null,
+      warnMutationDelta: null,
+      criticalMutationDelta: null,
+      warnPropertyFailed: null,
+      criticalPropertyFailed: null,
+      warnPropertyFailureRate: null,
+      warnMbtViolations: null,
+      criticalMbtViolations: null,
     },
   };
 }
@@ -350,7 +422,12 @@ function renderMarkdown(historyDir, recommendation) {
     '',
   ];
 
-  if (recommendation.status !== 'ready') {
+  if (recommendation.status === 'no_data') {
+    lines.push(
+      `> No snapshots found. Run CI Extended via schedule/workflow_dispatch and archive history before tuning thresholds.`,
+      '',
+    );
+  } else if (recommendation.status !== 'ready') {
     lines.push(
       `> Data is not sufficient yet. Keep collecting schedule snapshots until at least ${recommendation.minSnapshots} samples are available.`,
       '',
