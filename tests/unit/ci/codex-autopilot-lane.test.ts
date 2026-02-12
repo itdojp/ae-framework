@@ -40,4 +40,44 @@ describe('codex-autopilot-lane helpers', () => {
       },
     ])).toBe('failure');
   });
+
+  it('prefers latest gate run when conclusions are mixed', () => {
+    expect(parseGateStatus([
+      {
+        __typename: 'CheckRun',
+        workflowName: 'Copilot Review Gate',
+        name: 'gate',
+        status: 'COMPLETED',
+        conclusion: 'FAILURE',
+        completedAt: '2026-02-12T10:00:00Z',
+      },
+      {
+        __typename: 'CheckRun',
+        workflowName: 'Copilot Review Gate',
+        name: 'gate',
+        status: 'COMPLETED',
+        conclusion: 'SUCCESS',
+        completedAt: '2026-02-12T10:05:00Z',
+      },
+    ])).toBe('success');
+
+    expect(parseGateStatus([
+      {
+        __typename: 'CheckRun',
+        workflowName: 'Copilot Review Gate',
+        name: 'gate',
+        status: 'COMPLETED',
+        conclusion: 'SUCCESS',
+        completedAt: '2026-02-12T10:00:00Z',
+      },
+      {
+        __typename: 'CheckRun',
+        workflowName: 'Copilot Review Gate',
+        name: 'gate',
+        status: 'COMPLETED',
+        conclusion: 'FAILURE',
+        completedAt: '2026-02-12T10:05:00Z',
+      },
+    ])).toBe('failure');
+  });
 });

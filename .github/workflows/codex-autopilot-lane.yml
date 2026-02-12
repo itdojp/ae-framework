@@ -40,17 +40,28 @@ jobs:
       || (
         vars.AE_CODEX_AUTOPILOT_ENABLED == '1'
         && (
-          github.event_name == 'pull_request'
+          (
+            github.event_name == 'pull_request'
+            && github.event.pull_request.head.repo.fork == false
+            && contains(github.event.pull_request.labels.*.name, 'autopilot:on')
+          )
           || (
             github.event_name == 'issue_comment'
             && github.event.issue.pull_request
             && contains(github.event.comment.body, '/autopilot run')
+            && (
+              github.event.comment.author_association == 'MEMBER'
+              || github.event.comment.author_association == 'OWNER'
+              || github.event.comment.author_association == 'COLLABORATOR'
+            )
           )
         )
       )
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.repository.default_branch }}
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:

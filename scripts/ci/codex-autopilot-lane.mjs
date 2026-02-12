@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 
 import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { execGh, execGhJson } from './lib/gh-exec.mjs';
 
 const marker = '<!-- AE-CODEX-AUTOPILOT v1 -->';
@@ -14,6 +18,7 @@ const copilotActors = (process.env.COPILOT_ACTORS
   .split(',')
   .map((value) => value.trim())
   .filter(Boolean);
+const copilotActorSet = new Set(copilotActors.map((value) => value.toLowerCase()));
 
 function readIntEnv(name, fallback, min) {
   const parsed = Number.parseInt(String(process.env[name] || '').trim(), 10);
@@ -91,8 +96,29 @@ function parseGateStatus(statusCheckRollup) {
     && item.workflowName === 'Copilot Review Gate'
   );
   if (gateChecks.length === 0) return 'missing';
+
+  const allHaveCompletedAt = gateChecks.every(
+    (item) => item && typeof item.completedAt === 'string' && item.completedAt,
+  );
+  if (allHaveCompletedAt) {
+    const sorted = [...gateChecks].sort(
+      (a, b) => new Date(a.completedAt) - new Date(b.completedAt),
+    );
+    const latest = sorted[sorted.length - 1];
+    if (latest.status !== 'COMPLETED') return 'pending';
+    return latest.conclusion === 'SUCCESS' ? 'success' : 'failure';
+  }
+
   if (gateChecks.some((item) => item.status !== 'COMPLETED')) return 'pending';
-  if (gateChecks.some((item) => item.conclusion === 'SUCCESS')) return 'success';
+  const conclusions = new Set(
+    gateChecks
+      .map((item) => item && item.conclusion)
+      .filter(Boolean),
+  );
+  if (conclusions.size === 1) {
+    const [only] = conclusions;
+    return only === 'SUCCESS' ? 'success' : 'failure';
+  }
   return 'failure';
 }
 
@@ -109,7 +135,7 @@ function fetchPrView(number) {
 }
 
 function fetchCopilotThreadState(number) {
-  const query = `query($owner:String!, $repo:String!, $number:Int!) {\n  repository(owner:$owner, name:$repo) {\n    pullRequest(number:$number) {\n      reviewThreads(first:100) {\n        nodes {\n          isResolved\n          comments(first:25) { nodes { author { login } } }\n        }\n      }\n    }\n  }\n}`;
+  const query = `query($owner:String!, $repo:String!, $number:Int!) {\n  repository(owner:$owner, name:$repo) {\n    pullRequest(number:$number) {\n      reviewThreads(first:100) {\n        nodes {\n          isResolved\n          comments(first:100) { nodes { author { login } } }\n        }\n      }\n    }\n  }\n}`;
   const [owner, repoName] = repo.split('/');
   const data = execJson([
     'api',
@@ -128,7 +154,8 @@ function fetchCopilotThreadState(number) {
     thread
     && !thread.isResolved
     && Array.isArray(thread.comments?.nodes)
-    && thread.comments.nodes.some((comment) => copilotActors.includes(comment?.author?.login || ''))
+    && thread.comments.nodes.some((comment) =>
+      copilotActorSet.has(String(comment?.author?.login || '').toLowerCase()))
   );
   return {
     total: threads.length,
@@ -136,15 +163,20 @@ function fetchCopilotThreadState(number) {
   };
 }
 
-function ensureHeadCheckedOut(pr) {
-  const current = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
-  if (current === pr.headRefOid) return;
-  execFileSync('git', ['fetch', 'origin', pr.headRefName], { stdio: 'inherit' });
-  execFileSync('git', ['checkout', '--detach', pr.headRefOid], { stdio: 'inherit' });
-}
-
 function runAutoFix(pr) {
-  ensureHeadCheckedOut(pr);
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ae-codex-autopilot-'));
+  const worktreeDir = path.join(tempRoot, 'worktree');
+  const runnerDir = path.join(tempRoot, 'runner');
+  const ciDir = path.dirname(fileURLToPath(import.meta.url));
+  const trustedAutoFixPath = path.join(ciDir, 'copilot-auto-fix.mjs');
+  const trustedGhExecPath = path.join(ciDir, 'lib', 'gh-exec.mjs');
+  const runnerAutoFixPath = path.join(runnerDir, 'copilot-auto-fix.mjs');
+  const runnerLibDir = path.join(runnerDir, 'lib');
+
+  fs.mkdirSync(runnerLibDir, { recursive: true });
+  fs.copyFileSync(trustedAutoFixPath, runnerAutoFixPath);
+  fs.copyFileSync(trustedGhExecPath, path.join(runnerLibDir, 'gh-exec.mjs'));
+
   const env = {
     ...process.env,
     PR_NUMBER: String(pr.number),
@@ -153,7 +185,18 @@ function runAutoFix(pr) {
     AE_COPILOT_AUTO_FIX_FORCE: '1',
     AE_COPILOT_AUTO_FIX: '1',
   };
-  execFileSync('node', ['scripts/ci/copilot-auto-fix.mjs'], { stdio: 'inherit', env });
+  try {
+    execFileSync('git', ['fetch', 'origin', pr.headRefName], { stdio: 'inherit' });
+    execFileSync('git', ['worktree', 'add', '--detach', worktreeDir, pr.headRefOid], { stdio: 'inherit' });
+    execFileSync('node', [runnerAutoFixPath], { stdio: 'inherit', env, cwd: worktreeDir });
+  } finally {
+    try {
+      execFileSync('git', ['worktree', 'remove', '--force', worktreeDir], { stdio: 'ignore' });
+    } catch {
+      // Ignore cleanup failure.
+    }
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
 }
 
 function dispatchGate(pr) {
@@ -220,8 +263,10 @@ async function processPr(number) {
   let finalReason = '';
   let finalState = null;
   let done = false;
+  let roundsExecuted = 0;
 
   for (let round = 1; round <= maxRounds; round += 1) {
+    roundsExecuted = round;
     const pr = fetchPrView(number);
     finalState = pr;
 
@@ -280,6 +325,7 @@ async function processPr(number) {
     }
     if (refreshedGate === 'success' && refreshedThreads.unresolvedCopilot === 0 && refreshed.mergeStateStatus !== 'BEHIND') {
       finalReason = 'checks healthy, waiting for required checks/merge queue';
+      done = true;
       break;
     }
 
@@ -303,13 +349,17 @@ async function processPr(number) {
     title: finalState?.title || '',
     status,
     reason: finalReason,
-    rounds: maxRounds,
+    rounds: roundsExecuted,
     actions,
     unresolvedCopilot: finalThreads.unresolvedCopilot,
     gateStatus: finalGate,
     mergeable: finalState?.mergeable || '',
     mergeState: finalState?.mergeStateStatus || '',
   };
+
+  if (status === 'skip') {
+    return result;
+  }
 
   if (!dryRun) {
     if (status === 'blocked') {
