@@ -35,7 +35,7 @@
   - Standalone execution support
 
 #### 💻 CLI Integration
-- **File**: [CLI-INTEGRATION-GUIDE.md](./CLI-INTEGRATION-GUIDE.md)
+- **File**: [CLI-COMMANDS-REFERENCE.md](../reference/CLI-COMMANDS-REFERENCE.md)
 - **Overview**: Command line integration and script execution
 - **Features**:
   - Direct execution for developers
@@ -138,7 +138,7 @@ ae-framework ui scaffold --input domain-model.json
   - スタンドアロン実行対応
 
 #### 💻 CLI統合
-- **ファイル**: [CLI-INTEGRATION-GUIDE.md](./CLI-INTEGRATION-GUIDE.md)
+- **ファイル**: [CLI-COMMANDS-REFERENCE.md](../reference/CLI-COMMANDS-REFERENCE.md)
 - **概要**: コマンドライン統合とスクリプト実行
 - **特徴**:
   - 開発者向け直接実行

@@ -444,7 +444,7 @@ it('rejects empty email', async () => {
 <a class="card">Details</a>
 
 // a11y — After: tabindex/role/aria を付与
-<a class="card" href="/details" role="link" tabindex="0" aria-label="Open details">Details</a>
+<a class="card" href="https://example.com/details" role="link" tabindex="0" aria-label="Open details">Details</a>
 ```
 
 ```
@@ -453,7 +453,7 @@ it('rejects empty email', async () => {
 
 // perf — After: preconnect/preload を活用
 <link rel="preconnect" href="https://cdn.example.com" crossorigin>
-<link rel="preload" as="image" href="/hero.jpg" imagesrcset="/hero@2x.jpg 2x" />
+<link rel="preload" as="image" href="https://cdn.example.com/hero.jpg" imagesrcset="https://cdn.example.com/hero@2x.jpg 2x" />
 ```
 
 ```

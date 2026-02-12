@@ -392,9 +392,9 @@ export class HybridIntentSystem {
 ## 📚 関連ドキュメント
 
 - [Claude Code 公式ドキュメント](https://docs.anthropic.com/en/docs/claude-code)
-- [ae-framework クイックスタートガイド](./QUICK-START-GUIDE.md)
-- [ae-framework 使い方ガイド](./USAGE.md)
-- [Claude Code ワークフロー](./CLAUDECODE-WORKFLOW.md)
+- [ae-framework クイックスタートガイド](../getting-started/QUICK-START-GUIDE.md)
+- [ae-framework 使い方ガイド](../guides/USAGE.md)
+- [Claude Code ワークフロー](../integrations/CLAUDECODE-WORKFLOW.md)
 
 ## 🤝 コミュニティ・サポート
 

@@ -534,13 +534,13 @@ requirements.mdファイルを対象として、
 ## 📚 関連ドキュメント
 
 - [ae-framework README](../README.md) - プロジェクト概要
-- [Claude Code Task Tool Integration](./CLAUDE-CODE-TASK-TOOL-INTEGRATION.md) - 技術統合詳細
-- [Phase 2: Natural Language Requirements](./PHASE-2-NATURAL-LANGUAGE-REQUIREMENTS.md)
-- [Phase 3: User Stories Creation](./PHASE-3-USER-STORIES-CREATION.md)
-- [Phase 4: Validation](./PHASE-4-VALIDATION.md)
-- [Phase 5: Domain Modeling](./PHASE-5-DOMAIN-MODELING.md)
-- [CLI Commands Reference](./CLI-COMMANDS-REFERENCE.md)
-- [TDD Framework Architecture](./TDD-FRAMEWORK-ARCHITECTURE.md)
+- [Claude Code Task Tool Integration](../integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md) - 技術統合詳細
+- [Phase 2: Natural Language Requirements](../phases/PHASE-2-NATURAL-LANGUAGE-REQUIREMENTS.md)
+- [Phase 3: User Stories Creation](../phases/PHASE-3-USER-STORIES-CREATION.md)
+- [Phase 4: Validation](../phases/PHASE-4-VALIDATION.md)
+- [Phase 5: Domain Modeling](../phases/PHASE-5-DOMAIN-MODELING.md)
+- [CLI Commands Reference](../reference/CLI-COMMANDS-REFERENCE.md)
+- [TDD Framework Architecture](../architecture/TDD-FRAMEWORK-ARCHITECTURE.md)
 
 ## 🤝 フィードバック
 

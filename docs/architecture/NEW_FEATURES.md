@@ -574,7 +574,7 @@ ae-slash help /intent
 
 ## 📚 詳細情報
 
-- [API リファレンス](./API.md)
-- [設定ガイド](./CONFIGURATION.md)
-- [コントリビューションガイド](../CONTRIBUTING.md)
+- [API リファレンス](../reference/API.md)
+- [設定ガイド](../getting-started/SETUP.md)
+- [コントリビューションガイド](../../CONTRIBUTING.md)
 - [Issue #11 Implementation Details](https://github.com/itdojp/ae-framework/issues/11)

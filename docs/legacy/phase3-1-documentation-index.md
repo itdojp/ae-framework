@@ -262,9 +262,9 @@ graph TB
 
 ### Project-Wide Documentation
 - [Overall Project README](../README.md)
-- [API Documentation](./API.md)
+- [API Documentation](../reference/API.md)
 - [Quick Start Guide](./QUICK_START.md)
-- [Setup Instructions](./SETUP.md)
+- [Setup Instructions](../getting-started/SETUP.md)
 
 ### Phase-Specific Documentation
 - **Phase 2**: Persona Management and Smart Installer systems
@@ -272,9 +272,9 @@ graph TB
 - **Phase 3.3**: (Upcoming) Performance Optimization
 
 ### Agent Documentation
-- [Agent Architecture Proposal](./agent-architecture-proposal.md)
+- [Agent Architecture Proposal](../proposals/agent-architecture-proposal.md)
 - [Code Generation Agent](./agents/code-generation-agent.md)
-- [Test Generation Guide](./test-generation-guide.md)
+- [Test Generation Guide](../guides/test-generation-guide.md)
 
 ---
 
