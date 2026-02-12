@@ -19,7 +19,7 @@
 | Property failed count | `failed >= 1` | `failed >= 3` | 失敗率が 10% を超えた場合も Warning。|
 | MBT violations | `violations >= 1` | `violations >= 3` | violations が 0 でない場合は詳細ログ確認を必須にする。|
 
-## 通知フロー案
+## 通知フロー（現行実装）
 1. `render-heavy-trend-summary.mjs` に閾値判定オプションを追加し、Markdown 出力内に :warning:/:rotating_light: を埋め込む。
 2. Warning 以上の項目が存在する場合は Slack Webhook（`ci-extended.yml` スケジュール実行に追加済み）でメッセージ送信。
 3. Critical 判定時は GitHub Issue（`flaky-test` ラベル）を自動作成し、関連ログ／アーティファクトへのリンクを添付。
@@ -41,18 +41,15 @@
   - [ ] Download artifacts and inspect mutation/property/MBT outputs
   - [ ] Update issue with root cause and resolution plan
   ```
-- 実装案: `ci-extended.yml` で `severity == 'critical'` の場合に `gh issue create` を呼び出す（`GITHUB_TOKEN` の権限を要確認）。
+- 実装: `ci-extended.yml` の `Create heavy trend issue` ステップで `severity == 'critical'` 時に `actions/github-script` から Issue を自動起票。
 
-1. `render-heavy-trend-summary.mjs` に閾値判定オプションを追加し、Markdown 出力内に :warning:/:rotating_light: を埋め込む。
-2. Warning 以上の項目が存在する場合は Slack Webhook（`nightly.yml` の monitor ジョブ通知を再利用）でメッセージ送信。
-3. Critical 判定時は GitHub Issue（`flaky-test` ラベル）を自動作成し、関連ログ／アーティファクトへのリンクを添付。
-4. PR 上で手動 rerun を行う際も同スクリプトを実行し、Step Summary に判定結果を表示する。
-
-## 実装ステップ
-1. `render-heavy-trend-summary.mjs` を拡張し、`--warn-mutation-score`, `--critical-mutation-score` 等の CLI オプションで閾値を受け取り、Markdown 内にバッジを表示する。
-2. CLI から JSON 形式の判定結果を吐き出す (`--json-output`)、Slack ワークフローで利用できるようにする。
-3. `ci-extended` のスケジュール実行後に判定スクリプトを実行し、Warning 以上の場合は Slack 通知ステップを追加する。
-4. Critical の場合は `gh issue create` を用いた自動起票か、既存 `nightly.yml` の monitor ジョブに統合する。
+## 実装状況
+- [x] `render-heavy-trend-summary.mjs` への閾値オプション追加
+- [x] JSON 形式の判定結果出力（`--json-output`）
+- [x] `ci-extended` スケジュール実行への Slack 通知ステップ追加
+- [x] Critical 判定時の自動 Issue 起票（`ci-extended.yml`）
+- [x] `reports/heavy-test-trends-history/*.json` の履歴アーカイブと `summary.md`/`summary.json` の定期生成
+- [ ] 実測データに基づく閾値リファイン（2〜3週間運用後）
 
 ## 運用上の注意
 - 閾値は初期案。実データに基づき 2〜3 週間運用した後に見直す。
@@ -63,5 +60,6 @@
 ## TODO
 - [x] `render-heavy-trend-summary.mjs` への閾値オプション追加
 - [x] Slack Webhook 通知ステップの実装（`ci-extended.yml` スケジュール実行に追加済み）
-- [x] 自動 Issue 起票フローの設計（Critical 判定時）
-- [ ] 閾値リファインのためのメトリクス実測データ収集
+- [x] 自動 Issue 起票フローの実装（Critical 判定時）
+- [x] 閾値リファイン向けの実測データ収集基盤（履歴アーカイブ）整備
+- [ ] 閾値リファイン実施（実測データに基づく見直し）
