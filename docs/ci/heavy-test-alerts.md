@@ -49,17 +49,22 @@
 - [x] `ci-extended` スケジュール実行への Slack 通知ステップ追加
 - [x] Critical 判定時の自動 Issue 起票（`ci-extended.yml`）
 - [x] `reports/heavy-test-trends-history/*.json` の履歴アーカイブと `summary.md`/`summary.json` の定期生成
-- [ ] 実測データに基づく閾値リファイン（2〜3週間運用後）
+- [x] 履歴アーティファクト保持期間を 30 日に拡張（2〜3週間分の分析前提を満たす）
+- [x] 閾値見直し補助スクリプトを追加（`scripts/pipelines/recommend-heavy-trend-thresholds.mjs`）
+- [ ] 実測データに基づく閾値リファイン（`min-snapshots=14` 以上で実施）
 
 ## 運用上の注意
 - 閾値は初期案。実データに基づき 2〜3 週間運用した後に見直す。
 - false positive を避けるため、`Δ` 判定は 2 回連続で閾値を下回った場合にエスカレーションするモードも検討する。
 - Slack 通知は深夜帯（JST）に偏るため、通知チャンネルのサイレンス設定を確認する。
 - Issue 起票時には関連する `reports/heavy-test-trends-history/<timestamp>.json` と `reports/heavy-test-trends-history/summary.md`、該当 run の URL を必ず添付する。
+- 閾値見直し時は次を実行し、`Status: ready` を確認してから workflow 閾値へ反映する。
+  - `node scripts/pipelines/recommend-heavy-trend-thresholds.mjs --history-dir reports/heavy-test-trends-history --min-snapshots 14`
 
 ## TODO
 - [x] `render-heavy-trend-summary.mjs` への閾値オプション追加
 - [x] Slack Webhook 通知ステップの実装（`ci-extended.yml` スケジュール実行に追加済み）
 - [x] 自動 Issue 起票フローの実装（Critical 判定時）
 - [x] 閾値リファイン向けの実測データ収集基盤（履歴アーカイブ）整備
-- [ ] 閾値リファイン実施（実測データに基づく見直し）
+- [x] 閾値見直し補助レポートの自動生成（`threshold-recommendation.md/json`）
+- [ ] 閾値リファイン実施（`threshold-recommendation` を根拠に workflow へ反映）

@@ -375,6 +375,21 @@ jobs:
           severity=$(jq -r '.highestSeverity' reports/heavy-test-trends-history/summary.json)
           printf '%s\n' "severity=${severity}" >> "$GITHUB_OUTPUT"
 
+      - name: Recommend heavy test thresholds
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' && (github.event_name == 'schedule' || inputs.trigger == 'schedule') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/pipelines/recommend-heavy-trend-thresholds.mjs \
+            --history-dir reports/heavy-test-trends-history \
+            --markdown-output reports/heavy-test-trends-history/threshold-recommendation.md \
+            --json-output reports/heavy-test-trends-history/threshold-recommendation.json \
+            --min-snapshots 14
+          if [ -f reports/heavy-test-trends-history/threshold-recommendation.md ]; then
+            printf '\n' >> "$GITHUB_STEP_SUMMARY"
+            cat reports/heavy-test-trends-history/threshold-recommendation.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Upload heavy test trend report
         if: ${{ always() && steps.flags.outputs.should_run == 'true' && github.event_name != 'pull_request' && inputs.trigger != 'pull_request' }}
         uses: actions/upload-artifact@v4
@@ -391,7 +406,7 @@ jobs:
           name: heavy-test-trends-history
           path: reports/heavy-test-trends-history
           if-no-files-found: ignore
-          retention-days: 14
+          retention-days: 30
 
       - name: Notify Slack (heavy trend alert)
         if: ${{ always() && steps.flags.outputs.should_run == 'true' && (github.event_name == 'schedule' || inputs.trigger == 'schedule') && steps.heavy-summary.outputs.severity != 'ok' && env.SLACK_WEBHOOK_URL != '' }}
