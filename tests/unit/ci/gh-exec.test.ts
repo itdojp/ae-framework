@@ -5,6 +5,7 @@ const baseEnv = {
   AE_GH_RETRY_MAX_ATTEMPTS: process.env.AE_GH_RETRY_MAX_ATTEMPTS,
   AE_GH_RETRY_INITIAL_DELAY_MS: process.env.AE_GH_RETRY_INITIAL_DELAY_MS,
   AE_GH_RETRY_MAX_DELAY_MS: process.env.AE_GH_RETRY_MAX_DELAY_MS,
+  AE_GH_THROTTLE_MS: process.env.AE_GH_THROTTLE_MS,
 };
 
 const resetEnv = () => {

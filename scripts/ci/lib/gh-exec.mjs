@@ -3,7 +3,8 @@ import { execFileSync } from 'node:child_process';
 const DEFAULT_MAX_ATTEMPTS = 8;
 const DEFAULT_INITIAL_DELAY_MS = 750;
 const DEFAULT_MAX_DELAY_MS = 60_000;
-const DEFAULT_THROTTLE_MS = 0;
+// Add a small default spacing between gh calls to reduce secondary rate-limit bursts.
+const DEFAULT_THROTTLE_MS = 250;
 
 let lastGhInvocationAtMs = 0;
 
