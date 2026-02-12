@@ -82,6 +82,9 @@ Copilot レビューのインラインコメントに含まれる ```` ```sugges
 - review comment の `commit_id` が `PR_HEAD_SHA` と一致しない
 - `AE_COPILOT_AUTO_FIX_SCOPE=docs` で docs 以外のファイルが含まれる
 
+運用補足:
+- `AE_COPILOT_AUTO_FIX_FORCE=1` を指定すると、`GITHUB_ACTOR` が Copilot アクターでなくても適用処理を実行できます（Codex Autopilot Lane などの自動オーケストレーション用途）。
+
 また、ファイル書き込みは repo 外や symlink を拒否します（`realpath` + `lstat`）。
 
 ## 5. 対応範囲（suggestion の扱い）

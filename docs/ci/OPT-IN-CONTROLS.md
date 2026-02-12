@@ -39,6 +39,7 @@ PRやIssueで **必要な検証だけを opt-in で起動** し、CIコストと
 | `coverage:<pct>` | coverage閾値上書き | `coverage-check.yml` | `/coverage 75` 等で付与 |
 | `pr-summary:digest` | PR summary を簡潔化 | `pr-ci-status-comment.yml` | `/pr-digest` で付与 |
 | `pr-summary:detailed` | PR summary を詳細化 | `pr-ci-status-comment.yml` | `/pr-detailed` で付与 |
+| `autopilot:on` | Codex Autopilot Lane 対象化 | `codex-autopilot-lane.yml` | touchless merge の opt-in |
 
 補足: PR の自動化（auto-fix / auto-merge）は、ラベルではなく **Repository Variables** でプロジェクト単位に有効化できます。
 
@@ -74,6 +75,14 @@ PR self-heal を使う場合は次も設定できます（一次情報: `.github
 | `AE_SELF_HEAL_MAX_PRS` | schedule実行時に処理するPR数上限 | `20` | `docs/ci/pr-automation.md` |
 | `AE_SELF_HEAL_ROUND_WAIT_SECONDS` | 復旧ラウンド間の待機秒 | `60` | `docs/ci/pr-automation.md` |
 
+Codex Autopilot Lane を使う場合:
+
+| 変数 | 役割 | 既定 | 詳細 |
+| --- | --- | --- | --- |
+| `AE_CODEX_AUTOPILOT_ENABLED` | autopilot lane 有効化 | 未設定（OFF） | `docs/ci/codex-autopilot-lane.md` |
+| `AE_AUTOPILOT_MAX_ROUNDS` | 1PRあたりの自律ループ上限 | `3` | `docs/ci/codex-autopilot-lane.md` |
+| `AE_AUTOPILOT_ROUND_WAIT_SECONDS` | ループ間待機秒 | `8` | `docs/ci/codex-autopilot-lane.md` |
+| `AE_AUTOPILOT_DRY_RUN` | 副作用なし検証 | `false` | `docs/ci/codex-autopilot-lane.md` |
 関連:
 - PR自動化の全体像: `docs/ci/pr-automation.md`
 

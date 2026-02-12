@@ -16,7 +16,8 @@ It is controlled per repository via GitHub Repository Variables.
 Primary sources:
 - Workflows: `.github/workflows/copilot-review-gate.yml`, `.github/workflows/copilot-auto-fix.yml`, `.github/workflows/pr-ci-status-comment.yml`
 - Workflows (self-heal): `.github/workflows/pr-self-heal.yml`
-- Scripts: `scripts/ci/copilot-auto-fix.mjs`, `scripts/ci/auto-merge-enabler.mjs`, `scripts/ci/auto-merge-eligible.mjs`, `scripts/ci/pr-self-heal.mjs`, `scripts/ci/lib/automation-config.mjs`
+- Workflow (autopilot lane): `.github/workflows/codex-autopilot-lane.yml`
+- Scripts: `scripts/ci/copilot-auto-fix.mjs`, `scripts/ci/auto-merge-enabler.mjs`, `scripts/ci/auto-merge-eligible.mjs`, `scripts/ci/pr-self-heal.mjs`, `scripts/ci/codex-autopilot-lane.mjs`, `scripts/ci/lib/automation-config.mjs`
 
 ---
 
@@ -178,6 +179,15 @@ auto-merge（ラベルopt-in）:
   - `AE_SELF_HEAL_MAX_PRS`（既定 `20`）
   - `AE_SELF_HEAL_ROUND_WAIT_SECONDS`（既定 `60`）
 
+### 5.6 Codex Autopilot Lane（touchless merge の opt-in）
+
+- `Codex Autopilot Lane`（`.github/workflows/codex-autopilot-lane.yml`）は `autopilot:on` ラベル付きPRで次を自動化します。
+  - update-branch dispatch
+  - copilot auto-fix（force mode）
+  - review gate dispatch
+  - auto-merge 有効化試行
+- 収束しない場合は `status:blocked` を付与して停止します。
+- 詳細: `docs/ci/codex-autopilot-lane.md`
 補足:
 - CI で調整する場合、これらは Repository Variables として設定し、ワークフロー側で `env:` に渡します（本リポジトリの `copilot-auto-fix.yml` / `pr-ci-status-comment.yml` は `vars.*` を参照）。
 
