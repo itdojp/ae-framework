@@ -66,14 +66,14 @@ if detect_engine; then
     exit 0
   fi
 
-  printf "%s\n" "Container execution failed (exit=$rc)." >&2
-  printf "%s\n" "If the image pull is denied (e.g. ghcr 403), set ACTIONLINT_BIN or install local 'actionlint'." >&2
-  printf "%s\n" "Example: ACTIONLINT_BIN=/usr/local/bin/actionlint pnpm run lint:actions" >&2
-  if command -v actionlint >/dev/null 2>&1; then
-    printf "%s\n" "Fallback: running local actionlint from PATH." >&2
-    run_local_actionlint "actionlint"
-    exit 0
+  # Docker/Podman の典型的なコンテナ実行エラー時のみ補足メッセージを表示する。
+  # それ以外（例: actionlint のlint失敗で exit=1）は、そのまま返して誤解を避ける。
+  if [[ "$rc" -eq 125 || "$rc" -eq 126 || "$rc" -eq 127 ]]; then
+    printf "%s\n" "Container execution failed (exit=$rc)." >&2
+    printf "%s\n" "If the image pull is denied (e.g. ghcr 403), set ACTIONLINT_BIN or install local 'actionlint'." >&2
+    printf "%s\n" "Example: ACTIONLINT_BIN=/usr/local/bin/actionlint pnpm run lint:actions" >&2
   fi
+
   exit "$rc"
 else
   printf "%s\n" "Podman/Docker が見つかりません。コンテナ版 actionlint の利用を推奨します。" >&2
