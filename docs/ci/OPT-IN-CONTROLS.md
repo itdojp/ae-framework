@@ -64,6 +64,16 @@ GitHub API の 429 / secondary rate limit が出る場合は、以下の Reposit
 | `AE_GH_RETRY_MAX_DELAY_MS` | retry最大待ち（ms） | `60000` | `docs/ci/pr-automation.md` |
 | `AE_GH_RETRY_DEBUG` | retryログ出力（`1`） | 未設定 | `docs/ci/pr-automation.md` |
 
+PR self-heal を使う場合は次も設定できます（一次情報: `.github/workflows/pr-self-heal.yml`, `scripts/ci/pr-self-heal.mjs`）。
+
+| 変数 | 役割 | 既定 | 詳細 |
+| --- | --- | --- | --- |
+| `AE_SELF_HEAL_ENABLED` | self-heal workflow 有効化 | 未設定（OFF） | `docs/ci/pr-automation.md` |
+| `AE_SELF_HEAL_MAX_ROUNDS` | 1PRあたりの復旧ラウンド上限 | `3` | `docs/ci/pr-automation.md` |
+| `AE_SELF_HEAL_MAX_AGE_MINUTES` | rerun対象にする失敗チェックの最大経過分 | `180` | `docs/ci/pr-automation.md` |
+| `AE_SELF_HEAL_MAX_PRS` | schedule実行時に処理するPR数上限 | `20` | `docs/ci/pr-automation.md` |
+| `AE_SELF_HEAL_ROUND_WAIT_SECONDS` | 復旧ラウンド間の待機秒 | `60` | `docs/ci/pr-automation.md` |
+
 関連:
 - PR自動化の全体像: `docs/ci/pr-automation.md`
 
