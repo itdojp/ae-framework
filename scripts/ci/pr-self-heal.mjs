@@ -6,14 +6,15 @@ const marker = '<!-- AE-SELF-HEAL v1 -->';
 const FAILURE_CONCLUSIONS = new Set(['FAILURE', 'CANCELLED', 'TIMED_OUT', 'ACTION_REQUIRED', 'STALE']);
 
 const repo = String(process.env.GITHUB_REPOSITORY || '').trim();
+const eventName = String(process.env.GITHUB_EVENT_NAME || '').trim();
 
 const maxRounds = readIntEnv('AE_SELF_HEAL_MAX_ROUNDS', 3, 1);
 const maxAgeMinutes = readIntEnv('AE_SELF_HEAL_MAX_AGE_MINUTES', 180, 1);
 const maxPrs = readIntEnv('AE_SELF_HEAL_MAX_PRS', 20, 1);
-const roundWaitSeconds = readIntEnv('AE_SELF_HEAL_ROUND_WAIT_SECONDS', 8, 0);
+const roundWaitSeconds = readIntEnv('AE_SELF_HEAL_ROUND_WAIT_SECONDS', 60, 0);
 const dryRun = toBool(process.env.AE_SELF_HEAL_DRY_RUN) || toBool(process.env.SELF_HEAL_DRY_RUN);
 const targetPr = toPositiveInt(process.env.PR_NUMBER || '');
-const workflowRunPr = toPositiveInt(process.env.WORKFLOW_RUN_PR_NUMBER || '');
+const workflowRunPr = parseFirstPositiveInt(process.env.WORKFLOW_RUN_PR_NUMBERS || process.env.WORKFLOW_RUN_PR_NUMBER || '');
 
 function readIntEnv(name, fallback, min) {
   const parsed = Number.parseInt(String(process.env[name] || '').trim(), 10);
@@ -26,6 +27,14 @@ function toPositiveInt(raw) {
   const parsed = Number.parseInt(String(raw || '').trim(), 10);
   if (!Number.isFinite(parsed) || parsed <= 0) return null;
   return parsed;
+}
+
+function parseFirstPositiveInt(raw) {
+  const parts = String(raw || '')
+    .split(',')
+    .map((part) => toPositiveInt(part))
+    .filter(Boolean);
+  return parts.length > 0 ? parts[0] : null;
 }
 
 function toBool(value) {
@@ -107,16 +116,24 @@ function summarizeCheckRollup(rollup, { nowMs, maxAgeMs, rerunBlacklist }) {
     }
 
     if (item.__typename === 'StatusContext') {
+      const key = `status-context::${item.context || ''}`;
+      const stateSet = keyStates.get(key) || new Set();
+
       if (item.state === 'SUCCESS') {
         counts.success += 1;
+        stateSet.add('success');
       } else if (item.state === 'PENDING') {
         counts.pending += 1;
+        stateSet.add('pending');
       } else if (item.state === 'FAILURE' || item.state === 'ERROR') {
         counts.failure += 1;
+        stateSet.add('failure');
         failureNames.push(item.context || 'status-context');
       } else {
         counts.neutral += 1;
+        stateSet.add('neutral');
       }
+      keyStates.set(key, stateSet);
     }
   }
 
@@ -311,8 +328,11 @@ async function processPr(prNumber) {
   const actionsTaken = [];
   let finalState = null;
   let finalReason = '';
+  let roundsExecuted = 0;
+  let lastRoundExecutedActions = false;
 
   for (let round = 1; round <= maxRounds; round += 1) {
+    roundsExecuted = round;
     const view = fetchPrView(prNumber);
     const state = classifyPr(view, {
       nowMs: Date.now(),
@@ -332,6 +352,7 @@ async function processPr(prNumber) {
       break;
     }
 
+    lastRoundExecutedActions = true;
     for (const action of plan.actions) {
       if (action.type === 'update-branch') {
         actionsTaken.push(`round${round}: update-branch dispatch`);
@@ -360,8 +381,16 @@ async function processPr(prNumber) {
   }
 
   const finalPlan = planActions(finalState);
-  const finalStatus = finalPlan.status === 'healthy' ? 'resolved' : finalPlan.status;
-  const reason = finalReason || finalPlan.reason;
+  let finalStatus = finalPlan.status === 'healthy' ? 'resolved' : finalPlan.status;
+  let reason = finalReason || finalPlan.reason;
+  if (finalStatus === 'actionable') {
+    finalStatus = 'blocked';
+    if (!reason) {
+      reason = lastRoundExecutedActions
+        ? 'max rounds reached with pending actions; follow-up run required'
+        : 'actionable state remained after max rounds';
+    }
+  }
 
   if (!dryRun) {
     if (finalStatus === 'resolved' || finalStatus === 'skip') {
@@ -376,7 +405,7 @@ async function processPr(prNumber) {
     title: finalState.title,
     status: finalStatus,
     reason,
-    rounds: maxRounds,
+    rounds: roundsExecuted,
     mergeable: finalState.mergeable,
     mergeState: finalState.mergeState,
     checks: finalState.checkSummary.counts,
@@ -422,6 +451,9 @@ async function main() {
     targets.push(targetPr);
   } else if (workflowRunPr) {
     targets.push(workflowRunPr);
+  } else if (eventName === 'workflow_run') {
+    console.log('[pr-self-heal] workflow_run has no associated pull request; skipping global scan.');
+    return;
   } else {
     targets.push(...listOpenPrNumbers(maxPrs));
   }

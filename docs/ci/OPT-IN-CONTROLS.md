@@ -73,7 +73,7 @@ PR self-heal を使う場合は次も設定できます（一次情報: `.github
 | `AE_SELF_HEAL_MAX_ROUNDS` | 1PRあたりの復旧ラウンド上限 | `3` | `docs/ci/pr-automation.md` |
 | `AE_SELF_HEAL_MAX_AGE_MINUTES` | rerun対象にする失敗チェックの最大経過分 | `180` | `docs/ci/pr-automation.md` |
 | `AE_SELF_HEAL_MAX_PRS` | schedule実行時に処理するPR数上限 | `20` | `docs/ci/pr-automation.md` |
-| `AE_SELF_HEAL_ROUND_WAIT_SECONDS` | 復旧ラウンド間の待機秒 | `8` | `docs/ci/pr-automation.md` |
+| `AE_SELF_HEAL_ROUND_WAIT_SECONDS` | 復旧ラウンド間の待機秒 | `60` | `docs/ci/pr-automation.md` |
 
 Codex Autopilot Lane を使う場合:
 
