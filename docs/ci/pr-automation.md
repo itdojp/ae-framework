@@ -15,7 +15,8 @@ It is controlled per repository via GitHub Repository Variables.
 
 Primary sources:
 - Workflows: `.github/workflows/copilot-review-gate.yml`, `.github/workflows/copilot-auto-fix.yml`, `.github/workflows/pr-ci-status-comment.yml`
-- Scripts: `scripts/ci/copilot-auto-fix.mjs`, `scripts/ci/auto-merge-enabler.mjs`, `scripts/ci/auto-merge-eligible.mjs`, `scripts/ci/lib/automation-config.mjs`
+- Workflows (self-heal): `.github/workflows/pr-self-heal.yml`
+- Scripts: `scripts/ci/copilot-auto-fix.mjs`, `scripts/ci/auto-merge-enabler.mjs`, `scripts/ci/auto-merge-eligible.mjs`, `scripts/ci/pr-self-heal.mjs`, `scripts/ci/lib/automation-config.mjs`
 
 ---
 
@@ -163,6 +164,18 @@ auto-merge（ラベルopt-in）:
 - `AE_GH_RETRY_NO_SLEEP=1`（テスト用途: sleep無効）
 
 それでも失敗する場合は、Actions の rerun（failedのみ）で再試行してください。
+
+### 5.5 Self-Heal（自動復旧）
+
+- `PR Self-Heal`（`.github/workflows/pr-self-heal.yml`）を有効化すると、次を自動復旧します。
+  - failed checks の `gh run rerun --failed`
+  - behind PR の `PR Maintenance/update-branch` dispatch
+  - 収束しない PR の `status:blocked` ラベル付与と要約コメント
+- 有効化変数:
+  - `AE_SELF_HEAL_ENABLED=1`
+  - `AE_SELF_HEAL_MAX_ROUNDS`（既定 `3`）
+  - `AE_SELF_HEAL_MAX_AGE_MINUTES`（既定 `180`）
+  - `AE_SELF_HEAL_MAX_PRS`（既定 `20`）
 
 補足:
 - CI で調整する場合、これらは Repository Variables として設定し、ワークフロー側で `env:` に渡します（本リポジトリの `copilot-auto-fix.yml` / `pr-ci-status-comment.yml` は `vars.*` を参照）。
