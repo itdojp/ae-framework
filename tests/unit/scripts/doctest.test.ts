@@ -8,6 +8,7 @@ import { DocumentationTester } from '../../../scripts/doctest.ts';
 describe('DocumentationTester', () => {
   it('validates code blocks in ESM runtime without require errors', async () => {
     const fixtureDir = mkdtempSync(join(tmpdir(), 'doctest-fixture-'));
+    const runnerTempDir = join(process.cwd(), 'tmp', 'doctest');
 
     try {
       writeFileSync(join(fixtureDir, 'linked.md'), '# linked');
@@ -45,6 +46,7 @@ describe('DocumentationTester', () => {
       ).toBe(false);
     } finally {
       rmSync(fixtureDir, { recursive: true, force: true });
+      rmSync(runnerTempDir, { recursive: true, force: true });
     }
   });
 });

@@ -397,7 +397,11 @@ class DocumentationTester {
   }
 
   private async deleteFile(path: string): Promise<void> {
-    rmSync(path, { force: true });
+    try {
+      rmSync(path, { force: true });
+    } catch {
+      // Best-effort cleanup: keep validation result independent from temp file lock races.
+    }
   }
 
   private async executeCommand(command: string[]): Promise<{
