@@ -83,6 +83,7 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
  - Copilot Auto Fix: `ci/copilot-auto-fix.md`（suggestion自動適用）
  - PR automation runbook: `ci/pr-automation.md`（Copilot→auto-fix→auto-merge）
  - Auto Merge: `ci/auto-merge.md`（auto-merge自動有効化）
+ - Automation Profiles: `ci/automation-profiles.md`（自動化設定の一括プロファイル）
 
 For the complete navigation with highlights, see the Japanese section below (same links).
 

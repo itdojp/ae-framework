@@ -11,6 +11,7 @@
   - Copilot アカウント（`github-copilot` / `github-copilot[bot]`）のレビューが存在するか
   - Copilot が関与したスレッド（コメントを含む）がすべて `isResolved=true` であるか
 - 未満の条件の場合、チェックを失敗させます（Required化でマージを停止）
+- `COPILOT_REVIEW_WAIT_MINUTES` / `COPILOT_REVIEW_MAX_ATTEMPTS` は `scripts/ci/lib/automation-config.mjs` で解決（個別変数 > `AE_AUTOMATION_PROFILE` > 既定値）
 
 関連:
 - Copilot suggestion の自動適用（auto-fix）: `docs/ci/copilot-auto-fix.md`
@@ -33,6 +34,7 @@
 
 ### 補足: wait/retry の調整（レビュー到着待ち）
 - workflow 側 env の `COPILOT_REVIEW_WAIT_MINUTES` / `COPILOT_REVIEW_MAX_ATTEMPTS` を調整できます（既定: 5分 x 3回）。
+- `AE_AUTOMATION_PROFILE` による一括設定も可能です（詳細: `docs/ci/automation-profiles.md`）。
 
 ## 例外運用
 - Copilot が利用できない環境では、Requiredチェックに含めない運用、または `COPILOT_ACTORS` を空にして無効化できます（workflow の `env` を編集）。

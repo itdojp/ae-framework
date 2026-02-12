@@ -11,6 +11,7 @@ const prHeadSha = process.env.PR_HEAD_SHA ? String(process.env.PR_HEAD_SHA).trim
 const scope = String(process.env.AE_COPILOT_AUTO_FIX_SCOPE || 'docs').toLowerCase();
 const optInLabel = String(process.env.AE_COPILOT_AUTO_FIX_LABEL || '').trim();
 const actor = String(process.env.GITHUB_ACTOR || '').trim();
+const autoFixEnabled = String(process.env.AE_COPILOT_AUTO_FIX || '').trim() === '1';
 const copilotActors = (process.env.COPILOT_ACTORS || 'github-copilot,github-copilot[bot]')
   .split(',')
   .map((s) => s.trim())
@@ -30,6 +31,11 @@ if (!/^[1-9][0-9]*$/.test(prNumberRaw)) {
   process.exit(1);
 }
 const prNumber = Number(prNumberRaw);
+
+if (!autoFixEnabled) {
+  console.log('[copilot-auto-fix] Skip: AE_COPILOT_AUTO_FIX is disabled after config resolution.');
+  process.exit(0);
+}
 
 if (!copilotActorSet.has(actor.toLowerCase())) {
   console.log(`[copilot-auto-fix] Skip: actor ${actor || '(empty)'} is not in COPILOT_ACTORS.`);

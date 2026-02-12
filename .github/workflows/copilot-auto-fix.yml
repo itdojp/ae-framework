@@ -20,7 +20,6 @@ jobs:
   auto-fix:
     if: >-
       github.event.pull_request.head.repo.fork == false
-      && vars.AE_COPILOT_AUTO_FIX == '1'
       && contains(fromJSON('["copilot-pull-request-reviewer","github-copilot","github-copilot[bot]","copilot","copilot[bot]","Copilot"]'), github.actor)
     runs-on: ubuntu-latest
     steps:
@@ -32,17 +31,29 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: "20"
+      - name: Resolve automation config
+        env:
+          AE_AUTOMATION_PROFILE: ${{ vars.AE_AUTOMATION_PROFILE || '' }}
+          AE_COPILOT_AUTO_FIX: ${{ vars.AE_COPILOT_AUTO_FIX || '' }}
+          AE_COPILOT_AUTO_FIX_SCOPE: ${{ vars.AE_COPILOT_AUTO_FIX_SCOPE || '' }}
+          AE_COPILOT_AUTO_FIX_LABEL: ${{ vars.AE_COPILOT_AUTO_FIX_LABEL || '' }}
+          AE_AUTO_MERGE: ${{ vars.AE_AUTO_MERGE || '' }}
+          AE_AUTO_MERGE_MODE: ${{ vars.AE_AUTO_MERGE_MODE || '' }}
+          AE_AUTO_MERGE_LABEL: ${{ vars.AE_AUTO_MERGE_LABEL || '' }}
+          AE_GH_THROTTLE_MS: ${{ vars.AE_GH_THROTTLE_MS || '' }}
+          AE_GH_RETRY_MAX_ATTEMPTS: ${{ vars.AE_GH_RETRY_MAX_ATTEMPTS || '' }}
+          AE_GH_RETRY_INITIAL_DELAY_MS: ${{ vars.AE_GH_RETRY_INITIAL_DELAY_MS || '' }}
+          AE_GH_RETRY_MAX_DELAY_MS: ${{ vars.AE_GH_RETRY_MAX_DELAY_MS || '' }}
+          AE_GH_RETRY_DEBUG: ${{ vars.AE_GH_RETRY_DEBUG || '' }}
+          COPILOT_REVIEW_WAIT_MINUTES: ${{ vars.COPILOT_REVIEW_WAIT_MINUTES || '' }}
+          COPILOT_REVIEW_MAX_ATTEMPTS: ${{ vars.COPILOT_REVIEW_MAX_ATTEMPTS || '' }}
+        run: |
+          node scripts/ci/lib/automation-config.mjs --format github-env >> "$GITHUB_ENV"
+          node scripts/ci/lib/automation-config.mjs --format summary >> "$GITHUB_STEP_SUMMARY"
       - name: Apply Copilot suggestions
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          AE_COPILOT_AUTO_FIX_SCOPE: ${{ vars.AE_COPILOT_AUTO_FIX_SCOPE || 'docs' }}
-          AE_COPILOT_AUTO_FIX_LABEL: ${{ vars.AE_COPILOT_AUTO_FIX_LABEL || '' }}
-          AE_GH_THROTTLE_MS: ${{ vars.AE_GH_THROTTLE_MS || '250' }}
-          AE_GH_RETRY_MAX_ATTEMPTS: ${{ vars.AE_GH_RETRY_MAX_ATTEMPTS || '' }}
-          AE_GH_RETRY_INITIAL_DELAY_MS: ${{ vars.AE_GH_RETRY_INITIAL_DELAY_MS || '' }}
-          AE_GH_RETRY_MAX_DELAY_MS: ${{ vars.AE_GH_RETRY_MAX_DELAY_MS || '' }}
-          AE_GH_RETRY_DEBUG: ${{ vars.AE_GH_RETRY_DEBUG || '' }}
         run: node scripts/ci/copilot-auto-fix.mjs

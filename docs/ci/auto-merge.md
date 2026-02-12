@@ -10,7 +10,7 @@
 - It is controlled by GitHub Repository Variables (`AE_AUTO_MERGE`, `AE_AUTO_MERGE_MODE`, `AE_AUTO_MERGE_LABEL`).
 - Eligibility is evaluated against branch protection (required checks + required reviews) and PR state.
 
-Primary sources: `.github/workflows/pr-ci-status-comment.yml`, `scripts/ci/auto-merge-enabler.mjs`, `scripts/ci/auto-merge-eligible.mjs`.
+Primary sources: `.github/workflows/pr-ci-status-comment.yml`, `scripts/ci/auto-merge-enabler.mjs`, `scripts/ci/auto-merge-eligible.mjs`, `scripts/ci/lib/automation-config.mjs`.
 
 ---
 
@@ -31,6 +31,10 @@ PR の状態が「マージ可能」かつ「Required checks/レビュー条件�
 ## 2. 有効化（プロジェクト単位）
 
 本機能は **リポジトリ毎**に GitHub Repository Variables で制御します。
+
+補足:
+- `AE_AUTOMATION_PROFILE` を設定すると、auto-merge 関連の既定値も自動解決されます（個別変数が優先）。
+- 詳細: `docs/ci/automation-profiles.md`
 
 ### 2.1 必須（ON/OFF）
 - `AE_AUTO_MERGE=1` を設定すると有効化します。

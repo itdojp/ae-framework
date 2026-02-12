@@ -10,7 +10,7 @@
 - Can be enabled per repository with variables (`AE_COPILOT_AUTO_FIX`, `AE_COPILOT_AUTO_FIX_SCOPE`, `AE_COPILOT_AUTO_FIX_LABEL`).
 - In `docs` scope mode, the entire auto-fix is skipped if the PR contains non-doc changes (fail-safe).
 
-Primary sources: `.github/workflows/copilot-auto-fix.yml`, `scripts/ci/copilot-auto-fix.mjs`.
+Primary sources: `.github/workflows/copilot-auto-fix.yml`, `scripts/ci/copilot-auto-fix.mjs`, `scripts/ci/lib/automation-config.mjs`.
 
 ---
 
@@ -30,6 +30,10 @@ Copilot レビューのインラインコメントに含まれる ```` ```sugges
 ## 2. 有効化（プロジェクト単位）
 
 本機能は **リポジトリ毎**に GitHub Repository Variables で制御します。
+
+補足:
+- `AE_AUTOMATION_PROFILE` を設定すると、auto-fix 関連の既定値も自動解決されます（個別変数が優先）。
+- 詳細: `docs/ci/automation-profiles.md`
 
 ### 2.1 必須（ON/OFF）
 - `AE_COPILOT_AUTO_FIX=1` を設定すると有効化します。

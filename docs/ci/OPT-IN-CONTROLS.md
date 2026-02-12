@@ -44,12 +44,15 @@ PRやIssueで **必要な検証だけを opt-in で起動** し、CIコストと
 
 | 変数 | 役割 | 既定 | 詳細 |
 | --- | --- | --- | --- |
+| `AE_AUTOMATION_PROFILE` | PR自動化の一括プロファイル（`conservative` / `balanced` / `aggressive`） | 未設定（無効） | `docs/ci/automation-profiles.md` |
 | `AE_COPILOT_AUTO_FIX` | Copilot suggestion 自動適用（ON/OFF） | 未設定（OFF） | `docs/ci/copilot-auto-fix.md` |
 | `AE_COPILOT_AUTO_FIX_SCOPE` | 対象スコープ（`docs` / `all`） | `docs` | `docs/ci/copilot-auto-fix.md` |
 | `AE_COPILOT_AUTO_FIX_LABEL` | ラベルopt-in（任意） | 未設定 | `docs/ci/copilot-auto-fix.md` |
 | `AE_AUTO_MERGE` | auto-merge 自動有効化（ON/OFF） | 未設定（OFF） | `docs/ci/auto-merge.md` |
 | `AE_AUTO_MERGE_MODE` | 対象方式（`all` / `label`） | `all` | `docs/ci/auto-merge.md` |
 | `AE_AUTO_MERGE_LABEL` | opt-in ラベル名（`label` モード時） | 未設定 | `docs/ci/auto-merge.md` |
+
+補足: 個別変数は `AE_AUTOMATION_PROFILE` より優先されます。
 
 GitHub API の 429 / secondary rate limit が出る場合は、以下の Repository Variables で緩和できます（一次情報: `scripts/ci/lib/gh-exec.mjs`）。
 
