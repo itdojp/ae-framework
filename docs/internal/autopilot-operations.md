@@ -4,6 +4,10 @@
 watcher / ブリッジ / Autopilot を安全に停止・再開するための運用手順をまとめる。
 単一 CodeX 運用時の干渉回避を目的とする。
 
+補足:
+- GitHub Actions 側の opt-in 実装として `Codex Autopilot Lane`（`.github/workflows/codex-autopilot-lane.yml`）を追加。
+- 運用の主眼は同じ（停止条件の明確化と fail-closed）だが、外部常駐スクリプトではなく PR 単位の workflow 実行で管理する。
+
 ## 停止（干渉防止）
 - watcher を停止（各ワークスペースで実行中の `watch.sh` を終了）
 - Autopilot 停止:

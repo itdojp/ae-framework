@@ -11,6 +11,7 @@ const prHeadSha = process.env.PR_HEAD_SHA ? String(process.env.PR_HEAD_SHA).trim
 const scope = String(process.env.AE_COPILOT_AUTO_FIX_SCOPE || 'docs').toLowerCase();
 const optInLabel = String(process.env.AE_COPILOT_AUTO_FIX_LABEL || '').trim();
 const actor = String(process.env.GITHUB_ACTOR || '').trim();
+const forceApply = String(process.env.AE_COPILOT_AUTO_FIX_FORCE || '').trim() === '1';
 const copilotActors = (process.env.COPILOT_ACTORS || 'github-copilot,github-copilot[bot]')
   .split(',')
   .map((s) => s.trim())
@@ -31,7 +32,7 @@ if (!/^[1-9][0-9]*$/.test(prNumberRaw)) {
 }
 const prNumber = Number(prNumberRaw);
 
-if (!copilotActorSet.has(actor.toLowerCase())) {
+if (!forceApply && !copilotActorSet.has(actor.toLowerCase())) {
   console.log(`[copilot-auto-fix] Skip: actor ${actor || '(empty)'} is not in COPILOT_ACTORS.`);
   process.exit(0);
 }
