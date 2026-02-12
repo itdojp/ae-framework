@@ -188,7 +188,6 @@ auto-merge（ラベルopt-in）:
   - auto-merge 有効化試行
 - 収束しない場合は `status:blocked` を付与して停止します。
 - 詳細: `docs/ci/codex-autopilot-lane.md`
-
 補足:
 - CI で調整する場合、これらは Repository Variables として設定し、ワークフロー側で `env:` に渡します（本リポジトリの `copilot-auto-fix.yml` / `pr-ci-status-comment.yml` は `vars.*` を参照）。
 

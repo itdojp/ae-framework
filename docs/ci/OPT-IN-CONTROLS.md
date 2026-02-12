@@ -83,7 +83,6 @@ Codex Autopilot Lane を使う場合:
 | `AE_AUTOPILOT_MAX_ROUNDS` | 1PRあたりの自律ループ上限 | `3` | `docs/ci/codex-autopilot-lane.md` |
 | `AE_AUTOPILOT_ROUND_WAIT_SECONDS` | ループ間待機秒 | `8` | `docs/ci/codex-autopilot-lane.md` |
 | `AE_AUTOPILOT_DRY_RUN` | 副作用なし検証 | `false` | `docs/ci/codex-autopilot-lane.md` |
-
 関連:
 - PR自動化の全体像: `docs/ci/pr-automation.md`
 
