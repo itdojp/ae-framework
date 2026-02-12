@@ -7,7 +7,7 @@
  * and checks link validity (internal and external)
  */
 
-import { readFileSync, writeFileSync, existsSync, statSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, statSync, mkdirSync, rmSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { glob } from 'glob';
@@ -393,22 +393,11 @@ class DocumentationTester {
   }
 
   private async createDirectory(path: string): Promise<void> {
-    const { spawn } = require('child_process');
-    return new Promise((resolve, reject) => {
-      const child = spawn('mkdir', ['-p', path]);
-      child.on('close', (code: number) => {
-        if (code === 0) resolve();
-        else reject(new Error(`Failed to create directory ${path}`));
-      });
-    });
+    mkdirSync(path, { recursive: true });
   }
 
   private async deleteFile(path: string): Promise<void> {
-    const { spawn } = require('child_process');
-    return new Promise((resolve) => {
-      const child = spawn('rm', ['-f', path]);
-      child.on('close', () => resolve()); // Always resolve, ignore errors
-    });
+    rmSync(path, { force: true });
   }
 
   private async executeCommand(command: string[]): Promise<{
