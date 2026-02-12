@@ -323,7 +323,7 @@ pnpm run perf:budgets:prod
 
 ### 📚 Next Steps
 
-Once installation is complete, refer to the [Usage Guide](./USAGE.md) to learn how to use each agent.
+Once installation is complete, refer to the [Usage Guide](../guides/USAGE.md) to learn how to use each agent.
 
 ### 🆘 Support
 
@@ -698,7 +698,7 @@ pnpm run perf:budgets:prod
 
 ### 📚 次のステップ
 
-インストールが完了したら、[使い方ガイド](./USAGE.md)を参照して各エージェントの使用方法を確認してください。
+インストールが完了したら、[使い方ガイド](../guides/USAGE.md)を参照して各エージェントの使用方法を確認してください。
 
 ### 🆘 サポート
 

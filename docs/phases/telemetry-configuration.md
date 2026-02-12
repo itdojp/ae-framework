@@ -212,7 +212,7 @@ CI環境では自動的にメトリクスがログ出力され、閾値チェッ
 ## 📚 Related Documentation
 
 - [Phase 6 Overview](./phase-6-uiux.md)
-- [Quality Gates Configuration](./quality-gates.md)
+- [Quality Gates Configuration](../development/centralized-quality-gates.md)
 - [OpenTelemetry Official Documentation](https://opentelemetry.io/docs/)
 
 ---

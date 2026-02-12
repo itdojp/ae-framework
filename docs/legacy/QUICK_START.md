@@ -293,14 +293,14 @@ ae-approve request <phase> --summary "Re-requesting approval"
 
 ## 📚 次のステップ
 
-- [新機能ガイド](./NEW_FEATURES.md) - 各機能の詳細な使用方法
-- [API リファレンス](./API.md) - プログラマティックアクセス
-- [ベストプラクティス](./BEST_PRACTICES.md) - 効果的な使用方法
-- [コントリビューション](../CONTRIBUTING.md) - プロジェクトへの貢献方法
+- [新機能ガイド](../architecture/NEW_FEATURES.md) - 各機能の詳細な使用方法
+- [API リファレンス](../reference/API.md) - プログラマティックアクセス
+- [使い方ガイド](../guides/USAGE.md) - 効果的な使用方法
+- [コントリビューション](../../CONTRIBUTING.md) - プロジェクトへの貢献方法
 
 ## 💬 サポート
 
 問題が発生した場合は：
 1. [Issues](https://github.com/itdojp/ae-framework/issues) で報告
 2. [Discussions](https://github.com/itdojp/ae-framework/discussions) で質問
-3. ドキュメントの [FAQ](./FAQ.md) を確認
+3. ドキュメントの [トラブルシューティング](../guides/ADVANCED-TROUBLESHOOTING-GUIDE.md) を確認

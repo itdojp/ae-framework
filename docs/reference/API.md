@@ -637,10 +637,10 @@ async function validateArtifacts(artifacts: string[]): Promise<boolean> {
 
 ## 🔗 Related Links
 
-- [Quick Start](./QUICK_START.md)
-- [New Features Guide](./NEW_FEATURES.md)
-- [Configuration Guide](./CONFIGURATION.md)
-- [Troubleshooting](./TROUBLESHOOTING.md)
+- [Quick Start](../getting-started/QUICK-START-GUIDE.md)
+- [New Features Guide](../architecture/NEW_FEATURES.md)
+- [Configuration Guide](../getting-started/SETUP.md)
+- [Troubleshooting](../guides/ADVANCED-TROUBLESHOOTING-GUIDE.md)
 
 ---
 

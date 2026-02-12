@@ -325,9 +325,9 @@ export AE_TEST_OUTPUT_DIR=tests/
 
 ## Related Documentation
 
-- [TDD Enforcement Guide](./tdd-enforcement.md)
-- [ae-framework Phases](./phases.md)
-- [Agent Architecture](./agent-architecture-proposal.md)
+- [TDD Framework Architecture](../architecture/TDD-FRAMEWORK-ARCHITECTURE.md)
+- [ae-framework Phases](../architecture/PHASE-DETAILED-ARCHITECTURE.md)
+- [Agent Architecture](../proposals/agent-architecture-proposal.md)
 
 ---
 

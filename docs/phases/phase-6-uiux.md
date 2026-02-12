@@ -216,11 +216,11 @@ Perf:     75%
 
 ### Font Preload Example
 ```html
-<link rel="preload" href="/fonts/Inter-roman.var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="https://example.com/fonts/Inter-roman.var.woff2" as="font" type="font/woff2" crossorigin>
 <style>
   @font-face {
     font-family: Inter;
-    src: url('/fonts/Inter-roman.var.woff2') format('woff2');
+    src: url('https://example.com/fonts/Inter-roman.var.woff2') format('woff2');
     font-display: swap;
   }
 </style>
@@ -753,7 +753,7 @@ examples/
 - **[Phase 2: Natural Language Requirements](./PHASE-2-NATURAL-LANGUAGE-REQUIREMENTS.md)** - 要件分析フェーズ
 - **[Phase 3: User Stories Creation](./PHASE-3-USER-STORIES-CREATION.md)** - ユーザーストーリー生成フェーズ  
 - **[Phase 5: Domain Modeling](./PHASE-5-DOMAIN-MODELING.md)** - ドメインモデリングフェーズ
-- **[Claude Code自動実行ガイド](./CLAUDE-CODE-AUTOMATION-GUIDE.md)** - 自動実行手順
+- **[Claude Code自動実行ガイド](../guides/CLAUDE-CODE-AUTOMATION-GUIDE.md)** - 自動実行手順
 - **[Frontend Development Enhancement (#52)](https://github.com/itdojp/ae-framework/issues/52)** - フロントエンド強化提案
 
 ## 🎯 Success Metrics
