@@ -25,6 +25,7 @@ Purpose: Provide a short, deterministic path to diagnose common CI failures.
 - Failed job は `ci-auto-rerun-failed` が **1回だけ**自動再実行します（再実行ログを確認）。
 - `pr-ci-status-comment`（PR Maintenance）が behind の PR を自動更新します。競合時は手動解決が必要です。
 - `gateExpected` / `verify-liteExpected` が "Waiting for status to be reported" の場合、auto update で作られたマージコミットにチェックが載っていない可能性があります。対処: PRブランチに空コミットを追加してPRイベントを再発火、またはPR画面から再実行します。恒久策として `AE_AUTO_UPDATE_TOKEN` をSecretsに設定し、auto update の更新コミットから required checks が走るようにします。
+- `Copilot Review Gate` の `pull_request_review` 実行が `action_required` でも、PR head SHA 上の `Copilot Review Gate / gate` が green ならマージ判定としては問題ありません。必要時は `workflow_dispatch`（`pr_number` 指定）で再実行します。
 - GitHub API の 429 / secondary rate limit が出る場合、Actions の rerun を優先します。必要に応じて `AE_GH_THROTTLE_MS` と `AE_GH_RETRY_*` を調整します（詳細: `docs/ci/pr-automation.md` / 実装: `scripts/ci/lib/gh-exec.mjs`）。
 
 ## References
