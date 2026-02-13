@@ -15,10 +15,14 @@ const DEFAULT_WORKFLOWS = [
 const DEFAULT_FAILURE_STATUSES = ['error', 'blocked'];
 
 function toInt(value, fallback, min = 0) {
-  const parsed = Number.parseInt(String(value ?? '').trim(), 10);
-  if (!Number.isFinite(parsed) || parsed < min) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return fallback;
+  const numeric = Number(raw);
+  if (!Number.isFinite(numeric)) {
     return fallback;
   }
+  const parsed = Math.trunc(numeric);
+  if (parsed < min) return fallback;
   return parsed;
 }
 
@@ -349,8 +353,13 @@ export {
   DEFAULT_WORKFLOWS,
   REPORT_PREFIX,
   REPORT_SCHEMA,
+  buildSummaryMarkdown,
   extractAutomationReportsFromLog,
+  formatTopReasonTable,
+  joinCountMap,
   summarizeAutomationReports,
+  parseCsv,
+  toInt,
   toIsoCutoff,
   main,
 };
