@@ -209,6 +209,7 @@ auto-merge（ラベルopt-in）:
 - `docs/ci/copilot-review-gate.md`
 - `docs/ci/copilot-auto-fix.md`
 - `docs/ci/auto-merge.md`
+- `docs/ci/automation-failure-policies.md`
 - `docs/ci/branch-protection-operations.md`
 - `docs/ci/ci-troubleshooting-guide.md`
 - `docs/ci/automation-observability.md`
