@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { execGh, execGhJson } from './lib/gh-exec.mjs';
+import { emitAutomationReport } from './lib/automation-report.mjs';
 
 const marker = '<!-- AE-SELF-HEAL v1 -->';
 const FAILURE_CONCLUSIONS = new Set(['FAILURE', 'CANCELLED', 'TIMED_OUT', 'ACTION_REQUIRED', 'STALE']);
@@ -447,12 +448,25 @@ async function main() {
   }
 
   const targets = [];
+  let targetSource = 'scan';
   if (targetPr) {
     targets.push(targetPr);
+    targetSource = 'pr_number';
   } else if (workflowRunPr) {
     targets.push(workflowRunPr);
+    targetSource = 'workflow_run';
   } else if (eventName === 'workflow_run') {
     console.log('[pr-self-heal] workflow_run has no associated pull request; skipping global scan.');
+    emitAutomationReport({
+      tool: 'pr-self-heal',
+      mode: dryRun ? 'dry-run' : 'active',
+      status: 'skip',
+      reason: 'workflow_run has no associated pull request',
+      metrics: {
+        targets: 0,
+        processed: 0,
+      },
+    });
     return;
   } else {
     targets.push(...listOpenPrNumbers(maxPrs));
@@ -460,23 +474,83 @@ async function main() {
 
   if (targets.length === 0) {
     console.log('[pr-self-heal] No PR targets found.');
+    emitAutomationReport({
+      tool: 'pr-self-heal',
+      mode: dryRun ? 'dry-run' : 'active',
+      status: 'skip',
+      reason: 'no PR targets found',
+      metrics: {
+        targets: 0,
+        processed: 0,
+      },
+    });
     return;
   }
 
+  const results = [];
+  const failures = [];
   for (const number of targets) {
     try {
       const result = await processPr(number);
       if (!result) {
         console.log(`[pr-self-heal] #${number}: skipped (no state).`);
+        results.push({
+          number,
+          status: 'skip',
+          reason: 'no state',
+        });
         continue;
       }
       console.log(`[pr-self-heal] #${number}: ${result.status} (${result.reason || 'n/a'})`);
+      results.push({
+        number,
+        status: result.status,
+        reason: result.reason || '',
+        rounds: result.rounds,
+      });
     } catch (error) {
       const message = error && error.message ? error.message : String(error);
       console.error(`[pr-self-heal] #${number}: failed - ${message}`);
+      failures.push({ number, message });
     }
     await sleep(300);
   }
+
+  const blocked = results.filter((item) => item.status === 'blocked').length;
+  const resolved = results.filter((item) => item.status === 'resolved').length;
+  const skipped = results.filter((item) => item.status === 'skip').length;
+  let status = 'resolved';
+  let reason = 'completed';
+  if (failures.length > 0) {
+    status = 'error';
+    reason = `${failures.length} target(s) failed`;
+  } else if (blocked > 0) {
+    status = 'blocked';
+    reason = `${blocked} target(s) blocked`;
+  } else if (resolved === 0 && skipped > 0) {
+    status = 'skip';
+    reason = 'all targets skipped';
+  }
+
+  emitAutomationReport({
+    tool: 'pr-self-heal',
+    mode: dryRun ? 'dry-run' : 'active',
+    status,
+    reason,
+    metrics: {
+      targets: targets.length,
+      processed: results.length,
+      resolved,
+      blocked,
+      skipped,
+      errors: failures.length,
+    },
+    data: {
+      targetSource,
+      results,
+      failures,
+    },
+  });
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

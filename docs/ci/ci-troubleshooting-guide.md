@@ -31,7 +31,20 @@ Purpose: Provide a short, deterministic path to diagnose common CI failures.
 - GitHub API の 429 / secondary rate limit が出る場合、Actions の rerun を優先します。`AE_GH_THROTTLE_MS` の既定は `250`（`0` で無効化）で、必要に応じて `AE_GH_RETRY_*` と合わせて調整します（詳細: `docs/ci/pr-automation.md` / 実装: `scripts/ci/lib/gh-exec.mjs`）。
 - `pnpm run lint:actions` で `ghcr.io/rhysd/actionlint` pull が 403 の場合、`ACTIONLINT_BIN` でローカルバイナリを指定できます（例: `ACTIONLINT_BIN=/usr/local/bin/actionlint pnpm run lint:actions`）。
 
+## 6) 症状 → runbook 対応表
+
+| 症状 | 一次確認 | runbook |
+| --- | --- | --- |
+| `Copilot Review Gate / gate` fail | 未解決レビューthread数、失敗runのconclusion | thread解消 → `gh run rerun <runId> --failed` |
+| `PR Self-Heal` が `blocked` | PRコメントの reason、`status:blocked` ラベル | 競合解消/失敗チェック修復後に手動rerun |
+| `auto-merge` が有効化されない | `AE_AUTO_MERGE*`、required checks、reviewDecision | `docs/ci/auto-merge.md` に沿って条件修正 |
+| 429 / secondary rate limit | `gh-exec` retryログ、失敗タイミング | rerun優先、必要なら `AE_GH_THROTTLE_MS` と `AE_GH_RETRY_*` を調整 |
+
+補足:
+- 自動化系の共通JSON/Step Summary出力は `docs/ci/automation-observability.md` を参照。
+
 ## References
 - `docs/ci/ci-baseline-checklist.md`
+- `docs/ci/automation-observability.md`
 - `docs/testing/test-categorization.md`
 - `docs/testing/flaky-test-triage.md`
