@@ -87,6 +87,7 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
  - Auto Merge: `ci/auto-merge.md`（auto-merge自動有効化）
  - Automation Profiles: `ci/automation-profiles.md`（自動化設定の一括プロファイル）
  - Automation Observability: `ci/automation-observability.md`（共通JSON/Step Summary出力）
+ - Automation Permission Boundaries: `ci/automation-permission-boundaries.md`（workflow_dispatch / issue_comment の権限境界）
  - Workflow dispatch validation report (2026-02-12): `ci/workflow-dispatch-validation-2026-02-12.md`
 
 For the complete navigation with highlights, see the Japanese section below (same links).
