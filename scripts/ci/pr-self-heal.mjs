@@ -14,6 +14,7 @@ const maxAgeMinutes = readIntEnv('AE_SELF_HEAL_MAX_AGE_MINUTES', 180, 1);
 const maxPrs = readIntEnv('AE_SELF_HEAL_MAX_PRS', 20, 1);
 const roundWaitSeconds = readIntEnv('AE_SELF_HEAL_ROUND_WAIT_SECONDS', 60, 0);
 const dryRun = toBool(process.env.AE_SELF_HEAL_DRY_RUN) || toBool(process.env.SELF_HEAL_DRY_RUN);
+const globalDisabled = toBool(process.env.AE_AUTOMATION_GLOBAL_DISABLE);
 const targetPr = toPositiveInt(process.env.PR_NUMBER || '');
 const workflowRunPr = parseFirstPositiveInt(process.env.WORKFLOW_RUN_PR_NUMBERS || process.env.WORKFLOW_RUN_PR_NUMBER || '');
 
@@ -445,6 +446,20 @@ async function main() {
   if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo)) {
     console.error('[pr-self-heal] GITHUB_REPOSITORY format is invalid.');
     process.exit(1);
+  }
+  if (globalDisabled) {
+    console.log('[pr-self-heal] Skip: AE_AUTOMATION_GLOBAL_DISABLE is enabled.');
+    emitAutomationReport({
+      tool: 'pr-self-heal',
+      mode: dryRun ? 'dry-run' : 'active',
+      status: 'skip',
+      reason: 'AE_AUTOMATION_GLOBAL_DISABLE is enabled',
+      metrics: {
+        targets: 0,
+        processed: 0,
+      },
+    });
+    return;
   }
 
   const targets = [];

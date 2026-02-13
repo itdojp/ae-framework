@@ -16,7 +16,7 @@ Repository Variables に `AE_AUTOMATION_PROFILE` を設定します。
 - `balanced`
 - `aggressive`
 
-未設定時はプロファイル無効で、既存の個別変数（`AE_COPILOT_AUTO_FIX*`, `AE_AUTO_MERGE*`, `AE_GH_*` など）がそのまま使われます。
+未設定時はプロファイル無効で、既存の個別変数（`AE_COPILOT_AUTO_FIX*`, `AE_AUTO_MERGE*`, `AE_GH_*`, `AE_AUTOMATION_GLOBAL_DISABLE` など）がそのまま使われます。
 
 ## 2. 優先順位
 
@@ -34,6 +34,7 @@ Repository Variables に `AE_AUTOMATION_PROFILE` を設定します。
 
 | Key | conservative | balanced | aggressive |
 | --- | --- | --- | --- |
+| `AE_AUTOMATION_GLOBAL_DISABLE` | `0` | `0` | `0` |
 | `AE_COPILOT_AUTO_FIX` | `1` | `1` | `1` |
 | `AE_COPILOT_AUTO_FIX_SCOPE` | `docs` | `docs` | `all` |
 | `AE_COPILOT_AUTO_FIX_LABEL` | `copilot-auto-fix` | *(empty)* | *(empty)* |
@@ -67,3 +68,4 @@ Repository Variables に `AE_AUTOMATION_PROFILE` を設定します。
 - `AE_AUTO_MERGE_MODE=label` で `AE_AUTO_MERGE_LABEL` が空の場合は警告します。
 - `AE_GH_RETRY_MAX_DELAY_MS < AE_GH_RETRY_INITIAL_DELAY_MS` の場合は、`MAX_DELAY` を `INITIAL_DELAY` に補正します。
 - プロファイル名が不正な場合は無効扱い（既定値にフォールバック）です。
+- `AE_AUTOMATION_GLOBAL_DISABLE=1` の場合、auto-fix / auto-merge / update-branch / self-heal / autopilot の実行は安全側で停止（skip）します。

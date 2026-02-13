@@ -39,8 +39,11 @@ jobs:
   update-branch:
     # Skip edited events to avoid branch updates on metadata-only changes.
     if: >-
-      (github.event_name == 'pull_request' && github.event.action != 'edited' && github.event.pull_request.head.repo.fork == false)
-      || (github.event_name == 'workflow_dispatch' && inputs.mode == 'update-branch')
+      vars.AE_AUTOMATION_GLOBAL_DISABLE != '1'
+      && (
+        (github.event_name == 'pull_request' && github.event.action != 'edited' && github.event.pull_request.head.repo.fork == false)
+        || (github.event_name == 'workflow_dispatch' && inputs.mode == 'update-branch')
+      )
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -351,9 +354,12 @@ jobs:
 
   enable-auto-merge:
     if: >-
-      (github.event_name == 'pull_request' && github.event.action != 'edited' && github.event.pull_request.head.repo.fork == false)
-      || (github.event_name == 'schedule')
-      || (github.event_name == 'workflow_dispatch' && (inputs.mode == 'auto-merge' || inputs.mode == 'both'))
+      vars.AE_AUTOMATION_GLOBAL_DISABLE != '1'
+      && (
+        (github.event_name == 'pull_request' && github.event.action != 'edited' && github.event.pull_request.head.repo.fork == false)
+        || (github.event_name == 'schedule')
+        || (github.event_name == 'workflow_dispatch' && (inputs.mode == 'auto-merge' || inputs.mode == 'both'))
+      )
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

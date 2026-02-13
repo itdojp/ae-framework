@@ -42,16 +42,19 @@ permissions:
 jobs:
   self-heal:
     if: >-
-      github.event_name == 'workflow_dispatch'
-      || (vars.AE_SELF_HEAL_ENABLED == '1'
-        && (
-          github.event_name == 'schedule'
-          || (github.event_name == 'workflow_run'
-            && join(github.event.workflow_run.pull_requests.*.number, '') != ''
-            && (
-              github.event.workflow_run.conclusion == 'failure'
-              || github.event.workflow_run.conclusion == 'timed_out'
-              || github.event.workflow_run.conclusion == 'cancelled'
+      vars.AE_AUTOMATION_GLOBAL_DISABLE != '1'
+      && (
+        github.event_name == 'workflow_dispatch'
+        || (vars.AE_SELF_HEAL_ENABLED == '1'
+          && (
+            github.event_name == 'schedule'
+            || (github.event_name == 'workflow_run'
+              && join(github.event.workflow_run.pull_requests.*.number, '') != ''
+              && (
+                github.event.workflow_run.conclusion == 'failure'
+                || github.event.workflow_run.conclusion == 'timed_out'
+                || github.event.workflow_run.conclusion == 'cancelled'
+              )
             )
           )
         )

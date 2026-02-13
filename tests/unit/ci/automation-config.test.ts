@@ -9,6 +9,7 @@ describe('automation-config', () => {
   it('uses defaults when profile and variables are not set', () => {
     const config = resolveAutomationConfig({});
     expect(config.profile.resolved).toBe('');
+    expect(config.values.AE_AUTOMATION_GLOBAL_DISABLE).toBe('0');
     expect(config.values.AE_COPILOT_AUTO_FIX).toBe('0');
     expect(config.values.AE_AUTO_MERGE).toBe('0');
     expect(config.values.AE_COPILOT_AUTO_FIX_SCOPE).toBe('docs');
@@ -21,6 +22,7 @@ describe('automation-config', () => {
       AE_AUTOMATION_PROFILE: 'balanced',
     });
     expect(config.profile.resolved).toBe('balanced');
+    expect(config.values.AE_AUTOMATION_GLOBAL_DISABLE).toBe('0');
     expect(config.values.AE_COPILOT_AUTO_FIX).toBe('1');
     expect(config.values.AE_COPILOT_AUTO_FIX_SCOPE).toBe('docs');
     expect(config.values.AE_AUTO_MERGE).toBe('1');
@@ -77,8 +79,20 @@ describe('automation-config', () => {
     });
     const envBody = toGithubEnv(config);
     expect(envBody).toContain('AE_AUTOMATION_PROFILE_RESOLVED=conservative');
+    expect(envBody).toContain('AE_AUTOMATION_GLOBAL_DISABLE=0');
     expect(envBody).toContain('AE_COPILOT_AUTO_FIX=1');
     expect(envBody).toContain('AE_AUTO_MERGE_MODE=label');
+  });
+
+  it('normalizes global disable toggle values', () => {
+    const on = resolveAutomationConfig({
+      AE_AUTOMATION_GLOBAL_DISABLE: 'true',
+    });
+    const off = resolveAutomationConfig({
+      AE_AUTOMATION_GLOBAL_DISABLE: 'no',
+    });
+    expect(on.values.AE_AUTOMATION_GLOBAL_DISABLE).toBe('1');
+    expect(off.values.AE_AUTOMATION_GLOBAL_DISABLE).toBe('0');
   });
 
   it('sanitizes newline characters when exporting GitHub env lines', () => {

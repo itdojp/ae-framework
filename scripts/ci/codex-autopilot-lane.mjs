@@ -14,6 +14,7 @@ const prNumber = toPositiveInt(process.env.PR_NUMBER || '');
 const maxRounds = readIntEnv('AE_AUTOPILOT_MAX_ROUNDS', 3, 1);
 const roundWaitSeconds = readIntEnv('AE_AUTOPILOT_ROUND_WAIT_SECONDS', 8, 0);
 const dryRun = toBool(process.env.AE_AUTOPILOT_DRY_RUN) || toBool(process.env.DRY_RUN);
+const globalDisabled = toBool(process.env.AE_AUTOMATION_GLOBAL_DISABLE);
 const copilotActors = (process.env.COPILOT_ACTORS
   || 'copilot-pull-request-reviewer,github-copilot,github-copilot[bot],copilot,copilot[bot],Copilot')
   .split(',')
@@ -394,6 +395,17 @@ async function main() {
       reason: 'PR_NUMBER is required',
     });
     process.exit(1);
+  }
+  if (globalDisabled) {
+    console.log('[codex-autopilot] Skip: AE_AUTOMATION_GLOBAL_DISABLE is enabled.');
+    emitAutomationReport({
+      tool: 'codex-autopilot-lane',
+      mode: dryRun ? 'dry-run' : 'active',
+      status: 'skip',
+      reason: 'AE_AUTOMATION_GLOBAL_DISABLE is enabled',
+      prNumber,
+    });
+    return;
   }
 
   try {
