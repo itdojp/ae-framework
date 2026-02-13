@@ -359,6 +359,8 @@ const main = async () => {
   } else if (blocked > 0) {
     status = 'blocked';
     reason = `${blocked} target(s) blocked`;
+  } else if (enabled > 0 || alreadyEnabled > 0) {
+    reason = `${enabled} enabled, ${alreadyEnabled} already enabled`;
   }
 
   emitAutomationReport({

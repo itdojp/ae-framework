@@ -50,10 +50,20 @@ PR自動化系スクリプトの実行結果は、共通フォーマット `ae-a
 
 ## 4. ログからの抽出例
 
+`rg` 版（bash/zsh前提）:
+
 ```bash
 gh run view <run_id> --repo itdojp/ae-framework --log \
   | rg '^\\[ae-automation-report\\]' \
   | sed 's/^\\[ae-automation-report\\] //'
+```
+
+`grep` 版（POSIX系シェル互換）:
+
+```bash
+gh run view <run_id> --repo itdojp/ae-framework --log \
+  | grep '^\[ae-automation-report\]' \
+  | sed 's/^\[ae-automation-report\] //'
 ```
 
 ## 5. 代表的な運用
@@ -61,4 +71,3 @@ gh run view <run_id> --repo itdojp/ae-framework --log \
 - 監視連携: `status != resolved` を抽出して通知
 - 失敗分析: `reason` と `metrics` で要因を分類
 - 証跡保存: `AE_AUTOMATION_REPORT_FILE` でJSONを生成し artifact 化
-

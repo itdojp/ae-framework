@@ -69,11 +69,16 @@ describe('automation-report', () => {
       expect(fs.existsSync(reportFile)).toBe(true);
       expect(fs.readFileSync(reportFile, 'utf8')).toContain('"tool": "pr-self-heal"');
       expect(fs.readFileSync(summaryFile, 'utf8')).toContain('## Automation Report');
-      expect(logs.some((line) => line.includes('[ae-automation-report]'))).toBe(true);
+      const reportLines = logs.filter((line) => line.startsWith('[ae-automation-report] '));
+      expect(reportLines.length).toBe(1);
+      for (const line of reportLines) {
+        const payload = line.replace(/^\[ae-automation-report\] /, '');
+        expect(() => JSON.parse(payload)).not.toThrow();
+      }
+      expect(logs.some((line) => line.startsWith('[ae-automation-report-file] wrote '))).toBe(true);
     } finally {
       spy.mockRestore();
       fs.rmSync(tmpRoot, { recursive: true, force: true });
     }
   });
 });
-

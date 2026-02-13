@@ -98,7 +98,7 @@ function emitAutomationReport(input, env = process.env) {
   const configuredPath = String(env.AE_AUTOMATION_REPORT_FILE || '').trim();
   if (configuredPath) {
     const resolvedPath = writeJsonFile(configuredPath, report);
-    console.log(`[ae-automation-report] wrote ${resolvedPath}`);
+    console.log(`[ae-automation-report-file] wrote ${resolvedPath}`);
   }
 
   appendSummary('Automation Report', summarizeReport(report), env);

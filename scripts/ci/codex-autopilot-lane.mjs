@@ -399,10 +399,11 @@ async function main() {
   try {
     const result = await processPr(prNumber);
     console.log(`[codex-autopilot] #${result.number}: ${result.status} (${result.reason || 'n/a'})`);
+    const reportStatus = result.status === 'done' ? 'resolved' : result.status;
     emitAutomationReport({
       tool: 'codex-autopilot-lane',
       mode: dryRun ? 'dry-run' : 'active',
-      status: result.status,
+      status: reportStatus,
       reason: result.reason || '',
       prNumber: result.number,
       metrics: {
