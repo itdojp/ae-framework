@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { execGh, execGhJson } from './lib/gh-exec.mjs';
+import { emitAutomationReport } from './lib/automation-report.mjs';
 
 const repo = process.env.GITHUB_REPOSITORY;
 if (!repo) {
@@ -30,11 +31,6 @@ if (PR_NUMBER_RAW !== '') {
 }
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-if (!AUTO_MERGE_ENABLED) {
-  console.log('[auto-merge-enabler] Skip: AE_AUTO_MERGE is disabled after config resolution.');
-  process.exit(0);
-}
 
 const execJson = (args, input) => {
   try {
@@ -233,7 +229,23 @@ const enableAutoMerge = (number) => {
 };
 
 const main = async () => {
+  if (!AUTO_MERGE_ENABLED) {
+    console.log('[auto-merge-enabler] Skip: AE_AUTO_MERGE is disabled after config resolution.');
+    emitAutomationReport({
+      tool: 'auto-merge-enabler',
+      mode: AUTO_MERGE_MODE || 'all',
+      status: 'skip',
+      reason: 'AE_AUTO_MERGE is disabled after config resolution',
+      metrics: {
+        targets: 0,
+      },
+    });
+    return;
+  }
+
   const prs = PR_NUMBER ? [{ number: PR_NUMBER, title: '' }] : listOpenPrs();
+  const results = [];
+  const failures = [];
   for (const pr of prs) {
     try {
       const view = execJson([
@@ -247,6 +259,11 @@ const main = async () => {
       ]);
       const branchMeta = fetchBranchMeta(repo, view.baseRefName);
       if (branchMeta === null) {
+        results.push({
+          number: pr.number,
+          status: 'blocked',
+          reason: 'branch metadata unavailable',
+        });
         upsertComment(
           pr.number,
           buildStatusBody(pr, view, ['branch metadata unavailable'], {
@@ -259,6 +276,11 @@ const main = async () => {
       }
       const protectionSummary = fetchProtectionSummary(repo, view.baseRefName, branchMeta);
       if (protectionSummary === null) {
+        results.push({
+          number: pr.number,
+          status: 'blocked',
+          reason: 'branch protection unavailable',
+        });
         upsertComment(pr.number, buildStatusBody(pr, view, ['branch protection unavailable'], {
           counts: { success: 0, failure: 0, pending: 0 },
           failed: [],
@@ -292,21 +314,74 @@ const main = async () => {
       if (summaryRequired.counts.failure > 0) reasons.push('checks failed');
       if (summaryRequired.counts.pending > 0) reasons.push('checks pending');
 
+      let status = 'blocked';
+      let statusReason = reasons.join('; ');
       if (reasons.length === 0 && !view.autoMergeRequest) {
         try {
           enableAutoMerge(pr.number);
+          status = 'enabled';
+          statusReason = 'auto-merge enabled';
         } catch (error) {
           const message = error && error.message ? error.message : String(error);
           reasons.push(`auto-merge enable failed: ${message}`);
+          statusReason = reasons.join('; ');
         }
+      } else if (view.autoMergeRequest && reasons.length === 0) {
+        status = 'already-enabled';
+        statusReason = 'auto-merge already enabled';
       }
       const body = buildStatusBody(pr, view, reasons, summaryAll, reviewRequirement);
       upsertComment(pr.number, body);
+      results.push({
+        number: pr.number,
+        status,
+        reason: statusReason,
+      });
     } catch (error) {
       console.error(`[auto-merge-enabler] Failed to process PR #${pr.number}:`, error);
+      const message = error && error.message ? error.message : String(error);
+      failures.push({
+        number: pr.number,
+        message,
+      });
     }
     await sleep(PR_SLEEP_MS);
   }
+
+  const enabled = results.filter((item) => item.status === 'enabled').length;
+  const alreadyEnabled = results.filter((item) => item.status === 'already-enabled').length;
+  const blocked = results.filter((item) => item.status === 'blocked').length;
+  let status = 'resolved';
+  let reason = 'completed';
+  if (failures.length > 0) {
+    status = 'error';
+    reason = `${failures.length} target(s) failed`;
+  } else if (blocked > 0) {
+    status = 'blocked';
+    reason = `${blocked} target(s) blocked`;
+  } else if (enabled > 0 || alreadyEnabled > 0) {
+    reason = `${enabled} enabled, ${alreadyEnabled} already enabled`;
+  }
+
+  emitAutomationReport({
+    tool: 'auto-merge-enabler',
+    mode: AUTO_MERGE_MODE || 'all',
+    status,
+    reason,
+    metrics: {
+      targets: prs.length,
+      processed: results.length,
+      enabled,
+      alreadyEnabled,
+      blocked,
+      errors: failures.length,
+    },
+    data: {
+      label: AUTO_MERGE_LABEL,
+      results,
+      failures,
+    },
+  });
 };
 
 await main();

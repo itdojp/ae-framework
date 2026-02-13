@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { execGh, execGhJson } from './lib/gh-exec.mjs';
+import { emitAutomationReport } from './lib/automation-report.mjs';
 
 const repo = process.env.GITHUB_REPOSITORY;
 const prNumberRaw = process.env.PR_NUMBER ? String(process.env.PR_NUMBER).trim() : '';
@@ -21,25 +22,55 @@ const copilotActorSet = new Set(copilotActors.map((s) => s.toLowerCase()));
 
 if (!repo) {
   console.error('[copilot-auto-fix] GITHUB_REPOSITORY is required.');
+  emitAutomationReport({
+    tool: 'copilot-auto-fix',
+    mode: scope,
+    status: 'error',
+    reason: 'GITHUB_REPOSITORY is required',
+  });
   process.exit(1);
 }
 if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo)) {
   console.error('[copilot-auto-fix] GITHUB_REPOSITORY format is invalid.');
+  emitAutomationReport({
+    tool: 'copilot-auto-fix',
+    mode: scope,
+    status: 'error',
+    reason: 'GITHUB_REPOSITORY format is invalid',
+  });
   process.exit(1);
 }
 if (!/^[1-9][0-9]*$/.test(prNumberRaw)) {
   console.error('[copilot-auto-fix] PR_NUMBER is required and must be a positive integer.');
+  emitAutomationReport({
+    tool: 'copilot-auto-fix',
+    mode: scope,
+    status: 'error',
+    reason: 'PR_NUMBER is required and must be a positive integer',
+  });
   process.exit(1);
 }
 const prNumber = Number(prNumberRaw);
 
+const emitReport = (status, reason, extra = {}) =>
+  emitAutomationReport({
+    tool: 'copilot-auto-fix',
+    mode: scope,
+    status,
+    reason,
+    prNumber,
+    ...extra,
+  });
+
 if (!forceApply && !autoFixEnabled) {
   console.log('[copilot-auto-fix] Skip: AE_COPILOT_AUTO_FIX is disabled after config resolution.');
+  emitReport('skip', 'AE_COPILOT_AUTO_FIX is disabled after config resolution');
   process.exit(0);
 }
 
 if (!forceApply && !copilotActorSet.has(actor.toLowerCase())) {
   console.log(`[copilot-auto-fix] Skip: actor ${actor || '(empty)'} is not in COPILOT_ACTORS.`);
+  emitReport('skip', `actor ${actor || '(empty)'} is not in COPILOT_ACTORS`);
   process.exit(0);
 }
 
@@ -232,6 +263,13 @@ const main = async () => {
           note: `opt-in label ${optInLabel} is missing; skipping.`,
         })
       );
+      emitReport('skip', `opt-in label ${optInLabel} is missing`, {
+        metrics: {
+          applied: 0,
+          alreadyApplied: 0,
+          resolvedThreads: 0,
+        },
+      });
       return;
     }
   }
@@ -254,6 +292,16 @@ const main = async () => {
           note: `AE_COPILOT_AUTO_FIX_SCOPE=docs: PR includes non-doc files; skipping. sample=${nonDocs.slice(0, 5).join(', ')}`,
         })
       );
+      emitReport('skip', 'docs scope rejected non-doc files', {
+        metrics: {
+          applied: 0,
+          alreadyApplied: 0,
+          resolvedThreads: 0,
+        },
+        data: {
+          nonDocSample: nonDocs.slice(0, 5),
+        },
+      });
       return;
     }
   } else if (scope !== 'all') {
@@ -268,6 +316,13 @@ const main = async () => {
         note: `unknown scope=${scope}; skipping.`,
       })
     );
+    emitReport('skip', `unknown scope=${scope}`, {
+      metrics: {
+        applied: 0,
+        alreadyApplied: 0,
+        resolvedThreads: 0,
+      },
+    });
     return;
   }
 
@@ -285,6 +340,12 @@ const main = async () => {
           note: `PR_HEAD_SHA mismatch; expected=${prHeadSha} actual=${checkedOutSha}. Skipping to avoid applying suggestions to the wrong commit.`,
         })
       );
+      emitReport('skip', 'PR_HEAD_SHA mismatch', {
+        data: {
+          expectedHeadSha: prHeadSha,
+          actualHeadSha: checkedOutSha,
+        },
+      });
       return;
     }
 
@@ -302,6 +363,12 @@ const main = async () => {
           note: `PR head advanced after review event; expected=${prHeadSha} current=${currentHeadSha}. Skipping to avoid line-number misapplication.`,
         })
       );
+      emitReport('skip', 'PR head advanced after review event', {
+        data: {
+          expectedHeadSha: prHeadSha,
+          currentHeadSha,
+        },
+      });
       return;
     }
   }
@@ -474,6 +541,23 @@ const main = async () => {
           : null,
     })
   );
+
+  const finalStatus = appliedCount > 0 || alreadyCount > 0 ? 'resolved' : 'skip';
+  emitReport(finalStatus, finalStatus === 'resolved' ? 'suggestions processed' : 'no applicable suggestions', {
+    metrics: {
+      applied: appliedCount,
+      alreadyApplied: alreadyCount,
+      resolvedThreads,
+      changedFiles: changedFiles.length,
+      skipped: skipped.length,
+    },
+  });
 };
 
-await main();
+try {
+  await main();
+} catch (error) {
+  const message = error && error.message ? error.message : String(error);
+  emitReport('error', message);
+  throw error;
+}

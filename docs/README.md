@@ -86,6 +86,7 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
  - Codex Autopilot Lane: `ci/codex-autopilot-lane.md`（touchless merge の opt-in）
  - Auto Merge: `ci/auto-merge.md`（auto-merge自動有効化）
  - Automation Profiles: `ci/automation-profiles.md`（自動化設定の一括プロファイル）
+ - Automation Observability: `ci/automation-observability.md`（共通JSON/Step Summary出力）
  - Workflow dispatch validation report (2026-02-12): `ci/workflow-dispatch-validation-2026-02-12.md`
 
 For the complete navigation with highlights, see the Japanese section below (same links).

@@ -6,6 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execGh, execGhJson } from './lib/gh-exec.mjs';
+import { emitAutomationReport } from './lib/automation-report.mjs';
 
 const marker = '<!-- AE-CODEX-AUTOPILOT v1 -->';
 const repo = String(process.env.GITHUB_REPOSITORY || '').trim();
@@ -376,15 +377,57 @@ async function processPr(number) {
 async function main() {
   if (!repo) {
     console.error('[codex-autopilot] GITHUB_REPOSITORY is required.');
+    emitAutomationReport({
+      tool: 'codex-autopilot-lane',
+      mode: dryRun ? 'dry-run' : 'active',
+      status: 'error',
+      reason: 'GITHUB_REPOSITORY is required',
+    });
     process.exit(1);
   }
   if (!prNumber) {
     console.error('[codex-autopilot] PR_NUMBER is required.');
+    emitAutomationReport({
+      tool: 'codex-autopilot-lane',
+      mode: dryRun ? 'dry-run' : 'active',
+      status: 'error',
+      reason: 'PR_NUMBER is required',
+    });
     process.exit(1);
   }
 
-  const result = await processPr(prNumber);
-  console.log(`[codex-autopilot] #${result.number}: ${result.status} (${result.reason || 'n/a'})`);
+  try {
+    const result = await processPr(prNumber);
+    console.log(`[codex-autopilot] #${result.number}: ${result.status} (${result.reason || 'n/a'})`);
+    const reportStatus = result.status === 'done' ? 'resolved' : result.status;
+    emitAutomationReport({
+      tool: 'codex-autopilot-lane',
+      mode: dryRun ? 'dry-run' : 'active',
+      status: reportStatus,
+      reason: result.reason || '',
+      prNumber: result.number,
+      metrics: {
+        rounds: result.rounds,
+        actions: result.actions.length,
+        unresolvedCopilot: result.unresolvedCopilot,
+        gateStatus: result.gateStatus,
+      },
+      data: {
+        mergeable: result.mergeable,
+        mergeState: result.mergeState,
+      },
+    });
+  } catch (error) {
+    const message = error && error.message ? error.message : String(error);
+    emitAutomationReport({
+      tool: 'codex-autopilot-lane',
+      mode: dryRun ? 'dry-run' : 'active',
+      status: 'error',
+      reason: message,
+      prNumber,
+    });
+    throw error;
+  }
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
