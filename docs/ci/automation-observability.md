@@ -71,3 +71,27 @@ gh run view <run_id> --repo itdojp/ae-framework --log \
 - 監視連携: `status != resolved` を抽出して通知
 - 失敗分析: `reason` と `metrics` で要因を分類
 - 証跡保存: `AE_AUTOMATION_REPORT_FILE` でJSONを生成し artifact 化
+
+## 6. 週次集計（失敗理由 Top N）
+
+週次バッチ `Automation Observability Weekly` が、主要自動化WFの実行ログから `ae-automation-report/v1` を抽出し、`error` / `blocked` の理由を集計します。
+
+- workflow: `.github/workflows/automation-observability-weekly.yml`
+- script: `scripts/ci/automation-observability-weekly.mjs`
+- artifact: `automation-observability-weekly`（`weekly-failure-summary.json`）
+
+主な入力:
+- `AE_AUTOMATION_OBSERVABILITY_WORKFLOWS`: 対象WF名（CSV）
+- `AE_AUTOMATION_OBSERVABILITY_SINCE_DAYS`: 集計対象期間（日数）
+- `AE_AUTOMATION_OBSERVABILITY_MAX_RUNS_PER_WORKFLOW`: WFごとの参照run上限
+- `AE_AUTOMATION_OBSERVABILITY_TOP_N`: Top N件数
+
+手動実行例:
+
+```bash
+gh workflow run "Automation Observability Weekly" \
+  --repo itdojp/ae-framework \
+  -f since_days=7 \
+  -f max_runs_per_workflow=30 \
+  -f top_n=5
+```

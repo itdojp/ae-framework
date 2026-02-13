@@ -1,0 +1,49 @@
+name: Automation Observability Weekly
+
+on:
+  schedule:
+    - cron: '15 0 * * 1'
+  workflow_dispatch:
+    inputs:
+      since_days:
+        description: "Lookback window (days)"
+        required: false
+        default: "7"
+      max_runs_per_workflow:
+        description: "Max runs to inspect per workflow"
+        required: false
+        default: "30"
+      top_n:
+        description: "Top N failure reasons"
+        required: false
+        default: "5"
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  summarize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: "20"
+      - name: Generate weekly automation observability summary
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
+          AE_AUTOMATION_REPOSITORY: ${{ github.repository }}
+          AE_AUTOMATION_OBSERVABILITY_WORKFLOWS: ${{ vars.AE_AUTOMATION_OBSERVABILITY_WORKFLOWS || 'PR Self-Heal,Codex Autopilot Lane,PR Maintenance,Copilot Auto Fix' }}
+          AE_AUTOMATION_OBSERVABILITY_SINCE_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.since_days || vars.AE_AUTOMATION_OBSERVABILITY_SINCE_DAYS || '7' }}
+          AE_AUTOMATION_OBSERVABILITY_MAX_RUNS_PER_WORKFLOW: ${{ github.event_name == 'workflow_dispatch' && inputs.max_runs_per_workflow || vars.AE_AUTOMATION_OBSERVABILITY_MAX_RUNS_PER_WORKFLOW || '30' }}
+          AE_AUTOMATION_OBSERVABILITY_TOP_N: ${{ github.event_name == 'workflow_dispatch' && inputs.top_n || vars.AE_AUTOMATION_OBSERVABILITY_TOP_N || '5' }}
+          AE_AUTOMATION_OBSERVABILITY_OUTPUT: artifacts/automation/weekly-failure-summary.json
+        run: node scripts/ci/automation-observability-weekly.mjs
+      - name: Upload weekly observability artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: automation-observability-weekly
+          path: artifacts/automation/weekly-failure-summary.json
+          if-no-files-found: error
