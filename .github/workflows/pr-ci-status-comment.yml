@@ -39,7 +39,7 @@ jobs:
   update-branch:
     # Skip edited events to avoid branch updates on metadata-only changes.
     if: >-
-      vars.AE_AUTOMATION_GLOBAL_DISABLE != '1'
+      !contains(fromJSON('["1","true","yes","on","TRUE","YES","ON","True","Yes","On"]'), vars.AE_AUTOMATION_GLOBAL_DISABLE)
       && (
         (github.event_name == 'pull_request' && github.event.action != 'edited' && github.event.pull_request.head.repo.fork == false)
         || (github.event_name == 'workflow_dispatch' && inputs.mode == 'update-branch')
@@ -354,7 +354,7 @@ jobs:
 
   enable-auto-merge:
     if: >-
-      vars.AE_AUTOMATION_GLOBAL_DISABLE != '1'
+      !contains(fromJSON('["1","true","yes","on","TRUE","YES","ON","True","Yes","On"]'), vars.AE_AUTOMATION_GLOBAL_DISABLE)
       && (
         (github.event_name == 'pull_request' && github.event.action != 'edited' && github.event.pull_request.head.repo.fork == false)
         || (github.event_name == 'schedule')

@@ -101,6 +101,7 @@ auto-merge（ラベルopt-in）:
 
 全自動化の緊急停止（kill-switch）:
 - `AE_AUTOMATION_GLOBAL_DISABLE=1`
+  - `true` / `yes` / `on` も有効値として扱います。
 
 `AE_COPILOT_AUTO_FIX_SCOPE=docs` の安全設計（A）:
 - PR差分に `docs/**` と `README.md` 以外が含まれる場合、auto-fix 全体をスキップします（`scripts/ci/copilot-auto-fix.mjs` の allowlist に準拠）。

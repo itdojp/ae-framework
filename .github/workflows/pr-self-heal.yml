@@ -42,7 +42,7 @@ permissions:
 jobs:
   self-heal:
     if: >-
-      vars.AE_AUTOMATION_GLOBAL_DISABLE != '1'
+      !contains(fromJSON('["1","true","yes","on","TRUE","YES","ON","True","Yes","On"]'), vars.AE_AUTOMATION_GLOBAL_DISABLE)
       && (
         github.event_name == 'workflow_dispatch'
         || (vars.AE_SELF_HEAL_ENABLED == '1'

@@ -68,4 +68,4 @@ Repository Variables に `AE_AUTOMATION_PROFILE` を設定します。
 - `AE_AUTO_MERGE_MODE=label` で `AE_AUTO_MERGE_LABEL` が空の場合は警告します。
 - `AE_GH_RETRY_MAX_DELAY_MS < AE_GH_RETRY_INITIAL_DELAY_MS` の場合は、`MAX_DELAY` を `INITIAL_DELAY` に補正します。
 - プロファイル名が不正な場合は無効扱い（既定値にフォールバック）です。
-- `AE_AUTOMATION_GLOBAL_DISABLE=1` の場合、auto-fix / auto-merge / update-branch / self-heal / autopilot の実行は安全側で停止（skip）します。
+- `AE_AUTOMATION_GLOBAL_DISABLE=1`（`true` / `yes` / `on` も可）の場合、auto-fix / auto-merge / update-branch / self-heal / autopilot の実行は安全側で停止（skip）します。

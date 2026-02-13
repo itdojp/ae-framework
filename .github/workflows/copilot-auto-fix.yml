@@ -19,7 +19,7 @@ permissions:
 jobs:
   auto-fix:
     if: >-
-      vars.AE_AUTOMATION_GLOBAL_DISABLE != '1'
+      !contains(fromJSON('["1","true","yes","on","TRUE","YES","ON","True","Yes","On"]'), vars.AE_AUTOMATION_GLOBAL_DISABLE)
       && github.event.pull_request.head.repo.fork == false
       && contains(fromJSON('["copilot-pull-request-reviewer","github-copilot","github-copilot[bot]","copilot","copilot[bot]","Copilot"]'), github.actor)
     runs-on: ubuntu-latest
