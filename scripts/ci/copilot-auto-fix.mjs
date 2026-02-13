@@ -4,6 +4,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execGh, execGhJson } from './lib/gh-exec.mjs';
 import { emitAutomationReport } from './lib/automation-report.mjs';
+import {
+  collectNonDocs,
+  hasLabel,
+  isActorAllowed,
+  isDocsPath,
+  normalizeLabelNames,
+  parseActorCsv,
+  toActorSet,
+} from './lib/automation-guards.mjs';
 
 const repo = process.env.GITHUB_REPOSITORY;
 const prNumberRaw = process.env.PR_NUMBER ? String(process.env.PR_NUMBER).trim() : '';
@@ -15,11 +24,11 @@ const actor = String(process.env.GITHUB_ACTOR || '').trim();
 const forceApply = String(process.env.AE_COPILOT_AUTO_FIX_FORCE || '').trim() === '1';
 const autoFixEnabled = String(process.env.AE_COPILOT_AUTO_FIX || '').trim() === '1';
 const globalDisabled = String(process.env.AE_AUTOMATION_GLOBAL_DISABLE || '').trim() === '1';
-const copilotActors = (process.env.COPILOT_ACTORS || 'github-copilot,github-copilot[bot]')
-  .split(',')
-  .map((s) => s.trim())
-  .filter(Boolean);
-const copilotActorSet = new Set(copilotActors.map((s) => s.toLowerCase()));
+const copilotActors = parseActorCsv(
+  process.env.COPILOT_ACTORS,
+  'github-copilot,github-copilot[bot]',
+);
+const copilotActorSet = toActorSet(copilotActors);
 
 if (!repo) {
   console.error('[copilot-auto-fix] GITHUB_REPOSITORY is required.');
@@ -75,14 +84,13 @@ if (!forceApply && !autoFixEnabled) {
   process.exit(0);
 }
 
-if (!forceApply && !copilotActorSet.has(actor.toLowerCase())) {
+if (!forceApply && !isActorAllowed(actor, copilotActorSet)) {
   console.log(`[copilot-auto-fix] Skip: actor ${actor || '(empty)'} is not in COPILOT_ACTORS.`);
   emitReport('skip', `actor ${actor || '(empty)'} is not in COPILOT_ACTORS`);
   process.exit(0);
 }
 
 const marker = '<!-- AE-COPILOT-AUTO-FIX v1 -->';
-const docsAllowlist = [/^docs\//, /^README\.md$/];
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -127,8 +135,6 @@ const upsertComment = (number, body) => {
   execGh(['api', `repos/${repo}/issues/${number}/comments`, '--input', '-'], { input: payload });
 };
 
-const isDocPath = (filePath) => docsAllowlist.some((re) => re.test(filePath));
-
 const listPullFiles = async (number) => {
   const files = [];
   let page = 1;
@@ -148,10 +154,7 @@ const listPullFiles = async (number) => {
 
 const fetchIssueLabels = (number) => {
   const issue = execJson(['api', `repos/${repo}/issues/${number}`]);
-  const labels = Array.isArray(issue.labels)
-    ? issue.labels.map((l) => (typeof l === 'string' ? l : l && l.name)).filter(Boolean)
-    : [];
-  return labels;
+  return normalizeLabelNames(issue.labels);
 };
 
 const listReviewComments = async (number) => {
@@ -258,7 +261,7 @@ const resolveReviewThread = async (threadId) => {
 const main = async () => {
   if (optInLabel) {
     const labels = fetchIssueLabels(prNumber);
-    if (!labels.includes(optInLabel)) {
+    if (!hasLabel(labels, optInLabel)) {
       upsertComment(
         prNumber,
         formatSummary({
@@ -283,10 +286,11 @@ const main = async () => {
 
   if (scope === 'docs') {
     const files = await listPullFiles(prNumber);
-    const nonDocs = files
-      .map((f) => f && f.filename)
-      .filter((name) => typeof name === 'string')
-      .filter((name) => !isDocPath(name));
+    const nonDocs = collectNonDocs(
+      files
+        .map((f) => f && f.filename)
+        .filter((name) => typeof name === 'string'),
+    );
     if (nonDocs.length > 0) {
       upsertComment(
         prNumber,
