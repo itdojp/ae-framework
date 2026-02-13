@@ -20,6 +20,7 @@ const FAILED_LIST_LIMIT = 5;
 const AUTO_MERGE_ENABLED = String(process.env.AE_AUTO_MERGE || '').trim() === '1';
 const AUTO_MERGE_MODE = String(process.env.AE_AUTO_MERGE_MODE || 'all').toLowerCase();
 const AUTO_MERGE_LABEL = String(process.env.AE_AUTO_MERGE_LABEL || '').trim();
+const GLOBAL_DISABLE = String(process.env.AE_AUTOMATION_GLOBAL_DISABLE || '').trim() === '1';
 const PR_NUMBER_RAW = process.env.PR_NUMBER !== undefined ? String(process.env.PR_NUMBER).trim() : '';
 let PR_NUMBER = null;
 if (PR_NUMBER_RAW !== '') {
@@ -229,6 +230,19 @@ const enableAutoMerge = (number) => {
 };
 
 const main = async () => {
+  if (GLOBAL_DISABLE) {
+    console.log('[auto-merge-enabler] Skip: AE_AUTOMATION_GLOBAL_DISABLE is enabled.');
+    emitAutomationReport({
+      tool: 'auto-merge-enabler',
+      mode: AUTO_MERGE_MODE || 'all',
+      status: 'skip',
+      reason: 'AE_AUTOMATION_GLOBAL_DISABLE is enabled',
+      metrics: {
+        targets: 0,
+      },
+    });
+    return;
+  }
   if (!AUTO_MERGE_ENABLED) {
     console.log('[auto-merge-enabler] Skip: AE_AUTO_MERGE is disabled after config resolution.');
     emitAutomationReport({

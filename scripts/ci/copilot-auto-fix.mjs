@@ -14,6 +14,7 @@ const optInLabel = String(process.env.AE_COPILOT_AUTO_FIX_LABEL || '').trim();
 const actor = String(process.env.GITHUB_ACTOR || '').trim();
 const forceApply = String(process.env.AE_COPILOT_AUTO_FIX_FORCE || '').trim() === '1';
 const autoFixEnabled = String(process.env.AE_COPILOT_AUTO_FIX || '').trim() === '1';
+const globalDisabled = String(process.env.AE_AUTOMATION_GLOBAL_DISABLE || '').trim() === '1';
 const copilotActors = (process.env.COPILOT_ACTORS || 'github-copilot,github-copilot[bot]')
   .split(',')
   .map((s) => s.trim())
@@ -61,6 +62,12 @@ const emitReport = (status, reason, extra = {}) =>
     prNumber,
     ...extra,
   });
+
+if (globalDisabled) {
+  console.log('[copilot-auto-fix] Skip: AE_AUTOMATION_GLOBAL_DISABLE is enabled.');
+  emitReport('skip', 'AE_AUTOMATION_GLOBAL_DISABLE is enabled');
+  process.exit(0);
+}
 
 if (!forceApply && !autoFixEnabled) {
   console.log('[copilot-auto-fix] Skip: AE_COPILOT_AUTO_FIX is disabled after config resolution.');

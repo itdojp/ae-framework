@@ -51,6 +51,7 @@ const PROFILE_PRESETS = {
 };
 
 const FIELD_SPECS = [
+  { key: 'AE_AUTOMATION_GLOBAL_DISABLE', type: 'toggle', defaultValue: '0' },
   { key: 'AE_COPILOT_AUTO_FIX', type: 'toggle', defaultValue: '0' },
   { key: 'AE_COPILOT_AUTO_FIX_SCOPE', type: 'enum', values: ['docs', 'all'], defaultValue: 'docs' },
   { key: 'AE_COPILOT_AUTO_FIX_LABEL', type: 'string', defaultValue: '' },

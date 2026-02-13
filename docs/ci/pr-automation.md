@@ -99,6 +99,10 @@ auto-merge（ラベルopt-in）:
 - `AE_AUTO_MERGE_MODE=label`
 - `AE_AUTO_MERGE_LABEL=auto-merge`
 
+全自動化の緊急停止（kill-switch）:
+- `AE_AUTOMATION_GLOBAL_DISABLE=1`
+  - `true` / `yes` / `on` も有効値として扱います。
+
 `AE_COPILOT_AUTO_FIX_SCOPE=docs` の安全設計（A）:
 - PR差分に `docs/**` と `README.md` 以外が含まれる場合、auto-fix 全体をスキップします（`scripts/ci/copilot-auto-fix.mjs` の allowlist に準拠）。
 
@@ -190,6 +194,15 @@ auto-merge（ラベルopt-in）:
 - 詳細: `docs/ci/codex-autopilot-lane.md`
 補足:
 - CI で調整する場合、これらは Repository Variables として設定し、ワークフロー側で `env:` に渡します（本リポジトリの `copilot-auto-fix.yml` / `pr-ci-status-comment.yml` は `vars.*` を参照）。
+
+### 5.7 グローバル kill-switch
+
+- `AE_AUTOMATION_GLOBAL_DISABLE=1` を設定すると、次の自動実行を停止します（skip）:
+  - `Copilot Auto Fix`
+  - `PR Maintenance` の `update-branch` / `enable-auto-merge`
+  - `PR Self-Heal`
+  - `Codex Autopilot Lane`
+- 復帰時は `AE_AUTOMATION_GLOBAL_DISABLE=0`（または未設定）へ戻し、必要なworkflowを rerun してください。
 
 ## 6. 参照
 
