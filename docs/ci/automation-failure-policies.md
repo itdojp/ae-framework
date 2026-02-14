@@ -12,7 +12,7 @@ PR 自動化ワークフローの fail-open / fail-closed 方針と、運用で�
 | `Copilot Review Gate / gate` | Copilot レビュー必須化 | fail-closed | review不在/未解決threadで `gate` を failure にする（`.github/workflows/copilot-review-gate.yml`） |
 | `Copilot Auto Fix / auto-fix` | suggestion 自動適用 | fail-closed | actor/scope/head整合が崩れる場合は `skip` で停止し書き換えしない（`scripts/ci/copilot-auto-fix.mjs`） |
 | `PR Maintenance / enable-auto-merge` | auto-merge 有効化 | fail-closed | required checks/review/保護情報が不十分な場合は `blocked` で停止（`scripts/ci/auto-merge-enabler.mjs`） |
-| `PR Maintenance / update-branch` | behind 解消 | fail-open（ただし競合は手動移行） | conflict検知時は自動停止しコメントで手動解消へ誘導（`.github/workflows/pr-ci-status-comment.yml`） |
+| `PR Maintenance / update-branch` | behind 解消 | 条件別（conflict は fail-open / その他は fail-closed） | conflict はコメントを残して停止、非conflictエラーは `core.setFailed(...)` で job を失敗終了（`.github/workflows/pr-ci-status-comment.yml`） |
 | `PR Self-Heal / self-heal` | failed/behind の復旧 | fail-closed | 復旧不能時は `status:blocked` を付与し明示停止（`scripts/ci/pr-self-heal.mjs`） |
 | `Codex Autopilot Lane / autopilot` | touchless merge lane | fail-closed | conflict/gate不一致/未収束時は `status:blocked` で停止（`scripts/ci/codex-autopilot-lane.mjs`） |
 | `PR Maintenance / post-status` | 状態可視化 | fail-open | 情報投稿専用。失敗してもマージ条件判定はこのjobに依存しない（`scripts/ci/pr-ci-status-comment.mjs`） |
@@ -98,6 +98,7 @@ PR 自動化ワークフローの fail-open / fail-closed 方針と、運用で�
 
 ```md
 <!-- AE-PR-AUTO-UPDATE -->
+
 ### Auto Update Branch
 PR #<number> was behind base; triggered branch update.
 If conflicts remain, manual resolution is required.
@@ -107,6 +108,7 @@ If conflicts remain, manual resolution is required.
 
 ```md
 <!-- AE-PR-AUTO-UPDATE -->
+
 ### Auto Update Branch
 PR #<number> could not be auto-updated due to conflicts.
 Details: <error>
@@ -118,4 +120,3 @@ Please resolve conflicts manually.
 - marker 付きコメントを削除せず update する（履歴の連続性を維持）
 - `status:blocked` は「自動復旧不能」の明示として扱う
 - fail-closed 系の job は rerun 前に reason 行を確認し、条件不足か実装不具合かを切り分ける
-
