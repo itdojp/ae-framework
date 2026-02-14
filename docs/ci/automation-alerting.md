@@ -53,6 +53,9 @@ Issue comment の本文は次の要素で構成する。
 - `AE_AUTOMATION_ALERT_COOLDOWN_HOURS`
 - `AE_AUTOMATION_ALERT_DRY_RUN`（`true` で通知投稿を抑止）
 
+補足:
+- `AE_AUTOMATION_ALERT_CHANNEL=dry_run` または `AE_AUTOMATION_ALERT_DRY_RUN=true` の場合も、`issue_number` が設定されていれば suppression 判定自体は実行し、`weekly-alert-summary.json` に反映する。
+
 ## 5. 運用
 
 1. 週次 workflow が summary を生成

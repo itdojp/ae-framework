@@ -15,6 +15,8 @@ const DEFAULT_COOLDOWN_HOURS = 24;
 const DEFAULT_OUTPUT_PATH = 'artifacts/automation/weekly-alert-summary.json';
 const DEFAULT_INPUT_PATH = 'artifacts/automation/weekly-failure-summary.json';
 const DEFAULT_CHANNEL = 'issue_comment';
+const DEFAULT_COMMENTS_PER_PAGE = 100;
+const DEFAULT_MAX_COMMENT_PAGES = 100;
 
 function toInt(value, fallback, min = 0) {
   const raw = String(value ?? '').trim();
@@ -297,11 +299,48 @@ function parseFingerprint(body) {
   return match ? match[1] : null;
 }
 
-function listIssueComments(repository, issueNumber) {
+function fetchIssueCommentsPage(repository, issueNumber, page, perPage = DEFAULT_COMMENTS_PER_PAGE) {
   return execGhJson([
     'api',
-    `repos/${repository}/issues/${issueNumber}/comments?per_page=100`,
+    `repos/${repository}/issues/${issueNumber}/comments?per_page=${perPage}&page=${page}`,
   ]);
+}
+
+function listIssueComments(repository, issueNumber, options = {}) {
+  const perPage = toInt(options.perPage, DEFAULT_COMMENTS_PER_PAGE, 1);
+  const maxPages = toInt(options.maxPages, DEFAULT_MAX_COMMENT_PAGES, 1);
+  const fetchPage = typeof options.fetchPage === 'function'
+    ? options.fetchPage
+    : fetchIssueCommentsPage;
+
+  const comments = [];
+  for (let page = 1; page <= maxPages; page += 1) {
+    const pageComments = fetchPage(repository, issueNumber, page, perPage);
+    if (!Array.isArray(pageComments) || pageComments.length === 0) {
+      break;
+    }
+    comments.push(...pageComments);
+    if (pageComments.length < perPage) {
+      break;
+    }
+  }
+  return comments;
+}
+
+function normalizeAlertChannel(value) {
+  const raw = String(value || '').trim().toLowerCase();
+  if (raw === 'issue_comment') return 'issue_comment';
+  if (raw === 'dry_run') return 'dry_run';
+  if (!raw) return DEFAULT_CHANNEL;
+  return 'dry_run';
+}
+
+function shouldEvaluateSuppression({ alerts, issueNumber }) {
+  return Array.isArray(alerts) && alerts.length > 0 && Number.isFinite(issueNumber) && issueNumber > 0;
+}
+
+function canPostIssueComment({ channel, dryRun, suppressed }) {
+  return channel === 'issue_comment' && !dryRun && !suppressed;
 }
 
 function findSuppressionState(comments, { fingerprint, cooldownHours, nowMs }) {
@@ -391,8 +430,8 @@ function main(env = process.env) {
     env.AE_AUTOMATION_OBSERVABILITY_ALERT_OUTPUT || DEFAULT_OUTPUT_PATH
   ).trim();
   const issueNumber = toInt(env.AE_AUTOMATION_ALERT_ISSUE_NUMBER, 0, 1);
-  const channel = String(env.AE_AUTOMATION_ALERT_CHANNEL || DEFAULT_CHANNEL).trim() || DEFAULT_CHANNEL;
-  const dryRun = toBool(env.AE_AUTOMATION_ALERT_DRY_RUN, false);
+  const channel = normalizeAlertChannel(env.AE_AUTOMATION_ALERT_CHANNEL || DEFAULT_CHANNEL);
+  const dryRun = toBool(env.AE_AUTOMATION_ALERT_DRY_RUN, false) || channel === 'dry_run';
   const cooldownHours = toInt(env.AE_AUTOMATION_ALERT_COOLDOWN_HOURS, DEFAULT_COOLDOWN_HOURS, 0);
 
   const payload = readJsonFile(inputPath);
@@ -414,7 +453,7 @@ function main(env = process.env) {
   let suppressed = false;
   let suppressedReason = null;
 
-  if (alerts.length > 0 && channel === 'issue_comment' && issueNumber > 0) {
+  if (shouldEvaluateSuppression({ alerts, issueNumber })) {
     const comments = listIssueComments(repository, issueNumber);
     const suppression = findSuppressionState(comments, {
       fingerprint,
@@ -424,7 +463,7 @@ function main(env = process.env) {
     suppressed = suppression.suppressed;
     suppressedReason = suppression.reason;
 
-    if (!suppressed && !dryRun) {
+    if (canPostIssueComment({ channel, dryRun, suppressed })) {
       const body = buildAlertCommentBody({
         repository,
         issueNumber,
@@ -481,11 +520,16 @@ export {
   buildConsecutiveFailureStats,
   buildFingerprint,
   buildStepSummaryLines,
+  canPostIssueComment,
   evaluateAlertConditions,
+  fetchIssueCommentsPage,
   findSuppressionState,
+  listIssueComments,
   main,
+  normalizeAlertChannel,
   parseEventTimestamp,
   parseFingerprint,
+  shouldEvaluateSuppression,
   toBool,
   toInt,
 };

@@ -2,11 +2,15 @@ import { describe, expect, it } from 'vitest';
 import {
   ALERT_MARKER,
   buildAlertCommentBody,
+  canPostIssueComment,
   buildConsecutiveFailureStats,
   buildFingerprint,
   evaluateAlertConditions,
+  listIssueComments,
   findSuppressionState,
+  normalizeAlertChannel,
   parseFingerprint,
+  shouldEvaluateSuppression,
 } from '../../../scripts/ci/automation-observability-alert.mjs';
 
 describe('automation-observability-alert', () => {
@@ -97,6 +101,39 @@ describe('automation-observability-alert', () => {
     );
     expect(cooldown.suppressed).toBe(true);
     expect(cooldown.reason).toBe('cooldown_active');
+  });
+
+  it('paginates issue comments for suppression checks', () => {
+    const pages = {
+      1: Array.from({ length: 2 }, (_, index) => ({ id: index + 1 })),
+      2: Array.from({ length: 2 }, (_, index) => ({ id: index + 3 })),
+      3: [{ id: 5 }],
+    };
+    const calls = [];
+    const comments = listIssueComments('itdojp/ae-framework', 1963, {
+      perPage: 2,
+      fetchPage: (_repo, _issue, page) => {
+        calls.push(page);
+        return pages[page] || [];
+      },
+    });
+
+    expect(calls).toEqual([1, 2, 3]);
+    expect(comments.map((item) => item.id)).toEqual([1, 2, 3, 4, 5]);
+  });
+
+  it('normalizes channel and posting decision', () => {
+    expect(normalizeAlertChannel('issue_comment')).toBe('issue_comment');
+    expect(normalizeAlertChannel('dry_run')).toBe('dry_run');
+    expect(normalizeAlertChannel('invalid-channel')).toBe('dry_run');
+    expect(
+      shouldEvaluateSuppression({
+        alerts: [{ code: 'blocked_spike' }],
+        issueNumber: 1963,
+      })
+    ).toBe(true);
+    expect(canPostIssueComment({ channel: 'issue_comment', dryRun: false, suppressed: false })).toBe(true);
+    expect(canPostIssueComment({ channel: 'dry_run', dryRun: true, suppressed: false })).toBe(false);
   });
 
   it('renders alert comment body with marker and fingerprint', () => {
