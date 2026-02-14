@@ -86,6 +86,8 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
  - Codex Autopilot Lane: `ci/codex-autopilot-lane.md`（touchless merge の opt-in）
  - Auto Merge: `ci/auto-merge.md`（auto-merge自動有効化）
  - Automation Failure Policies: `ci/automation-failure-policies.md`（fail-open/fail-closedとコメントテンプレ）
+ - Automation Rollback Runbook: `ci/automation-rollback-runbook.md`（段階停止/復帰/巻き戻し）
+ - Rollback Validation Report (2026-02-14): `ci/automation-rollback-validation-2026-02-14.md`（dry-run実行ログ）
  - Automation Profiles: `ci/automation-profiles.md`（自動化設定の一括プロファイル）
  - Automation Observability: `ci/automation-observability.md`（共通JSON/Step Summary出力）
  - Automation Permission Boundaries: `ci/automation-permission-boundaries.md`（workflow_dispatch / issue_comment の権限境界）
