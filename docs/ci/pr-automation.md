@@ -212,6 +212,7 @@ auto-merge（ラベルopt-in）:
 - `docs/ci/automation-failure-policies.md`
 - `docs/ci/branch-protection-operations.md`
 - `docs/ci/ci-troubleshooting-guide.md`
+- `docs/ci/automation-permission-boundaries.md`
 - `docs/ci/automation-observability.md`
 - `docs/ci/workflow-dispatch-validation-2026-02-12.md`
 - `docs/product/MINIMAL-ADOPTION.md`
