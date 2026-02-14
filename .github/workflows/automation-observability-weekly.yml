@@ -17,6 +17,14 @@ on:
         description: "Top N failure reasons"
         required: false
         default: "5"
+      slo_target_percent:
+        description: "SLO success-rate target (%)"
+        required: false
+        default: "95"
+      mttr_target_minutes:
+        description: "MTTR target (minutes)"
+        required: false
+        default: "120"
       alert_issue_number:
         description: "Issue number for alert comments (0 disables issue_comment)"
         required: false
@@ -64,6 +72,8 @@ jobs:
           AE_AUTOMATION_OBSERVABILITY_SINCE_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.since_days || vars.AE_AUTOMATION_OBSERVABILITY_SINCE_DAYS || '7' }}
           AE_AUTOMATION_OBSERVABILITY_MAX_RUNS_PER_WORKFLOW: ${{ github.event_name == 'workflow_dispatch' && inputs.max_runs_per_workflow || vars.AE_AUTOMATION_OBSERVABILITY_MAX_RUNS_PER_WORKFLOW || '30' }}
           AE_AUTOMATION_OBSERVABILITY_TOP_N: ${{ github.event_name == 'workflow_dispatch' && inputs.top_n || vars.AE_AUTOMATION_OBSERVABILITY_TOP_N || '5' }}
+          AE_AUTOMATION_OBSERVABILITY_SLO_TARGET_PERCENT: ${{ github.event_name == 'workflow_dispatch' && inputs.slo_target_percent || vars.AE_AUTOMATION_OBSERVABILITY_SLO_TARGET_PERCENT || '95' }}
+          AE_AUTOMATION_OBSERVABILITY_MTTR_TARGET_MINUTES: ${{ github.event_name == 'workflow_dispatch' && inputs.mttr_target_minutes || vars.AE_AUTOMATION_OBSERVABILITY_MTTR_TARGET_MINUTES || '120' }}
           AE_AUTOMATION_OBSERVABILITY_OUTPUT: artifacts/automation/weekly-failure-summary.json
         run: node scripts/ci/automation-observability-weekly.mjs
       - name: Evaluate automation alerts

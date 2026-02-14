@@ -88,12 +88,23 @@ gh run view <run_id> --repo itdojp/ae-framework --log \
 - `AE_AUTOMATION_OBSERVABILITY_SINCE_DAYS`: 集計対象期間（日数）
 - `AE_AUTOMATION_OBSERVABILITY_MAX_RUNS_PER_WORKFLOW`: WFごとの参照run上限
 - `AE_AUTOMATION_OBSERVABILITY_TOP_N`: Top N件数
+- `AE_AUTOMATION_OBSERVABILITY_SLO_TARGET_PERCENT`: 成功率SLO目標（%）
+- `AE_AUTOMATION_OBSERVABILITY_MTTR_TARGET_MINUTES`: MTTR目標（分）
 - `AE_AUTOMATION_ALERT_MAX_BLOCKED`: blocked 件数しきい値
 - `AE_AUTOMATION_ALERT_MAX_CONSECUTIVE_FAILURES`: 連続失敗しきい値
 - `AE_AUTOMATION_ALERT_COOLDOWN_HOURS`: 通知クールダウン
 - `AE_AUTOMATION_ALERT_ISSUE_NUMBER`: Issue comment 通知先
 - `AE_AUTOMATION_ALERT_CHANNEL`: `issue_comment` / `dry_run`
 - `AE_AUTOMATION_ALERT_DRY_RUN`: `true` の場合は通知を投稿せず判定のみ
+
+出力に追加される主要指標:
+- `summary.slo.successRatePercent`: 期間内成功率（`(1 - failures/totalReports) * 100`）
+- `summary.slo.achieved`: SLO達成可否
+- `summary.mttr.meanMinutes` / `summary.mttr.p95Minutes`: 復旧時間の平均/P95
+- `summary.mttr.byIncidentType`: インシデント種別（`rate_limit_429` / `review_gate` / `behind_loop` / `blocked` / `other`）別の復旧統計
+
+定義の詳細:
+- `docs/ci/automation-slo-mttr.md`
 
 手動実行例:
 
@@ -103,10 +114,14 @@ gh workflow run "Automation Observability Weekly" \
   -f since_days=7 \
   -f max_runs_per_workflow=30 \
   -f top_n=5 \
+  -f slo_target_percent=95 \
+  -f mttr_target_minutes=120 \
   -f alert_issue_number=1963 \
   -f alert_max_blocked=2 \
   -f alert_max_consecutive_failures=3 \
-  -f alert_cooldown_hours=24
+  -f alert_cooldown_hours=24 \
+  -f alert_channel=issue_comment \
+  -f alert_dry_run=false
 ```
 
 通知条件・テンプレート・抑止ルールの詳細は `docs/ci/automation-alerting.md` を参照してください。
