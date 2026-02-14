@@ -95,6 +95,7 @@ gh issue edit <pr-number> --repo itdojp/ae-framework --remove-label status:block
 - 緊急停止解除は `unfreeze` を先に実行
 - `write` は `unfreeze` で即時復帰可能（個別トグルは変更しない）
 - `freeze` は `unfreeze` 後も個別トグルが `0` のため、必要変数を明示的に戻して復帰する
+- 復帰判断では `docs/ci/automation-slo-mttr.md` の MTTR 目標と `automation-observability-weekly` の実測値を確認する
 - その後、プロジェクト方針に沿って個別Variablesを段階復帰
   - 例: `AE_AUTOMATION_PROFILE=conservative` を基準に再設定
 - 復帰直後は `PR Maintenance` / `Copilot Review Gate` の run を監視し、再発時は `write` へ戻す
@@ -103,5 +104,6 @@ gh issue edit <pr-number> --repo itdojp/ae-framework --remove-label status:block
 
 - `docs/ci/pr-automation.md`
 - `docs/ci/ci-troubleshooting-guide.md`
+- `docs/ci/automation-slo-mttr.md`
 - `docs/ci/automation-rollback-validation-2026-02-14.md`
 - `docs/internal/autopilot-operations.md`

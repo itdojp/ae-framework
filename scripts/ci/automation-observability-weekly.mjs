@@ -13,6 +13,8 @@ const DEFAULT_WORKFLOWS = [
   'Copilot Auto Fix',
 ];
 const DEFAULT_FAILURE_STATUSES = ['error', 'blocked'];
+const DEFAULT_SLO_TARGET_PERCENT = 95;
+const DEFAULT_MTTR_TARGET_MINUTES = 120;
 
 function toInt(value, fallback, min = 0) {
   const raw = String(value ?? '').trim();
@@ -66,8 +68,215 @@ function joinCountMap(mapObj) {
     .join(', ');
 }
 
+function parseEventTimestamp(report) {
+  const candidates = [
+    report?.generatedAt,
+    report?.run?.createdAt,
+    report?.__meta?.runCreatedAt,
+  ];
+  for (const value of candidates) {
+    const raw = String(value || '').trim();
+    if (!raw) continue;
+    const parsed = Date.parse(raw);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return null;
+}
+
+function resolveIncidentScope(report) {
+  const prNumberRaw = Number(report?.prNumber);
+  if (Number.isFinite(prNumberRaw) && prNumberRaw > 0) {
+    return `pr:${Math.trunc(prNumberRaw)}`;
+  }
+
+  const ref = String(report?.run?.ref || '').trim();
+  const pullRefMatch = ref.match(/^refs\/pull\/(\d+)\/.+$/u);
+  if (pullRefMatch) {
+    return `pr:${pullRefMatch[1]}`;
+  }
+
+  const sha = String(report?.run?.sha || '').trim();
+  if (sha) {
+    return `sha:${sha}`;
+  }
+
+  return 'global';
+}
+
+// Classify incidents with deterministic precedence (first match wins):
+// 1) rate limit, 2) behind loop, 3) review gate, 4) blocked/conflict, 5) other.
+function classifyIncidentType(report) {
+  const status = String(report?.status || '').trim().toLowerCase();
+  const reason = String(report?.reason || '').trim().toLowerCase();
+
+  if (reason.includes('429') || reason.includes('too many requests') || reason.includes('rate limit')) {
+    return 'rate_limit_429';
+  }
+  if (reason.includes('behind')) {
+    return 'behind_loop';
+  }
+  if (reason.includes('gate') || reason.includes('review')) {
+    return 'review_gate';
+  }
+  if (status === 'blocked' || reason.includes('blocked') || reason.includes('conflict')) {
+    return 'blocked';
+  }
+  return 'other';
+}
+
+function percentile(values, ratio) {
+  if (!Array.isArray(values) || values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const index = Math.max(0, Math.min(sorted.length - 1, Math.ceil(sorted.length * ratio) - 1));
+  return sorted[index];
+}
+
+function round2(value) {
+  if (!Number.isFinite(value)) return null;
+  return Math.round(value * 100) / 100;
+}
+
+function buildSloStats({ totalReports, totalFailures, targetPercent }) {
+  const successful = Math.max(0, totalReports - totalFailures);
+  const successRatePercent = totalReports > 0
+    ? round2((successful / totalReports) * 100)
+    : null;
+  return {
+    targetPercent,
+    successfulReports: successful,
+    totalReports,
+    successRatePercent,
+    achieved: successRatePercent !== null ? successRatePercent >= targetPercent : null,
+  };
+}
+
+function buildMttrStats(reports, { failureStatuses, targetMinutes }) {
+  const failureSet = new Set(Array.isArray(failureStatuses) ? failureStatuses : []);
+  const events = (Array.isArray(reports) ? reports : [])
+    .map((report) => ({
+      report,
+      tool: String(report?.tool || 'unknown').trim() || 'unknown',
+      status: String(report?.status || 'unknown').trim() || 'unknown',
+      timestampMs: parseEventTimestamp(report),
+      reason: String(report?.reason || '').trim(),
+      runUrl: String(report?.run?.url || '').trim(),
+      incidentScope: resolveIncidentScope(report),
+      incidentType: classifyIncidentType(report),
+    }))
+    .filter((item) => Number.isFinite(item.timestampMs))
+    .sort((a, b) => a.timestampMs - b.timestampMs);
+
+  const openByScope = new Map();
+  const durationsMs = [];
+  const byIncidentType = new Map();
+
+  const ensureTypeBucket = (incidentType) => {
+    if (!byIncidentType.has(incidentType)) {
+      byIncidentType.set(incidentType, {
+        incidentType,
+        recoveries: 0,
+        unresolvedOpenIncidents: 0,
+        meanMinutes: null,
+        p95Minutes: null,
+        samples: [],
+        _durationsMs: [],
+      });
+    }
+    return byIncidentType.get(incidentType);
+  };
+
+  for (const event of events) {
+    const scopeKey = `${event.tool}::${event.incidentScope}`;
+    const isFailure = failureSet.has(event.status);
+    if (isFailure) {
+      if (!openByScope.has(scopeKey)) {
+        const bucket = ensureTypeBucket(event.incidentType);
+        if (event.runUrl && bucket.samples.length < 3) {
+          bucket.samples.push(event.runUrl);
+        }
+        openByScope.set(scopeKey, {
+          startedAtMs: event.timestampMs,
+          incidentType: event.incidentType,
+        });
+      }
+      continue;
+    }
+
+    if (event.status !== 'resolved') {
+      continue;
+    }
+
+    if (!openByScope.has(scopeKey)) {
+      continue;
+    }
+
+    const openIncident = openByScope.get(scopeKey);
+    const duration = Math.max(0, event.timestampMs - openIncident.startedAtMs);
+    durationsMs.push(duration);
+    const bucket = ensureTypeBucket(openIncident.incidentType);
+    bucket.recoveries += 1;
+    bucket._durationsMs.push(duration);
+    if (event.runUrl && bucket.samples.length < 3) {
+      bucket.samples.push(event.runUrl);
+    }
+    openByScope.delete(scopeKey);
+  }
+
+  for (const incident of openByScope.values()) {
+    const bucket = ensureTypeBucket(incident.incidentType);
+    bucket.unresolvedOpenIncidents += 1;
+  }
+
+  const byIncidentTypeSummary = [...byIncidentType.values()]
+    .map((item) => {
+      const meanMs = item._durationsMs.length > 0
+        ? item._durationsMs.reduce((sum, value) => sum + value, 0) / item._durationsMs.length
+        : null;
+      const p95Ms = percentile(item._durationsMs, 0.95);
+      return {
+        incidentType: item.incidentType,
+        recoveries: item.recoveries,
+        unresolvedOpenIncidents: item.unresolvedOpenIncidents,
+        meanMinutes: meanMs === null ? null : round2(meanMs / 60000),
+        p95Minutes: p95Ms === null ? null : round2(p95Ms / 60000),
+        samples: item.samples,
+      };
+    })
+    .sort((a, b) => {
+      const recoveriesDiff = b.recoveries - a.recoveries;
+      if (recoveriesDiff !== 0) return recoveriesDiff;
+      return a.incidentType.localeCompare(b.incidentType);
+    });
+
+  const meanMs = durationsMs.length > 0
+    ? durationsMs.reduce((sum, value) => sum + value, 0) / durationsMs.length
+    : null;
+  const p95Ms = percentile(durationsMs, 0.95);
+  const unresolvedOpenIncidents = openByScope.size;
+  const meanMinutes = meanMs === null ? null : round2(meanMs / 60000);
+  const p95Minutes = p95Ms === null ? null : round2(p95Ms / 60000);
+
+  return {
+    targetMinutes,
+    recoveries: durationsMs.length,
+    unresolvedOpenIncidents,
+    meanMinutes,
+    p95Minutes,
+    achieved: meanMinutes !== null ? meanMinutes <= targetMinutes : null,
+    byIncidentType: byIncidentTypeSummary,
+  };
+}
+
 function summarizeAutomationReports(reports, options = {}) {
   const topN = toInt(options.topN, 5, 1);
+  const sloTargetPercent = Math.min(100, Math.max(0, toInt(
+    options.sloTargetPercent,
+    DEFAULT_SLO_TARGET_PERCENT,
+    0,
+  )));
+  const mttrTargetMinutes = toInt(options.mttrTargetMinutes, DEFAULT_MTTR_TARGET_MINUTES, 1);
   const failureStatuses = new Set(
     Array.isArray(options.failureStatuses) && options.failureStatuses.length > 0
       ? options.failureStatuses
@@ -128,6 +337,15 @@ function summarizeAutomationReports(reports, options = {}) {
     byStatus,
     byTool,
     topFailureReasons,
+    slo: buildSloStats({
+      totalReports: reports.length,
+      totalFailures: failures,
+      targetPercent: sloTargetPercent,
+    }),
+    mttr: buildMttrStats(reports, {
+      failureStatuses: [...failureStatuses],
+      targetMinutes: mttrTargetMinutes,
+    }),
   };
 }
 
@@ -267,6 +485,9 @@ function buildSummaryMarkdown({ repo, sinceIso, workflows, runStats, summary, ou
     `- scannedRuns: ${runStats.scannedRuns}`,
     `- reports: ${summary.totalReports}`,
     `- failures(error/blocked): ${summary.totalFailures}`,
+    `- SLO successRate: ${summary.slo?.successRatePercent ?? 'n/a'}% (target: ${summary.slo?.targetPercent ?? 'n/a'}%, achieved: ${summary.slo?.achieved === null ? 'n/a' : summary.slo.achieved})`,
+    `- MTTR mean: ${summary.mttr?.meanMinutes ?? 'n/a'} min (target: ${summary.mttr?.targetMinutes ?? 'n/a'} min, achieved: ${summary.mttr?.achieved === null ? 'n/a' : summary.mttr.achieved})`,
+    `- MTTR p95: ${summary.mttr?.p95Minutes ?? 'n/a'} min, unresolvedOpenIncidents: ${summary.mttr?.unresolvedOpenIncidents ?? 'n/a'}`,
     `- output: ${outputPath}`,
     '',
     '### Status breakdown',
@@ -277,6 +498,17 @@ function buildSummaryMarkdown({ repo, sinceIso, workflows, runStats, summary, ou
     '',
     '### Top failure reasons',
     ...formatTopReasonTable(summary),
+    '',
+    '### MTTR by incident type',
+    ...(summary.mttr?.byIncidentType?.length
+      ? [
+        '| Incident Type | Recoveries | Mean (min) | P95 (min) | Unresolved | Sample run |',
+        '| --- | ---: | ---: | ---: | ---: | --- |',
+        ...summary.mttr.byIncidentType.map((item) => (
+          `| ${escapeMarkdownCell(item.incidentType)} | ${item.recoveries} | ${item.meanMinutes ?? '-'} | ${item.p95Minutes ?? '-'} | ${item.unresolvedOpenIncidents} | ${escapeMarkdownCell(item.samples?.[0] || '-')} |`
+        )),
+      ]
+      : ['No MTTR incident buckets were observed in this period.']),
   ];
   return lines;
 }
@@ -290,6 +522,16 @@ function main(env = process.env) {
   const sinceDays = toInt(env.AE_AUTOMATION_OBSERVABILITY_SINCE_DAYS, 7, 1);
   const maxRunsPerWorkflow = toInt(env.AE_AUTOMATION_OBSERVABILITY_MAX_RUNS_PER_WORKFLOW, 30, 1);
   const topN = toInt(env.AE_AUTOMATION_OBSERVABILITY_TOP_N, 5, 1);
+  const sloTargetPercent = Math.min(100, Math.max(0, toInt(
+    env.AE_AUTOMATION_OBSERVABILITY_SLO_TARGET_PERCENT,
+    DEFAULT_SLO_TARGET_PERCENT,
+    0,
+  )));
+  const mttrTargetMinutes = toInt(
+    env.AE_AUTOMATION_OBSERVABILITY_MTTR_TARGET_MINUTES,
+    DEFAULT_MTTR_TARGET_MINUTES,
+    1,
+  );
   const outputPath = String(env.AE_AUTOMATION_OBSERVABILITY_OUTPUT || 'artifacts/automation/weekly-failure-summary.json').trim();
 
   const workflows = parseCsv(env.AE_AUTOMATION_OBSERVABILITY_WORKFLOWS);
@@ -306,6 +548,8 @@ function main(env = process.env) {
   const summary = summarizeAutomationReports(reports, {
     topN,
     failureStatuses: DEFAULT_FAILURE_STATUSES,
+    sloTargetPercent,
+    mttrTargetMinutes,
   });
 
   const payload = {
@@ -316,6 +560,8 @@ function main(env = process.env) {
       sinceIso,
       maxRunsPerWorkflow,
       topN,
+      sloTargetPercent,
+      mttrTargetMinutes,
       workflows: targetWorkflows,
       failureStatuses: DEFAULT_FAILURE_STATUSES,
     },
@@ -358,6 +604,11 @@ export {
   formatTopReasonTable,
   joinCountMap,
   summarizeAutomationReports,
+  parseEventTimestamp,
+  resolveIncidentScope,
+  classifyIncidentType,
+  buildSloStats,
+  buildMttrStats,
   parseCsv,
   toInt,
   toIsoCutoff,
