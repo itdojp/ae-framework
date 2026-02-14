@@ -45,10 +45,6 @@ on:
         description: "Alert channel (issue_comment / dry_run)"
         required: false
         default: "issue_comment"
-      alert_dry_run:
-        description: "Dry-run mode (true/false)"
-        required: false
-        default: "false"
 
 permissions:
   actions: read
@@ -87,7 +83,7 @@ jobs:
           AE_AUTOMATION_ALERT_MAX_CONSECUTIVE_FAILURES: ${{ github.event_name == 'workflow_dispatch' && inputs.alert_max_consecutive_failures || vars.AE_AUTOMATION_ALERT_MAX_CONSECUTIVE_FAILURES || '3' }}
           AE_AUTOMATION_ALERT_COOLDOWN_HOURS: ${{ github.event_name == 'workflow_dispatch' && inputs.alert_cooldown_hours || vars.AE_AUTOMATION_ALERT_COOLDOWN_HOURS || '24' }}
           AE_AUTOMATION_ALERT_CHANNEL: ${{ github.event_name == 'workflow_dispatch' && inputs.alert_channel || vars.AE_AUTOMATION_ALERT_CHANNEL || 'issue_comment' }}
-          AE_AUTOMATION_ALERT_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.alert_dry_run || vars.AE_AUTOMATION_ALERT_DRY_RUN || 'false' }}
+          AE_AUTOMATION_ALERT_DRY_RUN: ${{ vars.AE_AUTOMATION_ALERT_DRY_RUN || 'false' }}
           AE_AUTOMATION_OBSERVABILITY_SLO_TARGET_PERCENT: ${{ vars.AE_AUTOMATION_OBSERVABILITY_SLO_TARGET_PERCENT || '95' }}
           AE_AUTOMATION_OBSERVABILITY_MTTR_TARGET_MINUTES: ${{ vars.AE_AUTOMATION_OBSERVABILITY_MTTR_TARGET_MINUTES || '120' }}
         run: node scripts/ci/automation-observability-alert.mjs

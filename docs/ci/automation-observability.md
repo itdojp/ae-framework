@@ -120,8 +120,7 @@ gh workflow run "Automation Observability Weekly" \
   -f alert_max_blocked=2 \
   -f alert_max_consecutive_failures=3 \
   -f alert_cooldown_hours=24 \
-  -f alert_channel=issue_comment \
-  -f alert_dry_run=false
+  -f alert_channel=issue_comment
 ```
 
 通知条件・テンプレート・抑止ルールの詳細は `docs/ci/automation-alerting.md` を参照してください。
