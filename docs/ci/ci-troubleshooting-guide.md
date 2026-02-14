@@ -46,5 +46,6 @@ Purpose: Provide a short, deterministic path to diagnose common CI failures.
 ## References
 - `docs/ci/ci-baseline-checklist.md`
 - `docs/ci/automation-observability.md`
+- `docs/ci/automation-failure-policies.md`
 - `docs/testing/test-categorization.md`
 - `docs/testing/flaky-test-triage.md`
