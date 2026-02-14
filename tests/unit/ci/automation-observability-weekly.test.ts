@@ -8,6 +8,7 @@ import {
   formatTopReasonTable,
   joinCountMap,
   parseEventTimestamp,
+  resolveIncidentScope,
   parseCsv,
   summarizeAutomationReports,
   toInt,
@@ -147,6 +148,8 @@ describe('automation-observability-weekly', () => {
     };
     expect(parseEventTimestamp(report)).toBe(Date.parse('2026-02-13T00:00:00.000Z'));
     expect(classifyIncidentType(report)).toBe('behind_loop');
+    expect(resolveIncidentScope({ prNumber: 42 })).toBe('pr:42');
+    expect(resolveIncidentScope({ run: { ref: 'refs/pull/51/merge' } })).toBe('pr:51');
     expect(classifyIncidentType({ status: 'error', reason: 'HTTP 429 Too Many Requests' })).toBe('rate_limit_429');
   });
 
@@ -209,6 +212,49 @@ describe('automation-observability-weekly', () => {
     expect(mttr.byIncidentType.some((item) => item.incidentType === 'rate_limit_429')).toBe(true);
     expect(mttr.byIncidentType.some((item) => item.incidentType === 'behind_loop')).toBe(true);
     expect(mttr.byIncidentType.some((item) => item.incidentType === 'blocked')).toBe(true);
+  });
+
+  it('matches overlapping incidents by tool and scope', () => {
+    const reports = [
+      {
+        status: 'blocked',
+        reason: 'checks pending',
+        tool: 'auto-merge-enabler',
+        prNumber: 101,
+        generatedAt: '2026-02-13T00:00:00.000Z',
+      },
+      {
+        status: 'blocked',
+        reason: 'checks pending',
+        tool: 'auto-merge-enabler',
+        prNumber: 102,
+        generatedAt: '2026-02-13T00:05:00.000Z',
+      },
+      {
+        status: 'resolved',
+        reason: 'completed',
+        tool: 'auto-merge-enabler',
+        prNumber: 101,
+        generatedAt: '2026-02-13T00:20:00.000Z',
+      },
+      {
+        status: 'resolved',
+        reason: 'completed',
+        tool: 'auto-merge-enabler',
+        prNumber: 102,
+        generatedAt: '2026-02-13T00:35:00.000Z',
+      },
+    ];
+
+    const mttr = buildMttrStats(reports, {
+      failureStatuses: ['error', 'blocked'],
+      targetMinutes: 30,
+    });
+
+    expect(mttr.recoveries).toBe(2);
+    expect(mttr.unresolvedOpenIncidents).toBe(0);
+    expect(mttr.meanMinutes).toBe(25);
+    expect(mttr.p95Minutes).toBe(30);
   });
 
   it('builds markdown summary with key sections', () => {

@@ -85,6 +85,28 @@ function parseEventTimestamp(report) {
   return null;
 }
 
+function resolveIncidentScope(report) {
+  const prNumberRaw = Number(report?.prNumber);
+  if (Number.isFinite(prNumberRaw) && prNumberRaw > 0) {
+    return `pr:${Math.trunc(prNumberRaw)}`;
+  }
+
+  const ref = String(report?.run?.ref || '').trim();
+  const pullRefMatch = ref.match(/^refs\/pull\/(\d+)\/.+$/u);
+  if (pullRefMatch) {
+    return `pr:${pullRefMatch[1]}`;
+  }
+
+  const sha = String(report?.run?.sha || '').trim();
+  if (sha) {
+    return `sha:${sha}`;
+  }
+
+  return 'global';
+}
+
+// Classify incidents with deterministic precedence (first match wins):
+// 1) rate limit, 2) behind loop, 3) review gate, 4) blocked/conflict, 5) other.
 function classifyIncidentType(report) {
   const status = String(report?.status || '').trim().toLowerCase();
   const reason = String(report?.reason || '').trim().toLowerCase();
@@ -140,12 +162,13 @@ function buildMttrStats(reports, { failureStatuses, targetMinutes }) {
       timestampMs: parseEventTimestamp(report),
       reason: String(report?.reason || '').trim(),
       runUrl: String(report?.run?.url || '').trim(),
+      incidentScope: resolveIncidentScope(report),
       incidentType: classifyIncidentType(report),
     }))
     .filter((item) => Number.isFinite(item.timestampMs))
     .sort((a, b) => a.timestampMs - b.timestampMs);
 
-  const openByTool = new Map();
+  const openByScope = new Map();
   const durationsMs = [];
   const byIncidentType = new Map();
 
@@ -165,14 +188,15 @@ function buildMttrStats(reports, { failureStatuses, targetMinutes }) {
   };
 
   for (const event of events) {
+    const scopeKey = `${event.tool}::${event.incidentScope}`;
     const isFailure = failureSet.has(event.status);
     if (isFailure) {
-      if (!openByTool.has(event.tool)) {
+      if (!openByScope.has(scopeKey)) {
         const bucket = ensureTypeBucket(event.incidentType);
         if (event.runUrl && bucket.samples.length < 3) {
           bucket.samples.push(event.runUrl);
         }
-        openByTool.set(event.tool, {
+        openByScope.set(scopeKey, {
           startedAtMs: event.timestampMs,
           incidentType: event.incidentType,
         });
@@ -184,11 +208,11 @@ function buildMttrStats(reports, { failureStatuses, targetMinutes }) {
       continue;
     }
 
-    if (!openByTool.has(event.tool)) {
+    if (!openByScope.has(scopeKey)) {
       continue;
     }
 
-    const openIncident = openByTool.get(event.tool);
+    const openIncident = openByScope.get(scopeKey);
     const duration = Math.max(0, event.timestampMs - openIncident.startedAtMs);
     durationsMs.push(duration);
     const bucket = ensureTypeBucket(openIncident.incidentType);
@@ -197,10 +221,10 @@ function buildMttrStats(reports, { failureStatuses, targetMinutes }) {
     if (event.runUrl && bucket.samples.length < 3) {
       bucket.samples.push(event.runUrl);
     }
-    openByTool.delete(event.tool);
+    openByScope.delete(scopeKey);
   }
 
-  for (const incident of openByTool.values()) {
+  for (const incident of openByScope.values()) {
     const bucket = ensureTypeBucket(incident.incidentType);
     bucket.unresolvedOpenIncidents += 1;
   }
@@ -230,7 +254,7 @@ function buildMttrStats(reports, { failureStatuses, targetMinutes }) {
     ? durationsMs.reduce((sum, value) => sum + value, 0) / durationsMs.length
     : null;
   const p95Ms = percentile(durationsMs, 0.95);
-  const unresolvedOpenIncidents = openByTool.size;
+  const unresolvedOpenIncidents = openByScope.size;
   const meanMinutes = meanMs === null ? null : round2(meanMs / 60000);
   const p95Minutes = p95Ms === null ? null : round2(p95Ms / 60000);
 
@@ -581,6 +605,7 @@ export {
   joinCountMap,
   summarizeAutomationReports,
   parseEventTimestamp,
+  resolveIncidentScope,
   classifyIncidentType,
   buildSloStats,
   buildMttrStats,

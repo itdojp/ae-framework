@@ -89,7 +89,7 @@ gh run view <run_id> --repo itdojp/ae-framework --log \
 - `AE_AUTOMATION_OBSERVABILITY_MTTR_TARGET_MINUTES`: MTTR目標（分）
 
 出力に追加される主要指標:
-- `summary.slo.successRatePercent`: 期間内成功率（`1 - failures/totalReports`）
+- `summary.slo.successRatePercent`: 期間内成功率（`(1 - failures/totalReports) * 100`）
 - `summary.slo.achieved`: SLO達成可否
 - `summary.mttr.meanMinutes` / `summary.mttr.p95Minutes`: 復旧時間の平均/P95
 - `summary.mttr.byIncidentType`: インシデント種別（`rate_limit_429` / `review_gate` / `behind_loop` / `blocked` / `other`）別の復旧統計
