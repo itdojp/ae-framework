@@ -1,44 +1,72 @@
 # Autopilot Operations Runbook
 
 ## 目的
-watcher / ブリッジ / Autopilot を安全に停止・再開するための運用手順をまとめる。
-単一 CodeX 運用時の干渉回避を目的とする。
 
-補足:
-- GitHub Actions 側の opt-in 実装として `Codex Autopilot Lane`（`.github/workflows/codex-autopilot-lane.yml`）を追加。
-- 運用の主眼は同じ（停止条件の明確化と fail-closed）だが、外部常駐スクリプトではなく PR 単位の workflow 実行で管理する。
+`Codex Autopilot Lane` を中心とした PR 自動化を、安全に停止・復帰するための運用手順を定義する。
 
-## 停止（干渉防止）
-- watcher を停止（各ワークスペースで実行中の `watch.sh` を終了）
-- Autopilot 停止:
-  - `pkill -f '~/work/CodeX/ae/codex-autopilot.sh' || true`
-- READY の新規付与を控える（watcher が拾うため）
+対象 workflow:
+- `.github/workflows/codex-autopilot-lane.yml`
+- `.github/workflows/pr-self-heal.yml`
+- `.github/workflows/pr-ci-status-comment.yml`
+- `.github/workflows/copilot-auto-fix.yml`
 
-## 再開（必要時）
-- watcher 再開（各エージェントのワークスペース）
-  - `WATCH_INTERVAL=30 ./watch.sh`
-- Autopilot 再開（in-progress Issue を対象）
-  - `export GH_REPO=itdojp/ae-framework`
-  - 各ワークスペースで `source agent.env; ~/work/CodeX/ae/codex-autopilot.sh <issue#> >/dev/null 2>&1 & disown`
-- READY を段階的に付与（流量調整）
+## 運用原則
 
-## ブリッジ / Autopilot の要点
-- ブリッジ（Zellij向け）: `~/work/CodeX/ae/bridge-codex-relay-zellij.sh`
-  - Zellij の `codex-<role>` セッションで CodeX Pane がフォーカス前提
-  - プロンプト投入後に Enter を自動送信
-- Autopilot: `~/work/CodeX/ae/codex-autopilot.sh`
-  - 既定: `INTERVAL=60s` / `COOLDOWN=180s` / `MAX_FEEDS=240`
-  - 停止条件: `status:review`, `status:done`, `status:blocked`, `autopilot:off`
-  - ラベルでテンポ制御: `autopilot:fast`（最短30s）/ `autopilot:slow`（3倍）
-  - 直近の Issue 活動があればクールダウン内は投下しない（スパム抑止）
+- fail-closed を基本とし、未収束PRは `status:blocked` で明示停止する
+- 停止/復帰は Repository Variables を一次制御面として扱う
+- 復旧時は必ず marker 付きコメントと run URL を証跡として残す
 
-## ラベル/コマンド運用（覚書）
-- ステータス: `status:ready` / `status:in-progress` / `status:review` / `status:blocked` / `status:done`
-- 役割: `role:*`、スプリント: `sprint:*`、Epic: `epic:#*`
-- スラッシュコマンド（Issue コメントのみ）:
-  - `/start` `/ready-for-review` `/assign` `/handoff` `/plan`
+## 段階停止（推奨）
 
-## 監視
-- サマリ: `~/work/CodeX/ae/telemetry/status-board.sh --watch 10`
-- イベント追尾: `~/work/CodeX/ae/telemetry/status-board.sh --events-follow`
-- ログ/ステータス/イベント: `~/work/CodeX/ae/telemetry/{logs,status,events.ndjson}`
+`scripts/ci/automation-rollback.sh` を使用する。
+
+```bash
+GH_REPO=itdojp/ae-framework scripts/ci/automation-rollback.sh <merge|write|freeze>
+```
+
+- `merge`: auto-merge 系のみ停止
+- `write`: `AE_AUTOMATION_GLOBAL_DISABLE=1` で bot の書き込み系を一時停止
+- `freeze`: `write` に加えて個別トグルを `0` に固定し、復帰後も自動化を持続停止
+
+状態確認:
+
+```bash
+GH_REPO=itdojp/ae-framework scripts/ci/automation-rollback.sh status
+```
+
+## 復帰手順
+
+1. `unfreeze` で global kill-switch を解除
+2. 収束済みPRから段階的にラベル巻き戻し（`status:blocked` 除去）
+3. `Copilot Review Gate` / `PR Maintenance` / `Codex Autopilot Lane` のrunを監視
+4. 再発があれば直ちに `write` へ戻す
+
+```bash
+GH_REPO=itdojp/ae-framework scripts/ci/automation-rollback.sh unfreeze
+```
+
+## ラベル運用（最小）
+
+- 主要制御:
+  - `autopilot:on`（lane opt-in）
+  - `status:blocked`（未収束停止）
+  - `ci-stability`（CI復旧対象）
+- 手動巻き戻し:
+
+```bash
+gh issue edit <pr-number> --repo itdojp/ae-framework --remove-label status:blocked --remove-label ci-stability
+```
+
+## 監視観点
+
+- `ae-automation-report/v1` の `status` / `reason` を最優先で確認
+- 代表障害:
+  - 429 / secondary rate limit
+  - review gate mismatch
+  - behind loop
+- 詳細 runbook は `docs/ci/automation-rollback-runbook.md` を参照
+
+## 参照
+
+- `docs/ci/pr-automation.md`
+- `docs/ci/automation-rollback-runbook.md`
