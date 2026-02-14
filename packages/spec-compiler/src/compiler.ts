@@ -1,7 +1,9 @@
 import { readFileSync, writeFileSync } from 'fs';
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4, v5 as uuidv5 } from 'uuid';
 import type { AEIR, CompileOptions, SpecLintReport, SpecLintIssue } from './types.js';
 import { StrictAEIRSchema, validateAEIR, createAEIRValidator } from './strict-schema.js';
+
+const INVARIANT_NAMESPACE_UUID = 'f309bd85-aea8-4418-9215-6134f52d6800';
 
 export class AESpecCompiler {
   /**
@@ -85,7 +87,16 @@ export class AESpecCompiler {
     }
     const glossary = this.parseGlossary(sections['glossary'] || '');
     const domain = this.parseDomain(sections['domain'] || '');
-    const invariants = this.parseInvariants(sections['invariants'] || '');
+    const invariantSectionContent = [
+      sections['invariants'],
+      sections['stateinvariants'],
+      sections['businessrules'],
+      sections['businesslogic'],
+      sections['rules'],
+    ]
+      .filter((value): value is string => Boolean(value && value.trim()))
+      .join('\n');
+    const invariants = this.parseInvariants(invariantSectionContent, domain);
     const usecases = this.parseUsecases(sections['usecases'] || '');
     const api = this.parseAPI(sections['api'] || '');
     const st = this.parseStateMachines(sections['statemachines']);
@@ -187,26 +198,212 @@ export class AESpecCompiler {
     return entities;
   }
 
-  private parseInvariants(content: string): AEIR['invariants'] {
+  private parseInvariants(content: string, domain: AEIR['domain'] = []): AEIR['invariants'] {
     const invariants: AEIR['invariants'] = [];
     const lines = content.split('\n');
-    let counter = 1;
+    let counter = 0;
     
     for (const line of lines) {
-      const match = line.match(/^[-*]\s*(.+)$/);
-      if (match && match[1]) {
-        invariants.push({
-          id: `INV_${counter.toString().padStart(3, '0')}`,
-          description: match[1].trim(),
-          expression: match[1].trim(), // In real implementation, parse to formal expression
-          entities: [], // Extract from expression
-          severity: 'error',
-        });
-        counter++;
-      }
+      const raw = this.extractInvariantRawText(line);
+      if (!raw) continue;
+      const description = this.normalizeInvariantText(raw);
+      if (!description) continue;
+      const entities = this.extractInvariantEntities(raw, description, domain);
+      if (entities.length === 0) continue;
+      counter += 1;
+
+      invariants.push({
+        id: uuidv5(`${counter}:${description}`, INVARIANT_NAMESPACE_UUID),
+        description,
+        expression: description, // In real implementation, parse to formal expression
+        entities,
+        severity: 'error',
+      });
     }
     
     return invariants;
+  }
+
+  private extractInvariantRawText(line: string): string | null {
+    const trimmed = line.trim();
+    if (!trimmed) return null;
+
+    const bulletMatch = trimmed.match(/^[-*]\s+(.+)$/u);
+    if (bulletMatch?.[1]) {
+      return bulletMatch[1].trim();
+    }
+
+    const orderedMatch = trimmed.match(/^\d+[.)]\s+(.+)$/u);
+    if (orderedMatch?.[1]) {
+      return orderedMatch[1].trim();
+    }
+
+    return null;
+  }
+
+  private normalizeInvariantText(value: string): string {
+    return value
+      .trim()
+      .replace(/^\*\*([^*]+)\*\*:\s*/u, '')
+      .replace(/^`([^`]+)`:\s*/u, '')
+      .replace(/^(?:BR|INV)-[A-Z0-9_-]+:\s*/iu, '')
+      .replace(/\s+/gu, ' ')
+      .trim();
+  }
+
+  private extractInvariantEntities(rawLine: string, description: string, domain: AEIR['domain']): string[] {
+    if (!Array.isArray(domain) || domain.length === 0) {
+      return [];
+    }
+
+    const matched = new Set<string>();
+    this.findEntityMatchesInText(description, domain).forEach((name) => matched.add(name));
+    this.findEntityMatchesByRuleTag(rawLine, domain).forEach((name) => matched.add(name));
+
+    if (matched.size === 0 && domain.length === 1 && domain[0]?.name) {
+      matched.add(domain[0].name);
+    }
+
+    return [...matched];
+  }
+
+  private findEntityMatchesInText(text: string, domain: AEIR['domain']): string[] {
+    const matches = new Set<string>();
+    const loweredText = text.toLowerCase();
+    const fieldTermOwners = new Map<string, Set<string>>();
+
+    for (const entity of domain) {
+      for (const field of entity.fields || []) {
+        for (const term of this.buildFieldSearchTerms(field.name)) {
+          if (!fieldTermOwners.has(term)) {
+            fieldTermOwners.set(term, new Set<string>());
+          }
+          fieldTermOwners.get(term)?.add(entity.name);
+        }
+      }
+    }
+
+    for (const entity of domain) {
+      const nameTerms = this.buildEntitySearchTerms(entity.name);
+      if (nameTerms.some((term) => this.containsSearchTerm(loweredText, term))) {
+        matches.add(entity.name);
+        continue;
+      }
+
+      const fieldTerms = (entity.fields || [])
+        .flatMap((field) => this.buildFieldSearchTerms(field.name))
+        .filter((term) => {
+          const owners = fieldTermOwners.get(term);
+          return owners?.size === 1 && owners.has(entity.name);
+        });
+      if (fieldTerms.some((term) => this.containsSearchTerm(loweredText, term))) {
+        matches.add(entity.name);
+      }
+    }
+
+    return [...matches];
+  }
+
+  private findEntityMatchesByRuleTag(rawLine: string, domain: AEIR['domain']): string[] {
+    const matches = new Set<string>();
+    const tags = [...rawLine.matchAll(/\b(?:BR|INV)-([A-Z0-9_]+)/gu)]
+      .map((match) => match[1]?.toLowerCase().replace(/[^a-z0-9]/gu, '') || '')
+      .filter(Boolean);
+
+    if (tags.length === 0) return [];
+
+    for (const entity of domain) {
+      const entityKey = this.splitIdentifierTokens(entity.name).join('');
+      for (const tag of tags) {
+        if (
+          tag === entityKey
+          || (tag.length >= 4 && entityKey.includes(tag))
+          || (entityKey.length >= 4 && tag.includes(entityKey))
+        ) {
+          matches.add(entity.name);
+        }
+      }
+    }
+
+    return [...matches];
+  }
+
+  private buildEntitySearchTerms(name: string): string[] {
+    const tokens = this.splitIdentifierTokens(name);
+    if (tokens.length === 0) return [];
+
+    const terms = new Set<string>();
+    const spaced = tokens.join(' ');
+    const compact = tokens.join('');
+    terms.add(name.trim().toLowerCase());
+    terms.add(spaced);
+    terms.add(compact);
+
+    const pluralTokens = [...tokens];
+    pluralTokens[pluralTokens.length - 1] = this.pluralizeToken(pluralTokens[pluralTokens.length - 1] || '');
+    terms.add(pluralTokens.join(' '));
+    terms.add(pluralTokens.join(''));
+
+    return [...terms].filter((term) => term.length >= 2);
+  }
+
+  private buildFieldSearchTerms(fieldName: string): string[] {
+    const ignored = new Set([
+      'id',
+      'name',
+      'type',
+      'state',
+      'status',
+      'createdat',
+      'updatedat',
+    ]);
+    const tokens = this.splitIdentifierTokens(fieldName);
+    if (tokens.length === 0) return [];
+
+    const terms = new Set<string>();
+    const spaced = tokens.join(' ');
+    const compact = tokens.join('');
+    terms.add(spaced);
+    terms.add(compact);
+
+    if (tokens.length > 1) {
+      terms.add(tokens[tokens.length - 1] || '');
+    }
+
+    return [...terms].filter((term) => {
+      const normalized = term.replace(/[^a-z0-9]/gu, '');
+      return normalized.length >= 3 && !ignored.has(normalized);
+    });
+  }
+
+  private splitIdentifierTokens(value: string): string[] {
+    return value
+      .replace(/([a-z0-9])([A-Z])/gu, '$1 $2')
+      .replace(/[_-]+/gu, ' ')
+      .trim()
+      .toLowerCase()
+      .split(/[^a-z0-9]+/gu)
+      .filter(Boolean);
+  }
+
+  private pluralizeToken(token: string): string {
+    if (!token) return token;
+    if (token.endsWith('ies') || token.endsWith('ses') || token.endsWith('s')) return token;
+    if (token.endsWith('y') && token.length > 1) return `${token.slice(0, -1)}ies`;
+    if (token.endsWith('x') || token.endsWith('ch') || token.endsWith('sh')) return `${token}es`;
+    return `${token}s`;
+  }
+
+  private containsSearchTerm(text: string, term: string): boolean {
+    const normalized = term.trim().toLowerCase();
+    if (!normalized) return false;
+    const escaped = this.escapeRegExp(normalized).replace(/\s+/gu, '\\s+');
+    const pattern = new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, 'u');
+    return pattern.test(text);
+  }
+
+  private escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
   }
 
   private parseUsecases(content: string): AEIR['usecases'] {
