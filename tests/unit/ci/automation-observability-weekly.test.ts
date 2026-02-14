@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildConsecutiveFailureStats,
   buildMttrStats,
   buildSloStats,
   buildSummaryMarkdown,
@@ -7,9 +8,9 @@ import {
   extractAutomationReportsFromLog,
   formatTopReasonTable,
   joinCountMap,
+  parseCsv,
   parseEventTimestamp,
   resolveIncidentScope,
-  parseCsv,
   summarizeAutomationReports,
   toInt,
   toIsoCutoff,
@@ -90,6 +91,8 @@ describe('automation-observability-weekly', () => {
     expect(reasonMap.get('checks pending')?.count).toBe(1);
     expect(reasonMap.get('checks pending')?.sampleRuns).toContain('https://example/runs/2');
     expect(reasonMap.get('api timeout')?.count).toBe(1);
+    expect(summary.maxConsecutiveFailures).toBe(1);
+    expect(summary.maxConsecutiveFailuresByTool['auto-merge-enabler']).toBe(1);
     expect(summary.slo.successRatePercent).toBe(60);
     expect(summary.slo.achieved).toBe(true);
     expect(summary.mttr.recoveries).toBe(2);
@@ -151,6 +154,22 @@ describe('automation-observability-weekly', () => {
     expect(resolveIncidentScope({ prNumber: 42 })).toBe('pr:42');
     expect(resolveIncidentScope({ run: { ref: 'refs/pull/51/merge' } })).toBe('pr:51');
     expect(classifyIncidentType({ status: 'error', reason: 'HTTP 429 Too Many Requests' })).toBe('rate_limit_429');
+  });
+
+  it('calculates consecutive failure stats by tool', () => {
+    const stats = buildConsecutiveFailureStats(
+      [
+        { tool: 'a', status: 'blocked', generatedAt: '2026-02-13T00:00:00.000Z' },
+        { tool: 'a', status: 'error', generatedAt: '2026-02-13T00:01:00.000Z' },
+        { tool: 'a', status: 'resolved', generatedAt: '2026-02-13T00:02:00.000Z' },
+        { tool: 'b', status: 'error', generatedAt: '2026-02-13T00:03:00.000Z' },
+      ],
+      { failureStatuses: ['error', 'blocked'] },
+    );
+
+    expect(stats.maxConsecutiveFailures).toBe(2);
+    expect(stats.maxConsecutiveFailuresByTool.a).toBe(2);
+    expect(stats.maxConsecutiveFailuresByTool.b).toBe(1);
   });
 
   it('builds SLO and MTTR stats from reports', () => {
@@ -271,6 +290,7 @@ describe('automation-observability-weekly', () => {
       summary: {
         totalReports: 3,
         totalFailures: 1,
+        maxConsecutiveFailures: 1,
         byStatus: { resolved: 2, blocked: 1 },
         byTool: { 'pr-self-heal': 2, 'auto-merge-enabler': 1 },
         topFailureReasons: [
@@ -309,6 +329,7 @@ describe('automation-observability-weekly', () => {
     });
     expect(lines[0]).toBe('## Automation Observability Weekly Summary');
     expect(lines.some((line) => line.includes('failures(error/blocked): 1'))).toBe(true);
+    expect(lines.some((line) => line.includes('maxConsecutiveFailures: 1'))).toBe(true);
     expect(lines.some((line) => line.includes('SLO successRate'))).toBe(true);
     expect(lines.some((line) => line.includes('MTTR mean'))).toBe(true);
     expect(lines.some((line) => line.includes('MTTR by incident type'))).toBe(true);

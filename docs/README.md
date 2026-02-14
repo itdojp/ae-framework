@@ -90,6 +90,7 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
  - Rollback Validation Report (2026-02-14): `ci/automation-rollback-validation-2026-02-14.md`（dry-run実行ログ）
  - Automation Profiles: `ci/automation-profiles.md`（自動化設定の一括プロファイル）
  - Automation Observability: `ci/automation-observability.md`（共通JSON/Step Summary出力）
+ - Automation Alerting: `ci/automation-alerting.md`（通知条件/テンプレート/重複抑止）
  - Automation SLO/MTTR: `ci/automation-slo-mttr.md`（成功率SLOと復旧時間MTTRの定義）
  - Automation Permission Boundaries: `ci/automation-permission-boundaries.md`（workflow_dispatch / issue_comment の権限境界）
  - Workflow dispatch validation report (2026-02-12): `ci/workflow-dispatch-validation-2026-02-12.md`

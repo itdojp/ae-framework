@@ -105,6 +105,46 @@ function resolveIncidentScope(report) {
   return 'global';
 }
 
+function buildConsecutiveFailureStats(reports, { failureStatuses }) {
+  const failureSet = new Set(Array.isArray(failureStatuses) ? failureStatuses : DEFAULT_FAILURE_STATUSES);
+  const events = (Array.isArray(reports) ? reports : [])
+    .map((report, index) => ({
+      index,
+      status: String(report?.status || 'unknown').trim().toLowerCase(),
+      tool: String(report?.tool || 'unknown').trim() || 'unknown',
+      timestampMs: parseEventTimestamp(report),
+    }))
+    .sort((a, b) => {
+      if (Number.isFinite(a.timestampMs) && Number.isFinite(b.timestampMs)) {
+        return a.timestampMs - b.timestampMs || a.index - b.index;
+      }
+      if (Number.isFinite(a.timestampMs)) return -1;
+      if (Number.isFinite(b.timestampMs)) return 1;
+      return a.index - b.index;
+    });
+
+  const currentByTool = new Map();
+  const maxByTool = {};
+  let maxConsecutive = 0;
+
+  for (const event of events) {
+    const previous = currentByTool.get(event.tool) || 0;
+    if (failureSet.has(event.status)) {
+      const next = previous + 1;
+      currentByTool.set(event.tool, next);
+      maxByTool[event.tool] = Math.max(maxByTool[event.tool] || 0, next);
+      maxConsecutive = Math.max(maxConsecutive, next);
+      continue;
+    }
+    currentByTool.set(event.tool, 0);
+  }
+
+  return {
+    maxConsecutiveFailures: maxConsecutive,
+    maxConsecutiveFailuresByTool: maxByTool,
+  };
+}
+
 // Classify incidents with deterministic precedence (first match wins):
 // 1) rate limit, 2) behind loop, 3) review gate, 4) blocked/conflict, 5) other.
 function classifyIncidentType(report) {
@@ -268,7 +308,6 @@ function buildMttrStats(reports, { failureStatuses, targetMinutes }) {
     byIncidentType: byIncidentTypeSummary,
   };
 }
-
 function summarizeAutomationReports(reports, options = {}) {
   const topN = toInt(options.topN, 5, 1);
   const sloTargetPercent = Math.min(100, Math.max(0, toInt(
@@ -282,6 +321,9 @@ function summarizeAutomationReports(reports, options = {}) {
       ? options.failureStatuses
       : DEFAULT_FAILURE_STATUSES,
   );
+  const streakStats = buildConsecutiveFailureStats(reports, {
+    failureStatuses: [...failureStatuses],
+  });
 
   const byStatus = {};
   const byTool = {};
@@ -336,6 +378,8 @@ function summarizeAutomationReports(reports, options = {}) {
     totalFailures: failures,
     byStatus,
     byTool,
+    maxConsecutiveFailures: streakStats.maxConsecutiveFailures,
+    maxConsecutiveFailuresByTool: streakStats.maxConsecutiveFailuresByTool,
     topFailureReasons,
     slo: buildSloStats({
       totalReports: reports.length,
@@ -485,6 +529,7 @@ function buildSummaryMarkdown({ repo, sinceIso, workflows, runStats, summary, ou
     `- scannedRuns: ${runStats.scannedRuns}`,
     `- reports: ${summary.totalReports}`,
     `- failures(error/blocked): ${summary.totalFailures}`,
+    `- maxConsecutiveFailures: ${summary.maxConsecutiveFailures}`,
     `- SLO successRate: ${summary.slo?.successRatePercent ?? 'n/a'}% (target: ${summary.slo?.targetPercent ?? 'n/a'}%, achieved: ${summary.slo?.achieved === null ? 'n/a' : summary.slo.achieved})`,
     `- MTTR mean: ${summary.mttr?.meanMinutes ?? 'n/a'} min (target: ${summary.mttr?.targetMinutes ?? 'n/a'} min, achieved: ${summary.mttr?.achieved === null ? 'n/a' : summary.mttr.achieved})`,
     `- MTTR p95: ${summary.mttr?.p95Minutes ?? 'n/a'} min, unresolvedOpenIncidents: ${summary.mttr?.unresolvedOpenIncidents ?? 'n/a'}`,
@@ -599,6 +644,7 @@ export {
   DEFAULT_WORKFLOWS,
   REPORT_PREFIX,
   REPORT_SCHEMA,
+  buildConsecutiveFailureStats,
   buildSummaryMarkdown,
   extractAutomationReportsFromLog,
   formatTopReasonTable,

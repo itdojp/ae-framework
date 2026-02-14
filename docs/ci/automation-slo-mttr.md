@@ -65,4 +65,3 @@ PR 自動化運用で使用する SLO / MTTR の定義をまとめる。
 - `docs/ci/automation-observability.md`
 - `docs/ci/ci-troubleshooting-guide.md`
 - `docs/ci/automation-rollback-runbook.md`
-

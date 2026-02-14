@@ -78,7 +78,10 @@ gh run view <run_id> --repo itdojp/ae-framework --log \
 
 - workflow: `.github/workflows/automation-observability-weekly.yml`
 - script: `scripts/ci/automation-observability-weekly.mjs`
-- artifact: `automation-observability-weekly`（`weekly-failure-summary.json`）
+- alert script: `scripts/ci/automation-observability-alert.mjs`
+- artifact: `automation-observability-weekly`
+  - `weekly-failure-summary.json`（週次集計）
+  - `weekly-alert-summary.json`（通知判定結果）
 
 主な入力:
 - `AE_AUTOMATION_OBSERVABILITY_WORKFLOWS`: 対象WF名（CSV）
@@ -87,6 +90,12 @@ gh run view <run_id> --repo itdojp/ae-framework --log \
 - `AE_AUTOMATION_OBSERVABILITY_TOP_N`: Top N件数
 - `AE_AUTOMATION_OBSERVABILITY_SLO_TARGET_PERCENT`: 成功率SLO目標（%）
 - `AE_AUTOMATION_OBSERVABILITY_MTTR_TARGET_MINUTES`: MTTR目標（分）
+- `AE_AUTOMATION_ALERT_MAX_BLOCKED`: blocked 件数しきい値
+- `AE_AUTOMATION_ALERT_MAX_CONSECUTIVE_FAILURES`: 連続失敗しきい値
+- `AE_AUTOMATION_ALERT_COOLDOWN_HOURS`: 通知クールダウン
+- `AE_AUTOMATION_ALERT_ISSUE_NUMBER`: Issue comment 通知先
+- `AE_AUTOMATION_ALERT_CHANNEL`: `issue_comment` / `dry_run`
+- `AE_AUTOMATION_ALERT_DRY_RUN`: `true` の場合は通知を投稿せず判定のみ
 
 出力に追加される主要指標:
 - `summary.slo.successRatePercent`: 期間内成功率（`(1 - failures/totalReports) * 100`）
@@ -106,5 +115,12 @@ gh workflow run "Automation Observability Weekly" \
   -f max_runs_per_workflow=30 \
   -f top_n=5 \
   -f slo_target_percent=95 \
-  -f mttr_target_minutes=120
+  -f mttr_target_minutes=120 \
+  -f alert_issue_number=1963 \
+  -f alert_max_blocked=2 \
+  -f alert_max_consecutive_failures=3 \
+  -f alert_cooldown_hours=24 \
+  -f alert_channel=issue_comment
 ```
+
+通知条件・テンプレート・抑止ルールの詳細は `docs/ci/automation-alerting.md` を参照してください。
