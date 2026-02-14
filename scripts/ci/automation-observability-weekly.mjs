@@ -66,6 +66,63 @@ function joinCountMap(mapObj) {
     .join(', ');
 }
 
+function parseEventTimestamp(report) {
+  const candidates = [
+    report?.generatedAt,
+    report?.run?.createdAt,
+    report?.__meta?.runCreatedAt,
+  ];
+  for (const candidate of candidates) {
+    const raw = String(candidate || '').trim();
+    if (!raw) continue;
+    const parsed = Date.parse(raw);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return null;
+}
+
+function buildConsecutiveFailureStats(reports, { failureStatuses }) {
+  const failureSet = new Set(Array.isArray(failureStatuses) ? failureStatuses : DEFAULT_FAILURE_STATUSES);
+  const events = (Array.isArray(reports) ? reports : [])
+    .map((report, index) => ({
+      index,
+      status: String(report?.status || 'unknown').trim().toLowerCase(),
+      tool: String(report?.tool || 'unknown').trim() || 'unknown',
+      timestampMs: parseEventTimestamp(report),
+    }))
+    .sort((a, b) => {
+      if (Number.isFinite(a.timestampMs) && Number.isFinite(b.timestampMs)) {
+        return a.timestampMs - b.timestampMs || a.index - b.index;
+      }
+      if (Number.isFinite(a.timestampMs)) return -1;
+      if (Number.isFinite(b.timestampMs)) return 1;
+      return a.index - b.index;
+    });
+
+  const currentByTool = new Map();
+  const maxByTool = {};
+  let maxConsecutive = 0;
+
+  for (const event of events) {
+    const previous = currentByTool.get(event.tool) || 0;
+    if (failureSet.has(event.status)) {
+      const next = previous + 1;
+      currentByTool.set(event.tool, next);
+      maxByTool[event.tool] = Math.max(maxByTool[event.tool] || 0, next);
+      maxConsecutive = Math.max(maxConsecutive, next);
+      continue;
+    }
+    currentByTool.set(event.tool, 0);
+  }
+
+  return {
+    maxConsecutiveFailures: maxConsecutive,
+    maxConsecutiveFailuresByTool: maxByTool,
+  };
+}
+
 function summarizeAutomationReports(reports, options = {}) {
   const topN = toInt(options.topN, 5, 1);
   const failureStatuses = new Set(
@@ -73,6 +130,9 @@ function summarizeAutomationReports(reports, options = {}) {
       ? options.failureStatuses
       : DEFAULT_FAILURE_STATUSES,
   );
+  const streakStats = buildConsecutiveFailureStats(reports, {
+    failureStatuses: [...failureStatuses],
+  });
 
   const byStatus = {};
   const byTool = {};
@@ -127,6 +187,8 @@ function summarizeAutomationReports(reports, options = {}) {
     totalFailures: failures,
     byStatus,
     byTool,
+    maxConsecutiveFailures: streakStats.maxConsecutiveFailures,
+    maxConsecutiveFailuresByTool: streakStats.maxConsecutiveFailuresByTool,
     topFailureReasons,
   };
 }
@@ -267,6 +329,7 @@ function buildSummaryMarkdown({ repo, sinceIso, workflows, runStats, summary, ou
     `- scannedRuns: ${runStats.scannedRuns}`,
     `- reports: ${summary.totalReports}`,
     `- failures(error/blocked): ${summary.totalFailures}`,
+    `- maxConsecutiveFailures: ${summary.maxConsecutiveFailures}`,
     `- output: ${outputPath}`,
     '',
     '### Status breakdown',
@@ -353,10 +416,12 @@ export {
   DEFAULT_WORKFLOWS,
   REPORT_PREFIX,
   REPORT_SCHEMA,
+  buildConsecutiveFailureStats,
   buildSummaryMarkdown,
   extractAutomationReportsFromLog,
   formatTopReasonTable,
   joinCountMap,
+  parseEventTimestamp,
   summarizeAutomationReports,
   parseCsv,
   toInt,

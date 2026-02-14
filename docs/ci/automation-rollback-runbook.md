@@ -103,5 +103,6 @@ gh issue edit <pr-number> --repo itdojp/ae-framework --remove-label status:block
 
 - `docs/ci/pr-automation.md`
 - `docs/ci/ci-troubleshooting-guide.md`
+- `docs/ci/automation-alerting.md`
 - `docs/ci/automation-rollback-validation-2026-02-14.md`
 - `docs/internal/autopilot-operations.md`

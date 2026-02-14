@@ -30,6 +30,7 @@ Purpose: Provide a short, deterministic path to diagnose common CI failures.
 - `Copilot Review Gate / gate` が success/failure 混在のまま残る場合は、失敗した `Copilot Review Gate` ランを rerun します（`gh run rerun <runId> --failed`）。
 - GitHub API の 429 / secondary rate limit が出る場合、Actions の rerun を優先します。`AE_GH_THROTTLE_MS` の既定は `250`（`0` で無効化）で、必要に応じて `AE_GH_RETRY_*` と合わせて調整します（詳細: `docs/ci/pr-automation.md` / 実装: `scripts/ci/lib/gh-exec.mjs`）。
 - `pnpm run lint:actions` で `ghcr.io/rhysd/actionlint` pull が 403 の場合、`ACTIONLINT_BIN` でローカルバイナリを指定できます（例: `ACTIONLINT_BIN=/usr/local/bin/actionlint pnpm run lint:actions`）。
+- `automation-observability-weekly` の通知判定は `weekly-alert-summary.json` に保存されます。通知が来ない場合は `suppressed` / `suppressedReason` を確認します。
 
 ## 6) 症状 → runbook 対応表
 
@@ -42,10 +43,12 @@ Purpose: Provide a short, deterministic path to diagnose common CI failures.
 
 補足:
 - 自動化系の共通JSON/Step Summary出力は `docs/ci/automation-observability.md` を参照。
+- 通知条件/クールダウンは `docs/ci/automation-alerting.md` を参照。
 
 ## References
 - `docs/ci/ci-baseline-checklist.md`
 - `docs/ci/automation-observability.md`
+- `docs/ci/automation-alerting.md`
 - `docs/ci/automation-failure-policies.md`
 - `docs/testing/test-categorization.md`
 - `docs/testing/flaky-test-triage.md`

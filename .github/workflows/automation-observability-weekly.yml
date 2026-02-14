@@ -17,10 +17,35 @@ on:
         description: "Top N failure reasons"
         required: false
         default: "5"
+      alert_issue_number:
+        description: "Issue number for alert comments (0 disables issue_comment)"
+        required: false
+        default: "1963"
+      alert_max_blocked:
+        description: "Alert threshold: blocked count"
+        required: false
+        default: "2"
+      alert_max_consecutive_failures:
+        description: "Alert threshold: max consecutive failures"
+        required: false
+        default: "3"
+      alert_cooldown_hours:
+        description: "Alert cooldown hours"
+        required: false
+        default: "24"
+      alert_channel:
+        description: "Alert channel (issue_comment / dry_run)"
+        required: false
+        default: "issue_comment"
+      alert_dry_run:
+        description: "Dry-run mode (true/false)"
+        required: false
+        default: "false"
 
 permissions:
   actions: read
   contents: read
+  issues: write
 
 jobs:
   summarize:
@@ -41,9 +66,26 @@ jobs:
           AE_AUTOMATION_OBSERVABILITY_TOP_N: ${{ github.event_name == 'workflow_dispatch' && inputs.top_n || vars.AE_AUTOMATION_OBSERVABILITY_TOP_N || '5' }}
           AE_AUTOMATION_OBSERVABILITY_OUTPUT: artifacts/automation/weekly-failure-summary.json
         run: node scripts/ci/automation-observability-weekly.mjs
+      - name: Evaluate automation alerts
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
+          AE_AUTOMATION_REPOSITORY: ${{ github.repository }}
+          AE_AUTOMATION_OBSERVABILITY_ALERT_INPUT: artifacts/automation/weekly-failure-summary.json
+          AE_AUTOMATION_OBSERVABILITY_ALERT_OUTPUT: artifacts/automation/weekly-alert-summary.json
+          AE_AUTOMATION_ALERT_ISSUE_NUMBER: ${{ github.event_name == 'workflow_dispatch' && inputs.alert_issue_number || vars.AE_AUTOMATION_ALERT_ISSUE_NUMBER || '1963' }}
+          AE_AUTOMATION_ALERT_MAX_BLOCKED: ${{ github.event_name == 'workflow_dispatch' && inputs.alert_max_blocked || vars.AE_AUTOMATION_ALERT_MAX_BLOCKED || '2' }}
+          AE_AUTOMATION_ALERT_MAX_CONSECUTIVE_FAILURES: ${{ github.event_name == 'workflow_dispatch' && inputs.alert_max_consecutive_failures || vars.AE_AUTOMATION_ALERT_MAX_CONSECUTIVE_FAILURES || '3' }}
+          AE_AUTOMATION_ALERT_COOLDOWN_HOURS: ${{ github.event_name == 'workflow_dispatch' && inputs.alert_cooldown_hours || vars.AE_AUTOMATION_ALERT_COOLDOWN_HOURS || '24' }}
+          AE_AUTOMATION_ALERT_CHANNEL: ${{ github.event_name == 'workflow_dispatch' && inputs.alert_channel || vars.AE_AUTOMATION_ALERT_CHANNEL || 'issue_comment' }}
+          AE_AUTOMATION_ALERT_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.alert_dry_run || vars.AE_AUTOMATION_ALERT_DRY_RUN || 'false' }}
+          AE_AUTOMATION_OBSERVABILITY_SLO_TARGET_PERCENT: ${{ vars.AE_AUTOMATION_OBSERVABILITY_SLO_TARGET_PERCENT || '95' }}
+          AE_AUTOMATION_OBSERVABILITY_MTTR_TARGET_MINUTES: ${{ vars.AE_AUTOMATION_OBSERVABILITY_MTTR_TARGET_MINUTES || '120' }}
+        run: node scripts/ci/automation-observability-alert.mjs
       - name: Upload weekly observability artifact
         uses: actions/upload-artifact@v4
         with:
           name: automation-observability-weekly
-          path: artifacts/automation/weekly-failure-summary.json
+          path: |
+            artifacts/automation/weekly-failure-summary.json
+            artifacts/automation/weekly-alert-summary.json
           if-no-files-found: error

@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildConsecutiveFailureStats,
   buildSummaryMarkdown,
   extractAutomationReportsFromLog,
   formatTopReasonTable,
   joinCountMap,
+  parseEventTimestamp,
   parseCsv,
   summarizeAutomationReports,
   toInt,
@@ -33,6 +35,7 @@ describe('automation-observability-weekly', () => {
         tool: 'pr-self-heal',
         status: 'resolved',
         reason: 'completed',
+        generatedAt: '2026-02-13T00:00:00.000Z',
         run: { url: 'https://example/runs/1' },
       },
       {
@@ -40,6 +43,7 @@ describe('automation-observability-weekly', () => {
         tool: 'auto-merge-enabler',
         status: 'blocked',
         reason: 'checks pending',
+        generatedAt: '2026-02-13T00:05:00.000Z',
         run: { url: 'https://example/runs/2' },
       },
       {
@@ -47,6 +51,7 @@ describe('automation-observability-weekly', () => {
         tool: 'auto-merge-enabler',
         status: 'blocked',
         reason: 'checks pending',
+        generatedAt: '2026-02-13T00:10:00.000Z',
         run: { url: 'https://example/runs/3' },
       },
       {
@@ -54,6 +59,7 @@ describe('automation-observability-weekly', () => {
         tool: 'copilot-auto-fix',
         status: 'error',
         reason: 'api timeout',
+        generatedAt: '2026-02-13T00:20:00.000Z',
         run: { url: 'https://example/runs/4' },
       },
     ];
@@ -69,6 +75,8 @@ describe('automation-observability-weekly', () => {
     expect(summary.topFailureReasons[0].count).toBe(2);
     expect(summary.topFailureReasons[0].sampleRuns).toContain('https://example/runs/2');
     expect(summary.topFailureReasons[1].reason).toBe('api timeout');
+    expect(summary.maxConsecutiveFailures).toBe(2);
+    expect(summary.maxConsecutiveFailuresByTool['auto-merge-enabler']).toBe(2);
   });
 
   it('parses integers with min validation', () => {
@@ -114,6 +122,25 @@ describe('automation-observability-weekly', () => {
     expect(table[2]).toContain('checks pending');
   });
 
+  it('extracts timestamps and calculates consecutive failure stats', () => {
+    expect(parseEventTimestamp({ generatedAt: '2026-02-13T00:00:00.000Z' })).toBe(
+      Date.parse('2026-02-13T00:00:00.000Z')
+    );
+
+    const stats = buildConsecutiveFailureStats(
+      [
+        { tool: 'a', status: 'blocked', generatedAt: '2026-02-13T00:00:00.000Z' },
+        { tool: 'a', status: 'error', generatedAt: '2026-02-13T00:01:00.000Z' },
+        { tool: 'a', status: 'resolved', generatedAt: '2026-02-13T00:02:00.000Z' },
+        { tool: 'b', status: 'error', generatedAt: '2026-02-13T00:03:00.000Z' },
+      ],
+      { failureStatuses: ['error', 'blocked'] }
+    );
+    expect(stats.maxConsecutiveFailures).toBe(2);
+    expect(stats.maxConsecutiveFailuresByTool.a).toBe(2);
+    expect(stats.maxConsecutiveFailuresByTool.b).toBe(1);
+  });
+
   it('builds markdown summary with key sections', () => {
     const lines = buildSummaryMarkdown({
       repo: 'itdojp/ae-framework',
@@ -128,6 +155,7 @@ describe('automation-observability-weekly', () => {
       summary: {
         totalReports: 3,
         totalFailures: 1,
+        maxConsecutiveFailures: 1,
         byStatus: { resolved: 2, blocked: 1 },
         byTool: { 'pr-self-heal': 2, 'auto-merge-enabler': 1 },
         topFailureReasons: [
@@ -144,6 +172,7 @@ describe('automation-observability-weekly', () => {
     });
     expect(lines[0]).toBe('## Automation Observability Weekly Summary');
     expect(lines.some((line) => line.includes('failures(error/blocked): 1'))).toBe(true);
+    expect(lines.some((line) => line.includes('maxConsecutiveFailures: 1'))).toBe(true);
     expect(lines.some((line) => line.includes('Top failure reasons'))).toBe(true);
   });
 });
