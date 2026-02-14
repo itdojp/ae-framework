@@ -8,8 +8,8 @@ Usage:
 
 Modes:
   merge     Stop merge automation only (AE_AUTO_MERGE, AE_CODEX_AUTOPILOT_ENABLED)
-  write     Stop all write-side automation (merge + AE_COPILOT_AUTO_FIX + AE_SELF_HEAL_ENABLED)
-  freeze    Global freeze (write + AE_AUTOMATION_GLOBAL_DISABLE=1)
+  write     Temporarily stop write-side automation (AE_AUTOMATION_GLOBAL_DISABLE=1)
+  freeze    Persistent freeze (write + AE_AUTO_MERGE=0 + AE_COPILOT_AUTO_FIX=0 + AE_SELF_HEAL_ENABLED=0)
   unfreeze  Disable global kill-switch only (AE_AUTOMATION_GLOBAL_DISABLE=0)
   status    Show effective rollback-related repository variables
 
@@ -84,9 +84,14 @@ apply_merge_stop() {
 }
 
 apply_write_stop() {
+  set_var "AE_AUTOMATION_GLOBAL_DISABLE" "1"
+}
+
+apply_freeze_stop() {
   apply_merge_stop
   set_var "AE_COPILOT_AUTO_FIX" "0"
   set_var "AE_SELF_HEAL_ENABLED" "0"
+  apply_write_stop
 }
 
 case "${MODE}" in
@@ -97,8 +102,7 @@ case "${MODE}" in
     apply_write_stop
     ;;
   freeze)
-    apply_write_stop
-    set_var "AE_AUTOMATION_GLOBAL_DISABLE" "1"
+    apply_freeze_stop
     ;;
   unfreeze)
     set_var "AE_AUTOMATION_GLOBAL_DISABLE" "0"
@@ -117,4 +121,3 @@ case "${MODE}" in
     exit 1
     ;;
 esac
-

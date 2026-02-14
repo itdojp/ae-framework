@@ -25,8 +25,8 @@ GH_REPO=itdojp/ae-framework scripts/ci/automation-rollback.sh <merge|write|freez
 ```
 
 - `merge`: auto-merge 系のみ停止
-- `write`: bot の書き込み系を停止
-- `freeze`: `AE_AUTOMATION_GLOBAL_DISABLE=1` で全自動化を停止
+- `write`: `AE_AUTOMATION_GLOBAL_DISABLE=1` で bot の書き込み系を一時停止
+- `freeze`: `write` に加えて個別トグルを `0` に固定し、復帰後も自動化を持続停止
 
 状態確認:
 

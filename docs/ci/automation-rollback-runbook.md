@@ -26,8 +26,8 @@ GH_REPO=itdojp/ae-framework scripts/ci/automation-rollback.sh <mode>
 | mode | 目的 | 設定される Variables |
 | --- | --- | --- |
 | `merge` | 自動マージ系のみ停止 | `AE_AUTO_MERGE=0`, `AE_CODEX_AUTOPILOT_ENABLED=0` |
-| `write` | bot書き込み系を停止 | `merge` + `AE_COPILOT_AUTO_FIX=0`, `AE_SELF_HEAL_ENABLED=0` |
-| `freeze` | 全自動化の緊急停止 | `write` + `AE_AUTOMATION_GLOBAL_DISABLE=1` |
+| `write` | bot書き込み系を一時停止 | `AE_AUTOMATION_GLOBAL_DISABLE=1` |
+| `freeze` | 全自動化を持続停止（復帰後も無効を維持） | `write` + `AE_AUTO_MERGE=0`, `AE_CODEX_AUTOPILOT_ENABLED=0`, `AE_COPILOT_AUTO_FIX=0`, `AE_SELF_HEAL_ENABLED=0` |
 | `unfreeze` | kill-switch解除のみ | `AE_AUTOMATION_GLOBAL_DISABLE=0` |
 
 状態確認:
@@ -93,6 +93,8 @@ gh issue edit <pr-number> --repo itdojp/ae-framework --remove-label status:block
 ## 5. 復帰方針
 
 - 緊急停止解除は `unfreeze` を先に実行
+- `write` は `unfreeze` で即時復帰可能（個別トグルは変更しない）
+- `freeze` は `unfreeze` 後も個別トグルが `0` のため、必要変数を明示的に戻して復帰する
 - その後、プロジェクト方針に沿って個別Variablesを段階復帰
   - 例: `AE_AUTOMATION_PROFILE=conservative` を基準に再設定
 - 復帰直後は `PR Maintenance` / `Copilot Review Gate` の run を監視し、再発時は `write` へ戻す

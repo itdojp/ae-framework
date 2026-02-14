@@ -171,7 +171,10 @@ jobs:
             await safeComment(content, 'updated');
 
   label:
-    if: github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork
+    if: >-
+      !contains(fromJSON('["1","true","yes","on","TRUE","YES","ON","True","Yes","On"]'), vars.AE_AUTOMATION_GLOBAL_DISABLE)
+      && github.event_name == 'pull_request'
+      && !github.event.pull_request.head.repo.fork
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v7
@@ -198,7 +201,11 @@ jobs:
             }
 
   summarize:
-    if: github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && github.event.action != 'edited'
+    if: >-
+      !contains(fromJSON('["1","true","yes","on","TRUE","YES","ON","True","Yes","On"]'), vars.AE_AUTOMATION_GLOBAL_DISABLE)
+      && github.event_name == 'pull_request'
+      && !github.event.pull_request.head.repo.fork
+      && github.event.action != 'edited'
     runs-on: ubuntu-latest
     steps:
       - name: Determine summary language
@@ -319,8 +326,11 @@ jobs:
 
   post-status:
     if: >-
-      (github.event_name == 'schedule')
-      || (github.event_name == 'workflow_dispatch' && (inputs.mode == 'status' || inputs.mode == 'both'))
+      !contains(fromJSON('["1","true","yes","on","TRUE","YES","ON","True","Yes","On"]'), vars.AE_AUTOMATION_GLOBAL_DISABLE)
+      && (
+        (github.event_name == 'schedule')
+        || (github.event_name == 'workflow_dispatch' && (inputs.mode == 'status' || inputs.mode == 'both'))
+      )
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
