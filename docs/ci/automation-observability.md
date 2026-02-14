@@ -85,6 +85,17 @@ gh run view <run_id> --repo itdojp/ae-framework --log \
 - `AE_AUTOMATION_OBSERVABILITY_SINCE_DAYS`: 集計対象期間（日数）
 - `AE_AUTOMATION_OBSERVABILITY_MAX_RUNS_PER_WORKFLOW`: WFごとの参照run上限
 - `AE_AUTOMATION_OBSERVABILITY_TOP_N`: Top N件数
+- `AE_AUTOMATION_OBSERVABILITY_SLO_TARGET_PERCENT`: 成功率SLO目標（%）
+- `AE_AUTOMATION_OBSERVABILITY_MTTR_TARGET_MINUTES`: MTTR目標（分）
+
+出力に追加される主要指標:
+- `summary.slo.successRatePercent`: 期間内成功率（`1 - failures/totalReports`）
+- `summary.slo.achieved`: SLO達成可否
+- `summary.mttr.meanMinutes` / `summary.mttr.p95Minutes`: 復旧時間の平均/P95
+- `summary.mttr.byIncidentType`: インシデント種別（`rate_limit_429` / `review_gate` / `behind_loop` / `blocked` / `other`）別の復旧統計
+
+定義の詳細:
+- `docs/ci/automation-slo-mttr.md`
 
 手動実行例:
 
@@ -93,5 +104,7 @@ gh workflow run "Automation Observability Weekly" \
   --repo itdojp/ae-framework \
   -f since_days=7 \
   -f max_runs_per_workflow=30 \
-  -f top_n=5
+  -f top_n=5 \
+  -f slo_target_percent=95 \
+  -f mttr_target_minutes=120
 ```
