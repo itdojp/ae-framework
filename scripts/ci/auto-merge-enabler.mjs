@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { execGh, execGhJson } from './lib/gh-exec.mjs';
 import { emitAutomationReport } from './lib/automation-report.mjs';
+import { hasLabel, normalizeLabelNames } from './lib/automation-guards.mjs';
 
 const repo = process.env.GITHUB_REPOSITORY;
 if (!repo) {
@@ -314,8 +315,8 @@ const main = async () => {
         if (!AUTO_MERGE_LABEL) {
           reasons.push('auto-merge label mode but AE_AUTO_MERGE_LABEL is empty');
         } else {
-          const labels = Array.isArray(view.labels) ? view.labels.map((l) => l && l.name).filter(Boolean) : [];
-          if (!labels.includes(AUTO_MERGE_LABEL)) {
+          const labels = normalizeLabelNames(view.labels);
+          if (!hasLabel(labels, AUTO_MERGE_LABEL)) {
             reasons.push(`missing label=${AUTO_MERGE_LABEL}`);
           }
         }

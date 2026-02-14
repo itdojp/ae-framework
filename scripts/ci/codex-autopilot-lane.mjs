@@ -7,6 +7,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execGh, execGhJson } from './lib/gh-exec.mjs';
 import { emitAutomationReport } from './lib/automation-report.mjs';
+import {
+  hasLabel as hasOptInLabel,
+  isActorAllowed,
+  normalizeLabelNames,
+  parseActorCsv,
+  toActorSet,
+} from './lib/automation-guards.mjs';
 
 const marker = '<!-- AE-CODEX-AUTOPILOT v1 -->';
 const repo = String(process.env.GITHUB_REPOSITORY || '').trim();
@@ -15,12 +22,11 @@ const maxRounds = readIntEnv('AE_AUTOPILOT_MAX_ROUNDS', 3, 1);
 const roundWaitSeconds = readIntEnv('AE_AUTOPILOT_ROUND_WAIT_SECONDS', 8, 0);
 const dryRun = toBool(process.env.AE_AUTOPILOT_DRY_RUN) || toBool(process.env.DRY_RUN);
 const globalDisabled = toBool(process.env.AE_AUTOMATION_GLOBAL_DISABLE);
-const copilotActors = (process.env.COPILOT_ACTORS
-  || 'copilot-pull-request-reviewer,github-copilot,github-copilot[bot],copilot,copilot[bot],Copilot')
-  .split(',')
-  .map((value) => value.trim())
-  .filter(Boolean);
-const copilotActorSet = new Set(copilotActors.map((value) => value.toLowerCase()));
+const copilotActors = parseActorCsv(
+  process.env.COPILOT_ACTORS,
+  'copilot-pull-request-reviewer,github-copilot,github-copilot[bot],copilot,copilot[bot],Copilot',
+);
+const copilotActorSet = toActorSet(copilotActors);
 
 function readIntEnv(name, fallback, min) {
   const parsed = Number.parseInt(String(process.env[name] || '').trim(), 10);
@@ -88,7 +94,7 @@ function clearBlocked(number) {
 }
 
 function hasLabel(pr, labelName) {
-  return Array.isArray(pr.labels) && pr.labels.some((label) => label && label.name === labelName);
+  return hasOptInLabel(normalizeLabelNames(pr && pr.labels), labelName);
 }
 
 function parseGateStatus(statusCheckRollup) {
@@ -157,7 +163,7 @@ function fetchCopilotThreadState(number) {
     && !thread.isResolved
     && Array.isArray(thread.comments?.nodes)
     && thread.comments.nodes.some((comment) =>
-      copilotActorSet.has(String(comment?.author?.login || '').toLowerCase()))
+      isActorAllowed(comment?.author?.login, copilotActorSet))
   );
   return {
     total: threads.length,
@@ -172,12 +178,16 @@ function runAutoFix(pr) {
   const ciDir = path.dirname(fileURLToPath(import.meta.url));
   const trustedAutoFixPath = path.join(ciDir, 'copilot-auto-fix.mjs');
   const trustedGhExecPath = path.join(ciDir, 'lib', 'gh-exec.mjs');
+  const trustedAutomationReportPath = path.join(ciDir, 'lib', 'automation-report.mjs');
+  const trustedGuardsPath = path.join(ciDir, 'lib', 'automation-guards.mjs');
   const runnerAutoFixPath = path.join(runnerDir, 'copilot-auto-fix.mjs');
   const runnerLibDir = path.join(runnerDir, 'lib');
 
   fs.mkdirSync(runnerLibDir, { recursive: true });
   fs.copyFileSync(trustedAutoFixPath, runnerAutoFixPath);
   fs.copyFileSync(trustedGhExecPath, path.join(runnerLibDir, 'gh-exec.mjs'));
+  fs.copyFileSync(trustedAutomationReportPath, path.join(runnerLibDir, 'automation-report.mjs'));
+  fs.copyFileSync(trustedGuardsPath, path.join(runnerLibDir, 'automation-guards.mjs'));
 
   const env = {
     ...process.env,
