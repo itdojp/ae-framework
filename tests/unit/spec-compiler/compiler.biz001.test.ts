@@ -55,4 +55,82 @@ describe('AESpecCompiler BIZ_001 regression', () => {
       rmSync(tempDir, { recursive: true, force: true });
     }
   });
+
+  it('keeps unmatched global rules in IR and still reports BIZ_001', async () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'spec-compiler-biz001-global-'));
+    const specPath = join(tempDir, 'spec.md');
+
+    writeFileSync(
+      specPath,
+      `# GlobalRuleSpec
+
+## Domain
+
+### Order
+- **id** (uuid, required) - Order ID
+
+### Customer
+- **id** (uuid, required) - Customer ID
+
+## Business Rules
+- **BR-GLOBAL-001**: All write operations must be audited.
+`,
+      'utf-8',
+    );
+
+    const compiler = new AESpecCompiler();
+
+    try {
+      const ir = await compiler.compile({
+        inputPath: specPath,
+        validate: false,
+      });
+      const globalRule = (ir.invariants ?? [])[0];
+      expect(globalRule).toBeDefined();
+      expect(globalRule?.entities ?? []).toEqual([]);
+
+      const lintResult = await compiler.lint(ir);
+      const biz001Issues = lintResult.issues.filter((issue) => issue.id === 'BIZ_001');
+      expect(biz001Issues).toHaveLength(2);
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('avoids tag over-match between Order and OrderItem', async () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'spec-compiler-biz001-tag-'));
+    const specPath = join(tempDir, 'spec.md');
+
+    writeFileSync(
+      specPath,
+      `# TagSpecificSpec
+
+## Domain
+
+### Order
+- **id** (uuid, required) - Order ID
+
+### OrderItem
+- **id** (uuid, required) - Order item ID
+
+## Business Rules
+1. **br-orderitem-001**: Item-level validation applies.
+`,
+      'utf-8',
+    );
+
+    const compiler = new AESpecCompiler();
+
+    try {
+      const ir = await compiler.compile({
+        inputPath: specPath,
+        validate: false,
+      });
+      const extracted = new Set((ir.invariants ?? []).flatMap((invariant) => invariant.entities ?? []));
+      expect(extracted.has('OrderItem')).toBe(true);
+      expect(extracted.has('Order')).toBe(false);
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
 });

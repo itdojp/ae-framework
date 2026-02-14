@@ -147,7 +147,7 @@ const InvariantSchema = z.object({
   id: z.string().uuid({ message: "Invariant ID must be a valid UUID" }),
   description: z.string().min(DESC_MIN).max(INVARIANT_DESC_MAX),
   expression: z.string().min(5).max(1000),
-  entities: z.array(IdentifierSchema).min(1).max(10),
+  entities: z.array(IdentifierSchema).max(10),
   severity: z.enum(['error', 'warning'])
 }).strict();
 

@@ -3,6 +3,7 @@ import { v4 as uuidv4, v5 as uuidv5 } from 'uuid';
 import type { AEIR, CompileOptions, SpecLintReport, SpecLintIssue } from './types.js';
 import { StrictAEIRSchema, validateAEIR, createAEIRValidator } from './strict-schema.js';
 
+// Namespace UUID for deterministic invariant IDs (uuidv5). Keep this stable.
 const INVARIANT_NAMESPACE_UUID = 'f309bd85-aea8-4418-9215-6134f52d6800';
 
 export class AESpecCompiler {
@@ -209,11 +210,12 @@ export class AESpecCompiler {
       const description = this.normalizeInvariantText(raw);
       if (!description) continue;
       const entities = this.extractInvariantEntities(raw, description, domain);
-      if (entities.length === 0) continue;
       counter += 1;
+      const tag = this.extractInvariantTag(raw);
+      const stableKey = tag ? `tag:${tag}` : `line:${counter}:${description}`;
 
       invariants.push({
-        id: uuidv5(`${counter}:${description}`, INVARIANT_NAMESPACE_UUID),
+        id: uuidv5(stableKey, INVARIANT_NAMESPACE_UUID),
         description,
         expression: description, // In real implementation, parse to formal expression
         entities,
@@ -244,11 +246,17 @@ export class AESpecCompiler {
   private normalizeInvariantText(value: string): string {
     return value
       .trim()
-      .replace(/^\*\*([^*]+)\*\*:\s*/u, '')
+      .replace(/^\*\*(.+?)\*\*:\s*/u, '')
       .replace(/^`([^`]+)`:\s*/u, '')
-      .replace(/^(?:BR|INV)-[A-Z0-9_-]+:\s*/iu, '')
+      .replace(/^(?:BR|INV)-[A-Za-z0-9_-]+:\s*/iu, '')
       .replace(/\s+/gu, ' ')
       .trim();
+  }
+
+  private extractInvariantTag(rawLine: string): string | null {
+    const match = rawLine.match(/\b(?:BR|INV)-([A-Za-z0-9_-]+)/iu);
+    if (!match?.[1]) return null;
+    return match[1].toLowerCase().replace(/[^a-z0-9]/gu, '');
   }
 
   private extractInvariantEntities(rawLine: string, description: string, domain: AEIR['domain']): string[] {
@@ -259,11 +267,6 @@ export class AESpecCompiler {
     const matched = new Set<string>();
     this.findEntityMatchesInText(description, domain).forEach((name) => matched.add(name));
     this.findEntityMatchesByRuleTag(rawLine, domain).forEach((name) => matched.add(name));
-
-    if (matched.size === 0 && domain.length === 1 && domain[0]?.name) {
-      matched.add(domain[0].name);
-    }
-
     return [...matched];
   }
 
@@ -306,26 +309,42 @@ export class AESpecCompiler {
 
   private findEntityMatchesByRuleTag(rawLine: string, domain: AEIR['domain']): string[] {
     const matches = new Set<string>();
-    const tags = [...rawLine.matchAll(/\b(?:BR|INV)-([A-Z0-9_]+)/gu)]
-      .map((match) => match[1]?.toLowerCase().replace(/[^a-z0-9]/gu, '') || '')
+    const tags = [...rawLine.matchAll(/\b(?:BR|INV)-([A-Za-z0-9_-]+)/giu)]
+      .map((match) => String(match[1] || '').toLowerCase())
       .filter(Boolean);
 
     if (tags.length === 0) return [];
 
-    for (const entity of domain) {
-      const entityKey = this.splitIdentifierTokens(entity.name).join('');
-      for (const tag of tags) {
-        if (
-          tag === entityKey
-          || (tag.length >= 4 && entityKey.includes(tag))
-          || (entityKey.length >= 4 && tag.includes(entityKey))
-        ) {
+    for (const tag of tags) {
+      const candidates = domain.filter((entity) => {
+        const entityTokens = this.splitIdentifierTokens(entity.name);
+        if (entityTokens.length === 0) return false;
+        return this.isEntityMatchedByTag(tag, entityTokens);
+      });
+      if (candidates.length === 0) continue;
+
+      const maxTokenCount = Math.max(...candidates.map((entity) => this.splitIdentifierTokens(entity.name).length));
+      for (const entity of candidates) {
+        if (this.splitIdentifierTokens(entity.name).length === maxTokenCount) {
           matches.add(entity.name);
         }
       }
     }
 
     return [...matches];
+  }
+
+  private isEntityMatchedByTag(tag: string, entityTokens: string[]): boolean {
+    const tagTokens = tag
+      .split(/[^a-z0-9]+/gu)
+      .filter(Boolean);
+    const tokenSet = new Set(tagTokens);
+    const compactSet = new Set(tagTokens.map((token) => this.splitIdentifierTokens(token).join('')).filter(Boolean));
+    const entityKey = entityTokens.join('');
+    if (compactSet.has(entityKey)) return true;
+    if (tokenSet.has(entityKey)) return true;
+    if (entityTokens.every((token) => tokenSet.has(token))) return true;
+    return false;
   }
 
   private buildEntitySearchTerms(name: string): string[] {
@@ -367,7 +386,10 @@ export class AESpecCompiler {
     terms.add(compact);
 
     if (tokens.length > 1) {
-      terms.add(tokens[tokens.length - 1] || '');
+      const tail = tokens[tokens.length - 1] || '';
+      if (tail.length >= 3) {
+        terms.add(tail);
+      }
     }
 
     return [...terms].filter((term) => {
@@ -388,6 +410,13 @@ export class AESpecCompiler {
 
   private pluralizeToken(token: string): string {
     if (!token) return token;
+    const irregular: Record<string, string> = {
+      analysis: 'analyses',
+      person: 'people',
+      child: 'children',
+      mouse: 'mice',
+    };
+    if (irregular[token]) return irregular[token];
     if (token.endsWith('ies') || token.endsWith('ses') || token.endsWith('s')) return token;
     if (token.endsWith('y') && token.length > 1) return `${token.slice(0, -1)}ies`;
     if (token.endsWith('x') || token.endsWith('ch') || token.endsWith('sh')) return `${token}es`;
