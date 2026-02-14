@@ -41,7 +41,7 @@ function hasLabel(labels, targetLabel) {
 }
 
 function isDocsPath(filePath, allowlist = DEFAULT_DOCS_ALLOWLIST) {
-  const target = String(filePath || '').trim();
+  const target = String(filePath || '');
   if (!target) return false;
   return allowlist.some((rule) => rule.test(target));
 }
@@ -49,7 +49,7 @@ function isDocsPath(filePath, allowlist = DEFAULT_DOCS_ALLOWLIST) {
 function collectNonDocs(paths, allowlist = DEFAULT_DOCS_ALLOWLIST) {
   const values = Array.isArray(paths) ? paths : [];
   return values
-    .map((value) => String(value || '').trim())
+    .map((value) => String(value || ''))
     .filter(Boolean)
     .filter((value) => !isDocsPath(value, allowlist));
 }

@@ -410,7 +410,7 @@ const main = async () => {
       skipped.push(`comment=${commentId} path=${filePath}: commit_id mismatch; skipping`);
       continue;
     }
-    if (scope === 'docs' && !isDocPath(filePath)) {
+    if (scope === 'docs' && !isDocsPath(filePath)) {
       skipped.push(`comment=${commentId} path=${filePath}: outside docs scope`);
       continue;
     }

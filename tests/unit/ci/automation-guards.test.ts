@@ -41,4 +41,13 @@ describe('automation-guards', () => {
 
     expect(collectNonDocs(['docs/a.md', 'README.md', 'src/main.ts'])).toEqual(['src/main.ts']);
   });
+
+  it('does not trim file paths before docs matching', () => {
+    expect(isDocsPath(' docs/guide.md')).toBe(false);
+    expect(isDocsPath('README.md ')).toBe(false);
+    expect(collectNonDocs(['docs/a.md', ' README.md', 'src/main.ts'])).toEqual([
+      ' README.md',
+      'src/main.ts',
+    ]);
+  });
 });
