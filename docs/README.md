@@ -57,6 +57,7 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - Claude Code Task Tool Integration: `integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md`
 - Claude Code Workflow: `integrations/CLAUDECODE-WORKFLOW.md`
 - CodeX Integration (PoC/MCP/Adapter): `integrations/CODEX-INTEGRATION.md`
+- Codex boundary + vendor-neutral core: `integrations/CODEX-VENDOR-NEUTRAL-BOUNDARY.md`
 
 ### Reference
 - CLI Commands: `reference/CLI-COMMANDS-REFERENCE.md`
@@ -167,6 +168,7 @@ Claude CodeやMCPとの統合
 - **[CLAUDE-CODE-TASK-TOOL-INTEGRATION.md](./integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)** ⭐ **重要** - Task Tool統合仕様
 - [CLAUDECODE-WORKFLOW.md](./integrations/CLAUDECODE-WORKFLOW.md) - Claude Codeワークフロー
 - [CODEX-INTEGRATION.md](./integrations/CODEX-INTEGRATION.md) - CodeX統合（PoC/MCP/Adapter）
+- [CODEX-VENDOR-NEUTRAL-BOUNDARY.md](./integrations/CODEX-VENDOR-NEUTRAL-BOUNDARY.md) - Codex連携の責務境界とVendor-neutral最小コア
 
 ### 📚 [reference/](./reference/) - リファレンス・API仕様
 コマンドやAPIの詳細仕様
