@@ -23,6 +23,10 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - User manual: `product/USER-MANUAL.md`
 - Positioning / comparison: `product/POSITIONING.md`
 
+### Strategy
+- Codex boundary + Verify-first strategy: `strategy/CODEX-AE-BOUNDARY-VERIFY-FIRST.md`
+- Plan -> Spec normalization template: `templates/plan-to-spec-normalization-template.md`
+
 ### Positioning maps (concept / flow / use cases)
 - Concept & system diagrams: `architecture/ARCHITECTURE.md`
 - Reference flow (Web API + DB): `reference/REFERENCE-FLOW-WEB-API-DB.md`
@@ -121,6 +125,10 @@ ae-frameworkは、エージェント協調型のSDLCオーケストレーター�
 - [USER-MANUAL.md](./product/USER-MANUAL.md) - 利用マニュアル
 - [POSITIONING.md](./product/POSITIONING.md) - 類似ツールとの棲み分け・導入指針
 - [PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md](./product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md) - 適用対象 × 入力 × 出力 × ツール適性
+
+### 🧭 [strategy/](./strategy/) - 戦略・責務境界
+- [CODEX-AE-BOUNDARY-VERIFY-FIRST.md](./strategy/CODEX-AE-BOUNDARY-VERIFY-FIRST.md) - Codex との責務境界、Verify-first、Thread→Repo→CI の標準化
+- [plan-to-spec-normalization-template.md](./templates/plan-to-spec-normalization-template.md) - Plan を repo SSOT に正規化する最小テンプレート
 
 ### 🧭 ポジショニングの図とフロー
 - 概念図/システム図: `architecture/ARCHITECTURE.md`
