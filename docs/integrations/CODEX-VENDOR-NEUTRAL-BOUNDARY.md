@@ -1,6 +1,6 @@
 # Codex連携の責務境界と Vendor-neutral 最小コア
 
-> Language / 言語: English | 日本語
+> 🌍 Language / 言語: English | 日本語
 
 ---
 
