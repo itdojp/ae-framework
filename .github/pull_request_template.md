@@ -15,6 +15,7 @@ Checklist
 - [ ] Verify Lite passes locally (`pnpm types:check && pnpm lint && pnpm build`)
 - [ ] test:fast passes (`pnpm run test:fast`)
 - [ ] Docs updated if behavior changes (see `docs/ci-policy.md`)
+- [ ] Plan->Spec traceability を記載（source issue/thread, spec path, gate/evidence）
 
 If applicable (Web API + DB flow)
 - [ ] Spec links 記載: OpenAPI / BDD / Property
