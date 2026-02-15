@@ -29,6 +29,7 @@ import { createHelpCommand } from './help-cli.js';
 import { createSetupCommand } from './setup-cli.js';
 import { safeExit } from '../utils/safe-exit.js';
 import { handleTestsSuggest } from '../commands/tdd/suggest.js';
+import { handleTestsScaffold } from '../commands/tdd/scaffold.js';
 import { createProgressCommands } from './progress-cli.js';
 
 const program = new Command();
@@ -427,6 +428,24 @@ program
       intent: options.intent,
       input: options.input,
       output: options.output,
+    });
+  });
+
+program
+  .command('tests:scaffold')
+  .description('Generate acceptance/property test skeletons from spec acceptance criteria')
+  .requiredOption('--input <file>', 'Spec/plan markdown file path')
+  .option('--out <dir>', 'Output directory (default: tests/generated/spec-kit/<spec-id>)')
+  .option('--spec-id <id>', 'Spec identifier override')
+  .option('--no-property', 'Skip property test scaffold generation')
+  .option('--overwrite', 'Overwrite existing output files')
+  .action((options) => {
+    handleTestsScaffold({
+      input: options.input,
+      out: options.out,
+      specId: options.specId,
+      property: options.property,
+      overwrite: options.overwrite,
     });
   });
 
