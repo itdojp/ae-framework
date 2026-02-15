@@ -15,27 +15,42 @@ type FileEntry = {
   content: string;
 };
 
+/**
+ * Bullet line parser used across acceptance extraction:
+ * - supports "-" / "*" bullets
+ * - supports optional markdown checkboxes
+ * - keeps indentation so nested bullets can be distinguished from AC items
+ */
+const MARKDOWN_BULLET_RE = /^(\s*)[-*]\s*(?:\[[ xX]\]\s*)?(.*)$/;
+const ACCEPTANCE_HEADING_RE = /^#{2,6}\s+.*(Acceptance Criteria|Acceptance|受入基準)/i;
+const AC_PREFIX_RE = /^AC[-_ ]?\d+\s*(?:\([^)]*\))?:\s*(.*)$/i;
+const GWT_LINE_RE = /^(Given|When|Then)\b.*$/i;
+
+function parseBulletLine(line: string): { indent: number; text: string } | null {
+  const match = line.match(MARKDOWN_BULLET_RE);
+  if (!match) {
+    return null;
+  }
+  const indent = (match[1] ?? '').length;
+  const text = (match[2] ?? '').trim();
+  return { indent, text };
+}
+
+function stripAcPrefix(text: string): string {
+  const ac = text.match(AC_PREFIX_RE);
+  const body = ac?.[1] ?? text;
+  return body.trim().replace(/[:：]\s*$/, '').trim();
+}
+
 export function extractAcceptanceCriteria(markdown: string): string[] {
   const lines = markdown.split(/\r?\n/);
   const start = lines.findIndex((line) =>
-    /^#{2,6}\s+.*(Acceptance Criteria|Acceptance|受入基準)/i.test(line.trim()),
+    ACCEPTANCE_HEADING_RE.test(line.trim()),
   );
 
   const candidates: string[] = [];
-
-  const pushBullet = (line: string) => {
-    const match = line.match(
-      /^\s*[-*]\s*(?:\[[ xX]\]\s*)?(?:AC[-_ ]?\d+\s*(?:\([^)]*\))?:\s*)?(.+?)\s*$/,
-    );
-    if (match?.[1]) {
-      candidates.push(match[1].trim());
-    }
-  };
-
-  const captureSectionCriteria = () => {
-    if (start < 0) {
-      return;
-    }
+  if (start >= 0) {
+    let baseIndent: number | null = null;
     for (let i = start + 1; i < lines.length; i += 1) {
       const line = lines[i] ?? '';
       const trimmed = line.trim();
@@ -43,14 +58,18 @@ export function extractAcceptanceCriteria(markdown: string): string[] {
         break;
       }
 
-      const bullet = line.match(
-        /^\s*[-*]\s*(?:\[[ xX]\]\s*)?(?:AC[-_ ]?\d+\s*(?:\([^)]*\))?:\s*)?(.*)\s*$/,
-      );
+      const bullet = parseBulletLine(line);
       if (!bullet) {
         continue;
       }
+      if (baseIndent === null) {
+        baseIndent = bullet.indent;
+      }
+      if (bullet.indent !== baseIndent) {
+        continue;
+      }
 
-      let body = (bullet[1] ?? '').trim().replace(/[:：]\s*$/, '');
+      let body = stripAcPrefix(bullet.text);
       const gwtParts: string[] = [];
       let j = i + 1;
       for (; j < lines.length; j += 1) {
@@ -59,13 +78,25 @@ export function extractAcceptanceCriteria(markdown: string): string[] {
         if (/^#{1,6}\s+/.test(nextTrimmed)) {
           break;
         }
-        if (/^\s*[-*]\s+/.test(nextLine)) {
-          break;
+
+        const nextBullet = parseBulletLine(nextLine);
+        if (nextBullet) {
+          if (nextBullet.indent <= baseIndent) {
+            break;
+          }
+          if (GWT_LINE_RE.test(nextBullet.text)) {
+            gwtParts.push(nextBullet.text);
+          }
+          continue;
         }
-        const gwt = nextTrimmed.match(/^(Given|When|Then)\b.*$/i);
-        if (gwt?.[0]) {
-          gwtParts.push(gwt[0].trim());
-        } else if (!body && nextTrimmed.length > 0) {
+
+        if (nextTrimmed.length === 0) {
+          continue;
+        }
+
+        if (GWT_LINE_RE.test(nextTrimmed)) {
+          gwtParts.push(nextTrimmed);
+        } else if (!body) {
           body = nextTrimmed;
         }
       }
@@ -75,43 +106,23 @@ export function extractAcceptanceCriteria(markdown: string): string[] {
       }
       i = j - 1;
     }
-  };
-
-  captureSectionCriteria();
-  if (candidates.length > 0) {
+    // Acceptance section exists: do not fall back to whole-document parsing.
+    // This avoids accidentally treating NFR/checklist bullets as AC.
     return normalizeCriteria(candidates);
   }
 
-  if (start >= 0) {
-    for (let i = start + 1; i < lines.length; i += 1) {
-      const line = lines[i] ?? '';
-      if (/^#{1,6}\s+/.test(line.trim())) {
-        break;
-      }
-      pushBullet(line);
+  // No Acceptance heading: accept explicit AC-prefixed bullets only.
+  for (const line of lines) {
+    const bullet = parseBulletLine(line);
+    if (!bullet) {
+      continue;
+    }
+    const acMatch = bullet.text.match(AC_PREFIX_RE);
+    if (acMatch?.[1]) {
+      candidates.push(acMatch[1].trim());
     }
   }
 
-  if (candidates.length > 0) {
-    return normalizeCriteria(candidates);
-  }
-
-  for (const line of lines) {
-    const acBullet = line.match(
-      /^\s*[-*]\s*(?:\[[ xX]\]\s*)?AC[-_ ]?\d+\s*(?:\([^)]*\))?:\s*(.+?)\s*$/,
-    );
-    if (acBullet?.[1]) {
-      candidates.push(acBullet[1].trim());
-    }
-  }
-
-  if (candidates.length > 0) {
-    return normalizeCriteria(candidates);
-  }
-
-  for (const line of lines) {
-    pushBullet(line);
-  }
   return normalizeCriteria(candidates);
 }
 
@@ -134,16 +145,24 @@ function deriveSpecId(inputPath: string, override?: string): string {
 
 function splitGivenWhenThen(text: string): { given: string; when: string; then: string } | null {
   const normalized = text.replace(/\s+/g, ' ').trim();
-  const match = normalized.match(/(Given .*?)(?:\s+)(When .*?)(?:\s+)(Then .*)/i);
-  if (!match) {
+  const whenIndex = normalized.search(/\bWhen\b/i);
+  if (whenIndex < 0) {
     return null;
   }
-  const given = match[1];
-  const when = match[2];
-  const then = match[3];
-  if (!given || !when || !then) {
+
+  const thenRelativeIndex = normalized.slice(whenIndex + 4).search(/\bThen\b/i);
+  if (thenRelativeIndex < 0) {
     return null;
   }
+
+  const thenIndex = whenIndex + 4 + thenRelativeIndex;
+  const given = normalized.slice(0, whenIndex).trim();
+  const when = normalized.slice(whenIndex, thenIndex).trim();
+  const then = normalized.slice(thenIndex).trim();
+  if (!/^Given\b/i.test(given) || !/^When\b/i.test(when) || !/^Then\b/i.test(then)) {
+    return null;
+  }
+
   return { given: given.trim(), when: when.trim(), then: then.trim() };
 }
 
@@ -190,12 +209,30 @@ function buildAcceptanceMapContent(specId: string, criteria: string[]): string {
 function buildPropertyTestContent(specId: string): string {
   return `import { describe, it, expect } from 'vitest';\n` +
     `import fc from 'fast-check';\n\n` +
+    `// Property-based tests for spec "${specId}".\n` +
+    `//\n` +
+    `// This is a scaffolded test. Replace the generator and assertions below\n` +
+    `// with domain-specific properties and invariants derived from the\n` +
+    `// acceptance criteria.\n` +
+    `//\n` +
+    `// Example patterns:\n` +
+    `// - Idempotence: f(f(x)) === f(x)\n` +
+    `// - Inverse: g(f(x)) === x\n` +
+    `// - Preservation: an input property is preserved by the output\n` +
+    `// - Ordering: outputs stay sorted/monotonic for ordered inputs\n` +
+    `//\n` +
+    `// TODO: Replace this placeholder with meaningful properties.\n` +
     `describe('property:${specId}', () => {\n` +
-    `  it('maintains invariant for generated inputs', () => {\n` +
+    `  it('satisfies domain invariants for all valid inputs', () => {\n` +
     `    fc.assert(\n` +
-    `      fc.property(fc.anything(), (input) => {\n` +
-    `        expect(input).toBeDefined();\n` +
-    `      }),\n` +
+    `      fc.property(\n` +
+    `        // TODO: Replace fc.anything() with domain-specific arbitrary.\n` +
+    `        fc.anything(),\n` +
+    `        (input) => {\n` +
+    `          // TODO: Replace with assertions that encode your invariant.\n` +
+    `          expect(input).toBeDefined();\n` +
+    `        },\n` +
+    `      ),\n` +
     `    );\n` +
     `  });\n` +
     `});\n`;

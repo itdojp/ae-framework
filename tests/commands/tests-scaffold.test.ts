@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { afterEach, describe, it, expect } from 'vitest';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import os from 'os';
 import path from 'path';
 import {
@@ -7,6 +7,21 @@ import {
   extractAcceptanceCriteria,
   testsScaffold,
 } from '../../src/commands/tdd/scaffold.js';
+
+const tempDirs: string[] = [];
+
+function createTempDir(): string {
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'tests-scaffold-'));
+  tempDirs.push(dir);
+  return dir;
+}
+
+afterEach(() => {
+  for (const dir of tempDirs) {
+    rmSync(dir, { recursive: true, force: true });
+  }
+  tempDirs.length = 0;
+});
 
 describe('tests:scaffold helpers', () => {
   it('extracts acceptance criteria from Acceptance section bullets', () => {
@@ -50,10 +65,13 @@ describe('tests:scaffold helpers', () => {
     expect(feature).toContain('Given cart exists');
     expect(feature).toContain('When checkout');
     expect(feature).toContain('Then order is created');
+
+    const property = files.find((f) => f.relativePath.endsWith('.property.test.ts'))?.content ?? '';
+    expect(property).toContain('TODO: Replace this placeholder with meaningful properties.');
   });
 
   it('writes scaffold files to disk', () => {
-    const tempDir = mkdtempSync(path.join(os.tmpdir(), 'tests-scaffold-'));
+    const tempDir = createTempDir();
     const inputPath = path.join(tempDir, 'sample.md');
     const outputDir = path.join(tempDir, 'out');
     writeFileSync(
@@ -77,6 +95,56 @@ describe('tests:scaffold helpers', () => {
     expect(readFileSync(featurePath, 'utf8')).toContain('Feature: auth-login');
     expect(readFileSync(mapPath, 'utf8')).toContain('AC-1');
     expect(readFileSync(propertyPath, 'utf8')).toContain('fast-check');
+  });
+
+  it('does not fall back to global bullets when Acceptance heading exists', () => {
+    const markdown = [
+      '# Spec',
+      '',
+      '## Acceptance Criteria',
+      '- AC-1:',
+      '',
+      '## NFR',
+      '- latency < 200ms',
+      '- AC-99: not an acceptance item',
+    ].join('\n');
+
+    expect(extractAcceptanceCriteria(markdown)).toEqual([]);
+  });
+
+  it('keeps nested Given/When/Then bullets inside one AC', () => {
+    const markdown = [
+      '# Spec',
+      '',
+      '## Acceptance',
+      '- AC-1:',
+      '  - Given user is logged in',
+      '  - Given cart has items',
+      '  - When checkout is submitted',
+      '  - Then order is created',
+      '- AC-2: payment error is shown',
+    ].join('\n');
+
+    expect(extractAcceptanceCriteria(markdown)).toEqual([
+      'Given user is logged in Given cart has items When checkout is submitted Then order is created',
+      'payment error is shown',
+    ]);
+  });
+
+  it('preserves multiple Given clauses when splitting GWT', () => {
+    const markdown = [
+      '# Spec',
+      '',
+      '## Acceptance',
+      '- AC-1: Given user is logged in Given cart has items When checkout Then order is created',
+    ].join('\n');
+
+    const files = createScaffoldFiles(markdown, 'checkout-flow', false);
+    const feature = files.find((f) => f.relativePath.endsWith('.feature'))?.content ?? '';
+
+    expect(feature).toContain('Given user is logged in Given cart has items');
+    expect(feature).toContain('When checkout');
+    expect(feature).toContain('Then order is created');
   });
 
   it('fails when no acceptance bullets are found', () => {
