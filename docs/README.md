@@ -80,6 +80,7 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - Artifacts contract: `quality/ARTIFACTS-CONTRACT.md`
 - Verify-first gate baseline: `quality/verify-first-gate-baseline.md`
 - Verify-first failure diagnostic template: `quality/verify-first-failure-diagnostic-template.md`
+- Verify-first failure comment design: `quality/verify-first-failure-comment-design.md`
 - Verify-first artifacts catalog: `quality/verify-first-artifacts-catalog.md`
 - Verify-first implementation runbook: `quality/verify-first-implementation-runbook.md`
 - Adoption sample flow: `quality/adoption-sample-flow.md`
@@ -206,6 +207,7 @@ Claude CodeやMCPとの統合
 - [ARTIFACTS-CONTRACT.md](./quality/ARTIFACTS-CONTRACT.md) - 成果物契約（Required/Optional）
 - [verify-first-gate-baseline.md](./quality/verify-first-gate-baseline.md) - Verify-first の最小Required/Opt-inゲート基準
 - [verify-first-failure-diagnostic-template.md](./quality/verify-first-failure-diagnostic-template.md) - CI失敗時の診断テンプレ（再現手順/Evidence）
+- [verify-first-failure-comment-design.md](./quality/verify-first-failure-comment-design.md) - 失敗診断テンプレをPR自動コメントに連携する設計案
 - [verify-first-artifacts-catalog.md](./quality/verify-first-artifacts-catalog.md) - Verify-first の最小成果物（SSOT/AC/NFR/Evidence）定義
 - [verify-first-implementation-runbook.md](./quality/verify-first-implementation-runbook.md) - Verify-first 実装運用の標準手順（Plan→Spec→Gate→Evidence）
 - [path-normalization-contract.md](./quality/path-normalization-contract.md) - 成果物パス正規化契約（repo-relative優先）
