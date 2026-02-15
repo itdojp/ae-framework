@@ -433,11 +433,13 @@ program
 
 program
   .command('tests:scaffold')
-  .description('Generate acceptance/property test skeletons from spec acceptance criteria')
+  .description('Generate acceptance/contract/property/regression test skeletons from spec acceptance criteria')
   .requiredOption('--input <file>', 'Spec/plan markdown file path')
   .option('--out <dir>', 'Output directory (default: tests/generated/spec-kit/<spec-id>)')
   .option('--spec-id <id>', 'Spec identifier override')
   .option('--no-property', 'Skip property test scaffold generation')
+  .option('--no-contract', 'Skip contract test scaffold generation')
+  .option('--no-regression', 'Skip regression test scaffold generation')
   .option('--overwrite', 'Overwrite existing output files')
   .action((options) => {
     handleTestsScaffold({
@@ -445,6 +447,8 @@ program
       out: options.out,
       specId: options.specId,
       property: options.property,
+      contract: options.contract,
+      regression: options.regression,
       overwrite: options.overwrite,
     });
   });

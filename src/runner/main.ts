@@ -64,11 +64,13 @@ export async function main() {
       output: opts.output,
     }));
 
-  cli.command('tests:scaffold', 'Generate acceptance/property test skeletons from spec acceptance criteria')
+  cli.command('tests:scaffold', 'Generate acceptance/contract/property/regression test skeletons from spec acceptance criteria')
     .option('--input <file>', 'Spec/plan markdown file path')
     .option('--out <dir>', 'Output directory')
     .option('--spec-id <id>', 'Spec identifier override')
     .option('--no-property', 'Skip property test scaffold generation')
+    .option('--no-contract', 'Skip contract test scaffold generation')
+    .option('--no-regression', 'Skip regression test scaffold generation')
     .option('--overwrite', 'Overwrite existing output files')
     .action((opts: Record<string, unknown>) => {
       const payload: {
@@ -76,6 +78,8 @@ export async function main() {
         out?: string;
         specId?: string;
         property?: boolean;
+        contract?: boolean;
+        regression?: boolean;
         overwrite?: boolean;
       } = {
         input: typeof opts['input'] === 'string' ? opts['input'] : '',
@@ -83,6 +87,8 @@ export async function main() {
       if (typeof opts['out'] === 'string') payload.out = opts['out'];
       if (typeof opts['specId'] === 'string') payload.specId = opts['specId'];
       if (typeof opts['property'] === 'boolean') payload.property = opts['property'];
+      if (typeof opts['contract'] === 'boolean') payload.contract = opts['contract'];
+      if (typeof opts['regression'] === 'boolean') payload.regression = opts['regression'];
       if (opts['overwrite'] !== undefined) payload.overwrite = Boolean(opts['overwrite']);
       handleTestsScaffold(payload);
     });

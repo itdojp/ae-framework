@@ -7,12 +7,20 @@ export type TestsScaffoldOptions = {
   out?: string;
   specId?: string;
   property?: boolean;
+  contract?: boolean;
+  regression?: boolean;
   overwrite?: boolean;
 };
 
 type FileEntry = {
   relativePath: string;
   content: string;
+};
+
+export type ScaffoldGenerationOptions = {
+  property?: boolean;
+  contract?: boolean;
+  regression?: boolean;
 };
 
 /**
@@ -238,6 +246,44 @@ function buildPropertyTestContent(specId: string): string {
     `});\n`;
 }
 
+function buildContractTestContent(specId: string, criteria: string[]): string {
+  const rows = criteria
+    .map((criterion, index) => `    ['AC-${index + 1}', ${JSON.stringify(criterion)}],`)
+    .join('\n');
+
+  return `import { describe, it, expect } from 'vitest';\n\n` +
+    `// Contract test scaffold for spec "${specId}".\n` +
+    `// TODO: Replace placeholders with real API/service calls and assertions.\n` +
+    `describe('contract:${specId}', () => {\n` +
+    `  it.each([\n` +
+    `${rows}\n` +
+    `  ])('validates %s', (_acId, _criterion) => {\n` +
+    `    // TODO: Arrange request/input and invoke the target boundary.\n` +
+    `    // TODO: Assert status, schema, and side effects for this AC.\n` +
+    `    expect(true).toBe(true);\n` +
+    `  });\n` +
+    `});\n`;
+}
+
+function buildRegressionTestContent(specId: string, criteria: string[]): string {
+  const rows = criteria
+    .map((criterion, index) => `    ['AC-${index + 1}', ${JSON.stringify(criterion)}],`)
+    .join('\n');
+
+  return `import { describe, it, expect } from 'vitest';\n\n` +
+    `// Regression test scaffold for spec "${specId}".\n` +
+    `// TODO: Capture bug reproductions or golden cases tied to each AC.\n` +
+    `describe('regression:${specId}', () => {\n` +
+    `  it.each([\n` +
+    `${rows}\n` +
+    `  ])('prevents regressions for %s', (_acId, _criterion) => {\n` +
+    `    // TODO: Reproduce prior failure or execute fixed scenario.\n` +
+    `    // TODO: Assert that current behavior stays stable.\n` +
+    `    expect(true).toBe(true);\n` +
+    `  });\n` +
+    `});\n`;
+}
+
 function ensureWritable(filePath: string, overwrite: boolean) {
   if (!overwrite && existsSync(filePath)) {
     throw new Error(`Output file already exists: ${filePath} (use --overwrite to replace)`);
@@ -247,12 +293,16 @@ function ensureWritable(filePath: string, overwrite: boolean) {
 export function createScaffoldFiles(
   markdown: string,
   specId: string,
-  includeProperty = true,
+  generationOptions: ScaffoldGenerationOptions = {},
 ): FileEntry[] {
   const criteria = extractAcceptanceCriteria(markdown);
   if (criteria.length === 0) {
     throw new Error('No acceptance criteria bullets found in input document');
   }
+
+  const includeProperty = generationOptions.property !== false;
+  const includeContract = generationOptions.contract !== false;
+  const includeRegression = generationOptions.regression !== false;
 
   const files: FileEntry[] = [
     {
@@ -272,6 +322,20 @@ export function createScaffoldFiles(
     });
   }
 
+  if (includeContract) {
+    files.push({
+      relativePath: path.join('contract', `${specId}.contract.test.ts`),
+      content: buildContractTestContent(specId, criteria),
+    });
+  }
+
+  if (includeRegression) {
+    files.push({
+      relativePath: path.join('regression', `${specId}.regression.test.ts`),
+      content: buildRegressionTestContent(specId, criteria),
+    });
+  }
+
   return files;
 }
 
@@ -285,9 +349,15 @@ export function testsScaffold(options: TestsScaffoldOptions) {
   const specId = deriveSpecId(inputPath, options.specId);
   const outputDir = path.resolve(options.out || path.join('tests', 'generated', 'spec-kit', specId));
   const includeProperty = options.property !== false;
+  const includeContract = options.contract !== false;
+  const includeRegression = options.regression !== false;
   const overwrite = options.overwrite === true;
 
-  const files = createScaffoldFiles(markdown, specId, includeProperty);
+  const files = createScaffoldFiles(markdown, specId, {
+    property: includeProperty,
+    contract: includeContract,
+    regression: includeRegression,
+  });
   mkdirSync(outputDir, { recursive: true });
 
   for (const file of files) {
