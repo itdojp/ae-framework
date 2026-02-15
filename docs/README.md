@@ -23,6 +23,10 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - User manual: `product/USER-MANUAL.md`
 - Positioning / comparison: `product/POSITIONING.md`
 
+### Strategy
+- Codex boundary + Verify-first strategy: `strategy/CODEX-AE-BOUNDARY-VERIFY-FIRST.md`
+- Plan -> Spec normalization template: `templates/plan-to-spec-normalization-template.md`
+
 ### Positioning maps (concept / flow / use cases)
 - Concept & system diagrams: `architecture/ARCHITECTURE.md`
 - Reference flow (Web API + DB): `reference/REFERENCE-FLOW-WEB-API-DB.md`
@@ -73,6 +77,7 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - Guarded automation template: `quality/guarded-automation-template.md`
 - Incident triage template: `quality/incident-triage-template.md`
 - Artifacts contract: `quality/ARTIFACTS-CONTRACT.md`
+- Verify-first artifacts catalog: `quality/verify-first-artifacts-catalog.md`
 - Adoption sample flow: `quality/adoption-sample-flow.md`
 - Runbooks / Traceability / Runtime Contracts: see `docs/quality` and `docs/verify`
  - Coverage policy: `quality/coverage-policy.md`（しきい値の由来/Required化の運用）
@@ -121,6 +126,10 @@ ae-frameworkは、エージェント協調型のSDLCオーケストレーター�
 - [USER-MANUAL.md](./product/USER-MANUAL.md) - 利用マニュアル
 - [POSITIONING.md](./product/POSITIONING.md) - 類似ツールとの棲み分け・導入指針
 - [PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md](./product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md) - 適用対象 × 入力 × 出力 × ツール適性
+
+### 🧭 [strategy/](./strategy/) - 戦略・責務境界
+- [CODEX-AE-BOUNDARY-VERIFY-FIRST.md](./strategy/CODEX-AE-BOUNDARY-VERIFY-FIRST.md) - Codex との責務境界、Verify-first、Thread→Repo→CI の標準化
+- [plan-to-spec-normalization-template.md](./templates/plan-to-spec-normalization-template.md) - Plan を repo SSOT に正規化する最小テンプレート
 
 ### 🧭 ポジショニングの図とフロー
 - 概念図/システム図: `architecture/ARCHITECTURE.md`
@@ -190,6 +199,7 @@ Claude CodeやMCPとの統合
 - [guarded-automation-template.md](./quality/guarded-automation-template.md) - Guarded automation 運用テンプレ
 - [incident-triage-template.md](./quality/incident-triage-template.md) - インシデント一次切り分けテンプレ
 - [ARTIFACTS-CONTRACT.md](./quality/ARTIFACTS-CONTRACT.md) - 成果物契約（Required/Optional）
+- [verify-first-artifacts-catalog.md](./quality/verify-first-artifacts-catalog.md) - Verify-first の最小成果物（SSOT/AC/NFR/Evidence）定義
 - [path-normalization-contract.md](./quality/path-normalization-contract.md) - 成果物パス正規化契約（repo-relative優先）
 - [run-manifest-freshness-contract.md](./quality/run-manifest-freshness-contract.md) - run-manifest鮮度判定契約（stale artifact 検出）
 - [adoption-sample-flow.md](./quality/adoption-sample-flow.md) - 導入の最小フロー（エンドツーエンド）
