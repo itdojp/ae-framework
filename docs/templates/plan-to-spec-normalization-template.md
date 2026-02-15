@@ -78,8 +78,10 @@ Plan (thread/conversation asset) を repository SSOT に正規化するための
 
 | Plan item | Spec artifact | Gate / Check | Evidence |
 | --- | --- | --- | --- |
-| 例: タスクA | `docs/specs/xxx.md` | `verify-lite` | `artifacts/verify-lite/summary.json` |
+| 例: タスクA | `spec/example-spec.md` | `verify-lite` | `artifacts/verify-lite/verify-lite-run-summary.json` |
 |  |  |  |  |
+
+補足: Spec artifact path は `docs/spec/registry.md` の配置規約に合わせる。
 
 ## 8. Delivery Checklist / 実行チェックリスト
 
@@ -88,4 +90,3 @@ Plan (thread/conversation asset) を repository SSOT に正規化するための
 - [ ] Required gates の合否が確認済み
 - [ ] Evidence が PR から追跡可能
 - [ ] Non-goals / out-of-scope が明記されている
-
