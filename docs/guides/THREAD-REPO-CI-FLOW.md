@@ -15,7 +15,7 @@ This guide standardizes how conversation plans are normalized into repository SS
 ## 1. 目的
 
 Plan（会話資産）を直接実装の正にせず、repo 上の Spec を SSOT として固定するための運用手順です。  
-対象: #1971（親: #1969）
+本ガイドは特定のIssueに依存しない一般的な運用標準です。
 
 ## 2. 入力/出力/更新タイミング
 
@@ -53,7 +53,7 @@ Plan（会話資産）を直接実装の正にせず、repo 上の Spec を SSOT
 
 | Source plan/thread | Spec path | Gate | Evidence |
 | --- | --- | --- | --- |
-| Issue #1971 / 作業スレッド | `docs/templates/plan-to-spec-normalization-sample.md` | verify-lite | CI URL + summary artifact |
+| Issue/Thread URL | `docs/templates/plan-to-spec-normalization-sample.md` | verify-lite | CI URL + `artifacts/verify-lite/verify-lite-run-summary.json` |
 
 ## 5. 失敗時の再実行手順
 
