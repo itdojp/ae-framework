@@ -15,6 +15,8 @@ Canonical templates live under `docs/quality/` and are linked below for reuse.
 - Ownership DoD: `docs/quality/ownership-dod.md`
 - LLM-first review checklist: `docs/quality/llm-first-review-checklist.md`
 - PR summary template: `docs/quality/pr-summary-template.md`
+- Verify-first gate baseline: `docs/quality/verify-first-gate-baseline.md`
+- Verify-first failure diagnostic template: `docs/quality/verify-first-failure-diagnostic-template.md`
 
 ### Guardrails (machine verifying machine)
 - Human review is required before merge, even if automated gates pass.
@@ -34,6 +36,8 @@ Canonical templates live under `docs/quality/` and are linked below for reuse.
 - Ownership DoD: `docs/quality/ownership-dod.md`
 - LLM-first レビュー・チェックリスト: `docs/quality/llm-first-review-checklist.md`
 - PRサマリーテンプレ: `docs/quality/pr-summary-template.md`
+- Verify-first ゲート基準: `docs/quality/verify-first-gate-baseline.md`
+- Verify-first 失敗診断テンプレ: `docs/quality/verify-first-failure-diagnostic-template.md`
 
 ### ガードレール（machine verifying machine）
 - 自動ゲートが通っても、人のレビューを必須とする。
