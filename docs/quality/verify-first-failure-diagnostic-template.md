@@ -25,8 +25,8 @@
 
 - Local command(s):
   ```bash
-  # 例
-  pnpm types:check && pnpm lint && pnpm build
+  # 例: Verify Lite / PR-blocking と同じエントリポイント
+  pnpm run verify:lite
   ```
 - Expected:
 - Actual:
