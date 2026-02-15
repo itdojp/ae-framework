@@ -81,6 +81,7 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - Verify-first gate baseline: `quality/verify-first-gate-baseline.md`
 - Verify-first failure diagnostic template: `quality/verify-first-failure-diagnostic-template.md`
 - Verify-first artifacts catalog: `quality/verify-first-artifacts-catalog.md`
+- Verify-first implementation runbook: `quality/verify-first-implementation-runbook.md`
 - Adoption sample flow: `quality/adoption-sample-flow.md`
 - Runbooks / Traceability / Runtime Contracts: see `docs/quality` and `docs/verify`
  - Coverage policy: `quality/coverage-policy.md`（しきい値の由来/Required化の運用）
@@ -206,6 +207,7 @@ Claude CodeやMCPとの統合
 - [verify-first-gate-baseline.md](./quality/verify-first-gate-baseline.md) - Verify-first の最小Required/Opt-inゲート基準
 - [verify-first-failure-diagnostic-template.md](./quality/verify-first-failure-diagnostic-template.md) - CI失敗時の診断テンプレ（再現手順/Evidence）
 - [verify-first-artifacts-catalog.md](./quality/verify-first-artifacts-catalog.md) - Verify-first の最小成果物（SSOT/AC/NFR/Evidence）定義
+- [verify-first-implementation-runbook.md](./quality/verify-first-implementation-runbook.md) - Verify-first 実装運用の標準手順（Plan→Spec→Gate→Evidence）
 - [path-normalization-contract.md](./quality/path-normalization-contract.md) - 成果物パス正規化契約（repo-relative優先）
 - [run-manifest-freshness-contract.md](./quality/run-manifest-freshness-contract.md) - run-manifest鮮度判定契約（stale artifact 検出）
 - [adoption-sample-flow.md](./quality/adoption-sample-flow.md) - 導入の最小フロー（エンドツーエンド）
