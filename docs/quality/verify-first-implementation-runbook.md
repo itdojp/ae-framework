@@ -39,12 +39,14 @@ Operational runbook for implementing Verify-first in real projects: normalize pl
 
 Spec の AC から、最小のテスト雛形を作成する。
 
+> ステータス注記（2026-02-15時点）: `ae tests:scaffold` は Issue #1979 の実装項目で、PR #1980 が未マージの環境では利用不可です。
+
 ```bash
-# 例: ACから bdd/property/acceptance map を生成
+# 例: 実装済み環境（PR #1980 以降）では AC から bdd/property/acceptance map を生成
 ae tests:scaffold --input docs/templates/plan-to-spec-normalization-sample.md
 ```
 
-`tests:scaffold` が利用できない環境では、`docs/templates/spec-kit/*` を手動展開して同等の雛形を作成する。
+`ae tests:scaffold` が未実装の環境では、`docs/templates/spec-kit/*` を手動展開して同等の雛形を作成する。
 
 生成される成果物（例）:
 - `tests/generated/spec-kit/<spec-id>/bdd/<spec-id>.feature`
