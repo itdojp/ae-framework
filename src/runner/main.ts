@@ -8,6 +8,7 @@ import { verifyRun } from '../commands/verify/run.js';
 import { agentComplete } from '../commands/agent/complete.js';
 import { doctorEnv } from '../commands/doctor/env.js';
 import { handleTestsSuggest } from '../commands/tdd/suggest.js';
+import { handleTestsScaffold } from '../commands/tdd/scaffold.js';
 
 export async function main() {
   const cli = cac('ae');
@@ -62,6 +63,29 @@ export async function main() {
       input: opts.input,
       output: opts.output,
     }));
+
+  cli.command('tests:scaffold', 'Generate acceptance/property test skeletons from spec acceptance criteria')
+    .option('--input <file>', 'Spec/plan markdown file path')
+    .option('--out <dir>', 'Output directory')
+    .option('--spec-id <id>', 'Spec identifier override')
+    .option('--no-property', 'Skip property test scaffold generation')
+    .option('--overwrite', 'Overwrite existing output files')
+    .action((opts: Record<string, unknown>) => {
+      const payload: {
+        input: string;
+        out?: string;
+        specId?: string;
+        property?: boolean;
+        overwrite?: boolean;
+      } = {
+        input: typeof opts['input'] === 'string' ? opts['input'] : '',
+      };
+      if (typeof opts['out'] === 'string') payload.out = opts['out'];
+      if (typeof opts['specId'] === 'string') payload.specId = opts['specId'];
+      if (typeof opts['property'] === 'boolean') payload.property = opts['property'];
+      if (opts['overwrite'] !== undefined) payload.overwrite = Boolean(opts['overwrite']);
+      handleTestsScaffold(payload);
+    });
   
   cli.command('doctor env', 'diagnose environment & LLM keys')
     .action(doctorEnv);
