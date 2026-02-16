@@ -98,6 +98,8 @@ const PROFILE_STEPS = {
 };
 
 const SUMMARY_SCHEMA_VERSION = 'verify-profile-summary/v1';
+const STEP_CAPTURE_MAX_BUFFER_BYTES = 128 * 1024 * 1024;
+const STEP_OUTPUT_MAX_LENGTH = 16_000;
 
 export function listProfiles() {
   return Object.keys(PROFILE_STEPS);
@@ -200,9 +202,13 @@ function nowIso() {
 
 function writeSummaryFile(outPath, summary) {
   const absolute = path.resolve(outPath);
-  mkdirSync(path.dirname(absolute), { recursive: true });
-  writeFileSync(absolute, JSON.stringify(summary, null, 2));
-  return absolute;
+  try {
+    mkdirSync(path.dirname(absolute), { recursive: true });
+    writeFileSync(absolute, JSON.stringify(summary, null, 2));
+    return { ok: true, path: absolute };
+  } catch (error) {
+    return { ok: false, path: absolute, error };
+  }
 }
 
 function createStepSummary(step, extra = {}) {
@@ -216,10 +222,12 @@ function createStepSummary(step, extra = {}) {
 
 function runStep(step, extraArgs, captureOutput) {
   const startedAt = Date.now();
-  const result = spawnSync(step.command[0], [...step.command.slice(1), ...extraArgs], {
+  const spawnOptions = {
     stdio: captureOutput ? ['ignore', 'pipe', 'pipe'] : 'inherit',
     env: process.env,
-  });
+    ...(captureOutput ? { maxBuffer: STEP_CAPTURE_MAX_BUFFER_BYTES } : {}),
+  };
+  const result = spawnSync(step.command[0], [...step.command.slice(1), ...extraArgs], spawnOptions);
   const durationMs = Date.now() - startedAt;
 
   if (result.error) {
@@ -240,10 +248,17 @@ function runStep(step, extraArgs, captureOutput) {
     duration_ms: durationMs,
   };
   if (captureOutput) {
+    const stdout = result.stdout?.toString('utf8') ?? '';
+    const stderr = result.stderr?.toString('utf8') ?? '';
+    const truncate = (text) =>
+      text.length > STEP_OUTPUT_MAX_LENGTH
+        ? `${text.slice(0, STEP_OUTPUT_MAX_LENGTH)}\n...[truncated]`
+        : text;
+
     return {
       ...summary,
-      stdout: result.stdout?.toString('utf8') ?? '',
-      stderr: result.stderr?.toString('utf8') ?? '',
+      stdout: truncate(stdout),
+      stderr: truncate(stderr),
     };
   }
   return summary;
@@ -251,7 +266,14 @@ function runStep(step, extraArgs, captureOutput) {
 
 function emitSummary(summary, options) {
   if (options.out) {
-    const savedPath = writeSummaryFile(options.out, summary);
+    const saveResult = writeSummaryFile(options.out, summary);
+    if (!saveResult.ok) {
+      const message = `[verify-runner] Failed to write summary file at "${saveResult.path}": ${String(saveResult.error?.message ?? saveResult.error)}`;
+      console.error(message);
+      return { ok: false };
+    }
+
+    const savedPath = saveResult.path;
     if (!options.json) {
       console.log(`[verify-runner] summary written: ${savedPath}`);
     }
@@ -259,6 +281,7 @@ function emitSummary(summary, options) {
   if (options.json) {
     console.log(JSON.stringify(summary, null, 2));
   }
+  return { ok: true };
 }
 
 export function runVerify(options) {
@@ -353,7 +376,10 @@ export function runVerify(options) {
     steps: stepResults,
   };
 
-  emitSummary(summary, options);
+  const emitResult = emitSummary(summary, options);
+  if (!emitResult.ok) {
+    return 1;
+  }
 
   if (options.dryRun) {
     return 0;
