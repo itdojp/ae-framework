@@ -17,15 +17,38 @@ function respondError(error, exitCode = 1) {
 }
 
 async function loadSpecCompiler() {
+  const importErrors = [];
   try {
     return await import('@ae-framework/spec-compiler');
   } catch (error) {
-    const localDist = path.resolve(process.cwd(), 'packages/spec-compiler/dist/index.js');
-    if (fs.existsSync(localDist)) {
-      return await import(pathToFileURL(localDist).href);
-    }
-    throw error;
+    importErrors.push(error instanceof Error ? error.message : String(error));
   }
+
+  const localDist = path.resolve(process.cwd(), 'packages/spec-compiler/dist/index.js');
+  if (!fs.existsSync(localDist)) {
+    try {
+      const { spawnSync } = await import('child_process');
+      const build = spawnSync('pnpm', ['-s', '--filter', '@ae-framework/spec-compiler', 'build'], {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+      });
+      if (build.status !== 0) {
+        importErrors.push(`pnpm build failed: ${(build.stderr || build.stdout || '').trim()}`);
+      }
+    } catch (error) {
+      importErrors.push(`failed to run pnpm build: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  if (fs.existsSync(localDist)) {
+    try {
+      return await import(pathToFileURL(localDist).href);
+    } catch (error) {
+      importErrors.push(error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  throw new Error(`Unable to load @ae-framework/spec-compiler (${importErrors.join(' | ')})`);
 }
 
 async function main() {
