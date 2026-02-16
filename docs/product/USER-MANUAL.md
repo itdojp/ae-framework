@@ -179,6 +179,9 @@ pnpm run ae-framework -- traceability extract-ids --issue "https://github.com/<o
 pnpm run ae-framework -- traceability matrix --map docs/specs/issue-traceability-map.json --tests "tests/**/*" --code "src/**/*" --format json --output docs/specs/ISSUE-TRACEABILITY-MATRIX.json
 pnpm run ae-framework -- validate --traceability --strict --sources docs/specs/ISSUE-TRACEABILITY-MATRIX.json
 
+# 有用性評価レポート（JSON + Markdown）
+pnpm run evaluate:usefulness -- --strict-inputs --min-score 70
+
 # 依存監査
 pnpm run security:integrated:quick
 ```
@@ -188,6 +191,7 @@ pnpm run security:integrated:quick
 - Formal ツールの導入状況確認は `pnpm run tools:formal:check`
 - CSP 詳細手順は `docs/quality/formal-csp.md`
 - Issue要件IDトレーサビリティ手順は `docs/quality/issue-requirements-traceability.md`
+- 有用性評価の入力契約・スコア算出規約は `docs/quality/usefulness-evaluation.md`
 
 ## 8. トラブルシューティング
 

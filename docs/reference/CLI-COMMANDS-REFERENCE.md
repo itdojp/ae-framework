@@ -270,6 +270,36 @@ ae domain-model --language --sources "glossary.md"
 # optional step の失敗は optional_fail_count に集計され、required が通れば exit code 0。
 ```
 
+### Usefulness Evaluation Runner
+```bash
+# Generate usefulness report (JSON + Markdown)
+ pnpm run evaluate:usefulness
+
+# CI usage: strict inputs + quality threshold
+ pnpm run evaluate:usefulness -- --strict-inputs --min-score 70
+
+# Explicit artifact paths
+ pnpm run evaluate:usefulness -- \
+  --run-index artifacts/runs/index.json \
+  --traceability traceability.json \
+  --verify-profile artifacts/verify-profile-summary.json \
+  --quality-report reports/quality-gates/quality-report-ci-latest.json \
+  --run-manifest-check artifacts/run-manifest-check.json \
+  --out-json artifacts/evaluation/ae-framework-usefulness-latest.json \
+  --out-markdown artifacts/evaluation/ae-framework-usefulness-latest.md
+
+# Axis scoring:
+# - Reproducibility: run history success rate
+# - Traceability: linked coverage across tests/impl/formal
+# - Automation: verify-profile required-pass + execution rates
+# - Quality Detection: failure history + latest quality/freshness signals
+#
+# Exit contract:
+# - exit 0: report generated and policy passed
+# - exit 1: policy failed (e.g. --min-score threshold)
+# - exit 2: invalid input / parse error / strict-inputs violation
+```
+
 ### Property-Based Test Runner
 ```bash
 # Default resilient entrypoint (config auto-discovery + fallback)
@@ -531,6 +561,9 @@ ae quality run --env development
  ae quality validate
  ae quality report --env development --format json
  ae quality init --force
+
+# 有用性評価（JSON + Markdown）
+pnpm run evaluate:usefulness -- --strict-inputs --min-score 70
 ```
 
 ### Security / SBOM / Resilience / Circuit Breaker
