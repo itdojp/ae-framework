@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/itdojp/ae-framework/schema/usefulness-evaluation-report.schema.json",
+  "title": "Usefulness Evaluation Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "inputs",
+    "axes",
+    "overall",
+    "recommendations"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "usefulness-evaluation/v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "path",
+          "provided",
+          "exists",
+          "validJson",
+          "error"
+        ],
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "provided": {
+            "type": "boolean"
+          },
+          "exists": {
+            "type": "boolean"
+          },
+          "validJson": {
+            "type": "boolean"
+          },
+          "error": {
+            "oneOf": [
+              { "type": "string" },
+              { "type": "null" }
+            ]
+          }
+        }
+      }
+    },
+    "axes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reproducibility",
+        "traceability",
+        "automation",
+        "qualityDetection"
+      ],
+      "properties": {
+        "reproducibility": { "$ref": "#/$defs/axisScore" },
+        "traceability": { "$ref": "#/$defs/axisScore" },
+        "automation": { "$ref": "#/$defs/axisScore" },
+        "qualityDetection": { "$ref": "#/$defs/axisScore" }
+      }
+    },
+    "overall": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "score",
+        "bucket",
+        "availableAxes",
+        "missingAxes"
+      ],
+      "properties": {
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "bucket": {
+          "type": "string",
+          "enum": [
+            "excellent",
+            "good",
+            "warning",
+            "critical"
+          ]
+        },
+        "availableAxes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4
+        },
+        "missingAxes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "reproducibility",
+              "traceability",
+              "automation",
+              "qualityDetection"
+            ]
+          }
+        }
+      }
+    },
+    "recommendations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "$defs": {
+    "axisScore": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "available",
+        "score",
+        "reason",
+        "details"
+      ],
+      "properties": {
+        "available": {
+          "type": "boolean"
+        },
+        "score": {
+          "oneOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reason": {
+          "oneOf": [
+            { "type": "string" },
+            { "type": "null" }
+          ]
+        },
+        "details": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}
