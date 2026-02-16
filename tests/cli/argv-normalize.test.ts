@@ -2,6 +2,27 @@ import { describe, expect, it } from 'vitest';
 import { normalizeProgramArgv } from '../../src/cli/argv-normalize.js';
 
 describe('normalizeProgramArgv', () => {
+  it('removes leading standalone separator for direct invocation', () => {
+    const argv = [
+      'node',
+      'src/cli/index.ts',
+      '--',
+      'validate',
+      '--traceability',
+      '--sources',
+      'spec/example-spec.md',
+    ];
+
+    expect(normalizeProgramArgv(argv, {})).toEqual([
+      'node',
+      'src/cli/index.ts',
+      'validate',
+      '--traceability',
+      '--sources',
+      'spec/example-spec.md',
+    ]);
+  });
+
   it('removes pnpm separator before options', () => {
     const argv = [
       'node',
@@ -53,6 +74,29 @@ describe('normalizeProgramArgv', () => {
     ];
 
     expect(normalizeProgramArgv(argv, {})).toEqual(argv);
+  });
+
+  it('removes forwarded separator when invoked via package script', () => {
+    const argv = [
+      'node',
+      'src/cli/index.ts',
+      'quality',
+      'run',
+      '--',
+      '--env=testing',
+      '--gates=dod',
+    ];
+
+    expect(
+      normalizeProgramArgv(argv, { npm_lifecycle_event: 'quality:run' }),
+    ).toEqual([
+      'node',
+      'src/cli/index.ts',
+      'quality',
+      'run',
+      '--env=testing',
+      '--gates=dod',
+    ]);
   });
 
   it('keeps argv unchanged when separator is not followed by options', () => {
