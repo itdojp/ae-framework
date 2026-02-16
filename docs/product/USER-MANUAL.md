@@ -171,6 +171,9 @@ pnpm run spec:validate
 # CI向け最小検証
 pnpm run verify:lite
 
+# fast/full を統一実行（JSONサマリ出力）
+pnpm run verify:profile -- --profile fast --json --out artifacts/verify-profile-summary.json
+
 # 依存監査
 pnpm run security:integrated:quick
 ```

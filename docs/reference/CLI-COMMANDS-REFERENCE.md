@@ -238,6 +238,18 @@ ae domain-model --language --sources "glossary.md"
  ae entry test --profile ci --root /path/to/repo
 ```
 
+### Verify Profile Runner
+```bash
+# fast/full プロファイルを実行
+ pnpm run verify:profile -- --profile fast
+ pnpm run verify:profile -- --profile full
+
+# CI向け JSON サマリ（step別 name/command/status/exit_code/duration_ms/required）
+ pnpm run verify:profile -- --profile fast --json --out artifacts/verify-profile-summary.json
+# required step が失敗すると overall_status=fail / exit code!=0。
+# optional step の失敗は optional_fail_count に集計され、required が通れば exit code 0。
+```
+
 ### Setup
 ```bash
 ae setup list

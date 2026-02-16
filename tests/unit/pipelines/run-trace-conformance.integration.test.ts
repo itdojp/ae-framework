@@ -43,11 +43,17 @@ describe('pipelines:trace', () => {
       ]);
 
       const summary = JSON.parse(await readFile(summaryPath, 'utf8'));
-      expect(summary.trace).toBeDefined();
+      expect(summary.schemaVersion).toBe('verify-profile-summary/v1');
+      expect(summary.profile).toBe('conformance');
+      expect(summary.overall_status).toBe('pass');
+      expect(Array.isArray(summary.steps)).toBe(true);
+      expect(summary.steps[0]?.name).toBe('verify:conformance');
+      expect(summary.steps[0]?.status).toBe('passed');
 
       const envelope = JSON.parse(await readFile(envelopePath, 'utf8'));
       expect(envelope.source).toBe('pipelines:trace');
-      expect(envelope.summary.trace.status).toBe(summary.trace.status);
+      expect(envelope.summary.profile).toBe(summary.profile);
+      expect(envelope.summary.overall_status).toBe(summary.overall_status);
       expect(Array.isArray(envelope.artifacts)).toBe(true);
       expect(envelope.artifacts.length).toBeGreaterThan(0);
     });
