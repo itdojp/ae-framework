@@ -253,7 +253,7 @@ ae setup list
  ae circuit-breaker create --name demo
  ae circuit-breaker list
  ae circuit-breaker stats --name demo
- ae circuit-breaker health --name demo
+ ae circuit-breaker health
 ```
 
 ### Other Utilities
@@ -466,7 +466,7 @@ ae resilience create --name default
 ae circuit-breaker create --name demo
  ae circuit-breaker list
  ae circuit-breaker stats --name demo
- ae circuit-breaker health --name demo
+ ae circuit-breaker health
 ```
 
 ### ベンチマーク（Req2Run）
