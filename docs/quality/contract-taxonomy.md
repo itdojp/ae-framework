@@ -11,7 +11,7 @@ In ae-framework, the word "contract" appears in multiple contexts. This document
 | Category | Meaning | Typical artifacts / commands |
 | --- | --- | --- |
 | Design contract (DbC) | Preconditions / postconditions / invariants for behavior/design | Spec Kit, Plan->Spec template, Context Bundle, runtime conformance checks |
-| API/Integration contract | Consumer-driven API contract verification (Pact and related) | `pnpm run pipelines:pact`, CI Extended `pact` smoke, `artifacts/contracts/` |
+| API/Integration contract | Consumer-driven API contract verification (Pact and related) | `pnpm run pipelines:pact`, CI Extended `pact` smoke, pact test logs/artifacts configured by each project |
 | Artifacts contract | Required/optional CI output contract (reports/artifacts presence and shape) | `docs/quality/ARTIFACTS-CONTRACT.md`, `scripts/ci/check-required-artifacts.mjs` |
 
 Naming guidance:
@@ -32,7 +32,7 @@ ae-framework では `contract` が複数の意味で使われます。本ドキ�
 | 区分 | 意味 | 代表的な成果物 / コマンド |
 | --- | --- | --- |
 | Design contract（DbC） | 振る舞い仕様の事前条件 / 事後条件 / 不変条件 | Spec Kit、Plan->Spec テンプレ、Context Bundle、Runtime Conformance |
-| API/Integration contract | Pact などの consumer-driven API 契約検証 | `pnpm run pipelines:pact`、CI Extended の pact smoke、`artifacts/contracts/` |
+| API/Integration contract | Pact などの consumer-driven API 契約検証 | `pnpm run pipelines:pact`、CI Extended の pact smoke、プロジェクトで定義された pact のログ/成果物 |
 | Artifacts contract | CI成果物（reports/artifacts）の必須/任意ルール | `docs/quality/ARTIFACTS-CONTRACT.md`、`scripts/ci/check-required-artifacts.mjs` |
 
 表記ルール:

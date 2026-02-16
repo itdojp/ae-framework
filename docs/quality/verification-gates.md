@@ -48,7 +48,7 @@ Quality gate reports (`reports/quality-gates/quality-report-*.json`) include a `
 | Gate | How to enable | Primary output | Notes |
 | --- | --- | --- | --- |
 | property | label `run-property` | `artifacts/properties/` | CI Extended 側で実行 |
-| pact-contract(API) | `pnpm run pipelines:pact` | `artifacts/contracts/` | API契約の検証（Pact） |
+| pact-contract(API) | `pnpm run pipelines:pact` | pact test logs/artifacts (project-defined) | API契約の検証（Pact） |
 | mutation | label `run-mutation` | `reports/mutation/` | quick mode + ignoreStatic |
 | MBT | label `run-mbt` | `artifacts/mbt/` | CI Extended 側 |
 | perf/a11y/lh | label `enforce-perf` / `enforce-a11y` / `enforce-lh` | `reports/*.json` | しきい値でブロッキング |
