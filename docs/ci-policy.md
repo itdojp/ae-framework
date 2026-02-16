@@ -22,13 +22,17 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - Optionally enable validate-artifacts-ajv / coverage-check as required
 
 ### Opt-in Labels
-- `ci-non-blocking`: run selected jobs with continue-on-error (traceability, model-check, contracts, security, etc.)
+- `ci-non-blocking`: run selected jobs with continue-on-error (traceability, model-check, formal-contract checks, security, etc.)
 - `run-security`: run heavy security jobs (Security Scanning, Dependency Audit, License Compliance, CodeQL)
 - `run-ci-extended`: trigger CI Extended workflow (`test:int`, property harness, MBT smoke, Pact smoke, mutation auto diff)
 - `run-integration`: request the integration subset of CI Extended (integration vitest + pact smoke)
 - `run-property`: execute property harness smoke within CI Extended
 - `run-mbt`: execute MBT smoke (`test:mbt:ci`) within CI Extended
 - `run-mutation`: execute mutation auto diff (extended pipeline)
+- Terminology note:
+  - `pact` in CI Extended refers to **API/Integration contract verification**
+  - `/enforce-contracts` refers to **formal/DbC-oriented contract enforcement**
+  - See `docs/quality/contract-taxonomy.md` for the canonical split
 
 CI Extended restores cached heavy test artifacts (`.cache/test-results`) when rerunning; the cache is refreshed at the end of each run via `node scripts/pipelines/sync-test-results.mjs --store`. Check or warm the cache locally with `--status` / `--restore` before dispatching reruns. Nightly runs use a stable cache key (`ci-heavy-${ runner.os }-schedule`) so the previous baseline is rehydrated before execution, call `node scripts/pipelines/compare-test-trends.mjs` to produce a Markdown diff (posted to the Step Summary), and persist both `reports/heavy-test-trends.json` and `reports/heavy-test-trends-history/<timestamp>.json` as artifacts (`heavy-test-trends`, `heavy-test-trends-history`).
 - `qa --light`: run QA in light mode (vitest -> `test:fast`); QA bench (`ae-ci`, ci.yml から呼び出し) で使用
@@ -80,7 +84,7 @@ CI Extended restores cached heavy test artifacts (`.cache/test-results`) when re
     - `/non-blocking` … `ci-non-blocking` を付与（一部ジョブを continue-on-error）
     - `/ready` … `do-not-merge` を除去（マージ待ちへ）
     - `/pr-digest` / `/pr-detailed` … PR要約モード切替
-    - `/run-formal` / `/enforce-formal` / `/enforce-contracts` … フォーマル/契約の実行/エンフォース切替
+    - `/run-formal` / `/enforce-formal` / `/enforce-contracts` … フォーマル（DbC系）契約の実行/エンフォース切替
     - `/coverage <pct|clear>` … `coverage:<pct>` を設定/クリア（しきい値上書き）
     - `/enforce-typecov` … `enforce-typecov` を付与（型カバレッジ enforcement）
     - `/enforce-coverage` … `enforce-coverage` を付与（カバレッジ enforcement）
@@ -147,13 +151,17 @@ CI Extended restores cached heavy test artifacts (`.cache/test-results`) when re
  - カバレッジ運用とRequired化の詳細は `docs/quality/coverage-policy.md` を参照（しきい値の由来、ラベル/変数、main運用）
 
 ### ラベル運用（Opt-in）
-- `ci-non-blocking`: 一部ジョブ（traceability, model-check, contracts, security 等）を continue-on-error で実行し PR をブロックしない
+- `ci-non-blocking`: 一部ジョブ（traceability, model-check, formal系contract, security 等）を continue-on-error で実行し PR をブロックしない
 - `run-security`: 重いセキュリティ系（Security Scanning, Dependency Audit, License Compliance, CodeQL 等）を PR で実行
 - `run-ci-extended`: CI Extended ワークフローを起動（integration / property / MBT / pact / mutation auto diff のフルスイート）
 - `run-integration`: CI Extended の統合テスト＋pact のみを実行
 - `run-property`: CI Extended の property harness のみを実行
 - `run-mbt`: CI Extended の `test:mbt:ci` のみを実行
 - `run-mutation`: CI Extended の mutation auto diff のみを実行
+- 用語注記:
+  - `pact` は **API/Integration contract** 検証を指す
+  - `/enforce-contracts` は **formal/DbC系 contract** のエンフォースを指す
+  - 用語基準は `docs/quality/contract-taxonomy.md`
 
 CI Extended 実行後は heavy テスト成果物を `.cache/test-results` に保存し、再実行時に自動復元します。必要に応じて `node scripts/pipelines/sync-test-results.mjs --status` / `--restore` でキャッシュの状態を確認・展開してから再実行できます。差分の確認は `node scripts/pipelines/compare-test-trends.mjs` を実行すると Markdown と JSON で出力され、Step Summary にも自動追記されます。
 - `qa --light`: QA を軽量実行（vitest は `test:fast` 実行）。QA bench（`ae-ci`）に適用済み
