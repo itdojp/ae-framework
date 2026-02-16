@@ -38,6 +38,10 @@ Verify-first を運用可能にするため、PRで常時適用する最小ゲ�
 | Adapters | `run-adapters` | a11y/perf/lighthouse 等の品質確認 | adapter summary/comment |
 | QA | `run-qa` | 挙動回帰や性能劣化の懸念がある変更 | qa bench レポート |
 
+補足（contract の意味分離）:
+- API/Integration contract 検証（Pact）は `run-integration` / CI Extended の `pipelines:pact` を参照する。
+- DbC（pre/post/invariant）は、property / runtime conformance / integration assertion の組み合わせで担保する。
+
 ### 4. 適用基準（判断ルール）
 
 1. すべてのPRで Required ゲートを実施する。  

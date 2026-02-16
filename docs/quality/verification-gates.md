@@ -47,6 +47,19 @@ Quality gate reports (`reports/quality-gates/quality-report-*.json`) include a `
 | perf/a11y/lh | label `enforce-perf` / `enforce-a11y` / `enforce-lh` | `reports/*.json` | しきい値でブロッキング |
 | heavy tests | label `run-ci-extended` | `reports/heavy-test-trends.json` | integration/property/MBT/mutation の集約 |
 
+### contract gate の意味（読み替え）
+
+- 本ガイドの `contract` gate は **Pact等の API/Integration contract test** を指します。
+- DbC（pre/post/invariant）は単独ゲート名ではなく、下記の複数手段で担保します。
+
+### DbC -> 検証マッピング（最小）
+
+| DbC条件 | 代表的な検証手段 | 代表的な証跡 |
+| --- | --- | --- |
+| Preconditions | request validation / negative tests / type guards | unit test logs, verify-lite logs |
+| Postconditions | state assertions / event assertions / integration tests | test reports, conformance summary |
+| Invariants | property tests / runtime conformance monitors / DB constraints | `artifacts/properties/`, conformance artifacts |
+
 ## PRレポート
 
 - 既存テンプレ: `docs/quality/pr-summary-template.md`
