@@ -33,15 +33,22 @@
 ### 2.1 Design by Contract (DbC) / 契約条件
 
 - Preconditions（PRE-*）:
-  - PRE-001: PR本文に対象の Plan URL と関連 Spec path が記載されていること。
-  - Violation behavior（違反時の期待挙動）: review gate で差し戻し、PRコメントで不足項目を明示する。
+
+| ID | Statement | Violation behavior |
+| --- | --- | --- |
+| PRE-001 | PR本文に対象の Plan URL と関連 Spec path が記載されていること。 | review gate で差し戻し、PRコメントで不足項目を明示する。 |
+
 - Postconditions（POST-*）:
-  - POST-001: Plan -> Spec -> Gate -> Evidence の対応が PR から追跡可能であること。
-  - Violation behavior（違反時の期待挙動）: verify-lite 結果共有を保留し、追記後に再レビューする。
+
+| ID | Statement | Violation behavior |
+| --- | --- | --- |
+| POST-001 | Plan -> Spec -> Gate -> Evidence の対応が PR から追跡可能であること。 | verify-lite 結果共有を保留し、追記後に再レビューする。 |
+
 - Invariants（INV-*）:
-  - INV-001: Required gates（verify-lite/review gate）の確認を省略しないこと。
-  - Enforcement location（どこで担保するか）: PRテンプレチェック + review gate。
-  - Violation behavior（違反時の期待挙動）: `do-not-merge` の維持。
+
+| ID | Statement | Enforcement location（どこで担保するか） | Violation behavior |
+| --- | --- | --- | --- |
+| INV-001 | Required gates（verify-lite/review gate）の確認を省略しないこと。 | PRテンプレチェック + review gate。 | `do-not-merge` の維持。 |
 
 ## 3. Acceptance Criteria (AC) / 受入基準
 

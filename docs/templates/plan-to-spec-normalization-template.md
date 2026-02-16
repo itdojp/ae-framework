@@ -35,15 +35,22 @@ Plan (thread/conversation asset) を repository SSOT に正規化するための
 ### 2.1 Design by Contract (DbC) / 契約条件
 
 - Preconditions（PRE-*）:
-  - PRE-1:
-  - Violation behavior（違反時の期待挙動）:
+
+| ID | Statement | Violation behavior |
+| --- | --- | --- |
+| PRE-001 |  |  |
+
 - Postconditions（POST-*）:
-  - POST-1:
-  - Violation behavior（違反時の期待挙動）:
+
+| ID | Statement | Violation behavior |
+| --- | --- | --- |
+| POST-001 |  |  |
+
 - Invariants（INV-*）:
-  - INV-1:
-  - Enforcement location（どこで担保するか）:
-  - Violation behavior（違反時の期待挙動）:
+
+| ID | Statement | Enforcement location（どこで担保するか） | Violation behavior |
+| --- | --- | --- | --- |
+| INV-001 |  |  |  |
 
 ## 3. Acceptance Criteria (AC) / 受入基準
 
@@ -102,7 +109,7 @@ Plan (thread/conversation asset) を repository SSOT に正規化するための
 | Plan or Contract item | Spec artifact | Gate / Check | Evidence |
 | --- | --- | --- | --- |
 | 例: タスクA | `spec/example-spec.md` | `verify-lite` | `artifacts/verify-lite/verify-lite-run-summary.json` |
-| 例: PRE-001（入力制約） | `docs/templates/spec-kit/feature-spec-kit.md` | `unit` | `tests/**` |
+| 例: PRE-001（入力制約） | `spec/example-feature-spec.md` | `unit` | `tests/**` |
 |  |  |  |  |
 
 補足: Spec artifact path は `docs/spec/registry.md` の配置規約に合わせる。
