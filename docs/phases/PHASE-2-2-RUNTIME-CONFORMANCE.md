@@ -23,6 +23,11 @@ See the Japanese sections for the full architecture and CLI details.
 - Early violation detection → optional auto-remediation via Phase 2.1 (CEGIS)
 - Evidence collection for quality gates and PR summaries
 
+### Contract terminology note
+- In this document, "runtime contract" means **Design contract (DbC)** such as pre/postconditions and invariants.
+- API contract verification with Pact belongs to **API/Integration contract tests** in CI workflows.
+- Required/optional report rules are tracked separately as **Artifacts contract**.
+
 ### Key Components
 - Verification Engine: configurable rules (sampling, cache, concurrency)
 - Monitors: data validation, API contract, custom business rules
@@ -72,6 +77,11 @@ jobs:
 ## 概要
 
 Phase 2.2では、アプリケーションが実行時に定義された仕様や品質基準に適合しているかをリアルタイムで監視・検証するシステムを提供します。このシステムは、CEGIS自動修復システム（Phase 2.1）と連携し、違反を検出した際の自動修正フローを実現します。
+
+### 用語注記（contract）
+- 本ドキュメントの「ランタイム契約」は **Design contract（DbC）**（pre/post/invariant）を指します。
+- Pact などの API 契約検証は **API/Integration contract test** として CI で扱います。
+- 成果物の必須/任意ルールは **Artifacts contract** として別管理します。
 
 ## 主要機能
 
