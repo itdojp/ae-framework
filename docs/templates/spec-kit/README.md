@@ -12,6 +12,7 @@ They are designed to reduce Context Vacuum and to make verify-then-merge practic
 - Feature: Gherkin/OpenAPI + error vocabulary + invariants + acceptance
 - Bugfix: reproduction + logs + failing test + expected behavior
 - Refactor: invariants + constraints + safety checks
+- DbC template: pre/post/invariant + test/gate/evidence mapping
 
 ---
 
@@ -23,6 +24,7 @@ Context Vacuum を抑制し、verify-then-merge を成立させることを目�
 - Feature: Gherkin/OpenAPI + エラー語彙 + 不変条件 + 受け入れ基準
 - Bugfix: 再現手順 + ログ + failing test + 期待挙動
 - Refactor: 不変条件 + 制約 + 安全性チェック
+- DbC template: pre/post/invariant と test/gate/evidence の接続
 
 ## 使い方
 
@@ -35,3 +37,4 @@ Context Vacuum を抑制し、verify-then-merge を成立させることを目�
 - `feature-spec-kit.md`
 - `bugfix-spec-kit.md`
 - `refactor-spec-kit.md`
+- `dbc-template.md`

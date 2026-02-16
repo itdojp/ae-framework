@@ -28,6 +28,9 @@
       "type": "array",
       "items": { "type": "string" }
     },
+    "contracts": {
+      "$ref": "#/$defs/contracts"
+    },
     "openQuestions": {
       "type": "array",
       "items": { "type": "string" }
@@ -74,6 +77,45 @@
         }
       },
       "required": ["status"],
+      "additionalProperties": true
+    },
+    "contractClause": {
+      "oneOf": [
+        { "type": "string" },
+        {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string" },
+            "statement": { "type": "string" },
+            "scope": { "type": "string" },
+            "severity": {
+              "type": "string",
+              "enum": ["info", "low", "medium", "high", "critical"]
+            },
+            "source": { "type": "string" },
+            "notes": { "type": "string" }
+          },
+          "required": ["statement"],
+          "additionalProperties": true
+        }
+      ]
+    },
+    "contracts": {
+      "type": "object",
+      "properties": {
+        "preconditions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/contractClause" }
+        },
+        "postconditions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/contractClause" }
+        },
+        "invariants": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/contractClause" }
+        }
+      },
       "additionalProperties": true
     }
   }
