@@ -4,9 +4,22 @@
  * Goal: Ensure TDD system is operational and metrics collection is active
  */
 
-import { describe, test, expect } from 'vitest';
-import { readFileSync, writeFileSync, unlinkSync } from 'fs';
+import { describe, test, expect, beforeAll, afterAll } from 'vitest';
+import { readFileSync, writeFileSync, unlinkSync, mkdtempSync, rmSync } from 'fs';
 import { join } from 'path';
+import { tmpdir } from 'os';
+
+let phaseStateRoot = '';
+
+beforeAll(() => {
+  phaseStateRoot = mkdtempSync(join(tmpdir(), 'tdd-setup-phase-state-'));
+});
+
+afterAll(() => {
+  if (phaseStateRoot) {
+    rmSync(phaseStateRoot, { recursive: true, force: true });
+  }
+});
 
 describe('TDD Infrastructure Setup - Phase 0', () => {
   describe('TDD System Operational', () => {
@@ -70,7 +83,7 @@ describe('TDD Infrastructure Setup - Phase 0', () => {
       // Check if phase state manager is available
       try {
         const { PhaseStateManager } = await import('../src/utils/phase-state-manager.js');
-        const manager = new PhaseStateManager();
+        const manager = new PhaseStateManager(phaseStateRoot);
         expect(manager).toBeDefined();
         expect(typeof manager.getCurrentState).toBe('function');
         expect(typeof manager.addMetadata).toBe('function');
@@ -81,7 +94,7 @@ describe('TDD Infrastructure Setup - Phase 0', () => {
 
     test('should validate metrics collection capability', async () => {
       const { PhaseStateManager } = await import('../src/utils/phase-state-manager.js');
-      const manager = new PhaseStateManager();
+      const manager = new PhaseStateManager(phaseStateRoot);
       
       // Test metadata collection
       const testMetrics = {
@@ -100,7 +113,7 @@ describe('TDD Infrastructure Setup - Phase 0', () => {
 
     test('should validate phase progression tracking', async () => {
       const { PhaseStateManager } = await import('../src/utils/phase-state-manager.js');
-      const manager = new PhaseStateManager();
+      const manager = new PhaseStateManager(phaseStateRoot);
       
       // Initialize if needed
       const currentState = await manager.getCurrentState();

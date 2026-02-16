@@ -12,8 +12,22 @@ describe('ConformanceCli', () => {
   let consoleLogSpy: any;
   let consoleErrorSpy: any;
   let testFiles: string[] = [];
+  let guardedFilesSnapshot = new Map<string, string | null>();
+
+  const guardedFiles = [
+    'configs/samples/sample-rules.json',
+    'configs/samples/sample-config.json',
+    'configs/samples/sample-data.json',
+    'configs/samples/sample-context.json',
+    'conformance-results.json',
+    'reports/conformance/conformance-summary.json',
+    'reports/conformance/conformance-summary.md',
+  ];
 
   beforeEach(() => {
+    guardedFilesSnapshot = new Map(
+      guardedFiles.map((file) => [file, existsSync(file) ? readFileSync(file, 'utf-8') : null]),
+    );
     cli = new ConformanceCli();
     consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -21,8 +35,12 @@ describe('ConformanceCli', () => {
   });
 
   afterEach(() => {
-    consoleLogSpy.mockRestore();
-    consoleErrorSpy.mockRestore();
+    if (consoleLogSpy) {
+      consoleLogSpy.mockRestore();
+    }
+    if (consoleErrorSpy) {
+      consoleErrorSpy.mockRestore();
+    }
     
     // Cleanup test files
     testFiles.forEach(file => {
@@ -30,6 +48,17 @@ describe('ConformanceCli', () => {
         unlinkSync(file);
       }
     });
+    guardedFiles.forEach((file) => {
+      const previous = guardedFilesSnapshot.get(file);
+      if (previous === null) {
+        if (existsSync(file)) {
+          unlinkSync(file);
+        }
+        return;
+      }
+      writeFileSync(file, previous);
+    });
+    guardedFilesSnapshot.clear();
   });
 
   describe('command creation', () => {
