@@ -1,0 +1,44 @@
+name: Lockfile Reproducibility
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".npmrc"
+      - "apps/**/package.json"
+      - "packages/**/package.json"
+      - ".github/actions/setup-node-pnpm/action.yml"
+      - ".github/actions/setup-pnpm/action.yml"
+      - ".github/workflows/lockfile-reproducibility.yml"
+  push:
+    branches: [main, develop]
+    paths:
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".npmrc"
+      - "apps/**/package.json"
+      - "packages/**/package.json"
+      - ".github/actions/setup-node-pnpm/action.yml"
+      - ".github/actions/setup-pnpm/action.yml"
+      - ".github/workflows/lockfile-reproducibility.yml"
+  workflow_dispatch:
+
+jobs:
+  lockfile-clean-after-install:
+    name: lockfile-clean-after-install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: 22
+          pnpm-version: 10.0.0
+
+      - name: Verify lockfile stays clean after install
+        run: pnpm run ci:lockfile:verify

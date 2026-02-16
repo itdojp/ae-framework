@@ -12,7 +12,7 @@
 
 #### System Requirements
 - **Node.js**: 20.11 以上（22系でも動作確認済み）
-- **pnpm**: 10.x（Corepack での有効化を推奨）
+- **pnpm**: 10.0.0（`package.json` の `packageManager` と一致させる）
 - **TypeScript**: 5.9.x 以上
 - **Git**: 2.0 or higher
 - **Playwright**: 1.47.0 or higher (for E2E testing)
@@ -27,7 +27,7 @@
 Note: With Node.js 20.11+ (<23), enable Corepack to use the bundled pnpm:
 ```bash
 corepack enable
-corepack prepare pnpm@10 --activate  # 推奨の固定
+corepack prepare pnpm@10.0.0 --activate
 ```
 
 #### 1. Clone Repository
@@ -43,6 +43,11 @@ cd ae-framework
 ```bash
 # CI環境等でロックファイルの読み書きが制限されている場合は --no-frozen-lockfile を使用
 pnpm install --no-frozen-lockfile
+```
+
+Lockfile reproducibility self-check (optional):
+```bash
+pnpm run ci:lockfile:verify
 ```
 
 注: このプロジェクトは pnpm を前提としています。
@@ -395,7 +400,7 @@ Regular updates are recommended to get the latest features and fixes.
 
 #### システム要件
 - **Node.js**: 20.11 以上（<23）
-- **pnpm**: 10.x（Corepack 推奨）
+- **pnpm**: 10.0.0（`package.json` の `packageManager` と一致）
 - **TypeScript**: 5.5.0 以上
 - **Git**: 2.0 以上
 - **Playwright**: 1.47.0 以上 (E2Eテスト用)
@@ -416,12 +421,22 @@ cd ae-framework
 
 #### 2. 依存関係のインストール
 
+```bash
+corepack enable
+corepack prepare pnpm@10.0.0 --activate
+```
+
 **pnpm使用（推奨）:**
 ```bash
-pnpm install
+pnpm install --no-frozen-lockfile
 ```
 
 注: このプロジェクトは pnpm を前提としています。
+
+Lockfile の再現性確認（任意）:
+```bash
+pnpm run ci:lockfile:verify
+```
 
 #### 3. Phase 6 Playwright設定
 
