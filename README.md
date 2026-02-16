@@ -37,6 +37,7 @@ pnpm run test:fast
 
 # Mutation quick run (mktemp-based; supports STRYKER_TEMP_DIR)
 STRYKER_TIME_LIMIT=0 pnpm run pipelines:mutation:quick
+# If report generation is intentionally optional, set MUTATION_REPORT_STRICT=0
 
 # Formal smoke (non-blocking summary; cspx backend preferred)
 pnpm run verify:formal
@@ -87,6 +88,7 @@ pnpm run test:fast
 
 # Mutation quick（mktemp利用、STRYKER_TEMP_DIR対応）
 STRYKER_TIME_LIMIT=0 pnpm run pipelines:mutation:quick
+# レポート生成失敗を許容する場合のみ MUTATION_REPORT_STRICT=0 を付与
 
 # ヘビーテスト結果のキャッシュ運用
 node scripts/pipelines/sync-test-results.mjs --store

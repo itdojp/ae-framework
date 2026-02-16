@@ -39,7 +39,8 @@ Options:
 
 Environment overrides:
   STRYKER_MUTATE, STRYKER_CONCURRENCY, STRYKER_TIMEOUT, STRYKER_TIME_LIMIT,
-  STRYKER_CONFIG (fallback when --config/--configFile is not provided).
+  STRYKER_CONFIG (fallback when --config/--configFile is not provided),
+  MUTATION_REPORT_STRICT=0|1 (default: 1, report生成失敗をexit codeへ反映).
 USAGE
 }
 
@@ -221,15 +222,15 @@ if [[ -n "$CONFIG_PATH" ]] ; then
 fi
 
 CMD_STATUS=0
+set +e
 if command -v timeout >/dev/null 2>&1 && [[ -n "${TIME_LIMIT}" && "${TIME_LIMIT}" != "0" ]]; then
-  if ! timeout --foreground "${TIME_LIMIT}"s "${CMD[@]}"; then
-    CMD_STATUS=$?
-  fi
+  timeout --foreground "${TIME_LIMIT}"s "${CMD[@]}"
+  CMD_STATUS=$?
 else
-  if ! "${CMD[@]}"; then
-    CMD_STATUS=$?
-  fi
+  "${CMD[@]}"
+  CMD_STATUS=$?
 fi
+set -e
 
 if [[ "$CMD_STATUS" -eq 124 ]]; then
   echo "[mutation] Stryker timed out after ${TIME_LIMIT}s (treated as non-blocking)" >&2
@@ -238,5 +239,21 @@ elif [[ "$CMD_STATUS" -ne 0 ]]; then
   echo "[mutation] Stryker exited with status ${CMD_STATUS}" >&2
 fi
 
-node scripts/mutation/mutation-report.mjs || true
+REPORT_STATUS=0
+set +e
+node scripts/mutation/mutation-report.mjs
+REPORT_STATUS=$?
+set -e
+
+MUTATION_REPORT_STRICT=${MUTATION_REPORT_STRICT:-1}
+if [[ "$REPORT_STATUS" -ne 0 ]]; then
+  if [[ "$MUTATION_REPORT_STRICT" == "1" ]]; then
+    if [[ "$CMD_STATUS" -eq 0 ]]; then
+      CMD_STATUS=$REPORT_STATUS
+    fi
+  else
+    echo "[mutation] mutation-report failed but ignored (MUTATION_REPORT_STRICT=0)" >&2
+  fi
+fi
+
 exit "$CMD_STATUS"
