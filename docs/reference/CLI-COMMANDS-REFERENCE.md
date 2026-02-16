@@ -143,9 +143,12 @@ ae domain-model --language --sources "glossary.md"
 
 # Lint AE-IR
  ae spec lint -i .ae/ae-ir.json
+ ae spec lint -i .ae/ae-ir.json --format json --output artifacts/spec/lint-report.json
 
 # Validate (compile + lint)
  ae spec validate -i spec/example.md --output .ae/ae-ir.json
+ ae spec validate -i spec/example.md --output .ae/ae-ir.json --format json --report-output artifacts/spec/validate-report.json
+ # JSON schema: schema/spec-validation-report.schema.json
 
 # Export AE-IR (default: kiro)
  ae spec export -i .ae/ae-ir.json -f kiro -o .kiro/specs
@@ -213,6 +216,7 @@ ae domain-model --language --sources "glossary.md"
 ```bash
 # Run quality gates
  ae quality run --env development
+ ae quality run --env development --no-history
 
 # Reconcile (run + auto-fix rounds)
  ae quality reconcile --env development --max-rounds 3 --fix-input .ae/failures.json
@@ -442,7 +446,9 @@ ae integration generate --type environment --name test --output test-env.json
 # Spec
 ae spec compile -i spec/example.md -o .ae/ae-ir.json
  ae spec lint -i .ae/ae-ir.json
+ ae spec lint -i .ae/ae-ir.json --format json --output artifacts/spec/lint-report.json
  ae spec validate -i spec/example.md --output .ae/ae-ir.json
+ ae spec validate -i spec/example.md --output .ae/ae-ir.json --format json --report-output artifacts/spec/validate-report.json
  ae spec export -i .ae/ae-ir.json -f kiro -o .kiro/specs
 
 # Entry runner
@@ -456,6 +462,7 @@ ae setup list
 
 # Quality
 ae quality run --env development
+ ae quality run --env development --no-history
  ae quality reconcile --env development --max-rounds 3 --fix-input .ae/failures.json
  ae quality list --env development --format summary
  ae quality policy --env development

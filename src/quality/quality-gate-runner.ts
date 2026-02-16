@@ -38,6 +38,7 @@ export interface QualityGateExecutionOptions {
   dryRun?: boolean;
   verbose?: boolean;
   outputDir?: string;
+  noHistory?: boolean;
 }
 
 export class QualityGateRunner {
@@ -60,6 +61,7 @@ export class QualityGateRunner {
       dryRun = false,
       verbose = false,
       outputDir = 'reports/quality-gates',
+      noHistory = false,
     } = options;
 
     const timer = mockTelemetry.createTimer('quality_gates.execution.total', {
@@ -174,7 +176,7 @@ export class QualityGateRunner {
       
       // Save report
       if (!dryRun) {
-        await this.saveReport(report, outputDir);
+        await this.saveReport(report, outputDir, { noHistory });
       }
 
       // Record metrics
@@ -656,23 +658,30 @@ export class QualityGateRunner {
   /**
    * Save quality report to file
    */
-  private async saveReport(report: QualityReport, outputDir: string): Promise<void> {
+  private async saveReport(
+    report: QualityReport,
+    outputDir: string,
+    options: { noHistory?: boolean } = {}
+  ): Promise<void> {
     try {
       // Ensure output directory exists
       if (!fs.existsSync(outputDir)) {
         fs.mkdirSync(outputDir, { recursive: true });
       }
 
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const filename = `quality-report-${report.environment}-${timestamp}.json`;
-      const filepath = path.join(outputDir, filename);
+      if (!options.noHistory) {
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const filename = `quality-report-${report.environment}-${timestamp}.json`;
+        const filepath = path.join(outputDir, filename);
 
-      fs.writeFileSync(filepath, JSON.stringify(report, null, 2));
-      console.log(`📝 Quality report saved to: ${filepath}`);
+        fs.writeFileSync(filepath, JSON.stringify(report, null, 2));
+        console.log(`📝 Quality report saved to: ${filepath}`);
+      }
 
       // Also save as latest
       const latestPath = path.join(outputDir, `quality-report-${report.environment}-latest.json`);
       fs.writeFileSync(latestPath, JSON.stringify(report, null, 2));
+      console.log(`📝 Quality report latest updated: ${latestPath}`);
 
     } catch (error) {
       console.error('⚠️  Failed to save quality report:', error);
@@ -814,6 +823,9 @@ export async function runQualityGatesCLI(args: string[]): Promise<void> {
         }
         break;
       }
+      case '--no-history':
+        options.noHistory = true;
+        break;
     }
   }
 
