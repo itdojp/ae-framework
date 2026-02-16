@@ -53,7 +53,7 @@ DbC（precondition / postcondition / invariant）を仕様として固定し、�
 ## 7) Notes / 運用メモ
 - DbCは「条件の定義と検証接続」を扱います。
 - property template（`property-template.md`）は「実装テスト雛形」を扱います。
-- API契約検証（Pact）と用語を混同しないよう `docs/quality/contract-taxonomy.md` を参照してください。
+- API契約検証（Pact）と用語を混同しないよう、内部の契約タクソノミー指針に従ってください。
 
 ## 8) Related Docs / 関連ドキュメント
 - `docs/templates/plan-to-spec-normalization-template.md`
