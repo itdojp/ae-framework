@@ -75,6 +75,22 @@ ae tdd
  ae tests:scaffold --input docs/templates/plan-to-spec-normalization-sample.md
  ae tests:scaffold --input spec/example-spec.md --spec-id order-checkout --out tests/generated/spec-kit/order-checkout
  ae tests:scaffold --input spec/example-spec.md --no-regression
+
+# Issue requirements traceability (LG-*/REQ-* driven)
+ ae traceability extract-ids \
+   --issue "https://github.com/<org>/<repo>/issues/1" \
+   --pattern "(?:LG|REQ)-[A-Z0-9_-]+" \
+   --output docs/specs/issue-traceability-map.json
+
+ ae traceability matrix \
+   --map docs/specs/issue-traceability-map.json \
+   --tests "tests/**/*" \
+   --code "src/**/*" \
+   --format json \
+   --output docs/specs/ISSUE-TRACEABILITY-MATRIX.json
+
+# strict mode: fail on missing links (matrix input recommended)
+ ae validate --traceability --strict --sources docs/specs/ISSUE-TRACEABILITY-MATRIX.json
 ```
 
 ### Natural Language Requirements
@@ -426,6 +442,8 @@ ae intent --analyze --sources "requirements.md"
  ae intent --validate --sources "requirements.md"
  ae tests:suggest --template http-api --intent "Build a minimal todo API"
  # auth テンプレートの {intent}/{auth_type}/{roles}/{resources} は入力から自動展開されます
+ ae traceability extract-ids --issue "https://github.com/<org>/<repo>/issues/1" --pattern "(?:LG|REQ)-[A-Z0-9_-]+" --output docs/specs/issue-traceability-map.json
+ ae traceability matrix --map docs/specs/issue-traceability-map.json --tests "tests/**/*" --code "src/**/*" --format md --output docs/specs/ISSUE-TRACEABILITY-MATRIX.md
  ae tests:scaffold --input docs/templates/plan-to-spec-normalization-sample.md
  ae tests:scaffold --input docs/templates/plan-to-spec-normalization-sample.md --no-contract
 ```
@@ -448,6 +466,7 @@ ae validate --requirements --sources "requirements.md"
  ae validate --stories --sources "user-stories.md"
  ae validate --specifications --sources "spec/"
  ae validate --traceability --sources "project/"
+ ae validate --traceability --strict --sources "docs/specs/ISSUE-TRACEABILITY-MATRIX.json"
  ae validate --completeness --sources "artifacts/"
 
 # Domain Model

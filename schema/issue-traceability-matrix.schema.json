@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/itdojp/ae-framework/schema/issue-traceability-matrix.schema.json",
+  "title": "Issue Traceability Matrix",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "sourceMap",
+    "summary",
+    "rows"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "issue-traceability-matrix/v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sourceMap": {
+      "type": "string",
+      "minLength": 1
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "totalRequirements",
+        "linkedRequirements",
+        "unlinkedRequirements",
+        "coverage"
+      ],
+      "properties": {
+        "totalRequirements": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "linkedRequirements": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unlinkedRequirements": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "coverage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    },
+    "rows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requirementId",
+          "tests",
+          "code",
+          "linked"
+        ],
+        "properties": {
+          "requirementId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "tests": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "code": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "linked": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}

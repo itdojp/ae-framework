@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/itdojp/ae-framework/schema/issue-traceability-map.schema.json",
+  "title": "Issue Traceability Map",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "source",
+    "pattern",
+    "requirementIds",
+    "mappings"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "issue-traceability-map/v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "repository",
+        "issueNumber",
+        "issueUrl",
+        "title"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "github-issue"
+        },
+        "repository": {
+          "type": "string",
+          "pattern": "^[^/]+/[^/]+$"
+        },
+        "issueNumber": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "issueUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "title": {
+          "oneOf": [
+            { "type": "string" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "pattern": {
+      "type": "string",
+      "minLength": 1
+    },
+    "requirementIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "mappings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "tests",
+          "code",
+          "notes"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "tests": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "code": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "notes": {
+            "oneOf": [
+              { "type": "string" },
+              { "type": "null" }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
