@@ -23,18 +23,24 @@ echo "Lockfile reproducibility check"
 echo "- lockfile: $LOCKFILE_PATH"
 echo "- install flags: $INSTALL_FLAGS"
 
-if ! git diff --quiet -- "$LOCKFILE_PATH"; then
-  echo "::error::Precondition failed: lockfile already has unstaged changes"
-  git --no-pager diff -- "$LOCKFILE_PATH"
+has_lockfile_changes() {
+  git status --porcelain -- "$LOCKFILE_PATH" | grep -q .
+}
+
+if has_lockfile_changes; then
+  echo "::error::Precondition failed: lockfile already has staged or unstaged changes"
+  git --no-pager diff -- "$LOCKFILE_PATH" || true
+  git --no-pager diff --cached -- "$LOCKFILE_PATH" || true
   exit 2
 fi
 
 pnpm install $INSTALL_FLAGS
 
-if ! git diff --quiet -- "$LOCKFILE_PATH"; then
+if has_lockfile_changes; then
   echo "::error::Lockfile drift detected after pnpm install."
   echo "::error::Regenerate and commit $LOCKFILE_PATH with the project-recommended pnpm version."
-  git --no-pager diff -- "$LOCKFILE_PATH"
+  git --no-pager diff -- "$LOCKFILE_PATH" || true
+  git --no-pager diff --cached -- "$LOCKFILE_PATH" || true
   exit 1
 fi
 

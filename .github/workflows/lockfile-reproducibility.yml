@@ -12,6 +12,7 @@ on:
       - "packages/**/package.json"
       - ".github/actions/setup-node-pnpm/action.yml"
       - ".github/actions/setup-pnpm/action.yml"
+      - "scripts/ci/check-lockfile-clean-after-install.sh"
       - ".github/workflows/lockfile-reproducibility.yml"
   push:
     branches: [main, develop]
@@ -24,8 +25,13 @@ on:
       - "packages/**/package.json"
       - ".github/actions/setup-node-pnpm/action.yml"
       - ".github/actions/setup-pnpm/action.yml"
+      - "scripts/ci/check-lockfile-clean-after-install.sh"
       - ".github/workflows/lockfile-reproducibility.yml"
   workflow_dispatch:
+
+concurrency:
+  group: lockfile-reproducibility-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   lockfile-clean-after-install:
