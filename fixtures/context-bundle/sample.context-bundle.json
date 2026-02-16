@@ -31,6 +31,37 @@
   "assumptions": [
     "CLI exits with code 1 on fatal error"
   ],
+  "contracts": {
+    "preconditions": [
+      "Envelope JSON exists before command execution",
+      {
+        "id": "PRE-CLI-001",
+        "statement": "Input file path points to readable JSON",
+        "scope": "src/trace/post-envelope-comment.ts",
+        "severity": "high",
+        "source": "trace CLI",
+        "notes": "Reject unreadable or malformed JSON with exit code 1"
+      }
+    ],
+    "postconditions": [
+      {
+        "id": "POST-CLI-001",
+        "statement": "CLI writes a result envelope comment summary",
+        "scope": "artifacts/verify-lite/verify-lite-run-summary.json",
+        "severity": "medium",
+        "source": "verify-lite"
+      }
+    ],
+    "invariants": [
+      {
+        "id": "INV-TRACE-001",
+        "statement": "traceCorrelation fields remain schema-compliant",
+        "scope": "schema/envelope.schema.json",
+        "severity": "critical",
+        "source": "envelope schema"
+      }
+    ]
+  },
   "openQuestions": [
     "Should stderr message format be asserted strictly?"
   ],

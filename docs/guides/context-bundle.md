@@ -29,8 +29,21 @@ Context Bundle は、LLM/エージェントに渡すコンテキストを **構�
 - `artifacts`: 参照すべき仕様/コード/ログ/設定
 - `roles`: 役割ラベル（controller/service/domain/helper/test など）
 - `assumptions`: 不明点を仮定として明示
+- `contracts`: DbC（pre/post/invariant）を構造化して記録
 - `openQuestions`: 不足情報を質問として列挙
 - `contextVacuum`: 不足情報のチェック結果
+
+### `contracts` フィールド（任意）
+
+`contracts` は後方互換を保った任意フィールドです。DbCの3条件を明示し、テスト/ゲートへの接続を明確にします。
+
+- `contracts.preconditions`: 事前条件（入力制約、前提状態）
+- `contracts.postconditions`: 事後条件（観測可能な結果、副作用）
+- `contracts.invariants`: 不変条件（常に守る制約）
+
+各要素は次の2形式を許容します。
+- 簡易形式: 文字列
+- 拡張形式: `{ id?, statement, scope?, severity?, source?, notes? }`
 
 ### Context Vacuum チェック（簡易）
 
@@ -40,6 +53,7 @@ Context Bundle は、LLM/エージェントに渡すコンテキストを **構�
 - データ構造（入出力の型/フォーマット）
 - 実行文脈（CLI/CI/HTTP などの入口）
 - 期待される失敗パターン（エラー語彙）
+- DbC 3条件（pre/post/invariant）の不足
 
 ---
 
@@ -56,6 +70,13 @@ Context Bundle は、LLM/エージェントに渡すコンテキストを **構�
     {"type": "doc", "path": "docs/verify/verify-lite.md", "role": "spec"}
   ],
   "assumptions": ["Retry count defaults to 3"],
+  "contracts": {
+    "preconditions": ["Retry target endpoint is reachable"],
+    "postconditions": ["Retry attempts are logged with final status"],
+    "invariants": [
+      {"id": "INV-RETRY-001", "statement": "Retry attempts never exceed configured max", "severity": "high"}
+    ]
+  },
   "openQuestions": ["Should retry be exponential or fixed?"],
   "contextVacuum": {"status": "missing", "missing": ["error taxonomy"]}
 }
@@ -74,6 +95,11 @@ Context Bundle は、LLM/エージェントに渡すコンテキストを **構�
     {"type": "test", "path": "tests/unit/trace/post-envelope-comment.test.ts", "role": "tests"}
   ],
   "assumptions": ["Exit code is 1 on fatal error"],
+  "contracts": {
+    "preconditions": [{"id": "PRE-CLI-001", "statement": "Input file is valid JSON", "severity": "high"}],
+    "postconditions": ["CLI exits with code 1 when envelope is missing"],
+    "invariants": ["traceCorrelation fields remain schema-compliant"]
+  },
   "openQuestions": ["Should stderr be asserted strictly?"],
   "contextVacuum": {"status": "ok", "missing": []}
 }
