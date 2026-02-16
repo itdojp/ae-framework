@@ -56,9 +56,9 @@ Quality gate reports (`reports/quality-gates/quality-report-*.json`) include a `
 
 | DbC条件 | 代表的な検証手段 | 代表的な証跡 |
 | --- | --- | --- |
-| Preconditions | request validation / negative tests / type guards | unit test logs, verify-lite logs |
-| Postconditions | state assertions / event assertions / integration tests | test reports, conformance summary |
-| Invariants | property tests / runtime conformance monitors / DB constraints | `artifacts/properties/`, conformance artifacts |
+| Preconditions | request validation / negative tests / type guards | `artifacts/verify-lite/verify-lite-run-summary.json`（詳細は `docs/quality/ARTIFACTS-CONTRACT.md`） |
+| Postconditions | state assertions / event assertions / integration tests | `reports/quality-gates/quality-report-*.json`, `artifacts/hermetic-reports/conformance/summary.json` |
+| Invariants | property tests / runtime conformance monitors / DB constraints | `artifacts/properties/summary.json`, `artifacts/hermetic-reports/conformance/summary.json` |
 
 ## PRレポート
 
