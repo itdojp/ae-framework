@@ -4,9 +4,31 @@
  * Goal: Test-driven unification of all agents under a common domain model
  */
 
-import { describe, test, expect, beforeEach } from 'vitest';
+import { describe, test, expect, beforeEach, beforeAll, afterAll } from 'vitest';
+import { mkdtempSync, rmSync } from 'fs';
+import { join } from 'path';
+import { tmpdir } from 'os';
 import { UnifiedAgent } from '../../src/agents/unified-agent.js';
 import { AgentTask, TaskType, TaskResult } from '../../src/agents/domain-types.js';
+
+const previousPhaseStateFile = process.env.AE_PHASE_STATE_FILE;
+let phaseStateRoot = '';
+
+beforeAll(() => {
+  phaseStateRoot = mkdtempSync(join(tmpdir(), 'unified-agent-phase-state-'));
+  process.env.AE_PHASE_STATE_FILE = join(phaseStateRoot, '.ae', 'phase-state.json');
+});
+
+afterAll(() => {
+  if (previousPhaseStateFile !== undefined) {
+    process.env.AE_PHASE_STATE_FILE = previousPhaseStateFile;
+  } else {
+    delete process.env.AE_PHASE_STATE_FILE;
+  }
+  if (phaseStateRoot) {
+    rmSync(phaseStateRoot, { recursive: true, force: true });
+  }
+});
 
 describe('UnifiedAgent - Domain Model Architecture', () => {
   let agent: UnifiedAgent;

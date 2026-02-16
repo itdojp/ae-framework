@@ -1,20 +1,49 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { spawnSync } from 'node:child_process';
-import { writeFileSync, mkdirSync, rmSync } from 'node:fs';
+import { writeFileSync, mkdirSync, rmSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const repoRoot = process.cwd();
 const defaultCoveragePath = join(repoRoot, 'coverage', 'coverage-summary.json');
 const fallbackCoveragePath = join(repoRoot, 'artifacts', 'coverage', 'coverage-summary.json');
 
-beforeEach(() => {
-  for (const path of [defaultCoveragePath, fallbackCoveragePath]) {
+const cleanupGeneratedFiles = (): void => {
+  const cleanupPaths = [
+    defaultCoveragePath,
+    fallbackCoveragePath,
+    join(repoRoot, 'coverage', 'index.html'),
+  ];
+  for (const path of cleanupPaths) {
     try {
       rmSync(path, { force: true });
     } catch {
       // Ignore cleanup issues; concurrent tests recreate paths as needed.
     }
   }
+  for (const dir of ['custom', 'custom2']) {
+    try {
+      rmSync(join(repoRoot, dir), { recursive: true, force: true });
+    } catch {
+      // Ignore cleanup issues.
+    }
+  }
+  for (const file of readdirSync(repoRoot)) {
+    if (file.startsWith('tmp-gh-event') && file.endsWith('.json')) {
+      try {
+        rmSync(join(repoRoot, file), { force: true });
+      } catch {
+        // Ignore cleanup issues.
+      }
+    }
+  }
+};
+
+beforeEach(() => {
+  cleanupGeneratedFiles();
+});
+
+afterEach(() => {
+  cleanupGeneratedFiles();
 });
 
 describe('pr-coverage-summary.mjs (dry-run)', () => {

@@ -4,7 +4,22 @@
  * Goal: Validate strict TypeScript compliance and zero core errors for working utilities
  */
 
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect, beforeAll, afterAll } from 'vitest';
+import { mkdtempSync, rmSync } from 'fs';
+import { join } from 'path';
+import { tmpdir } from 'os';
+
+let phaseStateRoot = '';
+
+beforeAll(() => {
+  phaseStateRoot = mkdtempSync(join(tmpdir(), 'phase1-validation-'));
+});
+
+afterAll(() => {
+  if (phaseStateRoot) {
+    rmSync(phaseStateRoot, { recursive: true, force: true });
+  }
+});
 
 describe('Phase 1: Foundation Analysis & Core Utilities - Validation', () => {
   describe('Required Artifacts Validation', () => {
@@ -34,7 +49,7 @@ describe('Phase 1: Foundation Analysis & Core Utilities - Validation', () => {
       const { PhaseStateManager } = await import('../../src/utils/phase-state-manager.js');
       
       // Test strict typing
-      const manager = new PhaseStateManager();
+      const manager = new PhaseStateManager(phaseStateRoot);
       expect(manager).toBeDefined();
       expect(typeof manager.getCurrentState).toBe('function');
       expect(typeof manager.addMetadata).toBe('function');
@@ -62,7 +77,7 @@ describe('Phase 1: Foundation Analysis & Core Utilities - Validation', () => {
     test('should validate EnhancedStateManager TypeScript compliance', async () => {
       const { EnhancedStateManager } = await import('../../src/utils/enhanced-state-manager.js');
       
-      const manager = new EnhancedStateManager();
+      const manager = new EnhancedStateManager(phaseStateRoot);
       expect(manager).toBeDefined();
       expect(typeof manager.saveSSOT).toBe('function');
       expect(typeof manager.loadSSOT).toBe('function');
@@ -74,7 +89,7 @@ describe('Phase 1: Foundation Analysis & Core Utilities - Validation', () => {
     test('should validate PhaseStateManager operates without errors', async () => {
       const { PhaseStateManager } = await import('../../src/utils/phase-state-manager.js');
       
-      const manager = new PhaseStateManager();
+      const manager = new PhaseStateManager(phaseStateRoot);
       // Ensure project state is initialized to avoid env-dependent failures
       await manager.initializeProject('phase1-validation', true);
       
@@ -110,7 +125,7 @@ describe('Phase 1: Foundation Analysis & Core Utilities - Validation', () => {
     test('should validate EnhancedStateManager operates without errors', async () => {
       const { EnhancedStateManager } = await import('../../src/utils/enhanced-state-manager.js');
       
-      const manager = new EnhancedStateManager();
+      const manager = new EnhancedStateManager(phaseStateRoot);
       
       // Test initialization and basic operations
       await expect(manager.initialize()).resolves.toBeUndefined();
@@ -141,8 +156,8 @@ describe('Phase 1: Foundation Analysis & Core Utilities - Validation', () => {
       const { PhaseStateManager } = await import('../../src/utils/phase-state-manager.js');
       const { EnhancedStateManager } = await import('../../src/utils/enhanced-state-manager.js');
       
-      const phaseManager = new PhaseStateManager();
-      const stateManager = new EnhancedStateManager();
+      const phaseManager = new PhaseStateManager(phaseStateRoot);
+      const stateManager = new EnhancedStateManager(phaseStateRoot);
       await phaseManager.initializeProject('phase1-integration', true);
       await stateManager.initialize();
       

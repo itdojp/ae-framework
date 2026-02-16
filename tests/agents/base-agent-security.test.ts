@@ -3,10 +3,32 @@
  * Validates safe validation flow and error handling
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
+import { mkdtempSync, rmSync } from 'fs';
+import { join } from 'path';
+import { tmpdir } from 'os';
 import { BaseAgent, AgentOutput } from '../../src/agents/base-agent';
 import { ValidationResult } from '../../src/cli/types';
 import { PhaseType } from '../../src/utils/phase-state-manager';
+
+const previousPhaseStateFile = process.env.AE_PHASE_STATE_FILE;
+let phaseStateRoot = '';
+
+beforeAll(() => {
+  phaseStateRoot = mkdtempSync(join(tmpdir(), 'base-agent-phase-state-'));
+  process.env.AE_PHASE_STATE_FILE = join(phaseStateRoot, '.ae', 'phase-state.json');
+});
+
+afterAll(() => {
+  if (previousPhaseStateFile !== undefined) {
+    process.env.AE_PHASE_STATE_FILE = previousPhaseStateFile;
+  } else {
+    delete process.env.AE_PHASE_STATE_FILE;
+  }
+  if (phaseStateRoot) {
+    rmSync(phaseStateRoot, { recursive: true, force: true });
+  }
+});
 
 // Test implementation of BaseAgent
 class TestAgent extends BaseAgent {
