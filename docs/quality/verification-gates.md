@@ -21,7 +21,7 @@ Quality gate reports (`reports/quality-gates/quality-report-*.json`) include a `
 ## ゲート種別
 
 - 基本ゲート: lint / types / coverage
-- 追加ゲート: property / contract / mutation / MBT / perf / a11y / lighthouse / heavy (CI Extended)
+- 追加ゲート: property / pact-contract(API) / mutation / MBT / perf / a11y / lighthouse / heavy (CI Extended)
 - Formal: TLA+ / Alloy / conformance (report-only → opt-in)
 
 ## 有効化の指針（既存運用のまとめ）
@@ -36,12 +36,19 @@ Quality gate reports (`reports/quality-gates/quality-report-*.json`) include a `
 - `docs/quality/adapter-thresholds.md`
 - `docs/quality/comparator.md`
 
+## Contract taxonomy（意味の分離）
+
+- 用語の基準は `docs/quality/contract-taxonomy.md` を参照
+- 本ガイドの `pact-contract(API)` は **API/Integration contract（Pact）** を指す
+- DbC（Design contract: pre/post/invariant）は、主に property / runtime conformance / integration assertion で担保する
+- Artifacts contract は成果物の必須/任意ルールであり、API契約検証とは別概念
+
 ## 代表的なゲートと入口
 
 | Gate | How to enable | Primary output | Notes |
 | --- | --- | --- | --- |
 | property | label `run-property` | `artifacts/properties/` | CI Extended 側で実行 |
-| contract | `pnpm run pipelines:pact` | `artifacts/contracts/` | API契約の検証 |
+| pact-contract(API) | `pnpm run pipelines:pact` | pact test logs/artifacts (project-defined) | API契約の検証（Pact） |
 | mutation | label `run-mutation` | `reports/mutation/` | quick mode + ignoreStatic |
 | MBT | label `run-mbt` | `artifacts/mbt/` | CI Extended 側 |
 | perf/a11y/lh | label `enforce-perf` / `enforce-a11y` / `enforce-lh` | `reports/*.json` | しきい値でブロッキング |
