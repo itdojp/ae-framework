@@ -84,7 +84,7 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - Verify-first artifacts catalog: `quality/verify-first-artifacts-catalog.md`
 - Verify-first implementation runbook: `quality/verify-first-implementation-runbook.md`
 - Adoption sample flow: `quality/adoption-sample-flow.md`
-- Runbooks / Traceability / Runtime Contracts: see `docs/quality` and `docs/verify`
+- Runbooks / Traceability / Runtime Contracts: see `./quality` and `./verify`
  - Coverage policy: `quality/coverage-policy.md`（しきい値の由来/Required化の運用）
  - Formal runbook: `quality/formal-runbook.md`（ラベル/dispatch/要約/環境変数）
  - CSP verification (cspx runner): `quality/formal-csp.md`（使い方/成果物/実行結果例）
