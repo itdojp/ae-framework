@@ -37,6 +37,12 @@ If any item is missing, add **open questions** or **assumptions** to the Context
 - [ ] 不足情報は `openQuestions` に列挙した
 - [ ] 仮定は `assumptions` に明示した
 
+### 7) DbC（Design by Contract）
+- [ ] `contracts.preconditions` に入力制約/前提状態を記載した
+- [ ] `contracts.postconditions` に観測可能な事後状態を記載した
+- [ ] `contracts.invariants` に常時成立する制約を記載した
+- [ ] 各条件の検証先（test/gate/evidence）が追跡できる
+
 ---
 
 ## 関連
