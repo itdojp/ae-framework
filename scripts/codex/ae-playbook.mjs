@@ -13,7 +13,7 @@
  * Options: --resume, --skip=<comma list> (e.g., setup,qa,spec,sim)
  */
 
-import { promises as fs } from 'fs';
+import { createWriteStream, promises as fs } from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
 
@@ -89,7 +89,11 @@ function sh(cmd, args, opts) {
 
 export async function teeTo(file, runner, options = {}) {
   await ensureDir(path.dirname(file));
-  let log = '';
+  const logStream = createWriteStream(file, { encoding: 'utf8', flags: 'w' });
+  let streamError = null;
+  logStream.on('error', (error) => {
+    streamError = error;
+  });
   const phaseName = (options.phaseName || 'run').toString();
   const heartbeatMs = Number.isFinite(options.heartbeatMs) ? Math.max(0, Math.floor(options.heartbeatMs)) : 30_000;
   const stdoutWriter = typeof options.stdoutWriter === 'function' ? options.stdoutWriter : (s) => process.stdout.write(s);
@@ -98,17 +102,22 @@ export async function teeTo(file, runner, options = {}) {
   const streamStderr = options.streamStderr !== false;
   const startedAt = Date.now();
 
+  const writeLog = (chunk) => {
+    if (!chunk || streamError) return;
+    logStream.write(chunk);
+  };
+
   const onStdout = (s) => {
-    log += s;
+    writeLog(s);
     if (streamStdout) stdoutWriter(s);
   };
   const onStderr = (s) => {
-    log += s;
+    writeLog(s);
     if (streamStderr) stderrWriter(s);
   };
 
   let heartbeat = null;
-  if (heartbeatMs > 0) {
+  if (heartbeatMs > 0 && streamStdout) {
     heartbeat = setInterval(() => {
       stdoutWriter(formatHeartbeatLine(phaseName, Date.now() - startedAt));
     }, heartbeatMs);
@@ -120,8 +129,20 @@ export async function teeTo(file, runner, options = {}) {
     res = await runner({ onStdout, onStderr });
   } finally {
     if (heartbeat) clearInterval(heartbeat);
+    await new Promise((resolve, reject) => {
+      logStream.end((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        if (streamError) {
+          reject(streamError);
+          return;
+        }
+        resolve();
+      });
+    });
   }
-  await fs.writeFile(file, log);
   return res;
 }
 
@@ -300,11 +321,12 @@ async function runFormal(context, opts = {}) {
   const cmd = cmds.join(' && ');
   phaseLog('formal', 'start');
   const startedAt = Date.now();
-  await teeTo(log, (hooks) => sh('bash', ['-lc', cmd], hooks), {
+  const res = await teeTo(log, (hooks) => sh('bash', ['-lc', cmd], hooks), {
     phaseName: 'formal',
     heartbeatMs: opts.heartbeatMs,
   });
-  phaseLog('formal', `done code=0 elapsed=${formatDuration(Date.now() - startedAt)}`);
+  const code = Number.isInteger(res.code) ? res.code : 1;
+  phaseLog('formal', `done code=${code} elapsed=${formatDuration(Date.now() - startedAt)}`);
 
   // Collect known outputs (if generated)
   const hr = path.join(CWD, 'artifacts/hermetic-reports', 'formal');
@@ -318,7 +340,7 @@ async function runFormal(context, opts = {}) {
     try { await fs.access(f.file); summary[f.key] = path.relative(CWD, f.file); } catch {}
   }
 
-  await savePhase(context, 'formal', { code: 0, log, ...summary });
+  await savePhase(context, 'formal', { code, log, ...summary });
   return true;
 }
 

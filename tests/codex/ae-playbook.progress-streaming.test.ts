@@ -72,6 +72,34 @@ describe('ae-playbook progress streaming', () => {
     expect(stdoutChunks.some((chunk) => chunk.includes('[ae-playbook] [setup] heartbeat'))).toBe(true);
   });
 
+  it('does not emit heartbeat when stdout streaming is disabled', async () => {
+    const work = mkdtempSync(path.join(tmpdir(), 'ae-playbook-heartbeat-disabled-'));
+    tempDirs.push(work);
+    const logFile = path.join(work, 'setup.log');
+    const stdoutChunks: string[] = [];
+
+    await teeTo(
+      logFile,
+      async ({ onStdout }) => {
+        onStdout('begin\n');
+        await wait(30);
+        onStdout('end\n');
+        return { code: 0, stdout: '', stderr: '' };
+      },
+      {
+        phaseName: 'setup',
+        heartbeatMs: 10,
+        streamStdout: false,
+        stdoutWriter: (chunk) => stdoutChunks.push(chunk),
+      },
+    );
+
+    expect(stdoutChunks.some((chunk) => chunk.includes('heartbeat'))).toBe(false);
+    const log = readFileSync(logFile, 'utf-8');
+    expect(log).toContain('begin');
+    expect(log).toContain('end');
+  });
+
   it('formats elapsed duration and heartbeat message', () => {
     expect(formatDuration(950)).toBe('950ms');
     expect(formatDuration(1100)).toBe('1s');
