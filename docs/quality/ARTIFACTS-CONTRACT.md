@@ -15,6 +15,11 @@ Defines required vs optional artifacts and how to validate them in CI.
 ## 1. 目的
 CIが生成する成果物（artifacts/reports）について **最低限の契約（contract）** を定義し、missing/invalid を早期に検出できるようにします。
 
+### 1.1 用語の注記
+- 本ドキュメントでの contract は **Artifacts contract**（成果物の必須/任意ルール）を指します。
+- DbC（Design contract: pre/post/invariant）や API/Integration contract（Pact）とは別概念です。
+- 用語の基準は `docs/quality/contract-taxonomy.md` を参照してください。
+
 ## 2. Required（必須）成果物
 
 | 成果物 | 生成元 | 検証 | 備考 |
