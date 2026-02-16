@@ -1,5 +1,14 @@
-export const normalizeProgramArgv = (argv: string[]): string[] => {
+export const normalizeProgramArgv = (
+  argv: string[],
+  env: NodeJS.ProcessEnv = process.env,
+): string[] => {
   if (argv.length < 3) {
+    return argv;
+  }
+
+  // Only normalize argv when invoked via package scripts (pnpm/npm/yarn),
+  // where a separator token can be injected before forwarded options.
+  if (!env['npm_lifecycle_event']) {
     return argv;
   }
 

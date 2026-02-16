@@ -15,7 +15,9 @@ describe('normalizeProgramArgv', () => {
       '.ae/ae-ir.json',
     ];
 
-    expect(normalizeProgramArgv(argv)).toEqual([
+    expect(
+      normalizeProgramArgv(argv, { npm_lifecycle_event: 'spec:validate' }),
+    ).toEqual([
       'node',
       'src/cli/index.ts',
       'spec',
@@ -38,6 +40,19 @@ describe('normalizeProgramArgv', () => {
     ];
 
     expect(normalizeProgramArgv(argv)).toEqual(argv);
+  });
+
+  it('keeps argv unchanged for direct CLI invocation', () => {
+    const argv = [
+      'node',
+      'src/cli/index.ts',
+      'sm',
+      'validate',
+      '--',
+      '-input.sm.json',
+    ];
+
+    expect(normalizeProgramArgv(argv, {})).toEqual(argv);
   });
 
   it('keeps argv unchanged when separator is not followed by options', () => {
