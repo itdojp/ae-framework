@@ -5,9 +5,27 @@
 
 import fs from 'fs';
 import path from 'path';
+import { pathToFileURL } from 'url';
 
 function respond(obj) {
   process.stdout.write(JSON.stringify(obj) + '\n');
+}
+
+function respondError(error, exitCode = 1) {
+  process.exitCode = exitCode;
+  respond({ ok: false, error });
+}
+
+async function loadSpecCompiler() {
+  try {
+    return await import('@ae-framework/spec-compiler');
+  } catch (error) {
+    const localDist = path.resolve(process.cwd(), 'packages/spec-compiler/dist/index.js');
+    if (fs.existsSync(localDist)) {
+      return await import(pathToFileURL(localDist).href);
+    }
+    throw error;
+  }
 }
 
 async function main() {
@@ -24,11 +42,11 @@ async function main() {
     const action = req.action;
     const args = req.args || {};
 
-    if (!action) return respond({ ok: false, error: 'Missing action' });
+    if (!action) return respondError('Missing action', 2);
 
     switch (action) {
       case 'compile': {
-        const { AESpecCompiler } = await import('../../packages/spec-compiler/src/index.js');
+        const { AESpecCompiler } = await loadSpecCompiler();
         const compiler = new AESpecCompiler();
         const prev = process.env.AE_SPEC_RELAXED;
         if (args.relaxed) process.env.AE_SPEC_RELAXED = '1';
@@ -49,7 +67,7 @@ async function main() {
         }
       }
       case 'validate': {
-        const { AESpecCompiler } = await import('../../packages/spec-compiler/src/index.js');
+        const { AESpecCompiler } = await loadSpecCompiler();
         const compiler = new AESpecCompiler();
         const prev = process.env.AE_SPEC_RELAXED;
         if (args.relaxed) process.env.AE_SPEC_RELAXED = '1';
@@ -70,20 +88,26 @@ async function main() {
         const targets = Array.isArray(args.targets) && args.targets.length ? args.targets : ['typescript','api','database'];
         const run = (t, dir) => spawnSync(process.execPath, ['dist/src/cli/index.js','codegen','generate','-i', irPath, '-o', path.resolve(dir), '-t', t], { stdio: 'inherit' });
         const results = {};
+        const failedTargets = [];
         for (const t of targets) {
           const dir = `${outBase}/${t}`;
-          run(t, dir);
+          const runResult = run(t, dir);
+          if (runResult.status !== 0) {
+            failedTargets.push(t);
+          }
           results[t] = dir;
+        }
+        if (failedTargets.length > 0) {
+          return respondError(`Codegen failed for targets: ${failedTargets.join(', ')}`);
         }
         return respond({ ok: true, data: { outBase, results } });
       }
       default:
-        return respond({ ok: false, error: `Unknown action: ${action}` });
+        return respondError(`Unknown action: ${action}`, 2);
     }
   } catch (err) {
-    respond({ ok: false, error: err instanceof Error ? err.message : String(err) });
+    respondError(err instanceof Error ? err.message : String(err));
   }
 }
 
 main();
-

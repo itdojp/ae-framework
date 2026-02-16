@@ -13,6 +13,15 @@
 - Dev (TypeScript) execution in this repo: `pnpm run ae-framework -- <command>`
 - Installed usage: `pnpm exec ae <command>` or `npx ae-framework <command>`
 
+### Output and Exit Code Contract (Baseline)
+- Standard result text is printed to `stdout`.
+- Diagnostics and failure reasons are printed in command output with non-zero exit code.
+- Exit code policy used by stdio/automation commands:
+  - `0`: completed successfully (`ok:true`).
+  - `1`: internal/runtime failure (`ok:false`).
+  - `2`: invalid input or unsupported action.
+- `pnpm run ae-framework -- <command>` is supported; a leading standalone `--` is normalized by the CLI entrypoint.
+
 ### Basic Syntax
 ```bash
 ae <command> [options]
@@ -300,6 +309,15 @@ ae setup list
 - CLI バイナリは `ae` / `ae-framework`（同一エントリ）
 - リポジトリ開発時: `pnpm run ae-framework -- <command>`
 - インストール後: `pnpm exec ae <command>` / `npx ae-framework <command>`
+
+### 出力/終了コード契約（ベースライン）
+- 通常の実行結果は `stdout` に出力します。
+- 異常時は診断メッセージを出力し、非0終了コードを返します。
+- stdio/自動化コマンドの終了コード方針:
+  - `0`: 正常終了（`ok:true`）。
+  - `1`: 実行時エラー（`ok:false`）。
+  - `2`: 入力不備または未対応アクション。
+- `pnpm run ae-framework -- <command>` 形式の先頭 `--` は CLI 側で正規化され、サブオプションを解釈します。
 
 ### 基本構文
 ```bash

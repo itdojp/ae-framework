@@ -10,6 +10,7 @@ import path from 'path';
 import { IntentTaskAdapter } from '../agents/intent-task-adapter.js';
 import type { TaskRequest, TaskResponse } from '../agents/intent-task-adapter.js';
 import { IntentAgent } from '../agents/intent-agent.js';
+import type { RequirementSource } from '../agents/intent-agent.js';
 import { ConfigLoader } from '../cli/config/ConfigLoader.js';
 import { MetricsCollector } from '../cli/metrics/MetricsCollector.js';
 
@@ -262,17 +263,167 @@ export class HybridIntentSystem {
 
     // Execute Intent agent commands based on data
     if (data.command === 'analyze') {
-      return this.agent.analyzeIntent(data.request || data);
+      const analyzeRequest = this.normalizeIntentAnalyzeRequest(data.request || data);
+      return this.agent.analyzeIntent(analyzeRequest);
     } else if (data.command === 'extract') {
       return this.agent.extractFromNaturalLanguage(data.text);
     } else if (data.command === 'validate') {
-      return this.agent.validateCompleteness(data.sources);
+      const analyzeRequest = this.normalizeIntentAnalyzeRequest(data.request || data);
+      const analysis = await this.agent.analyzeIntent(analyzeRequest);
+      const validation = await this.agent.validateCompleteness(analysis.requirements);
+      return {
+        ...validation,
+        score: validation.coverage / 100,
+        missingAreas: validation.missing,
+      };
     } else if (data.command === 'user-stories') {
       return this.agent.createUserStories(data.requirements);
     }
     
     // Default: try to analyze as intent request
-    return this.agent.analyzeIntent(data);
+    return this.agent.analyzeIntent(this.normalizeIntentAnalyzeRequest(data));
+  }
+
+  private normalizeIntentAnalyzeRequest(raw: any): {
+    sources: RequirementSource[];
+    context?: any;
+    analysisDepth?: 'basic' | 'detailed' | 'comprehensive';
+    outputFormat?: 'structured' | 'narrative' | 'both';
+  } {
+    const normalizedSources = this.normalizeIntentSources(raw?.sources);
+    return {
+      ...raw,
+      sources: normalizedSources,
+      analysisDepth: raw?.analysisDepth || 'comprehensive',
+      outputFormat: raw?.outputFormat || 'both',
+    };
+  }
+
+  private normalizeIntentSources(rawSources: unknown): RequirementSource[] {
+    const resolved: RequirementSource[] = [];
+    const unresolved: string[] = [];
+
+    const addSource = (value: unknown): void => {
+      if (typeof value === 'object' && value !== null) {
+        const source = value as Partial<RequirementSource>;
+        if (typeof source.content === 'string' && source.content.trim().length > 0) {
+          const normalized: RequirementSource = {
+            type: source.type || 'text',
+            content: source.content,
+          };
+          if (source.metadata) {
+            normalized.metadata = source.metadata;
+          }
+          resolved.push(normalized);
+          return;
+        }
+      }
+
+      if (typeof value !== 'string') {
+        return;
+      }
+
+      const token = value.trim();
+      if (!token) {
+        return;
+      }
+
+      const abs = path.resolve(token);
+      if (fs.existsSync(abs)) {
+        try {
+          const stat = fs.statSync(abs);
+          if (stat.isFile()) {
+            resolved.push({
+              type: 'document',
+              content: fs.readFileSync(abs, 'utf8'),
+              metadata: { references: [token] },
+            });
+            return;
+          }
+          if (stat.isDirectory()) {
+            const files = this.collectIntentSourceFiles(abs);
+            for (const file of files) {
+              resolved.push({
+                type: 'document',
+                content: fs.readFileSync(file, 'utf8'),
+                metadata: { references: [path.relative(process.cwd(), file)] },
+              });
+            }
+            return;
+          }
+        } catch {
+          unresolved.push(token);
+          return;
+        }
+      }
+
+      if (!/\s/.test(token)) {
+        unresolved.push(token);
+        return;
+      }
+
+      resolved.push({ type: 'text', content: token });
+    };
+
+    if (Array.isArray(rawSources)) {
+      for (const source of rawSources) {
+        addSource(source);
+      }
+    } else if (typeof rawSources === 'string') {
+      for (const token of rawSources.split(',').map((entry) => entry.trim()).filter(Boolean)) {
+        addSource(token);
+      }
+    } else if (rawSources !== undefined && rawSources !== null) {
+      addSource(rawSources);
+    }
+
+    if (resolved.length === 0 && unresolved.length > 0) {
+      throw new Error(`Intent sources could not be resolved: ${unresolved.join(', ')}`);
+    }
+
+    if (resolved.length === 0) {
+      resolved.push({
+        type: 'text',
+        content: '',
+      });
+    }
+
+    return resolved;
+  }
+
+  private collectIntentSourceFiles(root: string): string[] {
+    const supportedExt = new Set(['.md', '.txt', '.yaml', '.yml', '.json', '.feature', '.adoc', '.rst']);
+    const files: string[] = [];
+    const stack: string[] = [root];
+    while (stack.length > 0 && files.length < 100) {
+      const current = stack.pop();
+      if (!current) {
+        continue;
+      }
+      let entries: fs.Dirent[] = [];
+      try {
+        entries = fs.readdirSync(current, { withFileTypes: true });
+      } catch {
+        continue;
+      }
+      for (const entry of entries) {
+        const abs = path.join(current, entry.name);
+        if (entry.isDirectory()) {
+          stack.push(abs);
+          continue;
+        }
+        if (!entry.isFile()) {
+          continue;
+        }
+        if (supportedExt.has(path.extname(entry.name).toLowerCase())) {
+          files.push(abs);
+          if (files.length >= 100) {
+            break;
+          }
+        }
+      }
+    }
+    return files;
   }
 
   private async executeMCPCommand(data: any): Promise<any> {
