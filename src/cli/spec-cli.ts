@@ -99,7 +99,7 @@ const createSpecCommandReport = (params: {
     aeIrOutput,
   } = params;
 
-  return {
+  const report: SpecCommandReport = {
     command,
     status: failed ? 'fail' : 'pass',
     summary: {
@@ -107,22 +107,35 @@ const createSpecCommandReport = (params: {
       warnings: lintResult.summary.warnings,
       info: lintResult.summary.infos,
     },
-    issues: lintResult.issues.map((issue) => ({
-      ruleId: issue.id,
-      severity: normalizeIssueSeverity(issue.severity),
-      message: issue.message,
-      category: detectIssueCategory(issue),
-      location: issue.location,
-      suggestion: issue.suggestion,
-    })),
+    issues: lintResult.issues.map((issue) => {
+      const normalizedIssue: SpecCommandReportIssue = {
+        ruleId: issue.id,
+        severity: normalizeIssueSeverity(issue.severity),
+        message: issue.message,
+      };
+      const category = detectIssueCategory(issue);
+      if (category !== undefined) {
+        normalizedIssue.category = category;
+      }
+      if (issue.location !== undefined) {
+        normalizedIssue.location = issue.location;
+      }
+      if (issue.suggestion !== undefined) {
+        normalizedIssue.suggestion = issue.suggestion;
+      }
+      return normalizedIssue;
+    }),
     input,
-    aeIrOutput,
     thresholds: {
       maxErrors,
       maxWarnings,
     },
     generatedAt: new Date().toISOString(),
   };
+  if (aeIrOutput !== undefined) {
+    report.aeIrOutput = aeIrOutput;
+  }
+  return report;
 };
 
 const writeCommandOutput = (outputPath: string, content: string): void => {
