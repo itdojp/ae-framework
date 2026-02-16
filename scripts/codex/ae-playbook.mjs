@@ -45,6 +45,10 @@ async function writeJson(file, obj) {
   await fs.writeFile(file, JSON.stringify(obj, null, 2));
 }
 
+function createDefaultContext() {
+  return { phases: {} };
+}
+
 function sh(cmd, args, opts) {
   return new Promise((resolve) => {
     const child = spawn(cmd, args, { cwd: CWD, env: process.env, shell: false });
@@ -66,11 +70,39 @@ async function teeTo(file, runner) {
   return res;
 }
 
+function migrateContext(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    throw new Error('context.json must be an object');
+  }
+  const context = { ...raw };
+  if (!context.phases || typeof context.phases !== 'object' || Array.isArray(context.phases)) {
+    context.phases = {};
+  }
+  return context;
+}
+
 async function loadContext() {
-  try { return JSON.parse(await fs.readFile(CONTEXT_FILE, 'utf8')); } catch { return { phases: {} }; }
+  try {
+    const text = await fs.readFile(CONTEXT_FILE, 'utf8');
+    return migrateContext(JSON.parse(text));
+  } catch (error) {
+    if (error?.code === 'ENOENT') {
+      return createDefaultContext();
+    }
+    if (error instanceof SyntaxError) {
+      throw new Error(`context.json is invalid JSON: ${error.message}`);
+    }
+    if (error instanceof Error) {
+      throw new Error(`context.json could not be loaded: ${error.message}`);
+    }
+    throw error;
+  }
 }
 
 async function savePhase(context, name, data) {
+  if (!context.phases || typeof context.phases !== 'object' || Array.isArray(context.phases)) {
+    context.phases = {};
+  }
   context.phases[name] = { ...data, timestamp: new Date().toISOString() };
   await writeJson(CONTEXT_FILE, context);
 }
@@ -202,58 +234,64 @@ async function runFormal(context, opts = {}) {
 }
 
 async function main() {
-  const args = parseArgs(process.argv);
-  await ensureDir(ART_ROOT);
-  const context = args.resume ? await loadContext() : { phases: {} };
+  try {
+    const args = parseArgs(process.argv);
+    await ensureDir(ART_ROOT);
+    const context = args.resume ? await loadContext() : createDefaultContext();
 
-  const shouldSkip = (name) => args.skip.has(name) || args.skip.has('*');
+    const shouldSkip = (name) => args.skip.has(name) || args.skip.has('*');
 
-  if (!shouldSkip('setup')) {
-    const ok = await runSetup(context);
-    if (!ok) { console.error('Setup failed.'); process.exit(1); }
-  } else {
-    await savePhase(context, 'setup', { code: 0, skipped: true });
+    if (!shouldSkip('setup')) {
+      const ok = await runSetup(context);
+      if (!ok) { console.error('Setup failed.'); process.exit(1); }
+    } else {
+      await savePhase(context, 'setup', { code: 0, skipped: true });
+    }
+
+    if (!shouldSkip('qa')) {
+      const ok = await runQALight(context);
+      if (!ok) { console.error('QA (light) failed.'); process.exit(1); }
+    } else {
+      await savePhase(context, 'qa', { code: 0, skipped: true });
+    }
+
+    if (!shouldSkip('spec')) {
+      await runSpecCompile(context); // non-fatal (skips when no spec)
+    } else {
+      await savePhase(context, 'spec', { code: 0, skipped: true });
+    }
+
+    if (!shouldSkip('sim')) {
+      await runSimulation(context); // non-fatal
+    } else {
+      await savePhase(context, 'sim', { code: 0, skipped: true });
+    }
+
+    // Phase-3: Formal (opt-in, non-blocking)
+    if (args.enableFormal && !shouldSkip('formal')) {
+      await runFormal(context, { timeoutMs: args.formalTimeoutMs });
+    } else {
+      await savePhase(context, 'formal', { code: 0, skipped: true });
+    }
+
+    // Phase-4: Coverage/Adapters (report-only detection)
+    if (!shouldSkip('coverage')) {
+      await detectCoverage(context);
+    } else {
+      await savePhase(context, 'coverage', { code: 0, skipped: true });
+    }
+    if (!shouldSkip('adapters')) {
+      await detectAdapters(context);
+    } else {
+      await savePhase(context, 'adapters', { code: 0, skipped: true });
+    }
+
+    console.log(`\n✔ Playbook completed. Context: ${path.relative(CWD, CONTEXT_FILE)}`);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`Playbook failed: ${message}`);
+    process.exit(2);
   }
-
-  if (!shouldSkip('qa')) {
-    const ok = await runQALight(context);
-    if (!ok) { console.error('QA (light) failed.'); process.exit(1); }
-  } else {
-    await savePhase(context, 'qa', { code: 0, skipped: true });
-  }
-
-  if (!shouldSkip('spec')) {
-    await runSpecCompile(context); // non-fatal (skips when no spec)
-  } else {
-    await savePhase(context, 'spec', { code: 0, skipped: true });
-  }
-
-  if (!shouldSkip('sim')) {
-    await runSimulation(context); // non-fatal
-  } else {
-    await savePhase(context, 'sim', { code: 0, skipped: true });
-  }
-
-  // Phase-3: Formal (opt-in, non-blocking)
-  if (args.enableFormal && !shouldSkip('formal')) {
-    await runFormal(context, { timeoutMs: args.formalTimeoutMs });
-  } else {
-    await savePhase(context, 'formal', { code: 0, skipped: true });
-  }
-
-  // Phase-4: Coverage/Adapters (report-only detection)
-  if (!shouldSkip('coverage')) {
-    await detectCoverage(context);
-  } else {
-    await savePhase(context, 'coverage', { code: 0, skipped: true });
-  }
-  if (!shouldSkip('adapters')) {
-    await detectAdapters(context);
-  } else {
-    await savePhase(context, 'adapters', { code: 0, skipped: true });
-  }
-
-  console.log(`\n✔ Playbook completed. Context: ${path.relative(CWD, CONTEXT_FILE)}`);
 }
 
 async function detectCoverage(context) {

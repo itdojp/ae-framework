@@ -16,7 +16,7 @@ import { createHybridIntentSystem } from '../integration/hybrid-intent-system.js
 import type { TaskRequest, TaskResponse, TaskHandler } from '../agents/task-types.js';
 import { createNaturalLanguageTaskHandler } from '../agents/natural-language-task-adapter.js';
 import { createUserStoriesTaskHandler } from '../agents/user-stories-task-adapter.js';
-import { createValidationTaskHandler } from '../agents/validation-task-adapter.js';
+import { createValidationTaskHandler, type ValidationTaskType } from '../agents/validation-task-adapter.js';
 import { createDomainModelingTaskHandler } from '../agents/domain-modeling-task-adapter.js';
 import { UIScaffoldGenerator } from '../generators/ui-scaffold-generator.js';
 import { Phase6Telemetry } from '../telemetry/phase6-metrics.js';
@@ -36,6 +36,47 @@ const program = new Command();
 
 // TaskResult is now TaskResponse from the adapters (addressing Copilot review comment 2280080078)
 type TaskResult = TaskResponse;
+
+const parseCommaSeparatedSources = (value?: string): string[] => {
+  if (!value) {
+    return [];
+  }
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
+const resolveValidationTaskTypeFromOptions = (options: Record<string, unknown>): ValidationTaskType => {
+  if (options['requirements']) {
+    return 'validate-requirements';
+  }
+  if (options['stories']) {
+    return 'validate-user-stories';
+  }
+  if (options['specifications']) {
+    return 'validate-specifications';
+  }
+  if (options['traceability']) {
+    return 'validate-traceability';
+  }
+  if (options['completeness']) {
+    return 'validate-completeness';
+  }
+  return 'validate-requirements';
+};
+
+const normalizeProgramArgv = (argv: string[]): string[] => {
+  if (argv.length < 3 || argv[2] !== '--') {
+    return argv;
+  }
+  const nodePath = argv[0];
+  const scriptPath = argv[1];
+  if (!nodePath || !scriptPath) {
+    return argv;
+  }
+  return [nodePath, scriptPath, ...argv.slice(3)];
+};
 
 class AEFrameworkCLI {
   private config: AEFrameworkConfig;
@@ -132,19 +173,23 @@ class AEFrameworkCLI {
 
   async runIntent(options: { analyze?: boolean; validate?: boolean; sources?: string }): Promise<void> {
     console.log(chalk.blue('🎯 Running Intent Analysis...'));
+    const parsedSources = parseCommaSeparatedSources(options.sources);
     
     try {
       if (options.validate) {
         console.log(chalk.blue('🔍 Validating Intent completeness...'));
         const result = await this.intentSystem.handleIntentRequest({
           type: 'cli',
-          data: { command: 'validate', sources: options.sources || [] }
+          data: { command: 'validate', sources: parsedSources }
         });
         
-        if (result.response.score > 0.8) {
-          console.log(chalk.green(`✅ Intent validation passed: ${Math.round(result.response.score * 100)}%`));
+        const scoreRatio = typeof result.response.score === 'number'
+          ? result.response.score
+          : (typeof result.response.coverage === 'number' ? result.response.coverage / 100 : 0);
+        if (scoreRatio > 0.8) {
+          console.log(chalk.green(`✅ Intent validation passed: ${Math.round(scoreRatio * 100)}%`));
         } else {
-          console.log(chalk.red(`❌ Intent validation failed: ${Math.round(result.response.score * 100)}%`));
+          console.log(chalk.red(`❌ Intent validation failed: ${Math.round(scoreRatio * 100)}%`));
           console.log(chalk.yellow('Missing areas:'));
           result.response.missingAreas?.forEach((area: string) => {
             console.log(chalk.yellow(`  • ${area}`));
@@ -155,7 +200,7 @@ class AEFrameworkCLI {
         console.log(chalk.blue('📋 Analyzing requirements and extracting intent...'));
         const result = await this.intentSystem.handleIntentRequest({
           type: 'cli',
-          data: { command: 'analyze', sources: options.sources || [] }
+          data: { command: 'analyze', sources: parsedSources }
         });
         
         console.log(chalk.green('✅ Intent analysis completed'));
@@ -541,17 +586,17 @@ program
     const cli = new AEFrameworkCLI();
     console.log(chalk.blue('🔍 Running Validation...'));
     
-    const taskType = options.requirements ? 'validate-requirements' :
-                    options.stories ? 'validate-user-stories' :
-                    options.specifications ? 'validate-specifications' :
-                    options.traceability ? 'validate-traceability' :
-                    options.completeness ? 'validate-completeness' :
-                    'validate-requirements';
+    const taskType = resolveValidationTaskTypeFromOptions(options);
+    const sources = parseCommaSeparatedSources(options.sources);
     
     const request = {
       description: `Validation: ${taskType}`,
       prompt: options.sources || 'Validate available artifacts',
       subagent_type: 'validation-processing',
+      context: {
+        validationTaskType: taskType,
+        sources,
+      },
     };
     
     try {
@@ -798,6 +843,6 @@ adaptCommand
     await adaptVitest(thresholds);
   });
 
-program.parse();
+program.parse(normalizeProgramArgv(process.argv));
 
 export { AEFrameworkCLI };

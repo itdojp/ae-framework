@@ -5,9 +5,50 @@
 
 import fs from 'fs';
 import path from 'path';
+import { pathToFileURL } from 'url';
 
 function respond(obj) {
   process.stdout.write(JSON.stringify(obj) + '\n');
+}
+
+function respondError(error, exitCode = 1) {
+  process.exitCode = exitCode;
+  respond({ ok: false, error });
+}
+
+async function loadSpecCompiler() {
+  const importErrors = [];
+  try {
+    return await import('@ae-framework/spec-compiler');
+  } catch (error) {
+    importErrors.push(error instanceof Error ? error.message : String(error));
+  }
+
+  const localDist = path.resolve(process.cwd(), 'packages/spec-compiler/dist/index.js');
+  if (!fs.existsSync(localDist)) {
+    try {
+      const { spawnSync } = await import('child_process');
+      const build = spawnSync('pnpm', ['-s', '--filter', '@ae-framework/spec-compiler', 'build'], {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+      });
+      if (build.status !== 0) {
+        importErrors.push(`pnpm build failed: ${(build.stderr || build.stdout || '').trim()}`);
+      }
+    } catch (error) {
+      importErrors.push(`failed to run pnpm build: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  if (fs.existsSync(localDist)) {
+    try {
+      return await import(pathToFileURL(localDist).href);
+    } catch (error) {
+      importErrors.push(error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  throw new Error(`Unable to load @ae-framework/spec-compiler (${importErrors.join(' | ')})`);
 }
 
 async function main() {
@@ -20,15 +61,21 @@ async function main() {
       process.stdin.on('error', reject);
     });
     const line = input.trim().split('\n').filter(Boolean).pop() || '{}';
-    const req = JSON.parse(line);
+    let req;
+    try {
+      req = JSON.parse(line);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return respondError(`Invalid JSON input: ${message}`, 2);
+    }
     const action = req.action;
     const args = req.args || {};
 
-    if (!action) return respond({ ok: false, error: 'Missing action' });
+    if (!action) return respondError('Missing action', 2);
 
     switch (action) {
       case 'compile': {
-        const { AESpecCompiler } = await import('../../packages/spec-compiler/src/index.js');
+        const { AESpecCompiler } = await loadSpecCompiler();
         const compiler = new AESpecCompiler();
         const prev = process.env.AE_SPEC_RELAXED;
         if (args.relaxed) process.env.AE_SPEC_RELAXED = '1';
@@ -49,7 +96,7 @@ async function main() {
         }
       }
       case 'validate': {
-        const { AESpecCompiler } = await import('../../packages/spec-compiler/src/index.js');
+        const { AESpecCompiler } = await loadSpecCompiler();
         const compiler = new AESpecCompiler();
         const prev = process.env.AE_SPEC_RELAXED;
         if (args.relaxed) process.env.AE_SPEC_RELAXED = '1';
@@ -70,20 +117,26 @@ async function main() {
         const targets = Array.isArray(args.targets) && args.targets.length ? args.targets : ['typescript','api','database'];
         const run = (t, dir) => spawnSync(process.execPath, ['dist/src/cli/index.js','codegen','generate','-i', irPath, '-o', path.resolve(dir), '-t', t], { stdio: 'inherit' });
         const results = {};
+        const failedTargets = [];
         for (const t of targets) {
           const dir = `${outBase}/${t}`;
-          run(t, dir);
+          const runResult = run(t, dir);
+          if (runResult.status !== 0) {
+            failedTargets.push(t);
+          }
           results[t] = dir;
+        }
+        if (failedTargets.length > 0) {
+          return respondError(`Codegen failed for targets: ${failedTargets.join(', ')}`);
         }
         return respond({ ok: true, data: { outBase, results } });
       }
       default:
-        return respond({ ok: false, error: `Unknown action: ${action}` });
+        return respondError(`Unknown action: ${action}`, 2);
     }
   } catch (err) {
-    respond({ ok: false, error: err instanceof Error ? err.message : String(err) });
+    respondError(err instanceof Error ? err.message : String(err));
   }
 }
 
 main();
-
