@@ -9,6 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const RUN_SCOPED_SOURCE = path.join(REPO_ROOT, 'scripts/mutation/run-scoped.sh');
+const describePosixOnly = process.platform === 'win32' ? describe.skip : describe;
 
 const tempDirs: string[] = [];
 
@@ -57,7 +58,7 @@ afterEach(() => {
   }
 });
 
-describe('scripts/mutation/run-scoped.sh', () => {
+describePosixOnly('scripts/mutation/run-scoped.sh', () => {
   it('fails when mutation report generation fails by default', () => {
     const { workspace, binDir } = setupTempWorkspace();
     createExecutable(path.join(binDir, 'npx'), '#!/usr/bin/env bash\nexit 0\n');
@@ -94,5 +95,20 @@ describe('scripts/mutation/run-scoped.sh', () => {
 
     expect(result.status).toBe(7);
     expect(result.stderr).toContain('Stryker exited with status 7');
+  });
+
+  it('keeps timeout as non-blocking even when report generation fails', () => {
+    const { workspace, binDir } = setupTempWorkspace();
+    createExecutable(path.join(binDir, 'npx'), '#!/usr/bin/env bash\nexit 124\n');
+    createExecutable(
+      path.join(binDir, 'node'),
+      '#!/usr/bin/env bash\nif [[ "${1:-}" == "scripts/mutation/mutation-report.mjs" ]]; then\n  exit 1\nfi\nexit 0\n',
+    );
+
+    const result = runScoped(workspace, binDir);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toContain('treated as non-blocking');
+    expect(result.stderr).toContain('keeping non-blocking timeout semantics');
   });
 });

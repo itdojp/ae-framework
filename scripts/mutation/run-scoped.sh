@@ -232,8 +232,10 @@ else
 fi
 set -e
 
+TIMED_OUT=0
 if [[ "$CMD_STATUS" -eq 124 ]]; then
   echo "[mutation] Stryker timed out after ${TIME_LIMIT}s (treated as non-blocking)" >&2
+  TIMED_OUT=1
   CMD_STATUS=0
 elif [[ "$CMD_STATUS" -ne 0 ]]; then
   echo "[mutation] Stryker exited with status ${CMD_STATUS}" >&2
@@ -248,7 +250,9 @@ set -e
 MUTATION_REPORT_STRICT=${MUTATION_REPORT_STRICT:-1}
 if [[ "$REPORT_STATUS" -ne 0 ]]; then
   if [[ "$MUTATION_REPORT_STRICT" == "1" ]]; then
-    if [[ "$CMD_STATUS" -eq 0 ]]; then
+    if [[ "$TIMED_OUT" -eq 1 ]]; then
+      echo "[mutation] mutation-report failed after timeout; keeping non-blocking timeout semantics" >&2
+    elif [[ "$CMD_STATUS" -eq 0 ]]; then
       CMD_STATUS=$REPORT_STATUS
     fi
   else
