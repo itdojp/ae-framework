@@ -131,6 +131,7 @@ function normalizeListValue(value: string) {
 
 function extractStructuredValues(text: string) {
   const values: Partial<TestsSuggestTemplateVariables> = {};
+  let hasStructuredHints = false;
   const lines = text.split(/\r?\n/);
   for (const line of lines) {
     const match = line.match(/^\s*(?:[-*]\s*)?([a-z_][a-z0-9_-]*)\s*[:=]\s*(.+?)\s*$/i);
@@ -148,16 +149,35 @@ function extractStructuredValues(text: string) {
       continue;
     }
     if (key === 'intent') {
+      hasStructuredHints = true;
       values.intent = value;
     } else if (key === 'auth_type' || key === 'authtype' || key === 'auth-type') {
+      hasStructuredHints = true;
       values.auth_type = value;
     } else if (key === 'roles') {
+      hasStructuredHints = true;
       values.roles = normalizeListValue(value);
     } else if (key === 'resources') {
+      hasStructuredHints = true;
       values.resources = normalizeListValue(value);
     }
   }
-  return values;
+  return { values, hasStructuredHints };
+}
+
+function summarizeIntentValue(text: string) {
+  const firstLine = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .find(Boolean);
+  if (!firstLine) {
+    return FALLBACK_VALUE;
+  }
+  const singleLine = firstLine.replace(/\s+/g, ' ').trim();
+  if (singleLine.length <= 120) {
+    return singleLine;
+  }
+  return `${singleLine.slice(0, 117).trimEnd()}...`;
 }
 
 function inferAuthType(text: string) {
@@ -189,12 +209,13 @@ function inferResources(text: string) {
 
 export function resolveTestsSuggestTemplateVariables(intentText?: string): TestsSuggestTemplateVariables {
   const text = (intentText ?? '').trim();
-  const structured = extractStructuredValues(text);
+  const { values: structured, hasStructuredHints } = extractStructuredValues(text);
+  const strictFallback = hasStructuredHints;
   return {
-    intent: structured.intent ?? (text || FALLBACK_VALUE),
-    auth_type: structured.auth_type ?? inferAuthType(text),
-    roles: structured.roles ?? inferRoles(text),
-    resources: structured.resources ?? inferResources(text),
+    intent: structured.intent ?? (strictFallback ? FALLBACK_VALUE : summarizeIntentValue(text)),
+    auth_type: structured.auth_type ?? (strictFallback ? FALLBACK_VALUE : inferAuthType(text)),
+    roles: structured.roles ?? (strictFallback ? FALLBACK_VALUE : inferRoles(text)),
+    resources: structured.resources ?? (strictFallback ? FALLBACK_VALUE : inferResources(text)),
   };
 }
 

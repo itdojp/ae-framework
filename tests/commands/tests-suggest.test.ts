@@ -88,6 +88,33 @@ describe('tests:suggest helpers', () => {
     expect(variables.resources).toContain('/products');
   });
 
+  it('uses a single-line summary for {intent} in free-form multi-line input', () => {
+    const variables = resolveTestsSuggestTemplateVariables(
+      [
+        '',
+        'Enable JWT access control for order APIs',
+        'Include admin and auditor permissions for /orders.',
+      ].join('\n'),
+    );
+
+    expect(variables.intent).toBe('Enable JWT access control for order APIs');
+    expect(variables.intent).not.toContain('\n');
+  });
+
+  it('keeps missing fields as fallback when structured hints are provided', () => {
+    const variables = resolveTestsSuggestTemplateVariables(
+      [
+        'auth_type: JWT',
+        'roles: admin',
+      ].join('\n'),
+    );
+
+    expect(variables.intent).toBe('unspecified');
+    expect(variables.auth_type).toBe('JWT');
+    expect(variables.roles).toBe('admin');
+    expect(variables.resources).toBe('unspecified');
+  });
+
   it('fills missing placeholder values with fallback text', () => {
     const output = applyTestsSuggestTemplateVariables(
       'auth={auth_type} roles={roles} resources={resources} intent={intent}',

@@ -17,7 +17,6 @@ const DEFAULT_CONFIG_CANDIDATES = [
 
 const DEFAULT_DIR_CANDIDATES = [
   'tests/property',
-  'test/property',
 ];
 
 export function parseArgs(argv) {
@@ -132,8 +131,10 @@ function printHelp() {
   console.log(`Usage: pnpm run pbt [-- --config <path>] [vitest args...]
 
 Resolves PBT execution in this order:
-  1) tests/property/vitest.config.{ts,mts,js,mjs,cjs}
-  2) tests/property directory fallback (vitest run tests/property)
+  1) --config/-c <path>
+  2) PBT_CONFIG environment variable
+  3) tests/property/vitest.config.{ts,mts,js,mjs,cjs}
+  4) tests/property directory fallback (vitest run tests/property)
 
 Exit codes:
   0: success

@@ -67,7 +67,9 @@ ae tdd
  ae tests:suggest --template http-api --intent "Build a minimal todo API"
  ae tests:suggest --template auth --input requirements.md --output tests-first.md
 # auth template placeholders ({intent},{auth_type},{roles},{resources}) are auto-resolved.
-# Supported input hints: intent:, auth_type:, roles:, resources: (missing fields => "unspecified")
+# Supported input hints: intent:, auth_type:, roles:, resources:
+# - When structured hints are present, missing fields remain "unspecified".
+# - For free-form text, {intent} uses the first non-empty line and other fields are inferred when possible.
 
 # Generate acceptance/contract/property/regression test skeletons from spec AC
  ae tests:scaffold --input docs/templates/plan-to-spec-normalization-sample.md
@@ -260,12 +262,22 @@ ae domain-model --language --sources "glossary.md"
 # Use explicit config
  pnpm run pbt -- --config tests/property/vitest.config.ts
 
+# Use environment override (lower priority than --config)
+ PBT_CONFIG=tests/property/vitest.config.ts pnpm run pbt
+
 # Pass-through vitest args
  pnpm run pbt -- tests/property/email.brand.is.pbt.test.ts --reporter=dot
 
+# Resolution order:
+# - --config/-c
+# - PBT_CONFIG environment variable
+# - tests/property/vitest.config.{ts,mts,js,mjs,cjs}
+# - tests/property directory
+#
 # Error contract:
 # - exit 2: PBT_CONFIG_NOT_FOUND (config/tests directory could not be resolved)
 # - exit 1: test failure
+# - exit 127: runner (pnpm) not found
 ```
 
 ### Setup

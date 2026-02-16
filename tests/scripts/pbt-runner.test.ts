@@ -33,6 +33,50 @@ describe('pbt runner arg parsing', () => {
     expect(parsed.explicitConfig).toBe('custom/vitest.config.ts');
     expect(parsed.passThrough).toEqual(['--runInBand']);
   });
+
+  it('uses PBT_CONFIG environment variable when --config is omitted', () => {
+    const originalPbtConfig = process.env.PBT_CONFIG;
+    process.env.PBT_CONFIG = 'env/vitest.config.ts';
+
+    try {
+      const parsed = parseArgs([
+        'node',
+        'scripts/testing/run-pbt.mjs',
+        '--reporter=dot',
+      ]);
+
+      expect(parsed.explicitConfig).toBe('env/vitest.config.ts');
+      expect(parsed.passThrough).toEqual(['--reporter=dot']);
+    } finally {
+      if (originalPbtConfig === undefined) {
+        delete process.env.PBT_CONFIG;
+      } else {
+        process.env.PBT_CONFIG = originalPbtConfig;
+      }
+    }
+  });
+
+  it('prioritizes --config over PBT_CONFIG environment variable', () => {
+    const originalPbtConfig = process.env.PBT_CONFIG;
+    process.env.PBT_CONFIG = 'env/vitest.config.ts';
+
+    try {
+      const parsed = parseArgs([
+        'node',
+        'scripts/testing/run-pbt.mjs',
+        '--config',
+        'cli/vitest.config.ts',
+      ]);
+
+      expect(parsed.explicitConfig).toBe('cli/vitest.config.ts');
+    } finally {
+      if (originalPbtConfig === undefined) {
+        delete process.env.PBT_CONFIG;
+      } else {
+        process.env.PBT_CONFIG = originalPbtConfig;
+      }
+    }
+  });
 });
 
 describe('pbt runner plan resolution', () => {
