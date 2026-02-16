@@ -9,7 +9,7 @@ Scope:
 ## Required inputs
 - Spec or Blueprint (if present): `docs/templates/spec-kit/` or `docs/templates/blueprint/`
 - Plan -> Spec template (if used): `docs/templates/plan-to-spec-normalization-template.md`
-- DbC template (if used): `docs/templates/spec-kit/dbc-template.md`
+- DbC definition source (if used): Plan->Spec, Spec/Blueprint, or Context Bundle
 - Context Bundle (if used): `docs/guides/context-bundle.md`
 - Context Vacuum checklist: `docs/guides/context-vacuum-checklist.md`
 - Verification summary: `docs/quality/pr-summary-template.md`
@@ -61,6 +61,5 @@ LLM First-Pass Review
 - `docs/quality/pr-summary-tool.md`
 - `docs/ci/copilot-review-gate.md`
 - `docs/templates/plan-to-spec-normalization-template.md`
-- `docs/templates/spec-kit/dbc-template.md`
 - `docs/guides/context-bundle.md`
 - `docs/quality/verification-gates.md`
