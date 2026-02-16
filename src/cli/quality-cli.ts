@@ -199,6 +199,7 @@ export function createQualityCommand(): Command {
     .option('-v, --verbose', 'Verbose output with detailed results')
     .option('-t, --timeout <ms>', 'Timeout for each gate in milliseconds', '300000')
     .option('-o, --output <dir>', 'Output directory for reports', 'reports/quality-gates')
+    .option('--no-history', 'Skip timestamped history report and write latest report only')
     .action(async (options) => {
       try {
         console.log(chalk.blue(`🔍 Running quality gates for ${options.env} environment`));
@@ -212,6 +213,7 @@ export function createQualityCommand(): Command {
           verbose: options.verbose,
           timeout: parseInt(options.timeout),
           outputDir: options.output,
+          noHistory: options.history === false,
         });
 
         // Exit with appropriate code
@@ -239,6 +241,7 @@ export function createQualityCommand(): Command {
     .option('-v, --verbose', 'Verbose output with detailed results')
     .option('-t, --timeout <ms>', 'Timeout for each gate in milliseconds', '300000')
     .option('-o, --output <dir>', 'Output directory for reports', 'reports/quality-gates')
+    .option('--no-history', 'Skip timestamped history report and write latest report only')
     .option('--max-rounds <number>', 'Maximum reconciliation rounds', '3')
     .option('--fix-input <path>', 'Failure artifacts JSON file for auto-fix')
     .option('--fix-output <dir>', 'Output directory for auto-fix', '.ae/auto-fix')
@@ -263,6 +266,7 @@ export function createQualityCommand(): Command {
             verbose: options.verbose,
             timeout: parseInt(options.timeout, 10) || 300000,
             outputDir: options.output,
+            noHistory: options.history === false,
           });
 
           lastReport = report;

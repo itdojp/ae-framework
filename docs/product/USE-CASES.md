@@ -100,6 +100,11 @@ node scripts/admin/apply-branch-protection.mjs .github/branch-protection.main.ve
 ```bash
 pnpm run ae-framework -- spec validate -i spec/example-spec.md --output .ae/ae-ir.json
 pnpm run ae-framework -- spec lint -i .ae/ae-ir.json
+
+# CI 向け機械可読レポート
+pnpm run ae-framework -- spec validate -i spec/example-spec.md --output .ae/ae-ir.json --format json --report-output artifacts/spec/validate-report.json
+pnpm run ae-framework -- spec lint -i .ae/ae-ir.json --format json --output artifacts/spec/lint-report.json
+# schema: schema/spec-validation-report.schema.json
 ```
 
 3) （任意）外部形式へ export

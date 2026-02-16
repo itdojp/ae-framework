@@ -69,6 +69,10 @@ pnpm run spec:validate -- -i spec/example-spec.md --output .ae/ae-ir.json
 
 # AE-IR lint
 pnpm run spec:lint -- -i .ae/ae-ir.json
+
+# CI向け JSON レポート（schema/spec-validation-report.schema.json 準拠）
+pnpm run ae-framework -- spec lint -i .ae/ae-ir.json --format json --output artifacts/spec/lint-report.json
+pnpm run ae-framework -- spec validate -i spec/example-spec.md --output .ae/ae-ir.json --format json --report-output artifacts/spec/validate-report.json
 ```
 
 ### 4.2 形式検証（任意）
@@ -142,6 +146,7 @@ CLIの詳細は `docs/reference/CLI-COMMANDS-REFERENCE.md` を参照してくだ
 pnpm run ae-framework -- --help
 pnpm run ae-framework -- spec --help
 pnpm run ae-framework -- quality run --env development
+pnpm run ae-framework -- quality run --env development --no-history
 pnpm run ae-framework -- security --help
 pnpm run ae-framework -- conformance --help
 pnpm run ae-framework -- integration --help

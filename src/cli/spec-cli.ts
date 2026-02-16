@@ -7,12 +7,182 @@
 
 import { Command } from 'commander';
 import { AESpecCompiler } from '../../packages/spec-compiler/src/index.js';
-import { resolve } from 'path';
-import { readFileSync } from 'fs';
+import { dirname, resolve } from 'path';
+import { mkdirSync, readFileSync, writeFileSync } from 'fs';
 import chalk from 'chalk';
 import { toMessage } from '../utils/error-utils.js';
 import { safeExit } from '../utils/safe-exit.js';
 import { exportKiroSpec } from './spec-exporter.js';
+import type { SpecLintIssue, SpecLintReport } from '../../packages/spec-compiler/src/types.js';
+
+type SpecOutputFormat = 'text' | 'json';
+type SpecIssueSeverity = 'error' | 'warning' | 'info';
+
+interface SpecCommandReportIssue {
+  ruleId: string;
+  severity: SpecIssueSeverity;
+  message: string;
+  category?: string;
+  location?: SpecLintIssue['location'];
+  suggestion?: string;
+}
+
+interface SpecCommandReport {
+  command: 'lint' | 'validate';
+  status: 'pass' | 'fail';
+  summary: {
+    errors: number;
+    warnings: number;
+    info: number;
+  };
+  issues: SpecCommandReportIssue[];
+  input: string;
+  aeIrOutput?: string;
+  thresholds: {
+    maxErrors: number;
+    maxWarnings: number;
+  };
+  generatedAt: string;
+}
+
+const normalizeSpecOutputFormat = (rawFormat: string | undefined): SpecOutputFormat => {
+  const normalized = (rawFormat ?? 'text').toLowerCase();
+  if (normalized === 'text' || normalized === 'json') {
+    return normalized;
+  }
+  throw new Error(`Unsupported --format: ${rawFormat}. Expected one of: text, json`);
+};
+
+const normalizeIssueSeverity = (severity: SpecLintIssue['severity']): SpecIssueSeverity => {
+  if (severity === 'warn') {
+    return 'warning';
+  }
+  return severity;
+};
+
+const detectIssueCategory = (issue: SpecLintIssue): string | undefined => {
+  if (issue.location?.section) {
+    return issue.location.section.toLowerCase();
+  }
+  const prefix = issue.id.match(/^([A-Z]+)/)?.[1];
+  if (!prefix) {
+    return undefined;
+  }
+  const categoryMap: Record<string, string> = {
+    STRUCT: 'structure',
+    BIZ: 'business',
+    CONS: 'consistency',
+    COMP: 'completeness',
+    SCHEMA: 'schema',
+    PARSE: 'parse',
+    COMPILER: 'compiler',
+  };
+  return categoryMap[prefix];
+};
+
+const createSpecCommandReport = (params: {
+  command: 'lint' | 'validate';
+  lintResult: SpecLintReport;
+  failed: boolean;
+  input: string;
+  maxErrors: number;
+  maxWarnings: number;
+  aeIrOutput?: string;
+}): SpecCommandReport => {
+  const {
+    command,
+    lintResult,
+    failed,
+    input,
+    maxErrors,
+    maxWarnings,
+    aeIrOutput,
+  } = params;
+
+  const report: SpecCommandReport = {
+    command,
+    status: failed ? 'fail' : 'pass',
+    summary: {
+      errors: lintResult.summary.errors,
+      warnings: lintResult.summary.warnings,
+      info: lintResult.summary.infos,
+    },
+    issues: lintResult.issues.map((issue) => {
+      const normalizedIssue: SpecCommandReportIssue = {
+        ruleId: issue.id,
+        severity: normalizeIssueSeverity(issue.severity),
+        message: issue.message,
+      };
+      const category = detectIssueCategory(issue);
+      if (category !== undefined) {
+        normalizedIssue.category = category;
+      }
+      if (issue.location !== undefined) {
+        normalizedIssue.location = issue.location;
+      }
+      if (issue.suggestion !== undefined) {
+        normalizedIssue.suggestion = issue.suggestion;
+      }
+      return normalizedIssue;
+    }),
+    input,
+    thresholds: {
+      maxErrors,
+      maxWarnings,
+    },
+    generatedAt: new Date().toISOString(),
+  };
+  if (aeIrOutput !== undefined) {
+    report.aeIrOutput = aeIrOutput;
+  }
+  return report;
+};
+
+const writeCommandOutput = (outputPath: string, content: string): void => {
+  mkdirSync(dirname(outputPath), { recursive: true });
+  writeFileSync(outputPath, content, 'utf8');
+};
+
+const formatIssueIcon = (severity: SpecLintIssue['severity']) => {
+  if (severity === 'error') {
+    return chalk.red('❌');
+  }
+  if (severity === 'warn') {
+    return chalk.yellow('⚠️ ');
+  }
+  return chalk.blue('ℹ️ ');
+};
+
+const renderSpecCommandReportText = (report: SpecCommandReport, maxIssues: number): string => {
+  const lines: string[] = [];
+  lines.push(`# ${report.command} report`);
+  lines.push(`status: ${report.status}`);
+  lines.push(`input: ${report.input}`);
+  if (report.aeIrOutput) {
+    lines.push(`aeIrOutput: ${report.aeIrOutput}`);
+  }
+  lines.push(`generatedAt: ${report.generatedAt}`);
+  lines.push(
+    `summary: errors=${report.summary.errors}, warnings=${report.summary.warnings}, info=${report.summary.info}`
+  );
+  lines.push(
+    `thresholds: maxErrors=${report.thresholds.maxErrors}, maxWarnings=${report.thresholds.maxWarnings}`
+  );
+  lines.push('');
+  lines.push('issues:');
+  if (report.issues.length === 0) {
+    lines.push('  - none');
+    return lines.join('\n');
+  }
+  report.issues.slice(0, maxIssues).forEach((issue) => {
+    const category = issue.category ? ` [${issue.category}]` : '';
+    lines.push(`  - (${issue.severity}) ${issue.ruleId}: ${issue.message}${category}`);
+  });
+  if (report.issues.length > maxIssues) {
+    lines.push(`  - ... and ${report.issues.length - maxIssues} more issues`);
+  }
+  return lines.join('\n');
+};
 
 export function createSpecCommand(): Command {
   const spec = new Command('spec');
@@ -56,52 +226,78 @@ export function createSpecCommand(): Command {
     .option('-i, --input <file>', 'Input AE-IR JSON file', '.ae/ae-ir.json')
     .option('--max-errors <n>', 'Maximum allowed errors', parseInt, 0)
     .option('--max-warnings <n>', 'Maximum allowed warnings', parseInt, 10)
+    .option('--format <format>', 'Output format (text|json)', 'text')
+    .option('--output <file>', 'Write lint report to file')
     .action(async (options) => {
       try {
         const inputPath = options.input || '.ae/ae-ir.json';
-        console.log(chalk.blue(`🔍 Linting ${inputPath}...`));
+        const format = normalizeSpecOutputFormat(options.format);
+        const printText = format === 'text';
+        if (printText) {
+          console.log(chalk.blue(`🔍 Linting ${inputPath}...`));
+        }
         
         const irContent = readFileSync(resolve(inputPath), 'utf-8');
         const ir = JSON.parse(irContent);
         
         const compiler = new AESpecCompiler();
         const result = await compiler.lint(ir);
-        
-        console.log(chalk.blue('\n📊 Lint Results:'));
-        console.log(`   ${result.summary.errors > 0 ? chalk.red('❌') : chalk.green('✅')} Errors: ${result.summary.errors}`);
-        console.log(`   ${result.summary.warnings > 0 ? chalk.yellow('⚠️ ') : chalk.green('✅')} Warnings: ${result.summary.warnings}`);
-        console.log(`   ${chalk.blue('ℹ️ ')} Info: ${result.summary.infos}`);
-        
-        if (result.issues.length > 0) {
-          console.log('\n📋 Issues:');
-          for (const issue of result.issues.slice(0, 10)) {
-            const icon = issue.severity === 'error' ? chalk.red('❌') : 
-                        issue.severity === 'warn' ? chalk.yellow('⚠️ ') : 
-                        chalk.blue('ℹ️ ');
-            const location = issue.location?.section ? 
-              chalk.gray(` [${issue.location.section}]`) : '';
-            
-            console.log(`${icon} ${chalk.bold(issue.id)}: ${issue.message}${location}`);
-            if (issue.suggestion) {
-              console.log(chalk.gray(`   💡 ${issue.suggestion}`));
-            }
-          }
-          
-          if (result.issues.length > 10) {
-            console.log(chalk.gray(`\n   ... and ${result.issues.length - 10} more issues`));
-          }
-        }
-        
-        // Check thresholds
+
         const failed = 
           result.summary.errors > options.maxErrors ||
           result.summary.warnings > options.maxWarnings;
-        
-        if (failed) {
-          console.log(chalk.red('\n❌ Quality thresholds exceeded'));
-          safeExit(1);
+
+        const report = createSpecCommandReport({
+          command: 'lint',
+          lintResult: result,
+          failed,
+          input: inputPath,
+          maxErrors: options.maxErrors,
+          maxWarnings: options.maxWarnings,
+        });
+
+        if (format === 'json') {
+          const payload = JSON.stringify(report, null, 2);
+          if (options.output) {
+            writeCommandOutput(resolve(options.output), payload);
+          }
+          console.log(payload);
         } else {
-          console.log(chalk.green('\n✅ All quality checks passed'));
+          console.log(chalk.blue('\n📊 Lint Results:'));
+          console.log(`   ${result.summary.errors > 0 ? chalk.red('❌') : chalk.green('✅')} Errors: ${result.summary.errors}`);
+          console.log(`   ${result.summary.warnings > 0 ? chalk.yellow('⚠️ ') : chalk.green('✅')} Warnings: ${result.summary.warnings}`);
+          console.log(`   ${chalk.blue('ℹ️ ')} Info: ${result.summary.infos}`);
+
+          if (result.issues.length > 0) {
+            console.log('\n📋 Issues:');
+            for (const issue of result.issues.slice(0, 10)) {
+              const location = issue.location?.section ?
+                chalk.gray(` [${issue.location.section}]`) : '';
+
+              console.log(`${formatIssueIcon(issue.severity)} ${chalk.bold(issue.id)}: ${issue.message}${location}`);
+              if (issue.suggestion) {
+                console.log(chalk.gray(`   💡 ${issue.suggestion}`));
+              }
+            }
+
+            if (result.issues.length > 10) {
+              console.log(chalk.gray(`\n   ... and ${result.issues.length - 10} more issues`));
+            }
+          }
+
+          if (options.output) {
+            writeCommandOutput(resolve(options.output), renderSpecCommandReportText(report, 10));
+          }
+
+          if (failed) {
+            console.log(chalk.red('\n❌ Quality thresholds exceeded'));
+          } else {
+            console.log(chalk.green('\n✅ All quality checks passed'));
+          }
+        }
+
+        if (failed) {
+          safeExit(1);
         }
         
       } catch (error: unknown) {
@@ -115,13 +311,19 @@ export function createSpecCommand(): Command {
     .description('Validate AE-Spec file (compile + lint)')
     .requiredOption('-i, --input <file>', 'Input markdown file')
     .option('--output <file>', 'Output JSON file (default: .ae/ae-ir.json)')
+    .option('--report-output <file>', 'Output validation report file (default: stdout only)')
+    .option('--format <format>', 'Validation report format (text|json)', 'text')
     .option('--max-errors <n>', 'Maximum allowed errors', parseInt, 0)
     .option('--max-warnings <n>', 'Maximum allowed warnings', parseInt, 10)
     .option('--relaxed', 'Relax strict schema errors to warnings')
     .option('--desc-max <n>', 'Override description max length (e.g., 1000)', parseInt)
     .action(async (options) => {
       try {
-        console.log(chalk.blue(`🔍 Validating ${options.input}...`));
+        const format = normalizeSpecOutputFormat(options.format);
+        const printText = format === 'text';
+        if (printText) {
+          console.log(chalk.blue(`🔍 Validating ${options.input}...`));
+        }
         
         const compiler = new AESpecCompiler();
         const outputPath = options.output || '.ae/ae-ir.json';
@@ -135,55 +337,83 @@ export function createSpecCommand(): Command {
         }
         
         // Compile
-        console.log(chalk.blue('📝 Compiling...'));
+        if (printText) {
+          console.log(chalk.blue('📝 Compiling...'));
+        }
         const ir = await compiler.compile({
           inputPath: resolve(options.input),
           outputPath: resolve(outputPath),
           validate: false, // We'll lint separately
         });
         
-        console.log(chalk.green('✅ Compilation successful'));
-        
-        // Lint
-        console.log(chalk.blue('🔍 Linting...'));
-        const lintResult = await compiler.lint(ir);
-        
-        console.log(chalk.blue('\n📊 Validation Results:'));
-        console.log(`   ${lintResult.summary.errors > 0 ? chalk.red('❌') : chalk.green('✅')} Errors: ${lintResult.summary.errors}`);
-        console.log(`   ${lintResult.summary.warnings > 0 ? chalk.yellow('⚠️ ') : chalk.green('✅')} Warnings: ${lintResult.summary.warnings}`);
-        console.log(`   ${chalk.blue('ℹ️ ')} Info: ${lintResult.summary.infos}`);
-        
-        if (lintResult.issues.length > 0) {
-          console.log('\n📋 Top Issues:');
-          for (const issue of lintResult.issues.slice(0, 5)) {
-            const icon = issue.severity === 'error' ? chalk.red('❌') : 
-                        issue.severity === 'warn' ? chalk.yellow('⚠️ ') : 
-                        chalk.blue('ℹ️ ');
-            console.log(`${icon} ${issue.message}`);
-          }
-          
-          if (lintResult.issues.length > 5) {
-            console.log(chalk.gray(`\n   ... and ${lintResult.issues.length - 5} more issues`));
-          }
+        if (printText) {
+          console.log(chalk.green('✅ Compilation successful'));
         }
         
+        // Lint
+        if (printText) {
+          console.log(chalk.blue('🔍 Linting...'));
+        }
+        const lintResult = await compiler.lint(ir);
+
         const failed = 
           lintResult.summary.errors > options.maxErrors ||
           lintResult.summary.warnings > options.maxWarnings;
-        
-        if (failed) {
-          console.log(chalk.red('\n❌ Validation failed - quality thresholds exceeded'));
-          console.log(chalk.red(`   Max errors allowed: ${options.maxErrors}, found: ${lintResult.summary.errors}`));
-          console.log(chalk.red(`   Max warnings allowed: ${options.maxWarnings}, found: ${lintResult.summary.warnings}`));
-          safeExit(1);
+
+        const report = createSpecCommandReport({
+          command: 'validate',
+          lintResult,
+          failed,
+          input: options.input,
+          aeIrOutput: outputPath,
+          maxErrors: options.maxErrors,
+          maxWarnings: options.maxWarnings,
+        });
+
+        if (format === 'json') {
+          const payload = JSON.stringify(report, null, 2);
+          if (options.reportOutput) {
+            writeCommandOutput(resolve(options.reportOutput), payload);
+          }
+          console.log(payload);
         } else {
-          console.log(chalk.green('\n✅ Validation passed successfully'));
-          console.log(chalk.gray(`   AE-IR saved to: ${outputPath}`));
+          console.log(chalk.blue('\n📊 Validation Results:'));
+          console.log(`   ${lintResult.summary.errors > 0 ? chalk.red('❌') : chalk.green('✅')} Errors: ${lintResult.summary.errors}`);
+          console.log(`   ${lintResult.summary.warnings > 0 ? chalk.yellow('⚠️ ') : chalk.green('✅')} Warnings: ${lintResult.summary.warnings}`);
+          console.log(`   ${chalk.blue('ℹ️ ')} Info: ${lintResult.summary.infos}`);
+
+          if (lintResult.issues.length > 0) {
+            console.log('\n📋 Top Issues:');
+            for (const issue of lintResult.issues.slice(0, 5)) {
+              console.log(`${formatIssueIcon(issue.severity)} ${issue.message}`);
+            }
+
+            if (lintResult.issues.length > 5) {
+              console.log(chalk.gray(`\n   ... and ${lintResult.issues.length - 5} more issues`));
+            }
+          }
+
+          if (options.reportOutput) {
+            writeCommandOutput(resolve(options.reportOutput), renderSpecCommandReportText(report, 5));
+          }
+
+          if (failed) {
+            console.log(chalk.red('\n❌ Validation failed - quality thresholds exceeded'));
+            console.log(chalk.red(`   Max errors allowed: ${options.maxErrors}, found: ${lintResult.summary.errors}`));
+            console.log(chalk.red(`   Max warnings allowed: ${options.maxWarnings}, found: ${lintResult.summary.warnings}`));
+          } else {
+            console.log(chalk.green('\n✅ Validation passed successfully'));
+            console.log(chalk.gray(`   AE-IR saved to: ${outputPath}`));
+          }
+        }
+
+        if (failed) {
+          safeExit(1);
         }
         
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Validation failed: ${toMessage(error)}`));
-        process.exit(1);
+        safeExit(1);
       }
     });
 
