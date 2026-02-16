@@ -277,6 +277,7 @@ export class ConformanceCli {
 
       // Save results
       if (options.format === 'json') {
+        mkdirSync(path.dirname(options.output), { recursive: true });
         writeFileSync(options.output, JSON.stringify(result, null, 2));
         console.log(`💾 Results saved to ${options.output}`);
       }

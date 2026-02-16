@@ -65,10 +65,10 @@ CLIは YAML 設定を探索して読み込みます（`src/cli/config/ConfigLoad
 - 検証コマンド（例: `spec/example-spec.md`）:
 ```bash
 # AE-Spec (Markdown) -> AE-IR (JSON)
-pnpm run spec:validate -- -i spec/example-spec.md --output .ae/ae-ir.json
+pnpm run spec:validate -i spec/example-spec.md --output .ae/ae-ir.json
 
 # AE-IR lint
-pnpm run spec:lint -- -i .ae/ae-ir.json
+pnpm run spec:lint -i .ae/ae-ir.json
 
 # CI向け JSON レポート（schema/spec-validation-report.schema.json 準拠）
 pnpm run ae-framework -- spec lint -i .ae/ae-ir.json --format json --output artifacts/spec/lint-report.json

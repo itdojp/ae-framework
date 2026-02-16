@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ConformanceCli } from '../../src/cli/conformance-cli.js';
-import { writeFileSync, unlinkSync, existsSync, readFileSync } from 'fs';
+import { writeFileSync, unlinkSync, existsSync, readFileSync, rmSync } from 'fs';
 
 describe('ConformanceCli', () => {
   let cli: ConformanceCli;
@@ -45,7 +45,7 @@ describe('ConformanceCli', () => {
     // Cleanup test files
     testFiles.forEach(file => {
       if (existsSync(file)) {
-        unlinkSync(file);
+        rmSync(file, { recursive: true, force: true });
       }
     });
     guardedFiles.forEach((file) => {
@@ -263,6 +263,34 @@ describe('ConformanceCli', () => {
         expect.stringContaining(`Results saved to ${outputFile}`)
       );
       expect(existsSync(outputFile)).toBe(true);
+    });
+
+    it('should create output directory when missing', async () => {
+      const inputData = { test: true };
+      const inputFile = 'test-input-output-dir.json';
+      const outputDir = 'tmp-conformance-cli-output/nested';
+      const outputFile = `${outputDir}/result.json`;
+
+      writeFileSync(inputFile, JSON.stringify(inputData, null, 2));
+      if (existsSync(outputDir)) {
+        rmSync(outputDir, { recursive: true, force: true });
+      }
+
+      testFiles.push(inputFile, 'tmp-conformance-cli-output');
+
+      const command = cli.createCommand();
+      const args = [
+        'node', 'cli', 'verify',
+        '--input', inputFile,
+        '--output', outputFile
+      ];
+
+      await command.parseAsync(args);
+
+      expect(existsSync(outputFile)).toBe(true);
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        expect.stringContaining(`Results saved to ${outputFile}`)
+      );
     });
   });
 
