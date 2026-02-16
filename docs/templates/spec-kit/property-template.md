@@ -38,3 +38,4 @@ test('property: <property-id>', () => {
 ## Notes
 - Keep the generator small first; expand with edge cases later.
 - Prefer shrinking-friendly data shapes.
+- Define contract IDs and gate/evidence mapping in `dbc-template.md`; keep this template focused on executable property tests.
