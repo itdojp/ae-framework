@@ -30,6 +30,19 @@
   - A-1: verify-lite と review gate が運用中である。
   - A-2: PR本文にトレーサビリティ欄を記載できる。
 
+### 2.1 Design by Contract (DbC) / 契約条件
+
+- Preconditions（PRE-*）:
+  - PRE-001: PR本文に対象の Plan URL と関連 Spec path が記載されていること。
+  - Violation behavior（違反時の期待挙動）: review gate で差し戻し、PRコメントで不足項目を明示する。
+- Postconditions（POST-*）:
+  - POST-001: Plan -> Spec -> Gate -> Evidence の対応が PR から追跡可能であること。
+  - Violation behavior（違反時の期待挙動）: verify-lite 結果共有を保留し、追記後に再レビューする。
+- Invariants（INV-*）:
+  - INV-001: Required gates（verify-lite/review gate）の確認を省略しないこと。
+  - Enforcement location（どこで担保するか）: PRテンプレチェック + review gate。
+  - Violation behavior（違反時の期待挙動）: `do-not-merge` の維持。
+
 ## 3. Acceptance Criteria (AC) / 受入基準
 
 - AC-1 (Given / When / Then):  
@@ -71,6 +84,16 @@
   - Unit: n/a（ドキュメント変更）
   - Integration: n/a（ドキュメント変更）
   - Property / contract: 既存契約ドキュメントとの整合を確認
+  - Runtime conformance: n/a（ドキュメント変更）
+  - Pact / API contract: n/a（ドキュメント変更）
+
+- DbC verification mapping:
+
+| Contract ID | Type | Verification (test/gate) | Evidence |
+| --- | --- | --- | --- |
+| PRE-001 | precondition | Copilot Review Gate / checklist review | PR review thread |
+| POST-001 | postcondition | verify-lite summary確認 | `artifacts/verify-lite/verify-lite-run-summary.json` |
+| INV-001 | invariant | Required gate確認（review gate + verify-lite） | Required checks status |
 
 ## 6. Evidence Contract / 証跡契約
 
@@ -85,15 +108,17 @@
 
 ## 7. Traceability Map / トレーサビリティ
 
-| Plan item | Spec artifact | Gate / Check | Evidence |
+| Plan or Contract item | Spec artifact | Gate / Check | Evidence |
 | --- | --- | --- | --- |
 | Thread->Repo手順の定義 | `docs/guides/THREAD-REPO-CI-FLOW.md` | review gate | PR review thread |
 | テンプレ適用例の追加 | `docs/templates/plan-to-spec-normalization-sample.md` | verify-lite | CI summary artifact |
+| PRE-001 / POST-001 / INV-001 | `docs/templates/plan-to-spec-normalization-template.md` | review gate + verify-lite | Required checks status |
 
 ## 8. Delivery Checklist / 実行チェックリスト
 
 - [x] Plan 由来の要件が Spec に反映されている
 - [x] AC と NFR がレビュー可能な形で固定されている
+- [x] PRE/POST/INV と違反時挙動が明記されている
 - [x] Required gates の合否が確認済み
 - [x] Evidence が PR から追跡可能
 - [x] Non-goals / out-of-scope が明記されている
