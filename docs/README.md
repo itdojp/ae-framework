@@ -87,8 +87,9 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - Adoption sample flow: `quality/adoption-sample-flow.md`
 - Runbooks / Traceability / Runtime Contracts: see `./quality` and `./verify`
  - Coverage policy: `quality/coverage-policy.md`（しきい値の由来/Required化の運用）
- - Formal runbook: `quality/formal-runbook.md`（ラベル/dispatch/要約/環境変数）
- - CSP verification (cspx runner): `quality/formal-csp.md`（使い方/成果物/実行結果例）
+- Formal runbook: `quality/formal-runbook.md`（ラベル/dispatch/要約/環境変数）
+- CSP verification (cspx runner): `quality/formal-csp.md`（使い方/成果物/実行結果例）
+- Usefulness evaluation: `quality/usefulness-evaluation.md`（4軸スコア算出/終了コード契約）
  - CI policy: `ci-policy.md`（PR必須ゲート/opt-in/運用方針）
  - Opt-in controls: `ci/OPT-IN-CONTROLS.md`（ラベル/Slash/dispatchの一覧）
  - Copilot Review Gate: `ci/copilot-review-gate.md`（レビュー必須化）
@@ -214,6 +215,7 @@ Claude CodeやMCPとの統合
 - [verify-first-implementation-runbook.md](./quality/verify-first-implementation-runbook.md) - Verify-first 実装運用の標準手順（Plan→Spec→Gate→Evidence）
 - [path-normalization-contract.md](./quality/path-normalization-contract.md) - 成果物パス正規化契約（repo-relative優先）
 - [run-manifest-freshness-contract.md](./quality/run-manifest-freshness-contract.md) - run-manifest鮮度判定契約（stale artifact 検出）
+- [usefulness-evaluation.md](./quality/usefulness-evaluation.md) - 有用性評価レポート契約（4軸/JSON+Markdown）
 - [adoption-sample-flow.md](./quality/adoption-sample-flow.md) - 導入の最小フロー（エンドツーエンド）
 - [formal-ops-guidelines.md](./quality/formal-ops-guidelines.md) - 運用パターン/命名/証跡/CI分割の指針
 - [formal-tools-setup.md](./quality/formal-tools-setup.md) - ローカル環境セットアップ（Apalache/TLC/Z3/cvc5）

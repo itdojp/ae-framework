@@ -174,6 +174,9 @@ pnpm run verify:lite
 # fast/full を統一実行（JSONサマリ出力）
 pnpm run verify:profile -- --profile fast --json --out artifacts/verify-profile-summary.json
 
+# 有用性評価レポート（JSON + Markdown）
+pnpm run evaluate:usefulness -- --strict-inputs --min-score 70
+
 # 依存監査
 pnpm run security:integrated:quick
 ```
@@ -182,6 +185,7 @@ pnpm run security:integrated:quick
 - Full smoke は `pnpm run verify:formal`
 - Formal ツールの導入状況確認は `pnpm run tools:formal:check`
 - CSP 詳細手順は `docs/quality/formal-csp.md`
+- 有用性評価の入力契約・スコア算出規約は `docs/quality/usefulness-evaluation.md`
 
 ## 8. トラブルシューティング
 

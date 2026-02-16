@@ -63,6 +63,7 @@
     "test:perf": "vitest run --workspace configs/vitest/vitest.workspace.ts --project performance --passWithNoTests",
     "verify:lite": "node scripts/admin/run-script-alias.mjs verify:lite",
     "verify:profile": "node scripts/verify/run.mjs",
+    "evaluate:usefulness": "node scripts/evaluation/evaluate-usefulness.mjs",
     "flow:run": "node scripts/agent-builder/flow-runner.mjs --flow fixtures/flow/sample.flow.json",
     "demo:ab-poc": "node scripts/agent-builder/flow-runner.mjs --flow fixtures/flow/sample.flow.json --summary packages/envelope/__fixtures__/verify-lite-summary.json --output artifacts/agent-builder/envelope.json",
     "test:all": "vitest run",
