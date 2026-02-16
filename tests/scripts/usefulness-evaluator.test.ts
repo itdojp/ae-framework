@@ -103,6 +103,23 @@ describe('usefulness evaluator execution', () => {
     }
   });
 
+  it('returns exit 2 when default run-index JSON is malformed', () => {
+    const tmp = mkdtempSync(path.join(tmpdir(), 'ae-usefulness-invalid-default-'));
+    try {
+      mkdirSync(path.join(tmp, 'artifacts', 'runs'), { recursive: true });
+      writeFileSync(path.join(tmp, 'artifacts', 'runs', 'index.json'), '{broken', 'utf8');
+
+      const options = parseArgs([
+        'node',
+        'scripts/evaluation/evaluate-usefulness.mjs',
+      ]);
+      const exitCode = runUsefulness(options, { cwd: tmp, logger: { log() {}, error() {} } });
+      expect(exitCode).toBe(2);
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
   it('writes reports and returns exit 1 when min-score is not met', () => {
     const tmp = mkdtempSync(path.join(tmpdir(), 'ae-usefulness-threshold-'));
     try {

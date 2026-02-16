@@ -691,7 +691,8 @@ export function runUsefulness(options, {
   });
 
   for (const status of inputStatus) {
-    if (status.provided && status.error) {
+    const hasParseError = Boolean(status.exists && status.error && String(status.error).startsWith('invalid_json:'));
+    if (hasParseError || (status.provided && status.error)) {
       logger.error(`[usefulness] invalid input (${status.key}): ${status.path} (${status.error})`);
       return EXIT_INVALID_INPUT;
     }
