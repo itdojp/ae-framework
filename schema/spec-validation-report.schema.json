@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://itdojp.github.io/ae-framework/schema/spec-validation-report.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/spec-validation-report.schema.json",
   "title": "AE Spec Validation/Lint Report",
   "description": "Machine-readable report emitted by `ae spec lint` and `ae spec validate` when --format json is used.",
   "type": "object",
