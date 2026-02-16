@@ -66,6 +66,8 @@ ae tdd
 # Tests-first prompt generation (recommended after intent)
  ae tests:suggest --template http-api --intent "Build a minimal todo API"
  ae tests:suggest --template auth --input requirements.md --output tests-first.md
+# auth template placeholders ({intent},{auth_type},{roles},{resources}) are auto-resolved.
+# Supported input hints: intent:, auth_type:, roles:, resources: (missing fields => "unspecified")
 
 # Generate acceptance/contract/property/regression test skeletons from spec AC
  ae tests:scaffold --input docs/templates/plan-to-spec-normalization-sample.md
@@ -250,6 +252,22 @@ ae domain-model --language --sources "glossary.md"
 # optional step の失敗は optional_fail_count に集計され、required が通れば exit code 0。
 ```
 
+### Property-Based Test Runner
+```bash
+# Default resilient entrypoint (config auto-discovery + fallback)
+ pnpm run pbt
+
+# Use explicit config
+ pnpm run pbt -- --config tests/property/vitest.config.ts
+
+# Pass-through vitest args
+ pnpm run pbt -- tests/property/email.brand.is.pbt.test.ts --reporter=dot
+
+# Error contract:
+# - exit 2: PBT_CONFIG_NOT_FOUND (config/tests directory could not be resolved)
+# - exit 1: test failure
+```
+
 ### Setup
 ```bash
 ae setup list
@@ -365,6 +383,7 @@ ae check
 ae intent --analyze --sources "requirements.md"
  ae intent --validate --sources "requirements.md"
  ae tests:suggest --template http-api --intent "Build a minimal todo API"
+ # auth テンプレートの {intent}/{auth_type}/{roles}/{resources} は入力から自動展開されます
  ae tests:scaffold --input docs/templates/plan-to-spec-normalization-sample.md
  ae tests:scaffold --input docs/templates/plan-to-spec-normalization-sample.md --no-contract
 ```

@@ -109,7 +109,7 @@ pnpm run test:unit
 pnpm run test:int
 ```
 
-必要に応じて、`pnpm run pbt` や `pnpm run bdd` を追加します。
+必要に応じて、`pnpm run pbt` や `pnpm run bdd` を追加します。`pbt` は `tests/property/vitest.config.*` を優先し、見つからない場合は `tests/property` ディレクトリにフォールバックします（解決不能時は `PBT_CONFIG_NOT_FOUND` で exit 2）。
 
 ### 4.4 CI運用の基本
 - PR作成時に verify-lite を基本ゲートとします
