@@ -78,6 +78,7 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - Guarded automation template: `quality/guarded-automation-template.md`
 - Incident triage template: `quality/incident-triage-template.md`
 - Artifacts contract: `quality/ARTIFACTS-CONTRACT.md`
+- Contract taxonomy (DbC / API / Artifacts): `quality/contract-taxonomy.md`
 - Verify-first gate baseline: `quality/verify-first-gate-baseline.md`
 - Verify-first failure diagnostic template: `quality/verify-first-failure-diagnostic-template.md`
 - Verify-first failure comment design: `quality/verify-first-failure-comment-design.md`
@@ -205,6 +206,7 @@ Claude CodeやMCPとの統合
 - [guarded-automation-template.md](./quality/guarded-automation-template.md) - Guarded automation 運用テンプレ
 - [incident-triage-template.md](./quality/incident-triage-template.md) - インシデント一次切り分けテンプレ
 - [ARTIFACTS-CONTRACT.md](./quality/ARTIFACTS-CONTRACT.md) - 成果物契約（Required/Optional）
+- [contract-taxonomy.md](./quality/contract-taxonomy.md) - contract 用語の基準（DbC / API / Artifacts）
 - [verify-first-gate-baseline.md](./quality/verify-first-gate-baseline.md) - Verify-first の最小Required/Opt-inゲート基準
 - [verify-first-failure-diagnostic-template.md](./quality/verify-first-failure-diagnostic-template.md) - CI失敗時の診断テンプレ（再現手順/Evidence）
 - [verify-first-failure-comment-design.md](./quality/verify-first-failure-comment-design.md) - 失敗診断テンプレをPR自動コメントに連携する設計案
