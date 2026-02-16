@@ -38,7 +38,13 @@ async function main() {
       process.stdin.on('error', reject);
     });
     const line = input.trim().split('\n').filter(Boolean).pop() || '{}';
-    const req = JSON.parse(line);
+    let req;
+    try {
+      req = JSON.parse(line);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return respondError(`Invalid JSON input: ${message}`, 2);
+    }
     const action = req.action;
     const args = req.args || {};
 

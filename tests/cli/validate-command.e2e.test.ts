@@ -77,4 +77,25 @@ describe('validate command routing', () => {
     expect(result.status).toBe(1);
     expect(result.stdout).toContain('No readable validation sources found');
   });
+
+  it('treats whitespace file paths as filesystem sources when the file exists', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'ae-validate-space-'));
+    const file = join(dir, 'spec v2.md');
+    writeFileSync(
+      file,
+      [
+        'REQ-SPACE-1 must be traceable to STORY-SPACE-1 and SPEC-SPACE-1',
+        'REQ-SPACE-2 must be traceable to STORY-SPACE-2 and SPEC-SPACE-2',
+      ].join('\n'),
+      'utf8',
+    );
+
+    const result = runCli(['validate', '--traceability', '--sources', file]);
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('Traceability Validation Complete');
+    expect(result.stdout).toContain('Resolved: 1');
+    expect(result.stdout).not.toContain('inline:');
+
+    rmSync(dir, { recursive: true, force: true });
+  });
 });

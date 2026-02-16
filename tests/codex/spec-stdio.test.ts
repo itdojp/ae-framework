@@ -48,4 +48,16 @@ describe('spec-stdio bridge', () => {
     expect(parsed.ok).toBe(false);
     expect(parsed.error).toContain('Missing action');
   });
+
+  it('returns non-zero(2) on malformed JSON input', () => {
+    const result = spawnSync(process.execPath, [scriptPath], {
+      input: '{"action":"validate",',
+      encoding: 'utf8',
+      timeout: 60_000,
+    });
+    expect(result.status).toBe(2);
+    const parsed = parseLastJsonLine(result.stdout);
+    expect(parsed.ok).toBe(false);
+    expect(parsed.error).toContain('Invalid JSON input');
+  });
 });

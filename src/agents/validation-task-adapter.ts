@@ -668,54 +668,49 @@ ${validation.alignmentGaps.map((gap: any) =>
 
     for (const source of requestedSources) {
       const abs = path.resolve(cwd, source);
-      const looksLikePath = !/\s/.test(source);
-      if (!looksLikePath) {
-        resolvedSources.push({ path: `inline:${source.slice(0, 40)}`, content: source });
-        continue;
-      }
-
-      if (!fs.existsSync(abs)) {
-        missingSources.push(source);
-        continue;
-      }
-
-      const stat = fs.statSync(abs);
-      if (stat.isFile()) {
-        const content = this.tryReadFile(abs);
-        if (content === null) {
-          missingSources.push(source);
-          continue;
-        }
-        const key = path.normalize(abs);
-        if (seen.has(key)) {
-          continue;
-        }
-        seen.add(key);
-        resolvedSources.push({ path: source, content });
-        continue;
-      }
-
-      if (stat.isDirectory()) {
-        const files = this.collectReadableFiles(abs);
-        if (files.length === 0) {
-          missingSources.push(source);
-          continue;
-        }
-        for (const file of files) {
-          const key = path.normalize(file);
+      if (fs.existsSync(abs)) {
+        const stat = fs.statSync(abs);
+        if (stat.isFile()) {
+          const content = this.tryReadFile(abs);
+          if (content === null) {
+            missingSources.push(source);
+            continue;
+          }
+          const key = path.normalize(abs);
           if (seen.has(key)) {
             continue;
           }
           seen.add(key);
-          const content = this.tryReadFile(file);
-          if (content === null) {
+          resolvedSources.push({ path: source, content });
+          continue;
+        }
+
+        if (stat.isDirectory()) {
+          const files = this.collectReadableFiles(abs);
+          if (files.length === 0) {
+            missingSources.push(source);
             continue;
           }
-          resolvedSources.push({ path: path.relative(cwd, file), content });
-          if (resolvedSources.length >= this.sourceFileLimit) {
-            break;
+          for (const file of files) {
+            const key = path.normalize(file);
+            if (seen.has(key)) {
+              continue;
+            }
+            seen.add(key);
+            const content = this.tryReadFile(file);
+            if (content === null) {
+              continue;
+            }
+            resolvedSources.push({ path: path.relative(cwd, file), content });
+            if (resolvedSources.length >= this.sourceFileLimit) {
+              break;
+            }
           }
         }
+      } else if (/\s/.test(source)) {
+        resolvedSources.push({ path: `inline:${source.slice(0, 40)}`, content: source });
+      } else {
+        missingSources.push(source);
       }
 
       if (resolvedSources.length >= this.sourceFileLimit) {
