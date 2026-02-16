@@ -58,9 +58,10 @@ ae tdd
  ae tests:suggest --template http-api --intent "Build a minimal todo API"
  ae tests:suggest --template auth --input requirements.md --output tests-first.md
 
-# Generate acceptance/property test skeletons from spec AC
+# Generate acceptance/contract/property/regression test skeletons from spec AC
  ae tests:scaffold --input docs/templates/plan-to-spec-normalization-sample.md
  ae tests:scaffold --input spec/example-spec.md --spec-id order-checkout --out tests/generated/spec-kit/order-checkout
+ ae tests:scaffold --input spec/example-spec.md --no-regression
 ```
 
 ### Natural Language Requirements
@@ -331,6 +332,7 @@ ae intent --analyze --sources "requirements.md"
  ae intent --validate --sources "requirements.md"
  ae tests:suggest --template http-api --intent "Build a minimal todo API"
  ae tests:scaffold --input docs/templates/plan-to-spec-normalization-sample.md
+ ae tests:scaffold --input docs/templates/plan-to-spec-normalization-sample.md --no-contract
 ```
 
 ### Phase 2–6 コア

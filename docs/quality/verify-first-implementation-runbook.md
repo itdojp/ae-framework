@@ -52,6 +52,13 @@ ae tests:scaffold --input docs/templates/plan-to-spec-normalization-sample.md
 - `tests/generated/spec-kit/<spec-id>/bdd/<spec-id>.feature`
 - `tests/generated/spec-kit/<spec-id>/<spec-id>.acceptance.md`
 - `tests/generated/spec-kit/<spec-id>/property/<spec-id>.property.test.ts`
+- `tests/generated/spec-kit/<spec-id>/contract/<spec-id>.contract.test.ts`
+- `tests/generated/spec-kit/<spec-id>/regression/<spec-id>.regression.test.ts`
+
+配置規約と更新ルール（最小）:
+- 雛形生成物は `tests/generated/spec-kit/<spec-id>/` 配下に集約し、手動作成の本実装テストとは分離する。
+- AC変更時は `ae tests:scaffold ... --overwrite` で再生成し、差分レビューで必要な手修正を反映する。
+- `*.acceptance.md` は AC とテスト成果物パスの対応表として維持し、PR で必ず更新有無を確認する。
 
 ### Step 3: Required ゲート実行
 
@@ -74,6 +81,8 @@ PRでは Required を fail-closed とし、未通過のまま merge しない。
 - 再現コマンド
 - 関連Spec/Policyリンク
 - CI run URL と artifact path
+
+PR自動コメントへの連携案は `docs/quality/verify-first-failure-comment-design.md` を参照。
 
 ## 4. Codex連携あり/なしの運用
 
@@ -101,4 +110,5 @@ PRでは Required を fail-closed とし、未通過のまま merge しない。
 - `docs/quality/verify-first-artifacts-catalog.md`
 - `docs/quality/verify-first-gate-baseline.md`
 - `docs/quality/verify-first-failure-diagnostic-template.md`
+- `docs/quality/verify-first-failure-comment-design.md`
 - `docs/integrations/CODEX-VENDOR-NEUTRAL-BOUNDARY.md`
