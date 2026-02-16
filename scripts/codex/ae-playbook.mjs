@@ -22,7 +22,13 @@ const ART_ROOT = path.join(CWD, 'artifacts', 'ae');
 const CONTEXT_FILE = path.join(ART_ROOT, 'context.json');
 
 function parseArgs(argv) {
-  const args = { resume: false, skip: new Set(), enableFormal: false, formalTimeoutMs: 0 };
+  const args = {
+    resume: false,
+    skip: new Set(),
+    enableFormal: false,
+    formalTimeoutMs: 0,
+    heartbeatMs: 30_000,
+  };
   for (const a of argv.slice(2)) {
     if (a === '--resume') args.resume = true;
     else if (a.startsWith('--skip=')) {
@@ -33,6 +39,9 @@ function parseArgs(argv) {
     } else if (a.startsWith('--formal-timeout=')) {
       const v = Number(a.split('=')[1]);
       if (Number.isFinite(v) && v >= 0) args.formalTimeoutMs = v;
+    } else if (a.startsWith('--heartbeat-ms=')) {
+      const v = Number(a.split('=')[1]);
+      if (Number.isFinite(v) && v >= 0) args.heartbeatMs = Math.floor(v);
     }
   }
   return args;
@@ -43,6 +52,23 @@ async function ensureDir(dir) { await fs.mkdir(dir, { recursive: true }); }
 async function writeJson(file, obj) {
   await ensureDir(path.dirname(file));
   await fs.writeFile(file, JSON.stringify(obj, null, 2));
+}
+
+export function formatDuration(ms) {
+  const safeMs = Math.max(0, Number(ms) || 0);
+  if (safeMs < 1000) return `${safeMs}ms`;
+  const totalSec = Math.floor(safeMs / 1000);
+  const min = Math.floor(totalSec / 60);
+  const sec = totalSec % 60;
+  return min > 0 ? `${min}m${sec}s` : `${totalSec}s`;
+}
+
+export function formatHeartbeatLine(phaseName, elapsedMs) {
+  return `[ae-playbook] [${phaseName}] heartbeat elapsed=${formatDuration(elapsedMs)}\n`;
+}
+
+function phaseLog(phaseName, message) {
+  process.stdout.write(`[ae-playbook] [${phaseName}] ${message}\n`);
 }
 
 function createDefaultContext() {
@@ -61,11 +87,40 @@ function sh(cmd, args, opts) {
   });
 }
 
-async function teeTo(file, runner) {
+export async function teeTo(file, runner, options = {}) {
   await ensureDir(path.dirname(file));
   let log = '';
-  const append = async (s) => { log += s; };
-  const res = await runner({ onStdout: append, onStderr: append });
+  const phaseName = (options.phaseName || 'run').toString();
+  const heartbeatMs = Number.isFinite(options.heartbeatMs) ? Math.max(0, Math.floor(options.heartbeatMs)) : 30_000;
+  const stdoutWriter = typeof options.stdoutWriter === 'function' ? options.stdoutWriter : (s) => process.stdout.write(s);
+  const stderrWriter = typeof options.stderrWriter === 'function' ? options.stderrWriter : (s) => process.stderr.write(s);
+  const streamStdout = options.streamStdout !== false;
+  const streamStderr = options.streamStderr !== false;
+  const startedAt = Date.now();
+
+  const onStdout = (s) => {
+    log += s;
+    if (streamStdout) stdoutWriter(s);
+  };
+  const onStderr = (s) => {
+    log += s;
+    if (streamStderr) stderrWriter(s);
+  };
+
+  let heartbeat = null;
+  if (heartbeatMs > 0) {
+    heartbeat = setInterval(() => {
+      stdoutWriter(formatHeartbeatLine(phaseName, Date.now() - startedAt));
+    }, heartbeatMs);
+    heartbeat.unref?.();
+  }
+
+  let res;
+  try {
+    res = await runner({ onStdout, onStderr });
+  } finally {
+    if (heartbeat) clearInterval(heartbeat);
+  }
   await fs.writeFile(file, log);
   return res;
 }
@@ -128,27 +183,40 @@ async function discoverSpec() {
   return candidates[0] || null;
 }
 
-async function runSetup(context) {
+async function runSetup(context, opts = {}) {
   const dir = path.join(ART_ROOT, 'setup');
   await ensureDir(dir);
   const log = path.join(dir, 'build.log');
-  const res = await teeTo(log, (hooks) => sh('bash', ['-lc', 'corepack enable && pnpm i && pnpm build'], hooks));
+  const startedAt = Date.now();
+  phaseLog('setup', 'start');
+  const res = await teeTo(log, (hooks) => sh('bash', ['-lc', 'corepack enable && pnpm i && pnpm build'], hooks), {
+    phaseName: 'setup',
+    heartbeatMs: opts.heartbeatMs,
+  });
+  phaseLog('setup', `done code=${res.code} elapsed=${formatDuration(Date.now() - startedAt)}`);
   await savePhase(context, 'setup', { code: res.code, log });
   return res.code === 0;
 }
 
-async function runQALight(context) {
+async function runQALight(context, opts = {}) {
   const dir = path.join(ART_ROOT, 'qa');
   await ensureDir(dir);
   const log = path.join(dir, 'qa-light.log');
-  const res = await teeTo(log, (hooks) => sh('bash', ['-lc', 'pnpm -s run test:fast && (node dist/src/cli/index.js qa --light || pnpm -s tsx src/cli/qa-cli.ts --light)'], hooks));
+  const startedAt = Date.now();
+  phaseLog('qa', 'start');
+  const res = await teeTo(log, (hooks) => sh('bash', ['-lc', 'pnpm -s run test:fast && (node dist/src/cli/index.js qa --light || pnpm -s tsx src/cli/qa-cli.ts --light)'], hooks), {
+    phaseName: 'qa',
+    heartbeatMs: opts.heartbeatMs,
+  });
+  phaseLog('qa', `done code=${res.code} elapsed=${formatDuration(Date.now() - startedAt)}`);
   await savePhase(context, 'qa', { code: res.code, log });
   return res.code === 0;
 }
 
-async function runSpecCompile(context) {
+async function runSpecCompile(context, opts = {}) {
   const specIn = await discoverSpec();
   if (!specIn) {
+    phaseLog('spec', 'skip reason=no spec input found');
     await savePhase(context, 'spec', { code: 0, skipped: true, reason: 'no spec input found' });
     return true;
   }
@@ -156,21 +224,29 @@ async function runSpecCompile(context) {
   await ensureDir(dir);
   const out = path.join(dir, 'ir.json');
   const log = path.join(dir, 'spec-compile.log');
+  phaseLog('spec', `start input=${specIn}`);
+  const startedAt = Date.now();
   const cmd = `node dist/src/cli/index.js spec compile -i ${specIn} -o ${path.relative(CWD, out)} || pnpm -s ae-framework spec compile -i ${specIn} -o ${path.relative(CWD, out)} || pnpm -s tsx src/cli/index.ts spec compile -i ${specIn} -o ${path.relative(CWD, out)}`;
-  const res = await teeTo(log, (hooks) => sh('bash', ['-lc', cmd], hooks));
+  const res = await teeTo(log, (hooks) => sh('bash', ['-lc', cmd], hooks), {
+    phaseName: 'spec',
+    heartbeatMs: opts.heartbeatMs,
+  });
   const ok = res.code === 0;
+  phaseLog('spec', `done code=${res.code} elapsed=${formatDuration(Date.now() - startedAt)}`);
   await savePhase(context, 'spec', { code: res.code, log, output: ok ? out : null, input: specIn });
   return ok;
 }
 
-async function runSimulation(context) {
+async function runSimulation(context, opts = {}) {
   const ir = path.join(ART_ROOT, 'spec', 'ir.json');
   try { await fs.access(ir); } catch {
+    phaseLog('sim', 'skip reason=no IR found');
     await savePhase(context, 'sim', { code: 0, skipped: true, reason: 'no IR found' });
     return true;
   }
   const script = path.join('scripts', 'simulation', 'deterministic-runner.mjs');
   try { await fs.access(path.join(CWD, script)); } catch {
+    phaseLog('sim', 'skip reason=deterministic-runner not present');
     await savePhase(context, 'sim', { code: 0, skipped: true, reason: 'deterministic-runner not present' });
     return true;
   }
@@ -178,9 +254,15 @@ async function runSimulation(context) {
   await ensureDir(dir);
   const out = path.join(dir, 'sim.json');
   const log = path.join(dir, 'sim.log');
+  phaseLog('sim', `start input=${path.relative(CWD, ir)}`);
+  const startedAt = Date.now();
   const cmd = `node ${script} --in ${path.relative(CWD, ir)} --out ${path.relative(CWD, out)}`;
-  const res = await teeTo(log, (hooks) => sh('bash', ['-lc', cmd], hooks));
+  const res = await teeTo(log, (hooks) => sh('bash', ['-lc', cmd], hooks), {
+    phaseName: 'sim',
+    heartbeatMs: opts.heartbeatMs,
+  });
   const ok = res.code === 0;
+  phaseLog('sim', `done code=${res.code} elapsed=${formatDuration(Date.now() - startedAt)}`);
   await savePhase(context, 'sim', { code: res.code, log, output: ok ? out : null });
   return ok;
 }
@@ -200,6 +282,7 @@ async function runFormal(context, opts = {}) {
     .catch(() => false);
 
   if (!hasTla && !hasApalache) {
+    phaseLog('formal', 'skip reason=no formal runners present');
     await savePhase(context, 'formal', { code: 0, skipped: true, reason: 'no formal runners present' });
     return true;
   }
@@ -215,7 +298,13 @@ async function runFormal(context, opts = {}) {
   }
 
   const cmd = cmds.join(' && ');
-  await teeTo(log, (hooks) => sh('bash', ['-lc', cmd], hooks));
+  phaseLog('formal', 'start');
+  const startedAt = Date.now();
+  await teeTo(log, (hooks) => sh('bash', ['-lc', cmd], hooks), {
+    phaseName: 'formal',
+    heartbeatMs: opts.heartbeatMs,
+  });
+  phaseLog('formal', `done code=0 elapsed=${formatDuration(Date.now() - startedAt)}`);
 
   // Collect known outputs (if generated)
   const hr = path.join(CWD, 'artifacts/hermetic-reports', 'formal');
@@ -238,51 +327,63 @@ async function main() {
     const args = parseArgs(process.argv);
     await ensureDir(ART_ROOT);
     const context = args.resume ? await loadContext() : createDefaultContext();
+    phaseLog('playbook', `start resume=${String(args.resume)} heartbeatMs=${args.heartbeatMs}`);
 
     const shouldSkip = (name) => args.skip.has(name) || args.skip.has('*');
 
     if (!shouldSkip('setup')) {
-      const ok = await runSetup(context);
+      const ok = await runSetup(context, { heartbeatMs: args.heartbeatMs });
       if (!ok) { console.error('Setup failed.'); process.exit(1); }
     } else {
+      phaseLog('setup', 'skip requested');
       await savePhase(context, 'setup', { code: 0, skipped: true });
     }
 
     if (!shouldSkip('qa')) {
-      const ok = await runQALight(context);
+      const ok = await runQALight(context, { heartbeatMs: args.heartbeatMs });
       if (!ok) { console.error('QA (light) failed.'); process.exit(1); }
     } else {
+      phaseLog('qa', 'skip requested');
       await savePhase(context, 'qa', { code: 0, skipped: true });
     }
 
     if (!shouldSkip('spec')) {
-      await runSpecCompile(context); // non-fatal (skips when no spec)
+      await runSpecCompile(context, { heartbeatMs: args.heartbeatMs }); // non-fatal (skips when no spec)
     } else {
+      phaseLog('spec', 'skip requested');
       await savePhase(context, 'spec', { code: 0, skipped: true });
     }
 
     if (!shouldSkip('sim')) {
-      await runSimulation(context); // non-fatal
+      await runSimulation(context, { heartbeatMs: args.heartbeatMs }); // non-fatal
     } else {
+      phaseLog('sim', 'skip requested');
       await savePhase(context, 'sim', { code: 0, skipped: true });
     }
 
     // Phase-3: Formal (opt-in, non-blocking)
     if (args.enableFormal && !shouldSkip('formal')) {
-      await runFormal(context, { timeoutMs: args.formalTimeoutMs });
+      await runFormal(context, { timeoutMs: args.formalTimeoutMs, heartbeatMs: args.heartbeatMs });
     } else {
+      phaseLog('formal', args.enableFormal ? 'skip requested' : 'skip disabled');
       await savePhase(context, 'formal', { code: 0, skipped: true });
     }
 
     // Phase-4: Coverage/Adapters (report-only detection)
     if (!shouldSkip('coverage')) {
+      phaseLog('coverage', 'start');
       await detectCoverage(context);
+      phaseLog('coverage', 'done code=0');
     } else {
+      phaseLog('coverage', 'skip requested');
       await savePhase(context, 'coverage', { code: 0, skipped: true });
     }
     if (!shouldSkip('adapters')) {
+      phaseLog('adapters', 'start');
       await detectAdapters(context);
+      phaseLog('adapters', 'done code=0');
     } else {
+      phaseLog('adapters', 'skip requested');
       await savePhase(context, 'adapters', { code: 0, skipped: true });
     }
 

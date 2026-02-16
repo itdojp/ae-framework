@@ -19,6 +19,7 @@
 アーキテクチャ
 - 実行ハブ: Node スクリプト（例: scripts/codex/ae-playbook.mjs）でフェーズを順次実行
 - 出力標準: artifacts/ae/<phase>/… に JSON/MD/LOG を配置し、最新状況を artifacts/ae/context.json に集約
+- 可観測性: フェーズ開始/終了ログ + 実コマンド stdout/stderr のストリーミング + heartbeat（既定30秒）
 - 失敗方針: Setup/Build/Unit Test は fail-fast、Formal/Adapters/Coverage は warn & continue（report-only）
 
 フェーズ定義（最小→拡張）
@@ -63,6 +64,7 @@
 - fail-fast: Setup/Build/Unit Tests
 - warn & continue: Formal/Adapters/Coverage（report-only）
 - `--resume` で context.json から再開、`--skip=<phase>` で対象フェーズをスキップ
+- `--heartbeat-ms=<ms>` で heartbeat 間隔を制御（`0` で無効化）
 - タイムアウト/リトライ: Formal 等は GNU `timeout` があれば使用（verify-* に準拠）
 
 セキュリティ/Hermetic

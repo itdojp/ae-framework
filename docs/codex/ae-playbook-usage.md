@@ -2,6 +2,8 @@
 
 本書は、CodeX CLI 0.38 から ae‑framework のプレイブックを実行し、セットアップ→軽量QA→Spec/IR→Sim→Formal（任意）→Coverage/Adapters 検出→PRサマリ反映までを一気通貫で動かすための実践ガイドです。
 
+- 実行中は標準出力へフェーズ開始/終了ログと heartbeat を継続表示し、無出力タイムアウトを回避します。
+
 ## 前提（環境/権限）
 - 実行場所
   - ローカル開発端末（推奨）: Node.js 18+、Git、pnpm、任意で gh（GitHub CLI）/CodeX CLI 0.38
@@ -58,6 +60,10 @@
 - `--skip=<csv>`: スキップ対象（例: `setup,qa,spec,sim,formal,coverage,adapters`）
 - `--enable-formal`: Formalフェーズを実行（presenceガード/非ブロッキング）
 - `--formal-timeout=<ms>`: Formalのタイムアウト（GNU timeout があれば適用）
+- `--heartbeat-ms=<ms>`: 実行中の heartbeat 間隔（既定: `30000`、`0` で無効化）
+- フェーズ進捗ログ
+  - `[ae-playbook] [<phase>] start|done|skip ...` を標準出力へ出力
+  - 実コマンドの stdout/stderr もそのまま標準出力/標準エラーへストリーミング
 - 非ブロッキング設計
   - fail-fast: setup, qa（ビルド/単体テストの致命的失敗は即終了）
   - warn & continue: spec/sim/coverage/adapters/formal（入力不在はスキップ、要約/検出のみ継続）
@@ -90,6 +96,7 @@
 
 ## トラブルシュート
 - Formal ツール未導入: `status=tool_not_available` でスキップ。導入/環境変数設定後に `--enable-formal` 実行
+- 長時間実行でログ頻度を調整したい: `--heartbeat-ms=<ms>` を指定（例: `--heartbeat-ms=10000`）
 - coverage-summary 不在: `coverage` フェーズは note 記録のみ。ユニットテストや計測の設定を確認
 - アダプタ要約が見つからない: `artifacts/adapters/**/summary.json` などの生成パスを確認
 - PR サマリが反映されない: `/verify-lite` を再実行、Actions のログで Upsert 処理を確認
@@ -98,5 +105,6 @@
 - セットアップ+軽量: `node scripts/codex/ae-playbook.mjs --resume --skip=formal`
 - Formal込み: `node scripts/codex/ae-playbook.mjs --resume --enable-formal --formal-timeout=60000`
 - 検出のみ: `node scripts/codex/ae-playbook.mjs --resume --skip=setup,qa,spec,sim,formal`
+- heartbeat 10秒: `node scripts/codex/ae-playbook.mjs --resume --heartbeat-ms=10000`
 - npm 補助: `pnpm run codex:run`
 - CodeX プリセット（例）: `codex run playbook:light` / `codex run playbook:formal` / `codex run playbook:detect`
