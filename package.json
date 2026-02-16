@@ -327,6 +327,7 @@
     "artifacts:aggregate": "node scripts/adapters/aggregate-artifacts.mjs",
     "progress:summary": "node scripts/progress/aggregate-progress.mjs",
     "lint:actions": "bash scripts/ci/actionlint.sh",
+    "ci:lockfile:verify": "bash scripts/ci/check-lockfile-clean-after-install.sh",
     "generate:artifacts:preview": "bash scripts/ci/run-generate-artifacts-preview.sh",
     "pipelines:api-fuzz": "node scripts/pipelines/run-api-fuzz.mjs",
     "pipelines:mutation:quick": "bash scripts/mutation/run-scoped.sh --quick",
