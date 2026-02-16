@@ -31,6 +31,7 @@ import { safeExit } from '../utils/safe-exit.js';
 import { handleTestsSuggest } from '../commands/tdd/suggest.js';
 import { handleTestsScaffold } from '../commands/tdd/scaffold.js';
 import { createProgressCommands } from './progress-cli.js';
+import { createTraceabilityCommand } from './traceability-cli.js';
 
 const program = new Command();
 
@@ -581,6 +582,7 @@ program
   .option('--specifications', 'Validate specifications')
   .option('--traceability', 'Validate traceability')
   .option('--completeness', 'Validate completeness')
+  .option('--strict', 'Enable strict validation mode')
   .option('--sources <sources>', 'Source files to validate')
   .action(async (options) => {
     const cli = new AEFrameworkCLI();
@@ -596,6 +598,7 @@ program
       context: {
         validationTaskType: taskType,
         sources,
+        strict: Boolean(options.strict),
       },
     };
     
@@ -734,6 +737,9 @@ program.addCommand(createQaCommand());
 for (const cmd of createProgressCommands()) {
   program.addCommand(cmd);
 }
+
+// Issue requirement ID traceability helpers
+program.addCommand(createTraceabilityCommand());
 
 // Conformance verification commands  
 import { ConformanceCli } from './conformance-cli.js';

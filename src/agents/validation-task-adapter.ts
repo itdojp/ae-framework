@@ -67,6 +67,7 @@ interface ValidationInput {
   requestedSources: string[];
   resolvedSources: ValidationSourceItem[];
   missingSources: string[];
+  strict: boolean;
 }
 
 export class ValidationTaskAdapter {
@@ -328,6 +329,7 @@ ${validation.criticalGaps.map((gap: any) => `• ${gap.description} (Impact: ${g
 
 ${this.formatSourceSummary(traceabilityInput)}
 
+**Strict Mode**: ${traceabilityInput.strict ? 'enabled' : 'disabled'}
 **Traceability Coverage**: ${validation.coveragePercentage}%
 **Total Trace Links**: ${validation.totalLinks}
 **Broken Links**: ${validation.brokenLinks.length}
@@ -363,7 +365,9 @@ ${validation.orphanedArtifacts.map((artifact: any) =>
         ...validation.brokenLinks.map((link: any) => `Broken link: ${link.from} → ${link.to}`),
         ...traceabilityInput.missingSources.map((source) => `Source not found: ${source}`),
       ],
-      shouldBlockProgress: validation.coveragePercentage < 70,
+      shouldBlockProgress: traceabilityInput.strict
+        ? validation.missingLinks.length > 0 || validation.brokenLinks.length > 0 || validation.coveragePercentage < 100
+        : validation.coveragePercentage < 70,
     };
   }
 
@@ -631,7 +635,10 @@ ${validation.alignmentGaps.map((gap: any) =>
     if (resolved.requestedSources.length > 0 && resolved.resolvedSources.length === 0) {
       throw new Error(`No readable validation sources found. Requested: ${resolved.requestedSources.join(', ')}`);
     }
-    return resolved;
+    return {
+      ...resolved,
+      strict: Boolean(request.context?.strict),
+    };
   }
 
   private collectRequestedSources(request: TaskRequest): string[] {
@@ -660,7 +667,7 @@ ${validation.alignmentGaps.map((gap: any) =>
       .filter(Boolean);
   }
 
-  private resolveValidationSources(requestedSources: string[]): ValidationInput {
+  private resolveValidationSources(requestedSources: string[]): Omit<ValidationInput, 'strict'> {
     const resolvedSources: ValidationSourceItem[] = [];
     const missingSources: string[] = [];
     const seen = new Set<string>();
@@ -942,6 +949,46 @@ ${resolvedPreview ? `- Sample:\n${resolvedPreview}` : ''}
   }
 
   private async validateTraceability(input: ValidationInput): Promise<any> {
+    const matrixRows = this.extractTraceabilityMatrixRows(input);
+    if (matrixRows.length > 0) {
+      const linkedRows = matrixRows.filter((row) => row.linked);
+      const coveragePercentage = matrixRows.length > 0
+        ? Math.round((linkedRows.length / matrixRows.length) * 100)
+        : 0;
+      const missingLinks = matrixRows
+        .filter((row) => !row.linked)
+        .map((row) => {
+          const reasons: string[] = [];
+          if (row.tests.length === 0) {
+            reasons.push('no test link');
+          }
+          if (row.code.length === 0) {
+            reasons.push('no implementation link');
+          }
+          return {
+            from: row.requirementId,
+            to: 'Tests/Implementation',
+            reason: reasons.join(', ') || 'unlinked',
+          };
+        });
+
+      return {
+        coveragePercentage,
+        totalLinks: matrixRows.length,
+        brokenLinks: [],
+        matrix: matrixRows.map((row) => ({
+          source: row.requirementId,
+          targets: [
+            row.tests.length > 0 ? 'Tests' : '(missing tests)',
+            row.code.length > 0 ? 'Implementation' : '(missing implementation)',
+          ],
+          coverage: row.linked ? 100 : 0,
+        })),
+        missingLinks,
+        orphanedArtifacts: [],
+      };
+    }
+
     const text = this.collectSourceText(input);
     const reqIds = this.extractIds(text, /\bREQ-[A-Za-z0-9_-]+\b/g);
     const storyIds = this.extractIds(text, /\b(US|STORY)-[A-Za-z0-9_-]+\b/g);
@@ -966,6 +1013,59 @@ ${resolvedPreview ? `- Sample:\n${resolvedPreview}` : ''}
       missingLinks,
       orphanedArtifacts: [],
     };
+  }
+
+  private extractTraceabilityMatrixRows(input: ValidationInput): Array<{
+    requirementId: string;
+    tests: string[];
+    code: string[];
+    linked: boolean;
+  }> {
+    const rows: Array<{ requirementId: string; tests: string[]; code: string[]; linked: boolean }> = [];
+    for (const source of input.resolvedSources) {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(source.content);
+      } catch {
+        continue;
+      }
+      if (!parsed || typeof parsed !== 'object') {
+        continue;
+      }
+      const schemaVersion = (parsed as { schemaVersion?: unknown }).schemaVersion;
+      if (schemaVersion !== 'issue-traceability-matrix/v1') {
+        continue;
+      }
+      const candidateRows = (parsed as { rows?: unknown }).rows;
+      if (!Array.isArray(candidateRows)) {
+        continue;
+      }
+      for (const row of candidateRows) {
+        if (!row || typeof row !== 'object') {
+          continue;
+        }
+        const requirementId = (row as { requirementId?: unknown }).requirementId;
+        if (typeof requirementId !== 'string' || requirementId.trim().length === 0) {
+          continue;
+        }
+        const tests = Array.isArray((row as { tests?: unknown }).tests)
+          ? ((row as { tests: unknown[] }).tests.filter((value): value is string => typeof value === 'string'))
+          : [];
+        const code = Array.isArray((row as { code?: unknown }).code)
+          ? ((row as { code: unknown[] }).code.filter((value): value is string => typeof value === 'string'))
+          : [];
+        const linked = typeof (row as { linked?: unknown }).linked === 'boolean'
+          ? Boolean((row as { linked: unknown }).linked)
+          : tests.length > 0 && code.length > 0;
+        rows.push({
+          requirementId: requirementId.trim(),
+          tests,
+          code,
+          linked,
+        });
+      }
+    }
+    return rows;
   }
 
   private async validateCompleteness(input: ValidationInput): Promise<any> {
@@ -1019,13 +1119,17 @@ ${resolvedPreview ? `- Sample:\n${resolvedPreview}` : ''}
       Array.isArray(input.resolvedSources) &&
       Array.isArray(input.missingSources)
     ) {
-      return input as ValidationInput;
+      return {
+        ...(input as ValidationInput),
+        strict: Boolean((input as { strict?: unknown }).strict),
+      };
     }
     if (typeof input === 'string') {
       return {
         requestedSources: ['inline'],
         resolvedSources: [{ path: 'inline', content: input }],
         missingSources: [],
+        strict: false,
       };
     }
     if (input && typeof input === 'object') {
@@ -1033,12 +1137,14 @@ ${resolvedPreview ? `- Sample:\n${resolvedPreview}` : ''}
         requestedSources: [],
         resolvedSources: [{ path: 'inline:object', content: JSON.stringify(input, null, 2) }],
         missingSources: [],
+        strict: false,
       };
     }
     return {
       requestedSources: [],
       resolvedSources: [],
       missingSources: [],
+      strict: false,
     };
   }
 

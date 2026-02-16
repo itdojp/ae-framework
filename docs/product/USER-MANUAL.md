@@ -174,6 +174,11 @@ pnpm run verify:lite
 # fast/full を統一実行（JSONサマリ出力）
 pnpm run verify:profile -- --profile fast --json --out artifacts/verify-profile-summary.json
 
+# Issue要件ID起点のトレーサビリティ（抽出 -> matrix -> strict validate）
+pnpm run ae-framework -- traceability extract-ids --issue "https://github.com/<org>/<repo>/issues/1" --pattern "(?:LG|REQ)-[A-Z0-9_-]+" --output docs/specs/issue-traceability-map.json
+pnpm run ae-framework -- traceability matrix --map docs/specs/issue-traceability-map.json --tests "tests/**/*" --code "src/**/*" --format json --output docs/specs/ISSUE-TRACEABILITY-MATRIX.json
+pnpm run ae-framework -- validate --traceability --strict --sources docs/specs/ISSUE-TRACEABILITY-MATRIX.json
+
 # 依存監査
 pnpm run security:integrated:quick
 ```
@@ -182,6 +187,7 @@ pnpm run security:integrated:quick
 - Full smoke は `pnpm run verify:formal`
 - Formal ツールの導入状況確認は `pnpm run tools:formal:check`
 - CSP 詳細手順は `docs/quality/formal-csp.md`
+- Issue要件IDトレーサビリティ手順は `docs/quality/issue-requirements-traceability.md`
 
 ## 8. トラブルシューティング
 
