@@ -25,6 +25,11 @@ Runtime Conformance は、実行時にシステム挙動が仕様（不変量・
 - 仕様ドリフト: 仕様と実装のズレ検出
 - 適応閾値: 文脈に応じた許容範囲の動的調整
 
+### 1.3 用語の境界（contract）
+- 本設計で扱う `Runtime Contract` は主に **Design contract（DbC）**（pre/post/invariant）を指します。
+- Pact 等の **API/Integration contract test** は CI 側の契約検証であり、意味を分けて扱います。
+- 成果物の必須/任意ルールは **Artifacts contract** として別管理です（`docs/quality/ARTIFACTS-CONTRACT.md`）。
+
 ### 2. アーキテクチャ
 コンポーネント: 契約エンジン／モニター・オーケストレータ／違反検出／証跡収集／適合性アナライザ／適応コントローラ。
 ```
@@ -59,6 +64,12 @@ Runtime Conformance provides:
 - **Conformance Monitoring**: Continuous observation and validation of system behavior
 - **Specification Drift**: Detection of deviations between intended and actual system behavior
 - **Adaptive Thresholds**: Dynamic adjustment of conformance requirements based on context
+
+### 1.3 Terminology boundary (contract)
+
+- `Runtime Contract` in this document primarily means **Design contract (DbC)**: preconditions, postconditions, and invariants.
+- **API/Integration contract tests** (e.g., Pact) are separate CI-level verification concerns.
+- Required/optional output obligations are tracked as **Artifacts contract** (`docs/quality/ARTIFACTS-CONTRACT.md`).
 
 ## 2. Architecture
 
