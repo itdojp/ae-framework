@@ -72,10 +72,10 @@ describe('tests:scaffold helpers', () => {
     expect(property).toContain('TODO: Replace this placeholder with meaningful properties.');
 
     const contract = files.find((f) => f.relativePath.endsWith('.contract.test.ts'))?.content ?? '';
-    expect(contract).toContain("describe('contract:checkout-flow'");
+    expect(contract).toContain("describe('contract:checkout-flow', () => {");
 
     const regression = files.find((f) => f.relativePath.endsWith('.regression.test.ts'))?.content ?? '';
-    expect(regression).toContain("describe('regression:checkout-flow'");
+    expect(regression).toContain("describe('regression:checkout-flow', () => {");
   });
 
   it('writes scaffold files to disk', () => {
