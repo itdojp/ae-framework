@@ -1,0 +1,113 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://itdojp.github.io/ae-framework/schema/verify-profile-summary.schema.json",
+  "title": "Verify Profile Summary",
+  "description": "Summary emitted by scripts/verify/run.mjs (--json/--out).",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "profile",
+    "started_at",
+    "finished_at",
+    "overall_status",
+    "required_fail_count",
+    "optional_fail_count",
+    "steps"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "verify-profile-summary/v1"
+    },
+    "profile": {
+      "type": "string",
+      "enum": [
+        "lite",
+        "conformance",
+        "formal",
+        "fast",
+        "full"
+      ]
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "finished_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "overall_status": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "fail"
+      ]
+    },
+    "required_fail_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "optional_fail_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "required",
+          "command",
+          "status",
+          "exit_code",
+          "duration_ms"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "command": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "passed",
+              "failed",
+              "skipped"
+            ]
+          },
+          "exit_code": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "duration_ms": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "reason": {
+            "type": "string"
+          },
+          "error": {
+            "type": "string"
+          },
+          "stdout": {
+            "type": "string"
+          },
+          "stderr": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

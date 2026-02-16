@@ -2,43 +2,116 @@
 /**
  * CLI entry point for running verification profiles.
  *
- * This script resolves a named "verify profile" (e.g. `lite`, `conformance`, `formal`)
- * to one or more underlying package scripts and executes them sequentially.
- * It provides a consistent interface for verify tasks in CLI/CI.
+ * This script resolves a named "verify profile" (e.g. `fast`, `full`, `lite`)
+ * to one or more underlying package scripts and executes them in order.
+ * It can emit a machine-readable summary for CI.
  *
  * Usage:
- *   node scripts/verify/run.mjs --profile <name> [--list] [--dry-run]
- *
- * Options:
- *   -p, --profile <name>   Name of the verify profile to run.
- *   --list                 Print all available profile names and exit.
- *   --dry-run              Print the resolved commands instead of executing them.
- *   -h, --help             Show this usage information and exit.
- *
- * Exit codes:
- *   0  - Success (including help or list output).
- *   2  - Unknown profile name.
- *   3  - Invalid or missing arguments.
- *   >0 - Non-zero exit code from a child verify command.
+ *   node scripts/verify/run.mjs --profile <name> [--list] [--dry-run] [--json] [--out <file>]
  */
 import { spawnSync } from 'node:child_process';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const PROFILE_COMMANDS = {
-  lite: [['bash', 'scripts/ci/run-verify-lite-local.sh']],
-  conformance: [['node', 'scripts/formal/verify-conformance.mjs']],
-  formal: [['pnpm', 'run', 'verify:formal']],
+const PROFILE_STEPS = {
+  lite: [
+    {
+      name: 'verify:lite',
+      command: ['bash', 'scripts/ci/run-verify-lite-local.sh'],
+      required: true,
+    },
+  ],
+  conformance: [
+    {
+      name: 'verify:conformance',
+      command: ['node', 'scripts/formal/verify-conformance.mjs'],
+      required: true,
+    },
+  ],
+  formal: [
+    {
+      name: 'verify:formal',
+      command: ['pnpm', 'run', 'verify:formal'],
+      required: true,
+    },
+  ],
+  fast: [
+    {
+      name: 'build',
+      command: ['pnpm', 'run', 'build'],
+      required: true,
+    },
+    {
+      name: 'codex:quickstart',
+      command: ['pnpm', 'run', 'codex:quickstart'],
+      required: false,
+    },
+    {
+      name: 'verify:lite',
+      command: ['bash', 'scripts/ci/run-verify-lite-local.sh'],
+      required: true,
+    },
+    {
+      name: 'mbt',
+      command: ['pnpm', 'run', 'mbt'],
+      required: false,
+    },
+  ],
+  full: [
+    {
+      name: 'build',
+      command: ['pnpm', 'run', 'build'],
+      required: true,
+    },
+    {
+      name: 'codex:quickstart',
+      command: ['pnpm', 'run', 'codex:quickstart'],
+      required: false,
+    },
+    {
+      name: 'verify:lite',
+      command: ['bash', 'scripts/ci/run-verify-lite-local.sh'],
+      required: true,
+    },
+    {
+      name: 'mbt',
+      command: ['pnpm', 'run', 'mbt'],
+      required: false,
+    },
+    {
+      name: 'pbt',
+      command: ['pnpm', 'run', 'pbt'],
+      required: false,
+    },
+    {
+      name: 'mutation',
+      command: ['pnpm', 'run', 'mutation'],
+      required: false,
+    },
+    {
+      name: 'verify:formal',
+      command: ['pnpm', 'run', 'verify:formal'],
+      required: false,
+    },
+  ],
 };
 
+const SUMMARY_SCHEMA_VERSION = 'verify-profile-summary/v1';
+
 export function listProfiles() {
-  return Object.keys(PROFILE_COMMANDS);
+  return Object.keys(PROFILE_STEPS);
+}
+
+export function resolveProfileSteps(profile) {
+  return Object.prototype.hasOwnProperty.call(PROFILE_STEPS, profile)
+    ? PROFILE_STEPS[profile]
+    : null;
 }
 
 export function resolveProfile(profile) {
-  return Object.prototype.hasOwnProperty.call(PROFILE_COMMANDS, profile)
-    ? PROFILE_COMMANDS[profile]
-    : null;
+  const steps = resolveProfileSteps(profile);
+  return steps ? steps.map((step) => step.command) : null;
 }
 
 export function parseArgs(argv) {
@@ -47,7 +120,10 @@ export function parseArgs(argv) {
     list: false,
     dryRun: false,
     help: false,
+    json: false,
+    out: null,
     profileError: false,
+    outError: false,
     unknown: [],
   };
 
@@ -75,10 +151,26 @@ export function parseArgs(argv) {
       }
       options.profile = next;
       i += 1;
+    } else if (arg.startsWith('--out=')) {
+      const value = arg.slice('--out='.length);
+      if (!value) {
+        options.outError = true;
+        continue;
+      }
+      options.out = value;
+    } else if (arg === '--out') {
+      if (!next || next.startsWith('-')) {
+        options.outError = true;
+        continue;
+      }
+      options.out = next;
+      i += 1;
     } else if (arg === '--list') {
       options.list = true;
     } else if (arg === '--dry-run') {
       options.dryRun = true;
+    } else if (arg === '--json') {
+      options.json = true;
     } else if (arg === '--help' || arg === '-h') {
       options.help = true;
     } else {
@@ -90,14 +182,83 @@ export function parseArgs(argv) {
 }
 
 function printHelp() {
-  console.log(`Usage: node scripts/verify/run.mjs --profile <name> [--list] [--dry-run]
+  console.log(`Usage: node scripts/verify/run.mjs --profile <name> [--list] [--dry-run] [--json] [--out <file>]
 
 Options:
-  -p, --profile <name>   Profile name (e.g. lite, conformance, formal)
+  -p, --profile <name>   Profile name (${listProfiles().join(', ')})
   --list                 Print available profiles
   --dry-run              Print resolved commands without executing
+  --json                 Emit JSON summary to stdout
+  --out <file>           Write JSON summary to file
   -h, --help             Show this message
 `);
+}
+
+function nowIso() {
+  return new Date().toISOString();
+}
+
+function writeSummaryFile(outPath, summary) {
+  const absolute = path.resolve(outPath);
+  mkdirSync(path.dirname(absolute), { recursive: true });
+  writeFileSync(absolute, JSON.stringify(summary, null, 2));
+  return absolute;
+}
+
+function createStepSummary(step, extra = {}) {
+  return {
+    name: step.name,
+    required: step.required,
+    command: step.command.join(' '),
+    ...extra,
+  };
+}
+
+function runStep(step, extraArgs, captureOutput) {
+  const startedAt = Date.now();
+  const result = spawnSync(step.command[0], [...step.command.slice(1), ...extraArgs], {
+    stdio: captureOutput ? ['ignore', 'pipe', 'pipe'] : 'inherit',
+    env: process.env,
+  });
+  const durationMs = Date.now() - startedAt;
+
+  if (result.error) {
+    const code = result.error.code === 'ENOENT' ? 127 : 1;
+    return {
+      status: 'failed',
+      exit_code: code,
+      duration_ms: durationMs,
+      error: String(result.error.message ?? result.error),
+    };
+  }
+
+  const exitCode = result.status ?? 1;
+  const status = exitCode === 0 ? 'passed' : 'failed';
+  const summary = {
+    status,
+    exit_code: exitCode,
+    duration_ms: durationMs,
+  };
+  if (captureOutput) {
+    return {
+      ...summary,
+      stdout: result.stdout?.toString('utf8') ?? '',
+      stderr: result.stderr?.toString('utf8') ?? '',
+    };
+  }
+  return summary;
+}
+
+function emitSummary(summary, options) {
+  if (options.out) {
+    const savedPath = writeSummaryFile(options.out, summary);
+    if (!options.json) {
+      console.log(`[verify-runner] summary written: ${savedPath}`);
+    }
+  }
+  if (options.json) {
+    console.log(JSON.stringify(summary, null, 2));
+  }
 }
 
 export function runVerify(options) {
@@ -116,41 +277,89 @@ export function runVerify(options) {
     return 3;
   }
 
+  if (options.outError) {
+    console.error('[verify-runner] missing value for --out');
+    return 3;
+  }
+
   if (!options.profile) {
     console.error('[verify-runner] missing --profile');
     return 3;
   }
 
-  const commands = resolveProfile(options.profile);
-  if (!commands) {
+  const steps = resolveProfileSteps(options.profile);
+  if (!steps) {
     console.error(`[verify-runner] unknown profile: ${options.profile}`);
     return 2;
   }
 
+  const startedAt = nowIso();
+  const stepResults = [];
+  let blockedByRequiredFailure = false;
+  let firstRequiredFailureExitCode = 1;
   const extraArgs = options.unknown;
-  if (options.dryRun) {
-    for (const command of commands) {
-      console.log([...command, ...extraArgs].join(' '));
+  const captureOutput = options.json;
+
+  for (const step of steps) {
+    if (options.dryRun) {
+      if (!options.json) {
+        console.log([...step.command, ...extraArgs].join(' '));
+      }
+      stepResults.push(
+        createStepSummary(step, {
+          status: 'skipped',
+          exit_code: null,
+          duration_ms: 0,
+          reason: 'dry_run',
+        })
+      );
+      continue;
     }
+
+    if (blockedByRequiredFailure) {
+      stepResults.push(
+        createStepSummary(step, {
+          status: 'skipped',
+          exit_code: null,
+          duration_ms: 0,
+          reason: 'blocked_by_required_failure',
+        })
+      );
+      continue;
+    }
+
+    const stepResult = runStep(step, extraArgs, captureOutput);
+    stepResults.push(createStepSummary(step, stepResult));
+
+    if (stepResult.status === 'failed' && step.required) {
+      blockedByRequiredFailure = true;
+      firstRequiredFailureExitCode = stepResult.exit_code || 1;
+    }
+  }
+
+  const requiredFailCount = stepResults.filter((step) => step.required && step.status === 'failed').length;
+  const optionalFailCount = stepResults.filter((step) => !step.required && step.status === 'failed').length;
+  const finishedAt = nowIso();
+  const overallStatus = requiredFailCount === 0 ? 'pass' : 'fail';
+
+  const summary = {
+    schemaVersion: SUMMARY_SCHEMA_VERSION,
+    profile: options.profile,
+    started_at: startedAt,
+    finished_at: finishedAt,
+    overall_status: overallStatus,
+    required_fail_count: requiredFailCount,
+    optional_fail_count: optionalFailCount,
+    steps: stepResults,
+  };
+
+  emitSummary(summary, options);
+
+  if (options.dryRun) {
     return 0;
   }
 
-  for (const command of commands) {
-    const result = spawnSync(command[0], [...command.slice(1), ...extraArgs], {
-      stdio: 'inherit',
-      env: process.env,
-    });
-    if (result.error) {
-      console.error(
-        `[verify-runner] failed to spawn command: ${command.join(' ')}: ${result.error.message ?? result.error}`
-      );
-      return result.error.code === 'ENOENT' ? 127 : 1;
-    }
-    if (result.status !== 0) {
-      return result.status ?? 1;
-    }
-  }
-  return 0;
+  return requiredFailCount > 0 ? firstRequiredFailureExitCode : 0;
 }
 
 export function isCliInvocation(argv) {
