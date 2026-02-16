@@ -95,6 +95,35 @@ interface AmbiguityResolution {
 }
 ```
 
+#### 3.1 DbC extraction (pre/post/invariant)
+For each requirement or use-case, extract Design by Contract (DbC) statements with stable IDs.
+
+```typescript
+interface DbcExtractionItem {
+  id: string; // PRE-*, POST-*, INV-*
+  requirementRef: string;
+  statement: string;
+  type: 'precondition' | 'postcondition' | 'invariant';
+  violationBehavior: string;
+}
+```
+
+Example:
+- PRE-LOGIN-001: Login input must include non-empty email/password.
+- POST-LOGIN-001: Successful login creates an auditable session record.
+- INV-SEC-001: Locked accounts never receive active sessions.
+
+#### 3.2 Clarification question template (DbC-oriented)
+When ambiguous terms like "fast", "reliable", "secure" are found, ask:
+- **precondition**: Which inputs/states are accepted? How should invalid input be rejected?
+- **postcondition**: What must be true after execution? Which side effects are expected?
+- **invariant**: What must always hold? What is the recovery behavior on violation?
+
+#### 3.3 Verification linkage (minimum)
+- Preconditions -> request validation / negative tests / type guards
+- Postconditions -> unit/integration assertions for state/events
+- Invariants -> property tests / runtime conformance / DB constraints
+
 #### 4. Requirements Validation
 Ensuring completeness and consistency of requirements:
 
@@ -364,6 +393,45 @@ interface BusinessEntity {
 - "システムは高速である必要がある" → "システムは2秒以内に応答する必要がある"
 - "ユーザーフレンドリーなUI" → "3クリック以内で主要機能にアクセス可能"
 
+#### 4.1 DbC 3条件抽出（pre/post/invariant）
+各要件・ユースケースごとに DbC を抽出し、IDを付与します。
+
+- Preconditions（PRE-*）: 入力制約、前提状態、許容範囲
+- Postconditions（POST-*）: 事後状態、観測可能な副作用、出力保証
+- Invariants（INV-*）: 常時成立する整合性制約、セキュリティ制約
+
+最小出力例:
+
+```yaml
+dbc:
+  - id: PRE-ORDER-001
+    type: precondition
+    requirementRef: FR-ORDER-01
+    statement: "注文数量は1以上"
+    violationBehavior: "400 Bad Request"
+  - id: POST-ORDER-001
+    type: postcondition
+    requirementRef: FR-ORDER-01
+    statement: "注文確定後に在庫が減算される"
+    violationBehavior: "トランザクションをロールバック"
+  - id: INV-STOCK-001
+    type: invariant
+    requirementRef: FR-ORDER-01
+    statement: "在庫は負数にならない"
+    violationBehavior: "監視アラート + 補正ジョブ"
+```
+
+#### 4.2 確認質問テンプレ（DbC）
+曖昧語彙（例: fast / reliable / secure）を検出したら、以下を確認します。
+
+- pre: どの入力/状態を許容するか。違反時は reject / error / no-op のどれか。
+- post: 実行後に必ず満たす状態は何か。副作用（DB/イベント/ログ）は何か。
+- invariant: 常時守る整合性は何か。違反時に停止/回復/通知のどれを行うか。
+
+#### 4.3 テスト/ゲートへの接続（最小）
+- pre/post: unit・integration の assertion と negative test に接続
+- invariant: property test / runtime conformance / DB制約 に接続
+
 #### 5. 要件構造化（Requirements Structuring）
 要件のカテゴリ分類と優先度設定：
 
@@ -483,6 +551,12 @@ interface ProcessedRequirements {
   clarificationNeeded: string[];
 }
 ```
+
+## 関連テンプレート / 関連ガイド
+
+- `docs/templates/plan-to-spec-normalization-template.md`
+- `docs/guides/context-bundle.md`
+- `docs/quality/verification-gates.md`
 
 ## 次のステップ
 
