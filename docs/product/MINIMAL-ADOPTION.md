@@ -70,8 +70,8 @@ pnpm run verify:lite
 
 ### 5.2 仕様運用を開始したい（最小）
 ```bash
-pnpm run spec:validate -- -i spec/example-spec.md --output .ae/ae-ir.json
-pnpm run spec:lint -- -i .ae/ae-ir.json
+pnpm run spec:validate -i spec/example-spec.md --output .ae/ae-ir.json
+pnpm run spec:lint -i .ae/ae-ir.json
 ```
 
 ### 5.3 形式検証を追加したい（opt-in）

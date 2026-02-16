@@ -32,6 +32,7 @@ import { handleTestsSuggest } from '../commands/tdd/suggest.js';
 import { handleTestsScaffold } from '../commands/tdd/scaffold.js';
 import { createProgressCommands } from './progress-cli.js';
 import { createTraceabilityCommand } from './traceability-cli.js';
+import { normalizeProgramArgv } from './argv-normalize.js';
 
 const program = new Command();
 
@@ -65,18 +66,6 @@ const resolveValidationTaskTypeFromOptions = (options: Record<string, unknown>):
     return 'validate-completeness';
   }
   return 'validate-requirements';
-};
-
-const normalizeProgramArgv = (argv: string[]): string[] => {
-  if (argv.length < 3 || argv[2] !== '--') {
-    return argv;
-  }
-  const nodePath = argv[0];
-  const scriptPath = argv[1];
-  if (!nodePath || !scriptPath) {
-    return argv;
-  }
-  return [nodePath, scriptPath, ...argv.slice(3)];
 };
 
 class AEFrameworkCLI {
