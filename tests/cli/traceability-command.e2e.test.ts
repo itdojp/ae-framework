@@ -102,7 +102,8 @@ describe('traceability command e2e', () => {
             },
             rows: [
               { requirementId: 'LG-1', tests: ['tests/a.test.ts'], code: ['src/a.ts'], linked: true },
-              { requirementId: 'LG-2', tests: [], code: ['src/b.ts'], linked: false },
+              // linked=true is intentionally inconsistent; strict validation must recompute from tests/code.
+              { requirementId: 'LG-2', tests: [], code: ['src/b.ts'], linked: true },
             ],
           },
           null,

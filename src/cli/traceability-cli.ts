@@ -183,6 +183,16 @@ function scanFiles(patterns: string[], cwd: string): ScannedFile[] {
   return files;
 }
 
+function escapeRegexLiteral(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function hasRequirementIdToken(text: string, requirementId: string): boolean {
+  const escapedId = escapeRegexLiteral(requirementId);
+  const matcher = new RegExp(`(^|[^A-Za-z0-9_-])${escapedId}(?=$|[^A-Za-z0-9_-])`);
+  return matcher.test(text);
+}
+
 export function buildTraceabilityMatrix(
   requirementIds: string[],
   testFiles: ScannedFile[],
@@ -191,10 +201,10 @@ export function buildTraceabilityMatrix(
 ): IssueTraceabilityMatrix {
   const rows: IssueTraceabilityRow[] = requirementIds.map((requirementId) => {
     const tests = testFiles
-      .filter((file) => file.content.includes(requirementId))
+      .filter((file) => hasRequirementIdToken(file.content, requirementId))
       .map((file) => path.relative(cwd, file.path));
     const code = codeFiles
-      .filter((file) => file.content.includes(requirementId))
+      .filter((file) => hasRequirementIdToken(file.content, requirementId))
       .map((file) => path.relative(cwd, file.path));
 
     return {

@@ -76,4 +76,22 @@ describe('traceability cli helpers', () => {
     expect(matrix.rows.find((row) => row.requirementId === 'LG-1')?.linked).toBe(true);
     expect(matrix.rows.find((row) => row.requirementId === 'LG-2')?.linked).toBe(false);
   });
+
+  it('does not match requirement IDs as substrings of other IDs', () => {
+    const matrix = buildTraceabilityMatrix(
+      ['LG-1'],
+      [
+        { path: '/repo/tests/auth.test.ts', content: 'LG-10' },
+      ],
+      [
+        { path: '/repo/src/auth.ts', content: 'LG-10' },
+      ],
+      '/repo',
+    );
+
+    expect(matrix.summary.linkedRequirements).toBe(0);
+    expect(matrix.rows[0]?.tests).toEqual([]);
+    expect(matrix.rows[0]?.code).toEqual([]);
+    expect(matrix.rows[0]?.linked).toBe(false);
+  });
 });

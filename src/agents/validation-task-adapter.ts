@@ -1054,9 +1054,7 @@ ${resolvedPreview ? `- Sample:\n${resolvedPreview}` : ''}
         const code = Array.isArray((row as { code?: unknown }).code)
           ? ((row as { code: unknown[] }).code.filter((value): value is string => typeof value === 'string'))
           : [];
-        const linked = typeof (row as { linked?: unknown }).linked === 'boolean'
-          ? Boolean((row as { linked: unknown }).linked)
-          : tests.length > 0 && code.length > 0;
+        const linked = tests.length > 0 && code.length > 0;
         rows.push({
           requirementId: requirementId.trim(),
           tests,
