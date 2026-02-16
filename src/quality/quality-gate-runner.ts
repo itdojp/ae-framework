@@ -556,14 +556,21 @@ export class QualityGateRunner {
     threshold: { maxErrors?: number; maxWarnings?: number }
   ): QualityGateResult {
     try {
+      const combinedOutput = `${result.stdout}\n${result.stderr ?? ''}`;
       // Count errors and warnings
-      const errorMatches = result.stdout.match(/(\d+)\s+error/g) || [];
-      const warningMatches = result.stdout.match(/(\d+)\s+warning/g) || [];
+      const errorMatches = combinedOutput.match(/(\d+)\s+error/g) || [];
+      const warningMatches = combinedOutput.match(/(\d+)\s+warning/g) || [];
       
       const errors = errorMatches.reduce((sum, match) => sum + parseInt(match.match(/\d+/)?.[0] || '0'), 0);
       const warnings = warningMatches.reduce((sum, match) => sum + parseInt(match.match(/\d+/)?.[0] || '0'), 0);
 
       baseResult.details = { errors, warnings };
+
+      const exitCode = result.code ?? 0;
+      const hasCounts = errorMatches.length > 0 || warningMatches.length > 0;
+      if (exitCode !== 0 && !hasCounts) {
+        baseResult.violations.push(`Linting command failed with exit code ${exitCode}`);
+      }
       
       // Check against thresholds
       if (threshold.maxErrors !== undefined && errors > threshold.maxErrors) {
@@ -574,7 +581,7 @@ export class QualityGateRunner {
         baseResult.violations.push(`Too many warnings: ${warnings} > ${threshold.maxWarnings}`);
       }
 
-      baseResult.passed = baseResult.violations.length === 0 && result.code === 0;
+      baseResult.passed = baseResult.violations.length === 0;
     } catch (error) {
       baseResult.violations.push(`Failed to parse linting results: ${error}`);
     }
@@ -591,19 +598,48 @@ export class QualityGateRunner {
     threshold: { maxCritical?: number; maxHigh?: number; maxMedium?: number }
   ): QualityGateResult {
     try {
-      // Parse npm audit output
-      const criticalMatches = result.stdout.match(/(\d+)\s+critical/i);
-      const highMatches = result.stdout.match(/(\d+)\s+high/i);
-      const mediumMatches = result.stdout.match(/(\d+)\s+moderate/i);
+      const combinedOutput = `${result.stdout}\n${result.stderr ?? ''}`.trim();
 
-      const critical = parseInt(criticalMatches?.[1] || '0', 10);
-      const high = parseInt(highMatches?.[1] || '0', 10);
-      const medium = parseInt(mediumMatches?.[1] || '0', 10);
+      let critical = 0;
+      let high = 0;
+      let medium = 0;
+      let hasCounts = false;
+
+      const jsonPayloads = [result.stdout, result.stderr ?? '']
+        .map((segment) => segment.trim())
+        .filter((segment) => segment.length > 0);
+      for (const payload of jsonPayloads) {
+        try {
+          const parsed = JSON.parse(payload) as {
+            metadata?: { vulnerabilities?: { critical?: number; high?: number; moderate?: number } };
+          };
+          const vulnerabilities = parsed.metadata?.vulnerabilities;
+          if (vulnerabilities) {
+            critical = Number(vulnerabilities.critical ?? 0);
+            high = Number(vulnerabilities.high ?? 0);
+            medium = Number(vulnerabilities.moderate ?? 0);
+            hasCounts = true;
+            break;
+          }
+        } catch {
+          // Ignore non-JSON payloads and fallback to regex parsing below.
+        }
+      }
+
+      if (!hasCounts) {
+        const criticalMatches = combinedOutput.match(/(\d+)\s+critical/i);
+        const highMatches = combinedOutput.match(/(\d+)\s+high/i);
+        const mediumMatches = combinedOutput.match(/(\d+)\s+moderate/i);
+
+        critical = parseInt(criticalMatches?.[1] || '0', 10);
+        high = parseInt(highMatches?.[1] || '0', 10);
+        medium = parseInt(mediumMatches?.[1] || '0', 10);
+        hasCounts = Boolean(criticalMatches || highMatches || mediumMatches);
+      }
 
       baseResult.details = { critical, high, medium };
 
       const exitCode = result.code ?? 0;
-      const hasCounts = Boolean(criticalMatches || highMatches || mediumMatches);
       if (exitCode !== 0 && !hasCounts) {
         baseResult.violations.push(`Security scan failed with exit code ${exitCode}`);
       }

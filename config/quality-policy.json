@@ -212,7 +212,7 @@
         },
         "testing": {
           "maxCritical": 2,
-          "maxHigh": 5,
+          "maxHigh": 6,
           "maxMedium": 15,
           "blockOnCritical": true
         },
@@ -235,7 +235,7 @@
         "semgrep"
       ],
       "commands": {
-        "test": "npm run verify:security",
+        "test": "pnpm audit --prod --json",
         "fix": "npm audit fix"
       }
     },

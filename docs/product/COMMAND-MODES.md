@@ -57,7 +57,7 @@ pnpm run security:integrated:quick
 `spec validate` は **`-i` が必須** です（`src/cli/spec-cli.ts` の `requiredOption`）。
 
 ```bash
-pnpm run spec:validate -- -i spec/example-spec.md --output .ae/ae-ir.json
+pnpm run spec:validate -i spec/example-spec.md --output .ae/ae-ir.json
 ```
 
 ### 6.2 `help` の表示
