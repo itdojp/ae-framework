@@ -76,6 +76,8 @@ gh issue edit <pr-number> --repo itdojp/ae-framework --remove-label status:block
    - `AE_GH_RETRY_MAX_ATTEMPTS`
    - `AE_GH_RETRY_INITIAL_DELAY_MS`
    - `AE_GH_RETRY_MAX_DELAY_MS`
+   - `AE_GH_RETRY_MULTIPLIER`
+   - `AE_GH_RETRY_JITTER_MS`
 3. それでも収束しない場合は `write` 以上で段階停止し、手動運用へ移行
 
 ### 4.2 review gate mismatch（同一SHAで gate が success/failure 混在）
