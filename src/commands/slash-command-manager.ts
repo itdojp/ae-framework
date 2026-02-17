@@ -13,6 +13,7 @@ import { PhaseStateManager } from '../utils/phase-state-manager.js';
 import type { PhaseType } from '../utils/phase-state-manager.js';
 import { SteeringLoader } from '../utils/steering-loader.js';
 import { ApprovalService } from '../services/approval-service.js';
+import { defaultOperateAgentConfig } from './slash-command-operate-config.js';
 import { 
   UnifiedAnalyzeCommand,
   UnifiedDocumentCommand,
@@ -81,121 +82,28 @@ export class SlashCommandManager {
     this.registerExtendedCommands();
   }
 
-  /**
-   * Get or create intent agent
-   */
   private getIntentAgent(): IntentAgent {
-    if (!this.intentAgent) {
-      this.intentAgent = new IntentAgent();
-    }
-    return this.intentAgent;
+    return (this.intentAgent ??= new IntentAgent());
   }
 
-  /**
-   * Get or create formal agent
-   */
   private getFormalAgent(): FormalAgent {
-    if (!this.formalAgent) {
-      this.formalAgent = new FormalAgent();
-    }
-    return this.formalAgent;
+    return (this.formalAgent ??= new FormalAgent());
   }
 
-  /**
-   * Get or create test agent
-   */
   private getTestAgent(): TestGenerationAgent {
-    if (!this.testAgent) {
-      this.testAgent = new TestGenerationAgent();
-    }
-    return this.testAgent;
+    return (this.testAgent ??= new TestGenerationAgent());
   }
 
-  /**
-   * Get or create code agent
-   */
   private getCodeAgent(): CodeGenerationAgent {
-    if (!this.codeAgent) {
-      this.codeAgent = new CodeGenerationAgent();
-    }
-    return this.codeAgent;
+    return (this.codeAgent ??= new CodeGenerationAgent());
   }
 
-  /**
-   * Get or create verify agent
-   */
   private getVerifyAgent(): VerifyAgent {
-    if (!this.verifyAgent) {
-      this.verifyAgent = new VerifyAgent();
-    }
-    return this.verifyAgent;
+    return (this.verifyAgent ??= new VerifyAgent());
   }
 
-  /**
-   * Get or create operate agent
-   */
   private getOperateAgent(): OperateAgent {
-    if (!this.operateAgent) {
-      this.operateAgent = new OperateAgent({
-        deploymentConfig: {
-          cicdProvider: 'github-actions',
-          environments: ['dev', 'prod'],
-          rolloutStrategy: 'rolling',
-          healthCheckUrl: 'http://localhost:3000/health',
-          timeoutSeconds: 300
-        },
-        monitoringConfig: {
-          metricsEndpoint: 'http://localhost:8080/metrics',
-          logsEndpoint: 'http://localhost:8080/logs',
-          tracesEndpoint: 'http://localhost:8080/traces',
-          healthEndpoints: ['http://localhost:3000/health'],
-          checkIntervalMs: 30000
-        },
-        alertingConfig: {
-          channels: [],
-          thresholds: [],
-          escalationPolicy: []
-        },
-        scalingConfig: {
-          minInstances: 1,
-          maxInstances: 10,
-          targetCpuPercent: 80,
-          targetMemoryPercent: 80,
-          scaleUpCooldown: '5m',
-          scaleDownCooldown: '10m'
-        },
-        securityConfig: {
-          scanSchedule: '0 2 * * *',
-          vulnerabilityThreshold: 'medium',
-          complianceFrameworks: [],
-          securityEndpoints: []
-        },
-        costConfig: {
-          budgetLimit: 10000,
-          costCenter: 'development',
-          optimizationTargets: [],
-          reportingSchedule: 'weekly'
-        },
-        sloConfig: {
-          availability: 99.9,
-          latencyP95Ms: 200,
-          errorRatePercent: 0.1,
-          throughputRps: 1000,
-          evaluationWindow: '1d'
-        },
-        chaosConfig: {
-          enabled: false,
-          schedule: '0 3 * * 1',
-          experiments: [],
-          safetyLimits: {
-            maxErrorRate: 0.05,
-            maxLatencyMs: 5000,
-            minHealthyInstances: 1
-          }
-        }
-      });
-    }
-    return this.operateAgent;
+    return (this.operateAgent ??= new OperateAgent(defaultOperateAgentConfig));
   }
 
   /**
