@@ -28,7 +28,9 @@ const readEnvInt = (name, fallback) => {
 const readEnvNumber = (name, fallback) => {
   const raw = process.env[name];
   if (raw === null || raw === undefined) return fallback;
-  const parsed = Number(String(raw).trim());
+  const trimmed = String(raw).trim();
+  if (!trimmed) return fallback;
+  const parsed = Number(trimmed);
   if (!Number.isFinite(parsed)) return fallback;
   return parsed;
 };
@@ -142,7 +144,8 @@ export function execGh(args, { input, encoding = 'utf8', cwd, env, stdio } = {})
         );
       }
       sleepSync(waitDelay);
-      delay = Math.min(maxDelay, Math.max(1, Math.round(delay * multiplier)));
+      const nextDelaySeed = Math.max(delay, baseDelay);
+      delay = Math.min(maxDelay, Math.max(1, Math.round(nextDelaySeed * multiplier)));
     }
   }
 
