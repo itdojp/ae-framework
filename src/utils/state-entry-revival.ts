@@ -31,7 +31,7 @@ export function reviveStateEntryData(rawEntry: CompressedStateEntryLike): unknow
       if (typeof ArrayBuffer !== 'undefined' && data instanceof ArrayBuffer) {
         return Buffer.from(new Uint8Array(data));
       }
-      // SharedArrayBuffer (Node 20+)
+      // SharedArrayBuffer (when available)
       if (typeof SharedArrayBuffer !== 'undefined' && data instanceof SharedArrayBuffer) {
         return Buffer.from(new Uint8Array(data));
       }
