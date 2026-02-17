@@ -45,6 +45,7 @@
     "lint": "eslint .",
     "check:root-layout": "node scripts/ci/check-root-layout.mjs",
     "check:root-layout:warn": "node scripts/ci/check-root-layout.mjs --mode=warn",
+    "check:root-generated": "node scripts/ci/check-no-root-generated-files.mjs",
     "check:doc-consistency": "node scripts/docs/check-doc-consistency.mjs",
     "types:check": "tsc -p configs/tsconfig/tsconfig.verify.json --noEmit",
     "test:property:webapi": "vitest run --dir tests/property/web-api --passWithNoTests",

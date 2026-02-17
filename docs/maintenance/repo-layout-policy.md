@@ -39,7 +39,7 @@
   - `cegis-report-*.json`
   - `generated-*.json`
   - `filtered-test.json`, `parallel-test.json`, `run-suite.json`, `run-test.json`, `workflow-test.json`
-  - `conformance-results.json`, `verify-lite-lint-summary.json`
+  - `conformance-results.json`, `verify-lite-run-summary.json`, `verify-lite-lint-summary.json`, `verify-lite-lint.log`
 - 実行キャッシュ/一時物:
   - `node_modules/`, `test-results/`, `test-results-run/`, `tmp/`
 - 日次/手動検証メモの生ファイル（ルート直下）
@@ -51,7 +51,7 @@
 | CEGISレポート | `src/cegis/auto-fix-engine.ts` | `cegis-report-*.json` (root) | ルート禁止。`temp-reports/cegis-archives/` へ退避または削除 |
 | Conformance結果 | `ae conformance verify` | `conformance-results.json` | ルート禁止。`artifacts/` か `temp-reports/` へ |
 | Integration CLI生成物 | integration系CLI/tests | `generated-*.json`, `run-*.json` など | ルート禁止。テスト実行後に削除 |
-| Verify Lite lint要約 | `scripts/ci/run-verify-lite-local.sh` | `verify-lite-lint-summary.json` | ルート禁止。`reports/lint/` 優先 |
+| Verify Lite lint要約 | `scripts/ci/run-verify-lite-local.sh` | `artifacts/verify-lite/verify-lite-lint-summary.json` | ルート禁止。`artifacts/verify-lite/` に保存 |
 | Coverage | `pnpm run coverage`, `pnpm run test:coverage` | `coverage/` | 非追跡（生成物） |
 | レポート集約 | quality/verify系 | `reports/`, `artifacts/hermetic-reports/` | 原則非追跡（必要成果物のみ残す） |
 
@@ -84,4 +84,4 @@
 
 - ルート直下の生成物パターンを発生源単位で修正
 - `needs-review` 対象をサブフォルダ再配置するPRを分割投入
-- 配置違反を検知するスクリプト（例: `scripts/ci/check-root-layout.mjs`）を追加
+- 配置違反を検知するスクリプト（`scripts/ci/check-root-layout.mjs`, `scripts/ci/check-no-root-generated-files.mjs`）をCIに組み込む

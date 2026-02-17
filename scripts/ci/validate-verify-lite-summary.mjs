@@ -4,7 +4,7 @@ import path from 'node:path';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 
-const summaryPath = process.argv[2] ?? 'verify-lite-run-summary.json';
+const summaryPath = process.argv[2] ?? 'artifacts/verify-lite/verify-lite-run-summary.json';
 const schemaPath = process.argv[3] ?? 'schema/verify-lite-run-summary.schema.json';
 
 const resolvedSummary = path.resolve(summaryPath);

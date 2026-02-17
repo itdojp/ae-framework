@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const summaryPath = process.argv[2] ?? 'verify-lite-lint-summary.json';
+const summaryPath = process.argv[2] ?? 'artifacts/verify-lite/verify-lite-lint-summary.json';
 const baselinePath = process.argv[3] ?? 'config/verify-lite-lint-baseline.json';
 const resolvedSummary = path.resolve(summaryPath);
 const resolvedBaseline = path.resolve(baselinePath);

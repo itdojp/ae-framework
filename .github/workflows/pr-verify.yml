@@ -100,7 +100,7 @@ jobs:
         if: always()
         with:
           name: codex-quickstart-summary
-          path: artifacts/codex-quickstart-summary.md
+          path: artifacts/codex/quickstart-summary.md
       - name: Upload CodeX JSON artifacts
         uses: actions/upload-artifact@v4
         if: always()
@@ -211,9 +211,9 @@ jobs:
       - name: Show CodeX summary (head)
         if: always()
         run: |
-          if [ -f artifacts/codex-quickstart-summary.md ]; then
+          if [ -f artifacts/codex/quickstart-summary.md ]; then
             printf "%s\n" "--- CodeX Quickstart Summary (head) ---"
-            sed -n '1,60p' artifacts/codex-quickstart-summary.md || true
+            sed -n '1,60p' artifacts/codex/quickstart-summary.md || true
             printf "%s\n" "---"
           else
             printf "%s\n" "No codex-quickstart summary found."

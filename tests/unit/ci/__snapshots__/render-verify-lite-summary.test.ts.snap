@@ -44,8 +44,8 @@ Schema Version: 1.0.0
 
 
 Artifacts:
-- Lint Baseline Diff: \`verify-lite-lint-summary.json\` ([Data Link](https://example.com/artifacts))
-- Lint Log: \`verify-lite-lint.log\` ([Data Link](https://example.com/artifacts))
+- Lint Baseline Diff: \`artifacts/verify-lite/verify-lite-lint-summary.json\` ([Data Link](https://example.com/artifacts))
+- Lint Log: \`artifacts/verify-lite/verify-lite-lint.log\` ([Data Link](https://example.com/artifacts))
 - Mutation Summary JSON: \`reports/mutation/summary.json\` ([Data Link](https://example.com/artifacts))
 - Mutation Survivors JSON: \`reports/mutation/survivors.json\` ([Data Link](https://example.com/artifacts))
 - Conformance Summary JSON: \`reports/conformance/verify-lite-summary.json\` ([Data Link](https://example.com/artifacts))
