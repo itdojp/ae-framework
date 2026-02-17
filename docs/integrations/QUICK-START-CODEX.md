@@ -22,13 +22,12 @@ This guide shows the fastest way to use ae-framework from CodeX via CLI/MCP.
 - Node.js 20.11+
 - pnpm 10 (Corepack recommended: `corepack enable`)
 - Run environment diagnostics first: `pnpm run doctor:env`
-- If doctor reports `dist` warning, run `pnpm run build` before quickstart/stdio usage
+- `codex:quickstart` auto-builds `dist` when missing (set `CODEX_SKIP_BUILD=1` to disable auto-build)
 
 ## 1) One-command PoC (Verify + Formal)
 To customize formal input, set `CODEX_FORMAL_REQ` to your requirement text (single line or escaped).
 ```bash
 pnpm run doctor:env
-pnpm run build
 CODEX_RUN_FORMAL=1 pnpm run codex:quickstart
 ```
 Outputs under `artifacts/`:
@@ -51,7 +50,6 @@ CODEX_TOLERANT=1 pnpm run codex:quickstart
 Use the included sample Phase State:
 ```bash
 pnpm run doctor:env
-pnpm run build
 CODEX_RUN_UI=1 \
 CODEX_PHASE_STATE_FILE=samples/phase-state.example.json \
 CODEX_UI_DRY_RUN=1 \
@@ -77,15 +75,15 @@ Sample configs:
 - Examples: `docs/integrations/examples/*`
 
 ## Windows/WSL Tips
-- Run `pnpm run doctor:env` first and then build when `dist` warning is reported.
+- Run `pnpm run doctor:env` first. Quickstart auto-builds `dist` when needed.
 - Prefer WSL for consistent paths; avoid spaces in Windows paths.
 - PowerShell:
 ```powershell
-$env:CODEX_RUN_FORMAL="1"; pnpm run doctor:env; pnpm run build; pnpm run codex:quickstart
+$env:CODEX_RUN_FORMAL="1"; pnpm run doctor:env; pnpm run codex:quickstart
 ```
 - cmd.exe:
 ```bat
-set CODEX_RUN_FORMAL=1 & pnpm run doctor:env & pnpm run build && pnpm run codex:quickstart
+set CODEX_RUN_FORMAL=1 & pnpm run doctor:env & pnpm run codex:quickstart
 ```
 ## 4) Stdio Adapter (direct Task Adapter)
 Pipe a `TaskRequest` JSON to the stdio adapter and receive a `TaskResponse` JSON.
@@ -105,13 +103,12 @@ echo '{"description":"Generate UI","subagent_type":"ui","context":{"phaseState":
 - Node.js 20.11+
 - pnpm 10（Corepack 推奨: `corepack enable`）
 - まず環境診断: `pnpm run doctor:env`
-- `dist` 警告が出た場合は `pnpm run build` を実行（quickstart/stdio スクリプトは `dist/` を参照）
+- `codex:quickstart` は `dist` が無い場合に自動で `pnpm run build` を試行（`CODEX_SKIP_BUILD=1` で無効化）
 
 ### 1) ワンコマンド PoC（Verify + Formal）
 OpenAPI/TLA+ 等の成果物を `artifacts/` に出力します。必要なら `CODEX_FORMAL_REQ` で要件文字列を指定。
 ```bash
 pnpm run doctor:env
-pnpm run build
 CODEX_RUN_FORMAL=1 pnpm run codex:quickstart
 ```
 主な出力:
@@ -134,7 +131,6 @@ CODEX_TOLERANT=1 pnpm run codex:quickstart
 同梱の Phase State サンプルを使って UI をスキャフォールド。
 ```bash
 pnpm run doctor:env
-pnpm run build
 CODEX_RUN_UI=1 \
 CODEX_PHASE_STATE_FILE=samples/phase-state.example.json \
 CODEX_UI_DRY_RUN=1 \
@@ -163,6 +159,6 @@ echo '{"description":"Generate UI","subagent_type":"ui","context":{"phaseState":
 ```
 
 ### Windows/WSL の注意
-- 先に `pnpm run doctor:env` を実行し、`dist` 警告が出たら `pnpm run build`
+- 先に `pnpm run doctor:env` を実行（quickstart は必要に応じて `dist` を自動ビルド）
 - WSL 推奨。Windows パスは空白を避け、`cwd` は絶対パスで
 - Corepack（`corepack enable`）で pnpm を管理
