@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execGh, execGhJson } from './lib/gh-exec.mjs';
 import { emitAutomationReport } from './lib/automation-report.mjs';
+import { sleep } from './lib/timing.mjs';
 import {
   collectNonDocs,
   hasLabel,
@@ -91,8 +92,6 @@ if (!forceApply && !isActorAllowed(actor, copilotActorSet)) {
 }
 
 const marker = '<!-- AE-COPILOT-AUTO-FIX v1 -->';
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const execJson = (args, input) => {
   try {

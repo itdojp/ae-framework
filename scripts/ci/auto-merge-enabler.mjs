@@ -2,6 +2,7 @@
 import { execGh, execGhJson } from './lib/gh-exec.mjs';
 import { emitAutomationReport } from './lib/automation-report.mjs';
 import { hasLabel, normalizeLabelNames } from './lib/automation-guards.mjs';
+import { sleep } from './lib/timing.mjs';
 
 const repo = process.env.GITHUB_REPOSITORY;
 if (!repo) {
@@ -31,8 +32,6 @@ if (PR_NUMBER_RAW !== '') {
   }
   PR_NUMBER = Number(PR_NUMBER_RAW);
 }
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const execJson = (args, input) => {
   try {
