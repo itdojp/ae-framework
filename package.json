@@ -432,6 +432,7 @@
   },
   "files": [
     "dist/**",
+    "scripts/ci/check-package-manager.mjs",
     "templates/**",
     "docs/**",
     "schema/**",
