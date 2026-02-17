@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { encodeSpecialValue, reviveSpecialValue } from '../../../src/utils/state-serialization';
+import { encodeSpecialValue, reviveSpecialValue } from '../../../src/utils/state-serialization.js';
 
 describe('state-serialization helpers', () => {
   it('encodes and revives typed arrays', () => {
