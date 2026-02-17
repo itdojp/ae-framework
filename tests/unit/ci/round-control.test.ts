@@ -47,7 +47,30 @@ describe('round-control helpers', () => {
     })).toBe(40000);
   });
 
-  it('sleeps only before the last round', async () => {
+  it('handles wait resolution edge cases', () => {
+    expect(resolveRoundWaitMs({
+      round: 2,
+      baseSeconds: 0,
+      strategy: 'fixed',
+      maxSeconds: 10,
+    })).toBe(0);
+
+    expect(resolveRoundWaitMs({
+      round: 2,
+      baseSeconds: 7,
+      strategy: 'unknown',
+      maxSeconds: 10,
+    })).toBe(7000);
+
+    expect(resolveRoundWaitMs({
+      round: 1,
+      baseSeconds: 9,
+      strategy: 'exponential',
+      maxSeconds: 60,
+    })).toBe(9000);
+  });
+
+  it('skips sleep on the last round', async () => {
     const calls: number[] = [];
     const sleeper = async (ms: number) => {
       calls.push(ms);
@@ -72,5 +95,23 @@ describe('round-control helpers', () => {
     });
     expect(waitedLast).toBe(0);
     expect(calls).toEqual([5000]);
+  });
+
+  it('supports exponential wait strategy in waitForNextRound', async () => {
+    const calls: number[] = [];
+    const sleeper = async (ms: number) => {
+      calls.push(ms);
+    };
+
+    const waited = await waitForNextRound({
+      round: 2,
+      maxRounds: 4,
+      baseSeconds: 6,
+      strategy: 'exponential',
+      maxSeconds: 18,
+      sleeper,
+    });
+    expect(waited).toBe(12000);
+    expect(calls).toEqual([12000]);
   });
 });
