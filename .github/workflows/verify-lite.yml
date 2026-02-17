@@ -32,6 +32,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      # Intentional: run before docs-only detection to fail fast on root pollution
+      # regardless of PR change scope.
       - name: Enforce root layout policy
         run: node scripts/ci/check-root-layout.mjs
       - name: Detect docs-only change
