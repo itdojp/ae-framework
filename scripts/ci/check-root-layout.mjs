@@ -2,6 +2,7 @@
 
 import { readdirSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 export const ALLOWED_ROOT_ENTRIES = new Set([
   '.ae',
@@ -178,7 +179,20 @@ export function runRootLayoutCheck(argv = process.argv) {
   return { ...result, exitCode, options };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+export function isExecutedAsMain(metaUrl, argvPath = process.argv[1]) {
+  if (!argvPath || typeof argvPath !== 'string') {
+    return false;
+  }
+  try {
+    const modulePath = path.resolve(fileURLToPath(metaUrl));
+    const entryPath = path.resolve(argvPath);
+    return modulePath === entryPath;
+  } catch {
+    return false;
+  }
+}
+
+if (isExecutedAsMain(import.meta.url, process.argv[1])) {
   const outcome = runRootLayoutCheck(process.argv);
   process.exit(outcome.exitCode);
 }

@@ -2,7 +2,7 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { runRootLayoutCheck, scanRootLayout } from '../../../scripts/ci/check-root-layout.mjs';
+import { isExecutedAsMain, runRootLayoutCheck, scanRootLayout } from '../../../scripts/ci/check-root-layout.mjs';
 
 function withTempDir(fn: (dir: string) => void): void {
   const dir = mkdtempSync(path.join(tmpdir(), 'ae-root-layout-'));
@@ -72,5 +72,11 @@ describe('check-root-layout', () => {
         process.stdout.write = originalWrite;
       }
     });
+  });
+
+  it('treats URL-escaped module path and argv path as the same file', () => {
+    const metaUrl = 'file:///tmp/with%20space/check-root-layout.mjs';
+    const argvPath = '/tmp/with space/check-root-layout.mjs';
+    expect(isExecutedAsMain(metaUrl, argvPath)).toBe(true);
   });
 });
