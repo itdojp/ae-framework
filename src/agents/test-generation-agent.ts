@@ -45,6 +45,57 @@ export interface TestCoverage {
   security: string[];
 }
 
+interface PropertyTestContractInput {
+  name: string;
+  type: string;
+  constraints?: string[];
+}
+
+interface PropertyTestContract {
+  function: string;
+  inputs: PropertyTestContractInput[];
+  outputs: { type: string; constraints?: string[] };
+  invariants: string[];
+}
+
+interface IntegrationService {
+  name: string;
+  dependencies: string[];
+}
+
+interface IntegrationDataFlow {
+  from: string;
+  to: string;
+  data: string;
+}
+
+interface IntegrationArchitecture {
+  services: IntegrationService[];
+  dataFlow: IntegrationDataFlow[];
+}
+
+interface IntegrationPlannedTest {
+  name: string;
+  type: 'integration' | 'e2e';
+}
+
+interface PerformanceSLA {
+  responseTime: number;
+  throughput: number;
+  concurrentUsers: number;
+  availability: number;
+}
+
+type SecurityEndpointInput = string | { type?: string; [key: string]: unknown };
+
+interface SecurityEndpoint {
+  path: string;
+  method: string;
+  authentication: boolean;
+  authorization?: string[];
+  inputs: SecurityEndpointInput[];
+}
+
 export class TestGenerationAgent {
   /**
    * 要件からテストケースを自動生成
@@ -90,12 +141,7 @@ export class TestGenerationAgent {
   /**
    * Property-Based Testing の自動設計
    */
-  async generatePropertyTests(contract: {
-    function: string;
-    inputs: Array<{ name: string; type: string; constraints?: string[] }>;
-    outputs: { type: string; constraints?: string[] };
-    invariants: string[];
-  }): Promise<TestCase[]> {
+  async generatePropertyTests(contract: PropertyTestContract): Promise<TestCase[]> {
     const propertyTests: TestCase[] = [];
 
     // 入力の性質から自動的にプロパティを導出
@@ -159,10 +205,7 @@ export class TestGenerationAgent {
   /**
    * 統合テスト戦略の立案
    */
-  async planIntegrationTests(architecture: {
-    services: Array<{ name: string; dependencies: string[] }>;
-    dataFlow: Array<{ from: string; to: string; data: string }>;
-  }): Promise<{
+  async planIntegrationTests(architecture: IntegrationArchitecture): Promise<{
     testPlan: IntegrationTestPlan;
     mockStrategy: MockStrategy;
     testOrder: string[];
@@ -187,13 +230,7 @@ export class TestGenerationAgent {
   /**
    * セキュリティテストの自動生成
    */
-  async generateSecurityTests(endpoint: {
-    path: string;
-    method: string;
-    authentication: boolean;
-    authorization?: string[];
-    inputs: any[];
-  }): Promise<TestCase[]> {
+  async generateSecurityTests(endpoint: SecurityEndpoint): Promise<TestCase[]> {
     const securityTests: TestCase[] = [];
 
     // OWASP Top 10 に基づくテスト生成
@@ -218,12 +255,7 @@ export class TestGenerationAgent {
   /**
    * パフォーマンステストの設計
    */
-  async designPerformanceTests(sla: {
-    responseTime: number;
-    throughput: number;
-    concurrentUsers: number;
-    availability: number;
-  }): Promise<{
+  async designPerformanceTests(sla: PerformanceSLA): Promise<{
     loadTests: LoadTest[];
     stressTests: StressTest[];
     spikeTests: SpikeTest[];
@@ -364,14 +396,14 @@ export class TestGenerationAgent {
       .join('');
   }
 
-  private generatePropertyTestCode(contract: any, invariant: string): string {
+  private generatePropertyTestCode(contract: PropertyTestContract, invariant: string): string {
     return `
   property('${invariant}', () => {
     fc.assert(
       fc.property(
-        ${contract.inputs.map((i: any) => this.generateArbitrary(i)).join(',\n        ')},
-        (${contract.inputs.map((i: any) => i.name).join(', ')}) => {
-          const result = ${contract.function}(${contract.inputs.map((i: any) => i.name).join(', ')});
+        ${contract.inputs.map((input) => this.generateArbitrary(input)).join(',\n        ')},
+        (${contract.inputs.map((input) => input.name).join(', ')}) => {
+          const result = ${contract.function}(${contract.inputs.map((input) => input.name).join(', ')});
           return ${this.invariantToAssertion(invariant)};
         }
       )
@@ -379,7 +411,7 @@ export class TestGenerationAgent {
   });`;
   }
 
-  private generateArbitrary(input: { name: string; type: string; constraints?: string[] }): string {
+  private generateArbitrary(input: PropertyTestContractInput): string {
     const typeMap: Record<string, string> = {
       'string': 'fc.string()',
       'number': 'fc.integer()',
@@ -417,20 +449,20 @@ export class TestGenerationAgent {
     return conditions + 1;
   }
 
-  private generateImports(framework: string): string {
-    const imports = {
+  private generateImports(framework: TestGenerationRequest['testFramework']): string {
+    const imports: Record<TestGenerationRequest['testFramework'], string> = {
       'vitest': "import { describe, it, expect, beforeEach, afterEach } from 'vitest';",
       'jest': "import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';",
       'mocha': "import { describe, it, beforeEach, afterEach } from 'mocha';\nimport { expect } from 'chai';",
       'exunit': "use ExUnit.Case",
-    } as const;
+    };
     
-    return (imports as any)[framework] || imports.vitest;
+    return imports[framework] || imports.vitest;
   }
 
   // 以下、多数のヘルパーメソッドの簡略版
   private determineTestFilePath(request: TestGenerationRequest): string {
-    const framework = request.testFramework || 'vitest';
+    const framework = request.testFramework;
     const baseName = request.feature.toLowerCase().replace(/\s+/g, '-');
     
     switch (framework) {
@@ -530,7 +562,7 @@ export class TestGenerationAgent {
     return recommendations;
   }
 
-  private createDataGenerators(inputs: Array<{ name: string; type: string; constraints?: string[] }>): PropertyGenerator[] {
+  private createDataGenerators(inputs: PropertyTestContractInput[]): PropertyGenerator[] {
     return inputs.map(input => ({
       name: input.name,
       type: input.type,
@@ -539,7 +571,7 @@ export class TestGenerationAgent {
     }));
   }
 
-  private detectEdgeCaseProperties(contract: any): Array<{ name: string; description: string; property: string; generators: PropertyGenerator[] }> {
+  private detectEdgeCaseProperties(contract: PropertyTestContract): Array<{ name: string; description: string; property: string; generators: PropertyGenerator[] }> {
     return [
       {
         name: 'boundary values',
@@ -557,7 +589,7 @@ export class TestGenerationAgent {
     Then expected outcome occurs`;
   }
 
-  private generateEdgeCaseScenarios(userStory: any): string[] {
+  private generateEdgeCaseScenarios(userStory: { iWant: string }): string[] {
     return [
       `  Scenario: Edge case - empty input
     Given empty input
@@ -566,29 +598,29 @@ export class TestGenerationAgent {
     ];
   }
 
-  private identifyCriticalPaths(architecture: any): string[] {
-    return architecture.services.map((service: any) => service.name);
+  private identifyCriticalPaths(architecture: IntegrationArchitecture): string[] {
+    return architecture.services.map((service) => service.name);
   }
 
-  private identifyIntegrationPoints(architecture: any): string[] {
-    return architecture.dataFlow.map((flow: any) => `${flow.from}->${flow.to}`);
+  private identifyIntegrationPoints(architecture: IntegrationArchitecture): string[] {
+    return architecture.dataFlow.map((flow) => `${flow.from}->${flow.to}`);
   }
 
-  private generateUnitIntegrationTests(architecture: any): any[] {
-    return architecture.services.map((service: any) => ({
+  private generateUnitIntegrationTests(architecture: IntegrationArchitecture): IntegrationPlannedTest[] {
+    return architecture.services.map((service) => ({
       name: `${service.name} unit integration`,
       type: 'integration',
     }));
   }
 
-  private generateServiceIntegrationTests(architecture: any): any[] {
-    return architecture.services.map((service: any) => ({
+  private generateServiceIntegrationTests(architecture: IntegrationArchitecture): IntegrationPlannedTest[] {
+    return architecture.services.map((service) => ({
       name: `${service.name} service integration`,
       type: 'integration',
     }));
   }
 
-  private generateE2ETests(architecture: any): any[] {
+  private generateE2ETests(_architecture: IntegrationArchitecture): IntegrationPlannedTest[] {
     return [
       {
         name: 'End-to-end flow test',
@@ -601,10 +633,10 @@ export class TestGenerationAgent {
     return integrationPoints.length > 0 ? 0.8 : 0;
   }
 
-  private determineMockStrategy(architecture: any): MockStrategy {
+  private determineMockStrategy(architecture: IntegrationArchitecture): MockStrategy {
     return {
       approach: 'partial',
-      mocks: architecture.services.map((service: any) => ({
+      mocks: architecture.services.map((service) => ({
         service: service.name,
         type: 'partial',
       })),
@@ -615,7 +647,7 @@ export class TestGenerationAgent {
     return criticalPaths.sort();
   }
 
-  private generateInjectionTest(endpoint: any): TestCase | null {
+  private generateInjectionTest(endpoint: SecurityEndpoint): TestCase | null {
     if (endpoint.inputs.length === 0) return null;
     return {
       name: 'SQL Injection Test',
@@ -626,7 +658,7 @@ export class TestGenerationAgent {
     };
   }
 
-  private generateAuthenticationTest(endpoint: any): TestCase | null {
+  private generateAuthenticationTest(endpoint: SecurityEndpoint): TestCase | null {
     if (!endpoint.authentication) return null;
     return {
       name: 'Authentication Test',
@@ -637,7 +669,7 @@ export class TestGenerationAgent {
     };
   }
 
-  private generateAuthorizationTest(endpoint: any): TestCase | null {
+  private generateAuthorizationTest(endpoint: SecurityEndpoint): TestCase | null {
     if (!endpoint.authorization) return null;
     return {
       name: 'Authorization Test',
@@ -648,8 +680,8 @@ export class TestGenerationAgent {
     };
   }
 
-  private generateXSSTest(endpoint: any): TestCase | null {
-    const hasStringInputs = endpoint.inputs.some((input: any) => typeof input === 'string' || input.type === 'string');
+  private generateXSSTest(endpoint: SecurityEndpoint): TestCase | null {
+    const hasStringInputs = endpoint.inputs.some((input) => this.isStringEndpointInput(input));
     if (!hasStringInputs) return null;
     return {
       name: 'XSS Prevention Test',
@@ -660,7 +692,7 @@ export class TestGenerationAgent {
     };
   }
 
-  private generateCSRFTest(endpoint: any): TestCase | null {
+  private generateCSRFTest(endpoint: SecurityEndpoint): TestCase | null {
     if (endpoint.method === 'GET') return null;
     return {
       name: 'CSRF Protection Test',
@@ -671,7 +703,7 @@ export class TestGenerationAgent {
     };
   }
 
-  private generateFuzzingTest(endpoint: any): TestCase {
+  private generateFuzzingTest(_endpoint: SecurityEndpoint): TestCase {
     return {
       name: 'Fuzzing Test',
       type: 'unit',
@@ -681,7 +713,7 @@ export class TestGenerationAgent {
     };
   }
 
-  private generateLoadTests(sla: any): LoadTest[] {
+  private generateLoadTests(sla: PerformanceSLA): LoadTest[] {
     return [
       {
         name: 'Basic Load Test',
@@ -692,7 +724,7 @@ export class TestGenerationAgent {
     ];
   }
 
-  private generateStressTests(sla: any): StressTest[] {
+  private generateStressTests(sla: PerformanceSLA): StressTest[] {
     return [
       {
         name: 'Stress Test',
@@ -704,7 +736,7 @@ export class TestGenerationAgent {
     ];
   }
 
-  private generateSpikeTests(sla: any): SpikeTest[] {
+  private generateSpikeTests(sla: PerformanceSLA): SpikeTest[] {
     return [
       {
         name: 'Spike Test',
@@ -716,7 +748,7 @@ export class TestGenerationAgent {
     ];
   }
 
-  private generateSoakTests(sla: any): SoakTest[] {
+  private generateSoakTests(sla: PerformanceSLA): SoakTest[] {
     return [
       {
         name: 'Soak Test',
@@ -726,6 +758,14 @@ export class TestGenerationAgent {
         sustainedDuration: 1200,
       },
     ];
+  }
+
+  private isStringEndpointInput(input: SecurityEndpointInput): boolean {
+    if (typeof input === 'string') {
+      return true;
+    }
+    const inputType = input.type;
+    return typeof inputType === 'string' && inputType.toLowerCase() === 'string';
   }
 
   private inferFeatureName(functions: string[], classes: string[]): string {
@@ -781,7 +821,7 @@ interface CodeAnalysis {
 }
 
 interface IntegrationTestPlan {
-  phases: Array<{ name: string; tests: any[] }>;
+  phases: Array<{ name: string; tests: IntegrationPlannedTest[] }>;
   coverage: number;
 }
 
