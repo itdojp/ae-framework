@@ -13,7 +13,7 @@ import { PhaseStateManager } from '../utils/phase-state-manager.js';
 import type { PhaseType } from '../utils/phase-state-manager.js';
 import { SteeringLoader } from '../utils/steering-loader.js';
 import { ApprovalService } from '../services/approval-service.js';
-import { defaultOperateAgentConfig } from './slash-command-operate-config.js';
+import { createDefaultOperateAgentConfig } from './slash-command-operate-config.js';
 import { 
   UnifiedAnalyzeCommand,
   UnifiedDocumentCommand,
@@ -103,7 +103,7 @@ export class SlashCommandManager {
   }
 
   private getOperateAgent(): OperateAgent {
-    return (this.operateAgent ??= new OperateAgent(defaultOperateAgentConfig));
+    return (this.operateAgent ??= new OperateAgent(createDefaultOperateAgentConfig()));
   }
 
   /**
