@@ -65,6 +65,17 @@ describe('check-root-layout', () => {
     ]);
   });
 
+  it('treats reports directories as allowed root entries', () => {
+    const result = scanRootLayout([
+      'reports',
+      'temp-reports',
+      'src',
+    ]);
+
+    expect(result.violations).toHaveLength(0);
+    expect(result.warnings).toHaveLength(0);
+  });
+
   it('returns exit code 1 in strict mode when violation exists', () => {
     withTempDir((dir) => {
       writeFileSync(path.join(dir, 'cegis-report-100.json'), '{}');

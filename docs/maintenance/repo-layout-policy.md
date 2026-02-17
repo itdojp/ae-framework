@@ -77,7 +77,7 @@
 
 1. 新規コマンドを追加する際は、出力先を `artifacts/`・`reports/`・`coverage/`・`temp-reports/` のいずれかに固定する。  
 2. ルート直下へ生成する実装は受け入れない（既存実装は段階的に解消）。  
-3. Cleanupコマンド（`pnpm run clean:project`）で除去できることを保証する。  
+3. Cleanupコマンド（`pnpm run clean:root-safe` / `pnpm run clean:project`）で除去できることを保証する。  
 4. Phase 3で「ルート汚染検知」をCI必須ゲート化する。  
 
 ## 7. 次アクション（Phase 1向け）
