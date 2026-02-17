@@ -317,14 +317,11 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
    * Analyze requirements and extract intent
    */
   async analyzeIntent(request: IntentAnalysisRequest): Promise<IntentAnalysisResult> {
-    // Load steering documents for context
-    const steeringContext = await this.steeringLoader.getSteeringContext();
-    
-    // Extract raw requirements from sources, considering steering context
+    // Extract raw requirements from sources.
     const rawRequirements = extractRequirementsFromSources(request.sources);
     
-    // Parse and structure requirements with steering context
-    const requirements = await this.parseRequirementsWithSteering(rawRequirements, request.context, steeringContext);
+    // Parse and structure requirements with steering enhancements.
+    const requirements = await this.parseRequirementsWithSteering(rawRequirements);
     
     // Generate user stories
     const userStories = this.generateUserStories(requirements);
@@ -968,9 +965,7 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
    * Parse requirements with steering document context
    */
   private async parseRequirementsWithSteering(
-    raw: string[],
-    context: ProjectContext | undefined,
-    steeringContext: string
+    raw: string[]
   ): Promise<Requirement[]> {
     const requirements = parseStructuredRequirements(raw);
     

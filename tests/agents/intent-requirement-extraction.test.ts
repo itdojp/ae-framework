@@ -60,7 +60,28 @@ describe('intent requirement extraction', () => {
     expect(requirements[2]).toMatchObject({
       id: 'REQ-003',
       type: 'non-functional',
+      category: 'performance',
+      priority: 'should',
+    });
+  });
+
+  it('normalizes whitespace and avoids substring false positives', () => {
+    const requirements = parseStructuredRequirements([
+      '   ',
+      '  author profile customization  ',
+      'custom policy should be configurable',
+    ]);
+
+    expect(requirements).toHaveLength(2);
+    expect(requirements[0]).toMatchObject({
+      id: 'REQ-001',
+      description: 'author profile customization',
       category: 'general',
+      priority: 'should',
+    });
+    expect(requirements[1]).toMatchObject({
+      id: 'REQ-002',
+      description: 'custom policy should be configurable',
       priority: 'should',
     });
   });

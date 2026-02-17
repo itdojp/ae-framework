@@ -9,7 +9,11 @@ export function extractRequirementsFromSources(sources: RequirementSource[]): st
 }
 
 export function parseStructuredRequirements(raw: string[]): Requirement[] {
-  return raw.map((text, index) => ({
+  const normalized = raw
+    .map((text) => text.trim())
+    .filter((text) => text.length > 0);
+
+  return normalized.map((text, index) => ({
     id: `REQ-${String(index + 1).padStart(3, '0')}`,
     type: determineRequirementType(text),
     category: determineCategory(text),
@@ -66,12 +70,41 @@ export function determineRequirementType(text: string): Requirement['type'] {
 export function determineCategory(text: string): string {
   const lowerText = text.toLowerCase();
 
-  if (lowerText.includes('auth')) return 'authentication';
-  if (lowerText.includes('security')) return 'security';
-  if (lowerText.includes('performance')) return 'performance';
-  if (lowerText.includes('data')) return 'data-management';
-  if (lowerText.includes('ui') || lowerText.includes('user interface')) return 'ui';
-  if (lowerText.includes('api')) return 'api';
+  if (
+    containsKeyword(lowerText, [
+      'auth',
+      'authentication',
+      'authenticate',
+      'authorization',
+      'authorisation',
+      'authorize',
+      'login',
+      'sign-in',
+      'signin',
+      'oauth',
+      'sso',
+    ])
+  ) {
+    return 'authentication';
+  }
+  if (containsKeyword(lowerText, ['security', 'secure', 'encryption', 'encrypted'])) {
+    return 'security';
+  }
+  if (containsKeyword(lowerText, ['performance', 'latency', 'response time', 'throughput', 'scalability'])) {
+    return 'performance';
+  }
+  if (containsKeyword(lowerText, ['data', 'database', 'storage', 'persistence'])) {
+    return 'data-management';
+  }
+  if (
+    containsKeyword(lowerText, ['ui', 'user interface'])
+    || containsKeyword(lowerText, ['ux', 'user experience'])
+  ) {
+    return 'ui';
+  }
+  if (containsKeyword(lowerText, ['api', 'rest', 'graphql'])) {
+    return 'api';
+  }
 
   return 'general';
 }
@@ -79,12 +112,28 @@ export function determineCategory(text: string): string {
 export function determinePriority(text: string): Requirement['priority'] {
   const lowerText = text.toLowerCase();
 
-  if (lowerText.includes('must') || lowerText.includes('critical')) return 'must';
-  if (lowerText.includes('should') || lowerText.includes('important')) return 'should';
-  if (lowerText.includes('could') || lowerText.includes('nice to have')) return 'could';
-  if (lowerText.includes('wont') || lowerText.includes('future')) return 'wont';
+  const mustPattern = /\b(must|critical)\b/;
+  const shouldPattern = /\b(should|important)\b/;
+  const couldPattern = /\b(could|nice to have)\b/;
+  const wontPattern = /\b(wont|future)\b/;
+
+  if (mustPattern.test(lowerText)) return 'must';
+  if (shouldPattern.test(lowerText)) return 'should';
+  if (couldPattern.test(lowerText)) return 'could';
+  if (wontPattern.test(lowerText)) return 'wont';
 
   return 'should';
+}
+
+function containsKeyword(text: string, keywords: string[]): boolean {
+  return keywords.some((keyword) => {
+    const escaped = escapeForRegex(keyword);
+    return new RegExp(`\\b${escaped}\\b`, 'i').test(text);
+  });
+}
+
+function escapeForRegex(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function extractFromSource(source: RequirementSource): string[] {
