@@ -63,6 +63,8 @@ GitHub API の 429 / secondary rate limit が出る場合は、以下の Reposit
 | `AE_GH_RETRY_MAX_ATTEMPTS` | 最大試行回数（初回実行を含む） | `8` | `docs/ci/pr-automation.md` |
 | `AE_GH_RETRY_INITIAL_DELAY_MS` | retry初期待ち（ms） | `750` | `docs/ci/pr-automation.md` |
 | `AE_GH_RETRY_MAX_DELAY_MS` | retry最大待ち（ms） | `60000` | `docs/ci/pr-automation.md` |
+| `AE_GH_RETRY_MULTIPLIER` | retry待機の指数倍率 | `2` | `docs/ci/pr-automation.md` |
+| `AE_GH_RETRY_JITTER_MS` | retry待機に加えるランダムジッター上限（ms） | `250` | `docs/ci/pr-automation.md` |
 | `AE_GH_RETRY_DEBUG` | retryログ出力（`1`） | 未設定 | `docs/ci/pr-automation.md` |
 
 PR self-heal を使う場合は次も設定できます（一次情報: `.github/workflows/pr-self-heal.yml`, `scripts/ci/pr-self-heal.mjs`）。

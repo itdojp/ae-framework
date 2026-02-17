@@ -45,6 +45,8 @@ Repository Variables に `AE_AUTOMATION_PROFILE` を設定します。
 | `AE_GH_RETRY_MAX_ATTEMPTS` | `10` | `8` | `6` |
 | `AE_GH_RETRY_INITIAL_DELAY_MS` | `1000` | `750` | `500` |
 | `AE_GH_RETRY_MAX_DELAY_MS` | `120000` | `60000` | `30000` |
+| `AE_GH_RETRY_MULTIPLIER` | `2` | `2` | `2` |
+| `AE_GH_RETRY_JITTER_MS` | `400` | `250` | `100` |
 | `COPILOT_REVIEW_WAIT_MINUTES` | `7` | `5` | `2` |
 | `COPILOT_REVIEW_MAX_ATTEMPTS` | `4` | `3` | `2` |
 

@@ -45,6 +45,8 @@ jobs:
           AE_GH_RETRY_MAX_ATTEMPTS: ${{ vars.AE_GH_RETRY_MAX_ATTEMPTS || '' }}
           AE_GH_RETRY_INITIAL_DELAY_MS: ${{ vars.AE_GH_RETRY_INITIAL_DELAY_MS || '' }}
           AE_GH_RETRY_MAX_DELAY_MS: ${{ vars.AE_GH_RETRY_MAX_DELAY_MS || '' }}
+          AE_GH_RETRY_MULTIPLIER: ${{ vars.AE_GH_RETRY_MULTIPLIER || '' }}
+          AE_GH_RETRY_JITTER_MS: ${{ vars.AE_GH_RETRY_JITTER_MS || '' }}
           AE_GH_RETRY_DEBUG: ${{ vars.AE_GH_RETRY_DEBUG || '' }}
           COPILOT_REVIEW_WAIT_MINUTES: ${{ vars.COPILOT_REVIEW_WAIT_MINUTES || '' }}
           COPILOT_REVIEW_MAX_ATTEMPTS: ${{ vars.COPILOT_REVIEW_MAX_ATTEMPTS || '' }}
