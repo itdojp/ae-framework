@@ -34,6 +34,21 @@ interface CodegenSnapshot {
 
 const SNAPSHOT_PATH = './tests/golden/snapshots/codegen-snapshot.json';
 const APPROVED_SNAPSHOT_PATH = './tests/golden/snapshots/codegen-approved.json';
+const DEFAULT_STABLE_TIMESTAMP = '1970-01-01T00:00:00.000Z';
+
+function resolveSnapshotTimestamp(): string {
+  const value = process.env.AE_GOLDEN_SNAPSHOT_TIMESTAMP?.trim();
+  return value && value.length > 0 ? value : DEFAULT_STABLE_TIMESTAMP;
+}
+
+function shouldPersistSnapshot(): boolean {
+  const override = process.env.AE_GOLDEN_SNAPSHOT_WRITE?.trim()?.toLowerCase();
+  if (override === 'true') return true;
+  if (override === 'false') return false;
+
+  const ci = process.env.CI?.trim()?.toLowerCase();
+  return ci !== 'true' && ci !== '1';
+}
 
 class CodegenSnapshotManager {
   private ensureSnapshotDir(): void {
@@ -47,12 +62,12 @@ class CodegenSnapshotManager {
     this.ensureSnapshotDir();
     
     // Find all generated files in examples/inventory
-    const generatedFiles = await glob('examples/inventory/**/*.{tsx,ts,spec.ts,stories.tsx}', {
+    const generatedFiles = (await glob('examples/inventory/**/*.{tsx,ts,spec.ts,stories.tsx}', {
       ignore: ['**/node_modules/**']
-    });
+    })).sort((a, b) => a.localeCompare(b));
 
     const snapshot: CodegenSnapshot = {
-      timestamp: new Date().toISOString(),
+      timestamp: resolveSnapshotTimestamp(),
       version: '1.0.0',
       files: {},
       summary: {
@@ -93,8 +108,9 @@ class CodegenSnapshotManager {
       snapshot.summary.totalEslintErrors += eslintErrors;
     }
 
-    // Save current snapshot
-    writeFileSync(SNAPSHOT_PATH, JSON.stringify(snapshot, null, 2));
+    if (shouldPersistSnapshot()) {
+      writeFileSync(SNAPSHOT_PATH, JSON.stringify(snapshot, null, 2));
+    }
     return snapshot;
   }
 
@@ -109,14 +125,24 @@ class CodegenSnapshotManager {
     }
   }
 
-  approveSnapshot(): void {
-    if (existsSync(SNAPSHOT_PATH)) {
-      const snapshot = readFileSync(SNAPSHOT_PATH, 'utf-8');
-      writeFileSync(APPROVED_SNAPSHOT_PATH, snapshot);
-      console.log('✅ Snapshot approved and saved to', APPROVED_SNAPSHOT_PATH);
-    } else {
+  loadCurrentSnapshot(): CodegenSnapshot | null {
+    if (!existsSync(SNAPSHOT_PATH)) {
+      return null;
+    }
+    try {
+      return JSON.parse(readFileSync(SNAPSHOT_PATH, 'utf-8'));
+    } catch {
+      return null;
+    }
+  }
+
+  approveSnapshot(snapshot?: CodegenSnapshot): void {
+    const approvedSource = snapshot ?? this.loadCurrentSnapshot();
+    if (!approvedSource) {
       throw new Error('No current snapshot found. Run tests first.');
     }
+    writeFileSync(APPROVED_SNAPSHOT_PATH, JSON.stringify(approvedSource, null, 2));
+    console.log('✅ Snapshot approved and saved to', APPROVED_SNAPSHOT_PATH);
   }
 
   compareSnapshots(current: CodegenSnapshot, approved: CodegenSnapshot): {
