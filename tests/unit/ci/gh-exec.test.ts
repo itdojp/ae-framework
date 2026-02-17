@@ -5,6 +5,8 @@ const baseEnv = {
   AE_GH_RETRY_MAX_ATTEMPTS: process.env.AE_GH_RETRY_MAX_ATTEMPTS,
   AE_GH_RETRY_INITIAL_DELAY_MS: process.env.AE_GH_RETRY_INITIAL_DELAY_MS,
   AE_GH_RETRY_MAX_DELAY_MS: process.env.AE_GH_RETRY_MAX_DELAY_MS,
+  AE_GH_RETRY_MULTIPLIER: process.env.AE_GH_RETRY_MULTIPLIER,
+  AE_GH_RETRY_JITTER_MS: process.env.AE_GH_RETRY_JITTER_MS,
   AE_GH_THROTTLE_MS: process.env.AE_GH_THROTTLE_MS,
 };
 
@@ -38,11 +40,21 @@ describe('gh-exec', () => {
     expect(__testOnly_shouldRetry('HTTP 403: Resource not accessible by integration')).toBe(false);
   });
 
+  it('parses retry-after hints from failure text', async () => {
+    const { __testOnly_extractRetryAfterMs } = await import('../../../scripts/ci/lib/gh-exec.mjs');
+
+    expect(__testOnly_extractRetryAfterMs('Retry-After: 3')).toBe(3000);
+    expect(__testOnly_extractRetryAfterMs('retry after 250ms')).toBe(250);
+    expect(__testOnly_extractRetryAfterMs('retrying after 2 seconds')).toBe(2000);
+    expect(__testOnly_extractRetryAfterMs('no retry header')).toBeNull();
+  });
+
   it('retries execGh on retryable failures', async () => {
     process.env.AE_GH_RETRY_NO_SLEEP = '1';
     process.env.AE_GH_RETRY_MAX_ATTEMPTS = '3';
     process.env.AE_GH_RETRY_INITIAL_DELAY_MS = '1';
     process.env.AE_GH_RETRY_MAX_DELAY_MS = '1';
+    process.env.AE_GH_RETRY_JITTER_MS = '0';
 
     let attempt = 0;
     const execFileSyncMock = vi.fn(() => {

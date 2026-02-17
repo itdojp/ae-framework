@@ -164,6 +164,8 @@ auto-merge（ラベルopt-in）:
 - `AE_GH_RETRY_MAX_ATTEMPTS`（既定 8）
 - `AE_GH_RETRY_INITIAL_DELAY_MS`（既定 750）
 - `AE_GH_RETRY_MAX_DELAY_MS`（既定 60000）
+- `AE_GH_RETRY_MULTIPLIER`（既定 2。指数backoffの倍率）
+- `AE_GH_RETRY_JITTER_MS`（既定 250。retry待機に追加するランダムジッター上限ms）
 - `AE_GH_THROTTLE_MS`（既定 250。`gh` 呼び出し間の最小間隔ms。`0` で無効化）
 - `AE_GH_RETRY_DEBUG=1`（retryログ出力）
 - `AE_GH_RETRY_NO_SLEEP=1`（テスト用途: sleep無効）
