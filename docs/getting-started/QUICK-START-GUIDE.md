@@ -6,10 +6,14 @@
 
 ## English
 
-**Get started with ae-framework in Claude Code!**
-**Complete automation of your first project in 15 minutes**
+**Get started with ae-framework in Claude Code**
+**Run a reproducible local setup first, then expand to automation**
 
 ### ⚡ 5-Minute Quick Setup
+
+> Notes:
+> - Command examples are executable on the current repository checkout.
+> - Conversation transcripts shown later are illustrative examples, not guaranteed verbatim output.
 
 #### 1. Enable ae-framework in Claude Code
 
@@ -19,11 +23,15 @@
 # 1. Clone and setup ae-framework in your project
 git clone https://github.com/itdojp/ae-framework.git
 cd ae-framework
+corepack enable
+corepack prepare pnpm@10.0.0 --activate
 pnpm install
 
 # 2. Auto-recognized by Claude Code
 # Intent Agent available as Task Tool
 ```
+
+`npm install` is intentionally blocked in this repository because workspace dependencies use pnpm (`workspace:*`).
 
 **Configuration Check (Optional):**
 ```json
