@@ -8,6 +8,7 @@
 
 import { VerifyAgent } from './verify-agent.js';
 import type { TaskRequest, TaskResponse } from './task-types.js';
+import type { Conflict, UserStory } from './interfaces/standard-interfaces.js';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -70,6 +71,217 @@ interface ValidationInput {
   strict: boolean;
 }
 
+interface ValidationIssueFrequency {
+  description: string;
+  frequency: number;
+}
+
+interface ValidationStoryIssue {
+  storyId: string;
+  description: string;
+}
+
+interface BlockingValidationIssue {
+  description: string;
+}
+
+interface UserStoriesQualityMetrics {
+  formatCompliance: number;
+  acceptanceCriteria: number;
+  testability: number;
+  independence: number;
+  estimability: number;
+}
+
+interface UserStoriesValidationResult {
+  score: number;
+  totalStories: number;
+  validStories: number;
+  qualityMetrics: UserStoriesQualityMetrics;
+  commonIssues: ValidationIssueFrequency[];
+  storyIssues: ValidationStoryIssue[];
+  blockingIssues: BlockingValidationIssue[];
+  validatedStories?: UserStory[];
+  conflicts?: Conflict[];
+  recommendations?: string[];
+}
+
+interface SpecificationCompliance {
+  formalNotation: number;
+  completeness: number;
+  consistency: number;
+  clarity: number;
+  testability: number;
+}
+
+interface SpecificationGap {
+  description: string;
+  impact: string;
+}
+
+interface SpecificationValidationResult {
+  score: number;
+  totalSpecs: number;
+  compliance: SpecificationCompliance;
+  issuesByCategory: Record<string, number>;
+  criticalGaps: SpecificationGap[];
+  recommendations: string[];
+}
+
+interface TraceabilityMatrixEntry {
+  source: string;
+  targets: string[];
+  coverage: number;
+}
+
+interface TraceabilityLinkIssue {
+  from: string;
+  to: string;
+  reason: string;
+}
+
+interface BrokenTraceabilityLink {
+  from: string;
+  to: string;
+}
+
+interface OrphanedTraceabilityArtifact {
+  type: string;
+  name: string;
+}
+
+interface TraceabilityValidationResult {
+  coveragePercentage: number;
+  totalLinks: number;
+  brokenLinks: BrokenTraceabilityLink[];
+  matrix: TraceabilityMatrixEntry[];
+  missingLinks: TraceabilityLinkIssue[];
+  orphanedArtifacts: OrphanedTraceabilityArtifact[];
+}
+
+interface CompletenessCategoryScore {
+  name: string;
+  score: number;
+  missing: number;
+}
+
+interface MissingComponent {
+  category: string;
+  description: string;
+  priority: string;
+}
+
+interface CompletenessTrend {
+  improving: string[];
+  declining: string[];
+  stable: string[];
+}
+
+interface CompletenessValidationResult {
+  completenessScore: number;
+  categoryScores: CompletenessCategoryScore[];
+  missingComponents: MissingComponent[];
+  trends: CompletenessTrend;
+  recommendations: string[];
+  criticalGaps: Array<{ description: string }>;
+}
+
+interface MajorInconsistency {
+  type: string;
+  description: string;
+  location: string;
+}
+
+interface TerminologyConflict {
+  term: string;
+  definitions: string[];
+}
+
+interface ConsistencyValidationResult {
+  consistencyScore: number;
+  inconsistencies: MajorInconsistency[];
+  terminologyConsistency: number;
+  formatConsistency: number;
+  businessRuleConsistency: number;
+  technicalConsistency: number;
+  majorInconsistencies: MajorInconsistency[];
+  terminologyConflicts: TerminologyConflict[];
+  recommendations: string[];
+}
+
+interface FeasibilityRiskFactor {
+  category: string;
+  description: string;
+  impact: string;
+  probability: string;
+}
+
+interface InfeasibleRequirement {
+  id: string;
+  reason: string;
+  alternative: string;
+}
+
+interface FeasibilityValidationResult {
+  feasibilityScore: number;
+  technical: number;
+  economic: number;
+  operational: number;
+  schedule: number;
+  riskFactors: FeasibilityRiskFactor[];
+  infeasibleRequirements: InfeasibleRequirement[];
+  highRiskFactors: FeasibilityRiskFactor[];
+  recommendations: string[];
+}
+
+interface PhaseAlignmentScore {
+  name: string;
+  score: number;
+}
+
+interface CrossPhaseIssue {
+  phases: string[];
+  description: string;
+  severity: string;
+}
+
+interface AlignmentGap {
+  description: string;
+  phases: string[];
+}
+
+interface CrossValidationResult {
+  overallScore: number;
+  phaseAlignment: PhaseAlignmentScore[];
+  crossPhaseIssues: CrossPhaseIssue[];
+  alignmentGaps: AlignmentGap[];
+  criticalIssues: Array<{ description: string }>;
+  recommendations: string[];
+}
+
+interface GenericValidationResult {
+  report: string;
+  recommendations: string[];
+  nextActions: string[];
+  warnings: string[];
+  hasBlockingIssues: boolean;
+}
+
+interface ProactiveGuidanceContext {
+  recentFiles: string[];
+  recentActions: string[];
+  userIntent: string;
+}
+
+interface ProactiveGuidanceResult {
+  shouldIntervene: boolean;
+  intervention: {
+    type: 'warning' | 'suggestion' | 'block';
+    message: string;
+    recommendedActions: string[];
+  };
+}
+
 export class ValidationTaskAdapter {
   private agent: VerifyAgent;
   private readonly sourceFileLimit = 200;
@@ -119,18 +331,7 @@ export class ValidationTaskAdapter {
   /**
    * Proactive validation guidance for Claude Code
    */
-  async provideProactiveGuidance(context: {
-    recentFiles: string[];
-    recentActions: string[];
-    userIntent: string;
-  }): Promise<{
-    shouldIntervene: boolean;
-    intervention: {
-      type: 'warning' | 'suggestion' | 'block';
-      message: string;
-      recommendedActions: string[];
-    };
-  }> {
+  async provideProactiveGuidance(context: ProactiveGuidanceContext): Promise<ProactiveGuidanceResult> {
     const analysis = await this.analyzeRecentActivity(context);
     
     if (analysis.hasCriticalValidationIssues) {
@@ -249,10 +450,10 @@ ${this.formatSourceSummary(storiesInput)}
 - **Estimable Stories**: ${validation.qualityMetrics.estimability}%
 
 ## Common Issues
-${validation.commonIssues.map((issue: any) => `• ${issue.description} (${issue.frequency} occurrences)`).join('\n')}
+${validation.commonIssues.map((issue) => `• ${issue.description} (${issue.frequency} occurrences)`).join('\n')}
 
 ## Story-Specific Issues
-${validation.storyIssues.map((issue: any) => `• **${issue.storyId}**: ${issue.description}`).join('\n')}
+${validation.storyIssues.map((issue) => `• **${issue.storyId}**: ${issue.description}`).join('\n')}
       `.trim(),
       recommendations: [
         'Fix stories with format compliance issues',
@@ -267,7 +468,7 @@ ${validation.storyIssues.map((issue: any) => `• **${issue.storyId}**: ${issue.
         'Check story dependencies',
       ],
       warnings: [
-        ...validation.blockingIssues.map((issue: any) => issue.description),
+        ...validation.blockingIssues.map((issue) => issue.description),
         ...storiesInput.missingSources.map((source) => `Source not found: ${source}`),
       ],
       shouldBlockProgress: validation.blockingIssues.length > 0,
@@ -296,12 +497,12 @@ ${this.formatSourceSummary(specInput)}
 - **Testability**: ${validation.compliance.testability}%
 
 ## Validation Issues by Category
-${Object.entries(validation.issuesByCategory).map(([category, count]: [string, any]) => 
+${Object.entries(validation.issuesByCategory).map(([category, count]) => 
   `• **${category}**: ${count} issues`
 ).join('\n')}
 
 ## Critical Specification Gaps
-${validation.criticalGaps.map((gap: any) => `• ${gap.description} (Impact: ${gap.impact})`).join('\n')}
+${validation.criticalGaps.map((gap) => `• ${gap.description} (Impact: ${gap.impact})`).join('\n')}
       `.trim(),
       recommendations: validation.recommendations,
       nextActions: [
@@ -311,7 +512,7 @@ ${validation.criticalGaps.map((gap: any) => `• ${gap.description} (Impact: ${g
         'Validate specifications with domain experts',
       ],
       warnings: [
-        ...validation.criticalGaps.map((gap: any) => gap.description),
+        ...validation.criticalGaps.map((gap) => gap.description),
         ...specInput.missingSources.map((source) => `Source not found: ${source}`),
       ],
       shouldBlockProgress: validation.criticalGaps.length > 2,
@@ -335,17 +536,17 @@ ${this.formatSourceSummary(traceabilityInput)}
 **Broken Links**: ${validation.brokenLinks.length}
 
 ## Traceability Matrix
-${validation.matrix.map((row: any) => 
+${validation.matrix.map((row) => 
   `• ${row.source} → ${row.targets.join(', ')} (${row.coverage}% coverage)`
 ).join('\n')}
 
 ## Missing Trace Links
-${validation.missingLinks.map((link: any) => 
+${validation.missingLinks.map((link) => 
   `• ${link.from} → ${link.to} (${link.reason})`
 ).join('\n')}
 
 ## Orphaned Artifacts
-${validation.orphanedArtifacts.map((artifact: any) => 
+${validation.orphanedArtifacts.map((artifact) => 
   `• **${artifact.type}**: ${artifact.name} (no traceability)`
 ).join('\n')}
       `.trim(),
@@ -362,7 +563,7 @@ ${validation.orphanedArtifacts.map((artifact: any) =>
         'Set up automated traceability checking',
       ],
       warnings: [
-        ...validation.brokenLinks.map((link: any) => `Broken link: ${link.from} → ${link.to}`),
+        ...validation.brokenLinks.map((link) => `Broken link: ${link.from} → ${link.to}`),
         ...traceabilityInput.missingSources.map((source) => `Source not found: ${source}`),
       ],
       shouldBlockProgress: traceabilityInput.strict
@@ -385,12 +586,12 @@ ${this.formatSourceSummary(input)}
 **Overall Completeness**: ${validation.completenessScore}%
 
 ## Category Completeness
-${validation.categoryScores.map((cat: any) => 
+${validation.categoryScores.map((cat) => 
   `• **${cat.name}**: ${cat.score}% (${cat.missing} missing items)`
 ).join('\n')}
 
 ## Missing Components
-${validation.missingComponents.map((comp: any) => 
+${validation.missingComponents.map((comp) => 
   `• **${comp.category}**: ${comp.description} (Priority: ${comp.priority})`
 ).join('\n')}
 
@@ -406,7 +607,7 @@ ${validation.missingComponents.map((comp: any) =>
         'Validate completeness with stakeholders',
       ],
       warnings: [
-        ...validation.criticalGaps.map((gap: any) => gap.description),
+        ...validation.criticalGaps.map((gap) => gap.description),
         ...input.missingSources.map((source) => `Source not found: ${source}`),
       ],
       shouldBlockProgress: validation.completenessScore < 60,
@@ -432,12 +633,12 @@ ${validation.missingComponents.map((comp: any) =>
 - **Technical Constraints**: ${validation.technicalConsistency}%
 
 ## Major Inconsistencies
-${validation.majorInconsistencies.map((inc: any) => 
+${validation.majorInconsistencies.map((inc) => 
   `• **${inc.type}**: ${inc.description} (Location: ${inc.location})`
 ).join('\n')}
 
 ## Terminology Conflicts
-${validation.terminologyConflicts.map((conflict: any) => 
+${validation.terminologyConflicts.map((conflict) => 
   `• "${conflict.term}": ${conflict.definitions.join(' vs ')}`
 ).join('\n')}
       `.trim(),
@@ -448,7 +649,7 @@ ${validation.terminologyConflicts.map((conflict: any) =>
         'Create consistency guidelines',
         'Implement consistency checking',
       ],
-      warnings: validation.majorInconsistencies.map((inc: any) => inc.description),
+      warnings: validation.majorInconsistencies.map((inc) => inc.description),
       shouldBlockProgress: validation.majorInconsistencies.length > 3,
     };
   }
@@ -471,12 +672,12 @@ ${validation.terminologyConflicts.map((conflict: any) =>
 - **Schedule Feasibility**: ${validation.schedule}%
 
 ## Risk Factors
-${validation.riskFactors.map((risk: any) => 
+${validation.riskFactors.map((risk) => 
   `• **${risk.category}**: ${risk.description} (Impact: ${risk.impact}, Probability: ${risk.probability})`
 ).join('\n')}
 
 ## Infeasible Requirements
-${validation.infeasibleRequirements.map((req: any) => 
+${validation.infeasibleRequirements.map((req) => 
   `• **${req.id}**: ${req.reason} (Suggested: ${req.alternative})`
 ).join('\n')}
       `.trim(),
@@ -487,7 +688,7 @@ ${validation.infeasibleRequirements.map((req: any) =>
         'Validate technical constraints',
         'Review resource requirements',
       ],
-      warnings: validation.highRiskFactors.map((risk: any) => risk.description),
+      warnings: validation.highRiskFactors.map((risk) => risk.description),
       shouldBlockProgress: validation.infeasibleRequirements.length > 0,
     };
   }
@@ -504,17 +705,17 @@ ${validation.infeasibleRequirements.map((req: any) =>
 **Overall Alignment**: ${validation.overallScore}%
 
 ## Phase Alignment Matrix
-${validation.phaseAlignment.map((phase: any) => 
+${validation.phaseAlignment.map((phase) => 
   `• **${phase.name}**: ${phase.score}% aligned with other phases`
 ).join('\n')}
 
 ## Cross-Phase Issues
-${validation.crossPhaseIssues.map((issue: any) => 
+${validation.crossPhaseIssues.map((issue) => 
   `• **${issue.phases.join(' ↔ ')}**: ${issue.description} (Severity: ${issue.severity})`
 ).join('\n')}
 
 ## Alignment Gaps
-${validation.alignmentGaps.map((gap: any) => 
+${validation.alignmentGaps.map((gap) => 
   `• ${gap.description} (Between: ${gap.phases.join(' and ')})`
 ).join('\n')}
       `.trim(),
@@ -525,7 +726,7 @@ ${validation.alignmentGaps.map((gap: any) =>
         'Validate phase transitions',
         'Establish cross-phase review process',
       ],
-      warnings: validation.criticalIssues.map((issue: any) => issue.description),
+      warnings: validation.criticalIssues.map((issue) => issue.description),
       shouldBlockProgress: validation.criticalIssues.length > 0,
     };
   }
@@ -869,7 +1070,7 @@ ${resolvedPreview ? `- Sample:\n${resolvedPreview}` : ''}
     };
   }
 
-  async validateUserStories(input: any): Promise<any> {
+  async validateUserStories(input: unknown): Promise<UserStoriesValidationResult> {
     const normalizedInput = this.toValidationInput(input);
     const text = this.collectSourceText(normalizedInput);
     const blocks = text
@@ -907,7 +1108,7 @@ ${resolvedPreview ? `- Sample:\n${resolvedPreview}` : ''}
     };
   }
 
-  private async validateSpecifications(input: ValidationInput): Promise<any> {
+  private async validateSpecifications(input: ValidationInput): Promise<SpecificationValidationResult> {
     const text = this.collectSourceText(input);
     const totalSpecs = input.resolvedSources.length;
     const formalNotation = this.keywordCoverage(text, ['state', 'invariant', 'precondition', 'postcondition', 'schema'], 55);
@@ -948,7 +1149,7 @@ ${resolvedPreview ? `- Sample:\n${resolvedPreview}` : ''}
     };
   }
 
-  private async validateTraceability(input: ValidationInput): Promise<any> {
+  private async validateTraceability(input: ValidationInput): Promise<TraceabilityValidationResult> {
     const matrixRows = this.extractTraceabilityMatrixRows(input);
     if (matrixRows.length > 0) {
       const linkedRows = matrixRows.filter((row) => row.linked);
@@ -1066,7 +1267,7 @@ ${resolvedPreview ? `- Sample:\n${resolvedPreview}` : ''}
     return rows;
   }
 
-  private async validateCompleteness(input: ValidationInput): Promise<any> {
+  private async validateCompleteness(input: ValidationInput): Promise<CompletenessValidationResult> {
     const text = this.collectSourceText(input);
     const categories = [
       { name: 'Requirements', keywords: ['requirement', 'must', 'should'] },
@@ -1109,18 +1310,46 @@ ${resolvedPreview ? `- Sample:\n${resolvedPreview}` : ''}
     return input.resolvedSources.map((source) => source.content).join('\n');
   }
 
-  private toValidationInput(input: any): ValidationInput {
-    if (
-      input &&
-      typeof input === 'object' &&
-      Array.isArray(input.requestedSources) &&
-      Array.isArray(input.resolvedSources) &&
-      Array.isArray(input.missingSources)
-    ) {
-      return {
-        ...(input as ValidationInput),
-        strict: Boolean((input as { strict?: unknown }).strict),
-      };
+  private toValidationInput(input: unknown): ValidationInput {
+    if (input && typeof input === 'object') {
+      const candidate = input as Record<string, unknown>;
+      const requestedSources = candidate['requestedSources'];
+      const resolvedSources = candidate['resolvedSources'];
+      const missingSources = candidate['missingSources'];
+      if (
+        Array.isArray(requestedSources) &&
+        Array.isArray(resolvedSources) &&
+        Array.isArray(missingSources)
+      ) {
+        const validRequestedSources = requestedSources.filter(
+          (value): value is string => typeof value === 'string',
+        );
+        const validResolvedSources = resolvedSources.filter(
+          (value): value is ValidationSourceItem => this.isValidationSourceItem(value),
+        );
+        const validMissingSources = missingSources.filter(
+          (value): value is string => typeof value === 'string',
+        );
+
+        const invalidRequestedCount = requestedSources.length - validRequestedSources.length;
+        const invalidResolvedCount = resolvedSources.length - validResolvedSources.length;
+        const invalidMissingCount = missingSources.length - validMissingSources.length;
+
+        if (invalidRequestedCount > 0 || invalidResolvedCount > 0 || invalidMissingCount > 0) {
+          console.warn('[ValidationTaskAdapter] Ignored invalid source entries in validation input.', {
+            invalidRequestedCount,
+            invalidResolvedCount,
+            invalidMissingCount,
+          });
+        }
+
+        return {
+          requestedSources: validRequestedSources,
+          resolvedSources: validResolvedSources,
+          missingSources: validMissingSources,
+          strict: Boolean(candidate['strict']),
+        };
+      }
     }
     if (typeof input === 'string') {
       return {
@@ -1146,6 +1375,21 @@ ${resolvedPreview ? `- Sample:\n${resolvedPreview}` : ''}
     };
   }
 
+  private isValidationSourceItem(value: unknown): value is ValidationSourceItem {
+    if (!value || typeof value !== 'object') {
+      return false;
+    }
+    const candidate = value as Record<string, unknown>;
+    const pathValue = candidate['path'];
+    const contentValue = candidate['content'];
+    return (
+      typeof pathValue === 'string' &&
+      pathValue.trim().length > 0 &&
+      typeof contentValue === 'string' &&
+      contentValue.trim().length > 0
+    );
+  }
+
   private keywordCoverage(text: string, keywords: string[], baseline: number): number {
     const lower = text.toLowerCase();
     const hits = keywords.filter((keyword) => lower.includes(keyword)).length;
@@ -1160,7 +1404,8 @@ ${resolvedPreview ? `- Sample:\n${resolvedPreview}` : ''}
     return Math.max(min, Math.min(max, value));
   }
 
-  private async validateConsistency(input: any): Promise<any> {
+  private async validateConsistency(input: unknown): Promise<ConsistencyValidationResult> {
+    void input;
     return {
       consistencyScore: 85,
       inconsistencies: [],
@@ -1174,7 +1419,8 @@ ${resolvedPreview ? `- Sample:\n${resolvedPreview}` : ''}
     };
   }
 
-  private async validateFeasibility(input: any): Promise<any> {
+  private async validateFeasibility(input: unknown): Promise<FeasibilityValidationResult> {
+    void input;
     return {
       feasibilityScore: 80,
       technical: 85,
@@ -1188,7 +1434,8 @@ ${resolvedPreview ? `- Sample:\n${resolvedPreview}` : ''}
     };
   }
 
-  private async performCrossValidation(input: any): Promise<any> {
+  private async performCrossValidation(input: unknown): Promise<CrossValidationResult> {
+    void input;
     return {
       overallScore: 85,
       phaseAlignment: [
@@ -1201,7 +1448,8 @@ ${resolvedPreview ? `- Sample:\n${resolvedPreview}` : ''}
     };
   }
 
-  private async performGenericValidation(input: any): Promise<any> {
+  private async performGenericValidation(input: unknown): Promise<GenericValidationResult> {
+    void input;
     return {
       report: 'General validation completed',
       recommendations: ['Continue with validation best practices'],
@@ -1211,11 +1459,7 @@ ${resolvedPreview ? `- Sample:\n${resolvedPreview}` : ''}
     };
   }
 
-  private async analyzeRecentActivity(context: {
-    recentFiles: string[];
-    recentActions: string[];
-    userIntent: string;
-  }): Promise<{
+  private async analyzeRecentActivity(context: ProactiveGuidanceContext): Promise<{
     hasCriticalValidationIssues: boolean;
     hasValidationGaps: boolean;
     shouldValidateChanges: boolean;
@@ -1259,7 +1503,7 @@ export const createValidationTaskHandler = () => {
       return adapter.handleValidationTask(request);
     },
     
-    provideProactiveGuidance: async (context: any): Promise<any> => {
+    provideProactiveGuidance: async (context: ProactiveGuidanceContext): Promise<ProactiveGuidanceResult> => {
       return adapter.provideProactiveGuidance(context);
     },
   };
