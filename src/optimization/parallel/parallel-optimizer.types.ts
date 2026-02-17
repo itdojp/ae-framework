@@ -1,4 +1,4 @@
-export interface ParallelTask<T = any, R = any> {
+export interface ParallelTask<T = unknown, R = unknown> {
   id: string;
   name: string;
   type: TaskType;
@@ -9,7 +9,7 @@ export interface ParallelTask<T = any, R = any> {
   maxRetries: number;
   timeout: number;
   resourceRequirements: ResourceRequirements;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export type TaskType =
@@ -25,13 +25,17 @@ export type TaskType =
 export type TaskPriority = 'urgent' | 'high' | 'normal' | 'low' | 'background';
 
 export interface ResourceRequirements {
+  // CPU cores required (0-1 scale)
   cpu: number;
+  // Memory in MB
   memory: number;
+  // IO bandwidth requirement (0-1 scale)
   io: number;
+  // Network bandwidth requirement (0-1 scale)
   network: number;
 }
 
-export interface TaskResult<R = any> {
+export interface TaskResult<R = unknown> {
   taskId: string;
   status: 'completed' | 'failed' | 'timeout' | 'cancelled';
   result?: R;
