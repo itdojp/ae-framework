@@ -15,6 +15,25 @@ export const DEFAULT_DOC_FILES = [
 const PNPM_RUN_REGEX = /\bpnpm\s+(?:-s\s+)?run\s+([A-Za-z0-9:_-]+)\b/g;
 const MARKDOWN_LINK_REGEX = /\[[^\]]*]\(([^)\s]+)\)/g;
 const INLINE_CODE_REGEX = /`([^`\n]+)`/g;
+const ROOT_RELATIVE_PREFIXES = [
+  '.github/',
+  'api/',
+  'apps/',
+  'artifacts/',
+  'config/',
+  'configs/',
+  'contracts/',
+  'docs/',
+  'examples/',
+  'fixtures/',
+  'packages/',
+  'plans/',
+  'samples/',
+  'schema/',
+  'scripts/',
+  'spec/',
+  'src/',
+];
 
 function sanitizeReference(rawReference) {
   if (!rawReference) {
@@ -61,10 +80,18 @@ function isPathLikeReference(reference) {
   if (reference.includes(' ')) {
     return false;
   }
-  if (reference.includes('\\')) {
+  if (reference.includes('\\') || reference.includes('/')) {
     return true;
   }
-  return reference.includes('/');
+  return /\.[A-Za-z0-9_-]+$/u.test(reference);
+}
+
+function isExplicitRelativeReference(reference) {
+  return reference.startsWith('./') || reference.startsWith('../');
+}
+
+function isRootRelativeReference(reference) {
+  return ROOT_RELATIVE_PREFIXES.some((prefix) => reference === prefix || reference.startsWith(prefix));
 }
 
 export function parseArgs(argv = process.argv) {
@@ -153,11 +180,25 @@ export function parseArgs(argv = process.argv) {
 
 function loadPackageScripts(rootDir) {
   const packageJsonPath = path.join(rootDir, 'package.json');
-  const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
-  const scripts = packageJson.scripts && typeof packageJson.scripts === 'object'
-    ? Object.keys(packageJson.scripts)
-    : [];
-  return new Set(scripts);
+  try {
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
+    const scripts = packageJson.scripts && typeof packageJson.scripts === 'object'
+      ? Object.keys(packageJson.scripts)
+      : [];
+    return {
+      scripts: new Set(scripts),
+      error: null,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      scripts: new Set(),
+      error: {
+        code: 'package_json_read_error',
+        message: `Failed to load package.json: ${message}`,
+      },
+    };
+  }
 }
 
 function resolveReferencePath(rootDir, markdownPath, reference) {
@@ -165,11 +206,13 @@ function resolveReferencePath(rootDir, markdownPath, reference) {
     return null;
   }
   const markdownDir = path.dirname(path.resolve(rootDir, markdownPath));
-  const relativePath = path.resolve(markdownDir, reference);
-  if (existsSync(relativePath)) {
-    return relativePath;
+  if (isExplicitRelativeReference(reference)) {
+    return path.resolve(markdownDir, reference);
   }
-  return path.resolve(rootDir, reference);
+  if (isRootRelativeReference(reference)) {
+    return path.resolve(rootDir, reference);
+  }
+  return path.resolve(markdownDir, reference);
 }
 
 function collectMissingScripts(markdownPath, lines, scriptNames) {
@@ -256,8 +299,16 @@ function renderText(result) {
   lines.push('Doc consistency check');
   lines.push(`- docs scanned: ${result.docsScanned.length}`);
   lines.push(`- missing docs: ${result.missingDocs.length}`);
+  lines.push(`- package errors: ${result.packageErrors.length}`);
   lines.push(`- missing scripts: ${result.missingScripts.length}`);
   lines.push(`- missing paths: ${result.missingPaths.length}`);
+
+  if (result.packageErrors.length > 0) {
+    lines.push('', 'Package errors:');
+    for (const finding of result.packageErrors) {
+      lines.push(`- ${finding.code}: ${finding.message}`);
+    }
+  }
 
   if (result.missingDocs.length > 0) {
     lines.push('', 'Missing docs:');
@@ -290,6 +341,7 @@ export function runDocConsistencyCheck(argv = process.argv) {
       ...options,
       docsScanned: [],
       missingDocs: [],
+      packageErrors: [],
       missingScripts: [],
       missingPaths: [],
       exitCode: 0,
@@ -301,6 +353,7 @@ export function runDocConsistencyCheck(argv = process.argv) {
       ...options,
       docsScanned: [],
       missingDocs: [],
+      packageErrors: [],
       missingScripts: [],
       missingPaths: [],
       exitCode: 2,
@@ -308,7 +361,12 @@ export function runDocConsistencyCheck(argv = process.argv) {
     };
   }
 
-  const scriptNames = loadPackageScripts(options.rootDir);
+  const packageErrors = [];
+  const packageScriptsResult = loadPackageScripts(options.rootDir);
+  const scriptNames = packageScriptsResult.scripts;
+  if (packageScriptsResult.error) {
+    packageErrors.push(packageScriptsResult.error);
+  }
   const missingDocs = [];
   const missingScripts = [];
   const missingPaths = [];
@@ -330,11 +388,12 @@ export function runDocConsistencyCheck(argv = process.argv) {
     missingPaths.push(...collectMissingPaths(options.rootDir, markdownPath, lines));
   }
 
-  const hasFailures = missingDocs.length > 0 || missingScripts.length > 0 || missingPaths.length > 0;
+  const hasFailures = packageErrors.length > 0 || missingDocs.length > 0 || missingScripts.length > 0 || missingPaths.length > 0;
   return {
     ...options,
     docsScanned,
     missingDocs,
+    packageErrors,
     missingScripts,
     missingPaths,
     exitCode: hasFailures ? 1 : 0,
@@ -379,6 +438,7 @@ function main(argv = process.argv) {
     console.log(JSON.stringify({
       docsScanned: result.docsScanned,
       missingDocs: result.missingDocs,
+      packageErrors: result.packageErrors,
       missingScripts: result.missingScripts,
       missingPaths: result.missingPaths,
       exitCode: result.exitCode,

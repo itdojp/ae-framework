@@ -114,8 +114,54 @@ describe('check-doc-consistency', () => {
 
       expect(result.exitCode).toBe(0);
       expect(result.missingDocs).toHaveLength(0);
+      expect(result.packageErrors).toHaveLength(0);
       expect(result.missingScripts).toHaveLength(0);
       expect(result.missingPaths).toHaveLength(0);
+    });
+  });
+
+  it('resolves simple filename links strictly relative to source markdown', () => {
+    withTempRepo((rootDir) => {
+      writePackageJson(rootDir, { lint: 'echo lint' });
+      mkdirSync(path.join(rootDir, 'docs'), { recursive: true });
+      writeFileSync(path.join(rootDir, 'README.md'), '# root readme');
+      writeFileSync(path.join(rootDir, 'docs/guide.md'), [
+        '[Guide local readme](README.md)',
+      ].join('\n'));
+
+      const result = runDocConsistencyCheck([
+        'node',
+        'check-doc-consistency.mjs',
+        `--root=${rootDir}`,
+        '--docs=docs/guide.md',
+      ]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.missingPaths).toEqual([
+        expect.objectContaining({
+          markdownPath: 'docs/guide.md',
+          reference: 'README.md',
+        }),
+      ]);
+    });
+  });
+
+  it('reports package.json read error without throwing', () => {
+    withTempRepo((rootDir) => {
+      mkdirSync(path.join(rootDir, 'docs'), { recursive: true });
+      writeFileSync(path.join(rootDir, 'docs/guide.md'), 'Run `pnpm run lint`.');
+
+      const result = runDocConsistencyCheck([
+        'node',
+        'check-doc-consistency.mjs',
+        `--root=${rootDir}`,
+        '--docs=docs/guide.md',
+      ]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.packageErrors).toEqual([
+        expect.objectContaining({ code: 'package_json_read_error' }),
+      ]);
     });
   });
 });
