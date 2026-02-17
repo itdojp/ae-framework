@@ -6,6 +6,16 @@ describe('command-errors helpers', () => {
     expect(toErrorDetail(new Error('boom'))).toBe('boom');
     expect(toErrorDetail('plain')).toBe('plain');
     expect(toErrorDetail({ reason: 'x' })).toContain('reason');
+    expect(toErrorDetail(undefined)).toBe('undefined');
+    expect(toErrorDetail(Symbol('x'))).toBe('Symbol(x)');
+  });
+
+  it('handles serialization edge cases in toErrorDetail', () => {
+    const circular: { self?: unknown } = {};
+    circular.self = circular;
+
+    expect(toErrorDetail(circular)).toBe(String(circular));
+    expect(toErrorDetail(null)).toBe('null');
   });
 
   it('builds and formats E_EXEC errors', () => {
@@ -23,5 +33,10 @@ describe('command-errors helpers', () => {
     expect(formatAppError({ code: 'E_CONFIG', key: 'x', detail: 'invalid' })).toContain('[E_CONFIG]');
     expect(formatAppError({ code: 'E_TIMEOUT', step: 'verify', ms: 120000 })).toContain('ms=120000');
     expect(formatAppError({ code: 'E_PARSE', step: 'qa', detail: 'bad json' })).toContain('[E_PARSE]');
+
+    const parseWithoutDetail = formatAppError({ code: 'E_PARSE', step: 'qa' });
+    expect(parseWithoutDetail).toContain('[E_PARSE]');
+    expect(parseWithoutDetail).not.toContain('undefined');
+    expect(parseWithoutDetail).not.toContain('detail=');
   });
 });
