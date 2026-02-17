@@ -42,7 +42,7 @@ async function handleApprove() {
     const currentSnapshot = await snapshotManager.generateSnapshot();
     
     console.log('✅ Approving snapshot...');
-    snapshotManager.approveSnapshot();
+    snapshotManager.approveSnapshot(currentSnapshot);
     
     console.log('');
     console.log('🎉 Snapshot approved successfully!');

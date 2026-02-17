@@ -125,14 +125,24 @@ class CodegenSnapshotManager {
     }
   }
 
-  approveSnapshot(): void {
-    if (existsSync(SNAPSHOT_PATH)) {
-      const snapshot = readFileSync(SNAPSHOT_PATH, 'utf-8');
-      writeFileSync(APPROVED_SNAPSHOT_PATH, snapshot);
-      console.log('✅ Snapshot approved and saved to', APPROVED_SNAPSHOT_PATH);
-    } else {
+  loadCurrentSnapshot(): CodegenSnapshot | null {
+    if (!existsSync(SNAPSHOT_PATH)) {
+      return null;
+    }
+    try {
+      return JSON.parse(readFileSync(SNAPSHOT_PATH, 'utf-8'));
+    } catch {
+      return null;
+    }
+  }
+
+  approveSnapshot(snapshot?: CodegenSnapshot): void {
+    const approvedSource = snapshot ?? this.loadCurrentSnapshot();
+    if (!approvedSource) {
       throw new Error('No current snapshot found. Run tests first.');
     }
+    writeFileSync(APPROVED_SNAPSHOT_PATH, JSON.stringify(approvedSource, null, 2));
+    console.log('✅ Snapshot approved and saved to', APPROVED_SNAPSHOT_PATH);
   }
 
   compareSnapshots(current: CodegenSnapshot, approved: CodegenSnapshot): {

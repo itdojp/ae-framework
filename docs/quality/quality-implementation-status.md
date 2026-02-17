@@ -17,6 +17,7 @@ All quality improvement features requested in Issue #125 have been successfully 
   - CLI commands for approval workflow (`pnpm test:golden:approve`, `pnpm test:golden:diff`)
   - Deterministic snapshot output (stable timestamp + sorted file order)
   - CI write suppression for snapshot file updates (`CI=true` では `codegen-snapshot.json` を更新しない)
+  - Approval command uses in-memory freshly generated snapshot (avoids stale baseline approval in CI)
   - Optional env controls: `AE_GOLDEN_SNAPSHOT_TIMESTAMP`, `AE_GOLDEN_SNAPSHOT_WRITE`
   - Comprehensive file analysis (hash, line count, ARIA attributes, TypeScript/ESLint errors)
   - Quality thresholds validation
