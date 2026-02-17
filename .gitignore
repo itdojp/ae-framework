@@ -66,6 +66,8 @@ parallel-test.json
 run-suite.json
 run-test.json
 workflow-test.json
+verify-lite-run-summary.json
+verify-lite-lint.log
 verify-lite-lint-summary.json
 
 # Generated reports and artifacts
@@ -80,7 +82,6 @@ invalid-sample-*.json
 clean-sample-*.json
 artifacts/cassettes/
 artifacts/codex/
-artifacts/codex-quickstart-summary.md
 artifacts/hermetic-reports/
 artifacts/api/.tmp/
 tests/api/generated/

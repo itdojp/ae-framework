@@ -42,6 +42,8 @@ describe('check-root-layout', () => {
       'docs',
       'cegis-report-1234.json',
       'drift-report-src-generated.json',
+      'verify-lite-run-summary.json',
+      'verify-lite-lint.log',
       'verify-lite-lint-summary.json',
     ]);
 
@@ -49,6 +51,8 @@ describe('check-root-layout', () => {
       'cegis-report-1234.json',
       'drift-report-src-generated.json',
       'verify-lite-lint-summary.json',
+      'verify-lite-lint.log',
+      'verify-lite-run-summary.json',
     ]);
     expect(result.warnings).toHaveLength(0);
   });

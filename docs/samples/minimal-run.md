@@ -23,7 +23,7 @@
    - `artifacts/codex/quickstart-formal.tla`
    - `artifacts/codex/quickstart-openapi.yaml`
    - `tests/api/generated/` (契約・E2E テンプレート)
-   - `artifacts/codex-quickstart-summary.md`
+   - `artifacts/codex/quickstart-summary.md`
 
 3. **ユニットテストで生成コードを検証**
    ```bash
@@ -73,6 +73,6 @@
 1. `pnpm run build`
 2. `CODEX_SKIP_QUALITY=1 CODEX_TOLERANT=1 pnpm run codex:quickstart`
 3. `pnpm vitest run --project unit --reporter dot`
-4. 生成物 (`artifacts/codex-quickstart-summary.md`, `tests/api/generated/**`) を artifact としてアップロード
+4. 生成物 (`artifacts/codex/quickstart-summary.md`, `tests/api/generated/**`) を artifact としてアップロード
 
 上記が安定した後に Verify Lite や Mutation quick の実行を追加していく。

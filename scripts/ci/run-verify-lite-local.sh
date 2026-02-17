@@ -17,10 +17,12 @@ fi
 INSTALL_FLAGS_STR="${INSTALL_FLAGS[*]}"
 
 RUN_TIMESTAMP="$(date -u "+%Y-%m-%dT%H:%M:%SZ")"
-SUMMARY_PATH="${VERIFY_LITE_SUMMARY_FILE:-verify-lite-run-summary.json}"
-SUMMARY_EXPORT_PATH="${VERIFY_LITE_SUMMARY_EXPORT_PATH:-artifacts/verify-lite/verify-lite-run-summary.json}"
+SUMMARY_PATH="${VERIFY_LITE_SUMMARY_FILE:-artifacts/verify-lite/verify-lite-run-summary.json}"
+SUMMARY_EXPORT_PATH="${VERIFY_LITE_SUMMARY_EXPORT_PATH:-}"
 LINT_BASELINE_PATH="${VERIFY_LITE_LINT_BASELINE:-config/verify-lite-lint-baseline.json}"
 VERIFY_LITE_LINT_ENFORCE="${VERIFY_LITE_LINT_ENFORCE:-${VERIFY_LITE_ENFORCE_LINT:-0}}"
+LINT_SUMMARY_TARGET="${VERIFY_LITE_LINT_SUMMARY_FILE:-artifacts/verify-lite/verify-lite-lint-summary.json}"
+LINT_LOG_TARGET="${VERIFY_LITE_LINT_LOG_FILE:-artifacts/verify-lite/verify-lite-lint.log}"
 
 INSTALL_STATUS="success"
 INSTALL_NOTES="flags=${INSTALL_FLAGS_STR}"
@@ -93,12 +95,14 @@ else
   LINT_STATUS="failure"
 fi
 if [[ -s "$LINT_LOG_FILE" ]]; then
-  if node scripts/ci/verify-lite-lint-summary.mjs < "$LINT_LOG_FILE" > verify-lite-lint-summary.json; then
-    LINT_SUMMARY_PATH="verify-lite-lint-summary.json"
+  mkdir -p "$(dirname "$LINT_SUMMARY_TARGET")"
+  if node scripts/ci/verify-lite-lint-summary.mjs < "$LINT_LOG_FILE" > "$LINT_SUMMARY_TARGET"; then
+    LINT_SUMMARY_PATH="$LINT_SUMMARY_TARGET"
   fi
   if [[ ${VERIFY_LITE_KEEP_LINT_LOG:-0} == "1" ]]; then
-    cp "$LINT_LOG_FILE" verify-lite-lint.log
-    LINT_LOG_EXPORT="verify-lite-lint.log"
+    mkdir -p "$(dirname "$LINT_LOG_TARGET")"
+    cp "$LINT_LOG_FILE" "$LINT_LOG_TARGET"
+    LINT_LOG_EXPORT="$LINT_LOG_TARGET"
   fi
 fi
 
@@ -216,7 +220,9 @@ fi
 
 if [[ -n "$SUMMARY_EXPORT_PATH" ]]; then
   mkdir -p "$(dirname "$SUMMARY_EXPORT_PATH")"
-  cp "$SUMMARY_PATH" "$SUMMARY_EXPORT_PATH"
+  if [[ "$SUMMARY_EXPORT_PATH" != "$SUMMARY_PATH" ]]; then
+    cp "$SUMMARY_PATH" "$SUMMARY_EXPORT_PATH"
+  fi
 fi
 
 if [[ -n "$LINT_SUMMARY_PATH" && -f "$LINT_SUMMARY_PATH" ]]; then

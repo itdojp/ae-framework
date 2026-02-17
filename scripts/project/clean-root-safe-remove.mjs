@@ -15,6 +15,8 @@ export const SAFE_REMOVE_FILE_PATTERNS = [
   'run-test.json',
   'workflow-test.json',
   'conformance-results.json',
+  'verify-lite-run-summary.json',
+  'verify-lite-lint.log',
   'verify-lite-lint-summary.json',
 ];
 

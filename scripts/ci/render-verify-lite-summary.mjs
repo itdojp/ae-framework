@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { renderVerifyLiteSummary } from './lib/verify-lite-summary.mjs';
 
-const summaryPath = process.argv[2] ?? 'verify-lite-run-summary.json';
+const summaryPath = process.argv[2] ?? 'artifacts/verify-lite/verify-lite-run-summary.json';
 const resolved = path.resolve(summaryPath);
 
 if (!fs.existsSync(resolved)) {

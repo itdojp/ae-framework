@@ -38,8 +38,8 @@
   - `@typescript-eslint/no-explicit-any` / `no-unsafe-assignment` / `no-unsafe-member-access`（`src/utils/quality-policy-loader.ts` ほか）
   - `no-useless-escape` / `require-await`（`src/utils/token-optimizer.ts`）
 - lint を必須にするには大規模なリファクタが必要。短期的には lint をレポート用途に留め、改善タスクを段階的に切り出す方針が現実的。
-- `.github/workflows/verify-lite.yml` で lint 出力を `verify-lite-lint-summary.json` に集計し、Step Summary に上位ルールを出力する処理を追加済み（artifact も併せて保存）。
-- `scripts/ci/verify-lite-lint-summary.mjs` で出力を集計し、`artifacts/verify-lite-lint-summary.json` に上位ルール（例: `@typescript-eslint/no-unsafe-*` 1371 件、`@typescript-eslint/no-explicit-any` 648 件、`@typescript-eslint/require-await` 209 件）を記録。
+- `.github/workflows/verify-lite.yml` で lint 出力を `artifacts/verify-lite/verify-lite-lint-summary.json` に集計し、Step Summary に上位ルールを出力する処理を追加済み。
+- `scripts/ci/verify-lite-lint-summary.mjs` で出力を集計し、`artifacts/verify-lite/verify-lite-lint-summary.json` に上位ルール（例: `@typescript-eslint/no-unsafe-*` 1371 件、`@typescript-eslint/no-explicit-any` 648 件、`@typescript-eslint/require-await` 209 件）を記録。
 
 ### Verify Lite ローカルログ収集手順（Phase A 用）
 1. ログ保存先を決めてディレクトリを用意する。
@@ -53,13 +53,12 @@
    VERIFY_LITE_RUN_MUTATION=1 \
    pnpm run verify:lite | tee "$ts_dir/verify-lite.log"
    ```
-   - `verify-lite-run-summary.json`（ステップ結果の JSON、`schemaVersion` は semver 準拠で管理）、`verify-lite-lint-summary.json`（lint 集計）、`verify-lite-lint.log`（生ログ）、`reports/mutation/summary.json` がリポジトリ配下に出力される。
-   - 同時に `artifacts/verify-lite/verify-lite-run-summary.json` にもコピーされるため、CI アーティファクトと同じパスで参照可能。
+   - `artifacts/verify-lite/verify-lite-run-summary.json`（ステップ結果の JSON、`schemaVersion` は semver 準拠で管理）、`artifacts/verify-lite/verify-lite-lint-summary.json`（lint 集計）、`artifacts/verify-lite/verify-lite-lint.log`（生ログ）、`reports/mutation/summary.json` がリポジトリ配下に出力される。
 3. 出力成果物を保存ディレクトリへ移動する。
    ```bash
-   mv verify-lite-run-summary.json "$ts_dir/"
-   mv verify-lite-lint-summary.json "$ts_dir/"
-   mv verify-lite-lint.log "$ts_dir/" 2>/dev/null || true
+   cp artifacts/verify-lite/verify-lite-run-summary.json "$ts_dir/"
+   cp artifacts/verify-lite/verify-lite-lint-summary.json "$ts_dir/"
+   cp artifacts/verify-lite/verify-lite-lint.log "$ts_dir/" 2>/dev/null || true
    cp -R reports/mutation "$ts_dir/" 2>/dev/null || true
    ```
 4. Issue #1012 Phase A の進捗報告時は、上記ディレクトリを添付し `verify-lite.log` の先頭 20 行と lint サマリの上位ルールをまとめて記載する。
@@ -87,7 +86,7 @@
   2. `CODEX_SKIP_QUALITY=1 CODEX_TOLERANT=1 pnpm run codex:quickstart`
   3. `pnpm exec vitest run --project unit --reporter dot`
   4. `STRYKER_TIME_LIMIT=480 ./scripts/mutation/run-scoped.sh --quick -m src/utils/enhanced-state-manager.ts -c configs/stryker.enhanced.config.js`（オプション）
-  5. アーティファクト: `artifacts/codex-quickstart-summary.md`, `tests/api/generated/**`, mutation レポート
+  5. アーティファクト: `artifacts/codex/quickstart-summary.md`, `tests/api/generated/**`, mutation レポート
 - 必要な環境変数: `AE_HOST_STORE=$GITHUB_WORKSPACE/.pnpm-store`
 - キャッシュ: `.pnpm-store`（既存の actions/cache を再利用）
 - 既知の課題: Quality Gate ポリシー未整備、Makefile 欠落、mutation survivors（Issue #1016）
@@ -96,7 +95,7 @@
 - `.github/workflows/minimal-pipeline.yml` を作成（manual dispatch 専用）。
   - CodeX quickstart（品質ゲートスキップ）、EnhancedStateManager ユニットテスト、verify-lite（lint サマリ出力）、KvOnce TLC を順次実行。
   - `VERIFY_LITE_ENFORCE_LINT` を入力で切り替え可能。
-  - `scripts/ci/verify-lite-lint-summary.mjs` により lint 結果を `verify-lite-lint-summary.json` として保存し、Step Summary へ上位ルールを表示。
+- `scripts/ci/verify-lite-lint-summary.mjs` により lint 結果を `artifacts/verify-lite/verify-lite-lint-summary.json` として保存し、Step Summary へ上位ルールを表示。
 - 今後: 差分 mutation quick の実行や生成アーティファクト比較を統合予定。
 
 ## 参考ログ

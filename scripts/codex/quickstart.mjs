@@ -38,7 +38,9 @@ async function main() {
   const cli = findCLI();
   const artifactsDir = path.join(root, 'artifacts');
   ensureDir(artifactsDir);
-  const summaryPath = path.join(artifactsDir, `codex-quickstart-summary.md`);
+  const codexDir = path.join(artifactsDir, 'codex');
+  ensureDir(codexDir);
+  const summaryPath = path.join(codexDir, 'quickstart-summary.md');
 
   // 1) Quality gates (skippable)
   let verifyCode = 0;
@@ -80,8 +82,6 @@ async function main() {
       const agent = new FormalAgent({ outputFormat: 'tla+', validationLevel: 'comprehensive', generateDiagrams: false, enableModelChecking: true });
       const reqText = process.env.CODEX_FORMAL_REQ || 'Users can register, login, and view their dashboard.';
       const spec = await agent.generateFormalSpecification(reqText, 'tla+');
-      const codexDir = path.join(artifactsDir, 'codex');
-      ensureDir(codexDir);
       const tlaPath = path.join(codexDir, 'quickstart-formal.tla');
       fs.writeFileSync(tlaPath, spec.content, 'utf8');
       try {
@@ -158,7 +158,6 @@ async function main() {
   }
 
   // Enrich summary from artifacts
-  const codexDir = path.join(artifactsDir, 'codex');
   function readJSON(p) { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return null; } }
   const uiSummary = readJSON(path.join(codexDir, 'ui-summary.json'));
   const uiResult = readJSON(path.join(codexDir, 'result-ui.json'));

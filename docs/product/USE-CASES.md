@@ -58,8 +58,8 @@ pnpm exec ae --help
 - PR 自動化の運用全体像: `docs/ci/pr-automation.md`
 
 ### 期待される成果物（代表）
-- `artifacts/verify-lite/verify-lite-run-summary.json`（verify-liteの要約; CIで `VERIFY_LITE_SUMMARY_EXPORT_PATH` により出力）
-- `verify-lite-lint-summary.json`（verify-lite lintの要約; CIのbaseline比較に使用）
+- `artifacts/verify-lite/verify-lite-run-summary.json`（verify-liteの要約; `VERIFY_LITE_SUMMARY_FILE` で出力先を制御）
+- `artifacts/verify-lite/verify-lite-lint-summary.json`（verify-lite lintの要約; CIのbaseline比較に使用）
 
 ### 注意点（根拠）
 - Copilot Review Gate は「Copilotレビューの存在」と「Copilotが関与したスレッドの解決」を要求します（`docs/ci/copilot-review-gate.md` / `.github/workflows/copilot-review-gate.yml`）。

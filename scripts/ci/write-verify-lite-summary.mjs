@@ -4,7 +4,7 @@ import path from 'node:path';
 import { buildArtifactMetadata } from './lib/artifact-metadata.mjs';
 
 const summaryPathFromArg = process.argv[2];
-const summaryPath = summaryPathFromArg ?? process.env.VERIFY_LITE_SUMMARY_FILE ?? 'verify-lite-run-summary.json';
+const summaryPath = summaryPathFromArg ?? process.env.VERIFY_LITE_SUMMARY_FILE ?? 'artifacts/verify-lite/verify-lite-run-summary.json';
 const resolvedPath = path.resolve(summaryPath);
 
 const bool = (value) => value === '1' || value === true || value === 'true';
@@ -67,6 +67,7 @@ const summary = {
 };
 
 try {
+  fs.mkdirSync(path.dirname(resolvedPath), { recursive: true });
   fs.writeFileSync(resolvedPath, JSON.stringify(summary, null, 2));
   console.log(`[verify-lite] summary written to ${resolvedPath}`);
 } catch (error) {

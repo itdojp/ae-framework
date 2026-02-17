@@ -28,7 +28,7 @@
    pnpm run verify:lite
    ```
 2. 実行結果:
-   - `verify-lite-run-summary.json` / `verify-lite-lint-summary.json`
+   - `artifacts/verify-lite/verify-lite-run-summary.json` / `artifacts/verify-lite/verify-lite-lint-summary.json`
    - Property harness サマリ `artifacts/properties/summary.json`
    - MBT サマリ `artifacts/mbt/summary.json`
    - Mutation quick レポート `reports/mutation/mutation.json`

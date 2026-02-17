@@ -36,7 +36,7 @@ Issue: #2031
   - `cegis-report-*.json`
   - `generated-*.json`
   - `filtered-test.json`, `parallel-test.json`, `run-suite.json`, `run-test.json`, `workflow-test.json`
-  - `conformance-results.json`, `verify-lite-lint-summary.json`
+  - `conformance-results.json`, `verify-lite-run-summary.json`, `verify-lite-lint-summary.json`, `verify-lite-lint.log`
 - 再生成可能ディレクトリ:
   - `node_modules/`, `coverage/`, `test-results/`, `test-results-run/`, `tmp/`
 
@@ -54,7 +54,7 @@ Issue: #2031
 | `cegis-report-*.json` | `src/cegis/auto-fix-engine.ts` | ルート出力。移設方針が必要 |
 | `conformance-results.json` | `src/cli/conformance-cli.ts` default output | 既定値の見直し対象 |
 | `generated-*.json`, `run-*.json` | integration CLI/tests | テスト実行後のクリーン対象 |
-| `verify-lite-lint-summary.json` | `scripts/ci/run-verify-lite-local.sh` | `reports/lint/` への統一が望ましい |
+| `artifacts/verify-lite/verify-lite-lint-summary.json` | `scripts/ci/run-verify-lite-local.sh` | ルート出力は禁止。`artifacts/verify-lite/` に統一 |
 
 ## 4. コード改善候補（優先観測）
 

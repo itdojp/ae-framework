@@ -1,7 +1,7 @@
 # Verify Lite → Envelope 変換プラン
 
 ## 現状整理
-- Verify Lite 実行結果は `verify-lite-run-summary.json` に書き出され、スキーマ `schema/verify-lite-run-summary.schema.json` で定義済み。
+- Verify Lite 実行結果は `artifacts/verify-lite/verify-lite-run-summary.json` に書き出され、スキーマ `schema/verify-lite-run-summary.schema.json` で定義済み。
 - `scripts/trace/create-report-envelope.mjs` は任意のサマリーファイル（デフォルトで Verify Lite のもの）をそのまま `summary` フィールドに格納するが、Envelope v1.0 では `traceCorrelation` 等の共通フィールドに寄せる必要あり。
 - Agent Builder 連携 (#1047/#1053) では、Verify Lite サマリーを Envelope へ正規化するコンバータ（PR-2）を実装する計画。
 

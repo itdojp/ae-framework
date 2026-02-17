@@ -21,8 +21,8 @@ describe('renderVerifyLiteSummary', () => {
       conformanceReport: { status: 'success', notes: 'runs=1;violations=0' }
     },
     artifacts: {
-      lintSummary: 'verify-lite-lint-summary.json',
-      lintLog: 'verify-lite-lint.log',
+      lintSummary: 'artifacts/verify-lite/verify-lite-lint-summary.json',
+      lintLog: 'artifacts/verify-lite/verify-lite-lint.log',
       mutationSummary: 'reports/mutation/summary.json',
       mutationSurvivors: 'reports/mutation/survivors.json',
       conformanceSummary: 'reports/conformance/verify-lite-summary.json',
