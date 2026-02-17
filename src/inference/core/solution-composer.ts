@@ -154,6 +154,15 @@ type CompositionResultPayload =
   | HybridCompositionResult;
 
 type ValidationAspect = GlobalValidationResult['aspect'];
+type ValidatorFunction = (
+  result: CompositionResultPayload,
+  context: CompositionContext,
+) => Promise<ValidationResult[]>;
+
+interface RegisteredValidator {
+  aspect: ValidationAspect;
+  run: ValidatorFunction;
+}
 
 export interface IntegrationRule {
   id: string;
@@ -166,7 +175,7 @@ export interface IntegrationRule {
 
 export class SolutionComposer {
   private strategies = new Map<string, CompositionStrategy>();
-  private validators = new Map<string, (result: CompositionResultPayload, context: CompositionContext) => Promise<ValidationResult[]>>();
+  private validators = new Map<string, RegisteredValidator>();
   private transformers = new Map<string, (solutions: SubSolution[]) => SubSolution[]>();
 
   constructor() {
@@ -215,11 +224,7 @@ export class SolutionComposer {
     );
 
     // Calculate metrics
-    const integrationMetrics = this.calculateIntegrationMetrics(
-      processedSolutions, 
-      compositeResult, 
-      globalValidations
-    );
+    const integrationMetrics = this.calculateIntegrationMetrics(globalValidations);
 
     // Generate recommendations
     const recommendations = this.generateRecommendations(
@@ -260,9 +265,13 @@ export class SolutionComposer {
    */
   registerValidator(
     name: string,
-    validator: (result: CompositionResultPayload, context: CompositionContext) => Promise<ValidationResult[]>,
+    validator: ValidatorFunction,
+    aspect: ValidationAspect = 'quality',
   ): void {
-    this.validators.set(name, validator);
+    this.validators.set(name, {
+      aspect,
+      run: validator,
+    });
   }
 
   private registerDefaultStrategies(): void {
@@ -300,11 +309,11 @@ export class SolutionComposer {
   }
 
   private registerDefaultValidators(): void {
-    this.validators.set('consistency', this.validateConsistency.bind(this));
-    this.validators.set('completeness', this.validateCompleteness.bind(this));
-    this.validators.set('quality', this.validateQuality.bind(this));
-    this.validators.set('performance', this.validatePerformance.bind(this));
-    this.validators.set('security', this.validateSecurity.bind(this));
+    this.registerValidator('consistency', this.validateConsistency.bind(this), 'consistency');
+    this.registerValidator('completeness', this.validateCompleteness.bind(this), 'completeness');
+    this.registerValidator('quality', this.validateQuality.bind(this), 'quality');
+    this.registerValidator('performance', this.validatePerformance.bind(this), 'performance');
+    this.registerValidator('security', this.validateSecurity.bind(this), 'security');
   }
 
   private registerDefaultTransformers(): void {
@@ -496,23 +505,16 @@ export class SolutionComposer {
     context: CompositionContext
   ): Promise<GlobalValidationResult[]> {
     const validations: GlobalValidationResult[] = [];
-    const validatorAspectMap: Record<string, ValidationAspect> = {
-      consistency: 'consistency',
-      completeness: 'completeness',
-      quality: 'quality',
-      performance: 'performance',
-      security: 'security',
-    };
 
     // Run each validator
     for (const [name, validator] of this.validators) {
       try {
-        const results = await validator(compositeResult, context);
+        const results = await validator.run(compositeResult, context);
         
         // Convert to global validation format
         for (const result of results) {
           validations.push({
-            aspect: validatorAspectMap[name] ?? 'quality',
+            aspect: validator.aspect,
             passed: result.passed,
             score: result.score,
             details: result.details,
@@ -521,7 +523,7 @@ export class SolutionComposer {
         }
       } catch (error) {
         validations.push({
-          aspect: validatorAspectMap[name] ?? 'quality',
+          aspect: validator.aspect,
           passed: false,
           score: 0,
           details: `Validation failed: ${(error as Error).message}`,
@@ -534,12 +536,8 @@ export class SolutionComposer {
   }
 
   private calculateIntegrationMetrics(
-    subSolutions: SubSolution[], 
-    compositeResult: CompositionResultPayload,
     validations: GlobalValidationResult[]
   ): CompositeSolution['integrationMetrics'] {
-    void subSolutions;
-    void compositeResult;
     const consistencyValidation = validations.find(v => v.aspect === 'consistency');
     const completenessValidation = validations.find(v => v.aspect === 'completeness');
     const qualityValidation = validations.find(v => v.aspect === 'quality');
