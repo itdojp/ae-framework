@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
+import { formatAppError, toExecAppError } from '../../core/command-errors.js';
 
 interface PackageJson {
   scripts?: Record<string, string>;
@@ -156,7 +157,8 @@ export async function adaptJest(thresholds?: { statements: number; branches: num
     console.log(chalk.green('\n✅ Jest adaptation completed successfully!'));
 
   } catch (error) {
-    console.error(chalk.red(`❌ Jest adaptation failed: ${error instanceof Error ? error.message : 'Unknown error'}`));
+    const appError = toExecAppError('adapt:jest', error);
+    console.error(chalk.red(`❌ Jest adaptation failed: ${formatAppError(appError)}`));
     const { safeExit } = await import('../../utils/safe-exit.js');
     safeExit(1);
   }

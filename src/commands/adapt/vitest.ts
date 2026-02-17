@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
+import { formatAppError, toExecAppError } from '../../core/command-errors.js';
 
 interface PackageJson {
   scripts?: Record<string, string>;
@@ -209,7 +210,8 @@ export async function adaptVitest(thresholds?: { statements: number; branches: n
     console.log(chalk.green('\n✅ Vitest adaptation completed successfully!'));
 
   } catch (error) {
-    console.error(chalk.red(`❌ Vitest adaptation failed: ${error instanceof Error ? error.message : 'Unknown error'}`));
+    const appError = toExecAppError('adapt:vitest', error);
+    console.error(chalk.red(`❌ Vitest adaptation failed: ${formatAppError(appError)}`));
     const { safeExit } = await import('../../utils/safe-exit.js');
     safeExit(1);
   }
