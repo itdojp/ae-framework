@@ -46,6 +46,57 @@ Purpose: Provide a short, deterministic path to diagnose common CI failures.
 - 自動化系の共通JSON/Step Summary出力は `docs/ci/automation-observability.md` を参照。
 - 通知条件/クールダウンは `docs/ci/automation-alerting.md` を参照。
 
+## 7) 再実行手順（標準）
+
+### 7.1 単一runの再実行（最優先）
+- 失敗runが特定できる場合は `gh run rerun <runId> --failed` を優先
+- runId の取得例:
+  - `gh run list --branch <head-branch> --limit 20`
+  - `gh run view <runId> --log-failed`
+
+### 7.2 PR番号指定での手動起動
+- review gate: `gh workflow run \"Copilot Review Gate\" -f pr_number=<PR番号>`
+- self-heal: `gh workflow run \"PR Self-Heal\" -f pr_number=<PR番号> -f dry_run=false`
+- autopilot lane: `gh workflow run \"Codex Autopilot Lane\" -f pr_number=<PR番号> -f dry_run=false`
+
+### 7.3 behind / stale checks の再同期
+- `mergeStateStatus=BEHIND` の場合は update-branch を先に実行
+  - `gh workflow run \"PR Maintenance\" -f mode=update-branch -f pr_number=<PR番号>`
+- required check が古いコミットに残る場合:
+  1. PRブランチに空コミットをpushして `pull_request` イベントを再発火
+  2. 必要なら `gate` / `verify-lite` を rerun
+
+## 8) 失敗時の切り分け（5分版）
+
+1. **分類**: 失敗jobが `quality` / `security` / `automation` のどれかを確定  
+2. **原因粒度**: `設定不足`（label/env/permission）か `実装不具合` かを分離  
+3. **再現性**: `pnpm run verify:lite` でローカル再現するか確認  
+4. **API制限**: 429系なら run rerun を優先し、`AE_GH_THROTTLE_MS` を段階的に上げる  
+5. **停止判断**: 同一症状が連続する場合は kill-switch で自動実行を一時停止
+
+## 9) 緊急回避（Fail-safe）
+
+- 即時停止:
+  - Repository Variable `AE_AUTOMATION_GLOBAL_DISABLE=1`
+  - 影響: auto-fix / auto-merge / self-heal / autopilot を skip
+- 部分停止:
+  - `AE_CODEX_AUTOPILOT_ENABLED=0`
+  - `AE_SELF_HEAL_ENABLED=0`
+  - `AE_COPILOT_AUTO_FIX=0`
+- 復帰手順:
+  1. 根本原因を修正（permission / env / workflow設定）
+  2. `AE_AUTOMATION_GLOBAL_DISABLE=0` へ戻す
+  3. 対象workflowを `workflow_dispatch` で段階的に再開
+
+## 10) 変更記録（運用ルール）
+
+- 失敗と復旧の実施内容は、PRコメントまたはIssueコメントに必ず残す
+- 記録必須項目:
+  - 発生時刻（UTC）
+  - 失敗workflow/job名
+  - 実施した rerun / dispatch / env変更
+  - 再発防止策（あればPR番号）
+
 ## References
 - `docs/ci/ci-baseline-checklist.md`
 - `docs/ci/automation-observability.md`
