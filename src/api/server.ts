@@ -184,7 +184,7 @@ export async function createServer(): Promise<FastifyInstance> {
         });
       }
 
-      // TODO: delegate to service layer (inventory checks, idempotent handling, transactions)
+      // TODO(#2031): delegate to service layer (inventory checks, idempotent handling, transactions)
       const responseData = { ok: true };
 
       // Validate response

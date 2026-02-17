@@ -127,7 +127,7 @@ export class BenchmarkRunner {
         logs
       );
 
-      // TODO: Implement UI/UX generation phase
+      // TODO(#2031): Implement UI/UX generation phase
       const application = await this.executePhase(
         AEFrameworkPhase.UI_UX_GENERATION,
         () => this.generateUIUX(domainModel),
@@ -474,7 +474,7 @@ export class BenchmarkRunner {
    * Placeholder for UI/UX generation phase
    */
   private async generateUIUX(domainModel: unknown): Promise<unknown> {
-    // TODO: Implement UI/UX generation when the agent is available
+    // TODO(#2031): Implement UI/UX generation when the agent is available
     console.warn('UI/UX generation phase not yet implemented');
     return domainModel; // Return domain model as placeholder
   }
