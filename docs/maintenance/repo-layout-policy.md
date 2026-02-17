@@ -31,6 +31,7 @@
 - ソース/テスト/仕様: `src/`, `tests/`, `spec/`, `schema/`, `docs/`
 - 補助ディレクトリ: `scripts/`, `config/`, `configs/`, `packages/`, `apps/`, `samples/`, `fixtures/`
 - 運用成果物（追跡対象のみ）: `artifacts/`（契約済みファイルに限定）
+- 生成物ディレクトリ（原則 `.gitignore` 管理）: `reports/`, `coverage/`, `temp-reports/`
 
 ### 3.2 ルート配置を禁止する項目（原則）
 
@@ -40,7 +41,7 @@
   - `filtered-test.json`, `parallel-test.json`, `run-suite.json`, `run-test.json`, `workflow-test.json`
   - `conformance-results.json`, `verify-lite-lint-summary.json`
 - 実行キャッシュ/一時物:
-  - `node_modules/`, `coverage/`, `test-results/`, `test-results-run/`, `tmp/`
+  - `node_modules/`, `test-results/`, `test-results-run/`, `tmp/`
 - 日次/手動検証メモの生ファイル（ルート直下）
 
 ## 4. 生成物マップ（Phase 0時点）
@@ -74,7 +75,7 @@
 
 ## 6. 運用ルール
 
-1. 新規コマンドを追加する際は、出力先を `artifacts/` か `reports/` に固定する。  
+1. 新規コマンドを追加する際は、出力先を `artifacts/`・`reports/`・`coverage/`・`temp-reports/` のいずれかに固定する。  
 2. ルート直下へ生成する実装は受け入れない（既存実装は段階的に解消）。  
 3. Cleanupコマンド（`pnpm run clean:project`）で除去できることを保証する。  
 4. Phase 3で「ルート汚染検知」をCI必須ゲート化する。  
