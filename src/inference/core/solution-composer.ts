@@ -9,14 +9,14 @@ export interface SubSolution {
   subProblemId: string;
   success: boolean;
   confidence: number;
-  result: any;
+  result: unknown;
   metrics: {
     executionTime: number;
     resourcesUsed: string[];
     qualityScore: number;
   };
   validationResults: ValidationResult[];
-  dependencies: Record<string, any>;
+  dependencies: Record<string, unknown>;
   error?: Error;
 }
 
@@ -32,7 +32,7 @@ export interface CompositeSolution {
   problemId: string;
   success: boolean;
   overallConfidence: number;
-  compositeResult: any;
+  compositeResult: CompositionResultPayload;
   subSolutions: SubSolution[];
   integrationMetrics: {
     consistencyScore: number;
@@ -69,16 +69,99 @@ export interface CompositionStrategy {
   name: string;
   description: string;
   canHandle: (decomposition: DecompositionResult) => boolean;
-  compose: (subSolutions: SubSolution[], context: CompositionContext) => Promise<any>;
-  validate: (result: any, context: CompositionContext) => Promise<ValidationResult[]>;
+  compose: (subSolutions: SubSolution[], context: CompositionContext) => Promise<CompositionResultPayload>;
+  validate: (result: CompositionResultPayload, context: CompositionContext) => Promise<ValidationResult[]>;
 }
 
 export interface CompositionContext {
-  originalProblem: any;
+  originalProblem: DecompositionResult['originalProblem'];
   decompositionResult: DecompositionResult;
-  constraints: any[];
+  constraints: DecompositionResult['originalProblem']['constraints'];
   qualityThresholds: Record<string, number>;
   integrationRules: IntegrationRule[];
+}
+
+interface SequentialCompositionResult {
+  type: 'sequential_composition';
+  results: Array<{
+    subProblemId: string;
+    result: unknown;
+    confidence: number;
+  }>;
+  metadata: {
+    strategy: 'sequential';
+    totalSolutions: number;
+    successfulSolutions: number;
+  };
+  summary: string;
+}
+
+interface ParallelCompositionResult {
+  type: 'parallel_composition';
+  phases: Array<{
+    phase: number;
+    results: SequentialCompositionResult['results'];
+    averageConfidence: number;
+  }>;
+  metadata: {
+    strategy: 'parallel';
+    totalPhases: number;
+    totalSolutions: number;
+  };
+  summary: string;
+}
+
+interface HierarchyNode {
+  root?: SubSolution[];
+  children?: HierarchyNode[];
+  [key: string]: unknown;
+}
+
+interface HierarchicalCompositionResult {
+  type: 'hierarchical_composition';
+  hierarchy: HierarchyNode;
+  metadata: {
+    strategy: 'hierarchical';
+    levels: number;
+    totalNodes: number;
+  };
+  summary: string;
+}
+
+interface HybridIntegrationResult {
+  sequential: SequentialCompositionResult['results'];
+  parallel: ParallelCompositionResult['phases'];
+  integration: 'hybrid';
+}
+
+interface HybridCompositionResult {
+  type: 'hybrid_composition';
+  sequential: SequentialCompositionResult | null;
+  parallel: ParallelCompositionResult | null;
+  integrated: HybridIntegrationResult;
+  metadata: {
+    strategy: 'hybrid';
+    sequentialSolutions: number;
+    parallelSolutions: number;
+  };
+  summary: string;
+}
+
+type CompositionResultPayload =
+  | SequentialCompositionResult
+  | ParallelCompositionResult
+  | HierarchicalCompositionResult
+  | HybridCompositionResult;
+
+type ValidationAspect = GlobalValidationResult['aspect'];
+type ValidatorFunction = (
+  result: CompositionResultPayload,
+  context: CompositionContext,
+) => Promise<ValidationResult[]>;
+
+interface RegisteredValidator {
+  aspect: ValidationAspect;
+  run: ValidatorFunction;
 }
 
 export interface IntegrationRule {
@@ -92,7 +175,7 @@ export interface IntegrationRule {
 
 export class SolutionComposer {
   private strategies = new Map<string, CompositionStrategy>();
-  private validators = new Map<string, (result: any, context: CompositionContext) => Promise<ValidationResult[]>>();
+  private validators = new Map<string, RegisteredValidator>();
   private transformers = new Map<string, (solutions: SubSolution[]) => SubSolution[]>();
 
   constructor() {
@@ -141,11 +224,7 @@ export class SolutionComposer {
     );
 
     // Calculate metrics
-    const integrationMetrics = this.calculateIntegrationMetrics(
-      processedSolutions, 
-      compositeResult, 
-      globalValidations
-    );
+    const integrationMetrics = this.calculateIntegrationMetrics(globalValidations);
 
     // Generate recommendations
     const recommendations = this.generateRecommendations(
@@ -184,8 +263,15 @@ export class SolutionComposer {
   /**
    * Register a custom validator
    */
-  registerValidator(name: string, validator: (result: any, context: CompositionContext) => Promise<ValidationResult[]>): void {
-    this.validators.set(name, validator);
+  registerValidator(
+    name: string,
+    validator: ValidatorFunction,
+    aspect: ValidationAspect = 'quality',
+  ): void {
+    this.validators.set(name, {
+      aspect,
+      run: validator,
+    });
   }
 
   private registerDefaultStrategies(): void {
@@ -216,18 +302,18 @@ export class SolutionComposer {
     this.strategies.set('hybrid', {
       name: 'hybrid',
       description: 'Flexible composition strategy',
-      canHandle: () => true, // Can handle any decomposition
+      canHandle: () => true, // Can handle all decomposition shapes
       compose: this.composeHybrid.bind(this),
       validate: this.validateHybrid.bind(this)
     });
   }
 
   private registerDefaultValidators(): void {
-    this.validators.set('consistency', this.validateConsistency.bind(this));
-    this.validators.set('completeness', this.validateCompleteness.bind(this));
-    this.validators.set('quality', this.validateQuality.bind(this));
-    this.validators.set('performance', this.validatePerformance.bind(this));
-    this.validators.set('security', this.validateSecurity.bind(this));
+    this.registerValidator('consistency', this.validateConsistency.bind(this), 'consistency');
+    this.registerValidator('completeness', this.validateCompleteness.bind(this), 'completeness');
+    this.registerValidator('quality', this.validateQuality.bind(this), 'quality');
+    this.registerValidator('performance', this.validatePerformance.bind(this), 'performance');
+    this.registerValidator('security', this.validateSecurity.bind(this), 'security');
   }
 
   private registerDefaultTransformers(): void {
@@ -296,9 +382,12 @@ export class SolutionComposer {
     return this.strategies.get('hybrid')!;
   }
 
-  private async composeSequential(subSolutions: SubSolution[], context: CompositionContext): Promise<any> {
-    const results: any[] = [];
-    const metadata = {
+  private async composeSequential(
+    subSolutions: SubSolution[],
+    context: CompositionContext,
+  ): Promise<SequentialCompositionResult> {
+    const results: SequentialCompositionResult['results'] = [];
+    const metadata: SequentialCompositionResult['metadata'] = {
       strategy: 'sequential',
       totalSolutions: subSolutions.length,
       successfulSolutions: subSolutions.filter(s => s.success).length
@@ -325,10 +414,13 @@ export class SolutionComposer {
     };
   }
 
-  private async composeParallel(subSolutions: SubSolution[], context: CompositionContext): Promise<any> {
+  private async composeParallel(
+    subSolutions: SubSolution[],
+    context: CompositionContext,
+  ): Promise<ParallelCompositionResult> {
     // Group solutions by execution phase
     const phases = this.groupByExecutionPhase(subSolutions, context.decompositionResult);
-    const composedPhases: any[] = [];
+    const composedPhases: ParallelCompositionResult['phases'] = [];
 
     for (const [phase, solutions] of phases) {
       const phaseResults = solutions
@@ -342,7 +434,9 @@ export class SolutionComposer {
       composedPhases.push({
         phase,
         results: phaseResults,
-        averageConfidence: phaseResults.reduce((sum, r) => sum + r.confidence, 0) / phaseResults.length
+        averageConfidence: phaseResults.length > 0
+          ? phaseResults.reduce((sum, r) => sum + r.confidence, 0) / phaseResults.length
+          : 0,
       });
     }
 
@@ -358,7 +452,10 @@ export class SolutionComposer {
     };
   }
 
-  private async composeHierarchical(subSolutions: SubSolution[], context: CompositionContext): Promise<any> {
+  private async composeHierarchical(
+    subSolutions: SubSolution[],
+    context: CompositionContext,
+  ): Promise<HierarchicalCompositionResult> {
     const hierarchy = this.buildHierarchy(subSolutions, context.decompositionResult);
     const composedHierarchy = await this.composeHierarchyRecursive(hierarchy, context);
 
@@ -374,7 +471,10 @@ export class SolutionComposer {
     };
   }
 
-  private async composeHybrid(subSolutions: SubSolution[], context: CompositionContext): Promise<any> {
+  private async composeHybrid(
+    subSolutions: SubSolution[],
+    context: CompositionContext,
+  ): Promise<HybridCompositionResult> {
     // Analyze the structure and apply multiple strategies
     const sequentialPart = subSolutions.filter(s => this.isSequentialSolution(s, context));
     const parallelPart = subSolutions.filter(s => this.isParallelSolution(s, context));
@@ -400,7 +500,7 @@ export class SolutionComposer {
   }
 
   private async performGlobalValidation(
-    compositeResult: any, 
+    compositeResult: CompositionResultPayload,
     subSolutions: SubSolution[], 
     context: CompositionContext
   ): Promise<GlobalValidationResult[]> {
@@ -409,12 +509,12 @@ export class SolutionComposer {
     // Run each validator
     for (const [name, validator] of this.validators) {
       try {
-        const results = await validator(compositeResult, context);
+        const results = await validator.run(compositeResult, context);
         
         // Convert to global validation format
         for (const result of results) {
           validations.push({
-            aspect: name as any,
+            aspect: validator.aspect,
             passed: result.passed,
             score: result.score,
             details: result.details,
@@ -423,7 +523,7 @@ export class SolutionComposer {
         }
       } catch (error) {
         validations.push({
-          aspect: name as any,
+          aspect: validator.aspect,
           passed: false,
           score: 0,
           details: `Validation failed: ${(error as Error).message}`,
@@ -436,8 +536,6 @@ export class SolutionComposer {
   }
 
   private calculateIntegrationMetrics(
-    subSolutions: SubSolution[], 
-    compositeResult: any, 
     validations: GlobalValidationResult[]
   ): CompositeSolution['integrationMetrics'] {
     const consistencyValidation = validations.find(v => v.aspect === 'consistency');
@@ -501,8 +599,11 @@ export class SolutionComposer {
     }));
   }
 
-  private resolveSubSolutionDependencies(solution: SubSolution, allSolutions: SubSolution[]): Record<string, any> {
-    const resolved: Record<string, any> = {};
+  private resolveSubSolutionDependencies(
+    solution: SubSolution,
+    allSolutions: SubSolution[],
+  ): Record<string, unknown> {
+    const resolved: Record<string, unknown> = {};
     
     for (const depId of Object.keys(solution.dependencies)) {
       const depSolution = allSolutions.find(s => s.subProblemId === depId);
@@ -533,7 +634,12 @@ export class SolutionComposer {
   }
 
   // Validation implementations
-  private async validateSequential(result: any, context: CompositionContext): Promise<ValidationResult[]> {
+  private async validateSequential(
+    result: CompositionResultPayload,
+    context: CompositionContext,
+  ): Promise<ValidationResult[]> {
+    void result;
+    void context;
     return [{
       criterion: 'sequential_order',
       passed: true,
@@ -543,7 +649,12 @@ export class SolutionComposer {
     }];
   }
 
-  private async validateParallel(result: any, context: CompositionContext): Promise<ValidationResult[]> {
+  private async validateParallel(
+    result: CompositionResultPayload,
+    context: CompositionContext,
+  ): Promise<ValidationResult[]> {
+    void result;
+    void context;
     return [{
       criterion: 'parallel_consistency',
       passed: true,
@@ -553,7 +664,12 @@ export class SolutionComposer {
     }];
   }
 
-  private async validateHierarchical(result: any, context: CompositionContext): Promise<ValidationResult[]> {
+  private async validateHierarchical(
+    result: CompositionResultPayload,
+    context: CompositionContext,
+  ): Promise<ValidationResult[]> {
+    void result;
+    void context;
     return [{
       criterion: 'hierarchy_structure',
       passed: true,
@@ -563,7 +679,12 @@ export class SolutionComposer {
     }];
   }
 
-  private async validateHybrid(result: any, context: CompositionContext): Promise<ValidationResult[]> {
+  private async validateHybrid(
+    result: CompositionResultPayload,
+    context: CompositionContext,
+  ): Promise<ValidationResult[]> {
+    void result;
+    void context;
     return [{
       criterion: 'hybrid_integration',
       passed: true,
@@ -573,7 +694,12 @@ export class SolutionComposer {
     }];
   }
 
-  private async validateConsistency(result: any, context: CompositionContext): Promise<ValidationResult[]> {
+  private async validateConsistency(
+    result: CompositionResultPayload,
+    context: CompositionContext,
+  ): Promise<ValidationResult[]> {
+    void result;
+    void context;
     return [{
       criterion: 'data_consistency',
       passed: true,
@@ -583,7 +709,12 @@ export class SolutionComposer {
     }];
   }
 
-  private async validateCompleteness(result: any, context: CompositionContext): Promise<ValidationResult[]> {
+  private async validateCompleteness(
+    result: CompositionResultPayload,
+    context: CompositionContext,
+  ): Promise<ValidationResult[]> {
+    void result;
+    void context;
     return [{
       criterion: 'solution_completeness',
       passed: true,
@@ -593,7 +724,12 @@ export class SolutionComposer {
     }];
   }
 
-  private async validateQuality(result: any, context: CompositionContext): Promise<ValidationResult[]> {
+  private async validateQuality(
+    result: CompositionResultPayload,
+    context: CompositionContext,
+  ): Promise<ValidationResult[]> {
+    void result;
+    void context;
     return [{
       criterion: 'output_quality',
       passed: true,
@@ -603,7 +739,12 @@ export class SolutionComposer {
     }];
   }
 
-  private async validatePerformance(result: any, context: CompositionContext): Promise<ValidationResult[]> {
+  private async validatePerformance(
+    result: CompositionResultPayload,
+    context: CompositionContext,
+  ): Promise<ValidationResult[]> {
+    void result;
+    void context;
     return [{
       criterion: 'performance_metrics',
       passed: true,
@@ -613,7 +754,12 @@ export class SolutionComposer {
     }];
   }
 
-  private async validateSecurity(result: any, context: CompositionContext): Promise<ValidationResult[]> {
+  private async validateSecurity(
+    result: CompositionResultPayload,
+    context: CompositionContext,
+  ): Promise<ValidationResult[]> {
+    void result;
+    void context;
     return [{
       criterion: 'security_compliance',
       passed: true,
@@ -625,10 +771,15 @@ export class SolutionComposer {
 
   // Other helper methods would be implemented similarly...
   private sortByExecutionOrder(solutions: SubSolution[], decomposition: DecompositionResult): SubSolution[] {
+    void decomposition;
     return solutions.sort((a, b) => a.subProblemId.localeCompare(b.subProblemId));
   }
 
-  private groupByExecutionPhase(solutions: SubSolution[], decomposition: DecompositionResult): Map<number, SubSolution[]> {
+  private groupByExecutionPhase(
+    solutions: SubSolution[],
+    decomposition: DecompositionResult,
+  ): Map<number, SubSolution[]> {
+    void decomposition;
     const phases = new Map<number, SubSolution[]>();
     // Simplified phase grouping
     solutions.forEach((solution, index) => {
@@ -639,27 +790,38 @@ export class SolutionComposer {
     return phases;
   }
 
-  private buildHierarchy(solutions: SubSolution[], decomposition: DecompositionResult): any {
+  private buildHierarchy(solutions: SubSolution[], decomposition: DecompositionResult): HierarchyNode {
+    void decomposition;
     return { root: solutions };
   }
 
-  private async composeHierarchyRecursive(hierarchy: any, context: CompositionContext): Promise<any> {
+  private async composeHierarchyRecursive(
+    hierarchy: HierarchyNode,
+    context: CompositionContext,
+  ): Promise<HierarchyNode> {
+    void context;
     return hierarchy;
   }
 
-  private calculateHierarchyLevels(hierarchy: any): number {
+  private calculateHierarchyLevels(hierarchy: HierarchyNode): number {
+    void hierarchy;
     return 1; // Simplified
   }
 
   private isSequentialSolution(solution: SubSolution, context: CompositionContext): boolean {
+    void context;
     return Object.keys(solution.dependencies).length > 0;
   }
 
   private isParallelSolution(solution: SubSolution, context: CompositionContext): boolean {
+    void context;
     return Object.keys(solution.dependencies).length === 0;
   }
 
-  private integrateHybridResults(sequential: any, parallel: any): any {
+  private integrateHybridResults(
+    sequential: SequentialCompositionResult | null,
+    parallel: ParallelCompositionResult | null,
+  ): HybridIntegrationResult {
     return {
       sequential: sequential?.results || [],
       parallel: parallel?.phases || [],
