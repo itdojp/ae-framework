@@ -32,6 +32,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      # Intentional: run before docs-only detection to fail fast on root pollution
+      # regardless of PR change scope.
+      - name: Enforce root layout policy
+        run: node scripts/ci/check-root-layout.mjs
       - name: Detect docs-only change
         id: docs-only
         shell: bash
@@ -126,12 +130,11 @@ jobs:
           node scripts/ci/validate-report-envelope.mjs \
             artifacts/report-envelope.json \
             schema/envelope.schema.json
-      - name: Check required artifacts (non-blocking)
+      - name: Check required artifacts (required)
         if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
-        continue-on-error: ${{ !(github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-artifacts')) }}
         env:
           REQUIRED_ARTIFACTS: artifacts/verify-lite/verify-lite-run-summary.json,artifacts/report-envelope.json
-          REQUIRED_ARTIFACTS_STRICT: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-artifacts') && '1' || '0' }}
+          REQUIRED_ARTIFACTS_STRICT: '1'
         run: |
           node scripts/ci/check-required-artifacts.mjs
       - name: BDD lint (strict; label-gated)
