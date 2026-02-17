@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execGh, execGhJson } from './lib/gh-exec.mjs';
 import { emitAutomationReport } from './lib/automation-report.mjs';
-import { sleep } from './lib/timing.mjs';
+import { readIntEnv, waitForNextRound } from './lib/round-control.mjs';
 import {
   hasLabel as hasOptInLabel,
   isActorAllowed,
@@ -21,6 +21,8 @@ const repo = String(process.env.GITHUB_REPOSITORY || '').trim();
 const prNumber = toPositiveInt(process.env.PR_NUMBER || '');
 const maxRounds = readIntEnv('AE_AUTOPILOT_MAX_ROUNDS', 3, 1);
 const roundWaitSeconds = readIntEnv('AE_AUTOPILOT_ROUND_WAIT_SECONDS', 8, 0);
+const roundWaitStrategy = String(process.env.AE_AUTOPILOT_WAIT_STRATEGY || 'fixed').trim().toLowerCase();
+const roundWaitMaxSeconds = readIntEnv('AE_AUTOPILOT_ROUND_WAIT_MAX_SECONDS', roundWaitSeconds, 0);
 const dryRun = toBool(process.env.AE_AUTOPILOT_DRY_RUN) || toBool(process.env.DRY_RUN);
 const globalDisabled = toBool(process.env.AE_AUTOMATION_GLOBAL_DISABLE);
 const copilotActors = parseActorCsv(
@@ -28,12 +30,6 @@ const copilotActors = parseActorCsv(
   'copilot-pull-request-reviewer,github-copilot,github-copilot[bot],copilot,copilot[bot],Copilot',
 );
 const copilotActorSet = toActorSet(copilotActors);
-
-function readIntEnv(name, fallback, min) {
-  const parsed = Number.parseInt(String(process.env[name] || '').trim(), 10);
-  if (!Number.isFinite(parsed) || parsed < min) return fallback;
-  return parsed;
-}
 
 function toBool(value) {
   const normalized = String(value || '').trim().toLowerCase();
@@ -338,9 +334,13 @@ async function processPr(number) {
       break;
     }
 
-    if (round < maxRounds && roundWaitSeconds > 0) {
-      await sleep(roundWaitSeconds * 1000);
-    }
+    await waitForNextRound({
+      round,
+      maxRounds,
+      baseSeconds: roundWaitSeconds,
+      strategy: roundWaitStrategy,
+      maxSeconds: roundWaitMaxSeconds,
+    });
   }
 
   const finalThreads = finalState ? fetchCopilotThreadState(number) : { unresolvedCopilot: 0 };

@@ -74,6 +74,8 @@ PR self-heal を使う場合は次も設定できます（一次情報: `.github
 | `AE_SELF_HEAL_MAX_AGE_MINUTES` | rerun対象にする失敗チェックの最大経過分 | `180` | `docs/ci/pr-automation.md` |
 | `AE_SELF_HEAL_MAX_PRS` | schedule実行時に処理するPR数上限 | `20` | `docs/ci/pr-automation.md` |
 | `AE_SELF_HEAL_ROUND_WAIT_SECONDS` | 復旧ラウンド間の待機秒 | `60` | `docs/ci/pr-automation.md` |
+| `AE_SELF_HEAL_WAIT_STRATEGY` | 復旧ラウンド待機戦略（`fixed`/`exponential`） | `fixed` | `docs/ci/pr-automation.md` |
+| `AE_SELF_HEAL_ROUND_WAIT_MAX_SECONDS` | 指数待機時の上限秒 | `AE_SELF_HEAL_ROUND_WAIT_SECONDS` | `docs/ci/pr-automation.md` |
 
 Codex Autopilot Lane を使う場合:
 
@@ -82,6 +84,8 @@ Codex Autopilot Lane を使う場合:
 | `AE_CODEX_AUTOPILOT_ENABLED` | autopilot lane 有効化 | 未設定（OFF） | `docs/ci/codex-autopilot-lane.md` |
 | `AE_AUTOPILOT_MAX_ROUNDS` | 1PRあたりの自律ループ上限 | `3` | `docs/ci/codex-autopilot-lane.md` |
 | `AE_AUTOPILOT_ROUND_WAIT_SECONDS` | ループ間待機秒 | `8` | `docs/ci/codex-autopilot-lane.md` |
+| `AE_AUTOPILOT_WAIT_STRATEGY` | ラウンド待機戦略（`fixed`/`exponential`） | `fixed` | `docs/ci/codex-autopilot-lane.md` |
+| `AE_AUTOPILOT_ROUND_WAIT_MAX_SECONDS` | 指数待機時の上限秒 | `AE_AUTOPILOT_ROUND_WAIT_SECONDS` | `docs/ci/codex-autopilot-lane.md` |
 | `AE_AUTOPILOT_DRY_RUN` | 副作用なし検証 | `false` | `docs/ci/codex-autopilot-lane.md` |
 関連:
 - PR自動化の全体像: `docs/ci/pr-automation.md`
