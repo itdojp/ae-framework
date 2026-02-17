@@ -42,11 +42,11 @@ function resolveSnapshotTimestamp(): string {
 }
 
 function shouldPersistSnapshot(): boolean {
-  const override = process.env.AE_GOLDEN_SNAPSHOT_WRITE?.trim().toLowerCase();
+  const override = process.env.AE_GOLDEN_SNAPSHOT_WRITE?.trim()?.toLowerCase();
   if (override === 'true') return true;
   if (override === 'false') return false;
 
-  const ci = process.env.CI?.trim().toLowerCase();
+  const ci = process.env.CI?.trim()?.toLowerCase();
   return ci !== 'true' && ci !== '1';
 }
 
