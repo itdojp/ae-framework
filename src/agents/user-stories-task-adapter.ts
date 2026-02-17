@@ -7,7 +7,13 @@
  */
 
 import { FormalAgent, FormalAgentConfig } from './formal-agent.js';
-import type { TaskRequest, TaskResponse } from './task-types.js';
+import type {
+  ProactiveGuidanceContext,
+  ProactiveGuidanceResult,
+  TaskHandler,
+  TaskRequest,
+  TaskResponse,
+} from './task-types.js';
 
 export interface UserStory {
   id: string;
@@ -31,6 +37,159 @@ export interface UserStorySet {
   completenessScore: number;
   gaps: string[];
   conflicts: string[];
+}
+
+type UserStoriesTaskType =
+  | 'generate-stories'
+  | 'validate-stories'
+  | 'prioritize-stories'
+  | 'estimate-stories'
+  | 'create-acceptance-criteria'
+  | 'organize-epics'
+  | 'identify-dependencies'
+  | 'generic-processing';
+
+interface StoryValidationIssue {
+  story: string;
+  problem: string;
+  severity: string;
+}
+
+interface StoryValidationMetrics {
+  properFormat: number;
+  clearCriteria: number;
+  testable: number;
+  independent: number;
+}
+
+interface StoryValidationResult {
+  totalStories: number;
+  validStories: number;
+  issues: StoryValidationIssue[];
+  criticalIssues: Array<{ description: string }>;
+  recommendations: string[];
+  metrics: StoryValidationMetrics;
+}
+
+interface StoryPriorityGroup {
+  priority: string;
+  stories: UserStory[];
+  businessValue: string;
+}
+
+interface StoryReleasePlan {
+  name: string;
+  stories: UserStory[];
+  duration: number;
+}
+
+interface StoryPrioritizationResult {
+  stories: UserStory[];
+  priorityMatrix: StoryPriorityGroup[];
+  releases: StoryReleasePlan[];
+  businessValueDistribution: {
+    high: number;
+    medium: number;
+    low: number;
+  };
+  risks: Array<{ description: string }>;
+}
+
+interface StoryEstimationResult {
+  totalStoryPoints: number;
+  averagePoints: number;
+  distribution: Array<{ points: number; count: number }>;
+  complexityBreakdown: {
+    simple: number;
+    medium: number;
+    complex: number;
+  };
+  confidence: {
+    high: number;
+    medium: number;
+    low: number;
+  };
+  concerns: Array<{ description: string }>;
+}
+
+interface StoryAcceptanceCriteriaResult {
+  storyTitle: string;
+  criteria: Array<{
+    given: string;
+    when: string;
+    then: string;
+  }>;
+  testScenarios: Array<{
+    description: string;
+    type: string;
+  }>;
+  coverage: {
+    happyPath: number;
+    edgeCases: number;
+    errorHandling: number;
+  };
+  gaps: Array<{ description: string }>;
+}
+
+interface EpicOrganizationResult {
+  epics: Array<{
+    name: string;
+    stories: UserStory[];
+    totalPoints: number;
+    estimatedWeeks: number;
+  }>;
+  orphanedStories: UserStory[];
+  dependencies: Array<{
+    from: string;
+    to: string;
+    reason: string;
+  }>;
+  releasePlan: Array<{
+    name: string;
+    epics: string[];
+    duration: number;
+  }>;
+}
+
+interface StoryDependenciesResult {
+  totalDependencies: number;
+  dependentStories: string[];
+  criticalPath: Array<{
+    from: string;
+    to: string;
+    type: string;
+    reason: string;
+  }>;
+  byType: {
+    technical: number;
+    business: number;
+    data: number;
+    ui: number;
+  };
+  risks: Array<{
+    severity: string;
+    description: string;
+    impactedStories: string[];
+  }>;
+  blockers: Array<{ description: string }>;
+}
+
+interface GenericStoryAnalysisResult {
+  report: string;
+  recommendations: string[];
+  nextActions: string[];
+  warnings: string[];
+}
+
+interface StoryPromptInput {
+  prompt: string;
+}
+
+interface StoryActivityAnalysis {
+  hasIncompleteStories: boolean;
+  hasPoorStoryQuality: boolean;
+  completionActions: string[];
+  qualityActions: string[];
 }
 
 export class UserStoriesTaskAdapter {
@@ -83,18 +242,7 @@ export class UserStoriesTaskAdapter {
   /**
    * Proactive user story guidance for Claude Code
    */
-  async provideProactiveGuidance(context: {
-    recentFiles: string[];
-    recentActions: string[];
-    userIntent: string;
-  }): Promise<{
-    shouldIntervene: boolean;
-    intervention: {
-      type: 'warning' | 'suggestion' | 'block';
-      message: string;
-      recommendedActions: string[];
-    };
-  }> {
+  async provideProactiveGuidance(context: ProactiveGuidanceContext): Promise<ProactiveGuidanceResult> {
     const analysis = await this.analyzeRecentActivity(context);
     
     if (analysis.hasIncompleteStories) {
@@ -186,7 +334,7 @@ ${storySet.gaps.map((gap: string) => `• ${gap}`).join('\n')}
 **Validation Score**: ${Math.round((validation.validStories / validation.totalStories) * 100)}%
 
 ## Validation Issues
-${validation.issues.map((issue: any) => `• **${issue.story}**: ${issue.problem} - ${issue.severity}`).join('\n')}
+${validation.issues.map((issue) => `• **${issue.story}**: ${issue.problem} - ${issue.severity}`).join('\n')}
 
 ## Quality Metrics
 - **Proper Format**: ${validation.metrics.properFormat}%
@@ -200,7 +348,7 @@ ${validation.issues.map((issue: any) => `• **${issue.story}**: ${issue.problem
         'Improve acceptance criteria clarity',
         'Ensure all stories are testable and independent',
       ],
-      warnings: validation.criticalIssues.map((issue: any) => issue.description),
+      warnings: validation.criticalIssues.map((issue) => issue.description),
       shouldBlockProgress: validation.criticalIssues.length > 0,
     };
   }
@@ -217,12 +365,12 @@ ${validation.issues.map((issue: any) => `• **${issue.story}**: ${issue.problem
 **Total Stories**: ${prioritization.stories.length}
 
 ## Priority Matrix
-${prioritization.priorityMatrix.map((group: any) => 
+${prioritization.priorityMatrix.map((group) => 
   `• **${group.priority}**: ${group.stories.length} stories (${group.businessValue} business value)`
 ).join('\n')}
 
 ## Release Recommendations
-${prioritization.releases.map((release: any) => 
+${prioritization.releases.map((release) => 
   `• **${release.name}**: ${release.stories.length} stories (${release.duration} weeks)`
 ).join('\n')}
 
@@ -241,7 +389,7 @@ ${prioritization.releases.map((release: any) =>
         'Define sprint goals aligned with priorities',
         'Communicate priority rationale to team',
       ],
-      warnings: prioritization.risks.map((risk: any) => risk.description),
+      warnings: prioritization.risks.map((risk) => risk.description),
       shouldBlockProgress: false,
     };
   }
@@ -259,7 +407,7 @@ ${prioritization.releases.map((release: any) =>
 **Average Points per Story**: ${Math.round(estimation.averagePoints * 10) / 10}
 
 ## Estimation Distribution
-${estimation.distribution.map((bucket: any) => 
+${estimation.distribution.map((bucket) => 
   `• **${bucket.points} points**: ${bucket.count} stories`
 ).join('\n')}
 
@@ -283,7 +431,7 @@ ${estimation.distribution.map((bucket: any) =>
         'Break down complex stories if needed',
         'Track actual vs estimated effort for calibration',
       ],
-      warnings: estimation.concerns.map((concern: any) => concern.description),
+      warnings: estimation.concerns.map((concern) => concern.description),
       shouldBlockProgress: false,
     };
   }
@@ -301,12 +449,12 @@ ${estimation.distribution.map((bucket: any) =>
 **Story**: ${criteria.storyTitle}
 
 ## Generated Criteria
-${criteria.criteria.map((criterion: any, index: number) => 
+${criteria.criteria.map((criterion, index) => 
   `${index + 1}. **Given** ${criterion.given}, **When** ${criterion.when}, **Then** ${criterion.then}`
 ).join('\n')}
 
 ## Test Scenarios
-${criteria.testScenarios.map((scenario: any, index: number) => 
+${criteria.testScenarios.map((scenario, index) => 
   `${index + 1}. ${scenario.description} (${scenario.type})`
 ).join('\n')}
 
@@ -325,7 +473,7 @@ ${criteria.testScenarios.map((scenario: any, index: number) =>
         'Define manual testing scenarios',
         'Proceed to story implementation',
       ],
-      warnings: criteria.gaps.map((gap: any) => gap.description),
+      warnings: criteria.gaps.map((gap) => gap.description),
       shouldBlockProgress: false,
     };
   }
@@ -343,17 +491,17 @@ ${criteria.testScenarios.map((scenario: any, index: number) =>
 **Orphaned Stories**: ${organization.orphanedStories.length}
 
 ## Epic Breakdown
-${organization.epics.map((epic: any) => 
+${organization.epics.map((epic) => 
   `• **${epic.name}**: ${epic.stories.length} stories (${epic.totalPoints} points, ${epic.estimatedWeeks} weeks)`
 ).join('\n')}
 
 ## Epic Dependencies
-${organization.dependencies.map((dep: any) => 
+${organization.dependencies.map((dep) => 
   `• ${dep.from} → ${dep.to} (${dep.reason})`
 ).join('\n')}
 
 ## Release Mapping
-${organization.releasePlan.map((release: any) => 
+${organization.releasePlan.map((release) => 
   `• **${release.name}**: ${release.epics.join(', ')} (${release.duration} weeks)`
 ).join('\n')}
       `.trim(),
@@ -385,7 +533,7 @@ ${organization.releasePlan.map((release: any) =>
 **Stories with Dependencies**: ${dependencies.dependentStories.length}
 
 ## Critical Dependencies
-${dependencies.criticalPath.map((dep: any) => 
+${dependencies.criticalPath.map((dep) => 
   `• **${dep.from}** → **${dep.to}** (${dep.type}: ${dep.reason})`
 ).join('\n')}
 
@@ -396,7 +544,7 @@ ${dependencies.criticalPath.map((dep: any) =>
 - **UI Dependencies**: ${dependencies.byType.ui}
 
 ## Risk Analysis
-${dependencies.risks.map((risk: any) => 
+${dependencies.risks.map((risk) => 
   `• **${risk.severity}**: ${risk.description} (Impact: ${risk.impactedStories.length} stories)`
 ).join('\n')}
       `.trim(),
@@ -410,7 +558,7 @@ ${dependencies.risks.map((risk: any) =>
         'Communicate dependencies to development team',
         'Monitor dependency resolution during development',
       ],
-      warnings: dependencies.blockers.map((blocker: any) => blocker.description),
+      warnings: dependencies.blockers.map((blocker) => blocker.description),
       shouldBlockProgress: dependencies.blockers.length > 2,
     };
   }
@@ -429,7 +577,7 @@ ${dependencies.risks.map((risk: any) =>
     };
   }
 
-  private classifyTask(description: string, prompt: string): string {
+  private classifyTask(description: string, prompt: string): UserStoriesTaskType {
     const combined = (description + ' ' + prompt).toLowerCase();
     
     if (combined.includes('generate') || combined.includes('create stories') || combined.includes('write stories')) {
@@ -467,12 +615,12 @@ ${dependencies.risks.map((risk: any) =>
     return prompt; // Simplified extraction
   }
 
-  private extractStoriesInput(prompt: string): any {
-    return {}; // Simplified extraction
+  private extractStoriesInput(prompt: string): StoryPromptInput {
+    return { prompt }; // Simplified extraction
   }
 
-  private extractStoryInput(prompt: string): any {
-    return {}; // Simplified extraction
+  private extractStoryInput(prompt: string): StoryPromptInput {
+    return { prompt }; // Simplified extraction
   }
 
   // Mock implementations for demonstration
@@ -506,7 +654,8 @@ ${dependencies.risks.map((risk: any) =>
     };
   }
 
-  private async validateUserStories(input: any): Promise<any> {
+  private async validateUserStories(input: StoryPromptInput): Promise<StoryValidationResult> {
+    void input;
     return {
       totalStories: 1,
       validStories: 1,
@@ -522,7 +671,8 @@ ${dependencies.risks.map((risk: any) =>
     };
   }
 
-  private async prioritizeUserStories(input: any): Promise<any> {
+  private async prioritizeUserStories(input: StoryPromptInput): Promise<StoryPrioritizationResult> {
+    void input;
     return {
       stories: [],
       priorityMatrix: [
@@ -536,7 +686,8 @@ ${dependencies.risks.map((risk: any) =>
     };
   }
 
-  private async estimateUserStories(input: any): Promise<any> {
+  private async estimateUserStories(input: StoryPromptInput): Promise<StoryEstimationResult> {
+    void input;
     return {
       totalStoryPoints: 5,
       averagePoints: 5,
@@ -547,7 +698,8 @@ ${dependencies.risks.map((risk: any) =>
     };
   }
 
-  private async createAcceptanceCriteria(input: any): Promise<any> {
+  private async createAcceptanceCriteria(input: StoryPromptInput): Promise<StoryAcceptanceCriteriaResult> {
+    void input;
     return {
       storyTitle: 'Sample Story',
       criteria: [
@@ -565,7 +717,8 @@ ${dependencies.risks.map((risk: any) =>
     };
   }
 
-  private async organizeStoriesIntoEpics(input: any): Promise<any> {
+  private async organizeStoriesIntoEpics(input: StoryPromptInput): Promise<EpicOrganizationResult> {
+    void input;
     return {
       epics: [
         {
@@ -583,7 +736,8 @@ ${dependencies.risks.map((risk: any) =>
     };
   }
 
-  private async identifyStoryDependencies(input: any): Promise<any> {
+  private async identifyStoryDependencies(input: StoryPromptInput): Promise<StoryDependenciesResult> {
+    void input;
     return {
       totalDependencies: 0,
       dependentStories: [],
@@ -594,7 +748,8 @@ ${dependencies.risks.map((risk: any) =>
     };
   }
 
-  private async performGenericStoryAnalysis(input: any): Promise<any> {
+  private async performGenericStoryAnalysis(input: StoryPromptInput): Promise<GenericStoryAnalysisResult> {
+    void input;
     return {
       report: 'General user story analysis completed',
       recommendations: ['Consider more detailed story breakdown'],
@@ -603,25 +758,18 @@ ${dependencies.risks.map((risk: any) =>
     };
   }
 
-  private async analyzeRecentActivity(context: {
-    recentFiles: string[];
-    recentActions: string[];
-    userIntent: string;
-  }): Promise<{
-    hasIncompleteStories: boolean;
-    hasPoorStoryQuality: boolean;
-    completionActions: string[];
-    qualityActions: string[];
-  }> {
-    const storyFiles = context.recentFiles.filter((f: string) => 
-      f.includes('story') || f.includes('stories') || f.includes('backlog')
+  private async analyzeRecentActivity(context: ProactiveGuidanceContext): Promise<StoryActivityAnalysis> {
+    const normalizedIntent = context.userIntent.toLowerCase();
+    const normalizedFiles = context.recentFiles.map((file) => file.toLowerCase());
+
+    const storyFiles = normalizedFiles.filter(
+      (file) => file.includes('story') || file.includes('stories') || file.includes('backlog'),
     );
-    
-    const hasIncompleteStories = storyFiles.length === 0 && 
-      context.userIntent.toLowerCase().includes('implement');
-    
-    const hasPoorStoryQuality = context.userIntent.includes('user') && 
-      !context.userIntent.includes('acceptance criteria');
+
+    const hasIncompleteStories = storyFiles.length === 0 && normalizedIntent.includes('implement');
+
+    const hasPoorStoryQuality = normalizedIntent.includes('user') &&
+      !normalizedIntent.includes('acceptance criteria');
     
     return {
       hasIncompleteStories,
@@ -641,7 +789,7 @@ ${dependencies.risks.map((risk: any) =>
 }
 
 // Export for Claude Code Task tool integration
-export const createUserStoriesTaskHandler = () => {
+export const createUserStoriesTaskHandler = (): TaskHandler => {
   const adapter = new UserStoriesTaskAdapter();
   
   return {
@@ -649,7 +797,9 @@ export const createUserStoriesTaskHandler = () => {
       return adapter.handleUserStoriesTask(request);
     },
     
-    provideProactiveGuidance: async (context: any): Promise<any> => {
+    provideProactiveGuidance: async (
+      context: ProactiveGuidanceContext,
+    ): Promise<ProactiveGuidanceResult> => {
       return adapter.provideProactiveGuidance(context);
     },
   };
