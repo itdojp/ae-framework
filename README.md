@@ -27,7 +27,9 @@ ae-framework is a project skeleton plus verification toolkit that **orchestrates
 
 ### Quick start (local)
 ```bash
-# Prereqs: Node.js 20.11+ (<23), pnpm 10 (corepack enable)
+# Prereqs: Node.js 20.11+ (<23), pnpm 10
+corepack enable
+corepack prepare pnpm@10.0.0 --activate
 pnpm install
 pnpm run setup-hooks
 
@@ -48,6 +50,8 @@ node scripts/pipelines/sync-test-results.mjs --store
 node scripts/pipelines/sync-test-results.mjs --snapshot
 node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-trends.json
 ```
+
+> `npm install` is intentionally blocked by `preinstall` because this repository uses `pnpm` workspace dependencies (`workspace:*`).
 
 ### Documentation pointers
 - Overview & nav: `docs/README.md`, `docs/project-organization.md`
@@ -79,7 +83,9 @@ ae-framework は **エージェント協調型のSDLCオーケストレーター
 
 ### すぐ試す
 ```bash
-# 前提: Node.js 20.11+ (<23), pnpm 10 (corepack enable)
+# 前提: Node.js 20.11+ (<23), pnpm 10
+corepack enable
+corepack prepare pnpm@10.0.0 --activate
 pnpm install
 pnpm run setup-hooks
 
@@ -95,6 +101,8 @@ node scripts/pipelines/sync-test-results.mjs --store
 node scripts/pipelines/sync-test-results.mjs --snapshot
 node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-trends.json
 ```
+
+> このリポジトリは `workspace:*` を使うため、`npm install` は `preinstall` ガードで意図的に失敗させています。`pnpm install` を使用してください。
 
 ### ドキュメントへの入り口
 - 全体概要: `docs/README.md`, `docs/project-organization.md`
