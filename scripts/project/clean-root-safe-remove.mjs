@@ -7,6 +7,7 @@ import { globSync } from 'glob';
 
 export const SAFE_REMOVE_FILE_PATTERNS = [
   'cegis-report-*.json',
+  'drift-report-*.json',
   'generated-*.json',
   'filtered-test.json',
   'parallel-test.json',

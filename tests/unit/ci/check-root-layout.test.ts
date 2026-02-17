@@ -41,11 +41,13 @@ describe('check-root-layout', () => {
       'src',
       'docs',
       'cegis-report-1234.json',
+      'drift-report-src-generated.json',
       'verify-lite-lint-summary.json',
     ]);
 
     expect(result.violations.map((v) => v.entry)).toEqual([
       'cegis-report-1234.json',
+      'drift-report-src-generated.json',
       'verify-lite-lint-summary.json',
     ]);
     expect(result.warnings).toHaveLength(0);

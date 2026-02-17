@@ -21,6 +21,7 @@ describe('clean-root-safe-remove', () => {
   it('collects file and directory targets by policy', () => {
     withTempDir((dir) => {
       writeFileSync(path.join(dir, 'generated-suite.json'), '{}');
+      writeFileSync(path.join(dir, 'drift-report-src-generated.json'), '{}');
       writeFileSync(path.join(dir, 'run-test.json'), '{}');
       mkdirSync(path.join(dir, 'coverage'));
       mkdirSync(path.join(dir, 'src'));
@@ -28,6 +29,7 @@ describe('clean-root-safe-remove', () => {
       const targets = collectSafeRemoveTargets(dir);
 
       expect(targets.files).toContain('generated-suite.json');
+      expect(targets.files).toContain('drift-report-src-generated.json');
       expect(targets.files).toContain('run-test.json');
       expect(targets.dirs).toContain('coverage');
       expect(targets.dirs).not.toContain('src');
