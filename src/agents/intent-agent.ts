@@ -6,6 +6,8 @@
 import type { readFileSync, writeFileSync, existsSync } from 'fs';
 import type * as path from 'path';
 import { SteeringLoader } from '../utils/steering-loader.js';
+import { generateSpecificationTemplates as generateSpecTemplates } from './intent-spec-generation.js';
+import type { GeneratedSpecificationTemplates } from './intent-spec-generation.js';
 
 export interface IntentAnalysisRequest {
   sources: RequirementSource[];
@@ -495,23 +497,8 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
   /**
    * Generate specification templates
    */
-  async generateSpecificationTemplates(requirements: Requirement[]): Promise<{
-    gherkin: string[];
-    openapi: object;
-    asyncapi: object;
-    graphql: string;
-  }> {
-    const gherkin = this.generateGherkinScenarios(requirements);
-    const openapi = this.generateOpenAPISpec(requirements);
-    const asyncapi = this.generateAsyncAPISpec(requirements);
-    const graphql = this.generateGraphQLSchema(requirements);
-    
-    return {
-      gherkin,
-      openapi,
-      asyncapi,
-      graphql,
-    };
+  async generateSpecificationTemplates(requirements: Requirement[]): Promise<GeneratedSpecificationTemplates> {
+    return generateSpecTemplates(requirements);
   }
 
   /**
@@ -1128,42 +1115,6 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
       const priorityOrder = { high: 0, medium: 1, low: 2 };
       return priorityOrder[a.priority] - priorityOrder[b.priority];
     });
-  }
-
-  private generateGherkinScenarios(requirements: Requirement[]): string[] {
-    return requirements.map(req => 
-      `Feature: ${req.description}\n` +
-      `  Scenario: Implement ${req.id}\n` +
-      `    Given the system is ready\n` +
-      `    When the requirement is implemented\n` +
-      `    Then the system meets the requirement\n`
-    );
-  }
-
-  private generateOpenAPISpec(requirements: Requirement[]): object {
-    return {
-      openapi: '3.0.0',
-      info: {
-        title: 'Generated API',
-        version: '1.0.0',
-      },
-      paths: {},
-    };
-  }
-
-  private generateAsyncAPISpec(requirements: Requirement[]): object {
-    return {
-      asyncapi: '2.0.0',
-      info: {
-        title: 'Generated Async API',
-        version: '1.0.0',
-      },
-      channels: {},
-    };
-  }
-
-  private generateGraphQLSchema(requirements: Requirement[]): string {
-    return `type Query {\n  # Generated from requirements\n}\n`;
   }
 
   private findConflicts(concerns1: string[], concerns2: string[]): string[] {
