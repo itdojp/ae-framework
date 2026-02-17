@@ -55,13 +55,15 @@ Purpose: Provide a short, deterministic path to diagnose common CI failures.
   - `gh run view <runId> --log-failed`
 
 ### 7.2 PR番号指定での手動起動
-- review gate: `gh workflow run \"Copilot Review Gate\" -f pr_number=<PR番号>`
-- self-heal: `gh workflow run \"PR Self-Heal\" -f pr_number=<PR番号> -f dry_run=false`
-- autopilot lane: `gh workflow run \"Codex Autopilot Lane\" -f pr_number=<PR番号> -f dry_run=false`
+```bash
+gh workflow run "Copilot Review Gate" -f pr_number=<PR番号>
+gh workflow run "PR Self-Heal" -f pr_number=<PR番号> -f dry_run=false
+gh workflow run "Codex Autopilot Lane" -f pr_number=<PR番号> -f dry_run=false
+```
 
 ### 7.3 behind / stale checks の再同期
 - `mergeStateStatus=BEHIND` の場合は update-branch を先に実行
-  - `gh workflow run \"PR Maintenance\" -f mode=update-branch -f pr_number=<PR番号>`
+  - `gh workflow run "PR Maintenance" -f mode=update-branch -f pr_number=<PR番号>`
 - required check が古いコミットに残る場合:
   1. PRブランチに空コミットをpushして `pull_request` イベントを再発火
   2. 必要なら `gate` / `verify-lite` を rerun
@@ -78,7 +80,7 @@ Purpose: Provide a short, deterministic path to diagnose common CI failures.
 
 - 即時停止:
   - Repository Variable `AE_AUTOMATION_GLOBAL_DISABLE=1`
-  - 影響: auto-fix / auto-merge / self-heal / autopilot を skip
+  - 影響: PR Maintenance（update-branch / enable-auto-merge）/ auto-fix / auto-merge / self-heal / autopilot を skip
 - 部分停止:
   - `AE_CODEX_AUTOPILOT_ENABLED=0`
   - `AE_SELF_HEAL_ENABLED=0`
