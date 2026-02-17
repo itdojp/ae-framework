@@ -14,6 +14,9 @@ export const EXIT_CODES = {
 };
 
 export function isExecutedAsMain(importMetaUrl, argvPath) {
+  if (typeof argvPath !== 'string' || argvPath.trim() === '') {
+    return false;
+  }
   const modulePath = fileURLToPath(importMetaUrl);
   return path.resolve(modulePath) === path.resolve(argvPath);
 }

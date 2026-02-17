@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   EXIT_CODES,
+  isExecutedAsMain,
   isSupportedNodeVersion,
   parseArgs,
   runBootstrapLocal,
@@ -38,6 +39,12 @@ describe('bootstrap-local prerequisites', () => {
     expect(isSupportedNodeVersion('v20.10.9')).toBe(false);
     expect(isSupportedNodeVersion('v23.0.0')).toBe(false);
     expect(isSupportedNodeVersion('v18.19.1')).toBe(false);
+  });
+});
+
+describe('bootstrap-local module invocation guard', () => {
+  it('returns false when argv path is missing', () => {
+    expect(isExecutedAsMain(import.meta.url, undefined as unknown as string)).toBe(false);
   });
 });
 
