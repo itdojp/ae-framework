@@ -10,7 +10,7 @@ import { performance } from 'perf_hooks';
 
 /**
  * Minimal AEIR stub type for build fix.
- * TODO: Replace with import from '@ae-framework/spec-compiler' when available.
+ * TODO(#2031): Replace with import from '@ae-framework/spec-compiler' when available.
  */
 export interface AEIR {
   id?: string;
