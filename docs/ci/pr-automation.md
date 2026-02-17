@@ -182,6 +182,8 @@ auto-merge（ラベルopt-in）:
   - `AE_SELF_HEAL_MAX_AGE_MINUTES`（既定 `180`）
   - `AE_SELF_HEAL_MAX_PRS`（既定 `20`）
   - `AE_SELF_HEAL_ROUND_WAIT_SECONDS`（既定 `60`）
+  - `AE_SELF_HEAL_WAIT_STRATEGY`（既定 `fixed`。`fixed` / `exponential`）
+  - `AE_SELF_HEAL_ROUND_WAIT_MAX_SECONDS`（既定 `AE_SELF_HEAL_ROUND_WAIT_SECONDS` と同値）
 
 ### 5.6 Codex Autopilot Lane（touchless merge の opt-in）
 

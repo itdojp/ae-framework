@@ -95,4 +95,6 @@ jobs:
           AE_SELF_HEAL_MAX_AGE_MINUTES: ${{ vars.AE_SELF_HEAL_MAX_AGE_MINUTES || '180' }}
           AE_SELF_HEAL_MAX_PRS: ${{ vars.AE_SELF_HEAL_MAX_PRS || '20' }}
           AE_SELF_HEAL_ROUND_WAIT_SECONDS: ${{ vars.AE_SELF_HEAL_ROUND_WAIT_SECONDS || '60' }}
+          AE_SELF_HEAL_WAIT_STRATEGY: ${{ vars.AE_SELF_HEAL_WAIT_STRATEGY || 'fixed' }}
+          AE_SELF_HEAL_ROUND_WAIT_MAX_SECONDS: ${{ vars.AE_SELF_HEAL_ROUND_WAIT_MAX_SECONDS || vars.AE_SELF_HEAL_ROUND_WAIT_SECONDS || '60' }}
         run: node scripts/ci/pr-self-heal.mjs

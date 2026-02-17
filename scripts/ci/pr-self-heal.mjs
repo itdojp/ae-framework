@@ -2,6 +2,7 @@
 
 import { execGh, execGhJson } from './lib/gh-exec.mjs';
 import { emitAutomationReport } from './lib/automation-report.mjs';
+import { readIntEnv, waitForNextRound } from './lib/round-control.mjs';
 import { sleep } from './lib/timing.mjs';
 
 const marker = '<!-- AE-SELF-HEAL v1 -->';
@@ -14,17 +15,12 @@ const maxRounds = readIntEnv('AE_SELF_HEAL_MAX_ROUNDS', 3, 1);
 const maxAgeMinutes = readIntEnv('AE_SELF_HEAL_MAX_AGE_MINUTES', 180, 1);
 const maxPrs = readIntEnv('AE_SELF_HEAL_MAX_PRS', 20, 1);
 const roundWaitSeconds = readIntEnv('AE_SELF_HEAL_ROUND_WAIT_SECONDS', 60, 0);
+const roundWaitStrategy = String(process.env.AE_SELF_HEAL_WAIT_STRATEGY || 'fixed').trim().toLowerCase();
+const roundWaitMaxSeconds = readIntEnv('AE_SELF_HEAL_ROUND_WAIT_MAX_SECONDS', roundWaitSeconds, 0);
 const dryRun = toBool(process.env.AE_SELF_HEAL_DRY_RUN) || toBool(process.env.SELF_HEAL_DRY_RUN);
 const globalDisabled = toBool(process.env.AE_AUTOMATION_GLOBAL_DISABLE);
 const targetPr = toPositiveInt(process.env.PR_NUMBER || '');
 const workflowRunPr = parseFirstPositiveInt(process.env.WORKFLOW_RUN_PR_NUMBERS || process.env.WORKFLOW_RUN_PR_NUMBER || '');
-
-function readIntEnv(name, fallback, min) {
-  const parsed = Number.parseInt(String(process.env[name] || '').trim(), 10);
-  if (!Number.isFinite(parsed)) return fallback;
-  if (parsed < min) return fallback;
-  return parsed;
-}
 
 function toPositiveInt(raw) {
   const parsed = Number.parseInt(String(raw || '').trim(), 10);
@@ -370,9 +366,13 @@ async function processPr(prNumber) {
       }
     }
 
-    if (round < maxRounds && roundWaitSeconds > 0) {
-      await sleep(roundWaitSeconds * 1000);
-    }
+    await waitForNextRound({
+      round,
+      maxRounds,
+      baseSeconds: roundWaitSeconds,
+      strategy: roundWaitStrategy,
+      maxSeconds: roundWaitMaxSeconds,
+    });
   }
 
   if (!finalState) {
