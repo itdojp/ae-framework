@@ -7,95 +7,39 @@ import type { readFileSync, existsSync, writeFileSync } from 'fs';
 import type { execSync } from 'child_process';
 import * as path from 'path';
 
-export interface CodeGenerationRequest {
-  tests: TestFile[];
-  specifications?: Specification;
-  architecture?: ArchitecturePattern;
-  language: 'typescript' | 'javascript' | 'python' | 'go' | 'rust' | 'elixir';
-  framework?: string;
-  style?: CodingStyle;
-}
+import type {
+  CodeGenerationRequest,
+  TestFile,
+  ArchitecturePattern,
+  GeneratedCode,
+  CodeFile,
+  ProjectStructure,
+  TestResult,
+  TestAnalysis,
+  DatabaseSchema,
+  Table,
+  Column,
+  PerformanceImprovement,
+  Benchmark,
+  RefactoringChange,
+  CodeMetrics,
+} from './code-generation-agent.types.js';
 
-export interface TestFile {
-  path: string;
-  content: string;
-  type: 'unit' | 'integration' | 'e2e';
-}
-
-export interface Specification {
-  openapi?: string;
-  tla?: string;
-  contracts?: Contract[];
-  requirements?: string[];
-}
-
-export interface Contract {
-  name: string;
-  preconditions: string[];
-  postconditions: string[];
-  invariants: string[];
-}
-
-export interface ArchitecturePattern {
-  pattern: 'mvc' | 'hexagonal' | 'clean' | 'ddd' | 'microservice';
-  layers?: Layer[];
-  dependencies?: Dependency[];
-}
-
-export interface Layer {
-  name: string;
-  responsibilities: string[];
-  allowedDependencies: string[];
-}
-
-export interface Dependency {
-  from: string;
-  to: string;
-  type: 'uses' | 'implements' | 'extends';
-}
-
-export interface CodingStyle {
-  naming: 'camelCase' | 'snake_case' | 'PascalCase';
-  indentation: 'spaces' | 'tabs';
-  indentSize?: number;
-  maxLineLength?: number;
-  preferConst?: boolean;
-  preferArrowFunctions?: boolean;
-}
-
-export interface GeneratedCode {
-  files: CodeFile[];
-  structure: ProjectStructure;
-  dependencies: string[];
-  testResults: TestResult[];
-  coverage: number;
-  suggestions: string[];
-}
-
-export interface CodeFile {
-  path: string;
-  content: string;
-  purpose: string;
-  tests: string[];
-}
-
-export interface ProjectStructure {
-  directories: string[];
-  entryPoint: string;
-  configFiles: ConfigFile[];
-}
-
-export interface ConfigFile {
-  name: string;
-  content: string;
-  purpose: string;
-}
-
-export interface TestResult {
-  test: string;
-  status: 'passing' | 'failing' | 'pending';
-  error?: string;
-}
+export type {
+  CodeGenerationRequest,
+  TestFile,
+  Specification,
+  Contract,
+  ArchitecturePattern,
+  Layer,
+  Dependency,
+  CodingStyle,
+  GeneratedCode,
+  CodeFile,
+  ProjectStructure,
+  ConfigFile,
+  TestResult,
+} from './code-generation-agent.types.js';
 
 export class CodeGenerationAgent {
   /**
@@ -1311,67 +1255,3 @@ export class ${table.name} {
   }
 }
 
-// Type definitions
-interface TestAnalysis {
-  functions: string[];
-  classes: string[];
-  expectedBehaviors: string[];
-}
-
-interface DatabaseSchema {
-  tables: Table[];
-  relations: Relation[];
-}
-
-interface Table {
-  name: string;
-  columns: Column[];
-  indexes: Index[];
-}
-
-interface Column {
-  name: string;
-  type: string;
-  nullable: boolean;
-  primary?: boolean;
-  unique?: boolean;
-}
-
-interface Index {
-  name: string;
-  columns: string[];
-  unique: boolean;
-}
-
-interface Relation {
-  from: string;
-  to: string;
-  type: 'one-to-one' | 'one-to-many' | 'many-to-many';
-}
-
-interface PerformanceImprovement {
-  location: string;
-  type: string;
-  description: string;
-  impact: 'high' | 'medium' | 'low';
-}
-
-interface Benchmark {
-  name: string;
-  before: number;
-  after: number;
-  improvement: number;
-}
-
-interface RefactoringChange {
-  type: string;
-  location: string;
-  description: string;
-}
-
-interface CodeMetrics {
-  complexity: number;
-  maintainability: number;
-  duplication: number;
-  testCoverage: number;
-}
