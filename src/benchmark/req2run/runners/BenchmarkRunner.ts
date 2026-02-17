@@ -127,7 +127,7 @@ export class BenchmarkRunner {
         logs
       );
 
-    // TODO(#2031): Implement UI/UX generation phase
+      // TODO(#2031): Implement UI/UX generation phase
       const application = await this.executePhase(
         AEFrameworkPhase.UI_UX_GENERATION,
         () => this.generateUIUX(domainModel),

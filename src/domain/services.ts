@@ -28,9 +28,9 @@ export class InventoryServiceImpl implements InventoryService {
       );
     }
 
-  // TODO(#2031): Implement idempotency check for orderId
-  // TODO(#2031): Create reservation in database with transaction
-  // TODO(#2031): Update item reserved count
+    // TODO(#2031): Implement idempotency check for orderId
+    // TODO(#2031): Create reservation in database with transaction
+    // TODO(#2031): Update item reserved count
 
     return {
       id: 'generated-id',
@@ -43,7 +43,7 @@ export class InventoryServiceImpl implements InventoryService {
   }
 
   async getItem(_itemId: string): Promise<Item | null> {
-  // TODO(#2031): Implement database query
+    // TODO(#2031): Implement database query
     return null;
   }
 }

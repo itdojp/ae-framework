@@ -786,7 +786,7 @@ end
             configContent = JSON.stringify(config.content, null, 2);
             break;
           case 'yaml':
-    // TODO(#2031): Implement proper YAML support by adding yaml library dependency
+            // TODO(#2031): Implement proper YAML support by adding yaml library dependency
             configContent = JSON.stringify(config.content, null, 2);
             result.warnings.push('YAML format not implemented, falling back to JSON');
             break;

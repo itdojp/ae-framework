@@ -449,7 +449,7 @@ export class ParallelOptimizer extends EventEmitter {
     const mockWorker = {
       postMessage: (message: any) => {
         // Demo simulation: uses setTimeout to mimic async worker execution
-    // TODO(#2031): Replace with actual worker communication protocol
+        // TODO(#2031): Replace with actual worker communication protocol
         setTimeout(() => {
           this.handleWorkerMessage(workerId, {
             type: 'task_completed',
