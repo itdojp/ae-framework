@@ -167,4 +167,34 @@ describe('doctor-env script', () => {
       ]));
     });
   });
+
+  it('does not downgrade exit code on windows-only platform hint', () => {
+    withTempRepo((rootDir) => {
+      writePackageJson(rootDir);
+      mkdirSync(path.join(rootDir, 'dist', 'src', 'cli'), { recursive: true });
+      writeFileSync(path.join(rootDir, 'dist', 'src', 'cli', 'index.js'), 'console.log("ok");');
+      const spawn = createSpawnStub({
+        pnpm: { status: 0, stdout: '10.0.0\n' },
+        corepack: { status: 0, stdout: '0.31.0\n' },
+      });
+
+      const outcome = runDoctorEnv([
+        'node',
+        'doctor-env.mjs',
+        '--root',
+        rootDir,
+      ], {
+        spawn,
+        processVersion: 'v20.12.0',
+        platform: 'win32',
+        arch: 'x64',
+      });
+
+      expect(outcome.exitCode).toBe(0);
+      expect(outcome.result?.summary.status).toBe('ok');
+      expect(outcome.result?.checks).toEqual(expect.arrayContaining([
+        expect.objectContaining({ id: 'os.platform', status: 'ok' }),
+      ]));
+    });
+  });
 });

@@ -315,7 +315,7 @@ function evaluateEnvironment(options, deps = {}) {
     pushCheck(checks, {
       id: 'os.platform',
       label: 'platform',
-      status: 'warn',
+      status: 'ok',
       required: false,
       value: `${runtime.platform}/${runtime.arch}`,
       message: 'Windows detected.',

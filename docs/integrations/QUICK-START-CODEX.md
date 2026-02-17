@@ -85,7 +85,7 @@ $env:CODEX_RUN_FORMAL="1"; pnpm run doctor:env; pnpm run build; pnpm run codex:q
 ```
 - cmd.exe:
 ```bat
-set CODEX_RUN_FORMAL=1 && pnpm run doctor:env && pnpm run build && pnpm run codex:quickstart
+set CODEX_RUN_FORMAL=1 & pnpm run doctor:env & pnpm run build && pnpm run codex:quickstart
 ```
 ## 4) Stdio Adapter (direct Task Adapter)
 Pipe a `TaskRequest` JSON to the stdio adapter and receive a `TaskResponse` JSON.
