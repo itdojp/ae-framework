@@ -7,7 +7,13 @@
  */
 
 import { FormalAgent, FormalAgentConfig } from './formal-agent.js';
-import type { TaskRequest, TaskResponse } from './task-types.js';
+import type {
+  ProactiveGuidanceContext,
+  ProactiveGuidanceResult,
+  TaskHandler,
+  TaskRequest,
+  TaskResponse,
+} from './task-types.js';
 
 export interface UserStory {
   id: string;
@@ -42,21 +48,6 @@ type UserStoriesTaskType =
   | 'organize-epics'
   | 'identify-dependencies'
   | 'generic-processing';
-
-interface StoryGuidanceContext {
-  recentFiles: string[];
-  recentActions: string[];
-  userIntent: string;
-}
-
-interface StoryGuidanceResult {
-  shouldIntervene: boolean;
-  intervention: {
-    type: 'warning' | 'suggestion' | 'block';
-    message: string;
-    recommendedActions: string[];
-  };
-}
 
 interface StoryValidationIssue {
   story: string;
@@ -251,7 +242,7 @@ export class UserStoriesTaskAdapter {
   /**
    * Proactive user story guidance for Claude Code
    */
-  async provideProactiveGuidance(context: StoryGuidanceContext): Promise<StoryGuidanceResult> {
+  async provideProactiveGuidance(context: ProactiveGuidanceContext): Promise<ProactiveGuidanceResult> {
     const analysis = await this.analyzeRecentActivity(context);
     
     if (analysis.hasIncompleteStories) {
@@ -767,16 +758,18 @@ ${dependencies.risks.map((risk) =>
     };
   }
 
-  private async analyzeRecentActivity(context: StoryGuidanceContext): Promise<StoryActivityAnalysis> {
-    const storyFiles = context.recentFiles.filter((f: string) => 
-      f.includes('story') || f.includes('stories') || f.includes('backlog')
+  private async analyzeRecentActivity(context: ProactiveGuidanceContext): Promise<StoryActivityAnalysis> {
+    const normalizedIntent = context.userIntent.toLowerCase();
+    const normalizedFiles = context.recentFiles.map((file) => file.toLowerCase());
+
+    const storyFiles = normalizedFiles.filter(
+      (file) => file.includes('story') || file.includes('stories') || file.includes('backlog'),
     );
-    
-    const hasIncompleteStories = storyFiles.length === 0 && 
-      context.userIntent.toLowerCase().includes('implement');
-    
-    const hasPoorStoryQuality = context.userIntent.includes('user') && 
-      !context.userIntent.includes('acceptance criteria');
+
+    const hasIncompleteStories = storyFiles.length === 0 && normalizedIntent.includes('implement');
+
+    const hasPoorStoryQuality = normalizedIntent.includes('user') &&
+      !normalizedIntent.includes('acceptance criteria');
     
     return {
       hasIncompleteStories,
@@ -796,7 +789,7 @@ ${dependencies.risks.map((risk) =>
 }
 
 // Export for Claude Code Task tool integration
-export const createUserStoriesTaskHandler = () => {
+export const createUserStoriesTaskHandler = (): TaskHandler => {
   const adapter = new UserStoriesTaskAdapter();
   
   return {
@@ -804,7 +797,9 @@ export const createUserStoriesTaskHandler = () => {
       return adapter.handleUserStoriesTask(request);
     },
     
-    provideProactiveGuidance: async (context: StoryGuidanceContext): Promise<StoryGuidanceResult> => {
+    provideProactiveGuidance: async (
+      context: ProactiveGuidanceContext,
+    ): Promise<ProactiveGuidanceResult> => {
       return adapter.provideProactiveGuidance(context);
     },
   };
