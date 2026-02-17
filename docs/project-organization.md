@@ -61,6 +61,12 @@ pnpm run clean:all
 # Clean only temporary files and reports
 pnpm run clean:project
 
+# Check root layout violations (strict: non-zero on violation)
+pnpm run check:root-layout
+
+# Check root layout in warning mode (always zero exit)
+pnpm run check:root-layout:warn
+
 # Clean archived reports
 pnpm run clean:reports
 
@@ -133,6 +139,15 @@ The `scripts/project-cleanup.mjs` script provides:
    - Track project growth over time
    - Identify sources of file accumulation
    - Implement automated size monitoring
+
+### Root Layout Guard
+
+- `pnpm run check:root-layout`
+  - repository root の禁止パターン（`cegis-report-*.json`, `generated-*.json`, `coverage/` など）を検出
+  - violation がある場合は exit code 1
+- `pnpm run check:root-layout:warn`
+  - 同じ検査を warning モードで実施（exit code 0）
+- CI導入前の段階では、ローカル掃除・棚卸しの補助用途として利用する
 
 ### Development Workflow
 
