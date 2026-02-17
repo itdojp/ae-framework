@@ -63,6 +63,13 @@ export function parseSourceTokens(value: string): string[] {
     .filter(Boolean);
 }
 
+function normalizeSourceList(values: unknown[]): string[] {
+  return values
+    .filter((value): value is string => typeof value === 'string')
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
 export function resolveValidationSources(
   requestedSources: string[],
   options: ValidationSourceResolutionOptions = {},
@@ -72,6 +79,7 @@ export function resolveValidationSources(
   const seen = new Set<string>();
   const cwd = options.cwd ?? process.cwd();
   const sourceFileLimit = options.sourceFileLimit ?? DEFAULT_SOURCE_FILE_LIMIT;
+  let inlineSourceIndex = 0;
 
   for (const source of requestedSources) {
     const abs = path.resolve(cwd, source);
@@ -115,7 +123,8 @@ export function resolveValidationSources(
         }
       }
     } else if (/\s/.test(source)) {
-      resolvedSources.push({ path: `inline:${source.slice(0, 40)}`, content: source });
+      inlineSourceIndex += 1;
+      resolvedSources.push({ path: `inline:${inlineSourceIndex}`, content: source });
     } else {
       missingSources.push(source);
     }
@@ -206,15 +215,11 @@ export function toValidationInput(input: unknown): ValidationInput {
       Array.isArray(resolvedSources) &&
       Array.isArray(missingSources)
     ) {
-      const validRequestedSources = requestedSources.filter(
-        (value): value is string => typeof value === 'string',
-      );
+      const validRequestedSources = normalizeSourceList(requestedSources);
       const validResolvedSources = resolvedSources.filter(
         (value): value is ValidationSourceItem => isValidationSourceItem(value),
       );
-      const validMissingSources = missingSources.filter(
-        (value): value is string => typeof value === 'string',
-      );
+      const validMissingSources = normalizeSourceList(missingSources);
 
       const invalidRequestedCount = requestedSources.length - validRequestedSources.length;
       const invalidResolvedCount = resolvedSources.length - validResolvedSources.length;

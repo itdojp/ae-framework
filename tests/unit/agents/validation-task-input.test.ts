@@ -84,7 +84,7 @@ describe('validation-task-input', () => {
     const resolved = resolveValidationSources(['inline requirement text', 'missing-file.md'], { cwd: root });
 
     expect(resolved.resolvedSources).toHaveLength(1);
-    expect(resolved.resolvedSources[0]?.path).toContain('inline:');
+    expect(resolved.resolvedSources[0]?.path).toBe('inline:1');
     expect(resolved.missingSources).toEqual(['missing-file.md']);
   });
 
@@ -103,9 +103,9 @@ describe('validation-task-input', () => {
   it('toValidationInput filters invalid entries and keeps strict flag', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const normalized = toValidationInput({
-      requestedSources: ['valid.md', 42],
+      requestedSources: [' valid.md ', 42, '   '],
       resolvedSources: [{ path: 'valid.md', content: 'ok' }, { path: '', content: 'invalid' }],
-      missingSources: ['missing.md', {}],
+      missingSources: [' missing.md ', {}, '\n'],
       strict: 1,
     });
     warnSpy.mockRestore();
