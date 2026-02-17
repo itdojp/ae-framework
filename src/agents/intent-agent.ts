@@ -3,9 +3,14 @@
  * Phase 1 of ae-framework: Requirements gathering and intent analysis
  */
 
-import type { readFileSync, writeFileSync, existsSync } from 'fs';
-import type * as path from 'path';
 import { SteeringLoader } from '../utils/steering-loader.js';
+import {
+  determineCategory,
+  determinePriority,
+  determineRequirementType,
+  extractRequirementsFromSources,
+  parseStructuredRequirements,
+} from './intent-requirement-extraction.js';
 import { generateSpecificationTemplates as generateSpecTemplates } from './intent-spec-generation.js';
 import type { GeneratedSpecificationTemplates } from './intent-spec-generation.js';
 
@@ -316,7 +321,7 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
     const steeringContext = await this.steeringLoader.getSteeringContext();
     
     // Extract raw requirements from sources, considering steering context
-    const rawRequirements = this.extractRequirements(request.sources);
+    const rawRequirements = extractRequirementsFromSources(request.sources);
     
     // Parse and structure requirements with steering context
     const requirements = await this.parseRequirementsWithSteering(rawRequirements, request.context, steeringContext);
@@ -605,198 +610,6 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
 
   // Private helper methods
 
-  private extractRequirements(sources: RequirementSource[]): string[] {
-    const requirements: string[] = [];
-    
-    for (const source of sources) {
-      const extracted = this.extractFromSource(source);
-      requirements.push(...extracted);
-    }
-    
-    return requirements;
-  }
-
-  private extractFromSource(source: RequirementSource): string[] {
-    switch (source.type) {
-      case 'text':
-        return source.content.split('\n').filter(line => line.trim());
-      case 'document':
-        return this.parseDocument(source.content);
-      case 'conversation':
-        return this.extractFromConversation(source.content);
-      case 'issue':
-        return this.parseIssue(source.content);
-      case 'email':
-        return this.extractFromEmail(source.content);
-      case 'diagram':
-        return this.extractFromDiagram(source.content);
-      default:
-        return [source.content];
-    }
-  }
-
-  private parseDocument(content: string): string[] {
-    // Extract requirements from structured documents
-    const lines = content.split('\n');
-    const requirements: string[] = [];
-    
-    for (const line of lines) {
-      const trimmedLine = line.trim();
-      
-      // Match various requirement patterns:
-      // - Numbered: "1. requirement", "1) requirement"  
-      // - Bullet points: "- requirement", "* requirement"
-      // - Priority levels: "MUST: requirement", "SHOULD: requirement", "MAY: requirement"
-      // - Keywords: "The system must/should/shall"
-      if (trimmedLine.match(/^(\d+[\.\)]\s+|[\-\*]\s+|(MUST|SHOULD|MAY|SHALL):\s*|.*(must|should|shall|will)\s+)/i)) {
-        let cleanRequirement = trimmedLine
-          .replace(/^(\d+[\.\)]\s+|[\-\*]\s+|(MUST|SHOULD|MAY|SHALL):\s*)/i, '')
-          .trim();
-        
-        // If the requirement is still meaningful after cleaning, add it
-        if (cleanRequirement.length > 10) {
-          requirements.push(cleanRequirement);
-        }
-      }
-      
-      // Also extract lines that contain clear requirement indicators
-      else if (trimmedLine.match(/(requirement|feature|capability|function).*:/i) && trimmedLine.length > 15) {
-        requirements.push(trimmedLine);
-      }
-    }
-    
-    return requirements;
-  }
-
-  private extractFromConversation(content: string): string[] {
-    // Extract requirements from conversation transcripts
-    const requirements: string[] = [];
-    const patterns = [
-      /I need (.+)/gi,
-      /We want (.+)/gi,
-      /The system should (.+)/gi,
-      /Users must be able to (.+)/gi,
-    ];
-    
-    for (const pattern of patterns) {
-      let match;
-      pattern.lastIndex = 0; // Reset regex state
-      while ((match = pattern.exec(content)) !== null) {
-        if (match[1]) {
-          requirements.push(match[1]);
-        }
-        // All patterns are global, so continue until no more matches
-      }
-    }
-    
-    return requirements;
-  }
-
-  private parseIssue(content: string): string[] {
-    // Parse GitHub/Jira style issues
-    const requirements: string[] = [];
-    const sections = content.split(/#+\s+/);
-    
-    for (const section of sections) {
-      if (section.toLowerCase().includes('requirement') || 
-          section.toLowerCase().includes('acceptance')) {
-        requirements.push(section.trim());
-      }
-    }
-    
-    return requirements;
-  }
-
-  private extractFromEmail(content: string): string[] {
-    // Extract requirements from email content
-    return this.extractFromConversation(content);
-  }
-
-  private extractFromDiagram(content: string): string[] {
-    // Extract requirements from diagram descriptions
-    return [content];
-  }
-
-  private parseRequirements(
-    raw: string[],
-    context?: ProjectContext
-  ): Requirement[] {
-    return raw.map((text, index) => ({
-      id: `REQ-${String(index + 1).padStart(3, '0')}`,
-      type: this.determineRequirementType(text),
-      category: this.determineCategory(text),
-      description: text,
-      priority: this.determinePriority(text),
-      acceptance: [],
-      source: 'extracted',
-      status: 'draft',
-    }));
-  }
-
-  private determineRequirementType(text: string): Requirement['type'] {
-    const lowerText = text.toLowerCase();
-    
-    // Non-functional requirements (performance, security, quality attributes)
-    if (lowerText.includes('performance') || 
-        lowerText.includes('security') || 
-        lowerText.includes('scalability') ||
-        lowerText.includes('usability') ||
-        lowerText.includes('reliability') ||
-        lowerText.includes('availability') ||
-        lowerText.includes('response time') ||
-        lowerText.includes('throughput')) {
-      return 'non-functional';
-    }
-    
-    // Business requirements (business rules, policies, objectives)
-    if (lowerText.includes('business') || 
-        lowerText.includes('revenue') || 
-        lowerText.includes('customer') ||
-        lowerText.includes('policy') ||
-        lowerText.includes('compliance') ||
-        lowerText.includes('regulation')) {
-      return 'business';
-    }
-    
-    // Technical requirements (infrastructure, APIs, technical constraints)
-    if (lowerText.includes('api') || 
-        lowerText.includes('database') || 
-        lowerText.includes('integration') ||
-        lowerText.includes('platform') ||
-        lowerText.includes('architecture') ||
-        lowerText.includes('framework') ||
-        lowerText.includes('technology')) {
-      return 'technical';
-    }
-    
-    // Functional requirements (what the system should do)
-    return 'functional';
-  }
-
-  private determineCategory(text: string): string {
-    const lowerText = text.toLowerCase();
-    
-    if (lowerText.includes('auth')) return 'authentication';
-    if (lowerText.includes('security')) return 'security';
-    if (lowerText.includes('performance')) return 'performance';
-    if (lowerText.includes('data')) return 'data-management';
-    if (lowerText.includes('ui') || lowerText.includes('user interface')) return 'ui';
-    if (lowerText.includes('api')) return 'api';
-    
-    return 'general';
-  }
-
-  private determinePriority(text: string): Requirement['priority'] {
-    const lowerText = text.toLowerCase();
-    
-    if (lowerText.includes('must') || lowerText.includes('critical')) return 'must';
-    if (lowerText.includes('should') || lowerText.includes('important')) return 'should';
-    if (lowerText.includes('could') || lowerText.includes('nice to have')) return 'could';
-    if (lowerText.includes('wont') || lowerText.includes('future')) return 'wont';
-    
-    return 'should';
-  }
-
   private generateUserStories(requirements: Requirement[]): UserStory[] {
     return requirements
       .filter(req => req.type === 'functional')
@@ -1084,10 +897,10 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
     
     return {
       id: `REQ-${++this.requirementCounter}-${Date.now().toString(36)}`,
-      type: this.determineRequirementType(sentence),
-      category: this.determineCategory(sentence),
+      type: determineRequirementType(sentence),
+      category: determineCategory(sentence),
       description: sentence.trim(),
-      priority: this.determinePriority(sentence),
+      priority: determinePriority(sentence),
       acceptance: [],
       source: 'natural-language',
       status: 'draft',
@@ -1159,7 +972,7 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
     context: ProjectContext | undefined,
     steeringContext: string
   ): Promise<Requirement[]> {
-    const requirements = this.parseRequirements(raw, context);
+    const requirements = parseStructuredRequirements(raw);
     
     // Enhance requirements based on steering documents
     const steeringDocs = await this.steeringLoader.loadAllDocuments();
