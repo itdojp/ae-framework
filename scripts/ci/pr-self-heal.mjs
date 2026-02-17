@@ -2,6 +2,7 @@
 
 import { execGh, execGhJson } from './lib/gh-exec.mjs';
 import { emitAutomationReport } from './lib/automation-report.mjs';
+import { sleep } from './lib/timing.mjs';
 
 const marker = '<!-- AE-SELF-HEAL v1 -->';
 const FAILURE_CONCLUSIONS = new Set(['FAILURE', 'CANCELLED', 'TIMED_OUT', 'ACTION_REQUIRED', 'STALE']);
@@ -42,10 +43,6 @@ function parseFirstPositiveInt(raw) {
 function toBool(value) {
   const normalized = String(value || '').trim().toLowerCase();
   return normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on';
-}
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function parseRunId(detailsUrl) {

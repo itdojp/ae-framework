@@ -7,6 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execGh, execGhJson } from './lib/gh-exec.mjs';
 import { emitAutomationReport } from './lib/automation-report.mjs';
+import { sleep } from './lib/timing.mjs';
 import {
   hasLabel as hasOptInLabel,
   isActorAllowed,
@@ -43,10 +44,6 @@ function toPositiveInt(value) {
   const parsed = Number.parseInt(String(value || '').trim(), 10);
   if (!Number.isFinite(parsed) || parsed <= 0) return null;
   return parsed;
-}
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function execJson(args, input) {

@@ -1,4 +1,5 @@
 import { execGh, execGhJson } from './lib/gh-exec.mjs';
+import { sleep } from './lib/timing.mjs';
 
 const repo = process.env.GITHUB_REPOSITORY;
 if (!repo) {
@@ -14,8 +15,6 @@ const marker = '<!-- AE-CI-STATUS v1 -->';
 const FAILED_LIST_LIMIT = 5;
 const PR_LIMIT = 50;
 const PR_SLEEP_MS = 150;
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const execJson = (args, input) => {
   try {
