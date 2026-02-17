@@ -83,6 +83,7 @@ PR運用を以下の形に収束させます。
 ### 3.1 推奨導入順（手戻りを減らす）
 
 1. Branch protection で Required checks を整備（最小: `Verify Lite / verify-lite` + `Copilot Review Gate / gate`）
+   - `verify-lite` は root layout 検査と required artifacts 検査を必須で実行します（非 docs-only 変更）
 2. `AE_AUTOMATION_PROFILE=conservative` で docs領域 + label opt-in から段階導入
 3. 問題がなければ `balanced` / `aggressive` へ拡張
 4. 必要時のみ個別変数で上書き
