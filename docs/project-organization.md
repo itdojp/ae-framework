@@ -143,11 +143,11 @@ The `scripts/project-cleanup.mjs` script provides:
 ### Root Layout Guard
 
 - `pnpm run check:root-layout`
-  - repository root の禁止パターン（`cegis-report-*.json`, `generated-*.json`, `coverage/` など）を検出
-  - violation がある場合は exit code 1
+  - Detects forbidden patterns in the repository root (e.g., `cegis-report-*.json`, `generated-*.json`, `coverage/`)
+  - Exits with code `1` when violations are found
 - `pnpm run check:root-layout:warn`
-  - 同じ検査を warning モードで実施（exit code 0）
-- CI導入前の段階では、ローカル掃除・棚卸しの補助用途として利用する
+  - Runs the same checks in warning mode (always exits with code `0`)
+- Before introducing CI enforcement, use this command to support local cleanup and repository inventory.
 
 ### Development Workflow
 

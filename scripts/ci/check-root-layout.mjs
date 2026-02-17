@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 export const ALLOWED_ROOT_ENTRIES = new Set([
   '.ae',
   '.devcontainer',
+  '.dependency-cruiser.js',
   '.dockerignore',
   '.editorconfig',
   '.env.example',
@@ -80,6 +81,12 @@ export const FORBIDDEN_ROOT_PATTERNS = [
   { pattern: /^tmp$/, reason: 'temporary directory in repository root' },
 ];
 
+/**
+ * Classify repository root entries into blocking violations and non-blocking warnings.
+ *
+ * @param {string[]} entries - Root entry names.
+ * @returns {{violations: Array<{entry: string, reason: string, type: string}>, warnings: Array<{entry: string, reason: string, type: string}>}}
+ */
 export function scanRootLayout(entries) {
   const violations = [];
   const warnings = [];
@@ -155,14 +162,14 @@ function renderText(result, options) {
   return `${lines.join('\n')}\n`;
 }
 
-export function runRootLayoutCheck(argv = process.argv) {
-  const options = parseArgs(argv);
-  const entries = readdirSync(options.rootDir, { encoding: 'utf8' })
-    .filter((name) => name !== '.git');
-  const result = scanRootLayout(entries);
-  const hasError = result.violations.length > 0;
-  const exitCode = options.mode === 'warn' ? 0 : (hasError ? 1 : 0);
-
+/**
+ * Emit check result in configured output format.
+ *
+ * @param {{violations: Array<{entry: string, reason: string, type: string}>, warnings: Array<{entry: string, reason: string, type: string}>}} result - Scan result.
+ * @param {{mode: string, format: string, rootDir: string}} options - Parsed command options.
+ * @param {number} exitCode - Exit code derived from mode and result.
+ */
+function writeResult(result, options, exitCode) {
   if (options.format === 'json') {
     process.stdout.write(JSON.stringify({
       root: options.rootDir,
@@ -172,9 +179,42 @@ export function runRootLayoutCheck(argv = process.argv) {
       exitCode,
     }, null, 2));
     process.stdout.write('\n');
-  } else {
-    process.stdout.write(renderText(result, options));
+    return;
   }
+  process.stdout.write(renderText(result, options));
+}
+
+/**
+ * Run root layout validation and print the result.
+ *
+ * @param {string[]} [argv=process.argv] - Process arguments.
+ * @returns {{violations: Array<{entry: string, reason: string, type: string}>, warnings: Array<{entry: string, reason: string, type: string}>, exitCode: number, options: {format: string, mode: string, rootDir: string}}}
+ */
+export function runRootLayoutCheck(argv = process.argv) {
+  const options = parseArgs(argv);
+  let entries;
+  try {
+    entries = readdirSync(options.rootDir, { encoding: 'utf8' })
+      .filter((name) => name !== '.git');
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const failure = {
+      violations: [{
+        entry: options.rootDir,
+        reason: `failed to read root directory: ${message}`,
+        type: 'read_error',
+      }],
+      warnings: [],
+    };
+    const exitCode = 1;
+    writeResult(failure, options, exitCode);
+    return { ...failure, exitCode, options };
+  }
+
+  const result = scanRootLayout(entries);
+  const hasError = result.violations.length > 0;
+  const exitCode = options.mode === 'warn' ? 0 : (hasError ? 1 : 0);
+  writeResult(result, options, exitCode);
 
   return { ...result, exitCode, options };
 }

@@ -13,6 +13,28 @@ function withTempDir(fn: (dir: string) => void): void {
   }
 }
 
+function captureStdout(fn: () => void): string {
+  const originalWrite = process.stdout.write;
+  let output = '';
+  process.stdout.write = ((chunk: unknown, encoding?: unknown, callback?: unknown) => {
+    if (typeof chunk === 'string') {
+      output += chunk;
+    } else if (chunk) {
+      output += Buffer.from(chunk as Uint8Array).toString(typeof encoding === 'string' ? encoding : undefined);
+    }
+    if (typeof callback === 'function') {
+      callback();
+    }
+    return true;
+  }) as typeof process.stdout.write;
+  try {
+    fn();
+  } finally {
+    process.stdout.write = originalWrite;
+  }
+  return output;
+}
+
 describe('check-root-layout', () => {
   it('detects forbidden root files', () => {
     const result = scanRootLayout([
@@ -47,14 +69,10 @@ describe('check-root-layout', () => {
     withTempDir((dir) => {
       writeFileSync(path.join(dir, 'cegis-report-100.json'), '{}');
       mkdirSync(path.join(dir, 'src'));
-      const originalWrite = process.stdout.write;
-      process.stdout.write = (() => true) as typeof process.stdout.write;
-      try {
+      captureStdout(() => {
         const outcome = runRootLayoutCheck(['node', 'check-root-layout.mjs', `--root=${dir}`, '--mode=strict']);
         expect(outcome.exitCode).toBe(1);
-      } finally {
-        process.stdout.write = originalWrite;
-      }
+      });
     });
   });
 
@@ -62,15 +80,79 @@ describe('check-root-layout', () => {
     withTempDir((dir) => {
       writeFileSync(path.join(dir, 'conformance-results.json'), '{}');
       mkdirSync(path.join(dir, 'src'));
-      const originalWrite = process.stdout.write;
-      process.stdout.write = (() => true) as typeof process.stdout.write;
-      try {
+      captureStdout(() => {
         const outcome = runRootLayoutCheck(['node', 'check-root-layout.mjs', `--root=${dir}`, '--mode=warn']);
         expect(outcome.exitCode).toBe(0);
         expect(outcome.violations).toHaveLength(1);
-      } finally {
-        process.stdout.write = originalWrite;
-      }
+      });
+    });
+  });
+
+  it('outputs valid JSON in strict mode when --format=json is used', () => {
+    withTempDir((dir) => {
+      writeFileSync(path.join(dir, 'cegis-report-100.json'), '{}');
+      mkdirSync(path.join(dir, 'src'));
+      const output = captureStdout(() => {
+        const outcome = runRootLayoutCheck([
+          'node',
+          'check-root-layout.mjs',
+          `--root=${dir}`,
+          '--mode=strict',
+          '--format=json',
+        ]);
+        expect(outcome.exitCode).toBe(1);
+      });
+
+      const parsed = JSON.parse(output);
+      expect(parsed.mode).toBe('strict');
+      expect(parsed.exitCode).toBe(1);
+      expect(parsed.violations).toHaveLength(1);
+      expect(parsed.warnings).toHaveLength(0);
+    });
+  });
+
+  it('outputs valid JSON in warn mode when --format=json is used', () => {
+    withTempDir((dir) => {
+      writeFileSync(path.join(dir, 'conformance-results.json'), '{}');
+      mkdirSync(path.join(dir, 'src'));
+      const output = captureStdout(() => {
+        const outcome = runRootLayoutCheck([
+          'node',
+          'check-root-layout.mjs',
+          `--root=${dir}`,
+          '--mode=warn',
+          '--format=json',
+        ]);
+        expect(outcome.exitCode).toBe(0);
+      });
+
+      const parsed = JSON.parse(output);
+      expect(parsed.mode).toBe('warn');
+      expect(parsed.exitCode).toBe(0);
+      expect(parsed.violations).toHaveLength(1);
+      expect(parsed.warnings).toHaveLength(0);
+    });
+  });
+
+  it('reports a read error when root directory does not exist', () => {
+    withTempDir((dir) => {
+      const missingDir = path.join(dir, 'missing');
+      const output = captureStdout(() => {
+        const outcome = runRootLayoutCheck([
+          'node',
+          'check-root-layout.mjs',
+          `--root=${missingDir}`,
+          '--mode=strict',
+          '--format=json',
+        ]);
+        expect(outcome.exitCode).toBe(1);
+        expect(outcome.violations[0]?.type).toBe('read_error');
+      });
+
+      const parsed = JSON.parse(output);
+      expect(parsed.exitCode).toBe(1);
+      expect(parsed.violations[0]?.type).toBe('read_error');
+      expect(parsed.violations[0]?.entry).toBe(missingDir);
     });
   });
 
