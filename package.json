@@ -27,6 +27,7 @@
     "dev:storybook": "pnpm --filter @ae-framework/storybook dev",
     "help": "node scripts/project/help.mjs",
     "bootstrap:local": "node scripts/project/bootstrap-local.mjs",
+    "first-run": "node scripts/onboarding/first-run.mjs",
     "doctor:env": "node scripts/doctor/doctor-env.mjs",
     "build": "pnpm build:spec-compiler && tsc -p configs/tsconfig/tsconfig.build.json && ( [ -f scripts/ci/ensure-bin-executables.mjs ] && node scripts/ci/ensure-bin-executables.mjs || true )",
     "build:spec-compiler": "pnpm --filter @ae-framework/spec-compiler build",

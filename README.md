@@ -31,7 +31,7 @@ ae-framework is a project skeleton plus verification toolkit that **orchestrates
 corepack enable
 corepack prepare pnpm@10.0.0 --activate
 pnpm install
-pnpm run doctor:env
+pnpm run first-run
 pnpm run setup-hooks
 
 # Fast feedback
@@ -54,6 +54,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 
 > `npm install` is intentionally blocked by `preinstall` because this repository uses `pnpm` workspace dependencies (`workspace:*`).
 > `pnpm run doctor:env` writes `artifacts/doctor/env.json` and returns `0` (ok) / `2` (warning) / `1` (error) / `3` (invalid arguments).
+> `pnpm run first-run` runs `doctor:env -> build -> verify:lite` and writes summary JSON/Markdown files under the `artifacts/first-run` directory.
 
 ### Documentation pointers
 - Overview & nav: `docs/README.md`, `docs/project-organization.md`
@@ -90,7 +91,7 @@ ae-framework は **エージェント協調型のSDLCオーケストレーター
 corepack enable
 corepack prepare pnpm@10.0.0 --activate
 pnpm install
-pnpm run doctor:env
+pnpm run first-run
 pnpm run setup-hooks
 
 pnpm run lint
@@ -108,6 +109,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 
 > このリポジトリは `workspace:*` を使うため、`npm install` は `preinstall` ガードで意図的に失敗させています。`pnpm install` を使用してください。
 > `pnpm run doctor:env` は `artifacts/doctor/env.json` を出力し、終了コードは `0`（正常）/`2`（警告）/`1`（要修正）/`3`（引数不正）です。
+> `pnpm run first-run` は `doctor:env -> build -> verify:lite` を順に実行し、`artifacts/first-run` ディレクトリに summary の JSON/Markdown を出力します。
 
 ### ドキュメントへの入り口
 - 全体概要: `docs/README.md`, `docs/project-organization.md`

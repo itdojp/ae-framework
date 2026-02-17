@@ -40,7 +40,23 @@ pnpm install
 
 `npm install` を実行した場合は、pnpm へ移行するためのエラーメッセージを表示して即時終了します（exit 1）。
 
-### 3.2 環境診断（推奨）
+### 3.2 初回1コマンド（推奨）
+```bash
+pnpm run first-run
+```
+
+`doctor:env -> build -> verify:lite` を順に実行し、実行結果を以下に保存します。
+- artifacts/first-run 配下の summary JSON（機械可読）
+- artifacts/first-run 配下の summary Markdown（人間向け）
+- artifacts/first-run/logs 配下のログ（各ステップ）
+
+終了コード契約:
+- `0`: すべてのステップが成功
+- `1`: いずれかの必須ステップが失敗
+- `3`: 引数不正
+- `4`: サマリ書き込み失敗
+
+### 3.3 環境診断（個別実行）
 ```bash
 pnpm run doctor:env
 ```
@@ -51,18 +67,18 @@ pnpm run doctor:env
 - `1`: 要修正（例: Node.js範囲外、pnpm未導入）
 - `3`: 引数不正（例: 未定義オプション）
 
-### 3.3 開発フックの導入
+### 3.4 開発フックの導入
 ```bash
 pnpm run setup-hooks
 ```
 
-### 3.4 最小検証
+### 3.5 最小検証
 ```bash
 pnpm run lint
 pnpm run test:fast
 ```
 
-### 3.4 設定ファイル（任意）
+### 3.6 設定ファイル（任意）
 CLIは YAML 設定を探索して読み込みます（`src/cli/config/ConfigLoader.ts`）。
 
 探索順（上から優先）:
