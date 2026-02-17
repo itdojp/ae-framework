@@ -56,7 +56,7 @@ function getResponseSchema(content: Record<string, unknown> | undefined): unknow
   if (pickedValue['schema']) {
     return pickedValue['schema'];
   }
-  if (picked === 'text/plain') {
+  if (/xml/i.test(picked) || picked === 'text/plain') {
     return { type: 'string' };
   }
   return undefined;

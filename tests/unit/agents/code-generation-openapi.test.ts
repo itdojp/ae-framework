@@ -80,6 +80,32 @@ describe('code-generation-openapi helpers', () => {
     expect(route.content).toContain('return { status: 201, data: output }');
   });
 
+  it('falls back to string sample for XML responses without schema', () => {
+    const endpoint = {
+      path: '/feeds',
+      method: 'get',
+      components: {},
+      definition: {
+        operationId: 'get-feed',
+        responses: {
+          200: {
+            content: {
+              'application/xml': {},
+            },
+          },
+        },
+      },
+    };
+
+    const route = generateRouteHandler(endpoint, {
+      includeContracts: true,
+      useOperationIdForFilenames: true,
+    });
+
+    expect(route.content).toContain('const output: unknown = ""');
+    expect(route.content).toContain('return { status: 200, data: output }');
+  });
+
   it('resolves ref schema when building sample literal', () => {
     const literal = buildSampleLiteral(
       { $ref: '#/components/schemas/User' },
