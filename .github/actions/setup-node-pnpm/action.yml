@@ -28,3 +28,8 @@ runs:
     - uses: ./.github/actions/setup-pnpm
       with:
         version: ${{ inputs.pnpm-version }}
+    - run: |
+        set -euo pipefail
+        STORE_PATH="$(pnpm store path --silent)"
+        mkdir -p "$STORE_PATH"
+      shell: bash

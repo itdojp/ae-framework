@@ -24,6 +24,16 @@ import type {
   RefactoringChange,
   CodeMetrics,
 } from './code-generation-agent.types.js';
+import type { OpenApiGenerationOptions } from './code-generation-openapi.js';
+import {
+  buildSampleLiteral,
+  generateAuthMiddleware,
+  generateModel,
+  generateRouteHandler,
+  generateServerSetup,
+  generateValidationMiddleware,
+  parseOpenAPI,
+} from './code-generation-openapi.js';
 
 export type {
   CodeGenerationRequest,
@@ -77,41 +87,33 @@ export class CodeGenerationAgent {
   /**
    * Generate code from OpenAPI specification
    */
-  async generateFromOpenAPI(spec: string, options: {
-    framework: 'fastify' | 'express' | 'koa';
-    database?: 'postgres' | 'mongodb' | 'mysql';
-    includeValidation?: boolean;
-    includeAuth?: boolean;
-    includeContracts?: boolean; // inject runtime contracts usage (opt-in)
-    useOperationIdForFilenames?: boolean; // prefer operationId for route filenames
-    useOperationIdForTestNames?: boolean; // prefer operationId in test titles
-  }): Promise<GeneratedCode> {
-    const api = this.parseOpenAPI(spec);
+  async generateFromOpenAPI(spec: string, options: OpenApiGenerationOptions): Promise<GeneratedCode> {
+    const api = parseOpenAPI(spec);
     const files: CodeFile[] = [];
     
     // Generate route handlers
     for (const endpoint of api.endpoints) {
-      const handler = this.generateRouteHandler(endpoint, options);
+      const handler = generateRouteHandler(endpoint, options);
       files.push(handler);
     }
     
     // Generate models
     for (const schema of api.schemas) {
-      const model = this.generateModel(schema, options.database);
+      const model = generateModel(schema, options.database);
       files.push(model);
     }
     
     // Generate middleware
     if (options.includeValidation) {
-      files.push(this.generateValidationMiddleware(api));
+      files.push(generateValidationMiddleware());
     }
     
     if (options.includeAuth) {
-      files.push(this.generateAuthMiddleware(api));
+      files.push(generateAuthMiddleware());
     }
     
     // Generate server setup
-    files.push(this.generateServerSetup(options.framework, api));
+    files.push(generateServerSetup(options.framework));
     
     return {
       files,
@@ -127,7 +129,7 @@ export class CodeGenerationAgent {
    * Optionally generate minimal test skeletons from OpenAPI using operationId or path+method.
    */
   async generateTestsFromOpenAPI(spec: string, options?: { useOperationIdForTestNames?: boolean; includeSampleInput?: boolean }): Promise<CodeFile[]> {
-    const api = this.parseOpenAPI(spec);
+    const api = parseOpenAPI(spec);
     const out: CodeFile[] = [];
     for (const ep of api.endpoints) {
       const opIdRaw = (ep?.definition as any)?.operationId as string | undefined;
@@ -149,7 +151,7 @@ export class CodeGenerationAgent {
             schema = rb[appCt]?.schema || (appCt === 'text/plain' ? { type: 'string' } : undefined);
           }
         }
-        sample = this.buildSampleLiteral(schema, ep?.components || {});
+        sample = buildSampleLiteral(schema, ep?.components || {});
       }
       const content = `import { describe, it, expect } from 'vitest'\nimport { handler } from '../../src/routes/${fileBase}'\n\n// OperationId: ${opIdRaw ?? 'N/A'}\ndescribe('${title}', () => {\n  it('returns success on minimal input (skeleton)', async () => {\n    const res: any = await handler(${sample})\n    expect(typeof res.status).toBe('number')\n  })\n})\n`;
       out.push({ path: `tests/api/generated/${fileBase}.spec.ts`, content, purpose: `Test for ${title}`, tests: [] });
@@ -681,282 +683,6 @@ export class CodeGenerationAgent {
     return suggestions;
   }
 
-  // Additional helper methods
-  private generateValidationMiddleware(api: any): CodeFile {
-    return {
-      path: 'src/middleware/validation.ts',
-      content: `import { FastifyRequest, FastifyReply } from 'fastify';
-import { z } from 'zod';
-
-export const validationMiddleware = async (
-  request: FastifyRequest,
-  reply: FastifyReply
-) => {
-  // Validate request based on OpenAPI spec
-  try {
-    // Validation logic here
-  } catch (error) {
-    reply.code(400).send({ error: 'Validation failed' });
-  }
-};
-`,
-      purpose: 'Request validation middleware',
-      tests: [],
-    };
-  }
-
-  private generateAuthMiddleware(api: any): CodeFile {
-    return {
-      path: 'src/middleware/auth.ts',
-      content: `import { FastifyRequest, FastifyReply } from 'fastify';
-
-export const authMiddleware = async (
-  request: FastifyRequest,
-  reply: FastifyReply
-) => {
-  // Authentication logic
-  const token = request.headers.authorization;
-  if (!token) {
-    reply.code(401).send({ error: 'Unauthorized' });
-    return;
-  }
-  // Verify token
-};
-`,
-      purpose: 'Authentication middleware',
-      tests: [],
-    };
-  }
-
-  private generateServerSetup(framework: string, api: any): CodeFile {
-    const setupCode = framework === 'fastify' ? `
-import Fastify from 'fastify';
-import cors from '@fastify/cors';
-
-const server = Fastify({ logger: true });
-
-server.register(cors);
-
-// Register routes
-// ...
-
-const start = async () => {
-  try {
-    await server.listen({ port: 3000, host: '0.0.0.0' });
-  } catch (err) {
-    server.log.error(err);
-    const { safeExit } = await import('../utils/safe-exit.js');
-    safeExit(1);
-  }
-};
-
-start();
-` : '// Server setup for ' + framework;
-
-    return {
-      path: 'src/server.ts',
-      content: setupCode,
-      purpose: 'Server initialization and setup',
-      tests: [],
-    };
-  }
-
-  private parseOpenAPI(spec: string): any {
-    // Basic OpenAPI parsing
-    try {
-      const parsed = JSON.parse(spec);
-      const endpoints = [];
-      const schemas = [];
-      
-      if (parsed.paths) {
-        for (const [path, methods] of Object.entries(parsed.paths)) {
-          for (const [method, definition] of Object.entries(methods as any)) {
-            endpoints.push({ path, method, definition });
-          }
-        }
-      }
-      
-      if (parsed.components?.schemas) {
-        for (const [name, schema] of Object.entries(parsed.components.schemas)) {
-          schemas.push({ name, schema });
-        }
-      }
-      
-      return { endpoints, schemas };
-    } catch (error) {
-      return { endpoints: [], schemas: [] };
-    }
-  }
-
-  private generateRouteHandler(endpoint: any, options: any): CodeFile {
-    const safeName = String(endpoint.path)
-      .replace(/[^a-zA-Z0-9]/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '');
-    const method = String(endpoint.method || 'get').toLowerCase();
-    const toPascal = (s: string) => s
-      .split('-')
-      .filter(Boolean)
-      .map(p => p.charAt(0).toUpperCase() + p.slice(1))
-      .join('');
-    const opIdRaw = (endpoint?.definition as any)?.operationId as string | undefined;
-    const opIdSafe = opIdRaw ? opIdRaw.replace(/[^a-zA-Z0-9]+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '') : '';
-    const fileSafe = (options?.useOperationIdForFilenames && opIdSafe) ? opIdSafe.toLowerCase() : `${safeName}-${method}`;
-    const contractBase = opIdSafe && opIdSafe.length > 0
-      ? `${toPascal(opIdSafe)}`
-      : `${toPascal(safeName)}${method.charAt(0).toUpperCase()}${method.slice(1)}`;
-
-    const base = `// Route handler implementation for ${endpoint.method} ${endpoint.path}\n`;
-    let content = base;
-    if (options?.includeContracts) {
-      content += `import { z } from 'zod';\n`;
-      content += `import { ${contractBase}Input, ${contractBase}Output } from '../contracts/schemas';\n`;
-      content += `import { pre, post } from '../contracts/conditions';\n`;
-      content += `\n// OperationId: ${opIdRaw ?? 'N/A'}\n`;
-      content += `export async function handler(input: unknown): Promise<unknown> {\n`;
-      content += `  try {\n`;
-      content += `    // Validate input and pre-condition (skeleton)\n`;
-      content += `    ${contractBase}Input.parse(input);\n`;
-      content += `    if (!pre(input)) return { status: 400, error: 'Precondition failed' };\n`;
-      content += `    // TODO: actual implementation here\n`;
-      // Build minimal sample output from OpenAPI response schema (best-effort)
-      const responses = endpoint?.definition?.responses || {};
-      const respCodes = Object.keys(responses).filter((c: string) => /^\d{3}$/.test(c));
-      const pick2xx = (codes: string[]) => codes.map(Number).filter(n => n>=200 && n<300).sort((a,b)=>a-b);
-      let chosenSchema: any | null = null;
-      if (respCodes.length > 0) {
-        const twos = pick2xx(respCodes);
-        const chosen = (method === 'post' && twos.includes(201)) ? 201
-          : (method === 'delete' && twos.includes(204)) ? 204
-          : (twos.includes(200) ? 200 : (twos[0] ?? 200));
-        const resp = responses[String(chosen)];
-        let schema = resp?.content?.['application/problem+json']?.schema
-          || resp?.content?.['application/json']?.schema;
-        if (!schema && resp?.content) {
-          const cts = Object.keys(resp.content);
-          const appCt = cts.find(ct => ct.startsWith('application/')) || cts[0];
-          const isXml = appCt ? /xml/i.test(appCt) : false;
-          if (appCt) {
-            schema = isXml ? { type: 'string' } : (resp.content[appCt]?.schema || (appCt === 'text/plain' ? { type: 'string' } : undefined));
-          }
-        }
-        if (schema) chosenSchema = schema;
-      }
-      const lit = this.buildSampleLiteral(chosenSchema, endpoint?.components || {});
-      content += `    const output: unknown = ${lit};\n`;
-      content += `    if (!post(input, output)) return { status: 500, error: 'Postcondition failed' };\n`;
-      content += `    ${contractBase}Output.parse(output);\n`;
-      // Choose default status from OpenAPI responses (prefer 201 for POST, 204 for DELETE, else 200)
-      // responses already computed above
-      const respCodes2 = Object.keys(responses).filter((c: string) => /^\d{3}$/.test(c));
-      let defaultStatus = method === 'post' ? 201 : method === 'delete' ? 204 : 200;
-      if (respCodes2.length > 0) {
-        const twos = respCodes2.map(Number).filter(n => n >= 200 && n < 300).sort((a,b)=>a-b);
-        if (method === 'post' && twos.includes(201)) defaultStatus = 201;
-        else if (method === 'delete' && twos.includes(204)) defaultStatus = 204;
-        else if (twos.includes(200)) defaultStatus = 200;
-        else if (twos.length > 0) {
-          const first = twos[0];
-          if (typeof first === 'number') defaultStatus = first;
-        }
-      }
-      content += `    return { status: ${defaultStatus}, data: output };\n`;
-      content += `  } catch (e) {\n`;
-      // Map errors to OpenAPI 4xx/5xx and include minimal bodies when available
-      const fourxx = respCodes2.map(Number).filter(n => n >= 400 && n < 500);
-      const fivexx = respCodes2.map(Number).filter(n => n >= 500 && n < 600);
-      const badReq = fourxx.includes(400) ? 400 : (fourxx.includes(422) ? 422 : (fourxx[0] ?? 400));
-      const srvErr = fivexx.includes(500) ? 500 : (fivexx[0] ?? 500);
-      let badSchema = (responses as any)[String(badReq)]?.content?.['application/problem+json']?.schema
-        || (responses as any)[String(badReq)]?.content?.['application/json']?.schema
-        || null;
-      let srvSchema = (responses as any)[String(srvErr)]?.content?.['application/problem+json']?.schema
-        || (responses as any)[String(srvErr)]?.content?.['application/json']?.schema
-        || null;
-      if (!badSchema) {
-        const c = (responses as any)[String(badReq)]?.content; if (c) {
-          const cts = Object.keys(c);
-          const appCt = cts.find((ct: string) => ct.startsWith('application/')) || cts[0];
-          if (appCt) {
-            badSchema = c[appCt]?.schema || (appCt === 'text/plain' ? { type: 'string' } : null);
-          }
-        }
-      }
-      if (!srvSchema) {
-        const c = (responses as any)[String(srvErr)]?.content; if (c) {
-          const cts = Object.keys(c);
-          const appCt = cts.find((ct: string) => ct.startsWith('application/')) || cts[0];
-          if (appCt) {
-            srvSchema = c[appCt]?.schema || (appCt === 'text/plain' ? { type: 'string' } : null);
-          }
-        }
-      }
-      const badLit = this.buildSampleLiteral(badSchema, endpoint?.components || {});
-      const srvLit = this.buildSampleLiteral(srvSchema, endpoint?.components || {});
-      content += `    if (e instanceof z.ZodError) return { status: ${badReq}, error: 'Validation error', details: e.errors, data: ${badLit} };\n`;
-      content += `    return { status: ${srvErr}, error: 'Unhandled error', data: ${srvLit} };\n`;
-      content += `  }\n`;
-      content += `}\n`;
-    }
-    return {
-      path: `src/routes/${fileSafe}.ts`,
-      content,
-      purpose: `Handle ${endpoint.method} ${endpoint.path}`,
-      tests: [],
-    };
-  }
-
-  // Build a minimal TypeScript literal from an OpenAPI schema object (best-effort)
-  private buildSampleLiteral(schema: any, components: Record<string, any> = {}, depth = 0): string {
-    if (!schema || depth > 5) return '{}';
-    if (schema.$ref && typeof schema.$ref === 'string') {
-      const ref = String(schema.$ref);
-      const name = ref.split('/').pop() as string;
-      const target = name && components ? components[name] : null;
-      if (target) return this.buildSampleLiteral(target, components, depth + 1);
-      return '{}';
-    }
-    if (schema.default !== undefined) {
-      return JSON.stringify(schema.default);
-    }
-    if (Array.isArray(schema.enum) && schema.enum.length > 0) {
-      return JSON.stringify(schema.enum[0]);
-    }
-    const t = schema.type || (schema.properties ? 'object' : (schema.items ? 'array' : undefined));
-    switch (t) {
-      case 'integer':
-      case 'number':
-        return '0';
-      case 'boolean':
-        return 'false';
-      case 'string':
-        return JSON.stringify('');
-      case 'array': {
-        // keep minimal; empty array is safe
-        return '[]';
-      }
-      case 'object': {
-        const props = schema.properties || {};
-        const keys = Object.keys(props);
-        const body = keys.map(k => `${JSON.stringify(k)}: ${this.buildSampleLiteral(props[k], components, depth + 1)}`).join(', ');
-        return `{ ${body} }`;
-      }
-      default:
-        return '{}';
-    }
-  }
-
-  private generateModel(schema: any, database?: string): CodeFile {
-    return {
-      path: `src/models/${schema.name}.ts`,
-      content: '// Model implementation',
-      purpose: `Model for ${schema.name}`,
-      tests: [],
-    };
-  }
-
   private createProjectStructure(files: CodeFile[]): ProjectStructure {
     return {
       directories: [...new Set(files.map(f => path.dirname(f.path)))],
@@ -1254,4 +980,3 @@ export class ${table.name} {
     };
   }
 }
-
