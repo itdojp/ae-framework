@@ -199,7 +199,7 @@ interface TerminologyConflict {
 
 interface ConsistencyValidationResult {
   consistencyScore: number;
-  inconsistencies: unknown[];
+  inconsistencies: MajorInconsistency[];
   terminologyConsistency: number;
   formatConsistency: number;
   businessRuleConsistency: number;
@@ -1321,10 +1321,32 @@ ${resolvedPreview ? `- Sample:\n${resolvedPreview}` : ''}
         Array.isArray(resolvedSources) &&
         Array.isArray(missingSources)
       ) {
+        const validRequestedSources = requestedSources.filter(
+          (value): value is string => typeof value === 'string',
+        );
+        const validResolvedSources = resolvedSources.filter(
+          (value): value is ValidationSourceItem => this.isValidationSourceItem(value),
+        );
+        const validMissingSources = missingSources.filter(
+          (value): value is string => typeof value === 'string',
+        );
+
+        const invalidRequestedCount = requestedSources.length - validRequestedSources.length;
+        const invalidResolvedCount = resolvedSources.length - validResolvedSources.length;
+        const invalidMissingCount = missingSources.length - validMissingSources.length;
+
+        if (invalidRequestedCount > 0 || invalidResolvedCount > 0 || invalidMissingCount > 0) {
+          console.warn('[ValidationTaskAdapter] Ignored invalid source entries in validation input.', {
+            invalidRequestedCount,
+            invalidResolvedCount,
+            invalidMissingCount,
+          });
+        }
+
         return {
-          requestedSources: requestedSources.filter((value): value is string => typeof value === 'string'),
-          resolvedSources: resolvedSources.filter(this.isValidationSourceItem),
-          missingSources: missingSources.filter((value): value is string => typeof value === 'string'),
+          requestedSources: validRequestedSources,
+          resolvedSources: validResolvedSources,
+          missingSources: validMissingSources,
           strict: Boolean(candidate['strict']),
         };
       }
@@ -1358,7 +1380,14 @@ ${resolvedPreview ? `- Sample:\n${resolvedPreview}` : ''}
       return false;
     }
     const candidate = value as Record<string, unknown>;
-    return typeof candidate['path'] === 'string' && typeof candidate['content'] === 'string';
+    const pathValue = candidate['path'];
+    const contentValue = candidate['content'];
+    return (
+      typeof pathValue === 'string' &&
+      pathValue.trim().length > 0 &&
+      typeof contentValue === 'string' &&
+      contentValue.trim().length > 0
+    );
   }
 
   private keywordCoverage(text: string, keywords: string[], baseline: number): number {
