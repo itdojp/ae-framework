@@ -55,5 +55,5 @@ function generateAsyncAPISpec(): Record<string, unknown> {
 }
 
 function generateGraphQLSchema(): string {
-  return `type Query {\n  # Generated from requirements\n}\n`;
+  return `type Query {\n  # Placeholder GraphQL schema\n}\n`;
 }

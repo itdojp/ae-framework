@@ -7,6 +7,7 @@ import type { readFileSync, writeFileSync, existsSync } from 'fs';
 import type * as path from 'path';
 import { SteeringLoader } from '../utils/steering-loader.js';
 import { generateSpecificationTemplates as generateSpecTemplates } from './intent-spec-generation.js';
+import type { GeneratedSpecificationTemplates } from './intent-spec-generation.js';
 
 export interface IntentAnalysisRequest {
   sources: RequirementSource[];
@@ -496,12 +497,7 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
   /**
    * Generate specification templates
    */
-  async generateSpecificationTemplates(requirements: Requirement[]): Promise<{
-    gherkin: string[];
-    openapi: object;
-    asyncapi: object;
-    graphql: string;
-  }> {
+  async generateSpecificationTemplates(requirements: Requirement[]): Promise<GeneratedSpecificationTemplates> {
     return generateSpecTemplates(requirements);
   }
 
