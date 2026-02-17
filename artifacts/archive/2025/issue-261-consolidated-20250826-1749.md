@@ -13,7 +13,7 @@
 
 ### Comment 2 (3222673373) - 2025-08-26 14:27 JST  
 **タイトル**: 詳細ヘルスチェックレポート追加  
-**内容**: 詳細レポート(`artifacts/status-20250826-1344.md`)の追加通知
+**内容**: 詳細レポート(`artifacts/archive/2025/status-20250826-1344.md`)の追加通知
 
 ## 📊 現状スナップショット (統合ステータス表)
 
@@ -45,7 +45,7 @@
 - 全ステータスが未変更 (同一時点のレポート)
 
 ### 追加事項
-- ✅ **詳細レポート追加**: `artifacts/status-20250826-1344.md`
+- ✅ **詳細レポート追加**: `artifacts/archive/2025/status-20250826-1344.md`
 - ✅ **GitHub永続化**: main ブランチにコミット済み
 - ✅ **7ゲート個別結果**: 詳細レポートで利用可能
 - ✅ **具体的修正手順**: P0/P1/P2優先度別アクション
@@ -109,7 +109,7 @@
 ## 📄 関連資料
 
 - **Issue**: [#261](https://github.com/itdojp/ae-framework/issues/261)
-- **詳細レポート**: [artifacts/status-20250826-1344.md](https://github.com/itdojp/ae-framework/blob/main/artifacts/status-20250826-1344.md)
+- **詳細レポート**: [artifacts/archive/2025/status-20250826-1344.md](https://github.com/itdojp/ae-framework/blob/main/artifacts/archive/2025/status-20250826-1344.md)
 - **Verify結果**: [artifacts/verify.md](https://github.com/itdojp/ae-framework/blob/main/artifacts/verify.md)
 - **コミット**: [4304993a322eb006fe2088aa227e70f5283eea99](https://github.com/itdojp/ae-framework/commit/4304993a322eb006fe2088aa227e70f5283eea99)
 
