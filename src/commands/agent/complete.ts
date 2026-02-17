@@ -1,5 +1,7 @@
 import { loadLLM } from '../../providers/index.js';
 import { withRecorder } from '../../providers/recorder.js';
+import { formatAppError, toExecAppError } from '../../core/command-errors.js';
+import type { AppError } from '../../core/errors.js';
 
 export async function agentComplete(prompt: string, system?: string, flags?: { record?: boolean; replay?: boolean; dir?: string }) {
   // Enhanced flag interpretation
@@ -7,7 +9,12 @@ export async function agentComplete(prompt: string, system?: string, flags?: { r
   
   // Error if both --record and --replay are specified
   if (flags?.record && flags?.replay) {
-    console.error('Error: Cannot specify both --record and --replay flags');
+    const appError: AppError = {
+      code: 'E_CONFIG',
+      key: 'agent.complete.flags',
+      detail: 'Cannot specify both --record and --replay flags',
+    };
+    console.error(`[ae][agent] ${formatAppError(appError)}`);
     const { safeExit } = await import('../../utils/safe-exit.js');
     safeExit(1);
   }
@@ -50,7 +57,7 @@ export async function agentComplete(prompt: string, system?: string, flags?: { r
     
     console.log(`[ae][agent] Provider: ${llm.name}`);
     
-    const llmOpts: any = { prompt };
+    const llmOpts: { prompt: string; system?: string } = { prompt };
     if (system) llmOpts.system = system;
     const output = await llm.complete(llmOpts);
     
@@ -58,7 +65,8 @@ export async function agentComplete(prompt: string, system?: string, flags?: { r
     console.log(`[ae][agent] Completed: ${output.length} characters`);
     console.log(`[${llm.name}]`, output);
   } catch (error) {
-    console.error('[ae][agent] LLM completion failed:', error instanceof Error ? error.message : 'Unknown error');
+    const appError = toExecAppError('agent.complete', error);
+    console.error(`[ae][agent] ${formatAppError(appError)}`);
     const { safeExit } = await import('../../utils/safe-exit.js');
     safeExit(1);
   }
