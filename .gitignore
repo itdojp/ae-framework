@@ -75,9 +75,6 @@ conformance-results.json
 reports/
 benchmarks/current/
 benchmarks/reports/
-reports/conformance/
-reports/heavy-test-trends.json
-reports/heavy-test-trends-history/
 sample-*.json
 invalid-sample-*.json
 clean-sample-*.json
@@ -99,6 +96,3 @@ packages/*/src/**/*.js
 !packages/envelope/src/**/*.js
 packages/*/src/**/*.js.map
 packages/*/src/**/*.d.ts
-cegis-report-*.json
-temp-reports/
-# CEGIS report files - generated during testing

@@ -77,6 +77,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-
 
+      - name: Root layout guard (pre-install)
+        run: node scripts/ci/check-root-layout.mjs
+
       - name: Install
         run: |
           pnpm fetch --prefer-offline

@@ -50,6 +50,7 @@ export const ALLOWED_ROOT_ENTRIES = new Set([
   'policy',
   'presets',
   'proofs',
+  'reports',
   'samples',
   'schema',
   'scripts',
@@ -58,6 +59,7 @@ export const ALLOWED_ROOT_ENTRIES = new Set([
   'src',
   'templates',
   'test-cassettes',
+  'temp-reports',
   'tests',
   'tsconfig.json',
   'types',
@@ -66,6 +68,7 @@ export const ALLOWED_ROOT_ENTRIES = new Set([
 
 export const FORBIDDEN_ROOT_PATTERNS = [
   { pattern: /^cegis-report-\d+\.json$/, reason: 'ephemeral CEGIS report in repository root' },
+  { pattern: /^drift-report-[\w.-]+\.json$/, reason: 'ephemeral codegen drift report in repository root' },
   { pattern: /^generated-[\w.-]+\.json$/, reason: 'ephemeral integration generated file in repository root' },
   { pattern: /^filtered-test\.json$/, reason: 'ephemeral integration output in repository root' },
   { pattern: /^parallel-test\.json$/, reason: 'ephemeral integration output in repository root' },

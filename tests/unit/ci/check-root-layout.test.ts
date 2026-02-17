@@ -41,11 +41,13 @@ describe('check-root-layout', () => {
       'src',
       'docs',
       'cegis-report-1234.json',
+      'drift-report-src-generated.json',
       'verify-lite-lint-summary.json',
     ]);
 
     expect(result.violations.map((v) => v.entry)).toEqual([
       'cegis-report-1234.json',
+      'drift-report-src-generated.json',
       'verify-lite-lint-summary.json',
     ]);
     expect(result.warnings).toHaveLength(0);
@@ -63,6 +65,17 @@ describe('check-root-layout', () => {
     expect(result.warnings).toEqual([
       expect.objectContaining({ entry: 'mystery', type: 'unclassified_entry' }),
     ]);
+  });
+
+  it('treats reports directories as allowed root entries', () => {
+    const result = scanRootLayout([
+      'reports',
+      'temp-reports',
+      'src',
+    ]);
+
+    expect(result.violations).toHaveLength(0);
+    expect(result.warnings).toHaveLength(0);
   });
 
   it('returns exit code 1 in strict mode when violation exists', () => {

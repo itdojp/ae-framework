@@ -58,6 +58,12 @@ The project includes automated cleanup tools to maintain project hygiene:
 # Full project cleanup
 pnpm run clean:all
 
+# Clean only root safe-remove targets (ephemeral files/dirs)
+pnpm run clean:root-safe
+
+# Clean root safe-remove targets including node_modules (slow path)
+pnpm run clean:root-safe:deep
+
 # Clean only temporary files and reports
 pnpm run clean:project
 
@@ -83,6 +89,12 @@ The `scripts/project-cleanup.mjs` script provides:
 - **Report Organization**: Categorizes reports by type (testing, performance, security, etc.)
 - **Space Optimization**: Tracks and reports space savings
 - **Retention Policies**: Keeps recent files while archiving older ones
+
+The `scripts/project/clean-root-safe-remove.mjs` script provides:
+
+- **Root Safe-Remove Cleanup**: Deletes root-level ephemeral outputs defined by the layout policy
+- **Dry-Run Support**: Supports inventory-only execution via `--dry-run`
+- **Deterministic Scope**: Restricts cleanup to known patterns and directories
 
 ### File Categories
 
