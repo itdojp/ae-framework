@@ -117,6 +117,252 @@ export interface BusinessRule {
   actions: string[];
 }
 
+interface DomainModelingInput {
+  [key: string]: unknown;
+}
+
+interface WarningLike {
+  description: string;
+}
+
+interface EntitySummary {
+  name: string;
+  type: string;
+  description: string;
+}
+
+interface BoundedContextSummary {
+  name: string;
+  description: string;
+  entities: string[];
+}
+
+interface NamedDescription {
+  name: string;
+  description: string;
+}
+
+interface DomainComplexityAnalysis {
+  high: string[];
+  medium: string[];
+  simple: string[];
+}
+
+interface DomainAnalysisResult {
+  entities: EntitySummary[];
+  boundedContexts: BoundedContextSummary[];
+  businessRules: NamedDescription[];
+  domainServices: NamedDescription[];
+  coreEntities: EntitySummary[];
+  keyBusinessRules: NamedDescription[];
+  complexityAnalysis: DomainComplexityAnalysis;
+  complexityWarnings: WarningLike[];
+  criticalGaps: string[];
+}
+
+interface EntityRelationshipSummary {
+  from: string;
+  type: string;
+  to: string;
+  cardinality: string;
+}
+
+interface EntityRuleCoverage {
+  entity: string;
+  rulesCount: number;
+}
+
+interface EntityIdentificationResult {
+  entities: EntitySummary[];
+  aggregateRoots: string[];
+  valueObjects: string[];
+  domainServices: string[];
+  relationships: EntityRelationshipSummary[];
+  businessRuleCoverage: EntityRuleCoverage[];
+  warnings: WarningLike[];
+}
+
+interface AggregateSummary {
+  name: string;
+  description: string;
+  entities: string[];
+  valueObjects: string[];
+  businessRules: string[];
+  invariants: string[];
+}
+
+interface AggregateBoundaryAnalysis {
+  aggregate: string;
+  boundaryStrength: string;
+  cohesion: number;
+}
+
+interface AggregateDependency {
+  from: string;
+  to: string;
+  type: string;
+  reason: string;
+}
+
+interface AggregateModelingResult {
+  aggregates: AggregateSummary[];
+  boundaryAnalysis: AggregateBoundaryAnalysis[];
+  dependencies: AggregateDependency[];
+  boundaryWarnings: WarningLike[];
+  criticalIssues: string[];
+}
+
+interface ContextSummary {
+  name: string;
+  description: string;
+  entities: string[];
+  services: string[];
+  responsibilities: string[];
+}
+
+interface ContextRelationship {
+  upstream: string;
+  downstream: string;
+  type: string;
+}
+
+interface ContextIntegrationPattern {
+  contexts: string[];
+  pattern: string;
+  description: string;
+}
+
+interface BoundedContextDefinitionResult {
+  contexts: ContextSummary[];
+  relationships: ContextRelationship[];
+  integrationPatterns: ContextIntegrationPattern[];
+  integrationRisks: WarningLike[];
+}
+
+interface RuleSummary {
+  name: string;
+  description: string;
+  type: BusinessRule['type'];
+  priority: 'high' | 'medium' | 'low';
+}
+
+interface RuleComplexity {
+  rule: string;
+  complexity: string;
+  dependencies: number;
+}
+
+interface RuleEntityMapping {
+  entity: string;
+  rules: string[];
+}
+
+interface BusinessRuleExtractionResult {
+  rules: RuleSummary[];
+  complexityAnalysis: RuleComplexity[];
+  entityMapping: RuleEntityMapping[];
+  conflictingRules: WarningLike[];
+}
+
+interface LanguageTermSummary {
+  term: string;
+  definition: string;
+  context: string;
+}
+
+interface TermRelationshipSummary {
+  term1: string;
+  relationship: string;
+  term2: string;
+}
+
+interface UbiquitousLanguageResult {
+  terms: LanguageTermSummary[];
+  coreTerms: LanguageTermSummary[];
+  supportingTerms: LanguageTermSummary[];
+  termRelationships: TermRelationshipSummary[];
+  ambiguousTerms: LanguageTermSummary[];
+}
+
+interface DomainServiceSummary {
+  name: string;
+  description: string;
+  operations: ServiceOperation[];
+  dependencies: string[];
+}
+
+interface ServiceDependencyAnalysis {
+  service: string;
+  dependencies: number;
+  coupling: string;
+}
+
+interface ServiceCohesionAnalysis {
+  service: string;
+  cohesion: number;
+  responsibilities: number;
+}
+
+interface DomainServiceDesignResult {
+  services: DomainServiceSummary[];
+  dependencyAnalysis: ServiceDependencyAnalysis[];
+  cohesionAnalysis: ServiceCohesionAnalysis[];
+  designIssues: WarningLike[];
+}
+
+interface ValidationIssue {
+  severity: string;
+  description: string;
+  category: string;
+}
+
+interface ModelCompleteness {
+  entities: number;
+  relationships: number;
+  businessRules: number;
+  boundedContexts: number;
+}
+
+interface ConsistencyCheckResult {
+  category: string;
+  status: string;
+  issues: number;
+}
+
+interface DomainModelValidationResult {
+  score: number;
+  entityValidation: number;
+  relationshipValidation: number;
+  businessRuleValidation: number;
+  issues: ValidationIssue[];
+  completeness: ModelCompleteness;
+  consistencyChecks: ConsistencyCheckResult[];
+  recommendations: string[];
+  criticalIssues: WarningLike[];
+}
+
+interface GenericDomainAnalysisResult {
+  report: string;
+  recommendations: string[];
+  nextActions: string[];
+  warnings: string[];
+}
+
+interface ProactiveGuidanceContext {
+  recentFiles: string[];
+  recentActions: string[];
+  userIntent: string;
+}
+
+interface ProactiveGuidanceResult {
+  shouldIntervene: boolean;
+  intervention: {
+    type: 'warning' | 'suggestion' | 'block';
+    message: string;
+    recommendedActions: string[];
+  };
+}
+
 export class DomainModelingTaskAdapter {
   private agent: FormalAgent;
 
@@ -170,18 +416,7 @@ export class DomainModelingTaskAdapter {
   /**
    * Proactive domain modeling guidance for Claude Code
    */
-  async provideProactiveGuidance(context: {
-    recentFiles: string[];
-    recentActions: string[];
-    userIntent: string;
-  }): Promise<{
-    shouldIntervene: boolean;
-    intervention: {
-      type: 'warning' | 'suggestion' | 'block';
-      message: string;
-      recommendedActions: string[];
-    };
-  }> {
+  async provideProactiveGuidance(context: ProactiveGuidanceContext): Promise<ProactiveGuidanceResult> {
     const analysis = await this.analyzeRecentActivity(context);
     
     if (analysis.hasIncompleteModeling) {
@@ -242,17 +477,17 @@ export class DomainModelingTaskAdapter {
 **Domain Services**: ${analysis.domainServices.length}
 
 ## Core Domain Entities
-${analysis.coreEntities.map((entity: any) => 
+${analysis.coreEntities.map((entity) => 
   `• **${entity.name}** (${entity.type}): ${entity.description}`
 ).join('\n')}
 
 ## Bounded Contexts Overview
-${analysis.boundedContexts.map((context: any) => 
+${analysis.boundedContexts.map((context) => 
   `• **${context.name}**: ${context.description} (${context.entities.length} entities)`
 ).join('\n')}
 
 ## Key Business Rules
-${analysis.keyBusinessRules.map((rule: any) => 
+${analysis.keyBusinessRules.map((rule) => 
   `• **${rule.name}**: ${rule.description}`
 ).join('\n')}
 
@@ -273,7 +508,7 @@ ${analysis.keyBusinessRules.map((rule: any) =>
         'Document ubiquitous language terms',
         'Design domain service interfaces',
       ],
-      warnings: analysis.complexityWarnings.map((warning: any) => warning.description),
+      warnings: analysis.complexityWarnings.map((warning) => warning.description),
       shouldBlockProgress: analysis.criticalGaps.length > 0,
     };
   }
@@ -293,17 +528,17 @@ ${analysis.keyBusinessRules.map((rule: any) =>
 **Domain Services**: ${entities.domainServices.length}
 
 ## Entity Classification
-${entities.entities.map((entity: any) => 
+${entities.entities.map((entity) => 
   `• **${entity.name}** (${entity.type}): ${entity.description}`
 ).join('\n')}
 
 ## Entity Relationships
-${entities.relationships.map((rel: any) => 
+${entities.relationships.map((rel) => 
   `• ${rel.from} ${rel.type} ${rel.to} (${rel.cardinality})`
 ).join('\n')}
 
 ## Business Rule Coverage
-${entities.businessRuleCoverage.map((coverage: any) => 
+${entities.businessRuleCoverage.map((coverage) => 
   `• **${coverage.entity}**: ${coverage.rulesCount} business rules`
 ).join('\n')}
       `.trim(),
@@ -319,7 +554,7 @@ ${entities.businessRuleCoverage.map((coverage: any) =>
         'Design aggregate root interfaces',
         'Validate entity model with use cases',
       ],
-      warnings: entities.warnings.map((warning: any) => warning.description),
+      warnings: entities.warnings.map((warning) => warning.description),
       shouldBlockProgress: false,
     };
   }
@@ -336,7 +571,7 @@ ${entities.businessRuleCoverage.map((coverage: any) =>
 **Total Aggregates**: ${aggregates.aggregates.length}
 
 ## Aggregate Details
-${aggregates.aggregates.map((agg: any) => `
+${aggregates.aggregates.map((agg) => `
 ### ${agg.name}
 - **Description**: ${agg.description}
 - **Entities**: ${agg.entities.join(', ')}
@@ -346,12 +581,12 @@ ${aggregates.aggregates.map((agg: any) => `
 `).join('\n')}
 
 ## Aggregate Boundaries Analysis
-${aggregates.boundaryAnalysis.map((analysis: any) => 
+${aggregates.boundaryAnalysis.map((analysis) => 
   `• **${analysis.aggregate}**: ${analysis.boundaryStrength} boundary strength (${analysis.cohesion}% cohesion)`
 ).join('\n')}
 
 ## Cross-Aggregate Dependencies
-${aggregates.dependencies.map((dep: any) => 
+${aggregates.dependencies.map((dep) => 
   `• ${dep.from} → ${dep.to} (${dep.type}: ${dep.reason})`
 ).join('\n')}
       `.trim(),
@@ -367,7 +602,7 @@ ${aggregates.dependencies.map((dep: any) =>
         'Create aggregate repositories',
         'Implement aggregate business rules',
       ],
-      warnings: aggregates.boundaryWarnings.map((warning: any) => warning.description),
+      warnings: aggregates.boundaryWarnings.map((warning) => warning.description),
       shouldBlockProgress: aggregates.criticalIssues.length > 0,
     };
   }
@@ -384,7 +619,7 @@ ${aggregates.dependencies.map((dep: any) =>
 **Total Contexts**: ${contexts.contexts.length}
 
 ## Context Definitions
-${contexts.contexts.map((context: any) => `
+${contexts.contexts.map((context) => `
 ### ${context.name}
 - **Description**: ${context.description}
 - **Entities**: ${context.entities.length}
@@ -393,12 +628,12 @@ ${contexts.contexts.map((context: any) => `
 `).join('\n')}
 
 ## Context Relationships
-${contexts.relationships.map((rel: any) => 
+${contexts.relationships.map((rel) => 
   `• **${rel.upstream}** → **${rel.downstream}** (${rel.type})`
 ).join('\n')}
 
 ## Integration Patterns
-${contexts.integrationPatterns.map((pattern: any) => 
+${contexts.integrationPatterns.map((pattern) => 
   `• **${pattern.contexts.join(' ↔ ')}**: ${pattern.pattern} (${pattern.description})`
 ).join('\n')}
       `.trim(),
@@ -414,7 +649,7 @@ ${contexts.integrationPatterns.map((pattern: any) =>
         'Implement context integration patterns',
         'Create context deployment strategies',
       ],
-      warnings: contexts.integrationRisks.map((risk: any) => risk.description),
+      warnings: contexts.integrationRisks.map((risk) => risk.description),
       shouldBlockProgress: false,
     };
   }
@@ -429,23 +664,23 @@ ${contexts.integrationPatterns.map((pattern: any) =>
 # Business Rules Analysis
 
 **Total Rules**: ${rules.rules.length}
-**Constraint Rules**: ${rules.rules.filter((r: any) => r.type === 'constraint').length}
-**Derivation Rules**: ${rules.rules.filter((r: any) => r.type === 'derivation').length}
-**Action Enablers**: ${rules.rules.filter((r: any) => r.type === 'action_enabler').length}
+**Constraint Rules**: ${rules.rules.filter((r) => r.type === 'constraint').length}
+**Derivation Rules**: ${rules.rules.filter((r) => r.type === 'derivation').length}
+**Action Enablers**: ${rules.rules.filter((r) => r.type === 'action_enabler').length}
 
 ## High Priority Rules
 ${rules.rules
-  .filter((r: any) => r.priority === 'high')
-  .map((rule: any) => `• **${rule.name}**: ${rule.description}`)
+  .filter((r) => r.priority === 'high')
+  .map((rule) => `• **${rule.name}**: ${rule.description}`)
   .join('\n')}
 
 ## Rule Complexity Analysis
-${rules.complexityAnalysis.map((analysis: any) => 
+${rules.complexityAnalysis.map((analysis) => 
   `• **${analysis.rule}**: ${analysis.complexity} complexity (${analysis.dependencies} dependencies)`
 ).join('\n')}
 
 ## Entity-Rule Mapping
-${rules.entityMapping.map((mapping: any) => 
+${rules.entityMapping.map((mapping) => 
   `• **${mapping.entity}**: ${mapping.rules.length} rules`
 ).join('\n')}
       `.trim(),
@@ -461,7 +696,7 @@ ${rules.entityMapping.map((mapping: any) =>
         'Design rule testing strategies',
         'Document rule change procedures',
       ],
-      warnings: rules.conflictingRules.map((conflict: any) => conflict.description),
+      warnings: rules.conflictingRules.map((conflict) => conflict.description),
       shouldBlockProgress: rules.conflictingRules.length > 0,
     };
   }
@@ -480,17 +715,17 @@ ${rules.entityMapping.map((mapping: any) =>
 **Supporting Terms**: ${language.supportingTerms.length}
 
 ## Core Domain Terms
-${language.coreTerms.map((term: any) => 
+${language.coreTerms.map((term) => 
   `• **${term.term}**: ${term.definition} (Context: ${term.context})`
 ).join('\n')}
 
 ## Term Relationships
-${language.termRelationships.map((rel: any) => 
+${language.termRelationships.map((rel) => 
   `• **${rel.term1}** ${rel.relationship} **${rel.term2}**`
 ).join('\n')}
 
 ## Ambiguous Terms
-${language.ambiguousTerms.map((term: any) => 
+${language.ambiguousTerms.map((term) => 
   `• **${term.term}**: Multiple definitions found - requires clarification`
 ).join('\n')}
       `.trim(),
@@ -506,7 +741,7 @@ ${language.ambiguousTerms.map((term: any) =>
         'Design language evolution process',
         'Create team communication guidelines',
       ],
-      warnings: language.ambiguousTerms.map((term: any) => `Ambiguous term: ${term.term}`),
+      warnings: language.ambiguousTerms.map((term) => `Ambiguous term: ${term.term}`),
       shouldBlockProgress: false,
     };
   }
@@ -523,7 +758,7 @@ ${language.ambiguousTerms.map((term: any) =>
 **Total Services**: ${services.services.length}
 
 ## Service Definitions
-${services.services.map((service: any) => `
+${services.services.map((service) => `
 ### ${service.name}
 - **Description**: ${service.description}
 - **Operations**: ${service.operations.length}
@@ -531,12 +766,12 @@ ${services.services.map((service: any) => `
 `).join('\n')}
 
 ## Service Dependencies
-${services.dependencyAnalysis.map((dep: any) => 
-  `• **${dep.service}**: ${dep.dependencies.length} dependencies (${dep.coupling} coupling)`
+${services.dependencyAnalysis.map((dep) => 
+  `• **${dep.service}**: ${dep.dependencies} dependencies (${dep.coupling} coupling)`
 ).join('\n')}
 
 ## Service Cohesion Analysis
-${services.cohesionAnalysis.map((analysis: any) => 
+${services.cohesionAnalysis.map((analysis) => 
   `• **${analysis.service}**: ${analysis.cohesion}% cohesion (${analysis.responsibilities} responsibilities)`
 ).join('\n')}
       `.trim(),
@@ -552,7 +787,7 @@ ${services.cohesionAnalysis.map((analysis: any) =>
         'Create service documentation',
         'Plan service deployment architecture',
       ],
-      warnings: services.designIssues.map((issue: any) => issue.description),
+      warnings: services.designIssues.map((issue) => issue.description),
       shouldBlockProgress: false,
     };
   }
@@ -572,7 +807,7 @@ ${services.cohesionAnalysis.map((analysis: any) =>
 **Business Rule Validation**: ${validation.businessRuleValidation}%
 
 ## Validation Issues
-${validation.issues.map((issue: any) => 
+${validation.issues.map((issue) => 
   `• **${issue.severity}**: ${issue.description} (${issue.category})`
 ).join('\n')}
 
@@ -583,7 +818,7 @@ ${validation.issues.map((issue: any) =>
 - **Bounded Contexts**: ${validation.completeness.boundedContexts}%
 
 ## Consistency Checks
-${validation.consistencyChecks.map((check: any) => 
+${validation.consistencyChecks.map((check) => 
   `• **${check.category}**: ${check.status} (${check.issues} issues)`
 ).join('\n')}
       `.trim(),
@@ -594,7 +829,7 @@ ${validation.consistencyChecks.map((check: any) =>
         'Validate model with stakeholders',
         'Create model evolution strategy',
       ],
-      warnings: validation.criticalIssues.map((issue: any) => issue.description),
+      warnings: validation.criticalIssues.map((issue) => issue.description),
       shouldBlockProgress: validation.criticalIssues.length > 0,
     };
   }
@@ -653,26 +888,54 @@ ${validation.consistencyChecks.map((check: any) =>
 
   // Input extraction methods (simplified)
   // TODO: Implement input extraction logic (addressing Copilot review comment 2280080079)
-  private extractDomainInput(prompt: string): any { return {}; }
+  private extractDomainInput(prompt: string): DomainModelingInput {
+    void prompt;
+    return {};
+  }
   // TODO: Implement input extraction logic
-  private extractEntityInput(prompt: string): any { return {}; }
+  private extractEntityInput(prompt: string): DomainModelingInput {
+    void prompt;
+    return {};
+  }
   // TODO: Implement input extraction logic
-  private extractAggregateInput(prompt: string): any { return {}; }
+  private extractAggregateInput(prompt: string): DomainModelingInput {
+    void prompt;
+    return {};
+  }
   // TODO: Implement input extraction logic
-  private extractContextInput(prompt: string): any { return {}; }
+  private extractContextInput(prompt: string): DomainModelingInput {
+    void prompt;
+    return {};
+  }
   // TODO: Implement input extraction logic
-  private extractBusinessRuleInput(prompt: string): any { return {}; }
+  private extractBusinessRuleInput(prompt: string): DomainModelingInput {
+    void prompt;
+    return {};
+  }
   // TODO: Implement input extraction logic
-  private extractLanguageInput(prompt: string): any { return {}; }
+  private extractLanguageInput(prompt: string): DomainModelingInput {
+    void prompt;
+    return {};
+  }
   // TODO: Implement input extraction logic
-  private extractServiceInput(prompt: string): any { return {}; }
+  private extractServiceInput(prompt: string): DomainModelingInput {
+    void prompt;
+    return {};
+  }
   // TODO: Implement input extraction logic
-  private extractModelInput(prompt: string): any { return {}; }
+  private extractModelInput(prompt: string): DomainModelingInput {
+    void prompt;
+    return {};
+  }
   // TODO: Implement input extraction logic
-  private extractGenericInput(prompt: string): any { return {}; }
+  private extractGenericInput(prompt: string): DomainModelingInput {
+    void prompt;
+    return {};
+  }
 
   // Mock analysis methods (to be implemented with actual domain modeling logic)
-  private async analyzeDomain(input: any): Promise<any> {
+  private async analyzeDomain(input: DomainModelingInput): Promise<DomainAnalysisResult> {
+    void input;
     return {
       entities: [
         { name: 'User', type: 'entity', description: 'System user' },
@@ -699,7 +962,8 @@ ${validation.consistencyChecks.map((check: any) =>
     };
   }
 
-  private async identifyEntities(input: any): Promise<any> {
+  private async identifyEntities(input: DomainModelingInput): Promise<EntityIdentificationResult> {
+    void input;
     return {
       entities: [
         { name: 'User', type: 'entity', description: 'System user' },
@@ -717,7 +981,8 @@ ${validation.consistencyChecks.map((check: any) =>
     };
   }
 
-  private async modelAggregates(input: any): Promise<any> {
+  private async modelAggregates(input: DomainModelingInput): Promise<AggregateModelingResult> {
+    void input;
     return {
       aggregates: [
         {
@@ -738,7 +1003,8 @@ ${validation.consistencyChecks.map((check: any) =>
     };
   }
 
-  private async defineBoundedContexts(input: any): Promise<any> {
+  private async defineBoundedContexts(input: DomainModelingInput): Promise<BoundedContextDefinitionResult> {
+    void input;
     return {
       contexts: [
         {
@@ -763,7 +1029,8 @@ ${validation.consistencyChecks.map((check: any) =>
     };
   }
 
-  private async extractBusinessRules(input: any): Promise<any> {
+  private async extractBusinessRules(input: DomainModelingInput): Promise<BusinessRuleExtractionResult> {
+    void input;
     return {
       rules: [
         {
@@ -783,7 +1050,8 @@ ${validation.consistencyChecks.map((check: any) =>
     };
   }
 
-  private async createUbiquitousLanguage(input: any): Promise<any> {
+  private async createUbiquitousLanguage(input: DomainModelingInput): Promise<UbiquitousLanguageResult> {
+    void input;
     return {
       terms: [
         {
@@ -803,7 +1071,8 @@ ${validation.consistencyChecks.map((check: any) =>
     };
   }
 
-  private async designDomainServices(input: any): Promise<any> {
+  private async designDomainServices(input: DomainModelingInput): Promise<DomainServiceDesignResult> {
+    void input;
     return {
       services: [
         {
@@ -831,7 +1100,8 @@ ${validation.consistencyChecks.map((check: any) =>
     };
   }
 
-  private async validateDomainModel(input: any): Promise<any> {
+  private async validateDomainModel(input: DomainModelingInput): Promise<DomainModelValidationResult> {
+    void input;
     return {
       score: 85,
       entityValidation: 90,
@@ -854,7 +1124,8 @@ ${validation.consistencyChecks.map((check: any) =>
     };
   }
 
-  private async performGenericDomainAnalysis(input: any): Promise<any> {
+  private async performGenericDomainAnalysis(input: DomainModelingInput): Promise<GenericDomainAnalysisResult> {
+    void input;
     return {
       report: 'General domain modeling analysis completed',
       recommendations: ['Continue with domain-driven design practices'],
@@ -863,11 +1134,7 @@ ${validation.consistencyChecks.map((check: any) =>
     };
   }
 
-  private async analyzeRecentActivity(context: {
-    recentFiles: string[];
-    recentActions: string[];
-    userIntent: string;
-  }): Promise<{
+  private async analyzeRecentActivity(context: ProactiveGuidanceContext): Promise<{
     hasIncompleteModeling: boolean;
     hasModelingInconsistencies: boolean;
     shouldRefineModel: boolean;
@@ -915,7 +1182,7 @@ export const createDomainModelingTaskHandler = () => {
       return adapter.handleDomainModelingTask(request);
     },
     
-    provideProactiveGuidance: async (context: any): Promise<any> => {
+    provideProactiveGuidance: async (context: ProactiveGuidanceContext): Promise<ProactiveGuidanceResult> => {
       return adapter.provideProactiveGuidance(context);
     },
   };
