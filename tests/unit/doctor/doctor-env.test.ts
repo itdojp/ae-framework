@@ -197,4 +197,21 @@ describe('doctor-env script', () => {
       ]));
     });
   });
+
+  it('returns exit 3 for invalid arguments', () => {
+    withTempRepo((rootDir) => {
+      writePackageJson(rootDir);
+      const outcome = runDoctorEnv([
+        'node',
+        'doctor-env.mjs',
+        '--root',
+        rootDir,
+        '--unknown-option',
+      ]);
+
+      expect(outcome.exitCode).toBe(3);
+      expect(outcome.result).toBeNull();
+      expect(outcome.options.unknown).toEqual(['--unknown-option']);
+    });
+  });
 });

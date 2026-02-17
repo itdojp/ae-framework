@@ -12,6 +12,12 @@ const DIST_CANDIDATES = [
   'dist/src/cli/index.js',
   'dist/cli.js',
 ];
+const EXIT_CODES = {
+  SUCCESS: 0,
+  ERROR: 1,
+  WARNING: 2,
+  INVALID_ARGUMENT: 3,
+};
 
 function parseNodeVersion(versionText) {
   const match = /^v?(\d+)\.(\d+)\.(\d+)/.exec(versionText.trim());
@@ -337,7 +343,7 @@ function evaluateEnvironment(options, deps = {}) {
     error: checks.filter((check) => check.status === 'error').length,
   };
 
-  const exitCode = counts.error > 0 ? 1 : (counts.warn > 0 ? 2 : 0);
+  const exitCode = counts.error > 0 ? EXIT_CODES.ERROR : (counts.warn > 0 ? EXIT_CODES.WARNING : EXIT_CODES.SUCCESS);
   return {
     schemaVersion: 'doctor-env/v1',
     generatedAt: (deps.nowIso ?? (() => new Date().toISOString()))(),
@@ -389,14 +395,14 @@ export function runDoctorEnv(argv = process.argv, deps = {}) {
   const options = parseArgs(argv);
   if (options.help) {
     return {
-      exitCode: 0,
+      exitCode: EXIT_CODES.SUCCESS,
       options,
       result: null,
     };
   }
   if (options.unknown.length > 0) {
     return {
-      exitCode: 2,
+      exitCode: EXIT_CODES.INVALID_ARGUMENT,
       options,
       result: null,
     };
@@ -434,12 +440,12 @@ export function main(argv = process.argv) {
   const outcome = runDoctorEnv(argv);
   if (outcome.options.help) {
     printHelp();
-    return 0;
+    return EXIT_CODES.SUCCESS;
   }
   if (outcome.options.unknown.length > 0) {
     process.stderr.write(`Unknown argument(s): ${outcome.options.unknown.join(', ')}\n`);
     printHelp();
-    return 2;
+    return EXIT_CODES.INVALID_ARGUMENT;
   }
   return outcome.exitCode;
 }

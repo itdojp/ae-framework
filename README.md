@@ -53,7 +53,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 ```
 
 > `npm install` is intentionally blocked by `preinstall` because this repository uses `pnpm` workspace dependencies (`workspace:*`).
-> `pnpm run doctor:env` writes `artifacts/doctor/env.json` and returns `0` (ok) / `2` (warning) / `1` (error).
+> `pnpm run doctor:env` writes `artifacts/doctor/env.json` and returns `0` (ok) / `2` (warning) / `1` (error) / `3` (invalid arguments).
 
 ### Documentation pointers
 - Overview & nav: `docs/README.md`, `docs/project-organization.md`
@@ -106,7 +106,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 ```
 
 > このリポジトリは `workspace:*` を使うため、`npm install` は `preinstall` ガードで意図的に失敗させています。`pnpm install` を使用してください。
-> `pnpm run doctor:env` は `artifacts/doctor/env.json` を出力し、終了コードは `0`（正常）/`2`（警告）/`1`（要修正）です。
+> `pnpm run doctor:env` は `artifacts/doctor/env.json` を出力し、終了コードは `0`（正常）/`2`（警告）/`1`（要修正）/`3`（引数不正）です。
 
 ### ドキュメントへの入り口
 - 全体概要: `docs/README.md`, `docs/project-organization.md`
