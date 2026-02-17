@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { formatGWT } from '../utils/gwt-format';
 import {
+  generateAnalytics,
   generateCSVReport,
   generateEnhancedMarkdownReport,
   type EnhancedReportData,
@@ -23,6 +24,8 @@ function makeConfig(): BenchmarkConfig {
       },
       environment: 'test',
       docker: { enabled: false, image: '', volumes: [], ports: [] },
+      retryOnFailure: false,
+      timeout: 2000,
     },
     evaluation: {
       includeCodeQualityMetrics: false,
@@ -108,11 +111,39 @@ function makeResult(problemId: string, success: boolean, duration: number, score
 }
 
 describe('standardized benchmark report helpers', () => {
+  it(formatGWT('empty benchmark results', 'generate analytics', 'returns zeroed aggregates'), () => {
+    const analytics = generateAnalytics([]);
+    expect(analytics.summary.totalProblems).toBe(0);
+    expect(analytics.summary.successRate).toBe(0);
+    expect(analytics.performance.fastestExecution).toBe(0);
+    expect(analytics.errors.commonErrorPatterns).toEqual([]);
+  });
+
+  it(formatGWT('mixed benchmark results', 'generate analytics', 'computes success/error distributions'), () => {
+    const results = [
+      makeResult('p-1', true, 1000, 88),
+      makeResult('p-2', false, 2000, 55),
+      makeResult('p-3', true, 3000, 92),
+    ];
+    const analytics = generateAnalytics(results);
+
+    expect(analytics.summary.totalProblems).toBe(3);
+    expect(analytics.summary.successRate).toBeCloseTo((2 / 3) * 100, 5);
+    expect(analytics.summary.averageScore).toBe(90);
+    expect(analytics.quality.highScoreProblems).toBe(2);
+    expect(analytics.quality.lowScoreProblems).toBe(0);
+    expect(analytics.errors.totalErrors).toBe(1);
+  });
+
   it(formatGWT('benchmark result list', 'generate CSV', 'creates header and records'), () => {
-    const csv = generateCSVReport([makeResult('p-1', true, 1000, 88)]);
+    const csv = generateCSVReport([
+      makeResult('p-1', true, 1000, 88),
+      makeResult('p-2', false, 2500, 55),
+    ]);
     const lines = csv.split('\n');
     expect(lines[0]).toContain('Problem ID,Success,Score');
     expect(lines[1]).toContain('p-1,TRUE,88.0,1000,75.0,0,0');
+    expect(lines[2]).toContain('p-2,FALSE,55.0,2500,75.0,1,1');
   });
 
   it(formatGWT('report data', 'render markdown', 'includes summary and per-problem section'), () => {
@@ -164,5 +195,35 @@ describe('standardized benchmark report helpers', () => {
     expect(markdown).toContain('### p-2');
     expect(markdown).toContain('❌ Failed');
     expect(markdown).toContain('Errors by Phase');
+  });
+
+  it(formatGWT('empty phase and error analytics', 'render markdown', 'prints fallback messages'), () => {
+    const data: EnhancedReportData = {
+      metadata: {
+        timestamp: new Date().toISOString(),
+        totalProblems: 0,
+        successfulRuns: 0,
+        failedRuns: 0,
+        averageScore: 0,
+        totalExecutionTime: 0,
+        framework: 'AE Framework',
+        benchmarkVersion: 'req2run-benchmark',
+        pipelineVersion: '1.0.0',
+        agentsUsed: [],
+      },
+      configuration: makeConfig(),
+      analytics: {
+        summary: { totalProblems: 0, successRate: 0, averageScore: 0, averageExecutionTime: 0 },
+        performance: { fastestExecution: 0, slowestExecution: 0, averagePhaseTime: {} },
+        quality: { highScoreProblems: 0, mediumScoreProblems: 0, lowScoreProblems: 0 },
+        errors: { totalErrors: 0, errorsByPhase: {}, commonErrorPatterns: [] },
+      },
+      results: [],
+    };
+
+    const markdown = generateEnhancedMarkdownReport(data);
+    expect(markdown).toContain('- No phase data available');
+    expect(markdown).toContain('- No errors detected');
+    expect(markdown).toContain('- No common error patterns identified');
   });
 });
