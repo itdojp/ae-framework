@@ -8,283 +8,31 @@
 
 import { VerifyAgent } from './verify-agent.js';
 import type { TaskRequest, TaskResponse } from './task-types.js';
-import type { Conflict, UserStory } from './interfaces/standard-interfaces.js';
-import fs from 'node:fs';
-import path from 'node:path';
+import { extractValidationInput, formatSourceSummary, toValidationInput } from './validation-task-input.js';
+import { extractTraceabilityMatrixRows } from './validation-task-traceability.js';
+import {
+  VALIDATION_TASK_TYPES,
+  type CompletenessValidationResult,
+  type ConsistencyValidationResult,
+  type CrossValidationResult,
+  type FeasibilityValidationResult,
+  type GenericValidationResult,
+  type ProactiveGuidanceContext,
+  type ProactiveGuidanceResult,
+  type SpecificationValidationResult,
+  type TraceabilityValidationResult,
+  type UserStoriesValidationResult,
+  type ValidationInput,
+  type ValidationIssue,
+  type ValidationResult,
+  type ValidationTaskType,
+} from './validation-task-adapter.types.js';
 
-export interface ValidationResult {
-  isValid: boolean;
-  score: number;
-  issues: ValidationIssue[];
-  recommendations: string[];
-  coverageReport: CoverageReport;
-}
-
-export interface ValidationIssue {
-  id: string;
-  type: 'error' | 'warning' | 'info';
-  severity: 'critical' | 'high' | 'medium' | 'low';
-  category: string;
-  description: string;
-  location?: string;
-  suggestion?: string;
-}
-
-export interface CoverageReport {
-  functional: number;
-  nonFunctional: number;
-  business: number;
-  technical: number;
-  overall: number;
-}
-
-export type ValidationTaskType =
-  | 'validate-requirements'
-  | 'validate-user-stories'
-  | 'validate-specifications'
-  | 'validate-traceability'
-  | 'validate-completeness'
-  | 'validate-consistency'
-  | 'validate-feasibility'
-  | 'cross-validate';
-
-export const VALIDATION_TASK_TYPES: ValidationTaskType[] = [
-  'validate-requirements',
-  'validate-user-stories',
-  'validate-specifications',
-  'validate-traceability',
-  'validate-completeness',
-  'validate-consistency',
-  'validate-feasibility',
-  'cross-validate',
-];
-
-interface ValidationSourceItem {
-  path: string;
-  content: string;
-}
-
-interface ValidationInput {
-  requestedSources: string[];
-  resolvedSources: ValidationSourceItem[];
-  missingSources: string[];
-  strict: boolean;
-}
-
-interface ValidationIssueFrequency {
-  description: string;
-  frequency: number;
-}
-
-interface ValidationStoryIssue {
-  storyId: string;
-  description: string;
-}
-
-interface BlockingValidationIssue {
-  description: string;
-}
-
-interface UserStoriesQualityMetrics {
-  formatCompliance: number;
-  acceptanceCriteria: number;
-  testability: number;
-  independence: number;
-  estimability: number;
-}
-
-interface UserStoriesValidationResult {
-  score: number;
-  totalStories: number;
-  validStories: number;
-  qualityMetrics: UserStoriesQualityMetrics;
-  commonIssues: ValidationIssueFrequency[];
-  storyIssues: ValidationStoryIssue[];
-  blockingIssues: BlockingValidationIssue[];
-  validatedStories?: UserStory[];
-  conflicts?: Conflict[];
-  recommendations?: string[];
-}
-
-interface SpecificationCompliance {
-  formalNotation: number;
-  completeness: number;
-  consistency: number;
-  clarity: number;
-  testability: number;
-}
-
-interface SpecificationGap {
-  description: string;
-  impact: string;
-}
-
-interface SpecificationValidationResult {
-  score: number;
-  totalSpecs: number;
-  compliance: SpecificationCompliance;
-  issuesByCategory: Record<string, number>;
-  criticalGaps: SpecificationGap[];
-  recommendations: string[];
-}
-
-interface TraceabilityMatrixEntry {
-  source: string;
-  targets: string[];
-  coverage: number;
-}
-
-interface TraceabilityLinkIssue {
-  from: string;
-  to: string;
-  reason: string;
-}
-
-interface BrokenTraceabilityLink {
-  from: string;
-  to: string;
-}
-
-interface OrphanedTraceabilityArtifact {
-  type: string;
-  name: string;
-}
-
-interface TraceabilityValidationResult {
-  coveragePercentage: number;
-  totalLinks: number;
-  brokenLinks: BrokenTraceabilityLink[];
-  matrix: TraceabilityMatrixEntry[];
-  missingLinks: TraceabilityLinkIssue[];
-  orphanedArtifacts: OrphanedTraceabilityArtifact[];
-}
-
-interface CompletenessCategoryScore {
-  name: string;
-  score: number;
-  missing: number;
-}
-
-interface MissingComponent {
-  category: string;
-  description: string;
-  priority: string;
-}
-
-interface CompletenessTrend {
-  improving: string[];
-  declining: string[];
-  stable: string[];
-}
-
-interface CompletenessValidationResult {
-  completenessScore: number;
-  categoryScores: CompletenessCategoryScore[];
-  missingComponents: MissingComponent[];
-  trends: CompletenessTrend;
-  recommendations: string[];
-  criticalGaps: Array<{ description: string }>;
-}
-
-interface MajorInconsistency {
-  type: string;
-  description: string;
-  location: string;
-}
-
-interface TerminologyConflict {
-  term: string;
-  definitions: string[];
-}
-
-interface ConsistencyValidationResult {
-  consistencyScore: number;
-  inconsistencies: MajorInconsistency[];
-  terminologyConsistency: number;
-  formatConsistency: number;
-  businessRuleConsistency: number;
-  technicalConsistency: number;
-  majorInconsistencies: MajorInconsistency[];
-  terminologyConflicts: TerminologyConflict[];
-  recommendations: string[];
-}
-
-interface FeasibilityRiskFactor {
-  category: string;
-  description: string;
-  impact: string;
-  probability: string;
-}
-
-interface InfeasibleRequirement {
-  id: string;
-  reason: string;
-  alternative: string;
-}
-
-interface FeasibilityValidationResult {
-  feasibilityScore: number;
-  technical: number;
-  economic: number;
-  operational: number;
-  schedule: number;
-  riskFactors: FeasibilityRiskFactor[];
-  infeasibleRequirements: InfeasibleRequirement[];
-  highRiskFactors: FeasibilityRiskFactor[];
-  recommendations: string[];
-}
-
-interface PhaseAlignmentScore {
-  name: string;
-  score: number;
-}
-
-interface CrossPhaseIssue {
-  phases: string[];
-  description: string;
-  severity: string;
-}
-
-interface AlignmentGap {
-  description: string;
-  phases: string[];
-}
-
-interface CrossValidationResult {
-  overallScore: number;
-  phaseAlignment: PhaseAlignmentScore[];
-  crossPhaseIssues: CrossPhaseIssue[];
-  alignmentGaps: AlignmentGap[];
-  criticalIssues: Array<{ description: string }>;
-  recommendations: string[];
-}
-
-interface GenericValidationResult {
-  report: string;
-  recommendations: string[];
-  nextActions: string[];
-  warnings: string[];
-  hasBlockingIssues: boolean;
-}
-
-interface ProactiveGuidanceContext {
-  recentFiles: string[];
-  recentActions: string[];
-  userIntent: string;
-}
-
-interface ProactiveGuidanceResult {
-  shouldIntervene: boolean;
-  intervention: {
-    type: 'warning' | 'suggestion' | 'block';
-    message: string;
-    recommendedActions: string[];
-  };
-}
+export { VALIDATION_TASK_TYPES };
+export type { CoverageReport, ValidationIssue, ValidationResult, ValidationTaskType } from './validation-task-adapter.types.js';
 
 export class ValidationTaskAdapter {
   private agent: VerifyAgent;
-  private readonly sourceFileLimit = 200;
 
   constructor() {
     // VerifyAgent doesn't use config pattern like FormalAgent
@@ -378,7 +126,7 @@ export class ValidationTaskAdapter {
   }
 
   private async handleRequirementsValidation(request: TaskRequest): Promise<TaskResponse> {
-    const requirementsInput = this.extractRequirementsInput(request);
+    const requirementsInput = extractValidationInput(request);
     const validation = await this.validateRequirements(requirementsInput);
     
     return {
@@ -386,7 +134,7 @@ export class ValidationTaskAdapter {
       analysis: `
 # Requirements Validation Report
 
-${this.formatSourceSummary(requirementsInput)}
+${formatSourceSummary(requirementsInput)}
 
 **Validation Score**: ${validation.score}%
 **Total Issues**: ${validation.issues.length}
@@ -428,7 +176,7 @@ ${validation.issues
   }
 
   private async handleUserStoriesValidation(request: TaskRequest): Promise<TaskResponse> {
-    const storiesInput = this.extractStoriesInput(request);
+    const storiesInput = extractValidationInput(request);
     const validation = await this.validateUserStories(storiesInput);
     
     return {
@@ -436,7 +184,7 @@ ${validation.issues
       analysis: `
 # User Stories Validation Report
 
-${this.formatSourceSummary(storiesInput)}
+${formatSourceSummary(storiesInput)}
 
 **Validation Score**: ${validation.score}%
 **Stories Analyzed**: ${validation.totalStories}
@@ -476,7 +224,7 @@ ${validation.storyIssues.map((issue) => `• **${issue.storyId}**: ${issue.descr
   }
 
   private async handleSpecificationValidation(request: TaskRequest): Promise<TaskResponse> {
-    const specInput = this.extractSpecificationInput(request);
+    const specInput = extractValidationInput(request);
     const validation = await this.validateSpecifications(specInput);
     
     return {
@@ -484,7 +232,7 @@ ${validation.storyIssues.map((issue) => `• **${issue.storyId}**: ${issue.descr
       analysis: `
 # Specification Validation Report
 
-${this.formatSourceSummary(specInput)}
+${formatSourceSummary(specInput)}
 
 **Overall Compliance**: ${validation.score}%
 **Specifications Analyzed**: ${validation.totalSpecs}
@@ -520,7 +268,7 @@ ${validation.criticalGaps.map((gap) => `• ${gap.description} (Impact: ${gap.im
   }
 
   private async handleTraceabilityValidation(request: TaskRequest): Promise<TaskResponse> {
-    const traceabilityInput = this.extractTraceabilityInput(request);
+    const traceabilityInput = extractValidationInput(request);
     const validation = await this.validateTraceability(traceabilityInput);
     
     return {
@@ -528,7 +276,7 @@ ${validation.criticalGaps.map((gap) => `• ${gap.description} (Impact: ${gap.im
       analysis: `
 # Traceability Validation Report
 
-${this.formatSourceSummary(traceabilityInput)}
+${formatSourceSummary(traceabilityInput)}
 
 **Strict Mode**: ${traceabilityInput.strict ? 'enabled' : 'disabled'}
 **Traceability Coverage**: ${validation.coveragePercentage}%
@@ -573,7 +321,7 @@ ${validation.orphanedArtifacts.map((artifact) =>
   }
 
   private async handleCompletenessValidation(request: TaskRequest): Promise<TaskResponse> {
-    const input = this.extractCompletenessInput(request);
+    const input = extractValidationInput(request);
     const validation = await this.validateCompleteness(input);
     
     return {
@@ -581,7 +329,7 @@ ${validation.orphanedArtifacts.map((artifact) =>
       analysis: `
 # Completeness Validation Report
 
-${this.formatSourceSummary(input)}
+${formatSourceSummary(input)}
 
 **Overall Completeness**: ${validation.completenessScore}%
 
@@ -615,7 +363,7 @@ ${validation.missingComponents.map((comp) =>
   }
 
   private async handleConsistencyValidation(request: TaskRequest): Promise<TaskResponse> {
-    const input = this.extractConsistencyInput(request);
+    const input = extractValidationInput(request);
     const validation = await this.validateConsistency(input);
     
     return {
@@ -655,7 +403,7 @@ ${validation.terminologyConflicts.map((conflict) =>
   }
 
   private async handleFeasibilityValidation(request: TaskRequest): Promise<TaskResponse> {
-    const input = this.extractFeasibilityInput(request);
+    const input = extractValidationInput(request);
     const validation = await this.validateFeasibility(input);
     
     return {
@@ -694,7 +442,7 @@ ${validation.infeasibleRequirements.map((req) =>
   }
 
   private async handleCrossValidation(request: TaskRequest): Promise<TaskResponse> {
-    const input = this.extractCrossValidationInput(request);
+    const input = extractValidationInput(request);
     const validation = await this.performCrossValidation(input);
     
     return {
@@ -732,7 +480,7 @@ ${validation.alignmentGaps.map((gap) =>
   }
 
   private async handleGenericValidation(request: TaskRequest): Promise<TaskResponse> {
-    const input = this.extractGenericInput(request);
+    const input = extractValidationInput(request);
     const validation = await this.performGenericValidation(input);
     
     return {
@@ -792,219 +540,6 @@ ${validation.alignmentGaps.map((gap) =>
     }
     
     return 'generic-validation';
-  }
-
-  private extractRequirementsInput(request: TaskRequest): ValidationInput {
-    return this.extractValidationInput(request);
-  }
-
-  private extractStoriesInput(request: TaskRequest): ValidationInput {
-    return this.extractValidationInput(request);
-  }
-
-  private extractSpecificationInput(request: TaskRequest): ValidationInput {
-    return this.extractValidationInput(request);
-  }
-
-  private extractTraceabilityInput(request: TaskRequest): ValidationInput {
-    return this.extractValidationInput(request);
-  }
-
-  private extractCompletenessInput(request: TaskRequest): ValidationInput {
-    return this.extractValidationInput(request);
-  }
-
-  private extractConsistencyInput(request: TaskRequest): ValidationInput {
-    return this.extractValidationInput(request);
-  }
-
-  private extractFeasibilityInput(request: TaskRequest): ValidationInput {
-    return this.extractValidationInput(request);
-  }
-
-  private extractCrossValidationInput(request: TaskRequest): ValidationInput {
-    return this.extractValidationInput(request);
-  }
-
-  private extractGenericInput(request: TaskRequest): ValidationInput {
-    return this.extractValidationInput(request);
-  }
-
-  private extractValidationInput(request: TaskRequest): ValidationInput {
-    const requestedSources = this.collectRequestedSources(request);
-    const resolved = this.resolveValidationSources(requestedSources);
-    if (resolved.requestedSources.length > 0 && resolved.resolvedSources.length === 0) {
-      throw new Error(`No readable validation sources found. Requested: ${resolved.requestedSources.join(', ')}`);
-    }
-    return {
-      ...resolved,
-      strict: Boolean(request.context?.strict),
-    };
-  }
-
-  private collectRequestedSources(request: TaskRequest): string[] {
-    const contextSources = request.context?.sources;
-    if (Array.isArray(contextSources)) {
-      return contextSources
-        .filter((value): value is string => typeof value === 'string')
-        .map((value) => value.trim())
-        .filter(Boolean);
-    }
-    if (typeof contextSources === 'string') {
-      return this.parseSourceTokens(contextSources);
-    }
-
-    const prompt = (request.prompt || '').trim();
-    if (!prompt || prompt.toLowerCase() === 'validate available artifacts') {
-      return [];
-    }
-    return this.parseSourceTokens(prompt);
-  }
-
-  private parseSourceTokens(value: string): string[] {
-    return value
-      .split(/[\n,]/)
-      .map((item) => item.trim())
-      .filter(Boolean);
-  }
-
-  private resolveValidationSources(requestedSources: string[]): Omit<ValidationInput, 'strict'> {
-    const resolvedSources: ValidationSourceItem[] = [];
-    const missingSources: string[] = [];
-    const seen = new Set<string>();
-    const cwd = process.cwd();
-
-    for (const source of requestedSources) {
-      const abs = path.resolve(cwd, source);
-      if (fs.existsSync(abs)) {
-        const stat = fs.statSync(abs);
-        if (stat.isFile()) {
-          const content = this.tryReadFile(abs);
-          if (content === null) {
-            missingSources.push(source);
-            continue;
-          }
-          const key = path.normalize(abs);
-          if (seen.has(key)) {
-            continue;
-          }
-          seen.add(key);
-          resolvedSources.push({ path: source, content });
-          continue;
-        }
-
-        if (stat.isDirectory()) {
-          const files = this.collectReadableFiles(abs);
-          if (files.length === 0) {
-            missingSources.push(source);
-            continue;
-          }
-          for (const file of files) {
-            const key = path.normalize(file);
-            if (seen.has(key)) {
-              continue;
-            }
-            seen.add(key);
-            const content = this.tryReadFile(file);
-            if (content === null) {
-              continue;
-            }
-            resolvedSources.push({ path: path.relative(cwd, file), content });
-            if (resolvedSources.length >= this.sourceFileLimit) {
-              break;
-            }
-          }
-        }
-      } else if (/\s/.test(source)) {
-        resolvedSources.push({ path: `inline:${source.slice(0, 40)}`, content: source });
-      } else {
-        missingSources.push(source);
-      }
-
-      if (resolvedSources.length >= this.sourceFileLimit) {
-        break;
-      }
-    }
-
-    return {
-      requestedSources,
-      resolvedSources,
-      missingSources,
-    };
-  }
-
-  private collectReadableFiles(root: string): string[] {
-    const supportedExt = new Set([
-      '.md',
-      '.txt',
-      '.yaml',
-      '.yml',
-      '.json',
-      '.feature',
-      '.adoc',
-      '.rst',
-      '.spec',
-    ]);
-    const stack: string[] = [root];
-    const files: string[] = [];
-    while (stack.length > 0 && files.length < this.sourceFileLimit) {
-      const current = stack.pop();
-      if (!current) {
-        continue;
-      }
-      let entries: fs.Dirent[] = [];
-      try {
-        entries = fs.readdirSync(current, { withFileTypes: true });
-      } catch {
-        continue;
-      }
-      entries.sort((a, b) => a.name.localeCompare(b.name));
-      for (const entry of entries) {
-        const abs = path.join(current, entry.name);
-        if (entry.isDirectory()) {
-          stack.push(abs);
-          continue;
-        }
-        if (!entry.isFile()) {
-          continue;
-        }
-        const ext = path.extname(entry.name).toLowerCase();
-        if (supportedExt.has(ext) || entry.name.toLowerCase().includes('requirement')) {
-          files.push(abs);
-          if (files.length >= this.sourceFileLimit) {
-            break;
-          }
-        }
-      }
-    }
-    return files;
-  }
-
-  private tryReadFile(filePath: string): string | null {
-    try {
-      const stat = fs.statSync(filePath);
-      if (!stat.isFile() || stat.size > 1024 * 1024) {
-        return null;
-      }
-      return fs.readFileSync(filePath, 'utf8');
-    } catch {
-      return null;
-    }
-  }
-
-  private formatSourceSummary(input: ValidationInput): string {
-    const resolvedPreview = input.resolvedSources
-      .slice(0, 5)
-      .map((source) => `- ${source.path}`)
-      .join('\n');
-
-    return `
-## Source Inputs
-- Requested: ${input.requestedSources.length}
-- Resolved: ${input.resolvedSources.length}
-- Missing: ${input.missingSources.length}
-${resolvedPreview ? `- Sample:\n${resolvedPreview}` : ''}
-`.trim();
   }
 
   // Lightweight source-aware heuristics for CLI validation
@@ -1071,7 +606,7 @@ ${resolvedPreview ? `- Sample:\n${resolvedPreview}` : ''}
   }
 
   async validateUserStories(input: unknown): Promise<UserStoriesValidationResult> {
-    const normalizedInput = this.toValidationInput(input);
+    const normalizedInput = toValidationInput(input);
     const text = this.collectSourceText(normalizedInput);
     const blocks = text
       .split(/\n{2,}/)
@@ -1150,7 +685,7 @@ ${resolvedPreview ? `- Sample:\n${resolvedPreview}` : ''}
   }
 
   private async validateTraceability(input: ValidationInput): Promise<TraceabilityValidationResult> {
-    const matrixRows = this.extractTraceabilityMatrixRows(input);
+    const matrixRows = extractTraceabilityMatrixRows(input);
     if (matrixRows.length > 0) {
       const linkedRows = matrixRows.filter((row) => row.linked);
       const coveragePercentage = matrixRows.length > 0
@@ -1216,57 +751,6 @@ ${resolvedPreview ? `- Sample:\n${resolvedPreview}` : ''}
     };
   }
 
-  private extractTraceabilityMatrixRows(input: ValidationInput): Array<{
-    requirementId: string;
-    tests: string[];
-    code: string[];
-    linked: boolean;
-  }> {
-    const rows: Array<{ requirementId: string; tests: string[]; code: string[]; linked: boolean }> = [];
-    for (const source of input.resolvedSources) {
-      let parsed: unknown;
-      try {
-        parsed = JSON.parse(source.content);
-      } catch {
-        continue;
-      }
-      if (!parsed || typeof parsed !== 'object') {
-        continue;
-      }
-      const schemaVersion = (parsed as { schemaVersion?: unknown }).schemaVersion;
-      if (schemaVersion !== 'issue-traceability-matrix/v1') {
-        continue;
-      }
-      const candidateRows = (parsed as { rows?: unknown }).rows;
-      if (!Array.isArray(candidateRows)) {
-        continue;
-      }
-      for (const row of candidateRows) {
-        if (!row || typeof row !== 'object') {
-          continue;
-        }
-        const requirementId = (row as { requirementId?: unknown }).requirementId;
-        if (typeof requirementId !== 'string' || requirementId.trim().length === 0) {
-          continue;
-        }
-        const tests = Array.isArray((row as { tests?: unknown }).tests)
-          ? ((row as { tests: unknown[] }).tests.filter((value): value is string => typeof value === 'string'))
-          : [];
-        const code = Array.isArray((row as { code?: unknown }).code)
-          ? ((row as { code: unknown[] }).code.filter((value): value is string => typeof value === 'string'))
-          : [];
-        const linked = tests.length > 0 && code.length > 0;
-        rows.push({
-          requirementId: requirementId.trim(),
-          tests,
-          code,
-          linked,
-        });
-      }
-    }
-    return rows;
-  }
-
   private async validateCompleteness(input: ValidationInput): Promise<CompletenessValidationResult> {
     const text = this.collectSourceText(input);
     const categories = [
@@ -1308,86 +792,6 @@ ${resolvedPreview ? `- Sample:\n${resolvedPreview}` : ''}
 
   private collectSourceText(input: ValidationInput): string {
     return input.resolvedSources.map((source) => source.content).join('\n');
-  }
-
-  private toValidationInput(input: unknown): ValidationInput {
-    if (input && typeof input === 'object') {
-      const candidate = input as Record<string, unknown>;
-      const requestedSources = candidate['requestedSources'];
-      const resolvedSources = candidate['resolvedSources'];
-      const missingSources = candidate['missingSources'];
-      if (
-        Array.isArray(requestedSources) &&
-        Array.isArray(resolvedSources) &&
-        Array.isArray(missingSources)
-      ) {
-        const validRequestedSources = requestedSources.filter(
-          (value): value is string => typeof value === 'string',
-        );
-        const validResolvedSources = resolvedSources.filter(
-          (value): value is ValidationSourceItem => this.isValidationSourceItem(value),
-        );
-        const validMissingSources = missingSources.filter(
-          (value): value is string => typeof value === 'string',
-        );
-
-        const invalidRequestedCount = requestedSources.length - validRequestedSources.length;
-        const invalidResolvedCount = resolvedSources.length - validResolvedSources.length;
-        const invalidMissingCount = missingSources.length - validMissingSources.length;
-
-        if (invalidRequestedCount > 0 || invalidResolvedCount > 0 || invalidMissingCount > 0) {
-          console.warn('[ValidationTaskAdapter] Ignored invalid source entries in validation input.', {
-            invalidRequestedCount,
-            invalidResolvedCount,
-            invalidMissingCount,
-          });
-        }
-
-        return {
-          requestedSources: validRequestedSources,
-          resolvedSources: validResolvedSources,
-          missingSources: validMissingSources,
-          strict: Boolean(candidate['strict']),
-        };
-      }
-    }
-    if (typeof input === 'string') {
-      return {
-        requestedSources: ['inline'],
-        resolvedSources: [{ path: 'inline', content: input }],
-        missingSources: [],
-        strict: false,
-      };
-    }
-    if (input && typeof input === 'object') {
-      return {
-        requestedSources: [],
-        resolvedSources: [{ path: 'inline:object', content: JSON.stringify(input, null, 2) }],
-        missingSources: [],
-        strict: false,
-      };
-    }
-    return {
-      requestedSources: [],
-      resolvedSources: [],
-      missingSources: [],
-      strict: false,
-    };
-  }
-
-  private isValidationSourceItem(value: unknown): value is ValidationSourceItem {
-    if (!value || typeof value !== 'object') {
-      return false;
-    }
-    const candidate = value as Record<string, unknown>;
-    const pathValue = candidate['path'];
-    const contentValue = candidate['content'];
-    return (
-      typeof pathValue === 'string' &&
-      pathValue.trim().length > 0 &&
-      typeof contentValue === 'string' &&
-      contentValue.trim().length > 0
-    );
   }
 
   private keywordCoverage(text: string, keywords: string[], baseline: number): number {
