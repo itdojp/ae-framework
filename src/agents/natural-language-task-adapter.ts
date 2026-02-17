@@ -502,7 +502,7 @@ ${gaps.map(g => `• ${g.suggestedRequirement}`).join('\n')}
       return conflicts;
     }
     
-    // TODO: Implement more sophisticated conflict detection logic.
+    // TODO(#2031): Implement more sophisticated conflict detection logic.
     // This basic implementation flags requirements with identical content but different types or priorities.
     for (let i = 0; i < requirements.length; i++) {
       for (let j = i + 1; j < requirements.length; j++) {

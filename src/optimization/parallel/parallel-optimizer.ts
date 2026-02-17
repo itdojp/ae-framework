@@ -444,12 +444,12 @@ export class ParallelOptimizer extends EventEmitter {
     const workerId = `worker-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     
     // Demo implementation: simulates worker behavior with mock object
-    // TODO: In production, replace with actual Worker threads or process pools
+    // TODO(#2031): In production, replace with actual Worker threads or process pools
     // Example: new Worker(workerScript, { workerData: config })
     const mockWorker = {
       postMessage: (message: any) => {
         // Demo simulation: uses setTimeout to mimic async worker execution
-        // TODO: Replace with actual worker communication protocol
+        // TODO(#2031): Replace with actual worker communication protocol
         setTimeout(() => {
           this.handleWorkerMessage(workerId, {
             type: 'task_completed',

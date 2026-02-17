@@ -649,7 +649,7 @@ export class PerformanceMonitor extends EventEmitter {
 
   private getActiveConnections(): number {
     // Demo placeholder: returns simulated connection count
-    // TODO: Implement actual connection tracking in production
+    // TODO(#2031): Implement actual connection tracking in production
     const simulatedCount = Math.floor(Math.random() * 100);
     console.debug(`[Demo] Simulated active connections: ${simulatedCount}`);
     return simulatedCount;
@@ -657,7 +657,7 @@ export class PerformanceMonitor extends EventEmitter {
 
   private getQueueSize(): number {
     // Demo placeholder: returns simulated queue size
-    // TODO: Implement actual queue size tracking in production
+    // TODO(#2031): Implement actual queue size tracking in production
     const simulatedSize = Math.floor(Math.random() * 50);
     console.debug(`[Demo] Simulated queue size: ${simulatedSize}`);
     return simulatedSize;
@@ -665,7 +665,7 @@ export class PerformanceMonitor extends EventEmitter {
 
   private getCacheHitRate(): number {
     // Demo placeholder: returns simulated cache hit rate
-    // TODO: Implement actual cache hit rate tracking in production
+    // TODO(#2031): Implement actual cache hit rate tracking in production
     const simulatedRate = 85 + Math.random() * 10;
     console.debug(`[Demo] Simulated cache hit rate: ${simulatedRate.toFixed(1)}%`);
     return simulatedRate;
