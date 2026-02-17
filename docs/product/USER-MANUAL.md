@@ -23,16 +23,22 @@ This manual explains setup, common workflows, and operational commands for ae-fr
 ## 2. 前提条件（根拠）
 - Node.js: `>=20.11 <23`（`package.json` の `engines.node`）
 - pnpm: `10.0.0`（`package.json` の `packageManager`）
+- `npm install` は `preinstall` ガードで失敗させる仕様（pnpm workspace 前提）
 - GitHub Actions 利用可能なリポジトリ
 - `verify:lite` をそのまま利用する場合は JS/TS ツールチェーン前提（`pnpm types:check`, `pnpm lint`, `pnpm run build`。CI の Verify Lite ワークフローではこれに加えて `vitest` が実行されます）
 - 非JS/TSプロダクトは `verify:formal` / `verify:conformance` を先行導入し、lint/test/build は対象言語向けジョブを別途定義
+- Windows は PowerShell でも実行可能ですが、ツール互換性で問題が出る場合は WSL2 を推奨
 
 ## 3. セットアップ
 
 ### 3.1 依存関係の導入
 ```bash
+corepack enable
+corepack prepare pnpm@10.0.0 --activate
 pnpm install
 ```
+
+`npm install` を実行した場合は、pnpm へ移行するためのエラーメッセージを表示して即時終了します（exit 1）。
 
 ### 3.2 開発フックの導入
 ```bash
