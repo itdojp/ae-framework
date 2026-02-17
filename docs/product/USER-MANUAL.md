@@ -40,12 +40,22 @@ pnpm install
 
 `npm install` を実行した場合は、pnpm へ移行するためのエラーメッセージを表示して即時終了します（exit 1）。
 
-### 3.2 開発フックの導入
+### 3.2 環境診断（推奨）
+```bash
+pnpm run doctor:env
+```
+
+診断結果は `artifacts/doctor/env.json` に保存されます。終了コード契約:
+- `0`: 必須チェックすべてOK
+- `2`: 警告あり（例: `dist/` 未生成、corepack未検出）
+- `1`: 要修正（例: Node.js範囲外、pnpm未導入）
+
+### 3.3 開発フックの導入
 ```bash
 pnpm run setup-hooks
 ```
 
-### 3.3 最小検証
+### 3.4 最小検証
 ```bash
 pnpm run lint
 pnpm run test:fast
