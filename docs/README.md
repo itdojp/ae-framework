@@ -27,6 +27,11 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - Codex boundary + Verify-first strategy: `strategy/CODEX-AE-BOUNDARY-VERIFY-FIRST.md`
 - Plan -> Spec normalization template: `templates/plan-to-spec-normalization-template.md`
 
+### Maintenance
+- Repository layout policy: `maintenance/repo-layout-policy.md`
+- Code improvement plan: `maintenance/code-improvement-plan.md`
+- Phase 0 inventory snapshot: `maintenance/phase0-inventory-2026-02-17.md`
+
 ### Positioning maps (concept / flow / use cases)
 - Concept & system diagrams: `architecture/ARCHITECTURE.md`
 - Reference flow (Web API + DB): `reference/REFERENCE-FLOW-WEB-API-DB.md`
@@ -222,6 +227,11 @@ Claude CodeやMCPとの統合
 - [formal-ops-guidelines.md](./quality/formal-ops-guidelines.md) - 運用パターン/命名/証跡/CI分割の指針
 - [formal-tools-setup.md](./quality/formal-tools-setup.md) - ローカル環境セットアップ（Apalache/TLC/Z3/cvc5）
 - [formal-mini-flow.md](./quality/formal-mini-flow.md) - 反例→失敗テスト→修正→緑の最小フロー
+
+### 🛠️ [maintenance/](./maintenance/) - リポジトリ整理・改善計画
+- [repo-layout-policy.md](./maintenance/repo-layout-policy.md) - ルート配置ルールと生成物配置方針
+- [code-improvement-plan.md](./maintenance/code-improvement-plan.md) - 型安全性/分割/テスト改善の実行計画
+- [phase0-inventory-2026-02-17.md](./maintenance/phase0-inventory-2026-02-17.md) - Phase 0棚卸しスナップショット
 
 ### 🧠 現行実装ベース全体像（推奨）
 - **[architecture/CURRENT-SYSTEM-OVERVIEW.md](./architecture/CURRENT-SYSTEM-OVERVIEW.md)** - 2026-02 時点の全体構成（CLI/CI/Formal/Artifacts）
