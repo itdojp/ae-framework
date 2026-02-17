@@ -620,8 +620,7 @@ export class TestGenerationAgent {
     }));
   }
 
-  private generateE2ETests(architecture: IntegrationArchitecture): IntegrationPlannedTest[] {
-    void architecture;
+  private generateE2ETests(_architecture: IntegrationArchitecture): IntegrationPlannedTest[] {
     return [
       {
         name: 'End-to-end flow test',
@@ -704,8 +703,7 @@ export class TestGenerationAgent {
     };
   }
 
-  private generateFuzzingTest(endpoint: SecurityEndpoint): TestCase {
-    void endpoint;
+  private generateFuzzingTest(_endpoint: SecurityEndpoint): TestCase {
     return {
       name: 'Fuzzing Test',
       type: 'unit',
