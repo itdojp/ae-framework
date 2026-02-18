@@ -843,6 +843,9 @@ try {
   program.parse(normalizeProgramArgv(process.argv));
 } catch (error: unknown) {
   if (error instanceof CommanderError) {
+    if (error.code === 'commander.helpDisplayed' || error.code === 'commander.version') {
+      safeExit(0);
+    }
     const invalidArgumentCodes = new Set([
       'commander.unknownCommand',
       'commander.unknownOption',

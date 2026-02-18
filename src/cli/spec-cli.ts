@@ -50,7 +50,6 @@ interface SpecCommandErrorPayload {
   code: 'SPEC_INVALID_INPUT' | 'SPEC_INTERNAL_ERROR';
   message: string;
   details: {
-    command: 'lint' | 'validate';
     input?: string;
   };
   ts: string;
@@ -67,16 +66,36 @@ const normalizeSpecOutputFormat = (rawFormat: string | undefined): SpecOutputFor
 
 const detectFormatHint = (rawFormat: string | undefined): SpecOutputFormat => {
   const normalized = (rawFormat ?? 'text').toLowerCase();
-  return normalized === 'json' ? 'json' : 'text';
+  return normalized === 'text' ? 'text' : 'json';
+};
+
+const isErrnoException = (error: unknown): error is NodeJS.ErrnoException => {
+  return (
+    typeof error === 'object'
+    && error !== null
+    && 'code' in error
+    && typeof (error as { code?: unknown }).code === 'string'
+  );
 };
 
 const isSpecInvalidInputError = (error: unknown): boolean => {
+  if (isErrnoException(error)) {
+    const code = error.code;
+    if (code === 'ENOENT' || code === 'EISDIR') {
+      return true;
+    }
+  }
+
   const message = toMessage(error).toLowerCase();
   return message.includes('unsupported --format')
     || message.includes('enoent')
     || message.includes('no such file')
     || message.includes('eisdir')
-    || message.includes('unexpected token');
+    || message.includes('unexpected token')
+    || message.includes('expected')
+    || message.includes(' in json')
+    || message.includes('json at position')
+    || message.includes('non-whitespace character');
 };
 
 const emitSpecCommandError = (params: {
@@ -90,8 +109,7 @@ const emitSpecCommandError = (params: {
   const exitCode = invalidInput ? 2 : 1;
 
   if (params.format === 'json') {
-    const details: { command: 'lint' | 'validate'; input?: string } = {
-      command: params.command,
+    const details: { input?: string } = {
       ...(params.input !== undefined ? { input: params.input } : {}),
     };
     const payload: SpecCommandErrorPayload = {

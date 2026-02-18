@@ -201,7 +201,6 @@ pnpm run ae-framework -- sbom --help
   "code": "SPEC_INVALID_INPUT",
   "message": "ENOENT: no such file or directory, open 'spec/does-not-exist.json'",
   "details": {
-    "command": "lint",
     "input": "spec/does-not-exist.json"
   },
   "ts": "2026-02-18T00:00:00.000Z",

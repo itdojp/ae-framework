@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
-import { resolve } from 'node:path';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 
 const tsxBin = resolve('node_modules/.bin/tsx');
 
@@ -17,11 +19,16 @@ const runCli = (args: string[]) =>
   });
 
 const parseJsonFromStdout = (stdout: string) => {
-  const start = stdout.indexOf('{');
-  if (start < 0) {
-    throw new Error(`JSON payload not found in stdout: ${stdout}`);
+  let start = stdout.indexOf('{');
+  while (start >= 0) {
+    const candidate = stdout.slice(start).trim();
+    try {
+      return JSON.parse(candidate);
+    } catch {
+      start = stdout.indexOf('{', start + 1);
+    }
   }
-  return JSON.parse(stdout.slice(start).trim());
+  throw new Error(`JSON payload not found in stdout: ${stdout}`);
 };
 
 describe('CLI contract (help / invalid input / json error)', () => {
@@ -58,10 +65,57 @@ describe('CLI contract (help / invalid input / json error)', () => {
     );
     expect(payload.details).toEqual(
       expect.objectContaining({
-        command: 'lint',
         input: 'spec/does-not-exist.json',
       }),
     );
     expect(typeof payload.ts).toBe('string');
+  });
+
+  it('classifies malformed JSON input as invalid input', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'ae-cli-contract-'));
+    try {
+      const malformedPath = join(dir, 'malformed.json');
+      writeFileSync(malformedPath, '{ invalid json', 'utf8');
+      const result = runCli([
+        'spec',
+        'lint',
+        '--input',
+        malformedPath,
+        '--format',
+        'json',
+      ]);
+      expect(result.status).toBe(2);
+      const payload = parseJsonFromStdout(result.stdout);
+      expect(payload).toEqual(
+        expect.objectContaining({
+          error: true,
+          code: 'SPEC_INVALID_INPUT',
+          command: 'lint',
+        }),
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('emits parseable error JSON when an unknown --format is provided', () => {
+    const result = runCli([
+      'spec',
+      'lint',
+      '--input',
+      'spec/does-not-exist.json',
+      '--format',
+      'xml',
+    ]);
+
+    expect(result.status).toBe(2);
+    const payload = parseJsonFromStdout(result.stdout);
+    expect(payload).toEqual(
+      expect.objectContaining({
+        error: true,
+        code: 'SPEC_INVALID_INPUT',
+        command: 'lint',
+      }),
+    );
   });
 });
