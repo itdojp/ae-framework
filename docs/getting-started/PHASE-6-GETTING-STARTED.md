@@ -20,7 +20,8 @@ pnpm run codex:quickstart
 > Metrics and transcript blocks in this document are example outputs unless explicitly noted as measured results.
 >
 > Current enforcement status (as of 2026-02-18):
-> - a11y/perf/lighthouse are **report-only by default** and become blocking only with labels (`enforce-a11y`, `enforce-perf`, `enforce-lh`) in `.github/workflows/adapter-thresholds.yml`.
+> - Adapter threshold jobs in `.github/workflows/adapter-thresholds.yml` run only when the PR has the `run-adapters` label.
+> - Within `run-adapters` runs, a11y/perf/lighthouse are **report-only by default** and become blocking only with labels (`enforce-a11y`, `enforce-perf`, `enforce-lh`).
 > - Coverage is validated by dedicated workflows (for example `coverage-check.yml`) and policy may differ by workflow/label.
 > - See `docs/quality/adapter-thresholds.md` for the exact gate behavior.
 
@@ -449,7 +450,8 @@ pnpm run codex:quickstart
 > この文書中のメトリクス/ログは、明示がない限り実行例です（実測値の保証ではありません）。
 >
 > 現行の強制ポリシー（2026-02-18時点）:
-> - a11y/perf/lighthouse は既定で **report-only** であり、`.github/workflows/adapter-thresholds.yml` のラベル（`enforce-a11y`/`enforce-perf`/`enforce-lh`）付与時のみブロッキングになります。
+> - `.github/workflows/adapter-thresholds.yml` のアダプタしきい値ジョブは、PRに `run-adapters` ラベルがある場合のみ実行されます。
+> - `run-adapters` 実行時、a11y/perf/lighthouse は既定で **report-only** であり、ラベル（`enforce-a11y`/`enforce-perf`/`enforce-lh`）付与時のみブロッキングになります。
 > - Coverage は専用workflow（例: `coverage-check.yml`）側で判定され、workflow/ラベルにより挙動が変わります。
 > - 詳細は `docs/quality/adapter-thresholds.md` を参照してください。
 

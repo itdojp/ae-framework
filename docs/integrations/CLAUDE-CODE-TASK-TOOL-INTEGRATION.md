@@ -22,7 +22,8 @@ pnpm run codex:quickstart
 > Output transcripts and quality metrics in this document are examples unless explicitly marked as measured in CI artifacts.
 >
 > Enforcement status (2026-02-18):
-> - a11y/perf/lighthouse are report-only by default and enforced only when PR labels (`enforce-a11y`, `enforce-perf`, `enforce-lh`) are set.
+> - Adapter thresholds run only when the PR has the `run-adapters` label.
+> - Within `run-adapters` runs, a11y/perf/lighthouse are report-only by default and enforced only when PR labels (`enforce-a11y`, `enforce-perf`, `enforce-lh`) are set.
 > - Coverage enforcement is handled by dedicated coverage workflows/policies.
 > - See `docs/quality/adapter-thresholds.md` for the authoritative gate behavior.
 
@@ -612,6 +613,7 @@ AE Framework (Task Adapters)
 - ✅ Phase 6 UI scaffold コマンドとテンプレート群を利用可能
 - ✅ verify-lite / CI ワークフローによる品質検証フローを利用可能
 - ✅ Runtime conformance / formal tools 連携はオプション経路として利用可能
+- ℹ️ アダプタしきい値は PR に `run-adapters` ラベルがある場合のみ実行されます（その実行内で `enforce-*` ラベルによりブロッキング化）。
 - ℹ️ 本文中の性能値は例示であり、固定保証値ではありません
 
 ---

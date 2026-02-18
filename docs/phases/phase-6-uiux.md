@@ -8,7 +8,7 @@
 
 Phase 6 turns user stories and domain models into production‑ready UI/UX via automated scaffolding, design system integration, a11y/perf quality gates, and telemetry. Inputs: Phase 3/5 outputs. Outputs: components, tokens, state architecture, and reports.
 
-> Status note (2026-02-18): a11y/perf/lighthouse thresholds are report-only by default and become blocking only with enforce labels in `.github/workflows/adapter-thresholds.yml`. Treat threshold values in this document as targets unless explicitly tied to a specific workflow policy.
+> Status note (2026-02-18): adapter thresholds in `.github/workflows/adapter-thresholds.yml` run only when the PR includes `run-adapters`. Within those runs, a11y/perf/lighthouse are report-only by default and become blocking only with `enforce-*` labels. Treat threshold values in this document as targets unless explicitly tied to a specific workflow policy.
 
 ## English (Detailed)
 
@@ -74,7 +74,7 @@ lhci autorun --upload.target=temporary-public-storage
 
 Phase 6は、Phase 3（ユーザーストーリー）とPhase 5（ドメインモデル）の成果を受けて、**実用的なUI/UXを自動生成・検証・承認**するフェーズです。
 
-> 現行ステータス（2026-02-18）: a11y/perf/lighthouse は `.github/workflows/adapter-thresholds.yml` で既定 report-only、enforce ラベル付与時のみブロッキングです。本書のしきい値は、個別workflowで明示しない限り目標値として扱ってください。
+> 現行ステータス（2026-02-18）: `.github/workflows/adapter-thresholds.yml` のアダプタしきい値は PR に `run-adapters` ラベルがある場合のみ実行されます。実行時は a11y/perf/lighthouse が既定 report-only で、`enforce-*` ラベル付与時のみブロッキングです。本書のしきい値は、個別workflowで明示しない限り目標値として扱ってください。
 
 Design Systems統合、アクセシビリティ確保、パフォーマンス最適化、品質ゲートを通じて、**Production Ready**なフロントエンド成果物を提供します。
 
