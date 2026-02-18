@@ -21,6 +21,7 @@ const STEP_PLAN = [
     label: 'doctor:env',
     command: 'pnpm run doctor:env',
     required: true,
+    allowedExitCodes: [0, 2],
   },
   {
     id: 'build',
@@ -36,11 +37,11 @@ const STEP_PLAN = [
   },
 ];
 
-function shellEscape(value) {
-  return `'${String(value).replace(/'/g, '\'\"\'\"\'' )}'`;
+export function shellEscape(value) {
+  return `'${String(value).replace(/'/g, '\'\\\'\'')}'`;
 }
 
-function parseArgs(argv = process.argv) {
+export function parseArgs(argv = process.argv) {
   const options = {
     outputDir: 'artifacts/first-run',
     json: false,
@@ -133,9 +134,23 @@ function suggestNextActions(failedStepId) {
       'lint/type/build 失敗箇所を修正後、pnpm run first-run を再実行してください。',
     ];
   }
+  if (!failedStepId) {
+    return [
+      'pnpm run setup-hooks で Git hooks を有効化してください。',
+      'docs/integrations/QUICK-START-CODEX.md を参照し、必要に応じて pnpm run codex:quickstart を実行してください。',
+      'PR作業前に pnpm run verify:lite を再実行し、最新状態を確認してください。',
+    ];
+  }
   return [
     'pnpm run first-run を再実行して、失敗ステップのログを確認してください。',
   ];
+}
+
+function normalizeArtifactPath(pathValue, rootDir) {
+  if (!pathValue) {
+    return '';
+  }
+  return path.relative(rootDir, path.resolve(rootDir, pathValue));
 }
 
 function renderMarkdownSummary(summary) {
@@ -197,9 +212,13 @@ export function runFirstRun(options, deps = {}) {
   const steps = [];
   let failedStepId = null;
   for (const step of STEP_PLAN) {
-    const result = executeStep(step, { cwd, env, outputDir });
+    const rawResult = executeStep(step, { cwd, env, outputDir });
+    const allowedExitCodes = step.allowedExitCodes ?? [0];
+    const stepSucceeded = allowedExitCodes.includes(rawResult.exitCode);
+    const status = rawResult.exitCode === 0 ? 'passed' : (stepSucceeded ? 'warn' : 'failed');
+    const result = { ...rawResult, status };
     steps.push(result);
-    if (result.exitCode !== 0 && step.required) {
+    if (!stepSucceeded && step.required) {
       failedStepId = step.id;
       break;
     }
@@ -216,7 +235,7 @@ export function runFirstRun(options, deps = {}) {
     keyArtifacts: [
       { label: 'doctor report', path: 'artifacts/doctor/env.json' },
       { label: 'verify-lite summary', path: 'artifacts/verify-lite/verify-lite-run-summary.json' },
-      { label: 'first-run summary', path: path.join(options.outputDir, 'summary.json') },
+      { label: 'first-run summary', path: normalizeArtifactPath(path.join(options.outputDir, 'summary.json'), cwd) },
     ],
     nextActions: suggestNextActions(failedStepId),
   };
