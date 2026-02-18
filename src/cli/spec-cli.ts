@@ -582,17 +582,18 @@ export function createSpecCommand(): Command {
           // Compile (lenient for intermediate)
           const prevRelaxed = process.env['AE_SPEC_RELAXED'];
           process.env['AE_SPEC_RELAXED'] = '1';
-          let lint: SpecLintReport;
-          try {
-            const ir = await compiler.compile({ inputPath: resolve(iterPath), validate: false });
-            lint = await compiler.lint(ir);
-          } finally {
-            if (prevRelaxed === undefined) {
-              delete process.env['AE_SPEC_RELAXED'];
-            } else {
-              process.env['AE_SPEC_RELAXED'] = prevRelaxed;
+          const lint: SpecLintReport = await (async () => {
+            try {
+              const ir = await compiler.compile({ inputPath: resolve(iterPath), validate: false });
+              return await compiler.lint(ir);
+            } finally {
+              if (prevRelaxed === undefined) {
+                delete process.env['AE_SPEC_RELAXED'];
+              } else {
+                process.env['AE_SPEC_RELAXED'] = prevRelaxed;
+              }
             }
-          }
+          })();
           lastIssues = lint.issues.slice(0, 10).map(i => `${i.message} [${i.location?.section || 'root'}]`);
           console.log(chalk.blue(`   Lint summary: errors=${lint.summary.errors}, warnings=${lint.summary.warnings}`));
 

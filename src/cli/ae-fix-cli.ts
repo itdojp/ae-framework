@@ -14,7 +14,8 @@ import type { FailureArtifact, FailureArtifactCollection } from '../cegis/failur
 import { validateFailureArtifact, validateFailureArtifactCollection, FailureArtifactFactory } from '../cegis/failure-artifact-schema.js';
 import { AutoFixEngine } from '../cegis/auto-fix-engine.js';
 import type { AutoFixOptions } from '../cegis/auto-fix-engine.js';
-import type { FailureArtifact as EngineFailureArtifact } from '../cegis/types.js';
+import { FailureArtifactSchema as EngineFailureArtifactSchema } from '../cegis/types.js';
+import type { FailureArtifact as EngineFailureArtifact, RepairAction as EngineRepairAction } from '../cegis/types.js';
 import { toMessage } from '../utils/error-utils.js';
 import { safeExit } from '../utils/safe-exit.js';
 
@@ -169,8 +170,158 @@ program
 const toFailureArtifactArray = (artifacts: LoadedFailureArtifacts): FailureArtifact[] =>
   Array.isArray(artifacts) ? artifacts : artifacts.failures;
 
+const SOURCE_TO_ENGINE_CATEGORY: Record<FailureArtifact['category'], EngineFailureArtifact['category']> = {
+  specification_mismatch: 'runtime_error',
+  contract_violation: 'contract_violation',
+  type_error: 'type_error',
+  runtime_error: 'runtime_error',
+  performance_regression: 'performance_issue',
+  security_violation: 'security_violation',
+  quality_gate_failure: 'lint_error',
+  drift_detection: 'dependency_issue',
+  test_failure: 'test_failure',
+};
+
+const SOURCE_TO_ENGINE_ACTION_TYPE: Record<
+  FailureArtifact['suggestedActions'][number]['type'],
+  EngineRepairAction['type']
+> = {
+  code_change: 'code_change',
+  spec_update: 'validation_update',
+  config_change: 'config_change',
+  dependency_update: 'dependency_update',
+  test_update: 'test_update',
+  documentation_update: 'documentation_update',
+};
+
+const toEnginePhase = (phase: FailureArtifact['context']['phase']): EngineFailureArtifact['context']['phase'] => {
+  switch (phase) {
+    case 'intent':
+    case 'formal':
+    case 'test':
+    case 'code':
+    case 'verify':
+    case 'operate':
+      return phase;
+    default:
+      return undefined;
+  }
+};
+
+const toEngineMetrics = (metrics: FailureArtifact['evidence']['metrics']): Record<string, number> => {
+  const normalized: Record<string, number> = {};
+  if (!metrics) {
+    return normalized;
+  }
+  for (const [key, value] of Object.entries(metrics)) {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      normalized[key] = value;
+      continue;
+    }
+    if (typeof value === 'boolean') {
+      normalized[key] = value ? 1 : 0;
+    }
+  }
+  return normalized;
+};
+
+const toRiskLevel = (severity: FailureArtifact['severity']): EngineRepairAction['riskLevel'] => {
+  switch (severity) {
+    case 'critical':
+      return 5;
+    case 'major':
+      return 4;
+    case 'minor':
+      return 2;
+    case 'info':
+    default:
+      return 1;
+  }
+};
+
+const toEngineSuggestedActions = (
+  actions: FailureArtifact['suggestedActions'],
+  severity: FailureArtifact['severity'],
+): EngineFailureArtifact['suggestedActions'] =>
+  actions.map((action) => ({
+    type: SOURCE_TO_ENGINE_ACTION_TYPE[action.type],
+    description: action.description,
+    confidence: action.confidence,
+    riskLevel: toRiskLevel(severity),
+    estimatedEffort: 'medium',
+    ...(action.targetFile ? { filePath: action.targetFile } : {}),
+    dependencies: [],
+    prerequisites: action.prerequisites,
+  }));
+
+const toEngineFailureArtifact = (artifact: FailureArtifact): EngineFailureArtifact => {
+  const filePath = artifact.location?.file ?? 'unknown';
+  const line = artifact.location?.line ?? 1;
+  const phase = toEnginePhase(artifact.context.phase);
+  const converted: EngineFailureArtifact = {
+    id: artifact.id,
+    title: artifact.title,
+    description: artifact.description,
+    severity: artifact.severity,
+    category: SOURCE_TO_ENGINE_CATEGORY[artifact.category],
+    ...(artifact.location
+      ? {
+          location: {
+            filePath,
+            startLine: line,
+            endLine: line,
+            ...(artifact.location.column !== undefined
+              ? { startColumn: artifact.location.column, endColumn: artifact.location.column }
+              : {}),
+            ...(artifact.location.function ? { functionName: artifact.location.function } : {}),
+            ...(artifact.location.module ? { className: artifact.location.module } : {}),
+          },
+        }
+      : {}),
+    context: {
+      environment: artifact.context.environment,
+      timestamp: artifact.context.timestamp,
+      ...(phase ? { phase } : {}),
+      ...(artifact.context.commitHash ? { gitCommit: artifact.context.commitHash } : {}),
+      ...(artifact.context.branch ? { gitBranch: artifact.context.branch } : {}),
+    },
+    evidence: {
+      ...(artifact.evidence.stackTrace ? { stackTrace: artifact.evidence.stackTrace } : {}),
+      errorMessage: artifact.description,
+      errorType: artifact.category,
+      logs: artifact.evidence.logs,
+      metrics: toEngineMetrics(artifact.evidence.metrics),
+      dependencies: [],
+      relatedFiles: artifact.location?.file ? [artifact.location.file] : [],
+    },
+    ...(artifact.rootCause
+      ? {
+          rootCause: {
+            primaryCause: artifact.rootCause.hypothesis,
+            contributingFactors: artifact.rootCause.evidence,
+            confidence: artifact.rootCause.confidence,
+            reasoning: artifact.rootCause.hypothesis,
+            suggestedActions: artifact.rootCause.relatedFailures,
+          },
+        }
+      : {}),
+    suggestedActions: toEngineSuggestedActions(artifact.suggestedActions, artifact.severity),
+    relatedArtifacts: artifact.childFailureIds,
+    metadata: {
+      createdAt: artifact.createdAt,
+      updatedAt: artifact.updatedAt,
+      version: artifact.schemaVersion,
+      tags: artifact.tags,
+      ...(artifact.evidence.environmentInfo ? { environment: artifact.evidence.environmentInfo } : {}),
+      source: 'ae-fix-cli',
+    },
+  };
+
+  return EngineFailureArtifactSchema.parse(converted);
+};
+
 const toEngineFailureArtifactArray = (artifacts: LoadedFailureArtifacts): EngineFailureArtifact[] =>
-  toFailureArtifactArray(artifacts) as unknown as EngineFailureArtifact[];
+  toFailureArtifactArray(artifacts).map(toEngineFailureArtifact);
 
 const hasFailureCollectionShape = (value: unknown): value is { failures: unknown[] } => {
   if (typeof value !== 'object' || value === null || !('failures' in value)) {
