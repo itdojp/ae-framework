@@ -237,9 +237,11 @@ ae domain-model --language --sources "glossary.md"
 # Run quality gates
  ae quality run --env development
  ae quality run --env development --no-history
+ ae quality run --env development --dry-run --format json
 
 # Reconcile (run + auto-fix rounds)
  ae quality reconcile --env development --max-rounds 3 --fix-input .ae/failures.json
+ ae quality reconcile --env development --dry-run --format json
 
 # List / policy / validate / report
  ae quality list --env development --format summary
@@ -555,7 +557,9 @@ ae setup list
 # Quality
 ae quality run --env development
  ae quality run --env development --no-history
+ ae quality run --env development --dry-run --format json
  ae quality reconcile --env development --max-rounds 3 --fix-input .ae/failures.json
+ ae quality reconcile --env development --dry-run --format json
  ae quality list --env development --format summary
  ae quality policy --env development
  ae quality validate

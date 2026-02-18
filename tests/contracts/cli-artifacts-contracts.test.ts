@@ -238,4 +238,65 @@ describe('CLI/Artifacts contract conformance', () => {
       rmSync(tempDir, { recursive: true, force: true });
     }
   });
+
+  it('quality run --format json follows output/exit contract (success/input)', () => {
+    const successResult = runAeCli([
+      'quality',
+      'run',
+      '--format',
+      'json',
+      '--dry-run',
+      '--gates',
+      'linting',
+    ]);
+    expect(successResult.status).toBe(0);
+    const payload = parseJsonFromStdout(successResult.stdout);
+    expect(payload).toEqual(
+      expect.objectContaining({
+        environment: expect.any(String),
+        overallScore: expect.any(Number),
+        totalGates: expect.any(Number),
+        passedGates: expect.any(Number),
+        failedGates: expect.any(Number),
+        results: expect.any(Array),
+        summary: expect.any(Object),
+      }),
+    );
+
+    const invalidFormatResult = runAeCli([
+      'quality',
+      'run',
+      '--format',
+      'xml',
+      '--dry-run',
+    ]);
+    expect(invalidFormatResult.status).toBe(2);
+  });
+
+  it('quality reconcile --format json follows output contract (success)', () => {
+    const result = runAeCli([
+      'quality',
+      'reconcile',
+      '--format',
+      'json',
+      '--dry-run',
+      '--max-rounds',
+      '1',
+      '--gates',
+      'linting',
+    ]);
+    expect(result.status).toBe(0);
+    const payload = parseJsonFromStdout(result.stdout);
+    expect(payload).toEqual(
+      expect.objectContaining({
+        environment: expect.any(String),
+        overallScore: expect.any(Number),
+        totalGates: expect.any(Number),
+        passedGates: expect.any(Number),
+        failedGates: expect.any(Number),
+        results: expect.any(Array),
+        summary: expect.any(Object),
+      }),
+    );
+  });
 });

@@ -214,10 +214,12 @@ pnpm run ae-framework -- sbom --help
 | --- | --- | --- | --- | --- |
 | `ae spec lint --format json` | `0` | `2` (`SPEC_INVALID_INPUT`) | `1` (`SPEC_INTERNAL_ERROR`) | `schema/spec-validation-report.schema.json` |
 | `ae spec validate --format json` | `0` | `2` (`SPEC_INVALID_INPUT`) | `1` (`SPEC_INTERNAL_ERROR`) | `schema/spec-validation-report.schema.json` |
+| `ae quality run --format json` | `0` | `2` (`--format` 不正値) | `1`（blocker失敗/実行エラー） | `QualityReport`（`src/quality/policy-loader.ts`） |
+| `ae quality reconcile --format json` | `0` | `2` (`--format` 不正値) | `1`（blocker残存/実行エラー） | `QualityReport`（`src/quality/policy-loader.ts`） |
 | `pnpm run verify:profile -- --json` | `0` | `2` (unknown profile) / `3` (invalid args) | `1` (summary write failure 等) | `schema/verify-profile-summary.schema.json` |
 
 補足:
-- `ae quality run` は現行実装に `--format json` を持ちません（テキスト出力）。JSON契約が必要な場合は `ae quality report --format json` または `reports/quality-gates/*.json` を利用してください。
+- `ae quality run --format json` / `ae quality reconcile --format json` は、標準出力に `QualityReport` を出力します（デフォルト `text`）。
 - 成果物配置の契約（`artifacts/**`）と root 汚染検知は `docs/quality/ARTIFACTS-CONTRACT.md` と `scripts/ci/check-no-root-generated-files.mjs` を参照してください。
 
 ## 6. エージェント統合

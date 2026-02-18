@@ -39,11 +39,14 @@ export interface QualityGateExecutionOptions {
   verbose?: boolean;
   outputDir?: string;
   noHistory?: boolean;
+  printSummary?: boolean;
+  silent?: boolean;
 }
 
 export class QualityGateRunner {
   private policyLoader: QualityPolicyLoader;
   private results: QualityGateResult[] = [];
+  private silent = false;
 
   constructor(policyLoader?: QualityPolicyLoader) {
     this.policyLoader = policyLoader || new QualityPolicyLoader();
@@ -62,7 +65,10 @@ export class QualityGateRunner {
       verbose = false,
       outputDir = 'reports/quality-gates',
       noHistory = false,
+      printSummary = true,
+      silent = false,
     } = options;
+    this.silent = silent;
 
     const timer = mockTelemetry.createTimer('quality_gates.execution.total', {
       [TELEMETRY_ATTRIBUTES.SERVICE_COMPONENT]: 'quality-gates',
@@ -70,7 +76,7 @@ export class QualityGateRunner {
     });
 
     try {
-      console.log(`🔍 Executing quality gates for environment: ${environment}`);
+      this.log(`🔍 Executing quality gates for environment: ${environment}`);
       
       // Get gates to execute
       const allGateMap = this.policyLoader.getAllGates();
@@ -129,29 +135,29 @@ export class QualityGateRunner {
       }
 
       if (gateRecords.length === 0) {
-        console.log('⚠️  No quality gates found for execution');
+        this.log('⚠️  No quality gates found for execution');
         return this.generateEmptyReport(environment);
       }
 
-      console.log(`📋 Found ${gateRecords.length} quality gates to execute`);
+      this.log(`📋 Found ${gateRecords.length} quality gates to execute`);
       if (verbose) {
         gateRecords.forEach(({ gate, key }) => {
-          console.log(`   • ${gate.name} (${gate.category}) [${key}]`);
+          this.log(`   • ${gate.name} (${gate.category}) [${key}]`);
         });
       }
 
       // Execute gates
       this.results = [];
       if (parallel) {
-        console.log('🚀 Executing gates in parallel...');
+        this.log('🚀 Executing gates in parallel...');
         const promises = gateRecords.map(({ gate, key }) =>
-          this.executeGate(gate, key, environment, { timeout, dryRun, verbose })
+          this.executeGate(gate, key, environment, { timeout, dryRun, verbose, silent })
         );
         this.results = await Promise.all(promises);
       } else {
-        console.log('⏭️  Executing gates sequentially...');
+        this.log('⏭️  Executing gates sequentially...');
         for (const { gate, key } of gateRecords) {
-          const result = await this.executeGate(gate, key, environment, { timeout, dryRun, verbose });
+          const result = await this.executeGate(gate, key, environment, { timeout, dryRun, verbose, silent });
           this.results.push(result);
         }
       }
@@ -195,7 +201,9 @@ export class QualityGateRunner {
       });
 
       // Print summary
-      this.printSummary(report, verbose);
+      if (printSummary) {
+        this.printSummary(report, verbose);
+      }
 
       return report;
 
@@ -213,9 +221,9 @@ export class QualityGateRunner {
     gate: QualityGate,
     gateKey: string,
     environment: string,
-    options: { timeout: number; dryRun: boolean; verbose: boolean }
+    options: { timeout: number; dryRun: boolean; verbose: boolean; silent: boolean }
   ): Promise<QualityGateResult> {
-    const { timeout, dryRun, verbose } = options;
+    const { timeout, dryRun, verbose, silent } = options;
     
     const gateTimer = mockTelemetry.createTimer('quality_gates.gate.execution', {
       [TELEMETRY_ATTRIBUTES.SERVICE_COMPONENT]: 'quality-gate',
@@ -227,15 +235,15 @@ export class QualityGateRunner {
 
     try {
       if (verbose) {
-        console.log(`\n🔍 Executing: ${gate.name}`);
-        console.log(`   Description: ${gate.description}`);
-        console.log(`   Command: ${gate.commands.test}`);
+        this.log(`\n🔍 Executing: ${gate.name}`);
+        this.log(`   Description: ${gate.description}`);
+        this.log(`   Command: ${gate.commands.test}`);
       }
 
       const threshold = this.policyLoader.getThreshold(gateKey, environment);
       
       if (dryRun) {
-        console.log(`   🔄 DRY RUN: Would execute '${gate.commands.test}'`);
+        this.log(`   🔄 DRY RUN: Would execute '${gate.commands.test}'`);
         return {
           gateKey,
           gateName: gate.name,
@@ -251,7 +259,7 @@ export class QualityGateRunner {
 
       // Execute the gate command
       const startTime = Date.now();
-      const result = await this.executeCommand(gate.commands.test, timeout);
+      const result = await this.executeCommand(gate.commands.test, timeout, { silent });
       const executionTime = Date.now() - startTime;
 
       // Parse result based on gate type
@@ -271,12 +279,12 @@ export class QualityGateRunner {
       });
 
       if (verbose) {
-        console.log(`   ${gateResult.passed ? '✅' : '❌'} Result: ${gateResult.passed ? 'PASSED' : 'FAILED'}`);
+        this.log(`   ${gateResult.passed ? '✅' : '❌'} Result: ${gateResult.passed ? 'PASSED' : 'FAILED'}`);
         if (gateResult.score !== undefined) {
-          console.log(`   📊 Score: ${gateResult.score}`);
+          this.log(`   📊 Score: ${gateResult.score}`);
         }
         if (gateResult.violations.length > 0) {
-          console.log(`   ⚠️  Violations: ${gateResult.violations.length}`);
+          this.log(`   ⚠️  Violations: ${gateResult.violations.length}`);
         }
       }
 
@@ -303,7 +311,12 @@ export class QualityGateRunner {
   /**
    * Execute a command with timeout
    */
-  private async executeCommand(command: string, timeout: number): Promise<{ stdout: string; stderr: string; code: number }> {
+  private async executeCommand(
+    command: string,
+    timeout: number,
+    options: { silent?: boolean } = {}
+  ): Promise<{ stdout: string; stderr: string; code: number }> {
+    const { silent = false } = options;
     return new Promise((resolve, reject) => {
       // Check if command needs shell features (pipes, redirects, etc.)
       const needsShell = command.includes('|') || command.includes('>') || command.includes('<') || 
@@ -313,7 +326,7 @@ export class QualityGateRunner {
       
       if (needsShell) {
         // Use shell for complex commands with enhanced security validation
-        this.validateShellCommand(command);
+        this.validateShellCommand(command, { silent });
         process = spawn(command, {
           shell: true,
           stdio: ['pipe', 'pipe', 'pipe'],
@@ -414,7 +427,7 @@ export class QualityGateRunner {
     
     // For non-allowlisted commands, require they don't start with dangerous prefixes
     if (!allowedCommands.includes(executable)) {
-      console.warn(`⚠️ Command '${executable}' is not in the allowlist. Proceeding with caution.`);
+      this.warn(`⚠️ Command '${executable}' is not in the allowlist. Proceeding with caution.`);
       
       // Additional check for suspicious patterns
       if (executable.includes('/') || executable.includes('\\') || executable.startsWith('.')) {
@@ -427,7 +440,8 @@ export class QualityGateRunner {
   /**
    * Validate shell commands for security
    */
-  private validateShellCommand(command: string): void {
+  private validateShellCommand(command: string, options: { silent?: boolean } = {}): void {
+    const { silent = false } = options;
     // Check for obviously dangerous patterns
     const dangerousPatterns = [
       /rm\s+-rf/,           // Dangerous rm commands
@@ -450,7 +464,9 @@ export class QualityGateRunner {
       }
     }
 
-    console.log(`ℹ️ Using shell mode for command: ${command.substring(0, 50)}...`);
+    if (!silent) {
+      this.log(`ℹ️ Using shell mode for command: ${command.substring(0, 50)}...`);
+    }
   }
 
   private pickNumericThresholds(input: Record<string, unknown>): Record<string, number | undefined> {
@@ -711,13 +727,13 @@ export class QualityGateRunner {
         const filepath = path.join(outputDir, filename);
 
         fs.writeFileSync(filepath, JSON.stringify(report, null, 2));
-        console.log(`📝 Quality report saved to: ${filepath}`);
+        this.log(`📝 Quality report saved to: ${filepath}`);
       }
 
       // Also save as latest
       const latestPath = path.join(outputDir, `quality-report-${report.environment}-latest.json`);
       fs.writeFileSync(latestPath, JSON.stringify(report, null, 2));
-      console.log(`📝 Quality report latest updated: ${latestPath}`);
+      this.log(`📝 Quality report latest updated: ${latestPath}`);
 
     } catch (error) {
       console.error('⚠️  Failed to save quality report:', error);
@@ -750,53 +766,65 @@ export class QualityGateRunner {
    * Print execution summary
    */
   private printSummary(report: QualityReport, verbose: boolean): void {
-    console.log('\n' + '='.repeat(60));
-    console.log('📊 QUALITY GATES SUMMARY');
-    console.log('='.repeat(60));
-    console.log(`Environment: ${report.environment}`);
-    console.log(`Overall Score: ${report.overallScore}/100`);
-    console.log(`Gates: ${report.passedGates}/${report.totalGates} passed`);
-    console.log(`Execution Time: ${Math.round(report.summary.executionTime / 1000)}s`);
+    this.log('\n' + '='.repeat(60));
+    this.log('📊 QUALITY GATES SUMMARY');
+    this.log('='.repeat(60));
+    this.log(`Environment: ${report.environment}`);
+    this.log(`Overall Score: ${report.overallScore}/100`);
+    this.log(`Gates: ${report.passedGates}/${report.totalGates} passed`);
+    this.log(`Execution Time: ${Math.round(report.summary.executionTime / 1000)}s`);
 
     if (report.summary.blockers.length > 0) {
-      console.log(`\n🚫 BLOCKERS (${report.summary.blockers.length}):`);
+      this.log(`\n🚫 BLOCKERS (${report.summary.blockers.length}):`);
       report.summary.blockers.forEach(blocker => {
-        console.log(`   • ${blocker}`);
+        this.log(`   • ${blocker}`);
       });
     }
 
     if (report.composites && Object.keys(report.composites).length > 0) {
-      console.log('\n🧩 COMPOSITES:');
+      this.log('\n🧩 COMPOSITES:');
       Object.entries(report.composites).forEach(([name, composite]) => {
         const icon = composite.passed ? '✅' : '❌';
-        console.log(`   ${icon} ${name} (${composite.gates.join(', ')})`);
+        this.log(`   ${icon} ${name} (${composite.gates.join(', ')})`);
         if (!composite.passed && composite.failedGates.length > 0) {
-          console.log(`      Failed: ${composite.failedGates.join(', ')}`);
+          this.log(`      Failed: ${composite.failedGates.join(', ')}`);
         }
       });
     }
 
     if (verbose || report.failedGates > 0) {
-      console.log('\n📋 DETAILED RESULTS:');
+      this.log('\n📋 DETAILED RESULTS:');
       report.results.forEach(result => {
         const icon = result.passed ? '✅' : '❌';
         const score = result.score !== undefined ? ` (${result.score})` : '';
-        console.log(`   ${icon} ${result.gateName}${score}`);
+        this.log(`   ${icon} ${result.gateName}${score}`);
         
         if (!result.passed && result.violations.length > 0) {
           result.violations.forEach(violation => {
-            console.log(`      • ${violation}`);
+            this.log(`      • ${violation}`);
           });
         }
       });
     }
 
-    console.log('='.repeat(60));
+    this.log('='.repeat(60));
     
     if (report.failedGates > 0) {
-      console.log('❌ Some quality gates failed. Review the results above.');
+      this.log('❌ Some quality gates failed. Review the results above.');
     } else {
-      console.log('✅ All quality gates passed!');
+      this.log('✅ All quality gates passed!');
+    }
+  }
+
+  private log(message: string): void {
+    if (!this.silent) {
+      console.log(message);
+    }
+  }
+
+  private warn(message: string): void {
+    if (!this.silent) {
+      console.warn(message);
     }
   }
 }
