@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import Ajv2020 from 'ajv/dist/2020.js';
@@ -160,34 +160,29 @@ describe('CLI/Artifacts contract conformance', () => {
         }),
       );
 
-      const readOnlyDir = join(tempDir, 'readonly');
-      mkdirSync(readOnlyDir);
-      chmodSync(readOnlyDir, 0o555);
-      try {
-        const internalErrorResult = runAeCli([
-          'spec',
-          'validate',
-          '-i',
-          'spec/0_first_valid_spec.md',
-          '--output',
-          join(tempDir, 'internal-ae-ir.json'),
-          '--format',
-          'json',
-          '--report-output',
-          join(readOnlyDir, 'report.json'),
-        ]);
-        expect(internalErrorResult.status).toBe(1);
-        const internalPayload = parseJsonFromStdout(internalErrorResult.stdout);
-        expect(internalPayload).toEqual(
-          expect.objectContaining({
-            error: true,
-            code: 'SPEC_INTERNAL_ERROR',
-            command: 'validate',
-          }),
-        );
-      } finally {
-        chmodSync(readOnlyDir, 0o755);
-      }
+      const notDirectoryPath = join(tempDir, 'not-a-dir');
+      writeFileSync(notDirectoryPath, 'x', 'utf8');
+      const internalErrorResult = runAeCli([
+        'spec',
+        'validate',
+        '-i',
+        'spec/0_first_valid_spec.md',
+        '--output',
+        join(tempDir, 'internal-ae-ir.json'),
+        '--format',
+        'json',
+        '--report-output',
+        join(notDirectoryPath, 'report.json'),
+      ]);
+      expect(internalErrorResult.status).toBe(1);
+      const internalPayload = parseJsonFromStdout(internalErrorResult.stdout);
+      expect(internalPayload).toEqual(
+        expect.objectContaining({
+          error: true,
+          code: 'SPEC_INTERNAL_ERROR',
+          command: 'validate',
+        }),
+      );
     } finally {
       rmSync(tempDir, { recursive: true, force: true });
     }
