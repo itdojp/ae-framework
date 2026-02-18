@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { Command } from 'commander';
+import { Command, CommanderError } from 'commander';
 import chalk from 'chalk';
 import { PhaseValidator } from './validators/PhaseValidator.js';
 import { toMessage } from '../utils/error-utils.js';
@@ -838,6 +838,24 @@ adaptCommand
     await adaptVitest(thresholds);
   });
 
-program.parse(normalizeProgramArgv(process.argv));
+program.exitOverride();
+try {
+  program.parse(normalizeProgramArgv(process.argv));
+} catch (error: unknown) {
+  if (error instanceof CommanderError) {
+    const invalidArgumentCodes = new Set([
+      'commander.unknownCommand',
+      'commander.unknownOption',
+      'commander.missingArgument',
+      'commander.optionMissingArgument',
+      'commander.excessArguments',
+      'commander.missingMandatoryOptionValue',
+    ]);
+    const exitCode = invalidArgumentCodes.has(error.code) ? 2 : (error.exitCode ?? 1);
+    safeExit(exitCode);
+  }
+  console.error(chalk.red(`❌ CLI failed: ${toMessage(error)}`));
+  safeExit(1);
+}
 
 export { AEFrameworkCLI };

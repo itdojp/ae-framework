@@ -45,12 +45,69 @@ interface SpecCommandReport {
   generatedAt: string;
 }
 
+interface SpecCommandErrorPayload {
+  error: true;
+  code: 'SPEC_INVALID_INPUT' | 'SPEC_INTERNAL_ERROR';
+  message: string;
+  details: {
+    command: 'lint' | 'validate';
+    input?: string;
+  };
+  ts: string;
+  command: 'lint' | 'validate';
+}
+
 const normalizeSpecOutputFormat = (rawFormat: string | undefined): SpecOutputFormat => {
   const normalized = (rawFormat ?? 'text').toLowerCase();
   if (normalized === 'text' || normalized === 'json') {
     return normalized;
   }
   throw new Error(`Unsupported --format: ${rawFormat}. Expected one of: text, json`);
+};
+
+const detectFormatHint = (rawFormat: string | undefined): SpecOutputFormat => {
+  const normalized = (rawFormat ?? 'text').toLowerCase();
+  return normalized === 'json' ? 'json' : 'text';
+};
+
+const isSpecInvalidInputError = (error: unknown): boolean => {
+  const message = toMessage(error).toLowerCase();
+  return message.includes('unsupported --format')
+    || message.includes('enoent')
+    || message.includes('no such file')
+    || message.includes('eisdir')
+    || message.includes('unexpected token');
+};
+
+const emitSpecCommandError = (params: {
+  command: 'lint' | 'validate';
+  format: SpecOutputFormat;
+  input?: string;
+  error: unknown;
+}): void => {
+  const message = toMessage(params.error);
+  const invalidInput = isSpecInvalidInputError(params.error);
+  const exitCode = invalidInput ? 2 : 1;
+
+  if (params.format === 'json') {
+    const payload: SpecCommandErrorPayload = {
+      error: true,
+      code: invalidInput ? 'SPEC_INVALID_INPUT' : 'SPEC_INTERNAL_ERROR',
+      message,
+      details: {
+        command: params.command,
+        input: params.input,
+      },
+      ts: new Date().toISOString(),
+      command: params.command,
+    };
+    console.log(JSON.stringify(payload, null, 2));
+  } else {
+    const label = params.command === 'lint' ? 'Linting failed' : 'Validation failed';
+    console.error(chalk.red(`❌ ${label}: ${message}`));
+  }
+
+  safeExit(exitCode);
 };
 
 const normalizeIssueSeverity = (severity: SpecLintIssue['severity']): SpecIssueSeverity => {
@@ -229,8 +286,9 @@ export function createSpecCommand(): Command {
     .option('--format <format>', 'Output format (text|json)', 'text')
     .option('--output <file>', 'Write lint report to file')
     .action(async (options) => {
+      const formatHint = detectFormatHint(options.format);
+      const inputPath = options.input || '.ae/ae-ir.json';
       try {
-        const inputPath = options.input || '.ae/ae-ir.json';
         const format = normalizeSpecOutputFormat(options.format);
         const printText = format === 'text';
         if (printText) {
@@ -301,8 +359,12 @@ export function createSpecCommand(): Command {
         }
         
       } catch (error: unknown) {
-        console.error(chalk.red(`❌ Linting failed: ${toMessage(error)}`));
-        safeExit(1);
+        emitSpecCommandError({
+          command: 'lint',
+          format: formatHint,
+          input: inputPath,
+          error,
+        });
       }
     });
 
@@ -318,6 +380,7 @@ export function createSpecCommand(): Command {
     .option('--relaxed', 'Relax strict schema errors to warnings')
     .option('--desc-max <n>', 'Override description max length (e.g., 1000)', parseInt)
     .action(async (options) => {
+      const formatHint = detectFormatHint(options.format);
       try {
         const format = normalizeSpecOutputFormat(options.format);
         const printText = format === 'text';
@@ -412,8 +475,12 @@ export function createSpecCommand(): Command {
         }
         
       } catch (error: unknown) {
-        console.error(chalk.red(`❌ Validation failed: ${toMessage(error)}`));
-        safeExit(1);
+        emitSpecCommandError({
+          command: 'validate',
+          format: formatHint,
+          input: options.input,
+          error,
+        });
       }
     });
 
