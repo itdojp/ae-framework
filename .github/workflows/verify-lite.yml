@@ -78,6 +78,20 @@ jobs:
         if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
         run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
+      - name: Collect TypeScript inventory
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
+        continue-on-error: ${{ !(github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-ts-inventory')) }}
+        shell: bash
+        run: |
+          ENFORCE_FLAG=""
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ contains(github.event.pull_request.labels.*.name, 'enforce-ts-inventory') }}" = "true" ]; then
+            ENFORCE_FLAG="--enforce"
+          fi
+          pnpm -s run inventory:ts -- \
+            --output artifacts/verify-lite/ts-inventory.json \
+            --baseline config/ts-inventory-baseline.json \
+            ${ENFORCE_FLAG}
+
       - name: Run verify-lite pipeline
         if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
         env:
@@ -269,6 +283,7 @@ jobs:
             artifacts/run-manifest-check.json
             artifacts/verify-lite/verify-lite-lint.log
             artifacts/verify-lite/verify-lite-lint-summary.json
+            artifacts/verify-lite/ts-inventory.json
           if-no-files-found: ignore
       - name: Append verify-lite run summary
         if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}

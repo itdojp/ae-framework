@@ -49,6 +49,7 @@
     "check:root-generated": "node scripts/ci/check-no-root-generated-files.mjs",
     "docs:lint": "node scripts/docs/check-doc-consistency.mjs",
     "check:doc-consistency": "node scripts/docs/check-doc-consistency.mjs",
+    "inventory:ts": "node scripts/quality/ts-inventory.mjs",
     "types:check": "tsc -p configs/tsconfig/tsconfig.verify.json --noEmit",
     "test:property:webapi": "vitest run --dir tests/property/web-api --passWithNoTests",
     "test:integration:webapi": "vitest run --dir tests/integration/web-api --runInBand --passWithNoTests",
