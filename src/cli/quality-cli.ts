@@ -184,6 +184,16 @@ const loadFailureArtifacts = (inputPath?: string): EngineFailureArtifact[] => {
   return [normalizeFailureArtifact(data)];
 };
 
+type QualityOutputFormat = 'text' | 'json';
+
+const normalizeQualityOutputFormat = (rawFormat: string | undefined): QualityOutputFormat => {
+  const normalized = (rawFormat ?? 'text').toLowerCase();
+  if (normalized === 'text' || normalized === 'json') {
+    return normalized;
+  }
+  throw new Error(`Unsupported --format: ${rawFormat}. Expected one of: text, json`);
+};
+
 export function createQualityCommand(): Command {
   const quality = new Command('quality');
   quality.description('Quality gates and policy management');
@@ -199,10 +209,24 @@ export function createQualityCommand(): Command {
     .option('-v, --verbose', 'Verbose output with detailed results')
     .option('-t, --timeout <ms>', 'Timeout for each gate in milliseconds', '300000')
     .option('-o, --output <dir>', 'Output directory for reports', 'reports/quality-gates')
+    .option('--format <format>', 'Output format (text|json)', 'text')
     .option('--no-history', 'Skip timestamped history report and write latest report only')
     .action(async (options) => {
+      const rawFormat = options.format as string | undefined;
+      let outputFormat: QualityOutputFormat;
       try {
-        console.log(chalk.blue(`🔍 Running quality gates for ${options.env} environment`));
+        outputFormat = normalizeQualityOutputFormat(rawFormat);
+      } catch (error) {
+        console.error(chalk.red(`❌ ${toMessage(error)}`));
+        safeExit(2);
+        return;
+      }
+
+      const printJson = outputFormat === 'json';
+      try {
+        if (!printJson) {
+          console.log(chalk.blue(`🔍 Running quality gates for ${options.env} environment`));
+        }
         
         const runner = new QualityGateRunner();
         const report = await runner.executeGates({
@@ -214,16 +238,28 @@ export function createQualityCommand(): Command {
           timeout: parseInt(options.timeout),
           outputDir: options.output,
           noHistory: options.history === false,
+          printSummary: !printJson,
+          silent: printJson,
         });
+
+        if (printJson) {
+          console.log(JSON.stringify(report, null, 2));
+        }
 
         // Exit with appropriate code
         if (report.summary.blockers.length > 0) {
-          console.log(chalk.red(`\n❌ ${report.summary.blockers.length} blocking quality gate(s) failed`));
+          if (!printJson) {
+            console.log(chalk.red(`\n❌ ${report.summary.blockers.length} blocking quality gate(s) failed`));
+          }
           safeExit(1);
         } else if (report.failedGates > 0) {
-          console.log(chalk.yellow(`\n⚠️  ${report.failedGates} quality gate(s) failed (non-blocking)`));
+          if (!printJson) {
+            console.log(chalk.yellow(`\n⚠️  ${report.failedGates} quality gate(s) failed (non-blocking)`));
+          }
         } else {
-          console.log(chalk.green('\n✅ All quality gates passed!'));
+          if (!printJson) {
+            console.log(chalk.green('\n✅ All quality gates passed!'));
+          }
         }
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Error running quality gates: ${toMessage(error)}`));
@@ -241,6 +277,7 @@ export function createQualityCommand(): Command {
     .option('-v, --verbose', 'Verbose output with detailed results')
     .option('-t, --timeout <ms>', 'Timeout for each gate in milliseconds', '300000')
     .option('-o, --output <dir>', 'Output directory for reports', 'reports/quality-gates')
+    .option('--format <format>', 'Output format (text|json)', 'text')
     .option('--no-history', 'Skip timestamped history report and write latest report only')
     .option('--max-rounds <number>', 'Maximum reconciliation rounds', '3')
     .option('--fix-input <path>', 'Failure artifacts JSON file for auto-fix')
@@ -248,6 +285,17 @@ export function createQualityCommand(): Command {
     .option('--fix-iterations <number>', 'Auto-fix max iterations', '10')
     .option('--fix-confidence <threshold>', 'Auto-fix confidence threshold', '0.7')
     .action(async (options) => {
+      const rawFormat = options.format as string | undefined;
+      let outputFormat: QualityOutputFormat;
+      try {
+        outputFormat = normalizeQualityOutputFormat(rawFormat);
+      } catch (error) {
+        console.error(chalk.red(`❌ ${toMessage(error)}`));
+        safeExit(2);
+        return;
+      }
+
+      const printJson = outputFormat === 'json';
       try {
         const maxRounds = Math.max(1, parseInt(options.maxRounds, 10) || 1);
         const runner = new QualityGateRunner();
@@ -255,8 +303,10 @@ export function createQualityCommand(): Command {
 
         let passed = false;
         for (let round = 1; round <= maxRounds; round += 1) {
-          console.log(chalk.blue(`🔁 Reconciliation round ${round}/${maxRounds}`));
-          console.log(chalk.blue(`🔍 Running quality gates for ${options.env} environment`));
+          if (!printJson) {
+            console.log(chalk.blue(`🔁 Reconciliation round ${round}/${maxRounds}`));
+            console.log(chalk.blue(`🔍 Running quality gates for ${options.env} environment`));
+          }
 
           const report = await runner.executeGates({
             environment: options.env,
@@ -267,32 +317,46 @@ export function createQualityCommand(): Command {
             timeout: parseInt(options.timeout, 10) || 300000,
             outputDir: options.output,
             noHistory: options.history === false,
+            printSummary: !printJson,
+            silent: printJson,
           });
 
           lastReport = report;
 
           if (report.summary.blockers.length > 0) {
-            console.log(chalk.red(`\n❌ ${report.summary.blockers.length} blocking quality gate(s) failed`));
+            if (!printJson) {
+              console.log(chalk.red(`\n❌ ${report.summary.blockers.length} blocking quality gate(s) failed`));
+            }
           } else if (report.failedGates > 0) {
-            console.log(chalk.yellow(`\n⚠️  ${report.failedGates} quality gate(s) failed (non-blocking)`));
+            if (!printJson) {
+              console.log(chalk.yellow(`\n⚠️  ${report.failedGates} quality gate(s) failed (non-blocking)`));
+            }
           } else {
-            console.log(chalk.green('\n✅ All quality gates passed!'));
+            if (!printJson) {
+              console.log(chalk.green('\n✅ All quality gates passed!'));
+            }
             passed = true;
             break;
           }
 
           if (options.dryRun) {
-            console.log(chalk.yellow('ℹ️  Dry-run mode enabled; skipping auto-fix.'));
+            if (!printJson) {
+              console.log(chalk.yellow('ℹ️  Dry-run mode enabled; skipping auto-fix.'));
+            }
             break;
           }
 
           if (report.summary.blockers.length === 0) {
-            console.log(chalk.yellow('ℹ️  No blocking gates failed; stopping reconciliation.'));
+            if (!printJson) {
+              console.log(chalk.yellow('ℹ️  No blocking gates failed; stopping reconciliation.'));
+            }
             break;
           }
 
           if (round >= maxRounds) {
-            console.log(chalk.yellow('ℹ️  Max rounds reached; stopping reconciliation.'));
+            if (!printJson) {
+              console.log(chalk.yellow('ℹ️  Max rounds reached; stopping reconciliation.'));
+            }
             break;
           }
 
@@ -301,9 +365,11 @@ export function createQualityCommand(): Command {
             failures = loadFailureArtifacts(options.fixInput);
           } catch (error) {
             console.error(chalk.red('\n❌ Unable to load failure artifacts for auto-fix.'));
-            console.error(chalk.yellow('ℹ️  Generate failure artifacts (for example, `ae-fix demo`).'));
-            console.error(chalk.yellow(`   Details: ${toMessage(error)}`));
-            console.log(chalk.yellow('ℹ️  Stopping reconciliation. Quality gates remain failed.'));
+            if (!printJson) {
+              console.error(chalk.yellow('ℹ️  Generate failure artifacts (for example, `ae-fix demo`).'));
+              console.error(chalk.yellow(`   Details: ${toMessage(error)}`));
+              console.log(chalk.yellow('ℹ️  Stopping reconciliation. Quality gates remain failed.'));
+            }
             break;
           }
 
@@ -316,10 +382,18 @@ export function createQualityCommand(): Command {
 
           const appliedFixCount = fixResult.appliedFixes?.length ?? 0;
           if (appliedFixCount === 0) {
-            console.log(chalk.yellow('⚠️  Auto-fix did not apply any changes. Stopping reconciliation.'));
+            if (!printJson) {
+              console.log(chalk.yellow('⚠️  Auto-fix did not apply any changes. Stopping reconciliation.'));
+            }
             break;
           }
-          console.log(chalk.green(`✅ Auto-fix applied ${appliedFixCount} change(s).`));
+          if (!printJson) {
+            console.log(chalk.green(`✅ Auto-fix applied ${appliedFixCount} change(s).`));
+          }
+        }
+
+        if (printJson && lastReport) {
+          console.log(JSON.stringify(lastReport, null, 2));
         }
 
         if (passed) {
