@@ -8,8 +8,10 @@ export const DEFAULT_DOC_FILES = [
   'README.md',
   'docs/README.md',
   'docs/getting-started/QUICK-START-GUIDE.md',
+  'docs/getting-started/PHASE-6-GETTING-STARTED.md',
   'docs/product/USER-MANUAL.md',
   'docs/integrations/QUICK-START-CODEX.md',
+  'docs/integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md',
 ];
 
 const PNPM_RUN_REGEX = /\bpnpm\s+(?:-s\s+)?run\s+([A-Za-z0-9:_-]+)\b/g;

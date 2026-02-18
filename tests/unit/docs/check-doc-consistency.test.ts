@@ -22,6 +22,16 @@ function writePackageJson(rootDir: string, scripts: Record<string, string>): voi
 }
 
 describe('check-doc-consistency', () => {
+  it('uses expanded default docs when --docs is omitted', () => {
+    const result = parseArgs(['node', 'check-doc-consistency.mjs']);
+    expect(result.docs).toEqual(expect.arrayContaining([
+      'README.md',
+      'docs/getting-started/QUICK-START-GUIDE.md',
+      'docs/getting-started/PHASE-6-GETTING-STARTED.md',
+      'docs/integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md',
+    ]));
+  });
+
   it('parses docs and format arguments', () => {
     const result = parseArgs([
       'node',
