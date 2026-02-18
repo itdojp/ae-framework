@@ -230,7 +230,7 @@ category: string (optional)"
 
 **CLI Instruction:**
 ```bash
-ae-framework ui-scaffold --entity=Product --components --storybook --tests
+ae-framework ui-scaffold --components --tokens --a11y
 ```
 
 **Expected Output:**
