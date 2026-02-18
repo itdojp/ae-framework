@@ -14,10 +14,53 @@ import type { FailureArtifact, FailureArtifactCollection } from '../cegis/failur
 import { validateFailureArtifact, validateFailureArtifactCollection, FailureArtifactFactory } from '../cegis/failure-artifact-schema.js';
 import { AutoFixEngine } from '../cegis/auto-fix-engine.js';
 import type { AutoFixOptions } from '../cegis/auto-fix-engine.js';
+import { FailureArtifactSchema as EngineFailureArtifactSchema } from '../cegis/types.js';
+import type { FailureArtifact as EngineFailureArtifact, RepairAction as EngineRepairAction } from '../cegis/types.js';
 import { toMessage } from '../utils/error-utils.js';
 import { safeExit } from '../utils/safe-exit.js';
 
 const program = new Command();
+
+type LoadedFailureArtifacts = FailureArtifact[] | FailureArtifactCollection;
+
+interface AutoFixCliOptions {
+  input?: string;
+  output?: string;
+  dryRun?: boolean;
+  maxIterations?: string;
+  confidence?: string;
+  noBackup?: boolean;
+  verbose?: boolean;
+}
+
+interface AnalysisCliOptions {
+  input?: string;
+  output?: string;
+  verbose?: boolean;
+}
+
+interface CreateArtifactCliOptions {
+  title?: string;
+  description?: string;
+  severity?: FailureArtifact['severity'];
+  category?: FailureArtifact['category'];
+  file?: string;
+  line?: string;
+  output: string;
+}
+
+interface ValidateCliOptions {
+  input?: string;
+}
+
+interface HistoryCliOptions {
+  count?: string;
+}
+
+interface DemoCliOptions {
+  output: string;
+  count?: string;
+}
 
 program
   .name('ae-fix')
@@ -35,7 +78,7 @@ program
   .option('--confidence <threshold>', 'Minimum confidence threshold (0-1)', '0.7')
   .option('--no-backup', 'Skip backup of original files')
   .option('--verbose', 'Verbose output', false)
-  .action(async (options) => {
+  .action(async (options: AutoFixCliOptions) => {
     try {
       await executeAutoFix(options);
     } catch (error: unknown) {
@@ -51,7 +94,7 @@ program
   .option('-i, --input <path>', 'Input failure artifacts file (JSON)')
   .option('-o, --output <dir>', 'Output directory for analysis', '.ae/analysis')
   .option('--verbose', 'Verbose output', false)
-  .action(async (options) => {
+  .action(async (options: AnalysisCliOptions) => {
     try {
       await executeAnalysis(options);
     } catch (error: unknown) {
@@ -71,7 +114,7 @@ program
   .option('-f, --file <path>', 'Source file location')
   .option('-l, --line <number>', 'Line number')
   .option('-o, --output <path>', 'Output file path', 'failure-artifact.json')
-  .action(async (options) => {
+  .action(async (options: CreateArtifactCliOptions) => {
     try {
       await createFailureArtifact(options);
     } catch (error: unknown) {
@@ -85,7 +128,7 @@ program
   .command('validate')
   .description('Validate failure artifact schema')
   .option('-i, --input <path>', 'Input failure artifacts file (JSON)')
-  .action(async (options) => {
+  .action(async (options: ValidateCliOptions) => {
     try {
       await validateArtifacts(options);
     } catch (error: unknown) {
@@ -99,7 +142,7 @@ program
   .command('history')
   .description('Show auto-fix execution history')
   .option('-n, --count <number>', 'Number of recent fixes to show', '10')
-  .action(async (options) => {
+  .action(async (options: HistoryCliOptions) => {
     try {
       await showFixHistory(options);
     } catch (error: unknown) {
@@ -114,7 +157,7 @@ program
   .description('Generate demo failure artifacts for testing')
   .option('-o, --output <path>', 'Output file path', 'demo-failures.json')
   .option('--count <number>', 'Number of demo failures', '5')
-  .action(async (options) => {
+  .action(async (options: DemoCliOptions) => {
     try {
       await generateDemoArtifacts(options);
     } catch (error: unknown) {
@@ -124,7 +167,171 @@ program
   });
 
 // Execute auto-fix
-async function executeAutoFix(options: any): Promise<void> {
+const toFailureArtifactArray = (artifacts: LoadedFailureArtifacts): FailureArtifact[] =>
+  Array.isArray(artifacts) ? artifacts : artifacts.failures;
+
+const SOURCE_TO_ENGINE_CATEGORY: Record<FailureArtifact['category'], EngineFailureArtifact['category']> = {
+  specification_mismatch: 'runtime_error',
+  contract_violation: 'contract_violation',
+  type_error: 'type_error',
+  runtime_error: 'runtime_error',
+  performance_regression: 'performance_issue',
+  security_violation: 'security_violation',
+  quality_gate_failure: 'lint_error',
+  drift_detection: 'dependency_issue',
+  test_failure: 'test_failure',
+};
+
+const SOURCE_TO_ENGINE_ACTION_TYPE: Record<
+  FailureArtifact['suggestedActions'][number]['type'],
+  EngineRepairAction['type']
+> = {
+  code_change: 'code_change',
+  spec_update: 'validation_update',
+  config_change: 'config_change',
+  dependency_update: 'dependency_update',
+  test_update: 'test_update',
+  documentation_update: 'documentation_update',
+};
+
+const toEnginePhase = (phase: FailureArtifact['context']['phase']): EngineFailureArtifact['context']['phase'] => {
+  switch (phase) {
+    case 'intent':
+    case 'formal':
+    case 'test':
+    case 'code':
+    case 'verify':
+    case 'operate':
+      return phase;
+    default:
+      return undefined;
+  }
+};
+
+const toEngineMetrics = (metrics: FailureArtifact['evidence']['metrics']): Record<string, number> => {
+  const normalized: Record<string, number> = {};
+  if (!metrics) {
+    return normalized;
+  }
+  for (const [key, value] of Object.entries(metrics)) {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      normalized[key] = value;
+      continue;
+    }
+    if (typeof value === 'boolean') {
+      normalized[key] = value ? 1 : 0;
+    }
+  }
+  return normalized;
+};
+
+const toRiskLevel = (severity: FailureArtifact['severity']): EngineRepairAction['riskLevel'] => {
+  switch (severity) {
+    case 'critical':
+      return 5;
+    case 'major':
+      return 4;
+    case 'minor':
+      return 2;
+    case 'info':
+    default:
+      return 1;
+  }
+};
+
+const toEngineSuggestedActions = (
+  actions: FailureArtifact['suggestedActions'],
+  severity: FailureArtifact['severity'],
+): EngineFailureArtifact['suggestedActions'] =>
+  actions.map((action) => ({
+    type: SOURCE_TO_ENGINE_ACTION_TYPE[action.type],
+    description: action.description,
+    confidence: action.confidence,
+    riskLevel: toRiskLevel(severity),
+    estimatedEffort: 'medium',
+    ...(action.targetFile ? { filePath: action.targetFile } : {}),
+    dependencies: [],
+    prerequisites: action.prerequisites,
+  }));
+
+const toEngineFailureArtifact = (artifact: FailureArtifact): EngineFailureArtifact => {
+  const filePath = artifact.location?.file ?? 'unknown';
+  const line = artifact.location?.line ?? 1;
+  const phase = toEnginePhase(artifact.context.phase);
+  const converted: EngineFailureArtifact = {
+    id: artifact.id,
+    title: artifact.title,
+    description: artifact.description,
+    severity: artifact.severity,
+    category: SOURCE_TO_ENGINE_CATEGORY[artifact.category],
+    ...(artifact.location
+      ? {
+          location: {
+            filePath,
+            startLine: line,
+            endLine: line,
+            ...(artifact.location.column !== undefined
+              ? { startColumn: artifact.location.column, endColumn: artifact.location.column }
+              : {}),
+            ...(artifact.location.function ? { functionName: artifact.location.function } : {}),
+            ...(artifact.location.module ? { className: artifact.location.module } : {}),
+          },
+        }
+      : {}),
+    context: {
+      environment: artifact.context.environment,
+      timestamp: artifact.context.timestamp,
+      ...(phase ? { phase } : {}),
+      ...(artifact.context.commitHash ? { gitCommit: artifact.context.commitHash } : {}),
+      ...(artifact.context.branch ? { gitBranch: artifact.context.branch } : {}),
+    },
+    evidence: {
+      ...(artifact.evidence.stackTrace ? { stackTrace: artifact.evidence.stackTrace } : {}),
+      errorMessage: artifact.description,
+      errorType: artifact.category,
+      logs: artifact.evidence.logs,
+      metrics: toEngineMetrics(artifact.evidence.metrics),
+      dependencies: [],
+      relatedFiles: artifact.location?.file ? [artifact.location.file] : [],
+    },
+    ...(artifact.rootCause
+      ? {
+          rootCause: {
+            primaryCause: artifact.rootCause.hypothesis,
+            contributingFactors: artifact.rootCause.evidence,
+            confidence: artifact.rootCause.confidence,
+            reasoning: artifact.rootCause.hypothesis,
+            suggestedActions: artifact.rootCause.relatedFailures,
+          },
+        }
+      : {}),
+    suggestedActions: toEngineSuggestedActions(artifact.suggestedActions, artifact.severity),
+    relatedArtifacts: artifact.childFailureIds,
+    metadata: {
+      createdAt: artifact.createdAt,
+      updatedAt: artifact.updatedAt,
+      version: artifact.schemaVersion,
+      tags: artifact.tags,
+      ...(artifact.evidence.environmentInfo ? { environment: artifact.evidence.environmentInfo } : {}),
+      source: 'ae-fix-cli',
+    },
+  };
+
+  return EngineFailureArtifactSchema.parse(converted);
+};
+
+const toEngineFailureArtifactArray = (artifacts: LoadedFailureArtifacts): EngineFailureArtifact[] =>
+  toFailureArtifactArray(artifacts).map(toEngineFailureArtifact);
+
+const hasFailureCollectionShape = (value: unknown): value is { failures: unknown[] } => {
+  if (typeof value !== 'object' || value === null || !('failures' in value)) {
+    return false;
+  }
+  const failures = (value as { failures?: unknown }).failures;
+  return Array.isArray(failures);
+};
+
+async function executeAutoFix(options: AutoFixCliOptions): Promise<void> {
   console.log(chalk.blue('🔧 AE-Framework Auto-Fix Engine'));
   console.log(chalk.gray('====================================='));
 
@@ -135,8 +342,8 @@ async function executeAutoFix(options: any): Promise<void> {
   // Configure fix options
   const fixOptions: AutoFixOptions = {
     dryRun: options.dryRun || false,
-    maxIterations: parseInt(options.maxIterations) || 10,
-    confidenceThreshold: parseFloat(options.confidence) || 0.7,
+    maxIterations: Number.parseInt(options.maxIterations ?? '10', 10) || 10,
+    confidenceThreshold: Number.parseFloat(options.confidence ?? '0.7') || 0.7,
     // backupOriginals: !options.noBackup, // TODO: Verify property exists in interface
     outputDir: options.output || '.ae/auto-fix',
   };
@@ -149,8 +356,8 @@ async function executeAutoFix(options: any): Promise<void> {
 
   // Execute fixes
   const engine = new AutoFixEngine();
-  const artifactArray = Array.isArray(artifacts) ? artifacts : artifacts.failures;
-  const result = await engine.executeFixes(artifactArray as any, fixOptions);
+  const artifactArray = toEngineFailureArtifactArray(artifacts);
+  const result = await engine.executeFixes(artifactArray, fixOptions);
 
   // Display results
   console.log(chalk.gray('\n🎯 Fix Results:'));
@@ -188,7 +395,7 @@ async function executeAutoFix(options: any): Promise<void> {
 }
 
 // Execute analysis only
-async function executeAnalysis(options: any): Promise<void> {
+async function executeAnalysis(options: AnalysisCliOptions): Promise<void> {
   console.log(chalk.blue('🔍 AE-Framework Failure Analysis'));
   console.log(chalk.gray('=================================='));
 
@@ -196,8 +403,8 @@ async function executeAnalysis(options: any): Promise<void> {
   console.log(chalk.green(`📥 Loaded ${Array.isArray(artifacts) ? artifacts.length : artifacts.failures.length} failure artifacts`));
 
   const engine = new AutoFixEngine();
-  const artifactArray = Array.isArray(artifacts) ? artifacts : artifacts.failures;
-  const analysis = await engine.executeFixes(artifactArray as any, {
+  const artifactArray = toEngineFailureArtifactArray(artifacts);
+  const analysis = await engine.executeFixes(artifactArray, {
     outputDir: options.output || '.ae/analysis',
     dryRun: true,
   });
@@ -232,7 +439,7 @@ async function executeAnalysis(options: any): Promise<void> {
 }
 
 // Create failure artifact
-async function createFailureArtifact(options: any): Promise<void> {
+async function createFailureArtifact(options: CreateArtifactCliOptions): Promise<void> {
   console.log(chalk.blue('📝 Creating Failure Artifact'));
 
   if (!options.title || !options.description) {
@@ -242,12 +449,14 @@ async function createFailureArtifact(options: any): Promise<void> {
   const artifact = FailureArtifactFactory.create({
     title: options.title,
     description: options.description,
-    severity: options.severity,
+    ...(options.severity ? { severity: options.severity } : {}),
     category: options.category || 'runtime_error',
-    location: options.file ? {
-      file: options.file,
-      line: options.line ? parseInt(options.line) : undefined,
-    } : undefined,
+    ...(options.file ? {
+      location: {
+        file: options.file,
+        line: options.line ? Number.parseInt(options.line, 10) : undefined,
+      },
+    } : {}),
   });
 
   fs.writeFileSync(options.output, JSON.stringify(artifact, null, 2));
@@ -260,14 +469,14 @@ async function createFailureArtifact(options: any): Promise<void> {
 }
 
 // Validate artifacts
-async function validateArtifacts(options: any): Promise<void> {
+async function validateArtifacts(options: ValidateCliOptions): Promise<void> {
   console.log(chalk.blue('✅ Validating Failure Artifacts'));
 
   if (!options.input) {
     throw new Error('Input file path is required');
   }
 
-  const data = JSON.parse(fs.readFileSync(options.input, 'utf8'));
+  const data: unknown = JSON.parse(fs.readFileSync(options.input, 'utf8'));
   
   try {
     if (Array.isArray(data)) {
@@ -276,7 +485,7 @@ async function validateArtifacts(options: any): Promise<void> {
         validateFailureArtifact(data[i]);
       }
       console.log(chalk.green(`✅ All ${data.length} artifacts are valid`));
-    } else if (data.failures) {
+    } else if (hasFailureCollectionShape(data)) {
       // Validate collection
       validateFailureArtifactCollection(data);
       console.log(chalk.green(`✅ Collection with ${data.failures.length} artifacts is valid`));
@@ -292,7 +501,7 @@ async function validateArtifacts(options: any): Promise<void> {
 }
 
 // Show fix history
-async function showFixHistory(options: any): Promise<void> {
+async function showFixHistory(_options: HistoryCliOptions): Promise<void> {
   console.log(chalk.blue('📚 Auto-Fix History'));
   console.log(chalk.gray('==================='));
 
@@ -302,10 +511,10 @@ async function showFixHistory(options: any): Promise<void> {
 }
 
 // Generate demo artifacts
-async function generateDemoArtifacts(options: any): Promise<void> {
+async function generateDemoArtifacts(options: DemoCliOptions): Promise<void> {
   console.log(chalk.blue('🎪 Generating Demo Failure Artifacts'));
 
-  const count = parseInt(options.count) || 5;
+  const count = Number.parseInt(options.count ?? '5', 10) || 5;
   const artifacts: FailureArtifact[] = [];
 
   // Generate various types of demo failures
