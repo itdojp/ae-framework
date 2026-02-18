@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://itdojp.github.io/ae-framework/schema/codex-task-request.schema.json",
+  "title": "CodexTaskRequest",
+  "type": "object",
+  "required": [
+    "subagent_type"
+  ],
+  "properties": {
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "prompt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "subagent_type": {
+      "type": "string",
+      "minLength": 1
+    },
+    "context": {
+      "type": [
+        "object",
+        "array",
+        "string",
+        "number",
+        "boolean",
+        "null"
+      ]
+    }
+  },
+  "anyOf": [
+    {
+      "required": [
+        "description"
+      ]
+    },
+    {
+      "required": [
+        "prompt"
+      ]
+    }
+  ],
+  "additionalProperties": true
+}
