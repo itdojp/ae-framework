@@ -190,8 +190,9 @@ npx ae-framework ui-scaffold --components
 # .github/workflows/phase6-validation.yml
 - name: Run UI Scaffold with Telemetry
   run: |
-    pnpm run ae-framework -- ui-scaffold --components
-    # Logs phase6 telemetry to stdout (or OTLP when configured)
+    DEBUG_TELEMETRY=true pnpm run ae-framework -- ui-scaffold --components
+    # Emits telemetry init logs and threshold warnings to stdout
+    # (or exports to OTLP when exporter is configured)
 ```
 
 ## 🚀 Future Roadmap
