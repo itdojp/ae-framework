@@ -230,16 +230,19 @@ category: string (optional)"
 
 **CLI Instruction:**
 ```bash
-ae-framework ui-scaffold --entity=Product --components --storybook --tests
+ae-framework ui-scaffold --components --tokens --a11y
 ```
 
 **Expected Output:**
 ```bash
-✅ Generated ProductCard Component:
-  • packages/ui/src/product-card.tsx
-  • apps/storybook/stories/ProductCard.stories.tsx
-  • apps/web/__tests__/ProductCard.test.tsx
-  • apps/web/__e2e__/product-card.spec.ts
+✅ Generated UI scaffold files (per entity):
+  • apps/web/app/<entity>/page.tsx
+  • apps/web/app/<entity>/new/page.tsx
+  • apps/web/app/<entity>/[id]/page.tsx
+  • apps/web/components/<Entity>Form.tsx
+  • apps/web/components/<Entity>Card.tsx
+  • apps/storybook/stories/<Entity>.stories.tsx
+  • apps/web/__e2e__/<entity>.spec.ts
 
 📊 Component Quality:
   • TypeScript compliance: ✅

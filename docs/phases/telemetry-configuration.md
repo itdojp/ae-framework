@@ -15,6 +15,8 @@ Key metrics
 
 Configuration: environment variables to disable/enable telemetry and configure OTLP exporters.
 
+> Note: Threshold values are implementation constants (`src/telemetry/phase6-metrics.ts`) and are not equal to a CI pass guarantee by themselves.
+
 ## Overview
 
 ae-frameworkのPhase 6（UI/UX & Frontend Delivery）では、OpenTelemetryを使用してメトリクス・トレース・ログの計測を行います。これにより、品質ゲート引き上げの判断材料を定量化し、継続的改善を実現します。
@@ -68,11 +70,8 @@ NODE_ENV=production             # Environment (development/production)
 # UI scaffold with telemetry
 npx ae-framework ui-scaffold --components
 
-# Output includes timing and metrics:
-# 📊 Test Coverage: 100% (threshold: 80%)
-# 📈 Phase 6 Efficiency Metrics:
-#   🏗️  Scaffold Time: 15243ms ✅
-#   📊 Generated 21 files for 3/3 entities
+# Output includes timing/threshold logs when metrics are recorded.
+# Exact numeric values depend on the current project state.
 ```
 
 ### Programmatic Usage
@@ -182,14 +181,18 @@ npx ae-framework ui-scaffold --components
 
 ### CI Integration
 
-CI環境では自動的にメトリクスがログ出力され、閾値チェックが実行されます：
+`phase6-validation.yml` には a11y/visual/Lighthouse/coverage などのジョブがあります。  
+一方で、`ae-framework ui-scaffold` を常に実行してテレメトリを収集する構成にはなっていません（2026-02-18 時点）。
+
+必要に応じて、以下のような専用ステップを追加して収集してください：
 
 ```yaml
 # .github/workflows/phase6-validation.yml
 - name: Run UI Scaffold with Telemetry
   run: |
-    npx ae-framework ui-scaffold --components
-    # Automatically logs performance metrics and threshold violations
+    DEBUG_TELEMETRY=true pnpm run ae-framework -- ui-scaffold --components
+    # Emits telemetry init logs and threshold warnings to stdout
+    # (or exports to OTLP when exporter is configured)
 ```
 
 ## 🚀 Future Roadmap

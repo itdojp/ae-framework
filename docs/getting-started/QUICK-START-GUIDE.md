@@ -351,7 +351,7 @@ Risk: Medium risk (mitigated with proper monitoring)
 
 # 🎨 Phase 6 UI/UX commands
 "ae-framework ui-scaffold --components --tokens --a11y"
-"ae-ui scaffold --storybook --i18n"
+"ae-ui scaffold --components --tokens --a11y"
 "Monitor quality with OpenTelemetry telemetry"
 ```
 
@@ -726,7 +726,7 @@ Phase 3: 並行テスト戦略
 
 # 🎨 Phase 6 UI/UXコマンド
 「ae-framework ui-scaffold --components --tokens --a11y」
-「ae-ui scaffold --storybook --i18n」
+「ae-ui scaffold --components --tokens --a11y」
 「OpenTelemetryテレメトリで品質監視してください」
 ```
 
