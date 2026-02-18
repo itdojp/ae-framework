@@ -18,6 +18,11 @@ pnpm run codex:quickstart
 ```
 
 > Metrics and transcript blocks in this document are example outputs unless explicitly noted as measured results.
+>
+> Current enforcement status (as of 2026-02-18):
+> - a11y/perf/lighthouse are **report-only by default** and become blocking only with labels (`enforce-a11y`, `enforce-perf`, `enforce-lh`) in `.github/workflows/adapter-thresholds.yml`.
+> - Coverage is validated by dedicated workflows (for example `coverage-check.yml`) and policy may differ by workflow/label.
+> - See `docs/quality/adapter-thresholds.md` for the exact gate behavior.
 
 ### 📋 Overview
 
@@ -28,7 +33,7 @@ Phase 6 automatically generates React + Next.js 14 based frontend applications f
 - **Next.js 14 App Router** - SEO-optimized page generation
 - **Design System Integration** - Design Tokens + Tailwind CSS + shadcn/ui
 - **Multi-language Support (i18n)** - Japanese/English support
-- **Accessibility Compliance** - WCAG 2.1 AA standards
+- **Accessibility Checks (report-based)** - WCAG 2.1 AA guideline checks (label-gated enforcement)
 - **Storybook Integration** - Auto component documentation
 - **E2E Testing** - Automated Playwright test generation
 - **OpenTelemetry Telemetry** - Real-time quality metrics monitoring
@@ -171,7 +176,7 @@ DISABLE_TELEMETRY=true ae-framework ui-scaffold --components
 ```
 
 #### Monitoring Metrics
-- **Quality Metrics**: Test coverage (≥80%), A11y score (≥95%), Performance score (≥75%)
+- **Quality Metrics (example targets)**: Test coverage (≥80%), A11y score (≥95%), Performance score (≥75%)
 - **Efficiency Metrics**: Scaffold time (<30s), E2E test time (<5min), Build time
 - **Maintainability Metrics**: Component complexity (<10), Unused CSS rate (<5%), Design token usage (≥95%)
 
@@ -442,6 +447,11 @@ pnpm run codex:quickstart
 ```
 
 > この文書中のメトリクス/ログは、明示がない限り実行例です（実測値の保証ではありません）。
+>
+> 現行の強制ポリシー（2026-02-18時点）:
+> - a11y/perf/lighthouse は既定で **report-only** であり、`.github/workflows/adapter-thresholds.yml` のラベル（`enforce-a11y`/`enforce-perf`/`enforce-lh`）付与時のみブロッキングになります。
+> - Coverage は専用workflow（例: `coverage-check.yml`）側で判定され、workflow/ラベルにより挙動が変わります。
+> - 詳細は `docs/quality/adapter-thresholds.md` を参照してください。
 
 ### 📋 概要
 
@@ -452,7 +462,7 @@ Phase 6では、ドメインモデルから**React + Next.js 14**ベースのフ
 - **Next.js 14 App Router** - SEO最適化されたページ生成
 - **デザインシステム統合** - Design Tokens + Tailwind CSS + shadcn/ui
 - **多言語対応 (i18n)** - 日本語/英語対応
-- **アクセシビリティ準拠** - WCAG 2.1 AA基準
+- **アクセシビリティ検証（レポート主体）** - WCAG 2.1 AAガイドライン検証（強制はラベル制御）
 - **Storybook統合** - コンポーネントドキュメント自動生成
 - **E2Eテスト** - Playwright自動テスト生成
 - **OpenTelemetryテレメトリ** - リアルタイム品質メトリクス監視
@@ -595,7 +605,7 @@ DISABLE_TELEMETRY=true ae-framework ui-scaffold --components
 ```
 
 #### 監視メトリクス
-- **品質メトリクス**: テストカバレッジ(≥80%)、A11yスコア(≥95%)、パフォーマンススコア(≥75%)
+- **品質メトリクス（目安値）**: テストカバレッジ(≥80%)、A11yスコア(≥95%)、パフォーマンススコア(≥75%)
 - **効率性メトリクス**: スキャフォールド時間(<30秒)、E2Eテスト時間(<5分)、ビルド時間
 - **保守性メトリクス**: コンポーネント複雑度(<10)、未使用CSS率(<5%)、デザイントークン使用率(≥95%)
 

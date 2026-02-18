@@ -8,6 +8,8 @@
 
 Phase 6 turns user stories and domain models into production‑ready UI/UX via automated scaffolding, design system integration, a11y/perf quality gates, and telemetry. Inputs: Phase 3/5 outputs. Outputs: components, tokens, state architecture, and reports.
 
+> Status note (2026-02-18): a11y/perf/lighthouse thresholds are report-only by default and become blocking only with enforce labels in `.github/workflows/adapter-thresholds.yml`. Treat threshold values in this document as targets unless explicitly tied to a specific workflow policy.
+
 ## English (Detailed)
 
 ### Scope
@@ -26,6 +28,8 @@ Phase 6 turns user stories and domain models into production‑ready UI/UX via a
 - E2E: 100% pass
 - Coverage: ≥ 80%
 - Web Vitals budget maintained
+
+> Implementation note: default CI does not always enforce every gate above. Refer to `docs/quality/adapter-thresholds.md` and workflow files for current enforcement scope.
 
 ### A11y Checklist (quick)
 - Landmarks: main/nav/footer/accessible headings present
@@ -70,6 +74,8 @@ lhci autorun --upload.target=temporary-public-storage
 
 Phase 6は、Phase 3（ユーザーストーリー）とPhase 5（ドメインモデル）の成果を受けて、**実用的なUI/UXを自動生成・検証・承認**するフェーズです。
 
+> 現行ステータス（2026-02-18）: a11y/perf/lighthouse は `.github/workflows/adapter-thresholds.yml` で既定 report-only、enforce ラベル付与時のみブロッキングです。本書のしきい値は、個別workflowで明示しない限り目標値として扱ってください。
+
 Design Systems統合、アクセシビリティ確保、パフォーマンス最適化、品質ゲートを通じて、**Production Ready**なフロントエンド成果物を提供します。
 
 ## 🔄 Phase境界定義
@@ -99,6 +105,8 @@ Design Systems統合、アクセシビリティ確保、パフォーマンス最
 - E2E: 100% pass
 - Coverage: ≥80%
 - Web Vitals Budget
+
+> 実装注記: 上記を常時すべて強制しているわけではありません。現在の強制範囲は `docs/quality/adapter-thresholds.md` と各workflow定義を参照してください。
 
 ### A11y チェックリスト（簡易）
 - ランドマーク: main/nav/footer/見出しの構造化

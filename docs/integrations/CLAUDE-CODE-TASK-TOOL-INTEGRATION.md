@@ -20,6 +20,11 @@ pnpm run codex:quickstart
 ```
 
 > Output transcripts and quality metrics in this document are examples unless explicitly marked as measured in CI artifacts.
+>
+> Enforcement status (2026-02-18):
+> - a11y/perf/lighthouse are report-only by default and enforced only when PR labels (`enforce-a11y`, `enforce-perf`, `enforce-lh`) are set.
+> - Coverage enforcement is handled by dedicated coverage workflows/policies.
+> - See `docs/quality/adapter-thresholds.md` for the authoritative gate behavior.
 
 ### 📋 Table of Contents
 
@@ -42,7 +47,7 @@ AE Framework integrates as a **Task Tool** in Claude Code environment, supportin
 
 - **Requirements Analysis** → **Domain Modeling** → **UI Generation** workflow support
 - **6-Phase Development Methodology** seamless execution
-- **WCAG 2.1 AA compliant** high-quality UI auto-generation
+- **WCAG 2.1 AA oriented** UI auto-generation (enforcement policy depends on workflow/labels)
 - **Enterprise-grade** quality assurance
 
 #### 🔄 Integration Architecture
@@ -58,9 +63,9 @@ High-Quality Artifacts (React+Next.js etc.)
 #### ✨ Key Benefits
 
 1. **Zero Learning Curve**: No complex CLI commands required
-2. **Quality Assurance**: Automatic quality gates and metrics
+2. **Quality Assurance**: Automatic quality reporting with optional label-gated enforcement
 3. **High-Speed Generation**: 21 files/30 seconds UI auto-generation
-4. **Full Compliance**: WCAG 2.1 AA, Enterprise Security ready
+4. **Compliance Ready**: WCAG 2.1 AA / Enterprise Security are managed through configured gates
 
 **Current status (2026-02 snapshot):**
 - ✅ Phase 6 UI scaffolding command and templates are available in-repo
@@ -317,7 +322,7 @@ pnpm run codex:quickstart
 ### 統合概要
 - **Task Tool** として統合し、自然言語だけで「要件→モデリング→UI生成」まで自動化
 - **6フェーズ開発**を一貫実行
-- **WCAG 2.1 AA** 準拠の UI 自動生成と **エンタープライズ品質**
+- **WCAG 2.1 AA 指向** の UI 自動生成と **エンタープライズ品質**（強制はworkflow/ラベル依存）
 
 ### アーキテクチャ（要点）
 CLI / MCP / Agent のハイブリッド構成。実行環境検出・リアルタイム介入・厳密モードを切替可能。
@@ -583,7 +588,7 @@ AE FrameworkはClaude Code環境における**Task Tool**として統合され�
 
 - **要件分析** → **ドメインモデリング** → **UI生成**の完全自動化
 - **6フェーズ開発手法**のシームレス実行
-- **WCAG 2.1 AA準拠**の高品質UI自動生成
+- **WCAG 2.1 AA指向**の高品質UI自動生成（強制はworkflow/ラベル依存）
 - **エンタープライズグレード**の品質保証
 
 ### 🔄 統合方式
@@ -599,9 +604,9 @@ AE Framework (Task Adapters)
 ### ✨ 主要メリット
 
 1. **学習コスト ゼロ**: 複雑なCLIコマンド不要
-2. **品質保証**: 自動的な品質ゲートとメトリクス
+2. **品質保証**: 自動レポート＋必要時のみラベルで品質ゲートを強制
 3. **高速生成**: 21ファイル/30秒のUI自動生成
-4. **完全準拠**: WCAG 2.1 AA、Enterprise Security対応
+4. **準拠運用**: WCAG 2.1 AA / Enterprise Security は設定済みゲートで運用
 
 **現状ステータス（2026-02 時点）**：
 - ✅ Phase 6 UI scaffold コマンドとテンプレート群を利用可能
