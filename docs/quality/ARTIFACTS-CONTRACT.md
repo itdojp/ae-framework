@@ -60,6 +60,7 @@ node scripts/ci/check-required-artifacts.mjs --strict
 - `verify-lite.yml` に **non-blocking** で組み込み（観測フェーズ）
 - 厳格化する場合は `REQUIRED_ARTIFACTS_STRICT=1` を有効化  
   - 例: PRラベル `enforce-artifacts` を条件に strict モードを有効化
+- `verify-lite.yml` の必須ステップで `tests/contracts/cli-artifacts-contracts.test.ts` を実行し、主要CLIの JSON schema / exit code 契約を継続検証
 
 ## 6. 参照
 - `.github/workflows/verify-lite.yml`

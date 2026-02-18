@@ -78,6 +78,10 @@ jobs:
         if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
         run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
+      - name: Run CLI/Artifacts contract conformance tests (required)
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
+        run: pnpm -s vitest run tests/contracts/cli-artifacts-contracts.test.ts
+
       - name: Collect TypeScript inventory
         if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
         continue-on-error: ${{ !(github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-ts-inventory')) }}
