@@ -187,6 +187,27 @@ pnpm run ae-framework -- resilience --help
 pnpm run ae-framework -- sbom --help
 ```
 
+### 5.4 CLI契約（exit code / JSONエラー）
+- `0`: 正常終了
+- `2`: 不正入力・契約違反（例: 不正サブコマンド、必須引数不足）
+- `1`: 内部エラー・想定外の失敗
+
+`spec lint` / `spec validate` で `--format json` を指定した場合、失敗時も JSON を返します。  
+例（失敗時）:
+
+```json
+{
+  "error": true,
+  "code": "SPEC_INVALID_INPUT",
+  "message": "ENOENT: no such file or directory, open 'spec/does-not-exist.json'",
+  "details": {
+    "input": "spec/does-not-exist.json"
+  },
+  "ts": "2026-02-18T00:00:00.000Z",
+  "command": "lint"
+}
+```
+
 ## 6. エージェント統合
 - CodeX 連携: `docs/integrations/CODEX-INTEGRATION.md`
 - Claude Code 連携: `docs/integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md`
