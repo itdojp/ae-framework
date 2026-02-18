@@ -580,13 +580,22 @@ export function createSpecCommand(): Command {
           console.log(chalk.gray(`   Saved draft: ${iterPath}`));
 
           // Compile (lenient for intermediate)
-        const prevRelaxed = process.env['AE_SPEC_RELAXED'];
-        process.env['AE_SPEC_RELAXED'] = '1';
-          const ir = await compiler.compile({ inputPath: resolve(iterPath), validate: false });
-          const lint = await compiler.lint(ir);
-          lastIssues = lint.issues.slice(0, 10).map(i => `${i.message} [${i.location?.section||'root'}]`);
+          const prevRelaxed = process.env['AE_SPEC_RELAXED'];
+          process.env['AE_SPEC_RELAXED'] = '1';
+          const lint: SpecLintReport = await (async () => {
+            try {
+              const ir = await compiler.compile({ inputPath: resolve(iterPath), validate: false });
+              return await compiler.lint(ir);
+            } finally {
+              if (prevRelaxed === undefined) {
+                delete process.env['AE_SPEC_RELAXED'];
+              } else {
+                process.env['AE_SPEC_RELAXED'] = prevRelaxed;
+              }
+            }
+          })();
+          lastIssues = lint.issues.slice(0, 10).map(i => `${i.message} [${i.location?.section || 'root'}]`);
           console.log(chalk.blue(`   Lint summary: errors=${lint.summary.errors}, warnings=${lint.summary.warnings}`));
-        process.env['AE_SPEC_RELAXED'] = prevRelaxed as any;
 
           // If no errors in lenient pass, attempt strict validation
           if (lint.summary.errors === 0 && lint.summary.warnings <= maxWarnings) {

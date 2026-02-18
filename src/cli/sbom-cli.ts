@@ -8,6 +8,40 @@ import * as path from 'path';
 import * as fs from 'fs/promises';
 import { SBOMGenerator, type SBOMGeneratorOptions, type SBOMComponent } from '../security/sbom-generator.js';
 
+interface ParsedSBOMComponent {
+  name?: string;
+  version?: string;
+  type?: string;
+}
+
+interface ParsedSBOMDocument {
+  bomFormat?: string;
+  specVersion?: string;
+  serialNumber?: string;
+  version?: number;
+  metadata?: {
+    timestamp?: string;
+    tools?: unknown;
+  };
+  components?: ParsedSBOMComponent[];
+  dependencies?: unknown[];
+  vulnerabilities?: unknown[];
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const parseSBOMDocument = (content: string): ParsedSBOMDocument => {
+  const parsed: unknown = JSON.parse(content);
+  if (!isRecord(parsed)) {
+    throw new Error('Invalid SBOM document: expected JSON object');
+  }
+  return parsed as ParsedSBOMDocument;
+};
+
+const toComponentKey = (component: ParsedSBOMComponent): string =>
+  `${component.name ?? '<unknown>'}@${component.version ?? '<unknown>'}`;
+
 /**
  * SBOM (Software Bill of Materials) CLI
  * Provides command-line interface for SBOM generation and management
@@ -102,9 +136,9 @@ export class SBOMCLI {
       const content = await fs.readFile(resolvedPath, 'utf8');
       
       // Parse based on file extension
-      let sbom: any;
+      let sbom: ParsedSBOMDocument;
       if (resolvedPath.endsWith('.json')) {
-        sbom = JSON.parse(content);
+        sbom = parseSBOMDocument(content);
       } else if (resolvedPath.endsWith('.xml')) {
         // For XML validation, we'd need an XML parser
         console.log(chalk.yellow('⚠️  XML validation not implemented yet'));
@@ -132,8 +166,9 @@ export class SBOMCLI {
       }
 
       // Component validation
-      if (sbom.components && Array.isArray(sbom.components)) {
-        sbom.components.forEach((comp: any, index: number) => {
+      const components = Array.isArray(sbom.components) ? sbom.components : [];
+      if (components.length > 0) {
+        components.forEach((comp, index: number) => {
           if (!comp.name) errors.push(`Component ${index}: missing name`);
           if (!comp.version) errors.push(`Component ${index}: missing version`);
           if (!comp.type) errors.push(`Component ${index}: missing type`);
@@ -188,12 +223,14 @@ export class SBOMCLI {
         fs.readFile(path.resolve(sbom2Path), 'utf8'),
       ]);
 
-      const sbom1 = JSON.parse(content1);
-      const sbom2 = JSON.parse(content2);
+      const sbom1 = parseSBOMDocument(content1);
+      const sbom2 = parseSBOMDocument(content2);
+      const componentsList1 = Array.isArray(sbom1.components) ? sbom1.components : [];
+      const componentsList2 = Array.isArray(sbom2.components) ? sbom2.components : [];
 
       // Compare components
-      const components1 = new Map<string, any>(sbom1.components?.map((c: any) => [`${c.name}@${c.version}`, c]) || []);
-      const components2 = new Map<string, any>(sbom2.components?.map((c: any) => [`${c.name}@${c.version}`, c]) || []);
+      const components1 = new Map<string, ParsedSBOMComponent>(componentsList1.map((component) => [toComponentKey(component), component]));
+      const components2 = new Map<string, ParsedSBOMComponent>(componentsList2.map((component) => [toComponentKey(component), component]));
 
       const added: string[] = [];
       const removed: string[] = [];
@@ -214,13 +251,13 @@ export class SBOMCLI {
       }
 
       // Find changed components (same name, different version)
-      const names1 = new Set(sbom1.components?.map((c: any) => c.name) || []);
-      const names2 = new Set(sbom2.components?.map((c: any) => c.name) || []);
+      const names1 = new Set(componentsList1.map((component) => component.name).filter((name): name is string => Boolean(name)));
+      const names2 = new Set(componentsList2.map((component) => component.name).filter((name): name is string => Boolean(name)));
       
       for (const name of names1) {
         if (names2.has(name)) {
-          const comp1 = sbom1.components?.find((c: any) => c.name === name);
-          const comp2 = sbom2.components?.find((c: any) => c.name === name);
+          const comp1 = componentsList1.find((component) => component.name === name);
+          const comp2 = componentsList2.find((component) => component.name === name);
           
           if (comp1?.version !== comp2?.version) {
             changed.push(`${name}: ${comp1?.version} → ${comp2?.version}`);
