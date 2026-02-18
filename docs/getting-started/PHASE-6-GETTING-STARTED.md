@@ -6,7 +6,18 @@
 
 ## English
 
-**Build modern frontend foundation with React + Next.js 14 in 15 minutes**
+**Build a frontend baseline with React + Next.js through the currently implemented flow**
+
+### ✅ Implemented / Reproducible Path
+
+```bash
+pnpm install
+pnpm run build
+pnpm run verify:lite
+pnpm run codex:quickstart
+```
+
+> Metrics and transcript blocks in this document are example outputs unless explicitly noted as measured results.
 
 ### 📋 Overview
 
@@ -424,7 +435,18 @@ pnpm run test:a11y -- --fix
 
 ## Japanese
 
-**React + Next.js 14でモダンなフロントエンド基盤を15分で構築**
+**現在実装されている導線で、React + Next.js フロントエンド基盤を構築**
+
+### ✅ 現在実装に整合する手順
+
+```bash
+pnpm install
+pnpm run build
+pnpm run verify:lite
+pnpm run codex:quickstart
+```
+
+> この文書中のメトリクス/ログは、明示がない限り実行例です（実測値の保証ではありません）。
 
 ### 📋 概要
 

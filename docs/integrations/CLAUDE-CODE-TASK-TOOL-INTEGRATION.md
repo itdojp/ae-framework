@@ -1,4 +1,4 @@
-# Claude Code Integration Guide - AE Framework Complete Integration
+# Claude Code Integration Guide - AE Framework Integration (Implemented + Roadmap)
 
 > **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
 
@@ -8,6 +8,18 @@
 
 **Comprehensive Integration Documentation for AE Framework ↔ Claude Code**  
 **Seamless workflow from natural language instructions to high-quality code generation**
+
+### ✅ Implemented / Reproducible Baseline
+
+Start from the currently implemented commands below, then expand with optional adapters/phases.
+
+```bash
+pnpm install
+pnpm run first-run
+pnpm run codex:quickstart
+```
+
+> Output transcripts and quality metrics in this document are examples unless explicitly marked as measured in CI artifacts.
 
 ### 📋 Table of Contents
 
@@ -26,9 +38,9 @@
 
 #### 🎯 Core Philosophy
 
-AE Framework integrates as a **Task Tool** in Claude Code environment, enabling the following through natural language instructions alone:
+AE Framework integrates as a **Task Tool** in Claude Code environment, supporting the following workflow from natural language instructions:
 
-- **Requirements Analysis** → **Domain Modeling** → **UI Generation** complete automation
+- **Requirements Analysis** → **Domain Modeling** → **UI Generation** workflow support
 - **6-Phase Development Methodology** seamless execution
 - **WCAG 2.1 AA compliant** high-quality UI auto-generation
 - **Enterprise-grade** quality assurance
@@ -50,14 +62,11 @@ High-Quality Artifacts (React+Next.js etc.)
 3. **High-Speed Generation**: 21 files/30 seconds UI auto-generation
 4. **Full Compliance**: WCAG 2.1 AA, Enterprise Security ready
 
-**🎉 2025 Complete Implementation Status**:
-- ✅ **Phase 6 UI/UX Generation**: 100% implementation complete (21 files/30 seconds generation)
-- ✅ **Comprehensive Quality System**: Golden/Approval, Metamorphic, CLI Fuzzing complete
-- ✅ **Integrated Security Audit**: 5 core modules implementation complete
-- ✅ **CEGIS Auto-repair**: Failure artifact analysis & auto-correction implemented
-- ✅ **Runtime Conformance**: Zod + OpenTelemetry runtime verification implemented
-- ✅ **Fast CI/CD**: 5min/15min/30min staged pipeline implemented
-- ✅ **Enterprise Quality**: WCAG 2.1 AA compliant, production-ready complete
+**Current status (2026-02 snapshot):**
+- ✅ Phase 6 UI scaffolding command and templates are available in-repo
+- ✅ Quality/verification pipelines are available via verify-lite and CI workflows
+- ✅ Runtime conformance and formal-tool integrations are available as optional flows
+- ℹ️ Performance figures in this document are example values; verify current values in generated artifacts/CI logs
 
 ### Architecture Details
 
@@ -292,8 +301,18 @@ button:focus { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 
 ## 日本語
 
-**AE Framework ↔ Claude Code の完全統合ドキュメント**  
+**AE Framework ↔ Claude Code の統合ドキュメント（実装済み + 拡張計画）**  
 **自然言語の指示から高品質なコード生成まで一貫したワークフロー**
+
+### 現在実装に整合するベースライン
+
+```bash
+pnpm install
+pnpm run first-run
+pnpm run codex:quickstart
+```
+
+> この文書内の出力ログ/品質メトリクスは、明示がない限り実行例です。実測値は CI の artifacts / job log を参照してください。
 
 ### 統合概要
 - **Task Tool** として統合し、自然言語だけで「要件→モデリング→UI生成」まで自動化
@@ -584,14 +603,11 @@ AE Framework (Task Adapters)
 3. **高速生成**: 21ファイル/30秒のUI自動生成
 4. **完全準拠**: WCAG 2.1 AA、Enterprise Security対応
 
-**🎉 2025年完全実装状況**：
-- ✅ **Phase 6 UI/UX Generation**: 100%実装完了 (21ファイル/30秒生成)
-- ✅ **包括的品質システム**: Golden/Approval、Metamorphic、CLI Fuzzing完備  
-- ✅ **統合セキュリティ監査**: 5コアモジュール実装完了
-- ✅ **CEGIS自動修復**: 失敗アーティファクト分析・自動修正実装
-- ✅ **Runtime Conformance**: Zod + OpenTelemetry実行時検証実装
-- ✅ **Fast CI/CD**: 5分/15分/30分段階パイプライン実装
-- ✅ **エンタープライズ品質**: WCAG 2.1 AA準拠、プロダクション対応完了
+**現状ステータス（2026-02 時点）**：
+- ✅ Phase 6 UI scaffold コマンドとテンプレート群を利用可能
+- ✅ verify-lite / CI ワークフローによる品質検証フローを利用可能
+- ✅ Runtime conformance / formal tools 連携はオプション経路として利用可能
+- ℹ️ 本文中の性能値は例示であり、固定保証値ではありません
 
 ---
 

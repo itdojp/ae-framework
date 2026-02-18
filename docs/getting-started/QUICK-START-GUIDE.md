@@ -9,6 +9,20 @@
 **Get started with ae-framework in Claude Code**
 **Run a reproducible local setup first, then expand to automation**
 
+### ✅ Implemented / Reproducible Path
+
+Use the following path as the baseline that is aligned with current scripts in this repository:
+
+```bash
+corepack enable
+corepack prepare pnpm@10.0.0 --activate
+pnpm install
+pnpm run first-run
+pnpm run codex:quickstart
+```
+
+> The conversation transcripts and metrics later in this document are illustrative examples.
+
 ### ⚡ 5-Minute Quick Setup
 
 > Notes:
@@ -449,7 +463,19 @@ Enter in Claude Code:
 ## Japanese
 
 **Claude Code で今すぐ始める ae-framework！**
-**15分で最初のプロジェクトを完全自動化**
+**最初に再現可能なローカル手順を完了し、その後に自動化へ拡張**
+
+### ✅ 現在実装に整合する最短導線
+
+```bash
+corepack enable
+corepack prepare pnpm@10.0.0 --activate
+pnpm install
+pnpm run first-run
+pnpm run codex:quickstart
+```
+
+> この文書内の会話ログや数値は、実装イメージを示す例です。
 
 ### ⚡ 5分で始める最短セットアップ
 
