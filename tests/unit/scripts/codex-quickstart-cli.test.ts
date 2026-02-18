@@ -43,24 +43,45 @@ describe('codex quickstart cli resolution', () => {
   });
 
   it('builds once and resolves CLI when build succeeds', () => {
+    const rootDir = '/tmp/repo';
+    const expectedCliPath = `${rootDir}/${CLI_CANDIDATES[0]}`;
     let built = false;
     const spawn = vi.fn(() => {
       built = true;
       return { status: 0 };
     });
-    const existsFn = vi.fn((candidatePath: string) => built && candidatePath.endsWith(CLI_CANDIDATES[0]));
+    const existsFn = vi.fn((candidatePath: string) => built && candidatePath === expectedCliPath);
 
     const result = ensureCLI({
-      rootDir: '/tmp/repo',
+      rootDir,
       existsFn,
       spawn,
       skipBuild: false,
     });
 
     expect(spawn).toHaveBeenCalledOnce();
+    expect(spawn).toHaveBeenCalledWith(
+      'pnpm',
+      ['-s', 'run', 'build'],
+      expect.objectContaining({ cwd: rootDir, stdio: 'inherit' }),
+    );
     expect(result.ok).toBe(true);
     expect(result.built).toBe(true);
     expect(result.cliPath).toContain(CLI_CANDIDATES[0]);
+  });
+
+  it('returns failure when build succeeds but CLI is still missing', () => {
+    const spawn = vi.fn(() => ({ status: 0 }));
+    const result = ensureCLI({
+      rootDir: '/tmp/repo',
+      existsFn: () => false,
+      spawn,
+      skipBuild: false,
+    });
+
+    expect(spawn).toHaveBeenCalledOnce();
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain('ae CLI not found after build');
   });
 
   it('returns failure when build exits with non-zero status', () => {
@@ -73,6 +94,19 @@ describe('codex quickstart cli resolution', () => {
     });
     expect(result.ok).toBe(false);
     expect(result.error).toContain('exit code 2');
+  });
+
+  it('returns failure with exit code 127 when pnpm is not found (ENOENT)', () => {
+    const spawn = vi.fn(() => ({ status: 1, error: { code: 'ENOENT' } }));
+    const result = ensureCLI({
+      rootDir: '/tmp/repo',
+      existsFn: () => false,
+      spawn,
+      skipBuild: false,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain('exit code 127');
   });
 
   it('treats URL-escaped module path and argv path as the same file', () => {
