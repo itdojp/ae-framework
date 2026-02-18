@@ -5,7 +5,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import Ajv from 'ajv';
+import Ajv2020 from 'ajv/dist/2020.js';
 
 const EXIT_CODES = Object.freeze({
   SUCCESS: 0,
@@ -38,7 +38,7 @@ function writeError({ code, message, details, exitCode }) {
     details: details ?? null,
     ts: new Date().toISOString(),
   });
-  process.exit(exitCode);
+  process.exitCode = exitCode;
 }
 
 function formatValidationErrors(errors = []) {
@@ -67,7 +67,7 @@ function buildValidators() {
   const requestSchemaPath = resolveSchemaPath('CODEX_TASK_REQUEST_SCHEMA', 'schema/codex-task-request.schema.json');
   const responseSchemaPath = resolveSchemaPath('CODEX_TASK_RESPONSE_SCHEMA', 'schema/codex-task-response.schema.json');
 
-  const ajv = new Ajv({
+  const ajv = new Ajv2020({
     allErrors: true,
     strict: false,
   });
@@ -80,6 +80,21 @@ function buildValidators() {
     responseSchemaPath,
     validateRequest: ajv.compile(requestSchema),
     validateResponse: ajv.compile(responseSchema),
+  };
+}
+
+function normalizeTaskRequest(request) {
+  const description = typeof request.description === 'string' && request.description.length > 0
+    ? request.description
+    : request.prompt;
+  const prompt = typeof request.prompt === 'string' && request.prompt.length > 0
+    ? request.prompt
+    : request.description;
+
+  return {
+    ...request,
+    description,
+    prompt,
   };
 }
 
@@ -148,7 +163,7 @@ async function main() {
   try {
     const { createCodexTaskAdapter } = await loadAdapter();
     const adapter = createCodexTaskAdapter();
-    response = await adapter.handleTask(request);
+    response = await adapter.handleTask(normalizeTaskRequest(request));
   } catch (error) {
     writeError({
       code: 'ADAPTER_ERROR',
@@ -172,11 +187,7 @@ async function main() {
   }
 
   writeJSON(response);
-  if (response.shouldBlockProgress) {
-    process.exit(EXIT_CODES.BLOCKED);
-    return;
-  }
-  process.exit(EXIT_CODES.SUCCESS);
+  process.exitCode = response.shouldBlockProgress ? EXIT_CODES.BLOCKED : EXIT_CODES.SUCCESS;
 }
 
 main().catch((error) => {

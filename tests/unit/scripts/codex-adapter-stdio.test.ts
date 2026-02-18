@@ -29,7 +29,7 @@ function writeAdapterModule(tempRoot: string, moduleBody: string) {
   writeFileSync(adapterPath, moduleBody, 'utf8');
 }
 
-function runAdapter(tempRoot: string, input: string) {
+function runAdapter(tempRoot: string, input: string, envOverrides: NodeJS.ProcessEnv = {}) {
   return spawnSync(process.execPath, [scriptPath], {
     cwd: tempRoot,
     input,
@@ -38,11 +38,40 @@ function runAdapter(tempRoot: string, input: string) {
       ...process.env,
       CODEX_TASK_REQUEST_SCHEMA: requestSchemaPath,
       CODEX_TASK_RESPONSE_SCHEMA: responseSchemaPath,
+      ...envOverrides,
     },
   });
 }
 
 describe('codex adapter stdio contract', () => {
+  it('returns exit 3 with machine-readable error when stdin is empty', () => {
+    withTempRepo((tempRoot) => {
+      const result = runAdapter(tempRoot, '');
+      expect(result.status).toBe(3);
+      const payload = parseJsonLine(result.stdout);
+      expect(payload).toEqual(
+        expect.objectContaining({
+          error: true,
+          code: 'EMPTY_STDIN',
+        }),
+      );
+    });
+  });
+
+  it('returns exit 3 with machine-readable error for malformed input JSON', () => {
+    withTempRepo((tempRoot) => {
+      const result = runAdapter(tempRoot, '{ invalid');
+      expect(result.status).toBe(3);
+      const payload = parseJsonLine(result.stdout);
+      expect(payload).toEqual(
+        expect.objectContaining({
+          error: true,
+          code: 'INVALID_JSON',
+        }),
+      );
+    });
+  });
+
   it('returns exit 0 and TaskResponse JSON for valid request', () => {
     withTempRepo((tempRoot) => {
       writeAdapterModule(tempRoot, `
@@ -75,6 +104,37 @@ describe('codex adapter stdio contract', () => {
           shouldBlockProgress: false,
         }),
       );
+    });
+  });
+
+  it('normalizes missing prompt/description before delegating to adapter', () => {
+    withTempRepo((tempRoot) => {
+      writeAdapterModule(tempRoot, `
+        export function createCodexTaskAdapter() {
+          return {
+            async handleTask(request) {
+              return {
+                summary: request.description,
+                analysis: request.prompt,
+                recommendations: [],
+                nextActions: [],
+                warnings: [],
+                shouldBlockProgress: false
+              };
+            }
+          };
+        }
+      `);
+
+      const result = runAdapter(
+        tempRoot,
+        JSON.stringify({ description: 'single-source', subagent_type: 'intent' }),
+      );
+
+      expect(result.status).toBe(0);
+      const payload = parseJsonLine(result.stdout);
+      expect(payload.summary).toBe('single-source');
+      expect(payload.analysis).toBe('single-source');
     });
   });
 
@@ -169,6 +229,56 @@ describe('codex adapter stdio contract', () => {
           code: 'ADAPTER_ERROR',
         }),
       );
+    });
+  });
+
+  it('returns exit 1 with machine-readable error for schema load failure', () => {
+    withTempRepo((tempRoot) => {
+      const result = runAdapter(
+        tempRoot,
+        JSON.stringify({ description: 'run', subagent_type: 'intent' }),
+        { CODEX_TASK_REQUEST_SCHEMA: join(tempRoot, 'missing-schema.json') },
+      );
+
+      expect(result.status).toBe(1);
+      const payload = parseJsonLine(result.stdout);
+      expect(payload).toEqual(
+        expect.objectContaining({
+          error: true,
+          code: 'SCHEMA_LOAD_FAILED',
+        }),
+      );
+    });
+  });
+
+  it('returns exit 1 with machine-readable error for invalid response schema', () => {
+    withTempRepo((tempRoot) => {
+      writeAdapterModule(tempRoot, `
+        export function createCodexTaskAdapter() {
+          return {
+            async handleTask() {
+              return {
+                summary: 'missing fields'
+              };
+            }
+          };
+        }
+      `);
+
+      const result = runAdapter(
+        tempRoot,
+        JSON.stringify({ description: 'run', subagent_type: 'intent' }),
+      );
+
+      expect(result.status).toBe(1);
+      const payload = parseJsonLine(result.stdout);
+      expect(payload).toEqual(
+        expect.objectContaining({
+          error: true,
+          code: 'INVALID_RESPONSE_SCHEMA',
+        }),
+      );
+      expect(Array.isArray(payload.details?.errors)).toBe(true);
     });
   });
 });
