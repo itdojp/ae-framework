@@ -51,6 +51,7 @@ CI Extended restores cached heavy test artifacts (`.cache/test-results`) when re
 - `run-e2e`: enable E2E tests on PRs
 - `coverage:<pct>`: override coverage threshold for coverage-check (default 80). e.g., `coverage:75`
  - `qa-batch:commands` / `qa-batch:cli` / `qa-batch:property` / `qa-batch:agents`: run additional CI Fast batches for the specific categories (opt-in)
+- `enforce-ts-inventory`: in Verify Lite, enforce no increase of `@ts-ignore` against `config/ts-inventory-baseline.json` (label-gated). `pnpm run inventory:ts` is always collected in non-docs-only runs (`artifacts/verify-lite/ts-inventory.json`).
 
 ### Comment formatting (Coverage/Adapters)
 - Coverage / Adapters comments show:
@@ -181,6 +182,7 @@ CI Extended 実行後は heavy テスト成果物を `.cache/test-results` に�
 - `run-flake`: flake-detection を PR で有効化
 - `run-e2e`: E2E テストを PR で有効化
 - `coverage:<pct>`: coverage-check のしきい値を上書き（既定 80）。例: `coverage:75`
+- `enforce-ts-inventory`: Verify Lite で `config/ts-inventory-baseline.json` 基準の `@ts-ignore` 増加を禁止（ラベル付与時のみ強制）。docs-only 以外では `pnpm run inventory:ts` の結果を `artifacts/verify-lite/ts-inventory.json` に収集。
 
 ### 手動実行（Actions UI）
 - `Flake Stability Schedule`（`flake-detect.yml`）は workflow_dispatch で `mode=retry` と `workflow_file` / `eligibility_artifact` / `eligibility_path` / `dry_run` を指定可能

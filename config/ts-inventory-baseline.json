@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.0.0",
+  "generatedAt": "2026-02-18T05:55:16.955Z",
+  "totals": {
+    "files": 1034,
+    "lines": 200836,
+    "any": 1968,
+    "tsIgnore": 6,
+    "tsNoCheck": 1,
+    "eslintDisable": 6
+  },
+  "notes": "Baseline for label-gated ts-ignore increase enforcement in verify-lite."
+}

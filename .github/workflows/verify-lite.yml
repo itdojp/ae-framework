@@ -78,6 +78,15 @@ jobs:
         if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
         run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
+      - name: Collect TypeScript inventory (non-blocking)
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
+        continue-on-error: true
+        shell: bash
+        run: |
+          pnpm -s run inventory:ts -- \
+            --output artifacts/verify-lite/ts-inventory.json \
+            --baseline config/ts-inventory-baseline.json
+
       - name: Run verify-lite pipeline
         if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
         env:
@@ -150,6 +159,14 @@ jobs:
           BDD_ROOTS: ${{ vars.BDD_ROOTS }}
         run: |
           node scripts/bdd/lint.mjs
+      - name: Enforce ts-ignore increase (label-gated)
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' && github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-ts-inventory') }}
+        shell: bash
+        run: |
+          pnpm -s run inventory:ts -- \
+            --output artifacts/verify-lite/ts-inventory.json \
+            --baseline config/ts-inventory-baseline.json \
+            --enforce
       - name: BDD → LTL suggestions (report-only)
         if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
         run: |
@@ -269,6 +286,7 @@ jobs:
             artifacts/run-manifest-check.json
             artifacts/verify-lite/verify-lite-lint.log
             artifacts/verify-lite/verify-lite-lint-summary.json
+            artifacts/verify-lite/ts-inventory.json
           if-no-files-found: ignore
       - name: Append verify-lite run summary
         if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
