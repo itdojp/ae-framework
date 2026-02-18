@@ -78,14 +78,19 @@ jobs:
         if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
         run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
-      - name: Collect TypeScript inventory (non-blocking)
+      - name: Collect TypeScript inventory
         if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
-        continue-on-error: true
+        continue-on-error: ${{ !(github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-ts-inventory')) }}
         shell: bash
         run: |
+          ENFORCE_FLAG=""
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ contains(github.event.pull_request.labels.*.name, 'enforce-ts-inventory') }}" = "true" ]; then
+            ENFORCE_FLAG="--enforce"
+          fi
           pnpm -s run inventory:ts -- \
             --output artifacts/verify-lite/ts-inventory.json \
-            --baseline config/ts-inventory-baseline.json
+            --baseline config/ts-inventory-baseline.json \
+            ${ENFORCE_FLAG}
 
       - name: Run verify-lite pipeline
         if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
@@ -159,14 +164,6 @@ jobs:
           BDD_ROOTS: ${{ vars.BDD_ROOTS }}
         run: |
           node scripts/bdd/lint.mjs
-      - name: Enforce ts-ignore increase (label-gated)
-        if: ${{ steps.docs-only.outputs.docs_only != 'true' && github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-ts-inventory') }}
-        shell: bash
-        run: |
-          pnpm -s run inventory:ts -- \
-            --output artifacts/verify-lite/ts-inventory.json \
-            --baseline config/ts-inventory-baseline.json \
-            --enforce
       - name: BDD → LTL suggestions (report-only)
         if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
         run: |

@@ -146,7 +146,9 @@ function countLines(content) {
   if (content.length === 0) {
     return 0;
   }
-  return content.split(/\r?\n/u).length;
+  const newlineMatches = content.match(/\r?\n/gu);
+  const newlineCount = newlineMatches ? newlineMatches.length : 0;
+  return content.endsWith('\n') ? newlineCount : newlineCount + 1;
 }
 
 function countMatches(content, pattern) {
@@ -164,7 +166,7 @@ function analyzeFiles(rootDir, largeFileLines) {
     const stats = {
       path: relativeToRoot(rootDir, absolutePath),
       lines,
-      any: countMatches(content, /\bany\b/gu),
+      any: countMatches(content, /(?:[:<]\s*|as\s+)any\b/gu),
       tsIgnore: countMatches(content, /@ts-ignore\b/gu),
       tsNoCheck: countMatches(content, /@ts-nocheck\b/gu),
       eslintDisable: countMatches(content, /\beslint-disable(?:-next-line|-line)?\b/gu),
