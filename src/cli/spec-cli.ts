@@ -90,14 +90,15 @@ const emitSpecCommandError = (params: {
   const exitCode = invalidInput ? 2 : 1;
 
   if (params.format === 'json') {
+    const details: { command: 'lint' | 'validate'; input?: string } = {
+      command: params.command,
+      ...(params.input !== undefined ? { input: params.input } : {}),
+    };
     const payload: SpecCommandErrorPayload = {
       error: true,
       code: invalidInput ? 'SPEC_INVALID_INPUT' : 'SPEC_INTERNAL_ERROR',
       message,
-      details: {
-        command: params.command,
-        input: params.input,
-      },
+      details,
       ts: new Date().toISOString(),
       command: params.command,
     };
