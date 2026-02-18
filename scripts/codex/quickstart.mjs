@@ -7,19 +7,22 @@
 import { spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 const root = process.cwd();
-const cliCandidates = [
+export const CLI_CANDIDATES = [
   'dist/src/cli/index.js',
   'dist/cli.js',
 ];
 
-function findCLI() {
-  for (const p of cliCandidates) {
-    const abs = path.join(root, p);
-    if (fs.existsSync(abs)) return abs;
+export function findCLI(rootDir = root, existsFn = fs.existsSync) {
+  for (const candidate of CLI_CANDIDATES) {
+    const abs = path.join(rootDir, candidate);
+    if (existsFn(abs)) {
+      return abs;
+    }
   }
-  throw new Error(`ae CLI not found. Tried: ${cliCandidates.join(', ')}`);
+  return null;
 }
 
 function runNode(args, opts = {}) {
@@ -30,12 +33,67 @@ function runNode(args, opts = {}) {
   return res.status ?? 1;
 }
 
+export function runBuild(rootDir = root, spawn = spawnSync, env = process.env) {
+  const result = spawn('pnpm', ['-s', 'run', 'build'], {
+    cwd: rootDir,
+    env,
+    stdio: 'inherit',
+  });
+  if (result.error?.code === 'ENOENT') {
+    return 127;
+  }
+  return result.status ?? 1;
+}
+
+export function ensureCLI({
+  rootDir = root,
+  skipBuild = process.env.CODEX_SKIP_BUILD === '1',
+  existsFn = fs.existsSync,
+  spawn = spawnSync,
+  env = process.env,
+} = {}) {
+  const direct = findCLI(rootDir, existsFn);
+  if (direct) {
+    return { ok: true, cliPath: direct, built: false };
+  }
+
+  if (skipBuild) {
+    return {
+      ok: false,
+      error: `ae CLI not found. Tried: ${CLI_CANDIDATES.join(', ')} (CODEX_SKIP_BUILD=1)`,
+    };
+  }
+
+  console.log('[codex] dist CLI not found; running pnpm run build ...');
+  const buildExit = runBuild(rootDir, spawn, env);
+  if (buildExit !== 0) {
+    return {
+      ok: false,
+      error: `build failed with exit code ${buildExit}. Run 'pnpm run build' and retry.`,
+    };
+  }
+
+  const afterBuild = findCLI(rootDir, existsFn);
+  if (!afterBuild) {
+    return {
+      ok: false,
+      error: `ae CLI not found after build. Tried: ${CLI_CANDIDATES.join(', ')}`,
+    };
+  }
+
+  return { ok: true, cliPath: afterBuild, built: true };
+}
+
 function ensureDir(p) {
   fs.mkdirSync(p, { recursive: true });
 }
 
 async function main() {
-  const cli = findCLI();
+  const cliResolution = ensureCLI();
+  if (!cliResolution.ok || !cliResolution.cliPath) {
+    throw new Error(cliResolution.error || 'ae CLI not found');
+  }
+  const cli = cliResolution.cliPath;
   const artifactsDir = path.join(root, 'artifacts');
   ensureDir(artifactsDir);
   const codexDir = path.join(artifactsDir, 'codex');
@@ -204,7 +262,20 @@ async function main() {
   }
 }
 
-main().catch(err => {
-  console.error('[codex] Quickstart failed:', err);
-  process.exit(1);
-});
+export function isExecutedAsMain(importMetaUrl, argvPath = process.argv[1]) {
+  if (!argvPath || typeof argvPath !== 'string') {
+    return false;
+  }
+  try {
+    return path.resolve(fileURLToPath(importMetaUrl)) === path.resolve(argvPath);
+  } catch {
+    return false;
+  }
+}
+
+if (isExecutedAsMain(import.meta.url, process.argv[1])) {
+  main().catch(err => {
+    console.error('[codex] Quickstart failed:', err);
+    process.exit(1);
+  });
+}
