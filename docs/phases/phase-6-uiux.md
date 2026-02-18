@@ -501,7 +501,19 @@ Feature: Optimistic UI Updates
   - Network status is reflected in UI state
 ```
 
-## 🏗️ Phase6TaskAdapter 仕様
+## 🏗️ Phase6TaskAdapter 仕様（将来拡張案）
+
+> 重要: この節の `Phase6TaskAdapter` / `Phase6UITaskAdapter` は設計スケッチです。  
+> 現在の実装パスは `src/cli/index.ts` の `ui-scaffold` コマンドと  
+> `src/generators/ui-scaffold-generator.ts`（テンプレート駆動生成）です。
+
+### 現行実装マッピング（2026-02-18）
+
+- CLI: `src/cli/index.ts` (`ae-framework ui-scaffold`)
+- Alias: `src/cli/ae-ui-alias.ts` (`ae-ui scaffold`)
+- Generator: `src/generators/ui-scaffold-generator.ts`
+- Templates: `templates/ui/*.template`（現在 7 テンプレート）
+- CI workflow: `.github/workflows/phase6-validation.yml`
 
 ### Interface Definition
 ```typescript
@@ -545,10 +557,10 @@ export interface A11yReport {
 }
 ```
 
-### Implementation Skeleton
+### Implementation Skeleton (proposal)
 ```typescript
 // src/agents/phase6-ui-task-adapter.ts
-// NOTE: './formal-agent.js' is a planned dependency and will be implemented in a future phase.
+// NOTE: This is a future-phase proposal and not the current production path.
 import { FormalAgent, FormalAgentConfig } from './formal-agent.js';
 import { TaskRequest, TaskResponse } from './task-types.js';
 
@@ -631,7 +643,7 @@ export const createPhase6UITaskHandler = () => {
 };
 ```
 
-## 📁 ディレクトリ構成
+## 📁 ディレクトリ構成（目標案）
 
 ```
 src/

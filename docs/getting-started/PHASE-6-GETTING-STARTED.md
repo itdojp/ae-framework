@@ -46,17 +46,15 @@ Claude Code: Generating UI components using Phase 6 UI Task Adapter...
    Service: ae-framework v1.0.0
    Environment: development
 
-✅ Generated 21 files for 3/3 entities
+✅ Generated UI files for detected entities
 📊 Test Coverage: 96% (threshold: 80%) ✅
 ♿ A11y Score: 97% (threshold: 95%) ✅  
 ⚡ Performance Score: 79% (threshold: 75%) ✅
 🏗️ Scaffold Time: 18243ms ✅
 
 🎨 UI Analysis:
-  • React Components: 12 files
-  • Next.js Pages: 9 files  
-  • Storybook Stories: 3 files
-  • E2E Tests: 3 files
+  • Generated files: depends on entity count and template set
+  • Current template set: 7 files per entity (as of 2026-02-18)
   • Design Tokens: integrated ✅
   • i18n Support: ja/en ✅
 ```
@@ -68,13 +66,10 @@ Claude Code: Generating UI components using Phase 6 UI Task Adapter...
 ae-framework ui-scaffold --components --tokens --a11y
 
 # ae-ui alias (equivalent functionality)
-ae-ui scaffold --components --state --storybook
+ae-ui scaffold --components --tokens --a11y
 
 # Enable OpenTelemetry telemetry
 DEBUG_TELEMETRY=true ae-framework ui-scaffold --components
-
-# Generate specific entity only
-ae-framework ui-scaffold --entity=Product --components
 ```
 
 ### 🏗️ Generated Architecture
@@ -475,17 +470,15 @@ Claude Code: Phase 6 UI Task Adapterを使用してUIコンポーネントを生
    Service: ae-framework v1.0.0
    Environment: development
 
-✅ Generated 21 files for 3/3 entities
+✅ エンティティに応じたUIファイルを生成
 📊 Test Coverage: 96% (threshold: 80%) ✅
 ♿ A11y Score: 97% (threshold: 95%) ✅  
 ⚡ Performance Score: 79% (threshold: 75%) ✅
 🏗️ Scaffold Time: 18243ms ✅
 
 🎨 UI Analysis:
-  • React Components: 12 files
-  • Next.js Pages: 9 files  
-  • Storybook Stories: 3 files
-  • E2E Tests: 3 files
+  • 生成ファイル数: エンティティ数とテンプレート数に依存
+  • 現在のテンプレート: 1エンティティあたり7ファイル（2026-02-18時点）
   • Design Tokens: integrated ✅
   • i18n Support: ja/en ✅
 ```
@@ -497,13 +490,10 @@ Claude Code: Phase 6 UI Task Adapterを使用してUIコンポーネントを生
 ae-framework ui-scaffold --components --tokens --a11y
 
 # ae-ui エイリアス (同等の動作)
-ae-ui scaffold --components --state --storybook
+ae-ui scaffold --components --tokens --a11y
 
 # OpenTelemetryテレメトリ有効化
 DEBUG_TELEMETRY=true ae-framework ui-scaffold --components
-
-# 特定エンティティのみ生成
-ae-framework ui-scaffold --entity=Product --components
 ```
 
 ### 🏗️ 生成されるアーキテクチャ
