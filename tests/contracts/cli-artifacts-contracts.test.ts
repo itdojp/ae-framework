@@ -13,6 +13,7 @@ const nodeBin = process.execPath;
 
 const specReportSchema = JSON.parse(readFileSync(resolve('schema/spec-validation-report.schema.json'), 'utf8'));
 const verifyProfileSchema = JSON.parse(readFileSync(resolve('schema/verify-profile-summary.schema.json'), 'utf8'));
+const qualityReportSchema = JSON.parse(readFileSync(resolve('schema/quality-report.schema.json'), 'utf8'));
 
 const runAeCli = (args: string[]) =>
   spawnSync(tsxBin, ['src/cli/index.ts', ...args], {
@@ -251,17 +252,10 @@ describe('CLI/Artifacts contract conformance', () => {
     ]);
     expect(successResult.status).toBe(0);
     const payload = parseJsonFromStdout(successResult.stdout);
-    expect(payload).toEqual(
-      expect.objectContaining({
-        environment: expect.any(String),
-        overallScore: expect.any(Number),
-        totalGates: expect.any(Number),
-        passedGates: expect.any(Number),
-        failedGates: expect.any(Number),
-        results: expect.any(Array),
-        summary: expect.any(Object),
-      }),
-    );
+    const ajv = new Ajv2020({ allErrors: true, strict: false });
+    addFormats(ajv);
+    const validate = ajv.compile(qualityReportSchema);
+    expect(validate(payload), JSON.stringify(validate.errors)).toBe(true);
 
     const invalidFormatResult = runAeCli([
       'quality',
@@ -287,16 +281,9 @@ describe('CLI/Artifacts contract conformance', () => {
     ]);
     expect(result.status).toBe(0);
     const payload = parseJsonFromStdout(result.stdout);
-    expect(payload).toEqual(
-      expect.objectContaining({
-        environment: expect.any(String),
-        overallScore: expect.any(Number),
-        totalGates: expect.any(Number),
-        passedGates: expect.any(Number),
-        failedGates: expect.any(Number),
-        results: expect.any(Array),
-        summary: expect.any(Object),
-      }),
-    );
+    const ajv = new Ajv2020({ allErrors: true, strict: false });
+    addFormats(ajv);
+    const validate = ajv.compile(qualityReportSchema);
+    expect(validate(payload), JSON.stringify(validate.errors)).toBe(true);
   });
 });
