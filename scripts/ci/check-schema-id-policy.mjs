@@ -11,6 +11,10 @@ export const ALLOWED_SCHEMA_ID_PREFIXES = [
   'https://ae-framework/schema/',
   'https://itdojp.github.io/ae-framework/schema/',
 ];
+const DISALLOWED_SCHEMA_REF_PREFIXES = [
+  'https://github.com/itdojp/ae-framework/',
+  'https://raw.githubusercontent.com/itdojp/ae-framework/',
+];
 
 function parseArgs(argv) {
   let rootDir = DEFAULT_REPO_ROOT;
@@ -38,6 +42,28 @@ function createViolation(file, type, reason, id) {
     violation.id = id;
   }
   return violation;
+}
+
+function collectRefEntries(value, pointer = '#') {
+  const refs = [];
+  if (Array.isArray(value)) {
+    for (let index = 0; index < value.length; index += 1) {
+      refs.push(...collectRefEntries(value[index], `${pointer}/${index}`));
+    }
+    return refs;
+  }
+  if (!value || typeof value !== 'object') {
+    return refs;
+  }
+  for (const [key, child] of Object.entries(value)) {
+    const escapedKey = key.replace(/~/g, '~0').replace(/\//g, '~1');
+    const nextPointer = `${pointer}/${escapedKey}`;
+    if (key === '$ref' && typeof child === 'string') {
+      refs.push({ ref: child, pointer: nextPointer });
+    }
+    refs.push(...collectRefEntries(child, nextPointer));
+  }
+  return refs;
 }
 
 function countViolationsByType(violations) {
@@ -125,6 +151,25 @@ export function scanSchemaIdPolicy(rootDir) {
           'filename_mismatch',
           `filename mismatch (expected: ${fileName}, actual: ${idFileName || '(empty)'})`,
           id,
+        ),
+      );
+      violatingFiles.add(relativeFile);
+    }
+
+    const refEntries = collectRefEntries(parsed);
+    for (const entry of refEntries) {
+      const disallowedRefPrefix = DISALLOWED_SCHEMA_REF_PREFIXES.find((prefix) =>
+        entry.ref.startsWith(prefix)
+      );
+      if (!disallowedRefPrefix) {
+        continue;
+      }
+      violations.push(
+        createViolation(
+          relativeFile,
+          'invalid_ref_url',
+          `disallowed $ref URL at ${entry.pointer} (prefix: ${disallowedRefPrefix})`,
+          entry.ref,
         ),
       );
       violatingFiles.add(relativeFile);

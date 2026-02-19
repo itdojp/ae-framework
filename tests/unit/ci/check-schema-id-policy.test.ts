@@ -84,19 +84,35 @@ describe('check-schema-id-policy', () => {
         $id: `${ALLOWED_SCHEMA_ID_PREFIXES[0]}other.schema.json`,
         type: 'object',
       });
+      writeSchema(repoDir, 'bad-ref.schema.json', {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        $id: `${ALLOWED_SCHEMA_ID_PREFIXES[0]}bad-ref.schema.json`,
+        type: 'object',
+        properties: {
+          nested: {
+            allOf: [
+              {
+                $ref: 'https://github.com/itdojp/ae-framework/schema/bad-ref-target.schema.json',
+              },
+            ],
+          },
+        },
+      });
 
       const result = scanSchemaIdPolicy(repoDir);
-      expect(result.scannedFiles).toBe(3);
+      expect(result.scannedFiles).toBe(4);
       expect(result.compliantFiles).toBe(0);
-      expect(result.violations).toHaveLength(3);
+      expect(result.violations).toHaveLength(4);
       expect(result.violationCounts).toEqual({
         filename_mismatch: 1,
+        invalid_ref_url: 1,
         invalid_prefix: 1,
         missing_id: 1,
       });
       expect(result.violations.map((violation) => violation.type).sort()).toEqual([
         'filename_mismatch',
         'invalid_prefix',
+        'invalid_ref_url',
         'missing_id',
       ]);
     });
