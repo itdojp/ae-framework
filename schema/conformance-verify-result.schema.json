@@ -1,0 +1,482 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/conformance-verify-result.schema.json",
+  "title": "Conformance Verify Result",
+  "description": "Machine-readable result emitted by `ae conformance verify --format json`.",
+  "type": "object",
+  "required": [
+    "overall",
+    "results",
+    "violations",
+    "summary",
+    "metadata"
+  ],
+  "properties": {
+    "overall": {
+      "$ref": "#/$defs/verificationStatus"
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/verificationResult"
+      }
+    },
+    "violations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/violationDetails"
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": [
+        "totalRules",
+        "rulesExecuted",
+        "rulesPassed",
+        "rulesFailed",
+        "rulesSkipped",
+        "rulesError",
+        "totalDuration",
+        "violationsBySeverity",
+        "violationsByCategory"
+      ],
+      "properties": {
+        "totalRules": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rulesExecuted": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rulesPassed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rulesFailed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rulesSkipped": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rulesError": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "totalDuration": {
+          "type": "number",
+          "minimum": 0
+        },
+        "violationsBySeverity": {
+          "$ref": "#/$defs/severityCounts"
+        },
+        "violationsByCategory": {
+          "$ref": "#/$defs/categoryCounts"
+        }
+      },
+      "additionalProperties": false
+    },
+    "metadata": {
+      "type": "object",
+      "required": [
+        "executionId",
+        "timestamp",
+        "environment",
+        "version"
+      ],
+      "properties": {
+        "executionId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "environment": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "verificationStatus": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "fail",
+        "skip",
+        "error",
+        "timeout"
+      ]
+    },
+    "violationSeverity": {
+      "type": "string",
+      "enum": [
+        "critical",
+        "major",
+        "minor",
+        "info",
+        "warning"
+      ]
+    },
+    "conformanceRuleCategory": {
+      "type": "string",
+      "enum": [
+        "data_validation",
+        "api_contract",
+        "business_logic",
+        "security_policy",
+        "performance_constraint",
+        "resource_usage",
+        "state_invariant",
+        "behavioral_constraint",
+        "integration_requirement",
+        "compliance_rule"
+      ]
+    },
+    "severityCounts": {
+      "type": "object",
+      "required": [
+        "critical",
+        "major",
+        "minor",
+        "info",
+        "warning"
+      ],
+      "properties": {
+        "critical": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "major": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "minor": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "info": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warning": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "categoryCounts": {
+      "type": "object",
+      "required": [
+        "data_validation",
+        "api_contract",
+        "business_logic",
+        "security_policy",
+        "performance_constraint",
+        "resource_usage",
+        "state_invariant",
+        "behavioral_constraint",
+        "integration_requirement",
+        "compliance_rule"
+      ],
+      "properties": {
+        "data_validation": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "api_contract": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "business_logic": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "security_policy": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "performance_constraint": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "resource_usage": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "state_invariant": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "behavioral_constraint": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "integration_requirement": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "compliance_rule": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "runtimeContext": {
+      "type": "object",
+      "required": [
+        "timestamp",
+        "executionId",
+        "environment",
+        "metadata"
+      ],
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "executionId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "functionName": {
+          "type": "string"
+        },
+        "modulePath": {
+          "type": "string"
+        },
+        "requestId": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "sessionId": {
+          "type": "string"
+        },
+        "environment": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string"
+        },
+        "buildId": {
+          "type": "string"
+        },
+        "traceId": {
+          "type": "string"
+        },
+        "spanId": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "violationEvidence": {
+      "type": "object",
+      "required": [
+        "stateSnapshot",
+        "metrics",
+        "logs",
+        "traces"
+      ],
+      "properties": {
+        "inputData": {},
+        "outputData": {},
+        "stateSnapshot": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "metrics": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "logs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "traces": {
+          "type": "array"
+        }
+      },
+      "additionalProperties": true
+    },
+    "violationRemediation": {
+      "type": "object",
+      "required": [
+        "suggested",
+        "automatic",
+        "priority"
+      ],
+      "properties": {
+        "suggested": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "automatic": {
+          "type": "boolean"
+        },
+        "priority": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "violationDetails": {
+      "type": "object",
+      "required": [
+        "ruleId",
+        "ruleName",
+        "category",
+        "severity",
+        "message",
+        "context",
+        "evidence"
+      ],
+      "properties": {
+        "ruleId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ruleName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "category": {
+          "$ref": "#/$defs/conformanceRuleCategory"
+        },
+        "severity": {
+          "$ref": "#/$defs/violationSeverity"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "actualValue": {},
+        "expectedValue": {},
+        "context": {
+          "$ref": "#/$defs/runtimeContext"
+        },
+        "stackTrace": {
+          "type": "string"
+        },
+        "evidence": {
+          "$ref": "#/$defs/violationEvidence"
+        },
+        "remediation": {
+          "$ref": "#/$defs/violationRemediation"
+        }
+      },
+      "additionalProperties": false
+    },
+    "verificationMetrics": {
+      "type": "object",
+      "required": [
+        "executionTime",
+        "networkCalls",
+        "dbQueries"
+      ],
+      "properties": {
+        "executionTime": {
+          "type": "number",
+          "minimum": 0
+        },
+        "memoryUsage": {
+          "type": "number",
+          "minimum": 0
+        },
+        "cpuUsage": {
+          "type": "number",
+          "minimum": 0
+        },
+        "networkCalls": {
+          "type": "number",
+          "minimum": 0
+        },
+        "dbQueries": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "verificationResult": {
+      "type": "object",
+      "required": [
+        "id",
+        "ruleId",
+        "status",
+        "timestamp",
+        "duration",
+        "context",
+        "metrics",
+        "metadata"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ruleId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "$ref": "#/$defs/verificationStatus"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "duration": {
+          "type": "number",
+          "minimum": 0
+        },
+        "context": {
+          "$ref": "#/$defs/runtimeContext"
+        },
+        "violation": {
+          "$ref": "#/$defs/violationDetails"
+        },
+        "metrics": {
+          "$ref": "#/$defs/verificationMetrics"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

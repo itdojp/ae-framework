@@ -14,6 +14,9 @@ const nodeBin = process.execPath;
 const specReportSchema = JSON.parse(readFileSync(resolve('schema/spec-validation-report.schema.json'), 'utf8'));
 const verifyProfileSchema = JSON.parse(readFileSync(resolve('schema/verify-profile-summary.schema.json'), 'utf8'));
 const qualityReportSchema = JSON.parse(readFileSync(resolve('schema/quality-report.schema.json'), 'utf8'));
+const conformanceVerifySchema = JSON.parse(readFileSync(resolve('schema/conformance-verify-result.schema.json'), 'utf8'));
+const conformanceMetricsSchema = JSON.parse(readFileSync(resolve('schema/conformance-metrics.schema.json'), 'utf8'));
+const conformanceReportSchema = JSON.parse(readFileSync(resolve('schema/conformance-report.schema.json'), 'utf8'));
 
 const runAeCli = (args: string[]) =>
   spawnSync(tsxBin, ['src/cli/index.ts', ...args], {
@@ -235,6 +238,84 @@ describe('CLI/Artifacts contract conformance', () => {
         outDir,
       ]);
       expect(writeFailureResult.status).toBe(1);
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('conformance verify --format json follows output schema contract (success)', () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'ae-contract-conformance-verify-'));
+    try {
+      const outputPath = join(tempDir, 'artifacts', 'conformance', 'conformance-results.json');
+      const result = runAeCli([
+        'conformance',
+        'verify',
+        '--input',
+        'configs/samples/sample-data.json',
+        '--rules',
+        'configs/samples/sample-rules.json',
+        '--context-file',
+        'configs/samples/sample-context.json',
+        '--format',
+        'json',
+        '--output',
+        outputPath,
+      ]);
+
+      expect(result.status).toBe(0);
+      expect(existsSync(outputPath)).toBe(true);
+
+      const ajv = new Ajv2020({ allErrors: true, strict: false });
+      addFormats(ajv);
+      const validate = ajv.compile(conformanceVerifySchema);
+      const payload = JSON.parse(readFileSync(outputPath, 'utf8')) as Record<string, unknown>;
+      expect(validate(payload), JSON.stringify(validate.errors)).toBe(true);
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('conformance metrics --format json follows output schema contract (success)', () => {
+    const result = runAeCli([
+      'conformance',
+      'metrics',
+      '--format',
+      'json',
+    ]);
+
+    expect(result.status).toBe(0);
+
+    const ajv = new Ajv2020({ allErrors: true, strict: false });
+    addFormats(ajv);
+    const validate = ajv.compile(conformanceMetricsSchema);
+    const payload = parseJsonFromStdout(result.stdout);
+    expect(validate(payload), JSON.stringify(validate.errors)).toBe(true);
+  });
+
+  it('conformance report --format json follows output schema contract (success)', () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'ae-contract-conformance-report-'));
+    try {
+      const outputPath = join(tempDir, 'artifacts', 'conformance', 'conformance-summary.json');
+      const result = runAeCli([
+        'conformance',
+        'report',
+        '--inputs',
+        'fixtures/conformance/sample.conformance-verify-result.json',
+        '--format',
+        'json',
+        '--output',
+        outputPath,
+        '--no-default-discovery',
+      ]);
+
+      expect(result.status).toBe(0);
+      expect(existsSync(outputPath)).toBe(true);
+
+      const ajv = new Ajv2020({ allErrors: true, strict: false });
+      addFormats(ajv);
+      const validate = ajv.compile(conformanceReportSchema);
+      const payload = JSON.parse(readFileSync(outputPath, 'utf8')) as Record<string, unknown>;
+      expect(validate(payload), JSON.stringify(validate.errors)).toBe(true);
     } finally {
       rmSync(tempDir, { recursive: true, force: true });
     }

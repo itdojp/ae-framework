@@ -1,0 +1,36 @@
+{
+  "timestamp": "2026-02-18T09:10:00.000Z",
+  "period": {
+    "start": "2026-02-18T09:00:00.000Z",
+    "end": "2026-02-18T09:10:00.000Z"
+  },
+  "counts": {
+    "totalVerifications": 3,
+    "totalViolations": 2,
+    "uniqueRules": 5,
+    "uniqueViolations": 2
+  },
+  "performance": {
+    "averageExecutionTime": 42.5,
+    "p95ExecutionTime": 58.0,
+    "p99ExecutionTime": 65.0,
+    "timeouts": 0,
+    "errors": 0
+  },
+  "violationTrends": [
+    {
+      "category": "data_validation",
+      "severity": "major",
+      "count": 2,
+      "trend": "stable"
+    }
+  ],
+  "topViolations": [
+    {
+      "ruleId": "rule-required-email",
+      "ruleName": "Required Email Field",
+      "count": 2,
+      "lastOccurrence": "2026-02-18T09:09:30.000Z"
+    }
+  ]
+}
