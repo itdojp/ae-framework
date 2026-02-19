@@ -75,6 +75,21 @@ const checks = [
     schema: 'schema/quality-report.schema.json',
     fixtures: ['fixtures/quality-report/sample.quality-report.json'],
     label: 'Quality report schema validation'
+  },
+  {
+    schema: 'schema/conformance-verify-result.schema.json',
+    fixtures: ['fixtures/conformance/sample.conformance-verify-result.json'],
+    label: 'Conformance verify result schema validation'
+  },
+  {
+    schema: 'schema/conformance-metrics.schema.json',
+    fixtures: ['fixtures/conformance/sample.conformance-metrics.json'],
+    label: 'Conformance metrics schema validation'
+  },
+  {
+    schema: 'schema/conformance-report.schema.json',
+    fixtures: ['fixtures/conformance/sample.conformance-report.json'],
+    label: 'Conformance report schema validation'
   }
 ];
 

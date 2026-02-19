@@ -1,0 +1,111 @@
+{
+  "schemaVersion": "1.0.0",
+  "generatedAt": "2026-02-18T09:15:00.000Z",
+  "status": "failure",
+  "runsAnalyzed": 2,
+  "statusBreakdown": {
+    "pass": 1,
+    "fail": 1,
+    "skip": 0,
+    "error": 0,
+    "timeout": 0
+  },
+  "totals": {
+    "rulesExecuted": 4,
+    "rulesPassed": 3,
+    "rulesFailed": 1,
+    "rulesErrored": 0,
+    "rulesSkipped": 0,
+    "totalViolations": 1,
+    "uniqueRules": 4,
+    "uniqueViolationRules": 1
+  },
+  "severityTotals": {
+    "critical": 0,
+    "major": 1,
+    "minor": 0,
+    "info": 0,
+    "warning": 0
+  },
+  "categoryTotals": {
+    "data_validation": 1,
+    "api_contract": 0,
+    "business_logic": 0,
+    "security_policy": 0,
+    "performance_constraint": 0,
+    "resource_usage": 0,
+    "state_invariant": 0,
+    "behavioral_constraint": 0,
+    "integration_requirement": 0,
+    "compliance_rule": 0
+  },
+  "severityTrends": [
+    {
+      "severity": "critical",
+      "current": 0,
+      "previous": 0,
+      "trend": "stable"
+    },
+    {
+      "severity": "major",
+      "current": 1,
+      "previous": 0,
+      "trend": "increasing"
+    },
+    {
+      "severity": "minor",
+      "current": 0,
+      "previous": 0,
+      "trend": "stable"
+    },
+    {
+      "severity": "info",
+      "current": 0,
+      "previous": 0,
+      "trend": "stable"
+    },
+    {
+      "severity": "warning",
+      "current": 0,
+      "previous": 0,
+      "trend": "stable"
+    }
+  ],
+  "topViolations": [
+    {
+      "ruleId": "rule-required-email",
+      "ruleName": "Required Email Field",
+      "count": 1,
+      "lastObserved": "2026-02-18T09:00:06.000Z"
+    }
+  ],
+  "latestRun": {
+    "file": "fixtures/conformance/sample.conformance-verify-result.json",
+    "timestamp": "2026-02-18T09:00:06.000Z",
+    "status": "fail",
+    "environment": "cli",
+    "version": "2.2.0",
+    "rulesExecuted": 1,
+    "rulesFailed": 1,
+    "totalViolations": 1
+  },
+  "inputs": [
+    {
+      "file": "fixtures/conformance/sample.conformance-verify-result.json",
+      "timestamp": "2026-02-18T09:00:06.000Z",
+      "status": "fail",
+      "environment": "cli",
+      "version": "2.2.0",
+      "totalViolations": 1
+    },
+    {
+      "file": "fixtures/conformance/secondary.conformance-verify-result.json",
+      "timestamp": "2026-02-18T08:55:00.000Z",
+      "status": "pass",
+      "environment": "cli",
+      "version": "2.2.0",
+      "totalViolations": 0
+    }
+  ],
+  "notes": "One or more runs reported failures, errors, or timeouts."
+}

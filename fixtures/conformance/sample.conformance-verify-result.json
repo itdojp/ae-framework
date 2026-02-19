@@ -1,0 +1,138 @@
+{
+  "overall": "fail",
+  "results": [
+    {
+      "id": "result-001",
+      "ruleId": "rule-required-email",
+      "status": "fail",
+      "timestamp": "2026-02-18T09:00:05.000Z",
+      "duration": 18,
+      "context": {
+        "timestamp": "2026-02-18T09:00:00.000Z",
+        "executionId": "run-001",
+        "environment": "cli",
+        "version": "2.2.0",
+        "metadata": {
+          "source": "cli",
+          "tool": "conformance-cli"
+        }
+      },
+      "violation": {
+        "ruleId": "rule-required-email",
+        "ruleName": "Required Email Field",
+        "category": "data_validation",
+        "severity": "major",
+        "message": "Required field is missing or null",
+        "actualValue": null,
+        "expectedValue": "Non-null value",
+        "context": {
+          "timestamp": "2026-02-18T09:00:00.000Z",
+          "executionId": "run-001",
+          "environment": "cli",
+          "version": "2.2.0",
+          "metadata": {
+            "source": "cli",
+            "tool": "conformance-cli"
+          }
+        },
+        "evidence": {
+          "inputData": {
+            "user": {}
+          },
+          "stateSnapshot": {},
+          "metrics": {},
+          "logs": [
+            "Validation failed for rule: Required Email Field"
+          ],
+          "traces": []
+        },
+        "remediation": {
+          "suggested": [
+            "Provide a non-null value for email"
+          ],
+          "automatic": false,
+          "priority": "high"
+        }
+      },
+      "metrics": {
+        "executionTime": 18,
+        "networkCalls": 0,
+        "dbQueries": 0
+      },
+      "metadata": {}
+    }
+  ],
+  "violations": [
+    {
+      "ruleId": "rule-required-email",
+      "ruleName": "Required Email Field",
+      "category": "data_validation",
+      "severity": "major",
+      "message": "Required field is missing or null",
+      "actualValue": null,
+      "expectedValue": "Non-null value",
+      "context": {
+        "timestamp": "2026-02-18T09:00:00.000Z",
+        "executionId": "run-001",
+        "environment": "cli",
+        "version": "2.2.0",
+        "metadata": {
+          "source": "cli",
+          "tool": "conformance-cli"
+        }
+      },
+      "evidence": {
+        "inputData": {
+          "user": {}
+        },
+        "stateSnapshot": {},
+        "metrics": {},
+        "logs": [
+          "Validation failed for rule: Required Email Field"
+        ],
+        "traces": []
+      },
+      "remediation": {
+        "suggested": [
+          "Provide a non-null value for email"
+        ],
+        "automatic": false,
+        "priority": "high"
+      }
+    }
+  ],
+  "summary": {
+    "totalRules": 1,
+    "rulesExecuted": 1,
+    "rulesPassed": 0,
+    "rulesFailed": 1,
+    "rulesSkipped": 0,
+    "rulesError": 0,
+    "totalDuration": 18,
+    "violationsBySeverity": {
+      "critical": 0,
+      "major": 1,
+      "minor": 0,
+      "info": 0,
+      "warning": 0
+    },
+    "violationsByCategory": {
+      "data_validation": 1,
+      "api_contract": 0,
+      "business_logic": 0,
+      "security_policy": 0,
+      "performance_constraint": 0,
+      "resource_usage": 0,
+      "state_invariant": 0,
+      "behavioral_constraint": 0,
+      "integration_requirement": 0,
+      "compliance_rule": 0
+    }
+  },
+  "metadata": {
+    "executionId": "run-001",
+    "timestamp": "2026-02-18T09:00:06.000Z",
+    "environment": "cli",
+    "version": "2.2.0"
+  }
+}

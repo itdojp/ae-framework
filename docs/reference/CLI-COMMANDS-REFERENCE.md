@@ -202,15 +202,18 @@ ae domain-model --language --sources "glossary.md"
 # Verify input data
  ae conformance verify --input data.json --rules rules.json \
    --context-file context.json --format json --output conformance-results.json
+# JSON schema (--format json): schema/conformance-verify-result.schema.json
 
 # Rules / config / metrics / status
  ae conformance rules --list
  ae conformance config --show
  ae conformance metrics --format json --export metrics.json
+# JSON schema (--format json): schema/conformance-metrics.schema.json
  ae conformance status
 
 # Aggregate reports
  ae conformance report --directory artifacts/hermetic-reports/conformance --format both
+# JSON schema (--format json): schema/conformance-report.schema.json
 ```
 
 ### Integration Testing (Phase 2.3)
@@ -509,12 +512,15 @@ ae conformance sample --rules configs/samples/sample-rules.json \
 
  ae conformance verify --input data.json --rules rules.json \
   --context-file context.json --format json --output conformance-results.json
+# JSON schema (--format json): schema/conformance-verify-result.schema.json
 
  ae conformance rules --list
  ae conformance config --show
  ae conformance metrics --format json --export metrics.json
+# JSON schema (--format json): schema/conformance-metrics.schema.json
  ae conformance status
  ae conformance report --directory artifacts/hermetic-reports/conformance --format both
+# JSON schema (--format json): schema/conformance-report.schema.json
 ```
 
 ### Integration Testing

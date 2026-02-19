@@ -1,0 +1,192 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/conformance-metrics.schema.json",
+  "title": "Conformance Metrics",
+  "description": "Machine-readable metrics emitted by `ae conformance metrics --format json`.",
+  "type": "object",
+  "required": [
+    "timestamp",
+    "period",
+    "counts",
+    "performance",
+    "violationTrends",
+    "topViolations"
+  ],
+  "properties": {
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "period": {
+      "type": "object",
+      "required": [
+        "start",
+        "end"
+      ],
+      "properties": {
+        "start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "counts": {
+      "type": "object",
+      "required": [
+        "totalVerifications",
+        "totalViolations",
+        "uniqueRules",
+        "uniqueViolations"
+      ],
+      "properties": {
+        "totalVerifications": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "totalViolations": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "uniqueRules": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "uniqueViolations": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "performance": {
+      "type": "object",
+      "required": [
+        "averageExecutionTime",
+        "p95ExecutionTime",
+        "p99ExecutionTime",
+        "timeouts",
+        "errors"
+      ],
+      "properties": {
+        "averageExecutionTime": {
+          "type": "number",
+          "minimum": 0
+        },
+        "p95ExecutionTime": {
+          "type": "number",
+          "minimum": 0
+        },
+        "p99ExecutionTime": {
+          "type": "number",
+          "minimum": 0
+        },
+        "timeouts": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "errors": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "violationTrends": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "category",
+          "severity",
+          "count",
+          "trend"
+        ],
+        "properties": {
+          "category": {
+            "$ref": "#/$defs/conformanceRuleCategory"
+          },
+          "severity": {
+            "$ref": "#/$defs/violationSeverity"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "trend": {
+            "type": "string",
+            "enum": [
+              "increasing",
+              "decreasing",
+              "stable"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "topViolations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "ruleId",
+          "ruleName",
+          "count",
+          "lastOccurrence"
+        ],
+        "properties": {
+          "ruleId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "ruleName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "lastOccurrence": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "violationSeverity": {
+      "type": "string",
+      "enum": [
+        "critical",
+        "major",
+        "minor",
+        "info",
+        "warning"
+      ]
+    },
+    "conformanceRuleCategory": {
+      "type": "string",
+      "enum": [
+        "data_validation",
+        "api_contract",
+        "business_logic",
+        "security_policy",
+        "performance_constraint",
+        "resource_usage",
+        "state_invariant",
+        "behavioral_constraint",
+        "integration_requirement",
+        "compliance_rule"
+      ]
+    }
+  }
+}
