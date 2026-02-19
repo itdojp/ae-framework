@@ -1,5 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/report-envelope.schema.json",
   "title": "AE Framework Report Envelope",
   "type": "object",
   "required": [

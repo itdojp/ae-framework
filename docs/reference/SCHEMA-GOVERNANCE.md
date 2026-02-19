@@ -45,7 +45,7 @@ These URLs are branch/path-coupled and are not stable schema identifiers.
 
 - Keep `<file>` in URI exactly equal to the schema filename under `schema/`.
 - If changing `$id` of an already published schema, treat it as compatibility-impacting and follow `docs/project/RELEASE.md`.
-- If a schema intentionally omits `$id` (local-only usage), document the rationale in the PR description.
+- Every `schema/*.schema.json` file must define `$id`.
 
 ### 6. Review checklist
 
@@ -106,7 +106,7 @@ These URLs are branch/path-coupled and are not stable schema identifiers.
 
 - URI の `<file>` は `schema/` 配下の実ファイル名と一致させる。
 - 公開済みスキーマの `$id` 変更は互換性影響ありとして扱い、`docs/project/RELEASE.md` の手順に従う。
-- 意図的に `$id` を省略するスキーマ（ローカル専用）は、PR説明に理由を明記する。
+- `schema/*.schema.json` は `$id` 定義を必須とする。
 
 ### 6. レビュー観点
 
