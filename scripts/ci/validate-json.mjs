@@ -70,6 +70,11 @@ const checks = [
     schema: 'schema/trace-map.schema.json',
     fixtures: ['fixtures/trace-map/sample.trace-map.json'],
     label: 'Trace map schema validation'
+  },
+  {
+    schema: 'schema/quality-report.schema.json',
+    fixtures: ['fixtures/quality-report/sample.quality-report.json'],
+    label: 'Quality report schema validation'
   }
 ];
 

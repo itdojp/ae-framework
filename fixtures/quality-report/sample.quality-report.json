@@ -1,0 +1,41 @@
+{
+  "timestamp": "2026-02-19T00:00:00.000Z",
+  "environment": "development",
+  "meta": {
+    "runId": "local-1234567890",
+    "createdAt": "2026-02-19T00:00:00.000Z"
+  },
+  "overallScore": 100,
+  "totalGates": 1,
+  "passedGates": 1,
+  "failedGates": 0,
+  "results": [
+    {
+      "gateKey": "linting",
+      "gateName": "Code Linting",
+      "passed": true,
+      "score": 100,
+      "violations": [],
+      "executionTime": 0,
+      "environment": "development",
+      "threshold": {
+        "maxErrors": 0,
+        "maxWarnings": 0,
+        "blockOnErrors": false
+      },
+      "details": {
+        "dryRun": true
+      }
+    }
+  ],
+  "summary": {
+    "byCategory": {
+      "code-quality": {
+        "passed": 1,
+        "total": 1
+      }
+    },
+    "executionTime": 0,
+    "blockers": []
+  }
+}

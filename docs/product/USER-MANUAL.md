@@ -214,8 +214,8 @@ pnpm run ae-framework -- sbom --help
 | --- | --- | --- | --- | --- |
 | `ae spec lint --format json` | `0` | `2` (`SPEC_INVALID_INPUT`) | `1` (`SPEC_INTERNAL_ERROR`) | `schema/spec-validation-report.schema.json` |
 | `ae spec validate --format json` | `0` | `2` (`SPEC_INVALID_INPUT`) | `1` (`SPEC_INTERNAL_ERROR`) | `schema/spec-validation-report.schema.json` |
-| `ae quality run --format json` | `0` | `2` (`--format` 不正値) | `1`（blocker失敗/実行エラー） | `QualityReport`（`src/quality/policy-loader.ts`） |
-| `ae quality reconcile --format json` | `0` | `2` (`--format` 不正値) | `1`（blocker残存/実行エラー） | `QualityReport`（`src/quality/policy-loader.ts`） |
+| `ae quality run --format json` | `0` | `2` (`--format` 不正値) | `1`（blocker失敗/実行エラー） | `schema/quality-report.schema.json` |
+| `ae quality reconcile --format json` | `0` | `2` (`--format` 不正値) | `1`（blocker残存/実行エラー） | `schema/quality-report.schema.json` |
 | `pnpm run verify:profile -- --json` | `0` | `2` (unknown profile) / `3` (invalid args) | `1` (summary write failure 等) | `schema/verify-profile-summary.schema.json` |
 
 補足:

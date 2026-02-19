@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://itdojp.github.io/ae-framework/schema/quality-report.schema.json",
+  "title": "Quality Report",
+  "description": "Machine-readable report emitted by quality run/reconcile in JSON mode.",
+  "type": "object",
+  "required": [
+    "timestamp",
+    "environment",
+    "overallScore",
+    "totalGates",
+    "passedGates",
+    "failedGates",
+    "results",
+    "summary"
+  ],
+  "properties": {
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "environment": {
+      "type": "string"
+    },
+    "meta": {
+      "type": "object",
+      "required": [
+        "runId",
+        "createdAt"
+      ],
+      "properties": {
+        "runId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "commitSha": {
+          "type": "string"
+        },
+        "branch": {
+          "type": "string"
+        },
+        "agent": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "traceId": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "overallScore": {
+      "type": "number"
+    },
+    "totalGates": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "passedGates": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "failedGates": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "gateKey",
+          "gateName",
+          "passed",
+          "violations",
+          "executionTime",
+          "environment",
+          "threshold"
+        ],
+        "properties": {
+          "gateKey": {
+            "type": "string",
+            "minLength": 1
+          },
+          "gateName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "passed": {
+            "type": "boolean"
+          },
+          "score": {
+            "type": "number"
+          },
+          "violations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "executionTime": {
+            "type": "number",
+            "minimum": 0
+          },
+          "environment": {
+            "type": "string"
+          },
+          "threshold": {
+            "type": "object",
+            "additionalProperties": {
+              "type": [
+                "number",
+                "string",
+                "boolean"
+              ]
+            }
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "composites": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "gates",
+          "passed",
+          "failedGates"
+        ],
+        "properties": {
+          "gates": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "passed": {
+            "type": "boolean"
+          },
+          "failedGates": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": [
+        "byCategory",
+        "executionTime",
+        "blockers"
+      ],
+      "properties": {
+        "byCategory": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "passed",
+              "total"
+            ],
+            "properties": {
+              "passed": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "total": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "executionTime": {
+          "type": "number",
+          "minimum": 0
+        },
+        "blockers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
