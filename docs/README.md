@@ -48,6 +48,10 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - CLI Entry Migration: `guides/CLI-MIGRATION.md`
 - ExecPlan JSON schema: `guides/EXECPLAN-SCHEMA.md`
 
+### Development
+- Enhanced State Manager: [development/enhanced-state-manager.md](./development/enhanced-state-manager.md) - SSOT/versioning/transactions with EventBus-aware state management.
+- Circuit Breaker Pattern: [development/circuit-breaker.md](./development/circuit-breaker.md) - CLOSED/OPEN/HALF_OPEN failover control with fallback and monitoring.
+
 ### Phases
 - Natural Language Requirements: `phases/PHASE-2-NATURAL-LANGUAGE-REQUIREMENTS.md`
 - Runtime Conformance: `phases/PHASE-2-2-RUNTIME-CONFORMANCE.md`
@@ -164,6 +168,10 @@ ae-frameworkは、エージェント協調型のSDLCオーケストレーター�
 - [CLI-MIGRATION.md](./guides/CLI-MIGRATION.md) - CLI entry 移行ガイド
 - [test-generation-guide.md](./guides/test-generation-guide.md) - テスト生成ガイド
 - [EXECPLAN-SCHEMA.md](./guides/EXECPLAN-SCHEMA.md) - ExecPlan JSONスキーマ
+
+### 🛠️ [development/](./development/) - 開発向け実装ドキュメント
+- [enhanced-state-manager.md](./development/enhanced-state-manager.md) - SSOT管理・バージョニング・トランザクション・EventBus連携を備えた状態管理設計。
+- [circuit-breaker.md](./development/circuit-breaker.md) - CLOSED/OPEN/HALF_OPENの遷移で障害連鎖を防ぐ回路遮断パターンの実装ガイド。
 
 ### 🎯 [phases/](./phases/) - フェーズ別詳細ドキュメント
 6フェーズの詳細仕様とガイド
