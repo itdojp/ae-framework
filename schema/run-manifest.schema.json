@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/itdojp/ae-framework/schema/run-manifest.schema.json",
+  "$id": "https://ae-framework/schema/run-manifest.schema.json",
   "title": "Run Manifest",
   "type": "object",
   "additionalProperties": false,
@@ -27,7 +27,7 @@
       "description": "When the manifest was generated (UTC ISO8601)."
     },
     "metadata": {
-      "$ref": "https://github.com/itdojp/ae-framework/schema/artifact-metadata.schema.json"
+      "$ref": "https://ae-framework/schema/artifact-metadata.schema.json"
     },
     "summaries": {
       "type": "object",
