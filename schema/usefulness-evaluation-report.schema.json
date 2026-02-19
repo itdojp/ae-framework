@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/itdojp/ae-framework/schema/usefulness-evaluation-report.schema.json",
+  "$id": "https://ae-framework/schema/usefulness-evaluation-report.schema.json",
   "title": "Usefulness Evaluation Report",
   "type": "object",
   "additionalProperties": false,

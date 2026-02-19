@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/itdojp/ae-framework/schema/issue-traceability-matrix.schema.json",
+  "$id": "https://ae-framework/schema/issue-traceability-matrix.schema.json",
   "title": "Issue Traceability Matrix",
   "type": "object",
   "additionalProperties": false,

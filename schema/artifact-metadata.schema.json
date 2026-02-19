@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/itdojp/ae-framework/schema/artifact-metadata.schema.json",
+  "$id": "https://ae-framework/schema/artifact-metadata.schema.json",
   "title": "Artifact Metadata",
   "type": "object",
   "additionalProperties": false,
