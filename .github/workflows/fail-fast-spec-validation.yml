@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: fail-fast-spec-${{ github.event.pull_request.number || github.ref || github.run_id }}
   cancel-in-progress: true
 
 env:
@@ -29,6 +29,8 @@ jobs:
             .ae
             packages/spec-compiler
             src
+            scripts/ci
+            configs/tsconfig
             .github/actions/setup-pnpm
             .github/actions/setup-node-pnpm
             package.json
