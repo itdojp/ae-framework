@@ -37,6 +37,9 @@ jobs:
   spec-validation:
     name: Spec Validation
     if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_call' && inputs.mode == 'full') || github.event.schedule == '0 2 * * 0' }}
+    permissions:
+      contents: read
+      pull-requests: write
     uses: ./.github/workflows/spec-validation.yml
     secrets: inherit
 
