@@ -29,6 +29,9 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+permissions: read-all
+
 jobs:
   # Issue #71: CI最前段にSpec Validation追加
   spec-validation:
