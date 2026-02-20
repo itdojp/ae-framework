@@ -231,6 +231,10 @@ jobs:
   pr-verify-entry:
     name: "PR Verify (entry: pr)"
     if: ${{ github.event_name == 'pull_request' }}
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
     uses: ./.github/workflows/pr-verify.yml
     secrets: inherit
     with:
