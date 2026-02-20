@@ -2635,12 +2635,12 @@ Flake maintenance is scheduled in the same workflow via the `mode: maintenance` 
 ```json
 {
   "scripts": {
-    "flake:isolate": "node scripts/flake-isolation-manager.js isolate",
-    "flake:recover": "node scripts/flake-isolation-manager.js recover", 
-    "flake:remove": "node scripts/flake-isolation-manager.js remove",
-    "flake:report": "node scripts/flake-isolation-manager.js report",
-    "flake:maintenance": "node scripts/flake-isolation-manager.js maintenance",
-    "flake:list": "node scripts/flake-isolation-manager.js list"
+    "flake:isolate": "node scripts/flake-isolation-manager.cjs isolate",
+    "flake:recover": "node scripts/flake-isolation-manager.cjs recover", 
+    "flake:remove": "node scripts/flake-isolation-manager.cjs remove",
+    "flake:report": "node scripts/flake-isolation-manager.cjs report",
+    "flake:maintenance": "node scripts/flake-isolation-manager.cjs maintenance",
+    "flake:list": "node scripts/flake-isolation-manager.cjs list"
   }
 }
 ```
