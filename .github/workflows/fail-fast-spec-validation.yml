@@ -32,6 +32,7 @@ jobs:
             src
             .github/actions/setup-pnpm
             .github/actions/setup-node-pnpm
+            scripts/ci
             package.json
             pnpm-lock.yaml
             tsconfig.json
