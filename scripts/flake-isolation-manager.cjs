@@ -363,7 +363,7 @@ async function main() {
       const pattern = args[1];
       const failureRate = args[2];
       if (!pattern) {
-        console.error('Usage: flake-isolation-manager.js isolate <test-pattern> [failure-rate]');
+        console.error('Usage: flake-isolation-manager.cjs isolate <test-pattern> [failure-rate]');
         process.exit(1);
       }
       manager.isolateTest(pattern, { failureRate });
@@ -373,7 +373,7 @@ async function main() {
       const recoverPattern = args[1];
       const runs = parseInt(args[2]) || 10;
       if (!recoverPattern) {
-        console.error('Usage: flake-isolation-manager.js recover <test-pattern> [runs]');
+        console.error('Usage: flake-isolation-manager.cjs recover <test-pattern> [runs]');
         process.exit(1);
       }
       await manager.tryRecoverTest(recoverPattern, runs);
@@ -382,7 +382,7 @@ async function main() {
     case 'remove':
       const removePattern = args[1];
       if (!removePattern) {
-        console.error('Usage: flake-isolation-manager.js remove <test-pattern>');
+        console.error('Usage: flake-isolation-manager.cjs remove <test-pattern>');
         process.exit(1);
       }
       manager.removeTest(removePattern);
