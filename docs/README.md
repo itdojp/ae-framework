@@ -72,6 +72,7 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 ### Reference
 - CLI Commands: `reference/CLI-COMMANDS-REFERENCE.md`
 - API Reference: `reference/API.md`
+- Schema governance ($id canonical URI policy): [SCHEMA-GOVERNANCE.md](./reference/SCHEMA-GOVERNANCE.md)
 - Spec & Verification Kit (minimal activation guide): `reference/SPEC-VERIFICATION-KIT-MIN.md`
 - Legacy ExecPlan (6-phase, deprecated): `../plans/archive/legacy-6-phase.md`
 
@@ -199,6 +200,7 @@ Claude CodeやMCPとの統合
 
 - **[CLI-COMMANDS-REFERENCE.md](./reference/CLI-COMMANDS-REFERENCE.md)** ⭐ **重要** - 全CLIコマンドリファレンス
 - [API.md](./reference/API.md) - API仕様
+- [SCHEMA-GOVERNANCE.md](./reference/SCHEMA-GOVERNANCE.md) - schema `$id` canonical URI 方針
 - [SPEC-VERIFICATION-KIT-MIN.md](./reference/SPEC-VERIFICATION-KIT-MIN.md) - Spec & Verification Kit（最小パッケージ・有効化手順）
 - [legacy-6-phase.md](../plans/archive/legacy-6-phase.md) - 旧6フェーズExecPlan（非推奨）
 

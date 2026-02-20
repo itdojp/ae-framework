@@ -95,4 +95,53 @@ describe('QualityGateRunner result parsing', () => {
     expect(result.passed).toBe(false);
     expect(result.violations).toContain('Too many high vulnerabilities: 7 > 6');
   });
+
+  it('treats transient pnpm audit endpoint errors as non-blocking when counts are unavailable', () => {
+    const runner = new QualityGateRunner();
+    const parseSecurityResult = (runner as unknown as { parseSecurityResult: ParseSecurityResult }).parseSecurityResult;
+    const result = parseSecurityResult(
+      createBaseResult('security', 'Security Vulnerabilities'),
+      {
+        stdout: JSON.stringify({
+          error: {
+            code: 'ERR_PNPM_AUDIT_BAD_RESPONSE',
+            message:
+              'The audit endpoint responded with 500: {"error":"Internal Server Error"}',
+          },
+        }),
+        code: 1,
+      },
+      { maxCritical: 2, maxHigh: 6, maxMedium: 15 },
+    );
+
+    expect(result.passed).toBe(true);
+    expect(result.violations).toHaveLength(0);
+    expect(result.details).toMatchObject({
+      critical: 0,
+      high: 0,
+      medium: 0,
+      auditTransientErrorCode: 'ERR_PNPM_AUDIT_BAD_RESPONSE',
+    });
+  });
+
+  it('fails security gate on non-transient execution errors when counts are unavailable', () => {
+    const runner = new QualityGateRunner();
+    const parseSecurityResult = (runner as unknown as { parseSecurityResult: ParseSecurityResult }).parseSecurityResult;
+    const result = parseSecurityResult(
+      createBaseResult('security', 'Security Vulnerabilities'),
+      {
+        stdout: JSON.stringify({
+          error: {
+            code: 'ERR_PNPM_AUDIT_BAD_RESPONSE',
+            message: 'The audit endpoint responded with 403: {"error":"Forbidden"}',
+          },
+        }),
+        code: 1,
+      },
+      { maxCritical: 2, maxHigh: 6, maxMedium: 15 },
+    );
+
+    expect(result.passed).toBe(false);
+    expect(result.violations).toContain('Security scan failed with exit code 1');
+  });
 });

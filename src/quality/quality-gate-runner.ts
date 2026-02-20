@@ -615,30 +615,65 @@ export class QualityGateRunner {
   ): QualityGateResult {
     try {
       const combinedOutput = `${result.stdout}\n${result.stderr ?? ''}`.trim();
+      const parseJsonPayload = (payload: string): Record<string, unknown> | null => {
+        const trimmed = payload.trim();
+        if (trimmed.length === 0) return null;
+
+        try {
+          return JSON.parse(trimmed) as Record<string, unknown>;
+        } catch {
+          // Fall through to best-effort extraction from mixed stdout/stderr logs.
+        }
+
+        const start = trimmed.indexOf('{');
+        const end = trimmed.lastIndexOf('}');
+        if (start >= 0 && end > start) {
+          const candidate = trimmed.slice(start, end + 1);
+          try {
+            return JSON.parse(candidate) as Record<string, unknown>;
+          } catch {
+            return null;
+          }
+        }
+
+        return null;
+      };
 
       let critical = 0;
       let high = 0;
       let medium = 0;
       let hasCounts = false;
+      let transientAuditError: { code: string; message: string } | null = null;
 
       const jsonPayloads = [result.stdout, result.stderr ?? '']
         .map((segment) => segment.trim())
         .filter((segment) => segment.length > 0);
       for (const payload of jsonPayloads) {
-        try {
-          const parsed = JSON.parse(payload) as {
-            metadata?: { vulnerabilities?: { critical?: number; high?: number; moderate?: number } };
-          };
-          const vulnerabilities = parsed.metadata?.vulnerabilities;
-          if (vulnerabilities) {
-            critical = Number(vulnerabilities.critical ?? 0);
-            high = Number(vulnerabilities.high ?? 0);
-            medium = Number(vulnerabilities.moderate ?? 0);
-            hasCounts = true;
-            break;
-          }
-        } catch {
-          // Ignore non-JSON payloads and fallback to regex parsing below.
+        const parsed = parseJsonPayload(payload) as {
+          metadata?: { vulnerabilities?: { critical?: number; high?: number; moderate?: number } };
+          error?: { code?: string; message?: string };
+        } | null;
+        if (!parsed) {
+          continue;
+        }
+
+        const vulnerabilities = parsed.metadata?.vulnerabilities;
+        if (vulnerabilities) {
+          critical = Number(vulnerabilities.critical ?? 0);
+          high = Number(vulnerabilities.high ?? 0);
+          medium = Number(vulnerabilities.moderate ?? 0);
+          hasCounts = true;
+          break;
+        }
+
+        const errorCode = parsed.error?.code;
+        const errorMessage = parsed.error?.message;
+        if (
+          errorCode === 'ERR_PNPM_AUDIT_BAD_RESPONSE' &&
+          typeof errorMessage === 'string' &&
+          /responded with (429|5\d\d)/i.test(errorMessage)
+        ) {
+          transientAuditError = { code: errorCode, message: errorMessage };
         }
       }
 
@@ -653,11 +688,23 @@ export class QualityGateRunner {
         hasCounts = Boolean(criticalMatches || highMatches || mediumMatches);
       }
 
-      baseResult.details = { critical, high, medium };
+      baseResult.details = {
+        critical,
+        high,
+        medium,
+        ...(transientAuditError
+          ? {
+              auditTransientErrorCode: transientAuditError.code,
+              auditTransientErrorMessage: transientAuditError.message,
+            }
+          : {}),
+      };
 
       const exitCode = result.code ?? 0;
       if (exitCode !== 0 && !hasCounts) {
-        baseResult.violations.push(`Security scan failed with exit code ${exitCode}`);
+        if (!transientAuditError) {
+          baseResult.violations.push(`Security scan failed with exit code ${exitCode}`);
+        }
       }
       
       // Check against thresholds

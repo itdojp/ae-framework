@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
+import { runSchemaIdPolicyCheck } from './check-schema-id-policy.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..', '..');
@@ -94,6 +95,16 @@ const checks = [
 ];
 
 let hasFailures = false;
+
+const schemaIdPolicyCheck = runSchemaIdPolicyCheck([
+  'node',
+  'check-schema-id-policy.mjs',
+  `--root=${repoRoot}`,
+]);
+if (schemaIdPolicyCheck.exitCode !== 0) {
+  hasFailures = true;
+}
+
 for (const check of checks) {
   const failures = validateSchema(check.schema, check.fixtures);
   if (failures.length === 0) {
