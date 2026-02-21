@@ -5,6 +5,9 @@ describe('llm schemas', () => {
   test('AnthropicMsg accepts string content and passthrough fields', () => {
     const result = AnthropicMsg.safeParse({ content: 'hello', id: 'msg_1' });
     expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.id).toBe('msg_1');
+    }
   });
 
   test('AnthropicMsg accepts structured content arrays', () => {
@@ -16,7 +19,7 @@ describe('llm schemas', () => {
     expect(result.success).toBe(true);
   });
 
-  test('GeminiResp accepts response object with text method', () => {
+  test('GeminiResp accepts unknown response payloads', () => {
     const result = GeminiResp.safeParse({
       response: { text: () => 'ok' },
       meta: { provider: 'gemini' },
