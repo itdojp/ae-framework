@@ -33,24 +33,26 @@ export function post(input: unknown, output: unknown): boolean {
   if (!isObject(output)) return true
   // Inventory response should never be negative
   if ('stock' in output && 'sku' in output) {
-    const ok = InventorySchema.safeParse(output).success
-    if (!ok) return false
+    const parsedOutput = InventorySchema.safeParse(output)
+    if (!parsedOutput.success) return false
     // If input provided sku, ensure it matches
     if (isObject(input) && 'sku' in input) {
-      if ((output as any).sku !== (input as any).sku) return false
+      const parsedInput = InventorySkuGetInput.safeParse(input)
+      if (!parsedInput.success) return false
+      if (parsedOutput.data.sku !== parsedInput.data.sku) return false
     }
     return true
   }
   // Reservation response should echo input fields; status must be allowed
   if ('status' in output && 'id' in output && 'sku' in output && 'quantity' in output && 'orderId' in output) {
-    const ok = ReservationSchema.safeParse(output).success
-    if (!ok) return false
+    const parsedOutput = ReservationSchema.safeParse(output)
+    if (!parsedOutput.success) return false
     if (isObject(input) && 'sku' in input && 'quantity' in input && 'orderId' in input) {
-      const i = input as any
-      const o = output as any
-      if (o.sku !== i.sku) return false
-      if (o.quantity !== i.quantity) return false
-      if (o.orderId !== i.orderId) return false
+      const parsedInput = CreateReservationInputSchema.safeParse(input)
+      if (!parsedInput.success) return false
+      if (parsedOutput.data.sku !== parsedInput.data.sku) return false
+      if (parsedOutput.data.quantity !== parsedInput.data.quantity) return false
+      if (parsedOutput.data.orderId !== parsedInput.data.orderId) return false
     }
     return true
   }

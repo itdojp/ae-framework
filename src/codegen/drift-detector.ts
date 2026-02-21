@@ -6,9 +6,9 @@
 import { createHash } from 'crypto';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
-import { glob } from 'glob';
+import { glob, type GlobOptionsWithFileTypesFalse } from 'glob';
 import chalk from 'chalk';
-import type { CodegenManifest, DriftDetectionResult } from './deterministic-generator.js';
+import type { CodegenManifest, GeneratedFile } from './deterministic-generator.js';
 
 export interface DriftConfig {
   /** Directory containing generated code */
@@ -71,6 +71,7 @@ export interface DriftReport {
 // Configuration constants for drift detection
 const DEFAULT_LINE_CHANGE_ESTIMATE_RATIO = 0.1; // 10% estimated change ratio
 const FALLBACK_ORIGINAL_LINES = 100; // Fallback when original line count unknown
+type LegacyLineCountInfo = { content?: unknown; lines?: unknown };
 
 export class DriftDetector {
   private config: DriftConfig;
@@ -222,9 +223,10 @@ export class DriftDetector {
     const knownFiles = new Set(manifest?.files.map(f => f.filePath) || []);
 
     // Find all files in the code directory
-    const globOpts: any = {
+    const globOpts: GlobOptionsWithFileTypesFalse = {
       cwd: this.config.codeDir,
       nodir: true,
+      withFileTypes: false,
     };
     if (this.config.ignorePatterns && this.config.ignorePatterns.length > 0) {
       globOpts.ignore = this.config.ignorePatterns;
@@ -381,7 +383,10 @@ export class DriftDetector {
     return Math.floor(lines * DEFAULT_LINE_CHANGE_ESTIMATE_RATIO);
   }
 
-  private calculateChangeConfidence(content: string, originalFile: any): 'high' | 'medium' | 'low' {
+  private calculateChangeConfidence(
+    content: string,
+    originalFile: GeneratedFile | LegacyLineCountInfo
+  ): 'high' | 'medium' | 'low' {
     // Check for generated file markers
     if (content.includes('DO NOT MODIFY') || content.includes('automatically generated')) {
       return 'high';
@@ -406,20 +411,22 @@ export class DriftDetector {
   /**
    * Attempts to determine the original line count from the manifest or original file content.
    */
-  private getOriginalLineCount(originalFile: any): number | undefined {
+  private getOriginalLineCount(
+    originalFile: GeneratedFile | LegacyLineCountInfo | string
+  ): number | undefined {
     // If originalFile is a string (content), count lines
     if (typeof originalFile === 'string') {
       return originalFile.split('\n').length;
     }
-    // If originalFile is an object with a 'content' property
-    if (originalFile && typeof originalFile.content === 'string') {
+
+    if (typeof originalFile.content === 'string') {
       return originalFile.content.split('\n').length;
     }
-    // If originalFile is an object with a 'lines' property
-    if (originalFile && typeof originalFile.lines === 'number') {
+
+    if ('lines' in originalFile && typeof originalFile.lines === 'number') {
       return originalFile.lines;
     }
-    // Could not determine
+
     return undefined;
   }
 
