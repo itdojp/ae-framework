@@ -1,22 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { Reservation } from '../../domain/contracts.js';
 import type { InventoryService } from '../../domain/services.js';
-
-function getErrorDetails(error: unknown): { name?: string; message?: string } {
-  if (typeof error !== 'object' || error === null) {
-    return {};
-  }
-
-  const record = error as Record<string, unknown>;
-  const details: { name?: string; message?: string } = {};
-  if (typeof record['name'] === 'string') {
-    details.name = record['name'];
-  }
-  if (typeof record['message'] === 'string') {
-    details.message = record['message'];
-  }
-  return details;
-}
+import { normalizeError } from '../../resilience/error-utils.js';
 
 export async function reservationRoutes(fastify: FastifyInstance, options: { inventoryService: InventoryService }) {
   const { inventoryService } = options;
@@ -35,11 +20,11 @@ export async function reservationRoutes(fastify: FastifyInstance, options: { inv
       const reservation = await inventoryService.createReservation(parsed.data);
       return reply.code(201).send(reservation);
     } catch (error: unknown) {
-      const errorDetails = getErrorDetails(error);
-      if (errorDetails.name === 'InsufficientStockError') {
+      const normalizedError = normalizeError(error, 'Reservation creation failed');
+      if (normalizedError.name === 'InsufficientStockError') {
         return reply.code(409).send({
           error: 'INSUFFICIENT_STOCK',
-          message: errorDetails.message ?? 'Insufficient stock'
+          message: normalizedError.message
         });
       }
       throw error;

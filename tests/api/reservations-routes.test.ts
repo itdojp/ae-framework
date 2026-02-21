@@ -2,6 +2,7 @@ import Fastify from 'fastify';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { reservationRoutes } from '../../src/api/routes/reservations.js';
+import { InsufficientStockError } from '../../src/domain/entities.js';
 import type { InventoryService } from '../../src/domain/services.js';
 
 function createInventoryService(overrides: Partial<InventoryService> = {}): InventoryService {
@@ -47,7 +48,7 @@ describe('reservationRoutes', () => {
   it('returns 409 when createReservation throws InsufficientStockError', async () => {
     const inventoryService = createInventoryService({
       createReservation: vi.fn().mockRejectedValue(
-        Object.assign(new Error('Not enough stock'), { name: 'InsufficientStockError' }),
+        new InsufficientStockError('item-1', 10, 0),
       ),
     });
     const app = await buildApp(inventoryService);
@@ -59,9 +60,9 @@ describe('reservationRoutes', () => {
     });
 
     expect(res.statusCode).toBe(409);
-    expect(res.json()).toEqual({
+    expect(res.json()).toMatchObject({
       error: 'INSUFFICIENT_STOCK',
-      message: 'Not enough stock',
+      message: expect.stringContaining('Insufficient stock'),
     });
   });
 
@@ -78,5 +79,10 @@ describe('reservationRoutes', () => {
     });
 
     expect(res.statusCode).toBe(500);
+    const body = res.json();
+    expect(body).toHaveProperty('error');
+    expect(body).toHaveProperty('message');
+    expect(typeof body.error).toBe('string');
+    expect(typeof body.message).toBe('string');
   });
 });
