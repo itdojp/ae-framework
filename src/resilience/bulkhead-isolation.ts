@@ -24,9 +24,9 @@ export interface BulkheadStats {
 }
 
 interface QueuedOperation {
-  operation: () => Promise<any>;
-  resolve: (value: any) => void;
-  reject: (reason: any) => void;
+  operation: () => Promise<unknown>;
+  resolve: (value: unknown) => void;
+  reject: (reason: unknown) => void;
   enqueuedAt: number;
   timeoutId: NodeJS.Timeout;
 }
@@ -76,8 +76,8 @@ export class Bulkhead {
 
       queuedOp = {
         operation,
-        resolve,
-        reject,
+        resolve: (value: unknown) => resolve(value as T),
+        reject: (reason: unknown) => reject(reason),
         enqueuedAt: Date.now(),
         timeoutId,
       };
@@ -92,7 +92,7 @@ export class Bulkhead {
   private async executeImmediately<T>(
     operation: () => Promise<T>,
     resolve: (value: T) => void,
-    reject: (reason: any) => void
+    reject: (reason: unknown) => void
   ): Promise<void> {
     this.active++;
     const startTime = Date.now();
@@ -150,7 +150,7 @@ export class Bulkhead {
    */
   private handleRejection(
     reason: 'capacity' | 'timeout' | 'queue_full',
-    reject: (reason: any) => void,
+    reject: (reason: unknown) => void,
     message: string
   ): void {
     this.totalRejected++;
