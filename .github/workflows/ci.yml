@@ -245,6 +245,10 @@ jobs:
   verify-entry:
     name: "Verify Traceability (entry: pr/push)"
     if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
     uses: ./.github/workflows/verify.yml
     secrets: inherit
     with:

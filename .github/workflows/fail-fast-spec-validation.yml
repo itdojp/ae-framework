@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
 
 concurrency:
+  # Reusable workflows must not share the caller's concurrency key.
   group: fail-fast-spec-${{ github.event.pull_request.number || github.ref || github.run_id }}
   cancel-in-progress: true
 
