@@ -34,12 +34,12 @@ export interface ContractViolation {
   timestamp: Date;
   requestId?: string;
   endpoint?: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }
 
-export interface ValidationResult {
+export interface ValidationResult<T = unknown> {
   valid: boolean;
-  data?: any;
+  data?: T;
   violations: ContractViolation[];
 }
 
@@ -58,7 +58,7 @@ export class RuntimeGuard {
       endpoint?: string;
       operation?: string;
     } = {}
-  ): ValidationResult {
+  ): ValidationResult<T> {
     const span = this.tracer.startSpan('runtime_guard.validate_request', {
       attributes: {
         [TELEMETRY_ATTRIBUTES.SERVICE_COMPONENT]: 'runtime-guard',
@@ -139,7 +139,7 @@ export class RuntimeGuard {
       endpoint?: string;
       statusCode?: number;
     } = {}
-  ): ValidationResult {
+  ): ValidationResult<T> {
     const span = this.tracer.startSpan('runtime_guard.validate_response', {
       attributes: {
         [TELEMETRY_ATTRIBUTES.SERVICE_COMPONENT]: 'runtime-guard',
@@ -213,7 +213,7 @@ export class RuntimeGuard {
     rule: string,
     message: string,
     severity: ViolationSeverity = ViolationSeverity.MEDIUM,
-    details?: Record<string, any>
+    details?: Record<string, unknown>
   ): ContractViolation {
     const violation: ContractViolation = {
       id: `biz_rule_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
@@ -279,7 +279,10 @@ export class RuntimeGuard {
       }
 
       // Attach validated data to request
-      (request as any).validatedBody = result.data;
+      const requestWithValidatedBody = request as FastifyRequest & { validatedBody?: T };
+      if (result.data !== undefined) {
+        requestWithValidatedBody.validatedBody = result.data;
+      }
     };
   }
 
@@ -287,7 +290,7 @@ export class RuntimeGuard {
    * Create Fastify middleware for response validation
    */
   public createResponseValidator<T>(schema: z.ZodSchema<T>) {
-    return async (request: FastifyRequest, reply: FastifyReply, payload: any) => {
+    return async (request: FastifyRequest, reply: FastifyReply, payload: unknown) => {
       const result = this.validateResponse(schema, payload, {
         requestId: request.id,
         endpoint: `${request.method} ${request.url}`,
@@ -433,7 +436,7 @@ export const CommonSchemas = {
   ErrorResponse: z.object({
     error: z.string(),
     message: z.string().optional(),
-    details: z.record(z.any()).optional(),
+    details: z.record(z.unknown()).optional(),
   }),
 
   // Reservation request
