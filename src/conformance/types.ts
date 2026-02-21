@@ -57,7 +57,7 @@ export const RuntimeContextSchema = z.object({
   buildId: z.string().optional(),
   traceId: z.string().optional(),
   spanId: z.string().optional(),
-  metadata: z.record(z.any()).default({})
+  metadata: z.record(z.unknown()).default({})
 });
 
 export type RuntimeContext = z.infer<typeof RuntimeContextSchema>;
@@ -73,7 +73,7 @@ export const ConformanceRuleSchema = z.object({
   condition: z.object({
     expression: z.string(), // JavaScript-like expression
     variables: z.array(z.string()).default([]),
-    constraints: z.record(z.any()).default({})
+    constraints: z.record(z.unknown()).default({})
   }),
   actions: z.array(z.enum([
     'log_violation',
@@ -103,17 +103,17 @@ export const ViolationDetailsSchema = z.object({
   category: ConformanceRuleCategorySchema,
   severity: ViolationSeveritySchema,
   message: z.string(),
-  actualValue: z.any().optional(),
-  expectedValue: z.any().optional(),
+  actualValue: z.unknown().optional(),
+  expectedValue: z.unknown().optional(),
   context: RuntimeContextSchema,
   stackTrace: z.string().optional(),
   evidence: z.object({
-    inputData: z.any().optional(),
-    outputData: z.any().optional(),
-    stateSnapshot: z.record(z.any()).default({}),
+    inputData: z.unknown().optional(),
+    outputData: z.unknown().optional(),
+    stateSnapshot: z.record(z.unknown()).default({}),
     metrics: z.record(z.number()).default({}),
     logs: z.array(z.string()).default([]),
-    traces: z.array(z.any()).default([])
+    traces: z.array(z.unknown()).default([])
   }).default({}),
   remediation: z.object({
     suggested: z.array(z.string()).default([]),
@@ -140,7 +140,7 @@ export const VerificationResultSchema = z.object({
     networkCalls: z.number().default(0),
     dbQueries: z.number().default(0)
   }).default({ executionTime: 0, networkCalls: 0, dbQueries: 0 }),
-  metadata: z.record(z.any()).default({})
+  metadata: z.record(z.unknown()).default({})
 });
 
 export type VerificationResult = z.infer<typeof VerificationResultSchema>;
@@ -186,7 +186,7 @@ export interface ConformanceMonitor {
   readonly id: string;
   readonly name: string;
   
-  verify(data: any, context: RuntimeContext): Promise<VerificationResult>;
+  verify(data: unknown, context: RuntimeContext): Promise<VerificationResult>;
   canVerify(ruleId: string): boolean;
   getRules(): ConformanceRule[];
   updateRule(rule: ConformanceRule): Promise<void>;
@@ -229,11 +229,11 @@ export interface ConformanceVerificationResult {
 // Rule execution context
 export interface RuleExecutionContext {
   rule: ConformanceRule;
-  input: any;
-  output?: any;
+  input: unknown;
+  output?: unknown;
   runtime: RuntimeContext;
   config: ConformanceConfig;
-  cache: Map<string, any>;
+  cache: Map<string, unknown>;
 }
 
 // Pattern matching for common violations
