@@ -24,9 +24,9 @@ export interface BulkheadStats {
 }
 
 interface QueuedOperation {
-  operation: () => Promise<any>;
-  resolve: (value: any) => void;
-  reject: (reason: any) => void;
+  operation: () => Promise<unknown>;
+  resolve: (value: unknown) => void;
+  reject: (reason: unknown) => void;
   enqueuedAt: number;
   timeoutId: NodeJS.Timeout;
 }
@@ -52,12 +52,13 @@ export class Bulkhead {
    */
   public async execute<T>(
     operation: () => Promise<T>,
-    operationName: string = 'operation'
+    _operationName: string = 'operation'
   ): Promise<T> {
+    void _operationName;
     return new Promise<T>((resolve, reject) => {
       // Check if we can execute immediately
       if (this.active < this.options.maxConcurrent) {
-        this.executeImmediately(operation, resolve, reject);
+        void this.executeImmediately(operation, resolve, reject);
         return;
       }
 
@@ -68,18 +69,21 @@ export class Bulkhead {
       }
 
       // Add to queue with timeout
-      let queuedOp!: QueuedOperation;
-      const timeoutId = setTimeout(() => {
-        this.removeFromQueue(queuedOp);
-        this.handleRejection('timeout', reject, `Operation timed out in queue for bulkhead ${this.options.name}`);
-      }, this.options.timeoutMs);
-
-      queuedOp = {
+      const queuedOp: QueuedOperation = {
         operation,
-        resolve,
-        reject,
+        resolve: (value: unknown) => resolve(value as T),
+        reject: (reason: unknown) => {
+          if (reason instanceof Error) {
+            reject(reason);
+            return;
+          }
+          reject(new Error(String(reason)));
+        },
         enqueuedAt: Date.now(),
-        timeoutId,
+        timeoutId: setTimeout(() => {
+          this.removeFromQueue(queuedOp);
+          this.handleRejection('timeout', reject, `Operation timed out in queue for bulkhead ${this.options.name}`);
+        }, this.options.timeoutMs),
       };
 
       this.queue.push(queuedOp);
@@ -92,7 +96,7 @@ export class Bulkhead {
   private async executeImmediately<T>(
     operation: () => Promise<T>,
     resolve: (value: T) => void,
-    reject: (reason: any) => void
+    reject: (reason: unknown) => void
   ): Promise<void> {
     this.active++;
     const startTime = Date.now();
@@ -132,7 +136,7 @@ export class Bulkhead {
       return;
     }
 
-    this.executeImmediately(queuedOp.operation, queuedOp.resolve, queuedOp.reject);
+    void this.executeImmediately(queuedOp.operation, queuedOp.resolve, queuedOp.reject);
   }
 
   /**
@@ -150,7 +154,7 @@ export class Bulkhead {
    */
   private handleRejection(
     reason: 'capacity' | 'timeout' | 'queue_full',
-    reject: (reason: any) => void,
+    reject: (reason: unknown) => void,
     message: string
   ): void {
     this.totalRejected++;
