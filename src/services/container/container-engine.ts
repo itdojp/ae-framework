@@ -43,7 +43,7 @@ export interface VolumeMount {
 export interface PortMapping {
   containerPort: number;
   hostPort?: number;
-  protocol?: 'tcp' | 'udp';
+  protocol?: string;
   hostIp?: string;
 }
 
