@@ -5,11 +5,11 @@ export const OpenAIChat = z.object({
 }).passthrough();
 
 export const AnthropicMsg = z.object({
-  content: z.any()
+  content: z.unknown()
 }).passthrough();
 
 export const GeminiResp = z.object({
-  response: z.any()
+  response: z.unknown()
 }).passthrough();
 
 // Benchmark JSON schema for parsing artifacts/bench.json
@@ -22,6 +22,6 @@ export const BenchmarkResult = z.object({
     samples: z.number().optional()
   })),
   date: z.string().optional(),
-  env: z.any().optional(),
-  config: z.any().optional()
+  env: z.unknown().optional(),
+  config: z.unknown().optional()
 }).passthrough();

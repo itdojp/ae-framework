@@ -1,8 +1,8 @@
 import { z } from 'zod'
 
 // Generic fallbacks (kept for compatibility)
-export const InputSchema = z.any()
-export const OutputSchema = z.any()
+export const InputSchema = z.unknown()
+export const OutputSchema = z.unknown()
 
 // Domain-specific schemas derived from artifacts/codex/openapi.yaml
 export const CreateReservationInputSchema = z.object({
