@@ -75,6 +75,19 @@ const performanceScoreGauge = meter.createObservableGauge('phase6_performance_sc
 const qualitySnapshot: Partial<Phase6Metrics['quality']> = {};
 
 type Attrs = Record<string, string | number | boolean>;
+type SpanMetadata = Record<string, unknown>;
+const sanitizeSpanAttributes = (metadata: SpanMetadata): Attrs => {
+  const attributes: Attrs = {};
+  for (const [key, value] of Object.entries(metadata)) {
+    if (value === null || value === undefined) {
+      continue;
+    }
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      attributes[key] = value;
+    }
+  }
+  return attributes;
+};
 interface MinimalObservableResult {
   observe: (instrument: ObservableGauge | undefined, value: number, attributes?: Attrs) => void;
 }
@@ -101,13 +114,13 @@ export class Phase6Telemetry {
   static async instrumentScaffoldOperation<T>(
     operationName: string,
     operation: () => Promise<T>,
-    metadata: Record<string, any> = {}
+    metadata: SpanMetadata = {}
   ): Promise<T> {
     const span = tracer.startSpan(`phase6.scaffold.${operationName}`, {
       attributes: {
         'phase6.operation': 'scaffold',
         'phase6.operation_name': operationName,
-        ...metadata,
+        ...sanitizeSpanAttributes(metadata),
       },
     });
 
@@ -171,13 +184,13 @@ export class Phase6Telemetry {
   static async instrumentE2ETest<T>(
     testName: string,
     operation: () => Promise<T>,
-    metadata: Record<string, any> = {}
+    metadata: SpanMetadata = {}
   ): Promise<T> {
     const span = tracer.startSpan(`phase6.e2e.${testName}`, {
       attributes: {
         'phase6.operation': 'e2e_test',
         'phase6.test_name': testName,
-        ...metadata,
+        ...sanitizeSpanAttributes(metadata),
       },
     });
 
@@ -238,13 +251,13 @@ export class Phase6Telemetry {
   static async instrumentA11yAudit<T>(
     auditName: string,
     operation: () => Promise<T>,
-    metadata: Record<string, any> = {}
+    metadata: SpanMetadata = {}
   ): Promise<T> {
     const span = tracer.startSpan(`phase6.a11y.${auditName}`, {
       attributes: {
         'phase6.operation': 'a11y_audit',
         'phase6.audit_name': auditName,
-        ...metadata,
+        ...sanitizeSpanAttributes(metadata),
       },
     });
 
@@ -296,13 +309,13 @@ export class Phase6Telemetry {
   static async instrumentBuildOperation<T>(
     buildType: string,
     operation: () => Promise<T>,
-    metadata: Record<string, any> = {}
+    metadata: SpanMetadata = {}
   ): Promise<T> {
     const span = tracer.startSpan(`phase6.build.${buildType}`, {
       attributes: {
         'phase6.operation': 'build',
         'phase6.build_type': buildType,
-        ...metadata,
+        ...sanitizeSpanAttributes(metadata),
       },
     });
 
