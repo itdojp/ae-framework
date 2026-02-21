@@ -71,6 +71,7 @@ export interface DriftReport {
 // Configuration constants for drift detection
 const DEFAULT_LINE_CHANGE_ESTIMATE_RATIO = 0.1; // 10% estimated change ratio
 const FALLBACK_ORIGINAL_LINES = 100; // Fallback when original line count unknown
+type LegacyLineCountInfo = { content?: unknown; lines?: unknown };
 
 export class DriftDetector {
   private config: DriftConfig;
@@ -382,7 +383,10 @@ export class DriftDetector {
     return Math.floor(lines * DEFAULT_LINE_CHANGE_ESTIMATE_RATIO);
   }
 
-  private calculateChangeConfidence(content: string, originalFile: GeneratedFile): 'high' | 'medium' | 'low' {
+  private calculateChangeConfidence(
+    content: string,
+    originalFile: GeneratedFile | LegacyLineCountInfo
+  ): 'high' | 'medium' | 'low' {
     // Check for generated file markers
     if (content.includes('DO NOT MODIFY') || content.includes('automatically generated')) {
       return 'high';
@@ -407,12 +411,23 @@ export class DriftDetector {
   /**
    * Attempts to determine the original line count from the manifest or original file content.
    */
-  private getOriginalLineCount(originalFile: GeneratedFile | string): number | undefined {
+  private getOriginalLineCount(
+    originalFile: GeneratedFile | LegacyLineCountInfo | string
+  ): number | undefined {
     // If originalFile is a string (content), count lines
     if (typeof originalFile === 'string') {
       return originalFile.split('\n').length;
     }
-    return originalFile.content.split('\n').length;
+
+    if (typeof originalFile.content === 'string') {
+      return originalFile.content.split('\n').length;
+    }
+
+    if ('lines' in originalFile && typeof originalFile.lines === 'number') {
+      return originalFile.lines;
+    }
+
+    return undefined;
   }
 
   private isLikelyGeneratedFile(content: string, filePath: string): boolean {

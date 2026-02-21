@@ -37,8 +37,9 @@ export function post(input: unknown, output: unknown): boolean {
     if (!parsedOutput.success) return false
     // If input provided sku, ensure it matches
     if (isObject(input) && 'sku' in input) {
-      if (typeof input['sku'] !== 'string') return false
-      if (parsedOutput.data.sku !== input['sku']) return false
+      const parsedInput = InventorySkuGetInput.safeParse(input)
+      if (!parsedInput.success) return false
+      if (parsedOutput.data.sku !== parsedInput.data.sku) return false
     }
     return true
   }
