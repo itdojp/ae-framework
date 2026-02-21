@@ -12,7 +12,7 @@ import { GuardRunner } from './guards/GuardRunner.js';
 import { ConfigLoader } from './config/ConfigLoader.js';
 // import { MetricsCollector } from './metrics/MetricsCollector.js';  // TODO: Enable when metrics tracking is implemented
 import type { AEFrameworkConfig, Phase } from './types.js';
-import { createHybridIntentSystem } from '../integration/hybrid-intent-system.js';
+import { createHybridIntentSystem, type HybridIntentSystem } from '../integration/hybrid-intent-system.js';
 import type { TaskRequest, TaskResponse, TaskHandler } from '../agents/task-types.js';
 import { createNaturalLanguageTaskHandler } from '../agents/natural-language-task-adapter.js';
 import { createUserStoriesTaskHandler } from '../agents/user-stories-task-adapter.js';
@@ -72,7 +72,7 @@ class AEFrameworkCLI {
   private config: AEFrameworkConfig;
   private phaseValidator: PhaseValidator;
   private guardRunner: GuardRunner;
-  private intentSystem: any;
+  private intentSystem: HybridIntentSystem;
   // private metricsCollector: MetricsCollector;  // TODO: use for metrics tracking
   public naturalLanguageHandler: TaskHandler;
   public userStoriesHandler: TaskHandler;
