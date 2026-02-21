@@ -18,8 +18,24 @@ import type {
   ImageInfo,
   ContainerCapabilities
 } from './container-engine.js';
+import {
+  parseHumanSizeToBytes,
+  parseJsonLines,
+  parsePublishedPorts,
+  toExecErrorLike
+} from './container-engine-utils.js';
+import type {
+  DockerContainerListEntry,
+  DockerImageListEntry,
+  DockerNetworkListEntry,
+  DockerVolumeListEntry
+} from './container-engine-output-types.js';
 
 const execAsync = promisify(exec);
+
+interface DockerInfoResponse {
+  SecurityOptions?: string[];
+}
 
 export class DockerEngine extends ContainerEngine {
   private dockerPath: string = 'docker';
@@ -59,10 +75,10 @@ export class DockerEngine extends ContainerEngine {
       this.engineInfo.version = versionMatch[1] || 'unknown';
       // Verify the Docker daemon is reachable (docker CLI can exist even when the daemon isn't running).
       // Keep this bounded with a timeout to avoid hanging in CI.
-      let info: any;
+      let info: DockerInfoResponse = {};
       try {
         const infoResult = await execAsync(`${this.dockerPath} info --format json`, { timeout: checkTimeout });
-        info = JSON.parse(infoResult.stdout);
+        info = JSON.parse(infoResult.stdout) as DockerInfoResponse;
       } catch {
         this.engineInfo.available = false;
         return false;
@@ -324,16 +340,17 @@ export class DockerEngine extends ContainerEngine {
         exitCode: 0,
         output: logs
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const execError = toExecErrorLike(error);
       const logs: ContainerLogs = {
-        stdout: error.stdout || '',
-        stderr: error.stderr || error.message,
-        combined: (error.stdout || '') + (error.stderr || error.message),
+        stdout: execError.stdout || '',
+        stderr: execError.stderr || execError.message,
+        combined: (execError.stdout || '') + (execError.stderr || execError.message),
         timestamp: new Date()
       };
 
       return {
-        exitCode: error.code || 1,
+        exitCode: execError.code || 1,
         output: logs
       };
     }
@@ -374,17 +391,15 @@ export class DockerEngine extends ContainerEngine {
       const result = await execAsync(`${this.dockerPath} ${args.join(' ')}`);
       
       // Docker returns JSONL (one JSON object per line) instead of a JSON array
-      const lines = result.stdout.trim().split('\n').filter(line => line.trim());
-      const containers = lines.map(line => JSON.parse(line));
-
-      return containers.map((container: any) => ({
+      const containers = parseJsonLines<DockerContainerListEntry>(result.stdout);
+      return containers.map(container => ({
         id: container.ID,
         name: container.Names,
         state: this.mapDockerState(container.State),
         status: container.Status,
         image: container.Image,
         createdAt: new Date(container.CreatedAt),
-        ...(container.Ports ? { ports: this.parsePorts(container.Ports) } : {})
+        ...(container.Ports ? { ports: parsePublishedPorts(container.Ports) } : {})
       }));
     } catch (error: any) {
       throw new Error(`Failed to list containers: ${error.message}`);
@@ -456,17 +471,17 @@ export class DockerEngine extends ContainerEngine {
           systemUsage: 0 // Not easily available in Docker stats
         },
         memory: {
-          usage: this.parseSize(stats.MemUsage.split('/')[0]),
-          limit: this.parseSize(stats.MemUsage.split('/')[1]),
+          usage: parseHumanSizeToBytes(stats.MemUsage.split('/')[0]),
+          limit: parseHumanSizeToBytes(stats.MemUsage.split('/')[1]),
           percentage: parseFloat(stats.MemPerc.replace('%', ''))
         },
         network: {
-          rx: this.parseSize(stats.NetIO.split('/')[0]),
-          tx: this.parseSize(stats.NetIO.split('/')[1])
+          rx: parseHumanSizeToBytes(stats.NetIO.split('/')[0]),
+          tx: parseHumanSizeToBytes(stats.NetIO.split('/')[1])
         },
         io: {
-          read: this.parseSize(stats.BlockIO.split('/')[0]),
-          write: this.parseSize(stats.BlockIO.split('/')[1])
+          read: parseHumanSizeToBytes(stats.BlockIO.split('/')[0]),
+          write: parseHumanSizeToBytes(stats.BlockIO.split('/')[1])
         },
         timestamp: new Date()
       };
@@ -594,16 +609,14 @@ export class DockerEngine extends ContainerEngine {
       const result = await execAsync(`${this.dockerPath} ${args.join(' ')}`);
       
       // Docker returns JSONL format
-      const lines = result.stdout.trim().split('\n').filter(line => line.trim());
-      const images = lines.map(line => JSON.parse(line));
-
-      return images.map((image: any) => ({
+      const images = parseJsonLines<DockerImageListEntry>(result.stdout);
+      return images.map(image => ({
         id: image.ID,
         repository: image.Repository,
         tag: image.Tag,
-        digest: image.Digest,
         size: parseInt(image.Size) || 0,
-        created: new Date(image.CreatedAt)
+        created: new Date(image.CreatedAt),
+        ...(image.Digest ? { digest: image.Digest } : {})
       }));
     } catch (error: any) {
       throw new Error(`Failed to list images: ${error.message}`);
@@ -682,15 +695,13 @@ export class DockerEngine extends ContainerEngine {
       const result = await execAsync(`${this.dockerPath} volume ls --format json`);
       
       // Docker returns JSONL format
-      const lines = result.stdout.trim().split('\n').filter(line => line.trim());
-      const volumes = lines.map(line => JSON.parse(line));
-
-      return volumes.map((volume: any) => ({
+      const volumes = parseJsonLines<DockerVolumeListEntry>(result.stdout);
+      return volumes.map(volume => ({
         name: volume.Name,
         driver: volume.Driver,
         mountpoint: volume.Mountpoint,
-        labels: volume.Labels,
-        size: volume.Size
+        ...(volume.Labels ? { labels: volume.Labels } : {}),
+        ...(volume.Size !== undefined ? { size: volume.Size } : {})
       }));
     } catch (error: any) {
       throw new Error(`Failed to list volumes: ${error.message}`);
@@ -757,14 +768,12 @@ export class DockerEngine extends ContainerEngine {
       const result = await execAsync(`${this.dockerPath} network ls --format json`);
       
       // Docker returns JSONL format
-      const lines = result.stdout.trim().split('\n').filter(line => line.trim());
-      const networks = lines.map(line => JSON.parse(line));
-
-      return networks.map((network: any) => ({
+      const networks = parseJsonLines<DockerNetworkListEntry>(result.stdout);
+      return networks.map(network => ({
         id: network.ID,
         name: network.Name,
         driver: network.Driver,
-        labels: network.Labels
+        ...(network.Labels ? { labels: network.Labels } : {})
       }));
     } catch (error: any) {
       throw new Error(`Failed to list networks: ${error.message}`);
@@ -913,48 +922,4 @@ export class DockerEngine extends ContainerEngine {
     return stateMap[state.toLowerCase()] || 'exited';
   }
 
-  private parsePorts(portsString: string): any[] {
-    // Parse Docker port format: "0.0.0.0:8080->80/tcp, 0.0.0.0:8443->443/tcp"
-    if (!portsString) return [];
-
-    return portsString.split(', ').map(portMapping => {
-      const match = portMapping.match(/(.+?):(\d+)->(\d+)\/(.+)/);
-      if (match) {
-        const hostIp = match[1] ?? '';
-        const hostPortStr = match[2] ?? '0';
-        const contPortStr = match[3] ?? '0';
-        const proto = match[4] ?? 'tcp';
-        return {
-          hostIp,
-          hostPort: parseInt(hostPortStr, 10),
-          containerPort: parseInt(contPortStr, 10),
-          protocol: proto
-        };
-      }
-      return null;
-    }).filter(Boolean);
-  }
-
-  private parseSize(sizeStr: string): number {
-    const units: Record<string, number> = {
-      'B': 1,
-      'kB': 1000,
-      'MB': 1000000,
-      'GB': 1000000000,
-      'TB': 1000000000000,
-      'KiB': 1024,
-      'MiB': 1024 ** 2,
-      'GiB': 1024 ** 3,
-      'TiB': 1024 ** 4
-    };
-
-    const match = sizeStr.trim().match(/^(\d+(?:\.\d+)?)\s*([A-Za-z]+)$/);
-    if (!match) return 0;
-
-    const value = parseFloat(match[1] ?? '0');
-    const unit = match[2] ?? 'B';
-    const multiplier = units[unit] || 1;
-
-    return Math.round(value * multiplier);
-  }
 }
