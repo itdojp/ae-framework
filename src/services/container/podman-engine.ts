@@ -19,8 +19,28 @@ import type {
   ImageInfo,
   ContainerCapabilities
 } from './container-engine.js';
+import {
+  parseHumanSizeToBytes,
+  parsePublishedPorts,
+  splitUsagePair,
+  toExecErrorLike
+} from './container-engine-utils.js';
+import type {
+  PodmanContainerListEntry,
+  PodmanImageListEntry,
+  PodmanNetworkListEntry,
+  PodmanVolumeListEntry
+} from './container-engine-output-types.js';
 
 const execAsync = promisify(exec);
+
+interface PodmanInfoResponse {
+  host?: {
+    security?: {
+      rootless?: boolean;
+    };
+  };
+}
 
 export class PodmanEngine extends ContainerEngine {
   private podmanPath: string = 'podman';
@@ -60,10 +80,10 @@ export class PodmanEngine extends ContainerEngine {
       this.engineInfo.version = versionMatch[1] ?? '';
       // Verify Podman is usable (podman CLI can exist even when the backend isn't reachable).
       // Keep this bounded with a timeout to avoid hanging in CI.
-      let info: any;
+      let info: PodmanInfoResponse = {};
       try {
         const infoResult = await execAsync(`${this.podmanPath} info --format json`, { timeout: checkTimeout });
-        info = JSON.parse(infoResult.stdout);
+        info = JSON.parse(infoResult.stdout) as PodmanInfoResponse;
       } catch {
         this.engineInfo.available = false;
         return false;
@@ -259,24 +279,25 @@ export class PodmanEngine extends ContainerEngine {
         exitCode: 0,
         output: logs
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const execError = toExecErrorLike(error);
       const logs: ContainerLogs = {
-        stdout: error.stdout || '',
-        stderr: error.stderr || error.message,
-        combined: (error.stdout || '') + (error.stderr || error.message),
+        stdout: execError.stdout || '',
+        stderr: execError.stderr || execError.message,
+        combined: (execError.stdout || '') + (execError.stderr || execError.message),
         timestamp: new Date()
       };
 
       this.emit('error', {
         operation: 'runContainer',
-        error: error.message,
+        error: execError.message,
         config,
         output: logs
       });
 
       return {
         containerId: 'failed-' + Date.now(),
-        exitCode: error.code || 1,
+        exitCode: execError.code || 1,
         output: logs
       };
     }
@@ -317,16 +338,17 @@ export class PodmanEngine extends ContainerEngine {
         exitCode: 0,
         output: logs
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const execError = toExecErrorLike(error);
       const logs: ContainerLogs = {
-        stdout: error.stdout || '',
-        stderr: error.stderr || error.message,
-        combined: (error.stdout || '') + (error.stderr || error.message),
+        stdout: execError.stdout || '',
+        stderr: execError.stderr || execError.message,
+        combined: (execError.stdout || '') + (execError.stderr || execError.message),
         timestamp: new Date()
       };
 
       return {
-        exitCode: error.code || 1,
+        exitCode: execError.code || 1,
         output: logs
       };
     }
@@ -365,16 +387,15 @@ export class PodmanEngine extends ContainerEngine {
       }
 
       const result = await execAsync(`${this.podmanPath} ${args.join(' ')}`);
-      const containers = JSON.parse(result.stdout);
-
-      return containers.map((container: any) => ({
+      const containers = JSON.parse(result.stdout) as PodmanContainerListEntry[];
+      return containers.map(container => ({
         id: container.Id,
-        name: container.Names[0],
+        name: container.Names[0] ?? container.Id,
         state: this.mapPodmanState(container.State),
         status: container.Status,
         image: container.Image,
         createdAt: new Date(container.CreatedAt * 1000),
-        ports: container.Ports ? this.parsePorts(container.Ports) : undefined
+        ...(container.Ports ? { ports: parsePublishedPorts(container.Ports) } : {})
       }));
     } catch (error: any) {
       throw new Error(`Failed to list containers: ${error.message}`);
@@ -439,6 +460,9 @@ export class PodmanEngine extends ContainerEngine {
     try {
       const result = await execAsync(`${this.podmanPath} stats ${containerId} --no-stream --format json`);
       const stats = JSON.parse(result.stdout);
+      const [memoryUsageRaw, memoryLimitRaw] = splitUsagePair(stats.MemUsage);
+      const [networkRxRaw, networkTxRaw] = splitUsagePair(stats.NetIO);
+      const [blockReadRaw, blockWriteRaw] = splitUsagePair(stats.BlockIO);
 
       return {
         cpu: {
@@ -446,17 +470,17 @@ export class PodmanEngine extends ContainerEngine {
           systemUsage: 0 // Not available in Podman stats
         },
         memory: {
-          usage: this.parseSize(stats.MemUsage.split('/')[0]),
-          limit: this.parseSize(stats.MemUsage.split('/')[1]),
+          usage: parseHumanSizeToBytes(memoryUsageRaw),
+          limit: parseHumanSizeToBytes(memoryLimitRaw),
           percentage: parseFloat(stats.MemPerc.replace('%', ''))
         },
         network: {
-          rx: this.parseSize(stats.NetIO.split('/')[0]),
-          tx: this.parseSize(stats.NetIO.split('/')[1])
+          rx: parseHumanSizeToBytes(networkRxRaw),
+          tx: parseHumanSizeToBytes(networkTxRaw)
         },
         io: {
-          read: this.parseSize(stats.BlockIO.split('/')[0]),
-          write: this.parseSize(stats.BlockIO.split('/')[1])
+          read: parseHumanSizeToBytes(blockReadRaw),
+          write: parseHumanSizeToBytes(blockWriteRaw)
         },
         timestamp: new Date()
       };
@@ -582,16 +606,15 @@ export class PodmanEngine extends ContainerEngine {
       }
 
       const result = await execAsync(`${this.podmanPath} ${args.join(' ')}`);
-      const images = JSON.parse(result.stdout);
-
-      return images.map((image: any) => ({
+      const images = JSON.parse(result.stdout) as PodmanImageListEntry[];
+      return images.map(image => ({
         id: image.Id,
         repository: image.Repository,
         tag: image.Tag,
-        digest: image.Digest,
         size: image.Size,
         created: new Date(image.Created * 1000),
-        labels: image.Labels
+        ...(image.Digest ? { digest: image.Digest } : {}),
+        ...(image.Labels ? { labels: image.Labels } : {})
       }));
     } catch (error: any) {
       throw new Error(`Failed to list images: ${error.message}`);
@@ -668,14 +691,13 @@ export class PodmanEngine extends ContainerEngine {
   }>> {
     try {
       const result = await execAsync(`${this.podmanPath} volume ls --format json`);
-      const volumes = JSON.parse(result.stdout);
-
-      return volumes.map((volume: any) => ({
+      const volumes = JSON.parse(result.stdout) as PodmanVolumeListEntry[];
+      return volumes.map(volume => ({
         name: volume.Name,
         driver: volume.Driver,
         mountpoint: volume.Mountpoint,
-        labels: volume.Labels,
-        size: volume.Size
+        ...(volume.Labels ? { labels: volume.Labels } : {}),
+        ...(volume.Size !== undefined ? { size: volume.Size } : {})
       }));
     } catch (error: any) {
       throw new Error(`Failed to list volumes: ${error.message}`);
@@ -740,13 +762,12 @@ export class PodmanEngine extends ContainerEngine {
   }>> {
     try {
       const result = await execAsync(`${this.podmanPath} network ls --format json`);
-      const networks = JSON.parse(result.stdout);
-
-      return networks.map((network: any) => ({
+      const networks = JSON.parse(result.stdout) as PodmanNetworkListEntry[];
+      return networks.map(network => ({
         id: network.NetworkID,
         name: network.Name,
         driver: network.Driver,
-        labels: network.Labels
+        ...(network.Labels ? { labels: network.Labels } : {})
       }));
     } catch (error: any) {
       throw new Error(`Failed to list networks: ${error.message}`);
@@ -896,48 +917,4 @@ export class PodmanEngine extends ContainerEngine {
     return stateMap[state.toLowerCase()] || 'exited';
   }
 
-  private parsePorts(portsString: string): any[] {
-    // Parse Podman port format: "0.0.0.0:8080->80/tcp, 0.0.0.0:8443->443/tcp"
-    if (!portsString) return [];
-
-    return portsString.split(', ').map(portMapping => {
-      const match = portMapping.match(/(.+?):(\d+)->(\d+)\/(.+)/);
-      if (match) {
-        const hostIp = match[1] ?? '';
-        const hostPortStr = match[2] ?? '0';
-        const contPortStr = match[3] ?? '0';
-        const proto = match[4] ?? 'tcp';
-        return {
-          hostIp,
-          hostPort: parseInt(hostPortStr, 10),
-          containerPort: parseInt(contPortStr, 10),
-          protocol: proto
-        };
-      }
-      return null;
-    }).filter(Boolean);
-  }
-
-  private parseSize(sizeStr: string): number {
-    const units: Record<string, number> = {
-      'B': 1,
-      'kB': 1000,
-      'MB': 1000000,
-      'GB': 1000000000,
-      'TB': 1000000000000,
-      'KiB': 1024,
-      'MiB': 1024 ** 2,
-      'GiB': 1024 ** 3,
-      'TiB': 1024 ** 4
-    };
-
-    const match = sizeStr.trim().match(/^(\d+(?:\.\d+)?)\s*([A-Za-z]+)$/);
-    if (!match) return 0;
-
-    const value = parseFloat(match[1] ?? '0');
-    const unit = match[2] ?? 'B';
-    const multiplier = units[unit] || 1;
-
-    return Math.round(value * multiplier);
-  }
 }
