@@ -76,7 +76,14 @@ export function parseJsonLines<T>(rawOutput: string): T[] {
     .trim()
     .split('\n')
     .filter(line => line.trim().length > 0)
-    .map(line => JSON.parse(line) as T);
+    .map((line, index) => {
+      try {
+        return JSON.parse(line) as T;
+      } catch (error) {
+        const details = error instanceof Error ? ` (${error.message})` : '';
+        throw new Error(`Failed to parse JSON on line ${index + 1}: ${line}${details}`);
+      }
+    });
 }
 
 export function parsePublishedPorts(portsString: string): PortMapping[] {
@@ -96,14 +103,26 @@ export function parsePublishedPorts(portsString: string): PortMapping[] {
       hostIp,
       hostPort: parseInt(hostPortStr, 10),
       containerPort: parseInt(containerPortStr, 10),
-      protocol: protocol === 'udp' ? 'udp' : 'tcp'
+      protocol
     });
   }
 
   return parsedPorts;
 }
 
-export function parseHumanSizeToBytes(sizeStr: string): number {
+export function splitUsagePair(
+  usageValue: string | undefined,
+  fallbackValue: string = '0 B'
+): [string, string] {
+  if (!usageValue) return [fallbackValue, fallbackValue];
+  const [leftRaw, rightRaw] = usageValue.split('/');
+  const left = leftRaw?.trim();
+  const right = rightRaw?.trim();
+  return [left || fallbackValue, right || fallbackValue];
+}
+
+export function parseHumanSizeToBytes(sizeStr: string | undefined): number {
+  if (!sizeStr) return 0;
   const match = sizeStr.trim().match(/^(\d+(?:\.\d+)?)\s*([A-Za-z]+)$/);
   if (!match) return 0;
 

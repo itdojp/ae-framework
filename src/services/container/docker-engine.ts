@@ -22,6 +22,7 @@ import {
   parseHumanSizeToBytes,
   parseJsonLines,
   parsePublishedPorts,
+  splitUsagePair,
   toExecErrorLike
 } from './container-engine-utils.js';
 import type {
@@ -464,6 +465,9 @@ export class DockerEngine extends ContainerEngine {
     try {
       const result = await execAsync(`${this.dockerPath} stats ${containerId} --no-stream --format json`);
       const stats = JSON.parse(result.stdout);
+      const [memoryUsageRaw, memoryLimitRaw] = splitUsagePair(stats.MemUsage);
+      const [networkRxRaw, networkTxRaw] = splitUsagePair(stats.NetIO);
+      const [blockReadRaw, blockWriteRaw] = splitUsagePair(stats.BlockIO);
 
       return {
         cpu: {
@@ -471,17 +475,17 @@ export class DockerEngine extends ContainerEngine {
           systemUsage: 0 // Not easily available in Docker stats
         },
         memory: {
-          usage: parseHumanSizeToBytes(stats.MemUsage.split('/')[0]),
-          limit: parseHumanSizeToBytes(stats.MemUsage.split('/')[1]),
+          usage: parseHumanSizeToBytes(memoryUsageRaw),
+          limit: parseHumanSizeToBytes(memoryLimitRaw),
           percentage: parseFloat(stats.MemPerc.replace('%', ''))
         },
         network: {
-          rx: parseHumanSizeToBytes(stats.NetIO.split('/')[0]),
-          tx: parseHumanSizeToBytes(stats.NetIO.split('/')[1])
+          rx: parseHumanSizeToBytes(networkRxRaw),
+          tx: parseHumanSizeToBytes(networkTxRaw)
         },
         io: {
-          read: parseHumanSizeToBytes(stats.BlockIO.split('/')[0]),
-          write: parseHumanSizeToBytes(stats.BlockIO.split('/')[1])
+          read: parseHumanSizeToBytes(blockReadRaw),
+          write: parseHumanSizeToBytes(blockWriteRaw)
         },
         timestamp: new Date()
       };
