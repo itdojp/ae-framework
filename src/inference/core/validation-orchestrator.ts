@@ -653,11 +653,15 @@ export class ValidationOrchestrator extends EventEmitter {
     const requiredFields = this.asStringArray(config.parameters['requiredFields']);
     const targetRecord = this.asRecord(target);
     const missingFields = requiredFields.filter(field => !(targetRecord && field in targetRecord));
+    const score =
+      requiredFields.length === 0
+        ? 1
+        : (requiredFields.length - missingFields.length) / requiredFields.length;
     
     return {
       criterion: 'structure_completeness',
       passed: missingFields.length === 0,
-      score: (requiredFields.length - missingFields.length) / Math.max(requiredFields.length, 1),
+      score,
       details: missingFields.length === 0 
         ? 'All required fields present' 
         : `Missing fields: ${missingFields.join(', ')}`,
@@ -787,7 +791,7 @@ export class ValidationOrchestrator extends EventEmitter {
   }
 
   private asRecord(value: unknown): Record<string, unknown> | null {
-    if (typeof value === 'object' && value !== null) {
+    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
       return value as Record<string, unknown>;
     }
     return null;
