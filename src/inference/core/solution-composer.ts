@@ -175,7 +175,7 @@ export interface IntegrationRule {
   type: 'dependency' | 'consistency' | 'transformation' | 'validation';
   description: string;
   condition: (subSolutions: SubSolution[]) => boolean;
-  action: (subSolutions: SubSolution[]) => IntegrationActionResult;
+  action: (subSolutions: SubSolution[]) => IntegrationActionResult | void;
   priority: 'low' | 'medium' | 'high' | 'critical';
 }
 
@@ -847,6 +847,9 @@ export class SolutionComposer {
     for (const rule of rules.sort((a, b) => this.getPriorityValue(b.priority) - this.getPriorityValue(a.priority))) {
       if (rule.condition(processed)) {
         const result = rule.action(processed);
+        if (!result) {
+          continue;
+        }
         if (result.kind === 'replace') {
           processed = result.solutions;
         }
