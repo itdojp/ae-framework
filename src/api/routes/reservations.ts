@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { Reservation } from '../../domain/contracts.js';
 import type { InventoryService } from '../../domain/services.js';
+import { normalizeError } from '../../resilience/error-utils.js';
 
 export async function reservationRoutes(fastify: FastifyInstance, options: { inventoryService: InventoryService }) {
   const { inventoryService } = options;
@@ -18,11 +19,12 @@ export async function reservationRoutes(fastify: FastifyInstance, options: { inv
     try {
       const reservation = await inventoryService.createReservation(parsed.data);
       return reply.code(201).send(reservation);
-    } catch (error: any) {
-      if (error.name === 'InsufficientStockError') {
+    } catch (error: unknown) {
+      const normalizedError = normalizeError(error, 'Reservation creation failed');
+      if (normalizedError.name === 'InsufficientStockError') {
         return reply.code(409).send({
           error: 'INSUFFICIENT_STOCK',
-          message: error.message
+          message: normalizedError.message
         });
       }
       throw error;
