@@ -29,11 +29,17 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+permissions: read-all
+
 jobs:
   # Issue #71: CI最前段にSpec Validation追加
   spec-validation:
     name: Spec Validation
     if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_call' && inputs.mode == 'full') || github.event.schedule == '0 2 * * 0' }}
+    permissions:
+      contents: read
+      pull-requests: write
     uses: ./.github/workflows/spec-validation.yml
     secrets: inherit
 
@@ -225,6 +231,10 @@ jobs:
   pr-verify-entry:
     name: "PR Verify (entry: pr)"
     if: ${{ github.event_name == 'pull_request' }}
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
     uses: ./.github/workflows/pr-verify.yml
     secrets: inherit
     with:
@@ -235,6 +245,10 @@ jobs:
   verify-entry:
     name: "Verify Traceability (entry: pr/push)"
     if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
     uses: ./.github/workflows/verify.yml
     secrets: inherit
     with:
