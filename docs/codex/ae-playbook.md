@@ -27,7 +27,7 @@
    - 実行: `corepack enable && pnpm i && pnpm build`
    - 出力: `artifacts/ae/setup/build.log`
 2) Spec/IR（任意: spec 不在ならスキップ）
-   - 例: `node dist/src/cli/index.js spec compile --input spec/app.yaml --out artifacts/ae/spec/ir.json`
+   - 例: `node dist/src/cli/index.js spec compile --input spec/app.yaml --output artifacts/ae/spec/ir.json`
    - 出力: `artifacts/ae/spec/ir.json`
 3) Contracts/Replay（report-only）
    - `node scripts/spec/generate-contracts.mjs --in artifacts/ae/spec/ir.json --out artifacts/ae/spec/contracts.json`

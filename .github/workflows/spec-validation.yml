@@ -99,7 +99,7 @@ jobs:
         if: steps.check-spec.outputs.spec_exists == 'true'
         run: |
           printf "%s\n" "🔄 Compiling AE-Spec to AE-IR..."
-          pnpm spec:compile --in "${{ steps.check-spec.outputs.spec_file }}" --out .ae/ae-ir.json
+          pnpm spec:compile --input "${{ steps.check-spec.outputs.spec_file }}" --output .ae/ae-ir.json
           printf "%s\n" "✅ Compilation successful"
 
       - name: Generate contracts & replay fixtures (non-blocking)
@@ -112,7 +112,7 @@ jobs:
         if: steps.check-spec.outputs.spec_exists == 'true'
         run: |
           printf "%s\n" "🔍 Linting AE-IR for quality issues..."
-          pnpm spec:lint --in .ae/ae-ir.json
+          pnpm spec:lint --input .ae/ae-ir.json
           printf "%s\n" "✅ Linting completed"
       
       - name: BDD step lint (non-blocking)

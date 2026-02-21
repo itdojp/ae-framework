@@ -6,7 +6,8 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  # Reusable workflows must not share the caller's concurrency key.
+  group: fail-fast-spec-${{ github.event.pull_request.number || github.ref || github.run_id }}
   cancel-in-progress: true
 
 env:
@@ -31,6 +32,8 @@ jobs:
             src
             .github/actions/setup-pnpm
             .github/actions/setup-node-pnpm
+            scripts/ci
+            configs/tsconfig
             package.json
             pnpm-lock.yaml
             tsconfig.json
