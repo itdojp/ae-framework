@@ -9,7 +9,7 @@ export async function handler(input: unknown): Promise<unknown> {
     if (!pre(input)) return { status: 400, error: 'Precondition failed' }
     const output: unknown = {}
     if (!post(input, output)) return { status: 500, error: 'Postcondition failed' }
-    ReservationsIdDeleteOutput.parse(output as any)
+    ReservationsIdDeleteOutput.parse(output)
     return { status: 204 }
   } catch (e) {
     if (e instanceof z.ZodError) return { status: 400, error: 'Validation error', details: e.errors }
