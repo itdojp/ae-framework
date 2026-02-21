@@ -33,6 +33,7 @@ import type {
 } from './container-engine-output-types.js';
 
 const execAsync = promisify(exec);
+const getErrorMessage = (error: unknown): string => toExecErrorLike(error).message;
 
 interface DockerInfoResponse {
   SecurityOptions?: string[];
@@ -159,13 +160,13 @@ export class DockerEngine extends ContainerEngine {
       });
 
       return containerId;
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.emit('error', {
         operation: 'createContainer',
-        error: error.message,
+        error: getErrorMessage(error),
         config
       });
-      throw new Error(`Failed to create container: ${error.message}`);
+      throw new Error(`Failed to create container: ${getErrorMessage(error)}`);
     }
   }
 
@@ -180,13 +181,13 @@ export class DockerEngine extends ContainerEngine {
       });
 
       this.emit('containerStarted', { containerId });
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.emit('error', {
         operation: 'startContainer',
-        error: error.message,
+        error: getErrorMessage(error),
         containerId
       });
-      throw new Error(`Failed to start container: ${error.message}`);
+      throw new Error(`Failed to start container: ${getErrorMessage(error)}`);
     }
   }
 
@@ -195,13 +196,13 @@ export class DockerEngine extends ContainerEngine {
       await execAsync(`${this.dockerPath} stop --time ${timeout} ${containerId}`);
       
       this.emit('containerStopped', { containerId });
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.emit('error', {
         operation: 'stopContainer',
-        error: error.message,
+        error: getErrorMessage(error),
         containerId
       });
-      throw new Error(`Failed to stop container: ${error.message}`);
+      throw new Error(`Failed to stop container: ${getErrorMessage(error)}`);
     }
   }
 
@@ -214,13 +215,13 @@ export class DockerEngine extends ContainerEngine {
       await execAsync(`${this.dockerPath} ${args.join(' ')}`);
       
       this.emit('containerRemoved', { containerId, force });
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.emit('error', {
         operation: 'removeContainer',
-        error: error.message,
+        error: getErrorMessage(error),
         containerId
       });
-      throw new Error(`Failed to remove container: ${error.message}`);
+      throw new Error(`Failed to remove container: ${getErrorMessage(error)}`);
     }
   }
 
@@ -229,13 +230,13 @@ export class DockerEngine extends ContainerEngine {
       await execAsync(`${this.dockerPath} restart ${containerId}`);
       
       this.emit('containerRestarted', { containerId });
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.emit('error', {
         operation: 'restartContainer',
-        error: error.message,
+        error: getErrorMessage(error),
         containerId
       });
-      throw new Error(`Failed to restart container: ${error.message}`);
+      throw new Error(`Failed to restart container: ${getErrorMessage(error)}`);
     }
   }
 
@@ -283,24 +284,25 @@ export class DockerEngine extends ContainerEngine {
         exitCode: 0,
         output: logs
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const execError = toExecErrorLike(error);
       const logs: ContainerLogs = {
-        stdout: error.stdout || '',
-        stderr: error.stderr || error.message,
-        combined: (error.stdout || '') + (error.stderr || error.message),
+        stdout: execError.stdout || '',
+        stderr: execError.stderr || execError.message,
+        combined: (execError.stdout || '') + (execError.stderr || execError.message),
         timestamp: new Date()
       };
 
       this.emit('error', {
         operation: 'runContainer',
-        error: error.message,
+        error: execError.message,
         config,
         output: logs
       });
 
       return {
         containerId: 'failed-' + Date.now(),
-        exitCode: error.code || 1,
+        exitCode: execError.code || 1,
         output: logs
       };
     }
@@ -374,8 +376,8 @@ export class DockerEngine extends ContainerEngine {
         ...(containerInfo.State.ExitCode !== undefined ? { exitCode: containerInfo.State.ExitCode } : {}),
         health: containerInfo.State.Health?.Status || 'none'
       };
-    } catch (error: any) {
-      throw new Error(`Failed to get container status: ${error.message}`);
+    } catch (error: unknown) {
+      throw new Error(`Failed to get container status: ${getErrorMessage(error)}`);
     }
   }
 
@@ -402,8 +404,8 @@ export class DockerEngine extends ContainerEngine {
         createdAt: new Date(container.CreatedAt),
         ...(container.Ports ? { ports: parsePublishedPorts(container.Ports) } : {})
       }));
-    } catch (error: any) {
-      throw new Error(`Failed to list containers: ${error.message}`);
+    } catch (error: unknown) {
+      throw new Error(`Failed to list containers: ${getErrorMessage(error)}`);
     }
   }
 
@@ -432,8 +434,8 @@ export class DockerEngine extends ContainerEngine {
           combined: result.stdout + result.stderr,
           timestamp: new Date()
         };
-      } catch (error: any) {
-        throw new Error(`Failed to get container logs: ${error.message}`);
+      } catch (error: unknown) {
+        throw new Error(`Failed to get container logs: ${getErrorMessage(error)}`);
       }
     }
   }
@@ -489,8 +491,8 @@ export class DockerEngine extends ContainerEngine {
         },
         timestamp: new Date()
       };
-    } catch (error: any) {
-      throw new Error(`Failed to get container stats: ${error.message}`);
+    } catch (error: unknown) {
+      throw new Error(`Failed to get container stats: ${getErrorMessage(error)}`);
     }
   }
 
@@ -538,14 +540,14 @@ export class DockerEngine extends ContainerEngine {
       });
 
       return imageId;
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.emit('error', {
         operation: 'buildImage',
-        error: error.message,
+        error: getErrorMessage(error),
         imageTag,
         buildContext
       });
-      throw new Error(`Failed to build image: ${error.message}`);
+      throw new Error(`Failed to build image: ${getErrorMessage(error)}`);
     }
   }
 
@@ -555,13 +557,13 @@ export class DockerEngine extends ContainerEngine {
       await execAsync(`${this.dockerPath} pull ${fullImage}`);
       
       this.emit('imagePulled', { image: fullImage });
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.emit('error', {
         operation: 'pullImage',
-        error: error.message,
+        error: getErrorMessage(error),
         image: `${image}:${tag}`
       });
-      throw new Error(`Failed to pull image: ${error.message}`);
+      throw new Error(`Failed to pull image: ${getErrorMessage(error)}`);
     }
   }
 
@@ -571,13 +573,13 @@ export class DockerEngine extends ContainerEngine {
       await execAsync(`${this.dockerPath} push ${fullImage}`);
       
       this.emit('imagePushed', { image: fullImage });
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.emit('error', {
         operation: 'pushImage',
-        error: error.message,
+        error: getErrorMessage(error),
         image: `${image}:${tag}`
       });
-      throw new Error(`Failed to push image: ${error.message}`);
+      throw new Error(`Failed to push image: ${getErrorMessage(error)}`);
     }
   }
 
@@ -590,13 +592,13 @@ export class DockerEngine extends ContainerEngine {
       await execAsync(`${this.dockerPath} ${args.join(' ')}`);
       
       this.emit('imageRemoved', { image, force });
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.emit('error', {
         operation: 'removeImage',
-        error: error.message,
+        error: getErrorMessage(error),
         image
       });
-      throw new Error(`Failed to remove image: ${error.message}`);
+      throw new Error(`Failed to remove image: ${getErrorMessage(error)}`);
     }
   }
 
@@ -622,8 +624,8 @@ export class DockerEngine extends ContainerEngine {
         created: new Date(image.CreatedAt),
         ...(image.Digest ? { digest: image.Digest } : {})
       }));
-    } catch (error: any) {
-      throw new Error(`Failed to list images: ${error.message}`);
+    } catch (error: unknown) {
+      throw new Error(`Failed to list images: ${getErrorMessage(error)}`);
     }
   }
 
@@ -632,14 +634,14 @@ export class DockerEngine extends ContainerEngine {
       await execAsync(`${this.dockerPath} tag ${sourceImage} ${targetImage}`);
       
       this.emit('imageTagged', { sourceImage, targetImage });
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.emit('error', {
         operation: 'tagImage',
-        error: error.message,
+        error: getErrorMessage(error),
         sourceImage,
         targetImage
       });
-      throw new Error(`Failed to tag image: ${error.message}`);
+      throw new Error(`Failed to tag image: ${getErrorMessage(error)}`);
     }
   }
 
@@ -659,13 +661,13 @@ export class DockerEngine extends ContainerEngine {
       await execAsync(`${this.dockerPath} ${args.join(' ')}`);
       
       this.emit('volumeCreated', { name, labels });
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.emit('error', {
         operation: 'createVolume',
-        error: error.message,
+        error: getErrorMessage(error),
         name
       });
-      throw new Error(`Failed to create volume: ${error.message}`);
+      throw new Error(`Failed to create volume: ${getErrorMessage(error)}`);
     }
   }
 
@@ -678,13 +680,13 @@ export class DockerEngine extends ContainerEngine {
       await execAsync(`${this.dockerPath} ${args.join(' ')}`);
       
       this.emit('volumeRemoved', { name, force });
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.emit('error', {
         operation: 'removeVolume',
-        error: error.message,
+        error: getErrorMessage(error),
         name
       });
-      throw new Error(`Failed to remove volume: ${error.message}`);
+      throw new Error(`Failed to remove volume: ${getErrorMessage(error)}`);
     }
   }
 
@@ -707,8 +709,8 @@ export class DockerEngine extends ContainerEngine {
         ...(volume.Labels ? { labels: volume.Labels } : {}),
         ...(volume.Size !== undefined ? { size: volume.Size } : {})
       }));
-    } catch (error: any) {
-      throw new Error(`Failed to list volumes: ${error.message}`);
+    } catch (error: unknown) {
+      throw new Error(`Failed to list volumes: ${getErrorMessage(error)}`);
     }
   }
 
@@ -735,13 +737,13 @@ export class DockerEngine extends ContainerEngine {
       await execAsync(`${this.dockerPath} ${args.join(' ')}`);
       
       this.emit('networkCreated', { name, options });
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.emit('error', {
         operation: 'createNetwork',
-        error: error.message,
+        error: getErrorMessage(error),
         name
       });
-      throw new Error(`Failed to create network: ${error.message}`);
+      throw new Error(`Failed to create network: ${getErrorMessage(error)}`);
     }
   }
 
@@ -750,13 +752,13 @@ export class DockerEngine extends ContainerEngine {
       await execAsync(`${this.dockerPath} network rm ${name}`);
       
       this.emit('networkRemoved', { name });
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.emit('error', {
         operation: 'removeNetwork',
-        error: error.message,
+        error: getErrorMessage(error),
         name
       });
-      throw new Error(`Failed to remove network: ${error.message}`);
+      throw new Error(`Failed to remove network: ${getErrorMessage(error)}`);
     }
   }
 
@@ -779,8 +781,8 @@ export class DockerEngine extends ContainerEngine {
         driver: network.Driver,
         ...(network.Labels ? { labels: network.Labels } : {})
       }));
-    } catch (error: any) {
-      throw new Error(`Failed to list networks: ${error.message}`);
+    } catch (error: unknown) {
+      throw new Error(`Failed to list networks: ${getErrorMessage(error)}`);
     }
   }
 
@@ -812,13 +814,13 @@ export class DockerEngine extends ContainerEngine {
       await execAsync(`${this.composePath} ${args.join(' ')}`, { env });
       
       this.emit('composeUp', { composeFile, options });
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.emit('error', {
         operation: 'runCompose',
-        error: error.message,
+        error: getErrorMessage(error),
         composeFile
       });
-      throw new Error(`Failed to run compose: ${error.message}`);
+      throw new Error(`Failed to run compose: ${getErrorMessage(error)}`);
     }
   }
 
@@ -839,13 +841,13 @@ export class DockerEngine extends ContainerEngine {
       await execAsync(`${this.composePath} ${args.join(' ')}`);
       
       this.emit('composeDown', { composeFile, projectName });
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.emit('error', {
         operation: 'stopCompose',
-        error: error.message,
+        error: getErrorMessage(error),
         composeFile
       });
-      throw new Error(`Failed to stop compose: ${error.message}`);
+      throw new Error(`Failed to stop compose: ${getErrorMessage(error)}`);
     }
   }
 
@@ -901,13 +903,13 @@ export class DockerEngine extends ContainerEngine {
 
       this.emit('cleanup', results);
       return results;
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.emit('error', {
         operation: 'cleanup',
-        error: error.message,
+        error: getErrorMessage(error),
         options
       });
-      throw new Error(`Failed to cleanup: ${error.message}`);
+      throw new Error(`Failed to cleanup: ${getErrorMessage(error)}`);
     }
   }
 
