@@ -70,6 +70,25 @@ export const CompositeGateSchema = z.object({
   environments: z.array(z.string()),
 });
 
+const MonitoringDashboardSchema = z
+  .object({
+    enabled: z.boolean(),
+    url: z.string().optional(),
+    channels: z.record(z.string()).optional(),
+  })
+  .passthrough();
+
+const NotificationChannelSchema = z
+  .object({
+    enabled: z.boolean(),
+    webhook: z.string().optional(),
+    channels: z.record(z.string()).optional(),
+    recipients: z.array(z.string()).optional(),
+    onFailure: z.boolean().optional(),
+    dailySummary: z.boolean().optional(),
+  })
+  .passthrough();
+
 export const QualityPolicySchema = z.object({
   version: z.string(),
   lastUpdated: z.string(),
@@ -97,10 +116,10 @@ export const QualityPolicySchema = z.object({
         metricsPrefix: z.string(),
         tracingEnabled: z.boolean(),
       }),
-      dashboards: z.record(z.any()),
+      dashboards: z.record(MonitoringDashboardSchema),
     }),
   }),
-  notifications: z.record(z.any()),
+  notifications: z.record(NotificationChannelSchema),
   reporting: z.object({
     formats: z.array(z.string()),
     outputDirectory: z.string(),
@@ -138,7 +157,7 @@ export interface QualityGateResult {
   executionTime: number;
   environment: string;
   threshold: QualityThreshold;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }
 
 export interface QualityReport {
@@ -156,6 +175,14 @@ export interface QualityReport {
     executionTime: number;
     blockers: string[];
   };
+}
+
+function getNumericMetric(
+  details: Record<string, unknown>,
+  key: string
+): number | undefined {
+  const value = details[key];
+  return typeof value === 'number' ? value : undefined;
 }
 
 export class QualityPolicyLoader {
@@ -471,7 +498,10 @@ export class QualityPolicyLoader {
 
     // Coverage validation
     if (result.details) {
-      const { lines, functions, branches, statements } = result.details;
+      const lines = getNumericMetric(result.details, 'lines');
+      const functions = getNumericMetric(result.details, 'functions');
+      const branches = getNumericMetric(result.details, 'branches');
+      const statements = getNumericMetric(result.details, 'statements');
       
       if (threshold.lines !== undefined && lines !== undefined && lines < threshold.lines) {
         violations.push(`Line coverage ${lines}% below minimum ${threshold.lines}%`);
