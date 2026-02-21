@@ -6,12 +6,48 @@
  */
 
 import { Command } from 'commander';
+import { existsSync, readFileSync } from 'fs';
 import { resolve, join } from 'path';
 import chalk from 'chalk';
 import { DeterministicCodeGenerator } from '../codegen/deterministic-generator.js';
+import type { CodegenManifest, CodegenOptions, GeneratedFile } from '../codegen/deterministic-generator.js';
 import { toMessage } from '../utils/error-utils.js';
 import { safeExit } from '../utils/safe-exit.js';
 import { DriftDetector } from '../codegen/drift-detector.js';
+import type { DriftConfig } from '../codegen/drift-detector.js';
+
+type GenerateCommandOptions = {
+  input: string;
+  output: string;
+  target: CodegenOptions['target'];
+  templateDir?: string;
+  driftDetection: boolean;
+  preserveChanges: boolean;
+  hashAlgorithm: NonNullable<CodegenOptions['hashAlgorithm']>;
+};
+
+type DriftCommandOptions = {
+  codeDir: string;
+  spec: string;
+  manifest?: string;
+  ignore?: string[];
+  verbose?: boolean;
+  autoFix?: boolean;
+  format: 'text' | 'json';
+};
+
+type WatchCommandOptions = {
+  input: string;
+  output: string;
+  target: CodegenOptions['target'];
+  debounce: string;
+  templateDir?: string;
+};
+
+type StatusCommandOptions = {
+  codeDir: string;
+  manifest?: string;
+};
 
 export function createCodegenCommand(): Command {
   const codegen = new Command('codegen');
@@ -27,14 +63,14 @@ export function createCodegenCommand(): Command {
     .option('--no-drift-detection', 'Disable drift detection')
     .option('--no-preserve-changes', 'Do not preserve manual changes')
     .option('--hash-algorithm <algo>', 'Hash algorithm (sha256|md5)', 'sha256')
-    .action(async (options) => {
+    .action(async (options: GenerateCommandOptions) => {
       try {
         console.log(chalk.blue('🏗️  Starting code generation...'));
         console.log(chalk.gray(`   Input: ${options.input}`));
         console.log(chalk.gray(`   Output: ${options.output}`));
         console.log(chalk.gray(`   Target: ${options.target}`));
 
-        const genOptions: any = {
+        const genOptions: CodegenOptions = {
           inputPath: resolve(options.input),
           outputDir: resolve(options.output),
           target: options.target,
@@ -79,18 +115,18 @@ export function createCodegenCommand(): Command {
     .option('-v, --verbose', 'Enable verbose output')
     .option('--auto-fix', 'Auto-fix minor drift issues')
     .option('--format <type>', 'Output format (text|json)', 'text')
-    .action(async (options) => {
+    .action(async (options: DriftCommandOptions) => {
       try {
         console.log(chalk.blue('🔍 Starting drift detection...'));
         console.log(chalk.gray(`   Code directory: ${options.codeDir}`));
         console.log(chalk.gray(`   Specification: ${options.spec}`));
 
-        const detOptions: any = {
+        const detOptions: DriftConfig = {
           codeDir: resolve(options.codeDir),
           specPath: resolve(options.spec),
-          ignorePatterns: options.ignore,
-          verbose: options.verbose,
-          autoFix: options.autoFix,
+          ...(options.ignore ? { ignorePatterns: options.ignore } : {}),
+          ...(typeof options.verbose === 'boolean' ? { verbose: options.verbose } : {}),
+          ...(typeof options.autoFix === 'boolean' ? { autoFix: options.autoFix } : {}),
         };
         if (options.manifest) detOptions.manifestPath = resolve(options.manifest);
         const detector = new DriftDetector(detOptions);
@@ -149,7 +185,7 @@ export function createCodegenCommand(): Command {
     .requiredOption('-t, --target <type>', 'Target type (typescript|react|api|database)')
     .option('--debounce <ms>', 'Debounce time for file changes (ms)', '1000')
     .option('--template-dir <dir>', 'Template directory')
-    .action(async (options) => {
+    .action(async (options: WatchCommandOptions) => {
       try {
         console.log(chalk.blue('👀 Starting watch mode...'));
         console.log(chalk.yellow('  Press Ctrl+C to stop'));
@@ -177,7 +213,7 @@ export function createCodegenCommand(): Command {
           try {
             console.log(chalk.blue('\n🔄 Specification changed, regenerating...'));
             
-            const regenOptions: any = {
+            const regenOptions: CodegenOptions = {
               inputPath: resolve(options.input),
               outputDir: resolve(options.output),
               target: options.target,
@@ -219,17 +255,17 @@ export function createCodegenCommand(): Command {
     .description('Show current generation status and statistics')
     .requiredOption('-d, --code-dir <dir>', 'Directory containing generated code')
     .option('-m, --manifest <file>', 'Codegen manifest file')
-    .action(async (options) => {
+    .action(async (options: StatusCommandOptions) => {
       try {
         const manifestPath = options.manifest || join(options.codeDir, '.codegen-manifest.json');
         
-        if (!require('fs').existsSync(manifestPath)) {
+        if (!existsSync(manifestPath)) {
           console.log(chalk.yellow('⚠️  No generation manifest found'));
           console.log(chalk.gray('   Run "codegen generate" first'));
           return;
         }
 
-        const manifest = JSON.parse(require('fs').readFileSync(manifestPath, 'utf-8'));
+        const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8')) as CodegenManifest;
         
         console.log(chalk.blue('📊 Code Generation Status'));
         console.log(chalk.blue('========================='));
@@ -239,7 +275,7 @@ export function createCodegenCommand(): Command {
         console.log(`Total files: ${manifest.files.length}`);
 
         // File type breakdown
-        const filesByType = manifest.files.reduce((acc: Record<string, number>, file: any) => {
+        const filesByType = manifest.files.reduce((acc: Record<string, number>, file: GeneratedFile) => {
           const ext = file.filePath.split('.').pop() || 'unknown';
           acc[ext] = (acc[ext] || 0) + 1;
           return acc;
@@ -252,11 +288,11 @@ export function createCodegenCommand(): Command {
 
         // Recent files
         const recentFiles = manifest.files
-          .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+          .sort((a: GeneratedFile, b: GeneratedFile) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
           .slice(0, 5);
 
         console.log(chalk.blue('\n🕒 Recent files:'));
-        recentFiles.forEach((file: any) => {
+        recentFiles.forEach((file: GeneratedFile) => {
           console.log(`  ${file.filePath}`);
         });
 
