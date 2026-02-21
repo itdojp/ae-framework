@@ -35,7 +35,7 @@ export interface ValidatorConfig {
   priority: 'low' | 'medium' | 'high' | 'critical';
   timeout: number;
   retries: number;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   successCriteria: SuccessCriteria;
 }
 
@@ -122,19 +122,25 @@ export interface Validator {
   id: string;
   category: ValidationCategory;
   validate: (
-    target: any, 
+    target: unknown, 
     context: ValidationContext, 
     config: ValidatorConfig
   ) => Promise<ValidationResult>;
-  canHandle: (target: any, context: ValidationContext) => boolean;
+  canHandle: (target: unknown, context: ValidationContext) => boolean;
 }
 
 export interface ValidationContext {
-  originalProblem?: any;
+  originalProblem?: unknown;
   subSolutions?: SubSolution[];
   compositeSolution?: CompositeSolution;
-  constraints: any[];
-  metadata: Record<string, any>;
+  constraints: unknown[];
+  metadata: Record<string, unknown>;
+}
+
+export interface ValidationRequirements {
+  categories?: ValidationCategory[];
+  criticalityLevel?: 'low' | 'medium' | 'high' | 'critical';
+  maxDuration?: number;
 }
 
 export class ValidationOrchestrator extends EventEmitter {
@@ -163,13 +169,9 @@ export class ValidationOrchestrator extends EventEmitter {
    * Create a validation plan for a given context
    */
   async createValidationPlan(
-    target: any,
+    target: unknown,
     context: ValidationContext,
-    requirements?: {
-      categories?: ValidationCategory[];
-      criticalityLevel?: 'low' | 'medium' | 'high' | 'critical';
-      maxDuration?: number;
-    }
+    requirements?: ValidationRequirements
   ): Promise<ValidationPlan> {
     const planId = `plan-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     
@@ -205,7 +207,7 @@ export class ValidationOrchestrator extends EventEmitter {
    */
   async executeValidationPlan(
     planId: string,
-    target: any,
+    target: unknown,
     context: ValidationContext
   ): Promise<ValidationExecution> {
     const plan = this.validationPlans.get(planId);
@@ -358,9 +360,9 @@ export class ValidationOrchestrator extends EventEmitter {
   }
 
   private selectValidators(
-    target: any,
+    target: unknown,
     context: ValidationContext,
-    requirements?: any
+    requirements?: ValidationRequirements
   ): ValidatorConfig[] {
     const configs: ValidatorConfig[] = [];
 
@@ -456,7 +458,7 @@ export class ValidationOrchestrator extends EventEmitter {
 
   private async executeValidationPhase(
     phase: ValidationPhase,
-    target: any,
+    target: unknown,
     context: ValidationContext,
     execution: ValidationExecution
   ): Promise<ValidationPhaseResult> {
@@ -546,7 +548,7 @@ export class ValidationOrchestrator extends EventEmitter {
 
   private async executeValidator(
     config: ValidatorConfig,
-    target: any,
+    target: unknown,
     context: ValidationContext
   ): Promise<ValidatorExecutionResult> {
     const validator = this.validators.get(config.id);
@@ -627,8 +629,11 @@ export class ValidationOrchestrator extends EventEmitter {
 
   private calculateRetryDelay(attempt: number, config: ValidatorConfig): number {
     const baseDelay = 1000; // Default base delay
+    const retryPolicy = this.asRecord(config.parameters['retryPolicy']);
+    const backoffStrategy = retryPolicy?.['backoffStrategy'];
+    const strategy = typeof backoffStrategy === 'string' ? backoffStrategy : 'linear';
     
-    switch (config.parameters?.['retryPolicy']?.backoffStrategy || 'linear') {
+    switch (strategy) {
       case 'exponential':
         return Math.min(baseDelay * Math.pow(2, attempt - 1), 10000);
       case 'linear':
@@ -641,12 +646,13 @@ export class ValidationOrchestrator extends EventEmitter {
 
   // Validation implementations
   private async validateStructureCompleteness(
-    target: any,
+    target: unknown,
     context: ValidationContext,
     config: ValidatorConfig
   ): Promise<ValidationResult> {
-    const requiredFields = config.parameters['requiredFields'] || [];
-    const missingFields = requiredFields.filter((field: string) => !(field in target));
+    const requiredFields = this.asStringArray(config.parameters['requiredFields']);
+    const targetRecord = this.asRecord(target);
+    const missingFields = requiredFields.filter(field => !(targetRecord && field in targetRecord));
     
     return {
       criterion: 'structure_completeness',
@@ -660,7 +666,7 @@ export class ValidationOrchestrator extends EventEmitter {
   }
 
   private async validateStructureConsistency(
-    target: any,
+    target: unknown,
     context: ValidationContext,
     config: ValidatorConfig
   ): Promise<ValidationResult> {
@@ -677,7 +683,7 @@ export class ValidationOrchestrator extends EventEmitter {
   }
 
   private async validateFunctionalCorrectness(
-    target: any,
+    target: unknown,
     context: ValidationContext,
     config: ValidatorConfig
   ): Promise<ValidationResult> {
@@ -692,7 +698,7 @@ export class ValidationOrchestrator extends EventEmitter {
   }
 
   private async validatePerformanceMetrics(
-    target: any,
+    target: unknown,
     context: ValidationContext,
     config: ValidatorConfig
   ): Promise<ValidationResult> {
@@ -706,7 +712,7 @@ export class ValidationOrchestrator extends EventEmitter {
   }
 
   private async validateSecurityCompliance(
-    target: any,
+    target: unknown,
     context: ValidationContext,
     config: ValidatorConfig
   ): Promise<ValidationResult> {
@@ -720,7 +726,7 @@ export class ValidationOrchestrator extends EventEmitter {
   }
 
   private async validateDataQuality(
-    target: any,
+    target: unknown,
     context: ValidationContext,
     config: ValidatorConfig
   ): Promise<ValidationResult> {
@@ -736,7 +742,7 @@ export class ValidationOrchestrator extends EventEmitter {
   }
 
   private async validateIntegrationCompatibility(
-    target: any,
+    target: unknown,
     context: ValidationContext,
     config: ValidatorConfig
   ): Promise<ValidationResult> {
@@ -750,31 +756,46 @@ export class ValidationOrchestrator extends EventEmitter {
   }
 
   // Helper methods
-  private assessDataQuality(data: any): number {
+  private assessDataQuality(data: unknown): number {
     if (!data) return 0;
     
     let score = 1.0;
     
     // Simple quality assessment
-    if (typeof data === 'object') {
-      const keys = Object.keys(data);
-      const nullValues = keys.filter(key => data[key] == null).length;
+    const record = this.asRecord(data);
+    if (record) {
+      const keys = Object.keys(record);
+      const nullValues = keys.filter(key => record[key] == null).length;
       score = (keys.length - nullValues) / Math.max(keys.length, 1);
     }
     
     return score;
   }
 
-  private hasDataContent(target: any): boolean {
-    return target && typeof target === 'object' && Object.keys(target).length > 0;
+  private hasDataContent(target: unknown): boolean {
+    const record = this.asRecord(target);
+    return Boolean(record && Object.keys(record).length > 0);
   }
 
-  private getTargetDescription(target: any): string {
+  private getTargetDescription(target: unknown): string {
     if (Array.isArray(target)) return `array with ${target.length} items`;
-    if (typeof target === 'object' && target !== null) {
-      return `object with ${Object.keys(target).length} properties`;
+    const record = this.asRecord(target);
+    if (record) {
+      return `object with ${Object.keys(record).length} properties`;
     }
     return `${typeof target} value`;
+  }
+
+  private asRecord(value: unknown): Record<string, unknown> | null {
+    if (typeof value === 'object' && value !== null) {
+      return value as Record<string, unknown>;
+    }
+    return null;
+  }
+
+  private asStringArray(value: unknown): string[] {
+    if (!Array.isArray(value)) return [];
+    return value.filter((item): item is string => typeof item === 'string');
   }
 
   private getValidatorName(validatorId: string): string {
