@@ -5,18 +5,20 @@
 
 import type { SubProblem, DecompositionResult } from './problem-decomposer.js';
 
+type SubSolutionResult = Record<string, unknown> | null;
+
 export interface SubSolution {
   subProblemId: string;
   success: boolean;
   confidence: number;
-  result: unknown;
+  result: SubSolutionResult;
   metrics: {
     executionTime: number;
     resourcesUsed: string[];
     qualityScore: number;
   };
   validationResults: ValidationResult[];
-  dependencies: Record<string, unknown>;
+  dependencies: Record<string, SubSolutionResult>;
   error?: Error;
 }
 
@@ -85,7 +87,7 @@ interface SequentialCompositionResult {
   type: 'sequential_composition';
   results: Array<{
     subProblemId: string;
-    result: unknown;
+    result: SubSolutionResult;
     confidence: number;
   }>;
   metadata: {
@@ -114,7 +116,7 @@ interface ParallelCompositionResult {
 interface HierarchyNode {
   root?: SubSolution[];
   children?: HierarchyNode[];
-  [key: string]: unknown;
+  metadata?: Record<string, unknown>;
 }
 
 interface HierarchicalCompositionResult {
@@ -164,12 +166,16 @@ interface RegisteredValidator {
   run: ValidatorFunction;
 }
 
+export type IntegrationActionResult =
+  | { kind: 'noop' }
+  | { kind: 'replace'; solutions: SubSolution[] };
+
 export interface IntegrationRule {
   id: string;
   type: 'dependency' | 'consistency' | 'transformation' | 'validation';
   description: string;
   condition: (subSolutions: SubSolution[]) => boolean;
-  action: (subSolutions: SubSolution[]) => SubSolution[] | void;
+  action: (subSolutions: SubSolution[]) => IntegrationActionResult | void;
   priority: 'low' | 'medium' | 'high' | 'critical';
 }
 
@@ -585,7 +591,7 @@ export class SolutionComposer {
         type: 'dependency',
         description: 'Ensure all dependencies are satisfied',
         condition: (solutions) => solutions.some(s => Object.keys(s.dependencies).length > 0),
-        action: (solutions) => this.resolveDependencies(solutions),
+        action: (solutions) => ({ kind: 'replace', solutions: this.resolveDependencies(solutions) }),
         priority: 'critical'
       }
     ];
@@ -602,8 +608,8 @@ export class SolutionComposer {
   private resolveSubSolutionDependencies(
     solution: SubSolution,
     allSolutions: SubSolution[],
-  ): Record<string, unknown> {
-    const resolved: Record<string, unknown> = {};
+  ): SubSolution['dependencies'] {
+    const resolved: SubSolution['dependencies'] = {};
     
     for (const depId of Object.keys(solution.dependencies)) {
       const depSolution = allSolutions.find(s => s.subProblemId === depId);
@@ -841,8 +847,11 @@ export class SolutionComposer {
     for (const rule of rules.sort((a, b) => this.getPriorityValue(b.priority) - this.getPriorityValue(a.priority))) {
       if (rule.condition(processed)) {
         const result = rule.action(processed);
-        if (Array.isArray(result)) {
-          processed = result;
+        if (!result) {
+          continue;
+        }
+        if (result.kind === 'replace') {
+          processed = result.solutions;
         }
       }
     }
