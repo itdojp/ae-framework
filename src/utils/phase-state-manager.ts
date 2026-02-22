@@ -34,13 +34,21 @@ export interface PhaseState {
     operate: PhaseStatus;
   };
   approvalsRequired: boolean;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
  * Phase types in ae-framework
  */
 export type PhaseType = 'intent' | 'formal' | 'test' | 'code' | 'verify' | 'operate';
+
+type PhaseTimelineEntry = {
+  phase: PhaseType;
+  startedAt?: Date;
+  completedAt?: Date;
+  duration?: number;
+  status: 'pending' | 'in-progress' | 'completed' | 'approved';
+};
 
 /**
  * Phase transition rules
@@ -307,13 +315,7 @@ export class PhaseStateManager {
   /**
    * Get phase timeline
    */
-  async getPhaseTimeline(): Promise<Array<{
-    phase: PhaseType;
-    startedAt?: Date;
-    completedAt?: Date;
-    duration?: number; // in milliseconds
-    status: 'pending' | 'in-progress' | 'completed' | 'approved';
-  }>> {
+  async getPhaseTimeline(): Promise<PhaseTimelineEntry[]> {
     const state = await this.getCurrentState();
     if (!state) return [];
 
@@ -332,7 +334,7 @@ export class PhaseStateManager {
         status = 'in-progress';
       }
 
-      const entry: any = {
+      const entry: PhaseTimelineEntry = {
         phase,
         status,
       };
@@ -358,7 +360,7 @@ export class PhaseStateManager {
   /**
    * Add metadata to state
    */
-  async addMetadata(key: string, value: any): Promise<void> {
+  async addMetadata(key: string, value: unknown): Promise<void> {
     let state = await this.getCurrentState();
     if (!state) {
       state = await this.initializeProject(undefined, true);
