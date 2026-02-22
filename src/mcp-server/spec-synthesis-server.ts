@@ -19,7 +19,7 @@ type LintIssueSummary = {
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function isSpecLintIssue(value: unknown): value is SpecLintIssue {
@@ -169,8 +169,8 @@ async function start() {
             const lint = await compiler.lint(ir);
             const rawIssues: unknown[] = Array.isArray(lint.issues) ? lint.issues : [];
             const issues = rawIssues
-              .slice(0, 50)
               .filter(isSpecLintIssue)
+              .slice(0, 50)
               .map(toLintIssueSummary);
             const passed = lint.summary.errors === 0 && (parsed.maxWarnings == null || lint.summary.warnings <= parsed.maxWarnings);
             return { content: [{ type: 'text', text: JSON.stringify({ passed, summary: lint.summary, issues }, null, 2) }] };
