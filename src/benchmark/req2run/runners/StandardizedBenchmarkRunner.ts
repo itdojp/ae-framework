@@ -525,7 +525,10 @@ export class StandardizedBenchmarkRunner {
       };
 
       // Save reports
-      const rawDir = this.config.reporting.destinations[0]?.config?.['directory'];
+      const primaryDestinationConfig = this.config?.reporting?.destinations?.[0]?.config;
+      const rawDir = (primaryDestinationConfig && typeof primaryDestinationConfig === 'object')
+        ? primaryDestinationConfig['directory']
+        : undefined;
       const reportDir = (typeof rawDir === 'string' && rawDir.trim()) ? rawDir : 'reports/benchmark';
       await fs.mkdir(reportDir, { recursive: true });
 
