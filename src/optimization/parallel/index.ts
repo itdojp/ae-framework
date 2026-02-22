@@ -4,8 +4,11 @@
  */
 
 import { ParallelOptimizer } from './parallel-optimizer.js';
+import type { OptimizationStrategy } from './parallel-optimizer.js';
 import { TaskScheduler } from './task-scheduler.js';
+import type { SchedulingPolicy } from './task-scheduler.js';
 import { ResourcePool } from './resource-pool.js';
+import type { PoolConfiguration } from './resource-pool.js';
 
 export { ParallelOptimizer } from './parallel-optimizer.js';
 export { TaskScheduler } from './task-scheduler.js';
@@ -84,9 +87,9 @@ export class ParallelOptimizationSystem {
   private resourcePool: ResourcePool;
 
   constructor(
-    optimizerConfig?: any,
-    schedulerConfig?: any,
-    poolConfig?: any
+    optimizerConfig?: Partial<OptimizationStrategy>,
+    schedulerConfig?: Partial<SchedulingPolicy>,
+    poolConfig?: Partial<PoolConfiguration>
   ) {
     this.resourcePool = new ResourcePool(poolConfig);
     this.scheduler = new TaskScheduler(schedulerConfig);

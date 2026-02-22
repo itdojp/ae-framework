@@ -23,7 +23,7 @@ export enum ServiceType {
 export interface ServiceConfig {
   id: string;
   type: ServiceType;
-  config: Record<string, any>;
+  config: Record<string, unknown>;
   dependencies: string[];
   enabled?: boolean;
   timeout?: number;
@@ -35,7 +35,7 @@ export interface ServiceConfig {
 export interface ServiceTaskSpecification {
   requirements: string;
   acceptance: string[];
-  context: Record<string, any>;
+  context: Record<string, unknown>;
 }
 
 /**
@@ -148,7 +148,7 @@ export interface ServiceLayerValidation {
     check: string;
     passed: boolean;
     message: string;
-    value?: any;
+    value?: unknown;
   }>;
 }
 
