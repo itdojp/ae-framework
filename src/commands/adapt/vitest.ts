@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
 import { formatAppError, toExecAppError } from '../../core/command-errors.js';
+import { parsePackageJsonWithNormalizedScripts } from './package-json-utils.js';
 
 interface PackageJson {
   scripts?: Record<string, string>;
@@ -16,40 +17,6 @@ const isErrnoException = (value: unknown): value is NodeJS.ErrnoException => {
     return false;
   }
   return typeof (value as { code?: unknown }).code === 'string';
-};
-
-const normalizeScriptRecord = (value: unknown): Record<string, string> | undefined => {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return undefined;
-  }
-
-  const normalized: Record<string, string> = {};
-  for (const [entryKey, entryValue] of Object.entries(value as Record<string, unknown>)) {
-    if (typeof entryValue === 'string') {
-      normalized[entryKey] = entryValue;
-    }
-  }
-
-  return normalized;
-};
-
-const parsePackageJson = (raw: string): PackageJson => {
-  const parsed: unknown = JSON.parse(raw);
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    return {};
-  }
-
-  const packageJson = parsed as PackageJson;
-  if (packageJson.scripts !== undefined) {
-    const normalizedScripts = normalizeScriptRecord(packageJson.scripts);
-    if (normalizedScripts) {
-      packageJson.scripts = normalizedScripts;
-    } else {
-      delete packageJson.scripts;
-    }
-  }
-
-  return packageJson;
 };
 
 function generateVitestConfigTemplate(thresholds = { lines: 80, functions: 80, branches: 80, statements: 80 }) {
@@ -100,7 +67,7 @@ function updatePackageJson(): boolean {
     throw error;
   }
   
-  const packageJson = parsePackageJson(packageJsonRaw);
+  const packageJson = parsePackageJsonWithNormalizedScripts<PackageJson>(packageJsonRaw);
   
   let modified = false;
 
