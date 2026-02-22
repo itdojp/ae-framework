@@ -716,12 +716,14 @@ export class TaskScheduler extends EventEmitter {
     tags.push(task.type);
     
     // Extract tags from metadata
-    if ((task.metadata as any)['component']) {
-      tags.push(`component:${(task.metadata as any)['component']}`);
+    const component = task.metadata['component'];
+    if (typeof component === 'string' && component.length > 0) {
+      tags.push(`component:${component}`);
     }
     
-    if ((task.metadata as any)['language']) {
-      tags.push(`language:${(task.metadata as any)['language']}`);
+    const language = task.metadata['language'];
+    if (typeof language === 'string' && language.length > 0) {
+      tags.push(`language:${language}`);
     }
     
     return tags;

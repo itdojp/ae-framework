@@ -705,8 +705,8 @@ class IntentMCPServer {
   private async handleAnalyzeStakeholderConcerns(args: unknown) {
     const parsed: AnalyzeStakeholderConcernsArgs = parseOrThrow(AnalyzeStakeholderConcernsArgsSchema, args);
     const analysis = await this.agent.analyzeStakeholderConcerns(
-      parsed.stakeholders as any[],
-      parsed.requirements as any[]
+      parsed.stakeholders,
+      parsed.requirements
     );
     
     // Convert Map objects to plain objects for JSON serialization
@@ -724,7 +724,7 @@ class IntentMCPServer {
               conflicts: analysis.conflicts,
             },
             summary: {
-              total_stakeholders: (parsed.stakeholders as any[]).length,
+              total_stakeholders: parsed.stakeholders.length,
               total_conflicts: analysis.conflicts.length,
               stakeholders_with_unaddressed_concerns: Object.keys(unaddressedObj)
                 .filter(key => Array.isArray(unaddressedObj[key]) && (unaddressedObj[key] as unknown[]).length > 0)
