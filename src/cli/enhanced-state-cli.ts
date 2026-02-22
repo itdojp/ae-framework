@@ -56,11 +56,12 @@ export class EnhancedStateCLI {
       const aeir: AEIR = JSON.parse(inputData);
 
       // Parse tags if provided
-      const tags = options.tags ? JSON.parse(options.tags) : {};
+      const tags = options.tags ? (JSON.parse(options.tags) as Record<string, string>) : undefined;
+      type SaveSSOTOptions = NonNullable<Parameters<EnhancedStateManager['saveSSOT']>[2]>;
 
-      const saveOptions: any = {};
+      const saveOptions: SaveSSOTOptions = {};
       if (options.phase) saveOptions.phase = options.phase;
-      if (options.tags) saveOptions.tags = tags;
+      if (tags) saveOptions.tags = tags;
       if (options.ttl !== undefined) saveOptions.ttl = options.ttl;
       if (options.source) saveOptions.source = options.source;
       const key = await this.stateManager.saveSSOT(options.logicalKey, aeir, saveOptions);
