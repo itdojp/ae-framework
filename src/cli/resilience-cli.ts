@@ -216,6 +216,12 @@ export class ResilienceCLI {
 
     for (let i = 0; i < operations; i++) {
       try {
+        const executeOptions: Parameters<ResilienceSystem['executeResilient']>[1] = {
+          operationName: `test-op-${i + 1}`,
+          timeoutMs: 5000,
+          useAdaptiveTimeout: true,
+          ...(options.bulkheadName ? { bulkheadName: options.bulkheadName } : {}),
+        };
         await system.executeResilient(
           async () => {
             // Simulate operation with potential failure
@@ -225,12 +231,7 @@ export class ResilienceCLI {
             await new Promise(resolve => setTimeout(resolve, Math.random() * 100));
             return `Operation ${i + 1} success`;
           },
-          ({
-            operationName: `test-op-${i + 1}`,
-            timeoutMs: 5000,
-            useAdaptiveTimeout: true,
-            ...(options.bulkheadName ? { bulkheadName: options.bulkheadName } : {}),
-          } as any)
+          executeOptions,
         );
         successes++;
         process.stdout.write(chalk.green('.'));
