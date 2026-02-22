@@ -418,11 +418,11 @@ export class BenchmarkRunner {
       };
 
       // Normalize enum-like fields and required strings with safe fallbacks
-      const normalizedCategory = (spec.category && Object.values(BenchmarkCategory).includes(spec.category as any))
-        ? (spec.category as BenchmarkCategory)
+      const normalizedCategory = this.isBenchmarkCategory(spec.category)
+        ? spec.category
         : BenchmarkCategory.WEB_API;
-      const normalizedDifficulty = (spec.difficulty && Object.values(DifficultyLevel).includes(spec.difficulty as any))
-        ? (spec.difficulty as DifficultyLevel)
+      const normalizedDifficulty = this.isDifficultyLevel(spec.difficulty)
+        ? spec.difficulty
         : DifficultyLevel.INTERMEDIATE;
 
       // Convert to RequirementSpec format (requirements as string[])
@@ -769,7 +769,7 @@ export class BenchmarkRunner {
       };
 
       // Determine report directory from config, fallback to 'reports/benchmark'
-      const rawDir = (this.config?.reporting?.destinations?.[0]?.config as any)?.['directory'];
+      const rawDir = this.config.reporting?.destinations?.[0]?.config?.['directory'];
       const reportDir = (typeof rawDir === 'string' && rawDir.trim()) ? rawDir : 'reports/benchmark';
       await fs.mkdir(reportDir, { recursive: true });
 
@@ -830,5 +830,13 @@ ${data.results.map((result) =>
 ${result.errors.length > 0 ? `- **Errors**: ${result.errors.join(', ')}` : ''}`
 ).join('\n\n')}
 `;
+  }
+
+  private isBenchmarkCategory(value: unknown): value is BenchmarkCategory {
+    return typeof value === 'string' && (Object.values(BenchmarkCategory) as string[]).includes(value);
+  }
+
+  private isDifficultyLevel(value: unknown): value is DifficultyLevel {
+    return typeof value === 'string' && (Object.values(DifficultyLevel) as string[]).includes(value);
   }
 }
