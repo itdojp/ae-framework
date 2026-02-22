@@ -15,17 +15,29 @@ const readExecOutput = (error: unknown): string => {
     return '';
   }
   const candidate = error as ExecErrorOutput;
-  if (typeof candidate.stdout === 'string') {
-    return candidate.stdout;
+  const toText = (value: string | Buffer | undefined): string | undefined => {
+    if (typeof value === 'string') {
+      return value;
+    }
+    if (Buffer.isBuffer(value)) {
+      return value.toString('utf8');
+    }
+    return undefined;
+  };
+
+  const stdoutText = toText(candidate.stdout);
+  if (stdoutText && stdoutText.length > 0) {
+    return stdoutText;
   }
-  if (Buffer.isBuffer(candidate.stdout)) {
-    return candidate.stdout.toString('utf8');
+  const stderrText = toText(candidate.stderr);
+  if (stderrText && stderrText.length > 0) {
+    return stderrText;
   }
-  if (typeof candidate.stderr === 'string') {
-    return candidate.stderr;
+  if (stdoutText !== undefined) {
+    return stdoutText;
   }
-  if (Buffer.isBuffer(candidate.stderr)) {
-    return candidate.stderr.toString('utf8');
+  if (stderrText !== undefined) {
+    return stderrText;
   }
   return '';
 };
