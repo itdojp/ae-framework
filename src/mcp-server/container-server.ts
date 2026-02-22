@@ -270,7 +270,16 @@ export class ContainerServer {
 
           case 'run_container_verification': {
             const parsed: RunContainerVerificationArgs = parseOrThrow(RunContainerVerificationArgsSchema, args);
-            const result = await this.agent.runVerification(parsed as any);
+            const request: Parameters<ContainerAgent['runVerification']>[0] = {
+              projectPath: parsed.projectPath,
+              language: parsed.language,
+              tools: parsed.tools,
+              buildImages: parsed.buildImages,
+              environment: parsed.environment,
+              ...(parsed.jobName !== undefined ? { jobName: parsed.jobName } : {}),
+              ...(parsed.timeout !== undefined ? { timeout: parsed.timeout } : {}),
+            };
+            const result = await this.agent.runVerification(request);
             return {
               content: [
                 {
@@ -283,7 +292,15 @@ export class ContainerServer {
 
           case 'build_verification_image': {
             const parsed: BuildVerificationImageArgs = parseOrThrow(BuildVerificationImageArgsSchema, args);
-            const result = await this.agent.buildVerificationImage(parsed as any);
+            const request: Parameters<ContainerAgent['buildVerificationImage']>[0] = {
+              language: parsed.language,
+              tools: parsed.tools,
+              push: parsed.push,
+              buildArgs: parsed.buildArgs,
+              ...(parsed.baseImage !== undefined ? { baseImage: parsed.baseImage } : {}),
+              ...(parsed.tag !== undefined ? { tag: parsed.tag } : {}),
+            };
+            const result = await this.agent.buildVerificationImage(request);
             return {
               content: [
                 {
@@ -309,7 +326,11 @@ export class ContainerServer {
 
           case 'list_verification_jobs': {
             const parsed: ListJobsArgs = parseOrThrow(ListJobsArgsSchema, args);
-            const result = await this.agent.listJobs(parsed as any);
+            const filter: Parameters<ContainerAgent['listJobs']>[0] = {
+              ...(parsed.status ? { status: parsed.status } : {}),
+              ...(parsed.language ? { language: parsed.language } : {}),
+            };
+            const result = await this.agent.listJobs(filter);
             return {
               content: [
                 {
@@ -347,7 +368,12 @@ export class ContainerServer {
 
           case 'cleanup_container_resources': {
             const parsed: CleanupArgs = parseOrThrow(CleanupArgsSchema, args);
-            const result = await this.agent.cleanup(parsed as any);
+            const options: Parameters<ContainerAgent['cleanup']>[0] = {
+              maxAge: parsed.maxAge,
+              keepCompleted: parsed.keepCompleted,
+              force: parsed.force,
+            };
+            const result = await this.agent.cleanup(options);
             return {
               content: [
                 {
