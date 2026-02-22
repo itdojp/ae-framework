@@ -249,12 +249,8 @@ export class StandardizedBenchmarkRunner {
    */
   private normalizeSpecification(spec: unknown, problemId: string): RequirementSpec {
     const s = spec as MinimalSpec;
-    const cat = (s.category && Object.values(BenchmarkCategory).includes(s.category as any))
-      ? (s.category as BenchmarkCategory)
-      : BenchmarkCategory.WEB_API;
-    const diff = (s.difficulty && Object.values(DifficultyLevel).includes(s.difficulty as any))
-      ? (s.difficulty as DifficultyLevel)
-      : DifficultyLevel.INTERMEDIATE;
+    const cat = this.isBenchmarkCategory(s.category) ? s.category : BenchmarkCategory.WEB_API;
+    const diff = this.isDifficultyLevel(s.difficulty) ? s.difficulty : DifficultyLevel.INTERMEDIATE;
     return {
       id: String(s.id || problemId),
       title: String(s.title || `Benchmark Problem ${problemId}`),
@@ -307,7 +303,7 @@ export class StandardizedBenchmarkRunner {
       });
     }
 
-    const context: any = {
+    const context: ProjectContext = {
       domain: spec.metadata.category || 'general',
       organization: 'Req2Run Benchmark',
       existingSystem: false,
@@ -327,7 +323,7 @@ export class StandardizedBenchmarkRunner {
       }))
     };
 
-    return { sources, context: context as ProjectContext };
+    return { sources, context };
   }
 
   /**
@@ -529,7 +525,7 @@ export class StandardizedBenchmarkRunner {
       };
 
       // Save reports
-      const rawDir = (this.config?.reporting?.destinations?.[0]?.config as any)?.['directory'];
+      const rawDir = this.config.reporting.destinations[0]?.config?.['directory'];
       const reportDir = (typeof rawDir === 'string' && rawDir.trim()) ? rawDir : 'reports/benchmark';
       await fs.mkdir(reportDir, { recursive: true });
 
@@ -597,6 +593,14 @@ export class StandardizedBenchmarkRunner {
     }
 
     return requirements;
+  }
+
+  private isBenchmarkCategory(value: unknown): value is BenchmarkCategory {
+    return typeof value === 'string' && (Object.values(BenchmarkCategory) as string[]).includes(value);
+  }
+
+  private isDifficultyLevel(value: unknown): value is DifficultyLevel {
+    return typeof value === 'string' && (Object.values(DifficultyLevel) as string[]).includes(value);
   }
 
   private extractConstraints(spec: unknown): Record<string, unknown> {
