@@ -10,6 +10,21 @@ import type { AEIR } from '@ae-framework/spec-compiler';
 import * as fs from 'fs/promises';
 import type * as path from 'path';
 
+const parseStringRecord = (raw: string): Record<string, string> => {
+  const parsed: unknown = JSON.parse(raw);
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('tags must be a JSON object with string values');
+  }
+  const normalized: Record<string, string> = {};
+  for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+    if (typeof value !== 'string') {
+      throw new Error(`tags.${key} must be a string`);
+    }
+    normalized[key] = value;
+  }
+  return normalized;
+};
+
 /**
  * Enhanced State Manager CLI
  * Provides command-line interface for advanced state management operations
@@ -56,7 +71,7 @@ export class EnhancedStateCLI {
       const aeir: AEIR = JSON.parse(inputData);
 
       // Parse tags if provided
-      const tags = options.tags ? (JSON.parse(options.tags) as Record<string, string>) : undefined;
+      const tags = options.tags ? parseStringRecord(options.tags) : undefined;
       type SaveSSOTOptions = NonNullable<Parameters<EnhancedStateManager['saveSSOT']>[2]>;
 
       const saveOptions: SaveSSOTOptions = {};
