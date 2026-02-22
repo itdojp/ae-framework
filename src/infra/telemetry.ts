@@ -6,6 +6,8 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-grpc';
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 
+type NodeSdkConfig = NonNullable<ConstructorParameters<typeof NodeSDK>[0]>;
+
 export function initTelemetry(serviceName: string = 'inventory-api') {
   const resource = new Resource({
     [SemanticResourceAttributes.SERVICE_NAME]: serviceName,
@@ -26,7 +28,7 @@ export function initTelemetry(serviceName: string = 'inventory-api') {
     metricReader: new PeriodicExportingMetricReader({
       exporter: metricExporter,
       exportIntervalMillis: 10000,
-    }) as any,
+    }) as unknown as NonNullable<NodeSdkConfig['metricReader']>,
     instrumentations: [
       getNodeAutoInstrumentations({
         '@opentelemetry/instrumentation-fs': {
