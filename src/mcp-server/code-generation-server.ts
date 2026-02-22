@@ -7,6 +7,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { CodeGenerationAgent } from '../agents/code-generation-agent.js';
+import type { OpenApiGenerationOptions } from '../agents/code-generation-openapi.js';
 import {
   GenerateAPIFromOpenAPIArgsSchema,
   GenerateCodeFromTestsArgsSchema,
@@ -175,7 +176,7 @@ export class CodeGenerationServer {
 
           case 'generate_api_from_openapi': {
             const args: GenerateAPIFromOpenAPIArgs = parseOrThrow(GenerateAPIFromOpenAPIArgsSchema, request.params.arguments);
-            const apiOpts: any = {
+            const apiOpts: OpenApiGenerationOptions = {
               framework: args.framework,
               ...(args.database ? { database: args.database } : {}),
               ...(args.includeValidation !== undefined ? { includeValidation: args.includeValidation } : {}),
