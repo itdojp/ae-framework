@@ -5,7 +5,7 @@ import { formatAppError, toExecAppError } from '../../core/command-errors.js';
 
 interface PackageJson {
   scripts?: Record<string, string>;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 const DEFAULT_COVERAGE_THRESHOLD = {
@@ -25,6 +25,34 @@ const isErrnoException = (value: unknown): value is NodeJS.ErrnoException => {
     return false;
   }
   return typeof (value as { code?: unknown }).code === 'string';
+};
+
+const isStringRecord = (value: unknown): value is Record<string, string> => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return false;
+  }
+
+  for (const entryValue of Object.values(value as Record<string, unknown>)) {
+    if (typeof entryValue !== 'string') {
+      return false;
+    }
+  }
+
+  return true;
+};
+
+const parsePackageJson = (raw: string): PackageJson => {
+  const parsed: unknown = JSON.parse(raw);
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return {};
+  }
+
+  const packageJson = parsed as PackageJson;
+  if (packageJson.scripts !== undefined && !isStringRecord(packageJson.scripts)) {
+    delete packageJson.scripts;
+  }
+
+  return packageJson;
 };
 
 function backupFile(filePath: string): void {
@@ -61,7 +89,7 @@ function updatePackageJson(customThresholds?: { statements: number; branches: nu
     throw error;
   }
 
-  const packageJson: PackageJson = JSON.parse(packageJsonRaw);
+  const packageJson = parsePackageJson(packageJsonRaw);
   
   let modified = false;
 
