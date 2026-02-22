@@ -1,10 +1,12 @@
-import { execa } from 'execa';
+import { execa, type Options } from 'execa';
 import { err, ok, type Result } from './result.js';
 import type { AppError } from './errors.js';
 
-export async function run(step: string, cmd: string, args: string[], opts: any = {}): Promise<Result<{ stdout: string }, AppError>> {
+type RunOptions = Omit<Options, 'reject'>;
+
+export async function run(step: string, cmd: string, args: string[], opts: RunOptions = {}): Promise<Result<{ stdout: string }, AppError>> {
   try {
-    const r = await execa(cmd, args, { reject: false, ...opts });
+    const r = await execa<{ reject: false }>(cmd, args, { reject: false, ...opts });
     if (r.exitCode !== 0) {
       return err({ code: 'E_EXEC', step, detail: `exit ${r.exitCode}` });
     }
