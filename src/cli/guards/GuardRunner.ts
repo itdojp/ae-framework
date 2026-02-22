@@ -5,6 +5,31 @@ import type { AEFrameworkConfig, Guard, GuardResult } from '../types.js';
 import { toMessage } from '../../utils/error-utils.js';
 import { getCurrentPhase, shouldEnforceGate, getThreshold } from '../../utils/quality-policy-loader.js';
 
+type ExecErrorOutput = {
+  stdout?: string | Buffer;
+  stderr?: string | Buffer;
+};
+
+const readExecOutput = (error: unknown): string => {
+  if (!error || typeof error !== 'object') {
+    return '';
+  }
+  const candidate = error as ExecErrorOutput;
+  if (typeof candidate.stdout === 'string') {
+    return candidate.stdout;
+  }
+  if (Buffer.isBuffer(candidate.stdout)) {
+    return candidate.stdout.toString('utf8');
+  }
+  if (typeof candidate.stderr === 'string') {
+    return candidate.stderr;
+  }
+  if (Buffer.isBuffer(candidate.stderr)) {
+    return candidate.stderr.toString('utf8');
+  }
+  return '';
+};
+
 export class GuardRunner {
   constructor(private config: AEFrameworkConfig) {}
 
@@ -85,8 +110,8 @@ export class GuardRunner {
       } else {
         return { success: false, message: 'Some tests are failing' };
       }
-    } catch (error: any) {
-      const output = error.stdout || error.stderr || '';
+    } catch (error: unknown) {
+      const output = readExecOutput(error);
       return {
         success: false,
         message: `Tests failed: ${output.split('\n').slice(-3).join('\n').trim()}`
