@@ -378,8 +378,8 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
    * Analyze stakeholder concerns
    */
   async analyzeStakeholderConcerns(
-    stakeholders: Stakeholder[],
-    requirements: Requirement[]
+    stakeholders: Array<Pick<Stakeholder, 'name' | 'concerns'>>,
+    requirements: Array<Pick<Requirement, 'description'>>
   ): Promise<{
     addressed: Map<string, string[]>;
     unaddressed: Map<string, string[]>;
