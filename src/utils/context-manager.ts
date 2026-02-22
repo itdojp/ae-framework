@@ -27,11 +27,13 @@ export interface ContextOptions {
   relevantKeywords?: string[];
 }
 
+type WorkingMemoryValue = unknown;
+
 export class ContextManager {
   private tokenOptimizer: TokenOptimizer;
   private steeringLoader: SteeringLoader;
   private phaseStateManager: PhaseStateManager;
-  private workingMemory: Map<string, any> = new Map();
+  private workingMemory: Map<string, WorkingMemoryValue> = new Map();
   private readonly DEFAULT_MAX_TOKENS = 8000;
   private readonly STEERING_TOKEN_BUDGET = 2000;
   private readonly PHASE_TOKEN_BUDGET = 1500;
@@ -405,7 +407,7 @@ export class ContextManager {
   /**
    * Add item to working memory
    */
-  addToMemory(key: string, value: any): void {
+  addToMemory<T extends WorkingMemoryValue>(key: string, value: T): void {
     // Limit memory size
     if (this.workingMemory.size >= 20) {
       // Remove oldest entry
@@ -427,8 +429,9 @@ export class ContextManager {
   /**
    * Get memory item
    */
-  getFromMemory(key: string): any {
-    return this.workingMemory.get(key);
+  getFromMemory<T extends WorkingMemoryValue>(key: string): T | undefined {
+    const memoryItem = this.workingMemory.get(key);
+    return memoryItem as T | undefined;
   }
 
   /**
