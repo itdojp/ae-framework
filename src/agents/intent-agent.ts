@@ -378,8 +378,8 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
    * Analyze stakeholder concerns
    */
   async analyzeStakeholderConcerns(
-    stakeholders: Stakeholder[],
-    requirements: Requirement[]
+    stakeholders: Array<Partial<Pick<Stakeholder, 'name' | 'concerns'>>>,
+    requirements: Array<Partial<Pick<Requirement, 'description'>>>
   ): Promise<{
     addressed: Map<string, string[]>;
     unaddressed: Map<string, string[]>;
@@ -392,10 +392,10 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
     for (const stakeholder of stakeholders) {
       const addressedConcerns: string[] = [];
       const unaddressedConcerns: string[] = [];
-      
-      for (const concern of stakeholder.concerns) {
+
+      for (const concern of stakeholder.concerns ?? []) {
         const isAddressed = requirements.some(req => 
-          req.description.toLowerCase().includes(concern.toLowerCase())
+          (req.description ?? '').toLowerCase().includes(concern.toLowerCase())
         );
         
         if (isAddressed) {
@@ -405,8 +405,9 @@ ${JSON.stringify(spec.constraints, null, 2)}`;
         }
       }
       
-      addressed.set(stakeholder.name, addressedConcerns);
-      unaddressed.set(stakeholder.name, unaddressedConcerns);
+      const stakeholderName = stakeholder.name ?? 'Unknown';
+      addressed.set(stakeholderName, addressedConcerns);
+      unaddressed.set(stakeholderName, unaddressedConcerns);
     }
     
     // Check for conflicts between stakeholders
