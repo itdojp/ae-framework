@@ -769,7 +769,7 @@ export class BenchmarkRunner {
       };
 
       // Determine report directory from config, fallback to 'reports/benchmark'
-      const rawDir = this.config.reporting.destinations[0]?.config?.['directory'];
+      const rawDir = this.config.reporting?.destinations?.[0]?.config?.['directory'];
       const reportDir = (typeof rawDir === 'string' && rawDir.trim()) ? rawDir : 'reports/benchmark';
       await fs.mkdir(reportDir, { recursive: true });
 
