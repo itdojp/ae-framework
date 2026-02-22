@@ -128,7 +128,10 @@ export const PropertyTestsArgsSchema = z.object({
   functionName: z.string().min(1),
   inputs: z.array(InputParamSchema).min(1),
   outputs: z
-    .object({ type: z.string().min(1) })
+    .object({
+      type: z.string().min(1),
+      constraints: z.array(z.string()).optional(),
+    })
     .optional()
     .default({ type: 'any' }),
   invariants: z.array(z.string()).min(1),
