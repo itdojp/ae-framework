@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import type { createHash } from 'crypto';
 
-export type ErrorConstructorLike = new (...args: never[]) => Error;
+export type ErrorConstructorLike = (new (message: string) => Error) | (new () => Error);
 export type FallbackHandler<TResult = unknown> = (...args: unknown[]) => TResult;
 
 function isFallbackFor<T>(fallback: FallbackHandler | undefined): fallback is FallbackHandler<T> {
