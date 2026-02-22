@@ -343,10 +343,7 @@ class TestGenerationServer {
 
   private async handleGeneratePropertyTests(args: unknown) {
     const parsed: PropertyTestsArgs = parseOrThrow(PropertyTestsArgsSchema, args);
-    const outputConstraints =
-      'constraints' in parsed.outputs && Array.isArray(parsed.outputs.constraints)
-        ? parsed.outputs.constraints.filter((constraint): constraint is string => typeof constraint === 'string')
-        : undefined;
+    const outputConstraints = parsed.outputs.constraints;
     const contract: Parameters<TestGenerationAgent['generatePropertyTests']>[0] = {
       function: parsed.functionName,
       inputs: parsed.inputs.map((i) => ({
