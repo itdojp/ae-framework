@@ -27,18 +27,19 @@ const isErrnoException = (value: unknown): value is NodeJS.ErrnoException => {
   return typeof (value as { code?: unknown }).code === 'string';
 };
 
-const isStringRecord = (value: unknown): value is Record<string, string> => {
+const normalizeScriptRecord = (value: unknown): Record<string, string> | undefined => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return false;
+    return undefined;
   }
 
-  for (const entryValue of Object.values(value as Record<string, unknown>)) {
-    if (typeof entryValue !== 'string') {
-      return false;
+  const normalized: Record<string, string> = {};
+  for (const [entryKey, entryValue] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof entryValue === 'string') {
+      normalized[entryKey] = entryValue;
     }
   }
 
-  return true;
+  return normalized;
 };
 
 const parsePackageJson = (raw: string): PackageJson => {
@@ -48,8 +49,13 @@ const parsePackageJson = (raw: string): PackageJson => {
   }
 
   const packageJson = parsed as PackageJson;
-  if (packageJson.scripts !== undefined && !isStringRecord(packageJson.scripts)) {
-    delete packageJson.scripts;
+  if (packageJson.scripts !== undefined) {
+    const normalizedScripts = normalizeScriptRecord(packageJson.scripts);
+    if (normalizedScripts) {
+      packageJson.scripts = normalizedScripts;
+    } else {
+      delete packageJson.scripts;
+    }
   }
 
   return packageJson;
