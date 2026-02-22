@@ -9,6 +9,37 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { CallToolRequestSchema, ErrorCode, ListToolsRequestSchema, McpError } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { resolve } from 'path';
+import type { SpecLintIssue } from '../../packages/spec-compiler/src/types.js';
+
+type LintIssueSummary = {
+  severity: SpecLintIssue['severity'];
+  id: SpecLintIssue['id'];
+  message: SpecLintIssue['message'];
+  section: string;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isSpecLintIssue(value: unknown): value is SpecLintIssue {
+  if (!isRecord(value)) return false;
+  const severity = value['severity'];
+  return (
+    typeof value['id'] === 'string' &&
+    typeof value['message'] === 'string' &&
+    (severity === 'error' || severity === 'warn' || severity === 'info')
+  );
+}
+
+function toLintIssueSummary(issue: SpecLintIssue): LintIssueSummary {
+  return {
+    severity: issue.severity,
+    id: issue.id,
+    message: issue.message,
+    section: issue.location?.section || 'root',
+  };
+}
 
 async function start() {
   const server = new Server(
@@ -136,9 +167,11 @@ async function start() {
           try {
             const ir = await compiler.compile({ inputPath: resolve(parsed.inputPath), validate: false });
             const lint = await compiler.lint(ir);
-            const issues = lint.issues
+            const rawIssues: unknown[] = Array.isArray(lint.issues) ? lint.issues : [];
+            const issues = rawIssues
               .slice(0, 50)
-              .map((i: any) => ({ severity: i.severity, id: i.id, message: i.message, section: i.location?.section || 'root' }));
+              .filter(isSpecLintIssue)
+              .map(toLintIssueSummary);
             const passed = lint.summary.errors === 0 && (parsed.maxWarnings == null || lint.summary.warnings <= parsed.maxWarnings);
             return { content: [{ type: 'text', text: JSON.stringify({ passed, summary: lint.summary, issues }, null, 2) }] };
           } finally {
