@@ -308,8 +308,7 @@ class TDDGuardServer {
         };
       }
     } catch (error: unknown) {
-      const e = error as any;
-      const output = e?.stdout || e?.stderr || '';
+      const output = this.extractProcessOutput(error);
       
       if (expectRed) {
         return {
@@ -327,6 +326,16 @@ class TDDGuardServer {
         };
       }
     }
+  }
+
+  private extractProcessOutput(error: unknown): string {
+    if (typeof error !== 'object' || error === null) {
+      return '';
+    }
+    const output = error as { stdout?: unknown; stderr?: unknown };
+    const stdout = typeof output.stdout === 'string' ? output.stdout : '';
+    const stderr = typeof output.stderr === 'string' ? output.stderr : '';
+    return stdout || stderr;
   }
 
   private async suggestTestStructure(args: unknown): Promise<{ content: { type: 'text'; text: string }[] }> {
