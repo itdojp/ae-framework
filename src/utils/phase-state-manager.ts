@@ -42,7 +42,7 @@ export interface PhaseState {
  */
 export type PhaseType = 'intent' | 'formal' | 'test' | 'code' | 'verify' | 'operate';
 
-type PhaseTimelineEntry = {
+export type PhaseTimelineEntry = {
   phase: PhaseType;
   startedAt?: Date;
   completedAt?: Date;
