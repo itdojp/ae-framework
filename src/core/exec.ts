@@ -6,11 +6,19 @@ type RunOptions = Omit<Options, 'reject'>;
 
 export async function run(step: string, cmd: string, args: string[], opts: RunOptions = {}): Promise<Result<{ stdout: string }, AppError>> {
   try {
-    const r = await execa<{ reject: false }>(cmd, args, { reject: false, ...opts });
+    const r = await execa(cmd, args, { reject: false, ...opts });
     if (r.exitCode !== 0) {
       return err({ code: 'E_EXEC', step, detail: `exit ${r.exitCode}` });
     }
-    return ok({ stdout: r.stdout ?? '' });
+    const stdout =
+      typeof r.stdout === 'string'
+        ? r.stdout
+        : Array.isArray(r.stdout)
+          ? r.stdout.join('\n')
+          : r.stdout instanceof Uint8Array
+            ? Buffer.from(r.stdout).toString('utf8')
+            : '';
+    return ok({ stdout });
   } catch (e: unknown) {
     return err({ code: 'E_EXEC', step, detail: e instanceof Error ? e.message : String(e) });
   }
