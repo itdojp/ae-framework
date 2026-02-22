@@ -11,7 +11,7 @@ export interface Problem {
   complexity: 'low' | 'medium' | 'high' | 'critical';
   priority: 'low' | 'medium' | 'high' | 'critical';
   constraints: Constraint[];
-  context: Record<string, any>;
+  context: Record<string, unknown>;
   expectedOutcome?: string;
   deadline?: Date;
 }
@@ -21,7 +21,7 @@ export interface Constraint {
   type: 'resource' | 'time' | 'quality' | 'dependency' | 'business' | 'technical';
   description: string;
   importance: 'low' | 'medium' | 'high' | 'critical';
-  value?: any;
+  value?: unknown;
   operator?: '>' | '<' | '>=' | '<=' | '=' | '!=' | 'in' | 'not_in';
 }
 
@@ -168,6 +168,16 @@ export class ProblemDecomposer {
     if (!problem.domain) {
       throw new Error('Problem domain is required');
     }
+  }
+
+  private getContextNumber(problem: Problem, key: string): number | undefined {
+    const value = problem.context[key];
+    return typeof value === 'number' ? value : undefined;
+  }
+
+  private getContextArrayLength(problem: Problem, key: string): number | undefined {
+    const value = problem.context[key];
+    return Array.isArray(value) ? value.length : undefined;
   }
 
   private analyzeComplexity(problem: Problem): number {
@@ -390,12 +400,14 @@ export class ProblemDecomposer {
     complexity += 3;
     
     // Add complexity based on context
-    if (problem.context['linesOfCode']) {
-      complexity += Math.min(3, (problem.context['linesOfCode'] as number) / 10000);
+    const linesOfCode = this.getContextNumber(problem, 'linesOfCode');
+    if (linesOfCode) {
+      complexity += Math.min(3, linesOfCode / 10000);
     }
-    
-    if (problem.context['dependencies']) {
-      complexity += Math.min(2, (problem.context['dependencies'] as any[]).length / 10);
+
+    const dependenciesLength = this.getContextArrayLength(problem, 'dependencies');
+    if (dependenciesLength !== undefined) {
+      complexity += Math.min(2, dependenciesLength / 10);
     }
     
     if (problem.constraints.length > 5) {
@@ -410,12 +422,14 @@ export class ProblemDecomposer {
     
     complexity += 2; // Base complexity
     
-    if (problem.context['dataSize']) {
-      complexity += Math.min(3, Math.log10(problem.context['dataSize'] as number) / 2);
+    const dataSize = this.getContextNumber(problem, 'dataSize');
+    if (dataSize) {
+      complexity += Math.min(3, Math.log10(dataSize) / 2);
     }
-    
-    if (problem.context['dataSources']) {
-      complexity += Math.min(2, (problem.context['dataSources'] as any[]).length / 5);
+
+    const dataSourcesLength = this.getContextArrayLength(problem, 'dataSources');
+    if (dataSourcesLength !== undefined) {
+      complexity += Math.min(2, dataSourcesLength / 5);
     }
     
     return Math.min(10, complexity);
