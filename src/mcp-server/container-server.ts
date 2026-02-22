@@ -276,7 +276,7 @@ export class ContainerServer {
               tools: parsed.tools,
               buildImages: parsed.buildImages,
               environment: parsed.environment,
-              ...(parsed.jobName ? { jobName: parsed.jobName } : {}),
+              ...(parsed.jobName !== undefined ? { jobName: parsed.jobName } : {}),
               ...(parsed.timeout !== undefined ? { timeout: parsed.timeout } : {}),
             };
             const result = await this.agent.runVerification(request);
@@ -297,8 +297,8 @@ export class ContainerServer {
               tools: parsed.tools,
               push: parsed.push,
               buildArgs: parsed.buildArgs,
-              ...(parsed.baseImage ? { baseImage: parsed.baseImage } : {}),
-              ...(parsed.tag ? { tag: parsed.tag } : {}),
+              ...(parsed.baseImage !== undefined ? { baseImage: parsed.baseImage } : {}),
+              ...(parsed.tag !== undefined ? { tag: parsed.tag } : {}),
             };
             const result = await this.agent.buildVerificationImage(request);
             return {
@@ -369,9 +369,9 @@ export class ContainerServer {
           case 'cleanup_container_resources': {
             const parsed: CleanupArgs = parseOrThrow(CleanupArgsSchema, args);
             const options: Parameters<ContainerAgent['cleanup']>[0] = {
-              ...(parsed.maxAge !== undefined ? { maxAge: parsed.maxAge } : {}),
-              ...(parsed.keepCompleted !== undefined ? { keepCompleted: parsed.keepCompleted } : {}),
-              ...(parsed.force !== undefined ? { force: parsed.force } : {}),
+              maxAge: parsed.maxAge,
+              keepCompleted: parsed.keepCompleted,
+              force: parsed.force,
             };
             const result = await this.agent.cleanup(options);
             return {
