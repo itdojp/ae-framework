@@ -9,7 +9,7 @@ export interface InventoryService {
 }
 
 export class InventoryServiceImpl implements InventoryService {
-  constructor(private _db: any) {}
+  constructor(private _db: unknown) {}
 
   async checkAvailability(itemId: string, quantity: number): Promise<boolean> {
     const item = await this.getItem(itemId);
