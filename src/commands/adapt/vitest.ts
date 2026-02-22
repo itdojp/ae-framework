@@ -2,10 +2,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
 import { formatAppError, toExecAppError } from '../../core/command-errors.js';
+import { parsePackageJsonWithNormalizedScripts } from './package-json-utils.js';
 
 interface PackageJson {
   scripts?: Record<string, string>;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 const isErrnoException = (value: unknown): value is NodeJS.ErrnoException => {
@@ -66,7 +67,7 @@ function updatePackageJson(): boolean {
     throw error;
   }
   
-  const packageJson: PackageJson = JSON.parse(packageJsonRaw);
+  const packageJson = parsePackageJsonWithNormalizedScripts<PackageJson>(packageJsonRaw);
   
   let modified = false;
 
