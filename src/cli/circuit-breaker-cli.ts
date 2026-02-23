@@ -6,6 +6,11 @@ import { CircuitBreaker, CircuitState } from '../utils/circuit-breaker.js';
 import { toMessage } from '../utils/error-utils.js';
 import { safeExit } from '../utils/safe-exit.js';
 
+interface BreakerFailureEntry {
+  timestamp: string | number | Date;
+  error: string;
+}
+
 /**
  * Circuit Breaker CLI
  * Provides command-line interface for circuit breaker management and monitoring
@@ -167,7 +172,7 @@ export class CircuitBreakerCLI {
           
           if (breaker.recentFailures && breaker.recentFailures.length > 0) {
             console.log(`  Recent Failures: ${breaker.recentFailures.length}`);
-            breaker.recentFailures.slice(0, 3).forEach((failure: any) => {
+            breaker.recentFailures.slice(0, 3).forEach((failure: BreakerFailureEntry) => {
               console.log(`    • ${new Date(failure.timestamp).toISOString()}: ${failure.error}`);
             });
           }
@@ -404,9 +409,9 @@ export class CircuitBreakerCLI {
     healthy: number;
     degraded: number;
     unhealthy: number;
-    summary: Array<{name: string; state: string; health: string; recentFailures?: any[]; recommendations?: string[]}>;
+    summary: Array<{name: string; state: string; health: string; recentFailures?: BreakerFailureEntry[]; recommendations?: string[]}>;
     overall: string;
-    breakers: Array<{name: string; state: string; health: string; recentFailures?: any[]; recommendations?: string[]}>;
+    breakers: Array<{name: string; state: string; health: string; recentFailures?: BreakerFailureEntry[]; recommendations?: string[]}>;
     totalRequests: number;
     totalFailures: number;
     closedBreakers: number;
