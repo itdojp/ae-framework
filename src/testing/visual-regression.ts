@@ -70,9 +70,9 @@ export interface VisualTestTarget {
 }
 
 export interface ComponentState {
-  props?: Record<string, any>;
+  props?: Record<string, unknown>;
   interactions?: StateInteraction[];
-  dataState?: Record<string, any>;
+  dataState?: Record<string, unknown>;
 }
 
 export interface StateInteraction {
@@ -201,6 +201,8 @@ export interface VisualRecommendation {
   effort: 'low' | 'medium' | 'high';
   implementation: string[];
 }
+
+type VisualComponent = DependencyAnalysisResult['nodes'][number];
 
 export class VisualRegressionTesting extends EventEmitter {
   private config: VisualTestConfig;
@@ -814,14 +816,14 @@ export class VisualRegressionTesting extends EventEmitter {
     return `${affectedComponents} components affected by visual changes, requiring developer review`;
   }
 
-  private extractComponentName(component: any): string {
+  private extractComponentName(component: VisualComponent): string {
     if (component.path) {
       return component.path.split('/').pop()?.replace(/\.(ts|js|tsx|jsx)$/, '') || component.id;
     }
     return component.id;
   }
 
-  private getComponentURL(component: any): string {
+  private getComponentURL(component: VisualComponent): string {
     const name = this.extractComponentName(component);
     return `/components/${name.toLowerCase().replace(/\s+/g, '-')}`;
   }
