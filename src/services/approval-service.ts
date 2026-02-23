@@ -16,7 +16,7 @@ export interface ApprovalRequest {
   requestedAt: Date;
   artifacts: string[];
   summary?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface ApprovalResponse {
@@ -536,7 +536,7 @@ export class ApprovalService extends EventEmitter {
       if (loaded) {
         return { 
           required: true, 
-          status: loaded.status as any,
+          status: loaded.status,
           details: loaded 
         };
       }
@@ -545,7 +545,7 @@ export class ApprovalService extends EventEmitter {
     if (pendingApproval) {
       return { 
         required: true, 
-        status: pendingApproval.status as any,
+        status: pendingApproval.status,
         details: pendingApproval 
       };
     }
