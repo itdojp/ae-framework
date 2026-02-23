@@ -149,7 +149,7 @@ export class AEFrameworkCircuitBreakerIntegration extends EventEmitter {
     agentName: string,
     operation: () => Promise<T>,
     context?: unknown
-  ): Promise<T> {
+  ): Promise<T | CircuitFallbackResult> {
     const breaker = this.getAgentCircuitBreaker(agentName);
     
     try {
@@ -172,7 +172,7 @@ export class AEFrameworkCircuitBreakerIntegration extends EventEmitter {
     operationType: string,
     operation: () => Promise<T>,
     context?: unknown
-  ): Promise<T> {
+  ): Promise<T | CircuitFallbackResult> {
     const breaker = this.getStateManagementCircuitBreaker();
     
     try {
@@ -196,7 +196,7 @@ export class AEFrameworkCircuitBreakerIntegration extends EventEmitter {
     toPhase: string,
     operation: () => Promise<T>,
     context?: unknown
-  ): Promise<T> {
+  ): Promise<T | CircuitFallbackResult> {
     const breaker = this.getPhaseTransitionCircuitBreaker();
     
     try {
@@ -219,7 +219,7 @@ export class AEFrameworkCircuitBreakerIntegration extends EventEmitter {
     serviceName: string,
     operation: () => Promise<T>,
     context?: unknown
-  ): Promise<T> {
+  ): Promise<T | CircuitFallbackResult> {
     const breaker = this.getExternalServiceCircuitBreaker(serviceName);
     
     try {
@@ -242,7 +242,7 @@ export class AEFrameworkCircuitBreakerIntegration extends EventEmitter {
     resourceType: string,
     operation: () => Promise<T>,
     context?: unknown
-  ): Promise<T> {
+  ): Promise<T | CircuitFallbackResult> {
     const breaker = this.getResourceCircuitBreaker(resourceType);
     
     try {
