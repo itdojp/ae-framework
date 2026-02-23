@@ -429,6 +429,14 @@ export class SequentialInferenceEngine extends EventEmitter {
     query: ComplexQuery
   ): Promise<Record<string, unknown>> {
     const completedSteps = steps.filter(s => s.status === 'completed');
+    if (completedSteps.length === 0) {
+      return {
+        summary: 'Processed 0 steps',
+        outputs: [],
+        confidence: 0
+      };
+    }
+
     return {
       summary: `Processed ${completedSteps.length} of ${steps.length} steps`,
       outputs: completedSteps.map(s => s.output),
