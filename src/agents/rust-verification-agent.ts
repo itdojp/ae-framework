@@ -73,7 +73,7 @@ export interface VerificationReport {
     coverage: number;
   };
   recommendations: string[];
-  toolSpecificResults: Record<string, any>;
+  toolSpecificResults: Record<string, unknown>;
 }
 
 export interface VerificationError {

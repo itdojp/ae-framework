@@ -526,7 +526,7 @@ ${compressed}` : compressed;
   /**
    * Generate cache key for content
    */
-  private generateCacheKey(content: any, options: any): string {
+  private generateCacheKey(content: unknown, options: unknown): string {
     const hash = crypto.createHash('sha256');
     hash.update(JSON.stringify({ content, options }));
     return hash.digest('hex').substring(0, 16);

@@ -526,7 +526,7 @@ export class HTMLTestReporter implements TestReporter {
   /**
    * Generate simple pie chart representation
    */
-  private generatePieChart(stats: any): string {
+  private generatePieChart(stats: TestExecutionSummary['statistics']): string {
     const total = stats.total;
     if (total === 0) {
       return '<p style="color: #6c757d; text-align: center; padding-top: 2rem;">No test data available</p>';
