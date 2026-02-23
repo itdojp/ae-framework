@@ -76,7 +76,7 @@ export class ConformanceRuleEngine {
    * Verify data against all applicable rules
    */
   async verifyConformance(
-    data: any,
+    data: unknown,
     context: RuntimeContext,
     ruleIds?: string[]
   ): Promise<ConformanceVerificationResult> {
@@ -130,7 +130,7 @@ export class ConformanceRuleEngine {
    */
   async verifyRule(
     ruleId: string,
-    data: any,
+    data: unknown,
     context: RuntimeContext
   ): Promise<VerificationResult> {
     const rule = this.rules.get(ruleId);
@@ -150,7 +150,7 @@ export class ConformanceRuleEngine {
    */
   private async executeRule(
     rule: ConformanceRule,
-    data: any,
+    data: unknown,
     context: RuntimeContext,
     executionId?: string
   ): Promise<VerificationResult> {
@@ -564,7 +564,7 @@ export class ConformanceRuleEngine {
     };
   }
 
-  private generateCacheKey(rule: ConformanceRule, data: any, context: RuntimeContext): string {
+  private generateCacheKey(rule: ConformanceRule, data: unknown, context: RuntimeContext): string {
     return `${rule.id}:${JSON.stringify(data)}:${context.timestamp}`;
   }
 
