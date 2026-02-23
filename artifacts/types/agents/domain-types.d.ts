@@ -23,7 +23,7 @@ export declare enum TaskType {
 export interface TaskSpecification {
     requirements: string;
     acceptance: string[];
-    context: Record<string, any>;
+    context: Record<string, unknown>;
 }
 /**
  * Unified task definition for all agent types
@@ -118,6 +118,6 @@ export interface ValidationResult {
         check: string;
         passed: boolean;
         message: string;
-        value?: any;
+        value?: unknown;
     }>;
 }

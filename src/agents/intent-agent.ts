@@ -90,7 +90,7 @@ export class IntentAgent {
     title: string;
     description: string;
     requirements: Array<{ id: string; description: string; priority: string }>;
-    constraints: any;
+    constraints: unknown;
     metadata: {
       created_by: string;
       created_at: string;
