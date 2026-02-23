@@ -262,7 +262,7 @@ function showActiveAlerts(system: MonitoringSystem): void {
     return;
   }
 
-  alerts.forEach((alert: any, index: number) => {
+  alerts.forEach((alert) => {
     const icon = alert.severity === 'critical' ? '🚨' : 
                  alert.severity === 'warning' ? '⚠️' : 'ℹ️';
     const duration = formatDuration(alert.duration);
