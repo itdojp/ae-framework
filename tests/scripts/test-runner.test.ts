@@ -24,6 +24,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   spawnSyncMock.mockReset();
+  process.env.AE_TEST_RUN_CLEAN_ROOT_SAFE = '0';
 });
 
 describe('test runner profiles', () => {

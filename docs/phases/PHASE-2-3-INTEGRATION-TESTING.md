@@ -34,8 +34,8 @@ ae-framework integration reports          # list/clean reports
 
 ### Reports & Artifacts
 - HTML reporter with filters
-- Default output: `./test-results` (reports only; change with `--output-dir`)
-- Attachments: screenshots/traces/videos are currently written under `./test-results` regardless of `--output-dir`
+- Default output: `artifacts/integration/test-results` (reports only; change with `--output-dir`)
+- Attachments: screenshots/traces/videos are written under `artifacts/integration/test-results`
 
 ### Minimal CI YAML (English)
 ```yaml
@@ -49,14 +49,14 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
       - run: pnpm install --frozen-lockfile
-      - run: ae-framework integration discover --patterns "./tests/**/*.json" --type tests --output test-results/discovery.json
-      - run: ae-framework integration run --suites ./tests/integration/suites/*.json --environment default --output-dir test-results
+      - run: ae-framework integration discover --patterns "./tests/**/*.json" --type tests --output artifacts/integration/test-results/discovery.json
+      - run: ae-framework integration run --suites ./tests/integration/suites/*.json --environment default --output-dir artifacts/integration/test-results
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: integration-artifacts
           path: |
-            test-results/**
+            artifacts/integration/test-results/**
             apps/**/__e2e__/**
 ```
 
@@ -524,7 +524,7 @@ const testResult = await orchestrator.executeTest(
     timeout: 60000,
     retries: 1,
     generateReport: true,
-    outputDir: './test-results'
+    outputDir: 'artifacts/integration/test-results'
   }
 );
 
@@ -543,7 +543,7 @@ const suiteResult = await orchestrator.executeSuite(
     generateReport: true,
     captureScreenshots: true,
     collectLogs: true,
-    outputDir: './test-results',
+    outputDir: 'artifacts/integration/test-results',
     reportFormat: ['html'], // 現行実装はHTMLのみ
     filters: {
       categories: ['e2e'],
@@ -830,7 +830,7 @@ jobs:
           --max-concurrency 4 \
           --timeout 300000 \
           --retries 2 \
-          --output-dir ./test-results \
+          --output-dir artifacts/integration/test-results \
           --report-format html
           
     - name: Upload test results
@@ -838,7 +838,7 @@ jobs:
       if: always()
       with:
         name: integration-test-results
-        path: ./test-results/
+        path: artifacts/integration/test-results/
       # NOTE: 現行実装はHTMLレポートのみ。JUnit/JSONが必要ならカスタムReporterを追加。
 ```
 
@@ -881,7 +881,7 @@ ae-framework integration run \
   ${TEST_PARALLEL:+--parallel} \
   --max-concurrency ${MAX_CONCURRENCY} \
   --timeout ${TEST_TIMEOUT:-300000} \
-  --output-dir ${OUTPUT_DIR:-"./test-results"} \
+  --output-dir ${OUTPUT_DIR:-"artifacts/integration/test-results"} \
   --report-format html
 
 # 結果の後処理
@@ -918,7 +918,7 @@ ae-framework integration run \
   --tests ./discovered-tests.json \
   --tags smoke \
   --environment local \
-  --output-dir ./test-results/smoke
+  --output-dir artifacts/integration/test-results/smoke
 
 # 4. フル統合テストの実行
 echo "Running full integration tests..."
@@ -927,12 +927,12 @@ ae-framework integration run \
   --environment local \
   --parallel \
   --max-concurrency 2 \
-  --output-dir ./test-results/full \
+  --output-dir artifacts/integration/test-results/full \
   --report-format html
 
 # 5. レポートを開く
 echo "Opening test report..."
-open ./test-results/full/test-report-*.html
+open ./artifacts/integration/test-results/full/test-report-*.html
 
 # 6. クリーンアップ
 cleanup() {

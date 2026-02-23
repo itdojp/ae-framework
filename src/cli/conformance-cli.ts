@@ -30,6 +30,7 @@ import type {
 const DEFAULT_REPORT_DIR = 'reports/conformance';
 const DEFAULT_REPORT_JSON = path.join(DEFAULT_REPORT_DIR, 'conformance-summary.json');
 const DEFAULT_REPORT_MARKDOWN = path.join(DEFAULT_REPORT_DIR, 'conformance-summary.md');
+const DEFAULT_VERIFY_OUTPUT_JSON = path.join('artifacts', 'conformance', 'conformance-results.json');
 
 export class ConformanceCli {
   private engine: ConformanceVerificationEngine;
@@ -54,7 +55,7 @@ export class ConformanceCli {
       .description('Verify data against conformance rules')
       .option('-i, --input <file>', 'Input data JSON file')
       .option('-r, --rules <file>', 'Rules configuration file')
-      .option('-o, --output <file>', 'Output results file', 'conformance-results.json')
+      .option('-o, --output <file>', 'Output results file', DEFAULT_VERIFY_OUTPUT_JSON)
       .option('--rule-ids <ids>', 'Specific rule IDs to execute (comma-separated)')
       .option('--skip-categories <categories>', 'Categories to skip (comma-separated)')
       .option('--context-file <file>', 'Runtime context JSON file')

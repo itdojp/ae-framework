@@ -95,7 +95,7 @@ pnpm run ae-framework -- conformance verify \
   --input configs/samples/sample-data.json \
   --context-file configs/samples/sample-context.json \
   --rules configs/samples/sample-rules.json --format json \
-  --output conformance-results.json
+  --output artifacts/conformance/conformance-results.json
 
 # 2) SBOM 生成
 pnpm run ae-framework -- sbom generate --format json --output sbom.json --verbose

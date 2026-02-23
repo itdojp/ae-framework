@@ -16,9 +16,20 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - name: Root layout guard (pre-install)
+        run: node scripts/ci/check-root-layout.mjs
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: ${{ inputs.node-version }}
       - run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
       - run: pnpm run ${{ inputs.run-script }}
+      - name: Root generated-file guard (post-run)
+        if: always()
+        run: node scripts/ci/check-no-root-generated-files.mjs
+      - name: Cleanup root safe-remove targets
+        if: always()
+        run: pnpm -s run clean:root-safe
+      - name: Root layout snapshot (post-cleanup, warn-only)
+        if: always()
+        run: node scripts/ci/check-root-layout.mjs --mode=warn

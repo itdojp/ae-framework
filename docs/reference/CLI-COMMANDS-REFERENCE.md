@@ -201,7 +201,7 @@ ae domain-model --language --sources "glossary.md"
 
 # Verify input data
  ae conformance verify --input data.json --rules rules.json \
-   --context-file context.json --format json --output conformance-results.json
+   --context-file context.json --format json --output artifacts/conformance/conformance-results.json
 # JSON schema (--format json): schema/conformance-verify-result.schema.json
 
 # Rules / config / metrics / status
@@ -228,7 +228,7 @@ ae domain-model --language --sources "glossary.md"
 
 # Run tests/suites
  ae integration run --tests login-test.json --environment test
- ae integration run --suites auth-suite.json --parallel --max-concurrency 4 --output-dir ./test-results
+ ae integration run --suites auth-suite.json --parallel --max-concurrency 4 --output-dir artifacts/integration/test-results
 
 # Status / reports
  ae integration status --watch --refresh 5
@@ -511,7 +511,7 @@ ae conformance sample --rules configs/samples/sample-rules.json \
   --context configs/samples/sample-context.json
 
  ae conformance verify --input data.json --rules rules.json \
-  --context-file context.json --format json --output conformance-results.json
+  --context-file context.json --format json --output artifacts/conformance/conformance-results.json
 # JSON schema (--format json): schema/conformance-verify-result.schema.json
 
  ae conformance rules --list
@@ -531,7 +531,7 @@ ae integration generate --type environment --name test --output test-env.json
 
  ae integration discover --patterns "./tests/**/*.json" --type all --output discovery.json
  ae integration run --tests login-test.json --environment test
- ae integration run --suites auth-suite.json --parallel --max-concurrency 4 --output-dir ./test-results
+ ae integration run --suites auth-suite.json --parallel --max-concurrency 4 --output-dir artifacts/integration/test-results
 
  ae integration status --watch --refresh 5
  ae integration reports --list

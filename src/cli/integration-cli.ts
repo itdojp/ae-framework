@@ -25,6 +25,8 @@ import type {
   TestDiscovery
 } from '../integration/types.js';
 
+const DEFAULT_INTEGRATION_OUTPUT_DIR = join('artifacts', 'integration', 'test-results');
+
 const parseOptionalBoolean = (value?: string | boolean): boolean => {
   if (value === undefined) return true;
   if (typeof value === 'boolean') return value;
@@ -120,7 +122,8 @@ export class IntegrationTestingCli {
           screenshots: true,
           video: false,
           trace: false,
-          slowMo: 0
+          slowMo: 0,
+          outputDir: DEFAULT_INTEGRATION_OUTPUT_DIR
         }),
         new APITestRunner({
           timeout: 10000,
@@ -178,7 +181,7 @@ export class IntegrationTestingCli {
       .option('--retries <num>', 'Number of retries for failed tests', '1')
       .option('--fail-fast', 'Stop execution on first failure')
       .option('--skip-on-failure', 'Skip remaining tests on failure')
-      .option('--output-dir <dir>', 'Output directory for results', './test-results')
+      .option('--output-dir <dir>', 'Output directory for results', DEFAULT_INTEGRATION_OUTPUT_DIR)
       .option('--report-format <formats>', 'Report formats (comma-separated)', 'html,json')
       .option('--categories <categories>', 'Test categories to run (comma-separated)')
       .option('--tags <tags>', 'Test tags to run (comma-separated)')
@@ -560,7 +563,7 @@ export class IntegrationTestingCli {
    * Handle the reports command
    */
   private async handleReportsCommand(options: any): Promise<void> {
-    const reportsDir = './test-results';
+    const reportsDir = DEFAULT_INTEGRATION_OUTPUT_DIR;
 
     if (options.list) {
       console.log('📄 Available Test Reports:\n');
