@@ -95,24 +95,84 @@ jobs:
           else
             pnpm run coverage || true
           fi
+      - name: Coverage artifact diagnostics
+        if: always()
+        run: |
+          if [ -d coverage ]; then
+            printf "%s\n" "coverage/ directory found"
+            find coverage -maxdepth 2 -type f | sort
+          else
+            printf "%s\n" "coverage/ directory is missing"
+          fi
+          if [ -d artifacts/coverage ]; then
+            printf "%s\n" "artifacts/coverage directory found"
+            find artifacts/coverage -maxdepth 2 -type f | sort
+          else
+            printf "%s\n" "artifacts/coverage directory is missing"
+          fi
+          {
+            printf "%s\n" "### Coverage Artifacts"
+            if [ -d coverage ]; then
+              printf "%s\n" "- coverage/ exists"
+              find coverage -maxdepth 2 -type f | sort | sed 's/^/- /'
+            else
+              printf "%s\n" "- coverage/ is missing"
+            fi
+            if [ -d artifacts/coverage ]; then
+              printf "%s\n" "- artifacts/coverage exists"
+              find artifacts/coverage -maxdepth 2 -type f | sort | sed 's/^/- /'
+            else
+              printf "%s\n" "- artifacts/coverage is missing"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ ! -d coverage ] && [ ! -d artifacts/coverage ]; then
+            printf "%s\n" "No coverage artifact directories found."
+          fi
       - name: Check coverage threshold
         env:
           THRESHOLD: ${{ needs.gate.outputs.threshold }}
           COVERAGE_STRICT: ${{ needs.gate.outputs.strict }}
         run: |
+          SUMMARY_PATH=""
           if [ -f coverage/coverage-summary.json ]; then
-            PCT=$(node -e "console.log((require('./coverage/coverage-summary.json').total.lines.pct)||0)")
+            SUMMARY_PATH="coverage/coverage-summary.json"
+          elif [ -f artifacts/coverage/coverage-summary.json ]; then
+            SUMMARY_PATH="artifacts/coverage/coverage-summary.json"
+          fi
+          if [ -n "$SUMMARY_PATH" ]; then
+            PCT=$(node - "$SUMMARY_PATH" <<'NODE'
+            const fs = require('node:fs');
+            const summaryPath = process.argv[2];
+            const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
+            const pct = Number(summary?.total?.lines?.pct ?? 0);
+            process.stdout.write(String(Number.isFinite(pct) ? pct : 0));
+            NODE
+            )
             printf "Coverage: %s%% (threshold: %s%%)\n" "$PCT" "$THRESHOLD"
+            printf "Coverage summary source: %s\n" "$SUMMARY_PATH"
+            {
+              printf "%s\n" "### Coverage Threshold Check"
+              printf "%s\n" "- summary: $SUMMARY_PATH"
+              printf "%s\n" "- lines: $PCT%"
+              printf "%s\n" "- threshold: $THRESHOLD%"
+            } >> "$GITHUB_STEP_SUMMARY"
             awk 'BEGIN{ if ('"${PCT}"' + 0 < '"${THRESHOLD}"' + 0) exit 1 }' || {
               printf "%s\n" "::error::Coverage ${PCT}% below threshold ${THRESHOLD}% (see docs/quality/coverage-required.md; tips: /coverage <pct>, /enforce-coverage)"
               exit 1
             }
           else
             if [ "${COVERAGE_STRICT}" = "true" ]; then
-              printf "%s\n" "::error::coverage-summary.json missing under strict policy; failing coverage-check"
+              printf "%s\n" "::error::coverage summary JSON is missing under strict policy; expected coverage/coverage-summary.json (or artifacts/coverage/coverage-summary.json)"
+              {
+                printf "%s\n" "### Coverage Threshold Check"
+                printf "%s\n" "- summary: missing"
+                printf "%s\n" "- strict policy: true"
+                printf "%s\n" "- expected: coverage/coverage-summary.json or artifacts/coverage/coverage-summary.json"
+                printf "%s\n" "- hint: ensure \`pnpm run coverage\` emits \`json-summary\` reporter output"
+              } >> "$GITHUB_STEP_SUMMARY"
               exit 1
             fi
-            printf "%s\n" "No coverage-summary.json found; skipping check"
+            printf "%s\n" "No coverage summary JSON found; skipping check (looked in coverage/coverage-summary.json and artifacts/coverage/coverage-summary.json)"
           fi
         continue-on-error: ${{ needs.gate.outputs.strict != 'true' }}
       - name: Comment PR with coverage (non-blocking)
