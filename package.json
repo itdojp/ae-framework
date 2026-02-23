@@ -46,6 +46,7 @@
     "lint": "eslint .",
     "check:root-layout": "node scripts/ci/check-root-layout.mjs --allow-entry=node_modules",
     "check:root-layout:warn": "node scripts/ci/check-root-layout.mjs --mode=warn --allow-entry=node_modules",
+    "check:todo-issue-links": "node scripts/ci/check-todo-issue-links.mjs",
     "check:root-generated": "node scripts/ci/check-no-root-generated-files.mjs",
     "docs:lint": "node scripts/docs/check-doc-consistency.mjs",
     "check:doc-consistency": "node scripts/docs/check-doc-consistency.mjs",

@@ -551,47 +551,47 @@ ${validation.consistencyChecks.map((check) =>
   }
 
   // Input extraction methods (simplified)
-  // TODO(#2031): Implement input extraction logic (addressing Copilot review comment 2280080079)
+  // TODO(#2227): Implement input extraction logic (addressing Copilot review comment 2280080079)
   private extractDomainInput(prompt: string): DomainModelingInput {
     void prompt;
     return {};
   }
-  // TODO(#2031): Implement input extraction logic
+  // TODO(#2227): Implement input extraction logic
   private extractEntityInput(prompt: string): DomainModelingInput {
     void prompt;
     return {};
   }
-  // TODO(#2031): Implement input extraction logic
+  // TODO(#2227): Implement input extraction logic
   private extractAggregateInput(prompt: string): DomainModelingInput {
     void prompt;
     return {};
   }
-  // TODO(#2031): Implement input extraction logic
+  // TODO(#2227): Implement input extraction logic
   private extractContextInput(prompt: string): DomainModelingInput {
     void prompt;
     return {};
   }
-  // TODO(#2031): Implement input extraction logic
+  // TODO(#2227): Implement input extraction logic
   private extractBusinessRuleInput(prompt: string): DomainModelingInput {
     void prompt;
     return {};
   }
-  // TODO(#2031): Implement input extraction logic
+  // TODO(#2227): Implement input extraction logic
   private extractLanguageInput(prompt: string): DomainModelingInput {
     void prompt;
     return {};
   }
-  // TODO(#2031): Implement input extraction logic
+  // TODO(#2227): Implement input extraction logic
   private extractServiceInput(prompt: string): DomainModelingInput {
     void prompt;
     return {};
   }
-  // TODO(#2031): Implement input extraction logic
+  // TODO(#2227): Implement input extraction logic
   private extractModelInput(prompt: string): DomainModelingInput {
     void prompt;
     return {};
   }
-  // TODO(#2031): Implement input extraction logic
+  // TODO(#2227): Implement input extraction logic
   private extractGenericInput(prompt: string): DomainModelingInput {
     void prompt;
     return {};

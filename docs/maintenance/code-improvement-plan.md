@@ -58,6 +58,8 @@
    `Result` 形式・exit code・エラーメッセージをテストで固定してから内部実装を変える。
 4. **無名TODOを残さない**  
    `TODO(#issue): ...` 形式でIssue参照を必須化。
+5. **クローズ済みIssue参照をCIで禁止する**  
+   `node scripts/ci/check-todo-issue-links.mjs` を required gate で実行し、`TODO/FIXME` が closed issue を参照していたら fail させる。
 
 ## 6. TODO（実装向け）
 

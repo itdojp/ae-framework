@@ -1,7 +1,7 @@
 /**
  * UI/UX Agent Adapter (Placeholder Implementation)
  * Provides a standardized interface for UI/UX generation phase
- * TODO(#2031): Replace with actual UI/UX generation agent when available
+ * TODO(#2230): Replace with actual UI/UX generation agent when available
  */
 
 import type {

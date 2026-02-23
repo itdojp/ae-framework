@@ -36,6 +36,10 @@ jobs:
       # regardless of PR change scope.
       - name: Enforce root layout policy
         run: node scripts/ci/check-root-layout.mjs
+      - name: Validate TODO/FIXME issue references
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci/check-todo-issue-links.mjs
       - name: Check documentation consistency
         run: node scripts/docs/check-doc-consistency.mjs
       - name: Detect docs-only change
