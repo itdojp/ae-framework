@@ -649,7 +649,7 @@ export class IntegrationTestOrchestrator extends EventEmitter {
   /**
    * Collect metadata
    */
-  private async collectMetadata(): Promise<Record<string, any>> {
+  private async collectMetadata(): Promise<Record<string, unknown>> {
     return {
       nodeVersion: process.version,
       platform: process.platform,
