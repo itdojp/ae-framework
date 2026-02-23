@@ -17,13 +17,13 @@ import type {
 const DEFAULT_METRICS = {};
 const DEFAULT_LOGS: string[] = [];
 const DEFAULT_STATE_SNAPSHOT = {};
-const DEFAULT_TRACES: any[] = [];
+const DEFAULT_TRACES: unknown[] = [];
 
 interface APIContractSpec {
   method: string;
   path: string;
-  requestSchema?: any;
-  responseSchema?: any;
+  requestSchema?: unknown;
+  responseSchema?: unknown;
   headers?: Record<string, string>;
   statusCodes?: number[];
   timeout?: number;
@@ -38,11 +38,11 @@ interface APICallData {
   url: string;
   path: string;
   headers: Record<string, string>;
-  body?: any;
+  body?: unknown;
   response?: {
     status: number;
     headers: Record<string, string>;
-    body?: any;
+    body?: unknown;
     time: number; // response time in ms
   };
   timestamp: string;
@@ -59,7 +59,7 @@ export class APIContractMonitor implements ConformanceMonitor {
   /**
    * Verify API call against contract rules
    */
-  async verify(data: any, context: RuntimeContext): Promise<VerificationResult> {
+  async verify(data: unknown, context: RuntimeContext): Promise<VerificationResult> {
     const startTime = Date.now();
     const resultId = uuidv4();
 
@@ -368,13 +368,24 @@ export class APIContractMonitor implements ConformanceMonitor {
   /**
    * Check if data is valid API call data
    */
-  private isAPICallData(data: any): data is APICallData {
-    return data && 
-           typeof data.method === 'string' &&
-           typeof data.url === 'string' &&
-           typeof data.path === 'string' &&
-           typeof data.headers === 'object' &&
-           typeof data.timestamp === 'string';
+  private isAPICallData(data: unknown): data is APICallData {
+    if (typeof data !== 'object' || data === null) {
+      return false;
+    }
+    const candidate = data as Partial<APICallData>;
+    const headers = candidate.headers;
+    if (headers === null || headers === undefined || typeof headers !== 'object' || Array.isArray(headers)) {
+      return false;
+    }
+    for (const [key, value] of Object.entries(headers as Record<string, unknown>)) {
+      if (typeof key !== 'string' || typeof value !== 'string') {
+        return false;
+      }
+    }
+    return typeof candidate.method === 'string' &&
+           typeof candidate.url === 'string' &&
+           typeof candidate.path === 'string' &&
+           typeof candidate.timestamp === 'string';
   }
 
   /**

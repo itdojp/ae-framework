@@ -18,7 +18,7 @@ import type {
 const DEFAULT_METRICS = {};
 const DEFAULT_LOGS: string[] = [];
 const DEFAULT_STATE_SNAPSHOT = {};
-const DEFAULT_TRACES: any[] = [];
+const DEFAULT_TRACES: unknown[] = [];
 
 export class DataValidationMonitor implements ConformanceMonitor {
   readonly id = 'data-validation-monitor';
@@ -30,7 +30,7 @@ export class DataValidationMonitor implements ConformanceMonitor {
   /**
    * Verify data against validation rules
    */
-  async verify(data: any, context: RuntimeContext): Promise<VerificationResult> {
+  async verify(data: unknown, context: RuntimeContext): Promise<VerificationResult> {
     const startTime = Date.now();
     const resultId = uuidv4();
 
