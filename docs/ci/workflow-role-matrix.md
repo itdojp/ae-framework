@@ -1,6 +1,6 @@
 # Workflow Role Matrix (core / optional / report)
 
-最終更新: 2026-02-17
+最終更新: 2026-02-24
 
 対象: `.github/workflows/*.yml` の運用責務整理（Issue #2031 / Phase 3）
 
@@ -18,7 +18,8 @@
 
 補足:
 
-- 2026-02-17 時点の main branch Required checks は `verify-lite`, `gate` の 2 つ
+- 2026-02-24 時点の main branch Required checks は `verify-lite`, `gate` の 2 つ
+- Copilot Auto Fix 後の gate 再評価 dispatch は `copilot-review-gate.yml` ではなく `agent-commands.yml` が担当
 
 ## 3. 現行マッピング（主要workflow）
 
