@@ -8,8 +8,9 @@ import type { ContainerManagerConfig, VerificationJob, VerificationEnvironment }
 import { ContainerEngineFactory, type ContainerEngineName } from '../services/container/container-engine.js';
 import * as path from 'path';
 import * as fs from 'fs/promises';
+import { toMessage } from '../utils/error-utils.js';
 
-export interface AgentResult<T = any> {
+export interface AgentResult<T = unknown> {
   success: boolean;
   message: string;
   data?: T;
@@ -105,7 +106,7 @@ export class ContainerAgent {
       const initTimeout = process.env['CI'] ? 10000 : 30000; // 10s for CI, 30s for local
       const initPromise = this.containerManager.initialize();
       
-      let engineInfo;
+      let engineInfo: { name: string; version: string; available: boolean } | null = null;
       try {
         await Promise.race([
           initPromise,
@@ -113,16 +114,18 @@ export class ContainerAgent {
             setTimeout(() => reject(new Error('Container engine initialization timeout')), initTimeout)
           )
         ]);
-        engineInfo = this.containerManager.getEngineInfo();
-      } catch (error: any) {
+        const info = this.containerManager.getEngineInfo();
+        engineInfo = info ? { name: info.name, version: info.version, available: info.available } : null;
+      } catch (error: unknown) {
         // In CI environments, container engines might not be available
         // Continue with limited functionality
-        if (process.env['CI'] || error.message.includes('not found') || error.message.includes('timeout')) {
-          console.warn(`Container engine not available: ${error.message}`);
+        const message = toMessage(error);
+        if (process.env['CI'] || message.includes('not found') || message.includes('timeout')) {
+          console.warn(`Container engine not available: ${message}`);
           console.warn('Running in degraded mode without container engine');
           engineInfo = { name: 'none', version: 'N/A', available: false };
         } else {
-          throw error;
+          throw error instanceof Error ? error : new Error(message);
         }
       }
 
@@ -155,11 +158,12 @@ export class ContainerAgent {
           degradedMode: engineInfo?.available === false
         }
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = toMessage(error);
       return {
         success: false,
-        message: `Failed to initialize container agent: ${error.message}`,
-        error: error.message
+        message: `Failed to initialize container agent: ${message}`,
+        error: message
       };
     }
   }
@@ -167,7 +171,17 @@ export class ContainerAgent {
   /**
    * Run verification job in container
    */
-  async runVerification(request: ContainerVerificationRequest): Promise<AgentResult> {
+  async runVerification(
+    request: ContainerVerificationRequest
+  ): Promise<
+    AgentResult<{
+      jobId: string;
+      status: VerificationJob['status'];
+      results: VerificationJob['results'];
+      logs: VerificationJob['logs'];
+      duration: number | null;
+    }>
+  > {
     try {
       await this.ensureInitialized();
 
@@ -190,7 +204,11 @@ export class ContainerAgent {
         });
         
         if (!buildResult.success) {
-          return buildResult;
+          return {
+            success: false,
+            message: buildResult.message,
+            ...(buildResult.error ? { error: buildResult.error } : {}),
+          };
         }
       }
 
@@ -217,11 +235,12 @@ export class ContainerAgent {
             : null
         }
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = toMessage(error);
       return {
         success: false,
-        message: `Container verification failed: ${error.message}`,
-        error: error.message
+        message: `Container verification failed: ${message}`,
+        error: message
       };
     }
   }
@@ -256,11 +275,12 @@ export class ContainerAgent {
           pushed: request.push || false
         }
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = toMessage(error);
       return {
         success: false,
-        message: `Failed to build verification image: ${error.message}`,
-        error: error.message
+        message: `Failed to build verification image: ${message}`,
+        error: message
       };
     }
   }
@@ -297,11 +317,12 @@ export class ContainerAgent {
           logs: job.logs
         }
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = toMessage(error);
       return {
         success: false,
-        message: `Failed to get job status: ${error.message}`,
-        error: error.message
+        message: `Failed to get job status: ${message}`,
+        error: message
       };
     }
   }
@@ -333,11 +354,12 @@ export class ContainerAgent {
           filter
         }
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = toMessage(error);
       return {
         success: false,
-        message: `Failed to list jobs: ${error.message}`,
-        error: error.message
+        message: `Failed to list jobs: ${message}`,
+        error: message
       };
     }
   }
@@ -356,11 +378,12 @@ export class ContainerAgent {
         message: `Job cancelled: ${jobId}`,
         data: { jobId, cancelled: true }
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = toMessage(error);
       return {
         success: false,
-        message: `Failed to cancel job: ${error.message}`,
-        error: error.message
+        message: `Failed to cancel job: ${message}`,
+        error: message
       };
     }
   }
@@ -393,11 +416,12 @@ export class ContainerAgent {
           health: healthStatus.healthy
         }
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = toMessage(error);
       return {
         success: false,
-        message: `Failed to get status: ${error.message}`,
-        error: error.message,
+        message: `Failed to get status: ${message}`,
+        error: message,
         data: {
           engine: { name: 'unknown', version: 'unknown', available: false },
           jobs: { active: 0, completed: 0, failed: 0, total: 0 },
@@ -427,11 +451,12 @@ export class ContainerAgent {
           options
         }
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = toMessage(error);
       return {
         success: false,
-        message: `Cleanup failed: ${error.message}`,
-        error: error.message
+        message: `Cleanup failed: ${message}`,
+        error: message
       };
     }
   }
@@ -456,11 +481,12 @@ export class ContainerAgent {
           total: engines.length
         }
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = toMessage(error);
       return {
         success: false,
-        message: `Failed to list engines: ${error.message}`,
-        error: error.message
+        message: `Failed to list engines: ${message}`,
+        error: message
       };
     }
   }
@@ -480,11 +506,12 @@ export class ContainerAgent {
         message: 'Container agent shutdown complete',
         data: { shutdown: true }
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = toMessage(error);
       return {
         success: false,
-        message: `Failed to shutdown container agent: ${error.message}`,
-        error: error.message
+        message: `Failed to shutdown container agent: ${message}`,
+        error: message
       };
     }
   }
@@ -625,9 +652,10 @@ CMD ["sh", "-c", "echo 'Multi-language verification environment ready'"]
       await fs.writeFile(path.join(containerfilesPath, 'Containerfile.multi'), multiContainerfile);
 
       console.log(`✅ Created default Containerfiles in ${containerfilesPath}`);
-    } catch (error: any) {
-      console.warn(`Failed to create default Containerfiles: ${error.message}`);
-      throw error;
+    } catch (error: unknown) {
+      const message = toMessage(error);
+      console.warn(`Failed to create default Containerfiles: ${message}`);
+      throw error instanceof Error ? error : new Error(message);
     }
   }
 
