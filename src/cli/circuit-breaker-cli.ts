@@ -167,8 +167,8 @@ export class CircuitBreakerCLI {
           
           if (breaker.recentFailures && breaker.recentFailures.length > 0) {
             console.log(`  Recent Failures: ${breaker.recentFailures.length}`);
-            breaker.recentFailures.slice(0, 3).forEach((failure: any) => {
-              console.log(`    • ${new Date(failure.timestamp).toISOString()}: ${failure.error}`);
+            breaker.recentFailures.slice(0, 3).forEach((failureTs: number) => {
+              console.log(`    • ${new Date(failureTs).toISOString()}`);
             });
           }
           
@@ -404,9 +404,9 @@ export class CircuitBreakerCLI {
     healthy: number;
     degraded: number;
     unhealthy: number;
-    summary: Array<{name: string; state: string; health: string; recentFailures?: any[]; recommendations?: string[]}>;
+    summary: Array<{name: string; state: string; health: string; recentFailures?: number[]; recommendations?: string[]}>;
     overall: string;
-    breakers: Array<{name: string; state: string; health: string; recentFailures?: any[]; recommendations?: string[]}>;
+    breakers: Array<{name: string; state: string; health: string; recentFailures?: number[]; recommendations?: string[]}>;
     totalRequests: number;
     totalFailures: number;
     closedBreakers: number;
