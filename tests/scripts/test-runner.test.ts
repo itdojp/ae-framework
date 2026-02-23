@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
 
 const spawnSyncMock = vi.fn();
 
@@ -11,6 +11,7 @@ let resolveProfile;
 let parseArgs;
 let runTest;
 let isCliInvocation;
+let previousRootCleanupEnv;
 
 beforeAll(async () => {
   ({
@@ -24,7 +25,16 @@ beforeAll(async () => {
 
 beforeEach(() => {
   spawnSyncMock.mockReset();
+  previousRootCleanupEnv = process.env.AE_TEST_RUN_CLEAN_ROOT_SAFE;
   process.env.AE_TEST_RUN_CLEAN_ROOT_SAFE = '0';
+});
+
+afterEach(() => {
+  if (previousRootCleanupEnv === undefined) {
+    delete process.env.AE_TEST_RUN_CLEAN_ROOT_SAFE;
+    return;
+  }
+  process.env.AE_TEST_RUN_CLEAN_ROOT_SAFE = previousRootCleanupEnv;
 });
 
 describe('test runner profiles', () => {
@@ -137,5 +147,49 @@ describe('test runner execution', () => {
 
   it('detects non-cli invocation', () => {
     expect(isCliInvocation(['node', '/tmp/unknown'])).toBe(false);
+  });
+
+  it('runs root-safe cleanup before and after profile commands by default', () => {
+    delete process.env.AE_TEST_RUN_CLEAN_ROOT_SAFE;
+    spawnSyncMock
+      .mockReturnValueOnce({ status: 0 })
+      .mockReturnValueOnce({ status: 0 })
+      .mockReturnValueOnce({ status: 0 });
+    const options = parseArgs(['node', 'script', '--profile', 'fast']);
+    expect(runTest(options)).toBe(0);
+    expect(spawnSyncMock).toHaveBeenNthCalledWith(
+      1,
+      'pnpm',
+      ['-s', 'run', 'clean:root-safe'],
+      expect.objectContaining({ env: process.env })
+    );
+    expect(spawnSyncMock).toHaveBeenNthCalledWith(
+      2,
+      'pnpm',
+      ['run', 'test:fast'],
+      expect.objectContaining({ env: process.env })
+    );
+    expect(spawnSyncMock).toHaveBeenNthCalledWith(
+      3,
+      'pnpm',
+      ['-s', 'run', 'clean:root-safe'],
+      expect.objectContaining({ env: process.env })
+    );
+  });
+
+  it('continues test execution when root-safe cleanup fails', () => {
+    delete process.env.AE_TEST_RUN_CLEAN_ROOT_SAFE;
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    spawnSyncMock
+      .mockReturnValueOnce({
+        error: Object.assign(new Error('cleanup failed'), { code: 'EACCES' }),
+        status: null,
+      })
+      .mockReturnValueOnce({ status: 0 })
+      .mockReturnValueOnce({ status: 0 });
+    const options = parseArgs(['node', 'script', '--profile', 'fast']);
+    expect(runTest(options)).toBe(0);
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
   });
 });

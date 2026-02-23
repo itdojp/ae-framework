@@ -7,9 +7,8 @@ import { Command } from 'commander';
 import { toMessage } from '../utils/error-utils.js';
 import { safeExit } from '../utils/safe-exit.js';
 import chalk from 'chalk';
-import { promises as fs } from 'fs';
+import { promises as fs, existsSync, statSync } from 'node:fs';
 import { join } from 'path';
-import { existsSync } from 'fs';
 import { loadConfig } from '../core/config.js';
 import { IntegrationTestOrchestrator } from '../integration/test-orchestrator.js';
 import { E2ETestRunner } from '../integration/runners/e2e-runner.js';
@@ -580,7 +579,7 @@ export class IntegrationTestingCli {
               console.log(`${index + 1}. ${file}`);
               const filePath = join(reportsDir, file);
               if (existsSync(filePath)) {
-                const stats = require('fs').statSync(filePath);
+                const stats = statSync(filePath);
                 console.log(`   Created: ${stats.ctime.toLocaleString()}`);
                 console.log(`   Size: ${this.formatFileSize(stats.size)}`);
               }
@@ -608,7 +607,7 @@ export class IntegrationTestingCli {
           
           for (const file of files) {
             const filePath = join(reportsDir, file);
-            const stats = require('fs').statSync(filePath);
+            const stats = statSync(filePath);
             
             if (stats.ctime < cutoffDate) {
               await fs.unlink(filePath);
