@@ -5,6 +5,43 @@ import type { AEFrameworkConfig, Guard, GuardResult } from '../types.js';
 import { toMessage } from '../../utils/error-utils.js';
 import { getCurrentPhase, shouldEnforceGate, getThreshold } from '../../utils/quality-policy-loader.js';
 
+type ExecErrorOutput = {
+  stdout?: string | Buffer;
+  stderr?: string | Buffer;
+};
+
+const readExecOutput = (error: unknown): string => {
+  if (!error || typeof error !== 'object') {
+    return '';
+  }
+  const candidate = error as ExecErrorOutput;
+  const toText = (value: string | Buffer | undefined): string | undefined => {
+    if (typeof value === 'string') {
+      return value;
+    }
+    if (Buffer.isBuffer(value)) {
+      return value.toString('utf8');
+    }
+    return undefined;
+  };
+
+  const stdoutText = toText(candidate.stdout);
+  if (stdoutText && stdoutText.length > 0) {
+    return stdoutText;
+  }
+  const stderrText = toText(candidate.stderr);
+  if (stderrText && stderrText.length > 0) {
+    return stderrText;
+  }
+  if (stdoutText !== undefined) {
+    return stdoutText;
+  }
+  if (stderrText !== undefined) {
+    return stderrText;
+  }
+  return '';
+};
+
 export class GuardRunner {
   constructor(private config: AEFrameworkConfig) {}
 
@@ -85,8 +122,8 @@ export class GuardRunner {
       } else {
         return { success: false, message: 'Some tests are failing' };
       }
-    } catch (error: any) {
-      const output = error.stdout || error.stderr || '';
+    } catch (error: unknown) {
+      const output = readExecOutput(error);
       return {
         success: false,
         message: `Tests failed: ${output.split('\n').slice(-3).join('\n').trim()}`
