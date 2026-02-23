@@ -692,32 +692,33 @@ export class OperateAgent {
     };
 
     const actuals = {
-      availability: metrics.availability ?? 99.9,
-      latencyP95Ms: metrics.latencyP95Ms ?? 100,
-      errorRatePercent: metrics.errorRatePercent ?? 0.1,
-      throughputRps: metrics.throughputRps ?? 1000,
+      availability: metrics.availability ?? null,
+      latencyP95Ms: metrics.latencyP95Ms ?? null,
+      errorRatePercent: metrics.errorRatePercent ?? null,
+      throughputRps: metrics.throughputRps ?? null,
     };
 
     return {
       availability: {
         target: targets.availability,
         actual: actuals.availability,
-        compliant: actuals.availability >= targets.availability,
+        compliant: actuals.availability !== null && actuals.availability >= targets.availability,
       },
       latency: {
         target: targets.latencyP95Ms,
         actual: actuals.latencyP95Ms,
-        compliant: actuals.latencyP95Ms <= targets.latencyP95Ms,
+        compliant: actuals.latencyP95Ms !== null && actuals.latencyP95Ms <= targets.latencyP95Ms,
       },
       errorRate: {
         target: targets.errorRatePercent,
         actual: actuals.errorRatePercent,
-        compliant: actuals.errorRatePercent <= targets.errorRatePercent,
+        compliant:
+          actuals.errorRatePercent !== null && actuals.errorRatePercent <= targets.errorRatePercent,
       },
       throughput: {
         target: targets.throughputRps,
         actual: actuals.throughputRps,
-        compliant: actuals.throughputRps >= targets.throughputRps,
+        compliant: actuals.throughputRps !== null && actuals.throughputRps >= targets.throughputRps,
       },
       timestamp: new Date(),
     };
@@ -949,10 +950,10 @@ export interface SloMetrics {
 }
 
 export interface SloStatus {
-  availability: { target: number; actual: number; compliant: boolean };
-  latency: { target: number; actual: number; compliant: boolean };
-  errorRate: { target: number; actual: number; compliant: boolean };
-  throughput: { target: number; actual: number; compliant: boolean };
+  availability: { target: number; actual: number | null; compliant: boolean };
+  latency: { target: number; actual: number | null; compliant: boolean };
+  errorRate: { target: number; actual: number | null; compliant: boolean };
+  throughput: { target: number; actual: number | null; compliant: boolean };
   timestamp: Date;
 }
 
