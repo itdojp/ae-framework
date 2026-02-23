@@ -67,7 +67,7 @@ export interface DependencyNode {
   dependencies: string[];
   dependents: string[];
   weight: number;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface DependencyGraph {
