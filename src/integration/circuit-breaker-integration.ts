@@ -1,6 +1,13 @@
 import { circuitBreakerManager, CircuitBreaker, type ErrorConstructorLike, type FallbackHandler } from '../utils/circuit-breaker.js';
 import { EventEmitter } from 'events';
 
+interface CircuitFallbackResult {
+  success: false;
+  error: string;
+  fallback: true;
+  timestamp: string;
+}
+
 /**
  * AE-Framework specific error types for circuit breaker filtering
  */
@@ -115,7 +122,7 @@ export class AEFrameworkCircuitBreakerIntegration extends EventEmitter {
       timeout: 20000,
       monitoringWindow: 60000,
       expectedErrors: [ExternalServiceError],
-      fallback: (...args: any[]) => this.externalServiceFallback(serviceName, ...args),
+      fallback: (...args: unknown[]) => this.externalServiceFallback(serviceName, ...args),
       enableMonitoring: true
     });
   }
@@ -141,7 +148,7 @@ export class AEFrameworkCircuitBreakerIntegration extends EventEmitter {
   async executeAgentOperation<T>(
     agentName: string,
     operation: () => Promise<T>,
-    context?: any
+    context?: unknown
   ): Promise<T> {
     const breaker = this.getAgentCircuitBreaker(agentName);
     
@@ -164,7 +171,7 @@ export class AEFrameworkCircuitBreakerIntegration extends EventEmitter {
   async executeStateOperation<T>(
     operationType: string,
     operation: () => Promise<T>,
-    context?: any
+    context?: unknown
   ): Promise<T> {
     const breaker = this.getStateManagementCircuitBreaker();
     
@@ -188,7 +195,7 @@ export class AEFrameworkCircuitBreakerIntegration extends EventEmitter {
     fromPhase: string,
     toPhase: string,
     operation: () => Promise<T>,
-    context?: any
+    context?: unknown
   ): Promise<T> {
     const breaker = this.getPhaseTransitionCircuitBreaker();
     
@@ -211,7 +218,7 @@ export class AEFrameworkCircuitBreakerIntegration extends EventEmitter {
   async executeExternalServiceCall<T>(
     serviceName: string,
     operation: () => Promise<T>,
-    context?: any
+    context?: unknown
   ): Promise<T> {
     const breaker = this.getExternalServiceCircuitBreaker(serviceName);
     
@@ -234,7 +241,7 @@ export class AEFrameworkCircuitBreakerIntegration extends EventEmitter {
   async executeResourceOperation<T>(
     resourceType: string,
     operation: () => Promise<T>,
-    context?: any
+    context?: unknown
   ): Promise<T> {
     const breaker = this.getResourceCircuitBreaker(resourceType);
     
@@ -347,7 +354,7 @@ export class AEFrameworkCircuitBreakerIntegration extends EventEmitter {
 
   // Fallback implementations
 
-  private agentFallback(agentName: string): any {
+  private agentFallback(agentName: string): CircuitFallbackResult {
     this.emit('agentFallbackTriggered', { agentName });
     console.warn(`🔄 Agent '${agentName}' circuit breaker fallback triggered`);
     return {
@@ -358,7 +365,7 @@ export class AEFrameworkCircuitBreakerIntegration extends EventEmitter {
     };
   }
 
-  private stateManagementFallback(): any {
+  private stateManagementFallback(): CircuitFallbackResult {
     this.emit('stateManagementFallbackTriggered');
     console.warn('🔄 State management circuit breaker fallback triggered');
     return {
@@ -369,7 +376,7 @@ export class AEFrameworkCircuitBreakerIntegration extends EventEmitter {
     };
   }
 
-  private phaseTransitionFallback(): any {
+  private phaseTransitionFallback(): CircuitFallbackResult {
     this.emit('phaseTransitionFallbackTriggered');
     console.warn('🔄 Phase transition circuit breaker fallback triggered');
     return {
@@ -380,7 +387,7 @@ export class AEFrameworkCircuitBreakerIntegration extends EventEmitter {
     };
   }
 
-  private externalServiceFallback(serviceName: string, ...args: any[]): any {
+  private externalServiceFallback(serviceName: string, ...args: unknown[]): CircuitFallbackResult {
     this.emit('externalServiceFallbackTriggered', { serviceName, args });
     console.warn(`🔄 External service '${serviceName}' circuit breaker fallback triggered`);
     return {
@@ -391,7 +398,7 @@ export class AEFrameworkCircuitBreakerIntegration extends EventEmitter {
     };
   }
 
-  private resourceFallback(resourceType: string): any {
+  private resourceFallback(resourceType: string): CircuitFallbackResult {
     this.emit('resourceFallbackTriggered', { resourceType });
     console.warn(`🔄 Resource '${resourceType}' circuit breaker fallback triggered`);
     return {
