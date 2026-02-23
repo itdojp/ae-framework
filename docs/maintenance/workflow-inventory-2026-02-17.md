@@ -1,6 +1,6 @@
 # Workflow Inventory (Issue #2031 / Phase 3)
 
-最終更新: 2026-02-17
+最終更新: 2026-02-24
 
 対象: `.github/workflows/*.yml`（51 files）
 
@@ -10,7 +10,7 @@
 
 - workflow 一覧/トリガー抽出: `node + yaml` で `name` と `on` を集計
 - reusable 呼び出し関係抽出: `jobs.<job>.uses` が `./.github/workflows/*.yml` のものを抽出
-- Branch protection 必須チェック抽出: `gh api repos/itdojp/ae-framework/branches/main/protection --jq '.required_status_checks.checks[].context'`
+- Branch protection 必須チェック抽出: `gh api repos/itdojp/ae-framework/branches/main/protection --jq '.required_status_checks.contexts[]'`
 
 ## 2. 必須/任意の現状（main branch protection 基準）
 
@@ -23,7 +23,7 @@ main の Required checks は次の 2 つのみ。
 
 補足:
 
-- 上記以外の workflow は、実行されても merge blocking の必須条件ではない（2026-02-17 時点）。
+- 上記以外の workflow は、実行されても merge blocking の必須条件ではない（2026-02-24 時点）。
 - ただし個別 workflow 内で failure を返す場合、運用上の判断で対応対象になる。
 
 ## 3. workflow_dispatch 入力棚卸し（主要運用フロー）
@@ -69,6 +69,29 @@ main の Required checks は次の 2 つのみ。
    - `formal-verify.yml` → `formal-aggregate.yml`
 5. flake 系の段階呼び出し
    - `flake-detect.yml` → `flake-stability.yml`
+6. Copilot gate 再評価の責務分離
+   - `copilot-review-gate.yml` は PR/review/dispatch の gate 判定に専念
+   - auto-fix コメント契機の dispatch は `agent-commands.yml` に統合
+
+## 4.1 `ci.yml` 入口から見た依存関係（workflow_call）
+
+```mermaid
+flowchart TD
+  CI[ci.yml]
+  CI --> SPEC[spec-validation.yml]
+  CI --> EXT[ci-extended.yml]
+  CI --> HERM[hermetic-ci.yml]
+  CI --> PAR[parallel-test-execution.yml]
+  CI --> POD[podman-smoke.yml]
+  CI --> FAST[ci-fast.yml]
+  CI --> PRV[pr-verify.yml]
+  CI --> VER[verify.yml]
+  CI --> QA[ae-ci.yml]
+```
+
+補足:
+- `ci.yml` は entry workflow として reusable workflow を起動するハブ
+- required checks は `verify-lite` と `gate` のみで、`ci.yml` 配下ジョブは merge blocking の必須条件ではない
 
 ## 5. 必須/任意/レポート分類（運用上の整理）
 
@@ -115,9 +138,9 @@ main の Required checks は次の 2 つのみ。
 
 `ae-ci.yml`, `ci-core.yml`, `ci-extended.yml`, `ci-fast.yml`, `ci.yml`, `codegen-drift-check.yml`, `fail-fast-spec-validation.yml`, `flake-stability.yml`, `formal-aggregate.yml`, `hermetic-ci.yml`, `parallel-test-execution.yml`, `podman-smoke.yml`, `pr-verify.yml`, `quality-gates-centralized.yml`, `release-quality-artifacts.yml`, `sbom-generation.yml`, `spec-check.yml`, `spec-validation.yml`, `validate-artifacts-ajv.yml`, `verify.yml`
 
-### 6.6 `issue_comment`（4）
+### 6.6 `issue_comment`（3）
 
-`agent-commands.yml`, `codex-autopilot-lane.yml`, `copilot-review-gate.yml`, `slash-commands.yml`
+`agent-commands.yml`, `codex-autopilot-lane.yml`, `slash-commands.yml`
 
 ### 6.7 `workflow_run`（2）
 
@@ -136,4 +159,3 @@ main の Required checks は次の 2 つのみ。
 1. `core / optional / report` を前提に、`ci.yml` と周辺 reusable workflow の責務境界を明文化
 2. Required 化候補（`workflow-lint`, `coverage-check`）の段階導入条件を定義
 3. 429対策（retry/backoff/sleep）を `scripts/ci/lib` 共通化し、呼び出し workflow を統一
-

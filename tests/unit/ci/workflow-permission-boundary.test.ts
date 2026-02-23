@@ -37,12 +37,13 @@ describe('workflow permission boundaries', () => {
     expect(workflow).toContain('AE_AUTOMATION_GLOBAL_DISABLE');
   });
 
-  it('copilot-review-gate dispatch reacts only to trusted bot marker comments', () => {
-    const workflow = readWorkflow('copilot-review-gate.yml');
-    expect(workflow).toContain("github.event_name == 'issue_comment'");
-    expect(workflow).toContain('github.event.issue.pull_request');
-    expect(workflow).toContain("contains(github.event.comment.body, '<!-- AE-COPILOT-AUTO-FIX v1 -->')");
-    expect(workflow).toContain("github.event.comment.user.login == 'github-actions[bot]'");
+  it('agent-commands dispatches copilot-review-gate only for trusted bot marker comments', () => {
+    const workflow = readWorkflow('agent-commands.yml');
+    expect(workflow).toContain("const autoFixMarker = '<!-- AE-COPILOT-AUTO-FIX v1 -->'");
+    expect(workflow).toContain("context.payload.comment?.user?.type === 'Bot'");
+    expect(workflow).toContain("context.payload.comment?.user?.login === 'github-actions[bot]'");
+    expect(workflow).toContain('body.includes(autoFixMarker)');
+    expect(workflow).toContain("workflow_id: 'copilot-review-gate.yml'");
   });
 
   it('pr-maintenance update-branch enforces fork guard, explicit mode, and global kill-switch', () => {

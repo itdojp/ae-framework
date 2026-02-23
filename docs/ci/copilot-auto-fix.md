@@ -114,7 +114,7 @@ Copilot レビューのインラインコメントに含まれる ```` ```sugges
   - docs 以外の差分が含まれているため。docs のみに分割するか、`AE_COPILOT_AUTO_FIX_SCOPE=all` を検討
 - Copilot Review Gate が失敗のまま:
   - auto-fix が commit/push を行わない場合（既適用など）、ゲートの再評価が走らないことがあります
-  - auto-fix 結果コメント（marker: `<!-- AE-COPILOT-AUTO-FIX v1 -->`）が作成/更新されると、Copilot Review Gate の `dispatch` job（issue_comment→workflow_dispatch）が gate を PR head に対して再実行します（通常は手動の rerun は不要）
+  - auto-fix 結果コメント（marker: `<!-- AE-COPILOT-AUTO-FIX v1 -->`）が作成されると、`agent-commands` が `copilot-review-gate.yml` を `workflow_dispatch` し、gate を PR head に対して再実行します（通常は手動 rerun 不要）
   - それでも更新されない場合は、`Copilot Review Gate` の再実行（Actions UI）や、PR の更新（空コミット等）で再評価してください
 - GitHub API 429 / secondary rate limit:
   - `gh` の一時的失敗が発生する場合があります（HTTP 429 等）

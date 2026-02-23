@@ -3,6 +3,7 @@
 PR自動化ワークフローにおける `workflow_dispatch` / `issue_comment` 起点の権限境界を整理します。
 
 一次情報:
+- `.github/workflows/agent-commands.yml`
 - `.github/workflows/copilot-review-gate.yml`
 - `.github/workflows/codex-autopilot-lane.yml`
 - `.github/workflows/pr-ci-status-comment.yml`
@@ -12,7 +13,7 @@ PR自動化ワークフローにおける `workflow_dispatch` / `issue_comment` 
 
 | Workflow | Trigger | 境界条件 | 意図 |
 | --- | --- | --- | --- |
-| Copilot Review Gate (`dispatch`) | `issue_comment` | PRに紐づくコメントのみ、`github-actions[bot]` + `<!-- AE-COPILOT-AUTO-FIX v1 -->` を要求 | 任意コメントからのdispatch起動を防止 |
+| agent-commands (`copilot-review-gate dispatch`) | `issue_comment` | PRに紐づくコメントのみ、`github-actions[bot]` + `<!-- AE-COPILOT-AUTO-FIX v1 -->` を要求 | 任意コメントからのdispatch起動を防止 |
 | Copilot Review Gate (`gate`) | `workflow_dispatch` | `pr_number` 必須（main以外で手動実行時） | 無関係ブランチでの誤起動を防止 |
 | Copilot Auto Fix | `pull_request_review` | fork PR除外、Copilot actor限定、global kill-switch考慮 | 書き込み権限と適用主体を制限 |
 | Codex Autopilot Lane | `issue_comment` / `pull_request` / `workflow_dispatch` | `/autopilot run` + 権限者（MEMBER/OWNER/COLLABORATOR）+ PRコメント限定、global kill-switch考慮 | 任意ユーザーコメントによる自動更新を防止 |

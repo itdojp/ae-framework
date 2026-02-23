@@ -2,7 +2,7 @@ name: agent-commands
 
 on:
   issue_comment:
-    types: [created]
+    types: [created, edited]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.issue.number || github.ref }}-${{ github.event.comment.id || github.run_id }}
@@ -108,6 +108,35 @@ jobs:
             // /formal-quickstart (alias of /formal-help)
             const cmd = body.split(/\s+/)[0];
             const arg = body.split(/\s+/)[1] || '';
+            const autoFixMarker = '<!-- AE-COPILOT-AUTO-FIX v1 -->';
+            const isAutoFixComment =
+              context.payload.comment?.user?.type === 'Bot'
+              && context.payload.comment?.user?.login === 'github-actions[bot]'
+              && body.includes(autoFixMarker);
+            const isEditedCommentEvent = context.payload.action === 'edited';
+
+            // Keep slash-command behavior deterministic:
+            // process edited events only for trusted auto-fix marker comments.
+            if (isEditedCommentEvent && !isAutoFixComment) {
+              core.notice('Skip edited comment event (non auto-fix marker).');
+              return;
+            }
+
+            // Copilot Auto Fix results are posted as issue comments.
+            // Re-run gate against PR head via workflow_dispatch to refresh required checks.
+            if (isAutoFixComment) {
+              const pr = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
+              const ref = pr.data.head.ref;
+              await github.rest.actions.createWorkflowDispatch({
+                owner,
+                repo,
+                workflow_id: 'copilot-review-gate.yml',
+                ref,
+                inputs: { pr_number: String(issue_number) }
+              });
+              core.notice(`Dispatched copilot-review-gate for PR #${issue_number} on ${ref}`);
+              return;
+            }
 
             switch (cmd) {
               case '/enforce-bdd-lint':
