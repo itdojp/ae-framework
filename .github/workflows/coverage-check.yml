@@ -101,17 +101,32 @@ jobs:
           if [ -d coverage ]; then
             printf "%s\n" "coverage/ directory found"
             find coverage -maxdepth 2 -type f | sort
-            {
-              printf "%s\n" "### Coverage Artifacts"
-              printf "%s\n" "- coverage/ exists"
-              find coverage -maxdepth 2 -type f | sort | sed 's/^/- /'
-            } >> "$GITHUB_STEP_SUMMARY"
           else
             printf "%s\n" "coverage/ directory is missing"
-            {
-              printf "%s\n" "### Coverage Artifacts"
+          fi
+          if [ -d artifacts/coverage ]; then
+            printf "%s\n" "artifacts/coverage directory found"
+            find artifacts/coverage -maxdepth 2 -type f | sort
+          else
+            printf "%s\n" "artifacts/coverage directory is missing"
+          fi
+          {
+            printf "%s\n" "### Coverage Artifacts"
+            if [ -d coverage ]; then
+              printf "%s\n" "- coverage/ exists"
+              find coverage -maxdepth 2 -type f | sort | sed 's/^/- /'
+            else
               printf "%s\n" "- coverage/ is missing"
-            } >> "$GITHUB_STEP_SUMMARY"
+            fi
+            if [ -d artifacts/coverage ]; then
+              printf "%s\n" "- artifacts/coverage exists"
+              find artifacts/coverage -maxdepth 2 -type f | sort | sed 's/^/- /'
+            else
+              printf "%s\n" "- artifacts/coverage is missing"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ ! -d coverage ] && [ ! -d artifacts/coverage ]; then
+            printf "%s\n" "No coverage artifact directories found."
           fi
       - name: Check coverage threshold
         env:
@@ -157,7 +172,7 @@ jobs:
               } >> "$GITHUB_STEP_SUMMARY"
               exit 1
             fi
-            printf "%s\n" "No coverage-summary.json found; skipping check"
+            printf "%s\n" "No coverage summary JSON found; skipping check (looked in coverage/coverage-summary.json and artifacts/coverage/coverage-summary.json)"
           fi
         continue-on-error: ${{ needs.gate.outputs.strict != 'true' }}
       - name: Comment PR with coverage (non-blocking)

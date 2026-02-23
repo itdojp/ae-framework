@@ -39,7 +39,7 @@ References
 - Dry-run the summary composer locally without posting to GitHub:
   - `AE_COVERAGE_DRY_RUN=1 GITHUB_TOKEN=dummy GITHUB_REPOSITORY=owner/repo GITHUB_EVENT_NAME=pull_request GITHUB_EVENT_PATH=event.json node scripts/coverage/pr-coverage-summary.mjs`
 - The script searches for coverage JSON at `coverage/coverage-summary.json` (then `artifacts/coverage/coverage-summary.json`).
-  - The project default command emits summary JSON: `pnpm run coverage` (`vitest --coverage.reporter=json-summary`).
+  - The project default command emits summary JSON: `pnpm run coverage` (`vitest run --coverage --coverage.reporter=json-summary`).
   - Or override the summary path via `AE_COVERAGE_SUMMARY_PATH` (when set and exists, it is used).
   - Label parsing rules: last-wins, accepts 0–100, trims `%` and spaces, case-insensitive `coverage:` prefix.
   - Opt-out posting entirely (in CI experiments): set `AE_COVERAGE_SKIP_COMMENT=1` (script prints a note and exits).
