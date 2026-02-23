@@ -341,7 +341,7 @@ export class ResilienceSystem {
       rateLimiter?: { availableTokens: number; maxTokens: number };
       bulkheads: Record<string, BulkheadStats>;
       timeouts: Record<string, TimeoutStats>;
-      http?: any;
+      http?: ReturnType<ResilientHttpClient['getHealthStats']>;
     };
     bulkheadSystem: ReturnType<BulkheadManager['getSystemHealth']>;
   } {
@@ -352,7 +352,7 @@ export class ResilienceSystem {
       rateLimiter?: { availableTokens: number; maxTokens: number };
       bulkheads: Record<string, BulkheadStats>;
       timeouts: Record<string, TimeoutStats>;
-      http?: any;
+      http?: ReturnType<ResilientHttpClient['getHealthStats']>;
     } = {
       bulkheads: this.bulkheadManager.getAllStats(),
       timeouts: this.timeoutManager.getAllStats(),
