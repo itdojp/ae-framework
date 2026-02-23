@@ -110,7 +110,7 @@ export class ParallelStrategy {
               type: stepType,
               description: task.description,
               input: this.toReasoningStepInput(task, context, steps),
-              ...(stepOutput !== undefined ? { output: stepOutput } : {}),
+              output: stepOutput,
               confidence: taskResult.confidence,
               metadata: {
                 startTime: new Date(Date.now() - taskResult.duration),
@@ -300,7 +300,6 @@ export class ParallelStrategy {
     let lastError: Error | undefined;
 
     while (attempts < task.maxRetries + 1) {
-      this.activeTaskCount++;
       try {
         // Get processor for task
         const processor = this.getTaskProcessor(task);
@@ -308,6 +307,7 @@ export class ParallelStrategy {
         // Prepare task input with dependency results
         const enrichedInput = this.enrichTaskInput(task, previousResults);
         const enrichedTask = { ...task, input: enrichedInput };
+        this.activeTaskCount++;
 
         // Execute task
         const result = await processor(enrichedTask);
@@ -322,7 +322,7 @@ export class ParallelStrategy {
         };
 
       } catch (error) {
-        lastError = error instanceof Error ? error : new Error(String(error));
+        lastError = this.normalizeError(error);
         attempts++;
 
         if (attempts < task.maxRetries + 1) {
@@ -569,9 +569,9 @@ export class ParallelStrategy {
     }
   }
 
-  private toStepOutput(stepType: ReasoningStep['type'], task: ParallelTask, result: unknown): StepOutput | undefined {
+  private toStepOutput(stepType: ReasoningStep['type'], task: ParallelTask, result: unknown): StepOutput {
     const record = this.asRecord(result);
-    if (!record) return undefined;
+    if (!record) return this.defaultStepOutput(stepType, result);
 
     switch (stepType) {
       case 'analyze': {
@@ -626,8 +626,10 @@ export class ParallelStrategy {
   }
 
   private asConstraint(value: unknown): ReasoningConstraint | undefined {
-    if (!value || typeof value !== 'object') return undefined;
-    return value as ReasoningConstraint;
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+    const record = value as Record<string, unknown>;
+    if (Object.keys(record).length === 0) return undefined;
+    return record as ReasoningConstraint;
   }
 
   private asRecord(value: unknown): Record<string, unknown> | undefined {
@@ -651,6 +653,61 @@ export class ParallelStrategy {
     if (!Array.isArray(value)) return undefined;
     const strings = value.filter((item): item is string => typeof item === 'string');
     return strings.length > 0 ? strings : undefined;
+  }
+
+  private normalizeError(error: unknown): Error {
+    if (error instanceof Error) {
+      return error;
+    }
+    if (typeof error === 'string') {
+      return new Error(error);
+    }
+    if (error && typeof error === 'object') {
+      const record = error as Record<string, unknown>;
+      if (typeof record['message'] === 'string') {
+        return new Error(record['message']);
+      }
+      try {
+        return new Error(JSON.stringify(error));
+      } catch {
+        return new Error('Unserializable error object');
+      }
+    }
+    if (typeof error === 'number' || typeof error === 'boolean' || typeof error === 'bigint') {
+      return new Error(String(error));
+    }
+    return new Error('Unknown error');
+  }
+
+  private defaultStepOutput(stepType: ReasoningStep['type'], result: unknown): StepOutput {
+    switch (stepType) {
+      case 'analyze':
+        return {
+          patterns: [],
+          relevantConstraints: [],
+          dataQuality: { score: 0.5, issues: ['analysis result was not structured'] },
+          summary: this.readString(result, 'Parallel analysis completed'),
+        };
+      case 'validate':
+        return {
+          valid: false,
+          results: [{ passed: false, confidence: 0, reason: 'Validation result was not structured' }],
+          confidence: 0,
+        };
+      case 'synthesize':
+        return {
+          keyFindings: [],
+          recommendations: [],
+          summary: this.readString(result, 'Parallel synthesis completed'),
+          confidence: 0.5,
+        };
+      case 'deduce':
+        return {
+          hypotheses: [],
+          conclusion: this.readString(result, 'Parallel task completed'),
+          reasoning: 'Result was not structured; fallback output was used',
+        };
+    }
   }
 
   private normalizeAnalysisData(value: unknown): Record<string, unknown> {
