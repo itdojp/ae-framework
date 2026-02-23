@@ -11,6 +11,9 @@ export interface ReasoningConstraint {
   domain?: string;
   type?: string;
   threshold?: number;
+  condition?: string;
+  severity?: string;
+  [key: string]: unknown;
 }
 
 export interface PatternInfo {
@@ -135,10 +138,10 @@ export interface StrategyResult {
   reasoning: string[];
 }
 
-type StepProcessor = (step: ReasoningStep) => StepOutput | Promise<StepOutput>;
+type StepProcessor = (step: ReasoningStep, context?: ReasoningContext) => StepOutput | Promise<StepOutput>;
 
 export class SequentialStrategy {
-  private stepProcessors = new Map<ReasoningStepType, StepProcessor>();
+  private stepProcessors = new Map<string, StepProcessor>();
 
   constructor() {
     this.registerDefaultProcessors();
@@ -154,7 +157,7 @@ export class SequentialStrategy {
 
     try {
       const analysisStep = this.createAnalysisStep(currentContext);
-      const analysisOutput = await this.processStep(analysisStep);
+      const analysisOutput = await this.processStep(analysisStep, currentContext);
       if (!this.isAnalysisResult(analysisOutput)) {
         throw new Error('Unexpected analysis output');
       }
@@ -164,7 +167,7 @@ export class SequentialStrategy {
 
       currentContext.previousSteps = steps;
       const deductionStep = this.createDeductionStep(currentContext);
-      const deductionOutput = await this.processStep(deductionStep);
+      const deductionOutput = await this.processStep(deductionStep, currentContext);
       if (!this.isDeductionResult(deductionOutput)) {
         throw new Error('Unexpected deduction output');
       }
@@ -174,7 +177,7 @@ export class SequentialStrategy {
 
       currentContext.previousSteps = steps;
       const validationStep = this.createValidationStep(currentContext);
-      const validationOutput = await this.processStep(validationStep);
+      const validationOutput = await this.processStep(validationStep, currentContext);
       if (!this.isValidationResult(validationOutput)) {
         throw new Error('Unexpected validation output');
       }
@@ -185,7 +188,7 @@ export class SequentialStrategy {
       if (validationOutput.valid) {
         currentContext.previousSteps = steps;
         const synthesisStep = this.createSynthesisStep(currentContext);
-        const synthesisOutput = await this.processStep(synthesisStep);
+        const synthesisOutput = await this.processStep(synthesisStep, currentContext);
         if (!this.isSynthesisResult(synthesisOutput)) {
           throw new Error('Unexpected synthesis output');
         }
@@ -221,7 +224,7 @@ export class SequentialStrategy {
   /**
    * Register a custom step processor
    */
-  registerStepProcessor(type: ReasoningStepType, processor: StepProcessor): void {
+  registerStepProcessor(type: string, processor: StepProcessor): void {
     this.stepProcessors.set(type, processor);
   }
 
@@ -319,7 +322,7 @@ export class SequentialStrategy {
     };
   }
 
-  private async processStep(step: ReasoningStep): Promise<StepOutput> {
+  private async processStep(step: ReasoningStep, context?: ReasoningContext): Promise<StepOutput> {
     const startTime = Date.now();
     step.metadata.startTime = new Date();
 
@@ -329,7 +332,7 @@ export class SequentialStrategy {
         throw new Error(`No processor found for step type: ${step.type}`);
       }
 
-      const result = await Promise.resolve(processor(step));
+      const result = await Promise.resolve(processor(step, context));
 
       step.metadata.endTime = new Date();
       step.metadata.duration = Date.now() - startTime;
@@ -574,7 +577,8 @@ export class SequentialStrategy {
   private isAnalysisResult(value: unknown): value is AnalysisResult {
     return this.isRecord(value)
       && Array.isArray(value['patterns'])
-      && this.isRecord(value['dataQuality']);
+      && this.isRecord(value['dataQuality'])
+      && typeof value['summary'] === 'string';
   }
 
   private isDeductionResult(value: unknown): value is DeductionResult {
@@ -586,12 +590,15 @@ export class SequentialStrategy {
   private isValidationResult(value: unknown): value is ValidationResult {
     return this.isRecord(value)
       && typeof value['valid'] === 'boolean'
-      && Array.isArray(value['results']);
+      && Array.isArray(value['results'])
+      && typeof value['confidence'] === 'number';
   }
 
   private isSynthesisResult(value: unknown): value is SynthesisResult {
     return this.isRecord(value)
+      && typeof value['summary'] === 'string'
       && Array.isArray(value['keyFindings'])
-      && Array.isArray(value['recommendations']);
+      && Array.isArray(value['recommendations'])
+      && this.hasConfidence(value);
   }
 }
