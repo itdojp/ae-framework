@@ -77,7 +77,7 @@ export const TestFixtureSchema = z.object({
   name: z.string(),
   description: z.string(),
   category: TestCategorySchema,
-  data: z.record(z.any()).default({}),
+  data: z.record(z.unknown()).default({}),
   setup: z.array(z.string()).default([]),
   teardown: z.array(z.string()).default([]),
   dependencies: z.array(z.string()).default([]),
@@ -105,7 +105,7 @@ export const TestCaseSchema = z.object({
     id: z.string(),
     description: z.string(),
     action: z.string(),
-    data: z.record(z.any()).default({}),
+    data: z.record(z.unknown()).default({}),
     expectedResult: z.string().optional(),
     timeout: z.number().optional()
   })),

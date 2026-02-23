@@ -213,8 +213,8 @@ export class FailureArtifactFactory {
 
   static fromContractViolation(
     contractName: string, 
-    expected: any, 
-    actual: any, 
+    expected: unknown,
+    actual: unknown,
     location?: FailureLocation
   ): FailureArtifact {
     return this.create({
