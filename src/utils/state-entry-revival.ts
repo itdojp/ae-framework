@@ -9,12 +9,14 @@ export function reviveStateEntryData(rawEntry: CompressedStateEntryLike): unknow
   if (rawEntry.compressed) {
     // `compressed` entries are expected to carry byte payloads (Buffer/Uint8Array/etc).
     // Accept multiple representations to support persisted/imported state shapes.
-    const rawData = rawEntry.data as any;
+    const rawData = rawEntry.data;
     // Only revive marker objects (e.g. {__ae_type: string}); do not traverse real TypedArray instances,
     // otherwise they get converted into plain objects and become unusable as byte payloads.
     const data =
-      rawData && typeof rawData === 'object' && typeof (rawData as any).__ae_type === 'string'
-        ? (reviveSpecialValue(rawData) as any)
+      rawData &&
+      typeof rawData === 'object' &&
+      typeof (rawData as { __ae_type?: unknown }).__ae_type === 'string'
+        ? reviveSpecialValue(rawData)
         : rawData;
 
     if (Buffer.isBuffer(data)) {
@@ -22,6 +24,7 @@ export function reviveStateEntryData(rawEntry: CompressedStateEntryLike): unknow
     }
 
     if (data && typeof data === 'object') {
+      const dataRecord = data as Record<string, unknown>;
       // TypedArray / DataView
       if (ArrayBuffer.isView(data)) {
         const view = data as ArrayBufferView;
@@ -36,15 +39,15 @@ export function reviveStateEntryData(rawEntry: CompressedStateEntryLike): unknow
         return Buffer.from(new Uint8Array(data));
       }
       // Buffer JSON form (e.g. {"type":"Buffer","data":[...]})
-      if (data.type === 'Buffer' && Array.isArray(data.data)) {
-        return Buffer.from(data.data);
+      if (dataRecord['type'] === 'Buffer' && Array.isArray(dataRecord['data'])) {
+        return Buffer.from(dataRecord['data']);
       }
       // Legacy number[] form
       if (Array.isArray(data)) {
         let allNumbers = true;
         const buffer = Buffer.alloc(data.length);
         for (let i = 0; i < data.length; i++) {
-          const value = (data as any)[i];
+          const value = data[i];
           if (typeof value !== 'number') {
             allNumbers = false;
             break;
