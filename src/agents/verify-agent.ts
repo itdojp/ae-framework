@@ -36,13 +36,11 @@ interface VerifyAgentOptions {
 interface ContractTestResult {
   passed: boolean;
   message: string;
-  [key: string]: unknown;
 }
 
 interface MutationCandidate {
   id: number;
   file: string;
-  [key: string]: unknown;
 }
 
 function getErrorMessage(error: unknown): string {

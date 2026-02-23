@@ -23,21 +23,27 @@ function safeName(p: string) {
 }
 
 function toPlainObject(value: unknown): PlainObject {
-  return value !== null && typeof value === 'object' ? (value as PlainObject) : {}
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? (value as PlainObject)
+    : {}
 }
 
 function getResponseStatus(result: unknown, fallback: number): number {
+  if (result == null) return fallback
   const status = toPlainObject(result)['status']
   return typeof status === 'number' ? status : fallback
 }
 
 function getRouteParam(params: unknown, key: string): string {
   const value = toPlainObject(params)[key]
+  if (typeof value === 'undefined') return ''
   if (typeof value === 'string') return value
   if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') {
     return String(value)
   }
-  return ''
+  throw new TypeError(
+    `Invalid route parameter "${key}": expected primitive or undefined, got ${value === null ? 'null' : typeof value}`
+  )
 }
 
 function isRouteHandlerModule(value: unknown): value is RouteHandlerModule {
