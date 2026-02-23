@@ -163,8 +163,8 @@ The `scripts/project/clean-root-safe-remove.mjs` script provides:
 - `pnpm run check:root-layout:warn`
   - Runs the same checks in warning mode (always exits with code `0`)
 - `node scripts/ci/check-root-layout.mjs`
-  - CI strict mode (no local allow-entry override)
-- Before introducing CI enforcement, use this command to support local cleanup and repository inventory.
+  - Underlying script used by CI. The script supports `--allow-entry`, but CI invokes it without overrides for strict enforcement.
+- For local tuning/cleanup, use `pnpm run check:root-layout` or `pnpm run check:root-layout:warn` to verify current state and adjust allowed entries as needed.
 
 ### Development Workflow
 
