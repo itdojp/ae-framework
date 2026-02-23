@@ -4,8 +4,14 @@
  */
 
 import { EventEmitter } from 'events';
-import type { SequentialInferenceEngine, ComplexQuery } from '../engines/sequential-inference-engine.js';
+import type {
+  SequentialInferenceEngine,
+  ComplexQuery,
+  InferenceResult,
+} from '../engines/sequential-inference-engine.js';
 import type { DependencyAnalysisResult } from '../analysis/dependency-analyzer.js';
+
+type CoverageGap = CoverageAnalysisResult['gaps'][number];
 
 // Core interfaces
 export interface CodeChange {
@@ -593,8 +599,8 @@ class CoverageAnalyzer {
     return riskCoverage;
   }
   
-  private identifyGaps(changes: CodeChange[], inventory: TestInventory) {
-    const gaps = [];
+  private identifyGaps(changes: CodeChange[], inventory: TestInventory): CoverageAnalysisResult['gaps'] {
+    const gaps: CoverageGap[] = [];
     
     for (const change of changes) {
       const coverage = inventory.coverage.byComponent[change.componentId] || 0;
@@ -639,10 +645,10 @@ class CoverageAnalyzer {
     return gaps;
   }
   
-  private generateRecommendations(gaps: any[]) {
+  private generateRecommendations(gaps: CoverageAnalysisResult['gaps']): CoverageAnalysisResult['recommendations'] {
     return gaps.map(gap => ({
       type: 'test-coverage',
-      priority: gap.severity as 'high' | 'medium' | 'low',
+      priority: gap.severity,
       description: `Address ${gap.description.toLowerCase()}`,
       effort: 'medium' as const,
       impact: 'Improved test coverage and risk mitigation'
@@ -654,7 +660,10 @@ class CoverageAnalyzer {
     return values.length > 0 ? values.reduce((sum, val) => sum + val, 0) / values.length : 0;
   }
   
-  private projectCoverage(current: Record<string, number>, recommendations: any[]): Record<string, number> {
+  private projectCoverage(
+    current: Record<string, number>,
+    recommendations: CoverageAnalysisResult['recommendations']
+  ): Record<string, number> {
     const projected = { ...current };
     
     // Simulate coverage improvement from recommendations
@@ -911,16 +920,15 @@ export class IntelligentTestSelection extends EventEmitter {
     const inferenceResult = await this.inferenceEngine.processComplexQuery(query);
     
     // Enhance scores based on inference engine recommendations
-    if (inferenceResult.finalResult?.selectedTests) {
+    if (this.hasSelectedTests(inferenceResult.finalResult as unknown)) {
       // Apply ML insights to adjust scores
-      this.applyMLInsights(inferenceResult, riskScores, impactScores);
+      this.applyMLInsights(inferenceResult, riskScores);
     }
   }
   
   private applyMLInsights(
-    inferenceResult: any,
-    riskScores: Map<string, number>,
-    impactScores: Map<string, number>
+    inferenceResult: InferenceResult,
+    riskScores: Map<string, number>
   ): void {
     // Apply ML-based adjustments to scores
     const confidence = inferenceResult.confidence || 0.8;
@@ -930,6 +938,13 @@ export class IntelligentTestSelection extends EventEmitter {
     for (const [component, score] of riskScores.entries()) {
       riskScores.set(component, Math.min(1.0, score + adjustmentFactor));
     }
+  }
+
+  private hasSelectedTests(result: unknown): boolean {
+    if (typeof result !== 'object' || result === null) {
+      return false;
+    }
+    return 'selectedTests' in result;
   }
   
   private calculateCoverageProjection(tests: TestCase[], changes: CodeChange[]): number {
