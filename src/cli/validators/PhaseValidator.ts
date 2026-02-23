@@ -4,6 +4,11 @@ import { glob } from 'glob';
 import type { AEFrameworkConfig, Phase, ValidationResult, ValidationDetail, Prerequisite } from '../types.js';
 import { toMessage } from '../../utils/error-utils.js';
 
+type ExecErrorOutput = {
+  stdout?: unknown;
+  stderr?: unknown;
+};
+
 export class PhaseValidator {
   constructor(private config: AEFrameworkConfig) {}
 
@@ -287,14 +292,11 @@ export class PhaseValidator {
       return '';
     }
 
-    const stdout = this.normalizeExecStream(
-      'stdout' in error ? (error as { stdout?: unknown }).stdout : undefined
-    );
-    const stderr = this.normalizeExecStream(
-      'stderr' in error ? (error as { stderr?: unknown }).stderr : undefined
-    );
+    const candidate = error as ExecErrorOutput;
+    const stdout = this.normalizeExecStream(candidate.stdout);
+    const stderr = this.normalizeExecStream(candidate.stderr);
 
-    return stdout || stderr;
+    return stdout.length > 0 ? stdout : stderr;
   }
 
   private normalizeExecStream(value: unknown): string {
