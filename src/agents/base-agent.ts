@@ -15,7 +15,7 @@ export interface AgentOutput {
   type: 'requirements' | 'specifications' | 'tests' | 'code' | 'verification' | 'deployment' | 'generic';
   content: string;
   artifacts: string[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   quality?: {
     score: number;
     metrics: Record<string, number>;
@@ -138,12 +138,12 @@ export abstract class BaseAgent {
   /**
    * Log phase activity
    */
-  protected async logActivity(activity: string, metadata?: any): Promise<void> {
+  protected async logActivity(activity: string, metadata?: Record<string, unknown>): Promise<void> {
     const key = `${this.phaseName}_activity_${Date.now()}`;
     const value = {
       activity,
       timestamp: new Date().toISOString(),
-      ...metadata,
+      ...(metadata ?? {}),
     };
     
     await this.phaseStateManager.addMetadata(key, value);
@@ -280,7 +280,7 @@ export abstract class BaseAgent {
    * Safe logging method that never throws exceptions
    * Falls back to console logging if phase state logging fails
    */
-  private safeLogActivity(activity: string, metadata?: any): void {
+  private safeLogActivity(activity: string, metadata?: Record<string, unknown>): void {
     // Don't await - run async without blocking validation
     this.logActivity(activity, metadata).catch(error => {
       // Fallback to console logging if phase state logging fails
