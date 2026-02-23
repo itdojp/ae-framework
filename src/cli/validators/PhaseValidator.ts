@@ -181,9 +181,9 @@ export class PhaseValidator {
         passed: false,
         message: 'Tests are GREEN but should be RED in test-first phase'
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Tests failing is expected in RED phase
-      const output = error.stdout || error.stderr || '';
+      const output = this.extractExecOutput(error);
       const hasFailures = output.includes('failing') || output.includes('failed');
       
       return {
@@ -197,8 +197,8 @@ export class PhaseValidator {
     try {
       execSync('npm test --silent', { encoding: 'utf8', stdio: 'pipe' });
       return { passed: true, message: 'All tests pass' };
-    } catch (error: any) {
-      const output = error.stdout || error.stderr || '';
+    } catch (error: unknown) {
+      const output = this.extractExecOutput(error);
       return {
         passed: false,
         message: `Tests failed: ${output.split('\n').slice(-5).join('\n')}`
@@ -280,5 +280,30 @@ export class PhaseValidator {
     } catch (error: unknown) {
       return { passed: false, message: `Traceability verification failed: ${toMessage(error)}` };
     }
+  }
+
+  private extractExecOutput(error: unknown): string {
+    if (typeof error !== 'object' || error === null) {
+      return '';
+    }
+
+    const stdout = this.normalizeExecStream(
+      'stdout' in error ? (error as { stdout?: unknown }).stdout : undefined
+    );
+    const stderr = this.normalizeExecStream(
+      'stderr' in error ? (error as { stderr?: unknown }).stderr : undefined
+    );
+
+    return stdout || stderr;
+  }
+
+  private normalizeExecStream(value: unknown): string {
+    if (typeof value === 'string') {
+      return value;
+    }
+    if (Buffer.isBuffer(value)) {
+      return value.toString('utf8');
+    }
+    return '';
   }
 }
