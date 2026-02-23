@@ -2,7 +2,7 @@ name: agent-commands
 
 on:
   issue_comment:
-    types: [created]
+    types: [created, edited]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.issue.number || github.ref }}-${{ github.event.comment.id || github.run_id }}
@@ -113,6 +113,14 @@ jobs:
               context.payload.comment?.user?.type === 'Bot'
               && context.payload.comment?.user?.login === 'github-actions[bot]'
               && body.includes(autoFixMarker);
+            const isEditedCommentEvent = context.payload.action === 'edited';
+
+            // Keep slash-command behavior deterministic:
+            // process edited events only for trusted auto-fix marker comments.
+            if (isEditedCommentEvent && !isAutoFixComment) {
+              core.notice('Skip edited comment event (non auto-fix marker).');
+              return;
+            }
 
             // Copilot Auto Fix results are posted as issue comments.
             // Re-run gate against PR head via workflow_dispatch to refresh required checks.

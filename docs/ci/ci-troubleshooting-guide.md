@@ -28,7 +28,7 @@ Purpose: Provide a short, deterministic path to diagnose common CI failures.
 - `gateExpected` / `verify-liteExpected` が "Waiting for status to be reported" の場合、auto update で作られたマージコミットにチェックが載っていない可能性があります。対処: PRブランチに空コミットを追加してPRイベントを再発火、またはPR画面から再実行します。恒久策として `AE_AUTO_UPDATE_TOKEN` をSecretsに設定し、auto update の更新コミットから required checks が走るようにします。
 - `Copilot Review Gate` の `pull_request_review` 実行が `action_required` でも、PR head SHA 上の `Copilot Review Gate / gate` が green ならマージ判定としては問題ありません。必要時は `workflow_dispatch`（`pr_number` 指定）で再実行します。
 - `Copilot Review Gate / gate` が success/failure 混在のまま残る場合は、失敗した `Copilot Review Gate` ランを rerun します（`gh run rerun <runId> --failed`）。
-- `Copilot Auto Fix` 後の gate 再評価は `agent-commands` が `issue_comment(created)` で `copilot-review-gate.yml` を dispatch します。再評価が起動しない場合は `agent-commands` の実行ログとコメント作成イベント（edited ではなく created）を確認してください。
+- `Copilot Auto Fix` 後の gate 再評価は `agent-commands` が `issue_comment(created/edited)` で `copilot-review-gate.yml` を dispatch します。再評価が起動しない場合は `agent-commands` の実行ログを確認してください。
 - GitHub API の 429 / secondary rate limit が出る場合、Actions の rerun を優先します。`AE_GH_THROTTLE_MS` の既定は `250`（`0` で無効化）で、必要に応じて `AE_GH_RETRY_*` と合わせて調整します（詳細: `docs/ci/pr-automation.md` / 実装: `scripts/ci/lib/gh-exec.mjs`）。
 - `pnpm run lint:actions` で `ghcr.io/rhysd/actionlint` pull が 403 の場合、`ACTIONLINT_BIN` でローカルバイナリを指定できます（例: `ACTIONLINT_BIN=/usr/local/bin/actionlint pnpm run lint:actions`）。
 - `automation-observability-weekly` の通知判定は `weekly-alert-summary.json` に保存されます。通知が来ない場合は `suppressed` / `suppressedReason` を確認します。

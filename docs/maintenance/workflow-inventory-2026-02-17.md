@@ -10,7 +10,7 @@
 
 - workflow 一覧/トリガー抽出: `node + yaml` で `name` と `on` を集計
 - reusable 呼び出し関係抽出: `jobs.<job>.uses` が `./.github/workflows/*.yml` のものを抽出
-- Branch protection 必須チェック抽出: `gh api repos/itdojp/ae-framework/branches/main/protection --jq '.required_status_checks.checks[].context'`
+- Branch protection 必須チェック抽出: `gh api repos/itdojp/ae-framework/branches/main/protection --jq '.required_status_checks.contexts[]'`
 
 ## 2. 必須/任意の現状（main branch protection 基準）
 

@@ -33,7 +33,7 @@
 
 ```bash
 gh api repos/itdojp/ae-framework/branches/main/protection \
-  --jq '.required_status_checks.checks[].context'
+  --jq '.required_status_checks.contexts[]'
 ```
 
 ## ローカルからの適用（Node スクリプト）
