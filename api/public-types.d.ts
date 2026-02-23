@@ -1,4 +1,4 @@
-// snapshot sha1=5c9877db79b9e96edf2dcff6c6d63badf66f1eea
+// snapshot sha1=64ce1d649dc9836580e11031f951411c5668c337
 // ---- agents/domain-types.d.ts ----
 /**
  * @fileoverview Domain Types for Unified Agent System
@@ -25,7 +25,7 @@ export declare enum TaskType {
 export interface TaskSpecification {
     requirements: string;
     acceptance: string[];
-    context: Record<string, any>;
+    context: Record<string, unknown>;
 }
 /**
  * Unified task definition for all agent types
@@ -120,7 +120,7 @@ export interface ValidationResult {
         check: string;
         passed: boolean;
         message: string;
-        value?: any;
+        value?: unknown;
     }>;
 }
 
