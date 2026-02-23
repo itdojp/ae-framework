@@ -2,11 +2,18 @@
  * Common types for Claude Code Task Tool integration
  */
 
+export interface TaskRequestContext {
+  validationTaskType?: string;
+  strict?: boolean;
+  sources?: string | string[];
+  [key: string]: unknown;
+}
+
 export interface TaskRequest {
   description: string;
   prompt: string;
   subagent_type: string;
-  context?: any;
+  context?: TaskRequestContext;
 }
 
 export interface TaskResponse {
