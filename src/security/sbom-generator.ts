@@ -90,6 +90,30 @@ export interface SBOMGeneratorOptions {
   customComponents?: SBOMComponent[];
 }
 
+interface PackageLockEntry {
+  version?: string;
+  description?: string;
+  homepage?: string;
+  repository?: {
+    url?: string;
+  };
+  dependencies?: Record<string, string>;
+  license?: string | string[];
+  licenses?: Array<string | { type?: string }>;
+}
+
+interface PackageLockFile {
+  packages?: Record<string, PackageLockEntry>;
+}
+
+interface PackageJsonLike {
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  author?: string;
+}
+
+type SBOMVulnerability = NonNullable<SBOM['vulnerabilities']>[number];
+
 export class SBOMGenerator {
   private options: Required<SBOMGeneratorOptions>;
 
@@ -171,26 +195,26 @@ export class SBOMGenerator {
     try {
       // Read package.json
       const packageJsonPath = path.join(this.options.projectRoot, 'package.json');
-      const packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf8'));
+      const packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf8')) as PackageJsonLike;
 
       // Read package-lock.json for detailed version info
-      let packageLock: any = {};
+      let packageLock: PackageLockFile = {};
       try {
         const packageLockPath = path.join(this.options.projectRoot, 'package-lock.json');
-        packageLock = JSON.parse(await fs.readFile(packageLockPath, 'utf8'));
+        packageLock = JSON.parse(await fs.readFile(packageLockPath, 'utf8')) as PackageLockFile;
       } catch {
         // package-lock.json might not exist
       }
 
       // Process dependencies
-      const deps = {
-        ...packageJson.dependencies || {},
-        ...(this.options.includeDevDependencies ? packageJson.devDependencies || {} : {}),
+      const deps: Record<string, string> = {
+        ...(packageJson.dependencies ?? {}),
+        ...(this.options.includeDevDependencies ? (packageJson.devDependencies ?? {}) : {}),
       };
 
       for (const [name, version] of Object.entries(deps)) {
-        const lockInfo = packageLock.packages?.[`node_modules/${name}`] || {};
-        const resolvedVersion = lockInfo.version || (version as string);
+        const lockInfo = packageLock.packages?.[`node_modules/${name}`] ?? {};
+        const resolvedVersion = lockInfo.version ?? version;
 
         const component: SBOMComponent = {
           name,
@@ -280,10 +304,10 @@ export class SBOMGenerator {
    * Generate metadata section
    */
   private async generateMetadata(): Promise<SBOMMetadata> {
-    let packageJson: any = {};
+    let packageJson: PackageJsonLike = {};
     try {
       const packageJsonPath = path.join(this.options.projectRoot, 'package.json');
-      packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf8'));
+      packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf8')) as PackageJsonLike;
     } catch {
       // package.json might not exist
     }
@@ -310,14 +334,14 @@ export class SBOMGenerator {
 
     try {
       const packageLockPath = path.join(this.options.projectRoot, 'package-lock.json');
-      const packageLock = JSON.parse(await fs.readFile(packageLockPath, 'utf8'));
+      const packageLock = JSON.parse(await fs.readFile(packageLockPath, 'utf8')) as PackageLockFile;
 
       if (packageLock.packages) {
         for (const [packagePath, packageInfo] of Object.entries(packageLock.packages)) {
-          if (packagePath === '' || !(packageInfo as any).dependencies) continue;
+          if (packagePath === '' || !packageInfo.dependencies) continue;
 
           const packageName = packagePath.replace('node_modules/', '');
-          const dependsOn = Object.keys((packageInfo as any).dependencies || {});
+          const dependsOn = Object.keys(packageInfo.dependencies);
 
           if (dependsOn.length > 0) {
             dependencies.push({
@@ -337,7 +361,7 @@ export class SBOMGenerator {
   /**
    * Extract vulnerabilities (placeholder for vulnerability scanning integration)
    */
-  private async extractVulnerabilities(components: SBOMComponent[]): Promise<any[]> {
+  private async extractVulnerabilities(components: SBOMComponent[]): Promise<SBOMVulnerability[]> {
     // This would integrate with vulnerability databases like:
     // - NPM audit
     // - GitHub Advisory Database
@@ -345,7 +369,8 @@ export class SBOMGenerator {
     // - Snyk
     // - CVE databases
 
-    const vulnerabilities: any[] = [];
+    const vulnerabilities: SBOMVulnerability[] = [];
+    const severities = ['low', 'medium', 'high', 'critical'] as const;
 
     // Placeholder implementation - TODO: Replace with actual vulnerability scanning
     // Note: This is a demonstration/testing implementation only
@@ -354,6 +379,7 @@ export class SBOMGenerator {
         // Deterministic mock vulnerability check based on component name hash
         const hash = this.simpleHash(component.name + component.version);
         if (hash % 10 === 0) { // Deterministic 10% chance based on name/version
+          const severity = severities[hash % severities.length] ?? 'low';
           vulnerabilities.push({
             bom_ref: component.name,
             id: `CVE-2023-${(hash % 10000).toString().padStart(4, '0')}`,
@@ -365,7 +391,7 @@ export class SBOMGenerator {
               {
                 source: 'NVD',
                 score: ((hash % 100) / 10), // Deterministic score 0-10
-                severity: ['low', 'medium', 'high', 'critical'][hash % 4],
+                severity,
                 method: 'CVSSv3',
               },
             ],
@@ -381,7 +407,7 @@ export class SBOMGenerator {
   /**
    * Extract license information
    */
-  private extractLicenses(packageInfo: any): string[] {
+  private extractLicenses(packageInfo: PackageLockEntry): string[] {
     const licenses: string[] = [];
 
     if (packageInfo.license) {

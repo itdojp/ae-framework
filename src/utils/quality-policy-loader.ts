@@ -47,7 +47,7 @@ export interface QualityGate {
   phases: string[];
   enabledFromPhase?: string;
   excludePatterns?: string[];
-  config?: Record<string, any>;
+  config?: Record<string, unknown>;
   targetPaths?: string[];
 }
 
@@ -61,7 +61,7 @@ export interface QualityPolicy {
   quality: Record<string, QualityGate>;
   environments: Record<string, {
     description: string;
-    overrides: Record<string, any>;
+    overrides: Record<string, unknown>;
   }>;
   reporting: {
     outputDirectory: string;
@@ -72,7 +72,7 @@ export interface QualityPolicy {
     };
   };
   notifications: {
-    onFailure: Record<string, any>;
+    onFailure: Record<string, unknown>;
     onThresholdChange: {
       requireApproval: boolean;
       reviewers: string[];
@@ -241,21 +241,27 @@ export const validateQualityResults = (
  * @param overrides - Environment-specific overrides
  * @returns Updated quality configuration
  */
-function applyOverrides(quality: Record<string, QualityGate>, overrides: Record<string, any>): Record<string, QualityGate> {
-  const updatedQuality = JSON.parse(JSON.stringify(quality)); // Deep clone
+function applyOverrides(quality: Record<string, QualityGate>, overrides: Record<string, unknown>): Record<string, QualityGate> {
+  const updatedQuality = JSON.parse(JSON.stringify(quality)) as Record<string, unknown>; // Deep clone
   
   Object.entries(overrides).forEach(([path, value]) => {
     const pathParts = path.split('.');
-    let current = updatedQuality;
+    let current: Record<string, unknown> = updatedQuality;
     
     // Navigate to the parent object
     for (let i = 0; i < pathParts.length - 1; i++) {
       const part = pathParts[i];
-      if (part && current[part] === undefined) {
-        current[part] = {};
-      }
       if (part) {
-        current = current[part];
+        const next = current[part];
+        if (next === undefined) {
+          current[part] = {};
+          current = current[part] as Record<string, unknown>;
+          continue;
+        }
+        if (typeof next !== 'object' || next === null || Array.isArray(next)) {
+          throw new Error(`Invalid quality override path '${path}': '${part}' is not an object`);
+        }
+        current = next as Record<string, unknown>;
       }
     }
     
@@ -266,7 +272,7 @@ function applyOverrides(quality: Record<string, QualityGate>, overrides: Record<
     }
   });
   
-  return updatedQuality;
+  return updatedQuality as Record<string, QualityGate>;
 }
 
 /**
