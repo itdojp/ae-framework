@@ -8,7 +8,7 @@ import { EventEmitter } from 'events';
 export interface ComplexQuery {
   id: string;
   description: string;
-  context: Record<string, any>;
+  context: Record<string, unknown>;
   constraints: Constraint[];
   expectedOutcome?: string;
   priority: 'low' | 'medium' | 'high' | 'critical';
@@ -23,8 +23,8 @@ export interface Constraint {
 export interface InferenceStep {
   id: string;
   description: string;
-  input: Record<string, any>;
-  output?: Record<string, any>;
+  input: Record<string, unknown>;
+  output?: Record<string, unknown>;
   confidence: number;
   duration: number;
   dependencies: string[];
@@ -39,7 +39,7 @@ export interface InferenceResult {
   totalSteps: number;
   completedSteps: number;
   steps: InferenceStep[];
-  finalResult?: any;
+  finalResult?: Record<string, unknown>;
   error?: Error;
   metadata: {
     startTime: Date;
@@ -52,12 +52,12 @@ export interface InferenceResult {
 
 export interface ProjectContext {
   projectRoot: string;
-  packageJson?: any;
-  tsConfig?: any;
+  packageJson?: Record<string, unknown>;
+  tsConfig?: Record<string, unknown>;
   sourceFiles: string[];
   dependencies: Record<string, string>;
   devDependencies: Record<string, string>;
-  buildConfig?: any;
+  buildConfig?: Record<string, unknown>;
 }
 
 export interface DependencyNode {
@@ -127,9 +127,9 @@ export interface TestRequirement {
 }
 
 export class SequentialInferenceEngine extends EventEmitter {
-  private cache = new Map<string, any>();
+  private cache = new Map<string, unknown>();
   private activeQueries = new Map<string, InferenceResult>();
-  private stepHandlers = new Map<string, (step: InferenceStep) => Promise<any>>();
+  private stepHandlers = new Map<string, (step: InferenceStep) => Promise<Record<string, unknown>>>();
 
   constructor(private options: {
     maxConcurrentQueries?: number;
@@ -397,7 +397,10 @@ export class SequentialInferenceEngine extends EventEmitter {
     });
   }
 
-  private async executeStep(step: InferenceStep, query: ComplexQuery): Promise<any> {
+  private async executeStep(
+    step: InferenceStep,
+    query: ComplexQuery
+  ): Promise<Record<string, unknown>> {
     const stepType = step.id.split('-').pop() || 'default';
     const handler = this.stepHandlers.get(stepType);
     
@@ -421,8 +424,19 @@ export class SequentialInferenceEngine extends EventEmitter {
     return query.priority === 'critical' || step.dependencies.length === 0;
   }
 
-  private async synthesizeResult(steps: InferenceStep[], query: ComplexQuery): Promise<any> {
+  private async synthesizeResult(
+    steps: InferenceStep[],
+    query: ComplexQuery
+  ): Promise<Record<string, unknown>> {
     const completedSteps = steps.filter(s => s.status === 'completed');
+    if (completedSteps.length === 0) {
+      return {
+        summary: 'Processed 0 steps',
+        outputs: [],
+        confidence: 0
+      };
+    }
+
     return {
       summary: `Processed ${completedSteps.length} of ${steps.length} steps`,
       outputs: completedSteps.map(s => s.output),
@@ -430,7 +444,7 @@ export class SequentialInferenceEngine extends EventEmitter {
     };
   }
 
-  private async handleAnalyzeStep(step: InferenceStep): Promise<any> {
+  private async handleAnalyzeStep(step: InferenceStep): Promise<Record<string, unknown>> {
     // Simulate analysis
     await new Promise(resolve => setTimeout(resolve, 100));
     return {
@@ -440,16 +454,18 @@ export class SequentialInferenceEngine extends EventEmitter {
     };
   }
 
-  private async handleValidateStep(step: InferenceStep): Promise<any> {
+  private async handleValidateStep(step: InferenceStep): Promise<Record<string, unknown>> {
     await new Promise(resolve => setTimeout(resolve, 50));
+    const constraintsValue = step.input['constraints'];
+    const constraintCount = Array.isArray(constraintsValue) ? constraintsValue.length : 0;
     return {
       validated: true,
-      constraints: step.input['constraints']?.length || 0,
+      constraints: constraintCount,
       passed: true
     };
   }
 
-  private async handleSynthesizeStep(step: InferenceStep): Promise<any> {
+  private async handleSynthesizeStep(step: InferenceStep): Promise<Record<string, unknown>> {
     await new Promise(resolve => setTimeout(resolve, 75));
     return {
       synthesized: true,
