@@ -26,6 +26,16 @@ import { safeExit } from '../utils/safe-exit.js';
 
 const program = new Command();
 
+interface ConfigLoadOptions {
+  config?: string;
+  ci?: boolean;
+  light?: boolean;
+  difficulty?: DifficultyLevel;
+  category?: BenchmarkCategory;
+  parallel?: boolean;
+  timeout?: string;
+}
+
 program
   .name('ae-benchmark')
   .description('Run AE Framework benchmarks against Req2Run problems')
@@ -216,7 +226,7 @@ program
 /**
  * Load configuration from file or use defaults
  */
-async function loadConfiguration(options: any): Promise<BenchmarkConfig> {
+async function loadConfiguration(options: ConfigLoadOptions): Promise<BenchmarkConfig> {
   let config = DEFAULT_BENCHMARK_CONFIG;
   
   // Load from file if specified
@@ -240,7 +250,7 @@ async function loadConfiguration(options: any): Promise<BenchmarkConfig> {
     const enabled = config.problems.filter(p => p.enabled);
     config.problems = enabled.slice(0, Math.min(3, enabled.length));
     config.execution.parallel = false;
-    config.execution.maxConcurrency = 1 as any;
+    config.execution.maxConcurrency = 1;
   }
   
   if (options.difficulty) {

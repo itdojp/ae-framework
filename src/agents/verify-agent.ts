@@ -881,15 +881,15 @@ export class VerifyAgent {
     return [];
   }
 
-  private async scanForVulnerabilities(file: CodeFile): Promise<any[]> {
+  private async scanForVulnerabilities(file: CodeFile): Promise<Issue[]> {
     return [];
   }
 
-  private async checkDependencies(): Promise<any[]> {
+  private async checkDependencies(): Promise<Issue[]> {
     return [];
   }
 
-  private async scanForSecrets(files: CodeFile[]): Promise<any[]> {
+  private async scanForSecrets(files: CodeFile[]): Promise<Issue[]> {
     return [];
   }
 
