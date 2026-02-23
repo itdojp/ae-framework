@@ -781,6 +781,7 @@ export class VerifyAgent {
       };
 
       const result = await this.containerAgent.runVerification(containerRequest);
+      const warningCount = result.data?.results?.summary?.warnings;
 
       return {
         type: 'container-verification',
@@ -796,8 +797,8 @@ export class VerifyAgent {
           tools,
         },
         ...(!result.success ? { errors: [result.message] } : {}),
-        ...(result.success && result.data?.results?.summary?.warnings > 0 
-          ? { warnings: [`${result.data.results.summary.warnings} warnings found`] }
+        ...(result.success && typeof warningCount === 'number' && warningCount > 0 
+          ? { warnings: [`${warningCount} warnings found`] }
           : {}),
       };
     } catch (error: unknown) {
