@@ -253,10 +253,15 @@ function applyOverrides(quality: Record<string, QualityGate>, overrides: Record<
       const part = pathParts[i];
       if (part) {
         const next = current[part];
-        if (next === undefined || typeof next !== 'object' || next === null) {
+        if (next === undefined) {
           current[part] = {};
+          current = current[part] as Record<string, unknown>;
+          continue;
         }
-        current = current[part] as Record<string, unknown>;
+        if (typeof next !== 'object' || next === null || Array.isArray(next)) {
+          throw new Error(`Invalid quality override path '${path}': '${part}' is not an object`);
+        }
+        current = next as Record<string, unknown>;
       }
     }
     
