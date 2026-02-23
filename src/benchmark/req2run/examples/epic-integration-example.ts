@@ -162,7 +162,10 @@ export async function runBenchmarkEPICDemo(): Promise<void> {
 /**
  * Analyze EPIC integration success and provide insights
  */
-async function analyzeEPICIntegration(runner: StandardizedBenchmarkRunner, sampleResult: any): Promise<void> {
+async function analyzeEPICIntegration(
+  runner: StandardizedBenchmarkRunner,
+  sampleResult: Awaited<ReturnType<StandardizedBenchmarkRunner['runBenchmark']>>
+): Promise<void> {
   const status = runner.getPipelineStatus();
   
   console.log('🔍 EPIC Integration Success Analysis:');

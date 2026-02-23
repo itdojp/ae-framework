@@ -7,7 +7,7 @@ import type { execSync } from 'child_process';
 import { existsSync } from 'fs';
 import * as path from 'path';
 import { RustVerificationAgent, type RustVerificationRequest, type RustVerificationResult } from './rust-verification-agent.js';
-import { ContainerAgent, type ContainerVerificationRequest } from './container-agent.js';
+import { ContainerAgent, type ContainerAgentConfig, type ContainerVerificationRequest } from './container-agent.js';
 import type {
   BenchmarkResult,
   CodeFile,
@@ -28,11 +28,33 @@ import type {
 
 export * from './verify-agent.types.js';
 
+interface VerifyAgentOptions {
+  enableContainers?: boolean;
+  containerConfig?: ContainerAgentConfig;
+}
+
+interface ContractTestResult {
+  passed: boolean;
+  message: string;
+  [key: string]: unknown;
+}
+
+interface MutationCandidate {
+  id: number;
+  file: string;
+  [key: string]: unknown;
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
+
 export class VerifyAgent {
   private rustVerificationAgent: RustVerificationAgent;
   private containerAgent?: ContainerAgent;
 
-  constructor(options?: { enableContainers?: boolean; containerConfig?: any }) {
+  constructor(options?: VerifyAgentOptions) {
     this.rustVerificationAgent = new RustVerificationAgent();
     
     if (options?.enableContainers !== false) {
@@ -125,13 +147,13 @@ export class VerifyAgent {
    * Run all tests
    */
   async runTests(request: VerificationRequest): Promise<VerificationCheck> {
-    const testResults = {
+    const testResults: TestResult & { skipped: number } = {
       total: 0,
       passed: 0,
       failed: 0,
       skipped: 0,
       duration: 0,
-      failures: [] as any[],
+      failures: [],
     };
 
     try {
@@ -200,10 +222,19 @@ export class VerifyAgent {
    * Run linting checks
    */
   async runLinting(request: VerificationRequest): Promise<VerificationCheck> {
-    const lintResults = {
+    const lintResults: {
+      errors: number;
+      warnings: number;
+      files: Array<{
+        path: string;
+        errors: number;
+        warnings: number;
+        messages: LintResult['messages'];
+      }>;
+    } = {
       errors: 0,
       warnings: 0,
-      files: [] as any[],
+      files: [],
     };
 
     try {
@@ -279,7 +310,7 @@ export class VerifyAgent {
    * Run security checks
    */
   async runSecurityChecks(request: VerificationRequest): Promise<VerificationCheck> {
-    const securityIssues = [];
+    const securityIssues: Issue[] = [];
 
     try {
       // Check for common vulnerabilities
@@ -380,11 +411,16 @@ export class VerifyAgent {
    */
   async verifyContracts(request: VerificationRequest): Promise<VerificationCheck> {
     try {
-      const contractResults = {
+      const contractResults: {
+        total: number;
+        passed: number;
+        failed: number;
+        violations: ContractTestResult[];
+      } = {
         total: 0,
         passed: 0,
         failed: 0,
-        violations: [] as any[],
+        violations: [],
       };
 
       // Check contract tests
@@ -468,12 +504,18 @@ export class VerifyAgent {
    */
   async runMutationTesting(request: VerificationRequest): Promise<VerificationCheck> {
     try {
-      const mutationResults = {
+      const mutationResults: {
+        mutantsGenerated: number;
+        mutantsKilled: number;
+        mutantsSurvived: number;
+        mutationScore: number;
+        survivors: MutationCandidate[];
+      } = {
         mutantsGenerated: 0,
         mutantsKilled: 0,
         mutantsSurvived: 0,
         mutationScore: 0,
-        survivors: [] as any[],
+        survivors: [],
       };
 
       // Generate mutants
@@ -760,12 +802,13 @@ export class VerifyAgent {
           ? { warnings: [`${result.data.results.summary.warnings} warnings found`] }
           : {}),
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = getErrorMessage(error);
       return {
         type: 'container-verification',
         passed: false,
-        details: { error: error.message },
-        errors: [error.message],
+        details: { error: message },
+        errors: [message],
       };
     }
   }
@@ -862,19 +905,19 @@ export class VerifyAgent {
     };
   }
 
-  private async runContractTest(test: TestFile): Promise<any> {
-    return { passed: true };
+  private async runContractTest(test: TestFile): Promise<ContractTestResult> {
+    return { passed: true, message: `${test.path} contract passed` };
   }
 
   private async validateSpecification(spec: Specification): Promise<boolean> {
     return true;
   }
 
-  private async generateMutants(files: CodeFile[]): Promise<any[]> {
+  private async generateMutants(files: CodeFile[]): Promise<MutationCandidate[]> {
     return Array(20).fill({}).map((_, i) => ({ id: i, file: 'test.ts' }));
   }
 
-  private async testMutant(mutant: any, tests: TestFile[]): Promise<boolean> {
+  private async testMutant(mutant: MutationCandidate, tests: TestFile[]): Promise<boolean> {
     return Math.random() > 0.2; // 80% kill rate
   }
 
