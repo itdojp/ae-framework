@@ -1,4 +1,6 @@
-const TYPED_ARRAY_CTORS: Record<string, { from(values: Iterable<any>): ArrayBufferView }> = {
+type TypedArrayValue = number | bigint;
+
+const TYPED_ARRAY_CTORS: Record<string, { from(values: Iterable<TypedArrayValue>): ArrayBufferView }> = {
   Int8Array,
   Uint8Array,
   Uint8ClampedArray,
@@ -13,7 +15,7 @@ const TYPED_ARRAY_CTORS: Record<string, { from(values: Iterable<any>): ArrayBuff
 };
 
 type EncodedSpecial =
-  | { __ae_type: 'TypedArray'; name: string; values: Array<any> }
+  | { __ae_type: 'TypedArray'; name: string; values: Array<TypedArrayValue> }
   | { __ae_type: 'DataView'; bytes: number[] }
   | { __ae_type: 'ArrayBuffer'; bytes: number[] }
   | { __ae_type: 'SharedArrayBuffer'; bytes: number[] };
@@ -29,7 +31,14 @@ export function encodeSpecialValue(value: unknown): unknown {
     }
     const name = value.constructor?.name;
     if (name && TYPED_ARRAY_CTORS[name]) {
-      const values = Array.from(value as any);
+      const typedView = value as unknown as { readonly length: number; [index: number]: TypedArrayValue };
+      const values: TypedArrayValue[] = [];
+      for (let i = 0; i < typedView.length; i++) {
+        const item = typedView[i];
+        if (item !== undefined) {
+          values.push(item);
+        }
+      }
       return { __ae_type: 'TypedArray', name, values } satisfies EncodedSpecial;
     }
   }
@@ -55,7 +64,7 @@ export function reviveSpecialValue(value: unknown, seen = new WeakSet<object>())
 
   const marker = (value as { __ae_type?: string }).__ae_type;
   if (marker === 'TypedArray') {
-    const { name, values } = value as EncodedSpecial & { name: string; values: Array<any> };
+    const { name, values } = value as EncodedSpecial & { name: string; values: Array<TypedArrayValue> };
     const ctor = TYPED_ARRAY_CTORS[name];
     if (ctor) {
       return ctor.from(values);
