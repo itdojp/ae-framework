@@ -9,6 +9,7 @@ import { HybridTDDSystem, type HybridTDDConfig } from '../integration/hybrid-tdd
 import { TDDAgent, type TDDAgentConfig } from '../agents/tdd-agent.js';
 import { MetricsCollector } from '../cli/metrics/MetricsCollector.js';
 import { ConfigLoader } from '../cli/config/ConfigLoader.js';
+import type { AEFrameworkConfig } from '../cli/types.js';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
@@ -102,7 +103,7 @@ export class SelfImprovementTDDSetup {
   /**
    * Load self-improvement configuration
    */
-  private loadSelfImprovementConfig() {
+  private loadSelfImprovementConfig(): AEFrameworkConfig {
     const configPath = path.join(this.config.projectRoot, this.config.configFile);
     
     if (!fs.existsSync(configPath)) {
@@ -119,7 +120,7 @@ export class SelfImprovementTDDSetup {
   /**
    * Set up HybridTDDSystem for Claude Code integration
    */
-  private async setupHybridTDDSystem(aeConfig: any): Promise<boolean> {
+  private async setupHybridTDDSystem(_aeConfig: AEFrameworkConfig): Promise<boolean> {
     try {
       const hybridConfig: HybridTDDConfig = {
         enableCLI: true,
@@ -175,7 +176,7 @@ export class SelfImprovementTDDSetup {
   /**
    * Initialize MetricsCollector for progress tracking
    */
-  private async setupMetricsCollector(aeConfig: any): Promise<boolean> {
+  private async setupMetricsCollector(aeConfig: AEFrameworkConfig): Promise<boolean> {
     try {
       // Ensure metrics directory exists
       const metricsDir = path.join(this.config.projectRoot, this.config.metricsOutputPath);
