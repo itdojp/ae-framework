@@ -66,6 +66,8 @@ export interface VerificationCheckMetadata {
 export type VerificationCheckDetails =
   | (CoverageReport & VerificationCheckMetadata)
   | (BenchmarkResult & VerificationCheckMetadata)
+  | (TestResult & VerificationCheckMetadata)
+  | (LintResult & VerificationCheckMetadata)
   | (Record<string, unknown> & VerificationCheckMetadata);
 
 export interface VerificationCheck {
