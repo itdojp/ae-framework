@@ -206,8 +206,8 @@ export class BackoffStrategy {
     }
 
     // HTTP status codes that are retryable
-    if ('status' in error) {
-      const status = getErrorStatus(error);
+    const status = getErrorStatus(error);
+    if (status !== undefined) {
       return status === 429 || // Too Many Requests
              status === 502 || // Bad Gateway
              status === 503 || // Service Unavailable
