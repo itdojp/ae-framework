@@ -76,7 +76,7 @@ export class ConformanceVerificationEngine extends EventEmitter {
    * Verify data against all applicable rules
    */
   async verify(
-    data: any,
+    data: unknown,
     context: RuntimeContext,
     options?: {
       ruleIds?: string[];
@@ -398,7 +398,7 @@ export class ConformanceVerificationEngine extends EventEmitter {
    * Run specialized monitors
    */
   private async runSpecializedMonitors(
-    data: any,
+    data: unknown,
     context: RuntimeContext
   ): Promise<VerificationResult[]> {
     const results: VerificationResult[] = [];
