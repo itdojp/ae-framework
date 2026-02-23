@@ -54,10 +54,26 @@ export interface VerificationResult {
   traceability: TraceabilityMatrix;
 }
 
+export interface VerificationCheckMetadata {
+  threshold?: number;
+  fixApplied?: boolean;
+  strictMode?: boolean;
+  includeDevDeps?: boolean;
+  testDuration?: number;
+  standards?: string[];
+}
+
+export type VerificationCheckDetails =
+  | (CoverageReport & VerificationCheckMetadata)
+  | (BenchmarkResult & VerificationCheckMetadata)
+  | (TestResult & VerificationCheckMetadata)
+  | (LintResult & VerificationCheckMetadata)
+  | (Record<string, unknown> & VerificationCheckMetadata);
+
 export interface VerificationCheck {
   type: VerificationType;
   passed: boolean;
-  details: any;
+  details: VerificationCheckDetails;
   errors?: string[];
   warnings?: string[];
 }
