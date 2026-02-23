@@ -370,6 +370,7 @@ export class SBOMGenerator {
     // - CVE databases
 
     const vulnerabilities: SBOMVulnerability[] = [];
+    const severities = ['low', 'medium', 'high', 'critical'] as const;
 
     // Placeholder implementation - TODO: Replace with actual vulnerability scanning
     // Note: This is a demonstration/testing implementation only
@@ -524,4 +525,3 @@ export class SBOMGenerator {
       .replace(/'/g, '&#39;');
   }
 }
-    const severities = ['low', 'medium', 'high', 'critical'] as const;
