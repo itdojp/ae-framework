@@ -1,6 +1,6 @@
 # Repository Layout Policy (Issue #2031 / Phase 0)
 
-最終更新: 2026-02-17
+最終更新: 2026-02-23
 
 ## 1. 目的
 
@@ -48,9 +48,9 @@
 
 | 種別 | 代表コマンド/実行経路 | 代表出力 | 取扱い |
 |---|---|---|---|
-| CEGISレポート | `src/cegis/auto-fix-engine.ts` | `cegis-report-*.json` (root) | ルート禁止。`temp-reports/cegis-archives/` へ退避または削除 |
-| Conformance結果 | `ae conformance verify` | `conformance-results.json` | ルート禁止。`artifacts/` か `temp-reports/` へ |
-| Integration CLI生成物 | integration系CLI/tests | `generated-*.json`, `run-*.json` など | ルート禁止。テスト実行後に削除 |
+| CEGISレポート | `src/cegis/auto-fix-engine.ts` | `temp-reports/cegis/cegis-report-*.json` | ルート直下への出力は禁止。必要時のみ `AE_CEGIS_REPORT_DIR` で変更 |
+| Conformance結果 | `ae conformance verify` | `artifacts/conformance/conformance-results.json` | 既定出力先は `artifacts/` 配下。ルート出力は違反 |
+| Integration CLI生成物 | `ae integration run` | `artifacts/integration/test-results/**` | 既定出力先は `artifacts/` 配下。`generated-*.json` 等のルート出力は禁止 |
 | Verify Lite lint要約 | `scripts/ci/run-verify-lite-local.sh` | `artifacts/verify-lite/verify-lite-lint-summary.json` | ルート禁止。`artifacts/verify-lite/` に保存 |
 | Coverage | `pnpm run coverage`, `pnpm run test:coverage` | `coverage/` | 非追跡（生成物） |
 | レポート集約 | quality/verify系 | `reports/`, `artifacts/hermetic-reports/` | 原則非追跡（必要成果物のみ残す） |
@@ -78,7 +78,7 @@
 1. 新規コマンドを追加する際は、出力先を `artifacts/`・`reports/`・`coverage/`・`temp-reports/` のいずれかに固定する。  
 2. ルート直下へ生成する実装は受け入れない（既存実装は段階的に解消）。  
 3. Cleanupコマンド（`pnpm run clean:root-safe` / `pnpm run clean:project`）で除去できることを保証する。  
-4. Phase 3で「ルート汚染検知」をCI必須ゲート化する。  
+4. `verify-lite` / `pr-verify` / `ci-core` でルート汚染検知を必須ゲートとして維持する。  
 
 ## 7. 次アクション（Phase 1向け）
 

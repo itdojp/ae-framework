@@ -3,26 +3,27 @@
 > 🌍 Language / 言語: 日本語 (English TL;DR included inline)
 
 ## 現状サマリ
-- 📊 合計 2,365 件（前回 2,101 件から **+264**）
-- 🛑 `no-unsafe-*` 系 1,202 件（50.8%）
-- ⚠️ `no-explicit-any` 524 件（22.2%）
-- 🔄 `no-unused-vars` 271 件（11.5%）
-- ⏳ `require-await` 203 件（8.6%）
-- ℹ️ 2025-10-16 時点の再集計値。以下のチェックリストの個別件数は順次更新予定です。
-- 🛠 自動修正対象は 42 件（`no-unnecessary-type-assertion` が 39 件で最多。`src/server.ts` / `enhanced-state-manager.ts` など Stage 1 で後回しにした部分が再浮上）
+- 📊 合計 1,447 件
+- 🛑 `no-unsafe-*` 系 686 件（47.4%）
+- ⚠️ `no-explicit-any` 226 件（15.6%）
+- 🔄 `no-unused-vars` 194 件（13.4%）
+- ⏳ `require-await` 197 件（13.6%）
+- ℹ️ 2026-02-23 時点の再集計値（`node scripts/quality/check-lint-summary.mjs`）
+- 🛠 自動修正対象は 35 件（`no-unnecessary-type-assertion` が 31 件で最多）
+- ✅ `src/inference/strategies/sequential-strategy.ts` は 107 件 → 0 件に改善（Issue #2214）
 
 ### ファイル別インパクト（抜粋）
 | 主要ファイル | 代表的なルール | 指摘件数<sup>*</sup> |
 | --- | --- | --- |
-| `src/integration/runners/e2e-runner.ts` | require-await / no-unsafe-* | 136 |
-| `src/inference/strategies/sequential-strategy.ts` | no-explicit-any / no-unsafe-* | 107 |
-| `src/inference/core/solution-composer.ts` | no-unused-vars / require-await / no-explicit-any | 97 |
-| `src/integration/runners/api-runner.ts` | no-explicit-any / no-unsafe-* | 84 |
-| `src/server.ts` | no-explicit-any / no-unsafe-* | 78 |
+| `src/integration/runners/e2e-runner.ts` | require-await / no-unsafe-* | 110 |
+| `src/integration/runners/api-runner.ts` | no-explicit-any / no-unsafe-* | 65 |
+| `src/integration/hybrid-intent-system.ts` | no-explicit-any / no-unsafe-* | 56 |
+| `src/self-improvement/phase4-code-generation.ts` | no-unsafe-* | 46 |
+| `src/integration/hybrid-tdd-system.ts` | no-explicit-any / no-unsafe-* | 40 |
 
 <sup>*</sup> 指摘件数は `reports/lint/verify-lite-lint-summary.json` の該当ファイル・ルールの合計値。
 
-> English TL;DR: Unsafe typed interactions still dominate (~51%), followed by `any` usage (~22%). Five files (`integration/runners/e2e-runner`, `inference/strategies/sequential-strategy`, `inference/core/solution-composer`, `integration/runners/api-runner`, `server`) now concentrate ~26% of the backlog after the runtime middleware cleanup.
+> English TL;DR: Unsafe typed interactions still dominate (~47%). `sequential-strategy` has been remediated (107 → 0), and remaining hotspots are concentrated in `integration` and `self-improvement` areas.
 
 ---
 
@@ -30,6 +31,11 @@
 - `node scripts/quality/check-lint-summary.mjs` を Quality Policy (development) の Lint gate から呼び出し、`config/verify-lite-lint-baseline.json` と差分比較して増加分のみを検出します。
 - Quality gate は `maxErrors=0 / maxWarnings=0`（development 環境）運用のため、Verify Lite のベースラインを超える lint 指摘が追加されると即時に検知されます。
 - サマリ JSON (`reports/lint/verify-lite-lint-summary.json`) は本スクリプトで再生成されるため、Verify Lite を事前に実行していない環境でもチェック可能です。
+
+### Baseline 更新ルール
+- baseline 更新は「総件数が減少」かつ「重点ルール（`no-explicit-any` / `no-unsafe-*`）が非増加」の場合のみ実施する。
+- `unknown` ルール差分が増加した場合は baseline を更新せず、先に原因（ignore 設定・formatter差分等）を解消する。
+- baseline 更新時は本ドキュメントに「対象PR」「前後件数」「未着手トップ3」を追記する。
 
 ## ルール別チェックリスト
 各項目は **[ ]** → 未対応 / **[x]** → 解消済み で管理します。数字は現時点の残件数です（`reports/lint/verify-lite-lint-summary.json` から算出）。
@@ -42,7 +48,7 @@
 - [ ] `src/engines/sequential-inference-engine.ts` (13)
 - [ ] `src/testing/visual-regression.ts` (12)
 - [ ] `src/integration/runners/e2e-runner.ts` (11)
-- [ ] `src/inference/strategies/sequential-strategy.ts` (8)
+- [x] `src/inference/strategies/sequential-strategy.ts` (0, 2026-02-23)
 - [ ] `src/integration/reporters/html-reporter.ts` (7)
 - [ ] `src/self-improvement/phase5-verification-final.ts` (7)
 
@@ -51,7 +57,7 @@
 - [ ] `src/inference/core/solution-composer.ts` (14)
 - [ ] `src/inference/core/validation-orchestrator.ts` (9)
 - [ ] `src/cegis/strategies/type-error-strategy.ts` (8)
-- [ ] `src/inference/strategies/sequential-strategy.ts` (8)
+- [x] `src/inference/strategies/sequential-strategy.ts` (0, 2026-02-23)
 - [ ] `src/cegis/strategies/test-failure-strategy.ts` (6)
 - [ ] `src/engines/sequential-inference-engine.ts` (6)
 - [ ] `src/integration/hybrid-tdd-system.ts` (6)
@@ -60,7 +66,7 @@
 
 ### 3. `@typescript-eslint/no-explicit-any`（524）
 - [ ] `src/inference/core/solution-composer.ts` (37)
-- [ ] `src/inference/strategies/sequential-strategy.ts` (31)
+- [x] `src/inference/strategies/sequential-strategy.ts` (0, 2026-02-23)
 - [ ] `src/inference/core/validation-orchestrator.ts` (22)
 - [ ] `src/server.ts` (22)
 - [ ] `src/conformance/rule-engine.ts` (20)
@@ -72,7 +78,7 @@
 
 ### 4. `no-unsafe-*` クラスター（計 1,202）
 #### 4-1. `@typescript-eslint/no-unsafe-assignment`（350）
-- [ ] `src/inference/strategies/sequential-strategy.ts` (24)
+- [x] `src/inference/strategies/sequential-strategy.ts` (0, 2026-02-23)
 - [ ] `src/integration/runners/e2e-runner.ts` (19)
 - [ ] `src/conformance/monitors/data-validation-monitor.ts` (18)
 - [ ] `src/inference/core/solution-composer.ts` (17)
@@ -90,14 +96,14 @@
 - [ ] `src/self-improvement/phase4-code-generation.ts` (27)
 - [ ] `src/integration/runners/api-runner.ts` (24)
 - [ ] `src/server.ts` (23)
-- [ ] `src/inference/strategies/sequential-strategy.ts` (22)
+- [x] `src/inference/strategies/sequential-strategy.ts` (0, 2026-02-23)
 - [ ] `src/testing/playwright-integration.ts` (20)
 - [ ] `src/optimization/monitoring/demo.ts` (19)
 - [ ] `src/optimization/parallel/parallel-optimizer.ts` (18)
 
 #### 4-3. `@typescript-eslint/no-unsafe-argument`（143）
 - [ ] `src/integration/runners/e2e-runner.ts` (20)
-- [ ] `src/inference/strategies/sequential-strategy.ts` (11)
+- [x] `src/inference/strategies/sequential-strategy.ts` (0, 2026-02-23)
 - [ ] `src/mcp-server/intent-server.ts` (9)
 - [ ] `src/integration/hybrid-intent-system.ts` (8)
 - [ ] `src/optimization/parallel/parallel-optimizer.ts` (8)
@@ -134,8 +140,8 @@
    - `no-unnecessary-type-assertion` / `prefer-const` / unused disable を解消し、backlog を 2,202 件（fixable 0）まで削減。  
    - `config/verify-lite-lint-baseline.json` を最新サマリに合わせて更新済み。
 3. **Stage 2 — 優先 5 ファイルの Unsafe & any 解消**  
-   - `integration/runners/e2e-runner.ts`, `inference/strategies/sequential-strategy.ts`, `inference/core/solution-composer.ts`, `integration/runners/api-runner.ts`, `server.ts` を対象に型付けとユーティリティ抽出を実施（`runtime/runtime-middleware.ts` は 2025-10-16 時点で 1 件に低減済み）。  
-   - ここで Unsafe 系を 25% 減らし、`no-explicit-any` はドメイン型を定義した DTO で置換。
+   - `integration/runners/e2e-runner.ts`, `inference/strategies/sequential-strategy.ts`, `inference/core/solution-composer.ts`, `integration/runners/api-runner.ts`, `server.ts` を対象に型付けとユーティリティ抽出を実施（`sequential-strategy.ts` は 2026-02-23 に完了）。  
+   - 残件の Unsafe 系を継続的に削減し、`no-explicit-any` はドメイン型を定義した DTO で置換。
 4. **Stage 3 — Verify Lite Lint の段階的強制**  
    - PR ラベル (`lint-blocking`) で opt-in → `main` で警告 → CI で `VERIFY_LITE_ENFORCE_LINT=1` に引き上げ。  
    - 成果は `docs/quality/verify-lite-lint-backlog.md` に更新履歴を追記。
@@ -154,7 +160,7 @@ node scripts/quality/check-lint-summary.mjs
 ---
 
 ## 次のステップ（Issue #1019 対応観点）
-1. Stage 2: `integration/runners/e2e-runner.ts` / `inference/strategies/sequential-strategy.ts` / `inference/core/solution-composer.ts` / `integration/runners/api-runner.ts` / `server.ts` の Unsafe/any 改修（runtime middleware は完了済み）  
+1. Stage 2: `integration/runners/e2e-runner.ts` / `inference/core/solution-composer.ts` / `integration/runners/api-runner.ts` / `server.ts` の Unsafe/any 改修（`sequential-strategy.ts` は完了済み）  
 2. Stage 2 完了後に lint サマリを Step Summary / CI に連携する運用案を整理  
 3. Verify Lite lint を警告モードで CI に組み込み、効果測定  
 4. 本ドキュメントに PBI／PR 単位で進捗を追記し、Issue コメントと連動させる

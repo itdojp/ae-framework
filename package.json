@@ -98,7 +98,7 @@
     "typecov": "type-coverage -p configs/tsconfig/tsconfig.verify.json --ignore-catch",
     "typecov:check": "type-coverage -p configs/tsconfig/tsconfig.verify.json --ignore-catch --threshold 65",
     "typecov:check:70": "type-coverage -p configs/tsconfig/tsconfig.verify.json --ignore-catch --threshold 70",
-    "coverage": "vitest run --coverage",
+    "coverage": "vitest run --coverage --coverage.reporter=json-summary --coverage.reporter=text --coverage.reporter=lcov",
     "bdd": "cucumber-js spec/bdd/features --import 'spec/bdd/steps/**/*.js'",
     "pbt": "node scripts/testing/run-pbt.mjs",
     "mbt": "node tests/mbt/run.js",

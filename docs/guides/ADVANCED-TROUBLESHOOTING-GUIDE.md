@@ -641,7 +641,7 @@ ae-framework fix status > $DIAG_DIR/fix-status.txt
 cp -r .ae/logs/ $DIAG_DIR/ 2>/dev/null || echo "No logs directory found"
 
 # 最近の実行結果
-cp -r ./test-results/ $DIAG_DIR/ 2>/dev/null || echo "No test results found"
+cp -r ./artifacts/integration/test-results/ $DIAG_DIR/ 2>/dev/null || echo "No test results found"
 
 echo "Diagnostics collected in: $DIAG_DIR"
 tar -czf $DIAG_DIR.tar.gz $DIAG_DIR

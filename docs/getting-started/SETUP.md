@@ -370,7 +370,7 @@ pnpm tsx src/cli/conformance-cli.ts verify \
   --input configs/samples/sample-data.json \
   --context-file configs/samples/sample-context.json \
   --rules configs/samples/sample-rules.json \
-  --format json --output conformance-results.json
+  --format json --output artifacts/conformance/conformance-results.json
 
 # SBOM 生成（依存グラフ抽出はロックファイルが無い場合に警告）
 pnpm tsx src/cli/index.ts sbom generate --format json --output sbom.json --verbose

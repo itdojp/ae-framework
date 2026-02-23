@@ -129,6 +129,7 @@ export async function resolveConformanceResultFiles(
 
   if (options.useDefaults) {
     const defaultCandidates = [
+      path.join('artifacts', 'conformance', 'conformance-results.json'),
       'conformance-results.json',
       path.join('artifacts/hermetic-reports', 'conformance', '*.json'),
       path.join('reports', 'conformance', '*.json'),

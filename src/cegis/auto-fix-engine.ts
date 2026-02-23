@@ -3,6 +3,8 @@
  * Phase 2.1: Core engine for analyzing failures and applying automated fixes
  */
 
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
 import type {
   FailureArtifact,
   FixStrategy,
@@ -21,6 +23,8 @@ import { RiskAssessmentService } from './risk-assessment-service.js';
 import { TypeErrorFixStrategy } from './strategies/type-error-strategy.js';
 import { TestFailureFixStrategy } from './strategies/test-failure-strategy.js';
 import { ContractViolationFixStrategy } from './strategies/contract-violation-strategy.js';
+
+const DEFAULT_CEGIS_REPORT_DIR = path.join('temp-reports', 'cegis');
 
 export class AutoFixEngine {
   private strategies: Map<FailureCategory, FixStrategy[]> = new Map();
@@ -63,7 +67,7 @@ export class AutoFixEngine {
     options: AutoFixOptions = {}
   ): Promise<FixResult> {
     const startTime = Date.now();
-    const effectiveConfig = { ...this.config, ...options };
+    const effectiveConfig: AutoFixConfig & AutoFixOptions = { ...this.config, ...options };
     
     console.log(`🔧 Starting auto-fix process for ${failures.length} failures...`);
     
@@ -103,7 +107,8 @@ export class AutoFixEngine {
           appliedFixes,
           skippedFixes,
           summary,
-          recommendations
+          recommendations,
+          effectiveConfig.outputDir
         );
       }
       
@@ -535,9 +540,14 @@ export class AutoFixEngine {
     appliedFixes: AppliedFix[],
     skippedFixes: SkippedFix[],
     summary: FixResult['summary'],
-    recommendations: string[]
+    recommendations: string[],
+    outputDir?: string
   ): Promise<string> {
-    const reportPath = `cegis-report-${Date.now()}.json`;
+    const configuredDir = outputDir?.trim() || process.env['AE_CEGIS_REPORT_DIR']?.trim();
+    const reportDir = configuredDir && configuredDir.length > 0
+      ? configuredDir
+      : DEFAULT_CEGIS_REPORT_DIR;
+    const reportPath = path.join(reportDir, `cegis-report-${Date.now()}.json`);
     
     const report = {
       timestamp: new Date().toISOString(),
@@ -554,9 +564,9 @@ export class AutoFixEngine {
       patterns: this.analyzeFailurePatterns(failures)
     };
     
-    const fs = await import('fs');
-    await fs.promises.writeFile(reportPath, JSON.stringify(report, null, 2));
-    
+    await fs.mkdir(path.dirname(reportPath), { recursive: true });
+    await fs.writeFile(reportPath, JSON.stringify(report, null, 2));
+
     return reportPath;
   }
 }

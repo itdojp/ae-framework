@@ -34,7 +34,8 @@ ae-framework/
 ├── packages/               # Monorepo packages
 ├── reports/                # Organized reports
 ├── temp-reports/           # Temporary and archived reports
-│   ├── cegis-archives/     # CEGIS conformance reports
+│   ├── cegis/              # CEGIS auto-fix reports (default output)
+│   ├── cegis-archives/     # Archived CEGIS reports
 │   ├── sample-data-archives/ # Sample data files
 │   ├── conformance-archives/ # Conformance test results
 │   └── build-artifacts/    # Build-related artifacts
@@ -99,9 +100,9 @@ The `scripts/project/clean-root-safe-remove.mjs` script provides:
 ### File Categories
 
 #### Temporary Files (Auto-archived)
-- `cegis-report-*.json` - CEGIS conformance test reports
+- `temp-reports/cegis/cegis-report-*.json` - CEGIS conformance test reports
 - `sample-*.json` - Sample data files used in testing
-- `conformance-results.json` - Conformance test results
+- `artifacts/conformance/conformance-results.json` - Conformance test results
 - Build artifacts and coverage reports
 
 #### Reports (Organized by Type)
@@ -165,6 +166,7 @@ The `scripts/project/clean-root-safe-remove.mjs` script provides:
 
 1. **Before Commits**
    ```bash
+  pnpm run clean:root-safe
   pnpm run clean:project
   pnpm run lint
   pnpm run test

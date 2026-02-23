@@ -7,9 +7,8 @@ import { Command } from 'commander';
 import { toMessage } from '../utils/error-utils.js';
 import { safeExit } from '../utils/safe-exit.js';
 import chalk from 'chalk';
-import { promises as fs } from 'fs';
+import { promises as fs, existsSync, statSync } from 'node:fs';
 import { join } from 'path';
-import { existsSync } from 'fs';
 import { loadConfig } from '../core/config.js';
 import { IntegrationTestOrchestrator } from '../integration/test-orchestrator.js';
 import { E2ETestRunner } from '../integration/runners/e2e-runner.js';
@@ -24,6 +23,8 @@ import type {
   IntegrationTestConfig,
   TestDiscovery
 } from '../integration/types.js';
+
+const DEFAULT_INTEGRATION_OUTPUT_DIR = join('artifacts', 'integration', 'test-results');
 
 const parseOptionalBoolean = (value?: string | boolean): boolean => {
   if (value === undefined) return true;
@@ -120,7 +121,8 @@ export class IntegrationTestingCli {
           screenshots: true,
           video: false,
           trace: false,
-          slowMo: 0
+          slowMo: 0,
+          outputDir: DEFAULT_INTEGRATION_OUTPUT_DIR
         }),
         new APITestRunner({
           timeout: 10000,
@@ -178,7 +180,7 @@ export class IntegrationTestingCli {
       .option('--retries <num>', 'Number of retries for failed tests', '1')
       .option('--fail-fast', 'Stop execution on first failure')
       .option('--skip-on-failure', 'Skip remaining tests on failure')
-      .option('--output-dir <dir>', 'Output directory for results', './test-results')
+      .option('--output-dir <dir>', 'Output directory for results', DEFAULT_INTEGRATION_OUTPUT_DIR)
       .option('--report-format <formats>', 'Report formats (comma-separated)', 'html,json')
       .option('--categories <categories>', 'Test categories to run (comma-separated)')
       .option('--tags <tags>', 'Test tags to run (comma-separated)')
@@ -560,7 +562,7 @@ export class IntegrationTestingCli {
    * Handle the reports command
    */
   private async handleReportsCommand(options: any): Promise<void> {
-    const reportsDir = './test-results';
+    const reportsDir = DEFAULT_INTEGRATION_OUTPUT_DIR;
 
     if (options.list) {
       console.log('📄 Available Test Reports:\n');
@@ -577,7 +579,7 @@ export class IntegrationTestingCli {
               console.log(`${index + 1}. ${file}`);
               const filePath = join(reportsDir, file);
               if (existsSync(filePath)) {
-                const stats = require('fs').statSync(filePath);
+                const stats = statSync(filePath);
                 console.log(`   Created: ${stats.ctime.toLocaleString()}`);
                 console.log(`   Size: ${this.formatFileSize(stats.size)}`);
               }
@@ -605,7 +607,7 @@ export class IntegrationTestingCli {
           
           for (const file of files) {
             const filePath = join(reportsDir, file);
-            const stats = require('fs').statSync(filePath);
+            const stats = statSync(filePath);
             
             if (stats.ctime < cutoffDate) {
               await fs.unlink(filePath);
