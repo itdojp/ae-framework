@@ -5,6 +5,18 @@
 
 import { normalizeError } from './error-utils.js';
 
+interface ErrorWithStatus extends Error {
+  status?: number;
+}
+
+function getErrorStatus(error: unknown): number | undefined {
+  if (typeof error !== 'object' || error === null || !('status' in error)) {
+    return undefined;
+  }
+  const status = (error as { status?: unknown }).status;
+  return typeof status === 'number' ? status : undefined;
+}
+
 export interface RetryOptions {
   maxRetries: number;
   baseDelayMs: number;
@@ -194,8 +206,8 @@ export class BackoffStrategy {
     }
 
     // HTTP status codes that are retryable
-    if ('status' in error) {
-      const status = (error as any).status;
+    const status = getErrorStatus(error);
+    if (status !== undefined) {
       return status === 429 || // Too Many Requests
              status === 502 || // Bad Gateway
              status === 503 || // Service Unavailable
@@ -351,10 +363,10 @@ export class CircuitBreaker {
       uptime: Date.now() - this.startTime,
     };
     if (this.lastFailureTime !== undefined) {
-      (base as any).lastFailureTime = this.lastFailureTime;
+      base.lastFailureTime = this.lastFailureTime;
     }
     if (this.lastSuccessTime !== undefined) {
-      (base as any).lastSuccessTime = this.lastSuccessTime;
+      base.lastSuccessTime = this.lastSuccessTime;
     }
     return base;
   }
@@ -555,20 +567,20 @@ export class ResilientHttpClient {
       if (this.circuitBreaker) {
         return this.circuitBreaker
           .execute(op, `HTTP ${options.method || 'GET'} ${url}`)
-          .catch((err: any) => {
-            const status = err?.status;
+          .catch((err: unknown) => {
+            const status = getErrorStatus(err);
             if (typeof status === 'number' && status >= 500) {
               serverErrorCount++;
               if (this.cbFailureThreshold !== undefined && serverErrorCount >= this.cbFailureThreshold) {
                 this.circuitBreaker!.forceOpen();
                 this.forcedOpenHint = true;
                 // Abort current request immediately with CB OPEN error to align with expectations
-                const openErr = new Error(`Circuit breaker is OPEN for HTTP ${options.method || 'GET'} ${url}`);
-                (openErr as any).status = status;
+                const openErr: ErrorWithStatus = new Error(`Circuit breaker is OPEN for HTTP ${options.method || 'GET'} ${url}`);
+                openErr.status = status;
                 throw openErr;
               }
             }
-            const msg: string = (err && typeof err.message === 'string') ? err.message : '';
+            const msg = err instanceof Error ? err.message : '';
             if (msg.includes('Circuit breaker is OPEN')) {
               this.forcedOpenHint = true;
             }
@@ -585,9 +597,8 @@ export class ResilientHttpClient {
 
     if (!result.success) {
       // If consecutive attempts reached threshold and last error is 5xx, or CB-open error bubbled, ensure CB is OPEN
-      const err: any = result.error as any;
-      const lastStatus = err?.status;
-      const msg: string = (err && typeof err.message === 'string') ? err.message : '';
+      const lastStatus = getErrorStatus(result.error);
+      const msg = result.error instanceof Error ? result.error.message : '';
       if (this.circuitBreaker) {
         const hitThreshold = this.cbFailureThreshold !== undefined && result.attempts >= this.cbFailureThreshold;
         if (
@@ -631,8 +642,8 @@ export class ResilientHttpClient {
     const response = await fetch(fullUrl, requestOptions);
 
     if (!response.ok) {
-      const error = new Error(`HTTP ${response.status}: ${response.statusText}`);
-      (error as any).status = response.status;
+      const error: ErrorWithStatus = new Error(`HTTP ${response.status}: ${response.statusText}`);
+      error.status = response.status;
       throw error;
     }
 
@@ -650,8 +661,7 @@ export class ResilientHttpClient {
         stats.state = CircuitState.OPEN;
       } else if (
         this.cbFailureThreshold !== undefined &&
-        typeof (stats as any).failures === 'number' &&
-        (stats as any).failures >= this.cbFailureThreshold
+        stats.failures >= this.cbFailureThreshold
       ) {
         // If failure threshold was reached but state is not yet visible as OPEN, present as OPEN
         stats.state = CircuitState.OPEN;
