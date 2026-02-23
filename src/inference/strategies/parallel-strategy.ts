@@ -3,14 +3,44 @@
  * Implements concurrent reasoning with result aggregation
  */
 
-import type { ReasoningStep, ReasoningContext, StrategyResult } from './sequential-strategy.js';
+import type {
+  ReasoningConstraint,
+  ReasoningContext,
+  ReasoningStep,
+  ReasoningStepInput,
+  StepOutput,
+  StrategyResult,
+} from './sequential-strategy.js';
+
+type TaskProcessor = (task: ParallelTask) => Promise<unknown>;
+
+interface DependencyResults {
+  [taskId: string]: unknown;
+}
+
+export interface TaskInput {
+  dependencyResults?: DependencyResults;
+  [key: string]: unknown;
+}
+
+interface PatternSummary {
+  type: 'array' | 'object';
+  length?: number;
+  keys?: number;
+}
+
+interface DataStatistics {
+  type: string;
+  count?: number;
+  properties?: number;
+}
 
 export interface ParallelTask {
   id: string;
   description: string;
   priority: 'low' | 'medium' | 'high' | 'critical';
   dependencies: string[];
-  input: any;
+  input: TaskInput;
   estimatedDuration: number;
   maxRetries: number;
 }
@@ -18,7 +48,7 @@ export interface ParallelTask {
 export interface TaskResult {
   taskId: string;
   success: boolean;
-  result: any;
+  result: unknown;
   duration: number;
   confidence: number;
   error?: Error;
@@ -41,7 +71,7 @@ export interface TaskPhase {
 export class ParallelStrategy {
   private maxConcurrency: number;
   private activeTaskCount = 0;
-  private taskProcessors = new Map<string, (task: ParallelTask) => Promise<any>>();
+  private taskProcessors = new Map<string, TaskProcessor>();
 
   constructor(options: { maxConcurrency?: number } = {}) {
     this.maxConcurrency = options.maxConcurrency || 4;
@@ -57,7 +87,7 @@ export class ParallelStrategy {
 
     try {
       // Create execution plan
-      const plan = await this.createExecutionPlan(context);
+      const plan = this.createExecutionPlan(context);
       reasoning.push(`Created execution plan with ${plan.totalTasks} tasks in ${plan.phases.length} phases`);
 
       // Execute phases
@@ -65,20 +95,22 @@ export class ParallelStrategy {
       
       for (const phase of plan.phases) {
         reasoning.push(`Executing phase ${phase.id} with ${phase.tasks.length} tasks`);
-        
-        const phaseTaskResults = await this.executePhase(phase, phaseResults, context);
+
+        const phaseTaskResults = await this.executePhase(phase, phaseResults);
         phaseResults = { ...phaseResults, ...phaseTaskResults };
 
         // Convert task results to reasoning steps
         for (const [taskId, taskResult] of Object.entries(phaseTaskResults)) {
           const task = phase.tasks.find(t => t.id === taskId);
           if (task) {
+            const stepType = this.getStepTypeFromTask(task);
+            const stepOutput = this.toStepOutput(stepType, taskResult.result);
             const step: ReasoningStep = {
               id: taskId,
-              type: this.getStepTypeFromTask(task),
+              type: stepType,
               description: task.description,
-              input: task.input,
-              output: taskResult.result,
+              input: this.toReasoningStepInput(task, context, steps),
+              ...(stepOutput !== undefined ? { output: stepOutput } : {}),
               confidence: taskResult.confidence,
               metadata: {
                 startTime: new Date(Date.now() - taskResult.duration),
@@ -93,7 +125,7 @@ export class ParallelStrategy {
       }
 
       // Aggregate results
-      const finalResult = await this.aggregateResults(Object.values(phaseResults));
+      const finalResult = this.aggregateResults(Object.values(phaseResults));
       const overallConfidence = this.calculateOverallConfidence(Object.values(phaseResults));
 
       reasoning.push(`Aggregated ${Object.keys(phaseResults).length} task results`);
@@ -120,7 +152,7 @@ export class ParallelStrategy {
   /**
    * Register a custom task processor
    */
-  registerTaskProcessor(taskType: string, processor: (task: ParallelTask) => Promise<any>): void {
+  registerTaskProcessor(taskType: string, processor: TaskProcessor): void {
     this.taskProcessors.set(taskType, processor);
   }
 
@@ -131,7 +163,7 @@ export class ParallelStrategy {
     this.taskProcessors.set('fetch', this.processFetchTask.bind(this));
   }
 
-  private async createExecutionPlan(context: ReasoningContext): Promise<ParallelExecutionPlan> {
+  private createExecutionPlan(context: ReasoningContext): ParallelExecutionPlan {
     const tasks = this.createTasksFromContext(context);
     const phases = this.organizeTasks(tasks);
     const totalDuration = phases.reduce((sum, phase) => sum + this.estimatePhaseTime(phase), 0);
@@ -236,12 +268,12 @@ export class ParallelStrategy {
     return phases;
   }
 
-  private async executePhase(phase: TaskPhase, previousResults: Record<string, TaskResult>, context: ReasoningContext): Promise<Record<string, TaskResult>> {
+  private async executePhase(phase: TaskPhase, previousResults: Record<string, TaskResult>): Promise<Record<string, TaskResult>> {
     if (!phase.canRunConcurrently || phase.tasks.length === 1) {
       // Execute tasks sequentially
       const results: Record<string, TaskResult> = {};
       for (const task of phase.tasks) {
-        results[task.id] = await this.executeTask(task, previousResults, context);
+        results[task.id] = await this.executeTask(task, previousResults);
       }
       return results;
     }
@@ -249,53 +281,37 @@ export class ParallelStrategy {
     // Execute tasks in parallel with concurrency limit
     const results: Record<string, TaskResult> = {};
     const taskQueue = [...phase.tasks];
-    const executing: Promise<void>[] = [];
-
-    while (taskQueue.length > 0 || executing.length > 0) {
-      // Start new tasks up to concurrency limit
-      while (taskQueue.length > 0 && executing.length < this.maxConcurrency) {
-        const task = taskQueue.shift()!;
-        const execution = this.executeTask(task, previousResults, context)
-          .then(result => {
-            results[task.id] = result;
-          })
-          .finally(() => {
-            const index = executing.indexOf(execution);
-            if (index > -1) executing.splice(index, 1);
-          });
-        executing.push(execution);
+    const workerCount = Math.min(this.maxConcurrency, taskQueue.length);
+    const workers = Array.from({ length: workerCount }, async () => {
+      while (taskQueue.length > 0) {
+        const task = taskQueue.shift();
+        if (!task) return;
+        results[task.id] = await this.executeTask(task, previousResults);
       }
-
-      // Wait for at least one task to complete
-      if (executing.length > 0) {
-        await Promise.race(executing);
-      }
-    }
+    });
+    await Promise.all(workers);
 
     return results;
   }
 
-  private async executeTask(task: ParallelTask, previousResults: Record<string, TaskResult>, context: ReasoningContext): Promise<TaskResult> {
+  private async executeTask(task: ParallelTask, previousResults: Record<string, TaskResult>): Promise<TaskResult> {
     const startTime = Date.now();
     let attempts = 0;
     let lastError: Error | undefined;
 
     while (attempts < task.maxRetries + 1) {
+      this.activeTaskCount++;
       try {
-        this.activeTaskCount++;
-        
         // Get processor for task
         const processor = this.getTaskProcessor(task);
-        
+
         // Prepare task input with dependency results
         const enrichedInput = this.enrichTaskInput(task, previousResults);
         const enrichedTask = { ...task, input: enrichedInput };
-        
+
         // Execute task
         const result = await processor(enrichedTask);
-        
-        this.activeTaskCount--;
-        
+
         return {
           taskId: task.id,
           success: true,
@@ -306,14 +322,15 @@ export class ParallelStrategy {
         };
 
       } catch (error) {
-        this.activeTaskCount--;
-        lastError = error as Error;
+        lastError = error instanceof Error ? error : new Error(String(error));
         attempts++;
-        
+
         if (attempts < task.maxRetries + 1) {
           // Wait before retry
           await new Promise(resolve => setTimeout(resolve, 100 * attempts));
         }
+      } finally {
+        this.activeTaskCount--;
       }
     }
 
@@ -327,7 +344,7 @@ export class ParallelStrategy {
     };
   }
 
-  private getTaskProcessor(task: ParallelTask): (task: ParallelTask) => Promise<any> {
+  private getTaskProcessor(task: ParallelTask): TaskProcessor {
     const taskType = task.id.split('-')[0]!;
     const processor = this.taskProcessors.get(taskType);
     
@@ -338,26 +355,27 @@ export class ParallelStrategy {
     return processor;
   }
 
-  private enrichTaskInput(task: ParallelTask, previousResults: Record<string, TaskResult>): any {
-    const enrichedInput = { ...task.input };
-    
-    // Add dependency results
-    enrichedInput.dependencyResults = {};
+  private enrichTaskInput(task: ParallelTask, previousResults: Record<string, TaskResult>): TaskInput {
+    const dependencyResults: DependencyResults = {};
     for (const depId of task.dependencies) {
       if (previousResults[depId]) {
-        enrichedInput.dependencyResults[depId] = previousResults[depId].result;
+        dependencyResults[depId] = previousResults[depId].result;
       }
     }
-    
-    return enrichedInput;
+
+    return {
+      ...task.input,
+      dependencyResults,
+    };
   }
 
-  private async processAnalysisTask(task: ParallelTask): Promise<any> {
-    const { domain, data } = task.input;
-    
+  private async processAnalysisTask(task: ParallelTask): Promise<unknown> {
+    const domain = this.readString(task.input['domain'], 'unknown-domain');
+    const data = task.input['data'];
+
     // Simulate analysis
     await new Promise(resolve => setTimeout(resolve, Math.random() * 500 + 200));
-    
+
     return {
       domain,
       patterns: this.extractPatterns(data),
@@ -366,26 +384,26 @@ export class ParallelStrategy {
     };
   }
 
-  private async processValidationTask(task: ParallelTask): Promise<any> {
-    const { constraint } = task.input;
-    
+  private async processValidationTask(task: ParallelTask): Promise<unknown> {
+    const constraint = this.asConstraint(task.input['constraint']);
+
     // Simulate validation
     await new Promise(resolve => setTimeout(resolve, Math.random() * 300 + 100));
-    
+
     const passed = Math.random() > 0.2; // 80% pass rate
-    
+
     return {
-      constraintId: constraint.id,
+      constraintId: constraint?.id,
       passed,
       confidence: passed ? 0.85 : 0.15,
       details: `Validation ${passed ? 'passed' : 'failed'} for constraint`
     };
   }
 
-  private async processComputationTask(task: ParallelTask): Promise<any> {
+  private async processComputationTask(task: ParallelTask): Promise<unknown> {
     // Simulate computation
     await new Promise(resolve => setTimeout(resolve, Math.random() * 800 + 400));
-    
+
     return {
       computed: true,
       value: Math.random() * 100,
@@ -393,10 +411,10 @@ export class ParallelStrategy {
     };
   }
 
-  private async processFetchTask(task: ParallelTask): Promise<any> {
+  private async processFetchTask(): Promise<unknown> {
     // Simulate data fetching
     await new Promise(resolve => setTimeout(resolve, Math.random() * 600 + 300));
-    
+
     return {
       fetched: true,
       data: { items: Math.floor(Math.random() * 20) + 1 },
@@ -404,7 +422,7 @@ export class ParallelStrategy {
     };
   }
 
-  private async aggregateResults(results: TaskResult[]): Promise<{ success: boolean; conclusion: any }> {
+  private aggregateResults(results: TaskResult[]): { success: boolean; conclusion: Record<string, unknown> } {
     const successfulResults = results.filter(r => r.success);
     const failedResults = results.filter(r => !r.success);
     
@@ -431,10 +449,10 @@ export class ParallelStrategy {
     };
   }
 
-  private extractPatterns(data: any): any[] {
+  private extractPatterns(data: unknown): PatternSummary[] {
     if (!data || typeof data !== 'object') return [];
-    
-    const patterns = [];
+
+    const patterns: PatternSummary[] = [];
     if (Array.isArray(data)) {
       patterns.push({ type: 'array', length: data.length });
     } else {
@@ -443,7 +461,7 @@ export class ParallelStrategy {
     return patterns;
   }
 
-  private calculateStatistics(data: any): any {
+  private calculateStatistics(data: unknown): DataStatistics {
     if (Array.isArray(data)) {
       return {
         count: data.length,
@@ -475,13 +493,12 @@ export class ParallelStrategy {
     return Array.from(resources);
   }
 
-  private getPriorityValue(priority: string): number {
+  private getPriorityValue(priority: ParallelTask['priority']): number {
     switch (priority) {
       case 'critical': return 4;
       case 'high': return 3;
       case 'medium': return 2;
       case 'low': return 1;
-      default: return 1;
     }
   }
 
@@ -492,19 +509,22 @@ export class ParallelStrategy {
     return 'deduce';
   }
 
-  private calculateTaskConfidence(task: ParallelTask, result: any): number {
+  private calculateTaskConfidence(task: ParallelTask, result: unknown): number {
     let baseConfidence = 0.7;
-    
-    if (result && typeof result === 'object') {
-      if (result.confidence !== undefined) {
-        baseConfidence = result.confidence;
-      } else if (result.passed === true) {
+
+    const record = this.asRecord(result);
+    if (record) {
+      const confidence = this.readNumber(record['confidence']);
+      const passed = this.readBoolean(record['passed']);
+      if (confidence !== undefined) {
+        baseConfidence = confidence;
+      } else if (passed === true) {
         baseConfidence = 0.8;
-      } else if (result.passed === false) {
+      } else if (passed === false) {
         baseConfidence = 0.3;
       }
     }
-    
+
     // Adjust based on priority
     const priorityMultiplier = this.getPriorityValue(task.priority) / 4;
     return Math.min(1.0, baseConfidence * (0.8 + 0.2 * priorityMultiplier));
@@ -518,5 +538,112 @@ export class ParallelStrategy {
     
     const totalConfidence = successfulResults.reduce((sum, r) => sum + r.confidence, 0);
     return totalConfidence / successfulResults.length;
+  }
+
+  private toReasoningStepInput(task: ParallelTask, context: ReasoningContext, steps: ReasoningStep[]): ReasoningStepInput {
+    const stepType = this.getStepTypeFromTask(task);
+    switch (stepType) {
+      case 'analyze':
+        return {
+          domain: this.readString(task.input['domain'], context.domain),
+          data: this.asRecord(task.input['data']) ?? context.availableData,
+          constraints: context.constraints,
+        };
+      case 'validate': {
+        const constraint = this.asConstraint(task.input['constraint']);
+        return {
+          constraints: constraint ? [constraint] : context.constraints,
+          originalData: context.availableData,
+        };
+      }
+      case 'synthesize':
+        return {
+          allSteps: steps,
+          objectives: this.readStringArray(task.input['objectives']) ?? context.objectives,
+        };
+      case 'deduce':
+        return {
+          objectives: context.objectives,
+          constraints: context.constraints,
+        };
+    }
+  }
+
+  private toStepOutput(stepType: ReasoningStep['type'], result: unknown): StepOutput | undefined {
+    const record = this.asRecord(result);
+    if (!record) return undefined;
+
+    switch (stepType) {
+      case 'analyze': {
+        const summary = this.readSummary(record['insights'], 'Parallel analysis completed');
+        return {
+          patterns: [],
+          relevantConstraints: [],
+          dataQuality: { score: 0.8, issues: [] },
+          summary,
+        };
+      }
+      case 'validate': {
+        const passed = this.readBoolean(record['passed']) ?? false;
+        const confidence = this.readNumber(record['confidence']) ?? 0.5;
+        const details = this.readString(record['details'], 'Validation completed');
+        return {
+          valid: passed,
+          results: [{ passed, confidence, reason: details }],
+          confidence,
+        };
+      }
+      case 'synthesize':
+        return {
+          keyFindings: [],
+          recommendations: [],
+          summary: this.readString(record['summary'], 'Parallel synthesis completed'),
+          confidence: this.readNumber(record['confidence']) ?? 0.7,
+        };
+      case 'deduce':
+        return {
+          hypotheses: [],
+          conclusion: this.readString(record['summary'], 'Parallel task completed'),
+          reasoning: this.readString(record['details'], 'Derived from parallel execution'),
+        };
+    }
+  }
+
+  private readSummary(value: unknown, fallback: string): string {
+    if (!Array.isArray(value)) return fallback;
+    for (const item of value) {
+      if (typeof item === 'string' && item.length > 0) {
+        return item;
+      }
+    }
+    return fallback;
+  }
+
+  private asConstraint(value: unknown): ReasoningConstraint | undefined {
+    if (!value || typeof value !== 'object') return undefined;
+    return value as ReasoningConstraint;
+  }
+
+  private asRecord(value: unknown): Record<string, unknown> | undefined {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+    return value as Record<string, unknown>;
+  }
+
+  private readString(value: unknown, fallback: string): string {
+    return typeof value === 'string' && value.length > 0 ? value : fallback;
+  }
+
+  private readNumber(value: unknown): number | undefined {
+    return typeof value === 'number' ? value : undefined;
+  }
+
+  private readBoolean(value: unknown): boolean | undefined {
+    return typeof value === 'boolean' ? value : undefined;
+  }
+
+  private readStringArray(value: unknown): string[] | undefined {
+    if (!Array.isArray(value)) return undefined;
+    const strings = value.filter((item): item is string => typeof item === 'string');
+    return strings.length > 0 ? strings : undefined;
   }
 }
