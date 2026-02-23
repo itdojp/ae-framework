@@ -32,6 +32,8 @@ Purpose: Provide a short, deterministic path to diagnose common CI failures.
 - `pnpm run lint:actions` で `ghcr.io/rhysd/actionlint` pull が 403 の場合、`ACTIONLINT_BIN` でローカルバイナリを指定できます（例: `ACTIONLINT_BIN=/usr/local/bin/actionlint pnpm run lint:actions`）。
 - `automation-observability-weekly` の通知判定は `weekly-alert-summary.json` に保存されます。通知が来ない場合は `suppressed` / `suppressedReason` を確認します。
 - SLO/MTTR の判定基準は `docs/ci/automation-slo-mttr.md` を参照し、週次 artifact（`automation-observability-weekly`）で確認します。
+- `Security Analysis` の `Secrets Scanning` は `GITLEAKS_LICENSE` 未設定時に skip されます。scan を有効化する場合は repository secret `GITLEAKS_LICENSE` を設定してください。
+- `Container Security` は `trivy-results.sarif` 未生成時に upload を skip し warning を出します。build失敗ログを先に確認してください。
 
 ## 6) 症状 → runbook 対応表
 

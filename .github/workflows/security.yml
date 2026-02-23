@@ -124,14 +124,14 @@ jobs:
         id: license_gate
         run: |
           if [ -z "${{ secrets.GITLEAKS_LICENSE }}" ]; then
-            if [ "${{ github.event_name }}" = "pull_request" ]; then
-              printf '%s\n' "skip=true" >> "$GITHUB_OUTPUT"
-              echo "GITLEAKS_LICENSE is not set; skipping gitleaks for PR."
-            else
-              printf '%s\n' "skip=false" >> "$GITHUB_OUTPUT"
-              echo "GITLEAKS_LICENSE is required on push/schedule. Failing."
-              exit 1
-            fi
+            printf '%s\n' "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::GITLEAKS_LICENSE is not set; skipping gitleaks scan."
+            {
+              printf "%s\n" "### Secrets Scanning"
+              printf "%s\n" "- skipped: true"
+              printf "%s\n" "- reason: GITLEAKS_LICENSE is not set"
+              printf "%s\n" "- action: add repository secret GITLEAKS_LICENSE to enable gitleaks"
+            } >> "$GITHUB_STEP_SUMMARY"
           else
             printf '%s\n' "skip=false" >> "$GITHUB_OUTPUT"
           fi
@@ -311,9 +311,19 @@ jobs:
 
       - name: Upload Trivy scan results
         uses: github/codeql-action/upload-sarif@v3
-        if: always() && steps.container_manifest.outputs.skip != 'true'
+        if: ${{ always() && steps.container_manifest.outputs.skip != 'true' && hashFiles('trivy-results.sarif') != '' }}
         with:
           sarif_file: 'trivy-results.sarif'
+
+      - name: Note missing Trivy SARIF
+        if: ${{ always() && steps.container_manifest.outputs.skip != 'true' && hashFiles('trivy-results.sarif') == '' }}
+        run: |
+          printf "%s\n" "::warning::trivy-results.sarif was not generated; skipping SARIF upload"
+          {
+            printf "%s\n" "### Container Security"
+            printf "%s\n" "- trivy-results.sarif: missing"
+            printf "%s\n" "- upload-sarif: skipped"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   security-notification:
     name: Security Notification
