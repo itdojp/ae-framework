@@ -63,6 +63,27 @@ export interface Logger {
   error(message: string): void;
 }
 
+interface StoredTDDViolation extends Omit<TDDViolation, 'timestamp'> {
+  timestamp: string | Date;
+}
+
+interface StoredPhaseMetrics extends Omit<PhaseMetrics, 'startTime' | 'endTime' | 'violations'> {
+  startTime: string | Date;
+  endTime?: string | Date;
+  violations: StoredTDDViolation[];
+}
+
+interface StoredMTTRIncident extends Omit<MTTRIncident, 'detectedAt' | 'recoveredAt'> {
+  detectedAt: string | Date;
+  recoveredAt?: string | Date;
+}
+
+interface StoredProjectMetrics extends Omit<ProjectMetrics, 'startTime' | 'phases' | 'incidents'> {
+  startTime: string | Date;
+  phases: StoredPhaseMetrics[];
+  incidents?: StoredMTTRIncident[];
+}
+
 export class MetricsCollector {
   private projectMetrics: ProjectMetrics;
   private metricsPath: string;
@@ -91,24 +112,33 @@ export class MetricsCollector {
     if (existsSync(metricsFile)) {
       try {
         const data = readFileSync(metricsFile, 'utf8');
-        const metrics = JSON.parse(data);
-        // Convert date strings back to Date objects
-        metrics.startTime = new Date(metrics.startTime);
-        metrics.phases.forEach((phase: any) => {
-          phase.startTime = new Date(phase.startTime);
-          if (phase.endTime) phase.endTime = new Date(phase.endTime);
-          phase.violations.forEach((violation: any) => {
-            violation.timestamp = new Date(violation.timestamp);
-          });
-        });
-        if (!Array.isArray(metrics.incidents)) {
-          metrics.incidents = [];
-        }
-        metrics.incidents.forEach((incident: any) => {
-          incident.detectedAt = new Date(incident.detectedAt);
-          if (incident.recoveredAt) incident.recoveredAt = new Date(incident.recoveredAt);
-        });
-        return metrics;
+        const metrics = JSON.parse(data) as StoredProjectMetrics;
+        const incidents = Array.isArray(metrics.incidents) ? metrics.incidents : [];
+
+        return {
+          ...metrics,
+          startTime: new Date(metrics.startTime),
+          phases: metrics.phases.map((phase) => {
+            const { endTime, violations, ...rest } = phase;
+            return {
+              ...rest,
+              startTime: new Date(phase.startTime),
+              ...(endTime ? { endTime: new Date(endTime) } : {}),
+              violations: violations.map((violation) => ({
+                ...violation,
+                timestamp: new Date(violation.timestamp),
+              })),
+            };
+          }),
+          incidents: incidents.map((incident) => {
+            const { recoveredAt, ...rest } = incident;
+            return {
+              ...rest,
+              detectedAt: new Date(incident.detectedAt),
+              ...(recoveredAt ? { recoveredAt: new Date(recoveredAt) } : {}),
+            };
+          }),
+        };
       } catch (error: unknown) {
         console.warn(`Could not load existing metrics: ${toMessage(error)}`);
       }
