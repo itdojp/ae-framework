@@ -45,7 +45,7 @@ ae conformance report --format both                          # aggregate reports
 ```
 
 ### Artifacts
-- `conformance-results.json` — verification result (default output)
+- `artifacts/conformance/conformance-results.json` — verification result (default output)
 - `reports/conformance/conformance-summary.{json,md}` — aggregated reports
 - PR summary integration when enabled
 
@@ -62,10 +62,10 @@ jobs:
         with: { node-version: '20' }
       - run: pnpm install --frozen-lockfile
       - run: pnpm run ae-framework -- conformance sample --rules rules.json --data data.json --context context.json
-      - run: pnpm run ae-framework -- conformance verify --input data.json --context-file context.json --rules rules.json --output reports/conformance/conformance-results.json
+      - run: pnpm run ae-framework -- conformance verify --input data.json --context-file context.json --rules rules.json --output artifacts/conformance/conformance-results.json
       - uses: actions/upload-artifact@v4
         if: always()
-        with: { name: conformance, path: reports/conformance/** }
+        with: { name: conformance, path: artifacts/conformance/** }
 ```
 
 ### Integration
@@ -224,7 +224,7 @@ ae-framework conformance verify --input data.json --rules rules.json
 
 # 出力ファイル指定（JSON）
 ae-framework conformance verify --input data.json --rules rules.json \
-  --context-file context.json --format json --output conformance-results.json
+  --context-file context.json --format json --output artifacts/conformance/conformance-results.json
 ```
 
 ### 4. メトリクス確認
@@ -383,7 +383,7 @@ ae-framework conformance verify [options]
 Options:
   --input <file>          入力データ(JSON)ファイル（必須）
   --rules <file>          規則定義ファイル
-  --output <file>         出力ファイル（default: conformance-results.json）
+  --output <file>         出力ファイル（default: artifacts/conformance/conformance-results.json）
   --rule-ids <ids>         実行する規則ID（カンマ区切り）
   --skip-categories <cats> スキップするカテゴリ（カンマ区切り）
   --context-file <file>   ランタイムコンテキスト(JSON)

@@ -45,6 +45,16 @@ CONFORMANCE_NOTES="not_run"
 CONFORMANCE_SUMMARY_PATH="${VERIFY_LITE_CONFORMANCE_SUMMARY_FILE:-reports/conformance/verify-lite-summary.json}"
 CONFORMANCE_SUMMARY_MARKDOWN_PATH="${VERIFY_LITE_CONFORMANCE_MARKDOWN_FILE:-reports/conformance/verify-lite-summary.md}"
 
+run_root_safe_cleanup() {
+  local phase="${1:-post-run}"
+  echo "[verify-lite] root safe cleanup (${phase})"
+  if pnpm -s run clean:root-safe >/dev/null 2>&1; then
+    echo "[verify-lite] root safe cleanup completed (${phase})"
+  else
+    echo "[verify-lite] root safe cleanup failed (${phase})" >&2
+  fi
+}
+
 if [[ "${VERIFY_LITE_SKIP_INSTALL:-0}" == "1" ]]; then
   INSTALL_STATUS="skipped"
   INSTALL_NOTES="skipped (preinstalled)"
@@ -63,6 +73,8 @@ else
     fi
   fi
 fi
+
+run_root_safe_cleanup "pre-run"
 
 echo "[verify-lite] building spec-compiler types (non-blocking)"
 if pnpm -F @ae-framework/spec-compiler -s run build; then
@@ -87,7 +99,11 @@ cleanup_lint() {
     rm -f "$LINT_LOG_FILE"
   fi
 }
-trap cleanup_lint EXIT
+cleanup_on_exit() {
+  cleanup_lint
+  run_root_safe_cleanup "post-run"
+}
+trap cleanup_on_exit EXIT
 
 if pnpm lint 2>&1 | tee "$LINT_LOG_FILE"; then
   LINT_STATUS="success"

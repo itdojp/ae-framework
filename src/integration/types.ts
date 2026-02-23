@@ -216,7 +216,7 @@ export const TestExecutionConfigSchema = z.object({
   recordVideo: z.boolean().default(false),
   collectLogs: z.boolean().default(true),
   measureCoverage: z.boolean().default(false),
-  outputDir: z.string().default('./test-results'),
+  outputDir: z.string().default('artifacts/integration/test-results'),
   reportFormat: z.array(z.enum(['json', 'html', 'xml', 'junit'])).default(['json', 'html']),
   filters: z.object({
     categories: z.array(TestCategorySchema).optional(),

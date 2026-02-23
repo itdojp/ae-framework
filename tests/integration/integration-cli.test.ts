@@ -13,6 +13,7 @@ import './setup';
 applyIntegrationRetry(it);
 
 describe('IntegrationTestingCli', () => {
+  const defaultReportsDir = 'artifacts/integration/test-results';
   let cli: IntegrationTestingCli;
   let consoleLogSpy: any;
   let consoleErrorSpy: any;
@@ -203,7 +204,7 @@ describe('IntegrationTestingCli', () => {
 
   describe('generate command', () => {
     it('should generate sample test', async () => {
-      const outputFile = 'generated-test.json';
+      const outputFile = inTemp('generated-test.json');
 
       const command = cli.createCommand();
       const args = [
@@ -226,7 +227,7 @@ describe('IntegrationTestingCli', () => {
     });
 
     it('should generate sample suite', async () => {
-      const outputFile = 'generated-suite.json';
+      const outputFile = inTemp('generated-suite.json');
 
       const command = cli.createCommand();
       const args = [
@@ -245,7 +246,7 @@ describe('IntegrationTestingCli', () => {
     });
 
     it('should generate sample fixture', async () => {
-      const outputFile = 'generated-fixture.json';
+      const outputFile = inTemp('generated-fixture.json');
 
       const command = cli.createCommand();
       const args = [
@@ -264,7 +265,7 @@ describe('IntegrationTestingCli', () => {
     });
 
     it('should generate sample environment', async () => {
-      const outputFile = 'generated-environment.json';
+      const outputFile = inTemp('generated-environment.json');
 
       const command = cli.createCommand();
       const args = [
@@ -343,7 +344,7 @@ describe('IntegrationTestingCli', () => {
   describe('reports command', () => {
     it('should list reports when directory exists', async () => {
       // Create test reports directory
-      const reportsDir = inTemp('test-results');
+      const reportsDir = inTemp(defaultReportsDir);
       if (!existsSync(reportsDir)) {
         mkdirSync(reportsDir, { recursive: true });
       }
@@ -377,7 +378,7 @@ describe('IntegrationTestingCli', () => {
     });
 
     it('should clean old reports', async () => {
-      const reportsDir = inTemp('test-results');
+      const reportsDir = inTemp(defaultReportsDir);
       if (!existsSync(reportsDir)) {
         mkdirSync(reportsDir, { recursive: true });
       }
@@ -423,13 +424,13 @@ describe('IntegrationTestingCli', () => {
         tests: [testData.id]
       };
 
-      const testFile = 'run-test.json';
-      const suiteFile = 'run-suite.json';
+      const testFile = inTemp('run-test.json');
+      const suiteFile = inTemp('run-suite.json');
 
       writeFileSync(testFile, JSON.stringify([testData], null, 2));
       writeFileSync(suiteFile, JSON.stringify([suiteData], null, 2));
 
-      const outputDir = './test-results-run';
+      const outputDir = inTemp('test-results-run');
 
       const command = cli.createCommand();
       const args = [
@@ -450,7 +451,7 @@ describe('IntegrationTestingCli', () => {
 
     it('should handle execution filters', async () => {
       const testData = createSampleTestData();
-      const testFile = 'filtered-test.json';
+      const testFile = inTemp('filtered-test.json');
       writeFileSync(testFile, JSON.stringify([testData], null, 2));
 
       const command = cli.createCommand();
@@ -472,7 +473,7 @@ describe('IntegrationTestingCli', () => {
 
     it('should handle parallel execution options', async () => {
       const testData = createSampleTestData();
-      const testFile = 'parallel-test.json';
+      const testFile = inTemp('parallel-test.json');
       writeFileSync(testFile, JSON.stringify([testData], null, 2));
 
       const command = cli.createCommand();
@@ -527,7 +528,7 @@ describe('IntegrationTestingCli', () => {
   describe('integration workflow', () => {
     it('should support complete testing workflow', async () => {
       // 1. Generate sample test
-      const testFile = 'workflow-test.json';
+      const testFile = inTemp('workflow-test.json');
 
       let command = cli.createCommand();
       await command.parseAsync([

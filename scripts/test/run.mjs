@@ -144,12 +144,33 @@ export function runTest(options) {
     console.error(`[test-runner] unknown profile: ${options.profile}`);
     return 2;
   }
+  const shouldCleanRootSafe = process.env.AE_TEST_RUN_CLEAN_ROOT_SAFE !== '0';
+
+  const runRootSafeCleanup = (phase) => {
+    const cleanupResult = spawnSync('pnpm', ['-s', 'run', 'clean:root-safe'], {
+      stdio: 'inherit',
+      env: process.env,
+    });
+    if (cleanupResult.error) {
+      console.warn(
+        `[test-runner] root safe cleanup skipped (${phase}): ${cleanupResult.error.message ?? cleanupResult.error}`
+      );
+      return;
+    }
+    if ((cleanupResult.status ?? 1) !== 0) {
+      console.warn(`[test-runner] root safe cleanup returned non-zero (${phase}): ${cleanupResult.status}`);
+    }
+  };
 
   if (options.dryRun) {
     for (const command of commands) {
       console.log(command.join(' '));
     }
     return 0;
+  }
+
+  if (shouldCleanRootSafe) {
+    runRootSafeCleanup('pre-run');
   }
 
   for (const command of commands) {
@@ -161,11 +182,20 @@ export function runTest(options) {
       console.error(
         `[test-runner] failed to spawn command: ${command.join(' ')}: ${result.error.message ?? result.error}`
       );
+      if (shouldCleanRootSafe) {
+        runRootSafeCleanup('post-run');
+      }
       return result.error.code === 'ENOENT' ? 127 : 1;
     }
     if (result.status !== 0) {
+      if (shouldCleanRootSafe) {
+        runRootSafeCleanup('post-run');
+      }
       return result.status ?? 1;
     }
+  }
+  if (shouldCleanRootSafe) {
+    runRootSafeCleanup('post-run');
   }
   return 0;
 }

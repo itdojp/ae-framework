@@ -7,6 +7,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 
+const DEFAULT_E2E_OUTPUT_DIR = join('artifacts', 'integration', 'test-results');
+
 /**
  * Test step result interface - for internal step tracking
  */
@@ -58,6 +60,7 @@ export interface E2EConfig {
   video: boolean;
   trace: boolean;
   slowMo: number;
+  outputDir?: string;
 }
 
 // Browser page interface (simplified)
@@ -96,12 +99,14 @@ export class E2ETestRunner implements TestRunner {
   readonly category: TestCategory = 'e2e';
 
   private config: E2EConfig;
+  private outputDir: string;
   private browser: Browser | null = null;
   private context: BrowserContext | null = null;
   private currentPage: BrowserPage | null = null;
 
   constructor(config: E2EConfig) {
     this.config = config;
+    this.outputDir = config.outputDir ?? DEFAULT_E2E_OUTPUT_DIR;
   }
 
   /**
@@ -121,8 +126,8 @@ export class E2ETestRunner implements TestRunner {
       this.browser = await this.launchBrowser();
       this.context = await this.browser.newContext({
         viewport: this.config.viewport,
-        recordVideo: this.config.video ? { dir: './test-results/videos' } : undefined,
-        recordTrace: this.config.trace ? './test-results/traces' : undefined
+        recordVideo: this.config.video ? { dir: join(this.outputDir, 'videos') } : undefined,
+        recordTrace: this.config.trace ? join(this.outputDir, 'traces') : undefined
       });
 
       // Set default timeout
@@ -513,10 +518,11 @@ export class E2ETestRunner implements TestRunner {
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const fileName = `${testId}_${stepId}_${type}_${timestamp}.png`;
-    const filePath = join('./test-results/screenshots', fileName);
+    const screenshotDir = join(this.outputDir, 'screenshots');
+    const filePath = join(screenshotDir, fileName);
 
     // Ensure directory exists
-    await fs.mkdir('./test-results/screenshots', { recursive: true });
+    await fs.mkdir(screenshotDir, { recursive: true });
 
     // Capture screenshot
     await this.currentPage.screenshot({ 

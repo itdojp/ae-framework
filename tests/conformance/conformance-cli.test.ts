@@ -19,6 +19,7 @@ describe('ConformanceCli', () => {
     'configs/samples/sample-config.json',
     'configs/samples/sample-data.json',
     'configs/samples/sample-context.json',
+    'artifacts/conformance/conformance-results.json',
     'conformance-results.json',
     'reports/conformance/conformance-summary.json',
     'reports/conformance/conformance-summary.md',

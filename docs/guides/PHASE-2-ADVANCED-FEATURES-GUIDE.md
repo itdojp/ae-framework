@@ -31,8 +31,8 @@ ae-framework fix apply --input failure.json --output .ae/auto-fix --dry-run
 - 2.3 (Integration) provides E2E/API feedback → informs conformance rules and repair priorities
 
 ### Reports & Artifacts
-- Conformance: `conformance-results.json` / `reports/conformance/**` (集計)
-- Integration: `./test-results/**`（`--output-dir` で変更）
+- Conformance: `artifacts/conformance/conformance-results.json` / `reports/conformance/**` (集計)
+- Integration: `artifacts/integration/test-results/**`（`--output-dir` で変更）
 - CEGIS: `.ae/auto-fix/**`（適用結果/レポート）
 
 > Phase 2.1-2.3の新機能を活用した実践的な開発ワークフロー
@@ -204,11 +204,11 @@ time=3.2s, confidence=0.78
 ```
 
 ### 2.3 Integration – Attachments
-- Reports: `test-results/test-report-*.html`
-- Screenshots: `test-results/screenshots/*.png`（`--screenshots` 有効時）
-- Traces: `test-results/traces/*`（`--trace` 有効時）
-- Videos: `test-results/videos/*`（`--video` 有効時）
-※ 現行実装ではスクリーンショット/トレース/動画の保存先は `./test-results` 固定（`--output-dir` はレポートのみ対象）。
+- Reports: `artifacts/integration/test-results/test-report-*.html`
+- Screenshots: `artifacts/integration/test-results/screenshots/*.png`（`--screenshots` 有効時）
+- Traces: `artifacts/integration/test-results/traces/*`（`--trace` 有効時）
+- Videos: `artifacts/integration/test-results/videos/*`（`--video` 有効時）
+※ 現行実装ではスクリーンショット/トレース/動画は `artifacts/integration/test-results` に保存されます。
 
 ### 2.1 CEGIS – Diff example (pseudo)
 ```diff
@@ -411,12 +411,12 @@ jobs:
         
     - name: Phase 2.2 - Runtime Conformance
       run: |
-        mkdir -p ./conformance-results
+        mkdir -p ./artifacts/conformance
         ae-framework conformance verify \
           --input .ae/conformance-data.json \
           --context-file .ae/conformance-context.json \
           --rules .ae/conformance-rules.json \
-          --output ./conformance-results/conformance-results.json
+          --output ./artifacts/conformance/conformance-results.json
           
     - name: Phase 2.3 - Integration Testing
       run: |
@@ -449,7 +449,7 @@ jobs:
     - name: Quality Gate Check
       run: |
         # 最低品質基準のチェック
-        conformance_status=$(jq -r '.overall' ./conformance-results/conformance-results.json)
+        conformance_status=$(jq -r '.overall' ./artifacts/conformance/conformance-results.json)
         if [[ "$conformance_status" != "pass" ]]; then
           echo "❌ Conformance verification failed"
           exit 1
@@ -657,7 +657,7 @@ chmod +x scripts/team-validation.sh
 
 現行CLIには履歴メトリクスの自動集計コマンドがありません。CIで保存した成果物を外部で集計してください。
 
-- Conformance: `conformance-results.json` / `reports/conformance/**`
+- Conformance: `artifacts/conformance/conformance-results.json` / `reports/conformance/**`
 - Integration: `test-report-*.html`（出力ディレクトリ配下、現行はHTMLのみ）
 - CEGIS: `.ae/auto-fix/**`（適用結果/レポート）
 
