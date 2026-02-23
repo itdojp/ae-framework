@@ -373,11 +373,18 @@ export class APIContractMonitor implements ConformanceMonitor {
       return false;
     }
     const candidate = data as Partial<APICallData>;
+    const headers = candidate.headers;
+    if (headers === null || headers === undefined || typeof headers !== 'object' || Array.isArray(headers)) {
+      return false;
+    }
+    for (const [key, value] of Object.entries(headers as Record<string, unknown>)) {
+      if (typeof key !== 'string' || typeof value !== 'string') {
+        return false;
+      }
+    }
     return typeof candidate.method === 'string' &&
            typeof candidate.url === 'string' &&
            typeof candidate.path === 'string' &&
-           typeof candidate.headers === 'object' &&
-           candidate.headers !== null &&
            typeof candidate.timestamp === 'string';
   }
 
