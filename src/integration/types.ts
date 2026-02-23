@@ -338,7 +338,7 @@ export interface TestExecutionContext {
   environment: TestEnvironment;
   config: TestExecutionConfig;
   fixtures: Map<string, TestFixture>;
-  sharedData: Map<string, any>;
+  sharedData: Map<string, unknown>;
   logger: {
     info: (message: string) => void;
     warn: (message: string) => void;
@@ -375,11 +375,11 @@ export interface E2ETestStep {
   retry?: boolean;
   screenshot?: boolean;
   description: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
   validation?: {
     type: 'text' | 'attribute' | 'css' | 'count' | 'exists';
-    expected: any;
-    actual?: any;
+    expected: unknown;
+    actual?: unknown;
   };
 }
 
@@ -393,12 +393,12 @@ export interface ContractTest {
       method: string;
       path: string;
       headers?: Record<string, string>;
-      body?: any;
+      body?: unknown;
     };
     response: {
       status: number;
       headers?: Record<string, string>;
-      body?: any;
+      body?: unknown;
     };
   }>;
   metadata: {
