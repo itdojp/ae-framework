@@ -11,8 +11,6 @@ import type {
 } from '../engines/sequential-inference-engine.js';
 import type { DependencyAnalysisResult } from '../analysis/dependency-analyzer.js';
 
-type CoverageGap = CoverageAnalysisResult['gaps'][number];
-
 // Core interfaces
 export interface CodeChange {
   id: string;
@@ -144,6 +142,8 @@ export interface CoverageAnalysisResult {
   }>;
   projectedCoverage: Record<string, number>;
 }
+
+type CoverageGap = CoverageAnalysisResult['gaps'][number];
 
 export interface ExecutionTimePrediction {
   estimatedTime: number;
@@ -920,15 +920,16 @@ export class IntelligentTestSelection extends EventEmitter {
     const inferenceResult = await this.inferenceEngine.processComplexQuery(query);
     
     // Enhance scores based on inference engine recommendations
-    if (this.hasSelectedTests(inferenceResult.finalResult as unknown)) {
+    if (this.hasSelectedTests(inferenceResult.finalResult)) {
       // Apply ML insights to adjust scores
-      this.applyMLInsights(inferenceResult, riskScores);
+      this.applyMLInsights(inferenceResult, riskScores, impactScores);
     }
   }
   
   private applyMLInsights(
     inferenceResult: InferenceResult,
-    riskScores: Map<string, number>
+    riskScores: Map<string, number>,
+    impactScores: Map<string, number>
   ): void {
     // Apply ML-based adjustments to scores
     const confidence = inferenceResult.confidence || 0.8;
@@ -937,6 +938,9 @@ export class IntelligentTestSelection extends EventEmitter {
     // Enhance high-confidence predictions
     for (const [component, score] of riskScores.entries()) {
       riskScores.set(component, Math.min(1.0, score + adjustmentFactor));
+    }
+    for (const [component, score] of impactScores.entries()) {
+      impactScores.set(component, Math.min(1.0, score + adjustmentFactor));
     }
   }
 
