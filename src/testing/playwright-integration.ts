@@ -103,6 +103,7 @@ export interface UserFlowStep {
 
 type TestComponent = {
   id: string;
+  path: string;
   name?: string;
   type: string;
   metadata: Record<string, unknown>;
@@ -564,9 +565,16 @@ export class PlaywrightIntegration extends EventEmitter {
   }
 
   private createComponentTest(component: TestComponent, request: TestGenerationRequest): E2ETestCase {
-    const componentName = component.name ?? component.id;
+    const componentName = this.getComponentName(component);
+    const rawImportance = component.metadata['importance'];
     const importance =
-      typeof component.metadata['importance'] === 'string' ? component.metadata['importance'] : undefined;
+      typeof rawImportance === 'string' &&
+      (rawImportance === 'critical' ||
+        rawImportance === 'high' ||
+        rawImportance === 'medium' ||
+        rawImportance === 'low')
+        ? rawImportance
+        : undefined;
 
     return {
       id: `test-${component.id}`,
@@ -885,7 +893,7 @@ export class PlaywrightIntegration extends EventEmitter {
   }
 
   private getComponentURL(component: TestComponent): string {
-    const componentName = component.name ?? component.id;
+    const componentName = this.getComponentName(component);
     return `/${componentName.toLowerCase().replace(/\s+/g, '-')}`;
   }
 
@@ -915,14 +923,15 @@ export class PlaywrightIntegration extends EventEmitter {
   }
 
   private stringifyFlowData(data: unknown): string | undefined {
-    if (data === undefined || data === null) {
+    if (data === undefined) {
       return undefined;
     }
     if (
       typeof data === 'string' ||
       typeof data === 'number' ||
       typeof data === 'boolean' ||
-      typeof data === 'bigint'
+      typeof data === 'bigint' ||
+      typeof data === 'symbol'
     ) {
       return String(data);
     }
@@ -931,5 +940,13 @@ export class PlaywrightIntegration extends EventEmitter {
     } catch {
       return undefined;
     }
+  }
+
+  private getComponentName(component: TestComponent): string {
+    if (typeof component.name === 'string' && component.name.length > 0) {
+      return component.name;
+    }
+    const fromPath = component.path.split('/').pop()?.replace(/\.(ts|js|tsx|jsx)$/, '');
+    return fromPath && fromPath.length > 0 ? fromPath : component.id;
   }
 }
