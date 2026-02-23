@@ -31,7 +31,7 @@ export interface E2ETestCase {
   steps: TestStep[];
   expectedOutcome: string;
   preconditions: string[];
-  testData: Record<string, any>;
+  testData: Record<string, unknown>;
   dependencies: string[];
 }
 
@@ -40,7 +40,7 @@ export interface TestStep {
   action: TestAction;
   selector?: string;
   value?: string;
-  options?: Record<string, any>;
+  options?: Record<string, unknown>;
   description: string;
   timeout?: number;
   retry?: boolean;
@@ -97,9 +97,21 @@ export interface UserFlow {
 export interface UserFlowStep {
   action: string;
   target: string;
-  data?: any;
+  data?: unknown;
   expectedResult: string;
 }
+
+type TestComponent = {
+  id: string;
+  path: string;
+  name?: string;
+  type: string;
+  metadata: Record<string, unknown>;
+  dependencies: string[];
+};
+
+type CircularDependencyLike = DependencyAnalysisResult['circularDependencies'][number];
+type RiskFactorLike = DependencyAnalysisResult['riskAssessment']['riskFactors'][number];
 
 export interface TestGenerationResult {
   requestId: string;
@@ -540,9 +552,10 @@ export class PlaywrightIntegration extends EventEmitter {
     }
 
     // Generate tests for circular dependencies (if any)
-    if (request.sourceAnalysis.circularDependencies.length > 0) {
+    const firstCircularDependency = request.sourceAnalysis.circularDependencies[0];
+    if (firstCircularDependency) {
       const circularDepTest = this.createCircularDependencyTest(
-        request.sourceAnalysis.circularDependencies[0],
+        firstCircularDependency,
         request
       );
       tests.push(circularDepTest);
@@ -551,12 +564,23 @@ export class PlaywrightIntegration extends EventEmitter {
     return tests;
   }
 
-  private createComponentTest(component: any, request: TestGenerationRequest): E2ETestCase {
+  private createComponentTest(component: TestComponent, request: TestGenerationRequest): E2ETestCase {
+    const componentName = this.getComponentName(component);
+    const rawImportance = component.metadata['importance'];
+    const importance =
+      typeof rawImportance === 'string' &&
+      (rawImportance === 'critical' ||
+        rawImportance === 'high' ||
+        rawImportance === 'medium' ||
+        rawImportance === 'low')
+        ? rawImportance
+        : undefined;
+
     return {
       id: `test-${component.id}`,
-      name: `Test ${component.name} Component`,
-      description: `E2E test for ${component.name} component functionality`,
-      priority: component.metadata.importance === 'critical' ? 'critical' : 'high',
+      name: `Test ${componentName} Component`,
+      description: `E2E test for ${componentName} component functionality`,
+      priority: importance === 'critical' ? 'critical' : 'high',
       tags: ['component', 'automated', component.type],
       steps: [
         {
@@ -585,7 +609,7 @@ export class PlaywrightIntegration extends EventEmitter {
           value: 'visible'
         }
       ],
-      expectedOutcome: `${component.name} component functions correctly`,
+      expectedOutcome: `${componentName} component functions correctly`,
       preconditions: ['Application is running', 'User is authenticated'],
       testData: { componentId: component.id },
       dependencies: component.dependencies.slice(0, 3)
@@ -593,13 +617,16 @@ export class PlaywrightIntegration extends EventEmitter {
   }
 
   private createUserFlowTest(userFlow: UserFlow, request: TestGenerationRequest): E2ETestCase {
-    const steps: TestStep[] = userFlow.steps.map((flowStep, index) => ({
-      id: `step-${index}`,
-      action: this.mapFlowActionToTestAction(flowStep.action),
-      selector: this.generateSelectorFromTarget(flowStep.target),
-      ...(flowStep.data ? { value: String(flowStep.data) } : {}),
-      description: `${flowStep.action} on ${flowStep.target}`
-    }));
+    const steps: TestStep[] = userFlow.steps.map((flowStep, index) => {
+      const flowValue = this.stringifyFlowData(flowStep.data);
+      return {
+        id: `step-${index}`,
+        action: this.mapFlowActionToTestAction(flowStep.action),
+        selector: this.generateSelectorFromTarget(flowStep.target),
+        ...(flowValue !== undefined ? { value: flowValue } : {}),
+        description: `${flowStep.action} on ${flowStep.target}`
+      };
+    });
 
     return {
       id: `test-${userFlow.id}`,
@@ -616,7 +643,7 @@ export class PlaywrightIntegration extends EventEmitter {
   }
 
   private createCircularDependencyTest(
-    circularDep: any,
+    circularDep: CircularDependencyLike,
     request: TestGenerationRequest
   ): E2ETestCase {
     return {
@@ -840,7 +867,7 @@ export class PlaywrightIntegration extends EventEmitter {
     return edgeCaseTests.length / Math.max(tests.length * 0.2, 1); // Expect 20% edge cases
   }
 
-  private calculateRiskCoverage(tests: E2ETestCase[], riskFactors: any[]): number {
+  private calculateRiskCoverage(tests: E2ETestCase[], riskFactors: RiskFactorLike[]): number {
     if (riskFactors.length === 0) return 1.0;
     
     const riskTests = tests.filter(t => t.tags.includes('risk'));
@@ -865,11 +892,12 @@ export class PlaywrightIntegration extends EventEmitter {
     };
   }
 
-  private getComponentURL(component: any): string {
-    return `/${component.name.toLowerCase().replace(/\s+/g, '-')}`;
+  private getComponentURL(component: TestComponent): string {
+    const componentName = this.getComponentName(component);
+    return `/${componentName.toLowerCase().replace(/\s+/g, '-')}`;
   }
 
-  private getComponentSelector(component: any): string {
+  private getComponentSelector(component: TestComponent): string {
     return `[data-testid="${component.id}"]`;
   }
 
@@ -892,5 +920,33 @@ export class PlaywrightIntegration extends EventEmitter {
 
   private estimatePhaseTime(tests: E2ETestCase[]): number {
     return tests.reduce((sum, test) => sum + (test.steps.length * 2000), 0);
+  }
+
+  private stringifyFlowData(data: unknown): string | undefined {
+    if (data === undefined) {
+      return undefined;
+    }
+    if (
+      typeof data === 'string' ||
+      typeof data === 'number' ||
+      typeof data === 'boolean' ||
+      typeof data === 'bigint' ||
+      typeof data === 'symbol'
+    ) {
+      return String(data);
+    }
+    try {
+      return JSON.stringify(data);
+    } catch {
+      return undefined;
+    }
+  }
+
+  private getComponentName(component: TestComponent): string {
+    if (typeof component.name === 'string' && component.name.length > 0) {
+      return component.name;
+    }
+    const fromPath = component.path.split('/').pop()?.replace(/\.(ts|js|tsx|jsx)$/, '');
+    return fromPath && fromPath.length > 0 ? fromPath : component.id;
   }
 }
