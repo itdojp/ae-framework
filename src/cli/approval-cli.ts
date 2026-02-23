@@ -6,6 +6,10 @@
 
 import { Command } from 'commander';
 import { ApprovalService } from '../services/approval-service.js';
+import type {
+  ApprovalCondition,
+  ApprovalPolicy,
+} from '../services/approval-service.js';
 import type { PhaseType } from '../utils/phase-state-manager.js';
 import chalk from 'chalk';
 import { toMessage } from '../utils/error-utils.js';
@@ -284,7 +288,7 @@ program
   .option('--auto-security', 'Enable auto-approval with security scan')
   .action(async (phase: PhaseType, options) => {
     try {
-      const policy: any = {};
+      const policy: ApprovalPolicy = {};
       
       if (options.multiple !== undefined) {
         policy.requireMultipleApprovers = options.multiple;
@@ -299,20 +303,22 @@ program
       }
       
       if (options.autoTest || options.autoSecurity) {
-        policy.autoApproveConditions = [];
+        const autoApproveConditions: ApprovalCondition[] = [];
         
         if (options.autoTest) {
-          policy.autoApproveConditions.push({
+          autoApproveConditions.push({
             type: 'test-coverage',
             threshold: 80
           });
         }
         
         if (options.autoSecurity) {
-          policy.autoApproveConditions.push({
+          autoApproveConditions.push({
             type: 'security-scan'
           });
         }
+
+        policy.autoApproveConditions = autoApproveConditions;
       }
       
       service.setPolicy(phase, policy);
