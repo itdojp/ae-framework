@@ -163,14 +163,15 @@ describe('ParallelStrategy', () => {
     const validationSteps = result.steps.filter((step) => step.type === 'validate');
     expect(validationSteps).toHaveLength(2);
 
+    const inputConstraintIds: string[] = [];
     for (const step of validationSteps) {
       const output = expectValidationOutput(step);
-      const constraintId = String(output.results[0]?.reason.split(' ')[1] ?? '');
-      expect(step.input).toMatchObject({
-        constraints: [expect.objectContaining({ id: constraintId })],
-      });
+      const stepInput = step.input as { constraints?: ReasoningConstraint[] };
+      expect(stepInput.constraints).toHaveLength(1);
+      inputConstraintIds.push(String(stepInput.constraints?.[0]?.id ?? ''));
       expect(output.results).toHaveLength(1);
       expect(output.results[0]?.passed).toBe(true);
     }
+    expect(new Set(inputConstraintIds)).toEqual(new Set(constraints.map((constraint) => String(constraint.id))));
   });
 });
