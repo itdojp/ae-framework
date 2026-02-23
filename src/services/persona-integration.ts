@@ -90,8 +90,12 @@ export class PersonaIntegrationService {
 
     // Add proactive suggestions if enabled
     if (adaptedBehavior.proactiveSuggestions.length > 0) {
+      const existingData =
+        result.data !== null && typeof result.data === 'object' && !Array.isArray(result.data)
+          ? (result.data as Record<string, unknown>)
+          : {};
       adaptedResult.data = {
-        ...result.data,
+        ...existingData,
         personaSuggestions: adaptedBehavior.proactiveSuggestions
       };
     }

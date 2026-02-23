@@ -13,6 +13,7 @@ import { PhaseStateManager } from '../utils/phase-state-manager.js';
 import type { PhaseType } from '../utils/phase-state-manager.js';
 import { SteeringLoader } from '../utils/steering-loader.js';
 import { ApprovalService } from '../services/approval-service.js';
+import { toMessage } from '../utils/error-utils.js';
 import { createDefaultOperateAgentConfig } from './slash-command-operate-config.js';
 import { 
   UnifiedAnalyzeCommand,
@@ -48,7 +49,7 @@ export interface CommandContext {
 export interface CommandResult {
   success: boolean;
   message?: string;
-  data?: any;
+  data?: unknown;
   nextCommand?: string;
 }
 
@@ -401,10 +402,10 @@ export class SlashCommandManager {
 
     try {
       return await command.handler(args, this.context);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
-        message: `Error executing command: ${error.message}`,
+        message: `Error executing command: ${toMessage(error)}`,
       };
     }
   }
@@ -441,7 +442,7 @@ export class SlashCommandManager {
     const previousArtifacts = await context.phaseStateManager.getPhaseArtifacts('intent');
     
     // Generate formal specification based on type
-    let result: any;
+    let result: unknown;
     switch (specType) {
       case undefined:
       case 'openapi':
@@ -556,7 +557,7 @@ export class SlashCommandManager {
     }
 
     const action = args[0];
-    let result: any;
+    let result: unknown;
 
     switch (action) {
       case undefined:
