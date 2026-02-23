@@ -96,6 +96,14 @@ describe('ParallelStrategy', () => {
       domain: 'numbers',
       data: { items: [1, 2, 3] },
     });
+    const analyzeProfileStep = expectStep(
+      result.steps.find((step) => step.id === 'analyze-profile'),
+      'analyze-profile step should exist',
+    );
+    expect(analyzeProfileStep.input).toMatchObject({
+      domain: 'profile',
+      data: { role: 'admin' },
+    });
 
     const analyzeOutput = expectAnalysisOutput(analyzeNumbersStep);
     expect(analyzeOutput.patterns).toEqual(
