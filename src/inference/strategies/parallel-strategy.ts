@@ -104,7 +104,7 @@ export class ParallelStrategy {
           const task = phase.tasks.find(t => t.id === taskId);
           if (task) {
             const stepType = this.getStepTypeFromTask(task);
-            const stepOutput = this.toStepOutput(stepType, taskResult.result);
+            const stepOutput = this.toStepOutput(stepType, task, taskResult.result);
             const step: ReasoningStep = {
               id: taskId,
               type: stepType,
@@ -190,7 +190,7 @@ export class ParallelStrategy {
         description: `Analyze data in ${domain} domain`,
         priority: 'medium',
         dependencies: [],
-        input: { domain, data: context.availableData[domain] },
+        input: { domain, data: context.availableData[domain], constraints: context.constraints },
         estimatedDuration: 1000,
         maxRetries: 2
       });
@@ -546,8 +546,8 @@ export class ParallelStrategy {
       case 'analyze':
         return {
           domain: this.readString(task.input['domain'], context.domain),
-          data: this.asRecord(task.input['data']) ?? context.availableData,
-          constraints: context.constraints,
+          data: this.normalizeAnalysisData(task.input['data']),
+          constraints: this.readConstraints(task.input['constraints'], context.constraints),
         };
       case 'validate': {
         const constraint = this.asConstraint(task.input['constraint']);
@@ -569,17 +569,23 @@ export class ParallelStrategy {
     }
   }
 
-  private toStepOutput(stepType: ReasoningStep['type'], result: unknown): StepOutput | undefined {
+  private toStepOutput(stepType: ReasoningStep['type'], task: ParallelTask, result: unknown): StepOutput | undefined {
     const record = this.asRecord(result);
     if (!record) return undefined;
 
     switch (stepType) {
       case 'analyze': {
         const summary = this.readSummary(record['insights'], 'Parallel analysis completed');
+        const patterns = this.readAnalysisPatterns(record['patterns']);
+        const statistics = this.asRecord(record['statistics']);
+        const hasDetails = patterns.length > 0 || statistics !== undefined;
         return {
-          patterns: [],
-          relevantConstraints: [],
-          dataQuality: { score: 0.8, issues: [] },
+          patterns,
+          relevantConstraints: this.readConstraints(task.input['constraints'], []),
+          dataQuality: {
+            score: hasDetails ? 0.8 : 0.5,
+            issues: hasDetails ? [] : ['analysis details are limited'],
+          },
           summary,
         };
       }
@@ -645,5 +651,57 @@ export class ParallelStrategy {
     if (!Array.isArray(value)) return undefined;
     const strings = value.filter((item): item is string => typeof item === 'string');
     return strings.length > 0 ? strings : undefined;
+  }
+
+  private normalizeAnalysisData(value: unknown): Record<string, unknown> {
+    const asRecord = this.asRecord(value);
+    if (asRecord) return asRecord;
+    if (Array.isArray(value)) return { items: value };
+    if (value === undefined) return {};
+    return { value };
+  }
+
+  private readConstraints(value: unknown, fallback: ReasoningConstraint[]): ReasoningConstraint[] {
+    if (!Array.isArray(value)) return fallback;
+    const constraints = value
+      .map((item) => this.asConstraint(item))
+      .filter((item): item is ReasoningConstraint => item !== undefined);
+    return constraints.length > 0 ? constraints : fallback;
+  }
+
+  private readAnalysisPatterns(value: unknown): Array<{
+    type: 'array_pattern' | 'object_pattern';
+    key: string;
+    description: string;
+    length?: number;
+    properties?: number;
+  }> {
+    if (!Array.isArray(value)) return [];
+    const patterns = [];
+    for (const item of value) {
+      const record = this.asRecord(item);
+      if (!record) continue;
+      const type = this.readString(record['type'], '');
+      if (type === 'array') {
+        const length = this.readNumber(record['length']);
+        patterns.push({
+          type: 'array_pattern' as const,
+          key: 'data',
+          description: 'Detected array pattern',
+          ...(length !== undefined ? { length } : {}),
+        });
+        continue;
+      }
+      if (type === 'object') {
+        const properties = this.readNumber(record['keys']);
+        patterns.push({
+          type: 'object_pattern' as const,
+          key: 'data',
+          description: 'Detected object pattern',
+          ...(properties !== undefined ? { properties } : {}),
+        });
+      }
+    }
+    return patterns;
   }
 }
