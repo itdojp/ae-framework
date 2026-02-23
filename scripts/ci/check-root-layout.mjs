@@ -90,14 +90,20 @@ export const FORBIDDEN_ROOT_PATTERNS = [
  * Classify repository root entries into blocking violations and non-blocking warnings.
  *
  * @param {string[]} entries - Root entry names.
+ * @param {{allowEntries?: string[]}} [options] - Optional allow-list overrides.
  * @returns {{violations: Array<{entry: string, reason: string, type: string}>, warnings: Array<{entry: string, reason: string, type: string}>}}
  */
-export function scanRootLayout(entries) {
+export function scanRootLayout(entries, options = {}) {
+  const allowEntries = new Set(options.allowEntries ?? []);
   const violations = [];
   const warnings = [];
   const sorted = [...entries].sort((a, b) => a.localeCompare(b));
 
   for (const entry of sorted) {
+    if (allowEntries.has(entry)) {
+      continue;
+    }
+
     const forbidden = FORBIDDEN_ROOT_PATTERNS.find(({ pattern }) => pattern.test(entry));
     if (forbidden) {
       violations.push({ entry, reason: forbidden.reason, type: 'forbidden_pattern' });
@@ -120,6 +126,7 @@ function parseArgs(argv) {
   let format = 'text';
   let mode = 'strict';
   let rootDir = process.cwd();
+  const allowEntries = [];
 
   for (const arg of argv.slice(2)) {
     if (arg.startsWith('--format=')) {
@@ -134,10 +141,15 @@ function parseArgs(argv) {
     }
     if (arg.startsWith('--root=')) {
       rootDir = path.resolve(arg.slice('--root='.length));
+      continue;
+    }
+    if (arg.startsWith('--allow-entry=')) {
+      const entry = arg.slice('--allow-entry='.length).trim();
+      if (entry) allowEntries.push(entry);
     }
   }
 
-  return { format, mode, rootDir };
+  return { format, mode, rootDir, allowEntries };
 }
 
 function renderText(result, options) {
@@ -145,6 +157,9 @@ function renderText(result, options) {
   lines.push('Root layout check');
   lines.push(`- mode: ${options.mode}`);
   lines.push(`- root: ${options.rootDir}`);
+  if (options.allowEntries.length > 0) {
+    lines.push(`- allow-entry: ${options.allowEntries.join(', ')}`);
+  }
   lines.push(`- violations: ${result.violations.length}`);
   lines.push(`- warnings: ${result.warnings.length}`);
 
@@ -171,7 +186,7 @@ function renderText(result, options) {
  * Emit check result in configured output format.
  *
  * @param {{violations: Array<{entry: string, reason: string, type: string}>, warnings: Array<{entry: string, reason: string, type: string}>}} result - Scan result.
- * @param {{mode: string, format: string, rootDir: string}} options - Parsed command options.
+ * @param {{mode: string, format: string, rootDir: string, allowEntries: string[]}} options - Parsed command options.
  * @param {number} exitCode - Exit code derived from mode and result.
  */
 function writeResult(result, options, exitCode) {
@@ -179,6 +194,7 @@ function writeResult(result, options, exitCode) {
     process.stdout.write(JSON.stringify({
       root: options.rootDir,
       mode: options.mode,
+      allowEntries: options.allowEntries,
       violations: result.violations,
       warnings: result.warnings,
       exitCode,
@@ -193,7 +209,7 @@ function writeResult(result, options, exitCode) {
  * Run root layout validation and print the result.
  *
  * @param {string[]} [argv=process.argv] - Process arguments.
- * @returns {{violations: Array<{entry: string, reason: string, type: string}>, warnings: Array<{entry: string, reason: string, type: string}>, exitCode: number, options: {format: string, mode: string, rootDir: string}}}
+ * @returns {{violations: Array<{entry: string, reason: string, type: string}>, warnings: Array<{entry: string, reason: string, type: string}>, exitCode: number, options: {format: string, mode: string, rootDir: string, allowEntries: string[]}}}
  */
 export function runRootLayoutCheck(argv = process.argv) {
   const options = parseArgs(argv);
@@ -216,7 +232,7 @@ export function runRootLayoutCheck(argv = process.argv) {
     return { ...failure, exitCode, options };
   }
 
-  const result = scanRootLayout(entries);
+  const result = scanRootLayout(entries, { allowEntries: options.allowEntries });
   const hasError = result.violations.length > 0;
   const exitCode = options.mode === 'warn' ? 0 : (hasError ? 1 : 0);
   writeResult(result, options, exitCode);
