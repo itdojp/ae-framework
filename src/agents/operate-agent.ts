@@ -664,7 +664,11 @@ export class OperateAgent {
     this.logger.debug('Performing chaos pre-checks');
   }
 
-  private async executeChaosExperiment(testId: string, experiment: ChaosExperiment, params: ChaosTestParams): Promise<{ success: boolean; impact: any; observations: any[] }> {
+  private async executeChaosExperiment(
+    testId: string,
+    experiment: ChaosExperiment,
+    params: ChaosTestParams
+  ): Promise<{ success: boolean; impact: ChaosImpact; observations: ChaosObservation[] }> {
     // Implement chaos experiment execution
     return {
       success: true,
@@ -673,12 +677,12 @@ export class OperateAgent {
     };
   }
 
-  private async collectSloMetrics(): Promise<any> {
+  private async collectSloMetrics(): Promise<SloMetrics> {
     // Implement SLO metrics collection
     return {};
   }
 
-  private evaluateSloCompliance(metrics: any): SloStatus {
+  private evaluateSloCompliance(metrics: SloMetrics): SloStatus {
     // Implement SLO compliance evaluation
     const targets = {
       availability: this.config.sloConfig?.availability ?? 99.9,
@@ -686,11 +690,35 @@ export class OperateAgent {
       errorRatePercent: this.config.sloConfig?.errorRatePercent ?? 1,
       throughputRps: this.config.sloConfig?.throughputRps ?? 100,
     };
+
+    const actuals = {
+      availability: metrics.availability ?? 99.9,
+      latencyP95Ms: metrics.latencyP95Ms ?? 100,
+      errorRatePercent: metrics.errorRatePercent ?? 0.1,
+      throughputRps: metrics.throughputRps ?? 1000,
+    };
+
     return {
-      availability: { target: targets.availability, actual: 99.9, compliant: true },
-      latency: { target: targets.latencyP95Ms, actual: 100, compliant: true },
-      errorRate: { target: targets.errorRatePercent, actual: 0.1, compliant: true },
-      throughput: { target: targets.throughputRps, actual: 1000, compliant: true },
+      availability: {
+        target: targets.availability,
+        actual: actuals.availability,
+        compliant: actuals.availability >= targets.availability,
+      },
+      latency: {
+        target: targets.latencyP95Ms,
+        actual: actuals.latencyP95Ms,
+        compliant: actuals.latencyP95Ms <= targets.latencyP95Ms,
+      },
+      errorRate: {
+        target: targets.errorRatePercent,
+        actual: actuals.errorRatePercent,
+        compliant: actuals.errorRatePercent <= targets.errorRatePercent,
+      },
+      throughput: {
+        target: targets.throughputRps,
+        actual: actuals.throughputRps,
+        compliant: actuals.throughputRps >= targets.throughputRps,
+      },
       timestamp: new Date(),
     };
   }
@@ -795,7 +823,7 @@ export interface LogEntry {
   level: string;
   message: string;
   service: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface LogPattern {
@@ -855,7 +883,7 @@ export interface PerformanceOptimizationResult {
 }
 
 export interface PerformanceMetrics {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface OptimizationRecommendation {
@@ -901,8 +929,23 @@ export interface ChaosTestResult {
   endTime: Date;
   duration: number;
   success: boolean;
-  impact: any;
-  observations: any[];
+  impact: ChaosImpact;
+  observations: ChaosObservation[];
+}
+
+export interface ChaosImpact {
+  [key: string]: unknown;
+}
+
+export interface ChaosObservation {
+  [key: string]: unknown;
+}
+
+export interface SloMetrics {
+  availability?: number;
+  latencyP95Ms?: number;
+  errorRatePercent?: number;
+  throughputRps?: number;
 }
 
 export interface SloStatus {
@@ -928,7 +971,7 @@ export interface CostAnalysisResult {
 }
 
 export interface CostMetrics {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface CostOptimization {
