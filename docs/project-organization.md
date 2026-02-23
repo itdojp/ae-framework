@@ -69,6 +69,7 @@ pnpm run clean:root-safe:deep
 pnpm run clean:project
 
 # Check root layout violations (strict: non-zero on violation)
+# Note: local script allows node_modules via --allow-entry=node_modules
 pnpm run check:root-layout
 
 # Check root layout in warning mode (always zero exit)
@@ -157,10 +158,13 @@ The `scripts/project/clean-root-safe-remove.mjs` script provides:
 
 - `pnpm run check:root-layout`
   - Detects forbidden patterns in the repository root (e.g., `cegis-report-*.json`, `generated-*.json`, `coverage/`)
+  - For local workflows, this command allows `node_modules` via `--allow-entry=node_modules`
   - Exits with code `1` when violations are found
 - `pnpm run check:root-layout:warn`
   - Runs the same checks in warning mode (always exits with code `0`)
-- Before introducing CI enforcement, use this command to support local cleanup and repository inventory.
+- `node scripts/ci/check-root-layout.mjs`
+  - Underlying script used by CI. The script supports `--allow-entry`, but CI invokes it without overrides for strict enforcement.
+- For local tuning/cleanup, use `pnpm run check:root-layout` or `pnpm run check:root-layout:warn` to verify current state and adjust allowed entries as needed.
 
 ### Development Workflow
 

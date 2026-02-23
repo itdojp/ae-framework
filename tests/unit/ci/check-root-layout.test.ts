@@ -82,6 +82,19 @@ describe('check-root-layout', () => {
     expect(result.warnings).toHaveLength(0);
   });
 
+  it('supports per-entry override for local checks', () => {
+    const result = scanRootLayout(
+      [
+        'node_modules',
+        'src',
+      ],
+      { allowEntries: ['node_modules'] },
+    );
+
+    expect(result.violations).toHaveLength(0);
+    expect(result.warnings).toHaveLength(0);
+  });
+
   it('returns exit code 1 in strict mode when violation exists', () => {
     withTempDir((dir) => {
       writeFileSync(path.join(dir, 'cegis-report-100.json'), '{}');
@@ -125,6 +138,24 @@ describe('check-root-layout', () => {
       expect(parsed.exitCode).toBe(1);
       expect(parsed.violations).toHaveLength(1);
       expect(parsed.warnings).toHaveLength(0);
+    });
+  });
+
+  it('returns exit code 0 in strict mode when forbidden entry is explicitly allowed', () => {
+    withTempDir((dir) => {
+      mkdirSync(path.join(dir, 'node_modules'));
+      mkdirSync(path.join(dir, 'src'));
+      captureStdout(() => {
+        const outcome = runRootLayoutCheck([
+          'node',
+          'check-root-layout.mjs',
+          `--root=${dir}`,
+          '--mode=strict',
+          '--allow-entry=node_modules',
+        ]);
+        expect(outcome.exitCode).toBe(0);
+        expect(outcome.violations).toHaveLength(0);
+      });
     });
   });
 
