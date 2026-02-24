@@ -54,6 +54,7 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/*/package.json ./packages/*/
 COPY packages/ ./packages/
+COPY scripts/ci/check-package-manager.mjs ./scripts/ci/check-package-manager.mjs
 
 RUN corepack enable pnpm && \
     pnpm config set store-dir /pnpm && \

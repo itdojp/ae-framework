@@ -636,7 +636,7 @@ export class TaskScheduler extends EventEmitter {
 
   private simulateTaskExecution(task: ScheduledTask): void {
     // Demo simulation: uses setTimeout for simplicity
-    // TODO(#2031): In production, replace with actual worker thread execution
+    // TODO(#2228): In production, replace with actual worker thread execution
     // or integrate with real task execution framework
     setTimeout(() => {
       this.completeTask(task);

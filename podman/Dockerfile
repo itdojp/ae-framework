@@ -11,6 +11,8 @@ COPY package*.json pnpm-lock.yaml* ./
 COPY pnpm-workspace.yaml ./
 COPY tsconfig*.json ./
 COPY packages ./packages
+# package.json の preinstall で参照されるため、依存解決前に配置する
+COPY scripts/ci/check-package-manager.mjs ./scripts/ci/check-package-manager.mjs
 RUN npm install -g npm@11.7.0 && corepack enable pnpm && pnpm install --frozen-lockfile
 
 FROM deps AS build

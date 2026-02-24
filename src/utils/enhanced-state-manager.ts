@@ -12,7 +12,7 @@ import { reviveStateEntryData } from './state-entry-revival.js';
 
 /**
  * Minimal AEIR stub type for build fix.
- * TODO(#2031): Replace with import from '@ae-framework/spec-compiler' when available.
+ * TODO(#2230): Replace with import from '@ae-framework/spec-compiler' when available.
  */
 export interface AEIR {
   id?: string;
