@@ -46,6 +46,10 @@ const summary = {
     build: { status: readStatus('BUILD_STATUS', 'unknown') },
     stateMachineValidation: { status: readStatus('STATE_MACHINE_STATUS', 'unknown') },
     stateMachineRender: { status: readStatus('STATE_MACHINE_RENDER_STATUS', 'unknown') },
+    contextPackValidation: {
+      status: readStatus('CONTEXT_PACK_STATUS', 'unknown'),
+      notes: process.env.CONTEXT_PACK_NOTES || null,
+    },
     bddLint: { status: readStatus('BDD_LINT_STATUS', 'skipped') },
     mutationQuick: {
       status: readStatus('MUTATION_STATUS', 'skipped'),
@@ -61,6 +65,8 @@ const summary = {
     lintLog: existsOrNull(process.env.LINT_LOG_EXPORT),
     mutationSummary: existsOrNull(process.env.MUTATION_SUMMARY_PATH),
     mutationSurvivors: existsOrNull(process.env.MUTATION_SURVIVORS_PATH),
+    contextPackReportJson: existsOrNull(process.env.CONTEXT_PACK_REPORT_JSON_PATH),
+    contextPackReportMarkdown: existsOrNull(process.env.CONTEXT_PACK_REPORT_MD_PATH),
     conformanceSummary: existsOrNull(process.env.CONFORMANCE_SUMMARY_PATH),
     conformanceSummaryMarkdown: existsOrNull(process.env.CONFORMANCE_SUMMARY_MARKDOWN_PATH),
   },

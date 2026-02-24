@@ -34,12 +34,16 @@ BUILD_STATUS="pending"
 BDD_LINT_STATUS="skipped"
 STATE_MACHINE_STATUS="pending"
 STATE_MACHINE_RENDER_STATUS="pending"
+CONTEXT_PACK_STATUS="pending"
+CONTEXT_PACK_NOTES=""
 MUTATION_STATUS="skipped"
 MUTATION_NOTES=""
 LINT_LOG_EXPORT=""
 LINT_SUMMARY_PATH=""
 MUTATION_SUMMARY_PATH=""
 MUTATION_SURVIVORS_PATH=""
+CONTEXT_PACK_REPORT_JSON_PATH="${VERIFY_LITE_CONTEXT_PACK_REPORT_JSON:-artifacts/context-pack/context-pack-validate-report.json}"
+CONTEXT_PACK_REPORT_MD_PATH="${VERIFY_LITE_CONTEXT_PACK_REPORT_MD:-artifacts/context-pack/context-pack-validate-report.md}"
 CONFORMANCE_STATUS="skipped"
 CONFORMANCE_NOTES="not_run"
 CONFORMANCE_SUMMARY_PATH="${VERIFY_LITE_CONFORMANCE_SUMMARY_FILE:-reports/conformance/verify-lite-summary.json}"
@@ -156,6 +160,25 @@ else
   exit 1
 fi
 
+echo "[verify-lite] context-pack validation"
+if [[ "${VERIFY_LITE_SKIP_CONTEXT_PACK:-0}" == "1" ]]; then
+  CONTEXT_PACK_STATUS="skipped"
+  CONTEXT_PACK_NOTES="skipped by VERIFY_LITE_SKIP_CONTEXT_PACK=1"
+elif node scripts/context-pack/validate.mjs \
+  --sources 'spec/context-pack/**/*.{yml,yaml,json}' \
+  --schema schema/context-pack-v1.schema.json \
+  --report-json "$CONTEXT_PACK_REPORT_JSON_PATH" \
+  --report-md "$CONTEXT_PACK_REPORT_MD_PATH"; then
+  CONTEXT_PACK_STATUS="success"
+  CONTEXT_PACK_NOTES="validated spec/context-pack"
+else
+  CONTEXT_PACK_EXIT_CODE=$?
+  CONTEXT_PACK_STATUS="failure"
+  CONTEXT_PACK_NOTES="context-pack validation failed (exit=${CONTEXT_PACK_EXIT_CODE})"
+  echo "[verify-lite] context-pack validation failed (exit=${CONTEXT_PACK_EXIT_CODE})" >&2
+  exit "$CONTEXT_PACK_EXIT_CODE"
+fi
+
 echo "[verify-lite] optional BDD lint"
 if [[ -f scripts/bdd/lint.mjs ]]; then
   if node scripts/bdd/lint.mjs; then
@@ -223,6 +246,7 @@ export SUMMARY_PATH
 export INSTALL_STATUS INSTALL_NOTES INSTALL_RETRIED
 export SPEC_COMPILER_STATUS TYPECHECK_STATUS LINT_STATUS BUILD_STATUS BDD_LINT_STATUS STATE_MACHINE_STATUS STATE_MACHINE_RENDER_STATUS
 export MUTATION_STATUS MUTATION_NOTES
+export CONTEXT_PACK_STATUS CONTEXT_PACK_NOTES CONTEXT_PACK_REPORT_JSON_PATH CONTEXT_PACK_REPORT_MD_PATH
 export INSTALL_FLAGS_STR
 export LINT_SUMMARY_PATH LINT_LOG_EXPORT
 export MUTATION_SUMMARY_PATH MUTATION_SURVIVORS_PATH
