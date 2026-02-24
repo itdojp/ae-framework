@@ -30,6 +30,23 @@ Claude Code: Designing with Domain Modeling Task Adapter...
   • Domain Services: 3
 ```
 
+#### Input Extraction (Mixed Language Prompts)
+`DomainModelingTaskAdapter` extracts structured input from both English and Japanese prompt sections.
+
+Example prompt:
+```text
+Identify entities for reservation domain.
+Entities: Customer, Reservation, Inventory
+ビジネスルール: 在庫は0未満にできない, 重複予約は禁止
+Domain Services: ReservationService
+```
+
+Extracted fields (conceptual):
+- `taskType`: `identify-entities`
+- `entities`: `Customer`, `Reservation`, `Inventory`
+- `businessRules`: `在庫は0未満にできない`, `重複予約は禁止`
+- `domainServices`: `ReservationService`
+
 ### Key Features
 
 #### 1. Domain Analysis
@@ -482,6 +499,23 @@ Claude Code: Domain Modeling Task Adapterで設計中...
   • Business Rules: 12
   • Domain Services: 3
 ```
+
+### 入力抽出（日本語/英語混在プロンプト）
+`DomainModelingTaskAdapter` は、日本語と英語が混在するプロンプトから構造化入力を抽出します。
+
+入力例:
+```text
+Identify entities for reservation domain.
+Entities: Customer, Reservation, Inventory
+ビジネスルール: 在庫は0未満にできない, 重複予約は禁止
+Domain Services: ReservationService
+```
+
+抽出される主な項目（概念）:
+- `taskType`: `identify-entities`
+- `entities`: `Customer`, `Reservation`, `Inventory`
+- `businessRules`: `在庫は0未満にできない`, `重複予約は禁止`
+- `domainServices`: `ReservationService`
 
 ### 主要機能
 
