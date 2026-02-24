@@ -75,7 +75,14 @@ export class UIUXTaskAdapter {
   async generateUIUXArtifacts(input: UIUXInput): Promise<UIUXGenerationResult> {
     const warnings = this.validateInput(input);
     const requirements = this.buildRequirementSummary(input);
-    const apiSpec = await this.agent.createAPISpecification(requirements, 'openapi');
+    let endpointCount = 0;
+    try {
+      const apiSpec = await this.agent.createAPISpecification(requirements, 'openapi');
+      endpointCount = apiSpec.endpoints.length;
+    } catch {
+      // API spec generation is best-effort for hints; UI/UX artifacts should still be generated.
+      warnings.push('API-style endpoint inference failed; continuing with UI/UX artifact generation');
+    }
 
     const components = this.generateUIComponents(input);
     const output: UIUXOutput = {
@@ -86,7 +93,7 @@ export class UIUXTaskAdapter {
       prototypes: this.generatePrototypes(input, components),
     };
 
-    if (apiSpec.endpoints.length === 0) {
+    if (endpointCount === 0) {
       warnings.push('No API-style endpoint hints were detected from UI/UX requirements');
     }
 
@@ -99,12 +106,39 @@ export class UIUXTaskAdapter {
 
   private classifyTask(description: string, prompt: string): UIUXTaskType {
     const text = `${description} ${prompt}`.toLowerCase();
-    if (text.includes('wireframe')) return 'wireframe';
-    if (text.includes('flow') || text.includes('journey')) return 'user-flow';
-    if (text.includes('design system') || text.includes('token')) return 'design-system';
-    if (text.includes('accessibility') || text.includes('a11y')) return 'accessibility';
-    if (text.includes('prototype')) return 'prototype';
-    if (text.includes('ui') || text.includes('ux') || text.includes('screen')) return 'generate-uiux';
+
+    if (text.includes('wireframe') || text.includes('ワイヤーフレーム') || text.includes('ワイアーフレーム')) {
+      return 'wireframe';
+    }
+    if (
+      text.includes('flow') ||
+      text.includes('journey') ||
+      text.includes('画面遷移') ||
+      text.includes('画面フロー') ||
+      text.includes('ユーザーフロー') ||
+      text.includes('ユーザー フロー') ||
+      text.includes('ユーザージャーニー') ||
+      text.includes('ユーザー ジャーニー')
+    ) {
+      return 'user-flow';
+    }
+    if (text.includes('design system') || text.includes('token') || text.includes('デザインシステム')) {
+      return 'design-system';
+    }
+    if (
+      text.includes('accessibility') ||
+      text.includes('a11y') ||
+      text.includes('アクセシビリティ') ||
+      text.includes('バリアフリー')
+    ) {
+      return 'accessibility';
+    }
+    if (text.includes('prototype') || text.includes('プロトタイプ')) {
+      return 'prototype';
+    }
+    if (text.includes('ui') || text.includes('ux') || text.includes('screen') || text.includes('画面')) {
+      return 'generate-uiux';
+    }
     return 'generic';
   }
 
@@ -234,7 +268,9 @@ export class UIUXTaskAdapter {
       steps: stories.map((story, index) => ({
         action: story.iWant || story.description,
         screen: `screen_${story.id || index + 1}`,
-        nextStep: index < stories.length - 1 ? `screen_${stories[index + 1]?.id || index + 2}` : '',
+        ...(index < stories.length - 1
+          ? { nextStep: `screen_${stories[index + 1]?.id || index + 2}` }
+          : {}),
         conditions: story.acceptanceCriteria || [],
       })),
       triggers: stories.map((story) => story.asA || 'user'),
@@ -345,6 +381,11 @@ export class UIUXTaskAdapter {
   }
 
   private generateDesignSystem(components: UIComponent[]): DesignSystem {
+    const componentLibrary: Record<string, UIComponent> = {};
+    components.forEach((component) => {
+      componentLibrary[component.name] = component;
+    });
+
     return {
       colors: {
         primary: '#007bff',
@@ -379,10 +420,7 @@ export class UIUXTaskAdapter {
         base: 4,
         scale: { xs: 2, sm: 4, md: 8, lg: 16, xl: 24, '2xl': 32, '3xl': 48, '4xl': 64 },
       },
-      components: components.reduce(
-        (acc, component) => ({ ...acc, [component.name]: component }),
-        {} as Record<string, UIComponent>,
-      ),
+      components: componentLibrary,
     };
   }
 

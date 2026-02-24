@@ -61,6 +61,15 @@ describe('UIUXTaskAdapter', () => {
     expect(taskType).toBe('wireframe');
   });
 
+  it('classifyTask recognizes Japanese user-flow keywords', () => {
+    const adapter = new UIUXTaskAdapter();
+    const taskType = (adapter as any).classifyTask(
+      '画面遷移を設計する',
+      'ユーザーフローを整理してほしい',
+    );
+    expect(taskType).toBe('user-flow');
+  });
+
   it('generateUIUXArtifacts returns structured output and score', async () => {
     const adapter = new UIUXTaskAdapter();
     const result = await adapter.generateUIUXArtifacts(createInput());
@@ -86,6 +95,55 @@ describe('UIUXTaskAdapter', () => {
 
     expect(result.warnings.some((message) => message.includes('No stakeholders'))).toBe(true);
     expect(result.warnings.some((message) => message.includes('No user stories'))).toBe(true);
+  });
+
+  it('generateUserFlows omits nextStep for terminal step', async () => {
+    const adapter = new UIUXTaskAdapter();
+    const result = await adapter.generateUIUXArtifacts(
+      createInput({
+        userStories: {
+          stories: [
+            {
+              id: 'US-1',
+              title: 'Create order',
+              description: 'As a user I want to create an order',
+              asA: 'user',
+              iWant: 'create order',
+              soThat: 'I can submit it',
+              acceptanceCriteria: ['Order can be created'],
+              priority: 'high',
+            },
+            {
+              id: 'US-2',
+              title: 'List orders',
+              description: 'As a user I want to list orders',
+              asA: 'user',
+              iWant: 'list orders',
+              soThat: 'I can review them',
+              acceptanceCriteria: ['Orders can be listed'],
+              priority: 'medium',
+            },
+          ],
+          acceptanceCriteria: [],
+          traceabilityMatrix: { requirements: { 'req-1': ['US-1'], 'req-2': ['US-2'] }, coverage: 100, gaps: [] },
+          success: true,
+        },
+      }),
+    );
+
+    const mainFlow = result.output.userFlows.find((flow) => flow.name === 'Main User Flow');
+    const lastStep = mainFlow?.steps[mainFlow.steps.length - 1];
+    expect(lastStep).toBeDefined();
+    expect(lastStep?.nextStep).toBeUndefined();
+  });
+
+  it('generateUIUXArtifacts continues when API spec inference fails', async () => {
+    const adapter = new UIUXTaskAdapter();
+    vi.spyOn((adapter as any).agent, 'createAPISpecification').mockRejectedValue(new Error('api-spec failed'));
+
+    const result = await adapter.generateUIUXArtifacts(createInput());
+    expect(result.output.wireframes.length).toBeGreaterThan(0);
+    expect(result.warnings.some((message) => message.includes('API-style endpoint inference failed'))).toBe(true);
   });
 });
 
