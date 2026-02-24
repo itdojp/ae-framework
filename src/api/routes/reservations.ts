@@ -27,6 +27,12 @@ export async function reservationRoutes(fastify: FastifyInstance, options: { inv
           message: normalizedError.message
         });
       }
+      if (normalizedError.name === 'IdempotencyConflictError') {
+        return reply.code(409).send({
+          error: 'IDEMPOTENCY_CONFLICT',
+          message: normalizedError.message,
+        });
+      }
       throw error;
     }
   });

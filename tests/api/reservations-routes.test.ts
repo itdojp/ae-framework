@@ -2,7 +2,7 @@ import Fastify from 'fastify';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { reservationRoutes } from '../../src/api/routes/reservations.js';
-import { InsufficientStockError } from '../../src/domain/entities.js';
+import { IdempotencyConflictError, InsufficientStockError } from '../../src/domain/entities.js';
 import type { InventoryService } from '../../src/domain/services.js';
 
 function createInventoryService(overrides: Partial<InventoryService> = {}): InventoryService {
@@ -84,5 +84,26 @@ describe('reservationRoutes', () => {
     expect(body).toHaveProperty('message');
     expect(typeof body.error).toBe('string');
     expect(typeof body.message).toBe('string');
+  });
+
+  it('returns 409 when createReservation throws IdempotencyConflictError', async () => {
+    const inventoryService = createInventoryService({
+      createReservation: vi.fn().mockRejectedValue(
+        new IdempotencyConflictError('order-1', 'item-1', 2),
+      ),
+    });
+    const app = await buildApp(inventoryService);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/reservations',
+      payload: { orderId: 'order-1', itemId: 'item-1', quantity: 2 },
+    });
+
+    expect(res.statusCode).toBe(409);
+    expect(res.json()).toMatchObject({
+      error: 'IDEMPOTENCY_CONFLICT',
+      message: expect.stringContaining('Idempotency conflict'),
+    });
   });
 });

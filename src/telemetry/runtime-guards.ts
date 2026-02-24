@@ -436,7 +436,8 @@ export const CommonSchemas = {
   ErrorResponse: z.object({
     error: z.string(),
     message: z.string().optional(),
-    details: z.record(z.unknown()).optional(),
+    details: z.unknown().optional(),
+    violation_id: z.string().optional(),
   }),
 
   // Reservation request

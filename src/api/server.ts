@@ -5,17 +5,33 @@ import { runtimeGuard, CommonSchemas, ViolationSeverity } from "../telemetry/run
 import { enhancedTelemetry, TELEMETRY_ATTRIBUTES } from "../telemetry/enhanced-telemetry.js";
 import { trace } from '@opentelemetry/api';
 import { registerHealthEndpoint } from '../health/health-endpoint.js';
+import { IdempotencyConflictError, InsufficientStockError } from '../domain/entities.js';
+import { InMemoryInventoryRepository, InventoryServiceImpl } from '../domain/services.js';
+import type { InventoryService } from '../domain/services.js';
+
+interface CreateServerOptions {
+  inventoryService?: InventoryService;
+}
+
+const createFallbackInventoryService = (): InventoryService =>
+  new InventoryServiceImpl(
+    new InMemoryInventoryRepository([], [], {
+      autoProvisionUnknownItems: true,
+      defaultStock: 1000,
+    }),
+  );
 
 /**
  * Create and configure Fastify server instance
  */
-export async function createServer(): Promise<FastifyInstance> {
+export async function createServer(options: CreateServerOptions = {}): Promise<FastifyInstance> {
   const app = Fastify({ 
     logger: true,
     genReqId: () => `req_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
   });
 
   const tracer = trace.getTracer('ae-framework-api');
+  const inventoryService = options.inventoryService ?? createFallbackInventoryService();
 
   // Register security headers middleware with development config for testing
   const securityConfig = process.env['NODE_ENV'] === 'test' 
@@ -136,6 +152,21 @@ export async function createServer(): Promise<FastifyInstance> {
   // Reservations endpoint with full validation
   app.post("/reservations", async (req, reply) => {
     const timer = enhancedTelemetry.createTimer('api.reservations.duration');
+    const validateErrorResponse = (statusCode: number, payload: Record<string, unknown>) => {
+      const validation = runtimeGuard.validateResponse(
+        CommonSchemas.ErrorResponse,
+        payload,
+        {
+          requestId: req.id,
+          endpoint: 'POST /reservations',
+          statusCode,
+        },
+      );
+      if (!validation.valid) {
+        console.error('Reservation error response validation failed:', validation.violations);
+      }
+      return validation.valid ? 'success' : 'failure';
+    };
     
     try {
       // Validate request payload
@@ -151,18 +182,21 @@ export async function createServer(): Promise<FastifyInstance> {
 
       if (!requestValidation.valid) {
         const violation = requestValidation.violations?.[0];
-        timer.end({ 
-          endpoint: '/reservations', 
-          result: 'validation_error',
-          violation_type: violation?.type || 'unknown',
-        });
-        
-        return reply.code(400).send({
+        const errorPayload = {
           error: "VALIDATION_ERROR",
           message: "Request payload validation failed",
           details: violation?.details || 'Validation failed',
           violation_id: violation?.id || 'unknown',
+        };
+        const validationResult = validateErrorResponse(400, errorPayload);
+        timer.end({ 
+          endpoint: '/reservations', 
+          result: 'validation_error',
+          violation_type: violation?.type || 'unknown',
+          validation_result: validationResult,
         });
+        
+        return reply.code(400).send(errorPayload);
       }
 
       const { orderId, itemId, quantity } = requestValidation.data!;
@@ -175,17 +209,61 @@ export async function createServer(): Promise<FastifyInstance> {
           ViolationSeverity.MEDIUM,
           { orderId, itemId, quantity }
         );
-        
-        timer.end({ endpoint: '/reservations', result: 'business_rule_violation' });
-        
-        return reply.code(400).send({
+        const errorPayload = {
           error: "BUSINESS_RULE_VIOLATION",
           message: "Quantity exceeds maximum allowed limit of 100",
+        };
+        const validationResult = validateErrorResponse(400, errorPayload);
+        
+        timer.end({
+          endpoint: '/reservations',
+          result: 'business_rule_violation',
+          validation_result: validationResult,
         });
+        
+        return reply.code(400).send(errorPayload);
       }
 
-      // TODO(#2226): delegate to service layer (inventory checks, idempotent handling, transactions)
-      const responseData = { ok: true };
+      let responseData: { ok: true; reservationId: string };
+      try {
+        const reservation = await inventoryService.createReservation({ orderId, itemId, quantity });
+        responseData = {
+          ok: true,
+          reservationId: reservation.id,
+        };
+      } catch (error) {
+        if (error instanceof InsufficientStockError) {
+          const errorPayload = {
+            error: 'INSUFFICIENT_STOCK',
+            message: error.message,
+            details: { orderId, itemId, quantity },
+          };
+          const validationResult = validateErrorResponse(409, errorPayload);
+          timer.end({
+            endpoint: '/reservations',
+            result: 'insufficient_stock',
+            validation_result: validationResult,
+          });
+          return reply.code(409).send(errorPayload);
+        }
+
+        if (error instanceof IdempotencyConflictError) {
+          const errorPayload = {
+            error: 'IDEMPOTENCY_CONFLICT',
+            message: error.message,
+            details: { orderId, itemId, quantity },
+          };
+          const validationResult = validateErrorResponse(409, errorPayload);
+          timer.end({
+            endpoint: '/reservations',
+            result: 'idempotency_conflict',
+            validation_result: validationResult,
+          });
+          return reply.code(409).send(errorPayload);
+        }
+
+        throw error;
+      }
 
       // Validate response
       const responseValidation = runtimeGuard.validateResponse(
