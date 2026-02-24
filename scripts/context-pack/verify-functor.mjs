@@ -14,6 +14,8 @@ const DEFAULT_SCHEMA_PATH = 'schema/context-pack-functor-map.schema.json';
 const DEFAULT_REPORT_JSON = 'artifacts/context-pack/context-pack-functor-report.json';
 const DEFAULT_REPORT_MD = 'artifacts/context-pack/context-pack-functor-report.md';
 const SOURCE_EXTENSIONS = ['.ts', '.tsx', '.js', '.mjs', '.cjs', '.mts', '.cts'];
+const JS_SPECIFIER_EXTENSIONS = ['.js', '.mjs', '.cjs'];
+const ROOT_DIR = path.resolve(process.cwd());
 
 const normalizePath = (value) => value.replace(/\\/g, '/');
 const toRelativePath = (absolutePath) => normalizePath(path.relative(process.cwd(), absolutePath) || '.');
@@ -268,32 +270,70 @@ function resolveImportTarget(sourceFilePath, importPathValue) {
     return null;
   }
 
-  const candidates = [basePath];
-  for (const extension of SOURCE_EXTENSIONS) {
-    candidates.push(`${basePath}${extension}`);
+  const normalizedBasePath = path.normalize(basePath);
+  const candidates = [normalizedBasePath];
+  const baseExtension = path.extname(normalizedBasePath);
+  if (JS_SPECIFIER_EXTENSIONS.includes(baseExtension)) {
+    const baseWithoutExtension = normalizedBasePath.slice(0, -baseExtension.length);
+    candidates.push(
+      `${baseWithoutExtension}.ts`,
+      `${baseWithoutExtension}.tsx`,
+      `${baseWithoutExtension}.mts`,
+      `${baseWithoutExtension}.cts`,
+    );
   }
   for (const extension of SOURCE_EXTENSIONS) {
-    candidates.push(path.join(basePath, `index${extension}`));
+    candidates.push(`${normalizedBasePath}${extension}`);
+  }
+  for (const extension of SOURCE_EXTENSIONS) {
+    candidates.push(path.join(normalizedBasePath, `index${extension}`));
   }
 
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
-      return path.normalize(path.resolve(candidate));
+  const isInsideRepository = (candidatePath) => {
+    const relative = path.relative(ROOT_DIR, candidatePath);
+    return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
+  };
+
+  const uniqueCandidates = Array.from(new Set(candidates.map((candidate) => path.normalize(candidate))));
+  for (const candidate of uniqueCandidates) {
+    const resolvedCandidate = path.normalize(path.resolve(candidate));
+    if (!isInsideRepository(resolvedCandidate)) {
+      continue;
+    }
+    if (fs.existsSync(resolvedCandidate) && fs.statSync(resolvedCandidate).isFile()) {
+      return resolvedCandidate;
     }
   }
   return null;
 }
 
 function collectImports(fileContent) {
-  const imports = [];
-  const matcher = /(?:^|\n)\s*(?:import|export)\s+(?:type\s+)?(?:[\s\S]*?\s+from\s+)?["']([^"']+)["']/g;
-  for (const match of fileContent.matchAll(matcher)) {
-    const value = match[1];
-    if (value) {
-      imports.push(value);
+  const imports = new Set();
+  const importExportWithFrom = /(?:^|\n)\s*(?:import|export)\s+(?:type\s+)?(?:[\s\S]*?\s+from\s+|\*\s+from\s+)["']([^"']+)["']/g;
+  for (const match of fileContent.matchAll(importExportWithFrom)) {
+    if (match[1]) {
+      imports.add(match[1]);
     }
   }
-  return imports;
+  const sideEffectImports = /(?:^|\n)\s*import\s+["']([^"']+)["'];?/g;
+  for (const match of fileContent.matchAll(sideEffectImports)) {
+    if (match[1]) {
+      imports.add(match[1]);
+    }
+  }
+  const dynamicImports = /import\(\s*["']([^"']+)["']\s*\)/g;
+  for (const match of fileContent.matchAll(dynamicImports)) {
+    if (match[1]) {
+      imports.add(match[1]);
+    }
+  }
+  const requireCalls = /\brequire\(\s*["']([^"']+)["']\s*\)/g;
+  for (const match of fileContent.matchAll(requireCalls)) {
+    if (match[1]) {
+      imports.add(match[1]);
+    }
+  }
+  return Array.from(imports);
 }
 
 function buildObjectFileIndex(objectMappings, violations) {
@@ -343,7 +383,21 @@ function buildObjectFileIndex(objectMappings, violations) {
 }
 
 function escapeRegexLiteral(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/[.*+?^${}()|[\]]/g, '\\$&');
+}
+
+function hasEntrypointSymbol(content, symbol) {
+  const escapedSymbol = escapeRegexLiteral(symbol);
+  const declarationPatterns = [
+    new RegExp(`\\b(?:export\\s+)?(?:async\\s+)?function\\s+${escapedSymbol}\\b`),
+    new RegExp(`\\b(?:export\\s+)?class\\s+${escapedSymbol}\\b`),
+    new RegExp(`\\b(?:export\\s+)?(?:const|let|var|type|interface|enum)\\s+${escapedSymbol}\\b`),
+    new RegExp(`(?:^|\\n)\\s*(?:public|private|protected|static|readonly|abstract|override|async|get|set\\s+)*${escapedSymbol}\\s*\\(`),
+    new RegExp(`\\bexport\\s*\\{[^}]*\\b${escapedSymbol}\\b[^}]*\\}`),
+  ];
+  return declarationPatterns.some((pattern) => pattern.test(content));
 }
 
 function detectCycles(graph) {
@@ -507,8 +561,7 @@ function validateMorphismEntrypoints(morphismMappings, violations) {
       }
       if (entrypoint.symbol) {
         const content = fs.readFileSync(resolvedFilePath, 'utf8');
-        const symbolRegex = new RegExp(`\\b${escapeRegexLiteral(entrypoint.symbol)}\\b`);
-        if (!symbolRegex.test(content)) {
+        if (!hasEntrypointSymbol(content, entrypoint.symbol)) {
           violations.push({
             type: 'morphism-entrypoint-missing-symbol',
             severity: 'error',

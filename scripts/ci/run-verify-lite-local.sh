@@ -191,7 +191,7 @@ else
   exit "$CONTEXT_PACK_EXIT_CODE"
 fi
 
-if [[ "$CONTEXT_PACK_STATUS" != "failure" ]]; then
+if [[ "$CONTEXT_PACK_STATUS" == "success" ]]; then
   echo "[verify-lite] context-pack functor validation"
   if [[ "${VERIFY_LITE_SKIP_CONTEXT_PACK_FUNCTOR:-0}" == "1" ]]; then
     CONTEXT_PACK_FUNCTOR_STATUS="skipped"

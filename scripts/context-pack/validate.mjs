@@ -186,6 +186,7 @@ function buildMarkdownReport(report) {
     `- Files scanned: ${report.scannedFiles}`,
     `- Valid files: ${report.validFiles}`,
     `- Invalid files: ${report.invalidFiles}`,
+    `- Skipped files: ${report.skippedFiles}`,
     '',
     '## Source Patterns',
     ...report.sourcePatterns.map((pattern) => `- \`${pattern}\``),
@@ -229,6 +230,7 @@ function validateContextPacks(options) {
   const sourceFiles = discoverSources(options.sources);
   const errors = [];
   let validFiles = 0;
+  let skippedFiles = 0;
 
   if (sourceFiles.length === 0) {
     errors.push({
@@ -258,6 +260,15 @@ function validateContextPacks(options) {
       continue;
     }
 
+    if (
+      payload &&
+      typeof payload === 'object' &&
+      payload.schemaVersion === 'context-pack-functor-map/v1'
+    ) {
+      skippedFiles += 1;
+      continue;
+    }
+
     if (!validate(payload)) {
       for (const validationError of validate.errors ?? []) {
         errors.push({
@@ -282,7 +293,8 @@ function validateContextPacks(options) {
     sourcePatterns: options.sources,
     scannedFiles: sourceFiles.length,
     validFiles,
-    invalidFiles: sourceFiles.length - validFiles,
+    invalidFiles: sourceFiles.length - validFiles - skippedFiles,
+    skippedFiles,
     status: errors.length === 0 ? 'pass' : 'fail',
     errors,
   };

@@ -18,7 +18,7 @@
       "entrypoints": [
         {
           "file": "src/domain/services.ts",
-          "symbol": "createReservation"
+          "symbol": "InventoryServiceImpl"
         }
       ]
     }
