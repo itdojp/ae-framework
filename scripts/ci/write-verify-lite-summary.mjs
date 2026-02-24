@@ -57,6 +57,10 @@ const summary = {
       status: readStatus('CONTEXT_PACK_STATUS', 'unknown'),
       notes: process.env.CONTEXT_PACK_NOTES || null,
     },
+    contextPackFunctorValidation: {
+      status: readStatus('CONTEXT_PACK_FUNCTOR_STATUS', 'unknown'),
+      notes: process.env.CONTEXT_PACK_FUNCTOR_NOTES || null,
+    },
     bddLint: { status: readStatus('BDD_LINT_STATUS', 'skipped') },
     mutationQuick: {
       status: readStatus('MUTATION_STATUS', 'skipped'),
@@ -80,6 +84,8 @@ const summary = {
     mutationSurvivors: existsOrNull(process.env.MUTATION_SURVIVORS_PATH),
     contextPackReportJson: existsOrNull(process.env.CONTEXT_PACK_REPORT_JSON_PATH),
     contextPackReportMarkdown: existsOrNull(process.env.CONTEXT_PACK_REPORT_MD_PATH),
+    contextPackFunctorReportJson: existsOrNull(process.env.CONTEXT_PACK_FUNCTOR_REPORT_JSON_PATH),
+    contextPackFunctorReportMarkdown: existsOrNull(process.env.CONTEXT_PACK_FUNCTOR_REPORT_MD_PATH),
     conformanceSummary: existsOrNull(process.env.CONFORMANCE_SUMMARY_PATH),
     conformanceSummaryMarkdown: existsOrNull(process.env.CONFORMANCE_SUMMARY_MARKDOWN_PATH),
   },

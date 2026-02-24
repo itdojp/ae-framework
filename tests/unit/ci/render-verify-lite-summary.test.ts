@@ -17,6 +17,7 @@ describe('renderVerifyLiteSummary', () => {
       lint: { status: 'failure', notes: '2618 violations' },
       build: { status: 'success' },
       contextPackValidation: { status: 'success', notes: 'validated spec/context-pack' },
+      contextPackFunctorValidation: { status: 'success', notes: 'validated context-pack functor mapping' },
       bddLint: { status: 'skipped' },
       mutationQuick: { status: 'success', notes: 'score: 59.74%' },
       conformanceReport: { status: 'success', notes: 'runs=1;violations=0' }
@@ -34,6 +35,8 @@ describe('renderVerifyLiteSummary', () => {
       mutationSurvivors: 'reports/mutation/survivors.json',
       contextPackReportJson: 'artifacts/context-pack/context-pack-validate-report.json',
       contextPackReportMarkdown: 'artifacts/context-pack/context-pack-validate-report.md',
+      contextPackFunctorReportJson: 'artifacts/context-pack/context-pack-functor-report.json',
+      contextPackFunctorReportMarkdown: 'artifacts/context-pack/context-pack-functor-report.md',
       conformanceSummary: 'reports/conformance/verify-lite-summary.json',
       conformanceSummaryMarkdown: 'reports/conformance/verify-lite-summary.md'
     }
@@ -72,6 +75,8 @@ describe('renderVerifyLiteSummary', () => {
         mutationSurvivors: null,
         contextPackReportJson: null,
         contextPackReportMarkdown: null,
+        contextPackFunctorReportJson: null,
+        contextPackFunctorReportMarkdown: null,
         conformanceSummary: null,
         conformanceSummaryMarkdown: null
       }

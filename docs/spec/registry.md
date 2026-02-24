@@ -12,6 +12,8 @@ Canonical locations for specifications and related assets.
 
 Locations
 - Context Pack v1: `spec/context-pack/`
+- Context Pack functor map: `spec/context-pack/functor-map.json`
+- Context Pack functor map schema: `schema/context-pack-functor-map.schema.json`
 - TLA+: `spec/tla/`
 - Alloy 6: `spec/alloy/`
 - SMT-LIB2: `spec/smt/`

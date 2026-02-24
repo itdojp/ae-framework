@@ -163,6 +163,18 @@
             { "type": "null" }
           ]
         },
+        "contextPackFunctorReportJson": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "contextPackFunctorReportMarkdown": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
         "conformanceSummary": {
           "oneOf": [
             { "type": "string", "minLength": 1 },

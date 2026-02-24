@@ -22,6 +22,9 @@ Context Pack v1 は、AI/人間が更新する設計情報を SSOT として固�
 # 既定パスを検証
 pnpm run context-pack:validate
 
+# Objects/Morphisms と実装境界のマッピングを検証
+pnpm run context-pack:verify-functor
+
 # 探索パス・出力先を上書き
 node scripts/context-pack/validate.mjs \
   --sources 'spec/context-pack/**/*.{yml,yaml,json}' \
@@ -29,23 +32,50 @@ node scripts/context-pack/validate.mjs \
   --report-json artifacts/context-pack/context-pack-validate-report.json \
   --report-md artifacts/context-pack/context-pack-validate-report.md
 
+# Functorマッピングを直接検証（マップ・レポート先を上書き）
+node scripts/context-pack/verify-functor.mjs \
+  --map spec/context-pack/functor-map.json \
+  --schema schema/context-pack-functor-map.schema.json \
+  --report-json artifacts/context-pack/context-pack-functor-report.json \
+  --report-md artifacts/context-pack/context-pack-functor-report.md
+
 # Verify Lite でも必須ステップとして実行される
 pnpm run verify:lite
 ```
 
+### Functor 境界検証（Issue #2246）
+- 入力:
+  - `spec/context-pack/functor-map.json`（`schema/context-pack-functor-map.schema.json`）
+  - `spec/context-pack/**/*.{yml,yaml,json}` の `objects[].id` / `morphisms[].id`
+- 検査内容:
+  - Context Pack ID と Functor map の対応漏れ・過不足を検出
+  - `objects[].moduleGlobs` から実装境界を解決し、禁止依存・禁止ルール違反・循環依存を検出
+  - `morphisms[].entrypoints` の `file` / `symbol` 存在を検証
+- 失敗時:
+  - `layer-violation` / `forbidden-import` / `object-dependency-cycle` / `morphism-entrypoint-missing-*` などの種別を JSON/Markdown レポートに出力
+
 ### 出力（artifacts）
 - JSON: `artifacts/context-pack/context-pack-validate-report.json`
 - Markdown: `artifacts/context-pack/context-pack-validate-report.md`
+- JSON (Functor): `artifacts/context-pack/context-pack-functor-report.json`
+- Markdown (Functor): `artifacts/context-pack/context-pack-functor-report.md`
 - Verify Lite summary: `artifacts/verify-lite/verify-lite-run-summary.json`
   - `steps.contextPackValidation`
+  - `steps.contextPackFunctorValidation`
   - `artifacts.contextPackReportJson`
   - `artifacts.contextPackReportMarkdown`
+  - `artifacts.contextPackFunctorReportJson`
+  - `artifacts.contextPackFunctorReportMarkdown`
 
 ### よくある失敗
 - `required` エラー: 必須キー不足（例: `domain_glossary.terms[].ja`）
 - `type` エラー: 配列/オブジェクト/文字列の型不一致
 - `parse` エラー: YAML 構文エラー、JSON 構文エラー
 - `sources` エラー: 探索パターンに一致するファイルが 0 件
+- `object/morphism mapping` エラー: Context Pack ID と Functor map の不一致
+- `layer-violation` / `forbidden-import`: 境界/依存ルール違反
+- `object-dependency-cycle`: object間依存の循環
+- `morphism-entrypoint-missing-file/symbol`: 実装エントリポイントの欠落
 
 ---
 
@@ -59,10 +89,13 @@ Context Pack v1 defines the SSOT input contract for design metadata and is valid
 ### Commands
 ```bash
 pnpm run context-pack:validate
+pnpm run context-pack:verify-functor
 pnpm run verify:lite
 ```
 
 ### Artifacts
 - `artifacts/context-pack/context-pack-validate-report.json`
 - `artifacts/context-pack/context-pack-validate-report.md`
-- `artifacts/verify-lite/verify-lite-run-summary.json` (`steps.contextPackValidation`)
+- `artifacts/context-pack/context-pack-functor-report.json`
+- `artifacts/context-pack/context-pack-functor-report.md`
+- `artifacts/verify-lite/verify-lite-run-summary.json` (`steps.contextPackValidation`, `steps.contextPackFunctorValidation`)

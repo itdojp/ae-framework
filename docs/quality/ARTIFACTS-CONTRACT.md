@@ -43,6 +43,8 @@ CIが生成する成果物（artifacts/reports）について **最低限の契�
 | `artifacts/hermetic-reports/formal/summary.json` | formal aggregate を実行した場合 | `aggregate-formal.mjs` の出力 |
 | `artifacts/hermetic-reports/formal/*-output.txt` | formal verifier を実行した場合 | 各ツールの実行ログ（全文）。Formal Summary v1 の `results[].logPath` から参照される場合があります |
 | `artifacts/formal/formal-summary-v1.json` | formal aggregate または verify-lite（`run-formal`）を実行した場合 | Formal Summary v1（normalized、スキーマ: `schema/formal-summary-v1.schema.json`） |
+| `artifacts/context-pack/context-pack-functor-report.json` | context-pack functor 検証を実行した場合 | `scripts/context-pack/verify-functor.mjs` の JSON レポート（違反種別・対象 object/morphism を含む） |
+| `artifacts/context-pack/context-pack-functor-report.md` | context-pack functor 検証を実行した場合 | `scripts/context-pack/verify-functor.mjs` の Markdown 要約 |
 
 ## 4. 検証スクリプト
 

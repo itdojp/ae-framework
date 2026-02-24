@@ -36,6 +36,8 @@ STATE_MACHINE_STATUS="pending"
 STATE_MACHINE_RENDER_STATUS="pending"
 CONTEXT_PACK_STATUS="pending"
 CONTEXT_PACK_NOTES=""
+CONTEXT_PACK_FUNCTOR_STATUS="pending"
+CONTEXT_PACK_FUNCTOR_NOTES=""
 MUTATION_STATUS="skipped"
 MUTATION_NOTES=""
 LINT_LOG_EXPORT=""
@@ -44,6 +46,10 @@ MUTATION_SUMMARY_PATH=""
 MUTATION_SURVIVORS_PATH=""
 CONTEXT_PACK_REPORT_JSON_PATH="${VERIFY_LITE_CONTEXT_PACK_REPORT_JSON:-artifacts/context-pack/context-pack-validate-report.json}"
 CONTEXT_PACK_REPORT_MD_PATH="${VERIFY_LITE_CONTEXT_PACK_REPORT_MD:-artifacts/context-pack/context-pack-validate-report.md}"
+CONTEXT_PACK_FUNCTOR_MAP_PATH="${VERIFY_LITE_CONTEXT_PACK_FUNCTOR_MAP:-spec/context-pack/functor-map.json}"
+CONTEXT_PACK_FUNCTOR_SCHEMA_PATH="${VERIFY_LITE_CONTEXT_PACK_FUNCTOR_SCHEMA:-schema/context-pack-functor-map.schema.json}"
+CONTEXT_PACK_FUNCTOR_REPORT_JSON_PATH="${VERIFY_LITE_CONTEXT_PACK_FUNCTOR_REPORT_JSON:-artifacts/context-pack/context-pack-functor-report.json}"
+CONTEXT_PACK_FUNCTOR_REPORT_MD_PATH="${VERIFY_LITE_CONTEXT_PACK_FUNCTOR_REPORT_MD:-artifacts/context-pack/context-pack-functor-report.md}"
 TRACEABILITY_MATRIX_PATH="${VERIFY_LITE_TRACEABILITY_MATRIX:-docs/specs/ISSUE-TRACEABILITY-MATRIX.json}"
 TRACEABILITY_STATUS="skipped"
 TRACEABILITY_NOTES="matrix_not_found"
@@ -168,6 +174,8 @@ echo "[verify-lite] context-pack validation"
 if [[ "${VERIFY_LITE_SKIP_CONTEXT_PACK:-0}" == "1" ]]; then
   CONTEXT_PACK_STATUS="skipped"
   CONTEXT_PACK_NOTES="skipped by VERIFY_LITE_SKIP_CONTEXT_PACK=1"
+  CONTEXT_PACK_FUNCTOR_STATUS="skipped"
+  CONTEXT_PACK_FUNCTOR_NOTES="skipped with context-pack validation"
 elif node scripts/context-pack/validate.mjs \
   --sources 'spec/context-pack/**/*.{yml,yaml,json}' \
   --schema schema/context-pack-v1.schema.json \
@@ -181,6 +189,37 @@ else
   CONTEXT_PACK_NOTES="context-pack validation failed (exit=${CONTEXT_PACK_EXIT_CODE})"
   echo "[verify-lite] context-pack validation failed (exit=${CONTEXT_PACK_EXIT_CODE})" >&2
   exit "$CONTEXT_PACK_EXIT_CODE"
+fi
+
+if [[ "$CONTEXT_PACK_STATUS" == "success" ]]; then
+  echo "[verify-lite] context-pack functor validation"
+  if [[ "${VERIFY_LITE_SKIP_CONTEXT_PACK_FUNCTOR:-0}" == "1" ]]; then
+    CONTEXT_PACK_FUNCTOR_STATUS="skipped"
+    CONTEXT_PACK_FUNCTOR_NOTES="skipped by VERIFY_LITE_SKIP_CONTEXT_PACK_FUNCTOR=1"
+  elif [[ ! -f "$CONTEXT_PACK_FUNCTOR_MAP_PATH" ]]; then
+    CONTEXT_PACK_FUNCTOR_STATUS="skipped"
+    CONTEXT_PACK_FUNCTOR_NOTES="map_not_found:${CONTEXT_PACK_FUNCTOR_MAP_PATH}"
+  elif node scripts/context-pack/verify-functor.mjs \
+    --map "$CONTEXT_PACK_FUNCTOR_MAP_PATH" \
+    --schema "$CONTEXT_PACK_FUNCTOR_SCHEMA_PATH" \
+    --report-json "$CONTEXT_PACK_FUNCTOR_REPORT_JSON_PATH" \
+    --report-md "$CONTEXT_PACK_FUNCTOR_REPORT_MD_PATH"; then
+    CONTEXT_PACK_FUNCTOR_STATUS="success"
+    CONTEXT_PACK_FUNCTOR_NOTES="validated context-pack functor mapping"
+    if [[ -f "$CONTEXT_PACK_FUNCTOR_REPORT_JSON_PATH" ]]; then
+      if FUNCTOR_VIOLATION_COUNT="$(node --input-type=module -e "import fs from 'node:fs'; let count = 0; try { const data = JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); count = data?.summary?.totalViolations ?? 0; } catch {} process.stdout.write(String(count));" "$CONTEXT_PACK_FUNCTOR_REPORT_JSON_PATH")"; then
+        CONTEXT_PACK_FUNCTOR_NOTES="validated context-pack functor mapping;violations=${FUNCTOR_VIOLATION_COUNT}"
+      else
+        CONTEXT_PACK_FUNCTOR_NOTES="validated context-pack functor mapping;violations=parse_failed"
+      fi
+    fi
+  else
+    CONTEXT_PACK_FUNCTOR_EXIT_CODE=$?
+    CONTEXT_PACK_FUNCTOR_STATUS="failure"
+    CONTEXT_PACK_FUNCTOR_NOTES="context-pack functor validation failed (exit=${CONTEXT_PACK_FUNCTOR_EXIT_CODE})"
+    echo "[verify-lite] context-pack functor validation failed (exit=${CONTEXT_PACK_FUNCTOR_EXIT_CODE})" >&2
+    exit "$CONTEXT_PACK_FUNCTOR_EXIT_CODE"
+  fi
 fi
 
 echo "[verify-lite] traceability matrix summary"
@@ -293,6 +332,8 @@ export INSTALL_STATUS INSTALL_NOTES INSTALL_RETRIED
 export SPEC_COMPILER_STATUS TYPECHECK_STATUS LINT_STATUS BUILD_STATUS BDD_LINT_STATUS STATE_MACHINE_STATUS STATE_MACHINE_RENDER_STATUS
 export MUTATION_STATUS MUTATION_NOTES
 export CONTEXT_PACK_STATUS CONTEXT_PACK_NOTES CONTEXT_PACK_REPORT_JSON_PATH CONTEXT_PACK_REPORT_MD_PATH
+export CONTEXT_PACK_FUNCTOR_STATUS CONTEXT_PACK_FUNCTOR_NOTES
+export CONTEXT_PACK_FUNCTOR_REPORT_JSON_PATH CONTEXT_PACK_FUNCTOR_REPORT_MD_PATH
 export TRACEABILITY_STATUS TRACEABILITY_NOTES TRACEABILITY_MISSING_COUNT TRACEABILITY_MATRIX_PATH
 export INSTALL_FLAGS_STR
 export LINT_SUMMARY_PATH LINT_LOG_EXPORT

@@ -53,6 +53,11 @@ const checks = [
     label: 'Context Pack v1 schema validation'
   },
   {
+    schema: 'schema/context-pack-functor-map.schema.json',
+    fixtures: ['fixtures/context-pack/sample.functor-map.json'],
+    label: 'Context Pack functor map schema validation'
+  },
+  {
     schema: 'schema/execplan.schema.json',
     fixtures: ['fixtures/execplan/sample.execplan.json'],
     label: 'ExecPlan schema validation'

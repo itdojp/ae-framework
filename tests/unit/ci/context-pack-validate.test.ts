@@ -177,7 +177,36 @@ describe('context-pack validate CLI', () => {
     expect(report.scannedFiles).toBe(2);
     expect(report.validFiles).toBe(1);
     expect(report.invalidFiles).toBe(1);
+    expect(report.skippedFiles).toBe(0);
     expect(report.errors.some((entry: { file: string }) => entry.file.includes('invalid.json'))).toBe(true);
+  });
+
+  it('skips functor map files under context-pack sources', async () => {
+    await writeFile(join(sourcesDir, 'valid.yaml'), VALID_CONTEXT_PACK_YAML, 'utf8');
+    await writeFile(
+      join(sourcesDir, 'functor-map.json'),
+      JSON.stringify(
+        {
+          schemaVersion: 'context-pack-functor-map/v1',
+          contextPackSources: ['spec/context-pack/**/*.{yml,yaml,json}'],
+          objects: [{ id: 'InventoryItem', moduleGlobs: ['src/domain/**/*.ts'] }],
+          morphisms: [{ id: 'ReserveInventory', entrypoints: [{ file: 'src/domain/services.ts' }] }],
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
+
+    const result = runValidate(join(sourcesDir, '*.{yaml,yml,json}'));
+    expect(result.status).toBe(0);
+
+    const report = JSON.parse(await readFile(join(reportDir, 'context-pack-validate-report.json'), 'utf8'));
+    expect(report.status).toBe('pass');
+    expect(report.scannedFiles).toBe(2);
+    expect(report.validFiles).toBe(1);
+    expect(report.invalidFiles).toBe(0);
+    expect(report.skippedFiles).toBe(1);
   });
 
   it('rejects context-pack payload with unsupported version', async () => {

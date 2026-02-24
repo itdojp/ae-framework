@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "context-pack-functor-map/v1",
+  "contextPackSources": [
+    "spec/context-pack/**/*.yaml"
+  ],
+  "objects": [
+    {
+      "id": "InventoryItem",
+      "moduleGlobs": [
+        "src/inventory/**/*.ts"
+      ],
+      "forbiddenImportsFrom": [
+        "src/ui/**/*"
+      ],
+      "layer": "domain"
+    }
+  ],
+  "morphisms": [
+    {
+      "id": "ReserveInventory",
+      "entrypoints": [
+        {
+          "file": "src/inventory/reserve.ts",
+          "symbol": "reserveInventory"
+        }
+      ]
+    }
+  ],
+  "dependencyRules": [
+    {
+      "from": "InventoryItem",
+      "to": "InventoryItem",
+      "allowed": true,
+      "reason": "self dependency placeholder for fixture"
+    }
+  ]
+}

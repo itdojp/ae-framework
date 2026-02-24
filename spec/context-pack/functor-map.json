@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "context-pack-functor-map/v1",
+  "contextPackSources": [
+    "spec/context-pack/**/*.{yml,yaml,json}"
+  ],
+  "objects": [
+    {
+      "id": "InventoryItem",
+      "moduleGlobs": [
+        "src/domain/**/*.ts"
+      ],
+      "layer": "domain-core"
+    }
+  ],
+  "morphisms": [
+    {
+      "id": "ReserveInventory",
+      "entrypoints": [
+        {
+          "file": "src/domain/services.ts",
+          "symbol": "InventoryServiceImpl"
+        }
+      ]
+    }
+  ],
+  "dependencyRules": [
+    {
+      "from": "InventoryItem",
+      "to": "InventoryItem",
+      "allowed": true,
+      "reason": "Single-object baseline mapping for incremental adoption."
+    }
+  ]
+}
