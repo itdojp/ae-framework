@@ -62,6 +62,7 @@ export const renderVerifyLiteSummary = (summary, options = {}) => {
     'stateMachineRender',
     'contextPackValidation',
     'contextPackFunctorValidation',
+    'contextPackNaturalTransformationValidation',
     'bddLint',
     'mutationQuick',
     'conformanceReport',
@@ -112,6 +113,8 @@ export const renderVerifyLiteSummary = (summary, options = {}) => {
       contextPackReportMarkdown: 'Context Pack Validation Markdown',
       contextPackFunctorReportJson: 'Context Pack Functor JSON',
       contextPackFunctorReportMarkdown: 'Context Pack Functor Markdown',
+      contextPackNaturalTransformationReportJson: 'Context Pack Natural Transformation JSON',
+      contextPackNaturalTransformationReportMarkdown: 'Context Pack Natural Transformation Markdown',
       conformanceSummary: 'Conformance Summary JSON',
       conformanceSummaryMarkdown: 'Conformance Summary Markdown',
     };
@@ -136,6 +139,8 @@ export const renderVerifyLiteSummary = (summary, options = {}) => {
       'contextPackReportMarkdown',
       'contextPackFunctorReportJson',
       'contextPackFunctorReportMarkdown',
+      'contextPackNaturalTransformationReportJson',
+      'contextPackNaturalTransformationReportMarkdown',
       'conformanceSummary',
       'conformanceSummaryMarkdown',
     ];

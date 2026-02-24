@@ -77,6 +77,7 @@
     "verify:lite": "node scripts/admin/run-script-alias.mjs verify:lite",
     "context-pack:validate": "node scripts/context-pack/validate.mjs",
     "context-pack:verify-functor": "node scripts/context-pack/verify-functor.mjs",
+    "context-pack:verify-natural-transformation": "node scripts/context-pack/verify-natural-transformation.mjs",
     "verify:profile": "node scripts/verify/run.mjs",
     "evaluate:usefulness": "node scripts/evaluation/evaluate-usefulness.mjs",
     "flow:run": "node scripts/agent-builder/flow-runner.mjs --flow fixtures/flow/sample.flow.json",

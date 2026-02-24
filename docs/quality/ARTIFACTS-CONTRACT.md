@@ -45,6 +45,8 @@ CIが生成する成果物（artifacts/reports）について **最低限の契�
 | `artifacts/formal/formal-summary-v1.json` | formal aggregate または verify-lite（`run-formal`）を実行した場合 | Formal Summary v1（normalized、スキーマ: `schema/formal-summary-v1.schema.json`） |
 | `artifacts/context-pack/context-pack-functor-report.json` | context-pack functor 検証を実行した場合 | `scripts/context-pack/verify-functor.mjs` の JSON レポート（違反種別・対象 object/morphism を含む） |
 | `artifacts/context-pack/context-pack-functor-report.md` | context-pack functor 検証を実行した場合 | `scripts/context-pack/verify-functor.mjs` の Markdown 要約 |
+| `artifacts/context-pack/context-pack-natural-transformation-report.json` | context-pack natural transformation 検証を実行した場合 | `scripts/context-pack/verify-natural-transformation.mjs` の JSON レポート（可換チェック/禁止変更連携の違反種別を含む） |
+| `artifacts/context-pack/context-pack-natural-transformation-report.md` | context-pack natural transformation 検証を実行した場合 | `scripts/context-pack/verify-natural-transformation.mjs` の Markdown 要約 |
 
 ## 4. 検証スクリプト
 

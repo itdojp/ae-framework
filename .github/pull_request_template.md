@@ -16,6 +16,7 @@ Checklist
 - [ ] test:fast passes (`pnpm run test:fast`)
 - [ ] Docs updated if behavior changes (see `docs/ci-policy.md`)
 - [ ] Plan->Spec traceability を記載（source issue/thread, spec path, gate/evidence）
+- [ ] 変更の意味保存（Natural Transformation）を更新（必要時: `spec/context-pack/natural-transformations.json`）
 
 If applicable (Web API + DB flow)
 - [ ] Spec links 記載: OpenAPI / BDD / Property
