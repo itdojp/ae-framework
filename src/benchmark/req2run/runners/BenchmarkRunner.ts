@@ -526,55 +526,54 @@ export class BenchmarkRunner {
       return this.createFallbackDomainModel(spec);
     }
 
-    const entities = rawEntities
-      .map((entity, index) => {
-        const rawEntity = this.toObject(entity);
-        if (!rawEntity) {
-          return null;
-        }
+    const entities: DomainModelingOutput['entities'] = [];
+    rawEntities.forEach((entity, index) => {
+      const rawEntity = this.toObject(entity);
+      if (!rawEntity) {
+        return;
+      }
 
-        const name = typeof rawEntity['name'] === 'string' && rawEntity['name'].trim().length > 0
-          ? rawEntity['name'].trim()
-          : `${this.toPascalCase(spec.title)}Entity${index + 1}`;
-        const rawAttributes = Array.isArray(rawEntity['attributes']) ? rawEntity['attributes'] : [];
-        const attributes = rawAttributes
-          .map((attribute) => {
-            const rawAttribute = this.toObject(attribute);
-            if (!rawAttribute) {
-              return null;
-            }
+      const name = typeof rawEntity['name'] === 'string' && rawEntity['name'].trim().length > 0
+        ? rawEntity['name'].trim()
+        : `${this.toPascalCase(spec.title)}Entity${index + 1}`;
+      const rawAttributes = Array.isArray(rawEntity['attributes']) ? rawEntity['attributes'] : [];
+      const attributes = rawAttributes
+        .map((attribute) => {
+          const rawAttribute = this.toObject(attribute);
+          if (!rawAttribute) {
+            return null;
+          }
 
-            const attributeName = typeof rawAttribute['name'] === 'string' && rawAttribute['name'].trim().length > 0
-              ? rawAttribute['name'].trim()
-              : 'value';
-            const type = typeof rawAttribute['type'] === 'string' && rawAttribute['type'].trim().length > 0
-              ? rawAttribute['type'].trim()
-              : 'string';
-            const required = typeof rawAttribute['required'] === 'boolean' ? rawAttribute['required'] : false;
-            const description = typeof rawAttribute['description'] === 'string'
-              ? rawAttribute['description']
-              : undefined;
+          const attributeName = typeof rawAttribute['name'] === 'string' && rawAttribute['name'].trim().length > 0
+            ? rawAttribute['name'].trim()
+            : 'value';
+          const type = typeof rawAttribute['type'] === 'string' && rawAttribute['type'].trim().length > 0
+            ? rawAttribute['type'].trim()
+            : 'string';
+          const required = typeof rawAttribute['required'] === 'boolean' ? rawAttribute['required'] : false;
+          const description = typeof rawAttribute['description'] === 'string'
+            ? rawAttribute['description']
+            : undefined;
 
-            return {
-              name: attributeName,
-              type,
-              required,
-              ...(description ? { description } : {}),
-            };
-          })
-          .filter((attribute): attribute is DomainModelingOutput['entities'][number]['attributes'][number] => attribute !== null);
+          return {
+            name: attributeName,
+            type,
+            required,
+            ...(description ? { description } : {}),
+          };
+        })
+        .filter((attribute): attribute is DomainModelingOutput['entities'][number]['attributes'][number] => attribute !== null);
 
-        return {
-          name,
-          attributes: attributes.length > 0
-            ? attributes
-            : [{ name: 'id', type: 'string', required: true, description: 'Unique identifier' }],
-          methods: [],
-          invariants: [],
-          isAggregateRoot: index === 0,
-        };
-      })
-      .filter((entity): entity is DomainModelingOutput['entities'][number] => entity !== null);
+      entities.push({
+        name,
+        attributes: attributes.length > 0
+          ? attributes
+          : [{ name: 'id', type: 'string', required: true, description: 'Unique identifier' }],
+        methods: [],
+        invariants: [],
+        isAggregateRoot: index === 0,
+      });
+    });
 
     if (entities.length === 0) {
       return this.createFallbackDomainModel(spec);
