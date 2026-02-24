@@ -40,3 +40,5 @@ Conventions
 Roadmap
 - Keep CI runs non-blocking; evolve toolchains incrementally (see `docs/quality/formal-runbook.md`)
 - Context Pack validation details: `docs/spec/context-pack.md`
+- Context Pack Phase5+ cookbook: `docs/guides/context-pack-phase5-cookbook.md`
+- Context Pack troubleshooting runbook: `docs/operations/context-pack-troubleshooting.md`

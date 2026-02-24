@@ -13,6 +13,11 @@ Context Pack v1 は、AI/人間が更新する設計情報を SSOT として固�
 - `verify:lite` で schema 検証を必須化し、仕様破損を早期に検出する
 - JSON/Markdown レポートを artifacts に出力し、失敗原因を追跡可能にする
 
+### 関連ドキュメント
+- 実践手順（Phase5+ cookbook）: `docs/guides/context-pack-phase5-cookbook.md`
+- 障害対応（CI/ローカル復旧）: `docs/operations/context-pack-troubleshooting.md`
+- 仕様配置レジストリ: `docs/spec/registry.md`
+
 ### 配置ルール
 - 既定の探索先: `spec/context-pack/**/*.{yml,yaml,json}`
 - 例: `spec/context-pack/minimal-example.yaml`
@@ -268,52 +273,20 @@ pnpm run verify:lite
 - `kleisli-boundary-overlap` / `kleisli-impure-boundary-missing`: Kleisli 境界不整合
 - `phase5-evidence-missing`: Phase5+ 証跡パス不足
 
-### CI失敗時の復旧手順（Phase 3）
-1. report を確認:
-   - `artifacts/context-pack/context-pack-natural-transformation-report.json`
-   - `artifacts/context-pack/context-pack-natural-transformation-report.md`
-2. `spec/context-pack/natural-transformations.json` の以下を見直す:
-   - `changeType` ごとの必須チェック充足（refactor/migration/breaking）
-   - `before` / `after` の ID が Context Pack 本体に存在するか
-   - `commutativityChecks` の証跡パスが実在するか（glob含む）
-   - `breaking` 変更時に `forbiddenChanges` を連携しているか
-3. ローカル再実行:
-   - `pnpm run context-pack:verify-natural-transformation`
-   - `pnpm run verify:lite`
-4. report の `summary.totalViolations` が 0 であることを確認して再push
-
-### CI失敗時の復旧手順（Phase 4）
-1. report を確認:
-   - `artifacts/context-pack/context-pack-product-coproduct-report.json`
-   - `artifacts/context-pack/context-pack-product-coproduct-report.md`
-2. `spec/context-pack/product-coproduct-map.json` の以下を見直す:
-   - `products[].requiredInputKeys` が context-pack `morphisms[].input` を完全カバーしているか
-   - `disallowGenericDtoKeys=true` 時に曖昧キー（data/payload/body/dtoなど）を使っていないか
-   - `coproducts[].variants[].name` が `morphisms[].failures` と一致しているか
-   - `coproducts[].variants[].evidencePaths` が実在するか
-3. ローカル再実行:
-   - `pnpm run context-pack:verify-product-coproduct`
-   - `pnpm run verify:lite`
-4. report の `uncoveredFailureVariants` と `summary.totalViolations` が 0 であることを確認して再push
-
-### CI失敗時の復旧手順（Phase 5+）
-1. report を確認:
-   - `artifacts/context-pack/context-pack-phase5-report.json`
-   - `artifacts/context-pack/context-pack-phase5-report.md`
-2. `spec/context-pack/phase5-templates.json` の以下を見直す:
-   - Pullback/Pushout の morphism/object/diagram 参照IDが Context Pack 本体に存在するか
-   - Monoidal/Kleisli の morphism 参照と boundary 指定が矛盾していないか
-   - `evidencePaths` が実在するか（glob含む）
-3. ローカル再実行:
-   - `pnpm run context-pack:verify-phase5`
-   - `pnpm run verify:lite`
-4. report の `summary.totalViolations` が 0 であることを確認して再push
+### 運用時の診断・復旧
+CI失敗時の詳細な診断フロー（Phase 3/4/5+）は `docs/operations/context-pack-troubleshooting.md` を参照してください。
+本ドキュメントは入力契約と違反種別の定義を正として扱います。
 
 ---
 
 ## English
 
 Context Pack v1 defines the SSOT input contract for design metadata and is validated in CI.
+
+### Related docs
+- Practical recipes (Phase5+): `docs/guides/context-pack-phase5-cookbook.md`
+- Troubleshooting (CI/local recovery): `docs/operations/context-pack-troubleshooting.md`
+- Spec registry: `docs/spec/registry.md`
 
 ### Default source layout
 - `spec/context-pack/**/*.{yml,yaml,json}`

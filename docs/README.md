@@ -43,6 +43,8 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - Claude Code Automation Guide: `guides/CLAUDE-CODE-AUTOMATION-GUIDE.md`
 - Phase 2 Advanced Features (2.1–2.3): `guides/PHASE-2-ADVANCED-FEATURES-GUIDE.md`
 - Advanced Troubleshooting: `guides/ADVANCED-TROUBLESHOOTING-GUIDE.md`
+- Context Pack Phase5+ cookbook: `guides/context-pack-phase5-cookbook.md`
+- Context Pack troubleshooting runbook: `operations/context-pack-troubleshooting.md`
 - Thread -> Repo -> CI flow: `guides/THREAD-REPO-CI-FLOW.md`
 - General Usage: `guides/USAGE.md`
 - CLI Entry Migration: `guides/CLI-MIGRATION.md`
@@ -74,6 +76,8 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - API Reference: `reference/API.md`
 - Schema governance ($id canonical URI policy): [SCHEMA-GOVERNANCE.md](./reference/SCHEMA-GOVERNANCE.md)
 - Context Pack v1 validation guide: [context-pack.md](./spec/context-pack.md)
+- Context Pack Phase5+ cookbook: `guides/context-pack-phase5-cookbook.md`
+- Context Pack troubleshooting runbook: `operations/context-pack-troubleshooting.md`
 - Spec & Verification Kit (minimal activation guide): `reference/SPEC-VERIFICATION-KIT-MIN.md`
 - Legacy ExecPlan (6-phase, deprecated): `../plans/archive/legacy-6-phase.md`
 
@@ -165,6 +169,8 @@ ae-frameworkは、エージェント協調型のSDLCオーケストレーター�
 - **[CLAUDE-CODE-AUTOMATION-GUIDE.md](./guides/CLAUDE-CODE-AUTOMATION-GUIDE.md)** ⭐ **重要** - Claude Code完全自動化
 - **🆕 [PHASE-2-ADVANCED-FEATURES-GUIDE.md](./guides/PHASE-2-ADVANCED-FEATURES-GUIDE.md)** ⭐ **NEW** - Phase 2.1-2.3統合ガイド
 - **🆕 [ADVANCED-TROUBLESHOOTING-GUIDE.md](./guides/ADVANCED-TROUBLESHOOTING-GUIDE.md)** ⭐ **NEW** - 高度な機能のトラブルシューティング
+- [context-pack-phase5-cookbook.md](./guides/context-pack-phase5-cookbook.md) - Context Pack Phase5+ の実践レシピ
+- [context-pack-troubleshooting.md](./operations/context-pack-troubleshooting.md) - Context Pack 検証失敗時の復旧ランブック
 - [THREAD-REPO-CI-FLOW.md](./guides/THREAD-REPO-CI-FLOW.md) - Plan を repo SSOT に正規化する標準フロー
 - [USAGE.md](./guides/USAGE.md) - 一般的な使い方ガイド
 - [CLI-MIGRATION.md](./guides/CLI-MIGRATION.md) - CLI entry 移行ガイド
@@ -259,6 +265,8 @@ Claude CodeやMCPとの統合
 
 - **[registry.md](./spec/registry.md)** ⭐ 仕様配置レジストリ（TLA+/Alloy/Cedar/Trace）
 - [context-pack.md](./spec/context-pack.md) - Context Pack v1 の配置・検証ルール
+- [context-pack-phase5-cookbook.md](./guides/context-pack-phase5-cookbook.md) - Phase5+（Pullback/Pushout・Monoidal・Kleisli）の実践例
+- [context-pack-troubleshooting.md](./operations/context-pack-troubleshooting.md) - CI/ローカル実行の障害切り分け
 
 ### 🔬 [research/](./research/) - 調査・研究・サーベイ
 理論的背景や技術調査の成果物
