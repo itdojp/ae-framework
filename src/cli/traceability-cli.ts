@@ -40,9 +40,9 @@ type IssueTraceabilityRow = {
   requirementId: string;
   tests: string[];
   code: string[];
-  diagramId: string[];
-  morphismId: string[];
-  acceptanceTestId: string[];
+  diagramId?: string[];
+  morphismId?: string[];
+  acceptanceTestId?: string[];
   linked: boolean;
 };
 
@@ -315,6 +315,10 @@ export function buildTraceabilityMatrix(
     acceptanceTestIds: [],
   },
 ): IssueTraceabilityMatrix {
+  const contextPackTracked = contextPackIds.diagramIds.length > 0
+    || contextPackIds.morphismIds.length > 0
+    || contextPackIds.acceptanceTestIds.length > 0;
+
   const rows: IssueTraceabilityRow[] = requirementIds.map((requirementId) => {
     const linkedTestFiles = testFiles.filter((file) => hasRequirementIdToken(file.content, requirementId));
     const linkedCodeFiles = codeFiles.filter((file) => hasRequirementIdToken(file.content, requirementId));
@@ -322,34 +326,36 @@ export function buildTraceabilityMatrix(
     const code = linkedCodeFiles.map((file) => path.relative(cwd, file.path));
     const evidenceFiles = [...linkedTestFiles, ...linkedCodeFiles];
 
-    return {
+    const row: IssueTraceabilityRow = {
       requirementId,
       tests,
       code,
-      diagramId: collectMatchedIds(evidenceFiles, contextPackIds.diagramIds),
-      morphismId: collectMatchedIds(evidenceFiles, contextPackIds.morphismIds),
-      acceptanceTestId: collectMatchedIds(evidenceFiles, contextPackIds.acceptanceTestIds),
       linked: tests.length > 0 && code.length > 0,
     };
+    if (contextPackTracked) {
+      row.diagramId = collectMatchedIds(evidenceFiles, contextPackIds.diagramIds);
+      row.morphismId = collectMatchedIds(evidenceFiles, contextPackIds.morphismIds);
+      row.acceptanceTestId = collectMatchedIds(evidenceFiles, contextPackIds.acceptanceTestIds);
+    }
+    return row;
   });
 
   const linkedRequirements = rows.filter((row) => row.linked).length;
   const totalRequirements = rows.length;
-  const contextPackTracked = contextPackIds.diagramIds.length > 0
-    || contextPackIds.morphismIds.length > 0
-    || contextPackIds.acceptanceTestIds.length > 0;
   const missingDiagramLinks = contextPackTracked
-    ? rows.filter((row) => row.diagramId.length === 0).length
+    ? rows.filter((row) => (row.diagramId?.length ?? 0) === 0).length
     : 0;
   const missingMorphismLinks = contextPackTracked
-    ? rows.filter((row) => row.morphismId.length === 0).length
+    ? rows.filter((row) => (row.morphismId?.length ?? 0) === 0).length
     : 0;
   const missingAcceptanceTestLinks = contextPackTracked
-    ? rows.filter((row) => row.acceptanceTestId.length === 0).length
+    ? rows.filter((row) => (row.acceptanceTestId?.length ?? 0) === 0).length
     : 0;
   const rowsMissingContextPackLinks = contextPackTracked
     ? rows.filter(
-      (row) => row.diagramId.length === 0 || row.morphismId.length === 0 || row.acceptanceTestId.length === 0,
+      (row) => (row.diagramId?.length ?? 0) === 0
+        || (row.morphismId?.length ?? 0) === 0
+        || (row.acceptanceTestId?.length ?? 0) === 0,
     ).length
     : 0;
   const coverage = totalRequirements > 0
@@ -378,6 +384,9 @@ export function buildTraceabilityMatrix(
 }
 
 function renderMatrixMarkdown(matrix: IssueTraceabilityMatrix): string {
+  const hasContextPackColumns = matrix.summary.contextPackDiagramIds > 0
+    || matrix.summary.contextPackMorphismIds > 0
+    || matrix.summary.contextPackAcceptanceTestIds > 0;
   const lines = [
     '# Issue Traceability Matrix',
     '',
@@ -386,13 +395,23 @@ function renderMatrixMarkdown(matrix: IssueTraceabilityMatrix): string {
     `- Context Pack IDs tracked: diagram=${matrix.summary.contextPackDiagramIds}, morphism=${matrix.summary.contextPackMorphismIds}, acceptance_test=${matrix.summary.contextPackAcceptanceTestIds}`,
     `- Missing Context Pack links: rows=${matrix.summary.rowsMissingContextPackLinks}, diagram=${matrix.summary.missingDiagramLinks}, morphism=${matrix.summary.missingMorphismLinks}, acceptance_test=${matrix.summary.missingAcceptanceTestLinks}`,
     '',
-    '| Requirement ID | Tests | Code | Diagram ID | Morphism ID | Acceptance Test ID | Linked |',
-    '| --- | --- | --- | --- | --- | --- | --- |',
+    hasContextPackColumns
+      ? '| Requirement ID | Tests | Code | Diagram ID | Morphism ID | Acceptance Test ID | Linked |'
+      : '| Requirement ID | Tests | Code | Linked |',
+    hasContextPackColumns
+      ? '| --- | --- | --- | --- | --- | --- | --- |'
+      : '| --- | --- | --- | --- |',
   ];
   for (const row of matrix.rows) {
-    lines.push(
-      `| ${row.requirementId} | ${row.tests.join('<br>') || '-'} | ${row.code.join('<br>') || '-'} | ${row.diagramId.join('<br>') || '-'} | ${row.morphismId.join('<br>') || '-'} | ${row.acceptanceTestId.join('<br>') || '-'} | ${row.linked ? 'yes' : 'no'} |`,
-    );
+    if (hasContextPackColumns) {
+      lines.push(
+        `| ${row.requirementId} | ${row.tests.join('<br>') || '-'} | ${row.code.join('<br>') || '-'} | ${row.diagramId?.join('<br>') || '-'} | ${row.morphismId?.join('<br>') || '-'} | ${row.acceptanceTestId?.join('<br>') || '-'} | ${row.linked ? 'yes' : 'no'} |`,
+      );
+    } else {
+      lines.push(
+        `| ${row.requirementId} | ${row.tests.join('<br>') || '-'} | ${row.code.join('<br>') || '-'} | ${row.linked ? 'yes' : 'no'} |`,
+      );
+    }
   }
   return `${lines.join('\n')}\n`;
 }
