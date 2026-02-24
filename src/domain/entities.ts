@@ -20,3 +20,12 @@ export class InsufficientStockError extends Error {
     this.name = 'InsufficientStockError';
   }
 }
+
+export class IdempotencyConflictError extends Error {
+  constructor(orderId: string, itemId: string, quantity: number) {
+    super(
+      `Idempotency conflict for order ${orderId}: existing reservation does not match item=${itemId}, quantity=${quantity}`,
+    );
+    this.name = 'IdempotencyConflictError';
+  }
+}

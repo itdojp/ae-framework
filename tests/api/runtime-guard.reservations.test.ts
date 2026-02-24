@@ -47,6 +47,7 @@ vi.mock('../../src/telemetry/runtime-guards.js', () => ({
   CommonSchemas: {
     ReservationRequest: {},
     ReservationResponse: {},
+    ErrorResponse: {},
     HealthResponse: {},
   },
   ViolationSeverity: {
@@ -121,7 +122,12 @@ describe('Reservations API telemetry integration', () => {
 
         expect(response.statusCode).toBe(201);
         const payload = JSON.parse(response.body);
-        expect(payload).toEqual({ ok: true });
+        expect(payload).toEqual(
+          expect.objectContaining({
+            ok: true,
+            reservationId: expect.any(String),
+          }),
+        );
         expect(createTimerSpy).toHaveBeenCalledWith('api.reservations.duration');
         expect(runtimeGuardMocks.validateRequest).toHaveBeenCalledWith(
           {},
@@ -216,7 +222,18 @@ describe('Reservations API telemetry integration', () => {
             result: 'business_rule_violation',
           }),
         );
-        expect(runtimeGuardMocks.validateResponse).not.toHaveBeenCalled();
+        expect(runtimeGuardMocks.validateResponse).toHaveBeenCalledWith(
+          {},
+          expect.objectContaining({
+            error: 'BUSINESS_RULE_VIOLATION',
+            message: 'Quantity exceeds maximum allowed limit of 100',
+          }),
+          expect.objectContaining({
+            endpoint: 'POST /reservations',
+            statusCode: 400,
+            requestId: expect.any(String),
+          }),
+        );
       } finally {
         await app.close();
       }
@@ -305,7 +322,20 @@ describe('Reservations API telemetry integration', () => {
         );
         expect(recordQualityMetricsSpy).not.toHaveBeenCalled();
         expect(runtimeGuardMocks.recordBusinessRuleViolation).not.toHaveBeenCalled();
-        expect(runtimeGuardMocks.validateResponse).not.toHaveBeenCalled();
+        expect(runtimeGuardMocks.validateResponse).toHaveBeenCalledWith(
+          {},
+          expect.objectContaining({
+            error: 'VALIDATION_ERROR',
+            message: 'Request payload validation failed',
+            details: 'Validation failed',
+            violation_id: 'unknown',
+          }),
+          expect.objectContaining({
+            endpoint: 'POST /reservations',
+            statusCode: 400,
+            requestId: expect.any(String),
+          }),
+        );
       } finally {
         await app.close();
       }

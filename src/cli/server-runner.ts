@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 import { initTelemetry } from '../infra/telemetry.js';
 import { Database, initDatabase } from '../infra/db.js';
-import { InventoryServiceImpl } from '../domain/services.js';
+import { DatabaseInventoryRepository, InventoryServiceImpl } from '../domain/services.js';
 import { createServer } from '../api/server.js';
 import chalk from 'chalk';
 import { safeExit } from '../utils/safe-exit.js';
-import { reservationRoutes } from '../api/routes/reservations.js';
 
 async function main() {
   // Initialize telemetry
@@ -16,13 +15,11 @@ async function main() {
   await initDatabase(db);
 
   // Initialize services
-  const inventoryService = new InventoryServiceImpl(db);
+  const inventoryRepository = new DatabaseInventoryRepository(db);
+  const inventoryService = new InventoryServiceImpl(inventoryRepository);
 
   // Create app instance
-  const app = await createServer();
-
-  // Register routes
-  await app.register(reservationRoutes, { inventoryService });
+  const app = await createServer({ inventoryService });
 
   // Start server
   const port = process.env['PORT'] ? parseInt(process.env['PORT'] as string) : 3000;
