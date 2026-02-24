@@ -26,6 +26,10 @@ describe('renderVerifyLiteSummary', () => {
         status: 'success',
         notes: 'validated context-pack product/coproduct mapping;uncovered_variants=0'
       },
+      contextPackPhase5Validation: {
+        status: 'success',
+        notes: 'validated context-pack phase5 templates;violations=0'
+      },
       bddLint: { status: 'skipped' },
       mutationQuick: { status: 'success', notes: 'score: 59.74%' },
       conformanceReport: { status: 'success', notes: 'runs=1;violations=0' }
@@ -53,6 +57,8 @@ describe('renderVerifyLiteSummary', () => {
         'artifacts/context-pack/context-pack-product-coproduct-report.json',
       contextPackProductCoproductReportMarkdown:
         'artifacts/context-pack/context-pack-product-coproduct-report.md',
+      contextPackPhase5ReportJson: 'artifacts/context-pack/context-pack-phase5-report.json',
+      contextPackPhase5ReportMarkdown: 'artifacts/context-pack/context-pack-phase5-report.md',
       conformanceSummary: 'reports/conformance/verify-lite-summary.json',
       conformanceSummaryMarkdown: 'reports/conformance/verify-lite-summary.md'
     }
@@ -97,6 +103,8 @@ describe('renderVerifyLiteSummary', () => {
         contextPackNaturalTransformationReportMarkdown: null,
         contextPackProductCoproductReportJson: null,
         contextPackProductCoproductReportMarkdown: null,
+        contextPackPhase5ReportJson: null,
+        contextPackPhase5ReportMarkdown: null,
         conformanceSummary: null,
         conformanceSummaryMarkdown: null
       }

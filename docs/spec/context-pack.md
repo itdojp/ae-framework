@@ -31,6 +31,9 @@ pnpm run context-pack:verify-natural-transformation
 # Product/Coproduct（入力契約 + 失敗variant網羅）マッピングを検証
 pnpm run context-pack:verify-product-coproduct
 
+# Phase5+（Pullback/Pushout・Monoidal・Kleisli）テンプレを検証
+pnpm run context-pack:verify-phase5
+
 # 探索パス・出力先を上書き
 node scripts/context-pack/validate.mjs \
   --sources 'spec/context-pack/**/*.{yml,yaml,json}' \
@@ -58,6 +61,13 @@ node scripts/context-pack/verify-product-coproduct.mjs \
   --schema schema/context-pack-product-coproduct.schema.json \
   --report-json artifacts/context-pack/context-pack-product-coproduct-report.json \
   --report-md artifacts/context-pack/context-pack-product-coproduct-report.md
+
+# Phase5+テンプレを直接検証（マップ・レポート先を上書き）
+node scripts/context-pack/verify-phase5-templates.mjs \
+  --map spec/context-pack/phase5-templates.json \
+  --schema schema/context-pack-phase5-templates.schema.json \
+  --report-json artifacts/context-pack/context-pack-phase5-report.json \
+  --report-md artifacts/context-pack/context-pack-phase5-report.md
 
 # Verify Lite でも必須ステップとして実行される
 pnpm run verify:lite
@@ -158,6 +168,58 @@ pnpm run verify:lite
 }
 ```
 
+### Phase 5+ テンプレ検証（Issue #2252）
+- 入力:
+  - `spec/context-pack/phase5-templates.json`（`schema/context-pack-phase5-templates.schema.json`）
+  - `spec/context-pack/**/*.{yml,yaml,json}` の `objects[].id` / `morphisms[].id` / `diagrams[].id`
+- 検査内容:
+  - Pullback/Pushout:
+    - morphism/object/diagram 参照IDの存在確認
+    - `evidencePaths` の実在確認（file/glob）
+    - template ID 重複検出
+  - Monoidal:
+    - `parallelMorphismIds` / `mergeMorphismId` の存在確認
+    - `tensorLawChecks[].evidencePaths` / `stringDiagramPaths` の証跡確認
+  - Kleisli:
+    - `morphismIds` の存在確認
+    - `pureBoundaryMorphismIds` / `impureBoundaryMorphismIds` の境界整合（重複禁止、参照漏れ禁止、impure空禁止）
+    - `bindEvidencePaths` / `sideEffectEvidencePaths` の証跡確認
+- 失敗時:
+  - `pullback-morphism-missing` / `pushout-object-missing` / `monoidal-morphism-missing` /
+    `kleisli-boundary-overlap` / `kleisli-impure-boundary-missing` / `phase5-evidence-missing`
+    などの種別を JSON/Markdown レポートに出力
+
+### Phase 5+ 記述例（最小）
+```json
+{
+  "schemaVersion": "context-pack-phase5-templates/v1",
+  "contextPackSources": ["spec/context-pack/**/*.{yml,yaml,json}"],
+  "pullbacks": [
+    {
+      "id": "ReserveReleasePullback",
+      "leftMorphismId": "ReserveInventory",
+      "rightMorphismId": "ReleaseInventory",
+      "apexObjectId": "InventoryItem",
+      "commutingDiagramIds": ["D-1"],
+      "evidencePaths": ["tests/services/inventory-service.test.ts"]
+    }
+  ],
+  "pushouts": [],
+  "monoidalFlows": [],
+  "kleisliPipelines": [
+    {
+      "id": "ReservationEffectPipeline",
+      "effectType": "io",
+      "morphismIds": ["ReserveInventory"],
+      "pureBoundaryMorphismIds": [],
+      "impureBoundaryMorphismIds": ["ReserveInventory"],
+      "bindEvidencePaths": ["tests/services/inventory-service.test.ts"],
+      "sideEffectEvidencePaths": ["src/domain/services.ts"]
+    }
+  ]
+}
+```
+
 ### 出力（artifacts）
 - JSON: `artifacts/context-pack/context-pack-validate-report.json`
 - Markdown: `artifacts/context-pack/context-pack-validate-report.md`
@@ -167,11 +229,14 @@ pnpm run verify:lite
 - Markdown (Natural Transformation): `artifacts/context-pack/context-pack-natural-transformation-report.md`
 - JSON (Product/Coproduct): `artifacts/context-pack/context-pack-product-coproduct-report.json`
 - Markdown (Product/Coproduct): `artifacts/context-pack/context-pack-product-coproduct-report.md`
+- JSON (Phase5+): `artifacts/context-pack/context-pack-phase5-report.json`
+- Markdown (Phase5+): `artifacts/context-pack/context-pack-phase5-report.md`
 - Verify Lite summary: `artifacts/verify-lite/verify-lite-run-summary.json`
   - `steps.contextPackValidation`
   - `steps.contextPackFunctorValidation`
   - `steps.contextPackNaturalTransformationValidation`
   - `steps.contextPackProductCoproductValidation`
+  - `steps.contextPackPhase5Validation`
   - `artifacts.contextPackReportJson`
   - `artifacts.contextPackReportMarkdown`
   - `artifacts.contextPackFunctorReportJson`
@@ -180,6 +245,8 @@ pnpm run verify:lite
   - `artifacts.contextPackNaturalTransformationReportMarkdown`
   - `artifacts.contextPackProductCoproductReportJson`
   - `artifacts.contextPackProductCoproductReportMarkdown`
+  - `artifacts.contextPackPhase5ReportJson`
+  - `artifacts.contextPackPhase5ReportMarkdown`
 
 ### よくある失敗
 - `required` エラー: 必須キー不足（例: `domain_glossary.terms[].ja`）
@@ -197,6 +264,9 @@ pnpm run verify:lite
 - `ambiguous-dto-key`: 曖昧DTOキーの使用
 - `coproduct-variant-missing` / `coproduct-variant-unknown`: failure variant の過不足
 - `coproduct-evidence-missing`: variant の証跡パス不足
+- `*-template-duplicate`: Phase5+ テンプレ ID 重複
+- `kleisli-boundary-overlap` / `kleisli-impure-boundary-missing`: Kleisli 境界不整合
+- `phase5-evidence-missing`: Phase5+ 証跡パス不足
 
 ### CI失敗時の復旧手順（Phase 3）
 1. report を確認:
@@ -226,6 +296,19 @@ pnpm run verify:lite
    - `pnpm run verify:lite`
 4. report の `uncoveredFailureVariants` と `summary.totalViolations` が 0 であることを確認して再push
 
+### CI失敗時の復旧手順（Phase 5+）
+1. report を確認:
+   - `artifacts/context-pack/context-pack-phase5-report.json`
+   - `artifacts/context-pack/context-pack-phase5-report.md`
+2. `spec/context-pack/phase5-templates.json` の以下を見直す:
+   - Pullback/Pushout の morphism/object/diagram 参照IDが Context Pack 本体に存在するか
+   - Monoidal/Kleisli の morphism 参照と boundary 指定が矛盾していないか
+   - `evidencePaths` が実在するか（glob含む）
+3. ローカル再実行:
+   - `pnpm run context-pack:verify-phase5`
+   - `pnpm run verify:lite`
+4. report の `summary.totalViolations` が 0 であることを確認して再push
+
 ---
 
 ## English
@@ -241,6 +324,7 @@ pnpm run context-pack:validate
 pnpm run context-pack:verify-functor
 pnpm run context-pack:verify-natural-transformation
 pnpm run context-pack:verify-product-coproduct
+pnpm run context-pack:verify-phase5
 pnpm run verify:lite
 ```
 
@@ -253,4 +337,6 @@ pnpm run verify:lite
 - `artifacts/context-pack/context-pack-natural-transformation-report.md`
 - `artifacts/context-pack/context-pack-product-coproduct-report.json`
 - `artifacts/context-pack/context-pack-product-coproduct-report.md`
-- `artifacts/verify-lite/verify-lite-run-summary.json` (`steps.contextPackValidation`, `steps.contextPackFunctorValidation`, `steps.contextPackNaturalTransformationValidation`, `steps.contextPackProductCoproductValidation`)
+- `artifacts/context-pack/context-pack-phase5-report.json`
+- `artifacts/context-pack/context-pack-phase5-report.md`
+- `artifacts/verify-lite/verify-lite-run-summary.json` (`steps.contextPackValidation`, `steps.contextPackFunctorValidation`, `steps.contextPackNaturalTransformationValidation`, `steps.contextPackProductCoproductValidation`, `steps.contextPackPhase5Validation`)

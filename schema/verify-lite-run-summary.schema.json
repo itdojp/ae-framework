@@ -199,6 +199,18 @@
             { "type": "null" }
           ]
         },
+        "contextPackPhase5ReportJson": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "contextPackPhase5ReportMarkdown": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
         "conformanceSummary": {
           "oneOf": [
             { "type": "string", "minLength": 1 },

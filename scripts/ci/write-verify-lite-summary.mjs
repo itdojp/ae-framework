@@ -69,6 +69,10 @@ const summary = {
       status: readStatus('CONTEXT_PACK_PRODUCT_COPRODUCT_STATUS', 'unknown'),
       notes: process.env.CONTEXT_PACK_PRODUCT_COPRODUCT_NOTES || null,
     },
+    contextPackPhase5Validation: {
+      status: readStatus('CONTEXT_PACK_PHASE5_STATUS', 'unknown'),
+      notes: process.env.CONTEXT_PACK_PHASE5_NOTES || null,
+    },
     bddLint: { status: readStatus('BDD_LINT_STATUS', 'skipped') },
     mutationQuick: {
       status: readStatus('MUTATION_STATUS', 'skipped'),
@@ -106,6 +110,8 @@ const summary = {
     contextPackProductCoproductReportMarkdown: existsOrNull(
       process.env.CONTEXT_PACK_PRODUCT_COPRODUCT_REPORT_MD_PATH,
     ),
+    contextPackPhase5ReportJson: existsOrNull(process.env.CONTEXT_PACK_PHASE5_REPORT_JSON_PATH),
+    contextPackPhase5ReportMarkdown: existsOrNull(process.env.CONTEXT_PACK_PHASE5_REPORT_MD_PATH),
     conformanceSummary: existsOrNull(process.env.CONFORMANCE_SUMMARY_PATH),
     conformanceSummaryMarkdown: existsOrNull(process.env.CONFORMANCE_SUMMARY_MARKDOWN_PATH),
   },

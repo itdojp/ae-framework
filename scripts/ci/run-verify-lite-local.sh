@@ -42,6 +42,8 @@ CONTEXT_PACK_NATURAL_TRANSFORMATION_STATUS="pending"
 CONTEXT_PACK_NATURAL_TRANSFORMATION_NOTES=""
 CONTEXT_PACK_PRODUCT_COPRODUCT_STATUS="pending"
 CONTEXT_PACK_PRODUCT_COPRODUCT_NOTES=""
+CONTEXT_PACK_PHASE5_STATUS="pending"
+CONTEXT_PACK_PHASE5_NOTES=""
 MUTATION_STATUS="skipped"
 MUTATION_NOTES=""
 LINT_LOG_EXPORT=""
@@ -62,6 +64,10 @@ CONTEXT_PACK_PRODUCT_COPRODUCT_MAP_PATH="${VERIFY_LITE_CONTEXT_PACK_PRODUCT_COPR
 CONTEXT_PACK_PRODUCT_COPRODUCT_SCHEMA_PATH="${VERIFY_LITE_CONTEXT_PACK_PRODUCT_COPRODUCT_SCHEMA:-schema/context-pack-product-coproduct.schema.json}"
 CONTEXT_PACK_PRODUCT_COPRODUCT_REPORT_JSON_PATH="${VERIFY_LITE_CONTEXT_PACK_PRODUCT_COPRODUCT_REPORT_JSON:-artifacts/context-pack/context-pack-product-coproduct-report.json}"
 CONTEXT_PACK_PRODUCT_COPRODUCT_REPORT_MD_PATH="${VERIFY_LITE_CONTEXT_PACK_PRODUCT_COPRODUCT_REPORT_MD:-artifacts/context-pack/context-pack-product-coproduct-report.md}"
+CONTEXT_PACK_PHASE5_MAP_PATH="${VERIFY_LITE_CONTEXT_PACK_PHASE5_MAP:-spec/context-pack/phase5-templates.json}"
+CONTEXT_PACK_PHASE5_SCHEMA_PATH="${VERIFY_LITE_CONTEXT_PACK_PHASE5_SCHEMA:-schema/context-pack-phase5-templates.schema.json}"
+CONTEXT_PACK_PHASE5_REPORT_JSON_PATH="${VERIFY_LITE_CONTEXT_PACK_PHASE5_REPORT_JSON:-artifacts/context-pack/context-pack-phase5-report.json}"
+CONTEXT_PACK_PHASE5_REPORT_MD_PATH="${VERIFY_LITE_CONTEXT_PACK_PHASE5_REPORT_MD:-artifacts/context-pack/context-pack-phase5-report.md}"
 TRACEABILITY_MATRIX_PATH="${VERIFY_LITE_TRACEABILITY_MATRIX:-docs/specs/ISSUE-TRACEABILITY-MATRIX.json}"
 TRACEABILITY_STATUS="skipped"
 TRACEABILITY_NOTES="matrix_not_found"
@@ -192,6 +198,8 @@ if [[ "${VERIFY_LITE_SKIP_CONTEXT_PACK:-0}" == "1" ]]; then
   CONTEXT_PACK_NATURAL_TRANSFORMATION_NOTES="skipped with context-pack validation"
   CONTEXT_PACK_PRODUCT_COPRODUCT_STATUS="skipped"
   CONTEXT_PACK_PRODUCT_COPRODUCT_NOTES="skipped with context-pack validation"
+  CONTEXT_PACK_PHASE5_STATUS="skipped"
+  CONTEXT_PACK_PHASE5_NOTES="skipped with context-pack validation"
 elif node scripts/context-pack/validate.mjs \
   --sources 'spec/context-pack/**/*.{yml,yaml,json}' \
   --schema schema/context-pack-v1.schema.json \
@@ -297,6 +305,37 @@ if [[ "$CONTEXT_PACK_STATUS" == "success" ]]; then
     CONTEXT_PACK_PRODUCT_COPRODUCT_NOTES="context-pack product/coproduct validation failed (exit=${CONTEXT_PACK_PRODUCT_COPRODUCT_EXIT_CODE})"
     echo "[verify-lite] context-pack product/coproduct validation failed (exit=${CONTEXT_PACK_PRODUCT_COPRODUCT_EXIT_CODE})" >&2
     exit "$CONTEXT_PACK_PRODUCT_COPRODUCT_EXIT_CODE"
+  fi
+fi
+
+if [[ "$CONTEXT_PACK_STATUS" == "success" ]]; then
+  echo "[verify-lite] context-pack phase5 template validation"
+  if [[ "${VERIFY_LITE_SKIP_CONTEXT_PACK_PHASE5:-0}" == "1" ]]; then
+    CONTEXT_PACK_PHASE5_STATUS="skipped"
+    CONTEXT_PACK_PHASE5_NOTES="skipped by VERIFY_LITE_SKIP_CONTEXT_PACK_PHASE5=1"
+  elif [[ ! -f "$CONTEXT_PACK_PHASE5_MAP_PATH" ]]; then
+    CONTEXT_PACK_PHASE5_STATUS="skipped"
+    CONTEXT_PACK_PHASE5_NOTES="map_not_found:${CONTEXT_PACK_PHASE5_MAP_PATH}"
+  elif node scripts/context-pack/verify-phase5-templates.mjs \
+    --map "$CONTEXT_PACK_PHASE5_MAP_PATH" \
+    --schema "$CONTEXT_PACK_PHASE5_SCHEMA_PATH" \
+    --report-json "$CONTEXT_PACK_PHASE5_REPORT_JSON_PATH" \
+    --report-md "$CONTEXT_PACK_PHASE5_REPORT_MD_PATH"; then
+    CONTEXT_PACK_PHASE5_STATUS="success"
+    CONTEXT_PACK_PHASE5_NOTES="validated context-pack phase5 templates"
+    if [[ -f "$CONTEXT_PACK_PHASE5_REPORT_JSON_PATH" ]]; then
+      if PHASE5_VIOLATION_COUNT="$(node --input-type=module -e "import fs from 'node:fs'; let count = 0; try { const data = JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); count = data?.summary?.totalViolations ?? 0; } catch {} process.stdout.write(String(count));" "$CONTEXT_PACK_PHASE5_REPORT_JSON_PATH")"; then
+        CONTEXT_PACK_PHASE5_NOTES="validated context-pack phase5 templates;violations=${PHASE5_VIOLATION_COUNT}"
+      else
+        CONTEXT_PACK_PHASE5_NOTES="validated context-pack phase5 templates;violations=parse_failed"
+      fi
+    fi
+  else
+    CONTEXT_PACK_PHASE5_EXIT_CODE=$?
+    CONTEXT_PACK_PHASE5_STATUS="failure"
+    CONTEXT_PACK_PHASE5_NOTES="context-pack phase5 template validation failed (exit=${CONTEXT_PACK_PHASE5_EXIT_CODE})"
+    echo "[verify-lite] context-pack phase5 template validation failed (exit=${CONTEXT_PACK_PHASE5_EXIT_CODE})" >&2
+    exit "$CONTEXT_PACK_PHASE5_EXIT_CODE"
   fi
 fi
 
@@ -416,6 +455,8 @@ export CONTEXT_PACK_NATURAL_TRANSFORMATION_STATUS CONTEXT_PACK_NATURAL_TRANSFORM
 export CONTEXT_PACK_NATURAL_TRANSFORMATION_REPORT_JSON_PATH CONTEXT_PACK_NATURAL_TRANSFORMATION_REPORT_MD_PATH
 export CONTEXT_PACK_PRODUCT_COPRODUCT_STATUS CONTEXT_PACK_PRODUCT_COPRODUCT_NOTES
 export CONTEXT_PACK_PRODUCT_COPRODUCT_REPORT_JSON_PATH CONTEXT_PACK_PRODUCT_COPRODUCT_REPORT_MD_PATH
+export CONTEXT_PACK_PHASE5_STATUS CONTEXT_PACK_PHASE5_NOTES
+export CONTEXT_PACK_PHASE5_REPORT_JSON_PATH CONTEXT_PACK_PHASE5_REPORT_MD_PATH
 export TRACEABILITY_STATUS TRACEABILITY_NOTES TRACEABILITY_MISSING_COUNT TRACEABILITY_MATRIX_PATH
 export INSTALL_FLAGS_STR
 export LINT_SUMMARY_PATH LINT_LOG_EXPORT

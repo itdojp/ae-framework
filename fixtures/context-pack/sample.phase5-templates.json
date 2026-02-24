@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "context-pack-phase5-templates/v1",
+  "contextPackSources": [
+    "spec/context-pack/**/*.{yml,yaml,json}"
+  ],
+  "pullbacks": [
+    {
+      "id": "SamplePullback",
+      "leftMorphismId": "ReserveInventory",
+      "rightMorphismId": "ReserveInventory",
+      "apexObjectId": "InventoryItem",
+      "commutingDiagramIds": [
+        "D-1"
+      ],
+      "evidencePaths": [
+        "tests/services/inventory-service.test.ts"
+      ]
+    }
+  ],
+  "pushouts": [
+    {
+      "id": "SamplePushout",
+      "leftMorphismId": "ReserveInventory",
+      "rightMorphismId": "ReserveInventory",
+      "coapexObjectId": "InventoryItem",
+      "commutingDiagramIds": [
+        "D-1"
+      ],
+      "evidencePaths": [
+        "tests/services/inventory-service.test.ts"
+      ]
+    }
+  ],
+  "monoidalFlows": [],
+  "kleisliPipelines": [
+    {
+      "id": "SampleKleisliPipeline",
+      "effectType": "io",
+      "morphismIds": [
+        "ReserveInventory"
+      ],
+      "pureBoundaryMorphismIds": [],
+      "impureBoundaryMorphismIds": [
+        "ReserveInventory"
+      ],
+      "bindEvidencePaths": [
+        "tests/services/inventory-service.test.ts"
+      ],
+      "sideEffectEvidencePaths": [
+        "src/domain/services.ts"
+      ]
+    }
+  ]
+}

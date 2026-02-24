@@ -64,6 +64,7 @@ export const renderVerifyLiteSummary = (summary, options = {}) => {
     'contextPackFunctorValidation',
     'contextPackNaturalTransformationValidation',
     'contextPackProductCoproductValidation',
+    'contextPackPhase5Validation',
     'bddLint',
     'mutationQuick',
     'conformanceReport',
@@ -118,6 +119,8 @@ export const renderVerifyLiteSummary = (summary, options = {}) => {
       contextPackNaturalTransformationReportMarkdown: 'Context Pack Natural Transformation Markdown',
       contextPackProductCoproductReportJson: 'Context Pack Product/Coproduct JSON',
       contextPackProductCoproductReportMarkdown: 'Context Pack Product/Coproduct Markdown',
+      contextPackPhase5ReportJson: 'Context Pack Phase5 Templates JSON',
+      contextPackPhase5ReportMarkdown: 'Context Pack Phase5 Templates Markdown',
       conformanceSummary: 'Conformance Summary JSON',
       conformanceSummaryMarkdown: 'Conformance Summary Markdown',
     };
@@ -146,6 +149,8 @@ export const renderVerifyLiteSummary = (summary, options = {}) => {
       'contextPackNaturalTransformationReportMarkdown',
       'contextPackProductCoproductReportJson',
       'contextPackProductCoproductReportMarkdown',
+      'contextPackPhase5ReportJson',
+      'contextPackPhase5ReportMarkdown',
       'conformanceSummary',
       'conformanceSummaryMarkdown',
     ];
