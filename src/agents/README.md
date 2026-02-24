@@ -38,7 +38,8 @@ The standardization includes:
 ├── adapters/
 │   ├── intent-agent-adapter.ts   # IntentAgent standardization
 │   ├── task-adapters.ts          # Requirements, UserStories, Validation, Domain adapters
-│   └── ui-ux-agent-adapter.ts    # UI/UX placeholder adapter
+│   └── ui-ux-agent-adapter.ts    # UI/UX adapter (standard interface)
+├── ui-ux-task-adapter.ts         # UI/UX task execution backend
 └── examples/
     └── pipeline-integration-example.ts  # Complete usage examples
 ```
@@ -181,10 +182,15 @@ interface PipelineConfig {
 - **ValidationAgentAdapter**: Story validation and conflict detection
 - **DomainModelingAgentAdapter**: Domain model creation
 
-### UIUXAgentAdapter (Placeholder)
-- Mock implementation for UI/UX generation phase
-- Generates wireframes, user flows, and design systems
-- Ready for replacement with actual UI/UX agent
+### UIUXAgentAdapter
+- `UIUXTaskAdapter` を介した UI/UX generation 実行
+- Generates wireframes, user flows, components, design systems, prototypes
+- 標準インターフェース（`StandardAEAgent`）で pipeline と接続
+
+### UIUXTaskAdapter
+- TaskRequest/TaskResponse 互換の UI/UX タスク処理
+- `generateUIUXArtifacts` で UI/UX artifacts を構造化生成
+- 入力不足時の warning 生成と品質スコア算出を提供
 
 ## Integration Benefits
 
@@ -290,7 +296,7 @@ const result = await pipeline.executePhase('intent', benchmarkInput);
 **Pipeline Validation Fails**
 ```
 Error: Missing agents for phases: ui-ux-generation
-Solution: Register all required phase agents or use placeholder implementations
+Solution: Register all required phase agents (`UIUXAgentAdapter` を含む)
 ```
 
 **Input Validation Errors**
@@ -329,7 +335,8 @@ const context = {
 - `UserStoriesAgentAdapter`: User story generation
 - `ValidationAgentAdapter`: Story validation
 - `DomainModelingAgentAdapter`: Domain model creation
-- `UIUXAgentAdapter`: UI/UX generation (placeholder)
+- `UIUXAgentAdapter`: UI/UX generation
+- `UIUXTaskAdapter`: UI/UX task execution backend
 
 ### Key Interfaces
 - `StandardAEAgent<TInput, TOutput>`: Agent implementation interface
