@@ -57,6 +57,8 @@ export class NaturalLanguageTaskAdapter {
   
   // Constants for better maintainability (addressing review comment)
   private static readonly MAX_REQUIREMENTS_BEFORE_CONFLICTS = 10;
+  private static readonly CONFLICT_SIMILARITY_THRESHOLD = 0.45;
+  private static readonly CONFLICT_MIN_OVERLAP_TOKENS = 2;
 
   constructor() {
     const config: FormalAgentConfig = {
@@ -494,35 +496,209 @@ ${gaps.map(g => `• ${g.suggestedRequirement}`).join('\n')}
   }
 
   private detectConflicts(requirements: RequirementDocument[]): string[] {
-    // Initialize conflicts array to ensure it's properly initialized (addressing review comment)
     const conflicts: string[] = [];
-    
-    // Early return if no requirements to check
+
     if (!requirements || requirements.length === 0) {
       return conflicts;
     }
-    
-    // TODO(#2230): Implement more sophisticated conflict detection logic.
-    // This basic implementation flags requirements with identical content but different types or priorities.
-    for (let i = 0; i < requirements.length; i++) {
-      for (let j = i + 1; j < requirements.length; j++) {
+
+    type ConflictDescriptor = {
+      requirement: RequirementDocument;
+      normalizedContent: string;
+      tokens: Set<string>;
+      modality: 'required' | 'optional' | 'neutral';
+      access: 'allow' | 'deny' | 'neutral';
+      numericConstraint: { kind: 'upper' | 'lower'; valueMs: number } | null;
+    };
+
+    const descriptors: ConflictDescriptor[] = requirements.map((requirement) => ({
+      requirement,
+      normalizedContent: this.normalizeConflictText(requirement.content),
+      tokens: this.extractConflictTokens(requirement.content),
+      modality: this.detectModality(requirement.content),
+      access: this.detectAccessMode(requirement.content),
+      numericConstraint: this.extractNumericConstraint(requirement.content),
+    }));
+
+    for (let i = 0; i < descriptors.length; i++) {
+      for (let j = i + 1; j < descriptors.length; j++) {
+        const left = descriptors[i];
+        const right = descriptors[j];
+        if (!left || !right) {
+          continue;
+        }
+
         if (
-          requirements[i]?.content === requirements[j]?.content &&
-          (requirements[i]?.type !== requirements[j]?.type || requirements[i]?.priority !== requirements[j]?.priority)
+          left.normalizedContent === right.normalizedContent &&
+          (left.requirement.type !== right.requirement.type || left.requirement.priority !== right.requirement.priority)
         ) {
           conflicts.push(
-            `Conflict: Requirement "${requirements[i]?.content}" has differing type or priority (${requirements[i]?.type}/${requirements[i]?.priority} vs ${requirements[j]?.type}/${requirements[j]?.priority})`
+            `Conflict: Requirement "${left.requirement.content}" has differing type/priority (${left.requirement.type}/${left.requirement.priority} vs ${right.requirement.type}/${right.requirement.priority})`,
           );
+          continue;
+        }
+
+        const similarity = this.calculateTokenSimilarity(left.tokens, right.tokens);
+        if (
+          similarity.overlap < NaturalLanguageTaskAdapter.CONFLICT_MIN_OVERLAP_TOKENS ||
+          similarity.score < NaturalLanguageTaskAdapter.CONFLICT_SIMILARITY_THRESHOLD
+        ) {
+          continue;
+        }
+
+        if (
+          (left.modality === 'required' && right.modality === 'optional') ||
+          (left.modality === 'optional' && right.modality === 'required')
+        ) {
+          conflicts.push(
+            `Conflict: Requirement modality differs for similar scope ("${left.requirement.content}" vs "${right.requirement.content}")`,
+          );
+        }
+
+        if (
+          (left.access === 'allow' && right.access === 'deny') ||
+          (left.access === 'deny' && right.access === 'allow')
+        ) {
+          conflicts.push(
+            `Conflict: Permission intent differs for similar scope ("${left.requirement.content}" vs "${right.requirement.content}")`,
+          );
+        }
+
+        if (left.numericConstraint && right.numericConstraint) {
+          const incompatibleBounds =
+            (left.numericConstraint.kind === 'upper' &&
+              right.numericConstraint.kind === 'lower' &&
+              left.numericConstraint.valueMs < right.numericConstraint.valueMs) ||
+            (left.numericConstraint.kind === 'lower' &&
+              right.numericConstraint.kind === 'upper' &&
+              right.numericConstraint.valueMs < left.numericConstraint.valueMs);
+          if (incompatibleBounds) {
+            conflicts.push(
+              `Conflict: Numeric constraints are incompatible ("${left.requirement.content}" vs "${right.requirement.content}")`,
+            );
+          }
         }
       }
     }
-    
-    // Add complexity warning for large sets
+
     if (requirements.length > NaturalLanguageTaskAdapter.MAX_REQUIREMENTS_BEFORE_CONFLICTS) {
       conflicts.push('Potential conflicts between requirements due to complexity');
     }
-    
-    return conflicts;
+
+    return Array.from(new Set(conflicts));
+  }
+
+  private normalizeConflictText(content: string): string {
+    return content
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  private extractConflictTokens(content: string): Set<string> {
+    const stopWords = new Set([
+      'the',
+      'and',
+      'for',
+      'with',
+      'this',
+      'that',
+      'must',
+      'should',
+      'shall',
+      'may',
+      'can',
+      'could',
+      'would',
+      'system',
+      'user',
+      'users',
+    ]);
+
+    const tokens = this.normalizeConflictText(content)
+      .split(' ')
+      .map((token) => token.trim())
+      .filter((token) => token.length >= 3 && !stopWords.has(token));
+
+    return new Set(tokens);
+  }
+
+  private calculateTokenSimilarity(left: Set<string>, right: Set<string>): { score: number; overlap: number } {
+    const intersection = Array.from(left).filter((token) => right.has(token));
+    const union = new Set([...Array.from(left), ...Array.from(right)]);
+    if (union.size === 0) {
+      return { score: 0, overlap: 0 };
+    }
+    return {
+      score: intersection.length / union.size,
+      overlap: intersection.length,
+    };
+  }
+
+  private detectModality(content: string): 'required' | 'optional' | 'neutral' {
+    const normalized = content.toLowerCase();
+    const requiredSignals = ['must', 'shall', 'required', 'mandatory', '必須'];
+    const optionalSignals = ['may', 'optional', 'nice to have', '任意'];
+
+    if (requiredSignals.some((signal) => normalized.includes(signal))) {
+      return 'required';
+    }
+    if (optionalSignals.some((signal) => normalized.includes(signal))) {
+      return 'optional';
+    }
+    return 'neutral';
+  }
+
+  private detectAccessMode(content: string): 'allow' | 'deny' | 'neutral' {
+    const normalized = content.toLowerCase();
+    const allowSignals = ['allow', 'enable', 'permit', 'authorize', '許可'];
+    const denySignals = ['deny', 'forbid', 'prohibit', 'disallow', '禁止'];
+
+    if (allowSignals.some((signal) => normalized.includes(signal))) {
+      return 'allow';
+    }
+    if (denySignals.some((signal) => normalized.includes(signal))) {
+      return 'deny';
+    }
+    return 'neutral';
+  }
+
+  private extractNumericConstraint(content: string): { kind: 'upper' | 'lower'; valueMs: number } | null {
+    const normalized = content.toLowerCase();
+    const upperMatch = normalized.match(
+      /(?:within|under|less than|below|at most|<=)\s*(\d+(?:\.\d+)?)\s*(ms|millisecond|milliseconds|s|sec|second|seconds)?/,
+    );
+    if (upperMatch) {
+      return {
+        kind: 'upper',
+        valueMs: this.toMilliseconds(Number(upperMatch[1]), upperMatch[2]),
+      };
+    }
+
+    const lowerMatch = normalized.match(
+      /(?:at least|more than|greater than|above|>=)\s*(\d+(?:\.\d+)?)\s*(ms|millisecond|milliseconds|s|sec|second|seconds)?/,
+    );
+    if (lowerMatch) {
+      return {
+        kind: 'lower',
+        valueMs: this.toMilliseconds(Number(lowerMatch[1]), lowerMatch[2]),
+      };
+    }
+
+    return null;
+  }
+
+  private toMilliseconds(value: number, unit?: string): number {
+    if (!unit) {
+      return value;
+    }
+
+    const normalizedUnit = unit.toLowerCase();
+    if (normalizedUnit === 's' || normalizedUnit === 'sec' || normalizedUnit === 'second' || normalizedUnit === 'seconds') {
+      return value * 1000;
+    }
+    return value;
   }
 
   private detectAmbiguousLanguage(requirements: RequirementDocument[]): string[] {
