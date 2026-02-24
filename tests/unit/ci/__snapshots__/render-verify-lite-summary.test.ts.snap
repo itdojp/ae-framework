@@ -25,6 +25,8 @@ Artifacts:
 - Context Pack Validation Markdown: n/a
 - Context Pack Functor JSON: n/a
 - Context Pack Functor Markdown: n/a
+- Context Pack Natural Transformation JSON: n/a
+- Context Pack Natural Transformation Markdown: n/a
 - Conformance Summary JSON: n/a
 - Conformance Summary Markdown: n/a"
 `;
@@ -46,6 +48,7 @@ Schema Version: 1.0.0
 | Build | ✅ success |  |
 | Context Pack Validation | ✅ success | validated spec/context-pack |
 | Context Pack Functor Validation | ✅ success | validated context-pack functor mapping |
+| Context Pack Natural Transformation Validation | ✅ success | validated context-pack natural transformation mapping |
 | Bdd Lint | ⏭️ skipped |  |
 | Mutation Quick | ✅ success | score: 59.74% |
 | Conformance Report | ✅ success | runs=1;violations=0 |
@@ -60,6 +63,8 @@ Artifacts:
 - Context Pack Validation Markdown: \`artifacts/context-pack/context-pack-validate-report.md\` ([Data Link](https://example.com/artifacts))
 - Context Pack Functor JSON: \`artifacts/context-pack/context-pack-functor-report.json\` ([Data Link](https://example.com/artifacts))
 - Context Pack Functor Markdown: \`artifacts/context-pack/context-pack-functor-report.md\` ([Data Link](https://example.com/artifacts))
+- Context Pack Natural Transformation JSON: \`artifacts/context-pack/context-pack-natural-transformation-report.json\` ([Data Link](https://example.com/artifacts))
+- Context Pack Natural Transformation Markdown: \`artifacts/context-pack/context-pack-natural-transformation-report.md\` ([Data Link](https://example.com/artifacts))
 - Conformance Summary JSON: \`reports/conformance/verify-lite-summary.json\` ([Data Link](https://example.com/artifacts))
 - Conformance Summary Markdown: \`reports/conformance/verify-lite-summary.md\` ([Data Link](https://example.com/artifacts))
 - GitHub Artifacts: [Open](https://example.com/artifacts)"

@@ -14,6 +14,8 @@ Locations
 - Context Pack v1: `spec/context-pack/`
 - Context Pack functor map: `spec/context-pack/functor-map.json`
 - Context Pack functor map schema: `schema/context-pack-functor-map.schema.json`
+- Context Pack natural transformation map: `spec/context-pack/natural-transformations.json`
+- Context Pack natural transformation schema: `schema/context-pack-natural-transformation.schema.json`
 - TLA+: `spec/tla/`
 - Alloy 6: `spec/alloy/`
 - SMT-LIB2: `spec/smt/`

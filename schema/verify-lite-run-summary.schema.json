@@ -175,6 +175,18 @@
             { "type": "null" }
           ]
         },
+        "contextPackNaturalTransformationReportJson": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "contextPackNaturalTransformationReportMarkdown": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
         "conformanceSummary": {
           "oneOf": [
             { "type": "string", "minLength": 1 },

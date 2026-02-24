@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/context-pack-natural-transformation.schema.json",
+  "title": "Context Pack Natural Transformation Mapping",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contextPackSources",
+    "transformations"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "context-pack-natural-transformation/v1"
+    },
+    "contextPackSources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "transformations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "changeType",
+          "before",
+          "after",
+          "commutativityChecks"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "changeType": {
+            "type": "string",
+            "enum": [
+              "refactor",
+              "migration",
+              "breaking"
+            ]
+          },
+          "summary": {
+            "type": "string"
+          },
+          "before": {
+            "$ref": "#/$defs/transformationReferences"
+          },
+          "after": {
+            "$ref": "#/$defs/transformationReferences"
+          },
+          "commutativityChecks": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "regression": {
+                "$ref": "#/$defs/stringList"
+              },
+              "compatibility": {
+                "$ref": "#/$defs/stringList"
+              },
+              "differential": {
+                "$ref": "#/$defs/stringList"
+              }
+            }
+          },
+          "entrypoints": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "file"
+              ],
+              "properties": {
+                "file": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "symbol": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          "forbiddenChanges": {
+            "$ref": "#/$defs/stringList"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "stringList": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "nonEmptyStringList": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/stringList"
+        },
+        {
+          "minItems": 1
+        }
+      ]
+    },
+    "transformationReferences": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "morphismIds"
+      ],
+      "properties": {
+        "morphismIds": {
+          "$ref": "#/$defs/nonEmptyStringList"
+        },
+        "diagramIds": {
+          "$ref": "#/$defs/stringList"
+        },
+        "acceptanceTestIds": {
+          "$ref": "#/$defs/stringList"
+        }
+      }
+    }
+  }
+}

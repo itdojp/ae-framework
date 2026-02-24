@@ -12,6 +12,10 @@ const DEFAULT_SOURCES = ['spec/context-pack/**/*.{yml,yaml,json}'];
 const DEFAULT_SCHEMA_PATH = 'schema/context-pack-v1.schema.json';
 const DEFAULT_REPORT_JSON = 'artifacts/context-pack/context-pack-validate-report.json';
 const DEFAULT_REPORT_MD = 'artifacts/context-pack/context-pack-validate-report.md';
+const NON_CONTEXT_PACK_SCHEMA_VERSIONS = new Set([
+  'context-pack-functor-map/v1',
+  'context-pack-natural-transformation/v1',
+]);
 
 const normalizePath = (value) => value.replace(/\\/g, '/');
 const toRelativePath = (absolutePath) => normalizePath(path.relative(process.cwd(), absolutePath) || '.');
@@ -263,7 +267,8 @@ function validateContextPacks(options) {
     if (
       payload &&
       typeof payload === 'object' &&
-      payload.schemaVersion === 'context-pack-functor-map/v1'
+      typeof payload.schemaVersion === 'string' &&
+      NON_CONTEXT_PACK_SCHEMA_VERSIONS.has(payload.schemaVersion)
     ) {
       skippedFiles += 1;
       continue;

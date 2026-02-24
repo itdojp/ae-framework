@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "context-pack-natural-transformation/v1",
+  "contextPackSources": [
+    "spec/context-pack/**/*.{yml,yaml,json}"
+  ],
+  "transformations": [
+    {
+      "id": "ReserveInventoryRefactor",
+      "changeType": "refactor",
+      "summary": "ReserveInventory implementation can change while behavior remains compatible.",
+      "before": {
+        "morphismIds": [
+          "ReserveInventory"
+        ],
+        "diagramIds": [
+          "D-1"
+        ],
+        "acceptanceTestIds": [
+          "AT-1"
+        ]
+      },
+      "after": {
+        "morphismIds": [
+          "ReserveInventory"
+        ],
+        "diagramIds": [
+          "D-1"
+        ],
+        "acceptanceTestIds": [
+          "AT-1"
+        ]
+      },
+      "commutativityChecks": {
+        "regression": [
+          "tests/services/inventory-service.test.ts"
+        ],
+        "compatibility": [
+          "tests/api/reservations-routes.test.ts"
+        ],
+        "differential": []
+      },
+      "entrypoints": [
+        {
+          "file": "src/domain/services.ts",
+          "symbol": "InventoryServiceImpl"
+        }
+      ],
+      "forbiddenChanges": []
+    }
+  ]
+}

@@ -18,6 +18,10 @@ describe('renderVerifyLiteSummary', () => {
       build: { status: 'success' },
       contextPackValidation: { status: 'success', notes: 'validated spec/context-pack' },
       contextPackFunctorValidation: { status: 'success', notes: 'validated context-pack functor mapping' },
+      contextPackNaturalTransformationValidation: {
+        status: 'success',
+        notes: 'validated context-pack natural transformation mapping'
+      },
       bddLint: { status: 'skipped' },
       mutationQuick: { status: 'success', notes: 'score: 59.74%' },
       conformanceReport: { status: 'success', notes: 'runs=1;violations=0' }
@@ -37,6 +41,10 @@ describe('renderVerifyLiteSummary', () => {
       contextPackReportMarkdown: 'artifacts/context-pack/context-pack-validate-report.md',
       contextPackFunctorReportJson: 'artifacts/context-pack/context-pack-functor-report.json',
       contextPackFunctorReportMarkdown: 'artifacts/context-pack/context-pack-functor-report.md',
+      contextPackNaturalTransformationReportJson:
+        'artifacts/context-pack/context-pack-natural-transformation-report.json',
+      contextPackNaturalTransformationReportMarkdown:
+        'artifacts/context-pack/context-pack-natural-transformation-report.md',
       conformanceSummary: 'reports/conformance/verify-lite-summary.json',
       conformanceSummaryMarkdown: 'reports/conformance/verify-lite-summary.md'
     }
@@ -77,6 +85,8 @@ describe('renderVerifyLiteSummary', () => {
         contextPackReportMarkdown: null,
         contextPackFunctorReportJson: null,
         contextPackFunctorReportMarkdown: null,
+        contextPackNaturalTransformationReportJson: null,
+        contextPackNaturalTransformationReportMarkdown: null,
         conformanceSummary: null,
         conformanceSummaryMarkdown: null
       }

@@ -58,6 +58,11 @@ const checks = [
     label: 'Context Pack functor map schema validation'
   },
   {
+    schema: 'schema/context-pack-natural-transformation.schema.json',
+    fixtures: ['fixtures/context-pack/sample.natural-transformations.json'],
+    label: 'Context Pack natural transformation schema validation'
+  },
+  {
     schema: 'schema/execplan.schema.json',
     fixtures: ['fixtures/execplan/sample.execplan.json'],
     label: 'ExecPlan schema validation'
