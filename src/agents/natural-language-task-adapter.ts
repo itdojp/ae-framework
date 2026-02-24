@@ -57,6 +57,7 @@ export class NaturalLanguageTaskAdapter {
   
   // Constants for better maintainability (addressing review comment)
   private static readonly MAX_REQUIREMENTS_BEFORE_CONFLICTS = 10;
+  // Tuned to flag clearly similar requirements while avoiding noisy pairs.
   private static readonly CONFLICT_SIMILARITY_THRESHOLD = 0.45;
   private static readonly CONFLICT_MIN_OVERLAP_TOKENS = 2;
 
@@ -591,7 +592,7 @@ ${gaps.map(g => `• ${g.suggestedRequirement}`).join('\n')}
   private normalizeConflictText(content: string): string {
     return content
       .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/[^\p{L}\p{N}\s]/gu, ' ')
       .replace(/\s+/g, ' ')
       .trim();
   }
@@ -616,9 +617,13 @@ ${gaps.map(g => `• ${g.suggestedRequirement}`).join('\n')}
       'users',
     ]);
 
-    const tokens = this.normalizeConflictText(content)
-      .split(' ')
-      .map((token) => token.trim())
+    const normalized = this.normalizeConflictText(content);
+    if (this.containsCjk(normalized) && !normalized.includes(' ')) {
+      return this.generateCharacterBigrams(normalized);
+    }
+
+    const tokens = normalized
+      .split(/\s+/)
       .filter((token) => token.length >= 3 && !stopWords.has(token));
 
     return new Set(tokens);
@@ -637,29 +642,30 @@ ${gaps.map(g => `• ${g.suggestedRequirement}`).join('\n')}
   }
 
   private detectModality(content: string): 'required' | 'optional' | 'neutral' {
-    const normalized = content.toLowerCase();
+    const normalized = this.normalizeSignalText(content);
     const requiredSignals = ['must', 'shall', 'required', 'mandatory', '必須'];
     const optionalSignals = ['may', 'optional', 'nice to have', '任意'];
 
-    if (requiredSignals.some((signal) => normalized.includes(signal))) {
+    if (requiredSignals.some((signal) => this.hasLexicalSignal(normalized, signal))) {
       return 'required';
     }
-    if (optionalSignals.some((signal) => normalized.includes(signal))) {
+    if (optionalSignals.some((signal) => this.hasLexicalSignal(normalized, signal))) {
       return 'optional';
     }
     return 'neutral';
   }
 
   private detectAccessMode(content: string): 'allow' | 'deny' | 'neutral' {
-    const normalized = content.toLowerCase();
+    const normalized = this.normalizeSignalText(content);
     const allowSignals = ['allow', 'enable', 'permit', 'authorize', '許可'];
-    const denySignals = ['deny', 'forbid', 'prohibit', 'disallow', '禁止'];
+    const denySignals = ['deny', 'forbid', 'forbidden', 'prohibit', 'disallow', '禁止'];
 
-    if (allowSignals.some((signal) => normalized.includes(signal))) {
-      return 'allow';
-    }
-    if (denySignals.some((signal) => normalized.includes(signal))) {
+    // Evaluate deny first to avoid accidental allow matches on "disallow" forms.
+    if (denySignals.some((signal) => this.hasLexicalSignal(normalized, signal))) {
       return 'deny';
+    }
+    if (allowSignals.some((signal) => this.hasLexicalSignal(normalized, signal))) {
+      return 'allow';
     }
     return 'neutral';
   }
@@ -667,7 +673,7 @@ ${gaps.map(g => `• ${g.suggestedRequirement}`).join('\n')}
   private extractNumericConstraint(content: string): { kind: 'upper' | 'lower'; valueMs: number } | null {
     const normalized = content.toLowerCase();
     const upperMatch = normalized.match(
-      /(?:within|under|less than|below|at most|<=)\s*(\d+(?:\.\d+)?)\s*(ms|millisecond|milliseconds|s|sec|second|seconds)?/,
+      /(?:within|under|less than|below|at most|<=)\s*(\d+(?:\.\d+)?)\s*(ms|msec|millisecond|milliseconds|s|sec|second|seconds|m|min|minute|minutes)?/,
     );
     if (upperMatch) {
       return {
@@ -677,7 +683,7 @@ ${gaps.map(g => `• ${g.suggestedRequirement}`).join('\n')}
     }
 
     const lowerMatch = normalized.match(
-      /(?:at least|more than|greater than|above|>=)\s*(\d+(?:\.\d+)?)\s*(ms|millisecond|milliseconds|s|sec|second|seconds)?/,
+      /(?:at least|more than|greater than|above|>=)\s*(\d+(?:\.\d+)?)\s*(ms|msec|millisecond|milliseconds|s|sec|second|seconds|m|min|minute|minutes)?/,
     );
     if (lowerMatch) {
       return {
@@ -695,10 +701,44 @@ ${gaps.map(g => `• ${g.suggestedRequirement}`).join('\n')}
     }
 
     const normalizedUnit = unit.toLowerCase();
+    if (normalizedUnit === 'ms' || normalizedUnit === 'msec' || normalizedUnit === 'millisecond' || normalizedUnit === 'milliseconds') {
+      return value;
+    }
     if (normalizedUnit === 's' || normalizedUnit === 'sec' || normalizedUnit === 'second' || normalizedUnit === 'seconds') {
       return value * 1000;
     }
+    if (normalizedUnit === 'm' || normalizedUnit === 'min' || normalizedUnit === 'minute' || normalizedUnit === 'minutes') {
+      return value * 60_000;
+    }
     return value;
+  }
+
+  private normalizeSignalText(content: string): string {
+    return content.toLowerCase().replace(/\s+/g, ' ').trim();
+  }
+
+  private hasLexicalSignal(normalizedContent: string, signal: string): boolean {
+    if (/^[a-z]+(?:\s+[a-z]+)*$/.test(signal)) {
+      const escaped = signal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+      return new RegExp(`\\b${escaped}\\b`, 'i').test(normalizedContent);
+    }
+    return normalizedContent.includes(signal);
+  }
+
+  private containsCjk(text: string): boolean {
+    return /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text);
+  }
+
+  private generateCharacterBigrams(text: string): Set<string> {
+    const compact = text.replace(/\s+/g, '');
+    if (compact.length <= 1) {
+      return new Set(compact ? [compact] : []);
+    }
+    const tokens = new Set<string>();
+    for (let i = 0; i < compact.length - 1; i++) {
+      tokens.add(compact.slice(i, i + 2));
+    }
+    return tokens;
   }
 
   private detectAmbiguousLanguage(requirements: RequirementDocument[]): string[] {
