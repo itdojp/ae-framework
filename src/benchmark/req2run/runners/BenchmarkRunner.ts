@@ -504,7 +504,7 @@ export class BenchmarkRunner {
     });
 
     if (!result.success) {
-      const errorMessages = (result.errors || []).map((error) => error.message).filter(Boolean);
+      const errorMessages = Array.from(new Set((result.errors || []).map((error) => error.message).filter(Boolean)));
       throw new Error(errorMessages.length > 0 ? errorMessages.join('; ') : 'UI/UX generation failed');
     }
 
@@ -662,17 +662,39 @@ export class BenchmarkRunner {
     });
 
     const requirements: Record<string, string[]> = {};
-    normalizedStories.forEach((story, index) => {
-      requirements[`req-${index + 1}`] = [story.id];
-    });
+    const requirementIds = spec.requirements.map((_, index) => `req-${index + 1}`);
+    const gaps: string[] = [];
+    let linkedRequirements = 0;
+
+    if (requirementIds.length === 0) {
+      normalizedStories.forEach((story, index) => {
+        requirements[`req-${index + 1}`] = [story.id];
+      });
+      linkedRequirements = normalizedStories.length;
+    } else {
+      requirementIds.forEach((requirementId, index) => {
+        const story = normalizedStories[index];
+        if (story) {
+          requirements[requirementId] = [story.id];
+          linkedRequirements += 1;
+          return;
+        }
+        requirements[requirementId] = [];
+        gaps.push(requirementId);
+      });
+    }
+
+    const coverage = requirementIds.length > 0
+      ? Math.round((linkedRequirements / requirementIds.length) * 100)
+      : (normalizedStories.length > 0 ? 100 : 0);
 
     return {
       stories: normalizedStories,
       acceptanceCriteria,
       traceabilityMatrix: {
         requirements,
-        coverage: 100,
-        gaps: [],
+        coverage,
+        gaps,
       },
       success: true,
     };
