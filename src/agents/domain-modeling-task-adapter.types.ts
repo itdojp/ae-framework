@@ -111,6 +111,18 @@ export interface BusinessRule {
 }
 
 export interface DomainModelingInput {
+  taskType?: string;
+  rawPrompt?: string;
+  normalizedPrompt?: string;
+  keywords?: string[];
+  entities?: string[];
+  aggregates?: string[];
+  boundedContexts?: string[];
+  businessRules?: string[];
+  ubiquitousTerms?: string[];
+  domainServices?: string[];
+  relationships?: string[];
+  conflictIndicators?: string[];
   [key: string]: unknown;
 }
 
@@ -355,4 +367,3 @@ export interface ProactiveGuidanceResult {
     recommendedActions: string[];
   };
 }
-

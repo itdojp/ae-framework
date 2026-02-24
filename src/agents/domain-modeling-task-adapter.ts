@@ -515,86 +515,221 @@ ${validation.consistencyChecks.map((check) =>
   private classifyTask(description: string, prompt: string): string {
     const combined = (description + ' ' + prompt).toLowerCase();
     
-    if (combined.includes('analyze domain') || combined.includes('domain analysis')) {
+    if (
+      combined.includes('analyze domain') ||
+      combined.includes('domain analysis') ||
+      combined.includes('ドメイン分析')
+    ) {
       return 'analyze-domain';
     }
     
-    if (combined.includes('identify entities') || combined.includes('entity identification')) {
+    if (
+      combined.includes('identify entities') ||
+      combined.includes('entity identification') ||
+      (combined.includes('エンティティ') && (combined.includes('識別') || combined.includes('抽出')))
+    ) {
       return 'identify-entities';
     }
     
-    if (combined.includes('aggregate') || combined.includes('aggregate root')) {
+    if (combined.includes('aggregate') || combined.includes('aggregate root') || combined.includes('集約')) {
       return 'model-aggregates';
     }
     
-    if (combined.includes('bounded context') || combined.includes('context boundary')) {
+    if (
+      combined.includes('bounded context') ||
+      combined.includes('context boundary') ||
+      combined.includes('境界づけられたコンテキスト') ||
+      combined.includes('境界コンテキスト')
+    ) {
       return 'define-bounded-contexts';
     }
     
-    if (combined.includes('business rule') || combined.includes('extract rules')) {
+    if (
+      combined.includes('business rule') ||
+      combined.includes('extract rules') ||
+      combined.includes('ビジネスルール') ||
+      combined.includes('業務ルール')
+    ) {
       return 'extract-business-rules';
     }
     
-    if (combined.includes('ubiquitous language') || combined.includes('domain language')) {
+    if (
+      combined.includes('ubiquitous language') ||
+      combined.includes('domain language') ||
+      combined.includes('ユビキタス言語')
+    ) {
       return 'create-ubiquitous-language';
     }
     
-    if (combined.includes('domain service') || combined.includes('service design')) {
+    if (
+      combined.includes('domain service') ||
+      combined.includes('service design') ||
+      combined.includes('ドメインサービス')
+    ) {
       return 'design-domain-services';
     }
     
-    if (combined.includes('validate model') || combined.includes('model validation')) {
+    if (
+      combined.includes('validate model') ||
+      combined.includes('model validation') ||
+      combined.includes('モデル検証')
+    ) {
       return 'validate-domain-model';
     }
     
     return 'generic-modeling';
   }
 
-  // Input extraction methods (simplified)
-  // TODO(#2227): Implement input extraction logic (addressing Copilot review comment 2280080079)
   private extractDomainInput(prompt: string): DomainModelingInput {
-    void prompt;
-    return {};
+    const input = this.buildBaseInput(prompt, 'analyze-domain');
+    return {
+      ...input,
+      analysisFocus: 'domain-overview',
+    };
   }
-  // TODO(#2227): Implement input extraction logic
+
   private extractEntityInput(prompt: string): DomainModelingInput {
-    void prompt;
-    return {};
+    const input = this.buildBaseInput(prompt, 'identify-entities');
+    return {
+      ...input,
+      analysisFocus: 'entity-identification',
+      targetEntities: input.entities,
+    };
   }
-  // TODO(#2227): Implement input extraction logic
+
   private extractAggregateInput(prompt: string): DomainModelingInput {
-    void prompt;
-    return {};
+    const input = this.buildBaseInput(prompt, 'model-aggregates');
+    return {
+      ...input,
+      analysisFocus: 'aggregate-modeling',
+      targetAggregates: input.aggregates,
+    };
   }
-  // TODO(#2227): Implement input extraction logic
+
   private extractContextInput(prompt: string): DomainModelingInput {
-    void prompt;
-    return {};
+    const input = this.buildBaseInput(prompt, 'define-bounded-contexts');
+    return {
+      ...input,
+      analysisFocus: 'bounded-context-definition',
+      targetContexts: input.boundedContexts,
+    };
   }
-  // TODO(#2227): Implement input extraction logic
+
   private extractBusinessRuleInput(prompt: string): DomainModelingInput {
-    void prompt;
-    return {};
+    const input = this.buildBaseInput(prompt, 'extract-business-rules');
+    return {
+      ...input,
+      analysisFocus: 'business-rule-extraction',
+      targetBusinessRules: input.businessRules,
+    };
   }
-  // TODO(#2227): Implement input extraction logic
+
   private extractLanguageInput(prompt: string): DomainModelingInput {
-    void prompt;
-    return {};
+    const input = this.buildBaseInput(prompt, 'create-ubiquitous-language');
+    return {
+      ...input,
+      analysisFocus: 'ubiquitous-language',
+      targetTerms: input.ubiquitousTerms,
+    };
   }
-  // TODO(#2227): Implement input extraction logic
+
   private extractServiceInput(prompt: string): DomainModelingInput {
-    void prompt;
-    return {};
+    const input = this.buildBaseInput(prompt, 'design-domain-services');
+    return {
+      ...input,
+      analysisFocus: 'domain-service-design',
+      targetServices: input.domainServices,
+    };
   }
-  // TODO(#2227): Implement input extraction logic
+
   private extractModelInput(prompt: string): DomainModelingInput {
-    void prompt;
-    return {};
+    const input = this.buildBaseInput(prompt, 'validate-domain-model');
+    return {
+      ...input,
+      analysisFocus: 'model-validation',
+    };
   }
-  // TODO(#2227): Implement input extraction logic
+
   private extractGenericInput(prompt: string): DomainModelingInput {
-    void prompt;
-    return {};
+    const input = this.buildBaseInput(prompt, 'generic-modeling');
+    return {
+      ...input,
+      analysisFocus: 'generic-domain-analysis',
+    };
+  }
+
+  private buildBaseInput(prompt: string, taskType: string): DomainModelingInput {
+    const normalizedPrompt = prompt.toLowerCase();
+
+    return {
+      taskType,
+      rawPrompt: prompt,
+      normalizedPrompt,
+      keywords: this.extractKeywords(prompt),
+      entities: this.extractList(prompt, [
+        /(?:^|[\r\n]|[.!?]\s+)(?:[-*]\s*)?(?:entities?|entity|エンティティ)\s*[:：]\s*([^\n]+)/gi,
+      ]),
+      aggregates: this.extractList(prompt, [
+        /(?:aggregates?|aggregate roots?|aggregate|集約(?:ルート)?)[\s:：]+([^\n]+)/gi,
+      ]),
+      boundedContexts: this.extractList(prompt, [
+        /(?:bounded contexts?|context boundaries?|context boundary|境界づけられたコンテキスト|境界コンテキスト)[\s:：]+([^\n]+)/gi,
+      ]),
+      businessRules: this.extractList(prompt, [
+        /(?:business rules?|business rule|rules?|ビジネスルール|業務ルール)[\s:：]+([^\n]+)/gi,
+      ]),
+      ubiquitousTerms: this.extractList(prompt, [
+        /(?:ubiquitous language|ubiquitous terms?|domain language|ユビキタス言語|用語集)[\s:：]+([^\n]+)/gi,
+      ]),
+      domainServices: this.extractList(prompt, [
+        /(?:domain services?|service design|services?|ドメインサービス)[\s:：]+([^\n]+)/gi,
+      ]),
+      relationships: this.extractList(prompt, [
+        /(?:relationships?|関連|relation)[\s:：]+([^\n]+)/gi,
+      ]),
+      conflictIndicators: this.extractList(prompt, [
+        /(conflict[^\n]*|矛盾[^\n]*|衝突[^\n]*|不整合[^\n]*)/gi,
+      ]),
+    };
+  }
+
+  private extractKeywords(prompt: string): string[] {
+    const english = Array.from(prompt.matchAll(/\b[a-z][a-z0-9_-]{2,}\b/gi)).map((match) => match[0].toLowerCase());
+    const japaneseCandidates = [
+      'ドメイン',
+      'エンティティ',
+      '集約',
+      '境界コンテキスト',
+      'ビジネスルール',
+      'ユビキタス言語',
+      'ドメインサービス',
+      'モデル検証',
+      '矛盾',
+    ].filter((keyword) => prompt.includes(keyword));
+
+    return this.unique([...english, ...japaneseCandidates]);
+  }
+
+  private extractList(prompt: string, patterns: RegExp[]): string[] {
+    const values: string[] = [];
+    for (const pattern of patterns) {
+      for (const match of prompt.matchAll(pattern)) {
+        const captured = match[1] ?? '';
+        values.push(...this.splitItems(captured));
+      }
+    }
+    return this.unique(values);
+  }
+
+  private splitItems(input: string): string[] {
+    return input
+      .split(/[,、・/]/)
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
+  }
+
+  private unique(values: string[]): string[] {
+    return Array.from(new Set(values));
   }
 
   // Mock analysis methods (to be implemented with actual domain modeling logic)
