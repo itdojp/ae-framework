@@ -66,6 +66,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - Heavy test observability: `docs/ci/heavy-test-trend-archive.md`, `docs/ci/heavy-test-alerts.md`, `docs/ci/heavy-test-album.md`
 - Specification & verification: `docs/quality/`, `docs/quality/formal-csp.md`, `docs/ci-policy.md`, `docs/testing/integration-runtime-helpers.md`
 - Context Pack v1 (spec contract): `docs/spec/context-pack.md`
+- Context Pack onboarding checklist: `docs/guides/context-pack-onboarding-checklist.md`
 - Spec & Verification Kit (minimal activation guide): `docs/reference/SPEC-VERIFICATION-KIT-MIN.md`
 - Connectors & agent workflows: `docs/integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md`, `docs/integrations/CODEX-INTEGRATION.md`
 
@@ -123,6 +124,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - ヘビーテスト観測: `docs/ci/heavy-test-trend-archive.md`, `docs/ci/heavy-test-alerts.md`, `docs/ci/heavy-test-album.md`
 - 仕様と検証: `docs/ci-policy.md`, `docs/testing/integration-runtime-helpers.md`, `docs/quality/`, `docs/quality/formal-csp.md`
 - Context Pack v1（仕様入力契約）: `docs/spec/context-pack.md`
+- Context Pack 導入チェックリスト: `docs/guides/context-pack-onboarding-checklist.md`
 - Spec & Verification Kit（最小パッケージ・有効化手順）: `docs/reference/SPEC-VERIFICATION-KIT-MIN.md`
 - エージェント統合: `docs/integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md`, `docs/integrations/CODEX-INTEGRATION.md`
 

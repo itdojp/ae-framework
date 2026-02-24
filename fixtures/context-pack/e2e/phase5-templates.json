@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "context-pack-phase5-templates/v1",
+  "contextPackSources": [
+    "fixtures/context-pack/e2e/context-pack/**/*.{yml,yaml,json}"
+  ],
+  "pullbacks": [
+    {
+      "id": "ReservePullbackFixture",
+      "leftMorphismId": "ReserveInventory",
+      "rightMorphismId": "ReleaseInventory",
+      "apexObjectId": "InventoryItem",
+      "commutingDiagramIds": [
+        "D-1"
+      ],
+      "evidencePaths": [
+        "fixtures/context-pack/e2e/evidence/pullback.md"
+      ]
+    }
+  ],
+  "pushouts": [
+    {
+      "id": "ReservePushoutFixture",
+      "leftMorphismId": "ReserveInventory",
+      "rightMorphismId": "ReleaseInventory",
+      "coapexObjectId": "InventoryItem",
+      "commutingDiagramIds": [
+        "D-1"
+      ],
+      "evidencePaths": [
+        "fixtures/context-pack/e2e/evidence/pushout.md"
+      ]
+    }
+  ],
+  "monoidalFlows": [
+    {
+      "id": "ReserveMonoidalFixture",
+      "parallelMorphismIds": [
+        "ReserveInventory",
+        "ReleaseInventory"
+      ],
+      "mergeMorphismId": "ReserveInventory",
+      "tensorLawChecks": [
+        {
+          "name": "associativity",
+          "evidencePaths": [
+            "fixtures/context-pack/e2e/evidence/monoidal-associativity.md"
+          ]
+        }
+      ],
+      "stringDiagramPaths": [
+        "fixtures/context-pack/e2e/evidence/monoidal-diagram.md"
+      ]
+    }
+  ],
+  "kleisliPipelines": [
+    {
+      "id": "ReserveKleisliFixture",
+      "effectType": "io",
+      "morphismIds": [
+        "ReserveInventory",
+        "ReleaseInventory"
+      ],
+      "pureBoundaryMorphismIds": [],
+      "impureBoundaryMorphismIds": [
+        "ReserveInventory",
+        "ReleaseInventory"
+      ],
+      "bindEvidencePaths": [
+        "fixtures/context-pack/e2e/evidence/kleisli-bind.md"
+      ],
+      "sideEffectEvidencePaths": [
+        "fixtures/context-pack/e2e/src/domain/reserve.ts"
+      ]
+    }
+  ]
+}

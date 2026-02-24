@@ -43,6 +43,7 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - Claude Code Automation Guide: `guides/CLAUDE-CODE-AUTOMATION-GUIDE.md`
 - Phase 2 Advanced Features (2.1–2.3): `guides/PHASE-2-ADVANCED-FEATURES-GUIDE.md`
 - Advanced Troubleshooting: `guides/ADVANCED-TROUBLESHOOTING-GUIDE.md`
+- Context Pack onboarding checklist: `guides/context-pack-onboarding-checklist.md`
 - Thread -> Repo -> CI flow: `guides/THREAD-REPO-CI-FLOW.md`
 - General Usage: `guides/USAGE.md`
 - CLI Entry Migration: `guides/CLI-MIGRATION.md`
@@ -165,6 +166,7 @@ ae-frameworkは、エージェント協調型のSDLCオーケストレーター�
 - **[CLAUDE-CODE-AUTOMATION-GUIDE.md](./guides/CLAUDE-CODE-AUTOMATION-GUIDE.md)** ⭐ **重要** - Claude Code完全自動化
 - **🆕 [PHASE-2-ADVANCED-FEATURES-GUIDE.md](./guides/PHASE-2-ADVANCED-FEATURES-GUIDE.md)** ⭐ **NEW** - Phase 2.1-2.3統合ガイド
 - **🆕 [ADVANCED-TROUBLESHOOTING-GUIDE.md](./guides/ADVANCED-TROUBLESHOOTING-GUIDE.md)** ⭐ **NEW** - 高度な機能のトラブルシューティング
+- [context-pack-onboarding-checklist.md](./guides/context-pack-onboarding-checklist.md) - Context Pack 導入チェックリスト（入力準備→検証→修正→再検証）
 - [THREAD-REPO-CI-FLOW.md](./guides/THREAD-REPO-CI-FLOW.md) - Plan を repo SSOT に正規化する標準フロー
 - [USAGE.md](./guides/USAGE.md) - 一般的な使い方ガイド
 - [CLI-MIGRATION.md](./guides/CLI-MIGRATION.md) - CLI entry 移行ガイド
