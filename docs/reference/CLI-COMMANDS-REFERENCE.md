@@ -578,7 +578,7 @@ ae quality run --env development
 pnpm run evaluate:usefulness -- --strict-inputs --min-score 70
 ```
 
-`ae setup` が内部で利用する `InstallerManager` は `Configuration.format: yaml` 指定時に JSON fallback せず、YAML 形式で設定ファイルを出力します。
+`ae setup` の YAML 出力仕様については、前述の「Setup」セクションの注記を参照してください。
 
 ### Security / SBOM / Resilience / Circuit Breaker
 ```bash

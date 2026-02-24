@@ -8,6 +8,52 @@ import * as path from 'path';
 import { spawn } from 'child_process';
 import { stringify as toYamlString } from 'yaml';
 
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const stringifyConfigScalar = (value: unknown): string => {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (value === null || value === undefined) return '';
+  return JSON.stringify(value);
+};
+
+const stringifyEnvValue = (value: unknown): string => {
+  if (typeof value === 'string') {
+    if (/[\s#"'`=]/.test(value) || value.includes('\n')) {
+      return JSON.stringify(value);
+    }
+    return value;
+  }
+  return stringifyConfigScalar(value);
+};
+
+const toEnvString = (content: Record<string, unknown>): string =>
+  Object.entries(content)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([key, value]) => `${key.replace(/[^A-Za-z0-9_]/g, '_').toUpperCase()}=${stringifyEnvValue(value)}`)
+    .join('\n')
+    .concat('\n');
+
+const toIniString = (content: Record<string, unknown>): string => {
+  const rootEntries = Object.entries(content).sort(([left], [right]) => left.localeCompare(right));
+  const rootLines: string[] = [];
+  const sectionBlocks: string[] = [];
+
+  for (const [key, value] of rootEntries) {
+    if (isPlainObject(value)) {
+      const sectionLines = Object.entries(value)
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([sectionKey, sectionValue]) => `${sectionKey}=${stringifyConfigScalar(sectionValue)}`);
+      sectionBlocks.push(`[${key}]${sectionLines.length > 0 ? `\n${sectionLines.join('\n')}` : ''}`);
+      continue;
+    }
+    rootLines.push(`${key}=${stringifyConfigScalar(value)}`);
+  }
+
+  return [...rootLines, ...sectionBlocks].join('\n').concat('\n');
+};
+
 export interface InstallationTemplate {
   id: string;
   name: string;
@@ -789,6 +835,12 @@ end
           case 'yaml':
             configContent = toYamlString(config.content);
             break;
+          case 'env':
+            configContent = toEnvString(config.content);
+            break;
+          case 'ini':
+            configContent = toIniString(config.content);
+            break;
           case 'js':
           case 'ts':
             configContent = typeof config.content === 'string' 
@@ -802,7 +854,7 @@ end
             break;
           default:
             configContent = JSON.stringify(config.content, null, 2);
-            result.warnings.push(`Unsupported configuration format "${config.format}", falling back to JSON`);
+            result.warnings.push(`Configuration format "${config.format}" is not implemented, falling back to JSON`);
         }
       }
 

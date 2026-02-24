@@ -3,6 +3,7 @@ import { InstallerManager, InstallationTemplate } from '../../src/utils/installe
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { spawn } from 'child_process';
+import { parse as parseYaml } from 'yaml';
 
 // Mock dependencies
 vi.mock('fs/promises');
@@ -324,11 +325,89 @@ describe('InstallerManager', () => {
 
       const writtenContent = yamlWriteCall?.[1];
       expect(typeof writtenContent).toBe('string');
-      expect(writtenContent).toContain('app:');
-      expect(writtenContent).toContain('name: ae-framework');
-      expect(writtenContent).toContain('features:');
-      expect(result.warnings).not.toContain('YAML format not implemented, falling back to JSON');
+      expect(parseYaml(String(writtenContent))).toEqual({
+        app: { name: 'ae-framework', mode: 'test' },
+        features: ['installer', 'yaml'],
+      });
+      expect(result.warnings).toEqual([]);
       expect(result.configuredFiles).toContain('config/app.yaml');
+    });
+
+    test('should serialize ENV and INI configurations without unsupported warning', async () => {
+      const template: InstallationTemplate = {
+        id: 'env-ini-config-template',
+        name: 'ENV/INI Config Template',
+        description: 'Template for ENV and INI serialization test',
+        category: 'library',
+        language: 'typescript',
+        dependencies: [],
+        scripts: {},
+        files: [],
+        configurations: [
+          {
+            file: '.env',
+            format: 'env',
+            content: {
+              appName: 'ae-framework',
+              apiUrl: 'https://example.com',
+              retryCount: 3,
+              debugMode: true,
+            },
+          },
+          {
+            file: 'config/app.ini',
+            format: 'ini',
+            content: {
+              mode: 'test',
+              retries: 5,
+              database: {
+                host: 'localhost',
+                port: 5432,
+              },
+            },
+          },
+        ],
+      };
+
+      const result = {
+        success: true,
+        message: '',
+        installedDependencies: [],
+        createdFiles: [],
+        configuredFiles: [],
+        executedSteps: [],
+        warnings: [],
+        errors: [],
+        duration: 0,
+      };
+
+      await installerManager['applyConfigurations'](template, {
+        projectRoot: testProjectRoot,
+        projectName: 'test-project',
+        packageManager: 'pnpm',
+      }, result);
+
+      const envWriteCall = vi.mocked(fs.writeFile).mock.calls.find(
+        ([filePath]) => filePath === path.join(testProjectRoot, '.env')
+      );
+      expect(envWriteCall).toBeDefined();
+      expect(String(envWriteCall?.[1])).toContain('APPNAME=ae-framework');
+      expect(String(envWriteCall?.[1])).toContain('APIURL=https://example.com');
+      expect(String(envWriteCall?.[1])).toContain('RETRYCOUNT=3');
+      expect(String(envWriteCall?.[1])).toContain('DEBUGMODE=true');
+
+      const iniWriteCall = vi.mocked(fs.writeFile).mock.calls.find(
+        ([filePath]) => filePath === path.join(testProjectRoot, 'config/app.ini')
+      );
+      expect(iniWriteCall).toBeDefined();
+      expect(String(iniWriteCall?.[1])).toContain('mode=test');
+      expect(String(iniWriteCall?.[1])).toContain('retries=5');
+      expect(String(iniWriteCall?.[1])).toContain('[database]');
+      expect(String(iniWriteCall?.[1])).toContain('host=localhost');
+      expect(String(iniWriteCall?.[1])).toContain('port=5432');
+
+      expect(result.warnings).toEqual([]);
+      expect(result.configuredFiles).toEqual(expect.arrayContaining(['.env', 'config/app.ini']));
     });
   });
 
