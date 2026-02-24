@@ -38,7 +38,7 @@
             "minLength": 1
           },
           "requiredInputKeys": {
-            "$ref": "#/$defs/nonEmptyStringList"
+            "$ref": "#/$defs/stringList"
           },
           "disallowGenericDtoKeys": {
             "type": "boolean"

@@ -60,6 +60,19 @@ forbidden_changes:
   - Remove ReserveInventory precondition checks.
 `;
 
+const ZERO_INPUT_CONTEXT_PACK = `version: 1
+name: zero-input-context-pack
+problem_statement:
+  goals:
+    - Verify zero-input morphism coverage.
+morphisms:
+  - id: Heartbeat
+    input: {}
+    output:
+      ok: boolean
+    failures: []
+`;
+
 describe('context-pack product/coproduct validate CLI', () => {
   let workdir: string;
   let reportDir: string;
@@ -211,5 +224,56 @@ describe('context-pack product/coproduct validate CLI', () => {
     expect(report.status).toBe('fail');
     expect(report.summary.ambiguousDtoKeys).toBeGreaterThan(0);
     expect(report.summary.missingEvidence).toBeGreaterThan(0);
+  });
+
+  it('allows empty requiredInputKeys for zero-input morphisms', async () => {
+    await writeContextPack(ZERO_INPUT_CONTEXT_PACK);
+    await writeMap({
+      schemaVersion: 'context-pack-product-coproduct/v1',
+      contextPackSources: ['spec/context-pack/**/*.{yml,yaml,json}'],
+      products: [
+        {
+          morphismId: 'Heartbeat',
+          requiredInputKeys: [],
+        },
+      ],
+      coproducts: [
+        {
+          morphismId: 'Heartbeat',
+          variants: [],
+        },
+      ],
+    });
+
+    const result = runVerify();
+    expect(result.status).toBe(0);
+
+    const report = JSON.parse(await readFile(reportJsonPath(), 'utf8'));
+    expect(report.status).toBe('pass');
+    expect(report.summary.totalViolations).toBe(0);
+  });
+
+  it('counts uncovered failure variants when coproduct mapping is missing', async () => {
+    await writeContextPack();
+    await writeMap({
+      schemaVersion: 'context-pack-product-coproduct/v1',
+      contextPackSources: ['spec/context-pack/**/*.{yml,yaml,json}'],
+      products: [
+        {
+          morphismId: 'ReserveInventory',
+          requiredInputKeys: ['itemId', 'quantity'],
+        },
+      ],
+      coproducts: [],
+    });
+
+    const result = runVerify();
+    expect(result.status).toBe(2);
+
+    const report = JSON.parse(await readFile(reportJsonPath(), 'utf8'));
+    expect(report.status).toBe('fail');
+    expect(report.summary.missingCoproductMappings).toBe(1);
+    expect(report.summary.variantCoverageGaps).toBe(report.uncoveredFailureVariants);
+    expect(report.summary.variantCoverageGaps).toBeGreaterThan(0);
   });
 });

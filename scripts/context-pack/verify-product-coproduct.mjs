@@ -530,15 +530,19 @@ function validateCoproducts(contextMorphisms, coproductEntries, violations) {
   };
 }
 
-function summarizeViolations(violations) {
+function summarizeViolations(violations, stats = {}) {
   const countByType = (type) => violations.filter((entry) => entry.type === type).length;
+  const variantCoverageGaps =
+    Number.isFinite(stats.variantCoverageGaps) && stats.variantCoverageGaps >= 0
+      ? stats.variantCoverageGaps
+      : countByType('coproduct-variant-missing');
   return {
     totalViolations: violations.length,
     missingProductMappings: countByType('product-mapping-missing'),
     missingCoproductMappings: countByType('coproduct-mapping-missing'),
     inputCoverageGaps:
       countByType('product-required-input-missing') + countByType('product-required-input-unknown'),
-    variantCoverageGaps: countByType('coproduct-variant-missing'),
+    variantCoverageGaps,
     ambiguousDtoKeys: countByType('ambiguous-dto-key'),
     missingEvidence: countByType('coproduct-evidence-missing'),
   };
@@ -642,7 +646,9 @@ function validateProductCoproduct(options) {
     totalFailureVariants: coproductStats.totalFailureVariants,
     coveredFailureVariants: coproductStats.coveredFailureVariants,
     uncoveredFailureVariants: Math.max(0, coproductStats.totalFailureVariants - coproductStats.coveredFailureVariants),
-    summary: summarizeViolations(violations),
+    summary: summarizeViolations(violations, {
+      variantCoverageGaps: coproductStats.variantCoverageGaps,
+    }),
     status: violations.length === 0 ? 'pass' : 'fail',
     violations,
   };
