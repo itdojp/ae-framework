@@ -80,6 +80,41 @@
         }
       }
     },
+    "traceability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "missingCount",
+        "matrixPath",
+        "notes"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "success",
+            "failure",
+            "skipped",
+            "pending",
+            "unknown"
+          ]
+        },
+        "missingCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "matrixPath": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "notes": {
+          "type": ["string", "null"]
+        }
+      }
+    },
     "artifacts": {
       "type": "object",
       "additionalProperties": false,

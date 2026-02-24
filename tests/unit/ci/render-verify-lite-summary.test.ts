@@ -21,6 +21,12 @@ describe('renderVerifyLiteSummary', () => {
       mutationQuick: { status: 'success', notes: 'score: 59.74%' },
       conformanceReport: { status: 'success', notes: 'runs=1;violations=0' }
     },
+    traceability: {
+      status: 'success',
+      missingCount: 2,
+      matrixPath: 'docs/specs/ISSUE-TRACEABILITY-MATRIX.json',
+      notes: 'matrix=docs/specs/ISSUE-TRACEABILITY-MATRIX.json;missing=2'
+    },
     artifacts: {
       lintSummary: 'artifacts/verify-lite/verify-lite-lint-summary.json',
       lintLog: 'artifacts/verify-lite/verify-lite-lint.log',
@@ -52,6 +58,12 @@ describe('renderVerifyLiteSummary', () => {
       steps: {
         typeCheck: { status: 'success' },
         lint: { status: 'skipped' }
+      },
+      traceability: {
+        status: 'skipped',
+        missingCount: 0,
+        matrixPath: null,
+        notes: 'matrix_not_found'
       },
       artifacts: {
         lintSummary: null,

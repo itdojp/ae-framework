@@ -8,6 +8,7 @@ Schema Version: 1.0.0
 - keep lint log: ❌
 - enforce lint: ❌
 - run mutation: ❌
+- traceability missing count: 0 (⏭️ skipped)
 
 | Step | Status | Notes |
 | --- | --- | --- |
@@ -34,6 +35,7 @@ Schema Version: 1.0.0
 - keep lint log: ✅
 - enforce lint: ❌
 - run mutation: ✅
+- traceability missing count: 2 (✅ success)
 
 | Step | Status | Notes |
 | --- | --- | --- |

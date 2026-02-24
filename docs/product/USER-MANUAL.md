@@ -244,7 +244,7 @@ pnpm run verify:profile -- --profile fast --json --out artifacts/verify-profile-
 
 # Issue要件ID起点のトレーサビリティ（抽出 -> matrix -> strict validate）
 pnpm run ae-framework -- traceability extract-ids --issue "https://github.com/<org>/<repo>/issues/1" --pattern "(?:LG|REQ)-[A-Z0-9_-]+" --output docs/specs/issue-traceability-map.json
-pnpm run ae-framework -- traceability matrix --map docs/specs/issue-traceability-map.json --tests "tests/**/*" --code "src/**/*" --format json --output docs/specs/ISSUE-TRACEABILITY-MATRIX.json
+pnpm run ae-framework -- traceability matrix --map docs/specs/issue-traceability-map.json --tests "tests/**/*" --code "src/**/*" --context-pack "spec/context-pack/**/*.{yml,yaml,json}" --format json --output docs/specs/ISSUE-TRACEABILITY-MATRIX.json
 pnpm run ae-framework -- validate --traceability --strict --sources docs/specs/ISSUE-TRACEABILITY-MATRIX.json
 
 # 有用性評価レポート（JSON + Markdown）

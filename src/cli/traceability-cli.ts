@@ -2,11 +2,13 @@ import { Command } from 'commander';
 import { globSync } from 'glob';
 import fs from 'node:fs';
 import path from 'node:path';
+import yaml from 'yaml';
 import { safeExit } from '../utils/safe-exit.js';
 
 const MAP_SCHEMA_VERSION = 'issue-traceability-map/v1';
 const MATRIX_SCHEMA_VERSION = 'issue-traceability-matrix/v1';
 const DEFAULT_PATTERN = '(?:LG|REQ)-[A-Z0-9_-]+';
+const DEFAULT_CONTEXT_PACK_GLOB = 'spec/context-pack/**/*.{yml,yaml,json}';
 
 type IssueReference = {
   repository: string;
@@ -38,6 +40,9 @@ type IssueTraceabilityRow = {
   requirementId: string;
   tests: string[];
   code: string[];
+  diagramId: string[];
+  morphismId: string[];
+  acceptanceTestId: string[];
   linked: boolean;
 };
 
@@ -50,6 +55,13 @@ type IssueTraceabilityMatrix = {
     linkedRequirements: number;
     unlinkedRequirements: number;
     coverage: number;
+    contextPackDiagramIds: number;
+    contextPackMorphismIds: number;
+    contextPackAcceptanceTestIds: number;
+    missingDiagramLinks: number;
+    missingMorphismLinks: number;
+    missingAcceptanceTestLinks: number;
+    rowsMissingContextPackLinks: number;
   };
   rows: IssueTraceabilityRow[];
 };
@@ -57,6 +69,12 @@ type IssueTraceabilityMatrix = {
 type ScannedFile = {
   path: string;
   content: string;
+};
+
+type ContextPackIds = {
+  diagramIds: string[];
+  morphismIds: string[];
+  acceptanceTestIds: string[];
 };
 
 function readJsonFile<T>(filePath: string): T {
@@ -150,10 +168,35 @@ async function fetchIssueBody(issueRef: IssueReference): Promise<{ title: string
 }
 
 function resolveGlobPatterns(value: string): string[] {
-  return value
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean);
+  const patterns: string[] = [];
+  let token = '';
+  let braceDepth = 0;
+  for (const character of value) {
+    if (character === '{') {
+      braceDepth += 1;
+      token += character;
+      continue;
+    }
+    if (character === '}') {
+      braceDepth = Math.max(0, braceDepth - 1);
+      token += character;
+      continue;
+    }
+    if (character === ',' && braceDepth === 0) {
+      const trimmed = token.trim();
+      if (trimmed.length > 0) {
+        patterns.push(trimmed);
+      }
+      token = '';
+      continue;
+    }
+    token += character;
+  }
+  const tail = token.trim();
+  if (tail.length > 0) {
+    patterns.push(tail);
+  }
+  return patterns;
 }
 
 function scanFiles(patterns: string[], cwd: string): ScannedFile[] {
@@ -193,30 +236,122 @@ function hasRequirementIdToken(text: string, requirementId: string): boolean {
   return matcher.test(text);
 }
 
+function toUniqueIds(input: unknown): string[] {
+  if (!Array.isArray(input)) {
+    return [];
+  }
+  const ids = input
+    .map((item) => (item && typeof item === 'object' ? (item as { id?: unknown }).id : undefined))
+    .filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
+    .map((id) => id.trim());
+  return Array.from(new Set(ids));
+}
+
+function parseStructuredFile(file: ScannedFile): unknown {
+  const lowerPath = file.path.toLowerCase();
+  if (lowerPath.endsWith('.yaml') || lowerPath.endsWith('.yml')) {
+    return yaml.parse(file.content);
+  }
+  return JSON.parse(file.content);
+}
+
+function readContextPackIds(contextPackFiles: ScannedFile[]): ContextPackIds {
+  const diagramIds = new Set<string>();
+  const morphismIds = new Set<string>();
+  const acceptanceTestIds = new Set<string>();
+
+  for (const file of contextPackFiles) {
+    let payload: unknown;
+    try {
+      payload = parseStructuredFile(file);
+    } catch {
+      continue;
+    }
+    if (!payload || typeof payload !== 'object') {
+      continue;
+    }
+
+    const diagrams = toUniqueIds((payload as { diagrams?: unknown }).diagrams);
+    const morphisms = toUniqueIds((payload as { morphisms?: unknown }).morphisms);
+    const acceptanceTests = toUniqueIds((payload as { acceptance_tests?: unknown }).acceptance_tests);
+
+    for (const id of diagrams) {
+      diagramIds.add(id);
+    }
+    for (const id of morphisms) {
+      morphismIds.add(id);
+    }
+    for (const id of acceptanceTests) {
+      acceptanceTestIds.add(id);
+    }
+  }
+
+  return {
+    diagramIds: Array.from(diagramIds),
+    morphismIds: Array.from(morphismIds),
+    acceptanceTestIds: Array.from(acceptanceTestIds),
+  };
+}
+
+function collectMatchedIds(evidenceFiles: ScannedFile[], contextIds: string[]): string[] {
+  const matches: string[] = [];
+  for (const contextId of contextIds) {
+    const found = evidenceFiles.some((file) => hasRequirementIdToken(file.content, contextId));
+    if (found) {
+      matches.push(contextId);
+    }
+  }
+  return matches;
+}
+
 export function buildTraceabilityMatrix(
   requirementIds: string[],
   testFiles: ScannedFile[],
   codeFiles: ScannedFile[],
   cwd: string,
+  contextPackIds: ContextPackIds = {
+    diagramIds: [],
+    morphismIds: [],
+    acceptanceTestIds: [],
+  },
 ): IssueTraceabilityMatrix {
   const rows: IssueTraceabilityRow[] = requirementIds.map((requirementId) => {
-    const tests = testFiles
-      .filter((file) => hasRequirementIdToken(file.content, requirementId))
-      .map((file) => path.relative(cwd, file.path));
-    const code = codeFiles
-      .filter((file) => hasRequirementIdToken(file.content, requirementId))
-      .map((file) => path.relative(cwd, file.path));
+    const linkedTestFiles = testFiles.filter((file) => hasRequirementIdToken(file.content, requirementId));
+    const linkedCodeFiles = codeFiles.filter((file) => hasRequirementIdToken(file.content, requirementId));
+    const tests = linkedTestFiles.map((file) => path.relative(cwd, file.path));
+    const code = linkedCodeFiles.map((file) => path.relative(cwd, file.path));
+    const evidenceFiles = [...linkedTestFiles, ...linkedCodeFiles];
 
     return {
       requirementId,
       tests,
       code,
+      diagramId: collectMatchedIds(evidenceFiles, contextPackIds.diagramIds),
+      morphismId: collectMatchedIds(evidenceFiles, contextPackIds.morphismIds),
+      acceptanceTestId: collectMatchedIds(evidenceFiles, contextPackIds.acceptanceTestIds),
       linked: tests.length > 0 && code.length > 0,
     };
   });
 
   const linkedRequirements = rows.filter((row) => row.linked).length;
   const totalRequirements = rows.length;
+  const contextPackTracked = contextPackIds.diagramIds.length > 0
+    || contextPackIds.morphismIds.length > 0
+    || contextPackIds.acceptanceTestIds.length > 0;
+  const missingDiagramLinks = contextPackTracked
+    ? rows.filter((row) => row.diagramId.length === 0).length
+    : 0;
+  const missingMorphismLinks = contextPackTracked
+    ? rows.filter((row) => row.morphismId.length === 0).length
+    : 0;
+  const missingAcceptanceTestLinks = contextPackTracked
+    ? rows.filter((row) => row.acceptanceTestId.length === 0).length
+    : 0;
+  const rowsMissingContextPackLinks = contextPackTracked
+    ? rows.filter(
+      (row) => row.diagramId.length === 0 || row.morphismId.length === 0 || row.acceptanceTestId.length === 0,
+    ).length
+    : 0;
   const coverage = totalRequirements > 0
     ? Math.round((linkedRequirements / totalRequirements) * 100)
     : 0;
@@ -230,6 +365,13 @@ export function buildTraceabilityMatrix(
       linkedRequirements,
       unlinkedRequirements: totalRequirements - linkedRequirements,
       coverage,
+      contextPackDiagramIds: contextPackIds.diagramIds.length,
+      contextPackMorphismIds: contextPackIds.morphismIds.length,
+      contextPackAcceptanceTestIds: contextPackIds.acceptanceTestIds.length,
+      missingDiagramLinks,
+      missingMorphismLinks,
+      missingAcceptanceTestLinks,
+      rowsMissingContextPackLinks,
     },
     rows,
   };
@@ -241,13 +383,15 @@ function renderMatrixMarkdown(matrix: IssueTraceabilityMatrix): string {
     '',
     `- Generated at: ${matrix.generatedAt}`,
     `- Coverage: ${matrix.summary.coverage}% (${matrix.summary.linkedRequirements}/${matrix.summary.totalRequirements})`,
+    `- Context Pack IDs tracked: diagram=${matrix.summary.contextPackDiagramIds}, morphism=${matrix.summary.contextPackMorphismIds}, acceptance_test=${matrix.summary.contextPackAcceptanceTestIds}`,
+    `- Missing Context Pack links: rows=${matrix.summary.rowsMissingContextPackLinks}, diagram=${matrix.summary.missingDiagramLinks}, morphism=${matrix.summary.missingMorphismLinks}, acceptance_test=${matrix.summary.missingAcceptanceTestLinks}`,
     '',
-    '| Requirement ID | Tests | Code | Linked |',
-    '| --- | --- | --- | --- |',
+    '| Requirement ID | Tests | Code | Diagram ID | Morphism ID | Acceptance Test ID | Linked |',
+    '| --- | --- | --- | --- | --- | --- | --- |',
   ];
   for (const row of matrix.rows) {
     lines.push(
-      `| ${row.requirementId} | ${row.tests.join('<br>') || '-'} | ${row.code.join('<br>') || '-'} | ${row.linked ? 'yes' : 'no'} |`,
+      `| ${row.requirementId} | ${row.tests.join('<br>') || '-'} | ${row.code.join('<br>') || '-'} | ${row.diagramId.join('<br>') || '-'} | ${row.morphismId.join('<br>') || '-'} | ${row.acceptanceTestId.join('<br>') || '-'} | ${row.linked ? 'yes' : 'no'} |`,
     );
   }
   return `${lines.join('\n')}\n`;
@@ -326,6 +470,7 @@ export function createTraceabilityCommand(): Command {
     .requiredOption('--map <file>', 'traceability map JSON')
     .option('--tests <glob>', 'テストファイルの glob（comma-separated 可）', 'tests/**/*')
     .option('--code <glob>', '実装ファイルの glob（comma-separated 可）', 'src/**/*')
+    .option('--context-pack <glob>', 'Context Pack ファイルの glob（comma-separated 可）', DEFAULT_CONTEXT_PACK_GLOB)
     .option('--format <format>', '出力形式 (json|md)', 'md')
     .requiredOption('--output <file>', '出力先')
     .action((options) => {
@@ -339,9 +484,14 @@ export function createTraceabilityCommand(): Command {
 
         const testPatterns = resolveGlobPatterns(String(options.tests));
         const codePatterns = resolveGlobPatterns(String(options.code));
+        const contextPackPatterns = resolveGlobPatterns(String(options.contextPack ?? ''));
         const testFiles = scanFiles(testPatterns, cwd);
         const codeFiles = scanFiles(codePatterns, cwd);
-        const matrix = buildTraceabilityMatrix(requirementIds, testFiles, codeFiles, cwd);
+        const contextPackFiles = contextPackPatterns.length > 0
+          ? scanFiles(contextPackPatterns, cwd)
+          : [];
+        const contextPackIds = readContextPackIds(contextPackFiles);
+        const matrix = buildTraceabilityMatrix(requirementIds, testFiles, codeFiles, cwd, contextPackIds);
         matrix.sourceMap = path.relative(cwd, mapPath);
 
         const format = String(options.format).toLowerCase();
@@ -358,6 +508,11 @@ export function createTraceabilityCommand(): Command {
         console.log(
           `[traceability] matrix coverage ${matrix.summary.coverage}% (${matrix.summary.linkedRequirements}/${matrix.summary.totalRequirements})`,
         );
+        if (contextPackPatterns.length > 0) {
+          console.log(
+            `[traceability] context-pack missing rows=${matrix.summary.rowsMissingContextPackLinks} (diagram=${matrix.summary.missingDiagramLinks}, morphism=${matrix.summary.missingMorphismLinks}, acceptance_test=${matrix.summary.missingAcceptanceTestLinks})`,
+          );
+        }
         console.log(`[traceability] wrote ${path.relative(cwd, outputPath)}`);
       } catch (error) {
         console.error(`[traceability] matrix failed: ${error instanceof Error ? error.message : String(error)}`);

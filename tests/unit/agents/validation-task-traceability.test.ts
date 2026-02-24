@@ -18,7 +18,14 @@ describe('validation-task-traceability', () => {
       JSON.stringify({
         schemaVersion: 'issue-traceability-matrix/v1',
         rows: [
-          { requirementId: 'REQ-1', tests: ['tests/req1.test.ts'], code: ['src/req1.ts'] },
+          {
+            requirementId: 'REQ-1',
+            tests: ['tests/req1.test.ts'],
+            code: ['src/req1.ts'],
+            diagramId: ['DGM-REQ-1'],
+            morphismId: ['MOR-REQ-1'],
+            acceptanceTestId: ['AT-REQ-1'],
+          },
           { requirementId: 'REQ-2', tests: [], code: ['src/req2.ts'] },
         ],
       }),
@@ -31,12 +38,20 @@ describe('validation-task-traceability', () => {
         requirementId: 'REQ-1',
         tests: ['tests/req1.test.ts'],
         code: ['src/req1.ts'],
+        diagramId: ['DGM-REQ-1'],
+        morphismId: ['MOR-REQ-1'],
+        acceptanceTestId: ['AT-REQ-1'],
+        hasContextPackColumns: true,
         linked: true,
       },
       {
         requirementId: 'REQ-2',
         tests: [],
         code: ['src/req2.ts'],
+        diagramId: [],
+        morphismId: [],
+        acceptanceTestId: [],
+        hasContextPackColumns: false,
         linked: false,
       },
     ]);
@@ -70,5 +85,7 @@ describe('validation-task-traceability', () => {
 
     expect(rows).toHaveLength(1);
     expect(rows[0]?.requirementId).toBe('REQ-3');
+    expect(rows[0]?.diagramId).toEqual([]);
+    expect(rows[0]?.hasContextPackColumns).toBe(false);
   });
 });

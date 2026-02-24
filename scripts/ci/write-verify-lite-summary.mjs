@@ -9,6 +9,13 @@ const resolvedPath = path.resolve(summaryPath);
 
 const bool = (value) => value === '1' || value === true || value === 'true';
 const existsOrNull = (p) => (p && fs.existsSync(p) ? p : null);
+const toNonNegativeInteger = (value, fallback = 0) => {
+  const numeric = Number.parseInt(String(value ?? ''), 10);
+  if (Number.isFinite(numeric) && numeric >= 0) {
+    return numeric;
+  }
+  return fallback;
+};
 
 const readStatus = (name, fallback) => {
   const value = process.env[name];
@@ -59,6 +66,12 @@ const summary = {
       status: readStatus('CONFORMANCE_STATUS', 'skipped'),
       notes: process.env.CONFORMANCE_NOTES || null,
     },
+  },
+  traceability: {
+    status: readStatus('TRACEABILITY_STATUS', 'skipped'),
+    missingCount: toNonNegativeInteger(process.env.TRACEABILITY_MISSING_COUNT, 0),
+    matrixPath: existsOrNull(process.env.TRACEABILITY_MATRIX_PATH),
+    notes: process.env.TRACEABILITY_NOTES || null,
   },
   artifacts: {
     lintSummary: existsOrNull(process.env.LINT_SUMMARY_PATH),

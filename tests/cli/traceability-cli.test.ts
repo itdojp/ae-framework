@@ -17,12 +17,22 @@ let buildTraceabilityMatrix: (
     linkedRequirements: number;
     unlinkedRequirements: number;
     coverage: number;
+    contextPackDiagramIds: number;
+    contextPackMorphismIds: number;
+    contextPackAcceptanceTestIds: number;
+    missingDiagramLinks: number;
+    missingMorphismLinks: number;
+    missingAcceptanceTestLinks: number;
+    rowsMissingContextPackLinks: number;
   };
   rows: Array<{
     requirementId: string;
     linked: boolean;
     tests: string[];
     code: string[];
+    diagramId: string[];
+    morphismId: string[];
+    acceptanceTestId: string[];
   }>;
 };
 
@@ -93,5 +103,53 @@ describe('traceability cli helpers', () => {
     expect(matrix.rows[0]?.tests).toEqual([]);
     expect(matrix.rows[0]?.code).toEqual([]);
     expect(matrix.rows[0]?.linked).toBe(false);
+  });
+
+  it('maps context-pack IDs when they are present in linked files', () => {
+    const matrix = buildTraceabilityMatrix(
+      ['LG-1'],
+      [
+        { path: '/repo/tests/auth.test.ts', content: 'LG-1 DGM-AUTH MOR-AUTH AT-AUTH' },
+      ],
+      [
+        { path: '/repo/src/auth.ts', content: 'LG-1 MOR-AUTH' },
+      ],
+      '/repo',
+      {
+        diagramIds: ['DGM-AUTH'],
+        morphismIds: ['MOR-AUTH'],
+        acceptanceTestIds: ['AT-AUTH'],
+      },
+    );
+
+    expect(matrix.rows[0]?.diagramId).toEqual(['DGM-AUTH']);
+    expect(matrix.rows[0]?.morphismId).toEqual(['MOR-AUTH']);
+    expect(matrix.rows[0]?.acceptanceTestId).toEqual(['AT-AUTH']);
+    expect(matrix.summary.rowsMissingContextPackLinks).toBe(0);
+  });
+
+  it('counts missing context-pack links per requirement row', () => {
+    const matrix = buildTraceabilityMatrix(
+      ['LG-1', 'LG-2'],
+      [
+        { path: '/repo/tests/a.test.ts', content: 'LG-1 DGM-A MOR-A AT-A' },
+        { path: '/repo/tests/b.test.ts', content: 'LG-2' },
+      ],
+      [
+        { path: '/repo/src/a.ts', content: 'LG-1 DGM-A MOR-A AT-A' },
+        { path: '/repo/src/b.ts', content: 'LG-2' },
+      ],
+      '/repo',
+      {
+        diagramIds: ['DGM-A'],
+        morphismIds: ['MOR-A'],
+        acceptanceTestIds: ['AT-A'],
+      },
+    );
+
+    expect(matrix.summary.missingDiagramLinks).toBe(1);
+    expect(matrix.summary.missingMorphismLinks).toBe(1);
+    expect(matrix.summary.missingAcceptanceTestLinks).toBe(1);
+    expect(matrix.summary.rowsMissingContextPackLinks).toBe(1);
   });
 });

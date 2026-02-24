@@ -8,6 +8,7 @@ export const renderVerifyLiteSummary = (summary, options = {}) => {
     timestamp,
     flags = {},
     steps = {},
+    traceability = null,
     artifacts = {}
   } = summary;
 
@@ -46,6 +47,9 @@ export const renderVerifyLiteSummary = (summary, options = {}) => {
     `- keep lint log: ${yesNo(Boolean(flags.keepLintLog))}`,
     `- enforce lint: ${yesNo(Boolean(flags.enforceLint))}`,
     `- run mutation: ${yesNo(Boolean(flags.runMutation))}`,
+    ...(traceability && typeof traceability === 'object'
+      ? [`- traceability missing count: ${Number.isFinite(traceability.missingCount) ? traceability.missingCount : 'n/a'} (${formatStatus(traceability.status)})`]
+      : []),
   ];
 
   const orderedKeys = [

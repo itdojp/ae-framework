@@ -44,6 +44,10 @@ MUTATION_SUMMARY_PATH=""
 MUTATION_SURVIVORS_PATH=""
 CONTEXT_PACK_REPORT_JSON_PATH="${VERIFY_LITE_CONTEXT_PACK_REPORT_JSON:-artifacts/context-pack/context-pack-validate-report.json}"
 CONTEXT_PACK_REPORT_MD_PATH="${VERIFY_LITE_CONTEXT_PACK_REPORT_MD:-artifacts/context-pack/context-pack-validate-report.md}"
+TRACEABILITY_MATRIX_PATH="${VERIFY_LITE_TRACEABILITY_MATRIX:-docs/specs/ISSUE-TRACEABILITY-MATRIX.json}"
+TRACEABILITY_STATUS="skipped"
+TRACEABILITY_NOTES="matrix_not_found"
+TRACEABILITY_MISSING_COUNT=0
 CONFORMANCE_STATUS="skipped"
 CONFORMANCE_NOTES="not_run"
 CONFORMANCE_SUMMARY_PATH="${VERIFY_LITE_CONFORMANCE_SUMMARY_FILE:-reports/conformance/verify-lite-summary.json}"
@@ -179,6 +183,48 @@ else
   exit "$CONTEXT_PACK_EXIT_CODE"
 fi
 
+echo "[verify-lite] traceability matrix summary"
+if [[ -f "$TRACEABILITY_MATRIX_PATH" ]]; then
+  if TRACEABILITY_MISSING_COUNT="$(node --input-type=module -e "
+import fs from 'node:fs';
+const path = process.argv[1];
+const raw = fs.readFileSync(path, 'utf8');
+const payload = JSON.parse(raw);
+const toArray = (value) => Array.isArray(value) ? value.filter((item) => typeof item === 'string') : [];
+const hasContextColumns = (row) => Object.prototype.hasOwnProperty.call(row ?? {}, 'diagramId')
+  || Object.prototype.hasOwnProperty.call(row ?? {}, 'diagramIds')
+  || Object.prototype.hasOwnProperty.call(row ?? {}, 'morphismId')
+  || Object.prototype.hasOwnProperty.call(row ?? {}, 'morphismIds')
+  || Object.prototype.hasOwnProperty.call(row ?? {}, 'acceptanceTestId')
+  || Object.prototype.hasOwnProperty.call(row ?? {}, 'acceptanceTestIds');
+const rows = Array.isArray(payload?.rows) ? payload.rows : [];
+const missingRows = rows.filter((row) => {
+  const tests = toArray(row?.tests);
+  const code = toArray(row?.code);
+  const baseMissing = tests.length === 0 || code.length === 0;
+  if (!hasContextColumns(row)) {
+    return baseMissing;
+  }
+  const diagram = toArray(row?.diagramId ?? row?.diagramIds);
+  const morphism = toArray(row?.morphismId ?? row?.morphismIds);
+  const acceptance = toArray(row?.acceptanceTestId ?? row?.acceptanceTestIds);
+  const contextMissing = diagram.length === 0 || morphism.length === 0 || acceptance.length === 0;
+  return baseMissing || contextMissing;
+});
+process.stdout.write(String(missingRows.length));
+" "$TRACEABILITY_MATRIX_PATH")"; then
+    TRACEABILITY_STATUS="success"
+    TRACEABILITY_NOTES="matrix=$(realpath --relative-to=\"$ROOT_DIR\" \"$TRACEABILITY_MATRIX_PATH\");missing=${TRACEABILITY_MISSING_COUNT}"
+  else
+    TRACEABILITY_STATUS="failure"
+    TRACEABILITY_NOTES="matrix_parse_failed"
+    TRACEABILITY_MISSING_COUNT=0
+  fi
+else
+  TRACEABILITY_STATUS="skipped"
+  TRACEABILITY_NOTES="matrix_not_found"
+fi
+
 echo "[verify-lite] optional BDD lint"
 if [[ -f scripts/bdd/lint.mjs ]]; then
   if node scripts/bdd/lint.mjs; then
@@ -247,6 +293,7 @@ export INSTALL_STATUS INSTALL_NOTES INSTALL_RETRIED
 export SPEC_COMPILER_STATUS TYPECHECK_STATUS LINT_STATUS BUILD_STATUS BDD_LINT_STATUS STATE_MACHINE_STATUS STATE_MACHINE_RENDER_STATUS
 export MUTATION_STATUS MUTATION_NOTES
 export CONTEXT_PACK_STATUS CONTEXT_PACK_NOTES CONTEXT_PACK_REPORT_JSON_PATH CONTEXT_PACK_REPORT_MD_PATH
+export TRACEABILITY_STATUS TRACEABILITY_NOTES TRACEABILITY_MISSING_COUNT TRACEABILITY_MATRIX_PATH
 export INSTALL_FLAGS_STR
 export LINT_SUMMARY_PATH LINT_LOG_EXPORT
 export MUTATION_SUMMARY_PATH MUTATION_SURVIVORS_PATH
