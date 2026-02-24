@@ -23,6 +23,8 @@ Artifacts:
 - Mutation Survivors JSON: n/a
 - Context Pack Validation JSON: n/a
 - Context Pack Validation Markdown: n/a
+- Context Pack Functor JSON: n/a
+- Context Pack Functor Markdown: n/a
 - Conformance Summary JSON: n/a
 - Conformance Summary Markdown: n/a"
 `;
@@ -43,6 +45,7 @@ Schema Version: 1.0.0
 | Lint | ❌ failure | 2618 violations |
 | Build | ✅ success |  |
 | Context Pack Validation | ✅ success | validated spec/context-pack |
+| Context Pack Functor Validation | ✅ success | validated context-pack functor mapping |
 | Bdd Lint | ⏭️ skipped |  |
 | Mutation Quick | ✅ success | score: 59.74% |
 | Conformance Report | ✅ success | runs=1;violations=0 |
@@ -55,6 +58,8 @@ Artifacts:
 - Mutation Survivors JSON: \`reports/mutation/survivors.json\` ([Data Link](https://example.com/artifacts))
 - Context Pack Validation JSON: \`artifacts/context-pack/context-pack-validate-report.json\` ([Data Link](https://example.com/artifacts))
 - Context Pack Validation Markdown: \`artifacts/context-pack/context-pack-validate-report.md\` ([Data Link](https://example.com/artifacts))
+- Context Pack Functor JSON: \`artifacts/context-pack/context-pack-functor-report.json\` ([Data Link](https://example.com/artifacts))
+- Context Pack Functor Markdown: \`artifacts/context-pack/context-pack-functor-report.md\` ([Data Link](https://example.com/artifacts))
 - Conformance Summary JSON: \`reports/conformance/verify-lite-summary.json\` ([Data Link](https://example.com/artifacts))
 - Conformance Summary Markdown: \`reports/conformance/verify-lite-summary.md\` ([Data Link](https://example.com/artifacts))
 - GitHub Artifacts: [Open](https://example.com/artifacts)"
