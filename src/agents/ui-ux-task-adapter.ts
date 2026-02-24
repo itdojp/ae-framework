@@ -75,10 +75,8 @@ export class UIUXTaskAdapter {
   async generateUIUXArtifacts(input: UIUXInput): Promise<UIUXGenerationResult> {
     const warnings = this.validateInput(input);
     const requirements = this.buildRequirementSummary(input);
-    let endpointCount = 0;
     try {
-      const apiSpec = await this.agent.createAPISpecification(requirements, 'openapi');
-      endpointCount = apiSpec.endpoints.length;
+      await this.agent.createAPISpecification(requirements, 'openapi');
     } catch {
       // API spec generation is best-effort for hints; UI/UX artifacts should still be generated.
       warnings.push('API-style endpoint inference failed; continuing with UI/UX artifact generation');
@@ -92,10 +90,6 @@ export class UIUXTaskAdapter {
       designSystem: this.generateDesignSystem(components),
       prototypes: this.generatePrototypes(input, components),
     };
-
-    if (endpointCount === 0) {
-      warnings.push('No API-style endpoint hints were detected from UI/UX requirements');
-    }
 
     return {
       output,
