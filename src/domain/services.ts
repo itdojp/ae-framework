@@ -53,6 +53,14 @@ const toItem = (row: ItemRow): Item => ({
   reserved: Number(row.reserved),
 });
 
+const isUniqueOrderViolation = (error: unknown): boolean => {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+  const pgError = error as { code?: string; constraint?: string };
+  return pgError.code === '23505' && pgError.constraint === 'reservations_order_id_key';
+};
+
 export interface InventoryRepository {
   withTransaction<T>(callback: (repository: InventoryRepository) => Promise<T>): Promise<T>;
   findItemById(itemId: string, options?: { forUpdate?: boolean }): Promise<Item | null>;
@@ -113,8 +121,11 @@ export class DatabaseInventoryRepository implements InventoryRepository {
       `,
       [reservationId, input.orderId, input.itemId, input.quantity],
     );
-
-    return toReservationEntity(result.rows[0]);
+    const createdRow = result.rows[0];
+    if (!createdRow) {
+      throw new Error('Failed to create reservation: no row returned from INSERT');
+    }
+    return toReservationEntity(createdRow);
   }
 
   async incrementReservedCount(itemId: string, quantity: number): Promise<void> {
@@ -251,7 +262,29 @@ export class InventoryServiceImpl implements InventoryService {
         throw new InsufficientStockError(reservation.itemId, reservation.quantity, available);
       }
 
-      const createdReservation = await repository.createReservation(reservation);
+      let createdReservation: ReservationEntity;
+      try {
+        createdReservation = await repository.createReservation(reservation);
+      } catch (error) {
+        if (!isUniqueOrderViolation(error)) {
+          throw error;
+        }
+        const concurrentReservation = await repository.findReservationByOrderId(reservation.orderId);
+        if (!concurrentReservation) {
+          throw error;
+        }
+        if (
+          concurrentReservation.itemId !== reservation.itemId ||
+          concurrentReservation.quantity !== reservation.quantity
+        ) {
+          throw new IdempotencyConflictError(
+            reservation.orderId,
+            reservation.itemId,
+            reservation.quantity,
+          );
+        }
+        return concurrentReservation;
+      }
       await repository.incrementReservedCount(reservation.itemId, reservation.quantity);
       return createdReservation;
     });

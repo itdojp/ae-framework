@@ -24,13 +24,15 @@ export async function reservationRoutes(fastify: FastifyInstance, options: { inv
       if (normalizedError.name === 'InsufficientStockError') {
         return reply.code(409).send({
           error: 'INSUFFICIENT_STOCK',
-          message: normalizedError.message
+          message: normalizedError.message,
+          details: parsed.data,
         });
       }
       if (normalizedError.name === 'IdempotencyConflictError') {
         return reply.code(409).send({
           error: 'IDEMPOTENCY_CONFLICT',
           message: normalizedError.message,
+          details: parsed.data,
         });
       }
       throw error;
