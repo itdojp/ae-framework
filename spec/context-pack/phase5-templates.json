@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "context-pack-phase5-templates/v1",
+  "contextPackSources": [
+    "spec/context-pack/**/*.{yml,yaml,json}"
+  ],
+  "pullbacks": [
+    {
+      "id": "ReserveInventoryPullback",
+      "leftMorphismId": "ReserveInventory",
+      "rightMorphismId": "ReserveInventory",
+      "apexObjectId": "InventoryItem",
+      "commutingDiagramIds": [
+        "D-1"
+      ],
+      "evidencePaths": [
+        "tests/services/inventory-service.test.ts"
+      ],
+      "notes": "Phase5 template baseline for pullback-compatible merge checks."
+    }
+  ],
+  "pushouts": [
+    {
+      "id": "ReserveInventoryPushout",
+      "leftMorphismId": "ReserveInventory",
+      "rightMorphismId": "ReserveInventory",
+      "coapexObjectId": "InventoryItem",
+      "commutingDiagramIds": [
+        "D-1"
+      ],
+      "evidencePaths": [
+        "tests/services/inventory-service.test.ts"
+      ],
+      "notes": "Phase5 template baseline for migration pushout checks."
+    }
+  ],
+  "monoidalFlows": [],
+  "kleisliPipelines": [
+    {
+      "id": "ReserveInventoryIOPipeline",
+      "effectType": "io",
+      "morphismIds": [
+        "ReserveInventory"
+      ],
+      "pureBoundaryMorphismIds": [],
+      "impureBoundaryMorphismIds": [
+        "ReserveInventory"
+      ],
+      "bindEvidencePaths": [
+        "tests/services/inventory-service.test.ts"
+      ],
+      "sideEffectEvidencePaths": [
+        "src/domain/services.ts"
+      ],
+      "notes": "Phase5 template baseline for pure/impure boundary checks."
+    }
+  ]
+}

@@ -29,6 +29,8 @@ Artifacts:
 - Context Pack Natural Transformation Markdown: n/a
 - Context Pack Product/Coproduct JSON: n/a
 - Context Pack Product/Coproduct Markdown: n/a
+- Context Pack Phase5 Templates JSON: n/a
+- Context Pack Phase5 Templates Markdown: n/a
 - Conformance Summary JSON: n/a
 - Conformance Summary Markdown: n/a"
 `;
@@ -52,6 +54,7 @@ Schema Version: 1.0.0
 | Context Pack Functor Validation | ✅ success | validated context-pack functor mapping |
 | Context Pack Natural Transformation Validation | ✅ success | validated context-pack natural transformation mapping |
 | Context Pack Product Coproduct Validation | ✅ success | validated context-pack product/coproduct mapping;uncovered_variants=0 |
+| Context Pack Phase5 Validation | ✅ success | validated context-pack phase5 templates;violations=0 |
 | Bdd Lint | ⏭️ skipped |  |
 | Mutation Quick | ✅ success | score: 59.74% |
 | Conformance Report | ✅ success | runs=1;violations=0 |
@@ -70,6 +73,8 @@ Artifacts:
 - Context Pack Natural Transformation Markdown: \`artifacts/context-pack/context-pack-natural-transformation-report.md\` ([Data Link](https://example.com/artifacts))
 - Context Pack Product/Coproduct JSON: \`artifacts/context-pack/context-pack-product-coproduct-report.json\` ([Data Link](https://example.com/artifacts))
 - Context Pack Product/Coproduct Markdown: \`artifacts/context-pack/context-pack-product-coproduct-report.md\` ([Data Link](https://example.com/artifacts))
+- Context Pack Phase5 Templates JSON: \`artifacts/context-pack/context-pack-phase5-report.json\` ([Data Link](https://example.com/artifacts))
+- Context Pack Phase5 Templates Markdown: \`artifacts/context-pack/context-pack-phase5-report.md\` ([Data Link](https://example.com/artifacts))
 - Conformance Summary JSON: \`reports/conformance/verify-lite-summary.json\` ([Data Link](https://example.com/artifacts))
 - Conformance Summary Markdown: \`reports/conformance/verify-lite-summary.md\` ([Data Link](https://example.com/artifacts))
 - GitHub Artifacts: [Open](https://example.com/artifacts)"

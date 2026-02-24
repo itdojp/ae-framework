@@ -18,6 +18,8 @@ Locations
 - Context Pack natural transformation schema: `schema/context-pack-natural-transformation.schema.json`
 - Context Pack product/coproduct map: `spec/context-pack/product-coproduct-map.json`
 - Context Pack product/coproduct schema: `schema/context-pack-product-coproduct.schema.json`
+- Context Pack Phase5+ template map: `spec/context-pack/phase5-templates.json`
+- Context Pack Phase5+ template schema: `schema/context-pack-phase5-templates.schema.json`
 - TLA+: `spec/tla/`
 - Alloy 6: `spec/alloy/`
 - SMT-LIB2: `spec/smt/`

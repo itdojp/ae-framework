@@ -68,6 +68,11 @@ const checks = [
     label: 'Context Pack product/coproduct schema validation'
   },
   {
+    schema: 'schema/context-pack-phase5-templates.schema.json',
+    fixtures: ['fixtures/context-pack/sample.phase5-templates.json'],
+    label: 'Context Pack phase5 templates schema validation'
+  },
+  {
     schema: 'schema/execplan.schema.json',
     fixtures: ['fixtures/execplan/sample.execplan.json'],
     label: 'ExecPlan schema validation'

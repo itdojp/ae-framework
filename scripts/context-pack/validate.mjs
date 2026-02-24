@@ -16,6 +16,7 @@ const NON_CONTEXT_PACK_SCHEMA_VERSIONS = new Set([
   'context-pack-functor-map/v1',
   'context-pack-natural-transformation/v1',
   'context-pack-product-coproduct/v1',
+  'context-pack-phase5-templates/v1',
 ]);
 
 const normalizePath = (value) => value.replace(/\\/g, '/');

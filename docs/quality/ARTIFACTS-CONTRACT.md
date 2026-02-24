@@ -49,6 +49,8 @@ CIが生成する成果物（artifacts/reports）について **最低限の契�
 | `artifacts/context-pack/context-pack-natural-transformation-report.md` | context-pack natural transformation 検証を実行した場合 | `scripts/context-pack/verify-natural-transformation.mjs` の Markdown 要約 |
 | `artifacts/context-pack/context-pack-product-coproduct-report.json` | context-pack product/coproduct 検証を実行した場合 | `scripts/context-pack/verify-product-coproduct.mjs` の JSON レポート（入力必須項目/失敗variant網羅/証跡不足を含む） |
 | `artifacts/context-pack/context-pack-product-coproduct-report.md` | context-pack product/coproduct 検証を実行した場合 | `scripts/context-pack/verify-product-coproduct.mjs` の Markdown 要約 |
+| `artifacts/context-pack/context-pack-phase5-report.json` | context-pack Phase5+ テンプレ検証を実行した場合 | `scripts/context-pack/verify-phase5-templates.mjs` の JSON レポート（pullback/pushout/monoidal/kleisli の参照・証跡・境界違反を含む） |
+| `artifacts/context-pack/context-pack-phase5-report.md` | context-pack Phase5+ テンプレ検証を実行した場合 | `scripts/context-pack/verify-phase5-templates.mjs` の Markdown 要約 |
 
 ## 4. 検証スクリプト
 

@@ -286,6 +286,36 @@ describe('context-pack validate CLI', () => {
     expect(report.skippedFiles).toBe(1);
   });
 
+  it('skips phase5 template map files under context-pack sources', async () => {
+    await writeFile(join(sourcesDir, 'valid.yaml'), VALID_CONTEXT_PACK_YAML, 'utf8');
+    await writeFile(
+      join(sourcesDir, 'phase5-templates.json'),
+      JSON.stringify(
+        {
+          schemaVersion: 'context-pack-phase5-templates/v1',
+          contextPackSources: ['spec/context-pack/**/*.{yml,yaml,json}'],
+          pullbacks: [],
+          pushouts: [],
+          monoidalFlows: [],
+          kleisliPipelines: [],
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
+
+    const result = runValidate(join(sourcesDir, '*.{yaml,yml,json}'));
+    expect(result.status).toBe(0);
+
+    const report = JSON.parse(await readFile(join(reportDir, 'context-pack-validate-report.json'), 'utf8'));
+    expect(report.status).toBe('pass');
+    expect(report.scannedFiles).toBe(2);
+    expect(report.validFiles).toBe(1);
+    expect(report.invalidFiles).toBe(0);
+    expect(report.skippedFiles).toBe(1);
+  });
+
   it('rejects context-pack payload with unsupported version', async () => {
     await writeFile(
       join(sourcesDir, 'invalid-version.json'),
