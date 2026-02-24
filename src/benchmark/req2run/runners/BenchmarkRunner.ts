@@ -25,7 +25,14 @@ import { NaturalLanguageTaskAdapter } from '../../../agents/natural-language-tas
 import { UserStoriesTaskAdapter } from '../../../agents/user-stories-task-adapter.js';
 import { ValidationTaskAdapter } from '../../../agents/validation-task-adapter.js';
 import { DomainModelingTaskAdapter } from '../../../agents/domain-modeling-task-adapter.js';
-// Note: UI generation agent will be integrated when available
+import { UIUXAgentAdapter } from '../../../agents/adapters/ui-ux-agent-adapter.js';
+import type {
+  DomainModelingOutput,
+  Stakeholder,
+  UIUXInput,
+  UserStory,
+  UserStoriesOutput,
+} from '../../../agents/interfaces/standard-interfaces.js';
 
 export class BenchmarkRunner {
   private config: BenchmarkConfig;
@@ -34,6 +41,7 @@ export class BenchmarkRunner {
   private storiesAgent!: UserStoriesTaskAdapter;
   private validationAgent!: ValidationTaskAdapter;
   private domainAgent!: DomainModelingTaskAdapter;
+  private uiuxAgent!: UIUXAgentAdapter;
 
   constructor(config: BenchmarkConfig) {
     this.config = config;
@@ -127,10 +135,10 @@ export class BenchmarkRunner {
         logs
       );
 
-      // TODO(#2230): Implement UI/UX generation phase
+      // Execute UI/UX generation via standardized adapter bridge
       const application = await this.executePhase(
         AEFrameworkPhase.UI_UX_GENERATION,
-        () => this.generateUIUX(domainModel),
+        () => this.generateUIUX(domainModel, userStories, spec),
         phaseExecutions,
         errors,
         logs
@@ -365,6 +373,7 @@ export class BenchmarkRunner {
     this.storiesAgent = new UserStoriesTaskAdapter();
     this.validationAgent = new ValidationTaskAdapter();
     this.domainAgent = new DomainModelingTaskAdapter();
+    this.uiuxAgent = new UIUXAgentAdapter();
   }
 
   /**
@@ -471,12 +480,307 @@ export class BenchmarkRunner {
   }
 
   /**
-   * Placeholder for UI/UX generation phase
+   * Generate UI/UX artifacts by bridging legacy phase outputs to standardized UIUX input.
    */
-  private async generateUIUX(domainModel: unknown): Promise<unknown> {
-    // TODO(#2230): Implement UI/UX generation when the agent is available
-    console.warn('UI/UX generation phase not yet implemented');
-    return domainModel; // Return domain model as placeholder
+  private async generateUIUX(
+    domainModel: unknown,
+    userStories: unknown,
+    spec: RequirementSpec
+  ): Promise<unknown> {
+    const uiuxInput = this.buildUIUXInput(domainModel, userStories, spec);
+    const inputValidation = this.uiuxAgent.validateInput(uiuxInput);
+    if (!inputValidation.valid) {
+      throw new Error(`UI/UX input validation failed: ${inputValidation.errors.join(', ')}`);
+    }
+
+    const result = await this.uiuxAgent.process(uiuxInput, {
+      projectId: `req2run-${spec.id}`,
+      domain: spec.metadata.category,
+      metadata: {
+        problemId: spec.id,
+        benchmark: 'req2run',
+      },
+      timestamp: new Date().toISOString(),
+    });
+
+    if (!result.success) {
+      const errorMessages = (result.errors || []).map((error) => error.message).filter(Boolean);
+      throw new Error(errorMessages.length > 0 ? errorMessages.join('; ') : 'UI/UX generation failed');
+    }
+
+    return result.data;
+  }
+
+  private buildUIUXInput(domainModel: unknown, userStories: unknown, spec: RequirementSpec): UIUXInput {
+    return {
+      domainModel: this.normalizeDomainModel(domainModel, spec),
+      userStories: this.normalizeUserStories(userStories, spec),
+      stakeholders: this.buildStakeholders(spec),
+    };
+  }
+
+  private normalizeDomainModel(domainModel: unknown, spec: RequirementSpec): DomainModelingOutput {
+    const source = this.toObject(domainModel);
+    const rawEntities = source ? source['entities'] : undefined;
+    if (!Array.isArray(rawEntities)) {
+      return this.createFallbackDomainModel(spec);
+    }
+
+    const entities = rawEntities
+      .map((entity, index) => {
+        const rawEntity = this.toObject(entity);
+        if (!rawEntity) {
+          return null;
+        }
+
+        const name = typeof rawEntity['name'] === 'string' && rawEntity['name'].trim().length > 0
+          ? rawEntity['name'].trim()
+          : `${this.toPascalCase(spec.title)}Entity${index + 1}`;
+        const rawAttributes = Array.isArray(rawEntity['attributes']) ? rawEntity['attributes'] : [];
+        const attributes = rawAttributes
+          .map((attribute) => {
+            const rawAttribute = this.toObject(attribute);
+            if (!rawAttribute) {
+              return null;
+            }
+
+            const attributeName = typeof rawAttribute['name'] === 'string' && rawAttribute['name'].trim().length > 0
+              ? rawAttribute['name'].trim()
+              : 'value';
+            const type = typeof rawAttribute['type'] === 'string' && rawAttribute['type'].trim().length > 0
+              ? rawAttribute['type'].trim()
+              : 'string';
+            const required = typeof rawAttribute['required'] === 'boolean' ? rawAttribute['required'] : false;
+            const description = typeof rawAttribute['description'] === 'string'
+              ? rawAttribute['description']
+              : undefined;
+
+            return {
+              name: attributeName,
+              type,
+              required,
+              ...(description ? { description } : {}),
+            };
+          })
+          .filter((attribute): attribute is DomainModelingOutput['entities'][number]['attributes'][number] => attribute !== null);
+
+        return {
+          name,
+          attributes: attributes.length > 0
+            ? attributes
+            : [{ name: 'id', type: 'string', required: true, description: 'Unique identifier' }],
+          methods: [],
+          invariants: [],
+          isAggregateRoot: index === 0,
+        };
+      })
+      .filter((entity): entity is DomainModelingOutput['entities'][number] => entity !== null);
+
+    if (entities.length === 0) {
+      return this.createFallbackDomainModel(spec);
+    }
+
+    const rootEntityName = entities[0]?.name || 'DomainEntity';
+    return {
+      entities,
+      relationships: [],
+      valueObjects: [],
+      aggregates: [{
+        name: `${rootEntityName}Aggregate`,
+        root: rootEntityName,
+        entities: entities.map((entity) => entity.name),
+        valueObjects: [],
+        invariants: [],
+      }],
+      services: [],
+      boundedContexts: [{
+        name: `${spec.metadata.category}-context`,
+        description: spec.description,
+        entities: entities.map((entity) => entity.name),
+        services: [],
+        aggregates: [`${rootEntityName}Aggregate`],
+      }],
+    };
+  }
+
+  private createFallbackDomainModel(spec: RequirementSpec): DomainModelingOutput {
+    const entityName = `${this.toPascalCase(spec.title)}Entity`;
+    const aggregateName = `${entityName}Aggregate`;
+    return {
+      entities: [{
+        name: entityName,
+        attributes: [
+          { name: 'id', type: 'string', required: true, description: 'Unique identifier' },
+          { name: 'name', type: 'string', required: true, description: 'Display name' },
+        ],
+        methods: [],
+        invariants: ['id must be unique'],
+        isAggregateRoot: true,
+      }],
+      relationships: [],
+      valueObjects: [],
+      aggregates: [{
+        name: aggregateName,
+        root: entityName,
+        entities: [entityName],
+        valueObjects: [],
+        invariants: [],
+      }],
+      services: [],
+      boundedContexts: [{
+        name: `${spec.metadata.category}-context`,
+        description: spec.description,
+        entities: [entityName],
+        services: [],
+        aggregates: [aggregateName],
+      }],
+    };
+  }
+
+  private normalizeUserStories(userStories: unknown, spec: RequirementSpec): UserStoriesOutput {
+    const source = this.toObject(userStories);
+    const rawStories = source ? source['stories'] : undefined;
+    const stories = Array.isArray(rawStories)
+      ? rawStories
+          .map((story, index) => this.mapUserStory(story, index, spec))
+          .filter((story): story is UserStory => story !== null)
+      : [];
+
+    const normalizedStories = stories.length > 0 ? stories : [this.createFallbackStory(spec)];
+    const acceptanceCriteria = normalizedStories.map((story) => {
+      const criteria = story.acceptanceCriteria.length > 0
+        ? story.acceptanceCriteria
+        : [`${story.title} is completed successfully`];
+      return {
+        storyId: story.id,
+        criteria,
+        testScenarios: criteria.map((criterion) => ({
+          given: 'the user has completed prerequisites',
+          when: criterion,
+          then: 'the expected result is displayed',
+        })),
+      };
+    });
+
+    const requirements: Record<string, string[]> = {};
+    normalizedStories.forEach((story, index) => {
+      requirements[`req-${index + 1}`] = [story.id];
+    });
+
+    return {
+      stories: normalizedStories,
+      acceptanceCriteria,
+      traceabilityMatrix: {
+        requirements,
+        coverage: 100,
+        gaps: [],
+      },
+      success: true,
+    };
+  }
+
+  private mapUserStory(story: unknown, index: number, spec: RequirementSpec): UserStory | null {
+    const source = this.toObject(story);
+    if (!source) {
+      return null;
+    }
+
+    const id = typeof source['id'] === 'string' && source['id'].trim().length > 0
+      ? source['id'].trim()
+      : `US-${index + 1}`;
+    const description = typeof source['description'] === 'string' && source['description'].trim().length > 0
+      ? source['description'].trim()
+      : `Implement ${spec.title} story ${index + 1}`;
+    const title = typeof source['title'] === 'string' && source['title'].trim().length > 0
+      ? source['title'].trim()
+      : `Story ${index + 1}`;
+    const asA = typeof source['asA'] === 'string' && source['asA'].trim().length > 0
+      ? source['asA'].trim()
+      : 'user';
+    const iWant = typeof source['iWant'] === 'string' && source['iWant'].trim().length > 0
+      ? source['iWant'].trim()
+      : description;
+    const soThat = typeof source['soThat'] === 'string' && source['soThat'].trim().length > 0
+      ? source['soThat'].trim()
+      : 'I can complete the required workflow';
+    const priority = this.toStoryPriority(source['priority']);
+
+    return {
+      id,
+      title,
+      description,
+      asA,
+      iWant,
+      soThat,
+      acceptanceCriteria: this.toStringArray(source['acceptanceCriteria']),
+      priority,
+    };
+  }
+
+  private createFallbackStory(spec: RequirementSpec): UserStory {
+    return {
+      id: 'US-1',
+      title: `${spec.title} primary flow`,
+      description: spec.description,
+      asA: 'user',
+      iWant: `to use ${spec.title}`,
+      soThat: 'I can complete the requested task',
+      acceptanceCriteria: ['Primary use case can be completed end-to-end'],
+      priority: 'high',
+    };
+  }
+
+  private buildStakeholders(spec: RequirementSpec): Stakeholder[] {
+    const author = typeof spec.metadata.created_by === 'string' && spec.metadata.created_by.trim().length > 0
+      ? spec.metadata.created_by.trim()
+      : 'Product Owner';
+    return [
+      {
+        name: 'End User',
+        role: 'consumer',
+        concerns: ['usability', 'workflow completion'],
+        influenceLevel: 'high',
+      },
+      {
+        name: author,
+        role: 'product-owner',
+        concerns: ['requirement coverage', 'delivery quality'],
+        influenceLevel: 'medium',
+      },
+    ];
+  }
+
+  private toStoryPriority(priority: unknown): UserStory['priority'] {
+    if (priority === 'high' || priority === 'medium' || priority === 'low') {
+      return priority;
+    }
+    return 'medium';
+  }
+
+  private toObject(value: unknown): Record<string, unknown> | null {
+    if (typeof value !== 'object' || value === null) {
+      return null;
+    }
+    return value as Record<string, unknown>;
+  }
+
+  private toStringArray(value: unknown): string[] {
+    if (!Array.isArray(value)) {
+      return [];
+    }
+    return value
+      .map((item) => (typeof item === 'string' ? item.trim() : ''))
+      .filter((item) => item.length > 0);
+  }
+
+  private toPascalCase(value: string): string {
+    const normalized = value
+      .replace(/[^a-zA-Z0-9]+/g, ' ')
+      .trim()
+      .split(/\s+/)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+      .join('');
+    return normalized.length > 0 ? normalized : 'Domain';
   }
 
   /**
