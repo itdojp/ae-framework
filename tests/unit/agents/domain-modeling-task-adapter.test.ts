@@ -40,6 +40,17 @@ Relationships: Customer->Order, Order->Payment
     expect(input.relationships).toEqual(expect.arrayContaining(['Customer->Order', 'Order->Payment']));
   });
 
+  it('extractEntityInput does not treat narrative sentence as entity section', () => {
+    const adapter = new DomainModelingTaskAdapter();
+    const input = (adapter as any).extractEntityInput(`
+Identify entities for reservation domain.
+Business Rules: reservation must have a valid guest
+`);
+
+    expect(input.entities).toEqual([]);
+    expect(input.businessRules).toEqual(expect.arrayContaining(['reservation must have a valid guest']));
+  });
+
   it('handleDomainModelingTask passes extracted input to identifyEntities', async () => {
     const adapter = new DomainModelingTaskAdapter();
     let capturedInput: any;

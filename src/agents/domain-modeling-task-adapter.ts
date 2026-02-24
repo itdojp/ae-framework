@@ -667,7 +667,7 @@ ${validation.consistencyChecks.map((check) =>
       normalizedPrompt,
       keywords: this.extractKeywords(prompt),
       entities: this.extractList(prompt, [
-        /(?:entities?|entity|エンティティ)[\s:：]+([^\n]+)/gi,
+        /(?:^|[\r\n]|[.!?]\s+)(?:[-*]\s*)?(?:entities?|entity|エンティティ)\s*[:：]\s*([^\n]+)/gi,
       ]),
       aggregates: this.extractList(prompt, [
         /(?:aggregates?|aggregate roots?|aggregate|集約(?:ルート)?)[\s:：]+([^\n]+)/gi,
