@@ -50,6 +50,34 @@
           "type": "number",
           "minimum": 0,
           "maximum": 100
+        },
+        "contextPackDiagramIds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "contextPackMorphismIds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "contextPackAcceptanceTestIds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "missingDiagramLinks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "missingMorphismLinks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "missingAcceptanceTestLinks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rowsMissingContextPackLinks": {
+          "type": "integer",
+          "minimum": 0
         }
       }
     },
@@ -74,6 +102,18 @@
             "items": { "type": "string" }
           },
           "code": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "diagramId": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "morphismId": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "acceptanceTestId": {
             "type": "array",
             "items": { "type": "string" }
           },

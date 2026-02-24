@@ -86,6 +86,7 @@ ae tdd
    --map docs/specs/issue-traceability-map.json \
    --tests "tests/**/*" \
    --code "src/**/*" \
+   --context-pack "spec/context-pack/**/*.{yml,yaml,json}" \
    --format json \
    --output docs/specs/ISSUE-TRACEABILITY-MATRIX.json
 
@@ -450,7 +451,7 @@ ae intent --analyze --sources "requirements.md"
  ae tests:suggest --template http-api --intent "Build a minimal todo API"
  # auth テンプレートの {intent}/{auth_type}/{roles}/{resources} は入力から自動展開されます
  ae traceability extract-ids --issue "https://github.com/<org>/<repo>/issues/1" --pattern "(?:LG|REQ)-[A-Z0-9_-]+" --output docs/specs/issue-traceability-map.json
- ae traceability matrix --map docs/specs/issue-traceability-map.json --tests "tests/**/*" --code "src/**/*" --format md --output docs/specs/ISSUE-TRACEABILITY-MATRIX.md
+ ae traceability matrix --map docs/specs/issue-traceability-map.json --tests "tests/**/*" --code "src/**/*" --context-pack "spec/context-pack/**/*.{yml,yaml,json}" --format md --output docs/specs/ISSUE-TRACEABILITY-MATRIX.md
  ae tests:scaffold --input docs/templates/plan-to-spec-normalization-sample.md
  ae tests:scaffold --input docs/templates/plan-to-spec-normalization-sample.md --no-contract
 ```

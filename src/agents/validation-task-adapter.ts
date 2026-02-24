@@ -687,12 +687,18 @@ ${validation.alignmentGaps.map((gap) =>
   private async validateTraceability(input: ValidationInput): Promise<TraceabilityValidationResult> {
     const matrixRows = extractTraceabilityMatrixRows(input);
     if (matrixRows.length > 0) {
-      const linkedRows = matrixRows.filter((row) => row.linked);
+      const isContextPackLinked = (row: (typeof matrixRows)[number]): boolean => (
+        !row.hasContextPackColumns
+        || (row.diagramId.length > 0 && row.morphismId.length > 0 && row.acceptanceTestId.length > 0)
+      );
+      const isFullyLinked = (row: (typeof matrixRows)[number]): boolean => row.linked && isContextPackLinked(row);
+
+      const linkedRows = matrixRows.filter((row) => isFullyLinked(row));
       const coveragePercentage = matrixRows.length > 0
         ? Math.round((linkedRows.length / matrixRows.length) * 100)
         : 0;
       const missingLinks = matrixRows
-        .filter((row) => !row.linked)
+        .filter((row) => !isFullyLinked(row))
         .map((row) => {
           const reasons: string[] = [];
           if (row.tests.length === 0) {
@@ -701,9 +707,20 @@ ${validation.alignmentGaps.map((gap) =>
           if (row.code.length === 0) {
             reasons.push('no implementation link');
           }
+          if (row.hasContextPackColumns) {
+            if (row.diagramId.length === 0) {
+              reasons.push('no diagram ID link');
+            }
+            if (row.morphismId.length === 0) {
+              reasons.push('no morphism ID link');
+            }
+            if (row.acceptanceTestId.length === 0) {
+              reasons.push('no acceptance test ID link');
+            }
+          }
           return {
             from: row.requirementId,
-            to: 'Tests/Implementation',
+            to: row.hasContextPackColumns ? 'Tests/Implementation/ContextPack' : 'Tests/Implementation',
             reason: reasons.join(', ') || 'unlinked',
           };
         });
@@ -717,8 +734,15 @@ ${validation.alignmentGaps.map((gap) =>
           targets: [
             row.tests.length > 0 ? 'Tests' : '(missing tests)',
             row.code.length > 0 ? 'Implementation' : '(missing implementation)',
+            ...(row.hasContextPackColumns
+              ? [
+                row.diagramId.length > 0 ? 'Diagram ID' : '(missing diagram ID)',
+                row.morphismId.length > 0 ? 'Morphism ID' : '(missing morphism ID)',
+                row.acceptanceTestId.length > 0 ? 'Acceptance Test ID' : '(missing acceptance test ID)',
+              ]
+              : []),
           ],
-          coverage: row.linked ? 100 : 0,
+          coverage: isFullyLinked(row) ? 100 : 0,
         })),
         missingLinks,
         orphanedArtifacts: [],

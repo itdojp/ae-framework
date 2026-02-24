@@ -29,6 +29,7 @@ describe('traceability command e2e', () => {
     try {
       mkdirSync(join(dir, 'src'), { recursive: true });
       mkdirSync(join(dir, 'tests'), { recursive: true });
+      mkdirSync(join(dir, 'spec', 'context-pack'), { recursive: true });
       writeFileSync(
         join(dir, 'map.json'),
         JSON.stringify(
@@ -51,8 +52,32 @@ describe('traceability command e2e', () => {
         ),
         'utf8',
       );
-      writeFileSync(join(dir, 'tests', 'auth.test.ts'), '// LG-1\n', 'utf8');
-      writeFileSync(join(dir, 'src', 'auth.ts'), '// LG-1\n', 'utf8');
+      writeFileSync(
+        join(dir, 'spec', 'context-pack', 'minimal.yaml'),
+        [
+          'version: 1',
+          'name: sample',
+          'problem_statement:',
+          '  goals: ["g"]',
+          '  non_goals: ["ng"]',
+          'domain_glossary:',
+          '  terms: [{ term: "Order", ja: "受注" }]',
+          'objects: [{ id: "Order", kind: "entity" }]',
+          'morphisms: [{ id: "MOR-AUTH", input: {}, output: {}, pre: [], post: [], failures: [] }]',
+          'diagrams: [{ id: "DGM-AUTH", statement: "commutative", verification: [] }]',
+          'constraints: {}',
+          'acceptance_tests: [{ id: "AT-AUTH", scenario: "s", expected: ["ok"] }]',
+          'coding_conventions:',
+          '  language: ts',
+          '  directory: ["src"]',
+          '  dependencies: {}',
+          'forbidden_changes: []',
+          '',
+        ].join('\n'),
+        'utf8',
+      );
+      writeFileSync(join(dir, 'tests', 'auth.test.ts'), '// LG-1 DGM-AUTH MOR-AUTH AT-AUTH\n', 'utf8');
+      writeFileSync(join(dir, 'src', 'auth.ts'), '// LG-1 MOR-AUTH\n', 'utf8');
 
       const result = runCli(
         [
@@ -78,6 +103,11 @@ describe('traceability command e2e', () => {
       expect(matrix.summary.totalRequirements).toBe(2);
       expect(matrix.summary.linkedRequirements).toBe(1);
       expect(matrix.summary.coverage).toBe(50);
+      expect(matrix.summary.contextPackDiagramIds).toBe(1);
+      expect(matrix.summary.rowsMissingContextPackLinks).toBe(1);
+      expect(matrix.rows[0]?.diagramId).toEqual(['DGM-AUTH']);
+      expect(matrix.rows[0]?.morphismId).toEqual(['MOR-AUTH']);
+      expect(matrix.rows[0]?.acceptanceTestId).toEqual(['AT-AUTH']);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -139,8 +169,24 @@ describe('traceability command e2e', () => {
               coverage: 100,
             },
             rows: [
-              { requirementId: 'LG-1', tests: ['tests/a.test.ts'], code: ['src/a.ts'], linked: true },
-              { requirementId: 'LG-2', tests: ['tests/b.test.ts'], code: ['src/b.ts'], linked: true },
+              {
+                requirementId: 'LG-1',
+                tests: ['tests/a.test.ts'],
+                code: ['src/a.ts'],
+                diagramId: ['DGM-1'],
+                morphismId: ['MOR-1'],
+                acceptanceTestId: ['AT-1'],
+                linked: true,
+              },
+              {
+                requirementId: 'LG-2',
+                tests: ['tests/b.test.ts'],
+                code: ['src/b.ts'],
+                diagramId: ['DGM-2'],
+                morphismId: ['MOR-2'],
+                acceptanceTestId: ['AT-2'],
+                linked: true,
+              },
             ],
           },
           null,
@@ -152,6 +198,57 @@ describe('traceability command e2e', () => {
       const result = runCli(['validate', '--traceability', '--strict', '--sources', matrixPath]);
       expect(result.status).toBe(0);
       expect(result.stdout).toContain('Traceability Validation Complete - 100% traceability coverage');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('fails validate --traceability --strict when context-pack IDs are missing', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'ae-traceability-context-strict-fail-'));
+    try {
+      const matrixPath = join(dir, 'matrix.json');
+      writeFileSync(
+        matrixPath,
+        JSON.stringify(
+          {
+            schemaVersion: 'issue-traceability-matrix/v1',
+            generatedAt: '2026-02-17T00:00:00Z',
+            sourceMap: 'map.json',
+            summary: {
+              totalRequirements: 1,
+              linkedRequirements: 1,
+              unlinkedRequirements: 0,
+              coverage: 100,
+              contextPackDiagramIds: 1,
+              contextPackMorphismIds: 1,
+              contextPackAcceptanceTestIds: 1,
+              missingDiagramLinks: 1,
+              missingMorphismLinks: 0,
+              missingAcceptanceTestLinks: 0,
+              rowsMissingContextPackLinks: 1,
+            },
+            rows: [
+              {
+                requirementId: 'LG-1',
+                tests: ['tests/a.test.ts'],
+                code: ['src/a.ts'],
+                diagramId: [],
+                morphismId: ['MOR-1'],
+                acceptanceTestId: ['AT-1'],
+                linked: true,
+              },
+            ],
+          },
+          null,
+          2,
+        ),
+        'utf8',
+      );
+
+      const result = runCli(['validate', '--traceability', '--strict', '--sources', matrixPath]);
+      expect(result.status).toBe(1);
+      expect(result.stdout).toContain('Traceability Validation Complete');
+      expect(result.stdout).toContain('Progress blocked');
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
