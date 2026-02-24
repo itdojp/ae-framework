@@ -8,10 +8,11 @@ import {
 
 describe('check-todo-issue-links', () => {
   it('parses TODO/FIXME issue references with source location', () => {
+    const hash = '#';
     const content = [
-      '// TODO(#123): implement',
-      '/* FIXME(#456) pending */',
-      '// TODO ( #789 ) spacing variant',
+      `// TODO(${hash}123): implement`,
+      `/* FIXME(${hash}456) pending */`,
+      `// TODO ( ${hash}789 ) spacing variant`,
     ].join('\n');
 
     const references = parseTodoIssueReferences(content, 'src/sample.ts');
@@ -82,5 +83,36 @@ describe('check-todo-issue-links', () => {
       url: 'https://api.github.com/repos/itdojp/ae-framework/issues/3',
     });
     expect(fetchImpl).toHaveBeenCalledTimes(3);
+  });
+
+  it('retries on rate-limit style responses before succeeding', async () => {
+    const fetchImpl = vi.fn(async () => {
+      if (fetchImpl.mock.calls.length === 1) {
+        return {
+          ok: false,
+          status: 429,
+          headers: { get: (name: string) => (name.toLowerCase() === 'retry-after' ? '0' : null) },
+          json: async () => ({}),
+          text: async () => 'Too Many Requests',
+        };
+      }
+      return {
+        ok: true,
+        status: 200,
+        headers: { get: () => null },
+        json: async () => ({ state: 'open', html_url: 'https://example.test/issues/1' }),
+        text: async () => '',
+      };
+    });
+
+    const states = await fetchIssueStates([1], {
+      repository: 'itdojp/ae-framework',
+      token: '',
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      sleep: async () => {},
+    });
+
+    expect(states.get(1)).toEqual({ state: 'open', url: 'https://example.test/issues/1' });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 });

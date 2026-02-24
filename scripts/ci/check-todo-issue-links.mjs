@@ -7,6 +7,9 @@ import { fileURLToPath } from 'node:url';
 
 export const TODO_ISSUE_PATTERN = /\b(TODO|FIXME)\s*\(\s*#(\d+)\s*\)/gu;
 const DEFAULT_INCLUDE_PREFIXES = ['src/', 'scripts/', 'docs/', 'tests/', 'spec/', 'README.md'];
+const RATE_LIMIT_MAX_ATTEMPTS = 5;
+const RATE_LIMIT_BASE_DELAY_MS = 400;
+const RATE_LIMIT_MAX_DELAY_MS = 10000;
 
 /**
  * Parse TODO/FIXME issue references from text.
@@ -191,7 +194,7 @@ function splitRepository(repository) {
  * @returns {Promise<{state: 'open' | 'closed' | 'missing', url?: string}>}
  */
 async function fetchIssueState(issue, context) {
-  const { owner, repo, token, fetchImpl } = context;
+  const { owner, repo, token, fetchImpl, sleep } = context;
   const url = `https://api.github.com/repos/${owner}/${repo}/issues/${issue}`;
   const headers = {
     Accept: 'application/vnd.github+json',
@@ -201,29 +204,57 @@ async function fetchIssueState(issue, context) {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetchImpl(url, { headers });
-  if (response.status === 404) {
-    return { state: 'missing', url };
-  }
-  if (!response.ok) {
+  for (let attempt = 1; attempt <= RATE_LIMIT_MAX_ATTEMPTS; attempt += 1) {
+    // eslint-disable-next-line no-await-in-loop
+    const response = await fetchImpl(url, { headers });
+    if (response.status === 404 || response.status === 410 || response.status === 451) {
+      return { state: 'missing', url };
+    }
+    if (response.ok) {
+      const data = await response.json();
+      const state = data?.state === 'closed' ? 'closed' : 'open';
+      return { state, url: data?.html_url || url };
+    }
+
     const text = await response.text();
-    const body = text.replace(/\s+/gu, ' ').trim().slice(0, 200);
-    throw new Error(`GitHub API request failed for #${issue}: HTTP ${response.status}${body ? ` (${body})` : ''}`);
+    const body = text.replace(/\s+/gu, ' ').trim();
+    const isRateLimit = response.status === 429
+      || (response.status === 403 && /rate.?limit|secondary rate limit/iu.test(body));
+
+    if (!isRateLimit || attempt >= RATE_LIMIT_MAX_ATTEMPTS) {
+      const snippet = body.slice(0, 200);
+      throw new Error(`GitHub API request failed for #${issue}: HTTP ${response.status}${snippet ? ` (${snippet})` : ''}`);
+    }
+
+    const retryAfterSeconds = Number.parseInt(response.headers.get('retry-after') ?? '', 10);
+    const rateLimitResetSeconds = Number.parseInt(response.headers.get('x-ratelimit-reset') ?? '', 10);
+    const resetDelayMs = Number.isFinite(rateLimitResetSeconds)
+      ? Math.max(0, rateLimitResetSeconds * 1000 - Date.now())
+      : 0;
+    const retryAfterMs = Number.isFinite(retryAfterSeconds) ? Math.max(0, retryAfterSeconds * 1000) : 0;
+    const backoffMs = Math.min(RATE_LIMIT_MAX_DELAY_MS, RATE_LIMIT_BASE_DELAY_MS * 2 ** (attempt - 1));
+    const delayMs = Math.max(backoffMs, retryAfterMs, resetDelayMs);
+    // eslint-disable-next-line no-await-in-loop
+    await sleep(delayMs);
   }
 
-  const data = await response.json();
-  const state = data?.state === 'closed' ? 'closed' : 'open';
-  return { state, url: data?.html_url || url };
+  throw new Error(`GitHub API request failed for #${issue}: exceeded retry attempts`);
 }
 
 /**
  * @param {number[]} issueNumbers
- * @param {{repository: string, token: string, fetchImpl: typeof fetch}} options
+ * @param {{repository: string, token: string, fetchImpl: typeof fetch, sleep?: (ms: number) => Promise<void>}} options
  * @returns {Promise<Map<number, {state: 'open' | 'closed' | 'missing', url?: string}>>}
  */
 export async function fetchIssueStates(issueNumbers, options) {
   const { repository, token, fetchImpl } = options;
-  const context = { ...splitRepository(repository), token, fetchImpl };
+  const sleep = options.sleep ?? (async (ms) => {
+    if (ms <= 0) return;
+    await new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
+  });
+  const context = { ...splitRepository(repository), token, fetchImpl, sleep };
   const states = new Map();
   for (const issue of issueNumbers) {
     // Sequential requests keep behavior predictable and avoid burst traffic to the GitHub API.
@@ -242,7 +273,8 @@ function buildReport(references, issueStates, options) {
   const referenceMap = buildIssueReferenceMap(references);
   const evaluation = evaluateIssueReferenceMap(referenceMap, issueStates, options);
   const uniqueIssueCount = referenceMap.size;
-  const checkedIssueCount = uniqueIssueCount - new Set(options.allowIssues).size;
+  const allowSet = new Set(options.allowIssues);
+  const checkedIssueCount = [...referenceMap.keys()].filter((issue) => !allowSet.has(issue)).length;
   return {
     references,
     issueStates,
