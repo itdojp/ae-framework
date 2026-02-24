@@ -8,19 +8,7 @@ import { gzip, gunzip } from 'zlib';
 import { performance } from 'perf_hooks';
 import { encodeSpecialValue } from './state-serialization.js';
 import { reviveStateEntryData } from './state-entry-revival.js';
-// import { AEIR } from '@ae-framework/spec-compiler';  // Temporarily disabled for build fix
-
-/**
- * Minimal AEIR stub type for build fix.
- * TODO(#2230): Replace with import from '@ae-framework/spec-compiler' when available.
- */
-export interface AEIR {
-  id?: string;
-  name?: string;
-  type?: string;
-  version?: string;
-  // Add other properties as needed based on usage in this file.
-}
+import type { AEIR } from '@ae-framework/spec-compiler';
 
 const gzipAsync = promisify(gzip);
 const gunzipAsync = promisify(gunzip);

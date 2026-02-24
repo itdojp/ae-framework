@@ -315,9 +315,8 @@ export class APITestRunner implements TestRunner {
       step._requestDuration = duration;
 
       // Validate response if configured
-      if (step.data?.assertions) {
-        // TODO(#2230): Implement validateResponse method
-        // await this.validateResponse(response, step.data.assertions);
+      if (Array.isArray(step.data?.assertions) && step.data.assertions.length > 0) {
+        await this.validateResponse(response, step.data.assertions as APIAssertion[]);
       }
 
       return `${requestConfig.method} ${url} → ${response.status} ${response.statusText} (${duration}ms)`;
@@ -346,6 +345,15 @@ export class APITestRunner implements TestRunner {
     }
 
     return `Validated ${assertions.length} assertions: ${results.join(', ')}`;
+  }
+
+  /**
+   * Validate inline assertions attached to request steps.
+   */
+  private async validateResponse(response: HttpResponse, assertions: APIAssertion[]): Promise<void> {
+    for (const assertion of assertions) {
+      await this.validateAssertion(assertion, response);
+    }
   }
 
   /**
