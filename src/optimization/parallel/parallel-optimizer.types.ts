@@ -57,11 +57,14 @@ export interface OptimizationStrategy {
   name: string;
   description: string;
   maxConcurrency: number;
+  executionBackend: ExecutionBackendMode;
   loadBalancing: LoadBalancingStrategy;
   priorityWeighting: PriorityWeights;
   resourceAllocation: ResourceAllocationStrategy;
   adaptiveScaling: AdaptiveScalingConfig;
 }
+
+export type ExecutionBackendMode = 'worker_threads' | 'mock';
 
 export type LoadBalancingStrategy =
   | 'round_robin'
@@ -141,4 +144,6 @@ export interface OptimizationMetrics {
   throughput: number;
   queueLength: number;
   activeWorkers: number;
+  failedTasks: number;
+  retriedTasks: number;
 }

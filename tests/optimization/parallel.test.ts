@@ -4,7 +4,6 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { formatGWT } from '../utils/gwt-format';
-import { formatGWT } from '../utils/gwt-format';
 import { 
   ParallelOptimizer, 
   TaskScheduler, 
@@ -179,6 +178,86 @@ describe('Parallel Optimization Engine', () => {
       optimizer.updateStrategy(newStrategy);
       // Strategy update should emit event
       expect(optimizer).toBeDefined();
+    });
+
+    it('uses worker_threads backend and retries failed tasks up to maxRetries', async () => {
+      const workerOptimizer = new ParallelOptimizer({
+        executionBackend: 'worker_threads',
+        maxConcurrency: 1,
+        adaptiveScaling: {
+          enabled: false,
+          scaleUpThreshold: 0.8,
+          scaleDownThreshold: 0.3,
+          maxWorkers: 1,
+          minWorkers: 1,
+          cooldownPeriod: 30000,
+        },
+      });
+      workerOptimizer.start();
+
+      const task: ParallelTask = {
+        id: 'worker-failure-task',
+        name: 'Worker Failure Task',
+        type: 'computation',
+        payload: {},
+        priority: 'normal',
+        dependencies: [],
+        estimatedDuration: 20,
+        maxRetries: 2,
+        timeout: 2000,
+        resourceRequirements: { cpu: 0.2, memory: 32, io: 0.1, network: 0.1 },
+        metadata: { forceError: true },
+      };
+
+      await workerOptimizer.submitTask(task);
+      const result = await workerOptimizer.waitForTask(task.id, 15000);
+      expect(result.status).toBe('failed');
+      expect(result.retryCount).toBe(2);
+      const metrics = workerOptimizer.getOptimizationMetrics();
+      expect(metrics.failedTasks).toBeGreaterThanOrEqual(1);
+      expect(metrics.retriedTasks).toBeGreaterThanOrEqual(2);
+
+      await workerOptimizer.stop();
+    });
+
+    it('marks timed out task as timeout after retries are exhausted', async () => {
+      const workerOptimizer = new ParallelOptimizer({
+        executionBackend: 'worker_threads',
+        maxConcurrency: 1,
+        adaptiveScaling: {
+          enabled: false,
+          scaleUpThreshold: 0.8,
+          scaleDownThreshold: 0.3,
+          maxWorkers: 1,
+          minWorkers: 1,
+          cooldownPeriod: 30000,
+        },
+      });
+      workerOptimizer.start();
+
+      const task: ParallelTask = {
+        id: 'worker-timeout-task',
+        name: 'Worker Timeout Task',
+        type: 'computation',
+        payload: {},
+        priority: 'normal',
+        dependencies: [],
+        estimatedDuration: 20,
+        maxRetries: 1,
+        timeout: 5,
+        resourceRequirements: { cpu: 0.2, memory: 16, io: 0.1, network: 0.1 },
+        metadata: { executionTimeMs: 120 },
+      };
+
+      await workerOptimizer.submitTask(task);
+      const result = await workerOptimizer.waitForTask(task.id, 15000);
+      expect(result.status).toBe('timeout');
+      expect(result.retryCount).toBe(1);
+      const metrics = workerOptimizer.getOptimizationMetrics();
+      expect(metrics.failedTasks).toBeGreaterThanOrEqual(1);
+      expect(metrics.retriedTasks).toBeGreaterThanOrEqual(1);
+
+      await workerOptimizer.stop();
     });
   });
 

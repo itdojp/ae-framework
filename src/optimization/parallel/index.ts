@@ -27,6 +27,7 @@ export type {
   PriorityWeights,
   ResourceAllocationStrategy,
   AdaptiveScalingConfig,
+  ExecutionBackendMode,
   ParallelizationPlan,
   OptimizedTask,
   TaskGroup,
