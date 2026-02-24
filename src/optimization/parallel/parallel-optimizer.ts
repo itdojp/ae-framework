@@ -4,9 +4,10 @@
  */
 
 import { EventEmitter } from 'events';
-import type { Worker } from 'worker_threads';
+import { Worker } from 'worker_threads';
 import { cpus } from 'os';
 import type {
+  ExecutionBackendMode,
   OptimizationMetrics,
   OptimizationStrategy,
   OptimizedTask,
@@ -22,6 +23,7 @@ import type {
 
 export type {
   AdaptiveScalingConfig,
+  ExecutionBackendMode,
   LoadBalancingStrategy,
   OptimizationMetrics,
   OptimizationStrategy,
@@ -39,12 +41,103 @@ export type {
   TaskType,
 } from './parallel-optimizer.types.js';
 
+type WorkerCommandMessage = {
+  type: 'execute_task';
+  taskId: string;
+  attempt: number;
+  task: ParallelTask;
+};
+
+type WorkerResponseMessage =
+  | {
+      type: 'task_completed';
+      taskId: string;
+      attempt: number;
+      result: unknown;
+      executionTime: number;
+      resourceUsage?: Partial<ResourceUsage>;
+    }
+  | {
+      type: 'task_error';
+      taskId: string;
+      attempt: number;
+      error: string;
+      executionTime?: number;
+    }
+  | {
+      type: 'task_timeout';
+      taskId: string;
+      attempt: number;
+      executionTime?: number;
+      error: string;
+    };
+
+type ManagedWorker = {
+  postMessage(message: WorkerCommandMessage): void;
+  terminate(): Promise<void>;
+  busy: boolean;
+};
+
+const PARALLEL_TASK_WORKER_SOURCE = `
+const { parentPort } = require('worker_threads');
+const sleepBlocking = (ms) => {
+  const duration = Math.max(0, Number(ms) || 0);
+  if (duration <= 0) return;
+  const buffer = new SharedArrayBuffer(4);
+  const signal = new Int32Array(buffer);
+  Atomics.wait(signal, 0, 0, duration);
+};
+parentPort.on('message', (message) => {
+  if (!message || message.type !== 'execute_task') {
+    return;
+  }
+  const startedAt = Date.now();
+  try {
+    const task = message.task || {};
+    const metadata = task.metadata || {};
+    if (metadata.forceError === true) {
+      throw new Error('Forced task failure');
+    }
+    const rawDuration = Number(metadata.executionTimeMs ?? task.estimatedDuration ?? 0);
+    const durationMs = Number.isFinite(rawDuration) ? Math.max(0, rawDuration) : 0;
+    sleepBlocking(Math.min(durationMs, 300));
+    const executionTime = Date.now() - startedAt;
+    parentPort.postMessage({
+      type: 'task_completed',
+      taskId: message.taskId,
+      attempt: message.attempt,
+      result: { success: true },
+      executionTime,
+      resourceUsage: {
+        cpuTime: executionTime,
+        memoryPeak: Number(task.resourceRequirements?.memory ?? 0),
+        ioOperations: 0,
+        networkBytes: 0
+      }
+    });
+  } catch (error) {
+    parentPort.postMessage({
+      type: 'task_error',
+      taskId: message.taskId,
+      attempt: message.attempt,
+      error: error instanceof Error ? error.message : String(error),
+      executionTime: Date.now() - startedAt
+    });
+  }
+});
+`;
+
 export class ParallelOptimizer extends EventEmitter {
   private strategy: OptimizationStrategy;
-  private activeWorkers = new Map<string, Worker>();
+  private activeWorkers = new Map<string, ManagedWorker>();
   private taskQueue: ParallelTask[] = [];
   private executingTasks = new Map<string, ParallelTask>();
   private completedTasks = new Map<string, TaskResult>();
+  private workerAssignments = new Map<string, string>();
+  private taskAssignments = new Map<string, string>();
+  private taskTimeouts = new Map<string, NodeJS.Timeout>();
+  private taskRetryCounts = new Map<string, number>();
+  private taskAttempts = new Map<string, number>();
   private resourceUsage: ResourceUsage = {
     cpuTime: 0,
     memoryPeak: 0,
@@ -59,7 +152,9 @@ export class ParallelOptimizer extends EventEmitter {
     successRate: 0,
     throughput: 0,
     queueLength: 0,
-    activeWorkers: 0
+    activeWorkers: 0,
+    failedTasks: 0,
+    retriedTasks: 0,
   };
   private isRunning = false;
   private optimizationTimer?: NodeJS.Timeout;
@@ -270,11 +365,18 @@ export class ParallelOptimizer extends EventEmitter {
     // Cancel executing task
     const executingTask = this.executingTasks.get(taskId);
     if (executingTask) {
-      // Find and terminate the worker
-      // In a real implementation, we'd track which worker is executing which task
-      // For now, we'll simulate cancellation without targeting a specific worker
-      
+      this.clearTaskTimeout(taskId);
+      const workerId = this.taskAssignments.get(taskId);
+      if (workerId) {
+        if (this.strategy.executionBackend === 'worker_threads') {
+          this.recycleWorker(workerId, 'task_cancelled');
+        } else {
+          this.releaseWorkerById(workerId);
+        }
+      }
       this.executingTasks.delete(taskId);
+      this.taskRetryCounts.delete(taskId);
+      this.taskAttempts.delete(taskId);
       this.completedTasks.set(taskId, {
         taskId,
         status: 'cancelled',
@@ -298,11 +400,13 @@ export class ParallelOptimizer extends EventEmitter {
   // Private methods
   private createDefaultStrategy(overrides?: Partial<OptimizationStrategy>): OptimizationStrategy {
     const defaultConcurrency = Math.max(1, Math.min(cpus().length, 8));
+    const executionBackend = this.resolveExecutionBackendMode();
     
     return {
       name: 'Intelligent Parallel Optimization',
       description: 'Adaptive parallel processing with smart resource allocation',
       maxConcurrency: defaultConcurrency,
+      executionBackend,
       loadBalancing: 'resource_aware',
       priorityWeighting: {
         urgent: 1.0,
@@ -324,6 +428,14 @@ export class ParallelOptimizer extends EventEmitter {
     };
   }
 
+  private resolveExecutionBackendMode(): ExecutionBackendMode {
+    const explicitMode = process.env['AE_PARALLEL_BACKEND'];
+    if (explicitMode === 'mock' || explicitMode === 'worker_threads') {
+      return explicitMode;
+    }
+    return process.env['NODE_ENV'] === 'test' ? 'mock' : 'worker_threads';
+  }
+
   private setupWorkerPool(): void {
     // Initialize minimum workers
     for (let i = 0; i < this.strategy.adaptiveScaling.minWorkers; i++) {
@@ -333,33 +445,132 @@ export class ParallelOptimizer extends EventEmitter {
 
   private createWorker(): string {
     const workerId = `worker-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+
+    const worker =
+      this.strategy.executionBackend === 'worker_threads'
+        ? this.createWorkerThreadWorker(workerId)
+        : this.createMockWorker(workerId);
+    this.activeWorkers.set(workerId, worker);
+    this.metrics.activeWorkers = this.activeWorkers.size;
     
-    // Demo implementation: simulates worker behavior with mock object
-    // TODO(#2228): In production, replace with actual Worker threads or process pools
-    // Example: new Worker(workerScript, { workerData: config })
-    const mockWorker = {
-      postMessage: (message: any) => {
-        // Demo simulation: uses setTimeout to mimic async worker execution
-        // TODO(#2228): Replace with actual worker communication protocol
+    console.log(`🔧 Created worker: ${workerId} (${this.strategy.executionBackend})`);
+    return workerId;
+  }
+
+  private createMockWorker(workerId: string): ManagedWorker {
+    return {
+      busy: false,
+      postMessage: (message: WorkerCommandMessage) => {
+        const requestedDuration = Number(message.task.metadata['executionTimeMs'] ?? message.task.estimatedDuration);
+        const durationMs = Number.isFinite(requestedDuration) ? Math.max(0, requestedDuration) : 0;
         setTimeout(() => {
+          if (message.task.metadata['forceError'] === true) {
+            this.handleWorkerMessage(workerId, {
+              type: 'task_error',
+              taskId: message.taskId,
+              attempt: message.attempt,
+              error: 'Forced task failure',
+              executionTime: durationMs,
+            });
+            return;
+          }
           this.handleWorkerMessage(workerId, {
             type: 'task_completed',
             taskId: message.taskId,
+            attempt: message.attempt,
             result: { success: true },
-            executionTime: Math.random() * 1000 + 100
+            executionTime: durationMs,
+            resourceUsage: {
+              cpuTime: durationMs,
+              memoryPeak: message.task.resourceRequirements.memory,
+              ioOperations: 0,
+              networkBytes: 0,
+            },
           });
-        }, Math.random() * 1000 + 100);
+        }, Math.min(durationMs, 100));
       },
-      terminate: () => {
-        console.log(`🔧 Worker ${workerId} terminated`);
-      }
-    } as any;
+      terminate: async () => {
+        // No-op for mock workers.
+      },
+    };
+  }
 
-    this.activeWorkers.set(workerId, mockWorker);
+  private createWorkerThreadWorker(workerId: string): ManagedWorker {
+    let terminated = false;
+    const threadWorker = new Worker(PARALLEL_TASK_WORKER_SOURCE, { eval: true });
+    threadWorker.on('message', (message: WorkerResponseMessage) => {
+      this.handleWorkerMessage(workerId, message);
+    });
+    threadWorker.on('error', (error) => {
+      if (terminated) {
+        return;
+      }
+      this.handleWorkerRuntimeFailure(workerId, error.message);
+    });
+    threadWorker.on('exit', (code) => {
+      if (terminated || code === 0) {
+        return;
+      }
+      this.handleWorkerRuntimeFailure(workerId, `Worker exited unexpectedly with code ${code}`);
+    });
+
+    return {
+      busy: false,
+      postMessage: (message: WorkerCommandMessage) => {
+        threadWorker.postMessage(message);
+      },
+      terminate: async () => {
+        terminated = true;
+        await threadWorker.terminate();
+      },
+    };
+  }
+
+  private handleWorkerRuntimeFailure(workerId: string, errorMessage: string): void {
+    const taskId = this.workerAssignments.get(workerId);
+    const worker = this.activeWorkers.get(workerId);
+    this.releaseWorkerById(workerId);
+    if (worker) {
+      this.activeWorkers.delete(workerId);
+      this.metrics.activeWorkers = this.activeWorkers.size;
+    }
+
+    if (taskId) {
+      const attempt = this.taskAttempts.get(taskId) ?? 1;
+      this.handleTaskError(workerId, {
+        type: 'task_error',
+        taskId,
+        attempt,
+        error: errorMessage,
+      });
+    }
+
+    if (worker) {
+      void worker.terminate().catch((error) => {
+        console.warn(`Warning: Error terminating failed worker ${workerId}:`, error);
+      });
+    }
+    if (this.isRunning && this.activeWorkers.size < this.strategy.maxConcurrency) {
+      this.createWorker();
+    }
+  }
+
+  private recycleWorker(workerId: string, reason: string): void {
+    const worker = this.activeWorkers.get(workerId);
+    if (!worker) {
+      return;
+    }
+
+    this.releaseWorkerById(workerId);
+    this.activeWorkers.delete(workerId);
     this.metrics.activeWorkers = this.activeWorkers.size;
-    
-    console.log(`🔧 Created worker: ${workerId}`);
-    return workerId;
+    void worker.terminate().catch((error) => {
+      console.warn(`Warning: Error terminating worker ${workerId} during ${reason}:`, error);
+    });
+
+    if (this.isRunning && this.activeWorkers.size < this.strategy.maxConcurrency) {
+      this.createWorker();
+    }
   }
 
   private async terminateAllWorkers(): Promise<void> {
@@ -374,6 +585,14 @@ export class ParallelOptimizer extends EventEmitter {
     );
 
     await Promise.all(terminationPromises);
+    for (const timer of this.taskTimeouts.values()) {
+      clearTimeout(timer);
+    }
+    this.taskTimeouts.clear();
+    this.workerAssignments.clear();
+    this.taskAssignments.clear();
+    this.taskRetryCounts.clear();
+    this.taskAttempts.clear();
     this.activeWorkers.clear();
     this.metrics.activeWorkers = 0;
   }
@@ -448,17 +667,40 @@ export class ParallelOptimizer extends EventEmitter {
     // Send to worker
     const worker = this.activeWorkers.get(workerId);
     if (worker) {
+      worker.busy = true;
+      this.workerAssignments.set(workerId, task.id);
+      this.taskAssignments.set(task.id, workerId);
+      const attempt = (this.taskAttempts.get(task.id) ?? 0) + 1;
+      this.taskAttempts.set(task.id, attempt);
+
+      const timeoutMs = Math.max(1, task.timeout);
+      const timeout = setTimeout(() => {
+        this.handleWorkerMessage(workerId, {
+          type: 'task_timeout',
+          taskId: task.id,
+          attempt,
+          error: `Task timed out after ${timeoutMs}ms`,
+          executionTime: timeoutMs,
+        });
+      }, timeoutMs);
+      this.taskTimeouts.set(task.id, timeout);
+
       worker.postMessage({
         type: 'execute_task',
         taskId: task.id,
+        attempt,
         task: task
       });
       
       this.emit('taskStarted', { task, workerId });
+      return;
     }
+
+    this.executingTasks.delete(task.id);
+    this.taskQueue.unshift(task);
   }
 
-  private handleWorkerMessage(workerId: string, message: any): void {
+  private handleWorkerMessage(workerId: string, message: WorkerResponseMessage): void {
     switch (message.type) {
       case 'task_completed':
         this.handleTaskCompleted(workerId, message);
@@ -466,50 +708,74 @@ export class ParallelOptimizer extends EventEmitter {
       case 'task_error':
         this.handleTaskError(workerId, message);
         break;
-      case 'resource_usage':
-        this.updateResourceUsage(message.usage);
+      case 'task_timeout':
+        this.handleTaskTimeout(workerId, message);
         break;
     }
   }
 
-  private handleTaskCompleted(workerId: string, message: any): void {
+  private handleTaskCompleted(
+    workerId: string,
+    message: Extract<WorkerResponseMessage, { type: 'task_completed' }>,
+  ): void {
     const task = this.executingTasks.get(message.taskId);
     if (!task) {
       return;
     }
+    const currentAttempt = this.taskAttempts.get(message.taskId);
+    if (currentAttempt !== message.attempt) {
+      return;
+    }
 
+    this.clearTaskTimeout(message.taskId);
+    this.releaseWorkerById(workerId);
+    const retryCount = this.taskRetryCounts.get(message.taskId) ?? 0;
+    const resolvedResourceUsage: ResourceUsage = {
+      cpuTime: message.resourceUsage?.cpuTime ?? message.executionTime,
+      memoryPeak: message.resourceUsage?.memoryPeak ?? 0,
+      ioOperations: message.resourceUsage?.ioOperations ?? 0,
+      networkBytes: message.resourceUsage?.networkBytes ?? 0,
+    };
+    this.updateResourceUsage(resolvedResourceUsage);
     const result: TaskResult = {
       taskId: message.taskId,
       status: 'completed',
       result: message.result,
       executionTime: message.executionTime,
-      resourceUsage: message.resourceUsage || {
-        cpuTime: message.executionTime,
-        memoryPeak: 0,
-        ioOperations: 0,
-        networkBytes: 0
-      },
+      resourceUsage: resolvedResourceUsage,
       workerId,
-      retryCount: 0
+      retryCount,
     };
 
     this.executingTasks.delete(message.taskId);
+    this.taskRetryCounts.delete(message.taskId);
+    this.taskAttempts.delete(message.taskId);
     this.completedTasks.set(message.taskId, result);
     
     this.emit('taskCompleted', { task, result });
   }
 
-  private handleTaskError(workerId: string, message: any): void {
+  private handleTaskError(
+    workerId: string,
+    message: Extract<WorkerResponseMessage, { type: 'task_error' }>,
+  ): void {
     const task = this.executingTasks.get(message.taskId);
     if (!task) {
       return;
     }
+    const currentAttempt = this.taskAttempts.get(message.taskId);
+    if (currentAttempt !== message.attempt) {
+      return;
+    }
 
+    this.clearTaskTimeout(message.taskId);
+    this.releaseWorkerById(workerId);
+    const retryCount = this.taskRetryCounts.get(message.taskId) ?? 0;
     const result: TaskResult = {
       taskId: message.taskId,
       status: 'failed',
       error: message.error,
-      executionTime: message.executionTime || 0,
+      executionTime: message.executionTime ?? 0,
       resourceUsage: {
         cpuTime: 0,
         memoryPeak: 0,
@@ -517,20 +783,95 @@ export class ParallelOptimizer extends EventEmitter {
         networkBytes: 0
       },
       workerId,
-      retryCount: 0
+      retryCount,
     };
 
     this.executingTasks.delete(message.taskId);
     
     // Check if task should be retried
-    if (task.maxRetries > 0) {
-      task.maxRetries--;
+    if (retryCount < task.maxRetries) {
+      this.taskRetryCounts.set(message.taskId, retryCount + 1);
       this.taskQueue.unshift(task); // Add to front of queue for retry
-      this.emit('taskRetry', { task, error: message.error });
+      this.emit('taskRetry', { task, error: message.error, retryCount: retryCount + 1 });
+      this.processTaskQueue();
     } else {
+      this.taskRetryCounts.delete(message.taskId);
+      this.taskAttempts.delete(message.taskId);
       this.completedTasks.set(message.taskId, result);
       this.emit('taskFailed', { task, result });
     }
+  }
+
+  private handleTaskTimeout(
+    workerId: string,
+    message: Extract<WorkerResponseMessage, { type: 'task_timeout' }>,
+  ): void {
+    const task = this.executingTasks.get(message.taskId);
+    if (!task) {
+      return;
+    }
+    const currentAttempt = this.taskAttempts.get(message.taskId);
+    if (currentAttempt !== message.attempt) {
+      return;
+    }
+
+    this.clearTaskTimeout(message.taskId);
+    if (this.strategy.executionBackend === 'worker_threads') {
+      this.recycleWorker(workerId, 'task_timeout');
+    } else {
+      this.releaseWorkerById(workerId);
+    }
+    const retryCount = this.taskRetryCounts.get(message.taskId) ?? 0;
+    const result: TaskResult = {
+      taskId: message.taskId,
+      status: 'timeout',
+      error: message.error,
+      executionTime: message.executionTime ?? task.timeout,
+      resourceUsage: {
+        cpuTime: 0,
+        memoryPeak: 0,
+        ioOperations: 0,
+        networkBytes: 0,
+      },
+      workerId,
+      retryCount,
+    };
+
+    this.executingTasks.delete(message.taskId);
+
+    if (retryCount < task.maxRetries) {
+      this.taskRetryCounts.set(message.taskId, retryCount + 1);
+      this.taskQueue.unshift(task);
+      this.emit('taskRetry', { task, error: message.error, retryCount: retryCount + 1 });
+      this.processTaskQueue();
+      return;
+    }
+
+    this.taskRetryCounts.delete(message.taskId);
+    this.taskAttempts.delete(message.taskId);
+    this.completedTasks.set(message.taskId, result);
+    this.emit('taskFailed', { task, result });
+  }
+
+  private clearTaskTimeout(taskId: string): void {
+    const timeout = this.taskTimeouts.get(taskId);
+    if (!timeout) {
+      return;
+    }
+    clearTimeout(timeout);
+    this.taskTimeouts.delete(taskId);
+  }
+
+  private releaseWorkerById(workerId: string): void {
+    const worker = this.activeWorkers.get(workerId);
+    if (worker) {
+      worker.busy = false;
+    }
+    const taskId = this.workerAssignments.get(workerId);
+    if (taskId) {
+      this.taskAssignments.delete(taskId);
+    }
+    this.workerAssignments.delete(workerId);
   }
 
   private updateResourceUsage(usage: Partial<ResourceUsage>): void {
@@ -557,20 +898,26 @@ export class ParallelOptimizer extends EventEmitter {
   }
 
   private getAvailableWorkers(): string[] {
-    // For this simulation, all workers are always available
-    // In a real implementation, we'd track worker states
-    return Array.from(this.activeWorkers.keys());
+    return Array.from(this.activeWorkers.entries())
+      .filter(([, worker]) => !worker.busy)
+      .map(([workerId]) => workerId);
   }
 
   private updateMetrics(): void {
     const completed = this.completedTasks.size;
     const successful = Array.from(this.completedTasks.values())
       .filter(r => r.status === 'completed').length;
+    const failed = Array.from(this.completedTasks.values())
+      .filter((result) => result.status === 'failed' || result.status === 'timeout').length;
+    const retried = Array.from(this.completedTasks.values())
+      .reduce((sum, result) => sum + result.retryCount, 0);
     
     this.metrics.totalTasksProcessed = completed;
     this.metrics.successRate = completed > 0 ? successful / completed : 0;
     this.metrics.queueLength = this.taskQueue.length;
     this.metrics.activeWorkers = this.activeWorkers.size;
+    this.metrics.failedTasks = failed;
+    this.metrics.retriedTasks = retried;
     
     // Calculate average execution time
     const executionTimes = Array.from(this.completedTasks.values())
@@ -629,11 +976,15 @@ export class ParallelOptimizer extends EventEmitter {
     
     // Scale down if utilization is low
     else if (utilization < scaleDownThreshold && currentWorkers > minWorkers) {
-      const workersToRemove = Array.from(this.activeWorkers.keys()).slice(-1);
+      const workersToRemove = Array.from(this.activeWorkers.entries())
+        .filter(([, worker]) => !worker.busy)
+        .map(([workerId]) => workerId)
+        .slice(-1);
       for (const workerId of workersToRemove) {
         const worker = this.activeWorkers.get(workerId);
         if (worker) {
-          worker.terminate();
+          this.releaseWorkerById(workerId);
+          void worker.terminate();
           this.activeWorkers.delete(workerId);
         }
       }
@@ -654,11 +1005,16 @@ export class ParallelOptimizer extends EventEmitter {
       }
     } else if (currentWorkers > targetWorkers) {
       // Remove excess workers
-      const workersToRemove = Array.from(this.activeWorkers.keys()).slice(targetWorkers);
+      const idleWorkers = Array.from(this.activeWorkers.entries())
+        .filter(([, worker]) => !worker.busy)
+        .map(([workerId]) => workerId)
+      const workerExcess = Math.max(0, currentWorkers - targetWorkers);
+      const workersToRemove = idleWorkers.slice(0, workerExcess);
       for (const workerId of workersToRemove) {
         const worker = this.activeWorkers.get(workerId);
         if (worker) {
-          worker.terminate();
+          this.releaseWorkerById(workerId);
+          void worker.terminate();
           this.activeWorkers.delete(workerId);
         }
       }
