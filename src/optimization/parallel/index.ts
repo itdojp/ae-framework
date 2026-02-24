@@ -27,6 +27,7 @@ export type {
   PriorityWeights,
   ResourceAllocationStrategy,
   AdaptiveScalingConfig,
+  ExecutionBackendMode,
   ParallelizationPlan,
   OptimizedTask,
   TaskGroup,
@@ -114,7 +115,7 @@ export class ParallelOptimizationSystem {
    */
   async stop(): Promise<void> {
     await this.optimizer.stop();
-    this.scheduler.stop();
+    await this.scheduler.stop();
     this.resourcePool.stop();
     
     console.log('🛑 Parallel Optimization System stopped');
