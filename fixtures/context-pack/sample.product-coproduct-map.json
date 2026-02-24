@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "context-pack-product-coproduct/v1",
+  "contextPackSources": [
+    "spec/context-pack/**/*.{yml,yaml,json}"
+  ],
+  "products": [
+    {
+      "morphismId": "ReserveInventory",
+      "requiredInputKeys": [
+        "itemId",
+        "quantity"
+      ],
+      "disallowGenericDtoKeys": true
+    }
+  ],
+  "coproducts": [
+    {
+      "morphismId": "ReserveInventory",
+      "variants": [
+        {
+          "name": "OutOfStock",
+          "evidencePaths": [
+            "tests/services/inventory-service.test.ts"
+          ]
+        }
+      ]
+    }
+  ]
+}

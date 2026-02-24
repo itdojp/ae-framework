@@ -187,6 +187,18 @@
             { "type": "null" }
           ]
         },
+        "contextPackProductCoproductReportJson": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "contextPackProductCoproductReportMarkdown": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
         "conformanceSummary": {
           "oneOf": [
             { "type": "string", "minLength": 1 },
