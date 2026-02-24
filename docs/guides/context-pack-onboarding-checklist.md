@@ -66,7 +66,7 @@ pnpm run verify:lite
 3. 対象コマンドと `verify:lite` を再実行
 4. `summary.totalViolations == 0` を確認
 
-障害対応の詳細は `docs/operations/context-pack-troubleshooting.md` を参照してください。
+障害対応の詳細は `docs/spec/context-pack.md` を参照してください。
 
 ### 5. PR前確認
 - [ ] Context Pack 系 5 コマンドが成功
@@ -104,4 +104,4 @@ pnpm run context-pack:verify-phase5
 pnpm run verify:lite
 ```
 
-For incident recovery details, see `docs/operations/context-pack-troubleshooting.md`.
+For incident recovery details, see `docs/spec/context-pack.md`.

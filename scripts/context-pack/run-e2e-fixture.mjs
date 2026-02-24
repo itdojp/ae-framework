@@ -45,7 +45,11 @@ function parseArgs(argv) {
       continue;
     }
     if (arg.startsWith('--fixture-dir=')) {
-      options.fixtureDir = arg.slice('--fixture-dir='.length);
+      const fixtureDir = arg.slice('--fixture-dir='.length);
+      if (!fixtureDir.trim()) {
+        throw new Error('missing value for --fixture-dir');
+      }
+      options.fixtureDir = fixtureDir;
       continue;
     }
     if (arg === '--report-dir') {
@@ -220,7 +224,7 @@ function main() {
     generatedAt: new Date().toISOString(),
     fixtureDir: toRepoRelative(fixtureDirAbsolute),
     reportDir: toRepoRelative(reportDirAbsolute),
-    keepReports: options.keepReports || reportDirProvided,
+    keepReports: failed || options.keepReports || reportDirProvided,
     status: failed ? 'fail' : 'pass',
     steps,
   };
