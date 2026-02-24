@@ -339,6 +339,8 @@ ae setup list
  ae setup typescript-node --name my-app --package-manager pnpm
 ```
 
+`ae setup` が内部で利用する `InstallerManager` は `Configuration.format: yaml` を指定した場合に JSON へフォールバックせず、YAML 形式で設定ファイルを出力します。
+
 ### Security / SBOM / Resilience / Circuit Breaker
 ```bash
 # Security
@@ -575,6 +577,8 @@ ae quality run --env development
 # 有用性評価（JSON + Markdown）
 pnpm run evaluate:usefulness -- --strict-inputs --min-score 70
 ```
+
+`ae setup` が内部で利用する `InstallerManager` は `Configuration.format: yaml` 指定時に JSON fallback せず、YAML 形式で設定ファイルを出力します。
 
 ### Security / SBOM / Resilience / Circuit Breaker
 ```bash

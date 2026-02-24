@@ -276,6 +276,60 @@ describe('InstallerManager', () => {
       expect(tsConfig).toBeDefined();
       expect(tsConfig!.file).toBe('vite.config.ts');
     });
+
+    test('should serialize YAML configurations without JSON fallback warning', async () => {
+      const template: InstallationTemplate = {
+        id: 'yaml-config-template',
+        name: 'YAML Config Template',
+        description: 'Template for YAML configuration serialization test',
+        category: 'library',
+        language: 'typescript',
+        dependencies: [],
+        scripts: {},
+        files: [],
+        configurations: [
+          {
+            file: 'config/app.yaml',
+            format: 'yaml',
+            content: {
+              app: { name: 'ae-framework', mode: 'test' },
+              features: ['installer', 'yaml'],
+            },
+          },
+        ],
+      };
+
+      const result = {
+        success: true,
+        message: '',
+        installedDependencies: [],
+        createdFiles: [],
+        configuredFiles: [],
+        executedSteps: [],
+        warnings: [],
+        errors: [],
+        duration: 0,
+      };
+
+      await installerManager['applyConfigurations'](template, {
+        projectRoot: testProjectRoot,
+        projectName: 'test-project',
+        packageManager: 'pnpm',
+      }, result);
+
+      const yamlWriteCall = vi.mocked(fs.writeFile).mock.calls.find(
+        ([filePath]) => filePath === path.join(testProjectRoot, 'config/app.yaml')
+      );
+      expect(yamlWriteCall).toBeDefined();
+
+      const writtenContent = yamlWriteCall?.[1];
+      expect(typeof writtenContent).toBe('string');
+      expect(writtenContent).toContain('app:');
+      expect(writtenContent).toContain('name: ae-framework');
+      expect(writtenContent).toContain('features:');
+      expect(result.warnings).not.toContain('YAML format not implemented, falling back to JSON');
+      expect(result.configuredFiles).toContain('config/app.yaml');
+    });
   });
 
   describe('File Operations', () => {

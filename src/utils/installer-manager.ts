@@ -6,6 +6,7 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { spawn } from 'child_process';
+import { stringify as toYamlString } from 'yaml';
 
 export interface InstallationTemplate {
   id: string;
@@ -786,9 +787,7 @@ end
             configContent = JSON.stringify(config.content, null, 2);
             break;
           case 'yaml':
-            // TODO(#2229): Implement proper YAML support by adding yaml library dependency
-            configContent = JSON.stringify(config.content, null, 2);
-            result.warnings.push('YAML format not implemented, falling back to JSON');
+            configContent = toYamlString(config.content);
             break;
           case 'js':
           case 'ts':
@@ -803,6 +802,7 @@ end
             break;
           default:
             configContent = JSON.stringify(config.content, null, 2);
+            result.warnings.push(`Unsupported configuration format "${config.format}", falling back to JSON`);
         }
       }
 
