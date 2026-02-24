@@ -134,6 +134,7 @@ export class ParallelOptimizer extends EventEmitter {
   private executingTasks = new Map<string, ParallelTask>();
   private completedTasks = new Map<string, TaskResult>();
   private workerAssignments = new Map<string, string>();
+  private taskAssignments = new Map<string, string>();
   private taskTimeouts = new Map<string, NodeJS.Timeout>();
   private taskRetryCounts = new Map<string, number>();
   private taskAttempts = new Map<string, number>();
@@ -365,9 +366,17 @@ export class ParallelOptimizer extends EventEmitter {
     const executingTask = this.executingTasks.get(taskId);
     if (executingTask) {
       this.clearTaskTimeout(taskId);
-      this.releaseWorker(taskId);
+      const workerId = this.taskAssignments.get(taskId);
+      if (workerId) {
+        if (this.strategy.executionBackend === 'worker_threads') {
+          this.recycleWorker(workerId, 'task_cancelled');
+        } else {
+          this.releaseWorkerById(workerId);
+        }
+      }
       this.executingTasks.delete(taskId);
       this.taskRetryCounts.delete(taskId);
+      this.taskAttempts.delete(taskId);
       this.completedTasks.set(taskId, {
         taskId,
         status: 'cancelled',
@@ -487,38 +496,22 @@ export class ParallelOptimizer extends EventEmitter {
   }
 
   private createWorkerThreadWorker(workerId: string): ManagedWorker {
+    let terminated = false;
     const threadWorker = new Worker(PARALLEL_TASK_WORKER_SOURCE, { eval: true });
     threadWorker.on('message', (message: WorkerResponseMessage) => {
       this.handleWorkerMessage(workerId, message);
     });
     threadWorker.on('error', (error) => {
-      const taskId = this.workerAssignments.get(workerId);
-      if (!taskId) {
+      if (terminated) {
         return;
       }
-      const attempt = this.taskAttempts.get(taskId) ?? 1;
-      this.handleWorkerMessage(workerId, {
-        type: 'task_error',
-        taskId,
-        attempt,
-        error: error.message,
-      });
+      this.handleWorkerRuntimeFailure(workerId, error.message);
     });
     threadWorker.on('exit', (code) => {
-      if (code === 0) {
+      if (terminated || code === 0) {
         return;
       }
-      const taskId = this.workerAssignments.get(workerId);
-      if (!taskId) {
-        return;
-      }
-      const attempt = this.taskAttempts.get(taskId) ?? 1;
-      this.handleWorkerMessage(workerId, {
-        type: 'task_error',
-        taskId,
-        attempt,
-        error: `Worker exited unexpectedly with code ${code}`,
-      });
+      this.handleWorkerRuntimeFailure(workerId, `Worker exited unexpectedly with code ${code}`);
     });
 
     return {
@@ -527,9 +520,57 @@ export class ParallelOptimizer extends EventEmitter {
         threadWorker.postMessage(message);
       },
       terminate: async () => {
+        terminated = true;
         await threadWorker.terminate();
       },
     };
+  }
+
+  private handleWorkerRuntimeFailure(workerId: string, errorMessage: string): void {
+    const taskId = this.workerAssignments.get(workerId);
+    const worker = this.activeWorkers.get(workerId);
+    this.releaseWorkerById(workerId);
+    if (worker) {
+      this.activeWorkers.delete(workerId);
+      this.metrics.activeWorkers = this.activeWorkers.size;
+    }
+
+    if (taskId) {
+      const attempt = this.taskAttempts.get(taskId) ?? 1;
+      this.handleTaskError(workerId, {
+        type: 'task_error',
+        taskId,
+        attempt,
+        error: errorMessage,
+      });
+    }
+
+    if (worker) {
+      void worker.terminate().catch((error) => {
+        console.warn(`Warning: Error terminating failed worker ${workerId}:`, error);
+      });
+    }
+    if (this.isRunning && this.activeWorkers.size < this.strategy.maxConcurrency) {
+      this.createWorker();
+    }
+  }
+
+  private recycleWorker(workerId: string, reason: string): void {
+    const worker = this.activeWorkers.get(workerId);
+    if (!worker) {
+      return;
+    }
+
+    this.releaseWorkerById(workerId);
+    this.activeWorkers.delete(workerId);
+    this.metrics.activeWorkers = this.activeWorkers.size;
+    void worker.terminate().catch((error) => {
+      console.warn(`Warning: Error terminating worker ${workerId} during ${reason}:`, error);
+    });
+
+    if (this.isRunning && this.activeWorkers.size < this.strategy.maxConcurrency) {
+      this.createWorker();
+    }
   }
 
   private async terminateAllWorkers(): Promise<void> {
@@ -549,6 +590,7 @@ export class ParallelOptimizer extends EventEmitter {
     }
     this.taskTimeouts.clear();
     this.workerAssignments.clear();
+    this.taskAssignments.clear();
     this.taskRetryCounts.clear();
     this.taskAttempts.clear();
     this.activeWorkers.clear();
@@ -627,6 +669,7 @@ export class ParallelOptimizer extends EventEmitter {
     if (worker) {
       worker.busy = true;
       this.workerAssignments.set(workerId, task.id);
+      this.taskAssignments.set(task.id, workerId);
       const attempt = (this.taskAttempts.get(task.id) ?? 0) + 1;
       this.taskAttempts.set(task.id, attempt);
 
@@ -685,7 +728,7 @@ export class ParallelOptimizer extends EventEmitter {
     }
 
     this.clearTaskTimeout(message.taskId);
-    this.releaseWorker(message.taskId);
+    this.releaseWorkerById(workerId);
     const retryCount = this.taskRetryCounts.get(message.taskId) ?? 0;
     const resolvedResourceUsage: ResourceUsage = {
       cpuTime: message.resourceUsage?.cpuTime ?? message.executionTime,
@@ -726,7 +769,7 @@ export class ParallelOptimizer extends EventEmitter {
     }
 
     this.clearTaskTimeout(message.taskId);
-    this.releaseWorker(message.taskId);
+    this.releaseWorkerById(workerId);
     const retryCount = this.taskRetryCounts.get(message.taskId) ?? 0;
     const result: TaskResult = {
       taskId: message.taskId,
@@ -773,7 +816,11 @@ export class ParallelOptimizer extends EventEmitter {
     }
 
     this.clearTaskTimeout(message.taskId);
-    this.releaseWorker(message.taskId);
+    if (this.strategy.executionBackend === 'worker_threads') {
+      this.recycleWorker(workerId, 'task_timeout');
+    } else {
+      this.releaseWorkerById(workerId);
+    }
     const retryCount = this.taskRetryCounts.get(message.taskId) ?? 0;
     const result: TaskResult = {
       taskId: message.taskId,
@@ -815,15 +862,14 @@ export class ParallelOptimizer extends EventEmitter {
     this.taskTimeouts.delete(taskId);
   }
 
-  private releaseWorker(taskId: string): void {
-    const workerEntry = Array.from(this.workerAssignments.entries()).find(([, assignedTaskId]) => assignedTaskId === taskId);
-    if (!workerEntry) {
-      return;
-    }
-    const [workerId] = workerEntry;
+  private releaseWorkerById(workerId: string): void {
     const worker = this.activeWorkers.get(workerId);
     if (worker) {
       worker.busy = false;
+    }
+    const taskId = this.workerAssignments.get(workerId);
+    if (taskId) {
+      this.taskAssignments.delete(taskId);
     }
     this.workerAssignments.delete(workerId);
   }
@@ -937,6 +983,7 @@ export class ParallelOptimizer extends EventEmitter {
       for (const workerId of workersToRemove) {
         const worker = this.activeWorkers.get(workerId);
         if (worker) {
+          this.releaseWorkerById(workerId);
           void worker.terminate();
           this.activeWorkers.delete(workerId);
         }
@@ -958,13 +1005,15 @@ export class ParallelOptimizer extends EventEmitter {
       }
     } else if (currentWorkers > targetWorkers) {
       // Remove excess workers
-      const workersToRemove = Array.from(this.activeWorkers.entries())
+      const idleWorkers = Array.from(this.activeWorkers.entries())
         .filter(([, worker]) => !worker.busy)
         .map(([workerId]) => workerId)
-        .slice(Math.max(0, targetWorkers));
+      const workerExcess = Math.max(0, currentWorkers - targetWorkers);
+      const workersToRemove = idleWorkers.slice(0, workerExcess);
       for (const workerId of workersToRemove) {
         const worker = this.activeWorkers.get(workerId);
         if (worker) {
+          this.releaseWorkerById(workerId);
           void worker.terminate();
           this.activeWorkers.delete(workerId);
         }

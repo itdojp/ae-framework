@@ -4,7 +4,6 @@
  */
 
 import { EventEmitter } from 'events';
-import { Worker } from 'worker_threads';
 import type { ParallelTask, TaskResult, ResourceRequirements, TaskPriority } from './parallel-optimizer.js';
 
 type SchedulerExecutionBackendMode = 'worker_threads' | 'mock';
@@ -35,7 +34,15 @@ type SchedulerWorkerResponse =
       taskId: string;
       executionTime: number;
       error: string;
+    }
+  | {
+      type: 'task_timeout';
+      taskId: string;
+      executionTime: number;
+      error: string;
     };
+
+type WorkerThread = import('worker_threads').Worker;
 
 type SchedulerExecutionBackend = {
   execute(task: ScheduledTask): Promise<TaskResult>;
@@ -63,7 +70,13 @@ parentPort.on('message', (message) => {
     const requestedDuration = Number(message.metadata?.executionTimeMs ?? message.estimatedDuration ?? 0);
     const durationMs = Number.isFinite(requestedDuration) ? Math.max(0, requestedDuration) : 0;
     if (durationMs > message.timeout) {
-      throw new Error('Task execution timeout');
+      parentPort.postMessage({
+        type: 'task_timeout',
+        taskId: message.taskId,
+        executionTime: Number(message.timeout),
+        error: 'Task execution timeout'
+      });
+      return;
     }
     sleepBlocking(Math.min(durationMs, 300));
     const executionTime = Date.now() - startedAt;
@@ -133,14 +146,38 @@ class MockSchedulerExecutionBackend implements SchedulerExecutionBackend {
 }
 
 class WorkerThreadSchedulerExecutionBackend implements SchedulerExecutionBackend {
-  private workers = new Set<Worker>();
+  private workers = new Set<WorkerThread>();
 
   async execute(task: ScheduledTask): Promise<TaskResult> {
+    const { Worker } = await import('worker_threads');
+
     return new Promise((resolve) => {
       const worker = new Worker(TASK_SCHEDULER_WORKER_SOURCE, { eval: true });
       this.workers.add(worker);
+      let settled = false;
+      const parentTimeoutMs = Math.max(1, task.timeout + 50);
+      const parentTimeout = setTimeout(() => {
+        settle({
+          taskId: task.id,
+          status: 'timeout',
+          error: `Task execution timed out after ${task.timeout}ms`,
+          executionTime: task.timeout,
+          resourceUsage: {
+            cpuTime: 0,
+            memoryPeak: task.resourceRequirements.memory,
+            ioOperations: 0,
+            networkBytes: 0,
+          },
+          retryCount: 0,
+        });
+      }, parentTimeoutMs);
 
       const settle = (result: TaskResult): void => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        clearTimeout(parentTimeout);
         this.workers.delete(worker);
         void worker.terminate();
         resolve(result);
@@ -161,7 +198,7 @@ class WorkerThreadSchedulerExecutionBackend implements SchedulerExecutionBackend
 
         settle({
           taskId: task.id,
-          status: message.error.includes('timeout') ? 'timeout' : 'failed',
+          status: message.type === 'task_timeout' ? 'timeout' : 'failed',
           error: message.error,
           executionTime: message.executionTime,
           resourceUsage: {
@@ -179,6 +216,38 @@ class WorkerThreadSchedulerExecutionBackend implements SchedulerExecutionBackend
           taskId: task.id,
           status: 'failed',
           error: error.message,
+          executionTime: 0,
+          resourceUsage: {
+            cpuTime: 0,
+            memoryPeak: task.resourceRequirements.memory,
+            ioOperations: 0,
+            networkBytes: 0,
+          },
+          retryCount: 0,
+        });
+      });
+
+      worker.once('exit', (code) => {
+        if (code === 0) {
+          settle({
+            taskId: task.id,
+            status: 'failed',
+            error: 'Worker exited before sending result',
+            executionTime: 0,
+            resourceUsage: {
+              cpuTime: 0,
+              memoryPeak: task.resourceRequirements.memory,
+              ioOperations: 0,
+              networkBytes: 0,
+            },
+            retryCount: 0,
+          });
+          return;
+        }
+        settle({
+          taskId: task.id,
+          status: 'failed',
+          error: `Worker exited unexpectedly with code ${code}`,
           executionTime: 0,
           resourceUsage: {
             cpuTime: 0,
@@ -355,7 +424,7 @@ export class TaskScheduler extends EventEmitter {
   /**
    * Stop the task scheduler
    */
-  stop(): void {
+  async stop(): Promise<void> {
     if (!this.isRunning) {
       return;
     }
@@ -366,7 +435,7 @@ export class TaskScheduler extends EventEmitter {
       clearInterval(this.schedulingTimer);
       delete this.schedulingTimer;
     }
-    void this.executionBackend.shutdown();
+    await this.executionBackend.shutdown();
 
     this.emit('schedulerStopped');
     console.log('📅 Task Scheduler stopped');

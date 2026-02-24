@@ -268,8 +268,8 @@ describe('Parallel Optimization Engine', () => {
       scheduler = new TaskScheduler();
     });
     
-    afterEach(() => {
-      scheduler.stop();
+    afterEach(async () => {
+      await scheduler.stop();
     });
 
     it('should initialize with default policy', () => {
@@ -278,11 +278,11 @@ describe('Parallel Optimization Engine', () => {
       expect(metrics.totalScheduled).toBe(0);
     });
 
-    it('should start and stop correctly', () => {
+    it('should start and stop correctly', async () => {
       scheduler.start();
       expect(scheduler).toBeDefined();
       
-      scheduler.stop();
+      await scheduler.stop();
       expect(scheduler).toBeDefined();
     });
 
@@ -789,12 +789,12 @@ describe('Parallel Optimization Engine', () => {
       await optimizer.stop();
     });
 
-    it('should handle scheduler stop during task execution', () => {
+    it('should handle scheduler stop during task execution', async () => {
       const scheduler = new TaskScheduler();
       scheduler.start();
       
       // Stop scheduler immediately
-      scheduler.stop();
+      await scheduler.stop();
       expect(scheduler).toBeDefined();
     });
   });
