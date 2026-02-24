@@ -166,6 +166,16 @@ function parseContextPackFile(sourcePath) {
   return JSON.parse(raw);
 }
 
+function escapeMarkdownTableCell(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/`/g, '\\`')
+    .replace(/\|/g, '\\|')
+    .replace(/\r?\n/g, '<br>');
+}
+
 function buildMarkdownReport(report) {
   const lines = [
     '# Context Pack Validation Report',
@@ -189,8 +199,12 @@ function buildMarkdownReport(report) {
 
   lines.push('## Errors', '', '| File | Type | Path | Message |', '| --- | --- | --- | --- |');
   for (const error of report.errors) {
+    const file = escapeMarkdownTableCell(error.file);
+    const type = escapeMarkdownTableCell(error.type);
+    const instancePath = escapeMarkdownTableCell(error.instancePath || '/');
+    const message = escapeMarkdownTableCell(error.message);
     lines.push(
-      `| \`${error.file}\` | ${error.type} | \`${error.instancePath || '/'}\` | ${error.message.replace(/\n/g, ' ')} |`
+      `| ${file} | ${type} | ${instancePath} | ${message} |`
     );
   }
 

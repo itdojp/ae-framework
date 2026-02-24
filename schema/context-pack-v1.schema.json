@@ -20,7 +20,7 @@
   "properties": {
     "version": {
       "type": "integer",
-      "minimum": 1
+      "const": 1
     },
     "name": {
       "type": "string",

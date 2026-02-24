@@ -172,10 +172,11 @@ elif node scripts/context-pack/validate.mjs \
   CONTEXT_PACK_STATUS="success"
   CONTEXT_PACK_NOTES="validated spec/context-pack"
 else
+  CONTEXT_PACK_EXIT_CODE=$?
   CONTEXT_PACK_STATUS="failure"
-  CONTEXT_PACK_NOTES="context-pack validation failed"
-  echo "[verify-lite] context-pack validation failed" >&2
-  exit 1
+  CONTEXT_PACK_NOTES="context-pack validation failed (exit=${CONTEXT_PACK_EXIT_CODE})"
+  echo "[verify-lite] context-pack validation failed (exit=${CONTEXT_PACK_EXIT_CODE})" >&2
+  exit "$CONTEXT_PACK_EXIT_CODE"
 fi
 
 echo "[verify-lite] optional BDD lint"

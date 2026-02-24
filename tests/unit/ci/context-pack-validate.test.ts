@@ -179,4 +179,47 @@ describe('context-pack validate CLI', () => {
     expect(report.invalidFiles).toBe(1);
     expect(report.errors.some((entry: { file: string }) => entry.file.includes('invalid.json'))).toBe(true);
   });
+
+  it('rejects context-pack payload with unsupported version', async () => {
+    await writeFile(
+      join(sourcesDir, 'invalid-version.json'),
+      JSON.stringify(
+        {
+          version: 2,
+          name: 'future-context-pack',
+          problem_statement: { goals: [], non_goals: [] },
+          domain_glossary: { terms: [] },
+          objects: [],
+          morphisms: [],
+          diagrams: [],
+          constraints: {},
+          acceptance_tests: [],
+          coding_conventions: { language: 'TypeScript', directory: [], dependencies: {} },
+          forbidden_changes: [],
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
+
+    const result = runValidate(join(sourcesDir, '*.{yaml,yml,json}'));
+    expect(result.status).toBe(2);
+
+    const report = JSON.parse(await readFile(join(reportDir, 'context-pack-validate-report.json'), 'utf8'));
+    expect(report.status).toBe('fail');
+    expect(report.errors.some((entry: { keyword: string }) => entry.keyword === 'const')).toBe(true);
+  });
+
+  it('escapes markdown table cells in validation report', async () => {
+    const dangerousName = 'invalid|<tag>.json';
+    await writeFile(join(sourcesDir, dangerousName), '<invalid-json>', 'utf8');
+
+    const result = runValidate(join(sourcesDir, '*.{yaml,yml,json}'));
+    expect(result.status).toBe(2);
+
+    const markdown = await readFile(join(reportDir, 'context-pack-validate-report.md'), 'utf8');
+    expect(markdown).toContain('invalid\\|&lt;tag&gt;.json');
+    expect(markdown).toContain('&lt;');
+  });
 });
