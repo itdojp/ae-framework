@@ -14,6 +14,29 @@ import {
 describe('BenchmarkRunner', () => {
   let runner: BenchmarkRunner;
   let mockConfig: BenchmarkConfig;
+  const buildSpecFixture = () => ({
+    id: 'fixture-problem',
+    title: 'Order Management',
+    description: 'Manage orders from creation to completion',
+    category: BenchmarkCategory.WEB_API,
+    difficulty: DifficultyLevel.BASIC,
+    requirements: ['Users can create orders', 'Users can list orders'],
+    constraints: {},
+    testCriteria: [],
+    expectedOutput: {
+      type: 'application',
+      format: 'executable',
+      schema: null,
+      examples: []
+    },
+    metadata: {
+      created_by: 'tester',
+      created_at: new Date().toISOString(),
+      category: BenchmarkCategory.WEB_API,
+      difficulty: DifficultyLevel.BASIC,
+      estimated_time: 30
+    }
+  } as any);
 
   beforeEach(() => {
     // Create a minimal mock configuration
@@ -282,6 +305,59 @@ describe('BenchmarkRunner', () => {
       expect(typeof result.executionDetails.environment.memory).toBe('number');
       expect(typeof result.executionDetails.environment.cpuCount).toBe('number');
     }
+    );
+  });
+
+  describe('ui/ux generation integration', () => {
+    it(
+      formatGWT('legacy phase outputs', 'build UI/UX input', 'normalizes to valid standardized payload'),
+      () => {
+        const input = (runner as any).buildUIUXInput({}, {}, buildSpecFixture());
+        expect(input.domainModel.entities.length).toBeGreaterThan(0);
+        expect(input.userStories.stories.length).toBeGreaterThan(0);
+        expect(input.stakeholders.length).toBeGreaterThan(0);
+        expect(input.userStories.success).toBe(true);
+      }
+    );
+
+    it(
+      formatGWT('domain model + stories provided', 'generate UI/UX phase output', 'returns UI artifacts from adapter'),
+      async () => {
+        const output = await (runner as any).generateUIUX(
+          {
+            entities: [
+              {
+                name: 'Order',
+                attributes: [{ name: 'id', type: 'string', required: true }],
+                methods: [],
+                invariants: [],
+                isAggregateRoot: true
+              }
+            ]
+          },
+          {
+            stories: [
+              {
+                id: 'US-100',
+                title: 'Create order',
+                description: 'As a user I want to create an order so that I can submit it',
+                asA: 'user',
+                iWant: 'create an order',
+                soThat: 'I can submit it',
+                acceptanceCriteria: ['Order is created successfully'],
+                priority: 'high'
+              }
+            ]
+          },
+          buildSpecFixture()
+        );
+
+        expect(output).toHaveProperty('wireframes');
+        expect(output).toHaveProperty('userFlows');
+        expect(output).toHaveProperty('components');
+        expect(output.wireframes.length).toBeGreaterThan(0);
+        expect(output.components.length).toBeGreaterThan(0);
+      }
     );
   });
 });
