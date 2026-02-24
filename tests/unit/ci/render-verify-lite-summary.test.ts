@@ -16,6 +16,7 @@ describe('renderVerifyLiteSummary', () => {
       install: { status: 'success', notes: 'flags=--frozen-lockfile', retried: false },
       lint: { status: 'failure', notes: '2618 violations' },
       build: { status: 'success' },
+      contextPackValidation: { status: 'success', notes: 'validated spec/context-pack' },
       bddLint: { status: 'skipped' },
       mutationQuick: { status: 'success', notes: 'score: 59.74%' },
       conformanceReport: { status: 'success', notes: 'runs=1;violations=0' }
@@ -25,6 +26,8 @@ describe('renderVerifyLiteSummary', () => {
       lintLog: 'artifacts/verify-lite/verify-lite-lint.log',
       mutationSummary: 'reports/mutation/summary.json',
       mutationSurvivors: 'reports/mutation/survivors.json',
+      contextPackReportJson: 'artifacts/context-pack/context-pack-validate-report.json',
+      contextPackReportMarkdown: 'artifacts/context-pack/context-pack-validate-report.md',
       conformanceSummary: 'reports/conformance/verify-lite-summary.json',
       conformanceSummaryMarkdown: 'reports/conformance/verify-lite-summary.md'
     }
@@ -55,6 +58,8 @@ describe('renderVerifyLiteSummary', () => {
         lintLog: null,
         mutationSummary: null,
         mutationSurvivors: null,
+        contextPackReportJson: null,
+        contextPackReportMarkdown: null,
         conformanceSummary: null,
         conformanceSummaryMarkdown: null
       }

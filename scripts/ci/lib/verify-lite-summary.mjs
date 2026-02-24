@@ -54,6 +54,9 @@ export const renderVerifyLiteSummary = (summary, options = {}) => {
     'typeCheck',
     'lint',
     'build',
+    'stateMachineValidation',
+    'stateMachineRender',
+    'contextPackValidation',
     'bddLint',
     'mutationQuick',
     'conformanceReport',
@@ -100,6 +103,8 @@ export const renderVerifyLiteSummary = (summary, options = {}) => {
       lintLog: 'Lint Log',
       mutationSummary: 'Mutation Summary JSON',
       mutationSurvivors: 'Mutation Survivors JSON',
+      contextPackReportJson: 'Context Pack Validation JSON',
+      contextPackReportMarkdown: 'Context Pack Validation Markdown',
       conformanceSummary: 'Conformance Summary JSON',
       conformanceSummaryMarkdown: 'Conformance Summary Markdown',
     };
@@ -120,6 +125,8 @@ export const renderVerifyLiteSummary = (summary, options = {}) => {
       'lintLog',
       'mutationSummary',
       'mutationSurvivors',
+      'contextPackReportJson',
+      'contextPackReportMarkdown',
       'conformanceSummary',
       'conformanceSummaryMarkdown',
     ];

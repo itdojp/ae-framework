@@ -11,6 +11,7 @@
 Canonical locations for specifications and related assets.
 
 Locations
+- Context Pack v1: `spec/context-pack/`
 - TLA+: `spec/tla/`
 - Alloy 6: `spec/alloy/`
 - SMT-LIB2: `spec/smt/`
@@ -30,3 +31,4 @@ Conventions
 
 Roadmap
 - Keep CI runs non-blocking; evolve toolchains incrementally (see `docs/quality/formal-runbook.md`)
+- Context Pack validation details: `docs/spec/context-pack.md`
