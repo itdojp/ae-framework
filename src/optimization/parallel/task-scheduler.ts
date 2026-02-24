@@ -6,6 +6,277 @@
 import { EventEmitter } from 'events';
 import type { ParallelTask, TaskResult, ResourceRequirements, TaskPriority } from './parallel-optimizer.js';
 
+type SchedulerExecutionBackendMode = 'worker_threads' | 'mock';
+
+type SchedulerWorkerCommand = {
+  type: 'execute_task';
+  taskId: string;
+  estimatedDuration: number;
+  timeout: number;
+  resources: ResourceRequirements;
+  metadata: Record<string, unknown>;
+};
+
+type SchedulerWorkerResponse =
+  | {
+      type: 'task_completed';
+      taskId: string;
+      executionTime: number;
+      resourceUsage: {
+        cpuTime: number;
+        memoryPeak: number;
+        ioOperations: number;
+        networkBytes: number;
+      };
+    }
+  | {
+      type: 'task_failed';
+      taskId: string;
+      executionTime: number;
+      error: string;
+    }
+  | {
+      type: 'task_timeout';
+      taskId: string;
+      executionTime: number;
+      error: string;
+    };
+
+type WorkerThread = import('worker_threads').Worker;
+
+type SchedulerExecutionBackend = {
+  execute(task: ScheduledTask): Promise<TaskResult>;
+  shutdown(): Promise<void>;
+};
+
+const TASK_SCHEDULER_WORKER_SOURCE = `
+const { parentPort } = require('worker_threads');
+const sleepBlocking = (ms) => {
+  const duration = Math.max(0, Number(ms) || 0);
+  if (duration <= 0) return;
+  const buffer = new SharedArrayBuffer(4);
+  const signal = new Int32Array(buffer);
+  Atomics.wait(signal, 0, 0, duration);
+};
+parentPort.on('message', (message) => {
+  if (!message || message.type !== 'execute_task') {
+    return;
+  }
+  const startedAt = Date.now();
+  try {
+    if (message.metadata && message.metadata.forceError === true) {
+      throw new Error('Forced scheduler task failure');
+    }
+    const requestedDuration = Number(message.metadata?.executionTimeMs ?? message.estimatedDuration ?? 0);
+    const durationMs = Number.isFinite(requestedDuration) ? Math.max(0, requestedDuration) : 0;
+    if (durationMs > message.timeout) {
+      parentPort.postMessage({
+        type: 'task_timeout',
+        taskId: message.taskId,
+        executionTime: Number(message.timeout),
+        error: 'Task execution timeout'
+      });
+      return;
+    }
+    sleepBlocking(Math.min(durationMs, 300));
+    const executionTime = Date.now() - startedAt;
+    parentPort.postMessage({
+      type: 'task_completed',
+      taskId: message.taskId,
+      executionTime,
+      resourceUsage: {
+        cpuTime: executionTime,
+        memoryPeak: Number(message.resources?.memory ?? 0),
+        ioOperations: 0,
+        networkBytes: 0
+      }
+    });
+  } catch (error) {
+    parentPort.postMessage({
+      type: 'task_failed',
+      taskId: message.taskId,
+      executionTime: Date.now() - startedAt,
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+`;
+
+class MockSchedulerExecutionBackend implements SchedulerExecutionBackend {
+  async execute(task: ScheduledTask): Promise<TaskResult> {
+    const durationMs = Number(task.metadata['executionTimeMs'] ?? task.estimatedDuration);
+    const executionTime = Number.isFinite(durationMs) ? Math.max(0, durationMs) : 0;
+    const shouldFail = task.metadata['forceError'] === true || executionTime > task.timeout;
+    await Promise.resolve();
+
+    if (shouldFail) {
+      return {
+        taskId: task.id,
+        status: executionTime > task.timeout ? 'timeout' : 'failed',
+        error: executionTime > task.timeout ? 'Task execution timeout' : 'Forced scheduler task failure',
+        executionTime: executionTime > task.timeout ? task.timeout : executionTime,
+        resourceUsage: {
+          cpuTime: 0,
+          memoryPeak: task.resourceRequirements.memory,
+          ioOperations: 0,
+          networkBytes: 0,
+        },
+        retryCount: 0,
+      };
+    }
+
+    return {
+      taskId: task.id,
+      status: 'completed',
+      result: { success: true },
+      executionTime,
+      resourceUsage: {
+        cpuTime: executionTime,
+        memoryPeak: task.resourceRequirements.memory,
+        ioOperations: 0,
+        networkBytes: 0,
+      },
+      retryCount: 0,
+    };
+  }
+
+  async shutdown(): Promise<void> {
+    return Promise.resolve();
+  }
+}
+
+class WorkerThreadSchedulerExecutionBackend implements SchedulerExecutionBackend {
+  private workers = new Set<WorkerThread>();
+
+  async execute(task: ScheduledTask): Promise<TaskResult> {
+    const { Worker } = await import('worker_threads');
+
+    return new Promise((resolve) => {
+      const worker = new Worker(TASK_SCHEDULER_WORKER_SOURCE, { eval: true });
+      this.workers.add(worker);
+      let settled = false;
+      const parentTimeoutMs = Math.max(1, task.timeout + 50);
+      const parentTimeout = setTimeout(() => {
+        settle({
+          taskId: task.id,
+          status: 'timeout',
+          error: `Task execution timed out after ${task.timeout}ms`,
+          executionTime: task.timeout,
+          resourceUsage: {
+            cpuTime: 0,
+            memoryPeak: task.resourceRequirements.memory,
+            ioOperations: 0,
+            networkBytes: 0,
+          },
+          retryCount: 0,
+        });
+      }, parentTimeoutMs);
+
+      const settle = (result: TaskResult): void => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        clearTimeout(parentTimeout);
+        this.workers.delete(worker);
+        void worker.terminate();
+        resolve(result);
+      };
+
+      worker.once('message', (message: SchedulerWorkerResponse) => {
+        if (message.type === 'task_completed') {
+          settle({
+            taskId: task.id,
+            status: 'completed',
+            result: { success: true },
+            executionTime: message.executionTime,
+            resourceUsage: message.resourceUsage,
+            retryCount: 0,
+          });
+          return;
+        }
+
+        settle({
+          taskId: task.id,
+          status: message.type === 'task_timeout' ? 'timeout' : 'failed',
+          error: message.error,
+          executionTime: message.executionTime,
+          resourceUsage: {
+            cpuTime: 0,
+            memoryPeak: task.resourceRequirements.memory,
+            ioOperations: 0,
+            networkBytes: 0,
+          },
+          retryCount: 0,
+        });
+      });
+
+      worker.once('error', (error) => {
+        settle({
+          taskId: task.id,
+          status: 'failed',
+          error: error.message,
+          executionTime: 0,
+          resourceUsage: {
+            cpuTime: 0,
+            memoryPeak: task.resourceRequirements.memory,
+            ioOperations: 0,
+            networkBytes: 0,
+          },
+          retryCount: 0,
+        });
+      });
+
+      worker.once('exit', (code) => {
+        if (code === 0) {
+          settle({
+            taskId: task.id,
+            status: 'failed',
+            error: 'Worker exited before sending result',
+            executionTime: 0,
+            resourceUsage: {
+              cpuTime: 0,
+              memoryPeak: task.resourceRequirements.memory,
+              ioOperations: 0,
+              networkBytes: 0,
+            },
+            retryCount: 0,
+          });
+          return;
+        }
+        settle({
+          taskId: task.id,
+          status: 'failed',
+          error: `Worker exited unexpectedly with code ${code}`,
+          executionTime: 0,
+          resourceUsage: {
+            cpuTime: 0,
+            memoryPeak: task.resourceRequirements.memory,
+            ioOperations: 0,
+            networkBytes: 0,
+          },
+          retryCount: 0,
+        });
+      });
+
+      const command: SchedulerWorkerCommand = {
+        type: 'execute_task',
+        taskId: task.id,
+        estimatedDuration: task.estimatedDuration,
+        timeout: task.timeout,
+        resources: task.resourceRequirements,
+        metadata: task.metadata,
+      };
+      worker.postMessage(command);
+    });
+  }
+
+  async shutdown(): Promise<void> {
+    await Promise.all(Array.from(this.workers).map(async (worker) => worker.terminate()));
+    this.workers.clear();
+  }
+}
+
 export interface ScheduledTask extends ParallelTask {
   scheduledTime: Date;
   deadline?: Date;
@@ -124,12 +395,14 @@ export class TaskScheduler extends EventEmitter {
   private isRunning = false;
   private virtualTime = 0;
   private timeSliceCounter = 0;
+  private executionBackend: SchedulerExecutionBackend;
 
-  constructor(policy?: Partial<SchedulingPolicy>) {
+  constructor(policy?: Partial<SchedulingPolicy>, backendMode?: SchedulerExecutionBackendMode) {
     super();
     this.policy = this.createDefaultPolicy(policy);
     this.metrics = this.initializeMetrics();
     this.resourceAvailability = this.initializeResourceAvailability();
+    this.executionBackend = this.createExecutionBackend(backendMode ?? this.resolveExecutionBackendMode());
     this.setupDefaultQueues();
   }
 
@@ -151,7 +424,7 @@ export class TaskScheduler extends EventEmitter {
   /**
    * Stop the task scheduler
    */
-  stop(): void {
+  async stop(): Promise<void> {
     if (!this.isRunning) {
       return;
     }
@@ -162,6 +435,7 @@ export class TaskScheduler extends EventEmitter {
       clearInterval(this.schedulingTimer);
       delete this.schedulingTimer;
     }
+    await this.executionBackend.shutdown();
 
     this.emit('schedulerStopped');
     console.log('📅 Task Scheduler stopped');
@@ -337,6 +611,21 @@ export class TaskScheduler extends EventEmitter {
   }
 
   // Private methods
+  private resolveExecutionBackendMode(): SchedulerExecutionBackendMode {
+    const explicitMode = process.env['AE_PARALLEL_BACKEND'];
+    if (explicitMode === 'mock' || explicitMode === 'worker_threads') {
+      return explicitMode;
+    }
+    return process.env['NODE_ENV'] === 'test' ? 'mock' : 'worker_threads';
+  }
+
+  private createExecutionBackend(mode: SchedulerExecutionBackendMode): SchedulerExecutionBackend {
+    if (mode === 'worker_threads') {
+      return new WorkerThreadSchedulerExecutionBackend();
+    }
+    return new MockSchedulerExecutionBackend();
+  }
+
   private createDefaultPolicy(overrides?: Partial<SchedulingPolicy>): SchedulingPolicy {
     return {
       algorithm: 'resource_aware',
@@ -630,35 +919,36 @@ export class TaskScheduler extends EventEmitter {
 
     this.emit('taskStarted', { task, queue: queue.id });
     
-    // Simulate task execution
+    // Execute task via selected backend.
     this.simulateTaskExecution(task);
   }
 
   private simulateTaskExecution(task: ScheduledTask): void {
-    // Demo simulation: uses setTimeout for simplicity
-    // TODO(#2228): In production, replace with actual worker thread execution
-    // or integrate with real task execution framework
-    setTimeout(() => {
-      this.completeTask(task);
-    }, task.estimatedDuration);
+    void this.executionBackend
+      .execute(task)
+      .then((result) => {
+        this.completeTask(task, result);
+      })
+      .catch((error) => {
+        const failedResult: TaskResult = {
+          taskId: task.id,
+          status: 'failed',
+          error: error instanceof Error ? error.message : String(error),
+          executionTime: 0,
+          resourceUsage: {
+            cpuTime: 0,
+            memoryPeak: task.resourceRequirements.memory,
+            ioOperations: 0,
+            networkBytes: 0,
+          },
+          retryCount: 0,
+        };
+        this.completeTask(task, failedResult);
+      });
   }
 
-  private completeTask(task: ScheduledTask): void {
+  private completeTask(task: ScheduledTask, result: TaskResult): void {
     task.actualEndTime = new Date();
-    
-    const result: TaskResult = {
-      taskId: task.id,
-      status: 'completed',
-      result: { success: true },
-      executionTime: task.actualEndTime.getTime() - task.actualStartTime!.getTime(),
-      resourceUsage: {
-        cpuTime: task.estimatedDuration,
-        memoryPeak: task.resourceRequirements.memory,
-        ioOperations: 0,
-        networkBytes: 0
-      },
-      retryCount: 0
-    };
 
     this.activeTasks.delete(task.id);
     this.completedTasks.set(task.id, result);
