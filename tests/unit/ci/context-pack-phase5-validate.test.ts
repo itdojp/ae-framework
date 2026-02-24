@@ -281,4 +281,62 @@ describe('context-pack phase5 template validate CLI', () => {
     expect(report.summary.boundaryViolations).toBeGreaterThan(0);
     expect(report.summary.missingEvidence).toBeGreaterThan(0);
   });
+
+  it('fails with schema violations without crashing when map payload is null', async () => {
+    await writeContextPack();
+    await writeFile(mapPath, 'null\n', 'utf8');
+
+    const result = runVerify();
+    expect(result.status).toBe(2);
+    expect(result.stderr.toString('utf8')).toContain('validation failed');
+    expect(existsSync(reportJsonPath())).toBe(true);
+
+    const report = JSON.parse(await readFile(reportJsonPath(), 'utf8'));
+    expect(report.status).toBe('fail');
+    expect(report.summary.totalViolations).toBeGreaterThan(0);
+    expect(report.violations.some((entry: { type: string }) => entry.type === 'phase5-template-schema-invalid')).toBe(
+      true,
+    );
+  });
+
+  it('fails when template id is whitespace only', async () => {
+    await writeContextPack();
+    await writeFileInWorkdir('tests/services/inventory-service.test.ts', 'export {};\n');
+    await writeFileInWorkdir('src/domain/services.ts', 'export class InventoryService {}\n');
+
+    await writeMap({
+      schemaVersion: 'context-pack-phase5-templates/v1',
+      contextPackSources: ['spec/context-pack/**/*.{yml,yaml,json}'],
+      pullbacks: [
+        {
+          id: '   ',
+          leftMorphismId: 'ReserveInventory',
+          rightMorphismId: 'ReleaseInventory',
+          apexObjectId: 'InventoryItem',
+          commutingDiagramIds: ['D-1'],
+          evidencePaths: ['tests/services/inventory-service.test.ts'],
+        },
+      ],
+      pushouts: [],
+      monoidalFlows: [],
+      kleisliPipelines: [
+        {
+          id: 'ReservationEffectPipeline',
+          effectType: 'io',
+          morphismIds: ['ReserveInventory'],
+          pureBoundaryMorphismIds: [],
+          impureBoundaryMorphismIds: ['ReserveInventory'],
+          bindEvidencePaths: ['tests/services/inventory-service.test.ts'],
+          sideEffectEvidencePaths: ['src/domain/services.ts'],
+        },
+      ],
+    });
+
+    const result = runVerify();
+    expect(result.status).toBe(2);
+
+    const report = JSON.parse(await readFile(reportJsonPath(), 'utf8'));
+    expect(report.status).toBe('fail');
+    expect(report.violations.some((entry: { type: string }) => entry.type === 'phase5-template-id-empty')).toBe(true);
+  });
 });

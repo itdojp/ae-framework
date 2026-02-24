@@ -302,6 +302,14 @@ function toMapByTemplateId(entries, duplicateType, violations) {
       continue;
     }
     const templateId = entry.id.trim();
+    if (templateId.length === 0) {
+      violations.push({
+        type: 'phase5-template-id-empty',
+        severity: 'error',
+        message: 'Template id must include at least one non-whitespace character',
+      });
+      continue;
+    }
     if (mapping.has(templateId)) {
       violations.push({
         type: duplicateType,
@@ -690,12 +698,14 @@ function validatePhase5Templates(options) {
   const resolvedSchemaPath = path.resolve(options.schemaPath);
   const violations = [];
   violations.push(...validateMapSchema(mapPayload, resolvedSchemaPath));
+  const mapValue =
+    mapPayload && typeof mapPayload === 'object' && !Array.isArray(mapPayload) ? mapPayload : {};
 
   const sourcePatterns =
     options.contextPackSourcesOverride.length > 0
       ? options.contextPackSourcesOverride
-      : Array.isArray(mapPayload.contextPackSources)
-        ? mapPayload.contextPackSources
+      : Array.isArray(mapValue.contextPackSources)
+        ? mapValue.contextPackSources
         : [];
   const discoveredContextPackFiles = discoverSources(sourcePatterns);
   const normalizedMapPath = path.normalize(resolvedMapPath);
@@ -709,10 +719,10 @@ function validatePhase5Templates(options) {
   }
 
   const contextMetadata = collectContextMetadata(contextPackFiles, violations);
-  const pullbackStats = validatePullbacks(contextMetadata, mapPayload.pullbacks, violations);
-  const pushoutStats = validatePushouts(contextMetadata, mapPayload.pushouts, violations);
-  const monoidalStats = validateMonoidalFlows(contextMetadata, mapPayload.monoidalFlows, violations);
-  const kleisliStats = validateKleisliPipelines(contextMetadata, mapPayload.kleisliPipelines, violations);
+  const pullbackStats = validatePullbacks(contextMetadata, mapValue.pullbacks, violations);
+  const pushoutStats = validatePushouts(contextMetadata, mapValue.pushouts, violations);
+  const monoidalStats = validateMonoidalFlows(contextMetadata, mapValue.monoidalFlows, violations);
+  const kleisliStats = validateKleisliPipelines(contextMetadata, mapValue.kleisliPipelines, violations);
 
   const checkedEvidencePaths =
     pullbackStats.checkedEvidencePaths +
