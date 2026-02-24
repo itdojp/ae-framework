@@ -261,7 +261,6 @@ describe('context-pack natural transformation validate CLI', () => {
           },
           commutativityChecks: {
             regression: ['tests/services/inventory-service.test.ts'],
-            compatibility: [],
             differential: ['tests/property/reservation.pbt.test.ts'],
           },
           entrypoints: [

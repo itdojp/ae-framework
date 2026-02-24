@@ -60,11 +60,6 @@
           "commutativityChecks": {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "regression",
-              "compatibility",
-              "differential"
-            ],
             "properties": {
               "regression": {
                 "$ref": "#/$defs/stringList"
@@ -112,6 +107,16 @@
         "minLength": 1
       }
     },
+    "nonEmptyStringList": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/stringList"
+        },
+        {
+          "minItems": 1
+        }
+      ]
+    },
     "transformationReferences": {
       "type": "object",
       "additionalProperties": false,
@@ -120,7 +125,7 @@
       ],
       "properties": {
         "morphismIds": {
-          "$ref": "#/$defs/stringList"
+          "$ref": "#/$defs/nonEmptyStringList"
         },
         "diagramIds": {
           "$ref": "#/$defs/stringList"

@@ -299,14 +299,16 @@ function hasEntrypointSymbol(content, symbol) {
     new RegExp(`\\b(?:export\\s+)?(?:async\\s+)?function\\s+${escapedSymbol}\\b`),
     new RegExp(`\\b(?:export\\s+)?class\\s+${escapedSymbol}\\b`),
     new RegExp(`\\b(?:export\\s+)?(?:const|let|var|type|interface|enum)\\s+${escapedSymbol}\\b`),
-    new RegExp(`(?:^|\\n)\\s*(?:public|private|protected|static|readonly|abstract|override|async|get|set\\s+)*${escapedSymbol}\\s*\\(`),
+    new RegExp(
+      `(?:^|\\n)\\s*(?:(?:public|private|protected|static|readonly|abstract|override|async|get|set)\\s+)*${escapedSymbol}\\s*\\([^)]*\\)\\s*(?::\\s*[^\\n{]+)?\\s*\\{`,
+    ),
     new RegExp(`\\bexport\\s*\\{[^}]*\\b${escapedSymbol}\\b[^}]*\\}`),
   ];
   return declarationPatterns.some((pattern) => pattern.test(content));
 }
 
 function hasGlobPattern(value) {
-  return /[*?[\]{}!]/.test(value);
+  return /[*?\[\]{}!]/.test(value);
 }
 
 function resolveEvidenceTargets(value) {
