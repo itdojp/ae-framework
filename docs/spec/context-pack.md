@@ -28,6 +28,9 @@ pnpm run context-pack:verify-functor
 # Natural Transformation（変更の意味保存）マッピングを検証
 pnpm run context-pack:verify-natural-transformation
 
+# Product/Coproduct（入力契約 + 失敗variant網羅）マッピングを検証
+pnpm run context-pack:verify-product-coproduct
+
 # 探索パス・出力先を上書き
 node scripts/context-pack/validate.mjs \
   --sources 'spec/context-pack/**/*.{yml,yaml,json}' \
@@ -48,6 +51,13 @@ node scripts/context-pack/verify-natural-transformation.mjs \
   --schema schema/context-pack-natural-transformation.schema.json \
   --report-json artifacts/context-pack/context-pack-natural-transformation-report.json \
   --report-md artifacts/context-pack/context-pack-natural-transformation-report.md
+
+# Product/Coproductマッピングを直接検証（マップ・レポート先を上書き）
+node scripts/context-pack/verify-product-coproduct.mjs \
+  --map spec/context-pack/product-coproduct-map.json \
+  --schema schema/context-pack-product-coproduct.schema.json \
+  --report-json artifacts/context-pack/context-pack-product-coproduct-report.json \
+  --report-md artifacts/context-pack/context-pack-product-coproduct-report.md
 
 # Verify Lite でも必須ステップとして実行される
 pnpm run verify:lite
@@ -104,6 +114,50 @@ pnpm run verify:lite
 }
 ```
 
+### Product/Coproduct 検証（Issue #2248）
+- 入力:
+  - `spec/context-pack/product-coproduct-map.json`（`schema/context-pack-product-coproduct.schema.json`）
+  - `spec/context-pack/**/*.{yml,yaml,json}` の `morphisms[].input` / `morphisms[].failures`
+- 検査内容:
+  - Product（入力契約）:
+    - `requiredInputKeys` が context-pack の `morphisms[].input` を完全にカバーしているか検証
+    - `disallowGenericDtoKeys=true` の場合、`data` / `payload` / `body` / `dto` など曖昧DTOキーを拒否
+  - Coproduct（失敗variant）:
+    - `variants[].name` が context-pack の `morphisms[].failures` と一致しているか検証
+    - `variants[].evidencePaths` が実在するファイル/グロブに解決できるか検証
+  - variant coverage:
+    - `coveredFailureVariants` / `uncoveredFailureVariants` をレポート出力
+- 失敗時:
+  - `product-required-input-missing` / `product-required-input-unknown` / `ambiguous-dto-key` /
+    `coproduct-variant-missing` / `coproduct-variant-unknown` / `coproduct-evidence-missing`
+    などの種別を JSON/Markdown レポートに出力
+
+### Product/Coproduct 記述例（最小）
+```json
+{
+  "schemaVersion": "context-pack-product-coproduct/v1",
+  "contextPackSources": ["spec/context-pack/**/*.{yml,yaml,json}"],
+  "products": [
+    {
+      "morphismId": "ReserveInventory",
+      "requiredInputKeys": ["itemId", "quantity"],
+      "disallowGenericDtoKeys": true
+    }
+  ],
+  "coproducts": [
+    {
+      "morphismId": "ReserveInventory",
+      "variants": [
+        {
+          "name": "OutOfStock",
+          "evidencePaths": ["tests/services/inventory-service.test.ts"]
+        }
+      ]
+    }
+  ]
+}
+```
+
 ### 出力（artifacts）
 - JSON: `artifacts/context-pack/context-pack-validate-report.json`
 - Markdown: `artifacts/context-pack/context-pack-validate-report.md`
@@ -111,16 +165,21 @@ pnpm run verify:lite
 - Markdown (Functor): `artifacts/context-pack/context-pack-functor-report.md`
 - JSON (Natural Transformation): `artifacts/context-pack/context-pack-natural-transformation-report.json`
 - Markdown (Natural Transformation): `artifacts/context-pack/context-pack-natural-transformation-report.md`
+- JSON (Product/Coproduct): `artifacts/context-pack/context-pack-product-coproduct-report.json`
+- Markdown (Product/Coproduct): `artifacts/context-pack/context-pack-product-coproduct-report.md`
 - Verify Lite summary: `artifacts/verify-lite/verify-lite-run-summary.json`
   - `steps.contextPackValidation`
   - `steps.contextPackFunctorValidation`
   - `steps.contextPackNaturalTransformationValidation`
+  - `steps.contextPackProductCoproductValidation`
   - `artifacts.contextPackReportJson`
   - `artifacts.contextPackReportMarkdown`
   - `artifacts.contextPackFunctorReportJson`
   - `artifacts.contextPackFunctorReportMarkdown`
   - `artifacts.contextPackNaturalTransformationReportJson`
   - `artifacts.contextPackNaturalTransformationReportMarkdown`
+  - `artifacts.contextPackProductCoproductReportJson`
+  - `artifacts.contextPackProductCoproductReportMarkdown`
 
 ### よくある失敗
 - `required` エラー: 必須キー不足（例: `domain_glossary.terms[].ja`）
@@ -134,6 +193,10 @@ pnpm run verify:lite
 - `commutativity-check-missing`: 変更種別に必須の可換チェック不足
 - `commutativity-evidence-missing`: 回帰/互換/差分の証跡パス不足
 - `forbidden-change-link-missing` / `forbidden-change-mismatch`: 禁止変更との連携不備
+- `product-required-input-missing` / `product-required-input-unknown`: 必須入力の過不足
+- `ambiguous-dto-key`: 曖昧DTOキーの使用
+- `coproduct-variant-missing` / `coproduct-variant-unknown`: failure variant の過不足
+- `coproduct-evidence-missing`: variant の証跡パス不足
 
 ### CI失敗時の復旧手順（Phase 3）
 1. report を確認:
@@ -149,6 +212,20 @@ pnpm run verify:lite
    - `pnpm run verify:lite`
 4. report の `summary.totalViolations` が 0 であることを確認して再push
 
+### CI失敗時の復旧手順（Phase 4）
+1. report を確認:
+   - `artifacts/context-pack/context-pack-product-coproduct-report.json`
+   - `artifacts/context-pack/context-pack-product-coproduct-report.md`
+2. `spec/context-pack/product-coproduct-map.json` の以下を見直す:
+   - `products[].requiredInputKeys` が context-pack `morphisms[].input` を完全カバーしているか
+   - `disallowGenericDtoKeys=true` 時に曖昧キー（data/payload/body/dtoなど）を使っていないか
+   - `coproducts[].variants[].name` が `morphisms[].failures` と一致しているか
+   - `coproducts[].variants[].evidencePaths` が実在するか
+3. ローカル再実行:
+   - `pnpm run context-pack:verify-product-coproduct`
+   - `pnpm run verify:lite`
+4. report の `uncoveredFailureVariants` と `summary.totalViolations` が 0 であることを確認して再push
+
 ---
 
 ## English
@@ -163,6 +240,7 @@ Context Pack v1 defines the SSOT input contract for design metadata and is valid
 pnpm run context-pack:validate
 pnpm run context-pack:verify-functor
 pnpm run context-pack:verify-natural-transformation
+pnpm run context-pack:verify-product-coproduct
 pnpm run verify:lite
 ```
 
@@ -173,4 +251,6 @@ pnpm run verify:lite
 - `artifacts/context-pack/context-pack-functor-report.md`
 - `artifacts/context-pack/context-pack-natural-transformation-report.json`
 - `artifacts/context-pack/context-pack-natural-transformation-report.md`
-- `artifacts/verify-lite/verify-lite-run-summary.json` (`steps.contextPackValidation`, `steps.contextPackFunctorValidation`, `steps.contextPackNaturalTransformationValidation`)
+- `artifacts/context-pack/context-pack-product-coproduct-report.json`
+- `artifacts/context-pack/context-pack-product-coproduct-report.md`
+- `artifacts/verify-lite/verify-lite-run-summary.json` (`steps.contextPackValidation`, `steps.contextPackFunctorValidation`, `steps.contextPackNaturalTransformationValidation`, `steps.contextPackProductCoproductValidation`)

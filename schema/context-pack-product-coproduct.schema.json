@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/context-pack-product-coproduct.schema.json",
+  "title": "Context Pack Product/Coproduct Mapping",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contextPackSources",
+    "products",
+    "coproducts"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "context-pack-product-coproduct/v1"
+    },
+    "contextPackSources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "products": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "morphismId",
+          "requiredInputKeys"
+        ],
+        "properties": {
+          "morphismId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "requiredInputKeys": {
+            "$ref": "#/$defs/stringList"
+          },
+          "disallowGenericDtoKeys": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "coproducts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "morphismId",
+          "variants"
+        ],
+        "properties": {
+          "morphismId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "name",
+                "evidencePaths"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "evidencePaths": {
+                  "$ref": "#/$defs/nonEmptyStringList"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "stringList": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "nonEmptyStringList": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/stringList"
+        },
+        {
+          "minItems": 1
+        }
+      ]
+    }
+  }
+}

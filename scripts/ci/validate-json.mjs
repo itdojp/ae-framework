@@ -63,6 +63,11 @@ const checks = [
     label: 'Context Pack natural transformation schema validation'
   },
   {
+    schema: 'schema/context-pack-product-coproduct.schema.json',
+    fixtures: ['fixtures/context-pack/sample.product-coproduct-map.json'],
+    label: 'Context Pack product/coproduct schema validation'
+  },
+  {
     schema: 'schema/execplan.schema.json',
     fixtures: ['fixtures/execplan/sample.execplan.json'],
     label: 'ExecPlan schema validation'
