@@ -76,8 +76,6 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - API Reference: `reference/API.md`
 - Schema governance ($id canonical URI policy): [SCHEMA-GOVERNANCE.md](./reference/SCHEMA-GOVERNANCE.md)
 - Context Pack v1 validation guide: [context-pack.md](./spec/context-pack.md)
-- Context Pack Phase5+ cookbook: `guides/context-pack-phase5-cookbook.md`
-- Context Pack troubleshooting runbook: `operations/context-pack-troubleshooting.md`
 - Spec & Verification Kit (minimal activation guide): `reference/SPEC-VERIFICATION-KIT-MIN.md`
 - Legacy ExecPlan (6-phase, deprecated): `../plans/archive/legacy-6-phase.md`
 
@@ -265,8 +263,6 @@ Claude CodeやMCPとの統合
 
 - **[registry.md](./spec/registry.md)** ⭐ 仕様配置レジストリ（TLA+/Alloy/Cedar/Trace）
 - [context-pack.md](./spec/context-pack.md) - Context Pack v1 の配置・検証ルール
-- [context-pack-phase5-cookbook.md](./guides/context-pack-phase5-cookbook.md) - Phase5+（Pullback/Pushout・Monoidal・Kleisli）の実践例
-- [context-pack-troubleshooting.md](./operations/context-pack-troubleshooting.md) - CI/ローカル実行の障害切り分け
 
 ### 🔬 [research/](./research/) - 調査・研究・サーベイ
 理論的背景や技術調査の成果物

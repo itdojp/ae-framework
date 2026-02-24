@@ -64,7 +64,10 @@ pnpm run verify:lite
   - `artifacts/context-pack/context-pack-natural-transformation-report.json`
   - `artifacts/context-pack/context-pack-natural-transformation-report.md`
 - 重点確認:
-  - `changeType` に対する必須チェック（`regression` / `compatibility` / `differential`）
+  - `changeType` ごとの必須可換性チェック
+    - `refactor`: `regression` + `compatibility`
+    - `migration`: `regression` + `compatibility` + `differential`
+    - `breaking`: `regression` + `differential`
   - `before/after` の ID が Context Pack 本体に存在するか
   - `commutativityChecks` の証跡パスが実在するか
   - `breaking` 変更時の `forbiddenChanges` 連携
