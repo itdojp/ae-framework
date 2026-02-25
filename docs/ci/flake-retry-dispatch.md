@@ -59,6 +59,7 @@ Step Summary に以下が出力される。
 ## 失敗時の代表的な原因
 - 最新の失敗 run が見つからない（`select_reason=no_failed_first_attempt_run`）
 - workflow 取得に失敗（`select_reason=workflow_lookup_failed` / `select_reason=list_runs_failed`）
+- workflow が見つからない（`select_reason=workflow_not_found`）
 - eligibility アーティファクトが存在しない（`reason=no_artifact`）
 - zip 展開に失敗（`reason=unzip_failed`）
 - eligibility JSON ファイルが存在するが中身が空（`reason=missing_file`）

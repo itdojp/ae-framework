@@ -32,7 +32,7 @@ jobs:
   flake-detection:
     if: ${{ inputs.mode == 'detect' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 60
     env:
       DETECT_RUNS: ${{ inputs.detect_runs }}
       DETECT_SLEEP_SECONDS: ${{ inputs.detect_sleep_seconds }}

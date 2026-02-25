@@ -60,27 +60,19 @@ jobs:
       detect_runs: >-
         ${{
           github.event_name == 'workflow_dispatch'
-            && (inputs.detect_profile == 'quick'
-              && '2'
-              || inputs.detect_profile == 'thorough'
-              && '5'
-              || '3')
+            && (fromJSON('{"quick":"2","standard":"3","thorough":"5"}')[inputs.detect_profile] || '3')
             || '3'
         }}
       detect_sleep_seconds: >-
         ${{
           github.event_name == 'workflow_dispatch'
-            && (inputs.detect_profile == 'quick' && '2' || '3')
+            && (fromJSON('{"quick":"2","standard":"3","thorough":"3"}')[inputs.detect_profile] || '3')
             || '3'
         }}
       detect_run_timeout_seconds: >-
         ${{
           github.event_name == 'workflow_dispatch'
-            && (inputs.detect_profile == 'quick'
-              && '300'
-              || inputs.detect_profile == 'thorough'
-              && '600'
-              || '420')
+            && (fromJSON('{"quick":"300","standard":"420","thorough":"600"}')[inputs.detect_profile] || '420')
             || '420'
         }}
       flake_threshold_percent: '30.0'
