@@ -69,4 +69,18 @@ describe('fromVerifyLite', () => {
     expect(envelope.summary.trace?.traceIds).toContain('inventory-trace');
     expect(envelope.tempoLinks).toContain('https://tempo.example.com/explore?traceId=external');
   });
+
+  it('includes context-pack phase5 report artifacts when present in summary', () => {
+    const summary = loadSummary();
+    summary.artifacts.contextPackPhase5ReportJson = 'artifacts/context-pack/context-pack-phase5-report.json';
+    summary.artifacts.contextPackPhase5ReportMarkdown = 'artifacts/context-pack/context-pack-phase5-report.md';
+
+    const envelope = fromVerifyLite(summary, {
+      correlation: { runId: 'phase5-run' },
+    });
+
+    const artifactPaths = envelope.artifacts.map((item) => item.path);
+    expect(artifactPaths).toContain('artifacts/context-pack/context-pack-phase5-report.json');
+    expect(artifactPaths).toContain('artifacts/context-pack/context-pack-phase5-report.md');
+  });
 });

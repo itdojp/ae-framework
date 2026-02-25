@@ -339,4 +339,123 @@ describe('context-pack phase5 template validate CLI', () => {
     expect(report.status).toBe('fail');
     expect(report.violations.some((entry: { type: string }) => entry.type === 'phase5-template-id-empty')).toBe(true);
   });
+
+  it('fails on duplicate template ids and duplicate monoidal parallel morphisms', async () => {
+    await writeContextPack();
+    await writeFileInWorkdir('tests/services/inventory-service.test.ts', 'export {};\n');
+    await writeFileInWorkdir('tests/api/reservations-routes.test.ts', 'export {};\n');
+    await writeFileInWorkdir('spec/diagrams/reserve-flow.mmd', 'graph TD;\n');
+    await writeFileInWorkdir('src/domain/services.ts', 'export class InventoryService {}\n');
+
+    await writeMap({
+      schemaVersion: 'context-pack-phase5-templates/v1',
+      contextPackSources: ['spec/context-pack/**/*.{yml,yaml,json}'],
+      pullbacks: [
+        {
+          id: 'DuplicatedTemplate',
+          leftMorphismId: 'ReserveInventory',
+          rightMorphismId: 'ReleaseInventory',
+          apexObjectId: 'InventoryItem',
+          commutingDiagramIds: ['D-1'],
+          evidencePaths: ['tests/services/inventory-service.test.ts'],
+        },
+        {
+          id: 'DuplicatedTemplate',
+          leftMorphismId: 'ReserveInventory',
+          rightMorphismId: 'ReleaseInventory',
+          apexObjectId: 'InventoryItem',
+          commutingDiagramIds: ['D-2'],
+          evidencePaths: ['tests/services/inventory-service.test.ts'],
+        },
+      ],
+      pushouts: [],
+      monoidalFlows: [
+        {
+          id: 'BrokenParallelFlow',
+          parallelMorphismIds: ['ReserveInventory', 'ReserveInventory'],
+          mergeMorphismId: 'MergeReservations',
+          tensorLawChecks: [
+            {
+              name: 'associativity',
+              evidencePaths: ['tests/api/reservations-routes.test.ts'],
+            },
+          ],
+          stringDiagramPaths: ['spec/diagrams/reserve-flow.mmd'],
+        },
+      ],
+      kleisliPipelines: [
+        {
+          id: 'ReservationEffectPipeline',
+          effectType: 'io',
+          morphismIds: ['ReserveInventory', 'MergeReservations'],
+          pureBoundaryMorphismIds: ['MergeReservations'],
+          impureBoundaryMorphismIds: ['ReserveInventory'],
+          bindEvidencePaths: ['tests/services/inventory-service.test.ts'],
+          sideEffectEvidencePaths: ['src/domain/services.ts'],
+        },
+      ],
+    });
+
+    const result = runVerify();
+    expect(result.status).toBe(2);
+
+    const report = JSON.parse(await readFile(reportJsonPath(), 'utf8'));
+    expect(report.status).toBe('fail');
+    expect(report.summary.duplicateTemplates).toBeGreaterThan(0);
+    expect(report.violations.some((entry: { type: string }) => entry.type === 'pullback-template-duplicate')).toBe(
+      true,
+    );
+    expect(
+      report.violations.some((entry: { type: string }) => entry.type === 'monoidal-parallel-morphism-duplicate'),
+    ).toBe(true);
+  });
+
+  it('fails with context-pack-sources-empty when source patterns do not match files', async () => {
+    await writeMap({
+      schemaVersion: 'context-pack-phase5-templates/v1',
+      contextPackSources: ['spec/context-pack/does-not-exist/**/*.{yml,yaml,json}'],
+      pullbacks: [],
+      pushouts: [],
+      monoidalFlows: [],
+      kleisliPipelines: [],
+    });
+
+    const result = runVerify();
+    expect(result.status).toBe(2);
+
+    const report = JSON.parse(await readFile(reportJsonPath(), 'utf8'));
+    expect(report.status).toBe('fail');
+    expect(report.scannedContextPackFiles).toBe(0);
+    expect(report.violations.some((entry: { type: string }) => entry.type === 'context-pack-sources-empty')).toBe(
+      true,
+    );
+  });
+
+  it('fails with context-pack-parse-error and writes markdown violation report', async () => {
+    await writeFile(
+      join(contextPackDir, 'broken.yaml'),
+      `version: 1\nobjects:\n  - id: Broken\nmorphisms: [\n`,
+      'utf8',
+    );
+    await writeMap({
+      schemaVersion: 'context-pack-phase5-templates/v1',
+      contextPackSources: ['spec/context-pack/**/*.{yml,yaml,json}'],
+      pullbacks: [],
+      pushouts: [],
+      monoidalFlows: [],
+      kleisliPipelines: [],
+    });
+
+    const result = runVerify();
+    expect(result.status).toBe(2);
+    expect(existsSync(reportMarkdownPath())).toBe(true);
+
+    const report = JSON.parse(await readFile(reportJsonPath(), 'utf8'));
+    expect(report.status).toBe('fail');
+    expect(report.violations.some((entry: { type: string }) => entry.type === 'context-pack-parse-error')).toBe(true);
+
+    const markdownReport = await readFile(reportMarkdownPath(), 'utf8');
+    expect(markdownReport).toContain('| Type | Template | Rule | Message |');
+    expect(markdownReport).toContain('context-pack-parse-error');
+  });
 });
