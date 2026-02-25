@@ -59,6 +59,10 @@ function normalizeExpression(value) {
   return String(value ?? '').replace(/\s+/g, ' ').trim();
 }
 
+function hasRootReadmeTarget(script) {
+  return /(^|[{,\s'"])README\.md(?=$|[},\s'"])/.test(script);
+}
+
 export function ensureContains(source, snippet, message, errors) {
   if (typeof source !== 'string' || !source.includes(snippet)) {
     errors.push(`${message} (missing: ${snippet})`);
@@ -180,11 +184,11 @@ export function validateWorkflowConfig(workflowConfig, errors) {
       errors
     );
   }
-  if (indexSyncPos >= 0 && indexInstallPos >= 0 && indexSyncPos > indexInstallPos) {
-    errors.push('doctest-index sync step must run before Install dependencies');
+  if (indexSyncPos >= 0 && indexInstallPos >= 0 && indexSyncPos < indexInstallPos) {
+    errors.push('doctest-index sync step must run after Install dependencies');
   }
-  if (fullSyncPos >= 0 && fullInstallPos >= 0 && fullSyncPos > fullInstallPos) {
-    errors.push('doctest-full sync step must run before Install dependencies');
+  if (fullSyncPos >= 0 && fullInstallPos >= 0 && fullSyncPos < fullInstallPos) {
+    errors.push('doctest-full sync step must run after Install dependencies');
   }
 
   const { step: changedDocsStep, index: changedDocsPos } = findStepByName(
@@ -199,6 +203,7 @@ export function validateWorkflowConfig(workflowConfig, errors) {
   if (!changedDocsStep) {
     errors.push('doctest-index must include "Detect changed markdown files (PR only)" step');
   } else {
+    ensureEqual(changedDocsStep.id, 'changed-docs', 'changed-docs step id mismatch', errors);
     ensureEqual(
       normalizeExpression(changedDocsStep.if),
       "${{ github.event_name == 'pull_request' }}",
@@ -248,7 +253,9 @@ export function validatePackageScripts(scripts, errors) {
     errors.push('package.json scripts.test:doctest:index is missing');
   } else {
     ensureContains(indexScript, 'scripts/doctest.ts', 'test:doctest:index must invoke scripts/doctest.ts', errors);
-    ensureContains(indexScript, 'README.md', 'test:doctest:index must include README.md target', errors);
+    if (!hasRootReadmeTarget(indexScript)) {
+      errors.push('test:doctest:index must include README.md target');
+    }
     ensureContains(indexScript, 'docs/README.md', 'test:doctest:index must include docs/README.md target', errors);
   }
 

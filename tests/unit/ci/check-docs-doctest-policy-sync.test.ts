@@ -27,6 +27,7 @@ type WorkflowFixtureOptions = {
   includeFullSyncStep?: boolean;
   includeChangedDocsStep?: boolean;
   includeChangedDocsRunStep?: boolean;
+  changedDocsStepId?: string;
 };
 
 function createWorkflowYaml(options: WorkflowFixtureOptions = {}): string {
@@ -38,19 +39,21 @@ function createWorkflowYaml(options: WorkflowFixtureOptions = {}): string {
     includeFullSyncStep = true,
     includeChangedDocsStep = true,
     includeChangedDocsRunStep = true,
+    changedDocsStepId = 'changed-docs',
   } = options;
   const pathLines = paths.map((entry) => `      - '${entry}'`);
   const indexSteps: string[] = [];
   const fullSteps: string[] = [];
 
+  indexSteps.push('      - name: Install dependencies');
+  indexSteps.push('        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile');
   if (includeIndexSyncStep) {
     indexSteps.push('      - name: Validate docs-doctest policy sync');
     indexSteps.push('        run: node scripts/ci/check-docs-doctest-policy-sync.mjs');
   }
-  indexSteps.push('      - name: Install dependencies');
-  indexSteps.push('        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile');
   if (includeChangedDocsStep) {
     indexSteps.push('      - name: Detect changed markdown files (PR only)');
+    indexSteps.push(`        id: ${changedDocsStepId}`);
     indexSteps.push('        if: "${{ github.event_name == \'pull_request\' }}"');
     indexSteps.push('        run: |');
     indexSteps.push('          git fetch --no-tags --depth=1 origin "${BASE_SHA}"');
@@ -64,12 +67,12 @@ function createWorkflowYaml(options: WorkflowFixtureOptions = {}): string {
     indexSteps.push('        run: xargs -0 pnpm -s tsx scripts/doctest.ts');
   }
 
+  fullSteps.push('      - name: Install dependencies');
+  fullSteps.push('        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile');
   if (includeFullSyncStep) {
     fullSteps.push('      - name: Validate docs-doctest policy sync');
     fullSteps.push('        run: node scripts/ci/check-docs-doctest-policy-sync.mjs');
   }
-  fullSteps.push('      - name: Install dependencies');
-  fullSteps.push('        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile');
 
   return [
     'name: Docs Doctest',
@@ -156,6 +159,22 @@ describe('check-docs-doctest-policy-sync', () => {
     });
   });
 
+  it('does not treat docs/README.md only as root README.md target', () => {
+    withTempDir((dir) => {
+      const packageRaw = JSON.stringify({
+        scripts: {
+          'test:doctest:index': "tsx scripts/doctest.ts 'docs/README.md'",
+          'test:doctest:full': "tsx scripts/doctest.ts 'docs/**/*.md'",
+        },
+      });
+      const paths = writeFixtureFiles(dir, packageRaw);
+
+      const result = runDocsDoctestPolicySyncCheck(paths);
+      expect(result.exitCode).toBe(1);
+      expect(result.errors.some((error) => error.includes('README.md target'))).toBe(true);
+    });
+  });
+
   it('reports missing workflow path entries as validation errors', () => {
     withTempDir((dir) => {
       const paths = writeFixtureFiles(
@@ -206,6 +225,22 @@ describe('check-docs-doctest-policy-sync', () => {
           error.includes('doctest-index must include "Detect changed markdown files (PR only)" step')
         )
       ).toBe(true);
+    });
+  });
+
+  it('reports changed-docs id mismatch as validation errors', () => {
+    withTempDir((dir) => {
+      const paths = writeFixtureFiles(
+        dir,
+        defaultPackageRaw(),
+        createWorkflowYaml({
+          changedDocsStepId: 'changed-markdown',
+        })
+      );
+
+      const result = runDocsDoctestPolicySyncCheck(paths);
+      expect(result.exitCode).toBe(1);
+      expect(result.errors.some((error) => error.includes('changed-docs step id mismatch'))).toBe(true);
     });
   });
 
