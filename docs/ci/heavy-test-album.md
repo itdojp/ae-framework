@@ -33,7 +33,7 @@ pnpm node scripts/pipelines/recommend-heavy-trend-thresholds.mjs \
 ## Observable Notebook での活用例
 1. `history.csv` を `FileAttachment` として Notebook にアップロード。  
 2. 以下のコードで CSV を読み込み、Mutation score のトレンドを描画。
-```js
+```text
 viewof metric = Inputs.select([...new Set(data.map(d => d.metric))], {value: "mutationScore"})
 filtered = data.filter(d => d.metric === metric && d.label === "Mutation quick")
 Plot.plot({

@@ -68,9 +68,9 @@ Purpose: Provide a short, deterministic path to diagnose common CI failures.
 
 ### 7.2 PR番号指定での手動起動
 ```bash
-gh workflow run "Copilot Review Gate" -f pr_number=<PR番号>
-gh workflow run "PR Self-Heal" -f pr_number=<PR番号> -f dry_run=false
-gh workflow run "Codex Autopilot Lane" -f pr_number=<PR番号> -f dry_run=false
+gh workflow run "Copilot Review Gate" -f pr_number=12345
+gh workflow run "PR Self-Heal" -f pr_number=12345 -f dry_run=false
+gh workflow run "Codex Autopilot Lane" -f pr_number=12345 -f dry_run=false
 ```
 
 ### 7.3 behind / stale checks の再同期
