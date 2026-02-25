@@ -38,9 +38,16 @@ Labels
 The CI Extended workflow restores cached heavy test artifacts from `.cache/test-results`. To reuse MBT/property/mutation outputs when re-running locally or via dispatch, run `node scripts/pipelines/sync-test-results.mjs --restore` beforehand (and `--store` afterwards to refresh the cache). Scheduled runs share the `ci-heavy-${ runner.os }-schedule` cache key so that Nightly executions inherit the previous baseline and publish `heavy-test-trends-history` artifacts.
 
 Workflows
-- validate-artifacts-ajv.yml: reads `enforce-artifacts` and toggles `continue-on-error`
+- validate-artifacts-ajv.yml: reads `enforce-artifacts` and passes strict mode to `pnpm run artifacts:validate`
 - testing-ddd-scripts.yml: reads `enforce-testing` and toggles `continue-on-error`; reads `trace:<id>` to focus runs
 - pr-ci-status-comment.yml: reads `pr-summary:detailed` to switch summary mode
+
+Artifacts
+- `pnpm run artifacts:validate` always writes:
+  - `artifacts/schema-validation/summary.json`
+  - `artifacts/schema-validation/summary.md`
+  - `artifacts/schema-validation/errors.json`
+- `enforce-artifacts` が付与されると strict モード（スキーマ違反で exit 1）になります。
 
 Notes
 - These controls are per‑PR. Organization/branch‑wide enforcement can be added later (e.g., always blocking on main) once agreed.
