@@ -112,16 +112,18 @@ jobs:
           STRICT_MODE: ${{ needs.gate.outputs.strict }}
           STRICT_REASON: ${{ needs.gate.outputs.reason }}
         run: |
-          echo "## Context Pack Quality Gate" >> "$GITHUB_STEP_SUMMARY"
-          echo "- strict: ${STRICT_MODE}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- reason: ${STRICT_REASON}" >> "$GITHUB_STEP_SUMMARY"
-          if [ -f artifacts/context-pack/context-pack-e2e-summary.json ]; then
-            echo "- e2e summary: artifacts/context-pack/context-pack-e2e-summary.json" >> "$GITHUB_STEP_SUMMARY"
-          fi
-          if [ -f artifacts/context-pack/context-pack-gate-observability.md ]; then
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            cat artifacts/context-pack/context-pack-gate-observability.md >> "$GITHUB_STEP_SUMMARY"
-          fi
+          {
+            echo "## Context Pack Quality Gate"
+            echo "- strict: ${STRICT_MODE}"
+            echo "- reason: ${STRICT_REASON}"
+            if [ -f artifacts/context-pack/context-pack-e2e-summary.json ]; then
+              echo "- e2e summary: artifacts/context-pack/context-pack-e2e-summary.json"
+            fi
+            if [ -f artifacts/context-pack/context-pack-gate-observability.md ]; then
+              echo ""
+              cat artifacts/context-pack/context-pack-gate-observability.md
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Upload Context Pack gate artifacts
         if: ${{ always() }}
         uses: actions/upload-artifact@v4

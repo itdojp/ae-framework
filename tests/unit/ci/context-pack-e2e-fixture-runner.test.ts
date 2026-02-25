@@ -54,6 +54,22 @@ describe('context-pack fixture e2e runner', () => {
     expect(existsSync(join(reportDir, 'context-pack-phase5-report.json'))).toBe(true);
   });
 
+  it('accepts npm/pnpm style -- option separator', async () => {
+    const reportDir = await mkdtemp(join(tmpdir(), 'context-pack-e2e-report-dashdash-'));
+    reportDirs.push(reportDir);
+
+    const result = spawnSync(
+      process.execPath,
+      [runnerScript, '--', '--report-dir', reportDir],
+      {
+        cwd: repoRoot,
+      },
+    );
+
+    expect(result.status).toBe(0);
+    expect(existsSync(join(reportDir, 'context-pack-e2e-summary.json'))).toBe(true);
+  });
+
   it('keeps failure reports and marks keepReports=true when validation fails', async () => {
     const fixtureDir = await mkdtemp(join(tmpdir(), 'context-pack-e2e-fixture-broken-'));
     fixtureDirs.push(fixtureDir);

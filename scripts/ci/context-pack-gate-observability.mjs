@@ -51,7 +51,7 @@ function parseArgs(argv) {
     const next = argv[index + 1];
 
     if (arg === '--') {
-      continue;
+      break;
     }
 
     if (arg === '--help' || arg === '-h') {
@@ -199,7 +199,7 @@ function percentile(values, ratio) {
 
 function isFailureConclusion(conclusion) {
   const value = String(conclusion || '').toLowerCase();
-  return value !== 'success' && value !== 'skipped' && value !== 'neutral';
+  return value !== 'success' && value !== 'skipped' && value !== 'neutral' && value !== 'cancelled';
 }
 
 function asMs(value) {
@@ -214,6 +214,10 @@ function calcDurationMinutes(run) {
     return null;
   }
   return (endMs - startMs) / 60_000;
+}
+
+function formatPercent(value) {
+  return Number.isFinite(value) ? `${value}%` : 'n/a';
 }
 
 function buildMarkdown(report) {
@@ -232,13 +236,13 @@ function buildMarkdown(report) {
     `| Total completed runs | ${report.metrics.totalRuns} |`,
     `| Success runs | ${report.metrics.successRuns} |`,
     `| Failed runs | ${report.metrics.failedRuns} |`,
-    `| Failure rate | ${report.metrics.failureRatePercent ?? 'n/a'}% |`,
+    `| Failure rate | ${formatPercent(report.metrics.failureRatePercent)} |`,
     `| Mean duration | ${report.metrics.meanDurationMinutes ?? 'n/a'} min |`,
     `| P95 duration | ${report.metrics.p95DurationMinutes ?? 'n/a'} min |`,
     `| Mean MTTR | ${report.metrics.mttr.meanMinutes ?? 'n/a'} min |`,
     `| P95 MTTR | ${report.metrics.mttr.p95Minutes ?? 'n/a'} min |`,
     `| Unresolved failure streaks | ${report.metrics.mttr.unresolvedFailureStreaks} |`,
-    `| Failure reproduction rate | ${report.metrics.reproductionRatePercent ?? 'n/a'}% |`,
+    `| Failure reproduction rate | ${formatPercent(report.metrics.reproductionRatePercent)} |`,
     '',
     '## Blocking Readiness',
     '',
@@ -419,8 +423,12 @@ function evaluateReadiness(metrics, thresholds) {
     reasons.push(`failure rate threshold not met: ${metrics.failureRatePercent ?? 'n/a'}% > ${thresholds.failRatePercent}%`);
   }
 
-  if (metrics.reproductionRatePercent !== null && metrics.reproductionRatePercent < thresholds.reproductionRatePercent) {
-    reasons.push(`failure reproduction threshold not met: ${metrics.reproductionRatePercent}% < ${thresholds.reproductionRatePercent}%`);
+  if (metrics.failedRuns > 0) {
+    if (metrics.reproductionRatePercent === null) {
+      reasons.push('failure reproduction threshold not met: reproduction rate is n/a (insufficient repeated failure samples)');
+    } else if (metrics.reproductionRatePercent < thresholds.reproductionRatePercent) {
+      reasons.push(`failure reproduction threshold not met: ${metrics.reproductionRatePercent}% < ${thresholds.reproductionRatePercent}%`);
+    }
   }
 
   const mttrApplicable = metrics.failedRuns > 0;
@@ -499,4 +507,30 @@ function main() {
   process.stdout.write(`[context-pack-gate-observability] readiness: ${readiness.readyForBlocking ? 'ready' : 'not-ready'}\n`);
 }
 
-main();
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main();
+}
+
+export {
+  DEFAULT_DAYS,
+  DEFAULT_FAIL_RATE_THRESHOLD_PERCENT,
+  DEFAULT_MAX_RUNS,
+  DEFAULT_MIN_RUNS,
+  DEFAULT_MTTR_THRESHOLD_MINUTES,
+  DEFAULT_OUTPUT_JSON,
+  DEFAULT_OUTPUT_MD,
+  DEFAULT_REPRODUCTION_THRESHOLD_PERCENT,
+  DEFAULT_WORKFLOW_ID,
+  calcDurationMinutes,
+  evaluateReadiness,
+  fetchWorkflowRuns,
+  formatPercent,
+  isFailureConclusion,
+  main,
+  parseArgs,
+  percentile,
+  round2,
+  summarizeRuns,
+  toInt,
+  toNumber,
+};
