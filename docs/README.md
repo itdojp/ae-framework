@@ -101,32 +101,33 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - Verify-first implementation runbook: `quality/verify-first-implementation-runbook.md`
 - Adoption sample flow: `quality/adoption-sample-flow.md`
 - Runbooks / Traceability / Runtime Contracts: see `./quality` and `./verify`
- - Coverage policy: `quality/coverage-policy.md`（しきい値の由来/Required化の運用）
+- Coverage policy: `quality/coverage-policy.md`（しきい値の由来/Required化の運用）
 - Formal runbook: `quality/formal-runbook.md`（ラベル/dispatch/要約/環境変数）
 - CSP verification (cspx runner): `quality/formal-csp.md`（使い方/成果物/実行結果例）
 - Usefulness evaluation: `quality/usefulness-evaluation.md`（4軸スコア算出/終了コード契約）
 - Issue requirements traceability: `quality/issue-requirements-traceability.md`（extract-ids/matrix/strict validate）
- - CI policy: `ci-policy.md`（PR必須ゲート/opt-in/運用方針）
- - Docs Doctest policy: `ci/docs-doctest-policy.md`（PR軽量チェック + 週次全量チェック）
- - Workflow role matrix: `ci/workflow-role-matrix.md`（core / optional / report の責務整理）
- - Opt-in controls: `ci/OPT-IN-CONTROLS.md`（ラベル/Slash/dispatchの一覧）
- - Copilot Review Gate: `ci/copilot-review-gate.md`（レビュー必須化）
- - Copilot Auto Fix: `ci/copilot-auto-fix.md`（suggestion自動適用）
- - PR automation runbook: `ci/pr-automation.md`（Copilot→auto-fix→auto-merge）
- - PR self-heal: `ci/ci-troubleshooting-guide.md`（自動復旧の運用を含む）
- - CI operations handbook: `ci/ci-operations-handbook.md`（日次確認/再実行/停止復帰）
- - Codex Autopilot Lane: `ci/codex-autopilot-lane.md`（touchless merge の opt-in）
- - Auto Merge: `ci/auto-merge.md`（auto-merge自動有効化）
- - Automation Failure Policies: `ci/automation-failure-policies.md`（fail-open/fail-closedとコメントテンプレ）
- - Automation Rollback Runbook: `ci/automation-rollback-runbook.md`（段階停止/復帰/巻き戻し）
- - Rollback Validation Report (2026-02-14): `ci/automation-rollback-validation-2026-02-14.md`（dry-run実行ログ）
- - Automation Profiles: `ci/automation-profiles.md`（自動化設定の一括プロファイル）
- - Automation Observability: `ci/automation-observability.md`（共通JSON/Step Summary出力）
- - Automation Alerting: `ci/automation-alerting.md`（通知条件/テンプレート/重複抑止）
- - Automation SLO/MTTR: `ci/automation-slo-mttr.md`（成功率SLOと復旧時間MTTRの定義）
- - Context Pack Gate Rollout: `ci/context-pack-gate-rollout.md`（non-blocking→blocking 段階導入）
- - Automation Permission Boundaries: `ci/automation-permission-boundaries.md`（workflow_dispatch / issue_comment の権限境界）
- - Workflow dispatch validation report (2026-02-12): `ci/workflow-dispatch-validation-2026-02-12.md`
+- CI policy: `ci-policy.md`（PR必須ゲート/opt-in/運用方針）
+- Docs Doctest policy: `ci/docs-doctest-policy.md`（PR軽量チェック + 週次全量チェック）
+- CI operations handbook: `ci/ci-operations-handbook.md`（日次確認/再実行/停止復帰）
+- CI troubleshooting guide: `ci/ci-troubleshooting-guide.md`（失敗分類/復旧runbook）
+- PR automation runbook: `ci/pr-automation.md`（Copilot→auto-fix→auto-merge）
+- Workflow role matrix: `ci/workflow-role-matrix.md`（core / optional / report の責務整理）
+- Opt-in controls: `ci/OPT-IN-CONTROLS.md`（ラベル/Slash/dispatchの一覧）
+- CI docs boundary matrix: `ci/ci-doc-boundary-matrix.md`（方針文書とrunbookの責務境界）
+- Copilot Review Gate: `ci/copilot-review-gate.md`（レビュー必須化）
+- Copilot Auto Fix: `ci/copilot-auto-fix.md`（suggestion自動適用）
+- Codex Autopilot Lane: `ci/codex-autopilot-lane.md`（touchless merge の opt-in）
+- Auto Merge: `ci/auto-merge.md`（auto-merge自動有効化）
+- Automation Failure Policies: `ci/automation-failure-policies.md`（fail-open/fail-closedとコメントテンプレ）
+- Automation Rollback Runbook: `ci/automation-rollback-runbook.md`（段階停止/復帰/巻き戻し）
+- Rollback Validation Report (2026-02-14): `ci/automation-rollback-validation-2026-02-14.md`（dry-run実行ログ）
+- Automation Profiles: `ci/automation-profiles.md`（自動化設定の一括プロファイル）
+- Automation Observability: `ci/automation-observability.md`（共通JSON/Step Summary出力）
+- Automation Alerting: `ci/automation-alerting.md`（通知条件/テンプレート/重複抑止）
+- Automation SLO/MTTR: `ci/automation-slo-mttr.md`（成功率SLOと復旧時間MTTRの定義）
+- Context Pack Gate Rollout: `ci/context-pack-gate-rollout.md`（non-blocking→blocking 段階導入）
+- Automation Permission Boundaries: `ci/automation-permission-boundaries.md`（workflow_dispatch / issue_comment の権限境界）
+- Workflow dispatch validation report (2026-02-12): `ci/workflow-dispatch-validation-2026-02-12.md`
 
 For the complete navigation with highlights, see the Japanese section below (same links).
 

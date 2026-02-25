@@ -39,6 +39,7 @@ Workflow: `.github/workflows/docs-doctest.yml`
 ```bash
 node scripts/ci/check-docs-doctest-policy-sync.mjs
 pnpm run check:doc-consistency
+pnpm run check:ci-doc-index-consistency
 DOCTEST_ENFORCE=1 pnpm run test:doctest:index
 DOCTEST_ENFORCE=1 pnpm run test:doctest:full
 ```

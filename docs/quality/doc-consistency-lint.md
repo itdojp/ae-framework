@@ -1,11 +1,17 @@
 # Doc Consistency Lint
 
 ## Purpose
-`scripts/docs/check-doc-consistency.mjs` validates that key onboarding documents stay aligned with the implementation.
+`check:doc-consistency` now runs two validators:
+- `scripts/docs/check-doc-consistency.mjs`
+- `scripts/docs/check-ci-doc-index-consistency.mjs`
+
+Together they validate that key onboarding/CI-index documents stay aligned with the implementation.
 
 Checks:
 - `pnpm run <script>` references exist in `package.json`.
 - Local file/path references in markdown links and inline code resolve to real files/directories.
+- `docs/README.md` / `docs/ci-policy.md` include the canonical CI operation links.
+- CI reference sections in `docs/ci-policy.md` avoid duplicate entries.
 
 Current default targets:
 - `README.md`
@@ -27,6 +33,11 @@ pnpm run check:doc-consistency -- --format json
 Custom files:
 ```bash
 pnpm run check:doc-consistency -- --docs README.md,docs/README.md
+```
+
+CI index only:
+```bash
+pnpm run check:ci-doc-index-consistency
 ```
 
 ## Exclusion Rules
