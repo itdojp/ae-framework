@@ -4,6 +4,11 @@
 
 目的: 日次運用で使う確認手順・再実行手順・停止判断を 1 ページで参照できるようにする。
 
+責務境界:
+- 方針（Required checks / opt-in）は `docs/ci-policy.md` を正とする
+- 本書は「運用手順（運転方法）」のみを扱い、詳細診断は runbook へ委譲する
+- 境界表は `docs/ci/ci-doc-boundary-matrix.md` を参照
+
 ## 1. 日次オペレーション（開始時）
 
 1. Open PR の失敗チェックを確認する  
@@ -75,6 +80,8 @@
 
 ## 6. 関連ドキュメント
 
+- `docs/ci/ci-doc-boundary-matrix.md`
+- `docs/ci-policy.md`
 - `docs/ci/ci-troubleshooting-guide.md`
 - `docs/ci/pr-automation.md`
 - `docs/ci/copilot-review-gate.md`

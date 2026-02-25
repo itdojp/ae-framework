@@ -13,6 +13,12 @@ This document defines CI policies to keep PR experience fast and stable while ma
 - Heavy/unstable checks run opt-in via labels or path conditions
 - Comprehensive checks run on main and scheduled jobs
 
+### Document Boundary (Policy vs Operations)
+- This document defines policy decisions (required checks, opt-in labels, dispatch rules).
+- Operational procedures (daily checks / rerun / emergency stop) are maintained in `docs/ci/ci-operations-handbook.md`.
+- Troubleshooting details are maintained in `docs/ci/ci-troubleshooting-guide.md`.
+- Responsibility matrix: `docs/ci/ci-doc-boundary-matrix.md`.
+
 ### Required Checks (PR blocking)
 - Verify Lite (`test:ci:lite`=types:check / lint / build / conformance)
 - Docs Doctest (`docs-doctest.yml`): `README.md` + `docs/README.md` doctest, plus changed Markdown doctest for docs-touching PRs
@@ -46,7 +52,6 @@ CI Extended restores cached heavy test artifacts (`.cache/test-results`) when re
   - `run-security`: trigger Security/SBOM on PRs when touching deps, crypto/security code, or before release; otherwise weekly cron covers the baseline
   - `run-hermetic`: trigger Hermetic CI on PRs when build determinism or network isolation must be validated
   - `run-qa`: run QA bench on PRs when behavior/perf regressions are suspected; otherwise cron/main covers it
-- `run-hermetic`: enable Hermetic CI on PRs
 - `run-quality`: enable quality matrix in parallel tests
 - `run-flake`: enable flake-detection on PRs
 - `run-e2e`: enable E2E tests on PRs
@@ -101,9 +106,14 @@ CI Extended restores cached heavy test artifacts (`.cache/test-results`) when re
 - Branch Protection運用（プリセット適用/復元）: docs/ci/branch-protection-operations.md
 - Docs Doctest運用: docs/ci/docs-doctest-policy.md
 - CI運用ハンドブック（日次オペレーション）: docs/ci/ci-operations-handbook.md
+- CIトラブルシューティング: docs/ci/ci-troubleshooting-guide.md
 - Copilot Review Gate運用: docs/ci/copilot-review-gate.md
 - Copilot Auto Fix（suggestion 自動適用）: docs/ci/copilot-auto-fix.md
 - Auto Merge（auto-merge 自動有効化）: docs/ci/auto-merge.md
+- PR automation runbook: docs/ci/pr-automation.md
+- Workflow role matrix: docs/ci/workflow-role-matrix.md
+- Opt-in controls: docs/ci/OPT-IN-CONTROLS.md
+- CI docs boundary matrix: docs/ci/ci-doc-boundary-matrix.md
 
 <!-- duplicate section removed: Slash Commands (Instant Dispatch) repeated -->
 
@@ -148,6 +158,12 @@ CI Extended restores cached heavy test artifacts (`.cache/test-results`) when re
 - 重い/不安定な検査はラベルやパス条件でオプトイン実行
 - main と定期実行（スケジュール）で包括的な検査を実施
 
+### 文書の責務境界（方針と運用）
+- 本書は方針（Required checks / opt-in labels / dispatch規約）を定義する。
+- 日次運用・再実行・停止復帰の手順は `docs/ci/ci-operations-handbook.md` を正とする。
+- 障害時の詳細診断は `docs/ci/ci-troubleshooting-guide.md` を参照する。
+- 責務一覧は `docs/ci/ci-doc-boundary-matrix.md` に集約する。
+
 ### 必須チェック（PR ブロッキング）
 - Verify Lite（`test:ci:lite` = types:check / lint / build / conformance）
 - Docs Doctest（`docs-doctest.yml`）: docs 変更PRで `README.md` + `docs/README.md` に加えて差分 Markdown の doctest を実行
@@ -183,7 +199,6 @@ CI Extended 実行後は heavy テスト成果物を `.cache/test-results` に�
  - `run-adapters`: Adapter Thresholds（a11y/perf/Lighthouse）をPRでレポート（report-only）。`adapter-thresholds.yml` が要約コメントを投稿
  - `enforce-perf`: perf スコアのしきい値を強制（`perf:<pct>` ラベルで上書き、既定は `vars.PERF_DEFAULT_THRESHOLD` または 75）
  - `enforce-lh`: Lighthouse performance スコアのしきい値を強制（`lh:<pct>` ラベルで上書き、既定は `vars.LH_DEFAULT_THRESHOLD` または 80）
-- `run-hermetic`: Hermetic CI を PR で有効化
 - `run-quality`: Parallel Test の quality 行を有効化
 - `run-flake`: flake-detection を PR で有効化
 - `run-e2e`: E2E テストを PR で有効化
@@ -207,7 +222,6 @@ CI Extended 実行後は heavy テスト成果物を `.cache/test-results` に�
 ### test:ci（ライト / 拡張）
 - `test:ci:lite`: Verify Lite のローカル実行口。types:check / lint / build / conformance report をまとめて実行し、PR ブロッキングの最小セットを再現。
 - `test:ci:extended`: Integration（`test:int`）/ property harness / `test:mbt:ci` / `pipelines:pact` を連続実行し、最後に `pipelines:mutation:quick` で mutation quick を叩くローカル向け統合スイート。
-- Heavy test artifacts for the extended suite are cached under `.cache/test-results`; run `node scripts/pipelines/sync-test-results.mjs --restore` before reruns to reuse survivors, MBT summaries, and property harness outputs, then `--store` after local runs to refresh the cache.
 - 拡張スイートで生成される成果物は `.cache/test-results` にキャッシュされるため、再実行前に `node scripts/pipelines/sync-test-results.mjs --restore` を実行すると mutation survivors / MBT summary / property summary を再利用できます（ローカル実行後は `--store` で更新）。
 - `.github/workflows/ci-extended.yml`: `run-ci-extended` で上記一式を PR から opt-in。`run-integration` / `run-property` / `run-mbt` / `run-mutation` で部分実行を選択でき、main push / schedule では常時稼働。
 - Vitest ベースの安定プロファイルは従来通り `test:ci:stable`（Docker/Podman smoke イメージで利用）として提供。
@@ -252,3 +266,13 @@ CI Extended 実行後は heavy テスト成果物を `.cache/test-results` に�
 - setup-node-pnpm 監査（report-only）: `node scripts/ci/normalize-workflows.mjs --rule=setup-node-pnpm`
 
 ※ `setup-node-pnpm` は現在 audit-only で、適用は手動PRで行います。
+
+## 6. 参照
+
+- `docs/ci/docs-doctest-policy.md`
+- `docs/ci/ci-operations-handbook.md`
+- `docs/ci/ci-troubleshooting-guide.md`
+- `docs/ci/pr-automation.md`
+- `docs/ci/workflow-role-matrix.md`
+- `docs/ci/OPT-IN-CONTROLS.md`
+- `docs/ci/ci-doc-boundary-matrix.md`
