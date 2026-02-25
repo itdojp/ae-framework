@@ -67,10 +67,11 @@ describe('write-verify-lite-summary CLI', () => {
   it('keeps phase5 artifacts null when report files do not exist', async () => {
     const missingJsonPath = join(workdir, 'artifacts', 'context-pack', 'missing-phase5-report.json');
     const missingMarkdownPath = join(workdir, 'artifacts', 'context-pack', 'missing-phase5-report.md');
+    const expectedNotes = `map_not_found:${join('spec', 'context-pack', 'phase5-templates.json')}`;
 
     const { result, summaryPath } = runWriteSummary({
       CONTEXT_PACK_PHASE5_STATUS: 'skipped',
-      CONTEXT_PACK_PHASE5_NOTES: `map_not_found:${join('spec', 'context-pack', 'phase5-templates.json')}`,
+      CONTEXT_PACK_PHASE5_NOTES: expectedNotes,
       CONTEXT_PACK_PHASE5_REPORT_JSON_PATH: missingJsonPath,
       CONTEXT_PACK_PHASE5_REPORT_MD_PATH: missingMarkdownPath,
     });
@@ -79,7 +80,7 @@ describe('write-verify-lite-summary CLI', () => {
     const summary = JSON.parse(await readFile(summaryPath, 'utf8'));
     expect(summary.steps.contextPackPhase5Validation).toEqual({
       status: 'skipped',
-      notes: 'map_not_found:spec/context-pack/phase5-templates.json',
+      notes: expectedNotes,
     });
     expect(summary.artifacts.contextPackPhase5ReportJson).toBeNull();
     expect(summary.artifacts.contextPackPhase5ReportMarkdown).toBeNull();
