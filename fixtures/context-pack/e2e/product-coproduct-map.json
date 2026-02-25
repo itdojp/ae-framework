@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "context-pack-product-coproduct/v1",
+  "contextPackSources": [
+    "fixtures/context-pack/e2e/context-pack/**/*.{yml,yaml,json}"
+  ],
+  "products": [
+    {
+      "morphismId": "ReserveInventory",
+      "requiredInputKeys": [
+        "itemId",
+        "quantity"
+      ],
+      "disallowGenericDtoKeys": true
+    },
+    {
+      "morphismId": "ReleaseInventory",
+      "requiredInputKeys": [
+        "itemId",
+        "quantity"
+      ],
+      "disallowGenericDtoKeys": true
+    }
+  ],
+  "coproducts": [
+    {
+      "morphismId": "ReserveInventory",
+      "variants": [
+        {
+          "name": "OutOfStock",
+          "evidencePaths": [
+            "fixtures/context-pack/e2e/evidence/coproduct-out-of-stock.md"
+          ]
+        }
+      ]
+    },
+    {
+      "morphismId": "ReleaseInventory",
+      "variants": [
+        {
+          "name": "ReservationMissing",
+          "evidencePaths": [
+            "fixtures/context-pack/e2e/evidence/coproduct-reservation-missing.md"
+          ]
+        }
+      ]
+    }
+  ]
+}

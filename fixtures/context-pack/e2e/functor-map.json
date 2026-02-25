@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "context-pack-functor-map/v1",
+  "contextPackSources": [
+    "fixtures/context-pack/e2e/context-pack/**/*.{yml,yaml,json}"
+  ],
+  "objects": [
+    {
+      "id": "InventoryItem",
+      "moduleGlobs": [
+        "fixtures/context-pack/e2e/src/domain/**/*.ts"
+      ],
+      "layer": "domain"
+    }
+  ],
+  "morphisms": [
+    {
+      "id": "ReserveInventory",
+      "entrypoints": [
+        {
+          "file": "fixtures/context-pack/e2e/src/domain/reserve.ts",
+          "symbol": "reserveInventory"
+        }
+      ]
+    },
+    {
+      "id": "ReleaseInventory",
+      "entrypoints": [
+        {
+          "file": "fixtures/context-pack/e2e/src/domain/reserve.ts",
+          "symbol": "releaseInventory"
+        }
+      ]
+    }
+  ],
+  "dependencyRules": [
+    {
+      "from": "InventoryItem",
+      "to": "InventoryItem",
+      "allowed": true,
+      "reason": "fixture self-mapping"
+    }
+  ]
+}
