@@ -121,4 +121,89 @@ describe('validate-artifacts-ajv', () => {
       expect(result.errors.some((error) => error.instancePath.startsWith('/1'))).toBe(true);
     });
   });
+
+  it('reports schema_missing as rule error without counting failed files', () => {
+    withTempDir((rootDir) => {
+      writeJson(path.join(rootDir, 'artifacts', 'sample.json'), { name: 'ok' });
+
+      const result = validateArtifactsAjv({
+        rootDir,
+        strict: true,
+        rules: [
+          {
+            id: 'missing-schema',
+            schemaPath: 'schema/missing.schema.json',
+            patterns: ['artifacts/sample.json'],
+          },
+        ],
+      });
+
+      expect(result.exitCode).toBe(1);
+      expect(result.summary.totals.failedFiles).toBe(0);
+      expect(result.summary.totals.schemaRuleErrors).toBe(1);
+      expect(result.summary.rules[0]?.ruleError).toBe('schema_missing');
+    });
+  });
+
+  it('reports invalid_json and fails in strict mode', () => {
+    withTempDir((rootDir) => {
+      writeJson(path.join(rootDir, 'schema', 'sample.schema.json'), {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        $id: 'https://example.test/schema/sample.schema.json',
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+        },
+      });
+      const invalidJsonPath = path.join(rootDir, 'artifacts', 'broken.json');
+      mkdirSync(path.dirname(invalidJsonPath), { recursive: true });
+      writeFileSync(invalidJsonPath, '{"name":"ok",}\n');
+
+      const result = validateArtifactsAjv({
+        rootDir,
+        strict: true,
+        rules: [
+          {
+            id: 'invalid-json',
+            schemaPath: 'schema/sample.schema.json',
+            patterns: ['artifacts/broken.json'],
+          },
+        ],
+      });
+
+      expect(result.exitCode).toBe(1);
+      expect(result.errors.some((error) => error.keyword === 'invalid_json')).toBe(true);
+      expect(result.summary.totals.failedFiles).toBe(1);
+    });
+  });
+
+  it('marks no-match rules as skipped without errors', () => {
+    withTempDir((rootDir) => {
+      writeJson(path.join(rootDir, 'schema', 'sample.schema.json'), {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        $id: 'https://example.test/schema/sample.schema.json',
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+        },
+      });
+
+      const result = validateArtifactsAjv({
+        rootDir,
+        strict: true,
+        rules: [
+          {
+            id: 'no-match',
+            schemaPath: 'schema/sample.schema.json',
+            patterns: ['artifacts/not-found-*.json'],
+          },
+        ],
+      });
+
+      expect(result.exitCode).toBe(0);
+      expect(result.errors.length).toBe(0);
+      expect(result.summary.rules[0]?.skipped).toBe(true);
+      expect(result.summary.rules[0]?.skipReason).toBe('no files matched');
+    });
+  });
 });

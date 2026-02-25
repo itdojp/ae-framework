@@ -19,8 +19,16 @@ export const DEFAULT_RULES = [
     patterns: ['artifacts/verify-lite/verify-lite-run-summary.json'],
   },
   {
+    id: 'adapter-summary',
+    schemaPath: 'docs/schemas/artifacts-adapter-summary.schema.json',
+    patterns: [
+      'artifacts/adapters/**/summary.json',
+      'artifacts/lighthouse/**/summary.json',
+    ],
+  },
+  {
     id: 'report-envelope',
-    schemaPath: 'schema/report-envelope.schema.json',
+    schemaPath: 'schema/envelope.schema.json',
     patterns: [
       'artifacts/report-envelope.json',
       'artifacts/**/report-envelope.json',
@@ -285,6 +293,14 @@ function collectKeywordCounts(errors) {
   return counts;
 }
 
+function escapeMarkdownValue(value) {
+  return String(value ?? '')
+    .replace(/\\/g, '\\\\')
+    .replace(/\|/g, '\\|')
+    .replace(/`/g, '\\`')
+    .replace(/\r?\n/g, ' ');
+}
+
 function renderSummaryMarkdown(summary, errors) {
   const lines = [];
   lines.push('# Artifacts Schema Validation');
@@ -298,14 +314,20 @@ function renderSummaryMarkdown(summary, errors) {
   lines.push(`- passedFiles: ${summary.totals.passedFiles}`);
   lines.push(`- failedFiles: ${summary.totals.failedFiles}`);
   lines.push(`- errorCount: ${summary.totals.errorCount}`);
+  lines.push(`- schemaRuleErrors: ${summary.totals.schemaRuleErrors}`);
   lines.push('');
   lines.push('## Rules');
   lines.push('');
   lines.push('| Rule | Schema | Matched | Validated | Failed | Status |');
   lines.push('| --- | --- | ---: | ---: | ---: | --- |');
   for (const rule of summary.rules) {
-    const status = rule.skipped ? `skipped (${rule.skipReason ?? 'no files'})` : (rule.failedFiles > 0 ? 'failed' : 'ok');
-    lines.push(`| ${rule.id} | \`${rule.schemaPath}\` | ${rule.matchedFiles} | ${rule.validatedFiles} | ${rule.failedFiles} | ${status} |`);
+    let status = rule.skipped ? `skipped (${rule.skipReason ?? 'no files'})` : (rule.failedFiles > 0 ? 'failed' : 'ok');
+    if (rule.ruleError) {
+      status = `rule_error (${rule.ruleError})`;
+    }
+    lines.push(
+      `| ${escapeMarkdownValue(rule.id)} | \`${escapeMarkdownValue(rule.schemaPath)}\` | ${rule.matchedFiles} | ${rule.validatedFiles} | ${rule.failedFiles} | ${escapeMarkdownValue(status)} |`
+    );
   }
 
   const keywordEntries = Object.entries(summary.keywordCounts).sort(([left], [right]) => left.localeCompare(right));
@@ -323,7 +345,9 @@ function renderSummaryMarkdown(summary, errors) {
     lines.push('## Top Errors');
     lines.push('');
     for (const error of errors.slice(0, 20)) {
-      lines.push(`- [${error.ruleId}] \`${error.file}\` \`${error.instancePath}\` ${error.message}`);
+      lines.push(
+        `- [${escapeMarkdownValue(error.ruleId)}] \`${escapeMarkdownValue(error.file)}\` \`${escapeMarkdownValue(error.instancePath)}\` ${escapeMarkdownValue(error.message)}`
+      );
     }
   }
 
@@ -376,6 +400,7 @@ export function validateArtifactsAjv({
   let validatedFiles = 0;
   let passedFiles = 0;
   let failedFiles = 0;
+  let schemaRuleErrors = 0;
 
   for (const rule of rules) {
     const ruleSummary = {
@@ -388,6 +413,7 @@ export function validateArtifactsAjv({
       failedFiles: 0,
       skipped: false,
       skipReason: null,
+      ruleError: null,
     };
 
     const schemaAbsolutePath = path.resolve(resolvedRootDir, rule.schemaPath);
@@ -401,8 +427,8 @@ export function validateArtifactsAjv({
         message: 'schema file is missing',
       };
       errors.push(errorRecord);
-      ruleSummary.failedFiles += 1;
-      failedFiles += 1;
+      ruleSummary.ruleError = 'schema_missing';
+      schemaRuleErrors += 1;
       ruleSummaries.push(ruleSummary);
       continue;
     }
@@ -430,8 +456,8 @@ export function validateArtifactsAjv({
         message,
       };
       errors.push(errorRecord);
-      ruleSummary.failedFiles += 1;
-      failedFiles += 1;
+      ruleSummary.ruleError = 'schema_compile_error';
+      schemaRuleErrors += 1;
       ruleSummaries.push(ruleSummary);
       continue;
     }
@@ -518,6 +544,7 @@ export function validateArtifactsAjv({
       passedFiles,
       failedFiles,
       errorCount: errors.length,
+      schemaRuleErrors,
       durationMs: Date.now() - startedAt,
     },
     keywordCounts: collectKeywordCounts(errors),
