@@ -43,6 +43,7 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - Claude Code Automation Guide: `guides/CLAUDE-CODE-AUTOMATION-GUIDE.md`
 - Phase 2 Advanced Features (2.1–2.3): `guides/PHASE-2-ADVANCED-FEATURES-GUIDE.md`
 - Advanced Troubleshooting: `guides/ADVANCED-TROUBLESHOOTING-GUIDE.md`
+- Context Pack onboarding checklist: `guides/context-pack-onboarding-checklist.md`
 - Context Pack Phase5+ cookbook: `guides/context-pack-phase5-cookbook.md`
 - Context Pack troubleshooting runbook: `operations/context-pack-troubleshooting.md`
 - Thread -> Repo -> CI flow: `guides/THREAD-REPO-CI-FLOW.md`
@@ -167,6 +168,7 @@ ae-frameworkは、エージェント協調型のSDLCオーケストレーター�
 - **[CLAUDE-CODE-AUTOMATION-GUIDE.md](./guides/CLAUDE-CODE-AUTOMATION-GUIDE.md)** ⭐ **重要** - Claude Code完全自動化
 - **🆕 [PHASE-2-ADVANCED-FEATURES-GUIDE.md](./guides/PHASE-2-ADVANCED-FEATURES-GUIDE.md)** ⭐ **NEW** - Phase 2.1-2.3統合ガイド
 - **🆕 [ADVANCED-TROUBLESHOOTING-GUIDE.md](./guides/ADVANCED-TROUBLESHOOTING-GUIDE.md)** ⭐ **NEW** - 高度な機能のトラブルシューティング
+- [context-pack-onboarding-checklist.md](./guides/context-pack-onboarding-checklist.md) - Context Pack 導入チェックリスト（入力準備→検証→修正→再検証）
 - [context-pack-phase5-cookbook.md](./guides/context-pack-phase5-cookbook.md) - Context Pack Phase5+ の実践レシピ
 - [context-pack-troubleshooting.md](./operations/context-pack-troubleshooting.md) - Context Pack 検証失敗時の復旧ランブック
 - [THREAD-REPO-CI-FLOW.md](./guides/THREAD-REPO-CI-FLOW.md) - Plan を repo SSOT に正規化する標準フロー

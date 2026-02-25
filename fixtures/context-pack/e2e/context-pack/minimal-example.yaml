@@ -1,0 +1,61 @@
+version: 1
+name: inventory-minimal-context-pack-e2e
+problem_statement:
+  goals:
+    - Keep inventory counts consistent.
+  non_goals:
+    - Implement pricing logic.
+domain_glossary:
+  terms:
+    - term: inventory_item
+      ja: 在庫アイテム
+objects:
+  - id: InventoryItem
+    kind: aggregate
+morphisms:
+  - id: ReserveInventory
+    input:
+      itemId: string
+      quantity: number
+    output:
+      reserved: boolean
+    pre:
+      - quantity > 0
+    post:
+      - reserved implies stock_decreased
+    failures:
+      - OutOfStock
+  - id: ReleaseInventory
+    input:
+      itemId: string
+      quantity: number
+    output:
+      released: boolean
+    pre:
+      - quantity > 0
+    post:
+      - released implies stock_increased
+    failures:
+      - ReservationMissing
+diagrams:
+  - id: D-1
+    statement: ReserveInventory preserves non-negative stock.
+    verification:
+      - property-test
+constraints:
+  max_parallel_reservations: 8
+acceptance_tests:
+  - id: AT-1
+    scenario: Reserve succeeds when stock is available.
+    expected:
+      - reservation accepted
+coding_conventions:
+  language: TypeScript
+  directory:
+    - src/
+    - tests/
+  dependencies:
+    runtime:
+      - zod
+forbidden_changes:
+  - Remove ReserveInventory precondition checks.
