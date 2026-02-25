@@ -1,25 +1,51 @@
 #!/usr/bin/env node
 import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const workflowPath = '.github/workflows/docs-doctest.yml';
-const packagePath = 'package.json';
-const policyPath = 'docs/ci/docs-doctest-policy.md';
+export const DEFAULT_PATHS = {
+  workflowPath: '.github/workflows/docs-doctest.yml',
+  packagePath: 'package.json',
+  policyPath: 'docs/ci/docs-doctest-policy.md',
+};
 
-function readUtf8(path) {
-  return readFileSync(path, 'utf8');
+export function readUtf8(filePath) {
+  try {
+    return readFileSync(filePath, 'utf8');
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`failed to read ${filePath}: ${message}`);
+  }
 }
 
-function ensureContains(source, snippet, message, errors) {
+export function parseJson(raw, filePath) {
+  try {
+    return JSON.parse(raw);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`invalid JSON in ${filePath}: ${message}`);
+  }
+}
+
+export function ensureContains(source, snippet, message, errors) {
   if (!source.includes(snippet)) {
     errors.push(`${message} (missing: ${snippet})`);
   }
 }
 
-function main() {
+export function ensureRegexCount(source, pattern, minimum, message, errors) {
+  const count = [...source.matchAll(pattern)].length;
+  if (count < minimum) {
+    errors.push(`${message} (expected >= ${minimum}, actual: ${count})`);
+  }
+}
+
+export function runDocsDoctestPolicySyncCheck(paths = DEFAULT_PATHS) {
+  const { workflowPath, packagePath, policyPath } = paths;
   const errors = [];
 
   const workflow = readUtf8(workflowPath);
-  const pkg = JSON.parse(readUtf8(packagePath));
+  const pkg = parseJson(readUtf8(packagePath), packagePath);
   const policy = readUtf8(policyPath);
   const scripts = pkg?.scripts ?? {};
 
@@ -48,6 +74,13 @@ function main() {
     'changed-docs doctest execution guard is required',
     errors
   );
+  ensureRegexCount(
+    workflow,
+    /^\s*-\s*'scripts\/ci\/check-docs-doctest-policy-sync\.mjs'\s*$/gm,
+    2,
+    'docs-doctest workflow paths must include policy-sync checker',
+    errors
+  );
 
   if (typeof scripts['test:doctest:index'] !== 'string') {
     errors.push('package.json scripts.test:doctest:index is missing');
@@ -69,18 +102,56 @@ function main() {
     errors
   );
 
-  if (errors.length > 0) {
-    console.error('[check-docs-doctest-policy-sync] FAILED');
-    for (const error of errors) {
-      console.error(`- ${error}`);
-    }
-    process.exit(1);
-  }
-
-  console.log('[check-docs-doctest-policy-sync] OK');
-  console.log(`- checked: ${workflowPath}`);
-  console.log(`- checked: ${packagePath}`);
-  console.log(`- checked: ${policyPath}`);
+  return {
+    checkedFiles: [workflowPath, packagePath, policyPath],
+    errors,
+    exitCode: errors.length > 0 ? 1 : 0,
+  };
 }
 
-main();
+export function main(paths = DEFAULT_PATHS) {
+  try {
+    const result = runDocsDoctestPolicySyncCheck(paths);
+
+    if (result.exitCode !== 0) {
+      console.error('[check-docs-doctest-policy-sync] FAILED');
+      for (const error of result.errors) {
+        console.error(`- ${error}`);
+      }
+      return result;
+    }
+
+    console.log('[check-docs-doctest-policy-sync] OK');
+    for (const filePath of result.checkedFiles) {
+      console.log(`- checked: ${filePath}`);
+    }
+    return result;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[check-docs-doctest-policy-sync] FAILED');
+    console.error(`- ${message}`);
+    return {
+      checkedFiles: [paths.workflowPath, paths.packagePath, paths.policyPath],
+      errors: [message],
+      exitCode: 1,
+    };
+  }
+}
+
+export function isExecutedAsMain(metaUrl, argvPath = process.argv[1]) {
+  if (!argvPath || typeof argvPath !== 'string') {
+    return false;
+  }
+  try {
+    const modulePath = path.resolve(fileURLToPath(metaUrl));
+    const entryPath = path.resolve(argvPath);
+    return modulePath === entryPath;
+  } catch {
+    return false;
+  }
+}
+
+if (isExecutedAsMain(import.meta.url, process.argv[1])) {
+  const result = main(DEFAULT_PATHS);
+  process.exit(result.exitCode);
+}
