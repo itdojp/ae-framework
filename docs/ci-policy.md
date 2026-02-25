@@ -55,6 +55,9 @@ CI Extended restores cached heavy test artifacts (`.cache/test-results`) when re
 - `run-quality`: enable quality matrix in parallel tests
 - `run-flake`: enable flake-detection on PRs
 - `run-e2e`: enable E2E tests on PRs
+- Flake detect profile:
+  - `workflow_dispatch(mode=detect|both)` では `detect_profile=quick|standard|thorough` を選択できる
+  - 既定は `standard`（3 runs, timeout 420s）。待機時間優先時は `quick` を選択する
 - `coverage:<pct>`: override coverage threshold for coverage-check (default 80). e.g., `coverage:75`
 - `enforce-context-pack`: enable blocking mode for `context-pack-quality-gate.yml` on PRs
  - `qa-batch:commands` / `qa-batch:cli` / `qa-batch:property` / `qa-batch:agents`: run additional CI Fast batches for the specific categories (opt-in)
@@ -114,6 +117,8 @@ CI Extended restores cached heavy test artifacts (`.cache/test-results`) when re
 - Workflow role matrix: docs/ci/workflow-role-matrix.md
 - Opt-in controls: docs/ci/OPT-IN-CONTROLS.md
 - CI docs boundary matrix: docs/ci/ci-doc-boundary-matrix.md
+- Flake retry dispatch: docs/ci/flake-retry-dispatch.md
+- Flake baseline (2026-02-25): docs/ci/flake-detection-baseline-2026-02-25.md
 
 <!-- duplicate section removed: Slash Commands (Instant Dispatch) repeated -->
 
@@ -202,6 +207,9 @@ CI Extended 実行後は heavy テスト成果物を `.cache/test-results` に�
 - `run-quality`: Parallel Test の quality 行を有効化
 - `run-flake`: flake-detection を PR で有効化
 - `run-e2e`: E2E テストを PR で有効化
+- Flake detect profile:
+  - `workflow_dispatch(mode=detect|both)` では `detect_profile=quick|standard|thorough` を選択できる
+  - 既定は `standard`（3 runs, timeout 420s）。待機時間を優先する場合は `quick` を使う
 - `coverage:<pct>`: coverage-check のしきい値を上書き（既定 80）。例: `coverage:75`
 - `enforce-context-pack`: `context-pack-quality-gate.yml` を PR で blocking 化
 - `enforce-ts-inventory`: Verify Lite で `config/ts-inventory-baseline.json` 基準の `@ts-ignore` 増加を禁止（ラベル付与時のみ強制）。docs-only 以外では `pnpm run inventory:ts` の結果を `artifacts/verify-lite/ts-inventory.json` に収集。
@@ -276,3 +284,5 @@ CI Extended 実行後は heavy テスト成果物を `.cache/test-results` に�
 - `docs/ci/workflow-role-matrix.md`
 - `docs/ci/OPT-IN-CONTROLS.md`
 - `docs/ci/ci-doc-boundary-matrix.md`
+- `docs/ci/flake-retry-dispatch.md`
+- `docs/ci/flake-detection-baseline-2026-02-25.md`

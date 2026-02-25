@@ -51,6 +51,13 @@
 - 先に `rerun --failed` を使う
 - 必要に応じて `AE_GH_THROTTLE_MS` を引き上げる（既定 250ms）
 
+### 3.4 flake-detect が長時間化/失敗する
+
+- `workflow_dispatch` の `detect_profile` を用途に合わせて選ぶ（quick/standard/thorough）
+- run 探索に失敗した retry は `select_reason` を Step Summary で確認する
+- maintenance で report/list が失敗した場合は warning 扱いで継続する（復旧は次回 run で再評価）
+- 観測値は `docs/ci/flake-detection-baseline-2026-02-25.md` を起点に週次更新する
+
 ## 4. 停止・復帰（Fail-safe）
 
 ### 4.1 自動化停止（緊急）
@@ -87,3 +94,4 @@
 - `docs/ci/copilot-review-gate.md`
 - `docs/ci/docs-doctest-policy.md`
 - `docs/ci/automation-failure-policies.md`
+- `docs/ci/flake-retry-dispatch.md`

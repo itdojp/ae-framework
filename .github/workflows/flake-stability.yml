@@ -6,6 +6,22 @@ on:
       mode:
         required: true
         type: string
+      detect_runs:
+        required: false
+        type: string
+        default: '3'
+      detect_sleep_seconds:
+        required: false
+        type: string
+        default: '3'
+      detect_run_timeout_seconds:
+        required: false
+        type: string
+        default: '420'
+      flake_threshold_percent:
+        required: false
+        type: string
+        default: '30.0'
 
 permissions:
   contents: read
@@ -16,7 +32,12 @@ jobs:
   flake-detection:
     if: ${{ inputs.mode == 'detect' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 35
+    env:
+      DETECT_RUNS: ${{ inputs.detect_runs }}
+      DETECT_SLEEP_SECONDS: ${{ inputs.detect_sleep_seconds }}
+      DETECT_RUN_TIMEOUT_SECONDS: ${{ inputs.detect_run_timeout_seconds }}
+      FLAKE_THRESHOLD_PERCENT: ${{ inputs.flake_threshold_percent }}
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node + pnpm
@@ -50,29 +71,57 @@ jobs:
       - name: Run tests multiple times
         id: flake-test
         run: |
-          set -e
+          set -euo pipefail
           fails=0
-          total_runs=3
+
+          total_runs="${DETECT_RUNS:-3}"
+          sleep_seconds="${DETECT_SLEEP_SECONDS:-3}"
+          run_timeout_seconds="${DETECT_RUN_TIMEOUT_SECONDS:-420}"
+
+          case "$total_runs" in
+            ''|*[!0-9]*|0)
+              total_runs=3
+              ;;
+          esac
+          case "$sleep_seconds" in
+            ''|*[!0-9]*)
+              sleep_seconds=3
+              ;;
+          esac
+          case "$run_timeout_seconds" in
+            ''|*[!0-9]*|0)
+              run_timeout_seconds=420
+              ;;
+          esac
 
           printf "%s\n" "🔍 Starting flake detection with $total_runs runs"
+          printf "%s\n" "⏱️ Per-run timeout: ${run_timeout_seconds}s / sleep: ${sleep_seconds}s"
 
           for ((i=1; i<=total_runs; i++)); do
             printf "%s\n" "📊 Run #$i of $total_runs"
             report_file="reports/flake-detection/run-$i.json"
-            if pnpm exec vitest run --workspace configs/vitest/vitest.workspace.ts --project integration --reporter=json --outputFile "$report_file"; then
+            if timeout --signal=TERM "${run_timeout_seconds}s" \
+              pnpm exec vitest run --workspace configs/vitest/vitest.workspace.ts --project integration --reporter=json --outputFile "$report_file"; then
               printf "%s\n" "✅ Run #$i passed"
             else
+              code=$?
               printf "%s\n" "❌ Run #$i failed"
+              if [ "$code" -eq 124 ]; then
+                printf "%s\n" "   reason: timeout(${run_timeout_seconds}s)"
+              fi
               fails=$((fails+1))
             fi
 
             # Brief pause between runs
-            sleep 5
+            if [ "$i" -lt "$total_runs" ] && [ "$sleep_seconds" -gt 0 ]; then
+              sleep "$sleep_seconds"
+            fi
           done
 
           {
             printf "%s\n" "FAILS=$fails"
             printf "%s\n" "TOTAL_RUNS=$total_runs"
+            printf "%s\n" "RUN_TIMEOUT_SECONDS=$run_timeout_seconds"
           } >> "$GITHUB_ENV"
 
           failure_rate=$(printf "%s\n" "scale=2; $fails / $total_runs * 100" | bc -l)
@@ -239,8 +288,9 @@ jobs:
       - name: Create flake detection report
         run: |
           mkdir -p reports
+          threshold="${FLAKE_THRESHOLD_PERCENT:-30.0}"
           status="stable"
-          if [ "$(printf "%s\n" "$FAILURE_RATE > 30.0" | bc -l)" -eq 1 ]; then
+          if [ "$(printf "%s\n" "$FAILURE_RATE > $threshold" | bc -l)" -eq 1 ]; then
             status="flaky"
           fi
 
@@ -250,7 +300,7 @@ jobs:
             "totalRuns": $TOTAL_RUNS,
             "failures": $FAILS,
             "failureRate": $FAILURE_RATE,
-            "threshold": 30.0,
+            "threshold": $threshold,
             "status": "$status",
             "testSuite": "integration",
             "environment": "ci"
@@ -261,7 +311,7 @@ jobs:
         id: flake-check
         if: always()
         run: |
-          threshold=30.0
+          threshold="${FLAKE_THRESHOLD_PERCENT:-30.0}"
 
           if [ -z "${FAILURE_RATE}" ]; then
             printf "%s\n" "⚠️ FAILURE_RATE is empty; flake status unknown"
@@ -308,7 +358,7 @@ jobs:
             "retriable": ${retriable},
             "reason": "${reason}",
             "failureRate": ${failure_rate_value},
-            "threshold": 30.0
+            "threshold": ${FLAKE_THRESHOLD_PERCENT:-30.0}
           }
           EOF
 
@@ -353,7 +403,7 @@ jobs:
             **Test Suite:** Integration Tests  
             **Detection Time:** ${new Date().toISOString()}  
             **Failure Rate:** ${failureRate}% (${failures}/${totalRuns} runs failed)  
-            **Threshold:** 30.0%
+            **Threshold:** ${process.env.FLAKE_THRESHOLD_PERCENT || '30.0'}%
 
             ### 📊 Test Run Results
             - **Total Runs:** ${totalRuns}
@@ -508,11 +558,16 @@ jobs:
       - name: Generate maintenance report
         run: |
           printf "%s\n" "📊 Generating maintenance report..."
-          pnpm run flake:report
+          if ! pnpm run flake:report; then
+            printf "%s\n" "::warning::flake:report failed; continue with partial maintenance summary"
+            mkdir -p reports/flake-reports
+          fi
 
           # Display current status
           printf "%s\n" "📋 Current flake isolation status:"
-          pnpm run flake:list
+          if ! pnpm run flake:list; then
+            printf "%s\n" "::warning::flake:list failed; skip status details"
+          fi
 
       - name: Upload maintenance reports
         uses: actions/upload-artifact@v4

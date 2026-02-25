@@ -114,6 +114,8 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - Workflow role matrix: `ci/workflow-role-matrix.md`（core / optional / report の責務整理）
 - Opt-in controls: `ci/OPT-IN-CONTROLS.md`（ラベル/Slash/dispatchの一覧）
 - CI docs boundary matrix: `ci/ci-doc-boundary-matrix.md`（方針文書とrunbookの責務境界）
+- Flake retry dispatch: `ci/flake-retry-dispatch.md`（retriable判定に基づく rerun-failed-jobs）
+- Flake baseline (2026-02-25): `ci/flake-detection-baseline-2026-02-25.md`（実行時間と失敗要因の観測）
 - Copilot Review Gate: `ci/copilot-review-gate.md`（レビュー必須化）
 - Copilot Auto Fix: `ci/copilot-auto-fix.md`（suggestion自動適用）
 - Codex Autopilot Lane: `ci/codex-autopilot-lane.md`（touchless merge の opt-in）

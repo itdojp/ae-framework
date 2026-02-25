@@ -14,6 +14,12 @@ flake-detect で検知したフレークのうち、**再試行可否が true** 
 Actions から `Flake Stability Schedule` を起動し、`mode=retry` を指定する。
 必要に応じて以下を指定する。
 
+- `detect_profile`（`mode=detect` / `mode=both` のときのみ有効）  
+  既定: `standard`
+  - `quick`: 2 runs / run timeout 300s / sleep 2s
+  - `standard`: 3 runs / run timeout 420s / sleep 3s
+  - `thorough`: 5 runs / run timeout 600s / sleep 3s
+
 - `workflow_file`  
   既定: `flake-detect.yml`（例: verify-lite は `verify-lite.yml` / pr-verify は `pr-verify.yml`）
 - `eligibility_artifact`  
@@ -48,8 +54,11 @@ Step Summary に以下が出力される。
 - `run_id`
 - `retriable`
 - `reason`
+- `select_reason`（retry対象 run の探索結果）
 
 ## 失敗時の代表的な原因
+- 最新の失敗 run が見つからない（`select_reason=no_failed_first_attempt_run`）
+- workflow 取得に失敗（`select_reason=workflow_lookup_failed` / `select_reason=list_runs_failed`）
 - eligibility アーティファクトが存在しない（`reason=no_artifact`）
 - zip 展開に失敗（`reason=unzip_failed`）
 - eligibility JSON ファイルが存在するが中身が空（`reason=missing_file`）

@@ -11,6 +11,14 @@ on:
           - retry
           - both
         default: detect
+      detect_profile:
+        description: Detect mode profile (workflow_dispatch only).
+        type: choice
+        options:
+          - quick
+          - standard
+          - thorough
+        default: standard
       workflow_file:
         description: Target workflow file (e.g. flake-detect.yml)
         required: false
@@ -49,6 +57,33 @@ jobs:
     uses: ./.github/workflows/flake-stability.yml
     with:
       mode: detect
+      detect_runs: >-
+        ${{
+          github.event_name == 'workflow_dispatch'
+            && (inputs.detect_profile == 'quick'
+              && '2'
+              || inputs.detect_profile == 'thorough'
+              && '5'
+              || '3')
+            || '3'
+        }}
+      detect_sleep_seconds: >-
+        ${{
+          github.event_name == 'workflow_dispatch'
+            && (inputs.detect_profile == 'quick' && '2' || '3')
+            || '3'
+        }}
+      detect_run_timeout_seconds: >-
+        ${{
+          github.event_name == 'workflow_dispatch'
+            && (inputs.detect_profile == 'quick'
+              && '300'
+              || inputs.detect_profile == 'thorough'
+              && '600'
+              || '420')
+            || '420'
+        }}
+      flake_threshold_percent: '30.0'
   flake-maintenance:
     if: >-
       (github.event_name == 'schedule' && github.event.schedule == '0 10 * * *')
@@ -74,17 +109,38 @@ jobs:
         id: select
         run: |
           set -euo pipefail
-          wf_id=$(gh api "repos/${REPO}/actions/workflows/${WORKFLOW_FILE}" --jq '.id')
-          runs=$(gh api "repos/${REPO}/actions/workflows/${wf_id}/runs" -f per_page=10 -f status=completed)
+          wf_id=""
+          if ! wf_id=$(gh api "repos/${REPO}/actions/workflows/${WORKFLOW_FILE}" --jq '.id' 2>/tmp/flake_retry_workflow_lookup.err); then
+            printf '%s\n' "run_id=" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "select_reason=workflow_lookup_failed" >> "$GITHUB_OUTPUT"
+            sed 's/^/::warning::/g' /tmp/flake_retry_workflow_lookup.err || true
+            exit 0
+          fi
+          if [ -z "$wf_id" ] || [ "$wf_id" = "null" ]; then
+            printf '%s\n' "run_id=" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "select_reason=workflow_not_found" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          runs=""
+          if ! runs=$(gh api "repos/${REPO}/actions/workflows/${wf_id}/runs" -f per_page=10 -f status=completed 2>/tmp/flake_retry_runs.err); then
+            printf '%s\n' "run_id=" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "select_reason=list_runs_failed" >> "$GITHUB_OUTPUT"
+            sed 's/^/::warning::/g' /tmp/flake_retry_runs.err || true
+            exit 0
+          fi
+
           run_id=$(echo "$runs" | jq -r '.workflow_runs[]
             | select((.run_attempt // 1) == 1)
             | select(.conclusion == "failure" or .conclusion == "cancelled" or .conclusion == "timed_out" or .conclusion == "action_required")
-            | .id' | head -n1)
+            | .id' | head -n1 || true)
           if [ -z "$run_id" ]; then
             printf '%s\n' "run_id=" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "select_reason=no_failed_first_attempt_run" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           printf '%s\n' "run_id=$run_id" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "select_reason=selected" >> "$GITHUB_OUTPUT"
       - name: Fetch retry eligibility artifact
         id: eligibility
         if: ${{ steps.select.outputs.run_id }}
@@ -151,6 +207,7 @@ jobs:
             printf '%s\n' "- eligibility_path: ${ELIGIBILITY_PATH}"
             printf '%s\n' "- dry_run: ${DRY_RUN}"
             printf '%s\n' "- run_id: ${{ steps.select.outputs.run_id != '' && steps.select.outputs.run_id || 'none' }}"
+            printf '%s\n' "- select_reason: ${{ steps.select.outputs.select_reason || 'n/a' }}"
             printf '%s\n' "- retriable: ${{ steps.eligibility.outputs.retriable || 'n/a' }}"
             printf '%s\n' "- reason: ${{ steps.eligibility.outputs.reason || 'n/a' }}"
           } >> "$GITHUB_STEP_SUMMARY"
