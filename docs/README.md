@@ -107,6 +107,7 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - Usefulness evaluation: `quality/usefulness-evaluation.md`（4軸スコア算出/終了コード契約）
 - Issue requirements traceability: `quality/issue-requirements-traceability.md`（extract-ids/matrix/strict validate）
  - CI policy: `ci-policy.md`（PR必須ゲート/opt-in/運用方針）
+ - Docs Doctest policy: `ci/docs-doctest-policy.md`（PR軽量チェック + 週次全量チェック）
  - Workflow role matrix: `ci/workflow-role-matrix.md`（core / optional / report の責務整理）
  - Opt-in controls: `ci/OPT-IN-CONTROLS.md`（ラベル/Slash/dispatchの一覧）
  - Copilot Review Gate: `ci/copilot-review-gate.md`（レビュー必須化）

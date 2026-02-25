@@ -15,6 +15,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
 
 ### Required Checks (PR blocking)
 - Verify Lite (`test:ci:lite`=types:check / lint / build / conformance)
+- Docs Doctest (`docs-doctest.yml`): `README.md` + `docs/README.md` doctest for docs-touching PRs
 - Quality Gates (development profile):
   - Lint baseline enforcement via `node scripts/quality/check-lint-summary.mjs`
   - TDD smoke validation via `node scripts/quality/tdd-smoke-check.mjs`
@@ -98,6 +99,7 @@ CI Extended restores cached heavy test artifacts (`.cache/test-results`) when re
 
 ### 参考ドキュメント
 - Branch Protection運用（プリセット適用/復元）: docs/ci/branch-protection-operations.md
+- Docs Doctest運用: docs/ci/docs-doctest-policy.md
 - Copilot Review Gate運用: docs/ci/copilot-review-gate.md
 - Copilot Auto Fix（suggestion 自動適用）: docs/ci/copilot-auto-fix.md
 - Auto Merge（auto-merge 自動有効化）: docs/ci/auto-merge.md
@@ -147,6 +149,7 @@ CI Extended restores cached heavy test artifacts (`.cache/test-results`) when re
 
 ### 必須チェック（PR ブロッキング）
 - Verify Lite（`test:ci:lite` = types:check / lint / build / conformance）
+- Docs Doctest（`docs-doctest.yml`）: docs 変更PRで `README.md` + `docs/README.md` の doctest を実行
 - Quality Gates（development プロファイル）:
   - `node scripts/quality/check-lint-summary.mjs` による lint ベースライン差分チェック
   - `node scripts/quality/tdd-smoke-check.mjs` による TDD スモーク検証
