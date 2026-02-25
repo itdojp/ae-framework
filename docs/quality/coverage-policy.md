@@ -33,7 +33,7 @@ Notes
 
 References
 - Workflow: `.github/workflows/coverage-check.yml`
-- Slash commands: see `AGENTS.md` and `docs/ci-policy.md`
+- Slash commands: see `../../AGENTS.md` and `../ci-policy.md`
 
 ### Development (local verify)
 - Dry-run the summary composer locally without posting to GitHub:

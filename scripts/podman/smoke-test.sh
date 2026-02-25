@@ -24,6 +24,7 @@ COMPOSE_FILES=(
 )
 RUNTIME_TAG="${PODMAN_SMOKE_RUNTIME_TAG:-ae-framework/podman-smoke:runtime}"
 TEST_TAG="${PODMAN_SMOKE_TEST_TAG:-ae-framework/podman-smoke:test}"
+SKIP_NPM_UPGRADE_BUILD_ARG="${PODMAN_SMOKE_SKIP_NPM_UPGRADE:-1}"
 DO_COMPOSE_UP=false
 KEEP_IMAGES=false
 SKIP_BUILD=false
@@ -58,6 +59,7 @@ Environment overrides:
   CONTAINER_ENGINE                  Override container engine binary
   PODMAN_SMOKE_RUNTIME_TAG          Custom tag for runtime image build
   PODMAN_SMOKE_TEST_TAG             Custom tag for test image build
+  PODMAN_SMOKE_SKIP_NPM_UPGRADE     Passes SKIP_NPM_UPGRADE build-arg to podman/Dockerfile (default: 1)
 USAGE
 }
 
@@ -137,6 +139,7 @@ if [[ "$SKIP_BUILD" == false ]]; then
   log "building runtime image ($RUNTIME_TAG)"
   "$CONTAINER_ENGINE_BIN" build \
     --file podman/Dockerfile \
+    --build-arg "SKIP_NPM_UPGRADE=$SKIP_NPM_UPGRADE_BUILD_ARG" \
     --tag "$RUNTIME_TAG" \
     podman/.. || fail "Runtime image build failed"
 

@@ -11,7 +11,7 @@ pnpm node scripts/pipelines/export-heavy-trend-history.mjs \
   --markdown-limit 20
 ```
 - `history.csv`: 全スナップショットの `snapshot,label,metric,baseline,current,delta` を含む。Observable や Excel での分析に利用。  
-- `history.md`: 直近 N 件を Markdown テーブルで出力し、PR やドキュメントに貼り付け可能。
+- `reports/heavy-test-trends-history/history.md`: 直近 N 件を Markdown テーブルで出力し、PR やドキュメントに貼り付け可能。
 
 ## 閾値見直しレポート生成
 ```bash
@@ -21,7 +21,7 @@ pnpm node scripts/pipelines/recommend-heavy-trend-thresholds.mjs \
   --json-output reports/heavy-test-trends-history/threshold-recommendation.json \
   --min-snapshots 14
 ```
-- `threshold-recommendation.md`: 現在の閾値と提案値（Warning/Critical）を比較するレポート。  
+- `reports/heavy-test-trends-history/threshold-recommendation.md`: 現在の閾値と提案値（Warning/Critical）を比較するレポート。  
 - `threshold-recommendation.json`: 閾値提案の機械可読データ（サンプル数・quantile 設定含む）。  
 - `Status: ready` までは運用データ不足なので、workflow 閾値の更新は保留する。
 
@@ -33,7 +33,7 @@ pnpm node scripts/pipelines/recommend-heavy-trend-thresholds.mjs \
 ## Observable Notebook での活用例
 1. `history.csv` を `FileAttachment` として Notebook にアップロード。  
 2. 以下のコードで CSV を読み込み、Mutation score のトレンドを描画。
-```js
+```text
 viewof metric = Inputs.select([...new Set(data.map(d => d.metric))], {value: "mutationScore"})
 filtered = data.filter(d => d.metric === metric && d.label === "Mutation quick")
 Plot.plot({

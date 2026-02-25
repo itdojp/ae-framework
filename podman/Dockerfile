@@ -4,8 +4,10 @@
 #
 
 ARG NODE_IMAGE=docker.io/node:22-alpine
+ARG SKIP_NPM_UPGRADE=0
 FROM ${NODE_IMAGE} AS deps
 WORKDIR /app
+ARG SKIP_NPM_UPGRADE
 
 COPY package*.json pnpm-lock.yaml* ./
 COPY pnpm-workspace.yaml ./
@@ -13,7 +15,9 @@ COPY tsconfig*.json ./
 COPY packages ./packages
 # package.json の preinstall で参照されるため、依存解決前に配置する
 COPY scripts/ci/check-package-manager.mjs ./scripts/ci/check-package-manager.mjs
-RUN npm install -g npm@11.7.0 && corepack enable pnpm && pnpm install --frozen-lockfile
+RUN if [ "${SKIP_NPM_UPGRADE}" != "1" ]; then npm install -g npm@11.7.0; fi && \
+    corepack enable pnpm && \
+    pnpm install --frozen-lockfile
 
 FROM deps AS build
 WORKDIR /app
@@ -30,9 +34,10 @@ RUN pnpm run build && pnpm prune --prod
 
 FROM ${NODE_IMAGE} AS runtime
 WORKDIR /app
+ARG SKIP_NPM_UPGRADE
 
 # Update npm to remove vulnerable glob from the base image
-RUN npm install -g npm@11.7.0
+RUN if [ "${SKIP_NPM_UPGRADE}" != "1" ]; then npm install -g npm@11.7.0; fi
 
 # Rootless user (matches tests期待)
 RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001

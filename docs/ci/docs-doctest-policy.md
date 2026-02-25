@@ -11,7 +11,7 @@
 
 | レーン | トリガ | 実行内容 |
 | --- | --- | --- |
-| `doctest-index` | `pull_request` / `push(main)` / `workflow_dispatch` | `check-doc-consistency` + `README.md` / `docs/README.md` の doctest。`pull_request` では差分 Markdown も追加検証 |
+| `doctest-index` | `pull_request` / `push(main)` / `workflow_dispatch` | `check-doc-consistency` + README.md / docs/README.md の doctest。`pull_request` では差分 Markdown も追加検証 |
 | `doctest-full` | `schedule` / `workflow_dispatch(full=true)` | `docs/**/*.md` の全量 doctest |
 
 Workflow: `.github/workflows/docs-doctest.yml`

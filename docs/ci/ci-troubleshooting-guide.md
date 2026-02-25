@@ -30,6 +30,14 @@ Purpose: Provide a short, deterministic path to diagnose common CI failures.
 - `Copilot Review Gate / gate` が success/failure 混在のまま残る場合は、失敗した `Copilot Review Gate` ランを rerun します（`gh run rerun <runId> --failed`）。
 - `Copilot Auto Fix` 後の gate 再評価は `agent-commands` が `issue_comment(created/edited)` で `copilot-review-gate.yml` を dispatch します。再評価が起動しない場合は `agent-commands` の実行ログを確認してください。
 - GitHub API の 429 / secondary rate limit が出る場合、Actions の rerun を優先します。`AE_GH_THROTTLE_MS` の既定は `250`（`0` で無効化）で、必要に応じて `AE_GH_RETRY_*` と合わせて調整します（詳細: `docs/ci/pr-automation.md` / 実装: `scripts/ci/lib/gh-exec.mjs`）。
+- 429 が連続する場合は次の順で段階調整します（過剰リトライを避ける）:
+  1. `AE_GH_THROTTLE_MS=500`
+  2. `AE_GH_RETRY_INITIAL_DELAY_MS=1000`
+  3. `AE_GH_RETRY_MAX_ATTEMPTS=10`（必要時のみ）
+- Codex CLI 実行時に `maximum number of unified exec processes` 警告が出る場合:
+  - 長時間 `watch` / `tail -f` を停止し、同一セッション再利用を優先する
+  - 並列実行数を絞り、PR単位で順次処理する
+  - プロセス上限警告が継続する間は新規並列ジョブを開始しない
 - `pnpm run lint:actions` で `ghcr.io/rhysd/actionlint` pull が 403 の場合、`ACTIONLINT_BIN` でローカルバイナリを指定できます（例: `ACTIONLINT_BIN=/usr/local/bin/actionlint pnpm run lint:actions`）。
 - `automation-observability-weekly` の通知判定は `weekly-alert-summary.json` に保存されます。通知が来ない場合は `suppressed` / `suppressedReason` を確認します。
 - SLO/MTTR の判定基準は `docs/ci/automation-slo-mttr.md` を参照し、週次 artifact（`automation-observability-weekly`）で確認します。
@@ -44,6 +52,7 @@ Purpose: Provide a short, deterministic path to diagnose common CI failures.
 | `PR Self-Heal` が `blocked` | PRコメントの reason、`status:blocked` ラベル | 競合解消/失敗チェック修復後に手動rerun |
 | `auto-merge` が有効化されない | `AE_AUTO_MERGE*`、required checks、reviewDecision | `docs/ci/auto-merge.md` に沿って条件修正 |
 | 429 / secondary rate limit | `gh-exec` retryログ、失敗タイミング | rerun優先、必要なら `AE_GH_THROTTLE_MS` と `AE_GH_RETRY_*` を調整 |
+| unified exec process 上限警告 | 長時間ジョブ数、同時セッション数 | 長時間セッション停止・既存セッション再利用・並列度を抑制 |
 
 補足:
 - 自動化系の共通JSON/Step Summary出力は `docs/ci/automation-observability.md` を参照。
@@ -59,9 +68,9 @@ Purpose: Provide a short, deterministic path to diagnose common CI failures.
 
 ### 7.2 PR番号指定での手動起動
 ```bash
-gh workflow run "Copilot Review Gate" -f pr_number=<PR番号>
-gh workflow run "PR Self-Heal" -f pr_number=<PR番号> -f dry_run=false
-gh workflow run "Codex Autopilot Lane" -f pr_number=<PR番号> -f dry_run=false
+gh workflow run "Copilot Review Gate" -f pr_number=12345
+gh workflow run "PR Self-Heal" -f pr_number=12345 -f dry_run=false
+gh workflow run "Codex Autopilot Lane" -f pr_number=12345 -f dry_run=false
 ```
 
 ### 7.3 behind / stale checks の再同期
@@ -77,7 +86,8 @@ gh workflow run "Codex Autopilot Lane" -f pr_number=<PR番号> -f dry_run=false
 2. **原因粒度**: `設定不足`（label/env/permission）か `実装不具合` かを分離  
 3. **再現性**: `pnpm run verify:lite` でローカル再現するか確認  
 4. **API制限**: 429系なら run rerun を優先し、`AE_GH_THROTTLE_MS` を段階的に上げる  
-5. **停止判断**: 同一症状が連続する場合は kill-switch で自動実行を一時停止
+5. **プロセス上限**: unified exec 警告が出る場合は新規並列を止めて既存セッションを回収  
+6. **停止判断**: 同一症状が連続する場合は kill-switch で自動実行を一時停止
 
 ## 9) 緊急回避（Fail-safe）
 

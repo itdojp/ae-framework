@@ -30,6 +30,7 @@ describe('check-doc-consistency', () => {
       'docs/getting-started/PHASE-6-GETTING-STARTED.md',
       'docs/integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md',
     ]));
+    expect(result.docsProvided).toBe(false);
   });
 
   it('parses docs and format arguments', () => {
@@ -45,7 +46,65 @@ describe('check-doc-consistency', () => {
 
     expect(result.docs).toEqual(['README.md', 'docs/README.md']);
     expect(result.format).toBe('json');
+    expect(result.docsProvided).toBe(true);
     expect(result.unknown).toEqual([]);
+  });
+
+  it('expands default targets with docs/README CI/quality links', () => {
+    withTempRepo((rootDir) => {
+      writePackageJson(rootDir, { lint: 'echo lint' });
+      mkdirSync(path.join(rootDir, 'docs/ci'), { recursive: true });
+      mkdirSync(path.join(rootDir, 'docs/quality'), { recursive: true });
+      mkdirSync(path.join(rootDir, 'docs/notes'), { recursive: true });
+      mkdirSync(path.join(rootDir, 'docs/getting-started'), { recursive: true });
+      mkdirSync(path.join(rootDir, 'docs/product'), { recursive: true });
+      mkdirSync(path.join(rootDir, 'docs/integrations'), { recursive: true });
+      writeFileSync(path.join(rootDir, 'README.md'), '# root');
+      writeFileSync(path.join(rootDir, 'docs/README.md'), [
+        '- [CI Guide](./ci/guide.md)',
+        '- [Quality Guide](./quality/guide.md)',
+        '- [Notes](./notes/guide.md)',
+      ].join('\n'));
+      writeFileSync(path.join(rootDir, 'docs/ci/guide.md'), 'Run `pnpm run lint`.');
+      writeFileSync(path.join(rootDir, 'docs/quality/guide.md'), 'Run `pnpm run lint`.');
+      writeFileSync(path.join(rootDir, 'docs/notes/guide.md'), 'Run `pnpm run lint`.');
+      writeFileSync(path.join(rootDir, 'docs/getting-started/QUICK-START-GUIDE.md'), '# quick');
+      writeFileSync(path.join(rootDir, 'docs/getting-started/PHASE-6-GETTING-STARTED.md'), '# phase6');
+      writeFileSync(path.join(rootDir, 'docs/product/USER-MANUAL.md'), '# user manual');
+      writeFileSync(path.join(rootDir, 'docs/integrations/QUICK-START-CODEX.md'), '# codex');
+      writeFileSync(path.join(rootDir, 'docs/integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md'), '# integration');
+
+      const result = runDocConsistencyCheck([
+        'node',
+        'check-doc-consistency.mjs',
+        `--root=${rootDir}`,
+      ]);
+
+      expect(result.docsScanned).toEqual(expect.arrayContaining([
+        'docs/ci/guide.md',
+        'docs/quality/guide.md',
+      ]));
+      expect(result.docsScanned).not.toContain('docs/notes/guide.md');
+    });
+  });
+
+  it('does not auto-expand when --docs is explicitly provided', () => {
+    withTempRepo((rootDir) => {
+      writePackageJson(rootDir, { lint: 'echo lint' });
+      mkdirSync(path.join(rootDir, 'docs/ci'), { recursive: true });
+      writeFileSync(path.join(rootDir, 'README.md'), 'Run `pnpm run lint`.');
+      writeFileSync(path.join(rootDir, 'docs/README.md'), '- [CI Guide](./ci/guide.md)');
+      writeFileSync(path.join(rootDir, 'docs/ci/guide.md'), 'Run `pnpm run lint`.');
+
+      const result = runDocConsistencyCheck([
+        'node',
+        'check-doc-consistency.mjs',
+        `--root=${rootDir}`,
+        '--docs=README.md',
+      ]);
+
+      expect(result.docsScanned).toEqual(['README.md']);
+    });
   });
 
   it('detects missing pnpm script references', () => {
@@ -100,6 +159,46 @@ describe('check-doc-consistency', () => {
         expect.objectContaining({ reference: '../docs/missing.md' }),
         expect.objectContaining({ reference: 'docs/another-missing.md' }),
       ]));
+    });
+  });
+
+  it('ignores generated report/artifact markdown references', () => {
+    withTempRepo((rootDir) => {
+      writePackageJson(rootDir, { lint: 'echo lint' });
+      mkdirSync(path.join(rootDir, 'docs'), { recursive: true });
+      writeFileSync(path.join(rootDir, 'docs/guide.md'), [
+        'Generated outputs are optional:',
+        '- `artifacts/context-pack/context-pack-phase5-report.md`',
+        '- `reports/heavy-test-trends-history/summary.md`',
+      ].join('\n'));
+
+      const result = runDocConsistencyCheck([
+        'node',
+        'check-doc-consistency.mjs',
+        `--root=${rootDir}`,
+        '--docs=docs/guide.md',
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.missingPaths).toHaveLength(0);
+    });
+  });
+
+  it('does not treat extension-only inline tokens as paths', () => {
+    withTempRepo((rootDir) => {
+      writePackageJson(rootDir, { lint: 'echo lint' });
+      mkdirSync(path.join(rootDir, 'docs'), { recursive: true });
+      writeFileSync(path.join(rootDir, 'docs/guide.md'), 'Suffix notation: `.md`');
+
+      const result = runDocConsistencyCheck([
+        'node',
+        'check-doc-consistency.mjs',
+        `--root=${rootDir}`,
+        '--docs=docs/guide.md',
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.missingPaths).toHaveLength(0);
     });
   });
 

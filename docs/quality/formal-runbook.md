@@ -176,7 +176,7 @@ jobs:
   - Apalache: `artifacts/hermetic-reports/formal/apalache-summary.json`, `artifacts/hermetic-reports/formal/apalache-output.txt`
   - Formal summary: `artifacts/hermetic-reports/formal/summary.json`（present/conformance/smt/alloy/tla/apalache を含む）
   - `metadata`: `generatedAtUtc`, `generatedAtLocal`, `timezoneOffset`, `gitCommit`, `branch`, `runner`, `toolVersions`
-  - Conformance aggregated summary (verify-lite): `reports/conformance/verify-lite-summary.json` / `.md`
+  - Conformance aggregated summary (verify-lite): `reports/conformance/verify-lite-summary.json` / `reports/conformance/verify-lite-summary.md`
 
 ### Samples
 - TLA+: `spec/tla/DomainSpec.tla`（最小の安全性不変と遷移の例）
