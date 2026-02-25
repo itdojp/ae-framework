@@ -49,7 +49,7 @@
     "check:todo-issue-links": "node scripts/ci/check-todo-issue-links.mjs",
     "check:root-generated": "node scripts/ci/check-no-root-generated-files.mjs",
     "docs:lint": "pnpm -s run check:doc-consistency",
-    "check:doc-consistency": "node scripts/docs/check-doc-consistency.mjs && node scripts/docs/check-ci-doc-index-consistency.mjs",
+    "check:doc-consistency": "node scripts/docs/check-doc-consistency-all.mjs",
     "check:ci-doc-index-consistency": "node scripts/docs/check-ci-doc-index-consistency.mjs",
     "check:docs-doctest-policy-sync": "node scripts/ci/check-docs-doctest-policy-sync.mjs",
     "inventory:ts": "node scripts/quality/ts-inventory.mjs",

@@ -18,6 +18,7 @@ export const REQUIRED_LINKS = {
     'ci/pr-automation.md',
     'ci/workflow-role-matrix.md',
     'ci/OPT-IN-CONTROLS.md',
+    'ci/ci-doc-boundary-matrix.md',
   ],
   'docs/ci-policy.md': [
     'docs/ci/docs-doctest-policy.md',
@@ -26,6 +27,7 @@ export const REQUIRED_LINKS = {
     'docs/ci/pr-automation.md',
     'docs/ci/workflow-role-matrix.md',
     'docs/ci/OPT-IN-CONTROLS.md',
+    'docs/ci/ci-doc-boundary-matrix.md',
   ],
 };
 
@@ -38,6 +40,9 @@ export const SECTION_RULES = [
       'docs/ci/ci-operations-handbook.md',
       'docs/ci/ci-troubleshooting-guide.md',
       'docs/ci/pr-automation.md',
+      'docs/ci/workflow-role-matrix.md',
+      'docs/ci/OPT-IN-CONTROLS.md',
+      'docs/ci/ci-doc-boundary-matrix.md',
     ],
   },
   {
@@ -48,6 +53,9 @@ export const SECTION_RULES = [
       'docs/ci/ci-operations-handbook.md',
       'docs/ci/ci-troubleshooting-guide.md',
       'docs/ci/pr-automation.md',
+      'docs/ci/workflow-role-matrix.md',
+      'docs/ci/OPT-IN-CONTROLS.md',
+      'docs/ci/ci-doc-boundary-matrix.md',
     ],
   },
 ];

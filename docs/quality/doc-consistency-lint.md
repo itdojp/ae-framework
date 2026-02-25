@@ -35,6 +35,10 @@ Custom files:
 pnpm run check:doc-consistency -- --docs README.md,docs/README.md
 ```
 
+Note:
+- `--format json` または `--docs` 指定時は互換性のため `check-doc-consistency.mjs` のみを実行します。
+- CI索引チェックを併せて実行する場合は `pnpm run check:ci-doc-index-consistency` を利用してください。
+
 CI index only:
 ```bash
 pnpm run check:ci-doc-index-consistency

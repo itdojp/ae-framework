@@ -33,6 +33,7 @@ function writeBaselineDocs(rootDir: string): void {
     '- PR automation: `ci/pr-automation.md`',
     '- Workflow role matrix: `ci/workflow-role-matrix.md`',
     '- Opt-in controls: `ci/OPT-IN-CONTROLS.md`',
+    '- CI docs boundary matrix: `ci/ci-doc-boundary-matrix.md`',
   ].join('\n'));
 
   writeFile(rootDir, 'docs/ci-policy.md', [
@@ -44,6 +45,7 @@ function writeBaselineDocs(rootDir: string): void {
     '- docs/ci/pr-automation.md',
     '- docs/ci/workflow-role-matrix.md',
     '- docs/ci/OPT-IN-CONTROLS.md',
+    '- docs/ci/ci-doc-boundary-matrix.md',
     '',
     '## 6. 参照',
     '- docs/ci/docs-doctest-policy.md',
@@ -52,6 +54,7 @@ function writeBaselineDocs(rootDir: string): void {
     '- docs/ci/pr-automation.md',
     '- docs/ci/workflow-role-matrix.md',
     '- docs/ci/OPT-IN-CONTROLS.md',
+    '- docs/ci/ci-doc-boundary-matrix.md',
   ].join('\n'));
 
   const requiredTargets = [
@@ -61,6 +64,7 @@ function writeBaselineDocs(rootDir: string): void {
     'docs/ci/pr-automation.md',
     'docs/ci/workflow-role-matrix.md',
     'docs/ci/OPT-IN-CONTROLS.md',
+    'docs/ci/ci-doc-boundary-matrix.md',
   ];
   for (const target of requiredTargets) {
     writeFile(rootDir, target, `# ${target}\n`);
