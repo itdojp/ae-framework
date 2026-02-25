@@ -8,6 +8,7 @@ on:
       - 'docs/**'
       - 'scripts/doctest.ts'
       - 'scripts/docs/check-doc-consistency.mjs'
+      - 'scripts/ci/check-docs-doctest-policy-sync.mjs'
       - '.github/workflows/docs-doctest.yml'
       - 'package.json'
       - 'pnpm-lock.yaml'
@@ -19,6 +20,7 @@ on:
       - 'docs/**'
       - 'scripts/doctest.ts'
       - 'scripts/docs/check-doc-consistency.mjs'
+      - 'scripts/ci/check-docs-doctest-policy-sync.mjs'
       - '.github/workflows/docs-doctest.yml'
       - 'package.json'
       - 'pnpm-lock.yaml'
@@ -49,6 +51,8 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '20'
+      - name: Validate docs-doctest policy sync
+        run: node scripts/ci/check-docs-doctest-policy-sync.mjs
       - name: Install dependencies
         run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
       - name: Check documentation consistency
@@ -102,6 +106,8 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '20'
+      - name: Validate docs-doctest policy sync
+        run: node scripts/ci/check-docs-doctest-policy-sync.mjs
       - name: Install dependencies
         run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
       - name: Run full docs doctest

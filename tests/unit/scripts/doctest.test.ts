@@ -49,4 +49,35 @@ describe('DocumentationTester', () => {
       rmSync(runnerTempDir, { recursive: true, force: true });
     }
   });
+
+  it('accepts multiple patterns and de-duplicates matched markdown files', async () => {
+    const fixtureDir = mkdtempSync(join(tmpdir(), 'doctest-fixture-multi-'));
+    const runnerTempDir = join(process.cwd(), 'tmp', 'doctest');
+
+    try {
+      writeFileSync(
+        join(fixtureDir, 'sample.md'),
+        [
+          '# Sample',
+          '',
+          '```bash',
+          'echo "ok"',
+          '```',
+          '',
+          '[self](./sample.md)',
+          '',
+        ].join('\n')
+      );
+
+      const tester = new DocumentationTester();
+      const result = await tester.runDocTests([join(fixtureDir, '*.md'), join(fixtureDir, 'sample.md')]);
+
+      expect(result.codeBlocks.total).toBe(1);
+      expect(result.codeBlocks.failed).toBe(0);
+      expect(result.links.invalid).toBe(0);
+    } finally {
+      rmSync(fixtureDir, { recursive: true, force: true });
+      rmSync(runnerTempDir, { recursive: true, force: true });
+    }
+  });
 });

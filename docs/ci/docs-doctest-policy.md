@@ -21,6 +21,7 @@ Workflow: `.github/workflows/docs-doctest.yml`
 1. PR では index スコープを基本とし、レビュー待ち時間を抑える
 2. 全量チェックは週次 schedule で実行し、広域回帰を検知する
 3. 全量結果の確認が必要な場合は `workflow_dispatch` で `full=true` を指定して再実行する
+4. `scripts/ci/check-docs-doctest-policy-sync.mjs` を先行実行し、workflow / package script / policy の整合ドリフトを早期検出する
 
 ## 失敗時の対応手順（runbook）
 
@@ -36,6 +37,7 @@ Workflow: `.github/workflows/docs-doctest.yml`
 ## ローカル実行コマンド
 
 ```bash
+node scripts/ci/check-docs-doctest-policy-sync.mjs
 pnpm run check:doc-consistency
 DOCTEST_ENFORCE=1 pnpm run test:doctest:index
 DOCTEST_ENFORCE=1 pnpm run test:doctest:full
