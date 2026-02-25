@@ -9,6 +9,8 @@ const __dirname = path.dirname(__filename);
 
 const DOC_CONSISTENCY_SCRIPT = path.resolve(__dirname, 'check-doc-consistency.mjs');
 const CI_INDEX_SCRIPT = path.resolve(__dirname, 'check-ci-doc-index-consistency.mjs');
+const RUNBOOK_COMMAND_SCRIPT = path.resolve(__dirname, 'check-runbook-command-blocks.mjs');
+const DOC_TODO_MARKER_SCRIPT = path.resolve(__dirname, 'check-doc-todo-markers.mjs');
 
 function hasOption(args, longName, shortName) {
   return args.some((arg) => arg === longName || (shortName && arg === shortName) || arg.startsWith(`${longName}=`));
@@ -62,7 +64,15 @@ export function main(argv = process.argv) {
     return 0;
   }
   const ciIndexStatus = runNodeScript(CI_INDEX_SCRIPT, filterArgsForCiIndex(args));
-  return ciIndexStatus;
+  if (ciIndexStatus !== 0) {
+    return ciIndexStatus;
+  }
+  const runbookStatus = runNodeScript(RUNBOOK_COMMAND_SCRIPT, filterArgsForCiIndex(args));
+  if (runbookStatus !== 0) {
+    return runbookStatus;
+  }
+  const todoMarkerStatus = runNodeScript(DOC_TODO_MARKER_SCRIPT, filterArgsForCiIndex(args));
+  return todoMarkerStatus;
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {

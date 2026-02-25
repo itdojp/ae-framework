@@ -13,10 +13,13 @@ export const DEFAULT_DOC_FILES = [
   'docs/integrations/QUICK-START-CODEX.md',
   'docs/integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md',
 ];
+export const DEFAULT_DISCOVERY_SEED_FILES = ['README.md', 'docs/README.md'];
+export const DEFAULT_DISCOVERY_PREFIXES = ['docs/ci/', 'docs/quality/'];
 
 const PNPM_RUN_REGEX = /\bpnpm\s+(?:-s\s+)?run\s+([A-Za-z0-9:_-]+)\b/g;
 const MARKDOWN_LINK_REGEX = /\[[^\]]*]\(([^)\s]+)\)/g;
 const INLINE_CODE_REGEX = /`([^`\n]+)`/g;
+const OPTIONAL_GENERATED_PATH_PREFIXES = ['artifacts/', 'reports/'];
 const ROOT_RELATIVE_PREFIXES = [
   '.github/',
   'api/',
@@ -85,7 +88,7 @@ function isPathLikeReference(reference) {
   if (reference.includes('\\') || reference.includes('/')) {
     return true;
   }
-  return /\.[A-Za-z0-9_-]+$/u.test(reference);
+  return /[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/u.test(reference);
 }
 
 function isExplicitRelativeReference(reference) {
@@ -101,6 +104,7 @@ export function parseArgs(argv = process.argv) {
     rootDir: process.cwd(),
     format: 'text',
     docs: [...DEFAULT_DOC_FILES],
+    docsProvided: false,
     unknown: [],
     help: false,
   };
@@ -176,8 +180,14 @@ export function parseArgs(argv = process.argv) {
 
   if (docs.length > 0) {
     options.docs = docs;
+    options.docsProvided = true;
   }
   return options;
+}
+
+function toPosixRelativePath(rootDir, absolutePath) {
+  const relativePath = path.relative(rootDir, absolutePath);
+  return relativePath.split(path.sep).join('/');
 }
 
 function loadPackageScripts(rootDir) {
@@ -264,6 +274,51 @@ function collectMarkdownReferences(line, regex, sourceType) {
   return references;
 }
 
+function discoverAdditionalDocs(rootDir, seedFiles) {
+  const discovered = [];
+  for (const markdownPath of seedFiles) {
+    const absolutePath = path.resolve(rootDir, markdownPath);
+    if (!existsSync(absolutePath)) {
+      continue;
+    }
+    const content = readFileSync(absolutePath, 'utf8');
+    const lines = content.split(/\r?\n/u);
+    for (const line of lines) {
+      const references = [
+        ...collectMarkdownReferences(line, MARKDOWN_LINK_REGEX, 'link'),
+        ...collectMarkdownReferences(line, INLINE_CODE_REGEX, 'inline'),
+      ];
+      for (const reference of references) {
+        const normalizedReference = stripFragmentAndQuery(reference);
+        if (!normalizedReference) {
+          continue;
+        }
+        const resolvedPath = resolveReferencePath(rootDir, markdownPath, normalizedReference);
+        if (!resolvedPath || !existsSync(resolvedPath)) {
+          continue;
+        }
+        if (path.extname(resolvedPath).toLowerCase() !== '.md') {
+          continue;
+        }
+        const candidate = toPosixRelativePath(rootDir, resolvedPath);
+        if (!DEFAULT_DISCOVERY_PREFIXES.some((prefix) => candidate.startsWith(prefix))) {
+          continue;
+        }
+        discovered.push(candidate);
+      }
+    }
+  }
+  return discovered;
+}
+
+function resolveDocsToInspect(rootDir, docs, docsProvided) {
+  if (docsProvided) {
+    return docs;
+  }
+  const expanded = [...docs, ...discoverAdditionalDocs(rootDir, DEFAULT_DISCOVERY_SEED_FILES)];
+  return [...new Set(expanded)];
+}
+
 function collectMissingPaths(rootDir, markdownPath, lines) {
   const missingPaths = [];
   for (let lineNumber = 0; lineNumber < lines.length; lineNumber += 1) {
@@ -276,6 +331,9 @@ function collectMissingPaths(rootDir, markdownPath, lines) {
     for (const reference of uniqueReferences) {
       const normalizedReference = stripFragmentAndQuery(reference);
       if (!normalizedReference) {
+        continue;
+      }
+      if (OPTIONAL_GENERATED_PATH_PREFIXES.some((prefix) => normalizedReference.startsWith(prefix))) {
         continue;
       }
       const resolvedPath = resolveReferencePath(rootDir, markdownPath, normalizedReference);
@@ -338,9 +396,11 @@ function renderText(result) {
 
 export function runDocConsistencyCheck(argv = process.argv) {
   const options = parseArgs(argv);
+  const docsToInspect = resolveDocsToInspect(options.rootDir, options.docs, options.docsProvided);
   if (options.help) {
     return {
       ...options,
+      docs: docsToInspect,
       docsScanned: [],
       missingDocs: [],
       packageErrors: [],
@@ -353,6 +413,7 @@ export function runDocConsistencyCheck(argv = process.argv) {
   if (options.unknown.length > 0) {
     return {
       ...options,
+      docs: docsToInspect,
       docsScanned: [],
       missingDocs: [],
       packageErrors: [],
@@ -374,7 +435,7 @@ export function runDocConsistencyCheck(argv = process.argv) {
   const missingPaths = [];
   const docsScanned = [];
 
-  for (const markdownPath of options.docs) {
+  for (const markdownPath of docsToInspect) {
     const absolutePath = path.resolve(options.rootDir, markdownPath);
     if (!existsSync(absolutePath)) {
       missingDocs.push({
@@ -393,6 +454,7 @@ export function runDocConsistencyCheck(argv = process.argv) {
   const hasFailures = packageErrors.length > 0 || missingDocs.length > 0 || missingScripts.length > 0 || missingPaths.length > 0;
   return {
     ...options,
+    docs: docsToInspect,
     docsScanned,
     missingDocs,
     packageErrors,

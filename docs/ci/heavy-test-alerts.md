@@ -10,7 +10,7 @@
 - **MBT harness**
   - `violations` 件数、および `runs` / `depth` の極端な変化。
 
-`scripts/pipelines/render-heavy-trend-summary.mjs` で ``--warn-*`` / ``--critical-*`` オプションを指定し、`summary.md` / `summary.json` から自動判定できるようになりました。
+`scripts/pipelines/render-heavy-trend-summary.mjs` で ``--warn-*`` / ``--critical-*`` オプションを指定し、`reports/heavy-test-trends-history/summary.md` / `reports/heavy-test-trends-history/summary.json` から自動判定できるようになりました。
 
 ## 初期閾値案
 | メトリクス | Warning | Critical | 備考 |
@@ -48,7 +48,7 @@
 - [x] JSON 形式の判定結果出力（`--json-output`）
 - [x] `ci-extended` スケジュール実行への Slack 通知ステップ追加
 - [x] Critical 判定時の自動 Issue 起票（`ci-extended.yml`）
-- [x] `reports/heavy-test-trends-history/*.json` の履歴アーカイブと `summary.md`/`summary.json` の定期生成
+- [x] `reports/heavy-test-trends-history/*.json` の履歴アーカイブと `reports/heavy-test-trends-history/summary.md` / `reports/heavy-test-trends-history/summary.json` の定期生成
 - [x] 履歴アーティファクト保持期間を 30 日に拡張（2〜3週間分の分析前提を満たす）
 - [x] 閾値見直し補助スクリプトを追加（`scripts/pipelines/recommend-heavy-trend-thresholds.mjs`）
 - [ ] 実測データに基づく閾値リファイン（`min-snapshots=14` 以上で実施）
@@ -61,7 +61,7 @@
 - 閾値見直し時は次を実行し、`Status: ready` を確認してから workflow 閾値へ反映する。
   - `node scripts/pipelines/recommend-heavy-trend-thresholds.mjs --history-dir reports/heavy-test-trends-history --min-snapshots 14`
 
-## TODO
+## Backlog
 - [x] `render-heavy-trend-summary.mjs` への閾値オプション追加
 - [x] Slack Webhook 通知ステップの実装（`ci-extended.yml` スケジュール実行に追加済み）
 - [x] 自動 Issue 起票フローの実装（Critical 判定時）
