@@ -58,10 +58,11 @@ class DocumentationTester {
   ];
   private readonly EXTERNAL_URL_PATTERN = /^https?:\/\//;
 
-  async runDocTests(patterns: string[] = ['docs/**/*.md']): Promise<DocTestResult> {
+  async runDocTests(patternInput: string | string[] = 'docs/**/*.md'): Promise<DocTestResult> {
     console.log('📚 Running documentation tests...');
 
-    const files = await this.resolveTargetFiles(patterns);
+    const patterns = Array.isArray(patternInput) ? patternInput : [patternInput];
+    const files = await this.resolveTargetFiles(patterns.length > 0 ? patterns : ['docs/**/*.md']);
     const codeBlocks = this.extractCodeBlocks(files);
     const links = this.extractLinks(files);
 
