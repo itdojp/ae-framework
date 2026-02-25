@@ -67,6 +67,8 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - Specification & verification: `docs/quality/`, `docs/quality/formal-csp.md`, `docs/ci-policy.md`, `docs/testing/integration-runtime-helpers.md`
 - Context Pack v1 (spec contract): `docs/spec/context-pack.md`
 - Context Pack onboarding checklist: `docs/guides/context-pack-onboarding-checklist.md`
+- Context Pack Phase5+ cookbook: `docs/guides/context-pack-phase5-cookbook.md`
+- Context Pack troubleshooting runbook: `docs/operations/context-pack-troubleshooting.md`
 - Spec & Verification Kit (minimal activation guide): `docs/reference/SPEC-VERIFICATION-KIT-MIN.md`
 - Connectors & agent workflows: `docs/integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md`, `docs/integrations/CODEX-INTEGRATION.md`
 
@@ -125,6 +127,8 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - 仕様と検証: `docs/ci-policy.md`, `docs/testing/integration-runtime-helpers.md`, `docs/quality/`, `docs/quality/formal-csp.md`
 - Context Pack v1（仕様入力契約）: `docs/spec/context-pack.md`
 - Context Pack 導入チェックリスト: `docs/guides/context-pack-onboarding-checklist.md`
+- Context Pack Phase5+ 実践ガイド: `docs/guides/context-pack-phase5-cookbook.md`
+- Context Pack 障害対応ランブック: `docs/operations/context-pack-troubleshooting.md`
 - Spec & Verification Kit（最小パッケージ・有効化手順）: `docs/reference/SPEC-VERIFICATION-KIT-MIN.md`
 - エージェント統合: `docs/integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md`, `docs/integrations/CODEX-INTEGRATION.md`
 
