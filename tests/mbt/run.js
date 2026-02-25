@@ -25,6 +25,8 @@ function parseArgs(argv) {
     if (arg.startsWith('--seed=')) out.seed = Number(arg.slice(7));
     else if (arg.startsWith('--runs=')) out.runs = Number(arg.slice(7));
     else if (arg.startsWith('--depth=')) out.depth = Number(arg.slice(8));
+    else if (arg.startsWith('--trace-id=')) out.traceId = arg.slice(11);
+    else if (arg.startsWith('--output=')) out.output = arg.slice(9);
   }
   return out;
 }
@@ -112,19 +114,29 @@ function ensureOutputDir(filePath) {
 }
 
 async function main() {
+  const startedAt = Date.now();
   const opts = parseArgs(process.argv);
   const seed = Number.isFinite(opts.seed) ? opts.seed : Date.now();
   const rand = mulberry32(seed);
+  const traceId = opts.traceId || `mbt-${seed}`;
+  const outputPath = opts.output || process.env.MBT_OUTPUT || 'artifacts/mbt/summary.json';
   const summary = {
+    traceId,
     seed,
     runs: opts.runs,
     depth: opts.depth,
     scenarios: [],
     violations: 0,
+    passed: 0,
+    failed: 0,
+    durationMs: 0,
+    reproducibleCommand: `node tests/mbt/run.js --seed=${seed} --runs=${opts.runs} --depth=${opts.depth} --trace-id=${traceId}`,
+    generatedAtUtc: new Date().toISOString(),
   };
 
   for (let i = 0; i < opts.runs; i += 1) {
     const scenario = runScenario(rand, opts.depth);
+    const scenarioFailed = scenario.violations.length > 0;
     summary.scenarios.push({
       index: i + 1,
       steps: scenario.steps,
@@ -136,15 +148,42 @@ async function main() {
       violations: scenario.violations,
     });
     summary.violations += scenario.violations.length;
+    if (scenarioFailed) {
+      summary.failed += 1;
+    } else {
+      summary.passed += 1;
+    }
   }
 
-  const outputPath = 'artifacts/mbt/summary.json';
+  summary.durationMs = Math.max(0, Date.now() - startedAt);
   ensureOutputDir(outputPath);
   fs.writeFileSync(outputPath, JSON.stringify(summary, null, 2));
   console.log(`✓ MBT harness wrote ${outputPath} (seed=${seed}, runs=${summary.runs}, violations=${summary.violations})`);
 
-  if (summary.violations > 0) {
-    console.error('MBT invariants violated. Inspect artifacts/mbt/summary.json for details.');
+  if (summary.failed > 0) {
+    const firstFailed = summary.scenarios.find((scenario) => Array.isArray(scenario.violations) && scenario.violations.length > 0);
+    const counterexamplePath = process.env.MBT_COUNTEREXAMPLE_PATH || path.join(path.dirname(outputPath), 'counterexample.json');
+    ensureOutputDir(counterexamplePath);
+    fs.writeFileSync(
+      counterexamplePath,
+      JSON.stringify(
+        {
+          traceId,
+          seed,
+          runs: opts.runs,
+          depth: opts.depth,
+          failedScenarios: summary.failed,
+          firstFailedScenario: firstFailed || null,
+          reproducibleCommand: summary.reproducibleCommand,
+          generatedAtUtc: summary.generatedAtUtc,
+        },
+        null,
+        2
+      )
+    );
+    console.error(`MBT invariants violated. Inspect ${counterexamplePath} for details.`);
+    summary.counterexamplePath = counterexamplePath;
+    fs.writeFileSync(outputPath, JSON.stringify(summary, null, 2));
     process.exitCode = 1;
   }
 }

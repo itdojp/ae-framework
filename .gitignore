@@ -83,6 +83,7 @@ clean-sample-*.json
 artifacts/cassettes/
 artifacts/codex/
 artifacts/hermetic-reports/
+artifacts/testing/
 artifacts/api/.tmp/
 tests/api/generated/
 sbom.json
