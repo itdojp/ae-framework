@@ -16,7 +16,7 @@ Checks:
 - `docs/README.md` / `docs/ci-policy.md` include the canonical CI operation links.
 - CI reference sections in `docs/ci-policy.md` avoid duplicate entries.
 - CI runbook の shell code block を `bash -n` で構文検証する。
-- `docs/ci/*` の TODO/FIXME マーカーが Issue 参照付きであることを検証する（`TODO(#1234)` / `FIXME(#1234)`）。
+- `docs/ci/*` の TODO/FIXME マーカーが Issue 参照付きであることを検証する（`TODO(#<issue>)` / `FIXME(#<issue>)`）。
 
 Current default targets:
 - Base: `../../README.md`, `../README.md`, Getting Started, User Manual, Integrations

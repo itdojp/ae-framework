@@ -41,17 +41,19 @@ describe('check-doc-todo-markers', () => {
   });
 
   it('accepts TODO/FIXME with issue references', () => {
+    const issueRef = `#${'1234'}`;
     const violations = collectTodoMarkerViolations('docs/ci/sample.md', [
-      '## TODO(#1234)',
-      '- FIXME(#1234): follow-up',
+      `## TODO(${issueRef})`,
+      `- FIXME(${issueRef}): follow-up`,
     ].join('\n'));
     expect(violations).toHaveLength(0);
   });
 
   it('scans docs/ci by default and reports violations', () => {
     withTempRepo((rootDir) => {
+      const issueRef = `#${'1234'}`;
       mkdirSync(path.join(rootDir, 'docs/ci'), { recursive: true });
-      writeFileSync(path.join(rootDir, 'docs/ci/ok.md'), '## TODO(#1234)');
+      writeFileSync(path.join(rootDir, 'docs/ci/ok.md'), `## TODO(${issueRef})`);
       writeFileSync(path.join(rootDir, 'docs/ci/ng.md'), '## TODO');
 
       const result = runDocTodoMarkerCheck([
