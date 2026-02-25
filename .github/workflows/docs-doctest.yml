@@ -64,11 +64,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+
+          # checkout は shallow のため、base commit が無い場合は最小fetchで補完する
+          if ! git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
+            git fetch --no-tags --depth=1 origin "${BASE_SHA}"
+          fi
+
           {
             echo "files<<EOF"
             git diff --name-only \
-              "${{ github.event.pull_request.base.sha }}" \
-              "${{ github.event.pull_request.head.sha }}" \
+              "${BASE_SHA}" \
+              "${HEAD_SHA}" \
               -- '*.md'
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
