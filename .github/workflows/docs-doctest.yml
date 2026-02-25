@@ -76,7 +76,7 @@ jobs:
             git diff --name-only \
               "${BASE_SHA}" \
               HEAD \
-              -- '*.md'
+              -- '*.md' '**/*.md'
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
