@@ -58,10 +58,11 @@ class DocumentationTester {
   ];
   private readonly EXTERNAL_URL_PATTERN = /^https?:\/\//;
 
-  async runDocTests(pattern: string = 'docs/**/*.md'): Promise<DocTestResult> {
+  async runDocTests(patternInput: string | string[] = 'docs/**/*.md'): Promise<DocTestResult> {
     console.log('📚 Running documentation tests...');
-    
-    const files = await glob(pattern);
+
+    const patterns = Array.isArray(patternInput) ? patternInput : [patternInput];
+    const files = await this.resolveTargetFiles(patterns.length > 0 ? patterns : ['docs/**/*.md']);
     const codeBlocks = this.extractCodeBlocks(files);
     const links = this.extractLinks(files);
 
@@ -84,6 +85,19 @@ class DocumentationTester {
         results: linkResults
       }
     };
+  }
+
+  private async resolveTargetFiles(patterns: string[]): Promise<string[]> {
+    const fileSet = new Set<string>();
+
+    for (const pattern of patterns) {
+      const matches = await glob(pattern, { nodir: true });
+      for (const file of matches) {
+        fileSet.add(file);
+      }
+    }
+
+    return [...fileSet].sort();
   }
 
   private extractCodeBlocks(files: string[]): CodeBlock[] {
@@ -491,10 +505,11 @@ class DocumentationTester {
 // CLI interface
 async function main() {
   const tester = new DocumentationTester();
-  const pattern = process.argv[2] || 'docs/**/*.md';
+  const patterns = process.argv.slice(2);
+  const targets = patterns.length > 0 ? patterns : ['docs/**/*.md'];
   
   try {
-    const result = await tester.runDocTests(pattern);
+    const result = await tester.runDocTests(targets);
     
     console.log('\n📊 Results Summary:');
     console.log(`Code blocks: ${result.codeBlocks.passed}/${result.codeBlocks.total} passed`);
