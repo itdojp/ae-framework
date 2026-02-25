@@ -142,6 +142,7 @@ When using `@ts-expect-error` comments, follow this structured format:
 
 ```typescript
 // @ts-expect-error owner:@username expires:YYYY-MM-DD reason: detailed description
+const _example: number = 'type mismatch for policy example';
 ```
 
 **Required fields:**
@@ -151,10 +152,10 @@ When using `@ts-expect-error` comments, follow this structured format:
 
 **Examples:**
 ```typescript
-// @ts-expect-error owner:@alice expires:2025-12-31 reason: narrowing todo for complex union
+// @ts-expect-error owner:@alice expires:2027-12-31 reason: narrowing todo for complex union
 const result = complexUnion as string;
 
-// @ts-expect-error owner:@bob expires:2025-06-15 reason: legacy API compatibility until v2 migration
+// @ts-expect-error owner:@bob expires:2027-06-15 reason: legacy API compatibility until v2 migration
 legacyApi.unsafeMethod(data);
 ```
 
