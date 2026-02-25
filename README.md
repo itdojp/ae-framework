@@ -121,6 +121,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - 現行アーキテクチャ全体像: `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md`
 - 適用対象/入力/出力/ツール適性: `docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`
 - CI/品質ゲート: `docs/ci/phase2-ci-hardening-outline.md`, `docs/ci/label-gating.md`
+- ドキュメント検証ポリシー: `docs/ci/docs-doctest-policy.md`
 - 開発向け設計ドキュメント: [Enhanced State Manager](docs/development/enhanced-state-manager.md), [Circuit Breaker](docs/development/circuit-breaker.md)
 - ドキュメント整合チェック: `pnpm run check:doc-consistency`（`docs/quality/doc-consistency-lint.md`）
 - ヘビーテスト観測: `docs/ci/heavy-test-trend-archive.md`, `docs/ci/heavy-test-alerts.md`, `docs/ci/heavy-test-album.md`

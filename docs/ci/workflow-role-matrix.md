@@ -34,6 +34,7 @@
 | `pr-verify.yml` | PR向け標準検証 | call / dispatch |
 | `verify.yml` | traceability/formal系の統合検証入口 | PR / call / dispatch |
 | `workflow-lint.yml` | workflow品質ルール検証 | PR / push |
+| `docs-doctest.yml` | README/docs索引の軽量doctest + 週次全量doctest | PR(path) / push(main,path) / schedule / dispatch |
 | `coverage-check.yml` | カバレッジ閾値ゲート | PR / push / dispatch |
 | `spec-validation.yml` | spec fail-fast / schema検証 | PR / push / call / dispatch |
 
@@ -75,4 +76,5 @@
 
 - `docs/maintenance/workflow-inventory-2026-02-17.md`
 - `docs/ci-policy.md`
+- `docs/ci/docs-doctest-policy.md`
 - `docs/ci/copilot-review-gate.md`

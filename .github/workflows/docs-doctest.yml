@@ -1,0 +1,75 @@
+name: Docs Doctest
+
+on:
+  pull_request:
+    paths:
+      - 'README.md'
+      - 'docs/README.md'
+      - 'docs/**'
+      - 'scripts/doctest.ts'
+      - 'scripts/docs/check-doc-consistency.mjs'
+      - '.github/workflows/docs-doctest.yml'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+  push:
+    branches: [main]
+    paths:
+      - 'README.md'
+      - 'docs/README.md'
+      - 'docs/**'
+      - 'scripts/doctest.ts'
+      - 'scripts/docs/check-doc-consistency.mjs'
+      - '.github/workflows/docs-doctest.yml'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+  schedule:
+    - cron: '0 4 * * 0'
+  workflow_dispatch:
+    inputs:
+      full:
+        description: 'Run full docs doctest (`docs/**/*.md`)'
+        required: false
+        default: false
+        type: boolean
+
+permissions: read-all
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  doctest-index:
+    name: doctest-index
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+      - name: Check documentation consistency
+        run: node scripts/docs/check-doc-consistency.mjs
+      - name: Run doctest (README + docs index)
+        env:
+          DOCTEST_ENFORCE: '1'
+        run: pnpm -s run test:doctest:index
+
+  doctest-full:
+    name: doctest-full
+    if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.full) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+      - name: Run full docs doctest
+        env:
+          DOCTEST_ENFORCE: '1'
+        run: pnpm -s run test:doctest:full
