@@ -319,7 +319,7 @@
     "test:cli:fuzz": "vitest run tests/cli/fuzz.spec.ts",
     "test:contracts": "vitest run tests/contracts/",
     "test:doctest": "tsx scripts/doctest.ts",
-    "test:doctest:index": "tsx scripts/doctest.ts 'README.md' 'docs/README.md'",
+    "test:doctest:index": "tsx scripts/doctest.ts '{README.md,docs/README.md}'",
     "test:doctest:docs": "tsx scripts/doctest.ts 'docs/**/*.md'",
     "test:doctest:full": "tsx scripts/doctest.ts 'docs/**/*.md'",
     "test:doctest:readme": "tsx scripts/doctest.ts 'README.md'",

@@ -41,6 +41,7 @@ concurrency:
 jobs:
   doctest-index:
     name: doctest-index
+    if: ${{ github.event_name != 'schedule' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
