@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -13,7 +13,9 @@ export const DEFAULT_RUNBOOK_FILES = [
   'docs/ci/auto-merge.md',
 ];
 
-const SUPPORTED_SHELL_LANGS = new Set(['bash', 'sh', 'shell', 'zsh']);
+export const DEFAULT_RUNBOOK_DOCS_DIR = 'docs/ci';
+
+const SUPPORTED_SHELL_LANGS = new Set(['bash', 'sh', 'shell']);
 
 function parseCsv(value) {
   return value
@@ -148,21 +150,80 @@ function sanitizeShellSnippet(content) {
   return content.replace(/<[^>\n]+>/gu, 'PLACEHOLDER');
 }
 
-export function validateShellSyntax(content) {
-  const validation = spawnSync('bash', ['-n'], {
+export function discoverRunbookDocs(rootDir) {
+  const docsRoot = path.resolve(rootDir, DEFAULT_RUNBOOK_DOCS_DIR);
+  if (!existsSync(docsRoot)) {
+    return [];
+  }
+
+  const discovered = [];
+  const stack = [docsRoot];
+  while (stack.length > 0) {
+    const currentPath = stack.pop();
+    if (!currentPath) {
+      continue;
+    }
+    const entries = readdirSync(currentPath, { withFileTypes: true });
+    for (const entry of entries) {
+      const absolutePath = path.join(currentPath, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(absolutePath);
+        continue;
+      }
+      if (!entry.isFile() || path.extname(entry.name).toLowerCase() !== '.md') {
+        continue;
+      }
+      discovered.push(path.relative(rootDir, absolutePath).split(path.sep).join('/'));
+    }
+  }
+  discovered.sort((left, right) => left.localeCompare(right));
+  return discovered;
+}
+
+function resolveDocsToInspect(rootDir, docs, docsProvided) {
+  if (docsProvided) {
+    return docs;
+  }
+  const discovered = discoverRunbookDocs(rootDir);
+  if (discovered.length === 0) {
+    return docs;
+  }
+  return discovered;
+}
+
+export function validateShellSyntax(content, options = {}) {
+  const shellExecutable = options.shellExecutable || process.env.RUNBOOK_SHELL || 'bash';
+  const platform = options.platform || process.platform;
+  if (platform === 'win32') {
+    return {
+      ok: true,
+      skipped: true,
+      message: `shell syntax validation skipped on win32 (shell: ${shellExecutable})`,
+    };
+  }
+  const validation = spawnSync(shellExecutable, ['-n'], {
     encoding: 'utf8',
     stdio: ['pipe', 'pipe', 'pipe'],
     input: sanitizeShellSnippet(content),
   });
   if (validation.error) {
+    if (validation.error instanceof Error && 'code' in validation.error && validation.error.code === 'ENOENT') {
+      return {
+        ok: true,
+        skipped: true,
+        message: `shell syntax validation skipped: '${shellExecutable}' was not found in PATH`,
+      };
+    }
     const message = validation.error instanceof Error ? validation.error.message : String(validation.error);
     return {
       ok: false,
+      skipped: false,
       message,
     };
   }
   return {
     ok: validation.status === 0,
+    skipped: false,
     message: (validation.stderr || validation.stdout || '').trim(),
   };
 }
@@ -217,9 +278,10 @@ export function runRunbookCommandCheck(argv = process.argv) {
   const docsScanned = [];
   const missingDocs = [];
   const syntaxErrors = [];
+  const docsToInspect = resolveDocsToInspect(options.rootDir, options.docs, options.docsProvided);
   let shellBlocksScanned = 0;
 
-  for (const markdownPath of options.docs) {
+  for (const markdownPath of docsToInspect) {
     const absolutePath = path.resolve(options.rootDir, markdownPath);
     if (!existsSync(absolutePath)) {
       missingDocs.push({

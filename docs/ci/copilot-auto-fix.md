@@ -42,13 +42,13 @@ Copilot レビューのインラインコメントに含まれる ```` ```sugges
 ### 2.2 スコープ（docs / all）
 
 - `AE_COPILOT_AUTO_FIX_SCOPE=docs`（既定）
-  - PR の差分に `docs/**` と `../../README.md` 以外が含まれる場合、**auto-fix 全体をスキップ**します（安全側）
+  - PR の差分に `docs/**` と README.md 以外が含まれる場合、**auto-fix 全体をスキップ**します（安全側）
   - 理由は PR コメントに記録します
 - `AE_COPILOT_AUTO_FIX_SCOPE=all`
   - すべてのファイルを対象に suggestion 適用を試行します
 
 根拠（実装）:
-- allowlist: `docs/**`, `../../README.md`（`scripts/ci/copilot-auto-fix.mjs`）
+- allowlist: `docs/**`, README.md（`scripts/ci/copilot-auto-fix.mjs`）
 
 ### 2.3 ラベルopt-in（任意）
 
