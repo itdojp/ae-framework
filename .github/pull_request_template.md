@@ -21,7 +21,7 @@
 
 ## Policy Gate Inputs
 - [ ] `verify-lite` が green
-- [ ] `policy-gate` が green
+- [ ] `gate` が green
 
 ### High Risk Only
 - [ ] 人間Approve >= 1

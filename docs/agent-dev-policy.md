@@ -11,7 +11,7 @@
 
 ## 用語
 - **PR**：監査ログの単位。議論・検証結果・承認・履歴を残すための最小単位。
-- **Required checks**：Branch protection で必須化されたステータスチェック（本運用では `verify-lite` と `policy-gate`）。
+- **Required checks**：Branch protection で必須化されたステータスチェック（本運用では `verify-lite` と `gate`）。
 - **Low risk PR**：低リスク変更（人間Approve必須にしない）。
 - **High risk PR**：中〜高リスク変更（人間Approve必須＋追加ゲート必須）。
 - **Label gating**：PRラベルにより追加ゲート（重い検証、セキュリティ、厳格な契約検証等）を起動する運用。
@@ -21,7 +21,7 @@
 ---
 
 ## 基本方針（結論）
-1. **ae-framework は GitHub Actions（`verify-lite` + `policy-gate`）前提のため、原則 PR 単位で実行する。**
+1. **ae-framework は GitHub Actions（`verify-lite` + `gate`）前提のため、原則 PR 単位で実行する。**
    - PRは required checks のゲートとして運用する。
    - `main` への直接 push は原則禁止（例外は「例外運用」参照）。
 
@@ -75,7 +75,7 @@
 ### 2) Required checks（最低保証）
 - `main` へのマージ条件として、以下を required checks に設定する：
   - `verify-lite`
-  - `policy-gate`
+  - `gate`
 - required checks は **軽量・決定的**なものを基本とする。
   - 重い/不安定な検証は label gating で opt-in に寄せる（下記）。
 

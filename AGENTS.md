@@ -3,7 +3,7 @@
 このドキュメントは、リポジトリ内でエージェントが安全かつ一貫した方法で作業するためのガイドです。
 
 ## 目的
-- Risk-based PR gating を前提に CI を安定運用する（required: `verify-lite` + `policy-gate`）
+- Risk-based PR gating を前提に CI を安定運用する（required: `verify-lite` + `gate`）
 - 小さく安全な PR を多数（revert しやすい粒度）
 - actionlint 準拠（echo→printf、GITHUB_OUTPUT/GITHUB_ENV は printf で追記）
 - Coverage / Formal の表示は PR コメントに要約を投稿（coverage は閾値の由来/ポリシー、formal は再現ヒントと tools チェックを提示）
