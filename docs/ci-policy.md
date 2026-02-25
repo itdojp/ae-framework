@@ -50,6 +50,7 @@ CI Extended restores cached heavy test artifacts (`.cache/test-results`) when re
 - `run-flake`: enable flake-detection on PRs
 - `run-e2e`: enable E2E tests on PRs
 - `coverage:<pct>`: override coverage threshold for coverage-check (default 80). e.g., `coverage:75`
+- `enforce-context-pack`: enable blocking mode for `context-pack-quality-gate.yml` on PRs
  - `qa-batch:commands` / `qa-batch:cli` / `qa-batch:property` / `qa-batch:agents`: run additional CI Fast batches for the specific categories (opt-in)
 - `enforce-ts-inventory`: in Verify Lite, enforce no increase of `@ts-ignore` against `config/ts-inventory-baseline.json` (label-gated). `pnpm run inventory:ts` is always collected in non-docs-only runs (`artifacts/verify-lite/ts-inventory.json`).
 
@@ -89,6 +90,7 @@ CI Extended restores cached heavy test artifacts (`.cache/test-results`) when re
     - `/coverage <pct|clear>` … `coverage:<pct>` を設定/クリア（しきい値上書き）
     - `/enforce-typecov` … `enforce-typecov` を付与（型カバレッジ enforcement）
     - `/enforce-coverage` … `enforce-coverage` を付与（カバレッジ enforcement）
+    - `/enforce-context-pack` … `enforce-context-pack` を付与（Context Pack gate strict）
   - 使い分け例（推奨）
     - 追加確認したいカテゴリのみラベル付与 → `/ci-fast-dispatch` で即時起動
     - Verify Lite のみを再実行 → `/verify-lite`
@@ -182,6 +184,7 @@ CI Extended 実行後は heavy テスト成果物を `.cache/test-results` に�
 - `run-flake`: flake-detection を PR で有効化
 - `run-e2e`: E2E テストを PR で有効化
 - `coverage:<pct>`: coverage-check のしきい値を上書き（既定 80）。例: `coverage:75`
+- `enforce-context-pack`: `context-pack-quality-gate.yml` を PR で blocking 化
 - `enforce-ts-inventory`: Verify Lite で `config/ts-inventory-baseline.json` 基準の `@ts-ignore` 増加を禁止（ラベル付与時のみ強制）。docs-only 以外では `pnpm run inventory:ts` の結果を `artifacts/verify-lite/ts-inventory.json` に収集。
 
 ### 手動実行（Actions UI）

@@ -34,6 +34,7 @@ PRやIssueで **必要な検証だけを opt-in で起動** し、CIコストと
 | `run-drift` | codegen drift detection | `codegen-drift-check.yml` | `/run-drift` で付与 |
 | `enforce-bdd-lint` | BDD lint を strict 化 | `verify-lite.yml` | `/enforce-bdd-lint` で付与 |
 | `enforce-verify-lite-lint` | verify-lite lint baseline を enforce | `verify-lite.yml` | PRラベルで制御 |
+| `enforce-context-pack` | Context Pack E2E を strict 化 | `context-pack-quality-gate.yml` | Phase C までの段階導入で利用 |
 | `ci-non-blocking` | 一部ジョブを non-blocking 化 | 各workflowのcontinue-on-error設定 | `/non-blocking` で付与 |
 | `enforce-coverage` | coverageゲートの強制 | `coverage-check.yml` | `/enforce-coverage` で付与 |
 | `coverage:<pct>` | coverage閾値上書き | `coverage-check.yml` | `/coverage 75` 等で付与 |
@@ -111,6 +112,8 @@ Codex Autopilot Lane を使う場合:
   - `coverage:<pct>` を付与／クリア
 - `/enforce-coverage`  
   - coverage ゲートを強制
+- `/enforce-context-pack`
+  - `enforce-context-pack` を付与（Context Pack E2E を strict 化）
 - `/pr-digest` / `/pr-detailed`  
   - PR summary の出力モードを切替
 - `/formal-help` / `/formal-quickstart`  

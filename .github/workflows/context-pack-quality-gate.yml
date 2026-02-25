@@ -1,0 +1,138 @@
+name: Context Pack Quality Gate
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/context-pack-quality-gate.yml'
+      - 'scripts/context-pack/**'
+      - 'scripts/ci/context-pack-gate-observability.mjs'
+      - 'fixtures/context-pack/**'
+      - 'schema/context-pack-*.schema.json'
+      - 'schema/context-pack-v1.schema.json'
+      - 'spec/context-pack/**'
+      - 'tests/unit/ci/context-pack-*.test.ts'
+      - 'docs/ci/context-pack-gate-rollout.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/context-pack-quality-gate.yml'
+      - 'scripts/context-pack/**'
+      - 'scripts/ci/context-pack-gate-observability.mjs'
+      - 'fixtures/context-pack/**'
+      - 'schema/context-pack-*.schema.json'
+      - 'schema/context-pack-v1.schema.json'
+      - 'spec/context-pack/**'
+      - 'tests/unit/ci/context-pack-*.test.ts'
+      - 'docs/ci/context-pack-gate-rollout.md'
+  workflow_dispatch:
+    inputs:
+      strict:
+        description: 'Run in strict (blocking) mode'
+        required: false
+        default: false
+        type: boolean
+
+permissions: read-all
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      strict: ${{ steps.mode.outputs.strict }}
+      reason: ${{ steps.mode.outputs.reason }}
+    steps:
+      - name: Resolve gate mode
+        id: mode
+        uses: actions/github-script@v7
+        env:
+          CONTEXT_PACK_ENFORCE_MAIN: ${{ vars.CONTEXT_PACK_ENFORCE_MAIN || '0' }}
+        with:
+          script: |
+            const labels = (context.payload.pull_request?.labels || []).map((item) => item.name);
+            const dispatchStrict = String(context.payload.inputs?.strict || '').toLowerCase() === 'true';
+            const enforceLabel = labels.includes('enforce-context-pack');
+            const enforceMain = String(process.env.CONTEXT_PACK_ENFORCE_MAIN || '0') === '1';
+            const isMainRef = context.ref === 'refs/heads/main';
+
+            let strict = false;
+            let reason = 'default-report-only';
+
+            if (dispatchStrict) {
+              strict = true;
+              reason = 'workflow_dispatch.strict';
+            } else if (enforceLabel) {
+              strict = true;
+              reason = 'label:enforce-context-pack';
+            } else if (isMainRef && enforceMain) {
+              strict = true;
+              reason = 'main+repo_var:CONTEXT_PACK_ENFORCE_MAIN';
+            }
+
+            core.setOutput('strict', String(strict));
+            core.setOutput('reason', reason);
+            core.notice(`Context Pack gate strict=${strict} reason=${reason}`);
+
+  context-pack-e2e:
+    name: context-pack-e2e
+    needs: gate
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ needs.gate.outputs.strict != 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+      - name: Run Context Pack E2E fixture
+        run: |
+          pnpm -s run context-pack:e2e-fixture -- \
+            --fixture-dir fixtures/context-pack/e2e \
+            --report-dir artifacts/context-pack
+      - name: Observe rollout metrics (non-blocking)
+        if: ${{ always() }}
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/ci/context-pack-gate-observability.mjs \
+            --repo "${{ github.repository }}" \
+            --workflow-id context-pack-quality-gate.yml \
+            --days 14 \
+            --output-json artifacts/context-pack/context-pack-gate-observability.json \
+            --output-md artifacts/context-pack/context-pack-gate-observability.md
+      - name: Append summary
+        if: ${{ always() }}
+        env:
+          STRICT_MODE: ${{ needs.gate.outputs.strict }}
+          STRICT_REASON: ${{ needs.gate.outputs.reason }}
+        run: |
+          {
+            echo "## Context Pack Quality Gate"
+            echo "- strict: ${STRICT_MODE}"
+            echo "- reason: ${STRICT_REASON}"
+            if [ -f artifacts/context-pack/context-pack-e2e-summary.json ]; then
+              echo "- e2e summary: artifacts/context-pack/context-pack-e2e-summary.json"
+            fi
+            if [ -f artifacts/context-pack/context-pack-gate-observability.md ]; then
+              echo ""
+              cat artifacts/context-pack/context-pack-gate-observability.md
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload Context Pack gate artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: context-pack-gate-artifacts
+          path: |
+            artifacts/context-pack/context-pack-e2e-summary.json
+            artifacts/context-pack/context-pack-*-report.json
+            artifacts/context-pack/context-pack-*-report.md
+            artifacts/context-pack/context-pack-gate-observability.json
+            artifacts/context-pack/context-pack-gate-observability.md
+          if-no-files-found: warn

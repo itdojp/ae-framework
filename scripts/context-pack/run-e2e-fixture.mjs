@@ -32,6 +32,10 @@ function parseArgs(argv) {
     const arg = argv[index];
     const next = argv[index + 1];
 
+    if (arg === '--') {
+      continue;
+    }
+
     if (arg === '--help' || arg === '-h') {
       options.help = true;
       continue;

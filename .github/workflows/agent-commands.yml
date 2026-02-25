@@ -98,6 +98,7 @@ jobs:
 
             // Supported commands:
             // /run-qa, /run-security, /non-blocking, /ready, /pr-digest, /pr-detailed
+            // /enforce-context-pack
             // /review [strict]
             // /handoff A|B|C
             // Dispatchers (require workflow_dispatch on target):
@@ -201,6 +202,10 @@ jobs:
               case '/enforce-coverage': {
                 await addLabels(['enforce-coverage']);
                 return reply('Label `enforce-coverage` added. Coverage gate will be enforced.');
+              }
+              case '/enforce-context-pack': {
+                await addLabels(['enforce-context-pack']);
+                return reply('Label `enforce-context-pack` added. Context Pack gate will run in strict mode.');
               }
               case '/pr-digest':
                 await addLabels(['pr-summary:digest']);
