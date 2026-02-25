@@ -7,7 +7,7 @@
 ## 日本語（概要）
 
 PR ラベルでゲートを段階的に強化するための方針です（既定は非ブロッキング）。
-- `enforce-artifacts`, `enforce-testing`, `enforce-coverage`, `coverage:<pct>`, `trace:<id>`, `pr-summary:detailed`
+- `enforce-artifacts`, `enforce-testing`, `enforce-coverage`, `enforce-context-pack`, `coverage:<pct>`, `trace:<id>`, `pr-summary:detailed`
 - `run-ci-extended`, `run-integration`, `run-property`, `run-mbt`, `run-mutation`
 - オプトイン系: `run-security`（Security/SBOM）、`run-hermetic`（Hermetic CI）、`run-qa`（QA bench）
 - 各ワークフローがラベルを読み取り、`continue-on-error` 等を切り替え
@@ -22,6 +22,7 @@ Purpose
 Labels
 - `enforce-artifacts`: make artifacts validation (ajv) blocking
 - `enforce-testing`: make testing scripts (property/replay/BDD lint) blocking
+- `enforce-context-pack`: make Context Pack E2E validator blocking (`context-pack-quality-gate.yml`)
 - `trace:<id>`: set TRACE_ID for focused runs in property/replay scripts
 - `pr-summary:detailed`: render a more detailed PR summary (vs. digest)
 - `run-ci-extended`: launch the heavy CI Extended workflow (integration, property, MBT, pact, mutation auto diff)

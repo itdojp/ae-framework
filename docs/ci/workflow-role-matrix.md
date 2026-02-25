@@ -1,6 +1,6 @@
 # Workflow Role Matrix (core / optional / report)
 
-最終更新: 2026-02-24
+最終更新: 2026-02-25
 
 対象: `.github/workflows/*.yml` の運用責務整理（Issue #2031 / Phase 3）
 
@@ -48,6 +48,7 @@
 | `formal-aggregate.yml` | formal実行結果集約 | call / dispatch |
 | `security.yml` | security系重検証 | PR(label) / push / schedule / dispatch |
 | `sbom-generation.yml` | SBOM生成・脆弱性収集 | PR/push/call/dispatch |
+| `context-pack-quality-gate.yml` | Context Pack E2E検証（段階導入ゲート） | PR(path) / push(main) / dispatch |
 | `flake-detect.yml` / `flake-stability.yml` | flake検出/再試行 | schedule / dispatch / call |
 | `podman-smoke.yml` / `docker-tests.yml` | コンテナ実行検証 | call/dispatch/schedule |
 | `mutation-quick.yml` | mutation quick検証 | dispatch |

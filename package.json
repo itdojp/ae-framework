@@ -80,6 +80,7 @@
     "context-pack:verify-natural-transformation": "node scripts/context-pack/verify-natural-transformation.mjs",
     "context-pack:verify-product-coproduct": "node scripts/context-pack/verify-product-coproduct.mjs",
     "context-pack:verify-phase5": "node scripts/context-pack/verify-phase5-templates.mjs",
+    "ci:context-pack:observe": "node scripts/ci/context-pack-gate-observability.mjs",
     "verify:profile": "node scripts/verify/run.mjs",
     "evaluate:usefulness": "node scripts/evaluation/evaluate-usefulness.mjs",
     "flow:run": "node scripts/agent-builder/flow-runner.mjs --flow fixtures/flow/sample.flow.json",

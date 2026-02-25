@@ -121,6 +121,7 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
  - Automation Observability: `ci/automation-observability.md`（共通JSON/Step Summary出力）
  - Automation Alerting: `ci/automation-alerting.md`（通知条件/テンプレート/重複抑止）
  - Automation SLO/MTTR: `ci/automation-slo-mttr.md`（成功率SLOと復旧時間MTTRの定義）
+ - Context Pack Gate Rollout: `ci/context-pack-gate-rollout.md`（non-blocking→blocking 段階導入）
  - Automation Permission Boundaries: `ci/automation-permission-boundaries.md`（workflow_dispatch / issue_comment の権限境界）
  - Workflow dispatch validation report (2026-02-12): `ci/workflow-dispatch-validation-2026-02-12.md`
 
