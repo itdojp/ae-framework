@@ -3,20 +3,29 @@
 このドキュメントは、リポジトリ内でエージェントが安全かつ一貫した方法で作業するためのガイドです。
 
 ## 目的
-- CI 安定化・段階導入（Verify Lite 必須、その他はラベル駆動）
+- Risk-based PR gating を前提に CI を安定運用する（required: `verify-lite` + `policy-gate`）
 - 小さく安全な PR を多数（revert しやすい粒度）
 - actionlint 準拠（echo→printf、GITHUB_OUTPUT/GITHUB_ENV は printf で追記）
- - Coverage/ Formal の表示はPRコメントに要約を投稿（coverageは閾値の由来/ポリシー、formalは再現ヒントとtoolsチェックを提示）
+- Coverage / Formal の表示は PR コメントに要約を投稿（coverage は閾値の由来/ポリシー、formal は再現ヒントと tools チェックを提示）
 
 ## ブランチ/PR運用
-- ブランチ名: `chore/ci-<topic>-<short>`（例: `chore/ci-actionlint-printf-2`）
-- PR ラベル:
-  - `run-qa`: ae-ci の `qa-bench` を実行
+- ブランチ名: `feat/<issue>-<topic>` または `chore/ci-<topic>-<short>`
+- PR には `risk:low` または `risk:high` を必ず付与する
+  - `risk:low`: required checks green なら auto-merge 対象
+  - `risk:high`: 人間Approve >= 1 + policyラベル + 追加ゲート green が必須
+- 主要ラベル:
   - `run-security`: Security/SBOM 系を実行
-  - `ci-non-blocking`: 非ブロッキングで実行（continue-on-error）
-  - `enforce-security`: Security しきい値を強制
-- `coverage:<pct>`: coverage-check のしきい値上書き
-  - `run-cedar`: Cedar policies の非ブロッキング検証を起動（cedar-quality-gates.yml）
+  - `run-ci-extended`: 重い回帰テストを実行
+  - `enforce-artifacts`: artifacts/schema 検証を strict 化
+  - `enforce-testing`: test harness 検証を strict 化
+  - `enforce-context-pack`: context-pack 境界検証を strict 化
+  - `coverage:<pct>`: coverage-check のしきい値上書き
+- ラベル定義/判定基準は `policy/risk-policy.yml` を一次情報として扱う
+
+## レビュー観点（risk別）
+- `risk:low`: 誤分類がないか、required checks が green か、rollback が明記されているかを確認
+- `risk:high`: Approve 条件、必須ラベル、追加ゲート結果（Security/Artifacts/Testing/Context Pack）を確認
+- CI 失敗時は「再現手順（seed/trace/command）」と「修正根拠」を PR に記載する
 
 ## テスト/検証
 - ローカル: `corepack enable && pnpm i && pnpm build`

@@ -1,25 +1,41 @@
-Title: <concise change summary>
+## Summary
+- 何を変更したか
+- 変更理由（背景/課題）
 
-Summary
-- What changed and why
-- Risk/impact
+## Source / Scope
+- Issue: #
+- 対象範囲（path / workflow / domain）:
 
-CI Labels (optional)
-- Add `run-qa` to execute QA/Bench on this PR
-- Add `run-security` to execute Security/Compliance checks
-- Add `ci-non-blocking` to allow non-critical checks to continue-on-error
-- Add `coverage:<pct>` to set coverage threshold (default 80)
-- For integration flake diagnostics, rerun the failing job with `AE_INTEGRATION_TRACE_HANDLES=1` (see `docs/testing/integration-runtime-helpers.md`)
+## Risk Classification (Required)
+- Risk: `risk:low` / `risk:high`
+- 判定理由:
 
-Checklist
-- [ ] Verify Lite passes locally (`pnpm types:check && pnpm lint && pnpm build`)
-- [ ] test:fast passes (`pnpm run test:fast`)
-- [ ] Docs updated if behavior changes (see `docs/ci-policy.md`)
-- [ ] Plan->Spec traceability を記載（source issue/thread, spec path, gate/evidence）
-- [ ] 変更の意味保存（Natural Transformation）を更新（必要時: `spec/context-pack/natural-transformations.json`）
-- [ ] 入力契約/失敗variant（Product/Coproduct）を更新（必要時: `spec/context-pack/product-coproduct-map.json`）
+## Rollback
+- 取り消し手順（revert対象コミット / 無効化手順）:
+- 影響最小化策（feature flag / 段階適用）:
 
-If applicable (Web API + DB flow)
-- [ ] Spec links 記載: OpenAPI / BDD / Property
-- [ ] 実行テストを列挙: lint / test:fast / test:integration / test:property / mutation quick(任意)
-- [ ] キャッシュ操作を記載: sync-test-results (restore/store/snapshot) / trend比較結果
+## Acceptance Criteria
+- [ ] 要件を満たす
+- [ ] 既存挙動を壊さない
+- [ ] ドキュメント更新済み
+
+## Policy Gate Inputs
+- [ ] `verify-lite` が green
+- [ ] `policy-gate` が green
+
+### High Risk Only
+- [ ] 人間Approve >= 1
+- [ ] 変更内容に応じたラベルを付与済み
+  - [ ] `run-security`（依存/供給網リスク）
+  - [ ] `run-ci-extended`（重い回帰）
+  - [ ] `enforce-artifacts`（成果物契約）
+  - [ ] `enforce-testing`（再現性/テスト厳格化）
+  - [ ] `enforce-context-pack`（依存境界）
+
+## Validation Evidence
+- [ ] ローカル確認（実行コマンドを記載）
+- [ ] CI確認（workflow/job/主要出力）
+- [ ] 失敗時の再現手順（seed/trace/command）
+
+## Notes
+- レビュー観点（特に見てほしい箇所）:

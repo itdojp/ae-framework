@@ -1,0 +1,86 @@
+version: 1
+updated_at: "2026-02-26"
+owner: "ae-framework"
+
+labels:
+  risk:
+    low: "risk:low"
+    high: "risk:high"
+  optional_gates:
+    - "run-security"
+    - "run-ci-extended"
+    - "enforce-artifacts"
+    - "enforce-testing"
+    - "enforce-context-pack"
+
+required_checks:
+  - "verify-lite"
+  - "policy-gate"
+
+high_risk:
+  min_human_approvals: 1
+  require_policy_labels: true
+  fail_when_required_gate_is_pending: true
+
+low_risk:
+  allow_auto_merge: true
+  require_human_approval: false
+
+classification:
+  high_risk_paths:
+    - ".github/workflows/**"
+    - "infra/**"
+    - "terraform/**"
+    - "k8s/**"
+    - "ansible/**"
+    - "db/migrations/**"
+    - "schema/**"
+    - "auth/**"
+    - "security/**"
+    - "config/**"
+  force_high_risk_when:
+    - "contains_dependency_manifest_change"
+    - "contains_external_interface_change"
+    - "contains_context_boundary_change"
+
+label_requirements:
+  - id: "dependency-supply-chain"
+    when_any_changed:
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "package-lock.json"
+      - "yarn.lock"
+      - "go.mod"
+      - "go.sum"
+      - "requirements*.txt"
+      - "poetry.lock"
+      - "Gemfile.lock"
+      - "composer.lock"
+    require_labels:
+      - "run-security"
+  - id: "external-interface"
+    when_any_changed:
+      - "api/**"
+      - "contracts/**"
+      - "schema/**"
+      - "spec/**"
+      - "openapi/**"
+    require_labels:
+      - "run-ci-extended"
+      - "enforce-artifacts"
+  - id: "testing-reproducibility"
+    when_any_changed:
+      - "tests/**"
+      - "scripts/testing/**"
+      - "scripts/replay/**"
+      - ".github/workflows/testing-ddd-scripts.yml"
+    require_labels:
+      - "enforce-testing"
+  - id: "context-pack-boundary"
+    when_any_changed:
+      - "spec/context-pack/**"
+      - "configs/context-pack/**"
+      - "scripts/context-pack/**"
+      - ".github/workflows/context-pack-quality-gate.yml"
+    require_labels:
+      - "enforce-context-pack"

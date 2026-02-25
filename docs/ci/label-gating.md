@@ -7,10 +7,12 @@
 ## 日本語（概要）
 
 PR ラベルでゲートを段階的に強化するための方針です（既定は非ブロッキング）。
+- `risk:low`, `risk:high`
 - `enforce-artifacts`, `enforce-testing`, `enforce-coverage`, `enforce-context-pack`, `coverage:<pct>`, `trace:<id>`, `pr-summary:detailed`
 - `run-ci-extended`, `run-integration`, `run-property`, `run-mbt`, `run-mutation`
 - オプトイン系: `run-security`（Security/SBOM）、`run-hermetic`（Hermetic CI）、`run-qa`（QA bench）
 - 各ワークフローがラベルを読み取り、`continue-on-error` 等を切り替え
+- required checks は `verify-lite` + `policy-gate` を想定（`policy/risk-policy.yml` が一次情報）
 
 CI Extended を再実行する際は `.cache/test-results` に保存された成果物が自動復元されます。必要に応じて `node scripts/pipelines/sync-test-results.mjs --status` / `--restore` を実行し、完了後は `--store` で更新してください。差分概要は `node scripts/pipelines/compare-test-trends.mjs` で確認でき、Step Summary にトレンド比較が追記されます。スケジュール実行では `ci-heavy-${ runner.os }-schedule` キーを使って直近 Nightly の baseline を共有し、`heavy-test-trends-history` アーティファクトに履歴を蓄積します。
 
@@ -20,6 +22,8 @@ Purpose
 - Enable gradual tightening of CI by toggling gates per PR using labels. Default remains non‑blocking to avoid disruption.
 
 Labels
+- `risk:low`: eligible for auto-merge after required checks pass
+- `risk:high`: requires human approval + policy labels + policy-gate
 - `enforce-artifacts`: make artifacts validation (ajv) blocking
 - `enforce-testing`: make testing scripts (property/replay/BDD lint) blocking
 - `enforce-context-pack`: make Context Pack E2E validator blocking (`context-pack-quality-gate.yml`)
