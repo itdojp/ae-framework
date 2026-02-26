@@ -43,7 +43,7 @@ The CI Extended workflow restores cached heavy test artifacts from `.cache/test-
 
 Workflows
 - validate-artifacts-ajv.yml: reads `enforce-artifacts` and passes strict mode to `pnpm run artifacts:validate`
-- testing-ddd-scripts.yml: reads `enforce-testing` and toggles `continue-on-error`; reads `trace:<id>` to focus runs
+- testing-ddd-scripts.yml: reads `enforce-testing` and makes property/replay/BDD lint blocking only in strict mode; reads `trace:<id>` to focus runs
 - pr-ci-status-comment.yml: reads `pr-summary:detailed` to switch summary mode
 
 Artifacts
@@ -52,6 +52,12 @@ Artifacts
   - `artifacts/schema-validation/summary.md`
   - `artifacts/schema-validation/errors.json`
 - `enforce-artifacts` が付与されると strict モード（スキーマ違反で exit 1）になります。
+
+Testing reproducibility artifacts
+- `artifacts/properties/summary.json`
+- `artifacts/domain/replay.summary.json`
+- `artifacts/mbt/summary.json`
+- `artifacts/testing/repro-summary.{json,md}` (CI Step Summary source)
 
 Notes
 - These controls are per‑PR. Organization/branch‑wide enforcement can be added later (e.g., always blocking on main) once agreed.

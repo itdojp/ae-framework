@@ -14,8 +14,15 @@ describe('Integration: replay-runner (strict mode failure)', () => {
       ];
       const input = writeTempJson(tmpDir, 'events.strict.json', events);
       const output = path.join(tmpDir, 'replay.summary.strict.json');
+      const counterexample = path.join(tmpDir, 'replay.counterexample.strict.json');
       const res = spawnSync('node', ['scripts/testing/replay-runner.mjs'], {
-        env: { ...process.env, REPLAY_INPUT: input, REPLAY_OUTPUT: output, REPLAY_STRICT: '1' },
+        env: {
+          ...process.env,
+          REPLAY_INPUT: input,
+          REPLAY_OUTPUT: output,
+          REPLAY_COUNTEREXAMPLE_PATH: counterexample,
+          REPLAY_STRICT: '1'
+        },
         encoding: 'utf-8'
       });
       expect(res.status).not.toBe(0);
@@ -23,6 +30,11 @@ describe('Integration: replay-runner (strict mode failure)', () => {
       const summary = JSON.parse(fs.readFileSync(output, 'utf-8'));
       expect(Array.isArray(summary.violatedInvariants)).toBe(true);
       expect(summary.violatedInvariants.length).toBeGreaterThan(0);
+      expect(summary.failed).toBeGreaterThan(0);
+      expect(typeof summary.reproducibleCommand).toBe('string');
+      expect(typeof summary.counterexamplePath).toBe('string');
+      expect(summary.counterexamplePath).toBe(counterexample);
+      expect(fs.existsSync(counterexample)).toBe(true);
     } finally {
       rmrf(tmpDir);
     }

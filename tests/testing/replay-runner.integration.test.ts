@@ -23,6 +23,12 @@ describe('Integration: replay-runner', () => {
       expect(fs.existsSync(output)).toBe(true);
       const summary = JSON.parse(fs.readFileSync(output, 'utf-8'));
       expect(summary).toHaveProperty('traceId');
+      expect(summary).toHaveProperty('seed');
+      expect(summary).toHaveProperty('runs', 1);
+      expect(summary).toHaveProperty('passed');
+      expect(summary).toHaveProperty('failed');
+      expect(summary).toHaveProperty('durationMs');
+      expect(summary).toHaveProperty('reproducibleCommand');
       expect(summary).toHaveProperty('totalEvents', events.length);
       expect(summary).toHaveProperty('finalState');
       expect(summary).toHaveProperty('violatedInvariants');

@@ -43,24 +43,38 @@ jobs:
             const t = labels.find(n => n.startsWith('trace:'));
             if (t) core.setOutput('trace_id', t.slice(6));
       - name: Property harness (#406)
+        continue-on-error: ${{ steps.gate.outputs.strict != 'true' }}
         env:
           TRACE_ID: ${{ steps.trace.outputs.trace_id }}
         run: |
-          if [ -n "${TRACE_ID}" ]; then TRACE_ID=${TRACE_ID} pnpm run test:property:focus --silent || true; else pnpm run test:property --silent || true; fi
+          if [ -n "${TRACE_ID}" ]; then
+            TRACE_ID=${TRACE_ID} pnpm run test:property:focus --silent
+          else
+            pnpm run test:property --silent
+          fi
       - name: Replay runner (#411)
+        continue-on-error: ${{ steps.gate.outputs.strict != 'true' }}
         env:
           TRACE_ID: ${{ steps.trace.outputs.trace_id }}
         run: |
-          if [ -n "${TRACE_ID}" ]; then TRACE_ID=${TRACE_ID} pnpm run test:replay:focus --silent || true; else pnpm run test:replay --silent || true; fi
+          if [ -n "${TRACE_ID}" ]; then
+            TRACE_ID=${TRACE_ID} pnpm run test:replay:focus --silent
+          else
+            pnpm run test:replay --silent
+          fi
       - name: BDD lint (#410)
-        continue-on-error: ${{ github.ref != 'refs/heads/main' && steps.gate.outputs.strict != 'true' }}
-        run: pnpm run bdd:lint --silent || true
+        continue-on-error: ${{ steps.gate.outputs.strict != 'true' }}
+        run: pnpm run bdd:lint --silent
       - name: Formal GWT format (#407)
         run: |
           if [ -f formal/summary.json ]; then node scripts/formal/format-counterexamples.mjs; fi
       - name: Aggregate artifacts (#408)
         run: pnpm run artifacts:aggregate --silent || true
+      - name: Render reproducibility summary
+        if: always()
+        run: node scripts/ci/render-testing-repro-summary.mjs
       - name: Upload artifacts (summary)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: quality-artifacts
