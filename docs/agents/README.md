@@ -12,6 +12,7 @@
 - 権限境界: `docs/ci/automation-permission-boundaries.md`
 - Risk/Label判定: `policy/risk-policy.yml`
 - Slash Commands実装: `.github/workflows/agent-commands.yml`
+- Slash Commands catalog（生成）: `docs/agents/commands.md`
 - Workflow責務整理: `docs/ci/workflow-role-matrix.md`
 
 ## 利用順
