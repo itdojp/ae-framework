@@ -246,6 +246,7 @@ async function run(options = parseArgs(process.argv)) {
   const headRepoName = String(pullRequest?.head?.repo?.full_name || '').trim();
   const canWrite = headRepoName === repo && !options.dryRun;
   const writeSkips = [];
+  let writeMode = canWrite ? 'write' : 'readonly';
 
   if (!canWrite) {
     if (options.dryRun) {
@@ -257,15 +258,21 @@ async function run(options = parseArgs(process.argv)) {
   }
 
   if (canWrite) {
-    const repositoryLabels = listRepositoryLabels(repo);
-    for (const label of [...targetLabels, ...optionalGateLabels]) {
-      createLabelIfMissing(repo, label, repositoryLabels);
-    }
-    if (missingLabels.length > 0) {
-      addIssueLabels(repo, prNumber, missingLabels);
-    }
-    for (const label of removableLabels) {
-      removeIssueLabel(repo, prNumber, label);
+    try {
+      const repositoryLabels = listRepositoryLabels(repo);
+      for (const label of [...targetLabels, ...optionalGateLabels]) {
+        createLabelIfMissing(repo, label, repositoryLabels);
+      }
+      if (missingLabels.length > 0) {
+        addIssueLabels(repo, prNumber, missingLabels);
+      }
+      for (const label of removableLabels) {
+        removeIssueLabel(repo, prNumber, label);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      writeMode = 'readonly-fallback';
+      writeSkips.push(`write-denied: ${message.replace(/\s+/g, ' ').trim()}`);
     }
   }
 
@@ -277,7 +284,7 @@ async function run(options = parseArgs(process.argv)) {
     currentRiskLabels: currentLabels.filter((label) => label === riskLabels.low || label === riskLabels.high),
     targetLabels: [...targetLabels].sort(),
     requiredLabels,
-    writeMode: canWrite ? 'write' : 'readonly',
+    writeMode,
     writeSkips,
     missingLabels,
     removedLabels: removableLabels,
