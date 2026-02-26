@@ -333,6 +333,7 @@ function buildLocalArtifactsSnapshot() {
     schemaValidation: readJsonIfExists('artifacts/schema-validation/summary.json'),
     testingRepro: readJsonIfExists('artifacts/testing/repro-summary.json'),
     contextPackDeps: readJsonIfExists('artifacts/context-pack/deps-summary.json'),
+    contextPackSuggestions: readJsonIfExists('artifacts/context-pack/context-pack-suggestions.json'),
     heavyTrendSummary: readJsonIfExists('reports/heavy-test-trends-history/summary.json'),
   };
 }
@@ -565,6 +566,43 @@ function buildReproducibleHints(gateResults, labels, localArtifacts) {
   return dedupeHints(hints).slice(0, 20);
 }
 
+function normalizeRecommendedContextChanges(payload) {
+  if (!payload || payload._parseError || !Array.isArray(payload.recommendedContextChanges)) {
+    return [];
+  }
+  const normalized = [];
+  for (const entry of payload.recommendedContextChanges) {
+    if (!entry || typeof entry !== 'object') {
+      continue;
+    }
+    const file = typeof entry.file === 'string' ? entry.file.trim() : '';
+    const changeType = typeof entry.changeType === 'string' ? entry.changeType.trim() : '';
+    const rationale = typeof entry.rationale === 'string' ? entry.rationale.trim() : '';
+    if (!file || !changeType || !rationale) {
+      continue;
+    }
+    normalized.push({
+      file,
+      changeType,
+      targetId: typeof entry.targetId === 'string' && entry.targetId.trim().length > 0 ? entry.targetId.trim() : null,
+      rationale,
+      suggestedCommand:
+        typeof entry.suggestedCommand === 'string' && entry.suggestedCommand.trim().length > 0
+          ? entry.suggestedCommand.trim()
+          : null,
+    });
+  }
+  return normalized.slice(0, 20);
+}
+
+function buildRecommendedContextChanges(gateResults, localArtifacts) {
+  const contextPackGate = gateResults.contextPack;
+  if (!contextPackGate || !['fail', 'warn'].includes(contextPackGate.status)) {
+    return [];
+  }
+  return normalizeRecommendedContextChanges(localArtifacts.contextPackSuggestions);
+}
+
 function buildHarnessHealthReport({
   repo,
   prNumber,
@@ -618,6 +656,11 @@ function buildHarnessHealthReport({
     }
   }
 
+  const recommendedContextChanges = buildRecommendedContextChanges(gateResults, localArtifacts);
+  if (gateResults.contextPack) {
+    gateResults.contextPack.recommendedContextChanges = recommendedContextChanges;
+  }
+
   return {
     schemaVersion: 'harness-health/v1',
     generatedAt: toIsoNow(),
@@ -630,6 +673,7 @@ function buildHarnessHealthReport({
     severity,
     reasons: Array.from(new Set(reasons)),
     recommendedLabels: Array.from(new Set(recommendedLabels)),
+    recommendedContextChanges,
     reproducibleHints: buildReproducibleHints(gateResults, labels, localArtifacts),
   };
 }
@@ -652,6 +696,9 @@ function renderMarkdown(report, mode) {
   if (report.recommendedLabels.length > 0) {
     lines.push('');
     lines.push(`- recommended labels: ${report.recommendedLabels.map((label) => `\`${label}\``).join(', ')}`);
+  }
+  if (Array.isArray(report.recommendedContextChanges) && report.recommendedContextChanges.length > 0) {
+    lines.push(`- recommended context changes: ${report.recommendedContextChanges.length}`);
   }
 
   if (mode === 'detailed') {
@@ -682,6 +729,27 @@ function renderMarkdown(report, mode) {
           parts.push(`command=\`${hint.command}\``);
         }
         lines.push(`- ${hint.gate}: ${parts.join(', ') || 'n/a'}`);
+      }
+    }
+
+    lines.push('');
+    lines.push('### Context Pack Suggested Changes');
+    if (!Array.isArray(report.recommendedContextChanges) || report.recommendedContextChanges.length === 0) {
+      lines.push('- none');
+    } else {
+      for (const suggestion of report.recommendedContextChanges.slice(0, 20)) {
+        const parts = [
+          suggestion.changeType,
+          suggestion.file,
+        ];
+        if (suggestion.targetId) {
+          parts.push(`target=${suggestion.targetId}`);
+        }
+        if (suggestion.suggestedCommand) {
+          parts.push(`command=\`${suggestion.suggestedCommand}\``);
+        }
+        parts.push(`rationale=${suggestion.rationale}`);
+        lines.push(`- ${parts.join(', ')}`);
       }
     }
   }

@@ -181,6 +181,21 @@ function buildCommands(fixtureDirAbsolute, reportDirAbsolute) {
   ];
 }
 
+function buildSuggestCommand(reportDirAbsolute) {
+  return {
+    name: 'context-pack:suggest',
+    script: 'scripts/context-pack/suggest.mjs',
+    args: [
+      '--report-dir',
+      toRepoRelative(reportDirAbsolute),
+      '--report-json',
+      reportPath(reportDirAbsolute, 'context-pack-suggestions.json'),
+      '--report-md',
+      reportPath(reportDirAbsolute, 'context-pack-suggestions.md'),
+    ],
+  };
+}
+
 function main() {
   let options;
   try {
@@ -222,6 +237,15 @@ function main() {
       failed = true;
       break;
     }
+  }
+
+  const suggestCommand = buildSuggestCommand(reportDirAbsolute);
+  process.stdout.write(`[context-pack:e2e-fixture] running ${suggestCommand.name}\n`);
+  const suggestResult = runNodeScript(suggestCommand.script, suggestCommand.args);
+  const suggestExitCode = suggestResult.status ?? 1;
+  steps.push({ name: suggestCommand.name, exitCode: suggestExitCode });
+  if (suggestExitCode !== 0) {
+    failed = true;
   }
 
   const summary = {

@@ -18,10 +18,11 @@ Context Pack 検証（`context-pack:*`, `verify:lite`）の失敗時に、診断
 ### 共通診断フロー
 1. 失敗した step を特定する（`verify:lite` summary または CI job log）
 2. 対応する JSON/Markdown report を確認する
-3. report の `violations[].type` と対象 ID（object/morphism/diagram）を確認する
-4. `spec/context-pack/*.json` または Context Pack 本体を修正する
-5. 対象コマンドをローカル再実行する
-6. `summary.totalViolations == 0` を確認して再 push する
+3. `context-pack-suggestions.{json,md}` で推奨修正（file/changeType/targetId）を確認する
+4. report の `violations[].type` と対象 ID（object/morphism/diagram）を確認する
+5. `spec/context-pack/*.json` または Context Pack 本体を修正する
+6. 対象コマンドをローカル再実行する
+7. `summary.totalViolations == 0` を確認して再 push する
 
 ### verify:lite で最初に見るファイル
 - `artifacts/verify-lite/verify-lite-run-summary.json`
@@ -30,6 +31,8 @@ Context Pack 検証（`context-pack:*`, `verify:lite`）の失敗時に、診断
   - `steps.contextPackNaturalTransformationValidation`
   - `steps.contextPackProductCoproductValidation`
   - `steps.contextPackPhase5Validation`
+- `artifacts/context-pack/context-pack-suggestions.json`
+- `artifacts/context-pack/context-pack-suggestions.md`
 
 ### フェーズ別復旧手順
 
@@ -103,6 +106,7 @@ pnpm run verify:lite
 - 再実行:
 ```bash
 pnpm run context-pack:verify-phase5
+pnpm run context-pack:suggest
 pnpm run verify:lite
 ```
 
@@ -122,9 +126,10 @@ Operational runbook for diagnosing and recovering Context Pack validation failur
 ### Quick flow
 1. Identify the failed step (`verify:lite` summary or CI logs).
 2. Inspect matching JSON/Markdown reports under `artifacts/context-pack/`.
-3. Fix IDs/evidence/schema fields in `spec/context-pack/`.
-4. Re-run the target command and `pnpm run verify:lite`.
-5. Confirm `summary.totalViolations == 0` before re-push.
+3. Check `context-pack-suggestions.{json,md}` for actionable changes.
+4. Fix IDs/evidence/schema fields in `spec/context-pack/`.
+5. Re-run the target command and `pnpm run verify:lite`.
+6. Confirm `summary.totalViolations == 0` before re-push.
 
 ### Typical reports
 - Base: `context-pack-validate-report.{json,md}`
@@ -140,5 +145,6 @@ pnpm run context-pack:verify-functor
 pnpm run context-pack:verify-natural-transformation
 pnpm run context-pack:verify-product-coproduct
 pnpm run context-pack:verify-phase5
+pnpm run context-pack:suggest
 pnpm run verify:lite
 ```

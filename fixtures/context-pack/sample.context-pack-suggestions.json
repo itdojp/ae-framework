@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "context-pack-suggestions/v1",
+  "generatedAt": "2026-02-26T00:00:00.000Z",
+  "reportDir": "artifacts/context-pack",
+  "status": "fail",
+  "sourceReports": [
+    {
+      "source": "functor",
+      "path": "artifacts/context-pack/context-pack-functor-report.json",
+      "loaded": true,
+      "status": "fail",
+      "violationCount": 1
+    }
+  ],
+  "summary": {
+    "scannedReports": 1,
+    "loadedReports": 1,
+    "missingReports": 0,
+    "totalSuggestions": 1,
+    "bySource": {
+      "functor": 1
+    },
+    "byChangeType": {
+      "add": 1
+    },
+    "byViolationType": {
+      "morphism-mapping-missing": 1
+    }
+  },
+  "recommendedContextChanges": [
+    {
+      "source": "functor",
+      "sourceReport": "artifacts/context-pack/context-pack-functor-report.json",
+      "file": "spec/context-pack/functor-map.json",
+      "changeType": "add",
+      "targetId": "ReserveInventory",
+      "violationType": "morphism-mapping-missing",
+      "severity": "error",
+      "rationale": "Functor: Morphism mapping is missing for 'ReserveInventory'",
+      "suggestedCommand": "pnpm run context-pack:verify-functor"
+    }
+  ]
+}

@@ -45,13 +45,15 @@ describe('context-pack fixture e2e runner', () => {
     };
 
     expect(summary.status).toBe('pass');
-    expect(summary.steps).toHaveLength(5);
+    expect(summary.steps).toHaveLength(6);
     for (const step of summary.steps) {
       expect(step.exitCode).toBe(0);
     }
+    expect(summary.steps[5]?.name).toBe('context-pack:suggest');
 
     expect(existsSync(join(reportDir, 'context-pack-validate-report.json'))).toBe(true);
     expect(existsSync(join(reportDir, 'context-pack-phase5-report.json'))).toBe(true);
+    expect(existsSync(join(reportDir, 'context-pack-suggestions.json'))).toBe(true);
   });
 
   it('accepts npm/pnpm style -- option separator', async () => {
@@ -110,5 +112,7 @@ describe('context-pack fixture e2e runner', () => {
     expect(summary.status).toBe('fail');
     expect(summary.keepReports).toBe(true);
     expect(summary.steps.some((step) => step.exitCode !== 0)).toBe(true);
+    expect(summary.steps.some((step) => step.name === 'context-pack:suggest')).toBe(true);
+    expect(existsSync(join(reportDir, 'context-pack-suggestions.json'))).toBe(true);
   });
 });

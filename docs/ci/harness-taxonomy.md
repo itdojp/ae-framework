@@ -18,6 +18,7 @@
 - `severity` (`ok|warn|critical`)
 - `reasons[]`
 - `recommendedLabels[]`
+- `recommendedContextChanges[]` (`file`, `changeType`, `targetId`, `rationale`, `suggestedCommand`)
 - `reproducibleHints[]` (`gate`, `trace`, `seed`, `command`)
 
 ## Taxonomy定義
@@ -42,7 +43,7 @@
 ### PR運用（`pr-ci-status-comment`）
 
 - PRコメントに `Harness Health` セクションを追記する。
-- `pr-summary:detailed` の場合、`Reasons` と `Reproducible Hints` を詳細表示する。
+- `pr-summary:detailed` の場合、`Reasons` / `Reproducible Hints` / `Context Pack Suggested Changes` を詳細表示する。
 - `recommendedLabels` は次回実行の強化ラベル候補として使う。
 
 ### 週次運用（`ci-extended` schedule）

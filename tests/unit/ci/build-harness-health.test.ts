@@ -101,6 +101,17 @@ describe('build-harness-health', () => {
           ],
         },
         contextPackDeps: { status: 'warn', violations: [{ id: 'CP-1' }] },
+        contextPackSuggestions: {
+          recommendedContextChanges: [
+            {
+              file: 'spec/context-pack/functor-map.json',
+              changeType: 'add',
+              targetId: 'ReserveInventory',
+              rationale: 'Functor mapping is missing for ReserveInventory',
+              suggestedCommand: 'pnpm run context-pack:verify-functor',
+            },
+          ],
+        },
         heavyTrendSummary: { highestSeverity: 'critical' },
       },
       extraReasons: ['synthetic reason'],
@@ -115,6 +126,9 @@ describe('build-harness-health', () => {
     expect(report.recommendedLabels).toContain('enforce-context-pack');
     expect(report.recommendedLabels).toContain('run-ci-extended');
     expect(report.recommendedLabels).not.toContain('enforce-testing');
+    expect(report.recommendedContextChanges).toHaveLength(1);
+    expect(report.recommendedContextChanges[0]?.file).toBe('spec/context-pack/functor-map.json');
+    expect(report.gates.contextPack.recommendedContextChanges).toHaveLength(1);
     expect(report.reasons).toContain('synthetic reason');
     expect(
       report.reproducibleHints.some(
@@ -142,6 +156,7 @@ describe('build-harness-health', () => {
         schemaValidation: null,
         testingRepro: null,
         contextPackDeps: null,
+        contextPackSuggestions: null,
         heavyTrendSummary: null,
       },
       extraReasons: ['PR checks could not be loaded via gh: rate limited'],
@@ -166,6 +181,15 @@ describe('build-harness-health', () => {
         },
         reasons: ['Testing harness: pending checks'],
         recommendedLabels: ['enforce-testing'],
+        recommendedContextChanges: [
+          {
+            changeType: 'update',
+            file: 'spec/context-pack/natural-transformations.json',
+            targetId: 'ReserveInventoryRefactor',
+            suggestedCommand: 'pnpm run context-pack:verify-natural-transformation',
+            rationale: 'Missing commutativity evidence.',
+          },
+        ],
         reproducibleHints: [
           {
             gate: 'testingHarness',
@@ -181,7 +205,9 @@ describe('build-harness-health', () => {
     expect(markdown).toContain('## Harness Health');
     expect(markdown).toContain('### Reasons');
     expect(markdown).toContain('### Reproducible Hints');
+    expect(markdown).toContain('### Context Pack Suggested Changes');
     expect(markdown).toContain('enforce-testing');
     expect(markdown).toContain('TRACE_ID=TRACE-1');
+    expect(markdown).toContain('spec/context-pack/natural-transformations.json');
   });
 });

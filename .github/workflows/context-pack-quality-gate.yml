@@ -135,6 +135,9 @@ jobs:
             if [ -f artifacts/context-pack/deps-summary.json ]; then
               echo "- deps summary: artifacts/context-pack/deps-summary.json"
             fi
+            if [ -f artifacts/context-pack/context-pack-suggestions.json ]; then
+              echo "- suggestions: artifacts/context-pack/context-pack-suggestions.json"
+            fi
             if [ -f artifacts/context-pack/context-pack-gate-observability.md ]; then
               echo ""
               cat artifacts/context-pack/context-pack-gate-observability.md
@@ -142,6 +145,10 @@ jobs:
             if [ -f artifacts/context-pack/deps-summary.md ]; then
               echo ""
               cat artifacts/context-pack/deps-summary.md
+            fi
+            if [ -f artifacts/context-pack/context-pack-suggestions.md ]; then
+              echo ""
+              cat artifacts/context-pack/context-pack-suggestions.md
             fi
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Upload Context Pack gate artifacts
@@ -153,6 +160,8 @@ jobs:
             artifacts/context-pack/context-pack-e2e-summary.json
             artifacts/context-pack/deps-summary.json
             artifacts/context-pack/deps-summary.md
+            artifacts/context-pack/context-pack-suggestions.json
+            artifacts/context-pack/context-pack-suggestions.md
             artifacts/context-pack/context-pack-*-report.json
             artifacts/context-pack/context-pack-*-report.md
             artifacts/context-pack/context-pack-gate-observability.json

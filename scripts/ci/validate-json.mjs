@@ -73,6 +73,11 @@ const checks = [
     label: 'Context Pack phase5 templates schema validation'
   },
   {
+    schema: 'schema/context-pack-suggestions.schema.json',
+    fixtures: ['fixtures/context-pack/sample.context-pack-suggestions.json'],
+    label: 'Context Pack suggestions schema validation'
+  },
+  {
     schema: 'schema/execplan.schema.json',
     fixtures: ['fixtures/execplan/sample.execplan.json'],
     label: 'ExecPlan schema validation'
