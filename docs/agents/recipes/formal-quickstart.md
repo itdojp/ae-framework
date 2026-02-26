@@ -30,9 +30,9 @@ pnpm -s run formal:summary
 
 ## Artifacts
 
-- `artifacts/formal/*`
-- `artifacts/quality/formal-summary.json`
-- `artifacts/quality/formal-summary.md`
+- `artifacts/hermetic-reports/formal/summary.json`
+- `artifacts/hermetic-reports/formal/*-summary.json`
+- `artifacts/hermetic-reports/formal/*-output.txt`
 
 ## Follow-up
 
