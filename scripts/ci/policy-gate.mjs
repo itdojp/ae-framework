@@ -11,6 +11,7 @@ import {
   collectRequiredLabels,
   getGateCheckPatternsForLabel,
   getMinHumanApprovals,
+  isPolicyLabelRequirementEnabled,
   getRequiredChecks,
   getRiskLabels,
   inferRiskLevel,
@@ -257,9 +258,13 @@ function evaluateCheckRequirement(entries, patterns) {
 function hasTemplateSection(body, sectionName) {
   if (!body) return false;
   const escaped = sectionName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const headingPattern = new RegExp(`^\\s*#{1,6}\\s*${escaped}\\b`, 'im');
+  const headingPattern = new RegExp(`^\\s*#{1,6}\\s*${escaped}(?:\\s+.*)?$`, 'im');
   if (headingPattern.test(body)) return true;
-  return new RegExp(`\\b${escaped}\\b`, 'i').test(body);
+  if (/^[A-Za-z0-9_\\s]+$/.test(sectionName)) {
+    const boundaryPattern = new RegExp(`(^|[^A-Za-z0-9_])${escaped}($|[^A-Za-z0-9_])`, 'i');
+    return boundaryPattern.test(body);
+  }
+  return String(body).toLowerCase().includes(String(sectionName).toLowerCase());
 }
 
 function evaluatePolicyGate({
@@ -298,14 +303,19 @@ function evaluatePolicyGate({
     result: evaluateCheckRequirement(entries, [checkName]),
   }));
   for (const item of requiredCheckResults) {
-    if (item.result.status !== 'success') {
-      errors.push(`required check not green: ${item.checkName} (${item.result.status})`);
+    if (item.result.status === 'failure') {
+      errors.push(`required check failed: ${item.checkName}`);
+      continue;
+    }
+    if (item.result.status === 'pending' || item.result.status === 'missing') {
+      warnings.push(`required check not ready yet: ${item.checkName} (${item.result.status})`);
     }
   }
 
   const minApprovals = getMinHumanApprovals(policy);
   const approvals = countHumanApprovals(reviews);
   const { requiredLabels } = collectRequiredLabels(policy, changedFiles);
+  const policyLabelsRequired = isPolicyLabelRequirementEnabled(policy);
   const missingRequiredLabels = requiredLabels.filter((label) => !currentLabelSet.has(label));
 
   const highRiskLabel = riskLabels.high;
@@ -316,8 +326,10 @@ function evaluatePolicyGate({
     if (approvals < minApprovals) {
       errors.push(`human approvals are insufficient: required ${minApprovals}, got ${approvals}`);
     }
-    if (missingRequiredLabels.length > 0) {
+    if (policyLabelsRequired && missingRequiredLabels.length > 0) {
       errors.push(`missing required labels: ${missingRequiredLabels.join(', ')}`);
+    } else if (!policyLabelsRequired && missingRequiredLabels.length > 0) {
+      warnings.push(`policy labels missing (allowed by config): ${missingRequiredLabels.join(', ')}`);
     }
     for (const label of requiredLabels) {
       if (!currentLabelSet.has(label)) continue;

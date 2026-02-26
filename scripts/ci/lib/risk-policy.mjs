@@ -62,6 +62,12 @@ function getMinHumanApprovals(policy) {
   return Math.trunc(value);
 }
 
+function isPolicyLabelRequirementEnabled(policy) {
+  const value = policy?.high_risk?.require_policy_labels;
+  if (typeof value === 'boolean') return value;
+  return true;
+}
+
 function isPendingGateFailureEnabled(policy) {
   return Boolean(policy?.high_risk?.fail_when_required_gate_is_pending);
 }
@@ -159,6 +165,7 @@ export {
   getGateCheckPatternsForLabel,
   getMinHumanApprovals,
   getOptionalGateLabels,
+  isPolicyLabelRequirementEnabled,
   getRequiredChecks,
   getRiskLabels,
   inferRiskLevel,

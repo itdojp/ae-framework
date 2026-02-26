@@ -23,7 +23,7 @@ on:
         type: number
 
 concurrency:
-  group: policy-gate-${{ github.event.pull_request.number || github.event.pull_request_review.pull_request.number || github.event.workflow_run.id || inputs.pr_number || github.ref }}
+  group: policy-gate-${{ github.event.pull_request.number || github.event.pull_request_review.pull_request.number || github.event.workflow_run.pull_requests[0].number || github.event.workflow_run.id || inputs.pr_number || github.ref }}
   cancel-in-progress: true
 
 permissions:

@@ -4,6 +4,7 @@ import {
   getGateCheckPatternsForLabel,
   getRiskLabels,
   inferRiskLevel,
+  isPolicyLabelRequirementEnabled,
   loadRiskPolicy,
 } from '../../../scripts/ci/lib/risk-policy.mjs';
 
@@ -33,5 +34,17 @@ describe('risk-policy', () => {
   it('returns check patterns for label-gated checks', () => {
     const patterns = getGateCheckPatternsForLabel(policy, 'enforce-context-pack');
     expect(patterns).toContain('context-pack-e2e');
+  });
+
+  it('respects high_risk.require_policy_labels toggle', () => {
+    expect(isPolicyLabelRequirementEnabled(policy)).toBe(true);
+    const relaxedPolicy = {
+      ...policy,
+      high_risk: {
+        ...(policy.high_risk || {}),
+        require_policy_labels: false,
+      },
+    };
+    expect(isPolicyLabelRequirementEnabled(relaxedPolicy)).toBe(false);
   });
 });

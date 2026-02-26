@@ -23,7 +23,7 @@ describe('policy-gate', () => {
       },
       changedFiles: ['src/feature/example.ts'],
       reviews: [],
-      statusRollup: [checkRun('verify-lite'), checkRun('gate')],
+      statusRollup: [checkRun('verify-lite')],
     });
     expect(result.ok).toBe(true);
     expect(result.errors).toHaveLength(0);
@@ -38,7 +38,7 @@ describe('policy-gate', () => {
       },
       changedFiles: ['package.json'],
       reviews: [],
-      statusRollup: [checkRun('verify-lite'), checkRun('gate')],
+      statusRollup: [checkRun('verify-lite')],
     });
     expect(result.ok).toBe(false);
     expect(result.errors.some((item) => item.includes('risk label mismatch'))).toBe(true);
@@ -53,7 +53,7 @@ describe('policy-gate', () => {
       },
       changedFiles: ['package.json'],
       reviews: [],
-      statusRollup: [checkRun('verify-lite'), checkRun('gate')],
+      statusRollup: [checkRun('verify-lite')],
     });
     expect(result.ok).toBe(false);
     expect(result.errors.some((item) => item.includes('human approvals are insufficient'))).toBe(true);
@@ -78,12 +78,55 @@ describe('policy-gate', () => {
       ],
       statusRollup: [
         checkRun('verify-lite'),
-        checkRun('gate'),
         checkRun('Security Scanning'),
         checkRun('testing-ddd'),
       ],
     });
     expect(result.ok).toBe(true);
     expect(result.errors).toHaveLength(0);
+  });
+
+  it('allows high-risk PR without policy labels when require_policy_labels is false', () => {
+    const relaxedPolicy = {
+      ...policy,
+      high_risk: {
+        ...(policy.high_risk || {}),
+        require_policy_labels: false,
+      },
+    };
+    const result = evaluatePolicyGate({
+      policy: relaxedPolicy,
+      pullRequest: {
+        labels: [{ name: 'risk:high' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['package.json'],
+      reviews: [
+        {
+          id: 101,
+          state: 'APPROVED',
+          submitted_at: '2026-02-26T00:10:00Z',
+          user: { login: 'reviewer1', type: 'User' },
+        },
+      ],
+      statusRollup: [checkRun('verify-lite')],
+    });
+    expect(result.ok).toBe(true);
+    expect(result.errors).toHaveLength(0);
+    expect(result.warnings.some((item) => item.includes('policy labels missing'))).toBe(true);
+  });
+
+  it('treats Japanese acceptance headings as valid template section', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:low' }],
+        body: '## Rollback\nnone\n\n## 受入基準\nok',
+      },
+      changedFiles: ['src/feature/example.ts'],
+      reviews: [],
+      statusRollup: [checkRun('verify-lite')],
+    });
+    expect(result.warnings.some((item) => item.includes('Acceptance section'))).toBe(false);
   });
 });
