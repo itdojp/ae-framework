@@ -26,7 +26,7 @@ Labels
 - `risk:high`: requires human approval + policy labels + gate
 - `enforce-artifacts`: make artifacts validation (ajv) blocking
 - `enforce-testing`: make testing scripts (property/replay/BDD lint) blocking
-- `enforce-context-pack`: make Context Pack E2E validator blocking (`context-pack-quality-gate.yml`)
+- `enforce-context-pack`: make Context Pack dependency boundary check + E2E validator blocking (`context-pack-quality-gate.yml`)
 - `trace:<id>`: set TRACE_ID for focused runs in property/replay scripts
 - `pr-summary:detailed`: render a more detailed PR summary (vs. digest)
 - `run-ci-extended`: launch the heavy CI Extended workflow (integration, property, MBT, pact, mutation auto diff)
@@ -44,6 +44,7 @@ The CI Extended workflow restores cached heavy test artifacts from `.cache/test-
 Workflows
 - validate-artifacts-ajv.yml: reads `enforce-artifacts` and passes strict mode to `pnpm run artifacts:validate`
 - testing-ddd-scripts.yml: reads `enforce-testing` and makes property/replay/BDD lint blocking only in strict mode; reads `trace:<id>` to focus runs
+- context-pack-quality-gate.yml: reads `enforce-context-pack`; runs `context-pack:deps` + `context-pack:e2e-fixture` in report-only/blocking mode
 - pr-ci-status-comment.yml: reads `pr-summary:detailed` to switch summary mode
 
 Artifacts

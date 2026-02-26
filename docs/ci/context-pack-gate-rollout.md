@@ -15,6 +15,7 @@ Issue: #2258
 | ジョブ/ステップ | 依存 | 既定モード | blocking 化トリガー |
 | --- | --- | --- | --- |
 | `gate` | なし | report-only 判定 | `enforce-context-pack` ラベル / `CONTEXT_PACK_ENFORCE_MAIN=1` / dispatch strict |
+| `Run Context Pack dependency boundary checks` | `gate` | report-only（違反は warn 出力） | `gate.strict == true` のとき違反で fail |
 | `context-pack-e2e` | `gate` | non-blocking (`continue-on-error`) | `gate.strict == true` のとき blocking |
 | `Observe rollout metrics` | `context-pack-e2e` 内 | non-blocking | なし（常に観測のみ） |
 
@@ -73,4 +74,5 @@ pnpm -s run ci:context-pack:observe -- \
 
 - E2E fixture は `fixtures/context-pack/e2e` を SSOT とする。
 - 実行レポートは `artifacts/context-pack/` 配下に保存される。
+- 依存境界チェックのレポートは `deps-summary.json` / `deps-summary.md` として保存される。
 - 観測レポート JSON/Markdown は同ディレクトリに出力され、PR Step Summary にも転記される。
