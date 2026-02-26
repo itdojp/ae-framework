@@ -232,14 +232,14 @@ export function main(argv = process.argv) {
 
   if (!fs.existsSync(outputPath)) {
     process.stderr.write(`Missing generated file: ${options.outputPath}\n`);
-    process.stderr.write('Run: pnpm -s run docs:sync:agent-commands\n');
+    process.stderr.write('Run: node scripts/docs/check-agent-commands-doc-sync.mjs --write\n');
     return 1;
   }
 
   const current = fs.readFileSync(outputPath, 'utf8');
   if (current !== expected) {
     process.stderr.write(`Out of sync: ${options.outputPath}\n`);
-    process.stderr.write('Run: pnpm -s run docs:sync:agent-commands\n');
+    process.stderr.write('Run: node scripts/docs/check-agent-commands-doc-sync.mjs --write\n');
     return 1;
   }
 
