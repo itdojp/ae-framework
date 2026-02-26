@@ -52,7 +52,7 @@ describe('context-pack suggestion generator', () => {
           ruleId: 'core-does-not-depend-on-agents',
           from: 'src/core/service.ts',
           to: 'src/agents/runner.ts',
-          reason: 'Core layer must stay independent.',
+          reason: 'Core layer must stay independent. See C:\\agents\\runner.ts',
         },
       ],
     });
@@ -99,6 +99,9 @@ describe('context-pack suggestion generator', () => {
           && entry.suggestedCommand === 'pnpm run context-pack:deps -- --strict=true',
       ),
     ).toBe(true);
+
+    const markdown = await readFile(join(reportDir, 'context-pack-suggestions.md'), 'utf8');
+    expect(markdown).toContain('C:\\\\agents\\\\runner.ts');
   });
 
   it('returns pass when no input report is present', async () => {
