@@ -1,0 +1,202 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/context-pack-suggestions.schema.json",
+  "title": "Context Pack Suggestions",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "reportDir",
+    "status",
+    "sourceReports",
+    "summary",
+    "recommendedContextChanges"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "context-pack-suggestions/v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "schemaPath": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reportDir": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "warn",
+        "fail"
+      ]
+    },
+    "sourceReports": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/sourceReport"
+      }
+    },
+    "summary": {
+      "$ref": "#/$defs/summary"
+    },
+    "recommendedContextChanges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/recommendedContextChange"
+      }
+    }
+  },
+  "$defs": {
+    "sourceReport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "path",
+        "loaded",
+        "status",
+        "violationCount"
+      ],
+      "properties": {
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "loaded": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "violationCount": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "countByKey": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scannedReports",
+        "loadedReports",
+        "missingReports",
+        "totalSuggestions",
+        "bySource",
+        "byChangeType",
+        "byViolationType"
+      ],
+      "properties": {
+        "scannedReports": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "loadedReports": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "missingReports": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "totalSuggestions": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "bySource": {
+          "$ref": "#/$defs/countByKey"
+        },
+        "byChangeType": {
+          "$ref": "#/$defs/countByKey"
+        },
+        "byViolationType": {
+          "$ref": "#/$defs/countByKey"
+        }
+      }
+    },
+    "recommendedContextChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "sourceReport",
+        "file",
+        "changeType",
+        "targetId",
+        "violationType",
+        "severity",
+        "rationale",
+        "suggestedCommand"
+      ],
+      "properties": {
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceReport": {
+          "type": "string",
+          "minLength": 1
+        },
+        "file": {
+          "type": "string",
+          "minLength": 1
+        },
+        "changeType": {
+          "type": "string",
+          "enum": [
+            "add",
+            "update",
+            "remove",
+            "investigate"
+          ]
+        },
+        "targetId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "violationType": {
+          "type": "string",
+          "minLength": 1
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "error",
+            "warn",
+            "info"
+          ]
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "suggestedCommand": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

@@ -103,6 +103,7 @@ gate_checks:
   run-ci-extended:
     - "CI Extended (entry: pr/push) / extended"
     - "extended"
+    - "Parallel Tests (entry: pr/push) / Test Suite (integration)"
   enforce-artifacts:
     - "validate-artifacts / validate"
     - "*validate-artifacts*validate*"

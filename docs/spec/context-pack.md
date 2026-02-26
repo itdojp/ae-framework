@@ -42,6 +42,9 @@ pnpm run context-pack:verify-phase5
 # 依存境界（層の方向・循環依存）を検証
 pnpm run context-pack:deps
 
+# violation report から修正提案を生成
+node scripts/context-pack/suggest.mjs --report-dir artifacts/context-pack
+
 # 探索パス・出力先を上書き
 node scripts/context-pack/validate.mjs \
   --sources 'spec/context-pack/**/*.{yml,yaml,json}' \
@@ -83,6 +86,12 @@ node scripts/context-pack/check-deps.mjs \
   --strict false \
   --report-json artifacts/context-pack/deps-summary.json \
   --report-md artifacts/context-pack/deps-summary.md
+
+# 既存 report から修正提案を生成（Harness Health の recommendedContextChanges と連携）
+node scripts/context-pack/suggest.mjs \
+  --report-dir artifacts/context-pack \
+  --report-json artifacts/context-pack/context-pack-suggestions.json \
+  --report-md artifacts/context-pack/context-pack-suggestions.md
 
 # CI では context-pack-quality-gate ワークフロー内で常時実行される
 # （verify-lite の必須ステップではない）
@@ -254,6 +263,8 @@ node scripts/context-pack/check-deps.mjs \
 - Markdown: `artifacts/context-pack/context-pack-validate-report.md`
 - JSON (Dependency boundary): `artifacts/context-pack/deps-summary.json`
 - Markdown (Dependency boundary): `artifacts/context-pack/deps-summary.md`
+- JSON (Suggestions): `artifacts/context-pack/context-pack-suggestions.json`
+- Markdown (Suggestions): `artifacts/context-pack/context-pack-suggestions.md`
 - JSON (Functor): `artifacts/context-pack/context-pack-functor-report.json`
 - Markdown (Functor): `artifacts/context-pack/context-pack-functor-report.md`
 - JSON (Natural Transformation): `artifacts/context-pack/context-pack-natural-transformation-report.json`
@@ -326,6 +337,7 @@ pnpm run context-pack:verify-natural-transformation
 pnpm run context-pack:verify-product-coproduct
 pnpm run context-pack:verify-phase5
 pnpm run context-pack:deps
+node scripts/context-pack/suggest.mjs --report-dir artifacts/context-pack
 pnpm run verify:lite
 ```
 
@@ -334,6 +346,8 @@ pnpm run verify:lite
 - `artifacts/context-pack/context-pack-validate-report.md`
 - `artifacts/context-pack/deps-summary.json`
 - `artifacts/context-pack/deps-summary.md`
+- `artifacts/context-pack/context-pack-suggestions.json`
+- `artifacts/context-pack/context-pack-suggestions.md`
 - `artifacts/context-pack/context-pack-functor-report.json`
 - `artifacts/context-pack/context-pack-functor-report.md`
 - `artifacts/context-pack/context-pack-natural-transformation-report.json`

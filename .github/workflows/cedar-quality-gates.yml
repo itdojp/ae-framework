@@ -15,6 +15,10 @@ permissions: read-all
 jobs:
   cedar-validate:
     if: contains(github.event.pull_request.labels.*.name, 'run-security') || contains(github.event.pull_request.labels.*.name, 'run-cedar')
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -51,7 +55,7 @@ jobs:
           name: cedar-summary
           path: artifacts/policies/cedar-summary.json
       - name: Comment PR with cedar summary
-        if: always() && github.event_name == 'pull_request'
+        if: always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork
         uses: actions/github-script@v7
         with:
           script: |
