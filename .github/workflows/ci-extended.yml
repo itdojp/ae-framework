@@ -373,6 +373,27 @@ jobs:
           severity=$(jq -r '.highestSeverity' reports/heavy-test-trends-history/summary.json)
           printf '%s\n' "severity=${severity}" >> "$GITHUB_OUTPUT"
 
+      - name: Build harness health snapshot
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' && (github.event_name == 'schedule' || inputs.trigger == 'schedule') }}
+        id: harness-health
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/ci/build-harness-health.mjs \
+            --repo "${GITHUB_REPOSITORY}" \
+            --workflow "${GITHUB_WORKFLOW}" \
+            --run-id "${GITHUB_RUN_ID}" \
+            --commit-sha "${GITHUB_SHA}" \
+            --mode detailed \
+            --output-json artifacts/ci/harness-health.json \
+            --output-md artifacts/ci/harness-health.md
+          severity=$(jq -r '.severity // "ok"' artifacts/ci/harness-health.json)
+          printf '%s\n' "severity=${severity}" >> "$GITHUB_OUTPUT"
+          if [ -f artifacts/ci/harness-health.md ]; then
+            printf '\n' >> "$GITHUB_STEP_SUMMARY"
+            cat artifacts/ci/harness-health.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Recommend heavy test thresholds
         if: ${{ always() && steps.flags.outputs.should_run == 'true' && (github.event_name == 'schedule' || inputs.trigger == 'schedule') }}
         shell: bash
@@ -415,6 +436,17 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
 
+      - name: Upload harness health snapshot
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' && (github.event_name == 'schedule' || inputs.trigger == 'schedule') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: harness-health
+          path: |
+            artifacts/ci/harness-health.json
+            artifacts/ci/harness-health.md
+          if-no-files-found: ignore
+          retention-days: 30
+
       - name: Notify Slack (heavy trend alert)
         if: ${{ always() && steps.flags.outputs.should_run == 'true' && (github.event_name == 'schedule' || inputs.trigger == 'schedule') && steps.heavy-summary.outputs.severity != 'ok' && env.SLACK_WEBHOOK_URL != '' }}
         uses: rtCamp/action-slack-notify@v2
@@ -426,8 +458,8 @@ jobs:
             • run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
             • summary: heavy-test-trends-history/summary.md
 
-      - name: Create heavy trend issue
-        if: ${{ always() && steps.flags.outputs.should_run == 'true' && (github.event_name == 'schedule' || inputs.trigger == 'schedule') && steps.heavy-summary.outputs.severity == 'critical' }}
+      - name: Create harness health critical issue
+        if: ${{ always() && steps.flags.outputs.should_run == 'true' && (github.event_name == 'schedule' || inputs.trigger == 'schedule') && steps.harness-health.outputs.severity == 'critical' }}
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -436,6 +468,10 @@ jobs:
             const path = require('path');
             const summaryPath = path.resolve('reports/heavy-test-trends-history/summary.json');
             const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
+            const harnessPath = path.resolve('artifacts/ci/harness-health.json');
+            const harness = fs.existsSync(harnessPath)
+              ? JSON.parse(fs.readFileSync(harnessPath, 'utf8'))
+              : {};
             const snapshots = Array.isArray(summary.snapshots) ? summary.snapshots : [];
             const criticalSnapshot = snapshots.find(s => (s.severity || '').toLowerCase() === 'critical');
             if (!criticalSnapshot) {
@@ -447,7 +483,21 @@ jobs:
               const reasons = (entry.reasons || []).join('; ') || 'threshold exceeded';
               return `- **${entry.label}**: ${reasons}`;
             }).join('\n');
-            const title = `[CI Extended] Heavy test critical alert - ${criticalSnapshot.label}`;
+            const title = `[CI Extended] Harness health critical alert - ${criticalSnapshot.label}`;
+            const recommendedLabels = Array.isArray(harness.recommendedLabels) ? harness.recommendedLabels : [];
+            const harnessReasons = Array.isArray(harness.reasons) ? harness.reasons : [];
+            const { data: openIssues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'ci-stability,needs-investigation',
+              per_page: 100,
+            });
+            const duplicated = openIssues.find((issue) => !issue.pull_request && issue.title === title);
+            if (duplicated) {
+              core.info(`Open issue #${duplicated.number} already exists for ${criticalSnapshot.label}; skipping create.`);
+              return;
+            }
             const body = [
               '## Alert',
               `- Workflow: ${context.workflow} (run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`,
@@ -455,9 +505,16 @@ jobs:
               `- Snapshot: ${criticalSnapshot.label}`,
               '- Summary: reports/heavy-test-trends-history/summary.md',
               '- JSON: reports/heavy-test-trends-history/summary.json',
+              '- Harness health: artifacts/ci/harness-health.json',
               '',
-              '### Details',
+              '### Heavy trend details',
               detailLines || '- (no critical entry details recorded)',
+              '',
+              '### Harness reasons',
+              ...(harnessReasons.length > 0 ? harnessReasons.slice(0, 10).map((reason) => `- ${reason}`) : ['- (none)']),
+              '',
+              '### Recommended labels',
+              ...(recommendedLabels.length > 0 ? [`- ${recommendedLabels.map((label) => `\`${label}\``).join(', ')}`] : ['- (none)']),
               '',
               '## Next Steps',
               '- [ ] Download artifacts and inspect mutation/property/MBT outputs',

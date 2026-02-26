@@ -111,6 +111,7 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - Docs Doctest policy: `ci/docs-doctest-policy.md`（PR軽量チェック + 週次全量チェック）
 - CI operations handbook: `ci/ci-operations-handbook.md`（日次確認/再実行/停止復帰）
 - CI troubleshooting guide: `ci/ci-troubleshooting-guide.md`（失敗分類/復旧runbook）
+- Harness failure taxonomy: `ci/harness-taxonomy.md`（ゲート横断の分類/重要度/次アクション）
 - PR automation runbook: `ci/pr-automation.md`（Copilot→auto-fix→auto-merge）
 - Workflow role matrix: `ci/workflow-role-matrix.md`（core / optional / report の責務整理）
 - Opt-in controls: `ci/OPT-IN-CONTROLS.md`（ラベル/Slash/dispatchの一覧）

@@ -45,7 +45,11 @@ Workflows
 - validate-artifacts-ajv.yml: reads `enforce-artifacts` and passes strict mode to `pnpm run artifacts:validate`
 - testing-ddd-scripts.yml: reads `enforce-testing` and makes property/replay/BDD lint blocking only in strict mode; reads `trace:<id>` to focus runs
 - context-pack-quality-gate.yml: reads `enforce-context-pack`; runs `context-pack:deps` + `context-pack:e2e-fixture` in report-only/blocking mode
-- pr-ci-status-comment.yml: reads `pr-summary:detailed` to switch summary mode
+- pr-ci-status-comment.yml: reads `pr-summary:detailed` to switch summary mode; also generates `artifacts/ci/harness-health.{json,md}` and appends Harness Health section to PR summary
+
+Harness Health recommendation
+- `artifacts/ci/harness-health.json` emits `recommendedLabels` based on gate states.
+- Operators can apply suggested labels (`enforce-artifacts`, `enforce-testing`, `enforce-context-pack`, `run-ci-extended`) to tighten reruns only where needed.
 
 Artifacts
 - `pnpm run artifacts:validate` always writes:
