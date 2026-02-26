@@ -9,6 +9,7 @@ const __dirname = path.dirname(__filename);
 
 const DOC_CONSISTENCY_SCRIPT = path.resolve(__dirname, 'check-doc-consistency.mjs');
 const CI_INDEX_SCRIPT = path.resolve(__dirname, 'check-ci-doc-index-consistency.mjs');
+const AGENT_COMMANDS_SYNC_SCRIPT = path.resolve(__dirname, 'check-agent-commands-doc-sync.mjs');
 const RUNBOOK_COMMAND_SCRIPT = path.resolve(__dirname, 'check-runbook-command-blocks.mjs');
 const DOC_TODO_MARKER_SCRIPT = path.resolve(__dirname, 'check-doc-todo-markers.mjs');
 
@@ -66,6 +67,10 @@ export function main(argv = process.argv) {
   const ciIndexStatus = runNodeScript(CI_INDEX_SCRIPT, filterArgsForCiIndex(args));
   if (ciIndexStatus !== 0) {
     return ciIndexStatus;
+  }
+  const agentCommandsSyncStatus = runNodeScript(AGENT_COMMANDS_SYNC_SCRIPT, filterArgsForCiIndex(args));
+  if (agentCommandsSyncStatus !== 0) {
+    return agentCommandsSyncStatus;
   }
   const runbookStatus = runNodeScript(RUNBOOK_COMMAND_SCRIPT, filterArgsForCiIndex(args));
   if (runbookStatus !== 0) {
