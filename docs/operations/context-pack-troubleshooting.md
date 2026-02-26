@@ -106,7 +106,7 @@ pnpm run verify:lite
 - 再実行:
 ```bash
 pnpm run context-pack:verify-phase5
-pnpm run context-pack:suggest
+node scripts/context-pack/suggest.mjs --report-dir artifacts/context-pack
 pnpm run verify:lite
 ```
 
@@ -145,6 +145,6 @@ pnpm run context-pack:verify-functor
 pnpm run context-pack:verify-natural-transformation
 pnpm run context-pack:verify-product-coproduct
 pnpm run context-pack:verify-phase5
-pnpm run context-pack:suggest
+node scripts/context-pack/suggest.mjs --report-dir artifacts/context-pack
 pnpm run verify:lite
 ```

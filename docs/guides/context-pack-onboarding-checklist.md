@@ -45,7 +45,7 @@ pnpm run context-pack:verify-functor
 pnpm run context-pack:verify-natural-transformation
 pnpm run context-pack:verify-product-coproduct
 pnpm run context-pack:verify-phase5
-pnpm run context-pack:suggest
+node scripts/context-pack/suggest.mjs --report-dir artifacts/context-pack
 ```
 
 ### 3. 統合検証（verify-lite）
@@ -71,7 +71,7 @@ pnpm run verify:lite
 
 ### 5. PR前確認
 - [ ] Context Pack 系 6 コマンドが成功
-- [ ] `context-pack:suggest` で `recommendedContextChanges` を確認済み
+- [ ] `context-pack-suggestions.{json,md}` で `recommendedContextChanges` を確認済み
 - [ ] `verify:lite` で Context Pack 関連 step が想定通り
 - [ ] report に不要な差分ノイズを持ち込んでいない
 - [ ] `evidencePaths` が stale path ではない
@@ -103,7 +103,7 @@ pnpm run context-pack:verify-functor
 pnpm run context-pack:verify-natural-transformation
 pnpm run context-pack:verify-product-coproduct
 pnpm run context-pack:verify-phase5
-pnpm run context-pack:suggest
+node scripts/context-pack/suggest.mjs --report-dir artifacts/context-pack
 pnpm run verify:lite
 ```
 

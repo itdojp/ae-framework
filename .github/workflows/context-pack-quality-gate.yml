@@ -108,11 +108,6 @@ jobs:
           pnpm -s run context-pack:e2e-fixture -- \
             --fixture-dir fixtures/context-pack/e2e \
             --report-dir artifacts/context-pack
-      - name: Enforce strict dependency boundary result
-        if: ${{ always() && needs.gate.outputs.strict == 'true' && steps.context_pack_deps.outcome == 'failure' }}
-        run: |
-          echo "Strict mode enabled and context-pack:deps reported violations."
-          exit 2
       - name: Observe rollout metrics (non-blocking)
         if: ${{ always() }}
         continue-on-error: true

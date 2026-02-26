@@ -43,7 +43,7 @@ pnpm run context-pack:verify-phase5
 pnpm run context-pack:deps
 
 # violation report から修正提案を生成
-pnpm run context-pack:suggest
+node scripts/context-pack/suggest.mjs --report-dir artifacts/context-pack
 
 # 探索パス・出力先を上書き
 node scripts/context-pack/validate.mjs \
@@ -337,7 +337,7 @@ pnpm run context-pack:verify-natural-transformation
 pnpm run context-pack:verify-product-coproduct
 pnpm run context-pack:verify-phase5
 pnpm run context-pack:deps
-pnpm run context-pack:suggest
+node scripts/context-pack/suggest.mjs --report-dir artifacts/context-pack
 pnpm run verify:lite
 ```
 

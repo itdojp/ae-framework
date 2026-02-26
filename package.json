@@ -85,7 +85,6 @@
     "context-pack:verify-product-coproduct": "node scripts/context-pack/verify-product-coproduct.mjs",
     "context-pack:verify-phase5": "node scripts/context-pack/verify-phase5-templates.mjs",
     "context-pack:deps": "node scripts/context-pack/check-deps.mjs",
-    "context-pack:suggest": "node scripts/context-pack/suggest.mjs",
     "ci:context-pack:observe": "node scripts/ci/context-pack-gate-observability.mjs",
     "context-pack:e2e-fixture": "node scripts/context-pack/run-e2e-fixture.mjs",
     "verify:profile": "node scripts/verify/run.mjs",
