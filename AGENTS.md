@@ -3,14 +3,14 @@
 このドキュメントは、リポジトリ内でエージェントが安全かつ一貫した方法で作業するためのガイドです。
 
 ## 目的
-- Risk-based PR gating を前提に CI を安定運用する（required: `verify-lite` + `gate`）
+- Risk-based PR gating を前提に CI を安定運用する（required: `verify-lite` + `policy-gate`）
 - 小さく安全な PR を多数（revert しやすい粒度）
 - actionlint 準拠（echo→printf、GITHUB_OUTPUT/GITHUB_ENV は printf で追記）
 - Coverage / Formal の表示は PR コメントに要約を投稿（coverage は閾値の由来/ポリシー、formal は再現ヒントと tools チェックを提示）
 
 ## ブランチ/PR運用
 - ブランチ名: `feat/<issue>-<topic>` または `chore/ci-<topic>-<short>`
-- PR には `risk:low` または `risk:high` を必ず付与する
+- PR には `risk:low` または `risk:high` を必ず付与する（`Policy Gate` 内の `risk-labeler` が自動付与）
   - `risk:low`: required checks green なら auto-merge 対象
   - `risk:high`: 人間Approve >= 1 + policyラベル + 追加ゲート green が必須
 - 主要ラベル:
@@ -23,8 +23,8 @@
 - ラベル定義/判定基準は `policy/risk-policy.yml` を一次情報として扱う
 
 ## レビュー観点（risk別）
-- `risk:low`: 誤分類がないか、required checks が green か、rollback が明記されているかを確認
-- `risk:high`: Approve 条件、必須ラベル、追加ゲート結果（Security/Artifacts/Testing/Context Pack）を確認
+- `risk:low`: 誤分類がないか、required checks（`verify-lite` / `policy-gate`）が green か、rollback が明記されているかを確認
+- `risk:high`: Approve 条件、必須ラベル、追加ゲート結果（Security/Artifacts/Testing/Context Pack）が `policy-gate` で green 判定になるか確認
 - CI 失敗時は「再現手順（seed/trace/command）」と「修正根拠」を PR に記載する
 
 ## テスト/検証

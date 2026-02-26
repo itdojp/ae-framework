@@ -15,8 +15,11 @@ labels:
 
 required_checks:
   - "verify-lite"
-  # 現行のチェック名は gate（copilot-review-gate workflow）
+  # 既存運用（Copilot Review Gate）
   - "gate"
+  # 新運用（Risk policy enforced gate）
+  # policy-gate 自体は required check だが、自己参照を避けるため script 側で除外して評価する
+  - "policy-gate"
 
 high_risk:
   min_human_approvals: 1
@@ -95,3 +98,17 @@ label_requirements:
       - ".github/workflows/context-pack-quality-gate.yml"
     require_labels:
       - "enforce-context-pack"
+
+gate_checks:
+  run-security:
+    - "Security Scanning"
+  run-ci-extended:
+    - "CI Extended (entry: pr/push) / extended"
+    - "extended"
+  enforce-artifacts:
+    - "validate-artifacts / validate"
+    - "*validate-artifacts*validate*"
+  enforce-testing:
+    - "testing-ddd"
+  enforce-context-pack:
+    - "context-pack-e2e"

@@ -6,6 +6,8 @@ const prNumber = process.env.PR_NUMBER;
 const enable = process.env.ENABLE_AUTO_MERGE === 'true';
 const autoMergeMode = String(process.env.AE_AUTO_MERGE_MODE || 'all').toLowerCase();
 const autoMergeLabel = String(process.env.AE_AUTO_MERGE_LABEL || '').trim();
+const requireRiskLow = String(process.env.AE_AUTO_MERGE_REQUIRE_RISK_LOW || '1').trim() === '1';
+const riskLowLabel = String(process.env.AE_RISK_LOW_LABEL || 'risk:low').trim() || 'risk:low';
 
 if (!repo) {
   console.error('[auto-merge] GITHUB_REPOSITORY is required.');
@@ -189,11 +191,18 @@ const labelEligible = (() => {
   return labels.includes(autoMergeLabel);
 })();
 const reviewEligible = reviewRequirement.approvalRequired ? pr.reviewDecision === 'APPROVED' : true;
-const eligible = pr.mergeable === 'MERGEABLE' && labelEligible && reviewEligible && counts.failure === 0 && counts.pending === 0;
+const riskEligible = !requireRiskLow || labels.includes(riskLowLabel);
+const eligible = pr.mergeable === 'MERGEABLE'
+  && labelEligible
+  && reviewEligible
+  && riskEligible
+  && counts.failure === 0
+  && counts.pending === 0;
 
 console.log(`[auto-merge] PR #${pr.number}: ${pr.title}`);
 console.log(`[auto-merge] mergeable=${pr.mergeable} review=${pr.reviewDecision} (required=${reviewRequirement.approvalRequired ? `yes/${reviewRequirement.requiredApprovals}` : 'no'})`);
 console.log(`[auto-merge] mode=${autoMergeMode} label=${autoMergeLabel || '(none)'} hasLabel=${labels.includes(autoMergeLabel)}`);
+console.log(`[auto-merge] requireRiskLow=${requireRiskLow} riskLabel=${riskLowLabel} hasRiskLow=${labels.includes(riskLowLabel)}`);
 console.log(
   `[auto-merge] required checks: ${requiredContexts.length || 'none'} | success=${counts.success} failure=${counts.failure} pending=${counts.pending}`
 );

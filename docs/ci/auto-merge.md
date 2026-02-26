@@ -7,7 +7,7 @@
 ## English (Summary)
 
 - This document describes how `ae-framework` can enable GitHub auto-merge automatically per repository.
-- It is controlled by GitHub Repository Variables (`AE_AUTO_MERGE`, `AE_AUTO_MERGE_MODE`, `AE_AUTO_MERGE_LABEL`).
+- It is controlled by GitHub Repository Variables (`AE_AUTO_MERGE`, `AE_AUTO_MERGE_MODE`, `AE_AUTO_MERGE_LABEL`, `AE_AUTO_MERGE_REQUIRE_RISK_LOW`).
 - Eligibility is evaluated against branch protection (required checks + required reviews) and PR state.
 
 Primary sources: `.github/workflows/pr-ci-status-comment.yml`, `scripts/ci/auto-merge-enabler.mjs`, `scripts/ci/auto-merge-eligible.mjs`, `scripts/ci/lib/automation-config.mjs`.
@@ -51,6 +51,11 @@ PR の状態が「マージ可能」かつ「Required checks/レビュー条件�
 - `AE_AUTO_MERGE_LABEL`（例: `auto-merge`）を必ず設定してください
 - 指定ラベルが PR に付与されていない場合、auto-merge は有効化されません
 
+### 2.3 リスクラベル条件（既定）
+
+- `AE_AUTO_MERGE_REQUIRE_RISK_LOW=1`（既定）: `risk:low` ラベル付き PR のみ auto-merge 対象
+- `AE_AUTO_MERGE_REQUIRE_RISK_LOW=0`: リスクラベル制約を無効化
+
 ## 3. 動作概要（実装準拠）
 
 - Workflow: `.github/workflows/pr-ci-status-comment.yml`
@@ -72,6 +77,7 @@ PR の状態が「マージ可能」かつ「Required checks/レビュー条件�
 - ブランチ保護から取得した Required checks がすべて成功（failure/pending が 0）
 - ブランチ保護のレビュー要件がある場合、`reviewDecision == APPROVED`
 - `AE_AUTO_MERGE_MODE=label` の場合、`AE_AUTO_MERGE_LABEL` が付与されている
+- `AE_AUTO_MERGE_REQUIRE_RISK_LOW=1` の場合、`risk:low` が付与されている
 
 ブランチ保護の扱い:
 - base ブランチが「保護されている」場合に protection 情報が取得できないときは fail-closed（auto-merge を有効化しない）
@@ -98,6 +104,7 @@ Actions UI から `PR Maintenance`（`.github/workflows/pr-ci-status-comment.yml
 - auto-merge が有効化されない:
   - Required checks / required reviews がブランチ保護に設定されているか確認
   - `AE_AUTO_MERGE_MODE=label` の場合、`AE_AUTO_MERGE_LABEL` が設定され PR に付与されているか確認
+  - `AE_AUTO_MERGE_REQUIRE_RISK_LOW=1` の場合、`risk:low` が付与されているか確認
   - base ブランチ保護が取得不可になっていないか（token権限/Not Found）確認
 - self-hosted runner:
   - `gh` CLI の導入が必要です

@@ -15,10 +15,11 @@
 - `branch-protection.main.restore.json` … 既定（レビュー必須: 1、`PR Verify / verify` required）
 - `branch-protection.main.relax.json` … 軽く緩和（レビュー1件維持・他条件緩め）
 - `branch-protection.main.relax2.json` … レビュー要件なし（required_pull_request_reviews: null）
-- `branch-protection.main.require-verify-lite.json` … `verify-lite` を Required に（レビュー1件あり）
+- `branch-protection.main.require-verify-lite.json` … `verify-lite` + `policy-gate` を Required に（レビュー1件あり）
 - `branch-protection.main.verify-lite-noreview.json` … `verify-lite` Required、レビュー要件なし（推奨）
+  - `policy-gate` で risk/approval/label-gate 条件を強制
   - さらに `gate` も Required に含め、Copilot指摘の存在と解決を強制
-  - 備考: Branch protection の context は workflow表示名ではなく check context（`verify-lite`, `gate`）を使用
+  - 備考: Branch protection の context は workflow表示名ではなく check context（`verify-lite`, `policy-gate`, `gate`）を使用
 
 ## 切替方法（推奨: GitHub Actions 手動ディスパッチ）
 1. リポジトリに `ADMIN_TOKEN`（repo admin scope の PAT）を登録
@@ -44,7 +45,7 @@ ADMIN_TOKEN=ghp_xxx REPO=itdojp/ae-framework BRANCH=main \
 ```
 
 ## 運用指針（レビューを外す代替ガード）
-- Branch protection: Required checks を維持（`verify-lite` + `gate` を推奨）
+- Branch protection: Required checks を維持（`verify-lite` + `policy-gate` を推奨。既存運用では `gate` 併用）
 - `PR Verify / verify` を Required に含めない（verify-lite 運用時）
 - Auto-merge を許可（Checks が緑になれば自動マージ）
 - ラベルで強制ゲートを任意化（`enforce-coverage`, `enforce-typecov` など）
@@ -64,8 +65,9 @@ ADMIN_TOKEN=ghp_xxx REPO=itdojp/ae-framework BRANCH=main \
 
 ## クイックチェックリスト
 - [ ] ADMIN_TOKEN を登録済み（docs/ci/admin-token-setup.md）
-- [ ] `gate` が Required に含まれている
 - [ ] `verify-lite` が Required に含まれている
+- [ ] `policy-gate` が Required に含まれている
+- [ ] （既存運用）`gate` が Required に含まれている
 - [ ] PR Verify / verify が Required に含まれていない（verify-lite 運用時）
 - [ ] main で想定外の Required チェックが残っていない
 

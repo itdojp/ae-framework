@@ -14,6 +14,7 @@ describe('automation-config', () => {
     expect(config.values.AE_AUTO_MERGE).toBe('0');
     expect(config.values.AE_COPILOT_AUTO_FIX_SCOPE).toBe('docs');
     expect(config.values.AE_AUTO_MERGE_MODE).toBe('all');
+    expect(config.values.AE_AUTO_MERGE_REQUIRE_RISK_LOW).toBe('1');
     expect(config.values.AE_GH_RETRY_MULTIPLIER).toBe('2');
     expect(config.values.AE_GH_RETRY_JITTER_MS).toBe('250');
     expect(config.warnings).toEqual([]);
@@ -30,6 +31,7 @@ describe('automation-config', () => {
     expect(config.values.AE_AUTO_MERGE).toBe('1');
     expect(config.values.AE_AUTO_MERGE_MODE).toBe('label');
     expect(config.values.AE_AUTO_MERGE_LABEL).toBe('auto-merge');
+    expect(config.values.AE_AUTO_MERGE_REQUIRE_RISK_LOW).toBe('1');
     expect(config.values.AE_GH_RETRY_MULTIPLIER).toBe('2');
     expect(config.values.AE_GH_RETRY_JITTER_MS).toBe('250');
   });
@@ -45,6 +47,7 @@ describe('automation-config', () => {
     expect(config.sources.AE_COPILOT_AUTO_FIX_SCOPE).toBe('explicit');
     expect(config.values.AE_AUTO_MERGE_MODE).toBe('label');
     expect(config.values.AE_AUTO_MERGE_LABEL).toBe('manual-opt-in');
+    expect(config.values.AE_AUTO_MERGE_REQUIRE_RISK_LOW).toBe('1');
   });
 
   it('supports explicit empty string override for string fields', () => {
@@ -97,6 +100,13 @@ describe('automation-config', () => {
     });
     expect(on.values.AE_AUTOMATION_GLOBAL_DISABLE).toBe('1');
     expect(off.values.AE_AUTOMATION_GLOBAL_DISABLE).toBe('0');
+  });
+
+  it('allows overriding risk:low requirement for auto-merge', () => {
+    const config = resolveAutomationConfig({
+      AE_AUTO_MERGE_REQUIRE_RISK_LOW: 'false',
+    });
+    expect(config.values.AE_AUTO_MERGE_REQUIRE_RISK_LOW).toBe('0');
   });
 
   it('sanitizes newline characters when exporting GitHub env lines', () => {
