@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "context-pack-dependency-rules/v1",
+  "sourceGlobs": [
+    "src/**/*.{ts,tsx,js,mjs,cjs,mts,cts}"
+  ],
+  "rules": [
+    {
+      "id": "core-does-not-depend-on-agents",
+      "from": [
+        "src/core/**"
+      ],
+      "to": [
+        "src/agents/**"
+      ],
+      "reason": "Core layer must stay independent from agent orchestration."
+    },
+    {
+      "id": "mcp-server-does-not-depend-on-scripts",
+      "from": [
+        "src/mcp-server/**"
+      ],
+      "to": [
+        "scripts/**"
+      ],
+      "reason": "Runtime server code must not depend on development scripts."
+    },
+    {
+      "id": "src-does-not-depend-on-docs",
+      "from": [
+        "src/**"
+      ],
+      "to": [
+        "docs/**"
+      ],
+      "reason": "Executable source must not import documentation files."
+    }
+  ],
+  "cycleDetection": {
+    "enabled": true,
+    "scope": [
+      "src/**"
+    ],
+    "groupBy": "src-first-segment"
+  }
+}

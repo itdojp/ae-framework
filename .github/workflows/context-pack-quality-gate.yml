@@ -6,11 +6,14 @@ on:
       - '.github/workflows/context-pack-quality-gate.yml'
       - 'scripts/context-pack/**'
       - 'scripts/ci/context-pack-gate-observability.mjs'
+      - 'configs/context-pack/**'
       - 'fixtures/context-pack/**'
       - 'schema/context-pack-*.schema.json'
       - 'schema/context-pack-v1.schema.json'
       - 'spec/context-pack/**'
       - 'tests/unit/ci/context-pack-*.test.ts'
+      - 'docs/spec/context-pack.md'
+      - 'docs/ci/label-gating.md'
       - 'docs/ci/context-pack-gate-rollout.md'
   push:
     branches: [main]
@@ -18,11 +21,14 @@ on:
       - '.github/workflows/context-pack-quality-gate.yml'
       - 'scripts/context-pack/**'
       - 'scripts/ci/context-pack-gate-observability.mjs'
+      - 'configs/context-pack/**'
       - 'fixtures/context-pack/**'
       - 'schema/context-pack-*.schema.json'
       - 'schema/context-pack-v1.schema.json'
       - 'spec/context-pack/**'
       - 'tests/unit/ci/context-pack-*.test.ts'
+      - 'docs/spec/context-pack.md'
+      - 'docs/ci/label-gating.md'
       - 'docs/ci/context-pack-gate-rollout.md'
   workflow_dispatch:
     inputs:
@@ -89,6 +95,13 @@ jobs:
           node-version: '20'
       - name: Install dependencies
         run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+      - name: Run Context Pack dependency boundary checks
+        continue-on-error: ${{ needs.gate.outputs.strict != 'true' }}
+        run: |
+          pnpm -s run context-pack:deps -- \
+            --strict="${{ needs.gate.outputs.strict }}" \
+            --report-json artifacts/context-pack/deps-summary.json \
+            --report-md artifacts/context-pack/deps-summary.md
       - name: Run Context Pack E2E fixture
         run: |
           pnpm -s run context-pack:e2e-fixture -- \
@@ -119,9 +132,16 @@ jobs:
             if [ -f artifacts/context-pack/context-pack-e2e-summary.json ]; then
               echo "- e2e summary: artifacts/context-pack/context-pack-e2e-summary.json"
             fi
+            if [ -f artifacts/context-pack/deps-summary.json ]; then
+              echo "- deps summary: artifacts/context-pack/deps-summary.json"
+            fi
             if [ -f artifacts/context-pack/context-pack-gate-observability.md ]; then
               echo ""
               cat artifacts/context-pack/context-pack-gate-observability.md
+            fi
+            if [ -f artifacts/context-pack/deps-summary.md ]; then
+              echo ""
+              cat artifacts/context-pack/deps-summary.md
             fi
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Upload Context Pack gate artifacts
@@ -131,6 +151,8 @@ jobs:
           name: context-pack-gate-artifacts
           path: |
             artifacts/context-pack/context-pack-e2e-summary.json
+            artifacts/context-pack/deps-summary.json
+            artifacts/context-pack/deps-summary.md
             artifacts/context-pack/context-pack-*-report.json
             artifacts/context-pack/context-pack-*-report.md
             artifacts/context-pack/context-pack-gate-observability.json

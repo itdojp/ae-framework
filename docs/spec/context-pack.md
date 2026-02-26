@@ -39,6 +39,9 @@ pnpm run context-pack:verify-product-coproduct
 # Phase5+（Pullback/Pushout・Monoidal・Kleisli）テンプレを検証
 pnpm run context-pack:verify-phase5
 
+# 依存境界（層の方向・循環依存）を検証
+pnpm run context-pack:deps
+
 # 探索パス・出力先を上書き
 node scripts/context-pack/validate.mjs \
   --sources 'spec/context-pack/**/*.{yml,yaml,json}' \
@@ -74,9 +77,30 @@ node scripts/context-pack/verify-phase5-templates.mjs \
   --report-json artifacts/context-pack/context-pack-phase5-report.json \
   --report-md artifacts/context-pack/context-pack-phase5-report.md
 
-# Verify Lite でも必須ステップとして実行される
-pnpm run verify:lite
+# 依存境界検証を直接実行（strict は label gating と連動）
+node scripts/context-pack/check-deps.mjs \
+  --rules configs/context-pack/dependency-rules.json \
+  --strict false \
+  --report-json artifacts/context-pack/deps-summary.json \
+  --report-md artifacts/context-pack/deps-summary.md
+
+# CI では context-pack-quality-gate ワークフロー内で常時実行される
+# （verify-lite の必須ステップではない）
 ```
+
+### 依存境界ルール検証（Issue #2278）
+- ルール定義: `configs/context-pack/dependency-rules.json`
+- 既定ルール（最小）:
+  - `src/core/**` -> `src/agents/**` を禁止
+  - `src/mcp-server/**` -> `scripts/**` を禁止
+  - `src/**` -> `docs/**` を禁止
+  - `src/*` モジュール単位の循環依存を禁止
+- 出力:
+  - `artifacts/context-pack/deps-summary.json`
+  - `artifacts/context-pack/deps-summary.md`
+- CI 連動:
+  - `context-pack-quality-gate.yml` で常に実行
+  - `enforce-context-pack` ラベル（または strict dispatch/main 設定）時は blocking
 
 ### Functor 境界検証（Issue #2246）
 - 入力:
@@ -228,6 +252,8 @@ pnpm run verify:lite
 ### 出力（artifacts）
 - JSON: `artifacts/context-pack/context-pack-validate-report.json`
 - Markdown: `artifacts/context-pack/context-pack-validate-report.md`
+- JSON (Dependency boundary): `artifacts/context-pack/deps-summary.json`
+- Markdown (Dependency boundary): `artifacts/context-pack/deps-summary.md`
 - JSON (Functor): `artifacts/context-pack/context-pack-functor-report.json`
 - Markdown (Functor): `artifacts/context-pack/context-pack-functor-report.md`
 - JSON (Natural Transformation): `artifacts/context-pack/context-pack-natural-transformation-report.json`
@@ -261,6 +287,7 @@ pnpm run verify:lite
 - `object/morphism mapping` エラー: Context Pack ID と Functor map の不一致
 - `layer-violation` / `forbidden-import`: 境界/依存ルール違反
 - `object-dependency-cycle`: object間依存の循環
+- `boundary-violation` / `dependency-cycle`: `context-pack:deps` の境界/循環違反
 - `morphism-entrypoint-missing-file/symbol`: 実装エントリポイントの欠落
 - `commutativity-check-missing`: 変更種別に必須の可換チェック不足
 - `commutativity-evidence-missing`: 回帰/互換/差分の証跡パス不足
@@ -298,12 +325,15 @@ pnpm run context-pack:verify-functor
 pnpm run context-pack:verify-natural-transformation
 pnpm run context-pack:verify-product-coproduct
 pnpm run context-pack:verify-phase5
+pnpm run context-pack:deps
 pnpm run verify:lite
 ```
 
 ### Artifacts
 - `artifacts/context-pack/context-pack-validate-report.json`
 - `artifacts/context-pack/context-pack-validate-report.md`
+- `artifacts/context-pack/deps-summary.json`
+- `artifacts/context-pack/deps-summary.md`
 - `artifacts/context-pack/context-pack-functor-report.json`
 - `artifacts/context-pack/context-pack-functor-report.md`
 - `artifacts/context-pack/context-pack-natural-transformation-report.json`
