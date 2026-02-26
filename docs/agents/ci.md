@@ -15,15 +15,15 @@
 ## Commands (copy/paste)
 
 ```bash
-gh pr checks <PR_NUMBER> --required
+gh pr checks "$PR_NUMBER" --required
 ```
 
 ```bash
-gh run view <RUN_ID> --log-failed
+gh run view "$RUN_ID" --log-failed
 ```
 
 ```bash
-gh run rerun <RUN_ID>
+gh run rerun "$RUN_ID"
 ```
 
 ```bash

@@ -14,19 +14,19 @@
 ## Commands (copy/paste)
 
 ```bash
-gh pr view <PR_NUMBER> --json title,body,labels,reviewDecision,statusCheckRollup
+gh pr view "$PR_NUMBER" --json title,body,labels,reviewDecision,statusCheckRollup
 ```
 
 ```bash
-gh api repos/itdojp/ae-framework/pulls/<PR_NUMBER>/comments --paginate
+gh api "repos/itdojp/ae-framework/pulls/${PR_NUMBER}/comments" --paginate
 ```
 
 ```bash
-gh api repos/itdojp/ae-framework/pulls/<PR_NUMBER>/reviews --paginate
+gh api "repos/itdojp/ae-framework/pulls/${PR_NUMBER}/reviews" --paginate
 ```
 
 ```bash
-gh pr checks <PR_NUMBER> --required
+gh pr checks "$PR_NUMBER" --required
 ```
 
 ## Artifacts to check
