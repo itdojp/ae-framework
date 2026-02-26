@@ -5,13 +5,13 @@
 「どの工程を自動化し、どの監査点（合意・再現性・説明責任）を残すか」を明確化する。
 
 ## 適用範囲
-- 対象リポジトリ：<repo名>
+- 対象リポジトリ：`itdojp/ae-framework`
 - 対象ブランチ：`main`（または `master` / `release/*`）
 - 対象変更：コード、設定、IaC、ドキュメントを含む全変更
 
 ## 用語
 - **PR**：監査ログの単位。議論・検証結果・承認・履歴を残すための最小単位。
-- **Required checks**：Branch protection で必須化されたステータスチェック（例：PR verify / verify-lite）。
+- **Required checks**：Branch protection で必須化されたステータスチェック（本運用では `verify-lite` と `gate`）。
 - **Low risk PR**：低リスク変更（人間Approve必須にしない）。
 - **High risk PR**：中〜高リスク変更（人間Approve必須＋追加ゲート必須）。
 - **Label gating**：PRラベルにより追加ゲート（重い検証、セキュリティ、厳格な契約検証等）を起動する運用。
@@ -21,7 +21,7 @@
 ---
 
 ## 基本方針（結論）
-1. **ae-framework は GitHub Actions（PR verify / verify-lite 等）前提のため、原則 PR 単位で実行する。**
+1. **ae-framework は GitHub Actions（`verify-lite` + `gate`）前提のため、原則 PR 単位で実行する。**
    - PRは required checks のゲートとして運用する。
    - `main` への直接 push は原則禁止（例外は「例外運用」参照）。
 
@@ -34,6 +34,10 @@
      - CIサマリ（検証結果の要約）
      - PRラベル（追加ゲートの宣言）
      - （必要に応じて）Codexレビューガイドライン（AGENTS.md 等）
+
+4. **判定基準は `policy/risk-policy.yml` を一次情報（SSOT）とする。**
+   - リスク分類、必要ラベル、required checks の定義は同ファイルに集約する。
+   - 実装（workflow / script）とドキュメントは同ファイルに合わせて更新する。
 
 ---
 
@@ -70,8 +74,8 @@
 
 ### 2) Required checks（最低保証）
 - `main` へのマージ条件として、以下を required checks に設定する：
-  - `PR verify` または `verify-lite`（チーム標準）
-  - （必要に応じて）doctest / lint / typecheck 等の軽量チェック
+  - `verify-lite`
+  - `gate`
 - required checks は **軽量・決定的**なものを基本とする。
   - 重い/不安定な検証は label gating で opt-in に寄せる（下記）。
 
@@ -96,10 +100,13 @@ High risk PR は、PRラベルで追加ゲートを宣言する。
 ### 代表ラベル（例）
 > 実際のラベル名はリポジトリの運用に合わせて調整する。
 
+- `risk:low`：低リスクPR（Approve不要、required checks green で auto-merge 対象）
+- `risk:high`：高リスクPR（Approve必須 + 追加ゲート必須）
 - `run-security`：SCA/SBOM/脆弱性スキャン等を実行（依存追加/更新、セキュリティ領域）
 - `run-ci-extended`：統合テスト/重い回帰/長時間テスト等を実行
 - `run-mutation` / `run-property` / `run-mbt`：必要時のみ（テスト強度の追加）
 - `enforce-artifacts`：成果物（サマリ/仕様/JSON等）検証を厳格化（スキーマ検証など）
+- `enforce-testing`：Property/Replay/MBT の再現性検証を厳格化
 - `enforce-context-pack`：設計/契約（Context Pack等）検証を厳格化（境界/依存の監視など）
 - `enforce-coverage` / `coverage:NN`：カバレッジ目標の強制
 

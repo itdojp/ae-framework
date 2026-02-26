@@ -26,6 +26,7 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 ### Strategy
 - Codex boundary + Verify-first strategy: `strategy/CODEX-AE-BOUNDARY-VERIFY-FIRST.md`
 - Plan -> Spec normalization template: `templates/plan-to-spec-normalization-template.md`
+- Agent development policy (risk-based PR gating): `agent-dev-policy.md`
 
 ### Maintenance
 - Repository layout policy: `maintenance/repo-layout-policy.md`
