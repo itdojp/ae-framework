@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import path from 'node:path';
 
 import {
   buildCatalogFromWorkflow,
@@ -77,6 +78,8 @@ describe('check-agent-commands-doc-sync', () => {
     const options = parseArgs([
       'node',
       'check-agent-commands-doc-sync.mjs',
+      '--root',
+      '/tmp/repo',
       '--workflow',
       'a.yml',
       '--output',
@@ -84,6 +87,7 @@ describe('check-agent-commands-doc-sync', () => {
       '--write',
     ]);
     expect(options).toEqual({
+      rootDir: path.resolve('/tmp/repo'),
       workflowPath: 'a.yml',
       outputPath: 'b.md',
       write: true,

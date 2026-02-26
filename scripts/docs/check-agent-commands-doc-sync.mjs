@@ -158,12 +158,21 @@ function renderMarkdown({ prCommands, issueCommands, prLabels, issueLabels, dyna
 
 function parseArgs(argv) {
   const options = {
+    rootDir: process.cwd(),
     workflowPath: DEFAULT_WORKFLOW_PATH,
     outputPath: DEFAULT_OUTPUT_PATH,
     write: false,
   };
   for (let index = 2; index < argv.length; index += 1) {
     const value = argv[index];
+    if (value.startsWith('--root=')) {
+      options.rootDir = path.resolve(value.slice('--root='.length));
+      continue;
+    }
+    if (value === '--root' && argv[index + 1] && !argv[index + 1].startsWith('-')) {
+      options.rootDir = path.resolve(argv[++index]);
+      continue;
+    }
     if (value === '--write') {
       options.write = true;
       continue;
@@ -182,6 +191,7 @@ function parseArgs(argv) {
     }
     if (value.startsWith('--output=')) {
       options.outputPath = value.slice('--output='.length);
+      continue;
     }
   }
   return options;
@@ -207,8 +217,8 @@ function buildCatalogFromWorkflow(workflowText) {
 
 export function main(argv = process.argv) {
   const options = parseArgs(argv);
-  const workflowPath = path.resolve(options.workflowPath);
-  const outputPath = path.resolve(options.outputPath);
+  const workflowPath = path.resolve(options.rootDir, options.workflowPath);
+  const outputPath = path.resolve(options.rootDir, options.outputPath);
 
   const workflowText = fs.readFileSync(workflowPath, 'utf8');
   const expected = buildCatalogFromWorkflow(workflowText);
