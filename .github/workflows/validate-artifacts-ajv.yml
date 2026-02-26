@@ -39,51 +39,15 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
         with: { node-version: '20' }
       - name: Install deps (pnpm)
-        run: pnpm install --no-frozen-lockfile
-      - name: Ensure ajv, ajv-cli, jq
-        run: pnpm dlx npm@10 add -D ajv ajv-cli jq || pnpm add -D ajv ajv-cli jq || true
-      - name: Validate adapter summaries
-        run: npx ajv -s docs/schemas/artifacts-adapter-summary.schema.json -d "artifacts/*/summary.json" --strict=false || true
-        continue-on-error: ${{ github.ref != 'refs/heads/main' && needs.gate.outputs.strict != 'true' }}
-      - name: Validate report envelopes
-        run: |
-          shopt -s nullglob
-          files=(artifacts/**/report-envelope.json artifacts/**/*-envelope.json)
-          if [ ${#files[@]} -eq 0 ]; then
-            echo "[ajv] no report envelopes found"
-            exit 0
-          else
-            schema_path="schema/envelope.schema.json"
-            if [ ! -f "$schema_path" ] && [ -f docs/schemas/report-envelope.schema.json ]; then
-              schema_path="docs/schemas/report-envelope.schema.json"
-            fi
-            for file in "${files[@]}"; do
-              echo "[ajv] validating $file"
-              npx ajv -s "$schema_path" -d "$file" --strict=false;
-            done
-          fi
-        continue-on-error: ${{ github.ref != 'refs/heads/main' && needs.gate.outputs.strict != 'true' }}
-      - name: Validate formal summary
-        run: |
-          if [ -f formal/summary.json ]; then npx ajv -s docs/schemas/formal-summary.schema.json -d formal/summary.json --strict=false; fi
-        continue-on-error: ${{ github.ref != 'refs/heads/main' && needs.gate.outputs.strict != 'true' }}
-      - name: Validate flow fixtures
-        run: |
-          if [ -f schema/flow.schema.json ] && [ -f fixtures/flow/sample.flow.json ]; then
-            npx ajv -s schema/flow.schema.json -d fixtures/flow/sample.flow.json --strict=false;
-          else
-            printf "%s\n" "[ajv] flow schema or fixture not found; skipping"
-          fi
-        continue-on-error: ${{ github.ref != 'refs/heads/main' && needs.gate.outputs.strict != 'true' }}
-      - name: Validate property summaries
-        run: |
-          if [ -f artifacts/properties/summary.json ]; then \
-            if jq -e 'type=="array"' artifacts/properties/summary.json >/dev/null; then \
-              jq -c '.[]' artifacts/properties/summary.json | while read -r item; do \
-                printf "%s\n" "$item" | npx ajv -s docs/schemas/artifacts-properties-summary.schema.json -d /dev/stdin --strict=false; \
-              done; \
-            else \
-              npx ajv -s docs/schemas/artifacts-properties-summary.schema.json -d artifacts/properties/summary.json --strict=false; \
-            fi; \
-          fi
-        continue-on-error: ${{ github.ref != 'refs/heads/main' && needs.gate.outputs.strict != 'true' }}
+        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+      - name: Validate artifacts schema contracts
+        env:
+          ARTIFACTS_VALIDATE_STRICT: ${{ needs.gate.outputs.strict }}
+        run: pnpm run artifacts:validate -- --strict="${ARTIFACTS_VALIDATE_STRICT}"
+      - name: Upload schema-validation artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: schema-validation-${{ github.run_id }}
+          path: artifacts/schema-validation/**
+          if-no-files-found: warn

@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae.dev/schema/artifacts-codex-result.schema.json",
+  "title": "Codex Result Artifact",
+  "type": "object",
+  "required": [
+    "phase",
+    "response",
+    "ts"
+  ],
+  "properties": {
+    "phase": {
+      "type": "string",
+      "enum": [
+        "intent",
+        "formal",
+        "stories",
+        "validation",
+        "modeling",
+        "ui"
+      ]
+    },
+    "response": {
+      "type": "object",
+      "required": [
+        "summary",
+        "analysis",
+        "recommendations",
+        "nextActions",
+        "warnings",
+        "shouldBlockProgress"
+      ],
+      "properties": {
+        "summary": {
+          "type": "string"
+        },
+        "analysis": {
+          "type": "string"
+        },
+        "recommendations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "nextActions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "shouldBlockProgress": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "ts": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}
