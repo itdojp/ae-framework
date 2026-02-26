@@ -3,6 +3,15 @@
 `AGENTS.md` から参照する、エージェント向けの索引です。  
 ここでは一次情報の場所のみを示し、方針本文の重複を避けます。
 
+## ドメイン別 runbook
+
+- CI: `docs/agents/ci.md`
+- PR: `docs/agents/pr.md`
+- Spec: `docs/agents/spec.md`
+- Formal Methods: `docs/agents/formal.md`
+- Context Pack: `docs/agents/context-pack.md`
+- Security: `docs/agents/security.md`
+
 ## 主要ドメインと一次情報
 
 - 境界定義（一次/二次）: `docs/agents/agents-doc-boundary-matrix.md`
@@ -18,10 +27,11 @@
 ## 利用順
 
 1. `AGENTS.md` の Decision Table で作業タイプを決める
-2. この索引から一次情報を開く
+2. この索引から一次情報とrunbookを開く
 3. 実行結果を PR コメントと artifacts に残す
 
-## 今後の拡張
+## 関連Issue
 
-- ドメイン別runbook（`docs/agents/ci.md`, `pr.md`, `spec.md`, `formal.md`, `context-pack.md`, `security.md`）は #2292 で追加する。
-- Slash Commands / Labels の docs 同期自動化は #2294 で追加する。
+- #2292: ドメイン別runbook（`docs/agents/ci.md`, `pr.md`, `spec.md`, `formal.md`, `context-pack.md`, `security.md`）
+- #2293: Agent文書の境界表（一次情報/二次情報）
+- #2294: Slash Commands / Labels の docs 同期自動化
