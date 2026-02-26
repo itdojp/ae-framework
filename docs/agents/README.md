@@ -20,6 +20,7 @@
 - CI障害復旧: `docs/ci/ci-troubleshooting-guide.md`
 - PR自動化運用: `docs/ci/pr-automation.md`
 - Prompt Pack（検証プロンプト集）: `docs/agents/recipes/README.md`
+- Handoff標準プロトコル: `docs/agents/handoff.md`
 - 権限境界: `docs/ci/automation-permission-boundaries.md`
 - Risk/Label判定: `policy/risk-policy.yml`
 - Slash Commands実装: `.github/workflows/agent-commands.yml`
