@@ -26,13 +26,14 @@
 
 1. `docs/agents/README.md`（エージェント向け索引）
 2. `docs/agents/agents-doc-boundary-matrix.md`（一次情報/二次情報の境界定義）
-3. `docs/ci-policy.md`（CI方針のSSOT）
-4. `docs/ci/ci-operations-handbook.md`（日次運用）
-5. `docs/ci/ci-troubleshooting-guide.md`（失敗時の復旧手順）
-6. `docs/ci/pr-automation.md`（Copilotレビュー後の自動化フロー）
-7. `docs/ci/automation-permission-boundaries.md`（workflow_dispatch / issue_comment 権限境界）
-8. `.github/workflows/agent-commands.yml`（Slash Commands 実装値）
-9. `policy/risk-policy.yml`（risk/label 判定のSSOT）
+3. `docs/agents/recipes/README.md`（検証プロンプト集 / Prompt Pack）
+4. `docs/ci-policy.md`（CI方針のSSOT）
+5. `docs/ci/ci-operations-handbook.md`（日次運用）
+6. `docs/ci/ci-troubleshooting-guide.md`（失敗時の復旧手順）
+7. `docs/ci/pr-automation.md`（Copilotレビュー後の自動化フロー）
+8. `docs/ci/automation-permission-boundaries.md`（workflow_dispatch / issue_comment 権限境界）
+9. `.github/workflows/agent-commands.yml`（Slash Commands 実装値）
+10. `policy/risk-policy.yml`（risk/label 判定のSSOT）
 
 ## Scope
 
