@@ -1,8 +1,10 @@
 # CI Documentation Boundary Matrix
 
-最終更新: 2026-02-25
+最終更新: 2026-02-26
 
 目的: `docs/ci` 配下の運用ドキュメントについて、重複を抑えた責務境界を定義する。
+
+Agent文書側の境界定義は `docs/agents/agents-doc-boundary-matrix.md` を参照。
 
 ## 境界定義（主文書と個別runbook）
 

@@ -5,6 +5,7 @@
 
 ## 主要ドメインと一次情報
 
+- 境界定義（一次/二次）: `docs/agents/agents-doc-boundary-matrix.md`
 - CI方針（SSOT）: `docs/ci-policy.md`
 - CI運用: `docs/ci/ci-operations-handbook.md`
 - CI障害復旧: `docs/ci/ci-troubleshooting-guide.md`
@@ -24,4 +25,4 @@
 ## 今後の拡張
 
 - ドメイン別runbook（`docs/agents/ci.md`, `pr.md`, `spec.md`, `formal.md`, `context-pack.md`, `security.md`）は #2292 で追加する。
-- Agent文書の境界表（一次情報/二次情報）は #2293 で定義する。
+- Slash Commands / Labels の docs 同期自動化は #2294 で追加する。
