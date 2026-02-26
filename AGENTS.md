@@ -1,110 +1,40 @@
-# AGENTS — Multi‑Agent作業ルール（ae-framework）
+# AGENTS — ae-framework Router
 
-このドキュメントは、リポジトリ内でエージェントが安全かつ一貫した方法で作業するためのガイドです。
+このファイルは、エージェント作業時の最小ルータです。  
+詳細手順はドメイン別ドキュメントを参照し、本ファイルへの重複列挙を避けます。
 
-## 目的
-- Risk-based PR gating を前提に CI を安定運用する（required: `verify-lite` + `policy-gate`）
-- 小さく安全な PR を多数（revert しやすい粒度）
-- actionlint 準拠（echo→printf、GITHUB_OUTPUT/GITHUB_ENV は printf で追記）
-- Coverage / Formal の表示は PR コメントに要約を投稿（coverage は閾値の由来/ポリシー、formal は再現ヒントと tools チェックを提示）
+## Decision Table
 
-## ブランチ/PR運用
-- ブランチ名: `feat/<issue>-<topic>` または `chore/ci-<topic>-<short>`
-- PR には `risk:low` または `risk:high` を必ず付与する（`Policy Gate` 内の `risk-labeler` が自動付与）
-  - `risk:low`: required checks green なら auto-merge 対象
-  - `risk:high`: 人間Approve >= 1 + policyラベル + 追加ゲート green が必須
-- 主要ラベル:
-  - `run-security`: Security/SBOM 系を実行
-  - `run-ci-extended`: 重い回帰テストを実行
-  - `enforce-artifacts`: artifacts/schema 検証を strict 化
-  - `enforce-testing`: test harness 検証を strict 化
-  - `enforce-context-pack`: context-pack 境界検証を strict 化
-  - `coverage:<pct>`: coverage-check のしきい値上書き
-- ラベル定義/判定基準は `policy/risk-policy.yml` を一次情報として扱う
+| 依頼タイプ | 最初に読む一次情報 | 実行前の判断ポイント | 結果確認先 |
+| --- | --- | --- | --- |
+| CI失敗の復旧 | `docs/ci/ci-troubleshooting-guide.md` | required check か opt-in か | 対象Jobログ / PRコメント |
+| PR自動化・レビュー運用 | `docs/ci/pr-automation.md` | auto-fix / auto-merge の有効条件 | `gate` / `policy-gate` / automationコメント |
+| Risk判定・ラベル運用 | `policy/risk-policy.yml` | `risk:low` / `risk:high` と required labels | `policy-gate` サマリ |
+| GitHub Actions修正 | `.github/workflows/*.yml` | `printf`運用・権限境界・再現性 | `actionlint` / 対象workflow結果 |
+| Slash Command運用 | `.github/workflows/agent-commands.yml` | 受理コマンド・付与ラベルの実装値 | PRコメント / 付与ラベル |
+| 形式手法・仕様検証 | `docs/quality/formal-runbook.md` | 実行対象（TLA+/CSP/Lean/Alloy等）と証跡 | `artifacts/formal/*` |
 
-## レビュー観点（risk別）
-- `risk:low`: 誤分類がないか、required checks（`verify-lite` / `policy-gate`）が green か、rollback が明記されているかを確認
-- `risk:high`: Approve 条件、必須ラベル、追加ゲート結果（Security/Artifacts/Testing/Context Pack）が `policy-gate` で green 判定になるか確認
-- CI 失敗時は「再現手順（seed/trace/command）」と「修正根拠」を PR に記載する
+## Invariants（不変条件）
 
-## テスト/検証
-- ローカル: `corepack enable && pnpm i && pnpm build`
-- 速い確認: `pnpm run test:fast`（CI と同一の除外設定）
-- QA 軽量: `node dist/src/cli/index.js qa --light`（または `pnpm tsx src/cli/qa-cli.ts --light`）
-- actionlint: `uses: rhysd/actionlint@v1.7.1`（CI で workflow-lint.yml が実行）
+- Required checks の基準は `verify-lite` + `policy-gate`（branch protection 設定を一次情報とする）。
+- Riskラベルと判定規則の一次情報は `policy/risk-policy.yml`。  
+  `risk:high` は最小1名の人間Approve、必要に応じて policy label / 追加ゲートを要求する。
+- GitHub Actions の出力書き込みは `printf` を使用し、`$GITHUB_OUTPUT` / `$GITHUB_ENV` への追記はシェル安全性を維持する。
+- 方針は `docs/ci-policy.md`、運用は `docs/ci/*` を一次情報として参照し、AGENTSに再掲しない。
 
-## ワークフロー変更ポリシー
-- echo→printf へ置換（特に `>> $GITHUB_OUTPUT` / `$GITHUB_ENV` は `printf` + 変数引用）
-- paths / labels による発火制御（重い作業は opt-in）
-- SBOM/セキュリティは PR 既定非必須、ラベル/変数で段階導入
+## Progressive Disclosure（参照順）
 
-## Slash Commands（GitHub コメントでの即時連携）
-- PR コメントで以下を投稿すると、ラベル付与などを自動化します（.github/workflows/agent-commands.yml）。
-  - `/run-qa` … `run-qa` ラベル付与（ae-ci の QA 実行）
-  - `/run-security` … `run-security` ラベル付与（Security/SBOM 実行）
-  - `/run-hermetic` … `run-hermetic` ラベル付与（Hermetic CI 実行）
-  - `/run-spec` … `run-spec` ラベル付与（Spec Fail-Fast 実行）
-  - `/run-drift` … `run-drift` ラベル付与（Codegen Drift 検出 実行）
-  - `/run-adapters` … `run-adapters` ラベル付与（Adapter Thresholds レポート実行）
-  - `/enforce-perf` … `enforce-perf` ラベル付与（Perf しきい値 enforcement）
-  - `/perf <pct|clear>` … `perf:<pct>` を設定（上書き）/ クリア
-  - `/enforce-lh` … `enforce-lh` ラベル付与（Lighthouse しきい値 enforcement）
-  - `/lh <pct|clear>` … `lh:<pct>` を設定（上書き）/ クリア
-  - `/non-blocking` … `ci-non-blocking` ラベル付与（一部ジョブを continue-on-error）
-  - `/blocking` … `ci-non-blocking` ラベル除去（通常のブロッキング設定へ）
-  - `/ready` … `do-not-merge` ラベル除去（マージ待ち状態へ）
-  - `/pr-digest` … `pr-summary:digest` ラベル付与（要約）
-  - `/pr-detailed` … `pr-summary:detailed` ラベル付与（詳細）
-  - `/handoff A|B|C` … ハンドオフ用ラベル `handoff:agent-a|b|c` を付与し、次エージェントに委譲
-  - `/enforce-typecov` … `enforce-typecov` ラベル付与（型カバレッジのしきい値 enforcement）
-  - `/coverage <pct>` … `coverage:<pct>` ラベル設定（既存の coverage:* を置換）
-  - バッチ系（CI Fast の任意カテゴリ実行、いずれもラベル付与）
-    - `/qa-batch-commands` または `/run-qa:commands` … `qa-batch:commands`
-    - `/qa-batch-cli` または `/run-qa:cli` … `qa-batch:cli`
-    - `/qa-batch-property` または `/run-qa:property` … `qa-batch:property`
-    - `/qa-batch-agents` または `/run-qa:agents` … `qa-batch:agents`
-  - ディスパッチ（workflow_dispatch 直起動）
-    - `/verify-lite` … verify-lite.yml を PR の head ブランチで起動
-    - `/run-qa-dispatch` … ae-ci.yml を PR の head ブランチで起動
-    - `/run-security-dispatch` … sbom-generation.yml を PR の head ブランチで起動
-    - `/formal-aggregate-dispatch` … formal-aggregate.yml を PR の head ブランチで起動（`run-formal` 併用推奨）
-      - 環境変数（整形・抑制）: `FORMAL_AGG_LINE_CLAMP`（既定200）, `FORMAL_AGG_ERRORS_LIMIT`（既定5）, `FORMAL_AGG_SNIPPET_MAX_LINES`（既定20）
-    - `/ci-fast-dispatch` … ci-fast.yml を PR の head ブランチで起動（対応ラベルが付くとバッチも実行）
-    - `/formal-verify-dispatch` … formal-verify.yml を PR の head ブランチで起動
-    - `/formal-apalache-dispatch` … formal-verify.yml を Apalache ターゲットで起動（inputs.target=apalache）
-    - `/run-flake-dispatch` … flake-detect.yml を PR の head ブランチで起動
-    - `/spec-validation-dispatch` … spec-validation.yml を PR の head ブランチで起動
-  - フォーマル/契約（ラベル付与）
-    - `/run-formal` … `run-formal` を付与（verify/formal 系スタブを非ブロッキングで実行）
-    - `/enforce-formal` … `enforce-formal` を付与（有効時にエンフォース）
-    - `/enforce-contracts` … `enforce-contracts` を付与（有効時にエンフォース）
+1. `docs/agents/README.md`（エージェント向け索引）
+2. `docs/ci-policy.md`（CI方針のSSOT）
+3. `docs/ci/ci-operations-handbook.md`（日次運用）
+4. `docs/ci/ci-troubleshooting-guide.md`（失敗時の復旧手順）
+5. `docs/ci/pr-automation.md`（Copilotレビュー後の自動化フロー）
+6. `docs/ci/automation-permission-boundaries.md`（workflow_dispatch / issue_comment 権限境界）
+7. `.github/workflows/agent-commands.yml`（Slash Commands 実装値）
+8. `policy/risk-policy.yml`（risk/label 判定のSSOT）
 
-## 参考ファイル
-- `.github/workflows/ae-ci.yml`: PR 時 QA/Bench 軽量モード
-- `.github/workflows/sbom-generation.yml`: SBOM/依存監査/閾値強制
-- `docs/ci-policy.md`: ポリシー集約
-- `SECURITY.md`: セキュリティ運用（ラベル/変数）
-- `docs/quality/cedar-quality-gates.md`: Cedar policies の品質ゲート（report-only/label-gated）
+## Scope
 
-## 作業の進め方（共通）
-1) 変更箇所を最小限に限定する
-2) CI に影響のある変更は `run-qa` ラベルで限定的に回す
-3) テキスト生成・整形系は printf で統一
-4) 変更後: `pnpm -s types:check && pnpm -s build` のローカル通過を目安
-
-### 小PR連投のレビューポリシー（推奨）
-- 1PRあたりの変更は小さく、revertしやすい粒度に保つ
-- 体裁やコメント整形などは機能変更と切り分ける（レビュー容易化）
-- 衝突しやすいYAML/Docsは、こまめにmainへ追従（rebase/merge）
-
-### PRコメントヘッダ（AE-***）統一ガイド（推奨）
-- 集約系コメントはヘッダ行を固定（例: `<!-- AE-FORMAL-AGGREGATE -->` / `<!-- AE-COVERAGE-SUMMARY -->`）
-- 同一ヘッダのコメントはアップサート（一意に更新）
-- 1行サマリ→詳細→メタ情報（Clamp/Generated/Derived/Policy）の順で可読性を確保
-5) 小PR連投時の推奨ラベル: `ci-non-blocking`（非ブロッキング運用）, `run-formal`（Formalをopt-in）
-
-#### 例（良い/BAD）
-- 良い: Coverage コメントは `Threshold (effective)` → `Derived` → `Policy/Policy source` の順で表示（docsリンク付き）
-- 良い: Formal Aggregate コメントは `Present` → `Summary` → `By-type present` → `Apalache ran/ok` → `メタ（Tools/Reproduce/Policy/Clamp/Generated）`
-- BAD: 同一ヘッダのコメントを重複投稿する（アップサートせずノイズが増える）
-- BAD: 由来（Derived）/Policy の表記がCoverage/Adaptersで不一致になる
+- このファイルは「入口（Router）」のみを保持する。
+- 実行コマンド詳細、Slash Command一覧、ラベル詳細条件は一次情報へリンクし、ここでは列挙しない。
+- ドメイン別runbook追加は `docs/agents/*` で段階的に拡張する（関連: #2292）。
