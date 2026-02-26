@@ -467,23 +467,31 @@ jobs:
             const fs = require('fs');
             const path = require('path');
             const summaryPath = path.resolve('reports/heavy-test-trends-history/summary.json');
-            const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
             const harnessPath = path.resolve('artifacts/ci/harness-health.json');
-            const harness = fs.existsSync(harnessPath)
-              ? JSON.parse(fs.readFileSync(harnessPath, 'utf8'))
+            if (!fs.existsSync(harnessPath)) {
+              core.info('Harness health artifact is missing; skipping issue creation.');
+              return;
+            }
+            const harness = JSON.parse(fs.readFileSync(harnessPath, 'utf8'));
+            if ((harness.severity || '').toLowerCase() !== 'critical') {
+              core.info('Harness health is not critical; skipping issue creation.');
+              return;
+            }
+
+            const summary = fs.existsSync(summaryPath)
+              ? JSON.parse(fs.readFileSync(summaryPath, 'utf8'))
               : {};
             const snapshots = Array.isArray(summary.snapshots) ? summary.snapshots : [];
             const criticalSnapshot = snapshots.find(s => (s.severity || '').toLowerCase() === 'critical');
-            if (!criticalSnapshot) {
-              core.info('No critical snapshot detected; skipping issue creation.');
-              return;
-            }
-            const criticalEntries = (criticalSnapshot.entries || []).filter(e => (e.severity || '').toLowerCase() === 'critical');
+            const criticalEntries = criticalSnapshot
+              ? (criticalSnapshot.entries || []).filter(e => (e.severity || '').toLowerCase() === 'critical')
+              : [];
             const detailLines = criticalEntries.map(entry => {
               const reasons = (entry.reasons || []).join('; ') || 'threshold exceeded';
               return `- **${entry.label}**: ${reasons}`;
             }).join('\n');
-            const title = `[CI Extended] Harness health critical alert - ${criticalSnapshot.label}`;
+            const snapshotLabel = criticalSnapshot?.label || `run-${context.runId}`;
+            const title = `[CI Extended] Harness health critical alert - ${snapshotLabel}`;
             const recommendedLabels = Array.isArray(harness.recommendedLabels) ? harness.recommendedLabels : [];
             const harnessReasons = Array.isArray(harness.reasons) ? harness.reasons : [];
             const { data: openIssues } = await github.rest.issues.listForRepo({
@@ -502,13 +510,13 @@ jobs:
               '## Alert',
               `- Workflow: ${context.workflow} (run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`,
               '- Severity: critical',
-              `- Snapshot: ${criticalSnapshot.label}`,
-              '- Summary: reports/heavy-test-trends-history/summary.md',
-              '- JSON: reports/heavy-test-trends-history/summary.json',
+              `- Snapshot: ${snapshotLabel}`,
+              '- Summary: reports/heavy-test-trends-history/summary.md (if available)',
+              '- JSON: reports/heavy-test-trends-history/summary.json (if available)',
               '- Harness health: artifacts/ci/harness-health.json',
               '',
               '### Heavy trend details',
-              detailLines || '- (no critical entry details recorded)',
+              detailLines || '- (no critical heavy trend entry recorded)',
               '',
               '### Harness reasons',
               ...(harnessReasons.length > 0 ? harnessReasons.slice(0, 10).map((reason) => `- ${reason}`) : ['- (none)']),

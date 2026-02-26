@@ -62,11 +62,8 @@ const GATE_DEFINITIONS = [
     recommendedLabels: ['run-ci-extended'],
     defaultCommands: ['gh workflow run ci-extended.yml --repo <owner/repo>'],
     matcher: (check) => (
-      check.name === 'CI Extended (entry: pr/push)'
-      || check.name === 'CI Extended (scheduled)'
-      || check.name === 'PR Verify (entry: pr) / verify'
-      || /ci extended/i.test(check.workflowName)
-      || (check.workflowName === 'Full CI (Comprehensive Testing)' && /PR Verify/i.test(check.name))
+      /^CI Extended \(/.test(check.name)
+      || /^ci[- ]extended(\.yml)?$/i.test(check.workflowName)
     ),
   },
 ];
@@ -350,23 +347,23 @@ function evaluateGateFromChecks(gateDefinition, checkRuns) {
     };
   }
 
-  const pending = matched.filter((check) => check.status !== 'COMPLETED');
-  if (pending.length > 0) {
-    return {
-      status: 'warn',
-      reasons: [
-        `${gateDefinition.title}: pending checks (${pending.map((check) => check.name).join(', ')}).`,
-      ],
-      checks: matched,
-    };
-  }
-
   const failed = matched.filter((check) => FAIL_CONCLUSIONS.has(check.conclusion));
   if (failed.length > 0) {
     return {
       status: 'fail',
       reasons: [
         `${gateDefinition.title}: failing checks (${failed.map((check) => `${check.name}:${check.conclusion || 'UNKNOWN'}`).join(', ')}).`,
+      ],
+      checks: matched,
+    };
+  }
+
+  const pending = matched.filter((check) => check.status !== 'COMPLETED');
+  if (pending.length > 0) {
+    return {
+      status: 'warn',
+      reasons: [
+        `${gateDefinition.title}: pending checks (${pending.map((check) => check.name).join(', ')}).`,
       ],
       checks: matched,
     };
@@ -501,12 +498,12 @@ function evaluateGateFromLocalArtifacts(gateDefinition, localArtifacts) {
   };
 }
 
-function deriveSeverity(gates) {
+function deriveSeverity(gates, { forceWarn = false } = {}) {
   const statuses = Object.values(gates).map((gate) => gate.status);
   if (statuses.includes('fail')) {
     return 'critical';
   }
-  if (statuses.includes('warn')) {
+  if (statuses.includes('warn') || forceWarn) {
     return 'warn';
   }
   return 'ok';
@@ -605,7 +602,7 @@ function buildHarnessHealthReport({
     reasons.push(...finalReasons);
   }
 
-  const severity = deriveSeverity(gateResults);
+  const severity = deriveSeverity(gateResults, { forceWarn: extraReasons.length > 0 });
   const activeGates = Object.entries(gateResults).filter(([, gate]) => ['fail', 'warn'].includes(gate.status));
   const currentLabels = new Set(labels);
   const recommendedLabels = [];
@@ -729,16 +726,6 @@ function writeOutputs(report, outputJsonPath, outputMarkdownPath, mode) {
   fs.writeFileSync(outputMarkdownPath, renderMarkdown(report, mode));
 }
 
-export {
-  buildHarnessHealthReport,
-  evaluateGateFromLocalArtifacts,
-  collapseChecksByName,
-  evaluateGateFromChecks,
-  isExecutedAsMain,
-  parseArgs,
-  renderMarkdown,
-};
-
 function isExecutedAsMain(importMetaUrl, argvPath = process.argv[1]) {
   if (!importMetaUrl || !argvPath) {
     return false;
@@ -747,6 +734,15 @@ function isExecutedAsMain(importMetaUrl, argvPath = process.argv[1]) {
   const modulePath = fileURLToPath(importMetaUrl);
   return modulePath === entryPath;
 }
+
+export {
+  buildHarnessHealthReport,
+  evaluateGateFromLocalArtifacts,
+  collapseChecksByName,
+  evaluateGateFromChecks,
+  parseArgs,
+  renderMarkdown,
+};
 
 function main(argv = process.argv) {
   const options = parseArgs(argv);

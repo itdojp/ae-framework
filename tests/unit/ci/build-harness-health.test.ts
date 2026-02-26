@@ -53,6 +53,32 @@ describe('build-harness-health', () => {
     expect(gate.reasons[0]).toContain('verify:FAILURE');
   });
 
+  it('keeps fail when pending and failed checks coexist', () => {
+    const gate = evaluateGateFromChecks(
+      {
+        id: 'example',
+        title: 'Example Gate',
+        matcher: (check) => check.name.startsWith('verify'),
+      },
+      [
+        {
+          name: 'verify-failed',
+          workflowName: 'PR Verify',
+          status: 'COMPLETED',
+          conclusion: 'FAILURE',
+        },
+        {
+          name: 'verify-rerun',
+          workflowName: 'PR Verify',
+          status: 'IN_PROGRESS',
+          conclusion: '',
+        },
+      ],
+    );
+
+    expect(gate.status).toBe('fail');
+  });
+
   it('falls back to local artifacts and emits labels/hints on failures', () => {
     const report = buildHarnessHealthReport({
       repo: 'itdojp/ae-framework',
@@ -90,8 +116,39 @@ describe('build-harness-health', () => {
     expect(report.recommendedLabels).toContain('run-ci-extended');
     expect(report.recommendedLabels).not.toContain('enforce-testing');
     expect(report.reasons).toContain('synthetic reason');
-    expect(report.reproducibleHints.some((hint) => hint.command?.includes('TRACE_ID=TRACE-42'))).toBe(true);
+    expect(
+      report.reproducibleHints.some(
+        (hint) => hint.trace === 'TRACE-42' && hint.command?.includes('TRACE_ID=TRACE-42'),
+      ),
+    ).toBe(true);
+    expect(
+      report.reproducibleHints.some(
+        (hint) => hint.trace === 'TRACE-100' && hint.command?.includes('TRACE_ID=TRACE-100'),
+      ),
+    ).toBe(true);
     expect(report.reproducibleHints.some((hint) => hint.seed === 20260226)).toBe(true);
+  });
+
+  it('downgrades to warn when PR check loading failed and all gates are skipped', () => {
+    const report = buildHarnessHealthReport({
+      repo: 'itdojp/ae-framework',
+      prNumber: 2279,
+      workflow: 'PR Maintenance',
+      runId: 100,
+      commitSha: 'abc123',
+      checkRuns: [],
+      labels: [],
+      localArtifacts: {
+        schemaValidation: null,
+        testingRepro: null,
+        contextPackDeps: null,
+        heavyTrendSummary: null,
+      },
+      extraReasons: ['PR checks could not be loaded via gh: rate limited'],
+    });
+
+    expect(report.severity).toBe('warn');
+    expect(report.reasons[0]).toContain('rate limited');
   });
 
   it('renders detailed markdown with reasons and hints', () => {
