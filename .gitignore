@@ -84,6 +84,7 @@ artifacts/cassettes/
 artifacts/codex/
 artifacts/hermetic-reports/
 artifacts/testing/
+artifacts/schema-validation/
 artifacts/api/.tmp/
 tests/api/generated/
 sbom.json

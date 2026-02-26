@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae.dev/schema/artifacts-mbt-summary.schema.json",
+  "title": "MBT Summary",
+  "type": "object",
+  "required": [
+    "seed",
+    "runs",
+    "depth",
+    "scenarios",
+    "violations"
+  ],
+  "properties": {
+    "seed": {
+      "type": "integer"
+    },
+    "runs": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "depth": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "scenarios": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "index",
+          "steps",
+          "final",
+          "violations"
+        ],
+        "properties": {
+          "index": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "action",
+                "applied",
+                "reason"
+              ],
+              "properties": {
+                "action": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "applied": {
+                  "type": "boolean"
+                },
+                "reason": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "final": {
+            "type": "object",
+            "required": [
+              "available",
+              "reserved",
+              "shipped"
+            ],
+            "properties": {
+              "available": {
+                "type": "integer"
+              },
+              "reserved": {
+                "type": "integer"
+              },
+              "shipped": {
+                "type": "integer"
+              }
+            },
+            "additionalProperties": true
+          },
+          "violations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "violations": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "additionalProperties": true
+}

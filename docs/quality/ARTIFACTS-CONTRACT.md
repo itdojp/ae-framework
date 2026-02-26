@@ -55,6 +55,12 @@ CIが生成する成果物（artifacts/reports）について **最低限の契�
 ## 4. 検証スクリプト
 
 ```bash
+# JSON Schema 契約を検証（既定: non-blocking）
+pnpm run artifacts:validate
+
+# JSON Schema 契約を strict モードで検証（違反で exit 1）
+pnpm run artifacts:validate -- --strict
+
 # 既定の必須成果物を確認（非厳格）
 node scripts/ci/check-required-artifacts.mjs
 
@@ -63,6 +69,11 @@ REQUIRED_ARTIFACTS=artifacts/verify-lite/verify-lite-run-summary.json,artifacts/
 REQUIRED_ARTIFACTS_STRICT=1 \
 node scripts/ci/check-required-artifacts.mjs --strict
 ```
+
+`pnpm run artifacts:validate` は以下を常に出力します。
+- `artifacts/schema-validation/summary.json`
+- `artifacts/schema-validation/summary.md`
+- `artifacts/schema-validation/errors.json`
 
 ## 5. CI統合（段階導入）
 - `verify-lite.yml` に **non-blocking** で組み込み（観測フェーズ）
@@ -75,6 +86,7 @@ node scripts/ci/check-required-artifacts.mjs --strict
 - `.github/workflows/formal-aggregate.yml`
 - `.github/workflows/formal-verify.yml`
 - `scripts/ci/check-required-artifacts.mjs`
+- `scripts/ci/validate-artifacts-ajv.mjs`
 - `scripts/ci/validate-formal-summary-v1.mjs`
 - `schema/artifact-metadata.schema.json`
 - `schema/formal-summary-v1.schema.json`
