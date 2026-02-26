@@ -74,5 +74,5 @@ pnpm -s run ci:context-pack:observe -- \
 
 - E2E fixture は `fixtures/context-pack/e2e` を SSOT とする。
 - 実行レポートは `artifacts/context-pack/` 配下に保存される。
-- 依存境界チェックのレポートは `deps-summary.json` / `deps-summary.md` として保存される。
+- 依存境界チェックのレポートは `artifacts/context-pack/deps-summary.json` / `artifacts/context-pack/deps-summary.md` として保存される。
 - 観測レポート JSON/Markdown は同ディレクトリに出力され、PR Step Summary にも転記される。

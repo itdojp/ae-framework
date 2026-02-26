@@ -96,6 +96,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
       - name: Run Context Pack dependency boundary checks
+        continue-on-error: ${{ needs.gate.outputs.strict != 'true' }}
         run: |
           pnpm -s run context-pack:deps -- \
             --strict="${{ needs.gate.outputs.strict }}" \

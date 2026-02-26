@@ -105,6 +105,27 @@ describe('context-pack dependency boundary check CLI', () => {
     expect(report.metrics.cycleCount).toBe(0);
   });
 
+  it('accepts npm/pnpm style -- option separator', async () => {
+    const workdir = await setupWorkspace('context-pack-deps-dashdash-');
+    await mkdir(join(workdir, 'src', 'core'), { recursive: true });
+    await writeFile(join(workdir, 'src', 'core', 'service.ts'), 'export const serviceValue = 1;\n', 'utf8');
+
+    await writeRules(workdir, {
+      schemaVersion: 'context-pack-dependency-rules/v1',
+      sourceGlobs: ['src/**/*.ts'],
+      rules: [],
+      cycleDetection: {
+        enabled: true,
+        scope: ['src/**'],
+        groupBy: 'src-first-segment',
+      },
+    });
+
+    const result = runCheckDeps(workdir, ['--', '--strict=true']);
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('status=pass');
+  });
+
   it('returns warn status in report-only mode when boundary rules are violated', async () => {
     const workdir = await setupWorkspace('context-pack-deps-warn-');
     await mkdir(join(workdir, 'src', 'core'), { recursive: true });

@@ -84,8 +84,8 @@ node scripts/context-pack/check-deps.mjs \
   --report-json artifacts/context-pack/deps-summary.json \
   --report-md artifacts/context-pack/deps-summary.md
 
-# Verify Lite でも必須ステップとして実行される
-pnpm run verify:lite
+# CI では context-pack-quality-gate ワークフロー内で常時実行される
+# （verify-lite の必須ステップではない）
 ```
 
 ### 依存境界ルール検証（Issue #2278）

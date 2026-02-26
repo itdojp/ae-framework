@@ -95,6 +95,11 @@ function parseArgs(argv) {
     const arg = argv[index];
     const next = argv[index + 1];
 
+    // Allow npm/pnpm style argument separator (`--`) without failing parse.
+    if (arg === '--') {
+      continue;
+    }
+
     if (arg === '--help' || arg === '-h') {
       options.help = true;
       continue;
