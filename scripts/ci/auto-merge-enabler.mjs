@@ -22,6 +22,8 @@ const FAILED_LIST_LIMIT = 5;
 const AUTO_MERGE_ENABLED = String(process.env.AE_AUTO_MERGE || '').trim() === '1';
 const AUTO_MERGE_MODE = String(process.env.AE_AUTO_MERGE_MODE || 'all').toLowerCase();
 const AUTO_MERGE_LABEL = String(process.env.AE_AUTO_MERGE_LABEL || '').trim();
+const AUTO_MERGE_REQUIRE_RISK_LOW = String(process.env.AE_AUTO_MERGE_REQUIRE_RISK_LOW || '1').trim() === '1';
+const RISK_LOW_LABEL = String(process.env.AE_RISK_LOW_LABEL || 'risk:low').trim() || 'risk:low';
 const GLOBAL_DISABLE = String(process.env.AE_AUTOMATION_GLOBAL_DISABLE || '').trim() === '1';
 const PR_NUMBER_RAW = process.env.PR_NUMBER !== undefined ? String(process.env.PR_NUMBER).trim() : '';
 let PR_NUMBER = null;
@@ -184,7 +186,7 @@ const listComments = (number) => {
 const listOpenPrs = () =>
   execJson(['pr', 'list', '--state', 'open', '--limit', String(PR_LIMIT), '--json', 'number,title']);
 
-const buildStatusBody = (pr, view, reasons, summary, reviewRequirement) => {
+const buildStatusBody = (pr, view, reasons, summary, reviewRequirement, riskLowLabel) => {
   const reviewRequiredLabel = reviewRequirement
     ? (reviewRequirement.approvalRequired
       ? (reviewRequirement.requiredApprovals > 0 ? `yes/${reviewRequirement.requiredApprovals}` : 'yes')
@@ -197,6 +199,7 @@ const buildStatusBody = (pr, view, reasons, summary, reviewRequirement) => {
     `- mergeable: ${view.mergeable || 'UNKNOWN'}`,
     `- review: ${view.reviewDecision || 'NONE'} (required: ${reviewRequiredLabel})`,
     `- checks: ✅${summary.counts.success} ❌${summary.counts.failure} ⏳${summary.counts.pending}`,
+    `- risk-low required: ${AUTO_MERGE_REQUIRE_RISK_LOW ? `yes (${riskLowLabel})` : 'no'}`,
   ];
   if (summary.failed.length > 0) {
     lines.push(`- failed checks: ${summary.failed.join(', ')}`);
@@ -283,7 +286,7 @@ const main = async () => {
           buildStatusBody(pr, view, ['branch metadata unavailable'], {
             counts: { success: 0, failure: 0, pending: 0 },
             failed: [],
-          }, null)
+          }, null, RISK_LOW_LABEL)
         );
         await sleep(PR_SLEEP_MS);
         continue;
@@ -298,7 +301,7 @@ const main = async () => {
         upsertComment(pr.number, buildStatusBody(pr, view, ['branch protection unavailable'], {
           counts: { success: 0, failure: 0, pending: 0 },
           failed: [],
-        }, null));
+        }, null, RISK_LOW_LABEL));
         await sleep(PR_SLEEP_MS);
         continue;
       }
@@ -322,6 +325,10 @@ const main = async () => {
       } else if (AUTO_MERGE_MODE !== 'all') {
         reasons.push(`unknown AE_AUTO_MERGE_MODE=${AUTO_MERGE_MODE}`);
       }
+      const labels = normalizeLabelNames(view.labels);
+      if (AUTO_MERGE_REQUIRE_RISK_LOW && !hasLabel(labels, RISK_LOW_LABEL)) {
+        reasons.push(`missing risk label=${RISK_LOW_LABEL}`);
+      }
       if (reviewRequirement.approvalRequired && view.reviewDecision !== 'APPROVED') {
         reasons.push(`review=${view.reviewDecision || 'NONE'}`);
       }
@@ -344,7 +351,7 @@ const main = async () => {
         status = 'already-enabled';
         statusReason = 'auto-merge already enabled';
       }
-      const body = buildStatusBody(pr, view, reasons, summaryAll, reviewRequirement);
+      const body = buildStatusBody(pr, view, reasons, summaryAll, reviewRequirement, RISK_LOW_LABEL);
       upsertComment(pr.number, body);
       results.push({
         number: pr.number,
@@ -392,6 +399,8 @@ const main = async () => {
     },
     data: {
       label: AUTO_MERGE_LABEL,
+      riskLowLabel: RISK_LOW_LABEL,
+      requireRiskLow: AUTO_MERGE_REQUIRE_RISK_LOW,
       results,
       failures,
     },

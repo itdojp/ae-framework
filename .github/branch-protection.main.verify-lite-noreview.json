@@ -3,6 +3,7 @@
     "strict": true,
     "contexts": [
       "verify-lite",
+      "policy-gate",
       "gate"
     ]
   },

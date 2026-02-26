@@ -7,7 +7,7 @@
 - 対象範囲（path / workflow / domain）:
 
 ## Risk Classification (Required)
-- Risk: `risk:low` / `risk:high`
+- Risk: `risk:low` / `risk:high`（`Policy Gate / risk-labeler` が自動付与・要確認）
 - 判定理由:
 
 ## Rollback
@@ -21,7 +21,8 @@
 
 ## Policy Gate Inputs
 - [ ] `verify-lite` が green
-- [ ] `gate` が green
+- [ ] `policy-gate` が green
+- [ ] （既存運用）`gate` が green
 
 ### High Risk Only
 - [ ] 人間Approve >= 1

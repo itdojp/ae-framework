@@ -82,7 +82,7 @@ PR運用を以下の形に収束させます。
 
 ### 3.1 推奨導入順（手戻りを減らす）
 
-1. Branch protection で Required checks を整備（最小: `Verify Lite / verify-lite` + `Copilot Review Gate / gate`）
+1. Branch protection で Required checks を整備（最小: `Verify Lite / verify-lite` + `Policy Gate / policy-gate`）
    - `verify-lite` は root layout 検査を全PRで必須実行し、required artifacts 検査を非 docs-only 変更で必須実行します
 2. `AE_AUTOMATION_PROFILE=conservative` で docs領域 + label opt-in から段階導入
 3. 問題がなければ `balanced` / `aggressive` へ拡張
@@ -99,6 +99,7 @@ auto-merge（ラベルopt-in）:
 - `AE_AUTO_MERGE=1`
 - `AE_AUTO_MERGE_MODE=label`
 - `AE_AUTO_MERGE_LABEL=auto-merge`
+- `AE_AUTO_MERGE_REQUIRE_RISK_LOW=1`（既定）
 
 全自動化の緊急停止（kill-switch）:
 - `AE_AUTOMATION_GLOBAL_DISABLE=1`
@@ -110,6 +111,7 @@ auto-merge（ラベルopt-in）:
 ### 3.3 全PR自動マージ（積極設定）
 
 - `AE_AUTO_MERGE_MODE=all`（既定）
+- `AE_AUTO_MERGE_REQUIRE_RISK_LOW=1`（`risk:low` 必須）
 
 注意:
 - 影響範囲が大きいため、まず `label` モードで運用設計と例外対応を固めることを推奨します。
@@ -152,6 +154,7 @@ auto-merge（ラベルopt-in）:
 
 - `AE_AUTO_MERGE=1` が未設定（OFF）
 - `AE_AUTO_MERGE_MODE=label` でラベル不足、または `AE_AUTO_MERGE_LABEL` 未設定
+- `AE_AUTO_MERGE_REQUIRE_RISK_LOW=1` で `risk:low` が未付与
 - Branch protection の required checks が空、または保護情報取得ができない（fail-closed）
 - repo側で "Allow auto-merge" が無効
 - PRが `draft` / `mergeable != MERGEABLE` / required checks pending

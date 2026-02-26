@@ -1,0 +1,90 @@
+name: Policy Gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled, edited]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+  workflow_run:
+    workflows:
+      - Verify Lite
+      - Copilot Review Gate
+      - Security Analysis
+      - testing-ddd-scripts
+      - Context Pack Quality Gate
+      - Spec Validation
+      - Full CI (Comprehensive Testing)
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to evaluate (manual run)'
+        required: false
+        type: number
+
+concurrency:
+  group: policy-gate-${{ github.event.pull_request.number || github.event.pull_request_review.pull_request.number || github.event.workflow_run.pull_requests[0].number || github.event.workflow_run.id || inputs.pr_number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  policy-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+
+      - name: Resolve PR number
+        id: pr
+        shell: bash
+        run: |
+          set -euo pipefail
+          PR_NUMBER="${{ github.event.pull_request.number || github.event.pull_request_review.pull_request.number || inputs.pr_number || '' }}"
+          if [ -z "${PR_NUMBER}" ] && [ "${{ github.event_name }}" = "workflow_run" ]; then
+            PR_NUMBER="$(jq -r '.workflow_run.pull_requests[0].number // ""' "$GITHUB_EVENT_PATH")"
+          fi
+          if [ -z "${PR_NUMBER}" ]; then
+            printf '%s\n' 'skip=true' >> "$GITHUB_OUTPUT"
+            printf '%s\n' 'pr_number=' >> "$GITHUB_OUTPUT"
+            printf '%s\n' 'Policy Gate skipped: no PR context for this event.' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          printf '%s\n' "skip=false" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+
+      - name: Run risk labeler
+        if: ${{ steps.pr.outputs.skip != 'true' && github.event_name != 'workflow_run' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
+        run: node scripts/ci/risk-labeler.mjs
+
+      - name: Evaluate policy gate
+        if: ${{ steps.pr.outputs.skip != 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
+        run: node scripts/ci/policy-gate.mjs
+
+      - name: Upload policy artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: policy-gate-artifacts
+          path: |
+            artifacts/ci/risk-labeler-summary.json
+            artifacts/ci/risk-labeler-summary.md
+            artifacts/ci/policy-gate-summary.json
+            artifacts/ci/policy-gate-summary.md
+          if-no-files-found: warn

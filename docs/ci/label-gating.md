@@ -12,7 +12,7 @@ PR ラベルでゲートを段階的に強化するための方針です（既�
 - `run-ci-extended`, `run-integration`, `run-property`, `run-mbt`, `run-mutation`
 - オプトイン系: `run-security`（Security/SBOM）、`run-hermetic`（Hermetic CI）、`run-qa`（QA bench）
 - 各ワークフローがラベルを読み取り、`continue-on-error` 等を切り替え
-- required checks は `verify-lite` + `gate` を想定（`policy/risk-policy.yml` が一次情報）
+- required checks は `verify-lite` + `policy-gate` を想定（`policy/risk-policy.yml` が一次情報）
 
 CI Extended を再実行する際は `.cache/test-results` に保存された成果物が自動復元されます。必要に応じて `node scripts/pipelines/sync-test-results.mjs --status` / `--restore` を実行し、完了後は `--store` で更新してください。差分概要は `node scripts/pipelines/compare-test-trends.mjs` で確認でき、Step Summary にトレンド比較が追記されます。スケジュール実行では `ci-heavy-${ runner.os }-schedule` キーを使って直近 Nightly の baseline を共有し、`heavy-test-trends-history` アーティファクトに履歴を蓄積します。
 
@@ -42,6 +42,7 @@ Labels
 The CI Extended workflow restores cached heavy test artifacts from `.cache/test-results`. To reuse MBT/property/mutation outputs when re-running locally or via dispatch, run `node scripts/pipelines/sync-test-results.mjs --restore` beforehand (and `--store` afterwards to refresh the cache). Scheduled runs share the `ci-heavy-${ runner.os }-schedule` cache key so that Nightly executions inherit the previous baseline and publish `heavy-test-trends-history` artifacts.
 
 Workflows
+- policy-gate.yml: runs `risk-labeler` + `policy-gate`; enforces low/high risk policy, approval, required labels, and label-gated check results
 - validate-artifacts-ajv.yml: reads `enforce-artifacts` and passes strict mode to `pnpm run artifacts:validate`
 - testing-ddd-scripts.yml: reads `enforce-testing` and makes property/replay/BDD lint blocking only in strict mode; reads `trace:<id>` to focus runs
 - context-pack-quality-gate.yml: reads `enforce-context-pack`; runs `context-pack:deps` + `context-pack:e2e-fixture` in report-only/blocking mode

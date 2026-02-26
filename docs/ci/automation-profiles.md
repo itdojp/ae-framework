@@ -16,7 +16,7 @@ Repository Variables に `AE_AUTOMATION_PROFILE` を設定します。
 - `balanced`
 - `aggressive`
 
-未設定時はプロファイル無効で、既存の個別変数（`AE_COPILOT_AUTO_FIX*`, `AE_AUTO_MERGE*`, `AE_GH_*`, `AE_AUTOMATION_GLOBAL_DISABLE` など）がそのまま使われます。
+未設定時はプロファイル無効で、既存の個別変数（`AE_COPILOT_AUTO_FIX*`, `AE_AUTO_MERGE*`, `AE_GH_*`, `AE_AUTOMATION_GLOBAL_DISABLE` など）がそのまま使われます（`AE_AUTO_MERGE_REQUIRE_RISK_LOW` を含む）。
 
 ## 2. 優先順位
 
@@ -41,6 +41,7 @@ Repository Variables に `AE_AUTOMATION_PROFILE` を設定します。
 | `AE_AUTO_MERGE` | `1` | `1` | `1` |
 | `AE_AUTO_MERGE_MODE` | `label` | `label` | `all` |
 | `AE_AUTO_MERGE_LABEL` | `auto-merge` | `auto-merge` | *(empty)* |
+| `AE_AUTO_MERGE_REQUIRE_RISK_LOW` | `1` | `1` | `1` |
 | `AE_GH_THROTTLE_MS` | `400` | `300` | `150` |
 | `AE_GH_RETRY_MAX_ATTEMPTS` | `10` | `8` | `6` |
 | `AE_GH_RETRY_INITIAL_DELAY_MS` | `1000` | `750` | `500` |
