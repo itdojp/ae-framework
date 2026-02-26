@@ -18,7 +18,7 @@ Change Package（#2289）の詳細要約を代替するものではなく、存�
 6. Risks / Rollback note（必要時）
 7. Blockers（詰まりがある場合）
 
-## Optional field
+## Optional fields
 
 - Change Package reference  
   - 例: `artifacts/change-package/summary.md`

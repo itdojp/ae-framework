@@ -5,10 +5,8 @@
 - Next actions:
   1.
   2.
-- Commands run:
-  - ``
-- Artifacts:
-  - ``
+- Commands run: `command here`
+- Artifacts: `path/to/artifact`
 - Risks / Rollback note:
 - Blockers:
 - Change Package:
