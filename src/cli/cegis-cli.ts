@@ -5,9 +5,9 @@
 
 import { Command } from 'commander';
 import chalk from 'chalk';
-import { readFileSync, writeFileSync, existsSync } from 'fs';
-import type { join } from 'path';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { spawnSync } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { AutoFixEngine } from '../cegis/auto-fix-engine.js';
 import type { FailureCategory } from '../cegis/types.js';
@@ -16,6 +16,49 @@ import type { FailureArtifact, AutoFixOptions } from '../cegis/types.js';
 import { toMessage } from '../utils/error-utils.js';
 import { safeExit } from '../utils/safe-exit.js';
 import { loadConfig } from '../core/config.js';
+
+interface ConformanceViolationInput {
+  ruleId?: string;
+  ruleName?: string;
+  category?: string;
+  severity?: string;
+  message?: string;
+  actualValue?: unknown;
+  expectedValue?: unknown;
+  context?: {
+    timestamp?: string;
+    executionId?: string;
+    environment?: string;
+    functionName?: string;
+    modulePath?: string;
+    traceId?: string;
+    metadata?: Record<string, unknown>;
+  };
+  stackTrace?: string;
+  evidence?: {
+    inputData?: unknown;
+    outputData?: unknown;
+    stateSnapshot?: Record<string, unknown>;
+    metrics?: Record<string, number>;
+    logs?: string[];
+    traces?: unknown[];
+  };
+  remediation?: {
+    suggested?: string[];
+    automatic?: boolean;
+    priority?: 'low' | 'medium' | 'high' | 'critical';
+  };
+}
+
+interface ConformanceVerifyResultInput {
+  violations?: ConformanceViolationInput[];
+  metadata?: {
+    environment?: string;
+    timestamp?: string;
+    executionId?: string;
+    version?: string;
+  };
+}
 
 export class CEGISCli {
   private engine: AutoFixEngine;
@@ -74,6 +117,24 @@ export class CEGISCli {
       .option('--output <file>', 'Output file for artifact', 'failure-artifact.json')
       .action(async (options) => {
         await this.handleCreateArtifactCommand(options);
+      });
+
+    // Convert conformance result command
+    command
+      .command('from-conformance')
+      .description('Convert conformance verify result JSON into failure artifacts for ae fix apply')
+      .option(
+        '-i, --input <file>',
+        'Input conformance verify result JSON file',
+        path.join('artifacts', 'conformance', 'conformance-results.json')
+      )
+      .option(
+        '-o, --output <file>',
+        'Output failure artifacts JSON file',
+        path.join('artifacts', 'fix', 'failures.json')
+      )
+      .action(async (options) => {
+        await this.handleFromConformanceCommand(options);
       });
 
     // Status command
@@ -314,6 +375,227 @@ export class CEGISCli {
       console.error(chalk.red(`❌ Failed to create artifact: ${toMessage(error)}`));
       safeExit(1);
       throw error instanceof Error ? error : new Error(String(error));
+    }
+  }
+
+  /**
+   * Handle conversion from conformance verify result to CEGIS failure artifacts
+   */
+  private async handleFromConformanceCommand(options: any): Promise<void> {
+    try {
+      console.log('🧪 Converting conformance violations to failure artifacts...');
+
+      if (!options.input || !existsSync(options.input)) {
+        throw new Error(`Conformance result file not found: ${options.input}`);
+      }
+
+      const content = readFileSync(options.input, 'utf-8');
+      const parsed = JSON.parse(content) as ConformanceVerifyResultInput;
+      const violations = Array.isArray(parsed.violations) ? parsed.violations : [];
+
+      const failures = violations.map((violation, index) =>
+        FailureArtifactFactory.validate(
+          this.convertViolationToFailureArtifact(violation, parsed.metadata, index),
+        ),
+      );
+
+      const outputDir = path.dirname(options.output);
+      mkdirSync(outputDir, { recursive: true });
+      writeFileSync(options.output, JSON.stringify(failures, null, 2));
+
+      console.log(`📋 Conformance violations: ${violations.length}`);
+      console.log(`✅ Generated failure artifacts: ${failures.length}`);
+      console.log(`📁 Saved converted artifacts: ${options.output}`);
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Failed to convert conformance result: ${toMessage(error)}`));
+      safeExit(1);
+      throw error instanceof Error ? error : new Error(String(error));
+    }
+  }
+
+  private convertViolationToFailureArtifact(
+    violation: ConformanceViolationInput,
+    resultMetadata: ConformanceVerifyResultInput['metadata'],
+    index: number,
+  ): FailureArtifact {
+    const now = new Date().toISOString();
+    const traceId = this.extractTraceId(violation);
+    const ruleId = violation.ruleId || `unknown-rule-${index + 1}`;
+    const ruleName = violation.ruleName || ruleId;
+    const message = violation.message || 'Conformance violation detected';
+    const counterexampleKey = `${ruleId}|${traceId || 'no-trace'}|${message}`;
+
+    const evidenceLogs: string[] = [...(violation.evidence?.logs ?? [])];
+    if (violation.evidence?.stateSnapshot !== undefined) {
+      evidenceLogs.push(`stateSnapshot=${this.safeSerialize(violation.evidence.stateSnapshot)}`);
+    }
+    if (violation.evidence?.inputData !== undefined) {
+      evidenceLogs.push(`inputData=${this.safeSerialize(violation.evidence.inputData)}`);
+    }
+    if (violation.evidence?.outputData !== undefined) {
+      evidenceLogs.push(`outputData=${this.safeSerialize(violation.evidence.outputData)}`);
+    }
+    for (const [traceIndex, trace] of (violation.evidence?.traces ?? []).entries()) {
+      evidenceLogs.push(`trace[${traceIndex}]=${this.safeSerialize(trace)}`);
+    }
+
+    const remediationSuggestions = violation.remediation?.suggested ?? [];
+    const suggestedActions = remediationSuggestions.map((suggestion) => ({
+      type: 'validation_update' as const,
+      description: suggestion,
+      confidence: violation.remediation?.automatic ? 0.85 : 0.65,
+      riskLevel: this.mapRemediationPriorityToRiskLevel(violation.remediation?.priority),
+      estimatedEffort: this.mapRemediationPriorityToEffort(violation.remediation?.priority),
+      filePath: violation.context?.modulePath,
+      dependencies: [],
+      prerequisites: [],
+    }));
+
+    return {
+      id: randomUUID(),
+      title: `Conformance Violation: ${ruleName}`,
+      description: message,
+      severity: this.mapConformanceSeverityToFailureSeverity(violation.severity),
+      category: this.mapConformanceCategoryToFailureCategory(violation.category),
+      context: {
+        environment:
+          violation.context?.environment || resultMetadata?.environment || process.env['NODE_ENV'] || 'runtime',
+        nodeVersion: process.version,
+        timestamp: violation.context?.timestamp || resultMetadata?.timestamp || now,
+        phase: 'verify',
+        command: 'ae conformance verify',
+      },
+      evidence: {
+        stackTrace: violation.stackTrace,
+        errorMessage: message,
+        errorType: 'ConformanceViolation',
+        logs: evidenceLogs,
+        metrics: violation.evidence?.metrics ?? {},
+        dependencies: [],
+        relatedFiles: violation.context?.modulePath ? [violation.context.modulePath] : [],
+      },
+      suggestedActions,
+      relatedArtifacts: [],
+      metadata: {
+        createdAt: now,
+        updatedAt: now,
+        version: '1.0.0',
+        tags: [
+          'conformance',
+          `rule:${ruleId}`,
+          `category:${violation.category ?? 'unknown'}`,
+          `severity:${violation.severity ?? 'unknown'}`,
+          traceId ? `trace:${traceId}` : 'trace:none',
+        ],
+        source: 'conformance_verify',
+        environment: {
+          ruleId,
+          ruleName,
+          conformanceCategory: violation.category ?? 'unknown',
+          conformanceSeverity: violation.severity ?? 'unknown',
+          traceId: traceId || '',
+          executionId: violation.context?.executionId || resultMetadata?.executionId || '',
+          counterexampleKey,
+          actualValue: this.safeSerialize(violation.actualValue),
+          expectedValue: this.safeSerialize(violation.expectedValue),
+        },
+      },
+    };
+  }
+
+  private mapConformanceCategoryToFailureCategory(category?: string): FailureCategory {
+    switch (category) {
+      case 'security_policy':
+        return 'security_violation';
+      case 'performance_constraint':
+      case 'resource_usage':
+        return 'performance_issue';
+      case 'integration_requirement':
+        return 'dependency_issue';
+      default:
+        return 'contract_violation';
+    }
+  }
+
+  private mapConformanceSeverityToFailureSeverity(
+    severity?: string,
+  ): FailureArtifact['severity'] {
+    switch (severity) {
+      case 'critical':
+        return 'critical';
+      case 'major':
+        return 'major';
+      case 'minor':
+        return 'minor';
+      case 'warning':
+      case 'info':
+      default:
+        return 'info';
+    }
+  }
+
+  private mapRemediationPriorityToRiskLevel(priority?: string): number {
+    switch (priority) {
+      case 'critical':
+        return 5;
+      case 'high':
+        return 4;
+      case 'medium':
+        return 3;
+      case 'low':
+      default:
+        return 2;
+    }
+  }
+
+  private mapRemediationPriorityToEffort(
+    priority?: string,
+  ): 'low' | 'medium' | 'high' {
+    switch (priority) {
+      case 'critical':
+      case 'high':
+        return 'high';
+      case 'medium':
+        return 'medium';
+      case 'low':
+      default:
+        return 'low';
+    }
+  }
+
+  private extractTraceId(violation: ConformanceViolationInput): string | undefined {
+    const traceIdFromContext = violation.context?.traceId;
+    if (typeof traceIdFromContext === 'string' && traceIdFromContext.trim().length > 0) {
+      return traceIdFromContext.trim();
+    }
+
+    const metadata = violation.context?.metadata;
+    if (!metadata || typeof metadata !== 'object') {
+      return undefined;
+    }
+
+    const candidate = metadata['traceId'];
+    if (typeof candidate === 'string' && candidate.trim().length > 0) {
+      return candidate.trim();
+    }
+
+    return undefined;
+  }
+
+  private safeSerialize(value: unknown): string {
+    if (typeof value === 'string') {
+      return value;
+    }
+    if (typeof value === 'number' || typeof value === 'boolean' || value === null) {
+      return String(value);
+    }
+    if (value === undefined) {
+      return '';
+    }
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return '[unserializable]';
     }
   }
 

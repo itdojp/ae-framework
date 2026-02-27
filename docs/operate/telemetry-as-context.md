@@ -60,4 +60,6 @@ ae-framework conformance ingest \
 
 1. `ae conformance ingest` で Trace Bundle を作成
 2. `ae conformance verify --trace-bundle artifacts/observability/trace-bundle.json` で検証
-3. conformance 結果を CI artifacts として保存し、運用判断に利用
+3. `ae fix from-conformance --input artifacts/conformance/conformance-results.json --output artifacts/fix/failures.json` で CEGIS failure artifact へ変換
+4. `ae fix analyze/apply` に接続して修復レーンを実行
+5. conformance / fix の成果物を CI artifacts として保存し、運用判断に利用

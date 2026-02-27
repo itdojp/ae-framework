@@ -356,20 +356,17 @@ setInterval(() => {
 
 ## CEGIS連携
 
-Runtime Conformance Systemは違反検出結果を failure artifact に落とし込み、CEGIS（Phase 2.1）の `fix` フローへ引き渡す運用を想定します。現行実装では自動連携クラスは提供されていないため、CLIまたは独自連携で対応します。
+Runtime Conformance Systemは違反検出結果を failure artifact に落とし込み、CEGIS（Phase 2.1）の `fix` フローへ引き渡す運用を想定します。CLI では `ae fix from-conformance` が追加され、`ae conformance verify --format json` の出力を `ae fix apply` 互換形式へ変換できます。
 
 ### 自動修正フロー
 
 ```bash
-# 例: 違反情報を failure artifact に整形して fix へ渡す
-ae-framework fix create-artifact \
-  --type contract \
-  --message "Conformance violation" \
-  --file src/app.ts \
-  --line 42 \
-  --output failure.json
+# 例: conformance 結果を failure artifact に変換して fix へ渡す
+ae-framework fix from-conformance \
+  --input artifacts/conformance/conformance-results.json \
+  --output artifacts/fix/failures.json
 
-ae-framework fix apply --input failure.json --output .ae/auto-fix --dry-run
+ae-framework fix apply --input artifacts/fix/failures.json --output .ae/auto-fix --dry-run
 ```
 
 ## CLI コマンドリファレンス
