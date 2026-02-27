@@ -354,12 +354,14 @@ describe('CEGISCli', () => {
               timestamp: '2026-02-20T09:00:00.000Z',
               executionId: 'run-001',
               environment: 'staging',
+              modulePath: 'src/domain/user-service.ts:42:7',
               traceId: 'trace-123',
               metadata: {
                 source: 'conformance-cli'
               }
             },
             evidence: {
+              inputData: { user: {} },
               stateSnapshot: { user: {} },
               metrics: { mismatchCount: 1 },
               logs: ['Validation failed'],
@@ -398,10 +400,15 @@ describe('CEGISCli', () => {
       expect(converted[0].title).toContain('Required Email Field');
       expect(converted[0].category).toBe('contract_violation');
       expect(converted[0].severity).toBe('major');
+      expect(converted[0].location.filePath).toBe('src/domain/user-service.ts');
+      expect(converted[0].location.startLine).toBe(42);
       expect(converted[0].metadata.environment.counterexampleKey).toContain('rule-required-email');
+      expect(converted[0].metadata.environment.contractName).toBe('Required Email Field');
+      expect(converted[0].metadata.environment.violationType).toBe('input');
       expect(converted[0].suggestedActions).toHaveLength(1);
       expect(converted[0].evidence.logs.join('\n')).toContain('stateSnapshot=');
       expect(converted[0].evidence.logs.join('\n')).toContain('trace[0]=');
+      expect(converted[0].evidence.logs.join('\n')).toContain('Actual data:');
     });
 
     it('should fail when conformance result file does not exist', async () => {

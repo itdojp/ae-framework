@@ -7,8 +7,8 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { spawnSync } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
 import path from 'node:path';
+import { v4 as uuidv4 } from 'uuid';
 import { AutoFixEngine } from '../cegis/auto-fix-engine.js';
 import type { FailureCategory } from '../cegis/types.js';
 import { FailureArtifactFactory } from '../cegis/failure-artifact-factory.js';
@@ -31,6 +31,8 @@ interface ConformanceViolationInput {
     environment?: string;
     functionName?: string;
     modulePath?: string;
+    line?: number;
+    column?: number;
     traceId?: string;
     metadata?: Record<string, unknown>;
   };
@@ -424,8 +426,19 @@ export class CEGISCli {
     const ruleName = violation.ruleName || ruleId;
     const message = violation.message || 'Conformance violation detected';
     const counterexampleKey = `${ruleId}|${traceId || 'no-trace'}|${message}`;
+    const location = this.extractLocationFromViolation(violation);
+    const violationType = this.inferContractViolationType(violation);
+    const contractName = ruleName;
+    const actualData = violation.evidence?.inputData ?? violation.evidence?.outputData ?? violation.actualValue;
 
-    const evidenceLogs: string[] = [...(violation.evidence?.logs ?? [])];
+    const evidenceLogs: string[] = [
+      ...(violation.evidence?.logs ?? []),
+      `Contract: ${contractName}`,
+      `Violation type: ${violationType}`,
+    ];
+    if (actualData !== undefined) {
+      evidenceLogs.push(`Actual data: ${this.safeJsonSerialize(actualData)}`);
+    }
     if (violation.evidence?.stateSnapshot !== undefined) {
       evidenceLogs.push(`stateSnapshot=${this.safeSerialize(violation.evidence.stateSnapshot)}`);
     }
@@ -452,11 +465,12 @@ export class CEGISCli {
     }));
 
     return {
-      id: randomUUID(),
+      id: uuidv4(),
       title: `Conformance Violation: ${ruleName}`,
       description: message,
       severity: this.mapConformanceSeverityToFailureSeverity(violation.severity),
       category: this.mapConformanceCategoryToFailureCategory(violation.category),
+      location,
       context: {
         environment:
           violation.context?.environment || resultMetadata?.environment || process.env['NODE_ENV'] || 'runtime',
@@ -489,6 +503,9 @@ export class CEGISCli {
         ],
         source: 'conformance_verify',
         environment: {
+          contractName,
+          violationType,
+          expectedSchema: ruleId,
           ruleId,
           ruleName,
           conformanceCategory: violation.category ?? 'unknown',
@@ -563,6 +580,66 @@ export class CEGISCli {
     }
   }
 
+  private inferContractViolationType(violation: ConformanceViolationInput): 'input' | 'output' | 'schema' {
+    const metadataType = violation.context?.metadata?.['violationType'];
+    if (metadataType === 'input' || metadataType === 'output' || metadataType === 'schema') {
+      return metadataType;
+    }
+
+    const hasInput = violation.evidence?.inputData !== undefined;
+    const hasOutput = violation.evidence?.outputData !== undefined;
+    if (hasInput && !hasOutput) {
+      return 'input';
+    }
+    if (!hasInput && hasOutput) {
+      return 'output';
+    }
+    return 'schema';
+  }
+
+  private extractLocationFromViolation(
+    violation: ConformanceViolationInput,
+  ): FailureArtifact['location'] {
+    const rawModulePath = violation.context?.modulePath?.trim();
+    if (!rawModulePath) {
+      return undefined;
+    }
+
+    const parsed = rawModulePath.match(/^(.*?):([0-9]+)(?::([0-9]+))?$/);
+    const filePath = parsed?.[1] || rawModulePath;
+    const explicitLine = parsed?.[2] ? Number.parseInt(parsed[2], 10) : undefined;
+    const explicitColumn = parsed?.[3] ? Number.parseInt(parsed[3], 10) : undefined;
+
+    const metadata = violation.context?.metadata;
+    const metadataLine = this.toPositiveInt(metadata?.['line']);
+    const metadataColumn = this.toPositiveInt(metadata?.['column']);
+    const contextLine = this.toPositiveInt(violation.context?.line);
+    const contextColumn = this.toPositiveInt(violation.context?.column);
+
+    const startLine = explicitLine || contextLine || metadataLine || 1;
+    const startColumn = explicitColumn || contextColumn || metadataColumn;
+
+    return {
+      filePath,
+      startLine,
+      endLine: startLine,
+      ...(startColumn ? { startColumn, endColumn: startColumn } : {}),
+    };
+  }
+
+  private toPositiveInt(value: unknown): number | undefined {
+    if (typeof value === 'number' && Number.isInteger(value) && value > 0) {
+      return value;
+    }
+    if (typeof value === 'string' && value.trim().length > 0) {
+      const parsed = Number.parseInt(value, 10);
+      if (Number.isInteger(parsed) && parsed > 0) {
+        return parsed;
+      }
+    }
+    return undefined;
+  }
+
   private extractTraceId(violation: ConformanceViolationInput): string | undefined {
     const traceIdFromContext = violation.context?.traceId;
     if (typeof traceIdFromContext === 'string' && traceIdFromContext.trim().length > 0) {
@@ -596,6 +673,14 @@ export class CEGISCli {
       return JSON.stringify(value);
     } catch {
       return '[unserializable]';
+    }
+  }
+
+  private safeJsonSerialize(value: unknown): string {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return 'null';
     }
   }
 
