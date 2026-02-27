@@ -119,20 +119,20 @@ jobs:
 
       - name: Run runtime conformance self-heal pipeline
         id: pipeline
+        env:
+          TRACE_INPUT: ${{ steps.config.outputs.trace_input }}
+          TRACE_BUNDLE_INPUT: ${{ steps.config.outputs.trace_bundle_input }}
+          CONFORMANCE_RULES: ${{ steps.config.outputs.conformance_rules }}
+          APPLY_FIXES: ${{ steps.config.outputs.apply_fixes }}
+          DRY_RUN: ${{ steps.config.outputs.dry_run }}
+          TRACE_BUNDLE_PATH: ${{ steps.config.outputs.trace_bundle_path }}
+          TRACE_SUMMARY_PATH: ${{ steps.config.outputs.trace_summary_path }}
+          CONFORMANCE_RESULTS_PATH: ${{ steps.config.outputs.conformance_results_path }}
+          FAILURE_ARTIFACTS_PATH: ${{ steps.config.outputs.failure_artifacts_path }}
+          FIX_OUTPUT_DIR: ${{ steps.config.outputs.fix_output_dir }}
         shell: bash
         run: |
           set -euo pipefail
-
-          TRACE_INPUT='${{ steps.config.outputs.trace_input }}'
-          TRACE_BUNDLE_INPUT='${{ steps.config.outputs.trace_bundle_input }}'
-          CONFORMANCE_RULES='${{ steps.config.outputs.conformance_rules }}'
-          APPLY_FIXES='${{ steps.config.outputs.apply_fixes }}'
-          DRY_RUN='${{ steps.config.outputs.dry_run }}'
-          TRACE_BUNDLE_PATH='${{ steps.config.outputs.trace_bundle_path }}'
-          TRACE_SUMMARY_PATH='${{ steps.config.outputs.trace_summary_path }}'
-          CONFORMANCE_RESULTS_PATH='${{ steps.config.outputs.conformance_results_path }}'
-          FAILURE_ARTIFACTS_PATH='${{ steps.config.outputs.failure_artifacts_path }}'
-          FIX_OUTPUT_DIR='${{ steps.config.outputs.fix_output_dir }}'
 
           STATUS="success"
           REASON=""
@@ -246,10 +246,14 @@ jobs:
 
           git add -A . ':(exclude)artifacts/**' ':(exclude).ae/**' ':(exclude)reports/**'
           if git diff --cached --quiet; then
-            echo "created=false" >> "${GITHUB_OUTPUT}"
-            echo "number=" >> "${GITHUB_OUTPUT}"
-            echo "url=" >> "${GITHUB_OUTPUT}"
-            echo "- auto-fix applied but no commit-ready changes were detected." >> "${GITHUB_STEP_SUMMARY}"
+            {
+              echo "created=false"
+              echo "number="
+              echo "url="
+            } >> "${GITHUB_OUTPUT}"
+            {
+              echo "- auto-fix applied but no commit-ready changes were detected."
+            } >> "${GITHUB_STEP_SUMMARY}"
             exit 0
           fi
 
