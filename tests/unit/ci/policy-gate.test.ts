@@ -86,6 +86,113 @@ describe('policy-gate', () => {
     expect(result.errors).toHaveLength(0);
   });
 
+  it('passes high-risk PR without approvals in solo topology', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:high' }, { name: 'run-security' }, { name: 'enforce-testing' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['package.json', 'tests/unit/sample.test.ts'],
+      reviews: [],
+      statusRollup: [
+        checkRun('verify-lite'),
+        checkRun('Security Scanning'),
+        checkRun('testing-ddd'),
+      ],
+      reviewTopology: 'solo',
+    });
+    expect(result.ok).toBe(true);
+    expect(result.errors).toHaveLength(0);
+    expect(result.effectiveMinApprovals).toBe(0);
+  });
+
+  it('fails when approval override requires more approvals', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:high' }, { name: 'run-security' }, { name: 'enforce-testing' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['package.json', 'tests/unit/sample.test.ts'],
+      reviews: [
+        {
+          id: 120,
+          state: 'APPROVED',
+          submitted_at: '2026-02-26T00:00:00Z',
+          user: { login: 'reviewer1', type: 'User' },
+        },
+      ],
+      statusRollup: [
+        checkRun('verify-lite'),
+        checkRun('Security Scanning'),
+        checkRun('testing-ddd'),
+      ],
+      reviewTopology: 'team',
+      approvalOverride: '2',
+    });
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((item) => item.includes('required 2, got 1'))).toBe(true);
+    expect(result.effectiveMinApprovals).toBe(2);
+  });
+
+  it('falls back with warning when topology or override is invalid', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:low' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['src/feature/example.ts'],
+      reviews: [],
+      statusRollup: [checkRun('verify-lite')],
+      reviewTopology: 'unknown',
+      approvalOverride: '-1',
+    });
+    expect(result.ok).toBe(true);
+    expect(result.reviewTopology).toBe('team');
+    expect(result.warnings.some((item) => item.includes('invalid review topology'))).toBe(true);
+    expect(result.warnings.some((item) => item.includes('AE_POLICY_MIN_HUMAN_APPROVALS'))).toBe(true);
+  });
+
+  it('does not read process env implicitly for topology decisions', () => {
+    const prevTopology = process.env.AE_REVIEW_TOPOLOGY;
+    const prevOverride = process.env.AE_POLICY_MIN_HUMAN_APPROVALS;
+    process.env.AE_REVIEW_TOPOLOGY = 'solo';
+    process.env.AE_POLICY_MIN_HUMAN_APPROVALS = '9';
+    try {
+      const result = evaluatePolicyGate({
+        policy,
+        pullRequest: {
+          labels: [{ name: 'risk:high' }, { name: 'run-security' }, { name: 'enforce-testing' }],
+          body: '## Rollback\nnone\n\n## Acceptance\nok',
+        },
+        changedFiles: ['package.json', 'tests/unit/sample.test.ts'],
+        reviews: [
+          {
+            id: 130,
+            state: 'APPROVED',
+            submitted_at: '2026-02-26T00:00:00Z',
+            user: { login: 'reviewer1', type: 'User' },
+          },
+        ],
+        statusRollup: [
+          checkRun('verify-lite'),
+          checkRun('Security Scanning'),
+          checkRun('testing-ddd'),
+        ],
+      });
+      expect(result.reviewTopology).toBe('team');
+      expect(result.effectiveMinApprovals).toBe(1);
+      expect(result.ok).toBe(true);
+    } finally {
+      if (prevTopology === undefined) delete process.env.AE_REVIEW_TOPOLOGY;
+      else process.env.AE_REVIEW_TOPOLOGY = prevTopology;
+      if (prevOverride === undefined) delete process.env.AE_POLICY_MIN_HUMAN_APPROVALS;
+      else process.env.AE_POLICY_MIN_HUMAN_APPROVALS = prevOverride;
+    }
+  });
+
   it('allows high-risk PR without policy labels when require_policy_labels is false', () => {
     const relaxedPolicy = {
       ...policy,
