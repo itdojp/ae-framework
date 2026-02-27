@@ -7,6 +7,8 @@ const EXPLICIT_EMPTY_SENTINEL = '(empty)';
 
 const PROFILE_PRESETS = {
   conservative: {
+    AE_REVIEW_TOPOLOGY: 'team',
+    AE_POLICY_MIN_HUMAN_APPROVALS: '',
     AE_COPILOT_AUTO_FIX: '1',
     AE_COPILOT_AUTO_FIX_SCOPE: 'docs',
     AE_COPILOT_AUTO_FIX_LABEL: 'copilot-auto-fix',
@@ -26,6 +28,8 @@ const PROFILE_PRESETS = {
     COPILOT_REVIEW_MAX_ATTEMPTS: '4',
   },
   balanced: {
+    AE_REVIEW_TOPOLOGY: 'team',
+    AE_POLICY_MIN_HUMAN_APPROVALS: '',
     AE_COPILOT_AUTO_FIX: '1',
     AE_COPILOT_AUTO_FIX_SCOPE: 'docs',
     AE_COPILOT_AUTO_FIX_LABEL: '',
@@ -45,6 +49,8 @@ const PROFILE_PRESETS = {
     COPILOT_REVIEW_MAX_ATTEMPTS: '3',
   },
   aggressive: {
+    AE_REVIEW_TOPOLOGY: 'team',
+    AE_POLICY_MIN_HUMAN_APPROVALS: '',
     AE_COPILOT_AUTO_FIX: '1',
     AE_COPILOT_AUTO_FIX_SCOPE: 'all',
     AE_COPILOT_AUTO_FIX_LABEL: '',
@@ -66,6 +72,8 @@ const PROFILE_PRESETS = {
 };
 
 const FIELD_SPECS = [
+  { key: 'AE_REVIEW_TOPOLOGY', type: 'enum', values: ['team', 'solo'], defaultValue: 'team' },
+  { key: 'AE_POLICY_MIN_HUMAN_APPROVALS', type: 'optional-int', min: 0, defaultValue: '' },
   { key: 'AE_AUTOMATION_GLOBAL_DISABLE', type: 'toggle', defaultValue: '0' },
   { key: 'AE_COPILOT_AUTO_FIX', type: 'toggle', defaultValue: '0' },
   { key: 'AE_COPILOT_AUTO_FIX_SCOPE', type: 'enum', values: ['docs', 'all'], defaultValue: 'docs' },
@@ -111,6 +119,13 @@ function normalizeInt(value, min = Number.MIN_SAFE_INTEGER) {
 }
 
 function normalizeField(field, value) {
+  if (field.type === 'optional-int') {
+    const raw = String(value ?? '').trim();
+    if (raw === '') {
+      return { valid: true, value: '' };
+    }
+    return normalizeInt(raw, field.min ?? Number.MIN_SAFE_INTEGER);
+  }
   if (field.type === 'toggle') {
     return normalizeToggle(value);
   }
