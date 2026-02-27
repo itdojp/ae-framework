@@ -21,6 +21,7 @@ import {
 
 const OUTPUT_JSON_PATH = 'artifacts/ci/policy-gate-summary.json';
 const OUTPUT_MD_PATH = 'artifacts/ci/policy-gate-summary.md';
+const VALID_REVIEW_TOPOLOGIES = new Set(['team', 'solo']);
 
 function parseArgs(argv) {
   const options = {
@@ -166,6 +167,70 @@ function countHumanApprovals(reviews) {
   return approvals;
 }
 
+function normalizeReviewTopology(value) {
+  const raw = String(value ?? '').trim().toLowerCase();
+  if (!raw) {
+    return { value: 'team', warning: null };
+  }
+  if (VALID_REVIEW_TOPOLOGIES.has(raw)) {
+    return { value: raw, warning: null };
+  }
+  return {
+    value: 'team',
+    warning: `invalid review topology: ${raw} (fallback to team)`,
+  };
+}
+
+function parseOptionalNonNegativeInt(value, keyName) {
+  const raw = String(value ?? '').trim();
+  if (!raw) {
+    return { value: null, warning: null };
+  }
+  if (!/^-?[0-9]+$/.test(raw)) {
+    return {
+      value: null,
+      warning: `${keyName}=${raw} is invalid (expected non-negative integer)`,
+    };
+  }
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return {
+      value: null,
+      warning: `${keyName}=${raw} is invalid (expected non-negative integer)`,
+    };
+  }
+  return { value: parsed, warning: null };
+}
+
+function resolveApprovalGateConfig(policy, options = {}) {
+  const topologyState = normalizeReviewTopology(
+    options.reviewTopology ?? process.env.AE_REVIEW_TOPOLOGY,
+  );
+  const overrideState = parseOptionalNonNegativeInt(
+    options.approvalOverride ?? process.env.AE_POLICY_MIN_HUMAN_APPROVALS,
+    'AE_POLICY_MIN_HUMAN_APPROVALS',
+  );
+
+  const warnings = [];
+  if (topologyState.warning) warnings.push(topologyState.warning);
+  if (overrideState.warning) warnings.push(overrideState.warning);
+
+  const policyMinApprovals = getMinHumanApprovals(policy);
+  const topologyMinApprovals = topologyState.value === 'solo' ? 0 : policyMinApprovals;
+  const hasOverride = overrideState.value !== null;
+
+  return {
+    reviewTopology: topologyState.value,
+    policyMinApprovals,
+    topologyMinApprovals,
+    effectiveMinApprovals: hasOverride ? overrideState.value : topologyMinApprovals,
+    minApprovalsSource: hasOverride
+      ? 'override'
+      : (topologyState.value === 'solo' ? 'topology' : 'policy'),
+    warnings,
+  };
+}
+
 function toCheckEntries(statusRollup) {
   const entries = [];
   for (const item of statusRollup || []) {
@@ -273,6 +338,8 @@ function evaluatePolicyGate({
   changedFiles,
   reviews,
   statusRollup,
+  reviewTopology,
+  approvalOverride,
 }) {
   const errors = [];
   const warnings = [];
@@ -312,7 +379,13 @@ function evaluatePolicyGate({
     }
   }
 
-  const minApprovals = getMinHumanApprovals(policy);
+  const approvalConfig = resolveApprovalGateConfig(policy, {
+    reviewTopology,
+    approvalOverride,
+  });
+  warnings.push(...approvalConfig.warnings);
+
+  const minApprovals = approvalConfig.effectiveMinApprovals;
   const approvals = countHumanApprovals(reviews);
   const { requiredLabels } = collectRequiredLabels(policy, changedFiles);
   const policyLabelsRequired = isPolicyLabelRequirementEnabled(policy);
@@ -366,8 +439,13 @@ function evaluatePolicyGate({
     inferredRisk: inferred,
     selectedRiskLabel,
     currentRiskLabels,
+    reviewTopology: approvalConfig.reviewTopology,
     approvals,
     minApprovals,
+    policyMinApprovals: approvalConfig.policyMinApprovals,
+    topologyMinApprovals: approvalConfig.topologyMinApprovals,
+    effectiveMinApprovals: approvalConfig.effectiveMinApprovals,
+    minApprovalsSource: approvalConfig.minApprovalsSource,
     requiredLabels,
     missingRequiredLabels,
     requiredCheckResults,
@@ -393,7 +471,8 @@ function buildMarkdownSummary(prNumber, evaluation) {
     `- result: ${evaluation.ok ? 'PASS' : 'FAIL'}`,
     `- selected risk label: ${evaluation.selectedRiskLabel || '(none)'}`,
     `- inferred risk: ${evaluation.inferredRisk.level}`,
-    `- approvals: ${evaluation.approvals}/${evaluation.minApprovals}`,
+    `- review topology: ${evaluation.reviewTopology}`,
+    `- approvals: ${evaluation.approvals}/${evaluation.effectiveMinApprovals} (source: ${evaluation.minApprovalsSource}, policy: ${evaluation.policyMinApprovals})`,
   ];
 
   if (evaluation.requiredLabels.length > 0) {
@@ -461,6 +540,8 @@ async function run(options = parseArgs(process.argv)) {
     changedFiles,
     reviews,
     statusRollup,
+    reviewTopology: process.env.AE_REVIEW_TOPOLOGY,
+    approvalOverride: process.env.AE_POLICY_MIN_HUMAN_APPROVALS,
   });
 
   const report = {
