@@ -111,4 +111,66 @@ describe('change-package generate', () => {
     expect(markdown).toContain('## Change Package');
     expect(markdown).toContain('### Evidence');
   });
+
+  it('records conflicting risk labels as exceptions and keeps high-risk true when inferred high', async () => {
+    const workdir = await createWorkdir('change-package-generate-risk-conflict-');
+    const changedFilesPath = join(workdir, 'changed-files.txt');
+    const eventPath = join(workdir, 'event.json');
+    const outputJsonPath = join(workdir, 'artifacts', 'change-package', 'change-package.json');
+    const outputMarkdownPath = join(workdir, 'artifacts', 'change-package', 'change-package.md');
+
+    await writeFile(
+      changedFilesPath,
+      ['schema/change-package.schema.json'].join('\n'),
+      'utf8',
+    );
+
+    await writeFile(
+      eventPath,
+      `${JSON.stringify({
+        repository: { full_name: 'itdojp/ae-framework' },
+        pull_request: {
+          number: 2290,
+          title: 'Risk label conflict sample',
+          base: { ref: 'main' },
+          head: { ref: 'feat/risk-conflict' },
+          labels: [{ name: 'risk:low' }, { name: 'risk:high' }],
+        },
+      }, null, 2)}\n`,
+      'utf8',
+    );
+
+    const result = spawnSync(process.execPath, [
+      generateScript,
+      '--policy', policyPath,
+      '--changed-files-file', changedFilesPath,
+      '--event-path', eventPath,
+      '--artifact-root', workdir,
+      '--output-json', outputJsonPath,
+      '--output-md', outputMarkdownPath,
+      '--mode', 'digest',
+    ], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+    });
+
+    expect(result.status).toBe(0);
+
+    const generated = JSON.parse(await readFile(outputJsonPath, 'utf8')) as {
+      risk: {
+        selected: string;
+        inferred: string;
+        isHighRisk: boolean;
+      };
+      exceptions: Array<{ code: string; message: string }>;
+    };
+
+    expect(generated.risk.selected).toBe('risk:high');
+    expect(generated.risk.inferred).toBe('risk:high');
+    expect(generated.risk.isHighRisk).toBe(true);
+    expect(generated.exceptions.some((item) => item.code === 'multiple-risk-labels')).toBe(true);
+
+    const markdown = await readFile(outputMarkdownPath, 'utf8');
+    expect(markdown).toContain('### Change Package');
+  });
 });

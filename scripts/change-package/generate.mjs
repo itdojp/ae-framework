@@ -498,12 +498,30 @@ function buildMonitoringPlan(requiredLabels) {
   return { signals, alerts };
 }
 
-function buildExceptions({ missingRequiredLabels, selectedRiskLabel, inferredRiskLabel, evidence }) {
+function buildExceptions({
+  missingRequiredLabels,
+  selectedRiskLabel,
+  inferredRiskLabel,
+  currentRiskLabels,
+  evidence,
+}) {
   const exceptions = [];
   if (missingRequiredLabels.length > 0) {
     exceptions.push({
       code: 'missing-required-labels',
       message: `Missing required labels: ${missingRequiredLabels.join(', ')}`,
+    });
+  }
+  if (currentRiskLabels.length === 0) {
+    exceptions.push({
+      code: 'missing-risk-label',
+      message: 'No risk label is present on the pull request.',
+    });
+  }
+  if (currentRiskLabels.length > 1) {
+    exceptions.push({
+      code: 'multiple-risk-labels',
+      message: `Multiple risk labels are present: ${currentRiskLabels.join(', ')}`,
     });
   }
   if (selectedRiskLabel !== inferredRiskLabel) {
@@ -631,7 +649,7 @@ function buildChangePackage(options, eventPayload) {
     pushUnique(monitoringPlan.alerts, 'missing-required-labels');
   }
 
-  const isHighRisk = selectedRiskLabel === riskLabels.high;
+  const isHighRisk = selectedRiskLabel === riskLabels.high || inferredRisk.level === riskLabels.high;
   const rolloutPlan = {
     strategy: isHighRisk ? 'manual-approval-and-gate-green' : 'auto-merge-when-gates-pass',
     references: [options.policyPath],
@@ -684,6 +702,7 @@ function buildChangePackage(options, eventPayload) {
       missingRequiredLabels,
       selectedRiskLabel,
       inferredRiskLabel: inferredRisk.level,
+      currentRiskLabels,
       evidence,
     }),
   };

@@ -115,4 +115,55 @@ describe('change-package validate', () => {
     expect(report.errors.some((error) => error.includes('missing required evidence'))).toBe(true);
     expect(report.warnings).toHaveLength(0);
   });
+
+  it('treats inferred high-risk as high-risk even when risk.isHighRisk is false', async () => {
+    const workdir = await createWorkdir('change-package-validate-inferred-high-');
+    const inputPath = join(workdir, 'change-package.json');
+    const outputJsonPath = join(workdir, 'validation.json');
+    const outputMarkdownPath = join(workdir, 'validation.md');
+
+    const fixture = await loadFixture();
+    const risk = fixture.risk as { selected: string; inferred: string; isHighRisk: boolean };
+    risk.selected = 'risk:low';
+    risk.inferred = 'risk:high';
+    risk.isHighRisk = false;
+
+    const evidence = fixture.evidence as {
+      items: Array<{ id: string; present: boolean }>;
+      presentCount: number;
+      missingCount: number;
+    };
+    for (const item of evidence.items) {
+      item.present = item.id === 'verifyLiteSummary';
+    }
+    evidence.presentCount = evidence.items.filter((item) => item.present).length;
+    evidence.missingCount = evidence.items.length - evidence.presentCount;
+
+    await writeFile(inputPath, `${JSON.stringify(fixture, null, 2)}\n`, 'utf8');
+
+    const result = spawnSync(process.execPath, [
+      validateScript,
+      '--file', inputPath,
+      '--schema', schemaPath,
+      '--output-json', outputJsonPath,
+      '--output-md', outputMarkdownPath,
+      '--strict',
+    ], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+    });
+
+    expect(result.status).toBe(1);
+
+    const report = JSON.parse(await readFile(outputJsonPath, 'utf8')) as {
+      result: string;
+      evidence: {
+        requiredEvidenceIds: string[];
+        missingRequiredEvidence: Array<{ id: string }>;
+      };
+    };
+    expect(report.result).toBe('fail');
+    expect(report.evidence.requiredEvidenceIds).toContain('harnessHealth');
+    expect(report.evidence.missingRequiredEvidence.some((item) => item.id === 'harnessHealth')).toBe(true);
+  });
 });

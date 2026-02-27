@@ -155,11 +155,19 @@ function validateSchema(schema, payload) {
   };
 }
 
+function inferHighRisk(payload) {
+  const risk = payload?.risk || {};
+  if (risk?.selected === 'risk:high' || risk?.inferred === 'risk:high') {
+    return true;
+  }
+  return Boolean(risk?.isHighRisk);
+}
+
 function resolveRequiredEvidenceIds(options, payload) {
   if (options.requiredEvidenceIds.length > 0) {
     return options.requiredEvidenceIds;
   }
-  const highRisk = Boolean(payload?.risk?.isHighRisk);
+  const highRisk = inferHighRisk(payload);
   return highRisk
     ? ['verifyLiteSummary', 'policyGateSummary', 'harnessHealth']
     : ['verifyLiteSummary'];
