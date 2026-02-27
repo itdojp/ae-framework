@@ -35,7 +35,6 @@ See the Japanese sections for the full architecture and CLI details.
 
 ### CLI (high level)
 ```bash
-ae conformance ingest --input traces.ndjson                # normalize runtime traces to trace-bundle
 ae conformance verify --input data.json --rules rules.json   # run runtime checks
 ae conformance rules --list                                  # list/manage rules
 ae conformance config --show                                 # show/edit configuration
@@ -47,8 +46,6 @@ ae conformance report --format both                          # aggregate reports
 
 ### Artifacts
 - `artifacts/conformance/conformance-results.json` — verification result (default output)
-- `artifacts/observability/trace-bundle.json` — normalized telemetry bundle (`ae-trace-bundle/v1`)
-- `artifacts/observability/trace-bundle-summary.json` — ingest summary (drop/sampling/redaction counters)
 - `reports/conformance/conformance-summary.{json,md}` — aggregated reports
 - PR summary integration when enabled
 
@@ -222,11 +219,6 @@ ae-framework conformance sample --rules rules.json
 ### 3. 検証実行
 
 ```bash
-# 取り込み（Telemetry -> Trace Bundle）
-ae-framework conformance ingest --input runtime.ndjson \
-  --output artifacts/observability/trace-bundle.json \
-  --summary-output artifacts/observability/trace-bundle-summary.json
-
 # 基本検証の実行
 ae-framework conformance verify --input data.json --rules rules.json
 

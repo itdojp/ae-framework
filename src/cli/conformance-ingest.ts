@@ -157,6 +157,9 @@ const applyRedactionRule = (event: Record<string, unknown>, rule: TraceRedaction
   let cursor: unknown = event;
   for (let index = 0; index < pathTokens.length - 1; index += 1) {
     const token = pathTokens[index];
+    if (!token) {
+      return 0;
+    }
     if (!isPlainObject(cursor) || !(token in cursor)) {
       return 0;
     }
@@ -168,6 +171,9 @@ const applyRedactionRule = (event: Record<string, unknown>, rule: TraceRedaction
   }
 
   const leaf = pathTokens[pathTokens.length - 1];
+  if (!leaf) {
+    return 0;
+  }
   if (!(leaf in cursor)) {
     return 0;
   }
