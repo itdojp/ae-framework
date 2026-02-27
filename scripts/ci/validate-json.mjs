@@ -121,6 +121,11 @@ const checks = [
     schema: 'schema/conformance-report.schema.json',
     fixtures: ['fixtures/conformance/sample.conformance-report.json'],
     label: 'Conformance report schema validation'
+  },
+  {
+    schema: 'schema/change-package.schema.json',
+    fixtures: ['fixtures/change-package/sample.change-package.json'],
+    label: 'Change Package schema validation'
   }
 ];
 
