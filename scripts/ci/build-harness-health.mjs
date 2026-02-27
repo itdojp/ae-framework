@@ -64,8 +64,7 @@ const GATE_DEFINITIONS = [
       'gh workflow run runtime-conformance-self-heal.yml --repo <owner/repo> -f trace_input=samples/conformance/sample-traces.json -f apply_fixes=false -f dry_run=true',
     ],
     matcher: (check) => (
-      check.name === 'self-heal'
-      || /runtime conformance self-heal/i.test(check.workflowName)
+      /runtime conformance self-heal/i.test(check.workflowName)
     ),
   },
   {
@@ -518,7 +517,7 @@ function evaluateGateFromLocalArtifacts(gateDefinition, localArtifacts) {
     if (['error', 'failed', 'failure', 'blocked', 'cancelled', 'canceled'].includes(status)) {
       return {
         status: 'fail',
-        reasons: [`Runtime Conformance: self-heal status=${status || 'unknown'}.`],
+        reasons: [`Runtime Conformance: self-heal status=${status}.`],
       };
     }
     if (['warn', 'warning', 'degraded', 'partial'].includes(status)) {
