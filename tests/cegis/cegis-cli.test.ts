@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { CEGISCli } from '../../src/cli/cegis-cli.js';
-import { writeFileSync, unlinkSync, existsSync } from 'fs';
+import { writeFileSync, readFileSync, unlinkSync, existsSync } from 'fs';
 import { FailureArtifactFactory } from '../../src/cegis/failure-artifact-factory.js';
 
 describe('CEGISCli', () => {
@@ -46,6 +46,7 @@ describe('CEGISCli', () => {
       expect(subcommands).toContain('apply');
       expect(subcommands).toContain('analyze');
       expect(subcommands).toContain('create-artifact');
+      expect(subcommands).toContain('from-conformance');
       expect(subcommands).toContain('status');
       expect(subcommands).toContain('strategies');
     });
@@ -328,6 +329,103 @@ describe('CEGISCli', () => {
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         expect.stringContaining('Unknown artifact type: unknown')
+      );
+    });
+  });
+
+  describe('from-conformance command', () => {
+    it('should convert conformance violations into failure artifacts', async () => {
+      const inputFile = 'test-conformance-results.json';
+      const outputFile = 'test-conformance-failures.json';
+      testFiles.push(inputFile, outputFile);
+
+      writeFileSync(inputFile, JSON.stringify({
+        overall: 'fail',
+        violations: [
+          {
+            ruleId: 'rule-required-email',
+            ruleName: 'Required Email Field',
+            category: 'data_validation',
+            severity: 'major',
+            message: 'Required field is missing or null',
+            actualValue: null,
+            expectedValue: 'Non-null value',
+            context: {
+              timestamp: '2026-02-20T09:00:00.000Z',
+              executionId: 'run-001',
+              environment: 'staging',
+              modulePath: 'src/domain/user-service.ts:42:7',
+              traceId: 'trace-123',
+              metadata: {
+                source: 'conformance-cli'
+              }
+            },
+            evidence: {
+              inputData: { user: {} },
+              stateSnapshot: { user: {} },
+              metrics: { mismatchCount: 1 },
+              logs: ['Validation failed'],
+              traces: [{ id: 'trace-123', span: 'validate-email' }]
+            },
+            remediation: {
+              suggested: ['Provide a non-null value for email'],
+              automatic: false,
+              priority: 'high'
+            }
+          }
+        ],
+        metadata: {
+          executionId: 'run-001',
+          timestamp: '2026-02-20T09:00:01.000Z',
+          environment: 'staging',
+          version: '2.2.0'
+        }
+      }, null, 2));
+
+      const command = cli.createCommand();
+      const args = ['node', 'cli', 'from-conformance', '--input', inputFile, '--output', outputFile];
+
+      await command.parseAsync(args);
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Converting conformance violations to failure artifacts')
+      );
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Conformance violations: 1')
+      );
+      expect(existsSync(outputFile)).toBe(true);
+
+      const converted = JSON.parse(readFileSync(outputFile, 'utf-8')) as any[];
+      expect(converted).toHaveLength(1);
+      expect(converted[0].title).toContain('Required Email Field');
+      expect(converted[0].category).toBe('contract_violation');
+      expect(converted[0].severity).toBe('major');
+      expect(converted[0].location.filePath).toBe('src/domain/user-service.ts');
+      expect(converted[0].location.startLine).toBe(42);
+      expect(converted[0].metadata.environment.counterexampleKey).toContain('rule-required-email');
+      expect(converted[0].metadata.environment.contractName).toBe('Required Email Field');
+      expect(converted[0].metadata.environment.violationType).toBe('input');
+      expect(converted[0].suggestedActions).toHaveLength(1);
+      expect(converted[0].evidence.logs.join('\n')).toContain('stateSnapshot=');
+      expect(converted[0].evidence.logs.join('\n')).toContain('trace[0]=');
+      expect(converted[0].evidence.logs.join('\n')).toContain('Actual data:');
+    });
+
+    it('should fail when conformance result file does not exist', async () => {
+      const command = cli.createCommand();
+      const args = [
+        'node',
+        'cli',
+        'from-conformance',
+        '--input',
+        'not-found-conformance-results.json',
+        '--output',
+        'test-output.json'
+      ];
+
+      await expect(command.parseAsync(args)).rejects.toThrow();
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Conformance result file not found')
       );
     });
   });

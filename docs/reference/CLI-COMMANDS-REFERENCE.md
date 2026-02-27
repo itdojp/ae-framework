@@ -184,6 +184,11 @@ ae domain-model --language --sources "glossary.md"
 # Analyze failures
  ae fix analyze --input failures.json --output-format markdown
 
+# Convert conformance verify output to failure artifacts
+ ae fix from-conformance \
+   --input artifacts/conformance/conformance-results.json \
+   --output artifacts/fix/failures.json
+
 # Create a failure artifact
  ae fix create-artifact --type error --message "Null pointer" --file src/app.ts --line 10 --output failure.json
 
@@ -511,6 +516,7 @@ ae ui-scaffold --components
 ```bash
 ae fix apply --input failures.json --output .ae/auto-fix --dry-run
  ae fix analyze --input failures.json --output-format markdown
+ ae fix from-conformance --input artifacts/conformance/conformance-results.json --output artifacts/fix/failures.json
  ae fix create-artifact --type error --message "Null pointer" --file src/app.ts --line 10 --output failure.json
  ae fix status
  ae fix strategies --category test_failure
