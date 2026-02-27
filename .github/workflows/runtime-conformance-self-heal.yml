@@ -1,0 +1,348 @@
+name: Runtime Conformance Self-Heal
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      trace_input:
+        description: 'Trace input file path (NDJSON/JSON). Ignored when trace_bundle is set.'
+        required: false
+        default: ''
+      trace_bundle:
+        description: 'Existing trace bundle path (ae-trace-bundle/v1).'
+        required: false
+        default: ''
+      conformance_rules:
+        description: 'Optional conformance rules JSON path.'
+        required: false
+        default: ''
+      apply_fixes:
+        description: 'Run ae fix apply (true/false).'
+        required: false
+        default: 'false'
+      dry_run:
+        description: 'Use dry-run mode for ae fix apply (true/false).'
+        required: false
+        default: 'true'
+
+concurrency:
+  group: runtime-conformance-self-heal-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+
+jobs:
+  self-heal:
+    if: >-
+      !contains(fromJSON('["1","true","yes","on","TRUE","YES","ON","True","Yes","On"]'), vars.AE_AUTOMATION_GLOBAL_DISABLE)
+      && (
+        github.event_name == 'workflow_dispatch'
+        || vars.AE_RUNTIME_CONFORMANCE_SELF_HEAL_ENABLED == '1'
+      )
+    runs-on: ubuntu-latest
+    env:
+      AE_RUNTIME_CONFORMANCE_TRACE_INPUT: ${{ vars.AE_RUNTIME_CONFORMANCE_TRACE_INPUT || '' }}
+      AE_RUNTIME_CONFORMANCE_TRACE_BUNDLE: ${{ vars.AE_RUNTIME_CONFORMANCE_TRACE_BUNDLE || '' }}
+      AE_RUNTIME_CONFORMANCE_RULES: ${{ vars.AE_RUNTIME_CONFORMANCE_RULES || '' }}
+      AE_RUNTIME_CONFORMANCE_APPLY_FIXES: ${{ vars.AE_RUNTIME_CONFORMANCE_APPLY_FIXES || '' }}
+      AE_RUNTIME_CONFORMANCE_DRY_RUN: ${{ vars.AE_RUNTIME_CONFORMANCE_DRY_RUN || '' }}
+      DISPATCH_TRACE_INPUT: ${{ github.event_name == 'workflow_dispatch' && inputs.trace_input || '' }}
+      DISPATCH_TRACE_BUNDLE: ${{ github.event_name == 'workflow_dispatch' && inputs.trace_bundle || '' }}
+      DISPATCH_CONFORMANCE_RULES: ${{ github.event_name == 'workflow_dispatch' && inputs.conformance_rules || '' }}
+      DISPATCH_APPLY_FIXES: ${{ github.event_name == 'workflow_dispatch' && inputs.apply_fixes || '' }}
+      DISPATCH_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+
+      - name: Resolve self-heal configuration
+        id: config
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          normalize_bool() {
+            local raw="${1:-}"
+            case "${raw,,}" in
+              1|true|yes|on) echo "true" ;;
+              *) echo "false" ;;
+            esac
+          }
+
+          TRACE_INPUT="${DISPATCH_TRACE_INPUT:-${AE_RUNTIME_CONFORMANCE_TRACE_INPUT:-samples/conformance/sample-traces.json}}"
+          TRACE_BUNDLE_INPUT="${DISPATCH_TRACE_BUNDLE:-${AE_RUNTIME_CONFORMANCE_TRACE_BUNDLE:-}}"
+          CONFORMANCE_RULES="${DISPATCH_CONFORMANCE_RULES:-${AE_RUNTIME_CONFORMANCE_RULES:-}}"
+          APPLY_FIXES_RAW="${DISPATCH_APPLY_FIXES:-${AE_RUNTIME_CONFORMANCE_APPLY_FIXES:-false}}"
+          DRY_RUN_RAW="${DISPATCH_DRY_RUN:-${AE_RUNTIME_CONFORMANCE_DRY_RUN:-true}}"
+
+          APPLY_FIXES="$(normalize_bool "${APPLY_FIXES_RAW}")"
+          DRY_RUN="$(normalize_bool "${DRY_RUN_RAW}")"
+
+          TRACE_BUNDLE_PATH="artifacts/observability/runtime-self-heal-trace-bundle.json"
+          TRACE_SUMMARY_PATH="artifacts/observability/runtime-self-heal-trace-bundle-summary.json"
+          CONFORMANCE_RESULTS_PATH="artifacts/conformance/runtime-self-heal-results.json"
+          FAILURE_ARTIFACTS_PATH="artifacts/fix/runtime-self-heal-failures.json"
+          FIX_OUTPUT_DIR=".ae/runtime-self-heal"
+
+          {
+            echo "trace_input=${TRACE_INPUT}"
+            echo "trace_bundle_input=${TRACE_BUNDLE_INPUT}"
+            echo "conformance_rules=${CONFORMANCE_RULES}"
+            echo "apply_fixes=${APPLY_FIXES}"
+            echo "dry_run=${DRY_RUN}"
+            echo "trace_bundle_path=${TRACE_BUNDLE_PATH}"
+            echo "trace_summary_path=${TRACE_SUMMARY_PATH}"
+            echo "conformance_results_path=${CONFORMANCE_RESULTS_PATH}"
+            echo "failure_artifacts_path=${FAILURE_ARTIFACTS_PATH}"
+            echo "fix_output_dir=${FIX_OUTPUT_DIR}"
+          } >> "${GITHUB_OUTPUT}"
+
+          {
+            echo "## Runtime Conformance Self-Heal Config"
+            echo "- trace_input: ${TRACE_INPUT}"
+            echo "- trace_bundle_input: ${TRACE_BUNDLE_INPUT:-<none>}"
+            echo "- conformance_rules: ${CONFORMANCE_RULES:-<none>}"
+            echo "- apply_fixes: ${APPLY_FIXES}"
+            echo "- dry_run: ${DRY_RUN}"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Run runtime conformance self-heal pipeline
+        id: pipeline
+        env:
+          TRACE_INPUT: ${{ steps.config.outputs.trace_input }}
+          TRACE_BUNDLE_INPUT: ${{ steps.config.outputs.trace_bundle_input }}
+          CONFORMANCE_RULES: ${{ steps.config.outputs.conformance_rules }}
+          APPLY_FIXES: ${{ steps.config.outputs.apply_fixes }}
+          DRY_RUN: ${{ steps.config.outputs.dry_run }}
+          TRACE_BUNDLE_PATH: ${{ steps.config.outputs.trace_bundle_path }}
+          TRACE_SUMMARY_PATH: ${{ steps.config.outputs.trace_summary_path }}
+          CONFORMANCE_RESULTS_PATH: ${{ steps.config.outputs.conformance_results_path }}
+          FAILURE_ARTIFACTS_PATH: ${{ steps.config.outputs.failure_artifacts_path }}
+          FIX_OUTPUT_DIR: ${{ steps.config.outputs.fix_output_dir }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          STATUS="success"
+          REASON=""
+          INGEST_MODE=""
+
+          if [ -n "${TRACE_BUNDLE_INPUT}" ]; then
+            if [ ! -f "${TRACE_BUNDLE_INPUT}" ]; then
+              STATUS="error"
+              REASON="trace_bundle not found: ${TRACE_BUNDLE_INPUT}"
+            else
+              mkdir -p "$(dirname "${TRACE_BUNDLE_PATH}")"
+              cp "${TRACE_BUNDLE_INPUT}" "${TRACE_BUNDLE_PATH}"
+              INGEST_MODE="bundle-input"
+            fi
+          else
+            if [ ! -f "${TRACE_INPUT}" ]; then
+              STATUS="error"
+              REASON="trace_input not found: ${TRACE_INPUT}"
+            else
+              INGEST_MODE="ingest"
+              pnpm run ae-framework -- conformance ingest \
+                --input "${TRACE_INPUT}" \
+                --output "${TRACE_BUNDLE_PATH}" \
+                --summary-output "${TRACE_SUMMARY_PATH}" || {
+                  STATUS="error"
+                  REASON="conformance ingest failed"
+                }
+            fi
+          fi
+
+          if [ "${STATUS}" = "success" ]; then
+            VERIFY_ARGS=(
+              conformance verify
+              --trace-bundle "${TRACE_BUNDLE_PATH}"
+              --format json
+              --output "${CONFORMANCE_RESULTS_PATH}"
+            )
+            if [ -n "${CONFORMANCE_RULES}" ]; then
+              VERIFY_ARGS+=(--rules "${CONFORMANCE_RULES}")
+            fi
+
+            pnpm run ae-framework -- "${VERIFY_ARGS[@]}" || {
+              STATUS="error"
+              REASON="conformance verify failed"
+            }
+          fi
+
+          if [ "${STATUS}" = "success" ]; then
+            pnpm run ae-framework -- fix from-conformance \
+              --input "${CONFORMANCE_RESULTS_PATH}" \
+              --output "${FAILURE_ARTIFACTS_PATH}" || {
+                STATUS="error"
+                REASON="fix from-conformance failed"
+              }
+          fi
+
+          if [ "${STATUS}" = "success" ]; then
+            if [ "${APPLY_FIXES}" = "true" ]; then
+              if [ "${DRY_RUN}" = "true" ]; then
+                pnpm run ae-framework -- fix apply \
+                  --input "${FAILURE_ARTIFACTS_PATH}" \
+                  --output "${FIX_OUTPUT_DIR}" \
+                  --dry-run || {
+                    STATUS="error"
+                    REASON="fix apply (dry-run) failed"
+                  }
+              else
+                pnpm run ae-framework -- fix apply \
+                  --input "${FAILURE_ARTIFACTS_PATH}" \
+                  --output "${FIX_OUTPUT_DIR}" \
+                  --apply \
+                  --verify \
+                  --verify-profile lite || {
+                    STATUS="error"
+                    REASON="fix apply failed"
+                  }
+              fi
+            else
+              REASON="apply_fixes disabled"
+            fi
+          fi
+
+          VIOLATION_COUNT="$(jq '.violations | length' "${CONFORMANCE_RESULTS_PATH}" 2>/dev/null || echo 0)"
+          FAILURE_COUNT="$(jq 'length' "${FAILURE_ARTIFACTS_PATH}" 2>/dev/null || echo 0)"
+
+          {
+            echo "status=${STATUS}"
+            echo "reason=${REASON}"
+            echo "ingest_mode=${INGEST_MODE}"
+            echo "violation_count=${VIOLATION_COUNT}"
+            echo "failure_count=${FAILURE_COUNT}"
+          } >> "${GITHUB_OUTPUT}"
+
+          {
+            echo "## Runtime Conformance Self-Heal Result"
+            echo "- status: ${STATUS}"
+            echo "- reason: ${REASON:-<none>}"
+            echo "- ingest_mode: ${INGEST_MODE:-<none>}"
+            echo "- violations: ${VIOLATION_COUNT}"
+            echo "- failure_artifacts: ${FAILURE_COUNT}"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+          if [ "${STATUS}" != "success" ]; then
+            exit 1
+          fi
+
+      - name: Create PR for auto-fix changes
+        id: pr
+        if: ${{ steps.pipeline.outputs.status == 'success' && steps.config.outputs.apply_fixes == 'true' && steps.config.outputs.dry_run == 'false' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git add -A . ':(exclude)artifacts/**' ':(exclude).ae/**' ':(exclude)reports/**'
+          if git diff --cached --quiet; then
+            {
+              echo "created=false"
+              echo "number="
+              echo "url="
+            } >> "${GITHUB_OUTPUT}"
+            {
+              echo "- auto-fix applied but no commit-ready changes were detected."
+            } >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+
+          BRANCH="bot/runtime-conformance-self-heal-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "${BRANCH}"
+          git commit -m "chore(self-heal): runtime conformance auto-fix"
+          git push origin "${BRANCH}"
+
+          PR_JSON="$(gh pr create \
+            --base main \
+            --head "${BRANCH}" \
+            --title "chore(self-heal): runtime conformance auto-fix" \
+            --body "Automated runtime conformance self-heal pipeline output.\n\n- workflow: ${GITHUB_WORKFLOW}\n- run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}\n- violations: ${{ steps.pipeline.outputs.violation_count }}\n- failure artifacts: ${{ steps.pipeline.outputs.failure_count }}\n\nRefs: #2287" \
+            --json number,url)"
+
+          PR_NUMBER="$(echo "${PR_JSON}" | jq -r '.number')"
+          PR_URL="$(echo "${PR_JSON}" | jq -r '.url')"
+
+          {
+            echo "created=true"
+            echo "number=${PR_NUMBER}"
+            echo "url=${PR_URL}"
+          } >> "${GITHUB_OUTPUT}"
+
+          echo "- auto-fix PR created: ${PR_URL}" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Explain PR creation skip on non-default branch
+        if: ${{ steps.pipeline.outputs.status == 'success' && steps.config.outputs.apply_fixes == 'true' && steps.config.outputs.dry_run == 'false' && github.ref != format('refs/heads/{0}', github.event.repository.default_branch) }}
+        run: |
+          echo "- auto-fix PR creation skipped because workflow ref is not the default branch (${GITHUB_REF})." >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Emit automation report
+        if: always()
+        env:
+          AE_AUTOMATION_REPORT_FILE: artifacts/automation/runtime-conformance-self-heal-report.json
+          PIPELINE_STATUS: ${{ steps.pipeline.outputs.status || 'error' }}
+          PIPELINE_REASON: ${{ steps.pipeline.outputs.reason || 'pipeline step did not run' }}
+          PIPELINE_INGEST_MODE: ${{ steps.pipeline.outputs.ingest_mode || '' }}
+          PIPELINE_VIOLATION_COUNT: ${{ steps.pipeline.outputs.violation_count || '0' }}
+          PIPELINE_FAILURE_COUNT: ${{ steps.pipeline.outputs.failure_count || '0' }}
+          PIPELINE_APPLY_FIXES: ${{ steps.config.outputs.apply_fixes || 'false' }}
+          PIPELINE_DRY_RUN: ${{ steps.config.outputs.dry_run || 'true' }}
+          PIPELINE_CREATED_PR: ${{ steps.pr.outputs.created || 'false' }}
+          PIPELINE_CREATED_PR_NUMBER: ${{ steps.pr.outputs.number || '' }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { emitAutomationReport } from './scripts/ci/lib/automation-report.mjs';
+
+          const toInt = (value) => {
+            const parsed = Number.parseInt(String(value ?? ''), 10);
+            return Number.isFinite(parsed) ? parsed : 0;
+          };
+
+          const createdPrNumber = toInt(process.env.PIPELINE_CREATED_PR_NUMBER);
+          emitAutomationReport({
+            tool: 'runtime-conformance-self-heal',
+            mode: process.env.PIPELINE_DRY_RUN === 'true' ? 'dry-run' : 'apply',
+            status: process.env.PIPELINE_STATUS || 'error',
+            reason: process.env.PIPELINE_REASON || '',
+            prNumber: createdPrNumber > 0 ? createdPrNumber : undefined,
+            metrics: {
+              violations: toInt(process.env.PIPELINE_VIOLATION_COUNT),
+              failureArtifacts: toInt(process.env.PIPELINE_FAILURE_COUNT),
+              applyFixes: process.env.PIPELINE_APPLY_FIXES === 'true' ? 1 : 0,
+              dryRun: process.env.PIPELINE_DRY_RUN === 'true' ? 1 : 0,
+              createdPr: process.env.PIPELINE_CREATED_PR === 'true' ? 1 : 0,
+            },
+            data: {
+              ingestMode: process.env.PIPELINE_INGEST_MODE || '',
+            },
+          });
+          NODE
+
+      - name: Upload self-heal artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-conformance-self-heal-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            artifacts/observability/runtime-self-heal-trace-bundle.json
+            artifacts/observability/runtime-self-heal-trace-bundle-summary.json
+            artifacts/conformance/runtime-self-heal-results.json
+            artifacts/fix/runtime-self-heal-failures.json
+            artifacts/automation/runtime-conformance-self-heal-report.json
+            .ae/runtime-self-heal/**
+          if-no-files-found: warn
