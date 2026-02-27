@@ -203,11 +203,9 @@ function parseOptionalNonNegativeInt(value, keyName) {
 }
 
 function resolveApprovalGateConfig(policy, options = {}) {
-  const topologyState = normalizeReviewTopology(
-    options.reviewTopology ?? process.env.AE_REVIEW_TOPOLOGY,
-  );
+  const topologyState = normalizeReviewTopology(options.reviewTopology);
   const overrideState = parseOptionalNonNegativeInt(
-    options.approvalOverride ?? process.env.AE_POLICY_MIN_HUMAN_APPROVALS,
+    options.approvalOverride,
     'AE_POLICY_MIN_HUMAN_APPROVALS',
   );
 
