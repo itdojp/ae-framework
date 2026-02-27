@@ -20,6 +20,11 @@ import {
   toRelativePath,
 } from './conformance-report.js';
 import { displayVerificationResults } from './conformance-verify-output.js';
+import {
+  parseTraceRedactionRule,
+  runConformanceIngest,
+  type TraceRedactionRule,
+} from './conformance-ingest.js';
 import type { 
   ConformanceRule, 
   ConformanceConfig, 
@@ -31,6 +36,8 @@ const DEFAULT_REPORT_DIR = 'reports/conformance';
 const DEFAULT_REPORT_JSON = path.join(DEFAULT_REPORT_DIR, 'conformance-summary.json');
 const DEFAULT_REPORT_MARKDOWN = path.join(DEFAULT_REPORT_DIR, 'conformance-summary.md');
 const DEFAULT_VERIFY_OUTPUT_JSON = path.join('artifacts', 'conformance', 'conformance-results.json');
+const DEFAULT_TRACE_BUNDLE_OUTPUT_JSON = path.join('artifacts', 'observability', 'trace-bundle.json');
+const DEFAULT_TRACE_BUNDLE_SUMMARY_JSON = path.join('artifacts', 'observability', 'trace-bundle-summary.json');
 
 export class ConformanceCli {
   private engine: ConformanceVerificationEngine;
@@ -54,6 +61,7 @@ export class ConformanceCli {
       .command('verify')
       .description('Verify data against conformance rules')
       .option('-i, --input <file>', 'Input data JSON file')
+      .option('--trace-bundle <file>', 'Trace bundle JSON file (ae-trace-bundle/v1)')
       .option('-r, --rules <file>', 'Rules configuration file')
       .option('-o, --output <file>', 'Output results file', DEFAULT_VERIFY_OUTPUT_JSON)
       .option('--rule-ids <ids>', 'Specific rule IDs to execute (comma-separated)')
@@ -63,6 +71,30 @@ export class ConformanceCli {
       .option('--verbose', 'Verbose output')
       .action(async (options) => {
         await this.handleVerifyCommand(options);
+      });
+
+    command
+      .command('ingest')
+      .description('Ingest runtime traces and generate trace bundle artifacts')
+      .requiredOption('-i, --input <file>', 'Input trace file (NDJSON or JSON)')
+      .option('-o, --output <file>', 'Output trace bundle path', DEFAULT_TRACE_BUNDLE_OUTPUT_JSON)
+      .option('--summary-output <file>', 'Output trace bundle summary path', DEFAULT_TRACE_BUNDLE_SUMMARY_JSON)
+      .option('--source-env <name>', 'Source environment name', process.env['AE_TRACE_SOURCE_ENV'] ?? 'unknown')
+      .option('--source-service <name>', 'Source service name', process.env['AE_TRACE_SOURCE_SERVICE'] ?? 'unknown')
+      .option('--source-build-id <id>', 'Source build ID', process.env['AE_TRACE_SOURCE_BUILD_ID'] ?? '')
+      .option('--source-git-sha <sha>', 'Source git SHA', process.env['AE_TRACE_SOURCE_GIT_SHA'] ?? '')
+      .option('--source-time-start <iso>', 'Source time-window start (ISO-8601)', '')
+      .option('--source-time-end <iso>', 'Source time-window end (ISO-8601)', '')
+      .option('--sample-rate <number>', 'Deterministic sampling rate (0.0-1.0)', '1')
+      .option('--max-events <number>', 'Cap emitted events after sampling (0 means unlimited)', '0')
+      .option(
+        '--redact <rule>',
+        'Redaction rule in <jsonPath>:<remove|mask|hash> format (repeatable)',
+        (value: string, previous: string[] = []) => [...previous, value],
+        [],
+      )
+      .action(async (options) => {
+        await this.handleIngestCommand(options);
       });
 
     // Rules management
@@ -144,25 +176,132 @@ export class ConformanceCli {
   }
 
   /**
+   * Handle the ingest command
+   */
+  private async handleIngestCommand(options: any): Promise<void> {
+    try {
+      const sampleRate = Number(options.sampleRate);
+      const maxEvents = Number(options.maxEvents);
+
+      if (!Number.isFinite(sampleRate) || sampleRate < 0 || sampleRate > 1) {
+        console.error(chalk.red('❌ --sample-rate must be a number in [0,1].'));
+        safeExit(1);
+        return;
+      }
+      if (!Number.isFinite(maxEvents) || maxEvents < 0) {
+        console.error(chalk.red('❌ --max-events must be a non-negative number.'));
+        safeExit(1);
+        return;
+      }
+
+      const redactRules: TraceRedactionRule[] = [];
+      const redactSpecs = Array.isArray(options.redact) ? options.redact : [];
+      for (const ruleSpec of redactSpecs) {
+        const parsed = parseTraceRedactionRule(String(ruleSpec));
+        if (!parsed.ok || !parsed.rule) {
+          console.error(chalk.red(`❌ ${parsed.error ?? `invalid redaction rule: ${ruleSpec}`}`));
+          safeExit(1);
+          return;
+        }
+        redactRules.push(parsed.rule);
+      }
+
+      const result = runConformanceIngest({
+        inputPath: options.input,
+        outputPath: options.output,
+        summaryOutputPath: options.summaryOutput,
+        sourceEnv: options.sourceEnv,
+        sourceService: options.sourceService,
+        sourceBuildId: options.sourceBuildId || undefined,
+        sourceGitSha: options.sourceGitSha || undefined,
+        sourceTimeStart: options.sourceTimeStart || undefined,
+        sourceTimeEnd: options.sourceTimeEnd || undefined,
+        sampleRate,
+        maxEvents,
+        redactRules,
+      });
+
+      console.log('📥 Trace ingest completed');
+      console.log(`📦 Trace bundle: ${options.output}`);
+      console.log(`📊 Summary: ${options.summaryOutput}`);
+      console.log(`- raw events: ${result.summary.counts.rawEventCount}`);
+      console.log(`- emitted events: ${result.summary.counts.emittedEventCount}`);
+      console.log(`- traces: ${result.summary.counts.traceCount}`);
+      console.log(`- invalid events dropped: ${result.summary.counts.invalidEventCount}`);
+      console.log(`- sampled out: ${result.summary.counts.sampledOutCount}`);
+      console.log(`- redacted fields: ${result.summary.counts.redactedFieldCount}`);
+    } catch (error: unknown) {
+      console.error(chalk.red(`❌ Trace ingest failed: ${toMessage(error)}`));
+      safeExit(1);
+    }
+  }
+
+  /**
    * Handle the verify command
    */
   private async handleVerifyCommand(options: any): Promise<void> {
     try {
       console.log('🔍 Starting conformance verification...');
 
-      // Load input data
-      if (!options.input) {
-        console.error(chalk.red('❌ Input file is required. Use --input to specify the data file.'));
+      if (options.input && options.traceBundle) {
+        console.error(chalk.red('❌ Use either --input or --trace-bundle, not both.'));
+        safeExit(1);
         return;
       }
 
-      if (!existsSync(options.input)) {
-        console.error(chalk.red(`❌ Input file not found: ${options.input}`));
+      if (!options.input && !options.traceBundle) {
+        console.error(chalk.red('❌ Input file is required. Use --input or --trace-bundle.'));
+        safeExit(1);
         return;
       }
 
-      const inputData = JSON.parse(readFileSync(options.input, 'utf-8'));
-      console.log(`📄 Loaded input data from ${options.input}`);
+      let inputData: unknown;
+      if (options.traceBundle) {
+        if (!existsSync(options.traceBundle)) {
+          console.error(chalk.red(`❌ Trace bundle file not found: ${options.traceBundle}`));
+          safeExit(1);
+          return;
+        }
+
+        const parsed = JSON.parse(readFileSync(options.traceBundle, 'utf-8')) as unknown;
+        if (!parsed || typeof parsed !== 'object' || !Array.isArray((parsed as { events?: unknown }).events)) {
+          console.error(chalk.red('❌ Trace bundle must be a JSON object that contains events[].'));
+          safeExit(1);
+          return;
+        }
+        const bundle = parsed as {
+          schemaVersion?: string;
+          source?: unknown;
+          events: unknown[];
+          grouping?: unknown;
+          redaction?: unknown;
+          summary?: unknown;
+        };
+        if (bundle.schemaVersion !== 'ae-trace-bundle/v1') {
+          console.error(chalk.red('❌ Unsupported trace bundle schemaVersion. Expected ae-trace-bundle/v1.'));
+          safeExit(1);
+          return;
+        }
+
+        inputData = {
+          traceBundle: bundle,
+          source: bundle.source,
+          events: bundle.events,
+          grouping: bundle.grouping,
+          redaction: bundle.redaction,
+          summary: bundle.summary,
+        };
+        console.log(`📦 Loaded trace bundle from ${options.traceBundle} (${bundle.events.length} events)`);
+      } else {
+        if (!existsSync(options.input)) {
+          console.error(chalk.red(`❌ Input file not found: ${options.input}`));
+          safeExit(1);
+          return;
+        }
+
+        inputData = JSON.parse(readFileSync(options.input, 'utf-8'));
+        console.log(`📄 Loaded input data from ${options.input}`);
+      }
 
       // Load runtime context
       let context: RuntimeContext;

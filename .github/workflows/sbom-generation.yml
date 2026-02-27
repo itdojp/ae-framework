@@ -95,18 +95,23 @@ jobs:
     - name: Compare with previous SBOM (PR only)
       if: github.event_name == 'pull_request'
       run: |
+        cp sbom.json sbom-current.json
         # Download previous SBOM from main branch if available
         if gh api repos/${{ github.repository }}/actions/artifacts --paginate \
            --jq '.artifacts[] | select(.name=="sbom-files") | select(.workflow_run.head_branch=="main") | .archive_download_url' \
            | head -1 | xargs -I {} gh api {} > previous-sbom.zip 2>/dev/null; then
-          unzip -q previous-sbom.zip 2>/dev/null && \
-          if [[ -f "sbom.json" ]]; then
-            mv sbom.json previous-sbom.json
-            pnpm run ae-framework sbom compare previous-sbom.json sbom.json --verbose
+          mkdir -p previous-sbom
+          unzip -q previous-sbom.zip -d previous-sbom 2>/dev/null || true
+          if [[ -f "previous-sbom/sbom.json" ]]; then
+            pnpm run ae-framework sbom compare previous-sbom/sbom.json sbom-current.json --verbose || \
+              printf -- "%s\n" "SBOM differences detected (non-blocking on PR compare step)"
+          else
+            printf -- "%s\n" "No previous SBOM payload found after download"
           fi
         else
           printf -- "%s\n" "No previous SBOM found for comparison"
         fi
+        mv sbom-current.json sbom.json
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         

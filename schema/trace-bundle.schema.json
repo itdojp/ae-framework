@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/trace-bundle.schema.json",
+  "title": "ae-trace-bundle-v1",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "ae-trace-bundle/v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "environment": { "type": "string", "minLength": 1 },
+        "service": { "type": "string", "minLength": 1 },
+        "buildId": { "type": "string" },
+        "gitSha": { "type": "string" },
+        "input": {
+          "type": "object",
+          "properties": {
+            "path": { "type": "string", "minLength": 1 },
+            "format": {
+              "type": "string",
+              "enum": ["ndjson", "json-array", "json-events"]
+            }
+          },
+          "required": ["path", "format"],
+          "additionalProperties": false
+        },
+        "timeWindow": {
+          "type": "object",
+          "properties": {
+            "start": { "type": "string", "format": "date-time" },
+            "end": { "type": "string", "format": "date-time" }
+          },
+          "required": ["start", "end"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["environment", "service", "input", "timeWindow"],
+      "additionalProperties": false
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "traceId": { "type": "string", "minLength": 1 },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "actor": { "type": "string", "minLength": 1 },
+          "event": { "type": "string", "minLength": 1 }
+        },
+        "required": ["traceId", "timestamp", "actor", "event"],
+        "additionalProperties": true
+      }
+    },
+    "grouping": {
+      "type": "object",
+      "properties": {
+        "by": {
+          "type": "string",
+          "const": "traceId"
+        },
+        "traceCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "traces": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "traceId": { "type": "string", "minLength": 1 },
+              "eventCount": { "type": "integer", "minimum": 1 },
+              "firstTimestamp": { "type": "string", "format": "date-time" },
+              "lastTimestamp": { "type": "string", "format": "date-time" }
+            },
+            "required": ["traceId", "eventCount", "firstTimestamp", "lastTimestamp"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["by", "traceCount", "traces"],
+      "additionalProperties": false
+    },
+    "redaction": {
+      "type": "object",
+      "properties": {
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "jsonPath": { "type": "string", "minLength": 1 },
+              "action": {
+                "type": "string",
+                "enum": ["remove", "mask", "hash"]
+              }
+            },
+            "required": ["jsonPath", "action"],
+            "additionalProperties": false
+          }
+        },
+        "redactedFieldCount": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": ["rules", "redactedFieldCount"],
+      "additionalProperties": false
+    },
+    "summary": {
+      "type": "object",
+      "properties": {
+        "rawEventCount": { "type": "integer", "minimum": 0 },
+        "validEventCount": { "type": "integer", "minimum": 0 },
+        "invalidEventCount": { "type": "integer", "minimum": 0 },
+        "sampledOutCount": { "type": "integer", "minimum": 0 },
+        "emittedEventCount": { "type": "integer", "minimum": 0 }
+      },
+      "required": ["rawEventCount", "validEventCount", "invalidEventCount", "sampledOutCount", "emittedEventCount"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["schemaVersion", "generatedAt", "source", "events", "grouping", "redaction", "summary"],
+  "additionalProperties": false
+}

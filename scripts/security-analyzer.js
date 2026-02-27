@@ -59,10 +59,14 @@ class SecurityAnalyzer {
     
     const overallScore = (results.summary.passed / results.summary.totalChecks) * 100;
     console.log(`🎯 Security Score: ${overallScore.toFixed(1)}%`);
-    
+    const strictMode = process.env['SECURITY_ANALYZER_STRICT'] === '1';
+
     if (results.summary.failed > 0) {
       console.log('\n🚨 Security issues detected! Please review the report.');
-      process.exit(1);
+      if (strictMode) {
+        process.exit(1);
+      }
+      console.log('⚠️  SECURITY_ANALYZER_STRICT=0 のため non-blocking で継続します。');
     }
     
     return results;

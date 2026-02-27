@@ -194,6 +194,14 @@ ae domain-model --language --sources "glossary.md"
 
 ### Runtime Conformance (Phase 2.2)
 ```bash
+# Ingest runtime traces to Trace Bundle
+ ae conformance ingest --input runtime.ndjson \
+   --output artifacts/observability/trace-bundle.json \
+   --summary-output artifacts/observability/trace-bundle-summary.json \
+   --redact '$.details.email:mask'
+# JSON schema: schema/trace-bundle.schema.json
+# JSON schema (summary): schema/trace-bundle-summary.schema.json
+
 # Generate samples
  ae conformance sample --rules configs/samples/sample-rules.json \
    --config configs/samples/sample-config.json \
@@ -203,6 +211,8 @@ ae domain-model --language --sources "glossary.md"
 # Verify input data
  ae conformance verify --input data.json --rules rules.json \
    --context-file context.json --format json --output artifacts/conformance/conformance-results.json
+ ae conformance verify --trace-bundle artifacts/observability/trace-bundle.json \
+   --format json --output artifacts/conformance/conformance-results.json
 # JSON schema (--format json): schema/conformance-verify-result.schema.json
 
 # Rules / config / metrics / status
@@ -508,6 +518,14 @@ ae fix apply --input failures.json --output .ae/auto-fix --dry-run
 
 ### Runtime Conformance
 ```bash
+# 取り込み（Telemetry -> Trace Bundle）
+ae conformance ingest --input runtime.ndjson \
+  --output artifacts/observability/trace-bundle.json \
+  --summary-output artifacts/observability/trace-bundle-summary.json \
+  --redact '$.details.email:mask'
+# JSON schema: schema/trace-bundle.schema.json
+# JSON schema (summary): schema/trace-bundle-summary.schema.json
+
 ae conformance sample --rules configs/samples/sample-rules.json \
   --config configs/samples/sample-config.json \
   --data configs/samples/sample-data.json \
@@ -515,6 +533,8 @@ ae conformance sample --rules configs/samples/sample-rules.json \
 
  ae conformance verify --input data.json --rules rules.json \
   --context-file context.json --format json --output artifacts/conformance/conformance-results.json
+ ae conformance verify --trace-bundle artifacts/observability/trace-bundle.json \
+  --format json --output artifacts/conformance/conformance-results.json
 # JSON schema (--format json): schema/conformance-verify-result.schema.json
 
  ae conformance rules --list
