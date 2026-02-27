@@ -88,7 +88,27 @@ PR運用を以下の形に収束させます。
 3. 問題がなければ `balanced` / `aggressive` へ拡張
 4. 必要時のみ個別変数で上書き
 
+### 3.1.1 承認トポロジ（1人体制 / 複数人体制）
+
+`policy-gate` の人手承認要件は、次の変数で切替できます。
+
+- `AE_REVIEW_TOPOLOGY=team`（既定）
+  - high risk PR は `policy/risk-policy.yml` の `high_risk.min_human_approvals` を要求
+- `AE_REVIEW_TOPOLOGY=solo`
+  - high risk PR の approvals 要件を 0 として評価
+- `AE_POLICY_MIN_HUMAN_APPROVALS=<non-negative int>`
+  - 上記より優先される明示 override（例: `2`）
+
+運用フローは体制にかかわらず共通です。
+- PR作成 → Copilotレビュー → 指摘解消 → required checks green → merge
+- 差分は `policy-gate` の approvals 判定条件のみです。
+
 ### 3.2 変数セット例（保守的）
+
+体制切替:
+- `AE_REVIEW_TOPOLOGY=team`（既定、複数人体制）
+- `AE_REVIEW_TOPOLOGY=solo`（1人体制）
+- `AE_POLICY_MIN_HUMAN_APPROVALS=`（空: override無効）
 
 auto-fix（docsのみ）:
 - `AE_COPILOT_AUTO_FIX=1`

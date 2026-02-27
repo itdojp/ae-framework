@@ -47,6 +47,8 @@ PRやIssueで **必要な検証だけを opt-in で起動** し、CIコストと
 | 変数 | 役割 | 既定 | 詳細 |
 | --- | --- | --- | --- |
 | `AE_AUTOMATION_PROFILE` | PR自動化の一括プロファイル（`conservative` / `balanced` / `aggressive`） | 未設定（無効） | `docs/ci/automation-profiles.md` |
+| `AE_REVIEW_TOPOLOGY` | 承認トポロジ（`team` / `solo`） | `team` | `docs/ci/pr-automation.md` |
+| `AE_POLICY_MIN_HUMAN_APPROVALS` | policy-gate の人手承認数を明示上書き（非負整数、空で無効） | 未設定 | `docs/ci/pr-automation.md` |
 | `AE_COPILOT_AUTO_FIX` | Copilot suggestion 自動適用（ON/OFF） | 未設定（OFF） | `docs/ci/copilot-auto-fix.md` |
 | `AE_COPILOT_AUTO_FIX_SCOPE` | 対象スコープ（`docs` / `all`） | `docs` | `docs/ci/copilot-auto-fix.md` |
 | `AE_COPILOT_AUTO_FIX_LABEL` | ラベルopt-in（任意） | 未設定 | `docs/ci/copilot-auto-fix.md` |
