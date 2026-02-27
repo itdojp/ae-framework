@@ -56,7 +56,7 @@ describe('conformance ingest utilities', () => {
         }),
         JSON.stringify({
           traceId: '',
-          timestamp: 'not-date-time',
+          timestamp: '2026-02-27',
           actor: 'invalid',
           event: 'broken',
         }),
@@ -131,5 +131,35 @@ describe('conformance ingest utilities', () => {
     });
     expect(capped.bundle.summary.emittedEventCount).toBe(1);
     expect(capped.summary.sampling.maxEvents).toBe(1);
+  });
+
+  it('orders events by timestamp instant even when timezone offsets differ', async () => {
+    const workdir = await createWorkdir();
+    const inputPath = join(workdir, 'timezone-trace.json');
+    const outputPath = join(workdir, 'timezone-trace-bundle.json');
+    const summaryOutputPath = join(workdir, 'timezone-trace-summary.json');
+
+    await writeFile(
+      inputPath,
+      `${JSON.stringify({
+        events: [
+          { traceId: 'tz', timestamp: '2026-02-27T10:00:00+09:00', actor: 'svc', event: 'later' },
+          { traceId: 'tz', timestamp: '2026-02-27T00:30:00Z', actor: 'svc', event: 'earlier' },
+        ],
+      }, null, 2)}\n`,
+      'utf-8',
+    );
+
+    const { bundle } = runConformanceIngest({
+      inputPath,
+      outputPath,
+      summaryOutputPath,
+      sampleRate: 1,
+    });
+
+    expect(bundle.events[0]?.event).toBe('earlier');
+    expect(bundle.events[1]?.event).toBe('later');
+    expect(bundle.grouping.traces[0]?.firstTimestamp).toBe('2026-02-27T00:30:00Z');
+    expect(bundle.grouping.traces[0]?.lastTimestamp).toBe('2026-02-27T10:00:00+09:00');
   });
 });

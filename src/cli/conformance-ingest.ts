@@ -110,6 +110,8 @@ interface TraceBundleSummary {
 }
 
 const REDACTION_MASK = '[REDACTED]';
+const RFC3339_DATE_TIME =
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
 
 const toNormalizedSampleRate = (value: number | undefined): number => {
   if (!Number.isFinite(value)) {
@@ -200,6 +202,8 @@ const toStableHashRatio = (event: TraceEventRecord): number => {
   return numerator / 0x1_0000_0000;
 };
 
+const toTimestampMs = (value: string): number => Date.parse(value);
+
 const shouldKeepEvent = (event: TraceEventRecord, sampleRate: number): boolean => {
   if (sampleRate >= 1) {
     return true;
@@ -212,8 +216,9 @@ const shouldKeepEvent = (event: TraceEventRecord, sampleRate: number): boolean =
 
 const toSortedEvents = (events: TraceEventRecord[]): TraceEventRecord[] =>
   [...events].sort((left, right) => {
-    const byTime = left.timestamp.localeCompare(right.timestamp);
-    if (byTime !== 0) return byTime;
+    const leftEpoch = toTimestampMs(left.timestamp);
+    const rightEpoch = toTimestampMs(right.timestamp);
+    if (leftEpoch !== rightEpoch) return leftEpoch - rightEpoch;
     const byTraceId = left.traceId.localeCompare(right.traceId);
     if (byTraceId !== 0) return byTraceId;
     return left.event.localeCompare(right.event);
@@ -228,7 +233,12 @@ const parseEventRecord = (raw: unknown): TraceEventRecord | null => {
   if (!isNonEmptyString(raw['actor'])) return null;
   if (!isNonEmptyString(raw['event'])) return null;
 
-  const ts = new Date(raw['timestamp']);
+  const timestamp = raw['timestamp'];
+  if (!RFC3339_DATE_TIME.test(timestamp)) {
+    return null;
+  }
+
+  const ts = new Date(timestamp);
   if (Number.isNaN(ts.getTime())) {
     return null;
   }
@@ -283,10 +293,10 @@ const buildTraceGrouping = (events: TraceEventRecord[]): TraceBundle['grouping']
     }
 
     current.eventCount += 1;
-    if (event.timestamp < current.firstTimestamp) {
+    if (toTimestampMs(event.timestamp) < toTimestampMs(current.firstTimestamp)) {
       current.firstTimestamp = event.timestamp;
     }
-    if (event.timestamp > current.lastTimestamp) {
+    if (toTimestampMs(event.timestamp) > toTimestampMs(current.lastTimestamp)) {
       current.lastTimestamp = event.timestamp;
     }
   }
