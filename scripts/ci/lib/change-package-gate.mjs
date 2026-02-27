@@ -1,4 +1,5 @@
 const PR_SUMMARY_MARKER = '<!-- AE-PR-SUMMARY -->';
+const DEFAULT_TRUSTED_SUMMARY_AUTHORS = new Set(['github-actions', 'github-actions[bot]']);
 
 function normalizeTimestamp(comment) {
   const raw = comment?.created_at ?? comment?.createdAt ?? '';
@@ -8,6 +9,17 @@ function normalizeTimestamp(comment) {
 
 function normalizeCommentBody(comment) {
   return typeof comment?.body === 'string' ? comment.body : '';
+}
+
+function normalizeAuthorLogin(comment) {
+  const raw = comment?.user?.login ?? comment?.author?.login ?? '';
+  return String(raw).trim().toLowerCase();
+}
+
+function isTrustedSummaryAuthor(comment, trustedAuthors = DEFAULT_TRUSTED_SUMMARY_AUTHORS) {
+  const login = normalizeAuthorLogin(comment);
+  if (!login) return false;
+  return trustedAuthors.has(login);
 }
 
 function parseChangePackageValidationResult(body) {
@@ -39,6 +51,7 @@ function resolveChangePackageValidationStatus(comments = []) {
   const ordered = [...comments].sort((a, b) => normalizeTimestamp(a) - normalizeTimestamp(b));
   for (let index = ordered.length - 1; index >= 0; index -= 1) {
     const comment = ordered[index];
+    if (!isTrustedSummaryAuthor(comment)) continue;
     const body = normalizeCommentBody(comment);
     const parsed = parseChangePackageValidationResult(body);
     if (!parsed) continue;
@@ -51,6 +64,7 @@ function resolveChangePackageValidationStatus(comments = []) {
 }
 
 export {
+  isTrustedSummaryAuthor,
   parseChangePackageValidationResult,
   resolveChangePackageValidationStatus,
 };

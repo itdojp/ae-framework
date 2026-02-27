@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  isTrustedSummaryAuthor,
   parseChangePackageValidationResult,
   resolveChangePackageValidationStatus,
 } from '../../../scripts/ci/lib/change-package-gate.mjs';
@@ -24,11 +25,13 @@ describe('change-package gate helpers', () => {
     const comments = [
       {
         created_at: '2026-02-27T00:00:00Z',
+        user: { login: 'github-actions' },
         body: '<!-- AE-PR-SUMMARY -->\n### Change Package Validation\n- result: PASS\n',
         html_url: 'https://example.test/1',
       },
       {
         created_at: '2026-02-27T00:02:00Z',
+        user: { login: 'github-actions' },
         body: '<!-- AE-PR-SUMMARY -->\n### Change Package Validation\n- result: FAIL\n',
         html_url: 'https://example.test/2',
       },
@@ -48,5 +51,30 @@ describe('change-package gate helpers', () => {
       status: 'missing',
       sourceUrl: null,
     });
+  });
+
+  it('ignores untrusted summary comments', () => {
+    const comments = [
+      {
+        created_at: '2026-02-27T00:00:00Z',
+        user: { login: 'contributor-user' },
+        body: '<!-- AE-PR-SUMMARY -->\n### Change Package Validation\n- result: PASS\n',
+      },
+      {
+        created_at: '2026-02-27T00:01:00Z',
+        user: { login: 'github-actions' },
+        body: '<!-- AE-PR-SUMMARY -->\n### Change Package Validation\n- result: WARN\n',
+      },
+    ];
+    expect(resolveChangePackageValidationStatus(comments)).toEqual({
+      status: 'warn',
+      sourceUrl: null,
+    });
+  });
+
+  it('detects trusted summary author', () => {
+    expect(isTrustedSummaryAuthor({ user: { login: 'github-actions' } })).toBe(true);
+    expect(isTrustedSummaryAuthor({ author: { login: 'github-actions[bot]' } })).toBe(true);
+    expect(isTrustedSummaryAuthor({ user: { login: 'someone-else' } })).toBe(false);
   });
 });
