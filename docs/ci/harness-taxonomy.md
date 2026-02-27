@@ -2,7 +2,7 @@
 
 ## 目的
 
-複数のCIゲート（artifacts schema / testing harness / context-pack / CI Extended）を横断し、失敗を同一フォーマットで要約して次アクションを出す。
+複数のCIゲート（artifacts schema / testing harness / context-pack / runtime conformance / CI Extended）を横断し、失敗を同一フォーマットで要約して次アクションを出す。
 
 - 出力: `artifacts/ci/harness-health.json`, `artifacts/ci/harness-health.md`
 - 生成ポイント:
@@ -14,7 +14,7 @@
 主要フィールド:
 
 - `commitSha`, `workflow`, `runId`
-- `gates.{artifactsSchema|testingHarness|contextPack|ciExtended}.status` (`ok|warn|fail|skip`)
+- `gates.{artifactsSchema|testingHarness|contextPack|runtimeConformance|ciExtended}.status` (`ok|warn|fail|skip`)
 - `severity` (`ok|warn|critical`)
 - `reasons[]`
 - `recommendedLabels[]`
@@ -31,6 +31,7 @@
 | `DETERMINISTIC_TEST_FAIL` | `testingHarness=fail` | `enforce-testing` | `gh workflow run testing-ddd-scripts.yml --repo <owner/repo>` |
 | `FLAKE_SUSPECTED` | `testingHarness=warn`（pending/inconclusive） | `enforce-testing` | `trace:<id>` + `test:replay:focus` |
 | `BOUNDARY_VIOLATION` | `contextPack=fail/warn` | `enforce-context-pack` | `pnpm run context-pack:deps` |
+| `RUNTIME_CONFORMANCE` | `runtimeConformance=fail/warn` | `run-conformance`, `autopilot:on` | `gh workflow run runtime-conformance-self-heal.yml --repo <owner/repo> -f trace_input=samples/conformance/sample-traces.json -f apply_fixes=false -f dry_run=true` |
 | `PERF_REGRESSION` | `ciExtended=fail/warn`（heavy trend summary） | `run-ci-extended` | `gh workflow run ci-extended.yml` |
 | `INFRA` | チェック取得不可やCI都合で判定不能 | `needs-investigation`（運用側） | workflow run logs |
 

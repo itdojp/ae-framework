@@ -112,6 +112,10 @@ describe('build-harness-health', () => {
             },
           ],
         },
+        runtimeConformance: {
+          status: 'error',
+          reason: 'conformance verify failed',
+        },
         heavyTrendSummary: { highestSeverity: 'critical' },
       },
       extraReasons: ['synthetic reason'],
@@ -124,6 +128,8 @@ describe('build-harness-health', () => {
     expect(report.gates.ciExtended.status).toBe('fail');
     expect(report.recommendedLabels).toContain('enforce-artifacts');
     expect(report.recommendedLabels).toContain('enforce-context-pack');
+    expect(report.recommendedLabels).toContain('run-conformance');
+    expect(report.recommendedLabels).toContain('autopilot:on');
     expect(report.recommendedLabels).toContain('run-ci-extended');
     expect(report.recommendedLabels).not.toContain('enforce-testing');
     expect(report.recommendedContextChanges).toHaveLength(1);
@@ -157,6 +163,7 @@ describe('build-harness-health', () => {
         testingRepro: null,
         contextPackDeps: null,
         contextPackSuggestions: null,
+        runtimeConformance: null,
         heavyTrendSummary: null,
       },
       extraReasons: ['PR checks could not be loaded via gh: rate limited'],
@@ -177,6 +184,7 @@ describe('build-harness-health', () => {
           artifactsSchema: { status: 'ok', checkCount: 1 },
           testingHarness: { status: 'warn', checkCount: 2 },
           contextPack: { status: 'skip', checkCount: 0 },
+          runtimeConformance: { status: 'skip', checkCount: 0 },
           ciExtended: { status: 'ok', checkCount: 1 },
         },
         reasons: ['Testing harness: pending checks'],

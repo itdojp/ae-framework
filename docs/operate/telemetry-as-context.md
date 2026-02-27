@@ -97,3 +97,10 @@ gh workflow run runtime-conformance-self-heal.yml \
 - `artifacts/conformance/runtime-self-heal-results.json`
 - `artifacts/fix/runtime-self-heal-failures.json`
 - `artifacts/automation/runtime-conformance-self-heal-report.json`（`ae-automation-report/v1`）
+
+## 7. セキュリティ / PII 運用
+
+- Trace取り込み前に `--redact` を必ず指定し、機微情報（例: email/token/sessionId）を除去する。
+- 本番データを扱う場合、trace bundle は暗号化ストレージへ保管し、PR本文へ生データを貼り付けない。
+- 失敗調査時は `runtime-conformance-self-heal-report.json` と `runtime-self-heal-results.json` を優先参照し、必要最小限の event 抜粋のみ共有する。
+- `artifacts/ci/harness-health.json` に `runtimeConformance` ゲートが集約されるため、fail/warn 時は `run-conformance` で再実行し、継続運用時のみ `autopilot:on` を付与する。

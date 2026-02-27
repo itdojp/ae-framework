@@ -57,6 +57,18 @@ const GATE_DEFINITIONS = [
     ),
   },
   {
+    id: 'runtimeConformance',
+    title: 'Runtime Conformance',
+    recommendedLabels: ['run-conformance', 'autopilot:on'],
+    defaultCommands: [
+      'gh workflow run runtime-conformance-self-heal.yml --repo <owner/repo> -f trace_input=samples/conformance/sample-traces.json -f apply_fixes=false -f dry_run=true',
+    ],
+    matcher: (check) => (
+      check.name === 'self-heal'
+      || /runtime conformance self-heal/i.test(check.workflowName)
+    ),
+  },
+  {
     id: 'ciExtended',
     title: 'CI Extended',
     recommendedLabels: ['run-ci-extended'],
@@ -334,6 +346,7 @@ function buildLocalArtifactsSnapshot() {
     testingRepro: readJsonIfExists('artifacts/testing/repro-summary.json'),
     contextPackDeps: readJsonIfExists('artifacts/context-pack/deps-summary.json'),
     contextPackSuggestions: readJsonIfExists('artifacts/context-pack/context-pack-suggestions.json'),
+    runtimeConformance: readJsonIfExists('artifacts/automation/runtime-conformance-self-heal-report.json'),
     heavyTrendSummary: readJsonIfExists('reports/heavy-test-trends-history/summary.json'),
   };
 }
@@ -485,6 +498,33 @@ function evaluateGateFromLocalArtifacts(gateDefinition, localArtifacts) {
       return {
         status: 'warn',
         reasons: ['CI Extended: heavy trend summary reached warning severity.'],
+      };
+    }
+    return {
+      status: 'ok',
+      reasons: [],
+    };
+  }
+
+  if (gateDefinition.id === 'runtimeConformance') {
+    const summary = localArtifacts.runtimeConformance;
+    if (!summary || summary._parseError) {
+      return {
+        status: 'skip',
+        reasons: [],
+      };
+    }
+    const status = String(summary.status || '').toLowerCase();
+    if (['error', 'failed', 'failure', 'blocked', 'cancelled', 'canceled'].includes(status)) {
+      return {
+        status: 'fail',
+        reasons: [`Runtime Conformance: self-heal status=${status || 'unknown'}.`],
+      };
+    }
+    if (['warn', 'warning', 'degraded', 'partial'].includes(status)) {
+      return {
+        status: 'warn',
+        reasons: [`Runtime Conformance: self-heal status=${status}.`],
       };
     }
     return {
