@@ -282,6 +282,9 @@ jobs:
             printf '\n\n' >> artifacts/summary/PR_SUMMARY.md
             cat artifacts/ci/harness-health.md >> artifacts/summary/PR_SUMMARY.md
           fi
+      - name: Install dependencies for Change Package scripts
+        run: |
+          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
       - name: Generate Change Package
         env:
           SUMMARY_MODE: ${{ steps.mode.outputs.mode }}
