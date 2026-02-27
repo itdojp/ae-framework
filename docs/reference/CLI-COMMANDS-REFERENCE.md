@@ -211,6 +211,8 @@ ae domain-model --language --sources "glossary.md"
 # Verify input data
  ae conformance verify --input data.json --rules rules.json \
    --context-file context.json --format json --output artifacts/conformance/conformance-results.json
+ ae conformance verify --trace-bundle artifacts/observability/trace-bundle.json \
+   --format json --output artifacts/conformance/conformance-results.json
 # JSON schema (--format json): schema/conformance-verify-result.schema.json
 
 # Rules / config / metrics / status
@@ -531,6 +533,8 @@ ae conformance sample --rules configs/samples/sample-rules.json \
 
  ae conformance verify --input data.json --rules rules.json \
   --context-file context.json --format json --output artifacts/conformance/conformance-results.json
+ ae conformance verify --trace-bundle artifacts/observability/trace-bundle.json \
+  --format json --output artifacts/conformance/conformance-results.json
 # JSON schema (--format json): schema/conformance-verify-result.schema.json
 
  ae conformance rules --list

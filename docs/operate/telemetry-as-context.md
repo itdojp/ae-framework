@@ -59,5 +59,5 @@ ae-framework conformance ingest \
 現状は以下の流れを推奨します。
 
 1. `ae conformance ingest` で Trace Bundle を作成
-2. 必要に応じて bundle 内の `events` を `ae conformance verify --input` に渡して検証
+2. `ae conformance verify --trace-bundle artifacts/observability/trace-bundle.json` で検証
 3. conformance 結果を CI artifacts として保存し、運用判断に利用

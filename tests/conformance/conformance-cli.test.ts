@@ -107,6 +107,43 @@ describe('ConformanceCli', () => {
       );
     });
 
+    it('should handle trace bundle input', async () => {
+      const traceBundle = {
+        schemaVersion: 'ae-trace-bundle/v1',
+        generatedAt: '2026-02-27T00:00:00.000Z',
+        source: {
+          environment: 'staging',
+          service: 'checkout',
+          input: { path: 'runtime.ndjson', format: 'ndjson' },
+          timeWindow: { start: '2026-02-27T00:00:00.000Z', end: '2026-02-27T00:00:01.000Z' }
+        },
+        events: [
+          { traceId: 't1', timestamp: '2026-02-27T00:00:00.000Z', actor: 'svc', event: 'Placed' }
+        ],
+        grouping: { by: 'traceId', traceCount: 1, traces: [] },
+        redaction: { rules: [], redactedFieldCount: 0 },
+        summary: {
+          rawEventCount: 1,
+          validEventCount: 1,
+          invalidEventCount: 0,
+          sampledOutCount: 0,
+          emittedEventCount: 1
+        }
+      };
+      const traceBundleFile = 'test-trace-bundle.json';
+      writeFileSync(traceBundleFile, JSON.stringify(traceBundle, null, 2));
+      testFiles.push(traceBundleFile);
+
+      const command = cli.createCommand();
+      const args = ['node', 'cli', 'verify', '--trace-bundle', traceBundleFile];
+
+      await command.parseAsync(args);
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        expect.stringContaining(`Loaded trace bundle from ${traceBundleFile}`),
+      );
+    });
+
     it('should handle missing input file', async () => {
       const command = cli.createCommand();
       const args = ['node', 'cli', 'verify'];
@@ -118,6 +155,28 @@ describe('ConformanceCli', () => {
       );
     });
 
+    it('should reject using both --input and --trace-bundle', async () => {
+      const inputData = { test: true };
+      const traceBundle = {
+        schemaVersion: 'ae-trace-bundle/v1',
+        events: [{ traceId: 't1', timestamp: '2026-02-27T00:00:00.000Z', actor: 'svc', event: 'Placed' }]
+      };
+      const inputFile = 'test-input-both.json';
+      const traceBundleFile = 'test-trace-bundle-both.json';
+      writeFileSync(inputFile, JSON.stringify(inputData, null, 2));
+      writeFileSync(traceBundleFile, JSON.stringify(traceBundle, null, 2));
+      testFiles.push(inputFile, traceBundleFile);
+
+      const command = cli.createCommand();
+      const args = ['node', 'cli', 'verify', '--input', inputFile, '--trace-bundle', traceBundleFile];
+
+      await command.parseAsync(args);
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Use either --input or --trace-bundle'),
+      );
+    });
+
     it('should handle non-existent input file', async () => {
       const command = cli.createCommand();
       const args = ['node', 'cli', 'verify', '--input', 'nonexistent.json'];
@@ -126,6 +185,17 @@ describe('ConformanceCli', () => {
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         expect.stringContaining('Input file not found')
+      );
+    });
+
+    it('should handle non-existent trace bundle file', async () => {
+      const command = cli.createCommand();
+      const args = ['node', 'cli', 'verify', '--trace-bundle', 'nonexistent-trace-bundle.json'];
+
+      await command.parseAsync(args);
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Trace bundle file not found'),
       );
     });
 

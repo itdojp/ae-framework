@@ -61,6 +61,7 @@ export class ConformanceCli {
       .command('verify')
       .description('Verify data against conformance rules')
       .option('-i, --input <file>', 'Input data JSON file')
+      .option('--trace-bundle <file>', 'Trace bundle JSON file (ae-trace-bundle/v1)')
       .option('-r, --rules <file>', 'Rules configuration file')
       .option('-o, --output <file>', 'Output results file', DEFAULT_VERIFY_OUTPUT_JSON)
       .option('--rule-ids <ids>', 'Specific rule IDs to execute (comma-separated)')
@@ -242,19 +243,65 @@ export class ConformanceCli {
     try {
       console.log('🔍 Starting conformance verification...');
 
-      // Load input data
-      if (!options.input) {
-        console.error(chalk.red('❌ Input file is required. Use --input to specify the data file.'));
+      if (options.input && options.traceBundle) {
+        console.error(chalk.red('❌ Use either --input or --trace-bundle, not both.'));
+        safeExit(1);
         return;
       }
 
-      if (!existsSync(options.input)) {
-        console.error(chalk.red(`❌ Input file not found: ${options.input}`));
+      if (!options.input && !options.traceBundle) {
+        console.error(chalk.red('❌ Input file is required. Use --input or --trace-bundle.'));
+        safeExit(1);
         return;
       }
 
-      const inputData = JSON.parse(readFileSync(options.input, 'utf-8'));
-      console.log(`📄 Loaded input data from ${options.input}`);
+      let inputData: unknown;
+      if (options.traceBundle) {
+        if (!existsSync(options.traceBundle)) {
+          console.error(chalk.red(`❌ Trace bundle file not found: ${options.traceBundle}`));
+          safeExit(1);
+          return;
+        }
+
+        const parsed = JSON.parse(readFileSync(options.traceBundle, 'utf-8')) as unknown;
+        if (!parsed || typeof parsed !== 'object' || !Array.isArray((parsed as { events?: unknown }).events)) {
+          console.error(chalk.red('❌ Trace bundle must be a JSON object that contains events[].'));
+          safeExit(1);
+          return;
+        }
+        const bundle = parsed as {
+          schemaVersion?: string;
+          source?: unknown;
+          events: unknown[];
+          grouping?: unknown;
+          redaction?: unknown;
+          summary?: unknown;
+        };
+        if (bundle.schemaVersion !== 'ae-trace-bundle/v1') {
+          console.error(chalk.red('❌ Unsupported trace bundle schemaVersion. Expected ae-trace-bundle/v1.'));
+          safeExit(1);
+          return;
+        }
+
+        inputData = {
+          traceBundle: bundle,
+          source: bundle.source,
+          events: bundle.events,
+          grouping: bundle.grouping,
+          redaction: bundle.redaction,
+          summary: bundle.summary,
+        };
+        console.log(`📦 Loaded trace bundle from ${options.traceBundle} (${bundle.events.length} events)`);
+      } else {
+        if (!existsSync(options.input)) {
+          console.error(chalk.red(`❌ Input file not found: ${options.input}`));
+          safeExit(1);
+          return;
+        }
+
+        inputData = JSON.parse(readFileSync(options.input, 'utf-8'));
+        console.log(`📄 Loaded input data from ${options.input}`);
+      }
 
       // Load runtime context
       let context: RuntimeContext;
