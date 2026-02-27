@@ -89,6 +89,10 @@ node scripts/change-package/validate.mjs \
 
 これにより、`pr-summary:detailed` の場合は証跡と再現コマンドを詳細表示し、digest の場合は短い要約を表示します。
 
+auto-merge 運用と連携する場合:
+- `AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE=1`（既定）で、PR summary 上の `Change Package Validation` が auto-merge eligibility 条件に含まれます。
+- `AE_AUTO_MERGE_CHANGE_PACKAGE_ALLOW_WARN=0` にすると、validation 結果は `PASS` のみ許可されます。
+
 ## 6. 運用指針
 
 - `risk:high` PR は Change Package の `missingRequiredLabels` / `exceptions` を優先確認する。  
