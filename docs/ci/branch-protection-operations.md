@@ -53,6 +53,7 @@ ADMIN_TOKEN=ghp_xxx REPO=itdojp/ae-framework BRANCH=main \
   - `team`（既定）: high risk PR で人手承認要件を有効化
   - `solo`: approvals 要件を 0 として判定（他の required checks は同一）
 - 追加で `AE_POLICY_MIN_HUMAN_APPROVALS` を設定すると、approvals 要件を明示上書きできる
+- 注記: 上記2変数は policy-gate の topology対応実装が導入済みであることが前提
 
 ## 運用補助（自動化）
 - `ci-auto-rerun-failed` が失敗ジョブを **1回だけ** 自動再実行します（最終判断はログで確認）。
