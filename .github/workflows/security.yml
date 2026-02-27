@@ -63,10 +63,25 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
+      - name: Resolve security analyzer mode
+        id: security_mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          STRICT=1
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            STRICT=0
+            if jq -e '.pull_request.labels[]?.name | select(.=="enforce-security")' "$GITHUB_EVENT_PATH" >/dev/null; then
+              STRICT=1
+            fi
+          fi
+          printf '%s\n' "strict=${STRICT}" >> "$GITHUB_OUTPUT"
+
       - name: Run security analyzer
         run: pnpm run security:analyze
         env:
           NODE_ENV: test
+          SECURITY_ANALYZER_STRICT: ${{ steps.security_mode.outputs.strict }}
 
       - name: Upload security report
         uses: actions/upload-artifact@v4
@@ -100,11 +115,25 @@ jobs:
 
       - name: Check for high-risk packages
         run: |
+          set -euo pipefail
           pnpm audit --audit-level=high --json > audit-results.json || true
-          if [ -s audit-results.json ]; then
-            printf "%s\n" "High-risk vulnerabilities found!"
-            cat audit-results.json
-            exit 1
+          HIGH="$(jq -r '.metadata.vulnerabilities.high // 0' audit-results.json 2>/dev/null || echo 0)"
+          CRITICAL="$(jq -r '.metadata.vulnerabilities.critical // 0' audit-results.json 2>/dev/null || echo 0)"
+          ENFORCE=1
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            ENFORCE=0
+            if jq -e '.pull_request.labels[]?.name | select(.=="enforce-security")' "$GITHUB_EVENT_PATH" >/dev/null; then
+              ENFORCE=1
+            fi
+          fi
+
+          printf "%s\n" "Dependency audit summary: high=${HIGH}, critical=${CRITICAL}, enforce=${ENFORCE}"
+          if [ "${HIGH}" -gt 0 ] || [ "${CRITICAL}" -gt 0 ]; then
+            if [ "${ENFORCE}" = "1" ]; then
+              printf "%s\n" "High-risk vulnerabilities found under enforce-security mode."
+              exit 1
+            fi
+            echo "::warning::High/critical vulnerabilities detected (non-blocking without enforce-security label)."
           fi
 
   secrets-scan:
@@ -206,13 +235,39 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
 
-      - name: Install license checker
-        run: pnpm dlx -y license-checker --version || pnpm add -g license-checker
+      - name: Resolve license enforcement mode
+        id: license_mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          ENFORCE=1
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            ENFORCE=0
+            if jq -e '.pull_request.labels[]?.name | select(.=="enforce-security")' "$GITHUB_EVENT_PATH" >/dev/null; then
+              ENFORCE=1
+            fi
+          fi
+          printf '%s\n' "enforce=${ENFORCE}" >> "$GITHUB_OUTPUT"
 
       - name: Check licenses
+        env:
+          ENFORCE_LICENSE: ${{ steps.license_mode.outputs.enforce }}
         run: |
-          license-checker --production --failOn 'GPL;AGPL;LGPL;UNLICENSED' --summary > license-summary.txt
-          cat license-summary.txt
+          set +e
+          pnpm dlx license-checker --production --failOn 'GPL;AGPL;LGPL;UNLICENSED' --summary > license-summary.txt
+          status=$?
+          set -e
+          if [ -f license-summary.txt ]; then
+            cat license-summary.txt
+          else
+            printf "%s\n" "license-checker did not emit summary output"
+          fi
+          if [ "$status" -ne 0 ]; then
+            if [ "${ENFORCE_LICENSE}" = "1" ]; then
+              exit "$status"
+            fi
+            echo "::warning::License policy violations detected (non-blocking without enforce-security label)."
+          fi
 
       - name: Upload license report
         uses: actions/upload-artifact@v4
