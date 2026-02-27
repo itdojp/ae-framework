@@ -232,6 +232,22 @@ jobs:
       - name: Aggregate artifacts if present
         run: |
           if npm run -s | grep -q "artifacts:aggregate"; then npm run artifacts:aggregate || true; fi
+      - name: Generate Change Package
+        env:
+          SUMMARY_MODE: ${{ steps.mode.outputs.mode }}
+        run: |
+          node scripts/change-package/generate.mjs \
+            --policy policy/risk-policy.yml \
+            --mode "${SUMMARY_MODE}" \
+            --output-json artifacts/change-package/change-package.json \
+            --output-md artifacts/change-package/change-package.md
+      - name: Validate Change Package
+        run: |
+          node scripts/change-package/validate.mjs \
+            --file artifacts/change-package/change-package.json \
+            --schema schema/change-package.schema.json \
+            --output-json artifacts/change-package/change-package-validation.json \
+            --output-md artifacts/change-package/change-package-validation.md
       - name: Generate Markdown summary
         id: gen
         env:
@@ -282,6 +298,14 @@ jobs:
             printf '\n\n' >> artifacts/summary/PR_SUMMARY.md
             cat artifacts/ci/harness-health.md >> artifacts/summary/PR_SUMMARY.md
           fi
+          if [ -f artifacts/change-package/change-package.md ]; then
+            printf '\n\n' >> artifacts/summary/PR_SUMMARY.md
+            cat artifacts/change-package/change-package.md >> artifacts/summary/PR_SUMMARY.md
+          fi
+          if [ -f artifacts/change-package/change-package-validation.md ]; then
+            printf '\n\n' >> artifacts/summary/PR_SUMMARY.md
+            cat artifacts/change-package/change-package-validation.md >> artifacts/summary/PR_SUMMARY.md
+          fi
       - name: Upload harness health artifact
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
@@ -290,6 +314,18 @@ jobs:
           path: |
             artifacts/ci/harness-health.json
             artifacts/ci/harness-health.md
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Upload change-package artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: change-package-pr-${{ github.event.pull_request.number }}
+          path: |
+            artifacts/change-package/change-package.json
+            artifacts/change-package/change-package.md
+            artifacts/change-package/change-package-validation.json
+            artifacts/change-package/change-package-validation.md
           if-no-files-found: warn
           retention-days: 14
       - name: Post or update PR comment

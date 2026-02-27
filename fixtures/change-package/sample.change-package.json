@@ -1,0 +1,105 @@
+{
+  "schemaVersion": "change-package/v1",
+  "generatedAt": "2026-02-27T00:00:00.000Z",
+  "policyPath": "policy/risk-policy.yml",
+  "source": {
+    "repository": "itdojp/ae-framework",
+    "prNumber": 2289,
+    "baseRef": "main",
+    "headRef": "feat/2289-change-package-v1"
+  },
+  "intent": {
+    "summary": "Add Change Package generation and validation for PR evidence."
+  },
+  "scope": {
+    "changedFiles": [
+      ".github/workflows/pr-ci-status-comment.yml",
+      "schema/change-package.schema.json",
+      "scripts/change-package/generate.mjs"
+    ],
+    "changedFileCount": 3,
+    "areas": [
+      "ci",
+      "schema"
+    ]
+  },
+  "risk": {
+    "selected": "risk:high",
+    "inferred": "risk:high",
+    "isHighRisk": true,
+    "requiredLabels": [
+      "enforce-artifacts",
+      "run-ci-extended"
+    ],
+    "missingRequiredLabels": [
+      "run-ci-extended"
+    ],
+    "rationale": {
+      "highRiskPathMatches": [
+        ".github/workflows/pr-ci-status-comment.yml",
+        "schema/change-package.schema.json"
+      ],
+      "forceHighRiskTriggers": [
+        {
+          "condition": "contains_external_interface_change",
+          "ruleId": "external-interface",
+          "matchedFiles": [
+            "schema/change-package.schema.json"
+          ]
+        }
+      ]
+    }
+  },
+  "evidence": {
+    "artifactRoot": ".",
+    "items": [
+      {
+        "id": "verifyLiteSummary",
+        "path": "artifacts/verify-lite/verify-lite-run-summary.json",
+        "description": "verify-lite run summary",
+        "present": true
+      },
+      {
+        "id": "policyGateSummary",
+        "path": "artifacts/ci/policy-gate-summary.json",
+        "description": "policy-gate summary",
+        "present": false
+      }
+    ],
+    "presentCount": 1,
+    "missingCount": 1
+  },
+  "reproducibility": {
+    "commands": [
+      "pnpm run verify:lite",
+      "pnpm run artifacts:validate -- --strict=true",
+      "pnpm run test:ci:extended"
+    ]
+  },
+  "rolloutPlan": {
+    "strategy": "manual-approval-and-gate-green",
+    "references": [
+      "policy/risk-policy.yml"
+    ],
+    "notes": [
+      "High risk PR requires human approval and all required gates green."
+    ]
+  },
+  "monitoringPlan": {
+    "signals": [
+      "verify-lite.status",
+      "policy-gate.status",
+      "harness-health.severity"
+    ],
+    "alerts": [
+      "human-approval-required",
+      "missing-required-labels"
+    ]
+  },
+  "exceptions": [
+    {
+      "code": "missing-required-labels",
+      "message": "Missing required labels: run-ci-extended"
+    }
+  ]
+}
