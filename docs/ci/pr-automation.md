@@ -100,6 +100,8 @@ auto-merge（ラベルopt-in）:
 - `AE_AUTO_MERGE_MODE=label`
 - `AE_AUTO_MERGE_LABEL=auto-merge`
 - `AE_AUTO_MERGE_REQUIRE_RISK_LOW=1`（既定）
+- `AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE=1`（既定）
+- `AE_AUTO_MERGE_CHANGE_PACKAGE_ALLOW_WARN=1`（既定）
 
 全自動化の緊急停止（kill-switch）:
 - `AE_AUTOMATION_GLOBAL_DISABLE=1`
@@ -155,6 +157,7 @@ auto-merge（ラベルopt-in）:
 - `AE_AUTO_MERGE=1` が未設定（OFF）
 - `AE_AUTO_MERGE_MODE=label` でラベル不足、または `AE_AUTO_MERGE_LABEL` 未設定
 - `AE_AUTO_MERGE_REQUIRE_RISK_LOW=1` で `risk:low` が未付与
+- `AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE=1` で Change Package Validation 要約が未生成、または許容外（`FAIL` / `WARN`禁止時）
 - Branch protection の required checks が空、または保護情報取得ができない（fail-closed）
 - repo側で "Allow auto-merge" が無効
 - PRが `draft` / `mergeable != MERGEABLE` / required checks pending

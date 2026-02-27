@@ -2,6 +2,7 @@
 import { execGh, execGhJson } from './lib/gh-exec.mjs';
 import { emitAutomationReport } from './lib/automation-report.mjs';
 import { hasLabel, normalizeLabelNames } from './lib/automation-guards.mjs';
+import { resolveChangePackageValidationStatus } from './lib/change-package-gate.mjs';
 import { sleep } from './lib/timing.mjs';
 
 const repo = process.env.GITHUB_REPOSITORY;
@@ -23,6 +24,8 @@ const AUTO_MERGE_ENABLED = String(process.env.AE_AUTO_MERGE || '').trim() === '1
 const AUTO_MERGE_MODE = String(process.env.AE_AUTO_MERGE_MODE || 'all').toLowerCase();
 const AUTO_MERGE_LABEL = String(process.env.AE_AUTO_MERGE_LABEL || '').trim();
 const AUTO_MERGE_REQUIRE_RISK_LOW = String(process.env.AE_AUTO_MERGE_REQUIRE_RISK_LOW || '1').trim() === '1';
+const AUTO_MERGE_REQUIRE_CHANGE_PACKAGE = String(process.env.AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE || '1').trim() === '1';
+const AUTO_MERGE_CHANGE_PACKAGE_ALLOW_WARN = String(process.env.AE_AUTO_MERGE_CHANGE_PACKAGE_ALLOW_WARN || '1').trim() === '1';
 const RISK_LOW_LABEL = String(process.env.AE_RISK_LOW_LABEL || 'risk:low').trim() || 'risk:low';
 const GLOBAL_DISABLE = String(process.env.AE_AUTOMATION_GLOBAL_DISABLE || '').trim() === '1';
 const PR_NUMBER_RAW = process.env.PR_NUMBER !== undefined ? String(process.env.PR_NUMBER).trim() : '';
@@ -186,12 +189,23 @@ const listComments = (number) => {
 const listOpenPrs = () =>
   execJson(['pr', 'list', '--state', 'open', '--limit', String(PR_LIMIT), '--json', 'number,title']);
 
-const buildStatusBody = (pr, view, reasons, summary, reviewRequirement, riskLowLabel) => {
+const buildStatusBody = (
+  pr,
+  view,
+  reasons,
+  summary,
+  reviewRequirement,
+  riskLowLabel,
+  changePackageStatus,
+) => {
   const reviewRequiredLabel = reviewRequirement
     ? (reviewRequirement.approvalRequired
       ? (reviewRequirement.requiredApprovals > 0 ? `yes/${reviewRequirement.requiredApprovals}` : 'yes')
       : 'no')
     : 'unknown';
+  const changePackageRequired = AUTO_MERGE_REQUIRE_CHANGE_PACKAGE
+    ? (AUTO_MERGE_CHANGE_PACKAGE_ALLOW_WARN ? 'yes (warn allowed)' : 'yes (pass only)')
+    : 'no';
   const lines = [
     marker,
     `## Auto-merge Status (${new Date().toISOString()})`,
@@ -200,7 +214,12 @@ const buildStatusBody = (pr, view, reasons, summary, reviewRequirement, riskLowL
     `- review: ${view.reviewDecision || 'NONE'} (required: ${reviewRequiredLabel})`,
     `- checks: ✅${summary.counts.success} ❌${summary.counts.failure} ⏳${summary.counts.pending}`,
     `- risk-low required: ${AUTO_MERGE_REQUIRE_RISK_LOW ? `yes (${riskLowLabel})` : 'no'}`,
+    `- change-package required: ${changePackageRequired}`,
+    `- change-package validation: ${changePackageStatus.status}`,
   ];
+  if (changePackageStatus.sourceUrl) {
+    lines.push(`- change-package source: ${changePackageStatus.sourceUrl}`);
+  }
   if (summary.failed.length > 0) {
     lines.push(`- failed checks: ${summary.failed.join(', ')}`);
   }
@@ -213,9 +232,9 @@ const buildStatusBody = (pr, view, reasons, summary, reviewRequirement, riskLowL
   return `${lines.join('\n')}\n`;
 };
 
-const upsertComment = (number, body) => {
-  const comments = listComments(number);
-  const existing = comments.find(
+const upsertComment = (number, body, comments = null) => {
+  const resolvedComments = comments || listComments(number);
+  const existing = resolvedComments.find(
     (comment) => comment.body && typeof comment.body === 'string' && comment.body.startsWith(marker)
   );
   const payload = JSON.stringify({ body });
@@ -286,7 +305,7 @@ const main = async () => {
           buildStatusBody(pr, view, ['branch metadata unavailable'], {
             counts: { success: 0, failure: 0, pending: 0 },
             failed: [],
-          }, null, RISK_LOW_LABEL)
+          }, null, RISK_LOW_LABEL, { status: 'missing', sourceUrl: null })
         );
         await sleep(PR_SLEEP_MS);
         continue;
@@ -301,7 +320,7 @@ const main = async () => {
         upsertComment(pr.number, buildStatusBody(pr, view, ['branch protection unavailable'], {
           counts: { success: 0, failure: 0, pending: 0 },
           failed: [],
-        }, null, RISK_LOW_LABEL));
+        }, null, RISK_LOW_LABEL, { status: 'missing', sourceUrl: null }));
         await sleep(PR_SLEEP_MS);
         continue;
       }
@@ -310,6 +329,8 @@ const main = async () => {
       const summaryRequired = requiredContexts.length > 0
         ? summarizeChecks(view.statusCheckRollup || [], requiredContexts)
         : { counts: { success: 0, failure: 0, pending: 0, skipped: 0, neutral: 0 }, failed: [] };
+      const comments = listComments(pr.number);
+      const changePackageStatus = resolveChangePackageValidationStatus(comments);
       const reasons = [];
       if (view.isDraft) reasons.push('draft');
       if (view.mergeable !== 'MERGEABLE') reasons.push(`mergeable=${view.mergeable || 'UNKNOWN'}`);
@@ -328,6 +349,15 @@ const main = async () => {
       const labels = normalizeLabelNames(view.labels);
       if (AUTO_MERGE_REQUIRE_RISK_LOW && !hasLabel(labels, RISK_LOW_LABEL)) {
         reasons.push(`missing risk label=${RISK_LOW_LABEL}`);
+      }
+      if (AUTO_MERGE_REQUIRE_CHANGE_PACKAGE) {
+        if (changePackageStatus.status === 'missing') {
+          reasons.push('missing change-package validation summary');
+        } else if (changePackageStatus.status === 'fail') {
+          reasons.push('change-package validation failed');
+        } else if (changePackageStatus.status === 'warn' && !AUTO_MERGE_CHANGE_PACKAGE_ALLOW_WARN) {
+          reasons.push('change-package validation is warn (pass required)');
+        }
       }
       if (reviewRequirement.approvalRequired && view.reviewDecision !== 'APPROVED') {
         reasons.push(`review=${view.reviewDecision || 'NONE'}`);
@@ -351,8 +381,16 @@ const main = async () => {
         status = 'already-enabled';
         statusReason = 'auto-merge already enabled';
       }
-      const body = buildStatusBody(pr, view, reasons, summaryAll, reviewRequirement, RISK_LOW_LABEL);
-      upsertComment(pr.number, body);
+      const body = buildStatusBody(
+        pr,
+        view,
+        reasons,
+        summaryAll,
+        reviewRequirement,
+        RISK_LOW_LABEL,
+        changePackageStatus,
+      );
+      upsertComment(pr.number, body, comments);
       results.push({
         number: pr.number,
         status,

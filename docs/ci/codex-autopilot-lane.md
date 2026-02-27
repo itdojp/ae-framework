@@ -58,3 +58,4 @@ PRコメント（upsert）:
 - まず `AE_AUTOPILOT_DRY_RUN=1` で挙動確認してから本番有効化
 - 自動復旧は `PR Self-Heal`（`pr-self-heal.yml`）と併用すると停止率を下げられます
 - auto-merge が有効化されない場合は branch protection / required checks / label条件を確認してください
+- `AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE=1`（既定）の場合、PR summary に `Change Package Validation` が出力済みであることを確認してください

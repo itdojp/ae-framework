@@ -15,6 +15,8 @@ describe('automation-config', () => {
     expect(config.values.AE_COPILOT_AUTO_FIX_SCOPE).toBe('docs');
     expect(config.values.AE_AUTO_MERGE_MODE).toBe('all');
     expect(config.values.AE_AUTO_MERGE_REQUIRE_RISK_LOW).toBe('1');
+    expect(config.values.AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE).toBe('1');
+    expect(config.values.AE_AUTO_MERGE_CHANGE_PACKAGE_ALLOW_WARN).toBe('1');
     expect(config.values.AE_GH_RETRY_MULTIPLIER).toBe('2');
     expect(config.values.AE_GH_RETRY_JITTER_MS).toBe('250');
     expect(config.warnings).toEqual([]);
@@ -32,6 +34,8 @@ describe('automation-config', () => {
     expect(config.values.AE_AUTO_MERGE_MODE).toBe('label');
     expect(config.values.AE_AUTO_MERGE_LABEL).toBe('auto-merge');
     expect(config.values.AE_AUTO_MERGE_REQUIRE_RISK_LOW).toBe('1');
+    expect(config.values.AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE).toBe('1');
+    expect(config.values.AE_AUTO_MERGE_CHANGE_PACKAGE_ALLOW_WARN).toBe('1');
     expect(config.values.AE_GH_RETRY_MULTIPLIER).toBe('2');
     expect(config.values.AE_GH_RETRY_JITTER_MS).toBe('250');
   });
@@ -107,6 +111,15 @@ describe('automation-config', () => {
       AE_AUTO_MERGE_REQUIRE_RISK_LOW: 'false',
     });
     expect(config.values.AE_AUTO_MERGE_REQUIRE_RISK_LOW).toBe('0');
+  });
+
+  it('allows overriding change-package guard for auto-merge', () => {
+    const config = resolveAutomationConfig({
+      AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE: 'false',
+      AE_AUTO_MERGE_CHANGE_PACKAGE_ALLOW_WARN: 'false',
+    });
+    expect(config.values.AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE).toBe('0');
+    expect(config.values.AE_AUTO_MERGE_CHANGE_PACKAGE_ALLOW_WARN).toBe('0');
   });
 
   it('sanitizes newline characters when exporting GitHub env lines', () => {

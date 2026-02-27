@@ -54,6 +54,8 @@ PRやIssueで **必要な検証だけを opt-in で起動** し、CIコストと
 | `AE_AUTO_MERGE_MODE` | 対象方式（`all` / `label`） | `all` | `docs/ci/auto-merge.md` |
 | `AE_AUTO_MERGE_LABEL` | opt-in ラベル名（`label` モード時） | 未設定 | `docs/ci/auto-merge.md` |
 | `AE_AUTO_MERGE_REQUIRE_RISK_LOW` | `risk:low` ラベル必須化（`1`/`0`） | `1` | `docs/ci/auto-merge.md` |
+| `AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE` | Change Package Validation 要約必須化（`1`/`0`） | `1` | `docs/ci/auto-merge.md` |
+| `AE_AUTO_MERGE_CHANGE_PACKAGE_ALLOW_WARN` | Change Package Validation の `WARN` 許可（`1`/`0`） | `1` | `docs/ci/auto-merge.md` |
 
 補足: 個別変数は `AE_AUTOMATION_PROFILE` より優先されます。
 

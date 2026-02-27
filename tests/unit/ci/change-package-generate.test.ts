@@ -8,6 +8,17 @@ const repoRoot = process.cwd();
 const generateScript = resolve(repoRoot, 'scripts/change-package/generate.mjs');
 const policyPath = resolve(repoRoot, 'policy/risk-policy.yml');
 const workdirs: string[] = [];
+const isolatedGenerateEnv = {
+  ...process.env,
+  GITHUB_EVENT_PATH: '',
+  GITHUB_HEAD_REF: '',
+  GITHUB_BASE_REF: '',
+  GITHUB_REPOSITORY: '',
+  PR_NUMBER: '',
+  CHANGE_PACKAGE_LABELS: '',
+  CHANGE_PACKAGE_CHANGED_FILES: '',
+  CHANGE_PACKAGE_INTENT_SUMMARY: '',
+};
 
 async function createWorkdir(prefix: string): Promise<string> {
   const workdir = await mkdtemp(join(tmpdir(), prefix));
@@ -70,6 +81,7 @@ describe('change-package generate', () => {
     ], {
       cwd: repoRoot,
       encoding: 'utf8',
+      env: isolatedGenerateEnv,
     });
 
     expect(result.status).toBe(0);
@@ -152,6 +164,7 @@ describe('change-package generate', () => {
     ], {
       cwd: repoRoot,
       encoding: 'utf8',
+      env: isolatedGenerateEnv,
     });
 
     expect(result.status).toBe(0);

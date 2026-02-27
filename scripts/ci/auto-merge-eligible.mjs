@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { execGh, execGhJson } from './lib/gh-exec.mjs';
+import { resolveChangePackageValidationStatus } from './lib/change-package-gate.mjs';
 
 const repo = process.env.GITHUB_REPOSITORY;
 const prNumber = process.env.PR_NUMBER;
@@ -7,6 +8,8 @@ const enable = process.env.ENABLE_AUTO_MERGE === 'true';
 const autoMergeMode = String(process.env.AE_AUTO_MERGE_MODE || 'all').toLowerCase();
 const autoMergeLabel = String(process.env.AE_AUTO_MERGE_LABEL || '').trim();
 const requireRiskLow = String(process.env.AE_AUTO_MERGE_REQUIRE_RISK_LOW || '1').trim() === '1';
+const requireChangePackage = String(process.env.AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE || '1').trim() === '1';
+const allowChangePackageWarn = String(process.env.AE_AUTO_MERGE_CHANGE_PACKAGE_ALLOW_WARN || '1').trim() === '1';
 const riskLowLabel = String(process.env.AE_RISK_LOW_LABEL || 'risk:low').trim() || 'risk:low';
 
 if (!repo) {
@@ -160,6 +163,22 @@ const summarizeChecks = (rollup = [], requiredContexts = []) => {
   return { counts, failed };
 };
 
+const listComments = (repoName, number) => {
+  const comments = [];
+  let page = 1;
+  while (true) {
+    const chunk = execJson([
+      'api',
+      `repos/${repoName}/issues/${number}/comments?per_page=100&page=${page}`,
+    ]);
+    if (!Array.isArray(chunk) || chunk.length === 0) break;
+    comments.push(...chunk);
+    if (chunk.length < 100) break;
+    page += 1;
+  }
+  return comments;
+};
+
 const pr = execJson([
   'pr',
   'view',
@@ -184,6 +203,7 @@ if (protectionSummary === null) {
 const { requiredContexts, reviewRequirement } = protectionSummary;
 const { counts, failed } = summarizeChecks(pr.statusCheckRollup || [], requiredContexts);
 const labels = Array.isArray(pr.labels) ? pr.labels.map((l) => l && l.name).filter(Boolean) : [];
+const changePackageStatus = resolveChangePackageValidationStatus(listComments(repo, pr.number));
 const labelEligible = (() => {
   if (autoMergeMode === 'all') return true;
   if (autoMergeMode !== 'label') return false;
@@ -192,22 +212,51 @@ const labelEligible = (() => {
 })();
 const reviewEligible = reviewRequirement.approvalRequired ? pr.reviewDecision === 'APPROVED' : true;
 const riskEligible = !requireRiskLow || labels.includes(riskLowLabel);
-const eligible = pr.mergeable === 'MERGEABLE'
-  && labelEligible
-  && reviewEligible
-  && riskEligible
-  && counts.failure === 0
-  && counts.pending === 0;
+const changePackageEligible = (() => {
+  if (!requireChangePackage) return true;
+  if (changePackageStatus.status === 'missing') return false;
+  if (changePackageStatus.status === 'fail') return false;
+  if (changePackageStatus.status === 'warn' && !allowChangePackageWarn) return false;
+  return true;
+})();
+
+const reasons = [];
+if (pr.mergeable !== 'MERGEABLE') reasons.push(`mergeable=${pr.mergeable || 'UNKNOWN'}`);
+if (!labelEligible) reasons.push('label condition not satisfied');
+if (!reviewEligible) reasons.push(`review=${pr.reviewDecision || 'NONE'}`);
+if (!riskEligible) reasons.push(`missing risk label=${riskLowLabel}`);
+if (!changePackageEligible) {
+  if (changePackageStatus.status === 'missing') {
+    reasons.push('change-package validation summary missing');
+  } else if (changePackageStatus.status === 'fail') {
+    reasons.push('change-package validation failed');
+  } else {
+    reasons.push('change-package validation is warn (pass required)');
+  }
+}
+if (counts.failure > 0) reasons.push('required checks failed');
+if (counts.pending > 0) reasons.push('required checks pending');
+
+const eligible = reasons.length === 0;
 
 console.log(`[auto-merge] PR #${pr.number}: ${pr.title}`);
 console.log(`[auto-merge] mergeable=${pr.mergeable} review=${pr.reviewDecision} (required=${reviewRequirement.approvalRequired ? `yes/${reviewRequirement.requiredApprovals}` : 'no'})`);
 console.log(`[auto-merge] mode=${autoMergeMode} label=${autoMergeLabel || '(none)'} hasLabel=${labels.includes(autoMergeLabel)}`);
 console.log(`[auto-merge] requireRiskLow=${requireRiskLow} riskLabel=${riskLowLabel} hasRiskLow=${labels.includes(riskLowLabel)}`);
 console.log(
+  `[auto-merge] requireChangePackage=${requireChangePackage} allowWarn=${allowChangePackageWarn} status=${changePackageStatus.status}`
+);
+if (changePackageStatus.sourceUrl) {
+  console.log(`[auto-merge] change-package source=${changePackageStatus.sourceUrl}`);
+}
+console.log(
   `[auto-merge] required checks: ${requiredContexts.length || 'none'} | success=${counts.success} failure=${counts.failure} pending=${counts.pending}`
 );
 if (failed.length > 0) {
   console.log(`[auto-merge] failed: ${failed.slice(0, 10).join(', ')}`);
+}
+if (reasons.length > 0) {
+  console.log(`[auto-merge] reasons: ${reasons.join('; ')}`);
 }
 
 if (!eligible) {
