@@ -45,8 +45,27 @@ jobs:
       - name: Resolve automation config
         env:
           AE_AUTOMATION_PROFILE: ${{ vars.AE_AUTOMATION_PROFILE || '' }}
+          AE_AUTOMATION_GLOBAL_DISABLE: ${{ vars.AE_AUTOMATION_GLOBAL_DISABLE || '' }}
+          AE_COPILOT_AUTO_FIX: ${{ vars.AE_COPILOT_AUTO_FIX || '' }}
+          AE_COPILOT_AUTO_FIX_SCOPE: ${{ vars.AE_COPILOT_AUTO_FIX_SCOPE || '' }}
+          AE_COPILOT_AUTO_FIX_LABEL: ${{ vars.AE_COPILOT_AUTO_FIX_LABEL || '' }}
+          AE_AUTO_MERGE: ${{ vars.AE_AUTO_MERGE || '' }}
+          AE_AUTO_MERGE_MODE: ${{ vars.AE_AUTO_MERGE_MODE || '' }}
+          AE_AUTO_MERGE_LABEL: ${{ vars.AE_AUTO_MERGE_LABEL || '' }}
+          AE_AUTO_MERGE_REQUIRE_RISK_LOW: ${{ vars.AE_AUTO_MERGE_REQUIRE_RISK_LOW || '' }}
+          AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE: ${{ vars.AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE || '' }}
+          AE_AUTO_MERGE_CHANGE_PACKAGE_ALLOW_WARN: ${{ vars.AE_AUTO_MERGE_CHANGE_PACKAGE_ALLOW_WARN || '' }}
+          AE_GH_THROTTLE_MS: ${{ vars.AE_GH_THROTTLE_MS || '' }}
+          AE_GH_RETRY_MAX_ATTEMPTS: ${{ vars.AE_GH_RETRY_MAX_ATTEMPTS || '' }}
+          AE_GH_RETRY_INITIAL_DELAY_MS: ${{ vars.AE_GH_RETRY_INITIAL_DELAY_MS || '' }}
+          AE_GH_RETRY_MAX_DELAY_MS: ${{ vars.AE_GH_RETRY_MAX_DELAY_MS || '' }}
+          AE_GH_RETRY_MULTIPLIER: ${{ vars.AE_GH_RETRY_MULTIPLIER || '' }}
+          AE_GH_RETRY_JITTER_MS: ${{ vars.AE_GH_RETRY_JITTER_MS || '' }}
+          AE_GH_RETRY_DEBUG: ${{ vars.AE_GH_RETRY_DEBUG || '' }}
           AE_REVIEW_TOPOLOGY: ${{ vars.AE_REVIEW_TOPOLOGY || '' }}
           AE_POLICY_MIN_HUMAN_APPROVALS: ${{ vars.AE_POLICY_MIN_HUMAN_APPROVALS || '' }}
+          COPILOT_REVIEW_WAIT_MINUTES: ${{ vars.COPILOT_REVIEW_WAIT_MINUTES || '' }}
+          COPILOT_REVIEW_MAX_ATTEMPTS: ${{ vars.COPILOT_REVIEW_MAX_ATTEMPTS || '' }}
         run: |
           node scripts/ci/lib/automation-config.mjs --format github-env >> "$GITHUB_ENV"
           node scripts/ci/lib/automation-config.mjs --format summary >> "$GITHUB_STEP_SUMMARY"
