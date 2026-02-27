@@ -114,6 +114,7 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - CI troubleshooting guide: `ci/ci-troubleshooting-guide.md`（失敗分類/復旧runbook）
 - Harness failure taxonomy: `ci/harness-taxonomy.md`（ゲート横断の分類/重要度/次アクション）
 - PR automation runbook: `ci/pr-automation.md`（Copilot→auto-fix→auto-merge）
+- Review topology matrix validation: `ci/review-topology-matrix.md`（solo/team/override の比較検証）
 - Change Package runbook: `ci/change-package.md`（証跡パッケージ生成/検証/PR要約連携）
 - Workflow role matrix: `ci/workflow-role-matrix.md`（core / optional / report の責務整理）
 - Opt-in controls: `ci/OPT-IN-CONTROLS.md`（ラベル/Slash/dispatchの一覧）
