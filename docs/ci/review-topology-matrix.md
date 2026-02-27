@@ -5,7 +5,7 @@
 
 ## 1. 前提
 
-- `GITHUB_TOKEN` が設定済みであること
+- `GITHUB_TOKEN` または `GH_TOKEN` が設定済みであること
 - `GITHUB_REPOSITORY` が設定済みであること（例: `itdojp/ae-framework`）
 - 検証対象の PR 番号が存在すること
 

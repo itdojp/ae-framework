@@ -29,6 +29,7 @@ function parseArgs(argv) {
     }
     if (value.startsWith('--repo=')) {
       options.repository = String(value.slice('--repo='.length)).trim();
+      continue;
     }
   }
 
@@ -46,12 +47,24 @@ function ensureDirectory(filePath) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
 }
 
+function removeFileIfExists(filePath) {
+  if (!fs.existsSync(filePath)) {
+    return;
+  }
+  fs.rmSync(filePath, { force: true });
+}
+
 function readPolicyGateSummary() {
   if (!fs.existsSync(POLICY_GATE_SUMMARY_PATH)) {
-    throw new Error(`Missing ${POLICY_GATE_SUMMARY_PATH}`);
+    return { summary: null, error: `missing ${POLICY_GATE_SUMMARY_PATH}` };
   }
-  const raw = fs.readFileSync(POLICY_GATE_SUMMARY_PATH, 'utf8');
-  return JSON.parse(raw);
+  try {
+    const raw = fs.readFileSync(POLICY_GATE_SUMMARY_PATH, 'utf8');
+    return { summary: JSON.parse(raw), error: '' };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { summary: null, error: `invalid JSON in ${POLICY_GATE_SUMMARY_PATH}: ${message}` };
+  }
 }
 
 function runPolicyGateScenario({ scenarioId, prNumber, repository, reviewTopology, approvalOverride }) {
@@ -62,11 +75,13 @@ function runPolicyGateScenario({ scenarioId, prNumber, repository, reviewTopolog
   if (reviewTopology) env.AE_REVIEW_TOPOLOGY = reviewTopology;
   else delete env.AE_REVIEW_TOPOLOGY;
 
-  if (approvalOverride) env.AE_POLICY_MIN_HUMAN_APPROVALS = approvalOverride;
+  const hasApprovalOverride = approvalOverride !== undefined && approvalOverride !== null && String(approvalOverride) !== '';
+  if (hasApprovalOverride) env.AE_POLICY_MIN_HUMAN_APPROVALS = String(approvalOverride);
   else delete env.AE_POLICY_MIN_HUMAN_APPROVALS;
 
   let exitCode = 0;
   let stderr = '';
+  removeFileIfExists(POLICY_GATE_SUMMARY_PATH);
   try {
     execFileSync('node', ['scripts/ci/policy-gate.mjs', '--pr', String(prNumber)], {
       env,
@@ -77,21 +92,29 @@ function runPolicyGateScenario({ scenarioId, prNumber, repository, reviewTopolog
     stderr = String(error?.stderr || '').trim();
   }
 
-  const summary = readPolicyGateSummary();
+  const { summary, error: summaryError } = readPolicyGateSummary();
   const evaluation = summary?.evaluation || {};
+  const errors = Array.isArray(evaluation.errors) ? [...evaluation.errors] : [];
+  if (summaryError) {
+    errors.push(`policy-gate summary unavailable: ${summaryError}`);
+  }
+  if (exitCode !== 0 && !stderr && errors.length === 0) {
+    errors.push(`policy-gate exited with status ${exitCode}`);
+  }
   return {
     scenarioId,
     reviewTopology: reviewTopology || '(default)',
     approvalOverride: approvalOverride || '',
     exitCode,
-    ok: Boolean(evaluation.ok),
+    ok: Boolean(evaluation.ok) && exitCode === 0 && !summaryError,
     selectedRiskLabel: String(evaluation.selectedRiskLabel || ''),
     inferredRisk: String(evaluation?.inferredRisk?.level || ''),
     approvals: Number(evaluation.approvals || 0),
     effectiveMinApprovals: Number(evaluation.effectiveMinApprovals ?? evaluation.minApprovals ?? 0),
     minApprovalsSource: String(evaluation.minApprovalsSource || ''),
-    errors: Array.isArray(evaluation.errors) ? evaluation.errors : [],
+    errors,
     warnings: Array.isArray(evaluation.warnings) ? evaluation.warnings : [],
+    summaryError: summaryError || '',
     stderr,
   };
 }
@@ -151,8 +174,8 @@ function main() {
   if (!options.repository) {
     throw new Error('Repository is required (--repo or GITHUB_REPOSITORY).');
   }
-  if (!process.env.GITHUB_TOKEN) {
-    throw new Error('GITHUB_TOKEN is required.');
+  if (!process.env.GITHUB_TOKEN && !process.env.GH_TOKEN) {
+    throw new Error('GITHUB_TOKEN or GH_TOKEN is required.');
   }
 
   const scenarios = [
