@@ -9,6 +9,8 @@ describe('automation-config', () => {
   it('uses defaults when profile and variables are not set', () => {
     const config = resolveAutomationConfig({});
     expect(config.profile.resolved).toBe('');
+    expect(config.values.AE_REVIEW_TOPOLOGY).toBe('team');
+    expect(config.values.AE_POLICY_MIN_HUMAN_APPROVALS).toBe('');
     expect(config.values.AE_AUTOMATION_GLOBAL_DISABLE).toBe('0');
     expect(config.values.AE_COPILOT_AUTO_FIX).toBe('0');
     expect(config.values.AE_AUTO_MERGE).toBe('0');
@@ -27,6 +29,8 @@ describe('automation-config', () => {
       AE_AUTOMATION_PROFILE: 'balanced',
     });
     expect(config.profile.resolved).toBe('balanced');
+    expect(config.values.AE_REVIEW_TOPOLOGY).toBe('team');
+    expect(config.values.AE_POLICY_MIN_HUMAN_APPROVALS).toBe('');
     expect(config.values.AE_AUTOMATION_GLOBAL_DISABLE).toBe('0');
     expect(config.values.AE_COPILOT_AUTO_FIX).toBe('1');
     expect(config.values.AE_COPILOT_AUTO_FIX_SCOPE).toBe('docs');
@@ -43,10 +47,14 @@ describe('automation-config', () => {
   it('prefers explicit values over profile values', () => {
     const config = resolveAutomationConfig({
       AE_AUTOMATION_PROFILE: 'aggressive',
+      AE_REVIEW_TOPOLOGY: 'solo',
+      AE_POLICY_MIN_HUMAN_APPROVALS: '0',
       AE_COPILOT_AUTO_FIX_SCOPE: 'docs',
       AE_AUTO_MERGE_MODE: 'label',
       AE_AUTO_MERGE_LABEL: 'manual-opt-in',
     });
+    expect(config.values.AE_REVIEW_TOPOLOGY).toBe('solo');
+    expect(config.values.AE_POLICY_MIN_HUMAN_APPROVALS).toBe('0');
     expect(config.values.AE_COPILOT_AUTO_FIX_SCOPE).toBe('docs');
     expect(config.sources.AE_COPILOT_AUTO_FIX_SCOPE).toBe('explicit');
     expect(config.values.AE_AUTO_MERGE_MODE).toBe('label');
@@ -66,11 +74,17 @@ describe('automation-config', () => {
   it('falls back on invalid explicit values with warnings', () => {
     const config = resolveAutomationConfig({
       AE_AUTOMATION_PROFILE: 'balanced',
+      AE_REVIEW_TOPOLOGY: 'invalid-topology',
+      AE_POLICY_MIN_HUMAN_APPROVALS: '-1',
       AE_COPILOT_AUTO_FIX_SCOPE: 'invalid-scope',
       AE_GH_RETRY_MAX_ATTEMPTS: 'NaN',
     });
+    expect(config.values.AE_REVIEW_TOPOLOGY).toBe('team');
+    expect(config.values.AE_POLICY_MIN_HUMAN_APPROVALS).toBe('');
     expect(config.values.AE_COPILOT_AUTO_FIX_SCOPE).toBe('docs');
     expect(config.values.AE_GH_RETRY_MAX_ATTEMPTS).toBe('8');
+    expect(config.warnings.some((w) => w.includes('AE_REVIEW_TOPOLOGY'))).toBe(true);
+    expect(config.warnings.some((w) => w.includes('AE_POLICY_MIN_HUMAN_APPROVALS'))).toBe(true);
     expect(config.warnings.some((w) => w.includes('AE_COPILOT_AUTO_FIX_SCOPE'))).toBe(true);
     expect(config.warnings.some((w) => w.includes('AE_GH_RETRY_MAX_ATTEMPTS'))).toBe(true);
   });
@@ -90,6 +104,8 @@ describe('automation-config', () => {
     });
     const envBody = toGithubEnv(config);
     expect(envBody).toContain('AE_AUTOMATION_PROFILE_RESOLVED=conservative');
+    expect(envBody).toContain('AE_REVIEW_TOPOLOGY=team');
+    expect(envBody).toContain('AE_POLICY_MIN_HUMAN_APPROVALS=');
     expect(envBody).toContain('AE_AUTOMATION_GLOBAL_DISABLE=0');
     expect(envBody).toContain('AE_COPILOT_AUTO_FIX=1');
     expect(envBody).toContain('AE_AUTO_MERGE_MODE=label');

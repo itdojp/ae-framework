@@ -63,3 +63,37 @@ ae-framework conformance ingest \
 3. `ae fix from-conformance --input artifacts/conformance/conformance-results.json --output artifacts/fix/failures.json` で CEGIS failure artifact へ変換
 4. `ae fix analyze/apply` に接続して修復レーンを実行
 5. conformance / fix の成果物を CI artifacts として保存し、運用判断に利用
+
+## 6. GitHub Actions（Self-Heal レーン）
+
+`.github/workflows/runtime-conformance-self-heal.yml` は、以下の順で閉ループを実行します。
+
+1. Trace Bundle 準備（`trace_bundle` 指定時は ingest をスキップ）
+2. `ae conformance verify --trace-bundle ...`
+3. `ae fix from-conformance ...`
+4. `ae fix apply ...`（`apply_fixes=true` のときのみ）
+5. 差分があれば自動PRを作成（`apply_fixes=true` かつ `dry_run=false`）
+
+### 手動実行例
+
+```bash
+gh workflow run runtime-conformance-self-heal.yml \
+  -f trace_input=samples/conformance/sample-traces.json \
+  -f apply_fixes=true \
+  -f dry_run=false
+```
+
+### 主な入力
+
+- `trace_input`: ingest 元の NDJSON/JSON パス
+- `trace_bundle`: 既存 trace bundle パス（指定時は ingest を省略）
+- `conformance_rules`: 任意の custom rules JSON
+- `apply_fixes`: `true` の場合のみ `ae fix apply` を実行
+- `dry_run`: `true` の場合は `ae fix apply --dry-run`
+
+### 出力
+
+- `artifacts/observability/runtime-self-heal-trace-bundle.json`
+- `artifacts/conformance/runtime-self-heal-results.json`
+- `artifacts/fix/runtime-self-heal-failures.json`
+- `artifacts/automation/runtime-conformance-self-heal-report.json`（`ae-automation-report/v1`）
