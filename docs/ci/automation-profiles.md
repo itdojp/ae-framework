@@ -16,7 +16,10 @@ Repository Variables に `AE_AUTOMATION_PROFILE` を設定します。
 - `balanced`
 - `aggressive`
 
-未設定時はプロファイル無効で、既存の個別変数（`AE_COPILOT_AUTO_FIX*`, `AE_AUTO_MERGE*`, `AE_GH_*`, `AE_AUTOMATION_GLOBAL_DISABLE` など）がそのまま使われます（`AE_AUTO_MERGE_REQUIRE_RISK_LOW` / `AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE` を含む）。
+未設定時はプロファイル無効で、既存の個別変数（`AE_COPILOT_AUTO_FIX*`, `AE_AUTO_MERGE*`, `AE_GH_*`, `AE_AUTOMATION_GLOBAL_DISABLE`, `AE_REVIEW_TOPOLOGY`, `AE_POLICY_MIN_HUMAN_APPROVALS` など）がそのまま使われます（`AE_AUTO_MERGE_REQUIRE_RISK_LOW` / `AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE` を含む）。
+
+注記:
+- `AE_REVIEW_TOPOLOGY` / `AE_POLICY_MIN_HUMAN_APPROVALS` は、automation-config と policy-gate の対応実装が入っているバージョンで有効です。
 
 ## 2. 優先順位
 
@@ -34,6 +37,8 @@ Repository Variables に `AE_AUTOMATION_PROFILE` を設定します。
 
 | Key | conservative | balanced | aggressive |
 | --- | --- | --- | --- |
+| `AE_REVIEW_TOPOLOGY` | `team` | `team` | `team` |
+| `AE_POLICY_MIN_HUMAN_APPROVALS` | *(empty)* | *(empty)* | *(empty)* |
 | `AE_AUTOMATION_GLOBAL_DISABLE` | `0` | `0` | `0` |
 | `AE_COPILOT_AUTO_FIX` | `1` | `1` | `1` |
 | `AE_COPILOT_AUTO_FIX_SCOPE` | `docs` | `docs` | `all` |

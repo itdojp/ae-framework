@@ -49,6 +49,11 @@ ADMIN_TOKEN=ghp_xxx REPO=itdojp/ae-framework BRANCH=main \
 - `PR Verify / verify` を Required に含めない（verify-lite 運用時）
 - Auto-merge を許可（Checks が緑になれば自動マージ）
 - ラベルで強制ゲートを任意化（`enforce-coverage`, `enforce-typecov` など）
+- 体制に応じて `AE_REVIEW_TOPOLOGY` を設定
+  - `team`（既定）: high risk PR で人手承認要件を有効化
+  - `solo`: approvals 要件を 0 として判定（他の required checks は同一）
+- 追加で `AE_POLICY_MIN_HUMAN_APPROVALS` を設定すると、approvals 要件を明示上書きできる
+- 注記: 上記2変数は policy-gate の topology対応実装が導入済みであることが前提
 
 ## 運用補助（自動化）
 - `ci-auto-rerun-failed` が失敗ジョブを **1回だけ** 自動再実行します（最終判断はログで確認）。
