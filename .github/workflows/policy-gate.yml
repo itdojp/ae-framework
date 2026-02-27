@@ -42,6 +42,15 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Resolve automation config
+        env:
+          AE_AUTOMATION_PROFILE: ${{ vars.AE_AUTOMATION_PROFILE || '' }}
+          AE_REVIEW_TOPOLOGY: ${{ vars.AE_REVIEW_TOPOLOGY || '' }}
+          AE_POLICY_MIN_HUMAN_APPROVALS: ${{ vars.AE_POLICY_MIN_HUMAN_APPROVALS || '' }}
+        run: |
+          node scripts/ci/lib/automation-config.mjs --format github-env >> "$GITHUB_ENV"
+          node scripts/ci/lib/automation-config.mjs --format summary >> "$GITHUB_STEP_SUMMARY"
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
