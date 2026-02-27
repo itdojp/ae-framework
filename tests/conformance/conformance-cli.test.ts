@@ -73,6 +73,7 @@ describe('ConformanceCli', () => {
       // Check that subcommands exist
       const subcommands = command.commands.map(cmd => cmd.name());
       expect(subcommands).toContain('verify');
+      expect(subcommands).toContain('ingest');
       expect(subcommands).toContain('rules');
       expect(subcommands).toContain('config');
       expect(subcommands).toContain('metrics');
