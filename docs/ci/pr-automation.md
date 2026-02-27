@@ -102,6 +102,7 @@ PR運用を以下の形に収束させます。
 注記:
 - これら2変数は、`policy-gate` の topology対応実装と `policy-gate.yml` の automation-config連携が導入されているバージョンで有効です。
 - 導入前バージョンでは設定しても approvals 判定は変わりません。
+- 実測手順は `docs/ci/review-topology-matrix.md` を参照してください。
 
 運用フローは体制にかかわらず共通です。
 - PR作成 → Copilotレビュー → 指摘解消 → required checks green → merge
