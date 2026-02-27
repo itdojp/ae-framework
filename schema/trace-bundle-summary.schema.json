@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/trace-bundle-summary.schema.json",
+  "title": "ae-trace-bundle-summary-v1",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "ae-trace-bundle-summary/v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "input": {
+      "type": "object",
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "format": {
+          "type": "string",
+          "enum": ["ndjson", "json-array", "json-events"]
+        }
+      },
+      "required": ["path", "format"],
+      "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "properties": {
+        "bundlePath": { "type": "string", "minLength": 1 },
+        "summaryPath": { "type": "string", "minLength": 1 }
+      },
+      "required": ["bundlePath", "summaryPath"],
+      "additionalProperties": false
+    },
+    "counts": {
+      "type": "object",
+      "properties": {
+        "rawEventCount": { "type": "integer", "minimum": 0 },
+        "validEventCount": { "type": "integer", "minimum": 0 },
+        "invalidEventCount": { "type": "integer", "minimum": 0 },
+        "sampledOutCount": { "type": "integer", "minimum": 0 },
+        "emittedEventCount": { "type": "integer", "minimum": 0 },
+        "traceCount": { "type": "integer", "minimum": 0 },
+        "redactedFieldCount": { "type": "integer", "minimum": 0 }
+      },
+      "required": [
+        "rawEventCount",
+        "validEventCount",
+        "invalidEventCount",
+        "sampledOutCount",
+        "emittedEventCount",
+        "traceCount",
+        "redactedFieldCount"
+      ],
+      "additionalProperties": false
+    },
+    "sampling": {
+      "type": "object",
+      "properties": {
+        "sampleRate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "maxEvents": { "type": "integer", "minimum": 0 }
+      },
+      "required": ["sampleRate", "maxEvents"],
+      "additionalProperties": false
+    },
+    "redaction": {
+      "type": "object",
+      "properties": {
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "jsonPath": { "type": "string", "minLength": 1 },
+              "action": {
+                "type": "string",
+                "enum": ["remove", "mask", "hash"]
+              }
+            },
+            "required": ["jsonPath", "action"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["rules"],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "input",
+    "output",
+    "counts",
+    "sampling",
+    "redaction"
+  ],
+  "additionalProperties": false
+}

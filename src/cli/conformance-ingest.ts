@@ -312,14 +312,13 @@ const buildTraceGrouping = (events: TraceEventRecord[]): TraceBundle['grouping']
   };
 };
 
-const resolveTimeWindow = (
+const resolveTimeWindowFromSortedEvents = (
   events: TraceEventRecord[],
   sourceTimeStart?: string,
   sourceTimeEnd?: string,
 ): { start: string; end: string } => {
-  const sorted = toSortedEvents(events);
-  const fallbackStart = sorted[0]?.timestamp ?? new Date(0).toISOString();
-  const fallbackEnd = sorted[sorted.length - 1]?.timestamp ?? new Date(0).toISOString();
+  const fallbackStart = events[0]?.timestamp ?? new Date(0).toISOString();
+  const fallbackEnd = events[events.length - 1]?.timestamp ?? new Date(0).toISOString();
   return {
     start: sourceTimeStart || fallbackStart,
     end: sourceTimeEnd || fallbackEnd,
@@ -387,7 +386,7 @@ export const runConformanceIngest = (options: ConformanceIngestOptions): {
         path: toRelativePath(inputPath),
         format,
       },
-      timeWindow: resolveTimeWindow(sortedEvents, options.sourceTimeStart, options.sourceTimeEnd),
+      timeWindow: resolveTimeWindowFromSortedEvents(sortedEvents, options.sourceTimeStart, options.sourceTimeEnd),
     },
     events: sortedEvents,
     grouping,

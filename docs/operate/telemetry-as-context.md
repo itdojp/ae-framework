@@ -51,6 +51,8 @@ ae-framework conformance ingest \
   - バージョン: `schemaVersion = ae-trace-bundle/v1`
 - `artifacts/observability/trace-bundle-summary.json`
   - 取り込み件数、無効イベント件数、サンプリング件数、redaction件数を記録
+  - スキーマ: `schema/trace-bundle-summary.schema.json`
+  - 取り込み後にイベントが 0 件の場合、`source.timeWindow` の未指定側は Unix epoch（`1970-01-01T00:00:00.000Z`）で補完
 
 ## 5. 次段の利用
 

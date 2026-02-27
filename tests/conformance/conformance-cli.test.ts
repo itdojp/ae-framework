@@ -296,6 +296,66 @@ describe('ConformanceCli', () => {
     });
   });
 
+  describe('ingest command', () => {
+    it('should reject invalid sample-rate with non-zero exit path', async () => {
+      const inputFile = 'test-trace-invalid-sample.ndjson';
+      const outputFile = 'tmp-conformance-ingest-output/bundle.json';
+      const summaryFile = 'tmp-conformance-ingest-output/summary.json';
+
+      writeFileSync(
+        inputFile,
+        `${JSON.stringify({ traceId: 't1', timestamp: '2026-02-27T00:00:00.000Z', actor: 'svc', event: 'E1' })}\n`,
+      );
+      testFiles.push(inputFile, 'tmp-conformance-ingest-output');
+
+      const command = cli.createCommand();
+      const args = [
+        'node', 'cli', 'ingest',
+        '--input', inputFile,
+        '--output', outputFile,
+        '--summary-output', summaryFile,
+        '--sample-rate', '1.2',
+      ];
+
+      await command.parseAsync(args);
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('--sample-rate must be a number in [0,1]'),
+      );
+      expect(existsSync(outputFile)).toBe(false);
+      expect(existsSync(summaryFile)).toBe(false);
+    });
+
+    it('should reject invalid redaction rule format', async () => {
+      const inputFile = 'test-trace-invalid-redact.ndjson';
+      const outputFile = 'tmp-conformance-ingest-output-2/bundle.json';
+      const summaryFile = 'tmp-conformance-ingest-output-2/summary.json';
+
+      writeFileSync(
+        inputFile,
+        `${JSON.stringify({ traceId: 't1', timestamp: '2026-02-27T00:00:00.000Z', actor: 'svc', event: 'E1' })}\n`,
+      );
+      testFiles.push(inputFile, 'tmp-conformance-ingest-output-2');
+
+      const command = cli.createCommand();
+      const args = [
+        'node', 'cli', 'ingest',
+        '--input', inputFile,
+        '--output', outputFile,
+        '--summary-output', summaryFile,
+        '--redact', 'details.secret:mask',
+      ];
+
+      await command.parseAsync(args);
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('unsupported redaction path'),
+      );
+      expect(existsSync(outputFile)).toBe(false);
+      expect(existsSync(summaryFile)).toBe(false);
+    });
+  });
+
   describe('report command', () => {
     it('should generate empty report when no results are found', async () => {
       const outputFile = 'conformance-report-empty.json';

@@ -184,10 +184,12 @@ export class ConformanceCli {
 
       if (!Number.isFinite(sampleRate) || sampleRate < 0 || sampleRate > 1) {
         console.error(chalk.red('❌ --sample-rate must be a number in [0,1].'));
+        safeExit(1);
         return;
       }
       if (!Number.isFinite(maxEvents) || maxEvents < 0) {
         console.error(chalk.red('❌ --max-events must be a non-negative number.'));
+        safeExit(1);
         return;
       }
 
@@ -197,6 +199,7 @@ export class ConformanceCli {
         const parsed = parseTraceRedactionRule(String(ruleSpec));
         if (!parsed.ok || !parsed.rule) {
           console.error(chalk.red(`❌ ${parsed.error ?? `invalid redaction rule: ${ruleSpec}`}`));
+          safeExit(1);
           return;
         }
         redactRules.push(parsed.rule);

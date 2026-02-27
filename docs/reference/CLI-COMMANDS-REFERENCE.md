@@ -200,6 +200,7 @@ ae domain-model --language --sources "glossary.md"
    --summary-output artifacts/observability/trace-bundle-summary.json \
    --redact '$.details.email:mask'
 # JSON schema: schema/trace-bundle.schema.json
+# JSON schema (summary): schema/trace-bundle-summary.schema.json
 
 # Generate samples
  ae conformance sample --rules configs/samples/sample-rules.json \
@@ -521,6 +522,7 @@ ae conformance ingest --input runtime.ndjson \
   --summary-output artifacts/observability/trace-bundle-summary.json \
   --redact '$.details.email:mask'
 # JSON schema: schema/trace-bundle.schema.json
+# JSON schema (summary): schema/trace-bundle-summary.schema.json
 
 ae conformance sample --rules configs/samples/sample-rules.json \
   --config configs/samples/sample-config.json \

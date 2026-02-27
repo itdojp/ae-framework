@@ -162,4 +162,74 @@ describe('conformance ingest utilities', () => {
     expect(bundle.grouping.traces[0]?.firstTimestamp).toBe('2026-02-27T00:30:00Z');
     expect(bundle.grouping.traces[0]?.lastTimestamp).toBe('2026-02-27T10:00:00+09:00');
   });
+
+  it('fails when input file does not exist', async () => {
+    const workdir = await createWorkdir();
+    const inputPath = join(workdir, 'missing.ndjson');
+    const outputPath = join(workdir, 'trace-bundle.json');
+    const summaryOutputPath = join(workdir, 'trace-bundle-summary.json');
+
+    expect(() =>
+      runConformanceIngest({
+        inputPath,
+        outputPath,
+        summaryOutputPath,
+      }),
+    ).toThrowError();
+  });
+
+  it('fails when JSON input is malformed', async () => {
+    const workdir = await createWorkdir();
+    const inputPath = join(workdir, 'malformed.json');
+    const outputPath = join(workdir, 'trace-bundle.json');
+    const summaryOutputPath = join(workdir, 'trace-bundle-summary.json');
+    await writeFile(inputPath, '{ "events": [ }', 'utf-8');
+
+    expect(() =>
+      runConformanceIngest({
+        inputPath,
+        outputPath,
+        summaryOutputPath,
+      }),
+    ).toThrowError();
+  });
+
+  it('fails when input format is unsupported', async () => {
+    const workdir = await createWorkdir();
+    const inputPath = join(workdir, 'unsupported.json');
+    const outputPath = join(workdir, 'trace-bundle.json');
+    const summaryOutputPath = join(workdir, 'trace-bundle-summary.json');
+    await writeFile(inputPath, `${JSON.stringify({ notEvents: [] })}\n`, 'utf-8');
+
+    expect(() =>
+      runConformanceIngest({
+        inputPath,
+        outputPath,
+        summaryOutputPath,
+      }),
+    ).toThrowError('input must be NDJSON, JSON array, or object with events[]');
+  });
+
+  it('fails when output path is not writable as a file', async () => {
+    const workdir = await createWorkdir();
+    const inputPath = join(workdir, 'trace.json');
+    const outputPath = join(workdir, 'outdir');
+    const summaryOutputPath = join(workdir, 'trace-bundle-summary.json');
+    await writeFile(
+      inputPath,
+      `${JSON.stringify([
+        { traceId: 'a', timestamp: '2026-02-27T00:00:00.000Z', actor: 'svc', event: 'E1' },
+      ])}\n`,
+      'utf-8',
+    );
+    await writeFile(outputPath, '', 'utf-8');
+
+    expect(() =>
+      runConformanceIngest({
+        inputPath,
+        outputPath: join(outputPath, 'trace-bundle.json'),
+        summaryOutputPath,
+      }),
+    ).toThrowError();
+  });
 });
