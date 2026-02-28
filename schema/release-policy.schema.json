@@ -25,7 +25,7 @@
     },
     "updatedAt": {
       "type": "string",
-      "format": "date"
+      "format": "date-time"
     },
     "owner": {
       "type": "string",
@@ -136,18 +136,41 @@
               "type": "string",
               "enum": [
                 "command",
-                "webhook",
                 "none"
               ]
             },
             "command": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "timeoutSeconds": {
               "type": "integer",
               "minimum": 1
             }
           },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "command"
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "command"
+                ]
+              },
+              "else": {
+                "not": {
+                  "required": [
+                    "command"
+                  ]
+                }
+              }
+            }
+          ],
           "additionalProperties": false
         }
       },

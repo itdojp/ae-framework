@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
+import yaml from 'yaml';
 import { runSchemaIdPolicyCheck } from './check-schema-id-policy.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -17,12 +18,22 @@ function loadJson(relativePath) {
   return JSON.parse(readFileSync(resolved, 'utf8'));
 }
 
+function loadFixture(relativePath) {
+  const resolved = path.resolve(repoRoot, relativePath);
+  const raw = readFileSync(resolved, 'utf8');
+  const extension = path.extname(relativePath).toLowerCase();
+  if (extension === '.yaml' || extension === '.yml') {
+    return yaml.parse(raw);
+  }
+  return JSON.parse(raw);
+}
+
 function validateSchema(schemaPath, fixturePaths) {
   const schema = loadJson(schemaPath);
   const validate = ajv.compile(schema);
   const failures = [];
   for (const fixture of fixturePaths) {
-    const data = loadJson(fixture);
+    const data = loadFixture(fixture);
     const ok = validate(data);
     if (!ok) {
       failures.push({ fixture, errors: validate.errors ?? [] });
@@ -129,7 +140,7 @@ const checks = [
   },
   {
     schema: 'schema/release-policy.schema.json',
-    fixtures: ['fixtures/release/sample.release-policy.json'],
+    fixtures: ['fixtures/release/sample.release-policy.json', 'policy/release-policy.yml'],
     label: 'Release policy schema validation'
   }
 ];

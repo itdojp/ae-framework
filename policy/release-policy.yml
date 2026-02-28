@@ -1,6 +1,6 @@
 schemaVersion: "ae-release-policy/v1"
 version: 1
-updatedAt: "2026-02-28"
+updatedAt: "2026-02-28T00:00:00Z"
 owner: "ae-framework"
 
 rolloutStrategy:
@@ -32,7 +32,7 @@ rollbackPolicy:
   dryRun: true
   hook:
     type: "command"
-    command: "scripts/deploy/rollback.sh"
+    command: "scripts/ci/automation-rollback.sh"
     timeoutSeconds: 600
 
 requiredEvidence:
