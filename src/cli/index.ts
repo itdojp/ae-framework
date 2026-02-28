@@ -27,6 +27,7 @@ import { createSecurityCommand } from './security-cli.js';
 import { createEntryRunnerCommand } from './entry-runner-cli.js';
 import { createHelpCommand } from './help-cli.js';
 import { createSetupCommand } from './setup-cli.js';
+import { createReleaseCommand } from './release-cli.js';
 import { safeExit } from '../utils/safe-exit.js';
 import { handleTestsSuggest } from '../commands/tdd/suggest.js';
 import { handleTestsScaffold } from '../commands/tdd/scaffold.js';
@@ -747,6 +748,9 @@ program.addCommand(createResilienceCommand());
 // SBOM commands
 import { createSBOMCommand } from './sbom-cli.js';
 program.addCommand(createSBOMCommand());
+
+// Release engineering commands
+program.addCommand(createReleaseCommand());
 
 // Agent commands
 import { agentComplete } from '../commands/agent/complete.js';

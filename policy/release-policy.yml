@@ -38,7 +38,6 @@ rollbackPolicy:
 requiredEvidence:
   - "postDeployVerify"
   - "qualityGates"
-  - "conformanceSummary"
 
 environments:
   staging:

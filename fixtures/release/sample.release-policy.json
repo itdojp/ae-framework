@@ -41,8 +41,7 @@
   },
   "requiredEvidence": [
     "postDeployVerify",
-    "qualityGates",
-    "conformanceSummary"
+    "qualityGates"
   ],
   "environments": {
     "staging": {

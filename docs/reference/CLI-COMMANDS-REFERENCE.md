@@ -232,6 +232,26 @@ ae domain-model --language --sources "glossary.md"
 # JSON schema (--format json): schema/conformance-report.schema.json
 ```
 
+### Release Engineering (Policy / Post-deploy Verify)
+```bash
+# Generate release plan from policy
+ ae release plan --policy policy/release-policy.yml \
+   --environment staging \
+   --feature checkout \
+   --output-dir artifacts/release
+# outputs: artifacts/release/release-plan.{json,md}
+
+# Evaluate post-deploy health/evidence
+ ae release verify --policy policy/release-policy.yml \
+   --environment staging \
+   --metrics fixtures/release/sample.metrics-snapshot.json \
+   --synthetic-checks fixtures/release/sample.synthetic-checks.json \
+   --output-dir artifacts/release
+# optional: --trace-bundle artifacts/observability/trace-bundle.json
+# outputs: artifacts/release/post-deploy-verify.{json,md}
+# status: pass | warn | fail, with rollbackRecommended
+```
+
 ### Integration Testing (Phase 2.3)
 ```bash
 # Generate samples
@@ -550,6 +570,26 @@ ae conformance sample --rules configs/samples/sample-rules.json \
  ae conformance status
  ae conformance report --directory artifacts/hermetic-reports/conformance --format both
 # JSON schema (--format json): schema/conformance-report.schema.json
+```
+
+### Release Engineering
+```bash
+# release-policy から rollout plan を生成
+ae release plan --policy policy/release-policy.yml \
+  --environment staging \
+  --feature checkout \
+  --output-dir artifacts/release
+# 出力: artifacts/release/release-plan.{json,md}
+
+# デプロイ後メトリクス/evidence を評価
+ae release verify --policy policy/release-policy.yml \
+  --environment staging \
+  --metrics fixtures/release/sample.metrics-snapshot.json \
+  --synthetic-checks fixtures/release/sample.synthetic-checks.json \
+  --output-dir artifacts/release
+# 任意: --trace-bundle artifacts/observability/trace-bundle.json
+# 出力: artifacts/release/post-deploy-verify.{json,md}
+# 判定: pass | warn | fail（rollbackRecommended を返却）
 ```
 
 ### Integration Testing
