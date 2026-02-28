@@ -1,13 +1,13 @@
 # TODO Marker Inventory Summary
 
-- generatedAt: 2026-02-28T22:56:21.868Z
-- tracked files scanned: 2250
-- markers found: 72
+- generatedAt: 2026-02-28T23:08:00.405Z
+- tracked files scanned: 2251
+- markers found: 75
 - excluded prefixes: node_modules/, dist/, coverage/, artifacts/, tmp/, temp-reports/
 
 ## Counts by marker
 
-- TODO: 68
+- TODO: 71
 - FIXME: 1
 - XXX: 3
 
@@ -17,5 +17,5 @@
 - docs: 11
 - scripts: 8
 - spec: 5
+- tests: 5
 - api: 2
-- tests: 2

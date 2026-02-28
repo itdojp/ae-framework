@@ -71,3 +71,6 @@ TD-0069,src/self-improvement/phase5-verification-final.ts,333,TODO,"const additi
 TD-0070,src/testing/repro-writer.ts,42,TODO,"`test(${testNameLiteral}, () => { process.env.AE_SEED=${seedLiteral}; const data = JSON.parse(readFileSync(join(__dirname, ${jsonFilenameLiteral}), 'utf8')); /* TODO: call SUT(data) */ });`,",,no,src,,,,,,,,
 TD-0071,tests/commands/tests-scaffold.test.ts,72,TODO,expect(property).toContain('TODO: Replace this placeholder with meaningful properties.');,,no,tests,,,,,,,,
 TD-0072,tests/unit/docs/check-doc-todo-markers.test.ts,32,TODO,"'// TODO: this is code and ignored',",,no,tests,,,,,,,,
+TD-0073,tests/unit/scripts/extract-todo-markers.test.ts,11,TODO,"expect(normalizeMarker('// TODO: implement this', 'src/main.ts')).toBe('TODO');",,no,tests,,,,,,,,
+TD-0074,tests/unit/scripts/extract-todo-markers.test.ts,12,TODO,"expect(normalizeMarker('TODO(#2322) handle follow-up', 'src/main.ts')).toBe('TODO');",#2322,yes,tests,,,,,,,,
+TD-0075,tests/unit/scripts/extract-todo-markers.test.ts,19,TODO,"expect(normalizeMarker('// TODO: placeholder in fenced code', 'docs/template.md')).toBe('TODO');",,no,tests,,,,,,,,
