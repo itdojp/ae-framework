@@ -44,7 +44,7 @@ pnpm run maintenance:branch:inventory
    - reason: merged to `HEAD` but not fully merged to upstream tracking branch (`origin/feat/2292-agents-runbooks`) according to `git branch -d`.
 2. `fix/codeql-unused-vars-cli`
    - reason: branch is currently used by linked worktree:
-     `/home/devuser/work/CodeX/ae-frameworkA/ae-framework-unused-vars-cli`
+     `<worktree-path>`
 
 ## Operational updates applied
 

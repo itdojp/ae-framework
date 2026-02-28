@@ -25,8 +25,8 @@ pnpm run maintenance:branch:inventory
 
 Outputs:
 
-- `artifacts/maintenance/branch-inventory.json`
-- `artifacts/maintenance/branch-inventory.md`
+- `tmp/maintenance/branch-inventory.json`
+- `tmp/maintenance/branch-inventory.md`
 
 ### 2) Dry-run cleanup candidates
 
@@ -36,7 +36,7 @@ pnpm run maintenance:branch:cleanup:dry-run
 
 This prints planned delete commands and writes:
 
-- `artifacts/maintenance/branch-cleanup-report.json`
+- `tmp/maintenance/branch-cleanup-report.json`
 
 ### 3) Apply first safe batch (local only)
 

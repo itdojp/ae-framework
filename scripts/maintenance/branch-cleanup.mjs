@@ -7,7 +7,7 @@ const DEFAULT_BASE_REF = 'origin/main';
 const DEFAULT_REMOTE = 'origin';
 const DEFAULT_SCOPE = 'local';
 const DEFAULT_MAX = 200;
-const DEFAULT_OUTPUT_JSON = 'artifacts/maintenance/branch-cleanup-report.json';
+const DEFAULT_OUTPUT_JSON = 'tmp/maintenance/branch-cleanup-report.json';
 
 const PROTECTED_EXACT = new Set(['main', 'master', 'develop', 'staging']);
 const PROTECTED_PREFIXES = ['release/', 'hotfix/'];
@@ -133,7 +133,6 @@ try {
         .filter((name) => name !== currentBranch)
         .filter((name) => !isProtected(name))
         .sort()
-        .slice(0, options.max)
     : [];
 
   const remoteCandidates = shouldRemote
@@ -144,14 +143,27 @@ try {
         .map((name) => name.slice(options.remote.length + 1))
         .filter((name) => !isProtected(name))
         .sort()
-        .slice(0, options.max)
     : [];
 
-  const localResult = { target: localCandidates, deleted: [], failed: [] };
-  const remoteResult = { target: remoteCandidates, deleted: [], failed: [] };
+  const localResult = {
+    totalCandidates: localCandidates.length,
+    planned: localCandidates.slice(0, options.max),
+    considered: [],
+    deleted: [],
+    failed: [],
+  };
+  const remoteResult = {
+    totalCandidates: remoteCandidates.length,
+    planned: remoteCandidates.slice(0, options.max),
+    considered: [],
+    deleted: [],
+    failed: [],
+  };
 
   if (options.apply && shouldLocal) {
     for (const branch of localCandidates) {
+      if (localResult.deleted.length >= options.max) break;
+      localResult.considered.push(branch);
       const result = runGitSafe(['branch', '-d', branch]);
       if (result.ok) {
         localResult.deleted.push(branch);
@@ -163,6 +175,8 @@ try {
 
   if (options.apply && shouldRemote) {
     for (const branch of remoteCandidates) {
+      if (remoteResult.deleted.length >= options.max) break;
+      remoteResult.considered.push(branch);
       const result = runGitSafe(['push', options.remote, '--delete', branch]);
       if (result.ok) {
         remoteResult.deleted.push(branch);
@@ -194,16 +208,16 @@ try {
 
   console.log(`[branch-cleanup] mode=${options.apply ? 'apply' : 'dry-run'} scope=${options.scope}`);
   console.log(
-    `[branch-cleanup] local targets=${localCandidates.length}, remote targets=${remoteCandidates.length}`,
+    `[branch-cleanup] local candidates=${localCandidates.length}, remote candidates=${remoteCandidates.length}`,
   );
   if (!options.apply) {
     if (shouldLocal) {
-      for (const branch of localCandidates) {
+      for (const branch of localResult.planned) {
         console.log(`DRYRUN local: git branch -d ${branch}`);
       }
     }
     if (shouldRemote) {
-      for (const branch of remoteCandidates) {
+      for (const branch of remoteResult.planned) {
         console.log(`DRYRUN remote: git push ${options.remote} --delete ${branch}`);
       }
     }

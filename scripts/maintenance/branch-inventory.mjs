@@ -5,8 +5,8 @@ import path from 'node:path';
 
 const DEFAULT_BASE_REF = 'origin/main';
 const DEFAULT_REMOTE = 'origin';
-const DEFAULT_OUTPUT_JSON = 'artifacts/maintenance/branch-inventory.json';
-const DEFAULT_OUTPUT_MD = 'artifacts/maintenance/branch-inventory.md';
+const DEFAULT_OUTPUT_JSON = 'tmp/maintenance/branch-inventory.json';
+const DEFAULT_OUTPUT_MD = 'tmp/maintenance/branch-inventory.md';
 const DEFAULT_STALE_DAYS = 90;
 const DEFAULT_TOP = 30;
 
