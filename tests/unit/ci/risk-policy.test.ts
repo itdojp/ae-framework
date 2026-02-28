@@ -17,6 +17,12 @@ describe('risk-policy', () => {
     expect(inferred.highRiskPathMatches).toContain('.github/workflows/ci.yml');
   });
 
+  it('infers high risk when release policy is changed', () => {
+    const inferred = inferRiskLevel(policy, ['policy/release-policy.yml']);
+    expect(inferred.level).toBe(getRiskLabels(policy).high);
+    expect(inferred.highRiskPathMatches).toContain('policy/release-policy.yml');
+  });
+
   it('infers high risk when dependency manifests are changed', () => {
     const inferred = inferRiskLevel(policy, ['package.json']);
     expect(inferred.level).toBe(getRiskLabels(policy).high);

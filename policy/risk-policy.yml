@@ -31,6 +31,7 @@ low_risk:
 classification:
   high_risk_paths:
     - ".github/workflows/**"
+    - "policy/release-policy.yml"
     - "infra/**"
     - "terraform/**"
     - "k8s/**"

@@ -1,0 +1,226 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/release-policy.schema.json",
+  "title": "ae-release-policy-v1",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "version",
+    "updatedAt",
+    "owner",
+    "rolloutStrategy",
+    "healthSignals",
+    "rollbackPolicy",
+    "environments",
+    "requiredEvidence"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "ae-release-policy/v1"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 1
+    },
+    "rolloutStrategy": {
+      "type": "object",
+      "required": [
+        "mode",
+        "percentSteps",
+        "pauseSeconds",
+        "maxDurationSeconds"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "canary",
+            "progressive",
+            "blue-green"
+          ]
+        },
+        "percentSteps": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "pauseSeconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxDurationSeconds": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "healthSignals": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "metricKey",
+          "warningThreshold",
+          "criticalThreshold",
+          "comparison"
+        ],
+        "properties": {
+          "metricKey": {
+            "type": "string",
+            "minLength": 1
+          },
+          "warningThreshold": {
+            "type": "number"
+          },
+          "criticalThreshold": {
+            "type": "number"
+          },
+          "comparison": {
+            "type": "string",
+            "enum": [
+              "lte",
+              "gte"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "rollbackPolicy": {
+      "type": "object",
+      "required": [
+        "enabled",
+        "trigger",
+        "dryRun",
+        "hook"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "trigger": {
+          "type": "string",
+          "enum": [
+            "any-critical",
+            "all-critical",
+            "manual"
+          ]
+        },
+        "dryRun": {
+          "type": "boolean"
+        },
+        "hook": {
+          "type": "object",
+          "required": [
+            "type",
+            "timeoutSeconds"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "command",
+                "none"
+              ]
+            },
+            "command": {
+              "type": "string",
+              "minLength": 1
+            },
+            "timeoutSeconds": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "command"
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "command"
+                ]
+              },
+              "else": {
+                "not": {
+                  "required": [
+                    "command"
+                  ]
+                }
+              }
+            }
+          ],
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "environments": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "percentSteps",
+          "pauseSeconds",
+          "requiredEvidence"
+        ],
+        "properties": {
+          "percentSteps": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          "pauseSeconds": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "requiredEvidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "requiredEvidence": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    }
+  },
+  "additionalProperties": false
+}

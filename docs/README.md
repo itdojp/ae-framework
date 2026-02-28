@@ -60,6 +60,7 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - Natural Language Requirements: `phases/PHASE-2-NATURAL-LANGUAGE-REQUIREMENTS.md`
 - Runtime Conformance: `phases/PHASE-2-2-RUNTIME-CONFORMANCE.md`
 - Telemetry-as-Context (Trace Bundle ingest): `operate/telemetry-as-context.md`
+- Release engineering policy (rollout/rollback contract): `operate/release-engineering.md`
 - Integration Testing / E2E: `phases/PHASE-2-3-INTEGRATION-TESTING.md`
 - User Stories: `phases/PHASE-3-USER-STORIES-CREATION.md`
 - Validation: `phases/PHASE-4-VALIDATION.md`
@@ -196,6 +197,7 @@ ae-frameworkは、エージェント協調型のSDLCオーケストレーター�
 - [PHASE-2-NATURAL-LANGUAGE-REQUIREMENTS.md](./phases/PHASE-2-NATURAL-LANGUAGE-REQUIREMENTS.md) - 自然言語要件処理
 - **🆕 [PHASE-2-2-RUNTIME-CONFORMANCE.md](./phases/PHASE-2-2-RUNTIME-CONFORMANCE.md)** ⭐ **NEW** - リアルタイム適合性検証システム
 - **🆕 [telemetry-as-context.md](./operate/telemetry-as-context.md)** ⭐ **NEW** - Trace Bundle ingest による運用テレメトリの正規化
+- **🆕 [release-engineering.md](./operate/release-engineering.md)** ⭐ **NEW** - rollout/rollback を機械可読ポリシーとして扱う運用契約
 - **🆕 [PHASE-2-3-INTEGRATION-TESTING.md](./phases/PHASE-2-3-INTEGRATION-TESTING.md)** ⭐ **NEW** - 統合テストとE2Eテストシステム
 - [PHASE-3-USER-STORIES-CREATION.md](./phases/PHASE-3-USER-STORIES-CREATION.md) - ユーザーストーリー生成
 - [PHASE-4-VALIDATION.md](./phases/PHASE-4-VALIDATION.md) - 品質検証システム

@@ -1,0 +1,56 @@
+schemaVersion: "ae-release-policy/v1"
+version: 1
+updatedAt: "2026-02-28T00:00:00Z"
+owner: "ae-framework"
+
+rolloutStrategy:
+  mode: "canary"
+  percentSteps: [1, 5, 25, 50, 100]
+  pauseSeconds: 300
+  maxDurationSeconds: 7200
+
+healthSignals:
+  errorRate:
+    metricKey: "errorRate"
+    warningThreshold: 0.010
+    criticalThreshold: 0.020
+    comparison: "lte"
+  p95LatencyMs:
+    metricKey: "p95LatencyMs"
+    warningThreshold: 350
+    criticalThreshold: 500
+    comparison: "lte"
+  saturation:
+    metricKey: "saturation"
+    warningThreshold: 0.75
+    criticalThreshold: 0.90
+    comparison: "lte"
+
+rollbackPolicy:
+  enabled: true
+  trigger: "any-critical"
+  dryRun: true
+  hook:
+    type: "command"
+    command: "scripts/ci/automation-rollback.sh"
+    timeoutSeconds: 600
+
+requiredEvidence:
+  - "postDeployVerify"
+  - "qualityGates"
+  - "conformanceSummary"
+
+environments:
+  staging:
+    percentSteps: [10, 50, 100]
+    pauseSeconds: 120
+    requiredEvidence:
+      - "postDeployVerify"
+      - "qualityGates"
+  production:
+    percentSteps: [1, 5, 25, 50, 100]
+    pauseSeconds: 300
+    requiredEvidence:
+      - "postDeployVerify"
+      - "qualityGates"
+      - "conformanceSummary"
