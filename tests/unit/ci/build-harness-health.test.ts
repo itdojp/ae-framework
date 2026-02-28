@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildHarnessHealthReport,
   collapseChecksByName,
+  evaluateGateFromLocalArtifacts,
   evaluateGateFromChecks,
   renderMarkdown,
 } from '../../../scripts/ci/build-harness-health.mjs';
@@ -112,6 +113,10 @@ describe('build-harness-health', () => {
             },
           ],
         },
+        runtimeConformance: {
+          status: 'error',
+          reason: 'conformance verify failed',
+        },
         heavyTrendSummary: { highestSeverity: 'critical' },
       },
       extraReasons: ['synthetic reason'],
@@ -124,6 +129,8 @@ describe('build-harness-health', () => {
     expect(report.gates.ciExtended.status).toBe('fail');
     expect(report.recommendedLabels).toContain('enforce-artifacts');
     expect(report.recommendedLabels).toContain('enforce-context-pack');
+    expect(report.recommendedLabels).toContain('run-conformance');
+    expect(report.recommendedLabels).toContain('autopilot:on');
     expect(report.recommendedLabels).toContain('run-ci-extended');
     expect(report.recommendedLabels).not.toContain('enforce-testing');
     expect(report.recommendedContextChanges).toHaveLength(1);
@@ -157,6 +164,7 @@ describe('build-harness-health', () => {
         testingRepro: null,
         contextPackDeps: null,
         contextPackSuggestions: null,
+        runtimeConformance: null,
         heavyTrendSummary: null,
       },
       extraReasons: ['PR checks could not be loaded via gh: rate limited'],
@@ -164,6 +172,51 @@ describe('build-harness-health', () => {
 
     expect(report.severity).toBe('warn');
     expect(report.reasons[0]).toContain('rate limited');
+  });
+
+  it('evaluates runtime conformance local artifact warn/ok paths', () => {
+    const warnGate = evaluateGateFromLocalArtifacts(
+      { id: 'runtimeConformance' },
+      { runtimeConformance: { status: 'degraded' } },
+    );
+    expect(warnGate.status).toBe('warn');
+    expect(warnGate.reasons[0]).toContain('degraded');
+
+    const okGate = evaluateGateFromLocalArtifacts(
+      { id: 'runtimeConformance' },
+      { runtimeConformance: { status: 'success' } },
+    );
+    expect(okGate.status).toBe('ok');
+  });
+
+  it('does not classify PR Self-Heal checks as runtime conformance', () => {
+    const report = buildHarnessHealthReport({
+      repo: 'itdojp/ae-framework',
+      prNumber: 2287,
+      workflow: 'PR Maintenance',
+      runId: 101,
+      commitSha: 'def456',
+      checkRuns: [
+        {
+          name: 'self-heal',
+          workflowName: 'PR Self-Heal',
+          status: 'COMPLETED',
+          conclusion: 'FAILURE',
+        },
+      ],
+      labels: [],
+      localArtifacts: {
+        schemaValidation: null,
+        testingRepro: null,
+        contextPackDeps: null,
+        contextPackSuggestions: null,
+        runtimeConformance: null,
+        heavyTrendSummary: null,
+      },
+      extraReasons: [],
+    });
+
+    expect(report.gates.runtimeConformance.status).toBe('skip');
   });
 
   it('renders detailed markdown with reasons and hints', () => {
@@ -177,6 +230,7 @@ describe('build-harness-health', () => {
           artifactsSchema: { status: 'ok', checkCount: 1 },
           testingHarness: { status: 'warn', checkCount: 2 },
           contextPack: { status: 'skip', checkCount: 0 },
+          runtimeConformance: { status: 'skip', checkCount: 0 },
           ciExtended: { status: 'ok', checkCount: 1 },
         },
         reasons: ['Testing harness: pending checks'],

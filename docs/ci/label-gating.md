@@ -50,7 +50,7 @@ Workflows
 
 Harness Health recommendation
 - `artifacts/ci/harness-health.json` emits `recommendedLabels` based on gate states.
-- Operators can apply suggested labels (`enforce-artifacts`, `enforce-testing`, `enforce-context-pack`, `run-ci-extended`) to tighten reruns only where needed.
+- Operators can apply suggested labels (`enforce-artifacts`, `enforce-testing`, `enforce-context-pack`, `run-conformance`, `run-ci-extended`, `autopilot:on`) to tighten reruns only where needed.
 
 Artifacts
 - `pnpm run artifacts:validate` always writes:
