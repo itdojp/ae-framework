@@ -152,7 +152,11 @@ try {
 
   const localRefs = parseRefs(localRefRaw, options.remote);
   const remoteRefs = parseRefs(remoteRefRaw, options.remote).filter(
-    (ref) => ref.name !== `${options.remote}/HEAD`,
+    (ref) =>
+      ref.name !== options.remote &&
+      ref.name !== `${options.remote}/HEAD` &&
+      ref.shortName !== '' &&
+      ref.shortName !== 'HEAD',
   );
 
   const mergedLocal = parseBranchList(mergedLocalRaw);
