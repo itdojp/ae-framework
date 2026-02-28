@@ -13,6 +13,12 @@ const DEFAULT_EXCLUDED_PREFIXES = [
   'tmp/',
   'temp-reports/',
 ];
+const GENERATED_INVENTORY_PATTERN =
+  /^docs\/maintenance\/todo-triage-inventory-\d{4}-\d{2}-\d{2}\.(csv|md)$/;
+const MARKER_PATTERN = /\b(TODO|FIXME|XXX)\b/g;
+const STRUCTURED_SUFFIX_PATTERN = /^\s*(?:\(#\d+\))?\s*:/;
+const ISSUE_REF_SUFFIX_PATTERN = /^\s*\(#\d+\)/;
+const COMMENT_PREFIX_PATTERN = /^\s*(?:\/\/|#(?!#)|\/\*|\*|--|;|<!--)/;
 
 const usage = () => {
   console.log(`Usage: node scripts/maintenance/extract-todo-markers.mjs [options]
@@ -68,9 +74,30 @@ const listTrackedFiles = () =>
     .map((item) => item.trim())
     .filter(Boolean);
 
+const toPosixPath = (filePath) => filePath.split(path.sep).join('/');
+
+const toRepoRelativePath = (filePath) => {
+  const relative = path.relative(process.cwd(), path.resolve(filePath));
+  return toPosixPath(relative);
+};
+
 const normalizeMarker = (line) => {
-  const match = line.match(/\b(TODO|FIXME|XXX)\b/i);
-  return match ? match[1].toUpperCase() : null;
+  for (const match of line.matchAll(MARKER_PATTERN)) {
+    const marker = match[1];
+    const index = match.index ?? -1;
+    if (index < 0) continue;
+
+    const suffix = line.slice(index + marker.length);
+    if (STRUCTURED_SUFFIX_PATTERN.test(suffix) || ISSUE_REF_SUFFIX_PATTERN.test(suffix)) {
+      return marker;
+    }
+
+    const prefix = line.slice(0, index);
+    if (COMMENT_PREFIX_PATTERN.test(prefix)) {
+      return marker;
+    }
+  }
+  return null;
 };
 
 const parseIssueRefs = (line) => {
@@ -99,8 +126,15 @@ const topLevelArea = (filePath) => {
 
 try {
   const options = parseArgs(process.argv.slice(2));
+  const excludedFiles = new Set([
+    toRepoRelativePath(options.outputCsv),
+    toRepoRelativePath(options.outputMd),
+  ]);
   const files = listTrackedFiles().filter(
-    (file) => !options.excludedPrefixes.some((prefix) => file.startsWith(prefix)),
+    (file) =>
+      !options.excludedPrefixes.some((prefix) => file.startsWith(prefix)) &&
+      !excludedFiles.has(file) &&
+      !GENERATED_INVENTORY_PATTERN.test(file),
   );
   const rows = [];
   let idCounter = 1;
