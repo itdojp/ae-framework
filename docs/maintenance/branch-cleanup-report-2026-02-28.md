@@ -43,6 +43,7 @@ pnpm run maintenance:branch:inventory
   - remote branches: 908
   - local merged safe-delete candidates: 2
   - remote merged safe-delete candidates: 0
+  - note: The remote branch delta (1168 -> 908, -260) is 1 greater than the documented remote deletions (100 + 159 = 259) because the latest inventory excludes the `origin` pseudo-ref.
 
 ## Failed branches and reasons
 
