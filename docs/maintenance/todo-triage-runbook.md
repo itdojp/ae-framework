@@ -18,6 +18,10 @@ Default outputs:
 - `tmp/maintenance/todo-markers.csv`
 - `tmp/maintenance/todo-markers-summary.md`
 
+For issue tracking snapshots, copy the generated files into dated docs under
+`docs/maintenance/` (for example, inventory and backlog markdown) and include
+links in `docs/README.md`.
+
 ## Triage dimensions
 
 Each row should be evaluated on these columns:
@@ -60,3 +64,5 @@ Escalate to individual issue when:
 - New TODO markers should include issue references when possible (for example `TODO(#2322): ...`).
 - Remove markers with `triage_status=drop` in the same PR whenever safe.
 - Avoid large mixed PRs; separate “inventory/triage” and “implementation/removal”.
+- Keep `triage_status=now` items linked to dedicated issues and record them in
+  a dated backlog snapshot.

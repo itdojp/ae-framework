@@ -1,76 +1,76 @@
 id,file,line,marker,text,issue_refs,has_issue_ref,area,triage_status,severity,impact,reproducibility,dependency,owner,due,notes
-TD-0001,api/public-types.d.ts,3568,TODO,* TODO: Replace with actual UI/UX generation agent when available,,no,api,,,,,,,,
-TD-0002,api/public-types.d.ts,24063,TODO,* TODO: Replace with import from '@ae-framework/spec-compiler' when available.,,no,api,,,,,,,,
-TD-0003,docs/maintenance/todo-triage-runbook.md,60,TODO,- New TODO markers should include issue references when possible (for example `TODO(#2322): ...`).,#2322,yes,docs,,,,,,,,
-TD-0004,docs/quality/self-improvement-summary.md,129,TODO,"// technical: spec.constraints?.allowed_packages || [], // TODO: Verify interface",,no,docs,,,,,,,,
-TD-0005,docs/quality/self-improvement-summary.md,140,TODO,"success: undefined, // TODO: Implement",,no,docs,,,,,,,,
-TD-0006,docs/quality/self-improvement-summary.md,141,TODO,"appliedActions: undefined, // TODO: Implement",,no,docs,,,,,,,,
-TD-0007,docs/quality/self-improvement-summary.md,142,TODO,"generatedFiles: undefined, // TODO: Implement",,no,docs,,,,,,,,
-TD-0008,docs/quality/self-improvement-summary.md,143,TODO,"backupFiles: undefined, // TODO: Implement",,no,docs,,,,,,,,
-TD-0009,docs/templates/spec-kit/property-template.md,19,TODO,// TODO: add fields,,no,docs,,,,,,,,
-TD-0010,docs/templates/spec-kit/property-template.md,26,TODO,"// TODO: call the system under test with `input`, e.g.:",,no,docs,,,,,,,,
-TD-0011,docs/templates/spec-kit/property-template.md,31,TODO,// TODO: replace with meaningful property-specific assertions,,no,docs,,,,,,,,
-TD-0012,docs/testing/integration-runtime-helpers.md,85,XXX,at new Timeout (node:internal/timers:XXX:YY),,no,docs,,,,,,,,
-TD-0013,docs/testing/integration-runtime-helpers.md,89,XXX,at createServer (node:net:XXX:YY),,no,docs,,,,,,,,
-TD-0014,scripts/ci/check-todo-issue-links.mjs,15,TODO,* Parse TODO/FIXME issue references from text.,,no,scripts,,,,,,,,
-TD-0015,scripts/codemods/ts-ignore-to-expect.mjs,12,TODO,"t = t.replace(/\/\/\s*@ts-ignore\b/g, '// @ts-expect-error -- TODO: describe why');",,no,scripts,,,,,,,,
-TD-0016,scripts/codex/generate-contract-tests.mjs,54,TODO,// TODO: Implement contract validation against OpenAPI schemas,,no,scripts,,,,,,,,
-TD-0017,scripts/codex/generate-contract-tests.mjs,62,TODO,// TODO: Implement E2E/integration test,,no,scripts,,,,,,,,
-TD-0018,scripts/hooks/pre-commit,85,TODO,# Check 3: Verify no TODO/FIXME in tests (indicating incomplete tests),,no,scripts,,,,,,,,
-TD-0019,scripts/maintenance/extract-todo-markers.mjs,266,TODO,- TODO: ${countsByMarker.TODO || 0},,no,scripts,,,,,,,,
-TD-0020,scripts/maintenance/extract-todo-markers.mjs,267,FIXME,- FIXME: ${countsByMarker.FIXME || 0},,no,scripts,,,,,,,,
-TD-0021,scripts/maintenance/extract-todo-markers.mjs,268,XXX,- XXX: ${countsByMarker.XXX || 0},,no,scripts,,,,,,,,
-TD-0022,spec/bdd/steps/template.steps.ts,6,TODO,// TODO: app 起動 or ヘルスチェック,,no,spec,,,,,,,,
-TD-0023,spec/bdd/steps/template.steps.ts,10,TODO,// TODO: テスト用の在庫初期化,,no,spec,,,,,,,,
-TD-0024,spec/bdd/steps/template.steps.ts,14,TODO,// TODO: POST /reservations を呼ぶ,,no,spec,,,,,,,,
-TD-0025,spec/bdd/steps/template.steps.ts,18,TODO,// TODO: ステータスとレスポンスボディを検証,,no,spec,,,,,,,,
-TD-0026,spec/bdd/steps/template.steps.ts,22,TODO,// TODO: DB もしくは in-memory state を確認,,no,spec,,,,,,,,
-TD-0027,src/agents/code-generation-language.ts,19,TODO,implementation += '    # TODO: Implement based on tests\n';,,no,src,,,,,,,,
-TD-0028,src/agents/code-generation-language.ts,46,TODO,implementation += '    # TODO: Implement based on tests\n';,,no,src,,,,,,,,
-TD-0029,src/agents/code-generation-language.ts,63,TODO,implementation += '  // TODO: Implement based on tests\n';,,no,src,,,,,,,,
-TD-0030,src/agents/code-generation-language.ts,78,TODO,implementation += '    # TODO: Implement based on tests\n';,,no,src,,,,,,,,
-TD-0031,src/agents/code-generation-language.ts,91,TODO,implementation += '    // TODO: Implement based on tests\n';,,no,src,,,,,,,,
-TD-0032,src/agents/code-generation-language.ts,105,TODO,implementation += '    // TODO: Implement based on tests\n';,,no,src,,,,,,,,
-TD-0033,src/agents/code-generation-openapi.ts,315,TODO,content += `    // TODO: actual implementation here\n`;,,no,src,,,,,,,,
-TD-0034,src/agents/contracts-generator.ts,21,TODO,const schema = `${zodImport}\n\nexport const InputSchema = z.any(); // TODO: derive from spec\nexport const OutputSchema = z.any(); // TODO: derive from spec\n`;,,no,src,,,,,,,,
-TD-0035,src/agents/contracts-generator.ts,24,TODO,"const prePost = `// Pre/Post conditions (skeleton)\nexport function pre(input: unknown): boolean {\n  // TODO: derive from formal spec properties\n  return true;\n}\n\nexport function post(input: unknown, output: unknown): boolean {\n  // TODO: derive from formal spec properties\n  return true;\n}\n`;",,no,src,,,,,,,,
-TD-0036,src/agents/contracts-generator.ts,27,TODO,const machine = `// State-machine skeleton (to be completed)\nexport type State = 'Init' | 'Next' | 'Done';\nexport function next(state: State): State {\n  // TODO: derive from Next relation\n  return state === 'Init' ? 'Next' : 'Done';\n}\n`;,,no,src,,,,,,,,
-TD-0037,src/agents/test-generation-agent.ts,379,TODO,test += `    # TODO: Implement test logic\n`;,,no,src,,,,,,,,
-TD-0038,src/agents/test-generation-agent.ts,383,TODO,test += `    # TODO: Implement test logic\n`;,,no,src,,,,,,,,
-TD-0039,src/cli/ae-fix-cli.ts,347,TODO,"// backupOriginals: !options.noBackup, // TODO: Verify property exists in interface",,no,src,,,,,,,,
-TD-0040,src/cli/guards/GuardRunner.ts,154,TODO,// const srcFiles = await glob('src/**/*.ts');  // TODO: use for timestamp comparison,,no,src,,,,,,,,
-TD-0041,src/cli/index.ts,13,TODO,// import { MetricsCollector } from './metrics/MetricsCollector.js';  // TODO: Enable when metrics tracking is implemented,,no,src,,,,,,,,
-TD-0042,src/cli/index.ts,77,TODO,// private metricsCollector: MetricsCollector;  // TODO: use for metrics tracking,,no,src,,,,,,,,
-TD-0043,src/cli/index.ts,95,TODO,// this.metricsCollector = new MetricsCollector(this.config);  // TODO: use for metrics tracking,,no,src,,,,,,,,
-TD-0044,src/commands/tdd/scaffold.ts,192,TODO,lines.push('    Given TODO: setup precondition');,,no,src,,,,,,,,
-TD-0045,src/commands/tdd/scaffold.ts,193,TODO,lines.push('    When TODO: execute behavior');,,no,src,,,,,,,,
-TD-0046,src/commands/tdd/scaffold.ts,232,TODO,`// TODO: Replace this placeholder with meaningful properties.\n` +,,no,src,,,,,,,,
-TD-0047,src/commands/tdd/scaffold.ts,237,TODO,`        // TODO: Replace fc.anything() with domain-specific arbitrary.\n` +,,no,src,,,,,,,,
-TD-0048,src/commands/tdd/scaffold.ts,240,TODO,`          // TODO: Replace with assertions that encode your invariant.\n` +,,no,src,,,,,,,,
-TD-0049,src/commands/tdd/scaffold.ts,256,TODO,`// TODO: Replace placeholders with real API/service calls and assertions.\n` +,,no,src,,,,,,,,
-TD-0050,src/commands/tdd/scaffold.ts,261,TODO,`    // TODO: Arrange request/input and invoke the target boundary.\n` +,,no,src,,,,,,,,
-TD-0051,src/commands/tdd/scaffold.ts,262,TODO,"`    // TODO: Assert status, schema, and side effects for this AC.\n` +",,no,src,,,,,,,,
-TD-0052,src/commands/tdd/scaffold.ts,275,TODO,`// TODO: Capture bug reproductions or golden cases tied to each AC.\n` +,,no,src,,,,,,,,
-TD-0053,src/commands/tdd/scaffold.ts,280,TODO,`    // TODO: Reproduce prior failure or execute fixed scenario.\n` +,,no,src,,,,,,,,
-TD-0054,src/commands/tdd/scaffold.ts,281,TODO,`    // TODO: Assert that current behavior stays stable.\n` +,,no,src,,,,,,,,
-TD-0055,src/conformance/monitors/api-contract-monitor.ts,78,TODO,"networkCalls: 0, // TODO: Implement",,no,src,,,,,,,,
-TD-0056,src/conformance/monitors/api-contract-monitor.ts,79,TODO,"dbQueries: 0, // TODO: Implement",,no,src,,,,,,,,
-TD-0057,src/conformance/monitors/api-contract-monitor.ts,158,TODO,"// metrics: undefined, // TODO: Implement (removed as not part of interface)",,no,src,,,,,,,,
-TD-0058,src/conformance/monitors/api-contract-monitor.ts,159,TODO,"// logs: undefined, // TODO: Implement (removed as not part of interface)",,no,src,,,,,,,,
-TD-0059,src/conformance/monitors/api-contract-monitor.ts,160,TODO,"// stateSnapshot: undefined, // TODO: Implement (removed as not part of interface)",,no,src,,,,,,,,
-TD-0060,src/conformance/monitors/api-contract-monitor.ts,161,TODO,"// traces: undefined, // TODO: Implement (removed as not part of interface)",,no,src,,,,,,,,
-TD-0061,src/security/sbom-generator.ts,375,TODO,// Placeholder implementation - TODO: Replace with actual vulnerability scanning,,no,src,,,,,,,,
-TD-0062,src/self-improvement/phase4-code-generation.ts,214,TODO,fixCode = `// TODO: Fix ${errorCode} - ${description}`;,,no,src,,,,,,,,
-TD-0063,src/self-improvement/phase4-code-generation.ts,241,TODO,"return problemLine.replace(/(\w+)\s*$/, '$1 as any // TODO: Fix type compatibility');",,no,src,,,,,,,,
-TD-0064,src/self-improvement/phase4-code-generation.ts,243,TODO,return problemLine + ' // TODO: Address type compatibility';,,no,src,,,,,,,,
-TD-0065,src/self-improvement/phase4-code-generation.ts,252,TODO,return problemLine + ' // TODO: Update interface or remove invalid property';,,no,src,,,,,,,,
-TD-0066,src/self-improvement/phase4-code-generation.ts,273,TODO,"const additions = props.map(prop => `  ${prop.trim()}: undefined, // TODO: Implement`).join('\n');",,no,src,,,,,,,,
-TD-0067,src/self-improvement/phase4-code-generation.ts,276,TODO,return problemLine + ' // TODO: Add missing properties';,,no,src,,,,,,,,
-TD-0068,src/self-improvement/phase5-verification-final.ts,298,TODO,const fixedLine = `    // ${problemLine.trim()} // TODO: Verify property exists in interface`;,,no,src,,,,,,,,
-TD-0069,src/self-improvement/phase5-verification-final.ts,333,TODO,"const additions = props.map(prop => `  ${prop}: undefined, // TODO: Implement`).join('\n');",,no,src,,,,,,,,
-TD-0070,src/testing/repro-writer.ts,42,TODO,"`test(${testNameLiteral}, () => { process.env.AE_SEED=${seedLiteral}; const data = JSON.parse(readFileSync(join(__dirname, ${jsonFilenameLiteral}), 'utf8')); /* TODO: call SUT(data) */ });`,",,no,src,,,,,,,,
-TD-0071,tests/commands/tests-scaffold.test.ts,72,TODO,expect(property).toContain('TODO: Replace this placeholder with meaningful properties.');,,no,tests,,,,,,,,
-TD-0072,tests/unit/docs/check-doc-todo-markers.test.ts,32,TODO,"'// TODO: this is code and ignored',",,no,tests,,,,,,,,
-TD-0073,tests/unit/scripts/extract-todo-markers.test.ts,11,TODO,"expect(normalizeMarker('// TODO: implement this', 'src/main.ts')).toBe('TODO');",,no,tests,,,,,,,,
-TD-0074,tests/unit/scripts/extract-todo-markers.test.ts,12,TODO,"expect(normalizeMarker('TODO(#2322) handle follow-up', 'src/main.ts')).toBe('TODO');",#2322,yes,tests,,,,,,,,
-TD-0075,tests/unit/scripts/extract-todo-markers.test.ts,19,TODO,"expect(normalizeMarker('// TODO: placeholder in fenced code', 'docs/template.md')).toBe('TODO');",,no,tests,,,,,,,,
+TD-0001,api/public-types.d.ts,3568,TODO,* TODO: Replace with actual UI/UX generation agent when available,,no,api,planned,S3,quality,deterministic,internal,core,2026-04-30,public API type sync backlog
+TD-0002,api/public-types.d.ts,24063,TODO,* TODO: Replace with import from '@ae-framework/spec-compiler' when available.,,no,api,planned,S3,quality,deterministic,internal,core,2026-04-30,public API type sync backlog
+TD-0003,docs/maintenance/todo-triage-runbook.md,60,TODO,- New TODO markers should include issue references when possible (for example `TODO(#2322): ...`).,#2322,yes,docs,planned,S4,docs,deterministic,none,docs,,"process rule, keep with issue reference"
+TD-0004,docs/quality/self-improvement-summary.md,129,TODO,"// technical: spec.constraints?.allowed_packages || [], // TODO: Verify interface",,no,docs,drop,S4,docs,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0005,docs/quality/self-improvement-summary.md,140,TODO,"success: undefined, // TODO: Implement",,no,docs,drop,S4,docs,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0006,docs/quality/self-improvement-summary.md,141,TODO,"appliedActions: undefined, // TODO: Implement",,no,docs,drop,S4,docs,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0007,docs/quality/self-improvement-summary.md,142,TODO,"generatedFiles: undefined, // TODO: Implement",,no,docs,drop,S4,docs,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0008,docs/quality/self-improvement-summary.md,143,TODO,"backupFiles: undefined, // TODO: Implement",,no,docs,drop,S4,docs,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0009,docs/templates/spec-kit/property-template.md,19,TODO,// TODO: add fields,,no,docs,drop,S4,docs,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0010,docs/templates/spec-kit/property-template.md,26,TODO,"// TODO: call the system under test with `input`, e.g.:",,no,docs,drop,S4,docs,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0011,docs/templates/spec-kit/property-template.md,31,TODO,// TODO: replace with meaningful property-specific assertions,,no,docs,drop,S4,docs,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0012,docs/testing/integration-runtime-helpers.md,85,XXX,at new Timeout (node:internal/timers:XXX:YY),,no,docs,drop,S4,docs,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0013,docs/testing/integration-runtime-helpers.md,89,XXX,at createServer (node:net:XXX:YY),,no,docs,drop,S4,docs,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0014,scripts/ci/check-todo-issue-links.mjs,15,TODO,* Parse TODO/FIXME issue references from text.,,no,scripts,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0015,scripts/codemods/ts-ignore-to-expect.mjs,12,TODO,"t = t.replace(/\/\/\s*@ts-ignore\b/g, '// @ts-expect-error -- TODO: describe why');",,no,scripts,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0016,scripts/codex/generate-contract-tests.mjs,54,TODO,// TODO: Implement contract validation against OpenAPI schemas,,no,scripts,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0017,scripts/codex/generate-contract-tests.mjs,62,TODO,// TODO: Implement E2E/integration test,,no,scripts,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0018,scripts/hooks/pre-commit,85,TODO,# Check 3: Verify no TODO/FIXME in tests (indicating incomplete tests),,no,scripts,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0019,scripts/maintenance/extract-todo-markers.mjs,266,TODO,- TODO: ${countsByMarker.TODO || 0},,no,scripts,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0020,scripts/maintenance/extract-todo-markers.mjs,267,FIXME,- FIXME: ${countsByMarker.FIXME || 0},,no,scripts,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0021,scripts/maintenance/extract-todo-markers.mjs,268,XXX,- XXX: ${countsByMarker.XXX || 0},,no,scripts,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0022,spec/bdd/steps/template.steps.ts,6,TODO,// TODO: app 起動 or ヘルスチェック,,no,spec,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0023,spec/bdd/steps/template.steps.ts,10,TODO,// TODO: テスト用の在庫初期化,,no,spec,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0024,spec/bdd/steps/template.steps.ts,14,TODO,// TODO: POST /reservations を呼ぶ,,no,spec,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0025,spec/bdd/steps/template.steps.ts,18,TODO,// TODO: ステータスとレスポンスボディを検証,,no,spec,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0026,spec/bdd/steps/template.steps.ts,22,TODO,// TODO: DB もしくは in-memory state を確認,,no,spec,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0027,src/agents/code-generation-language.ts,19,TODO,implementation += '    # TODO: Implement based on tests\n';,,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0028,src/agents/code-generation-language.ts,46,TODO,implementation += '    # TODO: Implement based on tests\n';,,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0029,src/agents/code-generation-language.ts,63,TODO,implementation += '  // TODO: Implement based on tests\n';,,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0030,src/agents/code-generation-language.ts,78,TODO,implementation += '    # TODO: Implement based on tests\n';,,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0031,src/agents/code-generation-language.ts,91,TODO,implementation += '    // TODO: Implement based on tests\n';,,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0032,src/agents/code-generation-language.ts,105,TODO,implementation += '    // TODO: Implement based on tests\n';,,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0033,src/agents/code-generation-openapi.ts,315,TODO,content += `    // TODO: actual implementation here\n`;,,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0034,src/agents/contracts-generator.ts,21,TODO,const schema = `${zodImport}\n\nexport const InputSchema = z.any(); // TODO: derive from spec\nexport const OutputSchema = z.any(); // TODO: derive from spec\n`;,,no,src,now,S2,quality,deterministic,internal,formal,2026-03-22,tracked by #2330
+TD-0035,src/agents/contracts-generator.ts,24,TODO,"const prePost = `// Pre/Post conditions (skeleton)\nexport function pre(input: unknown): boolean {\n  // TODO: derive from formal spec properties\n  return true;\n}\n\nexport function post(input: unknown, output: unknown): boolean {\n  // TODO: derive from formal spec properties\n  return true;\n}\n`;",,no,src,now,S2,quality,deterministic,internal,formal,2026-03-22,tracked by #2330
+TD-0036,src/agents/contracts-generator.ts,27,TODO,const machine = `// State-machine skeleton (to be completed)\nexport type State = 'Init' | 'Next' | 'Done';\nexport function next(state: State): State {\n  // TODO: derive from Next relation\n  return state === 'Init' ? 'Next' : 'Done';\n}\n`;,,no,src,now,S2,quality,deterministic,internal,formal,2026-03-22,tracked by #2330
+TD-0037,src/agents/test-generation-agent.ts,379,TODO,test += `    # TODO: Implement test logic\n`;,,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0038,src/agents/test-generation-agent.ts,383,TODO,test += `    # TODO: Implement test logic\n`;,,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0039,src/cli/ae-fix-cli.ts,347,TODO,"// backupOriginals: !options.noBackup, // TODO: Verify property exists in interface",,no,src,planned,S4,devex,deterministic,internal,cli,2026-05-15,non-blocking CLI cleanup
+TD-0040,src/cli/guards/GuardRunner.ts,154,TODO,// const srcFiles = await glob('src/**/*.ts');  // TODO: use for timestamp comparison,,no,src,planned,S4,devex,deterministic,internal,cli,2026-05-15,non-blocking CLI cleanup
+TD-0041,src/cli/index.ts,13,TODO,// import { MetricsCollector } from './metrics/MetricsCollector.js';  // TODO: Enable when metrics tracking is implemented,,no,src,planned,S4,devex,deterministic,internal,cli,2026-05-15,non-blocking CLI cleanup
+TD-0042,src/cli/index.ts,77,TODO,// private metricsCollector: MetricsCollector;  // TODO: use for metrics tracking,,no,src,planned,S4,devex,deterministic,internal,cli,2026-05-15,non-blocking CLI cleanup
+TD-0043,src/cli/index.ts,95,TODO,// this.metricsCollector = new MetricsCollector(this.config);  // TODO: use for metrics tracking,,no,src,planned,S4,devex,deterministic,internal,cli,2026-05-15,non-blocking CLI cleanup
+TD-0044,src/commands/tdd/scaffold.ts,192,TODO,lines.push('    Given TODO: setup precondition');,,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0045,src/commands/tdd/scaffold.ts,193,TODO,lines.push('    When TODO: execute behavior');,,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0046,src/commands/tdd/scaffold.ts,232,TODO,`// TODO: Replace this placeholder with meaningful properties.\n` +,,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0047,src/commands/tdd/scaffold.ts,237,TODO,`        // TODO: Replace fc.anything() with domain-specific arbitrary.\n` +,,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0048,src/commands/tdd/scaffold.ts,240,TODO,`          // TODO: Replace with assertions that encode your invariant.\n` +,,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0049,src/commands/tdd/scaffold.ts,256,TODO,`// TODO: Replace placeholders with real API/service calls and assertions.\n` +,,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0050,src/commands/tdd/scaffold.ts,261,TODO,`    // TODO: Arrange request/input and invoke the target boundary.\n` +,,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0051,src/commands/tdd/scaffold.ts,262,TODO,"`    // TODO: Assert status, schema, and side effects for this AC.\n` +",,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0052,src/commands/tdd/scaffold.ts,275,TODO,`// TODO: Capture bug reproductions or golden cases tied to each AC.\n` +,,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0053,src/commands/tdd/scaffold.ts,280,TODO,`    // TODO: Reproduce prior failure or execute fixed scenario.\n` +,,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0054,src/commands/tdd/scaffold.ts,281,TODO,`    // TODO: Assert that current behavior stays stable.\n` +,,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0055,src/conformance/monitors/api-contract-monitor.ts,78,TODO,"networkCalls: 0, // TODO: Implement",,no,src,planned,S3,quality,deterministic,internal,conformance,2026-04-15,complete monitor metrics/evidence wiring
+TD-0056,src/conformance/monitors/api-contract-monitor.ts,79,TODO,"dbQueries: 0, // TODO: Implement",,no,src,planned,S3,quality,deterministic,internal,conformance,2026-04-15,complete monitor metrics/evidence wiring
+TD-0057,src/conformance/monitors/api-contract-monitor.ts,158,TODO,"// metrics: undefined, // TODO: Implement (removed as not part of interface)",,no,src,planned,S3,quality,deterministic,internal,conformance,2026-04-15,complete monitor metrics/evidence wiring
+TD-0058,src/conformance/monitors/api-contract-monitor.ts,159,TODO,"// logs: undefined, // TODO: Implement (removed as not part of interface)",,no,src,planned,S3,quality,deterministic,internal,conformance,2026-04-15,complete monitor metrics/evidence wiring
+TD-0059,src/conformance/monitors/api-contract-monitor.ts,160,TODO,"// stateSnapshot: undefined, // TODO: Implement (removed as not part of interface)",,no,src,planned,S3,quality,deterministic,internal,conformance,2026-04-15,complete monitor metrics/evidence wiring
+TD-0060,src/conformance/monitors/api-contract-monitor.ts,161,TODO,"// traces: undefined, // TODO: Implement (removed as not part of interface)",,no,src,planned,S3,quality,deterministic,internal,conformance,2026-04-15,complete monitor metrics/evidence wiring
+TD-0061,src/security/sbom-generator.ts,375,TODO,// Placeholder implementation - TODO: Replace with actual vulnerability scanning,,no,src,now,S2,security,deterministic,external,security,2026-03-15,tracked by #2329
+TD-0062,src/self-improvement/phase4-code-generation.ts,214,TODO,fixCode = `// TODO: Fix ${errorCode} - ${description}`;,,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0063,src/self-improvement/phase4-code-generation.ts,241,TODO,"return problemLine.replace(/(\w+)\s*$/, '$1 as any // TODO: Fix type compatibility');",,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0064,src/self-improvement/phase4-code-generation.ts,243,TODO,return problemLine + ' // TODO: Address type compatibility';,,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0065,src/self-improvement/phase4-code-generation.ts,252,TODO,return problemLine + ' // TODO: Update interface or remove invalid property';,,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0066,src/self-improvement/phase4-code-generation.ts,273,TODO,"const additions = props.map(prop => `  ${prop.trim()}: undefined, // TODO: Implement`).join('\n');",,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0067,src/self-improvement/phase4-code-generation.ts,276,TODO,return problemLine + ' // TODO: Add missing properties';,,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0068,src/self-improvement/phase5-verification-final.ts,298,TODO,const fixedLine = `    // ${problemLine.trim()} // TODO: Verify property exists in interface`;,,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0069,src/self-improvement/phase5-verification-final.ts,333,TODO,"const additions = props.map(prop => `  ${prop}: undefined, // TODO: Implement`).join('\n');",,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0070,src/testing/repro-writer.ts,42,TODO,"`test(${testNameLiteral}, () => { process.env.AE_SEED=${seedLiteral}; const data = JSON.parse(readFileSync(join(__dirname, ${jsonFilenameLiteral}), 'utf8')); /* TODO: call SUT(data) */ });`,",,no,src,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0071,tests/commands/tests-scaffold.test.ts,72,TODO,expect(property).toContain('TODO: Replace this placeholder with meaningful properties.');,,no,tests,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0072,tests/unit/docs/check-doc-todo-markers.test.ts,32,TODO,"'// TODO: this is code and ignored',",,no,tests,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0073,tests/unit/scripts/extract-todo-markers.test.ts,11,TODO,"expect(normalizeMarker('// TODO: implement this', 'src/main.ts')).toBe('TODO');",,no,tests,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0074,tests/unit/scripts/extract-todo-markers.test.ts,12,TODO,"expect(normalizeMarker('TODO(#2322) handle follow-up', 'src/main.ts')).toBe('TODO');",#2322,yes,tests,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
+TD-0075,tests/unit/scripts/extract-todo-markers.test.ts,19,TODO,"expect(normalizeMarker('// TODO: placeholder in fenced code', 'docs/template.md')).toBe('TODO');",,no,tests,drop,S4,devex,deterministic,none,,,intentional template/example marker; exclude from debt backlog
