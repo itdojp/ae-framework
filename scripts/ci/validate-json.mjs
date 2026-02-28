@@ -126,6 +126,11 @@ const checks = [
     schema: 'schema/change-package.schema.json',
     fixtures: ['fixtures/change-package/sample.change-package.json'],
     label: 'Change Package schema validation'
+  },
+  {
+    schema: 'schema/release-policy.schema.json',
+    fixtures: ['fixtures/release/sample.release-policy.json'],
+    label: 'Release policy schema validation'
   }
 ];
 
