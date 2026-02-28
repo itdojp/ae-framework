@@ -1,0 +1,13 @@
+{
+  "status": "pass",
+  "checks": [
+    {
+      "name": "smoke-api",
+      "status": "pass"
+    },
+    {
+      "name": "smoke-ui",
+      "status": "pass"
+    }
+  ]
+}

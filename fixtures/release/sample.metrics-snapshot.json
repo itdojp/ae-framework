@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-02-28T00:00:00Z",
+  "environment": "staging",
+  "metrics": {
+    "errorRate": 0.006,
+    "p95LatencyMs": 280,
+    "saturation": 0.62
+  }
+}

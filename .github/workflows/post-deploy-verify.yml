@@ -1,0 +1,194 @@
+name: post-deploy-verify
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        type: choice
+        required: true
+        default: staging
+        options:
+          - staging
+          - production
+      metrics_snapshot_path:
+        description: "Metrics snapshot JSON/YAML path"
+        type: string
+        required: true
+        default: fixtures/release/sample.metrics-snapshot.json
+      trace_bundle_path:
+        description: "Optional trace bundle JSON path"
+        type: string
+        required: false
+        default: ""
+      synthetic_checks_path:
+        description: "Optional synthetic checks JSON path"
+        type: string
+        required: false
+        default: fixtures/release/sample.synthetic-checks.json
+      fail_on_verify_fail:
+        description: "Fail workflow when verify result is fail"
+        type: boolean
+        required: true
+        default: true
+      run_rollback_hook_dry_run:
+        description: "Run rollback hook in dry-run mode when verify status=fail"
+        type: boolean
+        required: true
+        default: false
+      rollback_hook_args:
+        description: "Optional args appended to rollback hook command in dry-run mode"
+        type: string
+        required: false
+        default: ""
+
+permissions: read-all
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  post-deploy-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+
+      - name: Generate release plan
+        run: |
+          pnpm run ae-framework -- release plan \
+            --policy policy/release-policy.yml \
+            --environment "${{ inputs.environment }}" \
+            --output-dir artifacts/release
+
+      - name: Run post-deploy verify
+        run: |
+          set -euo pipefail
+
+          metrics_path="${{ inputs.metrics_snapshot_path }}"
+          if [ ! -f "$metrics_path" ]; then
+            echo "::error::metrics snapshot file not found: $metrics_path"
+            exit 1
+          fi
+
+          cmd=(pnpm run ae-framework -- release verify --policy policy/release-policy.yml --environment "${{ inputs.environment }}" --metrics "$metrics_path" --output-dir artifacts/release)
+
+          trace_path="${{ inputs.trace_bundle_path }}"
+          if [ -n "$trace_path" ]; then
+            if [ ! -f "$trace_path" ]; then
+              echo "::error::trace bundle file not found: $trace_path"
+              exit 1
+            fi
+            cmd+=(--trace-bundle "$trace_path")
+          fi
+
+          synthetic_path="${{ inputs.synthetic_checks_path }}"
+          if [ -n "$synthetic_path" ]; then
+            if [ ! -f "$synthetic_path" ]; then
+              echo "::error::synthetic checks file not found: $synthetic_path"
+              exit 1
+            fi
+            cmd+=(--synthetic-checks "$synthetic_path")
+          fi
+
+          printf '%s\n' "Running command: ${cmd[*]}"
+          "${cmd[@]}"
+
+      - name: Evaluate verify result
+        id: assess
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'artifacts/release/post-deploy-verify.json';
+          const verify = JSON.parse(fs.readFileSync(path, 'utf8'));
+          const summary = verify.summary && typeof verify.summary === 'object' ? verify.summary : {};
+          const missingEvidence = Array.isArray(summary.missingEvidence) ? summary.missingEvidence : [];
+          const outputLines = [
+            `status=${String(verify.status || 'unknown')}`,
+            `rollback_recommended=${verify.rollbackRecommended === true ? 'true' : 'false'}`,
+            `fail_signals=${Number(summary.failSignals || 0)}`,
+            `warn_signals=${Number(summary.warnSignals || 0)}`,
+            `unknown_signals=${Number(summary.unknownSignals || 0)}`,
+            `missing_evidence_count=${missingEvidence.length}`,
+            `missing_evidence=${missingEvidence.join(',')}`,
+            `rollback_hook_type=${String((verify.rollback && verify.rollback.hook && verify.rollback.hook.type) || '')}`,
+            `rollback_hook_command=${String((verify.rollback && verify.rollback.hook && verify.rollback.hook.command) || '')}`,
+          ];
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `${outputLines.join('\n')}\n`);
+          NODE
+
+      - name: Append Step Summary
+        if: always()
+        run: |
+          {
+            echo "## Post-deploy verify"
+            echo "- environment: ${{ inputs.environment }}"
+            echo "- status: ${{ steps.assess.outputs.status }}"
+            echo "- rollback recommended: ${{ steps.assess.outputs.rollback_recommended }}"
+            echo "- fail signals: ${{ steps.assess.outputs.fail_signals }}"
+            echo "- warn signals: ${{ steps.assess.outputs.warn_signals }}"
+            echo "- unknown signals: ${{ steps.assess.outputs.unknown_signals }}"
+            if [ "${{ steps.assess.outputs.missing_evidence_count }}" != "0" ]; then
+              echo "- missing evidence: ${{ steps.assess.outputs.missing_evidence }}"
+            else
+              echo "- missing evidence: (none)"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ -f artifacts/release/post-deploy-verify.md ]; then
+            {
+              echo ""
+              echo "### Detailed report"
+              cat artifacts/release/post-deploy-verify.md
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Rollback hook dry-run (optional)
+        if: ${{ steps.assess.outputs.status == 'fail' && inputs.run_rollback_hook_dry_run == true }}
+        run: |
+          set -euo pipefail
+          hook_command="${{ steps.assess.outputs.rollback_hook_command }}"
+          hook_args="${{ inputs.rollback_hook_args }}"
+          if [ -z "$hook_command" ]; then
+            echo "No rollback hook command is configured in release policy." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          full_command="$hook_command"
+          if [ -n "$hook_args" ]; then
+            full_command="$full_command $hook_args"
+          fi
+          echo "Executing rollback hook dry-run: AE_ROLLBACK_DRY_RUN=1 $full_command"
+          set +e
+          AE_ROLLBACK_DRY_RUN=1 bash -lc "$full_command"
+          hook_exit_code=$?
+          set -e
+          {
+            echo "### Rollback hook dry-run"
+            echo "- command: \`AE_ROLLBACK_DRY_RUN=1 $full_command\`"
+            echo "- exit code: $hook_exit_code"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$hook_exit_code" -ne 0 ]; then
+            echo "::warning::rollback hook dry-run returned non-zero exit code ($hook_exit_code)"
+          fi
+
+      - name: Upload release artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: post-deploy-verify-artifacts
+          path: artifacts/release/**
+          if-no-files-found: warn
+
+      - name: Enforce verify status gate
+        if: ${{ steps.assess.outputs.status == 'fail' && inputs.fail_on_verify_fail == true }}
+        run: |
+          echo "::error::post-deploy verify status is fail (rollbackRecommended=${{ steps.assess.outputs.rollback_recommended }})"
+          exit 1
