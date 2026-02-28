@@ -4,7 +4,9 @@
 
 - Issue: #2321
 - Repository: `itdojp/ae-framework`
-- Cleanup mode in this report: local safe-delete batch (`git branch -d`)
+- Cleanup mode in this report:
+  - local safe-delete batch (`git branch -d`)
+  - remote merged batch delete (`git push origin --delete`)
 
 ## Executed commands
 
@@ -13,19 +15,28 @@ pnpm run maintenance:branch:inventory
 node scripts/maintenance/branch-cleanup.mjs --scope both --max 50   # dry-run
 pnpm run maintenance:branch:cleanup:apply:local
 pnpm run maintenance:branch:inventory
+node scripts/maintenance/branch-cleanup.mjs --scope remote --max 100
+node scripts/maintenance/branch-cleanup.mjs --scope remote --max 100 --apply
+pnpm run maintenance:branch:inventory
 ```
 
 ## Result summary
 
 - Before cleanup (inventory):
   - local branches: 735
+  - remote branches: 1168
   - local merged safe-delete candidates: 39
+  - remote merged safe-delete candidates: 260
 - Apply result:
   - local deleted: 37
   - local failed: 2
+  - remote deleted: 100
+  - remote failed: 0
 - After cleanup (inventory):
   - local branches: 698
+  - remote branches: 1068
   - local merged safe-delete candidates: 2
+  - remote merged safe-delete candidates: 160
 
 ## Failed branches and reasons
 
@@ -43,6 +54,6 @@ pnpm run maintenance:branch:inventory
 
 ## Next steps
 
-- Remote merged branches are still numerous (current inventory candidate count: 260).
-- Execute remote cleanup in controlled batches after review/approval:
+- Remaining remote merged candidates: 160.
+- Continue remote cleanup in controlled batches:
   - `node scripts/maintenance/branch-cleanup.mjs --scope remote --max 100 --apply`
