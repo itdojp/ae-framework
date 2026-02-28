@@ -65,8 +65,14 @@ const parseArgs = (argv) => {
   return options;
 };
 
-const listTrackedFiles = () =>
-  execFileSync('git', ['ls-files', '-z'], {
+const getRepoRoot = () =>
+  execFileSync('git', ['rev-parse', '--show-toplevel'], {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  }).trim();
+
+const listTrackedFiles = (repoRoot) =>
+  execFileSync('git', ['-C', repoRoot, 'ls-files', '-z'], {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
   })
@@ -76,8 +82,8 @@ const listTrackedFiles = () =>
 
 const toPosixPath = (filePath) => filePath.split(path.sep).join('/');
 
-const toRepoRelativePath = (filePath) => {
-  const relative = path.relative(process.cwd(), path.resolve(filePath));
+const toRepoRelativePath = (repoRoot, filePath) => {
+  const relative = path.relative(repoRoot, path.resolve(filePath));
   return toPosixPath(relative);
 };
 
@@ -121,16 +127,18 @@ const csvEscape = (value) => {
 
 const topLevelArea = (filePath) => {
   const parts = filePath.split('/');
-  return parts.length > 0 ? parts[0] : '(root)';
+  if (parts.length <= 1) return '(root)';
+  return parts[0];
 };
 
 try {
+  const repoRoot = getRepoRoot();
   const options = parseArgs(process.argv.slice(2));
   const excludedFiles = new Set([
-    toRepoRelativePath(options.outputCsv),
-    toRepoRelativePath(options.outputMd),
+    toRepoRelativePath(repoRoot, options.outputCsv),
+    toRepoRelativePath(repoRoot, options.outputMd),
   ]);
-  const files = listTrackedFiles().filter(
+  const files = listTrackedFiles(repoRoot).filter(
     (file) =>
       !options.excludedPrefixes.some((prefix) => file.startsWith(prefix)) &&
       !excludedFiles.has(file) &&
@@ -142,7 +150,7 @@ try {
   for (const file of files) {
     let content;
     try {
-      content = fs.readFileSync(file, 'utf8');
+      content = fs.readFileSync(path.join(repoRoot, file), 'utf8');
     } catch {
       continue;
     }
