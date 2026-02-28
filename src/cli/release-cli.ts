@@ -133,9 +133,16 @@ export interface ReleaseVerifyResult {
 
 const DEFAULT_POLICY_PATH = 'policy/release-policy.yml';
 const DEFAULT_RELEASE_ARTIFACT_DIR = path.join('artifacts', 'release');
+const RELEASE_ROLLOUT_MODES = ['canary', 'progressive', 'blue-green'] as const;
+const RELEASE_SIGNAL_COMPARISONS = ['lte', 'gte'] as const;
+const ROLLBACK_TRIGGERS = ['any-critical', 'all-critical', 'manual'] as const;
+const ROLLBACK_HOOK_TYPES = ['command', 'none'] as const;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
+
+const isOneOf = <T extends readonly string[]>(value: string, candidates: T): value is T[number] =>
+  candidates.includes(value as T[number]);
 
 const toNumber = (value: unknown): number | null => {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -187,33 +194,61 @@ export const parseReleasePolicy = (input: unknown): ReleasePolicy => {
     throw new Error('release policy must be an object');
   }
 
-  const schemaVersion = String(input.schemaVersion ?? '');
+  const schemaVersion = String(input['schemaVersion'] ?? '');
   if (schemaVersion !== 'ae-release-policy/v1') {
     throw new Error(`unsupported schemaVersion: ${schemaVersion || '(empty)'}`);
   }
 
-  const rolloutStrategy = input.rolloutStrategy;
+  const rolloutStrategy = input['rolloutStrategy'];
   if (!isRecord(rolloutStrategy)) {
     throw new Error('rolloutStrategy is required');
   }
 
-  const rollbackPolicy = input.rollbackPolicy;
+  const rollbackPolicy = input['rollbackPolicy'];
   if (!isRecord(rollbackPolicy)) {
     throw new Error('rollbackPolicy is required');
   }
-  const hook = rollbackPolicy.hook;
+  const hook = rollbackPolicy['hook'];
   if (!isRecord(hook)) {
     throw new Error('rollbackPolicy.hook is required');
   }
 
-  const environmentsValue = input.environments;
+  const environmentsValue = input['environments'];
   if (!isRecord(environmentsValue)) {
     throw new Error('environments is required');
   }
 
-  const healthSignalsValue = input.healthSignals;
+  const healthSignalsValue = input['healthSignals'];
   if (!isRecord(healthSignalsValue)) {
     throw new Error('healthSignals is required');
+  }
+
+  const rolloutMode = String(rolloutStrategy['mode'] ?? 'canary');
+  if (!isOneOf(rolloutMode, RELEASE_ROLLOUT_MODES)) {
+    throw new Error(`rolloutStrategy.mode has invalid value: ${rolloutMode}`);
+  }
+
+  const rollbackTrigger = String(rollbackPolicy['trigger'] ?? 'manual');
+  if (!isOneOf(rollbackTrigger, ROLLBACK_TRIGGERS)) {
+    throw new Error(`rollbackPolicy.trigger has invalid value: ${rollbackTrigger}`);
+  }
+
+  const hookType = String(hook['type'] ?? 'none');
+  if (!isOneOf(hookType, ROLLBACK_HOOK_TYPES)) {
+    throw new Error(`rollbackPolicy.hook.type has invalid value: ${hookType}`);
+  }
+
+  const hookTimeoutSeconds = toNumber(hook['timeoutSeconds']);
+  if (hookTimeoutSeconds === null || !Number.isInteger(hookTimeoutSeconds) || hookTimeoutSeconds < 1) {
+    throw new Error('rollbackPolicy.hook.timeoutSeconds must be an integer >= 1');
+  }
+
+  const hookCommandValue = typeof hook['command'] === 'string' ? hook['command'].trim() : '';
+  if (hookType === 'command' && hookCommandValue === '') {
+    throw new Error('rollbackPolicy.hook.command is required when hook.type=command');
+  }
+  if (hookType === 'none' && hookCommandValue !== '') {
+    throw new Error('rollbackPolicy.hook.command must be empty when hook.type=none');
   }
 
   const parsedSignals: Record<string, ReleasePolicySignal> = {};
@@ -221,13 +256,18 @@ export const parseReleasePolicy = (input: unknown): ReleasePolicy => {
     if (!isRecord(rawSignal)) {
       throw new Error(`healthSignals.${name} must be an object`);
     }
-    const warningThreshold = toNumber(rawSignal.warningThreshold);
-    const criticalThreshold = toNumber(rawSignal.criticalThreshold);
-    const comparison = String(rawSignal.comparison ?? '') as SignalComparison;
-    const metricKey = String(rawSignal.metricKey ?? '').trim();
-    if (warningThreshold === null || criticalThreshold === null || !['lte', 'gte'].includes(comparison)) {
+    const warningThreshold = toNumber(rawSignal['warningThreshold']);
+    const criticalThreshold = toNumber(rawSignal['criticalThreshold']);
+    const comparisonValue = String(rawSignal['comparison'] ?? '');
+    const metricKey = String(rawSignal['metricKey'] ?? '').trim();
+    if (
+      warningThreshold === null ||
+      criticalThreshold === null ||
+      !isOneOf(comparisonValue, RELEASE_SIGNAL_COMPARISONS)
+    ) {
       throw new Error(`healthSignals.${name} has invalid threshold/comparison`);
     }
+    const comparison: SignalComparison = comparisonValue;
     if (!metricKey) {
       throw new Error(`healthSignals.${name}.metricKey is required`);
     }
@@ -247,43 +287,54 @@ export const parseReleasePolicy = (input: unknown): ReleasePolicy => {
     if (!isRecord(rawEnv)) {
       throw new Error(`environments.${name} must be an object`);
     }
-    const percentSteps = Array.isArray(rawEnv.percentSteps)
-      ? rawEnv.percentSteps.map((value) => toNumber(value)).filter((value): value is number => value !== null)
+    const percentSteps = Array.isArray(rawEnv['percentSteps'])
+      ? rawEnv['percentSteps']
+          .map((value) => toNumber(value))
+          .filter((value): value is number => value !== null)
       : [];
     parsedEnvironments[name] = {
       percentSteps,
-      pauseSeconds: toNumber(rawEnv.pauseSeconds) ?? 0,
-      requiredEvidence: normalizeStringArray(rawEnv.requiredEvidence),
+      pauseSeconds: toNumber(rawEnv['pauseSeconds']) ?? 0,
+      requiredEvidence: normalizeStringArray(rawEnv['requiredEvidence']),
     };
   }
 
+  const rolloutPercentSteps = Array.isArray(rolloutStrategy['percentSteps'])
+    ? rolloutStrategy['percentSteps']
+        .map((value) => toNumber(value))
+        .filter((value): value is number => value !== null)
+    : [];
+  const hookSettings: ReleasePolicyHook =
+    hookType === 'command'
+      ? {
+          type: 'command',
+          command: hookCommandValue,
+          timeoutSeconds: hookTimeoutSeconds,
+        }
+      : {
+          type: 'none',
+          timeoutSeconds: hookTimeoutSeconds,
+        };
+
   return {
     schemaVersion: 'ae-release-policy/v1',
-    version: toNumber(input.version) ?? 1,
-    updatedAt: String(input.updatedAt ?? ''),
-    owner: String(input.owner ?? ''),
+    version: toNumber(input['version']) ?? 1,
+    updatedAt: String(input['updatedAt'] ?? ''),
+    owner: String(input['owner'] ?? ''),
     rolloutStrategy: {
-      mode: String(rolloutStrategy.mode ?? 'canary') as ReleasePolicy['rolloutStrategy']['mode'],
-      percentSteps: Array.isArray(rolloutStrategy.percentSteps)
-        ? rolloutStrategy.percentSteps
-            .map((value) => toNumber(value))
-            .filter((value): value is number => value !== null)
-        : [],
-      pauseSeconds: toNumber(rolloutStrategy.pauseSeconds) ?? 0,
-      maxDurationSeconds: toNumber(rolloutStrategy.maxDurationSeconds) ?? 0,
+      mode: rolloutMode,
+      percentSteps: rolloutPercentSteps,
+      pauseSeconds: toNumber(rolloutStrategy['pauseSeconds']) ?? 0,
+      maxDurationSeconds: toNumber(rolloutStrategy['maxDurationSeconds']) ?? 0,
     },
     healthSignals: parsedSignals,
     rollbackPolicy: {
-      enabled: Boolean(rollbackPolicy.enabled),
-      trigger: String(rollbackPolicy.trigger ?? 'manual') as ReleasePolicy['rollbackPolicy']['trigger'],
-      dryRun: Boolean(rollbackPolicy.dryRun),
-      hook: {
-        type: String(hook.type ?? 'none') as ReleasePolicyHook['type'],
-        command: typeof hook.command === 'string' ? hook.command : undefined,
-        timeoutSeconds: toNumber(hook.timeoutSeconds) ?? 0,
-      },
+      enabled: Boolean(rollbackPolicy['enabled']),
+      trigger: rollbackTrigger,
+      dryRun: Boolean(rollbackPolicy['dryRun']),
+      hook: hookSettings,
     },
-    requiredEvidence: normalizeStringArray(input.requiredEvidence),
+    requiredEvidence: normalizeStringArray(input['requiredEvidence']),
     environments: parsedEnvironments,
   };
 };
@@ -329,8 +380,8 @@ const extractMetrics = (snapshot: unknown): Record<string, number> => {
       metrics[key] = asNumber;
     }
   }
-  if (isRecord(snapshot.metrics)) {
-    for (const [key, value] of Object.entries(snapshot.metrics)) {
+  if (isRecord(snapshot['metrics'])) {
+    for (const [key, value] of Object.entries(snapshot['metrics'])) {
       const asNumber = toNumber(value);
       if (asNumber !== null) {
         metrics[key] = asNumber;
@@ -418,9 +469,9 @@ export const evaluateReleaseVerify = (
   );
   const syntheticPass =
     isRecord(syntheticChecks) &&
-    (syntheticChecks.ok === true ||
-      syntheticChecks.status === 'pass' ||
-      syntheticChecks.status === 'success');
+    (syntheticChecks['ok'] === true ||
+      syntheticChecks['status'] === 'pass' ||
+      syntheticChecks['status'] === 'success');
 
   const evidence = requiredEvidence.map((name) => {
     if (name === 'postDeployVerify') {

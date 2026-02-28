@@ -15,7 +15,7 @@ Issue: `#2288`
 - Policy: `policy/release-policy.yml`
 - Schema: `schema/release-policy.schema.json`
 - Schema fixture: `fixtures/release/sample.release-policy.json`
-- Sample verify inputs:
+- Sample verify inputs（ローカル検証用。workflow_dispatch では利用不可）:
   - `fixtures/release/sample.metrics-snapshot.json`
   - `fixtures/release/sample.synthetic-checks.json`
 
@@ -98,8 +98,8 @@ CLI 実行例:
 ```bash
 gh workflow run post-deploy-verify.yml \
   -f environment=staging \
-  -f metrics_snapshot_path=fixtures/release/sample.metrics-snapshot.json \
-  -f synthetic_checks_path=fixtures/release/sample.synthetic-checks.json \
+  -f metrics_snapshot_path=artifacts/observability/metrics-snapshot.json \
+  -f synthetic_checks_path=artifacts/observability/synthetic-checks.json \
   -f fail_on_verify_fail=true \
   -f run_rollback_hook_dry_run=false
 ```

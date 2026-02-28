@@ -146,6 +146,25 @@ describe('release cli helpers', () => {
     );
   });
 
+  it('throws when rollback trigger value is invalid', () => {
+    const invalidPolicy = JSON.parse(JSON.stringify(basePolicy)) as Record<string, unknown>;
+    const rollback = invalidPolicy['rollbackPolicy'] as Record<string, unknown>;
+    rollback['trigger'] = 'any_critical';
+    expect(() => parseReleasePolicy(invalidPolicy)).toThrow(
+      'rollbackPolicy.trigger has invalid value: any_critical',
+    );
+  });
+
+  it('throws when command hook is missing command', () => {
+    const invalidPolicy = JSON.parse(JSON.stringify(basePolicy)) as Record<string, unknown>;
+    const rollback = invalidPolicy['rollbackPolicy'] as Record<string, unknown>;
+    const hook = rollback['hook'] as Record<string, unknown>;
+    hook['command'] = '';
+    expect(() => parseReleasePolicy(invalidPolicy)).toThrow(
+      'rollbackPolicy.hook.command is required when hook.type=command',
+    );
+  });
+
   it('returns warn when a metric is missing', () => {
     const result = evaluateReleaseVerify(
       basePolicy,

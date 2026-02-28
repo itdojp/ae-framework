@@ -15,7 +15,6 @@ on:
         description: "Metrics snapshot JSON/YAML path"
         type: string
         required: true
-        default: fixtures/release/sample.metrics-snapshot.json
       trace_bundle_path:
         description: "Optional trace bundle JSON path"
         type: string
@@ -25,7 +24,7 @@ on:
         description: "Optional synthetic checks JSON path"
         type: string
         required: false
-        default: fixtures/release/sample.synthetic-checks.json
+        default: ""
       fail_on_verify_fail:
         description: "Fail workflow when verify result is fail"
         type: boolean
@@ -78,6 +77,10 @@ jobs:
             echo "::error::metrics snapshot file not found: $metrics_path"
             exit 1
           fi
+          if [[ "$metrics_path" == fixtures/release/sample.* ]]; then
+            echo "::error::sample fixture is not allowed for metrics_snapshot_path in post-deploy verification: $metrics_path"
+            exit 1
+          fi
 
           cmd=(pnpm run ae-framework -- release verify --policy policy/release-policy.yml --environment "${{ inputs.environment }}" --metrics "$metrics_path" --output-dir artifacts/release)
 
@@ -94,6 +97,10 @@ jobs:
           if [ -n "$synthetic_path" ]; then
             if [ ! -f "$synthetic_path" ]; then
               echo "::error::synthetic checks file not found: $synthetic_path"
+              exit 1
+            fi
+            if [[ "$synthetic_path" == fixtures/release/sample.* ]]; then
+              echo "::error::sample fixture is not allowed for synthetic_checks_path in post-deploy verification: $synthetic_path"
               exit 1
             fi
             cmd+=(--synthetic-checks "$synthetic_path")
@@ -121,6 +128,7 @@ jobs:
             `missing_evidence=${missingEvidence.join(',')}`,
             `rollback_hook_type=${String((verify.rollback && verify.rollback.hook && verify.rollback.hook.type) || '')}`,
             `rollback_hook_command=${String((verify.rollback && verify.rollback.hook && verify.rollback.hook.command) || '')}`,
+            `rollback_hook_timeout_seconds=${Number((verify.rollback && verify.rollback.hook && verify.rollback.hook.timeoutSeconds) || 0)}`,
           ];
           fs.appendFileSync(process.env.GITHUB_OUTPUT, `${outputLines.join('\n')}\n`);
           NODE
@@ -155,24 +163,43 @@ jobs:
         if: ${{ steps.assess.outputs.status == 'fail' && inputs.run_rollback_hook_dry_run == true }}
         run: |
           set -euo pipefail
+          hook_type="${{ steps.assess.outputs.rollback_hook_type }}"
           hook_command="${{ steps.assess.outputs.rollback_hook_command }}"
+          hook_timeout_seconds="${{ steps.assess.outputs.rollback_hook_timeout_seconds }}"
           hook_args="${{ inputs.rollback_hook_args }}"
           if [ -z "$hook_command" ]; then
             echo "No rollback hook command is configured in release policy." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          full_command="$hook_command"
-          if [ -n "$hook_args" ]; then
-            full_command="$full_command $hook_args"
+          if [ "$hook_type" != "command" ]; then
+            echo "Rollback hook type is '$hook_type', not 'command'; skipping rollback hook execution." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
           fi
-          echo "Executing rollback hook dry-run: AE_ROLLBACK_DRY_RUN=1 $full_command"
+
+          if ! [[ "$hook_timeout_seconds" =~ ^[0-9]+$ ]] || [ "$hook_timeout_seconds" -lt 1 ]; then
+            hook_timeout_seconds=600
+          fi
+
+          cmd=("$hook_command")
+          if [ -n "$hook_args" ]; then
+            for arg in $hook_args; do
+              if [[ ! "$arg" =~ ^[A-Za-z0-9._:/=,+@-]+$ ]]; then
+                echo "::error::rollback_hook_args contains unsupported token: $arg"
+                exit 1
+              fi
+              cmd+=("$arg")
+            done
+          fi
+
+          printf -v rendered_command '%q ' "${cmd[@]}"
+          echo "Executing rollback hook dry-run: AE_ROLLBACK_DRY_RUN=1 timeout ${hook_timeout_seconds}s ${rendered_command}"
           set +e
-          AE_ROLLBACK_DRY_RUN=1 bash -lc "$full_command"
+          AE_ROLLBACK_DRY_RUN=1 timeout "${hook_timeout_seconds}s" "${cmd[@]}"
           hook_exit_code=$?
           set -e
           {
             echo "### Rollback hook dry-run"
-            echo "- command: \`AE_ROLLBACK_DRY_RUN=1 $full_command\`"
+            echo "- command: \`AE_ROLLBACK_DRY_RUN=1 timeout ${hook_timeout_seconds}s ${rendered_command}\`"
             echo "- exit code: $hook_exit_code"
           } >> "$GITHUB_STEP_SUMMARY"
           if [ "$hook_exit_code" -ne 0 ]; then
