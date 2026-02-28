@@ -1,7 +1,7 @@
 id,file,line,marker,text,issue_refs,has_issue_ref,area,triage_status,severity,impact,reproducibility,dependency,owner,due,notes
 TD-0001,api/public-types.d.ts,3568,TODO,* TODO: Replace with actual UI/UX generation agent when available,,no,api,planned,S3,quality,deterministic,internal,core,2026-04-30,public API type sync backlog
 TD-0002,api/public-types.d.ts,24063,TODO,* TODO: Replace with import from '@ae-framework/spec-compiler' when available.,,no,api,planned,S3,quality,deterministic,internal,core,2026-04-30,public API type sync backlog
-TD-0003,docs/maintenance/todo-triage-runbook.md,60,TODO,- New TODO markers should include issue references when possible (for example `TODO(#2322): ...`).,#2322,yes,docs,planned,S4,docs,deterministic,none,docs,,"process rule, keep with issue reference"
+TD-0003,docs/maintenance/todo-triage-runbook.md,64,TODO,- New TODO markers should include issue references when possible (for example `TODO(#2322): ...`).,#2322,yes,docs,planned,S4,docs,deterministic,none,docs,,"process rule, keep with issue reference"
 TD-0004,docs/quality/self-improvement-summary.md,129,TODO,"// technical: spec.constraints?.allowed_packages || [], // TODO: Verify interface",,no,docs,drop,S4,docs,deterministic,none,,,intentional template/example marker; exclude from debt backlog
 TD-0005,docs/quality/self-improvement-summary.md,140,TODO,"success: undefined, // TODO: Implement",,no,docs,drop,S4,docs,deterministic,none,,,intentional template/example marker; exclude from debt backlog
 TD-0006,docs/quality/self-improvement-summary.md,141,TODO,"appliedActions: undefined, // TODO: Implement",,no,docs,drop,S4,docs,deterministic,none,,,intentional template/example marker; exclude from debt backlog

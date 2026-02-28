@@ -18,9 +18,10 @@ Default outputs:
 - `tmp/maintenance/todo-markers.csv`
 - `tmp/maintenance/todo-markers-summary.md`
 
-For issue tracking snapshots, copy the generated files into dated docs under
-`docs/maintenance/` (for example, inventory and backlog markdown) and include
-links in `docs/README.md`.
+For issue tracking snapshots, copy the triaged `todo-markers.csv` (and optionally
+the generated `todo-markers-summary.md`) into dated docs under `docs/maintenance/`,
+add a separate curated backlog snapshot markdown file, and include links in
+`docs/README.md`.
 
 ## Triage dimensions
 
