@@ -24,7 +24,9 @@ on:
 
 concurrency:
   group: policy-gate-${{ github.event.pull_request.number || github.event.pull_request_review.pull_request.number || github.event.workflow_run.pull_requests[0].number || github.event.workflow_run.id || inputs.pr_number || github.ref }}
-  cancel-in-progress: true
+  # This workflow is triggered by both pull_request and workflow_run events.
+  # Keeping in-progress runs prevents required-check deadlocks from cancelled runs.
+  cancel-in-progress: false
 
 permissions:
   contents: read
