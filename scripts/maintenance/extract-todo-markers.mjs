@@ -2,10 +2,11 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const DEFAULT_OUTPUT_CSV = 'tmp/maintenance/todo-markers.csv';
-const DEFAULT_OUTPUT_MD = 'tmp/maintenance/todo-markers-summary.md';
-const DEFAULT_EXCLUDED_PREFIXES = [
+export const DEFAULT_OUTPUT_CSV = 'tmp/maintenance/todo-markers.csv';
+export const DEFAULT_OUTPUT_MD = 'tmp/maintenance/todo-markers-summary.md';
+export const DEFAULT_EXCLUDED_PREFIXES = [
   'node_modules/',
   'dist/',
   'coverage/',
@@ -13,14 +14,15 @@ const DEFAULT_EXCLUDED_PREFIXES = [
   'tmp/',
   'temp-reports/',
 ];
-const GENERATED_INVENTORY_PATTERN =
+export const GENERATED_INVENTORY_PATTERN =
   /^docs\/maintenance\/todo-triage-inventory-\d{4}-\d{2}-\d{2}\.(csv|md)$/;
-const MARKER_PATTERN = /\b(TODO|FIXME|XXX)\b/g;
+export const MARKER_PATTERN = /\b(TODO|FIXME|XXX)\b/g;
 const STRUCTURED_SUFFIX_PATTERN = /^\s*(?:\(#\d+\))?\s*:/;
 const ISSUE_REF_SUFFIX_PATTERN = /^\s*\(#\d+\)/;
-const COMMENT_PREFIX_PATTERN = /^\s*(?:\/\/|#(?!#)|\/\*|\*|--|;|<!--)/;
+const NON_MARKDOWN_COMMENT_PREFIX_PATTERN = /^\s*(?:\/\/|\/\*|\*(?:\s|$)|#(?:\s|$)|--|;|<!--)/;
+const MARKDOWN_FILE_PATTERN = /\.mdx?$/i;
 
-const usage = () => {
+export const usage = () => {
   console.log(`Usage: node scripts/maintenance/extract-todo-markers.mjs [options]
 
 Options:
@@ -31,7 +33,7 @@ Options:
 `);
 };
 
-const parseArgs = (argv) => {
+export const parseArgs = (argv) => {
   const options = {
     outputCsv: DEFAULT_OUTPUT_CSV,
     outputMd: DEFAULT_OUTPUT_MD,
@@ -65,13 +67,13 @@ const parseArgs = (argv) => {
   return options;
 };
 
-const getRepoRoot = () =>
-  execFileSync('git', ['rev-parse', '--show-toplevel'], {
+export const getRepoRoot = (cwd = process.cwd()) =>
+  execFileSync('git', ['-C', cwd, 'rev-parse', '--show-toplevel'], {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
   }).trim();
 
-const listTrackedFiles = (repoRoot) =>
+export const listTrackedFiles = (repoRoot) =>
   execFileSync('git', ['-C', repoRoot, 'ls-files', '-z'], {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -80,16 +82,18 @@ const listTrackedFiles = (repoRoot) =>
     .map((item) => item.trim())
     .filter(Boolean);
 
-const toPosixPath = (filePath) => filePath.split(path.sep).join('/');
+export const toPosixPath = (filePath) => filePath.split(path.sep).join('/');
 
-const toRepoRelativePath = (repoRoot, filePath) => {
+export const toRepoRelativePath = (repoRoot, filePath) => {
   const relative = path.relative(repoRoot, path.resolve(filePath));
   return toPosixPath(relative);
 };
 
-const normalizeMarker = (line) => {
+export const isMarkdownFile = (filePath) => MARKDOWN_FILE_PATTERN.test(filePath);
+
+export const normalizeMarker = (line, filePath = '') => {
   for (const match of line.matchAll(MARKER_PATTERN)) {
-    const marker = match[1];
+    const marker = String(match[1] ?? '').toUpperCase();
     const index = match.index ?? -1;
     if (index < 0) continue;
 
@@ -98,15 +102,19 @@ const normalizeMarker = (line) => {
       return marker;
     }
 
+    if (isMarkdownFile(filePath)) {
+      continue;
+    }
+
     const prefix = line.slice(0, index);
-    if (COMMENT_PREFIX_PATTERN.test(prefix)) {
+    if (NON_MARKDOWN_COMMENT_PREFIX_PATTERN.test(prefix)) {
       return marker;
     }
   }
   return null;
 };
 
-const parseIssueRefs = (line) => {
+export const parseIssueRefs = (line) => {
   const refs = [];
   const regex = /#(\d+)/g;
   let match = regex.exec(line);
@@ -117,7 +125,7 @@ const parseIssueRefs = (line) => {
   return refs;
 };
 
-const csvEscape = (value) => {
+export const csvEscape = (value) => {
   const text = String(value ?? '');
   if (/[",\n]/.test(text)) {
     return `"${text.replace(/"/g, '""')}"`;
@@ -125,32 +133,33 @@ const csvEscape = (value) => {
   return text;
 };
 
-const topLevelArea = (filePath) => {
+export const topLevelArea = (filePath) => {
   const parts = filePath.split('/');
   if (parts.length <= 1) return '(root)';
   return parts[0];
 };
 
-try {
-  const repoRoot = getRepoRoot();
-  const options = parseArgs(process.argv.slice(2));
-  const excludedFiles = new Set([
-    toRepoRelativePath(repoRoot, options.outputCsv),
-    toRepoRelativePath(repoRoot, options.outputMd),
-  ]);
-  const files = listTrackedFiles(repoRoot).filter(
-    (file) =>
-      !options.excludedPrefixes.some((prefix) => file.startsWith(prefix)) &&
-      !excludedFiles.has(file) &&
-      !GENERATED_INVENTORY_PATTERN.test(file),
-  );
+export const shouldIncludeFile = (file, options) => {
+  if (options.excludedPrefixes.some((prefix) => file.startsWith(prefix))) {
+    return false;
+  }
+  if (options.excludedFiles.has(file)) {
+    return false;
+  }
+  if (GENERATED_INVENTORY_PATTERN.test(file)) {
+    return false;
+  }
+  return true;
+};
+
+export const collectRows = (files, repoRoot, readFileSync = fs.readFileSync) => {
   const rows = [];
   let idCounter = 1;
 
   for (const file of files) {
     let content;
     try {
-      content = fs.readFileSync(path.join(repoRoot, file), 'utf8');
+      content = readFileSync(path.join(repoRoot, file), 'utf8');
     } catch {
       continue;
     }
@@ -161,7 +170,7 @@ try {
     const lines = content.split('\n');
     for (let index = 0; index < lines.length; index += 1) {
       const rawLine = lines[index];
-      const marker = normalizeMarker(rawLine);
+      const marker = normalizeMarker(rawLine, file);
       if (!marker) continue;
 
       const issueRefs = parseIssueRefs(rawLine);
@@ -187,16 +196,10 @@ try {
     }
   }
 
-  const countsByMarker = rows.reduce((acc, row) => {
-    acc[row.marker] = (acc[row.marker] || 0) + 1;
-    return acc;
-  }, {});
-  const countsByArea = rows.reduce((acc, row) => {
-    acc[row.area] = (acc[row.area] || 0) + 1;
-    return acc;
-  }, {});
-  const sortedAreaEntries = Object.entries(countsByArea).sort((a, b) => b[1] - a[1]);
+  return rows;
+};
 
+export const renderCsv = (rows) => {
   const headers = [
     'id',
     'file',
@@ -237,13 +240,26 @@ try {
     ];
     csvLines.push(values.map(csvEscape).join(','));
   }
+  return `${csvLines.join('\n')}\n`;
+};
 
-  const markdown = `# TODO Marker Inventory Summary
+export const renderMarkdownSummary = (rows, files, excludedPrefixes, generatedAt = new Date().toISOString()) => {
+  const countsByMarker = rows.reduce((acc, row) => {
+    acc[row.marker] = (acc[row.marker] || 0) + 1;
+    return acc;
+  }, {});
+  const countsByArea = rows.reduce((acc, row) => {
+    acc[row.area] = (acc[row.area] || 0) + 1;
+    return acc;
+  }, {});
+  const sortedAreaEntries = Object.entries(countsByArea).sort((a, b) => b[1] - a[1]);
 
-- generatedAt: ${new Date().toISOString()}
+  return `# TODO Marker Inventory Summary
+
+- generatedAt: ${generatedAt}
 - tracked files scanned: ${files.length}
 - markers found: ${rows.length}
-- excluded prefixes: ${options.excludedPrefixes.join(', ')}
+- excluded prefixes: ${excludedPrefixes.join(', ')}
 
 ## Counts by marker
 
@@ -258,18 +274,51 @@ ${sortedAreaEntries
   .map(([area, count]) => `- ${area}: ${count}`)
   .join('\n')}
 `;
+};
+
+export const runExtractTodoMarkers = (argv = process.argv) => {
+  const repoRoot = getRepoRoot();
+  const options = parseArgs(argv.slice(2));
+  const excludedFiles = new Set([
+    toRepoRelativePath(repoRoot, options.outputCsv),
+    toRepoRelativePath(repoRoot, options.outputMd),
+  ]);
+  const files = listTrackedFiles(repoRoot).filter((file) =>
+    shouldIncludeFile(file, { excludedPrefixes: options.excludedPrefixes, excludedFiles }),
+  );
+  const rows = collectRows(files, repoRoot);
+  const csvContent = renderCsv(rows);
+  const markdown = renderMarkdownSummary(rows, files, options.excludedPrefixes);
 
   const csvPath = path.resolve(options.outputCsv);
   const mdPath = path.resolve(options.outputMd);
   fs.mkdirSync(path.dirname(csvPath), { recursive: true });
   fs.mkdirSync(path.dirname(mdPath), { recursive: true });
-  fs.writeFileSync(csvPath, `${csvLines.join('\n')}\n`, 'utf8');
+  fs.writeFileSync(csvPath, csvContent, 'utf8');
   fs.writeFileSync(mdPath, markdown, 'utf8');
 
   console.log(`[todo-extract] wrote ${csvPath}`);
   console.log(`[todo-extract] wrote ${mdPath}`);
   console.log(`[todo-extract] markers=${rows.length}`);
-} catch (error) {
-  console.error(`[todo-extract] ${error instanceof Error ? error.message : String(error)}`);
-  process.exit(1);
+  return { csvPath, mdPath, markerCount: rows.length };
+};
+
+export const isExecutedAsMain = (metaUrl, argvPath = process.argv[1]) => {
+  if (!argvPath || typeof argvPath !== 'string') {
+    return false;
+  }
+  try {
+    return path.resolve(fileURLToPath(metaUrl)) === path.resolve(argvPath);
+  } catch {
+    return false;
+  }
+};
+
+if (isExecutedAsMain(import.meta.url, process.argv[1])) {
+  try {
+    runExtractTodoMarkers(process.argv);
+  } catch (error) {
+    console.error(`[todo-extract] ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
+  }
 }
