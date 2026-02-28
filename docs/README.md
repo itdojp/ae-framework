@@ -31,6 +31,8 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 ### Maintenance
 - Repository layout policy: `maintenance/repo-layout-policy.md`
 - Code improvement plan: `maintenance/code-improvement-plan.md`
+- Branch cleanup runbook: `maintenance/branch-cleanup-runbook.md`
+- Branch cleanup report (2026-02-28): `maintenance/branch-cleanup-report-2026-02-28.md`
 - Phase 0 inventory snapshot: `maintenance/phase0-inventory-2026-02-17.md`
 
 ### Positioning maps (concept / flow / use cases)

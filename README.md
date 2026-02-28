@@ -58,6 +58,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 
 ### Documentation pointers
 - Overview & nav: `docs/README.md`, `docs/project-organization.md`
+- Maintenance operations: `docs/maintenance/branch-cleanup-runbook.md`
 - Current architecture snapshot: `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md`
 - Product fit (what to input/output, which tools to use): `docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`
 - CI/quality gates: `docs/ci/phase2-ci-hardening-outline.md`, `docs/ci/label-gating.md`, `docs/ci/harness-taxonomy.md`
