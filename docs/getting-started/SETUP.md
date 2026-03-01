@@ -375,6 +375,12 @@ pnpm tsx src/cli/conformance-cli.ts verify \
 # SBOM 生成（依存グラフ抽出はロックファイルが無い場合に警告）
 pnpm tsx src/cli/index.ts sbom generate --format json --output sbom.json --verbose
 
+# 脆弱性情報付き SBOM（OSV querybatch 連携）
+pnpm tsx src/cli/index.ts sbom generate --format json --include-vulns --output sbom.json --verbose
+# 連携先/タイムアウトの調整（任意）
+SBOM_OSV_ENDPOINT="https://api.osv.dev/v1/querybatch" SBOM_OSV_TIMEOUT_MS=10000 \
+  pnpm tsx src/cli/index.ts sbom generate --format json --include-vulns --output sbom.json
+
 # UI Scaffold（Dry Run）
 pnpm tsx src/cli/ui-scaffold-cli.ts generate \
   --state samples/phase-state.example.json \
@@ -387,6 +393,8 @@ pnpm tsx src/cli/benchmark-cli.ts run --ci --dry-run
 # セキュリティ設定の表示
 pnpm tsx src/cli/index.ts security show-config --env development
 ```
+
+`--include-vulns` は OSV API を参照します。レート制限・ネットワーク障害時は SBOM 生成自体は失敗させず、警告ログを出して `vulnerabilities: []` を返します。
 
 Regular updates are recommended to get the latest features and fixes.
 

@@ -385,6 +385,7 @@ ae setup list
 
 # SBOM
  ae sbom generate --format json --output sbom.json
+ ae sbom generate --format json --include-vulns --output sbom.json
  ae sbom validate sbom.json
  ae sbom compare base.json head.json
 
@@ -655,6 +656,7 @@ ae security show-config --env development
 
 # SBOM
 ae sbom generate --format json --output sbom.json
+ ae sbom generate --format json --include-vulns --output sbom.json
  ae sbom validate sbom.json
  ae sbom compare base.json head.json
 
