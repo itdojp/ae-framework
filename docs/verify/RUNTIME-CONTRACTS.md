@@ -21,6 +21,11 @@ This document outlines an opt-in path to generate runtime contracts (e.g., Zod s
 
 - Contracts are generated alongside code and can be enabled per feature.
 - Contracts validate inputs/outputs and pre/post conditions in runtime and can be wired into `verify` as an optional gate.
+- The generator supports explicit directives in the formal-spec text:
+  - `@input <type>` / `@output <type>` (`object|array|string|number|boolean|unknown`)
+  - `@pre <expr>` / `@post <expr>`
+  - `@state <A|B|C>` / `@transition <A -> B if condition>`
+- Generated files expose `generationWarnings` so unsupported directives or missing structure are explicit.
 
 ### How to use (initial)
 
@@ -32,27 +37,53 @@ This document outlines an opt-in path to generate runtime contracts (e.g., Zod s
 Minimal example (TypeScript):
 
 ```ts
-import { CodeGenerationAgent } from '@/agents/code-generation-agent';
-import { promises as fs } from 'fs';
+type GeneratedFile = { path: string; content: string };
 
-const agent = new CodeGenerationAgent();
-
-// 1) Generate runtime contracts from a formal spec string
-const formalSpec = `---- MODULE Sample ----`; // TLA+ or Alloy snippet
-const contractFiles = await agent.generateContractsSkeleton(formalSpec);
-for (const f of contractFiles) {
-  await fs.mkdir(require('path').dirname(f.path), { recursive: true });
-  await fs.writeFile(f.path, f.content);
+async function generateContractsSkeleton(formalSpec: string): Promise<GeneratedFile[]> {
+  void formalSpec;
+  return [{ path: 'src/contracts/sample.ts', content: '// generated' }];
 }
 
-// 2) Generate API code with contracts injected
-const openapi = '...'; // OpenAPI YAML/JSON string
-const generated = await agent.generateFromOpenAPI(openapi, {
-  framework: 'fastify',
-  includeValidation: true,
-  includeContracts: true,
-});
-// write generated.files ...
+async function generateFromOpenAPI(
+  openapi: string,
+  options: { framework: 'fastify'; includeValidation: boolean; includeContracts: boolean },
+): Promise<{ files: GeneratedFile[] }> {
+  void openapi;
+  void options;
+  return { files: [] };
+}
+
+async function main(): Promise<void> {
+  // 1) Generate runtime contracts from a formal spec string
+  const formalSpec = `---- MODULE Sample ----`; // TLA+ or Alloy snippet
+  const contractFiles = await generateContractsSkeleton(formalSpec);
+  for (const file of contractFiles) {
+    console.log(`write: ${file.path}`);
+  }
+
+  // 2) Generate API code with contracts injected
+  const openapi = '...'; // OpenAPI YAML/JSON string
+  const generated = await generateFromOpenAPI(openapi, {
+    framework: 'fastify',
+    includeValidation: true,
+    includeContracts: true,
+  });
+  console.log(generated.files.length);
+}
+
+void main();
+```
+
+Directive-oriented example:
+
+```text
+@input object
+@output number
+@pre input != null
+@post output != null
+@state Init|Validated|Done
+@transition Init -> Validated if input != null
+@transition Validated -> Done if output != null
 ```
 
 > This is an initial skeleton; future versions will extract specific properties.
