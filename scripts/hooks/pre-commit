@@ -65,7 +65,7 @@ else
         
         if [ -n "$missing_tests" ]; then
             echo "${RED}❌ Source files without corresponding tests:${NC}"
-            echo -e "$missing_tests"
+            printf '%b\n' "$missing_tests"
             echo ""
             echo "${YELLOW}💡 TDD Violation: Write tests before implementing code${NC}"
             exit 1
@@ -85,8 +85,8 @@ else
     # Check 3: Verify no unresolved task markers in staged test additions.
     staged_test_files=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(test|spec)\.ts$' || true)
     todo_marker='TO''DO'
-    marker_pattern="${todo_marker}\\|FIXME\\|SKIP\\|PENDING\\|NEXT\\|IMPLEMENT"
-    marker_allow_pattern='MARKER_OK\|TO''DO/FIXME/XXX'
+    marker_pattern="${todo_marker}|FIXME|SKIP|PENDING|NEXT|IMPLEMENT"
+    marker_allow_pattern="MARKER_OK|${todo_marker}/FIXME/XXX"
     
     if [ -n "$staged_test_files" ]; then
         marker_violations=""
@@ -101,7 +101,7 @@ else
 
         if [ -n "$marker_violations" ]; then
             echo "${RED}❌ Unresolved test markers found in staged additions:${NC}"
-            echo -e "$marker_violations"
+            printf '%b\n' "$marker_violations"
             echo ""
             echo "${YELLOW}💡 Resolve marker lines before commit.${NC}"
             echo "${YELLOW}   If the marker text is intentionally part of a parser/example test, add 'MARKER_OK' to that added line.${NC}"
@@ -129,7 +129,7 @@ if [ -n "$staged_files" ]; then
     
     if [ -n "$debug_found" ]; then
         echo "${YELLOW}⚠️  Debug statements found in:${NC}"
-        echo -e "$debug_found"
+        printf '%b\n' "$debug_found"
         echo ""
         echo "${YELLOW}Consider removing debug statements before committing${NC}"
         
@@ -150,23 +150,8 @@ if [ -n "$staged_files" ]; then
     fi
 fi
 
-# Check 5: Enforce commit message standards
-commit_msg_file="$1"
-if [ -n "$commit_msg_file" ] && [ -f "$commit_msg_file" ]; then
-    commit_msg=$(cat "$commit_msg_file")
-    
-    # Check for minimum commit message length
-    if [ ${#commit_msg} -lt 10 ]; then
-        echo "${RED}❌ Commit message too short (minimum 10 characters)${NC}"
-        echo "Current message: '$commit_msg'"
-        exit 1
-    fi
-    
-    # Check for TDD-related keywords in commit message
-    if echo "$commit_msg" | grep -qi "tdd\|test\|spec\|coverage"; then
-        echo "${GREEN}✅ TDD-related commit detected${NC}"
-    fi
-fi
+# Note: commit message validation was removed from here; pre-commit hooks receive no arguments.
+# Place minimum-length and keyword checks in a separate commit-msg hook instead.
 
 echo "${GREEN}🎉 All pre-commit checks passed!${NC}"
 echo "${BLUE}💡 Remember: Keep following TDD principles in your development${NC}"
