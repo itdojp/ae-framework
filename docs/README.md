@@ -221,6 +221,7 @@ Claude CodeやMCPとの統合
 - **[CLAUDE-CODE-TASK-TOOL-INTEGRATION.md](./integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)** ⭐ **重要** - Task Tool統合仕様
 - [CLAUDECODE-WORKFLOW.md](./integrations/CLAUDECODE-WORKFLOW.md) - Claude Codeワークフロー
 - [CODEX-INTEGRATION.md](./integrations/CODEX-INTEGRATION.md) - CodeX統合（PoC/MCP/Adapter）
+- [CODEX-CONTINUATION-CONTRACT.md](./integrations/CODEX-CONTINUATION-CONTRACT.md) - 継続実行 Contract（No Human Bottleneck v1）
 - [CODEX-VENDOR-NEUTRAL-BOUNDARY.md](./integrations/CODEX-VENDOR-NEUTRAL-BOUNDARY.md) - Codex連携の責務境界とVendor-neutral最小コア
 
 ### 📚 [reference/](./reference/) - リファレンス・API仕様
@@ -276,7 +277,7 @@ Claude CodeやMCPとの統合
 - [workflow-inventory-2026-02-17.md](./maintenance/workflow-inventory-2026-02-17.md) - Phase 3向けCI workflow棚卸し（目的/入力/重複/必須任意）
 
 ### 🧠 現行実装ベース全体像（推奨）
-- **[architecture/CURRENT-SYSTEM-OVERVIEW.md](./architecture/CURRENT-SYSTEM-OVERVIEW.md)** - 2026-02 時点の全体構成（CLI/CI/Formal/Artifacts）
+- **[architecture/CURRENT-SYSTEM-OVERVIEW.md](./architecture/CURRENT-SYSTEM-OVERVIEW.md)** - 2026-03 時点の全体構成（CLI/CI/Formal/Artifacts）
 - [product/OVERVIEW.md](./product/OVERVIEW.md) - 概要説明資料
 - [product/DETAIL.md](./product/DETAIL.md) - 詳細説明資料
 - [product/USER-MANUAL.md](./product/USER-MANUAL.md) - 利用マニュアル
