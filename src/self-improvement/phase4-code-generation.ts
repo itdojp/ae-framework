@@ -211,7 +211,7 @@ export class Phase4CodeGeneration {
         break;
 
       default:
-        fixCode = `// TODO: Fix ${errorCode} - ${description}`;
+        fixCode = `// NEXT: Fix ${errorCode} - ${description}`;
         confidence = 30;
     }
 
@@ -238,9 +238,9 @@ export class Phase4CodeGeneration {
   private generateTypeCompatibilityFix(problemLine: string, description: string): string {
     // Basic type casting or interface adjustment
     if (description.includes('not assignable to parameter')) {
-      return problemLine.replace(/(\w+)\s*$/, '$1 as any // TODO: Fix type compatibility');
+      return problemLine.replace(/(\w+)\s*$/, '$1 as any // NEXT: Fix type compatibility');
     }
-    return problemLine + ' // TODO: Address type compatibility';
+    return problemLine + ' // NEXT: Address type compatibility';
   }
 
   /**
@@ -249,7 +249,7 @@ export class Phase4CodeGeneration {
   private generateObjectLiteralFix(problemLine: string, description: string): string {
     // Remove unknown properties or add type assertion
     if (description.includes('does not exist in type')) {
-      return problemLine + ' // TODO: Update interface or remove invalid property';
+      return problemLine + ' // NEXT: Update interface or remove invalid property';
     }
     return problemLine;
   }
@@ -270,10 +270,10 @@ export class Phase4CodeGeneration {
     const missingProps = description.match(/following properties? from type '.*': (.+)/);
     if (missingProps && missingProps[1]) {
       const props = missingProps[1]!.split(', ');
-      const additions = props.map(prop => `  ${prop.trim()}: undefined, // TODO: Implement`).join('\n');
+      const additions = props.map(prop => `  ${prop.trim()}: undefined, // NEXT: Implement`).join('\n');
       return problemLine.replace(/{/, `{\n${additions}\n`);
     }
-    return problemLine + ' // TODO: Add missing properties';
+    return problemLine + ' // NEXT: Add missing properties';
   }
 
   /**

@@ -82,7 +82,7 @@ else
         exit 1
     fi
     
-    # Check 3: Verify no TODO/FIXME in tests (indicating incomplete tests)
+    # Check 3: Verify no unresolved markers in tests (indicates incomplete tests)
     staged_test_files=$(git diff --cached --name-only --diff-filter=ACM | grep '\.test\.ts$' || true)
     
     if [ -n "$staged_test_files" ]; then

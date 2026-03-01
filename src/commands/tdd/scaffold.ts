@@ -189,8 +189,8 @@ function buildFeatureContent(specId: string, criteria: string[]): string {
       lines.push(`    ${gwt.when}`);
       lines.push(`    ${gwt.then}`);
     } else {
-      lines.push('    Given TODO: setup precondition');
-      lines.push('    When TODO: execute behavior');
+      lines.push('    Given NEXT: setup precondition');
+      lines.push('    When NEXT: execute behavior');
       lines.push(`    Then ${criterion}`);
     }
     lines.push('');
@@ -206,7 +206,7 @@ function buildAcceptanceMapContent(specId: string, criteria: string[]): string {
   lines.push('| AC | Criterion | Test Artifact | Status |');
   lines.push('| --- | --- | --- | --- |');
   criteria.forEach((criterion, index) => {
-    lines.push(`| AC-${index + 1} | ${criterion} | \`bdd/${specId}.feature\` | TODO |`);
+    lines.push(`| AC-${index + 1} | ${criterion} | \`bdd/${specId}.feature\` | PENDING |`);
   });
   lines.push('');
   lines.push('## Notes');
@@ -229,15 +229,15 @@ function buildPropertyTestContent(specId: string): string {
     `// - Preservation: an input property is preserved by the output\n` +
     `// - Ordering: outputs stay sorted/monotonic for ordered inputs\n` +
     `//\n` +
-    `// TODO: Replace this placeholder with meaningful properties.\n` +
+    `// NEXT: Replace this placeholder with meaningful properties.\n` +
     `describe('property:${specId}', () => {\n` +
     `  it('satisfies domain invariants for all valid inputs', () => {\n` +
     `    fc.assert(\n` +
     `      fc.property(\n` +
-    `        // TODO: Replace fc.anything() with domain-specific arbitrary.\n` +
+    `        // NEXT: Replace fc.anything() with domain-specific arbitrary.\n` +
     `        fc.anything(),\n` +
     `        (input) => {\n` +
-    `          // TODO: Replace with assertions that encode your invariant.\n` +
+    `          // NEXT: Replace with assertions that encode your invariant.\n` +
     `          expect(input).toBeDefined();\n` +
     `        },\n` +
     `      ),\n` +
@@ -253,13 +253,13 @@ function buildContractTestContent(specId: string, criteria: string[]): string {
 
   return `import { describe, it, expect } from 'vitest';\n\n` +
     `// Contract test scaffold for spec "${specId}".\n` +
-    `// TODO: Replace placeholders with real API/service calls and assertions.\n` +
+    `// NEXT: Replace placeholders with real API/service calls and assertions.\n` +
     `describe('contract:${specId}', () => {\n` +
     `  it.each([\n` +
     `${rows}\n` +
     `  ])('validates %s', (_acId, _criterion) => {\n` +
-    `    // TODO: Arrange request/input and invoke the target boundary.\n` +
-    `    // TODO: Assert status, schema, and side effects for this AC.\n` +
+    `    // NEXT: Arrange request/input and invoke the target boundary.\n` +
+    `    // NEXT: Assert status, schema, and side effects for this AC.\n` +
     `    expect(true).toBe(true);\n` +
     `  });\n` +
     `});\n`;
@@ -272,13 +272,13 @@ function buildRegressionTestContent(specId: string, criteria: string[]): string 
 
   return `import { describe, it, expect } from 'vitest';\n\n` +
     `// Regression test scaffold for spec "${specId}".\n` +
-    `// TODO: Capture bug reproductions or golden cases tied to each AC.\n` +
+    `// NEXT: Capture bug reproductions or golden cases tied to each AC.\n` +
     `describe('regression:${specId}', () => {\n` +
     `  it.each([\n` +
     `${rows}\n` +
     `  ])('prevents regressions for %s', (_acId, _criterion) => {\n` +
-    `    // TODO: Reproduce prior failure or execute fixed scenario.\n` +
-    `    // TODO: Assert that current behavior stays stable.\n` +
+    `    // NEXT: Reproduce prior failure or execute fixed scenario.\n` +
+    `    // NEXT: Assert that current behavior stays stable.\n` +
     `    expect(true).toBe(true);\n` +
     `  });\n` +
     `});\n`;

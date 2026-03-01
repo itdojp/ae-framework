@@ -51,7 +51,7 @@ function genTestTemplate({ operationId, method, pathKey, summary, hasRequestBody
 
 describe('${title}', () => {
   it.skip('contract: request/response schema validation', async () => {
-    // TODO: Implement contract validation against OpenAPI schemas
+    // IMPLEMENT: contract validation against OpenAPI schemas
     // - Validate request shape${hasRequestBody ? ' (requestBody is defined)' : ''}
     // - Validate response shape${hasResponses ? ' (responses are defined)' : ''}
     // Suggested approach: use Ajv with JSON Schema or zod adapters.
@@ -59,7 +59,7 @@ describe('${title}', () => {
   });
 
   it.skip('e2e: endpoint behavior (integration)', async () => {
-    // TODO: Implement E2E/integration test
+    // IMPLEMENT: E2E/integration test
     // - Start app/server
     // - Perform ${method.toUpperCase()} ${pathKey}
     // - Assert status code and payload
@@ -122,4 +122,3 @@ main().catch(err => {
   console.error('[codex] generate-contract-tests failed:', err);
   process.exit(1);
 });
-

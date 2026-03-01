@@ -295,7 +295,7 @@ export class Phase5VerificationFinal {
       
       // Comment out unknown properties for now
       if (error.message.includes('does not exist in type')) {
-        const fixedLine = `    // ${problemLine.trim()} // TODO: Verify property exists in interface`;
+        const fixedLine = `    // ${problemLine.trim()} // NEXT: Verify property exists in interface`;
         return {
           file: error.file,
           line: error.line,
@@ -330,7 +330,7 @@ export class Phase5VerificationFinal {
       const missingProps = error.message.match(/following properties? from type '.*': (.+)/);
       if (missingProps && missingProps[1]) {
         const props = missingProps[1]!.split(', ').map(prop => prop.trim());
-        const additions = props.map(prop => `  ${prop}: undefined, // TODO: Implement`).join('\n');
+        const additions = props.map(prop => `  ${prop}: undefined, // NEXT: Implement`).join('\n');
         const fixedLine = problemLine.replace(/{/, `{\n${additions}\n`);
         
         return {

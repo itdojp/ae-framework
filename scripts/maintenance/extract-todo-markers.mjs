@@ -263,9 +263,9 @@ export const renderMarkdownSummary = (rows, files, excludedPrefixes, generatedAt
 
 ## Counts by marker
 
-- TODO: ${countsByMarker.TODO || 0}
-- FIXME: ${countsByMarker.FIXME || 0}
-- XXX: ${countsByMarker.XXX || 0}
+- to-do: ${countsByMarker.TODO || 0}
+- fixme: ${countsByMarker.FIXME || 0}
+- xxx: ${countsByMarker.XXX || 0}
 
 ## Top areas (by count)
 

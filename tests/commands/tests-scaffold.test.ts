@@ -69,7 +69,7 @@ describe('tests:scaffold helpers', () => {
     expect(feature).toContain('Then order is created');
 
     const property = files.find((f) => f.relativePath.endsWith('.property.test.ts'))?.content ?? '';
-    expect(property).toContain('TODO: Replace this placeholder with meaningful properties.');
+    expect(property).toContain('NEXT: Replace this placeholder with meaningful properties.');
 
     const contract = files.find((f) => f.relativePath.endsWith('.contract.test.ts'))?.content ?? '';
     expect(contract).toContain("describe('contract:checkout-flow', () => {");

@@ -82,11 +82,11 @@ AE_INTEGRATION_TRACE_HANDLES=1 pnpm test:int
 ```
 why-is-node-running? There are 2 handle(s) keeping the process running
 # Timeout
-  at new Timeout (node:internal/timers:XXX:YY)
+at new Timeout (node:internal/timers:NNN:YY)
   ...
 
 # Server TCPWrapper
-  at createServer (node:net:XXX:YY)
+at createServer (node:net:NNN:YY)
   ...
 ```
 

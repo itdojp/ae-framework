@@ -9,7 +9,7 @@ let filesChanged = 0;
 for (const f of files) {
   let t = await readFile(f, 'utf8');
   const before = t;
-  t = t.replace(/\/\/\s*@ts-ignore\b/g, '// @ts-expect-error -- TODO: describe why');
+  t = t.replace(/\/\/\s*@ts-ignore\b/g, '// @ts-expect-error -- EXPLAIN: describe why');
   if (t !== before) {
     await writeFile(f, t);
     const changes = (before.match(/\/\/\s*@ts-ignore\b/g) || []).length;

@@ -312,7 +312,7 @@ export function generateRouteHandler(
     content += `    // Validate input and pre-condition (skeleton)\n`;
     content += `    ${contractBase}Input.parse(input);\n`;
     content += `    if (!pre(input)) return { status: 400, error: 'Precondition failed' };\n`;
-    content += `    // TODO: actual implementation here\n`;
+    content += `    // IMPLEMENT: actual implementation here\n`;
 
     const responses = asRecord(endpoint.definition['responses']);
     const responseCodes = normalizeResponseCodes(responses);

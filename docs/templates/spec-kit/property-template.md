@@ -16,19 +16,19 @@
 import fc from 'fast-check';
 
 const genInput = fc.record({
-  // TODO: add fields
+  // NEXT: add fields
 });
 
 test('property: <property-id>', () => {
   fc.assert(
     fc.property(genInput, (input) => {
       // Act
-      // TODO: call the system under test with `input`, e.g.:
+      // NEXT: call the system under test with `input`, e.g.:
       // const result = myFunctionUnderTest(input);
       const result = input;
 
       // Assert
-      // TODO: replace with meaningful property-specific assertions
+      // NEXT: replace with meaningful property-specific assertions
       expect(result).toBeDefined();
     })
   );

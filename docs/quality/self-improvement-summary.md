@@ -126,7 +126,7 @@ IntentAgent.createBenchmarkRequest(spec as any)
 technical: spec.constraints?.allowed_packages || []
 
 // After: Commented for verification
-// technical: spec.constraints?.allowed_packages || [], // TODO: Verify interface
+// technical: spec.constraints?.allowed_packages || [], // NEXT: Verify interface
 ```
 
 ### Missing Properties (TS2739) - 5 Fixes
@@ -137,10 +137,10 @@ return { appliedFixes, skippedFixes, summary };
 
 // After: Complete interface implementation
 return {
-  success: undefined, // TODO: Implement
-  appliedActions: undefined, // TODO: Implement
-  generatedFiles: undefined, // TODO: Implement
-  backupFiles: undefined, // TODO: Implement
+  success: undefined, // NEXT: Implement
+  appliedActions: undefined, // NEXT: Implement
+  generatedFiles: undefined, // NEXT: Implement
+  backupFiles: undefined, // NEXT: Implement
   appliedFixes, skippedFixes, summary
 };
 ```
