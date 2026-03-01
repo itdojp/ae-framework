@@ -3,21 +3,21 @@
 Issue: #2359 (refreshed after #2333 close)
 
 ## Snapshot
-- Markers triaged: 19
+- Markers triaged: 13
 - now: 0
-- planned: 14
+- planned: 8
 - drop: 5
 
 ## Reduction
 - 2026-02-28 snapshot: 75 markers
-- 2026-03-01 snapshot: 19 markers
-- reduced: 56 markers (74.7%)
+- 2026-03-01 snapshot: 13 markers
+- reduced: 62 markers (82.7%)
 
 ## Immediate backlog (`triage_status=now`)
 - none
 
 ## Planned backlog by area (`triage_status=planned`)
-- src: 11
+- src: 5
 - api: 2
 - scripts: 1
 

@@ -9,15 +9,15 @@ import type {
   ConformanceRule,
   RuntimeContext,
   VerificationResult,
-  ViolationDetails,
-  ConformanceRuleCategory
+  ViolationDetails
 } from '../types.js';
 
 // Default empty structures for evidence objects
 const DEFAULT_METRICS = {};
-const DEFAULT_LOGS: string[] = [];
 const DEFAULT_STATE_SNAPSHOT = {};
 const DEFAULT_TRACES: unknown[] = [];
+const DB_QUERY_HEADER_KEYS = ['x-db-query-count', 'x-db-queries', 'x-sql-query-count'];
+const NETWORK_CALL_HEADER_KEYS = ['x-network-calls', 'x-http-calls'];
 
 interface APIContractSpec {
   method: string;
@@ -75,14 +75,15 @@ export class APIContractMonitor implements ConformanceMonitor {
           context,
           metadata: {},
           metrics: {
-            networkCalls: 0, // TODO: Implement
-            dbQueries: 0, // TODO: Implement
+            networkCalls: 0,
+            dbQueries: 0,
             executionTime: Date.now() - startTime
           }
         };
       }
 
-      const apiCall = data as APICallData;
+      const apiCall = data;
+      const resourceMetrics = this.deriveResourceMetrics(apiCall, context);
       
       // Get applicable rules for API contracts
       const applicableRules = Array.from(this.rules.values())
@@ -133,13 +134,15 @@ export class APIContractMonitor implements ConformanceMonitor {
         metrics: {
           executionTime: duration,
           memoryUsage: this.getMemoryUsage(),
-          networkCalls: 1,
-          dbQueries: 0
+          networkCalls: resourceMetrics.networkCalls,
+          dbQueries: resourceMetrics.dbQueries
         }
       };
 
     } catch (error) {
       const duration = Date.now() - startTime;
+      const apiCall = this.isAPICallData(data) ? data : null;
+      const resourceMetrics = this.deriveResourceMetrics(apiCall, context);
       
       return {
         id: resultId,
@@ -155,24 +158,31 @@ export class APIContractMonitor implements ConformanceMonitor {
           category: 'api_contract',
           severity: 'major',
           message: `API contract validation failed: ${error instanceof Error ? error.message : String(error)}`,
-          // metrics: undefined, // TODO: Implement (removed as not part of interface)
-          // logs: undefined, // TODO: Implement (removed as not part of interface)
-          // stateSnapshot: undefined, // TODO: Implement (removed as not part of interface)
-          // traces: undefined, // TODO: Implement (removed as not part of interface)
           context,
           stackTrace: error instanceof Error ? error.stack : undefined,
           evidence: { 
             inputData: data,
-            metrics: DEFAULT_METRICS,
-            logs: DEFAULT_LOGS,
-            stateSnapshot: DEFAULT_STATE_SNAPSHOT,
+            metrics: {
+              executionTime: duration,
+              networkCalls: resourceMetrics.networkCalls,
+              dbQueries: resourceMetrics.dbQueries
+            },
+            logs: [`API contract monitor error: ${error instanceof Error ? error.message : String(error)}`],
+            stateSnapshot: apiCall
+              ? {
+                  method: apiCall.method,
+                  path: apiCall.path,
+                  status: apiCall.response?.status,
+                  responseTime: apiCall.response?.time
+                }
+              : DEFAULT_STATE_SNAPSHOT,
             traces: DEFAULT_TRACES
           }
         },
         metrics: { 
           executionTime: duration,
-          networkCalls: 0,
-          dbQueries: 0
+          networkCalls: resourceMetrics.networkCalls,
+          dbQueries: resourceMetrics.dbQueries
         }
       };
     }
@@ -418,6 +428,80 @@ export class APIContractMonitor implements ConformanceMonitor {
    */
   private normalizePathPattern(path: string): string {
     return path.replace(/\/+/g, '/').replace(/\/$/, '') || '/';
+  }
+
+  /**
+   * Derive resource metrics from API telemetry and runtime context.
+   */
+  private deriveResourceMetrics(
+    apiCall: APICallData | null,
+    context: RuntimeContext
+  ): { networkCalls: number; dbQueries: number } {
+    if (!apiCall) {
+      return {
+        networkCalls: 0,
+        dbQueries: 0
+      };
+    }
+
+    const networkCalls =
+      this.parseHeadersCount(apiCall.response?.headers, NETWORK_CALL_HEADER_KEYS) ??
+      this.parseHeadersCount(apiCall.headers, NETWORK_CALL_HEADER_KEYS) ??
+      1;
+
+    const dbQueries =
+      this.parseHeadersCount(apiCall.response?.headers, DB_QUERY_HEADER_KEYS) ??
+      this.parseHeadersCount(apiCall.headers, DB_QUERY_HEADER_KEYS) ??
+      this.parseContextCount(context.metadata, ['dbQueries', 'dbQueryCount']) ??
+      0;
+
+    return { networkCalls, dbQueries };
+  }
+
+  private parseHeadersCount(
+    headers: Record<string, string> | undefined,
+    keys: string[]
+  ): number | undefined {
+    if (!headers) return undefined;
+    const normalizedHeaders = new Map(
+      Object.entries(headers).map(([headerKey, headerValue]) => [headerKey.toLowerCase(), headerValue])
+    );
+    for (const key of keys) {
+      const raw = normalizedHeaders.get(key.toLowerCase());
+      const parsed = this.parseNonNegativeInteger(raw);
+      if (parsed !== undefined) {
+        return parsed;
+      }
+    }
+    return undefined;
+  }
+
+  private parseContextCount(
+    metadata: RuntimeContext['metadata'],
+    keys: string[]
+  ): number | undefined {
+    if (!metadata || typeof metadata !== 'object') return undefined;
+    const record = metadata;
+    for (const key of keys) {
+      const parsed = this.parseNonNegativeInteger(record[key]);
+      if (parsed !== undefined) {
+        return parsed;
+      }
+    }
+    return undefined;
+  }
+
+  private parseNonNegativeInteger(value: unknown): number | undefined {
+    if (typeof value === 'number' && Number.isInteger(value) && value >= 0) {
+      return value;
+    }
+    if (typeof value === 'string' && value.trim().length > 0) {
+      const parsed = Number.parseInt(value.trim(), 10);
+      if (!Number.isNaN(parsed) && parsed >= 0) {
+        return parsed;
+      }
+    }
+    return undefined;
   }
 
   /**
