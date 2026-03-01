@@ -29,6 +29,7 @@ export interface ParsedFormalSpec {
 }
 
 const DIRECTIVE_PATTERN = /^@([a-zA-Z_][\w-]*)\s+(.+)$/;
+const SUPPORTED_DIRECTIVES = new Set(['input', 'output', 'pre', 'post', 'state', 'states', 'transition']);
 
 const normalizeType = (raw: string): SupportedType | null => {
   const value = raw.trim().toLowerCase();
@@ -57,11 +58,17 @@ const splitStates = (raw: string): string[] =>
     .filter(Boolean);
 
 const parseTransition = (raw: string): TransitionEdge | null => {
-  const match = raw.match(/^([A-Za-z_][\w]*)\s*->\s*([A-Za-z_][\w]*)(?:\s+if\s+(.+))?$/);
-  if (!match) return null;
-  const from = sanitizeStateName(match[1] ?? '');
-  const to = sanitizeStateName(match[2] ?? '');
-  const condition = (match[3] ?? '').trim();
+  const normalized = raw.trim();
+  if (!normalized) return null;
+
+  const [transitionPartRaw, ...conditionParts] = normalized.split(/\s+if\s+/i);
+  const transitionPart = transitionPartRaw ?? '';
+  const arrowIndex = transitionPart.indexOf('->');
+  if (arrowIndex < 0) return null;
+
+  const from = sanitizeStateName(transitionPart.slice(0, arrowIndex));
+  const to = sanitizeStateName(transitionPart.slice(arrowIndex + 2));
+  const condition = conditionParts.join(' if ').trim();
   if (!from || !to) return null;
   const edge: TransitionEdge = { from, to };
   if (condition) edge.condition = condition;
@@ -113,11 +120,10 @@ const extractStateSet = (formalSpec: string): string[] => {
 
 const extractArrowTransitions = (formalSpec: string): TransitionEdge[] => {
   const edges: TransitionEdge[] = [];
-  const regex = /([A-Za-z_][\w]*)\s*->\s*([A-Za-z_][\w]*)(?:\s+if\s+([^\n]+))?/g;
-  for (const match of formalSpec.matchAll(regex)) {
-    const parsed = parseTransition(
-      `${match[1] ?? ''}->${match[2] ?? ''}${match[3] ? ` if ${String(match[3])}` : ''}`,
-    );
+  for (const rawLine of formalSpec.split(/\r?\n/)) {
+    const line = rawLine.trim().replace(/^(?:--+|\/\/+|#|;|\*)\s*/, '');
+    if (!line.includes('->')) continue;
+    const parsed = parseTransition(line);
     if (parsed) edges.push(parsed);
   }
   return edges;
@@ -149,27 +155,27 @@ const toConstArrayLiteral = (name: string, values: string[]): string => {
   return `export const ${name} = [\n${lines}\n] as const;\n`;
 };
 
-const renderPreconditionPredicate = (expr: string): string => {
+const renderPreconditionPredicate = (expr: string): { predicate: string; recognized: boolean } => {
   const normalized = expr.trim();
-  if (!normalized) return '(input) => input !== undefined';
-  if (/typeok/i.test(normalized)) return '(input) => input !== undefined';
-  if (/input\s*!=\s*null/i.test(normalized)) return '(input) => input != null';
-  return '(input) => input !== undefined';
+  if (!normalized) return { predicate: '(input) => input !== undefined', recognized: true };
+  if (/typeok/i.test(normalized)) return { predicate: '(input) => input !== undefined', recognized: true };
+  if (/input\s*!=\s*null/i.test(normalized)) return { predicate: '(input) => input != null', recognized: true };
+  return { predicate: '(_input) => false', recognized: false };
 };
 
-const renderPostconditionPredicate = (expr: string): string => {
+const renderPostconditionPredicate = (expr: string): { predicate: string; recognized: boolean } => {
   const normalized = expr.trim();
-  if (!normalized) return '(_input, output) => output !== undefined';
-  if (/output\s*!=\s*null/i.test(normalized)) return '(_input, output) => output != null';
-  return '(_input, output) => output !== undefined';
+  if (!normalized) return { predicate: '(_input, output) => output !== undefined', recognized: true };
+  if (/output\s*!=\s*null/i.test(normalized)) return { predicate: '(_input, output) => output != null', recognized: true };
+  return { predicate: '(_input, _output) => false', recognized: false };
 };
 
 const buildDefaultTransitions = (states: string[]): TransitionEdge[] => {
   if (states.length <= 1) return [];
   const edges: TransitionEdge[] = [];
-  for (let i = 0; i < states.length; i += 1) {
+  for (let i = 0; i < states.length - 1; i += 1) {
     const from = states[i]!;
-    const to = states[Math.min(i + 1, states.length - 1)]!;
+    const to = states[i + 1]!;
     edges.push({ from, to, condition: 'default-sequence' });
   }
   return edges;
@@ -192,8 +198,8 @@ export function parseFormalSpec(formalSpec: string): ParsedFormalSpec {
     const stripped = line.replace(/^(?:--+|\/\/+|#|;|\*)\s*/, '');
     const directiveMatch = stripped.match(DIRECTIVE_PATTERN);
     if (!directiveMatch) continue;
-    usedDirective = true;
     const directive = String(directiveMatch[1] ?? '').toLowerCase();
+    if (SUPPORTED_DIRECTIVES.has(directive)) usedDirective = true;
     const payload = String(directiveMatch[2] ?? '').trim();
     if (!payload) continue;
 
@@ -312,29 +318,36 @@ export function parseFormalSpec(formalSpec: string): ParsedFormalSpec {
 export function generateContractsFromParsedSpec(parsed: ParsedFormalSpec, opts: ContractsOptions = {}): ContractFile[] {
   const zodImport = opts.zodImport ?? "import { z } from 'zod'";
   const files: ContractFile[] = [];
-  const warningBlock = toConstArrayLiteral('generationWarnings', parsed.warnings);
-
-  const schema = `${zodImport}\n\n${warningBlock}\nexport const InputSchema = ${toZodExpr(parsed.inputType)};\nexport const OutputSchema = ${toZodExpr(parsed.outputType)};\n`;
-  files.push({ path: path.posix.join('src', 'contracts', 'schemas.ts'), content: schema });
+  const generationWarnings = [...parsed.warnings];
 
   const preconditionPredicates =
     parsed.preconditions.length > 0
       ? parsed.preconditions
-          .map(
-            (expr) =>
-              `  // Derived from spec: ${expr}\n  ${renderPreconditionPredicate(expr)},`,
-          )
+          .map((expr) => {
+            const rendered = renderPreconditionPredicate(expr);
+            if (!rendered.recognized) {
+              generationWarnings.push(`Unrecognized @pre expression "${expr}" defaults to fail-closed predicate.`);
+            }
+            return `  // Derived from spec: ${expr}\n  ${rendered.predicate},`;
+          })
           .join('\n')
       : '';
   const postconditionPredicates =
     parsed.postconditions.length > 0
       ? parsed.postconditions
-          .map(
-            (expr) =>
-              `  // Derived from spec: ${expr}\n  ${renderPostconditionPredicate(expr)},`,
-          )
+          .map((expr) => {
+            const rendered = renderPostconditionPredicate(expr);
+            if (!rendered.recognized) {
+              generationWarnings.push(`Unrecognized @post expression "${expr}" defaults to fail-closed predicate.`);
+            }
+            return `  // Derived from spec: ${expr}\n  ${rendered.predicate},`;
+          })
           .join('\n')
       : '';
+  const warningBlock = toConstArrayLiteral('generationWarnings', unique(generationWarnings));
+
+  const schema = `${zodImport}\n\n${warningBlock}\nexport const InputSchema = ${toZodExpr(parsed.inputType)};\nexport const OutputSchema = ${toZodExpr(parsed.outputType)};\n`;
+  files.push({ path: path.posix.join('src', 'contracts', 'schemas.ts'), content: schema });
 
   const prePost =
     `import { InputSchema, OutputSchema } from './schemas';\n\n` +
@@ -357,18 +370,19 @@ export function generateContractsFromParsedSpec(parsed: ParsedFormalSpec, opts: 
   const transitionMapLines = states.map((state) => {
     const edges = parsed.transitions.filter((edge) => edge.from === state);
     if (edges.length === 0) {
-      return `  ${state}: [{ to: '${state}' as State, condition: 'self-loop' }],`;
+      return `TRANSITIONS[${JSON.stringify(state)} as State] = [{ to: ${JSON.stringify(state)} as State, condition: 'self-loop' }];`;
     }
     const entries = edges
-      .map((edge) => `{ to: '${edge.to}' as State, condition: ${JSON.stringify(edge.condition ?? 'unspecified')} }`)
+      .map((edge) => `{ to: ${JSON.stringify(edge.to)} as State, condition: ${JSON.stringify(edge.condition ?? 'unspecified')} }`)
       .join(', ');
-    return `  ${state}: [${entries}],`;
+    return `TRANSITIONS[${JSON.stringify(state)} as State] = [${entries}];`;
   });
   const machine =
     `${warningBlock}\n` +
     `export type State = ${stateUnion};\n` +
     `export type Transition = { to: State; condition: string };\n\n` +
-    `const TRANSITIONS: Record<State, Transition[]> = {\n${transitionMapLines.join('\n')}\n};\n\n` +
+    `const TRANSITIONS: Record<State, Transition[]> = Object.create(null);\n` +
+    `${transitionMapLines.join('\n')}\n\n` +
     `export function next(state: State): State {\n` +
     `  const transitions = TRANSITIONS[state];\n` +
     `  if (!transitions || transitions.length === 0) return state;\n` +
