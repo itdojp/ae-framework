@@ -120,6 +120,7 @@ echo '{"description":"Generate UI","subagent_type":"ui","context":{"phaseState":
 - Validation: runtime schema validation (Zod) for `context.phaseState` blocks on invalid inputs with actionable messages.
  - Contract/E2E templates: when OpenAPI is available in quickstart, `scripts/codex/generate-contract-tests.mjs` scaffolds tests under `tests/api/generated/` and writes `artifacts/codex/openapi-contract-tests.json`.
 - Continuation contract (No Human Bottleneck): `docs/integrations/CODEX-CONTINUATION-CONTRACT.md`
+- Operational recipe (copy/paste runbook): `docs/agents/recipes/continuous-loop.md`
 
 ### TaskResponse schema transition note (Contract v1)
 
@@ -156,6 +157,7 @@ Flow suggestion:
 - Artifacts: prefer JSON/Markdown outputs for CodeX UI consumption.
 - Security: keep CLI/file permissions aligned with CodeX sandbox settings.
 - E2E dependencies (Playwright/LHCI): optional; introduce in CI/local first.
+- Continuous execution runbook: `docs/agents/recipes/continuous-loop.md`
 
 ### Environment variables
 - `CODEX_ARTIFACTS_DIR`: override adapter artifact output dir (defaults to `./artifacts/codex`).
