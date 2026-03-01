@@ -1,0 +1,8 @@
+{
+  "summary": "Blocked but incomplete",
+  "analysis": "This response should fail because blocked nextActions is empty.",
+  "recommendations": [],
+  "nextActions": [],
+  "warnings": [],
+  "shouldBlockProgress": true
+}

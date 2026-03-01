@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hasLabel, parseGateStatus } from '../../../scripts/ci/codex-autopilot-lane.mjs';
+import { deriveUnblockActions, hasLabel, parseGateStatus } from '../../../scripts/ci/codex-autopilot-lane.mjs';
 
 describe('codex-autopilot-lane helpers', () => {
   it('detects label presence', () => {
@@ -79,5 +79,38 @@ describe('codex-autopilot-lane helpers', () => {
         completedAt: '2026-02-12T10:05:00Z',
       },
     ])).toBe('failure');
+  });
+
+  it('maps status/reason to deterministic unblock actions', () => {
+    expect(deriveUnblockActions('skip', 'missing label autopilot:on')).toEqual([
+      'Add label `autopilot:on` and rerun `/autopilot run`.',
+    ]);
+    expect(deriveUnblockActions('skip', 'draft PR')).toEqual([
+      'Mark PR as Ready for review, then rerun `/autopilot run`.',
+    ]);
+    expect(deriveUnblockActions('blocked', 'merge conflict')).toEqual([
+      'Rebase/update branch to resolve merge conflicts, then rerun `/autopilot run`.',
+    ]);
+    expect(deriveUnblockActions('done', 'checks healthy, waiting for required checks/merge queue')).toEqual([
+      'No manual fix required. Wait for required checks or merge queue completion.',
+    ]);
+    expect(deriveUnblockActions('done', 'auto-merge enabled')).toEqual([
+      'No action required.',
+    ]);
+    expect(deriveUnblockActions('done', 'already merged')).toEqual([
+      'No action required.',
+    ]);
+  });
+
+  it('returns fallback unblock action for unknown reason', () => {
+    expect(deriveUnblockActions('done', 'queued')).toEqual([
+      'No immediate action required. Monitor PR checks until merge completes.',
+    ]);
+    expect(deriveUnblockActions('blocked', 'some unknown blocker')).toEqual([
+      'Resolve: some unknown blocker. Then rerun `/autopilot run`.',
+    ]);
+    expect(deriveUnblockActions('blocked', '')).toEqual([
+      'Inspect required checks and rerun `/autopilot run`.',
+    ]);
   });
 });
