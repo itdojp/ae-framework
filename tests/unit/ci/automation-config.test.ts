@@ -12,6 +12,8 @@ describe('automation-config', () => {
     expect(config.values.AE_REVIEW_TOPOLOGY).toBe('team');
     expect(config.values.AE_POLICY_MIN_HUMAN_APPROVALS).toBe('');
     expect(config.values.AE_AUTOMATION_GLOBAL_DISABLE).toBe('0');
+    expect(config.values.AE_AUTOPILOT_AUTO_LABEL).toBe('0');
+    expect(config.values.AE_AUTOPILOT_RISK_POLICY_PATH).toBe('policy/risk-policy.yml');
     expect(config.values.AE_COPILOT_AUTO_FIX).toBe('0');
     expect(config.values.AE_AUTO_MERGE).toBe('0');
     expect(config.values.AE_COPILOT_AUTO_FIX_SCOPE).toBe('docs');
@@ -32,6 +34,8 @@ describe('automation-config', () => {
     expect(config.values.AE_REVIEW_TOPOLOGY).toBe('team');
     expect(config.values.AE_POLICY_MIN_HUMAN_APPROVALS).toBe('');
     expect(config.values.AE_AUTOMATION_GLOBAL_DISABLE).toBe('0');
+    expect(config.values.AE_AUTOPILOT_AUTO_LABEL).toBe('0');
+    expect(config.values.AE_AUTOPILOT_RISK_POLICY_PATH).toBe('policy/risk-policy.yml');
     expect(config.values.AE_COPILOT_AUTO_FIX).toBe('1');
     expect(config.values.AE_COPILOT_AUTO_FIX_SCOPE).toBe('docs');
     expect(config.values.AE_AUTO_MERGE).toBe('1');
@@ -107,6 +111,8 @@ describe('automation-config', () => {
     expect(envBody).toContain('AE_REVIEW_TOPOLOGY=team');
     expect(envBody).toContain('AE_POLICY_MIN_HUMAN_APPROVALS=');
     expect(envBody).toContain('AE_AUTOMATION_GLOBAL_DISABLE=0');
+    expect(envBody).toContain('AE_AUTOPILOT_AUTO_LABEL=0');
+    expect(envBody).toContain('AE_AUTOPILOT_RISK_POLICY_PATH=policy/risk-policy.yml');
     expect(envBody).toContain('AE_COPILOT_AUTO_FIX=1');
     expect(envBody).toContain('AE_AUTO_MERGE_MODE=label');
   });
