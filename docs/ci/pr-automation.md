@@ -154,7 +154,7 @@ auto-merge（ラベルopt-in）:
 ### 4.1 マージ後の release verify 導線
 
 - PRマージ後の運用判定は `post-deploy-verify.yml`（workflow_dispatch）で実施します。
-- ローカル再現は `ae release verify` を使用します。
+- ローカル再現は `pnpm run ae-framework -- release verify ...`（または `ae release verify`）を使用します。
 - 手順詳細: `docs/operate/release-engineering.md`
 
 ## 5. トラブルシューティング
