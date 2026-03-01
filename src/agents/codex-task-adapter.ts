@@ -343,11 +343,8 @@ function inferRequiredHumanInput(warnings: string[]): string | undefined {
   return undefined;
 }
 
-function buildBlockedAction(phase: Phase, blockingReason: string, requiredHumanInput: string): string {
-  if (requiredHumanInput) {
-    return `Provide ${requiredHumanInput} and rerun codex task (${phase})`;
-  }
-  return `Resolve ${blockingReason} and rerun codex task (${phase})`;
+function buildBlockedAction(phase: Phase, requiredHumanInput: string): string {
+  return `Provide ${requiredHumanInput} and rerun codex task (${phase})`;
 }
 
 export function finalizeTaskResponse(phase: Phase, _request: TaskRequest, response: TaskResponse): TaskResponse {
@@ -372,7 +369,7 @@ export function finalizeTaskResponse(phase: Phase, _request: TaskRequest, respon
 
   const blockingReason = response.blockingReason?.trim() || 'human-input-required';
   const requiredHumanInput = response.requiredHumanInput?.trim() || inferRequiredHumanInput(warnings) || `resolve-${blockingReason}`;
-  const unblockAction = buildBlockedAction(phase, blockingReason, requiredHumanInput);
+  const unblockAction = buildBlockedAction(phase, requiredHumanInput);
   const blockedWarnings = warnings.length > 0
     ? warnings
     : [`INTERNAL CONTRACT VIOLATION: blocked response missing warnings. Human action: ${unblockAction}`];

@@ -82,4 +82,21 @@ describe('finalizeTaskResponse', () => {
     expect(response.blockingReason).toBe('missing-approval');
     expect(response.requiredHumanInput).toBe('approval=1');
   });
+
+  it('infers requiredHumanInput from warnings when not explicitly set', () => {
+    const response = finalizeTaskResponse(
+      'stories',
+      request,
+      createBaseResponse({
+        shouldBlockProgress: true,
+        summary: 'approval needed',
+        nextActions: [],
+        warnings: ['required_input: approval-token=abc'],
+      }),
+    );
+
+    expect(response.shouldBlockProgress).toBe(true);
+    expect(response.requiredHumanInput).toBe('approval-token=abc');
+    expect(response.nextActions[0]).toContain('approval-token=abc');
+  });
 });
