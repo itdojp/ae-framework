@@ -11,7 +11,7 @@ import * as path from 'path';
 import { trace } from '@opentelemetry/api';
 import { z } from 'zod';
 
-type Phase = 'intent' | 'formal' | 'stories' | 'validation' | 'modeling' | 'ui';
+export type Phase = 'intent' | 'formal' | 'stories' | 'validation' | 'modeling' | 'ui';
 
 export interface CodexTaskAdapterOptions {}
 
@@ -39,7 +39,7 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
             {
               const resp = await intent.handleIntentTask(request as any);
               span.setAttributes({ 'ae.result.blocked': resp.shouldBlockProgress || false, 'ae.result.warnings': resp.warnings?.length || 0 });
-              return writeAndReturn(phase, resp);
+              return writeAndReturn(phase, request, resp);
             }
           case 'formal': {
             const reqText = request.prompt || request.description || '';
@@ -75,39 +75,42 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
                 openapiPath ? `Review OpenAPI: ${path.relative(process.cwd(), openapiPath)}` : 'Consider API spec generation if needed',
                 mcPath ? `Check model checking: ${path.relative(process.cwd(), mcPath)}` : 'Model checking unavailable'
               ],
-              nextActions: ['Proceed to tests generation', 'Run model checking'],
+              nextActions: [
+                'pnpm -s run verify:lite',
+                'pnpm run codex:generate:tests -- --use-operation-id'
+              ],
               warnings: spec.validation.warnings?.map(w => w.message) || [],
               shouldBlockProgress: spec.validation.status === 'invalid',
             };
             span.setAttributes({ 'ae.result.blocked': resp.shouldBlockProgress || false, 'ae.result.warnings': resp.warnings?.length || 0 });
-            return writeAndReturn(phase, resp);
+            return writeAndReturn(phase, request, resp);
           }
           case 'stories':
             {
               const resp = await stories.handleUserStoriesTask(request);
               span.setAttributes({ 'ae.result.blocked': resp.shouldBlockProgress || false, 'ae.result.warnings': resp.warnings?.length || 0 });
-              return writeAndReturn(phase, resp);
+              return writeAndReturn(phase, request, resp);
             }
           case 'validation':
             {
               const resp = await validation.handleValidationTask(request);
               span.setAttributes({ 'ae.result.blocked': resp.shouldBlockProgress || false, 'ae.result.warnings': resp.warnings?.length || 0 });
-              return writeAndReturn(phase, resp);
+              return writeAndReturn(phase, request, resp);
             }
           case 'modeling':
             {
               const resp = await modeling.handleDomainModelingTask(request);
               span.setAttributes({ 'ae.result.blocked': resp.shouldBlockProgress || false, 'ae.result.warnings': resp.warnings?.length || 0 });
-              return writeAndReturn(phase, resp);
+              return writeAndReturn(phase, request, resp);
             }
           case 'ui':
             {
               const resp = await handleUI(request, span);
               span.setAttributes({ 'ae.result.blocked': resp.shouldBlockProgress || false, 'ae.result.warnings': resp.warnings?.length || 0 });
-              return writeAndReturn(phase, resp);
+              return writeAndReturn(phase, request, resp);
             }
           default:
-            return writeAndReturn(phase, createNeutralResponse(phase, request));
+            return writeAndReturn(phase, request, createNeutralResponse(phase, request));
         }
       } catch (err) {
         span.recordException(err as Error);
@@ -121,7 +124,7 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
           blockingReason: 'adapter-error',
           requiredHumanInput: `error_context_for_phase_${phase}`,
         };
-        return writeAndReturn(phase, errorResp);
+        return writeAndReturn(phase, request, errorResp);
       } finally {
         span.end();
       }
@@ -299,16 +302,109 @@ async function handleUI(request: TaskRequest, parentSpan?: any): Promise<TaskRes
   return resp;
 }
 
-function writeAndReturn(phase: Phase, response: TaskResponse): TaskResponse {
+function normalizeStringList(values: unknown): string[] {
+  if (!Array.isArray(values)) return [];
+  const normalized: string[] = [];
+  const seen = new Set<string>();
+  for (const value of values) {
+    if (typeof value !== 'string') continue;
+    const trimmed = value.trim();
+    if (!trimmed || seen.has(trimmed)) continue;
+    seen.add(trimmed);
+    normalized.push(trimmed);
+  }
+  return normalized;
+}
+
+function defaultContinueActions(phase: Phase): string[] {
+  switch (phase) {
+    case 'intent':
+      return ['Proceed to formal phase: subagent_type=formal', 'pnpm -s run verify:lite'];
+    case 'formal':
+      return ['pnpm -s run verify:lite', 'pnpm run codex:generate:tests -- --use-operation-id'];
+    case 'stories':
+      return ['Proceed to validation phase: subagent_type=validation', 'pnpm -s run verify:lite'];
+    case 'validation':
+      return ['Proceed to modeling phase: subagent_type=modeling', 'pnpm -s run verify:lite'];
+    case 'modeling':
+      return ['Proceed to ui phase: subagent_type=ui', 'pnpm -s run verify:lite'];
+    case 'ui':
+      return ['pnpm run test:a11y', 'pnpm run test:coverage'];
+    default:
+      return ['pnpm -s run verify:lite'];
+  }
+}
+
+function inferRequiredHumanInput(warnings: string[]): string | undefined {
+  const requiredInput = warnings.find((item) => /^required_input:/i.test(item));
+  if (requiredInput) {
+    return requiredInput.replace(/^required_input:/i, '').trim();
+  }
+  return undefined;
+}
+
+function buildBlockedAction(phase: Phase, blockingReason: string, requiredHumanInput: string): string {
+  if (requiredHumanInput) {
+    return `Provide ${requiredHumanInput} and rerun codex task (${phase})`;
+  }
+  return `Resolve ${blockingReason} and rerun codex task (${phase})`;
+}
+
+export function finalizeTaskResponse(phase: Phase, _request: TaskRequest, response: TaskResponse): TaskResponse {
+  const summary = typeof response.summary === 'string' ? response.summary.trim() : '';
+  const analysis = typeof response.analysis === 'string' ? response.analysis : '';
+  const recommendations = normalizeStringList(response.recommendations);
+  const nextActions = normalizeStringList(response.nextActions);
+  const warnings = normalizeStringList(response.warnings);
+
+  if (!response.shouldBlockProgress) {
+    const actionableNext = nextActions.length > 0 ? nextActions : defaultContinueActions(phase);
+    return {
+      ...response,
+      summary: summary || `Continue: ${phase}`,
+      analysis,
+      recommendations,
+      nextActions: actionableNext,
+      warnings,
+      shouldBlockProgress: false,
+    };
+  }
+
+  const blockingReason = response.blockingReason?.trim() || 'human-input-required';
+  const requiredHumanInput = response.requiredHumanInput?.trim() || inferRequiredHumanInput(warnings) || `resolve-${blockingReason}`;
+  const unblockAction = buildBlockedAction(phase, blockingReason, requiredHumanInput);
+  const blockedWarnings = warnings.length > 0
+    ? warnings
+    : [`INTERNAL CONTRACT VIOLATION: blocked response missing warnings. Human action: ${unblockAction}`];
+  const blockedNextActions = nextActions.length > 0 ? nextActions : [unblockAction];
+  const blockedSummary = summary.toLowerCase().startsWith('blocked:')
+    ? summary
+    : `Blocked: ${summary || `${phase} task requires human input`}`;
+
+  return {
+    ...response,
+    summary: blockedSummary,
+    analysis,
+    recommendations,
+    nextActions: blockedNextActions,
+    warnings: blockedWarnings,
+    shouldBlockProgress: true,
+    blockingReason,
+    requiredHumanInput,
+  };
+}
+
+function writeAndReturn(phase: Phase, request: TaskRequest, response: TaskResponse): TaskResponse {
+  const finalResponse = finalizeTaskResponse(phase, request, response);
   try {
     const outDir = getArtifactsDir();
     fs.mkdirSync(outDir, { recursive: true });
     const file = path.join(outDir, `result-${phase}.json`);
-    fs.writeFileSync(file, JSON.stringify({ phase, response, ts: new Date().toISOString() }, null, 2), 'utf8');
+    fs.writeFileSync(file, JSON.stringify({ phase, response: finalResponse, ts: new Date().toISOString() }, null, 2), 'utf8');
   } catch {
     // best-effort only
   }
-  return response;
+  return finalResponse;
 }
 
 function createNeutralResponse(phase: Phase, request: TaskRequest): TaskResponse {
