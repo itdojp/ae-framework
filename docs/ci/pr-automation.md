@@ -151,6 +151,12 @@ auto-merge（ラベルopt-in）:
 4. `Copilot Review Gate / gate` が green であることを確認（未解決スレッドは Resolve）
 5. 条件が揃うと `PR Maintenance` が auto-merge を有効化し、GitHubが自動マージします（marker: `<!-- AE-AUTO-MERGE-STATUS v1 -->`）
 
+### 4.1 マージ後の release verify 導線
+
+- PRマージ後の運用判定は `post-deploy-verify.yml`（workflow_dispatch）で実施します。
+- ローカル再現は `ae release verify` を使用します。
+- 手順詳細: `docs/operate/release-engineering.md`
+
 ## 5. トラブルシューティング
 
 ### 5.1 Copilot Review Gate が失敗する
@@ -252,3 +258,4 @@ auto-merge（ラベルopt-in）:
 - `docs/ci/automation-observability.md`
 - `docs/ci/workflow-dispatch-validation-2026-02-12.md`
 - `docs/product/MINIMAL-ADOPTION.md`
+- `docs/operate/release-engineering.md`

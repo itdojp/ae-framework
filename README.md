@@ -62,6 +62,8 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - TODO triage operations: `docs/maintenance/todo-triage-runbook.md`
 - Current architecture snapshot: `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md`
 - Product fit (what to input/output, which tools to use): `docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`
+- PR automation (Copilot -> auto-fix -> auto-merge): `docs/ci/pr-automation.md`
+- Release engineering (release verify / post-deploy): `docs/operate/release-engineering.md`
 - CI/quality gates: `docs/ci/phase2-ci-hardening-outline.md`, `docs/ci/label-gating.md`, `docs/ci/harness-taxonomy.md`
 - Development deep dives: [Enhanced State Manager](docs/development/enhanced-state-manager.md), [Circuit Breaker](docs/development/circuit-breaker.md)
 - Docs consistency lint: `pnpm run check:doc-consistency` (`docs/quality/doc-consistency-lint.md`)
@@ -122,6 +124,8 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - 全体概要: `docs/README.md`, `docs/project-organization.md`
 - 現行アーキテクチャ全体像: `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md`
 - 適用対象/入力/出力/ツール適性: `docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`
+- PR自動化（Copilot→auto-fix→auto-merge）: `docs/ci/pr-automation.md`
+- リリース運用（release verify / post-deploy verify）: `docs/operate/release-engineering.md`
 - CI/品質ゲート: `docs/ci/phase2-ci-hardening-outline.md`, `docs/ci/label-gating.md`, `docs/ci/harness-taxonomy.md`
 - ドキュメント検証ポリシー: `docs/ci/docs-doctest-policy.md`
 - 開発向け設計ドキュメント: [Enhanced State Manager](docs/development/enhanced-state-manager.md), [Circuit Breaker](docs/development/circuit-breaker.md)
