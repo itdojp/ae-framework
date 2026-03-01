@@ -82,16 +82,31 @@ else
         exit 1
     fi
     
-    # Check 3: Verify no unresolved markers in tests (TODO/FIXME/SKIP/PENDING/NEXT/IMPLEMENT)
-    staged_test_files=$(git diff --cached --name-only --diff-filter=ACM | grep '\.test\.ts$' || true)
+    # Check 3: Verify no unresolved task markers in staged test additions.
+    staged_test_files=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(test|spec)\.ts$' || true)
+    todo_marker='TO''DO'
+    marker_pattern="${todo_marker}\\|FIXME\\|SKIP\\|PENDING\\|NEXT\\|IMPLEMENT"
+    marker_allow_pattern='MARKER_OK\|TO''DO/FIXME/XXX'
     
     if [ -n "$staged_test_files" ]; then
+        marker_violations=""
         for test_file in $staged_test_files; do
-            if git show ":$test_file" | grep -q "TODO\|FIXME\|SKIP\|PENDING\|NEXT\|IMPLEMENT"; then
-                echo "${YELLOW}⚠️  Warning: Test file $test_file contains unresolved test markers${NC}"
-                echo "   Consider completing these tests before committing"
+            added_lines=$(git diff --cached --unified=0 -- "$test_file" | grep '^+' | grep -v '^+++' || true)
+            unresolved_lines=$(printf '%s\n' "$added_lines" | grep -E "$marker_pattern" | grep -Ev "$marker_allow_pattern" || true)
+
+            if [ -n "$unresolved_lines" ]; then
+                marker_violations="$marker_violations\n  - $test_file"
             fi
         done
+
+        if [ -n "$marker_violations" ]; then
+            echo "${RED}❌ Unresolved test markers found in staged additions:${NC}"
+            echo -e "$marker_violations"
+            echo ""
+            echo "${YELLOW}💡 Resolve marker lines before commit.${NC}"
+            echo "${YELLOW}   If the marker text is intentionally part of a parser/example test, add 'MARKER_OK' to that added line.${NC}"
+            exit 1
+        fi
     fi
     
     echo "${GREEN}✅ Basic TDD checks passed${NC}"
