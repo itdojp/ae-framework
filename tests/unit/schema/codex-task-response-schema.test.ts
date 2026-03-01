@@ -34,9 +34,9 @@ describe('codex-task-response schema contract', () => {
     expect(validate.errors?.some((error) => error.keyword === 'minItems')).toBe(true);
   });
 
-  it('rejects blocked fixture when blocked metadata is missing', () => {
+  it('rejects blocked fixture when nextActions is empty', () => {
     const payload = loadJson(invalidBlockedPath);
     expect(validate(payload)).toBe(false);
-    expect(validate.errors?.some((error) => error.keyword === 'anyOf')).toBe(true);
+    expect(validate.errors?.some((error) => error.keyword === 'minItems')).toBe(true);
   });
 });

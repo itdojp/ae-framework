@@ -78,22 +78,7 @@
           "nextActions": {
             "minItems": 1
           }
-        },
-        "anyOf": [
-          {
-            "required": [
-              "blockingReason",
-              "requiredHumanInput"
-            ]
-          },
-          {
-            "properties": {
-              "warnings": {
-                "minItems": 1
-              }
-            }
-          }
-        ]
+        }
       }
     }
   ],

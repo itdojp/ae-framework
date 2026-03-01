@@ -317,7 +317,7 @@ describe('codex adapter stdio contract', () => {
     });
   });
 
-  it('returns exit 1 when shouldBlockProgress=true without required blocked metadata', () => {
+  it('returns exit 2 when blocked response omits blocked metadata but has actionable nextActions', () => {
     withTempRepo((tempRoot) => {
       writeAdapterModule(tempRoot, `
         export function createCodexTaskAdapter() {
@@ -328,6 +328,40 @@ describe('codex adapter stdio contract', () => {
                 analysis: 'analysis',
                 recommendations: [],
                 nextActions: ['fix and rerun'],
+                warnings: [],
+                shouldBlockProgress: true
+              };
+            }
+          };
+        }
+      `);
+
+      const result = runAdapter(
+        tempRoot,
+        JSON.stringify({ description: 'run', subagent_type: 'intent' }),
+      );
+
+      expect(result.status).toBe(2);
+      const payload = parseJsonLine(result.stdout);
+      expect(payload).toEqual(
+        expect.objectContaining({
+          shouldBlockProgress: true,
+        }),
+      );
+    });
+  });
+
+  it('returns exit 1 when shouldBlockProgress=true and nextActions is empty', () => {
+    withTempRepo((tempRoot) => {
+      writeAdapterModule(tempRoot, `
+        export function createCodexTaskAdapter() {
+          return {
+            async handleTask() {
+              return {
+                summary: 'blocked',
+                analysis: 'analysis',
+                recommendations: [],
+                nextActions: [],
                 warnings: [],
                 shouldBlockProgress: true
               };

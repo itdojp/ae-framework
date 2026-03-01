@@ -1,10 +1,8 @@
 {
   "summary": "Blocked but incomplete",
-  "analysis": "This response should fail because blocked metadata is missing.",
+  "analysis": "This response should fail because blocked nextActions is empty.",
   "recommendations": [],
-  "nextActions": [
-    "Provide missing input and rerun"
-  ],
+  "nextActions": [],
   "warnings": [],
   "shouldBlockProgress": true
 }

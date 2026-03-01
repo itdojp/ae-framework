@@ -124,12 +124,10 @@ echo '{"description":"Generate UI","subagent_type":"ui","context":{"phaseState":
 
 - `schema/codex-task-response.schema.json` now enforces:
   - `shouldBlockProgress=false` => `nextActions` must be non-empty
-  - `shouldBlockProgress=true` => `nextActions` must be non-empty and either:
-    - `blockingReason` + `requiredHumanInput` are present, or
-    - `warnings` contains at least one item (legacy branch)
+  - `shouldBlockProgress=true` => `nextActions` must be non-empty
 - Migration recommendation:
-  - Move blocked responses to explicit `blockingReason` / `requiredHumanInput` fields.
-  - Keep legacy `warnings`-only blocked responses temporary; they remain accepted for compatibility.
+  - Move blocked responses to explicit `blockingReason` / `requiredHumanInput` fields where possible.
+  - Existing blocked responses without those fields are accepted for compatibility.
 
 ## 4) CodeX (no MCP) – Spec Tools over stdio
 - Script: `pnpm run codex:spec:stdio`
