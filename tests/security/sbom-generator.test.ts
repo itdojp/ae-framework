@@ -577,5 +577,82 @@ describe('SBOMGenerator', () => {
       expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('OSV query threw an error'));
       warnSpy.mockRestore();
     });
+
+    it('should derive severity from CVSS vector strings when numeric score is absent', async () => {
+      const optionsWithVulnerabilities = { ...options, includeVulnerabilities: true };
+      const generatorWithVulnerabilities = new SBOMGenerator(optionsWithVulnerabilities);
+
+      const mockPackageJson = {
+        dependencies: {
+          express: '^4.18.0',
+        },
+      };
+      const mockPackageLock = {
+        packages: {
+          'node_modules/express': {
+            version: '4.18.2',
+            license: 'MIT',
+          },
+        },
+      };
+      mockFs.readFile.mockImplementation((filePath: string) => {
+        const pathStr = filePath.toString();
+        if (pathStr.endsWith('package.json')) return Promise.resolve(JSON.stringify(mockPackageJson));
+        if (pathStr.endsWith('package-lock.json')) return Promise.resolve(JSON.stringify(mockPackageLock));
+        return Promise.reject(new Error('File not found'));
+      });
+      mockGlob.mockResolvedValue([]);
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: {
+          get: () => null,
+        },
+        json: async () => ({
+          results: [
+            {
+              vulns: [
+                {
+                  id: 'OSV-2024-0002',
+                  summary: 'Remote execution risk',
+                  severity: [
+                    {
+                      type: 'CVSS_V3',
+                      score: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H',
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        }),
+      });
+
+      const sbom = await generatorWithVulnerabilities.generate();
+      expect(sbom.vulnerabilities).toHaveLength(1);
+      expect(sbom.vulnerabilities?.[0]?.ratings?.[0]?.severity).toBe('critical');
+      expect(sbom.vulnerabilities?.[0]?.ratings?.[0]?.score).toBeUndefined();
+    });
+
+    it('should skip custom components without purl ecosystem mapping', async () => {
+      const optionsWithVulnerabilities = {
+        ...options,
+        includeVulnerabilities: true,
+        customComponents: [
+          {
+            name: 'custom-lib',
+            version: '1.0.0',
+            type: 'library' as const,
+          },
+        ],
+      };
+      const generatorWithVulnerabilities = new SBOMGenerator(optionsWithVulnerabilities);
+
+      mockFs.readFile.mockResolvedValue('{}');
+      mockGlob.mockResolvedValue([]);
+      await generatorWithVulnerabilities.generate();
+
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
   });
 });

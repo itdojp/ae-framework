@@ -505,8 +505,8 @@ export class SBOMGenerator {
       }
     }
 
-    // Current dependency extraction is npm-focused when purl is absent.
-    return 'npm';
+    // Without purl, ecosystem cannot be inferred safely.
+    return null;
   }
 
   private async queryOsvBatch(components: NormalizedVulnerabilityComponent[]): Promise<OsvBatchResponse | null> {
@@ -571,8 +571,8 @@ export class SBOMGenerator {
     const id = vulnerability.id?.trim() || 'OSV-UNKNOWN';
     const summary = vulnerability.summary?.trim();
     const details = vulnerability.details?.trim();
-    const severity = this.mapSeverityFromOsv(vulnerability);
     const score = this.parseCvssScore(vulnerability.severity);
+    const severity = this.mapSeverityFromOsv(vulnerability, score);
     const references = Array.isArray(vulnerability.references) ? vulnerability.references : [];
     const cwes = vulnerability.database_specific?.cwes
       ?.map((value) => Number.parseInt(value.replace(/^CWE-/i, ''), 10))
@@ -604,14 +604,16 @@ export class SBOMGenerator {
     };
   }
 
-  private mapSeverityFromOsv(vulnerability: OsvVulnerability): 'low' | 'medium' | 'high' | 'critical' {
-    const score = this.parseCvssScore(vulnerability.severity);
+  private mapSeverityFromOsv(vulnerability: OsvVulnerability, score?: number): 'low' | 'medium' | 'high' | 'critical' {
     if (score !== undefined) {
       if (score >= 9.0) return 'critical';
       if (score >= 7.0) return 'high';
       if (score >= 4.0) return 'medium';
       return 'low';
     }
+
+    const vectorSeverity = this.parseCvssSeverityFromVector(vulnerability.severity);
+    if (vectorSeverity) return vectorSeverity;
 
     const dbSeverity = vulnerability.database_specific?.severity?.toLowerCase();
     if (dbSeverity === 'critical') return 'critical';
@@ -628,6 +630,47 @@ export class SBOMGenerator {
       if (!rawScore) continue;
       const parsed = Number.parseFloat(rawScore);
       if (Number.isFinite(parsed)) return parsed;
+    }
+    return undefined;
+  }
+
+  private parseCvssSeverityFromVector(
+    severities?: OsvSeverity[],
+  ): 'low' | 'medium' | 'high' | 'critical' | undefined {
+    if (!Array.isArray(severities)) return undefined;
+    for (const severity of severities) {
+      const rawScore = severity.score?.trim();
+      if (!rawScore || !/^CVSS:/i.test(rawScore)) continue;
+
+      const metrics = new Map<string, string>();
+      for (const segment of rawScore.split('/').slice(1)) {
+        const [key, value] = segment.split(':');
+        if (!key || !value) continue;
+        metrics.set(key.toUpperCase(), value.toUpperCase());
+      }
+
+      let risk = 0;
+      const av = metrics.get('AV');
+      if (av === 'N') risk += 1.5;
+      else if (av === 'A') risk += 1.0;
+      else if (av === 'L') risk += 0.5;
+
+      if (metrics.get('AC') === 'L') risk += 1.0;
+      if (metrics.get('PR') === 'N') risk += 1.0;
+      else if (metrics.get('PR') === 'L') risk += 0.5;
+      if (metrics.get('UI') === 'N') risk += 0.5;
+      if (metrics.get('S') === 'C') risk += 1.0;
+
+      for (const axis of ['C', 'I', 'A']) {
+        const value = metrics.get(axis);
+        if (value === 'H') risk += 2.0;
+        else if (value === 'L') risk += 1.0;
+      }
+
+      if (risk >= 9.0) return 'critical';
+      if (risk >= 7.0) return 'high';
+      if (risk >= 4.0) return 'medium';
+      return 'low';
     }
     return undefined;
   }

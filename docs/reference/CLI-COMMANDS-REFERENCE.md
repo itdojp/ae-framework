@@ -652,24 +652,24 @@ pnpm run evaluate:usefulness -- --strict-inputs --min-score 70
 ```bash
 # Security
 ae security show-config --env development
- ae security check-headers --url http://localhost:3000/health
+ae security check-headers --url http://localhost:3000/health
 
 # SBOM
 ae sbom generate --format json --output sbom.json
- ae sbom generate --format json --include-vulns --output sbom.json
- ae sbom validate sbom.json
- ae sbom compare base.json head.json
+ae sbom generate --format json --include-vulns --output sbom.json
+ae sbom validate sbom.json
+ae sbom compare base.json head.json
 
 # Resilience
 ae resilience create --name default
- ae resilience health --name default
- ae resilience test --name default --operations 20 --failure-rate 0.2
+ae resilience health --name default
+ae resilience test --name default --operations 20 --failure-rate 0.2
 
 # Circuit breaker
 ae circuit-breaker create --name demo
- ae circuit-breaker list
- ae circuit-breaker stats --name demo
- ae circuit-breaker health
+ae circuit-breaker list
+ae circuit-breaker stats --name demo
+ae circuit-breaker health
 ```
 
 ### ベンチマーク（Req2Run）
