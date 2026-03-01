@@ -9,7 +9,7 @@ let filesChanged = 0;
 for (const f of files) {
   let t = await readFile(f, 'utf8');
   const before = t;
-  t = t.replace(/\/\/\s*@ts-ignore\b/g, '// @ts-expect-error -- TODO: describe why');
+  t = t.replace(/\/\/\s*@ts-ignore\b/g, '// @ts-expect-error -- EXPLAIN: describe why');
   if (t !== before) {
     await writeFile(f, t);
     const changes = (before.match(/\/\/\s*@ts-ignore\b/g) || []).length;
@@ -19,5 +19,5 @@ for (const f of files) {
   }
 }
 
-console.log(`[codemod] replaced ts-ignore -> ts-expect-error (with TODO)`);
+console.log(`[codemod] replaced ts-ignore -> ts-expect-error (with EXPLAIN: describe why)`);
 console.log(`[codemod] Total: ${totalChanges} replacements in ${filesChanged} files`);

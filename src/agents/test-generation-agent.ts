@@ -376,11 +376,11 @@ export class TestGenerationAgent {
     if (testCase.code.includes('expect(')) {
       // Convert expect() calls to ExUnit assertions
       test += `    # ${testCase.description}\n`;
-      test += `    # TODO: Implement test logic\n`;
+      test += `    # IMPLEMENT: test logic\n`;
       test += `    assert true\n`;
     } else {
       test += `    # ${testCase.description}\n`;
-      test += `    # TODO: Implement test logic\n`;
+      test += `    # IMPLEMENT: test logic\n`;
       test += `    assert true\n`;
     }
     

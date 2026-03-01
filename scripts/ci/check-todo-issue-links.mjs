@@ -12,7 +12,7 @@ const RATE_LIMIT_BASE_DELAY_MS = 400;
 const RATE_LIMIT_MAX_DELAY_MS = 10000;
 
 /**
- * Parse TODO/FIXME issue references from text.
+ * Parse issue references for unresolved marker tags from text.
  *
  * @param {string} content
  * @param {string} filePath

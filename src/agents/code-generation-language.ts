@@ -16,7 +16,7 @@ function generatePhoenixModule(funcName: string, behaviors: string[]): string {
     implementation += `    # ${behavior}\n`;
   }
 
-  implementation += '    # TODO: Implement based on tests\n';
+  implementation += '    # IMPLEMENT: based on tests\n';
   implementation += '    json(conn, %{message: "not implemented"})\n';
   implementation += '  end\n';
   implementation += 'end\n';
@@ -43,7 +43,7 @@ function generateElixirFunction(funcName: string, behaviors: string[], framework
     implementation += `    # ${behavior}\n`;
   }
 
-  implementation += '    # TODO: Implement based on tests\n';
+  implementation += '    # IMPLEMENT: based on tests\n';
   implementation += '    {:ok, "not implemented"}\n';
   implementation += '  end\n';
   implementation += 'end\n';
@@ -60,7 +60,7 @@ function generateTSFunction(funcName: string, behaviors: string[]): string {
     }
   }
 
-  implementation += '  // TODO: Implement based on tests\n';
+  implementation += '  // IMPLEMENT: based on tests\n';
   implementation += '  return {};\n';
   implementation += '}\n';
 
@@ -75,7 +75,7 @@ function generatePythonFunction(funcName: string, behaviors: string[]): string {
     implementation += `    # ${behavior}\n`;
   }
 
-  implementation += '    # TODO: Implement based on tests\n';
+  implementation += '    # IMPLEMENT: based on tests\n';
   implementation += '    return {}\n';
 
   return implementation;
@@ -88,7 +88,7 @@ function generateRustFunction(funcName: string, behaviors: string[]): string {
     implementation += `    // ${behavior}\n`;
   }
 
-  implementation += '    // TODO: Implement based on tests\n';
+  implementation += '    // IMPLEMENT: based on tests\n';
   implementation += '    Ok(())\n';
   implementation += '}\n';
 
@@ -102,7 +102,7 @@ function generateGoFunction(funcName: string, behaviors: string[]): string {
     implementation += `    // ${behavior}\n`;
   }
 
-  implementation += '    // TODO: Implement based on tests\n';
+  implementation += '    // IMPLEMENT: based on tests\n';
   implementation += '    return nil\n';
   implementation += '}\n';
 

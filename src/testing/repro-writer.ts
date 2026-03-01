@@ -39,7 +39,7 @@ export async function writeRepro(name: string, seed: number, data: unknown) {
     "import { fileURLToPath } from 'node:url';",
     "const __filename = fileURLToPath(import.meta.url);",
     "const __dirname = dirname(__filename);",
-    `test(${testNameLiteral}, () => { process.env.AE_SEED=${seedLiteral}; const data = JSON.parse(readFileSync(join(__dirname, ${jsonFilenameLiteral}), 'utf8')); /* TODO: call SUT(data) */ });`,
+    `test(${testNameLiteral}, () => { process.env.AE_SEED=${seedLiteral}; const data = JSON.parse(readFileSync(join(__dirname, ${jsonFilenameLiteral}), 'utf8')); /* IMPLEMENT: call SUT(data) */ });`,
   ].join('\n');
 
   await writeFile(jsonPath, jsonPayload);

@@ -67,3 +67,5 @@ Escalate to individual issue when:
 - Avoid large mixed PRs; separate “inventory/triage” and “implementation/removal”.
 - Keep `triage_status=now` items linked to dedicated issues and record them in
   a dated backlog snapshot.
+- For scaffolds/examples, prefer neutral placeholders such as `NEXT:` or
+  `IMPLEMENT:` instead of `TODO:` to avoid backlog noise.

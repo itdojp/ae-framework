@@ -82,13 +82,13 @@ else
         exit 1
     fi
     
-    # Check 3: Verify no TODO/FIXME in tests (indicating incomplete tests)
+    # Check 3: Verify no unresolved markers in tests (TODO/FIXME/SKIP/PENDING/NEXT/IMPLEMENT)
     staged_test_files=$(git diff --cached --name-only --diff-filter=ACM | grep '\.test\.ts$' || true)
     
     if [ -n "$staged_test_files" ]; then
         for test_file in $staged_test_files; do
-            if git show ":$test_file" | grep -q "TODO\|FIXME\|SKIP\|PENDING"; then
-                echo "${YELLOW}⚠️  Warning: Test file $test_file contains TODO/FIXME/SKIP markers${NC}"
+            if git show ":$test_file" | grep -q "TODO\|FIXME\|SKIP\|PENDING\|NEXT\|IMPLEMENT"; then
+                echo "${YELLOW}⚠️  Warning: Test file $test_file contains unresolved test markers${NC}"
                 echo "   Consider completing these tests before committing"
             fi
         done

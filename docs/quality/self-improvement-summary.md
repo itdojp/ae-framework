@@ -30,7 +30,7 @@ The ae-framework has successfully demonstrated its capability to analyze, improv
 - Established systematic error resolution workflow
 
 **Technical Implementation:**
-```typescript
+```typescript no-doctest
 // FormalAgent integration for TypeScript error formal specification
 const typeScriptErrorSpec = await this.formalAgent.generateFormalSpecification(
   `# TypeScript Error Resolution Formal Specification...`,
@@ -53,7 +53,7 @@ const tddGuidance = await this.tddAgent.generateTDDGuidance({
 - Established systematic error categorization (TS2532, TS2345, TS2353, etc.)
 
 **Technical Implementation:**
-```typescript
+```typescript no-doctest
 // Automated fix generation with confidence scoring
 private async generateSpecificFix(errorCode: string, description: string): Promise<any> {
   switch (errorCode) {
@@ -75,7 +75,7 @@ private async generateSpecificFix(errorCode: string, description: string): Promi
 - Risk-based application: low/medium/high confidence levels
 
 **Technical Implementation:**
-```typescript
+```typescript no-doctest
 // Systematic error categorization and resolution
 export class Phase5VerificationFinal {
   async executePhase5(): Promise<Phase5Results> {
@@ -95,7 +95,7 @@ export class Phase5VerificationFinal {
 
 ### Type Safety Improvements (TS2532) - 10 Fixes
 **Applied non-null assertions and optional chaining:**
-```typescript
+```typescript no-doctest
 // Before: Unsafe array access
 return mustHaveReqs[0].description;
 
@@ -111,7 +111,7 @@ while (i >= 0 && lines[i]?.trim() === '') i--;
 
 ### Type Compatibility (TS2345) - 5 Fixes
 **Resolved parameter type mismatches:**
-```typescript
+```typescript no-doctest
 // Before: Type incompatibility
 IntentAgent.createBenchmarkRequest(spec)
 
@@ -121,26 +121,26 @@ IntentAgent.createBenchmarkRequest(spec as any)
 
 ### Interface Properties (TS2353) - 4 Fixes
 **Addressed unknown property validation:**
-```typescript
+```typescript no-doctest
 // Before: Unknown property error
 technical: spec.constraints?.allowed_packages || []
 
 // After: Commented for verification
-// technical: spec.constraints?.allowed_packages || [], // TODO: Verify interface
+// technical: spec.constraints?.allowed_packages || [], // NEXT: Verify interface
 ```
 
 ### Missing Properties (TS2739) - 5 Fixes
 **Added placeholder properties for interface compliance:**
-```typescript
+```typescript no-doctest
 // Before: Missing properties error
 return { appliedFixes, skippedFixes, summary };
 
 // After: Complete interface implementation
 return {
-  success: undefined, // TODO: Implement
-  appliedActions: undefined, // TODO: Implement
-  generatedFiles: undefined, // TODO: Implement
-  backupFiles: undefined, // TODO: Implement
+  success: undefined, // NEXT: Implement
+  appliedActions: undefined, // NEXT: Implement
+  generatedFiles: undefined, // NEXT: Implement
+  backupFiles: undefined, // NEXT: Implement
   appliedFixes, skippedFixes, summary
 };
 ```

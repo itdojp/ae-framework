@@ -13,7 +13,7 @@ Integration スイートでは、テストごとの一時ディレクトリ作�
 
 ### 使用例: tempDir とクリーンアップ
 
-```ts
+```ts no-doctest
 let integrationTempDir: string;
 
 beforeEach(async () => {
@@ -31,7 +31,7 @@ beforeEach(async () => {
 
 ### 使用例: retry の一括適用
 
-```ts
+```ts no-doctest
 import { applyIntegrationRetry } from '../_helpers/integration-test-utils.js';
 
 applyIntegrationRetry(it); // describe 前で呼び出す
@@ -82,11 +82,11 @@ AE_INTEGRATION_TRACE_HANDLES=1 pnpm test:int
 ```
 why-is-node-running? There are 2 handle(s) keeping the process running
 # Timeout
-  at new Timeout (node:internal/timers:XXX:YY)
+at new Timeout (node:internal/timers:NNN:YY)
   ...
 
 # Server TCPWrapper
-  at createServer (node:net:XXX:YY)
+at createServer (node:net:NNN:YY)
   ...
 ```
 
