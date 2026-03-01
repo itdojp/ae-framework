@@ -103,6 +103,34 @@ describe('APIContractMonitor metrics wiring', () => {
     expect(result.metrics.dbQueries).toBe(4);
   });
 
+  it('ignores malformed string counters and falls back to defaults', async () => {
+    const monitor = createMonitor();
+    await monitor.updateRule(rule);
+
+    const result = await monitor.verify(
+      {
+        method: 'POST',
+        url: 'https://example.local/v1/messages',
+        path: '/v1/messages',
+        headers: {},
+        response: {
+          status: 202,
+          headers: {
+            'x-network-calls': '1.5',
+            'x-db-query-count': '12ms'
+          },
+          time: 20
+        },
+        timestamp: now
+      },
+      context
+    );
+
+    expect(result.status).toBe('pass');
+    expect(result.metrics.networkCalls).toBe(1);
+    expect(result.metrics.dbQueries).toBe(0);
+  });
+
   it('keeps metrics zero for invalid input payload', async () => {
     const monitor = createMonitor();
     await monitor.updateRule(rule);

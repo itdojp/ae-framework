@@ -496,8 +496,12 @@ export class APIContractMonitor implements ConformanceMonitor {
       return value;
     }
     if (typeof value === 'string' && value.trim().length > 0) {
-      const parsed = Number.parseInt(value.trim(), 10);
-      if (!Number.isNaN(parsed) && parsed >= 0) {
+      const normalized = value.trim();
+      if (!/^\d+$/.test(normalized)) {
+        return undefined;
+      }
+      const parsed = Number(normalized);
+      if (Number.isInteger(parsed) && parsed >= 0) {
         return parsed;
       }
     }
