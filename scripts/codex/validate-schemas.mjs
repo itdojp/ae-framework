@@ -75,6 +75,10 @@ function main() {
       name: 'blocked-warnings-empty-string',
       payload: { ...blockedBase, warnings: [''] },
     },
+    {
+      name: 'unblocked-warnings-empty-string',
+      payload: { ...unblockedBase, warnings: [''] },
+    },
   ];
 
   for (const sample of invalidCases) {

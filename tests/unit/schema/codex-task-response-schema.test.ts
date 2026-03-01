@@ -7,7 +7,6 @@ const schemaPath = resolve('schema/codex-task-response.schema.json');
 const validContinuePath = resolve('schema/examples/codex-task-response.unblocked.json');
 const validBlockedPath = resolve('schema/examples/codex-task-response.blocked.json');
 const invalidContinuePath = resolve('fixtures/codex/task-response.continue.invalid.json');
-const invalidBlockedPath = resolve('fixtures/codex/task-response.blocked.invalid.json');
 
 const loadJson = (filePath: string): unknown => JSON.parse(readFileSync(filePath, 'utf8'));
 
@@ -35,7 +34,11 @@ describe('codex-task-response schema contract', () => {
   });
 
   it('rejects blocked fixture when nextActions is empty', () => {
-    const payload = loadJson(invalidBlockedPath);
+    const payload = {
+      ...(loadJson(validBlockedPath) as Record<string, unknown>),
+      nextActions: [],
+      warnings: ['REQUIRED_INPUT: provide missing blocked-context'],
+    };
     expect(validate(payload)).toBe(false);
     expect(validate.errors?.some((error) => error.keyword === 'minItems')).toBe(true);
   });
@@ -58,10 +61,16 @@ describe('codex-task-response schema contract', () => {
       ...(loadJson(validContinuePath) as Record<string, unknown>),
       nextActions: [''],
     };
+    const continuePayloadWithEmptyWarning = {
+      ...(loadJson(validContinuePath) as Record<string, unknown>),
+      warnings: [''],
+    };
 
     expect(validate(blockedPayload)).toBe(false);
     expect(validate.errors?.some((error) => error.keyword === 'minLength')).toBe(true);
     expect(validate(continuePayload)).toBe(false);
+    expect(validate.errors?.some((error) => error.keyword === 'minLength')).toBe(true);
+    expect(validate(continuePayloadWithEmptyWarning)).toBe(false);
     expect(validate.errors?.some((error) => error.keyword === 'minLength')).toBe(true);
   });
 });
