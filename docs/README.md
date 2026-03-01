@@ -33,6 +33,7 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - Code improvement plan: `maintenance/code-improvement-plan.md`
 - Branch cleanup runbook: `maintenance/branch-cleanup-runbook.md`
 - Branch cleanup report (2026-02-28): `maintenance/branch-cleanup-report-2026-02-28.md`
+- Public types sync runbook: `maintenance/public-types-sync-runbook.md`
 - TODO triage runbook: `maintenance/todo-triage-runbook.md`
 - TODO triage inventory summary (2026-03-01): `maintenance/todo-triage-inventory-2026-03-01.md`
 - TODO triage inventory (triage CSV, 2026-03-01): `maintenance/todo-triage-inventory-2026-03-01.csv`

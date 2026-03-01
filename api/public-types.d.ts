@@ -1,4 +1,4 @@
-// snapshot sha1=64ce1d649dc9836580e11031f951411c5668c337
+// snapshot sha1=881ed213121fbf098d5e3f39d29c21a8e208c94f
 // ---- agents/domain-types.d.ts ----
 /**
  * @fileoverview Domain Types for Unified Agent System
@@ -3563,30 +3563,19 @@ export declare class DomainModelingAgentAdapter implements StandardAEAgent<Domai
 
 // ---- src/agents/adapters/ui-ux-agent-adapter.d.ts ----
 /**
- * UI/UX Agent Adapter (Placeholder Implementation)
- * Provides a standardized interface for UI/UX generation phase
- * TODO: Replace with actual UI/UX generation agent when available
+ * UI/UX Agent Adapter
+ * Standardized UI/UX generation phase backed by UIUXTaskAdapter.
  */
-import { StandardAEAgent, ProcessingContext, PhaseResult, ValidationResult, AgentCapabilities, UIUXInput, UIUXOutput } from '../interfaces/standard-interfaces.js';
-/**
- * Placeholder UI/UX Agent Adapter
- * Generates basic UI/UX artifacts based on domain model and user stories
- */
+import type { AgentCapabilities, PhaseResult, ProcessingContext, StandardAEAgent, UIUXInput, UIUXOutput, ValidationResult } from '../interfaces/standard-interfaces.js';
 export declare class UIUXAgentAdapter implements StandardAEAgent<UIUXInput, UIUXOutput> {
     readonly agentName = "UIUXAgentAdapter";
-    readonly version = "1.0.0";
+    readonly version = "1.1.0";
     readonly supportedPhase: "ui-ux-generation";
+    private uiuxTaskAdapter;
+    constructor();
     process(input: UIUXInput, context?: ProcessingContext): Promise<PhaseResult<UIUXOutput>>;
     validateInput(input: UIUXInput): ValidationResult;
     getCapabilities(): AgentCapabilities;
-    private generateWireframes;
-    private generateWireframeComponents;
-    private generateUserFlows;
-    private groupStoriesByFlow;
-    private generateUIComponents;
-    private generateDesignSystem;
-    private generatePrototypes;
-    private mapTypeToInputType;
     private buildErrorResult;
 }
 
@@ -24058,16 +24047,7 @@ export declare class ContextManager {
 
 // ---- src/utils/enhanced-state-manager.d.ts ----
 import { EventEmitter } from 'events';
-/**
- * Minimal AEIR stub type for build fix.
- * TODO: Replace with import from '@ae-framework/spec-compiler' when available.
- */
-export interface AEIR {
-    id?: string;
-    name?: string;
-    type?: string;
-    version?: string;
-}
+import type { AEIR } from '@ae-framework/spec-compiler';
 /**
  * Enhanced State Storage Entry with versioning and metadata
  */
@@ -24100,6 +24080,10 @@ export interface StorageOptions {
     gcInterval?: number;
     maxVersions?: number;
     enableTransactions?: boolean;
+    enablePerformanceMetrics?: boolean;
+    enableSerializationCache?: boolean;
+    performanceSampleSize?: number;
+    skipUnchangedPersistence?: boolean;
 }
 /**
  * Failure artifact information for CEGIS integration
@@ -24128,6 +24112,13 @@ export interface SnapshotMetadata {
     size: number;
     ttl?: number;
 }
+interface StringifySample {
+    context: string;
+    durationMs: number;
+    size: number;
+    cacheHit: boolean;
+    timestamp: string;
+}
 /**
  * Enhanced State Manager with SQLite-like storage, compression, and EventBus integration
  */
@@ -24137,8 +24128,13 @@ export declare class EnhancedStateManager extends EventEmitter {
     private versionIndex;
     private ttlIndex;
     private activeTransactions;
-    private gcTimer?;
+    private gcTimer;
     private isInitialized;
+    private performanceMetrics;
+    private stringifySamples;
+    private readonly stringifySampleLimit;
+    private serializationCache?;
+    private lastPersistedChecksum;
     private readonly options;
     private readonly dataDir;
     private readonly databaseFile;
@@ -24206,6 +24202,10 @@ export declare class EnhancedStateManager extends EventEmitter {
      */
     private runGarbageCollection;
     /**
+     * Public entry point for manual garbage collection (CLI-safe)
+     */
+    collectGarbage(): Promise<void>;
+    /**
      * Stop garbage collection
      */
     stopGarbageCollection(): void;
@@ -24222,6 +24222,19 @@ export declare class EnhancedStateManager extends EventEmitter {
         newestEntry: string | null;
         activeTransactions: number;
     };
+    getPerformanceMetrics(): {
+        stringifyCalls: number;
+        stringifyDurationMs: number;
+        stringifyMaxDurationMs: number;
+        averageDurationMs: number;
+        lastPayloadSize: number;
+        stringifyCacheHits: number;
+        stringifyCacheMisses: number;
+        persistedWrites: number;
+        skippedPersistWrites: number;
+        samples: StringifySample[];
+    };
+    resetPerformanceMetrics(): void;
     /**
      * Export state for backup or migration
      */
@@ -24241,11 +24254,16 @@ export declare class EnhancedStateManager extends EventEmitter {
      * Import state from backup or migration
      */
     importState(exportedState: Awaited<ReturnType<typeof this.exportState>>): Promise<void>;
+    private normalizeImportedEntry;
+    private reviveEntryData;
     private ensureInitialized;
     private getNextVersion;
     private findLatestKey;
     private findKeyByVersion;
     private updateIndices;
+    private recordStringifyMetrics;
+    private stringifyForStorage;
+    private measureSerializedSize;
     private shouldCompress;
     private compress;
     private decompress;
@@ -24259,6 +24277,7 @@ export declare class EnhancedStateManager extends EventEmitter {
      */
     shutdown(): Promise<void>;
 }
+export {};
 
 // ---- src/utils/evidence-validator.d.ts ----
 /**
