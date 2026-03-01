@@ -221,6 +221,7 @@ Claude CodeやMCPとの統合
 - **[CLAUDE-CODE-TASK-TOOL-INTEGRATION.md](./integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)** ⭐ **重要** - Task Tool統合仕様
 - [CLAUDECODE-WORKFLOW.md](./integrations/CLAUDECODE-WORKFLOW.md) - Claude Codeワークフロー
 - [CODEX-INTEGRATION.md](./integrations/CODEX-INTEGRATION.md) - CodeX統合（PoC/MCP/Adapter）
+- [CODEX-CONTINUATION-CONTRACT.md](./integrations/CODEX-CONTINUATION-CONTRACT.md) - 継続実行 Contract（No Human Bottleneck v1）
 - [CODEX-VENDOR-NEUTRAL-BOUNDARY.md](./integrations/CODEX-VENDOR-NEUTRAL-BOUNDARY.md) - Codex連携の責務境界とVendor-neutral最小コア
 
 ### 📚 [reference/](./reference/) - リファレンス・API仕様

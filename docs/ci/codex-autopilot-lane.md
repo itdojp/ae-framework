@@ -59,3 +59,15 @@ PRコメント（upsert）:
 - 自動復旧は `PR Self-Heal`（`pr-self-heal.yml`）と併用すると停止率を下げられます
 - auto-merge が有効化されない場合は branch protection / required checks / label条件を確認してください
 - `AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE=1`（既定）の場合、PR summary に `Change Package Validation` が出力済みであることを確認してください
+
+## 6. 停止理由と解除手順（運用定型）
+
+| status/reason | 最小解除手順 |
+| --- | --- |
+| `skip` + `missing label autopilot:on` | PR に `autopilot:on` ラベルを付与 |
+| `skip` + `draft PR` | Ready for review に変更 |
+| `blocked` + `merge conflict` | update-branch または手動 rebase で衝突を解消して push |
+| `done` + `checks healthy, waiting for required checks/merge queue` | required checks の完了を待機（追加操作不要） |
+
+補足:
+- レスポンス契約（継続/停止の定義）は `docs/integrations/CODEX-CONTINUATION-CONTRACT.md` を参照してください。
