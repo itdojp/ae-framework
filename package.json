@@ -217,6 +217,7 @@
     "container:demo": "tsx -e \"import { ContainerAgent } from './src/agents/container-agent.js'; console.log('Container verification demo ready');\"",
     "codex:quickstart": "node scripts/codex/quickstart.mjs",
     "codex:adapter": "node scripts/codex/adapter-stdio.mjs",
+    "check:schemas": "node scripts/codex/validate-schemas.mjs",
     "codex:spec:stdio": "node scripts/codex/spec-stdio.mjs",
     "codex:spec:iterate": "node scripts/codex/spec-iter.mjs",
     "codex:spec:prompt": "node scripts/codex/issues-to-revision-prompt.mjs",

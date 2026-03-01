@@ -98,6 +98,48 @@ function normalizeTaskRequest(request) {
   };
 }
 
+function normalizeBlockedWarnings(response) {
+  if (!response || typeof response !== 'object' || response.shouldBlockProgress !== true) {
+    return response;
+  }
+
+  const warnings = Array.isArray(response.warnings)
+    ? response.warnings
+      .filter((item) => typeof item === 'string')
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0)
+    : [];
+
+  if (warnings.length > 0) {
+    return {
+      ...response,
+      warnings,
+    };
+  }
+
+  const requiredHumanInput = typeof response.requiredHumanInput === 'string'
+    ? response.requiredHumanInput.trim()
+    : '';
+  const fallbackAction = Array.isArray(response.nextActions)
+    ? response.nextActions.find((item) => typeof item === 'string' && item.trim().length > 0)?.trim()
+    : '';
+  const blockingReason = typeof response.blockingReason === 'string'
+    ? response.blockingReason.trim()
+    : '';
+  const warningMessage = requiredHumanInput
+    ? `Human action: provide ${requiredHumanInput}`
+    : fallbackAction
+      ? `Human action: ${fallbackAction}`
+      : blockingReason
+        ? `Human action: resolve ${blockingReason}`
+        : 'Human action: provide required input and rerun codex task';
+
+  return {
+    ...response,
+    warnings: [warningMessage],
+  };
+}
+
 async function loadAdapter() {
   const candidates = [
     path.resolve('dist/src/agents/codex-task-adapter.js'),
@@ -164,6 +206,7 @@ async function main() {
     const { createCodexTaskAdapter } = await loadAdapter();
     const adapter = createCodexTaskAdapter();
     response = await adapter.handleTask(normalizeTaskRequest(request));
+    response = normalizeBlockedWarnings(response);
   } catch (error) {
     writeError({
       code: 'ADAPTER_ERROR',

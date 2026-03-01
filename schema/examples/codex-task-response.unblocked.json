@@ -1,0 +1,12 @@
+{
+  "summary": "Validation completed without blockers",
+  "analysis": "Schema and traceability checks passed for this request.",
+  "recommendations": [
+    "Run required checks before merge"
+  ],
+  "nextActions": [
+    "pnpm -s run verify:lite"
+  ],
+  "warnings": [],
+  "shouldBlockProgress": false
+}

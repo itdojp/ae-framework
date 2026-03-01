@@ -338,19 +338,11 @@ jobs:
         id: container_manifest
         uses: ./.github/actions/detect-container-manifest
 
-      - name: Install Podman and Trivy
+      - name: Install Podman
         if: steps.container_manifest.outputs.skip != 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y podman
-          TRIVY_VERSION="0.67.1"
-          TRIVY_TAR="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
-          TRIVY_CHECKSUMS="trivy_${TRIVY_VERSION}_checksums.txt"
-          curl -fsSLO "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${TRIVY_TAR}"
-          curl -fsSLO "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${TRIVY_CHECKSUMS}"
-          grep "${TRIVY_TAR}" "${TRIVY_CHECKSUMS}" | sha256sum --check --status
-          sudo tar -xzf "${TRIVY_TAR}" -C /usr/local/bin trivy
-          rm -f "${TRIVY_TAR}" "${TRIVY_CHECKSUMS}"
 
       - name: Build container image
         if: steps.container_manifest.outputs.skip != 'true'
@@ -362,7 +354,15 @@ jobs:
 
       - name: Run Trivy vulnerability scanner
         if: steps.container_manifest.outputs.skip != 'true'
-        run: trivy image --input ae-framework.tar --format sarif --output trivy-results.sarif
+        run: |
+          TRIVY_IMAGE="ghcr.io/aquasecurity/trivy:latest"
+          podman pull "${TRIVY_IMAGE}"
+          podman run --rm \
+            --security-opt label=disable \
+            -v "$PWD:/workspace" \
+            -w /workspace \
+            "${TRIVY_IMAGE}" \
+            image --input /workspace/ae-framework.tar --format sarif --output /workspace/trivy-results.sarif
 
       - name: Upload Trivy scan results
         uses: github/codeql-action/upload-sarif@v3

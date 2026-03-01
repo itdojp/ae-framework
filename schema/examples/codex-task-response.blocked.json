@@ -1,0 +1,16 @@
+{
+  "summary": "Blocked: required policy labels are missing",
+  "analysis": "Autopilot lane cannot continue until policy labels are applied.",
+  "recommendations": [
+    "Apply required labels and rerun lane"
+  ],
+  "nextActions": [
+    "gh pr edit 1234 --add-label enforce-testing --add-label run-security"
+  ],
+  "warnings": [
+    "Add labels: enforce-testing, run-security"
+  ],
+  "shouldBlockProgress": true,
+  "blockingReason": "missing-policy-labels",
+  "requiredHumanInput": "required-labels=enforce-testing,run-security"
+}

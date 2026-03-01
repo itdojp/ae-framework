@@ -62,7 +62,7 @@ Escalate to individual issue when:
 
 ## Hygiene rules
 
-- New TODO markers should include issue references when possible (for example `TODO(#2324): ...`).
+- New TODO markers should include issue references when possible (for example `TODO(#2333): ...`).
 - Remove markers with `triage_status=drop` in the same PR whenever safe.
 - Avoid large mixed PRs; separate “inventory/triage” and “implementation/removal”.
 - Keep `triage_status=now` items linked to dedicated issues and record them in

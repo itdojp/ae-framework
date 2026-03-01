@@ -8,6 +8,7 @@
 - Spec / IR / Drift: `docs/agents/recipes/spec-ir-drift.md`
 - Quality Profile: `docs/agents/recipes/quality-profile.md`
 - Formal Quickstart: `docs/agents/recipes/formal-quickstart.md`
+- Continuous Loop Contract (CodeX): `docs/agents/recipes/continuous-loop.md`
 
 ## 運用ルール
 

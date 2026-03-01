@@ -13,6 +13,7 @@
 - 2) UI スキャフォールド（Phase 6）: `CODEX_RUN_UI=1 CODEX_PHASE_STATE_FILE=... pnpm run codex:quickstart`
 - 3) MCP サーバ起動: `pnpm run codex:mcp:intent & pnpm run codex:mcp:verify &`
 - 成果物: `artifacts/codex/` 配下（OpenAPI, TLA+, model-check, UI サマリ 等）
+- 継続実行 Contract の運用レシピ: `docs/agents/recipes/continuous-loop.md`
 
 詳細は以下の英語セクションに記載のとおりです。
 
@@ -73,6 +74,7 @@ Sample configs:
 - Overview: `docs/integrations/CODEX-ARTIFACTS.md`
 - Schemas: `docs/integrations/schemas/*`
 - Examples: `docs/integrations/examples/*`
+- Continuous execution runbook: `docs/agents/recipes/continuous-loop.md`
 
 ## Windows/WSL Tips
 - Run `pnpm run doctor:env` first. Quickstart auto-builds `dist` when needed.
@@ -157,6 +159,9 @@ pnpm run doctor:env
 pnpm run build
 echo '{"description":"Generate UI","subagent_type":"ui","context":{"phaseState":{"entities":{}}}}' | pnpm run codex:adapter
 ```
+
+継続実行 Contract（blocked/unblocked の整形ルールと再開手順）は
+`docs/agents/recipes/continuous-loop.md` を参照してください。
 
 ### Windows/WSL の注意
 - 先に `pnpm run doctor:env` を実行（quickstart は必要に応じて `dist` を自動ビルド）

@@ -27,13 +27,15 @@
     "nextActions": {
       "type": "array",
       "items": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       }
     },
     "warnings": {
       "type": "array",
       "items": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       }
     },
     "shouldBlockProgress": {
@@ -76,6 +78,9 @@
       "then": {
         "properties": {
           "nextActions": {
+            "minItems": 1
+          },
+          "warnings": {
             "minItems": 1
           }
         }
