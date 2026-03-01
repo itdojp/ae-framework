@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { deriveUnblockActions, hasLabel, parseGateStatus } from '../../../scripts/ci/codex-autopilot-lane.mjs';
+import {
+  deriveBlockedSummary,
+  deriveUnblockActions,
+  hasLabel,
+  parseGateStatus,
+} from '../../../scripts/ci/codex-autopilot-lane.mjs';
 
 describe('codex-autopilot-lane helpers', () => {
   it('detects label presence', () => {
@@ -91,6 +96,9 @@ describe('codex-autopilot-lane helpers', () => {
     expect(deriveUnblockActions('blocked', 'merge conflict')).toEqual([
       'Rebase/update branch to resolve merge conflicts, then rerun `/autopilot run`.',
     ]);
+    expect(deriveUnblockActions('blocked', 'missing policy labels: run-security, enforce-artifacts')).toEqual([
+      'Add labels: run-security, enforce-artifacts. Then rerun `/autopilot run`.',
+    ]);
     expect(deriveUnblockActions('done', 'checks healthy, waiting for required checks/merge queue')).toEqual([
       'No manual fix required. Wait for required checks or merge queue completion.',
     ]);
@@ -112,5 +120,17 @@ describe('codex-autopilot-lane helpers', () => {
     expect(deriveUnblockActions('blocked', '')).toEqual([
       'Inspect required checks and rerun `/autopilot run`.',
     ]);
+    expect(deriveUnblockActions('blocked', 'auto-label failed: label write denied')).toEqual([
+      'Grant label-write permission (or disable auto-label) and rerun `/autopilot run`.',
+    ]);
+  });
+
+  it('formats deterministic blocked summary lines', () => {
+    expect(deriveBlockedSummary('merge conflict', [
+      'Rebase/update branch to resolve merge conflicts, then rerun `/autopilot run`.',
+    ])).toEqual({
+      blockedLine: 'Blocked: merge conflict',
+      unblockLine: 'To unblock: Rebase/update branch to resolve merge conflicts, then rerun `/autopilot run`.',
+    });
   });
 });

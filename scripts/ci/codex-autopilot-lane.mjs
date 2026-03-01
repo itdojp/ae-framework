@@ -15,6 +15,7 @@ import {
   parseActorCsv,
   toActorSet,
 } from './lib/automation-guards.mjs';
+import { DEFAULT_POLICY_PATH, collectRequiredLabels, loadRiskPolicy } from './lib/risk-policy.mjs';
 
 const marker = '<!-- AE-CODEX-AUTOPILOT v1 -->';
 const repo = String(process.env.GITHUB_REPOSITORY || '').trim();
@@ -24,6 +25,8 @@ const roundWaitSeconds = readIntEnv('AE_AUTOPILOT_ROUND_WAIT_SECONDS', 8, 0);
 const roundWaitStrategy = String(process.env.AE_AUTOPILOT_WAIT_STRATEGY || 'fixed').trim().toLowerCase();
 const roundWaitMaxSeconds = readIntEnv('AE_AUTOPILOT_ROUND_WAIT_MAX_SECONDS', roundWaitSeconds, 0);
 const dryRun = toBool(process.env.AE_AUTOPILOT_DRY_RUN) || toBool(process.env.DRY_RUN);
+const autoLabelEnabled = toBool(process.env.AE_AUTOPILOT_AUTO_LABEL);
+const riskPolicyPath = String(process.env.AE_AUTOPILOT_RISK_POLICY_PATH || DEFAULT_POLICY_PATH).trim() || DEFAULT_POLICY_PATH;
 const globalDisabled = toBool(process.env.AE_AUTOMATION_GLOBAL_DISABLE);
 const copilotActors = parseActorCsv(
   process.env.COPILOT_ACTORS,
@@ -86,6 +89,43 @@ function clearBlocked(number) {
   }
 }
 
+function addIssueLabels(number, labels) {
+  const unique = [...new Set((labels || []).map((item) => String(item || '').trim()).filter(Boolean))];
+  if (unique.length === 0) return [];
+  const payload = JSON.stringify({ labels: unique });
+  execText(['api', '--method', 'POST', `repos/${repo}/issues/${number}/labels`, '--input', '-'], payload);
+  return unique;
+}
+
+function fetchChangedFiles(number) {
+  const files = [];
+  let page = 1;
+  while (true) {
+    const chunk = execJson(['api', `repos/${repo}/pulls/${number}/files?per_page=100&page=${page}`]);
+    if (!Array.isArray(chunk) || chunk.length === 0) break;
+    for (const item of chunk) {
+      const name = String(item?.filename || '').trim();
+      if (name) files.push(name);
+    }
+    if (chunk.length < 100) break;
+    page += 1;
+  }
+  return files.sort();
+}
+
+function detectRequiredPolicyLabels(number) {
+  const policy = loadRiskPolicy(riskPolicyPath);
+  const changedFiles = fetchChangedFiles(number);
+  const { requiredLabels } = collectRequiredLabels(policy, changedFiles);
+  return requiredLabels.sort();
+}
+
+function detectMissingPolicyLabels(requiredLabels, prLabels) {
+  if (!Array.isArray(requiredLabels) || requiredLabels.length === 0) return [];
+  const currentLabels = new Set(normalizeLabelNames(prLabels || []));
+  return requiredLabels.filter((label) => !currentLabels.has(label)).sort();
+}
+
 function hasLabel(pr, labelName) {
   return hasOptInLabel(normalizeLabelNames(pr && pr.labels), labelName);
 }
@@ -143,6 +183,16 @@ function deriveUnblockActions(status, reason) {
   if (normalizedStatus === 'skip' && normalizedReason === 'draft pr') {
     return ['Mark PR as Ready for review, then rerun `/autopilot run`.'];
   }
+  if (normalizedReason.startsWith('missing policy labels:')) {
+    const labels = String(reason || '').split(':').slice(1).join(':').trim();
+    if (labels) {
+      return [`Add labels: ${labels}. Then rerun \`/autopilot run\`.`];
+    }
+    return ['Add missing policy labels, then rerun `/autopilot run`.'];
+  }
+  if (normalizedReason.startsWith('auto-label failed:')) {
+    return ['Grant label-write permission (or disable auto-label) and rerun `/autopilot run`.'];
+  }
   if (normalizedReason === 'merge conflict') {
     return ['Rebase/update branch to resolve merge conflicts, then rerun `/autopilot run`.'];
   }
@@ -150,6 +200,17 @@ function deriveUnblockActions(status, reason) {
     return [`Resolve: ${reason}. Then rerun \`/autopilot run\`.`];
   }
   return ['Inspect required checks and rerun `/autopilot run`.'];
+}
+
+function deriveBlockedSummary(reason, unblockActions) {
+  const normalizedReason = String(reason || '').trim() || 'unknown';
+  const primaryAction = Array.isArray(unblockActions) && unblockActions.length > 0
+    ? String(unblockActions[0] || '').trim()
+    : 'Inspect required checks and rerun `/autopilot run`.';
+  return {
+    blockedLine: `Blocked: ${normalizedReason}`,
+    unblockLine: `To unblock: ${primaryAction || 'Inspect required checks and rerun `/autopilot run`.'}`,
+  };
 }
 
 function fetchPrView(number) {
@@ -271,6 +332,7 @@ function enableAutoMerge(pr) {
 
 function renderBody(result) {
   const unblockActions = deriveUnblockActions(result.status, result.reason);
+  const blockedSummary = result.status === 'blocked' ? deriveBlockedSummary(result.reason, unblockActions) : null;
   const lines = [
     marker,
     `## Codex Autopilot Lane (${new Date().toISOString()})`,
@@ -283,6 +345,10 @@ function renderBody(result) {
     `- mergeable: ${result.mergeable || 'UNKNOWN'}`,
     `- merge state: ${result.mergeState || 'UNKNOWN'}`,
   ];
+  if (blockedSummary) {
+    lines.push(blockedSummary.blockedLine);
+    lines.push(blockedSummary.unblockLine);
+  }
   if (result.reason) lines.push(`- reason: ${result.reason}`);
   if (result.actions.length > 0) {
     lines.push('- actions:');
@@ -305,10 +371,17 @@ async function processPr(number) {
   let finalState = null;
   let done = false;
   let roundsExecuted = 0;
+  let requiredPolicyLabels = [];
+  try {
+    requiredPolicyLabels = detectRequiredPolicyLabels(number);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    actions.push(`policy-label detection failed: ${message}`);
+  }
 
   for (let round = 1; round <= maxRounds; round += 1) {
     roundsExecuted = round;
-    const pr = fetchPrView(number);
+    let pr = fetchPrView(number);
     finalState = pr;
 
     if (pr.state === 'MERGED') {
@@ -323,6 +396,26 @@ async function processPr(number) {
     if (!hasLabel(pr, 'autopilot:on')) {
       finalReason = 'missing label autopilot:on';
       break;
+    }
+    const missingPolicyLabels = detectMissingPolicyLabels(requiredPolicyLabels, pr.labels || []);
+    if (missingPolicyLabels.length > 0) {
+      if (autoLabelEnabled) {
+        actions.push(`round${round}: auto-label policy labels (${missingPolicyLabels.join(', ')})`);
+        if (!dryRun) {
+          try {
+            addIssueLabels(number, missingPolicyLabels);
+            pr = fetchPrView(number);
+            finalState = pr;
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            finalReason = `auto-label failed: ${message}`;
+            break;
+          }
+        }
+      } else {
+        finalReason = `missing policy labels: ${missingPolicyLabels.join(', ')}`;
+        break;
+      }
     }
     if (pr.mergeable === 'CONFLICTING' || pr.mergeStateStatus === 'DIRTY') {
       finalReason = 'merge conflict';
@@ -485,4 +578,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   main();
 }
 
-export { parseGateStatus, hasLabel, deriveUnblockActions };
+export { parseGateStatus, hasLabel, deriveBlockedSummary, deriveUnblockActions };
