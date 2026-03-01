@@ -36,7 +36,12 @@ pnpm api:update
 pnpm api:check
 ```
 
+`api:check` internally executes `api:sync-targets` after `api:emit`, so drift in
+the targeted declarations is also validated during CI checks.
+
 ## Notes
 
-- `configs/tsconfig/tsconfig.types.json` currently emits only a subset of source files.
-- `api:sync-targets` keeps critical declarations synchronized even when those files are outside the default emit set.
+- `configs/tsconfig/tsconfig.types.json` emits only a subset of source files.
+- Target sync uses `configs/tsconfig/tsconfig.public-types-sync.json` (extends
+  `tsconfig.types.json`) to keep compiler options aligned while adding path
+  mapping for `@ae-framework/spec-compiler`.

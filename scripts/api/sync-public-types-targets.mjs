@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 const PNPM_BIN = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+const TYPESCRIPT_PROJECT_PATH = path.resolve('configs/tsconfig/tsconfig.public-types-sync.json');
 const TARGETS = [
   {
     source: 'src/agents/adapters/ui-ux-agent-adapter.ts',
@@ -16,38 +17,29 @@ const TARGETS = [
   },
 ];
 
-const TYPESCRIPT_OPTIONS = [
-  '--declaration',
-  '--emitDeclarationOnly',
-  '--declarationMap',
-  'false',
-  '--target',
-  'es2022',
-  '--module',
-  'esnext',
-  '--moduleResolution',
-  'bundler',
-  '--skipLibCheck',
-  '--allowJs',
-  '--esModuleInterop',
-  '--allowSyntheticDefaultImports',
-  '--verbatimModuleSyntax',
-  'false',
-];
-
 const tempDir = mkdtempSync(path.join(os.tmpdir(), 'ae-public-types-sync-'));
 
 try {
   execFileSync(
     PNPM_BIN,
-    ['exec', 'tsc', ...TYPESCRIPT_OPTIONS, '--outDir', tempDir, ...TARGETS.map((target) => target.source)],
+    [
+      'exec',
+      'tsc',
+      '-p',
+      TYPESCRIPT_PROJECT_PATH,
+      '--declaration',
+      '--emitDeclarationOnly',
+      '--declarationMap',
+      'false',
+      '--outDir',
+      tempDir,
+    ],
     { stdio: 'inherit' }
   );
 
   for (const target of TARGETS) {
-    const compiledRelativePath = target.source
-      .replace(/^src\//, '')
-      .replace(/\.tsx?$/, '.d.ts')
+    const compiledRelativePath = target.targetDts
+      .replace(/^artifacts\/types\//, '')
       .split(path.posix.sep)
       .join(path.sep);
     const compiledPath = path.join(tempDir, compiledRelativePath);
