@@ -88,6 +88,8 @@ jobs:
           AE_GH_RETRY_MULTIPLIER: ${{ vars.AE_GH_RETRY_MULTIPLIER || '' }}
           AE_GH_RETRY_JITTER_MS: ${{ vars.AE_GH_RETRY_JITTER_MS || '' }}
           AE_GH_RETRY_DEBUG: ${{ vars.AE_GH_RETRY_DEBUG || '' }}
+          AE_AUTOPILOT_AUTO_LABEL: ${{ vars.AE_AUTOPILOT_AUTO_LABEL || '' }}
+          AE_AUTOPILOT_RISK_POLICY_PATH: ${{ vars.AE_AUTOPILOT_RISK_POLICY_PATH || '' }}
           COPILOT_REVIEW_WAIT_MINUTES: ${{ vars.COPILOT_REVIEW_WAIT_MINUTES || '' }}
           COPILOT_REVIEW_MAX_ATTEMPTS: ${{ vars.COPILOT_REVIEW_MAX_ATTEMPTS || '' }}
         run: |
@@ -102,4 +104,6 @@ jobs:
           AE_AUTOPILOT_ROUND_WAIT_SECONDS: ${{ vars.AE_AUTOPILOT_ROUND_WAIT_SECONDS || '8' }}
           AE_AUTOPILOT_WAIT_STRATEGY: ${{ vars.AE_AUTOPILOT_WAIT_STRATEGY || 'fixed' }}
           AE_AUTOPILOT_ROUND_WAIT_MAX_SECONDS: ${{ vars.AE_AUTOPILOT_ROUND_WAIT_MAX_SECONDS || vars.AE_AUTOPILOT_ROUND_WAIT_SECONDS || '8' }}
+          AE_AUTOPILOT_AUTO_LABEL: ${{ vars.AE_AUTOPILOT_AUTO_LABEL || '0' }}
+          AE_AUTOPILOT_RISK_POLICY_PATH: ${{ vars.AE_AUTOPILOT_RISK_POLICY_PATH || 'policy/risk-policy.yml' }}
         run: node scripts/ci/codex-autopilot-lane.mjs

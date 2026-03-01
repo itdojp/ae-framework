@@ -333,8 +333,12 @@ function enableAutoMerge(pr) {
 function renderBody(result) {
   const unblockActions = deriveUnblockActions(result.status, result.reason);
   const blockedSummary = result.status === 'blocked' ? deriveBlockedSummary(result.reason, unblockActions) : null;
-  const lines = [
-    marker,
+  const lines = [marker];
+  if (blockedSummary) {
+    lines.push(blockedSummary.blockedLine);
+    lines.push(blockedSummary.unblockLine);
+  }
+  lines.push(
     `## Codex Autopilot Lane (${new Date().toISOString()})`,
     `- PR: #${result.number} ${result.title}`.trimEnd(),
     `- status: ${result.status}`,
@@ -344,11 +348,7 @@ function renderBody(result) {
     `- unresolved copilot threads: ${result.unresolvedCopilot}`,
     `- mergeable: ${result.mergeable || 'UNKNOWN'}`,
     `- merge state: ${result.mergeState || 'UNKNOWN'}`,
-  ];
-  if (blockedSummary) {
-    lines.push(blockedSummary.blockedLine);
-    lines.push(blockedSummary.unblockLine);
-  }
+  );
   if (result.reason) lines.push(`- reason: ${result.reason}`);
   if (result.actions.length > 0) {
     lines.push('- actions:');
@@ -371,13 +371,7 @@ async function processPr(number) {
   let finalState = null;
   let done = false;
   let roundsExecuted = 0;
-  let requiredPolicyLabels = [];
-  try {
-    requiredPolicyLabels = detectRequiredPolicyLabels(number);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    actions.push(`policy-label detection failed: ${message}`);
-  }
+  let requiredPolicyLabels = null;
 
   for (let round = 1; round <= maxRounds; round += 1) {
     roundsExecuted = round;
@@ -396,6 +390,15 @@ async function processPr(number) {
     if (!hasLabel(pr, 'autopilot:on')) {
       finalReason = 'missing label autopilot:on';
       break;
+    }
+    if (!Array.isArray(requiredPolicyLabels)) {
+      try {
+        requiredPolicyLabels = detectRequiredPolicyLabels(number);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        finalReason = `policy-label detection failed: ${message}`;
+        break;
+      }
     }
     const missingPolicyLabels = detectMissingPolicyLabels(requiredPolicyLabels, pr.labels || []);
     if (missingPolicyLabels.length > 0) {
