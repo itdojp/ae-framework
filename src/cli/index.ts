@@ -90,7 +90,7 @@ class AEFrameworkCLI {
       enforceRealTime: false,
       strictMode: false,
     });
-    // Metrics collection is handled by telemetry/runtime modules; CLI bootstrap stays side-effect free.
+    // Metrics collection is handled by shared telemetry/runtime modules initialized during CLI bootstrap.
     
     // Initialize Task Tool handlers with proper types
     this.naturalLanguageHandler = createNaturalLanguageTaskHandler();
