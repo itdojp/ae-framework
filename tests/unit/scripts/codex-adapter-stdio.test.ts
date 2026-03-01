@@ -317,7 +317,7 @@ describe('codex adapter stdio contract', () => {
     });
   });
 
-  it('returns exit 1 when blocked response has empty warnings', () => {
+  it('returns exit 2 when blocked response has empty warnings but actionable nextActions', () => {
     withTempRepo((tempRoot) => {
       writeAdapterModule(tempRoot, `
         export function createCodexTaskAdapter() {
@@ -341,14 +341,15 @@ describe('codex adapter stdio contract', () => {
         JSON.stringify({ description: 'run', subagent_type: 'intent' }),
       );
 
-      expect(result.status).toBe(1);
+      expect(result.status).toBe(2);
       const payload = parseJsonLine(result.stdout);
       expect(payload).toEqual(
         expect.objectContaining({
-          error: true,
-          code: 'INVALID_RESPONSE_SCHEMA',
+          shouldBlockProgress: true,
         }),
       );
+      expect(Array.isArray(payload.warnings)).toBe(true);
+      expect(payload.warnings[0]).toContain('Human action:');
     });
   });
 
