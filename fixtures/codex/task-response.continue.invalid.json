@@ -1,0 +1,8 @@
+{
+  "summary": "No-op response",
+  "analysis": "This response should fail because nextActions is empty.",
+  "recommendations": [],
+  "nextActions": [],
+  "warnings": [],
+  "shouldBlockProgress": false
+}

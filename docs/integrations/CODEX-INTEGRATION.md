@@ -119,6 +119,16 @@ echo '{"description":"Generate UI","subagent_type":"ui","context":{"phaseState":
 - Formal: `FormalAgent` generates TLA+ and OpenAPI (best-effort model checking)
 - Validation: runtime schema validation (Zod) for `context.phaseState` blocks on invalid inputs with actionable messages.
  - Contract/E2E templates: when OpenAPI is available in quickstart, `scripts/codex/generate-contract-tests.mjs` scaffolds tests under `tests/api/generated/` and writes `artifacts/codex/openapi-contract-tests.json`.
+- Continuation contract (No Human Bottleneck): `docs/integrations/CODEX-CONTINUATION-CONTRACT.md`
+
+### TaskResponse schema transition note (Contract v1)
+
+- `schema/codex-task-response.schema.json` now enforces:
+  - `shouldBlockProgress=false` => `nextActions` must be non-empty
+  - `shouldBlockProgress=true` => `nextActions` must be non-empty
+- Migration recommendation:
+  - Move blocked responses to explicit `blockingReason` / `requiredHumanInput` fields where possible.
+  - Existing blocked responses without those fields are accepted for compatibility.
 
 ## 4) CodeX (no MCP) – Spec Tools over stdio
 - Script: `pnpm run codex:spec:stdio`
@@ -281,6 +291,7 @@ set CODEX_RUN_FORMAL=1 && pnpm run build && pnpm run codex:quickstart
 詳細は英語セクション（上部）および以下の関連資料を参照してください。
 - CodeX Quick Start（クイックスタート）
 - CodeX Artifacts and JSON Formats（成果物の形式）
+- CodeX Continuation Contract（継続実行ルール）
 
 ## 日本語（詳細）
 

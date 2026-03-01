@@ -61,11 +61,16 @@ PRコメント（upsert）:
 - auto-merge が有効化されない場合は branch protection / required checks / label条件を確認してください
 - `AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE=1`（既定）の場合、PR summary に `Change Package Validation` が出力済みであることを確認してください
 
-## 6. 停止理由と最小解除手順
+## 6. 停止理由と解除手順（運用定型）
 
-| reason | 最小解除手順 |
+| status/reason | 最小解除手順 |
 | --- | --- |
-| `missing label autopilot:on` | PR に `autopilot:on` を付与し `/autopilot run` |
-| `draft PR` | Ready for review へ変更し `/autopilot run` |
-| `merge conflict` | rebase/update branch で衝突解消後に `/autopilot run` |
-| `checks healthy, waiting for required checks/merge queue` | required checks/merge queue 完了まで待機（追加修正不要） |
+| `skip` + `missing label autopilot:on` | PR に `autopilot:on` ラベルを付与して `/autopilot run` |
+| `skip` + `draft PR` | Ready for review に変更して `/autopilot run` |
+| `blocked` + `merge conflict` | update-branch または手動 rebase で衝突を解消して push 後に `/autopilot run` |
+| `done` + `checks healthy, waiting for required checks/merge queue` | required checks/merge queue の完了を待機（追加修正不要） |
+| `done` + `auto-merge enabled` / `already merged` | 追加操作不要 |
+
+補足:
+- `done` で上表以外の reason の場合は、PR checks を監視して merge 完了まで待機します。
+- レスポンス契約（継続/停止の定義）は `docs/integrations/CODEX-CONTINUATION-CONTRACT.md` を参照してください。
