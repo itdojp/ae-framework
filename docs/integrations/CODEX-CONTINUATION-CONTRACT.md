@@ -48,7 +48,7 @@ CodeX 実行で「確認待ち」「追加指示待ち」による停止を減�
 
 条件:
 - `shouldBlockProgress=true`
-- `summary` または `warnings` に停止理由を明記
+- `warnings.length >= 1`（停止理由を明記）
 - `nextActions.length >= 1`（再開手順を明示）
 
 入力要求の表現（互換運用）:
@@ -116,8 +116,8 @@ echo '{"description":"validate API","subagent_type":"validation","context":{}}' 
 # 3) Contract quick checks
 # continue response: shouldBlockProgress=false なら nextActions は1件以上
 jq -e 'if .shouldBlockProgress then true else ((.nextActions | length) > 0) end' /tmp/codex-response.json
-# blocked response: shouldBlockProgress=true なら nextActions は1件以上
-jq -e 'if .shouldBlockProgress then ((.nextActions | length) > 0) else true end' /tmp/codex-response.json
+# blocked response: shouldBlockProgress=true なら nextActions/warnings は各1件以上
+jq -e 'if .shouldBlockProgress then ((.nextActions | length) > 0 and (.warnings | length) > 0) else true end' /tmp/codex-response.json
 
 # 4) Optional: standalone schema validation
 node --input-type=module - <<'NODE'
@@ -138,7 +138,7 @@ NODE
 
 備考:
 - `pnpm run codex:adapter` は blocked 応答時に exit code `2` を返します（想定動作）。
-- schemaの相関制約は段階導入で、互換期間中は blocked 応答の表現が混在し得ます。
+- schema の相関制約をローカルで再確認する場合は `pnpm run check:schemas` を実行します。
 
 ## 6. 一次情報
 

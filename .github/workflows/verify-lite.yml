@@ -83,6 +83,10 @@ jobs:
         if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
         run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
+      - name: Run Codex response schema checks (required)
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
+        run: pnpm run check:schemas
+
       - name: Run CLI/Artifacts contract conformance tests (required)
         if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
         run: pnpm -s vitest run tests/contracts/cli-artifacts-contracts.test.ts

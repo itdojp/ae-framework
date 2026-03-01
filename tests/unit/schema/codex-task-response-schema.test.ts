@@ -4,8 +4,8 @@ import { resolve } from 'node:path';
 import Ajv2020 from 'ajv/dist/2020.js';
 
 const schemaPath = resolve('schema/codex-task-response.schema.json');
-const validContinuePath = resolve('fixtures/codex/task-response.continue.valid.json');
-const validBlockedPath = resolve('fixtures/codex/task-response.blocked.valid.json');
+const validContinuePath = resolve('schema/examples/codex-task-response.unblocked.json');
+const validBlockedPath = resolve('schema/examples/codex-task-response.blocked.json');
 const invalidContinuePath = resolve('fixtures/codex/task-response.continue.invalid.json');
 const invalidBlockedPath = resolve('fixtures/codex/task-response.blocked.invalid.json');
 
@@ -38,5 +38,30 @@ describe('codex-task-response schema contract', () => {
     const payload = loadJson(invalidBlockedPath);
     expect(validate(payload)).toBe(false);
     expect(validate.errors?.some((error) => error.keyword === 'minItems')).toBe(true);
+  });
+
+  it('rejects blocked response when warnings is empty', () => {
+    const payload = {
+      ...(loadJson(validBlockedPath) as Record<string, unknown>),
+      warnings: [],
+    };
+    expect(validate(payload)).toBe(false);
+    expect(validate.errors?.some((error) => error.keyword === 'minItems')).toBe(true);
+  });
+
+  it('rejects response when nextActions or warnings includes empty string', () => {
+    const blockedPayload = {
+      ...(loadJson(validBlockedPath) as Record<string, unknown>),
+      warnings: [''],
+    };
+    const continuePayload = {
+      ...(loadJson(validContinuePath) as Record<string, unknown>),
+      nextActions: [''],
+    };
+
+    expect(validate(blockedPayload)).toBe(false);
+    expect(validate.errors?.some((error) => error.keyword === 'minLength')).toBe(true);
+    expect(validate(continuePayload)).toBe(false);
+    expect(validate.errors?.some((error) => error.keyword === 'minLength')).toBe(true);
   });
 });
