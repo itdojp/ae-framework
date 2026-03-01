@@ -17,14 +17,20 @@ export interface TaskRequest {
 }
 
 export interface TaskResponse {
+  // Short status line. Blocked responses should start with "Blocked:".
   summary: string;
+  // Main analysis body for humans/agents.
   analysis: string;
+  // Optional supporting recommendations.
   recommendations: string[];
+  // Deterministic next steps. When unblocked, at least one actionable item is required.
   nextActions: string[];
+  // Non-empty for blocked responses; first item should describe minimal human action.
   warnings: string[];
   shouldBlockProgress: boolean;
-  // Optional during transition; required by schema when blocked in strict branch.
+  // Machine-readable blocker key for deterministic retries.
   blockingReason?: string;
+  // Minimal input required to resume execution (tool-neutral string format).
   requiredHumanInput?: string;
 }
 
