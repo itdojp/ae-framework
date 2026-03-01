@@ -1,27 +1,16 @@
 /**
- * UI/UX Agent Adapter (Placeholder Implementation)
- * Provides a standardized interface for UI/UX generation phase
- * TODO: Replace with actual UI/UX generation agent when available
+ * UI/UX Agent Adapter
+ * Standardized UI/UX generation phase backed by UIUXTaskAdapter.
  */
-import { StandardAEAgent, ProcessingContext, PhaseResult, ValidationResult, AgentCapabilities, UIUXInput, UIUXOutput } from '../interfaces/standard-interfaces.js';
-/**
- * Placeholder UI/UX Agent Adapter
- * Generates basic UI/UX artifacts based on domain model and user stories
- */
+import type { AgentCapabilities, PhaseResult, ProcessingContext, StandardAEAgent, UIUXInput, UIUXOutput, ValidationResult } from '../interfaces/standard-interfaces.js';
 export declare class UIUXAgentAdapter implements StandardAEAgent<UIUXInput, UIUXOutput> {
     readonly agentName = "UIUXAgentAdapter";
-    readonly version = "1.0.0";
+    readonly version = "1.1.0";
     readonly supportedPhase: "ui-ux-generation";
+    private uiuxTaskAdapter;
+    constructor();
     process(input: UIUXInput, context?: ProcessingContext): Promise<PhaseResult<UIUXOutput>>;
     validateInput(input: UIUXInput): ValidationResult;
     getCapabilities(): AgentCapabilities;
-    private generateWireframes;
-    private generateWireframeComponents;
-    private generateUserFlows;
-    private groupStoriesByFlow;
-    private generateUIComponents;
-    private generateDesignSystem;
-    private generatePrototypes;
-    private mapTypeToInputType;
     private buildErrorResult;
 }
