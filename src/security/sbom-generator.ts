@@ -114,6 +114,43 @@ interface PackageJsonLike {
 
 type SBOMVulnerability = NonNullable<SBOM['vulnerabilities']>[number];
 
+interface NormalizedVulnerabilityComponent {
+  bomRef: string;
+  name: string;
+  version: string;
+  ecosystem: string;
+}
+
+interface OsvSeverity {
+  type?: string;
+  score?: string;
+}
+
+interface OsvReference {
+  type?: string;
+  url?: string;
+}
+
+interface OsvVulnerability {
+  id?: string;
+  summary?: string;
+  details?: string;
+  severity?: OsvSeverity[];
+  references?: OsvReference[];
+  database_specific?: {
+    severity?: string;
+    cwes?: string[];
+  };
+}
+
+interface OsvBatchResult {
+  vulns?: OsvVulnerability[];
+}
+
+interface OsvBatchResponse {
+  results?: OsvBatchResult[];
+}
+
 export class SBOMGenerator {
   private options: Required<SBOMGeneratorOptions>;
 
@@ -160,7 +197,7 @@ export class SBOMGenerator {
     };
 
     // Add dependencies if available
-    const dependencies = await this.extractDependencyGraph(components);
+    const dependencies = await this.extractDependencyGraph();
     if (dependencies.length > 0) {
       sbom.dependencies = dependencies;
     }
@@ -329,7 +366,7 @@ export class SBOMGenerator {
   /**
    * Extract dependency graph
    */
-  private async extractDependencyGraph(components: SBOMComponent[]): Promise<{ ref: string; dependsOn?: string[] }[]> {
+  private async extractDependencyGraph(): Promise<{ ref: string; dependsOn?: string[] }[]> {
     const dependencies: { ref: string; dependsOn?: string[] }[] = [];
 
     try {
@@ -359,49 +396,283 @@ export class SBOMGenerator {
   }
 
   /**
-   * Extract vulnerabilities (placeholder for vulnerability scanning integration)
+   * Extract vulnerabilities from OSV using normalized component metadata.
+   * Fallback behavior is non-fatal by design: warn + empty result.
    */
   private async extractVulnerabilities(components: SBOMComponent[]): Promise<SBOMVulnerability[]> {
-    // This would integrate with vulnerability databases like:
-    // - NPM audit
-    // - GitHub Advisory Database
-    // - OSV (Open Source Vulnerabilities)
-    // - Snyk
-    // - CVE databases
+    const normalized = this.normalizeVulnerabilityComponents(components);
+    if (normalized.length === 0) {
+      console.warn('[SBOM] No vulnerability-queryable components found; skipping OSV lookup.');
+      return [];
+    }
+
+    const batch = await this.queryOsvBatch(normalized);
+    if (!batch) return [];
+
+    const results = Array.isArray(batch.results) ? batch.results : [];
+    if (results.length !== normalized.length) {
+      console.warn(
+        `[SBOM] OSV response count mismatch (queries=${normalized.length}, results=${results.length}).`,
+      );
+    }
 
     const vulnerabilities: SBOMVulnerability[] = [];
-    const severities = ['low', 'medium', 'high', 'critical'] as const;
+    for (let i = 0; i < normalized.length; i += 1) {
+      const component = normalized[i]!;
+      const result = results[i];
+      const vulns = Array.isArray(result?.vulns) ? result.vulns : [];
+      for (const vuln of vulns) {
+        vulnerabilities.push(this.mapOsvVulnerability(component, vuln));
+      }
+    }
 
-    // Placeholder implementation - TODO: Replace with actual vulnerability scanning
-    // Note: This is a demonstration/testing implementation only
+    vulnerabilities.sort((a, b) => {
+      if (a.bom_ref !== b.bom_ref) return a.bom_ref.localeCompare(b.bom_ref);
+      return a.id.localeCompare(b.id);
+    });
+
+    return vulnerabilities;
+  }
+
+  private normalizeVulnerabilityComponents(components: SBOMComponent[]): NormalizedVulnerabilityComponent[] {
+    const normalized: NormalizedVulnerabilityComponent[] = [];
+    const seen = new Set<string>();
+
     for (const component of components) {
-      if (component.type === 'library') {
-        // Deterministic mock vulnerability check based on component name hash
-        const hash = this.simpleHash(component.name + component.version);
-        if (hash % 10 === 0) { // Deterministic 10% chance based on name/version
-          const severity = severities[hash % severities.length] ?? 'low';
-          vulnerabilities.push({
-            bom_ref: component.name,
-            id: `CVE-2023-${(hash % 10000).toString().padStart(4, '0')}`,
-            source: {
-              name: 'National Vulnerability Database',
-              url: 'https://nvd.nist.gov/',
-            },
-            ratings: [
-              {
-                source: 'NVD',
-                score: ((hash % 100) / 10), // Deterministic score 0-10
-                severity,
-                method: 'CVSSv3',
-              },
-            ],
-            description: `Mock vulnerability in ${component.name}`,
-          });
+      if (component.type !== 'library') continue;
+
+      const name = component.name.trim();
+      const version = this.normalizeVersionForVulnerabilityQuery(component.version);
+      const ecosystem = this.inferEcosystemForVulnerabilityQuery(component);
+
+      if (!name || !version || !ecosystem) {
+        continue;
+      }
+
+      const key = `${ecosystem}:${name}@${version}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      normalized.push({
+        bomRef: component.name,
+        name,
+        version,
+        ecosystem,
+      });
+    }
+
+    return normalized;
+  }
+
+  private normalizeVersionForVulnerabilityQuery(rawVersion: string): string | null {
+    const trimmed = rawVersion.trim();
+    if (!trimmed) return null;
+    if (/^(workspace|file|link|git):/i.test(trimmed)) return null;
+
+    // Accept exact resolved versions and normalize common semver prefixes when lockfile is unavailable.
+    const normalized = trimmed.replace(/^[~^<>=\s]+/, '').replace(/^v(?=\d)/i, '');
+    if (!normalized || /[\s|*]/.test(normalized)) return null;
+    return normalized;
+  }
+
+  private inferEcosystemForVulnerabilityQuery(component: SBOMComponent): string | null {
+    if (component.purl?.startsWith('pkg:')) {
+      const withoutPrefix = component.purl.slice(4);
+      const slashIndex = withoutPrefix.indexOf('/');
+      if (slashIndex > 0) {
+        const purlEcosystem = withoutPrefix.slice(0, slashIndex).toLowerCase();
+        switch (purlEcosystem) {
+          case 'npm':
+            return 'npm';
+          case 'maven':
+            return 'Maven';
+          case 'pypi':
+            return 'PyPI';
+          case 'nuget':
+            return 'NuGet';
+          case 'crates':
+            return 'crates.io';
+          case 'packagist':
+            return 'Packagist';
+          case 'rubygems':
+            return 'RubyGems';
+          case 'go':
+          case 'golang':
+            return 'Go';
+          default:
+            return null;
         }
       }
     }
 
-    return vulnerabilities;
+    // Without purl, ecosystem cannot be inferred safely.
+    return null;
+  }
+
+  private async queryOsvBatch(components: NormalizedVulnerabilityComponent[]): Promise<OsvBatchResponse | null> {
+    const endpoint = process.env['SBOM_OSV_ENDPOINT'] ?? 'https://api.osv.dev/v1/querybatch';
+    const timeoutRaw = Number.parseInt(process.env['SBOM_OSV_TIMEOUT_MS'] ?? '10000', 10);
+    const timeoutMs = Number.isFinite(timeoutRaw) && timeoutRaw > 0 ? timeoutRaw : 10000;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+    const body = {
+      queries: components.map((component) => ({
+        package: {
+          ecosystem: component.ecosystem,
+          name: component.name,
+        },
+        version: component.version,
+      })),
+    };
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const retryAfter = response.headers.get('retry-after');
+        if (response.status === 429) {
+          console.warn(
+            `[SBOM] OSV rate-limited (HTTP 429). retry-after=${retryAfter ?? 'unknown'}s. Returning empty vulnerabilities.`,
+          );
+        } else {
+          console.warn(`[SBOM] OSV query failed: HTTP ${response.status}. Returning empty vulnerabilities.`);
+        }
+        return null;
+      }
+
+      const payload = (await response.json()) as OsvBatchResponse;
+      if (!payload || !Array.isArray(payload.results)) {
+        console.warn('[SBOM] OSV response did not include a valid results array. Returning empty vulnerabilities.');
+        return null;
+      }
+
+      return payload;
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      console.warn(`[SBOM] OSV query threw an error (${reason}). Returning empty vulnerabilities.`);
+      return null;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  private mapOsvVulnerability(
+    component: NormalizedVulnerabilityComponent,
+    vulnerability: OsvVulnerability,
+  ): SBOMVulnerability {
+    const id = vulnerability.id?.trim() || 'OSV-UNKNOWN';
+    const summary = vulnerability.summary?.trim();
+    const details = vulnerability.details?.trim();
+    const score = this.parseCvssScore(vulnerability.severity);
+    const severity = this.mapSeverityFromOsv(vulnerability, score);
+    const references = Array.isArray(vulnerability.references) ? vulnerability.references : [];
+    const cwes = vulnerability.database_specific?.cwes
+      ?.map((value) => Number.parseInt(value.replace(/^CWE-/i, ''), 10))
+      .filter((value) => Number.isInteger(value));
+
+    return {
+      bom_ref: component.bomRef,
+      id,
+      source: {
+        name: 'OSV',
+        url: `https://osv.dev/vulnerability/${id}`,
+      },
+      ratings: [
+        {
+          source: 'OSV',
+          ...(score !== undefined ? { score } : {}),
+          severity,
+          method: 'OSV',
+        },
+      ],
+      ...(Array.isArray(cwes) && cwes.length > 0 ? { cwes } : {}),
+      description: summary || details || `Vulnerability in ${component.name}@${component.version}`,
+      advisories: references
+        .filter((reference): reference is OsvReference & { url: string } => Boolean(reference?.url))
+        .map((reference) => ({
+          ...(reference.type ? { title: reference.type } : {}),
+          url: reference.url,
+        })),
+    };
+  }
+
+  private mapSeverityFromOsv(vulnerability: OsvVulnerability, score?: number): 'low' | 'medium' | 'high' | 'critical' {
+    if (score !== undefined) {
+      if (score >= 9.0) return 'critical';
+      if (score >= 7.0) return 'high';
+      if (score >= 4.0) return 'medium';
+      return 'low';
+    }
+
+    const vectorSeverity = this.parseCvssSeverityFromVector(vulnerability.severity);
+    if (vectorSeverity) return vectorSeverity;
+
+    const dbSeverity = vulnerability.database_specific?.severity?.toLowerCase();
+    if (dbSeverity === 'critical') return 'critical';
+    if (dbSeverity === 'high') return 'high';
+    if (dbSeverity === 'medium' || dbSeverity === 'moderate') return 'medium';
+    if (dbSeverity === 'low') return 'low';
+    return 'medium';
+  }
+
+  private parseCvssScore(severities?: OsvSeverity[]): number | undefined {
+    if (!Array.isArray(severities)) return undefined;
+    for (const severity of severities) {
+      const rawScore = severity.score?.trim();
+      if (!rawScore) continue;
+      const parsed = Number.parseFloat(rawScore);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+    return undefined;
+  }
+
+  private parseCvssSeverityFromVector(
+    severities?: OsvSeverity[],
+  ): 'low' | 'medium' | 'high' | 'critical' | undefined {
+    if (!Array.isArray(severities)) return undefined;
+    for (const severity of severities) {
+      const rawScore = severity.score?.trim();
+      if (!rawScore || !/^CVSS:/i.test(rawScore)) continue;
+
+      const metrics = new Map<string, string>();
+      for (const segment of rawScore.split('/').slice(1)) {
+        const [key, value] = segment.split(':');
+        if (!key || !value) continue;
+        metrics.set(key.toUpperCase(), value.toUpperCase());
+      }
+
+      let risk = 0;
+      const av = metrics.get('AV');
+      if (av === 'N') risk += 1.5;
+      else if (av === 'A') risk += 1.0;
+      else if (av === 'L') risk += 0.5;
+
+      if (metrics.get('AC') === 'L') risk += 1.0;
+      if (metrics.get('PR') === 'N') risk += 1.0;
+      else if (metrics.get('PR') === 'L') risk += 0.5;
+      if (metrics.get('UI') === 'N') risk += 0.5;
+      if (metrics.get('S') === 'C') risk += 1.0;
+
+      for (const axis of ['C', 'I', 'A']) {
+        const value = metrics.get(axis);
+        if (value === 'H') risk += 2.0;
+        else if (value === 'L') risk += 1.0;
+      }
+
+      if (risk >= 9.0) return 'critical';
+      if (risk >= 7.0) return 'high';
+      if (risk >= 4.0) return 'medium';
+      return 'low';
+    }
+    return undefined;
   }
 
   /**
@@ -498,19 +769,6 @@ export class SBOMGenerator {
 
     xml += '</bom>\n';
     return xml;
-  }
-
-  /**
-   * Simple hash function for deterministic mock data generation
-   */
-  private simpleHash(str: string): number {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32-bit integer
-    }
-    return Math.abs(hash);
   }
 
   /**
