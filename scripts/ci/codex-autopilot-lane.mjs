@@ -123,6 +123,35 @@ function parseGateStatus(statusCheckRollup) {
   return 'failure';
 }
 
+function deriveUnblockActions(status, reason) {
+  const normalizedStatus = String(status || '').trim().toLowerCase();
+  const normalizedReason = String(reason || '').trim().toLowerCase();
+
+  if (normalizedStatus === 'done') {
+    if (normalizedReason === 'checks healthy, waiting for required checks/merge queue') {
+      return ['No manual fix required. Wait for required checks or merge queue completion.'];
+    }
+    if (normalizedReason === 'auto-merge enabled' || normalizedReason === 'already merged') {
+      return ['No action required.'];
+    }
+    return ['No immediate action required. Monitor PR checks until merge completes.'];
+  }
+
+  if (normalizedStatus === 'skip' && normalizedReason === 'missing label autopilot:on') {
+    return ['Add label `autopilot:on` and rerun `/autopilot run`.'];
+  }
+  if (normalizedStatus === 'skip' && normalizedReason === 'draft pr') {
+    return ['Mark PR as Ready for review, then rerun `/autopilot run`.'];
+  }
+  if (normalizedReason === 'merge conflict') {
+    return ['Rebase/update branch to resolve merge conflicts, then rerun `/autopilot run`.'];
+  }
+  if (normalizedReason) {
+    return [`Resolve: ${reason}. Then rerun \`/autopilot run\`.`];
+  }
+  return ['Inspect required checks and rerun `/autopilot run`.'];
+}
+
 function fetchPrView(number) {
   return execJson([
     'pr',
@@ -241,6 +270,7 @@ function enableAutoMerge(pr) {
 }
 
 function renderBody(result) {
+  const unblockActions = deriveUnblockActions(result.status, result.reason);
   const lines = [
     marker,
     `## Codex Autopilot Lane (${new Date().toISOString()})`,
@@ -257,6 +287,12 @@ function renderBody(result) {
   if (result.actions.length > 0) {
     lines.push('- actions:');
     for (const action of result.actions) {
+      lines.push(`  - ${action}`);
+    }
+  }
+  if (unblockActions.length > 0) {
+    lines.push('- unblock:');
+    for (const action of unblockActions) {
       lines.push(`  - ${action}`);
     }
   }
@@ -366,10 +402,6 @@ async function processPr(number) {
     mergeState: finalState?.mergeStateStatus || '',
   };
 
-  if (status === 'skip') {
-    return result;
-  }
-
   if (!dryRun) {
     if (status === 'blocked') {
       setBlocked(number);
@@ -453,4 +485,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   main();
 }
 
-export { parseGateStatus, hasLabel };
+export { parseGateStatus, hasLabel, deriveUnblockActions };
