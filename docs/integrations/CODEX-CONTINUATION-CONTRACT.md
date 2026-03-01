@@ -49,11 +49,12 @@ CodeX 実行で「確認待ち」「追加指示待ち」による停止を減�
 条件:
 - `shouldBlockProgress=true`
 - `summary` または `warnings` に停止理由を明記
-- 人間に必要な最小入力を1行で明記（曖昧な依頼を禁止）
+- `nextActions.length >= 1`（再開手順を明示）
 
-v1 暫定表現（schema 拡張前）:
-- `warnings` に `REQUIRED_INPUT: <key>=<value>` 形式を含める
-- `nextActions` は `Provide <key>=<value> and rerun` のように1ステップで再開可能な記述にする
+入力要求の表現（互換運用）:
+- 推奨: `blockingReason` と `requiredHumanInput` を明示する
+- 互換: `warnings` に `REQUIRED_INPUT: <key>=<value>` を含める
+- いずれの場合も `nextActions` は `Provide <key>=<value> and rerun` のように1ステップで再開可能な記述にする
 
 ## 3. 推奨レスポンス例
 
@@ -82,7 +83,9 @@ v1 暫定表現（schema 拡張前）:
   "recommendations": ["Set environment before rerun"],
   "nextActions": ["Provide environment=staging and rerun codex task"],
   "warnings": ["REQUIRED_INPUT: environment=staging|production"],
-  "shouldBlockProgress": true
+  "shouldBlockProgress": true,
+  "blockingReason": "missing-environment",
+  "requiredHumanInput": "environment=staging|production"
 }
 ```
 
@@ -108,17 +111,34 @@ v1 暫定表現（schema 拡張前）:
 pnpm run build
 
 # 2) Adapter call
-echo '{"description":"validate API","subagent_type":"validation","context":{}}' | pnpm run codex:adapter > /tmp/codex-response.json
+echo '{"description":"validate API","subagent_type":"validation","context":{}}' | pnpm run codex:adapter > /tmp/codex-response.json || test $? -eq 2
 
-# 3) Contract quick check (continue path)
-jq -e '(.shouldBlockProgress == true) or ((.nextActions | length) > 0)' /tmp/codex-response.json
+# 3) Contract quick checks
+# continue response: shouldBlockProgress=false なら nextActions は1件以上
+jq -e 'if .shouldBlockProgress then true else ((.nextActions | length) > 0) end' /tmp/codex-response.json
+# blocked response: shouldBlockProgress=true なら nextActions は1件以上
+jq -e 'if .shouldBlockProgress then ((.nextActions | length) > 0) else true end' /tmp/codex-response.json
 
-# 4) Schema validation path (adapter-stdio internally validates TaskResponse)
-cat /tmp/codex-response.json | jq .
+# 4) Optional: standalone schema validation
+node --input-type=module - <<'NODE'
+import fs from 'node:fs';
+import Ajv2020 from 'ajv/dist/2020.js';
+
+const schema = JSON.parse(fs.readFileSync('schema/codex-task-response.schema.json', 'utf8'));
+const data = JSON.parse(fs.readFileSync('/tmp/codex-response.json', 'utf8'));
+const ajv = new Ajv2020({ allErrors: true, strict: false });
+const validate = ajv.compile(schema);
+if (!validate(data)) {
+  console.error(JSON.stringify(validate.errors, null, 2));
+  process.exit(1);
+}
+console.log('schema-valid');
+NODE
 ```
 
 備考:
-- 追加の相関制約（`shouldBlockProgress` と `nextActions` の厳密関係）は `#2338` で schema 側へ実装予定。
+- `pnpm run codex:adapter` は blocked 応答時に exit code `2` を返します（想定動作）。
+- schemaの相関制約は段階導入で、互換期間中は blocked 応答の表現が混在し得ます。
 
 ## 6. 一次情報
 
