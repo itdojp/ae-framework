@@ -127,6 +127,16 @@ function deriveUnblockActions(status, reason) {
   const normalizedStatus = String(status || '').trim().toLowerCase();
   const normalizedReason = String(reason || '').trim().toLowerCase();
 
+  if (normalizedStatus === 'done') {
+    if (normalizedReason === 'checks healthy, waiting for required checks/merge queue') {
+      return ['No manual fix required. Wait for required checks or merge queue completion.'];
+    }
+    if (normalizedReason === 'auto-merge enabled' || normalizedReason === 'already merged') {
+      return ['No action required.'];
+    }
+    return ['No immediate action required. Monitor PR checks until merge completes.'];
+  }
+
   if (normalizedStatus === 'skip' && normalizedReason === 'missing label autopilot:on') {
     return ['Add label `autopilot:on` and rerun `/autopilot run`.'];
   }
@@ -135,12 +145,6 @@ function deriveUnblockActions(status, reason) {
   }
   if (normalizedReason === 'merge conflict') {
     return ['Rebase/update branch to resolve merge conflicts, then rerun `/autopilot run`.'];
-  }
-  if (normalizedReason === 'checks healthy, waiting for required checks/merge queue') {
-    return ['No manual fix required. Wait for required checks or merge queue completion.'];
-  }
-  if (normalizedReason === 'already merged') {
-    return ['No action required.'];
   }
   if (normalizedReason) {
     return [`Resolve: ${reason}. Then rerun \`/autopilot run\`.`];
@@ -397,10 +401,6 @@ async function processPr(number) {
     mergeable: finalState?.mergeable || '',
     mergeState: finalState?.mergeStateStatus || '',
   };
-
-  if (status === 'skip') {
-    return result;
-  }
 
   if (!dryRun) {
     if (status === 'blocked') {

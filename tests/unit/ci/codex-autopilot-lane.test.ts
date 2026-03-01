@@ -94,9 +94,18 @@ describe('codex-autopilot-lane helpers', () => {
     expect(deriveUnblockActions('done', 'checks healthy, waiting for required checks/merge queue')).toEqual([
       'No manual fix required. Wait for required checks or merge queue completion.',
     ]);
+    expect(deriveUnblockActions('done', 'auto-merge enabled')).toEqual([
+      'No action required.',
+    ]);
+    expect(deriveUnblockActions('done', 'already merged')).toEqual([
+      'No action required.',
+    ]);
   });
 
   it('returns fallback unblock action for unknown reason', () => {
+    expect(deriveUnblockActions('done', 'queued')).toEqual([
+      'No immediate action required. Monitor PR checks until merge completes.',
+    ]);
     expect(deriveUnblockActions('blocked', 'some unknown blocker')).toEqual([
       'Resolve: some unknown blocker. Then rerun `/autopilot run`.',
     ]);
