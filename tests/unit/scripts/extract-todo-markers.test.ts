@@ -10,6 +10,7 @@ describe('extract-todo-markers helpers', () => {
   it('detects TODO markers only in intentional contexts', () => {
     expect(normalizeMarker('// TODO: implement this', 'src/main.ts')).toBe('TODO');
     expect(normalizeMarker('TODO: handle follow-up', 'src/main.ts')).toBe('TODO');
+    expect(normalizeMarker('// TODO(#0): linked issue placeholder', 'src/main.ts')).toBe('TODO');
     expect(normalizeMarker('const label = "todo-app"', 'src/main.ts')).toBeNull();
   });
 
