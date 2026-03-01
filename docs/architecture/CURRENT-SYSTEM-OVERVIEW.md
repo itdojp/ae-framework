@@ -1,4 +1,4 @@
-# ae-framework Current System Overview (2026-02)
+# ae-framework Current System Overview (2026-03)
 
 > Language / 言語: English | 日本語
 
@@ -6,7 +6,7 @@
 
 ## English (Summary)
 
-This document captures the implementation-aligned architecture of `ae-framework` as of 2026-02-09, including the expanded formal-verification stack and CSP (`cspx`) integration contract.
+This document captures the implementation-aligned architecture of `ae-framework` as of 2026-03-01, including review-topology aware policy gates, release verify operations, and the expanded formal-verification stack with CSP (`cspx`) integration.
 
 ---
 
@@ -78,15 +78,18 @@ This document captures the implementation-aligned architecture of `ae-framework`
 | 種別 | 代表ワークフロー | 目的 |
 | --- | --- | --- |
 | 必須軽量ゲート | `verify-lite.yml`, `coverage-check.yml`, `workflow-lint.yml` | 日常PRの安定ゲート |
+| 必須ポリシーゲート | `policy-gate.yml` | risk/topology/approval 方針の判定（team/solo 切替対応） |
 | レビューゲート | `copilot-review-gate.yml` | Copilotレビュー存在 + スレッド解決確認 |
 | レビュー対応（auto-fix） | `copilot-auto-fix.yml` | Copilot suggestion をPRへ自動適用（コミット/push）+ スレッド解決（任意） |
 | 自動マージ（auto-merge） | `pr-ci-status-comment.yml` | 条件成立時に auto-merge を自動有効化し、人手マージを省略（任意） |
 | 形式検証（opt-in） | `formal-verify.yml` | `run-formal` ラベル/dispatchで重い検証を実行 |
 | 形式集約 | `formal-aggregate.yml` | formal出力をPRコメント向けに集約 |
 | セキュリティ | `security.yml`, `sbom-generation.yml` | 依存・脆弱性・SBOM運用 |
+| リリース検証 | `post-deploy-verify.yml` | workflow_dispatch 起点の post-deploy verify と証跡保存 |
 
 補足:
 - `formal-verify.yml` は non-blocking 設計。必要時のみ `enforce-formal` で Apalache の `ran/ok` をゲート化。
+- `policy-gate.yml` の approval 評価は `AE_REVIEW_TOPOLOGY` / `AE_POLICY_MIN_HUMAN_APPROVALS` で切替可能。
 
 ## 5. 形式検証スタック（拡張後）
 
@@ -149,12 +152,30 @@ CI pin（再現性）:
 4. PR運用:
    - 必要時に `run-formal` ラベルを付与
    - 集約結果を PR コメントと artifacts で確認
+5. リリース運用:
+   - `gh workflow run post-deploy-verify.yml ...` で post-deploy verify を実行
+   - `artifacts/release/post-deploy-verify.json` を判定証跡として保管
 
 ## 8. 関連ドキュメント
 
 - 製品概要: `docs/product/OVERVIEW.md`
 - 詳細説明: `docs/product/DETAIL.md`
 - 利用手順: `docs/product/USER-MANUAL.md`
+- PR自動化運用: `docs/ci/pr-automation.md`
+- リリース運用: `docs/operate/release-engineering.md`
 - Formal運用: `docs/quality/formal-runbook.md`
 - CSP詳細: `docs/quality/formal-csp.md`
 - 全ドキュメント索引: `docs/README.md`
+
+## 9. 更新サマリ（2026-03-01）
+
+更新内容:
+- 必須ゲートに `policy-gate.yml` を追加し、review topology 切替運用を反映
+- リリース検証導線（`post-deploy-verify.yml` / `release verify`）を全体像へ統合
+- PR自動化/リリース運用ドキュメントへの一次参照を明示
+
+一次情報（実装ソース）:
+- `.github/workflows/policy-gate.yml`
+- `.github/workflows/post-deploy-verify.yml`
+- `scripts/ci/lib/automation-config.mjs`
+- `src/cli/release-cli.ts`
