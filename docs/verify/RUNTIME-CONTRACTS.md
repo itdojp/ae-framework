@@ -21,6 +21,11 @@ This document outlines an opt-in path to generate runtime contracts (e.g., Zod s
 
 - Contracts are generated alongside code and can be enabled per feature.
 - Contracts validate inputs/outputs and pre/post conditions in runtime and can be wired into `verify` as an optional gate.
+- The generator supports explicit directives in the formal-spec text:
+  - `@input <type>` / `@output <type>` (`object|array|string|number|boolean|unknown`)
+  - `@pre <expr>` / `@post <expr>`
+  - `@state <A|B|C>` / `@transition <A -> B if condition>`
+- Generated files expose `generationWarnings` so unsupported directives or missing structure are explicit.
 
 ### How to use (initial)
 
@@ -53,6 +58,18 @@ const generated = await agent.generateFromOpenAPI(openapi, {
   includeContracts: true,
 });
 // write generated.files ...
+```
+
+Directive-oriented example:
+
+```text
+@input object
+@output number
+@pre input != null
+@post output != null
+@state Init|Validated|Done
+@transition Init -> Validated if input != null
+@transition Validated -> Done if output != null
 ```
 
 > This is an initial skeleton; future versions will extract specific properties.
