@@ -19,5 +19,5 @@ for (const f of files) {
   }
 }
 
-console.log(`[codemod] replaced ts-ignore -> ts-expect-error (with TODO)`);
+console.log(`[codemod] replaced ts-ignore -> ts-expect-error (with EXPLAIN: describe why)`);
 console.log(`[codemod] Total: ${totalChanges} replacements in ${filesChanged} files`);
