@@ -38,8 +38,9 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
           case 'intent':
             {
               const resp = await intent.handleIntentTask(request as any);
-              span.setAttributes({ 'ae.result.blocked': resp.shouldBlockProgress || false, 'ae.result.warnings': resp.warnings?.length || 0 });
-              return writeAndReturn(phase, request, resp);
+              const finalResp = writeAndReturn(phase, request, resp);
+              recordSpanResult(span, finalResp);
+              return finalResp;
             }
           case 'formal': {
             const reqText = request.prompt || request.description || '';
@@ -66,6 +67,7 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
                 fs.writeFileSync(mcPath, JSON.stringify(mc, null, 2), 'utf8');
               } catch {}
             } catch {}
+            const isInvalid = spec.validation.status === 'invalid';
             const resp: TaskResponse = {
               summary: `Formal spec generated: ${spec.type.toUpperCase()} (${spec.validation.status})`,
               analysis: spec.content.slice(0, 1200),
@@ -80,37 +82,51 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
                 'pnpm run codex:generate:tests -- --use-operation-id'
               ],
               warnings: spec.validation.warnings?.map(w => w.message) || [],
-              shouldBlockProgress: spec.validation.status === 'invalid',
+              shouldBlockProgress: isInvalid,
+              ...(isInvalid
+                ? {
+                    blockingReason: 'formal-validation-invalid',
+                    requiredHumanInput: 'resolve formal specification warnings and rerun formal phase',
+                  }
+                : {}),
             };
-            span.setAttributes({ 'ae.result.blocked': resp.shouldBlockProgress || false, 'ae.result.warnings': resp.warnings?.length || 0 });
-            return writeAndReturn(phase, request, resp);
+            const finalResp = writeAndReturn(phase, request, resp);
+            recordSpanResult(span, finalResp);
+            return finalResp;
           }
           case 'stories':
             {
               const resp = await stories.handleUserStoriesTask(request);
-              span.setAttributes({ 'ae.result.blocked': resp.shouldBlockProgress || false, 'ae.result.warnings': resp.warnings?.length || 0 });
-              return writeAndReturn(phase, request, resp);
+              const finalResp = writeAndReturn(phase, request, resp);
+              recordSpanResult(span, finalResp);
+              return finalResp;
             }
           case 'validation':
             {
               const resp = await validation.handleValidationTask(request);
-              span.setAttributes({ 'ae.result.blocked': resp.shouldBlockProgress || false, 'ae.result.warnings': resp.warnings?.length || 0 });
-              return writeAndReturn(phase, request, resp);
+              const finalResp = writeAndReturn(phase, request, resp);
+              recordSpanResult(span, finalResp);
+              return finalResp;
             }
           case 'modeling':
             {
               const resp = await modeling.handleDomainModelingTask(request);
-              span.setAttributes({ 'ae.result.blocked': resp.shouldBlockProgress || false, 'ae.result.warnings': resp.warnings?.length || 0 });
-              return writeAndReturn(phase, request, resp);
+              const finalResp = writeAndReturn(phase, request, resp);
+              recordSpanResult(span, finalResp);
+              return finalResp;
             }
           case 'ui':
             {
               const resp = await handleUI(request, span);
-              span.setAttributes({ 'ae.result.blocked': resp.shouldBlockProgress || false, 'ae.result.warnings': resp.warnings?.length || 0 });
-              return writeAndReturn(phase, request, resp);
+              const finalResp = writeAndReturn(phase, request, resp);
+              recordSpanResult(span, finalResp);
+              return finalResp;
             }
-          default:
-            return writeAndReturn(phase, request, createNeutralResponse(phase, request));
+          default: {
+            const finalResp = writeAndReturn(phase, request, createNeutralResponse(phase, request));
+            recordSpanResult(span, finalResp);
+            return finalResp;
+          }
         }
       } catch (err) {
         span.recordException(err as Error);
@@ -124,7 +140,9 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
           blockingReason: 'adapter-error',
           requiredHumanInput: `error_context_for_phase_${phase}`,
         };
-        return writeAndReturn(phase, request, errorResp);
+        const finalResp = writeAndReturn(phase, request, errorResp);
+        recordSpanResult(span, finalResp);
+        return finalResp;
       } finally {
         span.end();
       }
@@ -316,6 +334,13 @@ function normalizeStringList(values: unknown): string[] {
   return normalized;
 }
 
+function recordSpanResult(span: any, response: TaskResponse): void {
+  span.setAttributes({
+    'ae.result.blocked': response.shouldBlockProgress || false,
+    'ae.result.warnings': response.warnings?.length || 0,
+  });
+}
+
 function defaultContinueActions(phase: Phase): string[] {
   switch (phase) {
     case 'intent':
@@ -343,8 +368,8 @@ function inferRequiredHumanInput(warnings: string[]): string | undefined {
   return undefined;
 }
 
-function buildBlockedAction(phase: Phase, blockingReason: string, requiredHumanInput: string): string {
-  if (requiredHumanInput) {
+function buildBlockedAction(phase: Phase, blockingReason: string, requiredHumanInput?: string): string {
+  if (requiredHumanInput && requiredHumanInput.trim().length > 0) {
     return `Provide ${requiredHumanInput} and rerun codex task (${phase})`;
   }
   return `Resolve ${blockingReason} and rerun codex task (${phase})`;
@@ -371,12 +396,16 @@ export function finalizeTaskResponse(phase: Phase, _request: TaskRequest, respon
   }
 
   const blockingReason = response.blockingReason?.trim() || 'human-input-required';
-  const requiredHumanInput = response.requiredHumanInput?.trim() || inferRequiredHumanInput(warnings) || `resolve-${blockingReason}`;
-  const unblockAction = buildBlockedAction(phase, blockingReason, requiredHumanInput);
+  const explicitRequiredInput = response.requiredHumanInput?.trim() || inferRequiredHumanInput(warnings) || '';
+  const unblockAction = buildBlockedAction(phase, blockingReason, explicitRequiredInput);
+  const requiredHumanInput = explicitRequiredInput || `resolve-${blockingReason}`;
   const blockedWarnings = warnings.length > 0
     ? warnings
     : [`INTERNAL CONTRACT VIOLATION: blocked response missing warnings. Human action: ${unblockAction}`];
-  const blockedNextActions = nextActions.length > 0 ? nextActions : [unblockAction];
+  const hasUnblockAction = nextActions.some((item) => item.toLowerCase() === unblockAction.toLowerCase());
+  const blockedNextActions = hasUnblockAction
+    ? nextActions
+    : [unblockAction, ...nextActions];
   const blockedSummary = summary.toLowerCase().startsWith('blocked:')
     ? summary
     : `Blocked: ${summary || `${phase} task requires human input`}`;

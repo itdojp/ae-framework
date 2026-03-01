@@ -77,9 +77,30 @@ describe('finalizeTaskResponse', () => {
     );
 
     expect(response.summary).toBe('Blocked: waiting approval');
-    expect(response.nextActions).toEqual(['gh pr review --approve 1234']);
+    expect(response.nextActions[0]).toContain('Provide approval=1 and rerun codex task');
+    expect(response.nextActions[1]).toBe('gh pr review --approve 1234');
     expect(response.warnings).toEqual(['REQUIRED_INPUT: approval=1']);
     expect(response.blockingReason).toBe('missing-approval');
     expect(response.requiredHumanInput).toBe('approval=1');
+  });
+
+  it('adds unblock action ahead of continue-oriented actions for blocked formal responses', () => {
+    const response = finalizeTaskResponse(
+      'formal',
+      request,
+      createBaseResponse({
+        shouldBlockProgress: true,
+        blockingReason: 'formal-validation-invalid',
+        requiredHumanInput: 'resolve formal specification warnings and rerun formal phase',
+        nextActions: [
+          'pnpm -s run verify:lite',
+          'pnpm run codex:generate:tests -- --use-operation-id',
+        ],
+        warnings: ['Invariant violation detected'],
+      }),
+    );
+
+    expect(response.nextActions[0]).toContain('Provide resolve formal specification warnings and rerun formal phase and rerun codex task');
+    expect(response.nextActions[1]).toBe('pnpm -s run verify:lite');
   });
 });
