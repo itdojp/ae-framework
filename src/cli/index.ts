@@ -10,7 +10,6 @@ import { createCodegenCommand } from './codegen-cli.js';
 import { CEGISCli } from './cegis-cli.js';
 import { GuardRunner } from './guards/GuardRunner.js';
 import { ConfigLoader } from './config/ConfigLoader.js';
-// import { MetricsCollector } from './metrics/MetricsCollector.js';  // TODO: Enable when metrics tracking is implemented
 import type { AEFrameworkConfig, Phase } from './types.js';
 import { createHybridIntentSystem, type HybridIntentSystem } from '../integration/hybrid-intent-system.js';
 import type { TaskRequest, TaskResponse, TaskHandler } from '../agents/task-types.js';
@@ -74,7 +73,6 @@ class AEFrameworkCLI {
   private phaseValidator: PhaseValidator;
   private guardRunner: GuardRunner;
   private intentSystem: HybridIntentSystem;
-  // private metricsCollector: MetricsCollector;  // TODO: use for metrics tracking
   public naturalLanguageHandler: TaskHandler;
   public userStoriesHandler: TaskHandler;
   public validationHandler: TaskHandler;
@@ -92,7 +90,7 @@ class AEFrameworkCLI {
       enforceRealTime: false,
       strictMode: false,
     });
-    // this.metricsCollector = new MetricsCollector(this.config);  // TODO: use for metrics tracking
+    // Metrics collection is handled by telemetry/runtime modules; CLI bootstrap stays side-effect free.
     
     // Initialize Task Tool handlers with proper types
     this.naturalLanguageHandler = createNaturalLanguageTaskHandler();
