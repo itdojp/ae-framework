@@ -317,7 +317,7 @@ describe('codex adapter stdio contract', () => {
     });
   });
 
-  it('returns exit 2 when blocked response omits blocked metadata but has actionable nextActions', () => {
+  it('returns exit 2 when blocked response has empty warnings but actionable nextActions', () => {
     withTempRepo((tempRoot) => {
       writeAdapterModule(tempRoot, `
         export function createCodexTaskAdapter() {
@@ -348,6 +348,8 @@ describe('codex adapter stdio contract', () => {
           shouldBlockProgress: true,
         }),
       );
+      expect(Array.isArray(payload.warnings)).toBe(true);
+      expect(payload.warnings[0]).toContain('Human action:');
     });
   });
 
