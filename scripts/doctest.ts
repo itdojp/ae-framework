@@ -247,7 +247,8 @@ class DocumentationTester {
         case 'ts':
           extension = 'ts';
           writeFileSync(`${tempFile}.${extension}`, block.code);
-          validationCommand = ['npx', 'tsc', '--noEmit', '--skipLibCheck', `${tempFile}.${extension}`];
+          // Use pnpm exec to avoid npm-specific config warnings in CI.
+          validationCommand = ['pnpm', 'exec', 'tsc', '--noEmit', '--skipLibCheck', `${tempFile}.${extension}`];
           break;
           
         case 'javascript':

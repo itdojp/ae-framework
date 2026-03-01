@@ -13,7 +13,7 @@ Integration スイートでは、テストごとの一時ディレクトリ作�
 
 ### 使用例: tempDir とクリーンアップ
 
-```ts
+```ts no-doctest
 let integrationTempDir: string;
 
 beforeEach(async () => {
@@ -31,7 +31,7 @@ beforeEach(async () => {
 
 ### 使用例: retry の一括適用
 
-```ts
+```ts no-doctest
 import { applyIntegrationRetry } from '../_helpers/integration-test-utils.js';
 
 applyIntegrationRetry(it); // describe 前で呼び出す

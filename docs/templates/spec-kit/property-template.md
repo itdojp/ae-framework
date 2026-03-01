@@ -12,7 +12,7 @@
 - Then: <invariant/assertion>
 
 ## Generator sketch
-```ts
+```ts no-doctest
 import fc from 'fast-check';
 
 const genInput = fc.record({
