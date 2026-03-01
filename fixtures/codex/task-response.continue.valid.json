@@ -1,0 +1,12 @@
+{
+  "summary": "Generated validation summary",
+  "analysis": "No blocking issues were detected.",
+  "recommendations": [
+    "Run verify-lite"
+  ],
+  "nextActions": [
+    "pnpm run verify:lite"
+  ],
+  "warnings": [],
+  "shouldBlockProgress": false
+}

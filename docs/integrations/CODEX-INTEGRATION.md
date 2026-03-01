@@ -121,6 +121,15 @@ echo '{"description":"Generate UI","subagent_type":"ui","context":{"phaseState":
  - Contract/E2E templates: when OpenAPI is available in quickstart, `scripts/codex/generate-contract-tests.mjs` scaffolds tests under `tests/api/generated/` and writes `artifacts/codex/openapi-contract-tests.json`.
 - Continuation contract (No Human Bottleneck): `docs/integrations/CODEX-CONTINUATION-CONTRACT.md`
 
+### TaskResponse schema transition note (Contract v1)
+
+- `schema/codex-task-response.schema.json` now enforces:
+  - `shouldBlockProgress=false` => `nextActions` must be non-empty
+  - `shouldBlockProgress=true` => `nextActions` must be non-empty
+- Migration recommendation:
+  - Move blocked responses to explicit `blockingReason` / `requiredHumanInput` fields where possible.
+  - Existing blocked responses without those fields are accepted for compatibility.
+
 ## 4) CodeX (no MCP) – Spec Tools over stdio
 - Script: `pnpm run codex:spec:stdio`
 - Actions:
