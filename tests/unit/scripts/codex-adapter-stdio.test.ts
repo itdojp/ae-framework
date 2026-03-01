@@ -317,7 +317,7 @@ describe('codex adapter stdio contract', () => {
     });
   });
 
-  it('returns exit 2 when blocked response omits blocked metadata but has actionable nextActions', () => {
+  it('returns exit 1 when blocked response has empty warnings', () => {
     withTempRepo((tempRoot) => {
       writeAdapterModule(tempRoot, `
         export function createCodexTaskAdapter() {
@@ -341,11 +341,12 @@ describe('codex adapter stdio contract', () => {
         JSON.stringify({ description: 'run', subagent_type: 'intent' }),
       );
 
-      expect(result.status).toBe(2);
+      expect(result.status).toBe(1);
       const payload = parseJsonLine(result.stdout);
       expect(payload).toEqual(
         expect.objectContaining({
-          shouldBlockProgress: true,
+          error: true,
+          code: 'INVALID_RESPONSE_SCHEMA',
         }),
       );
     });
