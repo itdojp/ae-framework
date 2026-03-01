@@ -17,7 +17,8 @@
 ## Contract rules (v1)
 
 - `shouldBlockProgress=false` のときは `nextActions` を 1 件以上にする
-- `shouldBlockProgress=true` のときは停止理由と人間の最小 1 手を明示する
+- `shouldBlockProgress=true` のときは停止理由と人間の最小 1 手を明示し、`nextActions` を 1 件以上にする
+- blocked 時の人間の最小 1 手は `warnings[0]` にそのまま書く
 - オープンエンド質問（例:「どうしますか？」）は使わない
 - 選択肢が必要な場合は 2〜4 個に制限し、推奨案を 1 つ明示する
 
