@@ -1,0 +1,10 @@
+{
+  "summary": "Blocked but incomplete",
+  "analysis": "This response should fail because blocked metadata is missing.",
+  "recommendations": [],
+  "nextActions": [
+    "Provide missing input and rerun"
+  ],
+  "warnings": [],
+  "shouldBlockProgress": true
+}

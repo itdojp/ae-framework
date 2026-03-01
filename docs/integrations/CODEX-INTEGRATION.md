@@ -120,6 +120,17 @@ echo '{"description":"Generate UI","subagent_type":"ui","context":{"phaseState":
 - Validation: runtime schema validation (Zod) for `context.phaseState` blocks on invalid inputs with actionable messages.
  - Contract/E2E templates: when OpenAPI is available in quickstart, `scripts/codex/generate-contract-tests.mjs` scaffolds tests under `tests/api/generated/` and writes `artifacts/codex/openapi-contract-tests.json`.
 
+### TaskResponse schema transition note (Contract v1)
+
+- `schema/codex-task-response.schema.json` now enforces:
+  - `shouldBlockProgress=false` => `nextActions` must be non-empty
+  - `shouldBlockProgress=true` => `nextActions` must be non-empty and either:
+    - `blockingReason` + `requiredHumanInput` are present, or
+    - `warnings` contains at least one item (legacy branch)
+- Migration recommendation:
+  - Move blocked responses to explicit `blockingReason` / `requiredHumanInput` fields.
+  - Keep legacy `warnings`-only blocked responses temporary; they remain accepted for compatibility.
+
 ## 4) CodeX (no MCP) – Spec Tools over stdio
 - Script: `pnpm run codex:spec:stdio`
 - Actions:

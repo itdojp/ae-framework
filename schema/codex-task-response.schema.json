@@ -38,7 +38,64 @@
     },
     "shouldBlockProgress": {
       "type": "boolean"
+    },
+    "blockingReason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "requiredHumanInput": {
+      "type": "string",
+      "minLength": 1
     }
   },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "shouldBlockProgress": {
+            "const": false
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "nextActions": {
+            "minItems": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "shouldBlockProgress": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "nextActions": {
+            "minItems": 1
+          }
+        },
+        "anyOf": [
+          {
+            "required": [
+              "blockingReason",
+              "requiredHumanInput"
+            ]
+          },
+          {
+            "properties": {
+              "warnings": {
+                "minItems": 1
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
   "additionalProperties": true
 }

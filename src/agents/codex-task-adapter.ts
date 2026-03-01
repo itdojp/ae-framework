@@ -115,9 +115,11 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
           summary: `CodeX adapter error in phase: ${phase}`,
           analysis: String(err),
           recommendations: recommendNextActions(phase),
-          nextActions: [],
+          nextActions: [`Fix adapter error in phase '${phase}' and rerun the same task`],
           warnings: ['Adapter error encountered'],
           shouldBlockProgress: true,
+          blockingReason: 'adapter-error',
+          requiredHumanInput: `error_context_for_phase_${phase}`,
         };
         return writeAndReturn(phase, errorResp);
       } finally {
